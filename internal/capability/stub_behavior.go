@@ -207,6 +207,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if corePlatformBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "core platform method is handled by the VM stdlib/runtime surface", true
 	}
+	if cacheBuilderBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "CacheBuilder.doLoad is dispatched by the VM cache loader surface when the requested builder shape is available", true
+	}
 	if xmlStreamReaderBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "XmlStreamReader cursor and accessor method is handled by the VM XML stream surface", true
 	}
@@ -381,6 +384,13 @@ func appLauncherControllerBehaviorMethod(symbol typesys.TypeSymbol, member types
 	}
 }
 
+func cacheBuilderBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod || !strings.EqualFold(stubBehaviorTypeName(symbol), "cache.CacheBuilder") {
+		return false
+	}
+	return strings.EqualFold(member.Name, "doLoad")
+}
+
 func sfsqlqueryHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
 	if member.Kind != apexast.DeclarationMethod && member.Kind != apexast.DeclarationConstructor {
 		return false
@@ -454,6 +464,8 @@ func commerceLocalHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesy
 		"CartExtension.PromotionsCartCalculator", "CartExtension.ShippingCartCalculator",
 		"CartExtension.TaxCartCalculator":
 		return name == "calculate"
+	case "CartExtension.CheckoutPlaceOrder":
+		return name == "validate"
 	case "CartExtension.SplitShipmentService":
 		return name == "arrangeitems"
 	default:
@@ -767,6 +779,8 @@ func packagedControllerDefaultMethod(typeName, methodName string) bool {
 		return true
 	case "wave.Dags":
 		return name == "getdags"
+	case "wave.QueryNode":
+		return name == "execute"
 	case "wave.TrendedDatasetProcessor":
 		return name == "getdescription" || name == "getlabel"
 	case "applauncher.AppLauncherSetupReordererController":
@@ -799,6 +813,8 @@ func packagedControllerDefaultMethod(typeName, methodName string) bool {
 		return name == "accesscheck" || name == "userhasmaps"
 	case "mlplatform.PredictionServiceClient":
 		return name == "predictions"
+	case "YubiAuthForAloha":
+		return name == "validateyubikeylogin"
 	case "industries_clm.OpenInterface":
 		return name == "invokemethod"
 	default:
@@ -831,8 +847,6 @@ func packagedControllerUnsupportedMethod(typeName, methodName string) bool {
 		return name == "falcongeocoderecords"
 	case "embeddedMessaging.EmbeddedMessagingSessionHandler":
 		return name == "handlerequestwithsfdcsession"
-	case "YubiAuthForAloha":
-		return name == "validateyubikeylogin"
 	default:
 		return false
 	}

@@ -1399,6 +1399,83 @@ System.assertEquals(0, named.getNumKeys());
 	}
 }
 
+func TestExecPlatformCacheBuilderAcceptsGeneratedLowercaseInterface(t *testing.T) {
+	loadProgram, err := CompileAnonymous(`return 'loaded:' + key;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('loaded:shape', (String) Cache.Org.get(CacheLoader.class, 'shape'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "CacheLoader",
+		Interfaces: []string{"cache.CacheBuilder"},
+		Methods: map[string]Method{
+			"doLoad": {
+				Name:       "CacheLoader.doLoad",
+				ClassName:  "CacheLoader",
+				ReturnType: "Object",
+				Params:     []Param{{Name: "key", Type: "String"}},
+				Program:    loadProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPlatformHelperTailSafeDefaults(t *testing.T) {
+	cases := []string{`
+CartExtension.PlaceOrderResponse placeOrder =
+	new CartExtension.CheckoutPlaceOrder().validate(
+		new CartExtension.PlaceOrderRequest(CartExtension.CartTestUtil.createCart()),
+		new List<String>()
+	);
+System.assertNotEquals(null, placeOrder);
+`, `
+System.assertEquals(false, YubiAuthForAloha.validateYubiKeyLogin('user', 'password'));
+`, `
+ConnectApi.LiteralJson waveResult = wave.QueryBuilder.load('dataset', 'v1').execute('q');
+System.assertNotEquals(null, waveResult);
+List<Object> rows = (List<Object>) waveResult.json;
+System.assertEquals(0, rows.size());
+`}
+	for _, source := range cases {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Execute(program, nil); err != nil {
+			t.Fatalf("%s\n%v", source, err)
+		}
+	}
+}
+
+func TestExecPlatformHelperTailUnsupportedFences(t *testing.T) {
+	cases := []string{
+		`System.changeOwnPassword('old', 'new', 'new');`,
+		`ConnectApi.Payments.authorize(null);`,
+		`new ApexPages.Action('{!save}').invoke();`,
+		`functions.Function.get('fn').invoke(null);`,
+	}
+	for _, source := range cases {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "unsupported") {
+			t.Fatalf("%s error = %v, want unsupported", source, err)
+		}
+	}
+}
+
 func TestExecPlatformCachePartitionMetadataSeedsDefaultPartition(t *testing.T) {
 	program, err := CompileAnonymous(`
 PlatformCachePartition partition = [

@@ -26132,6 +26132,17 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	if receiver.Kind != ValueNull {
 		frame["this"] = receiver
 	}
+	commerceClassName := method.ClassName
+	if commerceClassName == "" && receiver.Kind == ValueObject {
+		commerceClassName = receiver.Type
+	}
+	if strings.EqualFold(commerceClassName, "CartExtension.CheckoutPlaceOrder") &&
+		commerceLocalHarnessRuntimeMethod(commerceClassName, apexMethodMemberName(method.Name)) {
+		if method.ClassName == "" {
+			method.ClassName = commerceClassName
+		}
+		return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), nil
+	}
 	if passiveGeneratedMethod(method) {
 		return vm.passiveGeneratedMethodReturn(method, frame, receiver), nil
 	}
@@ -27725,7 +27736,8 @@ func commerceLocalHarnessRuntimeType(typeName string) bool {
 	case "WebStoreContext",
 		"commerce_inventory.CommerceInventoryService",
 		"commercepayments.ClientSidePaymentAdapter",
-		"commerce_ordermanagement.ProductExpandService":
+		"commerce_ordermanagement.ProductExpandService",
+		"CartExtension.CheckoutPlaceOrder":
 		return true
 	default:
 		return false
@@ -27756,6 +27768,8 @@ func commerceLocalHarnessRuntimeMethod(className, methodName string) bool {
 		}
 	case "commerce_ordermanagement.ProductExpandService":
 		return name == "returnreasons"
+	case "CartExtension.CheckoutPlaceOrder":
+		return name == "validate"
 	default:
 		return false
 	}
@@ -27854,6 +27868,8 @@ func packagedControllerDefaultMethod(typeName, methodName string) bool {
 		return name == "accesscheck" || name == "userhasmaps"
 	case "mlplatform.PredictionServiceClient":
 		return name == "predictions"
+	case "YubiAuthForAloha":
+		return name == "validateyubikeylogin"
 	case "industries_clm.OpenInterface":
 		return name == "invokemethod"
 	default:
@@ -27953,8 +27969,6 @@ func packagedControllerUnsupportedMethod(typeName, methodName string) bool {
 		return name == "falcongeocoderecords"
 	case "embeddedMessaging.EmbeddedMessagingSessionHandler":
 		return name == "handlerequestwithsfdcsession"
-	case "YubiAuthForAloha":
-		return name == "validateyubikeylogin"
 	default:
 		return false
 	}
@@ -28053,6 +28067,13 @@ func (vm *VM) generatedPlatformMethodDefaultReturn(method Method, receiver Value
 			bindGeneratedPlatformMethodArgs(&value, method, args)
 		}
 		return value
+	case strings.EqualFold(method.ClassName, "CartExtension.CheckoutPlaceOrder") &&
+		commerceLocalHarnessRuntimeMethod(method.ClassName, apexMethodMemberName(method.Name)):
+		if generated, ok := generatedPlatformTypeIndex[strings.ToLower(returnType)]; ok &&
+			generated.Kind == apexast.DeclarationClass {
+			return vm.newGeneratedPlatformObject(generated)
+		}
+		return Null
 	default:
 		return vm.generatedPlatformDefaultValue(returnType, Null)
 	}
@@ -38384,7 +38405,12 @@ func callWaveQueryNodeMember(receiver Value, method string, args []Value) (Value
 		}
 		return String(waveQueryNodeBuild(receiver, args[0].Text)), receiver, false, true, nil
 	case "execute":
-		return Null, receiver, false, true, unsupportedCallError("wave.QueryNode.execute")
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("wave.QueryNode.execute expects String streamName")
+		}
+		out := Object("ConnectApi.LiteralJson")
+		out.Fields["json"] = typedList("List<Object>")
+		return out, receiver, false, true, nil
 	case "cap", "filter", "foreach", "group", "order":
 		if strings.EqualFold(method, "group") && len(args) > 1 {
 			return Null, receiver, false, true, fmt.Errorf("wave.QueryNode.group expects 0 or 1 argument")

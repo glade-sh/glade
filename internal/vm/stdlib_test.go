@@ -2087,15 +2087,18 @@ System.assert(wave.QueryBuilder.cogroup(new List<wave.QueryNode>{query}, new Lis
 	}
 }
 
-func TestExecWaveQueryExecuteExplicitUnsupported(t *testing.T) {
+func TestExecWaveQueryExecuteReturnsEmptyLiteralJson(t *testing.T) {
 	program, err := CompileAnonymous(`
-wave.QueryBuilder.load('dataset', 'v1').execute('q');
+ConnectApi.LiteralJson result = wave.QueryBuilder.load('dataset', 'v1').execute('q');
+System.assertNotEquals(null, result);
+List<Object> rows = (List<Object>) result.json;
+System.assertEquals(0, rows.size());
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "unsupported call") {
-		t.Fatalf("wave.QueryNode.execute error = %v, want explicit unsupported", err)
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 
