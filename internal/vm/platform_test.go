@@ -208,6 +208,8 @@ System.assertEquals('', mapslite.MapsLiteUtils.accessCheck());
 System.assertEquals('', regrelloapex.LoginFormController.getForgotPasswordUrl());
 System.assertEquals('', setup_service_livemessage.MessagingChannelAppleDomainController.getApplePayDomain('local.example'));
 System.assertEquals(0, wave.Dags.getDags(new wave.DagsSearchOptions()).size());
+System.assertEquals(0, wave.NodeType.valueOf('source').ordinal());
+System.assertEquals(0, wave.ProjectionType.valueOf('dim').ordinal());
 
 ime_mrm.EventManagementBudgetApi budget = new ime_mrm.EventManagementBudgetApi();
 Map<String,Object> budgetResult = budget.invokeMethod('get', new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>());
