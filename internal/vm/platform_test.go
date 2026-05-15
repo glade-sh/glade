@@ -2162,14 +2162,25 @@ func TestExecSlackLocalDispatcherAndRunnableHarnessDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
 Slack.ActionDispatcher actionDispatcher = new Slack.ActionDispatcher();
 System.assertEquals(false, actionDispatcher.allowUnauthenticatedUsers());
+System.assertNotEquals(null, actionDispatcher.invoke(new Map<String, Object>(), new Slack.RequestContext()));
 Slack.EventDispatcher eventDispatcher = new Slack.EventDispatcher();
 System.assertEquals(false, eventDispatcher.allowUnauthenticatedUsers());
+System.assertNotEquals(null, eventDispatcher.invoke(new Slack.EventParameters(new Slack.Event(), 'team', 1), new Slack.RequestContext()));
 Slack.ShortcutDispatcher shortcutDispatcher = new Slack.ShortcutDispatcher();
 System.assertEquals(false, shortcutDispatcher.allowUnauthenticatedUsers());
+System.assertNotEquals(null, shortcutDispatcher.invoke(new Slack.ShortcutParameters('shortcut'), new Slack.RequestContext()));
 Slack.SlashCommandDispatcher slashCommandDispatcher = new Slack.SlashCommandDispatcher();
 System.assertEquals(false, slashCommandDispatcher.allowUnauthenticatedUsers());
+System.assertNotEquals(null, slashCommandDispatcher.invoke(new Slack.SlashCommandParameters('/local', 'payload'), new Slack.RequestContext()));
 Slack.RunnableHandler handler = new Slack.RunnableHandler();
 handler.run();
+Slack.UserMappingUrlServiceProvider urls = new Slack.UserMappingUrlServiceProvider();
+System.assertEquals('', urls.generateSlackAuthorizationUrl('state'));
+System.assertEquals('', urls.generatePartnerAuthorizationUrl('state', 'team'));
+Slack.UserProvisioningProvider provisioning = new Slack.UserProvisioningProvider();
+System.assertNotEquals(null, provisioning.importUsers(new List<Slack.UserMapping>(), 'team'));
+System.assertNotEquals(null, provisioning.revokeUsersBySalesforceId(new List<String>(), 'team'));
+System.assertNotEquals(null, provisioning.revokeUsersBySlackId(new List<String>()));
 	`)
 	if err != nil {
 		t.Fatalf("compile: %v", err)
@@ -2233,6 +2244,11 @@ System.assertEquals(true, channel.canBeOpenedByUser(user));
 Slack.TestHarness.Message message = channel.SENDMESSAGE(session, 'hello');
 System.assertEquals('hello', message.getText());
 System.assertEquals(1, session.getMessages().size());
+session.executeSlashCommand('/local', new Slack.App());
+session.executeSlashCommand('/local', 'payload', new Slack.App());
+session.executeGlobalShortcut('shortcut', new Slack.App());
+session.executeMessageShortcut('shortcut', message, new Slack.App());
+session.executeEvent(new Slack.Event(), new Slack.App());
 channel.removeUser(user);
 	`)
 	if err != nil {

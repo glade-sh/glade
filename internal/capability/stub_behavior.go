@@ -2256,6 +2256,7 @@ func slackTestHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Me
 	case "Slack.UserSession":
 		switch name {
 		case "closeallmodals", "closemodal",
+			"executeevent", "executeglobalshortcut", "executemessageshortcut", "executeslashcommand",
 			"getapphome", "getmessagecount", "getmessages", "getmodalstack", "getopenchannel", "getstate", "gettopmodal", "getuser",
 			"openapphome", "openchannel", "postmessage":
 			return true
@@ -2275,7 +2276,18 @@ func slackLocalHarnessComponentBehaviorMethod(symbol typesys.TypeSymbol, member 
 	name := strings.ToLower(member.Name)
 	switch typeName {
 	case "Slack.ActionDispatcher", "Slack.EventDispatcher", "Slack.ShortcutDispatcher", "Slack.SlashCommandDispatcher":
-		return name == "allowunauthenticatedusers" && strings.EqualFold(member.Type, "Boolean")
+		return name == "allowunauthenticatedusers" && strings.EqualFold(member.Type, "Boolean") ||
+			name == "invoke" && strings.EqualFold(member.Type, "Slack.ActionHandler")
+	case "Slack.UserMappingUrlServiceProvider":
+		return (name == "generatepartnerauthorizationurl" || name == "generateslackauthorizationurl") &&
+			strings.EqualFold(member.Type, "String")
+	case "Slack.UserProvisioningProvider":
+		switch name {
+		case "importusers", "revokeusersbysalesforceid", "revokeusersbyslackid":
+			return strings.EqualFold(member.Type, "Slack.UserProvisioningResult")
+		default:
+			return false
+		}
 	case "Slack.RunnableHandler":
 		return name == "run" && strings.EqualFold(member.Type, "void")
 	case "Slack.Button":
