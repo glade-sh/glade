@@ -94,12 +94,15 @@ type VM struct {
 	sfsqlqueryRows     []Value
 	sfsqlqueryMetadata []Value
 	platformCache      map[string]map[string]cacheEntry
+	cacheScanLocators  map[string][]cacheScanItem
+	cacheScanSeq       int
 	capturedEmails     []CapturedEmail
 	restRequest        Value
 	restResponse       Value
 	serverBaseURL      string
 	metadataDeploys    map[string]Value
 	reportInstances    map[string]Value
+	pushUpgradeCustoms map[string]pushUpgradeCustomization
 	debugHooks         DebugHooks
 	hasDebugHooks      bool
 	traceEnabled       bool
@@ -116,6 +119,13 @@ type VM struct {
 	describeTabsCache  *Value
 	customDataCache    map[string]Value
 	staticValueRefs    map[uint64]bool
+}
+
+type pushUpgradeCustomization struct {
+	ID                   string
+	PackageID            string
+	SubscriberOrgID      string
+	CustomUpgradeAllowed bool
 }
 
 type enumClassLookup struct {
@@ -249,8 +259,14 @@ type AsyncJob struct {
 }
 
 type cacheEntry struct {
-	Value    Value
-	ExpireAt time.Time
+	Value        Value
+	SecondaryKey string
+	ExpireAt     time.Time
+}
+
+type cacheScanItem struct {
+	Key   string
+	Value Value
 }
 
 type Trigger struct {
@@ -285,8 +301,10 @@ func New(stdout io.Writer) *VM {
 		emailSavepoints:    make(map[string][]CapturedEmail),
 		savepointOrder:     make(map[string]int),
 		platformCache:      make(map[string]map[string]cacheEntry),
+		cacheScanLocators:  make(map[string][]cacheScanItem),
 		metadataDeploys:    make(map[string]Value),
 		reportInstances:    make(map[string]Value),
+		pushUpgradeCustoms: make(map[string]pushUpgradeCustomization),
 		traceEnabled:       true,
 		ctx:                context.Background(),
 		activeGetters:      make(map[string]int),
@@ -2126,6 +2144,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Cache.Org.getAvgValueSize", "Cache.Session.getAvgValueSize", "Cache.Org.getMaxGetSize", "Cache.Session.getMaxGetSize",
 		"Cache.Org.getMaxGetTime", "Cache.Session.getMaxGetTime", "Cache.Org.getMaxValueSize", "Cache.Session.getMaxValueSize",
 		"Cache.Org.getMissRate", "Cache.Session.getMissRate",
+		"Cache.SecondaryKeyApi.get",
 		"Metadata.Operations.enqueueDeployment", "Metadata.Operations.checkDeployStatus", "Metadata.Operations.retrieve",
 		"reports.ReportManager.describeReport", "reports.ReportManager.getDatatypeFilterOperatorMap",
 		"reports.ReportManager.getReportInstance", "reports.ReportManager.getReportInstances",
@@ -2134,6 +2153,8 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"UserProvisioning.UserProvisioningLog.log",
 		"pref_center.TokenUtility.generateToken", "pref_center.TokenUtility.generateTokens",
 		"Ideas.findSimilar",
+		"Datacloud.FindDuplicates.findDuplicates", "Datacloud.FindDuplicatesByIds.findDuplicatesByIds",
+		"DomainParser.parse", "FeatureManagement.changeProtection", "Packaging.getCurrentPackageId",
 		"RequestImpl.getCurrent", "UIRequest.getCurrent",
 		"Auth.AuthToken.revokeAccess", "Auth.SessionManagement.getCurrentSession",
 		"Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.CommunitiesUtil.isGuestUser",
@@ -2464,6 +2485,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 platformStaticCall:
 	callee = normalizeStaticCallCasing(callee)
 	if value, handled, err := vm.callConnectAPITestFixtureStatic(callee, args); handled || err != nil {
+		return value, err
+	}
+	if value, handled, err := vm.callPushUpgradeCustomizationRepository(callee, args); handled || err != nil {
 		return value, err
 	}
 	if reason, ok := unsupportedIntegrationSurface(callee); ok {
@@ -3994,6 +4018,13 @@ platformStaticCall:
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return Decimal(0), nil
+	case "Cache.SecondaryKeyApi.get":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("%s expects String feature name", callee)
+		}
+		api := Object("Cache.SecondaryKeyApi")
+		api.Fields["featureName"] = args[0]
+		return api, nil
 	case "Messaging.sendEmail":
 		return vm.sendEmail(args, result)
 	case "Messaging.sendEmailMessage":
@@ -4326,6 +4357,40 @@ platformStaticCall:
 			return Null, err
 		}
 		return newDomainFromHostname(host), nil
+	case "Packaging.getCurrentPackageId":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Packaging.getCurrentPackageId expects 0 arguments")
+		}
+		return Null, nil
+	case "FeatureManagement.changeProtection":
+		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString {
+			return Null, fmt.Errorf("FeatureManagement.changeProtection expects apiName, typeApiName, and protection Strings")
+		}
+		return Null, nil
+	case "Datacloud.FindDuplicates.findDuplicates":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("Datacloud.FindDuplicates.findDuplicates expects List<SObject>")
+		}
+		results := make([]Value, 0, len(args[0].List))
+		for _, item := range args[0].List {
+			if item.Kind != ValueObject || !vm.isSObjectLikeType(item.Type) {
+				return Null, fmt.Errorf("Datacloud.FindDuplicates.findDuplicates expects List<SObject>")
+			}
+			results = append(results, newDatacloudFindDuplicatesResult())
+		}
+		return List(results...), nil
+	case "Datacloud.FindDuplicatesByIds.findDuplicatesByIds":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("Datacloud.FindDuplicatesByIds.findDuplicatesByIds expects List<Id>")
+		}
+		results := make([]Value, 0, len(args[0].List))
+		for _, item := range args[0].List {
+			if _, ok := idValueText(item); !ok {
+				return Null, fmt.Errorf("Datacloud.FindDuplicatesByIds.findDuplicatesByIds expects List<Id>")
+			}
+			results = append(results, newDatacloudFindDuplicatesResult())
+		}
+		return List(results...), nil
 	case "DomainCreator.getContentHostname",
 		"DomainCreator.getExperienceCloudSitesBuilderHostname",
 		"DomainCreator.getExperienceCloudSitesHostname",
@@ -20486,6 +20551,14 @@ func newFormulaInstance(builder Value) Value {
 	return instance
 }
 
+func newDatacloudFindDuplicatesResult() Value {
+	result := Object("Datacloud.FindDuplicatesResult")
+	result.Fields["duplicateResults"] = typedList("List<Datacloud.DuplicateResult>")
+	result.Fields["errors"] = typedList("List<Database.Error>")
+	result.Fields["success"] = Bool(true)
+	return result
+}
+
 func newSendEmailResult() Value {
 	result := Object("Messaging.SendEmailResult")
 	result.Fields["success"] = Bool(true)
@@ -25706,6 +25779,166 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 		return action, true
 	}
 	return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
+}
+
+func (vm *VM) callPushUpgradeCustomizationRepository(callee string, args []Value) (Value, bool, error) {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok || !strings.EqualFold(className, "PushUpgradeCustomizationRepository") {
+		return Null, false, nil
+	}
+	methodName = canonicalStdlibMemberName(methodName,
+		"create",
+		"deleteById",
+		"deleteByIndex",
+		"getCustomUpgradeAllowedForId",
+		"getCustomUpgradeAllowedForIndex",
+		"getCustomUpgradeTypeForId",
+		"getCustomUpgradeTypeForIndex",
+		"setCustomUpgradeAllowedForId",
+		"setCustomUpgradeAllowedForIndex",
+	)
+	switch methodName {
+	case "create":
+		if len(args) != 3 || !stringLikeOrNull(args[0]) || !stringLikeOrNull(args[1]) || args[2].Kind != ValueBool {
+			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.create expects String, String, Boolean")
+		}
+		packageID := stringValueOrEmpty(args[0])
+		subscriberOrgID := stringValueOrEmpty(args[1])
+		if existing, ok := vm.pushUpgradeCustomizationByIndex(packageID, subscriberOrgID); ok {
+			existing.CustomUpgradeAllowed = args[2].Bool
+			vm.pushUpgradeCustoms[existing.ID] = existing
+			return String(existing.ID), true, nil
+		}
+		id := vm.nextPushUpgradeCustomizationID()
+		vm.pushUpgradeCustoms[id] = pushUpgradeCustomization{
+			ID:                   id,
+			PackageID:            packageID,
+			SubscriberOrgID:      subscriberOrgID,
+			CustomUpgradeAllowed: args[2].Bool,
+		}
+		return String(id), true, nil
+	case "deleteById":
+		if len(args) != 1 || !stringLikeOrNull(args[0]) {
+			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.deleteById expects String")
+		}
+		delete(vm.pushUpgradeCustoms, stringValueOrEmpty(args[0]))
+		return Null, true, nil
+	case "deleteByIndex":
+		if len(args) != 2 || !stringLikeOrNull(args[0]) || !stringLikeOrNull(args[1]) {
+			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.deleteByIndex expects String, String")
+		}
+		if existing, ok := vm.pushUpgradeCustomizationByIndex(stringValueOrEmpty(args[0]), stringValueOrEmpty(args[1])); ok {
+			delete(vm.pushUpgradeCustoms, existing.ID)
+		}
+		return Null, true, nil
+	case "getCustomUpgradeAllowedForId":
+		if len(args) != 1 || !stringLikeOrNull(args[0]) {
+			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForId expects String")
+		}
+		if existing, ok := vm.pushUpgradeCustoms[stringValueOrEmpty(args[0])]; ok {
+			return Bool(existing.CustomUpgradeAllowed), true, nil
+		}
+		return Bool(false), true, nil
+	case "getCustomUpgradeAllowedForIndex":
+		if len(args) != 2 || !stringLikeOrNull(args[0]) || !stringLikeOrNull(args[1]) {
+			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForIndex expects String, String")
+		}
+		if existing, ok := vm.pushUpgradeCustomizationByIndex(stringValueOrEmpty(args[0]), stringValueOrEmpty(args[1])); ok {
+			return Bool(existing.CustomUpgradeAllowed), true, nil
+		}
+		return Bool(false), true, nil
+	case "getCustomUpgradeTypeForId":
+		if len(args) != 1 || !stringLikeOrNull(args[0]) {
+			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.getCustomUpgradeTypeForId expects String")
+		}
+		if existing, ok := vm.pushUpgradeCustoms[stringValueOrEmpty(args[0])]; ok {
+			return pushUpgradeCustomizationType(existing.CustomUpgradeAllowed), true, nil
+		}
+		return pushUpgradeCustomizationType(true), true, nil
+	case "getCustomUpgradeTypeForIndex":
+		if len(args) != 2 || !stringLikeOrNull(args[0]) || !stringLikeOrNull(args[1]) {
+			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.getCustomUpgradeTypeForIndex expects String, String")
+		}
+		if existing, ok := vm.pushUpgradeCustomizationByIndex(stringValueOrEmpty(args[0]), stringValueOrEmpty(args[1])); ok {
+			return pushUpgradeCustomizationType(existing.CustomUpgradeAllowed), true, nil
+		}
+		return pushUpgradeCustomizationType(true), true, nil
+	case "setCustomUpgradeAllowedForId":
+		if len(args) != 2 || !stringLikeOrNull(args[0]) || args[1].Kind != ValueBool {
+			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.setCustomUpgradeAllowedForId expects String, Boolean")
+		}
+		id := stringValueOrEmpty(args[0])
+		if existing, ok := vm.pushUpgradeCustoms[id]; ok {
+			existing.CustomUpgradeAllowed = args[1].Bool
+			vm.pushUpgradeCustoms[id] = existing
+		}
+		return Null, true, nil
+	case "setCustomUpgradeAllowedForIndex":
+		if len(args) != 3 || !stringLikeOrNull(args[0]) || !stringLikeOrNull(args[1]) || args[2].Kind != ValueBool {
+			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.setCustomUpgradeAllowedForIndex expects String, String, Boolean")
+		}
+		packageID := stringValueOrEmpty(args[0])
+		subscriberOrgID := stringValueOrEmpty(args[1])
+		if existing, ok := vm.pushUpgradeCustomizationByIndex(packageID, subscriberOrgID); ok {
+			existing.CustomUpgradeAllowed = args[2].Bool
+			vm.pushUpgradeCustoms[existing.ID] = existing
+		}
+		return Null, true, nil
+	default:
+		return Null, true, unsupportedCallError(callee + " local push-upgrade customization repository surface")
+	}
+}
+
+func (vm *VM) pushUpgradeCustomizationByIndex(packageID, subscriberOrgID string) (pushUpgradeCustomization, bool) {
+	for _, customization := range vm.pushUpgradeCustoms {
+		if customization.PackageID == packageID && customization.SubscriberOrgID == subscriberOrgID {
+			return customization, true
+		}
+	}
+	return pushUpgradeCustomization{}, false
+}
+
+func (vm *VM) nextPushUpgradeCustomizationID() string {
+	for i := 1; ; i++ {
+		id := fmt.Sprintf("puc-%012d", i)
+		if _, ok := vm.pushUpgradeCustoms[id]; !ok {
+			return id
+		}
+	}
+}
+
+func pushUpgradeCustomizationType(customUpgradeAllowed bool) Value {
+	name := "BlockedBySubscriber"
+	if customUpgradeAllowed {
+		name = "None"
+	}
+	value := Value{Kind: ValueObject, Type: "CustomizationType", Text: name}
+	value.Fields = map[string]Value{"ordinal": Int(0)}
+	if name == "None" {
+		value.Fields["ordinal"] = Int(1)
+	}
+	return value
+}
+
+func stringLikeOrNull(value Value) bool {
+	if value.Kind == ValueNull || value.Kind == ValueString {
+		return true
+	}
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
+		_, ok := platformScalarObjectText(value)
+		return ok
+	}
+	return false
+}
+
+func stringValueOrEmpty(value Value) string {
+	if value.Kind == ValueString {
+		return value.Text
+	}
+	if text, ok := platformScalarObjectText(value); ok {
+		return text
+	}
+	return ""
 }
 
 func (vm *VM) callConnectAPITestFixtureStatic(callee string, args []Value) (Value, bool, error) {
@@ -33250,6 +33483,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "Cache.Partition", "Cache.OrgPartition", "Cache.SessionPartition", "cache.Partition", "cache.OrgPartition", "cache.SessionPartition":
 		value, updatedReceiver, err := vm.callCachePartitionMember(receiver, method, args)
 		return value, updatedReceiver, true, true, err
+	case "Cache.SecondaryKeyApi", "cache.SecondaryKeyApi":
+		value, updatedReceiver, err := vm.callCacheSecondaryKeyMember(receiver, method, args)
+		return value, updatedReceiver, true, true, err
 	case "Auth.AuthConfiguration":
 		switch method {
 		case "getAuthProviders":
@@ -35086,6 +35322,50 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 	}
 }
 
+func (vm *VM) callCacheSecondaryKeyMember(receiver Value, method string, args []Value) (Value, Value, error) {
+	feature, ok := receiver.Fields["featureName"]
+	if !ok || feature.Kind != ValueString || strings.TrimSpace(feature.Text) == "" {
+		feature = String("default")
+		receiver.Fields["featureName"] = feature
+	}
+	partition := cacheSecondaryKeyPartition(feature.Text)
+	method = strings.ToLower(method)
+	switch method {
+	case "putimmediate":
+		if len(args) != 3 || args[0].Kind != ValueString || args[2].Kind != ValueString {
+			return Null, receiver, fmt.Errorf("%s.putImmediate expects key String, value, and secondaryKey String", receiver.Type)
+		}
+		vm.cachePutSecondary(partition, args[0].Text, args[1], args[2].Text)
+		return Null, receiver, nil
+	case "remove":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, fmt.Errorf("%s.remove expects key String", receiver.Type)
+		}
+		_, removed := vm.cacheRemove(partition, args[0].Text)
+		return Bool(removed), receiver, nil
+	case "scanforcount":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, receiver, fmt.Errorf("%s.scanForCount expects startKey and endKey Strings", receiver.Type)
+		}
+		return Int(int64(len(vm.cacheSecondaryScan(partition, args[0].Text, args[1].Text)))), receiver, nil
+	case "scanforkeyvalues":
+		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueInt {
+			return Null, receiver, fmt.Errorf("%s.scanForKeyValues expects startKey String, endKey String, and batchSize Integer", receiver.Type)
+		}
+		items := vm.cacheSecondaryScan(partition, args[0].Text, args[1].Text)
+		return vm.cacheScanResult(items, int(args[2].Int)), receiver, nil
+	case "scanformorekeyvalues":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueInt {
+			return Null, receiver, fmt.Errorf("%s.scanForMoreKeyValues expects scanLocator String and batchSize Integer", receiver.Type)
+		}
+		items := vm.cacheScanLocators[args[0].Text]
+		delete(vm.cacheScanLocators, args[0].Text)
+		return vm.cacheScanResult(items, int(args[1].Int)), receiver, nil
+	default:
+		return Null, receiver, unsupportedCallError(receiver.Type + "." + method)
+	}
+}
+
 func cacheFullyQualifiedPartition(namespace, partition string) string {
 	namespace = strings.TrimSpace(namespace)
 	partition = cacheNormalizePartitionName(partition)
@@ -35303,6 +35583,80 @@ func (vm *VM) cacheRemove(partition, key string) (Value, bool) {
 	}
 	delete(vm.platformCache[partition], key)
 	return value, true
+}
+
+func cacheSecondaryKeyPartition(feature string) string {
+	feature = strings.TrimSpace(feature)
+	if feature == "" {
+		feature = "default"
+	}
+	return strings.ToLower("Cache.SecondaryKeyApi:" + feature)
+}
+
+func (vm *VM) cachePutSecondary(partition, key string, value Value, secondaryKey string) {
+	if vm.platformCache == nil {
+		vm.platformCache = make(map[string]map[string]cacheEntry)
+	}
+	entries := vm.platformCache[partition]
+	if entries == nil {
+		entries = make(map[string]cacheEntry)
+		vm.platformCache[partition] = entries
+	}
+	entries[key] = cacheEntry{Value: value, SecondaryKey: secondaryKey}
+}
+
+func (vm *VM) cacheSecondaryScan(partition, startKey, endKey string) []cacheScanItem {
+	entries := vm.platformCache[partition]
+	if entries == nil {
+		return nil
+	}
+	items := make([]cacheScanItem, 0, len(entries))
+	for key, entry := range entries {
+		if !entry.ExpireAt.IsZero() && !entry.ExpireAt.After(vm.fakeNow) {
+			delete(entries, key)
+			continue
+		}
+		secondary := entry.SecondaryKey
+		if secondary == "" {
+			secondary = key
+		}
+		if (startKey == "" || secondary >= startKey) && (endKey == "" || secondary <= endKey) {
+			items = append(items, cacheScanItem{Key: key, Value: entry.Value})
+		}
+	}
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].Key == items[j].Key {
+			return items[i].Value.String() < items[j].Value.String()
+		}
+		return items[i].Key < items[j].Key
+	})
+	return items
+}
+
+func (vm *VM) cacheScanResult(items []cacheScanItem, batchSize int) Value {
+	if batchSize <= 0 || batchSize > len(items) {
+		batchSize = len(items)
+	}
+	result := typedMap("Map<String,Object>")
+	for _, item := range items[:batchSize] {
+		key := String(item.Key)
+		result.Map[mapKey(key)] = item.Value
+		result.MapKeys[mapKey(key)] = key
+	}
+	scan := Object("Cache.ScanResult")
+	scan.Fields["result"] = result
+	scan.Fields["isDone"] = Bool(batchSize == len(items))
+	scan.Fields["scanLocator"] = String("")
+	if batchSize < len(items) {
+		if vm.cacheScanLocators == nil {
+			vm.cacheScanLocators = make(map[string][]cacheScanItem)
+		}
+		vm.cacheScanSeq++
+		locator := fmt.Sprintf("cache-scan-%d", vm.cacheScanSeq)
+		vm.cacheScanLocators[locator] = append([]cacheScanItem(nil), items[batchSize:]...)
+		scan.Fields["scanLocator"] = String(locator)
+	}
+	return scan
 }
 
 func (vm *VM) staticResourceMockResponse(mock Value, resourceName string) Value {

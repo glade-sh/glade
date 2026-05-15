@@ -233,6 +233,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if localMockHarnessBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "test/mock harness method is handled by the VM local deterministic/no-op surface", true
 	}
+	if socialInboundDefaultHandlerBehaviorMethod(symbol, member) {
+		return StubBehaviorUnsupported, "Social inbound default-handler method depends on the Social Customer Service case/persona lifecycle and remains explicit unsupported until modeled", true
+	}
 	if databaseResultDTOBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Database/Approval result DTO accessor is handled by the VM result object surface", true
 	}
@@ -244,6 +247,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	}
 	if ideasFindSimilarBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Ideas.findSimilar returns a typed empty List<Id> without enabling Ideas reply/read-state service surfaces", true
+	}
+	if pushUpgradeCustomizationRepositoryBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "PushUpgradeCustomizationRepository uses VM-local deterministic in-memory repository state", true
 	}
 	if quickActionDescribeBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "QuickAction describe/template/default methods return local read-only metadata/default DTOs without performing action side effects", true
@@ -279,6 +285,21 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 		return StubBehaviorPassiveDefault, "passive generated platform method returns a typed default value unless runtime code special-cases it", true
 	}
 	return "", "", false
+}
+
+func pushUpgradeCustomizationRepositoryBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod || !strings.EqualFold(stubBehaviorTypeName(symbol), "PushUpgradeCustomizationRepository") {
+		return false
+	}
+	switch strings.ToLower(member.Name) {
+	case "create", "deletebyid", "deletebyindex",
+		"getcustomupgradeallowedforid", "getcustomupgradeallowedforindex",
+		"getcustomupgradetypeforid", "getcustomupgradetypeforindex",
+		"setcustomupgradeallowedforid", "setcustomupgradeallowedforindex":
+		return true
+	default:
+		return false
+	}
 }
 
 func sfsqlqueryHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
@@ -561,10 +582,20 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 	case "EventBus":
 		return name == "publish" || name == "getoperationid"
 	case "Cache.Org", "Cache.Session", "Cache.Partition", "Cache.OrgPartition", "Cache.SessionPartition",
-		"cache.Org", "cache.Session", "cache.Partition", "cache.OrgPartition", "cache.SessionPartition":
+		"Cache.SecondaryKeyApi",
+		"cache.Org", "cache.Session", "cache.Partition", "cache.OrgPartition", "cache.SessionPartition",
+		"cache.SecondaryKeyApi":
 		return cacheBehaviorMethod(name)
 	case "FeatureManagement":
-		return strings.HasPrefix(name, "checkpackage") || strings.HasPrefix(name, "setpackage")
+		return strings.HasPrefix(name, "checkpackage") || strings.HasPrefix(name, "setpackage") || name == "changeprotection"
+	case "Packaging":
+		return name == "getcurrentpackageid"
+	case "DomainParser":
+		return name == "parse"
+	case "Datacloud.FindDuplicates":
+		return name == "findduplicates"
+	case "Datacloud.FindDuplicatesByIds":
+		return name == "findduplicatesbyids"
 	case "Security":
 		return name == "stripinaccessible"
 	case "DomainCreator":
@@ -809,7 +840,8 @@ func cacheBehaviorMethod(methodName string) bool {
 		"getavggetsize", "getavggettime", "getavgvaluesize", "getmaxgetsize",
 		"getmaxgettime", "getmaxvaluesize", "getmissrate",
 		"createfullyqualifiedkey", "createfullyqualifiedpartition", "validatecachebuilder",
-		"validatekey", "validatekeyvalue", "validatekeys", "validatepartitionname":
+		"validatekey", "validatekeyvalue", "validatekeys", "validatepartitionname",
+		"putimmediate", "scanforcount", "scanforkeyvalues", "scanformorekeyvalues":
 		return true
 	default:
 		return false
@@ -1315,6 +1347,18 @@ func localMockHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Me
 		return strings.EqualFold(member.Type, "void")
 	case "CartExtension.SplitShipmentServiceMock":
 		return strings.EqualFold(member.Type, "void")
+	default:
+		return false
+	}
+}
+
+func socialInboundDefaultHandlerBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod || genericObjectBehaviorMethod(member) {
+		return false
+	}
+	switch stubBehaviorTypeName(symbol) {
+	case "Social.DefaultInboundSocialPostHandler", "Social.InboundSocialPostHandlerImpl":
+		return true
 	default:
 		return false
 	}

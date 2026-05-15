@@ -1093,6 +1093,23 @@ System.assertEquals(1, Cache.Org.getNumKeys());
 System.assertEquals('org-default', (String) Cache.Org.getPartition('default').get('defaulted'));
 System.assertEquals('org-default', (String) Cache.Org.remove('defaulted'));
 System.assert(!Cache.Org.contains('defaulted'));
+
+Cache.SecondaryKeyApi secondary = Cache.SecondaryKeyApi.get('localFeature');
+secondary.putImmediate('alpha', 'A', 'group-1');
+secondary.putImmediate('beta', 'B', 'group-1');
+secondary.putImmediate('gamma', 'C', 'group-2');
+System.assertEquals(2, secondary.scanForCount('group-1', 'group-1'));
+Cache.ScanResult firstScan = secondary.scanForKeyValues('group-1', 'group-2', 2);
+System.assertEquals(false, firstScan.isDone);
+System.assertEquals(2, firstScan.result.size());
+System.assertEquals('A', (String) firstScan.result.get('alpha'));
+Cache.ScanResult secondScan = secondary.scanForMoreKeyValues(firstScan.scanLocator, 10);
+System.assertEquals(true, secondScan.isDone);
+System.assertEquals(1, secondScan.result.size());
+System.assertEquals('C', (String) secondScan.result.get('gamma'));
+System.assertEquals(true, secondary.remove('beta'));
+System.assertEquals(false, secondary.remove('missing'));
+System.assertEquals(2, secondary.scanForCount('', ''));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1508,6 +1525,8 @@ func TestExecFeatureManagementUsesExecutionUserPermissions(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assert(FeatureManagement.checkPermission('CanRunLocal'));
 System.assert(!FeatureManagement.checkPermission('OtherPermission'));
+FeatureManagement.changeProtection('LocalFeature', 'CustomPermission', 'Protected');
+System.assertEquals(null, Packaging.getCurrentPackageId());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1521,6 +1540,26 @@ System.assert(!FeatureManagement.checkPermission('OtherPermission'));
 		},
 	})
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatacloudFindDuplicatesLocalEmptyResults(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Datacloud.FindDuplicatesResult> byRecord = Datacloud.FindDuplicates.findDuplicates(new List<SObject>{new Account(Name = 'Acme')});
+System.assertEquals(1, byRecord.size());
+System.assert(byRecord.get(0).isSuccess());
+System.assertEquals(0, byRecord.get(0).getDuplicateResults().size());
+System.assertEquals(0, byRecord.get(0).getErrors().size());
+List<Datacloud.FindDuplicatesResult> byId = Datacloud.FindDuplicatesByIds.findDuplicatesByIds(new List<Id>{'001000000000001AAA'});
+System.assertEquals(1, byId.size());
+System.assert(byId.get(0).isSuccess());
+System.assertEquals(0, byId.get(0).getDuplicateResults().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
 	}
 }
