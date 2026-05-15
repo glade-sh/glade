@@ -1309,11 +1309,26 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 		case "signxml":
 			return true
 		}
+	case "Ideas":
+		switch name {
+		case "getallrecentreplies", "getreadrecentreplies", "getunreadrecentreplies", "markread":
+			return true
+		}
+	case "data_mask.DataMaskIntegrationUtil":
+		switch name {
+		case "canceljob", "getjobs", "getrunlogresponse", "runmask":
+			return true
+		}
+	case "KbManagement.PublishingService":
+		switch name {
+		case "deletearchivedarticle", "deletearchivedarticleversion", "deletedraftarticle", "deletedrafttranslation":
+			return true
+		}
 	case "System":
 		switch name {
 		case "changeownpassword", "getapplicationreadwritemode", "getquiddityshortcode",
-			"isfunctioncallback", "isrunningelasticcompute", "movepassword", "requestversion", "resetpassword",
-			"resetpasswordwithemailtemplate":
+			"isfunctioncallback", "isrunningelasticcompute", "movepassword", "process", "requestversion", "resetpassword",
+			"resetpasswordwithemailtemplate", "submit":
 			return true
 		}
 	case "UserManagement":

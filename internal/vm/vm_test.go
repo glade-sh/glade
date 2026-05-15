@@ -59,6 +59,7 @@ System.assertEquals(0, similarIdeas.size());
 func TestExecIdeasReplyServiceSurfacesRemainUnsupported(t *testing.T) {
 	for _, source := range []string{
 		`Ideas.getAllRecentReplies('005000000000001', '0DB000000000001');`,
+		`Ideas.getReadRecentReplies('005000000000001', '0DB000000000001');`,
 		`Ideas.getUnreadRecentReplies('005000000000001', '0DB000000000001');`,
 		`Ideas.markRead('087000000000001');`,
 	} {
@@ -369,9 +370,14 @@ func TestGeneratedPlatformFallbackDoesNotMaskExplicitUnsupportedRuntimeMethods(t
 		t.Fatalf("PageReference.getContent error = %v, want explicit unsupported", err)
 	}
 
-	_, err = machine.call("Crypto.signXml", []Value{String("RSA"), Object("Dom.XmlNode"), String("id"), String("cert")}, nil, result)
-	if err == nil || !strings.Contains(err.Error(), "unsupported call") {
-		t.Fatalf("Crypto.signXml error = %v, want explicit unsupported", err)
+	for _, args := range [][]Value{
+		{String("RSA"), Object("Dom.XmlNode"), String("id"), String("cert")},
+		{String("RSA"), Object("Dom.XmlNode"), String("id"), String("cert"), Object("Dom.XmlNode")},
+	} {
+		_, err = machine.call("Crypto.signXml", args, nil, result)
+		if err == nil || err.Error() != `unsupported call "Crypto.signXml local XML signature surface"` {
+			t.Fatalf("Crypto.signXml error = %v, want explicit unsupported", err)
+		}
 	}
 }
 
