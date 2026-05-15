@@ -5914,6 +5914,50 @@ System.assertEquals(0, survivors.size());
 	}
 }
 
+func TestExecAfterTriggerAddErrorProducesPartialDMLResults(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	if (a.Name == 'Block After') {
+		a.Name.addError('blocked after trigger');
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account ok = new Account(Name = 'Keep After');
+Account blocked = new Account(Name = 'Block After');
+List<Object> results = Database.insert(new List<Account>{ok, blocked}, false);
+System.assertEquals(2, results.size());
+System.assert(results.get(0).isSuccess());
+System.assert(!results.get(1).isSuccess());
+System.assertEquals('blocked after trigger', results.get(1).getErrors().get(0).getMessage());
+System.assertEquals('Name', results.get(1).getErrors().get(0).getFields().get(0));
+List<Account> survivors = [SELECT Name FROM Account];
+System.assertEquals(1, survivors.size());
+System.assertEquals('Keep After', survivors.get(0).Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountAfterInsertAddError",
+		Object:    "Account",
+		Timing:    triggerTimingAfter,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTriggerCustomFieldAddErrorProducesDMLResults(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 for (Widget__c w : Trigger.new) {
