@@ -13448,6 +13448,9 @@ func storageValueFromVMForField(value Value, fieldType storage.FieldType) (stora
 			return storage.StringValue(value.Text), nil
 		}
 		if value.Kind == ValueString {
+			if value.Text == "" {
+				return storage.NullValue(), nil
+			}
 			return storageValueFromVM(value)
 		}
 		if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
@@ -16348,7 +16351,10 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			fieldType := vm.resolveTypeNameInClass(owner, field.Type)
 			value, err := vm.typedValueFromJSON(fieldType, item, strict)
 			if err != nil {
-				return Null, err
+				if strict {
+					return Null, err
+				}
+				value = valueFromJSON(item)
 			}
 			if field.Setter != nil {
 				if _, err := vm.callMethodWithReceiver(*field.Setter, obj, []Value{value}, resultForLookup()); err != nil {
