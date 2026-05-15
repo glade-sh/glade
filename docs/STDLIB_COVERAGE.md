@@ -19,7 +19,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Assert | `Assert.isNull` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.isTrue` | `supported` | Routes through local assertion failures with optional message text. |
 | Crypto | `Crypto.generateDigest` | `partial` | MD5, SHA1, and SHA-256. |
+| Database | `Database.UnitOfWork` | `supported` | Queues local DML operations and applies them on commitWork; discardWork drops pending local work. |
 | Database | `Database.delete` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
+| Database | `Database.getAsyncLocator` | `supported` | Returns deterministic VM-local locator strings for local result and locator objects; no external async service lookup. |
 | Database | `Database.getQueryLocator` | `supported` | Supported SOQL executes eagerly for local batch scopes. |
 | Database | `Database.insert` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
 | Database | `Database.merge` | `supported` | Local merge behavior for supported schema-backed data. |
@@ -107,8 +109,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | System | `System.assert` | `supported` | Assertion failure returns runtime error. |
 | System | `System.assertEquals` | `supported` | Assertion failure returns runtime error. |
 | System | `System.debug` | `supported` | Collected in result debug output. |
+| Test | `Test.createStubQueryRow` | `partial` | Builds local SObject rows from field maps for SOQL stub providers. |
+| Test | `Test.createStubQueryRows` | `partial` | Builds local SObject row lists from field maps for SOQL stub providers. |
 | Test | `Test.getStandardPricebookId` | `partial` | Deterministic test-context-only ID. |
 | Test | `Test.isRunningTest` | `supported` | Reflects local test context. |
+| Test | `Test.loadData` | `partial` | Loads CSV static-resource content into local org storage through DML. |
 | Test | `Test.setMock` | `partial` | HttpCalloutMock support for local tests. |
 | Test | `Test.startTest` | `partial` | Governor-window reset/restore for supported counters. |
 | Test | `Test.stopTest` | `partial` | Drains supported async work. |

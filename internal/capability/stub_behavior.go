@@ -408,7 +408,9 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return strings.HasPrefix(name, "get")
 	case "Crypto":
 		switch name {
-		case "encrypt", "generateaeskey", "generatemac", "getrandominteger", "getrandomlong", "verifyhmac":
+		case "areequalconstanttime", "decrypt", "decryptwithmanagediv", "encrypt", "encryptwithmanagediv",
+			"generatedigest", "generateaeskey", "generatemac", "getrandominteger", "getrandomlong",
+			"sign", "signwithcertificate", "verify", "verifyhmac", "verifywithcertificate":
 			return true
 		}
 	case "Messaging":
@@ -424,7 +426,7 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 	case "Database":
 		switch name {
 		case "query", "querywithbinds", "countquery", "countquerywithbinds", "getquerylocator",
-			"getquerylocatorwithbinds", "getcursor", "getcursorwithbinds", "getpaginationcursor",
+			"getquerylocatorwithbinds", "getasynclocator", "getcursor", "getcursorwithbinds", "getpaginationcursor",
 			"getpaginationcursorwithbinds", "insert", "update", "upsert", "delete", "undelete",
 			"insertasync", "updateasync", "deleteasync", "insertimmediate", "updateimmediate",
 			"deleteimmediate", "getasyncsaveresult", "getasyncdeleteresult", "getdeleted", "getupdated",
@@ -447,6 +449,13 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return name == "getids" || name == "getlatestdatecovered"
 	case "Database.DeletedRecord":
 		return name == "getid" || name == "getdeleteddate"
+	case "Database.UnitOfWork":
+		switch name {
+		case "insertrecord", "insertrecords", "updaterecord", "updaterecords",
+			"upsertrecord", "upsertrecords", "deleterecord", "deleterecords",
+			"commitwork", "discardwork":
+			return true
+		}
 	case "Approval":
 		switch name {
 		case "lock", "unlock", "islocked":
@@ -772,12 +781,11 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 		return true
 	case "Approval":
 		return name != "lock" && name != "unlock" && name != "islocked"
-	case "Database.UnitOfWork", "FlexQueue":
+	case "FlexQueue":
 		return true
 	case "Crypto":
 		switch name {
-		case "decrypt", "decryptwithmanagediv", "encryptwithmanagediv", "sign", "signwithcertificate",
-			"signxml", "verify", "verifywithcertificate":
+		case "signxml":
 			return true
 		}
 	case "System":

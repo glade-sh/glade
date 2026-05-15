@@ -146,6 +146,57 @@ System.assert(built.toXmlString().contains('<payer>001000000000001AAA</payer>'))
 	}
 }
 
+func TestExecTestCreateStubQueryRowsBuildsSObjectsFromMaps(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Object> one = new Map<String, Object>{'Id' => '001000000000001', 'Name' => 'Acme'};
+Account row = (Account)Test.createStubQueryRow(Account.SObjectType, one);
+System.assertEquals('001000000000001', row.Id);
+System.assertEquals('Acme', row.Name);
+
+List<Map<String, Object>> rows = new List<Map<String, Object>>{
+    one,
+    new Map<String, Object>{'Id' => '001000000000002', 'Name' => 'Global Media'}
+};
+List<SObject> stubbed = Test.createStubQueryRows(Account.SObjectType, rows);
+System.assertEquals(2, stubbed.size());
+System.assertEquals('Global Media', ((Account)stubbed[1]).Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestLoadDataInsertsStaticResourceCSV(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Account> rows = Test.loadData(Account.SObjectType, 'Accounts');
+System.assertEquals(2, rows.size());
+System.assert(rows[0].Id != null);
+System.assertEquals('Acme', rows[0].Name);
+System.assertEquals(2, [SELECT Id FROM Account].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Metadata.StaticResources = []storage.StaticResourceMetadata{{
+		Name:    "Accounts",
+		Content: "Name\nAcme\nGlobal Media\n",
+	}}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStringSearchIndexesAndBetween(t *testing.T) {
 	program, err := CompileAnonymous(`
 String text = 'café café';
@@ -2048,6 +2099,10 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		source.WriteString(string(rune('A' + i/26)))
 		source.WriteString(string(rune('A' + i%26)))
 		source.WriteString(".toString());\n")
+		source.WriteString("System.assertEquals(0, e")
+		source.WriteString(string(rune('A' + i/26)))
+		source.WriteString(string(rune('A' + i%26)))
+		source.WriteString(".getInaccessibleFields().size());\n")
 	}
 	program, err := CompileAnonymous(source.String())
 	if err != nil {

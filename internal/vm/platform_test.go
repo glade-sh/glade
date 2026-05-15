@@ -2976,6 +2976,65 @@ Database.getQueryLocatorWithBinds('SELECT Id FROM Account', binds, 'USER_MODE');
 	}
 }
 
+func TestExecDatabaseGetAsyncLocatorLocalValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme');
+Database.QueryLocator locator = Database.getQueryLocator('SELECT Id, Name FROM Account');
+String queryLocator = Database.getAsyncLocator(locator);
+System.assertEquals(true, queryLocator.startsWith('local-query:SELECT Id, Name FROM Account'));
+
+Database.SaveResult saved = Database.insert(new Account(Name = 'Beta'));
+String resultLocator = Database.getAsyncLocator(saved);
+System.assertEquals(true, resultLocator.startsWith('local-result:'));
+System.assertEquals('already-local', Database.getAsyncLocator('already-local'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseUnitOfWorkCommitAndDiscard(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.UnitOfWork discarded = new Database.UnitOfWork();
+discarded.insertRecord(new Account(Name = 'Discarded'));
+discarded.discardWork();
+discarded.commitWork();
+System.assertEquals(0, ((List<Account>)Database.query('SELECT Id FROM Account WHERE Name = ''Discarded''')).size());
+
+Database.UnitOfWork work = new Database.UnitOfWork();
+Database.SaveResult insertResult = work.insertRecord(new Account(Name = 'Queued'));
+System.assertEquals(false, insertResult.isSuccess());
+System.assertEquals(0, ((List<Account>)Database.query('SELECT Id FROM Account WHERE Name = ''Queued''')).size());
+work.commitWork();
+System.assertEquals(true, insertResult.isSuccess());
+System.assertNotEquals(null, insertResult.getId());
+System.assertEquals(1, ((List<Account>)Database.query('SELECT Id FROM Account WHERE Name = ''Queued''')).size());
+
+List<Account> accounts = new List<Account>{new Account(Name = 'One'), new Account(Name = 'Two')};
+Database.UnitOfWork bulk = new Database.UnitOfWork();
+List<Database.SaveResult> results = bulk.insertRecords(accounts);
+bulk.commitWork();
+System.assertEquals(2, results.size());
+System.assertEquals(true, results.get(0).isSuccess());
+System.assertEquals(true, results.get(1).isSuccess());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTypeForNameAndNewInstance(t *testing.T) {
 	program, err := CompileAnonymous(`
 Type accountType = Type.forName('Account');

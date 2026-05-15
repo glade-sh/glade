@@ -24,6 +24,7 @@ import (
 	"io"
 	"math"
 	"net/url"
+	"os"
 	"reflect"
 	"regexp"
 	"sort"
@@ -2062,6 +2063,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Limits.getSoslQueries", "Limits.getLimitSoslQueries",
 		"OrgLimits.getAll", "OrgLimits.getMap",
 		"Database.query", "Database.queryWithBinds", "Database.countQuery", "Database.countQueryWithBinds", "Database.getQueryLocator", "Database.getQueryLocatorWithBinds",
+		"Database.getAsyncLocator",
 		"Database.getCursor", "Database.getCursorWithBinds", "Database.getPaginationCursor", "Database.getPaginationCursorWithBinds",
 		"Database.setSavepoint", "Database.releaseSavepoint", "Database.rollback", "Database.insert", "Database.update", "Database.delete",
 		"Database.insertAsync", "Database.updateAsync", "Database.deleteAsync", "Database.insertImmediate", "Database.updateImmediate", "Database.deleteImmediate",
@@ -2116,7 +2118,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Messaging.reserveSingleEmailCapacity", "Messaging.reserveMassEmailCapacity",
 		"ApexPages.hasMessages", "ApexPages.addMessage", "ApexPages.addMessages", "ApexPages.getMessages", "ApexPages.currentPage",
 		"Test.clearApexPageMessages", "Test.setCurrentPage", "Test.setCurrentPageReference",
-		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub",
+		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub", "Test.createStubQueryRow", "Test.createStubQueryRows", "Test.loadData",
 		"Test.getFlexQueueOrder", "Test.enqueueBatchJobs", "Test.calculatePermissionSetGroup", "Test.enableChangeDataCapture", "Test.setReadOnlyApplicationMode", "Test.isSoqlStubDefined",
 		"WebServiceCallout.invoke",
 		"CURRENCY.newInstance",
@@ -2717,6 +2719,11 @@ platformStaticCall:
 		locator.Fields["Records"] = value
 		locator.Fields["Query"] = String(args[0].Text)
 		return locator, nil
+	case "Database.getAsyncLocator":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("Database.getAsyncLocator expects local result or locator")
+		}
+		return databaseAsyncLocatorValue(args[0]), nil
 	case "Database.getCursor", "Database.getPaginationCursor":
 		if len(args) < 1 || len(args) > 2 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("%s expects query String and optional cursor options", callee)
@@ -3966,6 +3973,12 @@ platformStaticCall:
 		return vm.testCreateStub(args)
 	case "Test.createSoqlStub":
 		return Null, unsupportedCallError(callee + " local stub API")
+	case "Test.createStubQueryRow":
+		return vm.testCreateStubQueryRow(args)
+	case "Test.createStubQueryRows":
+		return vm.testCreateStubQueryRows(args)
+	case "Test.loadData":
+		return vm.testLoadData(args, result)
 	case "Test.getFlexQueueOrder":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Test.getFlexQueueOrder expects 0 arguments")
@@ -6319,6 +6332,185 @@ func (vm *VM) testCreateStub(args []Value) (Value, error) {
 	return proxy, nil
 }
 
+func (vm *VM) testCreateStubQueryRow(args []Value) (Value, error) {
+	if len(args) != 2 || !isSObjectTypeToken(args[0]) || args[1].Kind != ValueMap {
+		return Null, fmt.Errorf("Test.createStubQueryRow expects Schema.SObjectType and Map<String,Object>")
+	}
+	if err := vm.requireTestContext("Test.createStubQueryRow"); err != nil {
+		return Null, err
+	}
+	objectName, err := vm.schemaDescribeObjectName(args[0])
+	if err != nil {
+		return Null, err
+	}
+	return vm.stubQueryRowFromMap(objectName, args[1])
+}
+
+func (vm *VM) testCreateStubQueryRows(args []Value) (Value, error) {
+	if len(args) != 2 || !isSObjectTypeToken(args[0]) || args[1].Kind != ValueList {
+		return Null, fmt.Errorf("Test.createStubQueryRows expects Schema.SObjectType and List<Map<String,Object>>")
+	}
+	if err := vm.requireTestContext("Test.createStubQueryRows"); err != nil {
+		return Null, err
+	}
+	objectName, err := vm.schemaDescribeObjectName(args[0])
+	if err != nil {
+		return Null, err
+	}
+	rows := typedList("List<" + objectName + ">")
+	for _, item := range args[1].List {
+		if item.Kind != ValueMap {
+			return Null, fmt.Errorf("Test.createStubQueryRows expects List<Map<String,Object>>")
+		}
+		row, err := vm.stubQueryRowFromMap(objectName, item)
+		if err != nil {
+			return Null, err
+		}
+		rows.List = append(rows.List, row)
+	}
+	return rows, nil
+}
+
+func (vm *VM) stubQueryRowFromMap(objectName string, fields Value) (Value, error) {
+	row := Object(objectName)
+	for rawKey, fieldValue := range fields.Map {
+		key := mapStoredKey(fields, rawKey)
+		if key.Kind != ValueString || strings.TrimSpace(key.Text) == "" {
+			return Null, fmt.Errorf("Test.createStubQueryRow field names must be strings")
+		}
+		setExplicitSObjectField(&row, key.Text, fieldValue)
+		markQueriedSObjectField(&row, key.Text)
+	}
+	return row, nil
+}
+
+func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
+	if len(args) != 2 || !isSObjectTypeToken(args[0]) || args[1].Kind != ValueString {
+		return Null, fmt.Errorf("Test.loadData expects Schema.SObjectType and static resource name")
+	}
+	if err := vm.requireTestContext("Test.loadData"); err != nil {
+		return Null, err
+	}
+	objectName, err := vm.schemaDescribeObjectName(args[0])
+	if err != nil {
+		return Null, err
+	}
+	content, ok := vm.staticResourceContent(args[1].Text)
+	if !ok {
+		return Null, fmt.Errorf("Test.loadData static resource %s not found", args[1].Text)
+	}
+	reader := csv.NewReader(strings.NewReader(content))
+	reader.TrimLeadingSpace = true
+	rows, err := reader.ReadAll()
+	if err != nil {
+		return Null, fmt.Errorf("Test.loadData CSV parse failed: %w", err)
+	}
+	out := typedList("List<" + objectName + ">")
+	if len(rows) == 0 {
+		return out, nil
+	}
+	headers := rows[0]
+	for rowIndex, csvRow := range rows[1:] {
+		record := Object(objectName)
+		for i, header := range headers {
+			fieldName := strings.TrimSpace(header)
+			if fieldName == "" {
+				continue
+			}
+			raw := ""
+			if i < len(csvRow) {
+				raw = csvRow[i]
+			}
+			value, err := vm.testLoadDataFieldValue(objectName, fieldName, raw)
+			if err != nil {
+				return Null, fmt.Errorf("Test.loadData row %d %s.%s: %w", rowIndex+2, objectName, fieldName, err)
+			}
+			setExplicitSObjectField(&record, fieldName, value)
+		}
+		out.List = append(out.List, record)
+	}
+	if len(out.List) == 0 {
+		return out, nil
+	}
+	if _, err := vm.applyDML("insert", out, true, "", result); err != nil {
+		return Null, err
+	}
+	return out, nil
+}
+
+func (vm *VM) staticResourceContent(name string) (string, bool) {
+	if vm == nil || vm.Org == nil {
+		return "", false
+	}
+	for _, resource := range vm.Org.Metadata.StaticResources {
+		if !strings.EqualFold(resource.Name, name) {
+			continue
+		}
+		if resource.Content != "" {
+			return resource.Content, true
+		}
+		if resource.ContentPath != "" {
+			content, err := os.ReadFile(resource.ContentPath)
+			if err == nil {
+				return string(content), true
+			}
+		}
+		return "", false
+	}
+	return "", false
+}
+
+func (vm *VM) testLoadDataFieldValue(objectName, fieldName, raw string) (Value, error) {
+	if strings.TrimSpace(raw) == "" {
+		return Null, nil
+	}
+	if vm == nil || vm.Org == nil {
+		return String(raw), nil
+	}
+	canonicalObject := objectName
+	if resolved, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
+		canonicalObject = resolved
+	}
+	object, ok := vm.Org.Objects[canonicalObject]
+	if !ok {
+		return String(raw), nil
+	}
+	canonicalField := fieldName
+	if resolved, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, fieldName); ok {
+		canonicalField = resolved
+	}
+	field, ok := object.Definition.Fields[canonicalField]
+	if !ok {
+		return String(raw), nil
+	}
+	switch field.Type {
+	case storage.FieldBoolean:
+		return Bool(strings.EqualFold(raw, "true") || raw == "1"), nil
+	case storage.FieldInteger:
+		parsed, err := strconv.ParseInt(strings.TrimSpace(raw), 10, 64)
+		if err != nil {
+			return Null, err
+		}
+		return Int(parsed), nil
+	case storage.FieldDecimal:
+		parsed, err := strconv.ParseFloat(strings.TrimSpace(raw), 64)
+		if err != nil {
+			return Null, err
+		}
+		return Decimal(parsed), nil
+	case storage.FieldID, storage.FieldReference:
+		return platformScalar("Id", raw), nil
+	case storage.FieldDate:
+		return platformScalar("Date", raw), nil
+	case storage.FieldDateTime:
+		return platformScalar("Datetime", raw), nil
+	case storage.FieldBlob:
+		return platformScalar("Blob", raw), nil
+	default:
+		return String(raw), nil
+	}
+}
+
 func (vm *VM) testInstall(args []Value, result *Result) (Value, error) {
 	if len(args) != 2 && len(args) != 3 {
 		return Null, fmt.Errorf("Test.testInstall expects InstallHandler, previousVersion[, isPush]")
@@ -8577,6 +8769,21 @@ func callDatabaseResultObjectMember(receiver Value, method string, args []Value)
 			return Null, true, fmt.Errorf("%s.getErrors expects 0 arguments", receiver.Type)
 		}
 		return databaseResultObjectField(receiver, "errors", List()), true, nil
+	case "getrelationshipsaveresults":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getRelationshipSaveResults expects 0 arguments", receiver.Type)
+		}
+		return databaseResultObjectField(receiver, "relationshipSaveResults", List()), true, nil
+	case "getrelationshipname":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getRelationshipName expects 0 arguments", receiver.Type)
+		}
+		return databaseResultObjectField(receiver, "relationshipName", String("")), true, nil
+	case "getsaveresults":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getSaveResults expects 0 arguments", receiver.Type)
+		}
+		return databaseResultObjectField(receiver, "saveResults", List()), true, nil
 	case "iscreated":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("%s.isCreated expects 0 arguments", receiver.Type)
@@ -8596,6 +8803,8 @@ func databaseResultObjectLike(value Value) bool {
 		strings.EqualFold(value.Type, "Database.UndeleteResult"),
 		strings.EqualFold(value.Type, "Database.EmptyRecycleBinResult"),
 		strings.EqualFold(value.Type, "Database.LockResult"),
+		strings.EqualFold(value.Type, "Database.NestedSaveResult"),
+		strings.EqualFold(value.Type, "Database.RelationshipSaveResult"),
 		strings.EqualFold(value.Type, "Database.UnlockResult"),
 		strings.EqualFold(value.Type, "Database.UpsertResult"),
 		strings.EqualFold(value.Type, "Approval.LockResult"),
@@ -8614,6 +8823,157 @@ func databaseResultObjectField(value Value, field string, fallback Value) Value 
 
 func apexMemberKey(name string) string {
 	return strings.ToLower(strings.TrimSpace(name))
+}
+
+func newDatabaseUnitOfWork() Value {
+	uow := Object("Database.UnitOfWork")
+	uow.Fields["__ops"] = List()
+	return uow
+}
+
+func newPendingDatabaseResult(resultType string) Value {
+	row := Object(resultType)
+	row.Fields["success"] = Bool(false)
+	row.Fields["id"] = Null
+	row.Fields["error"] = String("")
+	row.Fields["errors"] = List()
+	if resultType == "Database.UpsertResult" {
+		row.Fields["created"] = Bool(false)
+	}
+	return row
+}
+
+func databaseUnitOfWorkResultType(op string) string {
+	switch op {
+	case "delete":
+		return "Database.DeleteResult"
+	case "upsert":
+		return "Database.UpsertResult"
+	default:
+		return "Database.SaveResult"
+	}
+}
+
+func databaseUnitOfWorkQueuedOps(receiver Value) Value {
+	if ops, ok := receiver.Fields["__ops"]; ok && ops.Kind == ValueList {
+		return ops
+	}
+	return List()
+}
+
+func databaseAsyncLocatorValue(value Value) Value {
+	switch value.Kind {
+	case ValueString:
+		return value
+	case ValueObject:
+		if value.Type == "Database.QueryLocator" || value.Type == "Database.Cursor" || value.Type == "Database.PaginationCursor" {
+			if query, ok := value.Fields["Query"]; ok && query.Kind == ValueString && query.Text != "" {
+				return String("local-query:" + query.Text)
+			}
+			return String("local-query")
+		}
+		if id, ok := value.Fields["id"]; ok && id.Kind != ValueNull {
+			return String("local-result:" + id.String())
+		}
+		return String("local-result:" + strings.ToLower(value.Type))
+	case ValueList:
+		return String(fmt.Sprintf("local-list:%d", len(value.List)))
+	default:
+		return String("local-result")
+	}
+}
+
+func (vm *VM) callDatabaseUnitOfWorkMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
+	if receiver.Type != "Database.UnitOfWork" {
+		return Null, receiver, false, false, nil
+	}
+	switch apexMemberKey(method) {
+	case "insertrecord", "updaterecord", "upsertrecord", "deleterecord":
+		if len(args) != 1 || args[0].Kind != ValueObject {
+			return Null, receiver, false, true, fmt.Errorf("Database.UnitOfWork.%s expects SObject", method)
+		}
+		op := strings.TrimSuffix(apexMemberKey(method), "record")
+		placeholder := newPendingDatabaseResult(databaseUnitOfWorkResultType(op))
+		opValue := Object("Database.UnitOfWorkOperation")
+		opValue.Fields["op"] = String(op)
+		opValue.Fields["records"] = args[0]
+		opValue.Fields["result"] = placeholder
+		ops := databaseUnitOfWorkQueuedOps(receiver)
+		ops.List = append(ops.List, opValue)
+		receiver.Fields["__ops"] = ops
+		return placeholder, receiver, true, true, nil
+	case "insertrecords", "updaterecords", "upsertrecords", "deleterecords":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, receiver, false, true, fmt.Errorf("Database.UnitOfWork.%s expects List<SObject>", method)
+		}
+		op := strings.TrimSuffix(apexMemberKey(method), "records")
+		resultType := databaseUnitOfWorkResultType(op)
+		placeholders := make([]Value, 0, len(args[0].List))
+		for range args[0].List {
+			placeholders = append(placeholders, newPendingDatabaseResult(resultType))
+		}
+		resultList := List(placeholders...)
+		opValue := Object("Database.UnitOfWorkOperation")
+		opValue.Fields["op"] = String(op)
+		opValue.Fields["records"] = args[0]
+		opValue.Fields["result"] = resultList
+		ops := databaseUnitOfWorkQueuedOps(receiver)
+		ops.List = append(ops.List, opValue)
+		receiver.Fields["__ops"] = ops
+		return resultList, receiver, true, true, nil
+	case "discardwork":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Database.UnitOfWork.discardWork expects 0 arguments")
+		}
+		receiver.Fields["__ops"] = List()
+		return Null, receiver, true, true, nil
+	case "commitwork":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Database.UnitOfWork.commitWork expects 0 arguments")
+		}
+		ops := databaseUnitOfWorkQueuedOps(receiver)
+		for _, queued := range ops.List {
+			if queued.Kind != ValueObject {
+				continue
+			}
+			opValue, ok := queued.Fields["op"]
+			if !ok || opValue.Kind != ValueString {
+				continue
+			}
+			records, ok := queued.Fields["records"]
+			if !ok {
+				continue
+			}
+			applied, err := vm.executeDatabaseDML(opValue.Text, []Value{records, Bool(false)}, result)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			if placeholder, ok := queued.Fields["result"]; ok {
+				copyDatabaseUnitOfWorkResult(placeholder, applied)
+			}
+		}
+		receiver.Fields["__ops"] = List()
+		return Null, receiver, true, true, nil
+	}
+	return Null, receiver, false, false, nil
+}
+
+func copyDatabaseUnitOfWorkResult(target Value, source Value) {
+	if target.Kind == ValueObject && source.Kind == ValueObject {
+		for field, value := range source.Fields {
+			target.Fields[field] = value
+		}
+		return
+	}
+	if target.Kind != ValueList || source.Kind != ValueList {
+		return
+	}
+	for i := range target.List {
+		if i >= len(source.List) {
+			return
+		}
+		copyDatabaseUnitOfWorkResult(target.List[i], source.List[i])
+	}
 }
 
 func newDatabaseDMLOptions() Value {
@@ -19506,6 +19866,14 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			options.Fields[field] = value
 		}
 		return options, nil
+	case "Database.UnitOfWork":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.UnitOfWork constructor expects 0 arguments")
+		}
+		if len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Database.UnitOfWork constructor does not accept named arguments")
+		}
+		return newDatabaseUnitOfWork(), nil
 	case "Database.AssignmentRuleHeader":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Database.AssignmentRuleHeader constructor expects 0 arguments")
@@ -28019,6 +28387,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	}
 	if value, handled, err := callDatabaseResultObjectMember(receiver, method, args); handled || err != nil {
 		return value, receiver, false, true, err
+	}
+	if value, updated, mutated, handled, err := vm.callDatabaseUnitOfWorkMember(receiver, method, args, result); handled || err != nil {
+		return value, updated, mutated, true, err
 	}
 	switch receiver.Type {
 	case "eventbus.SuccessResult", "eventbus.FailureResult", "EventBus.SuccessResult", "EventBus.FailureResult":
