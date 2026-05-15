@@ -233,6 +233,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if connectAPITestFixtureSetterBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "ConnectApi setTest fixture setter is accepted locally without calling ConnectApi services", true
 	}
+	if connectAPITestFixtureTargetBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "ConnectApi method returns a matching local setTest fixture when provided; live service calls remain explicitly unsupported without a fixture", true
+	}
 	if quickActionDescribeBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "QuickAction describe/template/default methods return local read-only metadata/default DTOs without performing action side effects", true
 	}
@@ -1223,6 +1226,39 @@ func connectAPITestFixtureSetterBehaviorMethod(symbol typesys.TypeSymbol, member
 		strings.HasPrefix(stubBehaviorTypeName(symbol), "ConnectApi.") &&
 		strings.HasPrefix(strings.ToLower(member.Name), "settest") &&
 		strings.EqualFold(member.Type, "void")
+}
+
+func connectAPITestFixtureTargetBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod ||
+		!stubBehaviorMemberStatic(member) ||
+		!strings.HasPrefix(stubBehaviorTypeName(symbol), "ConnectApi.") ||
+		strings.HasPrefix(strings.ToLower(member.Name), "settest") ||
+		strings.EqualFold(member.Type, "void") {
+		return false
+	}
+	setterName := "settest" + strings.ToLower(member.Name)
+	for _, candidate := range symbol.Members {
+		if !connectAPITestFixtureSetterBehaviorMethod(symbol, candidate) ||
+			strings.ToLower(candidate.Name) != setterName ||
+			len(candidate.Parameters) != len(member.Parameters)+1 {
+			continue
+		}
+		last := candidate.Parameters[len(candidate.Parameters)-1]
+		if !strings.EqualFold(last.Type, member.Type) {
+			continue
+		}
+		matched := true
+		for i, param := range member.Parameters {
+			if !strings.EqualFold(candidate.Parameters[i].Type, param.Type) {
+				matched = false
+				break
+			}
+		}
+		if matched {
+			return true
+		}
+	}
+	return false
 }
 
 func databaseResultDTOBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
