@@ -834,6 +834,30 @@ System.assertNotEquals(null, content);
 ConnectApi.ManagedContentDeliveryChannelsRepresentation channels =
 	ConnectApi.ManagedContentDelivery.getChannels(0, 10);
 System.assertNotEquals(null, channels);
+
+ConnectApi.AnnouncementPage announcements =
+	ConnectApi.Announcements.getAnnouncements('community-a', 'zone-a');
+System.assertNotEquals(null, announcements);
+
+ConnectApi.FeedFavorites favorites =
+	ConnectApi.ChatterFavorites.getFavorites('community-a', 'me');
+System.assertNotEquals(null, favorites);
+
+ConnectApi.ManagedContentChannelsRepresentation managedChannels =
+	ConnectApi.ManagedContentChannels.getManagedContentChannels(0, 10, true);
+System.assertNotEquals(null, managedChannels);
+
+ConnectApi.NamedCredentialList namedCredentials =
+	ConnectApi.NamedCredentials.getNamedCredentials();
+System.assertNotEquals(null, namedCredentials);
+
+ConnectApi.GiftWrapProductCollection giftWrapProducts =
+	ConnectApi.CommerceCatalog.getGiftWrapProducts('store-a');
+System.assertNotEquals(null, giftWrapProducts);
+
+ConnectApi.SortRulesCollection sortRules =
+	ConnectApi.CommerceSearch.getSortRules('store-a');
+System.assertNotEquals(null, sortRules);
 	`)
 	if err != nil {
 		t.Fatal(err)
