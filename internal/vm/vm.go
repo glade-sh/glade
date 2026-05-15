@@ -26872,7 +26872,7 @@ func (vm *VM) callConnectAPITestFixtureStatic(callee string, args []Value) (Valu
 
 func (vm *VM) callConnectAPIReadOnlyStaticDefault(callee string, args []Value) (Value, bool) {
 	className, methodName, ok := vm.splitClassMember(callee)
-	if !ok || !connectAPIReadOnlyHarnessType(className) || connectAPIMutationMethod(methodName) {
+	if !ok || !connectAPIReadOnlyHarnessType(className) {
 		return Null, false
 	}
 	method, ok := vm.generatedPlatformStaticMethodByNameArity(className, methodName, len(args))
@@ -26902,6 +26902,8 @@ func connectAPIReadOnlyHarnessType(typeName string) bool {
 		"ConnectApi.CdpCatalog",
 		"ConnectApi.CdpOptimizationConnectApi",
 		"ConnectApi.CdpQuery",
+		"ConnectApi.CdpQuickAttributes",
+		"ConnectApi.CdpSegment",
 		"ConnectApi.Communities",
 		"ConnectApi.CommunityModeration",
 		"ConnectApi.CommerceBuyerExperience",
@@ -26921,11 +26923,14 @@ func connectAPIReadOnlyHarnessType(typeName string) bool {
 		"ConnectApi.Mentions",
 		"ConnectApi.NamedCredentials",
 		"ConnectApi.NavigationMenu",
+		"ConnectApi.Personalization",
 		"ConnectApi.RecordAlert",
 		"ConnectApi.Records",
 		"ConnectApi.RecordUi",
 		"ConnectApi.Sharing",
 		"ConnectApi.Sites",
+		"ConnectApi.SmartDataDiscovery",
+		"ConnectApi.EinsteinLLM",
 		"ConnectApi.UserProfiles",
 		"ConnectApi.Zones":
 		return true
@@ -26936,12 +26941,12 @@ func connectAPIReadOnlyHarnessType(typeName string) bool {
 
 func connectAPIReadOnlyHarnessMethodAllowed(typeName, methodName string) bool {
 	name := strings.ToLower(methodName)
-	if connectAPIMutationMethod(name) {
-		return false
-	}
 	switch typeName {
 	case "ConnectApi.CdpCalculatedInsight":
-		return name == "getcalculatedinsight" || name == "getcalculatedinsights"
+		return name == "getcalculatedinsight" ||
+			name == "getcalculatedinsights" ||
+			name == "refreshstatuscalculatedinsight" ||
+			name == "validatecalculatedinsight"
 	case "ConnectApi.CdpCatalog":
 		return name == "getfieldlineage" || name == "getlineage"
 	case "ConnectApi.CdpOptimizationConnectApi":
@@ -26950,7 +26955,10 @@ func connectAPIReadOnlyHarnessMethodAllowed(typeName, methodName string) bool {
 			"getoptimizationdatalakeobjects", "getoptimizationdatamodelobjects",
 			"getoptimizationdataspaces", "getoptimizationdefinitions",
 			"getoptimizationformulaoperators", "getoptimizationorgvalues",
-			"getsingleoptimizationdefinition":
+			"getsingleoptimizationdefinition", "getdatamodelobjectquerycount",
+			"getoptimizationjobdetails", "getoptimizationjobstatusbyid",
+			"getoptimizationjobsfordefinition", "postdatamodelobjectquerycount",
+			"validateformulasyntax":
 			return true
 		default:
 			return false
@@ -26958,11 +26966,34 @@ func connectAPIReadOnlyHarnessMethodAllowed(typeName, methodName string) bool {
 	case "ConnectApi.CdpQuery":
 		switch name {
 		case "getallmetadata", "getdatagraphmetadata", "getinsightsmetadata",
-			"getmetadataentities", "getnextbatchmetadataentities", "getprofilemetadata":
+			"getmetadataentities", "getnextbatchmetadataentities", "getprofilemetadata",
+			"getdatagraphdata", "getdatagraphdatawithlookupkeys", "nextbatchansisqlv2",
+			"queryansisql", "queryansisqlv2", "querycalculatedinsights",
+			"queryprofileapi", "querysql", "querysqlrows", "querysqlstatus",
+			"universalidlookupbysourceid":
 			return true
 		default:
 			return false
 		}
+	case "ConnectApi.CdpQuickAttributes":
+		return name == "getquickattributebyidorname" || name == "getquickattributes"
+	case "ConnectApi.CdpSegment":
+		return name == "getsegment" ||
+			name == "getsegmentbyid" ||
+			name == "getsegments" ||
+			name == "getsegmentsfilteredpaginated" ||
+			name == "getsegmentspaginated"
+	case "ConnectApi.EinsteinLLM":
+		return name == "getoutputlanguages" || name == "getprompttemplates"
+	case "ConnectApi.Personalization":
+		return name == "getaudience" ||
+			name == "getaudiencebatch" ||
+			name == "getaudiences" ||
+			name == "gettarget" ||
+			name == "gettargetbatch" ||
+			name == "gettargets"
+	case "ConnectApi.SmartDataDiscovery":
+		return strings.HasPrefix(name, "get")
 	case "ConnectApi.Chatter":
 		return name == "getfollowers" || name == "getsubscription"
 	case "ConnectApi.ChatterFeeds":
@@ -26991,6 +27022,9 @@ func connectAPIReadOnlyHarnessMethodAllowed(typeName, methodName string) bool {
 			name == "getwishlistitems" ||
 			name == "getwishlistsummaries"
 	default:
+		if connectAPIMutationMethod(name) {
+			return false
+		}
 		return connectAPIReadOnlyHarnessMethod(methodName)
 	}
 }

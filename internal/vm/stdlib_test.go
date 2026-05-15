@@ -863,13 +863,52 @@ ConnectApi.CdpQueryMetadataOutput cdpMetadata =
 	ConnectApi.CdpQuery.getAllMetadata();
 System.assertNotEquals(null, cdpMetadata);
 
+ConnectApi.QuerySqlOutput sqlOutput =
+	ConnectApi.CdpQuery.querySql(new ConnectApi.QuerySqlInput());
+System.assertNotEquals(null, sqlOutput);
+
+ConnectApi.QuerySqlStatus sqlStatus =
+	ConnectApi.CdpQuery.querySqlStatus('query-a');
+System.assertNotEquals(null, sqlStatus);
+
 ConnectApi.CdpCalculatedInsightPage calculatedInsights =
 	ConnectApi.CdpCalculatedInsight.getCalculatedInsights('space-a', 0, 10, null, null);
 System.assertNotEquals(null, calculatedInsights);
 
+ConnectApi.CdpCalculatedInsightStandardActionResponseRepresentation calculatedInsightValidation =
+	ConnectApi.CdpCalculatedInsight.validateCalculatedInsight(new ConnectApi.CdpCalculatedInsightValidateInput());
+System.assertNotEquals(null, calculatedInsightValidation);
+
 ConnectApi.CdpOptimizationDefinitionCollectionRepresentation optimizations =
 	ConnectApi.CdpOptimizationConnectApi.getOptimizationDefinitions();
 System.assertNotEquals(null, optimizations);
+
+ConnectApi.CdpOptimizationDataModelObjectQueryCountRepresentation optimizationCount =
+	ConnectApi.CdpOptimizationConnectApi.postDataModelObjectQueryCount(
+		'space-a',
+		'object-a',
+		new ConnectApi.CdpOptimizationSourceDataInputRepresentation());
+System.assertNotEquals(null, optimizationCount);
+
+ConnectApi.CdpSegmentContainerOutput segments =
+	ConnectApi.CdpSegment.getSegments();
+System.assertNotEquals(null, segments);
+
+ConnectApi.CdpQuickAttributesCollectionRepresentation quickAttributes =
+	ConnectApi.CdpQuickAttributes.getQuickAttributes('space-a', 0, null, 10, null);
+System.assertNotEquals(null, quickAttributes);
+
+ConnectApi.EinsteinPromptRecordCollectionOutputRepresentation promptTemplates =
+	ConnectApi.EinsteinLLM.getPromptTemplates(null, null, 0, 10, new List<String>(), null, null, false);
+System.assertNotEquals(null, promptTemplates);
+
+ConnectApi.AudienceCollection audiences =
+	ConnectApi.Personalization.getAudiences('site-a', null, null, null, null, false, new List<String>());
+System.assertNotEquals(null, audiences);
+
+ConnectApi.SmartDataDiscoveryAIModelCollection aiModels =
+	ConnectApi.SmartDataDiscovery.getAIModels();
+System.assertNotEquals(null, aiModels);
 
 ConnectApi.CommunityPage communities =
 	ConnectApi.Communities.getCommunities();
