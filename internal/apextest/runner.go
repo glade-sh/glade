@@ -1445,10 +1445,22 @@ func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[st
 	if _, ok := storage.ResolveFieldName(state.Definition, org.Namespace, fieldName); ok {
 		return
 	}
+	if parentRelationshipKnown(state.Definition, fieldName) {
+		return
+	}
 	if inferred[objectName] == nil {
 		inferred[objectName] = make(map[string]storage.Field)
 	}
 	inferred[objectName][fieldName] = inferredReferencedStandardField(fieldName)
+}
+
+func parentRelationshipKnown(definition storage.ObjectDefinition, name string) bool {
+	for _, relation := range definition.Relations {
+		if strings.EqualFold(relation.ParentRelationship, name) {
+			return true
+		}
+	}
+	return false
 }
 
 func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]map[string]storage.Field) {

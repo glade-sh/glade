@@ -3517,6 +3517,32 @@ public class AssetProbe {
 	}
 }
 
+func TestOrgFromIndexDoesNotInferStandardParentRelationshipAsField(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AccountProbe.cls"), `
+public class AccountProbe {
+	public static void touch(Account existingRecord) {
+		Boolean linked = existingRecord.Parent?.IsPersonAccount == true;
+	}
+}
+`)
+	index := loadTestIndex(t, root)
+
+	org := orgFromIndex(index)
+	state := org.Objects["Account"]
+	if _, ok := state.Definition.Fields["Parent"]; ok {
+		t.Fatalf("Account.Parent was inferred as a concrete field: %#v", state.Definition.Fields["Parent"])
+	}
+	field, ok := state.Definition.Fields["ParentId"]
+	if !ok {
+		t.Fatalf("Account.ParentId missing from standard fields")
+	}
+	if field.Type != storage.FieldReference || !parentRelationshipKnown(state.Definition, "Parent") {
+		t.Fatalf("Account.ParentId relationship not preserved: field=%#v relations=%#v", field, state.Definition.Relations)
+	}
+}
+
 func TestOrgFromIndexIncludesApexClassRows(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
