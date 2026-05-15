@@ -2255,6 +2255,8 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"UserManagement.obfuscateUser", "UserManagement.registerVerificationMethod",
 		"UserManagement.sendAsyncEmailConfirmation", "UserManagement.verifyPasswordlessLogin",
 		"UserManagement.verifyRegisterVerificationMethod", "UserManagement.verifyVerificationMethod",
+		"Process.SparkPlugApi.describePlugin", "Process.SparkPlugApi.describePlugins", "Process.SparkPlugApi.invokePluginWithJson",
+		"TrailblazerIdentity.generateUserEmailVerificationToken", "TrailblazerIdentity.getUserOrgInfo", "TrailblazerIdentity.splunkLog",
 	}
 	calls := make(map[string]string, len(names))
 	for _, name := range names {
@@ -4089,6 +4091,38 @@ platformStaticCall:
 			return Null, fmt.Errorf("UserManagement.verifyVerificationMethod expects identifier, code, and verification method")
 		}
 		return newAuthVerificationResult(newPageReference("/"), Bool(true), Null), nil
+	case "Process.SparkPlugApi.describePlugin":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Process.SparkPlugApi.describePlugin expects class name String")
+		}
+		result := Object("Process.SparkPlugApi.SparkPlugDescribeResult")
+		result.Fields["className"] = args[0]
+		return result, nil
+	case "Process.SparkPlugApi.describePlugins":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Process.SparkPlugApi.describePlugins expects 0 arguments")
+		}
+		return typedList("List<Process.SparkPlugApi.SparkPlugDescribeResult>"), nil
+	case "Process.SparkPlugApi.invokePluginWithJson":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, fmt.Errorf("Process.SparkPlugApi.invokePluginWithJson expects class name and parameters JSON Strings")
+		}
+		return String("{}"), nil
+	case "TrailblazerIdentity.generateUserEmailVerificationToken":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("TrailblazerIdentity.generateUserEmailVerificationToken expects org Id, user Id, and email")
+		}
+		return String("local-email-verification-token"), nil
+	case "TrailblazerIdentity.getUserOrgInfo":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("TrailblazerIdentity.getUserOrgInfo expects email list")
+		}
+		return typedList("List<Auth.UserOrgInfo>"), nil
+	case "TrailblazerIdentity.splunkLog":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("TrailblazerIdentity.splunkLog expects source and message")
+		}
+		return Null, nil
 	case "Auth.AuthToken.revokeAccess":
 		if len(args) != 3 {
 			return Null, fmt.Errorf("Auth.AuthToken.revokeAccess expects 3 arguments")
@@ -32267,6 +32301,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return Object("UserProvisioning.ProvisioningProcessHandlerOutput"), receiver, false, true, nil
 		}
 	}
+	if value, handled, err := callPlatformCallbackDefaultMember(receiver, method, args); handled || err != nil {
+		return value, receiver, false, true, err
+	}
 	if value, updated, mutated, handled, err := vm.callIndustryControllerMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
@@ -37825,6 +37862,107 @@ func userProvisioningBatchableType(typeName string) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func callPlatformCallbackDefaultMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	typeName := receiver.Type
+	lowerMethod := strings.ToLower(method)
+	switch typeName {
+	case "workflow.Action":
+		if lowerMethod != "invoke" {
+			return Null, false, nil
+		}
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("workflow.Action.invoke expects Context")
+		}
+		return typedList("List<workflow.ActionDml>"), true, nil
+	case "workflow.ActionDml":
+		if lowerMethod != "invoke" {
+			return Null, false, nil
+		}
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("workflow.ActionDml.invoke expects 0 arguments")
+		}
+		return Null, true, nil
+	case "eventbus.EventPublishFailureCallback":
+		if lowerMethod != "onfailure" {
+			return Null, false, nil
+		}
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("eventbus.EventPublishFailureCallback.onFailure expects FailureResult")
+		}
+		return Null, true, nil
+	case "eventbus.EventPublishSuccessCallback":
+		if lowerMethod != "onsuccess" {
+			return Null, false, nil
+		}
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("eventbus.EventPublishSuccessCallback.onSuccess expects SuccessResult")
+		}
+		return Null, true, nil
+	case "TxnSecurity.EventCondition", "TxnSecurity.PolicyCondition":
+		if lowerMethod != "evaluate" {
+			return Null, false, nil
+		}
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("%s.evaluate expects event input", typeName)
+		}
+		return Bool(false), true, nil
+	case "Social.DefaultInboundSocialPostHandler", "Social.InboundSocialPostHandlerImpl":
+		return socialInboundHandlerDefault(typeName, lowerMethod, args)
+	case "Social.InboundSocialPostHandler":
+		if lowerMethod != "handleinboundsocialpost" {
+			return Null, false, nil
+		}
+		if len(args) != 3 {
+			return Null, true, fmt.Errorf("Social.InboundSocialPostHandler.handleInboundSocialPost expects post, persona, and rawData")
+		}
+		return Object("Social.InboundSocialPostResult"), true, nil
+	default:
+		return Null, false, nil
+	}
+}
+
+func socialInboundHandlerDefault(typeName, method string, args []Value) (Value, bool, error) {
+	switch method {
+	case "createpersonaparent":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("%s.createPersonaParent expects SocialPersona", typeName)
+		}
+		return Null, true, nil
+	case "getcasesubject", "getpersonafirstname", "getpersonalastname":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("%s.%s expects one argument", typeName, method)
+		}
+		return String(""), true, nil
+	case "getdefaultaccountid":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getDefaultAccountId expects 0 arguments", typeName)
+		}
+		return String(""), true, nil
+	case "getmaxnumberofdaysclosedtoreopencase":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getMaxNumberOfDaysClosedToReopenCase expects 0 arguments", typeName)
+		}
+		return Int(0), true, nil
+	case "getposttagsthatcreatecase":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getPostTagsThatCreateCase expects 0 arguments", typeName)
+		}
+		return typedSet("Set<String>"), true, nil
+	case "getusingcaseassignmentrule":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getUsingCaseAssignmentRule expects 0 arguments", typeName)
+		}
+		return Bool(false), true, nil
+	case "handleinboundsocialpost":
+		if len(args) != 3 {
+			return Null, true, fmt.Errorf("%s.handleInboundSocialPost expects post, persona, and rawData", typeName)
+		}
+		return Object("Social.InboundSocialPostResult"), true, nil
+	default:
+		return Null, false, nil
 	}
 }
 
