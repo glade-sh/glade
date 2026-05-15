@@ -467,7 +467,7 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		case "isrunningtest", "getstandardpricebookid", "starttest", "stoptest", "createstub",
 			"clearapexpagemessages", "setcurrentpage", "setcurrentpagereference", "setmock",
 			"setcreateddate", "setfixedsearchresults", "createstubqueryrow", "issoqlstubdefined",
-			"geteventbus", "getflexqueueorder", "calculatepermissionsetgroup", "enablechangedatacapture",
+			"geteventbus", "getflexqueueorder", "enqueuebatchjobs", "calculatepermissionsetgroup", "enablechangedatacapture",
 			"setreadonlyapplicationmode", "testinstall", "testuninstall":
 			return true
 		}

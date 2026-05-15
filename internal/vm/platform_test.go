@@ -2854,6 +2854,10 @@ func TestExecSafeGeneratedTestHelpers(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Id> flexQueueOrder = Test.getFlexQueueOrder();
 System.assertEquals(0, flexQueueOrder.size());
+List<Id> batchJobIds = Test.enqueueBatchJobs(2);
+System.assertEquals(2, batchJobIds.size());
+System.assertEquals('707000000000001', String.valueOf(batchJobIds.get(0)));
+System.assertEquals('707000000000002', String.valueOf(batchJobIds.get(1)));
 Test.calculatePermissionSetGroup('0PG000000000001');
 Id permissionSetGroupId = '0PG000000000003';
 Test.calculatePermissionSetGroup(permissionSetGroupId);

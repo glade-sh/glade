@@ -2117,7 +2117,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"ApexPages.hasMessages", "ApexPages.addMessage", "ApexPages.addMessages", "ApexPages.getMessages", "ApexPages.currentPage",
 		"Test.clearApexPageMessages", "Test.setCurrentPage", "Test.setCurrentPageReference",
 		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub",
-		"Test.getFlexQueueOrder", "Test.calculatePermissionSetGroup", "Test.enableChangeDataCapture", "Test.setReadOnlyApplicationMode", "Test.isSoqlStubDefined",
+		"Test.getFlexQueueOrder", "Test.enqueueBatchJobs", "Test.calculatePermissionSetGroup", "Test.enableChangeDataCapture", "Test.setReadOnlyApplicationMode", "Test.isSoqlStubDefined",
 		"WebServiceCallout.invoke",
 		"CURRENCY.newInstance",
 		"Collator.getInstance",
@@ -3974,6 +3974,22 @@ platformStaticCall:
 			return Null, err
 		}
 		return typedList("List<Id>"), nil
+	case "Test.enqueueBatchJobs":
+		if len(args) != 1 || args[0].Kind != ValueInt {
+			return Null, fmt.Errorf("Test.enqueueBatchJobs expects Integer")
+		}
+		if err := vm.requireTestContext(callee); err != nil {
+			return Null, err
+		}
+		count := int(args[0].Int)
+		if count < 0 {
+			count = 0
+		}
+		ids := typedList("List<Id>")
+		for i := 0; i < count; i++ {
+			ids.List = append(ids.List, platformScalar("Id", vm.nextAsyncJobID()))
+		}
+		return ids, nil
 	case "Test.calculatePermissionSetGroup":
 		if len(args) != 1 || (!isApexIDLikeValue(args[0]) && args[0].Kind != ValueList) {
 			return Null, fmt.Errorf("Test.calculatePermissionSetGroup expects permission set group Id or List<String>")
