@@ -2036,7 +2036,7 @@ func (vm *VM) shouldUseBuiltinStaticPrecedence(original, canonical string) bool 
 var canonicalBuiltinStaticCalls = func() map[string]string {
 	names := []string{
 		"System.assert", "System.assertEquals", "System.assertNotEquals", "System.debug", "System.today",
-		"Assert.areEqual", "Assert.areNotEqual", "Assert.isTrue", "Assert.isFalse", "Assert.isNull", "Assert.isNotNull", "Assert.isInstanceOfType", "Assert.fail",
+		"Assert.areEqual", "Assert.areNotEqual", "Assert.isTrue", "Assert.isFalse", "Assert.isNull", "Assert.isNotNull", "Assert.isInstanceOfType", "Assert.isNotInstanceOfType", "Assert.fail",
 		"System.equals", "System.hashCode",
 		"System.now", "System.currentTimeMillis", "System.isBatch", "System.isFuture", "System.isQueueable",
 		"System.isScheduled", "System.abortJob", "System.attachFinalizer", "System.isRunningTest",
@@ -2056,8 +2056,12 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Limits.getQueryLocatorRows", "Limits.getLimitQueryLocatorRows",
 		"Limits.getSavepointRollbacks", "Limits.getLimitSavepointRollbacks",
 		"Limits.getSoslQueries", "Limits.getLimitSoslQueries",
+		"OrgLimits.getAll", "OrgLimits.getMap",
 		"Database.query", "Database.queryWithBinds", "Database.countQuery", "Database.countQueryWithBinds", "Database.getQueryLocator", "Database.getQueryLocatorWithBinds",
+		"Database.getCursor", "Database.getCursorWithBinds", "Database.getPaginationCursor", "Database.getPaginationCursorWithBinds",
 		"Database.setSavepoint", "Database.releaseSavepoint", "Database.rollback", "Database.insert", "Database.update", "Database.delete",
+		"Database.insertAsync", "Database.updateAsync", "Database.deleteAsync", "Database.insertImmediate", "Database.updateImmediate", "Database.deleteImmediate",
+		"Database.getAsyncSaveResult", "Database.getAsyncDeleteResult", "Database.getDeleted", "Database.getUpdated",
 		"Database.upsert", "Database.undelete", "Database.emptyRecycleBin", "Database.lock", "Database.unlock",
 		"Database.convertLead", "Database.merge",
 		"Security.stripInaccessible",
@@ -2087,6 +2091,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"JSON.deserializeUntyped", "JSON.deserialize", "JSON.deserializeStrict",
 		"ConnectApi.Organization.getSettings", "ConnectApi.ChatterUsers.getFollowings", "ConnectApi.Communities.getCommunity",
 		"ConnectApi.UserProfiles.setPhoto", "ConnectApi.UserProfiles.deletePhoto",
+		"BusinessHours.add", "BusinessHours.addGmt", "BusinessHours.diff", "BusinessHours.isWithin", "BusinessHours.nextStartDate",
 		"Cache.Org.getPartition", "Cache.Session.getPartition",
 		"Cache.Org.get", "Cache.Session.get", "Cache.Org.put", "Cache.Session.put",
 		"Cache.Org.remove", "Cache.Session.remove", "Cache.Org.contains", "Cache.Session.contains",
@@ -2102,7 +2107,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.CommunitiesUtil.isGuestUser",
 		"Messaging.sendEmail", "Messaging.renderStoredEmailTemplate",
 		"Messaging.reserveSingleEmailCapacity", "Messaging.reserveMassEmailCapacity",
-		"ApexPages.hasMessages", "ApexPages.addMessage", "ApexPages.getMessages", "ApexPages.currentPage",
+		"ApexPages.hasMessages", "ApexPages.addMessage", "ApexPages.addMessages", "ApexPages.getMessages", "ApexPages.currentPage",
 		"Test.clearApexPageMessages", "Test.setCurrentPage", "Test.setCurrentPageReference",
 		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub",
 		"Test.getFlexQueueOrder", "Test.calculatePermissionSetGroup", "Test.enableChangeDataCapture", "Test.setReadOnlyApplicationMode", "Test.isSoqlStubDefined",
@@ -2507,6 +2512,27 @@ platformStaticCall:
 			return Null, vm.assertError(message)
 		}
 		return Null, nil
+	case "Assert.isNotInstanceOfType":
+		if len(args) != 2 && len(args) != 3 {
+			return Null, fmt.Errorf("Assert.isNotInstanceOfType expects value, Type[, message]")
+		}
+		if args[1].Kind != ValueObject || args[1].Type != "Type" {
+			return Null, fmt.Errorf("Assert.isNotInstanceOfType expects Type as second argument")
+		}
+		expectedType := typeValueName(args[1])
+		actualType := valueTypeName(args[0])
+		if args[0].Kind == ValueObject {
+			actualType = runtimeObjectType(args[0])
+		}
+		matches := args[0].Kind != ValueNull && vm.typeMatches(actualType, expectedType, make(map[string]bool))
+		if matches {
+			message, err := vm.assertMessage(fmt.Sprintf("expected not instance of <%s>, actual <%s>", expectedType, actualType), args[2:], result)
+			if err != nil {
+				return Null, err
+			}
+			return Null, vm.assertError(message)
+		}
+		return Null, nil
 	case "Assert.fail":
 		if len(args) > 1 {
 			return Null, fmt.Errorf("Assert.fail expects 0 or 1 arguments")
@@ -2682,6 +2708,38 @@ platformStaticCall:
 		locator.Fields["Records"] = value
 		locator.Fields["Query"] = String(args[0].Text)
 		return locator, nil
+	case "Database.getCursor", "Database.getPaginationCursor":
+		if len(args) < 1 || len(args) > 2 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("%s expects query String and optional cursor options", callee)
+		}
+		value, err := vm.executeSOQL(args[0].Text, result)
+		if err != nil {
+			return Null, err
+		}
+		cursorType := "Database.Cursor"
+		if callee == "Database.getPaginationCursor" {
+			cursorType = "Database.PaginationCursor"
+		}
+		cursor := Object(cursorType)
+		cursor.Fields["Records"] = value
+		cursor.Fields["Query"] = args[0]
+		return cursor, nil
+	case "Database.getCursorWithBinds", "Database.getPaginationCursorWithBinds":
+		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueMap {
+			return Null, fmt.Errorf("%s expects query String, bind Map, and cursor options", callee)
+		}
+		value, err := vm.executeSOQLWithBindMap(args[0].Text, args[1], result)
+		if err != nil {
+			return Null, err
+		}
+		cursorType := "Database.Cursor"
+		if callee == "Database.getPaginationCursorWithBinds" {
+			cursorType = "Database.PaginationCursor"
+		}
+		cursor := Object(cursorType)
+		cursor.Fields["Records"] = value
+		cursor.Fields["Query"] = args[0]
+		return cursor, nil
 	case "Security.stripInaccessible":
 		if len(args) != 2 && len(args) != 3 {
 			return Null, fmt.Errorf("Security.stripInaccessible expects AccessType, records, and optional enforceRootObjectCRUD")
@@ -2782,13 +2840,64 @@ platformStaticCall:
 		return vm.executeDatabaseDML(strings.TrimPrefix(callee, "Database."), args, result)
 	case "Database.insert", "Database.update", "Database.delete":
 		return vm.executeDatabaseDML(strings.TrimPrefix(callee, "Database."), args, result)
+	case "Database.insertAsync", "Database.updateAsync", "Database.deleteAsync",
+		"Database.insertImmediate", "Database.updateImmediate", "Database.deleteImmediate":
+		op := strings.TrimPrefix(callee, "Database.")
+		op = strings.TrimSuffix(strings.TrimSuffix(op, "Async"), "Immediate")
+		return vm.executeDatabaseDML(op, args, result)
+	case "Database.getAsyncSaveResult", "Database.getAsyncDeleteResult":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("%s expects async operation id or local result", callee)
+		}
+		if args[0].Kind == ValueObject || args[0].Kind == ValueList {
+			return args[0], nil
+		}
+		if args[0].Kind != ValueString {
+			return Null, fmt.Errorf("%s expects async operation id or local result", callee)
+		}
+		resultType := "Database.SaveResult"
+		if callee == "Database.getAsyncDeleteResult" {
+			resultType = "Database.DeleteResult"
+		}
+		row := Object(resultType)
+		row.Fields["success"] = Bool(false)
+		row.Fields["id"] = Null
+		row.Fields["errors"] = List(databaseErrorValue(dml.Error{
+			StatusCode: "UNSUPPORTED_OPERATION",
+			Message:    "async DML result lookup requires a local result object",
+		}))
+		return row, nil
+	case "Database.getDeleted":
+		if len(args) != 3 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Database.getDeleted expects object name String, start Datetime, and end Datetime")
+		}
+		deleted := Object("Database.GetDeletedResult")
+		deleted.Fields["deletedRecords"] = List()
+		deleted.Fields["earliestDateAvailable"] = args[1]
+		deleted.Fields["latestDateCovered"] = args[2]
+		return deleted, nil
+	case "Database.getUpdated":
+		if len(args) != 3 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Database.getUpdated expects object name String, start Datetime, and end Datetime")
+		}
+		updated := Object("Database.GetUpdatedResult")
+		updated.Fields["ids"] = List()
+		updated.Fields["latestDateCovered"] = args[2]
+		return updated, nil
 	case "Database.emptyRecycleBin":
-		return vm.executeDatabaseRecordAction("emptyRecycleBin", args, result)
+		return vm.executeDatabaseRecordAction("emptyRecycleBin", args, result, "Database.EmptyRecycleBinResult")
 	case "Database.lock", "Database.unlock":
-		return vm.executeDatabaseRecordAction(strings.TrimPrefix(callee, "Database."), args, result)
+		op := strings.TrimPrefix(callee, "Database.")
+		return vm.executeDatabaseRecordAction(op, args, result, databaseRecordActionResultType(op))
 	case "Database.convertLead":
 		return Null, unsupportedCallError("Database.convertLead local lead conversion surface")
-	case "Approval.process", "Approval.lock", "Approval.unlock", "Approval.isLocked":
+	case "Approval.lock":
+		return vm.executeDatabaseRecordAction("lock", args, result, "Approval.LockResult")
+	case "Approval.unlock":
+		return vm.executeDatabaseRecordAction("unlock", args, result, "Approval.UnlockResult")
+	case "Approval.isLocked":
+		return vm.executeApprovalIsLocked(args)
+	case "Approval.process":
 		return Null, unsupportedCallError(callee + " local approval process and lock surface")
 	case "Database.merge":
 		return vm.executeDatabaseMerge(args, result)
@@ -2814,6 +2923,22 @@ platformStaticCall:
 			return value, nil
 		}
 		return Null, unsupportedCallError(callee)
+	case "OrgLimits.getAll":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("OrgLimits.getAll expects 0 arguments")
+		}
+		return List(vm.orgLimitValues()...), nil
+	case "OrgLimits.getMap":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("OrgLimits.getMap expects 0 arguments")
+		}
+		out := typedMap("Map<String,OrgLimit>")
+		for _, limit := range vm.orgLimitValues() {
+			name := limit.Fields["name"]
+			out.Map[mapKey(name)] = limit
+			out.MapKeys[mapKey(name)] = name
+		}
+		return out, nil
 	case "String.valueOf":
 		if len(args) != 1 {
 			return Null, fmt.Errorf("String.valueOf expects 1 argument")
@@ -3512,6 +3637,44 @@ platformStaticCall:
 			return Bool(true), nil
 		}
 		return Bool(false), nil
+	case "BusinessHours.add", "BusinessHours.addGmt":
+		if len(args) != 3 || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueInt {
+			return Null, fmt.Errorf("%s expects Id, Datetime, Long", callee)
+		}
+		start, err := parsePlatformDatetime(args[1])
+		if err != nil {
+			return Null, err
+		}
+		return platformScalar("Datetime", formatPlatformDatetime(start.Add(time.Duration(args[2].Int)*time.Millisecond))), nil
+	case "BusinessHours.diff":
+		if len(args) != 3 || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueObject || args[2].Type != "Datetime" {
+			return Null, fmt.Errorf("BusinessHours.diff expects Id, Datetime, Datetime")
+		}
+		start, err := parsePlatformDatetime(args[1])
+		if err != nil {
+			return Null, err
+		}
+		end, err := parsePlatformDatetime(args[2])
+		if err != nil {
+			return Null, err
+		}
+		return Int(end.Sub(start).Milliseconds()), nil
+	case "BusinessHours.isWithin":
+		if len(args) != 2 || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
+			return Null, fmt.Errorf("BusinessHours.isWithin expects Id, Datetime")
+		}
+		if _, err := parsePlatformDatetime(args[1]); err != nil {
+			return Null, err
+		}
+		return Bool(true), nil
+	case "BusinessHours.nextStartDate":
+		if len(args) != 2 || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
+			return Null, fmt.Errorf("BusinessHours.nextStartDate expects Id, Datetime")
+		}
+		if _, err := parsePlatformDatetime(args[1]); err != nil {
+			return Null, err
+		}
+		return args[1], nil
 	case "EventBus.publish":
 		return vm.eventBusPublish(args, result)
 	case "EventBus.publishAfterCommit":
@@ -3665,6 +3828,16 @@ platformStaticCall:
 			return Null, fmt.Errorf("ApexPages.addMessage expects 1 argument")
 		}
 		vm.pageMessages = append(vm.pageMessages, args[0])
+		return Null, nil
+	case "ApexPages.addMessages":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("ApexPages.addMessages expects 1 argument")
+		}
+		messages, err := vm.apexPagesMessagesFromValue(args[0], result)
+		if err != nil {
+			return Null, err
+		}
+		vm.pageMessages = append(vm.pageMessages, messages...)
 		return Null, nil
 	case "ApexPages.getMessages":
 		if len(args) != 0 {
@@ -4323,6 +4496,9 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 		if len(callee) >= len(prefix) && strings.EqualFold(callee[:len(prefix)], prefix) {
 			switch prefix {
 			case "Approval.":
+				if strings.EqualFold(callee, "Approval.lock") || strings.EqualFold(callee, "Approval.unlock") || strings.EqualFold(callee, "Approval.isLocked") {
+					return "", false
+				}
 				return "local approval process and lock surface", true
 			case "Auth.":
 				return "local authentication token/cloud API surface", true
@@ -5698,6 +5874,43 @@ func (vm *VM) assertError(message string) error {
 		Message: message,
 		Stack:   vm.stackFrames(),
 	}
+}
+
+func (vm *VM) apexPagesMessagesFromValue(value Value, result *Result) ([]Value, error) {
+	if value.Kind == ValueList {
+		messages := make([]Value, 0, len(value.List))
+		for _, item := range value.List {
+			nested, err := vm.apexPagesMessagesFromValue(item, result)
+			if err != nil {
+				return nil, err
+			}
+			messages = append(messages, nested...)
+		}
+		return messages, nil
+	}
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "ApexPages.Message") {
+		return []Value{value}, nil
+	}
+	if value.Kind == ValueObject && isExceptionType(value.Type) {
+		summary := ""
+		if _, message, ok := objectFieldValue(value, "message"); ok {
+			text, err := vm.displayString(message, result)
+			if err != nil {
+				return nil, err
+			}
+			summary = text
+		}
+		if summary == "" {
+			summary = value.String()
+		}
+		message := Object("ApexPages.Message")
+		severity, _ := apexPagesSeverityStaticValue("ApexPages.Severity.ERROR")
+		message.Fields["severity"] = severity
+		message.Fields["summary"] = String(summary)
+		message.Fields["detail"] = String(summary)
+		return []Value{message}, nil
+	}
+	return nil, fmt.Errorf("ApexPages.addMessages expects Exception or ApexPages.Message list")
 }
 
 func (vm *VM) requireTestContext(callee string) error {
@@ -8118,7 +8331,9 @@ func databaseResultObjectLike(value Value) bool {
 		strings.EqualFold(value.Type, "Database.EmptyRecycleBinResult"),
 		strings.EqualFold(value.Type, "Database.LockResult"),
 		strings.EqualFold(value.Type, "Database.UnlockResult"),
-		strings.EqualFold(value.Type, "Database.UpsertResult"):
+		strings.EqualFold(value.Type, "Database.UpsertResult"),
+		strings.EqualFold(value.Type, "Approval.LockResult"),
+		strings.EqualFold(value.Type, "Approval.UnlockResult"):
 		return true
 	}
 	return false
@@ -8264,7 +8479,7 @@ func (vm *VM) sObjectNameForExistingID(id string) (string, bool) {
 	return names[0], true
 }
 
-func (vm *VM) executeDatabaseRecordAction(op string, args []Value, result *Result) (Value, error) {
+func (vm *VM) executeDatabaseRecordAction(op string, args []Value, result *Result, resultType string) (Value, error) {
 	if len(args) == 0 || len(args) > 2 {
 		return Null, fmt.Errorf("Database.%s expects records and optional allOrNone", op)
 	}
@@ -8275,7 +8490,7 @@ func (vm *VM) executeDatabaseRecordAction(op string, args []Value, result *Resul
 		}
 		allOrNone = args[1].Bool
 	}
-	if op == "emptyRecycleBin" {
+	if op == "emptyRecycleBin" || op == "lock" || op == "unlock" {
 		records, ok := vm.deleteIDsToSObjects(args[0])
 		if ok {
 			args[0] = records
@@ -8290,7 +8505,7 @@ func (vm *VM) executeDatabaseRecordAction(op string, args []Value, result *Resul
 	}
 	values := make([]Value, 0, len(results))
 	for _, dmlResult := range results {
-		row := Object(databaseRecordActionResultType(op))
+		row := Object(resultType)
 		row.Fields["success"] = Bool(dmlResult.Success)
 		row.Fields["id"] = databaseResultIDValue(dmlResult.ID)
 		row.Fields["error"] = String(dmlResult.Error)
@@ -8304,6 +8519,107 @@ func (vm *VM) executeDatabaseRecordAction(op string, args []Value, result *Resul
 		return Null, nil
 	}
 	return values[0], nil
+}
+
+func (vm *VM) executeApprovalIsLocked(args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("Approval.isLocked expects record or Id")
+	}
+	value := args[0]
+	if records, ok := vm.deleteIDsToSObjects(value); ok {
+		value = records
+	}
+	if value.Kind == ValueList {
+		out := typedMap("Map<Id,Boolean>")
+		for _, item := range value.List {
+			record, err := vm.recordFromValue(&item)
+			if err != nil {
+				return Null, err
+			}
+			key := databaseResultIDValue(record.ID)
+			encodedKey := vm.mapKey(key)
+			out.Map[encodedKey] = Bool(vm.isRecordLocked(record.ID))
+			out.MapKeys[encodedKey] = key
+		}
+		return out, nil
+	}
+	record, err := vm.recordFromValue(&value)
+	if err != nil {
+		return Null, err
+	}
+	return Bool(vm.isRecordLocked(record.ID)), nil
+}
+
+func databaseCursorNumRecords(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if len(args) != 0 {
+		return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+	}
+	records, ok := receiver.Fields["Records"]
+	if !ok || records.Kind != ValueList {
+		return Int(0), receiver, false, true, nil
+	}
+	return Int(int64(len(records.List))), receiver, false, true, nil
+}
+
+func databaseCursorFetch(receiver Value, method string, args []Value, deleted bool) (Value, Value, bool, bool, error) {
+	if len(args) != 2 || args[0].Kind != ValueInt || args[1].Kind != ValueInt {
+		return Null, receiver, false, true, fmt.Errorf("%s.%s expects start and page size Integers", receiver.Type, method)
+	}
+	records, ok := receiver.Fields["Records"]
+	if !ok || records.Kind != ValueList {
+		records = List()
+	}
+	start := int(args[0].Int)
+	size := int(args[1].Int)
+	if start < 0 {
+		start = 0
+	}
+	if size < 0 {
+		size = 0
+	}
+	if start > len(records.List) {
+		start = len(records.List)
+	}
+	end := start + size
+	if end > len(records.List) {
+		end = len(records.List)
+	}
+	page := List(append([]Value(nil), records.List[start:end]...)...)
+	page.Type = "List<SObject>"
+	if deleted {
+		return Int(0), receiver, false, true, nil
+	}
+	if strings.EqualFold(receiver.Type, "Database.Cursor") {
+		return page, receiver, false, true, nil
+	}
+	out := Object("Database.CursorFetchResult")
+	out.Fields["records"] = page
+	out.Fields["nextIndex"] = Int(int64(end))
+	out.Fields["numDeletedRecords"] = Int(0)
+	out.Fields["done"] = Bool(end >= len(records.List))
+	return out, receiver, false, true, nil
+}
+
+func databaseObjectGetter(receiver Value, method string, args []Value, field string, fallback Value) (Value, Value, bool, bool, error) {
+	if len(args) != 0 {
+		return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+	}
+	if _, value, ok := objectFieldValue(receiver, field); ok {
+		return value, receiver, false, true, nil
+	}
+	return fallback, receiver, false, true, nil
+}
+
+func (vm *VM) isRecordLocked(id storage.ID) bool {
+	if vm == nil || vm.Org == nil || id == "" {
+		return false
+	}
+	objectName, ok := vm.sObjectNameForExistingID(string(id))
+	if !ok {
+		return false
+	}
+	record, ok := vm.Org.Objects[objectName].Records[id]
+	return ok && record.System.Locked
 }
 
 func (vm *VM) applyDatabaseRecordAction(op string, value Value, allOrNone bool, result *Result) ([]dml.Result, error) {
@@ -12255,6 +12571,10 @@ func builtinEnumStaticValue(typeName, memberName string) (Value, bool) {
 		if token, ok := canonicalJSONTokenName(memberName); ok {
 			return Value{Kind: ValueObject, Type: "JSONToken", Text: token}, true
 		}
+	case strings.EqualFold(typeName, "XmlTag"):
+		if tag, ok := canonicalXmlTagName(memberName); ok {
+			return Value{Kind: ValueObject, Type: "XmlTag", Text: tag}, true
+		}
 	case strings.EqualFold(typeName, "DisplayType") || strings.EqualFold(typeName, "Schema.DisplayType"):
 		return schemaDisplayTypeStaticValue("Schema.DisplayType." + memberName)
 	case strings.EqualFold(typeName, "SOAPType") || strings.EqualFold(typeName, "SoapType") || strings.EqualFold(typeName, "Schema.SOAPType") || strings.EqualFold(typeName, "Schema.SoapType"):
@@ -13126,6 +13446,8 @@ func platformJSONDTOFields(typeName string) (map[string]string, bool) {
 		strings.EqualFold(typeName, "Database.EmptyRecycleBinResult"),
 		strings.EqualFold(typeName, "Database.LockResult"),
 		strings.EqualFold(typeName, "Database.UnlockResult"),
+		strings.EqualFold(typeName, "Approval.LockResult"),
+		strings.EqualFold(typeName, "Approval.UnlockResult"),
 		strings.EqualFold(typeName, "Database.UpsertResult"),
 		strings.EqualFold(typeName, "Database.MergeResult"):
 		return resultFields, true
@@ -17271,6 +17593,7 @@ func newDomXmlNode(nodeType, name, namespace, text string) Value {
 	node.Fields["nodeType"] = Value{Kind: ValueObject, Type: "Dom.XmlNodeType", Text: nodeType}
 	node.Fields["name"] = String(name)
 	node.Fields["namespace"] = domNullableString(namespace)
+	node.Fields["prefix"] = Null
 	node.Fields["text"] = String(text)
 	node.Fields["children"] = typedList("List<Dom.XmlNode>")
 	node.Fields["attributes"] = typedList("List<Dom.XmlAttribute>")
@@ -17305,6 +17628,40 @@ func domNodeList(node Value, field string) Value {
 		return value
 	}
 	return typedList("List<Dom.XmlNode>")
+}
+
+func domChildElements(node Value) Value {
+	out := typedList("List<Dom.XmlNode>")
+	for _, child := range domNodeList(node, "children").List {
+		if domNodeType(child) == "ELEMENT" {
+			out.List = append(out.List, child)
+		}
+	}
+	return out
+}
+
+func domNamespaceFor(node Value, prefix string) Value {
+	namespaces := node.Fields["namespaces"]
+	if namespaces.Kind != ValueMap {
+		return Null
+	}
+	if namespace, ok := namespaces.Map[mapKey(String(prefix))]; ok {
+		return namespace
+	}
+	return Null
+}
+
+func domPrefixFor(node Value, namespace string) Value {
+	namespaces := node.Fields["namespaces"]
+	if namespaces.Kind != ValueMap {
+		return Null
+	}
+	for rawKey, value := range namespaces.Map {
+		if value.Kind == ValueString && value.Text == namespace {
+			return valueFromMapKey(rawKey)
+		}
+	}
+	return Null
 }
 
 func domSetParent(child, parent Value) Value {
@@ -17431,6 +17788,9 @@ func parseDomDocument(source string) (Value, error) {
 				if _, ok := namespaces.Map[mapKey(String(prefix))]; !ok {
 					namespaces.Map[mapKey(String(prefix))] = String(uri)
 				}
+				if uri == typed.Name.Space && typed.Name.Space != "" {
+					node.Fields["prefix"] = String(prefix)
+				}
 			}
 			node.Fields["attributes"] = attrs
 			node.Fields["namespaces"] = namespaces
@@ -17512,6 +17872,7 @@ func callDomDocumentMember(receiver Value, method string, args []Value) (Value, 
 			namespaces := typedMap("Map<String,String>")
 			namespaces.Map[mapKey(args[2])] = String(namespace)
 			root.Fields["namespaces"] = namespaces
+			root.Fields["prefix"] = args[2]
 		}
 		receiver.Fields["root"] = root
 		return root, receiver, true, true, nil
@@ -17546,6 +17907,11 @@ func callDomXmlNodeMember(receiver Value, method string, args []Value) (Value, V
 			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getNamespace expects 0 arguments")
 		}
 		return receiver.Fields["namespace"], receiver, false, true, nil
+	case "getPrefix":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getPrefix expects 0 arguments")
+		}
+		return receiver.Fields["prefix"], receiver, false, true, nil
 	case "getText":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getText expects 0 arguments")
@@ -17565,6 +17931,11 @@ func callDomXmlNodeMember(receiver Value, method string, args []Value) (Value, V
 			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getChildren expects 0 arguments")
 		}
 		return domNodeList(receiver, "children"), receiver, false, true, nil
+	case "getChildElements":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getChildElements expects 0 arguments")
+		}
+		return domChildElements(receiver), receiver, false, true, nil
 	case "getChildElement":
 		if len(args) != 2 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getChildElement expects name and namespace")
@@ -17604,7 +17975,7 @@ func callDomXmlNodeMember(receiver Value, method string, args []Value) (Value, V
 			field = "keyNamespace"
 		}
 		return attrs[index].Fields[field], receiver, false, true, nil
-	case "getAttributeValue", "getAttributeValueNs":
+	case "getAttribute", "getAttributeValue", "getAttributeValueNs":
 		if len(args) != 2 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.%s expects key and namespace", method)
 		}
@@ -17626,15 +17997,12 @@ func callDomXmlNodeMember(receiver Value, method string, args []Value) (Value, V
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getPrefixFor expects namespace String")
 		}
-		namespaces := receiver.Fields["namespaces"]
-		if namespaces.Kind == ValueMap {
-			for rawKey, value := range namespaces.Map {
-				if value.Kind == ValueString && value.Text == args[0].Text {
-					return valueFromMapKey(rawKey), receiver, false, true, nil
-				}
-			}
+		return domPrefixFor(receiver, args[0].Text), receiver, false, true, nil
+	case "getNamespaceFor":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getNamespaceFor expects prefix String")
 		}
-		return Null, receiver, false, true, nil
+		return domNamespaceFor(receiver, args[0].Text), receiver, false, true, nil
 	case "setNamespace":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.setNamespace expects prefix and namespace Strings")
@@ -17690,15 +18058,17 @@ func callDomXmlNodeMember(receiver Value, method string, args []Value) (Value, V
 		keyNamespace := domString(args[1])
 		attrs := domNodeList(receiver, "attributes")
 		filtered := attrs.List[:0]
+		removed := false
 		for _, attr := range attrs.List {
 			if domString(attr.Fields["key"]) == key && domString(attr.Fields["keyNamespace"]) == keyNamespace {
+				removed = true
 				continue
 			}
 			filtered = append(filtered, attr)
 		}
 		attrs.List = filtered
 		receiver.Fields["attributes"] = attrs
-		return Null, receiver, true, true, nil
+		return Bool(removed), receiver, true, true, nil
 	case "addTextNode", "addCommentNode":
 		text, err := stringArg("Dom.XmlNode."+method, args)
 		if err != nil {
@@ -17721,6 +18091,7 @@ func callDomXmlNodeMember(receiver Value, method string, args []Value) (Value, V
 			namespaces := typedMap("Map<String,String>")
 			namespaces.Map[mapKey(args[2])] = String(namespace)
 			child.Fields["namespaces"] = namespaces
+			child.Fields["prefix"] = args[2]
 		}
 		child = domAppendChild(receiver, child)
 		return child, receiver, true, true, nil
@@ -17730,15 +18101,17 @@ func callDomXmlNodeMember(receiver Value, method string, args []Value) (Value, V
 		}
 		children := domNodeList(receiver, "children")
 		filtered := children.List[:0]
+		removed := false
 		for _, child := range children.List {
 			if child.Equal(args[0]) {
+				removed = true
 				continue
 			}
 			filtered = append(filtered, child)
 		}
 		children.List = filtered
 		receiver.Fields["children"] = children
-		return Null, receiver, true, true, nil
+		return Bool(removed), receiver, true, true, nil
 	case "insertBefore":
 		if len(args) != 2 || args[0].Kind != ValueObject || args[1].Kind != ValueObject {
 			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.insertBefore expects new child and reference child")
@@ -17759,7 +18132,7 @@ func callDomXmlNodeMember(receiver Value, method string, args []Value) (Value, V
 		}
 		children.List = out
 		receiver.Fields["children"] = children
-		return Null, receiver, true, true, nil
+		return newChild, receiver, true, true, nil
 	}
 	return Null, receiver, false, false, nil
 }
@@ -18672,6 +19045,12 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		value.Type = typeName
 		return value, nil
 	}
+	if strings.EqualFold(typeName, "XmlStreamReader") {
+		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("XmlStreamReader constructor expects XML String")
+		}
+		return newXmlStreamReader(args[0].Text)
+	}
 	if class, ok := vm.Classes[typeName]; ok {
 		if class.IsInterface {
 			return Null, fmt.Errorf("cannot instantiate interface %s", typeName)
@@ -18755,6 +19134,25 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		return object, nil
 	}
 	switch typeName {
+	case "Apex.Stack":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Apex.Stack constructor expects 0 arguments")
+		}
+		stack := Object("Apex.Stack")
+		stack.Fields["values"] = List()
+		return stack, nil
+	case "ApexPages.Action":
+		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("ApexPages.Action constructor expects expression String")
+		}
+		action := Object("ApexPages.Action")
+		action.Fields["expression"] = args[0]
+		return action, nil
+	case "ApexPages.Component", "ApexPages.ComponentIteration":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("%s constructor expects 0 arguments", typeName)
+		}
+		return Object(typeName), nil
 	case "HttpRequest":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("HttpRequest constructor expects 0 arguments")
@@ -21698,7 +22096,11 @@ func collectionIteratorType(collectionType string) string {
 }
 
 func isIteratorValue(value Value) bool {
-	return value.Kind == ValueObject && (strings.EqualFold(value.Type, "Iterator") || strings.HasPrefix(strings.ToLower(value.Type), "iterator<") || strings.HasPrefix(strings.ToLower(value.Type), "system.iterator<") || value.Type == "Database.QueryLocatorIterator")
+	return value.Kind == ValueObject && (strings.EqualFold(value.Type, "Iterator") ||
+		strings.HasPrefix(strings.ToLower(value.Type), "iterator<") ||
+		strings.HasPrefix(strings.ToLower(value.Type), "system.iterator<") ||
+		value.Type == "Database.QueryLocatorIterator" ||
+		value.Type == "Database.QueryLocatorChunkIterator")
 }
 
 func callIteratorMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -22663,6 +23065,9 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 	if !ok {
 		return Null, false
 	}
+	if !vm.generatedPlatformMethodAllowsDefault(method) {
+		return Null, false
+	}
 	if strings.EqualFold(className, "Invocable.Action") && (strings.EqualFold(methodName, "createCustomAction") || strings.EqualFold(methodName, "createStandardAction")) {
 		action := Object("Invocable.Action")
 		if len(args) > 0 {
@@ -22688,7 +23093,7 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 		}
 		return action, true
 	}
-	return vm.generatedPlatformMethodDefaultReturn(method, Null), true
+	return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
 }
 
 func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Value, methodName string, args []Value) (Value, bool) {
@@ -22700,7 +23105,10 @@ func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Val
 		if !ok {
 			continue
 		}
-		return vm.generatedPlatformMethodDefaultReturn(method, receiver), true
+		if !vm.generatedPlatformMethodAllowsDefault(method) {
+			continue
+		}
+		return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), true
 	}
 	return Null, false
 }
@@ -22710,6 +23118,17 @@ func (vm *VM) generatedPlatformMethodFallbackType(typeName string) bool {
 		return true
 	}
 	return vm.isPassivePlatformDTOType(typeName)
+}
+
+func (vm *VM) generatedPlatformMethodAllowsDefault(method Method) bool {
+	if strings.EqualFold(method.ClassName, "Answers") ||
+		strings.EqualFold(method.ClassName, "ApexPages.IdeaStandardSetController") {
+		return true
+	}
+	if slackGeneratedPlatformPassiveDTOTypeName(method.ClassName) {
+		return slackGeneratedPlatformPassiveDTOMethod(method)
+	}
+	return vm.isPassivePlatformDTOType(method.ClassName)
 }
 
 func (vm *VM) generatedPlatformReceiverTypes(receiverName string, receiver Value) []string {
@@ -22750,8 +23169,20 @@ func (vm *VM) generatedPlatformMethodForArgs(className, methodName string, args 
 	return method, ok
 }
 
-func (vm *VM) generatedPlatformMethodDefaultReturn(method Method, receiver Value) Value {
+func (vm *VM) generatedPlatformMethodDefaultReturn(method Method, receiver Value, args []Value) Value {
 	returnType := vm.resolveTypeNameInClass(method.ClassName, method.ReturnType)
+	if receiver.Kind == ValueObject {
+		if suffix, ok := passiveAccessorSuffix(method.Name, "get"); ok {
+			if _, value, found := objectFieldValue(receiver, passiveAccessorFieldName(receiver, suffix)); found {
+				return value
+			}
+		}
+		if suffix, ok := passiveAccessorSuffix(method.Name, "is"); ok {
+			if _, value, found := objectFieldValue(receiver, passiveAccessorFieldName(receiver, suffix)); found {
+				return value
+			}
+		}
+	}
 	switch strings.ToLower(returnType) {
 	case "", "void":
 		return Null
@@ -22772,9 +23203,35 @@ func (vm *VM) generatedPlatformMethodDefaultReturn(method Method, receiver Value
 	case isMapType(returnType):
 		return typedMap(returnType)
 	case receiver.Kind == ValueObject && strings.EqualFold(returnType, receiver.Type):
+		bindGeneratedPlatformMethodArgs(&receiver, method, args)
 		return receiver
+	case receiver.Kind == ValueObject && vm.isPassivePlatformDTOType(returnType):
+		value := vm.generatedPlatformDefaultValue(returnType, Null)
+		if value.Kind == ValueObject {
+			for field, fieldValue := range receiver.Fields {
+				value.Fields[field] = fieldValue
+			}
+			bindGeneratedPlatformMethodArgs(&value, method, args)
+		}
+		return value
 	default:
 		return vm.generatedPlatformDefaultValue(returnType, Null)
+	}
+}
+
+func bindGeneratedPlatformMethodArgs(object *Value, method Method, args []Value) {
+	if object == nil || object.Kind != ValueObject {
+		return
+	}
+	for i, param := range method.Params {
+		if i >= len(args) {
+			return
+		}
+		field := strings.TrimSpace(param.Name)
+		if field == "" || strings.HasPrefix(strings.ToLower(field), "arg") {
+			continue
+		}
+		object.Fields[passiveAccessorFieldName(*object, field)] = args[i]
 	}
 }
 
@@ -23848,7 +24305,7 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"cancel", "reset", "addFields",
 		"getRecords", "getSelected", "setSelected", "getPageSize", "setPageSize",
 		"getPageNumber", "first", "last", "next", "previous", "getHasNext",
-		"getHasPrevious", "getCompleteResult",
+		"getHasPrevious", "getCompleteResult", "getListViewOptions", "setPageNumber", "setFilterId", "getFilterId",
 		"setToAddresses", "setCcAddresses", "setBccAddresses", "setFileAttachments",
 		"setEntityAttachments", "setDocumentAttachments", "setTargetObjectIds",
 		"setBody", "setContentType", "setFileName", "setInline",
@@ -27010,6 +27467,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if isIteratorValue(receiver) {
 		return callIteratorMember(receiver, method, args)
 	}
+	if value, updated, mutated, handled, err := callXmlStreamReaderMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, true, err
+	}
 	if value, handled, err := callDatabaseResultObjectMember(receiver, method, args); handled || err != nil {
 		return value, receiver, false, true, err
 	}
@@ -27116,6 +27576,72 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			iterator.Fields["__values"] = List(append([]Value(nil), records.List...)...)
 			iterator.Fields["__index"] = Int(0)
 			return iterator, receiver, false, true, nil
+		case "querymore":
+			if len(args) != 1 || args[0].Kind != ValueInt {
+				return Null, receiver, false, true, fmt.Errorf("Database.QueryLocator.querymore expects row count Integer")
+			}
+			records, ok := receiver.Fields["Records"]
+			if !ok || records.Kind != ValueList {
+				return Null, receiver, false, true, fmt.Errorf("Database.QueryLocator missing records")
+			}
+			count := int(args[0].Int)
+			if count < 0 {
+				count = 0
+			}
+			if count > len(records.List) {
+				count = len(records.List)
+			}
+			return List(append([]Value(nil), records.List[:count]...)...), receiver, false, true, nil
+		}
+	case "Database.Cursor":
+		switch method {
+		case "getNumRecords":
+			return databaseCursorNumRecords(receiver, method, args)
+		case "fetch":
+			return databaseCursorFetch(receiver, method, args, false)
+		}
+	case "Database.PaginationCursor":
+		switch method {
+		case "getNumRecords":
+			return databaseCursorNumRecords(receiver, method, args)
+		case "fetchPage":
+			return databaseCursorFetch(receiver, method, args, false)
+		case "fetchDeleted":
+			return databaseCursorFetch(receiver, method, args, true)
+		}
+	case "Database.GetDeletedResult":
+		switch method {
+		case "getDeletedRecords":
+			return databaseObjectGetter(receiver, method, args, "deletedRecords", List())
+		case "getEarliestDateAvailable":
+			return databaseObjectGetter(receiver, method, args, "earliestDateAvailable", Null)
+		case "getLatestDateCovered":
+			return databaseObjectGetter(receiver, method, args, "latestDateCovered", Null)
+		}
+	case "Database.DeletedRecord":
+		switch method {
+		case "getId":
+			return databaseObjectGetter(receiver, method, args, "id", Null)
+		case "getDeletedDate":
+			return databaseObjectGetter(receiver, method, args, "deleteddate", Null)
+		}
+	case "Database.GetUpdatedResult":
+		switch method {
+		case "getIds":
+			return databaseObjectGetter(receiver, method, args, "ids", List())
+		case "getLatestDateCovered":
+			return databaseObjectGetter(receiver, method, args, "latestDateCovered", Null)
+		}
+	case "Database.CursorFetchResult":
+		switch method {
+		case "getRecords":
+			return databaseObjectGetter(receiver, method, args, "records", List())
+		case "getNextIndex":
+			return databaseObjectGetter(receiver, method, args, "nextIndex", Int(0))
+		case "getNumDeletedRecords":
+			return databaseObjectGetter(receiver, method, args, "numDeletedRecords", Int(0))
+		case "isDone":
+			return databaseObjectGetter(receiver, method, args, "done", Bool(false))
 		}
 	case "QueueableContext", "BatchableContext", "Database.BatchableContext":
 		if method == "getJobId" {
@@ -28104,7 +28630,38 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return String(text[:15]), receiver, false, true, nil
 		}
-	case "Database.SaveResult", "Database.DeleteResult", "Database.UndeleteResult", "Database.EmptyRecycleBinResult", "Database.LockResult", "Database.UnlockResult":
+	case "OrgLimit":
+		switch method {
+		case "getName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("OrgLimit.getName expects 0 arguments")
+			}
+			return receiver.Fields["name"], receiver, false, true, nil
+		case "getValue":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("OrgLimit.getValue expects 0 arguments")
+			}
+			return receiver.Fields["value"], receiver, false, true, nil
+		case "getLimit":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("OrgLimit.getLimit expects 0 arguments")
+			}
+			return receiver.Fields["limit"], receiver, false, true, nil
+		case "clone":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("OrgLimit.clone expects 0 arguments")
+			}
+			return cloneValue(receiver), receiver, false, true, nil
+		case "toString":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("OrgLimit.toString expects 0 arguments")
+			}
+			if name, ok := receiver.Fields["name"]; ok && name.Kind == ValueString {
+				return name, receiver, false, true, nil
+			}
+			return String(""), receiver, false, true, nil
+		}
+	case "Database.SaveResult", "Database.DeleteResult", "Database.UndeleteResult", "Database.EmptyRecycleBinResult", "Database.LockResult", "Database.UnlockResult", "Approval.LockResult", "Approval.UnlockResult":
 		switch method {
 		case "isSuccess":
 			if len(args) != 0 {
@@ -28697,7 +29254,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return Null, receiver, false, true, unsupportedCallError("Http.send real network transport")
 		}
-	case "Cache.OrgPartition", "Cache.SessionPartition":
+	case "Cache.Partition", "Cache.OrgPartition", "Cache.SessionPartition", "cache.Partition", "cache.OrgPartition", "cache.SessionPartition":
 		value, updatedReceiver, err := vm.callCachePartitionMember(receiver, method, args)
 		return value, updatedReceiver, true, true, err
 	case "Auth.AuthConfiguration":
@@ -28800,6 +29357,18 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return callVisualEditorDynamicPickListRowsMember(receiver, method, args)
 	case "SelectOption":
 		return callSelectOptionMember(receiver, method, args)
+	case "Apex.Stack":
+		return callApexStackMember(receiver, method, args)
+	case "ApexPages.Action":
+		return callApexPagesActionMember(receiver, method, args)
+	case "ApexPages.Component", "ApexPages.ComponentIteration":
+		return callApexPagesComponentMember(receiver, method, args)
+	case "ApexPages.IdeaStandardController":
+		return callApexPagesIdeaStandardControllerMember(receiver, method, args)
+	case "ApexPages.IdeaStandardSetController":
+		return callApexPagesIdeaStandardSetControllerMember(receiver, method, args)
+	case "ApexPages.KnowledgeArticleVersionStandardController":
+		return callApexPagesKnowledgeArticleVersionStandardControllerMember(receiver, method, args)
 	case "ApexPages.StandardController":
 		return vm.callStandardControllerMember(receiver, method, args, result)
 	case "ApexPages.StandardSetController":
@@ -29053,12 +29622,83 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 		}
 		return Null, receiver, false, true, nil
 	}
+	if strings.EqualFold(method, "setError") {
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("%s.setError expects error message and localized error message Strings", receiver.Type)
+		}
+		receiver.Fields["errorMessage"] = args[0]
+		receiver.Fields["localizedErrorMessage"] = args[1]
+		receiver.Fields["success"] = Bool(false)
+		return Null, receiver, true, true, nil
+	}
+	if value, updated, mutated, handled, err := vm.callPassivePlatformDTOCollectionMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, handled, err
+	}
 	if suffix, ok := passiveAccessorSuffix(method, "set"); ok {
 		if len(args) != 1 {
 			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 argument", receiver.Type, method)
 		}
 		field := passiveAccessorFieldName(receiver, suffix)
 		receiver.Fields[field] = args[0]
+		return Null, receiver, true, true, nil
+	}
+	if suffix, ok := passiveAccessorSuffix(method, "add"); ok {
+		if len(args) != 1 && len(args) != 2 {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 or 2 arguments", receiver.Type, method)
+		}
+		if len(args) == 2 {
+			field := passiveAccessorFieldName(receiver, suffix)
+			actual, mapValue, ok := objectFieldValue(receiver, field)
+			if !ok {
+				actual = field
+			}
+			if mapValue.Kind != ValueMap {
+				mapValue = typedMap("Map<Object,Object>")
+			}
+			key := mapKey(args[0])
+			mapValue.Map[key] = args[1]
+			mapValue.MapKeys[key] = args[0]
+			receiver.Fields[actual] = mapValue
+			return Null, receiver, true, true, nil
+		}
+		field := passiveAccessorFieldName(receiver, suffix+"s")
+		actual, listValue, ok := objectFieldValue(receiver, field)
+		if !ok {
+			actual = field
+		}
+		if listValue.Kind != ValueList {
+			listValue = List()
+			listValue.Type = "List<Object>"
+		}
+		listValue.List = append(listValue.List, args[0])
+		receiver.Fields[actual] = listValue
+		return Null, receiver, true, true, nil
+	}
+	if suffix, ok := passiveAccessorSuffix(method, "remove"); ok {
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 argument", receiver.Type, method)
+		}
+		field := passiveAccessorFieldName(receiver, suffix+"s")
+		actual, listValue, ok := objectFieldValue(receiver, field)
+		if !ok {
+			mapField := passiveAccessorFieldName(receiver, suffix)
+			if actualMap, mapValue, mapOK := objectFieldValue(receiver, mapField); mapOK && mapValue.Kind == ValueMap {
+				delete(mapValue.Map, mapKey(args[0]))
+				delete(mapValue.MapKeys, mapKey(args[0]))
+				receiver.Fields[actualMap] = mapValue
+				return Null, receiver, true, true, nil
+			}
+		}
+		if ok && listValue.Kind == ValueList {
+			filtered := listValue
+			filtered.List = filtered.List[:0]
+			for _, item := range listValue.List {
+				if !item.Equal(args[0]) {
+					filtered.List = append(filtered.List, item)
+				}
+			}
+			receiver.Fields[actual] = filtered
+		}
 		return Null, receiver, true, true, nil
 	}
 	if suffix, ok := passiveAccessorSuffix(method, "get"); ok {
@@ -29082,6 +29722,55 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 		return Bool(false), receiver, false, true, nil
 	}
 	return Null, receiver, false, false, nil
+}
+
+func (vm *VM) callPassivePlatformDTOCollectionMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	spec, ok := vm.passivePlatformDTOMethod(receiver.Type, method, args)
+	if !ok || !generatedPlatformPassiveCollectionMethod(spec) {
+		return Null, receiver, false, false, nil
+	}
+	items := receiver.Fields["__items"]
+	if items.Kind != ValueList {
+		items = typedList("List<Object>")
+	}
+	switch strings.ToLower(method) {
+	case "size":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.size expects 0 arguments", receiver.Type)
+		}
+		return Int(int64(len(items.List))), receiver, false, true, nil
+	case "isempty":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.isEmpty expects 0 arguments", receiver.Type)
+		}
+		return Bool(len(items.List) == 0), receiver, false, true, nil
+	case "iterator", "getiterator":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+		}
+		return collectionIterator(items), receiver, false, true, nil
+	case "get", "getfromlist":
+		if len(args) != 1 || args[0].Kind != ValueInt {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects Integer index", receiver.Type, method)
+		}
+		index := int(args[0].Int)
+		if index < 0 || index >= len(items.List) {
+			return Null, receiver, false, true, newExceptionError("ListException", "List index out of bounds: "+strconv.Itoa(index))
+		}
+		return items.List[index], receiver, false, true, nil
+	case "indexof", "getindexof":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 argument", receiver.Type, method)
+		}
+		for i, item := range items.List {
+			if item.Equal(args[0]) {
+				return Int(int64(i)), receiver, false, true, nil
+			}
+		}
+		return Int(-1), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
 }
 
 func (vm *VM) callPassivePlatformDTOFluentMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -29179,7 +29868,7 @@ func (vm *VM) isPassivePlatformDTOType(typeName string) bool {
 		return false
 	}
 	if generated, ok := generatedPlatformTypeIndex[strings.ToLower(typeName)]; ok {
-		return vm.generatedPlatformPassiveDTOShape(generated)
+		return vm.generatedPlatformPassiveDTOShape(generated) || slackGeneratedPlatformPassiveDTOType(generated)
 	}
 	if class, ok := vm.lookupClass(typeName); ok && !passiveRuntimeClass(class) {
 		return false
@@ -29204,6 +29893,9 @@ func (vm *VM) generatedPlatformPassiveDTOShape(generated generatedPlatformType) 
 	if generated.Kind != apexast.DeclarationClass || generatedExecutionSurfaceRuntimeType(generated.Name) {
 		return false
 	}
+	if generatedPlatformPassiveCollectionShape(generated) {
+		return true
+	}
 	if strings.EqualFold(generated.Name, "Invocable.Action") {
 		return true
 	}
@@ -29213,6 +29905,9 @@ func (vm *VM) generatedPlatformPassiveDTOShape(generated generatedPlatformType) 
 	hasDataShape := len(generated.Fields) != 0 || len(generated.Constructors) != 0 || strings.HasSuffix(generated.Name, ".Builder")
 	for _, overloads := range generatedPlatformMethodIndex[strings.ToLower(generated.Name)] {
 		for _, method := range overloads {
+			if strings.HasPrefix(generated.Name, "ConnectApi.") && method.IsStatic && !generatedConnectAPIPassiveStaticMethod(generated.Name, method) {
+				return false
+			}
 			if method.IsStatic && strings.EqualFold(method.Name, "builder") && strings.HasSuffix(method.ReturnType, ".Builder") {
 				continue
 			}
@@ -29226,6 +29921,52 @@ func (vm *VM) generatedPlatformPassiveDTOShape(generated generatedPlatformType) 
 		}
 	}
 	return hasDataShape
+}
+
+func generatedPlatformPassiveCollectionShape(generated generatedPlatformType) bool {
+	short := generated.Name
+	if dot := strings.LastIndex(short, "."); dot >= 0 {
+		short = short[dot+1:]
+	}
+	if !(strings.HasSuffix(short, "Collection") || strings.HasSuffix(short, "List")) {
+		return false
+	}
+	hasCollectionMethod := false
+	for _, overloads := range generatedPlatformMethodIndex[strings.ToLower(generated.Name)] {
+		for _, method := range overloads {
+			if !generatedPlatformPassiveCollectionMethod(method) {
+				return false
+			}
+			if !genericObjectRuntimeMethod(method) {
+				hasCollectionMethod = true
+			}
+		}
+	}
+	return hasCollectionMethod
+}
+
+func generatedPlatformPassiveCollectionMethod(method Method) bool {
+	name := strings.ToLower(method.Name)
+	if dot := strings.LastIndex(name, "."); dot >= 0 {
+		name = name[dot+1:]
+	}
+	if genericObjectRuntimeMethod(method) {
+		return true
+	}
+	switch name {
+	case "size", "isempty", "iterator", "getiterator":
+		return len(method.Params) == 0
+	case "get", "getfromlist", "indexof", "getindexof":
+		return len(method.Params) == 1
+	default:
+		return false
+	}
+}
+
+func generatedConnectAPIPassiveStaticMethod(typeName string, method Method) bool {
+	return len(method.Params) == 0 &&
+		(strings.EqualFold(method.ReturnType, typeName) ||
+			(strings.EqualFold(method.Name, "builder") && strings.HasSuffix(method.ReturnType, ".Builder")))
 }
 
 func generatedExecutionSurfaceRuntimeType(typeName string) bool {
@@ -29254,6 +29995,13 @@ func generatedPlatformPassiveDTOMethod(method Method) bool {
 	case "build":
 		return true
 	default:
+		if len(method.Params) == 1 && strings.EqualFold(method.ReturnType, "void") &&
+			(strings.HasPrefix(name, "add") || strings.HasPrefix(name, "remove")) {
+			return true
+		}
+		if len(method.Params) == 2 && strings.EqualFold(method.ReturnType, "void") && strings.HasPrefix(name, "add") {
+			return true
+		}
 		if len(method.Params) == 1 && strings.EqualFold(method.ReturnType, method.ClassName) {
 			return true
 		}
@@ -29264,6 +30012,51 @@ func generatedPlatformPassiveDTOMethod(method Method) bool {
 	}
 }
 
+func slackGeneratedPlatformPassiveDTOType(generated generatedPlatformType) bool {
+	if generated.Kind != apexast.DeclarationClass || generatedExecutionSurfaceRuntimeType(generated.Name) {
+		return false
+	}
+	return slackGeneratedPlatformPassiveDTOTypeName(generated.Name)
+}
+
+func slackGeneratedPlatformPassiveDTOTypeName(typeName string) bool {
+	if !strings.HasPrefix(typeName, "Slack.") {
+		return false
+	}
+	short := typeName[strings.LastIndex(typeName, ".")+1:]
+	if strings.HasSuffix(short, "Client") && !strings.HasSuffix(short, "ClientMock") {
+		return false
+	}
+	return !strings.HasSuffix(short, "Dispatcher") && !strings.HasSuffix(short, "Provider")
+}
+
+func slackGeneratedPlatformPassiveDTOMethod(method Method) bool {
+	name := strings.ToLower(method.Name)
+	if dot := strings.LastIndex(name, "."); dot >= 0 {
+		name = name[dot+1:]
+	}
+	if method.IsStatic && name == "builder" && strings.HasSuffix(method.ReturnType, ".Builder") {
+		return true
+	}
+	if strings.HasPrefix(name, "get") || strings.HasPrefix(name, "set") || strings.HasPrefix(name, "is") {
+		return true
+	}
+	if strings.HasSuffix(method.ClassName, ".Builder") && (name == "build" || strings.EqualFold(method.ReturnType, method.ClassName)) {
+		return true
+	}
+	if method.ClassName == "Slack.Builder" && strings.HasSuffix(method.ReturnType, ".Builder") {
+		return true
+	}
+	if strings.HasSuffix(method.ClassName, "ClientMock") && strings.HasPrefix(method.ReturnType, "Slack.") {
+		return true
+	}
+	if strings.EqualFold(method.ReturnType, method.ClassName) {
+		return true
+	}
+	return collectionBase(method.ReturnType) == "List" || collectionBase(method.ReturnType) == "Set" || isMapType(method.ReturnType) ||
+		len(method.Params) == 0 && strings.HasPrefix(method.ReturnType, "Slack.")
+}
+
 func passiveRuntimeClass(class Class) bool {
 	return !class.IsTest &&
 		!class.IsInterface &&
@@ -29271,6 +30064,19 @@ func passiveRuntimeClass(class Class) bool {
 		passiveRuntimeConstructors(class.Constructors) &&
 		len(class.StaticInitializers) == 0 &&
 		len(class.InstanceInitializers) == 0
+}
+
+func genericObjectRuntimeMethod(method Method) bool {
+	name := strings.ToLower(method.Name)
+	if dot := strings.LastIndex(name, "."); dot >= 0 {
+		name = name[dot+1:]
+	}
+	switch name {
+	case "clone", "equals", "hashcode", "tostring":
+		return true
+	default:
+		return false
+	}
 }
 
 func passiveRuntimeMethods(methods map[string]Method) bool {
@@ -29809,7 +30615,8 @@ func (vm *VM) localHTTPMockResponse(mock Value, request Value) (Value, error) {
 func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Value) (Value, Value, error) {
 	name, ok := receiver.Fields["name"]
 	if !ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "" {
-		return Null, receiver, fmt.Errorf("%s partition missing name", receiver.Type)
+		name = String("default")
+		receiver.Fields["name"] = name
 	}
 	partitionName := cachePartitionKey(receiver.Type, name.Text)
 	method = strings.ToLower(method)
@@ -29817,6 +30624,19 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 	case "get":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, receiver, fmt.Errorf("%s.get expects key or CacheBuilder type and key", receiver.Type)
+		}
+		if len(args) == 1 && args[0].Kind == ValueSet {
+			out := typedMap("Map<String,Object>")
+			for _, key := range args[0].Set {
+				if key.Kind != ValueString {
+					return Null, receiver, fmt.Errorf("%s.get keys expects Set<String>", receiver.Type)
+				}
+				if value, ok := vm.cacheGet(partitionName, key.Text); ok {
+					out.Map[mapKey(key)] = value
+					out.MapKeys[mapKey(key)] = key
+				}
+			}
+			return out, receiver, nil
 		}
 		keyArg := args[0]
 		if len(args) == 2 {
@@ -29857,8 +30677,20 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 		}
 		return removed, receiver, nil
 	case "contains":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, receiver, fmt.Errorf("%s.contains expects String key", receiver.Type)
+		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueSet) {
+			return Null, receiver, fmt.Errorf("%s.contains expects String key or Set<String>", receiver.Type)
+		}
+		if args[0].Kind == ValueSet {
+			out := typedMap("Map<String,Boolean>")
+			for _, key := range args[0].Set {
+				if key.Kind != ValueString {
+					return Null, receiver, fmt.Errorf("%s.contains keys expects Set<String>", receiver.Type)
+				}
+				_, ok := vm.cacheGet(partitionName, key.Text)
+				out.Map[mapKey(key)] = Bool(ok)
+				out.MapKeys[mapKey(key)] = key
+			}
+			return out, receiver, nil
 		}
 		_, ok := vm.cacheGet(partitionName, args[0].Text)
 		return Bool(ok), receiver, nil
@@ -30440,6 +31272,128 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 	}
 }
 
+func callApexStackMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "empty", "peek", "pop", "push")
+	values := receiver.Fields["values"]
+	if values.Kind != ValueList {
+		values = List()
+	}
+	switch method {
+	case "empty":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Apex.Stack.empty expects 0 arguments")
+		}
+		return Bool(len(values.List) == 0), receiver, false, true, nil
+	case "peek":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Apex.Stack.peek expects 0 arguments")
+		}
+		if len(values.List) == 0 {
+			return Null, receiver, false, true, newExceptionError("Apex.EmptyStackException", "Stack is empty")
+		}
+		return values.List[len(values.List)-1], receiver, false, true, nil
+	case "pop":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Apex.Stack.pop expects 0 arguments")
+		}
+		if len(values.List) == 0 {
+			return Null, receiver, false, true, newExceptionError("Apex.EmptyStackException", "Stack is empty")
+		}
+		value := values.List[len(values.List)-1]
+		values.List = values.List[:len(values.List)-1]
+		receiver.Fields["values"] = values
+		return value, receiver, true, true, nil
+	case "push":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("Apex.Stack.push expects 1 argument")
+		}
+		values.List = append(values.List, args[0])
+		receiver.Fields["values"] = values
+		return args[0], receiver, true, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callApexPagesActionMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "getExpression", "invoke")
+	switch method {
+	case "getExpression":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.Action.getExpression expects 0 arguments")
+		}
+		if value, ok := receiver.Fields["expression"]; ok {
+			return value, receiver, false, true, nil
+		}
+		return String(""), receiver, false, true, nil
+	case "invoke":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.Action.invoke expects 0 arguments")
+		}
+		return Null, receiver, false, true, unsupportedCallError("ApexPages.Action.invoke local Visualforce action invocation surface")
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callApexPagesComponentMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "getComponentById")
+	if method != "getComponentById" {
+		return Null, receiver, false, false, nil
+	}
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, receiver, false, true, fmt.Errorf("%s.getComponentById expects id String", receiver.Type)
+	}
+	return Null, receiver, false, true, nil
+}
+
+func callApexPagesIdeaStandardControllerMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "getCommentList")
+	if method != "getCommentList" {
+		return Null, receiver, false, false, nil
+	}
+	if len(args) != 0 {
+		return Null, receiver, false, true, fmt.Errorf("ApexPages.IdeaStandardController.getCommentList expects 0 arguments")
+	}
+	return typedList("List<IdeaComment>"), receiver, false, true, nil
+}
+
+func callApexPagesIdeaStandardSetControllerMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "getIdeaList", "getListViewOptions")
+	switch method {
+	case "getIdeaList":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.IdeaStandardSetController.getIdeaList expects 0 arguments")
+		}
+		return typedList("List<Idea>"), receiver, false, true, nil
+	case "getListViewOptions":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.IdeaStandardSetController.getListViewOptions expects 0 arguments")
+		}
+		return typedList("List<SelectOption>"), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callApexPagesKnowledgeArticleVersionStandardControllerMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "getSourceId", "selectDataCategory")
+	switch method {
+	case "getSourceId":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.KnowledgeArticleVersionStandardController.getSourceId expects 0 arguments")
+		}
+		return Null, receiver, false, true, nil
+	case "selectDataCategory":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.KnowledgeArticleVersionStandardController.selectDataCategory expects group and category Strings")
+		}
+		return Null, receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
 func appendStandardControllerActionTrace(result *Result, phase, method string, record Value, extra map[string]any) {
 	args := standardControllerTraceArgs(method, record)
 	for key, value := range extra {
@@ -30477,6 +31431,15 @@ func (vm *VM) callStandardSetControllerMember(receiver Value, method string, arg
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.getRecords expects 0 arguments")
 		}
 		return standardSetCurrentPage(receiver, records), receiver, false, true, nil
+	case "getRecord":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.getRecord expects 0 arguments")
+		}
+		page := standardSetCurrentPage(receiver, records)
+		if len(page.List) == 0 {
+			return Null, receiver, false, true, nil
+		}
+		return page.List[0], receiver, false, true, nil
 	case "getResultSize":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.getResultSize expects 0 arguments")
@@ -30513,6 +31476,36 @@ func (vm *VM) callStandardSetControllerMember(receiver Value, method string, arg
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.getPageNumber expects 0 arguments")
 		}
 		return receiver.Fields["pageNumber"], receiver, false, true, nil
+	case "setPageNumber":
+		if len(args) != 1 || args[0].Kind != ValueInt || args[0].Int <= 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.setPageNumber expects positive Integer")
+		}
+		page := int(args[0].Int)
+		pageCount := standardSetPageCount(receiver, records)
+		if page > pageCount {
+			page = pageCount
+		}
+		receiver.Fields["pageNumber"] = Int(int64(page))
+		return Null, receiver, true, true, nil
+	case "getListViewOptions":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.getListViewOptions expects 0 arguments")
+		}
+		return typedList("List<SelectOption>"), receiver, false, true, nil
+	case "setFilterId":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.setFilterId expects String")
+		}
+		receiver.Fields["filterId"] = args[0]
+		return Null, receiver, true, true, nil
+	case "getFilterId":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.getFilterId expects 0 arguments")
+		}
+		if value, ok := receiver.Fields["filterId"]; ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
 	case "first":
 		receiver.Fields["pageNumber"] = Int(1)
 		return Null, receiver, true, true, nil

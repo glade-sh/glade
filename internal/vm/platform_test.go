@@ -150,9 +150,9 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "Approval.ProcessWorkitemRequest.setAction local approval process and lock surface"`,
 		},
 		{
-			name: "approval lock api",
-			src:  `Approval.lock(new Account(Name = 'Acme'));`,
-			want: `unsupported call "Approval.lock local approval process and lock surface"`,
+			name: "approval process api",
+			src:  `Approval.process(null);`,
+			want: `unsupported call "Approval.process local approval process and lock surface"`,
 		},
 		{
 			name: "auth oauth api",
@@ -1294,6 +1294,106 @@ System.assert(!FeatureManagement.checkPermission('OtherPermission'));
 	}
 }
 
+func TestExecBusinessHoursLocalTwentyFourSevenModel(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id businessHoursId = '01m000000000001AAA';
+Datetime start = Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0);
+System.assert(BusinessHours.isWithin(businessHoursId, start));
+System.assertEquals(start.addMilliseconds(1250), BusinessHours.add(businessHoursId, start, 1250));
+System.assertEquals(start.addMilliseconds(1250), BusinessHours.addGmt(businessHoursId, start, 1250));
+System.assertEquals(1250, BusinessHours.diff(businessHoursId, start, start.addMilliseconds(1250)));
+System.assertEquals(start, BusinessHours.nextStartDate(businessHoursId, start));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecOrgLimitsLocalSnapshot(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<OrgLimit> limits = OrgLimits.getAll();
+System.assert(limits.size() > 0);
+Map<String, OrgLimit> byName = OrgLimits.getMap();
+System.assert(byName.containsKey('DailyApiRequests'));
+OrgLimit api = byName.get('DailyApiRequests');
+System.assertEquals('DailyApiRequests', api.getName());
+System.assertEquals(100, api.getLimit());
+System.assertEquals(0, api.getValue());
+System.assertEquals('DailyApiRequests', api.toString());
+OrgLimit cloned = (OrgLimit)api.clone();
+System.assertEquals(api.getName(), cloned.getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSlackPassiveDTOBuildersAndMocks(t *testing.T) {
+	program, err := CompileAnonymous(`
+Slack.ChatPostMessageRequest request = Slack.ChatPostMessageRequest.builder().
+	channel('C123').
+	text('hello').
+	build();
+System.assertEquals('C123', request.getChannel());
+System.assertEquals('hello', request.getText());
+Slack.Message message = new Slack.Message();
+message.setText('local');
+System.assertEquals('local', message.getText());
+Slack.BotClientMock mock = new Slack.BotClientMock();
+Slack.AuthTestResponse response = mock.authTest(Slack.AuthTestRequest.builder().build());
+System.assertNotEquals(null, response);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecGeneratedCommerceDTOCollectionMutators(t *testing.T) {
+	program, err := CompileAnonymous(`
+commercestorepricing.PricingRequest request = new commercestorepricing.PricingRequest();
+commercestorepricing.PricingRequestItem item = new commercestorepricing.PricingRequestItem('01t000000000001AAA');
+request.addPricingRequestItem(item);
+System.assertEquals(1, request.getPricingRequestItems().size());
+System.assertEquals(item, request.getPricingRequestItems().get(0));
+System.assertEquals(0, request.getPricingRequestItems().indexOf(item));
+System.assert(request.getPricingRequestItems().iterator().hasNext());
+request.removePricingRequestItem(item);
+System.assertEquals(0, request.getPricingRequestItems().size());
+commercestorepricing.PsmIDCollection ids = new commercestorepricing.PsmIDCollection();
+System.assert(ids.isEmpty());
+System.assertEquals(-1, ids.getIndexOf('missing'));
+
+commercestoretax.GetStoreTaxesInfoResponse taxResponse = new commercestoretax.GetStoreTaxesInfoResponse(commercestoretax.TaxLocaleType.Net);
+commercestoretax.StoreTaxesInfoContainer taxInfo = new commercestoretax.StoreTaxesInfoContainer();
+taxResponse.addTaxesInfo('01t000000000001AAA', taxInfo);
+System.assertEquals(taxInfo, taxResponse.getTaxesInfo().get('01t000000000001AAA'));
+taxResponse.removeTaxesInfo('01t000000000001AAA');
+System.assert(taxResponse.getTaxesInfo().isEmpty());
+taxResponse.setError('bad', 'localized');
+System.assertEquals('bad', taxResponse.getErrorMessage());
+System.assertEquals('localized', taxResponse.getLocalizedErrorMessage());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecApexPagesPageReferenceAndMessagesEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 PageReference page = new PageReference('/apex/Trail');
@@ -1317,14 +1417,24 @@ System.assertEquals('Summary', withDetail.getSummary());
 System.assertEquals('Detail', withDetail.getDetail());
 ApexPages.Message withoutDetail = new ApexPages.Message('INFO', 'Only summary');
 System.assertEquals('Only summary', withoutDetail.getDetail());
+ApexPages.Action action = new ApexPages.Action('{!save}');
+System.assertEquals('{!save}', action.getExpression());
+ApexPages.Component component = new ApexPages.Component();
+System.assertEquals(null, component.getComponentById('missing'));
 ApexPages.addMessage(withDetail);
 ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.Error, 'Lowercase constructor'));
 ApexPages.addMessage(withoutDetail);
+ApexPages.addMessages(new List<ApexPages.Message>{new ApexPages.Message('WARNING', 'List message')});
+try {
+	throw new VisualforceException('Thrown message');
+} catch (Exception e) {
+	ApexPages.addMessages(e);
+}
 System.assert(ApexPages.hasMessages());
 System.assert(ApexPages.hasMessages(ApexPages.Severity.ERROR));
 System.assert(ApexPages.hasMessages(ApexPages.Severity.Info));
-System.assert(!ApexPages.hasMessages(ApexPages.Severity.WARNING));
-System.assertEquals(3, ApexPages.getMessages().size());
+System.assert(ApexPages.hasMessages(ApexPages.Severity.WARNING));
+System.assertEquals(5, ApexPages.getMessages().size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1425,10 +1535,14 @@ System.assertEquals('Changed', option.getLabel());
 System.assertEquals(false, option.getDisabled());
 ApexPages.StandardSetController setController = new ApexPages.StandardSetController(new List<Account>{account, new Account(Name = 'Second')});
 System.assertEquals(2, setController.getResultSize());
+System.assertEquals(account, setController.getRecord());
+System.assertEquals(0, setController.getListViewOptions().size());
+setController.setFilterId('00B000000000001');
+System.assertEquals('00B000000000001', setController.getFilterId());
 setController.setPageSize(1);
 System.assertEquals(1, setController.getRecords().size());
 System.assert(setController.getHasNext());
-setController.next();
+setController.setPageNumber(2);
 System.assertEquals(2, setController.getPageNumber());
 System.assert(setController.getHasPrevious());
 `)
@@ -2748,6 +2862,75 @@ System.assertEquals('pkg.Thing', namespaced.getName());
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseDMLAsyncAndImmediateAliases(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account asyncAccount = new Account(Name = 'Async');
+Object asyncResult = Database.insertAsync(asyncAccount);
+Object saved = Database.getAsyncSaveResult(asyncResult);
+System.assert(saved.isSuccess());
+System.assertNotEquals(null, saved.getId());
+
+Account immediateUpdate = new Account(Id = saved.getId(), Name = 'Immediate');
+Object updateResult = Database.updateImmediate(immediateUpdate, false);
+System.assert(updateResult.isSuccess());
+
+Object deleteResult = Database.deleteAsync(immediateUpdate, false);
+Object deleted = Database.getAsyncDeleteResult(deleteResult);
+System.assert(deleted.isSuccess());
+
+List<Account> rows = Database.query('SELECT Id, Name, IsDeleted FROM Account WHERE Name = ''Immediate'' ALL ROWS');
+System.assertEquals(1, rows.size());
+System.assertEquals(true, rows.get(0).get('IsDeleted'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseCursorAndReplicationPlaceholders(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme');
+insert new Account(Name = 'Beta');
+
+Database.Cursor cursor = Database.getCursor('SELECT Id, Name FROM Account ORDER BY Name');
+System.assertEquals(2, cursor.getNumRecords());
+List<SObject> first = cursor.fetch(0, 1);
+System.assertEquals(1, first.size());
+
+Database.PaginationCursor page = Database.getPaginationCursor('SELECT Id, Name FROM Account ORDER BY Name');
+Database.CursorFetchResult pageResult = page.fetchPage(1, 10);
+System.assertEquals(1, pageResult.getRecords().size());
+System.assertEquals(true, pageResult.isDone());
+System.assertEquals(0, page.fetchDeleted(0, 10));
+
+Datetime start = Datetime.newInstanceGmt(2026, 5, 15, 0, 0, 0);
+Datetime finish = Datetime.newInstanceGmt(2026, 5, 15, 1, 0, 0);
+Database.GetDeletedResult deleted = Database.getDeleted('Account', start, finish);
+System.assertEquals(0, deleted.getDeletedRecords().size());
+System.assertEquals(start, deleted.getEarliestDateAvailable());
+System.assertEquals(finish, deleted.getLatestDateCovered());
+
+Database.GetUpdatedResult updated = Database.getUpdated('Account', start, finish);
+System.assertEquals(0, updated.getIds().size());
+System.assertEquals(finish, updated.getLatestDateCovered());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

@@ -66,6 +66,8 @@ type StubInventoryGaps struct {
 	SObjectSourceMissingActiveSample          []string `json:"sobjectSourceMissingActiveSample,omitempty"`
 	SObjectFieldMissingActiveCount            int      `json:"sobjectFieldMissingActiveCount"`
 	SObjectFieldMissingActiveSample           []string `json:"sobjectFieldMissingActiveSample,omitempty"`
+	SObjectFieldMissingFeatureGatedCount      int      `json:"sobjectFieldMissingFeatureGatedCount"`
+	SObjectFieldMissingFeatureGatedSample     []string `json:"sobjectFieldMissingFeatureGatedSample,omitempty"`
 	SObjectFieldMissingSupportedFeatureCount  int      `json:"sobjectFieldMissingSupportedFeatureCount"`
 	SObjectFieldMissingSupportedFeatureSample []string `json:"sobjectFieldMissingSupportedFeatureSample,omitempty"`
 }
@@ -194,6 +196,9 @@ func BuildStubInventoryReport(sourceRoot string) (StubInventoryReport, error) {
 	report.Gaps.SObjectFieldMissingActiveCount = len(missingActiveFields)
 	report.Gaps.SObjectFieldMissingActiveSample = firstInventoryNames(missingActiveFields, 25)
 	missingSupportedFeatureFields := missingSObjectFields(sobjectSourceFields, activeObjectNames, featureActiveFields)
+	missingFeatureGatedFields := inventoryNameDifference(missingActiveFields, missingSupportedFeatureFields)
+	report.Gaps.SObjectFieldMissingFeatureGatedCount = len(missingFeatureGatedFields)
+	report.Gaps.SObjectFieldMissingFeatureGatedSample = firstInventoryNames(missingFeatureGatedFields, 25)
 	report.Gaps.SObjectFieldMissingSupportedFeatureCount = len(missingSupportedFeatureFields)
 	report.Gaps.SObjectFieldMissingSupportedFeatureSample = firstInventoryNames(missingSupportedFeatureFields, 25)
 
@@ -232,6 +237,9 @@ func WriteStubInventoryMarkdown(w io.Writer, report StubInventoryReport) error {
 		return err
 	}
 	if _, err := fmt.Fprintf(w, "- SObject fields missing active field: %d\n", report.Gaps.SObjectFieldMissingActiveCount); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "- SObject fields missing only default feature gate: %d\n", report.Gaps.SObjectFieldMissingFeatureGatedCount); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintf(w, "- SObject fields missing supported-feature field: %d\n", report.Gaps.SObjectFieldMissingSupportedFeatureCount); err != nil {
@@ -372,6 +380,21 @@ func missingSObjectFields(sourceFields map[string]map[string]string, activeObjec
 	}
 	sort.Strings(missing)
 	return missing
+}
+
+func inventoryNameDifference(names []string, excluded []string) []string {
+	excludedSet := map[string]struct{}{}
+	for _, name := range excluded {
+		excludedSet[name] = struct{}{}
+	}
+	var out []string
+	for _, name := range names {
+		if _, ok := excludedSet[name]; !ok {
+			out = append(out, name)
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 func firstInventoryNames(names []string, limit int) []string {

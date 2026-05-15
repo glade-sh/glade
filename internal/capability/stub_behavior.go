@@ -178,7 +178,7 @@ func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys
 }
 
 func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.MemberSymbol) (StubBehaviorStatus, string, bool) {
-	if member.Kind != apexast.DeclarationMethod {
+	if member.Kind != apexast.DeclarationMethod && member.Kind != apexast.DeclarationConstructor {
 		return "", "", false
 	}
 	if genericObjectBehaviorMethod(member) {
@@ -196,8 +196,23 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if corePlatformBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "core platform method is handled by the VM stdlib/runtime surface", true
 	}
+	if xmlStreamReaderBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "XmlStreamReader cursor and accessor method is handled by the VM XML stream surface", true
+	}
+	if domXmlNodeBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "Dom.XmlNode method is handled by the VM DOM node surface", true
+	}
+	if databaseResultDTOBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "Database/Approval result DTO accessor is handled by the VM result object surface", true
+	}
 	if explicitlyUnsupportedCoreBehaviorMethod(symbol, member) {
 		return StubBehaviorUnsupported, "local runtime returns an explicit unsupported-feature error for this platform surface", true
+	}
+	if slackPassiveBehaviorMethod(symbol, member) {
+		return StubBehaviorPassiveDefault, "Slack DTO, builder, or mock placeholder method returns local passive/default values without performing Slack service calls", true
+	}
+	if generatedDTOCollectionBehaviorMethod(symbol, member) {
+		return StubBehaviorPassiveDefault, "passive generated DTO collection wrapper exposes local empty collection semantics", true
 	}
 	if generatedDTOAccessorBehaviorMethod(symbol, member) {
 		return StubBehaviorPassiveDefault, "passive generated DTO getter/setter returns or mutates the matching property when available, otherwise uses a typed default", true
@@ -249,6 +264,16 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return true
 	}
 	switch typeName {
+	case "BusinessHours":
+		switch name {
+		case "add", "addgmt", "diff", "iswithin", "nextstartdate":
+			return true
+		}
+	case "OrgLimits":
+		switch name {
+		case "getall", "getmap":
+			return true
+		}
 	case "Id":
 		switch name {
 		case "getsobjecttype", "to15", "to18", "valueof":
@@ -259,7 +284,7 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 	case "LIST", "List", "Set", "Map":
 		switch name {
 		case "add", "addall", "clear", "contains", "containsall", "get", "getsobjecttype",
-			"indexof", "isempty", "iterator", "put", "putall", "remov", "remove",
+			"deepclone", "indexof", "isempty", "iterator", "put", "putall", "remov", "remove",
 			"removeall", "retainall", "set", "size", "sort":
 			return true
 		}
@@ -302,13 +327,18 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 	case "Assert":
 		switch name {
 		case "areequal", "arenotequal", "istrue", "isfalse", "isnull", "isnotnull",
-			"isinstanceoftype", "fail":
+			"isinstanceoftype", "isnotinstanceoftype", "fail":
+			return true
+		}
+	case "Apex.Stack":
+		switch name {
+		case "empty", "peek", "pop", "push":
 			return true
 		}
 	case "EventBus":
 		return name == "publish" || name == "getoperationid"
-	case "Cache.Org", "Cache.Session", "Cache.OrgPartition", "Cache.SessionPartition",
-		"cache.Org", "cache.Session", "cache.OrgPartition", "cache.SessionPartition":
+	case "Cache.Org", "Cache.Session", "Cache.Partition", "Cache.OrgPartition", "Cache.SessionPartition",
+		"cache.Org", "cache.Session", "cache.Partition", "cache.OrgPartition", "cache.SessionPartition":
 		return cacheBehaviorMethod(name)
 	case "FeatureManagement":
 		return strings.HasPrefix(name, "checkpackage") || strings.HasPrefix(name, "setpackage")
@@ -326,11 +356,40 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		case "sendemail", "renderstoredemailtemplate", "reservesingleemailcapacity", "reservemassemailcapacity":
 			return true
 		}
+	case "ApexPages":
+		switch name {
+		case "hasmessages", "addmessage", "addmessages", "getmessages", "currentpage":
+			return true
+		}
 	case "Database":
 		switch name {
 		case "query", "querywithbinds", "countquery", "countquerywithbinds", "getquerylocator",
-			"getquerylocatorwithbinds", "insert", "update", "upsert", "delete", "undelete",
-			"emptyrecyclebin", "merge", "setsavepoint", "rollback":
+			"getquerylocatorwithbinds", "getcursor", "getcursorwithbinds", "getpaginationcursor",
+			"getpaginationcursorwithbinds", "insert", "update", "upsert", "delete", "undelete",
+			"insertasync", "updateasync", "deleteasync", "insertimmediate", "updateimmediate",
+			"deleteimmediate", "getasyncsaveresult", "getasyncdeleteresult", "getdeleted", "getupdated",
+			"emptyrecyclebin", "lock", "unlock", "merge", "setsavepoint", "releasesavepoint", "rollback":
+			return true
+		}
+	case "Database.QueryLocator":
+		return name == "getquery" || name == "iterator" || name == "querymore"
+	case "Database.QueryLocatorIterator", "Database.QueryLocatorChunkIterator":
+		return name == "hasnext" || name == "next"
+	case "Database.Cursor":
+		return name == "fetch" || name == "getnumrecords"
+	case "Database.PaginationCursor":
+		return name == "fetchpage" || name == "fetchdeleted" || name == "getnumrecords"
+	case "Database.CursorFetchResult":
+		return name == "getrecords" || name == "getnextindex" || name == "getnumdeletedrecords" || name == "isdone"
+	case "Database.GetDeletedResult":
+		return name == "getdeletedrecords" || name == "getearliestdateavailable" || name == "getlatestdatecovered"
+	case "Database.GetUpdatedResult":
+		return name == "getids" || name == "getlatestdatecovered"
+	case "Database.DeletedRecord":
+		return name == "getid" || name == "getdeleteddate"
+	case "Approval":
+		switch name {
+		case "lock", "unlock", "islocked":
 			return true
 		}
 	case "System":
@@ -433,6 +492,8 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return name == "getsettings"
 	case "ConnectApi.Communities":
 		return name == "getcommunity"
+	case "ConnectApi.ChatterUsers":
+		return name == "getfollowings"
 	case "ConnectApi.UserProfiles":
 		return name == "setphoto" || name == "deletephoto"
 	case "QueueableDuplicateSignature":
@@ -479,6 +540,10 @@ func apexPagesBehaviorMethod(typeName, methodName string) bool {
 	switch typeName {
 	case "ApexPages.Message":
 		return strings.HasPrefix(methodName, "get")
+	case "ApexPages.Action":
+		return methodName == "getexpression"
+	case "ApexPages.Component", "ApexPages.ComponentIteration":
+		return methodName == "getcomponentbyid"
 	case "ApexPages.StandardController":
 		switch methodName {
 		case "getid", "getrecord", "save", "quicksave", "delete", "view", "edit", "cancel", "reset", "addfields":
@@ -487,10 +552,12 @@ func apexPagesBehaviorMethod(typeName, methodName string) bool {
 	case "ApexPages.StandardSetController":
 		return apexPagesStandardSetControllerMethod(methodName)
 	case "ApexPages.IdeaStandardSetController":
-		return apexPagesStandardSetControllerMethod(methodName) || methodName == "getrecord" || methodName == "setpagenumber"
+		return apexPagesStandardSetControllerMethod(methodName) || methodName == "getrecord" ||
+			methodName == "setpagenumber" || methodName == "getidealist" || methodName == "getlistviewoptions"
 	case "ApexPages.IdeaStandardController", "ApexPages.KnowledgeArticleVersionStandardController":
 		switch methodName {
-		case "getid", "getrecord", "save", "quicksave", "delete", "view", "edit", "cancel", "reset", "addfields":
+		case "getid", "getrecord", "save", "quicksave", "delete", "view", "edit", "cancel", "reset", "addfields",
+			"getcommentlist", "getsourceid", "selectdatacategory":
 			return true
 		}
 	}
@@ -502,7 +569,8 @@ func apexPagesStandardSetControllerMethod(methodName string) bool {
 	case "getrecords", "getselected", "setselected", "getpagesize", "setpagesize",
 		"getpagenumber", "first", "last", "next", "previous", "gethasnext",
 		"gethasprevious", "getcompleteresult", "getresultsize", "setfilterid",
-		"getfilterid", "save", "cancel", "addfields":
+		"getfilterid", "getlistviewoptions", "getrecord", "setpagenumber",
+		"save", "cancel", "addfields":
 		return true
 	default:
 		return false
@@ -639,8 +707,8 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 	case "LIST":
 		return true
 	case "Approval":
-		return true
-	case "BusinessHours", "Database.UnitOfWork", "FlexQueue":
+		return name != "lock" && name != "unlock" && name != "islocked"
+	case "Database.UnitOfWork", "FlexQueue":
 		return true
 	case "Crypto":
 		switch name {
@@ -658,8 +726,6 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 			return true
 		}
 	case "UserManagement":
-		return true
-	case "XmlStreamReader":
 		return true
 	case "Test":
 		switch name {
@@ -691,19 +757,95 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 		return name == "getcontent" || name == "getcontentaspdf" || name == "setcookies"
 	case "Database":
 		switch name {
-		case "convertlead", "deleteasync", "deleteimmediate", "executebatch", "getasyncdeleteresult",
-			"getasynclocator", "getasyncsaveresult", "getcursor", "getcursorwithbinds",
-			"getdeleted", "getpaginationcursor", "getpaginationcursorwithbinds", "getupdated",
-			"insertasync", "insertimmediate", "releasesavepoint", "treesave", "updateasync",
-			"updateimmediate":
+		case "convertlead", "executebatch", "getasynclocator", "treesave":
 			return true
 		}
 	case "Messaging":
 		return name == "extractinboundemail"
 	default:
+		if connectAPIExternalServiceBehaviorMethod(symbol, member) {
+			return true
+		}
 		return false
 	}
 	return false
+}
+
+func xmlStreamReaderBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if !strings.EqualFold(stubBehaviorTypeName(symbol), "XmlStreamReader") ||
+		(member.Kind != apexast.DeclarationMethod && member.Kind != apexast.DeclarationConstructor) {
+		return false
+	}
+	if member.Kind == apexast.DeclarationConstructor {
+		return true
+	}
+	switch strings.ToLower(member.Name) {
+	case "<init>", "xmlstreamreader",
+		"getattributecount", "getattributelocalname", "getattributenamespace",
+		"getattributeprefix", "getattributetype", "getattributevalue", "getattributevalueat",
+		"geteventtype", "getlocalname", "getlocation", "getnamespace", "getnamespacecount",
+		"getnamespaceprefix", "getnamespaceuri", "getnamespaceuriat", "getpidata", "getpitarget",
+		"getprefix", "gettext", "getversion", "hasname", "hasnext", "hastext",
+		"ischaracters", "isendelement", "isstartelement", "iswhitespace", "next", "nexttag",
+		"setcoalescing", "setnamespaceaware":
+		return true
+	default:
+		return false
+	}
+}
+
+func domXmlNodeBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if !strings.EqualFold(stubBehaviorTypeName(symbol), "Dom.XmlNode") || member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	switch strings.ToLower(member.Name) {
+	case "addchildelement", "addcommentnode", "addtextnode",
+		"getattribute", "getattributecount", "getattributekeyat", "getattributekeynsat",
+		"getattributevalue", "getattributevaluens", "getchildelement", "getchildelements",
+		"getchildren", "getname", "getnamespace", "getnamespacefor", "getnodetype",
+		"getparent", "getprefixfor", "gettext", "insertbefore", "removeattribute",
+		"removechild", "setattribute", "setattributens", "setnamespace":
+		return true
+	default:
+		return false
+	}
+}
+
+func connectAPIExternalServiceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	typeName := stubBehaviorTypeName(symbol)
+	if !strings.HasPrefix(typeName, "ConnectApi.") || !stubBehaviorMemberStatic(member) {
+		return false
+	}
+	if len(member.Parameters) == 0 &&
+		(strings.EqualFold(member.Type, typeName) ||
+			(strings.EqualFold(member.Name, "builder") && strings.HasSuffix(member.Type, ".Builder"))) {
+		return false
+	}
+	return true
+}
+
+func databaseResultDTOBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	switch typeName {
+	case "Database.SaveResult", "Database.DeleteResult", "Database.UndeleteResult",
+		"Database.EmptyRecycleBinResult", "Database.LockResult", "Database.UnlockResult",
+		"Approval.LockResult", "Approval.UnlockResult":
+		return name == "issuccess" || name == "getid" || name == "geterrors"
+	case "Database.UpsertResult":
+		return name == "issuccess" || name == "getid" || name == "geterrors" || name == "iscreated"
+	case "Database.MergeResult":
+		return name == "issuccess" || name == "getid" || name == "geterrors" ||
+			name == "getmergedrecordids" || name == "getupdatedrelatedids"
+	case "Database.Error":
+		return name == "getmessage" || name == "getstatuscode" || name == "getfields" ||
+			name == "getextendederrordetails"
+	default:
+		return false
+	}
 }
 
 func stringBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
@@ -773,10 +915,78 @@ func generatedDTOAccessorBehaviorMethod(symbol typesys.TypeSymbol, member typesy
 	}
 }
 
+func generatedDTOCollectionBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if !generatedDTOCollectionBehaviorType(symbol) || member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	return generatedDTOCollectionBehaviorMethodShape(member)
+}
+
+func generatedDTOCollectionBehaviorMethodShape(member typesys.MemberSymbol) bool {
+	name := strings.ToLower(member.Name)
+	if genericObjectBehaviorMethod(member) {
+		return true
+	}
+	switch name {
+	case "size", "isempty", "iterator", "getiterator":
+		return len(member.Parameters) == 0
+	case "get", "getfromlist", "indexof", "getindexof":
+		return len(member.Parameters) == 1
+	default:
+		return false
+	}
+}
+
+func slackPassiveBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	if !strings.HasPrefix(typeName, "Slack.") || slackServiceBehaviorType(typeName) {
+		return false
+	}
+	name := strings.ToLower(member.Name)
+	return slackPassiveMethodShape(typeName, name, member.Type, member.Parameters, stubBehaviorMemberStatic(member))
+}
+
+func slackServiceBehaviorType(typeName string) bool {
+	short := typeName[strings.LastIndex(typeName, ".")+1:]
+	if strings.HasSuffix(short, "Client") && !strings.HasSuffix(short, "ClientMock") {
+		return true
+	}
+	return strings.HasSuffix(short, "Dispatcher") || strings.HasSuffix(short, "Provider")
+}
+
+func slackPassiveMethodShape(typeName, methodName, returnType string, params []apexast.Parameter, static bool) bool {
+	if static && methodName == "builder" && strings.HasSuffix(returnType, ".Builder") {
+		return true
+	}
+	if strings.HasPrefix(methodName, "get") || strings.HasPrefix(methodName, "set") || strings.HasPrefix(methodName, "is") {
+		return true
+	}
+	if strings.HasSuffix(typeName, ".Builder") && (methodName == "build" || strings.EqualFold(returnType, typeName)) {
+		return true
+	}
+	if typeName == "Slack.Builder" && strings.HasSuffix(returnType, ".Builder") {
+		return true
+	}
+	if strings.HasSuffix(typeName, "ClientMock") && strings.HasPrefix(returnType, "Slack.") {
+		return true
+	}
+	if strings.EqualFold(returnType, typeName) {
+		return true
+	}
+	return generatedDTOCollectionReturnType(returnType) || len(params) == 0 && strings.HasPrefix(returnType, "Slack.")
+}
+
 func generatedDTOCollectionMethod(member typesys.MemberSymbol) bool {
-	return strings.HasPrefix(member.Type, "List<") ||
-		strings.HasPrefix(member.Type, "Set<") ||
-		strings.HasPrefix(member.Type, "Map<")
+	return generatedDTOCollectionReturnType(member.Type)
+}
+
+func generatedDTOCollectionReturnType(returnType string) bool {
+	return strings.HasPrefix(returnType, "List<") ||
+		strings.HasPrefix(returnType, "Set<") ||
+		strings.HasPrefix(returnType, "Map<")
 }
 
 func generatedDTOBehaviorType(symbol typesys.TypeSymbol) bool {
@@ -802,6 +1012,37 @@ func generatedDTOBehaviorType(symbol typesys.TypeSymbol) bool {
 		return false
 	}
 	return generatedPassiveDTOShape(symbol)
+}
+
+func generatedDTOCollectionBehaviorType(symbol typesys.TypeSymbol) bool {
+	typeName := stubBehaviorTypeName(symbol)
+	if typeName == "" || !strings.Contains(typeName, ".") || symbol.Kind != apexast.DeclarationClass {
+		return false
+	}
+	short := typeName[strings.LastIndex(typeName, ".")+1:]
+	if !(strings.HasSuffix(short, "Collection") || strings.HasSuffix(short, "List")) {
+		return false
+	}
+	if generatedExecutionSurfaceType(typeName) {
+		return false
+	}
+	hasCollectionMethod := false
+	for _, member := range symbol.Members {
+		switch member.Kind {
+		case apexast.DeclarationConstructor:
+			continue
+		case apexast.DeclarationMethod:
+			if !generatedDTOCollectionBehaviorMethodShape(member) {
+				return false
+			}
+			if !genericObjectBehaviorMethod(member) {
+				hasCollectionMethod = true
+			}
+		default:
+			return false
+		}
+	}
+	return hasCollectionMethod
 }
 
 func generatedExecutionSurfaceType(typeName string) bool {
@@ -843,6 +1084,11 @@ func generatedPassiveDTOMethod(member typesys.MemberSymbol) bool {
 	}
 	switch {
 	case name == "getbuildversion":
+		return true
+	case len(member.Parameters) == 1 && strings.EqualFold(member.Type, "void") &&
+		(strings.HasPrefix(name, "add") || strings.HasPrefix(name, "remove")):
+		return true
+	case len(member.Parameters) == 2 && strings.EqualFold(member.Type, "void") && strings.HasPrefix(name, "add"):
 		return true
 	case strings.HasPrefix(name, "get"), strings.HasPrefix(name, "set"), strings.HasPrefix(name, "is"):
 		return true

@@ -189,6 +189,8 @@ System.Assert.isTrue(1 < 2);
 System.Assert.isFalse(2 < 1);
 System.Assert.isNull(null);
 System.Assert.isNotNull('value');
+System.Assert.isInstanceOfType('value', String.class, 'type');
+System.Assert.isNotInstanceOfType('value', Account.class, 'type');
 SYSTEM.assert.AREEQUAL('trail', 'trail');
 Assert.areEqual('short', 'short');
 `)
@@ -232,6 +234,11 @@ func TestExecSystemAssertClassFailures(t *testing.T) {
 			want:   "value should not be null: missing",
 		},
 		{
+			name:   "isNotInstanceOfType",
+			source: "System.Assert.isNotInstanceOfType(new Account(), Account.class, 'type');",
+			want:   "expected not instance of <Account>, actual <Account>: type",
+		},
+		{
 			name:   "fail",
 			source: "System.Assert.fail('forced');",
 			want:   "assertion failed: forced",
@@ -252,6 +259,44 @@ func TestExecSystemAssertClassFailures(t *testing.T) {
 				t.Fatalf("runtime error = (%q, %q), want System.AssertException %q", runtimeErr.Type, runtimeErr.Message, tt.want)
 			}
 		})
+	}
+}
+
+func TestExecApexStackLowRiskBehavior(t *testing.T) {
+	program, err := CompileAnonymous(`
+Apex.Stack stack = new Apex.Stack();
+System.assert(stack.empty());
+System.assertEquals('one', stack.push('one'));
+stack.push('two');
+System.assert(!stack.empty());
+System.assertEquals('two', stack.peek());
+System.assertEquals('two', stack.pop());
+System.assertEquals('one', stack.pop());
+System.assert(stack.empty());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexStackEmptyPopRaisesException(t *testing.T) {
+	program, err := CompileAnonymous(`
+Apex.Stack stack = new Apex.Stack();
+try {
+	stack.pop();
+	System.assert(false);
+} catch (Apex.EmptyStackException e) {
+	System.assertEquals('Apex.EmptyStackException', e.getTypeName());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 

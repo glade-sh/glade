@@ -13,7 +13,9 @@ Current checked baseline:
 
 - System/product stub source types missing generated OAER types: 0
 - SObject stub source objects missing active OAER objects: 0
-- SObject stub fields missing active fields with supported feature gates: 0
+- SObject stub fields missing after supported feature gates: 0
+- SObject stub fields missing only because their org feature gate is disabled
+  remain reported separately from unsupported field gaps.
 - Remaining work is behavioral support, not type-shape coverage.
 
 ## Phase 1: Behavior Inventory Gate

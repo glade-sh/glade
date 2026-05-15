@@ -245,6 +245,47 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	}
 }
 
+func (vm *VM) orgLimitValues() []Value {
+	type orgLimitSpec struct {
+		name  string
+		used  int
+		limit int
+	}
+	vm.limits.HeapSize = vm.currentHeapSize()
+	specs := []orgLimitSpec{
+		{name: "DailyApiRequests", used: vm.limits.Callouts, limit: vm.limitCaps.Callouts},
+		{name: "DailyAsyncApexExecutions", used: vm.limits.AsyncJobs, limit: vm.limitCaps.AsyncJobs},
+		{name: "DailyBulkApiBatches", used: vm.limits.BatchJobs, limit: vm.limitCaps.BatchJobs},
+		{name: "DailyDurableGenericStreamingApiEvents", used: 0, limit: 10000},
+		{name: "DailyDurableStreamingApiEvents", used: 0, limit: 10000},
+		{name: "DailyStreamingApiEvents", used: 0, limit: 10000},
+		{name: "DataStorageMB", used: 0, limit: 5},
+		{name: "FileStorageMB", used: 0, limit: 20},
+		{name: "HourlyAsyncReportRuns", used: 0, limit: 1200},
+		{name: "HourlyDashboardRefreshes", used: 0, limit: 200},
+		{name: "HourlyDashboardResults", used: 0, limit: 5000},
+		{name: "HourlyDashboardStatuses", used: 0, limit: 999999},
+		{name: "HourlyODataCallout", used: vm.limits.Callouts, limit: vm.limitCaps.Callouts},
+		{name: "HourlySyncReportRuns", used: 0, limit: 500},
+		{name: "HourlyTimeBasedWorkflow", used: 0, limit: 1000},
+		{name: "MassEmail", used: vm.limits.EmailInvokes, limit: vm.limitCaps.EmailInvokes},
+		{name: "SingleEmail", used: vm.limits.EmailInvokes, limit: vm.limitCaps.EmailInvokes},
+	}
+	values := make([]Value, 0, len(specs))
+	for _, spec := range specs {
+		values = append(values, orgLimitValue(spec.name, spec.used, spec.limit))
+	}
+	return values
+}
+
+func orgLimitValue(name string, used, limit int) Value {
+	out := Object("OrgLimit")
+	out.Fields["name"] = String(name)
+	out.Fields["value"] = Int(int64(used))
+	out.Fields["limit"] = Int(int64(limit))
+	return out
+}
+
 func unsupportedLimitGetter(name string) bool {
 	name = canonicalLimitGetterName(name)
 	switch name {

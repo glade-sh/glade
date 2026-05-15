@@ -6848,25 +6848,41 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "Dom.XmlNode", params: [][]string{{}}}, true
 		case "load":
 			return semaCollectionSignature{returnType: "void", params: [][]string{{"String"}}}, true
+		case "createrootelement":
+			return semaCollectionSignature{returnType: "Dom.XmlNode", params: [][]string{{"String", "String", "String"}}}, true
 		}
 	case "dom.xmlnode":
 		switch method {
-		case "gettext", "getname", "getnamespace", "getprefix", "getattribute", "getcommenttext":
-			return semaCollectionSignature{returnType: "String", params: [][]string{{}, {"String", "String"}}}, true
+		case "gettext", "getname", "getnamespace", "getprefix", "getcommenttext":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		case "getprefixfor", "getnamespacefor":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"String"}}}, true
+		case "getattribute", "getattributevalue", "getattributevaluens":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"String", "String"}}}, true
 		case "getparent":
 			return semaCollectionSignature{returnType: "Dom.XmlNode", params: [][]string{{}}}, true
 		case "getchildelement":
 			return semaCollectionSignature{returnType: "Dom.XmlNode", params: [][]string{{"String", "String"}}}, true
-		case "getchildren":
+		case "getchildren", "getchildelements":
 			return semaCollectionSignature{returnType: "List<Dom.XmlNode>", params: [][]string{{}}}, true
 		case "getnodetype":
 			return semaCollectionSignature{returnType: "Dom.XmlNodeType", params: [][]string{{}}}, true
 		case "getattributecount":
 			return semaCollectionSignature{returnType: "Integer", params: [][]string{{}}}, true
-		case "removeattribute", "setattributens":
-			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "String"}, {"String", "String", "String", "String"}}}, true
-		case "removechild", "insertbefore":
-			return semaCollectionSignature{returnType: "void", params: [][]string{{"Dom.XmlNode"}, {"Dom.XmlNode", "Dom.XmlNode"}}}, true
+		case "getattributekeyat", "getattributekeynsat":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"Integer"}}}, true
+		case "setattribute":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "String"}}}, true
+		case "setattributens":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "String", "String", "String"}}}, true
+		case "setnamespace":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "String"}}}, true
+		case "removeattribute":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"String", "String"}}}, true
+		case "removechild":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"Object"}}}, true
+		case "insertbefore":
+			return semaCollectionSignature{returnType: "Dom.XmlNode", params: [][]string{{"Object", "Object"}}}, true
 		case "addtextnode", "addcommentnode":
 			return semaCollectionSignature{returnType: "Dom.XmlNode", params: [][]string{{"String"}}}, true
 		case "addchildelement":

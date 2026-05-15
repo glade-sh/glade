@@ -4429,6 +4429,35 @@ System.assertEquals(0, unlocked.getErrors().size());
 	}
 }
 
+func TestExecApprovalLockUnlockResultShapes(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+System.assert(!Approval.isLocked(a));
+Approval.LockResult locked = Approval.lock(a, false);
+System.assert(locked.isSuccess());
+System.assertEquals(a.Id, locked.getId());
+System.assertEquals(0, locked.getErrors().size());
+System.assert(Approval.isLocked(a.Id));
+Map<Id, Boolean> lockStates = Approval.isLocked(new List<Id>{a.Id});
+System.assertEquals(true, lockStates.get(a.Id));
+Approval.UnlockResult unlocked = Approval.unlock(a.Id, false);
+System.assert(unlocked.isSuccess());
+System.assertEquals(a.Id, unlocked.getId());
+System.assertEquals(0, unlocked.getErrors().size());
+System.assert(!Approval.isLocked(a));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecApprovalAndConvertLeadReturnUnsupportedFeature(t *testing.T) {
 	tests := []struct {
 		name    string

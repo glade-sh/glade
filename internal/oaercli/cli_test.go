@@ -1087,6 +1087,7 @@ func TestRunCompatStubInventoryOutputAndCheck(t *testing.T) {
 		`"systemSourceMissingGeneratedTypeCount": 0`,
 		`"sobjectSourceMissingActiveCount": 0`,
 		`"sobjectFieldMissingActiveCount": 0`,
+		`"sobjectFieldMissingFeatureGatedCount": 0`,
 		`"sobjectFieldMissingSupportedFeatureCount": 0`,
 	} {
 		if !strings.Contains(stdout.String(), want) {
