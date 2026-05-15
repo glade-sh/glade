@@ -1932,6 +1932,24 @@ System.assert(caught);
 	}
 }
 
+func TestExecDMLSObjectGetAllowsLastModifiedById(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account record = new Account(Name = 'Acme');
+insert record;
+System.assertNotEquals(null, record.LastModifiedById);
+System.assertNotEquals(null, record.get(Account.LastModifiedById));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSchemaSObjectTypeFieldsPathReturnsFieldToken(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(Account.SObjectType, Schema.Account.SObjectType);
@@ -2383,6 +2401,7 @@ func TestExecSOQLQueriedUnsetSystemFieldIsAccessibleNull(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = [SELECT Id, LastModifiedById FROM Account WHERE Name = 'Acme' LIMIT 1];
 System.assertEquals(null, account.LastModifiedById);
+System.assertEquals(null, account.get('Account.LastModifiedById'));
 System.assertEquals('LastModifiedById', Account.SObjectType.fields.getMap().get('LastModifiedById').getDescribe().getName());
 System.assertEquals('LastModifiedById', Account.SObjectType.fields.getMap().get('Account.LastModifiedById').getDescribe().getName());
 `)
@@ -2390,6 +2409,34 @@ System.assertEquals('LastModifiedById', Account.SObjectType.fields.getMap().get(
 		t.Fatal(err)
 	}
 	org := singleSOQLAssignmentOrg()
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectFieldMapSynthesizesStandardFieldToken(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectType> globalDescribe = Schema.getGlobalDescribe();
+Schema.SObjectType boardCertification = globalDescribe.get('BoardCertification');
+Map<String, Schema.SObjectField> fields = boardCertification.getDescribe().fields.getMap();
+Schema.SObjectField practitioner = fields.get('PractitionerId');
+System.assertNotEquals(null, practitioner);
+System.assertEquals('PractitionerId', practitioner.getDescribe().getName());
+System.assertEquals('PractitionerId', fields.get('BoardCertification.PractitionerId').getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["BoardCertification"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "BoardCertification",
+			Fields:  map[string]storage.Field{},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
 	machine := New(nil)
 	machine.Org = &org
 	if _, err := machine.Execute(program); err != nil {
