@@ -19622,6 +19622,29 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("compression.ZipReader constructor expects Blob archive")
 		}
 		return newCompressionZipReader(args[0])
+	case "UserProvisioning.ProvisioningBatchable", "UserProvisioning.PluginBatchable":
+		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("%s constructor expects List<SObject>", typeName)
+		}
+		value := Object(typeName)
+		value.Fields["newRows"] = args[0]
+		return value, nil
+	case "UserProvisioning.CollectingBatchable":
+		if len(args) != 3 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("UserProvisioning.CollectingBatchable constructor expects reconOffset, uprId, connectedAppId")
+		}
+		value := Object(typeName)
+		value.Fields["reconOffset"] = args[0]
+		value.Fields["uprId"] = args[1]
+		value.Fields["connectedAppId"] = args[2]
+		return value, nil
+	case "UserProvisioning.LinkingBatchable":
+		if len(args) != 1 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("UserProvisioning.LinkingBatchable constructor expects uprId")
+		}
+		value := Object(typeName)
+		value.Fields["uprId"] = args[0]
+		return value, nil
 	case "Dom.Document":
 		if len(args) != 0 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("Dom.Document constructor expects 0 arguments")
@@ -27791,6 +27814,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if value, updated, mutated, handled, err := callOrgInstrumentationOperationMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
+	if value, updated, mutated, handled, err := callUserProvisioningBatchableMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, true, err
+	}
 	if value, updated, mutated, handled, err := callWaveQueryMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
@@ -32364,6 +32390,84 @@ func callOrgInstrumentationOperationMember(receiver Value, method string, args [
 		return Null, receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
+	}
+}
+
+func callUserProvisioningBatchableMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if !userProvisioningBatchableType(receiver.Type) {
+		return Null, receiver, false, false, nil
+	}
+	switch strings.ToLower(method) {
+	case "start":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("%s.start expects BatchableContext", receiver.Type)
+		}
+		locator := Object("Database.QueryLocator")
+		locator.Fields["Records"] = typedList("List<SObject>")
+		locator.Fields["Query"] = String("")
+		return locator, receiver, false, true, nil
+	case "execute":
+		if len(args) != 2 {
+			return Null, receiver, false, true, fmt.Errorf("%s.execute expects BatchableContext and scope", receiver.Type)
+		}
+		return Null, receiver, false, true, nil
+	case "finish":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("%s.finish expects BatchableContext", receiver.Type)
+		}
+		return Null, receiver, false, true, nil
+	case "flowinputpreprocessing":
+		if len(args) != 1 || args[0].Kind != ValueMap {
+			return Null, receiver, false, true, fmt.Errorf("%s.flowInputPreprocessing expects Map<String,Object>", receiver.Type)
+		}
+		return args[0], receiver, false, true, nil
+	case "flowpostprocessing":
+		if len(args) != 2 {
+			return Null, receiver, false, true, fmt.Errorf("%s.flowPostProcessing expects handler output and SObject", receiver.Type)
+		}
+		return Null, receiver, false, true, nil
+	case "postbatchprocessing":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.postBatchProcessing expects 0 arguments", receiver.Type)
+		}
+		return Null, receiver, false, true, nil
+	case "geteventprefix", "getflowname", "getflownamespace":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+		}
+		return String(""), receiver, false, true, nil
+	case "getperbatchupl":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.getPerBatchUPL expects 0 arguments", receiver.Type)
+		}
+		return typedList("List<SObject>"), receiver, false, true, nil
+	case "getperbatchupr":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.getPerBatchUPR expects 0 arguments", receiver.Type)
+		}
+		return typedList("List<UserProvisioningRequest>"), receiver, false, true, nil
+	case "getuprtonewuplmap":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.getUprToNewUplMap expects 0 arguments", receiver.Type)
+		}
+		return typedMap("Map<Id,SObject>"), receiver, false, true, nil
+	case "hasflow", "hasfloworapex":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+		}
+		return Bool(false), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func userProvisioningBatchableType(typeName string) bool {
+	switch typeName {
+	case "UserProvisioning.ProvisioningBatchable", "UserProvisioning.CollectingBatchable",
+		"UserProvisioning.PluginBatchable", "UserProvisioning.LinkingBatchable":
+		return true
+	default:
+		return false
 	}
 }
 

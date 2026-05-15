@@ -217,6 +217,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if orgInstrumentationBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "OrgInstrumentationOperation metric/span method is handled by the VM local no-op instrumentation surface", true
 	}
+	if userProvisioningBatchableBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "UserProvisioning batchable helper method is handled by the VM local no-op/default surface", true
+	}
 	if databaseResultDTOBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Database/Approval result DTO accessor is handled by the VM result object surface", true
 	}
@@ -966,6 +969,28 @@ func orgInstrumentationBehaviorMethod(symbol typesys.TypeSymbol, member typesys.
 		"publishcustomincrementalvalue", "publishcustompercentileset",
 		"publishincrementalvalue", "publishpercentileset",
 		"publishrequestcountandduration", "start":
+		return true
+	default:
+		return false
+	}
+}
+
+func userProvisioningBatchableBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	switch typeName {
+	case "UserProvisioning.ProvisioningBatchable", "UserProvisioning.CollectingBatchable",
+		"UserProvisioning.PluginBatchable", "UserProvisioning.LinkingBatchable":
+	default:
+		return false
+	}
+	switch strings.ToLower(member.Name) {
+	case "execute", "finish", "flowinputpreprocessing", "flowpostprocessing",
+		"geteventprefix", "getflowname", "getflownamespace", "getperbatchupl",
+		"getperbatchupr", "getuprtonewuplmap", "hasflow", "hasfloworapex",
+		"postbatchprocessing", "start":
 		return true
 	default:
 		return false

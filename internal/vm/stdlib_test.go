@@ -1643,6 +1643,36 @@ op.endWithStatus(metricContext, 200);
 	}
 }
 
+func TestExecUserProvisioningBatchableLocalDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+UserProvisioning.ProvisioningBatchable batchable = new UserProvisioning.ProvisioningBatchable(new List<SObject>());
+Map<String,Object> input = new Map<String,Object>{'uprId' => '0PR000000000001'};
+System.assertEquals('0PR000000000001', batchable.flowInputPreprocessing(input).get('uprId'));
+System.assertEquals('', batchable.getFlowName());
+System.assertEquals('', batchable.getFlowNamespace());
+System.assertEquals('', batchable.getEventPrefix());
+System.assertEquals(false, batchable.hasFlow());
+System.assertEquals(false, batchable.hasFlowOrApex());
+System.assertEquals(0, batchable.getPerBatchUPL().size());
+System.assertEquals(0, batchable.getPerBatchUPR().size());
+System.assertEquals(0, batchable.getUprToNewUplMap().size());
+Database.QueryLocator locator = batchable.start(null);
+System.assertEquals('', locator.getQuery());
+batchable.execute(null, new List<UserProvisioningRequest>());
+batchable.finish(null);
+batchable.postBatchProcessing();
+UserProvisioning.LinkingBatchable linking = new UserProvisioning.LinkingBatchable('0PR000000000001');
+System.assertEquals(false, linking.hasFlowOrApex());
+System.assertEquals('', linking.start(null).getQuery());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCoreTypeIDURLObjectStdlib(t *testing.T) {
 	program, err := CompileAnonymous(`
 Type accountType = Type.forName('Account');
