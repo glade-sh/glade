@@ -13202,6 +13202,9 @@ func (vm *VM) vmValueFromRecord(record storage.Record) Value {
 			list.Type = "List<" + childType + ">"
 		}
 		value.Fields[relationship] = list
+		if canonical := vm.canonicalChildRelationshipName(record.Object, relationship); canonical != "" && !strings.EqualFold(canonical, relationship) {
+			value.Fields[canonical] = list
+		}
 	}
 	for field, isNull := range record.ExplicitNulls {
 		if isNull {
@@ -13211,6 +13214,38 @@ func (vm *VM) vmValueFromRecord(record storage.Record) Value {
 	vm.hydrateParentLookupFields(value)
 	putSystemFields(value, record.System)
 	return value
+}
+
+func (vm *VM) canonicalChildRelationshipName(parentObject, relationship string) string {
+	if vm == nil || vm.Org == nil || strings.TrimSpace(parentObject) == "" || strings.TrimSpace(relationship) == "" {
+		return ""
+	}
+	canonicalParent, ok := storage.ResolveObjectName(*vm.Org, parentObject)
+	if !ok {
+		canonicalParent = parentObject
+	}
+	for _, childState := range vm.Org.Objects {
+		for _, relation := range childState.Definition.Relations {
+			if !relationshipTargetsObject(relation, canonicalParent) {
+				continue
+			}
+			childRelationshipName := relation.ChildRelationship
+			if childRelationshipName == "" {
+				childRelationshipName = derivedVMChildRelationshipName(childState.Definition)
+			}
+			if childRelationshipName == "" || !vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, relationship) {
+				continue
+			}
+			if strings.HasSuffix(childRelationshipName, "__r") || strings.HasSuffix(relationship, "__r") {
+				return childRelationshipName
+			}
+			if strings.HasSuffix(relation.Field, "__c") {
+				return relationship + "__r"
+			}
+			return relationship
+		}
+	}
+	return ""
 }
 
 func (vm *VM) childRelationshipListType(parentObject, relationship string, records []storage.Record) string {
@@ -15911,6 +15946,21 @@ func orderedJSONMapKeys(value Value) []string {
 	return value.MapOrder
 }
 
+func jsonObjectMap(raw any) (map[string]any, bool) {
+	if fields, ok := raw.(map[string]any); ok {
+		return fields, true
+	}
+	object, ok := raw.(orderedJSONObject)
+	if !ok {
+		return nil, false
+	}
+	fields := make(map[string]any, len(object))
+	for _, field := range object {
+		fields[field.name] = field.value
+	}
+	return fields, true
+}
+
 func jsonMapHasAnyNamedKey(value Value, names []string) bool {
 	for _, name := range names {
 		if _, ok := value.Map[mapKey(String(name))]; ok {
@@ -16197,6 +16247,14 @@ func valueFromJSON(raw any) Value {
 			out.Map[mapKey(String(key))] = valueFromJSON(item)
 		}
 		return out
+	case orderedJSONObject:
+		out := Map()
+		for _, field := range v {
+			out.Map[mapKey(String(field.name))] = valueFromJSON(field.value)
+			out.MapKeys[mapKey(String(field.name))] = String(field.name)
+			out.MapOrder = append(out.MapOrder, mapKey(String(field.name)))
+		}
+		return out
 	default:
 		return Null
 	}
@@ -16248,7 +16306,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		return out, nil
 	}
 	if isMapType(typeName) {
-		fields, ok := raw.(map[string]any)
+		fields, ok := jsonObjectMap(raw)
 		if !ok {
 			return Null, jsonTypeMappingError(typeName, raw)
 		}
@@ -16286,7 +16344,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 	if err != nil {
 		return Null, err
 	}
-	fields, ok := raw.(map[string]any)
+	fields, ok := jsonObjectMap(raw)
 	if !ok {
 		return Null, jsonTypeMappingError(typeName, raw)
 	}
@@ -16437,7 +16495,7 @@ func classHasZeroArgConstructor(class Class) bool {
 }
 
 func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
-	fields, ok := raw.(map[string]any)
+	fields, ok := jsonObjectMap(raw)
 	if !ok {
 		return Null, jsonTypeMappingError("sObject", raw)
 	}
@@ -16595,7 +16653,7 @@ func (vm *VM) applyDottedSObjectJSONField(obj *Value, typeName, key string, item
 }
 
 func jsonQueryResultRecords(raw any) ([]any, bool) {
-	fields, ok := raw.(map[string]any)
+	fields, ok := jsonObjectMap(raw)
 	if !ok {
 		return nil, false
 	}

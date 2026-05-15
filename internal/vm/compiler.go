@@ -1254,7 +1254,7 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 		}
 		return ir.Expr{Kind: ir.ExprLiteral, Value: tok.text}, nil
 	case tokenString:
-		return ir.Expr{Kind: ir.ExprLiteral, Value: "'" + strings.ReplaceAll(tok.text, "'", "''") + "'"}, nil
+		return ir.Expr{Kind: ir.ExprLiteral, Value: apexStringLiteralFromTokenText(tok.text)}, nil
 	case tokenIdent:
 		if strings.EqualFold(tok.text, "new") {
 			typeName, size, err := p.parseNewTypeName()
@@ -1316,6 +1316,30 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 		}
 	}
 	return ir.Expr{}, fmt.Errorf("unexpected token %q at byte %d", p.tokens[p.pos-1].text, p.tokens[p.pos-1].pos)
+}
+
+func apexStringLiteralFromTokenText(text string) string {
+	var out strings.Builder
+	out.Grow(len(text) + 2)
+	out.WriteByte('\'')
+	for i := 0; i < len(text); i++ {
+		switch text[i] {
+		case '\'':
+			out.WriteString("''")
+		case '\\':
+			out.WriteString("\\\\")
+		case '\n':
+			out.WriteString("\\n")
+		case '\r':
+			out.WriteString("\\r")
+		case '\t':
+			out.WriteString("\\t")
+		default:
+			out.WriteByte(text[i])
+		}
+	}
+	out.WriteByte('\'')
+	return out.String()
 }
 
 func (p *parser) parseClassLiteralSuffix(name string) (ir.Expr, bool, error) {
