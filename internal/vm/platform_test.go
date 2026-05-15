@@ -1313,6 +1313,26 @@ System.assertEquals(start, BusinessHours.nextStartDate(businessHoursId, start));
 	}
 }
 
+func TestExecCasesThreadingHelpers(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id caseId = '500000000000001AAA';
+String threadId = Cases.generateThreadingMessageId(caseId);
+System.assertEquals(caseId, Cases.getCaseIdFromEmailThreadId(threadId));
+Messaging.InboundEmail.Header header = new Messaging.InboundEmail.Header();
+header.name = 'References';
+header.value = 'previous ' + threadId;
+System.assertEquals(caseId, Cases.getCaseIdFromEmailHeaders(new List<Messaging.InboundEmail.Header>{header}));
+System.assertEquals(null, Cases.getCaseIdFromEmailThreadId('missing'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecOrgLimitsLocalSnapshot(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<OrgLimit> limits = OrgLimits.getAll();
@@ -3519,6 +3539,9 @@ Test.stopTest();
 	}
 	queueProgram, err := CompileAnonymous(`
 System.assertEquals(false, System.AsyncInfo.hasMaxStackDepth());
+System.assertEquals(1, System.AsyncInfo.getCurrentQueueableStackDepth());
+System.assertEquals(0, System.AsyncInfo.getMaximumQueueableStackDepth());
+System.assertEquals(0, System.AsyncInfo.getMinimumQueueableDelayInMinutes());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3814,11 +3837,6 @@ func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
 			name: "async options setter",
 			src:  `AsyncOptions opts = new AsyncOptions(); opts.setMinimumQueueableDelayInMinutes(1);`,
 			want: `unsupported call "AsyncOptions.setMinimumQueueableDelayInMinutes local async options surface"`,
-		},
-		{
-			name: "async info",
-			src:  `AsyncInfo.getCurrentQueueableStackDepth();`,
-			want: `unsupported call "AsyncInfo.getCurrentQueueableStackDepth local async info surface"`,
 		},
 		{
 			name: "finalizer context job id",

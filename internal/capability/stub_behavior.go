@@ -269,6 +269,15 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		case "add", "addgmt", "diff", "iswithin", "nextstartdate":
 			return true
 		}
+	case "Cases":
+		switch name {
+		case "generatethreadingmessageid", "getcaseidfromemailheaders", "getcaseidfromemailthreadid":
+			return true
+		}
+	case "Collator":
+		return name == "getinstance" || name == "compare"
+	case "CURRENCY":
+		return name == "newinstance" || name == "format" || name == "formatamount"
 	case "OrgLimits":
 		switch name {
 		case "getall", "getmap":
@@ -323,7 +332,10 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 			return true
 		}
 	case "AsyncInfo":
-		return name == "hasmaxstackdepth"
+		switch name {
+		case "hasmaxstackdepth", "getcurrentqueueablestackdepth", "getmaximumqueueablestackdepth", "getminimumqueueabledelayinminutes":
+			return true
+		}
 	case "Assert":
 		switch name {
 		case "areequal", "arenotequal", "istrue", "isfalse", "isnull", "isnotnull",
@@ -498,7 +510,7 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return name == "setphoto" || name == "deletephoto"
 	case "QueueableDuplicateSignature":
 		return name == "builder"
-	case "QueueableDuplicateSignature.Builder":
+	case "QueueableDuplicateSignature.Builder", "Builder":
 		switch name {
 		case "addid", "addinteger", "addstring", "build":
 			return true
@@ -688,7 +700,7 @@ func standardExceptionBehaviorMethod(typeName, methodName string) bool {
 	case "getmessage", "setmessage", "getcause", "initcause", "getlineNumber", "getlinenumber",
 		"getstacktrace", "getstacktracestring", "gettypeName", "gettypename",
 		"getnumdml", "getdmltype", "getdmlmessage", "getdmlstatuscode", "getdmlfields",
-		"getdmlid", "getdmlindex":
+		"getdmlid", "getdmlindex", "getinaccessiblefields":
 		return true
 	default:
 		return false
@@ -928,10 +940,12 @@ func generatedDTOCollectionBehaviorMethodShape(member typesys.MemberSymbol) bool
 		return true
 	}
 	switch name {
-	case "size", "isempty", "iterator", "getiterator":
+	case "clear", "size", "isempty", "iterator", "getiterator":
 		return len(member.Parameters) == 0
 	case "get", "getfromlist", "indexof", "getindexof":
 		return len(member.Parameters) == 1
+	case "add", "remove":
+		return len(member.Parameters) == 1 && strings.EqualFold(member.Type, "void")
 	default:
 		return false
 	}

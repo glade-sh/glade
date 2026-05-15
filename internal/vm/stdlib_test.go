@@ -378,6 +378,31 @@ QueueableDuplicateSignature sig = QueueableDuplicateSignature.builder()
 System.assert(sig.toString().contains('String:job'));
 System.assert(sig.toString().contains('Integer:42'));
 System.assert(sig.toString().contains('Id:001000000000001AAA'));
+Builder aliasBuilder = new Builder();
+QueueableDuplicateSignature aliasSig = aliasBuilder.addString('alias').build();
+System.assert(aliasSig.toString().contains('String:alias'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSmallPlatformHelperValueObjects(t *testing.T) {
+	program, err := CompileAnonymous(`
+CURRENCY usd = CURRENCY.newInstance(12.5, 'usd');
+System.assertEquals('USD 12.5', usd.format());
+System.assertEquals('12.5', usd.formatAmount());
+System.assertEquals('USD 12.5', usd.toString());
+Collator collator = Collator.getInstance();
+System.assert(collator.compare('a', 'b') < 0);
+System.assertEquals(0, collator.compare('same', 'same'));
+String threadId = Cases.generateThreadingMessageId('500000000000001AAA');
+System.assert(threadId.contains('500000000000001AAA'));
+System.assertEquals('500000000000001AAA', String.valueOf(Cases.getCaseIdFromEmailThreadId(threadId)));
+System.assertEquals(null, Cases.getCaseIdFromEmailThreadId('no case id here'));
 `)
 	if err != nil {
 		t.Fatal(err)

@@ -5017,6 +5017,24 @@ try {
 	}
 }
 
+func TestExecExceptionGetInaccessibleFieldsDefaultsEmpty(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+	throw new NoAccessException('blocked');
+} catch (Exception e) {
+	Map<String, Set<String>> fields = e.getInaccessibleFields();
+	System.assert(fields != null);
+	System.assertEquals(0, fields.size());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDMLRejectsCalculatedFieldWrites(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');

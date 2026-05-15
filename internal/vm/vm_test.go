@@ -153,6 +153,35 @@ func TestGeneratedPlatformInstanceMethodFallsBackToTypedDefault(t *testing.T) {
 	}
 }
 
+func TestExecGeneratedPlatformPassiveListWrapperMutatesItems(t *testing.T) {
+	program, err := CompileAnonymous(`
+CartExtension.CartAdjustmentBasisList items = new CartExtension.CartAdjustmentBasisList();
+CartExtension.CartAdjustmentBasis item = new CartExtension.CartAdjustmentBasis();
+System.assertEquals(0, items.size());
+System.assertEquals(true, items.isEmpty());
+items.add(item);
+System.assertEquals(1, items.size());
+System.assertEquals(false, items.isEmpty());
+System.assertEquals(0, items.indexOf(item));
+System.assertEquals(item, items.get(0));
+Iterator<Object> iter = items.iterator();
+System.assertEquals(true, iter.hasNext());
+System.assertEquals(item, iter.next());
+System.assertEquals(false, iter.hasNext());
+items.remove(item);
+System.assertEquals(0, items.size());
+items.add(item);
+items.clear();
+System.assertEquals(true, items.isEmpty());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestGeneratedPlatformFallbackDoesNotMaskExplicitUnsupportedRuntimeMethods(t *testing.T) {
 	machine := New(nil)
 	result := &Result{}

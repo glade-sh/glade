@@ -2071,6 +2071,8 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"String.stripAll", "String.fromCharArray", "String.escapeSingleQuotes",
 		"Integer.valueOf", "Long.valueOf", "Decimal.valueOf", "Double.valueOf", "Boolean.valueOf",
 		"RoundingMode.valueOf", "Id.valueOf",
+		"AsyncInfo.getCurrentQueueableStackDepth", "AsyncInfo.getMaximumQueueableStackDepth",
+		"AsyncInfo.getMinimumQueueableDelayInMinutes",
 		"Pattern.compile", "Pattern.matches", "Pattern.quote",
 		"Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.rint", "Math.roundToLong", "Math.signum",
 		"Math.sqrt", "Math.cbrt", "Math.acos", "Math.asin", "Math.atan", "Math.cos", "Math.sin", "Math.tan",
@@ -2092,6 +2094,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"ConnectApi.Organization.getSettings", "ConnectApi.ChatterUsers.getFollowings", "ConnectApi.Communities.getCommunity",
 		"ConnectApi.UserProfiles.setPhoto", "ConnectApi.UserProfiles.deletePhoto",
 		"BusinessHours.add", "BusinessHours.addGmt", "BusinessHours.diff", "BusinessHours.isWithin", "BusinessHours.nextStartDate",
+		"Cases.generateThreadingMessageId", "Cases.getCaseIdFromEmailHeaders", "Cases.getCaseIdFromEmailThreadId", "Cases.reparentFeedToCaseId",
 		"Cache.Org.getPartition", "Cache.Session.getPartition",
 		"Cache.Org.get", "Cache.Session.get", "Cache.Org.put", "Cache.Session.put",
 		"Cache.Org.remove", "Cache.Session.remove", "Cache.Org.contains", "Cache.Session.contains",
@@ -2112,6 +2115,8 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub",
 		"Test.getFlexQueueOrder", "Test.calculatePermissionSetGroup", "Test.enableChangeDataCapture", "Test.setReadOnlyApplicationMode", "Test.isSoqlStubDefined",
 		"WebServiceCallout.invoke",
+		"CURRENCY.newInstance",
+		"Collator.getInstance",
 		"Test.setCreatedDate", "Test.setFixedSearchResults", "Test.startTest", "Test.stopTest", "Test.getStandardPricebookId",
 		"Test.Database.hasRecords",
 		"DataWeave.Script.createScript",
@@ -3095,9 +3100,30 @@ platformStaticCall:
 			return Null, newExceptionError("System.AsyncException", "hasMaxStackDepth is not allowed outside a Queueable of Finalizer execution")
 		}
 		return Bool(false), nil
-	case "AsyncInfo.getCurrentQueueableStackDepth", "AsyncInfo.getMaximumQueueableStackDepth",
-		"AsyncInfo.getMinimumQueueableDelayInMinutes":
-		return Null, unsupportedCallError(callee + " local async info surface")
+	case "AsyncInfo.getCurrentQueueableStackDepth", "System.AsyncInfo.getCurrentQueueableStackDepth":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("AsyncInfo.getCurrentQueueableStackDepth expects 0 arguments")
+		}
+		if vm.currentAsyncKind != "Queueable" {
+			return Null, newExceptionError("System.AsyncException", "getCurrentQueueableStackDepth is not allowed outside a Queueable or Finalizer execution")
+		}
+		return Int(1), nil
+	case "AsyncInfo.getMaximumQueueableStackDepth", "System.AsyncInfo.getMaximumQueueableStackDepth":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("AsyncInfo.getMaximumQueueableStackDepth expects 0 arguments")
+		}
+		if vm.currentAsyncKind != "Queueable" {
+			return Null, newExceptionError("System.AsyncException", "getMaximumQueueableStackDepth is not allowed outside a Queueable or Finalizer execution")
+		}
+		return Int(0), nil
+	case "AsyncInfo.getMinimumQueueableDelayInMinutes", "System.AsyncInfo.getMinimumQueueableDelayInMinutes":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("AsyncInfo.getMinimumQueueableDelayInMinutes expects 0 arguments")
+		}
+		if vm.currentAsyncKind != "Queueable" {
+			return Null, newExceptionError("System.AsyncException", "getMinimumQueueableDelayInMinutes is not allowed outside a Queueable or Finalizer execution")
+		}
+		return Int(0), nil
 	case "Datetime.newInstance", "Datetime.newInstanceGmt":
 		if len(args) == 1 {
 			if args[0].Kind != ValueInt {
@@ -3999,6 +4025,55 @@ platformStaticCall:
 			return Null, fmt.Errorf("QueueableDuplicateSignature.builder expects 0 arguments")
 		}
 		return newQueueableDuplicateSignatureBuilder(), nil
+	case "CURRENCY.newInstance":
+		if len(args) != 2 || !isMathNumeric(args[0]) || args[1].Kind != ValueString {
+			return Null, fmt.Errorf("CURRENCY.newInstance expects Decimal and ISO code String")
+		}
+		return newCurrencyValue(args[0], args[1].Text), nil
+	case "Cases.generateThreadingMessageId":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("Cases.generateThreadingMessageId expects Case Id")
+		}
+		id := scalarText(args[0])
+		if id == "" {
+			if text, ok := typedIDValueText(args[0]); ok {
+				id = text
+			}
+		}
+		if id == "" {
+			return Null, fmt.Errorf("Cases.generateThreadingMessageId expects Case Id")
+		}
+		return String("ref:_00Dlocal._" + id + ":ref"), nil
+	case "Cases.getCaseIdFromEmailThreadId":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Cases.getCaseIdFromEmailThreadId expects String")
+		}
+		return caseIDFromThreadID(args[0].Text), nil
+	case "Cases.getCaseIdFromEmailHeaders":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("Cases.getCaseIdFromEmailHeaders expects List<Messaging.InboundEmail.Header>")
+		}
+		for _, header := range args[0].List {
+			if header.Kind != ValueObject {
+				continue
+			}
+			name := stringField(header, "name")
+			if !strings.EqualFold(name, "References") && !strings.EqualFold(name, "In-Reply-To") &&
+				!strings.EqualFold(name, "Thread-Index") && !strings.EqualFold(name, "Thread-Topic") {
+				continue
+			}
+			if id := caseIDFromThreadID(stringField(header, "value")); id.Kind != ValueNull {
+				return id, nil
+			}
+		}
+		return Null, nil
+	case "Cases.reparentFeedToCaseId":
+		return Null, unsupportedCallError("Cases.reparentFeedToCaseId local feed reparenting surface")
+	case "Collator.getInstance":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Collator.getInstance expects 0 arguments")
+		}
+		return Object("Collator"), nil
 	case "Test.startTest":
 		return vm.testStart()
 	case "Test.stopTest":
@@ -17518,6 +17593,66 @@ func newQueueableDuplicateSignatureBuilder() Value {
 	return builder
 }
 
+func newCurrencyValue(amount Value, isoCode string) Value {
+	value := Object("CURRENCY")
+	value.Fields["amount"] = Decimal(numericFloat(amount))
+	value.Fields["isoCode"] = String(strings.ToUpper(strings.TrimSpace(isoCode)))
+	return value
+}
+
+func currencyAmountText(value Value) string {
+	if amount, ok := value.Fields["amount"]; ok {
+		switch amount.Kind {
+		case ValueDecimal:
+			return strconv.FormatFloat(amount.Decimal, 'f', -1, 64)
+		case ValueInt:
+			return strconv.FormatInt(amount.Int, 10)
+		}
+	}
+	return "0"
+}
+
+func currencyISOCode(value Value) string {
+	if iso, ok := value.Fields["isoCode"]; ok && iso.Kind == ValueString && iso.Text != "" {
+		return iso.Text
+	}
+	return "USD"
+}
+
+func caseIDFromThreadID(text string) Value {
+	start := strings.Index(text, "500")
+	if start < 0 {
+		return Null
+	}
+	end := start
+	for end < len(text) {
+		ch := text[end]
+		if !((ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) {
+			break
+		}
+		end++
+	}
+	if end-start < 15 {
+		return Null
+	}
+	id := text[start:end]
+	if len(id) > 18 {
+		id = id[:18]
+	}
+	return platformScalar("Id", id)
+}
+
+func collatorCompare(left, right string) int64 {
+	switch {
+	case left < right:
+		return -1
+	case left > right:
+		return 1
+	default:
+		return 0
+	}
+}
+
 func newPageTokenReference(rawURL string) Value {
 	page := newPageReference(rawURL)
 	page.Fields["__pageToken"] = Bool(true)
@@ -24335,6 +24470,7 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 			"getDmlFields",
 			"getDmlId",
 			"getDmlIndex",
+			"getInaccessibleFields",
 			"getCause",
 			"initCause",
 			"getDescription",
@@ -27379,6 +27515,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 				return Int(-1), receiver, false, true, nil
 			}
+		case "getInaccessibleFields":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.getInaccessibleFields expects 0 arguments", receiver.Type)
+			}
+			return Map(), receiver, false, true, nil
 		case "getCause":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getCause expects 0 arguments", receiver.Type)
@@ -29504,8 +29645,35 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return String(""), receiver, false, true, nil
 		}
-	case "QueueableDuplicateSignature.Builder":
+	case "QueueableDuplicateSignature.Builder", "Builder":
 		return callQueueableDuplicateSignatureBuilderMember(receiver, method, args)
+	case "CURRENCY":
+		method = canonicalStdlibMemberName(method, "format", "formatAmount", "toString")
+		switch method {
+		case "format":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("CURRENCY.format expects 0 arguments")
+			}
+			return String(currencyISOCode(receiver) + " " + currencyAmountText(receiver)), receiver, false, true, nil
+		case "formatAmount":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("CURRENCY.formatAmount expects 0 arguments")
+			}
+			return String(currencyAmountText(receiver)), receiver, false, true, nil
+		case "toString":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("CURRENCY.toString expects 0 arguments")
+			}
+			return String(currencyISOCode(receiver) + " " + currencyAmountText(receiver)), receiver, false, true, nil
+		}
+	case "Collator":
+		method = canonicalStdlibMemberName(method, "compare")
+		if method == "compare" {
+			if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Collator.compare expects two Strings")
+			}
+			return Int(collatorCompare(args[0].Text, args[1].Text)), receiver, false, true, nil
+		}
 	case "Search.KnowledgeSuggestionFilter", "Search.QuestionSuggestionFilter":
 		return callSearchSuggestionFilterMember(receiver, method, args)
 	case "Search.SearchResult":
@@ -29725,8 +29893,8 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 }
 
 func (vm *VM) callPassivePlatformDTOCollectionMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
-	spec, ok := vm.passivePlatformDTOMethod(receiver.Type, method, args)
-	if !ok || !generatedPlatformPassiveCollectionMethod(spec) {
+	_, ok := vm.passivePlatformDTOCollectionMethod(receiver.Type, method, args)
+	if !ok {
 		return Null, receiver, false, false, nil
 	}
 	items := receiver.Fields["__items"]
@@ -29734,6 +29902,20 @@ func (vm *VM) callPassivePlatformDTOCollectionMember(receiver Value, method stri
 		items = typedList("List<Object>")
 	}
 	switch strings.ToLower(method) {
+	case "add":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("%s.add expects 1 argument", receiver.Type)
+		}
+		items.List = append(items.List, args[0])
+		receiver.Fields["__items"] = items
+		return Null, receiver, true, true, nil
+	case "clear":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.clear expects 0 arguments", receiver.Type)
+		}
+		items.List = nil
+		receiver.Fields["__items"] = items
+		return Null, receiver, true, true, nil
 	case "size":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("%s.size expects 0 arguments", receiver.Type)
@@ -29768,9 +29950,41 @@ func (vm *VM) callPassivePlatformDTOCollectionMember(receiver Value, method stri
 			}
 		}
 		return Int(-1), receiver, false, true, nil
+	case "remove":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("%s.remove expects 1 argument", receiver.Type)
+		}
+		filtered := items.List[:0]
+		for _, item := range items.List {
+			if !item.Equal(args[0]) {
+				filtered = append(filtered, item)
+			}
+		}
+		items.List = filtered
+		receiver.Fields["__items"] = items
+		return Null, receiver, true, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func (vm *VM) passivePlatformDTOCollectionMethod(typeName, method string, args []Value) (Method, bool) {
+	spec, ok := vm.passivePlatformDTOMethod(typeName, method, args)
+	if ok && generatedPlatformPassiveCollectionMethod(spec) {
+		return spec, true
+	}
+	if !vm.isPassivePlatformDTOType(typeName) {
+		return Method{}, false
+	}
+	methodsByName := generatedPlatformMethodIndex[strings.ToLower(typeName)]
+	candidates := methodsByName[strings.ToLower(method)]
+	for _, candidate := range candidates {
+		if candidate.IsStatic || len(candidate.Params) != len(args) || !generatedPlatformPassiveCollectionMethod(candidate) {
+			continue
+		}
+		return candidate, true
+	}
+	return Method{}, false
 }
 
 func (vm *VM) callPassivePlatformDTOFluentMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -29954,10 +30168,12 @@ func generatedPlatformPassiveCollectionMethod(method Method) bool {
 		return true
 	}
 	switch name {
-	case "size", "isempty", "iterator", "getiterator":
+	case "clear", "size", "isempty", "iterator", "getiterator":
 		return len(method.Params) == 0
 	case "get", "getfromlist", "indexof", "getindexof":
 		return len(method.Params) == 1
+	case "add", "remove":
+		return len(method.Params) == 1 && strings.EqualFold(method.ReturnType, "void")
 	default:
 		return false
 	}
