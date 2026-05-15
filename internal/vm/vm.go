@@ -36344,7 +36344,10 @@ func slackLocalClientHarnessCallbackMethodName(name string) bool {
 		"viewsopen",
 		"viewspublish",
 		"viewspush",
-		"viewsupdate":
+		"viewsupdate",
+		"workflowsstepcompleted",
+		"workflowsstepfailed",
+		"workflowsupdatestep":
 		return true
 	default:
 		return false
