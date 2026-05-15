@@ -110,6 +110,12 @@ System.assertEquals('/apex/Home', page.getUrl());
 ApexPages.PageReference apexPage = new ApexPages.PageReference('/apex/Alias');
 System.assertEquals('/apex/Alias', apexPage.getUrl());
 
+dom.Document doc = new dom.Document();
+dom.XmlNode root = doc.createrootelement('root', null, null);
+root.setattribute('name', 'local');
+System.assertEquals('local', root.getattribute('name', null));
+System.assert(doc.toxmlstring().contains('name="local"'));
+
 Messaging.SingleEmailMessage email = new messaging.singleemailmessage();
 email.setSubject('Hello');
 System.assertEquals('Hello', email.getSubject());

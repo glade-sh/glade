@@ -206,6 +206,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if xmlStreamReaderBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "XmlStreamReader cursor and accessor method is handled by the VM XML stream surface", true
 	}
+	if domDocumentBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "Dom.Document method is handled by the VM DOM document surface", true
+	}
 	if domXmlNodeBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Dom.XmlNode method is handled by the VM DOM node surface", true
 	}
@@ -1650,6 +1653,18 @@ func domXmlNodeBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSy
 	}
 }
 
+func domDocumentBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if !strings.EqualFold(stubBehaviorTypeName(symbol), "Dom.Document") || member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	switch strings.ToLower(member.Name) {
+	case "load", "getrootelement", "createrootelement", "toxmlstring":
+		return true
+	default:
+		return false
+	}
+}
+
 func visualEditorDynamicPickListRowsBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
 	typeName := stubBehaviorTypeName(symbol)
 	if member.Kind != apexast.DeclarationMethod && member.Kind != apexast.DeclarationConstructor {
@@ -1801,8 +1816,12 @@ func callbackInterfaceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.M
 		return name == "resolve"
 	case "database.batchable":
 		return name == "start" || name == "execute" || name == "finish"
-	case "queueable", "finalizer":
+	case "queueable", "finalizer", "schedulable":
 		return name == "execute"
+	case "sandboxpostcopy":
+		return name == "runapexclass"
+	case "messaging.inboundemailhandler":
+		return name == "handleinboundemail"
 	case "metadata.deploycallback":
 		return name == "handleresult"
 	case "process.plugin":
