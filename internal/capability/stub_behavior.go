@@ -221,6 +221,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if waveQueryBuilderBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "wave query builder node/projection method is handled by the VM local builder surface", true
 	}
+	if waveEnumLikeBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "wave enum-like ordinal/valueOf method returns a deterministic local default without invoking Analytics services", true
+	}
 	if contextIndustriesBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Context.IndustriesContext map passthrough/no-op method is handled by the VM local context surface", true
 	}
@@ -1740,6 +1743,18 @@ func waveQueryBuilderBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Me
 		}
 	}
 	return false
+}
+
+func waveEnumLikeBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	if typeName != "wave.NodeType" && typeName != "wave.ProjectionType" {
+		return false
+	}
+	name := strings.ToLower(member.Name)
+	return name == "ordinal" || name == "valueof"
 }
 
 func contextIndustriesBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {

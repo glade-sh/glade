@@ -26500,6 +26500,21 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 			return value, true
 		}
 	}
+	if waveEnumLikeRuntimeType(className) && strings.EqualFold(methodName, "valueOf") {
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, false
+		}
+		value := Object(className)
+		value.Text = args[0].Text
+		value.Fields["ordinal"] = Int(0)
+		return value, true
+	}
+	if waveEnumLikeRuntimeType(className) && strings.EqualFold(methodName, "ordinal") {
+		if len(args) != 0 {
+			return Null, false
+		}
+		return Int(0), true
+	}
 	if strings.EqualFold(className, "CartExtension.CartTestUtil") {
 		if value, handled := vm.callCartExtensionCartTestUtilStaticDefault(methodName, args); handled {
 			return value, true
@@ -27556,6 +27571,12 @@ func (vm *VM) generatedOptionalWrapperType(typeName string) bool {
 
 func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Value, methodName string, args []Value) (Value, bool) {
 	for _, receiverType := range vm.generatedPlatformReceiverTypes(receiverName, receiver) {
+		if waveEnumLikeRuntimeType(receiverType) && strings.EqualFold(methodName, "ordinal") {
+			if len(args) != 0 {
+				return Null, false
+			}
+			return Int(0), true
+		}
 		if !vm.generatedPlatformMethodFallbackType(receiverType) && !strings.EqualFold(receiverType, "ApexPages.IdeaStandardSetController") {
 			continue
 		}
@@ -27602,6 +27623,10 @@ func (vm *VM) generatedPlatformMethodAllowsDefault(method Method) bool {
 		return slackGeneratedPlatformPassiveDTOMethod(method)
 	}
 	return vm.isPassivePlatformDTOType(method.ClassName)
+}
+
+func waveEnumLikeRuntimeType(typeName string) bool {
+	return strings.EqualFold(typeName, "wave.NodeType") || strings.EqualFold(typeName, "wave.ProjectionType")
 }
 
 func commerceLocalHarnessRuntimeType(typeName string) bool {

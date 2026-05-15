@@ -431,6 +431,8 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "wavetemplate.Access.integUserHasAccessToSObjectField(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "wavetemplate.Answers.put(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "wave.Dags.getDags(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "wave.NodeType.valueOf(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "wave.ProjectionType.ordinal()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "wave.QueryNode.execute(", StubBehaviorUnsupported)
 	assertStubBehaviorPrefix(t, entries, "applauncher.AppLauncherSetupReordererController.getModel()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "applauncher.ChangePasswordController.changePassword(", StubBehaviorUnsupported)
