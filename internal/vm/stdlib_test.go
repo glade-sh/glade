@@ -879,6 +879,26 @@ ConnectApi.ModerationFlags commentFlags =
 	ConnectApi.CommunityModeration.getFlagsOnComment('community-a', 'comment-a');
 System.assertNotEquals(null, commentFlags);
 
+ConnectApi.RecordAlertCollectionRepresentation recordAlerts =
+	ConnectApi.RecordAlert.getRecordAlerts('001000000000001', '500000000000001');
+System.assertNotEquals(null, recordAlerts);
+
+ConnectApi.Motif motif =
+	ConnectApi.Records.getMotif('community-a', '001');
+System.assertNotEquals(null, motif);
+
+ConnectApi.PicklistValuesCollection picklistValues =
+	ConnectApi.RecordUi.getPicklistValuesByRecordType('Account', '012000000000000AAA');
+System.assertNotEquals(null, picklistValues);
+
+ConnectApi.RecordAccessDetailRepresentation accessDetail =
+	ConnectApi.Sharing.getRecordAccessDetail('001000000000001', UserInfo.getUserId(), 10);
+System.assertNotEquals(null, accessDetail);
+
+ConnectApi.UserProfile userProfile =
+	ConnectApi.UserProfiles.getUserProfile('community-a', UserInfo.getUserId());
+System.assertNotEquals(null, userProfile);
+
 ConnectApi.FeedEntityIsEditable editable =
 	ConnectApi.ChatterFeeds.isCommentEditableByMe('community-a', 'comment-a');
 System.assertNotEquals(null, editable);

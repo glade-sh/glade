@@ -1307,8 +1307,6 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return name == "getcommunity"
 	case "ConnectApi.ChatterUsers":
 		return name == "getfollowings"
-	case "ConnectApi.UserProfiles":
-		return name == "setphoto" || name == "deletephoto"
 	case "QueueableDuplicateSignature":
 		return name == "builder"
 	case "QueueableDuplicateSignature.Builder", "Builder":
@@ -2006,7 +2004,12 @@ func connectAPIReadOnlyHarnessBehaviorType(typeName string) bool {
 		"ConnectApi.Mentions",
 		"ConnectApi.NamedCredentials",
 		"ConnectApi.NavigationMenu",
+		"ConnectApi.RecordAlert",
+		"ConnectApi.Records",
+		"ConnectApi.RecordUi",
+		"ConnectApi.Sharing",
 		"ConnectApi.Sites",
+		"ConnectApi.UserProfiles",
 		"ConnectApi.Zones":
 		return true
 	default:

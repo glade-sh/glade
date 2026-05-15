@@ -2131,7 +2131,6 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"JSON.createGenerator", "JSON.createParser", "JSON.serialize", "JSON.serializePretty",
 		"JSON.deserializeUntyped", "JSON.deserialize", "JSON.deserializeStrict",
 		"ConnectApi.Organization.getSettings", "ConnectApi.ChatterUsers.getFollowings", "ConnectApi.Communities.getCommunity",
-		"ConnectApi.UserProfiles.setPhoto", "ConnectApi.UserProfiles.deletePhoto",
 		"BusinessHours.add", "BusinessHours.addGmt", "BusinessHours.diff", "BusinessHours.isWithin", "BusinessHours.nextStartDate",
 		"Cases.generateThreadingMessageId", "Cases.getCaseIdFromEmailHeaders", "Cases.getCaseIdFromEmailThreadId", "Cases.reparentFeedToCaseId",
 		"EmailMessages.getFormattedThreadingToken", "EmailMessages.getRecordIdFromEmail",
@@ -3993,16 +3992,6 @@ platformStaticCall:
 		return Object("ConnectApi.FollowingPage"), nil
 	case "ConnectApi.Communities.getCommunity":
 		return vm.connectAPICommunity(args)
-	case "ConnectApi.UserProfiles.setPhoto":
-		if len(args) != 4 {
-			return Null, fmt.Errorf("ConnectApi.UserProfiles.setPhoto expects 4 arguments")
-		}
-		return Null, nil
-	case "ConnectApi.UserProfiles.deletePhoto":
-		if len(args) != 2 {
-			return Null, fmt.Errorf("ConnectApi.UserProfiles.deletePhoto expects 2 arguments")
-		}
-		return Null, nil
 	case "Metadata.Operations.enqueueDeployment":
 		return vm.metadataEnqueueDeployment(args, result)
 	case "Metadata.Operations.checkDeployStatus":
@@ -26932,7 +26921,12 @@ func connectAPIReadOnlyHarnessType(typeName string) bool {
 		"ConnectApi.Mentions",
 		"ConnectApi.NamedCredentials",
 		"ConnectApi.NavigationMenu",
+		"ConnectApi.RecordAlert",
+		"ConnectApi.Records",
+		"ConnectApi.RecordUi",
+		"ConnectApi.Sharing",
 		"ConnectApi.Sites",
+		"ConnectApi.UserProfiles",
 		"ConnectApi.Zones":
 		return true
 	default:
