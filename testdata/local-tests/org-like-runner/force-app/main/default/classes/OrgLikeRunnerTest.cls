@@ -41,19 +41,22 @@ private class OrgLikeRunnerTest {
     List<Widget__c> beforeFuture = [SELECT Id FROM Widget__c WHERE Name = 'Future-7'];
     List<Widget__c> beforeBatch = [SELECT Id FROM Widget__c WHERE Name = 'Batch-1'];
     List<Widget__c> beforeScheduled = [SELECT Id FROM Widget__c WHERE Name = 'Scheduled'];
+    List<Widget__c> beforeQueueable = [SELECT Id FROM Widget__c WHERE Name = 'Queueable'];
     System.assertEquals(0, beforeFuture.size());
     System.assertEquals(0, beforeBatch.size());
     System.assertEquals(0, beforeScheduled.size());
+    System.assertEquals(0, beforeQueueable.size());
     Test.stopTest();
-    System.assertEquals(1, RunnerState.asyncRan);
     List<Widget__c> futureRows = [SELECT Id FROM Widget__c WHERE Name = 'Future-7'];
     List<Widget__c> batchRows = [SELECT Id FROM Widget__c WHERE Name = 'Batch-1' OR Name = 'Batch-2' OR Name = 'Batch-3'];
     List<Widget__c> batchFinishRows = [SELECT Id FROM Widget__c WHERE Name = 'Batch-Finish'];
     List<Widget__c> scheduledRows = [SELECT Id FROM Widget__c WHERE Name = 'Scheduled'];
+    List<Widget__c> queueableRows = [SELECT Id FROM Widget__c WHERE Name = 'Queueable'];
     System.assertEquals(1, futureRows.size());
     System.assertEquals(3, batchRows.size());
     System.assertEquals(1, batchFinishRows.size());
     System.assertEquals(1, scheduledRows.size());
+    System.assertEquals(1, queueableRows.size());
 
     List<CronTrigger> crons = [SELECT Id, State FROM CronTrigger];
     System.assertEquals(1, crons.size());

@@ -20,7 +20,7 @@ private class VisualforcePagesTest {
     PageReference saved = extension.saveAndReturn();
 
     System.assert(account.Id != null);
-    System.assertEquals('/' + account.Id, saved.getUrl());
+    System.assertEquals('/' + account.Id + '?source=visualforce-pages', saved.getUrl());
     System.assertEquals('visualforce-pages', saved.getParameters().get('source'));
   }
 

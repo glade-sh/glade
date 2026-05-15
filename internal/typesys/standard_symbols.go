@@ -98,25 +98,31 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 		if kind == "" {
 			kind = apexast.DeclarationClass
 		}
+		superClass := spec.SuperClass
+		if kind != apexast.DeclarationClass {
+			superClass = ""
+		}
 		sym := TypeSymbol{
 			Kind:       kind,
 			Name:       spec.Name,
 			File:       "<standard-platform>",
 			Dependency: true,
-			SuperClass: spec.SuperClass,
+			SuperClass: superClass,
 			Interfaces: append([]string(nil), spec.Interfaces...),
 		}
 		if namespace, localName, ok := splitStandardSymbolName(spec.Name); ok {
 			sym.Namespace = namespace
 			sym.Name = localName
 		}
-		for _, ctor := range standardConstructorSpecs(spec) {
-			sym.Members = append(sym.Members, MemberSymbol{
-				Kind:       apexast.DeclarationConstructor,
-				Name:       localStandardSymbolName(spec.Name),
-				Modifiers:  []string{"public"},
-				Parameters: standardSpecParameters(ctor.Parameters),
-			})
+		if kind == apexast.DeclarationClass {
+			for _, ctor := range standardConstructorSpecs(spec) {
+				sym.Members = append(sym.Members, MemberSymbol{
+					Kind:       apexast.DeclarationConstructor,
+					Name:       localStandardSymbolName(spec.Name),
+					Modifiers:  []string{"public"},
+					Parameters: standardSpecParameters(ctor.Parameters),
+				})
+			}
 		}
 		for _, prop := range spec.Properties {
 			modifiers := []string{"public"}
@@ -715,6 +721,12 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "UUID", Methods: []StandardMethodSpec{{Name: "randomUUID", ReturnType: "String", Static: true}}},
 	{Name: "Callable", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "call", ReturnType: "Object", Parameters: []string{"String", "Map<String,Object>"}}}},
 	{Name: "Comparator", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "compare", ReturnType: "Integer", Parameters: []string{"Object", "Object"}}}},
+	{Name: "Database.Batchable", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "start", ReturnType: "Iterable", Parameters: []string{"Database.BatchableContext"}}, {Name: "execute", ReturnType: "void", Parameters: []string{"Database.BatchableContext", "List<Object>"}}, {Name: "finish", ReturnType: "void", Parameters: []string{"Database.BatchableContext"}}}},
+	{Name: "HttpCalloutMock", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "respond", ReturnType: "HttpResponse", Parameters: []string{"HttpRequest"}}}},
+	{Name: "Iterable", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "iterator", ReturnType: "Iterator"}}},
+	{Name: "Iterator", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "hasNext", ReturnType: "Boolean"}, {Name: "next", ReturnType: "Object"}}},
+	{Name: "Queueable", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "execute", ReturnType: "void", Parameters: []string{"QueueableContext"}}}},
+	{Name: "Schedulable", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "execute", ReturnType: "void", Parameters: []string{"SchedulableContext"}}}},
 	{Name: "AsyncOptions", Constructors: [][]string{{}}, Properties: []StandardPropertySpec{{Name: "DuplicateSignature", Type: "Object"}, {Name: "MaximumQueueableStackDepth", Type: "Integer"}, {Name: "MinimumQueueableDelayInMinutes", Type: "Integer"}}},
 	{Name: "Database.DMLOptions", Constructors: [][]string{{}}, Properties: []StandardPropertySpec{{Name: "AllowFieldTruncation", Type: "Boolean"}, {Name: "AssignmentRuleHeader", Type: "Database.AssignmentRuleHeader"}, {Name: "DuplicateRuleHeader", Type: "Database.DuplicateRuleHeader"}, {Name: "EmailHeader", Type: "Database.EmailHeader"}, {Name: "LocaleOptions", Type: "Object"}, {Name: "LocalizeErrors", Type: "Boolean"}, {Name: "OptAllOrNone", Type: "Boolean"}}},
 	{Name: "Database.AssignmentRuleHeader", Constructors: [][]string{{}}, Properties: []StandardPropertySpec{{Name: "AssignmentRuleId", Type: "Id"}, {Name: "UseDefaultRule", Type: "Boolean"}}},

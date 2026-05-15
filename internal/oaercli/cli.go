@@ -205,6 +205,8 @@ Compat subcommands:
   dashboard     Generate compatibility dashboard.
   gaps          Generate known gaps document.
   stdlib        Generate standard library coverage document.
+  stub-behavior
+                Report generated platform stub behavior status.
   tooling-fixtures
                 Validate captured Tooling snippet oracle reports.
 `)+"\n")
@@ -1473,6 +1475,10 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return runCompatSalesforceCoverage(args[1:], w)
 	case "standard-objects":
 		return runCompatStandardObjects(args[1:], w)
+	case "stub-behavior":
+		return runCompatStubBehavior(args[1:], w)
+	case "stub-inventory":
+		return runCompatStubInventory(args[1:], w)
 	case "product-namespaces":
 		return runCompatProductNamespaces(args[1:], w)
 	case "tooling-fixtures":
@@ -1509,7 +1515,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 }
 
 func compatUsage() string {
-	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--top-failures <n>] [--timeout <ms-per-test>] [--parallel <n>] [--progress] [--analyze] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
+	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--top-failures <n>] [--timeout <ms-per-test>] [--parallel <n>] [--progress] [--analyze] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
 }
 
 type postParityReadiness struct {
@@ -2721,6 +2727,169 @@ func writeStandardObjectCoverageOutput(w io.Writer, report capability.StandardOb
 		return capability.WriteStandardObjectCoverageJSON(w, report)
 	}
 	return capability.WriteStandardObjectCoverageMarkdown(w, report)
+}
+
+func runCompatStubBehavior(args []string, w io.Writer) error {
+	outputPath := ""
+	checkPath := ""
+	jsonOut := false
+	usage := "usage: oaer compat stub-behavior [--json|--output <path>|--check <path>]"
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--json":
+			jsonOut = true
+		case "--output":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			outputPath = args[i]
+		case "--check":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			checkPath = args[i]
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	requested := 0
+	for _, set := range []bool{jsonOut, outputPath != "", checkPath != ""} {
+		if set {
+			requested++
+		}
+	}
+	if requested > 1 {
+		return errors.New("use only one of --json, --output, or --check")
+	}
+	report := capability.BuildStubBehaviorReport()
+	switch {
+	case jsonOut:
+		return capability.WriteStubBehaviorJSON(w, report)
+	case outputPath != "":
+		var buf strings.Builder
+		if err := writeStubBehaviorOutput(&buf, report, outputPath); err != nil {
+			return err
+		}
+		return os.WriteFile(outputPath, []byte(buf.String()), 0o644)
+	case checkPath != "":
+		var buf strings.Builder
+		if err := writeStubBehaviorOutput(&buf, report, checkPath); err != nil {
+			return err
+		}
+		existing, err := os.ReadFile(checkPath)
+		if err != nil {
+			return err
+		}
+		if string(existing) != buf.String() {
+			return fmt.Errorf("stub behavior drift: run `oaer compat stub-behavior --output %s`", checkPath)
+		}
+		fmt.Fprintf(w, "%s: up to date\n", checkPath)
+		return nil
+	default:
+		fmt.Fprintf(w, "entries: %d\n", report.Totals.Entries)
+		fmt.Fprintf(w, "types: %d\n", report.Totals.Types)
+		fmt.Fprintf(w, "members: %d\n", report.Totals.Members)
+		fmt.Fprintf(w, "implemented: %d\n", report.Totals.Implemented)
+		fmt.Fprintf(w, "passive-default: %d\n", report.Totals.PassiveDefault)
+		fmt.Fprintf(w, "unsupported: %d\n", report.Totals.Unsupported)
+		fmt.Fprintf(w, "unknown: %d\n", report.Totals.Unknown)
+		return nil
+	}
+}
+
+func writeStubBehaviorOutput(w io.Writer, report capability.StubBehaviorReport, path string) error {
+	if strings.EqualFold(filepath.Ext(path), ".json") {
+		return capability.WriteStubBehaviorJSON(w, report)
+	}
+	return capability.WriteStubBehaviorMarkdown(w, report)
+}
+
+func runCompatStubInventory(args []string, w io.Writer) error {
+	sourceRoot := filepath.Join("example-projects", "stubs")
+	outputPath := ""
+	checkPath := ""
+	jsonOut := false
+	usage := "usage: oaer compat stub-inventory [--source <dir>] [--json|--output <path>|--check <path>]"
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--source":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			sourceRoot = args[i]
+		case "--json":
+			jsonOut = true
+		case "--output":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			outputPath = args[i]
+		case "--check":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			checkPath = args[i]
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	requested := 0
+	for _, set := range []bool{jsonOut, outputPath != "", checkPath != ""} {
+		if set {
+			requested++
+		}
+	}
+	if requested > 1 {
+		return errors.New("use only one of --json, --output, or --check")
+	}
+	report, err := capability.BuildStubInventoryReport(sourceRoot)
+	if err != nil {
+		return err
+	}
+	switch {
+	case jsonOut:
+		return capability.WriteStubInventoryJSON(w, report)
+	case outputPath != "":
+		var buf strings.Builder
+		if err := writeStubInventoryOutput(&buf, report, outputPath); err != nil {
+			return err
+		}
+		return os.WriteFile(outputPath, []byte(buf.String()), 0o644)
+	case checkPath != "":
+		var buf strings.Builder
+		if err := writeStubInventoryOutput(&buf, report, checkPath); err != nil {
+			return err
+		}
+		existing, err := os.ReadFile(checkPath)
+		if err != nil {
+			return err
+		}
+		if string(existing) != buf.String() {
+			return fmt.Errorf("stub inventory drift: run `oaer compat stub-inventory --output %s`", checkPath)
+		}
+		fmt.Fprintf(w, "%s: up to date\n", checkPath)
+		return nil
+	default:
+		fmt.Fprintf(w, "systemStubClasses: %d\n", report.Source.SystemStubClasses)
+		fmt.Fprintf(w, "generatedPlatformTypes: %d\n", report.Generated.PlatformTypes)
+		fmt.Fprintf(w, "sobjectStubClasses: %d\n", report.Source.SObjectStubClasses)
+		fmt.Fprintf(w, "activeStandardObjects: %d\n", report.Active.StandardObjects)
+		fmt.Fprintf(w, "systemSourceMissingGeneratedTypeCount: %d\n", report.Gaps.SystemSourceMissingGeneratedTypeCount)
+		fmt.Fprintf(w, "sobjectSourceMissingActiveCount: %d\n", report.Gaps.SObjectSourceMissingActiveCount)
+		return nil
+	}
+}
+
+func writeStubInventoryOutput(w io.Writer, report capability.StubInventoryReport, path string) error {
+	if strings.EqualFold(filepath.Ext(path), ".json") {
+		return capability.WriteStubInventoryJSON(w, report)
+	}
+	return capability.WriteStubInventoryMarkdown(w, report)
 }
 
 func loadSalesforceCoverageCatalog(source, inventoryPath, catalogPath string) (capability.Catalog, error) {

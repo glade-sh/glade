@@ -47,7 +47,15 @@ func standardObjectKeyPrefixes() map[string]string {
 
 func standardObjectCatalogEntryFor(objectName string) (standardObjectCatalogEntry, bool) {
 	entry, ok := standardObjectCatalogData[objectName]
-	return entry, ok
+	if ok {
+		return entry, true
+	}
+	for candidate, entry := range standardObjectCatalogData {
+		if stringsEqualFold(candidate, objectName) {
+			return entry, true
+		}
+	}
+	return standardObjectCatalogEntry{}, false
 }
 
 var standardObjectCatalogData = map[string]standardObjectCatalogEntry{

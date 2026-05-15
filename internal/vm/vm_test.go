@@ -22,6 +22,155 @@ func TestExecAssertEquals(t *testing.T) {
 	}
 }
 
+func TestCommonSObjectTypeNamesIncludesGeneratedStandardObjects(t *testing.T) {
+	foundApexClass := false
+	foundAccount := false
+	for _, name := range CommonSObjectTypeNames() {
+		if strings.EqualFold(name, "ApexClass") {
+			foundApexClass = true
+		}
+		if strings.EqualFold(name, "Account") {
+			foundAccount = true
+		}
+	}
+	if !foundApexClass {
+		t.Fatalf("CommonSObjectTypeNames should include generated standard object ApexClass")
+	}
+	if !foundAccount {
+		t.Fatalf("CommonSObjectTypeNames should preserve prefix-backed standard object Account")
+	}
+}
+
+func TestExecGeneratedPlatformStaticMethodFallsBackToTypedDefault(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Id> similar = Answers.findSimilar(new Account(Name = 'Acme'));
+System.assertEquals(0, similar.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecGeneratedPlatformMethodReturnsPassiveValueObjectWithProperties(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.QuestionAndAnswersSuggestions suggestions =
+	ConnectApi.QuestionAndAnswers.getSuggestions('0DB000000000001', 'reset password', '005000000000001', true, 10);
+System.assertEquals(null, suggestions.articles);
+suggestions.questions = 'placeholder';
+System.assertEquals('placeholder', suggestions.questions);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecGeneratedPlatformConstructorInitializesPassiveProperties(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.QuestionAndAnswersCapabilityInput input =
+	new ConnectApi.QuestionAndAnswersCapabilityInput(bestAnswerId = '0D5000000000001');
+System.assertEquals('0D5000000000001', input.bestAnswerId);
+System.assertEquals(null, input.questionTitle);
+input.questionTitle = 'Solved';
+System.assertEquals('Solved', input.questionTitle);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGeneratedPlatformFallbackSelectsTypeAwareOverload(t *testing.T) {
+	original := generatedPlatformMethodIndex
+	generatedPlatformMethodIndex = map[string]map[string][]Method{
+		"generated.overload": {
+			"pick": {
+				{
+					Name:       "Generated.Overload.pick",
+					ClassName:  "Generated.Overload",
+					ReturnType: "Integer",
+					Params:     []Param{{Name: "value", Type: "Integer"}},
+					IsStatic:   true,
+				},
+				{
+					Name:       "Generated.Overload.pick",
+					ClassName:  "Generated.Overload",
+					ReturnType: "Boolean",
+					Params:     []Param{{Name: "value", Type: "Boolean"}},
+					IsStatic:   true,
+				},
+			},
+		},
+	}
+	defer func() { generatedPlatformMethodIndex = original }()
+
+	machine := New(nil)
+	value, handled := machine.generatedPlatformStaticDefault("Generated.Overload.pick", []Value{Bool(true)})
+	if !handled || value.Kind != ValueBool || value.Bool {
+		t.Fatalf("Boolean overload default = %#v, handled %v; want false Boolean", value, handled)
+	}
+
+	value, handled = machine.generatedPlatformStaticDefault("Generated.Overload.pick", []Value{Int(1)})
+	if !handled || value.Kind != ValueInt || value.Int != 0 {
+		t.Fatalf("Integer overload default = %#v, handled %v; want zero Integer", value, handled)
+	}
+}
+
+func TestGeneratedPlatformInstanceMethodFallsBackToTypedDefault(t *testing.T) {
+	machine := New(nil)
+	receiver := Object("ApexPages.IdeaStandardSetController")
+	result := &Result{}
+
+	value, handled, err := machine.callValueMember("controller", receiver, "getHasNext", nil, result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled || value.Kind != ValueBool || value.Bool {
+		t.Fatalf("getHasNext = %#v, handled %v; want false Boolean default", value, handled)
+	}
+
+	value, handled, err = machine.callValueMember("controller", receiver, "getResultSize", nil, result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled || value.Kind != ValueInt || value.Int != 0 {
+		t.Fatalf("getResultSize = %#v, handled %v; want zero Integer default", value, handled)
+	}
+
+	value, handled, err = machine.callValueMember("controller", receiver, "getListViewOptions", nil, result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled || value.Kind != ValueList || value.Type != "List<SelectOption>" {
+		t.Fatalf("getListViewOptions = %#v, handled %v; want typed List<SelectOption>", value, handled)
+	}
+}
+
+func TestGeneratedPlatformFallbackDoesNotMaskExplicitUnsupportedRuntimeMethods(t *testing.T) {
+	machine := New(nil)
+	result := &Result{}
+
+	_, handled, err := machine.callValueMember("page", newPageReference("/apex/example"), "getContent", nil, result)
+	if !handled {
+		t.Fatalf("PageReference.getContent was not handled")
+	}
+	if err == nil || !strings.Contains(err.Error(), "unsupported call") {
+		t.Fatalf("PageReference.getContent error = %v, want explicit unsupported", err)
+	}
+
+	_, err = machine.call("Crypto.signXml", []Value{String("RSA"), Object("Dom.XmlNode"), String("id"), String("cert")}, nil, result)
+	if err == nil || !strings.Contains(err.Error(), "unsupported call") {
+		t.Fatalf("Crypto.signXml error = %v, want explicit unsupported", err)
+	}
+}
+
 func TestExecSystemAssertEqualsIsCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous("system.assertEquals(2, 1 + 1);")
 	if err != nil {

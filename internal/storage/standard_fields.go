@@ -288,6 +288,9 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 	if org == nil || objectName == "" {
 		return
 	}
+	if canonical, ok := ResolveKnownStandardObjectName(objectName); ok {
+		objectName = canonical
+	}
 	if org.Objects == nil {
 		org.Objects = make(map[string]ObjectState)
 	}
@@ -338,10 +341,10 @@ func isKnownStandardObjectExact(objectName string) bool {
 	if StandardKeyPrefixes()[objectName] != "" {
 		return true
 	}
-	if _, ok := standardObjectCatalogEntryFor(objectName); ok {
+	if _, ok := standardObjectCatalogData[objectName]; ok {
 		return true
 	}
-	if _, ok := standardSObjectStubFieldsFor(objectName); ok {
+	if _, ok := standardSObjectStubFieldData[objectName]; ok {
 		return true
 	}
 	if stringsHasSuffixFold(objectName, "__c") || stringsHasSuffixFold(objectName, "__mdt") {

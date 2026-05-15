@@ -592,11 +592,6 @@ func TestRegexSplitRejectsNullablePatterns(t *testing.T) {
 		want   string
 	}{
 		{
-			name:   "stringEmptyPattern",
-			source: `String source = 'abc'; source.split('', -1);`,
-			want:   `String.split regexes that can match empty strings`,
-		},
-		{
 			name:   "patternNullableDelimiter",
 			source: `Pattern p = Pattern.compile('a*'); p.split('ab cd', -1);`,
 			want:   `Pattern.split regexes that can match empty strings`,

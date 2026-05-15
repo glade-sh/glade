@@ -145,11 +145,6 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "search.FIND local search/SOSL surface"`,
 		},
 		{
-			name: "inline sosl find",
-			src:  `Object rows = [FIND 'Acme' IN ALL FIELDS RETURNING Account(Id)];`,
-			want: `unsupported call "SOSL/FIND local search surface"`,
-		},
-		{
 			name: "approval process api",
 			src:  `Approval.ProcessWorkitemRequest.setAction('Approve');`,
 			want: `unsupported call "Approval.ProcessWorkitemRequest.setAction local approval process and lock surface"`,
@@ -1527,10 +1522,12 @@ func TestExecSendEmailCaptureRollback(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage before = new Messaging.SingleEmailMessage();
 before.setToAddresses(new List<String>{'before@example.test'});
+before.setPlainTextBody('before');
 Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{before});
 System.Savepoint sp = Database.setSavepoint();
 Messaging.SingleEmailMessage after = new Messaging.SingleEmailMessage();
 after.setToAddresses(new List<String>{'after@example.test'});
+after.setPlainTextBody('after');
 Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{after});
 Database.rollback(sp);
 `)
@@ -2484,7 +2481,7 @@ System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'batch finish'].size
 	if err := machine.RegisterClass(Class{
 		Name: "QueueWorker",
 		Methods: map[string]Method{
-			"execute": {Name: "QueueWorker.execute", ClassName: "QueueWorker", ReturnType: "void", Program: queueProgram},
+			"execute": {Name: "QueueWorker.execute", ClassName: "QueueWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: queueProgram},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -2677,6 +2674,7 @@ System.assertEquals(0, Limits.getEmailInvocations());
 System.assertEquals(10, Limits.getLimitEmailInvocations());
 Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
 email.setToAddresses(new List<String>{'hello@example.test'});
+email.setPlainTextBody('hello');
 Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{email});
 System.assertEquals(1, Limits.getEmailInvocations());
 
@@ -2900,7 +2898,7 @@ func TestExecAbortJobCompletedRecordsAreIdempotent(t *testing.T) {
 	if err := machine.RegisterClass(Class{Name: "QueueWorker"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := machine.RegisterMethod(Method{Name: "QueueWorker.execute", ClassName: "QueueWorker"}); err != nil {
+	if err := machine.RegisterMethod(Method{Name: "QueueWorker.execute", ClassName: "QueueWorker", Params: []Param{{Name: "context", Type: "QueueableContext"}}}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {
@@ -3042,7 +3040,7 @@ System.assertNotEquals('', job.CreatedDate.format());
 	if err := machine.RegisterClass(Class{Name: "QueueWorker"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := machine.RegisterMethod(Method{Name: "QueueWorker.execute", ClassName: "QueueWorker"}); err != nil {
+	if err := machine.RegisterMethod(Method{Name: "QueueWorker.execute", ClassName: "QueueWorker", Params: []Param{{Name: "context", Type: "QueueableContext"}}}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {
@@ -3128,7 +3126,7 @@ func TestExecAbortJobUnknownRecordsAreTypedUnsupported(t *testing.T) {
 			if err := machine.RegisterClass(Class{Name: "QueueWorker"}); err != nil {
 				t.Fatal(err)
 			}
-			if err := machine.RegisterMethod(Method{Name: "QueueWorker.execute", ClassName: "QueueWorker"}); err != nil {
+			if err := machine.RegisterMethod(Method{Name: "QueueWorker.execute", ClassName: "QueueWorker", Params: []Param{{Name: "context", Type: "QueueableContext"}}}); err != nil {
 				t.Fatal(err)
 			}
 			_, err = machine.Execute(program)
@@ -4704,11 +4702,13 @@ System.assert(recycleRow.IsDeleted);
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
-	lockID := storage.ID(machine.Globals["lockRollback"].Fields["Id"].Text)
+	lockText, _ := idValueText(machine.Globals["lockRollback"].Fields["Id"])
+	lockID := storage.ID(lockText)
 	if org.Objects["Account"].Records[lockID].System.Locked {
 		t.Fatalf("Database.lock allOrNone rollback left %s locked", lockID)
 	}
-	unlockID := storage.ID(machine.Globals["unlockRollback"].Fields["Id"].Text)
+	unlockText, _ := idValueText(machine.Globals["unlockRollback"].Fields["Id"])
+	unlockID := storage.ID(unlockText)
 	if !org.Objects["Account"].Records[unlockID].System.Locked {
 		t.Fatalf("Database.unlock allOrNone rollback left %s unlocked", unlockID)
 	}

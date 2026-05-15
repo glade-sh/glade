@@ -204,18 +204,40 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limits.EmailInvokes)), true
 	case "getLimitEmailInvocations":
 		return Int(int64(vm.limitCaps.EmailInvokes)), true
-	case "getAggregateQueries", "getFindSimilarCalls", "getMobilePushApexCalls", "getQueryLocatorRows", "getSavepointRollbacks", "getSoslQueries":
+	case "getAggregateQueries", "getApexCursorRows", "getApexCursors", "getApexPaginationCursorRows",
+		"getApexPaginationCursors", "getChildRelationshipsDescribes", "getDatabaseTime",
+		"getFetchCallsOnApexCursor", "getFieldSetsDescribes", "getFieldsDescribes",
+		"getFindSimilarCalls", "getMobilePushApexCalls", "getPicklistDescribes",
+		"getQueryLocatorRows", "getRecordTypesDescribes", "getRunAs", "getSavepointRollbacks",
+		"getSavepoints", "getScriptStatements", "getSoslQueries":
 		return Int(0), true
 	case "getLimitAggregateQueries":
 		return Int(300), true
+	case "getLimitApexCursorRows", "getLimitApexPaginationCursorRows":
+		return Int(10000), true
+	case "getLimitApexCursors", "getLimitApexPaginationCursors":
+		return Int(50), true
+	case "getLimitChildRelationshipsDescribes", "getLimitFieldSetsDescribes",
+		"getLimitFieldsDescribes", "getLimitPicklistDescribes", "getLimitRecordTypesDescribes":
+		return Int(100), true
+	case "getLimitDatabaseTime":
+		return Int(0), true
+	case "getLimitFetchCallsOnApexCursor":
+		return Int(10), true
 	case "getLimitFindSimilarCalls":
 		return Int(10), true
 	case "getLimitMobilePushApexCalls":
 		return Int(10), true
 	case "getLimitQueryLocatorRows":
 		return Int(10000), true
+	case "getLimitRunAs":
+		return Int(100), true
 	case "getLimitSavepointRollbacks":
 		return Int(100), true
+	case "getLimitSavepoints":
+		return Int(5), true
+	case "getLimitScriptStatements":
+		return Int(200000), true
 	case "getLimitSoslQueries":
 		return Int(20), true
 	default:

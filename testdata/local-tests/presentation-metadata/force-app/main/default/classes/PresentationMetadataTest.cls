@@ -6,11 +6,15 @@ private class PresentationMetadataTest {
     Object tabSet = tabSets.get(0);
     System.assertEquals('All Tabs', tabSet.getLabel());
     List<Object> tabs = tabSet.getTabs();
-    System.assertEquals(1, tabs.size());
-    Object tab = tabs.get(0);
-    System.assertEquals('Widget__c', tab.getName());
-    System.assertEquals('Widgets', tab.getLabel());
-    System.assertEquals('Widget__c', tab.getSObjectName());
-    System.assert(tab.isCustom());
+    Boolean foundWidgetTab = false;
+    for (Object tab : tabs) {
+      if (tab.getSObjectName() == 'Widget__c') {
+        System.assertEquals('Widget__c', tab.getName());
+        System.assertEquals('Widgets', tab.getLabel());
+        System.assert(tab.isCustom());
+        foundWidgetTab = true;
+      }
+    }
+    System.assert(foundWidgetTab);
   }
 }

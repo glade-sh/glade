@@ -216,6 +216,28 @@ System.assert(RestContext.response.getHeaderKeys().contains('location'));
 	}
 }
 
+func TestExecRestContextStaticFieldsAreCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+RestRequest req = new RestRequest();
+req.requestURI = '/services/apexrest/case';
+req.requestBody = Blob.valueOf('body');
+restcontext.REQUEST = req;
+System.assertEquals('/services/apexrest/case', RESTCONTEXT.request.requestURI);
+System.assertEquals('body', RestContext.Request.RequestBody.toString());
+
+RestResponse res = new RestResponse();
+res.statusCode = 202;
+RESTCONTEXT.Response = res;
+System.assertEquals(202, restcontext.RESPONSE.statusCode);
+`)
+	if err != nil {
+		t.Fatalf("compile: %v", err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+}
+
 func TestExecRestContextLifecycleEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 RestContext.request = null;
@@ -864,11 +886,11 @@ func TestStringRegexReplacementSplitAndUnsupportedEdges(t *testing.T) {
 	if err != nil || !handled || split.Kind != ValueList || len(split.List) != 3 || split.List[0].Text != "" || split.List[1].Text != "boo" || split.List[2].Text != "" {
 		t.Fatalf("split = %#v handled=%v err=%v", split, handled, err)
 	}
-	_, _, err = callStringMember(String("abc"), "replaceAll", []Value{String("(?=a)"), String("x")})
-	var runtimeErr *RuntimeError
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.replaceAll Java regex lookahead") {
-		t.Fatalf("replaceAll unsupported err = %#v", err)
+	lookahead, handled, err := callStringMember(String("abc"), "replaceAll", []Value{String("(?=a)"), String("x")})
+	if err != nil || !handled || lookahead.Text != "xabc" {
+		t.Fatalf("replaceAll lookahead = %#v handled=%v err=%v", lookahead, handled, err)
 	}
+	var runtimeErr *RuntimeError
 	_, _, err = callStringMember(String("abc"), "replaceFirst", []Value{String("(?<word>[a-z]+)"), String("${word}")})
 	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.replaceFirst Java regex named groups") {
 		t.Fatalf("replaceFirst named regex unsupported err = %#v", err)
@@ -917,19 +939,23 @@ System.assert(!Pattern.matches(passwordPattern, 'a1!'));
 
 func TestStringRegexSplitRejectsNullableEdges(t *testing.T) {
 	var runtimeErr *RuntimeError
-	for _, pattern := range []string{"", `\b`, "^"} {
+	for _, pattern := range []string{`\b`, "^"} {
 		_, _, err := callStringMember(String("abc"), "split", []Value{String(pattern), Int(-1)})
 		if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.split regexes that can match empty strings") {
 			t.Fatalf("split %q err = %#v", pattern, err)
 		}
 	}
+	charSplit, handled, err := callStringMember(String("abc"), "split", []Value{String(""), Int(-1)})
+	if err != nil || !handled || charSplit.Kind != ValueList || len(charSplit.List) != 4 || charSplit.List[0].Text != "a" || charSplit.List[3].Text != "" {
+		t.Fatalf("empty regex split = %#v handled=%v err=%v", charSplit, handled, err)
+	}
 	split, handled, err := callStringMember(String(""), "split", []Value{String("x")})
 	if err != nil || !handled || split.Kind != ValueList || len(split.List) != 1 || split.List[0].Text != "" {
 		t.Fatalf("empty no-match split = %#v handled=%v err=%v", split, handled, err)
 	}
-	_, err = splitRegex("Pattern.split", "", "Ωb", -1)
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "Pattern.split regexes that can match empty strings") {
-		t.Fatalf("Pattern.split empty regex err = %#v", err)
+	parts, err := splitRegex("Pattern.split", "", "Ωb", -1)
+	if err != nil || len(parts) != 3 || parts[0] != "Ω" || parts[2] != "" {
+		t.Fatalf("Pattern.split empty regex = %#v err=%v", parts, err)
 	}
 }
 

@@ -1115,8 +1115,8 @@ System.assertEquals(Schema.DisplayType.STRING, describe.getType());
 System.assertEquals(DisplayType.STRING, describe.getType());
 System.assertEquals('STRING', describe.getType());
 System.assertEquals(false, describe.isAutoNumber());
-System.assertEquals(null, describe.compoundFieldName);
-System.assertEquals(null, describe.getCompoundFieldName());
+System.assertEquals('Name', describe.compoundFieldName);
+System.assertEquals('Name', describe.getCompoundFieldName());
 System.assertEquals('Account', Account.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).getName());
 `)
 	if err != nil {
@@ -2599,7 +2599,7 @@ Object nameDescribe = nameField.getDescribe();
 Object lowercaseNameDescribe = lowercaseNameField.getDescribe();
 	System.assertEquals('Name', nameDescribe.getName());
 	System.assertEquals('Name', nameField.getName());
-	System.assertEquals('Name', nameField.label);
+	System.assertEquals('Account Name', nameField.label);
 	System.assertEquals('Name', lowercaseNameDescribe.getName());
 System.assert(nameDescribe.isNameField());
 System.assert(!nameDescribe.isEncrypted());
@@ -5374,7 +5374,7 @@ for (Account newer : Trigger.new) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Before');
 insert a;
-Account updateRecord = new Account(Id = (Id)(String.valueOf(a.Id) + 'AAA'), Name = 'After');
+Account updateRecord = new Account(Id = (Id)a.Id.to18(), Name = 'After');
 update updateRecord;
 `)
 	if err != nil {

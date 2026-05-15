@@ -121,7 +121,33 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	requireStandardMethodType(t, database, "getQueryLocatorWithBinds", "Database.QueryLocator")
 
 	batchable := requireStandardSymbol(t, symbols, "Database.Batchable")
+	if batchable.Kind != apexast.DeclarationInterface {
+		t.Fatalf("Database.Batchable kind = %q, want interface", batchable.Kind)
+	}
+	if batchable.SuperClass != "" {
+		t.Fatalf("Database.Batchable superclass = %q, want empty interface superclass", batchable.SuperClass)
+	}
+	for _, member := range batchable.Members {
+		if member.Kind == apexast.DeclarationConstructor {
+			t.Fatalf("Database.Batchable has generated-stub constructor %q, want no interface constructors", member.Name)
+		}
+	}
 	requireStandardMethodType(t, batchable, "start", "Iterable")
+
+	for _, name := range []string{"HttpCalloutMock", "Iterable", "Iterator", "Queueable", "Schedulable"} {
+		symbol := requireStandardSymbol(t, symbols, name)
+		if symbol.Kind != apexast.DeclarationInterface {
+			t.Fatalf("%s kind = %q, want interface", name, symbol.Kind)
+		}
+		if symbol.SuperClass != "" {
+			t.Fatalf("%s superclass = %q, want empty interface superclass", name, symbol.SuperClass)
+		}
+		for _, member := range symbol.Members {
+			if member.Kind == apexast.DeclarationConstructor {
+				t.Fatalf("%s has generated-stub constructor %q, want no interface constructors", name, member.Name)
+			}
+		}
+	}
 
 	statusCode := requireStandardSymbol(t, symbols, "StatusCode")
 	if statusCode.Kind != apexast.DeclarationEnum {

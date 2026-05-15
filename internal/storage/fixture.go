@@ -789,9 +789,6 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"PermissionSetId": IDValue(permissionSetID),
 		},
 	})
-	if _, ok := org.Objects["Site"]; ok {
-		ensureLocalSiteRecords(org)
-	}
 	ensureRecordTypeRecords(org)
 	if org.IDSequences == nil {
 		org.IDSequences = make(map[string]uint64)

@@ -649,6 +649,156 @@ func TestDMLRejectsNonCreateableAndNonUpdateableFields(t *testing.T) {
 	assertDMLErrorDetail(t, update[0], "INVALID_FIELD_FOR_INSERT_UPDATE", "External_Code__c")
 }
 
+func TestDMLAllowsLocalCreateRelationshipIdentityFieldsForJunctionObjects(t *testing.T) {
+	org := testOrg()
+	org.Objects["Junction__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Junction__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name":          {APIName: "Name", Type: storage.FieldString},
+				"ParentId":      {APIName: "ParentId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent", Required: true, Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false)},
+				"OtherParentId": {APIName: "OtherParentId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "OtherParent", Required: true, Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false)},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	parent := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !parent[0].Success {
+		t.Fatalf("parent insert = %#v", parent)
+	}
+	junction := engine.Insert([]storage.Record{{
+		Object: "Junction__c",
+		Fields: map[string]storage.Value{
+			"Name":          storage.StringValue("Child"),
+			"ParentId":      storage.IDValue(parent[0].ID),
+			"OtherParentId": storage.IDValue(parent[0].ID),
+		},
+	}})
+	if !junction[0].Success {
+		t.Fatalf("junction insert = %#v", junction)
+	}
+}
+
+func TestDMLStripsUnchangedNonUpdateableFieldsBeforeUpdateValidation(t *testing.T) {
+	org := testOrg()
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Child__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name":     {APIName: "Name", Type: storage.FieldString, Updateable: storage.BoolFlag(true)},
+				"ParentId": {APIName: "ParentId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent", Required: true, Createable: storage.BoolFlag(true), Updateable: storage.BoolFlag(false)},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	parent := engine.Insert([]storage.Record{{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}}})
+	otherParent := engine.Insert([]storage.Record{{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Other")}}})
+	child := engine.Insert([]storage.Record{{
+		Object: "Child__c",
+		Fields: map[string]storage.Value{
+			"Name":     storage.StringValue("Child"),
+			"ParentId": storage.IDValue(parent[0].ID),
+		},
+	}})
+	if !parent[0].Success || !otherParent[0].Success || !child[0].Success {
+		t.Fatalf("setup inserts parent=%#v other=%#v child=%#v", parent, otherParent, child)
+	}
+
+	unchanged := engine.Update([]storage.Record{{
+		ID:     child[0].ID,
+		Object: "Child__c",
+		Fields: map[string]storage.Value{
+			"Name":     storage.StringValue("Updated"),
+			"ParentId": storage.IDValue(parent[0].ID),
+		},
+	}})
+	if !unchanged[0].Success {
+		t.Fatalf("unchanged parent update = %#v", unchanged)
+	}
+
+	changed := engine.Update([]storage.Record{{
+		ID:     child[0].ID,
+		Object: "Child__c",
+		Fields: map[string]storage.Value{
+			"ParentId": storage.IDValue(otherParent[0].ID),
+		},
+	}})
+	assertDMLErrorDetail(t, changed[0], "INVALID_FIELD_FOR_INSERT_UPDATE", "ParentId")
+}
+
+func TestDMLStillRejectsNonCreateableReadonlyRelationshipAndTypeFields(t *testing.T) {
+	org := testOrg()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "CampaignMember")
+	engine := NewEngine(&org)
+
+	account := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("Acme"),
+			"MasterRecordId": storage.IDValue("001000000000001AAA"),
+		},
+	}})
+	assertDMLErrorDetail(t, account[0], "INVALID_FIELD_FOR_INSERT_UPDATE", "MasterRecordId")
+
+	member := engine.Insert([]storage.Record{{
+		Object: "CampaignMember",
+		Fields: map[string]storage.Value{
+			"Type": storage.StringValue("Default"),
+		},
+	}})
+	assertDMLErrorDetail(t, member[0], "INVALID_FIELD_FOR_INSERT_UPDATE", "Type")
+
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Child__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name":     {APIName: "Name", Type: storage.FieldString},
+				"ParentId": {APIName: "ParentId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent", Required: true, Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false)},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	child := engine.Insert([]storage.Record{{
+		Object: "Child__c",
+		Fields: map[string]storage.Value{
+			"Name":     storage.StringValue("Child"),
+			"ParentId": storage.IDValue("001000000000001AAA"),
+		},
+	}})
+	assertDMLErrorDetail(t, child[0], "INVALID_FIELD_FOR_INSERT_UPDATE", "ParentId")
+}
+
+func TestDMLDoesNotStripAbsentExplicitNullForNonUpdateableField(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Readonly__c"] = storage.Field{APIName: "Readonly__c", Type: storage.FieldString, Createable: storage.BoolFlag(true), Updateable: storage.BoolFlag(false)}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+	created := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !created[0].Success {
+		t.Fatalf("insert = %#v", created)
+	}
+
+	update := engine.Update([]storage.Record{{
+		ID:            created[0].ID,
+		Object:        "Account",
+		ExplicitNulls: map[string]bool{"Readonly__c": true},
+	}})
+	assertDMLErrorDetail(t, update[0], "INVALID_FIELD_FOR_INSERT_UPDATE", "Readonly__c")
+}
+
 func TestWithTransactionRollsBackOnError(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)
@@ -2425,6 +2575,51 @@ func TestContentVersionTransactionRollbackRemovesDocumentAndLink(t *testing.T) {
 	}
 	if got := len(org.Objects["Account"].Records); got != 1 {
 		t.Fatalf("accounts after rollback = %d", got)
+	}
+}
+
+func TestContentVersionCreatesDocumentWithGeneratedStandardSchema(t *testing.T) {
+	org := storage.NewOrgState()
+	for _, objectName := range []string{"Account", "ContentVersion", "ContentDocument", "ContentDocumentLink"} {
+		storage.EnsureStandardObject(&org, objectName)
+	}
+	storage.EnsureDeterministicPlatformData(&org)
+	engine := NewEngine(&org)
+	account := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !account[0].Success {
+		t.Fatalf("account insert = %#v", account)
+	}
+	first := engine.Insert([]storage.Record{{
+		Object: "ContentVersion",
+		Fields: map[string]storage.Value{
+			"Title":                  storage.StringValue("Spec"),
+			"PathOnClient":           storage.StringValue("docs/spec.pdf"),
+			"VersionData":            storage.BlobValue("pdf bytes"),
+			"FirstPublishLocationId": storage.IDValue(account[0].ID),
+		},
+	}})
+	if !first[0].Success {
+		t.Fatalf("content version insert = %#v", first)
+	}
+	version := org.Objects["ContentVersion"].Records[first[0].ID]
+	documentID := version.Fields["ContentDocumentId"].ID
+	document := org.Objects["ContentDocument"].Records[documentID]
+	if document.Fields["LatestPublishedVersionId"].ID != first[0].ID || document.Fields["Title"].String != "Spec" || document.Fields["FileExtension"].String != "pdf" {
+		t.Fatalf("content document = %#v", document)
+	}
+
+	direct := engine.Insert([]storage.Record{{
+		Object: "ContentDocument",
+		Fields: map[string]storage.Value{
+			"Title":                    storage.StringValue("Direct"),
+			"LatestPublishedVersionId": storage.IDValue(first[0].ID),
+		},
+	}})
+	if direct[0].Success || direct[0].StatusCode != "INVALID_FIELD_FOR_INSERT_UPDATE" {
+		t.Fatalf("direct content document insert = %#v", direct)
 	}
 }
 

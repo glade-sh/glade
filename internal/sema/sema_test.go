@@ -157,12 +157,171 @@ func TestAnalyzeRecognizesCallableAndStubProviderTypes(t *testing.T) {
 					},
 				},
 			},
+			{
+				Kind:       apexast.DeclarationClass,
+				Name:       "Mock",
+				File:       "Mock.cls",
+				Interfaces: []string{"HttpCalloutMock"},
+				Members: []typesys.MemberSymbol{{
+					Kind: apexast.DeclarationMethod,
+					Name: "respond",
+					Type: "HttpResponse",
+					Parameters: []apexast.Parameter{
+						{Name: "request", Type: "HttpRequest"},
+					},
+				}},
+			},
+			{
+				Kind:       apexast.DeclarationClass,
+				Name:       "Queued",
+				File:       "Queued.cls",
+				Interfaces: []string{"Queueable"},
+				Members: []typesys.MemberSymbol{{
+					Kind: apexast.DeclarationMethod,
+					Name: "execute",
+					Type: "void",
+					Parameters: []apexast.Parameter{
+						{Name: "context", Type: "QueueableContext"},
+					},
+				}},
+			},
+			{
+				Kind:       apexast.DeclarationClass,
+				Name:       "Scheduled",
+				File:       "Scheduled.cls",
+				Interfaces: []string{"Schedulable"},
+				Members: []typesys.MemberSymbol{{
+					Kind: apexast.DeclarationMethod,
+					Name: "execute",
+					Type: "void",
+					Parameters: []apexast.Parameter{
+						{Name: "context", Type: "SchedulableContext"},
+					},
+				}},
+			},
+			{
+				Kind:       apexast.DeclarationClass,
+				Name:       "Batch",
+				File:       "Batch.cls",
+				Interfaces: []string{"Database.Batchable<Account>"},
+				Members: []typesys.MemberSymbol{
+					{
+						Kind: apexast.DeclarationMethod,
+						Name: "start",
+						Type: "Database.QueryLocator",
+						Parameters: []apexast.Parameter{
+							{Name: "context", Type: "Database.BatchableContext"},
+						},
+					},
+					{
+						Kind: apexast.DeclarationMethod,
+						Name: "execute",
+						Type: "void",
+						Parameters: []apexast.Parameter{
+							{Name: "context", Type: "Database.BatchableContext"},
+							{Name: "records", Type: "List<Account>"},
+						},
+					},
+					{
+						Kind: apexast.DeclarationMethod,
+						Name: "finish",
+						Type: "void",
+						Parameters: []apexast.Parameter{
+							{Name: "context", Type: "Database.BatchableContext"},
+						},
+					},
+				},
+			},
 		},
+		Objects: []schema.Object{{Name: "Account"}},
 	}
 
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzePlatformAPITestCreateStubAndSetMockBridge(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Greeter.cls"), `
+public interface Greeter {
+  String greet(String name);
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "GreeterProvider.cls"), `
+private class GreeterProvider implements System.StubProvider {
+  public Object handleMethodCall(Object stubbedObject, String stubbedMethodName, Type returnType, List<Type> listOfParamTypes, List<String> listOfParamNames, List<Object> listOfArgs) {
+    return 'stubbed';
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "MockResponse.cls"), `
+private class MockResponse implements HttpCalloutMock {
+  public HttpResponse respond(HttpRequest request) {
+    return new HttpResponse();
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "PlatformBridgeTest.cls"), `
+@isTest
+private class PlatformBridgeTest {
+  @isTest static void bridgeCompiles() {
+    Greeter greeter = Test.createStub(Greeter.class, new GreeterProvider());
+    Test.setMock('HttpCalloutMock', new MockResponse());
+    System.assertEquals('stubbed', greeter.greet('Ada'));
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Greeter.cls"),
+		filepath.Join(root, "GreeterProvider.cls"),
+		filepath.Join(root, "MockResponse.cls"),
+		filepath.Join(root, "PlatformBridgeTest.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzePlatformAPITestSetCurrentPageReferencePageToken(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "PageTokenTest.cls"), `
+@isTest
+private class PageTokenTest {
+  @isTest static void pageTokenCompiles() {
+    Test.setCurrentPage(Page.AccountView);
+    Test.setCurrentPageReference(Page.OrderList);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "PageTokenTest.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzePlatformAPIInterfacesRequireContracts(t *testing.T) {
+	index := typesys.Index{
+		Types: []typesys.TypeSymbol{
+			{
+				Kind:       apexast.DeclarationClass,
+				Name:       "Provider",
+				File:       "Provider.cls",
+				Interfaces: []string{"System.StubProvider"},
+			},
+		},
+	}
+
+	result := Analyze(index)
+	if !result.HasErrors() {
+		t.Fatalf("expected missing StubProvider contract diagnostic")
 	}
 }
 
@@ -506,6 +665,32 @@ public class UsesGeneratedStubCase {
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
 		filepath.Join(root, "UsesGeneratedStubCase.cls"),
 	}}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeSObjectNamedConstructorsAndRunAsBlock(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSObjectConstructors.cls"), `
+@IsTest
+public class UsesSObjectConstructors {
+  @IsTest
+  static void run() {
+    User user = new User(Id = '005000000000001AAA');
+    System.runAs(user) {
+      Account account = new Account(Name = 'Acme', NumberOfEmployees = 7);
+      Contact contact = new Contact(LastName = 'Smith', AccountId = account.Id);
+      List<SObject> records = new List<SObject>{ new Contact(LastName = 'Jones') };
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesSObjectConstructors.cls"),
+	}}, schema.Schema{Objects: []schema.Object{{Name: "Account"}, {Name: "Contact"}, {Name: "User"}}})
 
 	result := Analyze(index)
 	if result.HasErrors() {
@@ -1533,6 +1718,7 @@ public class UsesDatabaseQuery {
     Account account = Database.query(query);
     List<SObject> records = Database.query(query);
     List<Account> accounts = Database.query(query);
+    List<AggregateResult> grouped = Database.query(query);
     SObject singleWithBinds = Database.queryWithBinds(query, binds);
     List<Account> accountsWithBinds = Database.queryWithBinds(query, binds);
   }
@@ -1545,6 +1731,248 @@ public class UsesDatabaseQuery {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected Database.query diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeDatabaseQueryIsIterableAsSObject(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesDatabaseQueryForEach.cls"), `
+public class UsesDatabaseQueryForEach {
+  public void run(String query) {
+    for (SObject row : Database.query(query)) {
+      row.getSObjectType();
+    }
+    for (Account account : Database.query(query)) {
+      account.getSObjectType();
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesDatabaseQueryForEach.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected Database.query enhanced-for diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeEncodingUtilAndBlobStaticMethods(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesEncodingUtil.cls"), `
+public class UsesEncodingUtil {
+  public void run(Blob body) {
+    String encoded = EncodingUtil.base64Encode(body);
+    Blob decoded = EncodingUtil.base64Decode(encoded);
+    String hexed = EncodingUtil.convertToHex(decoded);
+    Blob fromHex = EncodingUtil.convertFromHex(hexed);
+    String escaped = EncodingUtil.urlEncode('a b', 'UTF-8');
+    String plain = EncodingUtil.urlDecode(escaped, 'UTF-8');
+    Blob literal = Blob.valueOf(plain);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesEncodingUtil.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected EncodingUtil diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeSystemStatusCodeAlias(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesStatusCode.cls"), `
+public class UsesStatusCode {
+  public void run() {
+    System.StatusCode statusCode = StatusCode.REQUIRED_FIELD_MISSING;
+    StatusCode other = statusCode;
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesStatusCode.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected StatusCode diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeConcreteSObjectCloneReturnsConcreteType(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSObjectClone.cls"), `
+public class UsesSObjectClone {
+  public void run() {
+    Contact oldRec = new Contact(LastName = 'Old');
+    Contact newRec = oldRec.clone(true);
+    newRec.LastName = 'New';
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesSObjectClone.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Contact"}}})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected SObject clone diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeAssertClassMethods(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesAssert.cls"), `
+public class UsesAssert {
+  public void run(Object value) {
+    Assert.isFalse(false, 'message');
+    Assert.isTrue(true);
+    Assert.areEqual(value, value, 'same');
+    Assert.areNotEqual(value, null);
+    Assert.isNull(null, 'null');
+    Assert.isNotNull(value);
+    System.Assert.isInstanceOfType(value, Object.class, 'type');
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesAssert.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected Assert diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeAssertBooleanThroughNestedMapListFieldChain(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesNestedBooleanAssert.cls"), `
+public class UsesNestedBooleanAssert {
+  public class Root {
+    public Map<String, Bucket> buckets;
+  }
+  public class Bucket {
+    public List<Item> items;
+  }
+  public class Item {
+    public Boolean enabled;
+  }
+  public void run(Root result) {
+    Assert.isFalse(result.buckets.get('key').items[0].enabled, 'enabled');
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesNestedBooleanAssert.cls")},
+	}, schema.Schema{})
+	model := buildTypeMembers(enrichIndexWithStandardSymbols(index))
+	scope := map[string]string{
+		normalizeName("result"): "UsesNestedBooleanAssert.Root",
+		semaCurrentTypeScopeKey: "UsesNestedBooleanAssert",
+	}
+	for _, tc := range []struct {
+		expr string
+		want string
+	}{
+		{"result.buckets", "Map<String,UsesNestedBooleanAssert.Bucket>"},
+		{"result.buckets.get('key')", "UsesNestedBooleanAssert.Bucket"},
+		{"result.buckets.get('key').items", "List<UsesNestedBooleanAssert.Item>"},
+		{"result.buckets.get('key').items[0]", "UsesNestedBooleanAssert.Item"},
+		{"result.buckets.get('key').items[0].enabled", "Boolean"},
+	} {
+		if got := inferSemaArgTypeWithModel(tc.expr, scope, model); !strings.EqualFold(got, tc.want) {
+			t.Fatalf("%s type = %q, want %q", tc.expr, got, tc.want)
+		}
+	}
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected nested Boolean Assert diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeAssertBooleanThroughSingletonMethodResultChain(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSingletonMethodResultAssert.cls"), `
+public class UsesSingletonMethodResultAssert {
+  public class Root {
+    public Map<String, Bucket> buckets;
+  }
+  public class Bucket {
+    public List<Item> items;
+  }
+  public class Item {
+    public Boolean enabled;
+  }
+  public class Cache {
+    public static Cache Instance { get; private set; }
+    public Root getRoot() {
+      return null;
+    }
+  }
+  public void run() {
+    Root result = Cache.Instance.getRoot();
+    Assert.isFalse(result.buckets.get('key').items[0].enabled, 'enabled');
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesSingletonMethodResultAssert.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected singleton chain Assert diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeClassLiteralTypeMethodsAreInstanceCalls(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesClassLiteralType.cls"), `
+public class UsesClassLiteralType {
+  interface Runnable {}
+  class Impl implements Runnable {}
+  public Boolean run() {
+    return Runnable.class.isAssignableFrom(Impl.class);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesClassLiteralType.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected class literal Type diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeRestContextStaticFields(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesRestContext.cls"), `
+public class UsesRestContext {
+  public void run() {
+    RestRequest req = RestContext.request;
+    RestResponse res = RestContext.response;
+    String uri = req.requestURI;
+    Blob body = req.requestBody;
+    Integer status = res.statusCode;
+    Blob responseBody = res.responseBody;
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesRestContext.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected RestContext diagnostics: %#v", result.Diagnostics)
 	}
 }
 
@@ -4623,6 +5051,48 @@ public interface Context {
 		if diag.Code == "OAERSEMA016" || diag.Code == "OAERSEMA017" {
 			t.Fatalf("nested sibling inheritance should satisfy override contracts: %#v", result.Diagnostics)
 		}
+	}
+}
+
+func TestAnalyzeNestedInterfaceResolutionPrefersEnclosingType(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Filter.cls"), `
+public interface Filter {
+  Boolean getExcludeBotUsers();
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "SOQL.cls"), `
+public class SOQL {
+  public interface Filter {
+    Filter isFalse();
+  }
+  private class SoqlFilter implements Filter {
+    public Filter isFalse() {
+      return this;
+    }
+  }
+  private class MissingFilter implements Filter {
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Filter.cls"),
+		filepath.Join(root, "SOQL.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	getExcludeCount := 0
+	missingNestedCount := 0
+	for _, diag := range result.Diagnostics {
+		if strings.Contains(diag.Message, "getExcludeBotUsers") {
+			getExcludeCount++
+		}
+		if strings.Contains(diag.Message, "isFalse") {
+			missingNestedCount++
+		}
+	}
+	if getExcludeCount != 0 || missingNestedCount != 1 {
+		t.Fatalf("nested interface diagnostics getExclude=%d missingNested=%d all=%#v", getExcludeCount, missingNestedCount, result.Diagnostics)
 	}
 }
 

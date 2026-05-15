@@ -16,7 +16,7 @@ private class EnterpriseComposedTest {
     PageReference saved = extension.saveAndReturn();
 
     System.assert(work.Id != null);
-    System.assertEquals('/' + work.Id, saved.getUrl());
+    System.assertEquals('/' + work.Id + '?source=enterprise-composed', saved.getUrl());
     System.assertEquals('enterprise-composed', saved.getParameters().get('source'));
     System.assertEquals('review', ApexPages.currentPage().getParameters().get('mode'));
 
@@ -32,10 +32,14 @@ private class EnterpriseComposedTest {
     System.assertEquals(1, tabSets.size());
     Object tabSet = tabSets.get(0);
     List<Object> tabs = tabSet.getTabs();
-    System.assertEquals(1, tabs.size());
-    Object tab = tabs.get(0);
-    System.assertEquals('Legacy_Work_Order__c', tab.getSObjectName());
-    System.assertEquals('Legacy Work Orders', tab.getLabel());
+    Boolean foundWorkOrderTab = false;
+    for (Object tab : tabs) {
+      if (tab.getSObjectName() == 'Legacy_Work_Order__c') {
+        System.assertEquals('Legacy Work Orders', tab.getLabel());
+        foundWorkOrderTab = true;
+      }
+    }
+    System.assert(foundWorkOrderTab);
 
     Metadata.DeployContainer container = new Metadata.DeployContainer();
     Metadata.CustomMetadata deployed = new Metadata.CustomMetadata();

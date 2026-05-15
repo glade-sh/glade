@@ -1,0 +1,905 @@
+package capability
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"sort"
+	"strings"
+
+	"github.com/open-aer/oaer/internal/apexast"
+	"github.com/open-aer/oaer/internal/typesys"
+)
+
+const StubBehaviorSchemaVersion = 1
+
+type StubBehaviorStatus string
+
+const (
+	StubBehaviorImplemented    StubBehaviorStatus = "implemented"
+	StubBehaviorPassiveDefault StubBehaviorStatus = "passive-default"
+	StubBehaviorUnsupported    StubBehaviorStatus = "unsupported"
+	StubBehaviorUnknown        StubBehaviorStatus = "unknown"
+)
+
+type StubBehaviorReport struct {
+	SchemaVersion int                 `json:"schemaVersion"`
+	Target        string              `json:"target"`
+	Totals        StubBehaviorTotals  `json:"totals"`
+	Entries       []StubBehaviorEntry `json:"entries"`
+}
+
+type StubBehaviorTotals struct {
+	Entries        int            `json:"entries"`
+	Types          int            `json:"types"`
+	Members        int            `json:"members"`
+	Implemented    int            `json:"implemented"`
+	PassiveDefault int            `json:"passiveDefault"`
+	Unsupported    int            `json:"unsupported"`
+	Unknown        int            `json:"unknown"`
+	ByStatus       map[string]int `json:"byStatus"`
+}
+
+type StubBehaviorEntry struct {
+	ID         string             `json:"id"`
+	Type       string             `json:"type"`
+	Member     string             `json:"member,omitempty"`
+	Kind       string             `json:"kind"`
+	Static     bool               `json:"static,omitempty"`
+	ReturnType string             `json:"returnType,omitempty"`
+	Parameters []string           `json:"parameters,omitempty"`
+	Status     StubBehaviorStatus `json:"status"`
+	Evidence   []string           `json:"evidence,omitempty"`
+	Notes      string             `json:"notes,omitempty"`
+}
+
+func BuildStubBehaviorReport() StubBehaviorReport {
+	evidence := buildStubBehaviorEvidence()
+	report := StubBehaviorReport{
+		SchemaVersion: StubBehaviorSchemaVersion,
+		Target:        "standard platform stub behavior",
+	}
+	for _, symbol := range typesys.StandardPlatformSymbols() {
+		typeName := stubBehaviorTypeName(symbol)
+		typeEntry := StubBehaviorEntry{
+			ID:     typeName,
+			Type:   typeName,
+			Kind:   string(symbol.Kind),
+			Status: StubBehaviorPassiveDefault,
+			Notes:  "standard platform type is available to parser and semantic analysis",
+		}
+		if match := evidence.lookup(typeName, ""); match != nil {
+			typeEntry.Status = match.status
+			typeEntry.Evidence = match.evidence
+			typeEntry.Notes = match.notes
+		}
+		report.Entries = append(report.Entries, typeEntry)
+		for _, member := range symbol.Members {
+			report.Entries = append(report.Entries, buildStubBehaviorMemberEntry(symbol, typeName, member, evidence))
+		}
+	}
+	sort.Slice(report.Entries, func(i, j int) bool {
+		return report.Entries[i].ID < report.Entries[j].ID
+	})
+	report.Totals = countStubBehaviorTotals(report.Entries)
+	return report
+}
+
+func WriteStubBehaviorJSON(w io.Writer, report StubBehaviorReport) error {
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(report)
+}
+
+func WriteStubBehaviorMarkdown(w io.Writer, report StubBehaviorReport) error {
+	if _, err := fmt.Fprintln(w, "# Stub Behavior Manifest"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "\nTarget: %s\n", report.Target); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "\n- Entries: %d\n", report.Totals.Entries); err != nil {
+		return err
+	}
+	for _, status := range []StubBehaviorStatus{StubBehaviorImplemented, StubBehaviorPassiveDefault, StubBehaviorUnsupported, StubBehaviorUnknown} {
+		if _, err := fmt.Fprintf(w, "- %s: %d\n", status, report.Totals.ByStatus[string(status)]); err != nil {
+			return err
+		}
+	}
+	if _, err := fmt.Fprintln(w, "\n| ID | Kind | Status | Evidence |"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "| --- | --- | --- | --- |"); err != nil {
+		return err
+	}
+	for _, entry := range report.Entries {
+		if _, err := fmt.Fprintf(w, "| `%s` | %s | `%s` | %s |\n", entry.ID, entry.Kind, entry.Status, strings.Join(entry.Evidence, "; ")); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func buildStubBehaviorMemberEntry(symbol typesys.TypeSymbol, typeName string, member typesys.MemberSymbol, evidence stubBehaviorEvidence) StubBehaviorEntry {
+	entry := StubBehaviorEntry{
+		ID:         stubBehaviorMemberID(typeName, member),
+		Type:       typeName,
+		Member:     member.Name,
+		Kind:       string(member.Kind),
+		Static:     stubBehaviorMemberStatic(member),
+		ReturnType: member.Type,
+		Parameters: stubBehaviorParameterTypes(member.Parameters),
+		Status:     StubBehaviorUnknown,
+		Notes:      "no runtime behavior evidence recorded yet",
+	}
+	if member.Kind == apexast.DeclarationConstructor || member.Kind == apexast.DeclarationProperty {
+		entry.Status = StubBehaviorPassiveDefault
+		entry.Notes = "shape is available; behavior is passive/default unless runtime code special-cases it"
+	}
+	if status, notes, ok := genericStubBehaviorMemberStatus(symbol, member); ok {
+		entry.Status = status
+		entry.Notes = notes
+	}
+	if match := evidence.lookup(typeName, member.Name); match != nil {
+		entry.Status = match.status
+		entry.Evidence = match.evidence
+		entry.Notes = match.notes
+	} else if member.Kind == apexast.DeclarationConstructor {
+		if match := evidence.lookup(typeName, ""); match != nil {
+			entry.Status = match.status
+			entry.Evidence = match.evidence
+			entry.Notes = match.notes
+		}
+	}
+	if entry.Status == StubBehaviorUnknown && member.Kind == apexast.DeclarationMethod {
+		entry.Status = StubBehaviorPassiveDefault
+		entry.Notes = "generated platform method is callable and returns a typed default unless runtime code implements or rejects it"
+	}
+	return entry
+}
+
+func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.MemberSymbol) (StubBehaviorStatus, string, bool) {
+	if member.Kind != apexast.DeclarationMethod {
+		return "", "", false
+	}
+	if genericObjectBehaviorMethod(member) {
+		return StubBehaviorImplemented, "generic Object method is handled by the VM for runtime values", true
+	}
+	if symbol.Kind == apexast.DeclarationEnum && genericEnumBehaviorMethod(member) {
+		return StubBehaviorImplemented, "generic enum method is handled by the VM for enum values", true
+	}
+	if limitBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "Limits getter is handled by the VM limit counter/default-cap surface", true
+	}
+	if stringBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "String method is handled by the VM string stdlib surface", true
+	}
+	if corePlatformBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "core platform method is handled by the VM stdlib/runtime surface", true
+	}
+	if explicitlyUnsupportedCoreBehaviorMethod(symbol, member) {
+		return StubBehaviorUnsupported, "local runtime returns an explicit unsupported-feature error for this platform surface", true
+	}
+	if generatedDTOAccessorBehaviorMethod(symbol, member) {
+		return StubBehaviorPassiveDefault, "passive generated DTO getter/setter returns or mutates the matching property when available, otherwise uses a typed default", true
+	}
+	if generatedDTOCollectionMethod(member) {
+		return StubBehaviorPassiveDefault, "passive generated DTO collection method returns an empty typed collection", true
+	}
+	if generatedDTOBehaviorType(symbol) || generatedTopLevelPassiveBehaviorType(symbol) {
+		return StubBehaviorPassiveDefault, "passive generated platform method returns a typed default value unless runtime code special-cases it", true
+	}
+	return "", "", false
+}
+
+func limitBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if !strings.EqualFold(stubBehaviorTypeName(symbol), "Limits") {
+		return false
+	}
+	if member.Kind != apexast.DeclarationMethod || len(member.Parameters) != 0 {
+		return false
+	}
+	switch strings.ToLower(member.Name) {
+	case "getpublishimmediatedml", "getlimitpublishimmediatedml":
+		return false
+	default:
+		return strings.HasPrefix(strings.ToLower(member.Name), "get")
+	}
+}
+
+func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	if strings.HasPrefix(typeName, "Schema.") && (strings.HasPrefix(name, "get") || strings.HasPrefix(name, "is")) {
+		return true
+	}
+	if apexPagesBehaviorMethod(typeName, name) || messagingBehaviorMethod(typeName, name) {
+		return true
+	}
+	if passiveAccessorBehaviorType(typeName) && accessorBehaviorMethod(member) {
+		return true
+	}
+	if matcherBehaviorMethod(typeName, name) || xmlStreamWriterBehaviorMethod(typeName, name) ||
+		calloutMockBehaviorMethod(typeName, name) || searchDTOBehaviorMethod(typeName, name) {
+		return true
+	}
+	if standardExceptionBehaviorMethod(typeName, name) {
+		return true
+	}
+	switch typeName {
+	case "Id":
+		switch name {
+		case "getsobjecttype", "to15", "to18", "valueof":
+			return true
+		}
+	case "SelectOption":
+		return strings.HasPrefix(name, "get") || strings.HasPrefix(name, "set")
+	case "LIST", "List", "Set", "Map":
+		switch name {
+		case "add", "addall", "clear", "contains", "containsall", "get", "getsobjecttype",
+			"indexof", "isempty", "iterator", "put", "putall", "remov", "remove",
+			"removeall", "retainall", "set", "size", "sort":
+			return true
+		}
+	case "UserInfo":
+		switch name {
+		case "getcurrentuvid", "getdefaultcurrency", "getfirstname", "getlanguage",
+			"getlastname", "getlocale", "getname", "getorganizationid", "getorganizationname",
+			"getprofileid", "getsessionid", "gettimezone", "getuitheme", "getuithemedisplayed",
+			"getuseremail", "getuserid", "getusername", "getuserroleid", "getusertype",
+			"haspackagelicense", "iscurrentuserlicensed", "iscurrentuserlicensedforpackage",
+			"ismulticurrencyorganization":
+			return true
+		}
+	case "Site":
+		switch name {
+		case "getsiteid", "getbaseurl", "getbaserequesturl", "getbasesecureurl",
+			"getbasecustomurl", "getdomain", "getname", "gettemplate", "getsitetype",
+			"getsitetypelabel", "getpathprefix", "getadminemail", "getadminid",
+			"getmasterlabel", "isregistrationenabled", "isloginenabled", "isvalidusername",
+			"setexperienceid", "geterrormessage", "geterrordescription", "forgotpassword",
+			"login", "changepassword", "validatepassword", "createexternaluser", "createportaluser",
+			"getanalyticstrackingcode", "getbaseinsecureurl", "getcurrentsiteurl",
+			"getcustomwebaddress", "getexperienceid", "getoriginalurl",
+			"getpasswordpolicystatement", "getprefix", "ispasswordexpired":
+			return true
+		}
+	case "Network":
+		switch name {
+		case "getnetworkid", "getloginurl", "communitieslanding", "forwardtoauthpage",
+			"getlogouturl", "getselfregurl":
+			return true
+		}
+	case "Communities":
+		switch name {
+		case "communitieslanding", "forwardtoauthpage", "getcss", "internallogin", "login":
+			return true
+		}
+	case "AsyncInfo":
+		return name == "hasmaxstackdepth"
+	case "EventBus":
+		return name == "publish" || name == "getoperationid"
+	case "FeatureManagement":
+		return strings.HasPrefix(name, "checkpackage") || strings.HasPrefix(name, "setpackage")
+	case "Security":
+		return name == "stripinaccessible"
+	case "DomainCreator":
+		return strings.HasPrefix(name, "get")
+	case "Crypto":
+		switch name {
+		case "encrypt", "generateaeskey", "generatemac", "getrandominteger", "getrandomlong", "verifyhmac":
+			return true
+		}
+	case "Messaging":
+		switch name {
+		case "sendemail", "renderstoredemailtemplate", "reservesingleemailcapacity", "reservemassemailcapacity":
+			return true
+		}
+	case "Database":
+		switch name {
+		case "query", "querywithbinds", "countquery", "countquerywithbinds", "getquerylocator",
+			"getquerylocatorwithbinds", "insert", "update", "upsert", "delete", "undelete",
+			"emptyrecyclebin", "merge", "setsavepoint", "rollback":
+			return true
+		}
+	case "System":
+		switch name {
+		case "now", "today", "currenttimemillis", "currentpagereference", "debug", "assert",
+			"assertequals", "assertnotequals", "isrunningtest", "isbactivated", "isbatch",
+			"isfuture", "isqueueable", "isscheduled", "enqueuejob", "schedule", "runas",
+			"setpassword", "abortjob", "attachfinalizer", "schedulebatch":
+			return true
+		}
+	case "Test":
+		switch name {
+		case "isrunningtest", "getstandardpricebookid", "starttest", "stoptest", "createstub",
+			"clearapexpagemessages", "setcurrentpage", "setcurrentpagereference", "setmock",
+			"setcreateddate", "setfixedsearchresults", "createstubqueryrow", "issoqlstubdefined",
+			"calculatepermissionsetgroup", "enablechangedatacapture",
+			"setreadonlyapplicationmode", "testinstall", "testuninstall":
+			return true
+		}
+	case "Math":
+		switch name {
+		case "abs", "floor", "ceil", "round", "rint", "roundtolong", "signum", "sqrt", "cbrt",
+			"acos", "asin", "atan", "cos", "sin", "tan", "cosh", "sinh", "tanh",
+			"exp", "log", "log10", "max", "min", "mod", "pow", "atan2", "random":
+			return true
+		}
+	case "Date":
+		switch name {
+		case "today", "newinstance", "valueof", "parse", "daysinmonth", "isleapyear",
+			"format", "tostring", "adddays", "addmonths", "addyears", "daysbetween",
+			"issameday", "monthsbetween", "year", "month", "day", "dayofyear",
+			"tostartofmonth", "toendofmonth", "tostartofweek":
+			return true
+		}
+	case "Blob":
+		switch name {
+		case "size", "topdf", "valueof":
+			return true
+		}
+	case "Pattern":
+		switch name {
+		case "matcher", "pattern", "quote":
+			return true
+		}
+	case "Location":
+		switch name {
+		case "getdistance", "getlatitude", "getlongitude", "newinstance":
+			return true
+		}
+	case "Datetime":
+		switch name {
+		case "now", "newinstance", "newinstancegmt", "valueof", "valueofgmt", "parse",
+			"format", "formatgmt", "formatlong", "tostring", "date", "dategmt", "gettime",
+			"time", "timegmt", "adddays", "addmonths", "addyears", "addhours", "addminutes",
+			"addseconds", "addmilliseconds", "issameday", "year", "month", "day", "hour",
+			"minute", "second", "millisecond", "yeargmt", "monthgmt", "daygmt", "dayofyear",
+			"dayofyeargmt", "hourgmt", "minutegmt", "secondgmt", "millisecondgmt":
+			return true
+		}
+	case "Time":
+		switch name {
+		case "newinstance", "format", "tostring", "hour", "minute", "second", "millisecond",
+			"addhours", "addminutes", "addseconds", "addmilliseconds":
+			return true
+		}
+	case "Decimal", "Double", "Integer", "Long":
+		switch name {
+		case "abs", "format", "intvalue", "longvalue", "doublevalue", "decimalvalue",
+			"setscale", "round", "toplainstring", "divide", "scale", "precision",
+			"striptrailingzeros", "pow", "valueof":
+			return true
+		}
+	case "JSONGenerator", "JSONParser":
+		return true
+	case "HttpRequest":
+		switch name {
+		case "setendpoint", "getendpoint", "setmethod", "getmethod", "setbody", "setbodyasblob",
+			"getbody", "getbodyasblob", "setheader", "getheaderkeys", "getheader",
+			"setcompressed", "getcompressed", "settimeout", "gettimeout":
+			return true
+		}
+	case "HttpResponse":
+		switch name {
+		case "setbody", "setbodyasblob", "getbody", "getbodyasblob", "getbodydocument",
+			"setstatuscode", "setstatus", "getstatus", "setheader", "getheaderkeys",
+			"getheader", "getstatuscode":
+			return true
+		}
+	case "PageReference":
+		switch name {
+		case "geturl", "setredirect", "getredirect", "getparameters", "setanchor", "getanchor",
+			"setredirectcode", "getredirectcode", "forresource":
+			return true
+		}
+	case "URL", "Url":
+		switch name {
+		case "getsalesforcebaseurl", "getorgdomainurl", "getcurrentrequesturl", "toexternalform",
+			"getprotocol", "gethost", "getauthority", "getpath", "getquery", "getref",
+			"getfile", "getport", "getdefaultport", "getuserinfo", "samefile":
+			return true
+		}
+	case "SObject":
+		switch name {
+		case "clear", "get", "put", "getsobject", "putsobject", "getsobjecttype",
+			"getpopulatedfieldsasmap", "isset", "clone", "haserrors", "geterrors",
+			"adderror", "recalculateformulas", "getoptions", "setoptions", "isclone",
+			"getclonesourceid":
+			return true
+		}
+	}
+	return false
+}
+
+func apexPagesBehaviorMethod(typeName, methodName string) bool {
+	switch typeName {
+	case "ApexPages.Message":
+		return strings.HasPrefix(methodName, "get")
+	case "ApexPages.StandardController":
+		switch methodName {
+		case "getid", "getrecord", "save", "quicksave", "delete", "view", "edit", "cancel", "reset", "addfields":
+			return true
+		}
+	case "ApexPages.StandardSetController":
+		return apexPagesStandardSetControllerMethod(methodName)
+	case "ApexPages.IdeaStandardSetController":
+		return apexPagesStandardSetControllerMethod(methodName) || methodName == "getrecord" || methodName == "setpagenumber"
+	case "ApexPages.IdeaStandardController", "ApexPages.KnowledgeArticleVersionStandardController":
+		switch methodName {
+		case "getid", "getrecord", "save", "quicksave", "delete", "view", "edit", "cancel", "reset", "addfields":
+			return true
+		}
+	}
+	return false
+}
+
+func apexPagesStandardSetControllerMethod(methodName string) bool {
+	switch methodName {
+	case "getrecords", "getselected", "setselected", "getpagesize", "setpagesize",
+		"getpagenumber", "first", "last", "next", "previous", "gethasnext",
+		"gethasprevious", "getcompleteresult", "getresultsize", "setfilterid",
+		"getfilterid", "save", "cancel", "addfields":
+		return true
+	default:
+		return false
+	}
+}
+
+func passiveAccessorBehaviorType(typeName string) bool {
+	switch typeName {
+	case "Address", "Approval.ProcessRequest", "Approval.ProcessSubmitRequest",
+		"Approval.ProcessWorkitemRequest", "Approval.ProcessResult",
+		"Cookie",
+		"Database.LeadConvert", "Database.LeadConvertResult", "Database.MergeRequest",
+		"Database.UpsertResult", "Database.DuplicateError", "Database.CursorFetchResult",
+		"Database.PaginationCursor", "Database.UnitOfWork", "FinalizerContext",
+		"FinalizerContextImpl", "InstallContext", "Messaging.ActionResult",
+		"Messaging.ActionResult.Builder", "Messaging.ActionableNotification",
+		"Messaging.ActionableNotification.Builder", "Messaging.Builder",
+		"Messaging.CustomNotification", "Messaging.PushNotification", "OrgLimit",
+		"OrgInstrumentationContext", "OrgInstrumentationOperation",
+		"OrgInstrumentationService", "QuickAction", "QuickAction.SendEmailQuickActionDefaults",
+		"Builder", "Domain", "Request", "ResetPasswordResult", "SandboxContext", "Version":
+		return true
+	default:
+		return false
+	}
+}
+
+func accessorBehaviorMethod(member typesys.MemberSymbol) bool {
+	name := strings.ToLower(member.Name)
+	return strings.HasPrefix(name, "get") ||
+		strings.HasPrefix(name, "set") ||
+		strings.HasPrefix(name, "is") ||
+		strings.HasPrefix(name, "with") ||
+		name == "build"
+}
+
+func matcherBehaviorMethod(typeName, methodName string) bool {
+	if typeName != "Matcher" {
+		return false
+	}
+	switch methodName {
+	case "matches", "lookingat", "find", "group", "groupcount", "start", "end",
+		"replaceall", "replacefirst", "reset", "region", "regionstart", "regionend",
+		"usepattern", "hasanchoringbounds", "hastransparentbounds", "useanchoringbounds",
+		"usetransparentbounds":
+		return true
+	default:
+		return false
+	}
+}
+
+func xmlStreamWriterBehaviorMethod(typeName, methodName string) bool {
+	if typeName != "XmlStreamWriter" {
+		return false
+	}
+	switch methodName {
+	case "close", "getxmlstring", "setdefaultnamespace", "writeattribute", "writecdata",
+		"writecharacters", "writecomment", "writedefaultnamespace", "writeemptyelement",
+		"writeenddocument", "writeendelement", "writenamespace", "writeprocessinginstruction",
+		"writestartdocument", "writestartelement":
+		return true
+	default:
+		return false
+	}
+}
+
+func calloutMockBehaviorMethod(typeName, methodName string) bool {
+	switch typeName {
+	case "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock":
+		switch methodName {
+		case "respond", "setheader", "setstaticresource", "setstatus", "setstatuscode":
+			return true
+		}
+	}
+	return false
+}
+
+func searchDTOBehaviorMethod(typeName, methodName string) bool {
+	switch typeName {
+	case "Search.KnowledgeSuggestionFilter", "Search.QuestionSuggestionFilter":
+		return strings.HasPrefix(methodName, "add") || strings.HasPrefix(methodName, "set")
+	case "Search.SearchResult":
+		return strings.HasPrefix(methodName, "get")
+	default:
+		return false
+	}
+}
+
+func messagingBehaviorMethod(typeName, methodName string) bool {
+	if !strings.HasPrefix(typeName, "Messaging.") {
+		return false
+	}
+	switch typeName {
+	case "Messaging.Email", "Messaging.EmailAttachment", "Messaging.EmailFileAttachment",
+		"Messaging.SingleEmailMessage", "Messaging.MassEmailMessage",
+		"Messaging.SendEmailResult", "Messaging.SendEmailError",
+		"Messaging.RenderEmailTemplateBodyResult", "Messaging.RenderEmailTemplateError":
+		return strings.HasPrefix(methodName, "get") ||
+			strings.HasPrefix(methodName, "set") ||
+			strings.HasPrefix(methodName, "is")
+	default:
+		return false
+	}
+}
+
+func standardExceptionBehaviorMethod(typeName, methodName string) bool {
+	if !strings.HasSuffix(typeName, "Exception") {
+		return false
+	}
+	switch methodName {
+	case "getmessage", "setmessage", "getcause", "initcause", "getlineNumber", "getlinenumber",
+		"getstacktrace", "getstacktracestring", "gettypeName", "gettypename",
+		"getnumdml", "getdmltype", "getdmlmessage", "getdmlstatuscode", "getdmlfields",
+		"getdmlid", "getdmlindex":
+		return true
+	default:
+		return false
+	}
+}
+
+func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	switch typeName {
+	case "String", "Id", "Boolean", "Date", "Datetime", "Decimal", "Double", "Integer", "Long", "Time":
+		return name == "adderror"
+	case "LIST":
+		return true
+	case "Approval":
+		return true
+	case "BusinessHours", "Database.UnitOfWork", "FlexQueue":
+		return true
+	case "Crypto":
+		switch name {
+		case "decrypt", "decryptwithmanagediv", "encryptwithmanagediv", "sign", "signwithcertificate",
+			"signxml", "verify", "verifywithcertificate":
+			return true
+		}
+	case "System":
+		switch name {
+		case "changeownpassword", "getapplicationreadwritemode", "getquiddityshortcode",
+			"isfunctioncallback", "isrunningelasticcompute", "movepassword", "pausejobbyid",
+			"pausejobbyname", "purgeoldasyncjobs", "requestversion", "resetpassword",
+			"resetpasswordwithemailtemplate",
+			"resumejobbyid", "resumejobbyname":
+			return true
+		}
+	case "UserManagement":
+		return true
+	case "XmlStreamReader":
+		return true
+	case "Test":
+		switch name {
+		case "createsoqlstub", "geteventbus", "getexternalservice", "invokecontinuationmethod",
+			"invokepage", "newsendemailquickactiondefaults", "setcontinuationresponse",
+			"testnotificationactionhandler", "testsandboxpostcopyscript":
+			return true
+		}
+	case "Site":
+		switch name {
+		case "createpersonaccountportaluser", "passwordlesslogin", "setportaluserasauthprovider":
+			return true
+		}
+	case "Network":
+		switch name {
+		case "createexternaluserasync", "createrecordasync",
+			"loadallpackagedefaultnetworkdashboardsettings",
+			"loadallpackagedefaultnetworkpulsesettings",
+			"loadallpackagedefaultnetworkworkspacemetricsettings":
+			return true
+		}
+	case "OrgInstrumentationOperation":
+		return true
+	case "Search":
+		return name != "query"
+	case "HttpRequest":
+		return name == "setclientcertificatename" || name == "setclientcertificate" || name == "setbodydocument"
+	case "PageReference":
+		return name == "getcontent" || name == "getcontentaspdf" || name == "setcookies"
+	case "Database":
+		switch name {
+		case "convertlead", "deleteasync", "deleteimmediate", "executebatch", "getasyncdeleteresult",
+			"getasynclocator", "getasyncsaveresult", "getcursor", "getcursorwithbinds",
+			"getdeleted", "getpaginationcursor", "getpaginationcursorwithbinds", "getupdated",
+			"insertasync", "insertimmediate", "releasesavepoint", "treesave", "updateasync",
+			"updateimmediate":
+			return true
+		}
+	case "Messaging":
+		return name == "extractinboundemail"
+	default:
+		return false
+	}
+	return false
+}
+
+func stringBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if !strings.EqualFold(stubBehaviorTypeName(symbol), "String") || member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	switch strings.ToLower(member.Name) {
+	case "abbreviate", "capitalize", "center", "charat", "codepointat", "codepointbefore",
+		"codepointcount", "compareto", "containsany", "containsignorecase", "containsnone",
+		"containsonly", "containswhitespace", "countmatches", "deletewhitespace", "difference",
+		"endswithignorecase", "escapecsv", "escapeecmascript", "escapehtml3", "escapehtml4",
+		"escapejava", "escapesinglequotes", "escapeunicode", "escapexml", "format",
+		"fromchararray", "getcommonprefix", "getlevenshteindistance", "indexofany",
+		"indexofanybut", "indexofchar", "indexofdifference", "indexofignorecase",
+		"isalllowercase", "isalluppercase", "isalpha", "isalphaspace",
+		"isalphanumeric", "isalphanumericspace", "isasciiprintable", "isempty", "isnotempty",
+		"isnumeric", "isnumericspace", "iswhitespace", "lastindexofchar",
+		"lastindexofignorecase", "left", "leftpad", "mid", "normalizespace",
+		"offsetbycodepoints", "overlay", "remove", "removeend", "removeendignorecase",
+		"removestart", "removestartignorecase", "repeat", "replaceall", "replacefirst",
+		"reverse", "right", "rightpad", "startswithignorecase", "substringafter",
+		"striphtmltags", "substringafterlast", "substringbefore", "substringbeforelast",
+		"substringbetween", "swapcase", "uncapitalize", "unescapecsv", "unescapeecmascript",
+		"unescapehtml3", "unescapehtml4", "unescapejava", "unescapeunicode", "unescapexml",
+		"valueofgmt":
+		return true
+	default:
+		return false
+	}
+}
+
+func genericObjectBehaviorMethod(member typesys.MemberSymbol) bool {
+	switch strings.ToLower(member.Name) {
+	case "clone", "equals", "hashcode", "tostring":
+		return true
+	default:
+		return false
+	}
+}
+
+func genericEnumBehaviorMethod(member typesys.MemberSymbol) bool {
+	switch strings.ToLower(member.Name) {
+	case "equals", "hashcode", "name", "ordinal", "tostring", "valueof", "values":
+		return true
+	default:
+		return false
+	}
+}
+
+func generatedDTOAccessorBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if !generatedDTOBehaviorType(symbol) {
+		return false
+	}
+	name := member.Name
+	if len(name) <= 3 {
+		return false
+	}
+	switch {
+	case strings.HasPrefix(strings.ToLower(name), "get"):
+		return true
+	case strings.HasPrefix(strings.ToLower(name), "set") && strings.EqualFold(member.Type, "void"):
+		return true
+	case strings.HasPrefix(strings.ToLower(name), "is") && strings.EqualFold(member.Type, "Boolean"):
+		return true
+	default:
+		return false
+	}
+}
+
+func generatedDTOCollectionMethod(member typesys.MemberSymbol) bool {
+	return strings.HasPrefix(member.Type, "List<") ||
+		strings.HasPrefix(member.Type, "Set<") ||
+		strings.HasPrefix(member.Type, "Map<")
+}
+
+func generatedDTOBehaviorType(symbol typesys.TypeSymbol) bool {
+	typeName := stubBehaviorTypeName(symbol)
+	if typeName == "" || !strings.Contains(typeName, ".") || symbol.Kind != apexast.DeclarationClass {
+		return false
+	}
+	if strings.HasPrefix(typeName, "Schema.") || strings.HasPrefix(typeName, "ApexPages.") ||
+		strings.HasPrefix(typeName, "Messaging.") || strings.HasPrefix(typeName, "Dom.") ||
+		strings.HasPrefix(typeName, "System.") || strings.HasPrefix(typeName, "Database.") ||
+		strings.HasPrefix(typeName, "Test.") || strings.HasPrefix(typeName, "UserInfo.") ||
+		strings.HasPrefix(typeName, "Site.") || strings.HasPrefix(typeName, "Network.") ||
+		strings.HasPrefix(typeName, "Search.") || strings.HasPrefix(typeName, "Approval.") ||
+		strings.HasPrefix(typeName, "Security.") || strings.HasPrefix(typeName, "EventBus.") ||
+		strings.HasPrefix(typeName, "RestContext.") || strings.HasPrefix(typeName, "RestRequest.") ||
+		strings.HasPrefix(typeName, "RestResponse.") {
+		return false
+	}
+	return true
+}
+
+func generatedTopLevelPassiveBehaviorType(symbol typesys.TypeSymbol) bool {
+	if symbol.Kind != apexast.DeclarationClass {
+		return false
+	}
+	switch stubBehaviorTypeName(symbol) {
+	case "Answers":
+		return true
+	default:
+		return false
+	}
+}
+
+type stubBehaviorEvidence map[string]stubBehaviorEvidenceEntry
+
+type stubBehaviorEvidenceEntry struct {
+	status   StubBehaviorStatus
+	evidence []string
+	notes    string
+}
+
+func buildStubBehaviorEvidence() stubBehaviorEvidence {
+	out := stubBehaviorEvidence{}
+	for _, entry := range StdlibMatrix() {
+		status, ok := stubBehaviorStatusFromCapability(entry.Status)
+		if !ok {
+			continue
+		}
+		api := strings.TrimSpace(entry.API)
+		if strings.Contains(api, " ") && strings.HasSuffix(strings.Fields(api)[0], ".*") {
+			api = strings.Fields(api)[0]
+		}
+		if api == "" || strings.Contains(api, " ") || strings.EqualFold(api, "unimplemented platform/stdlib calls") {
+			continue
+		}
+		out.add(api, status, "stdlib matrix", entry.Notes)
+		if strings.HasSuffix(api, ".*") {
+			out.add(strings.TrimSuffix(api, ".*"), status, "stdlib matrix", entry.Notes)
+		}
+	}
+	return out
+}
+
+func (e stubBehaviorEvidence) add(api string, status StubBehaviorStatus, source, notes string) {
+	key := normalizeStubBehaviorKey(api)
+	if key == "" {
+		return
+	}
+	existing, ok := e[key]
+	if !ok || stubBehaviorStatusRank(status) < stubBehaviorStatusRank(existing.status) {
+		e[key] = stubBehaviorEvidenceEntry{status: status, evidence: []string{source + ": " + api}, notes: notes}
+		return
+	}
+	if ok && status == existing.status {
+		existing.evidence = append(existing.evidence, source+": "+api)
+		if existing.notes == "" {
+			existing.notes = notes
+		}
+		e[key] = existing
+	}
+}
+
+func (e stubBehaviorEvidence) lookup(typeName, member string) *stubBehaviorEvidenceEntry {
+	candidates := []string{typeName}
+	if member != "" {
+		candidates = []string{typeName + "." + member}
+		if idx := strings.LastIndex(typeName, "."); idx >= 0 {
+			candidates = append(candidates, typeName[idx+1:]+"."+member)
+		}
+	}
+	for _, candidate := range candidates {
+		if match, ok := e[normalizeStubBehaviorKey(candidate)]; ok {
+			return &match
+		}
+		if member != "" {
+			if match, ok := e[normalizeStubBehaviorKey(typeName+".*")]; ok {
+				return &match
+			}
+		}
+	}
+	return nil
+}
+
+func stubBehaviorStatusFromCapability(status Status) (StubBehaviorStatus, bool) {
+	switch status {
+	case StatusSupported, StatusPartial:
+		return StubBehaviorImplemented, true
+	case StatusUnsupported:
+		return StubBehaviorUnsupported, true
+	default:
+		return "", false
+	}
+}
+
+func stubBehaviorStatusRank(status StubBehaviorStatus) int {
+	switch status {
+	case StubBehaviorImplemented:
+		return 0
+	case StubBehaviorUnsupported:
+		return 1
+	case StubBehaviorPassiveDefault:
+		return 2
+	default:
+		return 3
+	}
+}
+
+func countStubBehaviorTotals(entries []StubBehaviorEntry) StubBehaviorTotals {
+	totals := StubBehaviorTotals{Entries: len(entries), ByStatus: map[string]int{}}
+	for _, status := range []StubBehaviorStatus{StubBehaviorImplemented, StubBehaviorPassiveDefault, StubBehaviorUnsupported, StubBehaviorUnknown} {
+		totals.ByStatus[string(status)] = 0
+	}
+	for _, entry := range entries {
+		if entry.Member == "" {
+			totals.Types++
+		} else {
+			totals.Members++
+		}
+		totals.ByStatus[string(entry.Status)]++
+		switch entry.Status {
+		case StubBehaviorImplemented:
+			totals.Implemented++
+		case StubBehaviorPassiveDefault:
+			totals.PassiveDefault++
+		case StubBehaviorUnsupported:
+			totals.Unsupported++
+		default:
+			totals.Unknown++
+		}
+	}
+	return totals
+}
+
+func stubBehaviorTypeName(symbol typesys.TypeSymbol) string {
+	if symbol.Namespace == "" || strings.EqualFold(symbol.Namespace, "System") {
+		return symbol.Name
+	}
+	return symbol.Namespace + "." + symbol.Name
+}
+
+func stubBehaviorMemberID(typeName string, member typesys.MemberSymbol) string {
+	if member.Kind == apexast.DeclarationConstructor {
+		return typeName + ".<init>(" + strings.Join(stubBehaviorParameterTypes(member.Parameters), ",") + ")"
+	}
+	return typeName + "." + member.Name + "(" + strings.Join(stubBehaviorParameterTypes(member.Parameters), ",") + ")"
+}
+
+func stubBehaviorMemberStatic(member typesys.MemberSymbol) bool {
+	for _, modifier := range member.Modifiers {
+		if strings.EqualFold(modifier, "static") {
+			return true
+		}
+	}
+	return false
+}
+
+func stubBehaviorParameterTypes(params []apexast.Parameter) []string {
+	out := make([]string, 0, len(params))
+	for _, param := range params {
+		out = append(out, param.Type)
+	}
+	return out
+}
+
+func normalizeStubBehaviorKey(api string) string {
+	api = strings.TrimSpace(api)
+	api = strings.TrimSuffix(api, "()")
+	return strings.ToLower(api)
+}

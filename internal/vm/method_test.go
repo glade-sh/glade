@@ -2022,7 +2022,7 @@ func TestExecStringConcatWithTypedNullStringOperand(t *testing.T) {
 Id missing;
 Id present = '001000000000001';
 String out = (String)missing + present;
-System.assertEquals('null001000000000001', out);
+System.assertEquals('null001000000000001AAA', out);
 `)
 	if err != nil {
 		t.Fatal(err)

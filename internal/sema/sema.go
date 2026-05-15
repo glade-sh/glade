@@ -541,12 +541,19 @@ func hasInheritedMethodSignature(model map[string]typeMembers, typ typesys.TypeS
 	if hasPlatformInheritedMethodSignature(typ, member) {
 		return true
 	}
-	for _, candidate := range resolveMemberMethods(model, typ.SuperClass, member.Name) {
+	members, _ := model[normalizeName(typ.Name)]
+	superClass := typ.SuperClass
+	interfaces := typ.Interfaces
+	if members.name != "" {
+		superClass = members.superClass
+		interfaces = members.interfaces
+	}
+	for _, candidate := range resolveMemberMethods(model, superClass, member.Name) {
 		if sameSemaSignature(candidate.member, member) {
 			return true
 		}
 	}
-	for _, iface := range typ.Interfaces {
+	for _, iface := range interfaces {
 		for _, candidate := range resolveMemberMethods(model, iface, member.Name) {
 			if sameSemaSignature(candidate.member, member) {
 				return true
@@ -590,10 +597,17 @@ type methodRequirement struct {
 func requiredMethodSignatures(model map[string]typeMembers, typ typesys.TypeSymbol) []methodRequirement {
 	var out []methodRequirement
 	seen := make(map[string]bool)
-	for _, iface := range typ.Interfaces {
+	members, _ := model[normalizeName(typ.Name)]
+	interfaces := typ.Interfaces
+	superClass := typ.SuperClass
+	if members.name != "" {
+		interfaces = members.interfaces
+		superClass = members.superClass
+	}
+	for _, iface := range interfaces {
 		out = append(out, collectRequiredMethods(model, iface, "interface", seen)...)
 	}
-	for current := typ.SuperClass; current != ""; {
+	for current := superClass; current != ""; {
 		members, ok := model[normalizeName(current)]
 		if !ok {
 			break
@@ -618,7 +632,7 @@ func requiredMethodSignatures(model map[string]typeMembers, typ typesys.TypeSymb
 }
 
 func collectRequiredMethods(model map[string]typeMembers, typeName, sourceKind string, seen map[string]bool) []methodRequirement {
-	members, ok := model[normalizeName(typeName)]
+	members, _, ok := semaLookupTypeMembers(model, typeName)
 	if !ok {
 		return nil
 	}
@@ -973,6 +987,8 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 		out[objectKey] = objectMembers
 	}
 	addStandardSObjectMembers(out)
+	semaApplyPlatformInterfaceOverlays(out)
+	semaApplyPlatformFieldOverlays(out)
 	for short, names := range shortAliases {
 		if len(names) == 1 {
 			if _, exists := out[short]; exists {
@@ -1122,6 +1138,132 @@ func addStandardSObjectMembers(out map[string]typeMembers) {
 	}
 }
 
+func semaApplyPlatformInterfaceOverlays(model map[string]typeMembers) {
+	semaSetPlatformInterface(model, "Callable", []string{"System.Callable"}, []typesys.MemberSymbol{{
+		Kind: apexast.DeclarationMethod,
+		Name: "call",
+		Type: "Object",
+		Parameters: []apexast.Parameter{
+			{Name: "action", Type: "String"},
+			{Name: "args", Type: "Map<String,Object>"},
+		},
+	}})
+	semaSetPlatformInterface(model, "StubProvider", []string{"System.StubProvider"}, []typesys.MemberSymbol{{
+		Kind: apexast.DeclarationMethod,
+		Name: "handleMethodCall",
+		Type: "Object",
+		Parameters: []apexast.Parameter{
+			{Name: "stubbedObject", Type: "Object"},
+			{Name: "stubbedMethodName", Type: "String"},
+			{Name: "returnType", Type: "Type"},
+			{Name: "listOfParamTypes", Type: "List<Type>"},
+			{Name: "listOfParamNames", Type: "List<String>"},
+			{Name: "listOfArgs", Type: "List<Object>"},
+		},
+	}})
+	semaSetPlatformInterface(model, "HttpCalloutMock", []string{"System.HttpCalloutMock"}, []typesys.MemberSymbol{{
+		Kind: apexast.DeclarationMethod,
+		Name: "respond",
+		Type: "HttpResponse",
+		Parameters: []apexast.Parameter{
+			{Name: "request", Type: "HttpRequest"},
+		},
+	}})
+}
+
+func semaSetPlatformInterface(model map[string]typeMembers, name string, aliases []string, methods []typesys.MemberSymbol) {
+	members, ok := model[normalizeName(name)]
+	if !ok {
+		members = typeMembers{
+			name:     name,
+			shortKey: semaShortTypeKey(name),
+			kind:     apexast.DeclarationInterface,
+			methods:  make(map[string][]typesys.MemberSymbol),
+			fields:   make(map[string]typesys.MemberSymbol),
+		}
+	}
+	if members.methods == nil {
+		members.methods = make(map[string][]typesys.MemberSymbol)
+	}
+	if members.fields == nil {
+		members.fields = make(map[string]typesys.MemberSymbol)
+	}
+	if members.kind == "" {
+		members.kind = apexast.DeclarationInterface
+	}
+	for _, method := range methods {
+		key := normalizeName(method.Name)
+		if len(members.methods[key]) == 0 {
+			members.methods[key] = append(members.methods[key], method)
+		}
+	}
+	model[normalizeName(name)] = members
+	for _, alias := range aliases {
+		if _, exists := model[normalizeName(alias)]; !exists {
+			model[normalizeName(alias)] = members
+		}
+	}
+}
+
+func semaApplyPlatformFieldOverlays(model map[string]typeMembers) {
+	semaSetPlatformField(model, "RestContext", "request", "RestRequest", true)
+	semaSetPlatformField(model, "RestContext", "response", "RestResponse", true)
+	for _, field := range []struct {
+		name string
+		typ  string
+	}{
+		{"headers", "Map<String,String>"},
+		{"httpMethod", "String"},
+		{"params", "Map<String,String>"},
+		{"remoteAddress", "String"},
+		{"requestBody", "Blob"},
+		{"requestURI", "String"},
+		{"resourcePath", "String"},
+	} {
+		semaSetPlatformField(model, "RestRequest", field.name, field.typ, false)
+	}
+	for _, field := range []struct {
+		name string
+		typ  string
+	}{
+		{"headers", "Map<String,String>"},
+		{"responseBody", "Blob"},
+		{"statusCode", "Integer"},
+	} {
+		semaSetPlatformField(model, "RestResponse", field.name, field.typ, false)
+	}
+}
+
+func semaSetPlatformField(model map[string]typeMembers, typeName, fieldName, fieldType string, static bool) {
+	key := normalizeName(typeName)
+	members, ok := model[key]
+	if !ok {
+		members = typeMembers{name: typeName, shortKey: semaShortTypeKey(typeName), methods: make(map[string][]typesys.MemberSymbol), fields: make(map[string]typesys.MemberSymbol)}
+	}
+	if members.fields == nil {
+		members.fields = make(map[string]typesys.MemberSymbol)
+	}
+	field := members.fields[normalizeName(fieldName)]
+	field.Kind = apexast.DeclarationProperty
+	field.Name = fieldName
+	field.Type = fieldType
+	field.Modifiers = semaWithModifier(field.Modifiers, "public")
+	if static {
+		field.Modifiers = semaWithModifier(field.Modifiers, "static")
+	}
+	members.fields[normalizeName(fieldName)] = field
+	model[key] = members
+}
+
+func semaWithModifier(modifiers []string, modifier string) []string {
+	for _, existing := range modifiers {
+		if strings.EqualFold(existing, modifier) {
+			return modifiers
+		}
+	}
+	return append(modifiers, modifier)
+}
+
 func semaAdditionalStandardSObjectNames() []string {
 	return []string{"ApexClass", "ApexPage", "CronJobDetail", "CronTrigger", "EntityDefinition", "EntityParticle", "FieldDefinition", "Folder", "NamedCredential", "Note", "RecentlyViewed", "Report", "UserEntityAccess", "UserFieldAccess", "UserRecordAccess"}
 }
@@ -1247,6 +1389,8 @@ func semaApexTypeForStorageField(field storage.Field) string {
 		return "Datetime"
 	case storage.FieldAddress:
 		return "Address"
+	case storage.FieldBlob:
+		return "Blob"
 	case storage.FieldReference:
 		return "Id"
 	case storage.FieldString, storage.FieldPicklist:
@@ -2131,6 +2275,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	receiverType := typ.Name
 	method := expr.Callee
 	explicitReceiver := false
+	classLiteralReceiver := false
 	if expr.Left != nil {
 		explicitReceiver = true
 		if inferred := a.inferIRExprType(*expr.Left, scope, model, typ.Name); inferred != "" {
@@ -2145,6 +2290,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 		if classMethod, ok := semaClassLiteralMethod(expr.Callee); ok {
 			receiverType = "Type"
 			method = classMethod
+			classLiteralReceiver = true
 		} else {
 			switch {
 			case strings.EqualFold(receiver, "this"):
@@ -2172,10 +2318,13 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if receiverType == "" {
 		return nil
 	}
+	if semaSystemRunAsBlockCall(receiverType, method, expr.Callee, expr.Args) {
+		return nil
+	}
 	receiverMode := "implicit"
 	if explicitReceiver {
 		receiverMode = "instance"
-		if receiver, _, ok := strings.Cut(expr.Callee, "."); ok {
+		if receiver, _, ok := strings.Cut(expr.Callee, "."); ok && !classLiteralReceiver {
 			if _, scoped := scope.lookup(receiver); !scoped {
 				if _, ok := model[normalizeName(receiver)]; ok {
 					receiverMode = "class"
@@ -2306,6 +2455,9 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 	if semaDatabaseDynamicQueryCall(receiverType, method) {
 		return nil, true
 	}
+	if _, ok := semaCollectionMethodSignature(receiverType, method); ok {
+		return nil, false
+	}
 	sig, ok := semaPlatformMethodSignatureForMode(model, receiverType, method, receiverMode)
 	if !ok {
 		return nil, false
@@ -2345,6 +2497,9 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 	}
 	if diagnostics, handled := a.checkIRCollectionConstructor(typ, member, typeName, expr.Args, scope, pos, bodyOffset, source, model); handled {
 		return diagnostics
+	}
+	if isSemaSObjectLike(resolvedTypeName, model) && len(expr.Args) == 0 {
+		return nil
 	}
 	target, ok := model[normalizeName(resolvedTypeName)]
 	if !ok {
@@ -2721,10 +2876,10 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 				method = cutMethod
 			}
 			method = strings.TrimPrefix(method, "__safe_call:")
-			if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
+			if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
 				return sig.returnType
 			}
-			if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
+			if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
 				return sig.returnType
 			}
 			if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
@@ -2811,13 +2966,16 @@ func semaResolvedIRCallReturnType(a *Analyzer, model map[string]typeMembers, rec
 	for i, arg := range args {
 		argTypes[i] = a.inferIRExprType(arg, scope, model, currentType)
 	}
+	if stubbedType := semaCreateStubReturnTypeFromIR(model, receiverType, method, args, currentType); stubbedType != "" {
+		return stubbedType
+	}
 	if semaDatabaseDynamicQueryCall(receiverType, method) {
 		return "Database.QueryResult"
 	}
-	if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
+	if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
 		return sig.returnType
 	}
-	if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
+	if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
 		return sig.returnType
 	}
 	if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
@@ -4086,12 +4244,11 @@ func resolveImplicitMemberMethods(model map[string]typeMembers, typeName, method
 }
 
 func resolveMemberMethodsSeen(model map[string]typeMembers, typeName, method string, seen map[string]bool) []resolvedMember {
-	key := normalizeName(typeName)
+	members, key, ok := semaLookupTypeMembers(model, typeName)
 	if key == "" || seen[key] {
 		return nil
 	}
 	seen[key] = true
-	members, ok := model[key]
 	if !ok {
 		return nil
 	}
@@ -5003,18 +5160,19 @@ func semaAssignableToType(paramType, argType string, model map[string]typeMember
 }
 
 func semaDynamicQueryResultAssignableTo(paramType string, model map[string]typeMembers) bool {
-	if strings.EqualFold(paramType, "Object") || strings.EqualFold(paramType, "SObject") || isSemaSObjectLike(paramType, model) {
+	if strings.EqualFold(paramType, "Object") || strings.EqualFold(paramType, "SObject") || strings.EqualFold(paramType, "AggregateResult") || isSemaSObjectLike(paramType, model) {
 		return true
 	}
 	base, args := semaGenericBaseAndArgs(paramType)
 	if !strings.EqualFold(base, "List") || len(args) > 1 {
 		return false
 	}
-	return len(args) == 0 || strings.EqualFold(args[0], "SObject") || isSemaSObjectLike(args[0], model)
+	return len(args) == 0 || strings.EqualFold(args[0], "SObject") || strings.EqualFold(args[0], "AggregateResult") || isSemaSObjectLike(args[0], model)
 }
 
 func semaPlatformAssignableToType(paramType, argType string, model map[string]typeMembers) bool {
 	paramBase, paramArgs := semaGenericBaseAndArgs(semaCanonicalPlatformAlias(paramType))
+	argType = semaCanonicalPlatformAlias(argType)
 	if !strings.EqualFold(paramBase, "Iterator") || !strings.EqualFold(argType, "Database.QueryLocatorIterator") {
 		return false
 	}
@@ -5219,10 +5377,16 @@ func semaTypeMatches(model map[string]typeMembers, typeName, target string, seen
 	if key == targetKey {
 		return true
 	}
+	if semaErasedTypeKey(typeName) == semaErasedTypeKey(target) {
+		return true
+	}
 	seen[key] = true
-	members, ok := model[key]
+	members, lookupKey, ok := semaLookupTypeMembers(model, typeName)
 	if !ok {
 		return semaTypeMatchesByShortName(model, key, target, seen)
+	}
+	if lookupKey != "" {
+		seen[lookupKey] = true
 	}
 	return semaTypeMatchesFromMembers(model, members, target, seen)
 }
@@ -5230,6 +5394,9 @@ func semaTypeMatches(model map[string]typeMembers, typeName, target string, seen
 func semaTypeMatchesFromMembers(model map[string]typeMembers, members typeMembers, target string, seen map[string]bool) bool {
 	targetKey := normalizeName(target)
 	if normalizeName(members.name) == targetKey {
+		return true
+	}
+	if semaErasedTypeKey(members.name) == semaErasedTypeKey(target) {
 		return true
 	}
 	if semaShortTypeKey(members.name) == targetKey {
@@ -5261,6 +5428,28 @@ func semaTypeMatchesByShortName(model map[string]typeMembers, key, target string
 		}
 	}
 	return found
+}
+
+func semaLookupTypeMembers(model map[string]typeMembers, typeName string) (typeMembers, string, bool) {
+	key := normalizeName(typeName)
+	if members, ok := model[key]; ok {
+		return members, key, true
+	}
+	base, args := semaGenericBaseAndArgs(typeName)
+	if len(args) == 0 {
+		return typeMembers{}, key, false
+	}
+	baseKey := normalizeName(base)
+	members, ok := model[baseKey]
+	return members, baseKey, ok
+}
+
+func semaErasedTypeKey(typeName string) string {
+	base, args := semaGenericBaseAndArgs(typeName)
+	if len(args) == 0 {
+		return normalizeName(typeName)
+	}
+	return normalizeName(base)
 }
 
 func semaShortTypeKey(typeName string) string {
@@ -5327,6 +5516,14 @@ func semaCanonicalPlatformAlias(typeName string) string {
 		return "Iterator"
 	case "system.address":
 		return "Address"
+	case "system.callable":
+		return "Callable"
+	case "system.stubprovider":
+		return "StubProvider"
+	case "system.httpcalloutmock":
+		return "HttpCalloutMock"
+	case "system.statuscode":
+		return "StatusCode"
 	case "system.list":
 		return "List"
 	case "system.set":
@@ -5373,6 +5570,9 @@ func inferSemaArgTypeWithModel(arg string, scope map[string]string, model map[st
 	}
 	if strings.HasSuffix(strings.ToLower(arg), ".class") {
 		return "Type"
+	}
+	if receiver, name, ok := strings.Cut(arg, "."); ok && strings.EqualFold(receiver, "Page") && strings.TrimSpace(name) != "" {
+		return "PageReference"
 	}
 	if receiver, ok := splitSemaIndexExpression(arg); ok {
 		receiverType := inferSemaArgTypeWithModel(receiver, scope, model)
@@ -5542,6 +5742,13 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 			return "Schema.SObjectType"
 		}
 	}
+	if receiverExpr, field, ok := splitSemaMethodPath(expr); ok {
+		if inferred := inferSemaArgTypeWithModel(receiverExpr, scope, model); inferred != "" {
+			if target, ok := semaResolveFieldPath(model, inferred, field); ok {
+				return target.member.Type
+			}
+		}
+	}
 	if _, scoped := scope[normalizeName(parts[0])]; !scoped {
 		if target, staticOK := semaStaticClassFieldPathMemberInContext(model, scope[semaCurrentTypeScopeKey], parts[0], strings.Join(parts[1:], ".")); staticOK {
 			return target.member.Type
@@ -5580,10 +5787,7 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 		}
 	}
 	if receiverExpr, field, ok := splitSemaMethodPath(expr); ok {
-		inferred := ""
-		if strings.HasSuffix(strings.TrimSpace(receiverExpr), ")") {
-			inferred = inferSemaMethodCallType(receiverExpr, scope, model)
-		}
+		inferred := inferSemaArgTypeWithModel(receiverExpr, scope, model)
 		if inferred != "" {
 			if target, ok := semaResolveFieldPath(model, inferred, field); ok {
 				return target.member.Type
@@ -5612,6 +5816,10 @@ func semaLooksLikeLabelReference(expr string) bool {
 func semaFallbackFieldPathType(fieldName string) string {
 	key := normalizeName(fieldName)
 	switch {
+	case key == "id":
+		return "Id"
+	case key == "name":
+		return "String"
 	case strings.HasSuffix(key, "date"):
 		return "Date"
 	case strings.HasSuffix(key, "infos"), strings.HasSuffix(key, "items"), strings.HasSuffix(key, "records"), strings.HasSuffix(key, "list"):
@@ -5916,22 +6124,58 @@ func semaResolvedCallReturnType(model map[string]typeMembers, receiverType, meth
 	for i, arg := range args {
 		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
 	}
+	if stubbedType := semaCreateStubReturnTypeFromText(model, receiverType, method, args); stubbedType != "" {
+		return stubbedType
+	}
 	if semaDatabaseDynamicQueryCall(receiverType, method) {
 		return "Database.QueryResult"
 	}
 	if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
 		return sig.returnType
 	}
-	if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
+	if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
 		return sig.returnType
 	}
-	if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
+	if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
 		return sig.returnType
 	}
 	if candidate, ok, _ := bestResolvedMemberByArgTypes(resolveMemberMethods(model, receiverType, method), argTypes, model); ok {
 		return candidate.member.Type
 	}
 	return ""
+}
+
+func semaCreateStubReturnTypeFromIR(model map[string]typeMembers, receiverType, method string, args []ir.Expr, currentType string) string {
+	if len(args) < 1 || !semaTestCreateStubCall(receiverType, method) {
+		return ""
+	}
+	if args[0].Kind != ir.ExprVariable {
+		return ""
+	}
+	return semaClassLiteralStubbedType(model, currentType, args[0].Name)
+}
+
+func semaCreateStubReturnTypeFromText(model map[string]typeMembers, receiverType, method string, args []semaArg) string {
+	if len(args) < 1 || !semaTestCreateStubCall(receiverType, method) {
+		return ""
+	}
+	return semaClassLiteralStubbedType(model, "", args[0].text)
+}
+
+func semaTestCreateStubCall(receiverType, method string) bool {
+	return strings.EqualFold(semaCanonicalPlatformAlias(receiverType), "Test") && strings.EqualFold(method, "createStub")
+}
+
+func semaClassLiteralStubbedType(model map[string]typeMembers, currentType, expr string) string {
+	expr = strings.TrimSpace(expr)
+	if !strings.HasSuffix(strings.ToLower(expr), ".class") {
+		return ""
+	}
+	typeName := strings.TrimSpace(expr[:len(expr)-len(".class")])
+	if typeName == "" {
+		return ""
+	}
+	return resolveNestedTypeReference(model, currentType, typeName)
 }
 
 func semaDatabaseDynamicQueryCall(receiverType, method string) bool {
@@ -6205,7 +6449,49 @@ func checkSemaCollectionCall(typ typesys.TypeSymbol, member typesys.MemberSymbol
 	if semaArgsMatchAny(sig.params, argTypes, model) {
 		return nil, true
 	}
+	if semaCollectionFieldPathArgsMatch(sig.params, args, scope, model) {
+		return nil, true
+	}
 	return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true
+}
+
+func semaCollectionFieldPathArgsMatch(params [][]string, args []semaArg, scope map[string]string, model map[string]typeMembers) bool {
+	for _, candidate := range params {
+		if len(candidate) != len(args) {
+			continue
+		}
+		matched := true
+		for i, param := range candidate {
+			argType := inferSemaArgTypeWithModel(args[i].text, scope, model)
+			if argType == "" || strings.EqualFold(argType, "null") || semaAssignableToType(param, argType, model) {
+				continue
+			}
+			fieldType := semaSObjectFieldPathArgType(args[i].text, scope, model)
+			if fieldType == "" || !semaAssignableToType(param, fieldType, model) {
+				matched = false
+				break
+			}
+		}
+		if matched {
+			return true
+		}
+	}
+	return false
+}
+
+func semaSObjectFieldPathArgType(arg string, scope map[string]string, model map[string]typeMembers) string {
+	receiverExpr, field, ok := splitSemaMethodPath(strings.TrimSpace(arg))
+	if !ok {
+		return ""
+	}
+	receiverType := inferSemaArgTypeWithModel(receiverExpr, scope, model)
+	if receiverType == "" || !isSemaSObjectLike(receiverType, model) {
+		return ""
+	}
+	if target, ok := semaResolveFieldPath(model, receiverType, field); ok && target.member.Type != "" {
+		return target.member.Type
+	}
+	return semaFallbackFieldPathType(field)
 }
 
 func checkSemaEnumCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model map[string]typeMembers) ([]diagnostic.Diagnostic, bool) {
@@ -6299,12 +6585,27 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		}
 	}
 	switch normalizeName(receiverType) {
+	case "assert", "system.assert":
+		switch method {
+		case "areequal", "arenotequal":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"Object", "Object"}, {"Object", "Object", "String"}}}, true
+		case "istrue", "isfalse":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"Boolean"}, {"Boolean", "String"}}}, true
+		case "isnull", "isnotnull":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"Object"}, {"Object", "String"}}}, true
+		case "fail":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{}, {"String"}}}, true
+		case "isinstanceoftype":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"Object", "Type"}, {"Object", "Type", "String"}}}, true
+		}
 	case "type":
 		switch method {
 		case "tostring", "getname":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
 		case "newinstance":
 			return semaCollectionSignature{returnType: "Object", params: [][]string{{}}}, true
+		case "isassignablefrom":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"Type"}}}, true
 		}
 	case "userinfo":
 		switch method {
@@ -6320,8 +6621,20 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
 		}
 	case "blob":
-		if method == "tostring" {
+		switch method {
+		case "tostring":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		case "valueof":
+			return semaCollectionSignature{returnType: "Blob", params: [][]string{{"String"}}}, true
+		}
+	case "encodingutil":
+		switch method {
+		case "base64encode", "converttohex":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"Blob"}}}, true
+		case "base64decode", "convertfromhex":
+			return semaCollectionSignature{returnType: "Blob", params: [][]string{{"String"}}}, true
+		case "urlencode", "urldecode":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"String", "String"}}}, true
 		}
 	case "address":
 		switch method {
@@ -6710,7 +7023,12 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "PageReference", params: [][]string{{}}}, true
 		}
 	case "test":
-		if method == "setcurrentpagereference" || method == "setcurrentpage" {
+		switch method {
+		case "createstub":
+			return semaCollectionSignature{returnType: "Object", params: [][]string{{"Type", "StubProvider"}}}, true
+		case "setmock":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "Object"}, {"Type", "Object"}}}, true
+		case "setcurrentpagereference", "setcurrentpage":
 			return semaCollectionSignature{returnType: "void", params: [][]string{{"PageReference"}}}, true
 		}
 	case "apexpages":
@@ -6770,6 +7088,9 @@ func semaPlatformMethodSignatureFor(model map[string]typeMembers, receiverType, 
 func semaPlatformMethodSignatureForMode(model map[string]typeMembers, receiverType, method, receiverMode string) (semaCollectionSignature, bool) {
 	if sig, ok := semaPlatformMethodSignature(receiverType, method); ok {
 		return sig, true
+	}
+	if isSemaSObjectLike(receiverType, model) && normalizeName(method) == "clone" {
+		return semaCollectionSignature{returnType: receiverType, params: [][]string{{}, {"Boolean"}, {"Boolean", "Boolean"}, {"Boolean", "Boolean", "Boolean"}, {"Boolean", "Boolean", "Boolean", "Boolean"}}}, true
 	}
 	if sig, ok := semaGeneratedPlatformMethodSignature(model, receiverType, method, receiverMode); ok {
 		return sig, true
@@ -6918,8 +7239,14 @@ func semaCustomDataStaticMethodSignature(receiverType, method string) (semaColle
 }
 
 func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model map[string]typeMembers, receiverMode string) ([]diagnostic.Diagnostic, bool) {
+	if strings.EqualFold(receiverType, "System") && strings.EqualFold(method, "runAs") && len(args) == 1 {
+		return nil, true
+	}
 	if semaDatabaseDynamicQueryCall(receiverType, method) {
 		return nil, true
+	}
+	if _, ok := semaCollectionMethodSignature(receiverType, method); ok {
+		return nil, false
 	}
 	if staticDiagnostic, blocked := checkGeneratedPlatformStaticAccess(typ, member, receiverType, method, receiverMode, start, end, source, model); blocked {
 		return []diagnostic.Diagnostic{staticDiagnostic}, true
@@ -6982,6 +7309,17 @@ func semaArgTypesContainNullish(argTypes []string) bool {
 		}
 	}
 	return false
+}
+
+func semaSystemRunAsBlockCall(receiverType, method, callee string, args []ir.Expr) bool {
+	if len(args) != 1 {
+		return false
+	}
+	if strings.EqualFold(receiverType, "System") && strings.EqualFold(method, "runAs") {
+		return true
+	}
+	receiver, method, ok := strings.Cut(callee, ".")
+	return ok && strings.EqualFold(receiver, "System") && strings.EqualFold(method, "runAs")
 }
 
 func semaArgsMatch(params, args []string, model map[string]typeMembers) bool {
@@ -7091,6 +7429,9 @@ func semaTypeModifier(word string) bool {
 }
 
 func semaIterableElementType(typeName string) (string, bool) {
+	if strings.EqualFold(typeName, "Database.QueryResult") {
+		return "SObject", true
+	}
 	base, args := semaGenericBaseAndArgs(typeName)
 	switch normalizeName(base) {
 	case "list", "set":

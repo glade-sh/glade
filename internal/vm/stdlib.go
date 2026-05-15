@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"html"
 	"math"
 	"math/big"
 	"regexp"
@@ -61,14 +62,16 @@ var stringStdlibMethodNames = []string{
 	"endsWithIgnoreCase", "equals", "equalsIgnoreCase", "escapeCsv", "escapeEcmaScript", "escapeHtml3",
 	"escapeHtml4", "escapeJava", "escapeUnicode", "escapeXml", "escapeXml10", "escapeXml11", "format",
 	"getChars", "getLevenshteinDistance", "hashCode", "indexOf", "indexOfAny", "indexOfAnyBut",
+	"indexOfChar", "indexOfDifference", "indexOfIgnoreCase",
 	"isAllLowerCase", "isAllUpperCase", "isAlpha", "isAlphaSpace", "isAlphanumeric", "isAlphanumericSpace",
 	"isAsciiPrintable", "isBlank", "isEmpty", "isNotBlank", "isNotEmpty", "isNumeric", "isNumericSpace",
-	"isWhitespace", "lastIndexOf", "lastIndexOfAny", "lastOrdinalIndexOf", "left", "leftPad", "length",
-	"mid", "normalizeSpace", "ordinalIndexOf", "overlay", "remove", "removeEnd", "removeEndIgnoreCase",
+	"isWhitespace", "lastIndexOf", "lastIndexOfAny", "lastIndexOfChar", "lastIndexOfIgnoreCase",
+	"lastOrdinalIndexOf", "left", "leftPad", "length", "mid", "normalizeSpace", "offsetByCodePoints",
+	"ordinalIndexOf", "overlay", "remove", "removeEnd", "removeEndIgnoreCase",
 	"removeIgnoreCase", "removeStart", "removeStartIgnoreCase", "repeat", "replace", "replaceAll",
 	"replaceFirst", "replaceIgnoreCase", "replaceOnce", "reverse", "right", "rightPad", "rotate", "split",
 	"splitByCharacterType", "splitByCharacterTypeCamelCase", "startsWith", "startsWithIgnoreCase", "strip",
-	"stripEnd", "stripStart", "stripToEmpty", "stripToNull", "substring", "substringAfter",
+	"stripEnd", "stripHtmlTags", "stripStart", "stripToEmpty", "stripToNull", "substring", "substringAfter",
 	"substringAfterLast", "substringBefore", "substringBeforeLast", "substringBetween", "swapCase",
 	"toCharArray", "toLowerCase", "toString", "toUpperCase", "trim", "uncapitalize", "unescapeCsv",
 	"unescapeEcmaScript", "unescapeHtml3", "unescapeHtml4", "unescapeJava", "unescapeUnicode",
@@ -714,6 +717,36 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, err
 		}
 		return Int(int64(stringLastIndexOf(receiver.Text, needle, start))), true, nil
+	case "indexOfChar":
+		char, start, err := stringCharSearchArgs("String.indexOfChar", args, 0)
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(stringIndexOf(receiver.Text, string(rune(char)), start))), true, nil
+	case "lastIndexOfChar":
+		char, start, err := stringCharSearchArgs("String.lastIndexOfChar", args, utf8.RuneCountInString(receiver.Text))
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(stringLastIndexOf(receiver.Text, string(rune(char)), start))), true, nil
+	case "indexOfIgnoreCase":
+		needle, start, err := stringSearchArgs("String.indexOfIgnoreCase", args, 0)
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(stringIndexOfFold(receiver.Text, needle, start))), true, nil
+	case "lastIndexOfIgnoreCase":
+		needle, start, err := stringSearchArgs("String.lastIndexOfIgnoreCase", args, utf8.RuneCountInString(receiver.Text))
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(stringLastIndexOfFold(receiver.Text, needle, start))), true, nil
+	case "indexOfDifference":
+		other, err := stringArg("String.indexOfDifference", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(stringIndexOfDifference(receiver.Text, other))), true, nil
 	case "ordinalIndexOf":
 		needle, ordinal, err := stringStringIntArgs("String.ordinalIndexOf", args)
 		if err != nil {
@@ -878,6 +911,17 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, fmt.Errorf("String.codePointCount index out of bounds")
 		}
 		return Int(int64(end - begin)), true, nil
+	case "offsetByCodePoints":
+		index, offset, err := stringTwoIntArgs("String.offsetByCodePoints", args)
+		if err != nil {
+			return Null, true, err
+		}
+		runes := []rune(receiver.Text)
+		result := index + offset
+		if index < 0 || index > len(runes) || result < 0 || result > len(runes) {
+			return Null, true, fmt.Errorf("String.offsetByCodePoints index out of bounds")
+		}
+		return Int(int64(result)), true, nil
 	case "getChars", "toCharArray":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
@@ -1058,6 +1102,11 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, err
 		}
 		return String(stripped), true, nil
+	case "stripHtmlTags":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.stripHtmlTags expects 0 arguments")
+		}
+		return String(stripHTMLTags(receiver.Text)), true, nil
 	case "stripToNull":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.stripToNull expects 0 arguments")
@@ -1217,6 +1266,12 @@ var stringMemberMethodNames = []string{
 	"hashCode",
 	"compareTo",
 	"substring",
+	"indexOfChar",
+	"lastIndexOfChar",
+	"indexOfIgnoreCase",
+	"lastIndexOfIgnoreCase",
+	"indexOfDifference",
+	"offsetByCodePoints",
 	"charAt",
 	"codePointAt",
 	"codePointBefore",
@@ -1248,6 +1303,7 @@ var stringMemberMethodNames = []string{
 	"strip",
 	"stripStart",
 	"stripEnd",
+	"stripHtmlTags",
 	"stripToNull",
 	"stripToEmpty",
 	"normalizeSpace",
@@ -2726,6 +2782,20 @@ func stringSearchArgs(name string, args []Value, defaultStart int) (string, int,
 	return args[0].Text, start, nil
 }
 
+func stringCharSearchArgs(name string, args []Value, defaultStart int) (int, int, error) {
+	if len(args) != 1 && len(args) != 2 {
+		return 0, 0, fmt.Errorf("%s expects Integer and optional Integer arguments", name)
+	}
+	if args[0].Kind != ValueInt || (len(args) == 2 && args[1].Kind != ValueInt) {
+		return 0, 0, fmt.Errorf("%s expects Integer and optional Integer arguments", name)
+	}
+	start := defaultStart
+	if len(args) == 2 {
+		start = int(args[1].Int)
+	}
+	return int(args[0].Int), start, nil
+}
+
 func dropFirstRunes(text string, count int) string {
 	if count <= 0 {
 		return text
@@ -2833,6 +2903,79 @@ func stringLastIndexOf(text, needle string, start int) int {
 		if runesEqual(textRunes[i:i+len(needleRunes)], needleRunes) {
 			return i
 		}
+	}
+	return -1
+}
+
+func stringIndexOfFold(text, needle string, start int) int {
+	if start < 0 {
+		start = 0
+	}
+	textRunes := []rune(text)
+	needleRunes := []rune(needle)
+	if start > len(textRunes) {
+		if len(needleRunes) == 0 {
+			return len(textRunes)
+		}
+		return -1
+	}
+	if len(needleRunes) == 0 {
+		return start
+	}
+	if len(needleRunes) > len(textRunes)-start {
+		return -1
+	}
+	for i := start; i <= len(textRunes)-len(needleRunes); i++ {
+		if strings.EqualFold(string(textRunes[i:i+len(needleRunes)]), needle) {
+			return i
+		}
+	}
+	return -1
+}
+
+func stringLastIndexOfFold(text, needle string, start int) int {
+	textRunes := []rune(text)
+	needleRunes := []rune(needle)
+	if len(needleRunes) == 0 {
+		if start < 0 {
+			return -1
+		}
+		if start > len(textRunes) {
+			return len(textRunes)
+		}
+		return start
+	}
+	if len(needleRunes) > len(textRunes) {
+		return -1
+	}
+	if start > len(textRunes)-len(needleRunes) {
+		start = len(textRunes) - len(needleRunes)
+	}
+	if start < 0 {
+		return -1
+	}
+	for i := start; i >= 0; i-- {
+		if strings.EqualFold(string(textRunes[i:i+len(needleRunes)]), needle) {
+			return i
+		}
+	}
+	return -1
+}
+
+func stringIndexOfDifference(left, right string) int {
+	leftRunes := []rune(left)
+	rightRunes := []rune(right)
+	limit := len(leftRunes)
+	if len(rightRunes) < limit {
+		limit = len(rightRunes)
+	}
+	for i := 0; i < limit; i++ {
+		if leftRunes[i] != rightRunes[i] {
+			return i
+		}
+	}
+	if len(leftRunes) != len(rightRunes) {
+		return limit
 	}
 	return -1
 }
@@ -3118,6 +3261,12 @@ func stripByPredicate(text string, mode stringStripMode, pred func(rune) bool) s
 	return string(runes[start:end])
 }
 
+var htmlTagPattern = regexp.MustCompile(`(?s)<[^>]*>`)
+
+func stripHTMLTags(text string) string {
+	return html.UnescapeString(htmlTagPattern.ReplaceAllString(text, ""))
+}
+
 func stringStaticStripAll(args []Value) (Value, error) {
 	if len(args) != 1 && len(args) != 2 {
 		return Null, fmt.Errorf("String.stripAll expects List<String> and optional stripChars String")
@@ -3325,6 +3474,9 @@ func splitStringCharacters(text string, limit int64) []string {
 		splits++
 	}
 	parts = append(parts, text[start:])
+	if limit != 0 && (limit < 0 || splits < limit-1) {
+		parts = append(parts, "")
+	}
 	return parts
 }
 

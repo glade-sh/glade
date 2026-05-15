@@ -795,7 +795,7 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 		if path, ok := version.Fields["PathOnClient"]; ok {
 			document.Fields["FileExtension"] = storage.StringValue(fileExtension(path.String))
 		}
-		id, err := e.insertOne(document)
+		id, err := e.insertPlatformRecord(document)
 		if err != nil {
 			return err
 		}
@@ -843,6 +843,66 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 		}
 	}
 	return nil
+}
+
+func (e *Engine) insertPlatformRecord(record storage.Record) (storage.ID, error) {
+	object, objectName, err := e.object(record.Object)
+	if err != nil {
+		return "", err
+	}
+	record, err = canonicalizeRecord(e.Org.Namespace, object.Definition, objectName, record)
+	if err != nil {
+		return "", err
+	}
+	applyFieldDefaults(e.Org, object.Definition, &record)
+	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
+		return "", err
+	}
+	if err := e.validateObjectID(object.Definition, record); err != nil {
+		return "", err
+	}
+	if err := e.validateReferences(object.Definition, record); err != nil {
+		return "", err
+	}
+	if record.ID == "" {
+		id, err := e.IDs.Next(objectName)
+		if err != nil {
+			return "", err
+		}
+		record.ID = id
+	}
+	if err := storage.ValidateID(record.ID); err != nil {
+		return "", err
+	}
+	if _, exists := object.Records[record.ID]; exists {
+		return "", dmlErrorf("DUPLICATE_VALUE", []string{"Id"}, "dml: duplicate id %s", record.ID)
+	}
+	stamp := e.systemTimestamp()
+	userID := e.systemUserID()
+	if record.System.CreatedDate == "" {
+		record.System.CreatedDate = stamp
+	}
+	if record.System.LastModifiedDate == "" {
+		record.System.LastModifiedDate = stamp
+	}
+	if record.System.SystemModstamp == "" {
+		record.System.SystemModstamp = stamp
+	}
+	if record.System.CreatedByID == "" {
+		record.System.CreatedByID = userID
+	}
+	if record.System.LastModifiedByID == "" {
+		record.System.LastModifiedByID = userID
+	}
+	if record.System.OwnerID == "" {
+		record.System.OwnerID = userID
+	}
+	if object.Records == nil {
+		object.Records = make(map[storage.ID]storage.Record)
+	}
+	object.Records[record.ID] = record.Clone()
+	e.Org.Objects[objectName] = object
+	return record.ID, nil
 }
 
 func (e *Engine) markLatestContentVersion(contentDocumentID storage.ID, latestVersionID storage.ID) {
@@ -978,9 +1038,6 @@ func (e *Engine) updateOne(record storage.Record) error {
 		return fmt.Errorf("dml: update requires id")
 	}
 	stripImplicitReadOnlyDefaultFields(object.Definition, e.Org.Namespace, &record, false)
-	if err := validateFieldWriteability(object.Definition, e.Org.Namespace, record, false); err != nil {
-		return err
-	}
 	if err := e.validateObjectID(object.Definition, record); err != nil {
 		return err
 	}
@@ -990,6 +1047,10 @@ func (e *Engine) updateOne(record storage.Record) error {
 	}
 	if existing.System.IsDeleted {
 		return fmt.Errorf("dml: record %s is deleted", record.ID)
+	}
+	stripUnchangedNonUpdateableFields(object.Definition, e.Org.Namespace, &record, existing)
+	if err := validateFieldWriteability(object.Definition, e.Org.Namespace, record, false); err != nil {
+		return err
 	}
 	stripReadOnlyUpdateFields(object.Definition, e.Org.Namespace, &record)
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
@@ -1392,7 +1453,7 @@ func validateFieldWriteabilityName(definition storage.ObjectDefinition, namespac
 		writeable = storage.FieldFlagValue(fieldDef.Createable, true)
 	}
 	if !writeable {
-		if allowLocalWriteabilityOverride(objectName, canonical, create) {
+		if allowLocalWriteabilityOverride(definition, objectName, canonical, fieldDef, create) {
 			return nil
 		}
 		return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{canonical}, "dml: field %s.%s is not writeable", objectName, canonical)
@@ -1400,14 +1461,108 @@ func validateFieldWriteabilityName(definition storage.ObjectDefinition, namespac
 	return nil
 }
 
-func allowLocalWriteabilityOverride(objectName, field string, create bool) bool {
+func allowLocalWriteabilityOverride(definition storage.ObjectDefinition, objectName, field string, fieldDef storage.Field, create bool) bool {
 	if strings.EqualFold(objectName, "Account") && strings.EqualFold(field, "IsPersonAccount") {
 		return true
 	}
 	if strings.EqualFold(field, "Name") && (strings.EqualFold(objectName, "Contact") || strings.EqualFold(objectName, "Lead")) {
 		return true
 	}
+	if !create {
+		return false
+	}
+	if allowLocalCreateRelationshipField(definition, field, fieldDef) {
+		return true
+	}
+	if allowLocalCreateConfigurationField(definition, field, fieldDef) {
+		return true
+	}
 	return false
+}
+
+func allowLocalCreateRelationshipField(definition storage.ObjectDefinition, field string, fieldDef storage.Field) bool {
+	if fieldDef.Type != storage.FieldReference || isSystemManagedReadonlyField(field) {
+		return false
+	}
+	if fieldDef.DefaultedOnCreate != nil && *fieldDef.DefaultedOnCreate {
+		return false
+	}
+	if fieldDef.Required && isLocalCreateIdentityObject(definition) {
+		return true
+	}
+	if isLocalSetupConfigurationObject(definition) && strings.HasSuffix(strings.ToLower(field), "id") {
+		return true
+	}
+	return false
+}
+
+func isLocalCreateIdentityObject(definition storage.ObjectDefinition) bool {
+	if isLocalSetupConfigurationObject(definition) {
+		return true
+	}
+	requiredReferences := 0
+	for _, field := range definition.Fields {
+		if field.Required && field.Type == storage.FieldReference && field.RelationshipName != "" {
+			requiredReferences++
+		}
+	}
+	return requiredReferences >= 2
+}
+
+func allowLocalCreateConfigurationField(definition storage.ObjectDefinition, field string, fieldDef storage.Field) bool {
+	if fieldDef.Type != storage.FieldString && fieldDef.Type != storage.FieldPicklist {
+		return false
+	}
+	if fieldDef.Required {
+		return true
+	}
+	if strings.EqualFold(field, "Type") && isLocalDeveloperNamedSetupObject(definition) {
+		return true
+	}
+	return isLocalSetupConfigurationObject(definition) && strings.HasSuffix(strings.ToLower(field), "type")
+}
+
+func isLocalDeveloperNamedSetupObject(definition storage.ObjectDefinition) bool {
+	if _, ok := fieldByName(definition, "DeveloperName"); !ok {
+		return false
+	}
+	if _, ok := fieldByName(definition, "RelatedId"); ok {
+		return true
+	}
+	if _, ok := fieldByName(definition, "SetupEntityId"); ok {
+		return true
+	}
+	return false
+}
+
+func isLocalSetupConfigurationObject(definition storage.ObjectDefinition) bool {
+	if _, ok := fieldByName(definition, "ParentId"); !ok {
+		return false
+	}
+	for _, name := range []string{"SObjectType", "Field", "SetupEntityId", "SetupEntityType"} {
+		if _, ok := fieldByName(definition, name); ok {
+			return true
+		}
+	}
+	return false
+}
+
+func fieldByName(definition storage.ObjectDefinition, name string) (storage.Field, bool) {
+	for fieldName, field := range definition.Fields {
+		if strings.EqualFold(fieldName, name) {
+			return field, true
+		}
+	}
+	return storage.Field{}, false
+}
+
+func isSystemManagedReadonlyField(field string) bool {
+	switch strings.ToLower(field) {
+	case "id", "isdeleted", "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid", "systemmodstamp", "lastvieweddate", "lastreferenceddate":
+		return true
+	default:
+		return false
+	}
 }
 
 func validateRequired(definition storage.ObjectDefinition, record storage.Record) error {
@@ -1440,6 +1595,40 @@ func stripReadOnlyUpdateFields(definition storage.ObjectDefinition, namespace st
 			continue
 		}
 		delete(record.Fields, field)
+	}
+}
+
+func stripUnchangedNonUpdateableFields(definition storage.ObjectDefinition, namespace string, record *storage.Record, existing storage.Record) {
+	if record == nil {
+		return
+	}
+	for field, value := range record.Fields {
+		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
+		if !ok {
+			continue
+		}
+		fieldDef := definition.Fields[canonical]
+		if storage.FieldFlagValue(fieldDef.Updateable, true) || fieldDef.Type == storage.FieldCalculated || fieldDef.Type == storage.FieldSummary {
+			continue
+		}
+		existingValue, ok := existing.GetField(canonical)
+		if ok && storageValuesEqual(fieldDef, value, existingValue) {
+			delete(record.Fields, field)
+		}
+	}
+	for field := range record.ExplicitNulls {
+		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
+		if !ok {
+			continue
+		}
+		fieldDef := definition.Fields[canonical]
+		if storage.FieldFlagValue(fieldDef.Updateable, true) || fieldDef.Type == storage.FieldCalculated || fieldDef.Type == storage.FieldSummary {
+			continue
+		}
+		existingValue, ok := existing.GetField(canonical)
+		if ok && existingValue.Kind == storage.ValueNull {
+			delete(record.ExplicitNulls, field)
+		}
 	}
 }
 
@@ -1482,11 +1671,19 @@ func (e *Engine) validateReferences(definition storage.ObjectDefinition, record 
 		if !found && isPolymorphicReference(definition, name) {
 			found = e.referenceExistsInAnyObject(id)
 		}
+		if !found && allowMissingLocalReference(definition, name) {
+			continue
+		}
 		if !found {
 			return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{name}, "dml: reference %s.%s points to missing record %s", record.Object, name, id)
 		}
 	}
 	return nil
+}
+
+func allowMissingLocalReference(definition storage.ObjectDefinition, fieldName string) bool {
+	field, ok := fieldByName(definition, fieldName)
+	return ok && field.Type == storage.FieldReference && isLocalSetupConfigurationObject(definition) && strings.EqualFold(fieldName, "SetupEntityId")
 }
 
 func isPolymorphicReference(definition storage.ObjectDefinition, fieldName string) bool {

@@ -1014,6 +1014,117 @@ func TestRunCompatStandardObjectsOutputAndCheck(t *testing.T) {
 	}
 }
 
+func TestRunCompatStubBehaviorJSONAndCheck(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "stub-behavior", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub behavior json exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"schemaVersion": 1`,
+		`"target": "standard platform stub behavior"`,
+		`"implemented":`,
+		`"passive-default":`,
+		`"unsupported":`,
+		`"unknown":`,
+		`"id": "String.trim(`,
+		`"status": "implemented"`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stub behavior stdout missing %q: %q", want, stdout.String())
+		}
+	}
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "stub-behavior.json")
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "stub-behavior", "--output", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub behavior output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "stub-behavior", "--check", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub behavior check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatStubInventoryOutputAndCheck(t *testing.T) {
+	sourceRoot := t.TempDir()
+	writeTestFile(t, filepath.Join(sourceRoot, "apex-system-stubs", "System", "String.cls"), `global class String {
+    global static String valueOf(Object value) { return null; }
+    global String trim() { return null; }
+}`)
+	writeTestFile(t, filepath.Join(sourceRoot, "apex-sobject-stubs", "Account.cls"), `global class Account extends SObject {
+    public static SObjectFields Fields { get; private set; }
+    global class SObjectFields {
+        public SObjectField Name;
+    }
+    /** Parent relationship for OwnerId **/
+    global User Owner { get; private set; }
+    /** Child relationship Contacts **/
+    global List<Contact> Contacts { get; private set; }
+    global String Name { get; set; }
+}`)
+	dir := t.TempDir()
+	markdownPath := filepath.Join(dir, "stub-inventory.md")
+	jsonPath := filepath.Join(dir, "stub-inventory.json")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "stub-inventory", "--source", sourceRoot, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub inventory json exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"schemaVersion": 1`,
+		`"systemStubClasses": 1`,
+		`"sobjectStubClasses": 1`,
+		`"systemSourceMissingGeneratedTypeCount": 0`,
+		`"sobjectSourceMissingActiveCount": 0`,
+		`"sobjectFieldMissingActiveCount": 0`,
+		`"sobjectFieldMissingSupportedFeatureCount": 0`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stub inventory stdout missing %q: %q", want, stdout.String())
+		}
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "stub-inventory", "--source", sourceRoot, "--output", markdownPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub inventory markdown output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(markdownPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), "# Stub Inventory") || !strings.Contains(string(content), "System stub classes: 1") {
+		t.Fatalf("markdown = %q", string(content))
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "stub-inventory", "--source", sourceRoot, "--output", jsonPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub inventory json output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "stub-inventory", "--source", sourceRoot, "--check", jsonPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub inventory json check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunCompatEvidenceJSON(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "apex_methods_system_string.md"), `# String Class

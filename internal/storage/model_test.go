@@ -279,6 +279,22 @@ func TestEnsureStandardObjectFieldsIncludesStubOverlayFields(t *testing.T) {
 	}
 }
 
+func TestEnsureStandardObjectFieldsUsesGeneratedStubsCaseInsensitively(t *testing.T) {
+	definition := ObjectDefinition{APIName: "asyncapexjob"}
+
+	EnsureStandardObjectFields(&definition)
+
+	if definition.Label == "" || definition.PluralLabel == "" {
+		t.Fatalf("object info was not merged: %#v", definition)
+	}
+	if field, ok := definition.Fields["ApexClassId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "ApexClass" {
+		t.Fatalf("ApexClassId field = %#v, %v", field, ok)
+	}
+	if field, ok := definition.Fields["CreatedDate"]; !ok || FieldFlagValue(field.Createable, true) || FieldFlagValue(field.Updateable, true) {
+		t.Fatalf("CreatedDate readonly flags = %#v, %v", field, ok)
+	}
+}
+
 func TestEnsureStandardObjectFieldsEnrichesShallowExistingStandardFields(t *testing.T) {
 	definition := ObjectDefinition{
 		APIName: "Account",
@@ -572,6 +588,26 @@ func TestEnsureStandardObjectAddsGeneratedSObjectStubOverlayShape(t *testing.T) 
 	}
 	if field, ok := org.Objects["AccountContactRelation"].Definition.Fields["Roles"]; !ok || field.Label != "Roles" || field.Type != FieldString {
 		t.Fatalf("AccountContactRelation.Roles field = %#v, %v", field, ok)
+	}
+}
+
+func TestEnsureStandardObjectCanonicalizesGeneratedStubNames(t *testing.T) {
+	org := NewOrgState()
+
+	EnsureStandardObject(&org, "asyncapexjob")
+
+	if _, ok := org.Objects["asyncapexjob"]; ok {
+		t.Fatalf("lowercase generated stub object key should not be retained: %#v", org.Objects["asyncapexjob"])
+	}
+	job := org.Objects["AsyncApexJob"].Definition
+	if job.APIName != "AsyncApexJob" || job.Label != "Apex Job" || job.PluralLabel != "Apex Jobs" {
+		t.Fatalf("AsyncApexJob metadata = %#v", job)
+	}
+	if field, ok := job.Fields["ApexClassId"]; !ok || field.Type != FieldReference || field.RelationshipName != "ApexClass" || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "ApexClass" {
+		t.Fatalf("AsyncApexJob.ApexClassId field = %#v, %v", field, ok)
+	}
+	if !hasRelationship(job.Relations, "ApexClassId", "ApexClass", "ApexClass") {
+		t.Fatalf("AsyncApexJob relations missing ApexClassId: %#v", job.Relations)
 	}
 }
 
