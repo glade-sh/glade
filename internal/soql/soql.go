@@ -557,12 +557,12 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 		if condition.Range {
 			return compareValues(left, condition.Value) >= 0 && compareValues(left, condition.Value2) < 0
 		}
-		return equalValues(left, condition.Value)
+		return equalValuesInOrg(org, left, condition.Value)
 	case "!=":
 		if condition.Range {
 			return compareValues(left, condition.Value) < 0 || compareValues(left, condition.Value2) >= 0
 		}
-		return !equalValues(left, condition.Value)
+		return !equalValuesInOrg(org, left, condition.Value)
 	case ">":
 		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
 			return false
@@ -592,7 +592,7 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 			return false
 		}
 		for _, v := range condition.Values {
-			if equalValues(left, v) {
+			if equalValuesInOrg(org, left, v) {
 				return true
 			}
 		}
@@ -605,7 +605,7 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 			if v.Kind == storage.ValueNull {
 				continue
 			}
-			if equalValues(left, v) {
+			if equalValuesInOrg(org, left, v) {
 				return false
 			}
 		}
@@ -1807,6 +1807,24 @@ func equalValues(left, right storage.Value) bool {
 	default:
 		return false
 	}
+}
+
+func equalValuesInOrg(org storage.OrgState, left, right storage.Value) bool {
+	if equalValues(left, right) {
+		return true
+	}
+	if org.Namespace == "" || left.Kind != storage.ValueString || right.Kind != storage.ValueString {
+		return false
+	}
+	leftText := strings.TrimSpace(left.String)
+	rightText := strings.TrimSpace(right.String)
+	if leftText == "" || rightText == "" {
+		return false
+	}
+	if !strings.Contains(leftText, "__") && !strings.Contains(rightText, "__") {
+		return false
+	}
+	return strings.EqualFold(storage.StripNamespaceToken(org.Namespace, leftText), storage.StripNamespaceToken(org.Namespace, rightText))
 }
 
 func idTextEqual(left, right string) bool {
