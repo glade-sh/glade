@@ -1844,6 +1844,22 @@ System.assertEquals(true, ((Map<String,Object>)LoyaltyManagement.WidgetReferMemb
 System.assertEquals(false, industries_docgen.DocGenPermsAndAccessChecksService.hasDocGenOrgPerm('u', 'p'));
 System.assertEquals(false, industries_docgen.DocGenPermsAndAccessChecksService.hasDocGenMetadataSetting('u', 'p'));
 System.assertEquals(false, industries_docgen.DocGenPermsAndAccessChecksService.isRuntimeUser('u', 'p', 'c'));
+System.assertEquals(0, new fschousehold.FSCFinancialAccountService().call('load', new Map<String,Object>()).size());
+System.assertEquals(0, new fscwmgen.RecordAlertProvider().getAlertsByWhatId('001').size());
+System.assertEquals(0, new fscwmgen.RecordAlertBatchProvider().getAlertsByWhatIdBatch(new List<String>{'001'}).size());
+System.assertEquals(0, new healthcloudext.AppointmentBookingInterop().findSlots(null).size());
+System.assertNotEquals(null, new healthcloudext.AppointmentBookingInterop().getSlotStatus(null));
+System.assertEquals(false, new healthcloudext.IQuotasAndAllocation().validateSlotChain(null));
+System.assertEquals(0, healthcloudext.IntegratedCareManagementApexUtil.checkCreateAccess(new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>()).size());
+System.assertEquals(false, new healthcloudext.ProviderSearchCardUtil().invokeMethod('load', new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>()));
+System.assertNotEquals(null, new id_verification.IdentityVerificationExt().search(null));
+System.assertEquals(false, new ind_docgen_api.OpenInterface().invokeMethod('load', new Map<String,Object>(), new Map<String,Object>()));
+System.assertEquals(null, new ind_docgen_api.EnvelopeStatusScheduler().execute(null));
+System.assertEquals(null, new industries_docgen.DocumentTemplate().Call('load', new Map<String,Object>()));
+System.assertNotEquals(null, new service_cloud_voice.GroupSetup().listGroups(null));
+System.assertNotEquals(null, new service_cloud_voice.PhoneNumberProvider().listPhoneNumbers(null));
+System.assertNotEquals(null, new service_cloud_voice.QueueSetup().listQueues(null));
+System.assertNotEquals(null, new service_cloud_voice.QueueManager().supportsQueueUserGrouping(null));
 
 inventorypricing.GetInventoryPricing inventory = new inventorypricing.GetInventoryPricing();
 inventorypricing.InventoryPricingData data = new inventorypricing.InventoryPricingData();
@@ -1888,6 +1904,21 @@ func TestExecIndustryControllerMutationsStayUnsupported(t *testing.T) {
 			name: "event create",
 			src:  `new ime_mrm.EventManagementBudgetApi().createMngEventBudget(new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>());`,
 			want: `unsupported call "ime_mrm.EventManagementBudgetApi.createMngEventBudget local industry service mutation surface"`,
+		},
+		{
+			name: "fsc alert mutation",
+			src:  `new fscwmgen.RecordAlertProvider().dismissAlert('a');`,
+			want: `unsupported call "fscwmgen.RecordAlertProvider.dismissAlert local industry service mutation surface"`,
+		},
+		{
+			name: "health interop booking",
+			src:  `new healthcloudext.AppointmentBookingInterop().bookAppointment(null);`,
+			want: `unsupported call "healthcloudext.AppointmentBookingInterop.bookAppointment local industry service mutation surface"`,
+		},
+		{
+			name: "service voice create",
+			src:  `new service_cloud_voice.GroupSetup().createGroup(null);`,
+			want: `unsupported call "service_cloud_voice.GroupSetup.createGroup local industry service mutation surface"`,
 		},
 		{
 			name: "sales transaction",

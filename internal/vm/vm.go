@@ -5980,6 +5980,8 @@ func industryControllerDefaultStatic(className, methodName string) bool {
 			"getmru", "getpicklist", "getsoslsearch":
 			return true
 		}
+	case "healthcloudext.IntegratedCareManagementApexUtil":
+		return name == "checkcaregapaccess" || name == "checkcreateaccess"
 	case "LoyaltyManagement.LoyaltyResources":
 		switch name {
 		case "getloyaltypromotionbasedonsalesforcecdp", "getloyaltypromotions", "getpointsbalance", "gettier":
@@ -6003,6 +6005,8 @@ func industryControllerUnsupportedStatic(className, methodName string) bool {
 		case "bookselfserviceappointment", "cancelselfserviceappointment", "createpatient", "publisheventforpft":
 			return true
 		}
+	case "healthcloudext.ATMCRMAuthenticationPortalUserDelegator":
+		return name == "executeauthenticationforportaluser"
 	case "LoyaltyManagement.LoyaltyResources":
 		switch name {
 		case "changetier", "creditpoints", "debitpoints", "issuevoucher",
@@ -6020,11 +6024,36 @@ func industryControllerDefaultInstance(className, methodName string) bool {
 	if industryWidgetCallMethod(className, methodName) {
 		return true
 	}
+	if industryControllerMapCallback(className, methodName) {
+		return true
+	}
 	if industryTypeName(className, "inventorypricing.GetInventoryPricing") {
 		switch name {
 		case "createresponse", "getinventory", "getinventoryandpricing", "getpricing", "handleinventorypricingserviceexception", "processinput":
 			return true
 		}
+	}
+	switch className {
+	case "fscwmgen.RecordAlertBatchProvider":
+		return name == "getalertsbyparentidbatch" || name == "getalertsbywhatidbatch"
+	case "fscwmgen.RecordAlertProvider":
+		return name == "getalertsbyparentid" || name == "getalertsbywhatid" || name == "getalertsbywhatidandparentid"
+	case "healthcloudext.AppointmentBookingInterop", "healthcloudext.AppointmentBookingInteropFhirAdapter":
+		return name == "findslots" || name == "getslotstatus"
+	case "healthcloudext.IQuotasAndAllocation":
+		return name == "validateslotchain"
+	case "id_verification.IdentityVerificationExt":
+		return name == "getverifiers" || name == "search"
+	case "ind_docgen_api.EnvelopeStatusScheduler":
+		return name == "execute"
+	case "service_cloud_voice.GroupSetup":
+		return name == "listgroups"
+	case "service_cloud_voice.PhoneNumberProvider":
+		return name == "listphonenumbers"
+	case "service_cloud_voice.QueueManager":
+		return name == "supportsqueueusergrouping"
+	case "service_cloud_voice.QueueSetup":
+		return name == "listqueues"
 	}
 	return industryEventManagementReadMethod(className, methodName)
 }
@@ -6032,9 +6061,58 @@ func industryControllerDefaultInstance(className, methodName string) bool {
 func industryControllerUnsupportedInstance(className, methodName string) bool {
 	name := strings.ToLower(methodName)
 	switch className {
+	case "fscwmgen.BranchManagementAssociationHandler":
+		return name == "handleassociation"
+	case "fscwmgen.RecordAlertBatchProvider":
+		return name == "dismissalertsbatch" || name == "snoozealertsbatch"
+	case "fscwmgen.RecordAlertProvider":
+		return name == "dismissalert" || name == "snoozealert"
+	case "healthcloudext.AppointmentBookingInterop", "healthcloudext.AppointmentBookingInteropFhirAdapter":
+		return name == "bookappointment" || name == "cancelappointment"
+	case "healthcloudext.IBenefitsVerificationInterOp":
+		return name == "verifybenefits"
+	case "healthcloudext.IQuotasAndAllocation":
+		return name == "fetchquotaavailability"
+	case "healthcloudext.IUnifiedHealthScore":
+		return name == "saveactiondetail"
+	case "healthcloudext.RosterFileRelatedObjectsCreationService":
+		return name == "createcaserelatedfiles"
+	case "healthcloudext.UMBookAppointmentSlotService":
+		return name == "bookslotremoteaction"
 	case "ime_mrm.EventManagementBudgetApi", "ime_mrm.EventManagementManagedEventApi",
 		"ime_mrm.EventManagementParticipantApi", "ime_mrm.EventManagementProductApi", "ime_mrm.EventManagementSubjectApi":
 		return strings.HasPrefix(name, "create") || strings.HasPrefix(name, "update") || strings.HasPrefix(name, "delete")
+	case "service_cloud_voice.GroupSetup":
+		return name == "associateuserswithgroup" || name == "creategroup"
+	case "service_cloud_voice.PartnerConnector":
+		return name == "connect"
+	case "service_cloud_voice.QueueSetup":
+		return name == "associateusersandgroupswithqueue" || name == "createqueue" || name == "removequeue"
+	case "service_cloud_voice.UpdateOrgDomainProvider":
+		return name == "updateorgdomainvalues"
+	case "service_cloud_voice.UserSyncing":
+		return name == "adduserstocontactcenter" || name == "removeusersfromcontactcenter"
+	default:
+		return false
+	}
+}
+
+func industryControllerMapCallback(className, methodName string) bool {
+	name := strings.ToLower(methodName)
+	switch className {
+	case "fschousehold.FSCFinancialAccountService", "fschousehold.FSCGoalService",
+		"fschousehold.FSCHouseholdService", "fschousehold.FSCPlanService",
+		"fschousehold.RetrievalSummaryDataRefresh",
+		"healthcloudext.AppointmentBookingSelfServiceWrapper", "healthcloudext.CommunityHelper",
+		"healthcloudext.HealthCloudICMCareGapUtil", "healthcloudext.HealthCloudICMDiscoveryFrameworkUtil",
+		"healthcloudext.IntegratedCareManagementApexUtil", "healthcloudext.IntegratedCareManagementCPTApexUtil",
+		"healthcloudext.IntegratedCareManagementUtil_250", "healthcloudext.ProviderSearchCardUtil",
+		"healthcloudext.ReferralManagementUtil", "healthcloudext.SuggestedResponseAssessmentService",
+		"healthcloudext.UtilizationManagementWrapper",
+		"ind_docgen_api.OpenInterface",
+		"industries_docgen.ApryseReplacementService", "industries_docgen.DocumentGenerationProcess",
+		"industries_docgen.DocumentTemplate":
+		return name == "call" || name == "invokemethod"
 	default:
 		return false
 	}
