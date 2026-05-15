@@ -110,18 +110,18 @@ func (v Value) String() string {
 		if stubbedType, ok := stubProxyTypeName(v); ok {
 			return fmt.Sprintf("%s__sfdc_ApexStub:%d", stubbedType, v.Ref)
 		}
-		if v.Type == "PageReference" {
+		if strings.EqualFold(v.Type, "PageReference") {
 			if rawURL, ok := v.Fields["url"]; ok && rawURL.Kind == ValueString {
 				return rawURL.Text
 			}
 			return ""
 		}
-		if v.Type == "Schema.SObjectType" {
+		if strings.EqualFold(v.Type, "Schema.SObjectType") {
 			if objectName, ok := v.Fields["object"]; ok && objectName.Kind == ValueString {
 				return objectName.Text
 			}
 		}
-		if v.Type == "Schema.SObjectField" {
+		if strings.EqualFold(v.Type, "Schema.SObjectField") {
 			objectName, hasObject := v.Fields["object"]
 			fieldName, hasField := v.Fields["field"]
 			if hasObject && hasField && objectName.Kind == ValueString && fieldName.Kind == ValueString {
@@ -454,23 +454,23 @@ func platformScalarObject(typeName string) bool {
 }
 
 func mapKey(v Value) string {
-	if v.Kind == ValueObject && v.Type == "Schema.SObjectType" {
+	if v.Kind == ValueObject && strings.EqualFold(v.Type, "Schema.SObjectType") {
 		if objectName, ok := v.Fields["object"]; ok && objectName.Kind == ValueString {
 			return string(v.Kind) + ":" + v.Type + ":" + schemaTokenObjectKey(objectName.Text)
 		}
 	}
-	if v.Kind == ValueObject && v.Type == "Schema.SObjectField" {
+	if v.Kind == ValueObject && strings.EqualFold(v.Type, "Schema.SObjectField") {
 		objectName, hasObject := v.Fields["object"]
 		fieldName, hasField := v.Fields["field"]
 		if hasObject && hasField && objectName.Kind == ValueString && fieldName.Kind == ValueString {
 			return string(v.Kind) + ":" + v.Type + ":" + schemaTokenObjectKey(objectName.Text) + "." + strings.ToLower(fieldName.Text)
 		}
 	}
-	if v.Kind == ValueObject && v.Type == "Schema.ChildRelationship" {
+	if v.Kind == ValueObject && strings.EqualFold(v.Type, "Schema.ChildRelationship") {
 		relationshipName, hasRelationship := v.Fields["relationshipName"]
 		childSObject, hasChild := v.Fields["childSObject"]
 		field, hasField := v.Fields["field"]
-		if hasRelationship && hasChild && hasField && relationshipName.Kind == ValueString && childSObject.Kind == ValueObject && childSObject.Type == "Schema.SObjectType" && field.Kind == ValueObject && field.Type == "Schema.SObjectField" {
+		if hasRelationship && hasChild && hasField && relationshipName.Kind == ValueString && childSObject.Kind == ValueObject && strings.EqualFold(childSObject.Type, "Schema.SObjectType") && field.Kind == ValueObject && strings.EqualFold(field.Type, "Schema.SObjectField") {
 			childName, childOK := childSObject.Fields["object"]
 			fieldName, fieldOK := field.Fields["field"]
 			if childOK && fieldOK && childName.Kind == ValueString && fieldName.Kind == ValueString {
@@ -558,7 +558,7 @@ func stableObjectMapKeyField(value Value) bool {
 		return true
 	case ValueObject:
 		return strings.EqualFold(value.Type, "Type") ||
-			strings.HasPrefix(value.Type, "Schema.") ||
+			hasTypePrefixFold(value.Type, "Schema") ||
 			platformScalarObject(value.Type) ||
 			sObjectValueType(value.Type)
 	default:

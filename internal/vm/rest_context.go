@@ -60,10 +60,10 @@ func StringValueMapEntries(value Value) map[string]Value {
 
 // SetRestContext installs request/response values for RestContext static fields.
 func (vm *VM) SetRestContext(request, response Value) error {
-	if request.Kind != ValueNull && (request.Kind != ValueObject || request.Type != "RestRequest") {
+	if request.Kind != ValueNull && (request.Kind != ValueObject || !strings.EqualFold(request.Type, "RestRequest")) {
 		return fmt.Errorf("RestContext.request expects RestRequest")
 	}
-	if response.Kind != ValueNull && (response.Kind != ValueObject || response.Type != "RestResponse") {
+	if response.Kind != ValueNull && (response.Kind != ValueObject || !strings.EqualFold(response.Type, "RestResponse")) {
 		return fmt.Errorf("RestContext.response expects RestResponse")
 	}
 	vm.restRequest = request

@@ -376,17 +376,18 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return false
 	}
 	typeName := stubBehaviorTypeName(symbol)
+	typeKey := strings.ToLower(typeName)
 	name := strings.ToLower(member.Name)
-	if strings.HasPrefix(typeName, "Schema.") && (strings.HasPrefix(name, "get") || strings.HasPrefix(name, "is")) {
+	if strings.HasPrefix(typeKey, "schema.") && (strings.HasPrefix(name, "get") || strings.HasPrefix(name, "is")) {
 		return true
 	}
-	if typeName == "Schema.SObjectType" && name == "newsobject" {
+	if typeKey == "schema.sobjecttype" && name == "newsobject" {
 		return true
 	}
-	if typeName == "Comparable" && name == "compareto" {
+	if typeKey == "comparable" && name == "compareto" {
 		return true
 	}
-	if typeName == "Comparator" && name == "compare" {
+	if typeKey == "comparator" && name == "compare" {
 		return true
 	}
 	if apexPagesBehaviorMethod(typeName, name) || messagingBehaviorMethod(typeName, name) {
@@ -403,6 +404,14 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return true
 	}
 	switch typeName {
+	case "Callable":
+		return name == "call"
+	case "StubProvider":
+		return name == "handlemethodcall"
+	case "DataWeave.Script":
+		return name == "createscript" || name == "execute"
+	case "Formula":
+		return name == "builder" || name == "recalculateformulas"
 	case "BusinessHours":
 		switch name {
 		case "add", "addgmt", "diff", "iswithin", "nextstartdate":
@@ -527,7 +536,8 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 			"getpaginationcursorwithbinds", "insert", "update", "upsert", "delete", "undelete",
 			"insertasync", "updateasync", "deleteasync", "insertimmediate", "updateimmediate",
 			"deleteimmediate", "getasyncsaveresult", "getasyncdeleteresult", "getdeleted", "getupdated",
-			"emptyrecyclebin", "lock", "unlock", "merge", "setsavepoint", "releasesavepoint", "rollback":
+			"emptyrecyclebin", "lock", "unlock", "merge", "setsavepoint", "releasesavepoint", "rollback",
+			"executebatch":
 			return true
 		}
 	case "Database.QueryLocator":
@@ -576,7 +586,8 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 			"clearapexpagemessages", "setcurrentpage", "setcurrentpagereference", "setmock",
 			"setcreateddate", "setfixedsearchresults", "createstubqueryrow", "issoqlstubdefined",
 			"geteventbus", "getflexqueueorder", "enqueuebatchjobs", "calculatepermissionsetgroup", "enablechangedatacapture",
-			"setreadonlyapplicationmode", "testinstall", "testuninstall":
+			"setreadonlyapplicationmode", "testinstall", "testuninstall", "invokecontinuationmethod",
+			"setcontinuationresponse":
 			return true
 		}
 	case "Math":
@@ -666,6 +677,17 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		switch name {
 		case "geturl", "setredirect", "getredirect", "getparameters", "getheaders", "getcookies", "setcookies", "setanchor", "getanchor",
 			"setredirectcode", "getredirectcode", "forresource":
+			return true
+		}
+	case "RestRequest":
+		switch name {
+		case "addheader", "getheader", "getheaderkeys", "addparameter", "addparam",
+			"getparameter", "getparam", "getparameterkeys", "getparamkeys":
+			return true
+		}
+	case "Schema":
+		switch name {
+		case "describetabs", "getappdescribe", "getmoduledescribe":
 			return true
 		}
 	case "Search":

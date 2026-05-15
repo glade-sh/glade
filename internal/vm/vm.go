@@ -3718,6 +3718,28 @@ platformStaticCall:
 			"count":     len(vm.schemaDescribeTabValues()),
 		})
 		return vm.schemaDescribeTabs(), nil
+	case "Schema.getAppDescribe":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Schema.getAppDescribe expects app name String")
+		}
+		appendTrace(result, "apex.describe.app", "apex.describe", map[string]any{
+			"operation": "getAppDescribe",
+			"app":       args[0].Text,
+		})
+		return vm.schemaGlobalDescribe(), nil
+	case "Schema.getModuleDescribe":
+		if len(args) > 1 || (len(args) == 1 && args[0].Kind != ValueString) {
+			return Null, fmt.Errorf("Schema.getModuleDescribe expects optional module name String")
+		}
+		module := ""
+		if len(args) == 1 {
+			module = args[0].Text
+		}
+		appendTrace(result, "apex.describe.module", "apex.describe", map[string]any{
+			"operation": "getModuleDescribe",
+			"module":    module,
+		})
+		return vm.schemaGlobalDescribe(), nil
 	case "Schema.describeDataCategoryGroups":
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, fmt.Errorf("Schema.describeDataCategoryGroups expects List<String>")
@@ -24504,7 +24526,7 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 
 func (vm *VM) callConnectAPITestFixtureStatic(callee string, args []Value) (Value, bool, error) {
 	className, methodName, ok := vm.splitClassMember(callee)
-	if !ok || !strings.HasPrefix(className, "ConnectApi.") {
+	if !ok || !hasTypePrefixFold(className, "ConnectApi") {
 		return Null, false, nil
 	}
 	if connectAPITestSetterName(methodName) {
@@ -29677,6 +29699,18 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if value, updated, mutated, handled, err := vm.callDatabaseUnitOfWorkMember(receiver, method, args, result); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
+	if strings.EqualFold(receiver.Type, "RestRequest") {
+		return callRestRequestMember(receiver, method, args)
+	}
+	if strings.EqualFold(receiver.Type, "RestResponse") {
+		return callRestResponseMember(receiver, method, args)
+	}
+	if strings.EqualFold(receiver.Type, "DataWeave.Script") {
+		return callDataWeaveScriptMember(receiver, method, args)
+	}
+	if strings.EqualFold(receiver.Type, "DataWeave.Result") {
+		return callDataWeaveResultMember(receiver, method, args)
+	}
 	switch receiver.Type {
 	case "eventbus.SuccessResult", "eventbus.FailureResult", "EventBus.SuccessResult", "EventBus.FailureResult":
 		switch method {
@@ -29922,10 +29956,6 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return callJSONGeneratorMember(receiver, method, args)
 	case "JSONParser":
 		return vm.callJSONParserMember(receiver, method, args)
-	case "RestRequest":
-		return callRestRequestMember(receiver, method, args)
-	case "RestResponse":
-		return callRestResponseMember(receiver, method, args)
 	case "Schema.SObjectType":
 		switch method {
 		case "newSObject":
@@ -31776,10 +31806,6 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "Cookie":
 		method = canonicalStdlibMemberName(method, "getName", "getValue", "getPath", "getDomain", "getMaxAge", "isSecure", "getSameSite", "isHttpOnly", "toString")
 		return callCookieMember(receiver, method, args)
-	case "DataWeave.Script", "dataweave.Script":
-		return callDataWeaveScriptMember(receiver, method, args)
-	case "DataWeave.Result", "dataweave.Result":
-		return callDataWeaveResultMember(receiver, method, args)
 	case "Domain":
 		return callDomainMember(receiver, method, args)
 	case "Address":
@@ -32372,7 +32398,7 @@ func (vm *VM) generatedPlatformPassiveDTOShape(generated generatedPlatformType) 
 	hasDataShape := len(generated.Fields) != 0 || len(generated.Constructors) != 0 || strings.HasSuffix(generated.Name, ".Builder")
 	for _, overloads := range generatedPlatformMethodIndex[strings.ToLower(generated.Name)] {
 		for _, method := range overloads {
-			if strings.HasPrefix(generated.Name, "ConnectApi.") && method.IsStatic && !generatedConnectAPIPassiveStaticMethod(generated.Name, method) {
+			if hasTypePrefixFold(generated.Name, "ConnectApi") && method.IsStatic && !generatedConnectAPIPassiveStaticMethod(generated.Name, method) {
 				return false
 			}
 			if method.IsStatic && strings.EqualFold(method.Name, "builder") && strings.HasSuffix(method.ReturnType, ".Builder") {
@@ -32441,12 +32467,11 @@ func generatedConnectAPIPassiveStaticMethod(typeName string, method Method) bool
 func generatedExecutionSurfaceRuntimeType(typeName string) bool {
 	for _, prefix := range []string{
 		"Cache.",
-		"cache.",
 		"Continuation.",
 		"ExternalService.",
 		"ExternalServiceTest.",
 	} {
-		if strings.HasPrefix(typeName, prefix) {
+		if len(typeName) >= len(prefix) && strings.EqualFold(typeName[:len(prefix)], prefix) {
 			return true
 		}
 	}
@@ -32655,8 +32680,13 @@ func callDataWeaveScriptMember(receiver Value, method string, args []Value) (Val
 	if method != "execute" {
 		return Null, receiver, false, false, nil
 	}
-	if len(args) != 1 || args[0].Kind != ValueMap {
-		return Null, receiver, false, true, fmt.Errorf("DataWeave.Script.execute expects Map<String,Object>")
+	inputs := typedMap("Map<String,Object>")
+	switch {
+	case len(args) == 0:
+	case len(args) == 1 && args[0].Kind == ValueMap:
+		inputs = args[0]
+	default:
+		return Null, receiver, false, true, fmt.Errorf("DataWeave.Script.execute expects optional Map<String,Object>")
 	}
 	scriptName := dataWeaveScriptName(receiver)
 	if scriptName == "" {
@@ -32669,7 +32699,7 @@ func callDataWeaveScriptMember(receiver Value, method string, args []Value) (Val
 	if lower == "error" || strings.Contains(lower, "error") {
 		return Null, receiver, false, true, newExceptionError("DataWeaveScriptException", "Division by zero")
 	}
-	return newDataWeaveResult(scriptName, args[0]), receiver, false, true, nil
+	return newDataWeaveResult(scriptName, inputs), receiver, false, true, nil
 }
 
 func callDataWeaveResultMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {

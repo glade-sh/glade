@@ -696,6 +696,7 @@ DataWeave.Result result = script.execute(new Map<String,Object>());
 System.assertEquals('"Hello World"', result.getValueAsString());
 System.assertEquals('text/plain', result.getMimeType());
 System.assertEquals('"Hello World"', (String)result.valueAsString);
+System.assertEquals('"Hello World"', script.execute().getValueAsString());
 
 Map<String,Object> inputs = new Map<String,Object>{'records' => new List<String>{'a', 'b'}};
 DataWeave.Result projected = DataWeave.Script.createScript('records').execute(inputs);

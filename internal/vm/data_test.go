@@ -3435,6 +3435,9 @@ func TestExecDescribeTabsFromLocalMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Object> tabSets = Schema.describeTabs();
 System.assertEquals(1, tabSets.size());
+System.assert(Schema.getAppDescribe('Sales').containsKey('Account'));
+System.assert(Schema.getModuleDescribe().containsKey('Account'));
+System.assert(Schema.getModuleDescribe('Sales').containsKey('Account'));
 Object tabSet = tabSets.get(0);
 System.assertEquals('All Tabs', tabSet.getLabel());
 System.assertEquals('AllTabs', tabSet.getName());
