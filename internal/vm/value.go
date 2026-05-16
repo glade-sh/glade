@@ -93,6 +93,9 @@ func (v Value) String() string {
 	case ValueInt:
 		return strconv.FormatInt(v.Int, 10)
 	case ValueDecimal:
+		if v.Text != "" {
+			return v.Text
+		}
 		return strconv.FormatFloat(v.Decimal, 'f', -1, 64)
 	case ValueBool:
 		if v.Bool {
@@ -126,7 +129,7 @@ func (v Value) String() string {
 			objectName, hasObject := v.Fields["object"]
 			fieldName, hasField := v.Fields["field"]
 			if hasObject && hasField && objectName.Kind == ValueString && fieldName.Kind == ValueString {
-				return objectName.Text + "." + fieldName.Text
+				return fieldName.Text
 			}
 		}
 		if raw, ok := v.Fields["value"]; ok && raw.Kind == ValueString {
@@ -309,19 +312,48 @@ func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
 			continue
 		}
 		_, rightValue, ok := objectFieldValue(right, key)
-		if !ok || !leftValue.equal(rightValue, seen) {
+		if !ok {
+			if sObjectMissingFieldEqualsImplicitDefault(left, key, leftValue) {
+				continue
+			}
+			return false
+		}
+		if !leftValue.equal(rightValue, seen) {
 			return false
 		}
 	}
-	for key := range right.Fields {
+	for key, rightValue := range right.Fields {
 		if isInternalSObjectField(key) {
 			continue
 		}
 		if _, _, ok := objectFieldValue(left, key); !ok {
+			if sObjectMissingFieldEqualsImplicitDefault(right, key, rightValue) {
+				continue
+			}
 			return false
 		}
 	}
 	return true
+}
+
+func sObjectMissingFieldEqualsImplicitDefault(owner Value, field string, value Value) bool {
+	if isExplicitSObjectField(owner, field) {
+		return false
+	}
+	switch value.Kind {
+	case ValueNull:
+		return true
+	case ValueBool:
+		return !value.Bool
+	case ValueInt:
+		return value.Int == 0
+	case ValueDecimal:
+		return value.Decimal == 0
+	case ValueString:
+		return value.Text == ""
+	default:
+		return false
+	}
 }
 
 func isStringComparableEnum(typeName string) bool {
@@ -336,13 +368,6 @@ func isStringComparableEnum(typeName string) bool {
 func apexIDTextEqual(left, right string) bool {
 	if len(left) >= 15 && len(right) >= 15 {
 		return strings.EqualFold(left[:15], right[:15])
-	}
-	if len(left) >= 14 && len(right) >= 14 {
-		return strings.EqualFold(left[:14], right[:14])
-	}
-	if len(left) >= 12 && len(right) >= 12 {
-		return strings.HasPrefix(strings.ToLower(left), strings.ToLower(right)) ||
-			strings.HasPrefix(strings.ToLower(right), strings.ToLower(left))
 	}
 	return left == right
 }
@@ -373,9 +398,39 @@ func valueIdentityEqual(left, right Value) bool {
 	}
 	switch left.Kind {
 	case ValueList, ValueSet, ValueMap, ValueObject:
+		if left.Kind == ValueObject && schemaTokenIdentityEqual(left, right) {
+			return true
+		}
+		if left.Kind == ValueObject && left.Text != "" && right.Text != "" && strings.EqualFold(left.Type, right.Type) {
+			return strings.EqualFold(left.Text, right.Text)
+		}
 		return left.Ref != 0 && left.Ref == right.Ref
 	default:
 		return left.Equal(right)
+	}
+}
+
+func schemaTokenIdentityEqual(left, right Value) bool {
+	if !strings.EqualFold(left.Type, right.Type) {
+		return false
+	}
+	switch {
+	case strings.EqualFold(left.Type, "Schema.SObjectType"):
+		leftObject, leftOK := left.Fields["object"]
+		rightObject, rightOK := right.Fields["object"]
+		return leftOK && rightOK && leftObject.Kind == ValueString && rightObject.Kind == ValueString && strings.EqualFold(leftObject.Text, rightObject.Text)
+	case strings.EqualFold(left.Type, "Schema.SObjectField"):
+		leftObject, leftObjectOK := left.Fields["object"]
+		rightObject, rightObjectOK := right.Fields["object"]
+		leftField, leftFieldOK := left.Fields["field"]
+		rightField, rightFieldOK := right.Fields["field"]
+		return leftObjectOK && rightObjectOK && leftFieldOK && rightFieldOK &&
+			leftObject.Kind == ValueString && rightObject.Kind == ValueString &&
+			leftField.Kind == ValueString && rightField.Kind == ValueString &&
+			strings.EqualFold(leftObject.Text, rightObject.Text) &&
+			strings.EqualFold(leftField.Text, rightField.Text)
+	default:
+		return false
 	}
 }
 
@@ -471,7 +526,7 @@ func mapKey(v Value) string {
 		objectName, hasObject := v.Fields["object"]
 		fieldName, hasField := v.Fields["field"]
 		if hasObject && hasField && objectName.Kind == ValueString && fieldName.Kind == ValueString {
-			return string(v.Kind) + ":" + v.Type + ":" + schemaTokenObjectKey(objectName.Text) + "." + strings.ToLower(fieldName.Text)
+			return string(v.Kind) + ":" + v.Type + ":" + schemaTokenObjectKey(objectName.Text) + "." + schemaTokenFieldKey(fieldName.Text)
 		}
 	}
 	if v.Kind == ValueObject && strings.EqualFold(v.Type, "Schema.ChildRelationship") {
@@ -593,6 +648,25 @@ func schemaTokenObjectKey(name string) string {
 	if dot := strings.LastIndexByte(name, '.'); dot >= 0 && dot < len(name)-1 {
 		name = name[dot+1:]
 	}
+	return strings.ToLower(stripSchemaNamespaceToken(name))
+}
+
+func schemaTokenFieldKey(name string) string {
+	if dot := strings.LastIndexByte(name, '.'); dot >= 0 && dot < len(name)-1 {
+		name = name[dot+1:]
+	}
+	return strings.ToLower(stripSchemaNamespaceToken(name))
+}
+
+func stripSchemaNamespaceToken(name string) string {
+	first := strings.Index(name, "__")
+	if first <= 0 || first+2 >= len(name) {
+		return name
+	}
+	rest := name[first+2:]
+	if strings.Contains(rest, "__") {
+		return rest
+	}
 	return name
 }
 
@@ -646,5 +720,26 @@ func sortedMapKeys(values map[string]Value) []string {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
+	return keys
+}
+
+func orderedValueMapKeys(value Value) []string {
+	if len(value.MapOrder) == 0 {
+		return sortedMapKeys(value.Map)
+	}
+	keys := make([]string, 0, len(value.Map))
+	seen := make(map[string]bool, len(value.Map))
+	for _, key := range value.MapOrder {
+		if _, ok := value.Map[key]; !ok || seen[key] {
+			continue
+		}
+		keys = append(keys, key)
+		seen[key] = true
+	}
+	for _, key := range sortedMapKeys(value.Map) {
+		if !seen[key] {
+			keys = append(keys, key)
+		}
+	}
 	return keys
 }

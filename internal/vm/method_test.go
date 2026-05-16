@@ -899,6 +899,236 @@ System.assertEquals('handled', proxy.getPaymentLinesByIDs(new Set<Id>()));
 	}
 }
 
+func TestExecTestCreateStubVerifyModeUsesCurrentProviderState(t *testing.T) {
+	providerProgram, err := CompileAnonymous(`
+if (Verifying) {
+  return null;
+}
+Count = Count + 1;
+return null;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Provider mocks = new Provider();
+Service proxy = (Service)Test.createStub(Service.class, mocks);
+proxy.send();
+mocks.Verifying = true;
+((IService)proxy).send();
+mocks.Verifying = false;
+proxy.send();
+System.assertEquals(2, mocks.Count);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "IService",
+		Interfaces: []string{},
+		Methods: map[string]Method{
+			"send": {Name: "IService.send", ClassName: "IService", ReturnType: "void"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Service",
+		Interfaces: []string{"IService"},
+		Methods: map[string]Method{
+			"send": {Name: "Service.send", ClassName: "Service", ReturnType: "void"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"StubProvider"},
+		Fields: map[string]Field{
+			"Count":     {Name: "Count", Type: "Integer", InitialValue: Int(0)},
+			"Verifying": {Name: "Verifying", Type: "Boolean", InitialValue: Bool(false)},
+		},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:       "Provider.handleMethodCall",
+				ClassName:  "Provider",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCurrentStubProviderPrefersActiveFflibApexMocksProvider(t *testing.T) {
+	machine := New(nil)
+	attached := Object("fflib_ApexMocks")
+	attached.Fields["methodReturnValueRecorder"] = Object("fflib_MethodReturnValueRecorder")
+	proxy := Object("IService__sfdc_ApexStub")
+	proxy.Fields["__oaerStubProvider"] = attached
+
+	live := Object("fflib_ApexMocks")
+	live.Fields["verifying"] = Bool(true)
+	live.Fields["methodReturnValueRecorder"] = Object("fflib_MethodReturnValueRecorder")
+	machine.Globals["mocks"] = live
+
+	provider := machine.currentStubProvider(proxy)
+	if provider.Ref != live.Ref {
+		t.Fatalf("expected active fflib_ApexMocks provider ref %d, got %d", live.Ref, provider.Ref)
+	}
+}
+
+func TestFflibMatcherFastPathMatchesCommonMatchers(t *testing.T) {
+	machine := New(nil)
+	methodArg := Object("fflib_MethodArgValues")
+	methodArg.Fields["argValues"] = List(String("Ada"), Null, Object("Account"))
+	eq := Object("fflib_MatcherDefinitions.Eq")
+	eq.Fields["toMatch"] = String("Ada")
+	isNull := Object("fflib_MatcherDefinitions.IsNull")
+	anySObject := Object("fflib_MatcherDefinitions.AnySObject")
+
+	matched, handled, err := machine.fflibMatchesAllArgs(methodArg, List(eq, isNull, anySObject))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled || !matched {
+		t.Fatalf("matched=%v handled=%v, want true true", matched, handled)
+	}
+
+	anyString := Object("fflib_MatcherDefinitions.AnyString")
+	matched, handled, err = machine.fflibMatchesAllArgs(methodArg, List(anyString, isNull, anySObject))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled || !matched {
+		t.Fatalf("matched=%v handled=%v for AnyString, want true true", matched, handled)
+	}
+
+	expectedAccount := Object("Account")
+	expectedAccount.Fields["Name"] = String("Acme")
+	actualAccount := expectedAccount
+	actualAccount.Ref = newValueRef()
+	eqSObject := Object("fflib_MatcherDefinitions.Eq")
+	eqSObject.Fields["toMatch"] = expectedAccount
+	methodArg.Fields["argValues"] = List(actualAccount)
+	matched, handled, err = machine.fflibMatchesAllArgs(methodArg, List(eqSObject))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled || !matched {
+		t.Fatalf("matched=%v handled=%v for SObject Eq, want true true", matched, handled)
+	}
+
+	expectedDTO := Object("CredentialingObjectMapping.CredentialingItemType")
+	expectedDTO.Fields["internalName"] = String("Custom")
+	actualDTO := Object("CredentialingObjectMapping.CredentialingItemType")
+	actualDTO.Fields["internalName"] = String("Custom")
+	eqDTO := Object("fflib_MatcherDefinitions.Eq")
+	eqDTO.Fields["toMatch"] = expectedDTO
+	methodArg.Fields["argValues"] = List(actualDTO)
+	matched, handled, err = machine.fflibMatchesAllArgs(methodArg, List(eqDTO))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled || !matched {
+		t.Fatalf("matched=%v handled=%v for DTO Eq, want true true", matched, handled)
+	}
+}
+
+func TestFflibArgumentCaptorMatcherStoresMatchedArgument(t *testing.T) {
+	machine := New(nil)
+	record := Object("Credentialing_Item__c")
+	record.Fields["Id"] = platformScalar("Id", "a5B000000000001")
+	records := List(record)
+	records.Type = "List<SObject>"
+
+	methodArg := Object("fflib_MethodArgValues")
+	methodArg.Fields["argValues"] = List(records)
+	captorMatcher := Object("fflib_ArgumentCaptor.AnyObject")
+
+	matched, handled, err := machine.fflibMatchesAllArgs(methodArg, List(captorMatcher))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled || !matched {
+		t.Fatalf("matched=%v handled=%v, want true true", matched, handled)
+	}
+	captured := captorMatcher.Fields["value"]
+	if captured.Kind != ValueList || len(captured.List) != 1 {
+		t.Fatalf("captured = %#v, want single-record list", captured)
+	}
+	if got := sObjectIDValue(captured.List[0]); got.String() != "a5B000000000001" {
+		t.Fatalf("captured record id = %v, want a5B000000000001", got)
+	}
+}
+
+func TestFflibSObjectUnitOfWorkHandleRegisterTypeFastPath(t *testing.T) {
+	machine := New(nil)
+	uow := Object("fflib_SObjectUnitOfWork")
+	for _, field := range []string{
+		"m_newListByType",
+		"m_dirtyMapByType",
+		"m_deletedMapByType",
+		"m_emptyRecycleBinMapByType",
+		"m_relationships",
+		"m_publishBeforeListByType",
+		"m_publishAfterSuccessListByType",
+		"m_publishAfterFailureListByType",
+	} {
+		uow.Fields[field] = Map()
+	}
+
+	_, handled, err := machine.callFflibSObjectUnitOfWorkMember(uow, "handleRegisterType", []Value{sObjectTypeToken("Account")}, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled {
+		t.Fatal("handleRegisterType was not handled")
+	}
+	if got := uow.Fields["m_newListByType"].Map[mapKey(String("Account"))]; got.Kind != ValueList {
+		t.Fatalf("new list kind = %v, want list", got.Kind)
+	}
+	if got := uow.Fields["m_dirtyMapByType"].Map[mapKey(String("Account"))]; got.Kind != ValueMap {
+		t.Fatalf("dirty map kind = %v, want map", got.Kind)
+	}
+	if got := uow.Fields["m_relationships"].Map[mapKey(String("Account"))]; got.Type != "fflib_SObjectUnitOfWork.Relationships" {
+		t.Fatalf("relationships type = %q", got.Type)
+	}
+}
+
+func TestFflibQueryFactoryOrderingToSOQLFastPath(t *testing.T) {
+	machine := New(nil)
+	ordering := Object("fflib_QueryFactory.Ordering")
+	ordering.Fields["field"] = String("Name")
+	ordering.Fields["direction"] = Value{Kind: ValueObject, Type: "fflib_QueryFactory.SortOrder", Text: "ASCENDING"}
+	ordering.Fields["nullsLast"] = Bool(true)
+
+	value, handled, err := machine.callFflibQueryFactoryMember(ordering, "toSOQL", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled {
+		t.Fatal("toSOQL was not handled")
+	}
+	if value.String() != "Name ASC NULLS LAST " {
+		t.Fatalf("toSOQL = %q", value.String())
+	}
+}
+
 func TestRuntimeStaticLookupIgnoresAmbiguousInstanceOverloads(t *testing.T) {
 	program, err := CompileAnonymous(`
 Selector selector = new Selector();
@@ -1951,6 +2181,94 @@ System.assertEquals('value', c.get('id'));
 	}
 }
 
+func TestExecConstructorChainPreservesConcreteSObjectListType(t *testing.T) {
+	sobjectsCtor, err := CompileAnonymous("describeName = sObjectType.getDescribe().getName();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	domainCtor, err := CompileAnonymous("this(records, records.getSObjectType());")
+	if err != nil {
+		t.Fatal(err)
+	}
+	domainTypedCtor, err := CompileAnonymous("super(records, sObjectType);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	actionCtor, err := CompileAnonymous("super(records);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	nameProgram, err := CompileAnonymous("return describeName;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<Account> records = new List<Account>{ new Account(Name = 'Acme') };
+ActionDomain domain = new ActionDomain(records);
+System.assertEquals('Account', domain.name());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "SObjects",
+		Fields: map[string]Field{
+			"describeName": {Name: "describeName", Type: "String"},
+		},
+		Constructors: []Method{{
+			Name:          "SObjects.<init>",
+			ClassName:     "SObjects",
+			Params:        []Param{{Name: "records", Type: "List<SObject>"}, {Name: "sObjectType", Type: "Schema.SObjectType"}},
+			Program:       sobjectsCtor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Domain",
+		SuperClass: "SObjects",
+		Constructors: []Method{
+			{
+				Name:          "Domain.<init>",
+				ClassName:     "Domain",
+				Params:        []Param{{Name: "records", Type: "List<SObject>"}},
+				Program:       domainCtor,
+				IsConstructor: true,
+			},
+			{
+				Name:          "Domain.<init>",
+				ClassName:     "Domain",
+				Params:        []Param{{Name: "records", Type: "List<SObject>"}, {Name: "sObjectType", Type: "Schema.SObjectType"}},
+				Program:       domainTypedCtor,
+				IsConstructor: true,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "ActionDomain",
+		SuperClass: "Domain",
+		Constructors: []Method{{
+			Name:          "ActionDomain.<init>",
+			ClassName:     "ActionDomain",
+			Params:        []Param{{Name: "records", Type: "List<Account>"}},
+			Program:       actionCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"name": {Name: "ActionDomain.name", ClassName: "ActionDomain", ReturnType: "String", Program: nameProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMutatingInstanceCollectionFieldPersists(t *testing.T) {
 	addProgram, err := CompileAnonymous("names.add(name);")
 	if err != nil {
@@ -2017,6 +2335,68 @@ func TestExecPropertyAccessorMethods(t *testing.T) {
 				Getter:   &Method{Name: "Box.Name.get", ClassName: "Box", ReturnType: "String", Program: getter},
 				Setter:   &Method{Name: "Box.Name.set", ClassName: "Box", Params: []Param{{Name: "value", Type: "String"}}, Program: setter},
 			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPassiveGeneratedPropertySetterMutatesBackingField(t *testing.T) {
+	empty, err := CompileAnonymous("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	enableProgram, err := CompileAnonymous("this.Stubbing = true;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkProgram, err := CompileAnonymous("return Stubbing;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Box b = new Box();
+b.Stubbing = true;
+System.assertEquals(true, b.Stubbing);
+b.Stubbing = false;
+System.assertEquals(false, b.Stubbing);
+b.enable();
+System.assertEquals(true, b.Stubbing);
+System.assertEquals(true, b.check());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"Stubbing": {
+				Name:     "Stubbing",
+				Type:     "Boolean",
+				Property: true,
+				Getter: &Method{
+					Name:       "Box.Stubbing.get",
+					ClassName:  "Box",
+					ReturnType: "Boolean",
+					Program:    empty,
+					Modifiers:  []string{"passive-generated"},
+				},
+				Setter: &Method{
+					Name:      "Box.Stubbing.set",
+					ClassName: "Box",
+					Params:    []Param{{Name: "value", Type: "Boolean"}},
+					Program:   empty,
+					Modifiers: []string{"passive-generated"},
+				},
+			},
+		},
+		Methods: map[string]Method{
+			"enable": {Name: "Box.enable", ClassName: "Box", Program: enableProgram},
+			"check":  {Name: "Box.check", ClassName: "Box", ReturnType: "Boolean", Program: checkProgram},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -4680,9 +5060,10 @@ System.assertEquals(5, Child.totalValue());
 
 func TestExecEnumMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
-Mood mood = Mood.Happy;
-System.assertEquals('Happy', mood.name());
-System.assertEquals(0, mood.ordinal());
+	Mood mood = Mood.Happy;
+	System.assertEquals('Happy', mood.name());
+	System.assertEquals('Happy', mood.toString());
+	System.assertEquals(0, mood.ordinal());
 List<Mood> values = Mood.values();
 System.assertEquals(2, values.size());
 `)
@@ -5223,6 +5604,54 @@ System.assertEquals('concrete', value.callRequired());
 			"required": {Name: "Concrete.required", ClassName: "Concrete", ReturnType: "String", Access: "public", Modifiers: []string{"override"}, Program: override},
 		},
 	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDispatchesInheritedVirtualOverrideFromBaseMethod(t *testing.T) {
+	baseRun, err := CompileAnonymous("this.apply(value); return value;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	baseApply, err := CompileAnonymous("return null;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	midApply, err := CompileAnonymous("box.put('Name', 'copied'); return null;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account value = new Account(Name = 'original');
+new Concrete().run(value);
+System.assertEquals('copied', value.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "BaseDomain",
+		Methods: map[string]Method{
+			"run":   {Name: "BaseDomain.run", ClassName: "BaseDomain", ReturnType: "Account", Params: []Param{{Name: "value", Type: "Account"}}, Access: "public", Modifiers: []string{"virtual"}, Program: baseRun},
+			"apply": {Name: "BaseDomain.apply", ClassName: "BaseDomain", ReturnType: "void", Params: []Param{{Name: "box", Type: "SObject"}}, Access: "public", Modifiers: []string{"virtual"}, Program: baseApply},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "MidDomain",
+		SuperClass: "BaseDomain",
+		Methods: map[string]Method{
+			"apply": {Name: "MidDomain.apply", ClassName: "MidDomain", ReturnType: "void", Params: []Param{{Name: "box", Type: "SObject"}}, Access: "public", Modifiers: []string{"override", "virtual"}, Program: midApply},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Concrete", SuperClass: "MidDomain"}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {

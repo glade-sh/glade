@@ -1377,7 +1377,9 @@ func stringStatic(callee string, args []Value) (Value, error) {
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueList {
 			return Null, fmt.Errorf("String.format expects format String and List arguments")
 		}
-		formatted, err := formatString(args[0].Text, args[1].List)
+		formatted, err := formatString(args[0].Text, args[1].List, func(value Value) (string, error) {
+			return value.String(), nil
+		})
 		if err != nil {
 			return Null, err
 		}
@@ -4238,9 +4240,17 @@ func unescapeJavaLike(name, text string) (string, error) {
 	return string(out), nil
 }
 
-func formatString(pattern string, args []Value) (string, error) {
+func formatString(pattern string, args []Value, display func(Value) (string, error)) (string, error) {
 	var out strings.Builder
 	inQuote := false
+	displayCache := make(map[int]string, len(args))
+	for i, arg := range args {
+		text, err := display(arg)
+		if err != nil {
+			return "", err
+		}
+		displayCache[i] = text
+	}
 	for i := 0; i < len(pattern); i++ {
 		switch pattern[i] {
 		case '\'':
@@ -4260,7 +4270,7 @@ func formatString(pattern string, args []Value) (string, error) {
 				return "", fmt.Errorf("String.format unmatched '{' in format pattern")
 			}
 			token := strings.TrimSpace(pattern[i+1 : i+1+end])
-			replacement, err := formatStringToken(token, args)
+			replacement, err := formatStringTokenCached(token, args, display, displayCache)
 			if err != nil {
 				return "", err
 			}
@@ -4279,7 +4289,43 @@ func formatString(pattern string, args []Value) (string, error) {
 	return out.String(), nil
 }
 
-func formatStringToken(token string, args []Value) (string, error) {
+func formatStringTokenCached(token string, args []Value, display func(Value) (string, error), cache map[int]string) (string, error) {
+	index, ok, err := formatStringTokenIndex(token)
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return formatStringToken(token, args, display)
+	}
+	if index >= len(args) {
+		return "{" + token + "}", nil
+	}
+	if cached, ok := cache[index]; ok {
+		return cached, nil
+	}
+	replacement, err := display(args[index])
+	if err != nil {
+		return "", err
+	}
+	cache[index] = replacement
+	return replacement, nil
+}
+
+func formatStringTokenIndex(token string) (int, bool, error) {
+	if token == "" {
+		return 0, false, fmt.Errorf("String.format empty argument index")
+	}
+	if strings.Contains(token, ",") {
+		return 0, false, nil
+	}
+	index, err := strconv.Atoi(token)
+	if err != nil || index < 0 {
+		return 0, false, nil
+	}
+	return index, true, nil
+}
+
+func formatStringToken(token string, args []Value, display func(Value) (string, error)) (string, error) {
 	if token == "" {
 		return "", fmt.Errorf("String.format empty argument index")
 	}
@@ -4293,7 +4339,7 @@ func formatStringToken(token string, args []Value) (string, error) {
 	if index >= len(args) {
 		return "{" + token + "}", nil
 	}
-	return args[index].String(), nil
+	return display(args[index])
 }
 
 func stringAbbreviate(text string, args []Value) (string, error) {

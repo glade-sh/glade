@@ -489,6 +489,9 @@ func jsonGeneratorRenderScalar(value Value) (string, error) {
 		if math.IsNaN(value.Decimal) || math.IsInf(value.Decimal, 0) {
 			return "", jsonGeneratorException("JSONGenerator.writeNumber cannot write non-finite number")
 		}
+		if value.Text != "" {
+			return value.Text, nil
+		}
 		return strconv.FormatFloat(value.Decimal, 'f', -1, 64), nil
 	case ValueObject:
 		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
@@ -520,11 +523,18 @@ func jsonPlatformScalarFromValue(value Value) (any, bool) {
 	if value.Kind != ValueObject {
 		return nil, false
 	}
+	if strings.TrimSpace(value.Text) != "" && len(value.Fields) == 0 {
+		return value.Text, true
+	}
 	text, ok := value.Fields["value"]
 	if !ok || text.Kind != ValueString {
 		return nil, false
 	}
-	switch value.Type {
+	typeName := value.Type
+	if rest, ok := stripLeadingSystemNamespace(typeName); ok {
+		typeName = rest
+	}
+	switch typeName {
 	case "Date", "Datetime", "Time", "URL":
 		return text.Text, true
 	case "Blob":

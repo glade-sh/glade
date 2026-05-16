@@ -167,6 +167,9 @@ func cloneValueWithSeen(value Value, seen map[uint64]bool) Value {
 	case ValueObject, ValueList, ValueSet, ValueMap:
 		if value.Ref != 0 {
 			if seen[value.Ref] {
+				if preserveRepeatedCloneReference(value) {
+					return value
+				}
 				out.Fields = nil
 				out.Map = nil
 				out.MapKeys = nil
@@ -210,4 +213,17 @@ func cloneValueWithSeen(value Value, seen map[uint64]bool) Value {
 		}
 	}
 	return out
+}
+
+func preserveRepeatedCloneReference(value Value) bool {
+	if value.Kind != ValueObject {
+		return false
+	}
+	if strings.EqualFold(value.Type, "fflib_ApexMocks") {
+		return true
+	}
+	if _, ok := value.Fields["__oaerStubProvider"]; ok {
+		return true
+	}
+	return false
 }

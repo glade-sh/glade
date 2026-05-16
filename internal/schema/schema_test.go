@@ -91,6 +91,25 @@ func TestLoadProject(t *testing.T) {
 	}
 }
 
+func TestLoadProjectRecordTypeDefaultIgnoresPicklistValueDefaults(t *testing.T) {
+	root := t.TempDir()
+	objectPath := filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml")
+	recordTypePath := filepath.Join(root, "force-app/main/objects/Thing__c/recordTypes/Internal.recordType-meta.xml")
+	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Thing</label><pluralLabel>Things</pluralLabel></CustomObject>`)
+	writeFile(t, recordTypePath, `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Internal</fullName><active>true</active><label>Internal</label><picklistValues><picklist>Status__c</picklist><values><fullName>New</fullName><default>true</default></values></picklistValues></RecordType>`)
+
+	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath}, RecordTypeFiles: []string{recordTypePath}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(s.Objects) != 1 || len(s.Objects[0].RecordTypes) != 1 {
+		t.Fatalf("objects = %#v", s.Objects)
+	}
+	if s.Objects[0].RecordTypes[0].Default {
+		t.Fatalf("record type default leaked from picklist value: %#v", s.Objects[0].RecordTypes[0])
+	}
+}
+
 func TestLoadProjectInfersMissingReferencedCustomObjects(t *testing.T) {
 	root := t.TempDir()
 	objectPath := filepath.Join(root, "force-app/main/objects/Line__c/Line__c.object-meta.xml")
@@ -130,7 +149,7 @@ func TestLoadProjectNormalizesLegacyObjectAndCustomMetadata(t *testing.T) {
 </CustomObject>`)
 	writeFile(t, targetPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Target</label></CustomObject>`)
 	writeFile(t, defaultPath, `<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata"><label>Default Label</label><protected>true</protected><values><field>Enabled__c</field><value>true</value></values><values><field>Target__c</field><value>Target</value></values></CustomMetadata>`)
-	writeFile(t, modernPath, `<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata"><values><field>Enabled__c</field><value>false</value></values></CustomMetadata>`)
+	writeFile(t, modernPath, `<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><values><field>Enabled__c</field><value>false</value></values><values><field>Target__c</field><value xsi:nil="true"/></values></CustomMetadata>`)
 
 	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath, targetPath}, CustomMetadataFiles: []string{modernPath, defaultPath}})
 	if err != nil {
@@ -148,6 +167,9 @@ func TestLoadProjectNormalizesLegacyObjectAndCustomMetadata(t *testing.T) {
 	}
 	if len(s.CustomMetadataRecords) != 2 || s.CustomMetadataRecords[0].FullName != "Feature.Default" || s.CustomMetadataRecords[0].ObjectName != "Feature__mdt" || s.CustomMetadataRecords[0].DeveloperName != "Default" || !s.CustomMetadataRecords[0].Protected {
 		t.Fatalf("custom metadata records = %#v", s.CustomMetadataRecords)
+	}
+	if len(s.CustomMetadataRecords[1].Values) != 2 || !s.CustomMetadataRecords[1].Values[1].Nil {
+		t.Fatalf("custom metadata nil value not preserved: %#v", s.CustomMetadataRecords[1].Values)
 	}
 }
 

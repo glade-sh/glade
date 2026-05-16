@@ -698,11 +698,33 @@ System.assertEquals(null, providerId);
 	}
 }
 
+func TestExecSafeNavigationReadsFieldAfterMethodCall(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme', Vuid__c = 'v1');
+Map<Id, Account> accounts = new Map<Id, Account>();
+accounts.put('001000000000001AAA', account);
+String vuid = accounts.get('001000000000001AAA')?.Vuid__c;
+System.assertEquals('v1', vuid);
+System.assertEquals(null, accounts.get('001000000000002AAA')?.Vuid__c);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDateTimeMinusIntegerAndMathExceptionAreCatchable(t *testing.T) {
 	program, err := CompileAnonymous(`
 Datetime current = Datetime.valueOfGmt('2024-02-29 12:00:00');
+Datetime next = current + 1;
 Datetime prior = current - 5;
+System.assertEquals('2024-03-01T12:00:00Z', String.valueOf(next));
 System.assertEquals('2024-02-24T12:00:00Z', String.valueOf(prior));
+Date day = Date.newInstance(2024, 2, 29);
+System.assertEquals(Date.newInstance(2024, 3, 1), day + 1);
+System.assertEquals(Date.newInstance(2024, 2, 28), day - 1);
 Boolean caught = false;
 try {
 	Integer result = 5 / 0;
@@ -1176,6 +1198,76 @@ System.assertEquals(Account.SObjectType, records.getSObjectType());
 	}
 }
 
+func TestExecListSObjectTypePreservesEmptyQueryRuntimeTypeAfterSObjectCast(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SObject> records = (List<SObject>) Database.query('SELECT Id FROM Account WHERE Name = \'Missing\'');
+System.assertEquals(Account.SObjectType, records.getSObjectType());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListSObjectTypePreservesEmptyQueryRuntimeTypeAfterSObjectReturn(t *testing.T) {
+	queryProgram, err := CompileAnonymous(`
+return Database.query('SELECT Id FROM Account WHERE Name = \'Missing\'');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<SObject> records = Util.queryAccounts();
+System.assertEquals(Account.SObjectType, records.getSObjectType());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+	if err := machine.RegisterMethod(Method{Name: "Util.queryAccounts", ReturnType: "List<SObject>", Program: queryProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListSObjectTypeInfersEmptySelectorReturnFromIDSet(t *testing.T) {
+	selectProgram, err := CompileAnonymous(`
+return new List<SObject>();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Set<Id> ids = new Set<Id>{ Id.valueOf('001B000001DVM9t') };
+List<SObject> records = Selector.selectById(ids);
+System.assertEquals(Account.SObjectType, records.getSObjectType());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+	if err := machine.RegisterMethod(Method{Name: "Selector.selectById", ReturnType: "List<SObject>", Params: []Param{{Name: "ids", Type: "Set<Id>"}}, Program: selectProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecEnhancedForUsesCustomIterableIterator(t *testing.T) {
 	iteratorProgram, err := CompileAnonymous(`
 return new List<String>{'first', 'second'}.iterator();
@@ -1313,6 +1405,41 @@ System.assertEquals(false, Schema.DisplayType.STRING.equals(Schema.DisplayType.D
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSwitchMatchesUnqualifiedUserEnumCase(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('provider', SwitchProbe.describe(SwitchProbe.Kind.PROVIDER));
+System.assertEquals('license', SwitchProbe.describe(SwitchProbe.Kind.LICENSE));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	providerProgram, err := CompileAnonymous(`
+String out;
+switch on kind {
+    when PROVIDER {
+        out = 'provider';
+    }
+    when LICENSE {
+        out = 'license';
+    }
+}
+return out;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "SwitchProbe.Kind", EnumValues: []string{"PROVIDER", "LICENSE"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "SwitchProbe.describe", ClassName: "SwitchProbe", IsStatic: true, ReturnType: "String", Params: []Param{{Name: "kind", Type: "SwitchProbe.Kind"}}, Program: providerProgram}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -1614,6 +1741,42 @@ System.assertEquals('Acme', typed.get(ownerId)[0].Name);
 	}
 }
 
+func TestExecInsertAppliesDefaultsWhenGeneratedSObjectFieldsAreImplicitNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+Widget__c rec = new Widget__c();
+insert rec;
+Widget__c stored = [SELECT Status__c FROM Widget__c LIMIT 1];
+System.assertEquals('Pending', stored.Status__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Status__c": {APIName: "Status__c", Type: storage.FieldPicklist, DefaultValue: `"Pending"`},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "Widget__c",
+		Fields: map[string]Field{
+			"Status__c": {Name: "Status__c", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecInsertedListSObjectFieldTokenValuesStayDistinct(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectField> fields = Group.SObjectType.getDescribe().fields.getMap();
@@ -1706,6 +1869,7 @@ func TestExecStringValueOfSObjectFieldUsesFieldAPIName(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals('Name', String.valueOf(Account.Name));
 System.assertEquals('AccountNumber', String.valueOf(Account.AccountNumber));
+System.assertEquals('{Alpha, Beta}', String.valueOf(new Set<String>{'Alpha', 'Beta'}));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1846,6 +2010,41 @@ System.assertEquals('ContactId', standardFields.get('pkg__ContactId').getDescrib
 			APIName: "pkg__Widget__c",
 			Fields: map[string]storage.Field{
 				"pkg__Thing__c": {APIName: "pkg__Thing__c", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeSObjectResultLocalNameStripsOrgNamespace(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeSObjectResult describe = Widget__c.SObjectType.getDescribe();
+System.assertEquals('pkg__Widget__c', describe.getName());
+System.assertEquals('Widget__c', describe.getLocalName());
+System.assertEquals('pkg__', describe.getName().remove(describe.getLocalName()));
+DescribeSObjectResult unqualifiedDescribe = Widget__c.SObjectType.getDescribe();
+System.assertEquals('pkg__Widget__c', unqualifiedDescribe.getName());
+System.assertEquals('Widget__c', unqualifiedDescribe.getLocalName());
+System.assertEquals('pkg__', unqualifiedDescribe.getName().remove(unqualifiedDescribe.getLocalName()));
+Schema.DescribeFieldResult fieldDescribe = Widget__c.Lookup__c.getDescribe();
+System.assertEquals('pkg__Lookup__c', fieldDescribe.getName());
+System.assertEquals('Lookup__c', fieldDescribe.getLocalName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Widget__c",
+			Fields: map[string]storage.Field{
+				"Lookup__c": {APIName: "Lookup__c", Type: storage.FieldString},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -2181,6 +2380,41 @@ System.assert(!('bob' instanceof Id));
 	}
 }
 
+func TestFflibNativeMatcherPrimitiveAndReferenceSemantics(t *testing.T) {
+	machine := New(nil)
+	one := List(String("bob"), String("tom"))
+	two := List(String("bob"), String("tom"))
+	refEq := Object("fflib_MatcherDefinitions.RefEq")
+	refEq.Fields["toMatch"] = one
+	if matched, _, err := machine.fflibMatcherMatches(refEq, one); err != nil || !matched {
+		t.Fatalf("RefEq same reference matched=%v err=%v", matched, err)
+	}
+	if matched, _, err := machine.fflibMatcherMatches(refEq, two); err != nil || matched {
+		t.Fatalf("RefEq equal different list matched=%v err=%v", matched, err)
+	}
+
+	anyDatetime := Object("fflib_MatcherDefinitions.AnyDatetime")
+	if matched, _, err := machine.fflibMatcherMatches(anyDatetime, platformScalar("Date", "2024-02-29")); err != nil || !matched {
+		t.Fatalf("AnyDatetime date matched=%v err=%v", matched, err)
+	}
+	if matched, _, err := machine.fflibMatcherMatches(anyDatetime, platformScalar("Datetime", "2024-02-29T12:34:56Z")); err != nil || !matched {
+		t.Fatalf("AnyDatetime datetime matched=%v err=%v", matched, err)
+	}
+
+	anyInteger := Object("fflib_MatcherDefinitions.AnyInteger")
+	longValue := Int(9)
+	longValue.Type = "Long"
+	if matched, _, err := machine.fflibMatcherMatches(anyInteger, Int(9)); err != nil || !matched {
+		t.Fatalf("AnyInteger integer matched=%v err=%v", matched, err)
+	}
+	if matched, _, err := machine.fflibMatcherMatches(anyInteger, longValue); err != nil || matched {
+		t.Fatalf("AnyInteger long matched=%v err=%v", matched, err)
+	}
+	if matched, _, err := machine.fflibMatcherMatches(anyInteger, Decimal(9.99)); err != nil || matched {
+		t.Fatalf("AnyInteger decimal matched=%v err=%v", matched, err)
+	}
+}
+
 func TestExecStringEqualityOperatorIsCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assert('Prepayment refunds are not allowed.' == 'Prepayment Refunds are not allowed.');
@@ -2448,7 +2682,9 @@ System.assertEquals('LastModifiedById', Account.SObjectType.fields.getMap().get(
 	org := singleSOQLAssignmentOrg()
 	machine := New(nil)
 	machine.Org = &org
-	if _, err := machine.Execute(program); err != nil {
+	result, err := machine.Execute(program)
+	t.Logf("debug=%v", result.Debug)
+	if err != nil {
 		t.Fatal(err)
 	}
 }
@@ -2476,6 +2712,148 @@ System.assertEquals('PractitionerId', fields.get('BoardCertification.Practitione
 	}
 	machine := New(nil)
 	machine.Org = &org
+	result, err := machine.Execute(program)
+	t.Logf("debug=%v", result.Debug)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectFieldMapAcceptsNamespaceAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = Credentialing_Workflow__c.SObjectType.getDescribe().fields.getMap();
+System.assertEquals(Credentialing_Workflow__c.ChecklistNotes__c, fields.get('verifiable__ChecklistNotes__c'));
+System.assertEquals(Credentialing_Workflow__c.ChecklistNotes__c, fields.get('VERIFIABLE__CHECKLISTNOTES__C'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "verifiable"
+	org.Objects["Credentialing_Workflow__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Credentialing_Workflow__c",
+			Fields: map[string]storage.Field{
+				"ChecklistNotes__c": {APIName: "ChecklistNotes__c", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.Org = &org
+	result, err := machine.Execute(program)
+	t.Logf("debug=%v", result.Debug)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectFieldMapIncludesReferenceRelationshipAliases(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = License_Verification__c.SObjectType.getDescribe().fields.getMap();
+System.assertEquals(null, fields.get('createdby'));
+Schema.DescribeFieldResult createdBy = fields.get('createdbyid').getDescribe();
+System.assertEquals('CreatedById', createdBy.getName());
+System.assertEquals(Schema.SOAPType.ID, createdBy.getSoapType());
+System.assertEquals('CreatedBy', createdBy.getRelationshipName());
+Schema.DescribeFieldResult provider = fields.get('Provider__c').getDescribe();
+System.assertEquals('Provider__c', provider.getName());
+System.assertEquals('Provider__r', provider.getRelationshipName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["License_Verification__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "License_Verification__c",
+			Fields: map[string]storage.Field{
+				"Provider__c": {APIName: "Provider__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Provider__r"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectGetSObjectUsesSyntheticReferenceFieldRelationship(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account();
+User user = new User(Id = UserInfo.getUserId(), Email = 'created@example.test');
+account.putSObject('CreatedBy', user);
+Schema.SObjectField createdById = Schema.SObjectType.Account.fields.getMap().get('CreatedById');
+System.assertEquals('created@example.test', (String) account.getSObject(createdById).get('Email'));
+System.assertEquals(null, new Account(CreatedById = UserInfo.getUserId()).getSObject(createdById));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "User")
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeSObjectIncludesCustomChildRelationships(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Schema.ChildRelationship> relationships = Account.SObjectType.getDescribe().getChildRelationships();
+Boolean found = false;
+for (Schema.ChildRelationship relationship : relationships) {
+    if (relationship.getChildSObject() == Invoice__c.SObjectType &&
+        relationship.getField().getDescribe().getName() == 'Account__c' &&
+        relationship.getRelationshipName() == 'Invoices__r') {
+        found = true;
+    }
+}
+System.assert(found, 'custom child relationship');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	org.Objects["Invoice__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Invoice__c",
+			Fields: map[string]storage.Field{
+				"Account__c": {APIName: "Account__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account__r", ChildRelationshipName: "Invoices__r"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPropertyAssignmentIsCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+Mapping mapping = new Mapping();
+mapping.checkListNotes = Account.Name;
+System.assertEquals(Account.Name, mapping.checklistNotes);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Mapping",
+		Fields: map[string]Field{
+			"checklistNotes": {Name: "checklistNotes", Type: "Schema.SObjectField", Property: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -3270,6 +3648,63 @@ System.assertEquals('calls', String.valueOf(mode));
 	}
 }
 
+func TestExecEnumNameOnThisFieldWithStringRuntimeValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+Harness h = new Harness();
+h.mode = 'calls';
+System.assertEquals('calls', h.modeName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := CompileAnonymous(`return this.mode.name();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "VerificationMode.ModeName", EnumValues: []string{"times", "calls"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Harness",
+		Fields: map[string]Field{
+			"mode": {Name: "mode", Type: "VerificationMode.ModeName"},
+		},
+		Methods: map[string]Method{
+			"modeName": {Name: "Harness.modeName", ClassName: "Harness", ReturnType: "String", Program: body},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeSchemaDisplayType(t *testing.T) {
+	program, err := CompileAnonymous(`
+Row row = (Row) JSON.deserialize('{"dataType":"STRING"}', Row.class);
+System.assertEquals(Schema.DisplayType.STRING, row.dataType);
+System.assertEquals(Schema.DisplayType.STRING, DisplayType.valueOf('STRING'));
+System.assertEquals('{"dataType":"STRING"}', JSON.serialize(row));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Row",
+		Fields: map[string]Field{
+			"dataType": {Name: "dataType", Type: "Schema.DisplayType"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecEnumValueOfInvalidValueIsCatchable(t *testing.T) {
 	program, err := CompileAnonymous(`
 Boolean caught = false;
@@ -3277,8 +3712,8 @@ try {
 	Object mode = VerificationMode.ModeName.valueOf('missing');
 } catch (Exception e) {
 	caught = true;
-	System.assertEquals('System.IllegalArgumentException', e.getTypeName());
-	System.assert(e.getMessage().contains('No enum constant VerificationMode.ModeName.missing'));
+	System.assertEquals('System.NoSuchElementException', e.getTypeName());
+	System.assert(e.getMessage().contains('No enum value found called missing'));
 }
 System.assert(caught);
 `)

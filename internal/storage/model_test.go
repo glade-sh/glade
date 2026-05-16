@@ -39,6 +39,29 @@ func TestResolveFieldNameMapsCustomFieldCaseInsensitiveToOrgNamespace(t *testing
 	}
 }
 
+func TestResolveFieldNameMapsUnqualifiedCustomFieldToOnlyNamespacedMatch(t *testing.T) {
+	definition := ObjectDefinition{APIName: "pkg__Thing__c", Fields: map[string]Field{
+		"pkg__Status__c": {APIName: "pkg__Status__c", Type: FieldString},
+	}}
+
+	resolved, ok := ResolveFieldName(definition, "", "Status__c")
+	if !ok || resolved != "pkg__Status__c" {
+		t.Fatalf("ResolveFieldName(Status__c) = %q, %v", resolved, ok)
+	}
+}
+
+func TestResolveFieldNameRejectsAmbiguousUnqualifiedNamespacedCustomField(t *testing.T) {
+	definition := ObjectDefinition{APIName: "pkg__Thing__c", Fields: map[string]Field{
+		"pkg__Status__c":   {APIName: "pkg__Status__c", Type: FieldString},
+		"other__Status__c": {APIName: "other__Status__c", Type: FieldString},
+	}}
+
+	resolved, ok := ResolveFieldName(definition, "", "Status__c")
+	if ok || resolved != "" {
+		t.Fatalf("ResolveFieldName(Status__c) = %q, %v; want ambiguous miss", resolved, ok)
+	}
+}
+
 func TestResolveFieldNameStripsNamespaceCaseInsensitive(t *testing.T) {
 	definition := ObjectDefinition{APIName: "Account", Fields: map[string]Field{
 		"UpdatePrimaryLocation__c": {APIName: "UpdatePrimaryLocation__c", Type: FieldBoolean},
@@ -47,6 +70,17 @@ func TestResolveFieldNameStripsNamespaceCaseInsensitive(t *testing.T) {
 	resolved, ok := ResolveFieldName(definition, "pkg", "PKG__UpdatePrimaryLocation__c")
 	if !ok || resolved != "UpdatePrimaryLocation__c" {
 		t.Fatalf("ResolveFieldName(PKG__UpdatePrimaryLocation__c) = %q, %v", resolved, ok)
+	}
+}
+
+func TestResolveFieldNameStripsAnyNamespaceWhenUnqualifiedFieldExists(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Thing__c", Fields: map[string]Field{
+		"Status__c": {APIName: "Status__c", Type: FieldString},
+	}}
+
+	resolved, ok := ResolveFieldName(definition, "", "pkg__Status__c")
+	if !ok || resolved != "Status__c" {
+		t.Fatalf("ResolveFieldName(pkg__Status__c) = %q, %v", resolved, ok)
 	}
 }
 
@@ -158,6 +192,27 @@ func TestResolveObjectNameMapsCustomObjectCaseInsensitiveToOrgNamespace(t *testi
 	}
 }
 
+func TestResolveObjectNameMapsUnqualifiedCustomObjectToOnlyNamespacedMatch(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["pkg__Thing__c"] = ObjectState{Definition: ObjectDefinition{APIName: "pkg__Thing__c"}}
+
+	resolved, ok := ResolveObjectName(org, "Thing__c")
+	if !ok || resolved != "pkg__Thing__c" {
+		t.Fatalf("ResolveObjectName(Thing__c) = %q, %v", resolved, ok)
+	}
+}
+
+func TestResolveObjectNameRejectsAmbiguousUnqualifiedNamespacedCustomObject(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["pkg__Thing__c"] = ObjectState{Definition: ObjectDefinition{APIName: "pkg__Thing__c"}}
+	org.Objects["other__Thing__c"] = ObjectState{Definition: ObjectDefinition{APIName: "other__Thing__c"}}
+
+	resolved, ok := ResolveObjectName(org, "Thing__c")
+	if ok || resolved != "" {
+		t.Fatalf("ResolveObjectName(Thing__c) = %q, %v; want ambiguous miss", resolved, ok)
+	}
+}
+
 func TestResolveObjectNameStripsNamespaceCaseInsensitive(t *testing.T) {
 	org := NewOrgState()
 	org.Namespace = "pkg"
@@ -166,6 +221,16 @@ func TestResolveObjectNameStripsNamespaceCaseInsensitive(t *testing.T) {
 	resolved, ok := ResolveObjectName(org, "PKG__Thing__c")
 	if !ok || resolved != "Thing__c" {
 		t.Fatalf("ResolveObjectName(PKG__Thing__c) = %q, %v", resolved, ok)
+	}
+}
+
+func TestResolveObjectNameStripsAnyNamespaceWhenUnqualifiedObjectExists(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["Thing__c"] = ObjectState{Definition: ObjectDefinition{APIName: "Thing__c"}}
+
+	resolved, ok := ResolveObjectName(org, "pkg__Thing__c")
+	if !ok || resolved != "Thing__c" {
+		t.Fatalf("ResolveObjectName(pkg__Thing__c) = %q, %v", resolved, ok)
 	}
 }
 
@@ -293,6 +358,9 @@ func TestEnsureStandardObjectFieldsRemovesEventNameOverlay(t *testing.T) {
 	if field, ok := definition.Fields["Subject"]; !ok || field.APIName != "Subject" {
 		t.Fatalf("Event.Subject field = %#v, %v", field, ok)
 	}
+	if field, ok := definition.Fields["Type"]; !ok || field.Type != FieldPicklist || !FieldFlagValue(field.Createable, false) {
+		t.Fatalf("Event.Type field = %#v, %v", field, ok)
+	}
 }
 
 func TestEnsureStandardObjectFieldsAddsAssetExternalIdentifierOverlay(t *testing.T) {
@@ -304,6 +372,27 @@ func TestEnsureStandardObjectFieldsAddsAssetExternalIdentifierOverlay(t *testing
 	}
 	if field.Type != FieldString || field.DisplayType != "STRING" {
 		t.Fatalf("Asset.ExternalIdentifier = %#v", field)
+	}
+	mrr, ok := definition.Fields["CurrentMrr"]
+	if !ok {
+		t.Fatalf("Asset.CurrentMrr missing; fields=%#v", definition.Fields)
+	}
+	if mrr.Type != FieldDecimal || mrr.DisplayType != "CURRENCY" || !FieldFlagValue(mrr.Createable, false) || !FieldFlagValue(mrr.Updateable, false) {
+		t.Fatalf("Asset.CurrentMrr = %#v", mrr)
+	}
+	uuid, ok := definition.Fields["Uuid"]
+	if !ok {
+		t.Fatalf("Asset.Uuid missing; fields=%#v", definition.Fields)
+	}
+	if uuid.Type != FieldString || uuid.DisplayType != "STRING" || !FieldFlagValue(uuid.Createable, false) || !FieldFlagValue(uuid.Updateable, false) {
+		t.Fatalf("Asset.Uuid = %#v", uuid)
+	}
+	statusReason, ok := definition.Fields["StatusReason"]
+	if !ok {
+		t.Fatalf("Asset.StatusReason missing; fields=%#v", definition.Fields)
+	}
+	if statusReason.Type != FieldPicklist || statusReason.DisplayType != "PICKLIST" || !FieldFlagValue(statusReason.Createable, false) || !FieldFlagValue(statusReason.Updateable, false) {
+		t.Fatalf("Asset.StatusReason = %#v", statusReason)
 	}
 }
 
@@ -344,6 +433,47 @@ func TestEnsureStandardObjectFieldsEnrichesShallowExistingStandardFields(t *test
 	website := definition.Fields["Website"]
 	if website.Label != "Project Website" || website.Type != FieldString || website.DisplayType != "URL" || website.Length != 255 {
 		t.Fatalf("Website enrichment = %#v", website)
+	}
+}
+
+func TestEnsureStandardObjectFieldsAddsLeadCommunicationFields(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Lead"}
+
+	EnsureStandardObjectFields(&definition)
+
+	for _, fieldName := range []string{"DoNotCall", "HasOptedOutOfEmail", "HasOptedOutOfFax"} {
+		field, ok := definition.Fields[fieldName]
+		if !ok || field.Type != FieldBoolean || !FieldFlagValue(field.Createable, false) || !FieldFlagValue(field.Updateable, false) {
+			t.Fatalf("Lead.%s field = %#v, %v", fieldName, field, ok)
+		}
+	}
+	if !definition.Fields["LastName"].Required || !definition.Fields["Company"].Required {
+		t.Fatalf("Lead required fields = LastName:%v Company:%v", definition.Fields["LastName"].Required, definition.Fields["Company"].Required)
+	}
+}
+
+func TestEnsureStandardObjectFieldsAddsUserProfileBreadthFields(t *testing.T) {
+	definition := ObjectDefinition{APIName: "User"}
+
+	EnsureStandardObjectFields(&definition)
+
+	if field, ok := definition.Fields["AssistantName"]; !ok || field.Type != FieldString {
+		t.Fatalf("User.AssistantName = %#v, %v", field, ok)
+	}
+	if field, ok := definition.Fields["LeadSource"]; !ok || field.Type != FieldPicklist {
+		t.Fatalf("User.LeadSource = %#v, %v", field, ok)
+	}
+	if field, ok := definition.Fields["Salutation"]; !ok || field.Type != FieldPicklist {
+		t.Fatalf("User.Salutation = %#v, %v", field, ok)
+	}
+	for _, fieldName := range []string{"Alias", "Email", "EmailEncodingKey", "LanguageLocaleKey", "LocaleSidKey", "ProfileId", "TimeZoneSidKey", "Username"} {
+		if field := definition.Fields[fieldName]; field.DefaultValue == "" {
+			t.Fatalf("User.%s default missing: %#v", fieldName, field)
+		}
+	}
+	profileDefault, ok := DefaultValueForField(definition.Fields["ProfileId"])
+	if !ok || profileDefault.Kind != ValueID || profileDefault.ID != "00e000000000001" {
+		t.Fatalf("User.ProfileId default = %#v, %v", profileDefault, ok)
 	}
 }
 
@@ -827,8 +957,26 @@ func TestEnsureStandardObjectFieldsAddsCustomObjectNameAndRecordTypeId(t *testin
 	if !ok || field.Type != FieldReference || field.RelationshipName != "RecordType" {
 		t.Fatalf("RecordTypeId field = %#v, %v", field, ok)
 	}
-	if len(definition.Relations) != 1 || definition.Relations[0].ParentRelationship != "RecordType" {
+	if !hasRelationship(definition.Relations, "RecordTypeId", "RecordType", "RecordType") {
 		t.Fatalf("relations = %#v", definition.Relations)
+	}
+}
+
+func TestEnsureStandardObjectFieldsAddsCoreSystemFields(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Credentialing_Workflow__c"}
+
+	EnsureStandardObjectFields(&definition)
+
+	for _, fieldName := range []string{"CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp", "OwnerId"} {
+		if _, ok := definition.Fields[fieldName]; !ok {
+			t.Fatalf("%s missing from custom object fields: %#v", fieldName, definition.Fields)
+		}
+	}
+	if !hasRelationship(definition.Relations, "CreatedById", "User", "CreatedBy") {
+		t.Fatalf("CreatedBy relation missing: %#v", definition.Relations)
+	}
+	if !hasRelationship(definition.Relations, "OwnerId", "User", "Owner") {
+		t.Fatalf("Owner relation missing: %#v", definition.Relations)
 	}
 }
 
@@ -922,6 +1070,7 @@ func TestApplyCustomMetadataRecordsMaterializesDeterministicRows(t *testing.T) {
 		Metadata:  map[string]string{"kind": "customMetadata"},
 		Fields: map[string]Field{
 			"Enabled__c": {APIName: "Enabled__c", Type: FieldBoolean},
+			"SubType__c": {APIName: "SubType__c", Type: FieldString},
 			"Target__c":  {APIName: "Target__c", Type: FieldReference, ReferenceTo: []string{"Target__mdt"}},
 		},
 	}
@@ -930,14 +1079,14 @@ func TestApplyCustomMetadataRecordsMaterializesDeterministicRows(t *testing.T) {
 	org.Objects["Feature__mdt"] = ObjectState{Definition: featureDefinition, Records: map[ID]Record{}}
 
 	err := ApplyCustomMetadataRecords(&org, []schema.CustomMetadataRecord{
-		{FullName: "Feature.Default", ObjectName: "Feature__mdt", DeveloperName: "Default", Label: "Default Label", Values: []schema.CustomMetadataValue{{Field: "Enabled__c", Value: "true"}, {Field: "Target__c", Value: "Target"}}},
+		{FullName: "Feature.Default", ObjectName: "Feature__mdt", DeveloperName: "Default", Label: "Default Label", Values: []schema.CustomMetadataValue{{Field: "Enabled__c", Value: "true"}, {Field: "SubType__c", Nil: true}, {Field: "Target__c", Value: "Target"}}},
 		{FullName: "Target.Target", ObjectName: "Target__mdt", DeveloperName: "Target", Values: []schema.CustomMetadataValue{{Field: "Description__c", Value: "Target row"}}},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	target := onlyRecord(t, org.Objects["Target__mdt"].Records)
-	if target.Fields["QualifiedApiName"].String != "Target" || target.Fields["Description__c"].String != "Target row" {
+	if target.Fields["QualifiedApiName"].String != "pkg__Target" || target.Fields["Description__c"].String != "Target row" {
 		t.Fatalf("target record = %#v", target)
 	}
 	feature := onlyRecord(t, org.Objects["Feature__mdt"].Records)
@@ -946,6 +1095,9 @@ func TestApplyCustomMetadataRecordsMaterializesDeterministicRows(t *testing.T) {
 	}
 	if feature.Fields["Target__c"].Kind != ValueID || feature.Fields["Target__c"].ID != target.ID {
 		t.Fatalf("relationship value = %#v, target id %s", feature.Fields["Target__c"], target.ID)
+	}
+	if feature.Fields["SubType__c"].Kind != ValueNull {
+		t.Fatalf("nil text value = %#v", feature.Fields["SubType__c"])
 	}
 }
 

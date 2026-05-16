@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/open-aer/oaer/internal/ir"
 	"github.com/open-aer/oaer/internal/storage"
 )
 
@@ -581,7 +582,8 @@ try {
 	Metadata.DeployStatus.valueOf('missing');
 	System.assert(false);
 } catch (Exception e) {
-	System.assert(e.getMessage().contains('No enum constant Metadata.DeployStatus.missing'));
+	System.assertEquals('System.NoSuchElementException', e.getTypeName());
+	System.assert(e.getMessage().contains('No enum value found called missing'));
 }
 `)
 	if err != nil {
@@ -1265,6 +1267,219 @@ Test.stopTest();
 		Timing:    triggerTimingAfter,
 		Operation: "insert",
 		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEventBusPublishBeforeStartTestRequiresExplicitDeliver(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`insert new Account(Name = 'pre-start event delivered');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+EventBus.publish(new Local_Event__e(Name__c = 'Trail'));
+System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'pre-start event delivered'].size());
+Test.startTest();
+Test.stopTest();
+System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'pre-start event delivered'].size());
+Test.getEventBus().deliver();
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'pre-start event delivered'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Event__e",
+			KeyPrefix: "e00",
+			Fields: map[string]storage.Field{
+				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "LocalEventTrigger",
+		Object:    "Local_Event__e",
+		Timing:    triggerTimingAfter,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStopTestDefersQueueableEnqueuedByPlatformEventTrigger(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`System.enqueueJob(new QueueWorker());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queueProgram, err := CompileAnonymous(`insert new Account(Name = 'platform event queueable ran');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+EventBus.publish(new Local_Event__e(Name__c = 'Trail'));
+Test.stopTest();
+System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'platform event queueable ran'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Event__e",
+			KeyPrefix: "e00",
+			Fields: map[string]storage.Field{
+				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "LocalEventTrigger",
+		Object:    "Local_Event__e",
+		Timing:    triggerTimingAfter,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "QueueWorker",
+		Methods: map[string]Method{
+			"execute": {Name: "QueueWorker.execute", ClassName: "QueueWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: queueProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStopTestPlatformEventDeliveryUsesFreshStatics(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+if (StaticBox.Value == null) {
+    insert new Account(Name = 'fresh statics');
+} else {
+    insert new Account(Name = 'stale statics');
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+StaticBox.Value = 'parent test value';
+Test.startTest();
+EventBus.publish(new Local_Event__e(Name__c = 'Trail'));
+Test.stopTest();
+System.assertEquals('parent test value', StaticBox.Value);
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'fresh statics'].size());
+System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'stale statics'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Event__e",
+			KeyPrefix: "e00",
+			Fields: map[string]storage.Field{
+				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "StaticBox",
+		StaticFields: map[string]Field{
+			"Value": {Name: "Value", Type: "String", Static: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "LocalEventTrigger",
+		Object:    "Local_Event__e",
+		Timing:    triggerTimingAfter,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecExplicitEventBusDeliverAllowsStopTestToDrainQueueable(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`System.enqueueJob(new QueueWorker());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queueProgram, err := CompileAnonymous(`insert new Account(Name = 'explicit platform event queueable ran');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+EventBus.publish(new Local_Event__e(Name__c = 'Trail'));
+Test.getEventBus().deliver();
+Test.stopTest();
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'explicit platform event queueable ran'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Event__e",
+			KeyPrefix: "e00",
+			Fields: map[string]storage.Field{
+				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "LocalEventTrigger",
+		Object:    "Local_Event__e",
+		Timing:    triggerTimingAfter,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "QueueWorker",
+		Methods: map[string]Method{
+			"execute": {Name: "QueueWorker.execute", ClassName: "QueueWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: queueProgram},
+		},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -4041,7 +4256,7 @@ func TestExecTestSetMockAcceptsTypeTokenForHttpMock(t *testing.T) {
 func TestExecTestInstallInvokesInstallHandler(t *testing.T) {
 	program, err := CompileAnonymous(`
 Test.testInstall(new InstallScript(), null);
-Account account = [SELECT Id, Name FROM Account WHERE Name = 'Installed'];
+Account account = [SELECT Id, Name, Description FROM Account WHERE Name = 'Installed'];
 System.assertEquals('Installed', account.Name);
 Test.testInstall(new InstallScript(), new Version(1, 47, 0), false);
 `)
@@ -4082,6 +4297,72 @@ if (context.previousVersion() == null) {
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecTestInstallSuppressesAfterTriggerSideEffects(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.testInstall(new InstallScript(), new Version(1, 0), true);
+System.assertEquals(1, InstallScript.beforeCount);
+System.assertEquals(0, InstallScript.afterCount);
+Account account = [SELECT Id, Name, Description FROM Account WHERE Name = 'Installed'];
+System.assertEquals('Touched', account.Description);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	onInstall, err := CompileAnonymous(`
+insert new Account(Name = 'Installed');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	triggerBefore, err := CompileAnonymous(`
+InstallScript.beforeCount++;
+for (Account account : (List<Account>) Trigger.new) {
+	account.Description = 'Touched';
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	triggerAfter, err := CompileAnonymous(`
+InstallScript.afterCount++;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "InstallScript",
+		Interfaces: []string{"InstallHandler"},
+		StaticFields: map[string]Field{
+			"beforeCount": {Name: "beforeCount", Type: "Integer", InitialValue: Int(0)},
+			"afterCount":  {Name: "afterCount", Type: "Integer", InitialValue: Int(0)},
+		},
+		Methods: map[string]Method{
+			"onInstall": {
+				Name:       "InstallScript.onInstall",
+				ClassName:  "InstallScript",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "InstallContext"}},
+				Program:    onInstall,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{Object: "Account", Timing: triggerTimingBefore, Operation: "insert", Program: triggerBefore}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{Object: "Account", Timing: triggerTimingAfter, Operation: "insert", Program: triggerAfter}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = machine.Execute(program); err != nil {
+		t.Fatalf("err = %v", err)
 	}
 }
 
@@ -4341,11 +4622,24 @@ for (Object objectRow : objectIterable) {
 System.assertEquals(1, objectCount);
 
 Object inlineLocator = Database.getQueryLocator([SELECT Id, Name FROM Account]);
+System.assertEquals('SELECT Id , Name FROM Account', inlineLocator.getQuery());
+List<Account> inlineQueried = Database.query(inlineLocator.getQuery());
+System.assertEquals(1, inlineQueried.size());
 Object inlineIterator = inlineLocator.iterator();
 System.assert(inlineIterator.hasNext());
 Account inlineRow = inlineIterator.next();
 System.assertEquals('Acme', inlineRow.Name);
 System.assert(!inlineIterator.hasNext());
+
+Database.QueryLocator emptyInlineLocator = Database.getQueryLocator([
+  SELECT Id, Name
+  FROM Account
+  WHERE Name = 'Missing'
+  ORDER BY Name NULLS LAST
+]);
+System.assertEquals('SELECT Id , Name FROM Account WHERE Name = ''Missing'' ORDER BY Name NULLS LAST', emptyInlineLocator.getQuery());
+List<Account> emptyInlineQueried = Database.query(emptyInlineLocator.getQuery());
+System.assertEquals(0, emptyInlineQueried.size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4455,6 +4749,145 @@ System.assertEquals(true, results.get(1).isSuccess());
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestUnitOfWorkCommitPersistsMultipleObjectBuckets(t *testing.T) {
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Parent__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Parent__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a01",
+				Fields: map[string]storage.Field{
+					"Id":       {APIName: "Id", Type: storage.FieldID},
+					"Name":     {APIName: "Name", Type: storage.FieldString},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Parent__c",
+					ParentObjects:      []string{"Parent__c"},
+					ParentRelationship: "Parent__r",
+				}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	uow, err := machine.constructFflibSObjectUnitOfWork([]Value{
+		List(sObjectTypeToken("Parent__c"), sObjectTypeToken("Child__c")),
+	}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent := Object("Parent__c")
+	parent.Fields["Name"] = String("Parent")
+	child := Object("Child__c")
+	child.Fields["Name"] = String("Child")
+	if _, _, err := machine.callFflibSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := machine.callFflibSObjectUnitOfWorkMember(uow, "registernew", []Value{child}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := machine.callFflibSObjectUnitOfWorkMember(uow, "commitwork", nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(machine.Org.Objects["Parent__c"].Records); got != 1 {
+		t.Fatalf("parent records = %d", got)
+	}
+	if got := len(machine.Org.Objects["Child__c"].Records); got != 1 {
+		t.Fatalf("child records = %d", got)
+	}
+}
+
+func TestUnitOfWorkCommitPersistsChildBucketWithDeferredRelationship(t *testing.T) {
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Unused__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Unused__c",
+				KeyPrefix: "a09",
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Parent__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Parent__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a01",
+				Fields: map[string]storage.Field{
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Name":      {APIName: "Name", Type: storage.FieldString},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Parent__c",
+					ParentObjects:      []string{"Parent__c"},
+					ParentRelationship: "Parent__r",
+				}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	uow, err := machine.constructFflibSObjectUnitOfWork([]Value{
+		List(sObjectTypeToken("Unused__c"), sObjectTypeToken("Parent__c"), sObjectTypeToken("Child__c")),
+	}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent := Object("Parent__c")
+	parent.Fields["Name"] = String("Parent")
+	child := Object("Child__c")
+	child.Fields["Name"] = String("Child")
+	if _, _, err := machine.callFflibSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := machine.callFflibSObjectUnitOfWorkMember(uow, "registernew", []Value{child}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.addFflibSObjectUnitOfWorkRelationship(uow, "Child__c", child, sObjectFieldToken("Child__c", "Parent__c"), parent); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := machine.callFflibSObjectUnitOfWorkMember(uow, "commitwork", nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(machine.Org.Objects["Parent__c"].Records); got != 1 {
+		t.Fatalf("parent records = %d", got)
+	}
+	if got := len(machine.Org.Objects["Child__c"].Records); got != 1 {
+		t.Fatalf("child records = %d", got)
+	}
+	for _, row := range machine.Org.Objects["Child__c"].Records {
+		if row.Fields["Parent__c"].Kind != storage.ValueID {
+			t.Fatalf("child parent lookup = %#v", row.Fields["Parent__c"])
+		}
 	}
 }
 
@@ -4772,6 +5205,51 @@ System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'batch finish'].size
 	}
 }
 
+func TestExecStopTestDrainsOnlyJobsEnqueuedAfterStartTest(t *testing.T) {
+	preStartProgram, err := CompileAnonymous(`insert new Account(Name = 'pre-start async');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	insideProgram, err := CompileAnonymous(`insert new Account(Name = 'inside async');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.enqueueJob(new PreStartWorker());
+Test.startTest();
+System.enqueueJob(new InsideWorker());
+Test.stopTest();
+System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'pre-start async'].size());
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'inside async'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "PreStartWorker",
+		Methods: map[string]Method{
+			"execute": {Name: "PreStartWorker.execute", ClassName: "PreStartWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: preStartProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "InsideWorker",
+		Methods: map[string]Method{
+			"execute": {Name: "InsideWorker.execute", ClassName: "InsideWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: insideProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStartStopRestoresOuterLimitViolations(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account beforeStart = new Account(Name = 'Before');
@@ -4939,7 +5417,7 @@ List<AsyncApexJob> scheduledBatches = [
 	WHERE CompletedDate = null
 	AND JobType = 'BatchApex'
 	AND ApexClass.Name = 'BatchWorker'
-	AND ApexClass.NamespacePrefix = ''
+	AND ApexClass.NamespacePrefix = null
 	LIMIT 1
 ];
 System.assertEquals(1, scheduledBatches.size());
@@ -5042,6 +5520,157 @@ Test.stopTest();
 	}
 }
 
+func TestExecScheduledApexCronJobDetailUsesScheduledApexType(t *testing.T) {
+	program, err := CompileAnonymous(`
+String scheduleId = System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
+List<CronTrigger> rows = [
+	SELECT Id, CronJobDetail.Name, CronJobDetail.JobType
+	FROM CronTrigger
+	WHERE CronJobDetail.Name = 'nightly' AND CronJobDetail.JobType = '7'
+];
+System.assertEquals(1, rows.size());
+System.assertEquals(scheduleId, rows[0].Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "ScheduledWorker", Interfaces: []string{"Schedulable"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAbortJobAcceptsCronTriggerIDValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id scheduleId = System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
+System.abortJob(scheduleId);
+List<AsyncApexJob> rows = [
+	SELECT Id
+	FROM AsyncApexJob
+	WHERE JobType = 'ScheduledApex' AND Status = 'Aborted'
+];
+System.assertEquals(1, rows.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "ScheduledWorker", Interfaces: []string{"Schedulable"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStopTestAllowsScheduledApexToEnqueueMultipleQueueables(t *testing.T) {
+	scheduledProgram, err := CompileAnonymous(`
+System.enqueueJob(new FirstWorker());
+System.enqueueJob(new SecondWorker());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstProgram, err := CompileAnonymous(`insert new Account(Name = 'first queueable ran');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondProgram, err := CompileAnonymous(`insert new Account(Name = 'second queueable ran');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
+Test.stopTest();
+System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'first queueable ran'].size());
+System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'second queueable ran'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "ScheduledWorker",
+		Interfaces: []string{"Schedulable"},
+		Methods: map[string]Method{
+			"execute": {Name: "ScheduledWorker.execute", ClassName: "ScheduledWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "SchedulableContext"}}, Program: scheduledProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for _, worker := range []struct {
+		name    string
+		program ir.Program
+	}{
+		{name: "FirstWorker", program: firstProgram},
+		{name: "SecondWorker", program: secondProgram},
+	} {
+		if err := machine.RegisterClass(Class{
+			Name:       worker.name,
+			Interfaces: []string{"Queueable"},
+			Methods: map[string]Method{
+				"execute": {Name: worker.name + ".execute", ClassName: worker.name, ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: worker.program},
+			},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStopTestRejectsMultipleQueueableChildrenFromQueueable(t *testing.T) {
+	queueProgram, err := CompileAnonymous(`
+System.enqueueJob(new FirstWorker());
+System.enqueueJob(new SecondWorker());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+System.enqueueJob(new ParentWorker());
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "ParentWorker",
+		Interfaces: []string{"Queueable"},
+		Methods: map[string]Method{
+			"execute": {Name: "ParentWorker.execute", ClassName: "ParentWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: queueProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"FirstWorker", "SecondWorker"} {
+		if err := machine.RegisterClass(Class{Name: name, Interfaces: []string{"Queueable"}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "Queueable chaining limit exceeded") {
+		t.Fatalf("err = %v, want queueable chaining limit", err)
+	}
+}
+
 func TestExecAbortJobRemovesQueuedLocalJobs(t *testing.T) {
 	program, err := CompileAnonymous(`
 Test.startTest();
@@ -5091,10 +5720,10 @@ Test.stopTest();
 	if err != nil {
 		t.Fatal(err)
 	}
-	queueProgram, err := CompileAnonymous(`
-System.assertEquals(false, System.AsyncInfo.hasMaxStackDepth());
+queueProgram, err := CompileAnonymous(`
+System.assertEquals(true, System.AsyncInfo.hasMaxStackDepth());
 System.assertEquals(1, System.AsyncInfo.getCurrentQueueableStackDepth());
-System.assertEquals(0, System.AsyncInfo.getMaximumQueueableStackDepth());
+System.assert(System.AsyncInfo.getMaximumQueueableStackDepth() > 0);
 System.assertEquals(0, System.AsyncInfo.getMinimumQueueableDelayInMinutes());
 `)
 	if err != nil {
@@ -5297,6 +5926,80 @@ Test.getEventBus().deliver();
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestRecordAsyncJobSplitsNamespacedApexClassRows(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	org.Namespace = "verifiable"
+	machine.SetOrg(&org)
+	job := AsyncJob{ID: "707000000000001", Kind: "Queueable", Object: Object("verifiable.ActionProcessorQueueable")}
+
+	machine.recordAsyncJob(job, "Queued", "")
+
+	apexClass := machine.Org.Objects["ApexClass"].Records[storage.ID(asyncApexClassID("verifiable.ActionProcessorQueueable"))]
+	if apexClass.Fields["Name"].String != "ActionProcessorQueueable" {
+		t.Fatalf("ApexClass.Name = %#v", apexClass.Fields["Name"])
+	}
+	if apexClass.Fields["NamespacePrefix"].String != "verifiable" {
+		t.Fatalf("ApexClass.NamespacePrefix = %#v", apexClass.Fields["NamespacePrefix"])
+	}
+	asyncJob := machine.Org.Objects["AsyncApexJob"].Records[storage.ID(job.ID)]
+	if asyncJob.Fields["ApexClassId"].ID != apexClass.ID {
+		t.Fatalf("AsyncApexJob.ApexClassId = %s, want %s", asyncJob.Fields["ApexClassId"].ID, apexClass.ID)
+	}
+}
+
+func TestRecordAsyncJobUsesRegisteredClassNamespace(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	org.Namespace = "verifiable"
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{Name: "ActionProcessorQueueable", Namespace: "verifiable"}); err != nil {
+		t.Fatal(err)
+	}
+	job := AsyncJob{ID: "707000000000001", Kind: "Queueable", Object: Object("ActionProcessorQueueable")}
+
+	machine.recordAsyncJob(job, "Queued", "")
+
+	apexClass := machine.Org.Objects["ApexClass"].Records[storage.ID(asyncApexClassID("ActionProcessorQueueable"))]
+	if apexClass.Fields["Name"].String != "ActionProcessorQueueable" {
+		t.Fatalf("ApexClass.Name = %#v", apexClass.Fields["Name"])
+	}
+	if apexClass.Fields["NamespacePrefix"].String != "verifiable" {
+		t.Fatalf("ApexClass.NamespacePrefix = %#v", apexClass.Fields["NamespacePrefix"])
+	}
+}
+
+func TestRecordAsyncJobReusesExistingApexClassRow(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	org.Namespace = "verifiable"
+	org.Objects["ApexClass"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "ApexClass"},
+		Records: map[storage.ID]storage.Record{
+			"01pExistingAAA": {
+				ID:     "01pExistingAAA",
+				Object: "ApexClass",
+				Fields: map[string]storage.Value{
+					"Name":            storage.StringValue("ActionProcessorQueueable"),
+					"NamespacePrefix": storage.StringValue("verifiable"),
+				},
+			},
+		},
+	}
+	machine.SetOrg(&org)
+	job := AsyncJob{ID: "707000000000001", Kind: "Queueable", Object: Object("ActionProcessorQueueable")}
+
+	machine.recordAsyncJob(job, "Queued", "")
+
+	asyncJob := machine.Org.Objects["AsyncApexJob"].Records[storage.ID(job.ID)]
+	if asyncJob.Fields["ApexClassId"].ID != "01pExistingAAA" {
+		t.Fatalf("AsyncApexJob.ApexClassId = %s, want existing ApexClass row", asyncJob.Fields["ApexClassId"].ID)
+	}
+	if got := len(machine.Org.Objects["ApexClass"].Records); got != 1 {
+		t.Fatalf("ApexClass rows = %d, want no duplicate rows", got)
 	}
 }
 
@@ -6243,6 +6946,7 @@ System.assertEquals(parsedDate, parsedDateTime);
 System.assertEquals(parsedDate, Date.valueOf('2026-05-04T23:59:58Z'));
 System.assertEquals(parsedDate, Date.valueOf('2026-5-4'));
 System.assertEquals(parsedDate, Date.valueOf('2026-5-4 23:59:58'));
+System.assertEquals(parsedDate, Date.valueOf('2026-05-04,not-a-date'));
 System.assertEquals(2026, Date.parse('01/01/2026').year());
 System.assertEquals(2026, Date.parse('01/01/26').year());
 Datetime dt = Datetime.now();
@@ -6434,9 +7138,11 @@ System.assertEquals(Time.newInstance(23, 59, 58, 0), gmt.timeGmt());
 Datetime parsedGmt = Datetime.valueOfGmt('2024-02-29 23:59:58');
 System.assertEquals('2024-02-29T23:59:58Z', parsedGmt.formatGmt());
 Datetime fractionalGmt = Datetime.valueOfGmt('2024-02-29T23:59:58.250Z');
+System.assertEquals('2024-02-29T23:59:58Z', fractionalGmt.formatGmt());
+System.assertEquals(0, fractionalGmt.millisecond());
 Datetime plusMillis = fractionalGmt.addMilliseconds(750);
-System.assertEquals('2024-02-29T23:59:59Z', plusMillis.formatGmt());
-System.assertEquals(0, plusMillis.millisecond());
+System.assertEquals('2024-02-29T23:59:58.75Z', plusMillis.formatGmt());
+System.assertEquals(750, plusMillis.millisecond());
 
 Time clock = Time.newInstance(23, 59, 58, 250);
 System.assertEquals(23, clock.hour());
@@ -6879,6 +7585,18 @@ List<Database.SaveResult> results = Database.insert(records, opts);
 System.assertEquals(2, results.size());
 System.assert(results.get(0).isSuccess());
 System.assert(results.get(1).isSuccess());
+
+Database.DMLOptions lowerOpts = new Database.DMLOptions();
+lowerOpts.optAllOrNone = false;
+List<Database.SaveResult> lowerResults = Database.insert(new List<Account>{new Account()}, lowerOpts);
+System.assertEquals(1, lowerResults.size());
+System.assertEquals(false, lowerResults.get(0).isSuccess());
+
+Database.DMLOptions upperOpts = new Database.DMLOptions();
+upperOpts.OptAllOrNone = false;
+List<Database.SaveResult> upperResults = Database.insert(new List<Account>{new Account()}, upperOpts);
+System.assertEquals(1, upperResults.size());
+System.assertEquals(false, upperResults.get(0).isSuccess());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -7440,6 +8158,12 @@ System.assertEquals('response', res.getBodyDocument().getRootElement().getName()
 XmlStreamReader reader = res.GETXMLSTREAMREADER();
 System.assertEquals(1, reader.next());
 System.assertEquals('response', reader.getLocalName());
+try {
+	res.setBody(null);
+	System.assert(false, 'null response body should throw');
+} catch (NullPointerException e) {
+	System.assertEquals('Argument 1 cannot be null', e.getMessage());
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -7608,13 +8332,15 @@ h.send(req);
 	}
 }
 
-func TestExecHttpSendWithoutMockInTestContextIsUnsupportedTransport(t *testing.T) {
+func TestExecHttpSendWithoutMockInTestContextReturnsDeterministicResponse(t *testing.T) {
 	program, err := CompileAnonymous(`
 HttpRequest req = new HttpRequest();
 req.setEndpoint('https://example.test');
 req.setMethod('GET');
 Http h = new Http();
-h.send(req);
+HttpResponse res = h.send(req);
+System.assertEquals(200, res.getStatusCode());
+System.assertEquals('{}', res.getBody());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -7622,9 +8348,8 @@ h.send(req);
 	machine := New(nil)
 	machine.EnableTestContext()
 	result, err := machine.Execute(program)
-	var runtimeErr *RuntimeError
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "Http.send real network transport"` {
-		t.Fatalf("err = %#v, want UnsupportedFeature real transport", err)
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
 	}
 	if result.Limits.Callouts != 1 {
 		t.Fatalf("callouts = %d, want 1", result.Limits.Callouts)

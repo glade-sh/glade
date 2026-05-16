@@ -129,7 +129,17 @@ func (vm *VM) checkLimit(name string, used, cap int) error {
 		return nil
 	}
 	violation := LimitViolation{Name: name, Used: used, Limit: cap}
-	vm.limitViolations = append(vm.limitViolations, violation)
+	recorded := false
+	for i := range vm.limitViolations {
+		if vm.limitViolations[i].Name == name {
+			vm.limitViolations[i] = violation
+			recorded = true
+			break
+		}
+	}
+	if !recorded {
+		vm.limitViolations = append(vm.limitViolations, violation)
+	}
 	if vm.limitMode == LimitModeStrict {
 		return &RuntimeError{
 			Type:    "System.LimitException",

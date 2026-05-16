@@ -42,8 +42,9 @@ func TestValueTracksFieldsAndExplicitNulls(t *testing.T) {
 
 func TestBuildDescribeRegistry(t *testing.T) {
 	registry := BuildDescribeRegistry(schema.Schema{Objects: []schema.Object{{
-		Name:  "Widget__c",
-		Label: "Widget",
+		Name:         "Widget__c",
+		Label:        "Widget",
+		SharingModel: "ReadWrite",
 		NameField: schema.NameField{
 			Type:          "AutoNumber",
 			Label:         "Widget Number",
@@ -68,6 +69,9 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	if describe.KeyPrefix != "a00" {
 		t.Fatalf("prefix = %q", describe.KeyPrefix)
 	}
+	if describe.SharingModel != "ReadWrite" {
+		t.Fatalf("sharing model = %q", describe.SharingModel)
+	}
 	if describe.Fields["Name"].Type != storage.FieldString || !describe.Fields["Name"].Required || !describe.Fields["Name"].AutoNumber || describe.Fields["Name"].DisplayFormat != "Widget {0000}" {
 		t.Fatalf("Name describe = %#v", describe.Fields["Name"])
 	}
@@ -86,7 +90,7 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	if got := describe.Relationships[2].ParentRelationship; got != "ParentAccount__r" {
 		t.Fatalf("parent relationship = %q", got)
 	}
-	if got := describe.Relationships[2].ChildRelationship; got != "Affiliates" {
+	if got := describe.Relationships[2].ChildRelationship; got != "Affiliates__r" {
 		t.Fatalf("metadata relationship child name = %q", got)
 	}
 	if !describe.Relationships[3].CascadeDelete {
@@ -104,6 +108,9 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	definition := ToObjectDefinition(describe)
 	if definition.Fields["Account__c"].Type != storage.FieldReference {
 		t.Fatalf("definition = %#v", definition)
+	}
+	if definition.SharingModel != "ReadWrite" {
+		t.Fatalf("definition sharing model = %q", definition.SharingModel)
 	}
 	if got := definition.Fields["Account__c"].ChildRelationshipName; got != "Widgets__r" {
 		t.Fatalf("definition child relationship name = %q", got)
@@ -240,15 +247,12 @@ func TestBuildDescribeRegistryDerivesCustomMetadataRelationship(t *testing.T) {
 	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Target__mdt" {
 		t.Fatalf("field = %#v", field)
 	}
-	if len(describe.Relationships) != 1 {
+	if !hasDescribeRelationship(describe.Relationships, "Target__c", "Target__mdt", "Target__r", "", false) {
 		t.Fatalf("relationships = %#v", describe.Relationships)
 	}
-	if got := describe.Relationships[0].ParentRelationship; got != "Target__r" {
-		t.Fatalf("parent relationship = %q", got)
-	}
 	definition := ToObjectDefinition(describe)
-	if got := definition.Relations[0].ParentRelationship; got != "Target__r" {
-		t.Fatalf("definition parent relationship = %q", got)
+	if !hasDescribeRelationship(definition.Relations, "Target__c", "Target__mdt", "Target__r", "", false) {
+		t.Fatalf("definition relationships = %#v", definition.Relations)
 	}
 }
 

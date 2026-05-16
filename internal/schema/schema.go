@@ -102,6 +102,7 @@ type CustomMetadataRecord struct {
 type CustomMetadataValue struct {
 	Field string `json:"field"`
 	Value string `json:"value,omitempty"`
+	Nil   bool   `json:"nil,omitempty"`
 }
 
 type customObjectXML struct {
@@ -206,8 +207,13 @@ type customMetadataXML struct {
 }
 
 type customMetadataValueXML struct {
-	Field string `xml:"field"`
-	Value string `xml:"value"`
+	Field string                `xml:"field"`
+	Value customMetadataTextXML `xml:"value"`
+}
+
+type customMetadataTextXML struct {
+	Text string `xml:",chardata"`
+	Nil  bool   `xml:"nil,attr"`
 }
 
 func LoadProject(p project.Project) (Schema, error) {
@@ -623,7 +629,7 @@ func loadCustomMetadataRecord(path string) (CustomMetadataRecord, error) {
 		if field == "" {
 			continue
 		}
-		values = append(values, CustomMetadataValue{Field: field, Value: strings.TrimSpace(value.Value)})
+		values = append(values, CustomMetadataValue{Field: field, Value: strings.TrimSpace(value.Value.Text), Nil: value.Value.Nil})
 	}
 	return CustomMetadataRecord{
 		FullName:      fullName,

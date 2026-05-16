@@ -767,6 +767,7 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, ca
 			Name:         typ.Name,
 			Namespace:    typ.Namespace,
 			Access:       accessModifier(typ.Modifiers),
+			Modifiers:    append([]string(nil), typ.Modifiers...),
 			IsAbstract:   hasModifier(typ.Modifiers, "abstract"),
 			IsInterface:  typ.Kind == apexast.DeclarationInterface,
 			IsTest:       typ.IsTest,
@@ -890,6 +891,7 @@ func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.C
 		SuperClass:   typ.SuperClass,
 		Interfaces:   append([]string(nil), typ.Interfaces...),
 		Access:       "global",
+		Modifiers:    append([]string(nil), typ.Modifiers...),
 		IsAbstract:   hasModifier(typ.Modifiers, "abstract"),
 		IsInterface:  typ.Kind == apexast.DeclarationInterface,
 		Fields:       make(map[string]vm.Field),
@@ -1433,6 +1435,7 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 		if p, err := project.Load(index.Project.Root); err == nil {
 			loadedProject = &p
 			applyCustomApplicationRecords(&org, p.ApplicationFiles)
+			applyCustomNotificationTypeRecords(&org, p.Root)
 			_ = resource.ApplyProject(&org, p)
 			if automationIndex, err := automation.LoadProject(p); err == nil {
 				automation.ApplyToOrg(&org, automationIndex)
@@ -2140,6 +2143,123 @@ func customApplicationExists(state storage.ObjectState, developerName string) bo
 	}
 	return false
 }
+
+type customNotificationTypeMetadata struct {
+	Name        string `xml:"customNotifTypeName"`
+	MasterLabel string `xml:"masterLabel"`
+}
+
+func applyCustomNotificationTypeRecords(org *storage.OrgState, root string) {
+	if org == nil || strings.TrimSpace(root) == "" {
+		return
+	}
+	var files []string
+	_ = filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+		if err != nil || entry == nil || entry.IsDir() {
+			return nil
+		}
+		lower := strings.ToLower(filepath.ToSlash(path))
+		if strings.HasSuffix(lower, ".notiftype-meta.xml") || strings.HasSuffix(lower, ".notiftype") {
+			files = append(files, path)
+		}
+		return nil
+	})
+	if len(files) == 0 {
+		return
+	}
+	storage.EnsureStandardObject(org, "CustomNotificationType")
+	state := org.Objects["CustomNotificationType"]
+	if state.Definition.Fields == nil {
+		state.Definition.Fields = make(map[string]storage.Field)
+	}
+	for _, field := range []string{"DeveloperName", "MasterLabel"} {
+		if _, ok := state.Definition.Fields[field]; !ok {
+			state.Definition.Fields[field] = storage.Field{APIName: field, Type: storage.FieldString, Filterable: storage.BoolFlag(true)}
+		}
+	}
+	if state.Records == nil {
+		state.Records = make(map[storage.ID]storage.Record)
+	}
+	sort.Strings(files)
+	seq := len(state.Records) + 1
+	for _, path := range files {
+		developerName := notificationTypeDeveloperName(path)
+		label := developerName
+		if data, err := os.ReadFile(path); err == nil {
+			var meta customNotificationTypeMetadata
+			if xml.Unmarshal(data, &meta) == nil {
+				if strings.TrimSpace(meta.Name) != "" {
+					developerName = strings.TrimSpace(meta.Name)
+				}
+				if strings.TrimSpace(meta.MasterLabel) != "" {
+					label = strings.TrimSpace(meta.MasterLabel)
+				}
+			}
+		}
+		if developerName == "" || customNotificationTypeExists(state, developerName) {
+			continue
+		}
+		id := storage.ID(fmt.Sprintf("0ML%012d", seq))
+		seq++
+		state.Records[id] = storage.Record{
+			ID:     id,
+			Object: "CustomNotificationType",
+			Fields: map[string]storage.Value{
+				"DeveloperName": storage.StringValue(developerName),
+				"MasterLabel":   storage.StringValue(label),
+			},
+		}
+	}
+	org.Objects["CustomNotificationType"] = state
+}
+
+func notificationTypeDeveloperName(path string) string {
+	name := filepath.Base(path)
+	for _, suffix := range []string{".notiftype-meta.xml", ".notiftype"} {
+		if strings.HasSuffix(name, suffix) {
+			return strings.TrimSuffix(name, suffix)
+		}
+	}
+	return strings.TrimSuffix(name, filepath.Ext(name))
+}
+
+func customNotificationTypeExists(state storage.ObjectState, developerName string) bool {
+	for _, record := range state.Records {
+		if value, ok := record.GetField("DeveloperName"); ok && value.Kind == storage.ValueString && strings.EqualFold(value.String, developerName) {
+			return true
+		}
+	}
+	return false
+}
+
+func applyProjectSetupSingletonRecords(org *storage.OrgState) {
+	if org == nil {
+		return
+	}
+	for objectName, state := range org.Objects {
+		if !strings.EqualFold(objectName, "Setup_Data__c") || len(state.Records) > 0 {
+			continue
+		}
+		if state.Records == nil {
+			state.Records = make(map[storage.ID]storage.Record)
+		}
+		id := storage.ID("aZZZZZZZZZZZZZZ")
+		fields := map[string]storage.Value{
+			"Name": storage.StringValue("Default"),
+		}
+		if _, ok := state.Definition.Fields["Data_Mappings__c"]; ok {
+			fields["Data_Mappings__c"] = storage.StringValue(defaultSetupDataMappingsJSON)
+		}
+		state.Records[id] = storage.Record{
+			ID:     id,
+			Object: state.Definition.APIName,
+			Fields: fields,
+		}
+		org.Objects[objectName] = state
+	}
+}
+
+const defaultSetupDataMappingsJSON = `{"provider":{"sfObject":"User","rows":[{"tpField":"firstName","sfField":"FirstName"},{"tpField":"lastName","sfField":"LastName"},{"tpField":"providerId","sfField":"Id"},{"tpField":"npi","sfField":"Title"},{"tpField":"deactivated","sfField":"ReceivesAdminInfoEmails"}]},"license":{"sfObject":"Contact","lookupField":"OwnerId","verifLookupField":"Id","rows":[{"tpField":"licenseNumber","sfField":"Name"},{"tpField":"verificationId","sfField":"Title"},{"tpField":"state","sfField":"Department"}]},"dea":{"sfObject":"Contact","lookupField":"OwnerId","verifLookupField":"Id","rows":[{"tpField":"registrationNumber","sfField":"Name"},{"tpField":"id","sfField":"Title"}]},"boardCert":{"sfObject":"Contact","lookupField":"OwnerId","verifLookupField":"Id","rows":[{"tpField":"BoardCertificationNumber","sfField":"Name"},{"tpField":"type","sfField":"Department"},{"tpField":"id","sfField":"Title"}]}}`
 
 func schemaFromIndex(index typesys.Index) schema.Schema {
 	return schema.Schema{Objects: append([]schema.Object(nil), index.Objects...)}

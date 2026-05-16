@@ -174,6 +174,28 @@ System.assertEquals('strict', (String)strictWidget.get('Data__c'));
 	}
 }
 
+func TestExecJSONDeserializeUntypedMapRemoveReturnsRemovedValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> untyped = (Map<String,Object>)JSON.deserializeUntyped('{"items":[{"name":"one"}],"nextCursor":null}');
+List<Object> items = (List<Object>)untyped.remove('items');
+System.assertEquals(1, items.size());
+System.assertEquals(false, untyped.containsKey('items'));
+try {
+	List<Object> bad = (List<Object>)untyped;
+	System.assert(false, 'cast should fail');
+} catch (System.TypeException e) {
+	System.assertEquals('Invalid conversion from runtime type Map<String,ANY> to List<ANY>', e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONUntypedListCastsMapsToTypedSObjects(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object raw = JSON.deserializeUntyped('[{"attributes":{"type":"Account"},"Name":"Acme"}]');
@@ -1344,6 +1366,62 @@ System.assertEquals(null, decoded.Children__r[0].Parent__r.Name);
 	}
 }
 
+func TestExecJSONDeserializeSObjectChildRelationshipFromSerializedMapSupportsGetSObjects(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Object> payload = new Map<String, Object>();
+payload.put('Id', 'a00000000000001AAA');
+payload.put('verifiable__EducationLast__r', new Map<String, Object>{
+	'records' => new List<SObject>{
+		new Education__c(Id = 'a01000000000001AAA', SchoolName__c = 'Test School')
+	},
+	'totalSize' => 1,
+	'done' => true
+});
+Sanction_Exclusion_Scan__c decoded = (Sanction_Exclusion_Scan__c)JSON.deserialize(JSON.serialize(payload), Sanction_Exclusion_Scan__c.class);
+List<Education__c> records = (List<Education__c>)decoded.getSObjects('verifiable__EducationLast__r');
+System.assertEquals(1, records.size());
+System.assertEquals('Test School', records[0].SchoolName__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.OrgState{Namespace: "verifiable", Objects: map[string]storage.ObjectState{
+		"Sanction_Exclusion_Scan__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Sanction_Exclusion_Scan__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id": {APIName: "Id", Type: storage.FieldID},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Education__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Education__c",
+				KeyPrefix: "a01",
+				Fields: map[string]storage.Field{
+					"Id":                  {APIName: "Id", Type: storage.FieldID},
+					"SchoolName__c":       {APIName: "SchoolName__c", Type: storage.FieldString},
+					"LastVerification__c": {APIName: "LastVerification__c", Type: storage.FieldReference, ReferenceTo: []string{"Sanction_Exclusion_Scan__c"}, RelationshipName: "LastVerification__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "LastVerification__c",
+					ParentObjects:      []string{"Sanction_Exclusion_Scan__c"},
+					ParentRelationship: "LastVerification__r",
+					ChildRelationship:  "EducationLast",
+				}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeStrictRejectsDuplicateFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account decoded = JSON.deserializeStrict('{"Name":"First","Name":"Second"}', Account.class);
@@ -1574,6 +1652,28 @@ System.assert(encoded.contains('\\n'), encoded);
 	}
 }
 
+func TestExecJSONSerializeDatetimeIncludesMillisecondsAndRejectsSObjectField(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('"2024-02-29T12:34:56.000Z"', JSON.serialize(Datetime.newInstanceGmt(2024, 2, 29, 12, 34, 56)));
+Boolean caught = false;
+try {
+	JSON.serialize(Account.Description, false);
+} catch (Exception e) {
+	caught = true;
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONMalformedDeserializeErrorsAreCatchable(t *testing.T) {
 	program, err := CompileAnonymous(`
 String caught = '';
@@ -1613,22 +1713,24 @@ func TestExecJSONSerializePrettyAndGeneratorOutputEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String,Object> root = new Map<String,Object>();
 root.put('name', 'Acme');
+root.put('scriptName', 'X');
 root.put('missing', null);
 List<Object> items = new List<Object>();
 items.add(1);
 items.add(null);
 root.put('items', items);
+root.put('webhooks', new List<String>{ 'DatasetScanMatchesChanged' });
 String compact = JSON.serialize(root, true);
-System.assertEquals('{"items":[1,null],"missing":null,"name":"Acme"}', compact);
+System.assertEquals('{"name":"Acme","scriptName":"X","missing":null,"items":[1,null],"webhooks":["DatasetScanMatchesChanged"]}', compact);
 String pretty = JSON.serializePretty(root, true);
-System.assert(pretty.contains('  "items": ['));
-System.assert(pretty.contains('    1,'));
-System.assert(pretty.contains('    null'));
-System.assert(pretty.contains('  "missing": null'));
-System.assert(pretty.contains('  "name": "Acme"'));
+System.assert(pretty.contains('  "items" : [ 1, null ]'));
+System.assert(pretty.contains('  "scriptName" : "X"'));
+System.assert(pretty.contains('"webhooks" : [ "DatasetScanMatchesChanged" ]'));
+System.assert(pretty.contains('  "missing" : null'));
+System.assert(pretty.contains('  "name" : "Acme"'));
 Account account = new Account(Name = 'NoNull', Phone = null);
 System.assert(!JSON.serializePretty(account, true).contains('Phone'));
-System.assert(JSON.serializePretty(account, false).contains('"Phone": null'));
+System.assert(JSON.serializePretty(account, false).contains('"Phone" : null'));
 
 JSONGenerator gen = JSON.createGenerator(true);
 gen.writeStartObject();
@@ -1636,7 +1738,7 @@ gen.writeObjectField('root', root);
 gen.writeRawField('raw', '{"ok":true}');
 gen.writeEndObject();
 String generated = gen.getAsString();
-System.assert(generated.contains('  "root": {"items":[1,null],"missing":null,"name":"Acme"}'));
+System.assert(generated.contains('  "root": {"name":"Acme","scriptName":"X","missing":null,"items":[1,null],"webhooks":["DatasetScanMatchesChanged"]}'));
 System.assert(generated.contains('"raw": {"ok":true}'));
 System.assert(gen.isClosed());
 `)
@@ -1731,9 +1833,9 @@ System.assert(compact.contains('"kept":"yes"'));
 System.assert(compact.contains('"missing":null'));
 System.assert(compact.contains('},null]'));
 String pretty = JSON.serializePretty(root, true);
-System.assert(pretty.contains('  "items": ['));
-System.assert(pretty.contains('      "kept": "yes"'));
-System.assert(pretty.contains('      "missing": null'));
+System.assert(pretty.contains('  "items" : ['));
+System.assert(pretty.contains('      "kept" : "yes"'));
+System.assert(pretty.contains('      "missing" : null'));
 Account account = new Account(Name = 'NoNull', Phone = null);
 String objectSuppressed = JSON.serialize(account, true);
 System.assert(objectSuppressed.contains('"Name":"NoNull"'));
@@ -1745,6 +1847,72 @@ System.assert(objectIncluded.contains('"Phone":null'));
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONSerializeEnumValueInUntypedMap(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> root = new Map<String,Object>();
+root.put('statusCode', System.StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION);
+String body = JSON.serialize(root);
+System.assertEquals('{"statusCode":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}', body);
+Database.Error decoded = (Database.Error)JSON.deserialize(body, Database.Error.class);
+System.assertEquals(System.StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION.name(), decoded.getStatusCode().name());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeTypedPropertySetterPersistsReceiverMutation(t *testing.T) {
+	getter, err := CompileAnonymous("return backingRows;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous("backingRows = value;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+MappingContainer decoded = (MappingContainer)JSON.deserialize('{"rows":[{"tpField":"gender","sfField":"LeadSource"}]}', MappingContainer.class);
+System.assertEquals(1, decoded.rows.size());
+System.assertEquals('gender', decoded.rows.get(0).tpField);
+System.assertEquals('LeadSource', decoded.rows.get(0).sfField);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "MappingRow",
+		Fields: map[string]Field{
+			"tpField": {Name: "tpField", Type: "String"},
+			"sfField": {Name: "sfField", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "MappingContainer",
+		Fields: map[string]Field{
+			"backingRows": {Name: "backingRows", Type: "List<MappingRow>"},
+			"rows": {
+				Name:     "rows",
+				Type:     "List<MappingRow>",
+				Property: true,
+				Getter:   &Method{Name: "MappingContainer.rows.get", ClassName: "MappingContainer", ReturnType: "List<MappingRow>", Program: getter},
+				Setter:   &Method{Name: "MappingContainer.rows.set", ClassName: "MappingContainer", Params: []Param{{Name: "value", Type: "List<MappingRow>"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

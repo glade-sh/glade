@@ -27,6 +27,8 @@ import (
 type LocalTestOptions struct {
 	Project             string
 	Class               string
+	ClassList           []string
+	ClassFile           string
 	Method              string
 	BlockersOnly        bool
 	TraceBlocked        bool
@@ -97,11 +99,12 @@ type LocalTestOutcome struct {
 }
 
 type LocalTestFailureGroup struct {
-	Outcome      string `json:"outcome"`
-	Phase        string `json:"phase,omitempty"`
-	CapabilityID string `json:"capabilityId,omitempty"`
-	Error        string `json:"error,omitempty"`
-	Count        int    `json:"count"`
+	Outcome      string   `json:"outcome"`
+	Phase        string   `json:"phase,omitempty"`
+	CapabilityID string   `json:"capabilityId,omitempty"`
+	Error        string   `json:"error,omitempty"`
+	Count        int      `json:"count"`
+	Samples      []string `json:"samples,omitempty"`
 }
 
 type LocalTestCorpusBaseline struct {
@@ -166,6 +169,19 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 			Error:        err.Error(),
 		}
 		report.Diagnostics = loadDiagnostics
+		report.Outcomes = append(report.Outcomes, outcome)
+		finalizeLocalTestReport(&report, options, started)
+		return report, nil
+	}
+	options, err = loadLocalTestClassFile(options)
+	if err != nil {
+		outcome := LocalTestOutcome{
+			ProjectLabel: projectLabel,
+			Outcome:      "load_error",
+			Phase:        "load",
+			CapabilityID: localTestCapabilityID("load", "", err.Error()),
+			Error:        err.Error(),
+		}
 		report.Outcomes = append(report.Outcomes, outcome)
 		finalizeLocalTestReport(&report, options, started)
 		return report, nil
@@ -239,16 +255,16 @@ func recordLocalTestPhase(report *LocalTestReport, options LocalTestOptions, eve
 }
 
 const largeLocalTestAnalysisThreshold = 5000
-const localTestTriageClassBatchSize = 8
+const localTestTriageClassBatchSize = 1
 
 func runLocalTestCases(index typesys.Index, testOpts apextest.Options, cases []apextest.TestCase, projectLabel string, options LocalTestOptions, started time.Time) ([]LocalTestOutcome, int, bool) {
-	if options.MaxFailureGroups <= 0 || options.Parallelism > 0 {
+	if options.MaxFailureGroups <= 0 {
 		run := apextest.RunCasesContext(context.Background(), index, testOpts, cases)
 		return localTestOutcomesFromRun(projectLabel, run, options), len(cases), false
 	}
 	outcomes := make([]LocalTestOutcome, 0)
 	casesRun := 0
-	for _, batch := range localTestCaseBatches(cases, localTestTriageClassBatchSize) {
+	for _, batch := range localTestCaseBatches(cases, localTestTriageBatchClassSize(options)) {
 		reportLocalTestPhase(options, fmt.Sprintf("triage_batch_start cases=%d", len(batch)), started)
 		run := apextest.RunCasesContext(context.Background(), index, testOpts, batch)
 		outcomes = append(outcomes, localTestOutcomesFromRun(projectLabel, run, options)...)
@@ -261,6 +277,13 @@ func runLocalTestCases(index typesys.Index, testOpts apextest.Options, cases []a
 		}
 	}
 	return outcomes, casesRun, false
+}
+
+func localTestTriageBatchClassSize(options LocalTestOptions) int {
+	if options.Parallelism > 1 {
+		return options.Parallelism
+	}
+	return localTestTriageClassBatchSize
 }
 
 func localTestOutcomesFromRun(projectLabel string, run testreport.Run, options LocalTestOptions) []LocalTestOutcome {
@@ -500,6 +523,9 @@ func WriteLocalTestText(w io.Writer, report LocalTestReport) {
 	}
 	fmt.Fprintf(w, "Local test readiness: %s\n", state)
 	fmt.Fprintf(w, "project: %s\n", report.Project)
+	if report.CasesDiscovered != 0 || report.CasesRun != 0 || report.TriageStopped {
+		fmt.Fprintf(w, "cases: discovered=%d run=%d triage_stopped=%t duration_ms=%d\n", report.CasesDiscovered, report.CasesRun, report.TriageStopped, report.DurationMS)
+	}
 	fmt.Fprintf(w, "summary: pass=%d fail=%d unsupported=%d load_error=%d compile_error=%d internal_error=%d assert_fail=%d runtime_gap=%d compile_gap=%d timeout=%d total=%d\n",
 		report.Summary.Pass,
 		report.Summary.Fail,
@@ -521,6 +547,9 @@ func WriteLocalTestText(w io.Writer, report LocalTestReport) {
 		fmt.Fprintf(w, ": %d", group.Count)
 		if group.Error != "" {
 			fmt.Fprintf(w, " - %s", group.Error)
+		}
+		if len(group.Samples) != 0 {
+			fmt.Fprintf(w, " samples=%s", strings.Join(group.Samples, ","))
 		}
 		fmt.Fprintln(w)
 	}
@@ -631,6 +660,24 @@ func localTestFilter(options LocalTestOptions) string {
 	}
 }
 
+func loadLocalTestClassFile(options LocalTestOptions) (LocalTestOptions, error) {
+	if strings.TrimSpace(options.ClassFile) == "" {
+		return options, nil
+	}
+	data, err := os.ReadFile(options.ClassFile)
+	if err != nil {
+		return options, fmt.Errorf("read --class-file: %w", err)
+	}
+	for _, line := range strings.FieldsFunc(string(data), func(r rune) bool {
+		return r == '\n' || r == '\r' || r == ',' || r == ';'
+	}) {
+		if className := strings.TrimSpace(line); className != "" && !strings.HasPrefix(className, "#") {
+			options.ClassList = append(options.ClassList, className)
+		}
+	}
+	return options, nil
+}
+
 func filterLocalTestCases(cases []apextest.TestCase, options LocalTestOptions) []apextest.TestCase {
 	out := make([]apextest.TestCase, 0, len(cases))
 	for _, testCase := range cases {
@@ -645,10 +692,22 @@ func matchesLocalTestCase(className, methodName string, options LocalTestOptions
 	if options.Class != "" && !strings.EqualFold(className, options.Class) {
 		return false
 	}
+	if len(options.ClassList) != 0 && !localTestClassListContains(options.ClassList, className) {
+		return false
+	}
 	if options.Method != "" && !strings.EqualFold(methodName, options.Method) {
 		return false
 	}
 	return true
+}
+
+func localTestClassListContains(classes []string, className string) bool {
+	for _, candidate := range classes {
+		if strings.EqualFold(strings.TrimSpace(candidate), className) {
+			return true
+		}
+	}
+	return false
 }
 
 func firstLocalTestError(diagnostics []diagnostic.Diagnostic) (diagnostic.Diagnostic, bool) {
@@ -704,7 +763,7 @@ func localTestRunOutcome(projectLabel string, testCase testreport.Case) LocalTes
 	if testCase.Problem != nil && strings.EqualFold(testCase.Problem.Type, "UnsupportedFeature") {
 		outcome = "unsupported"
 	}
-	if testCase.Problem != nil && strings.EqualFold(testCase.Problem.Type, "Canceled") && strings.Contains(strings.ToLower(testCase.Problem.Message), "deadline exceeded") {
+	if testCase.Problem != nil && isLocalTestTimeoutProblem(testCase.Problem.Type, testCase.Problem.Message) {
 		outcome = "timeout"
 		phase = "timeout"
 	}
@@ -745,10 +804,10 @@ func localTestCapabilityID(phase, code, message string) string {
 	if strings.EqualFold(code, "UnsupportedFeature") {
 		return "apex.test.unsupported"
 	}
+	if isLocalTestTimeoutProblem(code, message) {
+		return "apex.test.timeout"
+	}
 	if strings.EqualFold(code, "Canceled") {
-		if strings.Contains(strings.ToLower(message), "deadline exceeded") {
-			return "apex.test.timeout"
-		}
 		return "apex.test.canceled"
 	}
 	if code != "" {
@@ -769,6 +828,11 @@ func localTestCapabilityID(phase, code, message string) string {
 	default:
 		return "apex.test.unknown"
 	}
+}
+
+func isLocalTestTimeoutProblem(code, message string) bool {
+	text := strings.ToLower(strings.TrimSpace(code + " " + message))
+	return strings.Contains(text, "deadline exceeded") || strings.Contains(text, "context canceled")
 }
 
 func finalizeLocalTestReport(report *LocalTestReport, options LocalTestOptions, started time.Time) {
@@ -825,15 +889,16 @@ func localTestTopFailures(outcomes []LocalTestOutcome, limit int) []LocalTestFai
 	if limit <= 0 {
 		return nil
 	}
-	counts := localTestFailureGroups(outcomes)
+	counts := localTestFailureGroupStats(outcomes)
 	groups := make([]LocalTestFailureGroup, 0, len(counts))
-	for key, count := range counts {
+	for key, stat := range counts {
 		groups = append(groups, LocalTestFailureGroup{
 			Outcome:      key.outcome,
 			Phase:        key.phase,
 			CapabilityID: key.capabilityID,
 			Error:        key.error,
-			Count:        count,
+			Count:        stat.count,
+			Samples:      stat.samples,
 		})
 	}
 	sort.SliceStable(groups, func(i, j int) bool {
@@ -866,23 +931,90 @@ func localTestFailureGroupCount(outcomes []LocalTestOutcome) int {
 }
 
 func localTestFailureGroups(outcomes []LocalTestOutcome) map[localTestFailureGroupKey]int {
+	stats := localTestFailureGroupStats(outcomes)
 	counts := make(map[localTestFailureGroupKey]int)
+	for key, stat := range stats {
+		counts[key] = stat.count
+	}
+	return counts
+}
+
+type localTestFailureGroupStat struct {
+	count   int
+	samples []string
+}
+
+func localTestFailureGroupStats(outcomes []LocalTestOutcome) map[localTestFailureGroupKey]localTestFailureGroupStat {
+	counts := make(map[localTestFailureGroupKey]localTestFailureGroupStat)
 	for _, outcome := range outcomes {
 		if outcome.Outcome == "pass" {
 			continue
 		}
-		errText := strings.TrimSpace(outcome.Error)
-		if errText != "" && len(errText) > 180 {
-			errText = errText[:180]
-		}
-		counts[localTestFailureGroupKey{
+		key := localTestFailureGroupKey{
 			outcome:      outcome.Outcome,
 			phase:        outcome.Phase,
 			capabilityID: outcome.CapabilityID,
-			error:        errText,
-		}]++
+			error:        normalizeLocalTestFailureError(outcome.Error),
+		}
+		stat := counts[key]
+		stat.count++
+		if len(stat.samples) < 3 {
+			stat.samples = append(stat.samples, outcome.Class+"."+outcome.Method)
+		}
+		counts[key] = stat
 	}
 	return counts
+}
+
+func normalizeLocalTestFailureError(errText string) string {
+	errText = strings.TrimSpace(errText)
+	if errText == "" {
+		return ""
+	}
+	lines := strings.Split(errText, "\n")
+	errText = strings.TrimSpace(lines[0])
+	if strings.Contains(errText, "context deadline exceeded") {
+		return "context deadline exceeded"
+	}
+	if strings.Contains(errText, "HTTP transport is not available") {
+		return "HTTP transport is not available"
+	}
+	for _, prefix := range []string{
+		"System.AssertException:",
+		"Assertion Failed:",
+		"Database.insert failed:",
+		"Database.update failed:",
+		"Database.delete failed:",
+		"soql:",
+	} {
+		if strings.HasPrefix(errText, prefix) {
+			errText = prefix + " " + strings.TrimSpace(strings.TrimPrefix(errText, prefix))
+			break
+		}
+	}
+	errText = normalizeLocalTestDynamicText(errText)
+	if len(errText) > 180 {
+		errText = errText[:180]
+	}
+	return errText
+}
+
+func normalizeLocalTestDynamicText(text string) string {
+	var out strings.Builder
+	for i := 0; i < len(text); i++ {
+		ch := text[i]
+		if ch >= '0' && ch <= '9' {
+			j := i + 1
+			for j < len(text) && text[j] >= '0' && text[j] <= '9' {
+				j++
+			}
+			out.WriteByte('#')
+			i = j - 1
+			continue
+		}
+		out.WriteByte(ch)
+	}
+	return out.String()
 }
 
 func IsLocalTestTimeout(err error) bool {

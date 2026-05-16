@@ -46,6 +46,8 @@ func (vm *VM) RegisterMethod(method Method) error {
 	vm.MethodOverloads[method.Name] = append(vm.MethodOverloads[method.Name], method)
 	foldedName := strings.ToLower(method.Name)
 	vm.MethodFolded[foldedName] = append(vm.MethodFolded[foldedName], method)
+	vm.methodCandidates = nil
+	vm.methodResolveCache = nil
 	return nil
 }
 
@@ -77,6 +79,7 @@ type Class struct {
 	InstanceInitializers []Method
 	EnumValues           []string
 	Access               string
+	Modifiers            []string
 	IsAbstract           bool
 	IsInterface          bool
 	IsTest               bool
@@ -108,6 +111,7 @@ func (vm *VM) RegisterClass(class Class) error {
 	if vm.Classes == nil {
 		vm.Classes = make(map[string]Class)
 	}
+	vm.methodResolveCache = nil
 	for name, method := range class.Methods {
 		if method.Name == "" {
 			method.Name = class.Name + "." + name

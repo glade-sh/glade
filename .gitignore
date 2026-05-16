@@ -7,3 +7,5 @@
 /probes/sfdx/.sf/
 /probes/sfdx/.sfdx/
 /probes/output/
+/tmp/
+/.gocache/

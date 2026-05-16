@@ -140,6 +140,7 @@ type DescribeSObjectResult struct {
 	Label           string                         `json:"label,omitempty"`
 	PluralLabel     string                         `json:"pluralLabel,omitempty"`
 	KeyPrefix       string                         `json:"keyPrefix,omitempty"`
+	SharingModel    string                         `json:"sharingModel,omitempty"`
 	Metadata        map[string]string              `json:"metadata,omitempty"`
 	Fields          map[string]DescribeFieldResult `json:"fields,omitempty"`
 	Relationships   []storage.Relationship         `json:"relationships,omitempty"`
@@ -208,11 +209,12 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 	recordTypeIDs := storage.NewIDGenerator(map[string]string{"RecordType": storage.StandardKeyPrefixes()["RecordType"]})
 	for _, object := range objects {
 		describe := DescribeSObjectResult{
-			Name:        object.Name,
-			Label:       object.Label,
-			PluralLabel: object.PluralLabel,
-			KeyPrefix:   prefixes[object.Name],
-			Fields:      make(map[string]DescribeFieldResult, len(object.Fields)),
+			Name:         object.Name,
+			Label:        object.Label,
+			PluralLabel:  object.PluralLabel,
+			KeyPrefix:    prefixes[object.Name],
+			SharingModel: object.SharingModel,
+			Fields:       make(map[string]DescribeFieldResult, len(object.Fields)),
 		}
 		if strings.HasSuffix(object.Name, "__mdt") {
 			ensureDescribeField(describe.Fields, "DeveloperName", "Text", "Developer Name")
@@ -245,6 +247,17 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			if strings.EqualFold(field.Type, "Summary") {
 				fieldType = storage.FieldSummary
 			}
+			childRelationshipName := field.ChildRelationshipName
+			references := referenceTargets(field.ReferenceTo)
+			if len(references) != 0 && childRelationshipName == "" {
+				parentRelationship := storage.ParentRelationshipName(storage.Field{
+					APIName:          field.Name,
+					RelationshipName: field.RelationshipName,
+				})
+				if !strings.EqualFold(field.RelationshipName, parentRelationship) {
+					childRelationshipName = apexChildRelationshipName(field.RelationshipName)
+				}
+			}
 			describe.Fields[field.Name] = DescribeFieldResult{
 				Name:                  field.Name,
 				Type:                  fieldType,
@@ -260,7 +273,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				SummaryOperation:      field.SummaryOperation,
 				SummaryFilterItems:    storageSummaryFilters(field.SummaryFilterItems),
 				RelationshipName:      field.RelationshipName,
-				ChildRelationshipName: field.ChildRelationshipName,
+				ChildRelationshipName: childRelationshipName,
 				DeleteConstraint:      field.DeleteConstraint,
 				DefaultValue:          field.DefaultValue,
 				Required:              field.Required,
@@ -269,15 +282,14 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				Encrypted:             field.Encrypted,
 				PicklistValues:        storagePicklistValues(field.PicklistValues),
 			}
-			references := referenceTargets(field.ReferenceTo)
 			if len(references) != 0 {
 				parentRelationship := storage.ParentRelationshipName(storage.Field{
 					APIName:          field.Name,
 					RelationshipName: field.RelationshipName,
 				})
-				childRelationship := field.ChildRelationshipName
+				childRelationship := childRelationshipName
 				if childRelationship == "" && !strings.EqualFold(field.RelationshipName, parentRelationship) {
-					childRelationship = field.RelationshipName
+					childRelationship = apexChildRelationshipName(field.RelationshipName)
 				}
 				describe.Relationships = append(describe.Relationships, storage.Relationship{
 					Field:              field.Name,
@@ -379,6 +391,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 		Label:           describe.Label,
 		PluralLabel:     describe.PluralLabel,
 		KeyPrefix:       describe.KeyPrefix,
+		SharingModel:    describe.SharingModel,
 		Fields:          make(map[string]storage.Field, len(describe.Fields)),
 		Relations:       append([]storage.Relationship(nil), describe.Relationships...),
 		RecordTypes:     make([]storage.RecordTypeInfo, 0, len(describe.RecordTypes)),
@@ -452,6 +465,7 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 		Label:           definition.Label,
 		PluralLabel:     definition.PluralLabel,
 		KeyPrefix:       definition.KeyPrefix,
+		SharingModel:    definition.SharingModel,
 		Fields:          make(map[string]DescribeFieldResult, len(definition.Fields)),
 		Relationships:   append([]storage.Relationship(nil), definition.Relations...),
 		RecordTypes:     make([]DescribeRecordTypeInfo, 0, len(definition.RecordTypes)),
@@ -627,6 +641,14 @@ func referenceTargets(raw []string) []string {
 		}
 	}
 	return out
+}
+
+func apexChildRelationshipName(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" || strings.HasSuffix(name, "__r") {
+		return name
+	}
+	return name + "__r"
 }
 
 func labelOrName(label, name string) string {

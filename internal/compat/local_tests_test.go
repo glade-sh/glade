@@ -59,6 +59,27 @@ func TestRunLocalTestsReportsTopFailures(t *testing.T) {
 	if report.TopFailures[0].Count == 0 || report.TopFailures[0].Outcome == "pass" {
 		t.Fatalf("topFailures[0] = %#v", report.TopFailures[0])
 	}
+	if len(report.TopFailures[0].Samples) == 0 {
+		t.Fatalf("topFailures[0] missing samples: %#v", report.TopFailures[0])
+	}
+}
+
+func TestRunLocalTestsFiltersClassList(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{
+		Project:   filepath.Join("..", "..", "testdata", "local-tests", "basic"),
+		ClassList: []string{"PassingTest"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.CasesDiscovered == 0 {
+		t.Fatalf("expected filtered cases: %#v", report)
+	}
+	for _, outcome := range report.Outcomes {
+		if outcome.Class != "PassingTest" {
+			t.Fatalf("unexpected class %q in %#v", outcome.Class, report.Outcomes)
+		}
+	}
 }
 
 func TestRunLocalTestsStopsAfterMaxFailureGroups(t *testing.T) {
@@ -98,6 +119,59 @@ private class %s {
 	}
 	if report.Summary.Total != 1 || report.Summary.AssertFailures != 1 || len(report.TopFailures) != 1 {
 		t.Fatalf("report = %#v", report)
+	}
+}
+
+func TestRunLocalTestsStopsAfterMaxFailureGroupsWithParallelism(t *testing.T) {
+	root := t.TempDir()
+	writeLocalTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeLocalTestFile(t, filepath.Join(root, "force-app/main/default/classes/AFailingTest.cls"), `
+@isTest
+private class AFailingTest {
+  @isTest static void fails() {
+    System.assertEquals(3, 1 + 1);
+  }
+}
+`)
+	for i := 0; i < 9; i++ {
+		className := fmt.Sprintf("PassingParallelTriage%02dTest", i)
+		writeLocalTestFile(t, filepath.Join(root, "force-app/main/default/classes/"+className+".cls"), fmt.Sprintf(`
+@isTest
+private class %s {
+  @isTest static void passes() {
+    System.assertEquals(2, 1 + 1);
+  }
+}
+`, className))
+	}
+
+	report, err := RunLocalTests(LocalTestOptions{
+		Project:          root,
+		BlockersOnly:     true,
+		TopFailures:      1,
+		MaxFailureGroups: 1,
+		Parallelism:      4,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.TriageStopped || report.CasesDiscovered != 10 || report.CasesRun != 4 {
+		t.Fatalf("triage fields = stopped %v discovered %d run %d", report.TriageStopped, report.CasesDiscovered, report.CasesRun)
+	}
+	if report.Summary.Total != 1 || report.Summary.AssertFailures != 1 || len(report.TopFailures) != 1 {
+		t.Fatalf("report = %#v", report)
+	}
+}
+
+func TestLocalTestRunOutcomeClassifiesDeadlineRuntimeErrorAsTimeout(t *testing.T) {
+	outcome := localTestRunOutcome("fixture", testreport.Case{
+		ClassName:  "SlowTest",
+		MethodName: "timesOut",
+		Status:     testreport.StatusRuntimeError,
+		Problem:    &testreport.Problem{Type: "RuntimeError", Message: "context deadline exceeded"},
+	})
+	if outcome.Outcome != "timeout" || outcome.Phase != "timeout" || outcome.CapabilityID != "apex.test.timeout" {
+		t.Fatalf("outcome = %#v", outcome)
 	}
 }
 

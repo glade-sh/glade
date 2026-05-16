@@ -53,10 +53,9 @@ func standardObjectCatalogEntryFor(objectName string) (standardObjectCatalogEntr
 	if ok {
 		return entry, true
 	}
-	for candidate, entry := range standardObjectCatalogData {
-		if stringsEqualFold(candidate, objectName) {
-			return entry, true
-		}
+	initKnownStandardObjectCache()
+	if entry, ok := knownStandardObjectCache.catalogByLC[standardObjectLookupKey(objectName)]; ok {
+		return entry, true
 	}
 	return standardObjectCatalogEntry{}, false
 }

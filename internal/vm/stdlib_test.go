@@ -1457,6 +1457,8 @@ formatArgs.add('Lovelace');
 System.assertEquals('Hello Ada Lovelace', String.format('Hello {0} {1}', formatArgs));
 System.assertEquals('Use {0} then Ada', String.format('Use ''{0}'' then {0}', formatArgs));
 System.assertEquals('Lovelace/Ada/Lovelace/{2}', String.format('{1}/{0}/{1}/{2}', formatArgs));
+List<Object> objectFormatArgs = new List<Object>{ Account.Name };
+System.assertEquals('Name', String.format('{0}', objectFormatArgs));
 System.assertEquals('a' + '\r\n' + 'b', 'a\r\nb');
 String alphabet = 'abcdefghijklmnopqrstuvwxyz';
 System.assertEquals('abcdefg...', alphabet.abbreviate(10));
@@ -1968,6 +1970,8 @@ System.assertEquals('caf%E9+trail', EncodingUtil.urlEncode('café trail', 'ISO-8
 System.assertEquals('café trail', EncodingUtil.urlDecode('caf%E9+trail', 'latin1'));
 System.assertEquals('A%2BB+trail*', EncodingUtil.urlEncode('A+B trail*', 'US_ASCII'));
 System.assertEquals('A+B trail*', EncodingUtil.urlDecode('A%2BB+trail*', 'ascii'));
+Id recordId = '001000000000001AAA';
+System.assertEquals('001000000000001AAA', EncodingUtil.urlEncode(recordId, 'UTF-8'));
 Blob md5 = Crypto.generateDigest('MD5', hello);
 Blob sha1 = Crypto.generateDigest('SHA1', hello);
 Blob sha256 = Crypto.generateDigest('SHA-256', hello);
@@ -2478,11 +2482,23 @@ System.assertEquals('System.DmlException', systemPrefixed.getTypeName());
 System.assertEquals('System.DmlException: system blocked', systemPrefixed.toString());
 Exception allCapsDML = new DMLException('caps blocked');
 System.assertEquals('System.DMLException', allCapsDML.getTypeName());
-Exception aura = new AuraHandledException('aura blocked');
-System.assertEquals('System.AuraHandledException', aura.getTypeName());
-System.assertEquals('aura blocked', aura.getMessage());
+	Exception aura = new AuraHandledException('aura blocked');
+	System.assertEquals('System.AuraHandledException', aura.getTypeName());
+	System.assertEquals('aura blocked', aura.getMessage());
+	try {
+		throw aura;
+	} catch (Exception e) {
+		System.assertEquals('Script-thrown exception', e.getMessage());
+	}
+	AuraHandledException explicitAura = new AuraHandledException('constructor hidden');
+	explicitAura.setMessage('explicit aura message');
+	try {
+		throw explicitAura;
+	} catch (AuraHandledException e) {
+		System.assertEquals('explicit aura message', e.getMessage());
+	}
 
-String caught = '';
+	String caught = '';
 try {
 	throw new QueryException('bad query');
 } catch (Exception e) {
@@ -2512,6 +2528,9 @@ System.assert(outer.equals(returned));
 Exception recovered = outer.getCause();
 System.assertEquals('System.QueryException', recovered.getTypeName());
 System.assertEquals('root cause', recovered.getMessage());
+Exception constructedCause = new DmlException('wrapped', cause);
+System.assertEquals('wrapped', constructedCause.getMessage());
+System.assertEquals('root cause', constructedCause.getCause().getMessage());
 
 Boolean repeatCaught = false;
 try {
@@ -2551,6 +2570,42 @@ System.assert(selfCaught, 'self cause should throw');
 		t.Fatal(err)
 	}
 	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCustomExceptionInheritsCoreConstructors(t *testing.T) {
+	program, err := CompileAnonymous(`
+Exception cause = new QueryException('root');
+AppException wrapped = new AppException('wrapped', cause);
+System.assertEquals('wrapped', wrapped.getMessage());
+System.assertEquals('root', wrapped.getCause().getMessage());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "AppException", SuperClass: "Exception"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedNestedExceptionGetTypeName(t *testing.T) {
+	program, err := CompileAnonymous(`
+Exception e = new pkg.Outer.InnerException('blocked');
+System.assertEquals('pkg.Outer.InnerException', e.getTypeName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Outer.InnerException", Namespace: "pkg", SuperClass: "Exception", Access: "global"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -2822,6 +2877,7 @@ func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 		{source: "Blob bad = EncodingUtil.convertFromHex('80'); bad.toString();", want: "Blob.toString invalid UTF-8 data"},
 		{source: "EncodingUtil.urlEncode('Ω', 'ISO-8859-1');", want: `EncodingUtil.urlEncode charset "ISO-8859-1" cannot encode U+03A9`},
 		{source: "EncodingUtil.urlEncode('é', 'US-ASCII');", want: `EncodingUtil.urlEncode charset "US-ASCII" cannot encode U+00E9`},
+		{source: "EncodingUtil.urlEncode(null, 'UTF-8');", want: `Argument cannot be null.`},
 		{source: "EncodingUtil.urlDecode('%E9', 'ASCII');", want: `EncodingUtil.urlDecode charset "US-ASCII" cannot decode byte 0xE9`},
 		{source: "EncodingUtil.urlEncode('x', 'UTF-16');", want: `unsupported call "EncodingUtil.urlEncode charset \"UTF-16\""`},
 		{source: "EncodingUtil.urlDecode('x', 'UTF-16');", want: `unsupported call "EncodingUtil.urlDecode charset \"UTF-16\""`},
@@ -3083,6 +3139,27 @@ System.assertEquals('System.DmlException', systemDmlType.getName());
 	}
 }
 
+func TestExecTypeForNameNamespacedMissingClassReturnsNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type missing = Type.forName('verifiable', 'ThisClassDoesnotExistInYourOrg');
+System.assertEquals(null, missing);
+Type existing = Type.forName('verifiable', 'Present');
+System.assertEquals('Present', existing.getName());
+Object built = existing.newInstance();
+System.assertNotEquals(null, built);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Present", Namespace: "verifiable", Access: "global"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTypeForNameResolvesGenericCustomSObjectTypes(t *testing.T) {
 	program, err := CompileAnonymous(`
 Type recordsType = Type.forName('List<Widget__c>');
@@ -3229,6 +3306,30 @@ System.assertEquals('Trail__c', customDescribe.getName());
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringValueOfDecimalPreservesLiteralScale(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('0.0', String.valueOf(0.0));
+System.assertEquals('12.340', String.valueOf(Decimal.valueOf('12.340')));
+Decimal coerced = 0;
+System.assertEquals('0', String.valueOf(coerced));
+Widget__c widget = new Widget__c();
+widget.Score__c = 0;
+System.assertEquals('0.0', String.valueOf(widget.Score__c));
+Map<String,Object> roundTrip = (Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(new Map<String,Object>{'score' => widget.Score__c}));
+System.assertEquals('0.0', String.valueOf(roundTrip.get('score')));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Widget__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__c", Fields: map[string]storage.Field{"Score__c": {APIName: "Score__c", Type: storage.FieldDecimal}}}, Records: map[storage.ID]storage.Record{}}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -3997,8 +4098,8 @@ Map<String,Integer> copiedCounts = new Map<String,Integer>(counts);
 System.assertEquals(counts, copiedCounts);
 System.assertEquals('Map{a=1, b=2}', copiedCounts.toString());
 List<Integer> orderedValues = copiedCounts.values();
-System.assertEquals(1, orderedValues.get(0));
-System.assertEquals(2, orderedValues.get(1));
+System.assertEquals(2, orderedValues.get(0));
+System.assertEquals(1, orderedValues.get(1));
 Map<String,Integer> clonedCounts = copiedCounts.clone();
 clonedCounts.put('a', 9);
 System.assertEquals(1, copiedCounts.get('a'));
@@ -4349,6 +4450,23 @@ func TestCollectionStdlibCloneValueBreaksCycles(t *testing.T) {
 	}
 	if cloned.Fields["Child"].Fields["Parent"].Type != "Node" {
 		t.Fatalf("cycle placeholder type = %q, want Node", cloned.Fields["Child"].Fields["Parent"].Type)
+	}
+}
+
+func TestCollectionStdlibCloneValuePreservesApexMocksProviderCycles(t *testing.T) {
+	provider := Object("fflib_ApexMocks")
+	recorder := Object("fflib_MethodReturnValueRecorder")
+	proxy := Object("ISchemaService")
+	proxy.Fields["__oaerStubProvider"] = provider
+	recorder.Fields["proxy"] = proxy
+	provider.Fields["methodReturnValueRecorder"] = recorder
+
+	cloned := cloneValue(provider)
+	if cloned.Fields["methodReturnValueRecorder"].Fields["proxy"].Fields["__oaerStubProvider"].Fields["methodReturnValueRecorder"].Kind == ValueNull {
+		t.Fatalf("cloned ApexMocks provider cycle lost recorder field")
+	}
+	if cloned.Fields["methodReturnValueRecorder"].Fields["proxy"].Fields["__oaerStubProvider"].Fields["methodReturnValueRecorder"].Type != "fflib_MethodReturnValueRecorder" {
+		t.Fatalf("cloned ApexMocks provider cycle did not preserve recorder object")
 	}
 }
 

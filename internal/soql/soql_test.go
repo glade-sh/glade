@@ -1712,6 +1712,27 @@ func TestExecuteValidatesRelationshipReferencesAcrossClauses(t *testing.T) {
 	}
 }
 
+func TestExecuteValidatesSystemParentFieldsWithLazyStandardParent(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	delete(org.Objects, "User")
+
+	if _, err := ParseAndExecute(org, "SELECT Id, CreatedBy.Email, CreatedBy.Title FROM Account"); err != nil {
+		t.Fatalf("expected lazy standard User parent fields to validate, got %v", err)
+	}
+	if _, ok := org.Objects["User"]; ok {
+		t.Fatal("query validation should not mutate the caller org")
+	}
+
+	org.Objects["Audit_Target__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Audit_Target__c", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    make(map[storage.ID]storage.Record),
+	}
+	if _, err := ParseAndExecute(org, "SELECT Id, CreatedBy.Email, LastModifiedBy.Title, Owner.Username FROM Audit_Target__c"); err != nil {
+		t.Fatalf("expected virtual system parent fields to validate, got %v", err)
+	}
+}
+
 func TestExecuteProjectsChildRelationshipSubquery(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{
@@ -1800,6 +1821,43 @@ func TestExecuteProjectsChildRelationshipSubquery(t *testing.T) {
 	children = result.Records[0].Children["Contacts"]
 	if len(children) != 1 || children[0].Fields["LastName"].String != "Alpha" {
 		t.Fatalf("qualified child relationship rows = %#v", children)
+	}
+}
+
+func TestExecuteChildRelationshipSubqueryUsesSyntheticAuditRelationship(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["User"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "User",
+			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"005000000000001": {ID: "005000000000001", Object: "User", Fields: map[string]storage.Value{"Name": storage.StringValue("Admin")}},
+		},
+	}
+	org.Objects["Invoice__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:     "Invoice__c",
+			PluralLabel: "Invoices",
+			Fields:      map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {
+				ID:     "a01000000000001",
+				Object: "Invoice__c",
+				Fields: map[string]storage.Value{"Name": storage.StringValue("INV-1")},
+				System: storage.SystemFields{CreatedByID: "005000000000001"},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id, Name, CreatedById FROM Invoices) FROM User")
+	if err != nil {
+		t.Fatal(err)
+	}
+	children := result.Records[0].Children["Invoices"]
+	if len(children) != 1 || children[0].Fields["Name"].String != "INV-1" {
+		t.Fatalf("children = %#v", children)
 	}
 }
 
@@ -1954,6 +2012,44 @@ func TestExecuteCustomParentRelationshipFilterUsesDerivedName(t *testing.T) {
 	}
 	if len(result.Records) != 1 || result.Records[0].ID != "a0L000000000001" {
 		t.Fatalf("records = %#v", result.Records)
+	}
+}
+
+func TestExecuteCustomChildRelationshipSubqueryAcceptsNamespacedRelationship(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["Cart__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Cart__c", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records: map[storage.ID]storage.Record{
+			"a0S000000000001": {ID: "a0S000000000001", Object: "Cart__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Cart")}},
+		},
+	}
+	org.Objects["CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "CartItem__c",
+			Fields: map[string]storage.Field{
+				"Name":    {APIName: "Name", Type: storage.FieldString},
+				"Cart__c": {APIName: "Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"Cart__c"}},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Cart__c",
+				ParentObjects:      []string{"Cart__c"},
+				ParentRelationship: "Cart__r",
+				ChildRelationship:  "CartItems__r",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0I000000000001": {ID: "a0I000000000001", Object: "CartItem__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Line"), "Cart__c": storage.IDValue("a0S000000000001")}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id, Name FROM pkg__CartItems__r) FROM pkg__Cart__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	children := result.Records[0].Children["pkg__CartItems__r"]
+	if len(children) != 1 || children[0].Fields["Name"].String != "Line" {
+		t.Fatalf("children = %#v", children)
 	}
 }
 
@@ -2198,8 +2294,11 @@ func TestExecuteComplexPredicates(t *testing.T) {
 		want  []string
 	}{
 		{"SELECT Id FROM Account WHERE Name IN ('Acme', 'Beta')", []string{"001000000000001", "001000000000002"}},
+		{"SELECT Id FROM Account WHERE Name IN 'Acme'", []string{"001000000000001"}},
 		{"SELECT Id FROM Account WHERE Name NOT IN ('Acme', 'Beta')", []string{"001000000000003", "001000000000004"}},
 		{"SELECT Id FROM Account WHERE Name LIKE 'A%'", []string{"001000000000001"}},
+		{"SELECT Id FROM Account WHERE Name LIKE ('A%')", []string{"001000000000001"}},
+		{"SELECT Id FROM Account WHERE Name LIKE ('A%', 'B%')", []string{"001000000000001", "001000000000002"}},
 		{"SELECT Id FROM Account WHERE Name LIKE 'a%'", []string{"001000000000001"}},
 		{"SELECT Id FROM Account WHERE Name LIKE '%a%'", []string{"001000000000001", "001000000000002", "001000000000003", "001000000000004"}},
 		{"SELECT Id FROM Account WHERE Name LIKE '_CME'", []string{"001000000000001"}},
@@ -2266,6 +2365,45 @@ func TestExecuteNamespacedCustomFieldPredicate(t *testing.T) {
 	}
 	if result.Rows != 1 {
 		t.Fatalf("rows = %d, result = %#v", result.Rows, result)
+	}
+	if got, ok := result.Records[0].Fields["Name__c"]; !ok || got.Kind != storage.ValueString || got.String != "Changed" {
+		t.Fatalf("projected namespaced field = %#v ok=%v", got, ok)
+	}
+}
+
+func TestExecuteNamespacedCustomFieldPredicateWithUnqualifiedCondition(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["Webhook_Event__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Webhook_Event__c",
+			Fields: map[string]storage.Field{
+				"Status__c":                 {APIName: "Status__c", Type: storage.FieldPicklist},
+				"NextProcessingDateTime__c": {APIName: "NextProcessingDateTime__c", Type: storage.FieldDateTime},
+				"Priority__c":               {APIName: "Priority__c", Type: storage.FieldInteger},
+				"TriggeredAt__c":            {APIName: "TriggeredAt__c", Type: storage.FieldDateTime},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {
+				ID:     "a00000000000001",
+				Object: "Webhook_Event__c",
+				Fields: map[string]storage.Value{
+					"Status__c": storage.StringValue("Pending"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecuteAt(org, "SELECT Id, pkg__Status__c FROM pkg__Webhook_Event__c WHERE Status__c In('Pending', 'Retry') AND (NextProcessingDateTime__c = null OR NextProcessingDateTime__c <2026-05-02T12:00:00Z) ORDER BY pkg__Priority__c ASC NULLS LAST, pkg__TriggeredAt__c ASC NULLS LAST, pkg__NextProcessingDateTime__c ASC NULLS LAST LIMIT 200", time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d, result = %#v", result.Rows, result)
+	}
+	if got, ok := result.Records[0].Fields["Status__c"]; !ok || got.Kind != storage.ValueString || got.String != "Pending" {
+		t.Fatalf("projected status = %#v ok=%v", got, ok)
 	}
 }
 

@@ -197,6 +197,10 @@ func customMetadataFields(org OrgState, definition ObjectDefinition, source sche
 		if !ok {
 			return nil, nil, UnsupportedMetadataError{File: source.File, Feature: "custom metadata field", Message: fmt.Sprintf("unknown field %s.%s", definition.APIName, value.Field)}
 		}
+		if value.Nil {
+			fields[fieldName] = NullValue()
+			continue
+		}
 		field := definition.Fields[fieldName]
 		converted, isRef, err := customMetadataValue(field, value.Value)
 		if err != nil {
@@ -310,7 +314,14 @@ func labelOrDeveloperName(label, developerName string) string {
 }
 
 func customMetadataNamespace(namespace, objectName string) string {
-	if namespace != "" && strings.HasPrefix(objectName, namespace+"__") {
+	if namespace == "" || objectName == "" {
+		return ""
+	}
+	prefix := namespace + "__"
+	if len(objectName) >= len(prefix) && strings.EqualFold(objectName[:len(prefix)], prefix) {
+		return namespace
+	}
+	if hasAPISuffix(objectName, "__mdt") && !hasNamespaceToken(objectName) {
 		return namespace
 	}
 	return ""

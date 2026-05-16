@@ -62,6 +62,29 @@ func TestInsertUpdateDelete(t *testing.T) {
 	}
 }
 
+func TestDMLRejectsInvalidSystemOwnerIDPrefix(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	result := engine.Insert([]storage.Record{{
+		Object: "Widget__c",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Bad owner")},
+		System: storage.SystemFields{OwnerID: "003000000000001"},
+	}})
+	if result[0].Success || result[0].StatusCode != "FIELD_INTEGRITY_EXCEPTION" || len(result[0].Fields) != 1 || result[0].Fields[0] != "OwnerId" {
+		t.Fatalf("insert = %#v", result[0])
+	}
+}
+
 func TestUpdateRequiredFieldToNullFails(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)
@@ -112,6 +135,109 @@ func TestUpdateStandardNameFieldToBlankFails(t *testing.T) {
 	}
 	if got := org.Objects["Account"].Records[insert[0].ID].Fields["Name"].String; got != "Acme" {
 		t.Fatalf("stored name after failed update = %q", got)
+	}
+}
+
+func TestUpdateSparseExistingRecordDoesNotRequireAllRequiredFields(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldInteger}
+	account.Records["001000000000001"] = storage.Record{
+		ID:     "001000000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{},
+	}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	update := engine.Update([]storage.Record{{
+		ID:     "001000000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{"Score__c": storage.IntegerValue(42)},
+	}})
+	if !update[0].Success {
+		t.Fatalf("sparse update = %#v", update[0])
+	}
+	if got := org.Objects["Account"].Records["001000000000001"].Fields["Score__c"].Integer; got != 42 {
+		t.Fatalf("score = %d", got)
+	}
+}
+
+func TestInsertStoresBlankOptionalTextAsNull(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name":           {APIName: "Name", Type: storage.FieldString, Required: true},
+				"Description__c": {APIName: "Description__c", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	insert := engine.Insert([]storage.Record{{
+		Object: "Widget__c",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("Widget"),
+			"Description__c": storage.StringValue(""),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	stored := org.Objects["Widget__c"].Records[insert[0].ID]
+	if _, ok := stored.Fields["Description__c"]; ok {
+		t.Fatalf("Description__c stored as field: %#v", stored.Fields["Description__c"])
+	}
+	if !stored.HasExplicitNull("Description__c") {
+		t.Fatalf("Description__c explicit null missing: %#v", stored.ExplicitNulls)
+	}
+}
+
+func TestInsertRejectsOverlongSingleLineText(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Short__c"] = storage.Field{APIName: "Short__c", Type: storage.FieldString, Length: 3}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":     storage.StringValue("Acme"),
+			"Short__c": storage.StringValue("abcd"),
+		},
+	}})
+	if insert[0].Success || insert[0].StatusCode != "STRING_TOO_LONG" || insert[0].ID != "" {
+		t.Fatalf("overlong insert = %#v", insert[0])
+	}
+	if len(org.Objects["Account"].Records) != 0 {
+		t.Fatalf("record persisted after overlong insert: %#v", org.Objects["Account"].Records)
+	}
+}
+
+func TestInsertTruncatesOverlongSingleLineTextWhenAllowed(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Short__c"] = storage.Field{APIName: "Short__c", Type: storage.FieldString, Length: 3}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+	engine.Options.AllowFieldTruncation = true
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":     storage.StringValue("Acme"),
+			"Short__c": storage.StringValue("abcd"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("truncating insert = %#v", insert[0])
+	}
+	if got := org.Objects["Account"].Records[insert[0].ID].Fields["Short__c"].String; got != "abc" {
+		t.Fatalf("Short__c = %q", got)
 	}
 }
 
@@ -484,7 +610,58 @@ func TestInsertDefaultsRecordTypeIDAndRecordTypePicklistDefaults(t *testing.T) {
 	}
 }
 
-func TestInsertDefaultsRecordTypeWithPicklistDefaultsWhenNoMappingDefault(t *testing.T) {
+func TestInsertUpdateCanonicalizesPicklistValueCasing(t *testing.T) {
+	org := testOrg()
+	org.Objects["FacilitySE__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "FacilitySE__c",
+			KeyPrefix: "a03",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString, Required: true},
+				"Type__c": {
+					APIName: "Type__c",
+					Type:    storage.FieldPicklist,
+					PicklistValues: []storage.PicklistValue{
+						{Value: "OigExclusions", Active: true},
+						{Value: "Sam", Active: true},
+					},
+				},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "FacilitySE__c",
+		Fields: map[string]storage.Value{
+			"Name":    storage.StringValue("Facility SE"),
+			"Type__c": storage.StringValue("OIGExclusions"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	if got := org.Objects["FacilitySE__c"].Records[insert[0].ID].Fields["Type__c"]; got.Kind != storage.ValueString || got.String != "OigExclusions" {
+		t.Fatalf("insert Type__c = %#v; want OigExclusions", got)
+	}
+
+	update := engine.Update([]storage.Record{{
+		ID:     insert[0].ID,
+		Object: "FacilitySE__c",
+		Fields: map[string]storage.Value{
+			"Type__c": storage.StringValue("sam"),
+		},
+	}})
+	if !update[0].Success {
+		t.Fatalf("update = %#v", update[0])
+	}
+	if got := org.Objects["FacilitySE__c"].Records[insert[0].ID].Fields["Type__c"]; got.Kind != storage.ValueString || got.String != "Sam" {
+		t.Fatalf("update Type__c = %#v; want Sam", got)
+	}
+}
+
+func TestInsertDoesNotInferAmbiguousRecordTypeFromPicklistDefaults(t *testing.T) {
 	org := testOrg()
 	org.Objects["Event__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
@@ -519,10 +696,10 @@ func TestInsertDefaultsRecordTypeWithPicklistDefaultsWhenNoMappingDefault(t *tes
 		t.Fatalf("insert = %#v", insert[0])
 	}
 	stored := org.Objects["Event__c"].Records[insert[0].ID]
-	if got := stored.Fields["RecordTypeId"]; got.Kind != storage.ValueID || got.ID != "012000000000022AAA" {
+	if got, ok := stored.Fields["RecordTypeId"]; ok {
 		t.Fatalf("RecordTypeId = %#v", got)
 	}
-	if got := stored.Fields["Type__c"]; got.Kind != storage.ValueString || got.String != "Initial" {
+	if got, ok := stored.Fields["Type__c"]; ok {
 		t.Fatalf("Type__c = %#v", got)
 	}
 }
@@ -718,6 +895,28 @@ func TestInsertAccountWithDefaultPersonFlagDoesNotCreatePersonContact(t *testing
 	}
 	if got := len(org.Objects["Contact"].Records); got != 0 {
 		t.Fatalf("synthetic contacts = %d", got)
+	}
+}
+
+func TestInsertEvaluatesDateFormulaDefaultsWithOrgClock(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	org.Now = func() time.Time { return time.Date(2026, 5, 15, 10, 0, 0, 0, time.UTC) }
+	account := org.Objects["Account"]
+	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate, DefaultValue: "TODAY()"}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	record := org.Objects["Account"].Records[insert[0].ID]
+	if got := record.Fields["RenewalDate__c"]; got.Kind != storage.ValueDate || got.String != "2026-05-15" {
+		t.Fatalf("RenewalDate__c = %#v", got)
 	}
 }
 
@@ -990,6 +1189,92 @@ func TestDMLStillRejectsNonCreateableReadonlyRelationshipAndTypeFields(t *testin
 	assertDMLErrorDetail(t, child[0], "INVALID_FIELD_FOR_INSERT_UPDATE", "ParentId")
 }
 
+func TestDMLAllowsLocalLeadCommunicationFieldsForSecurityHarnesses(t *testing.T) {
+	org := testOrg()
+	storage.EnsureStandardObject(&org, "Lead")
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Lead",
+		Fields: map[string]storage.Value{
+			"LastName":           storage.StringValue("Test"),
+			"Company":            storage.StringValue("Test"),
+			"DoNotCall":          storage.BooleanValue(true),
+			"HasOptedOutOfEmail": storage.BooleanValue(true),
+			"HasOptedOutOfFax":   storage.BooleanValue(true),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+
+	update := engine.Update([]storage.Record{{
+		ID:     insert[0].ID,
+		Object: "Lead",
+		Fields: map[string]storage.Value{
+			"DoNotCall": storage.BooleanValue(false),
+		},
+	}})
+	if !update[0].Success {
+		t.Fatalf("update = %#v", update[0])
+	}
+
+	missing := engine.Insert([]storage.Record{{
+		Object: "Lead",
+		Fields: map[string]storage.Value{
+			"LastName": storage.StringValue(""),
+		},
+	}})
+	if missing[0].Success || missing[0].StatusCode != "REQUIRED_FIELD_MISSING" || missing[0].Error != "Required fields are missing: [LastName, Company]" {
+		t.Fatalf("missing required = %#v", missing[0])
+	}
+}
+
+func TestDMLAppliesLocalUserRequiredDefaults(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "User")
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"FirstName": storage.StringValue("Local"),
+			"LastName":  storage.StringValue("Provider"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	user := org.Objects["User"].Records[insert[0].ID]
+	for _, fieldName := range []string{"Alias", "Email", "EmailEncodingKey", "LanguageLocaleKey", "LocaleSidKey", "ProfileId", "TimeZoneSidKey", "Username"} {
+		if value, ok := user.Fields[fieldName]; !ok || value.Kind == "" {
+			t.Fatalf("User.%s default = %#v, %v", fieldName, value, ok)
+		}
+	}
+	if got := user.Fields["ProfileId"]; got.Kind != storage.ValueID || got.ID != "00e000000000001" {
+		t.Fatalf("ProfileId = %#v", got)
+	}
+}
+
+func TestInsertReplacesGeneratedPlaceholderID(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "User")
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		ID:     "#a#b#c#d#e#f#",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"LastName": storage.StringValue("Local"),
+		},
+	}})
+	if !insert[0].Success || !strings.HasPrefix(string(insert[0].ID), "005") {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+}
+
 func TestDMLDoesNotStripAbsentExplicitNullForNonUpdateableField(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
@@ -1179,24 +1464,24 @@ func TestUpsertByExternalIDAndUniqueValidation(t *testing.T) {
 	org.Objects["Account"] = account
 	engine := NewEngine(&org)
 
-	insert := engine.Upsert([]storage.Record{{
+	insert := engine.UpsertWithExternalID([]storage.Record{{
 		Object: "Account",
 		Fields: map[string]storage.Value{
 			"Name":            storage.StringValue("Acme"),
 			"External_Key__c": storage.StringValue("ext-1"),
 			"Code__c":         storage.StringValue("A"),
 		},
-	}})
+	}}, "External_Key__c")
 	if !insert[0].Success || !insert[0].Created {
 		t.Fatalf("external insert = %#v", insert)
 	}
-	update := engine.Upsert([]storage.Record{{
+	update := engine.UpsertWithExternalID([]storage.Record{{
 		Object: "Account",
 		Fields: map[string]storage.Value{
 			"External_Key__c": storage.StringValue("EXT-1"),
 			"Name":            storage.StringValue("Changed"),
 		},
-	}})
+	}}, "External_Key__c")
 	if !update[0].Success || update[0].Created || update[0].ID != insert[0].ID {
 		t.Fatalf("external update = %#v", update)
 	}
@@ -1315,6 +1600,40 @@ func TestReferenceValidationRestrictedDeleteAndUndelete(t *testing.T) {
 	}})
 	if missingParent[0].Success || missingParent[0].StatusCode != "FIELD_INTEGRITY_EXCEPTION" {
 		t.Fatalf("missing parent = %#v", missingParent)
+	}
+	placeholderParent := engine.Insert([]storage.Record{{
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"LastName":  storage.StringValue("Placeholder"),
+			"AccountId": storage.IDValue("#local-placeholder#"),
+		},
+	}})
+	if !placeholderParent[0].Success {
+		t.Fatalf("placeholder parent = %#v", placeholderParent)
+	}
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name":     {APIName: "Name", Type: storage.FieldString},
+				"Owner__c": {APIName: "Owner__c", Type: storage.FieldReference, ReferenceTo: []string{"User"}},
+				"Who__c":   {APIName: "Who__c", Type: storage.FieldReference, ReferenceTo: []string{"Contact"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine.IDs.Prefixes["Widget__c"] = "a00"
+	userBacked := engine.Insert([]storage.Record{{
+		Object: "Widget__c",
+		Fields: map[string]storage.Value{
+			"Name":     storage.StringValue("Widget"),
+			"Owner__c": storage.IDValue("005999999999999"),
+			"Who__c":   storage.IDValue("003999999999999"),
+		},
+	}})
+	if !userBacked[0].Success {
+		t.Fatalf("user-backed missing parent = %#v", userBacked)
 	}
 	contact := engine.Insert([]storage.Record{{
 		Object: "Contact",

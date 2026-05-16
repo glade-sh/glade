@@ -542,6 +542,8 @@ func DefaultValueForField(field Field) (Value, bool) {
 		if _, err := strconv.ParseFloat(raw, 64); err == nil {
 			return DecimalValue(raw), true
 		}
+	case FieldReference:
+		return IDValue(ID(normalizeStringDefaultValue(raw))), true
 	case FieldString, FieldPicklist, FieldDate, FieldDateTime, FieldID, FieldAny:
 		return StringValue(normalizeStringDefaultValue(raw)), true
 	}
@@ -825,6 +827,33 @@ func ResolveObjectName(org OrgState, name string) (string, bool) {
 			return candidate, true
 		}
 	}
+	if hasNamespaceToken(name) {
+		unqualified := StripAnyNamespaceToken(name)
+		if unqualified != name {
+			if _, ok := org.Objects[unqualified]; ok {
+				return unqualified, true
+			}
+			for candidate := range org.Objects {
+				if strings.EqualFold(candidate, unqualified) {
+					return candidate, true
+				}
+			}
+		}
+	}
+	if !hasNamespaceToken(name) && isCustomAPIName(name) {
+		var match string
+		for candidate := range org.Objects {
+			if strings.EqualFold(StripAnyNamespaceToken(candidate), name) {
+				if match != "" {
+					return "", false
+				}
+				match = candidate
+			}
+		}
+		if match != "" {
+			return match, true
+		}
+	}
 	return "", false
 }
 
@@ -853,6 +882,33 @@ func ResolveFieldName(definition ObjectDefinition, namespace, name string) (stri
 	for candidate := range definition.Fields {
 		if strings.EqualFold(candidate, name) || strings.EqualFold(candidate, prefixed) || strings.EqualFold(candidate, stripped) {
 			return candidate, true
+		}
+	}
+	if hasNamespaceToken(name) {
+		unqualified := StripAnyNamespaceToken(name)
+		if unqualified != name {
+			if _, ok := definition.Fields[unqualified]; ok {
+				return unqualified, true
+			}
+			for candidate := range definition.Fields {
+				if strings.EqualFold(candidate, unqualified) {
+					return candidate, true
+				}
+			}
+		}
+	}
+	if !hasNamespaceToken(name) && isCustomAPIName(name) {
+		var match string
+		for candidate := range definition.Fields {
+			if strings.EqualFold(StripAnyNamespaceToken(candidate), name) {
+				if match != "" {
+					return "", false
+				}
+				match = candidate
+			}
+		}
+		if match != "" {
+			return match, true
 		}
 	}
 	return "", false
@@ -909,6 +965,18 @@ func NamespaceTokenName(namespace, name string) string {
 		return name
 	}
 	return namespace + "__" + name
+}
+
+func StripAnyNamespaceToken(name string) string {
+	if !isCustomAPIName(name) {
+		return name
+	}
+	idx := strings.Index(name, "__")
+	suffix := strings.LastIndex(name, "__")
+	if idx <= 0 || idx >= suffix {
+		return name
+	}
+	return name[idx+2:]
 }
 
 func hasNamespaceToken(name string) bool {

@@ -3,6 +3,7 @@ package storage
 import (
 	"sort"
 	"strings"
+	"sync"
 )
 
 // EnsureStandardObjectFields adds public Salesforce standard fields for objects
@@ -24,6 +25,7 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	if field, ok := definition.Fields["Id"]; !ok || field.APIName == "" {
 		definition.Fields["Id"] = Field{APIName: "Id", Label: "Record ID", Type: FieldID}
 	}
+	ensureCoreSystemFields(definition)
 	mergeStandardObjectDefinition(definition, features)
 	mergeStandardSObjectStubFields(definition, features)
 	mergeStandardSObjectStubRelationships(definition, features)
@@ -45,6 +47,43 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	}
 	for _, field := range definition.Fields {
 		ensureStandardRelationship(definition, field)
+	}
+}
+
+func ensureCoreSystemFields(definition *ObjectDefinition) {
+	ensureField(definition, Field{APIName: "CreatedDate", Label: "Created Date", Type: FieldDateTime, DisplayType: "DATETIME"})
+	ensureField(definition, Field{APIName: "CreatedById", Label: "Created By ID", Type: FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"User"}, RelationshipName: "CreatedBy"})
+	ensureField(definition, Field{APIName: "LastModifiedDate", Label: "Last Modified Date", Type: FieldDateTime, DisplayType: "DATETIME"})
+	ensureField(definition, Field{APIName: "LastModifiedById", Label: "Last Modified By ID", Type: FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"User"}, RelationshipName: "LastModifiedBy"})
+	ensureField(definition, Field{APIName: "SystemModstamp", Label: "System Modstamp", Type: FieldDateTime, DisplayType: "DATETIME"})
+	if isOwnerBackedObject(definition.APIName) {
+		ensureField(definition, Field{APIName: "OwnerId", Label: "Owner ID", Type: FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"User"}, RelationshipName: "Owner"})
+	}
+}
+
+func isOwnerBackedObject(objectName string) bool {
+	objectName = strings.TrimSpace(objectName)
+	if objectName == "" || strings.HasSuffix(strings.ToLower(objectName), "__mdt") {
+		return false
+	}
+	if stringsHasSuffixFold(objectName, "__c") || stringsHasSuffixFold(objectName, "__pc") || stringsHasSuffixFold(objectName, "__pr") {
+		return true
+	}
+	switch {
+	case stringsEqualFold(objectName, "Account"),
+		stringsEqualFold(objectName, "Asset"),
+		stringsEqualFold(objectName, "Campaign"),
+		stringsEqualFold(objectName, "Case"),
+		stringsEqualFold(objectName, "Contact"),
+		stringsEqualFold(objectName, "Contract"),
+		stringsEqualFold(objectName, "Event"),
+		stringsEqualFold(objectName, "Lead"),
+		stringsEqualFold(objectName, "Opportunity"),
+		stringsEqualFold(objectName, "Order"),
+		stringsEqualFold(objectName, "Task"):
+		return true
+	default:
+		return false
 	}
 }
 
@@ -337,6 +376,13 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 	}
 }
 
+var knownStandardObjectCache struct {
+	once          sync.Once
+	names         []string
+	canonicalByLC map[string]string
+	catalogByLC   map[string]standardObjectCatalogEntry
+}
+
 func IsKnownStandardObject(objectName string) bool {
 	_, ok := ResolveKnownStandardObjectName(objectName)
 	return ok
@@ -366,15 +412,45 @@ func ResolveKnownStandardObjectName(objectName string) (string, bool) {
 	if isKnownStandardObjectExact(objectName) {
 		return objectName, true
 	}
-	for _, candidate := range KnownStandardObjectNames() {
-		if strings.EqualFold(candidate, objectName) {
-			return candidate, true
-		}
+	initKnownStandardObjectCache()
+	if candidate, ok := knownStandardObjectCache.canonicalByLC[standardObjectLookupKey(objectName)]; ok {
+		return candidate, true
 	}
 	return "", false
 }
 
 func KnownStandardObjectNames() []string {
+	initKnownStandardObjectCache()
+	return append([]string(nil), knownStandardObjectCache.names...)
+}
+
+func initKnownStandardObjectCache() {
+	knownStandardObjectCache.once.Do(func() {
+		names := buildKnownStandardObjectNameSet()
+		out := make([]string, 0, len(names))
+		for name := range names {
+			out = append(out, name)
+		}
+		sort.Strings(out)
+		canonicalByLC := make(map[string]string, len(out))
+		for _, name := range out {
+			canonicalByLC[standardObjectLookupKey(name)] = name
+		}
+		catalogByLC := make(map[string]standardObjectCatalogEntry, len(standardObjectCatalogData))
+		for name, entry := range standardObjectCatalogData {
+			catalogByLC[standardObjectLookupKey(name)] = entry
+		}
+		knownStandardObjectCache.names = out
+		knownStandardObjectCache.canonicalByLC = canonicalByLC
+		knownStandardObjectCache.catalogByLC = catalogByLC
+	})
+}
+
+func standardObjectLookupKey(name string) string {
+	return strings.ToLower(strings.TrimSpace(name))
+}
+
+func buildKnownStandardObjectNameSet() map[string]bool {
 	names := make(map[string]bool)
 	for name := range StandardKeyPrefixes() {
 		names[name] = true
@@ -398,12 +474,7 @@ func KnownStandardObjectNames() []string {
 	} {
 		names[name] = true
 	}
-	out := make([]string, 0, len(names))
-	for name := range names {
-		out = append(out, name)
-	}
-	sort.Strings(out)
-	return out
+	return names
 }
 
 func StandardObjectDefinition(objectName string) (ObjectDefinition, bool) {
@@ -575,6 +646,9 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		markFieldRequired(definition, "Name")
 	case stringsEqualFold(definition.APIName, "Asset"):
 		ensureField(definition, Field{APIName: "ExternalIdentifier", Label: "External Identifier", Type: FieldString, DisplayType: "STRING", Length: 255, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
+		ensureField(definition, Field{APIName: "CurrentMrr", Label: "Current MRR", Type: FieldDecimal, DisplayType: "CURRENCY", Precision: 18, Scale: 2, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
+		ensureField(definition, Field{APIName: "Uuid", Label: "UUID", Type: FieldString, DisplayType: "STRING", Length: 255, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
+		ensureField(definition, Field{APIName: "StatusReason", Label: "Status Reason", Type: FieldPicklist, DisplayType: "PICKLIST", Length: 255, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
 	case stringsEqualFold(definition.APIName, "Attachment"):
 		ensureReferenceTarget(definition, "ParentId", "User")
 	case stringsEqualFold(definition.APIName, "Document"):
@@ -599,6 +673,24 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 	case stringsEqualFold(definition.APIName, "EmailTemplate"):
 		ensureFieldDefault(definition, "TemplateStyle", "none")
 		ensureFieldDefault(definition, "TemplateType", "text")
+	case stringsEqualFold(definition.APIName, "Lead"):
+		markFieldRequired(definition, "Company")
+		markFieldRequired(definition, "LastName")
+		ensureField(definition, Field{APIName: "DoNotCall", Label: "Do Not Call", Type: FieldBoolean, DisplayType: "BOOLEAN", DefaultValue: "false", Createable: BoolFlag(true), Updateable: BoolFlag(true)})
+		ensureField(definition, Field{APIName: "HasOptedOutOfEmail", Label: "Email Opt Out", Type: FieldBoolean, DisplayType: "BOOLEAN", DefaultValue: "false", Createable: BoolFlag(true), Updateable: BoolFlag(true)})
+		ensureField(definition, Field{APIName: "HasOptedOutOfFax", Label: "Fax Opt Out", Type: FieldBoolean, DisplayType: "BOOLEAN", DefaultValue: "false", Createable: BoolFlag(true), Updateable: BoolFlag(true)})
+	case stringsEqualFold(definition.APIName, "User"):
+		ensureField(definition, Field{APIName: "AssistantName", Label: "Assistant", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(true), Updateable: BoolFlag(true)})
+		ensureField(definition, Field{APIName: "LeadSource", Label: "Lead Source", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(true), Updateable: BoolFlag(true)})
+		ensureField(definition, Field{APIName: "Salutation", Label: "Salutation", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(true), Updateable: BoolFlag(true)})
+		ensureFieldDefault(definition, "Alias", "local")
+		ensureFieldDefault(definition, "Email", "local-user@example.invalid")
+		ensureFieldDefault(definition, "EmailEncodingKey", "UTF-8")
+		ensureFieldDefault(definition, "LanguageLocaleKey", "en_US")
+		ensureFieldDefault(definition, "LocaleSidKey", "en_US")
+		ensureFieldDefault(definition, "ProfileId", "00e000000000001")
+		ensureFieldDefault(definition, "TimeZoneSidKey", "UTC")
+		ensureFieldDefault(definition, "Username", "local-user@example.invalid")
 	case stringsEqualFold(definition.APIName, "EntityDefinition"):
 		ensureReferenceShape(definition, "RunningUserEntityAccessId", []string{"UserEntityAccess"}, "RunningUserEntityAccess")
 	case stringsEqualFold(definition.APIName, "EntityParticle"):
@@ -607,6 +699,7 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		ensureReferenceShape(definition, "RunningUserFieldAccessId", []string{"UserFieldAccess"}, "RunningUserFieldAccess")
 	case stringsEqualFold(definition.APIName, "Event"):
 		removeField(definition, "Name")
+		ensureField(definition, Field{APIName: "Type", Label: "Type", Type: FieldPicklist, DisplayType: "PICKLIST", Length: 255, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
 	case stringsEqualFold(definition.APIName, "PermissionSetGroupComponent"):
 		markFieldCreateable(definition, "PermissionSetGroupId")
 		markFieldCreateable(definition, "PermissionSetId")
@@ -1037,24 +1130,25 @@ func ensureStandardRelationship(definition *ObjectDefinition, field Field) {
 			matchingFields++
 		}
 	}
-	if matchingFields > 1 && field.ChildRelationshipName == "" {
+	childRelationshipName := ChildRelationshipName(field)
+	if matchingFields > 1 && childRelationshipName == "" {
 		return
 	}
 	for i, relation := range definition.Relations {
 		if stringsEqualFold(relation.Field, field.APIName) {
-			if field.ChildRelationshipName != "" && relation.ChildRelationship != "" && !stringsEqualFold(relation.ChildRelationship, field.ChildRelationshipName) {
+			if childRelationshipName != "" && relation.ChildRelationship != "" && !stringsEqualFold(relation.ChildRelationship, childRelationshipName) {
 				continue
 			}
 			definition.Relations[i].ParentRelationship = relationshipName
 			definition.Relations[i].ParentObjects = appendUniqueStringsFold(definition.Relations[i].ParentObjects, field.ReferenceTo...)
-			if definition.Relations[i].ChildRelationship == "" && field.ChildRelationshipName != "" {
-				definition.Relations[i].ChildRelationship = field.ChildRelationshipName
+			if definition.Relations[i].ChildRelationship == "" && childRelationshipName != "" {
+				definition.Relations[i].ChildRelationship = childRelationshipName
 			}
 			return
 		}
 		if stringsEqualFold(relation.ParentRelationship, relationshipName) {
-			if definition.Relations[i].ChildRelationship == "" && field.ChildRelationshipName != "" {
-				definition.Relations[i].ChildRelationship = field.ChildRelationshipName
+			if definition.Relations[i].ChildRelationship == "" && childRelationshipName != "" {
+				definition.Relations[i].ChildRelationship = childRelationshipName
 			}
 			return
 		}
@@ -1063,7 +1157,7 @@ func ensureStandardRelationship(definition *ObjectDefinition, field Field) {
 		Field:              field.APIName,
 		ParentObjects:      append([]string(nil), field.ReferenceTo...),
 		ParentRelationship: relationshipName,
-		ChildRelationship:  field.ChildRelationshipName,
+		ChildRelationship:  childRelationshipName,
 		Polymorphic:        len(field.ReferenceTo) > 1,
 	})
 }
@@ -1079,4 +1173,14 @@ func ParentRelationshipName(field Field) string {
 	default:
 		return ""
 	}
+}
+
+func ChildRelationshipName(field Field) string {
+	if field.ChildRelationshipName != "" {
+		return field.ChildRelationshipName
+	}
+	if stringsHasSuffixFold(field.APIName, "__c") && field.RelationshipName != "" && !stringsHasSuffixFold(field.RelationshipName, "__r") {
+		return field.RelationshipName + "__r"
+	}
+	return ""
 }

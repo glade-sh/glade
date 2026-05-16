@@ -434,7 +434,9 @@ func jsonParserDecimalValue(receiver Value, method string) (Value, error) {
 	if err != nil {
 		return Null, jsonParserException("JSONParser.%s cannot parse decimal: %v", method, err)
 	}
-	return Decimal(value), nil
+	decimal := Decimal(value)
+	decimal.Text = jsonParserTokenText(token)
+	return decimal, nil
 }
 
 func jsonParserBooleanValue(receiver Value) (Value, error) {

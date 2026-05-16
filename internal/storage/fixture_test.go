@@ -33,6 +33,28 @@ func TestApplyFixtureResolvesAliasesAndRelationshipRefs(t *testing.T) {
 	}
 }
 
+func TestEnsureStandardObjectFieldsUsesCustomRelationshipNameAsChildRelationship(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "EducationDegree__c",
+		Fields: map[string]Field{
+			"Education__c": {APIName: "Education__c", Type: FieldReference, ReferenceTo: []string{"Education__c"}, RelationshipName: "EducationDegrees"},
+		},
+	}
+
+	EnsureStandardObjectFields(&definition)
+	relations := definition.Relations
+	var childRelationship string
+	for _, relation := range relations {
+		if relation.Field == "Education__c" {
+			childRelationship = relation.ChildRelationship
+			break
+		}
+	}
+	if got := childRelationship; got != "EducationDegrees__r" {
+		t.Fatalf("ChildRelationship = %q, want EducationDegrees__r", got)
+	}
+}
+
 func TestReadFixtureReportsUnsupportedVersionAsTypedError(t *testing.T) {
 	_, err := ReadFixture(strings.NewReader(`{"version":"oaer.storage.v0"}`))
 	var versionErr UnsupportedFixtureVersionError
@@ -210,8 +232,11 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 		if objectName == "Profile" {
 			want = 6
 		}
-		if objectName == "PermissionSet" {
+		if objectName == "User" {
 			want = 2
+		}
+		if objectName == "PermissionSet" {
+			want = 8
 		}
 		if objectName == "UserLicense" {
 			want = 2
@@ -250,7 +275,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if _, ok := org.Objects["RecordType"].Records[recordTypeID]; !ok {
 		t.Fatalf("missing RecordType record %s: %#v", recordTypeID, org.Objects["RecordType"].Records)
 	}
-	if len(org.Objects["User"].Records) != 1 || len(org.Objects["Profile"].Records) != 6 || len(org.Objects["UserLicense"].Records) != 2 {
+	if len(org.Objects["User"].Records) != 2 || len(org.Objects["Profile"].Records) != 6 || len(org.Objects["UserLicense"].Records) != 2 {
 		t.Fatalf("platform records = %#v", InspectOrg("", org))
 	}
 	user, ok := org.Objects["User"].Records["005000000000001"]
@@ -259,6 +284,14 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	}
 	if user.Fields["UserRoleId"].ID != "00E000000000001" || user.Fields["LocaleSidKey"].String != "en_US" || user.Fields["TimeZoneSidKey"].String != "UTC" {
 		t.Fatalf("user fields = %#v", user.Fields)
+	}
+	automatedProcessUser, ok := org.Objects["User"].Records["005000000000002"]
+	if !ok || automatedProcessUser.Fields["Name"].String != "Automated Process" || automatedProcessUser.Fields["UserType"].String != "AutomatedProcess" {
+		t.Fatalf("automated process user = %#v, %v", automatedProcessUser, ok)
+	}
+	minimumAccessPermissionSet, ok := org.Objects["PermissionSet"].Records["0PS000000000004"]
+	if !ok || !minimumAccessPermissionSet.Fields["IsOwnedByProfile"].Boolean || minimumAccessPermissionSet.Fields["ProfileId"].ID != "00e000000000002" {
+		t.Fatalf("minimum access permission set = %#v, %v", minimumAccessPermissionSet, ok)
 	}
 	if refs := org.Objects["Attachment"].Definition.Fields["ParentId"].ReferenceTo; !containsStringFold(refs, "User") {
 		t.Fatalf("Attachment.ParentId references = %#v, want User", refs)

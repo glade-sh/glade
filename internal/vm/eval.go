@@ -5,7 +5,6 @@ import (
 	"math"
 	"strconv"
 	"strings"
-	"time"
 )
 
 func parseLiteral(raw string) (Value, error) {
@@ -125,6 +124,9 @@ func evalUnary(op string, value Value) (Value, error) {
 func evalBinary(op string, left, right Value) (Value, error) {
 	switch op {
 	case "+":
+		if value, ok, err := platformDateArithmetic("+", left, right); ok || err != nil {
+			return value, err
+		}
 		if isStringConcatOperand(left) || isStringConcatOperand(right) {
 			return String(left.String() + right.String()), nil
 		}
@@ -247,8 +249,12 @@ func evalBinary(op string, left, right Value) (Value, error) {
 }
 
 func platformDateArithmetic(op string, left, right Value) (Value, bool, error) {
-	if op != "-" || right.Kind != ValueInt || left.Kind != ValueObject {
+	if (op != "+" && op != "-") || right.Kind != ValueInt || left.Kind != ValueObject {
 		return Null, false, nil
+	}
+	days := int(right.Int)
+	if op == "-" {
+		days = -days
 	}
 	switch left.Type {
 	case "Date":
@@ -256,13 +262,13 @@ func platformDateArithmetic(op string, left, right Value) (Value, bool, error) {
 		if err != nil {
 			return Null, true, err
 		}
-		return platformScalar("Date", date.AddDate(0, 0, -int(right.Int)).Format("2006-01-02")), true, nil
+		return platformScalar("Date", date.AddDate(0, 0, days).Format("2006-01-02")), true, nil
 	case "Datetime":
 		datetime, err := parsePlatformDatetime(left)
 		if err != nil {
 			return Null, true, err
 		}
-		return platformScalar("Datetime", formatPlatformDatetime(datetime.Add(-time.Duration(right.Int)*24*time.Hour))), true, nil
+		return platformScalar("Datetime", formatPlatformDatetime(datetime.AddDate(0, 0, days))), true, nil
 	default:
 		return Null, false, nil
 	}
@@ -279,7 +285,10 @@ func booleanOperand(value Value) (bool, bool) {
 }
 
 func isStringConcatOperand(value Value) bool {
-	return value.Kind == ValueString || (value.Kind == ValueNull && strings.EqualFold(canonicalApexScalarType(value.Type), "String"))
+	if value.Kind == ValueString || (value.Kind == ValueNull && strings.EqualFold(canonicalApexScalarType(value.Type), "String")) {
+		return true
+	}
+	return value.Kind == ValueObject && strings.EqualFold(value.Type, "Schema.SObjectField")
 }
 
 func comparablePlatformScalarText(left, right Value) ([2]string, bool) {
@@ -408,7 +417,9 @@ func coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 	case "Decimal", "Double":
 		if value.Kind == ValueInt {
-			return Decimal(float64(value.Int)), nil
+			decimal := Decimal(float64(value.Int))
+			decimal.Text = strconv.FormatInt(value.Int, 10)
+			return decimal, nil
 		}
 		if value.Kind == ValueDecimal {
 			return value, nil
@@ -510,6 +521,9 @@ func ensureAssignable(typeName string, value Value) error {
 }
 
 func coerceCollectionValue(typeName string, value Value) (Value, error) {
+	if value.Type != "" && !strings.EqualFold(value.Type, typeName) && value.Runtime == "" {
+		value.Runtime = value.Type
+	}
 	value.Type = typeName
 	switch value.Kind {
 	case ValueList:

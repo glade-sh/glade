@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/open-aer/oaer/internal/storage"
 )
@@ -16,6 +17,7 @@ type Engine struct {
 	IDs               storage.IDGenerator
 	Now               func() time.Time
 	UserID            storage.ID
+	Options           Options
 	FlowActionInvoker func(storage.FlowAction, storage.Record) error
 	WorkflowEmailer   func(storage.WorkflowEmailAlert, storage.Record) error
 	AutomationTracer  func(name string, args map[string]any)
@@ -25,6 +27,10 @@ type Engine struct {
 	flowDepth      int
 	summaryOrder   []string
 	summaryUpdates map[string]SummaryUpdate
+}
+
+type Options struct {
+	AllowFieldTruncation bool
 }
 
 type SummaryUpdate struct {
@@ -242,13 +248,14 @@ func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Res
 		}
 		return results
 	}
-	storedMaster, ok := object.Records[master.ID]
+	storedMasterID, storedMaster, ok := storage.LookupRecordByID(object.Records, master.ID)
 	if !ok || storedMaster.System.IsDeleted {
 		for i := range results {
 			results[i] = resultFromError(master.ID, fmt.Errorf("dml: merge master %s does not exist", master.ID))
 		}
 		return results
 	}
+	master.ID = storedMasterID
 	if len(master.Fields) > 0 || len(master.ExplicitNulls) > 0 {
 		if err := e.updateOne(master); err != nil {
 			for i := range results {
@@ -271,22 +278,40 @@ func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Res
 			results[i] = resultFromError(duplicate.ID, fmt.Errorf("dml: merge duplicate cannot be master"))
 			continue
 		}
-		storedDuplicate, ok := object.Records[duplicate.ID]
+		storedDuplicateID, storedDuplicate, ok := storage.LookupRecordByID(object.Records, duplicate.ID)
 		if !ok || storedDuplicate.System.IsDeleted {
 			results[i] = resultFromError(duplicate.ID, fmt.Errorf("dml: merge duplicate %s does not exist", duplicate.ID))
 			continue
 		}
+		duplicate.ID = storedDuplicateID
 		updatedRelatedIDs := e.reparentLookups(objectName, duplicate.ID, master.ID)
 		stamp := e.systemTimestamp()
+		if storedDuplicate.Fields == nil {
+			storedDuplicate.Fields = make(map[string]storage.Value)
+		}
+		storedDuplicate.Fields["MasterRecordId"] = storage.IDValue(master.ID)
+		deleteExplicitNull(storedDuplicate.ExplicitNulls, "MasterRecordId")
 		storedDuplicate.System.IsDeleted = true
 		storedDuplicate.System.LastModifiedDate = stamp
 		storedDuplicate.System.SystemModstamp = stamp
 		storedDuplicate.System.LastModifiedByID = e.systemUserID()
-		object.Records[duplicate.ID] = storedDuplicate
+		object.Records[storedDuplicateID] = storedDuplicate
 		e.Org.Objects[objectName] = object
 		results[i] = Result{ID: master.ID, Success: true, MergedRecordIDs: []storage.ID{duplicate.ID}, UpdatedRelatedIDs: updatedRelatedIDs}
 	}
 	return results
+}
+
+func deleteExplicitNull(nulls map[string]bool, field string) {
+	if nulls == nil {
+		return
+	}
+	delete(nulls, field)
+	for name := range nulls {
+		if strings.EqualFold(name, field) {
+			delete(nulls, name)
+		}
+	}
 }
 
 func (e *Engine) setLock(records []storage.Record, locked bool) []Result {
@@ -405,11 +430,17 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	applySetupInsertDefaults(objectName, object.Definition, &record)
 	e.applyFileInsertDefaults(objectName, object.Definition, &record)
 	stripMissingGeneratedRecordTypeID(e.Org, &record)
+	if err := e.applyStringLengthRules(object.Definition, &record); err != nil {
+		return "", err
+	}
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
 		return "", err
 	}
 	if err := validateRequired(object.Definition, record); err != nil {
 		return "", err
+	}
+	if isGeneratedPlaceholderInsertID(record.ID) {
+		record.ID = ""
 	}
 	if err := e.validateObjectID(object.Definition, record); err != nil {
 		return "", err
@@ -773,35 +804,35 @@ func defaultRecordType(recordTypes []storage.RecordTypeInfo) (storage.RecordType
 			return recordType, true
 		}
 	}
-	for _, recordType := range recordTypes {
-		if len(recordType.PicklistDefaults) > 0 && recordType.Active && recordType.Available {
-			return recordType, true
-		}
-	}
-	for _, recordType := range recordTypes {
-		if len(recordType.PicklistDefaults) > 0 && recordType.Active {
-			return recordType, true
-		}
-	}
+	var fallback storage.RecordTypeInfo
 	for _, recordType := range recordTypes {
 		if recordType.Active && recordType.Available {
-			return recordType, true
+			if fallback.ID != "" {
+				return storage.RecordTypeInfo{}, false
+			}
+			fallback = recordType
 		}
+	}
+	if fallback.ID != "" {
+		return fallback, true
 	}
 	for _, recordType := range recordTypes {
 		if recordType.Active {
-			return recordType, true
+			if fallback.ID != "" {
+				return storage.RecordTypeInfo{}, false
+			}
+			fallback = recordType
 		}
 	}
-	if len(recordTypes) == 0 {
-		return storage.RecordTypeInfo{}, false
+	if fallback.ID != "" {
+		return fallback, true
 	}
-	return recordTypes[0], true
+	return storage.RecordTypeInfo{}, false
 }
 
 func defaultValueForRecordField(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field) (storage.Value, bool) {
 	rawDefault := strings.TrimSpace(field.DefaultValue)
-	if org != nil && strings.Contains(rawDefault, "$RecordType") {
+	if org != nil && (strings.Contains(rawDefault, "$RecordType") || formulaDefaultShouldEvaluate(field, rawDefault)) {
 		if value, _, ok := EvaluateRecordFormulaValueInOrg(rawDefault, field, org, definition, record); ok {
 			return value, true
 		}
@@ -814,6 +845,18 @@ func defaultValueForRecordField(org *storage.OrgState, definition storage.Object
 	}
 	value, _, ok := EvaluateRecordFormulaValueInOrg(rawDefault, field, org, definition, record)
 	return value, ok
+}
+
+func formulaDefaultShouldEvaluate(field storage.Field, rawDefault string) bool {
+	if rawDefault == "" {
+		return false
+	}
+	switch field.Type {
+	case storage.FieldDate, storage.FieldDateTime:
+		return strings.ContainsAny(rawDefault, "()")
+	default:
+		return false
+	}
 }
 
 func applyAutoNumberName(definition storage.ObjectDefinition, sequence uint64, record *storage.Record) {
@@ -869,6 +912,10 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 				"LatestPublishedVersionId": storage.IDValue(version.ID),
 			},
 		}
+		if size, ok := e.contentDocumentSize(version); ok {
+			document.Fields["ContentSize"] = storage.IntegerValue(size)
+			document.Fields["ContentSizeLong"] = storage.IntegerValue(size)
+		}
 		if path, ok := version.Fields["PathOnClient"]; ok {
 			extension := fileExtension(path.String)
 			document.Fields["FileExtension"] = storage.StringValue(extension)
@@ -901,6 +948,10 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 		document.Fields["LatestPublishedVersionId"] = storage.IDValue(version.ID)
 		if title, ok := version.Fields["Title"]; ok {
 			document.Fields["Title"] = title.Clone()
+		}
+		if size, ok := e.contentDocumentSize(version); ok {
+			document.Fields["ContentSize"] = storage.IntegerValue(size)
+			document.Fields["ContentSizeLong"] = storage.IntegerValue(size)
 		}
 		if path, ok := version.Fields["PathOnClient"]; ok {
 			extension := fileExtension(path.String)
@@ -1054,6 +1105,26 @@ func (e *Engine) insertPlatformRecord(record storage.Record) (storage.ID, error)
 	object.Records[record.ID] = record.Clone()
 	e.Org.Objects[objectName] = object
 	return record.ID, nil
+}
+
+func (e *Engine) contentDocumentSize(version storage.Record) (int64, bool) {
+	documentObject, ok := e.Org.Objects["ContentDocument"]
+	if !ok {
+		return 0, false
+	}
+	if _, ok := documentObject.Definition.Fields["ContentSize"]; !ok {
+		return 0, false
+	}
+	data, ok := version.Fields["VersionData"]
+	if !ok {
+		return 0, false
+	}
+	switch data.Kind {
+	case storage.ValueBlob, storage.ValueString:
+		return int64(len(data.String)), true
+	default:
+		return 0, false
+	}
 }
 
 func (e *Engine) markLatestContentVersion(contentDocumentID storage.ID, latestVersionID storage.ID) {
@@ -1234,6 +1305,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 		return err
 	}
 	stripReadOnlyUpdateFields(object.Definition, e.Org.Namespace, &record)
+	if err := e.applyStringLengthRules(object.Definition, &record); err != nil {
+		return err
+	}
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
 		return err
 	}
@@ -1262,7 +1336,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 			finalRecord.ExplicitNulls[field] = true
 		}
 	}
-	if err := validateRequired(object.Definition, finalRecord); err != nil {
+	if err := validateRequiredUpdate(object.Definition, record); err != nil {
 		return err
 	}
 	if err := e.validateValidationRules(object.Definition, finalRecord); err != nil {
@@ -1451,6 +1525,12 @@ func canonicalizeRecord(namespace string, definition storage.ObjectDefinition, o
 	record.Object = objectName
 	fields := make(map[string]storage.Value, len(record.Fields))
 	for field, value := range record.Fields {
+		if strings.EqualFold(field, "OwnerId") {
+			if ownerID := idFromStorageValue(value); ownerID != "" {
+				record.System.OwnerID = ownerID
+			}
+			continue
+		}
 		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
 		if !ok {
 			fields[field] = value
@@ -1459,7 +1539,15 @@ func canonicalizeRecord(namespace string, definition storage.ObjectDefinition, o
 		if _, exists := fields[canonical]; exists && canonical != field {
 			return storage.Record{}, fmt.Errorf("dml: duplicate field alias %s.%s", objectName, field)
 		}
-		fields[canonical] = normalizeStoredFieldValue(definition.Fields[canonical], value)
+		normalized := normalizeStoredFieldValue(definition.Fields[canonical], value)
+		if normalized.Kind == storage.ValueNull {
+			if record.ExplicitNulls == nil {
+				record.ExplicitNulls = make(map[string]bool)
+			}
+			record.ExplicitNulls[canonical] = true
+			continue
+		}
+		fields[canonical] = normalized
 	}
 	record.Fields = fields
 	nulls := make(map[string]bool, len(record.ExplicitNulls))
@@ -1480,7 +1568,24 @@ func normalizeStoredFieldValue(field storage.Field, value storage.Value) storage
 		return value
 	}
 	value.String = strings.NewReplacer("\r\n", " ", "\n", " ", "\r", " ").Replace(value.String)
+	if value.String == "" {
+		return storage.NullValue()
+	}
+	if field.Type == storage.FieldPicklist {
+		if canonical, ok := canonicalPicklistValue(field, value.String); ok {
+			value.String = canonical
+		}
+	}
 	return value
+}
+
+func canonicalPicklistValue(field storage.Field, value string) (string, bool) {
+	for _, picklistValue := range field.PicklistValues {
+		if picklistValue.Value != "" && strings.EqualFold(picklistValue.Value, value) {
+			return picklistValue.Value, true
+		}
+	}
+	return "", false
 }
 
 func isSingleLineTextField(field storage.Field) bool {
@@ -1518,6 +1623,46 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		}
 	}
 	return nil
+}
+
+func (e Engine) applyStringLengthRules(definition storage.ObjectDefinition, record *storage.Record) error {
+	if record == nil {
+		return nil
+	}
+	for fieldName, value := range record.Fields {
+		if value.Kind != storage.ValueString {
+			continue
+		}
+		canonical, ok := storage.ResolveFieldName(definition, e.Org.Namespace, fieldName)
+		if !ok {
+			continue
+		}
+		field := definition.Fields[canonical]
+		if field.Length <= 0 || !isSingleLineTextField(field) {
+			continue
+		}
+		if utf8.RuneCountInString(value.String) <= field.Length {
+			continue
+		}
+		if e.Options.AllowFieldTruncation {
+			value.String = truncateRunes(value.String, field.Length)
+			record.Fields[fieldName] = value
+			continue
+		}
+		return dmlErrorf("STRING_TOO_LONG", []string{canonical}, "dml: value too long for field %s.%s: max length %d", record.Object, canonical, field.Length)
+	}
+	return nil
+}
+
+func truncateRunes(value string, length int) string {
+	if length <= 0 {
+		return ""
+	}
+	if utf8.RuneCountInString(value) <= length {
+		return value
+	}
+	runes := []rune(value)
+	return string(runes[:length])
 }
 
 func validateFieldWriteability(definition storage.ObjectDefinition, namespace string, record storage.Record, create bool) error {
@@ -1667,13 +1812,16 @@ func allowLocalWriteabilityOverride(definition storage.ObjectDefinition, objectN
 	if strings.EqualFold(objectName, "Account") && strings.EqualFold(field, "IsPersonAccount") {
 		return true
 	}
+	if strings.EqualFold(objectName, "Lead") && isLocalWritableLeadField(field) {
+		return true
+	}
 	if strings.EqualFold(field, "Name") && (strings.EqualFold(objectName, "Contact") || strings.EqualFold(objectName, "Lead")) {
 		return true
 	}
 	if !create {
 		return false
 	}
-	if allowLocalCreateRelationshipField(definition, field, fieldDef) {
+	if allowLocalCreateRelationshipField(definition, objectName, field, fieldDef) {
 		return true
 	}
 	if allowLocalCreateConfigurationField(definition, field, fieldDef) {
@@ -1682,7 +1830,16 @@ func allowLocalWriteabilityOverride(definition storage.ObjectDefinition, objectN
 	return false
 }
 
-func allowLocalCreateRelationshipField(definition storage.ObjectDefinition, field string, fieldDef storage.Field) bool {
+func isLocalWritableLeadField(field string) bool {
+	switch strings.ToLower(strings.TrimSpace(field)) {
+	case "donotcall", "hasoptedoutofemail", "hasoptedoutoffax":
+		return true
+	default:
+		return false
+	}
+}
+
+func allowLocalCreateRelationshipField(definition storage.ObjectDefinition, objectName, field string, fieldDef storage.Field) bool {
 	if fieldDef.Type != storage.FieldReference || isSystemManagedReadonlyField(field) {
 		return false
 	}
@@ -1692,10 +1849,24 @@ func allowLocalCreateRelationshipField(definition storage.ObjectDefinition, fiel
 	if fieldDef.Required && isLocalCreateIdentityObject(definition) {
 		return true
 	}
+	if isStandardCreateIdentityRelationship(objectName, field) {
+		return true
+	}
 	if isLocalSetupConfigurationObject(definition) && strings.HasSuffix(strings.ToLower(field), "id") {
 		return true
 	}
 	return false
+}
+
+func isStandardCreateIdentityRelationship(objectName, field string) bool {
+	switch strings.ToLower(strings.TrimSpace(objectName)) {
+	case "pricebookentry":
+		return strings.EqualFold(field, "Pricebook2Id") || strings.EqualFold(field, "Product2Id")
+	case "opportunitylineitem":
+		return strings.EqualFold(field, "OpportunityId") || strings.EqualFold(field, "PricebookEntryId")
+	default:
+		return false
+	}
 }
 
 func isLocalCreateIdentityObject(definition storage.ObjectDefinition) bool {
@@ -1768,22 +1939,86 @@ func isSystemManagedReadonlyField(field string) bool {
 }
 
 func validateRequired(definition storage.ObjectDefinition, record storage.Record) error {
+	var missing []string
 	for name, field := range definition.Fields {
 		if !isDMLRequiredField(field) {
 			continue
 		}
 		if value, ok := record.GetField(name); ok {
 			if field.Type == storage.FieldString && strings.TrimSpace(value.String) == "" {
-				return dmlErrorf("REQUIRED_FIELD_MISSING", []string{name}, "dml: missing required field %s.%s", record.Object, name)
+				missing = append(missing, name)
 			}
 			continue
 		}
 		if record.HasExplicitNull(name) {
-			return dmlErrorf("REQUIRED_FIELD_MISSING", []string{name}, "dml: required field %s.%s is null", record.Object, name)
+			missing = append(missing, name)
+			continue
 		}
-		return dmlErrorf("REQUIRED_FIELD_MISSING", []string{name}, "dml: missing required field %s.%s", record.Object, name)
+		missing = append(missing, name)
+	}
+	if len(missing) > 0 {
+		sortRequiredFields(missing)
+		return dmlErrorf("REQUIRED_FIELD_MISSING", missing, "%s", requiredFieldsMessage(definition, missing))
 	}
 	return nil
+}
+
+func validateRequiredUpdate(definition storage.ObjectDefinition, record storage.Record) error {
+	var missing []string
+	for name, field := range definition.Fields {
+		if !isDMLRequiredField(field) {
+			continue
+		}
+		if value, ok := record.GetField(name); ok {
+			if field.Type == storage.FieldString && strings.TrimSpace(value.String) == "" {
+				missing = append(missing, name)
+			}
+			continue
+		}
+		if record.HasExplicitNull(name) {
+			missing = append(missing, name)
+		}
+	}
+	if len(missing) > 0 {
+		sortRequiredFields(missing)
+		return dmlErrorf("REQUIRED_FIELD_MISSING", missing, "%s", requiredFieldsMessage(definition, missing))
+	}
+	return nil
+}
+
+func requiredFieldsMessage(definition storage.ObjectDefinition, missing []string) string {
+	if len(missing) == 1 && strings.EqualFold(missing[0], "Name") {
+		if field, ok := fieldByName(definition, "Name"); ok {
+			label := strings.TrimSpace(field.Label)
+			if label != "" && !strings.EqualFold(label, "Name") {
+				return fmt.Sprintf("%s is required", label)
+			}
+		}
+	}
+	return fmt.Sprintf("Required fields are missing: [%s]", strings.Join(missing, ", "))
+}
+
+func sortRequiredFields(fields []string) {
+	sort.SliceStable(fields, func(i, j int) bool {
+		left, right := requiredFieldOrder(fields[i]), requiredFieldOrder(fields[j])
+		if left != right {
+			return left < right
+		}
+		return strings.ToLower(fields[i]) < strings.ToLower(fields[j])
+	})
+}
+
+func requiredFieldOrder(field string) int {
+	switch strings.ToLower(strings.TrimSpace(field)) {
+	case "lastname":
+		return 0
+	case "company":
+		return 1
+	case "name":
+		return 2
+	default:
+		return 10
+	}
 }
 
 func isDMLRequiredField(field storage.Field) bool {
@@ -1851,7 +2086,20 @@ func (e *Engine) validateObjectID(definition storage.ObjectDefinition, record st
 	return nil
 }
 
+func isGeneratedPlaceholderInsertID(id storage.ID) bool {
+	if id == "" {
+		return false
+	}
+	if strings.Contains(string(id), "#") {
+		return true
+	}
+	return storage.ValidateID(id) != nil
+}
+
 func (e *Engine) validateReferences(definition storage.ObjectDefinition, record storage.Record) error {
+	if record.System.OwnerID != "" && !e.validSystemOwnerID(definition, record.System.OwnerID) {
+		return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{"OwnerId"}, "dml: invalid owner reference %s.OwnerId %s", record.Object, record.System.OwnerID)
+	}
 	for name, field := range definition.Fields {
 		if field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
 			continue
@@ -1880,7 +2128,7 @@ func (e *Engine) validateReferences(definition storage.ObjectDefinition, record 
 		if !found && isPolymorphicReference(definition, name) {
 			found = e.referenceExistsInAnyObject(id)
 		}
-		if !found && allowMissingLocalReference(definition, name) {
+		if !found && allowMissingLocalReference(definition, name, id) {
 			continue
 		}
 		if !found {
@@ -1890,9 +2138,53 @@ func (e *Engine) validateReferences(definition storage.ObjectDefinition, record 
 	return nil
 }
 
-func allowMissingLocalReference(definition storage.ObjectDefinition, fieldName string) bool {
+func (e *Engine) validSystemOwnerID(definition storage.ObjectDefinition, id storage.ID) bool {
+	idText := string(id)
+	if strings.EqualFold(idText, "system") {
+		return true
+	}
+	if len(idText) < 3 {
+		return false
+	}
+	targets := []string{"User", "Group"}
+	if field, ok := fieldByName(definition, "OwnerId"); ok && len(field.ReferenceTo) != 0 {
+		targets = field.ReferenceTo
+	}
+	for _, objectName := range targets {
+		canonical, ok := storage.ResolveObjectName(*e.Org, objectName)
+		if !ok {
+			continue
+		}
+		prefix := e.Org.Objects[canonical].Definition.KeyPrefix
+		if prefix != "" && strings.HasPrefix(idText, prefix) {
+			return true
+		}
+	}
+	for _, prefix := range []string{"005", "00G"} {
+		if strings.HasPrefix(idText, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func allowMissingLocalReference(definition storage.ObjectDefinition, fieldName string, id storage.ID) bool {
+	if id != "" && storage.ValidateID(id) != nil {
+		return true
+	}
 	field, ok := fieldByName(definition, fieldName)
-	return ok && field.Type == storage.FieldReference && isLocalSetupConfigurationObject(definition) && strings.EqualFold(fieldName, "SetupEntityId")
+	if !ok || field.Type != storage.FieldReference {
+		return false
+	}
+	if strings.HasSuffix(strings.ToLower(definition.APIName), "__c") {
+		return true
+	}
+	for _, target := range field.ReferenceTo {
+		if strings.EqualFold(target, "User") {
+			return true
+		}
+	}
+	return isLocalSetupConfigurationObject(definition) && strings.EqualFold(fieldName, "SetupEntityId")
 }
 
 func isPolymorphicReference(definition storage.ObjectDefinition, fieldName string) bool {
@@ -2680,15 +2972,6 @@ func upsertExternalID(definition storage.ObjectDefinition, namespace string, rec
 			return fieldName, storage.Value{}, false, dmlErrorf("MISSING_ARGUMENT", []string{fieldName}, "dml: external id field %s.%s is missing", record.Object, fieldName)
 		}
 		return fieldName, value, true, nil
-	}
-	for name, field := range definition.Fields {
-		if !field.ExternalID {
-			continue
-		}
-		value, ok := record.Fields[name]
-		if ok && value.Kind != storage.ValueNull {
-			return name, value, true, nil
-		}
 	}
 	return "", storage.Value{}, false, nil
 }

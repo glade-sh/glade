@@ -42,6 +42,29 @@ private class MathTest {
 	}
 }
 
+func TestRunAllowsDeterministicHttpSendWithoutMockInTestContext(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/HttpHarnessTest.cls"), `
+@isTest
+private class HttpHarnessTest {
+  @isTest static void sendsWithoutExternalNetwork() {
+    HttpRequest req = new HttpRequest();
+    req.setEndpoint('https://example.invalid/probe');
+    req.setMethod('GET');
+    HttpResponse res = new Http().send(req);
+    System.assertEquals(200, res.getStatusCode());
+    System.assertEquals('{}', res.getBody());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestDiscoverCapturesSeeAllDataAnnotation(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -1109,7 +1132,7 @@ private class CalculatorTest {
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
-		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
 	}
 }
 
@@ -1842,6 +1865,45 @@ private class OuterTest {
 	}
 }
 
+func TestRunPrefersNestedInstanceFieldOverCaseFoldedInnerType(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Outer.cls"), `
+public class Outer {
+  public interface Filter {
+    Boolean hasValue();
+  }
+  public class Impl implements Filter {
+    public Boolean hasValue() {
+      return true;
+    }
+  }
+  public class Adapter {
+    private Filter filter;
+    public Adapter(Filter filter) {
+      this.filter = filter;
+    }
+    public Boolean run() {
+      return filter.hasValue();
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/OuterTest.cls"), `
+@isTest
+private class OuterTest {
+  @isTest static void nestedFieldWins() {
+    System.assertEquals(true, new Outer.Adapter(new Outer.Impl()).run());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
 func TestRunExecutesLowercaseNestedClassStaticMethodFromInitializer(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -2271,14 +2333,55 @@ func TestProjectRuntimeResolvesCustomObjectFieldTokensFromMetadata(t *testing.T)
 private class SchemaTokenTest {
   @isTest static void resolvesFieldToken() {
     System.assertNotEquals(null, VfiHospitalAffiliation__c.Type__c);
-    System.assertEquals('Type__c', VfiHospitalAffiliation__c.Type__c.getDescribe().getName());
+    System.assertEquals('verifiable__VfiHospitalAffiliation__c', VfiHospitalAffiliation__c.SObjectType.getDescribe().getName());
+    System.assertEquals('VfiHospitalAffiliation__c', VfiHospitalAffiliation__c.SObjectType.getDescribe().getLocalName());
+    System.assertEquals('verifiable__Type__c', VfiHospitalAffiliation__c.Type__c.getDescribe().getName());
   }
 }
 `)
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
-		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunTestSetupRecordWinsOverSyntheticSetupDataDefault(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Setup_Data__c/Setup_Data__c.object-meta.xml"), `
+<CustomObject>
+  <label>Setup Data</label>
+  <pluralLabel>Setup Data</pluralLabel>
+  <sharingModel>ReadWrite</sharingModel>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Setup_Data__c/fields/Data_Mappings__c.field-meta.xml"), `
+<CustomField>
+  <fullName>Data_Mappings__c</fullName>
+  <label>Data Mappings</label>
+  <type>LongTextArea</type>
+  <length>32768</length>
+  <visibleLines>3</visibleLines>
+</CustomField>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SetupDataDefaultTest.cls"), `
+@isTest
+private class SetupDataDefaultTest {
+  @TestSetup static void seed() {
+    insert new Setup_Data__c(Name = 'Test Setup', Data_Mappings__c = 'method');
+  }
+
+  @isTest static void unorderedLimitPrefersTestSetupRecord() {
+    Setup_Data__c setup = [SELECT Data_Mappings__c FROM Setup_Data__c LIMIT 1];
+    System.assertEquals('method', setup.Data_Mappings__c);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
 	}
 }
 
@@ -2320,7 +2423,7 @@ private class MarkJobTest {
 	}
 }
 
-func TestRunDrainsQueueableEnqueuedBeforeStartTest(t *testing.T) {
+func TestRunDoesNotDrainQueueableEnqueuedBeforeStartTest(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/PreStartJob.cls"), `
@@ -2333,11 +2436,11 @@ public class PreStartJob implements Queueable {
 	writeFile(t, filepath.Join(root, "force-app/main/classes/PreStartJobTest.cls"), `
 @isTest
 private class PreStartJobTest {
-  @isTest static void stopTestDrainsPreStartQueue() {
+  @isTest static void stopTestSkipsPreStartQueue() {
     System.enqueueJob(new PreStartJob());
     Test.startTest();
     Test.stopTest();
-    System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'pre-start async ran']);
+    System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'pre-start async ran']);
   }
 }
 `)
@@ -2559,6 +2662,97 @@ private class LocatorBatchTest {
 	}
 }
 
+func TestRunBatchStartCanReturnCustomIterable(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/IterableBatchState.cls"), `
+public class IterableBatchState {
+  public static Integer sum = 0;
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/IterableBatch.cls"), `
+public class IterableBatch {
+  public CounterIterable start(Object bc) {
+    return new CounterIterable(3);
+  }
+  public void execute(Object bc, List<Integer> scope) {
+    for (Integer value : scope) {
+      IterableBatchState.sum = IterableBatchState.sum + value;
+    }
+  }
+  public class CounterIterable implements Iterable<Integer>, Iterator<Integer> {
+    private List<Integer> values;
+    private Integer index = 0;
+    public CounterIterable(Integer total) {
+      values = new List<Integer>();
+      for (Integer i = 0; i < total; i++) {
+        values.add(i + 1);
+      }
+    }
+    public Iterator<Integer> iterator() {
+      return this;
+    }
+    public Boolean hasNext() {
+      return index < values.size();
+    }
+    public Integer next() {
+      return values[index++];
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/IterableBatchTest.cls"), `
+@isTest
+private class IterableBatchTest {
+  @isTest static void drainsCustomIterableScope() {
+    Test.startTest();
+    Database.executeBatch(new IterableBatch(), 2);
+    Test.stopTest();
+    System.assertEquals(6, IterableBatchState.sum);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		if len(run.Suites) > 0 && len(run.Suites[0].Cases) > 0 && run.Suites[0].Cases[0].Problem != nil {
+			t.Logf("problem=%#v", *run.Suites[0].Cases[0].Problem)
+		}
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestRunAppliesCustomObjectNameDefaultWhenTestSetsNull(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Widget__c/Widget__c.object-meta.xml"), `
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Widget</label>
+  <pluralLabel>Widgets</pluralLabel>
+  <nameField><type>Text</type><label>Widget Name</label></nameField>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/WidgetNameDefaultTest.cls"), `
+@isTest
+private class WidgetNameDefaultTest {
+  @isTest static void insertsWithNullNameInLocalTestContext() {
+    Widget__c widget = new Widget__c(Name = null);
+    insert widget;
+    Widget__c loaded = [SELECT Name FROM Widget__c WHERE Id = :widget.Id];
+    System.assertEquals('Widget', loaded.Name);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		if len(run.Suites) > 0 && len(run.Suites[0].Cases) > 0 && run.Suites[0].Cases[0].Problem != nil {
+			t.Logf("problem=%#v", *run.Suites[0].Cases[0].Problem)
+		}
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
 func TestRunAsyncContextIdsAndJobFields(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -2636,11 +2830,18 @@ private class AsyncContextIdsTest {
 func TestRunScheduledApexExposesPendingJobWithCronTriggerRelationship(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/QueuedWorker.cls"), `
+public class QueuedWorker {
+  public void execute(QueueableContext qc) {
+  }
+}
+`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/ScheduledWorker.cls"), `
 public class ScheduledWorker {
   public static Integer Ran = 0;
   public void execute(SchedulableContext sc) {
     Ran = Ran + 1;
+    System.enqueueJob(new QueuedWorker());
   }
 }
 `)
@@ -2662,6 +2863,15 @@ private class ScheduledWorkerTest {
     System.assertEquals(1, jobs.size());
     System.assertEquals(scheduleId, jobs.get(0).CronTriggerId);
     System.assertEquals(scheduleId, jobs.get(0).CronTrigger.Id);
+    ApexClass queuedClass = [SELECT Id, Name, NamespacePrefix FROM ApexClass WHERE Name = 'QueuedWorker' AND NamespacePrefix = null LIMIT 1];
+    List<AsyncApexJob> queuedJobs = [
+      SELECT Id, Status, JobType, ApexClassId
+      FROM AsyncApexJob
+      WHERE ApexClassId = :queuedClass.Id
+      AND Status IN ('Preparing', 'Processing', 'Queued', 'Holding')
+      AND JobType = 'Queueable'
+    ];
+    System.assertEquals(1, queuedJobs.size());
   }
 }
 `)
@@ -2781,6 +2991,69 @@ private class RunAsTest {
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestRunAsDMLPersistsNonSetupRecordWithAuditUser(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Thing__c/Thing__c.object-meta.xml"), `
+<CustomObject>
+  <label>Thing</label>
+  <pluralLabel>Things</pluralLabel>
+  <sharingModel>ReadWrite</sharingModel>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/RunAsDMLTest.cls"), `
+@isTest
+private class RunAsDMLTest {
+  @isTest static void persistsRecord() {
+    User u = new User(Id = '005000000000999', ProfileId = '00e000000000006', Username = 'user-a@example.test');
+    System.runAs(u) {
+      insert new Thing__c();
+    }
+    List<Thing__c> rows = [SELECT Id, LastModifiedById FROM Thing__c];
+    System.assertEquals(1, rows.size());
+    System.assertEquals('005000000000999', rows[0].LastModifiedById);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunAsDMLPersistsOuterAssignedSObject(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Thing__c/Thing__c.object-meta.xml"), `
+<CustomObject>
+  <label>Thing</label>
+  <pluralLabel>Things</pluralLabel>
+  <sharingModel>ReadWrite</sharingModel>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/RunAsOuterAssignedDMLTest.cls"), `
+@isTest
+private class RunAsOuterAssignedDMLTest {
+  @isTest static void persistsOuterAssignedRecord() {
+    User u = new User(Id = '005000000000999', ProfileId = '00e000000000006', Username = 'user-a@example.test');
+    Thing__c row;
+    System.runAs(u) {
+      row = new Thing__c();
+      insert row;
+    }
+    System.assertNotEquals(null, row.Id);
+    System.assertEquals(1, [SELECT Id FROM Thing__c].size());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
 	}
 }
 
@@ -3093,6 +3366,57 @@ private class JSONPropertySetterTest {
       JSONPropertySetterEnvelope.class
     );
     System.assertNotEquals(null, envelope.Payload.StartDate);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunJSONDeserializePopulatesCustomGetterAutoSetterListProperty(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSONAutoSetterMapping.cls"), `
+public class JSONAutoSetterMapping {
+  public JSONAutoSetterMapping provider;
+  public class Row {
+    public String tpField;
+    public String sfField;
+    public Boolean isComplete() {
+      return String.isNotBlank(tpField) && String.isNotBlank(sfField);
+    }
+  }
+  public List<Row> rows {
+    get {
+      if (rows?.isEmpty() == false) {
+        List<Row> validRows = new List<Row>();
+        for (Row row : rows) {
+          if (row.isComplete()) {
+            validRows.add(row);
+          }
+        }
+        rows = validRows;
+      }
+      return rows;
+    }
+    set;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSONAutoSetterMappingTest.cls"), `
+@isTest
+private class JSONAutoSetterMappingTest {
+  @isTest static void deserializePopulatesRows() {
+    JSONAutoSetterMapping mapping = (JSONAutoSetterMapping)JSON.deserialize(
+      '{"provider":{"rows":[{"tpField":"gender","sfField":"LeadSource"}]}}',
+      JSONAutoSetterMapping.class
+    );
+    mapping = mapping.provider;
+    System.assertEquals(1, mapping.rows.size());
+    System.assertEquals('LeadSource', mapping.rows.get(0).sfField);
   }
 }
 `)
@@ -3497,6 +3821,39 @@ public class StaticSettings {
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestRunHierarchyCustomSettingAbsentOrgDefaultsEqualsFreshEmptySObject(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SetupSettingsDefaultsTest.cls"), `
+@isTest
+private class SetupSettingsDefaultsTest {
+  @isTest static void absentDefaultsEqualsFreshEmpty() {
+    Setup_Settings__c defaults = Setup_Settings__c.getOrgDefaults();
+    System.assertEquals(false, defaults.IsInternalOrg__c);
+    System.assertEquals(new Setup_Settings__c(), defaults);
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Setup_Settings__c/Setup_Settings__c.object-meta.xml"), `
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <customSettingsType>Hierarchy</customSettingsType>
+  <label>Setup Settings</label>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Setup_Settings__c/fields/IsInternalOrg__c.field-meta.xml"), `
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>IsInternalOrg__c</fullName>
+  <type>Checkbox</type>
+  <defaultValue>false</defaultValue>
+</CustomField>
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v", got, run.Suites[0].Cases[0])
 	}
 }
 

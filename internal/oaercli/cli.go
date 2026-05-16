@@ -1568,7 +1568,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 }
 
 func compatUsage() string {
-	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--parallel-methods] [--progress] [--analyze] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
+	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--parallel-methods] [--progress] [--analyze] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
 }
 
 type postParityReadiness struct {
@@ -1677,6 +1677,22 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 			}
 			options.Class = args[i+1]
 			i++
+		case "--class-list":
+			if i+1 >= len(args) {
+				return errors.New("--class-list requires a value")
+			}
+			for _, className := range strings.Split(args[i+1], ",") {
+				if className = strings.TrimSpace(className); className != "" {
+					options.ClassList = append(options.ClassList, className)
+				}
+			}
+			i++
+		case "--class-file":
+			if i+1 >= len(args) {
+				return errors.New("--class-file requires a value")
+			}
+			options.ClassFile = args[i+1]
+			i++
 		case "--method":
 			if i+1 >= len(args) {
 				return errors.New("--method requires a value")
@@ -1688,8 +1704,8 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 		}
 	}
 	if checkPath != "" {
-		if options.Project != "." || options.Class != "" || options.Method != "" || options.BlockersOnly || options.TraceBlocked || options.SlowTestThresholdMS != 0 || options.TopFailures != 0 || options.MaxFailureGroups != 0 || options.TimeoutMS != 0 || options.Parallelism != 0 || options.ProgressWriter != nil || options.ForceAnalysis || options.ProfileOnTimeout || options.ChangedSince != "" || options.ParallelMethods {
-			return errors.New("--check cannot be combined with --project, --class, --method, --changed-since, --parallel-methods, --blockers-only, --trace-blockers, --slow-test-ms, --top-failures, --max-failure-groups, --timeout, --parallel, --progress, --analyze, or --profile-on-timeout")
+		if options.Project != "." || options.Class != "" || len(options.ClassList) != 0 || options.ClassFile != "" || options.Method != "" || options.BlockersOnly || options.TraceBlocked || options.SlowTestThresholdMS != 0 || options.TopFailures != 0 || options.MaxFailureGroups != 0 || options.TimeoutMS != 0 || options.Parallelism != 0 || options.ProgressWriter != nil || options.ForceAnalysis || options.ProfileOnTimeout || options.ChangedSince != "" || options.ParallelMethods {
+			return errors.New("--check cannot be combined with --project, --class, --class-list, --class-file, --method, --changed-since, --parallel-methods, --blockers-only, --trace-blockers, --slow-test-ms, --top-failures, --max-failure-groups, --timeout, --parallel, --progress, --analyze, or --profile-on-timeout")
 		}
 		report, err := compat.CheckLocalTestCorpus(checkPath)
 		if jsonOut {

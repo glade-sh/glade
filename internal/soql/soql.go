@@ -151,6 +151,7 @@ func ParseAt(input string, now time.Time) (Query, error) {
 }
 
 func Execute(org storage.OrgState, query Query) (Result, error) {
+	hydrateVirtualSchemaObjects(&org)
 	objectName, ok := storage.ResolveObjectName(org, query.Object)
 	if !ok {
 		return Result{}, fmt.Errorf("soql: unknown object %s", query.Object)
@@ -236,6 +237,191 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 		records = append(records, projected)
 	}
 	return Result{Records: records, Rows: len(records)}, nil
+}
+
+func hydrateVirtualSchemaObjects(org *storage.OrgState) {
+	if org == nil {
+		return
+	}
+	for _, objectName := range []string{"EntityDefinition", "EntityParticle", "RelationshipDomain", "UserEntityAccess", "UserFieldAccess"} {
+		storage.EnsureStandardObject(org, objectName)
+	}
+	entityDefinitions := org.Objects["EntityDefinition"]
+	entityParticles := org.Objects["EntityParticle"]
+	relationshipDomains := org.Objects["RelationshipDomain"]
+	userEntityAccess := org.Objects["UserEntityAccess"]
+	userFieldAccess := org.Objects["UserFieldAccess"]
+	if entityDefinitions.Records == nil {
+		entityDefinitions.Records = make(map[storage.ID]storage.Record)
+	}
+	if entityParticles.Records == nil {
+		entityParticles.Records = make(map[storage.ID]storage.Record)
+	}
+	if relationshipDomains.Records == nil {
+		relationshipDomains.Records = make(map[storage.ID]storage.Record)
+	}
+	if userEntityAccess.Records == nil {
+		userEntityAccess.Records = make(map[storage.ID]storage.Record)
+	}
+	if userFieldAccess.Records == nil {
+		userFieldAccess.Records = make(map[storage.ID]storage.Record)
+	}
+	for objectName, object := range org.Objects {
+		if isVirtualSchemaObjectName(objectName) {
+			continue
+		}
+		if object.Definition.APIName == "" {
+			continue
+		}
+		entityID := storage.ID(object.Definition.APIName)
+		if _, exists := entityDefinitions.Records[entityID]; !exists {
+			entityDefinitions.Records[entityID] = virtualEntityDefinitionRecord(object.Definition)
+		}
+		if _, exists := userEntityAccess.Records[entityID]; !exists {
+			userEntityAccess.Records[entityID] = virtualUserEntityAccessRecord(object.Definition.APIName)
+		}
+		for fieldName, field := range object.Definition.Fields {
+			if field.APIName == "" {
+				field.APIName = fieldName
+			}
+			particleID := storage.ID(object.Definition.APIName + "." + field.APIName)
+			if _, exists := entityParticles.Records[particleID]; !exists {
+				entityParticles.Records[particleID] = virtualEntityParticleRecord(object.Definition, field)
+			}
+			if _, exists := userFieldAccess.Records[particleID]; !exists {
+				userFieldAccess.Records[particleID] = virtualUserFieldAccessRecord(particleID, object.Definition.APIName)
+			}
+		}
+		for _, relation := range object.Definition.Relations {
+			if relation.ChildRelationship == "" || relation.Field == "" {
+				continue
+			}
+			for _, parentName := range relation.ParentObjects {
+				if parentName == "" {
+					continue
+				}
+				domainID := storage.ID(parentName + "." + object.Definition.APIName + "." + relation.Field)
+				if _, exists := relationshipDomains.Records[domainID]; !exists {
+					relationshipDomains.Records[domainID] = virtualRelationshipDomainRecord(domainID, parentName, object.Definition.APIName, relation)
+				}
+			}
+		}
+	}
+	org.Objects["EntityDefinition"] = entityDefinitions
+	org.Objects["EntityParticle"] = entityParticles
+	org.Objects["RelationshipDomain"] = relationshipDomains
+	org.Objects["UserEntityAccess"] = userEntityAccess
+	org.Objects["UserFieldAccess"] = userFieldAccess
+}
+
+func isVirtualSchemaObjectName(objectName string) bool {
+	return strings.EqualFold(objectName, "EntityDefinition") ||
+		strings.EqualFold(objectName, "EntityParticle") ||
+		strings.EqualFold(objectName, "RelationshipDomain")
+}
+
+func virtualEntityDefinitionRecord(definition storage.ObjectDefinition) storage.Record {
+	label := definition.Label
+	if label == "" {
+		label = definition.APIName
+	}
+	return storage.Record{ID: storage.ID(definition.APIName), Object: "EntityDefinition", Fields: map[string]storage.Value{
+		"DurableId":                 storage.StringValue(definition.APIName),
+		"QualifiedApiName":          storage.StringValue(definition.APIName),
+		"DeveloperName":             storage.StringValue(strings.TrimSuffix(definition.APIName, "__c")),
+		"Label":                     storage.StringValue(label),
+		"MasterLabel":               storage.StringValue(label),
+		"NamespacePrefix":           storage.NullValue(),
+		"IsCustomSetting":           storage.BooleanValue(false),
+		"IsLayoutable":              storage.BooleanValue(true),
+		"IsQueryable":               storage.BooleanValue(true),
+		"IsTriggerable":             storage.BooleanValue(true),
+		"IsDeprecatedAndHidden":     storage.BooleanValue(false),
+		"RunningUserEntityAccessId": storage.StringValue(definition.APIName),
+	}}
+}
+
+func virtualEntityParticleRecord(definition storage.ObjectDefinition, field storage.Field) storage.Record {
+	label := field.Label
+	if label == "" {
+		label = field.APIName
+	}
+	dataType := field.DisplayType
+	if dataType == "" {
+		dataType = storageFieldDisplayType(field.Type)
+	}
+	length := int64(field.Length)
+	if length == 0 {
+		length = 255
+	}
+	fieldID := definition.APIName + "." + field.APIName
+	return storage.Record{ID: storage.ID(fieldID), Object: "EntityParticle", Fields: map[string]storage.Value{
+		"DurableId":          storage.StringValue(fieldID),
+		"QualifiedApiName":   storage.StringValue(field.APIName),
+		"DeveloperName":      storage.StringValue(strings.TrimSuffix(field.APIName, "__c")),
+		"Label":              storage.StringValue(label),
+		"MasterLabel":        storage.StringValue(label),
+		"Name":               storage.StringValue(field.APIName),
+		"DataType":           storage.StringValue(dataType),
+		"Length":             storage.IntegerValue(length),
+		"EntityDefinitionId": storage.StringValue(definition.APIName),
+		"FieldDefinitionId":  storage.StringValue(fieldID),
+	}}
+}
+
+func virtualRelationshipDomainRecord(id storage.ID, parentName, childName string, relation storage.Relationship) storage.Record {
+	return storage.Record{ID: id, Object: "RelationshipDomain", Fields: map[string]storage.Value{
+		"DurableId":             storage.StringValue(string(id)),
+		"ParentSobjectId":       storage.StringValue(parentName),
+		"ChildSobjectId":        storage.StringValue(childName),
+		"FieldId":               storage.StringValue(childName + "." + relation.Field),
+		"RelationshipName":      storage.StringValue(relation.ChildRelationship),
+		"IsCascadeDelete":       storage.BooleanValue(false),
+		"IsRestrictedDelete":    storage.BooleanValue(false),
+		"IsDeprecatedAndHidden": storage.BooleanValue(false),
+		"JunctionIdListNames":   storage.NullValue(),
+	}}
+}
+
+func virtualUserEntityAccessRecord(objectName string) storage.Record {
+	return storage.Record{ID: storage.ID(objectName), Object: "UserEntityAccess", Fields: map[string]storage.Value{
+		"EntityDefinitionId": storage.StringValue(objectName),
+		"IsCreatable":        storage.BooleanValue(true),
+		"IsDeletable":        storage.BooleanValue(true),
+		"IsUpdatable":        storage.BooleanValue(true),
+		"IsReadable":         storage.BooleanValue(true),
+	}}
+}
+
+func virtualUserFieldAccessRecord(id storage.ID, objectName string) storage.Record {
+	return storage.Record{ID: id, Object: "UserFieldAccess", Fields: map[string]storage.Value{
+		"EntityDefinitionId": storage.StringValue(objectName),
+		"FieldDefinitionId":  storage.StringValue(string(id)),
+		"IsAccessible":       storage.BooleanValue(true),
+		"IsCreatable":        storage.BooleanValue(true),
+		"IsUpdatable":        storage.BooleanValue(true),
+	}}
+}
+
+func storageFieldDisplayType(fieldType storage.FieldType) string {
+	switch fieldType {
+	case storage.FieldBoolean:
+		return "BOOLEAN"
+	case storage.FieldInteger:
+		return "INTEGER"
+	case storage.FieldDecimal, storage.FieldCalculated, storage.FieldSummary:
+		return "DOUBLE"
+	case storage.FieldDate:
+		return "DATE"
+	case storage.FieldDateTime:
+		return "DATETIME"
+	case storage.FieldReference, storage.FieldID:
+		return "REFERENCE"
+	case storage.FieldPicklist:
+		return "PICKLIST"
+	default:
+		return "STRING"
+	}
 }
 
 func candidateRecordIDs(object storage.ObjectState, where *Condition, allRows bool) []string {
@@ -758,7 +944,7 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 			out.Fields[canonicalField] = value.Clone()
 			continue
 		}
-		if value, ok := record.GetField(canonicalField); ok {
+		if value, ok := recordFieldValue(org, record, canonicalField); ok {
 			out.Fields[canonicalField] = value.Clone()
 			continue
 		}
@@ -826,7 +1012,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		query.Where = &condition
 	}
 	var ids []string
-	if indexed, ok := storage.LookupIndex(childObject, relation.Field, storage.IDValue(parent.ID)); ok {
+	if indexed, ok := storage.LookupIndex(childObject, relation.Field, storage.IDValue(parent.ID)); ok && !isSystemRelationshipField(relation.Field) {
 		ids = make([]string, 0, len(indexed))
 		for _, id := range indexed {
 			ids = append(ids, string(id))
@@ -876,17 +1062,28 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 	var bestObject string
 	var bestRelation storage.Relationship
 	for childObjectName, childObject := range org.Objects {
-		for _, relation := range childObject.Definition.Relations {
-			rank, matched := childRelationshipMatchRank(relation, childObject.Definition, relationship)
+		childDefinition := childObject.Definition.Clone()
+		storage.EnsureStandardObjectFields(&childDefinition)
+		relations := append([]storage.Relationship(nil), childDefinition.Relations...)
+		relations = append(relations, syntheticContentDocumentLinkRelationship(childDefinition)...)
+		relations = append(relations, syntheticSystemChildRelationships(childDefinition)...)
+		for _, relation := range relations {
+			rank, matched := childRelationshipMatchRank(org.Namespace, relation, childDefinition, relationship)
 			if !matched || rank >= bestRank {
 				continue
 			}
 			for _, candidate := range relation.ParentObjects {
+				if candidate == "*" {
+					bestRank = rank
+					bestObject = childObjectName
+					bestRelation = relation
+					break
+				}
 				resolved, ok := storage.ResolveObjectName(org, candidate)
 				if !ok {
 					resolved = candidate
 				}
-				if strings.EqualFold(resolved, parentName) {
+				if strings.EqualFold(resolved, parentName) || strings.EqualFold(storage.StripNamespaceToken(org.Namespace, resolved), storage.StripNamespaceToken(org.Namespace, parentName)) {
 					bestRank = rank
 					bestObject = childObjectName
 					bestRelation = relation
@@ -901,20 +1098,81 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 	return "", storage.Relationship{}, false
 }
 
-func childRelationshipMatchRank(relation storage.Relationship, definition storage.ObjectDefinition, queryName string) (int, bool) {
+func syntheticContentDocumentLinkRelationship(definition storage.ObjectDefinition) []storage.Relationship {
+	if !strings.EqualFold(definition.APIName, "ContentDocumentLink") {
+		return nil
+	}
+	field, ok := fieldDefinitionsForReferenceField(definition, "LinkedEntityId")
+	if !ok || field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
+		return nil
+	}
+	return []storage.Relationship{{
+		Field:              field.APIName,
+		ParentObjects:      []string{"*"},
+		ParentRelationship: "LinkedEntity",
+		ChildRelationship:  "ContentDocumentLinks",
+		Polymorphic:        true,
+	}}
+}
+
+func isSystemRelationshipField(field string) bool {
+	canonical, ok := canonicalSystemFieldName(field)
+	if !ok {
+		return false
+	}
+	switch canonical {
+	case "CreatedById", "LastModifiedById", "OwnerId":
+		return true
+	default:
+		return false
+	}
+}
+
+func syntheticSystemChildRelationships(definition storage.ObjectDefinition) []storage.Relationship {
+	fields := []string{"CreatedById", "LastModifiedById", "OwnerId"}
+	relations := make([]storage.Relationship, 0, len(fields))
+	for _, fieldName := range fields {
+		if hasSOQLRelationForField(definition.Relations, fieldName) {
+			continue
+		}
+		field, ok := fieldDefinitionsForReferenceField(definition, fieldName)
+		if !ok || field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
+			continue
+		}
+		relations = append(relations, storage.Relationship{
+			Field:              field.APIName,
+			ParentObjects:      append([]string(nil), field.ReferenceTo...),
+			ParentRelationship: strings.TrimSuffix(field.APIName, "Id"),
+			ChildRelationship:  derivedChildRelationshipName(definition),
+			Polymorphic:        len(field.ReferenceTo) > 1,
+		})
+	}
+	return relations
+}
+
+func hasSOQLRelationForField(relations []storage.Relationship, fieldName string) bool {
+	for _, relation := range relations {
+		if strings.EqualFold(relation.Field, fieldName) {
+			return true
+		}
+	}
+	return false
+}
+
+func childRelationshipMatchRank(namespace string, relation storage.Relationship, definition storage.ObjectDefinition, queryName string) (int, bool) {
 	if relation.ChildRelationship != "" {
-		if strings.EqualFold(relation.ChildRelationship, queryName) {
+		if relationshipNameMatches(namespace, relation.ChildRelationship, queryName) {
 			return 0, true
 		}
-		if childRelationshipNameMatches(relation.ChildRelationship, queryName) {
+		if childRelationshipNameMatches(namespace, relation.ChildRelationship, queryName) {
 			return 1, true
 		}
 	}
 	derived := derivedChildRelationshipName(definition)
-	if strings.EqualFold(derived, queryName) {
+	if relationshipNameMatches(namespace, derived, queryName) {
 		return 2, true
 	}
-	if childRelationshipNameMatches(derived, queryName) {
+	if childRelationshipNameMatches(namespace, derived, queryName) {
 		return 3, true
 	}
 	return 99, false
@@ -927,14 +1185,15 @@ func childRelationshipNameFromObject(objectName string) string {
 	return objectName
 }
 
-func childRelationshipNameMatches(metadataName, queryName string) bool {
-	if strings.EqualFold(metadataName, queryName) {
+func childRelationshipNameMatches(namespace, metadataName, queryName string) bool {
+	if relationshipNameMatches(namespace, metadataName, queryName) {
 		return true
 	}
-	if strings.HasSuffix(strings.ToLower(queryName), "__r") && strings.EqualFold(metadataName+"__r", queryName) {
+	strippedQuery := storage.StripNamespaceToken(namespace, queryName)
+	if strings.HasSuffix(strings.ToLower(strippedQuery), "__r") && strings.EqualFold(metadataName+"__r", strippedQuery) {
 		return true
 	}
-	if strings.HasSuffix(strings.ToLower(metadataName), "__r") && strings.EqualFold(strings.TrimSuffix(metadataName, metadataName[len(metadataName)-3:]), queryName) {
+	if strings.HasSuffix(strings.ToLower(metadataName), "__r") && strings.EqualFold(strings.TrimSuffix(metadataName, metadataName[len(metadataName)-3:]), strippedQuery) {
 		return true
 	}
 	return false
@@ -1154,18 +1413,29 @@ func fieldDefinitionsForReference(org storage.OrgState, definition storage.Objec
 	}
 	if strings.Contains(field, ".") {
 		parts := strings.SplitN(field, ".", 2)
-		for _, relation := range definition.Relations {
-			if !parentRelationshipNameMatches(org.Namespace, relation, parts[0]) {
-				continue
-			}
+		if strings.EqualFold(parts[1], "Id") && isSystemParentRelationship(parts[0]) {
+			return []storage.Field{{APIName: parts[1], Type: storage.FieldID}}, true
+		}
+		for _, relation := range matchingParentRelations(org.Namespace, definition, parts[0]) {
 			if len(relation.ParentObjects) == 0 {
 				return nil, false
 			}
 			var out []storage.Field
 			for _, parentName := range relation.ParentObjects {
+				if strings.EqualFold(parentName, "EntityDefinition") || strings.EqualFold(parentName, "FieldDefinition") {
+					if entityDefinitionFieldKnown(parts[1]) {
+						out = append(out, entityDefinitionRelationshipField(parts[1]))
+						continue
+					}
+				}
 				canonical, ok := storage.ResolveObjectName(org, parentName)
 				if !ok {
-					return nil, false
+					var orgWithStandard storage.OrgState
+					orgWithStandard, canonical, ok = orgWithLazyStandardObject(org, parentName)
+					if !ok {
+						return nil, false
+					}
+					org = orgWithStandard
 				}
 				fields, ok := fieldDefinitionsForReference(org, org.Objects[canonical].Definition, parts[1])
 				if !ok {
@@ -1182,6 +1452,33 @@ func fieldDefinitionsForReference(org storage.OrgState, definition storage.Objec
 		return nil, false
 	}
 	return []storage.Field{definition.Fields[canonicalField]}, true
+}
+
+func isSystemParentRelationship(relationship string) bool {
+	switch {
+	case strings.EqualFold(relationship, "CreatedBy"):
+		return true
+	case strings.EqualFold(relationship, "LastModifiedBy"):
+		return true
+	case strings.EqualFold(relationship, "Owner"):
+		return true
+	default:
+		return false
+	}
+}
+
+func orgWithLazyStandardObject(org storage.OrgState, objectName string) (storage.OrgState, string, bool) {
+	if canonical, ok := storage.ResolveObjectName(org, objectName); ok {
+		return org, canonical, true
+	}
+	orgWithStandard := org
+	orgWithStandard.Objects = make(map[string]storage.ObjectState, len(org.Objects)+1)
+	for name, state := range org.Objects {
+		orgWithStandard.Objects[name] = state
+	}
+	storage.EnsureStandardObject(&orgWithStandard, objectName)
+	canonical, ok := storage.ResolveObjectName(orgWithStandard, objectName)
+	return orgWithStandard, canonical, ok
 }
 
 func systemFieldDefinition(field string) (storage.Field, bool) {
@@ -1282,10 +1579,7 @@ func validateConditionReferences(org storage.OrgState, definition storage.Object
 func validateTypeofReference(org storage.OrgState, definition storage.ObjectDefinition, spec TypeofSpec, mode string) error {
 	allowedTargets := map[string]bool{}
 	relationshipKnown := false
-	for _, relation := range definition.Relations {
-		if !parentRelationshipNameMatches(org.Namespace, relation, spec.Relationship) {
-			continue
-		}
+	for _, relation := range matchingParentRelations(org.Namespace, definition, spec.Relationship) {
 		relationshipKnown = true
 		for _, parentName := range relation.ParentObjects {
 			canonical, ok := storage.ResolveObjectName(org, parentName)
@@ -1340,10 +1634,10 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 	}
 	if strings.Contains(field, ".") {
 		parts := strings.SplitN(field, ".", 2)
-		for _, relation := range definition.Relations {
-			if !parentRelationshipNameMatches(org.Namespace, relation, parts[0]) {
-				continue
-			}
+		if strings.EqualFold(parts[1], "Id") && isSystemParentRelationship(parts[0]) {
+			return true
+		}
+		for _, relation := range matchingParentRelations(org.Namespace, definition, parts[0]) {
 			if len(relation.ParentObjects) == 0 {
 				return false
 			}
@@ -1364,7 +1658,12 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 				}
 				canonical, ok := storage.ResolveObjectName(org, parentName)
 				if !ok {
-					return false
+					var orgWithStandard storage.OrgState
+					orgWithStandard, canonical, ok = orgWithLazyStandardObject(org, parentName)
+					if !ok {
+						return false
+					}
+					org = orgWithStandard
 				}
 				if fieldKnownForMode(org, org.Objects[canonical].Definition, parts[1], requireAllParents) {
 					if !requireAllParents {
@@ -1386,9 +1685,40 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 }
 
 func entityDefinitionFieldKnown(field string) bool {
-	return strings.EqualFold(field, "QualifiedApiName") ||
-		strings.EqualFold(field, "DeveloperName") ||
-		strings.EqualFold(field, "DurableId")
+	if strings.Contains(field, ".") {
+		parts := strings.SplitN(field, ".", 2)
+		switch strings.ToLower(strings.TrimSpace(parts[0])) {
+		case "runninguserfieldaccess", "runninguserentityaccess":
+			return entityDefinitionFieldKnown(parts[1])
+		}
+	}
+	switch strings.ToLower(strings.TrimSpace(field)) {
+	case "qualifiedapiname", "developername", "durableid", "label", "masterlabel",
+		"datatype", "length", "namespaceprefix", "iskeyprefix", "keyprefix",
+		"iscustomsetting", "islayoutable", "isqueryable", "istriggerable",
+		"isdeprecatedandhidden", "iscreatable", "isdeletable", "isupdatable",
+		"isaccessible", "iscreateable":
+		return true
+	default:
+		return false
+	}
+}
+
+func entityDefinitionRelationshipField(field string) storage.Field {
+	name := field
+	if strings.Contains(name, ".") {
+		parts := strings.Split(name, ".")
+		name = parts[len(parts)-1]
+	}
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "isaccessible", "iscreatable", "iscreateable", "isdeletable", "isupdatable",
+		"iscustomsetting", "islayoutable", "isqueryable", "istriggerable", "isdeprecatedandhidden":
+		return storage.Field{APIName: name, Type: storage.FieldBoolean}
+	case "length":
+		return storage.Field{APIName: name, Type: storage.FieldInteger}
+	default:
+		return storage.Field{APIName: name, Type: storage.FieldString}
+	}
 }
 
 func queryHasAggregates(query Query) bool {
@@ -1457,10 +1787,7 @@ func isCustomFieldName(name string) bool {
 }
 
 func polymorphicParentObject(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, relationship string) (string, bool) {
-	for _, relation := range definition.Relations {
-		if !parentRelationshipNameMatches(org.Namespace, relation, relationship) {
-			continue
-		}
+	for _, relation := range matchingParentRelations(org.Namespace, definition, relationship) {
 		parentID, ok := recordValue(org, definition, record, relation.Field)
 		if !ok || parentID.Kind == storage.ValueNull {
 			return "", false
@@ -1492,10 +1819,7 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 	if !ok {
 		return storage.Value{}, false
 	}
-	for _, relation := range object.Definition.Relations {
-		if !parentRelationshipNameMatches(org.Namespace, relation, parts[0]) {
-			continue
-		}
+	for _, relation := range matchingParentRelations(org.Namespace, object.Definition, parts[0]) {
 		parentID, ok := recordValue(org, object.Definition, record, relation.Field)
 		if !ok || parentID.Kind == storage.ValueNull {
 			return storage.NullValue(), true
@@ -1536,10 +1860,7 @@ func relationshipLookupMissing(org storage.OrgState, record storage.Record, fiel
 	if !ok {
 		return "", false
 	}
-	for _, relation := range object.Definition.Relations {
-		if !parentRelationshipNameMatches(org.Namespace, relation, parts[0]) {
-			continue
-		}
+	for _, relation := range matchingParentRelations(org.Namespace, object.Definition, parts[0]) {
 		parentID, ok := recordValue(org, object.Definition, record, relation.Field)
 		return parts[0], !ok || parentID.Kind == storage.ValueNull
 	}
@@ -1561,10 +1882,31 @@ func entityDefinitionRelationshipValue(value storage.Value, field string) (stora
 		return storage.NullValue(), true
 	}
 	switch {
+	case strings.Contains(field, "."):
+		parts := strings.SplitN(field, ".", 2)
+		switch strings.ToLower(strings.TrimSpace(parts[0])) {
+		case "runninguserfieldaccess", "runninguserentityaccess":
+			return entityDefinitionRelationshipValue(value, parts[1])
+		}
 	case strings.EqualFold(field, "QualifiedApiName"), strings.EqualFold(field, "DurableId"):
 		return storage.StringValue(text), true
 	case strings.EqualFold(field, "DeveloperName"):
 		return storage.StringValue(strings.TrimSuffix(text, "__c")), true
+	case strings.EqualFold(field, "Label"), strings.EqualFold(field, "MasterLabel"):
+		return storage.StringValue(strings.TrimSuffix(text, "__c")), true
+	case strings.EqualFold(field, "DataType"):
+		return storage.StringValue("STRING"), true
+	case strings.EqualFold(field, "Length"):
+		return storage.IntegerValue(255), true
+	case strings.EqualFold(field, "NamespacePrefix"), strings.EqualFold(field, "KeyPrefix"):
+		return storage.NullValue(), true
+	case strings.HasPrefix(strings.ToLower(field), "is"):
+		switch strings.ToLower(field) {
+		case "isdeprecatedandhidden", "iscustomsetting":
+			return storage.BooleanValue(false), true
+		default:
+			return storage.BooleanValue(true), true
+		}
 	}
 	return storage.Value{}, false
 }
@@ -1596,10 +1938,7 @@ func parentRelationshipRecord(org storage.OrgState, record storage.Record, relat
 	if !ok {
 		return storage.Value{}, storage.Record{}, false
 	}
-	for _, relation := range object.Definition.Relations {
-		if !parentRelationshipNameMatches(org.Namespace, relation, relationship) {
-			continue
-		}
+	for _, relation := range matchingParentRelations(org.Namespace, object.Definition, relationship) {
 		parentID, ok := recordValue(org, object.Definition, record, relation.Field)
 		if !ok || parentID.Kind == storage.ValueNull {
 			return storage.Value{}, storage.Record{}, false
@@ -1648,6 +1987,57 @@ func parentRelationshipNameMatches(namespace string, relation storage.Relationsh
 	default:
 		return false
 	}
+}
+
+func matchingParentRelations(namespace string, definition storage.ObjectDefinition, candidate string) []storage.Relationship {
+	var matches []storage.Relationship
+	for _, relation := range definition.Relations {
+		if parentRelationshipNameMatches(namespace, relation, candidate) {
+			matches = append(matches, relation)
+		}
+	}
+	if len(matches) > 0 {
+		return matches
+	}
+	if relation, ok := systemParentRelationship(definition, candidate); ok {
+		return []storage.Relationship{relation}
+	}
+	return nil
+}
+
+func systemParentRelationship(definition storage.ObjectDefinition, candidate string) (storage.Relationship, bool) {
+	if strings.EqualFold(definition.APIName, "RelationshipDomain") {
+		switch strings.ToLower(strings.TrimSpace(candidate)) {
+		case "childsobject":
+			return storage.Relationship{Field: "ChildSobjectId", ParentObjects: []string{"EntityDefinition"}, ParentRelationship: "ChildSobject"}, true
+		case "field":
+			return storage.Relationship{Field: "FieldId", ParentObjects: []string{"FieldDefinition"}, ParentRelationship: "Field"}, true
+		}
+	}
+	fieldName := candidate + "Id"
+	field, ok := fieldDefinitionsForReferenceField(definition, fieldName)
+	if !ok || field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
+		return storage.Relationship{}, false
+	}
+	return storage.Relationship{Field: field.APIName, ParentObjects: append([]string(nil), field.ReferenceTo...), ParentRelationship: candidate, Polymorphic: len(field.ReferenceTo) > 1}, true
+}
+
+func fieldDefinitionsForReferenceField(definition storage.ObjectDefinition, fieldName string) (storage.Field, bool) {
+	if field, ok := definition.Fields[fieldName]; ok {
+		return field, true
+	}
+	for candidate, field := range definition.Fields {
+		if strings.EqualFold(candidate, fieldName) || strings.EqualFold(field.APIName, fieldName) {
+			return field, true
+		}
+	}
+	if canonical, ok := canonicalSystemFieldName(fieldName); ok {
+		switch canonical {
+		case "CreatedById", "LastModifiedById", "OwnerId":
+			return storage.Field{APIName: canonical, Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: strings.TrimSuffix(canonical, "Id")}, true
+		}
+	}
+	return storage.Field{}, false
 }
 
 func idFromValue(value storage.Value) storage.ID {
@@ -1735,7 +2125,7 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	if value, ok := calculatedFieldValue(org, definition, record, canonicalField); ok {
 		return value, true
 	}
-	value, ok := record.GetField(canonicalField)
+	value, ok := recordFieldValue(org, record, canonicalField)
 	if !ok && strings.EqualFold(definition.APIName, "Contact") && strings.EqualFold(canonicalField, "Name") {
 		return contactNameValue(record)
 	}
@@ -1747,6 +2137,28 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 		}
 	}
 	return value, ok
+}
+
+func recordFieldValue(org storage.OrgState, record storage.Record, field string) (storage.Value, bool) {
+	if value, ok := record.GetField(field); ok {
+		return value, true
+	}
+	if stripped := storage.StripNamespaceToken(org.Namespace, field); stripped != field {
+		if value, ok := record.GetField(stripped); ok {
+			return value, true
+		}
+	}
+	if prefixed := storage.NamespaceTokenName(org.Namespace, field); prefixed != field {
+		if value, ok := record.GetField(prefixed); ok {
+			return value, true
+		}
+	}
+	if unqualified := storage.StripAnyNamespaceToken(field); unqualified != field {
+		if value, ok := record.GetField(unqualified); ok {
+			return value, true
+		}
+	}
+	return storage.Value{}, false
 }
 
 func calculatedFieldValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field string) (storage.Value, bool) {
@@ -2812,7 +3224,7 @@ func aggregateSpecs(fields []string) ([]Aggregate, error) {
 
 func validateAggregateQuery(query Query) error {
 	if len(query.Aggregates) == 0 && len(query.HavingAggregates) == 0 {
-		if len(query.GroupBy) > 0 || query.Having != nil {
+		if query.Having != nil {
 			return fmt.Errorf("soql: GROUP BY and HAVING require aggregate fields")
 		}
 		return nil
@@ -3068,6 +3480,7 @@ func (p *parser) parsePrimaryCondition() (Condition, error) {
 		}
 		return Condition{Field: field, Op: op, Values: values, Subquery: subquery}, nil
 	}
+	parenthesizedValue := p.match("(")
 	valueToken := p.advance().text
 	if valueToken == "" {
 		return Condition{}, p.errorf("expected WHERE value")
@@ -3075,6 +3488,35 @@ func (p *parser) parsePrimaryCondition() (Condition, error) {
 	value, value2, isRange, err := literalAt(valueToken, p.now)
 	if err != nil {
 		return Condition{}, err
+	}
+	if parenthesizedValue {
+		values := []storage.Value{value}
+		ranges := []bool{isRange}
+		for p.match(",") {
+			tok := p.advance().text
+			if tok == "" {
+				return Condition{}, p.errorf("expected WHERE value")
+			}
+			nextValue, _, nextRange, err := literalAt(tok, p.now)
+			if err != nil {
+				return Condition{}, err
+			}
+			values = append(values, nextValue)
+			ranges = append(ranges, nextRange)
+		}
+		if !p.match(")") {
+			return Condition{}, p.errorf("expected ) after WHERE value")
+		}
+		if len(values) > 1 && (op == "LIKE" || op == "NOT LIKE") {
+			conditions := make([]Condition, 0, len(values))
+			for i, item := range values {
+				conditions = append(conditions, Condition{Field: field, Op: op, Value: item, Range: ranges[i]})
+			}
+			if op == "NOT LIKE" {
+				return Condition{And: conditions}, nil
+			}
+			return Condition{Or: conditions}, nil
+		}
 	}
 	return Condition{Field: field, Op: op, Value: value, Value2: value2, Range: isRange}, nil
 }
@@ -3135,7 +3577,18 @@ func (p *parser) parseOperator() (string, error) {
 
 func (p *parser) parseInOperand() ([]storage.Value, *Query, error) {
 	if !p.match("(") {
-		return nil, nil, p.errorf("expected ( after IN")
+		tok := p.advance().text
+		if tok == "" {
+			return nil, nil, p.errorf("expected value after IN")
+		}
+		value, _, isRange, err := literalAt(tok, p.now)
+		if err != nil {
+			return nil, nil, err
+		}
+		if isRange {
+			return nil, nil, unsupportedSOQLErrorf("date range literal %s is not supported in IN lists", tok)
+		}
+		return []storage.Value{value}, nil, nil
 	}
 	if strings.EqualFold(p.peek().text, "SELECT") {
 		query, err := p.parseQuery()

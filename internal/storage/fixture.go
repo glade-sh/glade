@@ -539,8 +539,11 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"FiscalYearStartMonth": {APIName: "FiscalYearStartMonth", Type: FieldInteger},
 	})
 	ensureObject(org, "Profile", "00e", map[string]Field{
-		"Name":          {APIName: "Name", Type: FieldString, Required: true},
-		"UserLicenseId": {APIName: "UserLicenseId", Type: FieldReference, ReferenceTo: []string{"UserLicense"}, RelationshipName: "UserLicense"},
+		"Name":                           {APIName: "Name", Type: FieldString, Required: true},
+		"UserLicenseId":                  {APIName: "UserLicenseId", Type: FieldReference, ReferenceTo: []string{"UserLicense"}, RelationshipName: "UserLicense"},
+		"PermissionsEditPublicTemplates": {APIName: "PermissionsEditPublicTemplates", Type: FieldBoolean},
+		"PermissionsManageSolutions":     {APIName: "PermissionsManageSolutions", Type: FieldBoolean},
+		"PermissionsActivateContract":    {APIName: "PermissionsActivateContract", Type: FieldBoolean},
 	})
 	ensureObject(org, "UserLicense", "100", map[string]Field{
 		"Name": {APIName: "Name", Type: FieldString, Required: true},
@@ -552,10 +555,14 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	})
 	ensureObject(org, "User", "005", map[string]Field{
 		"Username":          {APIName: "Username", Type: FieldString, Required: true},
+		"Name":              {APIName: "Name", Type: FieldString},
 		"Alias":             {APIName: "Alias", Type: FieldString},
+		"AssistantName":     {APIName: "AssistantName", Type: FieldString},
 		"Email":             {APIName: "Email", Type: FieldString},
 		"FirstName":         {APIName: "FirstName", Type: FieldString},
 		"LastName":          {APIName: "LastName", Type: FieldString},
+		"LeadSource":        {APIName: "LeadSource", Type: FieldPicklist},
+		"Salutation":        {APIName: "Salutation", Type: FieldPicklist},
 		"CommunityNickname": {APIName: "CommunityNickname", Type: FieldString},
 		"AccountId":         {APIName: "AccountId", Type: FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
 		"ProfileId":         {APIName: "ProfileId", Type: FieldReference, ReferenceTo: []string{"Profile"}, RelationshipName: "Profile"},
@@ -577,10 +584,23 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"Status":            {APIName: "Status", Type: FieldString},
 	})
 	ensureObject(org, "PermissionSet", "0PS", map[string]Field{
-		"Name":             {APIName: "Name", Type: FieldString, Required: true},
-		"Label":            {APIName: "Label", Type: FieldString},
-		"Type":             {APIName: "Type", Type: FieldString},
-		"IsOwnedByProfile": {APIName: "IsOwnedByProfile", Type: FieldBoolean},
+		"Name":                              {APIName: "Name", Type: FieldString, Required: true},
+		"Label":                             {APIName: "Label", Type: FieldString},
+		"Type":                              {APIName: "Type", Type: FieldString},
+		"IsCustom":                          {APIName: "IsCustom", Type: FieldBoolean},
+		"IsOwnedByProfile":                  {APIName: "IsOwnedByProfile", Type: FieldBoolean},
+		"ProfileId":                         {APIName: "ProfileId", Type: FieldReference, ReferenceTo: []string{"Profile"}, RelationshipName: "Profile"},
+		"PermissionsEditPublicTemplates":    {APIName: "PermissionsEditPublicTemplates", Type: FieldBoolean},
+		"PermissionsManageSolutions":        {APIName: "PermissionsManageSolutions", Type: FieldBoolean},
+		"PermissionsActivateContract":       {APIName: "PermissionsActivateContract", Type: FieldBoolean},
+		"PermissionsModifyAllData":          {APIName: "PermissionsModifyAllData", Type: FieldBoolean},
+		"PermissionsViewAllData":            {APIName: "PermissionsViewAllData", Type: FieldBoolean},
+		"PermissionsAuthorApex":             {APIName: "PermissionsAuthorApex", Type: FieldBoolean},
+		"PermissionsCustomizeApplication":   {APIName: "PermissionsCustomizeApplication", Type: FieldBoolean},
+		"PermissionsManageUsers":            {APIName: "PermissionsManageUsers", Type: FieldBoolean},
+		"PermissionsViewSetup":              {APIName: "PermissionsViewSetup", Type: FieldBoolean},
+		"PermissionsAssignPermissionSets":   {APIName: "PermissionsAssignPermissionSets", Type: FieldBoolean},
+		"PermissionsManageProfilesAndPerms": {APIName: "PermissionsManageProfilesAndPerms", Type: FieldBoolean},
 	})
 	ensureObject(org, "PermissionSetAssignment", "0Pa", map[string]Field{
 		"AssigneeId":           {APIName: "AssigneeId", Type: FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Assignee"},
@@ -690,6 +710,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	chatterExternalLicenseID := ID("100000000000002")
 	roleID := ID("00E000000000001")
 	userID := ID("005000000000001")
+	automatedProcessUserID := ID("005000000000002")
 	permissionSetID := ID("0PS000000000001")
 	assignmentID := ID("0Pa000000000001")
 	putSeedRecord(org, "Pricebook2", Record{
@@ -728,32 +749,32 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	putSeedRecord(org, "Profile", Record{
 		ID:     profileID,
 		Object: "Profile",
-		Fields: map[string]Value{"Name": StringValue("System Administrator"), "UserLicenseId": IDValue(salesforceLicenseID)},
+		Fields: profileSeedFields("System Administrator", salesforceLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     minimumAccessProfileID,
 		Object: "Profile",
-		Fields: map[string]Value{"Name": StringValue("Minimum Access - Salesforce"), "UserLicenseId": IDValue(salesforceLicenseID)},
+		Fields: profileSeedFields("Minimum Access - Salesforce", salesforceLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     chatterExternalProfileID,
 		Object: "Profile",
-		Fields: map[string]Value{"Name": StringValue("Chatter External User"), "UserLicenseId": IDValue(chatterExternalLicenseID)},
+		Fields: profileSeedFields("Chatter External User", chatterExternalLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     standardPlatformUserProfileID,
 		Object: "Profile",
-		Fields: map[string]Value{"Name": StringValue("Standard Platform User"), "UserLicenseId": IDValue(salesforceLicenseID)},
+		Fields: profileSeedFields("Standard Platform User", salesforceLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     standardUserProfileID,
 		Object: "Profile",
-		Fields: map[string]Value{"Name": StringValue("Standard User"), "UserLicenseId": IDValue(salesforceLicenseID)},
+		Fields: profileSeedFields("Standard User", salesforceLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     marketingUserProfileID,
 		Object: "Profile",
-		Fields: map[string]Value{"Name": StringValue("Marketing User"), "UserLicenseId": IDValue(salesforceLicenseID)},
+		Fields: profileSeedFields("Marketing User", salesforceLicenseID),
 	})
 	putSeedRecord(org, "UserRole", Record{
 		ID:     roleID,
@@ -783,6 +804,25 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"EmailEncodingKey":  StringValue("UTF-8"),
 		},
 	})
+	putSeedRecord(org, "User", Record{
+		ID:     automatedProcessUserID,
+		Object: "User",
+		Fields: map[string]Value{
+			"Username":          StringValue("automated-process@example.invalid"),
+			"FirstName":         StringValue("Automated"),
+			"LastName":          StringValue("Process"),
+			"Name":              StringValue("Automated Process"),
+			"Alias":             StringValue("autoproc"),
+			"Email":             StringValue("automated-process@example.invalid"),
+			"ProfileId":         IDValue(profileID),
+			"IsActive":          BooleanValue(true),
+			"UserType":          StringValue("AutomatedProcess"),
+			"LocaleSidKey":      StringValue("en_US"),
+			"LanguageLocaleKey": StringValue("en_US"),
+			"TimeZoneSidKey":    StringValue("UTC"),
+			"EmailEncodingKey":  StringValue("UTF-8"),
+		},
+	})
 	putSeedRecord(org, "PermissionSet", Record{
 		ID:     permissionSetID,
 		Object: "PermissionSet",
@@ -790,6 +830,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"Name":             StringValue("OaerBaseline"),
 			"Label":            StringValue("OAER Baseline"),
 			"Type":             StringValue("Regular"),
+			"IsCustom":         BooleanValue(false),
 			"IsOwnedByProfile": BooleanValue(false),
 		},
 	})
@@ -800,9 +841,33 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"Name":             StringValue("Proving_With_User_Mode_Works"),
 			"Label":            StringValue("Proving With User Mode Works"),
 			"Type":             StringValue("Regular"),
+			"IsCustom":         BooleanValue(false),
 			"IsOwnedByProfile": BooleanValue(false),
 		},
 	})
+	seedProfileOwnedPermissionSet := func(id ID, name string, profileID ID) {
+		putSeedRecord(org, "PermissionSet", Record{
+			ID:     id,
+			Object: "PermissionSet",
+			Fields: map[string]Value{
+				"Name":                           StringValue(name),
+				"Label":                          StringValue(name),
+				"Type":                           StringValue("Profile"),
+				"IsCustom":                       BooleanValue(false),
+				"IsOwnedByProfile":               BooleanValue(true),
+				"ProfileId":                      IDValue(profileID),
+				"PermissionsEditPublicTemplates": BooleanValue(false),
+				"PermissionsManageSolutions":     BooleanValue(false),
+				"PermissionsActivateContract":    BooleanValue(false),
+			},
+		})
+	}
+	seedProfileOwnedPermissionSet(ID("0PS000000000003"), "System Administrator", profileID)
+	seedProfileOwnedPermissionSet(ID("0PS000000000004"), "Minimum Access - Salesforce", minimumAccessProfileID)
+	seedProfileOwnedPermissionSet(ID("0PS000000000005"), "Chatter External User", chatterExternalProfileID)
+	seedProfileOwnedPermissionSet(ID("0PS000000000006"), "Standard Platform User", standardPlatformUserProfileID)
+	seedProfileOwnedPermissionSet(ID("0PS000000000007"), "Standard User", standardUserProfileID)
+	seedProfileOwnedPermissionSet(ID("0PS000000000008"), "Marketing User", marketingUserProfileID)
 	putSeedRecord(org, "PermissionSetAssignment", Record{
 		ID:     assignmentID,
 		Object: "PermissionSetAssignment",
@@ -852,11 +917,11 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	}
 	for object, sequence := range map[string]uint64{
 		"Organization":            1,
-		"Profile":                 4,
+		"Profile":                 6,
 		"UserLicense":             2,
 		"UserRole":                1,
-		"User":                    1,
-		"PermissionSet":           1,
+		"User":                    2,
+		"PermissionSet":           8,
 		"PermissionSetAssignment": 1,
 		"FieldPermissions":        1,
 		"ObjectPermissions":       2,
@@ -866,6 +931,16 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		if org.IDSequences[object] < sequence {
 			org.IDSequences[object] = sequence
 		}
+	}
+}
+
+func profileSeedFields(name string, licenseID ID) map[string]Value {
+	return map[string]Value{
+		"Name":                           StringValue(name),
+		"UserLicenseId":                  IDValue(licenseID),
+		"PermissionsEditPublicTemplates": BooleanValue(false),
+		"PermissionsManageSolutions":     BooleanValue(false),
+		"PermissionsActivateContract":    BooleanValue(false),
 	}
 }
 
@@ -1117,10 +1192,15 @@ func ensureObject(org *OrgState, name, prefix string, fields map[string]Field) {
 			object.Definition.Fields[existingKey] = existing
 		}
 		if field.Type == FieldReference && field.RelationshipName != "" && len(field.ReferenceTo) > 0 && !hasParentRelationship(object.Definition.Relations, field.RelationshipName) {
+			childRelationship := field.ChildRelationshipName
+			if childRelationship == "" && strings.HasSuffix(field.APIName, "__c") && !strings.HasSuffix(field.RelationshipName, "__r") {
+				childRelationship = field.RelationshipName + "__r"
+			}
 			object.Definition.Relations = append(object.Definition.Relations, Relationship{
 				Field:              field.APIName,
 				ParentObjects:      append([]string(nil), field.ReferenceTo...),
 				ParentRelationship: field.RelationshipName,
+				ChildRelationship:  childRelationship,
 				Polymorphic:        len(field.ReferenceTo) > 1,
 			})
 		}

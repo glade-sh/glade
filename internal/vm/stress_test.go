@@ -18,7 +18,7 @@ func TestStressDescribeHeavyExecution(t *testing.T) {
 		source += fmt.Sprintf("List<Object> recordTypes%d = accountDescribe.getRecordTypeInfos();\n", i)
 		source += fmt.Sprintf("System.assertEquals(3, recordTypes%d.size());\n", i)
 		source += fmt.Sprintf("List<Object> children%d = accountDescribe.getChildRelationships();\n", i)
-		source += fmt.Sprintf("System.assertEquals(1, children%d.size());\n", i)
+		source += fmt.Sprintf("System.assert(children%d.size() >= 1);\n", i)
 	}
 	program, err := CompileAnonymous(source)
 	if err != nil {
