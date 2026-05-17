@@ -700,12 +700,12 @@ System.assertEquals(null, providerId);
 
 func TestExecSafeNavigationReadsFieldAfterMethodCall(t *testing.T) {
 	program, err := CompileAnonymous(`
-Account account = new Account(Name = 'Acme', Vuid__c = 'v1');
+Account account = new Account(Name = 'Acme', ExternalId__c = 'v1');
 Map<Id, Account> accounts = new Map<Id, Account>();
 accounts.put('001000000000001AAA', account);
-String vuid = accounts.get('001000000000001AAA')?.Vuid__c;
-System.assertEquals('v1', vuid);
-System.assertEquals(null, accounts.get('001000000000002AAA')?.Vuid__c);
+String externalId = accounts.get('001000000000001AAA')?.ExternalId__c;
+System.assertEquals('v1', externalId);
+System.assertEquals(null, accounts.get('001000000000002AAA')?.ExternalId__c);
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -2380,37 +2380,37 @@ System.assert(!('bob' instanceof Id));
 	}
 }
 
-func TestFflibNativeMatcherPrimitiveAndReferenceSemantics(t *testing.T) {
+func TestFrameworkNativeMatcherPrimitiveAndReferenceSemantics(t *testing.T) {
 	machine := New(nil)
 	one := List(String("bob"), String("tom"))
 	two := List(String("bob"), String("tom"))
-	refEq := Object("fflib_MatcherDefinitions.RefEq")
+	refEq := Object("framework_MatcherDefinitions.RefEq")
 	refEq.Fields["toMatch"] = one
-	if matched, _, err := machine.fflibMatcherMatches(refEq, one); err != nil || !matched {
+	if matched, _, err := machine.frameworkMatcherMatches(refEq, one); err != nil || !matched {
 		t.Fatalf("RefEq same reference matched=%v err=%v", matched, err)
 	}
-	if matched, _, err := machine.fflibMatcherMatches(refEq, two); err != nil || matched {
+	if matched, _, err := machine.frameworkMatcherMatches(refEq, two); err != nil || matched {
 		t.Fatalf("RefEq equal different list matched=%v err=%v", matched, err)
 	}
 
-	anyDatetime := Object("fflib_MatcherDefinitions.AnyDatetime")
-	if matched, _, err := machine.fflibMatcherMatches(anyDatetime, platformScalar("Date", "2024-02-29")); err != nil || !matched {
+	anyDatetime := Object("framework_MatcherDefinitions.AnyDatetime")
+	if matched, _, err := machine.frameworkMatcherMatches(anyDatetime, platformScalar("Date", "2024-02-29")); err != nil || !matched {
 		t.Fatalf("AnyDatetime date matched=%v err=%v", matched, err)
 	}
-	if matched, _, err := machine.fflibMatcherMatches(anyDatetime, platformScalar("Datetime", "2024-02-29T12:34:56Z")); err != nil || !matched {
+	if matched, _, err := machine.frameworkMatcherMatches(anyDatetime, platformScalar("Datetime", "2024-02-29T12:34:56Z")); err != nil || !matched {
 		t.Fatalf("AnyDatetime datetime matched=%v err=%v", matched, err)
 	}
 
-	anyInteger := Object("fflib_MatcherDefinitions.AnyInteger")
+	anyInteger := Object("framework_MatcherDefinitions.AnyInteger")
 	longValue := Int(9)
 	longValue.Type = "Long"
-	if matched, _, err := machine.fflibMatcherMatches(anyInteger, Int(9)); err != nil || !matched {
+	if matched, _, err := machine.frameworkMatcherMatches(anyInteger, Int(9)); err != nil || !matched {
 		t.Fatalf("AnyInteger integer matched=%v err=%v", matched, err)
 	}
-	if matched, _, err := machine.fflibMatcherMatches(anyInteger, longValue); err != nil || matched {
+	if matched, _, err := machine.frameworkMatcherMatches(anyInteger, longValue); err != nil || matched {
 		t.Fatalf("AnyInteger long matched=%v err=%v", matched, err)
 	}
-	if matched, _, err := machine.fflibMatcherMatches(anyInteger, Decimal(9.99)); err != nil || matched {
+	if matched, _, err := machine.frameworkMatcherMatches(anyInteger, Decimal(9.99)); err != nil || matched {
 		t.Fatalf("AnyInteger decimal matched=%v err=%v", matched, err)
 	}
 }
@@ -2692,20 +2692,20 @@ System.assertEquals('LastModifiedById', Account.SObjectType.fields.getMap().get(
 func TestExecSObjectFieldMapSynthesizesStandardFieldToken(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectType> globalDescribe = Schema.getGlobalDescribe();
-Schema.SObjectType boardCertification = globalDescribe.get('BoardCertification');
+Schema.SObjectType boardCertification = globalDescribe.get('Credentialification');
 Map<String, Schema.SObjectField> fields = boardCertification.getDescribe().fields.getMap();
 Schema.SObjectField practitioner = fields.get('PractitionerId');
 System.assertNotEquals(null, practitioner);
 System.assertEquals('PractitionerId', practitioner.getDescribe().getName());
-System.assertEquals('PractitionerId', fields.get('BoardCertification.PractitionerId').getDescribe().getName());
+System.assertEquals('PractitionerId', fields.get('Credentialification.PractitionerId').getDescribe().getName());
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	org.Objects["BoardCertification"] = storage.ObjectState{
+	org.Objects["Credentialification"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "BoardCertification",
+			APIName: "Credentialification",
 			Fields:  map[string]storage.Field{},
 		},
 		Records: make(map[storage.ID]storage.Record),

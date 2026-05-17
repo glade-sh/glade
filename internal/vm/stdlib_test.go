@@ -3481,21 +3481,16 @@ System.assertEquals('https://local.oaer.example/apex/current?mode=local', withPa
 	}
 }
 
-func TestExecTypeNewInstanceUnsupportedNamespacePackageToken(t *testing.T) {
+func TestExecTypeForNameReturnsNullForMissingNamespacedClass(t *testing.T) {
 	program, err := CompileAnonymous(`
 Type packaged = Type.forName('pkg', 'Thing');
-packaged.newInstance();
+System.assertEquals(null, packaged);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = Execute(program, nil)
-	var runtimeErr *RuntimeError
-	if !errors.As(err, &runtimeErr) {
-		t.Fatalf("error type = %T, want *RuntimeError", err)
-	}
-	if runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "Type.newInstance namespace/package reflection for pkg.Thing"` {
-		t.Fatalf("runtime error = (%q, %q)", runtimeErr.Type, runtimeErr.Message)
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -4454,8 +4449,8 @@ func TestCollectionStdlibCloneValueBreaksCycles(t *testing.T) {
 }
 
 func TestCollectionStdlibCloneValuePreservesApexMocksProviderCycles(t *testing.T) {
-	provider := Object("fflib_ApexMocks")
-	recorder := Object("fflib_MethodReturnValueRecorder")
+	provider := Object("framework_ApexMocks")
+	recorder := Object("framework_MethodReturnValueRecorder")
 	proxy := Object("ISchemaService")
 	proxy.Fields["__oaerStubProvider"] = provider
 	recorder.Fields["proxy"] = proxy
@@ -4465,7 +4460,7 @@ func TestCollectionStdlibCloneValuePreservesApexMocksProviderCycles(t *testing.T
 	if cloned.Fields["methodReturnValueRecorder"].Fields["proxy"].Fields["__oaerStubProvider"].Fields["methodReturnValueRecorder"].Kind == ValueNull {
 		t.Fatalf("cloned ApexMocks provider cycle lost recorder field")
 	}
-	if cloned.Fields["methodReturnValueRecorder"].Fields["proxy"].Fields["__oaerStubProvider"].Fields["methodReturnValueRecorder"].Type != "fflib_MethodReturnValueRecorder" {
+	if cloned.Fields["methodReturnValueRecorder"].Fields["proxy"].Fields["__oaerStubProvider"].Fields["methodReturnValueRecorder"].Type != "framework_MethodReturnValueRecorder" {
 		t.Fatalf("cloned ApexMocks provider cycle did not preserve recorder object")
 	}
 }

@@ -4770,8 +4770,8 @@ func TestUnitOfWorkCommitPersistsMultipleObjectBuckets(t *testing.T) {
 				APIName:   "Child__c",
 				KeyPrefix: "a01",
 				Fields: map[string]storage.Field{
-					"Id":       {APIName: "Id", Type: storage.FieldID},
-					"Name":     {APIName: "Name", Type: storage.FieldString},
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Name":      {APIName: "Name", Type: storage.FieldString},
 					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
 				},
 				Relations: []storage.Relationship{{
@@ -4785,7 +4785,7 @@ func TestUnitOfWorkCommitPersistsMultipleObjectBuckets(t *testing.T) {
 	}}
 	machine := New(nil)
 	machine.SetOrg(&org)
-	uow, err := machine.constructFflibSObjectUnitOfWork([]Value{
+	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{
 		List(sObjectTypeToken("Parent__c"), sObjectTypeToken("Child__c")),
 	}, nil)
 	if err != nil {
@@ -4795,13 +4795,13 @@ func TestUnitOfWorkCommitPersistsMultipleObjectBuckets(t *testing.T) {
 	parent.Fields["Name"] = String("Parent")
 	child := Object("Child__c")
 	child.Fields["Name"] = String("Child")
-	if _, _, err := machine.callFflibSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := machine.callFflibSObjectUnitOfWorkMember(uow, "registernew", []Value{child}, nil); err != nil {
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{child}, nil); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := machine.callFflibSObjectUnitOfWorkMember(uow, "commitwork", nil, nil); err != nil {
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "commitwork", nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(machine.Org.Objects["Parent__c"].Records); got != 1 {
@@ -4856,7 +4856,7 @@ func TestUnitOfWorkCommitPersistsChildBucketWithDeferredRelationship(t *testing.
 	}}
 	machine := New(nil)
 	machine.SetOrg(&org)
-	uow, err := machine.constructFflibSObjectUnitOfWork([]Value{
+	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{
 		List(sObjectTypeToken("Unused__c"), sObjectTypeToken("Parent__c"), sObjectTypeToken("Child__c")),
 	}, nil)
 	if err != nil {
@@ -4866,16 +4866,16 @@ func TestUnitOfWorkCommitPersistsChildBucketWithDeferredRelationship(t *testing.
 	parent.Fields["Name"] = String("Parent")
 	child := Object("Child__c")
 	child.Fields["Name"] = String("Child")
-	if _, _, err := machine.callFflibSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := machine.callFflibSObjectUnitOfWorkMember(uow, "registernew", []Value{child}, nil); err != nil {
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{child}, nil); err != nil {
 		t.Fatal(err)
 	}
-	if err := machine.addFflibSObjectUnitOfWorkRelationship(uow, "Child__c", child, sObjectFieldToken("Child__c", "Parent__c"), parent); err != nil {
+	if err := machine.addFrameworkSObjectUnitOfWorkRelationship(uow, "Child__c", child, sObjectFieldToken("Child__c", "Parent__c"), parent); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := machine.callFflibSObjectUnitOfWorkMember(uow, "commitwork", nil, nil); err != nil {
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "commitwork", nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(machine.Org.Objects["Parent__c"].Records); got != 1 {
@@ -4899,7 +4899,7 @@ Account account = accountType.newInstance();
 account.Name = 'Acme';
 System.assertEquals('Acme', account.Name);
 Type namespaced = Type.forName('pkg', 'Thing');
-System.assertEquals('pkg.Thing', namespaced.getName());
+System.assertEquals(null, namespaced);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5720,7 +5720,7 @@ Test.stopTest();
 	if err != nil {
 		t.Fatal(err)
 	}
-queueProgram, err := CompileAnonymous(`
+	queueProgram, err := CompileAnonymous(`
 System.assertEquals(true, System.AsyncInfo.hasMaxStackDepth());
 System.assertEquals(1, System.AsyncInfo.getCurrentQueueableStackDepth());
 System.assert(System.AsyncInfo.getMaximumQueueableStackDepth() > 0);

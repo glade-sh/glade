@@ -2247,9 +2247,6 @@ func applyProjectSetupSingletonRecords(org *storage.OrgState) {
 		fields := map[string]storage.Value{
 			"Name": storage.StringValue("Default"),
 		}
-		if _, ok := state.Definition.Fields["Data_Mappings__c"]; ok {
-			fields["Data_Mappings__c"] = storage.StringValue(defaultSetupDataMappingsJSON)
-		}
 		state.Records[id] = storage.Record{
 			ID:     id,
 			Object: state.Definition.APIName,
@@ -2258,8 +2255,6 @@ func applyProjectSetupSingletonRecords(org *storage.OrgState) {
 		org.Objects[objectName] = state
 	}
 }
-
-const defaultSetupDataMappingsJSON = `{"provider":{"sfObject":"User","rows":[{"tpField":"firstName","sfField":"FirstName"},{"tpField":"lastName","sfField":"LastName"},{"tpField":"providerId","sfField":"Id"},{"tpField":"npi","sfField":"Title"},{"tpField":"deactivated","sfField":"ReceivesAdminInfoEmails"}]},"license":{"sfObject":"Contact","lookupField":"OwnerId","verifLookupField":"Id","rows":[{"tpField":"licenseNumber","sfField":"Name"},{"tpField":"verificationId","sfField":"Title"},{"tpField":"state","sfField":"Department"}]},"dea":{"sfObject":"Contact","lookupField":"OwnerId","verifLookupField":"Id","rows":[{"tpField":"registrationNumber","sfField":"Name"},{"tpField":"id","sfField":"Title"}]},"boardCert":{"sfObject":"Contact","lookupField":"OwnerId","verifLookupField":"Id","rows":[{"tpField":"BoardCertificationNumber","sfField":"Name"},{"tpField":"type","sfField":"Department"},{"tpField":"id","sfField":"Title"}]}}`
 
 func schemaFromIndex(index typesys.Index) schema.Schema {
 	return schema.Schema{Objects: append([]schema.Object(nil), index.Objects...)}

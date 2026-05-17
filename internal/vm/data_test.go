@@ -114,8 +114,8 @@ insert parent;
 Account a = new Account(Name = 'Acme', External_Key__c = 'board-1');
 a.ParentId = parent.Id;
 insert a;
-Set<String> vuids = new Set<String>{ 'board-1' };
-List<Account> rows = Database.query('SELECT Id, External_Key__c, ParentId FROM Account WHERE External_Key__c IN:vuids AND ParentId != NULL');
+Set<String> externalIds = new Set<String>{ 'board-1' };
+List<Account> rows = Database.query('SELECT Id, External_Key__c, ParentId FROM Account WHERE External_Key__c IN:externalIds AND ParentId != NULL');
 System.assertEquals(1, rows.size());
 System.assertEquals('board-1', rows[0].External_Key__c);
 `)
@@ -135,14 +135,14 @@ System.assertEquals('board-1', rows[0].External_Key__c);
 
 func TestExecDynamicSOQLFindsStandardObjectFieldsUsedByDeleteRetry(t *testing.T) {
 	program, err := CompileAnonymous(`
-Contact c = new Contact(LastName = 'Hopkins', MobilePhone = 'provider-vuid');
+Contact c = new Contact(LastName = 'Hopkins', MobilePhone = 'provider-externalId');
 insert c;
 Asset board = new Asset(Name = '123456');
-board.ExternalIdentifier = 'board-vuid';
+board.ExternalIdentifier = 'board-externalId';
 board.ContactId = c.Id;
 insert board;
-Set<String> vuids = new Set<String>{ 'board-vuid' };
-List<SObject> rows = Database.query('SELECT Id, ExternalIdentifier, ContactId FROM Asset WHERE ExternalIdentifier IN:vuids AND ContactId != NULL');
+Set<String> externalIds = new Set<String>{ 'board-externalId' };
+List<SObject> rows = Database.query('SELECT Id, ExternalIdentifier, ContactId FROM Asset WHERE ExternalIdentifier IN:externalIds AND ContactId != NULL');
 System.assertEquals(1, rows.size());
 SObject row = rows[0];
 System.assertEquals(board.Id, row.Id);
@@ -6895,21 +6895,21 @@ try {
 }
 
 func TestExecDynamicSOQLLocalBindBuildsIdSObjectMapWithCustomField(t *testing.T) {
-	selectByID, err := CompileAnonymous("return Database.query('SELECT Id, Name, Vuid__c FROM Account WHERE id in :idSet');")
+	selectByID, err := CompileAnonymous("return Database.query('SELECT Id, Name, ExternalId__c FROM Account WHERE id in :idSet');")
 	if err != nil {
 		t.Fatal(err)
 	}
 	program, err := CompileAnonymous(`
-Account acct = new Account(Name = 'Acme', Vuid__c = 'v1');
+Account acct = new Account(Name = 'Acme', ExternalId__c = 'v1');
 insert acct;
 Set<Id> ids = new Set<Id>{ acct.Id };
 Map<Id, Account> accounts = new Map<Id, Account>((List<Account>) LocalAccountSelector.selectSObjectsById(ids));
-System.assertEquals('v1', accounts.get(acct.Id)?.Vuid__c);
+System.assertEquals('v1', accounts.get(acct.Id)?.ExternalId__c);
 Account loaded = accounts.get(acct.Id);
 SObject record = loaded;
-System.assertNotEquals(null, Account.Vuid__c);
-Schema.SObjectField vuidField = Account.Vuid__c;
-System.assertEquals('v1', record.get(vuidField));
+System.assertNotEquals(null, Account.ExternalId__c);
+Schema.SObjectField externalIdField = Account.ExternalId__c;
+System.assertEquals('v1', record.get(externalIdField));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -6917,7 +6917,7 @@ System.assertEquals('v1', record.get(vuidField));
 	machine := New(nil)
 	org := testDataOrg()
 	account := org.Objects["Account"]
-	account.Definition.Fields["Vuid__c"] = storage.Field{APIName: "Vuid__c", Type: storage.FieldString}
+	account.Definition.Fields["ExternalId__c"] = storage.Field{APIName: "ExternalId__c", Type: storage.FieldString}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
 	if err := machine.RegisterClass(Class{

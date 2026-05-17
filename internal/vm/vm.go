@@ -2459,7 +2459,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if value, handled, err := vm.callEnumStaticMember(className, methodName, args); handled || err != nil {
 			return value, err
 		}
-		if value, handled, err := vm.callFflibStaticMember(className, methodName, args); handled || err != nil {
+		if value, handled, err := vm.callFrameworkStaticMember(className, methodName, args); handled || err != nil {
 			return value, err
 		}
 		if packagedControllerDefaultMethod(className, methodName) || packagedControllerUnsupportedMethod(className, methodName) {
@@ -2596,7 +2596,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if value, handled, err := vm.callEnumStaticMember(className, methodName, args); handled || err != nil {
 			return value, err
 		}
-		if value, handled, err := vm.callFflibStaticMember(className, methodName, args); handled || err != nil {
+		if value, handled, err := vm.callFrameworkStaticMember(className, methodName, args); handled || err != nil {
 			return value, err
 		}
 		if method, ok, ambiguous := vm.resolveStaticMethodForArgs(className, methodName, args); ok {
@@ -9043,7 +9043,7 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 			vm.recordAsyncJob(job, "Failed", err.Error())
 			return err
 		}
-		if job.Kind == "ScheduledApex" {
+		if job.Kind == "ScheduledApex" || (vm.testContext != nil && job.Kind == "BatchApex") {
 			vm.recordAsyncJob(job, "Queued", "")
 		} else {
 			vm.recordAsyncJob(job, "Completed", "")
@@ -24721,8 +24721,8 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	if strings.EqualFold(typeName, "Continuation") {
 		return newContinuation(args, namedArgs)
 	}
-	if strings.EqualFold(typeName, "fflib_SObjectUnitOfWork") {
-		return vm.constructFflibSObjectUnitOfWork(args, namedArgs)
+	if strings.EqualFold(typeName, "framework_SObjectUnitOfWork") {
+		return vm.constructFrameworkSObjectUnitOfWork(args, namedArgs)
 	}
 	if class, ok := vm.Classes[typeName]; ok {
 		if class.IsInterface {
@@ -24737,7 +24737,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if len(class.EnumValues) > 0 {
 			return Null, fmt.Errorf("cannot instantiate enum %s", typeName)
 		}
-		if value, handled, err := vm.constructFflibFastDTO(typeName, args, namedArgs); handled || err != nil {
+		if value, handled, err := vm.constructFrameworkFastDTO(typeName, args, namedArgs); handled || err != nil {
 			return value, err
 		}
 		if err := vm.ensureClassInitialized(class.Name); err != nil {
@@ -25909,8 +25909,8 @@ func (vm *VM) callChainedConstructor(callee string, args []Value, result *Result
 	if vm.activeConstructors[constructorCallKey(target)] > 0 {
 		return Null, fmt.Errorf("recursive constructor invocation %s", target.Name)
 	}
-	if callee == "super" && strings.EqualFold(targetClass.Name, "fflib_SObjectUnitOfWork") {
-		constructed, err := vm.constructFflibSObjectUnitOfWork(args, nil)
+	if callee == "super" && strings.EqualFold(targetClass.Name, "framework_SObjectUnitOfWork") {
+		constructed, err := vm.constructFrameworkSObjectUnitOfWork(args, nil)
 		if err != nil {
 			return Null, err
 		}
@@ -31396,22 +31396,22 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return value, true, err
 			}
 		}
-		if value, handled, err := vm.callFflibSObjectDescribeMember(receiver, method, args, result); handled || err != nil {
+		if value, handled, err := vm.callFrameworkSObjectDescribeMember(receiver, method, args, result); handled || err != nil {
 			return value, true, err
 		}
-		if value, handled, err := vm.callFflibSObjectUnitOfWorkMember(receiver, method, args, result); handled || err != nil {
+		if value, handled, err := vm.callFrameworkSObjectUnitOfWorkMember(receiver, method, args, result); handled || err != nil {
 			return value, true, err
 		}
-		if value, handled, err := vm.callFflibQueryFactoryMember(receiver, method, args); handled || err != nil {
+		if value, handled, err := vm.callFrameworkQueryFactoryMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
-		if value, handled, err := vm.callFflibSimpleDMLMember(receiver, method, args, result); handled || err != nil {
+		if value, handled, err := vm.callFrameworkSimpleDMLMember(receiver, method, args, result); handled || err != nil {
 			return value, true, err
 		}
-		if value, handled, err := vm.callFflibMockRecorderMember(receiver, method, args); handled || err != nil {
+		if value, handled, err := vm.callFrameworkMockRecorderMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
-		if value, handled, err := vm.callFflibMatcherMember(receiver, method, args); handled || err != nil {
+		if value, handled, err := vm.callFrameworkMatcherMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
 		if strings.EqualFold(method, "values") || strings.EqualFold(method, "valueOf") {
@@ -32436,7 +32436,7 @@ func (vm *VM) apexObjectHashMapKey(value Value) (string, bool) {
 		strings.EqualFold(value.Type, "Type") {
 		return "", false
 	}
-	if key, ok := vm.fflibQualifiedMethodMapKey(value); ok {
+	if key, ok := vm.frameworkQualifiedMethodMapKey(value); ok {
 		return key, true
 	}
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(value.Type, "hashCode", nil)
@@ -32450,15 +32450,15 @@ func (vm *VM) apexObjectHashMapKey(value Value) (string, bool) {
 	return string(ValueObject) + ":" + value.Type + ":hash:" + strconv.FormatInt(result.Int, 10), true
 }
 
-func (vm *VM) fflibQualifiedMethodMapKey(value Value) (string, bool) {
-	if !strings.EqualFold(value.Type, "fflib_QualifiedMethod") {
+func (vm *VM) frameworkQualifiedMethodMapKey(value Value) (string, bool) {
+	if !strings.EqualFold(value.Type, "framework_QualifiedMethod") {
 		return "", false
 	}
 	typeName := objectStringField(value, "typeName")
 	methodName := objectStringField(value, "methodName")
 	_, methodArgTypes, _ := objectFieldValue(value, "methodArgTypes")
-	parts := []string{"object:fflib_QualifiedMethod", strings.ToLower(typeName), strings.ToLower(methodName), mapKey(methodArgTypes)}
-	if vm.fflibApexMocksIndependentMocks() {
+	parts := []string{"object:framework_QualifiedMethod", strings.ToLower(typeName), strings.ToLower(methodName), mapKey(methodArgTypes)}
+	if vm.frameworkApexMocksIndependentMocks() {
 		_, mockInstance, _ := objectFieldValue(value, "mockInstance")
 		parts = append(parts, strconv.FormatUint(mockInstance.Ref, 10), mapKey(mockInstance))
 	}
@@ -32483,8 +32483,8 @@ func objectStringField(value Value, field string) string {
 	return ""
 }
 
-func (vm *VM) fflibApexMocksIndependentMocks() bool {
-	class, ok := vm.Classes["fflib_ApexMocksConfig"]
+func (vm *VM) frameworkApexMocksIndependentMocks() bool {
+	class, ok := vm.Classes["framework_ApexMocksConfig"]
 	if !ok {
 		return false
 	}
@@ -32710,7 +32710,7 @@ func (vm *VM) declaredReceiverIsEnum(receiverName string) bool {
 }
 
 func (vm *VM) mapKeysEqual(storedKey, lookupKey Value) (bool, error) {
-	if equal, ok := vm.fflibQualifiedMethodKeysEqual(storedKey, lookupKey); ok {
+	if equal, ok := vm.frameworkQualifiedMethodKeysEqual(storedKey, lookupKey); ok {
 		return equal, nil
 	}
 	if storedKey.Kind == ValueObject {
@@ -32727,13 +32727,13 @@ func (vm *VM) mapKeysEqual(storedKey, lookupKey Value) (bool, error) {
 	return storedKey.Equal(lookupKey), nil
 }
 
-func (vm *VM) fflibQualifiedMethodKeysEqual(left, right Value) (bool, bool) {
+func (vm *VM) frameworkQualifiedMethodKeysEqual(left, right Value) (bool, bool) {
 	if left.Kind != ValueObject || right.Kind != ValueObject ||
-		!strings.EqualFold(left.Type, "fflib_QualifiedMethod") ||
-		!strings.EqualFold(right.Type, "fflib_QualifiedMethod") {
+		!strings.EqualFold(left.Type, "framework_QualifiedMethod") ||
+		!strings.EqualFold(right.Type, "framework_QualifiedMethod") {
 		return false, false
 	}
-	if vm.fflibApexMocksIndependentMocks() {
+	if vm.frameworkApexMocksIndependentMocks() {
 		_, leftMock, _ := objectFieldValue(left, "mockInstance")
 		_, rightMock, _ := objectFieldValue(right, "mockInstance")
 		if !valueAliasMatch(leftMock, rightMock) && !leftMock.Equal(rightMock) {
@@ -33042,17 +33042,17 @@ func (vm *VM) currentStubProvider(receiver Value) Value {
 	if provider.Kind != ValueObject || provider.Ref == 0 {
 		return provider
 	}
-	if live, ok := vm.findLiveStubProvider(provider); ok && fflibApexMocksProviderActive(live) {
+	if live, ok := vm.findLiveStubProvider(provider); ok && frameworkApexMocksProviderActive(live) {
 		return live
 	}
 	if current, ok := vm.findValueByRef(provider.Ref); ok && current.Kind == ValueObject {
-		if fflibApexMocksProviderActive(current) {
+		if frameworkApexMocksProviderActive(current) {
 			return current
 		}
-		if fflibApexMocksProviderHasRecorder(current) {
+		if frameworkApexMocksProviderHasRecorder(current) {
 			return current
 		}
-		if fflibApexMocksProviderHasRecorder(provider) {
+		if frameworkApexMocksProviderHasRecorder(provider) {
 			return provider
 		}
 		if !stubProviderStateFlagSet(current) {
@@ -33062,7 +33062,7 @@ func (vm *VM) currentStubProvider(receiver Value) Value {
 		}
 		return current
 	}
-	if fflibApexMocksProviderHasRecorder(provider) {
+	if frameworkApexMocksProviderHasRecorder(provider) {
 		return provider
 	}
 	if current, ok := vm.findLiveStubProvider(provider); ok {
@@ -33071,8 +33071,8 @@ func (vm *VM) currentStubProvider(receiver Value) Value {
 	return provider
 }
 
-func fflibApexMocksProviderActive(provider Value) bool {
-	if provider.Kind != ValueObject || !strings.EqualFold(provider.Type, "fflib_ApexMocks") {
+func frameworkApexMocksProviderActive(provider Value) bool {
+	if provider.Kind != ValueObject || !strings.EqualFold(provider.Type, "framework_ApexMocks") {
 		return false
 	}
 	if _, value, ok := objectFieldValue(provider, "verifying"); ok && value.Kind == ValueBool && value.Bool {
@@ -33088,8 +33088,8 @@ func fflibApexMocksProviderActive(provider Value) bool {
 	return false
 }
 
-func fflibApexMocksProviderHasRecorder(provider Value) bool {
-	if provider.Kind != ValueObject || !strings.EqualFold(provider.Type, "fflib_ApexMocks") {
+func frameworkApexMocksProviderHasRecorder(provider Value) bool {
+	if provider.Kind != ValueObject || !strings.EqualFold(provider.Type, "framework_ApexMocks") {
 		return false
 	}
 	_, recorder, ok := objectFieldValue(provider, "methodReturnValueRecorder")
@@ -33269,24 +33269,19 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 	}
 	provider = vm.currentStubProvider(receiver)
 	if value.Kind == ValueNull && !vm.stubProviderRecordingMode(provider) {
-		if fallback, ok, err := vm.unstubbedFflibMockReturnFallback(receiver, method, target, args, result); ok || err != nil {
+		if fallback, ok, err := vm.unstubbedFrameworkMockReturnFallback(receiver, method, target, args, result); ok || err != nil {
 			return fallback, true, err
 		}
 	}
 	if value.Kind == ValueNull && stubReturnCanUseReceiver(target.ReturnType, receiver) && !vm.stubProviderRecordingMode(provider) {
 		return receiver, true, nil
 	}
-	if value.Kind == ValueNull && !vm.stubProviderRecordingMode(provider) && !fflibApexMocksProviderHasRecorder(provider) {
-		if defaulted, ok := stubCollectionDefaultValue(target.ReturnType); ok {
-			return defaulted, true, nil
-		}
-	}
 	if target.ReturnType == "" || strings.EqualFold(target.ReturnType, "void") {
 		return Null, true, nil
 	}
 	coerced, err := vm.coerceAssignable(target.ReturnType, value)
 	if err != nil {
-		if fallback, ok := fflibMismatchedStubReturnFallback(target.ReturnType, value, provider); ok {
+		if fallback, ok := frameworkMismatchedStubReturnFallback(target.ReturnType, value, provider); ok {
 			return fallback, true, nil
 		}
 		return Null, true, fmt.Errorf("stubbed %s.%s return: %w", receiver.Type, method, err)
@@ -33294,7 +33289,7 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 	return coerced, true, nil
 }
 
-func (vm *VM) unstubbedFflibMockReturnFallback(receiver Value, method string, target Method, args []Value, result *Result) (Value, bool, error) {
+func (vm *VM) unstubbedFrameworkMockReturnFallback(receiver Value, method string, target Method, args []Value, result *Result) (Value, bool, error) {
 	if strings.EqualFold(receiver.Type, "IUnitOfWorkService") &&
 		strings.EqualFold(method, "getInstance") &&
 		strings.EqualFold(target.ReturnType, "ISecureUnitOfWork") {
@@ -33308,11 +33303,11 @@ func (vm *VM) unstubbedFflibMockReturnFallback(receiver Value, method string, ta
 	return Null, false, nil
 }
 
-func fflibMismatchedStubReturnFallback(returnType string, value Value, provider Value) (Value, bool) {
+func frameworkMismatchedStubReturnFallback(returnType string, value Value, provider Value) (Value, bool) {
 	if returnType == "" || strings.EqualFold(returnType, "void") || value.Kind == ValueNull {
 		return Null, false
 	}
-	if !strings.Contains(strings.ToLower(provider.Type), "fflib") {
+	if !strings.Contains(strings.ToLower(provider.Type), "framework") {
 		return Null, false
 	}
 	if collectionBase(returnType) != "" || isMapType(returnType) {
@@ -33321,44 +33316,44 @@ func fflibMismatchedStubReturnFallback(returnType string, value Value, provider 
 	return defaultValue(returnType, Null), true
 }
 
-func (vm *VM) callFflibSObjectDescribeMember(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
-	if strings.EqualFold(receiver.Type, "fflib_SObjectDescribe") {
-		return vm.callFflibSObjectDescribe(receiver, method, args, result)
+func (vm *VM) callFrameworkSObjectDescribeMember(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	if strings.EqualFold(receiver.Type, "framework_SObjectDescribe") {
+		return vm.callFrameworkSObjectDescribe(receiver, method, args, result)
 	}
-	if strings.EqualFold(receiver.Type, "fflib_SObjectDescribe.FieldsMap") ||
-		strings.EqualFold(receiver.Type, "fflib_SObjectDescribe.GlobalDescribeMap") {
-		return vm.callFflibNamespacedAttributeMap(receiver, method, args)
+	if strings.EqualFold(receiver.Type, "framework_SObjectDescribe.FieldsMap") ||
+		strings.EqualFold(receiver.Type, "framework_SObjectDescribe.GlobalDescribeMap") {
+		return vm.callFrameworkNamespacedAttributeMap(receiver, method, args)
 	}
 	return Null, false, nil
 }
 
-func (vm *VM) callFflibStaticMember(className, method string, args []Value) (Value, bool, error) {
+func (vm *VM) callFrameworkStaticMember(className, method string, args []Value) (Value, bool, error) {
 	switch {
-	case strings.EqualFold(className, "fflib_SObjectDomain") && strings.EqualFold(method, "triggerHandler"):
-		return vm.callFflibSObjectDomainTriggerHandler(args)
-	case strings.EqualFold(className, "fflib_ApexMocks") && strings.EqualFold(method, "extractTypeName"):
+	case strings.EqualFold(className, "framework_SObjectDomain") && strings.EqualFold(method, "triggerHandler"):
+		return vm.callFrameworkSObjectDomainTriggerHandler(args)
+	case strings.EqualFold(className, "framework_ApexMocks") && strings.EqualFold(method, "extractTypeName"):
 		if len(args) != 1 {
-			return Null, true, fmt.Errorf("fflib_ApexMocks.extractTypeName expects 1 argument")
+			return Null, true, fmt.Errorf("framework_ApexMocks.extractTypeName expects 1 argument")
 		}
 		text := args[0].String()
 		if before, _, ok := strings.Cut(text, ":"); ok {
 			text = before
 		}
 		return String(text), true, nil
-	case strings.EqualFold(className, "fflib_Match") && strings.EqualFold(method, "matchesAllArgs"):
+	case strings.EqualFold(className, "framework_Match") && strings.EqualFold(method, "matchesAllArgs"):
 		if len(args) != 2 {
-			return Null, true, fmt.Errorf("fflib_Match.matchesAllArgs expects MethodArgValues and matchers")
+			return Null, true, fmt.Errorf("framework_Match.matchesAllArgs expects MethodArgValues and matchers")
 		}
-		matched, handled, err := vm.fflibMatchesAllArgs(args[0], args[1])
+		matched, handled, err := vm.frameworkMatchesAllArgs(args[0], args[1])
 		if !handled || err != nil {
 			return Null, handled, err
 		}
 		return Bool(matched), true, nil
-	case strings.EqualFold(className, "fflib_Match") && strings.EqualFold(method, "validateArgs"):
+	case strings.EqualFold(className, "framework_Match") && strings.EqualFold(method, "validateArgs"):
 		if len(args) != 2 {
-			return Null, true, fmt.Errorf("fflib_Match.validateArgs expects MethodArgValues and matchers")
+			return Null, true, fmt.Errorf("framework_Match.validateArgs expects MethodArgValues and matchers")
 		}
-		_, handled, err := vm.fflibMatchesAllArgs(args[0], args[1])
+		_, handled, err := vm.frameworkMatchesAllArgs(args[0], args[1])
 		if !handled || err != nil {
 			return Null, handled, err
 		}
@@ -33368,19 +33363,19 @@ func (vm *VM) callFflibStaticMember(className, method string, args []Value) (Val
 	}
 }
 
-func (vm *VM) callFflibSObjectDomainTriggerHandler(args []Value) (Value, bool, error) {
+func (vm *VM) callFrameworkSObjectDomainTriggerHandler(args []Value) (Value, bool, error) {
 	if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "Type") {
-		return Null, true, fmt.Errorf("fflib_SObjectDomain.triggerHandler expects Type")
+		return Null, true, fmt.Errorf("framework_SObjectDomain.triggerHandler expects Type")
 	}
 	domainClassName := typeValueName(args[0])
 	if domainClassName == "" {
-		return Null, true, fmt.Errorf("fflib_SObjectDomain.triggerHandler Type is blank")
+		return Null, true, fmt.Errorf("framework_SObjectDomain.triggerHandler Type is blank")
 	}
-	if ctx, ok := vm.fflibMockDatabaseContext(false); ok {
-		afterCtx, hasAfterCtx := vm.fflibMockDatabaseContext(true)
+	if ctx, ok := vm.frameworkMockDatabaseContext(false); ok {
+		afterCtx, hasAfterCtx := vm.frameworkMockDatabaseContext(true)
 		saved := vm.triggerGlobals
 		vm.triggerGlobals = ctx
-		beforeDomain, _, err := vm.callFflibSObjectDomainTriggerHandlerForContext(domainClassName)
+		beforeDomain, _, err := vm.callFrameworkSObjectDomainTriggerHandlerForContext(domainClassName)
 		if err != nil {
 			vm.triggerGlobals = saved
 			return Null, true, err
@@ -33388,10 +33383,10 @@ func (vm *VM) callFflibSObjectDomainTriggerHandler(args []Value) (Value, bool, e
 		if hasAfterCtx {
 			vm.triggerGlobals = afterCtx
 			domainOverride := Null
-			if fflibDomainTriggerStateEnabled(beforeDomain) {
+			if frameworkDomainTriggerStateEnabled(beforeDomain) {
 				domainOverride = beforeDomain
 			}
-			if _, _, err := vm.callFflibSObjectDomainTriggerHandlerForContextWithDomain(domainClassName, domainOverride); err != nil {
+			if _, _, err := vm.callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(domainClassName, domainOverride); err != nil {
 				vm.triggerGlobals = saved
 				return Null, true, err
 			}
@@ -33399,15 +33394,15 @@ func (vm *VM) callFflibSObjectDomainTriggerHandler(args []Value) (Value, bool, e
 		vm.triggerGlobals = saved
 		return Null, true, nil
 	}
-	return vm.callFflibSObjectDomainTriggerHandlerForContext(domainClassName)
+	return vm.callFrameworkSObjectDomainTriggerHandlerForContext(domainClassName)
 }
 
-func (vm *VM) callFflibSObjectDomainTriggerHandlerForContext(domainClassName string) (Value, bool, error) {
-	return vm.callFflibSObjectDomainTriggerHandlerForContextWithDomain(domainClassName, Null)
+func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContext(domainClassName string) (Value, bool, error) {
+	return vm.callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(domainClassName, Null)
 }
 
-func (vm *VM) callFflibSObjectDomainTriggerHandlerForContextWithDomain(domainClassName string, domainOverride Value) (Value, bool, error) {
-	if !vm.fflibTriggerEventEnabled(domainClassName) {
+func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(domainClassName string, domainOverride Value) (Value, bool, error) {
+	if !vm.frameworkTriggerEventEnabled(domainClassName) {
 		return Null, true, nil
 	}
 	records := vm.triggerGlobals["Trigger.new"]
@@ -33424,14 +33419,14 @@ func (vm *VM) callFflibSObjectDomainTriggerHandlerForContextWithDomain(domainCla
 	if domain.Kind != ValueObject {
 		domain, err = vm.constructValue(domainClassName, []Value{records}, nil, resultForLookup())
 		if err != nil && strings.HasSuffix(strings.ToLower(domainClassName), ".constructor") {
-			domain, err = vm.constructDomainThroughFflibConstructor(domainClassName, records)
+			domain, err = vm.constructDomainThroughFrameworkConstructor(domainClassName, records)
 		}
 		if err != nil {
 			constructorName := domainClassName
 			if !strings.HasSuffix(strings.ToLower(constructorName), "constructor") {
 				constructorName += ".Constructor"
 			}
-			domain, err = vm.constructDomainThroughFflibConstructor(constructorName, records)
+			domain, err = vm.constructDomainThroughFrameworkConstructor(constructorName, records)
 		}
 		if err != nil {
 			return Null, true, err
@@ -33476,14 +33471,14 @@ func (vm *VM) callFflibSObjectDomainTriggerHandlerForContextWithDomain(domainCla
 		return Null, true, err
 	}
 	if triggerBool(vm.triggerGlobals, "Trigger.isBefore") && !triggerBool(vm.triggerGlobals, "Trigger.isDelete") {
-		if records, ok := fflibDomainRecords(domain); ok {
+		if records, ok := frameworkDomainRecords(domain); ok {
 			vm.triggerGlobals["Trigger.new"] = records
 		}
 	}
 	return domain, true, nil
 }
 
-func fflibDomainTriggerStateEnabled(domain Value) bool {
+func frameworkDomainTriggerStateEnabled(domain Value) bool {
 	if domain.Kind != ValueObject {
 		return false
 	}
@@ -33495,8 +33490,8 @@ func fflibDomainTriggerStateEnabled(domain Value) bool {
 	return ok && enabled.Kind == ValueBool && enabled.Bool
 }
 
-func (vm *VM) fflibTriggerEventEnabled(domainClassName string) bool {
-	field, _, ok := vm.lookupStaticField("fflib_SObjectDomain", "TriggerEventByClass")
+func (vm *VM) frameworkTriggerEventEnabled(domainClassName string) bool {
+	field, _, ok := vm.lookupStaticField("framework_SObjectDomain", "TriggerEventByClass")
 	if !ok || field.Value.Kind != ValueMap {
 		return true
 	}
@@ -33540,11 +33535,11 @@ func (vm *VM) fflibTriggerEventEnabled(domainClassName string) bool {
 	return !ok || enabled.Kind != ValueBool || enabled.Bool
 }
 
-func (vm *VM) fflibMockDatabaseContext(after bool) (map[string]Value, bool) {
+func (vm *VM) frameworkMockDatabaseContext(after bool) (map[string]Value, bool) {
 	if vm == nil {
 		return nil, false
 	}
-	testField, _, ok := vm.lookupStaticField("fflib_SObjectDomain", "Test")
+	testField, _, ok := vm.lookupStaticField("framework_SObjectDomain", "Test")
 	if !ok || testField.Value.Kind != ValueObject {
 		return nil, false
 	}
@@ -33605,8 +33600,8 @@ func (vm *VM) fflibMockDatabaseContext(after bool) (map[string]Value, bool) {
 		"Trigger.isDelete":      Bool(isDelete),
 		"Trigger.isUndelete":    Bool(isUndelete),
 		"Trigger.isUnDelete":    Bool(isUndelete),
-		"Trigger.operationType": Value{Kind: ValueObject, Type: "TriggerOperation", Text: strings.ToUpper(map[bool]string{true: "AFTER", false: "BEFORE"}[after] + "_" + fflibMockOperationName(isInsert, isUpdate, isDelete, isUndelete))},
-		"Trigger.size":          Int(int64(fflibMockTriggerSize(records, oldRecords))),
+		"Trigger.operationType": Value{Kind: ValueObject, Type: "TriggerOperation", Text: strings.ToUpper(map[bool]string{true: "AFTER", false: "BEFORE"}[after] + "_" + frameworkMockOperationName(isInsert, isUpdate, isDelete, isUndelete))},
+		"Trigger.size":          Int(int64(frameworkMockTriggerSize(records, oldRecords))),
 	}, true
 }
 
@@ -33626,7 +33621,7 @@ func valuesFromMap(value Value) []Value {
 	return out
 }
 
-func fflibMockOperationName(isInsert, isUpdate, isDelete, isUndelete bool) string {
+func frameworkMockOperationName(isInsert, isUpdate, isDelete, isUndelete bool) string {
 	switch {
 	case isInsert:
 		return "INSERT"
@@ -33641,7 +33636,7 @@ func fflibMockOperationName(isInsert, isUpdate, isDelete, isUndelete bool) strin
 	}
 }
 
-func fflibMockTriggerSize(records, oldRecords Value) int {
+func frameworkMockTriggerSize(records, oldRecords Value) int {
 	if records.Kind == ValueList && len(records.List) > 0 {
 		return len(records.List)
 	}
@@ -33651,7 +33646,7 @@ func fflibMockTriggerSize(records, oldRecords Value) int {
 	return 0
 }
 
-func (vm *VM) constructDomainThroughFflibConstructor(constructorName string, records Value) (Value, error) {
+func (vm *VM) constructDomainThroughFrameworkConstructor(constructorName string, records Value) (Value, error) {
 	constructor, err := vm.constructValue(constructorName, nil, nil, resultForLookup())
 	if err != nil {
 		return Null, err
@@ -33692,7 +33687,7 @@ func withConcreteSObjectListRuntime(records Value) Value {
 	return records
 }
 
-func fflibDomainRecords(domain Value) (Value, bool) {
+func frameworkDomainRecords(domain Value) (Value, bool) {
 	if domain.Kind != ValueObject {
 		return Null, false
 	}
@@ -33720,38 +33715,43 @@ func triggerBool(values map[string]Value, name string) bool {
 	return false
 }
 
-func (vm *VM) fflibMatchesAllArgs(methodArg Value, targetMatchers Value) (bool, bool, error) {
+func (vm *VM) frameworkMatchesAllArgs(methodArg Value, targetMatchers Value) (bool, bool, error) {
 	if methodArg.Kind == ValueNull {
-		return false, true, newExceptionError("fflib_ApexMocks.ApexMocksException", "MethodArgs cannot be null")
+		return false, true, newExceptionError("framework_ApexMocks.ApexMocksException", "MethodArgs cannot be null")
 	}
 	if targetMatchers.Kind == ValueNull {
-		return false, true, newExceptionError("fflib_ApexMocks.ApexMocksException", "Matchers cannot be null")
+		return false, true, newExceptionError("framework_ApexMocks.ApexMocksException", "Matchers cannot be null")
 	}
 	_, argValues, ok := objectFieldValue(methodArg, "argValues")
 	if !ok || argValues.Kind == ValueNull {
-		return false, true, newExceptionError("fflib_ApexMocks.ApexMocksException", "MethodArgs.argValues cannot be null")
+		return false, true, newExceptionError("framework_ApexMocks.ApexMocksException", "MethodArgs.argValues cannot be null")
 	}
 	if argValues.Kind != ValueList || targetMatchers.Kind != ValueList {
 		return false, false, nil
 	}
 	if len(argValues.List) != len(targetMatchers.List) {
-		return false, true, newExceptionError("fflib_ApexMocks.ApexMocksException", vm.fflibMatcherCountMessage(argValues, targetMatchers))
+		return false, true, newExceptionError("framework_ApexMocks.ApexMocksException", vm.frameworkMatcherCountMessage(argValues, targetMatchers))
 	}
 	for i, arg := range argValues.List {
 		matcher := targetMatchers.List[i]
-		matched, handled, err := vm.fflibMatcherMatchesMutable(&matcher, arg)
+		matched, handled, err := vm.frameworkMatcherMatchesMutable(&matcher, arg)
 		if !handled || err != nil {
 			return false, handled, err
 		}
 		if !matched {
 			return false, true, nil
 		}
+		if matcher.Kind == ValueObject && isArgumentCaptorAnyObjectType(matcher.Type) {
+			if _, _, err := vm.callFrameworkArgumentCaptorAnyObjectMember(matcher, "storeArgument", nil); err != nil {
+				return false, true, err
+			}
+		}
 		targetMatchers.List[i] = matcher
 	}
 	return true, true, nil
 }
 
-func (vm *VM) fflibMatcherCountMessage(argValues, targetMatchers Value) string {
+func (vm *VM) frameworkMatcherCountMessage(argValues, targetMatchers Value) string {
 	message := "MethodArgs and matchers must have the same count"
 	argsText, err := vm.displayString(argValues, resultForLookup())
 	if err != nil {
@@ -33764,8 +33764,8 @@ func (vm *VM) fflibMatcherCountMessage(argValues, targetMatchers Value) string {
 	return fmt.Sprintf("%s, MethodArgs: (%d) %s, Matchers: (%d) %s", message, len(argValues.List), argsText, len(targetMatchers.List), matchersText)
 }
 
-func (vm *VM) callFflibMatcherMember(receiver Value, method string, args []Value) (Value, bool, error) {
-	if !isFflibMatcherType(receiver.Type) {
+func (vm *VM) callFrameworkMatcherMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if !isFrameworkMatcherType(receiver.Type) {
 		return Null, false, nil
 	}
 	if !strings.EqualFold(method, "matches") {
@@ -33774,46 +33774,46 @@ func (vm *VM) callFflibMatcherMember(receiver Value, method string, args []Value
 	if len(args) != 1 {
 		return Null, true, fmt.Errorf("%s.matches expects 1 argument", receiver.Type)
 	}
-	matched, handled, err := vm.fflibMatcherMatches(receiver, args[0])
+	matched, handled, err := vm.frameworkMatcherMatches(receiver, args[0])
 	if !handled || err != nil {
 		return Null, handled, err
 	}
 	return Bool(matched), true, nil
 }
 
-func isFflibMatcherType(typeName string) bool {
-	switch fflibMatcherName(typeName) {
+func isFrameworkMatcherType(typeName string) bool {
+	switch frameworkMatcherName(typeName) {
 	case "eq", "refeq", "anyboolean", "anydate", "anydatetime", "anydecimal", "anydouble", "anyid", "anyinteger", "anylong", "anylist", "anyobject", "isnotnull", "anystring", "anysobject", "anysobjectfield", "anysobjecttype", "isnull":
 		return true
 	default:
-		return strings.EqualFold(typeName, "fflib_ArgumentCaptor.AnyObject")
+		return isArgumentCaptorAnyObjectType(typeName)
 	}
 }
 
-func (vm *VM) fflibMatcherMatches(matcher Value, arg Value) (bool, bool, error) {
-	return vm.fflibMatcherMatchesMutable(&matcher, arg)
+func (vm *VM) frameworkMatcherMatches(matcher Value, arg Value) (bool, bool, error) {
+	return vm.frameworkMatcherMatchesMutable(&matcher, arg)
 }
 
-func (vm *VM) fflibMatcherMatchesMutable(matcher *Value, arg Value) (bool, bool, error) {
+func (vm *VM) frameworkMatcherMatchesMutable(matcher *Value, arg Value) (bool, bool, error) {
 	if matcher == nil {
 		return false, false, nil
 	}
 	if matcher.Kind != ValueObject {
 		return false, false, nil
 	}
-	switch fflibMatcherName(matcher.Type) {
+	switch frameworkMatcherName(matcher.Type) {
 	case "eq":
 		_, toMatch, ok := objectFieldValue(*matcher, "toMatch")
 		if !ok {
 			return false, true, nil
 		}
-		if fflibMatcherEquivalent(toMatch, arg) {
+		if frameworkMatcherEquivalent(toMatch, arg) {
 			return true, true, nil
 		}
-		if fflibMatcherCanNativeEqual(toMatch) && fflibMatcherCanNativeEqual(arg) {
+		if frameworkMatcherCanNativeEqual(toMatch) && frameworkMatcherCanNativeEqual(arg) {
 			return ok && toMatch.Equal(arg), true, nil
 		}
-		if fflibMatcherNeedsApexEquality(toMatch) || fflibMatcherNeedsApexEquality(arg) {
+		if frameworkMatcherNeedsApexEquality(toMatch) || frameworkMatcherNeedsApexEquality(arg) {
 			return false, false, nil
 		}
 		return ok && toMatch.Equal(arg), true, nil
@@ -33840,7 +33840,7 @@ func (vm *VM) fflibMatcherMatchesMutable(matcher *Value, arg Value) (bool, bool,
 	case "anylist":
 		return arg.Kind == ValueList, true, nil
 	case "anyobject", "isnotnull":
-		if strings.EqualFold(matcher.Type, "fflib_ArgumentCaptor.AnyObject") && matcher.Fields != nil {
+		if isArgumentCaptorAnyObjectType(matcher.Type) && matcher.Fields != nil {
 			matcher.Fields["value"] = arg
 		}
 		return arg.Kind != ValueNull, true, nil
@@ -33855,11 +33855,16 @@ func (vm *VM) fflibMatcherMatchesMutable(matcher *Value, arg Value) (bool, bool,
 	case "isnull":
 		return arg.Kind == ValueNull, true, nil
 	default:
-		return vm.fflibMatcherMatchesViaApex(*matcher, arg)
+		return vm.frameworkMatcherMatchesViaApex(*matcher, arg)
 	}
 }
 
-func (vm *VM) fflibMatcherMatchesViaApex(matcher Value, arg Value) (bool, bool, error) {
+func isArgumentCaptorAnyObjectType(typeName string) bool {
+	name := strings.ToLower(strings.TrimSpace(typeName))
+	return strings.HasSuffix(name, "argumentcaptor.anyobject")
+}
+
+func (vm *VM) frameworkMatcherMatchesViaApex(matcher Value, arg Value) (bool, bool, error) {
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(matcher.Type, "matches", []Value{arg})
 	if ambiguous {
 		return false, true, vm.ambiguousOverloadError(matcher.Type+".matches", []Value{arg})
@@ -33877,11 +33882,11 @@ func (vm *VM) fflibMatcherMatchesViaApex(matcher Value, arg Value) (bool, bool, 
 	return value.Bool, true, nil
 }
 
-func fflibMatcherEquivalent(left, right Value) bool {
-	return fflibMatcherEquivalentSeen(left, right, make(map[[2]uint64]bool))
+func frameworkMatcherEquivalent(left, right Value) bool {
+	return frameworkMatcherEquivalentSeen(left, right, make(map[[2]uint64]bool))
 }
 
-func fflibMatcherEquivalentSeen(left, right Value, seen map[[2]uint64]bool) bool {
+func frameworkMatcherEquivalentSeen(left, right Value, seen map[[2]uint64]bool) bool {
 	if valueAliasMatch(left, right) || left.Equal(right) {
 		return true
 	}
@@ -33901,7 +33906,7 @@ func fflibMatcherEquivalentSeen(left, right Value, seen map[[2]uint64]bool) bool
 			return false
 		}
 		for i := range left.List {
-			if !fflibMatcherEquivalentSeen(left.List[i], right.List[i], seen) {
+			if !frameworkMatcherEquivalentSeen(left.List[i], right.List[i], seen) {
 				return false
 			}
 		}
@@ -33914,7 +33919,7 @@ func fflibMatcherEquivalentSeen(left, right Value, seen map[[2]uint64]bool) bool
 		for _, leftValue := range left.Set {
 			found := false
 			for i, rightValue := range right.Set {
-				if used[i] || !fflibMatcherEquivalentSeen(leftValue, rightValue, seen) {
+				if used[i] || !frameworkMatcherEquivalentSeen(leftValue, rightValue, seen) {
 					continue
 				}
 				used[i] = true
@@ -33932,7 +33937,7 @@ func fflibMatcherEquivalentSeen(left, right Value, seen map[[2]uint64]bool) bool
 		}
 		for key, leftValue := range left.Map {
 			rightValue, ok := right.Map[key]
-			if !ok || !fflibMatcherEquivalentSeen(leftValue, rightValue, seen) {
+			if !ok || !frameworkMatcherEquivalentSeen(leftValue, rightValue, seen) {
 				return false
 			}
 		}
@@ -33946,7 +33951,7 @@ func fflibMatcherEquivalentSeen(left, right Value, seen map[[2]uint64]bool) bool
 		}
 		for key, leftValue := range left.Fields {
 			rightValue, ok := right.Fields[key]
-			if !ok || !fflibMatcherEquivalentSeen(leftValue, rightValue, seen) {
+			if !ok || !frameworkMatcherEquivalentSeen(leftValue, rightValue, seen) {
 				return false
 			}
 		}
@@ -33956,7 +33961,7 @@ func fflibMatcherEquivalentSeen(left, right Value, seen map[[2]uint64]bool) bool
 	}
 }
 
-func fflibMatcherCanNativeEqual(value Value) bool {
+func frameworkMatcherCanNativeEqual(value Value) bool {
 	if value.Kind != ValueObject {
 		return true
 	}
@@ -33969,7 +33974,7 @@ func fflibMatcherCanNativeEqual(value Value) bool {
 		value.Text != ""
 }
 
-func fflibMatcherNeedsApexEquality(value Value) bool {
+func frameworkMatcherNeedsApexEquality(value Value) bool {
 	switch value.Kind {
 	case ValueObject, ValueList, ValueSet, ValueMap:
 		return true
@@ -33978,7 +33983,7 @@ func fflibMatcherNeedsApexEquality(value Value) bool {
 	}
 }
 
-func fflibMatcherName(typeName string) string {
+func frameworkMatcherName(typeName string) string {
 	name := strings.ToLower(strings.TrimSpace(typeName))
 	if dot := strings.LastIndexByte(name, '.'); dot >= 0 {
 		name = name[dot+1:]
@@ -33986,20 +33991,20 @@ func fflibMatcherName(typeName string) string {
 	return name
 }
 
-func (vm *VM) callFflibSObjectDescribe(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
-	token, ok := fflibSObjectDescribeToken(receiver)
+func (vm *VM) callFrameworkSObjectDescribe(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	token, ok := frameworkSObjectDescribeToken(receiver)
 	if !ok {
 		return Null, false, nil
 	}
 	switch strings.ToLower(method) {
 	case "getsobjecttype":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_SObjectDescribe.getSObjectType expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_SObjectDescribe.getSObjectType expects 0 arguments")
 		}
 		return token, true, nil
 	case "getdescribe":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_SObjectDescribe.getDescribe expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_SObjectDescribe.getDescribe expects 0 arguments")
 		}
 		describe, _, _, handled, err := vm.callPlatformObjectMember(token, "getDescribe", nil, result)
 		if err != nil || !handled {
@@ -34008,41 +34013,41 @@ func (vm *VM) callFflibSObjectDescribe(receiver Value, method string, args []Val
 		return describe, true, nil
 	case "getfieldsmap":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_SObjectDescribe.getFieldsMap expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_SObjectDescribe.getFieldsMap expects 0 arguments")
 		}
-		fields, err := vm.fflibSObjectDescribeFields(token, result)
+		fields, err := vm.frameworkSObjectDescribeFields(token, result)
 		return fields, true, err
 	case "getfield":
 		if len(args) != 1 && len(args) != 2 {
-			return Null, true, fmt.Errorf("fflib_SObjectDescribe.getField expects field name")
+			return Null, true, fmt.Errorf("framework_SObjectDescribe.getField expects field name")
 		}
 		if args[0].Kind == ValueNull {
 			return Null, true, nil
 		}
 		if args[0].Kind != ValueString {
-			return Null, true, fmt.Errorf("fflib_SObjectDescribe.getField expects String")
+			return Null, true, fmt.Errorf("framework_SObjectDescribe.getField expects String")
 		}
 		implyNamespace := true
 		if len(args) == 2 {
 			if args[1].Kind != ValueBool {
-				return Null, true, fmt.Errorf("fflib_SObjectDescribe.getField implyNamespace expects Boolean")
+				return Null, true, fmt.Errorf("framework_SObjectDescribe.getField implyNamespace expects Boolean")
 			}
 			implyNamespace = args[1].Bool
 		}
-		field, err := vm.fflibSObjectDescribeField(token, args[0].Text, implyNamespace, result)
+		field, err := vm.frameworkSObjectDescribeField(token, args[0].Text, implyNamespace, result)
 		return field, true, err
 	case "getnamefield":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_SObjectDescribe.getNameField expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_SObjectDescribe.getNameField expects 0 arguments")
 		}
-		field, err := vm.fflibSObjectDescribeNameField(token, result)
+		field, err := vm.frameworkSObjectDescribeNameField(token, result)
 		return field, true, err
 	}
 	return Null, false, nil
 }
 
-func (vm *VM) callFflibNamespacedAttributeMap(receiver Value, method string, args []Value) (Value, bool, error) {
-	values, ok := fflibNamespacedAttributeMapValues(receiver)
+func (vm *VM) callFrameworkNamespacedAttributeMap(receiver Value, method string, args []Value) (Value, bool, error) {
+	values, ok := frameworkNamespacedAttributeMapValues(receiver)
 	if !ok {
 		return Null, false, nil
 	}
@@ -34064,7 +34069,7 @@ func (vm *VM) callFflibNamespacedAttributeMap(receiver Value, method string, arg
 			}
 			implyNamespace = args[1].Bool
 		}
-		return vm.fflibNamespacedAttributeMapGet(values, args[0].Text, implyNamespace, fflibNamespacedAttributeMapNamespace(receiver)), true, nil
+		return vm.frameworkNamespacedAttributeMapGet(values, args[0].Text, implyNamespace, frameworkNamespacedAttributeMapNamespace(receiver)), true, nil
 	case "containskey":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, true, fmt.Errorf("%s.containsKey expects name", receiver.Type)
@@ -34082,14 +34087,14 @@ func (vm *VM) callFflibNamespacedAttributeMap(receiver Value, method string, arg
 			}
 			implyNamespace = args[1].Bool
 		}
-		value := vm.fflibNamespacedAttributeMapGet(values, args[0].Text, implyNamespace, fflibNamespacedAttributeMapNamespace(receiver))
+		value := vm.frameworkNamespacedAttributeMapGet(values, args[0].Text, implyNamespace, frameworkNamespacedAttributeMapNamespace(receiver))
 		return Bool(value.Kind != ValueNull), true, nil
 	case "values":
-		if !strings.EqualFold(receiver.Type, "fflib_SObjectDescribe.FieldsMap") {
+		if !strings.EqualFold(receiver.Type, "framework_SObjectDescribe.FieldsMap") {
 			return Null, false, nil
 		}
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_SObjectDescribe.FieldsMap.values expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_SObjectDescribe.FieldsMap.values expects 0 arguments")
 		}
 		out := make([]Value, 0, len(values.Map))
 		for _, key := range sortedMapKeys(values.Map) {
@@ -34105,31 +34110,31 @@ func (vm *VM) callFflibNamespacedAttributeMap(receiver Value, method string, arg
 	return Null, false, nil
 }
 
-func fflibSObjectDescribeToken(receiver Value) (Value, bool) {
+func frameworkSObjectDescribeToken(receiver Value) (Value, bool) {
 	_, token, ok := objectFieldValue(receiver, "token")
 	return token, ok && token.Kind == ValueObject && strings.EqualFold(token.Type, "Schema.SObjectType")
 }
 
-func fflibNamespacedAttributeMapValues(receiver Value) (Value, bool) {
+func frameworkNamespacedAttributeMapValues(receiver Value) (Value, bool) {
 	_, values, ok := objectFieldValue(receiver, "values")
 	return values, ok && values.Kind == ValueMap
 }
 
-func (vm *VM) fflibSObjectDescribeFields(token Value, result *Result) (Value, error) {
+func (vm *VM) frameworkSObjectDescribeFields(token Value, result *Result) (Value, error) {
 	describe, _, _, handled, err := vm.callPlatformObjectMember(token, "getDescribe", nil, result)
 	if err != nil || !handled {
 		return describe, err
 	}
 	fields, ok := describe.Fields["fields"]
 	if !ok {
-		return Null, fmt.Errorf("fflib_SObjectDescribe fields are not available")
+		return Null, fmt.Errorf("framework_SObjectDescribe fields are not available")
 	}
 	value, _, _, _, err := vm.callPlatformObjectMember(fields, "getMap", nil, result)
 	return value, err
 }
 
-func (vm *VM) fflibSObjectDescribeField(token Value, fieldName string, implyNamespace bool, result *Result) (Value, error) {
-	fields, err := vm.fflibSObjectDescribeFields(token, result)
+func (vm *VM) frameworkSObjectDescribeField(token Value, fieldName string, implyNamespace bool, result *Result) (Value, error) {
+	fields, err := vm.frameworkSObjectDescribeFields(token, result)
 	if err != nil {
 		return Null, err
 	}
@@ -34137,15 +34142,15 @@ func (vm *VM) fflibSObjectDescribeField(token Value, fieldName string, implyName
 	if strings.HasSuffix(strings.ToLower(lookupName), "__r") {
 		lookupName = lookupName[:len(lookupName)-len("__r")] + "__c"
 	}
-	value := vm.fflibNamespacedAttributeMapGet(fields, lookupName, implyNamespace, "")
+	value := vm.frameworkNamespacedAttributeMapGet(fields, lookupName, implyNamespace, "")
 	if value.Kind == ValueNull {
-		value = vm.fflibNamespacedAttributeMapGet(fields, fieldName+"Id", implyNamespace, "")
+		value = vm.frameworkNamespacedAttributeMapGet(fields, fieldName+"Id", implyNamespace, "")
 	}
 	return value, nil
 }
 
-func (vm *VM) fflibSObjectDescribeNameField(token Value, result *Result) (Value, error) {
-	fields, err := vm.fflibSObjectDescribeFields(token, result)
+func (vm *VM) frameworkSObjectDescribeNameField(token Value, result *Result) (Value, error) {
+	fields, err := vm.frameworkSObjectDescribeFields(token, result)
 	if err != nil {
 		return Null, err
 	}
@@ -34162,7 +34167,7 @@ func (vm *VM) fflibSObjectDescribeNameField(token Value, result *Result) (Value,
 	return Null, nil
 }
 
-func fflibNamespacedAttributeMapNamespace(receiver Value) string {
+func frameworkNamespacedAttributeMapNamespace(receiver Value) string {
 	_, namespace, ok := objectFieldValue(receiver, "currentNamespace")
 	if ok && namespace.Kind == ValueString {
 		return namespace.Text
@@ -34170,7 +34175,7 @@ func fflibNamespacedAttributeMapNamespace(receiver Value) string {
 	return ""
 }
 
-func (vm *VM) fflibNamespacedAttributeMapGet(values Value, name string, implyNamespace bool, namespace string) Value {
+func (vm *VM) frameworkNamespacedAttributeMapGet(values Value, name string, implyNamespace bool, namespace string) Value {
 	if strings.TrimSpace(name) == "" {
 		return Null
 	}
@@ -34197,12 +34202,12 @@ func (vm *VM) fflibNamespacedAttributeMapGet(values Value, name string, implyNam
 	return Null
 }
 
-func (vm *VM) callFflibSimpleDMLMember(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
-	if !strings.EqualFold(receiver.Type, "fflib_SObjectUnitOfWork.SimpleDML") {
+func (vm *VM) callFrameworkSimpleDMLMember(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	if !strings.EqualFold(receiver.Type, "framework_SObjectUnitOfWork.SimpleDML") {
 		return Null, false, nil
 	}
 	if len(args) != 1 || args[0].Kind != ValueList {
-		return Null, true, fmt.Errorf("fflib_SObjectUnitOfWork.SimpleDML.%s expects List<SObject>", method)
+		return Null, true, fmt.Errorf("framework_SObjectUnitOfWork.SimpleDML.%s expects List<SObject>", method)
 	}
 	switch strings.ToLower(method) {
 	case "dmlinsert":
@@ -34228,87 +34233,87 @@ func (vm *VM) callFflibSimpleDMLMember(receiver Value, method string, args []Val
 	}
 }
 
-func (vm *VM) callFflibSObjectUnitOfWorkMember(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
-	if !strings.EqualFold(receiver.Type, "fflib_SObjectUnitOfWork") && !vm.isSubclass(receiver.Type, "fflib_SObjectUnitOfWork") {
+func (vm *VM) callFrameworkSObjectUnitOfWorkMember(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	if !strings.EqualFold(receiver.Type, "framework_SObjectUnitOfWork") && !vm.isSubclass(receiver.Type, "framework_SObjectUnitOfWork") {
 		return Null, false, nil
 	}
 	switch strings.ToLower(method) {
 	case "commitwork":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_SObjectUnitOfWork.commitWork expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_SObjectUnitOfWork.commitWork expects 0 arguments")
 		}
-		return Null, true, vm.commitFflibSObjectUnitOfWork(receiver, result)
+		return Null, true, vm.commitFrameworkSObjectUnitOfWork(receiver, result)
 	case "handleregistertype":
-		return vm.callFflibSObjectUnitOfWorkHandleRegisterType(receiver, args)
+		return vm.callFrameworkSObjectUnitOfWorkHandleRegisterType(receiver, args)
 	case "registernew":
-		return Null, true, vm.registerFflibSObjectUnitOfWorkNew(receiver, args)
+		return Null, true, vm.registerFrameworkSObjectUnitOfWorkNew(receiver, args)
 	case "registerdirty":
-		return Null, true, vm.registerFflibSObjectUnitOfWorkDirty(receiver, args)
+		return Null, true, vm.registerFrameworkSObjectUnitOfWorkDirty(receiver, args)
 	case "registerdeleted":
-		return Null, true, vm.registerFflibSObjectUnitOfWorkRecords(receiver, "m_deletedMapByType", args, true)
+		return Null, true, vm.registerFrameworkSObjectUnitOfWorkRecords(receiver, "m_deletedMapByType", args, true)
 	case "registerupsert":
-		return Null, true, vm.registerFflibSObjectUnitOfWorkUpsert(receiver, args)
+		return Null, true, vm.registerFrameworkSObjectUnitOfWorkUpsert(receiver, args)
 	case "registeremptyrecyclebin":
-		return Null, true, vm.registerFflibSObjectUnitOfWorkRecords(receiver, "m_emptyRecycleBinMapByType", args, true)
+		return Null, true, vm.registerFrameworkSObjectUnitOfWorkRecords(receiver, "m_emptyRecycleBinMapByType", args, true)
 	case "registerpermanentlydeleted":
-		if err := vm.registerFflibSObjectUnitOfWorkRecords(receiver, "m_emptyRecycleBinMapByType", args, true); err != nil {
+		if err := vm.registerFrameworkSObjectUnitOfWorkRecords(receiver, "m_emptyRecycleBinMapByType", args, true); err != nil {
 			return Null, true, err
 		}
-		return Null, true, vm.registerFflibSObjectUnitOfWorkRecords(receiver, "m_deletedMapByType", args, true)
+		return Null, true, vm.registerFrameworkSObjectUnitOfWorkRecords(receiver, "m_deletedMapByType", args, true)
 	case "registerpublishbeforetransaction":
-		return Null, true, vm.registerFflibSObjectUnitOfWorkRecords(receiver, "m_publishBeforeListByType", args, false)
+		return Null, true, vm.registerFrameworkSObjectUnitOfWorkRecords(receiver, "m_publishBeforeListByType", args, false)
 	case "registerpublishaftersuccesstransaction":
-		return Null, true, vm.registerFflibSObjectUnitOfWorkRecords(receiver, "m_publishAfterSuccessListByType", args, false)
+		return Null, true, vm.registerFrameworkSObjectUnitOfWorkRecords(receiver, "m_publishAfterSuccessListByType", args, false)
 	case "registerpublishafterfailuretransaction":
-		return Null, true, vm.registerFflibSObjectUnitOfWorkRecords(receiver, "m_publishAfterFailureListByType", args, false)
+		return Null, true, vm.registerFrameworkSObjectUnitOfWorkRecords(receiver, "m_publishAfterFailureListByType", args, false)
 	default:
 		return Null, false, nil
 	}
 }
 
-func (vm *VM) callFflibSObjectUnitOfWorkHandleRegisterType(receiver Value, args []Value) (Value, bool, error) {
+func (vm *VM) callFrameworkSObjectUnitOfWorkHandleRegisterType(receiver Value, args []Value) (Value, bool, error) {
 	if len(args) != 1 || !isSObjectTypeToken(args[0]) {
-		return Null, true, fmt.Errorf("fflib_SObjectUnitOfWork.handleRegisterType expects Schema.SObjectType")
+		return Null, true, fmt.Errorf("framework_SObjectUnitOfWork.handleRegisterType expects Schema.SObjectType")
 	}
 	objectName, ok := sObjectTypeTokenObjectName(args[0])
 	if !ok || objectName == "" {
-		return Null, true, fmt.Errorf("fflib_SObjectUnitOfWork.handleRegisterType requires SObjectType object name")
+		return Null, true, fmt.Errorf("framework_SObjectUnitOfWork.handleRegisterType requires SObjectType object name")
 	}
 	if vm.Org != nil {
 		if canonical, resolved := storage.ResolveObjectName(*vm.Org, objectName); resolved && canonical != "" {
 			objectName = canonical
 		}
 	}
-	receiver.Fields["m_newListByType"] = fflibMapPut(receiver.Fields["m_newListByType"], String(objectName), typedList("List<SObject>"))
-	receiver.Fields["m_dirtyMapByType"] = fflibMapPut(receiver.Fields["m_dirtyMapByType"], String(objectName), typedMap("Map<Id,SObject>"))
-	receiver.Fields["m_deletedMapByType"] = fflibMapPut(receiver.Fields["m_deletedMapByType"], String(objectName), typedMap("Map<Id,SObject>"))
-	receiver.Fields["m_emptyRecycleBinMapByType"] = fflibMapPut(receiver.Fields["m_emptyRecycleBinMapByType"], String(objectName), typedMap("Map<Id,SObject>"))
-	receiver.Fields["m_relationships"] = fflibMapPut(receiver.Fields["m_relationships"], String(objectName), fflibUnitOfWorkRelationships())
-	receiver.Fields["m_publishBeforeListByType"] = fflibMapPut(receiver.Fields["m_publishBeforeListByType"], String(objectName), typedList("List<SObject>"))
-	receiver.Fields["m_publishAfterSuccessListByType"] = fflibMapPut(receiver.Fields["m_publishAfterSuccessListByType"], String(objectName), typedList("List<SObject>"))
-	receiver.Fields["m_publishAfterFailureListByType"] = fflibMapPut(receiver.Fields["m_publishAfterFailureListByType"], String(objectName), typedList("List<SObject>"))
+	receiver.Fields["m_newListByType"] = frameworkMapPut(receiver.Fields["m_newListByType"], String(objectName), typedList("List<SObject>"))
+	receiver.Fields["m_dirtyMapByType"] = frameworkMapPut(receiver.Fields["m_dirtyMapByType"], String(objectName), typedMap("Map<Id,SObject>"))
+	receiver.Fields["m_deletedMapByType"] = frameworkMapPut(receiver.Fields["m_deletedMapByType"], String(objectName), typedMap("Map<Id,SObject>"))
+	receiver.Fields["m_emptyRecycleBinMapByType"] = frameworkMapPut(receiver.Fields["m_emptyRecycleBinMapByType"], String(objectName), typedMap("Map<Id,SObject>"))
+	receiver.Fields["m_relationships"] = frameworkMapPut(receiver.Fields["m_relationships"], String(objectName), frameworkUnitOfWorkRelationships())
+	receiver.Fields["m_publishBeforeListByType"] = frameworkMapPut(receiver.Fields["m_publishBeforeListByType"], String(objectName), typedList("List<SObject>"))
+	receiver.Fields["m_publishAfterSuccessListByType"] = frameworkMapPut(receiver.Fields["m_publishAfterSuccessListByType"], String(objectName), typedList("List<SObject>"))
+	receiver.Fields["m_publishAfterFailureListByType"] = frameworkMapPut(receiver.Fields["m_publishAfterFailureListByType"], String(objectName), typedList("List<SObject>"))
 	return Null, true, nil
 }
 
-func (vm *VM) registerFflibSObjectUnitOfWorkUpsert(receiver Value, args []Value) error {
-	records, err := vm.fflibSObjectUnitOfWorkRegisterRecords(args)
+func (vm *VM) registerFrameworkSObjectUnitOfWorkUpsert(receiver Value, args []Value) error {
+	records, err := vm.frameworkSObjectUnitOfWorkRegisterRecords(args)
 	if err != nil {
 		return err
 	}
 	for _, record := range records {
 		if sObjectIDValue(record).Kind == ValueNull {
-			if err := vm.addFflibSObjectUnitOfWorkRecord(receiver, "m_newListByType", record, false); err != nil {
+			if err := vm.addFrameworkSObjectUnitOfWorkRecord(receiver, "m_newListByType", record, false); err != nil {
 				return err
 			}
-		} else if err := vm.addFflibSObjectUnitOfWorkRecord(receiver, "m_dirtyMapByType", record, true); err != nil {
+		} else if err := vm.addFrameworkSObjectUnitOfWorkRecord(receiver, "m_dirtyMapByType", record, true); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (vm *VM) registerFflibSObjectUnitOfWorkNew(receiver Value, args []Value) error {
-	records, err := vm.fflibSObjectUnitOfWorkRegisterRecords(args)
+func (vm *VM) registerFrameworkSObjectUnitOfWorkNew(receiver Value, args []Value) error {
+	records, err := vm.frameworkSObjectUnitOfWorkRegisterRecords(args)
 	if err != nil {
 		return err
 	}
@@ -34321,12 +34326,12 @@ func (vm *VM) registerFflibSObjectUnitOfWorkNew(receiver Value, args []Value) er
 		hasRelationship = true
 	}
 	for _, record := range records {
-		if err := vm.addFflibSObjectUnitOfWorkRecord(receiver, "m_newListByType", record, false); err != nil {
+		if err := vm.addFrameworkSObjectUnitOfWorkRecord(receiver, "m_newListByType", record, false); err != nil {
 			return err
 		}
 		if hasRelationship {
 			objectName := vm.canonicalSObjectValueType(record)
-			if err := vm.addFflibSObjectUnitOfWorkRelationship(receiver, objectName, record, relationshipField, relatedTo); err != nil {
+			if err := vm.addFrameworkSObjectUnitOfWorkRelationship(receiver, objectName, record, relationshipField, relatedTo); err != nil {
 				return err
 			}
 		}
@@ -34334,21 +34339,21 @@ func (vm *VM) registerFflibSObjectUnitOfWorkNew(receiver Value, args []Value) er
 	return nil
 }
 
-func (vm *VM) registerFflibSObjectUnitOfWorkDirty(receiver Value, args []Value) error {
-	records, err := vm.fflibSObjectUnitOfWorkRegisterRecords(args)
+func (vm *VM) registerFrameworkSObjectUnitOfWorkDirty(receiver Value, args []Value) error {
+	records, err := vm.frameworkSObjectUnitOfWorkRegisterRecords(args)
 	if err != nil {
 		return err
 	}
-	dirtyFields := fflibSObjectUnitOfWorkDirtyFields(args)
+	dirtyFields := frameworkSObjectUnitOfWorkDirtyFields(args)
 	for _, record := range records {
-		if err := vm.addFflibSObjectUnitOfWorkDirtyRecord(receiver, record, dirtyFields); err != nil {
+		if err := vm.addFrameworkSObjectUnitOfWorkDirtyRecord(receiver, record, dirtyFields); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func fflibSObjectUnitOfWorkDirtyFields(args []Value) []Value {
+func frameworkSObjectUnitOfWorkDirtyFields(args []Value) []Value {
 	if len(args) < 2 || args[1].Kind != ValueList || len(args[1].List) == 0 {
 		return nil
 	}
@@ -34361,29 +34366,29 @@ func fflibSObjectUnitOfWorkDirtyFields(args []Value) []Value {
 	return fields
 }
 
-func (vm *VM) registerFflibSObjectUnitOfWorkRecords(receiver Value, fieldName string, args []Value, requireID bool) error {
-	records, err := vm.fflibSObjectUnitOfWorkRegisterRecords(args)
+func (vm *VM) registerFrameworkSObjectUnitOfWorkRecords(receiver Value, fieldName string, args []Value, requireID bool) error {
+	records, err := vm.frameworkSObjectUnitOfWorkRegisterRecords(args)
 	if err != nil {
 		return err
 	}
 	for _, record := range records {
-		if err := vm.addFflibSObjectUnitOfWorkRecord(receiver, fieldName, record, requireID); err != nil {
+		if err := vm.addFrameworkSObjectUnitOfWorkRecord(receiver, fieldName, record, requireID); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (vm *VM) addFflibSObjectUnitOfWorkDirtyRecord(receiver Value, record Value, dirtyFields []Value) error {
+func (vm *VM) addFrameworkSObjectUnitOfWorkDirtyRecord(receiver Value, record Value, dirtyFields []Value) error {
 	if len(dirtyFields) == 0 {
-		return vm.addFflibSObjectUnitOfWorkRecord(receiver, "m_dirtyMapByType", record, true)
+		return vm.addFrameworkSObjectUnitOfWorkRecord(receiver, "m_dirtyMapByType", record, true)
 	}
-	existing, ok, err := vm.fflibSObjectUnitOfWorkRegisteredRecord(receiver, "m_dirtyMapByType", record)
+	existing, ok, err := vm.frameworkSObjectUnitOfWorkRegisteredRecord(receiver, "m_dirtyMapByType", record)
 	if err != nil {
 		return err
 	}
 	if !ok {
-		return vm.addFflibSObjectUnitOfWorkRecord(receiver, "m_dirtyMapByType", record, true)
+		return vm.addFrameworkSObjectUnitOfWorkRecord(receiver, "m_dirtyMapByType", record, true)
 	}
 	for _, fieldToken := range dirtyFields {
 		field, err := vm.sObjectFieldArg(record.Type, fieldToken)
@@ -34397,18 +34402,18 @@ func (vm *VM) addFflibSObjectUnitOfWorkDirtyRecord(receiver Value, record Value,
 		}
 		setExplicitSObjectField(&existing, actual, value)
 	}
-	return vm.addFflibSObjectUnitOfWorkRecord(receiver, "m_dirtyMapByType", existing, true)
+	return vm.addFrameworkSObjectUnitOfWorkRecord(receiver, "m_dirtyMapByType", existing, true)
 }
 
-func (vm *VM) fflibSObjectUnitOfWorkRegisteredRecord(receiver Value, fieldName string, record Value) (Value, bool, error) {
+func (vm *VM) frameworkSObjectUnitOfWorkRegisteredRecord(receiver Value, fieldName string, record Value) (Value, bool, error) {
 	id := sObjectIDValue(record)
 	if id.Kind == ValueNull {
-		return Null, false, newExceptionError("fflib_SObjectUnitOfWork.UnitOfWorkException", "New records cannot be registered for this operation")
+		return Null, false, newExceptionError("framework_SObjectUnitOfWork.UnitOfWorkException", "New records cannot be registered for this operation")
 	}
 	objectName := vm.canonicalSObjectValueType(record)
 	bucket, ok := receiver.Fields[fieldName]
 	if !ok || bucket.Kind != ValueMap {
-		return Null, false, fmt.Errorf("fflib_SObjectUnitOfWork missing %s", fieldName)
+		return Null, false, fmt.Errorf("framework_SObjectUnitOfWork missing %s", fieldName)
 	}
 	value, ok := bucket.Map[vm.resolveObjectBucketKey(bucket, objectName)]
 	if !ok || value.Kind != ValueMap {
@@ -34418,9 +34423,9 @@ func (vm *VM) fflibSObjectUnitOfWorkRegisteredRecord(receiver Value, fieldName s
 	return registered, ok, nil
 }
 
-func (vm *VM) fflibSObjectUnitOfWorkRegisterRecords(args []Value) ([]Value, error) {
+func (vm *VM) frameworkSObjectUnitOfWorkRegisterRecords(args []Value) ([]Value, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("fflib_SObjectUnitOfWork register method expects SObject or List<SObject>")
+		return nil, fmt.Errorf("framework_SObjectUnitOfWork register method expects SObject or List<SObject>")
 	}
 	value := args[0]
 	if value.Kind == ValueList {
@@ -34429,24 +34434,24 @@ func (vm *VM) fflibSObjectUnitOfWorkRegisterRecords(args []Value) ([]Value, erro
 	if value.Kind == ValueObject && sObjectValueType(value.Type) {
 		return []Value{value}, nil
 	}
-	return nil, fmt.Errorf("fflib_SObjectUnitOfWork register method expects SObject or List<SObject>")
+	return nil, fmt.Errorf("framework_SObjectUnitOfWork register method expects SObject or List<SObject>")
 }
 
-func (vm *VM) addFflibSObjectUnitOfWorkRecord(receiver Value, fieldName string, record Value, requireID bool) error {
+func (vm *VM) addFrameworkSObjectUnitOfWorkRecord(receiver Value, fieldName string, record Value, requireID bool) error {
 	if record.Kind != ValueObject || !sObjectValueType(record.Type) {
-		return fmt.Errorf("fflib_SObjectUnitOfWork register method expects SObject")
+		return fmt.Errorf("framework_SObjectUnitOfWork register method expects SObject")
 	}
 	id := sObjectIDValue(record)
 	if requireID && id.Kind == ValueNull {
-		return newExceptionError("fflib_SObjectUnitOfWork.UnitOfWorkException", "New records cannot be registered for this operation")
+		return newExceptionError("framework_SObjectUnitOfWork.UnitOfWorkException", "New records cannot be registered for this operation")
 	}
 	if !requireID && id.Kind != ValueNull && strings.EqualFold(fieldName, "m_newListByType") {
-		return newExceptionError("fflib_SObjectUnitOfWork.UnitOfWorkException", "Only new records can be registered as new")
+		return newExceptionError("framework_SObjectUnitOfWork.UnitOfWorkException", "Only new records can be registered as new")
 	}
 	objectName := vm.canonicalSObjectValueType(record)
 	bucket, ok := receiver.Fields[fieldName]
 	if !ok || bucket.Kind != ValueMap {
-		return fmt.Errorf("fflib_SObjectUnitOfWork missing %s", fieldName)
+		return fmt.Errorf("framework_SObjectUnitOfWork missing %s", fieldName)
 	}
 	key := vm.resolveObjectBucketKey(bucket, objectName)
 	value, ok := bucket.Map[key]
@@ -34473,7 +34478,7 @@ func (vm *VM) addFflibSObjectUnitOfWorkRecord(receiver Value, fieldName string, 
 		}
 		value.MapKeys[recordKey] = id
 	} else {
-		return fmt.Errorf("fflib_SObjectUnitOfWork %s bucket must be list or map", fieldName)
+		return fmt.Errorf("framework_SObjectUnitOfWork %s bucket must be list or map", fieldName)
 	}
 	bucket.Map[key] = value
 	if bucket.MapKeys == nil {
@@ -34507,30 +34512,30 @@ func (vm *VM) resolveObjectBucketKey(bucket Value, objectName string) string {
 	return key
 }
 
-func (vm *VM) addFflibSObjectUnitOfWorkRelationship(receiver Value, objectName string, record Value, relatedToField Value, relatedTo Value) error {
+func (vm *VM) addFrameworkSObjectUnitOfWorkRelationship(receiver Value, objectName string, record Value, relatedToField Value, relatedTo Value) error {
 	fieldName, err := vm.sObjectFieldArg(record.Type, relatedToField)
 	if err != nil {
 		return err
 	}
 	bucket, ok := receiver.Fields["m_relationships"]
 	if !ok || bucket.Kind != ValueMap {
-		return fmt.Errorf("fflib_SObjectUnitOfWork missing m_relationships")
+		return fmt.Errorf("framework_SObjectUnitOfWork missing m_relationships")
 	}
 	relationshipBucket, ok := bucket.Map[mapKey(String(objectName))]
 	if !ok || relationshipBucket.Kind != ValueObject {
-		relationshipBucket = fflibUnitOfWorkRelationships()
+		relationshipBucket = frameworkUnitOfWorkRelationships()
 	}
 	relationships, ok := relationshipBucket.Fields["m_relationships"]
 	if !ok || relationships.Kind != ValueList {
-		relationships = typedList("List<fflib_SObjectUnitOfWork.IRelationship>")
+		relationships = typedList("List<framework_SObjectUnitOfWork.IRelationship>")
 	}
-	relationship := Object("fflib_SObjectUnitOfWork.Relationship")
+	relationship := Object("framework_SObjectUnitOfWork.Relationship")
 	relationship.Fields["Record"] = record
 	relationship.Fields["RelatedToField"] = sObjectFieldToken(vm.canonicalSObjectValueType(record), fieldName)
 	relationship.Fields["RelatedTo"] = relatedTo
 	relationships.List = append(relationships.List, relationship)
 	relationshipBucket.Fields["m_relationships"] = relationships
-	receiver.Fields["m_relationships"] = fflibMapPut(bucket, String(objectName), relationshipBucket)
+	receiver.Fields["m_relationships"] = frameworkMapPut(bucket, String(objectName), relationshipBucket)
 	return nil
 }
 
@@ -34565,11 +34570,11 @@ func containsString(values []string, wanted string) bool {
 	return false
 }
 
-func (vm *VM) constructFflibSObjectUnitOfWork(args []Value, namedArgs map[string]Value) (Value, error) {
+func (vm *VM) constructFrameworkSObjectUnitOfWork(args []Value, namedArgs map[string]Value) (Value, error) {
 	if len(namedArgs) != 0 || (len(args) != 1 && len(args) != 2) || args[0].Kind != ValueList {
-		return Null, fmt.Errorf("fflib_SObjectUnitOfWork constructor expects List<Schema.SObjectType>[, IDML]")
+		return Null, fmt.Errorf("framework_SObjectUnitOfWork constructor expects List<Schema.SObjectType>[, IDML]")
 	}
-	uow := Object("fflib_SObjectUnitOfWork")
+	uow := Object("framework_SObjectUnitOfWork")
 	sObjectTypes := List(append([]Value(nil), args[0].List...)...)
 	sObjectTypes.Type = args[0].Type
 	uow.Fields["m_sObjectTypes"] = sObjectTypes
@@ -34577,65 +34582,65 @@ func (vm *VM) constructFflibSObjectUnitOfWork(args []Value, namedArgs map[string
 	uow.Fields["m_dirtyMapByType"] = typedMap("Map<String,Map<Id,SObject>>")
 	uow.Fields["m_deletedMapByType"] = typedMap("Map<String,Map<Id,SObject>>")
 	uow.Fields["m_emptyRecycleBinMapByType"] = typedMap("Map<String,Map<Id,SObject>>")
-	uow.Fields["m_relationships"] = typedMap("Map<String,fflib_SObjectUnitOfWork.Relationships>")
+	uow.Fields["m_relationships"] = typedMap("Map<String,framework_SObjectUnitOfWork.Relationships>")
 	uow.Fields["m_publishBeforeListByType"] = typedMap("Map<String,List<SObject>>")
 	uow.Fields["m_publishAfterSuccessListByType"] = typedMap("Map<String,List<SObject>>")
 	uow.Fields["m_publishAfterFailureListByType"] = typedMap("Map<String,List<SObject>>")
-	uow.Fields["m_workList"] = typedList("List<fflib_SObjectUnitOfWork.IDoWork>")
-	emailWork := Object("fflib_SObjectUnitOfWork.SendEmailWork")
+	uow.Fields["m_workList"] = typedList("List<framework_SObjectUnitOfWork.IDoWork>")
+	emailWork := Object("framework_SObjectUnitOfWork.SendEmailWork")
 	emailWork.Fields["emails"] = typedList("List<Messaging.Email>")
 	uow.Fields["m_emailWork"] = emailWork
 	if len(args) == 2 {
 		uow.Fields["m_dml"] = args[1]
 	} else {
-		uow.Fields["m_dml"] = Object("fflib_SObjectUnitOfWork.SimpleDML")
+		uow.Fields["m_dml"] = Object("framework_SObjectUnitOfWork.SimpleDML")
 	}
 	for _, sObjectType := range args[0].List {
-		if _, handled, err := vm.callFflibSObjectUnitOfWorkHandleRegisterType(uow, []Value{sObjectType}); err != nil || !handled {
+		if _, handled, err := vm.callFrameworkSObjectUnitOfWorkHandleRegisterType(uow, []Value{sObjectType}); err != nil || !handled {
 			if err != nil {
 				return Null, err
 			}
-			return Null, fmt.Errorf("fflib_SObjectUnitOfWork constructor expects Schema.SObjectType entries")
+			return Null, fmt.Errorf("framework_SObjectUnitOfWork constructor expects Schema.SObjectType entries")
 		}
 	}
-	uow.Fields["m_relationships"] = fflibMapPut(uow.Fields["m_relationships"], String("Messaging.SingleEmailMessage"), fflibUnitOfWorkRelationships())
+	uow.Fields["m_relationships"] = frameworkMapPut(uow.Fields["m_relationships"], String("Messaging.SingleEmailMessage"), frameworkUnitOfWorkRelationships())
 	return uow, nil
 }
 
-func (vm *VM) commitFflibSObjectUnitOfWork(receiver Value, result *Result) error {
-	if err := vm.publishFflibSObjectUnitOfWorkEvents(receiver, "m_publishBeforeListByType", result); err != nil {
+func (vm *VM) commitFrameworkSObjectUnitOfWork(receiver Value, result *Result) error {
+	if err := vm.publishFrameworkSObjectUnitOfWorkEvents(receiver, "m_publishBeforeListByType", result); err != nil {
 		return err
 	}
-	if err := vm.applyFflibSObjectUnitOfWorkDML(receiver, "m_newListByType", "insert", result); err != nil {
+	if err := vm.applyFrameworkSObjectUnitOfWorkDML(receiver, "m_newListByType", "insert", result); err != nil {
 		return err
 	}
-	if err := vm.applyFflibSObjectUnitOfWorkDML(receiver, "m_dirtyMapByType", "update", result); err != nil {
+	if err := vm.applyFrameworkSObjectUnitOfWorkDML(receiver, "m_dirtyMapByType", "update", result); err != nil {
 		return err
 	}
-	if err := vm.applyFflibSObjectUnitOfWorkDML(receiver, "m_deletedMapByType", "delete", result); err != nil {
+	if err := vm.applyFrameworkSObjectUnitOfWorkDML(receiver, "m_deletedMapByType", "delete", result); err != nil {
 		return err
 	}
-	if err := vm.applyFflibSObjectUnitOfWorkRecordAction(receiver, "m_emptyRecycleBinMapByType", result); err != nil {
+	if err := vm.applyFrameworkSObjectUnitOfWorkRecordAction(receiver, "m_emptyRecycleBinMapByType", result); err != nil {
 		return err
 	}
-	if err := vm.runFflibSObjectUnitOfWorkWorkItems(receiver, result); err != nil {
+	if err := vm.runFrameworkSObjectUnitOfWorkWorkItems(receiver, result); err != nil {
 		return err
 	}
-	return vm.publishFflibSObjectUnitOfWorkEvents(receiver, "m_publishAfterSuccessListByType", result)
+	return vm.publishFrameworkSObjectUnitOfWorkEvents(receiver, "m_publishAfterSuccessListByType", result)
 }
 
-func (vm *VM) applyFflibSObjectUnitOfWorkDML(receiver Value, fieldName, op string, result *Result) error {
-	for _, bucket := range fflibSObjectUnitOfWorkRecordBuckets(receiver, fieldName) {
+func (vm *VM) applyFrameworkSObjectUnitOfWorkDML(receiver Value, fieldName, op string, result *Result) error {
+	for _, bucket := range frameworkSObjectUnitOfWorkRecordBuckets(receiver, fieldName) {
 		records := bucket.records
 		if len(records.List) == 0 {
 			continue
 		}
 		if op == "insert" {
-			if err := vm.resolveFflibSObjectUnitOfWorkRelationships(receiver, bucket.objectName, result); err != nil {
+			if err := vm.resolveFrameworkSObjectUnitOfWorkRelationships(receiver, bucket.objectName, result); err != nil {
 				return err
 			}
 		}
-		if handled, err := vm.callFflibSObjectUnitOfWorkCustomDML(receiver, op, records, result); err != nil {
+		if handled, err := vm.callFrameworkSObjectUnitOfWorkCustomDML(receiver, op, records, result); err != nil {
 			return err
 		} else if handled {
 			continue
@@ -34647,20 +34652,20 @@ func (vm *VM) applyFflibSObjectUnitOfWorkDML(receiver Value, fieldName, op strin
 	return nil
 }
 
-type fflibSObjectUnitOfWorkRecordBucket struct {
+type frameworkSObjectUnitOfWorkRecordBucket struct {
 	objectName string
 	records    Value
 }
 
-func fflibSObjectUnitOfWorkRecordBuckets(receiver Value, fieldName string) []fflibSObjectUnitOfWorkRecordBucket {
+func frameworkSObjectUnitOfWorkRecordBuckets(receiver Value, fieldName string) []frameworkSObjectUnitOfWorkRecordBucket {
 	field, ok := receiver.Fields[fieldName]
 	if !ok || field.Kind != ValueMap {
 		return nil
 	}
-	out := make([]fflibSObjectUnitOfWorkRecordBucket, 0, len(field.MapOrder)+len(field.Map))
+	out := make([]frameworkSObjectUnitOfWorkRecordBucket, 0, len(field.MapOrder)+len(field.Map))
 	seen := make(map[string]bool, len(field.Map))
 	appendBucket := func(key string, value Value) {
-		list := fflibSObjectUnitOfWorkRecordList(value)
+		list := frameworkSObjectUnitOfWorkRecordList(value)
 		if list.Kind != ValueList {
 			return
 		}
@@ -34673,7 +34678,7 @@ func fflibSObjectUnitOfWorkRecordBuckets(receiver Value, fieldName string) []ffl
 		if objectName == "" {
 			objectName = strings.TrimPrefix(key, "s:")
 		}
-		out = append(out, fflibSObjectUnitOfWorkRecordBucket{objectName: objectName, records: list})
+		out = append(out, frameworkSObjectUnitOfWorkRecordBucket{objectName: objectName, records: list})
 	}
 	for _, key := range field.MapOrder {
 		if value, ok := field.Map[key]; ok {
@@ -34690,12 +34695,12 @@ func fflibSObjectUnitOfWorkRecordBuckets(receiver Value, fieldName string) []ffl
 	return out
 }
 
-func (vm *VM) applyFflibSObjectUnitOfWorkRecordAction(receiver Value, fieldName string, result *Result) error {
-	for _, records := range fflibSObjectUnitOfWorkRecordLists(receiver, fieldName) {
+func (vm *VM) applyFrameworkSObjectUnitOfWorkRecordAction(receiver Value, fieldName string, result *Result) error {
+	for _, records := range frameworkSObjectUnitOfWorkRecordLists(receiver, fieldName) {
 		if len(records.List) == 0 {
 			continue
 		}
-		if handled, err := vm.callFflibSObjectUnitOfWorkCustomDML(receiver, "emptyRecycleBin", records, result); handled || err != nil {
+		if handled, err := vm.callFrameworkSObjectUnitOfWorkCustomDML(receiver, "emptyRecycleBin", records, result); handled || err != nil {
 			return err
 		}
 		if _, err := vm.executeDatabaseRecordAction("emptyRecycleBin", []Value{records}, result, "Database.EmptyRecycleBinResult"); err != nil {
@@ -34705,12 +34710,12 @@ func (vm *VM) applyFflibSObjectUnitOfWorkRecordAction(receiver Value, fieldName 
 	return nil
 }
 
-func (vm *VM) publishFflibSObjectUnitOfWorkEvents(receiver Value, fieldName string, result *Result) error {
-	for _, records := range fflibSObjectUnitOfWorkRecordLists(receiver, fieldName) {
+func (vm *VM) publishFrameworkSObjectUnitOfWorkEvents(receiver Value, fieldName string, result *Result) error {
+	for _, records := range frameworkSObjectUnitOfWorkRecordLists(receiver, fieldName) {
 		if len(records.List) == 0 {
 			continue
 		}
-		if handled, err := vm.callFflibSObjectUnitOfWorkCustomDML(receiver, "eventPublish", records, result); handled || err != nil {
+		if handled, err := vm.callFrameworkSObjectUnitOfWorkCustomDML(receiver, "eventPublish", records, result); handled || err != nil {
 			return err
 		}
 		if _, err := vm.eventBusPublish([]Value{records}, result); err != nil {
@@ -34720,9 +34725,9 @@ func (vm *VM) publishFflibSObjectUnitOfWorkEvents(receiver Value, fieldName stri
 	return nil
 }
 
-func (vm *VM) callFflibSObjectUnitOfWorkCustomDML(receiver Value, op string, records Value, result *Result) (bool, error) {
+func (vm *VM) callFrameworkSObjectUnitOfWorkCustomDML(receiver Value, op string, records Value, result *Result) (bool, error) {
 	dmlValue, ok := receiver.Fields["m_dml"]
-	if !ok || dmlValue.Kind != ValueObject || strings.EqualFold(dmlValue.Type, "fflib_SObjectUnitOfWork.SimpleDML") {
+	if !ok || dmlValue.Kind != ValueObject || strings.EqualFold(dmlValue.Type, "framework_SObjectUnitOfWork.SimpleDML") {
 		return false, nil
 	}
 	methodName := ""
@@ -34749,7 +34754,7 @@ func (vm *VM) callFflibSObjectUnitOfWorkCustomDML(receiver Value, op string, rec
 	return true, err
 }
 
-func (vm *VM) resolveFflibSObjectUnitOfWorkRelationships(receiver Value, objectName string, result *Result) error {
+func (vm *VM) resolveFrameworkSObjectUnitOfWorkRelationships(receiver Value, objectName string, result *Result) error {
 	bucket, ok := receiver.Fields["m_relationships"]
 	if !ok || bucket.Kind != ValueMap {
 		return nil
@@ -34766,8 +34771,8 @@ func (vm *VM) resolveFflibSObjectUnitOfWorkRelationships(receiver Value, objectN
 		if relationship.Kind != ValueObject {
 			continue
 		}
-		if strings.EqualFold(relationship.Type, "fflib_SObjectUnitOfWork.Relationship") {
-			if err := vm.resolveFflibSObjectUnitOfWorkRelationship(relationship); err != nil {
+		if strings.EqualFold(relationship.Type, "framework_SObjectUnitOfWork.Relationship") {
+			if err := vm.resolveFrameworkSObjectUnitOfWorkRelationship(relationship); err != nil {
 				return err
 			}
 			continue
@@ -34786,7 +34791,7 @@ func (vm *VM) resolveFflibSObjectUnitOfWorkRelationships(receiver Value, objectN
 	return nil
 }
 
-func (vm *VM) resolveFflibSObjectUnitOfWorkRelationship(relationship Value) error {
+func (vm *VM) resolveFrameworkSObjectUnitOfWorkRelationship(relationship Value) error {
 	_, record, hasRecord := objectFieldValue(relationship, "Record")
 	_, relatedToField, hasField := objectFieldValue(relationship, "RelatedToField")
 	_, relatedTo, hasRelated := objectFieldValue(relationship, "RelatedTo")
@@ -34806,7 +34811,7 @@ func (vm *VM) resolveFflibSObjectUnitOfWorkRelationship(relationship Value) erro
 	return nil
 }
 
-func fflibSObjectUnitOfWorkRecordLists(receiver Value, fieldName string) []Value {
+func frameworkSObjectUnitOfWorkRecordLists(receiver Value, fieldName string) []Value {
 	field, ok := receiver.Fields[fieldName]
 	if !ok || field.Kind != ValueMap {
 		return nil
@@ -34815,7 +34820,7 @@ func fflibSObjectUnitOfWorkRecordLists(receiver Value, fieldName string) []Value
 	seen := make(map[string]bool, len(field.Map))
 	for _, key := range field.MapOrder {
 		if value, ok := field.Map[key]; ok {
-			if list := fflibSObjectUnitOfWorkRecordList(value); list.Kind == ValueList {
+			if list := frameworkSObjectUnitOfWorkRecordList(value); list.Kind == ValueList {
 				out = append(out, list)
 			}
 			seen[key] = true
@@ -34825,14 +34830,14 @@ func fflibSObjectUnitOfWorkRecordLists(receiver Value, fieldName string) []Value
 		if seen[key] {
 			continue
 		}
-		if list := fflibSObjectUnitOfWorkRecordList(value); list.Kind == ValueList {
+		if list := frameworkSObjectUnitOfWorkRecordList(value); list.Kind == ValueList {
 			out = append(out, list)
 		}
 	}
 	return out
 }
 
-func fflibSObjectUnitOfWorkRecordList(value Value) Value {
+func frameworkSObjectUnitOfWorkRecordList(value Value) Value {
 	switch value.Kind {
 	case ValueList:
 		return value
@@ -34862,10 +34867,10 @@ func fflibSObjectUnitOfWorkRecordList(value Value) Value {
 	}
 }
 
-func (vm *VM) runFflibSObjectUnitOfWorkWorkItems(receiver Value, result *Result) error {
+func (vm *VM) runFrameworkSObjectUnitOfWorkWorkItems(receiver Value, result *Result) error {
 	workList, ok := receiver.Fields["m_workList"]
 	if !ok || workList.Kind != ValueList {
-		workList = typedList("List<fflib_SObjectUnitOfWork.IDoWork>")
+		workList = typedList("List<framework_SObjectUnitOfWork.IDoWork>")
 	}
 	if emailWork, ok := receiver.Fields["m_emailWork"]; ok && emailWork.Kind == ValueObject {
 		workList.List = append(workList.List, emailWork)
@@ -34889,33 +34894,33 @@ func (vm *VM) runFflibSObjectUnitOfWorkWorkItems(receiver Value, result *Result)
 	return nil
 }
 
-func (vm *VM) callFflibQueryFactoryMember(receiver Value, method string, args []Value) (Value, bool, error) {
-	if !strings.EqualFold(receiver.Type, "fflib_QueryFactory.Ordering") {
+func (vm *VM) callFrameworkQueryFactoryMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if !strings.EqualFold(receiver.Type, "framework_QueryFactory.Ordering") {
 		return Null, false, nil
 	}
 	switch strings.ToLower(method) {
 	case "getfield":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_QueryFactory.Ordering.getField expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_QueryFactory.Ordering.getField expects 0 arguments")
 		}
 		_, field, _ := objectFieldValue(receiver, "field")
 		return field, true, nil
 	case "getdirection":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_QueryFactory.Ordering.getDirection expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_QueryFactory.Ordering.getDirection expects 0 arguments")
 		}
 		_, direction, _ := objectFieldValue(receiver, "direction")
 		return direction, true, nil
 	case "tosoql":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_QueryFactory.Ordering.toSOQL expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_QueryFactory.Ordering.toSOQL expects 0 arguments")
 		}
 		field := ""
 		if _, value, ok := objectFieldValue(receiver, "field"); ok {
 			field = scalarText(value)
 		}
 		direction := "DESC"
-		if _, value, ok := objectFieldValue(receiver, "direction"); ok && fflibQueryFactorySortAscending(value) {
+		if _, value, ok := objectFieldValue(receiver, "direction"); ok && frameworkQueryFactorySortAscending(value) {
 			direction = "ASC"
 		}
 		nulls := " NULLS FIRST "
@@ -34928,15 +34933,15 @@ func (vm *VM) callFflibQueryFactoryMember(receiver Value, method string, args []
 	}
 }
 
-func fflibQueryFactorySortAscending(value Value) bool {
+func frameworkQueryFactorySortAscending(value Value) bool {
 	text := value.Text
 	if text == "" {
 		text = value.String()
 	}
-	return strings.EqualFold(text, "ASCENDING") || strings.EqualFold(text, "fflib_QueryFactory.SortOrder.ASCENDING")
+	return strings.EqualFold(text, "ASCENDING") || strings.EqualFold(text, "framework_QueryFactory.SortOrder.ASCENDING")
 }
 
-func fflibMapPut(target Value, key Value, value Value) Value {
+func frameworkMapPut(target Value, key Value, value Value) Value {
 	if target.Kind != ValueMap {
 		return target
 	}
@@ -34952,9 +34957,9 @@ func fflibMapPut(target Value, key Value, value Value) Value {
 	return target
 }
 
-func fflibUnitOfWorkRelationships() Value {
-	relationships := Object("fflib_SObjectUnitOfWork.Relationships")
-	relationships.Fields["m_relationships"] = typedList("List<fflib_SObjectUnitOfWork.IRelationship>")
+func frameworkUnitOfWorkRelationships() Value {
+	relationships := Object("framework_SObjectUnitOfWork.Relationships")
+	relationships.Fields["m_relationships"] = typedList("List<framework_SObjectUnitOfWork.IRelationship>")
 	return relationships
 }
 
@@ -34963,49 +34968,49 @@ func sObjectTypeTokenObjectName(value Value) (string, bool) {
 	return objectName.Text, ok && objectName.Kind == ValueString
 }
 
-func (vm *VM) callFflibMockRecorderMember(receiver Value, method string, args []Value) (Value, bool, error) {
+func (vm *VM) callFrameworkMockRecorderMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	switch {
-	case strings.EqualFold(receiver.Type, "fflib_InvocationOnMock"):
-		return vm.callFflibInvocationOnMockMember(receiver, method, args)
-	case strings.EqualFold(receiver.Type, "fflib_MethodCountRecorder"):
-		return vm.callFflibMethodCountRecorderMember(receiver, method, args)
-	case strings.EqualFold(receiver.Type, "fflib_MethodReturnValueRecorder"):
-		return vm.callFflibMethodReturnValueRecorderMember(receiver, method, args)
-	case strings.EqualFold(receiver.Type, "fflib_ArgumentCaptor"):
-		return vm.callFflibArgumentCaptorMember(receiver, method, args)
-	case strings.EqualFold(receiver.Type, "fflib_ArgumentCaptor.AnyObject"):
-		return vm.callFflibArgumentCaptorAnyObjectMember(receiver, method, args)
+	case strings.EqualFold(receiver.Type, "framework_InvocationOnMock"):
+		return vm.callFrameworkInvocationOnMockMember(receiver, method, args)
+	case strings.EqualFold(receiver.Type, "framework_MethodCountRecorder"):
+		return vm.callFrameworkMethodCountRecorderMember(receiver, method, args)
+	case strings.EqualFold(receiver.Type, "framework_MethodReturnValueRecorder"):
+		return vm.callFrameworkMethodReturnValueRecorderMember(receiver, method, args)
+	case strings.EqualFold(receiver.Type, "framework_ArgumentCaptor"):
+		return vm.callFrameworkArgumentCaptorMember(receiver, method, args)
+	case strings.EqualFold(receiver.Type, "framework_ArgumentCaptor.AnyObject"):
+		return vm.callFrameworkArgumentCaptorAnyObjectMember(receiver, method, args)
 	default:
 		return Null, false, nil
 	}
 }
 
-func (vm *VM) constructFflibFastDTO(typeName string, args []Value, namedArgs map[string]Value) (Value, bool, error) {
+func (vm *VM) constructFrameworkFastDTO(typeName string, args []Value, namedArgs map[string]Value) (Value, bool, error) {
 	if len(namedArgs) != 0 {
 		return Null, false, nil
 	}
 	switch strings.ToLower(typeName) {
-	case "fflib_methodargvalues":
+	case "framework_methodargvalues":
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, false, nil
 		}
-		value := Object("fflib_MethodArgValues")
+		value := Object("framework_MethodArgValues")
 		value.Fields["argValues"] = args[0]
 		return value, true, nil
-	case "fflib_invocationonmock":
+	case "framework_invocationonmock":
 		if len(args) != 3 {
 			return Null, false, nil
 		}
-		value := Object("fflib_InvocationOnMock")
+		value := Object("framework_InvocationOnMock")
 		value.Fields["qm"] = args[0]
 		value.Fields["methodArg"] = args[1]
 		value.Fields["mockInstance"] = args[2]
 		return value, true, nil
-	case "fflib_qualifiedmethod":
+	case "framework_qualifiedmethod":
 		if len(args) != 3 && len(args) != 4 {
 			return Null, false, nil
 		}
-		value := Object("fflib_QualifiedMethod")
+		value := Object("framework_QualifiedMethod")
 		value.Fields["typeName"] = args[0]
 		value.Fields["methodName"] = args[1]
 		value.Fields["methodArgTypes"] = args[2]
@@ -35020,11 +35025,11 @@ func (vm *VM) constructFflibFastDTO(typeName string, args []Value, namedArgs map
 	}
 }
 
-func (vm *VM) callFflibArgumentCaptorMember(receiver Value, method string, args []Value) (Value, bool, error) {
+func (vm *VM) callFrameworkArgumentCaptorMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	switch strings.ToLower(method) {
 	case "getvalue":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_ArgumentCaptor.getValue expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_ArgumentCaptor.getValue expects 0 arguments")
 		}
 		_, values, ok := objectFieldValue(receiver, "argumentsCaptured")
 		if !ok || values.Kind != ValueList || len(values.List) == 0 {
@@ -35033,7 +35038,7 @@ func (vm *VM) callFflibArgumentCaptorMember(receiver Value, method string, args 
 		return values.List[len(values.List)-1], true, nil
 	case "getallvalues":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_ArgumentCaptor.getAllValues expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_ArgumentCaptor.getAllValues expects 0 arguments")
 		}
 		_, values, ok := objectFieldValue(receiver, "argumentsCaptured")
 		if !ok || values.Kind != ValueList {
@@ -35045,11 +35050,11 @@ func (vm *VM) callFflibArgumentCaptorMember(receiver Value, method string, args 
 	}
 }
 
-func (vm *VM) callFflibArgumentCaptorAnyObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
+func (vm *VM) callFrameworkArgumentCaptorAnyObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	switch strings.ToLower(method) {
 	case "matches":
 		if len(args) != 1 {
-			return Null, true, fmt.Errorf("fflib_ArgumentCaptor.AnyObject.matches expects 1 argument")
+			return Null, true, fmt.Errorf("framework_ArgumentCaptor.AnyObject.matches expects 1 argument")
 		}
 		receiver.Fields["value"] = args[0]
 		vm.propagateValueMutationToScope(vm.Globals, receiver, receiver)
@@ -35057,7 +35062,7 @@ func (vm *VM) callFflibArgumentCaptorAnyObjectMember(receiver Value, method stri
 		return Bool(true), true, nil
 	case "storeargument":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_ArgumentCaptor.AnyObject.storeArgument expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_ArgumentCaptor.AnyObject.storeArgument expects 0 arguments")
 		}
 		_, captor, ok := objectFieldValue(receiver, "captor")
 		if !ok || captor.Kind != ValueObject {
@@ -35084,11 +35089,11 @@ func (vm *VM) callFflibArgumentCaptorAnyObjectMember(receiver Value, method stri
 	}
 }
 
-func (vm *VM) callFflibInvocationOnMockMember(receiver Value, method string, args []Value) (Value, bool, error) {
+func (vm *VM) callFrameworkInvocationOnMockMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	switch strings.ToLower(method) {
 	case "getmethod":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_InvocationOnMock.getMethod expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_InvocationOnMock.getMethod expects 0 arguments")
 		}
 		_, value, ok := objectFieldValue(receiver, "qm")
 		if !ok {
@@ -35097,7 +35102,7 @@ func (vm *VM) callFflibInvocationOnMockMember(receiver Value, method string, arg
 		return value, true, nil
 	case "getmethodargvalues":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_InvocationOnMock.getMethodArgValues expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_InvocationOnMock.getMethodArgValues expects 0 arguments")
 		}
 		_, value, ok := objectFieldValue(receiver, "methodArg")
 		if !ok {
@@ -35106,7 +35111,7 @@ func (vm *VM) callFflibInvocationOnMockMember(receiver Value, method string, arg
 		return value, true, nil
 	case "getarguments":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_InvocationOnMock.getArguments expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_InvocationOnMock.getArguments expects 0 arguments")
 		}
 		_, methodArg, ok := objectFieldValue(receiver, "methodArg")
 		if !ok {
@@ -35119,7 +35124,7 @@ func (vm *VM) callFflibInvocationOnMockMember(receiver Value, method string, arg
 		return values, true, nil
 	case "getargument":
 		if len(args) != 1 || args[0].Kind != ValueInt {
-			return Null, true, fmt.Errorf("fflib_InvocationOnMock.getArgument expects Integer")
+			return Null, true, fmt.Errorf("framework_InvocationOnMock.getArgument expects Integer")
 		}
 		_, methodArg, ok := objectFieldValue(receiver, "methodArg")
 		if !ok {
@@ -35131,12 +35136,12 @@ func (vm *VM) callFflibInvocationOnMockMember(receiver Value, method string, arg
 		}
 		index := int(args[0].Int)
 		if index < 0 || index >= len(values.List) {
-			return Null, true, newExceptionError("fflib_ApexMocks.ApexMocksException", fmt.Sprintf("Invalid index, must be greater or equal to zero and less of %d.", len(values.List)))
+			return Null, true, newExceptionError("framework_ApexMocks.ApexMocksException", fmt.Sprintf("Invalid index, must be greater or equal to zero and less of %d.", len(values.List)))
 		}
 		return values.List[index], true, nil
 	case "getmock":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_InvocationOnMock.getMock expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_InvocationOnMock.getMock expects 0 arguments")
 		}
 		_, value, ok := objectFieldValue(receiver, "mockInstance")
 		if !ok {
@@ -35148,29 +35153,29 @@ func (vm *VM) callFflibInvocationOnMockMember(receiver Value, method string, arg
 	}
 }
 
-func (vm *VM) callFflibMethodCountRecorderMember(receiver Value, method string, args []Value) (Value, bool, error) {
+func (vm *VM) callFrameworkMethodCountRecorderMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	switch strings.ToLower(method) {
 	case "recordmethod":
-		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "fflib_InvocationOnMock") {
-			return Null, true, fmt.Errorf("fflib_MethodCountRecorder.recordMethod expects fflib_InvocationOnMock")
+		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "framework_InvocationOnMock") {
+			return Null, true, fmt.Errorf("framework_MethodCountRecorder.recordMethod expects framework_InvocationOnMock")
 		}
-		if err := vm.fflibRecordMethodInvocation(args[0]); err != nil {
+		if err := vm.frameworkRecordMethodInvocation(args[0]); err != nil {
 			return Null, true, err
 		}
 		return Null, true, nil
 	case "getorderedmethodcalls":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_MethodCountRecorder.getOrderedMethodCalls expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_MethodCountRecorder.getOrderedMethodCalls expects 0 arguments")
 		}
-		if value, ok := vm.fflibMethodCountRecorderStatic("orderedMethodCalls"); ok {
+		if value, ok := vm.frameworkMethodCountRecorderStatic("orderedMethodCalls"); ok {
 			return value, true, nil
 		}
 		return List(), true, nil
 	case "getmethodargumentsbytypename":
 		if len(args) != 0 {
-			return Null, true, fmt.Errorf("fflib_MethodCountRecorder.getMethodArgumentsByTypeName expects 0 arguments")
+			return Null, true, fmt.Errorf("framework_MethodCountRecorder.getMethodArgumentsByTypeName expects 0 arguments")
 		}
-		if value, ok := vm.fflibMethodCountRecorderStatic("methodArgumentsByTypeName"); ok {
+		if value, ok := vm.frameworkMethodCountRecorderStatic("methodArgumentsByTypeName"); ok {
 			return value, true, nil
 		}
 		return Map(), true, nil
@@ -35179,18 +35184,18 @@ func (vm *VM) callFflibMethodCountRecorderMember(receiver Value, method string, 
 	}
 }
 
-func (vm *VM) callFflibMethodReturnValueRecorderMember(receiver Value, method string, args []Value) (Value, bool, error) {
+func (vm *VM) callFrameworkMethodReturnValueRecorderMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	if !strings.EqualFold(method, "getMethodReturnValue") {
 		return Null, false, nil
 	}
-	if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "fflib_InvocationOnMock") {
-		return Null, true, fmt.Errorf("fflib_MethodReturnValueRecorder.getMethodReturnValue expects fflib_InvocationOnMock")
+	if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "framework_InvocationOnMock") {
+		return Null, true, fmt.Errorf("framework_MethodReturnValueRecorder.getMethodReturnValue expects framework_InvocationOnMock")
 	}
 	_, byMethod, ok := objectFieldValue(receiver, "matcherReturnValuesByMethod")
 	if !ok || byMethod.Kind != ValueMap {
 		return Null, true, nil
 	}
-	methodValue, ok := fflibInvocationMethod(args[0])
+	methodValue, ok := frameworkInvocationMethod(args[0])
 	if !ok {
 		return Null, true, nil
 	}
@@ -35219,7 +35224,7 @@ func (vm *VM) callFflibMethodReturnValueRecorderMember(receiver Value, method st
 		if !ok {
 			continue
 		}
-		matched, handled, err := vm.fflibMatchesAllArgs(methodArg, matchers)
+		matched, handled, err := vm.frameworkMatchesAllArgs(methodArg, matchers)
 		if err != nil {
 			return Null, true, err
 		}
@@ -35235,8 +35240,8 @@ func (vm *VM) callFflibMethodReturnValueRecorderMember(receiver Value, method st
 	return Null, true, nil
 }
 
-func (vm *VM) fflibRecordMethodInvocation(invocation Value) error {
-	methodValue, ok := fflibInvocationMethod(invocation)
+func (vm *VM) frameworkRecordMethodInvocation(invocation Value) error {
+	methodValue, ok := frameworkInvocationMethod(invocation)
 	if !ok {
 		return nil
 	}
@@ -35244,15 +35249,15 @@ func (vm *VM) fflibRecordMethodInvocation(invocation Value) error {
 	if !ok {
 		methodArg = Null
 	}
-	byMethod, ok := vm.fflibMethodCountRecorderStatic("methodArgumentsByTypeName")
+	byMethod, ok := vm.frameworkMethodCountRecorderStatic("methodArgumentsByTypeName")
 	if !ok || byMethod.Kind != ValueMap {
-		byMethod = typedMap("Map<fflib_QualifiedMethod,List<fflib_MethodArgValues>>")
+		byMethod = typedMap("Map<framework_QualifiedMethod,List<framework_MethodArgValues>>")
 	}
 	key := vm.mapKey(methodValue)
 	methodArgs, ok := byMethod.Map[key]
 	if !ok || methodArgs.Kind != ValueList {
 		methodArgs = List()
-		methodArgs.Type = "List<fflib_MethodArgValues>"
+		methodArgs.Type = "List<framework_MethodArgValues>"
 	}
 	methodArgs.List = append(methodArgs.List, methodArg)
 	byMethod.Map[key] = methodArgs
@@ -35260,24 +35265,24 @@ func (vm *VM) fflibRecordMethodInvocation(invocation Value) error {
 		byMethod.MapKeys = make(map[string]Value)
 	}
 	byMethod.MapKeys[key] = methodValue
-	vm.setFflibMethodCountRecorderStatic("methodArgumentsByTypeName", byMethod)
-	ordered, ok := vm.fflibMethodCountRecorderStatic("orderedMethodCalls")
+	vm.setFrameworkMethodCountRecorderStatic("methodArgumentsByTypeName", byMethod)
+	ordered, ok := vm.frameworkMethodCountRecorderStatic("orderedMethodCalls")
 	if !ok || ordered.Kind != ValueList {
 		ordered = List()
-		ordered.Type = "List<fflib_InvocationOnMock>"
+		ordered.Type = "List<framework_InvocationOnMock>"
 	}
 	ordered.List = append(ordered.List, invocation)
-	vm.setFflibMethodCountRecorderStatic("orderedMethodCalls", ordered)
+	vm.setFrameworkMethodCountRecorderStatic("orderedMethodCalls", ordered)
 	return nil
 }
 
-func fflibInvocationMethod(invocation Value) (Value, bool) {
+func frameworkInvocationMethod(invocation Value) (Value, bool) {
 	_, value, ok := objectFieldValue(invocation, "qm")
-	return value, ok && value.Kind == ValueObject && strings.EqualFold(value.Type, "fflib_QualifiedMethod")
+	return value, ok && value.Kind == ValueObject && strings.EqualFold(value.Type, "framework_QualifiedMethod")
 }
 
-func (vm *VM) fflibMethodCountRecorderStatic(name string) (Value, bool) {
-	class, ok := vm.Classes["fflib_MethodCountRecorder"]
+func (vm *VM) frameworkMethodCountRecorderStatic(name string) (Value, bool) {
+	class, ok := vm.Classes["framework_MethodCountRecorder"]
 	if !ok {
 		return Null, false
 	}
@@ -35289,8 +35294,8 @@ func (vm *VM) fflibMethodCountRecorderStatic(name string) (Value, bool) {
 	return Null, false
 }
 
-func (vm *VM) setFflibMethodCountRecorderStatic(name string, value Value) {
-	class, ok := vm.Classes["fflib_MethodCountRecorder"]
+func (vm *VM) setFrameworkMethodCountRecorderStatic(name string, value Value) {
+	class, ok := vm.Classes["framework_MethodCountRecorder"]
 	if !ok {
 		return
 	}

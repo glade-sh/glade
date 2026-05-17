@@ -219,7 +219,7 @@ func preserveRepeatedCloneReference(value Value) bool {
 	if value.Kind != ValueObject {
 		return false
 	}
-	if strings.EqualFold(value.Type, "fflib_ApexMocks") {
+	if strings.EqualFold(value.Type, "framework_ApexMocks") {
 		return true
 	}
 	if _, ok := value.Fields["__oaerStubProvider"]; ok {

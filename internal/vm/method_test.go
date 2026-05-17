@@ -793,14 +793,14 @@ System.assertEquals(proxy, proxy.disableSecurity().allOrNothing(false));
 	}
 }
 
-func TestExecTestCreateStubReturnsEmptyCollectionForUnstubbedCollectionMethod(t *testing.T) {
+func TestExecTestCreateStubReturnsNullForUnstubbedCollectionMethod(t *testing.T) {
 	providerProgram, err := CompileAnonymous("return null;")
 	if err != nil {
 		t.Fatal(err)
 	}
 	program, err := CompileAnonymous(`
 Collector proxy = (Collector)Test.createStub(Collector.class, new Provider());
-System.assertEquals(0, proxy.results().size());
+System.assertEquals(null, proxy.results());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -974,34 +974,34 @@ System.assertEquals(2, mocks.Count);
 	}
 }
 
-func TestCurrentStubProviderPrefersActiveFflibApexMocksProvider(t *testing.T) {
+func TestCurrentStubProviderPrefersActiveFrameworkApexMocksProvider(t *testing.T) {
 	machine := New(nil)
-	attached := Object("fflib_ApexMocks")
-	attached.Fields["methodReturnValueRecorder"] = Object("fflib_MethodReturnValueRecorder")
+	attached := Object("framework_ApexMocks")
+	attached.Fields["methodReturnValueRecorder"] = Object("framework_MethodReturnValueRecorder")
 	proxy := Object("IService__sfdc_ApexStub")
 	proxy.Fields["__oaerStubProvider"] = attached
 
-	live := Object("fflib_ApexMocks")
+	live := Object("framework_ApexMocks")
 	live.Fields["verifying"] = Bool(true)
-	live.Fields["methodReturnValueRecorder"] = Object("fflib_MethodReturnValueRecorder")
+	live.Fields["methodReturnValueRecorder"] = Object("framework_MethodReturnValueRecorder")
 	machine.Globals["mocks"] = live
 
 	provider := machine.currentStubProvider(proxy)
 	if provider.Ref != live.Ref {
-		t.Fatalf("expected active fflib_ApexMocks provider ref %d, got %d", live.Ref, provider.Ref)
+		t.Fatalf("expected active framework_ApexMocks provider ref %d, got %d", live.Ref, provider.Ref)
 	}
 }
 
-func TestFflibMatcherFastPathMatchesCommonMatchers(t *testing.T) {
+func TestFrameworkMatcherFastPathMatchesCommonMatchers(t *testing.T) {
 	machine := New(nil)
-	methodArg := Object("fflib_MethodArgValues")
+	methodArg := Object("framework_MethodArgValues")
 	methodArg.Fields["argValues"] = List(String("Ada"), Null, Object("Account"))
-	eq := Object("fflib_MatcherDefinitions.Eq")
+	eq := Object("framework_MatcherDefinitions.Eq")
 	eq.Fields["toMatch"] = String("Ada")
-	isNull := Object("fflib_MatcherDefinitions.IsNull")
-	anySObject := Object("fflib_MatcherDefinitions.AnySObject")
+	isNull := Object("framework_MatcherDefinitions.IsNull")
+	anySObject := Object("framework_MatcherDefinitions.AnySObject")
 
-	matched, handled, err := machine.fflibMatchesAllArgs(methodArg, List(eq, isNull, anySObject))
+	matched, handled, err := machine.frameworkMatchesAllArgs(methodArg, List(eq, isNull, anySObject))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1009,8 +1009,8 @@ func TestFflibMatcherFastPathMatchesCommonMatchers(t *testing.T) {
 		t.Fatalf("matched=%v handled=%v, want true true", matched, handled)
 	}
 
-	anyString := Object("fflib_MatcherDefinitions.AnyString")
-	matched, handled, err = machine.fflibMatchesAllArgs(methodArg, List(anyString, isNull, anySObject))
+	anyString := Object("framework_MatcherDefinitions.AnyString")
+	matched, handled, err = machine.frameworkMatchesAllArgs(methodArg, List(anyString, isNull, anySObject))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1022,10 +1022,10 @@ func TestFflibMatcherFastPathMatchesCommonMatchers(t *testing.T) {
 	expectedAccount.Fields["Name"] = String("Acme")
 	actualAccount := expectedAccount
 	actualAccount.Ref = newValueRef()
-	eqSObject := Object("fflib_MatcherDefinitions.Eq")
+	eqSObject := Object("framework_MatcherDefinitions.Eq")
 	eqSObject.Fields["toMatch"] = expectedAccount
 	methodArg.Fields["argValues"] = List(actualAccount)
-	matched, handled, err = machine.fflibMatchesAllArgs(methodArg, List(eqSObject))
+	matched, handled, err = machine.frameworkMatchesAllArgs(methodArg, List(eqSObject))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1037,10 +1037,10 @@ func TestFflibMatcherFastPathMatchesCommonMatchers(t *testing.T) {
 	expectedDTO.Fields["internalName"] = String("Custom")
 	actualDTO := Object("CredentialingObjectMapping.CredentialingItemType")
 	actualDTO.Fields["internalName"] = String("Custom")
-	eqDTO := Object("fflib_MatcherDefinitions.Eq")
+	eqDTO := Object("framework_MatcherDefinitions.Eq")
 	eqDTO.Fields["toMatch"] = expectedDTO
 	methodArg.Fields["argValues"] = List(actualDTO)
-	matched, handled, err = machine.fflibMatchesAllArgs(methodArg, List(eqDTO))
+	matched, handled, err = machine.frameworkMatchesAllArgs(methodArg, List(eqDTO))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1049,18 +1049,18 @@ func TestFflibMatcherFastPathMatchesCommonMatchers(t *testing.T) {
 	}
 }
 
-func TestFflibArgumentCaptorMatcherStoresMatchedArgument(t *testing.T) {
+func TestFrameworkArgumentCaptorMatcherStoresMatchedArgument(t *testing.T) {
 	machine := New(nil)
 	record := Object("Credentialing_Item__c")
 	record.Fields["Id"] = platformScalar("Id", "a5B000000000001")
 	records := List(record)
 	records.Type = "List<SObject>"
 
-	methodArg := Object("fflib_MethodArgValues")
+	methodArg := Object("framework_MethodArgValues")
 	methodArg.Fields["argValues"] = List(records)
-	captorMatcher := Object("fflib_ArgumentCaptor.AnyObject")
+	captorMatcher := Object("framework_ArgumentCaptor.AnyObject")
 
-	matched, handled, err := machine.fflibMatchesAllArgs(methodArg, List(captorMatcher))
+	matched, handled, err := machine.frameworkMatchesAllArgs(methodArg, List(captorMatcher))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1076,9 +1076,9 @@ func TestFflibArgumentCaptorMatcherStoresMatchedArgument(t *testing.T) {
 	}
 }
 
-func TestFflibSObjectUnitOfWorkHandleRegisterTypeFastPath(t *testing.T) {
+func TestFrameworkSObjectUnitOfWorkHandleRegisterTypeFastPath(t *testing.T) {
 	machine := New(nil)
-	uow := Object("fflib_SObjectUnitOfWork")
+	uow := Object("framework_SObjectUnitOfWork")
 	for _, field := range []string{
 		"m_newListByType",
 		"m_dirtyMapByType",
@@ -1092,7 +1092,7 @@ func TestFflibSObjectUnitOfWorkHandleRegisterTypeFastPath(t *testing.T) {
 		uow.Fields[field] = Map()
 	}
 
-	_, handled, err := machine.callFflibSObjectUnitOfWorkMember(uow, "handleRegisterType", []Value{sObjectTypeToken("Account")}, &Result{})
+	_, handled, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "handleRegisterType", []Value{sObjectTypeToken("Account")}, &Result{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1105,19 +1105,19 @@ func TestFflibSObjectUnitOfWorkHandleRegisterTypeFastPath(t *testing.T) {
 	if got := uow.Fields["m_dirtyMapByType"].Map[mapKey(String("Account"))]; got.Kind != ValueMap {
 		t.Fatalf("dirty map kind = %v, want map", got.Kind)
 	}
-	if got := uow.Fields["m_relationships"].Map[mapKey(String("Account"))]; got.Type != "fflib_SObjectUnitOfWork.Relationships" {
+	if got := uow.Fields["m_relationships"].Map[mapKey(String("Account"))]; got.Type != "framework_SObjectUnitOfWork.Relationships" {
 		t.Fatalf("relationships type = %q", got.Type)
 	}
 }
 
-func TestFflibQueryFactoryOrderingToSOQLFastPath(t *testing.T) {
+func TestFrameworkQueryFactoryOrderingToSOQLFastPath(t *testing.T) {
 	machine := New(nil)
-	ordering := Object("fflib_QueryFactory.Ordering")
+	ordering := Object("framework_QueryFactory.Ordering")
 	ordering.Fields["field"] = String("Name")
-	ordering.Fields["direction"] = Value{Kind: ValueObject, Type: "fflib_QueryFactory.SortOrder", Text: "ASCENDING"}
+	ordering.Fields["direction"] = Value{Kind: ValueObject, Type: "framework_QueryFactory.SortOrder", Text: "ASCENDING"}
 	ordering.Fields["nullsLast"] = Bool(true)
 
-	value, handled, err := machine.callFflibQueryFactoryMember(ordering, "toSOQL", nil)
+	value, handled, err := machine.callFrameworkQueryFactoryMember(ordering, "toSOQL", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

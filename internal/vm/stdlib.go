@@ -1370,6 +1370,10 @@ func stringStatic(callee string, args []Value) (Value, error) {
 		}
 		parts := make([]string, 0, len(values))
 		for _, item := range values {
+			if item.Kind == ValueNull {
+				parts = append(parts, "")
+				continue
+			}
 			parts = append(parts, item.String())
 		}
 		return String(strings.Join(parts, args[1].Text)), nil

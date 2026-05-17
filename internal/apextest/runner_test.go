@@ -2275,10 +2275,10 @@ func TestRunContinuesDeterministicRandomStateAfterTestSetup(t *testing.T) {
   <type>Text</type>
 </CustomField>
 `)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Vuid__c.field-meta.xml"), `
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/ExternalId__c.field-meta.xml"), `
 <CustomField>
-  <fullName>Vuid__c</fullName>
-  <label>Vuid</label>
+  <fullName>ExternalId__c</fullName>
+  <label>ExternalId</label>
   <type>Text</type>
   <unique>true</unique>
 </CustomField>
@@ -2287,11 +2287,11 @@ func TestRunContinuesDeterministicRandomStateAfterTestSetup(t *testing.T) {
 @isTest
 private class SetupRandomTest {
   @TestSetup static void seed() {
-    insert new Account(Name = 'Seed', Vuid__c = UUID.randomUUID().toString());
+    insert new Account(Name = 'Seed', ExternalId__c = UUID.randomUUID().toString());
   }
 
   @isTest static void methodRandomDoesNotCollideWithSetupData() {
-    insert new Account(Name = 'Method', Vuid__c = UUID.randomUUID().toString());
+    insert new Account(Name = 'Method', ExternalId__c = UUID.randomUUID().toString());
     System.assertEquals(2, [SELECT COUNT() FROM Account]);
   }
 }
@@ -2356,10 +2356,10 @@ func TestRunTestSetupRecordWinsOverSyntheticSetupDataDefault(t *testing.T) {
   <sharingModel>ReadWrite</sharingModel>
 </CustomObject>
 `)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Setup_Data__c/fields/Data_Mappings__c.field-meta.xml"), `
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Setup_Data__c/fields/Config__c.field-meta.xml"), `
 <CustomField>
-  <fullName>Data_Mappings__c</fullName>
-  <label>Data Mappings</label>
+  <fullName>Config__c</fullName>
+  <label>Config</label>
   <type>LongTextArea</type>
   <length>32768</length>
   <visibleLines>3</visibleLines>
@@ -2369,12 +2369,12 @@ func TestRunTestSetupRecordWinsOverSyntheticSetupDataDefault(t *testing.T) {
 @isTest
 private class SetupDataDefaultTest {
   @TestSetup static void seed() {
-    insert new Setup_Data__c(Name = 'Test Setup', Data_Mappings__c = 'method');
+    insert new Setup_Data__c(Name = 'Test Setup', Config__c = 'method');
   }
 
   @isTest static void unorderedLimitPrefersTestSetupRecord() {
-    Setup_Data__c setup = [SELECT Data_Mappings__c FROM Setup_Data__c LIMIT 1];
-    System.assertEquals('method', setup.Data_Mappings__c);
+    Setup_Data__c setup = [SELECT Config__c FROM Setup_Data__c LIMIT 1];
+    System.assertEquals('method', setup.Config__c);
   }
 }
 `)

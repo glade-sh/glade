@@ -189,19 +189,20 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 	report.Dependencies = append(report.Dependencies, index.Dependencies...)
 	report.Diagnostics = append(report.Diagnostics, loadDiagnostics...)
 
+	recordLocalTestPhase(&report, options, "discover_start", started)
+	parallelism := localTestParallelism(options)
 	testOpts := apextest.Options{
 		Filter:              localTestFilter(options),
 		TraceBlocked:        shouldTraceFocusedLocalTests(options),
 		SlowTestThresholdMS: options.SlowTestThresholdMS,
 		TimeoutMS:           options.TimeoutMS,
-		Parallelism:         localTestParallelism(options),
-		ParallelMethods:     options.ParallelMethods || shouldParallelizeFocusedMethods(options),
+		Parallelism:         parallelism,
 		Progress:            localTestProgressReporter(options.ProgressWriter),
 	}
-	recordLocalTestPhase(&report, options, "discover_start", started)
 	cases := apextest.Discover(index, testOpts)
 	cases = filterLocalTestCases(cases, options)
 	cases = selectChangedLocalTestCases(&report, index, cases, root, options)
+	testOpts.ParallelMethods = shouldParallelizeMethods(options, parallelism, len(cases))
 	sort.SliceStable(cases, func(i, j int) bool {
 		if cases[i].ClassName == cases[j].ClassName {
 			return cases[i].MethodName < cases[j].MethodName
@@ -407,6 +408,21 @@ func localTestParallelism(options LocalTestOptions) int {
 
 func shouldParallelizeFocusedMethods(options LocalTestOptions) bool {
 	return strings.TrimSpace(options.Class) != "" && strings.TrimSpace(options.Method) == ""
+}
+
+func shouldParallelizeMethods(options LocalTestOptions, parallelism, totalCases int) bool {
+	if options.ParallelMethods {
+		return true
+	}
+	if shouldParallelizeFocusedMethods(options) {
+		return true
+	}
+	if strings.TrimSpace(options.Method) != "" || parallelism <= 1 {
+		return false
+	}
+	// Full-project runs with large test counts benefit significantly when methods
+	// within a class are allowed to run in parallel after shared @TestSetup.
+	return totalCases >= 500
 }
 
 func localTestProgressReporter(w io.Writer) func(apextest.TestProgress) {

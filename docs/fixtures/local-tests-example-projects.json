@@ -81,10 +81,10 @@
           "message": "method \"shouldDetermineIfNewOrPreExistingRecurringDonation\" has ambiguous overloads for call \"withAccount\" with 1 argument(s)"
         },
         {
-          "key": "OAERSEMA010|fflib_SObjects2Test.cls|method \"<symbol>\" cannot access protected method \"<symbol>\"",
+          "key": "OAERSEMA010|framework_SObjects2Test.cls|method \"<symbol>\" cannot access protected method \"<symbol>\"",
           "count": 32,
           "code": "OAERSEMA010",
-          "file": "example-projects/NPSP-rel-3.237/force-app/infrastructure/apex-extensions/tests/classes/domains/fflib_SObjects2Test.cls",
+          "file": "example-projects/NPSP-rel-3.237/force-app/infrastructure/apex-extensions/tests/classes/domains/framework_SObjects2Test.cls",
           "message": "method \"itShouldAddErrorMessage\" cannot access protected method \"domain.addError\""
         },
         {
@@ -297,22 +297,22 @@
       },
       "topOutcomeBlockers": [
         {
-          "key": "compile_gap|compile|oaersema013|fflib_Application.cls|202|method \"<symbol>\" references unknown variable \"<symbol>\"",
+          "key": "compile_gap|compile|oaersema013|framework_Application.cls|202|method \"<symbol>\" references unknown variable \"<symbol>\"",
           "count": 761,
           "outcome": "compile_gap",
           "phase": "compile",
           "capabilityId": "oaersema013",
-          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/fflib/fflib_Application.cls",
+          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/framework/framework_Application.cls",
           "line": 202,
           "error": "method \"selectById\" references unknown variable \"domainSObjectType\""
         }
       ],
       "topDiagnostics": [
         {
-          "key": "OAERSEMA013|fflib_Application.cls|method \"<symbol>\" references unknown variable \"<symbol>\"",
+          "key": "OAERSEMA013|framework_Application.cls|method \"<symbol>\" references unknown variable \"<symbol>\"",
           "count": 1,
           "code": "OAERSEMA013",
-          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/fflib/fflib_Application.cls",
+          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/framework/framework_Application.cls",
           "message": "method \"selectById\" references unknown variable \"domainSObjectType\""
         }
       ]
@@ -378,10 +378,10 @@
           "message": "method \"whenTriggerIsDisabledTriggerShouldNotRun\" references unknown field \"HasOptedOutOfEmail\" on Contact"
         },
         {
-          "key": "OAERSEMA021|fflib_QueryFactoryTest.cls|method \"<symbol>\" references unknown field \"<symbol>\" on Contact",
+          "key": "OAERSEMA021|framework_QueryFactoryTest.cls|method \"<symbol>\" references unknown field \"<symbol>\" on Contact",
           "count": 51,
           "code": "OAERSEMA021",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/fflib/classes/fflib_QueryFactoryTest.cls",
+          "file": "example-projects/sf-cred-pkg-develop/force-app/framework/classes/framework_QueryFactoryTest.cls",
           "message": "method \"fieldSelections\" references unknown field \"SObjectType\" on Contact"
         },
         {
