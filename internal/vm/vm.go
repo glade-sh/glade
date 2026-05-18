@@ -64,6 +64,7 @@ type VM struct {
 	enumSuffixLookup         map[string]enumClassLookup
 	Org                      *storage.OrgState
 	Triggers                 map[string][]Trigger
+	triggerMatchCache        map[string][]Trigger
 	Stdout                   io.Writer
 	callStack                []callFrame
 	currentClass             string
@@ -315,6 +316,7 @@ func New(stdout io.Writer) *VM {
 		enumLookup:         make(map[string]enumClassLookup),
 		enumSuffixLookup:   make(map[string]enumClassLookup),
 		Triggers:           make(map[string][]Trigger),
+		triggerMatchCache:  make(map[string][]Trigger),
 		Stdout:             stdout,
 		limitCaps:          defaultLimitCaps(),
 		limitMode:          LimitModePermissive,
@@ -351,6 +353,7 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	clone.Classes = copyClassMap(vm.Classes)
 	clone.rebuildClassLookup()
 	clone.Triggers = copyTriggerSliceMap(vm.Triggers)
+	clone.triggerMatchCache = make(map[string][]Trigger)
 	clone.traceEnabled = vm.traceEnabled
 	clone.staticInitState = copyStaticInitStateMap(vm.staticInitState)
 	clone.pageReferences = copyStringMap(vm.pageReferences)
@@ -500,6 +503,7 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 		}
 	}
 	vm.Org = org
+	vm.clearTriggerMatchCache()
 	if vm.Org != nil {
 		vm.Org.Now = func() time.Time { return vm.fakeNow }
 	}
@@ -756,7 +760,15 @@ func (vm *VM) RegisterTrigger(trigger Trigger) error {
 		vm.Triggers = make(map[string][]Trigger)
 	}
 	vm.Triggers[trigger.Object] = append(vm.Triggers[trigger.Object], trigger)
+	vm.clearTriggerMatchCache()
 	return nil
+}
+
+func (vm *VM) clearTriggerMatchCache() {
+	if vm == nil {
+		return
+	}
+	vm.triggerMatchCache = make(map[string][]Trigger)
 }
 
 func (vm *VM) EnableTestContext() {
@@ -13684,15 +13696,8 @@ func (vm *VM) hasAfterTriggerForDML(op string, records []storage.Record) bool {
 			continue
 		}
 		seenRecordObjects[strings.ToLower(objectName)] = true
-		for triggerObject, candidates := range vm.Triggers {
-			if !vm.triggerObjectMatches(triggerObject, objectName) {
-				continue
-			}
-			for _, trigger := range candidates {
-				if trigger.Timing == triggerTimingAfter && strings.EqualFold(trigger.Operation, triggerOp) {
-					return true
-				}
-			}
+		if len(vm.triggersForOperation(objectName, triggerTimingAfter, triggerOp)) > 0 {
+			return true
 		}
 	}
 	return false
@@ -15250,6 +15255,7 @@ func (vm *VM) cascadeDeleteRowCount(records []storage.Record) int {
 	if vm.Org == nil {
 		return 0
 	}
+	ctx := vm.buildCascadeDeleteCountContext()
 	total := 0
 	seen := make(map[string]bool)
 	for _, record := range records {
@@ -15257,12 +15263,12 @@ func (vm *VM) cascadeDeleteRowCount(records []storage.Record) int {
 		if canonical, ok := storage.ResolveObjectName(*vm.Org, record.Object); ok {
 			objectName = canonical
 		}
-		total += vm.cascadeDeleteRowCountFrom(objectName, record.ID, seen)
+		total += vm.cascadeDeleteRowCountFrom(objectName, record.ID, seen, ctx)
 	}
 	return total
 }
 
-func (vm *VM) cascadeDeleteRowCountFrom(objectName string, id storage.ID, seen map[string]bool) int {
+func (vm *VM) cascadeDeleteRowCountFrom(objectName string, id storage.ID, seen map[string]bool, ctx *cascadeDeleteCountContext) int {
 	if id == "" {
 		return 0
 	}
@@ -15272,25 +15278,71 @@ func (vm *VM) cascadeDeleteRowCountFrom(objectName string, id storage.ID, seen m
 	}
 	seen[key] = true
 	total := 0
-	for childObjectName, childObject := range vm.Org.Objects {
-		for _, relation := range childObject.Definition.Relations {
-			if !relation.CascadeDelete || !stringSliceContains(relation.ParentObjects, objectName) {
+	for _, relation := range ctx.relationsByParent[objectName] {
+		childrenByParent := ctx.referenceIndex[relation.key()]
+		for _, childID := range childrenByParent[id] {
+			childObject := vm.Org.Objects[relation.childObject]
+			childRecord, ok := childObject.Records[childID]
+			if !ok || childRecord.System.IsDeleted {
 				continue
 			}
+			total++
+			total += vm.cascadeDeleteRowCountFrom(relation.childObject, childID, seen, ctx)
+		}
+	}
+	return total
+}
+
+type cascadeDeleteCountRelation struct {
+	childObject string
+	field       string
+}
+
+func (r cascadeDeleteCountRelation) key() string {
+	return r.childObject + "|" + r.field
+}
+
+type cascadeDeleteCountContext struct {
+	relationsByParent map[string][]cascadeDeleteCountRelation
+	referenceIndex    map[string]map[storage.ID][]storage.ID
+}
+
+func (vm *VM) buildCascadeDeleteCountContext() *cascadeDeleteCountContext {
+	if vm == nil || vm.Org == nil {
+		return nil
+	}
+	ctx := &cascadeDeleteCountContext{
+		relationsByParent: make(map[string][]cascadeDeleteCountRelation),
+		referenceIndex:    make(map[string]map[storage.ID][]storage.ID),
+	}
+	for childObjectName, childObject := range vm.Org.Objects {
+		for _, relation := range childObject.Definition.Relations {
+			if !relation.CascadeDelete {
+				continue
+			}
+			rel := cascadeDeleteCountRelation{childObject: childObjectName, field: relation.Field}
+			index := make(map[storage.ID][]storage.ID)
 			for childID, child := range childObject.Records {
 				if child.System.IsDeleted {
 					continue
 				}
 				value, ok := child.Fields[relation.Field]
-				if !ok || storageIDFromValue(value) != id {
+				if !ok {
 					continue
 				}
-				total++
-				total += vm.cascadeDeleteRowCountFrom(childObjectName, childID, seen)
+				parentID := storageIDFromValue(value)
+				if parentID == "" {
+					continue
+				}
+				index[parentID] = append(index[parentID], childID)
+			}
+			ctx.referenceIndex[rel.key()] = index
+			for _, parentObject := range relation.ParentObjects {
+				ctx.relationsByParent[parentObject] = append(ctx.relationsByParent[parentObject], rel)
 			}
 		}
 	}
-	return total
+	return ctx
 }
 
 func stringSliceContains(values []string, want string) bool {
@@ -15345,23 +15397,7 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 		return nil, nil
 	}
 	object := records[0].Object
-	triggers := make([]Trigger, 0, len(vm.Triggers[object]))
-	seenTriggers := make(map[string]bool)
-	for triggerObject, candidates := range vm.Triggers {
-		if !vm.triggerObjectMatches(triggerObject, object) {
-			continue
-		}
-		for _, trigger := range candidates {
-			if trigger.Timing == timing && trigger.Operation == op {
-				key := trigger.Name + "|" + trigger.File + "|" + trigger.Timing + "|" + trigger.Operation
-				if seenTriggers[key] {
-					continue
-				}
-				seenTriggers[key] = true
-				triggers = append(triggers, trigger)
-			}
-		}
-	}
+	triggers := vm.triggersForOperation(object, timing, op)
 	if len(triggers) == 0 {
 		return nil, nil
 	}
@@ -15384,6 +15420,38 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 		return failures, nil
 	}
 	return nil, nil
+}
+
+func (vm *VM) triggersForOperation(object, timing, op string) []Trigger {
+	if vm == nil {
+		return nil
+	}
+	if vm.triggerMatchCache == nil {
+		vm.triggerMatchCache = make(map[string][]Trigger)
+	}
+	cacheKey := strings.ToLower(object) + "|" + timing + "|" + op
+	if cached, ok := vm.triggerMatchCache[cacheKey]; ok {
+		return cached
+	}
+	triggers := make([]Trigger, 0, len(vm.Triggers[object]))
+	seenTriggers := make(map[string]bool)
+	for triggerObject, candidates := range vm.Triggers {
+		if !vm.triggerObjectMatches(triggerObject, object) {
+			continue
+		}
+		for _, trigger := range candidates {
+			if trigger.Timing == timing && trigger.Operation == op {
+				key := trigger.Name + "|" + trigger.File + "|" + trigger.Timing + "|" + trigger.Operation
+				if seenTriggers[key] {
+					continue
+				}
+				seenTriggers[key] = true
+				triggers = append(triggers, trigger)
+			}
+		}
+	}
+	vm.triggerMatchCache[cacheKey] = triggers
+	return triggers
 }
 
 func (vm *VM) runTriggersByObject(timing, op string, records, oldRecords []storage.Record, result *Result) ([]dml.Result, []storage.Record, error) {

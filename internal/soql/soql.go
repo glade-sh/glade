@@ -53,7 +53,7 @@ func storeParsedQuery(input string, now time.Time, query Query) {
 }
 
 func parsedQueryCacheKey(input string, now time.Time) string {
-	return now.Format(time.RFC3339Nano) + "\x00" + input
+	return now.UTC().Truncate(time.Minute).Format("2006-01-02T15:04") + "\x00" + input
 }
 
 type OrderSpec struct {

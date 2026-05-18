@@ -61,6 +61,17 @@ type Error struct {
 	Fields     []string `json:"fields,omitempty"`
 }
 
+type deleteRelation struct {
+	childObject string
+	field       string
+}
+
+type deleteContext struct {
+	restrictedByParent map[string][]deleteRelation
+	cascadeByParent    map[string][]deleteRelation
+	referenceIndex     map[string]map[storage.ID][]storage.ID
+}
+
 func NewEngine(org *storage.OrgState) Engine {
 	prefixes := make(map[string]string, len(org.Objects))
 	for name, object := range org.Objects {
@@ -125,8 +136,9 @@ func (e *Engine) Update(records []storage.Record) []Result {
 
 func (e *Engine) Delete(records []storage.Record) []Result {
 	results := make([]Result, len(records))
+	ctx := e.buildDeleteContext()
 	for i, record := range records {
-		if err := e.deleteOne(record); err != nil {
+		if err := e.deleteOneWithContext(record, ctx); err != nil {
 			results[i] = resultFromError(record.ID, err)
 			continue
 		}
@@ -1408,6 +1420,10 @@ func stripStoredCalculatedFields(definition storage.ObjectDefinition, record *st
 }
 
 func (e *Engine) deleteOne(record storage.Record) error {
+	return e.deleteOneWithContext(record, nil)
+}
+
+func (e *Engine) deleteOneWithContext(record storage.Record, ctx *deleteContext) error {
 	object, objectName, err := e.object(record.Object)
 	if err != nil {
 		return err
@@ -1428,13 +1444,10 @@ func (e *Engine) deleteOne(record storage.Record) error {
 	if stored.System.IsDeleted {
 		return fmt.Errorf("dml: record %s is deleted", record.ID)
 	}
-	if err := e.validateDeleteReferences(objectName, storedID); err != nil {
-		return err
-	}
-	return e.deleteRecord(objectName, storedID, make(map[string]bool))
+	return e.deleteRecord(objectName, storedID, make(map[string]bool), ctx)
 }
 
-func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]bool) error {
+func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]bool, ctx *deleteContext) error {
 	key := objectName + ":" + string(id)
 	if seen[key] {
 		return nil
@@ -1448,7 +1461,7 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	if stored.System.IsDeleted {
 		return fmt.Errorf("dml: record %s is deleted", id)
 	}
-	if err := e.validateDeleteReferences(objectName, id); err != nil {
+	if err := e.validateDeleteReferences(objectName, id, ctx); err != nil {
 		return err
 	}
 	stamp := e.systemTimestamp()
@@ -1459,7 +1472,7 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	object.Records[storedID] = stored
 	e.Org.Objects[objectName] = object
 	e.recalculateSummaryFieldsForChildren(objectName, stored)
-	return e.cascadeDeleteChildren(objectName, storedID, seen)
+	return e.cascadeDeleteChildren(objectName, storedID, seen, ctx)
 }
 
 func (e *Engine) upsertByExternalID(record storage.Record, externalIDField string) (storage.ID, bool, error) {
@@ -3074,19 +3087,39 @@ func workflowValueString(value storage.Value) string {
 	}
 }
 
-func (e *Engine) validateDeleteReferences(objectName string, id storage.ID) error {
-	for childObjectName, childObject := range e.Org.Objects {
-		for _, relation := range childObject.Definition.Relations {
-			if !relation.RestrictedDelete || !containsString(relation.ParentObjects, objectName) {
+func (e *Engine) validateDeleteReferences(objectName string, id storage.ID, ctx *deleteContext) error {
+	relations := e.restrictedDeleteRelations(objectName, ctx)
+	for _, relation := range relations {
+		childrenByParent := e.referenceIndexForRelation(relation.childObject, relation.field, ctx)
+		for _, childID := range childrenByParent[id] {
+			childObject := e.Org.Objects[relation.childObject]
+			childRecord, ok := childObject.Records[childID]
+			if !ok || childRecord.System.IsDeleted {
 				continue
 			}
-			for _, child := range childObject.Records {
-				if child.System.IsDeleted {
-					continue
-				}
-				value, ok := child.Fields[relation.Field]
-				if ok && idFromStorageValue(value) == id {
-					return dmlErrorf("DELETE_FAILED", []string{relation.Field}, "dml: cannot delete %s %s because %s records reference it", objectName, id, childObjectName)
+			value, ok := childRecord.Fields[relation.field]
+			if ok && idFromStorageValue(value) == id {
+				return dmlErrorf("DELETE_FAILED", []string{relation.field}, "dml: cannot delete %s %s because %s records reference it", objectName, id, relation.childObject)
+			}
+		}
+	}
+	return nil
+}
+
+func (e *Engine) cascadeDeleteChildren(objectName string, id storage.ID, seen map[string]bool, ctx *deleteContext) error {
+	relations := e.cascadeDeleteRelations(objectName, ctx)
+	for _, relation := range relations {
+		childrenByParent := e.referenceIndexForRelation(relation.childObject, relation.field, ctx)
+		for _, childID := range childrenByParent[id] {
+			childObject := e.Org.Objects[relation.childObject]
+			childRecord, ok := childObject.Records[childID]
+			if !ok || childRecord.System.IsDeleted {
+				continue
+			}
+			value, ok := childRecord.Fields[relation.field]
+			if ok && idFromStorageValue(value) == id {
+				if err := e.deleteRecord(relation.childObject, childID, seen, ctx); err != nil {
+					return err
 				}
 			}
 		}
@@ -3094,26 +3127,114 @@ func (e *Engine) validateDeleteReferences(objectName string, id storage.ID) erro
 	return nil
 }
 
-func (e *Engine) cascadeDeleteChildren(objectName string, id storage.ID, seen map[string]bool) error {
+func (e *Engine) buildDeleteContext() *deleteContext {
+	if e == nil || e.Org == nil {
+		return nil
+	}
+	ctx := &deleteContext{
+		restrictedByParent: make(map[string][]deleteRelation),
+		cascadeByParent:    make(map[string][]deleteRelation),
+		referenceIndex:     make(map[string]map[storage.ID][]storage.ID),
+	}
 	for childObjectName, childObject := range e.Org.Objects {
 		for _, relation := range childObject.Definition.Relations {
-			if !relation.CascadeDelete || !containsString(relation.ParentObjects, objectName) {
+			if !relation.RestrictedDelete && !relation.CascadeDelete {
 				continue
 			}
+			index := make(map[storage.ID][]storage.ID)
 			for childID, child := range childObject.Records {
 				if child.System.IsDeleted {
 					continue
 				}
 				value, ok := child.Fields[relation.Field]
-				if ok && idFromStorageValue(value) == id {
-					if err := e.deleteRecord(childObjectName, childID, seen); err != nil {
-						return err
-					}
+				if !ok {
+					continue
+				}
+				parentID := idFromStorageValue(value)
+				if parentID == "" {
+					continue
+				}
+				index[parentID] = append(index[parentID], childID)
+			}
+			ctx.referenceIndex[deleteRelationKey(childObjectName, relation.Field)] = index
+			for _, parentObject := range relation.ParentObjects {
+				rel := deleteRelation{childObject: childObjectName, field: relation.Field}
+				if relation.RestrictedDelete {
+					ctx.restrictedByParent[parentObject] = append(ctx.restrictedByParent[parentObject], rel)
+				}
+				if relation.CascadeDelete {
+					ctx.cascadeByParent[parentObject] = append(ctx.cascadeByParent[parentObject], rel)
 				}
 			}
 		}
 	}
-	return nil
+	return ctx
+}
+
+func deleteRelationKey(childObject, field string) string {
+	return childObject + "|" + field
+}
+
+func (e *Engine) restrictedDeleteRelations(objectName string, ctx *deleteContext) []deleteRelation {
+	if ctx != nil {
+		if relations, ok := ctx.restrictedByParent[objectName]; ok {
+			return relations
+		}
+		return nil
+	}
+	out := make([]deleteRelation, 0)
+	for childObjectName, childObject := range e.Org.Objects {
+		for _, relation := range childObject.Definition.Relations {
+			if relation.RestrictedDelete && containsString(relation.ParentObjects, objectName) {
+				out = append(out, deleteRelation{childObject: childObjectName, field: relation.Field})
+			}
+		}
+	}
+	return out
+}
+
+func (e *Engine) cascadeDeleteRelations(objectName string, ctx *deleteContext) []deleteRelation {
+	if ctx != nil {
+		if relations, ok := ctx.cascadeByParent[objectName]; ok {
+			return relations
+		}
+		return nil
+	}
+	out := make([]deleteRelation, 0)
+	for childObjectName, childObject := range e.Org.Objects {
+		for _, relation := range childObject.Definition.Relations {
+			if relation.CascadeDelete && containsString(relation.ParentObjects, objectName) {
+				out = append(out, deleteRelation{childObject: childObjectName, field: relation.Field})
+			}
+		}
+	}
+	return out
+}
+
+func (e *Engine) referenceIndexForRelation(childObject, field string, ctx *deleteContext) map[storage.ID][]storage.ID {
+	if ctx != nil {
+		if index, ok := ctx.referenceIndex[deleteRelationKey(childObject, field)]; ok {
+			return index
+		}
+		return nil
+	}
+	childState := e.Org.Objects[childObject]
+	index := make(map[storage.ID][]storage.ID)
+	for childID, child := range childState.Records {
+		if child.System.IsDeleted {
+			continue
+		}
+		value, ok := child.Fields[field]
+		if !ok {
+			continue
+		}
+		parentID := idFromStorageValue(value)
+		if parentID == "" {
+			continue
+		}
+		index[parentID] = append(index[parentID], childID)
+	}
+	return index
 }
 
 func upsertExternalID(definition storage.ObjectDefinition, namespace string, record storage.Record, externalIDField string) (string, storage.Value, bool, error) {
