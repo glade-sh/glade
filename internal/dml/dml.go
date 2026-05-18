@@ -31,6 +31,7 @@ type Engine struct {
 	uniqueFieldMap map[string]bool
 	activeValRules map[string]bool
 	uniqueFields   map[string][]string
+	uniqueIndexes  map[string]map[string]map[storage.ID]bool
 	summaryByChild map[string][]summaryRelation
 }
 
@@ -98,6 +99,7 @@ func NewEngine(org *storage.OrgState) Engine {
 		uniqueFieldMap: make(map[string]bool),
 		activeValRules: make(map[string]bool),
 		uniqueFields:   make(map[string][]string),
+		uniqueIndexes:  make(map[string]map[string]map[storage.ID]bool),
 		summaryByChild: make(map[string][]summaryRelation),
 	}
 }
@@ -222,6 +224,7 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 		stored.System.LastModifiedByID = e.systemUserID()
 		object.Records[storedID] = stored
 		e.Org.Objects[objectName] = object
+		e.addUniqueIndexRecord(objectName, object.Definition, stored)
 		results[i] = Result{ID: record.ID, Success: true}
 	}
 	return results
@@ -331,6 +334,7 @@ func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Res
 		storedDuplicate.System.LastModifiedByID = e.systemUserID()
 		object.Records[storedDuplicateID] = storedDuplicate
 		e.Org.Objects[objectName] = object
+		e.removeUniqueIndexRecord(objectName, object.Definition, storedDuplicate)
 		results[i] = Result{ID: master.ID, Success: true, MergedRecordIDs: []storage.ID{duplicate.ID}, UpdatedRelatedIDs: updatedRelatedIDs}
 	}
 	return results
@@ -402,6 +406,7 @@ func (e *Engine) reparentLookups(parentObject string, oldID, newID storage.ID) [
 		}
 		if changed {
 			e.Org.Objects[childObjectName] = childObject
+			e.clearUniqueIndexes()
 		}
 	}
 	ids := make([]storage.ID, 0, len(seen))
@@ -533,11 +538,13 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	}
 	object.Records[record.ID] = record.Clone()
 	e.Org.Objects[objectName] = object
+	e.addUniqueIndexRecord(objectName, object.Definition, record)
 	e.recalculateSummaryFieldsForChildren(objectName, record)
 	if objectName == "ContentVersion" {
 		if err := e.afterInsertContentVersion(record); err != nil {
 			*e.Org = rollbackOrg
 			e.IDs.Sequences = rollbackSequences
+			e.clearUniqueIndexes()
 			return "", err
 		}
 	}
@@ -548,6 +555,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 		if err := e.afterInsertEmailMessage(record); err != nil {
 			*e.Org = rollbackOrg
 			e.IDs.Sequences = rollbackSequences
+			e.clearUniqueIndexes()
 			return "", err
 		}
 	}
@@ -555,6 +563,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 		if err := e.afterInsertPersonAccount(record); err != nil {
 			*e.Org = rollbackOrg
 			e.IDs.Sequences = rollbackSequences
+			e.clearUniqueIndexes()
 			return "", err
 		}
 	}
@@ -562,6 +571,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 		if err := e.ApplyAutomation(objectName, record.ID); err != nil {
 			*e.Org = rollbackOrg
 			e.IDs.Sequences = rollbackSequences
+			e.clearUniqueIndexes()
 			return "", err
 		}
 	}
@@ -1395,11 +1405,14 @@ func (e *Engine) updateOne(record storage.Record) error {
 	existing.System.LastModifiedByID = e.systemUserID()
 	object.Records[storedID] = existing
 	e.Org.Objects[objectName] = object
+	e.removeUniqueIndexRecord(objectName, object.Definition, oldRecord)
+	e.addUniqueIndexRecord(objectName, object.Definition, existing)
 	e.recalculateSummaryFieldsForChildren(objectName, oldRecord, finalRecord)
 	if strings.EqualFold(objectName, "Account") {
 		if err := e.syncPersonContact(existing); err != nil {
 			*e.Org = rollbackOrg
 			e.IDs.Sequences = rollbackSequences
+			e.clearUniqueIndexes()
 			return err
 		}
 	}
@@ -1407,6 +1420,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 		if err := e.ApplyAutomation(objectName, storedID); err != nil {
 			*e.Org = rollbackOrg
 			e.IDs.Sequences = rollbackSequences
+			e.clearUniqueIndexes()
 			return err
 		}
 	}
@@ -1480,6 +1494,7 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	stored.System.LastModifiedByID = e.systemUserID()
 	object.Records[storedID] = stored
 	e.Org.Objects[objectName] = object
+	e.removeUniqueIndexRecord(objectName, object.Definition, stored)
 	e.recalculateSummaryFieldsForChildren(objectName, stored)
 	return e.cascadeDeleteChildren(objectName, storedID, seen, ctx)
 }
@@ -2272,27 +2287,134 @@ func (e *Engine) validateUnique(objectName string, definition storage.ObjectDefi
 	if len(uniqueFields) == 0 {
 		return nil
 	}
-	object := e.Org.Objects[objectName]
 	for _, fieldName := range uniqueFields {
 		field := definition.Fields[fieldName]
 		value, ok := record.Fields[fieldName]
 		if !ok || value.Kind == storage.ValueNull {
 			continue
 		}
-		for id, stored := range object.Records {
-			if id == currentID || stored.System.IsDeleted {
-				continue
-			}
-			storedValue, ok := stored.Fields[fieldName]
-			if !ok {
-				continue
-			}
-			if storageValuesEqual(field, storedValue, value) {
+		index := e.uniqueIndexForField(objectName, definition, fieldName)
+		for _, key := range uniqueValueKeys(field, value) {
+			for id := range index[key] {
+				if id == currentID {
+					continue
+				}
 				return dmlErrorf("DUPLICATE_VALUE", []string{fieldName}, "dml: duplicate value %s.%s", objectName, fieldName)
 			}
 		}
 	}
 	return nil
+}
+
+func (e *Engine) uniqueIndexForField(objectName string, definition storage.ObjectDefinition, fieldName string) map[string]map[storage.ID]bool {
+	if e.uniqueIndexes == nil {
+		e.uniqueIndexes = make(map[string]map[string]map[storage.ID]bool)
+	}
+	key := uniqueIndexKey(objectName, fieldName)
+	if index, ok := e.uniqueIndexes[key]; ok {
+		return index
+	}
+	index := make(map[string]map[storage.ID]bool)
+	field := definition.Fields[fieldName]
+	object := e.Org.Objects[objectName]
+	for id, stored := range object.Records {
+		if stored.System.IsDeleted {
+			continue
+		}
+		value, ok := stored.Fields[fieldName]
+		if !ok || value.Kind == storage.ValueNull {
+			continue
+		}
+		addUniqueIndexValue(index, field, value, id)
+	}
+	e.uniqueIndexes[key] = index
+	return index
+}
+
+func (e *Engine) addUniqueIndexRecord(objectName string, definition storage.ObjectDefinition, record storage.Record) {
+	if e == nil || e.uniqueIndexes == nil || len(e.uniqueIndexes) == 0 || record.ID == "" || record.System.IsDeleted {
+		return
+	}
+	for _, fieldName := range e.uniqueFieldNames(objectName, definition) {
+		index, ok := e.uniqueIndexes[uniqueIndexKey(objectName, fieldName)]
+		if !ok {
+			continue
+		}
+		value, ok := record.Fields[fieldName]
+		if !ok || value.Kind == storage.ValueNull {
+			continue
+		}
+		addUniqueIndexValue(index, definition.Fields[fieldName], value, record.ID)
+	}
+}
+
+func (e *Engine) removeUniqueIndexRecord(objectName string, definition storage.ObjectDefinition, record storage.Record) {
+	if e == nil || e.uniqueIndexes == nil || len(e.uniqueIndexes) == 0 || record.ID == "" {
+		return
+	}
+	for _, fieldName := range e.uniqueFieldNames(objectName, definition) {
+		index, ok := e.uniqueIndexes[uniqueIndexKey(objectName, fieldName)]
+		if !ok {
+			continue
+		}
+		value, ok := record.Fields[fieldName]
+		if !ok || value.Kind == storage.ValueNull {
+			continue
+		}
+		for _, key := range uniqueValueKeys(definition.Fields[fieldName], value) {
+			ids := index[key]
+			delete(ids, record.ID)
+			if len(ids) == 0 {
+				delete(index, key)
+			}
+		}
+	}
+}
+
+func (e *Engine) clearUniqueIndexes() {
+	if e != nil {
+		e.uniqueIndexes = make(map[string]map[string]map[storage.ID]bool)
+	}
+}
+
+func uniqueIndexKey(objectName, fieldName string) string {
+	return strings.ToLower(strings.TrimSpace(objectName)) + "\x00" + strings.ToLower(strings.TrimSpace(fieldName))
+}
+
+func addUniqueIndexValue(index map[string]map[storage.ID]bool, field storage.Field, value storage.Value, id storage.ID) {
+	for _, key := range uniqueValueKeys(field, value) {
+		ids := index[key]
+		if ids == nil {
+			ids = make(map[storage.ID]bool)
+			index[key] = ids
+		}
+		ids[id] = true
+	}
+}
+
+func uniqueValueKeys(field storage.Field, value storage.Value) []string {
+	switch value.Kind {
+	case storage.ValueString:
+		keys := []string{"text:" + value.String}
+		if !field.CaseSensitive {
+			keys = append(keys, "text-fold:"+strings.ToLower(value.String))
+		}
+		keys = append(keys, "id:"+value.String)
+		return keys
+	case storage.ValueID:
+		text := string(value.ID)
+		return []string{"id:" + text, "text:" + text}
+	case storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
+		return []string{string(value.Kind) + ":" + value.String}
+	case storage.ValueDecimal:
+		return []string{"decimal:" + value.Decimal}
+	case storage.ValueInteger:
+		return []string{"integer:" + strconv.FormatInt(value.Integer, 10)}
+	case storage.ValueBoolean:
+		return []string{"boolean:" + strconv.FormatBool(value.Boolean)}
+	default:
+		return nil
+	}
 }
 
 func (e *Engine) validateValidationRules(objectName string, definition storage.ObjectDefinition, record storage.Record) error {
@@ -2355,6 +2477,7 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 		return nil
 	}
 	changed := false
+	previous := record
 	record = record.Clone()
 	if record.Fields == nil {
 		record.Fields = make(map[string]storage.Value)
@@ -2421,6 +2544,8 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 	record.System.LastModifiedByID = e.systemUserID()
 	object.Records[id] = record
 	e.Org.Objects[objectName] = object
+	e.removeUniqueIndexRecord(objectName, object.Definition, previous)
+	e.addUniqueIndexRecord(objectName, object.Definition, record)
 	return nil
 }
 
@@ -2576,6 +2701,7 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 		return nil
 	}
 	changed := false
+	previous := record
 	record = record.Clone()
 	if record.Fields == nil {
 		record.Fields = make(map[string]storage.Value)
@@ -2647,6 +2773,8 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 	record.System.LastModifiedByID = e.systemUserID()
 	object.Records[id] = record
 	e.Org.Objects[objectName] = object
+	e.removeUniqueIndexRecord(objectName, object.Definition, previous)
+	e.addUniqueIndexRecord(objectName, object.Definition, record)
 	return nil
 }
 
