@@ -3681,6 +3681,10 @@ Version version = new Version(1, 2, 3);
 System.assertEquals(1, version.major());
 System.assertEquals(2, version.minor());
 System.assertEquals(3, version.patch());
+System.assertEquals('1.2', new Version(1, 2).toString());
+System.assertEquals(0, new Version(1, 95).compareTo(new Version(1, 95, 16)));
+System.assertEquals(0, new Version(1, 95, 16).compareTo(new Version(1, 95)));
+System.assert(new Version(1, 24).compareTo(new Version(1, 95, 16)) < 0);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4099,10 +4103,36 @@ Map<String,Integer> clonedCounts = copiedCounts.clone();
 clonedCounts.put('a', 9);
 System.assertEquals(1, copiedCounts.get('a'));
 System.assertEquals(9, clonedCounts.get('a'));
+List<Integer> clonedOrderedValues = clonedCounts.values();
+System.assertEquals(2, clonedOrderedValues.get(0));
+System.assertEquals(9, clonedOrderedValues.get(1));
 Map<String,Integer> deepCounts = copiedCounts.deepClone();
 deepCounts.put('b', 8);
 System.assertEquals(2, copiedCounts.get('b'));
 System.assertEquals(8, deepCounts.get('b'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMapValuesOrderSurvivesTypedAssignmentAndIndexProjection(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Integer> source = new Map<String, Integer>();
+source.put('0', 10);
+source.put('1', 20);
+source.put('2', 30);
+Map<String, Integer> assigned = source;
+Map<Integer, Integer> byIndex = new Map<Integer, Integer>();
+for (Integer i = 0; i < assigned.size(); i++) {
+    byIndex.put(i, assigned.values()[i]);
+}
+System.assertEquals(10, byIndex.get(0));
+System.assertEquals(20, byIndex.get(1));
+System.assertEquals(30, byIndex.get(2));
 `)
 	if err != nil {
 		t.Fatal(err)

@@ -126,18 +126,22 @@ type oaerDiscoveryPayload struct {
 }
 
 func New(org *storage.OrgState) *Server {
+	removeAutomatedProcessUsers(org)
 	return &Server{Org: org}
 }
 
 func NewWithStore(org *storage.OrgState, store interface{ Save(storage.OrgState) error }) *Server {
+	removeAutomatedProcessUsers(org)
 	return &Server{Org: org, Store: store}
 }
 
 func NewWithSource(org *storage.OrgState, source SourceMetadata) *Server {
+	removeAutomatedProcessUsers(org)
 	return &Server{Org: org, Source: source}
 }
 
 func NewWithStoreAndSource(org *storage.OrgState, store interface{ Save(storage.OrgState) error }, source SourceMetadata) *Server {
+	removeAutomatedProcessUsers(org)
 	return &Server{Org: org, Store: store, Source: source}
 }
 
@@ -1248,6 +1252,7 @@ func applyResetScopes(org *storage.OrgState, scopes []string) {
 	for _, scope := range scopes {
 		if scope == "all" {
 			storage.ResetData(org)
+			removeAutomatedProcessUsers(org)
 			return
 		}
 	}
@@ -1265,6 +1270,24 @@ func applyResetScopes(org *storage.OrgState, scopes []string) {
 	if resetPlatform {
 		storage.ResetPlatformData(org)
 	}
+	removeAutomatedProcessUsers(org)
+}
+
+func removeAutomatedProcessUsers(org *storage.OrgState) {
+	users, ok := org.Objects["User"]
+	if !ok || len(users.Records) == 0 {
+		return
+	}
+	for id, record := range users.Records {
+		userType := ""
+		if value, ok := record.Fields["UserType"]; ok && value.Kind == storage.ValueString {
+			userType = value.String
+		}
+		if strings.EqualFold(userType, "AutomatedProcess") {
+			delete(users.Records, id)
+		}
+	}
+	org.Objects["User"] = users
 }
 
 type localAPILimit struct {
@@ -3479,10 +3502,20 @@ func (s *Server) currentUser(r *http.Request, pathUserID storage.ID) storage.Rec
 		ids = append(ids, string(id))
 	}
 	sort.Strings(ids)
+	var fallback storage.Record
 	for _, id := range ids {
 		if record, ok := userRecord(object, storage.ID(id)); ok {
+			if strings.EqualFold(userString(record, "UserType", ""), "AutomatedProcess") {
+				if fallback.ID == "" {
+					fallback = record
+				}
+				continue
+			}
 			return record
 		}
+	}
+	if fallback.ID != "" {
+		return fallback
 	}
 	return storage.Record{ID: defaultLocalUserID, Object: "User", Fields: map[string]storage.Value{"Username": storage.StringValue("system@example.invalid")}}
 }

@@ -4300,6 +4300,56 @@ if (context.previousVersion() == null) {
 	}
 }
 
+func TestExecTestInstallComparesPreviousVersionWithStaticFinalVersion(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.testInstall(new InstallScript(), new Version(1, 24), true);
+System.assertEquals(0, InstallScript.lessThanCount);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	onInstall, err := CompileAnonymous(`
+if (context.previousVersion().compareTo(VERSION_1_24) < 0) {
+	lessThanCount++;
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "InstallScript",
+		StaticFields: map[string]Field{
+			"VERSION_1_24":  {Name: "VERSION_1_24", Type: "Version", Value: versionTestValue(1, 24, 0)},
+			"lessThanCount": {Name: "lessThanCount", Type: "Integer", Value: Int(0)},
+		},
+		Interfaces: []string{"InstallHandler"},
+		Methods: map[string]Method{
+			"onInstall": {
+				Name:       "InstallScript.onInstall",
+				ClassName:  "InstallScript",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "InstallContext"}},
+				Program:    onInstall,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func versionTestValue(major, minor, patch int64) Value {
+	version := Object("Version")
+	version.Fields["major"] = Int(major)
+	version.Fields["minor"] = Int(minor)
+	version.Fields["patch"] = Int(patch)
+	return version
+}
+
 func TestExecTestInstallSuppressesAfterTriggerSideEffects(t *testing.T) {
 	program, err := CompileAnonymous(`
 Test.testInstall(new InstallScript(), new Version(1, 0), true);

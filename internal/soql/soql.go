@@ -2180,6 +2180,9 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 		return value, true
 	}
 	value, ok := recordFieldValue(org, record, canonicalField)
+	if ok && strings.EqualFold(canonicalField, "NamespacePrefix") && value.Kind == storage.ValueString && strings.TrimSpace(value.String) == "" {
+		return storage.NullValue(), true
+	}
 	if !ok && strings.EqualFold(definition.APIName, "Contact") && strings.EqualFold(canonicalField, "Name") {
 		return contactNameValue(record)
 	}

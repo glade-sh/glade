@@ -200,6 +200,9 @@ func cloneValueWithSeen(value Value, seen map[uint64]bool) Value {
 			out.MapKeys[name] = cloneValueWithSeen(child, seen)
 		}
 	}
+	if value.MapOrder != nil {
+		out.MapOrder = append([]string(nil), value.MapOrder...)
+	}
 	if value.List != nil {
 		out.List = make([]Value, len(value.List))
 		for i, child := range value.List {

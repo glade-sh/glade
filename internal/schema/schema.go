@@ -629,7 +629,12 @@ func loadCustomMetadataRecord(path string) (CustomMetadataRecord, error) {
 		if field == "" {
 			continue
 		}
-		values = append(values, CustomMetadataValue{Field: field, Value: strings.TrimSpace(value.Value.Text), Nil: value.Value.Nil})
+		text := strings.TrimSpace(value.Value.Text)
+		isNil := value.Value.Nil
+		if !isNil && text == "" {
+			isNil = true
+		}
+		values = append(values, CustomMetadataValue{Field: field, Value: text, Nil: isNil})
 	}
 	return CustomMetadataRecord{
 		FullName:      fullName,

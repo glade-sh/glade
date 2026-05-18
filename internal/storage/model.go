@@ -1197,6 +1197,12 @@ func (o OrgState) CloneRuntime() OrgState {
 	return out
 }
 
+// CloneRollbackSnapshot returns an isolated org copy for DML rollback scopes.
+// It mirrors CloneRuntime for correctness.
+func (o OrgState) CloneRollbackSnapshot() OrgState {
+	return o.CloneRuntime()
+}
+
 func (o ObjectState) CloneRuntime() ObjectState {
 	out := o
 	out.Definition = o.Definition.Clone()

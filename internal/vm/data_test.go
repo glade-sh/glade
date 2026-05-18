@@ -916,6 +916,64 @@ System.assertEquals('ProviderAddress', row.Name);
 	}
 }
 
+func TestExecDatabaseUpsertUpdateResolvesCustomParentRelationshipExternalID(t *testing.T) {
+	program, err := CompileAnonymous(`
+Provider__c oldParent = new Provider__c(Name = 'Old Parent', LookupKey__c = 'old-parent-ext');
+Provider__c newParent = new Provider__c(Name = 'New Parent', LookupKey__c = 'new-parent-ext');
+insert new List<Provider__c>{oldParent, newParent};
+
+ProviderAddress__c child = new ProviderAddress__c(Name = 'Child', External_Key__c = 'child-ext', Provider__c = oldParent.Id);
+insert child;
+
+ProviderAddress__c updateChild = new ProviderAddress__c(
+	External_Key__c = 'child-ext',
+	Provider__r = new Provider__c(LookupKey__c = 'new-parent-ext')
+);
+Database.upsert(new List<SObject>{updateChild}, ProviderAddress__c.External_Key__c, false);
+
+ProviderAddress__c row = [SELECT Id, Provider__c FROM ProviderAddress__c WHERE Id = :child.Id];
+System.assertEquals(newParent.Id, row.Provider__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Provider__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Provider__c",
+			KeyPrefix: "a10",
+			Fields: map[string]storage.Field{
+				"Name":         {APIName: "Name", Type: storage.FieldString},
+				"LookupKey__c": {APIName: "LookupKey__c", Type: storage.FieldString, ExternalID: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["ProviderAddress__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "ProviderAddress__c",
+			KeyPrefix: "a11",
+			Fields: map[string]storage.Field{
+				"Name":            {APIName: "Name", Type: storage.FieldString},
+				"External_Key__c": {APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true},
+				"Provider__c":     {APIName: "Provider__c", Type: storage.FieldReference, ReferenceTo: []string{"Provider__c"}, RelationshipName: "Provider__r"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Provider__c",
+				ParentObjects:      []string{"Provider__c"},
+				ParentRelationship: "Provider__r",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.EnableTestContext()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRecordFromValueSkipsDerivedParentRelationshipFieldWithoutRelation(t *testing.T) {
 	machine := New(nil)
 	org := storage.OrgState{Objects: map[string]storage.ObjectState{
@@ -7184,6 +7242,60 @@ System.assertEquals('Keep After', survivors.get(0).Name);
 		Object:    "Account",
 		Timing:    triggerTimingAfter,
 		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAfterTriggerAddErrorRepeatingUpdateDoesNotPersistFailedStatus(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	Account oldRecord = Trigger.oldMap.get(a.Id);
+	if (a.Rating != oldRecord.Rating && (a.Rating == 'BlockedOne' || a.Rating == 'BlockedTwo')) {
+		a.addError('blocked status transition');
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Rollback Probe', Rating = 'Open');
+insert account;
+
+account.Rating = 'BlockedOne';
+Database.SaveResult first = Database.update(account, false);
+System.assert(!first.isSuccess());
+
+account.Rating = 'BlockedTwo';
+Database.SaveResult second = Database.update(account, false);
+System.assert(!second.isSuccess());
+
+account.Rating = 'BlockedTwo';
+Database.SaveResult third = Database.update(account, false);
+System.assert(!third.isSuccess());
+
+Account stored = [SELECT Rating FROM Account WHERE Id = :account.Id LIMIT 1];
+System.assertEquals('Open', stored.Rating);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountAfterUpdateBlockedStatus",
+		Object:    "Account",
+		Timing:    triggerTimingAfter,
+		Operation: "update",
 		Program:   triggerProgram,
 	}); err != nil {
 		t.Fatal(err)

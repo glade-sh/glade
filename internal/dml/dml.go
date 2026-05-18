@@ -27,6 +27,10 @@ type Engine struct {
 	flowDepth      int
 	summaryOrder   []string
 	summaryUpdates map[string]SummaryUpdate
+	automationRoll map[string]bool
+	uniqueFieldMap map[string]bool
+	activeValRules map[string]bool
+	uniqueFields   map[string][]string
 }
 
 type Options struct {
@@ -66,7 +70,16 @@ func NewEngine(org *storage.OrgState) Engine {
 	}
 	ids := storage.NewRuntimeIDGenerator(prefixes)
 	ids.Sequences = copySequences(org.IDSequences)
-	return Engine{Org: org, IDs: ids, Now: func() time.Time { return time.Now().UTC() }, UserID: "005000000000001"}
+	return Engine{
+		Org:            org,
+		IDs:            ids,
+		Now:            func() time.Time { return time.Now().UTC() },
+		UserID:         "005000000000001",
+		automationRoll: make(map[string]bool),
+		uniqueFieldMap: make(map[string]bool),
+		activeValRules: make(map[string]bool),
+		uniqueFields:   make(map[string][]string),
+	}
 }
 
 func (e Engine) systemTimestamp() string {
@@ -379,7 +392,7 @@ func (e *Engine) reparentLookups(parentObject string, oldID, newID storage.ID) [
 }
 
 func (e *Engine) WithTransaction(fn func(*Engine) error) error {
-	before := e.Org.CloneRuntime()
+	before := e.Org.CloneRollbackSnapshot()
 	if err := fn(e); err != nil {
 		*e.Org = before
 		e.IDs.Sequences = copySequences(before.IDSequences)
@@ -448,7 +461,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return "", err
 	}
-	if err := e.validateValidationRules(object.Definition, record); err != nil {
+	if err := e.validateValidationRules(objectName, object.Definition, record); err != nil {
 		return "", err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, ""); err != nil {
@@ -845,18 +858,6 @@ func defaultValueForRecordField(org *storage.OrgState, definition storage.Object
 	}
 	value, _, ok := EvaluateRecordFormulaValueInOrg(rawDefault, field, org, definition, record)
 	return value, ok
-}
-
-func formulaDefaultShouldEvaluate(field storage.Field, rawDefault string) bool {
-	if rawDefault == "" {
-		return false
-	}
-	switch field.Type {
-	case storage.FieldDate, storage.FieldDateTime:
-		return strings.ContainsAny(rawDefault, "()")
-	default:
-		return false
-	}
 }
 
 func applyAutoNumberName(definition storage.ObjectDefinition, sequence uint64, record *storage.Record) {
@@ -1339,7 +1340,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err := validateRequiredUpdate(object.Definition, record); err != nil {
 		return err
 	}
-	if err := e.validateValidationRules(object.Definition, finalRecord); err != nil {
+	if err := e.validateValidationRules(objectName, object.Definition, finalRecord); err != nil {
 		return err
 	}
 	if existing.Fields == nil {
@@ -1367,6 +1368,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 			existing.ExplicitNulls[field] = true
 		}
 	}
+	stripStoredCalculatedFields(object.Definition, &existing)
 	existing.System.LastModifiedDate = stamp
 	existing.System.SystemModstamp = stamp
 	existing.System.LastModifiedByID = e.systemUserID()
@@ -1388,6 +1390,21 @@ func (e *Engine) updateOne(record storage.Record) error {
 		}
 	}
 	return nil
+}
+
+func stripStoredCalculatedFields(definition storage.ObjectDefinition, record *storage.Record) {
+	if record == nil || record.Fields == nil {
+		return
+	}
+	for field := range record.Fields {
+		fieldDef, ok := definition.Fields[field]
+		if !ok {
+			continue
+		}
+		if fieldDef.Type == storage.FieldCalculated || fieldDef.Type == storage.FieldSummary {
+			delete(record.Fields, field)
+		}
+	}
 }
 
 func (e *Engine) deleteOne(record storage.Record) error {
@@ -1612,6 +1629,9 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		if definition.Fields[canonical].Type == storage.FieldCalculated || definition.Fields[canonical].Type == storage.FieldSummary {
 			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{canonical}, "dml: field %s.%s is not writeable", record.Object, canonical)
 		}
+		if err := validateEmailField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
+			return err
+		}
 	}
 	for field := range record.ExplicitNulls {
 		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
@@ -1621,6 +1641,21 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		if definition.Fields[canonical].Type == storage.FieldCalculated || definition.Fields[canonical].Type == storage.FieldSummary {
 			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{canonical}, "dml: field %s.%s is not writeable", record.Object, canonical)
 		}
+	}
+	return nil
+}
+
+func validateEmailField(objectName, fieldName string, field storage.Field, value storage.Value) error {
+	if !strings.EqualFold(fieldName, "Email") && !strings.EqualFold(field.DisplayType, "EMAIL") {
+		return nil
+	}
+	if value.Kind != storage.ValueString || strings.TrimSpace(value.String) == "" {
+		return nil
+	}
+	text := strings.TrimSpace(value.String)
+	at := strings.LastIndex(text, "@")
+	if at <= 0 || at == len(text)-1 || !strings.Contains(text[at+1:], ".") {
+		return dmlErrorf("INVALID_EMAIL_ADDRESS", []string{fieldName}, "dml: invalid email address for field %s.%s", objectName, fieldName)
 	}
 	return nil
 }
@@ -2055,6 +2090,10 @@ func stripUnchangedNonUpdateableFields(definition storage.ObjectDefinition, name
 		if fieldDef.Type != storage.FieldCalculated && fieldDef.Type != storage.FieldSummary && storage.FieldFlagValue(fieldDef.Updateable, true) {
 			continue
 		}
+		if fieldDef.Type == storage.FieldCalculated || fieldDef.Type == storage.FieldSummary {
+			delete(record.Fields, field)
+			continue
+		}
 		existingValue, ok := existing.GetField(canonical)
 		if ok && storageValuesEqual(fieldDef, value, existingValue) {
 			delete(record.Fields, field)
@@ -2207,15 +2246,17 @@ func (e *Engine) referenceExistsInAnyObject(id storage.ID) bool {
 }
 
 func (e *Engine) validateUnique(objectName string, definition storage.ObjectDefinition, record storage.Record, currentID storage.ID) error {
-	for fieldName, field := range definition.Fields {
-		if !field.Unique {
-			continue
-		}
+	uniqueFields := e.uniqueFieldNames(objectName, definition)
+	if len(uniqueFields) == 0 {
+		return nil
+	}
+	object := e.Org.Objects[objectName]
+	for _, fieldName := range uniqueFields {
+		field := definition.Fields[fieldName]
 		value, ok := record.Fields[fieldName]
 		if !ok || value.Kind == storage.ValueNull {
 			continue
 		}
-		object := e.Org.Objects[objectName]
 		for id, stored := range object.Records {
 			if id == currentID || stored.System.IsDeleted {
 				continue
@@ -2232,11 +2273,12 @@ func (e *Engine) validateUnique(objectName string, definition storage.ObjectDefi
 	return nil
 }
 
-func (e *Engine) validateValidationRules(definition storage.ObjectDefinition, record storage.Record) error {
-	for _, rule := range definition.ValidationRules {
-		if !rule.Active {
-			continue
-		}
+func (e *Engine) validateValidationRules(objectName string, definition storage.ObjectDefinition, record storage.Record) error {
+	activeRules := e.activeValidationRules(objectName, definition)
+	if len(activeRules) == 0 {
+		return nil
+	}
+	for _, rule := range activeRules {
 		matches, ok := evaluateValidationFormulaInOrg(rule.ErrorConditionFormula, e.Org, definition, record)
 		if !ok || !matches {
 			continue
@@ -2345,7 +2387,7 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return err
 	}
-	if err := e.validateValidationRules(object.Definition, record); err != nil {
+	if err := e.validateValidationRules(objectName, object.Definition, record); err != nil {
 		return err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
@@ -2372,6 +2414,126 @@ func (e *Engine) ApplyAutomation(objectName string, id storage.ID) error {
 
 func hasObjectAutomation(definition storage.ObjectDefinition) bool {
 	return len(definition.WorkflowRules) > 0 || len(definition.FlowRules) > 0
+}
+
+func hasComplexActiveAutomation(definition storage.ObjectDefinition) bool {
+	for _, rule := range definition.WorkflowRules {
+		if !rule.Active {
+			continue
+		}
+		// Workflow email alerts are external side effects and should use full rollback path.
+		if len(rule.EmailAlerts) > 0 {
+			return true
+		}
+	}
+	for _, rule := range definition.FlowRules {
+		if !rule.Active {
+			continue
+		}
+		if len(rule.Actions) > 0 || len(rule.RecordCreates) > 0 {
+			return true
+		}
+		for _, branch := range rule.Branches {
+			if len(branch.Actions) > 0 || len(branch.RecordCreates) > 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func objectCacheKey(objectName string) string {
+	key := strings.ToLower(strings.TrimSpace(objectName))
+	if key == "" {
+		key = "__anon__"
+	}
+	return key
+}
+
+func (e *Engine) hasUniqueFields(definition storage.ObjectDefinition) bool {
+	return len(e.uniqueFieldNames(definition.APIName, definition)) > 0
+}
+
+func (e *Engine) hasActiveValidationRules(definition storage.ObjectDefinition) bool {
+	return len(e.activeValidationRules(definition.APIName, definition)) > 0
+}
+
+func (e *Engine) uniqueFieldNames(objectName string, definition storage.ObjectDefinition) []string {
+	if e != nil {
+		key := objectCacheKey(objectName)
+		if cached, ok := e.uniqueFields[key]; ok {
+			return cached
+		}
+	}
+	out := make([]string, 0)
+	for fieldName, field := range definition.Fields {
+		if field.Unique {
+			out = append(out, fieldName)
+		}
+	}
+	if e != nil {
+		if e.uniqueFieldMap == nil {
+			e.uniqueFieldMap = make(map[string]bool)
+		}
+		key := objectCacheKey(objectName)
+		e.uniqueFieldMap[key] = len(out) > 0
+		if e.uniqueFields == nil {
+			e.uniqueFields = make(map[string][]string)
+		}
+		e.uniqueFields[key] = out
+	}
+	return out
+}
+
+func (e *Engine) activeValidationRules(objectName string, definition storage.ObjectDefinition) []storage.ValidationRule {
+	out := make([]storage.ValidationRule, 0)
+	for _, rule := range definition.ValidationRules {
+		if rule.Active {
+			out = append(out, rule)
+		}
+	}
+	if e != nil {
+		if e.activeValRules == nil {
+			e.activeValRules = make(map[string]bool)
+		}
+		e.activeValRules[objectCacheKey(objectName)] = len(out) > 0
+	}
+	return out
+}
+
+func (e *Engine) hasActiveObjectAutomationFor(objectName string, definition storage.ObjectDefinition) bool {
+	if e == nil {
+		return hasObjectAutomation(definition)
+	}
+	key := objectCacheKey(objectName)
+	if e.automationRoll != nil {
+		if cached, ok := e.automationRoll[key]; ok {
+			return cached
+		}
+	} else {
+		e.automationRoll = make(map[string]bool)
+	}
+	active := false
+	for _, rule := range definition.WorkflowRules {
+		if !rule.Active {
+			continue
+		}
+		if len(rule.FieldUpdates) > 0 || len(rule.EmailAlerts) > 0 {
+			active = true
+			break
+		}
+	}
+	if !active {
+		for _, rule := range definition.FlowRules {
+			if !rule.Active {
+				continue
+			}
+			active = true
+			break
+		}
+	}
+	e.automationRoll[key] = active
+	return active
 }
 
 func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
@@ -2451,7 +2613,7 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return err
 	}
-	if err := e.validateValidationRules(object.Definition, record); err != nil {
+	if err := e.validateValidationRules(objectName, object.Definition, record); err != nil {
 		return err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
@@ -3399,4 +3561,15 @@ func copySequences(in map[string]uint64) map[string]uint64 {
 		out[key] = value
 	}
 	return out
+}
+func formulaDefaultShouldEvaluate(field storage.Field, rawDefault string) bool {
+	if rawDefault == "" {
+		return false
+	}
+	switch field.Type {
+	case storage.FieldDate, storage.FieldDateTime:
+		return strings.ContainsAny(rawDefault, "()")
+	default:
+		return false
+	}
 }

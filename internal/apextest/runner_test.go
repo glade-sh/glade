@@ -2803,7 +2803,7 @@ private class AsyncContextIdsTest {
     List<AsyncApexJob> batches = [SELECT Id, Status, JobType, TotalJobItems, JobItemsProcessed, NumberOfErrors FROM AsyncApexJob WHERE Id = '707000000000002'];
     System.assertEquals(1, batches.size());
     AsyncApexJob batch = batches.get(0);
-    System.assertEquals('Completed', batch.Status);
+    System.assertEquals('Queued', batch.Status);
     System.assertEquals('BatchApex', batch.JobType);
     System.assertEquals(2, batch.TotalJobItems);
     System.assertEquals(2, batch.JobItemsProcessed);

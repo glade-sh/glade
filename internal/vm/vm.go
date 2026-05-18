@@ -51,81 +51,83 @@ const (
 )
 
 type VM struct {
-	Globals             map[string]Value
-	VarTypes            map[string]string
-	Methods             map[string]Method
-	MethodOverloads     map[string][]Method
-	MethodFolded        map[string][]Method
-	methodCandidates    map[string][]Method
-	methodResolveCache  map[string]methodResolution
-	Classes             map[string]Class
-	classLookup         map[string]Class
-	enumLookup          map[string]enumClassLookup
-	enumSuffixLookup    map[string]enumClassLookup
-	Org                 *storage.OrgState
-	Triggers            map[string][]Trigger
-	Stdout              io.Writer
-	callStack           []callFrame
-	currentClass        string
-	currentMethod       Method
-	testContext         *TestContext
-	localAsyncJobs      []AsyncJob
-	localAsyncSeq       int
-	localAsyncDrain     bool
-	localAsyncChain     bool
-	executionUser       Value
-	limits              Limits
-	limitCaps           LimitCaps
-	limitMode           LimitMode
-	limitViolations     []LimitViolation
-	fakeNow             time.Time
-	currentAsyncKind    string
-	currentFinalizer    Value
-	activeExceptions    []activeException
-	currentStatement    callFrame
-	hasStatement        bool
-	triggerDepth        int
-	installContextDepth int
-	savepoints          map[string]storage.OrgState
-	emailSavepoints     map[string][]CapturedEmail
-	savepointOrder      map[string]int
-	nextSavepoint       int
-	pageMessages        []Value
-	currentPage         Value
-	pageReferences      map[string]string
-	fixedSearchResults  []Value
-	sfsqlqueryRows      []Value
-	sfsqlqueryMetadata  []Value
-	platformCache       map[string]map[string]cacheEntry
-	cacheScanLocators   map[string][]cacheScanItem
-	cacheScanSeq        int
-	capturedEmails      []CapturedEmail
-	restRequest         Value
-	restResponse        Value
-	serverBaseURL       string
-	metadataDeploys     map[string]Value
-	reportInstances     map[string]Value
-	pushUpgradeCustoms  map[string]pushUpgradeCustomization
-	debugHooks          DebugHooks
-	hasDebugHooks       bool
-	traceEnabled        bool
-	ctx                 context.Context
-	activeGetters       map[string]int
-	activeSetters       map[string]int
-	triggerGlobals      map[string]Value
-	cryptoRandomSeq     uint64
-	staticInitState     map[string]staticInitState
-	lastAmbiguous       *overloadDiagnostic
-	activeConstructors  map[string]int
-	describeCache       map[string]Value
-	fieldDescribeCache  map[string]Value
-	globalDescribeCache *Value
-	describeTabsCache   *Value
-	describeDefCache    map[string]storage.ObjectDefinition
-	customDataCache     map[string]Value
-	childRelCache       map[string][]Value
-	metadataCacheStamp  string
-	staticValueRefs     map[uint64]bool
+	Globals                  map[string]Value
+	VarTypes                 map[string]string
+	Methods                  map[string]Method
+	MethodOverloads          map[string][]Method
+	MethodFolded             map[string][]Method
+	methodCandidates         map[string][]Method
+	methodResolveCache       map[string]methodResolution
+	Classes                  map[string]Class
+	classLookup              map[string]Class
+	enumLookup               map[string]enumClassLookup
+	enumSuffixLookup         map[string]enumClassLookup
+	Org                      *storage.OrgState
+	Triggers                 map[string][]Trigger
+	Stdout                   io.Writer
+	callStack                []callFrame
+	currentClass             string
+	currentMethod            Method
+	testContext              *TestContext
+	localAsyncJobs           []AsyncJob
+	localAsyncSeq            int
+	localAsyncDrain          bool
+	localAsyncChain          bool
+	executionUser            Value
+	limits                   Limits
+	limitCaps                LimitCaps
+	limitMode                LimitMode
+	limitViolations          []LimitViolation
+	fakeNow                  time.Time
+	currentAsyncKind         string
+	currentQueueableDepth    int
+	currentQueueableMaxDepth int
+	currentFinalizer         Value
+	activeExceptions         []activeException
+	currentStatement         callFrame
+	hasStatement             bool
+	triggerDepth             int
+	installContextDepth      int
+	savepoints               map[string]storage.OrgState
+	emailSavepoints          map[string][]CapturedEmail
+	savepointOrder           map[string]int
+	nextSavepoint            int
+	pageMessages             []Value
+	currentPage              Value
+	pageReferences           map[string]string
+	fixedSearchResults       []Value
+	sfsqlqueryRows           []Value
+	sfsqlqueryMetadata       []Value
+	platformCache            map[string]map[string]cacheEntry
+	cacheScanLocators        map[string][]cacheScanItem
+	cacheScanSeq             int
+	capturedEmails           []CapturedEmail
+	restRequest              Value
+	restResponse             Value
+	serverBaseURL            string
+	metadataDeploys          map[string]Value
+	reportInstances          map[string]Value
+	pushUpgradeCustoms       map[string]pushUpgradeCustomization
+	debugHooks               DebugHooks
+	hasDebugHooks            bool
+	traceEnabled             bool
+	ctx                      context.Context
+	activeGetters            map[string]int
+	activeSetters            map[string]int
+	triggerGlobals           map[string]Value
+	cryptoRandomSeq          uint64
+	staticInitState          map[string]staticInitState
+	lastAmbiguous            *overloadDiagnostic
+	activeConstructors       map[string]int
+	describeCache            map[string]Value
+	fieldDescribeCache       map[string]Value
+	globalDescribeCache      *Value
+	describeTabsCache        *Value
+	describeDefCache         map[string]storage.ObjectDefinition
+	customDataCache          map[string]Value
+	childRelCache            map[string][]Value
+	metadataCacheStamp       string
+	staticValueRefs          map[uint64]bool
 }
 
 type pushUpgradeCustomization struct {
@@ -263,15 +265,17 @@ type eventPublishCallback struct {
 }
 
 type AsyncJob struct {
-	ID        string
-	Kind      string
-	Object    Value
-	Method    Method
-	Args      []Value
-	BatchSize int
-	Name      string
-	Cron      string
-	Deferred  bool
+	ID                string
+	Kind              string
+	Object            Value
+	Method            Method
+	Args              []Value
+	BatchSize         int
+	Name              string
+	Cron              string
+	Deferred          bool
+	QueueableDepth    int
+	QueueableMaxDepth int
 }
 
 type cacheEntry struct {
@@ -416,6 +420,8 @@ func copyClass(class Class) Class {
 func copyFieldMap(in map[string]Field) map[string]Field {
 	out := make(map[string]Field, len(in))
 	for name, field := range in {
+		field.Value = cloneValue(field.Value)
+		field.InitialValue = cloneValue(field.InitialValue)
 		out[name] = field
 	}
 	return out
@@ -788,11 +794,29 @@ func (vm *VM) defaultOrgUser() Value {
 	if !ok || len(users.Records) == 0 {
 		return Value{}
 	}
+	for _, preferredID := range []storage.ID{storage.ID("005-local-user"), storage.ID("005000000000001")} {
+		if preferred, ok := users.Records[preferredID]; ok {
+			if !strings.EqualFold(recordFieldString(preferred, "UserType"), "AutomatedProcess") {
+				return vmValueFromRecord(preferred)
+			}
+		}
+	}
 	var first storage.ID
+	var fallback storage.ID
 	for id := range users.Records {
+		record := users.Records[id]
+		if strings.EqualFold(recordFieldString(record, "UserType"), "AutomatedProcess") {
+			if fallback == "" || id < fallback {
+				fallback = id
+			}
+			continue
+		}
 		if first == "" || id < first {
 			first = id
 		}
+	}
+	if first == "" {
+		first = fallback
 	}
 	return vmValueFromRecord(users.Records[first])
 }
@@ -847,6 +871,11 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 		defer func() {
 			vm.currentClass = callerClass
 		}()
+	}
+	if vm.ctx != nil {
+		if err := vm.ctx.Err(); err != nil {
+			return result, err
+		}
 	}
 	out, err := vm.executeProgram(program, &result)
 	if err != nil {
@@ -3469,13 +3498,16 @@ platformStaticCall:
 		if vm.currentAsyncKind != "Queueable" {
 			return Null, newExceptionError("System.AsyncException", "hasMaxStackDepth is not allowed outside a Queueable of Finalizer execution")
 		}
-		return Bool(true), nil
+		return Bool(vm.currentQueueableMaxDepth > 0), nil
 	case "AsyncInfo.getCurrentQueueableStackDepth", "System.AsyncInfo.getCurrentQueueableStackDepth":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("AsyncInfo.getCurrentQueueableStackDepth expects 0 arguments")
 		}
 		if vm.currentAsyncKind != "Queueable" {
 			return Null, newExceptionError("System.AsyncException", "getCurrentQueueableStackDepth is not allowed outside a Queueable or Finalizer execution")
+		}
+		if vm.currentQueueableDepth > 0 {
+			return Int(int64(vm.currentQueueableDepth)), nil
 		}
 		return Int(1), nil
 	case "AsyncInfo.getMaximumQueueableStackDepth", "System.AsyncInfo.getMaximumQueueableStackDepth":
@@ -3485,7 +3517,10 @@ platformStaticCall:
 		if vm.currentAsyncKind != "Queueable" {
 			return Null, newExceptionError("System.AsyncException", "getMaximumQueueableStackDepth is not allowed outside a Queueable or Finalizer execution")
 		}
-		return Int(2000), nil
+		if vm.currentQueueableMaxDepth > 0 {
+			return Int(int64(vm.currentQueueableMaxDepth)), nil
+		}
+		return Int(0), nil
 	case "AsyncInfo.getMinimumQueueableDelayInMinutes", "System.AsyncInfo.getMinimumQueueableDelayInMinutes":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("AsyncInfo.getMinimumQueueableDelayInMinutes expects 0 arguments")
@@ -3580,7 +3615,11 @@ platformStaticCall:
 		if err != nil {
 			return Null, newExceptionError("System.TypeException", "Invalid date/time: "+text)
 		}
-		value = value.Truncate(time.Second)
+		// Match existing local behavior: fractional seconds survive for space-separated
+		// datetime text, while ISO "T" forms normalize to second precision.
+		if !(strings.Contains(text, " ") && strings.Contains(text, ".")) {
+			value = value.Truncate(time.Second)
+		}
 		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
 	case "LoggingLevel.values":
 		return loggingLevelValues(args)
@@ -4936,7 +4975,11 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getUserId expects 0 arguments")
 		}
-		return String(vm.currentUserInfoField("Id", "005000000000001")), nil
+		fallbackID := "system"
+		if vm.Org != nil {
+			fallbackID = "005000000000001"
+		}
+		return String(vm.currentUserInfoField("Id", fallbackID)), nil
 	case "UserInfo.getCurrentUvid":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getCurrentUvid expects 0 arguments")
@@ -5396,6 +5439,7 @@ func (vm *VM) requestVersionValue() Value {
 	out.Fields["major"] = Int(int64(major))
 	out.Fields["minor"] = Int(int64(minor))
 	out.Fields["patch"] = Int(0)
+	out.Fields["__oaerPatchSpecified"] = Bool(true)
 	return out
 }
 
@@ -7050,15 +7094,32 @@ func userInfoField(user Value, field, fallback string) string {
 	return fallback
 }
 
+func recordFieldString(record storage.Record, field string) string {
+	if record.Fields == nil {
+		return ""
+	}
+	value, ok := record.Fields[field]
+	if !ok {
+		return ""
+	}
+	switch value.Kind {
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime:
+		return value.String
+	case storage.ValueID:
+		return string(value.ID)
+	case storage.ValueDecimal:
+		return value.Decimal
+	default:
+		return ""
+	}
+}
+
 func (vm *VM) currentUserInfoField(field, fallback string) string {
 	if vm.testContext != nil {
 		return userInfoField(vm.testContext.CurrentUser, field, fallback)
 	}
 	if vm.executionUser.Kind != "" && vm.executionUser.Kind != ValueNull {
 		return userInfoField(vm.executionUser, field, fallback)
-	}
-	if user := vm.defaultOrgUser(); user.Kind != "" && user.Kind != ValueNull {
-		return userInfoField(user, field, fallback)
 	}
 	return fallback
 }
@@ -8467,7 +8528,7 @@ func (vm *VM) deferPreStartAsyncJobRecords() {
 	vm.ensureAsyncObjects()
 	object := vm.Org.Objects["AsyncApexJob"]
 	for _, job := range vm.testContext.AsyncJobs {
-		record, ok := object.Records[storage.ID(job.ID)]
+		storedID, record, ok := storage.LookupRecordByID(object.Records, storage.ID(job.ID))
 		if !ok {
 			continue
 		}
@@ -8475,7 +8536,7 @@ func (vm *VM) deferPreStartAsyncJobRecords() {
 			record.Fields = make(map[string]storage.Value)
 		}
 		record.Fields["Status"] = storage.StringValue("Deferred")
-		object.Records[storage.ID(job.ID)] = record
+		object.Records[storedID] = record
 	}
 	vm.Org.Objects["AsyncApexJob"] = object
 }
@@ -8563,6 +8624,17 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 	}
 	vm.markAsyncChainEnqueued()
 	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: args[0]}
+	if vm.currentAsyncKind == "Queueable" {
+		job.QueueableDepth = vm.currentQueueableDepth + 1
+		job.QueueableMaxDepth = vm.currentQueueableMaxDepth
+	} else {
+		job.QueueableDepth = 1
+	}
+	if len(args) == 2 {
+		if maxDepth, ok := asyncOptionsInt(args[1], "maximumQueueableStackDepth"); ok {
+			job.QueueableMaxDepth = maxDepth
+		}
+	}
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
@@ -9089,7 +9161,10 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 			vm.recordAsyncJob(job, "Failed", err.Error())
 			return err
 		}
-		if job.Kind == "ScheduledApex" || (vm.testContext != nil && job.Kind == "BatchApex") {
+		if vm.testContext != nil && job.Kind == "BatchApex" {
+			vm.recordAsyncJob(job, "Completed", "")
+			vm.recordAsyncJob(job, "Queued", "")
+		} else if job.Kind == "ScheduledApex" {
 			vm.recordAsyncJob(job, "Queued", "")
 		} else {
 			vm.recordAsyncJob(job, "Completed", "")
@@ -9181,16 +9256,48 @@ func (vm *VM) markAsyncChainEnqueued() {
 
 func (vm *VM) enqueueAsyncJob(job AsyncJob) {
 	if vm.testContext != nil {
+		vm.recordApexClass(asyncClassName(job))
 		if vm.testContext.Draining && job.Kind != "Queueable" && job.Kind != "BatchApex" {
 			return
 		}
-		if vm.testContext.Draining && job.Kind == "Queueable" {
+		if vm.testContext.Draining && job.Kind == "Queueable" && !vm.canDrainQueueableJob(job) {
+			job.Deferred = true
+		}
+		if vm.testContext.Draining && job.Kind == "BatchApex" && vm.currentAsyncKind == "Queueable" {
 			job.Deferred = true
 		}
 		vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
 		return
 	}
 	vm.localAsyncJobs = append(vm.localAsyncJobs, job)
+}
+
+func asyncOptionsInt(options Value, fieldName string) (int, bool) {
+	if options.Kind != ValueObject {
+		return 0, false
+	}
+	for name, value := range options.Fields {
+		if !strings.EqualFold(name, fieldName) {
+			continue
+		}
+		switch value.Kind {
+		case ValueInt:
+			return int(value.Int), true
+		case ValueDecimal:
+			return int(value.Decimal), true
+		}
+	}
+	return 0, false
+}
+
+func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
+	if vm.currentAsyncKind != "Queueable" {
+		return false
+	}
+	if job.QueueableMaxDepth <= 0 {
+		return false
+	}
+	return job.QueueableDepth > 0 && job.QueueableDepth <= job.QueueableMaxDepth
 }
 
 func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
@@ -9218,7 +9325,7 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 		}
 		previousFinalizer := vm.currentFinalizer
 		vm.currentFinalizer = Value{}
-		_, err := vm.withAsyncKind("Queueable", func() (Value, error) {
+		_, err := vm.withQueueableJob(job, func() (Value, error) {
 			return vm.callMethodWithReceiver(target, job.Object, args, result)
 		})
 		finalizer := vm.currentFinalizer
@@ -9292,6 +9399,24 @@ func (vm *VM) withAsyncKind(kind string, run func() (Value, error)) (Value, erro
 	vm.currentAsyncKind = kind
 	defer func() {
 		vm.currentAsyncKind = previous
+	}()
+	return run()
+}
+
+func (vm *VM) withQueueableJob(job AsyncJob, run func() (Value, error)) (Value, error) {
+	previousKind := vm.currentAsyncKind
+	previousDepth := vm.currentQueueableDepth
+	previousMaxDepth := vm.currentQueueableMaxDepth
+	vm.currentAsyncKind = "Queueable"
+	vm.currentQueueableDepth = job.QueueableDepth
+	if vm.currentQueueableDepth <= 0 {
+		vm.currentQueueableDepth = 1
+	}
+	vm.currentQueueableMaxDepth = job.QueueableMaxDepth
+	defer func() {
+		vm.currentAsyncKind = previousKind
+		vm.currentQueueableDepth = previousDepth
+		vm.currentQueueableMaxDepth = previousMaxDepth
 	}()
 	return run()
 }
@@ -9781,6 +9906,11 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 }
 
 func (vm *VM) recordApexClass(className string) storage.ID {
+	vm.ensureAsyncObjects()
+	return vm.recordApexClassRecord(className)
+}
+
+func (vm *VM) recordApexClassRecord(className string) storage.ID {
 	fallbackID := storage.ID(asyncApexClassID(className))
 	if vm.Org == nil || className == "" {
 		return fallbackID
@@ -10441,8 +10571,14 @@ func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 	}
 	groups := make([]Value, 0, len(objects))
 	for _, spec := range objects {
+		specObjectName := spec.ObjectName
+		if vm.Org != nil {
+			if canonical, ok := storage.ResolveObjectName(*vm.Org, spec.ObjectName); ok {
+				specObjectName = canonical
+			}
+		}
 		rows := List()
-		rows.Type = "List<" + spec.ObjectName + ">"
+		rows.Type = "List<" + specObjectName + ">"
 		if vm.Org != nil {
 			for _, idValue := range vm.fixedSearchResults {
 				id, ok := valueIDString(idValue)
@@ -10453,7 +10589,7 @@ func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 				if !ok {
 					objectName, ok = vm.sObjectNameForExistingID(id)
 				}
-				if !ok || !strings.EqualFold(objectName, spec.ObjectName) {
+				if !ok || !strings.EqualFold(objectName, specObjectName) {
 					continue
 				}
 				record, ok := vm.findOrgRecord(objectName, storage.ID(id))
@@ -13051,6 +13187,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	}
 	engine := vm.newDeferredAutomationDMLEngine(result)
 	engine.Options = options
+	if !allOrNone && vm.hasAfterTriggerForDML(op, records) {
+		ensureBackup()
+	}
 	var results []dml.Result
 	switch op {
 	case "insert":
@@ -13248,18 +13387,6 @@ func (vm *VM) defaultValueForRecordField(definition storage.ObjectDefinition, re
 	}
 	value, _, ok := dml.EvaluateRecordFormulaValueInOrg(rawDefault, field, vm.Org, definition, record)
 	return value, ok
-}
-
-func vmFormulaDefaultShouldEvaluate(field storage.Field, rawDefault string) bool {
-	if rawDefault == "" {
-		return false
-	}
-	switch field.Type {
-	case storage.FieldDate, storage.FieldDateTime:
-		return strings.ContainsAny(rawDefault, "()")
-	default:
-		return false
-	}
 }
 
 func (vm *VM) applyTestSObjectNameDefault(definition storage.ObjectDefinition, record *storage.Record, defaultMissing bool) {
@@ -13468,6 +13595,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		return nil, err
 	}
 	engine := vm.newDeferredAutomationDMLEngine(result)
+	if !allOrNone && vm.hasAfterTriggerForDML("upsert", records) {
+		ensureBackup()
+	}
 	var engineResults []dml.Result
 	if externalIDField != "" {
 		engineResults = engine.UpsertWithExternalID(records, externalIDField)
@@ -13537,6 +13667,35 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		vm.clearCustomDataCache()
 	}
 	return results, nil
+}
+
+func (vm *VM) hasAfterTriggerForDML(op string, records []storage.Record) bool {
+	if vm == nil || len(records) == 0 {
+		return false
+	}
+	triggerOp := op
+	if strings.EqualFold(op, "upsert") {
+		triggerOp = "update"
+	}
+	seenRecordObjects := make(map[string]bool, len(records))
+	for _, record := range records {
+		objectName := strings.TrimSpace(record.Object)
+		if objectName == "" || seenRecordObjects[strings.ToLower(objectName)] {
+			continue
+		}
+		seenRecordObjects[strings.ToLower(objectName)] = true
+		for triggerObject, candidates := range vm.Triggers {
+			if !vm.triggerObjectMatches(triggerObject, objectName) {
+				continue
+			}
+			for _, trigger := range candidates {
+				if trigger.Timing == triggerTimingAfter && strings.EqualFold(trigger.Operation, triggerOp) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, backup storage.OrgState, result *Result) error {
@@ -13794,7 +13953,8 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		ExplicitNulls: make(map[string]bool),
 	}
 	if id := sObjectIDFromFields(value.Fields); id != "" {
-		if isExplicitSObjectField(*value, "Id") || definition.KeyPrefix == "" || strings.HasPrefix(string(id), definition.KeyPrefix) {
+		_, queried := value.Fields[sobjectQueriedFieldsField]
+		if queried || isExplicitSObjectField(*value, "Id") || definition.KeyPrefix == "" || strings.HasPrefix(string(id), definition.KeyPrefix) {
 			record.ID = id
 		}
 	}
@@ -13803,6 +13963,9 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 			continue
 		}
 		if strings.EqualFold(field, "Id") {
+			continue
+		}
+		if strings.Contains(field, ".") && !isExplicitSObjectField(*value, field) {
 			continue
 		}
 		if strings.EqualFold(field, "OwnerId") {
@@ -13829,6 +13992,11 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 			explicitField = true
 		}
 		if definition.APIName != "" && !explicitField && fieldValue.Kind == ValueNull {
+			// For insert-style records, preserve present null fields so metadata defaults
+			// do not override an intentionally null assignment.
+			if record.ID == "" {
+				record.ExplicitNulls[canonicalField] = true
+			}
 			continue
 		}
 		if isSObjectSystemField(field) || isSObjectSystemField(canonicalField) {
@@ -13853,6 +14021,10 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 			if lookupField, ok := vm.parentRelationshipField(objectType, field); ok {
 				if _, hasLookup := record.GetField(lookupField); !hasLookup && !record.HasExplicitNull(lookupField) {
 					if parentID := sObjectIDFromFields(fieldValue.Fields); parentID != "" {
+						record.Fields[lookupField] = storage.IDValue(parentID)
+					} else if parentID, err := vm.resolveParentRelationshipReferenceID(nil, fieldValue); err != nil {
+						return storage.Record{}, err
+					} else if parentID != "" {
 						record.Fields[lookupField] = storage.IDValue(parentID)
 					}
 				}
@@ -15296,15 +15468,27 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		vm.currentClass = callerClass
 	}()
 	out, err := vm.executeProgram(trigger.Program, result)
-	if err != nil {
-		return nil, err
-	}
-	if out.signal == signalThrow {
-		return nil, &apexThrowError{value: out.thrown, stack: append([]callFrame(nil), vm.callStack...)}
-	}
 	updated := ctx["Trigger.new"]
 	if trigger.Operation == "delete" {
 		updated = ctx["Trigger.old"]
+	}
+	if err != nil {
+		if updated.Kind == ValueList {
+			failures := dmlResultsFromSObjectErrors(records, updated.List)
+			if hasDMLFailures(failures) {
+				return failures, nil
+			}
+		}
+		return nil, err
+	}
+	if out.signal == signalThrow {
+		if updated.Kind == ValueList {
+			failures := dmlResultsFromSObjectErrors(records, updated.List)
+			if hasDMLFailures(failures) {
+				return failures, nil
+			}
+		}
+		return nil, &apexThrowError{value: out.thrown, stack: append([]callFrame(nil), vm.callStack...)}
 	}
 	if updated.Kind == ValueList {
 		failures := dmlResultsFromSObjectErrors(records, updated.List)
@@ -15839,7 +16023,7 @@ func parseDateParseText(text string) (time.Time, error) {
 }
 
 func formatPlatformDatetime(value time.Time) string {
-	return value.UTC().Format(time.RFC3339Nano)
+	return value.UTC().Truncate(time.Second).Format(time.RFC3339)
 }
 
 func formatApexDatetimePattern(value time.Time, pattern, zoneID, zoneLabel string, offset time.Duration) (string, error) {
@@ -21041,9 +21225,14 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 	for i, part := range parts {
 		if current.Kind == ValueNull {
 			if vm.isSObjectLikeType(current.Type) {
-				return Null, nil
+				if defaultValue, ok := vm.defaultNullSObjectAccessValue(current.Type); ok {
+					current = defaultValue
+				} else {
+					return Null, nil
+				}
+			} else {
+				return Null, newNullDereferenceError("while accessing " + strings.Join(parts[:i+1], "."))
 			}
-			return Null, newNullDereferenceError("while accessing " + strings.Join(parts[:i+1], "."))
 		}
 		if current.Kind == ValueList {
 			if len(current.List) == 0 {
@@ -21261,6 +21450,84 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 		current = value
 	}
 	return current, nil
+}
+
+func (vm *VM) defaultNullSObjectAccessValue(typeName string) (Value, bool) {
+	if vm == nil || vm.Org == nil {
+		return Null, false
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, typeName)
+	if !ok {
+		return Null, false
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return Null, false
+	}
+	if storage.IsCustomMetadataDefinition(object.Definition) {
+		value := vm.readOnlyCustomDataDefaultValue(objectName, "custom metadata")
+		value.Type = typeName
+		return value, true
+	}
+	if storage.IsCustomSettingDefinition(object.Definition) {
+		value := vm.readOnlyCustomDataDefaultValue(objectName, "custom setting")
+		value.Type = typeName
+		return value, true
+	}
+	return Null, false
+}
+
+func (vm *VM) addQueriedRelationshipFieldToPopulatedMap(out *Value, receiver Value, fieldPath string) {
+	if out == nil || out.Kind != ValueMap || strings.TrimSpace(fieldPath) == "" {
+		return
+	}
+	parts := strings.Split(fieldPath, ".")
+	if len(parts) < 2 {
+		return
+	}
+	relationshipName := strings.TrimSpace(parts[0])
+	if relationshipName == "" || strings.EqualFold(relationshipName, "object") || isInternalSObjectField(relationshipName) {
+		return
+	}
+	encodedRelationship := mapKey(String(relationshipName))
+	relationshipValue := Null
+	if existing, ok := out.Map[encodedRelationship]; ok && existing.Kind == ValueObject {
+		relationshipValue = existing
+	} else if _, loaded, ok := objectFieldValue(receiver, relationshipName); ok && loaded.Kind == ValueObject {
+		relationshipValue = loaded
+	} else if shell, ok := vm.parentRelationshipShell(receiver, relationshipName); ok {
+		relationshipValue = shell
+	}
+	if relationshipValue.Kind != ValueObject {
+		return
+	}
+	current := relationshipValue
+	for i := 1; i < len(parts); i++ {
+		segment := strings.TrimSpace(parts[i])
+		if segment == "" {
+			return
+		}
+		if i == len(parts)-1 {
+			if _, _, ok := objectFieldValue(current, segment); !ok {
+				current.Fields[segment] = Null
+			}
+			break
+		}
+		_, child, ok := objectFieldValue(current, segment)
+		if !ok || child.Kind != ValueObject {
+			child = Object(segment)
+			current.Fields[segment] = child
+		}
+		current = child
+	}
+	out.Map[encodedRelationship] = relationshipValue
+	if out.MapKeys == nil {
+		out.MapKeys = make(map[string]Value)
+	}
+	out.MapKeys[encodedRelationship] = String(relationshipName)
+	if !containsString(out.MapOrder, encodedRelationship) {
+		out.MapOrder = append(out.MapOrder, encodedRelationship)
+	}
 }
 
 func (vm *VM) isCurrentGetter(getter *Method) bool {
@@ -24902,8 +25169,13 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	if strings.EqualFold(typeName, "Continuation") {
 		return newContinuation(args, namedArgs)
 	}
-	if strings.EqualFold(typeName, "framework_SObjectUnitOfWork") {
-		return vm.constructFrameworkSObjectUnitOfWork(args, namedArgs)
+	if vm.isSObjectUnitOfWorkBaseType(typeName) {
+		uow, err := vm.constructFrameworkSObjectUnitOfWork(args, namedArgs)
+		if err != nil {
+			return Null, err
+		}
+		uow.Type = typeName
+		return uow, nil
 	}
 	if class, ok := vm.Classes[typeName]; ok {
 		if class.IsInterface {
@@ -24948,11 +25220,16 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if err := vm.runInstanceInitializers(class, object, result); err != nil {
 			return Null, err
 		}
+		isSObjectCtor := vm.isSObjectType(typeName)
 		if !passiveDTO {
 			delete(object.Fields, sobjectExplicitFieldsField)
 			for field, value := range namedArgs {
 				value = coerceLikelyCustomNumberRuntimeValue(field, value)
-				object.Fields[field] = value
+				if isSObjectCtor {
+					setExplicitSObjectField(&object, field, value)
+				} else {
+					object.Fields[field] = value
+				}
 			}
 		}
 		ctorArgs := args
@@ -24996,7 +25273,11 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if !passiveDTO {
 			delete(object.Fields, sobjectExplicitFieldsField)
 			for field, value := range namedArgs {
-				object.Fields[field] = value
+				if isSObjectCtor {
+					setExplicitSObjectField(&object, field, value)
+				} else {
+					object.Fields[field] = value
+				}
 			}
 		}
 		return object, nil
@@ -25272,6 +25553,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if len(args) == 2 {
 			version.Fields["patch"] = Int(0)
 		}
+		version.Fields["__oaerPatchSpecified"] = Bool(len(args) == 3)
 		return version, nil
 	case "Metadata.DeployContainer":
 		if len(args) != 0 {
@@ -25754,7 +26036,9 @@ func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result)
 		if initializer.ClassName == "" {
 			initializer.ClassName = class.Name
 		}
+		recorderSnapshot := vm.frameworkMethodCountRecorderSnapshot()
 		if _, err := vm.callMethodWithReceiver(initializer, object, nil, result); err != nil {
+			vm.restoreFrameworkMethodCountRecorderSnapshot(recorderSnapshot)
 			return err
 		}
 	}
@@ -26090,7 +26374,7 @@ func (vm *VM) callChainedConstructor(callee string, args []Value, result *Result
 	if vm.activeConstructors[constructorCallKey(target)] > 0 {
 		return Null, fmt.Errorf("recursive constructor invocation %s", target.Name)
 	}
-	if callee == "super" && strings.EqualFold(targetClass.Name, "framework_SObjectUnitOfWork") {
+	if callee == "super" && vm.isSObjectUnitOfWorkBaseType(targetClass.Name) {
 		constructed, err := vm.constructFrameworkSObjectUnitOfWork(args, nil)
 		if err != nil {
 			return Null, err
@@ -27975,7 +28259,8 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			value    Value
 		}
 		entries := make([]coercedEntry, 0, len(value.Map))
-		for rawKey, item := range value.Map {
+		for _, rawKey := range orderedValueMapKeys(value) {
+			item := value.Map[rawKey]
 			keyValue := mapStoredKey(value, rawKey)
 			coercedKey, err := vm.coerceAssignable(keyType, keyValue)
 			if err != nil {
@@ -27991,7 +28276,11 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			delete(value.Map, rawKey)
 		}
 		value.MapKeys = make(map[string]Value, len(entries))
+		value.MapOrder = make([]string, 0, len(entries))
 		for _, entry := range entries {
+			if _, exists := value.Map[entry.key]; !exists {
+				value.MapOrder = append(value.MapOrder, entry.key)
+			}
 			value.Map[entry.key] = entry.value
 			value.MapKeys[entry.key] = entry.keyValue
 		}
@@ -32242,6 +32531,15 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				removed = value
 				delete(receiver.Map, key)
 				delete(receiver.MapKeys, key)
+				if len(receiver.MapOrder) > 0 {
+					filtered := receiver.MapOrder[:0]
+					for _, orderedKey := range receiver.MapOrder {
+						if orderedKey != key {
+							filtered = append(filtered, orderedKey)
+						}
+					}
+					receiver.MapOrder = filtered
+				}
 				if err := vm.storeReceiver(receiverName, receiver); err != nil {
 					return Null, true, err
 				}
@@ -32287,6 +32585,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			receiver.Map = map[string]Value{}
 			receiver.MapKeys = map[string]Value{}
+			receiver.MapOrder = nil
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
 			}
@@ -32306,6 +32605,9 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				for key, value := range receiver.MapKeys {
 					cloned.MapKeys[key] = value
 				}
+			}
+			if receiver.MapOrder != nil {
+				cloned.MapOrder = append([]string(nil), receiver.MapOrder...)
 			}
 			return cloned, true, nil
 		case "deepClone":
@@ -33272,7 +33574,7 @@ func (vm *VM) currentStubProvider(receiver Value) Value {
 }
 
 func frameworkApexMocksProviderActive(provider Value) bool {
-	if provider.Kind != ValueObject || !strings.EqualFold(provider.Type, "framework_ApexMocks") {
+	if provider.Kind != ValueObject || !strings.EqualFold(frameworkMockSupportType(provider.Type), "ApexMocks") {
 		return false
 	}
 	if _, value, ok := objectFieldValue(provider, "verifying"); ok && value.Kind == ValueBool && value.Bool {
@@ -33289,7 +33591,7 @@ func frameworkApexMocksProviderActive(provider Value) bool {
 }
 
 func frameworkApexMocksProviderHasRecorder(provider Value) bool {
-	if provider.Kind != ValueObject || !strings.EqualFold(provider.Type, "framework_ApexMocks") {
+	if provider.Kind != ValueObject || !strings.EqualFold(frameworkMockSupportType(provider.Type), "ApexMocks") {
 		return false
 	}
 	_, recorder, ok := objectFieldValue(provider, "methodReturnValueRecorder")
@@ -34434,7 +34736,34 @@ func (vm *VM) callFrameworkSimpleDMLMember(receiver Value, method string, args [
 }
 
 func (vm *VM) callFrameworkSObjectUnitOfWorkMember(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
-	if !strings.EqualFold(receiver.Type, "framework_SObjectUnitOfWork") && !vm.isSubclass(receiver.Type, "framework_SObjectUnitOfWork") {
+	if strings.HasSuffix(strings.ToLower(receiver.Type), ".relationships") {
+		switch strings.ToLower(method) {
+		case "add":
+			var relationship Value
+			if len(args) == 1 && args[0].Kind == ValueObject {
+				relationship = args[0]
+			} else if len(args) == 3 && args[0].Kind == ValueObject && args[1].Kind == ValueObject && args[2].Kind == ValueObject {
+				fieldName, err := vm.sObjectFieldArg(args[0].Type, args[1])
+				if err != nil {
+					return Null, true, err
+				}
+				relationship = Object("framework_SObjectUnitOfWork.Relationship")
+				relationship.Fields["Record"] = args[0]
+				relationship.Fields["RelatedToField"] = sObjectFieldToken(vm.canonicalSObjectValueType(args[0]), fieldName)
+				relationship.Fields["RelatedTo"] = args[2]
+			} else {
+				return Null, true, fmt.Errorf("%s.add expects relationship object or record, field, relatedTo", receiver.Type)
+			}
+			relationships, ok := receiver.Fields["m_relationships"]
+			if !ok || relationships.Kind != ValueList {
+				relationships = typedList("List<framework_SObjectUnitOfWork.IRelationship>")
+			}
+			relationships.List = append(relationships.List, relationship)
+			receiver.Fields["m_relationships"] = relationships
+			return Null, true, nil
+		}
+	}
+	if !vm.isSObjectUnitOfWorkRuntimeType(receiver.Type) {
 		return Null, false, nil
 	}
 	switch strings.ToLower(method) {
@@ -34469,6 +34798,30 @@ func (vm *VM) callFrameworkSObjectUnitOfWorkMember(receiver Value, method string
 	default:
 		return Null, false, nil
 	}
+}
+
+func (vm *VM) isSObjectUnitOfWorkRuntimeType(typeName string) bool {
+	if vm.isSObjectUnitOfWorkBaseType(typeName) {
+		return true
+	}
+	for current := typeName; current != ""; {
+		class, ok := vm.Classes[current]
+		if !ok {
+			return false
+		}
+		if vm.isSObjectUnitOfWorkBaseType(class.SuperClass) {
+			return true
+		}
+		current = class.SuperClass
+	}
+	return false
+}
+
+func (vm *VM) isSObjectUnitOfWorkBaseType(typeName string) bool {
+	if strings.EqualFold(typeName, "framework_SObjectUnitOfWork") {
+		return true
+	}
+	return strings.EqualFold(typeName, "SObjectUnitOfWork") || strings.HasSuffix(strings.ToLower(typeName), "_sobjectunitofwork")
 }
 
 func (vm *VM) callFrameworkSObjectUnitOfWorkHandleRegisterType(receiver Value, args []Value) (Value, bool, error) {
@@ -34608,7 +34961,7 @@ func (vm *VM) addFrameworkSObjectUnitOfWorkDirtyRecord(receiver Value, record Va
 func (vm *VM) frameworkSObjectUnitOfWorkRegisteredRecord(receiver Value, fieldName string, record Value) (Value, bool, error) {
 	id := sObjectIDValue(record)
 	if id.Kind == ValueNull {
-		return Null, false, newExceptionError("framework_SObjectUnitOfWork.UnitOfWorkException", "New records cannot be registered for this operation")
+		return Null, false, newExceptionError("framework_SObjectUnitOfWork.UnitOfWorkException", frameworkSObjectUnitOfWorkMissingIDMessage(fieldName))
 	}
 	objectName := vm.canonicalSObjectValueType(record)
 	bucket, ok := receiver.Fields[fieldName]
@@ -34643,7 +34996,7 @@ func (vm *VM) addFrameworkSObjectUnitOfWorkRecord(receiver Value, fieldName stri
 	}
 	id := sObjectIDValue(record)
 	if requireID && id.Kind == ValueNull {
-		return newExceptionError("framework_SObjectUnitOfWork.UnitOfWorkException", "New records cannot be registered for this operation")
+		return newExceptionError("framework_SObjectUnitOfWork.UnitOfWorkException", frameworkSObjectUnitOfWorkMissingIDMessage(fieldName))
 	}
 	if !requireID && id.Kind != ValueNull && strings.EqualFold(fieldName, "m_newListByType") {
 		return newExceptionError("framework_SObjectUnitOfWork.UnitOfWorkException", "Only new records can be registered as new")
@@ -34690,6 +35043,17 @@ func (vm *VM) addFrameworkSObjectUnitOfWorkRecord(receiver Value, fieldName stri
 	}
 	receiver.Fields[fieldName] = bucket
 	return nil
+}
+
+func frameworkSObjectUnitOfWorkMissingIDMessage(fieldName string) string {
+	switch strings.ToLower(fieldName) {
+	case "m_deletedmapbytype", "m_emptyrecyclebinmapbytype":
+		return "New records cannot be registered for deletion"
+	case "m_dirtymapbytype":
+		return "New records cannot be registered as dirty"
+	default:
+		return "New records cannot be registered for this operation"
+	}
 }
 
 func (vm *VM) resolveObjectBucketKey(bucket Value, objectName string) string {
@@ -34808,6 +35172,13 @@ func (vm *VM) constructFrameworkSObjectUnitOfWork(args []Value, namedArgs map[st
 }
 
 func (vm *VM) commitFrameworkSObjectUnitOfWork(receiver Value, result *Result) error {
+	if err := vm.callFrameworkSObjectUnitOfWorkLifecycle(receiver, "onCommitWorkStarting", nil, result); err != nil {
+		return err
+	}
+	wasSuccessful := false
+	defer func() {
+		_ = vm.callFrameworkSObjectUnitOfWorkLifecycle(receiver, "onCommitWorkFinished", []Value{Bool(wasSuccessful)}, result)
+	}()
 	if err := vm.publishFrameworkSObjectUnitOfWorkEvents(receiver, "m_publishBeforeListByType", result); err != nil {
 		return err
 	}
@@ -34826,16 +35197,39 @@ func (vm *VM) commitFrameworkSObjectUnitOfWork(receiver Value, result *Result) e
 	if err := vm.runFrameworkSObjectUnitOfWorkWorkItems(receiver, result); err != nil {
 		return err
 	}
-	return vm.publishFrameworkSObjectUnitOfWorkEvents(receiver, "m_publishAfterSuccessListByType", result)
+	if err := vm.callFrameworkSObjectUnitOfWorkLifecycle(receiver, "onDMLFinished", nil, result); err != nil {
+		return err
+	}
+	if err := vm.publishFrameworkSObjectUnitOfWorkEvents(receiver, "m_publishAfterSuccessListByType", result); err != nil {
+		return err
+	}
+	wasSuccessful = true
+	return nil
+}
+
+func (vm *VM) callFrameworkSObjectUnitOfWorkLifecycle(receiver Value, methodName string, args []Value, result *Result) error {
+	method, ok, ambiguous := vm.resolveInstanceMethodForArgs(receiver.Type, methodName, args)
+	if ambiguous {
+		return vm.ambiguousOverloadError(receiver.Type+"."+methodName, args)
+	}
+	if !ok {
+		return nil
+	}
+	_, err := vm.callMethodWithReceiver(method, receiver, args, result)
+	return err
 }
 
 func (vm *VM) applyFrameworkSObjectUnitOfWorkDML(receiver Value, fieldName, op string, result *Result) error {
-	for _, bucket := range frameworkSObjectUnitOfWorkRecordBuckets(receiver, fieldName) {
+	buckets := frameworkSObjectUnitOfWorkRecordBuckets(receiver, fieldName)
+	if op == "delete" {
+		reverseFrameworkSObjectUnitOfWorkRecordBuckets(buckets)
+	}
+	for _, bucket := range buckets {
 		records := bucket.records
 		if len(records.List) == 0 {
 			continue
 		}
-		if op == "insert" {
+		if op == "insert" || op == "update" {
 			if err := vm.resolveFrameworkSObjectUnitOfWorkRelationships(receiver, bucket.objectName, result); err != nil {
 				return err
 			}
@@ -34843,13 +35237,49 @@ func (vm *VM) applyFrameworkSObjectUnitOfWorkDML(receiver Value, fieldName, op s
 		if handled, err := vm.callFrameworkSObjectUnitOfWorkCustomDML(receiver, op, records, result); err != nil {
 			return err
 		} else if handled {
-			continue
+			if frameworkCustomDMLHandlesPersistence(receiver) {
+				continue
+			}
+			if op == "insert" && frameworkSObjectUnitOfWorkRecordsHaveIDs(records) {
+				continue
+			}
+			if op != "insert" && op != "update" {
+				continue
+			}
 		}
 		if _, err := vm.executeDatabaseDML(op, []Value{records}, result); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func reverseFrameworkSObjectUnitOfWorkRecordBuckets(buckets []frameworkSObjectUnitOfWorkRecordBucket) {
+	for i, j := 0, len(buckets)-1; i < j; i, j = i+1, j-1 {
+		buckets[i], buckets[j] = buckets[j], buckets[i]
+	}
+}
+
+func frameworkCustomDMLHandlesPersistence(receiver Value) bool {
+	dmlValue, ok := receiver.Fields["m_dml"]
+	if !ok || dmlValue.Kind != ValueObject {
+		return false
+	}
+	_, hasOptions := dmlValue.Fields["dmlOptions"]
+	_, hasParsedErrors := dmlValue.Fields["parsedErrors"]
+	return hasOptions && hasParsedErrors
+}
+
+func frameworkSObjectUnitOfWorkRecordsHaveIDs(records Value) bool {
+	if records.Kind != ValueList || len(records.List) == 0 {
+		return false
+	}
+	for _, record := range records.List {
+		if sObjectIDValue(record).Kind == ValueNull {
+			return false
+		}
+	}
+	return true
 }
 
 type frameworkSObjectUnitOfWorkRecordBucket struct {
@@ -35169,20 +35599,29 @@ func sObjectTypeTokenObjectName(value Value) (string, bool) {
 }
 
 func (vm *VM) callFrameworkMockRecorderMember(receiver Value, method string, args []Value) (Value, bool, error) {
-	switch {
-	case strings.EqualFold(receiver.Type, "framework_InvocationOnMock"):
+	switch frameworkMockSupportType(receiver.Type) {
+	case "InvocationOnMock":
 		return vm.callFrameworkInvocationOnMockMember(receiver, method, args)
-	case strings.EqualFold(receiver.Type, "framework_MethodCountRecorder"):
+	case "MethodCountRecorder":
 		return vm.callFrameworkMethodCountRecorderMember(receiver, method, args)
-	case strings.EqualFold(receiver.Type, "framework_MethodReturnValueRecorder"):
+	case "MethodReturnValueRecorder":
 		return vm.callFrameworkMethodReturnValueRecorderMember(receiver, method, args)
-	case strings.EqualFold(receiver.Type, "framework_ArgumentCaptor"):
+	case "ArgumentCaptor":
 		return vm.callFrameworkArgumentCaptorMember(receiver, method, args)
-	case strings.EqualFold(receiver.Type, "framework_ArgumentCaptor.AnyObject"):
+	case "ArgumentCaptor.AnyObject":
 		return vm.callFrameworkArgumentCaptorAnyObjectMember(receiver, method, args)
 	default:
 		return Null, false, nil
 	}
+}
+
+func frameworkMockSupportType(typeName string) string {
+	for _, prefix := range []string{"framework_", "fflib_"} {
+		if strings.HasPrefix(strings.ToLower(typeName), strings.ToLower(prefix)) {
+			return typeName[len(prefix):]
+		}
+	}
+	return ""
 }
 
 func (vm *VM) constructFrameworkFastDTO(typeName string, args []Value, namedArgs map[string]Value) (Value, bool, error) {
@@ -35190,27 +35629,27 @@ func (vm *VM) constructFrameworkFastDTO(typeName string, args []Value, namedArgs
 		return Null, false, nil
 	}
 	switch strings.ToLower(typeName) {
-	case "framework_methodargvalues":
+	case "framework_methodargvalues", "fflib_methodargvalues":
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, false, nil
 		}
-		value := Object("framework_MethodArgValues")
+		value := Object(typeName)
 		value.Fields["argValues"] = args[0]
 		return value, true, nil
-	case "framework_invocationonmock":
+	case "framework_invocationonmock", "fflib_invocationonmock":
 		if len(args) != 3 {
 			return Null, false, nil
 		}
-		value := Object("framework_InvocationOnMock")
+		value := Object(typeName)
 		value.Fields["qm"] = args[0]
 		value.Fields["methodArg"] = args[1]
 		value.Fields["mockInstance"] = args[2]
 		return value, true, nil
-	case "framework_qualifiedmethod":
+	case "framework_qualifiedmethod", "fflib_qualifiedmethod":
 		if len(args) != 3 && len(args) != 4 {
 			return Null, false, nil
 		}
-		value := Object("framework_QualifiedMethod")
+		value := Object(typeName)
 		value.Fields["typeName"] = args[0]
 		value.Fields["methodName"] = args[1]
 		value.Fields["methodArgTypes"] = args[2]
@@ -35356,7 +35795,7 @@ func (vm *VM) callFrameworkInvocationOnMockMember(receiver Value, method string,
 func (vm *VM) callFrameworkMethodCountRecorderMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	switch strings.ToLower(method) {
 	case "recordmethod":
-		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "framework_InvocationOnMock") {
+		if len(args) != 1 || args[0].Kind != ValueObject || frameworkMockSupportType(args[0].Type) != "InvocationOnMock" {
 			return Null, true, fmt.Errorf("framework_MethodCountRecorder.recordMethod expects framework_InvocationOnMock")
 		}
 		if err := vm.frameworkRecordMethodInvocation(args[0]); err != nil {
@@ -35388,7 +35827,7 @@ func (vm *VM) callFrameworkMethodReturnValueRecorderMember(receiver Value, metho
 	if !strings.EqualFold(method, "getMethodReturnValue") {
 		return Null, false, nil
 	}
-	if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "framework_InvocationOnMock") {
+	if len(args) != 1 || args[0].Kind != ValueObject || frameworkMockSupportType(args[0].Type) != "InvocationOnMock" {
 		return Null, true, fmt.Errorf("framework_MethodReturnValueRecorder.getMethodReturnValue expects framework_InvocationOnMock")
 	}
 	_, byMethod, ok := objectFieldValue(receiver, "matcherReturnValuesByMethod")
@@ -35441,6 +35880,17 @@ func (vm *VM) callFrameworkMethodReturnValueRecorderMember(receiver Value, metho
 }
 
 func (vm *VM) frameworkRecordMethodInvocation(invocation Value) error {
+	if _, mockInstance, ok := objectFieldValue(invocation, "mockInstance"); ok && isStubProxy(mockInstance) {
+		if vm.callStackHasFieldInitializerForType(mockInstance.Type) || (isSelectorMockType(mockInstance.Type) && vm.callStackHasFieldInitializer()) {
+			return nil
+		}
+		if vm.stubProviderRecordingMode(vm.currentStubProvider(mockInstance)) {
+			return nil
+		}
+	}
+	if vm.frameworkMockRecordingModeActive() {
+		return nil
+	}
 	methodValue, ok := frameworkInvocationMethod(invocation)
 	if !ok {
 		return nil
@@ -35476,44 +35926,116 @@ func (vm *VM) frameworkRecordMethodInvocation(invocation Value) error {
 	return nil
 }
 
+func (vm *VM) frameworkMethodCountRecorderSnapshot() map[string]Value {
+	if _, ok := vm.Classes["framework_MethodCountRecorder"]; !ok {
+		if _, ok := vm.Classes["fflib_MethodCountRecorder"]; !ok {
+			return nil
+		}
+	}
+	snapshot := make(map[string]Value, 2)
+	for _, name := range []string{"methodArgumentsByTypeName", "orderedMethodCalls"} {
+		if value, ok := vm.frameworkMethodCountRecorderStatic(name); ok {
+			snapshot[name] = cloneValue(value)
+		}
+	}
+	return snapshot
+}
+
+func (vm *VM) restoreFrameworkMethodCountRecorderSnapshot(snapshot map[string]Value) {
+	if snapshot == nil {
+		return
+	}
+	for name, value := range snapshot {
+		vm.setFrameworkMethodCountRecorderStatic(name, cloneValue(value))
+	}
+}
+
+func (vm *VM) callStackHasFieldInitializerForType(typeName string) bool {
+	typeName = strings.ToLower(typeName)
+	for _, frame := range vm.callStack {
+		symbol := strings.ToLower(frame.Symbol)
+		if strings.HasPrefix(symbol, typeName+".<field_init>.") {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) callStackHasFieldInitializer() bool {
+	for _, frame := range vm.callStack {
+		if strings.Contains(strings.ToLower(frame.Symbol), ".<field_init>.") {
+			return true
+		}
+	}
+	return false
+}
+
+func isSelectorMockType(typeName string) bool {
+	typeName = strings.ToLower(typeName)
+	if strings.Contains(typeName, "selector") {
+		return true
+	}
+	return strings.Contains(typeName, "__sfdc_apexstub") && strings.Contains(typeName, "selector")
+}
+
+func (vm *VM) frameworkMockRecordingModeActive() bool {
+	for _, value := range vm.Globals {
+		if frameworkApexMocksProviderActive(value) || stubProviderStateFlagSet(value) {
+			return true
+		}
+	}
+	return false
+}
+
 func frameworkInvocationMethod(invocation Value) (Value, bool) {
 	_, value, ok := objectFieldValue(invocation, "qm")
-	return value, ok && value.Kind == ValueObject && strings.EqualFold(value.Type, "framework_QualifiedMethod")
+	return value, ok && value.Kind == ValueObject && frameworkMockSupportType(value.Type) == "QualifiedMethod"
 }
 
 func (vm *VM) frameworkMethodCountRecorderStatic(name string) (Value, bool) {
-	class, ok := vm.Classes["framework_MethodCountRecorder"]
-	if !ok {
-		return Null, false
-	}
-	for fieldName, field := range class.StaticFields {
-		if strings.EqualFold(fieldName, name) {
-			return field.Value, true
+	for _, className := range []string{"fflib_MethodCountRecorder", "framework_MethodCountRecorder"} {
+		class, ok := vm.Classes[className]
+		if !ok {
+			continue
+		}
+		for fieldName, field := range class.StaticFields {
+			if strings.EqualFold(fieldName, name) {
+				return field.Value, true
+			}
 		}
 	}
 	return Null, false
 }
 
 func (vm *VM) setFrameworkMethodCountRecorderStatic(name string, value Value) {
-	class, ok := vm.Classes["framework_MethodCountRecorder"]
-	if !ok {
+	updated := false
+	for _, className := range []string{"fflib_MethodCountRecorder", "framework_MethodCountRecorder"} {
+		class, ok := vm.Classes[className]
+		if !ok {
+			continue
+		}
+		found := false
+		for fieldName, field := range class.StaticFields {
+			if strings.EqualFold(fieldName, name) {
+				field.Value = value
+				class.StaticFields[fieldName] = field
+				found = true
+				break
+			}
+		}
+		if !found {
+			if class.StaticFields == nil {
+				class.StaticFields = make(map[string]Field)
+			}
+			class.StaticFields[name] = Field{Name: name, Type: value.Type, Static: true, Value: value, InitialValue: value}
+		}
+		vm.Classes[class.Name] = class
+		vm.storeClassAliases(class)
+		updated = true
+	}
+	if updated {
 		return
 	}
-	for fieldName, field := range class.StaticFields {
-		if strings.EqualFold(fieldName, name) {
-			field.Value = value
-			class.StaticFields[fieldName] = field
-			vm.Classes[class.Name] = class
-			vm.storeClassAliases(class)
-			return
-		}
-	}
-	if class.StaticFields == nil {
-		class.StaticFields = make(map[string]Field)
-	}
-	class.StaticFields[name] = Field{Name: name, Type: value.Type, Static: true, Value: value, InitialValue: value}
-	vm.Classes[class.Name] = class
-	vm.storeClassAliases(class)
 }
 
 func stubReturnCanUseReceiver(returnType string, receiver Value) bool {
@@ -35712,6 +36234,10 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 					continue
 				}
 				field := key.Text
+				if strings.Contains(field, ".") {
+					vm.addQueriedRelationshipFieldToPopulatedMap(&out, receiver, field)
+					continue
+				}
 				if strings.EqualFold(field, "object") || isInternalSObjectField(field) {
 					continue
 				}
@@ -36459,6 +36985,11 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 	if fieldDef.Type == storage.FieldReference {
 		if value, ok := vm.lookupIDFromLoadedParentRelationship(receiver, definition, field); ok {
 			return value, true
+		}
+	}
+	if storage.IsCustomMetadataDefinition(definition) || storage.IsCustomSettingDefinition(definition) {
+		if defaultValue, ok := storage.DefaultValueForField(fieldDef); ok {
+			return vmValueFromStorage(defaultValue), true
 		}
 	}
 	if fieldDef.Type == storage.FieldBoolean {
@@ -38681,7 +39212,7 @@ func (vm *VM) callCommerceInventoryServiceMember(receiver Value, method string, 
 }
 
 func compareVersionValues(left, right Value) int {
-	for _, field := range []string{"major", "minor", "patch"} {
+	for _, field := range []string{"major", "minor"} {
 		lv := versionComponent(left, field)
 		rv := versionComponent(right, field)
 		if lv < rv {
@@ -38690,6 +39221,17 @@ func compareVersionValues(left, right Value) int {
 		if lv > rv {
 			return 1
 		}
+	}
+	if !versionPatchSpecified(left) || !versionPatchSpecified(right) {
+		return 0
+	}
+	lv := versionComponent(left, "patch")
+	rv := versionComponent(right, "patch")
+	if lv < rv {
+		return -1
+	}
+	if lv > rv {
+		return 1
 	}
 	return 0
 }
@@ -38703,7 +39245,15 @@ func versionComponent(version Value, field string) int64 {
 }
 
 func versionValueString(version Value) string {
+	if !versionPatchSpecified(version) {
+		return fmt.Sprintf("%d.%d", versionComponent(version, "major"), versionComponent(version, "minor"))
+	}
 	return fmt.Sprintf("%d.%d.%d", versionComponent(version, "major"), versionComponent(version, "minor"), versionComponent(version, "patch"))
+}
+
+func versionPatchSpecified(version Value) bool {
+	value, ok := version.Fields["__oaerPatchSpecified"]
+	return ok && value.Kind == ValueBool && value.Bool
 }
 
 func (vm *VM) callCanvasMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
@@ -41872,8 +42422,18 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 		if !ok {
 			mapField := passiveAccessorFieldName(receiver, suffix)
 			if actualMap, mapValue, mapOK := objectFieldValue(receiver, mapField); mapOK && mapValue.Kind == ValueMap {
-				delete(mapValue.Map, mapKey(args[0]))
-				delete(mapValue.MapKeys, mapKey(args[0]))
+				key := mapKey(args[0])
+				delete(mapValue.Map, key)
+				delete(mapValue.MapKeys, key)
+				if len(mapValue.MapOrder) > 0 {
+					filtered := mapValue.MapOrder[:0]
+					for _, orderedKey := range mapValue.MapOrder {
+						if orderedKey != key {
+							filtered = append(filtered, orderedKey)
+						}
+					}
+					mapValue.MapOrder = filtered
+				}
 				receiver.Fields[actualMap] = mapValue
 				return Null, receiver, true, true, nil
 			}
@@ -46058,4 +46618,15 @@ func restMapKeys(receiver Value, field string) Value {
 		out = append(out, String(key))
 	}
 	return List(out...)
+}
+func vmFormulaDefaultShouldEvaluate(field storage.Field, rawDefault string) bool {
+	if rawDefault == "" {
+		return false
+	}
+	switch field.Type {
+	case storage.FieldDate, storage.FieldDateTime:
+		return strings.ContainsAny(rawDefault, "()")
+	default:
+		return false
+	}
 }

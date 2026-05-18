@@ -195,7 +195,11 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getLimitAsyncJobs", "getLimitAsyncCalls":
 		return Int(int64(vm.limitCaps.AsyncJobs)), true
 	case "getQueueableJobs":
-		return Int(int64(vm.limits.QueueableJobs)), true
+		queueableJobs := vm.limits.QueueableJobs
+		if vm.testContext != nil && vm.testContext.Draining && vm.currentAsyncKind == "Queueable" && queueableJobs > 0 {
+			queueableJobs--
+		}
+		return Int(int64(queueableJobs)), true
 	case "getLimitQueueableJobs":
 		return Int(int64(vm.limitCaps.QueueableJobs)), true
 	case "getFutureCalls":
