@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/pprof"
 	"sort"
 	"strconv"
 	"strings"
@@ -613,6 +614,9 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	slowTestThresholdMS := int64(0)
 	changedSince := ""
 	parallelMethods := false
+	cpuProfilePath := ""
+	memProfilePath := ""
+	perfJSONPath := ""
 	debounce := watch.DefaultDebounce
 	backend := watch.BackendAuto
 	for i := 0; i < len(args); i++ {
@@ -654,6 +658,24 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 			i++
 		case "--parallel-methods":
 			parallelMethods = true
+		case "--cpu-profile":
+			if i+1 >= len(args) {
+				return testreport.Run{}, errors.New("--cpu-profile requires a path")
+			}
+			cpuProfilePath = args[i+1]
+			i++
+		case "--mem-profile":
+			if i+1 >= len(args) {
+				return testreport.Run{}, errors.New("--mem-profile requires a path")
+			}
+			memProfilePath = args[i+1]
+			i++
+		case "--perf-json":
+			if i+1 >= len(args) {
+				return testreport.Run{}, errors.New("--perf-json requires a path")
+			}
+			perfJSONPath = args[i+1]
+			i++
 		case "--junit":
 			if i+1 >= len(args) {
 				return testreport.Run{}, errors.New("--junit requires a path")
@@ -701,6 +723,15 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 			return testreport.Run{}, fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
+	stopProfile, err := startCLIProfiler(cpuProfilePath, memProfilePath)
+	if err != nil {
+		return testreport.Run{}, err
+	}
+	defer func() {
+		if stopProfile != nil {
+			_ = stopProfile()
+		}
+	}()
 
 	index, err := loadIndex(root)
 	if err != nil {
@@ -725,7 +756,16 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	} else {
 		result = apextest.Run(index, testOpts)
 	}
+	if stopProfile != nil {
+		if stopErr := stopProfile(); stopErr != nil {
+			return result, stopErr
+		}
+		stopProfile = nil
+	}
 	result.Dependencies = append(result.Dependencies, index.Dependencies...)
+	if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath); err != nil {
+		return result, err
+	}
 	if debug {
 		return result, serveDAPSnapshot(testRunSnapshot(result), w)
 	}
@@ -742,6 +782,135 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	default:
 		return result, testreport.WriteConsole(w, result)
 	}
+}
+
+type runPerfSummary struct {
+	GeneratedAt    string             `json:"generatedAt"`
+	Project        string             `json:"project"`
+	DurationMS     int64              `json:"durationMs"`
+	Summary        testreport.Summary `json:"summary"`
+	TopSlowClasses []runPerfClass     `json:"topSlowClasses,omitempty"`
+	CPUProfilePath string             `json:"cpuProfilePath,omitempty"`
+	MemProfilePath string             `json:"memProfilePath,omitempty"`
+}
+
+type runPerfClass struct {
+	Class      string `json:"class"`
+	DurationMS int64  `json:"durationMs"`
+	Tests      int    `json:"tests"`
+}
+
+func startCLIProfiler(cpuProfilePath, memProfilePath string) (func() error, error) {
+	if strings.TrimSpace(cpuProfilePath) == "" && strings.TrimSpace(memProfilePath) == "" {
+		return nil, nil
+	}
+	var cpuFile *os.File
+	if path := strings.TrimSpace(cpuProfilePath); path != "" {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			return nil, err
+		}
+		file, err := os.Create(path)
+		if err != nil {
+			return nil, err
+		}
+		if err := pprof.StartCPUProfile(file); err != nil {
+			_ = file.Close()
+			return nil, err
+		}
+		cpuFile = file
+	}
+	return func() error {
+		if cpuFile != nil {
+			pprof.StopCPUProfile()
+			if err := cpuFile.Close(); err != nil {
+				return err
+			}
+		}
+		if path := strings.TrimSpace(memProfilePath); path != "" {
+			runtime.GC()
+			if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+				return err
+			}
+			file, err := os.Create(path)
+			if err != nil {
+				return err
+			}
+			if err := pprof.WriteHeapProfile(file); err != nil {
+				_ = file.Close()
+				return err
+			}
+			if err := file.Close(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}, nil
+}
+
+func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpuProfilePath, memProfilePath string) error {
+	if strings.TrimSpace(perfJSONPath) == "" {
+		return nil
+	}
+	absRoot, _ := filepath.Abs(root)
+	perf := runPerfSummary{
+		GeneratedAt:    time.Now().UTC().Format(time.RFC3339),
+		Project:        absRoot,
+		DurationMS:     result.Summary().DurationMS,
+		Summary:        result.Summary(),
+		CPUProfilePath: strings.TrimSpace(cpuProfilePath),
+		MemProfilePath: strings.TrimSpace(memProfilePath),
+	}
+	perf.TopSlowClasses = runTopSlowClasses(result, 15)
+	if err := os.MkdirAll(filepath.Dir(perfJSONPath), 0o755); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(perf, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(perfJSONPath, append(data, '\n'), 0o644)
+}
+
+func runTopSlowClasses(result testreport.Run, limit int) []runPerfClass {
+	if limit <= 0 {
+		return nil
+	}
+	totals := map[string]*runPerfClass{}
+	for _, suite := range result.Suites {
+		for _, testCase := range suite.Cases {
+			className := strings.TrimSpace(testCase.ClassName)
+			if className == "" {
+				className = strings.TrimSpace(suite.Name)
+			}
+			if className == "" {
+				continue
+			}
+			entry := totals[className]
+			if entry == nil {
+				entry = &runPerfClass{Class: className}
+				totals[className] = entry
+			}
+			entry.DurationMS += testCase.DurationMS
+			entry.Tests++
+		}
+	}
+	if len(totals) == 0 {
+		return nil
+	}
+	classes := make([]runPerfClass, 0, len(totals))
+	for _, entry := range totals {
+		classes = append(classes, *entry)
+	}
+	sort.Slice(classes, func(i, j int) bool {
+		if classes[i].DurationMS == classes[j].DurationMS {
+			return classes[i].Class < classes[j].Class
+		}
+		return classes[i].DurationMS > classes[j].DurationMS
+	})
+	if len(classes) > limit {
+		classes = classes[:limit]
+	}
+	return classes
 }
 
 func changedSinceSelection(root string, index typesys.Index, ref string) (watch.TestSelection, error) {
@@ -1568,7 +1737,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 }
 
 func compatUsage() string {
-	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--parallel-methods] [--progress] [--analyze] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
+	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--parallel-methods] [--progress] [--analyze] [--profile-on-timeout] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
 }
 
 type postParityReadiness struct {
@@ -1659,6 +1828,24 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 			options.ProfileOnTimeout = true
 		case "--parallel-methods":
 			options.ParallelMethods = true
+		case "--cpu-profile":
+			if i+1 >= len(args) {
+				return errors.New("--cpu-profile requires a path")
+			}
+			options.CPUProfilePath = args[i+1]
+			i++
+		case "--mem-profile":
+			if i+1 >= len(args) {
+				return errors.New("--mem-profile requires a path")
+			}
+			options.MemProfilePath = args[i+1]
+			i++
+		case "--perf-json":
+			if i+1 >= len(args) {
+				return errors.New("--perf-json requires a path")
+			}
+			options.PerfJSONPath = args[i+1]
+			i++
 		case "--changed-since":
 			if i+1 >= len(args) {
 				return errors.New("--changed-since requires a value")
@@ -1704,8 +1891,8 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 		}
 	}
 	if checkPath != "" {
-		if options.Project != "." || options.Class != "" || len(options.ClassList) != 0 || options.ClassFile != "" || options.Method != "" || options.BlockersOnly || options.TraceBlocked || options.SlowTestThresholdMS != 0 || options.TopFailures != 0 || options.MaxFailureGroups != 0 || options.TimeoutMS != 0 || options.Parallelism != 0 || options.ProgressWriter != nil || options.ForceAnalysis || options.ProfileOnTimeout || options.ChangedSince != "" || options.ParallelMethods {
-			return errors.New("--check cannot be combined with --project, --class, --class-list, --class-file, --method, --changed-since, --parallel-methods, --blockers-only, --trace-blockers, --slow-test-ms, --top-failures, --max-failure-groups, --timeout, --parallel, --progress, --analyze, or --profile-on-timeout")
+		if options.Project != "." || options.Class != "" || len(options.ClassList) != 0 || options.ClassFile != "" || options.Method != "" || options.BlockersOnly || options.TraceBlocked || options.SlowTestThresholdMS != 0 || options.TopFailures != 0 || options.MaxFailureGroups != 0 || options.TimeoutMS != 0 || options.Parallelism != 0 || options.ProgressWriter != nil || options.ForceAnalysis || options.ProfileOnTimeout || options.ChangedSince != "" || options.ParallelMethods || options.CPUProfilePath != "" || options.MemProfilePath != "" || options.PerfJSONPath != "" {
+			return errors.New("--check cannot be combined with --project, --class, --class-list, --class-file, --method, --changed-since, --parallel-methods, --blockers-only, --trace-blockers, --slow-test-ms, --top-failures, --max-failure-groups, --timeout, --parallel, --progress, --analyze, --profile-on-timeout, --cpu-profile, --mem-profile, or --perf-json")
 		}
 		report, err := compat.CheckLocalTestCorpus(checkPath)
 		if jsonOut {

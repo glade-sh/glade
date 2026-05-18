@@ -1216,10 +1216,23 @@ func (o ObjectState) CloneRuntime() ObjectState {
 }
 
 func isRuntimeMutableDefinition(definition ObjectDefinition) bool {
-	if definition.Metadata != nil {
+	if hasRuntimeMutableMetadata(definition.Metadata) {
 		return true
 	}
 	return isCustomAPIName(definition.APIName)
+}
+
+func hasRuntimeMutableMetadata(metadata map[string]string) bool {
+	if len(metadata) == 0 {
+		return false
+	}
+	for key := range metadata {
+		if strings.HasPrefix(key, "__oaer_") {
+			continue
+		}
+		return true
+	}
+	return false
 }
 
 func (t TransactionFrame) Clone() TransactionFrame {
