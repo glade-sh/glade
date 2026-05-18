@@ -15458,6 +15458,13 @@ func (vm *VM) runTriggersByObject(timing, op string, records, oldRecords []stora
 	if len(records) == 0 {
 		return nil, records, nil
 	}
+	if recordsShareSingleObject(records) {
+		groupFailures, err := vm.runTriggers(timing, op, records, oldRecords, result)
+		if err != nil {
+			return nil, records, err
+		}
+		return groupFailures, records, nil
+	}
 	failures := make([]dml.Result, len(records))
 	updated := append([]storage.Record(nil), records...)
 	for _, indices := range groupedRecordIndicesByObject(records) {
@@ -15486,6 +15493,19 @@ func (vm *VM) runTriggersByObject(timing, op string, records, oldRecords []stora
 		return failures, updated, nil
 	}
 	return nil, updated, nil
+}
+
+func recordsShareSingleObject(records []storage.Record) bool {
+	if len(records) <= 1 {
+		return true
+	}
+	first := strings.TrimSpace(records[0].Object)
+	for i := 1; i < len(records); i++ {
+		if !strings.EqualFold(first, strings.TrimSpace(records[i].Object)) {
+			return false
+		}
+	}
+	return true
 }
 
 func groupedRecordIndicesByObject(records []storage.Record) [][]int {
