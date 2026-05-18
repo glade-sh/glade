@@ -3300,15 +3300,16 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 		}
 		changed := false
 		parentIDs := summaryParentIDs(childRecords, relation.fkFieldName)
+		summaryValues, ok := e.evaluateSummaryFieldBatch(relation, parentIDs)
+		if !ok {
+			continue
+		}
 		for parentID := range parentIDs {
 			storedParentID, parentRecord, ok := storage.LookupRecordByID(parentObject.Records, parentID)
 			if !ok || parentRecord.System.IsDeleted {
 				continue
 			}
-			value, ok := e.evaluateSummaryField(parentRecord, relation.field)
-			if !ok {
-				continue
-			}
+			value := summaryValues[parentID]
 			oldValue, ok := parentRecord.Fields[relation.parentField]
 			if !ok {
 				oldValue = storage.NullValue()
@@ -3377,6 +3378,119 @@ func (e *Engine) summaryRelationsForChild(childObjectName string) []summaryRelat
 	}
 	e.summaryByChild[childObjectName] = relations
 	return relations
+}
+
+func (e *Engine) evaluateSummaryFieldBatch(relation summaryRelation, parentIDs map[storage.ID]bool) (map[storage.ID]storage.Value, bool) {
+	if e == nil || e.Org == nil || len(parentIDs) == 0 {
+		return nil, false
+	}
+	childObject, childField := splitSummaryQualifiedField(relation.field.SummarizedField)
+	fkObject, fkField := splitSummaryQualifiedField(relation.field.SummaryForeignKey)
+	operation := strings.ToLower(strings.TrimSpace(relation.field.SummaryOperation))
+	if childObject == "" && operation == "count" {
+		childObject = fkObject
+	}
+	if childObject == "" || fkObject == "" || fkField == "" || !strings.EqualFold(childObject, fkObject) {
+		return nil, false
+	}
+	canonicalChild, ok := storage.ResolveObjectName(*e.Org, childObject)
+	if !ok {
+		return nil, false
+	}
+	childState := e.Org.Objects[canonicalChild]
+	childFieldName := ""
+	if childField != "" {
+		childFieldName, ok = storage.ResolveFieldName(childState.Definition, e.Org.Namespace, childField)
+		if !ok {
+			return nil, false
+		}
+	}
+	fkFieldName, ok := storage.ResolveFieldName(childState.Definition, e.Org.Namespace, fkField)
+	if !ok {
+		return nil, false
+	}
+	if relation.fkFieldName != "" {
+		fkFieldName = relation.fkFieldName
+	}
+
+	type summaryAccumulator struct {
+		count int64
+		sum   float64
+		has   bool
+		min   float64
+		max   float64
+	}
+	acc := make(map[storage.ID]summaryAccumulator, len(parentIDs))
+	for parentID := range parentIDs {
+		acc[parentID] = summaryAccumulator{}
+	}
+	for _, child := range childState.Records {
+		if child.System.IsDeleted {
+			continue
+		}
+		parentID := idFromStorageValue(child.Fields[fkFieldName])
+		if parentID == "" || !parentIDs[parentID] {
+			continue
+		}
+		if !summaryFiltersMatch(e.Org, childState.Definition, child, relation.field.SummaryFilterItems) {
+			continue
+		}
+		current := acc[parentID]
+		if operation == "count" && childFieldName == "" {
+			current.count++
+			acc[parentID] = current
+			continue
+		}
+		value, ok := summaryRecordFieldValue(e.Org, childState.Definition, child, childFieldName)
+		if !ok {
+			continue
+		}
+		number, ok := summaryNumericValue(value)
+		if !ok {
+			continue
+		}
+		current.count++
+		current.sum += number
+		if !current.has {
+			current.has = true
+			current.min = number
+			current.max = number
+		} else {
+			if number < current.min {
+				current.min = number
+			}
+			if number > current.max {
+				current.max = number
+			}
+		}
+		acc[parentID] = current
+	}
+
+	values := make(map[storage.ID]storage.Value, len(parentIDs))
+	for parentID := range parentIDs {
+		current := acc[parentID]
+		switch operation {
+		case "count":
+			values[parentID] = storage.IntegerValue(current.count)
+		case "", "sum":
+			values[parentID] = storage.DecimalValue(strconv.FormatFloat(current.sum, 'f', -1, 64))
+		case "max":
+			if !current.has {
+				values[parentID] = storage.NullValue()
+			} else {
+				values[parentID] = storage.DecimalValue(strconv.FormatFloat(current.max, 'f', -1, 64))
+			}
+		case "min":
+			if !current.has {
+				values[parentID] = storage.NullValue()
+			} else {
+				values[parentID] = storage.DecimalValue(strconv.FormatFloat(current.min, 'f', -1, 64))
+			}
+		default:
+			return nil, false
+		}
+	}
+	return values, true
 }
 
 func (e *Engine) recordSummaryUpdate(objectName string, before, after storage.Record) {
