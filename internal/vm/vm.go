@@ -121,7 +121,10 @@ type VM struct {
 	fieldDescribeCache  map[string]Value
 	globalDescribeCache *Value
 	describeTabsCache   *Value
+	describeDefCache    map[string]storage.ObjectDefinition
 	customDataCache     map[string]Value
+	childRelCache       map[string][]Value
+	metadataCacheStamp  string
 	staticValueRefs     map[uint64]bool
 }
 
@@ -327,7 +330,9 @@ func New(stdout io.Writer) *VM {
 		staticInitState:    make(map[string]staticInitState),
 		describeCache:      make(map[string]Value),
 		fieldDescribeCache: make(map[string]Value),
+		describeDefCache:   make(map[string]storage.ObjectDefinition),
 		customDataCache:    make(map[string]Value),
+		childRelCache:      make(map[string][]Value),
 	}
 }
 
@@ -479,7 +484,14 @@ func (vm *VM) ResetApexPageState() {
 
 func (vm *VM) SetOrg(org *storage.OrgState) {
 	if vm.Org != org {
-		vm.clearMetadataCaches()
+		currentStamp := vm.schemaCacheStamp()
+		nextStamp := schemaCacheStampForOrg(org)
+		if currentStamp != "" && nextStamp != "" && currentStamp == nextStamp {
+			vm.metadataCacheStamp = nextStamp
+		} else {
+			vm.clearMetadataCaches()
+			vm.metadataCacheStamp = nextStamp
+		}
 	}
 	vm.Org = org
 	if vm.Org != nil {
@@ -488,6 +500,37 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 	if vm.testContext != nil && isPlaceholderCurrentUser(vm.testContext.CurrentUser) {
 		vm.testContext.CurrentUser = vm.defaultTestCurrentUser()
 	}
+}
+
+func (vm *VM) schemaCacheStamp() string {
+	if strings.TrimSpace(vm.metadataCacheStamp) != "" {
+		return vm.metadataCacheStamp
+	}
+	return schemaCacheStampForOrg(vm.Org)
+}
+
+func schemaCacheStampForOrg(org *storage.OrgState) string {
+	if org == nil {
+		return ""
+	}
+	objectCount := 0
+	fieldCount := 0
+	relationCount := 0
+	recordTypeCount := 0
+	for _, object := range org.Objects {
+		if strings.TrimSpace(object.Definition.APIName) == "" {
+			continue
+		}
+		objectCount++
+		fieldCount += len(object.Definition.Fields)
+		relationCount += len(object.Definition.Relations)
+		recordTypeCount += len(object.Definition.RecordTypes)
+	}
+	return strings.ToLower(strings.TrimSpace(org.Namespace)) + "|" +
+		strconv.Itoa(objectCount) + "|" +
+		strconv.Itoa(fieldCount) + "|" +
+		strconv.Itoa(relationCount) + "|" +
+		strconv.Itoa(recordTypeCount)
 }
 
 func isPlaceholderCurrentUser(user Value) bool {
@@ -6591,8 +6634,11 @@ func (vm *VM) clearCustomDataCache() {
 func (vm *VM) clearMetadataCaches() {
 	vm.describeCache = make(map[string]Value)
 	vm.fieldDescribeCache = make(map[string]Value)
+	vm.describeDefCache = make(map[string]storage.ObjectDefinition)
 	vm.globalDescribeCache = nil
 	vm.describeTabsCache = nil
+	vm.childRelCache = make(map[string][]Value)
+	vm.metadataCacheStamp = ""
 	vm.clearCustomDataCache()
 }
 
@@ -12041,7 +12087,10 @@ func (vm *VM) executeDatabaseConvertLead(args []Value, result *Result) (Value, e
 	if listInput {
 		converts = args[0].List
 	}
-	backup := cloneRuntimeOrgState(*vm.Org)
+	var backup storage.OrgState
+	if allOrNone {
+		backup = cloneRuntimeOrgState(*vm.Org)
+	}
 	values := make([]Value, 0, len(converts))
 	for _, convert := range converts {
 		row, err := vm.convertLeadOne(convert, result)
@@ -12388,7 +12437,10 @@ func (vm *VM) applyDatabaseRecordAction(op string, value Value, allOrNone bool, 
 		"rows":      len(records),
 		"objects":   dmlTraceObjectNames(records),
 	})
-	backup := cloneRuntimeOrgState(*vm.Org)
+	var backup storage.OrgState
+	if allOrNone {
+		backup = cloneRuntimeOrgState(*vm.Org)
+	}
 	engine := vm.newDMLEngine(result)
 	var results []dml.Result
 	switch op {
@@ -12586,7 +12638,10 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 		"operation": "merge",
 		"rows":      len(recordsForChecks),
 	})
-	backup := cloneRuntimeOrgState(*vm.Org)
+	var backup storage.OrgState
+	if allOrNone {
+		backup = cloneRuntimeOrgState(*vm.Org)
+	}
 	masterBefore, err := vm.oldRecords("update", master)
 	if err != nil {
 		return Null, err
@@ -12934,7 +12989,18 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if err != nil {
 		return nil, err
 	}
-	backup := cloneRuntimeOrgState(*vm.Org)
+	var backup storage.OrgState
+	backupReady := false
+	ensureBackup := func() {
+		if backupReady {
+			return
+		}
+		backup = cloneRuntimeOrgState(*vm.Org)
+		backupReady = true
+	}
+	if allOrNone {
+		ensureBackup()
+	}
 	var beforeFailures []dml.Result
 	originalUpdateRecords := records
 	beforeTriggerRecords := records
@@ -12944,6 +13010,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if op != "undelete" {
 		beforeFailures, beforeTriggerRecords, err = vm.runTriggersByObject(triggerTimingBefore, op, beforeTriggerRecords, before, result)
 		if err != nil {
+			ensureBackup()
 			*vm.Org = backup
 			return nil, dmlExceptionFromTriggerError(op, err)
 		}
@@ -12964,6 +13031,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if hasDMLFailures(beforeFailures) {
 		appendDMLResultTrace(result, op, records, beforeFailures)
 		if allOrNone {
+			ensureBackup()
 			*vm.Org = backup
 			return beforeFailures, nil
 		}
@@ -12975,6 +13043,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if op == "insert" {
 		if err := vm.resolveSameBatchParentRelationships(records, targets); err != nil {
 			if allOrNone {
+				ensureBackup()
 				*vm.Org = backup
 			}
 			return nil, err
@@ -13009,6 +13078,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if allOrNone {
 		for _, dmlResult := range results {
 			if !dmlResult.Success {
+				ensureBackup()
 				*vm.Org = backup
 				return results, nil
 			}
@@ -13026,6 +13096,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		afterRecords, err = vm.afterRecords(op, afterInputRecords, afterInputResults)
 		if err != nil {
 			if allOrNone {
+				ensureBackup()
 				*vm.Org = backup
 			}
 			return results, err
@@ -13033,6 +13104,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		afterFailures, _, err := vm.runTriggersByObject(triggerTimingAfter, op, afterRecords, afterInputBefore, result)
 		if err != nil {
 			if allOrNone {
+				ensureBackup()
 				*vm.Org = backup
 			}
 			return nil, dmlExceptionFromTriggerError(op, err)
@@ -13040,10 +13112,12 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		if hasDMLFailures(afterFailures) {
 			results = mergeAfterTriggerDMLResults(results, afterFailures)
 			if allOrNone {
+				ensureBackup()
 				*vm.Org = backup
 				vm.clearDMLResultFieldsForFailures(targets, results)
 				return results, nil
 			}
+			ensureBackup()
 			vm.rollbackAfterTriggerFailures(op, afterRecords, afterFailures, backup)
 			afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 		}
@@ -13307,7 +13381,18 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		"operation": "upsert",
 		"rows":      len(records),
 	})
-	backup := cloneRuntimeOrgState(*vm.Org)
+	var backup storage.OrgState
+	backupReady := false
+	ensureBackup := func() {
+		if backupReady {
+			return
+		}
+		backup = cloneRuntimeOrgState(*vm.Org)
+		backupReady = true
+	}
+	if allOrNone {
+		ensureBackup()
+	}
 	kinds := make([]string, len(records))
 	before := make([]storage.Record, len(records))
 	for i, record := range records {
@@ -13338,6 +13423,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		}
 		failures, err := vm.runTriggers(triggerTimingBefore, kind, triggerRecords, groupBefore, result)
 		if err != nil {
+			ensureBackup()
 			*vm.Org = backup
 			return nil, dmlExceptionFromTriggerError("upsert", err)
 		}
@@ -13365,6 +13451,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 	}
 	if hasDMLFailures(beforeFailures) {
 		if allOrNone {
+			ensureBackup()
 			*vm.Org = backup
 			return beforeFailures, nil
 		}
@@ -13375,6 +13462,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 	}
 	if err := vm.resolveSameBatchParentRelationships(records, targets); err != nil {
 		if allOrNone {
+			ensureBackup()
 			*vm.Org = backup
 		}
 		return nil, err
@@ -13393,6 +13481,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 	if allOrNone {
 		for _, dmlResult := range results {
 			if !dmlResult.Success {
+				ensureBackup()
 				*vm.Org = backup
 				return results, nil
 			}
@@ -13408,6 +13497,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		afterRecords, err := vm.afterRecords(kind, groupRecords, groupResults)
 		if err != nil {
 			if allOrNone {
+				ensureBackup()
 				*vm.Org = backup
 			}
 			return results, err
@@ -13415,6 +13505,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		afterFailures, err := vm.runTriggers(triggerTimingAfter, kind, afterRecords, groupBefore, result)
 		if err != nil {
 			if allOrNone {
+				ensureBackup()
 				*vm.Org = backup
 			}
 			return nil, dmlExceptionFromTriggerError("upsert", err)
@@ -13426,10 +13517,12 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 				}
 			}
 			if allOrNone {
+				ensureBackup()
 				*vm.Org = backup
 				vm.clearDMLResultFieldsForFailures(targets, results)
 				return results, nil
 			}
+			ensureBackup()
 			vm.rollbackAfterTriggerFailures(kind, afterRecords, afterFailures, backup)
 			afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 		}
@@ -13691,6 +13784,7 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		if canonical, ok := storage.ResolveObjectName(*vm.Org, objectType); ok {
 			objectType = canonical
 			definition = vm.Org.Objects[canonical].Definition
+			definition = cloneDescribeObjectDefinition(definition)
 			storage.EnsureStandardObjectFields(&definition)
 		}
 	}
@@ -14727,7 +14821,7 @@ func cloneRuntimeOrgState(org storage.OrgState) storage.OrgState {
 			if object.Records != nil {
 				copied.Records = make(map[storage.ID]storage.Record, len(object.Records))
 				for id, record := range object.Records {
-					copied.Records[id] = record.Clone()
+					copied.Records[id] = cloneRuntimeSnapshotRecord(record)
 				}
 			}
 			if object.Indexes != nil {
@@ -14751,6 +14845,26 @@ func cloneRuntimeOrgState(org storage.OrgState) storage.OrgState {
 			out.Transactions[i] = transaction.Clone()
 		}
 	}
+	return out
+}
+
+func cloneRuntimeSnapshotRecord(record storage.Record) storage.Record {
+	out := record
+	if record.Fields != nil {
+		out.Fields = make(map[string]storage.Value, len(record.Fields))
+		for name, value := range record.Fields {
+			out.Fields[name] = value.Clone()
+		}
+	}
+	if record.ExplicitNulls != nil {
+		out.ExplicitNulls = make(map[string]bool, len(record.ExplicitNulls))
+		for name, value := range record.ExplicitNulls {
+			out.ExplicitNulls[name] = value
+		}
+	}
+	// Child relationship query projections are not mutated by storage DML and
+	// are expensive to deep-clone in large rollback snapshots.
+	out.Children = nil
 	return out
 }
 
@@ -18772,30 +18886,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 			return cached
 		}
 	}
-	definition = definition.Clone()
-	if definition.KeyPrefix == "" {
-		prefixName := definition.APIName
-		if canonical, ok := storage.ResolveKnownStandardObjectName(prefixName); ok {
-			prefixName = canonical
-		} else if canonical, ok := storage.ResolveKnownStandardObjectName(name); ok {
-			prefixName = canonical
-		}
-		if prefix := storage.StandardKeyPrefixes()[prefixName]; prefix != "" {
-			definition.KeyPrefix = prefix
-		} else {
-			definition.KeyPrefix = storage.AssignDeterministicPrefixes([]string{prefixName}, nil)[prefixName]
-		}
-	}
-	storage.EnsureStandardObjectFields(&definition)
-	if strings.EqualFold(definition.APIName, "Account") && len(definition.RecordTypes) == 0 {
-		storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
-	}
-	if strings.EqualFold(definition.APIName, "Account") && vm.Org != nil {
-		if personAccountName, ok := storage.ResolveObjectName(*vm.Org, "PersonAccount"); ok {
-			personAccount := vm.Org.Objects[personAccountName]
-			definition.RecordTypes = appendMissingRecordTypes(definition.RecordTypes, personAccount.Definition.RecordTypes)
-		}
-	}
+	definition = vm.describePreparedDefinition(name, definition)
 	desc := Object("Schema.DescribeSObjectResult")
 	desc.Fields["name"] = String(vm.describeObjectName(name))
 	desc.Fields["label"] = String(definition.Label)
@@ -18845,34 +18936,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	fields.Fields["map"] = fieldsMap
 	desc.Fields["fields"] = fields
 	desc.Fields["fieldSets"] = vm.fieldSetMapValue(name, definition)
-	childRelationships := make([]Value, 0)
-	if vm.Org != nil {
-		childObjects := make([]string, 0, len(vm.Org.Objects))
-		for childName := range vm.Org.Objects {
-			childObjects = append(childObjects, childName)
-		}
-		sort.Strings(childObjects)
-		for _, childName := range childObjects {
-			childDefinition := vm.Org.Objects[childName].Definition.Clone()
-			storage.EnsureStandardObjectFields(&childDefinition)
-			relationships := append([]storage.Relationship(nil), childDefinition.Relations...)
-			relationships = append(relationships, syntheticSystemParentRelationsForDefinition(childDefinition)...)
-			sort.Slice(relationships, func(i, j int) bool {
-				if relationships[i].ChildRelationship == relationships[j].ChildRelationship {
-					return relationships[i].Field < relationships[j].Field
-				}
-				return relationships[i].ChildRelationship < relationships[j].ChildRelationship
-			})
-			for _, relationship := range relationships {
-				if relationshipTargetsObject(relationship, name) {
-					if relationship.ChildRelationship == "" && canDeriveChildRelationshipName(relationship) {
-						relationship.ChildRelationship = derivedVMChildRelationshipName(childDefinition)
-					}
-					childRelationships = append(childRelationships, vm.childRelationshipValue(childName, relationship))
-				}
-			}
-		}
-	}
+	childRelationships := vm.describeChildRelationships(name)
 	desc.Fields["childRelationships"] = List(childRelationships...)
 	recordTypes := make([]Value, 0, len(definition.RecordTypes))
 	byName := Map()
@@ -18913,6 +18977,84 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	return desc
 }
 
+func (vm *VM) describePreparedDefinition(name string, definition storage.ObjectDefinition) storage.ObjectDefinition {
+	cacheKey := strings.ToLower(strings.TrimSpace(name))
+	if vm != nil && cacheKey != "" {
+		if vm.describeDefCache == nil {
+			vm.describeDefCache = make(map[string]storage.ObjectDefinition)
+		}
+		if cached, ok := vm.describeDefCache[cacheKey]; ok {
+			return cached
+		}
+	}
+	definition = cloneDescribeObjectDefinition(definition)
+	if definition.KeyPrefix == "" {
+		prefixName := definition.APIName
+		if canonical, ok := storage.ResolveKnownStandardObjectName(prefixName); ok {
+			prefixName = canonical
+		} else if canonical, ok := storage.ResolveKnownStandardObjectName(name); ok {
+			prefixName = canonical
+		}
+		if prefix := storage.StandardKeyPrefixes()[prefixName]; prefix != "" {
+			definition.KeyPrefix = prefix
+		} else {
+			definition.KeyPrefix = storage.AssignDeterministicPrefixes([]string{prefixName}, nil)[prefixName]
+		}
+	}
+	storage.EnsureStandardObjectFields(&definition)
+	if strings.EqualFold(definition.APIName, "Account") && len(definition.RecordTypes) == 0 {
+		storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
+	}
+	if strings.EqualFold(definition.APIName, "Account") && vm != nil && vm.Org != nil {
+		if personAccountName, ok := storage.ResolveObjectName(*vm.Org, "PersonAccount"); ok {
+			personAccount := vm.Org.Objects[personAccountName]
+			definition.RecordTypes = appendMissingRecordTypes(definition.RecordTypes, personAccount.Definition.RecordTypes)
+		}
+	}
+	if vm != nil && cacheKey != "" {
+		vm.describeDefCache[cacheKey] = definition
+	}
+	return definition
+}
+
+func cloneDescribeObjectDefinition(definition storage.ObjectDefinition) storage.ObjectDefinition {
+	out := definition
+	if definition.Fields != nil {
+		out.Fields = make(map[string]storage.Field, len(definition.Fields))
+		for name, field := range definition.Fields {
+			copied := field
+			copied.ReferenceTo = append([]string(nil), field.ReferenceTo...)
+			copied.PicklistValues = append([]storage.PicklistValue(nil), field.PicklistValues...)
+			out.Fields[name] = copied
+		}
+	}
+	if definition.Relations != nil {
+		out.Relations = append([]storage.Relationship(nil), definition.Relations...)
+		for i := range out.Relations {
+			out.Relations[i].ParentObjects = append([]string(nil), definition.Relations[i].ParentObjects...)
+		}
+	}
+	if definition.RecordTypes != nil {
+		out.RecordTypes = append([]storage.RecordTypeInfo(nil), definition.RecordTypes...)
+		for i := range out.RecordTypes {
+			if definition.RecordTypes[i].PicklistDefaults == nil {
+				continue
+			}
+			out.RecordTypes[i].PicklistDefaults = make(map[string]string, len(definition.RecordTypes[i].PicklistDefaults))
+			for fieldName, value := range definition.RecordTypes[i].PicklistDefaults {
+				out.RecordTypes[i].PicklistDefaults[fieldName] = value
+			}
+		}
+	}
+	if definition.Metadata != nil {
+		out.Metadata = make(map[string]string, len(definition.Metadata))
+		for key, value := range definition.Metadata {
+			out.Metadata[key] = value
+		}
+	}
+	return out
+}
+
 func (vm *VM) addSObjectFieldMapEntry(fieldsMap *Value, fieldName string, token Value) {
 	for _, alias := range vm.sObjectFieldMapAliases(fieldName) {
 		key := mapKey(String(alias))
@@ -18945,6 +19087,49 @@ func (vm *VM) sObjectFieldMapAliases(fieldName string) []string {
 		add(storage.StripNamespaceToken(vm.Org.Namespace, fieldName))
 	}
 	return aliases
+}
+
+func (vm *VM) describeChildRelationships(name string) []Value {
+	if vm == nil || vm.Org == nil {
+		return nil
+	}
+	target := strings.ToLower(strings.TrimSpace(name))
+	if target == "" {
+		return nil
+	}
+	if vm.childRelCache == nil {
+		vm.childRelCache = make(map[string][]Value)
+	}
+	if cached, ok := vm.childRelCache[target]; ok {
+		return append([]Value(nil), cached...)
+	}
+	childRelationships := make([]Value, 0)
+	childObjects := make([]string, 0, len(vm.Org.Objects))
+	for childName := range vm.Org.Objects {
+		childObjects = append(childObjects, childName)
+	}
+	sort.Strings(childObjects)
+	for _, childName := range childObjects {
+		childDefinition := vm.describePreparedDefinition(childName, vm.Org.Objects[childName].Definition)
+		relationships := append([]storage.Relationship(nil), childDefinition.Relations...)
+		relationships = append(relationships, syntheticSystemParentRelationsForDefinition(childDefinition)...)
+		sort.Slice(relationships, func(i, j int) bool {
+			if relationships[i].ChildRelationship == relationships[j].ChildRelationship {
+				return relationships[i].Field < relationships[j].Field
+			}
+			return relationships[i].ChildRelationship < relationships[j].ChildRelationship
+		})
+		for _, relationship := range relationships {
+			if relationshipTargetsObject(relationship, name) {
+				if relationship.ChildRelationship == "" && canDeriveChildRelationshipName(relationship) {
+					relationship.ChildRelationship = derivedVMChildRelationshipName(childDefinition)
+				}
+				childRelationships = append(childRelationships, vm.childRelationshipValue(childName, relationship))
+			}
+		}
+	}
+	vm.childRelCache[target] = append([]Value(nil), childRelationships...)
+	return childRelationships
 }
 
 func (vm *VM) schemaDescribeMapAliases(name string) []string {
@@ -21212,7 +21397,6 @@ func (vm *VM) assign(name string, value Value) error {
 						class := vm.Classes[owner]
 						class.StaticFields[memberName] = field
 						vm.Classes[owner] = class
-						vm.storeClassAliases(class)
 						vm.invalidateStaticValueRefsForChange(oldValue, value)
 						return nil
 					}
@@ -21231,7 +21415,6 @@ func (vm *VM) assign(name string, value Value) error {
 				class := vm.Classes[owner]
 				class.StaticFields[memberName] = field
 				vm.Classes[owner] = class
-				vm.storeClassAliases(class)
 				vm.invalidateStaticValueRefsForChange(oldValue, value)
 				return nil
 			}
@@ -21328,7 +21511,6 @@ func (vm *VM) assign(name string, value Value) error {
 					class := vm.Classes[owner]
 					class.StaticFields[name] = field
 					vm.Classes[owner] = class
-					vm.storeClassAliases(class)
 					vm.invalidateStaticValueRefsForChange(oldValue, value)
 					return nil
 				}
@@ -21347,7 +21529,6 @@ func (vm *VM) assign(name string, value Value) error {
 			class := vm.Classes[owner]
 			class.StaticFields[name] = field
 			vm.Classes[owner] = class
-			vm.storeClassAliases(class)
 			vm.invalidateStaticValueRefsForChange(oldValue, value)
 			return nil
 		}
@@ -32776,8 +32957,13 @@ func (vm *VM) propagateCollectionMutationToScope(scope map[string]Value, previou
 }
 
 func (vm *VM) propagateValueMutationToScope(scope map[string]Value, previous, updated Value) {
+	if sameAliasValue(previous, updated) {
+		return
+	}
+	seen := make(map[uint64]bool)
 	for name, value := range scope {
-		replaced, changed := replaceValueAlias(value, previous, updated, make(map[uint64]bool))
+		clearRefSeen(seen)
+		replaced, changed := replaceValueAlias(value, previous, updated, seen)
 		if changed {
 			scope[name] = replaced
 		}
@@ -32797,6 +32983,9 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 	if previous.Ref == 0 {
 		return
 	}
+	if sameAliasValue(previous, updated) {
+		return
+	}
 	if vm.staticValueRefs == nil {
 		vm.staticValueRefs = vm.collectStaticValueRefs()
 	}
@@ -32805,8 +32994,10 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 	}
 	for className, class := range vm.Classes {
 		changed := false
+		seen := make(map[uint64]bool)
 		for fieldName, field := range class.StaticFields {
-			replaced, fieldChanged := replaceValueAlias(field.Value, previous, updated, make(map[uint64]bool))
+			clearRefSeen(seen)
+			replaced, fieldChanged := replaceValueAlias(field.Value, previous, updated, seen)
 			if fieldChanged {
 				field.Value = replaced
 				class.StaticFields[fieldName] = field
@@ -32815,7 +33006,6 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 		}
 		if changed {
 			vm.Classes[className] = class
-			vm.storeClassAliases(class)
 			vm.rememberStaticValueRefs(updated)
 		}
 	}
@@ -32982,6 +33172,16 @@ func replaceValueAlias(value, previous, updated Value, seen map[uint64]bool) (Va
 
 func collectionAliasMatch(left, right Value) bool {
 	return valueAliasMatch(left, right)
+}
+
+func sameAliasValue(left, right Value) bool {
+	return valueAliasMatch(left, right) && left.Equal(right)
+}
+
+func clearRefSeen(seen map[uint64]bool) {
+	for ref := range seen {
+		delete(seen, ref)
+	}
 }
 
 func valueAliasMatch(left, right Value) bool {

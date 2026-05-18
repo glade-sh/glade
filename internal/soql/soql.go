@@ -37,6 +37,8 @@ type Query struct {
 
 var parsedQueryCache sync.Map
 
+const virtualSchemaHydrationStampKey = "__oaer_virtual_schema_hydration_stamp"
+
 func cachedParsedQuery(input string, now time.Time) (Query, bool) {
 	value, ok := parsedQueryCache.Load(parsedQueryCacheKey(input, now))
 	if !ok {
@@ -243,6 +245,10 @@ func hydrateVirtualSchemaObjects(org *storage.OrgState) {
 	if org == nil {
 		return
 	}
+	stamp := virtualSchemaHydrationStamp(*org)
+	if virtualSchemaAlreadyHydrated(*org, stamp) {
+		return
+	}
 	for _, objectName := range []string{"EntityDefinition", "EntityParticle", "RelationshipDomain", "UserEntityAccess", "UserFieldAccess"} {
 		storage.EnsureStandardObject(org, objectName)
 	}
@@ -312,12 +318,60 @@ func hydrateVirtualSchemaObjects(org *storage.OrgState) {
 	org.Objects["RelationshipDomain"] = relationshipDomains
 	org.Objects["UserEntityAccess"] = userEntityAccess
 	org.Objects["UserFieldAccess"] = userFieldAccess
+	setVirtualSchemaHydrationStamp(org, stamp)
+}
+
+func virtualSchemaHydrationStamp(org storage.OrgState) string {
+	objectCount := 0
+	fieldCount := 0
+	for objectName, object := range org.Objects {
+		if isVirtualSchemaObjectName(objectName) || isUserAccessVirtualSchemaObjectName(objectName) {
+			continue
+		}
+		if object.Definition.APIName == "" {
+			continue
+		}
+		objectCount++
+		fieldCount += len(object.Definition.Fields)
+	}
+	return strconv.Itoa(objectCount) + ":" + strconv.Itoa(fieldCount)
+}
+
+func virtualSchemaAlreadyHydrated(org storage.OrgState, stamp string) bool {
+	entityDefinitions, ok := org.Objects["EntityDefinition"]
+	if !ok {
+		return false
+	}
+	if entityDefinitions.Definition.Metadata == nil {
+		return false
+	}
+	return entityDefinitions.Definition.Metadata[virtualSchemaHydrationStampKey] == stamp
+}
+
+func setVirtualSchemaHydrationStamp(org *storage.OrgState, stamp string) {
+	if org == nil {
+		return
+	}
+	entityDefinitions, ok := org.Objects["EntityDefinition"]
+	if !ok {
+		return
+	}
+	if entityDefinitions.Definition.Metadata == nil {
+		entityDefinitions.Definition.Metadata = make(map[string]string)
+	}
+	entityDefinitions.Definition.Metadata[virtualSchemaHydrationStampKey] = stamp
+	org.Objects["EntityDefinition"] = entityDefinitions
 }
 
 func isVirtualSchemaObjectName(objectName string) bool {
 	return strings.EqualFold(objectName, "EntityDefinition") ||
 		strings.EqualFold(objectName, "EntityParticle") ||
 		strings.EqualFold(objectName, "RelationshipDomain")
+}
+
+func isUserAccessVirtualSchemaObjectName(objectName string) bool {
+	return strings.EqualFold(objectName, "UserEntityAccess") ||
+		strings.EqualFold(objectName, "UserFieldAccess")
 }
 
 func virtualEntityDefinitionRecord(definition storage.ObjectDefinition) storage.Record {

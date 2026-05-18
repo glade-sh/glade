@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/pprof"
 	"sort"
 	"strings"
 	"sync"
@@ -42,6 +43,9 @@ type LocalTestOptions struct {
 	MaxFailureGroups    int
 	ChangedSince        string
 	ParallelMethods     bool
+	CPUProfilePath      string
+	MemProfilePath      string
+	PerfJSONPath        string
 }
 
 type LocalTestPhaseTiming struct {
@@ -64,6 +68,26 @@ type LocalTestReport struct {
 	Outcomes        []LocalTestOutcome       `json:"outcomes"`
 	TopFailures     []LocalTestFailureGroup  `json:"topFailures,omitempty"`
 	Diagnostics     []diagnostic.Diagnostic  `json:"diagnostics,omitempty"`
+	Perf            *LocalTestPerfSummary    `json:"perf,omitempty"`
+}
+
+type LocalTestPerfSummary struct {
+	GeneratedAt     string                 `json:"generatedAt"`
+	Project         string                 `json:"project"`
+	DurationMS      int64                  `json:"durationMs"`
+	CasesDiscovered int                    `json:"casesDiscovered"`
+	CasesRun        int                    `json:"casesRun"`
+	Summary         LocalTestSummary       `json:"summary"`
+	Phases          []LocalTestPhaseTiming `json:"phases,omitempty"`
+	TopSlowClasses  []LocalTestPerfClass   `json:"topSlowClasses,omitempty"`
+	CPUProfilePath  string                 `json:"cpuProfilePath,omitempty"`
+	MemProfilePath  string                 `json:"memProfilePath,omitempty"`
+}
+
+type LocalTestPerfClass struct {
+	Class      string `json:"class"`
+	DurationMS int64  `json:"durationMs"`
+	Tests      int    `json:"tests"`
 }
 
 type LocalTestSummary struct {
@@ -152,6 +176,15 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		Target:  "local Apex test execution readiness",
 		Project: absRoot,
 	}
+	stopProfile, err := startLocalTestProfiler(options)
+	if err != nil {
+		return LocalTestReport{}, err
+	}
+	defer func() {
+		if stopProfile != nil {
+			_ = stopProfile()
+		}
+	}()
 	projectLabel := filepath.Base(absRoot)
 	if projectLabel == "." || projectLabel == string(filepath.Separator) {
 		projectLabel = absRoot
@@ -171,6 +204,15 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		report.Diagnostics = loadDiagnostics
 		report.Outcomes = append(report.Outcomes, outcome)
 		finalizeLocalTestReport(&report, options, started)
+		if stopProfile != nil {
+			if stopErr := stopProfile(); stopErr != nil {
+				return LocalTestReport{}, stopErr
+			}
+			stopProfile = nil
+		}
+		if err := maybeWriteLocalTestPerfJSON(report, options); err != nil {
+			return LocalTestReport{}, err
+		}
 		return report, nil
 	}
 	options, err = loadLocalTestClassFile(options)
@@ -184,6 +226,15 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		}
 		report.Outcomes = append(report.Outcomes, outcome)
 		finalizeLocalTestReport(&report, options, started)
+		if stopProfile != nil {
+			if stopErr := stopProfile(); stopErr != nil {
+				return LocalTestReport{}, stopErr
+			}
+			stopProfile = nil
+		}
+		if err := maybeWriteLocalTestPerfJSON(report, options); err != nil {
+			return LocalTestReport{}, err
+		}
 		return report, nil
 	}
 	report.Dependencies = append(report.Dependencies, index.Dependencies...)
@@ -222,6 +273,15 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 				report.Outcomes = append(report.Outcomes, localTestDiagnosticOutcome(projectLabel, testCase, "compile_gap", "compile", firstError))
 			}
 			finalizeLocalTestReport(&report, options, started)
+			if stopProfile != nil {
+				if stopErr := stopProfile(); stopErr != nil {
+					return LocalTestReport{}, stopErr
+				}
+				stopProfile = nil
+			}
+			if err := maybeWriteLocalTestPerfJSON(report, options); err != nil {
+				return LocalTestReport{}, err
+			}
 			return report, nil
 		}
 	} else if strings.TrimSpace(options.Class) == "" && strings.TrimSpace(options.Method) == "" {
@@ -238,7 +298,130 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 	report.TriageStopped = triageStopped
 	recordLocalTestPhase(&report, options, "run_done", started)
 	finalizeLocalTestReport(&report, options, started)
+	if stopProfile != nil {
+		if stopErr := stopProfile(); stopErr != nil {
+			return LocalTestReport{}, stopErr
+		}
+		stopProfile = nil
+	}
+	if err := maybeWriteLocalTestPerfJSON(report, options); err != nil {
+		return LocalTestReport{}, err
+	}
 	return report, nil
+}
+
+func startLocalTestProfiler(options LocalTestOptions) (func() error, error) {
+	if strings.TrimSpace(options.CPUProfilePath) == "" && strings.TrimSpace(options.MemProfilePath) == "" {
+		return nil, nil
+	}
+	var cpuFile *os.File
+	if path := strings.TrimSpace(options.CPUProfilePath); path != "" {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			return nil, err
+		}
+		file, err := os.Create(path)
+		if err != nil {
+			return nil, err
+		}
+		if err := pprof.StartCPUProfile(file); err != nil {
+			_ = file.Close()
+			return nil, err
+		}
+		cpuFile = file
+	}
+	return func() error {
+		if cpuFile != nil {
+			pprof.StopCPUProfile()
+			if err := cpuFile.Close(); err != nil {
+				return err
+			}
+		}
+		if path := strings.TrimSpace(options.MemProfilePath); path != "" {
+			runtime.GC()
+			if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+				return err
+			}
+			file, err := os.Create(path)
+			if err != nil {
+				return err
+			}
+			if err := pprof.WriteHeapProfile(file); err != nil {
+				_ = file.Close()
+				return err
+			}
+			if err := file.Close(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}, nil
+}
+
+func maybeWriteLocalTestPerfJSON(report LocalTestReport, options LocalTestOptions) error {
+	if strings.TrimSpace(options.PerfJSONPath) == "" {
+		return nil
+	}
+	perf := localTestPerfSummary(report, options)
+	if err := os.MkdirAll(filepath.Dir(options.PerfJSONPath), 0o755); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(perf, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(options.PerfJSONPath, append(data, '\n'), 0o644)
+}
+
+func localTestPerfSummary(report LocalTestReport, options LocalTestOptions) LocalTestPerfSummary {
+	perf := LocalTestPerfSummary{
+		GeneratedAt:     time.Now().UTC().Format(time.RFC3339),
+		Project:         report.Project,
+		DurationMS:      report.DurationMS,
+		CasesDiscovered: report.CasesDiscovered,
+		CasesRun:        report.CasesRun,
+		Summary:         report.Summary,
+		Phases:          append([]LocalTestPhaseTiming(nil), report.Phases...),
+		CPUProfilePath:  strings.TrimSpace(options.CPUProfilePath),
+		MemProfilePath:  strings.TrimSpace(options.MemProfilePath),
+	}
+	perf.TopSlowClasses = localTestTopSlowClasses(report.Outcomes, 15)
+	return perf
+}
+
+func localTestTopSlowClasses(outcomes []LocalTestOutcome, limit int) []LocalTestPerfClass {
+	if limit <= 0 {
+		return nil
+	}
+	totals := map[string]*LocalTestPerfClass{}
+	for _, outcome := range outcomes {
+		if strings.TrimSpace(outcome.Class) == "" {
+			continue
+		}
+		entry := totals[outcome.Class]
+		if entry == nil {
+			entry = &LocalTestPerfClass{Class: outcome.Class}
+			totals[outcome.Class] = entry
+		}
+		entry.DurationMS += outcome.DurationMS
+		entry.Tests++
+	}
+	if len(totals) == 0 {
+		return nil
+	}
+	classes := make([]LocalTestPerfClass, 0, len(totals))
+	for _, entry := range totals {
+		classes = append(classes, *entry)
+	}
+	sort.Slice(classes, func(i, j int) bool {
+		if classes[i].DurationMS == classes[j].DurationMS {
+			return classes[i].Class < classes[j].Class
+		}
+		return classes[i].DurationMS > classes[j].DurationMS
+	})
+	if len(classes) > limit {
+		classes = classes[:limit]
+	}
+	return classes
 }
 
 func reportLocalTestPhase(options LocalTestOptions, event string, started time.Time) {

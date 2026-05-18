@@ -6,6 +6,8 @@ import (
 	"sync"
 )
 
+const standardFieldsOverlayMarker = "__oaer_standard_fields_overlay"
+
 // EnsureStandardObjectFields adds public Salesforce standard fields for objects
 // whose project metadata commonly only carries custom-field deltas.
 func EnsureStandardObjectFields(definition *ObjectDefinition) {
@@ -16,6 +18,10 @@ func EnsureStandardObjectFields(definition *ObjectDefinition) {
 // plus feature-gated standard fields and record types for enabled org features.
 func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, features []string) {
 	if definition == nil {
+		return
+	}
+	featureSignature := canonicalFeatureSignature(features)
+	if standardFieldsOverlayApplied(*definition, featureSignature) {
 		return
 	}
 	stateAndCountryPicklistEnabled := hasCanonicalFeature(features, "StateAndCountryPicklist")
@@ -48,6 +54,51 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	for _, field := range definition.Fields {
 		ensureStandardRelationship(definition, field)
 	}
+	markStandardFieldsOverlay(definition, featureSignature)
+}
+
+func standardFieldsOverlayApplied(definition ObjectDefinition, featureSignature string) bool {
+	if definition.Metadata == nil {
+		return false
+	}
+	return definition.Metadata[standardFieldsOverlayMarker] == featureSignature
+}
+
+func markStandardFieldsOverlay(definition *ObjectDefinition, featureSignature string) {
+	if definition == nil {
+		return
+	}
+	if definition.Metadata == nil {
+		definition.Metadata = make(map[string]string)
+	}
+	definition.Metadata[standardFieldsOverlayMarker] = featureSignature
+}
+
+func canonicalFeatureSignature(features []string) string {
+	if len(features) == 0 {
+		return ""
+	}
+	normalized := make([]string, 0, len(features))
+	for _, feature := range features {
+		feature = canonicalFeatureName(feature)
+		if feature != "" {
+			normalized = append(normalized, feature)
+		}
+	}
+	if len(normalized) == 0 {
+		return ""
+	}
+	sort.Strings(normalized)
+	out := normalized[:0]
+	last := ""
+	for _, feature := range normalized {
+		if feature == last {
+			continue
+		}
+		out = append(out, feature)
+		last = feature
+	}
+	return strings.Join(out, ",")
 }
 
 func ensureCoreSystemFields(definition *ObjectDefinition) {
