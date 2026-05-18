@@ -31,6 +31,7 @@ type Engine struct {
 	uniqueFieldMap map[string]bool
 	activeValRules map[string]bool
 	uniqueFields   map[string][]string
+	summaryByChild map[string][]summaryRelation
 }
 
 type Options struct {
@@ -72,6 +73,13 @@ type deleteContext struct {
 	referenceIndex     map[string]map[storage.ID][]storage.ID
 }
 
+type summaryRelation struct {
+	parentObject string
+	parentField  string
+	field        storage.Field
+	fkFieldName  string
+}
+
 func NewEngine(org *storage.OrgState) Engine {
 	prefixes := make(map[string]string, len(org.Objects))
 	for name, object := range org.Objects {
@@ -90,6 +98,7 @@ func NewEngine(org *storage.OrgState) Engine {
 		uniqueFieldMap: make(map[string]bool),
 		activeValRules: make(map[string]bool),
 		uniqueFields:   make(map[string][]string),
+		summaryByChild: make(map[string][]summaryRelation),
 	}
 }
 
@@ -3279,8 +3288,60 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 	if !ok {
 		canonicalChild = childObjectName
 	}
-	for parentObjectName, parentObject := range e.Org.Objects {
+	relations := e.summaryRelationsForChild(canonicalChild)
+	if len(relations) == 0 {
+		return
+	}
+	for _, relation := range relations {
+		parentObjectName := relation.parentObject
+		parentObject, ok := e.Org.Objects[parentObjectName]
+		if !ok {
+			continue
+		}
 		changed := false
+		parentIDs := summaryParentIDs(childRecords, relation.fkFieldName)
+		for parentID := range parentIDs {
+			storedParentID, parentRecord, ok := storage.LookupRecordByID(parentObject.Records, parentID)
+			if !ok || parentRecord.System.IsDeleted {
+				continue
+			}
+			value, ok := e.evaluateSummaryField(parentRecord, relation.field)
+			if !ok {
+				continue
+			}
+			oldValue, ok := parentRecord.Fields[relation.parentField]
+			if !ok {
+				oldValue = storage.NullValue()
+			}
+			if storageValuesEqual(relation.field, oldValue, value) {
+				continue
+			}
+			beforeParent := parentRecord.Clone()
+			if parentRecord.Fields == nil {
+				parentRecord.Fields = make(map[string]storage.Value)
+			}
+			parentRecord.Fields[relation.parentField] = value
+			parentObject.Records[storedParentID] = parentRecord
+			if recordTriggerUpdates {
+				e.recordSummaryUpdate(parentObjectName, beforeParent, parentRecord)
+			}
+			changed = true
+		}
+		if changed {
+			e.Org.Objects[parentObjectName] = parentObject
+		}
+	}
+}
+
+func (e *Engine) summaryRelationsForChild(childObjectName string) []summaryRelation {
+	if e == nil || e.Org == nil || strings.TrimSpace(childObjectName) == "" {
+		return nil
+	}
+	if relations, ok := e.summaryByChild[childObjectName]; ok {
+		return relations
+	}
+	relations := make([]summaryRelation, 0)
+	for parentObjectName, parentObject := range e.Org.Objects {
 		for parentFieldName, field := range parentObject.Definition.Fields {
 			if field.Type != storage.FieldSummary {
 				continue
@@ -3298,47 +3359,24 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 			if !ok {
 				resolvedSummaryChild = summaryChild
 			}
-			if !strings.EqualFold(resolvedSummaryChild, canonicalChild) {
+			if !strings.EqualFold(resolvedSummaryChild, childObjectName) {
 				continue
 			}
-			childObject := e.Org.Objects[canonicalChild]
+			childObject := e.Org.Objects[resolvedSummaryChild]
 			fkFieldName, ok := storage.ResolveFieldName(childObject.Definition, e.Org.Namespace, fkField)
 			if !ok {
 				continue
 			}
-			parentIDs := summaryParentIDs(childRecords, fkFieldName)
-			for parentID := range parentIDs {
-				storedParentID, parentRecord, ok := storage.LookupRecordByID(parentObject.Records, parentID)
-				if !ok || parentRecord.System.IsDeleted {
-					continue
-				}
-				value, ok := e.evaluateSummaryField(parentRecord, field)
-				if !ok {
-					continue
-				}
-				oldValue, ok := parentRecord.Fields[parentFieldName]
-				if !ok {
-					oldValue = storage.NullValue()
-				}
-				if storageValuesEqual(field, oldValue, value) {
-					continue
-				}
-				beforeParent := parentRecord.Clone()
-				if parentRecord.Fields == nil {
-					parentRecord.Fields = make(map[string]storage.Value)
-				}
-				parentRecord.Fields[parentFieldName] = value
-				parentObject.Records[storedParentID] = parentRecord
-				if recordTriggerUpdates {
-					e.recordSummaryUpdate(parentObjectName, beforeParent, parentRecord)
-				}
-				changed = true
-			}
-		}
-		if changed {
-			e.Org.Objects[parentObjectName] = parentObject
+			relations = append(relations, summaryRelation{
+				parentObject: parentObjectName,
+				parentField:  parentFieldName,
+				field:        field,
+				fkFieldName:  fkFieldName,
+			})
 		}
 	}
+	e.summaryByChild[childObjectName] = relations
+	return relations
 }
 
 func (e *Engine) recordSummaryUpdate(objectName string, before, after storage.Record) {
