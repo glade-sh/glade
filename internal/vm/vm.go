@@ -31157,6 +31157,11 @@ func (vm *VM) generatedUnsupportedFamilyExplicitMethodDefault(method Method, rec
 		"cartextension.ordergraph.getorderitems",
 		"cartextension.ordergraph.getorderitemtaxlineitems":
 		return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), true
+	case "cartextension.placeorderresponse.success":
+		value := Object("CartExtension.PlaceOrderResponse")
+		value.Fields["delegate"] = Null
+		value.Fields["status"] = String("Success")
+		return value, true
 	default:
 		return Null, false
 	}
