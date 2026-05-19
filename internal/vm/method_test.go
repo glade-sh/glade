@@ -6223,6 +6223,9 @@ func TestExecSystemAssertEqualsUsesApexEqualsOverride(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(new EqualBox(), new EqualBox());
 System.assertNotEquals(new DistinctBox(), new DistinctBox());
+Set<EqualBox> boxes = new Set<EqualBox>{new EqualBox()};
+System.assertEquals(true, boxes.remove(new EqualBox()));
+System.assertEquals(0, boxes.size());
 `)
 	if err != nil {
 		t.Fatal(err)

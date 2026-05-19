@@ -29681,6 +29681,24 @@ func collectionMembers(value Value) []Value {
 	}
 }
 
+func (vm *VM) collectionContainsValue(values []Value, needle Value, result *Result) (bool, error) {
+	index, err := vm.collectionIndexOfValue(values, needle, result)
+	return index >= 0, err
+}
+
+func (vm *VM) collectionIndexOfValue(values []Value, needle Value, result *Result) (int, error) {
+	for i, value := range values {
+		equal, err := vm.apexEquals(value, needle, result)
+		if err != nil {
+			return -1, err
+		}
+		if equal {
+			return i, nil
+		}
+	}
+	return -1, nil
+}
+
 func (vm *VM) iterableCollectionMembers(value Value, result *Result, context string) ([]Value, error) {
 	switch value.Kind {
 	case ValueList, ValueSet:
@@ -33383,17 +33401,20 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			if len(args) != 1 {
 				return Null, true, fmt.Errorf("List.contains expects 1 argument")
 			}
-			return Bool(containsValue(receiver.List, args[0])), true, nil
+			contains, err := vm.collectionContainsValue(receiver.List, args[0], result)
+			if err != nil {
+				return Null, true, err
+			}
+			return Bool(contains), true, nil
 		case "indexOf":
 			if len(args) != 1 {
 				return Null, true, fmt.Errorf("List.indexOf expects 1 argument")
 			}
-			for i, value := range receiver.List {
-				if value.Equal(args[0]) {
-					return Int(int64(i)), true, nil
-				}
+			i, err := vm.collectionIndexOfValue(receiver.List, args[0], result)
+			if err != nil {
+				return Null, true, err
 			}
-			return Int(-1), true, nil
+			return Int(int64(i)), true, nil
 		case "clone":
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("List.clone expects 0 arguments")
@@ -33497,7 +33518,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			if err != nil {
 				return Null, true, fmt.Errorf("Set.add: %w", err)
 			}
-			if !containsValue(receiver.Set, item) {
+			contains, err := vm.collectionContainsValue(receiver.Set, item, result)
+			if err != nil {
+				return Null, true, err
+			}
+			if !contains {
 				receiver.Set = append(receiver.Set, item)
 				if err := vm.storeReceiver(receiverName, receiver); err != nil {
 					return Null, true, err
@@ -33521,7 +33546,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				if err != nil {
 					return Null, true, fmt.Errorf("Set.addAll: %w", err)
 				}
-				if !containsValue(receiver.Set, item) {
+				contains, err := vm.collectionContainsValue(receiver.Set, item, result)
+				if err != nil {
+					return Null, true, err
+				}
+				if !contains {
 					receiver.Set = append(receiver.Set, item)
 					changed = true
 				}
@@ -33547,13 +33576,21 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			if len(args) != 1 {
 				return Null, true, fmt.Errorf("Set.contains expects 1 argument")
 			}
-			return Bool(containsValue(receiver.Set, args[0])), true, nil
+			contains, err := vm.collectionContainsValue(receiver.Set, args[0], result)
+			if err != nil {
+				return Null, true, err
+			}
+			return Bool(contains), true, nil
 		case "containsAll":
 			if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
 				return Null, true, fmt.Errorf("Set.containsAll expects List or Set")
 			}
 			for _, value := range collectionMembers(args[0]) {
-				if !containsValue(receiver.Set, value) {
+				contains, err := vm.collectionContainsValue(receiver.Set, value, result)
+				if err != nil {
+					return Null, true, err
+				}
+				if !contains {
 					return Bool(false), true, nil
 				}
 			}
@@ -33562,14 +33599,16 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			if len(args) != 1 {
 				return Null, true, fmt.Errorf("Set.remove expects 1 argument")
 			}
-			for i, value := range receiver.Set {
-				if value.Equal(args[0]) {
-					receiver.Set = append(receiver.Set[:i], receiver.Set[i+1:]...)
-					if err := vm.storeReceiver(receiverName, receiver); err != nil {
-						return Null, true, err
-					}
-					return Bool(true), true, nil
+			i, err := vm.collectionIndexOfValue(receiver.Set, args[0], result)
+			if err != nil {
+				return Null, true, err
+			}
+			if i >= 0 {
+				receiver.Set = append(receiver.Set[:i], receiver.Set[i+1:]...)
+				if err := vm.storeReceiver(receiverName, receiver); err != nil {
+					return Null, true, err
 				}
+				return Bool(true), true, nil
 			}
 			return Bool(false), true, nil
 		case "clear":
@@ -33589,7 +33628,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			out := receiver.Set[:0]
 			remove := collectionMembers(args[0])
 			for _, value := range receiver.Set {
-				if containsValue(remove, value) {
+				contains, err := vm.collectionContainsValue(remove, value, result)
+				if err != nil {
+					return Null, true, err
+				}
+				if contains {
 					changed = true
 					continue
 				}
@@ -33610,7 +33653,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			keep := collectionMembers(args[0])
 			out := receiver.Set[:0]
 			for _, value := range receiver.Set {
-				if containsValue(keep, value) {
+				contains, err := vm.collectionContainsValue(keep, value, result)
+				if err != nil {
+					return Null, true, err
+				}
+				if contains {
 					out = append(out, value)
 					continue
 				}
