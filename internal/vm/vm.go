@@ -5557,6 +5557,9 @@ platformStaticCall:
 		if strings.HasPrefix(callee, "Crypto.") {
 			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
 		}
+		if vm.generatedPassiveUnsupportedStaticCallee(callee, args) {
+			return Null, newExceptionError("UnsupportedOperationException", callee+" local stub surface")
+		}
 		if generatedFamilyUnsupportedStaticCallee(callee) {
 			return Null, newExceptionError("UnsupportedOperationException", callee+" local stub surface")
 		}
@@ -31094,7 +31097,7 @@ func generatedFamilyUnsupportedStaticCallee(callee string) bool {
 }
 
 func generatedFamilyUnsupportedTypePrefix(typeName string) bool {
-	trimmed := strings.TrimSpace(typeName)
+	trimmed := strings.ToLower(strings.TrimSpace(typeName))
 	if trimmed == "" {
 		return false
 	}
@@ -31112,6 +31115,21 @@ func generatedFamilyUnsupportedTypePrefix(typeName string) bool {
 		}
 	}
 	return false
+}
+
+func (vm *VM) generatedPassiveUnsupportedStaticCallee(callee string, args []Value) bool {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok {
+		return false
+	}
+	if !generatedFamilyUnsupportedTypePrefix(className) {
+		return false
+	}
+	method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, true)
+	if !ok {
+		return false
+	}
+	return passiveGeneratedMethod(method)
 }
 
 func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value, receiver Value) Value {

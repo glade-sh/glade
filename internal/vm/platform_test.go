@@ -9,6 +9,65 @@ import (
 	"github.com/open-aer/oaer/internal/storage"
 )
 
+func TestGeneratedFamilyUnsupportedTypePrefixIsCaseInsensitive(t *testing.T) {
+	cases := []struct {
+		typeName string
+		want     bool
+	}{
+		{typeName: "Messaging.ActionResult.Builder", want: true},
+		{typeName: "metadata.CustomMetadata", want: true},
+		{typeName: "Cache.OrgPartition", want: true},
+		{typeName: "ConnectApi.ChatterFeeds", want: false},
+		{typeName: "Database.QueryLocator", want: false},
+	}
+	for _, tc := range cases {
+		if got := generatedFamilyUnsupportedTypePrefix(tc.typeName); got != tc.want {
+			t.Fatalf("generatedFamilyUnsupportedTypePrefix(%q)=%v want %v", tc.typeName, got, tc.want)
+		}
+	}
+}
+
+func TestGeneratedPassiveUnsupportedStaticFamilyMethodThrowsUnsupportedOperation(t *testing.T) {
+	machine := New(nil)
+	callee, ok := findPassiveGeneratedStaticFamilyCalleeForTest(machine)
+	if !ok {
+		t.Skip("no passive-generated static family callee with zero arguments found")
+	}
+	_, err := machine.call(callee, nil, nil, &Result{})
+	if err == nil {
+		t.Fatalf("expected %s to throw UnsupportedOperationException", callee)
+	}
+	if !strings.Contains(err.Error(), "UnsupportedOperationException") {
+		t.Fatalf("expected UnsupportedOperationException, got %v", err)
+	}
+	if !strings.Contains(err.Error(), callee+" local stub surface") {
+		t.Fatalf("expected local stub surface message for %s, got %v", callee, err)
+	}
+}
+
+func findPassiveGeneratedStaticFamilyCalleeForTest(vm *VM) (string, bool) {
+	for className, methodsByName := range generatedPlatformMethodIndex {
+		if !generatedFamilyUnsupportedTypePrefix(className) {
+			continue
+		}
+		for _, methods := range methodsByName {
+			for _, method := range methods {
+				if !method.IsStatic || len(method.Params) != 0 || !passiveGeneratedMethod(method) {
+					continue
+				}
+				if method.ClassName == "" {
+					method.ClassName = className
+				}
+				if !vm.generatedPlatformMethodAllowsDefault(method) {
+					continue
+				}
+				return method.ClassName + "." + apexMethodMemberName(method.Name), true
+			}
+		}
+	}
+	return "", false
+}
+
 func TestExecLimitsCountersAndPermissiveViolations(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(0, Limits.getQueries());
