@@ -1927,6 +1927,75 @@ func TestExecuteEvaluatesDateFormulaOverrideFieldsInWhere(t *testing.T) {
 	}
 }
 
+func TestExecuteSupportsFromRelationshipAlias(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "CartItem__c",
+			Fields: map[string]storage.Field{
+				"Cart__c": {APIName: "Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"Cart__c"}, RelationshipName: "Cart__r"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {
+				ID:     "a00000000000001",
+				Object: "CartItem__c",
+				Fields: map[string]storage.Value{
+					"Cart__c": storage.IDValue("a01000000000001"),
+				},
+			},
+		},
+	}
+	org.Objects["Cart__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Cart__c",
+			Fields: map[string]storage.Field{
+				"BillTo__c": {APIName: "BillTo__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "BillTo__r"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {
+				ID:     "a01000000000001",
+				Object: "Cart__c",
+				Fields: map[string]storage.Value{
+					"BillTo__c": storage.IDValue("001000000000001"),
+				},
+			},
+		},
+	}
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"TaxExempt__c": {APIName: "TaxExempt__c", Type: storage.FieldBoolean},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {
+				ID:     "001000000000001",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"TaxExempt__c": storage.BooleanValue(true),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, `SELECT BillTo.Id, BillTo.TaxExempt__c FROM CartItem__c, CartItem__c.Cart__r.BillTo__r BillTo WHERE Cart__c = 'a01000000000001'`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d, want 1", result.Rows)
+	}
+	if got := result.Records[0].Fields["Cart__r.BillTo__r.Id"].ID; got != "001000000000001" {
+		t.Fatalf("aliased parent id = %s fields=%#v", got, result.Records[0].Fields)
+	}
+	if got := result.Records[0].Fields["Cart__r.BillTo__r.TaxExempt__c"].Boolean; !got {
+		t.Fatalf("aliased parent TaxExempt__c = %v", got)
+	}
+}
+
 func TestExecuteEvaluatesParentFormulaField(t *testing.T) {
 	org := storage.NewOrgState()
 	batchDefinition := storage.ObjectDefinition{

@@ -2021,6 +2021,9 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 				continue
 			}
 			parent.Object = canonicalParent
+			if strings.Contains(parts[1], ".") {
+				return relationshipValue(org, parent, parts[1])
+			}
 			value, ok := recordValue(org, parentObject.Definition, parent, parts[1])
 			if !ok {
 				return storage.NullValue(), true
@@ -2042,6 +2045,9 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 			return storage.NullValue(), true
 		}
 		parent.Object = parentObjectName
+		if strings.Contains(parts[1], ".") {
+			return relationshipValue(org, parent, parts[1])
+		}
 		value, ok := recordValue(org, parentObject.Definition, parent, parts[1])
 		if !ok {
 			return storage.NullValue(), true
@@ -2978,6 +2984,13 @@ func (p *parser) parseQuery() (Query, error) {
 	if err != nil {
 		return Query{}, err
 	}
+	relationshipAliases, err := p.parseRelationshipAliases(object)
+	if err != nil {
+		return Query{}, err
+	}
+	if len(relationshipAliases) != 0 {
+		fields = rewriteRelationshipAliasNames(fields, relationshipAliases)
+	}
 	aggregates, err := aggregateSpecs(fields)
 	if err != nil {
 		return Query{}, err
@@ -2989,6 +3002,9 @@ func (p *parser) parseQuery() (Query, error) {
 			condition, err := p.parseOrCondition()
 			if err != nil {
 				return Query{}, err
+			}
+			if len(relationshipAliases) != 0 {
+				rewriteRelationshipAliasCondition(&condition, relationshipAliases)
 			}
 			q.Where = &condition
 		case p.matchWord("GROUP"):
@@ -3005,6 +3021,9 @@ func (p *parser) parseQuery() (Query, error) {
 			groupBy, err := p.parseNameList()
 			if err != nil {
 				return Query{}, err
+			}
+			if len(relationshipAliases) != 0 {
+				groupBy = rewriteRelationshipAliasNames(groupBy, relationshipAliases)
 			}
 			if groupMode != "" && !p.match(")") {
 				return Query{}, p.errorf("expected ) after GROUP BY %s", groupMode)
@@ -3025,6 +3044,11 @@ func (p *parser) parseQuery() (Query, error) {
 			order, err := p.parseOrderList()
 			if err != nil {
 				return Query{}, err
+			}
+			if len(relationshipAliases) != 0 {
+				for i := range order {
+					order[i].Field = rewriteRelationshipAliasName(order[i].Field, relationshipAliases)
+				}
 			}
 			if len(order) == 0 {
 				return Query{}, p.errorf("expected ORDER BY field")
@@ -3072,6 +3096,86 @@ func (p *parser) parseQuery() (Query, error) {
 		return Query{}, err
 	}
 	return q, nil
+}
+
+func (p *parser) parseRelationshipAliases(rootObject string) (map[string]string, error) {
+	aliases := map[string]string(nil)
+	for p.match(",") {
+		path, err := p.parseName()
+		if err != nil {
+			return nil, err
+		}
+		path = trimRelationshipAliasRoot(path, rootObject)
+		if isSOQLClauseStart(p.peek().text) || p.peek().text == "" || p.peek().text == ")" || p.peek().text == "," {
+			continue
+		}
+		alias, err := p.parseName()
+		if err != nil {
+			return nil, err
+		}
+		if aliases == nil {
+			aliases = make(map[string]string)
+		}
+		aliases[alias] = path
+	}
+	return aliases, nil
+}
+
+func trimRelationshipAliasRoot(path, rootObject string) string {
+	prefix := strings.TrimSpace(rootObject) + "."
+	if len(path) > len(prefix) && strings.EqualFold(path[:len(prefix)], prefix) {
+		return path[len(prefix):]
+	}
+	return path
+}
+
+func isSOQLClauseStart(text string) bool {
+	switch strings.ToUpper(text) {
+	case "WHERE", "GROUP", "HAVING", "ORDER", "LIMIT", "OFFSET", "FOR", "ALL", "WITH":
+		return true
+	default:
+		return false
+	}
+}
+
+func rewriteRelationshipAliasNames(names []string, aliases map[string]string) []string {
+	if len(names) == 0 || len(aliases) == 0 {
+		return names
+	}
+	out := append([]string(nil), names...)
+	for i, name := range out {
+		out[i] = rewriteRelationshipAliasName(name, aliases)
+	}
+	return out
+}
+
+func rewriteRelationshipAliasName(name string, aliases map[string]string) string {
+	for alias, path := range aliases {
+		if strings.EqualFold(name, alias) {
+			return path
+		}
+		prefix := alias + "."
+		if len(name) > len(prefix) && strings.EqualFold(name[:len(prefix)], prefix) {
+			return path + name[len(alias):]
+		}
+	}
+	return name
+}
+
+func rewriteRelationshipAliasCondition(condition *Condition, aliases map[string]string) {
+	if condition == nil || len(aliases) == 0 {
+		return
+	}
+	condition.Field = rewriteRelationshipAliasName(condition.Field, aliases)
+	for i := range condition.And {
+		rewriteRelationshipAliasCondition(&condition.And[i], aliases)
+	}
+	for i := range condition.Or {
+		rewriteRelationshipAliasCondition(&condition.Or[i], aliases)
+	}
+	if condition.Subquery != nil {
+		condition.Subquery.Fields = rewriteRelationshipAliasNames(condition.Subquery.Fields, aliases)
+	}
 }
 
 func (p *parser) parseFields() ([]string, []ChildQuery, []TypeofSpec, error) {
