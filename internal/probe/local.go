@@ -105,7 +105,17 @@ func (l *LocalExecutor) CaptureLocal(probeIDs []string) (map[string]ProbeResult,
 	orderedTimings := make([]ProbeTiming, len(probeIDs))
 	for item := range out {
 		if item.err != nil {
-			return nil, nil, fmt.Errorf("probe %s: %w", item.id, item.err)
+			errType := "ExecutionError"
+			errMsg := item.err.Error()
+			results[item.id] = ProbeResult{
+				ProbeID:          item.id,
+				Category:         "Stub Contracts",
+				Result:           nil,
+				ExceptionType:    strPtr(errType),
+				ExceptionMessage: strPtr(errMsg),
+			}
+			orderedTimings[item.index] = item.timing
+			continue
 		}
 		results[item.id] = item.result
 		orderedTimings[item.index] = item.timing

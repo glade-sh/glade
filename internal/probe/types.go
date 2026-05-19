@@ -66,6 +66,7 @@ type Config struct {
 	Tier           string
 	GoldenCache    string
 	UseGoldenCache bool
+	GoldenExecutor string // rest (default) or sf
 }
 
 // Timing records elapsed time for a top-level probe runner phase.

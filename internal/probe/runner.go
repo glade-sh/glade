@@ -52,12 +52,27 @@ func Run(cfg Config) (*GapReport, error) {
 		report.RunMeta.GoldenSource = "cache"
 		fmt.Printf("Loaded %d golden responses from %s\n", len(golden), cachePath)
 	} else {
-		goldenExec := &SFDXExecutor{OrgAlias: cfg.OrgAlias}
-		golden, goldenTimings, err = goldenExec.CaptureGolden(cfg.ProbeDir, cfg.ProbeIDs)
+		executor := strings.TrimSpace(cfg.GoldenExecutor)
+		if executor == "" {
+			executor = "rest"
+		}
+		var orgShape map[string]interface{}
+		switch executor {
+		case "rest":
+			goldenExec := &RestExecutor{OrgAlias: cfg.OrgAlias}
+			golden, goldenTimings, err = goldenExec.CaptureGolden(cfg.ProbeDir, cfg.ProbeIDs)
+			orgShape = goldenExec.OrgShape
+		case "sf":
+			goldenExec := &SFDXExecutor{OrgAlias: cfg.OrgAlias}
+			golden, goldenTimings, err = goldenExec.CaptureGolden(cfg.ProbeDir, cfg.ProbeIDs)
+			orgShape = goldenExec.OrgShape
+		default:
+			return nil, fmt.Errorf("unknown golden executor %q (expected rest or sf)", executor)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("golden capture failed: %w", err)
 		}
-		report.OrgShape = goldenExec.OrgShape
+		report.OrgShape = orgShape
 		if err := validateOrgShape(report.OrgShape, cfg.ProbeIDs, cfg.Features); err != nil {
 			return nil, fmt.Errorf("org shape preflight failed: %w", err)
 		}

@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // Deployer handles deploying the probe SFDX project to a Salesforce org,
@@ -77,6 +78,18 @@ func (d *Deployer) ResetProbeData(ctx context.Context, w io.Writer) error {
 		return fmt.Errorf("seed data: %w", err)
 	}
 	fmt.Fprintln(w, "Data seeded.")
+	return nil
+}
+
+func (d *Deployer) ResetProbeDataWithTimeout(timeout time.Duration, w io.Writer) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	if err := d.ResetProbeData(ctx, w); err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return fmt.Errorf("reset probe data timed out after %s", timeout)
+		}
+		return err
+	}
 	return nil
 }
 

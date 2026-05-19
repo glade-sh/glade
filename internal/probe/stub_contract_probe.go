@@ -2,6 +2,7 @@ package probe
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -20,12 +21,17 @@ func stubContractProbeSpecByID(id string) (capability.StubContractProbeSpec, boo
 		stubContractProbeByID = map[string]capability.StubContractProbeSpec{}
 		const manifestPath = "docs/generated/STUB_CONTRACT_PROBE_MANIFEST.json"
 		data, err := os.ReadFile(manifestPath)
-		if err != nil {
-			return
+		specs := make([]capability.StubContractProbeSpec, 0)
+		if err == nil {
+			if err := json.Unmarshal(data, &specs); err != nil {
+				specs = nil
+			}
 		}
-		var specs []capability.StubContractProbeSpec
-		if err := json.Unmarshal(data, &specs); err != nil {
-			return
+		if len(specs) == 0 {
+			contracts, buildErr := capability.BuildStubContractReport("example-projects/stubs")
+			if buildErr == nil {
+				specs = capability.BuildStubContractProbeManifest(contracts, "full")
+			}
 		}
 		for _, spec := range specs {
 			stubContractProbeByID[spec.ID] = spec
@@ -37,6 +43,30 @@ func stubContractProbeSpecByID(id string) (capability.StubContractProbeSpec, boo
 
 func isStubContractProbeID(id string) bool {
 	return strings.HasPrefix(id, "stub.")
+}
+
+type apexCompileError struct {
+	Problem string
+}
+
+func (e *apexCompileError) Error() string {
+	return "apex compile failed: " + strings.TrimSpace(e.Problem)
+}
+
+func stubContractCompileFailureResult(spec capability.StubContractProbeSpec, err error) (ProbeResult, bool) {
+	var compileErr *apexCompileError
+	if !errors.As(err, &compileErr) {
+		return ProbeResult{}, false
+	}
+	exceptionType := "System.CompileException"
+	exceptionMessage := strings.TrimSpace(compileErr.Problem)
+	return ProbeResult{
+		ProbeID:          spec.ID,
+		Category:         "Stub Contracts",
+		Result:           nil,
+		ExceptionType:    &exceptionType,
+		ExceptionMessage: &exceptionMessage,
+	}, true
 }
 
 func buildLocalStubContractProbeCode(spec capability.StubContractProbeSpec) string {
@@ -75,6 +105,9 @@ System.assert(false, 'OAER_PROBE:' + JSON.serialize(payload));`, spec.ID, invoke
 
 func stubContractInvocationCode(spec capability.StubContractProbeSpec) string {
 	typeName := spec.Type
+	if strings.TrimSpace(spec.Member) == "" {
+		return fmt.Sprintf("resultValue = '%s';", typeName)
+	}
 	args := make([]string, 0, len(spec.Parameters))
 	for _, p := range spec.Parameters {
 		args = append(args, defaultApexArgForType(p))
@@ -86,23 +119,52 @@ func stubContractInvocationCode(spec capability.StubContractProbeSpec) string {
 	}
 	switch spec.Kind {
 	case "constructor":
-		return fmt.Sprintf("%s __obj = new %s(%s); resultValue = __obj;", typeName, typeName, argText)
+		return fmt.Sprintf("%s oaerObj = new %s(%s); resultValue = oaerObj;", typeName, typeName, argText)
 	case "property":
 		if spec.Static {
 			return fmt.Sprintf("resultValue = %s.%s;", typeName, spec.Member)
 		}
-		return fmt.Sprintf("%s __obj = new %s(); resultValue = __obj.%s;", typeName, typeName, spec.Member)
+		return fmt.Sprintf("%s oaerObj = %s; resultValue = oaerObj.%s;", typeName, defaultApexReceiverForType(typeName), spec.Member)
 	default:
 		if strings.EqualFold(returnType, "void") {
 			if spec.Static {
 				return fmt.Sprintf("%s.%s(%s); resultValue = 'void';", typeName, spec.Member, argText)
 			}
-			return fmt.Sprintf("%s __obj = new %s(); __obj.%s(%s); resultValue = 'void';", typeName, typeName, spec.Member, argText)
+			return fmt.Sprintf("%s oaerObj = %s; oaerObj.%s(%s); resultValue = 'void';", typeName, defaultApexReceiverForType(typeName), spec.Member, argText)
 		}
 		if spec.Static {
 			return fmt.Sprintf("resultValue = %s.%s(%s);", typeName, spec.Member, argText)
 		}
-		return fmt.Sprintf("%s __obj = new %s(); resultValue = __obj.%s(%s);", typeName, typeName, spec.Member, argText)
+		return fmt.Sprintf("%s oaerObj = %s; resultValue = oaerObj.%s(%s);", typeName, defaultApexReceiverForType(typeName), spec.Member, argText)
+	}
+}
+
+func defaultApexReceiverForType(typeName string) string {
+	trimmed := strings.TrimSpace(typeName)
+	lower := strings.ToLower(trimmed)
+	switch lower {
+	case "blob":
+		return "Blob.valueOf('oaer')"
+	case "string":
+		return "'oaer'"
+	case "boolean":
+		return "true"
+	case "integer", "int", "long", "short", "byte":
+		return "1"
+	case "double", "decimal":
+		return "1.25"
+	case "id":
+		return "'001000000000001AAA'"
+	case "date":
+		return "Date.newInstance(2024, 1, 2)"
+	case "datetime":
+		return "Datetime.newInstance(2024, 1, 2, 3, 4, 5)"
+	case "time":
+		return "Time.newInstance(3, 4, 5, 0)"
+	case "type", "system.type":
+		return "String.class"
+	default:
+		return fmt.Sprintf("new %s()", trimmed)
 	}
 }
 

@@ -42,6 +42,7 @@ func runProbeOrg(ctx context.Context, args []string, w io.Writer) error {
 	orgAlias := ""
 	outputDir := "probes/output"
 	tier := "full"
+	executor := "rest"
 	goldenCache := ""
 	useGoldenCache := false
 	var probeIDs []string
@@ -72,6 +73,12 @@ func runProbeOrg(ctx context.Context, args []string, w io.Writer) error {
 				return fmt.Errorf("--tier requires a value")
 			}
 			tier = args[i+1]
+			i++
+		case "--executor":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--executor requires a value")
+			}
+			executor = strings.TrimSpace(args[i+1])
 			i++
 		case "--golden-cache":
 			if i+1 >= len(args) {
@@ -107,6 +114,7 @@ func runProbeOrg(ctx context.Context, args []string, w io.Writer) error {
 		ProbeIDs:       probeIDs,
 		Features:       features,
 		Tier:           tier,
+		GoldenExecutor: executor,
 		GoldenCache:    goldenCache,
 		UseGoldenCache: useGoldenCache,
 	}

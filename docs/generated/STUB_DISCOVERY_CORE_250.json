@@ -1,0 +1,4891 @@
+{
+  "target": "stub contract implementation discovery",
+  "source": "example-projects/stubs",
+  "tier": "core",
+  "probeProject": "probes/sfdx",
+  "requested": 250,
+  "executed": 250,
+  "generatedAtUtc": "2026-05-19T04:22:21Z",
+  "outcomeCounts": {
+    "exception": 243,
+    "returns": 6,
+    "unsupported": 1
+  },
+  "oddityRiskCounts": {
+    "medium": 245
+  },
+  "candidates": [
+    {
+      "probeId": "stub.accesstype.valueof",
+      "contractId": "AccessType.valueOf(String)",
+      "type": "AccessType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.apexpages-severity.valueof",
+      "contractId": "ApexPages.Severity.valueOf(String)",
+      "type": "ApexPages.Severity",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "ui-runtime",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cache-visibility.valueof",
+      "contractId": "Cache.Visibility.valueOf(String)",
+      "type": "Cache.Visibility",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.callbackstatus.valueof",
+      "contractId": "CallbackStatus.valueOf(String)",
+      "type": "CallbackStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.canvas-contexttypeenum.valueof",
+      "contractId": "Canvas.ContextTypeEnum.valueOf(String)",
+      "type": "Canvas.ContextTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-adjustmentamountscopeenum.valueof",
+      "contractId": "CartExtension.AdjustmentAmountScopeEnum.valueOf(String)",
+      "type": "CartExtension.AdjustmentAmountScopeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-adjustmenttypeenum.valueof",
+      "contractId": "CartExtension.AdjustmentTypeEnum.valueOf(String)",
+      "type": "CartExtension.AdjustmentTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-associateditempricingenum.valueof",
+      "contractId": "CartExtension.AssociatedItemPricingEnum.valueOf(String)",
+      "type": "CartExtension.AssociatedItemPricingEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-billingfrequencyenum.valueof",
+      "contractId": "CartExtension.BillingFrequencyEnum.valueOf(String)",
+      "type": "CartExtension.BillingFrequencyEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-cartadjustmenttargettypeenum.valueof",
+      "contractId": "CartExtension.CartAdjustmentTargetTypeEnum.valueOf(String)",
+      "type": "CartExtension.CartAdjustmentTargetTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-cartitemsubtypeenum.valueof",
+      "contractId": "CartExtension.CartItemSubTypeEnum.valueOf(String)",
+      "type": "CartExtension.CartItemSubTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-cartstatusenum.valueof",
+      "contractId": "CartExtension.CartStatusEnum.valueOf(String)",
+      "type": "CartExtension.CartStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-cartvalidationoutputlevelenum.valueof",
+      "contractId": "CartExtension.CartValidationOutputLevelEnum.valueOf(String)",
+      "type": "CartExtension.CartValidationOutputLevelEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-cartvalidationoutputtypeenum.valueof",
+      "contractId": "CartExtension.CartValidationOutputTypeEnum.valueOf(String)",
+      "type": "CartExtension.CartValidationOutputTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-configureduringsaleenum.valueof",
+      "contractId": "CartExtension.ConfigureDuringSaleEnum.valueOf(String)",
+      "type": "CartExtension.ConfigureDuringSaleEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-periodboundaryenum.valueof",
+      "contractId": "CartExtension.PeriodBoundaryEnum.valueOf(String)",
+      "type": "CartExtension.PeriodBoundaryEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-priceadjustmentsourceenum.valueof",
+      "contractId": "CartExtension.PriceAdjustmentSourceEnum.valueOf(String)",
+      "type": "CartExtension.PriceAdjustmentSourceEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-productclass.valueof",
+      "contractId": "CartExtension.ProductClass.valueOf(String)",
+      "type": "CartExtension.ProductClass",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-quantityscalemethodenum.valueof",
+      "contractId": "CartExtension.QuantityScaleMethodEnum.valueOf(String)",
+      "type": "CartExtension.QuantityScaleMethodEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-roundingmethodenum.valueof",
+      "contractId": "CartExtension.RoundingMethodEnum.valueOf(String)",
+      "type": "CartExtension.RoundingMethodEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-salesitemtypeenum.valueof",
+      "contractId": "CartExtension.SalesItemTypeEnum.valueOf(String)",
+      "type": "CartExtension.SalesItemTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-sellingmodeltype.valueof",
+      "contractId": "CartExtension.SellingModelType.valueOf(String)",
+      "type": "CartExtension.SellingModelType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-stockcheckmethod.valueof",
+      "contractId": "CartExtension.StockCheckMethod.valueOf(String)",
+      "type": "CartExtension.StockCheckMethod",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-taxlocaletypeenum.valueof",
+      "contractId": "CartExtension.TaxLocaleTypeEnum.valueOf(String)",
+      "type": "CartExtension.TaxLocaleTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-taxtypeenum.valueof",
+      "contractId": "CartExtension.TaxTypeEnum.valueOf(String)",
+      "type": "CartExtension.TaxTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-timeunitenum.valueof",
+      "contractId": "CartExtension.TimeUnitEnum.valueOf(String)",
+      "type": "CartExtension.TimeUnitEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cartextension-webstoretypeenum.valueof",
+      "contractId": "CartExtension.WebStoreTypeEnum.valueOf(String)",
+      "type": "CartExtension.WebStoreTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commerceextension-resolutionstates.valueof",
+      "contractId": "CommerceExtension.ResolutionStates.valueOf(String)",
+      "type": "CommerceExtension.ResolutionStates",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-abnexperimentactionenum.valueof",
+      "contractId": "ConnectApi.ABnExperimentActionEnum.valueOf(String)",
+      "type": "ConnectApi.ABnExperimentActionEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-aimodelvisibilityenum.valueof",
+      "contractId": "ConnectApi.AIModelVisibilityEnum.valueOf(String)",
+      "type": "ConnectApi.AIModelVisibilityEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-accountengagementdatastreamtypeenum.valueof",
+      "contractId": "ConnectApi.AccountEngagementDataStreamTypeEnum.valueOf(String)",
+      "type": "ConnectApi.AccountEngagementDataStreamTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-accountholdertype.valueof",
+      "contractId": "ConnectApi.AccountHolderType.valueOf(String)",
+      "type": "ConnectApi.AccountHolderType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-accountrelationshiptypeenum.valueof",
+      "contractId": "ConnectApi.AccountRelationshipTypeEnum.valueOf(String)",
+      "type": "ConnectApi.AccountRelationshipTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-accounttype.valueof",
+      "contractId": "ConnectApi.AccountType.valueOf(String)",
+      "type": "ConnectApi.AccountType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-achievementcontributortypeenum.valueof",
+      "contractId": "ConnectApi.AchievementContributorTypeEnum.valueOf(String)",
+      "type": "ConnectApi.AchievementContributorTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-achievementmappingtypeenum.valueof",
+      "contractId": "ConnectApi.AchievementMappingTypeEnum.valueOf(String)",
+      "type": "ConnectApi.AchievementMappingTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-actionlinkexecutionsallowed.valueof",
+      "contractId": "ConnectApi.ActionLinkExecutionsAllowed.valueOf(String)",
+      "type": "ConnectApi.ActionLinkExecutionsAllowed",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-actionlinktype.valueof",
+      "contractId": "ConnectApi.ActionLinkType.valueOf(String)",
+      "type": "ConnectApi.ActionLinkType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-activationinternaldmotype.valueof",
+      "contractId": "ConnectApi.ActivationInternalDMOType.valueOf(String)",
+      "type": "ConnectApi.ActivationInternalDMOType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-activationplatformcreationtype.valueof",
+      "contractId": "ConnectApi.ActivationPlatformCreationType.valueOf(String)",
+      "type": "ConnectApi.ActivationPlatformCreationType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-activationplatformcustomerfilesource.valueof",
+      "contractId": "ConnectApi.ActivationPlatformCustomerFileSource.valueOf(String)",
+      "type": "ConnectApi.ActivationPlatformCustomerFileSource",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-activationplatformprivacytype.valueof",
+      "contractId": "ConnectApi.ActivationPlatformPrivacyType.valueOf(String)",
+      "type": "ConnectApi.ActivationPlatformPrivacyType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-activationplatformstatus.valueof",
+      "contractId": "ConnectApi.ActivationPlatformStatus.valueOf(String)",
+      "type": "ConnectApi.ActivationPlatformStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-activationplatformtype.valueof",
+      "contractId": "ConnectApi.ActivationPlatformType.valueOf(String)",
+      "type": "ConnectApi.ActivationPlatformType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-activationstatus.valueof",
+      "contractId": "ConnectApi.ActivationStatus.valueOf(String)",
+      "type": "ConnectApi.ActivationStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-activationtargetstatus.valueof",
+      "contractId": "ConnectApi.ActivationTargetStatus.valueOf(String)",
+      "type": "ConnectApi.ActivationTargetStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-activationtype.valueof",
+      "contractId": "ConnectApi.ActivationType.valueOf(String)",
+      "type": "ConnectApi.ActivationType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-activitysharingtype.valueof",
+      "contractId": "ConnectApi.ActivitySharingType.valueOf(String)",
+      "type": "ConnectApi.ActivitySharingType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-adjustmentamountscope.valueof",
+      "contractId": "ConnectApi.AdjustmentAmountScope.valueOf(String)",
+      "type": "ConnectApi.AdjustmentAmountScope",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-adjustmenttype.valueof",
+      "contractId": "ConnectApi.AdjustmentType.valueOf(String)",
+      "type": "ConnectApi.AdjustmentType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-agentcontextstatusenum.valueof",
+      "contractId": "ConnectApi.AgentContextStatusEnum.valueOf(String)",
+      "type": "ConnectApi.AgentContextStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-analysisfielddatapropertyenum.valueof",
+      "contractId": "ConnectApi.AnalysisFieldDataPropertyEnum.valueOf(String)",
+      "type": "ConnectApi.AnalysisFieldDataPropertyEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-analyticslicensetype.valueof",
+      "contractId": "ConnectApi.AnalyticsLicenseType.valueOf(String)",
+      "type": "ConnectApi.AnalyticsLicenseType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-animaltype.valueof",
+      "contractId": "ConnectApi.AnimalType.valueOf(String)",
+      "type": "ConnectApi.AnimalType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-apierrorcodeenum.valueof",
+      "contractId": "ConnectApi.ApiErrorCodeEnum.valueOf(String)",
+      "type": "ConnectApi.ApiErrorCodeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-apifamilytypeenumwrapper.valueof",
+      "contractId": "ConnectApi.ApiFamilyTypeEnumWrapper.valueOf(String)",
+      "type": "ConnectApi.ApiFamilyTypeEnumWrapper",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-apiresponsestatuscode.valueof",
+      "contractId": "ConnectApi.ApiResponseStatusCode.valueOf(String)",
+      "type": "ConnectApi.ApiResponseStatusCode",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-application.valueof",
+      "contractId": "ConnectApi.Application.valueOf(String)",
+      "type": "ConnectApi.Application",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-appointmentmode.valueof",
+      "contractId": "ConnectApi.AppointmentMode.valueOf(String)",
+      "type": "ConnectApi.AppointmentMode",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-articlerecommendationschanneltype.valueof",
+      "contractId": "ConnectApi.ArticleRecommendationsChannelType.valueOf(String)",
+      "type": "ConnectApi.ArticleRecommendationsChannelType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-articlestatus.valueof",
+      "contractId": "ConnectApi.ArticleStatus.valueOf(String)",
+      "type": "ConnectApi.ArticleStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-articletopicjobtype.valueof",
+      "contractId": "ConnectApi.ArticleTopicJobType.valueOf(String)",
+      "type": "ConnectApi.ArticleTopicJobType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-assessmentsearchderivedstatusenum.valueof",
+      "contractId": "ConnectApi.AssessmentSearchDerivedStatusEnum.valueOf(String)",
+      "type": "ConnectApi.AssessmentSearchDerivedStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-assetmgmtarcactiontype.valueof",
+      "contractId": "ConnectApi.AssetMgmtARCActionType.valueOf(String)",
+      "type": "ConnectApi.AssetMgmtARCActionType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-assetmgmtactionsubtype.valueof",
+      "contractId": "ConnectApi.AssetMgmtActionSubType.valueOf(String)",
+      "type": "ConnectApi.AssetMgmtActionSubType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-assetmgmtamendmenttype.valueof",
+      "contractId": "ConnectApi.AssetMgmtAmendmentType.valueOf(String)",
+      "type": "ConnectApi.AssetMgmtAmendmentType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-assetmgmtcancellationtype.valueof",
+      "contractId": "ConnectApi.AssetMgmtCancellationType.valueOf(String)",
+      "type": "ConnectApi.AssetMgmtCancellationType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-assetmgmtreturnpolicytype.valueof",
+      "contractId": "ConnectApi.AssetMgmtReturnPolicyType.valueOf(String)",
+      "type": "ConnectApi.AssetMgmtReturnPolicyType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-asyncoperationstatus.valueof",
+      "contractId": "ConnectApi.AsyncOperationStatus.valueOf(String)",
+      "type": "ConnectApi.AsyncOperationStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-attributecreationstrategyenum.valueof",
+      "contractId": "ConnectApi.AttributeCreationStrategyEnum.valueOf(String)",
+      "type": "ConnectApi.AttributeCreationStrategyEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-attributetypeenum.valueof",
+      "contractId": "ConnectApi.AttributeTypeEnum.valueOf(String)",
+      "type": "ConnectApi.AttributeTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-audiencecriteriaoperator.valueof",
+      "contractId": "ConnectApi.AudienceCriteriaOperator.valueOf(String)",
+      "type": "ConnectApi.AudienceCriteriaOperator",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-audiencecriteriatype.valueof",
+      "contractId": "ConnectApi.AudienceCriteriaType.valueOf(String)",
+      "type": "ConnectApi.AudienceCriteriaType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-audiencedmodeltatype.valueof",
+      "contractId": "ConnectApi.AudienceDMODeltaType.valueOf(String)",
+      "type": "ConnectApi.AudienceDMODeltaType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-authprovidertypeenum.valueof",
+      "contractId": "ConnectApi.AuthProviderTypeEnum.valueOf(String)",
+      "type": "ConnectApi.AuthProviderTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-availabilitystatusenum.valueof",
+      "contractId": "ConnectApi.AvailabilityStatusEnum.valueOf(String)",
+      "type": "ConnectApi.AvailabilityStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-banktype.valueof",
+      "contractId": "ConnectApi.BankType.valueOf(String)",
+      "type": "ConnectApi.BankType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-bannerstyle.valueof",
+      "contractId": "ConnectApi.BannerStyle.valueOf(String)",
+      "type": "ConnectApi.BannerStyle",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-batchcriteriafieldsforinvoicerunenum.valueof",
+      "contractId": "ConnectApi.BatchCriteriaFieldsForInvoiceRunEnum.valueOf(String)",
+      "type": "ConnectApi.BatchCriteriaFieldsForInvoiceRunEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-batchcriteriaobjectsforinvoicerunenum.valueof",
+      "contractId": "ConnectApi.BatchCriteriaObjectsForInvoiceRunEnum.valueOf(String)",
+      "type": "ConnectApi.BatchCriteriaObjectsForInvoiceRunEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-batchcriteriaoperationenum.valueof",
+      "contractId": "ConnectApi.BatchCriteriaOperationEnum.valueOf(String)",
+      "type": "ConnectApi.BatchCriteriaOperationEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-batchinvoicestatusenum.valueof",
+      "contractId": "ConnectApi.BatchInvoiceStatusEnum.valueOf(String)",
+      "type": "ConnectApi.BatchInvoiceStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-batchschedulerstatusenum.valueof",
+      "contractId": "ConnectApi.BatchSchedulerStatusEnum.valueOf(String)",
+      "type": "ConnectApi.BatchSchedulerStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-billingfrequency.valueof",
+      "contractId": "ConnectApi.BillingFrequency.valueOf(String)",
+      "type": "ConnectApi.BillingFrequency",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-billingmethodenum.valueof",
+      "contractId": "ConnectApi.BillingMethodEnum.valueOf(String)",
+      "type": "ConnectApi.BillingMethodEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-billingschedulestatusenum.valueof",
+      "contractId": "ConnectApi.BillingScheduleStatusEnum.valueOf(String)",
+      "type": "ConnectApi.BillingScheduleStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-billingstatusenum.valueof",
+      "contractId": "ConnectApi.BillingStatusEnum.valueOf(String)",
+      "type": "ConnectApi.BillingStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-billingtypeenum.valueof",
+      "contractId": "ConnectApi.BillingTypeEnum.valueOf(String)",
+      "type": "ConnectApi.BillingTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-bookingstatus.valueof",
+      "contractId": "ConnectApi.BookingStatus.valueOf(String)",
+      "type": "ConnectApi.BookingStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-botllmprompttemplatetype.valueof",
+      "contractId": "ConnectApi.BotLLMPromptTemplateType.valueOf(String)",
+      "type": "ConnectApi.BotLLMPromptTemplateType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-botllmprovidertype.valueof",
+      "contractId": "ConnectApi.BotLLMProviderType.valueOf(String)",
+      "type": "ConnectApi.BotLLMProviderType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-botversionactivationstatus.valueof",
+      "contractId": "ConnectApi.BotVersionActivationStatus.valueOf(String)",
+      "type": "ConnectApi.BotVersionActivationStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-broadcastresponseaction.valueof",
+      "contractId": "ConnectApi.BroadcastResponseAction.valueOf(String)",
+      "type": "ConnectApi.BroadcastResponseAction",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-bulkupdatestatusenum.valueof",
+      "contractId": "ConnectApi.BulkUpdateStatusEnum.valueOf(String)",
+      "type": "ConnectApi.BulkUpdateStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-bulkupdatetargetstatusenum.valueof",
+      "contractId": "ConnectApi.BulkUpdateTargetStatusEnum.valueOf(String)",
+      "type": "ConnectApi.BulkUpdateTargetStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-bundletype.valueof",
+      "contractId": "ConnectApi.BundleType.valueOf(String)",
+      "type": "ConnectApi.BundleType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-buyerprofileinitmethodenum.valueof",
+      "contractId": "ConnectApi.BuyerProfileInitMethodEnum.valueOf(String)",
+      "type": "ConnectApi.BuyerProfileInitMethodEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-buyerprofileinittypeenum.valueof",
+      "contractId": "ConnectApi.BuyerProfileInitTypeEnum.valueOf(String)",
+      "type": "ConnectApi.BuyerProfileInitTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cachestoragetype.valueof",
+      "contractId": "ConnectApi.CacheStorageType.valueOf(String)",
+      "type": "ConnectApi.CacheStorageType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-calcinsighthistorypublishscheduleinterval.valueof",
+      "contractId": "ConnectApi.CalcInsightHistoryPublishScheduleInterval.valueOf(String)",
+      "type": "ConnectApi.CalcInsightHistoryPublishScheduleInterval",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-calculatetaxtyperequest.valueof",
+      "contractId": "ConnectApi.CalculateTaxTypeRequest.valueOf(String)",
+      "type": "ConnectApi.CalculateTaxTypeRequest",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-calculatedinsightdefinitiontypeenum.valueof",
+      "contractId": "ConnectApi.CalculatedInsightDefinitionTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CalculatedInsightDefinitionTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-calculatedinsightpublishscheduleinterval.valueof",
+      "contractId": "ConnectApi.CalculatedInsightPublishScheduleInterval.valueOf(String)",
+      "type": "ConnectApi.CalculatedInsightPublishScheduleInterval",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-calendertypeenum.valueof",
+      "contractId": "ConnectApi.CalenderTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CalenderTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-calloutstatus.valueof",
+      "contractId": "ConnectApi.CalloutStatus.valueOf(String)",
+      "type": "ConnectApi.CalloutStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cardcategory.valueof",
+      "contractId": "ConnectApi.CardCategory.valueOf(String)",
+      "type": "ConnectApi.CardCategory",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cardtype.valueof",
+      "contractId": "ConnectApi.CardType.valueOf(String)",
+      "type": "ConnectApi.CardType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cartitemsortorder.valueof",
+      "contractId": "ConnectApi.CartItemSortOrder.valueOf(String)",
+      "type": "ConnectApi.CartItemSortOrder",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cartitemsubtype.valueof",
+      "contractId": "ConnectApi.CartItemSubType.valueOf(String)",
+      "type": "ConnectApi.CartItemSubType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cartitemtype.valueof",
+      "contractId": "ConnectApi.CartItemType.valueOf(String)",
+      "type": "ConnectApi.CartItemType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cartmessageseverity.valueof",
+      "contractId": "ConnectApi.CartMessageSeverity.valueOf(String)",
+      "type": "ConnectApi.CartMessageSeverity",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cartpromotiontype.valueof",
+      "contractId": "ConnectApi.CartPromotionType.valueOf(String)",
+      "type": "ConnectApi.CartPromotionType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cartsortorder.valueof",
+      "contractId": "ConnectApi.CartSortOrder.valueOf(String)",
+      "type": "ConnectApi.CartSortOrder",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cartstatus.valueof",
+      "contractId": "ConnectApi.CartStatus.valueOf(String)",
+      "type": "ConnectApi.CartStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-carttaxtype.valueof",
+      "contractId": "ConnectApi.CartTaxType.valueOf(String)",
+      "type": "ConnectApi.CartTaxType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-carttype.valueof",
+      "contractId": "ConnectApi.CartType.valueOf(String)",
+      "type": "ConnectApi.CartType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-caseactortype.valueof",
+      "contractId": "ConnectApi.CaseActorType.valueOf(String)",
+      "type": "ConnectApi.CaseActorType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-casecommenteventtype.valueof",
+      "contractId": "ConnectApi.CaseCommentEventType.valueOf(String)",
+      "type": "ConnectApi.CaseCommentEventType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-catalogratespreferenceenum.valueof",
+      "contractId": "ConnectApi.CatalogRatesPreferenceEnum.valueOf(String)",
+      "type": "ConnectApi.CatalogRatesPreferenceEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpcatalogedgeinputtypeenum.valueof",
+      "contractId": "ConnectApi.CdpCatalogEdgeInputTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpCatalogEdgeInputTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpcataloggenreenum2.valueof",
+      "contractId": "ConnectApi.CdpCatalogGenreEnum2.valueOf(String)",
+      "type": "ConnectApi.CdpCatalogGenreEnum2",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpdayofweekenum.valueof",
+      "contractId": "ConnectApi.CdpDayOfWeekEnum.valueOf(String)",
+      "type": "ConnectApi.CdpDayOfWeekEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpfieldlineageinputtypeenum.valueof",
+      "contractId": "ConnectApi.CdpFieldLineageInputTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpFieldLineageInputTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpidentityresolutionconfigurationtype.valueof",
+      "contractId": "ConnectApi.CdpIdentityResolutionConfigurationType.valueOf(String)",
+      "type": "ConnectApi.CdpIdentityResolutionConfigurationType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpidentityresolutionmatchmethodtype.valueof",
+      "contractId": "ConnectApi.CdpIdentityResolutionMatchMethodType.valueOf(String)",
+      "type": "ConnectApi.CdpIdentityResolutionMatchMethodType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpidentityresolutionreconciliationruletype.valueof",
+      "contractId": "ConnectApi.CdpIdentityResolutionReconciliationRuleType.valueOf(String)",
+      "type": "ConnectApi.CdpIdentityResolutionReconciliationRuleType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpidentityresolutionrunnowresultcode.valueof",
+      "contractId": "ConnectApi.CdpIdentityResolutionRunNowResultCode.valueOf(String)",
+      "type": "ConnectApi.CdpIdentityResolutionRunNowResultCode",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlactivepartitiontypeenum.valueof",
+      "contractId": "ConnectApi.CdpMlActivePartitionTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlActivePartitionTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlconfiguredmodelstatusenum.valueof",
+      "contractId": "ConnectApi.CdpMlConfiguredModelStatusEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlConfiguredModelStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlcustomizablefieldtypeenum.valueof",
+      "contractId": "ConnectApi.CdpMlCustomizableFieldTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlCustomizableFieldTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlfielddatatypeenum.valueof",
+      "contractId": "ConnectApi.CdpMlFieldDataTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlFieldDataTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlfilterfieldtypeenum.valueof",
+      "contractId": "ConnectApi.CdpMlFilterFieldTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlFilterFieldTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlfiltervaluetypeenum.valueof",
+      "contractId": "ConnectApi.CdpMlFilterValueTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlFilterValueTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlfoundationalmodelmainversionenum.valueof",
+      "contractId": "ConnectApi.CdpMlFoundationalModelMainVersionEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlFoundationalModelMainVersionEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmllivemetrictypeenum.valueof",
+      "contractId": "ConnectApi.CdpMlLiveMetricTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlLiveMetricTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlmetricassettypeenum.valueof",
+      "contractId": "ConnectApi.CdpMlMetricAssetTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlMetricAssetTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlmetricspanenum.valueof",
+      "contractId": "ConnectApi.CdpMlMetricSpanEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlMetricSpanEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlmodelartifactruntimetypeenum.valueof",
+      "contractId": "ConnectApi.CdpMlModelArtifactRuntimeTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlModelArtifactRuntimeTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlmodelpredictiontypeenum.valueof",
+      "contractId": "ConnectApi.CdpMlModelPredictionTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlModelPredictionTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlpredictaggregatefunctionstatusenum.valueof",
+      "contractId": "ConnectApi.CdpMlPredictAggregateFunctionStatusEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlPredictAggregateFunctionStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlpredictaggregatefunctiontypeenum.valueof",
+      "contractId": "ConnectApi.CdpMlPredictAggregateFunctionTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlPredictAggregateFunctionTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlpredictstatusenum.valueof",
+      "contractId": "ConnectApi.CdpMlPredictStatusEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlPredictStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlpredicttypeenum.valueof",
+      "contractId": "ConnectApi.CdpMlPredictTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlPredictTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmlpredictionerrorcodeenum.valueof",
+      "contractId": "ConnectApi.CdpMlPredictionErrorCodeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlPredictionErrorCodeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpmltransformationtypeenum.valueof",
+      "contractId": "ConnectApi.CdpMlTransformationTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpMlTransformationTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationaggregateoperatorenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationAggregateOperatorEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationAggregateOperatorEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationconditiontypeenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationConditionTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationConditionTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationconjunctiveoperatorenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationConjunctiveOperatorEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationConjunctiveOperatorEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationconstrainttypeenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationConstraintTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationConstraintTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationcontributiontypeenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationContributionTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationContributionTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationdynamicrecordtypeenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationDynamicRecordTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationDynamicRecordTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationfieldtypeenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationFieldTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationFieldTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationfilterfieldtypeenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationFilterFieldTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationFilterFieldTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationinputtypeenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationInputTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationInputTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationjoberrorreasonenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationJobErrorReasonEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationJobErrorReasonEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationjobstatusenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationJobStatusEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationJobStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationjoinoperatorenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationJoinOperatorEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationJoinOperatorEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationjointypeenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationJoinTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationJoinTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationobjectiveenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationObjectiveEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationObjectiveEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationoutputtypeenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationOutputTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationOutputTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationpredictiontypeenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationPredictionTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationPredictionTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationrunparametersalgorithmenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationRunParametersAlgorithmEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationRunParametersAlgorithmEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpoptimizationsourcetypeenum.valueof",
+      "contractId": "ConnectApi.CdpOptimizationSourceTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpOptimizationSourceTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cdpschedulefrequencytypeenum.valueof",
+      "contractId": "ConnectApi.CdpScheduleFrequencyTypeEnum.valueOf(String)",
+      "type": "ConnectApi.CdpScheduleFrequencyTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-changetype.valueof",
+      "contractId": "ConnectApi.ChangeType.valueOf(String)",
+      "type": "ConnectApi.ChangeType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-checkoutsessionstate.valueof",
+      "contractId": "ConnectApi.CheckoutSessionState.valueOf(String)",
+      "type": "ConnectApi.CheckoutSessionState",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-cloudprovidertype.valueof",
+      "contractId": "ConnectApi.CloudProviderType.valueOf(String)",
+      "type": "ConnectApi.CloudProviderType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commenttype.valueof",
+      "contractId": "ConnectApi.CommentType.valueOf(String)",
+      "type": "ConnectApi.CommentType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commerceaddresssort.valueof",
+      "contractId": "ConnectApi.CommerceAddressSort.valueOf(String)",
+      "type": "ConnectApi.CommerceAddressSort",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commercecatalogattributetype.valueof",
+      "contractId": "ConnectApi.CommerceCatalogAttributeType.valueOf(String)",
+      "type": "ConnectApi.CommerceCatalogAttributeType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commerceeinsteinactivityjobstatusenum.valueof",
+      "contractId": "ConnectApi.CommerceEinsteinActivityJobStatusEnum.valueOf(String)",
+      "type": "ConnectApi.CommerceEinsteinActivityJobStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commerceeinsteinstatusenum.valueof",
+      "contractId": "ConnectApi.CommerceEinsteinStatusEnum.valueOf(String)",
+      "type": "ConnectApi.CommerceEinsteinStatusEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commercesearchattributetype.valueof",
+      "contractId": "ConnectApi.CommerceSearchAttributeType.valueOf(String)",
+      "type": "ConnectApi.CommerceSearchAttributeType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commercesearchfacetdisplaytype.valueof",
+      "contractId": "ConnectApi.CommerceSearchFacetDisplayType.valueOf(String)",
+      "type": "ConnectApi.CommerceSearchFacetDisplayType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commercesearchfacettype.valueof",
+      "contractId": "ConnectApi.CommerceSearchFacetType.valueOf(String)",
+      "type": "ConnectApi.CommerceSearchFacetType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commercesearchgroupingoption.valueof",
+      "contractId": "ConnectApi.CommerceSearchGroupingOption.valueOf(String)",
+      "type": "ConnectApi.CommerceSearchGroupingOption",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commercesearchindexbuildtype.valueof",
+      "contractId": "ConnectApi.CommerceSearchIndexBuildType.valueOf(String)",
+      "type": "ConnectApi.CommerceSearchIndexBuildType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commercesearchindexcreationtype.valueof",
+      "contractId": "ConnectApi.CommerceSearchIndexCreationType.valueOf(String)",
+      "type": "ConnectApi.CommerceSearchIndexCreationType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commercesearchindexstatus.valueof",
+      "contractId": "ConnectApi.CommerceSearchIndexStatus.valueOf(String)",
+      "type": "ConnectApi.CommerceSearchIndexStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commercesearchindexusage.valueof",
+      "contractId": "ConnectApi.CommerceSearchIndexUsage.valueOf(String)",
+      "type": "ConnectApi.CommerceSearchIndexUsage",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commercesearchquerycontexttype.valueof",
+      "contractId": "ConnectApi.CommerceSearchQueryContextType.valueOf(String)",
+      "type": "ConnectApi.CommerceSearchQueryContextType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commercesearchsortruledirection.valueof",
+      "contractId": "ConnectApi.CommerceSearchSortRuleDirection.valueOf(String)",
+      "type": "ConnectApi.CommerceSearchSortRuleDirection",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commercesearchsortruletype.valueof",
+      "contractId": "ConnectApi.CommerceSearchSortRuleType.valueOf(String)",
+      "type": "ConnectApi.CommerceSearchSortRuleType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commercesearchtopproducttype.valueof",
+      "contractId": "ConnectApi.CommerceSearchTopProductType.valueOf(String)",
+      "type": "ConnectApi.CommerceSearchTopProductType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commercesubscriptionsortorder.valueof",
+      "contractId": "ConnectApi.CommerceSubscriptionSortOrder.valueOf(String)",
+      "type": "ConnectApi.CommerceSubscriptionSortOrder",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-commerequotessortorder.valueof",
+      "contractId": "ConnectApi.CommereQuotesSortOrder.valueOf(String)",
+      "type": "ConnectApi.CommereQuotesSortOrder",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-communityflagreasontype.valueof",
+      "contractId": "ConnectApi.CommunityFlagReasonType.valueOf(String)",
+      "type": "ConnectApi.CommunityFlagReasonType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-communityflagtype.valueof",
+      "contractId": "ConnectApi.CommunityFlagType.valueOf(String)",
+      "type": "ConnectApi.CommunityFlagType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-communityflagvisibility.valueof",
+      "contractId": "ConnectApi.CommunityFlagVisibility.valueOf(String)",
+      "type": "ConnectApi.CommunityFlagVisibility",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-communitystatus.valueof",
+      "contractId": "ConnectApi.CommunityStatus.valueOf(String)",
+      "type": "ConnectApi.CommunityStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-compliancecontrolloggingstatus.valueof",
+      "contractId": "ConnectApi.ComplianceControlLoggingStatus.valueOf(String)",
+      "type": "ConnectApi.ComplianceControlLoggingStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-compliancecontrolstatus.valueof",
+      "contractId": "ConnectApi.ComplianceControlStatus.valueOf(String)",
+      "type": "ConnectApi.ComplianceControlStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-complianceprocedurestatus.valueof",
+      "contractId": "ConnectApi.ComplianceProcedureStatus.valueOf(String)",
+      "type": "ConnectApi.ComplianceProcedureStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-compressionformatenum.valueof",
+      "contractId": "ConnectApi.CompressionFormatEnum.valueOf(String)",
+      "type": "ConnectApi.CompressionFormatEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-configuratorexecutionenum.valueof",
+      "contractId": "ConnectApi.ConfiguratorExecutionEnum.valueOf(String)",
+      "type": "ConnectApi.ConfiguratorExecutionEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-connectcommercesearchsortrulelabelsuffix.valueof",
+      "contractId": "ConnectApi.ConnectCommerceSearchSortRuleLabelSuffix.valueOf(String)",
+      "type": "ConnectApi.ConnectCommerceSearchSortRuleLabelSuffix",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-connectcommercesearchsortstandardfield.valueof",
+      "contractId": "ConnectApi.ConnectCommerceSearchSortStandardField.valueOf(String)",
+      "type": "ConnectApi.ConnectCommerceSearchSortStandardField",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-connectimagegenerationbackground.valueof",
+      "contractId": "ConnectApi.ConnectImageGenerationBackground.valueOf(String)",
+      "type": "ConnectApi.ConnectImageGenerationBackground",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-connectimagegenerationmodel.valueof",
+      "contractId": "ConnectApi.ConnectImageGenerationModel.valueOf(String)",
+      "type": "ConnectApi.ConnectImageGenerationModel",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-connectimagegenerationoutputformat.valueof",
+      "contractId": "ConnectApi.ConnectImageGenerationOutputFormat.valueOf(String)",
+      "type": "ConnectApi.ConnectImageGenerationOutputFormat",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-connectimagegenerationquality.valueof",
+      "contractId": "ConnectApi.ConnectImageGenerationQuality.valueOf(String)",
+      "type": "ConnectApi.ConnectImageGenerationQuality",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-connectimagegenerationsize.valueof",
+      "contractId": "ConnectApi.ConnectImageGenerationSize.valueOf(String)",
+      "type": "ConnectApi.ConnectImageGenerationSize",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-connectinsightunitenum.valueof",
+      "contractId": "ConnectApi.ConnectInsightUnitEnum.valueOf(String)",
+      "type": "ConnectApi.ConnectInsightUnitEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-connectmanagedcontentchanneltype.valueof",
+      "contractId": "ConnectApi.ConnectManagedContentChannelType.valueOf(String)",
+      "type": "ConnectApi.ConnectManagedContentChannelType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-connectmanagedcontentdeploymenttype.valueof",
+      "contractId": "ConnectApi.ConnectManagedContentDeploymentType.valueOf(String)",
+      "type": "ConnectApi.ConnectManagedContentDeploymentType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-connectmanagedcontentmediatype.valueof",
+      "contractId": "ConnectApi.ConnectManagedContentMediaType.valueOf(String)",
+      "type": "ConnectApi.ConnectManagedContentMediaType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-connectmanagedcontentnodetype.valueof",
+      "contractId": "ConnectApi.ConnectManagedContentNodeType.valueOf(String)",
+      "type": "ConnectApi.ConnectManagedContentNodeType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.connectapi-connectionschematypeenum.valueof",
+      "contractId": "ConnectApi.ConnectionSchemaTypeEnum.valueOf(String)",
+      "type": "ConnectApi.ConnectionSchemaTypeEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commerce_inventory-reservationchangetype.valueof",
+      "contractId": "commerce_inventory.ReservationChangeType.valueOf(String)",
+      "type": "commerce_inventory.ReservationChangeType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commerceorders-catalogratespreferenceenum.valueof",
+      "contractId": "commerceorders.CatalogRatesPreferenceEnum.valueOf(String)",
+      "type": "commerceorders.CatalogRatesPreferenceEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commerceorders-configurationinputenum.valueof",
+      "contractId": "commerceorders.ConfigurationInputEnum.valueOf(String)",
+      "type": "commerceorders.ConfigurationInputEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commerceorders-pricingpreferenceenum.valueof",
+      "contractId": "commerceorders.PricingPreferenceEnum.valueOf(String)",
+      "type": "commerceorders.PricingPreferenceEnum",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepayments-accountholdertype.valueof",
+      "contractId": "commercepayments.AccountHolderType.valueOf(String)",
+      "type": "commercepayments.AccountHolderType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepayments-accounttype.valueof",
+      "contractId": "commercepayments.AccountType.valueOf(String)",
+      "type": "commercepayments.AccountType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepayments-banktype.valueof",
+      "contractId": "commercepayments.BankType.valueOf(String)",
+      "type": "commercepayments.BankType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepayments-cardcategory.valueof",
+      "contractId": "commercepayments.CardCategory.valueOf(String)",
+      "type": "commercepayments.CardCategory",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepayments-cardtype.valueof",
+      "contractId": "commercepayments.CardType.valueOf(String)",
+      "type": "commercepayments.CardType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepayments-notificationstatus.valueof",
+      "contractId": "commercepayments.NotificationStatus.valueOf(String)",
+      "type": "commercepayments.NotificationStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepayments-paymentmethodidtype.valueof",
+      "contractId": "commercepayments.PaymentMethodIdType.valueOf(String)",
+      "type": "commercepayments.PaymentMethodIdType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepayments-requesttype.valueof",
+      "contractId": "commercepayments.RequestType.valueOf(String)",
+      "type": "commercepayments.RequestType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepayments-retrycategory.valueof",
+      "contractId": "commercepayments.RetryCategory.valueOf(String)",
+      "type": "commercepayments.RetryCategory",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepayments-retrydecision.valueof",
+      "contractId": "commercepayments.RetryDecision.valueOf(String)",
+      "type": "commercepayments.RetryDecision",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepayments-salesforceresultcode.valueof",
+      "contractId": "commercepayments.SalesforceResultCode.valueOf(String)",
+      "type": "commercepayments.SalesforceResultCode",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepayments-standardentryclasscode.valueof",
+      "contractId": "commercepayments.StandardEntryClassCode.valueOf(String)",
+      "type": "commercepayments.StandardEntryClassCode",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepricing-reductionmethod.valueof",
+      "contractId": "commercepricing.ReductionMethod.valueOf(String)",
+      "type": "commercepricing.ReductionMethod",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepricing-roundingmode.valueof",
+      "contractId": "commercepricing.RoundingMode.valueOf(String)",
+      "type": "commercepricing.RoundingMode",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepromotions-adjustmenttype.valueof",
+      "contractId": "commercepromotions.AdjustmentType.valueOf(String)",
+      "type": "commercepromotions.AdjustmentType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepromotions-associationstatus.valueof",
+      "contractId": "commercepromotions.AssociationStatus.valueOf(String)",
+      "type": "commercepromotions.AssociationStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepromotions-couponinfo-errorcode.valueof",
+      "contractId": "commercepromotions.CouponInfo.ErrorCode.valueOf(String)",
+      "type": "commercepromotions.CouponInfo.ErrorCode",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepromotions-errorcode.valueof",
+      "contractId": "commercepromotions.ErrorCode.valueOf(String)",
+      "type": "commercepromotions.ErrorCode",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepromotions-promotiontarget-adjustmenttype.valueof",
+      "contractId": "commercepromotions.PromotionTarget.AdjustmentType.valueOf(String)",
+      "type": "commercepromotions.PromotionTarget.AdjustmentType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepromotions-promotiontarget-associationstatus.valueof",
+      "contractId": "commercepromotions.PromotionTarget.AssociationStatus.valueOf(String)",
+      "type": "commercepromotions.PromotionTarget.AssociationStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepromotions-promotiontarget-targettype.valueof",
+      "contractId": "commercepromotions.PromotionTarget.TargetType.valueOf(String)",
+      "type": "commercepromotions.PromotionTarget.TargetType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercepromotions-targettype.valueof",
+      "contractId": "commercepromotions.TargetType.valueOf(String)",
+      "type": "commercepromotions.TargetType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercestoretax-taxadjustmenttype.valueof",
+      "contractId": "commercestoretax.TaxAdjustmentType.valueOf(String)",
+      "type": "commercestoretax.TaxAdjustmentType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercestoretax-taxlocaletype.valueof",
+      "contractId": "commercestoretax.TaxLocaleType.valueOf(String)",
+      "type": "commercestoretax.TaxLocaleType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercetax-calculatetaxtype.valueof",
+      "contractId": "commercetax.CalculateTaxType.valueOf(String)",
+      "type": "commercetax.CalculateTaxType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercetax-requesttype.valueof",
+      "contractId": "commercetax.RequestType.valueOf(String)",
+      "type": "commercetax.RequestType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercetax-resultcode.valueof",
+      "contractId": "commercetax.ResultCode.valueOf(String)",
+      "type": "commercetax.ResultCode",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercetax-taxtransactionstatus.valueof",
+      "contractId": "commercetax.TaxTransactionStatus.valueOf(String)",
+      "type": "commercetax.TaxTransactionStatus",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.commercetax-taxtransactiontype.valueof",
+      "contractId": "commercetax.TaxTransactionType.valueOf(String)",
+      "type": "commercetax.TaxTransactionType",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.compression-level.valueof",
+      "contractId": "compression.Level.valueOf(String)",
+      "type": "compression.Level",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.compression-method.valueof",
+      "contractId": "compression.Method.valueOf(String)",
+      "type": "compression.Method",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NoSuchElementException",
+      "exceptionMessage": "No enum value found called oaer",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.blob.topdf",
+      "contractId": "Blob.toPdf(String)",
+      "type": "Blob",
+      "member": "toPdf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "unsupported",
+      "exceptionType": "UnsupportedFeature",
+      "exceptionMessage": "unsupported call \"Blob.toPdf\"",
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "decide keep-unsupported or implement deterministic local model"
+    },
+    {
+      "probeId": "stub.blob.valueof",
+      "contractId": "Blob.valueOf(String)",
+      "type": "Blob",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "returns",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "run org-diff probe and compare payload parity"
+    },
+    {
+      "probeId": "stub.boolean.valueof",
+      "contractId": "Boolean.valueOf(Object)",
+      "type": "Boolean",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "returns",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "run org-diff probe and compare payload parity"
+    },
+    {
+      "probeId": "stub.blob.equals",
+      "contractId": "Blob.equals(Object)",
+      "type": "Blob",
+      "member": "equals",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "returns",
+      "normalization": "normalize object identity semantics for deterministic local comparison",
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "run org-diff probe and compare payload parity"
+    },
+    {
+      "probeId": "stub.blob.hashcode",
+      "contractId": "Blob.hashCode()",
+      "type": "Blob",
+      "member": "hashCode",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "returns",
+      "normalization": "normalize object identity semantics for deterministic local comparison",
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "run org-diff probe and compare payload parity"
+    },
+    {
+      "probeId": "stub.blob.size",
+      "contractId": "Blob.size()",
+      "type": "Blob",
+      "member": "size",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "returns",
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "run org-diff probe and compare payload parity"
+    },
+    {
+      "probeId": "stub.blob.tostring",
+      "contractId": "Blob.toString()",
+      "type": "Blob",
+      "member": "toString",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "returns",
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "run org-diff probe and compare payload parity"
+    }
+  ],
+  "topImplementation": [
+    {
+      "contractId": "AccessType.valueOf(String)",
+      "probeId": "stub.accesstype.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ApexPages.Severity.valueOf(String)",
+      "probeId": "stub.apexpages-severity.valueof",
+      "owner": "ui-runtime",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "Cache.Visibility.valueOf(String)",
+      "probeId": "stub.cache-visibility.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CallbackStatus.valueOf(String)",
+      "probeId": "stub.callbackstatus.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "Canvas.ContextTypeEnum.valueOf(String)",
+      "probeId": "stub.canvas-contexttypeenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.AdjustmentAmountScopeEnum.valueOf(String)",
+      "probeId": "stub.cartextension-adjustmentamountscopeenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.AdjustmentTypeEnum.valueOf(String)",
+      "probeId": "stub.cartextension-adjustmenttypeenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.AssociatedItemPricingEnum.valueOf(String)",
+      "probeId": "stub.cartextension-associateditempricingenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.BillingFrequencyEnum.valueOf(String)",
+      "probeId": "stub.cartextension-billingfrequencyenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.CartAdjustmentTargetTypeEnum.valueOf(String)",
+      "probeId": "stub.cartextension-cartadjustmenttargettypeenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.CartItemSubTypeEnum.valueOf(String)",
+      "probeId": "stub.cartextension-cartitemsubtypeenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.CartStatusEnum.valueOf(String)",
+      "probeId": "stub.cartextension-cartstatusenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.CartValidationOutputLevelEnum.valueOf(String)",
+      "probeId": "stub.cartextension-cartvalidationoutputlevelenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.CartValidationOutputTypeEnum.valueOf(String)",
+      "probeId": "stub.cartextension-cartvalidationoutputtypeenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.ConfigureDuringSaleEnum.valueOf(String)",
+      "probeId": "stub.cartextension-configureduringsaleenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.PeriodBoundaryEnum.valueOf(String)",
+      "probeId": "stub.cartextension-periodboundaryenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.PriceAdjustmentSourceEnum.valueOf(String)",
+      "probeId": "stub.cartextension-priceadjustmentsourceenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.ProductClass.valueOf(String)",
+      "probeId": "stub.cartextension-productclass.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.QuantityScaleMethodEnum.valueOf(String)",
+      "probeId": "stub.cartextension-quantityscalemethodenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.RoundingMethodEnum.valueOf(String)",
+      "probeId": "stub.cartextension-roundingmethodenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.SalesItemTypeEnum.valueOf(String)",
+      "probeId": "stub.cartextension-salesitemtypeenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.SellingModelType.valueOf(String)",
+      "probeId": "stub.cartextension-sellingmodeltype.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.StockCheckMethod.valueOf(String)",
+      "probeId": "stub.cartextension-stockcheckmethod.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.TaxLocaleTypeEnum.valueOf(String)",
+      "probeId": "stub.cartextension-taxlocaletypeenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.TaxTypeEnum.valueOf(String)",
+      "probeId": "stub.cartextension-taxtypeenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.TimeUnitEnum.valueOf(String)",
+      "probeId": "stub.cartextension-timeunitenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CartExtension.WebStoreTypeEnum.valueOf(String)",
+      "probeId": "stub.cartextension-webstoretypeenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "CommerceExtension.ResolutionStates.valueOf(String)",
+      "probeId": "stub.commerceextension-resolutionstates.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.ABnExperimentActionEnum.valueOf(String)",
+      "probeId": "stub.connectapi-abnexperimentactionenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.AIModelVisibilityEnum.valueOf(String)",
+      "probeId": "stub.connectapi-aimodelvisibilityenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.AccountEngagementDataStreamTypeEnum.valueOf(String)",
+      "probeId": "stub.connectapi-accountengagementdatastreamtypeenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.AccountHolderType.valueOf(String)",
+      "probeId": "stub.connectapi-accountholdertype.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.AccountRelationshipTypeEnum.valueOf(String)",
+      "probeId": "stub.connectapi-accountrelationshiptypeenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.AccountType.valueOf(String)",
+      "probeId": "stub.connectapi-accounttype.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.AchievementContributorTypeEnum.valueOf(String)",
+      "probeId": "stub.connectapi-achievementcontributortypeenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.AchievementMappingTypeEnum.valueOf(String)",
+      "probeId": "stub.connectapi-achievementmappingtypeenum.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.ActionLinkExecutionsAllowed.valueOf(String)",
+      "probeId": "stub.connectapi-actionlinkexecutionsallowed.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.ActionLinkType.valueOf(String)",
+      "probeId": "stub.connectapi-actionlinktype.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.ActivationInternalDMOType.valueOf(String)",
+      "probeId": "stub.connectapi-activationinternaldmotype.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.ActivationPlatformCreationType.valueOf(String)",
+      "probeId": "stub.connectapi-activationplatformcreationtype.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.ActivationPlatformCustomerFileSource.valueOf(String)",
+      "probeId": "stub.connectapi-activationplatformcustomerfilesource.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.ActivationPlatformPrivacyType.valueOf(String)",
+      "probeId": "stub.connectapi-activationplatformprivacytype.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.ActivationPlatformStatus.valueOf(String)",
+      "probeId": "stub.connectapi-activationplatformstatus.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.ActivationPlatformType.valueOf(String)",
+      "probeId": "stub.connectapi-activationplatformtype.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.ActivationStatus.valueOf(String)",
+      "probeId": "stub.connectapi-activationstatus.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.ActivationTargetStatus.valueOf(String)",
+      "probeId": "stub.connectapi-activationtargetstatus.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.ActivationType.valueOf(String)",
+      "probeId": "stub.connectapi-activationtype.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.ActivitySharingType.valueOf(String)",
+      "probeId": "stub.connectapi-activitysharingtype.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.AdjustmentAmountScope.valueOf(String)",
+      "probeId": "stub.connectapi-adjustmentamountscope.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "contractId": "ConnectApi.AdjustmentType.valueOf(String)",
+      "probeId": "stub.connectapi-adjustmenttype.valueof",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    }
+  ]
+}

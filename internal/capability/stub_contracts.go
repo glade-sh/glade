@@ -159,9 +159,6 @@ func WriteStubContractProbeManifestJSON(w io.Writer, specs []StubContractProbeSp
 func BuildStubContractProbeManifest(report StubContractReport, tier string) []StubContractProbeSpec {
 	specs := make([]StubContractProbeSpec, 0, len(report.Entries))
 	for _, entry := range report.Entries {
-		if !stubContractProbeExecutable(entry) {
-			continue
-		}
 		probeID := entry.ProbeID
 		if probeID == "" {
 			probeID = stubContractProbeID(StubBehaviorEntry{Type: entry.Type, Member: entry.Member})
@@ -189,18 +186,6 @@ func BuildStubContractProbeManifest(report StubContractReport, tier string) []St
 		return specs[i].ID < specs[j].ID
 	})
 	return specs
-}
-
-func stubContractProbeExecutable(entry StubContractEntry) bool {
-	if entry.Member == "" {
-		return false
-	}
-	switch strings.ToLower(entry.Kind) {
-	case "method", "constructor", "property":
-		return true
-	default:
-		return false
-	}
 }
 
 func buildStubContractEntry(entry StubBehaviorEntry) StubContractEntry {
@@ -294,6 +279,16 @@ func stubContractProbeID(entry StubBehaviorEntry) string {
 	if entry.Member != "" {
 		b.WriteString(".")
 		b.WriteString(normalizeProbeToken(entry.Member))
+	}
+	if len(entry.Parameters) > 0 {
+		b.WriteString(".")
+		b.WriteString("sig-")
+		for i, param := range entry.Parameters {
+			if i > 0 {
+				b.WriteString("-")
+			}
+			b.WriteString(normalizeProbeToken(param))
+		}
 	}
 	return b.String()
 }

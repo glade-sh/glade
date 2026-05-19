@@ -172,6 +172,12 @@ func classifyProbe(id string) ProbeSpec {
 		spec.Isolation = ProbeIsolationLimitSensitive
 		spec.CanBatch = false
 	}
+	switch id {
+	case "shape.json-sobject-attributes":
+		// This probe is stable in single execution but has shown intermittent
+		// stalls in batched anonymous wrappers on some orgs/CLI versions.
+		spec.CanBatch = false
+	}
 	if strings.HasPrefix(id, "soql.") || strings.HasPrefix(id, "dml.") || strings.HasPrefix(id, "bulkdml.") || id == "limits.dml-rows" {
 		spec.SeedProfile = "probe-test-object"
 	}
@@ -220,6 +226,11 @@ func categoryForProbe(id string) string {
 	}
 }
 
+// ProbeIDsForTier returns probe IDs for the named tier.
+func ProbeIDsForTier(tier string) []string {
+	return probeIDsForTier(strings.ToLower(strings.TrimSpace(tier)))
+}
+
 func probeIDsForTier(tier string) []string {
 	specs := defaultProbeSpecs()
 	ids := make([]string, 0, len(specs))
@@ -229,12 +240,6 @@ func probeIDsForTier(tier string) []string {
 		}
 	}
 	return ids
-}
-
-// ProbeIDsForTier returns probe IDs for the named tier.
-// Tiers include built-in and generated stub-contract tiers.
-func ProbeIDsForTier(tier string) []string {
-	return probeIDsForTier(strings.ToLower(strings.TrimSpace(tier)))
 }
 
 func probeTierMatches(requested, actual string) bool {

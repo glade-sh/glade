@@ -36,6 +36,32 @@ func TestStubContractInvocationCodeInstanceProperty(t *testing.T) {
 	}
 }
 
+func TestStubContractInvocationCodeValueTypeReceiver(t *testing.T) {
+	spec := capability.StubContractProbeSpec{
+		ID:         "stub.blob.equals",
+		Type:       "Blob",
+		Member:     "equals",
+		Kind:       "method",
+		ReturnType: "Boolean",
+		Parameters: []string{"Object"},
+	}
+	code := stubContractInvocationCode(spec)
+	if strings.Contains(code, "new Blob()") || !strings.Contains(code, "Blob.valueOf('oaer')") {
+		t.Fatalf("unexpected Blob receiver invocation: %q", code)
+	}
+}
+
+func TestStubContractCompileFailureResult(t *testing.T) {
+	spec := capability.StubContractProbeSpec{ID: "stub.missing.type", Type: "MissingType"}
+	result, ok := stubContractCompileFailureResult(spec, &apexCompileError{Problem: "Type is not visible: MissingType"})
+	if !ok {
+		t.Fatalf("expected compile failure result")
+	}
+	if result.ProbeID != spec.ID || result.ExceptionType == nil || *result.ExceptionType != "System.CompileException" {
+		t.Fatalf("unexpected compile failure result: %#v", result)
+	}
+}
+
 func TestDefaultApexArgForType(t *testing.T) {
 	tests := map[string]string{
 		"String":       "'oaer'",

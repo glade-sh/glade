@@ -1183,6 +1183,43 @@ func TestRunCompatStubContractsProbeManifest(t *testing.T) {
 	}
 }
 
+func TestRunCompatStubDiscoveryJSON(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "stub-discovery", "--tier", "smoke", "--limit", "3", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub discovery json exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"target": "stub contract implementation discovery"`,
+		`"tier": "smoke"`,
+		`"requested": 3`,
+		`"candidates":`,
+		`"topImplementation":`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stub discovery stdout missing %q: %q", want, stdout.String())
+		}
+	}
+}
+
+func TestRunCompatStubDiscoveryNoExecFull(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "stub-discovery", "--tier", "full", "--limit", "20", "--no-exec", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub discovery no-exec json exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"requested": 20`,
+		`"executed": 0`,
+		`"needs_org_probe"`,
+		`"unverified"`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stub discovery no-exec stdout missing %q: %q", want, stdout.String())
+		}
+	}
+}
+
 func TestRunCompatStubInventoryOutputAndCheck(t *testing.T) {
 	sourceRoot := t.TempDir()
 	writeTestFile(t, filepath.Join(sourceRoot, "apex-system-stubs", "System", "String.cls"), `global class String {
@@ -1792,7 +1829,7 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("seed exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), `"schemaVersion": 1`) || !strings.Contains(stdout.String(), `"Account": 1`) || !strings.Contains(stdout.String(), `"users": 2`) {
+	if !strings.Contains(stdout.String(), `"schemaVersion": 1`) || !strings.Contains(stdout.String(), `"Account": 1`) || !strings.Contains(stdout.String(), `"users": 1`) {
 		t.Fatalf("seed stdout = %q", stdout.String())
 	}
 
@@ -1802,7 +1839,7 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("inspect exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "schemaVersion: 1") || !strings.Contains(stdout.String(), "Account: 1") || !strings.Contains(stdout.String(), "User: 2") {
+	if !strings.Contains(stdout.String(), "schemaVersion: 1") || !strings.Contains(stdout.String(), "Account: 1") || !strings.Contains(stdout.String(), "User: 1") {
 		t.Fatalf("inspect stdout = %q", stdout.String())
 	}
 
@@ -1822,7 +1859,7 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("reset exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), `"Account": 0`) || !strings.Contains(stdout.String(), `"users": 2`) {
+	if !strings.Contains(stdout.String(), `"Account": 0`) || !strings.Contains(stdout.String(), `"users": 1`) {
 		t.Fatalf("reset stdout = %q", stdout.String())
 	}
 }

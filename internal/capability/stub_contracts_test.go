@@ -82,12 +82,36 @@ func TestStubContractProbeIDStable(t *testing.T) {
 	}
 }
 
+func TestStubContractProbeIDIncludesSignature(t *testing.T) {
+	entryA := StubBehaviorEntry{
+		Type:       "Date",
+		Member:     "addError",
+		Parameters: []string{"String"},
+	}
+	entryB := StubBehaviorEntry{
+		Type:       "Date",
+		Member:     "addError",
+		Parameters: []string{"String", "Boolean"},
+	}
+	idA := stubContractProbeID(entryA)
+	idB := stubContractProbeID(entryB)
+	if idA == idB {
+		t.Fatalf("expected unique probe IDs for overloads: %q", idA)
+	}
+	if idA != "stub.date.adderror.sig-string" {
+		t.Fatalf("idA = %q", idA)
+	}
+	if idB != "stub.date.adderror.sig-string-boolean" {
+		t.Fatalf("idB = %q", idB)
+	}
+}
+
 func TestBuildStubContractProbeManifest(t *testing.T) {
 	report := StubContractReport{
 		Entries: []StubContractEntry{
-			{ID: "String.trim()", Type: "String", Member: "trim", Kind: "method", Mode: StubContractOrgDiff, ProbeID: "stub.string.trim"},
-			{ID: "CustomDto.value()", Type: "CustomDto", Member: "value", Kind: "method", Mode: StubContractPassiveDTO},
-			{ID: "Network.call()", Type: "Network", Member: "call", Kind: "method", Mode: StubContractLocalOnly},
+			{ID: "String.trim()", Type: "String", Member: "trim", Mode: StubContractOrgDiff, ProbeID: "stub.string.trim"},
+			{ID: "CustomDto.value()", Type: "CustomDto", Member: "value", Mode: StubContractPassiveDTO},
+			{ID: "Network.call()", Type: "Network", Member: "call", Mode: StubContractLocalOnly},
 		},
 	}
 	core := BuildStubContractProbeManifest(report, "core")
