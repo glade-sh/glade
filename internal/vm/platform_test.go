@@ -182,6 +182,11 @@ func TestExecAppLauncherControllerServiceFlowsStayUnsupported(t *testing.T) {
 			src:  `applauncher.SocialLoginController.handleIdp();`,
 			want: `unsupported call "applauncher.SocialLoginController.handleIdp local identity provider callback flow"`,
 		},
+		{
+			name: "forgot password flow",
+			src:  `applauncher.ForgotPasswordController.forgotPassword('user@example.test', '/home');`,
+			want: `unsupported call "applauncher.ForgotPasswordController.forgotPassword local password reset flow"`,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -251,7 +256,7 @@ func TestExecPackagedControllerServiceFlowsStayUnsupported(t *testing.T) {
 		{
 			name: "maps geocode",
 			src:  `mapslite.MapsLiteUtils.falconGeocodeRecords('Account');`,
-			want: `unsupported call "mapslite.MapsLiteUtils.falconGeocodeRecords"`,
+			want: `unsupported call "mapslite.MapsLiteUtils.falconGeocodeRecords local maps geocode service flow"`,
 		},
 		{
 			name: "quote execution",
@@ -1118,6 +1123,19 @@ System.assert(many.get(1).isSuccess());
 		t.Fatal(err)
 	}
 	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEventBusTriggerContextCurrentContextReturnsLocalObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+eventbus.TriggerContext ctx = eventbus.TriggerContext.currentContext();
+System.assertNotEquals(null, ctx);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

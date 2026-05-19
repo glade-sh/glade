@@ -2878,6 +2878,12 @@ platformStaticCall:
 			return value, nil
 		}
 	}
+	if strings.EqualFold(callee, "eventbus.TriggerContext.currentContext") {
+		if len(args) != 0 {
+			return Null, fmt.Errorf("eventbus.TriggerContext.currentContext expects 0 arguments")
+		}
+		return Object("eventbus.TriggerContext"), nil
+	}
 
 	switch callee {
 	case "Datacloud.FindDuplicates.findDuplicates":
@@ -31692,6 +31698,19 @@ func (vm *VM) callAppLauncherControllerStatic(callee string, args []Value) (Valu
 		case "handleidp":
 			return Null, true, unsupportedCallError(callee + " local identity provider callback flow")
 		}
+	case "applauncher.forgotpasswordcontroller":
+		switch name {
+		case "setexperienceid":
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("%s expects 1 argument", callee)
+			}
+			return String(""), true, nil
+		case "forgotpassword":
+			if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+				return Null, true, fmt.Errorf("%s expects username and redirect URL Strings", callee)
+			}
+			return Null, true, unsupportedCallError(callee + " local password reset flow")
+		}
 	}
 	return Null, false, nil
 }
@@ -32730,6 +32749,12 @@ func (vm *VM) callPackagedControllerStatic(callee string, args []Value) (Value, 
 	if packagedControllerUnsupportedMethod(className, methodName) {
 		return Null, true, unsupportedCallError(callee)
 	}
+	if strings.EqualFold(className, "mapslite.MapsLiteUtils") && strings.EqualFold(methodName, "falconGeocodeRecords") {
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, true, fmt.Errorf("%s expects 1 String argument", callee)
+		}
+		return Null, true, unsupportedCallError(callee + " local maps geocode service flow")
+	}
 	if !packagedControllerDefaultMethod(className, methodName) {
 		return Null, false, nil
 	}
@@ -32799,8 +32824,6 @@ func packagedControllerUnsupportedMethod(typeName, methodName string) bool {
 		return strings.HasPrefix(name, "forget") || strings.HasPrefix(name, "mask") || strings.HasPrefix(name, "performunarchive")
 	case "applauncher.ChangePasswordController":
 		return strings.HasPrefix(name, "changepass")
-	case "applauncher.ForgotPasswordController":
-		return name == "forgotpassword"
 	case "setup_service_livemessage.MessagingChannelAppleDomainController":
 		return name == "uploaddomainverificationcertificate"
 	case "publicsectrsltn.AssessmentResponses":
@@ -32810,8 +32833,6 @@ func packagedControllerUnsupportedMethod(typeName, methodName string) bool {
 		return name == "execute" || name == "executeblacktabrequest"
 	case "omnichannel.RouteWorkApexController":
 		return name == "routework"
-	case "mapslite.MapsLiteUtils":
-		return name == "falcongeocoderecords"
 	case "embeddedMessaging.EmbeddedMessagingSessionHandler":
 		return name == "handlerequestwithsfdcsession"
 	default:
