@@ -1736,6 +1736,34 @@ System.assertNotEquals(null, fetched);
 	}
 }
 
+func TestExecConnectApiPrimaryUsageFallbackThrowsConnectApiException(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+	}{
+		{
+			name: "named credentials unsupported method",
+			src:  `ConnectApi.NamedCredentials.deleteNamedCredential('devName');`,
+		},
+		{
+			name: "user profiles unsupported method",
+			src:  `ConnectApi.UserProfiles.getBannerPhoto(Network.getNetworkId(), UserInfo.getUserId());`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = New(nil).Execute(program)
+			if err == nil || !strings.Contains(err.Error(), "ConnectApi.ConnectApiException") {
+				t.Fatalf("expected ConnectApi.ConnectApiException, got %v", err)
+			}
+		})
+	}
+}
+
 func TestExecConnectApiNextBestActionReadDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
 ConnectApi.Recommendation recommendation = ConnectApi.NextBestAction.getRecommendation('rec');

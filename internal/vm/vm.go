@@ -2840,6 +2840,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 platformStaticCall:
 	callee = normalizeStaticCallCasing(callee)
+	if value, handled, err := vm.callConnectAPIPrimaryUsageStaticOutcome(callee, args); handled || err != nil {
+		return value, err
+	}
 	if value, handled, err := vm.callConnectAPITestFixtureStatic(callee, args); handled || err != nil {
 		return value, err
 	}
@@ -30774,6 +30777,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		if className == "" {
 			className = receiver.Type
 		}
+		if connectAPIPrimaryUsageClass(className) && !connectAPIPrimaryUsageAllowedMethod(className, apexMethodMemberName(method.Name)) {
+			return Null, newExceptionError("ConnectApi.ConnectApiException", method.Name+" is not supported in local tests")
+		}
 		if generatedFamilyUnsupportedTypePrefix(className) {
 			return Null, newExceptionError("UnsupportedOperationException", method.Name+" local stub surface")
 		}
@@ -31854,6 +31860,45 @@ func (vm *VM) callConnectAPIReadOnlyStaticDefault(callee string, args []Value) (
 		return Null, false
 	}
 	return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
+}
+
+func (vm *VM) callConnectAPIPrimaryUsageStaticOutcome(callee string, args []Value) (Value, bool, error) {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok || !connectAPIPrimaryUsageClass(className) {
+		return Null, false, nil
+	}
+	if connectAPIPrimaryUsageAllowedMethod(className, methodName) {
+		return Null, false, nil
+	}
+	return Null, true, newExceptionError("ConnectApi.ConnectApiException", callee+" is not supported in local tests")
+}
+
+func connectAPIPrimaryUsageClass(className string) bool {
+	switch strings.ToLower(strings.TrimSpace(className)) {
+	case "connectapi.namedcredentials", "connectapi.userprofiles":
+		return true
+	default:
+		return false
+	}
+}
+
+func connectAPIPrimaryUsageAllowedMethod(className, methodName string) bool {
+	classLower := strings.ToLower(strings.TrimSpace(className))
+	methodLower := strings.ToLower(strings.TrimSpace(methodName))
+	switch classLower {
+	case "connectapi.namedcredentials":
+		return methodLower == "getnamedcredentials" ||
+			methodLower == "createexternalcredential" ||
+			methodLower == "createnamedcredential" ||
+			methodLower == "getexternalcredential"
+	case "connectapi.userprofiles":
+		return methodLower == "getuserprofile" ||
+			methodLower == "getphoto" ||
+			methodLower == "setphoto" ||
+			methodLower == "deletephoto"
+	default:
+		return false
+	}
 }
 
 func connectAPIReadOnlyHarnessType(typeName string) bool {
