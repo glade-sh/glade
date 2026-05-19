@@ -22602,12 +22602,13 @@ func (vm *VM) assign(name string, value Value) error {
 				}
 				value = coerced
 				if field.Setter != nil {
-					key := owner + "." + memberName
+					storageName := staticFieldStorageName(memberName, field)
+					key := owner + "." + storageName
 					if vm.activeSetters[key] > 0 {
 						oldValue := field.Value
 						field.Value = value
 						class := vm.Classes[owner]
-						class.StaticFields[memberName] = field
+						class.StaticFields[storageName] = field
 						vm.Classes[owner] = class
 						vm.invalidateStaticValueRefsForChange(oldValue, value)
 						return nil
@@ -22625,7 +22626,7 @@ func (vm *VM) assign(name string, value Value) error {
 				oldValue := field.Value
 				field.Value = value
 				class := vm.Classes[owner]
-				class.StaticFields[memberName] = field
+				class.StaticFields[staticFieldStorageName(memberName, field)] = field
 				vm.Classes[owner] = class
 				vm.invalidateStaticValueRefsForChange(oldValue, value)
 				return nil
@@ -22716,12 +22717,13 @@ func (vm *VM) assign(name string, value Value) error {
 			}
 			value = coerced
 			if field.Setter != nil {
-				key := owner + "." + name
+				storageName := staticFieldStorageName(name, field)
+				key := owner + "." + storageName
 				if vm.activeSetters[key] > 0 {
 					oldValue := field.Value
 					field.Value = value
 					class := vm.Classes[owner]
-					class.StaticFields[name] = field
+					class.StaticFields[storageName] = field
 					vm.Classes[owner] = class
 					vm.invalidateStaticValueRefsForChange(oldValue, value)
 					return nil
@@ -22739,7 +22741,7 @@ func (vm *VM) assign(name string, value Value) error {
 			oldValue := field.Value
 			field.Value = value
 			class := vm.Classes[owner]
-			class.StaticFields[name] = field
+			class.StaticFields[staticFieldStorageName(name, field)] = field
 			vm.Classes[owner] = class
 			vm.invalidateStaticValueRefsForChange(oldValue, value)
 			return nil
@@ -22984,6 +22986,13 @@ func (vm *VM) lookupStaticField(typeName, fieldName string) (Field, string, bool
 		search = search[:dot]
 	}
 	return Field{}, "", false
+}
+
+func staticFieldStorageName(requested string, field Field) string {
+	if strings.TrimSpace(field.Name) != "" {
+		return field.Name
+	}
+	return requested
 }
 
 func builtinStaticField(typeName, fieldName string) (Value, bool) {

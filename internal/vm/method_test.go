@@ -5857,6 +5857,32 @@ System.assertEquals(5, c.score());
 	}
 }
 
+func TestExecStaticFieldAssignmentUsesCanonicalCaseInsensitiveName(t *testing.T) {
+	program, err := CompileAnonymous(`
+Config.MockService = 'member';
+System.assertEquals('member', Config.mockService);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Config",
+		StaticFields: map[string]Field{
+			"mockService": {Name: "mockService", Type: "String", Static: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	class := machine.Classes["Config"]
+	if _, ok := class.StaticFields["MockService"]; ok {
+		t.Fatalf("static assignment created duplicate case-variant field: %#v", class.StaticFields)
+	}
+}
+
 func TestExecStaticPropertySingletonDispatchesInheritedMethod(t *testing.T) {
 	getterProgram, err := CompileAnonymous(`
 if (Instance == null) {
