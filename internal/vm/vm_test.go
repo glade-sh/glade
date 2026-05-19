@@ -2963,6 +2963,7 @@ System.assertEquals('PractitionerId', fields.get('Credentialification.Practition
 func TestExecSObjectFieldMapDoesNotSynthesizeUnknownMetadataField(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectField> fields = Widget__c.SObjectType.getDescribe().fields.getMap();
+System.assertEquals(false, fields.containsKey('Missing__c'));
 System.assertEquals(null, fields.get('Missing__c'));
 System.assertEquals(null, fields.get('Widget__c.Missing__c'));
 `)

@@ -14561,23 +14561,6 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 			record.Fields[canonicalField] = converted
 		}
 	}
-	for _, explicitField := range explicitSObjectFieldNames(*value) {
-		if strings.EqualFold(explicitField, "Id") || isInternalSObjectField(explicitField) {
-			continue
-		}
-		canonicalField := explicitField
-		if definition.APIName != "" {
-			resolved, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, explicitField)
-			if !ok {
-				continue
-			}
-			canonicalField = resolved
-		}
-		if _, ok := record.GetField(canonicalField); ok || record.HasExplicitNull(canonicalField) {
-			continue
-		}
-		record.ExplicitNulls[canonicalField] = true
-	}
 	return record, nil
 }
 
@@ -15312,6 +15295,9 @@ func storageValueFromVMForField(value Value, fieldType storage.FieldType) (stora
 		if value.Kind == ValueInt {
 			return storageValueFromVM(value)
 		}
+		if untypedIntegralDecimalLiteral(value) {
+			return storage.IntegerValue(int64(value.Decimal)), nil
+		}
 	case storage.FieldDecimal:
 		if value.Kind == ValueInt {
 			return storage.DecimalValue(strconv.FormatInt(value.Int, 10) + ".0"), nil
@@ -16032,7 +16018,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		frame[key] = value
 	}
 	vm.Globals = frame
-	vm.triggerGlobals = ctx
+	vm.triggerGlobals = frame
 	vm.currentClass = trigger.Name
 	vm.callStack = append(vm.callStack, callFrame{Symbol: trigger.Name, File: trigger.File, Line: trigger.Line, Column: trigger.Column})
 	defer func() {
@@ -16042,9 +16028,9 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		vm.currentClass = callerClass
 	}()
 	out, err := vm.executeProgram(trigger.Program, result)
-	updated := ctx["Trigger.new"]
+	updated := frame["Trigger.new"]
 	if trigger.Operation == "delete" {
-		updated = ctx["Trigger.old"]
+		updated = frame["Trigger.old"]
 	}
 	if err != nil {
 		if updated.Kind == ValueList {
@@ -33872,7 +33858,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				_, ok = vm.namespaceStringMapLookup(receiver, args[0])
 			}
 			if !ok {
-				_, ok = vm.specialMapLookup(receiver, args[0])
+				ok = vm.specialMapContainsKey(receiver, args[0])
 			}
 			if !ok {
 				var err error
@@ -34424,6 +34410,51 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 		}
 	}
 	return Null, false
+}
+
+func (vm *VM) specialMapContainsKey(receiver, key Value) bool {
+	if receiver.Kind != ValueMap || key.Kind != ValueString {
+		return false
+	}
+	if objectName, ok := sObjectFieldMapObjectName(receiver); ok || receiver.Type == "Schema.SObjectFieldMap" {
+		_ = objectName
+		for _, alias := range vm.sObjectFieldMapLookupAliases(key.Text) {
+			if _, ok := receiver.Map[mapKey(String(alias))]; ok {
+				return true
+			}
+		}
+		return false
+	}
+	if receiver.Type == "Schema.GlobalDescribeMap" {
+		for _, alias := range vm.schemaDescribeMapAliases(key.Text) {
+			if _, ok := receiver.Map[mapKey(String(alias))]; ok {
+				return true
+			}
+		}
+		return false
+	}
+	namespace := ""
+	if vm != nil && vm.Org != nil {
+		namespace = vm.Org.Namespace
+	}
+	if mapContainsOnlySObjectFieldTokens(receiver) {
+		for rawKey := range receiver.Map {
+			candidate := valueFromMapKey(rawKey)
+			if candidate.Kind == ValueString && schemaDescribeMapKeyMatches(namespace, candidate.Text, key.Text) {
+				return true
+			}
+		}
+	}
+	for _, value := range receiver.Map {
+		if value.Kind != ValueObject || value.Type != "Schema.RecordTypeInfo" {
+			continue
+		}
+		developerName, ok := value.Fields["developerName"]
+		if ok && developerName.Kind == ValueString && strings.EqualFold(developerName.Text, key.Text) {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) namespaceStringMapLookup(receiver Value, key Value) (Value, bool) {

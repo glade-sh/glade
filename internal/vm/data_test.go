@@ -2040,6 +2040,7 @@ System.assertEquals('Hot', updated.Rating);
 	machine := New(nil)
 	org := testDataOrg()
 	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
 	account.Definition.Fields["Payload__c"] = storage.Field{APIName: "Payload__c", Type: storage.FieldString}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
@@ -2082,6 +2083,7 @@ System.assertEquals('Hot', updated.Rating);
 	org := testDataOrg()
 	account := org.Objects["Account"]
 	account.Definition.Fields["External_Key__c"] = storage.Field{APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, Unique: true}
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
 	account.Definition.Fields["Payload__c"] = storage.Field{APIName: "Payload__c", Type: storage.FieldString}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
@@ -8755,6 +8757,47 @@ System.assertEquals('Warm', updated.Rating);
 	machine.SetOrg(&org)
 	if err := machine.RegisterTrigger(Trigger{
 		Name:      "AccountBeforeUpdateMergedRecord",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "update",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecBeforeUpdateSObjectPutThroughTriggerNewMapValuesPersists(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account row : Trigger.new) {
+	row.Rating = 'Warm';
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Before');
+insert a;
+Account patch = new Account(Id = a.Id);
+patch.Name = 'After';
+update patch;
+Account updated = [SELECT Rating FROM Account WHERE Id = :a.Id];
+System.assertEquals('Warm', updated.Rating);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeUpdateSObjectPut",
 		Object:    "Account",
 		Timing:    triggerTimingBefore,
 		Operation: "update",
