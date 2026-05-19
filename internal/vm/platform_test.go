@@ -2537,7 +2537,6 @@ System.assertEquals(0, availability.getInventoryCheckItemAvailability().size());
 commercepayments.ClientSidePaymentAdapter paymentAdapter = new commercepayments.ClientSidePaymentAdapter();
 System.assertEquals(null, paymentAdapter.getClientComponentName());
 System.assertEquals(0, paymentAdapter.getClientConfiguration().size());
-System.assertNotEquals(null, paymentAdapter.processClientRequest(new commercepayments.ClientRequestContext(), new Map<String,Object>()));
 commerce_ordermanagement.ProductExpandResponse expandResponse = new commerce_ordermanagement.ProductExpandService().returnReasons(new commerce_ordermanagement.ProductExpandRequest());
 System.assertNotEquals(null, expandResponse);
 System.assertEquals(null, expandResponse.getSucceed());
@@ -2553,6 +2552,33 @@ System.assertEquals(true, new ime_mrm.EventManagementSubjectApi().getSubjectAssi
 	}
 	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestGeneratedFamilyUnsupportedTypePrefixTargetsOnlyLowercaseStubFamilies(t *testing.T) {
+	for _, typeName := range []string{
+		"cartextension.Any",
+		"commercepayments.Any",
+		"metadata.Any",
+		"limits.Any",
+		"cache.Any",
+		"lxscheduler.Any",
+		"messaging.Any",
+	} {
+		if !generatedFamilyUnsupportedTypePrefix(typeName) {
+			t.Fatalf("expected %s to match", typeName)
+		}
+	}
+	for _, typeName := range []string{
+		"CartExtension.Any",
+		"Metadata.Operations",
+		"Limits",
+		"Cache.Org",
+		"Messaging.SingleEmailMessage",
+	} {
+		if generatedFamilyUnsupportedTypePrefix(typeName) {
+			t.Fatalf("did not expect %s to match", typeName)
+		}
 	}
 }
 

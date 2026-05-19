@@ -5542,6 +5542,9 @@ platformStaticCall:
 		if strings.HasPrefix(callee, "Crypto.") {
 			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
 		}
+		if generatedFamilyUnsupportedStaticCallee(callee) {
+			return Null, newExceptionError("UnsupportedOperationException", callee+" local stub surface")
+		}
 		if value, handled := vm.generatedPlatformStaticDefault(callee, args); handled {
 			return value, nil
 		}
@@ -30685,12 +30688,25 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	if commerceClassName == "" && receiver.Kind == ValueObject {
 		commerceClassName = receiver.Type
 	}
+	if strings.EqualFold(commerceClassName, "commercepayments.ClientSidePaymentAdapter") &&
+		strings.EqualFold(apexMethodMemberName(method.Name), "processClientRequest") {
+		return Null, newExceptionError("UnsupportedOperationException", method.Name+" local stub surface")
+	}
 	if strings.EqualFold(commerceClassName, "CartExtension.CheckoutPlaceOrder") &&
 		commerceLocalHarnessRuntimeMethod(commerceClassName, apexMethodMemberName(method.Name)) {
 		if method.ClassName == "" {
 			method.ClassName = commerceClassName
 		}
 		return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), nil
+	}
+	if methodHasModifier(method.Modifiers, "passive-generated") {
+		className := method.ClassName
+		if className == "" {
+			className = receiver.Type
+		}
+		if generatedFamilyUnsupportedTypePrefix(className) {
+			return Null, newExceptionError("UnsupportedOperationException", method.Name+" local stub surface")
+		}
 	}
 	if vm.generatedOptionalWrapperType(method.ClassName) {
 		if value, handled := vm.generatedOptionalWrapperStaticDefault(method.ClassName, apexMethodMemberName(method.Name), args); handled {
@@ -30991,6 +31007,35 @@ func describeFieldBooleanFlagName(method string) string {
 func passiveGeneratedMethod(method Method) bool {
 	return methodHasModifier(method.Modifiers, "passive-generated") &&
 		len(method.Program.Instructions) == 0
+}
+
+func generatedFamilyUnsupportedStaticCallee(callee string) bool {
+	className, _, ok := strings.Cut(callee, ".")
+	if !ok {
+		return false
+	}
+	return generatedFamilyUnsupportedTypePrefix(className)
+}
+
+func generatedFamilyUnsupportedTypePrefix(typeName string) bool {
+	trimmed := strings.TrimSpace(typeName)
+	if trimmed == "" {
+		return false
+	}
+	for _, family := range []string{
+		"cartextension",
+		"commercepayments",
+		"metadata",
+		"limits",
+		"cache",
+		"lxscheduler",
+		"messaging",
+	} {
+		if trimmed == family || strings.HasPrefix(trimmed, family+".") {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value, receiver Value) Value {
@@ -32486,6 +32531,10 @@ func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Val
 			return value, true
 		}
 		if !vm.generatedPlatformMethodAllowsDefault(method) {
+			continue
+		}
+		if strings.EqualFold(method.ClassName, "commercepayments.ClientSidePaymentAdapter") &&
+			strings.EqualFold(apexMethodMemberName(method.Name), "processClientRequest") {
 			continue
 		}
 		return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), true
