@@ -1864,6 +1864,62 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	}
 }
 
+func TestRunProbeSummarizeTopStub(t *testing.T) {
+	dir := t.TempDir()
+	reportPath := filepath.Join(dir, "gap-report.json")
+	writeTestFile(t, reportPath, `{
+  "entries": [
+    {"probeId":"stub.connectapi-feed.get","gapType":"behavioral_gap","diff":"org throws System.UnsupportedOperationException; local throws System.CompileException"},
+    {"probeId":"stub.connectapi-feed.post","gapType":"behavioral_gap","diff":"org throws System.UnsupportedOperationException; local returns <nil>"},
+    {"probeId":"stub.auth-oauth.login","gapType":"unsupported_gap","diff":"org returns true; local throws UnsupportedFeature"}
+  ],
+  "traceDiffs": [
+    {"classification":"contract_equivalent"},
+    {"classification":"contract_equivalent"},
+    {"classification":"missing_trace"}
+  ]
+}`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"probe", "summarize", reportPath, "--top-stub"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	out := stdout.String()
+	for _, want := range []string{
+		"topStubSuperfamilies:",
+		"  connectapi: 2",
+		"topDiffShapes:",
+		"traceClassificationCounts:",
+		"  contract_equivalent: 2",
+		"  missing_trace: 1",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("stdout missing %q: %q", want, out)
+		}
+	}
+}
+
+func TestRunProbeSummarizeDefaultDoesNotPrintTopStubSections(t *testing.T) {
+	dir := t.TempDir()
+	reportPath := filepath.Join(dir, "gap-report.json")
+	writeTestFile(t, reportPath, `{
+  "entries": [
+    {"probeId":"stub.connectapi-feed.get","gapType":"behavioral_gap","diff":"org throws System.UnsupportedOperationException; local throws System.CompileException"}
+  ],
+  "traceDiffs": [{"classification":"contract_equivalent"}]
+}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"probe", "summarize", reportPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	out := stdout.String()
+	if strings.Contains(out, "topStubSuperfamilies:") || strings.Contains(out, "traceClassificationCounts:") {
+		t.Fatalf("stdout unexpectedly included top stub sections: %q", out)
+	}
+}
+
 func writeTestFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
