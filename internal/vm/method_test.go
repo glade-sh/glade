@@ -814,6 +814,7 @@ Selector selector = new Selector();
 Object placeholder = null;
 System.assertEquals('fieldsets', selector.selectById((Set<Id>)placeholder, (List<Schema.FieldSet>)placeholder));
 System.assertEquals('fieldsets', selector.selectById((Set<Id>)Matcher.anyObject(), (List<Schema.FieldSet>)Matcher.anyList()));
+System.assertEquals('fieldsets', selector.selectById((Set<Id>)Matcher.anyObject(), (List<FieldSet>)Matcher.anyList()));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -853,6 +854,24 @@ System.assertEquals('fieldsets', selector.selectById((Set<Id>)Matcher.anyObject(
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestResolveClassNamePrefersLexicalNestedType(t *testing.T) {
+	machine := New(nil)
+	machine.currentClass = "Outer"
+	if err := machine.RegisterClass(Class{Name: "Nested"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Outer"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Outer.Nested", SuperClass: "Base"}); err != nil {
+		t.Fatal(err)
+	}
+	resolved, ok := machine.resolveClassName("Nested")
+	if !ok || resolved != "Outer.Nested" {
+		t.Fatalf("resolved Nested = %q, %v; want Outer.Nested", resolved, ok)
 	}
 }
 
@@ -1823,6 +1842,15 @@ func TestManagedTriggerHandlerManagerStaticTogglesAreNoops(t *testing.T) {
 		} else if !handled {
 			t.Fatalf("%s was not handled", method)
 		}
+	}
+
+	if err := machine.RegisterClass(Class{Name: "TriggerHandlerManager"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, handled, err := machine.callFrameworkStaticMember("TriggerHandlerManager", "disableTriggerForThisRequest", []Value{String("StepName")}); err != nil {
+		t.Fatal(err)
+	} else if handled {
+		t.Fatal("real TriggerHandlerManager class should not be handled by managed fallback")
 	}
 }
 

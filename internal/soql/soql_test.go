@@ -1824,6 +1824,45 @@ func TestExecuteEvaluatesFormulaFieldsInWhere(t *testing.T) {
 	}
 }
 
+func TestExecuteEvaluatesTextFormulaFieldsInWhere(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Now = func() time.Time { return time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC) }
+	org.Objects["Member__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Member__c",
+			Fields: map[string]storage.Field{
+				"StartDate__c":    {APIName: "StartDate__c", Type: storage.FieldDate},
+				"EndDate__c":      {APIName: "EndDate__c", Type: storage.FieldDate},
+				"StampedState__c": {APIName: "StampedState__c", Type: storage.FieldString},
+				"State__c": {
+					APIName: "State__c",
+					Type:    storage.FieldString,
+					Formula: `IF(TODAY() >= StartDate__c && TODAY() > EndDate__c, "Past", "Current")`,
+				},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {
+				ID:     "a00000000000001",
+				Object: "Member__c",
+				Fields: map[string]storage.Value{
+					"StartDate__c":    storage.DateValue("2026-01-01"),
+					"EndDate__c":      storage.DateValue("2026-05-01"),
+					"StampedState__c": storage.StringValue("Current"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, State__c FROM Member__c WHERE StampedState__c = 'Current' AND State__c != 'Current'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["State__c"].String != "Past" {
+		t.Fatalf("text formula where result = %#v", result)
+	}
+}
+
 func TestExecuteEvaluatesParentFormulaField(t *testing.T) {
 	org := storage.NewOrgState()
 	batchDefinition := storage.ObjectDefinition{

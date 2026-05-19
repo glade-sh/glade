@@ -4977,6 +4977,23 @@ System.assertEquals(null, namespaced);
 	}
 }
 
+func TestExecTypeForNameNamespaceAcceptsQualifiedName(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type qualified = Type.forName('pkg', 'pkg.Thing');
+System.assertNotEquals(null, qualified);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Thing", Namespace: "pkg"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTypeNewInstanceAbstractClassIsCatchable(t *testing.T) {
 	program, err := CompileAnonymous(`
 Type t = Type.forName('AbstractThing');
@@ -5681,12 +5698,13 @@ func TestExecScheduledApexCronJobDetailUsesScheduledApexType(t *testing.T) {
 	program, err := CompileAnonymous(`
 String scheduleId = System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
 List<CronTrigger> rows = [
-	SELECT Id, CronJobDetail.Name, CronJobDetail.JobType
+	SELECT Id, NextFireTime, CronJobDetail.Name, CronJobDetail.JobType
 	FROM CronTrigger
 	WHERE CronJobDetail.Name = 'nightly' AND CronJobDetail.JobType = '7'
 ];
 System.assertEquals(1, rows.size());
 System.assertEquals(scheduleId, rows[0].Id);
+System.assertEquals(Date.today() + 1, rows[0].NextFireTime.date());
 `)
 	if err != nil {
 		t.Fatal(err)

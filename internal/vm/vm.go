@@ -10272,7 +10272,7 @@ func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
 	record.Fields["CronJobDetail"] = storage.StringValue(job.Name)
 	record.Fields["CronJobDetailId"] = storage.IDValue(storage.ID(cronJobDetailID(job.Name)))
 	record.Fields["TimesTriggered"] = storage.IntegerValue(0)
-	if nextFireTime, ok := cronNextFireTime(job.Cron); ok {
+	if nextFireTime, ok := cronNextFireTime(job.Cron, vm.fakeNow); ok {
 		record.Fields["NextFireTime"] = storage.DateTimeValue(nextFireTime)
 	}
 	object.Records[record.ID] = record
@@ -10280,9 +10280,9 @@ func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
 	vm.recordCronJobDetail(job)
 }
 
-func cronNextFireTime(expr string) (string, bool) {
+func cronNextFireTime(expr string, now time.Time) (string, bool) {
 	parts := strings.Fields(expr)
-	if len(parts) != 7 {
+	if len(parts) != 6 && len(parts) != 7 {
 		return "", false
 	}
 	sec, err := strconv.Atoi(parts[0])
@@ -10297,19 +10297,68 @@ func cronNextFireTime(expr string) (string, bool) {
 	if err != nil {
 		return "", false
 	}
-	day, err := strconv.Atoi(parts[3])
-	if err != nil {
+	if sec < 0 || sec > 59 || min < 0 || min > 59 || hour < 0 || hour > 23 {
 		return "", false
 	}
-	month, err := strconv.Atoi(parts[4])
-	if err != nil {
+	day, anyDay, ok := cronField(parts[3], 1, 31, true)
+	if !ok {
 		return "", false
 	}
-	year, err := strconv.Atoi(parts[6])
-	if err != nil {
+	month, anyMonth, ok := cronField(parts[4], 1, 12, false)
+	if !ok {
 		return "", false
 	}
-	return fmt.Sprintf("%04d-%02d-%02d %02d:%02d:%02d", year, month, day, hour, min, sec), true
+	weekday, anyWeekday, ok := cronField(parts[5], 1, 7, true)
+	if !ok {
+		return "", false
+	}
+	year, anyYear := 0, true
+	if len(parts) == 7 {
+		year, anyYear, ok = cronField(parts[6], 1970, 9999, false)
+		if !ok {
+			return "", false
+		}
+	}
+	start := now.UTC().Truncate(24 * time.Hour)
+	for offset := 0; offset < 3660; offset++ {
+		candidateDay := start.AddDate(0, 0, offset)
+		if !anyYear && candidateDay.Year() != year {
+			continue
+		}
+		if !anyMonth && int(candidateDay.Month()) != month {
+			continue
+		}
+		if !anyDay && candidateDay.Day() != day {
+			continue
+		}
+		if !anyWeekday && salesforceCronWeekday(candidateDay) != weekday {
+			continue
+		}
+		candidate := time.Date(candidateDay.Year(), candidateDay.Month(), candidateDay.Day(), hour, min, sec, 0, time.UTC)
+		if candidate.After(now.UTC()) {
+			return formatPlatformDatetime(candidate), true
+		}
+	}
+	return "", false
+}
+
+func cronField(part string, min, max int, questionWildcard bool) (int, bool, bool) {
+	if part == "*" || (questionWildcard && part == "?") {
+		return 0, true, true
+	}
+	value, err := strconv.Atoi(part)
+	if err != nil || value < min || value > max {
+		return 0, false, false
+	}
+	return value, false, true
+}
+
+func salesforceCronWeekday(value time.Time) int {
+	weekday := int(value.Weekday()) + 1
+	if weekday == 8 {
+		return 1
+	}
+	return weekday
 }
 
 func (vm *VM) recordCronJobDetail(job AsyncJob) {
@@ -23258,8 +23307,10 @@ func (vm *VM) typeForName(namespace, name string) Value {
 		return Null
 	}
 	if namespace != "" {
-		if resolved, ok := vm.resolveClassName(namespace + "." + name); ok {
-			return platformScalar("Type", resolved)
+		for _, candidate := range namespaceTypeNameCandidates(namespace, name) {
+			if resolved, ok := vm.resolveClassName(candidate); ok {
+				return platformScalar("Type", resolved)
+			}
 		}
 		return Null
 	}
@@ -23278,6 +23329,19 @@ func (vm *VM) typeForName(namespace, name string) Value {
 		return platformScalar("Type", name)
 	}
 	return Null
+}
+
+func namespaceTypeNameCandidates(namespace, name string) []string {
+	namespace = strings.TrimSpace(namespace)
+	name = strings.TrimSpace(name)
+	if namespace == "" || name == "" {
+		return nil
+	}
+	candidates := []string{namespace + "." + name}
+	if strings.Contains(name, ".") {
+		candidates = append(candidates, name)
+	}
+	return candidates
 }
 
 func (vm *VM) resolveTypeNameToken(name string) (string, bool) {
@@ -23389,13 +23453,13 @@ func isCommonSObjectTypeName(name string) bool {
 }
 
 func (vm *VM) resolveClassName(typeName string) (string, bool) {
-	if class, ok := vm.lookupClass(typeName); ok {
-		return class.Name, true
-	}
 	if !strings.Contains(typeName, ".") && vm.currentClass != "" {
 		if resolved, ok := vm.resolveNestedTypeInClassHierarchy(vm.currentClass, typeName); ok {
 			return resolved, true
 		}
+	}
+	if class, ok := vm.lookupClass(typeName); ok {
+		return class.Name, true
 	}
 	return "", false
 }
@@ -25994,10 +26058,36 @@ func (vm *VM) constructValueLiteral(typeName string, args []Value, namedArgs map
 	return vm.constructValueWithLiteral(typeName, args, namedArgs, result, true)
 }
 
+func (vm *VM) resolveUniqueNestedTypeName(typeName string) (string, bool) {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" || strings.Contains(typeName, ".") || vm.currentClass == "" {
+		return "", false
+	}
+	for name := range vm.Classes {
+		if !strings.HasSuffix(strings.ToLower(name), "."+strings.ToLower(typeName)) {
+			continue
+		}
+		if vm.currentClass != "" && sameLexicalTopLevel(vm.currentClass, name) {
+			return name, true
+		}
+	}
+	return "", false
+}
+
 func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs map[string]Value, result *Result, literalArgs bool) (Value, error) {
 	if resolved := vm.resolveTypeNameInClass(vm.currentClass, typeName); resolved != "" && !strings.EqualFold(resolved, typeName) {
 		typeName = resolved
 	} else if resolved, ok := vm.resolveClassName(typeName); ok {
+		if !strings.Contains(typeName, ".") && !strings.Contains(resolved, ".") {
+			if nested, nestedOK := vm.resolveUniqueNestedTypeName(typeName); nestedOK {
+				typeName = nested
+			} else {
+				typeName = resolved
+			}
+		} else {
+			typeName = resolved
+		}
+	} else if resolved, ok := vm.resolveUniqueNestedTypeName(typeName); ok {
 		typeName = resolved
 	} else {
 		typeName = canonicalRuntimeTypeName(typeName)
@@ -27446,6 +27536,14 @@ func (vm *VM) resolveRuntimeTypeName(typeName string) string {
 		return resolved
 	}
 	if resolved, ok := vm.resolveClassName(typeName); ok {
+		if !strings.Contains(typeName, ".") && !strings.Contains(resolved, ".") {
+			if nested, nestedOK := vm.resolveUniqueNestedTypeName(typeName); nestedOK {
+				return nested
+			}
+		}
+		return resolved
+	}
+	if resolved, ok := vm.resolveUniqueNestedTypeName(typeName); ok {
 		return resolved
 	}
 	return typeName
@@ -28192,9 +28290,14 @@ func (vm *VM) resolveTypeNameInClass(className, typeName string) string {
 
 func (vm *VM) resolveNestedTypeInClassHierarchy(className, typeName string) (string, bool) {
 	for owner := className; owner != ""; {
-		candidate := owner + "." + typeName
-		if class, ok := vm.lookupClass(candidate); ok {
-			return class.Name, true
+		for _, ownerCandidate := range lexicalOwnerCandidates(owner) {
+			candidate := ownerCandidate + "." + typeName
+			if class, ok := vm.lookupClass(candidate); ok {
+				if strings.Contains(candidate, ".") && !strings.Contains(class.Name, ".") {
+					return candidate, true
+				}
+				return class.Name, true
+			}
 		}
 		seenSupers := map[string]bool{}
 		for super := vm.superClassName(owner); super != ""; super = vm.superClassName(super) {

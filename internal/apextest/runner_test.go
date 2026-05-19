@@ -4321,6 +4321,69 @@ private class MappingOperationFactoryTest {
 	}
 }
 
+func TestRunNestedSubclassInheritsBaseProperties(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BaseRequest.cls"), `
+public virtual class BaseRequest {
+  public String AccountId { get; set; }
+  public Datetime TransactionDate { get; set; }
+  public BaseRequest() {
+    this.TransactionDate = Datetime.now();
+  }
+  public virtual void validate() {
+    List<String> missing = getNullParams();
+    if (!missing.isEmpty()) {
+      throw new IllegalArgumentException(String.join(missing, ','));
+    }
+  }
+  public virtual String typeName() {
+    throw new IllegalArgumentException('must override');
+  }
+  protected virtual List<String> getNullParams() {
+    List<String> missing = new List<String>();
+    if (this.AccountId == null) {
+      missing.add('AccountId');
+    }
+    if (this.TransactionDate == null) {
+      missing.add('TransactionDate');
+    }
+    return missing;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/RequestFactory.cls"), `
+public class RequestFactory {
+  public void create(BaseRequest request) {
+    request.validate();
+    request.typeName();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/NestedRequestTest.cls"), `
+@isTest
+private class NestedRequestTest {
+  private class ChildRequest extends BaseRequest { }
+
+  @isTest static void nestedSubclassUsesInheritedStateAndMethods() {
+    ChildRequest request = new ChildRequest();
+    request.AccountId = '001000000000001AAA';
+    try {
+      new RequestFactory().create(request);
+      System.assert(false, 'Expected inherited method exception.');
+    } catch (IllegalArgumentException e) {
+      System.assertEquals('must override', e.getMessage());
+    }
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

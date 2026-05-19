@@ -2388,7 +2388,7 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 		}
 	}
 	if !ok {
-		if fieldDef, fieldOK := definition.Fields[canonicalField]; fieldOK && fieldDef.Type == storage.FieldCalculated && strings.TrimSpace(fieldDef.Formula) != "" {
+		if fieldDef, fieldOK := definition.Fields[canonicalField]; fieldOK && strings.TrimSpace(fieldDef.Formula) != "" {
 			if value, formulaOK := calculatedRecordValue(org, definition, record, fieldDef); formulaOK {
 				return value, true
 			}
@@ -2530,7 +2530,7 @@ func recordFieldValue(org storage.OrgState, record storage.Record, field string)
 
 func calculatedFieldValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field string) (storage.Value, bool) {
 	fieldDef, ok := definition.Fields[field]
-	if !ok || fieldDef.Type != storage.FieldCalculated || strings.TrimSpace(fieldDef.Formula) == "" {
+	if !ok || strings.TrimSpace(fieldDef.Formula) == "" {
 		return storage.Value{}, false
 	}
 	return calculatedRecordValue(org, definition, record, fieldDef)
