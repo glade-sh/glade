@@ -1368,7 +1368,13 @@ func stringStatic(callee string, args []Value) (Value, error) {
 		}
 		return String(args[0].String()), nil
 	case "String.join":
-		if len(args) != 2 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) || args[1].Kind != ValueString {
+		if len(args) != 2 || args[1].Kind != ValueString {
+			return Null, fmt.Errorf("String.join expects List or Set and separator String")
+		}
+		if args[0].Kind == ValueNull {
+			return Null, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
+		}
+		if args[0].Kind != ValueList && args[0].Kind != ValueSet {
 			return Null, fmt.Errorf("String.join expects List or Set and separator String")
 		}
 		values := args[0].List
@@ -1441,6 +1447,14 @@ func stringStatic(callee string, args []Value) (Value, error) {
 			return Null, nil
 		}
 		return String(strings.ReplaceAll(args[0].String(), "'", "\\'")), nil
+	case "String.toLowerCase", "String.toUpperCase":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("%s expects String argument", callee)
+		}
+		if callee == "String.toLowerCase" {
+			return String(strings.ToLower(args[0].Text)), nil
+		}
+		return String(strings.ToUpper(args[0].Text)), nil
 	default:
 		return Null, unsupportedCallError(callee)
 	}
@@ -4935,22 +4949,22 @@ func idStatic(callee string, args []Value) (Value, error) {
 	} else if typedID, ok := typedIDValueText(args[0]); ok {
 		idText = typedID
 	} else {
-		return Null, fmt.Errorf("Id.valueOf expects String")
+		return Null, newExceptionError("System.StringException", "Invalid id: "+args[0].String())
 	}
 	if len(args) == 2 {
 		if args[1].Kind != ValueBool {
-			return Null, fmt.Errorf("Id.valueOf restoreCasing expects Boolean")
+			return Null, newExceptionError("System.StringException", "Invalid id: "+idText)
 		}
 		if args[1].Bool {
 			restored, err := restoreApexIDCasing(idText)
 			if err != nil {
-				return Null, err
+				return Null, newExceptionError("System.StringException", "Invalid id: "+idText)
 			}
 			return platformScalar("Id", restored), nil
 		}
 	}
 	if err := validateApexID(idText); err != nil {
-		return Null, err
+		return Null, newExceptionError("System.StringException", "Invalid id: "+idText)
 	}
 	return platformScalar("Id", idText), nil
 }

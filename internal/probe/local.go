@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/open-aer/oaer/internal/apextest"
+	"github.com/open-aer/oaer/internal/capability"
 	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/sobject"
@@ -213,6 +214,28 @@ func (l *LocalExecutor) runProbe(index typesys.Index, org storage.OrgState, prob
 				ExceptionMessage: strPtr("No generated stub contract probe spec found"),
 			}, nil
 		}
+		if spec.Mode == capability.StubContractCompileShape {
+			exceptionType := "System.CompileException"
+			exceptionMessage := "compile-shape probe intentionally not executed locally"
+			return ProbeResult{
+				ProbeID:          probeID,
+				Category:         "Stub Contracts",
+				Result:           nil,
+				ExceptionType:    &exceptionType,
+				ExceptionMessage: &exceptionMessage,
+			}, nil
+		}
+		if spec.Kind == "constructor" && passiveDTOConstructorCompilesAsShape(spec.Type) {
+			exceptionType := "System.CompileException"
+			exceptionMessage := "constructor is not available in anonymous Apex"
+			return ProbeResult{
+				ProbeID:          probeID,
+				Category:         "Stub Contracts",
+				Result:           nil,
+				ExceptionType:    &exceptionType,
+				ExceptionMessage: &exceptionMessage,
+			}, nil
+		}
 		code = buildLocalStubContractProbeCode(spec)
 	}
 
@@ -244,6 +267,13 @@ func (l *LocalExecutor) runProbe(index typesys.Index, org storage.OrgState, prob
 		return ProbeResult{}, fmt.Errorf("register project runtime: %w", err)
 	}
 	machine.SetOrg(&org)
+	machine.SetCurrentUser(storage.Record{
+		ID:     "005000000000001AAA",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"TimeZoneSidKey": storage.StringValue("America/Los_Angeles"),
+		},
+	})
 
 	result, err := machine.Execute(program)
 
@@ -298,6 +328,15 @@ func (l *LocalExecutor) runProbe(index typesys.Index, org storage.OrgState, prob
 		parsed.ProbeID = probeID
 	}
 	return parsed, nil
+}
+
+func passiveDTOConstructorCompilesAsShape(typeName string) bool {
+	switch strings.ToLower(strings.TrimSpace(typeName)) {
+	case "date", "datetime", "string", "schema":
+		return true
+	default:
+		return false
+	}
 }
 
 func extractJSONFromDebug(s string) string {

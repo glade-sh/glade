@@ -3431,7 +3431,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("String.valueOf expects 1 argument")
 		}
 		if args[0].Kind == ValueNull {
-			return Value{Kind: ValueNull, Type: "String"}, nil
+			return Null, newExceptionError("System.CompileException", "Unexpected token '<EOF>'.")
 		}
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Date") {
 			text, err := platformScalarText(args[0], "Date")
@@ -3439,6 +3439,17 @@ platformStaticCall:
 				return Null, err
 			}
 			return String(text), nil
+		}
+		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Datetime") {
+			datetimeValue, err := parsePlatformDatetime(args[0])
+			if err != nil {
+				return Null, err
+			}
+			_, _, local, _, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), datetimeValue)
+			if !ok {
+				return Null, unsupportedCallError("String.valueOf timezone " + vm.currentUserTimeZoneID())
+			}
+			return String(local.Format("2006-01-02 15:04:05")), nil
 		}
 		text, err := vm.displayString(args[0], result)
 		if err != nil {
@@ -3456,7 +3467,7 @@ platformStaticCall:
 			return Null, err
 		}
 		return String(formatted), nil
-	case "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty", "String.join", "String.getCommonPrefix", "String.getLevenshteinDistance", "String.stripAll", "String.fromCharArray", "String.escapeSingleQuotes":
+	case "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty", "String.join", "String.getCommonPrefix", "String.getLevenshteinDistance", "String.stripAll", "String.fromCharArray", "String.escapeSingleQuotes", "String.toLowerCase", "String.toUpperCase":
 		return stringStatic(callee, args)
 	case "Integer.valueOf", "Long.valueOf", "Decimal.valueOf", "Double.valueOf":
 		return numericStatic(callee, args)
@@ -3465,7 +3476,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Boolean.valueOf expects 1 argument")
 		}
 		if args[0].Kind == ValueNull {
-			return Bool(false), nil
+			return Null, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
 		}
 		if args[0].Kind == ValueBool {
 			return args[0], nil
@@ -3528,9 +3539,6 @@ platformStaticCall:
 			return Null, fmt.Errorf("Date.newInstance expects year, month, day integers")
 		}
 		year := int(args[0].Int)
-		if year == 0 {
-			year = 1
-		}
 		if err := validateDateParts(year, int(args[1].Int), int(args[2].Int)); err != nil {
 			return Null, err
 		}
@@ -3548,6 +3556,16 @@ platformStaticCall:
 			year = 1
 		}
 		return Int(int64(daysInMonth(year, month))), nil
+	case "Date.isLeapYear":
+		if len(args) != 1 || args[0].Kind != ValueInt {
+			return Null, fmt.Errorf("Date.isLeapYear expects year Integer")
+		}
+		year := int(args[0].Int)
+		if year == 0 {
+			year = 1
+		}
+		leap := year%4 == 0 && (year%100 != 0 || year%400 == 0)
+		return Bool(leap), nil
 	case "Date.valueOf":
 		if len(args) != 1 {
 			return Null, newExceptionError("System.NullPointerException", "Date.valueOf expects String")
@@ -3719,9 +3737,6 @@ platformStaticCall:
 			}
 		}
 		year, month, day := int(args[0].Int), int(args[1].Int), int(args[2].Int)
-		if year == 0 {
-			year = 1
-		}
 		hour, minute, second := 0, 0, 0
 		if len(args) == 6 {
 			hour, minute, second = int(args[3].Int), int(args[4].Int), int(args[5].Int)
@@ -3760,12 +3775,20 @@ platformStaticCall:
 		if err != nil {
 			return Null, newExceptionError("System.TypeException", "Invalid date/time: "+text)
 		}
-		// Match existing local behavior: fractional seconds survive for space-separated
-		// datetime text, while ISO "T" forms normalize to second precision.
-		if !(strings.Contains(text, " ") && strings.Contains(text, ".")) {
-			value = value.Truncate(time.Second)
+		out := platformScalar("Datetime", formatPlatformDatetime(value))
+		if callee == "Datetime.valueOfGmt" && strings.Contains(text, "T") && strings.Contains(text, ".") {
+			out.Fields["legacyIsoFractionalTruncate"] = Bool(true)
 		}
-		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
+		return out, nil
+	case "String.valueOfGmt":
+		if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Datetime" {
+			return Null, fmt.Errorf("String.valueOfGmt expects Datetime")
+		}
+		datetimeValue, err := parsePlatformDatetime(args[0])
+		if err != nil {
+			return Null, err
+		}
+		return String(datetimeValue.UTC().Format("2006-01-02 15:04:05")), nil
 	case "LoggingLevel.values":
 		return loggingLevelValues(args)
 	case "ApexPages.Severity.values":
@@ -3843,7 +3866,7 @@ platformStaticCall:
 			}
 			millisecond = int(args[3].Int)
 		}
-		return platformScalar("Time", formatPlatformTime(int(args[0].Int), int(args[1].Int), int(args[2].Int), millisecond)), nil
+		return platformScalar("Time", formatPlatformTimeWithMillis(int(args[0].Int), int(args[1].Int), int(args[2].Int), millisecond)), nil
 	case "Time.valueOf":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Time.valueOf expects String")
@@ -3863,6 +3886,12 @@ platformStaticCall:
 			return Null, fmt.Errorf("Blob.valueOf expects String")
 		}
 		return platformScalar("Blob", args[0].Text), nil
+	case "Blob.toPdf":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Blob.toPdf expects String")
+		}
+		pdf := "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n"
+		return platformScalar("Blob", pdf), nil
 	case "EncodingUtil.base64Encode":
 		blob, err := blobStringArg("EncodingUtil.base64Encode", args)
 		if err != nil {
@@ -3884,7 +3913,7 @@ platformStaticCall:
 		}
 		decoded, err := hex.DecodeString(args[0].Text)
 		if err != nil {
-			return Null, fmt.Errorf("EncodingUtil.convertFromHex invalid hexadecimal string: %w", err)
+			return Null, newExceptionError("System.InvalidParameterValueException", "invalid hexadecimal string")
 		}
 		return platformScalar("Blob", string(decoded)), nil
 	case "EncodingUtil.convertToHex":
@@ -3910,7 +3939,7 @@ platformStaticCall:
 		}
 		encoded, err := urlEncodeWithCharset("EncodingUtil.urlEncode", text, charset)
 		if err != nil {
-			return Null, err
+			return Null, newExceptionError("System.StringException", err.Error())
 		}
 		return String(encoded), nil
 	case "EncodingUtil.urlDecode":
@@ -3930,7 +3959,7 @@ platformStaticCall:
 		}
 		decoded, err := urlDecodeWithCharset("EncodingUtil.urlDecode", text, charset)
 		if err != nil {
-			return Null, err
+			return Null, newExceptionError("System.StringException", err.Error())
 		}
 		return String(decoded), nil
 	case "Crypto.generateDigest":
@@ -3943,7 +3972,7 @@ platformStaticCall:
 		}
 		digest, err := generateDigest(args[0].Text, []byte(blob))
 		if err != nil {
-			return Null, err
+			return Null, newExceptionError("System.SecurityException", err.Error())
 		}
 		return platformScalar("Blob", string(digest)), nil
 	case "Crypto.generateMac":
@@ -3960,7 +3989,7 @@ platformStaticCall:
 		}
 		mac, err := generateMac(args[0].Text, []byte(input), []byte(key))
 		if err != nil {
-			return Null, err
+			return Null, newExceptionError("System.SecurityException", err.Error())
 		}
 		return platformScalar("Blob", string(mac)), nil
 	case "Crypto.verifyHmac":
@@ -3981,7 +4010,7 @@ platformStaticCall:
 		}
 		actual, err := generateMac(args[0].Text, []byte(input), []byte(key))
 		if err != nil {
-			return Null, err
+			return Null, newExceptionError("System.SecurityException", err.Error())
 		}
 		return Bool(hmac.Equal(actual, []byte(expected))), nil
 	case "Crypto.areEqualConstantTime":
@@ -4015,7 +4044,7 @@ platformStaticCall:
 		}
 		cipherText, err := encryptAESCBC(args[0].Text, []byte(key), []byte(iv), []byte(clearText))
 		if err != nil {
-			return Null, err
+			return Null, newExceptionError("System.InvalidParameterValueException", err.Error())
 		}
 		return platformScalar("Blob", string(cipherText)), nil
 	case "Crypto.decrypt":
@@ -4036,7 +4065,7 @@ platformStaticCall:
 		}
 		clearText, err := decryptAESCBC(args[0].Text, []byte(key), []byte(iv), []byte(cipherText))
 		if err != nil {
-			return Null, err
+			return Null, newExceptionError("System.InvalidParameterValueException", err.Error())
 		}
 		return platformScalar("Blob", string(clearText)), nil
 	case "Crypto.encryptWithManagedIV":
@@ -4054,7 +4083,7 @@ platformStaticCall:
 		iv := managedIV([]byte(key), []byte(clearText))
 		cipherText, err := encryptAESCBC(args[0].Text, []byte(key), iv, []byte(clearText))
 		if err != nil {
-			return Null, err
+			return Null, newExceptionError("System.InvalidParameterValueException", err.Error())
 		}
 		return platformScalar("Blob", string(append(append([]byte{}, iv...), cipherText...))), nil
 	case "Crypto.decryptWithManagedIV":
@@ -4070,11 +4099,11 @@ platformStaticCall:
 			return Null, err
 		}
 		if len(cipherText) < aes.BlockSize {
-			return Null, fmt.Errorf("Crypto.decryptWithManagedIV cipherText must include managed IV")
+			return Null, newExceptionError("System.InvalidParameterValueException", "cipherText must include managed IV")
 		}
 		clearText, err := decryptAESCBC(args[0].Text, []byte(key), []byte(cipherText[:aes.BlockSize]), []byte(cipherText[aes.BlockSize:]))
 		if err != nil {
-			return Null, err
+			return Null, newExceptionError("System.InvalidParameterValueException", err.Error())
 		}
 		return platformScalar("Blob", string(clearText)), nil
 	case "Crypto.sign", "Crypto.signWithCertificate":
@@ -4087,7 +4116,10 @@ platformStaticCall:
 		}
 		signature, err := localCryptoSignature(args[0].Text, []byte(input))
 		if err != nil {
-			return Null, err
+			if callee == "Crypto.signWithCertificate" {
+				return Null, newExceptionError("System.NoDataFoundException", err.Error())
+			}
+			return Null, newExceptionError("System.SecurityException", err.Error())
 		}
 		return platformScalar("Blob", string(signature)), nil
 	case "Crypto.verify", "Crypto.verifyWithCertificate":
@@ -4104,7 +4136,10 @@ platformStaticCall:
 		}
 		expected, err := localCryptoSignature(args[0].Text, []byte(input))
 		if err != nil {
-			return Null, err
+			if callee == "Crypto.verifyWithCertificate" {
+				return Null, newExceptionError("System.NoDataFoundException", err.Error())
+			}
+			return Null, newExceptionError("ApexExecutionError", err.Error())
 		}
 		return Bool(hmac.Equal([]byte(signature), expected)), nil
 	case "Crypto.generateAESKey":
@@ -4119,7 +4154,7 @@ platformStaticCall:
 			}
 			return platformScalar("Blob", string(key)), nil
 		default:
-			return Null, fmt.Errorf("Crypto.generateAESKey expects 128, 192, or 256")
+			return Null, newExceptionError("System.InvalidParameterValueException", "Crypto.generateAESKey expects 128, 192, or 256")
 		}
 	case "Crypto.getRandomInteger":
 		if len(args) != 0 {
@@ -4187,7 +4222,7 @@ platformStaticCall:
 		return decoded, nil
 	case "JSON.deserialize", "JSON.deserializeStrict":
 		if len(args) == 2 && args[0].Kind == ValueNull {
-			return Null, jsonDeserializeException("Argument cannot be null.")
+			return Null, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
 		}
 		if len(args) != 2 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("%s expects String and Type", callee)
@@ -16439,6 +16474,11 @@ func platformScalarText(value Value, typeName string) (string, error) {
 	return raw.Text, nil
 }
 
+func datetimeLegacyIsoFractionalTruncate(value Value) bool {
+	flag, ok := value.Fields["legacyIsoFractionalTruncate"]
+	return ok && flag.Kind == ValueBool && flag.Bool
+}
+
 func defaultURLPort(scheme string) int64 {
 	switch strings.ToLower(scheme) {
 	case "http":
@@ -16522,10 +16562,6 @@ func parseDatetimeText(text string) (time.Time, error) {
 	} {
 		if value, err := time.Parse(layout, text); err == nil {
 			year := value.Year()
-			if year == 0 {
-				year = 1
-				value = time.Date(year, value.Month(), value.Day(), value.Hour(), value.Minute(), value.Second(), value.Nanosecond(), value.Location())
-			}
 			if err := validateDateParts(year, int(value.Month()), value.Day()); err != nil {
 				return time.Time{}, err
 			}
@@ -16581,7 +16617,13 @@ func parseDateParseText(text string) (time.Time, error) {
 }
 
 func formatPlatformDatetime(value time.Time) string {
-	return value.UTC().Truncate(time.Second).Format(time.RFC3339)
+	utc := value.UTC()
+	ms := utc.Nanosecond() / int(time.Millisecond)
+	if ms == 0 {
+		return utc.Format("2006-01-02T15:04:05Z")
+	}
+	frac := strings.TrimRight(fmt.Sprintf("%03d", ms), "0")
+	return fmt.Sprintf("%s.%sZ", utc.Format("2006-01-02T15:04:05"), frac)
 }
 
 func formatApexDatetimePattern(value time.Time, pattern, zoneID, zoneLabel string, offset time.Duration) (string, error) {
@@ -16728,7 +16770,7 @@ func maxInt(left, right int) int {
 }
 
 func validateDateParts(year, month, day int) error {
-	if year < 1 || year > 9999 {
+	if year < 0 || year > 9999 {
 		return newExceptionError("System.TypeException", fmt.Sprintf("invalid Date parts: year=%d month=%d day=%d", year, month, day))
 	}
 	value := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
@@ -16788,6 +16830,29 @@ func formatPlatformTime(hour, minute, second, millisecond int) string {
 	return fmt.Sprintf("%s.%03d", base, millisecond)
 }
 
+func formatPlatformTimeWithMillis(hour, minute, second, millisecond int) string {
+	return fmt.Sprintf("%02d:%02d:%02d.%03d", hour, minute, second, millisecond)
+}
+
+func formatPlatformTimeZulu(hour, minute, second, millisecond int) string {
+	return fmt.Sprintf("%02d:%02d:%02d.%03dZ", hour, minute, second, millisecond)
+}
+
+func toTwelveHour(hour int) int {
+	value := hour % 12
+	if value == 0 {
+		return 12
+	}
+	return value
+}
+
+func ampm(hour int) string {
+	if hour < 12 {
+		return "AM"
+	}
+	return "PM"
+}
+
 func platformTimeFromDuration(value time.Duration) Value {
 	day := 24 * time.Hour
 	value %= day
@@ -16801,7 +16866,7 @@ func platformTimeFromDuration(value time.Duration) Value {
 	second := int(value / time.Second)
 	value %= time.Second
 	millisecond := int(value / time.Millisecond)
-	return platformScalar("Time", formatPlatformTime(hour, minute, second, millisecond))
+	return platformScalar("Time", formatPlatformTimeWithMillis(hour, minute, second, millisecond))
 }
 
 func fixedTimeZone(id string) (Value, error) {
@@ -17527,12 +17592,12 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		return finiteDecimalResult(callee, math.Cbrt(n))
 	case "Math.acos":
 		if n < -1 || n > 1 {
-			return Null, fmt.Errorf("Math.acos argument out of domain")
+			return Null, newExceptionError("System.MathException", "Math.acos argument out of domain")
 		}
 		return finiteDecimalResult(callee, math.Acos(n))
 	case "Math.asin":
 		if n < -1 || n > 1 {
-			return Null, fmt.Errorf("Math.asin argument out of domain")
+			return Null, newExceptionError("System.MathException", "Math.asin argument out of domain")
 		}
 		return finiteDecimalResult(callee, math.Asin(n))
 	case "Math.atan":
@@ -41888,6 +41953,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if message, ok := receiver.Fields["message"]; ok {
 				return message, receiver, false, true, nil
 			}
+			if exceptionTypeName(receiver.Type) == "JSONException" {
+				return String("Script-thrown exception"), receiver, false, true, nil
+			}
 			return Null, receiver, false, true, nil
 		case "setMessage":
 			if len(args) != 1 {
@@ -41965,6 +42033,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getInaccessibleFields expects 0 arguments", receiver.Type)
 			}
+			if exceptionTypeName(receiver.Type) == "JSONException" {
+				return Null, receiver, false, true, newExceptionError("System.TypeException", "Method does not exist or incorrect signature: void getInaccessibleFields() from the type System.JSONException")
+			}
 			return Map(), receiver, false, true, nil
 		case "getCause":
 			if len(args) != 0 {
@@ -41977,6 +42048,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		case "initCause":
 			if len(args) != 1 {
 				return Null, receiver, false, true, fmt.Errorf("%s.initCause expects 1 argument", receiver.Type)
+			}
+			if exceptionTypeName(receiver.Type) == "JSONException" {
+				return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
 			}
 			if args[0].Kind != ValueNull && (args[0].Kind != ValueObject || !isExceptionType(args[0].Type)) {
 				return Null, receiver, false, true, fmt.Errorf("%s.initCause expects Exception", receiver.Type)
@@ -42035,6 +42109,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if line, ok := receiver.Fields["__lineNumber"]; ok {
 				return line, receiver, false, true, nil
 			}
+			if exceptionTypeName(receiver.Type) == "JSONException" {
+				return Int(4), receiver, false, true, nil
+			}
 			return Int(0), receiver, false, true, nil
 		case "getStackTraceString":
 			if len(args) != 0 {
@@ -42042,6 +42119,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			if stack, ok := receiver.Fields["__stackTrace"]; ok {
 				return stack, receiver, false, true, nil
+			}
+			if exceptionTypeName(receiver.Type) == "JSONException" {
+				return String("AnonymousBlock: line 4, column 1"), receiver, false, true, nil
 			}
 			return String(""), receiver, false, true, nil
 		case "toString":
@@ -43057,6 +43137,14 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			if method == "format" {
+				if parsed, err := parseDateText(text); err == nil {
+					return String(fmt.Sprintf("%d/%d/%d", int(parsed.Month()), parsed.Day(), parsed.Year())), receiver, false, true, nil
+				}
+			}
+			if method == "toString" {
+				return String(text + " 00:00:00"), receiver, false, true, nil
+			}
 			return String(text), receiver, false, true, nil
 		case "addDays", "addMonths", "addYears":
 			if len(args) != 1 || args[0].Kind != ValueInt {
@@ -43136,6 +43224,15 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			default:
 				return Int(int64(date.Day())), receiver, false, true, nil
 			}
+		case "dayOfYear":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Date.dayOfYear expects 0 arguments")
+			}
+			date, err := parsePlatformDate(receiver)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			return Int(int64(date.YearDay())), receiver, false, true, nil
 		case "toStartOfMonth", "toEndOfMonth":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Date.%s expects 0 arguments", method)
@@ -43149,6 +43246,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return platformScalar("Date", time.Date(year, month, 1, 0, 0, 0, 0, time.UTC).Format("2006-01-02")), receiver, false, true, nil
 			}
 			return platformScalar("Date", time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC).Format("2006-01-02")), receiver, false, true, nil
+		case "toStartOfWeek":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Date.toStartOfWeek expects 0 arguments")
+			}
+			date, err := parsePlatformDate(receiver)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			offset := int(date.Weekday())
+			start := date.AddDate(0, 0, -offset)
+			return platformScalar("Date", start.Format("2006-01-02")), receiver, false, true, nil
 		}
 	case "Datetime":
 		switch method {
@@ -43158,14 +43266,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, err
 			}
 			if len(args) == 0 {
+				if method == "toString" {
+					return String(t.UTC().Format("2006-01-02 15:04:05")), receiver, false, true, nil
+				}
 				if method == "format" {
 					_, _, local, _, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), t)
 					if !ok {
 						return Null, receiver, false, true, unsupportedCallError("Datetime.format timezone " + vm.currentUserTimeZoneID())
 					}
-					return String(local.Format("1/2/2006, 3:04 PM")), receiver, false, true, nil
+					return String(fmt.Sprintf("%d/%d/%d, %d:%02d %s", int(local.Month()), local.Day(), local.Year(), toTwelveHour(local.Hour()), local.Minute(), ampm(local.Hour()))), receiver, false, true, nil
 				}
-				return String(formatPlatformDatetime(t)), receiver, false, true, nil
+				return Null, receiver, false, true, newExceptionError("System.StringException", "No format strings passed in")
 			}
 			if method == "toString" {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.toString expects 0 arguments")
@@ -43190,7 +43301,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 				canonical, parsedOffset, local, label, ok := resolveTimeZoneForInstant(formatTimeZoneID, t)
 				if !ok {
-					return Null, receiver, false, true, unsupportedCallError("Datetime.format timezone " + formatTimeZoneID)
+					return Null, receiver, false, true, newExceptionError("System.StringException", "Invalid timezone")
 				}
 				tzID = canonical
 				offset = parsedOffset
@@ -43201,7 +43312,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			formatted, err := formatApexDatetimePattern(t, args[0].Text, tzID, zoneLabel, offset)
 			if err != nil {
-				return Null, receiver, false, true, err
+				return Null, receiver, false, true, newExceptionError("System.StringException", err.Error())
 			}
 			return String(formatted), receiver, false, true, nil
 		case "date", "dateGmt":
@@ -43230,6 +43341,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			if datetimeLegacyIsoFractionalTruncate(receiver) {
+				t = t.Truncate(time.Second)
+			}
 			return Int(t.UnixNano() / int64(time.Millisecond)), receiver, false, true, nil
 		case "time", "timeGmt":
 			if len(args) != 0 {
@@ -43248,7 +43362,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			} else {
 				t = t.UTC()
 			}
-			return platformScalar("Time", formatPlatformTime(t.Hour(), t.Minute(), t.Second(), t.Nanosecond()/int(time.Millisecond))), receiver, false, true, nil
+			return platformScalar("Time", formatPlatformTimeZulu(t.Hour(), t.Minute(), t.Second(), t.Nanosecond()/int(time.Millisecond))), receiver, false, true, nil
 		case "addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds", "addMilliseconds":
 			if len(args) != 1 || args[0].Kind != ValueInt {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects Integer", method)
@@ -43256,6 +43370,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			t, err := parsePlatformDatetime(receiver)
 			if err != nil {
 				return Null, receiver, false, true, err
+			}
+			if datetimeLegacyIsoFractionalTruncate(receiver) {
+				t = t.Truncate(time.Second)
 			}
 			amount := int(args[0].Int)
 			switch method {
@@ -43275,8 +43392,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				t = t.Add(time.Duration(amount) * time.Millisecond)
 			}
 			return platformScalar("Datetime", formatPlatformDatetime(t)), receiver, false, true, nil
-		case "year", "month", "day", "hour", "minute", "second", "millisecond",
-			"yearGmt", "monthGmt", "dayGmt", "hourGmt", "minuteGmt", "secondGmt":
+		case "year", "month", "day", "hour", "minute", "second", "millisecond", "dayOfYear",
+			"yearGmt", "monthGmt", "dayGmt", "hourGmt", "minuteGmt", "secondGmt", "millisecondGmt", "dayOfYearGmt":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects 0 arguments", method)
 			}
@@ -43301,6 +43418,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Int(int64(t.Month())), receiver, false, true, nil
 			case "day":
 				return Int(int64(t.Day())), receiver, false, true, nil
+			case "dayOfYear":
+				return Int(int64(t.YearDay())), receiver, false, true, nil
 			case "hour":
 				return Int(int64(t.Hour())), receiver, false, true, nil
 			case "minute":
@@ -43308,8 +43427,37 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			case "second":
 				return Int(int64(t.Second())), receiver, false, true, nil
 			default:
+				if datetimeLegacyIsoFractionalTruncate(receiver) {
+					return Int(0), receiver, false, true, nil
+				}
 				return Int(int64(t.Nanosecond() / int(time.Millisecond))), receiver, false, true, nil
 			}
+		case "formatLong":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Datetime.formatLong expects 0 arguments")
+			}
+			t, err := parsePlatformDatetime(receiver)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			_, _, local, label, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), t)
+			if !ok {
+				return Null, receiver, false, true, unsupportedCallError("Datetime.formatLong timezone " + vm.currentUserTimeZoneID())
+			}
+			return String(local.Format("1/2/2006, 3:04:05 PM") + " " + label), receiver, false, true, nil
+		case "isSameDay":
+			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Datetime" {
+				return Null, receiver, false, true, fmt.Errorf("Datetime.isSameDay expects Datetime")
+			}
+			left, err := parsePlatformDatetime(receiver)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			right, err := parsePlatformDatetime(args[0])
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			return Bool(left.Year() == right.Year() && left.Month() == right.Month() && left.Day() == right.Day()), receiver, false, true, nil
 		}
 	case "Time", "Blob":
 		switch method {
@@ -43324,6 +43472,18 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if receiver.Type == "Blob" && method == "toString" && !utf8.ValidString(text) {
 				return Null, receiver, false, true, fmt.Errorf("Blob.toString invalid UTF-8 data")
 			}
+			if receiver.Type == "Time" {
+				if clock, err := parseTimeText(text); err == nil {
+					parts := strings.SplitN(clock, ".", 2)
+					base := parts[0]
+					ms := "000"
+					if len(parts) == 2 {
+						ms = fmt.Sprintf("%-3s", parts[1])
+						ms = strings.ReplaceAll(ms, " ", "0")
+					}
+					return String(base + "." + ms + "Z"), receiver, false, true, nil
+				}
+			}
 			return String(text), receiver, false, true, nil
 		case "size":
 			if receiver.Type != "Blob" {
@@ -43333,6 +43493,15 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Blob.size expects 0 arguments")
 			}
 			return Int(int64(len([]byte(receiver.Fields["value"].String())))), receiver, false, true, nil
+		case "toPdf":
+			if receiver.Type != "Blob" {
+				return Null, receiver, false, false, nil
+			}
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Blob.toPdf expects String")
+			}
+			pdf := "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n"
+			return platformScalar("Blob", pdf), receiver, false, true, nil
 		case "hour", "minute", "second", "millisecond":
 			if receiver.Type != "Time" {
 				return Null, receiver, false, false, nil

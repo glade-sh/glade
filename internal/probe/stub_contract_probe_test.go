@@ -76,3 +76,46 @@ func TestDefaultApexArgForType(t *testing.T) {
 		}
 	}
 }
+
+func TestStubContractInvocationCodeFactoryReceivers(t *testing.T) {
+	tests := []struct {
+		name     string
+		spec     capability.StubContractProbeSpec
+		contains string
+	}{
+		{
+			name: "matcher receiver",
+			spec: capability.StubContractProbeSpec{
+				ID: "stub.matcher.find", Type: "Matcher", Member: "find", Kind: "method", ReturnType: "Boolean",
+			},
+			contains: "Pattern.compile('a+').matcher('aaa')",
+		},
+		{
+			name: "pattern receiver",
+			spec: capability.StubContractProbeSpec{
+				ID: "stub.pattern.matcher.sig-string", Type: "Pattern", Member: "matcher", Kind: "method", ReturnType: "Matcher", Parameters: []string{"String"},
+			},
+			contains: "Pattern.compile('a+')",
+		},
+		{
+			name: "json generator receiver",
+			spec: capability.StubContractProbeSpec{
+				ID: "stub.jsongenerator.getasstring", Type: "JSONGenerator", Member: "getAsString", Kind: "method", ReturnType: "String",
+			},
+			contains: "JSON.createGenerator(false)",
+		},
+		{
+			name: "json parser receiver",
+			spec: capability.StubContractProbeSpec{
+				ID: "stub.jsonparser.getcurrenttoken", Type: "JSONParser", Member: "getCurrentToken", Kind: "method", ReturnType: "JSONToken",
+			},
+			contains: "JSON.createParser('{\"a\":1}')",
+		},
+	}
+	for _, tc := range tests {
+		code := stubContractInvocationCode(tc.spec)
+		if !strings.Contains(code, tc.contains) {
+			t.Fatalf("%s invocation missing receiver %q: %q", tc.name, tc.contains, code)
+		}
+	}
+}

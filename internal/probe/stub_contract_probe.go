@@ -161,6 +161,14 @@ func defaultApexReceiverForType(typeName string) string {
 		return "Datetime.newInstance(2024, 1, 2, 3, 4, 5)"
 	case "time":
 		return "Time.newInstance(3, 4, 5, 0)"
+	case "pattern":
+		return "Pattern.compile('a+')"
+	case "matcher":
+		return "Pattern.compile('a+').matcher('aaa')"
+	case "jsongenerator":
+		return "JSON.createGenerator(false)"
+	case "jsonparser":
+		return "JSON.createParser('{\"a\":1}')"
 	case "type", "system.type":
 		return "String.class"
 	default:
