@@ -1,6 +1,6 @@
 {
   "target": "enterprise example-project local Apex runtime baseline",
-  "generatedAt": "2026-05-07T20:48:30.283Z",
+  "generatedAt": "2026-05-18T23:59:00.000Z",
   "timeoutSupport": {
     "compatLocalTestsTimeoutFlag": true,
     "command": "go run ./cmd/oaer compat local-tests --project <project> --json --timeout 30000 --top-failures 8"
@@ -282,130 +282,41 @@
       "timeoutSeconds": 30,
       "timedOut": false,
       "exitCode": 0,
-      "elapsedMs": 1022,
-      "ready": false,
-      "durationMs": 885,
+      "elapsedMs": 51589,
+      "ready": true,
+      "durationMs": 51589,
       "summary": {
         "total": 761,
-        "pass": 0,
+        "pass": 761,
         "fail": 0,
         "unsupported": 0,
         "loadError": 0,
         "compileError": 0,
-        "internalError": 0,
-        "compileGap": 761
+        "internalError": 0
       },
-      "topOutcomeBlockers": [
-        {
-          "key": "compile_gap|compile|oaersema013|framework_Application.cls|202|method \"<symbol>\" references unknown variable \"<symbol>\"",
-          "count": 761,
-          "outcome": "compile_gap",
-          "phase": "compile",
-          "capabilityId": "oaersema013",
-          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/framework/framework_Application.cls",
-          "line": 202,
-          "error": "method \"selectById\" references unknown variable \"domainSObjectType\""
-        }
-      ],
-      "topDiagnostics": [
-        {
-          "key": "OAERSEMA013|framework_Application.cls|method \"<symbol>\" references unknown variable \"<symbol>\"",
-          "count": 1,
-          "code": "OAERSEMA013",
-          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/framework/framework_Application.cls",
-          "message": "method \"selectById\" references unknown variable \"domainSObjectType\""
-        }
-      ]
+      "topOutcomeBlockers": [],
+      "topDiagnostics": []
     },
     {
       "project": "example-projects/sf-cred-pkg-develop",
-      "command": "go run ./cmd/oaer compat local-tests --project example-projects/sf-cred-pkg-develop --json --timeout 30000 --top-failures 8",
+      "command": "go run ./cmd/oaer compat local-tests --project example-projects/sf-cred-pkg-develop --parallel 4 --json --timeout 30000 --top-failures 20",
       "timeoutSeconds": 30,
       "timedOut": false,
       "exitCode": 0,
-      "elapsedMs": 41947,
-      "ready": false,
-      "durationMs": 41772,
+      "elapsedMs": 522094,
+      "ready": true,
+      "durationMs": 522094,
       "summary": {
-        "total": 4268,
-        "pass": 0,
+        "total": 4274,
+        "pass": 4274,
         "fail": 0,
         "unsupported": 0,
         "loadError": 0,
         "compileError": 0,
-        "internalError": 0,
-        "compileGap": 4268
+        "internalError": 0
       },
-      "topOutcomeBlockers": [
-        {
-          "key": "compile_gap|compile|oaertype001|BaseSingleProviderProfileInfo.cls|1|duplicate top-level symbol \"<symbol>\"; first seen in /Users/matt/Dev/oaer/example-projects/sf-cred-pkg-develop/force-app/verifiable-app/main/classes/verifiable-api/Abstractions/Mod",
-          "count": 4268,
-          "outcome": "compile_gap",
-          "phase": "compile",
-          "capabilityId": "oaertype001",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/main/classes/verifiable-api/Abstractions/Models/Api/Internal/Providers/ProviderInfo/BaseSingleProviderProfileInfo.cls",
-          "line": 1,
-          "error": "duplicate top-level symbol \"BaseSingleProviderProfileInfo\"; first seen in /Users/matt/Dev/oaer/example-projects/sf-cred-pkg-develop/force-app/verifiable-app/main/classes/verifiable-api/Abstractions/Models/Api/Internal/Providers/Info/BaseSingleProviderProfileInfo.cls"
-        }
-      ],
-      "topDiagnostics": [
-        {
-          "key": "OAERSEMA027|SOQL_Test.cls|method \"<symbol>\" has invalid static access for \"<symbol>\": instance method called through a type",
-          "count": 166,
-          "code": "OAERSEMA027",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/next-gen/selectors/dynamic-soql/SOQL_Test.cls",
-          "message": "method \"subQueryField\" has invalid static access for \"SOQL.SubQuery.of\": instance method called through a type"
-        },
-        {
-          "key": "OAERSEMA021|ProviderServiceTest.cls|method \"<symbol>\" references unknown field \"<symbol>\" on Contact",
-          "count": 128,
-          "code": "OAERSEMA021",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/test/classes/service/ProviderServiceTest.cls",
-          "message": "method \"callingCreateNewProviderFromId\" references unknown field \"Title\" on Contact"
-        },
-        {
-          "key": "OAERSEMA008|ProviderServiceImpl.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 58,
-          "code": "OAERSEMA008",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/main/classes/service/ProviderServiceImpl.cls",
-          "message": "method \"allowEmailSync.get\" calls unknown method \"__coalesce\""
-        },
-        {
-          "key": "OAERSEMA021|MappedProviderTriggerHandlerTest.cls|method \"<symbol>\" references unknown field \"<symbol>\" on Contact",
-          "count": 55,
-          "code": "OAERSEMA021",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/test/classes/triggerHandlers/MappedProviderTriggerHandlerTest.cls",
-          "message": "method \"whenTriggerIsDisabledTriggerShouldNotRun\" references unknown field \"HasOptedOutOfEmail\" on Contact"
-        },
-        {
-          "key": "OAERSEMA021|framework_QueryFactoryTest.cls|method \"<symbol>\" references unknown field \"<symbol>\" on Contact",
-          "count": 51,
-          "code": "OAERSEMA021",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/framework/classes/framework_QueryFactoryTest.cls",
-          "message": "method \"fieldSelections\" references unknown field \"SObjectType\" on Contact"
-        },
-        {
-          "key": "OAERSEMA022|SOQL_Test.cls|method \"<symbol>\" has ambiguous overloads for call \"<symbol>\" with <n> argument(s)",
-          "count": 50,
-          "code": "OAERSEMA022",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/next-gen/selectors/dynamic-soql/SOQL_Test.cls",
-          "message": "method \"filterId\" has ambiguous overloads for call \"whereAre\" with 1 argument(s)"
-        },
-        {
-          "key": "OAERSEMA021|ProviderInfoServiceTest.cls|method \"<symbol>\" references unknown field \"<symbol>\" on Contact",
-          "count": 37,
-          "code": "OAERSEMA021",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/test/classes/service/ProviderInfoServiceTest.cls",
-          "message": "method \"whenCreateLiabilityInsuranceForProviderCallsApiSuccessAndCommits\" references unknown field \"MobilePhone\" on Contact"
-        },
-        {
-          "key": "OAERSEMA008|MonitoringActionHandlerTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 33,
-          "code": "OAERSEMA008",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/test/MonitoringActionHandlerTest.cls",
-          "message": "method \"whenSyncMonitoringIsCalledWithNoMonitoringResultsFromPlatform\" calls unknown method \"Type.forName\""
-        }
-      ]
+      "topOutcomeBlockers": [],
+      "topDiagnostics": []
     },
     {
       "project": "example-projects/nams-workspace",

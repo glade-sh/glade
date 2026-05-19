@@ -992,6 +992,79 @@ func TestCurrentStubProviderPrefersActiveFrameworkApexMocksProvider(t *testing.T
 	}
 }
 
+func TestCurrentStubProviderPrefersUniqueLiveFrameworkApexMocksProviderOverSnapshot(t *testing.T) {
+	machine := New(nil)
+	attached := Object("framework_ApexMocks")
+	attachedRecorder := Object("framework_MethodReturnValueRecorder")
+	attachedRecorder.Fields["Stubbing"] = Bool(true)
+	attached.Fields["methodReturnValueRecorder"] = attachedRecorder
+	proxy := Object("IService__sfdc_ApexStub")
+	proxy.Fields["__oaerStubProvider"] = attached
+
+	live := Object("framework_ApexMocks")
+	liveRecorder := Object("framework_MethodReturnValueRecorder")
+	liveRecorder.Fields["Stubbing"] = Bool(false)
+	live.Fields["methodReturnValueRecorder"] = liveRecorder
+	machine.Globals["mocks"] = live
+
+	provider := machine.currentStubProvider(proxy)
+	if provider.Ref != live.Ref {
+		t.Fatalf("expected live framework_ApexMocks provider ref %d, got %d", live.Ref, provider.Ref)
+	}
+}
+
+func TestFrameworkQualifiedMethodMapKeyNormalizesFflibTypes(t *testing.T) {
+	machine := New(nil)
+	left := Object("fflib_QualifiedMethod")
+	left.Fields["typeName"] = String("PricingManagerFacade__sfdc_ApexStub")
+	left.Fields["methodName"] = String("price")
+	left.Fields["methodArgTypes"] = typedList("List<Type>")
+
+	right := Object("framework_QualifiedMethod")
+	right.Fields["typeName"] = String("PricingManagerFacade__sfdc_ApexStub")
+	right.Fields["methodName"] = String("price")
+	right.Fields["methodArgTypes"] = typedList("List<Type>")
+
+	if machine.mapKey(left) != machine.mapKey(right) {
+		t.Fatalf("expected fflib and framework qualified method keys to match")
+	}
+	equal, err := machine.mapKeysEqual(left, right)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !equal {
+		t.Fatalf("expected fflib and framework qualified method keys to compare equal")
+	}
+}
+
+func TestManagedSuperclassConstructorCallIsPassiveWhenSuperclassIsExternal(t *testing.T) {
+	ctorProgram, err := CompileAnonymous("super('related');")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("new Plugin();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Plugin",
+		SuperClass: "pkg.ExternalBase",
+		Constructors: []Method{{
+			Name:          "Plugin.<init>",
+			ClassName:     "Plugin",
+			ReturnType:    "void",
+			IsConstructor: true,
+			Program:       ctorProgram,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestFrameworkMatcherFastPathMatchesCommonMatchers(t *testing.T) {
 	machine := New(nil)
 	methodArg := Object("framework_MethodArgValues")
@@ -1107,6 +1180,42 @@ func TestFrameworkSObjectUnitOfWorkHandleRegisterTypeFastPath(t *testing.T) {
 	}
 	if got := uow.Fields["m_relationships"].Map[mapKey(String("Account"))]; got.Type != "framework_SObjectUnitOfWork.Relationships" {
 		t.Fatalf("relationships type = %q", got.Type)
+	}
+}
+
+func TestFrameworkSObjectUnitOfWorkSendEmailWorkFastPath(t *testing.T) {
+	machine := New(nil)
+	emailWork := Object("framework_SObjectUnitOfWork.SendEmailWork")
+	emailWork.Fields["emails"] = typedList("List<Messaging.Email>")
+	email := Object("Messaging.SingleEmailMessage")
+	email.Fields["plainTextBody"] = String("body")
+
+	if _, handled, err := machine.callFrameworkSObjectUnitOfWorkMember(emailWork, "registerEmail", []Value{email}, &Result{}); err != nil {
+		t.Fatal(err)
+	} else if !handled {
+		t.Fatal("registerEmail was not handled")
+	}
+	if got := emailWork.Fields["emails"]; got.Kind != ValueList || len(got.List) != 1 {
+		t.Fatalf("emails = %#v, want one registered email", got)
+	}
+	if _, handled, err := machine.callFrameworkSObjectUnitOfWorkMember(emailWork, "doWork", nil, &Result{}); err != nil {
+		t.Fatal(err)
+	} else if !handled {
+		t.Fatal("doWork was not handled")
+	}
+	if machine.limits.EmailInvokes != 1 {
+		t.Fatalf("email invocations = %d, want 1", machine.limits.EmailInvokes)
+	}
+}
+
+func TestManagedTriggerHandlerManagerStaticTogglesAreNoops(t *testing.T) {
+	machine := New(nil)
+	for _, method := range []string{"disableTriggerStep", "enableTriggerStep", "reenableTriggerForThisRequest"} {
+		if _, handled, err := machine.callFrameworkStaticMember("znu.TriggerHandlerManager", method, []Value{String("StepName")}); err != nil {
+			t.Fatal(err)
+		} else if !handled {
+			t.Fatalf("%s was not handled", method)
+		}
 	}
 }
 
@@ -2897,6 +3006,80 @@ System.assertEquals(true, StaticSettingsHolder.check());
 		StaticFieldOrder: []string{"settings"},
 		Methods: map[string]Method{
 			"check": {Name: "StaticSettingsHolder.check", ClassName: "StaticSettingsHolder", ReturnType: "Boolean", IsStatic: true, Access: "public", Program: check},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestManagedAPIStaticPropertyChainUsesPassiveExternalObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+znu.ProductsApiV1Retriever retriever = znu.ProductsApi.v1.retriever();
+znu.ProductsApiRetriever baseRetriever = znu.ProductsApi.v1.retriever();
+System.assertNotEquals(null, retriever);
+System.assertNotEquals(null, baseRetriever);
+System.assertNotEquals(null, retriever.with(new znu.QPlugin.Fields(new Set<String>{ 'Name' })));
+System.assertEquals(0, retriever.getById(new Set<Id>{ '001000000000001AAA' }).size());
+znu.BulkPriceClassRequest request = new znu.BulkPriceClassRequest();
+request.Requests.addAll(new List<Object>());
+System.assertEquals(0, request.Requests.size());
+System.assertNotEquals(null, znu.ProductPricingInfo.newInstance());
+System.assertEquals(false, znu.CurrenciesApi.v1.isMultiCurrencyEnabled());
+System.assertNotEquals(null, znu.NimbleAmsSettingsService.Instance.getDefaultEntityId());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeUnqualifiedInstanceCallIgnoresSubclassStaticMethod(t *testing.T) {
+	create, err := CompileAnonymous(`
+SObject recordToInsert = build();
+return recordToInsert;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	instanceBuild, err := CompileAnonymous("return new Account(Name = 'Acme');")
+	if err != nil {
+		t.Fatal(err)
+	}
+	staticBuild, err := CompileAnonymous("return new ChildBuilder();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+BaseBuilder builder = new ChildBuilder();
+SObject record = builder.create();
+System.assertEquals('Account', record.getSObjectType().getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "BaseBuilder",
+		Methods: map[string]Method{
+			"create": {Name: "BaseBuilder.create", ClassName: "BaseBuilder", ReturnType: "SObject", Access: "public", Program: create},
+			"build":  {Name: "BaseBuilder.build", ClassName: "BaseBuilder", ReturnType: "SObject", Access: "private", Program: instanceBuild},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "ChildBuilder",
+		SuperClass: "BaseBuilder",
+		Methods: map[string]Method{
+			"build": {Name: "ChildBuilder.build", ClassName: "ChildBuilder", ReturnType: "ChildBuilder", IsStatic: true, Access: "public", Program: staticBuild},
 		},
 	}); err != nil {
 		t.Fatal(err)

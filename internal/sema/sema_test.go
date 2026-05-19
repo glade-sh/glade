@@ -5342,6 +5342,41 @@ public class Bad extends Base implements Worker {
 	}
 }
 
+func TestAnalyzeSkipsInheritanceContractsForPackageArtifacts(t *testing.T) {
+	result := Analyze(typesys.Index{Types: []typesys.TypeSymbol{{
+		Kind:       apexast.DeclarationClass,
+		Name:       "ScheduleLinesProcessorJob",
+		Namespace:  "znu",
+		Dependency: true,
+		Artifact:   true,
+		Interfaces: []string{"Database.Batchable", "Schedulable"},
+		Modifiers:  []string{"global"},
+	}}})
+
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA016" || diag.Code == "OAERSEMA017" {
+			t.Fatalf("artifact contract should not be revalidated: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeDoesNotRequirePlatformStubsToSatisfyInterfaces(t *testing.T) {
+	result := Analyze(typesys.Index{Types: []typesys.TypeSymbol{{
+		Kind:       apexast.DeclarationClass,
+		Name:       "OrderItem",
+		Namespace:  "znu",
+		Dependency: true,
+		Artifact:   true,
+		Interfaces: []string{"Comparable"},
+		Modifiers:  []string{"global"},
+	}}})
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA017" && strings.Contains(diag.Message, "OrderItem") && strings.Contains(diag.Message, "compareTo") {
+			t.Fatalf("platform stubs should not be revalidated as user Apex: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeNestedSiblingOverrideSignatures(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "ExprNode.cls"), `

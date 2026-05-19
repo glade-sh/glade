@@ -257,6 +257,25 @@ func TestResolveObjectNameKeepsExactCustomObjectMatch(t *testing.T) {
 	}
 }
 
+func TestResolveObjectNamePrefersRicherNamespacedMatchOverSparseExactCustomObject(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["Thing__c"] = ObjectState{Definition: ObjectDefinition{APIName: "Thing__c"}}
+	org.Objects["pkg__Thing__c"] = ObjectState{Definition: ObjectDefinition{
+		APIName: "pkg__Thing__c",
+		Fields:  map[string]Field{"pkg__Parent__c": {APIName: "pkg__Parent__c", Type: FieldReference}},
+		Relations: []Relationship{{
+			Field:              "pkg__Parent__c",
+			ParentObjects:      []string{"pkg__Parent__c"},
+			ParentRelationship: "pkg__Parent__r",
+		}},
+	}}
+
+	resolved, ok := ResolveObjectName(org, "Thing__c")
+	if !ok || resolved != "pkg__Thing__c" {
+		t.Fatalf("ResolveObjectName(Thing__c) = %q, %v", resolved, ok)
+	}
+}
+
 func TestEnsureStandardObjectFieldsAddsAccountWebsiteWithoutClobber(t *testing.T) {
 	definition := ObjectDefinition{
 		APIName: "Account",

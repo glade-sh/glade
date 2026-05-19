@@ -207,6 +207,9 @@ func (a *Analyzer) checkTriggers(index typesys.Index) []diagnostic.Diagnostic {
 func (a *Analyzer) checkMemberTypes(index typesys.Index) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
+		if typ.Artifact {
+			continue
+		}
 		for _, member := range typ.Members {
 			if member.Type == "" || member.Type == "void" {
 				continue
@@ -231,6 +234,9 @@ func (a *Analyzer) checkMemberTypes(index typesys.Index) []diagnostic.Diagnostic
 func (a *Analyzer) checkMethodParameters(index typesys.Index) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
+		if typ.Artifact {
+			continue
+		}
 		for _, member := range typ.Members {
 			if member.Kind != apexast.DeclarationMethod && member.Kind != apexast.DeclarationConstructor {
 				continue
@@ -487,6 +493,9 @@ func (a *Analyzer) checkInheritanceContracts(index typesys.Index) []diagnostic.D
 	defer unregisterSemaShortCandidateIndex(model)
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
+		if typ.Artifact {
+			continue
+		}
 		if typ.Kind != apexast.DeclarationClass {
 			continue
 		}
@@ -748,6 +757,9 @@ func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnosti
 	sources := make(map[string]string)
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
+		if typ.Artifact {
+			continue
+		}
 		for _, member := range typ.Members {
 			switch member.Kind {
 			case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
@@ -869,13 +881,13 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 				}
 			}
 		}
-		if _, exists := out[normalizeName(typ.Name)]; !exists {
+		if !semaRequiresQualifiedDependencyName(typ) && out[normalizeName(typ.Name)].name == "" {
 			out[normalizeName(typ.Name)] = members
 		}
 		if typ.Namespace != "" {
 			out[normalizeName(typ.Namespace+"."+typ.Name)] = members
 		}
-		if short := shortNestedTypeName(typ.Name); short != typ.Name {
+		if short := shortNestedTypeName(typ.Name); !semaRequiresQualifiedDependencyName(typ) && short != typ.Name {
 			shortAliases[normalizeName(short)] = append(shortAliases[normalizeName(short)], typ.Name)
 		}
 	}
@@ -1027,6 +1039,10 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 	}
 	registerSemaShortCandidateIndex(out)
 	return out
+}
+
+func semaRequiresQualifiedDependencyName(typ typesys.TypeSymbol) bool {
+	return typ.Dependency && typ.Namespace != "" && (typ.Artifact || typ.SourceRoot != "")
 }
 
 var semaShortCandidateIndexes sync.Map

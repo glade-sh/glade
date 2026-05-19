@@ -1986,6 +1986,35 @@ System.assertEquals(Schema.DisplayType.Datetime, PaymentLine__c.CreatedDate.getD
 	}
 }
 
+func TestClassStaticFieldWinsOverSyntheticSObjectFieldToken(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "CartItem__c",
+			KeyPrefix: "a00",
+			Fields:    map[string]storage.Field{},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "CartItem",
+		StaticFields: map[string]Field{
+			"NO_DELETABLE_LINES": {Name: "NO_DELETABLE_LINES", Type: "String", Static: true, InitialValue: String("Cart item contains no item lines to delete.")},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("System.assertEquals('Cart item contains no item lines to delete.', CartItem.NO_DELETABLE_LINES);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeMapsMatchUnqualifiedNamespaceTokens(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.SObjectType objectType = Schema.getGlobalDescribe().get('Widget__c');

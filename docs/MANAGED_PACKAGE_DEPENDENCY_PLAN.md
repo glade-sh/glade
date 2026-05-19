@@ -1,6 +1,6 @@
 # Managed Package Dependency Plan
 
-Status date: 2026-05-07.
+Status date: 2026-05-19.
 
 This plan covers Salesforce managed-package dependencies for local Apex test
 execution when OAER has access to the dependency package source code. The first
@@ -8,6 +8,12 @@ implementation should be intentionally source-backed and explicit: a consuming
 project config points OAER at local dependency project roots, their namespaces,
 and optionally the package version they represent. Later implementations can
 cache those inputs as version-pinned package artifacts.
+
+Current implementation note: `oaer.yml` source-backed and artifact-backed
+dependency config, dependency project loading, dependency JSON reporting,
+dependency symbol/schema loading, and a first package artifact model now exist.
+The remaining plan should focus on stronger cross-namespace access enforcement
+and using artifact-backed package contracts in `nams-workspace`.
 
 The immediate motivator is the enterprise example-project corpus. Projects such
 as `src-nmb-nc-develop` and `nams-workspace` reference the installed `znu`
@@ -74,6 +80,23 @@ Where:
   semantic version, or source snapshot label. It should be preserved in JSON
   output and artifact manifests even before strict version enforcement exists.
 
+Artifact-backed config should use the same installed namespace but a distinct
+artifact marker so a package artifact is not mistaken for a source root:
+
+```yaml
+project:
+  root: .
+  defaultNamespace: namz
+  managedPackageDependencies: [
+    "znu:artifact:../.oaer/packages/znu/package.oaer.json"
+  ]
+```
+
+For source checkouts whose local namespace differs from the installed namespace,
+the artifact builder must accept the installed namespace explicitly. This is the
+`src-nmb-nu-develop` to `znu` case: the source project may report `NU`, while
+the consuming org sees installed package namespace `znu`.
+
 Future config can graduate to structured YAML if the config parser grows beyond
 the current scalar and inline-list subset:
 
@@ -107,9 +130,10 @@ Artifact identity:
 
 Apex contract:
 
-- Top-level classes, interfaces, enums, and triggers.
-- Nested types and enum values.
-- Constructors, methods, properties, fields, and annotations.
+- Subscriber-visible top-level classes, interfaces, enums, and triggers. The
+  artifact must export only `global` dependency types.
+- Subscriber-visible nested types, enum values, constructors, methods,
+  properties, and fields. The artifact must export only `global` members.
 - Modifiers and sharing declarations.
 - Source ranges and declaring package identity.
 - Executable IR for source-backed dependencies when available.
@@ -264,6 +288,11 @@ problem, and a failing dependency method body is an OAER runtime fidelity gap.
 Goal: let users point a project at local source-backed managed package
 dependencies.
 
+Current status: mostly implemented for source-backed dependencies. `oaer.yml`
+parses `project.managedPackageDependencies`, resolves relative source paths,
+loads dependency projects, reports missing/load errors, and carries dependency
+summaries into test and compatibility JSON.
+
 Primary write scope: `internal/config`, `internal/project`, `internal/oaercli`,
 `internal/compat`.
 
@@ -299,6 +328,20 @@ Exit criteria:
 Goal: turn dependency source into a package artifact model without changing
 current runtime semantics yet.
 
+Current status: partially implemented. `internal/packageartifact` can build a
+JSON artifact from a loaded project and type/schema index, including only
+subscriber-visible `global` Apex types and members, installed-namespace custom
+objects/fields/custom metadata records, labels, static resources, source root,
+source API version, and source hash. The builder command is:
+
+```bash
+go run ./cmd/oaer package build \
+  --project example-projects/src-nmb-nu-develop \
+  --namespace znu \
+  --version src-nmb-nu-develop@<source-hash-or-git-sha> \
+  --output example-projects/.oaer/packages/znu/package.oaer.json
+```
+
 Primary write scope: new `internal/packageartifact` or `internal/managedpkg`,
 plus `internal/typesys`, `internal/schema`, and metadata loaders.
 
@@ -328,6 +371,14 @@ Exit criteria:
 ### Phase MP3: Cross-Namespace Type And Schema Resolution
 
 Goal: make consuming project compile resolution use loaded dependency packages.
+
+Current status: source-backed and artifact-backed dependency symbols and schema
+are appended before current project symbols. A tiny artifact-backed consumer
+fixture resolves `znu.Address` and `znu__CartItemLine__c`-style references with
+zero dependency diagnostics. A real `src-nmb-nu-develop` artifact built with
+`--namespace znu` currently exports `510` global Apex types, `2,420` global
+members, and `169` installed-namespace objects; `znu.Address`,
+`znu.Pluggable`, and `znu__CartItemLine__c` resolve from that artifact.
 
 Primary write scope: `internal/typesys`, `internal/sema`, `internal/schema`,
 `internal/soql`.
@@ -430,22 +481,29 @@ Exit criteria:
 - Unsupported dependency body behavior reports the package namespace/version and
   call site.
 
-### Phase MP6: Version-Pinned Artifact Cache
+### Phase MP6: Version-Pinned Artifact Loading And Cache
 
 Goal: make dependency loading reproducible and fast without reparsing full
 source trees on every local test run.
+
+Current status: the contract path is implemented. `oaer package build` writes a
+stable JSON artifact with an explicit installed namespace and source hash, and
+`oaer.yml` can load it with `namespace:artifact:path`. The remaining cache work
+is version mismatch handling, invalidation policy, endpoint-gap reporting for
+global signatures that reference non-exported types, and optional compiled IR.
 
 Primary write scope: `internal/packageartifact`, cache storage, CLI plumbing.
 
 Tasks:
 
-- Add `oaer package build --project <dependency-root> --namespace <ns>
-  --version <version> --output <artifact>` or equivalent internal command.
-- Serialize package contracts and optional compiled IR into a stable JSON or
-  binary artifact.
+- Keep `oaer package build --project <dependency-root> --namespace <installed-ns>
+  --version <version> --output <artifact>` as the artifact build surface.
+- Serialize package contracts into a stable JSON artifact; compiled IR can be
+  added later after the contract path proves useful.
 - Record source hashes and fail closed when a configured version expects a
   different artifact.
-- Load artifact files from `oaer.yml` when present.
+- Load artifact files from `oaer.yml` when present. The first contract loader is
+  done; runtime execution from compiled artifact bodies is later work.
 - Add cache invalidation for source-backed dependencies when the source hash
   changes.
 
@@ -519,15 +577,26 @@ visible so regressions in access enforcement are easy to catch.
 For the current corpus, the plan should be applied in this order:
 
 1. Create or locate a local source checkout for the package that owns namespace
-   `znu`.
-2. Add a local `oaer.yml` for the consuming example project that maps `znu` to
-   that checkout and, if known, the specific package version.
-3. Run `compat local-tests` and confirm the top blocker changes from unknown
+   `znu`. For the current local corpus, use `src-nmb-nu-develop` as the source
+   checkout and build it with installed namespace `znu`.
+2. Build a compact package artifact:
+
+   ```bash
+   go run ./cmd/oaer package build \
+     --project example-projects/src-nmb-nu-develop \
+     --namespace znu \
+     --version src-nmb-nu-develop@<source-hash-or-git-sha> \
+     --output example-projects/.oaer/packages/znu/package.oaer.json
+   ```
+
+3. Add a local `oaer.yml` for the consuming example project that maps `znu` to
+   that artifact, then fall back to source-backed config only when artifact
+   loading is not enough for the specific test.
+4. Run `compat local-tests` and confirm the top blocker changes from unknown
    `znu` type/object to either successful compile or explicit package-scoped
    access/runtime diagnostics.
-4. Build a version-pinned artifact once the source-backed path is stable.
-5. Replace path-only config with artifact config for repeatable squad and CI
-   runs.
+5. Keep the source-backed path as a rebuild/debug path and use the artifact path
+   for repeatable squad and CI runs.
 
 Do not fix `znu` references by adding current-project stubs or hard-coded
 runtime behavior. The dependency should be loaded as an installed package.

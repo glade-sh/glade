@@ -395,12 +395,13 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 			APIName:   "Parent__c",
 			KeyPrefix: "a00",
 			Fields: map[string]storage.Field{
-				"Name":       {APIName: "Name", Type: storage.FieldString},
-				"MaxTerm__c": {APIName: "MaxTerm__c", Type: storage.FieldSummary, SummarizedField: "Child__c.Term__c", SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "max"},
-				"Count__c":   {APIName: "Count__c", Type: storage.FieldSummary, SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "count"},
-				"Paid__c":    {APIName: "Paid__c", Type: storage.FieldDecimal},
-				"Total__c":   {APIName: "Total__c", Type: storage.FieldSummary, SummarizedField: "Child__c.Amount__c", SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "sum"},
-				"Balance__c": {APIName: "Balance__c", Type: storage.FieldCalculated, DisplayType: "Currency", Formula: "Total__c - Paid__c"},
+				"Name":            {APIName: "Name", Type: storage.FieldString},
+				"MaxTerm__c":      {APIName: "MaxTerm__c", Type: storage.FieldSummary, SummarizedField: "Child__c.Term__c", SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "max"},
+				"Count__c":        {APIName: "Count__c", Type: storage.FieldSummary, SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "count"},
+				"Paid__c":         {APIName: "Paid__c", Type: storage.FieldDecimal},
+				"FormulaTotal__c": {APIName: "FormulaTotal__c", Type: storage.FieldSummary, SummarizedField: "Child__c.FormulaAmount__c", SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "sum"},
+				"Total__c":        {APIName: "Total__c", Type: storage.FieldSummary, SummarizedField: "Child__c.Amount__c", SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "sum"},
+				"Balance__c":      {APIName: "Balance__c", Type: storage.FieldCalculated, DisplayType: "Currency", Formula: "Total__c - Paid__c"},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -410,9 +411,10 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 			APIName:   "Child__c",
 			KeyPrefix: "a01",
 			Fields: map[string]storage.Field{
-				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
-				"Term__c":   {APIName: "Term__c", Type: storage.FieldDecimal},
-				"Amount__c": {APIName: "Amount__c", Type: storage.FieldDecimal},
+				"Parent__c":        {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
+				"Term__c":          {APIName: "Term__c", Type: storage.FieldDecimal},
+				"Amount__c":        {APIName: "Amount__c", Type: storage.FieldDecimal},
+				"FormulaAmount__c": {APIName: "FormulaAmount__c", Type: storage.FieldDecimal, Formula: "Amount__c * 2"},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -436,6 +438,9 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 	if got := stored.Fields["Total__c"].Decimal; got != "12" {
 		t.Fatalf("sum summary after insert = %q", got)
 	}
+	if got := stored.Fields["FormulaTotal__c"].Decimal; got != "24" {
+		t.Fatalf("formula sum summary after insert = %q", got)
+	}
 	if got := stored.Fields["Count__c"].Integer; got != 2 {
 		t.Fatalf("count summary after insert = %d", got)
 	}
@@ -457,6 +462,17 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 	if !parentUpdate[0].Success {
 		t.Fatalf("parent update with unchanged summaries = %#v", parentUpdate[0])
 	}
+	formulaBackedUpdate := engine.Update([]storage.Record{{ID: children[0].ID, Object: "Child__c", Fields: map[string]storage.Value{
+		"Amount__c":        storage.DecimalValue("6"),
+		"FormulaAmount__c": storage.DecimalValue("0"),
+	}}})
+	if !formulaBackedUpdate[0].Success {
+		t.Fatalf("child update with formula-backed field = %#v", formulaBackedUpdate[0])
+	}
+	stored = org.Objects["Parent__c"].Records[parent[0].ID]
+	if got := stored.Fields["FormulaTotal__c"].Decimal; got != "26" {
+		t.Fatalf("formula sum summary after formula-backed update = %q", got)
+	}
 	update := engine.Update([]storage.Record{{ID: children[1].ID, Object: "Child__c", Fields: map[string]storage.Value{"Term__c": storage.DecimalValue("2"), "Amount__c": storage.DecimalValue("3")}}})
 	if !update[0].Success {
 		t.Fatalf("child update = %#v", update[0])
@@ -465,8 +481,11 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 	if got := stored.Fields["MaxTerm__c"].Decimal; got != "2" {
 		t.Fatalf("max summary after update = %q", got)
 	}
-	if got := stored.Fields["Total__c"].Decimal; got != "8" {
+	if got := stored.Fields["Total__c"].Decimal; got != "9" {
 		t.Fatalf("sum summary after update = %q", got)
+	}
+	if got := stored.Fields["FormulaTotal__c"].Decimal; got != "18" {
+		t.Fatalf("formula sum summary after update = %q", got)
 	}
 	if got := stored.Fields["Count__c"].Integer; got != 2 {
 		t.Fatalf("count summary after update = %d", got)
@@ -479,11 +498,83 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 	if got := stored.Fields["MaxTerm__c"].Decimal; got != "1" {
 		t.Fatalf("max summary after delete = %q", got)
 	}
-	if got := stored.Fields["Total__c"].Decimal; got != "5" {
+	if got := stored.Fields["Total__c"].Decimal; got != "6" {
 		t.Fatalf("sum summary after delete = %q", got)
 	}
 	if got := stored.Fields["Count__c"].Integer; got != 1 {
 		t.Fatalf("count summary after delete = %d", got)
+	}
+}
+
+func TestDMLCascadesSummaryFieldRecalculation(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Grandparent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Grandparent__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Total__c": {APIName: "Total__c", Type: storage.FieldSummary, SummarizedField: "Parent__c.Total__c", SummaryForeignKey: "Parent__c.Grandparent__c", SummaryOperation: "sum"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Parent__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Grandparent__c": {APIName: "Grandparent__c", Type: storage.FieldReference, ReferenceTo: []string{"Grandparent__c"}},
+				"Name":           {APIName: "Name", Type: storage.FieldString},
+				"Total__c":       {APIName: "Total__c", Type: storage.FieldSummary, SummarizedField: "Child__c.Amount__c", SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "sum"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Child__c",
+			KeyPrefix: "a02",
+			Fields: map[string]storage.Field{
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
+				"Amount__c": {APIName: "Amount__c", Type: storage.FieldDecimal},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	grandparent := engine.Insert([]storage.Record{{Object: "Grandparent__c"}})
+	if !grandparent[0].Success {
+		t.Fatalf("grandparent insert = %#v", grandparent[0])
+	}
+	parent := engine.Insert([]storage.Record{{
+		Object: "Parent__c",
+		Fields: map[string]storage.Value{"Grandparent__c": storage.IDValue(grandparent[0].ID)},
+	}})
+	if !parent[0].Success {
+		t.Fatalf("parent insert = %#v", parent[0])
+	}
+	child := engine.Insert([]storage.Record{{
+		Object: "Child__c",
+		Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID), "Amount__c": storage.DecimalValue("42")},
+	}})
+	if !child[0].Success {
+		t.Fatalf("child insert = %#v", child[0])
+	}
+	if got := org.Objects["Parent__c"].Records[parent[0].ID].Fields["Total__c"].Decimal; got != "42" {
+		t.Fatalf("parent total = %q", got)
+	}
+	if got := org.Objects["Grandparent__c"].Records[grandparent[0].ID].Fields["Total__c"].Decimal; got != "42" {
+		t.Fatalf("grandparent total = %q", got)
+	}
+	parentUpdate := engine.Update([]storage.Record{{ID: parent[0].ID, Object: "Parent__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Updated")}}})
+	if !parentUpdate[0].Success {
+		t.Fatalf("parent update = %#v", parentUpdate[0])
+	}
+	if got := org.Objects["Parent__c"].Records[parent[0].ID].Fields["Total__c"].Decimal; got != "42" {
+		t.Fatalf("parent total after unrelated update = %q", got)
+	}
+	if got := org.Objects["Grandparent__c"].Records[grandparent[0].ID].Fields["Total__c"].Decimal; got != "42" {
+		t.Fatalf("grandparent total after unrelated parent update = %q", got)
 	}
 }
 
@@ -736,6 +827,25 @@ func TestInsertValidatesRequiredAndUnknownFields(t *testing.T) {
 	}})
 	if unknown[0].Success || unknown[0].Error == "" {
 		t.Fatalf("unknown field result = %#v", unknown)
+	}
+}
+
+func TestInsertSynthesizesMissingCustomObject(t *testing.T) {
+	org := storage.NewOrgState()
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "pkg__PriceClass__c",
+		Fields: map[string]storage.Value{
+			"Name":               storage.StringValue("Default"),
+			"pkg__ExternalID__c": storage.StringValue("default"),
+		},
+	}})
+	if len(insert) != 1 || !insert[0].Success {
+		t.Fatalf("insert result = %#v", insert)
+	}
+	if _, ok := org.Objects["pkg__PriceClass__c"]; !ok {
+		t.Fatalf("synthetic object was not added: %#v", org.Objects)
 	}
 }
 
@@ -1523,6 +1633,42 @@ func TestUpsertWithMissingExplicitIDReturnsInvalidCrossReference(t *testing.T) {
 	}
 }
 
+func TestUpsertStripsRelationshipPseudoFields(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Child__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Parent__c",
+				ParentObjects:      []string{"Parent__c"},
+				ParentRelationship: "Parent__r",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	results := engine.Upsert([]storage.Record{{
+		Object: "Child__c",
+		Fields: map[string]storage.Value{
+			"Name":      storage.StringValue("Line"),
+			"Parent__r": storage.NullValue(),
+		},
+	}})
+	if len(results) != 1 || !results[0].Success {
+		t.Fatalf("upsert result = %#v", results)
+	}
+	stored := org.Objects["Child__c"].Records[results[0].ID]
+	if _, ok := stored.Fields["Parent__r"]; ok {
+		t.Fatalf("stored relationship pseudo-field: %#v", stored.Fields)
+	}
+}
+
 func TestUpsertWithExplicitExternalID(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
@@ -2272,6 +2418,134 @@ func TestCalculatedFormulaEvaluatesNestedParentCalculatedField(t *testing.T) {
 	})
 	if !ok || value.Kind != storage.ValueString || value.String != "Active" {
 		t.Fatalf("nested parent formula value = %#v, ok=%v; want Active", value, ok)
+	}
+}
+
+func TestRelationshipFormulaEvaluatesParentFormulaBackedField(t *testing.T) {
+	childDefinition := storage.ObjectDefinition{
+		APIName: "Line__c",
+		Fields: map[string]storage.Field{
+			"OrderItemLine__c":       {APIName: "OrderItemLine__c", Type: storage.FieldReference, ReferenceTo: []string{"OrderItemLine__c"}},
+			"ParentBundleSubtype__c": {APIName: "ParentBundleSubtype__c", Type: storage.FieldString},
+			"Product2__c":            {APIName: "Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}},
+			"Product__c":             {APIName: "Product__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}, RelationshipName: "Product__r"},
+			"Quantity__c":            {APIName: "Quantity__c", Type: storage.FieldDecimal},
+		},
+	}
+	productDefinition := storage.ObjectDefinition{
+		APIName: "Product__c",
+		Fields: map[string]storage.Field{
+			"Inventory__c":       {APIName: "Inventory__c", Type: storage.FieldDecimal},
+			"InventoryUsed__c":   {APIName: "InventoryUsed__c", Type: storage.FieldDecimal},
+			"InventoryOnHand__c": {APIName: "InventoryOnHand__c", Type: storage.FieldDecimal, Formula: "Inventory__c - InventoryUsed__c"},
+			"RecordTypeName__c":  {APIName: "RecordTypeName__c", Type: storage.FieldString, DefaultValue: "$RecordType.Name"},
+			"TrackInventory__c":  {APIName: "TrackInventory__c", Type: storage.FieldBoolean},
+		},
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Line__c": {Definition: childDefinition},
+		"Product__c": {
+			Definition: productDefinition,
+			Records: map[storage.ID]storage.Record{
+				"a01000000000001": {
+					ID:     "a01000000000001",
+					Object: "Product__c",
+					Fields: map[string]storage.Value{
+						"Inventory__c":      storage.DecimalValue("1000"),
+						"InventoryUsed__c":  storage.DecimalValue("10"),
+						"TrackInventory__c": storage.BooleanValue(true),
+					},
+				},
+			},
+		},
+	}}
+
+	matches, ok := evaluateValidationFormulaInOrg("Quantity__c > Product__r.InventoryOnHand__c", &org, childDefinition, storage.Record{
+		Object: "Line__c",
+		Fields: map[string]storage.Value{
+			"Product__c":  storage.IDValue("a01000000000001"),
+			"Quantity__c": storage.DecimalValue("1001"),
+		},
+	}, nil, true)
+	if !ok || !matches {
+		t.Fatalf("relationship formula-backed validation = %v, ok=%v; want true", matches, ok)
+	}
+	matches, ok = evaluateValidationFormulaInOrg("AND(ISNEW(), Quantity__c - IF(ISNEW(), 0, PRIORVALUE(Quantity__c)) > Product__r.InventoryOnHand__c)", &org, childDefinition, storage.Record{
+		Object: "Line__c",
+		Fields: map[string]storage.Value{
+			"Product__c":  storage.IDValue("a01000000000001"),
+			"Quantity__c": storage.DecimalValue("1001"),
+		},
+	}, nil, true)
+	if !ok || !matches {
+		t.Fatalf("insert validation with ISNEW = %v, ok=%v; want true", matches, ok)
+	}
+	prior := storage.Record{
+		Object: "Line__c",
+		Fields: map[string]storage.Value{
+			"Product__c":  storage.IDValue("a01000000000001"),
+			"Quantity__c": storage.DecimalValue("20"),
+		},
+	}
+	matches, ok = evaluateValidationFormulaInOrg("Quantity__c - IF(ISNEW(), 0, PRIORVALUE(Quantity__c)) > Product__r.InventoryOnHand__c", &org, childDefinition, storage.Record{
+		Object: "Line__c",
+		Fields: map[string]storage.Value{
+			"Product__c":  storage.IDValue("a01000000000001"),
+			"Quantity__c": storage.DecimalValue("1011"),
+		},
+	}, &prior, false)
+	if !ok || !matches {
+		t.Fatalf("update validation with PRIORVALUE = %v, ok=%v; want true", matches, ok)
+	}
+	matches, ok = evaluateValidationFormulaInOrg(`AND(Product__r.TrackInventory__c,
+Product__r.RecordTypeName__c != 'Merchandise',
+Quantity__c - IF(ISNEW(), 0, PRIORVALUE(Quantity__c)) > Product__r.InventoryOnHand__c,
+ISBLANK(OrderItemLine__c) || (!ISNEW() && Quantity__c > PRIORVALUE(Quantity__c)),
+TEXT(ParentBundleSubtype__c) != 'Assembled')`, &org, childDefinition, storage.Record{
+		Object: "Line__c",
+		Fields: map[string]storage.Value{
+			"Product__c":  storage.IDValue("a01000000000001"),
+			"Quantity__c": storage.DecimalValue("1001"),
+		},
+	}, nil, true)
+	if !ok || !matches {
+		t.Fatalf("cart-style inventory validation = %v, ok=%v; want true", matches, ok)
+	}
+	matches, ok = evaluateValidationFormulaInOrg(`AND(Product2__r.TrackInventory__c,
+Product2__r.RecordTypeName__c != 'Merchandise' || !$Setup.NimbleAMSPublicSettings__c.CanBackorderStaffView__c,
+Quantity__c - IF(ISNEW(), 0, PRIORVALUE(Quantity__c)) > Product2__r.InventoryOnHand__c,
+ISBLANK(OrderItemLine__c) || (!ISNEW() && Quantity__c > PRIORVALUE(Quantity__c)),
+TEXT(ParentBundleSubtype__c) != 'Assembled')`, &org, childDefinition, storage.Record{
+		Object: "Line__c",
+		Fields: map[string]storage.Value{
+			"Product2__c": storage.IDValue("a01000000000001"),
+			"Quantity__c": storage.DecimalValue("1001"),
+		},
+	}, nil, true)
+	if !ok || !matches {
+		t.Fatalf("exact cart inventory validation = %v, ok=%v; want true", matches, ok)
+	}
+	namespacedProductDefinition := productDefinition
+	namespacedProductDefinition.Fields = map[string]storage.Field{
+		"NU__Inventory__c":       {APIName: "NU__Inventory__c", Type: storage.FieldDecimal},
+		"NU__InventoryUsed__c":   {APIName: "NU__InventoryUsed__c", Type: storage.FieldDecimal},
+		"NU__InventoryOnHand__c": {APIName: "NU__InventoryOnHand__c", Type: storage.FieldDecimal, Formula: "Inventory__c - InventoryUsed__c"},
+		"NU__RecordTypeName__c":  {APIName: "NU__RecordTypeName__c", Type: storage.FieldString, DefaultValue: "$RecordType.Name"},
+		"NU__TrackInventory__c":  {APIName: "NU__TrackInventory__c", Type: storage.FieldBoolean},
+	}
+	namespacedOrg := org
+	namespacedOrg.Namespace = "NU"
+	namespacedProduct := namespacedOrg.Objects["Product__c"]
+	namespacedProduct.Definition = namespacedProductDefinition
+	namespacedOrg.Objects["Product__c"] = namespacedProduct
+	matches, ok = evaluateValidationFormulaInOrg("Product2__r.TrackInventory__c", &namespacedOrg, childDefinition, storage.Record{
+		Object: "Line__c",
+		Fields: map[string]storage.Value{
+			"Product2__c": storage.IDValue("a01000000000001"),
+		},
+	}, nil, true)
+	if !ok || !matches {
+		t.Fatalf("namespaced parent boolean field = %v, ok=%v; want true", matches, ok)
 	}
 }
 

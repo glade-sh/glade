@@ -23,9 +23,10 @@ type ProjectConfig struct {
 }
 
 type ManagedPackageDependency struct {
-	Namespace  string `json:"namespace"`
-	SourceRoot string `json:"sourceRoot"`
-	Version    string `json:"version,omitempty"`
+	Namespace    string `json:"namespace"`
+	SourceRoot   string `json:"sourceRoot,omitempty"`
+	ArtifactPath string `json:"artifactPath,omitempty"`
+	Version      string `json:"version,omitempty"`
 }
 
 type OrgConfig struct {
@@ -166,11 +167,18 @@ func parseManagedPackageDependencies(values []string) ([]ManagedPackageDependenc
 		}
 		namespace := strings.TrimSpace(parts[0])
 		sourceRoot := strings.TrimSpace(parts[1])
+		artifactPath := ""
 		version := ""
-		if len(parts) == 3 {
+		if sourceRoot == "artifact" {
+			if len(parts) != 3 || strings.TrimSpace(parts[2]) == "" {
+				return nil, fmt.Errorf("invalid managed package dependency %q: expected namespace:artifact:path", value)
+			}
+			artifactPath = strings.TrimSpace(parts[2])
+			sourceRoot = ""
+		} else if len(parts) == 3 {
 			version = strings.TrimSpace(parts[2])
 		}
-		if namespace == "" || sourceRoot == "" {
+		if namespace == "" || (sourceRoot == "" && artifactPath == "") {
 			return nil, fmt.Errorf("invalid managed package dependency %q: namespace and path are required", value)
 		}
 		key := strings.ToLower(namespace)
@@ -179,9 +187,10 @@ func parseManagedPackageDependencies(values []string) ([]ManagedPackageDependenc
 		}
 		seen[key] = true
 		deps = append(deps, ManagedPackageDependency{
-			Namespace:  namespace,
-			SourceRoot: sourceRoot,
-			Version:    version,
+			Namespace:    namespace,
+			SourceRoot:   sourceRoot,
+			ArtifactPath: artifactPath,
+			Version:      version,
 		})
 	}
 	return deps, nil
@@ -190,9 +199,12 @@ func parseManagedPackageDependencies(values []string) ([]ManagedPackageDependenc
 func resolveManagedPackageDependencyPaths(cfg *Config, baseDir string) {
 	for i := range cfg.Project.ManagedPackageDependencies {
 		path := cfg.Project.ManagedPackageDependencies[i].SourceRoot
-		if path == "" || filepath.IsAbs(path) {
-			continue
+		if path != "" && !filepath.IsAbs(path) {
+			cfg.Project.ManagedPackageDependencies[i].SourceRoot = filepath.Clean(filepath.Join(baseDir, filepath.FromSlash(path)))
 		}
-		cfg.Project.ManagedPackageDependencies[i].SourceRoot = filepath.Clean(filepath.Join(baseDir, filepath.FromSlash(path)))
+		artifactPath := cfg.Project.ManagedPackageDependencies[i].ArtifactPath
+		if artifactPath != "" && !filepath.IsAbs(artifactPath) {
+			cfg.Project.ManagedPackageDependencies[i].ArtifactPath = filepath.Clean(filepath.Join(baseDir, filepath.FromSlash(artifactPath)))
+		}
 	}
 }

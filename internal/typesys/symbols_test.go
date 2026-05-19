@@ -64,6 +64,56 @@ func TestBuildIndexAllowsDuplicateTypesAcrossPackageDirectories(t *testing.T) {
 	}
 }
 
+func TestBuildLoadsManagedPackageArtifactSymbols(t *testing.T) {
+	root := t.TempDir()
+	artifactPath := filepath.Join(root, "znu.oaer-package.json")
+	if err := os.WriteFile(artifactPath, []byte(`{
+  "namespace": "znu",
+  "version": "1.0",
+  "apexTypes": [
+    {
+      "kind": "class",
+      "name": "Address",
+      "namespace": "znu",
+      "sourceRoot": "/tmp/znu",
+      "version": "1.0",
+      "dependency": true,
+      "modifiers": ["global"]
+    }
+  ],
+  "objects": [
+    {
+      "name": "znu__CartItemLine__c",
+      "fields": [
+        {"name": "znu__Product__c", "type": "reference"}
+      ]
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	idx := Build(project.Project{
+		Root: root,
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:    "znu",
+			ArtifactPath: artifactPath,
+			Version:      "1.0",
+			Status:       "loaded",
+		}},
+	}, schema.Schema{})
+
+	if len(idx.Dependencies) != 1 || idx.Dependencies[0].Status != "loaded" || idx.Dependencies[0].ApexTypes != 1 || idx.Dependencies[0].Objects != 1 {
+		t.Fatalf("dependencies = %#v", idx.Dependencies)
+	}
+	if len(idx.Types) != 1 || idx.Types[0].Name != "Address" || idx.Types[0].Namespace != "znu" || !idx.Types[0].Dependency {
+		t.Fatalf("types = %#v", idx.Types)
+	}
+	if len(idx.Objects) != 1 || idx.Objects[0].Name != "znu__CartItemLine__c" {
+		t.Fatalf("objects = %#v", idx.Objects)
+	}
+}
+
 func TestBuildIndexDiscoversTests(t *testing.T) {
 	root := t.TempDir()
 	classPath := filepath.Join(root, "HelloTest.cls")

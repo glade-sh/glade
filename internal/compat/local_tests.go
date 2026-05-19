@@ -576,17 +576,7 @@ func localTestParallelism(options LocalTestOptions) int {
 		}
 		return 4
 	}
-	if runtime.GOMAXPROCS(0) < 2 {
-		return 1
-	}
-	procs := runtime.GOMAXPROCS(0)
-	if procs > 8 {
-		return 8
-	}
-	if procs < 2 {
-		return 1
-	}
-	return procs
+	return 1
 }
 
 func shouldParallelizeFocusedMethods(options LocalTestOptions) bool {
@@ -600,12 +590,8 @@ func shouldParallelizeMethods(options LocalTestOptions, parallelism, totalCases 
 	if shouldParallelizeFocusedMethods(options) {
 		return true
 	}
-	if strings.TrimSpace(options.Method) != "" || parallelism <= 1 {
-		return false
-	}
-	// Full-project runs with large test counts benefit significantly when methods
-	// within a class are allowed to run in parallel after shared @TestSetup.
-	return totalCases >= 500
+	_ = totalCases
+	return false
 }
 
 func localTestProgressReporter(w io.Writer) func(apextest.TestProgress) {

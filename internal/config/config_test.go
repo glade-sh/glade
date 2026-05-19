@@ -73,3 +73,29 @@ project:
 		t.Fatalf("source root = %q, want %q", got, want)
 	}
 }
+
+func TestLoadFileResolvesManagedPackageArtifactPaths(t *testing.T) {
+	root := t.TempDir()
+	cfgPath := filepath.Join(root, "nested", "oaer.yml")
+	if err := os.MkdirAll(filepath.Dir(cfgPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(cfgPath, []byte(`
+project:
+  managedPackageDependencies: ["znu:artifact:../packages/znu.oaer-package.json"]
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadFile(cfgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dep := cfg.Project.ManagedPackageDependencies[0]
+	want := filepath.Clean(filepath.Join(root, "packages", "znu.oaer-package.json"))
+	if dep.ArtifactPath != want {
+		t.Fatalf("artifact path = %q, want %q", dep.ArtifactPath, want)
+	}
+	if dep.SourceRoot != "" {
+		t.Fatalf("source root = %q, want empty", dep.SourceRoot)
+	}
+}

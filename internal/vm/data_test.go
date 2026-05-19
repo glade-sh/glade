@@ -6640,6 +6640,50 @@ try {
 	}
 }
 
+func TestExecCustomObjectFieldTokenSynthesizesWithoutMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.SObjectField field = pkg__Invoice__c.pkg__Amount__c;
+System.assertEquals('pkg__Amount__c', field.getDescribe().getName());
+System.assertEquals('pkg__Invoice__c', field.getDescribe().getSObjectName());
+System.assertEquals('pkg__Invoice__c', pkg__Invoice__c.SObjectType.getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectPutWrongFieldTokenThrowsSObjectException(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"Email": {APIName: "Email", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	record := Object("Account")
+	token := sObjectFieldToken("Contact", "Email")
+	_, handled, err := machine.callSObjectMember(record, "put", []Value{token, String("ada@example.com")})
+	if err == nil {
+		t.Fatal("expected SObjectException")
+	}
+	if !handled {
+		t.Fatal("put was not handled")
+	}
+	var thrown *apexThrowError
+	if !errors.As(err, &thrown) || thrown.value.Type != "SObjectException" {
+		t.Fatalf("err = %#v, want SObjectException", err)
+	}
+}
+
 func TestExecCatchNestedExceptionByQualifiedName(t *testing.T) {
 	program, err := CompileAnonymous(`
 Boolean caught = false;

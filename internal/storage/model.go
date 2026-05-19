@@ -807,7 +807,10 @@ func StripNamespaceToken(namespace, name string) string {
 }
 
 func ResolveObjectName(org OrgState, name string) (string, bool) {
-	if _, ok := org.Objects[name]; ok {
+	if exact, ok := org.Objects[name]; ok {
+		if preferred, preferredOK := richerNamespacedObjectMatch(org, name, exact); preferredOK {
+			return preferred, true
+		}
 		return name, true
 	}
 	prefixed := NamespaceTokenName(org.Namespace, name)
@@ -855,6 +858,35 @@ func ResolveObjectName(org OrgState, name string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func richerNamespacedObjectMatch(org OrgState, name string, exact ObjectState) (string, bool) {
+	if hasNamespaceToken(name) || !isCustomAPIName(name) {
+		return "", false
+	}
+	var match string
+	var matched ObjectState
+	for candidate, state := range org.Objects {
+		if strings.EqualFold(candidate, name) || !strings.EqualFold(StripAnyNamespaceToken(candidate), name) {
+			continue
+		}
+		if match != "" {
+			return "", false
+		}
+		match = candidate
+		matched = state
+	}
+	if match == "" {
+		return "", false
+	}
+	if objectDefinitionRicher(matched.Definition, exact.Definition) {
+		return match, true
+	}
+	return "", false
+}
+
+func objectDefinitionRicher(candidate, exact ObjectDefinition) bool {
+	return len(candidate.Fields) > len(exact.Fields) || len(candidate.Relations) > len(exact.Relations) || len(candidate.RecordTypes) > len(exact.RecordTypes)
 }
 
 func ResolveFieldName(definition ObjectDefinition, namespace, name string) (string, bool) {

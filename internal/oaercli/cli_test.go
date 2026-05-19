@@ -3,6 +3,7 @@ package oaercli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,6 +31,71 @@ func TestRunUnknownCommand(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), `unknown command "wat"`) {
 		t.Fatalf("stderr did not include diagnostic: %q", stderr.String())
+	}
+}
+
+func TestRunPackageBuildUsesRequestedNamespace(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"NU","sourceApiVersion":"61.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Address.cls"), `
+global class Address {
+  global String street;
+  public String internalCode;
+  global String format() { return street; }
+  public String helper() { return internalCode; }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Hidden.cls"), `
+public class Hidden {
+  global String shouldNotExport;
+}
+`)
+	output := filepath.Join(root, "out", "znu.oaer-package.json")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"package", "build", "--project", root, "--namespace", "znu", "--version", "test-version", "--output", output, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+
+	data, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var artifact struct {
+		Namespace        string `json:"namespace"`
+		Version          string `json:"version"`
+		SourceAPIVersion string `json:"sourceApiVersion"`
+		SourceHash       string `json:"sourceHash"`
+		ApexTypes        []struct {
+			Name      string `json:"name"`
+			Namespace string `json:"namespace"`
+			Members   []struct {
+				Name string `json:"name"`
+			} `json:"members"`
+		} `json:"apexTypes"`
+	}
+	if err := json.Unmarshal(data, &artifact); err != nil {
+		t.Fatal(err)
+	}
+	if artifact.Namespace != "znu" || artifact.Version != "test-version" || artifact.SourceAPIVersion != "61.0" || artifact.SourceHash == "" {
+		t.Fatalf("artifact metadata = %#v", artifact)
+	}
+	if len(artifact.ApexTypes) != 1 || artifact.ApexTypes[0].Name != "Address" || artifact.ApexTypes[0].Namespace != "znu" {
+		t.Fatalf("apex types = %#v", artifact.ApexTypes)
+	}
+	memberNames := make([]string, 0, len(artifact.ApexTypes[0].Members))
+	for _, member := range artifact.ApexTypes[0].Members {
+		memberNames = append(memberNames, member.Name)
+	}
+	if strings.Contains(strings.Join(memberNames, ","), "internalCode") || strings.Contains(strings.Join(memberNames, ","), "helper") {
+		t.Fatalf("exported non-global members: %#v", artifact.ApexTypes[0].Members)
+	}
+	if !strings.Contains(strings.Join(memberNames, ","), "street") || !strings.Contains(strings.Join(memberNames, ","), "format") {
+		t.Fatalf("missing global members: %#v", artifact.ApexTypes[0].Members)
+	}
+	if !strings.Contains(stdout.String(), `"namespace": "znu"`) {
+		t.Fatalf("stdout = %q", stdout.String())
 	}
 }
 

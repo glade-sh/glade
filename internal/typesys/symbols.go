@@ -11,6 +11,7 @@ import (
 
 	"github.com/open-aer/oaer/internal/apexast"
 	"github.com/open-aer/oaer/internal/diagnostic"
+	"github.com/open-aer/oaer/internal/packageartifact"
 	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/schema"
 )
@@ -39,6 +40,7 @@ type TypeSymbol struct {
 	SourceRoot string                  `json:"sourceRoot,omitempty"`
 	Version    string                  `json:"version,omitempty"`
 	Dependency bool                    `json:"dependency,omitempty"`
+	Artifact   bool                    `json:"artifact,omitempty"`
 	Modifiers  []string                `json:"modifiers,omitempty"`
 	IsTest     bool                    `json:"isTest,omitempty"`
 	SuperClass string                  `json:"superClass,omitempty"`
@@ -121,6 +123,9 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 	}
 	for _, dep := range p.ManagedPackageDependencies {
 		if dep.Status != "loaded" || dep.Project == nil {
+			if dep.Status == "loaded" && dep.ArtifactPath != "" {
+				appendArtifactDependency(&idx, dep)
+			}
 			continue
 		}
 		depSchema, err := schema.LoadProject(*dep.Project)
@@ -171,6 +176,95 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 		return idx.Triggers[i].Namespace < idx.Triggers[j].Namespace
 	})
 	return idx
+}
+
+func appendArtifactDependency(idx *Index, dep project.ManagedPackageDependency) {
+	artifact, err := packageartifact.ReadJSON(dep.ArtifactPath)
+	if err != nil {
+		diag := diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "dependency_load_error",
+			Message:  fmt.Sprintf("managed package dependency %s artifact load failed: %v", dep.Namespace, err),
+		}
+		idx.Diagnostics = append(idx.Diagnostics, diag)
+		idx.Dependencies = append(idx.Dependencies, DependencyInfo{
+			Namespace:   dep.Namespace,
+			SourceRoot:  dep.ArtifactPath,
+			Version:     dep.Version,
+			Status:      "load_error",
+			Diagnostics: []diagnostic.Diagnostic{diag},
+		})
+		return
+	}
+	namespace := dep.Namespace
+	if namespace == "" {
+		namespace = artifact.Namespace
+	}
+	version := dep.Version
+	if version == "" {
+		version = artifact.Version
+	}
+	for _, typ := range artifact.ApexTypes {
+		idx.Types = append(idx.Types, typeSymbolFromArtifact(namespace, version, typ))
+	}
+	idx.Objects = append(idx.Objects, artifact.Objects...)
+	idx.CustomMetadataRecords = append(idx.CustomMetadataRecords, artifact.CustomMetadataRecords...)
+	idx.Dependencies = append(idx.Dependencies, DependencyInfo{
+		Namespace:       namespace,
+		SourceRoot:      dep.ArtifactPath,
+		Version:         version,
+		Status:          dep.Status,
+		ApexTypes:       len(artifact.ApexTypes),
+		Objects:         len(artifact.Objects),
+		Labels:          artifact.Labels,
+		StaticResources: artifact.StaticResources,
+	})
+}
+
+func typeSymbolFromArtifact(namespace, version string, typ packageartifact.ApexType) TypeSymbol {
+	if typ.Namespace == "" {
+		typ.Namespace = namespace
+	}
+	if typ.Version == "" {
+		typ.Version = version
+	}
+	if typ.SourceRoot == "" {
+		typ.SourceRoot = namespace
+	}
+	typ.Dependency = true
+	return TypeSymbol{
+		Kind:       typ.Kind,
+		Name:       typ.Name,
+		File:       typ.File,
+		Namespace:  typ.Namespace,
+		SourceRoot: typ.SourceRoot,
+		Version:    typ.Version,
+		Dependency: typ.Dependency,
+		Artifact:   true,
+		Modifiers:  append([]string(nil), typ.Modifiers...),
+		IsTest:     typ.IsTest,
+		SuperClass: typ.SuperClass,
+		Interfaces: append([]string(nil), typ.Interfaces...),
+		Range:      typ.Range,
+		Members:    memberSymbolsFromArtifact(typ.Members),
+	}
+}
+
+func memberSymbolsFromArtifact(members []packageartifact.ApexMember) []MemberSymbol {
+	out := make([]MemberSymbol, 0, len(members))
+	for _, member := range members {
+		out = append(out, MemberSymbol{
+			Kind:       member.Kind,
+			Name:       member.Name,
+			Type:       member.Type,
+			Modifiers:  append([]string(nil), member.Modifiers...),
+			Parameters: append([]apexast.Parameter(nil), member.Parameters...),
+			Accessors:  append([]apexast.Accessor(nil), member.Accessors...),
+			IsTest:     member.IsTest,
+			Range:      member.Range,
+		})
+	}
+	return out
 }
 
 func appendProjectSymbols(idx *Index, parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, seenTypes map[string][]seenTypeSymbol) {

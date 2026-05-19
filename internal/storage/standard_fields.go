@@ -160,6 +160,15 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "EventUuid", Label: "Event UUID", Type: FieldString},
 			{APIName: "ReplayId", Label: "Replay ID", Type: FieldString},
 		}
+	case strings.HasSuffix(strings.ToLower(objectName), "__mdt"):
+		return []Field{
+			{APIName: "DeveloperName", Label: "Developer Name", Type: FieldString},
+			{APIName: "Label", Label: "Label", Type: FieldString},
+			{APIName: "Language", Label: "Language", Type: FieldString},
+			{APIName: "MasterLabel", Label: "Master Label", Type: FieldString},
+			{APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: FieldString},
+			{APIName: "QualifiedApiName", Label: "Qualified API Name", Type: FieldString},
+		}
 	case stringsEqualFold(objectName, "EntityDefinition"):
 		return []Field{
 			{APIName: "DeveloperName", Label: "Developer Name", Type: FieldString},

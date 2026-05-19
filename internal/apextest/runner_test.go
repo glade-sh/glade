@@ -3570,6 +3570,16 @@ private class NestedInitializerTest {
 	}
 }
 
+func TestQualifyNestedTypeNameResolvesTopLevelOwnerNestedType(t *testing.T) {
+	known := map[string]bool{
+		"Outer":       true,
+		"Outer.Inner": true,
+	}
+	if got := qualifyNestedTypeName("Outer", "Inner", known); got != "Outer.Inner" {
+		t.Fatalf("qualified type = %q, want Outer.Inner", got)
+	}
+}
+
 func TestProjectRuntimeMatchesSObjectListDowncastConstructors(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

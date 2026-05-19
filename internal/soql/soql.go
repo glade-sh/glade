@@ -608,6 +608,10 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 			if raw, alias, ok := splitSelectFieldAlias(field); ok {
 				if value, ok := fields[raw]; ok {
 					fields[alias] = value.Clone()
+					continue
+				}
+				if value, ok := findAggregateFieldByComparableName(fields, raw); ok {
+					fields[alias] = value.Clone()
 				}
 			}
 		}
@@ -1459,7 +1463,7 @@ func aggregateFieldMayBeNumeric(org storage.OrgState, definition storage.ObjectD
 }
 
 func fieldDefinitionsForReference(org storage.OrgState, definition storage.ObjectDefinition, field string) ([]storage.Field, bool) {
-	if canonical, ok := storage.ResolveFieldName(definition, org.Namespace, field); ok && canonical == "Id" {
+	if canonical, ok := resolveSOQLFieldName(definition, org.Namespace, field); ok && canonical == "Id" {
 		return []storage.Field{{APIName: "Id", Type: storage.FieldID}}, true
 	}
 	if systemField, ok := systemFieldDefinition(field); ok {
@@ -1499,9 +1503,12 @@ func fieldDefinitionsForReference(org storage.OrgState, definition storage.Objec
 			}
 			return out, len(out) > 0
 		}
+		if customObjectLikeSOQLName(definition.APIName) && customRelationshipLikeSOQLName(parts[0]) && fieldKnownForMode(org, storage.ObjectDefinition{APIName: relationshipObjectName(parts[0])}, parts[1], false) {
+			return []storage.Field{{APIName: parts[1], Type: storage.FieldAny}}, true
+		}
 		return nil, false
 	}
-	canonicalField, ok := storage.ResolveFieldName(definition, org.Namespace, field)
+	canonicalField, ok := resolveSOQLFieldName(definition, org.Namespace, field)
 	if !ok {
 		return nil, false
 	}
@@ -1515,6 +1522,8 @@ func isSystemParentRelationship(relationship string) bool {
 	case strings.EqualFold(relationship, "LastModifiedBy"):
 		return true
 	case strings.EqualFold(relationship, "Owner"):
+		return true
+	case strings.EqualFold(relationship, "RecordType"):
 		return true
 	default:
 		return false
@@ -1543,7 +1552,7 @@ func systemFieldDefinition(field string) (storage.Field, bool) {
 	switch canonical {
 	case "CreatedDate", "LastModifiedDate", "SystemModstamp":
 		return storage.Field{APIName: canonical, Type: storage.FieldDateTime}, true
-	case "CreatedById", "LastModifiedById", "OwnerId":
+	case "CreatedById", "LastModifiedById", "OwnerId", "RecordTypeId":
 		return storage.Field{APIName: canonical, Type: storage.FieldID}, true
 	case "IsDeleted":
 		return storage.Field{APIName: canonical, Type: storage.FieldBoolean}, true
@@ -1666,6 +1675,11 @@ func validateTypeofReference(org storage.OrgState, definition storage.ObjectDefi
 }
 
 func validateFieldReference(org storage.OrgState, definition storage.ObjectDefinition, field string, mode string) error {
+	if strings.Contains(field, ".") {
+		if base, ok := stripQualifiedCurrentObjectField(org, definition, field); ok {
+			field = base
+		}
+	}
 	if expr, ok := parseSelectFieldExpression(field); ok {
 		return validateSelectFieldExpression(org, definition, expr, mode)
 	}
@@ -1681,6 +1695,18 @@ func fieldKnown(org storage.OrgState, definition storage.ObjectDefinition, field
 
 func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition, field string, requireAllParents bool) bool {
 	if strings.EqualFold(field, "Id") || isSystemField(field) {
+		return true
+	}
+	if strings.EqualFold(strings.TrimSpace(field), "QualifiedApiName") {
+		return true
+	}
+	if storage.IsCustomMetadataDefinition(definition) && customMetadataSystemFieldKnown(field) {
+		return true
+	}
+	if customObjectLikeSOQLName(definition.APIName) && customFieldLikeSOQLName(field) {
+		return true
+	}
+	if namespacedCustomFieldLikeSOQLName(field) {
 		return true
 	}
 	if len(definition.Fields) == 0 && !strings.Contains(field, ".") {
@@ -1732,10 +1758,22 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 			}
 			return found
 		}
+		if customObjectLikeSOQLName(definition.APIName) && customRelationshipLikeSOQLName(parts[0]) {
+			return fieldKnownForMode(org, storage.ObjectDefinition{APIName: relationshipObjectName(parts[0])}, parts[1], requireAllParents)
+		}
 		return false
 	}
 	_, ok := storage.ResolveFieldName(definition, org.Namespace, field)
 	return ok
+}
+
+func customMetadataSystemFieldKnown(field string) bool {
+	switch strings.ToLower(strings.TrimSpace(field)) {
+	case "developername", "masterlabel", "label", "language", "namespaceprefix", "qualifiedapiname", "name":
+		return true
+	default:
+		return false
+	}
 }
 
 func entityDefinitionFieldKnown(field string) bool {
@@ -1828,8 +1866,9 @@ func isSystemField(field string) bool {
 }
 
 func canonicalSystemFieldName(field string) (string, bool) {
-	for _, candidate := range []string{"CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp", "OwnerId", "IsDeleted"} {
-		if strings.EqualFold(field, candidate) {
+	base := storage.StripAnyNamespaceToken(strings.TrimSpace(field))
+	for _, candidate := range []string{"CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp", "OwnerId", "RecordTypeId", "IsDeleted"} {
+		if strings.EqualFold(field, candidate) || strings.EqualFold(base, candidate) {
 			return candidate, true
 		}
 	}
@@ -1869,7 +1908,11 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
 		return storage.Value{}, false
 	}
-	object, ok := org.Objects[record.Object]
+	objectName := record.Object
+	if canonical, resolved := storage.ResolveObjectName(org, objectName); resolved {
+		objectName = canonical
+	}
+	object, ok := org.Objects[objectName]
 	if !ok {
 		return storage.Value{}, false
 	}
@@ -1877,6 +1920,9 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 		parentID, ok := recordValue(org, object.Definition, record, relation.Field)
 		if !ok || parentID.Kind == storage.ValueNull {
 			return storage.NullValue(), true
+		}
+		if strings.EqualFold(parts[1], "Id") {
+			return parentID.Clone(), true
 		}
 		for _, parentObjectName := range relation.ParentObjects {
 			if strings.EqualFold(parentObjectName, "EntityDefinition") || strings.EqualFold(parentObjectName, "FieldDefinition") {
@@ -1902,7 +1948,40 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 			return value.Clone(), true
 		}
 	}
+	if customObjectLikeSOQLName(object.Definition.APIName) && customRelationshipLikeSOQLName(parts[0]) {
+		lookupField := relationshipObjectName(parts[0])
+		parentID, ok := recordValue(org, object.Definition, record, lookupField)
+		if !ok || parentID.Kind == storage.ValueNull {
+			return storage.NullValue(), true
+		}
+		if strings.EqualFold(parts[1], "Id") {
+			return parentID.Clone(), true
+		}
+		parentObjectName, parentObject, parent, ok := lookupRecordByIDInOrg(org, idFromValue(parentID))
+		if !ok || parent.System.IsDeleted {
+			return storage.NullValue(), true
+		}
+		parent.Object = parentObjectName
+		value, ok := recordValue(org, parentObject.Definition, parent, parts[1])
+		if !ok {
+			return storage.NullValue(), true
+		}
+		return value.Clone(), true
+	}
 	return storage.Value{}, false
+}
+
+func lookupRecordByIDInOrg(org storage.OrgState, id storage.ID) (string, storage.ObjectState, storage.Record, bool) {
+	if id == "" {
+		return "", storage.ObjectState{}, storage.Record{}, false
+	}
+	for objectName, object := range org.Objects {
+		_, record, ok := storage.LookupRecordByID(object.Records, id)
+		if ok {
+			return objectName, object, record, true
+		}
+	}
+	return "", storage.ObjectState{}, storage.Record{}, false
 }
 
 func relationshipLookupMissing(org storage.OrgState, record storage.Record, field string) (string, bool) {
@@ -1910,7 +1989,11 @@ func relationshipLookupMissing(org storage.OrgState, record storage.Record, fiel
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
 		return "", false
 	}
-	object, ok := org.Objects[record.Object]
+	objectName := record.Object
+	if canonical, resolved := storage.ResolveObjectName(org, objectName); resolved {
+		objectName = canonical
+	}
+	object, ok := org.Objects[objectName]
 	if !ok {
 		return "", false
 	}
@@ -1988,7 +2071,11 @@ func projectRelationshipIDs(org storage.OrgState, record storage.Record, field s
 }
 
 func parentRelationshipRecord(org storage.OrgState, record storage.Record, relationship string) (storage.Value, storage.Record, bool) {
-	object, ok := org.Objects[record.Object]
+	objectName := record.Object
+	if canonical, resolved := storage.ResolveObjectName(org, objectName); resolved {
+		objectName = canonical
+	}
+	object, ok := org.Objects[objectName]
 	if !ok {
 		return storage.Value{}, storage.Record{}, false
 	}
@@ -2018,11 +2105,22 @@ func relationshipNameMatches(namespace, canonical, candidate string) bool {
 	if canonical == candidate || strings.EqualFold(canonical, candidate) {
 		return true
 	}
-	if namespace == "" {
-		return false
+	strippedCanonical := canonical
+	stripped := candidate
+	if namespace != "" {
+		strippedCanonical = storage.StripNamespaceToken(namespace, canonical)
+		stripped = storage.StripNamespaceToken(namespace, candidate)
 	}
-	stripped := storage.StripNamespaceToken(namespace, candidate)
-	return canonical == stripped || strings.EqualFold(canonical, stripped)
+	anyCanonical := storage.StripAnyNamespaceToken(canonical)
+	anyCandidate := storage.StripAnyNamespaceToken(candidate)
+	return anyCanonical == anyCandidate ||
+		strings.EqualFold(anyCanonical, anyCandidate) ||
+		canonical == stripped ||
+		strings.EqualFold(canonical, stripped) ||
+		strippedCanonical == candidate ||
+		strings.EqualFold(strippedCanonical, candidate) ||
+		strippedCanonical == stripped ||
+		strings.EqualFold(strippedCanonical, stripped)
 }
 
 func parentRelationshipNameMatches(namespace string, relation storage.Relationship, candidate string) bool {
@@ -2089,6 +2187,8 @@ func fieldDefinitionsForReferenceField(definition storage.ObjectDefinition, fiel
 		switch canonical {
 		case "CreatedById", "LastModifiedById", "OwnerId":
 			return storage.Field{APIName: canonical, Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: strings.TrimSuffix(canonical, "Id")}, true
+		case "RecordTypeId":
+			return storage.Field{APIName: canonical, Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"}, true
 		}
 	}
 	return storage.Field{}, false
@@ -2108,8 +2208,15 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	if expr, ok := parseSelectFieldExpression(field); ok {
 		return selectFieldExpressionValue(org, definition, record, expr)
 	}
-	if canonical, ok := storage.ResolveFieldName(definition, org.Namespace, field); ok && canonical == "Id" {
+	if canonical, ok := resolveSOQLFieldName(definition, org.Namespace, field); ok && canonical == "Id" {
 		return storage.IDValue(record.ID), true
+	}
+	if strings.Contains(field, ".") {
+		if base, ok := stripQualifiedCurrentObjectField(org, definition, field); ok {
+			field = base
+		} else {
+			return relationshipValue(org, record, field)
+		}
 	}
 	if strings.Contains(field, ".") {
 		return relationshipValue(org, record, field)
@@ -2169,7 +2276,7 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	case "IsDeleted":
 		return storage.BooleanValue(record.System.IsDeleted), true
 	}
-	canonicalField, ok := storage.ResolveFieldName(definition, org.Namespace, field)
+	canonicalField, ok := resolveSOQLFieldName(definition, org.Namespace, field)
 	if !ok {
 		canonicalField = field
 	}
@@ -2186,6 +2293,20 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	if !ok && strings.EqualFold(definition.APIName, "Contact") && strings.EqualFold(canonicalField, "Name") {
 		return contactNameValue(record)
 	}
+	if !ok && strings.EqualFold(canonicalField, "QualifiedApiName") {
+		return storage.NullValue(), true
+	}
+	if !ok && customObjectLikeSOQLName(definition.APIName) && customFieldLikeSOQLName(canonicalField) {
+		return storage.NullValue(), true
+	}
+	if !ok && namespacedCustomFieldLikeSOQLName(canonicalField) {
+		return storage.NullValue(), true
+	}
+	if !ok && storage.IsCustomMetadataDefinition(definition) {
+		if value, customMetadataOK := customMetadataSystemValue(definition, record, canonicalField); customMetadataOK {
+			return value, true
+		}
+	}
 	if !ok {
 		if fieldDef, fieldOK := definition.Fields[canonicalField]; fieldOK && fieldDef.Type == storage.FieldCalculated && strings.TrimSpace(fieldDef.Formula) != "" {
 			if value, formulaOK := calculatedRecordValue(org, definition, record, fieldDef); formulaOK {
@@ -2194,6 +2315,115 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 		}
 	}
 	return value, ok
+}
+
+func customObjectLikeSOQLName(name string) bool {
+	lower := strings.ToLower(strings.TrimSpace(name))
+	return strings.HasSuffix(lower, "__c") || strings.HasSuffix(lower, "__e") || strings.HasSuffix(lower, "__mdt")
+}
+
+func customFieldLikeSOQLName(name string) bool {
+	if strings.Contains(name, ".") {
+		return false
+	}
+	lower := strings.ToLower(strings.TrimSpace(name))
+	return strings.HasSuffix(lower, "__c") || strings.HasSuffix(lower, "__pc")
+}
+
+func namespacedCustomFieldLikeSOQLName(name string) bool {
+	name = strings.TrimSpace(name)
+	if strings.Contains(name, ".") {
+		return false
+	}
+	lower := strings.ToLower(name)
+	return strings.Count(lower, "__") >= 2 && (strings.HasSuffix(lower, "__c") || strings.HasSuffix(lower, "__pc"))
+}
+
+func customRelationshipLikeSOQLName(name string) bool {
+	lower := strings.ToLower(strings.TrimSpace(name))
+	return strings.HasSuffix(lower, "__r") && strings.Count(lower, "__") >= 1
+}
+
+func relationshipObjectName(relationship string) string {
+	relationship = strings.TrimSpace(relationship)
+	if strings.HasSuffix(strings.ToLower(relationship), "__r") {
+		return relationship[:len(relationship)-len("__r")] + "__c"
+	}
+	return relationship
+}
+
+func customMetadataSystemValue(definition storage.ObjectDefinition, record storage.Record, field string) (storage.Value, bool) {
+	if value, ok := record.GetField(field); ok {
+		return value, true
+	}
+	developerName := firstSOQLString(record.Fields, "DeveloperName", "Name")
+	switch strings.ToLower(strings.TrimSpace(field)) {
+	case "developername":
+		if developerName != "" {
+			return storage.StringValue(developerName), true
+		}
+	case "qualifiedapiname":
+		if value, ok := record.GetField("QualifiedApiName"); ok {
+			return value, true
+		}
+		if developerName != "" {
+			return storage.StringValue(developerName), true
+		}
+	case "masterlabel", "label", "name":
+		if label := firstSOQLString(record.Fields, "MasterLabel", "Label", "Name", "DeveloperName"); label != "" {
+			return storage.StringValue(label), true
+		}
+	case "language", "namespaceprefix":
+		return storage.NullValue(), true
+	}
+	return storage.Value{}, false
+}
+
+func firstSOQLString(fields map[string]storage.Value, names ...string) string {
+	for _, name := range names {
+		value, ok := fields[name]
+		if !ok || value.Kind != storage.ValueString {
+			continue
+		}
+		if text := strings.TrimSpace(value.String); text != "" {
+			return text
+		}
+	}
+	return ""
+}
+
+func resolveSOQLFieldName(definition storage.ObjectDefinition, namespace, field string) (string, bool) {
+	return storage.ResolveFieldName(definition, namespace, field)
+}
+
+func stripQualifiedCurrentObjectField(org storage.OrgState, definition storage.ObjectDefinition, field string) (string, bool) {
+	parts := strings.SplitN(field, ".", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", false
+	}
+	objectToken := strings.TrimSpace(parts[0])
+	fieldToken := strings.TrimSpace(parts[1])
+	if objectToken == "" || fieldToken == "" {
+		return "", false
+	}
+	canonicalObject := definition.APIName
+	if canonicalObject == "" {
+		return "", false
+	}
+	if strings.EqualFold(objectToken, canonicalObject) {
+		return fieldToken, true
+	}
+	if strings.EqualFold(storage.StripAnyNamespaceToken(objectToken), storage.StripAnyNamespaceToken(canonicalObject)) {
+		return fieldToken, true
+	}
+	if org.Namespace != "" {
+		localCanonical := storage.StripNamespaceToken(org.Namespace, canonicalObject)
+		localObject := storage.StripNamespaceToken(org.Namespace, objectToken)
+		if strings.EqualFold(localObject, localCanonical) {
+			return fieldToken, true
+		}
+	}
+	return "", false
 }
 
 func recordFieldValue(org storage.OrgState, record storage.Record, field string) (storage.Value, bool) {
@@ -3423,12 +3653,31 @@ func rewriteConditionAggregates(condition Condition, aliases map[string]string) 
 }
 
 func containsName(values []string, want string) bool {
+	wantNormalized := comparableSOQLName(want)
 	for _, value := range values {
-		if strings.EqualFold(value, want) {
+		if strings.EqualFold(value, want) || strings.EqualFold(comparableSOQLName(value), wantNormalized) {
 			return true
 		}
 	}
 	return false
+}
+
+func comparableSOQLName(name string) string {
+	name = strings.TrimSpace(name)
+	if idx := strings.LastIndex(name, "."); idx >= 0 && idx+1 < len(name) {
+		name = name[idx+1:]
+	}
+	return storage.StripAnyNamespaceToken(name)
+}
+
+func findAggregateFieldByComparableName(fields map[string]storage.Value, raw string) (storage.Value, bool) {
+	want := comparableSOQLName(raw)
+	for key, value := range fields {
+		if strings.EqualFold(comparableSOQLName(key), want) {
+			return value, true
+		}
+	}
+	return storage.Value{}, false
 }
 
 func parseAggregateField(field string) (Aggregate, bool, error) {

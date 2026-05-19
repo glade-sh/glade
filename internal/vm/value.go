@@ -133,6 +133,9 @@ func (v Value) String() string {
 			}
 		}
 		if raw, ok := v.Fields["value"]; ok && raw.Kind == ValueString {
+			if strings.EqualFold(v.Type, "Id") {
+				return displayIDText(raw.Text)
+			}
 			return raw.Text
 		}
 		if message, ok := v.Fields["message"]; ok && message.Kind == ValueString {

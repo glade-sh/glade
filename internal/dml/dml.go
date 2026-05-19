@@ -487,7 +487,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return "", err
 	}
-	if err := e.validateValidationRules(objectName, object.Definition, record); err != nil {
+	if err := e.validateValidationRules(objectName, object.Definition, record, nil, true); err != nil {
 		return "", err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, ""); err != nil {
@@ -797,7 +797,7 @@ func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefiniti
 		record.Fields = make(map[string]storage.Value)
 	}
 	for name, field := range definition.Fields {
-		if _, ok := record.Fields[name]; ok {
+		if _, ok := formulaRecordField(*record, name); ok {
 			continue
 		}
 		if strings.EqualFold(name, "RecordTypeId") {
@@ -1371,7 +1371,8 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err := validateRequiredUpdate(object.Definition, record); err != nil {
 		return err
 	}
-	if err := e.validateValidationRules(objectName, object.Definition, finalRecord); err != nil {
+	priorRecord := existing.Clone()
+	if err := e.validateValidationRules(objectName, object.Definition, finalRecord, &priorRecord, false); err != nil {
 		return err
 	}
 	if existing.Fields == nil {
@@ -1436,10 +1437,18 @@ func stripStoredCalculatedFields(definition storage.ObjectDefinition, record *st
 		if !ok {
 			continue
 		}
-		if fieldDef.Type == storage.FieldCalculated || fieldDef.Type == storage.FieldSummary {
+		if isFormulaBackedField(fieldDef) {
 			delete(record.Fields, field)
 		}
 	}
+}
+
+func isFormulaBackedField(field storage.Field) bool {
+	return field.Type == storage.FieldCalculated || strings.TrimSpace(field.Formula) != ""
+}
+
+func isCalculatedOrSummaryField(field storage.Field) bool {
+	return field.Type == storage.FieldSummary || isFormulaBackedField(field)
 }
 
 func (e *Engine) deleteOne(record storage.Record) error {
@@ -1566,7 +1575,14 @@ func (e *Engine) validateUpsertIDReference(record storage.Record) error {
 func (e *Engine) object(name string) (storage.ObjectState, string, error) {
 	objectName, ok := storage.ResolveObjectName(*e.Org, name)
 	if !ok {
-		return storage.ObjectState{}, "", fmt.Errorf("dml: unknown object %s", name)
+		if !isSyntheticCustomDMLObject(name) {
+			return storage.ObjectState{}, "", fmt.Errorf("dml: unknown object %s", name)
+		}
+		objectName = name
+		storage.EnsureStandardObject(e.Org, objectName)
+		if prefix := e.Org.Objects[objectName].Definition.KeyPrefix; prefix != "" {
+			e.IDs.Prefixes[objectName] = prefix
+		}
 	}
 	object := e.Org.Objects[objectName]
 	if object.Records == nil {
@@ -1583,6 +1599,9 @@ func canonicalizeRecord(namespace string, definition storage.ObjectDefinition, o
 			if ownerID := idFromStorageValue(value); ownerID != "" {
 				record.System.OwnerID = ownerID
 			}
+			continue
+		}
+		if shouldStripDMLRelationshipField(definition, namespace, field, value) {
 			continue
 		}
 		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
@@ -1606,6 +1625,9 @@ func canonicalizeRecord(namespace string, definition storage.ObjectDefinition, o
 	record.Fields = fields
 	nulls := make(map[string]bool, len(record.ExplicitNulls))
 	for field, value := range record.ExplicitNulls {
+		if isDMLRelationshipPseudoField(definition, namespace, field) {
+			continue
+		}
 		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
 		if !ok {
 			nulls[field] = value
@@ -1661,9 +1683,15 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		}
 		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
 		if !ok {
+			if shouldStripDMLRelationshipField(definition, namespace, field, record.Fields[field]) {
+				continue
+			}
+			if allowSyntheticCustomDMLField(definition, field) {
+				continue
+			}
 			return fmt.Errorf("dml: unknown field %s.%s", record.Object, field)
 		}
-		if definition.Fields[canonical].Type == storage.FieldCalculated || definition.Fields[canonical].Type == storage.FieldSummary {
+		if isCalculatedOrSummaryField(definition.Fields[canonical]) {
 			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{canonical}, "dml: field %s.%s is not writeable", record.Object, canonical)
 		}
 		if err := validateEmailField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
@@ -1673,13 +1701,115 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 	for field := range record.ExplicitNulls {
 		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
 		if !ok {
+			if isDMLRelationshipPseudoField(definition, namespace, field) {
+				continue
+			}
+			if allowSyntheticCustomDMLField(definition, field) {
+				continue
+			}
 			return fmt.Errorf("dml: unknown field %s.%s", record.Object, field)
 		}
-		if definition.Fields[canonical].Type == storage.FieldCalculated || definition.Fields[canonical].Type == storage.FieldSummary {
+		if isCalculatedOrSummaryField(definition.Fields[canonical]) {
 			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{canonical}, "dml: field %s.%s is not writeable", record.Object, canonical)
 		}
 	}
 	return nil
+}
+
+func shouldStripDMLRelationshipField(definition storage.ObjectDefinition, namespace, field string, value storage.Value) bool {
+	if !isDMLRelationshipPseudoField(definition, namespace, field) {
+		return false
+	}
+	if value.Kind == storage.ValueNull || value.Kind == storage.ValueList {
+		return true
+	}
+	return dmlRelationshipPseudoFieldHasMetadata(definition, namespace, field)
+}
+
+func isDMLRelationshipPseudoField(definition storage.ObjectDefinition, namespace, field string) bool {
+	field = strings.TrimSpace(field)
+	if field == "" || strings.Contains(field, ".") {
+		return false
+	}
+	if _, ok := storage.ResolveFieldName(definition, namespace, field); ok {
+		return false
+	}
+	if dmlRelationshipPseudoFieldHasMetadata(definition, namespace, field) {
+		return true
+	}
+	return isSyntheticCustomDMLObject(definition.APIName) && strings.HasSuffix(strings.ToLower(field), "__r")
+}
+
+func dmlRelationshipPseudoFieldHasMetadata(definition storage.ObjectDefinition, namespace, field string) bool {
+	for _, relation := range definition.Relations {
+		if dmlRelationshipNameMatches(namespace, relation.ParentRelationship, field) || dmlRelationshipNameMatches(namespace, relation.ChildRelationship, field) {
+			return true
+		}
+	}
+	for name, fieldDef := range definition.Fields {
+		if fieldDef.Type != storage.FieldReference && len(fieldDef.ReferenceTo) == 0 {
+			continue
+		}
+		apiName := fieldDef.APIName
+		if apiName == "" {
+			apiName = name
+		}
+		if dmlRelationshipNameMatches(namespace, fieldDef.RelationshipName, field) || dmlParentRelationshipNameMatches(namespace, apiName, field) {
+			return true
+		}
+	}
+	return false
+}
+
+func dmlParentRelationshipNameMatches(namespace, fieldName, relationshipName string) bool {
+	fieldName = strings.TrimSpace(fieldName)
+	if strings.HasSuffix(fieldName, "__c") {
+		return dmlRelationshipNameMatches(namespace, strings.TrimSuffix(fieldName, "__c")+"__r", relationshipName)
+	}
+	if strings.HasSuffix(fieldName, "Id") && len(fieldName) > len("Id") {
+		return dmlRelationshipNameMatches(namespace, strings.TrimSuffix(fieldName, "Id"), relationshipName)
+	}
+	return false
+}
+
+func dmlRelationshipNameMatches(namespace, canonical, candidate string) bool {
+	canonical = strings.TrimSpace(canonical)
+	candidate = strings.TrimSpace(candidate)
+	if canonical == "" || candidate == "" {
+		return false
+	}
+	if canonical == candidate || strings.EqualFold(canonical, candidate) {
+		return true
+	}
+	strippedCanonical := canonical
+	strippedCandidate := candidate
+	if namespace != "" {
+		strippedCanonical = storage.StripNamespaceToken(namespace, canonical)
+		strippedCandidate = storage.StripNamespaceToken(namespace, candidate)
+	}
+	anyCanonical := storage.StripAnyNamespaceToken(canonical)
+	anyCandidate := storage.StripAnyNamespaceToken(candidate)
+	return anyCanonical == anyCandidate ||
+		strings.EqualFold(anyCanonical, anyCandidate) ||
+		canonical == strippedCandidate ||
+		strings.EqualFold(canonical, strippedCandidate) ||
+		strippedCanonical == candidate ||
+		strings.EqualFold(strippedCanonical, candidate) ||
+		strippedCanonical == strippedCandidate ||
+		strings.EqualFold(strippedCanonical, strippedCandidate)
+}
+
+func isSyntheticCustomDMLObject(name string) bool {
+	lower := strings.ToLower(strings.TrimSpace(name))
+	return strings.HasSuffix(lower, "__c") || strings.HasSuffix(lower, "__e")
+}
+
+func allowSyntheticCustomDMLField(definition storage.ObjectDefinition, field string) bool {
+	if !isSyntheticCustomDMLObject(definition.APIName) {
+		return false
+	}
+	lower := strings.ToLower(strings.TrimSpace(field))
+	return strings.HasSuffix(lower, "__c") || strings.HasSuffix(lower, "__pc") || strings.EqualFold(field, "Name")
 }
 
 func validateEmailField(objectName, fieldName string, field storage.Field, value storage.Value) error {
@@ -1864,7 +1994,7 @@ func validateFieldWriteabilityName(definition storage.ObjectDefinition, namespac
 		return nil
 	}
 	fieldDef := definition.Fields[canonical]
-	if fieldDef.Type == storage.FieldCalculated || fieldDef.Type == storage.FieldSummary {
+	if isCalculatedOrSummaryField(fieldDef) {
 		return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{canonical}, "dml: field %s.%s is not writeable", objectName, canonical)
 	}
 	writeable := storage.FieldFlagValue(fieldDef.Updateable, true)
@@ -2107,7 +2237,7 @@ func stripReadOnlyUpdateFields(definition storage.ObjectDefinition, namespace st
 			continue
 		}
 		fieldDef := definition.Fields[canonical]
-		if fieldDef.Type != storage.FieldCalculated && fieldDef.Type != storage.FieldSummary {
+		if !isCalculatedOrSummaryField(fieldDef) {
 			continue
 		}
 		delete(record.Fields, field)
@@ -2124,10 +2254,10 @@ func stripUnchangedNonUpdateableFields(definition storage.ObjectDefinition, name
 			continue
 		}
 		fieldDef := definition.Fields[canonical]
-		if fieldDef.Type != storage.FieldCalculated && fieldDef.Type != storage.FieldSummary && storage.FieldFlagValue(fieldDef.Updateable, true) {
+		if !isCalculatedOrSummaryField(fieldDef) && storage.FieldFlagValue(fieldDef.Updateable, true) {
 			continue
 		}
-		if fieldDef.Type == storage.FieldCalculated || fieldDef.Type == storage.FieldSummary {
+		if isCalculatedOrSummaryField(fieldDef) {
 			delete(record.Fields, field)
 			continue
 		}
@@ -2142,7 +2272,11 @@ func stripUnchangedNonUpdateableFields(definition storage.ObjectDefinition, name
 			continue
 		}
 		fieldDef := definition.Fields[canonical]
-		if fieldDef.Type != storage.FieldCalculated && fieldDef.Type != storage.FieldSummary && storage.FieldFlagValue(fieldDef.Updateable, true) {
+		if !isCalculatedOrSummaryField(fieldDef) && storage.FieldFlagValue(fieldDef.Updateable, true) {
+			continue
+		}
+		if isCalculatedOrSummaryField(fieldDef) {
+			delete(record.ExplicitNulls, field)
 			continue
 		}
 		existingValue, ok := existing.GetField(canonical)
@@ -2417,13 +2551,13 @@ func uniqueValueKeys(field storage.Field, value storage.Value) []string {
 	}
 }
 
-func (e *Engine) validateValidationRules(objectName string, definition storage.ObjectDefinition, record storage.Record) error {
+func (e *Engine) validateValidationRules(objectName string, definition storage.ObjectDefinition, record storage.Record, prior *storage.Record, isNew bool) error {
 	activeRules := e.activeValidationRules(objectName, definition)
 	if len(activeRules) == 0 {
 		return nil
 	}
 	for _, rule := range activeRules {
-		matches, ok := evaluateValidationFormulaInOrg(rule.ErrorConditionFormula, e.Org, definition, record)
+		matches, ok := evaluateValidationFormulaInOrg(rule.ErrorConditionFormula, e.Org, definition, record, prior, isNew)
 		if !ok || !matches {
 			continue
 		}
@@ -2444,8 +2578,8 @@ func evaluateValidationFormula(formula string, record storage.Record) (bool, boo
 	return evaluateRecordFormula(formula, record)
 }
 
-func evaluateValidationFormulaInOrg(formula string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record) (bool, bool) {
-	return evaluateRecordFormulaInOrg(formula, org, definition, record)
+func evaluateValidationFormulaInOrg(formula string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, prior *storage.Record, isNew bool) (bool, bool) {
+	return evaluateRecordFormulaInOrgWithContext(formula, org, definition, record, prior, isNew)
 }
 
 func trimFormulaLiteral(value string) string {
@@ -2498,7 +2632,7 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 			if !ok || fieldName == "Id" {
 				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{update.Field}, "dml: workflow field update %s targets unknown or read-only field %s.%s", update.Name, objectName, update.Field)
 			}
-			if object.Definition.Fields[fieldName].Type == storage.FieldCalculated {
+			if isCalculatedOrSummaryField(object.Definition.Fields[fieldName]) {
 				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: workflow field update %s targets calculated field %s.%s", update.Name, objectName, fieldName)
 			}
 			value, explicitNull, ok := workflowUpdateValue(object.Definition.Fields[fieldName], record, update, object.Definition, e.Org.Namespace)
@@ -2532,7 +2666,7 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return err
 	}
-	if err := e.validateValidationRules(objectName, object.Definition, record); err != nil {
+	if err := e.validateValidationRules(objectName, object.Definition, record, nil, false); err != nil {
 		return err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
@@ -2761,7 +2895,7 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return err
 	}
-	if err := e.validateValidationRules(objectName, object.Definition, record); err != nil {
+	if err := e.validateValidationRules(objectName, object.Definition, record, nil, false); err != nil {
 		return err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
@@ -2820,7 +2954,7 @@ func (e *Engine) applyFlowEffects(flowName, objectName string, record *storage.R
 		if !ok || fieldName == "Id" {
 			return false, dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{update.Field}, "dml: flow field update %s targets unknown or read-only field %s.%s", update.Name, objectName, update.Field)
 		}
-		if definition.Fields[fieldName].Type == storage.FieldCalculated {
+		if isCalculatedOrSummaryField(definition.Fields[fieldName]) {
 			return false, dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow field update %s targets calculated field %s.%s", update.Name, objectName, fieldName)
 		}
 		value, explicitNull, ok := workflowUpdateValue(definition.Fields[fieldName], *record, update, definition, e.Org.Namespace)
@@ -2904,7 +3038,7 @@ func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source
 			return "", dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{assignment.Field}, "dml: flow record create %s targets unknown or read-only field %s.%s", create.Name, targetName, assignment.Field)
 		}
 		field := target.Definition.Fields[fieldName]
-		if field.Type == storage.FieldCalculated {
+		if isCalculatedOrSummaryField(field) {
 			return "", dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow record create %s targets calculated field %s.%s", create.Name, targetName, fieldName)
 		}
 		value, explicitNull, ok := flowRecordCreateAssignmentValue(field, source, assignment, sourceDefinition, e.Org.Namespace)
@@ -3411,7 +3545,6 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 	if e == nil || e.Org == nil || len(childRecords) == 0 {
 		return
 	}
-	recordTriggerUpdates := len(childRecords) > 1
 	canonicalChild, ok := storage.ResolveObjectName(*e.Org, childObjectName)
 	if !ok {
 		canonicalChild = childObjectName
@@ -3420,6 +3553,7 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 	if len(relations) == 0 {
 		return
 	}
+	updatedParents := make(map[string][]storage.Record)
 	for _, relation := range relations {
 		parentObjectName := relation.parentObject
 		parentObject, ok := e.Org.Objects[parentObjectName]
@@ -3428,6 +3562,7 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 		}
 		changed := false
 		parentIDs := summaryParentIDs(childRecords, relation.fkFieldName)
+		parentIDs = canonicalSummaryParentIDs(parentObject.Records, parentIDs)
 		summaryValues, ok := e.evaluateSummaryFieldBatch(relation, parentIDs)
 		if !ok {
 			continue
@@ -3451,14 +3586,19 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 			}
 			parentRecord.Fields[relation.parentField] = value
 			parentObject.Records[storedParentID] = parentRecord
-			if recordTriggerUpdates {
-				e.recordSummaryUpdate(parentObjectName, beforeParent, parentRecord)
-			}
+			e.recordSummaryUpdate(parentObjectName, beforeParent, parentRecord)
+			updatedParents[parentObjectName] = append(updatedParents[parentObjectName], parentRecord)
 			changed = true
 		}
 		if changed {
 			e.Org.Objects[parentObjectName] = parentObject
 		}
+	}
+	for parentObjectName, records := range updatedParents {
+		if strings.EqualFold(parentObjectName, canonicalChild) {
+			continue
+		}
+		e.recalculateSummaryFieldsForChildren(parentObjectName, records...)
 	}
 }
 
@@ -3557,6 +3697,11 @@ func (e *Engine) evaluateSummaryFieldBatch(relation summaryRelation, parentIDs m
 			continue
 		}
 		parentID := idFromStorageValue(child.Fields[fkFieldName])
+		if parentState, ok := e.Org.Objects[relation.parentObject]; ok {
+			if storedParentID, _, ok := storage.LookupRecordByID(parentState.Records, parentID); ok {
+				parentID = storedParentID
+			}
+		}
 		if parentID == "" || !parentIDs[parentID] {
 			continue
 		}
@@ -3650,6 +3795,21 @@ func summaryParentIDs(records []storage.Record, fkFieldName string) map[storage.
 		}
 	}
 	return ids
+}
+
+func canonicalSummaryParentIDs(records map[storage.ID]storage.Record, ids map[storage.ID]bool) map[storage.ID]bool {
+	if len(ids) == 0 || len(records) == 0 {
+		return ids
+	}
+	canonical := make(map[storage.ID]bool, len(ids))
+	for id := range ids {
+		if storedID, _, ok := storage.LookupRecordByID(records, id); ok {
+			canonical[storedID] = true
+			continue
+		}
+		canonical[id] = true
+	}
+	return canonical
 }
 
 func (e *Engine) evaluateSummaryField(parent storage.Record, field storage.Field) (storage.Value, bool) {
@@ -3775,15 +3935,15 @@ func summaryFiltersMatch(org *storage.OrgState, definition storage.ObjectDefinit
 }
 
 func summaryRecordFieldValue(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fieldName string) (storage.Value, bool) {
+	field, ok := definition.Fields[fieldName]
+	if ok && strings.TrimSpace(field.Formula) != "" {
+		value, _, ok := EvaluateRecordFormulaValueInOrg(field.Formula, field, org, definition, record)
+		return value, ok
+	}
 	if value, ok := record.Fields[fieldName]; ok {
 		return value, true
 	}
-	field, ok := definition.Fields[fieldName]
-	if !ok || field.Type != storage.FieldCalculated || strings.TrimSpace(field.Formula) == "" {
-		return storage.Value{}, false
-	}
-	value, _, ok := EvaluateRecordFormulaValueInOrg(field.Formula, field, org, definition, record)
-	return value, ok
+	return storage.Value{}, false
 }
 
 func summaryFilterMatches(value storage.Value, filter storage.SummaryFilterItem) bool {

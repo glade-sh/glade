@@ -683,6 +683,23 @@ option.setLimit(5);
 	}
 }
 
+func TestExecVisualEditorDataRowConstructorPrecedesRegisteredStubClass(t *testing.T) {
+	program, err := CompileAnonymous(`
+VisualEditor.DataRow row = new VisualEditor.DataRow('None', '');
+System.assertEquals('', row.getValue());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "VisualEditor.DataRow"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecLocalMockHarnessSurfaces(t *testing.T) {
 	program, err := CompileAnonymous(`
 Test.startTest();
@@ -4955,6 +4972,28 @@ System.assertEquals(null, namespaced);
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTypeNewInstanceAbstractClassIsCatchable(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type t = Type.forName('AbstractThing');
+try {
+    Object value = t.newInstance();
+    System.assert(false, 'expected TypeException');
+} catch (Exception e) {
+    System.assert(e.getMessage().contains('cannot instantiate abstract class'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "AbstractThing", IsAbstract: true}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

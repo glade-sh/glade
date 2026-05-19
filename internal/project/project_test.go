@@ -251,6 +251,28 @@ func TestLoadReportsMissingManagedPackageDependency(t *testing.T) {
 	}
 }
 
+func TestLoadManagedPackageArtifactDependency(t *testing.T) {
+	root := t.TempDir()
+	artifactPath := filepath.Join(root, "packages", "znu.oaer-package.json")
+	writeFile(t, artifactPath, `{"namespace":"znu","version":"1.0","apexTypes":[{"kind":"class","name":"Address","namespace":"znu","dependency":true}]}`)
+	writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "consumer", "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:artifact:../packages/znu.oaer-package.json"]
+`)
+
+	p, err := Load(filepath.Join(root, "consumer"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 {
+		t.Fatalf("dependency count = %d", len(p.ManagedPackageDependencies))
+	}
+	dep := p.ManagedPackageDependencies[0]
+	if dep.Status != "loaded" || dep.ArtifactPath != artifactPath || dep.SourceRoot != "" || dep.Version != "1.0" {
+		t.Fatalf("dependency = %#v", dep)
+	}
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

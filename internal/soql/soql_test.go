@@ -150,6 +150,78 @@ func TestExecuteResolvesLowercaseIdAsStandardField(t *testing.T) {
 	}
 }
 
+func TestExecuteAggregateAliasWithSystemReferenceGroupBy(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["VfiProviderSpecialty__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "VfiProviderSpecialty__c",
+			Fields: map[string]storage.Field{
+				"Type__c": {APIName: "Type__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {
+				ID:     "a01000000000001",
+				Object: "VfiProviderSpecialty__c",
+				Fields: map[string]storage.Value{
+					"Type__c": storage.StringValue("Primary"),
+				},
+				System: storage.SystemFields{
+					LastModifiedByID: "005000000000001",
+				},
+			},
+			"a01000000000002": {
+				ID:     "a01000000000002",
+				Object: "VfiProviderSpecialty__c",
+				Fields: map[string]storage.Value{
+					"Type__c": storage.StringValue("Secondary"),
+				},
+				System: storage.SystemFields{
+					LastModifiedByID: "005000000000001",
+				},
+			},
+		},
+	}
+
+	query, err := Parse("SELECT LastModifiedById provider, Type__c type, COUNT(Id) total FROM VfiProviderSpecialty__c WHERE LastModifiedById IN ('005000000000001') AND Id NOT IN ('a01000000000001') AND Type__c != 'Additional' GROUP BY LastModifiedById, Type__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Execute(org, query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Records) != 1 {
+		t.Fatalf("records=%d want 1 (%#v)", len(result.Records), result.Records)
+	}
+	row := result.Records[0]
+	if got := row.Fields["provider"]; got.Kind != storage.ValueID || got.ID != "005000000000001" {
+		t.Fatalf("provider=%#v", got)
+	}
+	if got := row.Fields["type"]; got.Kind != storage.ValueString || got.String != "Secondary" {
+		t.Fatalf("type=%#v", got)
+	}
+	if got := row.Fields["total"]; got.Kind != storage.ValueInteger || got.Integer != 1 {
+		t.Fatalf("total=%#v", got)
+	}
+
+	query, err = Parse("SELECT LastModifiedBy.Id provider, Type__c type, COUNT(Id) total FROM VfiProviderSpecialty__c WHERE LastModifiedBy.Id IN ('005000000000001') AND Id NOT IN ('a01000000000001') AND Type__c != 'Additional' GROUP BY LastModifiedBy.Id, Type__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err = Execute(org, query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Records) != 1 {
+		t.Fatalf("relationship records=%d want 1 (%#v)", len(result.Records), result.Records)
+	}
+	row = result.Records[0]
+	if got := row.Fields["provider"]; got.Kind != storage.ValueID || got.ID != "005000000000001" {
+		t.Fatalf("relationship provider=%#v", got)
+	}
+}
+
 func TestExecuteFieldReferencesAreCaseInsensitive(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{
@@ -286,6 +358,99 @@ func TestExecuteCustomMetadataDeveloperNameField(t *testing.T) {
 		t.Fatal(err)
 	}
 	if result.Rows != 1 || result.Records[0].Fields["DeveloperName"].String != "Default" {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
+func TestExecuteCustomMetadataQualifiedApiNameSystemField(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Feature__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:  "Feature__mdt",
+			Metadata: map[string]string{"kind": "customMetadata"},
+			Fields: map[string]storage.Field{
+				"Enabled__c": {APIName: "Enabled__c", Type: storage.FieldBoolean},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {
+				ID:     "a00000000000001",
+				Object: "Feature__mdt",
+				Fields: map[string]storage.Value{
+					"DeveloperName":    storage.StringValue("Default"),
+					"QualifiedApiName": storage.StringValue("pkg__Default"),
+					"Enabled__c":       storage.BooleanValue(true),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, QualifiedApiName FROM Feature__mdt WHERE QualifiedApiName = 'pkg__Default'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["QualifiedApiName"].String != "pkg__Default" {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
+func TestExecutePartialCustomMetadataAllowsCustomFields(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["pkg__Feature__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "pkg__Feature__mdt",
+			Fields: map[string]storage.Field{
+				"Known__c": {APIName: "Known__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {
+				ID:     "a00000000000001",
+				Object: "pkg__Feature__mdt",
+				Fields: map[string]storage.Value{
+					"Known__c": storage.StringValue("yes"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, QualifiedApiName, Language, pkg__Missing__c FROM pkg__Feature__mdt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["pkg__Missing__c"].Kind != storage.ValueNull {
+		t.Fatalf("result = %#v", result)
+	}
+	if result.Records[0].Fields["Language"].Kind != storage.ValueNull {
+		t.Fatalf("Language = %#v", result.Records[0].Fields["Language"])
+	}
+}
+
+func TestExecutePartialCustomObjectAllowsSyntheticRelationshipFields(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["pkg__Line__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "pkg__Line__c", Fields: map[string]storage.Field{}},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {ID: "a00000000000001", Object: "pkg__Line__c", Fields: map[string]storage.Value{}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT pkg__Parent__r.pkg__ExternalId__c, pkg__Parent__r.RecordType.Name FROM pkg__Line__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["pkg__Parent__r.pkg__ExternalId__c"].Kind != storage.ValueNull {
+		t.Fatalf("result = %#v", result)
+	}
+	if result.Records[0].Fields["pkg__Parent__r.RecordType.Name"].Kind != storage.ValueNull {
+		t.Fatalf("result = %#v", result)
+	}
+
+	result, err = ParseAndExecute(org, "SELECT pkg__Line__c.pkg__Parent__r.Name FROM pkg__Line__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
 		t.Fatalf("result = %#v", result)
 	}
 }
@@ -1999,6 +2164,119 @@ func TestExecuteCustomParentRelationshipFilterUsesDerivedName(t *testing.T) {
 				Field:              "CartItem__c",
 				ParentObjects:      []string{"CartItem__c"},
 				ParentRelationship: "CartItemLines",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0L000000000001": {ID: "a0L000000000001", Object: "CartItemLine__c", Fields: map[string]storage.Value{"CartItem__c": storage.IDValue("a0I000000000001")}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id FROM CartItemLine__c WHERE CartItem__r . Cart__c = 'a0S000000000001'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Records) != 1 || result.Records[0].ID != "a0L000000000001" {
+		t.Fatalf("records = %#v", result.Records)
+	}
+}
+
+func TestExecuteNamespacedCustomParentRelationshipFilterUsesUnqualifiedName(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "nu"
+	assertNamespacedCustomParentRelationshipFilterUsesUnqualifiedName(t, org)
+}
+
+func TestExecutePackagedCustomParentRelationshipFilterWithoutOrgNamespace(t *testing.T) {
+	org := storage.NewOrgState()
+	assertNamespacedCustomParentRelationshipFilterUsesUnqualifiedName(t, org)
+}
+
+func TestExecuteSyntheticCustomParentRelationshipFilterUsesLookupField(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Cart__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Cart__c",
+			Fields:  map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0S000000000001": {ID: "a0S000000000001", Object: "Cart__c"},
+		},
+	}
+	org.Objects["CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "CartItem__c",
+			Fields: map[string]storage.Field{
+				"Id":      {APIName: "Id", Type: storage.FieldID},
+				"Cart__c": {APIName: "Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"Cart__c"}},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0I000000000001": {ID: "a0I000000000001", Object: "CartItem__c", Fields: map[string]storage.Value{"Cart__c": storage.IDValue("a0S000000000001")}},
+		},
+	}
+	org.Objects["CartItemLine__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "CartItemLine__c",
+			Fields: map[string]storage.Field{
+				"Id":          {APIName: "Id", Type: storage.FieldID},
+				"CartItem__c": {APIName: "CartItem__c", Type: storage.FieldReference, ReferenceTo: []string{"CartItem__c"}},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0L000000000001": {ID: "a0L000000000001", Object: "CartItemLine__c", Fields: map[string]storage.Value{"CartItem__c": storage.IDValue("a0I000000000001")}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id FROM CartItemLine__c WHERE CartItem__r.Cart__c = 'a0S000000000001'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Records) != 1 || result.Records[0].ID != "a0L000000000001" {
+		t.Fatalf("records = %#v", result.Records)
+	}
+}
+
+func assertNamespacedCustomParentRelationshipFilterUsesUnqualifiedName(t *testing.T, org storage.OrgState) {
+	t.Helper()
+	org.Objects["nu__Cart__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "nu__Cart__c",
+			Fields:  map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0S000000000001": {ID: "a0S000000000001", Object: "Cart__c"},
+		},
+	}
+	org.Objects["nu__CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "nu__CartItem__c",
+			Fields: map[string]storage.Field{
+				"Id":          {APIName: "Id", Type: storage.FieldID},
+				"nu__Cart__c": {APIName: "nu__Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"nu__Cart__c"}, RelationshipName: "nu__Cart__r"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "nu__Cart__c",
+				ParentObjects:      []string{"nu__Cart__c"},
+				ParentRelationship: "nu__Cart__r",
+				ChildRelationship:  "nu__CartItems__r",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0I000000000001": {ID: "a0I000000000001", Object: "CartItem__c", Fields: map[string]storage.Value{"Cart__c": storage.IDValue("a0S000000000001")}},
+		},
+	}
+	org.Objects["nu__CartItemLine__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "nu__CartItemLine__c",
+			Fields: map[string]storage.Field{
+				"Id":              {APIName: "Id", Type: storage.FieldID},
+				"nu__CartItem__c": {APIName: "nu__CartItem__c", Type: storage.FieldReference, ReferenceTo: []string{"nu__CartItem__c"}, RelationshipName: "nu__CartItem__r"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "nu__CartItem__c",
+				ParentObjects:      []string{"nu__CartItem__c"},
+				ParentRelationship: "nu__CartItem__r",
+				ChildRelationship:  "nu__CartItemLines__r",
 			}},
 		},
 		Records: map[storage.ID]storage.Record{

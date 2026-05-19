@@ -59,11 +59,12 @@ type Project struct {
 }
 
 type ManagedPackageDependency struct {
-	Namespace  string   `json:"namespace"`
-	SourceRoot string   `json:"sourceRoot"`
-	Version    string   `json:"version,omitempty"`
-	Project    *Project `json:"project,omitempty"`
-	Status     string   `json:"status"`
+	Namespace    string   `json:"namespace"`
+	SourceRoot   string   `json:"sourceRoot,omitempty"`
+	ArtifactPath string   `json:"artifactPath,omitempty"`
+	Version      string   `json:"version,omitempty"`
+	Project      *Project `json:"project,omitempty"`
+	Status       string   `json:"status"`
 }
 
 type DependencyDiagnostic struct {
@@ -316,11 +317,12 @@ func loadManagedPackageDependencies(configured []config.ManagedPackageDependency
 	var diagnostics []DependencyDiagnostic
 	for _, dep := range configured {
 		projectDep := ManagedPackageDependency{
-			Namespace:  dep.Namespace,
-			SourceRoot: dep.SourceRoot,
-			Version:    dep.Version,
+			Namespace:    dep.Namespace,
+			SourceRoot:   dep.SourceRoot,
+			ArtifactPath: dep.ArtifactPath,
+			Version:      dep.Version,
 		}
-		if dep.Namespace == "" || dep.SourceRoot == "" {
+		if dep.Namespace == "" || (dep.SourceRoot == "" && dep.ArtifactPath == "") {
 			projectDep.Status = "invalid"
 			diagnostics = append(diagnostics, DependencyDiagnostic{
 				Namespace:  dep.Namespace,
@@ -328,8 +330,26 @@ func loadManagedPackageDependencies(configured []config.ManagedPackageDependency
 				Version:    dep.Version,
 				Status:     "invalid",
 				Code:       "dependency_invalid",
-				Message:    "managed package dependency requires namespace and sourceRoot",
+				Message:    "managed package dependency requires namespace and sourceRoot or artifactPath",
 			})
+			deps = append(deps, projectDep)
+			continue
+		}
+		if dep.ArtifactPath != "" {
+			if err := loadManagedPackageArtifactMetadata(dep.ArtifactPath, &projectDep); err != nil {
+				projectDep.Status = "missing"
+				diagnostics = append(diagnostics, DependencyDiagnostic{
+					Namespace:  dep.Namespace,
+					SourceRoot: dep.ArtifactPath,
+					Version:    dep.Version,
+					Status:     "missing",
+					Code:       "dependency_missing",
+					Message:    err.Error(),
+				})
+				deps = append(deps, projectDep)
+				continue
+			}
+			projectDep.Status = "loaded"
 			deps = append(deps, projectDep)
 			continue
 		}
@@ -371,6 +391,34 @@ func loadManagedPackageDependencies(configured []config.ManagedPackageDependency
 		deps = append(deps, projectDep)
 	}
 	return deps, diagnostics
+}
+
+func loadManagedPackageArtifactMetadata(path string, dep *ManagedPackageDependency) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		return errors.New("managed package dependency artifact path is a directory")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	var metadata struct {
+		Namespace string `json:"namespace"`
+		Version   string `json:"version"`
+	}
+	if err := json.Unmarshal(data, &metadata); err != nil {
+		return err
+	}
+	if metadata.Namespace != "" && !strings.EqualFold(metadata.Namespace, dep.Namespace) {
+		return errors.New("managed package dependency artifact namespace does not match configured namespace")
+	}
+	if dep.Version == "" {
+		dep.Version = metadata.Version
+	}
+	return nil
 }
 
 func loadSFDXProject(root string) (sfdxProject, error) {

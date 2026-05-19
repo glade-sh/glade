@@ -2593,6 +2593,40 @@ System.assertEquals('root', wrapped.getCause().getMessage());
 	}
 }
 
+func TestExecCustomExceptionCanCallSuperSetMessage(t *testing.T) {
+	setProgram, err := CompileAnonymous("super.setMessage(message);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+AppException ex = new AppException();
+System.assertEquals('blocked', ex.getMessage());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "AppException",
+		SuperClass: "Exception",
+		Constructors: []Method{{
+			Name:          "AppException",
+			ClassName:     "AppException",
+			Params:        []Param{{Name: "message", Type: "String"}},
+			Program:       setProgram,
+			IsConstructor: true,
+		}},
+		Fields: map[string]Field{
+			"message": {Name: "message", Type: "String", InitialValue: String("blocked")},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecNamespacedNestedExceptionGetTypeName(t *testing.T) {
 	program, err := CompileAnonymous(`
 Exception e = new pkg.Outer.InnerException('blocked');
@@ -3332,6 +3366,20 @@ System.assertEquals('0.0', String.valueOf(roundTrip.get('score')));
 	org.Objects["Widget__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__c", Fields: map[string]storage.Field{"Score__c": {APIName: "Score__c", Type: storage.FieldDecimal}}}, Records: map[storage.ID]storage.Record{}}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringValueOfDateIncludesTimePortion(t *testing.T) {
+	program, err := CompileAnonymous(`
+String value = String.valueOf(Date.newInstance(2026, 5, 19));
+System.assertEquals(10, value.indexOf(' '));
+System.assertEquals('2026-05-19', value.substring(0, value.indexOf(' ')));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
 	}
 }

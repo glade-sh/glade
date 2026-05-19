@@ -28,6 +28,7 @@ import (
 	"github.com/open-aer/oaer/internal/diagnostic"
 	"github.com/open-aer/oaer/internal/examplescan"
 	"github.com/open-aer/oaer/internal/lsp"
+	"github.com/open-aer/oaer/internal/packageartifact"
 	"github.com/open-aer/oaer/internal/probe"
 	"github.com/open-aer/oaer/internal/profile"
 	"github.com/open-aer/oaer/internal/project"
@@ -132,6 +133,12 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
+	case "package":
+		if err := runPackage(ctx, args[1:], stdout); err != nil {
+			fmt.Fprintf(stderr, "oaer: %v\n", err)
+			return 1
+		}
+		return 0
 	case "server":
 		if err := runServer(ctx, args[1:], stdout); err != nil {
 			fmt.Fprintf(stderr, "oaer: %v\n", err)
@@ -189,6 +196,7 @@ Commands:
   test      Discover and run supported Apex tests.
   lsp       Run the Language Server Protocol server over stdio.
   profile   Analyze oaer trace output.
+  package   Build managed package artifacts.
   server    Start the local Salesforce-compatible API baseline.
   db        Seed, reset, export, and inspect a persistent local database.
   compat    Validate fixtures and report capability readiness.
@@ -211,6 +219,133 @@ Compat subcommands:
   tooling-fixtures
                 Validate captured Tooling snippet oracle reports.
 `)+"\n")
+}
+
+func runPackage(ctx context.Context, args []string, w io.Writer) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if len(args) == 0 || args[0] != "build" {
+		return errors.New("usage: oaer package build --project <root> --namespace <namespace> --output <artifact> [--version <version>] [--json]")
+	}
+
+	root := "."
+	namespace := ""
+	version := ""
+	output := ""
+	jsonOut := false
+	for i := 1; i < len(args); i++ {
+		switch args[i] {
+		case "--project":
+			if i+1 >= len(args) {
+				return errors.New("--project requires a value")
+			}
+			root = args[i+1]
+			i++
+		case "--namespace":
+			if i+1 >= len(args) {
+				return errors.New("--namespace requires a value")
+			}
+			namespace = strings.TrimSpace(args[i+1])
+			i++
+		case "--version":
+			if i+1 >= len(args) {
+				return errors.New("--version requires a value")
+			}
+			version = strings.TrimSpace(args[i+1])
+			i++
+		case "--output":
+			if i+1 >= len(args) {
+				return errors.New("--output requires a value")
+			}
+			output = args[i+1]
+			i++
+		case "--json":
+			jsonOut = true
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if namespace == "" {
+		return errors.New("--namespace is required")
+	}
+	if output == "" {
+		return errors.New("--output is required")
+	}
+
+	p, err := project.Load(root)
+	if err != nil {
+		return err
+	}
+	p.Namespace = namespace
+	s, err := oaerschema.LoadProject(p)
+	if err != nil {
+		return err
+	}
+	idx := typesys.Build(p, s)
+	artifact, err := packageartifact.Build(namespace, version, p, s, packageArtifactTypes(idx.Types))
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(output), 0o755); err != nil {
+		return err
+	}
+	if err := packageartifact.WriteJSON(output, artifact); err != nil {
+		return err
+	}
+	if jsonOut {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(artifact)
+	}
+	fmt.Fprintf(w, "package artifact: %s\n", output)
+	fmt.Fprintf(w, "namespace: %s\n", artifact.Namespace)
+	if artifact.Version != "" {
+		fmt.Fprintf(w, "version: %s\n", artifact.Version)
+	}
+	fmt.Fprintf(w, "apexTypes: %d\n", len(artifact.ApexTypes))
+	fmt.Fprintf(w, "objects: %d\n", len(artifact.Objects))
+	fmt.Fprintf(w, "sourceHash: %s\n", artifact.SourceHash)
+	return nil
+}
+
+func packageArtifactTypes(types []typesys.TypeSymbol) []packageartifact.ApexType {
+	out := make([]packageartifact.ApexType, 0, len(types))
+	for _, typ := range types {
+		out = append(out, packageartifact.ApexType{
+			Kind:       typ.Kind,
+			Name:       typ.Name,
+			File:       typ.File,
+			Namespace:  typ.Namespace,
+			SourceRoot: typ.SourceRoot,
+			Version:    typ.Version,
+			Dependency: typ.Dependency,
+			Modifiers:  append([]string(nil), typ.Modifiers...),
+			IsTest:     typ.IsTest,
+			SuperClass: typ.SuperClass,
+			Interfaces: append([]string(nil), typ.Interfaces...),
+			Range:      typ.Range,
+			Members:    packageArtifactMembers(typ.Members),
+		})
+	}
+	return out
+}
+
+func packageArtifactMembers(members []typesys.MemberSymbol) []packageartifact.ApexMember {
+	out := make([]packageartifact.ApexMember, 0, len(members))
+	for _, member := range members {
+		out = append(out, packageartifact.ApexMember{
+			Kind:       member.Kind,
+			Name:       member.Name,
+			Type:       member.Type,
+			Modifiers:  append([]string(nil), member.Modifiers...),
+			Parameters: append([]apexast.Parameter(nil), member.Parameters...),
+			Accessors:  append([]apexast.Accessor(nil), member.Accessors...),
+			IsTest:     member.IsTest,
+			Range:      member.Range,
+		})
+	}
+	return out
 }
 
 func runDoctor(ctx context.Context, w io.Writer) error {

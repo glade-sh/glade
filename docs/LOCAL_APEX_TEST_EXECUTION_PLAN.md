@@ -1,6 +1,6 @@
 # Local Apex Test Execution Plan
 
-Status date: 2026-05-15.
+Status date: 2026-05-18.
 
 This plan turns the broad post-parity backlog into squad-sized implementation
 phases for full local Apex test execution. The target is not merely loading
@@ -18,16 +18,14 @@ pass=101 fail=0 unsupported=0 missing=0
 
 The owned local-test corpus gate is green for the checked baseline, including
 intentional unsupported classifications. The broader post-parity inventory for
-the full `example-projects` tree currently includes the public stubs and is not
-green. A May 15, 2026 inventory from the current checkout reports:
+the full `example-projects` tree is green as a scanner/readiness gate. A
+May 18, 2026 inventory from the current checkout reports:
 
 ```text
-filesScanned=59479 findings=4078 testBlockingFindings=4078 surfaces=3
+filesScanned=59482 findings=0 testBlockingFindings=0 surfaces=0 reports=114 dashboards=7
 ```
 
-The remaining scanner buckets are `platform.cache-connectapi`,
-`metadata.apex-deploy`, and `custommetadata.legacy-records`. The inventory is
-implementation-aware as of this checkpoint. It suppresses
+The inventory is implementation-aware as of this checkpoint. It suppresses
 surfaces only when the project metadata, static model, or runtime fallback can
 resolve them generally: generated standard object/field metadata, loaded
 labels/translations, managed-package and platform label fallbacks, loaded static
@@ -48,21 +46,26 @@ Use `docs/APEX_PARITY_FOLLOWUP_PLAN.md` for the broader Apex language,
 runtime, platform API, tooling, and release-hardening roadmap after the
 enterprise example-project local-test path is under control.
 
-Current execution focus as of May 14, 2026: drive
-`example-projects/sf-cred-pkg-develop` to zero local-test blockers. The latest
-accurate local run used:
+Current execution status as of May 18, 2026: `sf-cred-pkg-develop` is the first
+large package with a fully green local runtime pass. The validated command is:
 
 ```bash
-go build -o /private/tmp/oaer-perf ./cmd/oaer
-/private/tmp/oaer-perf compat local-tests \
+go run ./cmd/oaer compat local-tests \
   --project ./example-projects/sf-cred-pkg-develop \
   --parallel 4 \
-  --top-failures 60 \
+  --timeout 30000 \
+  --top-failures 20 \
   --json
 ```
 
-For fast blocker triage on large projects, cap the run by distinct failure
-groups instead of executing every discovered test:
+Measured result, repeated twice after the deterministic custom data lookup fix:
+
+```text
+total=4274 pass=4274 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0 topFailures=null durationMs=522094
+```
+
+For future blocker triage on other large projects, cap the run by distinct
+failure groups instead of executing every discovered test:
 
 ```bash
 go run ./cmd/oaer compat local-tests \
@@ -75,27 +78,12 @@ go run ./cmd/oaer compat local-tests \
   --json
 ```
 
-Measured result:
-
-```text
-total=4268 pass=3185 unsupported=71 runtimeGap=404 assertFail=608 compileError=0 internalError=0 durationMs=448640
-```
-
-May 15, 2026 performance note: the full `sf-cred-pkg` blocker scan took
-`durationMs=1677326` after semantic-analysis skipping, while the capped triage
-form above found 25 distinct blocker groups after running 187 of 4268 tests in
-`durationMs=101277`.
-
-The next blocker frontier is not compile loading. It is runtime fidelity:
-SObject describe shape gaps, standard metadata/relationship coverage, remaining
-DML behavior, HTTP/callout test contracts, and the top assert-failure families
-now reached after the UUID, nested enum, Java-regex lookahead,
-`Account.ChildAccounts`, `SObject.putSObject`, lenient JSON trailing text,
-nullable `Date.valueOf(Object)`, and Id coercion fixes. The May 14 full run took
-448.6s, so use focused method/class slices for normal feedback and reserve full
-runs for checkpoint deltas. `docs/plans/2026-05-07-src-nmb-nu-develop-squad-plan.md`
-is retained as historical planning for the larger NU project but is no longer
-the active frontier while `sf-cred-pkg-develop` is the zero-blocker target.
+May 18, 2026 performance note: serial `sf-cred-pkg` runs took about 24.3
+minutes. After fixing deterministic custom data lookup for duplicate logical
+records, `--parallel 4` is green and runs in about 8.7 minutes. The next runtime
+frontier is no longer `sf-cred-pkg`; it is the remaining example-project
+compile/runtime gaps, especially managed-package dependency artifacts for
+`znu` and NPSP standard object/type coverage.
 
 ## Execution Objective
 
@@ -198,9 +186,10 @@ Current measured runtime frontier:
 
 | Gate | Current signal |
 | --- | --- |
-| Static/readiness inventory | `go run ./cmd/oaer compat post-parity --project ./example-projects --json` reports `filesScanned=59479 findings=4078 testBlockingFindings=4078 surfaces=3`; the current buckets are `platform.cache-connectapi`, `metadata.apex-deploy`, and `custommetadata.legacy-records`. |
-| Fast runtime sentinel | `go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nutpl-develop --timeout 30000 --top-failures 8 --json` reports `total=761 pass=761 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0`. |
-| Six-project runtime baseline | `node scripts/baseline-local-tests-example-projects.mjs` records one green project and five compile-gap frontiers in `docs/fixtures/local-tests-example-projects.json`. |
+| Static/readiness inventory | `go run ./cmd/oaer compat post-parity --project ./example-projects --json` reports `filesScanned=59482 findings=0 testBlockingFindings=0 surfaces=0 reports=114 dashboards=7`. |
+| Fast runtime green sentinel | `go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nutpl-develop --timeout 30000 --top-failures 8 --json` reports `total=761 pass=761 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0 topFailures=null durationMs=51589`; `--parallel 4` also reports `total=761 pass=761` in `durationMs=22350`. |
+| Large-package green runtime sentinel | `go run ./cmd/oaer compat local-tests --project example-projects/sf-cred-pkg-develop --parallel 4 --timeout 30000 --top-failures 20 --json` reports `total=4274 pass=4274 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0`. |
+| Six-project runtime baseline | `docs/fixtures/local-tests-example-projects.json` tracks measured example-project frontiers; `src-nmb-nutpl-develop` and `sf-cred-pkg-develop` are green while the other unresolved projects remain measured gap frontiers. |
 | Scale runtime sentinel | `go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nc-develop --timeout 30000 --top-failures 8 --json` returns structured compile-gap output rather than timing out or stack-overflowing; the current top blocker is missing `znu.Address`. |
 | Unit/regression suite | `go test ./...` must stay green after every merge. |
 
@@ -230,10 +219,15 @@ Current blockers:
 Tasks:
 
 - Add explicit first-iteration dependency config in `oaer.yml`, mapping a
-  namespace to a local source project root and optional package version.
+  namespace to either a local source project root and optional package version
+  or a compact package artifact through `namespace:artifact:path`.
 - Build a source-backed managed package artifact model for Apex contracts,
   schema, labels, resources, custom metadata, and other test-visible metadata.
-- Load dependency artifacts before current project package directories.
+  Package artifacts should model the subscriber contract: export only `global`
+  Apex types and `global` members, while applying the installed namespace to
+  package custom objects, fields, and custom metadata.
+- Load source-backed and artifact-backed dependencies before current project
+  package directories.
 - Resolve `namespace.Type`, nested dependency types, `namespace__Object__c`,
   namespaced fields, labels, resources, and custom metadata through dependency
   registries.

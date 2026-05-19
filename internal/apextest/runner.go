@@ -148,6 +148,7 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	initializeTestOrg(&org)
 	baseMachine := runtime.BaseMachine.CloneRuntime(nil)
 	baseMachine.SetTraceEnabled(false)
+	baseMachine.EnableTestContext()
 	baseRuntimeErr := runtime.BaseErr
 	if baseRuntimeErr == nil {
 		baseRuntimeErr = registerTestRuntime(baseMachine, append(flattenSetupMethods(setups), methodMapValues(testMethods)...))
@@ -1356,15 +1357,15 @@ func qualifyNestedTypeName(owner, name string, known map[string]bool) string {
 		return name
 	}
 	for {
+		candidate := owner + "." + name
+		if known[candidate] {
+			return candidate
+		}
 		dot := strings.LastIndex(owner, ".")
 		if dot < 0 {
 			return name
 		}
 		owner = owner[:dot]
-		candidate := owner + "." + name
-		if known[candidate] {
-			return candidate
-		}
 	}
 }
 
@@ -2081,6 +2082,7 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 	if fieldState.Records == nil {
 		fieldState.Records = make(map[storage.ID]storage.Record)
 	}
+	fieldPermissionKeys := fieldPermissionRecordKeys(fieldState)
 	for _, permission := range metadata.ObjectPermission {
 		objectName := strings.TrimSpace(permission.Object)
 		if objectName == "" || objectPermissionRecordExists(objectState, parentID, objectName) {
@@ -2111,7 +2113,8 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 			continue
 		}
 		objectName := fieldPermissionObjectName(fieldName)
-		if objectName == "" || fieldPermissionRecordExists(fieldState, parentID, objectName, fieldName) {
+		key := fieldPermissionRecordKey(parentID, objectName, fieldName)
+		if objectName == "" || fieldPermissionKeys[key] {
 			continue
 		}
 		id, err := generator.Next("FieldPermissions")
@@ -2129,6 +2132,7 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 				"PermissionsEdit": storage.BooleanValue(permission.Editable),
 			},
 		}
+		fieldPermissionKeys[key] = true
 	}
 	org.Objects["ObjectPermissions"] = objectState
 	org.Objects["FieldPermissions"] = fieldState
@@ -2208,18 +2212,44 @@ func objectPermissionRecordExists(state storage.ObjectState, parentID, objectNam
 }
 
 func fieldPermissionRecordExists(state storage.ObjectState, parentID, objectName, fieldName string) bool {
+	return fieldPermissionRecordKeys(state)[fieldPermissionRecordKey(parentID, objectName, fieldName)]
+}
+
+func fieldPermissionRecordKeys(state storage.ObjectState) map[string]bool {
+	keys := make(map[string]bool, len(state.Records))
 	for _, record := range state.Records {
 		parent, hasParent := record.GetField("ParentId")
 		objectValue, hasObject := record.GetField("SObjectType")
 		fieldValue, hasField := record.GetField("Field")
-		if hasParent && hasObject && hasField &&
-			storageIDValueEqualsText(parent, parentID) &&
-			storageStringValueEqualsText(objectValue, objectName) &&
-			storageStringValueEqualsText(fieldValue, fieldName) {
-			return true
+		if hasParent && hasObject && hasField {
+			key := fieldPermissionRecordKey(storageRecordKeyText(parent), storageRecordKeyText(objectValue), storageRecordKeyText(fieldValue))
+			if key != "" {
+				keys[key] = true
+			}
 		}
 	}
-	return false
+	return keys
+}
+
+func fieldPermissionRecordKey(parentID, objectName, fieldName string) string {
+	parentID = strings.ToLower(strings.TrimSpace(parentID))
+	objectName = strings.ToLower(strings.TrimSpace(objectName))
+	fieldName = strings.ToLower(strings.TrimSpace(fieldName))
+	if parentID == "" || objectName == "" || fieldName == "" {
+		return ""
+	}
+	return parentID + "\x00" + objectName + "\x00" + fieldName
+}
+
+func storageRecordKeyText(value storage.Value) string {
+	switch value.Kind {
+	case storage.ValueID:
+		return string(value.ID)
+	case storage.ValueString:
+		return value.String
+	default:
+		return ""
+	}
 }
 
 func fieldPermissionObjectName(fieldName string) string {
