@@ -2042,6 +2042,36 @@ System.assertEquals(0, rows.size());
 	}
 }
 
+func TestExecCartExtensionUnsupportedFamilyExplicitDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+CartExtension.CartDeliveryGroup deliveryGroup = new CartExtension.CartDeliveryGroup();
+System.assertEquals(false, deliveryGroup.getIsDefault());
+System.assertEquals(false, deliveryGroup.getIsGift());
+System.assertEquals('Shipment 1', deliveryGroup.getName());
+
+CartExtension.OrderGraph graph = new CartExtension.OrderGraph();
+Order orderRecord = graph.getOrder();
+System.assertNotEquals(null, orderRecord);
+System.assertEquals('@{ref_Order_1.id}', (String)orderRecord.get('Id'));
+System.assertEquals(0, graph.getOrderAdjustmentGroups().size());
+System.assertEquals(0, graph.getOrderDeliveryGroups().size());
+System.assertEquals(0, graph.getOrderDeliveryMethods().size());
+System.assertEquals(0, graph.getOrderItemAdjustmentLineItems().size());
+System.assertEquals(0, graph.getOrderItems().size());
+System.assertEquals(0, graph.getOrderItemTaxLineItems().size());
+
+CartExtension.PlaceOrderResponse response = CartExtension.PlaceOrderResponse.success();
+System.assertNotEquals(null, response);
+System.assertEquals('Success', (String)response.status);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPlatformHelperTailUnsupportedFences(t *testing.T) {
 	cases := []string{
 		`System.changeOwnPassword('old', 'new', 'new');`,

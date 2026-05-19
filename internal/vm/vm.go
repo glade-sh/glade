@@ -5557,10 +5557,16 @@ platformStaticCall:
 		if strings.HasPrefix(callee, "Crypto.") {
 			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
 		}
+		if value, handled := vm.generatedUnsupportedFamilyExplicitStaticDefault(callee, args); handled {
+			return value, nil
+		}
 		if vm.generatedPassiveUnsupportedStaticCallee(callee, args) {
 			return Null, newExceptionError("UnsupportedOperationException", callee+" local stub surface")
 		}
 		if generatedFamilyUnsupportedStaticCallee(callee) {
+			if value, handled := vm.generatedUnsupportedFamilyExplicitStaticDefault(callee, args); handled {
+				return value, nil
+			}
 			return Null, newExceptionError("UnsupportedOperationException", callee+" local stub surface")
 		}
 		if value, handled := vm.generatedPlatformStaticDefault(callee, args); handled {
@@ -30775,6 +30781,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 		return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), nil
 	}
+	if value, handled := vm.generatedUnsupportedFamilyExplicitMethodDefault(method, receiver, args); handled {
+		return value, nil
+	}
 	if methodHasModifier(method.Modifiers, "passive-generated") {
 		className := method.ClassName
 		if className == "" {
@@ -30784,6 +30793,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			return Null, newExceptionError("ConnectApi.ConnectApiException", method.Name+" is not supported in local tests")
 		}
 		if generatedFamilyUnsupportedTypePrefix(className) {
+			if value, handled := vm.generatedUnsupportedFamilyExplicitMethodDefault(method, receiver, args); handled {
+				return value, nil
+			}
 			return Null, newExceptionError("UnsupportedOperationException", method.Name+" local stub surface")
 		}
 	}
@@ -31117,6 +31129,55 @@ func generatedFamilyUnsupportedTypePrefix(typeName string) bool {
 	return false
 }
 
+func generatedUnsupportedFamilyKey(className, methodName string) string {
+	return strings.ToLower(strings.TrimSpace(className) + "." + strings.TrimSpace(methodName))
+}
+
+func (vm *VM) generatedUnsupportedFamilyExplicitMethodDefault(method Method, receiver Value, args []Value) (Value, bool) {
+	className := method.ClassName
+	if className == "" && receiver.Kind == ValueObject {
+		className = receiver.Type
+	}
+	key := generatedUnsupportedFamilyKey(className, apexMethodMemberName(method.Name))
+	switch key {
+	case "cartextension.cartdeliverygroup.getisdefault":
+		return Bool(false), true
+	case "cartextension.cartdeliverygroup.getisgift":
+		return Bool(false), true
+	case "cartextension.cartdeliverygroup.getname":
+		return String("Shipment 1"), true
+	case "cartextension.ordergraph.getorder":
+		order := Object("Order")
+		order.Fields["Id"] = String("@{ref_Order_1.id}")
+		return order, true
+	case "cartextension.ordergraph.getorderadjustmentgroups",
+		"cartextension.ordergraph.getorderdeliverygroups",
+		"cartextension.ordergraph.getorderdeliverymethods",
+		"cartextension.ordergraph.getorderitemadjustmentlineitems",
+		"cartextension.ordergraph.getorderitems",
+		"cartextension.ordergraph.getorderitemtaxlineitems":
+		return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), true
+	default:
+		return Null, false
+	}
+}
+
+func (vm *VM) generatedUnsupportedFamilyExplicitStaticDefault(callee string, args []Value) (Value, bool) {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok {
+		return Null, false
+	}
+	switch generatedUnsupportedFamilyKey(className, methodName) {
+	case "cartextension.placeorderresponse.success":
+		value := Object("CartExtension.PlaceOrderResponse")
+		value.Fields["delegate"] = Null
+		value.Fields["status"] = String("Success")
+		return value, true
+	default:
+		return Null, false
+	}
+}
+
 func (vm *VM) generatedPassiveUnsupportedStaticCallee(callee string, args []Value) bool {
 	className, methodName, ok := vm.splitClassMember(callee)
 	if !ok {
@@ -31272,6 +31333,22 @@ func (vm *VM) newGeneratedPlatformObjectSeen(generated generatedPlatformType, se
 	for _, name := range generated.FieldOrder {
 		field := generated.Fields[name]
 		object.Fields[name] = vm.generatedPlatformDefaultValueSeen(field.Type, field.InitialValue, seen)
+	}
+	if strings.EqualFold(generated.Name, "CartExtension.CartDeliveryGroup") {
+		object.Fields["isDefault"] = Bool(false)
+		object.Fields["isGift"] = Bool(false)
+		object.Fields["name"] = String("Shipment 1")
+	}
+	if strings.EqualFold(generated.Name, "CartExtension.OrderGraph") {
+		order := Object("Order")
+		order.Fields["Id"] = String("@{ref_Order_1.id}")
+		object.Fields["order"] = order
+		object.Fields["orderAdjustmentGroups"] = typedList("List<CartExtension.OrderAdjustmentGroup>")
+		object.Fields["orderDeliveryGroups"] = typedList("List<CartExtension.OrderDeliveryGroup>")
+		object.Fields["orderDeliveryMethods"] = typedList("List<CartExtension.OrderDeliveryMethod>")
+		object.Fields["orderItemAdjustmentLineItems"] = typedList("List<CartExtension.OrderItemAdjustmentLineItem>")
+		object.Fields["orderItems"] = typedList("List<CartExtension.OrderItem>")
+		object.Fields["orderItemTaxLineItems"] = typedList("List<CartExtension.OrderItemTaxLineItem>")
 	}
 	delete(seen, key)
 	return object
