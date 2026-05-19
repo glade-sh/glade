@@ -8332,6 +8332,24 @@ System.assertEquals(1, Limits.getCallouts());
 	}
 }
 
+func TestExecHttpCalloutMockAllowsBlankRequest(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.setMock('HttpCalloutMock', new MockResponse(body = 'ok', statusCode = 201));
+HttpResponse res = new Http().send(new HttpRequest());
+System.assertEquals(201, res.getStatusCode());
+System.assertEquals('ok', res.getBody());
+System.assertEquals(1, Limits.getCallouts());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecHttpRequestValidationAndHeaderEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 HttpRequest req = new HttpRequest();

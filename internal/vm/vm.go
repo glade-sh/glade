@@ -44410,10 +44410,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "HttpRequest" {
 				return Null, receiver, false, true, fmt.Errorf("Http.send expects HttpRequest")
 			}
-			if err := validateHttpRequest(args[0]); err != nil {
-				return Null, receiver, false, true, err
-			}
 			request := args[0]
+			hasMock := vm.testContext != nil && vm.testContext.HTTPMock.Kind == ValueObject
+			if !hasMock {
+				if err := validateHttpRequest(request); err != nil {
+					return Null, receiver, false, true, err
+				}
+			}
 			if endpoint, ok := request.Fields["endpoint"]; ok && endpoint.Kind == ValueString && vm.Org != nil {
 				if resolved, ok := resource.ResolveEndpoint(vm.Org.Metadata, endpoint.Text); ok {
 					request.Fields["resolvedEndpoint"] = String(resolved)
@@ -44423,7 +44426,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, err
 			}
 			appendTrace(result, "apex.callout.http", "apex.callout", map[string]any{"operation": "Http.send"})
-			if vm.testContext != nil && vm.testContext.HTTPMock.Kind == ValueObject {
+			if hasMock {
 				if target, ok := vm.resolveInstanceMethod(vm.testContext.HTTPMock.Type, "respond"); ok {
 					value, err := vm.callMethodWithReceiver(target, vm.testContext.HTTPMock, []Value{request}, &Result{})
 					if err != nil {
