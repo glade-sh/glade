@@ -164,6 +164,12 @@ func Run(cfg Config) (*GapReport, error) {
 				return report, fmt.Errorf("write debug logs: %w", err)
 			}
 			fmt.Printf("Wrote debug logs to %s\n", debugLogPath)
+			summaryPath := filepath.Join(cfg.OutputDir, "debug-log-summaries.json")
+			summaries := SummarizeDebugLogs(debugLogs)
+			if err := WriteDebugLogSummaries(summaries, summaryPath); err != nil {
+				return report, fmt.Errorf("write debug log summaries: %w", err)
+			}
+			fmt.Printf("Wrote debug log summaries to %s\n", summaryPath)
 		}
 		trendPath := filepath.Join(cfg.OutputDir, "probe-history.jsonl")
 		if err := AppendTrend(trendPath, trendEntry(report)); err != nil {
