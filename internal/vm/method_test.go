@@ -53,6 +53,54 @@ System.assertEquals('Inner:{}', String.valueOf(inner));
 	}
 }
 
+func TestExecNestedSObjectFieldAssignmentThroughObjectPropertyPersists(t *testing.T) {
+	program, err := CompileAnonymous(`
+Holder holder = new Holder();
+holder.Cart = new Cart__c(Batch__c = 'a00000000000001AAA');
+holder.Cart.putSObject('Batch__r', new Batch__c(Id = 'a00000000000001AAA'));
+holder.Cart.Batch__c = null;
+System.assertEquals(null, holder.Cart.Batch__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "NU"
+	org.Objects["NU__Cart__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "NU__Cart__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"NU__Batch__c": {APIName: "NU__Batch__c", Type: storage.FieldReference, ReferenceTo: []string{"NU__Batch__c"}},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["NU__Batch__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "NU__Batch__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Id": {APIName: "Id", Type: storage.FieldID},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "Holder",
+		Fields: map[string]Field{
+			"Cart": {Name: "Cart", Type: "Cart__c"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRegisteredStaticMethodMatchesNestedSObjectCollectionMap(t *testing.T) {
 	methodProgram, err := CompileAnonymous("return values.size();")
 	if err != nil {
@@ -1178,6 +1226,172 @@ System.assertEquals('made', Service.create());
 				ReturnType: "String",
 				IsStatic:   true,
 				Program:    createProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecUnqualifiedStaticMethodWinsBeforeInheritedArityFallback(t *testing.T) {
+	runProgram, err := CompileAnonymous(`
+Set<Id> ids = new Set<Id>{ '001000000000001AAA' };
+execute('001000000000002AAA', ids);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	staticProgram, err := CompileAnonymous(`Called = 'static';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inheritedProgram, err := CompileAnonymous(`Called = 'inherited';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+new Child().run();
+System.assertEquals('static', Child.Called);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Methods: map[string]Method{
+			"execute": {
+				Name:      "Base.execute",
+				ClassName: "Base",
+				Params: []Param{
+					{Name: "context", Type: "Database.BatchableContext"},
+					{Name: "scope", Type: "List<Object>"},
+				},
+				Program: inheritedProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Base",
+		StaticFields: map[string]Field{
+			"Called": {Name: "Called", Type: "String", Static: true},
+		},
+		Methods: map[string]Method{
+			"run": {
+				Name:      "Child.run",
+				ClassName: "Child",
+				Program:   runProgram,
+			},
+			"execute": {
+				Name:      "Child.execute",
+				ClassName: "Child",
+				IsStatic:  true,
+				Params: []Param{
+					{Name: "recordId", Type: "Id"},
+					{Name: "ids", Type: "Set<Id>"},
+				},
+				Program: staticProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestCreateStubSObjectGetFallsThroughWithoutMethodMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+Order orderStub = (Order)Test.createStub(Order.class, new Provider());
+orderStub.put('Status', 'Draft');
+System.assertEquals('Draft', orderStub.get('Status'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	providerProgram, err := CompileAnonymous(`return null;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Order")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "Order"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"StubProvider"},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:      "Provider.handleMethodCall",
+				ClassName: "Provider",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				ReturnType: "Object",
+				Program:    providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestCreateStubDynamicMethodWithoutMetadataCallsProvider(t *testing.T) {
+	program, err := CompileAnonymous(`
+Order orderStub = (Order)Test.createStub(Order.class, new Provider());
+System.assertEquals('handled', orderStub.get());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	providerProgram, err := CompileAnonymous(`return 'handled';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Order")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "Order"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"StubProvider"},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:      "Provider.handleMethodCall",
+				ClassName: "Provider",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				ReturnType: "Object",
+				Program:    providerProgram,
 			},
 		},
 	}); err != nil {

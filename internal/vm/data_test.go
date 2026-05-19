@@ -540,6 +540,21 @@ System.assertEquals('001000000000001AAA', rows[0].get('Parent__c'));
 	}}
 	machine := New(nil)
 	machine.SetOrg(&org)
+	raw := map[string]any{
+		"Parent__r":      map[string]any{"Id": "001000000000001AAA", "Name": "First"},
+		"pkg__Parent__r": map[string]any{"Id": "001000000000002AAA", "Name": "Second"},
+	}
+	decoded, err := machine.typedValueFromJSON("Child__c", raw, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, parent, ok := objectFieldValue(decoded, "Parent__r")
+	if !ok || parent.Kind != ValueObject {
+		t.Fatalf("Parent__r = %#v, ok=%v", parent, ok)
+	}
+	if got := parent.Fields["Name"]; got.Kind != ValueString || got.Text != "Second" {
+		t.Fatalf("Parent__r.Name = %#v, want Second", got)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -1445,6 +1460,77 @@ System.assertEquals('001000000000001AAA', child.Parent__r.Id);
 		},
 	}}
 	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeParentRelationshipAliasesShareLoadedParent(t *testing.T) {
+	program, err := CompileAnonymous(`
+Child__c child = (Child__c)JSON.deserialize('{"pkg__Parent__r":{"Id":"001000000000001AAA","Name":"First"},"Parent__r":{"Id":"001000000000002AAA","Name":"Second"}}', Child__c.class);
+System.assertEquals('First', child.Parent__r.Name);
+System.assertEquals('First', child.getSObject('pkg__Parent__r').get('Name'));
+System.assertEquals(null, child.Parent__c);
+
+Child__c explicitLookup = (Child__c)JSON.deserialize('{"Parent__c":"001000000000003AAA","Parent__r":{"Id":"001000000000004AAA","Name":"Loaded"}}', Child__c.class);
+System.assertEquals('001000000000003AAA', explicitLookup.Parent__c);
+System.assertEquals('Loaded', explicitLookup.Parent__r.Name);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Namespace: "pkg", Objects: map[string]storage.ObjectState{
+		"Account": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Account",
+				KeyPrefix: "001",
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "pkg__Parent__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Parent__c",
+					ParentObjects:      []string{"Account"},
+					ParentRelationship: "pkg__Parent__r",
+				}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectMapCovariancePreservesValueReferences(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Id = '001000000000001AAA', Name = 'Before');
+Map<Id, Account> typed = new Map<Id, Account>{ account.Id => account };
+Map<Id, SObject> genericRecords = typed;
+Account fromGeneric = (Account)genericRecords.get(account.Id);
+fromGeneric.Name = 'After';
+System.assertEquals('After', account.Name);
+System.assertEquals('After', typed.get(account.Id).Name);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -3272,6 +3358,28 @@ System.assertEquals('aGVsbG8=', EncodingUtil.base64Encode(row.Body));
 	machine := New(nil)
 	org := testDataOrg()
 	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNoteParentIdIsWriteable(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+Note note = new Note(Title = 'Follow up', Body = 'Call back', ParentId = a.Id);
+insert note;
+List<Note> rows = [SELECT Id, ParentId, Title, Body FROM Note WHERE Id = :note.Id];
+System.assertEquals(1, rows.size());
+System.assertEquals(a.Id, rows[0].ParentId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Note")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)

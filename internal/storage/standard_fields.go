@@ -730,6 +730,8 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		markFieldCreateable(definition, "RelationId")
 		markFieldCreateable(definition, "RelationType")
 		markFieldCreateable(definition, "RelationAddress")
+	case stringsEqualFold(definition.APIName, "Note"):
+		markFieldWriteable(definition, "ParentId")
 	case stringsEqualFold(definition.APIName, "EmailTemplate"):
 		ensureFieldDefault(definition, "TemplateStyle", "none")
 		ensureFieldDefault(definition, "TemplateType", "text")
@@ -839,6 +841,17 @@ func markFieldCreateable(definition *ObjectDefinition, fieldName string) {
 	}
 	field := definition.Fields[resolved]
 	field.Createable = BoolFlag(true)
+	definition.Fields[resolved] = field
+}
+
+func markFieldWriteable(definition *ObjectDefinition, fieldName string) {
+	resolved, ok := ResolveFieldName(*definition, "", fieldName)
+	if !ok {
+		return
+	}
+	field := definition.Fields[resolved]
+	field.Createable = BoolFlag(true)
+	field.Updateable = BoolFlag(true)
 	definition.Fields[resolved] = field
 }
 

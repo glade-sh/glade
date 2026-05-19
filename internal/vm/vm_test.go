@@ -743,6 +743,26 @@ System.assert(caught);
 	}
 }
 
+func TestExecDateAndDatetimeComparisonsUseMidnightInstant(t *testing.T) {
+	program, err := CompileAnonymous(`
+Date day = Date.newInstance(2024, 2, 29);
+Datetime midnight = Datetime.newInstanceGmt(2024, 2, 29, 0, 0, 0);
+Datetime noon = Datetime.newInstanceGmt(2024, 2, 29, 12, 0, 0);
+Datetime prior = Datetime.newInstanceGmt(2024, 2, 28, 23, 59, 59);
+System.assert(day == midnight);
+System.assert(day < noon);
+System.assert(day <= midnight);
+System.assert(day > prior);
+System.assert(day >= midnight);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCompileStringEndingWithEscapedQuote(t *testing.T) {
 	program, err := CompileAnonymous(`String value = 'BYELARUS\''; System.assertEquals('BYELARUS''', value);`)
 	if err != nil {
@@ -1472,6 +1492,32 @@ System.assertEquals('set', QueryFactory.selectFields(new Set<String>()));
 		if err := machine.RegisterMethod(method); err != nil {
 			t.Fatal(err)
 		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecOverloadResolutionAllowsSetForIterableParameterByElementValues(t *testing.T) {
+	iterableProgram, err := CompileAnonymous(`return 'iterable';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('iterable', QueryFactory.selectFields(new Set<String>{'Name'}));
+System.assertEquals('iterable', QueryFactory.selectFields(new List<String>{'Name'}));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterMethod(Method{
+		Name:       "QueryFactory.selectFields",
+		ReturnType: "String",
+		Params:     []Param{{Name: "fields", Type: "Iterable<String>"}},
+		Program:    iterableProgram,
+	}); err != nil {
+		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -2334,6 +2380,41 @@ try {
 	}
 }
 
+func TestFrameworkQualifiedMethodKeysEqualTreatsSObjectListTypesCovariant(t *testing.T) {
+	machine := New(nil)
+	left := Object("framework_QualifiedMethod")
+	left.Fields["typeName"] = String("DML__sfdc_ApexStub")
+	left.Fields["methodName"] = String("updateRecords")
+	left.Fields["methodArgTypes"] = List(platformScalar("Type", "List<Account>"))
+
+	right := Object("framework_QualifiedMethod")
+	right.Fields["typeName"] = String("DML__sfdc_ApexStub")
+	right.Fields["methodName"] = String("updateRecords")
+	right.Fields["methodArgTypes"] = List(platformScalar("Type", "List<SObject>"))
+
+	matched, handled := machine.frameworkQualifiedMethodKeysEqual(left, right)
+	if !handled || !matched {
+		t.Fatalf("frameworkQualifiedMethodKeysEqual matched=%v handled=%v", matched, handled)
+	}
+}
+
+func TestFrameworkMatchesAllArgsTreatsAnySObjectAsSObjectListElementMatcher(t *testing.T) {
+	machine := New(nil)
+	methodArg := Object("framework_MethodArgValues")
+	records := List(Object("Account"))
+	records.Type = "List<Account>"
+	methodArg.Fields["argValues"] = List(records)
+	matchers := List(Object("fflib_MatcherDefinitions.AnySObject"))
+
+	matched, handled, err := machine.frameworkMatchesAllArgs(methodArg, matchers)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled || !matched {
+		t.Fatalf("frameworkMatchesAllArgs matched=%v handled=%v", matched, handled)
+	}
+}
+
 func TestExecInstanceOfSObjectCollectionGenerics(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Account> accounts = new List<Account>{new Account(Name = 'Test')};
@@ -2814,18 +2895,22 @@ System.assertEquals('CreatedById', createdBy.getName());
 System.assertEquals(Schema.SOAPType.ID, createdBy.getSoapType());
 System.assertEquals('CreatedBy', createdBy.getRelationshipName());
 Schema.DescribeFieldResult provider = fields.get('Provider__c').getDescribe();
-System.assertEquals('Provider__c', provider.getName());
-System.assertEquals('Provider__r', provider.getRelationshipName());
-`)
+System.assertEquals('NU__Provider__c', provider.getName());
+System.assertEquals('NU__Provider__r', provider.getRelationshipName());
+Schema.DescribeFieldResult billTo = fields.get('BillTo__c').getDescribe();
+System.assertEquals('NU__BillTo__r', billTo.getRelationshipName());
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
+	org.Namespace = "NU"
 	org.Objects["License_Verification__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "License_Verification__c",
 			Fields: map[string]storage.Field{
 				"Provider__c": {APIName: "Provider__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Provider__r"},
+				"BillTo__c":   {APIName: "BillTo__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Carts"},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -2913,6 +2998,19 @@ System.assertEquals(Account.Name, mapping.checklistNotes);
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestPageTokenReferenceURLIncludesMutatedParameters(t *testing.T) {
+	page := newPageTokenReference("/apex/Order")
+	params := page.Fields["parameters"]
+	key := mapKey(String("id"))
+	params.Map[key] = String("001000000000001")
+	params.MapKeys[key] = String("id")
+	page.Fields["parameters"] = params
+
+	if got := pageReferenceURL(page).String(); got != "/apex/Order?id=001000000000001" {
+		t.Fatalf("page URL = %q", got)
 	}
 }
 

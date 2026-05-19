@@ -5,6 +5,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func parseLiteral(raw string) (Value, error) {
@@ -194,6 +195,19 @@ func evalBinary(op string, left, right Value) (Value, error) {
 				return Bool(left.Text >= right.Text), nil
 			}
 		}
+		if comparable, ok := comparablePlatformTemporal(left, right); ok {
+			a, b := comparable[0], comparable[1]
+			switch op {
+			case "<":
+				return Bool(a.Before(b)), nil
+			case "<=":
+				return Bool(!a.After(b)), nil
+			case ">":
+				return Bool(a.After(b)), nil
+			default:
+				return Bool(!a.Before(b)), nil
+			}
+		}
 		if comparable, ok := comparablePlatformScalarText(left, right); ok {
 			a, b := comparable[0], comparable[1]
 			switch op {
@@ -314,6 +328,31 @@ func comparablePlatformScalarText(left, right Value) ([2]string, bool) {
 		return [2]string{}, false
 	}
 	return [2]string{leftText, rightText}, true
+}
+
+func comparablePlatformTemporal(left, right Value) ([2]time.Time, bool) {
+	leftTime, leftOK := comparablePlatformTemporalValue(left)
+	rightTime, rightOK := comparablePlatformTemporalValue(right)
+	if !leftOK || !rightOK {
+		return [2]time.Time{}, false
+	}
+	return [2]time.Time{leftTime, rightTime}, true
+}
+
+func comparablePlatformTemporalValue(value Value) (time.Time, bool) {
+	if value.Kind != ValueObject {
+		return time.Time{}, false
+	}
+	switch strings.ToLower(value.Type) {
+	case "date":
+		parsed, err := parsePlatformDate(value)
+		return parsed.UTC(), err == nil
+	case "datetime", "dateTime":
+		parsed, err := parsePlatformDatetime(value)
+		return parsed.UTC(), err == nil
+	default:
+		return time.Time{}, false
+	}
 }
 
 func comparableIDText(value Value) (string, bool) {

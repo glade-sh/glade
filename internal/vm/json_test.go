@@ -217,15 +217,33 @@ System.assertEquals('Acme', accounts.get(0).Name);
 
 func TestExecJSONDeserializeSObjectSystemFields(t *testing.T) {
 	program, err := CompileAnonymous(`
-Widget__c widget = (Widget__c)JSON.deserialize('{"CreatedDate":"2026-05-13T10:30:00Z","IsDeleted":false}', Widget__c.class);
+Widget__c widget = (Widget__c)JSON.deserializeStrict('{"CreatedDate":"2026-05-13T10:30:00Z","IsDeleted":false}', Widget__c.class);
 System.assertEquals(Date.newInstance(2026, 5, 13), widget.CreatedDate.date());
 System.assertEquals(false, widget.IsDeleted);
-	`)
+Widget__c withParent = (Widget__c)JSON.deserializeStrict('{"Account__r":{"attributes":{"type":"Account"},"Name":"Parent"}}', Widget__c.class);
+System.assertEquals('Parent', withParent.Account__r.Name);
+JSON.deserializeStrict('{"UnmodeledLines__r":{"totalSize":0,"done":true,"records":[]}}', Widget__c.class);
+		`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	org.Namespace = "pkg"
+	org.Objects["pkg__Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "pkg__Widget__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"pkg__Data__c":    {APIName: "pkg__Data__c", Type: storage.FieldString},
+				"pkg__Account__c": {APIName: "pkg__Account__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "pkg__Account__r"},
+			},
+			Relations: []storage.Relationship{
+				{Field: "pkg__Account__c", ParentObjects: []string{"Account"}, ParentRelationship: "pkg__Account__r", ChildRelationship: "Widgets__r"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -912,6 +930,43 @@ System.assertEquals('New', loaded.Name);
 	}
 }
 
+func TestExecJSONRoundTripTypedIdSObjectMapCanClearRecordField(t *testing.T) {
+	program, err := CompileAnonymous(`
+Membership__c membership = new Membership__c();
+insert membership;
+Account account = new Account(Name = 'Old', Membership__c = membership.Id);
+insert account;
+Map<Id, Account> updates = new Map<Id, Account>();
+Account updateAccount = new Account();
+updateAccount.put('Membership__c', null);
+updates.put(account.Id, updateAccount);
+String raw = JSON.serialize(updates);
+Map<Id, Account> decoded = (Map<Id, Account>)JSON.deserialize(raw, Map<Id, Account>.class);
+Account updateRecord = decoded.get(account.Id);
+updateRecord.Id = account.Id;
+update updateRecord;
+Account loaded = [SELECT Membership__c FROM Account WHERE Id = :account.Id];
+System.assertEquals(null, loaded.Membership__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	org.Objects["Account"].Definition.Fields["Membership__c"] = storage.Field{APIName: "Membership__c", Type: storage.FieldReference, ReferenceTo: []string{"Membership__c"}}
+	org.Objects["Membership__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Membership__c", KeyPrefix: "a01", Fields: map[string]storage.Field{
+			"Id": {APIName: "Id", Type: storage.FieldID},
+		}},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONRoundTripsClassWithTypedIdSObjectMap(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id accountId = '001B000001DVM9tIAH';
@@ -928,6 +983,39 @@ System.assertEquals('NewFirst', decoded.NewValues.get(accountId).FirstName);
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "SavedState",
+		Fields: map[string]Field{
+			"NewValues": {Name: "NewValues", Type: "Map<Id,Account>"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONRoundTripsExplicitNullSObjectFieldInTypedIdMap(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id accountId = '001B000001DVM9tIAH';
+SavedState state = new SavedState();
+state.NewValues = new Map<Id, Account>();
+state.NewValues.put(accountId, new Account(Membership__c = null));
+String raw = JSON.serialize(state);
+SavedState decoded = (SavedState)JSON.deserialize(raw, SavedState.class);
+Account updateRecord = decoded.NewValues.get(accountId);
+System.assert(updateRecord.getPopulatedFieldsAsMap().containsKey('Membership__c'));
+System.assertEquals(null, updateRecord.Membership__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	org.Objects["Account"].Definition.Fields["Membership__c"] = storage.Field{APIName: "Membership__c", Type: storage.FieldReference, ReferenceTo: []string{"Membership__c"}}
+	machine.SetOrg(&org)
 	if err := machine.RegisterClass(Class{
 		Name: "SavedState",
 		Fields: map[string]Field{

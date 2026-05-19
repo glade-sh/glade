@@ -127,8 +127,14 @@ type VM struct {
 	describeDefCache         map[string]storage.ObjectDefinition
 	customDataCache          map[string]Value
 	childRelCache            map[string][]Value
+	jsonChildRelTypeCache    map[string]jsonRelationshipTypeLookup
 	metadataCacheStamp       string
 	staticValueRefs          map[uint64]bool
+}
+
+type jsonRelationshipTypeLookup struct {
+	Type string
+	OK   bool
 }
 
 type pushUpgradeCustomization struct {
@@ -304,41 +310,42 @@ type Trigger struct {
 
 func New(stdout io.Writer) *VM {
 	return &VM{
-		Globals:            make(map[string]Value),
-		VarTypes:           make(map[string]string),
-		Methods:            make(map[string]Method),
-		MethodOverloads:    make(map[string][]Method),
-		MethodFolded:       make(map[string][]Method),
-		methodCandidates:   make(map[string][]Method),
-		methodResolveCache: make(map[string]methodResolution),
-		Classes:            make(map[string]Class),
-		classLookup:        make(map[string]Class),
-		enumLookup:         make(map[string]enumClassLookup),
-		enumSuffixLookup:   make(map[string]enumClassLookup),
-		Triggers:           make(map[string][]Trigger),
-		triggerMatchCache:  make(map[string][]Trigger),
-		Stdout:             stdout,
-		limitCaps:          defaultLimitCaps(),
-		limitMode:          LimitModePermissive,
-		fakeNow:            time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
-		savepoints:         make(map[string]storage.OrgState),
-		emailSavepoints:    make(map[string][]CapturedEmail),
-		savepointOrder:     make(map[string]int),
-		platformCache:      make(map[string]map[string]cacheEntry),
-		cacheScanLocators:  make(map[string][]cacheScanItem),
-		metadataDeploys:    make(map[string]Value),
-		reportInstances:    make(map[string]Value),
-		pushUpgradeCustoms: make(map[string]pushUpgradeCustomization),
-		traceEnabled:       true,
-		ctx:                context.Background(),
-		activeGetters:      make(map[string]int),
-		activeSetters:      make(map[string]int),
-		staticInitState:    make(map[string]staticInitState),
-		describeCache:      make(map[string]Value),
-		fieldDescribeCache: make(map[string]Value),
-		describeDefCache:   make(map[string]storage.ObjectDefinition),
-		customDataCache:    make(map[string]Value),
-		childRelCache:      make(map[string][]Value),
+		Globals:               make(map[string]Value),
+		VarTypes:              make(map[string]string),
+		Methods:               make(map[string]Method),
+		MethodOverloads:       make(map[string][]Method),
+		MethodFolded:          make(map[string][]Method),
+		methodCandidates:      make(map[string][]Method),
+		methodResolveCache:    make(map[string]methodResolution),
+		Classes:               make(map[string]Class),
+		classLookup:           make(map[string]Class),
+		enumLookup:            make(map[string]enumClassLookup),
+		enumSuffixLookup:      make(map[string]enumClassLookup),
+		Triggers:              make(map[string][]Trigger),
+		triggerMatchCache:     make(map[string][]Trigger),
+		Stdout:                stdout,
+		limitCaps:             defaultLimitCaps(),
+		limitMode:             LimitModePermissive,
+		fakeNow:               time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
+		savepoints:            make(map[string]storage.OrgState),
+		emailSavepoints:       make(map[string][]CapturedEmail),
+		savepointOrder:        make(map[string]int),
+		platformCache:         make(map[string]map[string]cacheEntry),
+		cacheScanLocators:     make(map[string][]cacheScanItem),
+		metadataDeploys:       make(map[string]Value),
+		reportInstances:       make(map[string]Value),
+		pushUpgradeCustoms:    make(map[string]pushUpgradeCustomization),
+		traceEnabled:          true,
+		ctx:                   context.Background(),
+		activeGetters:         make(map[string]int),
+		activeSetters:         make(map[string]int),
+		staticInitState:       make(map[string]staticInitState),
+		describeCache:         make(map[string]Value),
+		fieldDescribeCache:    make(map[string]Value),
+		describeDefCache:      make(map[string]storage.ObjectDefinition),
+		customDataCache:       make(map[string]Value),
+		childRelCache:         make(map[string][]Value),
+		jsonChildRelTypeCache: make(map[string]jsonRelationshipTypeLookup),
 	}
 }
 
@@ -2704,7 +2711,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		} else if ambiguous {
 			return Null, vm.ambiguousOverloadError(callee, args)
 		}
-		if method, ok := vm.firstRegisteredMethodByArity(dispatchClass, callee, len(args)); ok {
+		if method, ok := vm.firstRegisteredMethodByArity(dispatchClass, callee, args); ok {
 			accessMethod := vm.dispatchAccessMethod(vm.currentClass, method, callee, args)
 			if err := vm.checkMemberAccess(accessMethod.ClassName, accessMethod.Access, accessMethod.Name, accessMethod.Modifiers); err != nil {
 				return Null, err
@@ -6819,6 +6826,7 @@ func (vm *VM) clearMetadataCaches() {
 	vm.globalDescribeCache = nil
 	vm.describeTabsCache = nil
 	vm.childRelCache = make(map[string][]Value)
+	vm.jsonChildRelTypeCache = make(map[string]jsonRelationshipTypeLookup)
 	vm.metadataCacheStamp = ""
 	vm.clearCustomDataCache()
 }
@@ -9359,7 +9367,7 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 		}
 		if vm.testContext != nil && job.Kind == "BatchApex" {
 			vm.recordAsyncJob(job, "Completed", "")
-			vm.recordAsyncJob(job, "Queued", "")
+			vm.markCompletedBatchJobVisiblePendingInTest(job)
 		} else if job.Kind == "ScheduledApex" {
 			vm.recordAsyncJob(job, "Queued", "")
 		} else {
@@ -10097,6 +10105,20 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 	} else {
 		delete(record.Fields, "CompletedDate")
 	}
+	object.Records[record.ID] = record
+	vm.Org.Objects["AsyncApexJob"] = object
+}
+
+func (vm *VM) markCompletedBatchJobVisiblePendingInTest(job AsyncJob) {
+	if vm.Org == nil {
+		return
+	}
+	object := vm.Org.Objects["AsyncApexJob"]
+	record := object.Records[storage.ID(job.ID)]
+	if record.ID == "" {
+		return
+	}
+	record.Fields["Status"] = storage.StringValue("Queued")
 	object.Records[record.ID] = record
 	vm.Org.Objects["AsyncApexJob"] = object
 }
@@ -11025,14 +11047,15 @@ func (vm *VM) parentRelationshipNameForField(definition storage.ObjectDefinition
 }
 
 func (vm *VM) parentRelationshipNameForReferenceField(definition storage.ObjectDefinition, field storage.Field) string {
+	describeName := vm.describeFieldName(field.APIName)
+	if strings.HasSuffix(describeName, "__c") {
+		return strings.TrimSuffix(describeName, "__c") + "__r"
+	}
 	if parentRelationship, ok := vm.parentRelationshipNameForField(definition, field.APIName); ok {
 		return parentRelationship
 	}
-	if strings.HasSuffix(field.APIName, "__c") {
-		return strings.TrimSuffix(field.APIName, "__c") + "__r"
-	}
-	if strings.HasSuffix(field.APIName, "Id") && len(field.APIName) > len("Id") {
-		return strings.TrimSuffix(field.APIName, "Id")
+	if strings.HasSuffix(describeName, "Id") && len(describeName) > len("Id") {
+		return strings.TrimSuffix(describeName, "Id")
 	}
 	return field.RelationshipName
 }
@@ -18454,7 +18477,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 				if key == "attributes" {
 					continue
 				}
-				if !jsonAllowedFieldContains(allowed, key) {
+				if !jsonAllowedFieldContains(allowed, key) && !vm.jsonStrictAllowsRelationshipPayload(typeName, key, fields[key]) {
 					return Null, newExceptionError("JSONException", fmt.Sprintf("JSON.deserializeStrict found unknown field %q for %s", key, typeName))
 				}
 			}
@@ -18492,8 +18515,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			if err != nil {
 				return Null, err
 			}
-			obj.Fields[key] = value
-			vm.populateParentRelationshipLookup(&obj, typeName, key, value)
+			vm.setSObjectParentRelationshipValue(&obj, typeName, key, value)
 			continue
 		}
 		if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
@@ -18501,7 +18523,9 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			if err != nil {
 				return Null, err
 			}
-			obj.Fields[vm.resolveSObjectFieldName(typeName, key)] = value
+			fieldName := vm.resolveSObjectFieldName(typeName, key)
+			obj.Fields[fieldName] = value
+			markExplicitSObjectField(&obj, fieldName)
 			continue
 		}
 		if field, owner, ok := vm.lookupField(typeName, key); ok && field.Type != "" {
@@ -18657,8 +18681,7 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 			if err != nil {
 				return Null, err
 			}
-			obj.Fields[key] = value
-			vm.populateParentRelationshipLookup(&obj, typeName, key, value)
+			vm.setSObjectParentRelationshipValue(&obj, typeName, key, value)
 			continue
 		}
 		if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
@@ -18706,22 +18729,63 @@ func jsonSObjectEmptyCanonicalIDShadowedByLowercase(fields map[string]any, key s
 	return lower != nil
 }
 
-func (vm *VM) populateParentRelationshipLookup(obj *Value, typeName, relationshipName string, relationship Value) {
-	if obj == nil || relationship.Kind != ValueObject {
+func (vm *VM) setSObjectParentRelationshipValue(obj *Value, typeName, relationshipName string, relationship Value) {
+	if obj == nil || obj.Kind != ValueObject {
 		return
 	}
-	field, ok := vm.parentRelationshipField(typeName, relationshipName)
-	if !ok || strings.TrimSpace(field) == "" {
-		return
+	if obj.Fields == nil {
+		obj.Fields = make(map[string]Value)
 	}
-	if _, _, exists := objectFieldValue(*obj, field); exists {
-		return
+	obj.Fields[relationshipName] = relationship
+	for _, alias := range vm.parentRelationshipValueAliases(typeName, relationshipName) {
+		obj.Fields[alias] = relationship
 	}
-	_, id, ok := objectFieldValue(relationship, "Id")
-	if !ok || id.Kind == ValueNull {
-		return
+}
+
+func (vm *VM) parentRelationshipValueAliases(typeName, relationshipName string) []string {
+	aliases := []string{relationshipName}
+	if vm != nil && vm.Org != nil && vm.Org.Namespace != "" {
+		aliases = append(aliases, storage.StripNamespaceToken(vm.Org.Namespace, relationshipName))
+		aliases = append(aliases, storage.NamespaceTokenName(vm.Org.Namespace, relationshipName))
 	}
-	obj.Fields[field] = id
+	if vm == nil || vm.Org == nil {
+		return uniqueNonEmptyStrings(aliases)
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, typeName)
+	if !ok {
+		return uniqueNonEmptyStrings(aliases)
+	}
+	object := vm.Org.Objects[objectName]
+	for _, relation := range object.Definition.Relations {
+		if !vmRelationshipNameMatches(vm.Org.Namespace, relation.ParentRelationship, relationshipName) &&
+			!vmParentRelationshipNameMatches(vm.Org.Namespace, relation.Field, relationshipName) {
+			continue
+		}
+		aliases = append(aliases, relation.ParentRelationship)
+		if vm.Org.Namespace != "" {
+			aliases = append(aliases, storage.StripNamespaceToken(vm.Org.Namespace, relation.ParentRelationship))
+			aliases = append(aliases, storage.NamespaceTokenName(vm.Org.Namespace, relation.ParentRelationship))
+		}
+	}
+	return uniqueNonEmptyStrings(aliases)
+}
+
+func uniqueNonEmptyStrings(values []string) []string {
+	out := make([]string, 0, len(values))
+	seen := make(map[string]bool, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+		key := strings.ToLower(value)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, value)
+	}
+	return out
 }
 
 func (vm *VM) applyDottedSObjectJSONField(obj *Value, typeName, key string, item any, strict bool) (bool, error) {
@@ -18887,9 +18951,20 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 	if vm.Org == nil {
 		return "", false
 	}
+	cacheKey := strings.ToLower(strings.TrimSpace(typeName)) + "\x00" + strings.ToLower(strings.TrimSpace(relationshipName))
+	if cached, ok := vm.jsonChildRelTypeCache[cacheKey]; ok {
+		return cached.Type, cached.OK
+	}
+	cacheResult := func(typeName string, ok bool) (string, bool) {
+		if vm.jsonChildRelTypeCache == nil {
+			vm.jsonChildRelTypeCache = make(map[string]jsonRelationshipTypeLookup)
+		}
+		vm.jsonChildRelTypeCache[cacheKey] = jsonRelationshipTypeLookup{Type: typeName, OK: ok}
+		return typeName, ok
+	}
 	parentObject, ok := storage.ResolveObjectName(*vm.Org, typeName)
 	if !ok {
-		return "", false
+		return cacheResult("", false)
 	}
 	for childName, childState := range vm.Org.Objects {
 		childRelationshipName := ""
@@ -18902,7 +18977,7 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 				childRelationshipName = derivedVMChildRelationshipName(childState.Definition)
 			}
 			if vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, relationshipName) {
-				return "List<" + childName + ">", true
+				return cacheResult("List<"+childName+">", true)
 			}
 		}
 	}
@@ -18916,12 +18991,12 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 			}
 			for _, childRelationshipName := range vmFieldChildRelationshipNames(childState.Definition, field) {
 				if vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, relationshipName) {
-					return "List<" + childName + ">", true
+					return cacheResult("List<"+childName+">", true)
 				}
 			}
 		}
 	}
-	return "", false
+	return cacheResult("", false)
 }
 
 func vmFieldChildRelationshipNames(definition storage.ObjectDefinition, field storage.Field) []string {
@@ -19269,12 +19344,37 @@ func jsonRawKind(raw any) string {
 
 func (vm *VM) jsonAllowedFields(typeName string) map[string]struct{} {
 	allowed := map[string]struct{}{
-		"Id": struct{}{},
+		"Id":               {},
+		"CreatedDate":      {},
+		"CreatedById":      {},
+		"LastModifiedDate": {},
+		"LastModifiedById": {},
+		"SystemModstamp":   {},
+		"OwnerId":          {},
+		"IsDeleted":        {},
 	}
 	if vm.Org != nil {
-		if object, ok := vm.Org.Objects[typeName]; ok {
+		if objectName, ok := storage.ResolveObjectName(*vm.Org, typeName); ok {
+			object := vm.Org.Objects[objectName]
 			for name := range object.Definition.Fields {
 				allowed[name] = struct{}{}
+				if vm.Org.Namespace != "" {
+					allowed[storage.StripNamespaceToken(vm.Org.Namespace, name)] = struct{}{}
+					allowed[storage.NamespaceTokenName(vm.Org.Namespace, name)] = struct{}{}
+				}
+			}
+			for _, relation := range object.Definition.Relations {
+				for _, name := range []string{relation.ParentRelationship, relation.ChildRelationship} {
+					name = strings.TrimSpace(name)
+					if name == "" {
+						continue
+					}
+					allowed[name] = struct{}{}
+					if vm.Org.Namespace != "" {
+						allowed[storage.StripNamespaceToken(vm.Org.Namespace, name)] = struct{}{}
+						allowed[storage.NamespaceTokenName(vm.Org.Namespace, name)] = struct{}{}
+					}
+				}
 			}
 		}
 	}
@@ -19299,6 +19399,19 @@ func jsonAllowedFieldContains(allowed map[string]struct{}, key string) bool {
 		if strings.EqualFold(candidate, key) {
 			return true
 		}
+	}
+	return false
+}
+
+func (vm *VM) jsonStrictAllowsRelationshipPayload(typeName, key string, item any) bool {
+	if !vm.isSObjectLikeType(typeName) {
+		return false
+	}
+	if strings.HasSuffix(strings.ToLower(key), "__r") {
+		return true
+	}
+	if _, ok := jsonQueryResultRecords(item); ok {
+		return strings.HasSuffix(strings.ToLower(key), "s")
 	}
 	return false
 }
@@ -20869,9 +20982,11 @@ func (vm *VM) lookup(name string) (Value, error) {
 			return Value{Kind: ValueObject, Type: "Type", Text: "System." + exceptionName}, nil
 		}
 		if resolved, ok := vm.resolveClassName(className); ok {
-			if vm != nil && vm.Org != nil && vm.Org.Namespace != "" &&
-				!strings.Contains(resolved, ".") && !isBuiltinTypeName(resolved) {
-				return Value{Kind: ValueObject, Type: "Type", Text: vm.Org.Namespace + "." + resolved}, nil
+			if class, ok := vm.lookupClass(resolved); ok && strings.TrimSpace(class.Namespace) != "" {
+				prefix := class.Namespace + "."
+				if !strings.HasPrefix(strings.ToLower(resolved), strings.ToLower(prefix)) {
+					return Value{Kind: ValueObject, Type: "Type", Text: prefix + resolved}, nil
+				}
 			}
 			return Value{Kind: ValueObject, Type: "Type", Text: resolved}, nil
 		}
@@ -22103,6 +22218,10 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			}
 		}
 		if ok && value.Kind == ValueNull {
+			if isExplicitSObjectField(current, canonicalPart) {
+				current = value
+				continue
+			}
 			if definition, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists && fieldDef.Type == storage.FieldReference {
 				if lookupID, hasLookupID := vm.lookupIDFromLoadedParentRelationship(current, definition, canonicalPart); hasLookupID {
 					value = lookupID
@@ -22506,6 +22625,20 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	}
 	value = plainNull(value)
 	current := root
+	type pathParent struct {
+		object Value
+		field  string
+	}
+	parents := make([]pathParent, 0, len(parts)-1)
+	propagate := func(updated Value) {
+		for i := len(parents) - 1; i >= 0; i-- {
+			parent := parents[i]
+			if parent.object.Kind == ValueObject && parent.object.Fields != nil {
+				parent.object.Fields[parent.field] = updated
+			}
+			updated = parent.object
+		}
+	}
 	for i, part := range parts[:len(parts)-1] {
 		if current.Kind == ValueNull {
 			return newNullDereferenceError("while assigning " + strings.Join(parts[:i+1], "."))
@@ -22525,22 +22658,34 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 				if next.Kind != ValueObject {
 					return fmt.Errorf("unknown field %q on %s", part, current.Type)
 				}
+				actualName := field.Name
+				if actualName == "" {
+					actualName = part
+				}
+				parents = append(parents, pathParent{object: current, field: actualName})
 				current = next
 				continue
 			}
 		}
-		next, ok := current.Fields[vm.resolveSObjectFieldName(current.Type, part)]
+		actualName := vm.resolveSObjectFieldName(current.Type, part)
+		next, ok := current.Fields[actualName]
 		if !ok {
-			_, next, ok = objectFieldValue(current, part)
+			var resolved string
+			resolved, next, ok = objectFieldValue(current, part)
+			if ok {
+				actualName = resolved
+			}
 		}
 		if !ok || next.Kind != ValueObject {
 			if generated, generatedOK := vm.generatedPlatformInstanceField(current, part); generatedOK && generated.Kind == ValueObject {
 				current.Fields[part] = generated
+				parents = append(parents, pathParent{object: current, field: part})
 				current = generated
 				continue
 			}
 			return fmt.Errorf("unknown field %q on %s", part, current.Type)
 		}
+		parents = append(parents, pathParent{object: current, field: actualName})
 		current = next
 	}
 	fieldName := parts[len(parts)-1]
@@ -22558,6 +22703,15 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		if actualName == "" {
 			actualName = fieldName
 		}
+		if vm.Org != nil {
+			if objectName, ok := storage.ResolveObjectName(*vm.Org, current.Type); ok {
+				definition := vm.Org.Objects[objectName].Definition
+				if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, actualName); ok {
+					actualName = canonical
+					value = coerceSObjectFieldRuntimeValue(value, definition.Fields[canonical])
+				}
+			}
+		}
 		if err := vm.checkMemberAccess(owner, def.Access, owner+"."+actualName, def.Modifiers); err != nil {
 			return err
 		}
@@ -22571,6 +22725,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			if vm.activeSetters[key] > 0 {
 				setExplicitSObjectField(&current, actualName, value)
 				markQueriedSObjectField(&current, actualName)
+				propagate(current)
 				return nil
 			}
 			vm.activeSetters[key]++
@@ -22585,6 +22740,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		}
 		setExplicitSObjectField(&current, actualName, value)
 		markQueriedSObjectField(&current, actualName)
+		propagate(current)
 		return nil
 	}
 	if def, _, ok := vm.generatedPlatformField(current.Type, fieldName, false); ok {
@@ -22597,6 +22753,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			return fmt.Errorf("%s.%s: %w", current.Type, fieldName, err)
 		}
 		current.Fields[actualName] = coerced
+		propagate(current)
 		return nil
 	}
 	resolvedField := vm.resolveSObjectFieldName(current.Type, fieldName)
@@ -22617,6 +22774,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	}
 	setExplicitSObjectField(&current, resolvedField, value)
 	markQueriedSObjectField(&current, resolvedField)
+	propagate(current)
 	return nil
 }
 
@@ -24129,9 +24287,6 @@ func pageReferenceURL(page Value) Value {
 	raw, ok := page.Fields["url"]
 	if !ok || raw.Kind != ValueString {
 		return String("")
-	}
-	if token, ok := page.Fields["__pageToken"]; ok && token.Kind == ValueBool && token.Bool {
-		return raw
 	}
 	params, ok := page.Fields["parameters"]
 	if !ok || params.Kind != ValueMap || params.Equal(pageReferenceParameters(raw.Text)) {
@@ -27308,18 +27463,18 @@ func (vm *VM) matchRegisteredInstanceMethodByArity(name string, arity int) (Meth
 	}
 }
 
-func (vm *VM) firstRegisteredMethodByArity(typeName, method string, arity int) (Method, bool) {
-	return vm.firstRegisteredMethodByAritySeen(typeName, method, arity, make(map[string]bool))
+func (vm *VM) firstRegisteredMethodByArity(typeName, method string, args []Value) (Method, bool) {
+	return vm.firstRegisteredMethodByAritySeen(typeName, method, args, make(map[string]bool))
 }
 
-func (vm *VM) firstRegisteredMethodByAritySeen(typeName, method string, arity int, seen map[string]bool) (Method, bool) {
+func (vm *VM) firstRegisteredMethodByAritySeen(typeName, method string, args []Value, seen map[string]bool) (Method, bool) {
 	var interfaces []string
 	for typeName != "" {
 		if seen[typeName] {
 			return Method{}, false
 		}
 		seen[typeName] = true
-		if target, ok := vm.firstInstanceMethodByArity(typeName+"."+method, arity); ok {
+		if target, ok := vm.firstInstanceMethodByArity(typeName+"."+method, len(args)); ok && vm.methodApplicable(target, args) {
 			return target, true
 		}
 		class, ok := vm.lookupClass(typeName)
@@ -27330,7 +27485,7 @@ func (vm *VM) firstRegisteredMethodByAritySeen(typeName, method string, arity in
 		typeName = class.SuperClass
 	}
 	for _, iface := range interfaces {
-		if target, ok := vm.firstRegisteredMethodByAritySeen(iface, method, arity, seen); ok {
+		if target, ok := vm.firstRegisteredMethodByAritySeen(iface, method, args, seen); ok {
 			return target, true
 		}
 	}
@@ -28217,7 +28372,7 @@ func (vm *VM) collectionElementsAssignable(paramType string, value Value) bool {
 	paramBase := collectionBase(paramType)
 	switch value.Kind {
 	case ValueList:
-		if paramBase != "List" {
+		if paramBase != "List" && paramBase != "Iterable" {
 			return false
 		}
 		if len(value.List) == 0 {
@@ -28230,7 +28385,7 @@ func (vm *VM) collectionElementsAssignable(paramType string, value Value) bool {
 		}
 		return true
 	case ValueSet:
-		if paramBase != "Set" {
+		if paramBase != "Set" && paramBase != "Iterable" {
 			return false
 		}
 		if len(value.Set) == 0 {
@@ -29401,15 +29556,15 @@ func (vm *VM) mapFromSObjectList(mapType string, list Value) (Value, error) {
 		}
 		keyValue, ok := mapConstructorKeyValue(keyType, coerced)
 		if !ok || keyValue.Kind == ValueNull {
-			return Null, fmt.Errorf("Map constructor from SObject list requires non-null %s key at index %d", keyType, i)
+			return Null, fmt.Errorf("Map constructor from SObject list requires non-null %s at index %d", keyType, i)
 		}
 		key, err := vm.coerceAssignable(keyType, keyValue)
 		if err != nil {
 			return Null, fmt.Errorf("Map constructor from SObject list: key at index %d: %w", i, err)
 		}
 		encodedKey := mapKey(key)
-		if _, exists := out.Map[encodedKey]; exists {
-			return Null, fmt.Errorf("Map constructor from SObject list found duplicate Id at index %d", i)
+		if _, exists := out.Map[encodedKey]; !exists {
+			out.MapOrder = append(out.MapOrder, encodedKey)
 		}
 		out.Map[encodedKey] = coerced
 		out.MapKeys[encodedKey] = key
@@ -34214,7 +34369,56 @@ func (vm *VM) frameworkQualifiedMethodKeysEqual(left, right Value) (bool, bool) 
 	}
 	_, leftArgs, _ := objectFieldValue(left, "methodArgTypes")
 	_, rightArgs, _ := objectFieldValue(right, "methodArgTypes")
-	return leftArgs.Equal(rightArgs), true
+	return vm.frameworkMethodArgTypesEqual(leftArgs, rightArgs), true
+}
+
+func (vm *VM) frameworkMethodArgTypesEqual(left, right Value) bool {
+	if left.Equal(right) {
+		return true
+	}
+	if left.Kind != ValueList || right.Kind != ValueList || len(left.List) != len(right.List) {
+		return false
+	}
+	for i := range left.List {
+		if !vm.frameworkMethodArgTypeEqual(left.List[i], right.List[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func (vm *VM) frameworkMethodArgTypeEqual(left, right Value) bool {
+	leftText := canonicalTypeValueText(typeValueText(left))
+	rightText := canonicalTypeValueText(typeValueText(right))
+	if leftText == "" || rightText == "" {
+		return left.Equal(right)
+	}
+	if strings.EqualFold(leftText, rightText) {
+		return true
+	}
+	leftBase := collectionBase(leftText)
+	rightBase := collectionBase(rightText)
+	if leftBase != "" && strings.EqualFold(leftBase, rightBase) {
+		leftElement, leftOK := collectionElementType(leftText)
+		rightElement, rightOK := collectionElementType(rightText)
+		if leftOK && rightOK {
+			return vm.frameworkSObjectTypeMatch(leftElement, rightElement)
+		}
+	}
+	return vm.frameworkSObjectTypeMatch(leftText, rightText)
+}
+
+func (vm *VM) frameworkSObjectTypeMatch(left, right string) bool {
+	if strings.EqualFold(left, right) {
+		return true
+	}
+	if strings.EqualFold(left, "SObject") && vm.isSObjectLikeType(right) {
+		return true
+	}
+	if strings.EqualFold(right, "SObject") && vm.isSObjectLikeType(left) {
+		return true
+	}
+	return false
 }
 
 func mapContainsOnlySObjectFieldTokens(receiver Value) bool {
@@ -34754,7 +34958,7 @@ func findValueByRef(value Value, ref uint64, seen map[uint64]bool) (Value, bool)
 func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(receiver.Type, method, args)
 	if ambiguous {
-		target, ok = vm.firstRegisteredMethodByArity(receiver.Type, method, len(args))
+		target, ok = vm.firstRegisteredMethodByArity(receiver.Type, method, args)
 		if !ok {
 			return Null, true, vm.ambiguousOverloadError(receiver.Type+"."+method, args)
 		}
@@ -34769,10 +34973,15 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 		}
 	}
 	if !ok {
+		if vm.isSObjectLikeType(receiver.Type) && sObjectMemberCallShapeSupported(method, args) {
+			if value, handled, err := vm.callSObjectMember(receiver, method, args); handled || err != nil {
+				return value, true, err
+			}
+		}
 		if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
-		return Null, true, unsupportedCallError("Test.createStub dynamic method " + receiver.Type + "." + method + " without local target method metadata")
+		return vm.callStubProxyDynamicMember(receiver, method, args, result)
 	}
 	provider := vm.currentStubProvider(receiver)
 	paramTypes := make([]Value, 0, len(target.Params))
@@ -34831,6 +35040,56 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 		return Null, true, fmt.Errorf("stubbed %s.%s return: %w", receiver.Type, method, err)
 	}
 	return coerced, true, nil
+}
+
+func sObjectMemberCallShapeSupported(method string, args []Value) bool {
+	method = canonicalStdlibMemberName(method,
+		"addError", "hasErrors", "getErrors", "get", "put", "putSObject", "isSet", "clear",
+		"getPopulatedFieldsAsMap", "getSObjectType", "getSObjects", "getQuickActionName",
+		"getAll", "getInstance", "getOrgDefaults", "getValues", "recalculateFormulas",
+	)
+	switch method {
+	case "addError":
+		return len(args) >= 1 && len(args) <= 3
+	case "hasErrors", "getErrors", "clear", "getPopulatedFieldsAsMap", "getSObjectType", "getAll", "getOrgDefaults", "getValues", "recalculateFormulas":
+		return len(args) == 0
+	case "get", "isSet", "getSObjects", "getQuickActionName", "getInstance":
+		return len(args) == 1
+	case "put", "putSObject":
+		return len(args) == 2
+	default:
+		return false
+	}
+}
+
+func (vm *VM) callStubProxyDynamicMember(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	provider := vm.currentStubProvider(receiver)
+	paramTypes := make([]Value, 0, len(args))
+	paramNames := make([]Value, 0, len(args))
+	for i, arg := range args {
+		paramTypes = append(paramTypes, platformScalar("Type", valueTypeName(arg)))
+		paramNames = append(paramNames, String(fmt.Sprintf("arg%d", i)))
+	}
+	metadataArgs := []Value{
+		receiver,
+		String(apexMethodMemberName(method)),
+		platformScalar("Type", "Object"),
+		{Kind: ValueList, Type: "List<Type>", List: paramTypes},
+		{Kind: ValueList, Type: "List<String>", List: paramNames},
+		{Kind: ValueList, Type: "List<Object>", List: append([]Value(nil), args...)},
+	}
+	handler, ok, ambiguous := vm.resolveInstanceMethodForArgs(provider.Type, "handleMethodCall", metadataArgs)
+	if ambiguous {
+		return Null, true, vm.ambiguousOverloadError(provider.Type+".handleMethodCall", metadataArgs)
+	}
+	if !ok {
+		return Null, true, fmt.Errorf("StubProvider %s must implement handleMethodCall", provider.Type)
+	}
+	value, err := vm.callMethodWithReceiver(handler, provider, metadataArgs, result)
+	if err != nil {
+		return Null, true, err
+	}
+	return value, true, nil
 }
 
 func (vm *VM) frameworkStubInvocationCount(receiver Value, target Method) int {
@@ -35522,12 +35781,27 @@ func (vm *VM) frameworkMatchesAllArgs(methodArg Value, targetMatchers Value) (bo
 		if !handled || err != nil {
 			return false, handled, err
 		}
+		if !matched && frameworkMatcherMatchesSObjectListElement(matcher, arg) {
+			matched = true
+		}
 		if !matched {
 			return false, true, nil
 		}
 		targetMatchers.List[i] = matcher
 	}
 	return true, true, nil
+}
+
+func frameworkMatcherMatchesSObjectListElement(matcher Value, arg Value) bool {
+	if frameworkMatcherName(matcher.Type) != "anysobject" || arg.Kind != ValueList || len(arg.List) == 0 {
+		return false
+	}
+	for _, item := range arg.List {
+		if item.Kind != ValueObject || !sObjectValueType(item.Type) {
+			return false
+		}
+	}
+	return true
 }
 
 func (vm *VM) frameworkMatcherCountMessage(argValues, targetMatchers Value) string {
@@ -37655,6 +37929,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			}
 		}
 		if value.Kind == ValueNull {
+			if isExplicitSObjectField(receiver, field) {
+				return value, true, nil
+			}
 			if definition, fieldDef, exists := vm.sObjectFieldDefinition(receiver.Type, field); exists && fieldDef.Type == storage.FieldReference {
 				if value, ok := vm.lookupIDFromLoadedParentRelationship(receiver, definition, field); ok {
 					return value, true, nil
@@ -38524,6 +38801,9 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 		children.Type = relationshipType
 		return children, true
 	}
+	if isExplicitSObjectField(receiver, field) {
+		return Null, true
+	}
 	if value, ok := vm.parentRelationshipValueFromLookupID(receiver, field); ok {
 		return value, true
 	}
@@ -38576,6 +38856,9 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 		return value, true
 	}
 	if fieldDef.Type == storage.FieldReference {
+		if isExplicitSObjectField(receiver, field) {
+			return Null, true
+		}
 		if value, ok := vm.lookupIDFromLoadedParentRelationship(receiver, definition, field); ok {
 			return value, true
 		}

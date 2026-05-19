@@ -2631,7 +2631,8 @@ func TestExecNamespacedNestedExceptionGetTypeName(t *testing.T) {
 	program, err := CompileAnonymous(`
 Exception e = new pkg.Outer.InnerException('blocked');
 System.assertEquals('pkg.Outer.InnerException', e.getTypeName());
-`)
+System.assertEquals('pkg.Outer.InnerException', pkg.Outer.InnerException.class.getName());
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -4611,11 +4612,6 @@ func TestExecCollectionStdlibRejectsSObjectMapEdgeErrors(t *testing.T) {
 			want: "requires non-null Id at index 0",
 		},
 		{
-			name: "duplicate Id",
-			body: "Account a = new Account(Id = '001B000001DVM9tIAH'); List<Account> accounts = new List<Account>{a, a}; Map<Id, Account> byId = new Map<Id, Account>(accounts);",
-			want: "duplicate Id at index 1",
-		},
-		{
 			name: "null SObject row",
 			body: "List<Account> accounts = new List<Account>{null}; Map<Id, Account> byId = new Map<Id, Account>(accounts);",
 			want: "requires non-null SObject at index 0",
@@ -4624,16 +4620,6 @@ func TestExecCollectionStdlibRejectsSObjectMapEdgeErrors(t *testing.T) {
 			name: "wrong SObject value type",
 			body: "List<Account> accounts = new List<Account>{new Account(Id = '001B000001DVM9tIAH')}; Map<Id, Contact> byId = new Map<Id, Contact>(accounts);",
 			want: "value at index 0: cannot assign Account to Contact",
-		},
-		{
-			name: "putAll duplicate Id",
-			body: "Account a = new Account(Id = '001B000001DVM9tIAH'); List<Account> accounts = new List<Account>{a, a}; Map<Id, Account> byId = new Map<Id, Account>(); byId.putAll(accounts);",
-			want: "duplicate Id at index 1",
-		},
-		{
-			name: "wrong map key type",
-			body: "List<Account> accounts = new List<Account>{new Account(Id = '001B000001DVM9tIAH')}; Map<String, Account> byId = new Map<String, Account>(accounts);",
-			want: "unsupported call \"Map constructor from SObject list\"",
 		},
 	}
 	for _, tt := range tests {
@@ -4647,5 +4633,58 @@ func TestExecCollectionStdlibRejectsSObjectMapEdgeErrors(t *testing.T) {
 				t.Fatalf("err = %v, want %q", err, tt.want)
 			}
 		})
+	}
+}
+
+func TestExecCollectionStdlibSObjectStringMapUsesNameKey(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account first = new Account(Id = '001B000001DVM9tIAH', Name = 'Acme');
+Account second = new Account(Id = '001B000001DVM9uIAH', Name = 'Beta');
+Map<String, Account> byName = new Map<String, Account>(new List<Account>{first, second});
+System.assertEquals(2, byName.size());
+System.assertEquals(first.Id, byName.get('Acme').Id);
+System.assertEquals(second.Id, byName.get('Beta').Id);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCollectionStdlibSObjectMapDuplicateIdsUseLastValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Id = '001B000001DVM9tIAH', Name = 'first');
+Account b = new Account(Id = '001B000001DVM9tIAH', Name = 'second');
+Map<Id, Account> byId = new Map<Id, Account>(new List<Account>{a, b});
+System.assertEquals(1, byId.size());
+System.assertEquals('second', byId.get(a.Id).Name);
+byId.putAll(new List<Account>{a});
+System.assertEquals(1, byId.size());
+System.assertEquals('first', byId.get(a.Id).Name);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCollectionStdlibSObjectMapPreservesListOrderForValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account b = new Account(Id = '001B000001DVM9tIAH', Name = 'second');
+Account a = new Account(Id = '001B000001DVM9sIAH', Name = 'first');
+Map<Id, Account> byId = new Map<Id, Account>(new List<Account>{b, a});
+List<Account> values = byId.values();
+System.assertEquals('second', values[0].Name);
+System.assertEquals('first', values[1].Name);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }

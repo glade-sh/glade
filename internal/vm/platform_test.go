@@ -6131,6 +6131,69 @@ Test.stopTest();
 	}
 }
 
+func TestExecBatchEnqueuedFromFinishDoesNotSeePreviousBatchAsRunning(t *testing.T) {
+	firstStart, err := CompileAnonymous(`return new List<SObject>();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstFinish, err := CompileAnonymous(`Database.executeBatch(new SecondBatch(), 200);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondStart, err := CompileAnonymous(`
+List<AsyncApexJob> running = [
+	SELECT Id
+	FROM AsyncApexJob
+	WHERE CompletedDate = null
+	AND JobType = 'BatchApex'
+	AND Id != :context.getJobId()
+];
+System.assertEquals(0, running.size());
+return new List<SObject>{ new Account(Name = 'scope') };
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondExecute, err := CompileAnonymous(`insert new Account(Name = 'second batch ran');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+Database.executeBatch(new FirstBatch(), 200);
+Test.stopTest();
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'second batch ran'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "FirstBatch",
+		Methods: map[string]Method{
+			"start":  {Name: "FirstBatch.start", ClassName: "FirstBatch", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: firstStart},
+			"finish": {Name: "FirstBatch.finish", ClassName: "FirstBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: firstFinish},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "SecondBatch",
+		Methods: map[string]Method{
+			"start":   {Name: "SecondBatch.start", ClassName: "SecondBatch", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: secondStart},
+			"execute": {Name: "SecondBatch.execute", ClassName: "SecondBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: secondExecute},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecAbortJobUnknownRecordsAreTypedUnsupported(t *testing.T) {
 	cases := []struct {
 		name string

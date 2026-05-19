@@ -455,6 +455,79 @@ func TestExecutePartialCustomObjectAllowsSyntheticRelationshipFields(t *testing.
 	}
 }
 
+func TestExecuteProjectsNestedParentRelationshipFields(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Membership__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Membership__c",
+			Fields: map[string]storage.Field{
+				"Id":         {APIName: "Id", Type: storage.FieldID},
+				"Pending__c": {APIName: "Pending__c", Type: storage.FieldBoolean},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {
+				ID:     "a01000000000001",
+				Object: "Membership__c",
+				Fields: map[string]storage.Value{
+					"Pending__c": storage.BooleanValue(true),
+				},
+			},
+		},
+	}
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Id":            {APIName: "Id", Type: storage.FieldID},
+				"Membership__c": {APIName: "Membership__c", Type: storage.FieldReference, ReferenceTo: []string{"Membership__c"}},
+			},
+			Relations: []storage.Relationship{
+				{Field: "Membership__c", ParentObjects: []string{"Membership__c"}, ParentRelationship: "Membership__r"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {
+				ID:     "001000000000001",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"Membership__c": storage.IDValue("a01000000000001"),
+				},
+			},
+		},
+	}
+	org.Objects["Affiliation__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Affiliation__c",
+			Fields: map[string]storage.Field{
+				"Id":               {APIName: "Id", Type: storage.FieldID},
+				"ParentAccount__c": {APIName: "ParentAccount__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+			Relations: []storage.Relationship{
+				{Field: "ParentAccount__c", ParentObjects: []string{"Account"}, ParentRelationship: "ParentAccount__r"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a02000000000001": {
+				ID:     "a02000000000001",
+				Object: "Affiliation__c",
+				Fields: map[string]storage.Value{
+					"ParentAccount__c": storage.IDValue("001000000000001"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT ParentAccount__r.Membership__r.Pending__c FROM Affiliation__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := result.Records[0].Fields["ParentAccount__r.Membership__r.Pending__c"]
+	if got.Kind != storage.ValueBoolean || !got.Boolean {
+		t.Fatalf("nested relationship field = %#v", got)
+	}
+}
+
 func TestExecuteCustomMetadataRelationshipProjection(t *testing.T) {
 	org := customMetadataRelationshipOrg()
 
