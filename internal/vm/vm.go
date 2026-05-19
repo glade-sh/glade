@@ -8828,7 +8828,7 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 		return Null, fmt.Errorf("Queueable chaining limit exceeded")
 	}
 	vm.markAsyncChainEnqueued()
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: args[0]}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: cloneValue(args[0])}
 	if vm.currentAsyncKind == "Queueable" {
 		job.QueueableDepth = vm.currentQueueableDepth + 1
 		job.QueueableMaxDepth = vm.currentQueueableMaxDepth
@@ -8876,7 +8876,7 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 	if err := vm.incrementLimit("batchJobs", 1); err != nil {
 		return Null, err
 	}
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: args[0], BatchSize: batchSize}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: cloneValue(args[0]), BatchSize: batchSize}
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
@@ -8898,7 +8898,7 @@ func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
 	if err := vm.incrementLimit("scheduledJobs", 1); err != nil {
 		return Null, err
 	}
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "ScheduledApex", Object: args[2], Name: args[0].Text, Cron: args[1].Text}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "ScheduledApex", Object: cloneValue(args[2]), Name: args[0].Text, Cron: args[1].Text}
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	vm.recordCronTrigger(job, "Waiting")
@@ -8946,7 +8946,7 @@ func (vm *VM) scheduleBatch(args []Value, result *Result) (Value, error) {
 	if err := vm.incrementLimit("scheduledJobs", 1); err != nil {
 		return Null, err
 	}
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "ScheduledBatch", Object: args[0], BatchSize: batchSize, Name: args[1].Text, Cron: fmt.Sprintf("after %d minutes", args[2].Int)}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "ScheduledBatch", Object: cloneValue(args[0]), BatchSize: batchSize, Name: args[1].Text, Cron: fmt.Sprintf("after %d minutes", args[2].Int)}
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	vm.recordCronTrigger(job, "Waiting")
@@ -22214,6 +22214,9 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 					continue
 				}
 			}
+			if value.Kind == ValueList && vm.sObjectChildRelationshipField(current.Type, canonicalPart) {
+				value = shallowCopyListValue(value)
+			}
 			if addressValue, hasAddress := vm.sObjectCompoundAddressValue(current, canonicalPart); hasAddress {
 				value = addressValue
 				current = value
@@ -22276,6 +22279,20 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 		current = value
 	}
 	return current, nil
+}
+
+func shallowCopyListValue(value Value) Value {
+	out := value
+	out.Ref = newValueRef()
+	if value.List != nil {
+		out.List = append([]Value(nil), value.List...)
+	}
+	return out
+}
+
+func (vm *VM) sObjectChildRelationshipField(typeName, field string) bool {
+	_, ok := vm.jsonSObjectChildRelationshipType(typeName, field)
+	return ok
 }
 
 func (vm *VM) defaultNullSObjectAccessValue(typeName string) (Value, bool) {

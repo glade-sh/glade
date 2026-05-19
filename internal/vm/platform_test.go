@@ -5294,6 +5294,74 @@ System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'batch finish'].size
 	}
 }
 
+func TestExecAsyncJobsDoNotMutateCallerInstances(t *testing.T) {
+	batchStart, err := CompileAnonymous(`return new List<SObject>{ new Account(Name = 'scope') };`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	batchExecute, err := CompileAnonymous(`
+this.Marker = 'batch async';
+insert new Account(Name = this.Marker);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queueExecute, err := CompileAnonymous(`
+this.Marker = 'queue async';
+insert new Account(Name = this.Marker);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+BatchWorker batch = new BatchWorker();
+batch.Marker = 'caller batch';
+QueueWorker queueable = new QueueWorker();
+queueable.Marker = 'caller queue';
+Test.startTest();
+Database.executeBatch(batch, 1);
+System.enqueueJob(queueable);
+Test.stopTest();
+System.assertEquals('caller batch', batch.Marker);
+System.assertEquals('caller queue', queueable.Marker);
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'batch async'].size());
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'queue async'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "BatchWorker",
+		Fields: map[string]Field{
+			"Marker": {Name: "Marker", Type: "String"},
+		},
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: batchStart},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: batchExecute},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "QueueWorker",
+		Fields: map[string]Field{
+			"Marker": {Name: "Marker", Type: "String"},
+		},
+		Methods: map[string]Method{
+			"execute": {Name: "QueueWorker.execute", ClassName: "QueueWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: queueExecute},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStopTestDrainsOnlyJobsEnqueuedAfterStartTest(t *testing.T) {
 	preStartProgram, err := CompileAnonymous(`insert new Account(Name = 'pre-start async');`)
 	if err != nil {

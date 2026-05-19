@@ -1814,6 +1814,28 @@ System.runAs(u) {
 	}
 }
 
+func TestExecChildRelationshipPropertyReturnsShallowListCopy(t *testing.T) {
+	program, err := CompileAnonymous(`
+String payload = '{"attributes":{"type":"Account"},"Name":"Acme","Contacts":{"totalSize":1,"done":true,"records":[{"attributes":{"type":"Contact"},"LastName":"Original"}]}}';
+Account account = (Account)JSON.deserialize(payload, Account.class);
+List<Contact> contacts = account.Contacts;
+contacts.add(new Contact(LastName = 'Added'));
+System.assertEquals(1, account.Contacts.size());
+contacts[0].LastName = 'Changed';
+System.assertEquals('Changed', account.Contacts[0].LastName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDateDefaultFormulaCoercesToDate(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');
