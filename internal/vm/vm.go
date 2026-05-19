@@ -4400,6 +4400,16 @@ platformStaticCall:
 		return Object("ConnectApi.FollowingPage"), nil
 	case "ConnectApi.Communities.getCommunity":
 		return vm.connectAPICommunity(args)
+	case "ConnectApi.NamedCredentials.getNamedCredentials":
+		return vm.connectAPINamedCredentials(args)
+	case "ConnectApi.UserProfiles.getUserProfile":
+		return vm.connectAPIUserProfile(args)
+	case "ConnectApi.UserProfiles.getPhoto":
+		return vm.connectAPIUserPhoto(args)
+	case "ConnectApi.UserProfiles.setPhoto":
+		return vm.connectAPIUserSetPhoto(args)
+	case "ConnectApi.UserProfiles.deletePhoto":
+		return vm.connectAPIUserDeletePhoto(args)
 	case "Metadata.Operations.enqueueDeployment":
 		return vm.metadataEnqueueDeployment(args, result)
 	case "Metadata.Operations.checkDeployStatus":
@@ -6822,6 +6832,46 @@ func (vm *VM) connectAPICommunity(args []Value) (Value, error) {
 	community.Fields["urlPathPrefix"] = String(prefix)
 	community.Fields["siteUrl"] = String(strings.TrimRight(vm.salesforceBaseURL(), "/") + "/" + prefix)
 	return community, nil
+}
+
+func (vm *VM) connectAPINamedCredentials(args []Value) (Value, error) {
+	if len(args) != 0 {
+		return Null, fmt.Errorf("ConnectApi.NamedCredentials.getNamedCredentials expects 0 arguments")
+	}
+	return Object("ConnectApi.NamedCredentialList"), nil
+}
+
+func (vm *VM) connectAPIUserProfile(args []Value) (Value, error) {
+	if len(args) != 2 {
+		return Null, fmt.Errorf("ConnectApi.UserProfiles.getUserProfile expects 2 arguments")
+	}
+	profile := Object("ConnectApi.UserProfile")
+	profile.Fields["id"] = String(scalarText(args[1]))
+	profile.Fields["communityId"] = String(scalarText(args[0]))
+	return profile, nil
+}
+
+func (vm *VM) connectAPIUserPhoto(args []Value) (Value, error) {
+	if len(args) != 2 {
+		return Null, fmt.Errorf("ConnectApi.UserProfiles.getPhoto expects 2 arguments")
+	}
+	photo := Object("ConnectApi.Photo")
+	photo.Fields["id"] = String(scalarText(args[1]))
+	return photo, nil
+}
+
+func (vm *VM) connectAPIUserSetPhoto(args []Value) (Value, error) {
+	if len(args) != 4 {
+		return Null, fmt.Errorf("ConnectApi.UserProfiles.setPhoto expects 4 arguments")
+	}
+	return Null, nil
+}
+
+func (vm *VM) connectAPIUserDeletePhoto(args []Value) (Value, error) {
+	if len(args) != 2 {
+		return Null, fmt.Errorf("ConnectApi.UserProfiles.deletePhoto expects 2 arguments")
+	}
+	return Null, nil
 }
 
 func scalarText(value Value) string {

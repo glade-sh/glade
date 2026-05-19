@@ -6673,6 +6673,8 @@ System.assertEquals(0, Network.loadAllPackageDefaultNetworkWorkspaceMetricSettin
 	System.assertEquals('https://local.oaer.example/local', ConnectApi.Communities.getCommunity(Network.getNetworkId()).siteUrl);
 	System.assertNotEquals(null, ConnectApi.UserProfiles.getUserProfile(Network.getNetworkId(), UserInfo.getUserId()));
 	System.assertNotEquals(null, ConnectApi.UserProfiles.getPhoto(Network.getNetworkId(), UserInfo.getUserId()));
+	ConnectApi.UserProfiles.setPhoto(Network.getNetworkId(), UserInfo.getUserId(), '069000000000001', null);
+	ConnectApi.UserProfiles.deletePhoto(Network.getNetworkId(), UserInfo.getUserId());
 ConnectApi.UserSettings userSettings = ConnectApi.Organization.getSettings().userSettings;
 System.assertEquals('005-local-user', userSettings.userId);
 ConnectApi.TimeZone zone = userSettings.timeZone;
