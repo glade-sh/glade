@@ -58,15 +58,16 @@ type LocalRunReport struct {
 
 // Config drives a single probe run.
 type Config struct {
-	ProbeDir       string // path to probes/sfdx
-	OrgAlias       string // sfdx target org alias or username
-	OutputDir      string // where to write gap-report.json
-	ProbeIDs       []string
-	Features       []string // org shape features (e.g. MultiCurrency)
-	Tier           string
-	GoldenCache    string
-	UseGoldenCache bool
-	GoldenExecutor string // rest (default) or sf
+	ProbeDir        string // path to probes/sfdx
+	OrgAlias        string // sfdx target org alias or username
+	OutputDir       string // where to write gap-report.json
+	ProbeIDs        []string
+	Features        []string // org shape features (e.g. MultiCurrency)
+	Tier            string
+	GoldenCache     string
+	UseGoldenCache  bool
+	GoldenExecutor  string // rest (default) or sf
+	CaptureDebugLog bool
 }
 
 // Timing records elapsed time for a top-level probe runner phase.
@@ -82,6 +83,15 @@ type ProbeTiming struct {
 	ProbeIDs   []string `json:"probeIds,omitempty"`
 	Mode       string   `json:"mode"`
 	DurationMS int64    `json:"durationMs"`
+}
+
+// ProbeDebugLog stores raw org debug log content captured for probe execution.
+type ProbeDebugLog struct {
+	Phase    string   `json:"phase"`
+	ProbeID  string   `json:"probeId,omitempty"`
+	ProbeIDs []string `json:"probeIds,omitempty"`
+	Mode     string   `json:"mode"`
+	Log      string   `json:"log"`
 }
 
 // RunMeta records the shape inputs used by a probe run.

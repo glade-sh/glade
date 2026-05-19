@@ -17,8 +17,10 @@ import (
 
 // RestExecutor captures golden responses using Tooling API executeAnonymous.
 type RestExecutor struct {
-	OrgAlias string
-	OrgShape map[string]interface{}
+	OrgAlias        string
+	OrgShape        map[string]interface{}
+	CaptureDebugLog bool
+	DebugLogs       []ProbeDebugLog
 
 	instanceURL string
 	accessToken string
@@ -108,13 +110,14 @@ func (r *RestExecutor) CaptureGolden(probeDir string, probeIDs []string) (map[st
 				}
 				results[result.ProbeID] = result
 			} else {
-				batchResults, err := r.runProbeBatch(batch)
+				batchResults, logText, err := r.runProbeBatch(batch)
 				if err != nil {
 					return nil, nil, fmt.Errorf("probe batch %v: %w", batch, err)
 				}
 				for _, result := range batchResults {
 					results[result.ProbeID] = result
 				}
+				r.appendDebugLog(ProbeDebugLog{Phase: "golden", ProbeIDs: append([]string(nil), batch...), Mode: "batch", Log: logText})
 			}
 			timings = append(timings, ProbeTiming{Phase: "golden", ProbeIDs: append([]string(nil), batch...), Mode: "batch", DurationMS: time.Since(start).Milliseconds()})
 			i += len(batch)
@@ -158,13 +161,14 @@ func (r *RestExecutor) CaptureGolden(probeDir string, probeIDs []string) (map[st
 			}
 			results[result.ProbeID] = result
 		} else {
-			batchResults, err := r.runProbeBatchIsolated(batch)
+			batchResults, logText, err := r.runProbeBatchIsolated(batch)
 			if err != nil {
 				return nil, nil, fmt.Errorf("probe isolated batch %v: %w", batch, err)
 			}
 			for _, result := range batchResults {
 				results[result.ProbeID] = result
 			}
+			r.appendDebugLog(ProbeDebugLog{Phase: "golden", ProbeIDs: append([]string(nil), batch...), Mode: "isolated_batch", Log: logText})
 		}
 		timings = append(timings, ProbeTiming{Phase: "golden", ProbeIDs: append([]string(nil), batch...), Mode: "isolated_batch", DurationMS: time.Since(start).Milliseconds()})
 		i += len(batch)
@@ -249,39 +253,49 @@ func (r *RestExecutor) runProbe(probeID string) (ProbeResult, error) {
 	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
 		return ProbeResult{}, fmt.Errorf("parse probe result %q: %w", jsonStr, err)
 	}
+	if r.CaptureDebugLog && logs != "" {
+		r.appendDebugLog(ProbeDebugLog{Phase: "golden", ProbeID: probeID, Mode: "single", Log: logs})
+	}
 	return result, nil
 }
 
-func (r *RestExecutor) runProbeBatch(probeIDs []string) ([]ProbeResult, error) {
+func (r *RestExecutor) runProbeBatch(probeIDs []string) ([]ProbeResult, string, error) {
 	code := fmt.Sprintf("System.assert(false, 'OAER_PROBE:' + ProbeRunner.runMany(new List<String>{%s}));", apexStringList(probeIDs))
 	jsonStr, logs, err := r.runProbeCodeJSON(code)
 	if err != nil {
 		if strings.Contains(logs, "daily usage limit of apex log headers") {
-			return nil, fmt.Errorf("assertion batch unexpectedly requested debug logs: %w", err)
+			return nil, logs, fmt.Errorf("assertion batch unexpectedly requested debug logs: %w", err)
 		}
-		return nil, err
+		return nil, logs, err
 	}
 	var results []ProbeResult
 	if err := json.Unmarshal([]byte(jsonStr), &results); err != nil {
-		return nil, fmt.Errorf("parse probe batch result %q: %w", jsonStr, err)
+		return nil, logs, fmt.Errorf("parse probe batch result %q: %w", jsonStr, err)
 	}
-	return results, nil
+	return results, logs, nil
 }
 
-func (r *RestExecutor) runProbeBatchIsolated(probeIDs []string) ([]ProbeResult, error) {
+func (r *RestExecutor) runProbeBatchIsolated(probeIDs []string) ([]ProbeResult, string, error) {
 	code := fmt.Sprintf("System.assert(false, 'OAER_PROBE:' + ProbeRunner.runManyIsolated(new List<String>{%s}));", apexStringList(probeIDs))
 	jsonStr, logs, err := r.runProbeCodeJSON(code)
 	if err != nil {
 		if strings.Contains(logs, "daily usage limit of apex log headers") {
-			return nil, fmt.Errorf("assertion isolated batch unexpectedly requested debug logs: %w", err)
+			return nil, logs, fmt.Errorf("assertion isolated batch unexpectedly requested debug logs: %w", err)
 		}
-		return nil, err
+		return nil, logs, err
 	}
 	var results []ProbeResult
 	if err := json.Unmarshal([]byte(jsonStr), &results); err != nil {
-		return nil, fmt.Errorf("parse isolated probe batch result %q: %w", jsonStr, err)
+		return nil, logs, fmt.Errorf("parse isolated probe batch result %q: %w", jsonStr, err)
 	}
-	return results, nil
+	return results, logs, nil
+}
+
+func (r *RestExecutor) appendDebugLog(entry ProbeDebugLog) {
+	if !r.CaptureDebugLog || strings.TrimSpace(entry.Log) == "" {
+		return
+	}
+	r.DebugLogs = append(r.DebugLogs, entry)
 }
 
 func (r *RestExecutor) runProbeCodeJSON(code string) (string, string, error) {

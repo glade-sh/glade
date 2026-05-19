@@ -27,6 +27,10 @@ func WriteGoldenCache(cache GoldenCache, path string) error {
 	return writeIndentedJSON(path, cache)
 }
 
+func WriteDebugLogs(logs []ProbeDebugLog, path string) error {
+	return writeIndentedJSON(path, logs)
+}
+
 func ReadGoldenCache(path string) (GoldenCache, error) {
 	var cache GoldenCache
 	f, err := os.Open(path)

@@ -20,8 +20,10 @@ import (
 // SFDXExecutor captures golden responses by running probes against a real
 // Salesforce org via the sfdx/sf CLI.
 type SFDXExecutor struct {
-	OrgAlias string
-	OrgShape map[string]interface{}
+	OrgAlias        string
+	OrgShape        map[string]interface{}
+	CaptureDebugLog bool
+	DebugLogs       []ProbeDebugLog
 }
 
 const maxGoldenBatchSize = 20
@@ -123,13 +125,14 @@ func (s *SFDXExecutor) CaptureGolden(probeDir string, probeIDs []string) (map[st
 				}
 				results[result.ProbeID] = result
 			} else {
-				batchResults, err := s.runProbeBatch(probeDir, batch, timeout)
+				batchResults, logText, err := s.runProbeBatch(probeDir, batch, timeout)
 				if err != nil {
 					return nil, nil, fmt.Errorf("probe batch %v: %w", batch, err)
 				}
 				for _, result := range batchResults {
 					results[result.ProbeID] = result
 				}
+				s.appendDebugLog(ProbeDebugLog{Phase: "golden", ProbeIDs: append([]string(nil), batch...), Mode: "batch", Log: logText})
 			}
 			timings = append(timings, ProbeTiming{Phase: "golden", ProbeIDs: append([]string(nil), batch...), Mode: "batch", DurationMS: time.Since(start).Milliseconds()})
 			i += len(batch)
@@ -173,13 +176,14 @@ func (s *SFDXExecutor) CaptureGolden(probeDir string, probeIDs []string) (map[st
 			}
 			results[result.ProbeID] = result
 		} else {
-			batchResults, err := s.runProbeBatchIsolated(probeDir, batch, timeout)
+			batchResults, logText, err := s.runProbeBatchIsolated(probeDir, batch, timeout)
 			if err != nil {
 				return nil, nil, fmt.Errorf("probe isolated batch %v: %w", batch, err)
 			}
 			for _, result := range batchResults {
 				results[result.ProbeID] = result
 			}
+			s.appendDebugLog(ProbeDebugLog{Phase: "golden", ProbeIDs: append([]string(nil), batch...), Mode: "isolated_batch", Log: logText})
 		}
 		timings = append(timings, ProbeTiming{Phase: "golden", ProbeIDs: append([]string(nil), batch...), Mode: "isolated_batch", DurationMS: time.Since(start).Milliseconds()})
 		i += len(batch)
@@ -232,43 +236,53 @@ func (s *SFDXExecutor) runProbe(probeDir, probeID string) (ProbeResult, error) {
 	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
 		return ProbeResult{}, fmt.Errorf("parse probe result %q: %w", jsonStr, err)
 	}
+	if s.CaptureDebugLog && logs != "" {
+		s.appendDebugLog(ProbeDebugLog{Phase: "golden", ProbeID: probeID, Mode: "single", Log: logs})
+	}
 	return result, nil
 }
 
-func (s *SFDXExecutor) runProbeBatch(probeDir string, probeIDs []string, timeout time.Duration) ([]ProbeResult, error) {
+func (s *SFDXExecutor) runProbeBatch(probeDir string, probeIDs []string, timeout time.Duration) ([]ProbeResult, string, error) {
 	code := fmt.Sprintf("System.assert(false, 'OAER_PROBE:' + ProbeRunner.runMany(new List<String>{%s}));", apexStringList(probeIDs))
 	jsonStr, logs, err := s.runProbeCodeJSON(probeDir, code, timeout)
 	if err != nil {
 		if strings.Contains(logs, "daily usage limit of apex log headers") {
-			return nil, fmt.Errorf("assertion batch unexpectedly requested debug logs: %w", err)
+			return nil, logs, fmt.Errorf("assertion batch unexpectedly requested debug logs: %w", err)
 		}
 		if err != nil {
-			return nil, err
+			return nil, logs, err
 		}
 	}
 	var results []ProbeResult
 	if err := json.Unmarshal([]byte(jsonStr), &results); err != nil {
-		return nil, fmt.Errorf("parse probe batch result %q: %w", jsonStr, err)
+		return nil, logs, fmt.Errorf("parse probe batch result %q: %w", jsonStr, err)
 	}
-	return results, nil
+	return results, logs, nil
 }
 
-func (s *SFDXExecutor) runProbeBatchIsolated(probeDir string, probeIDs []string, timeout time.Duration) ([]ProbeResult, error) {
+func (s *SFDXExecutor) runProbeBatchIsolated(probeDir string, probeIDs []string, timeout time.Duration) ([]ProbeResult, string, error) {
 	code := fmt.Sprintf("System.assert(false, 'OAER_PROBE:' + ProbeRunner.runManyIsolated(new List<String>{%s}));", apexStringList(probeIDs))
 	jsonStr, logs, err := s.runProbeCodeJSON(probeDir, code, timeout)
 	if err != nil {
 		if strings.Contains(logs, "daily usage limit of apex log headers") {
-			return nil, fmt.Errorf("assertion isolated batch unexpectedly requested debug logs: %w", err)
+			return nil, logs, fmt.Errorf("assertion isolated batch unexpectedly requested debug logs: %w", err)
 		}
 		if err != nil {
-			return nil, err
+			return nil, logs, err
 		}
 	}
 	var results []ProbeResult
 	if err := json.Unmarshal([]byte(jsonStr), &results); err != nil {
-		return nil, fmt.Errorf("parse isolated probe batch result %q: %w", jsonStr, err)
+		return nil, logs, fmt.Errorf("parse isolated probe batch result %q: %w", jsonStr, err)
 	}
-	return results, nil
+	return results, logs, nil
+}
+
+func (s *SFDXExecutor) appendDebugLog(entry ProbeDebugLog) {
+	if !s.CaptureDebugLog || strings.TrimSpace(entry.Log) == "" {
+		return
+	}
+	s.DebugLogs = append(s.DebugLogs, entry)
 }
 
 func apexStringList(values []string) string {

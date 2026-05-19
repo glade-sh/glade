@@ -108,6 +108,7 @@ func runProbeOrg(ctx context.Context, args []string, w io.Writer) error {
 	executor := "rest"
 	goldenCache := ""
 	useGoldenCache := false
+	captureDebugLog := false
 	var probeIDs []string
 
 	for i := 0; i < len(args); i++ {
@@ -151,6 +152,8 @@ func runProbeOrg(ctx context.Context, args []string, w io.Writer) error {
 			i++
 		case "--use-golden-cache":
 			useGoldenCache = true
+		case "--capture-debug-log":
+			captureDebugLog = true
 		default:
 			if strings.HasPrefix(arg, "-") {
 				return fmt.Errorf("unknown flag %q", arg)
@@ -171,15 +174,16 @@ func runProbeOrg(ctx context.Context, args []string, w io.Writer) error {
 	}
 
 	cfg := probe.Config{
-		ProbeDir:       probeDir,
-		OrgAlias:       orgAlias,
-		OutputDir:      outputDir,
-		ProbeIDs:       probeIDs,
-		Features:       features,
-		Tier:           tier,
-		GoldenExecutor: executor,
-		GoldenCache:    goldenCache,
-		UseGoldenCache: useGoldenCache,
+		ProbeDir:        probeDir,
+		OrgAlias:        orgAlias,
+		OutputDir:       outputDir,
+		ProbeIDs:        probeIDs,
+		Features:        features,
+		Tier:            tier,
+		GoldenExecutor:  executor,
+		GoldenCache:     goldenCache,
+		UseGoldenCache:  useGoldenCache,
+		CaptureDebugLog: captureDebugLog,
 	}
 
 	report, err := probe.Run(cfg)
