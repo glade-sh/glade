@@ -3753,13 +3753,6 @@ func (e *Engine) evaluateSummaryFieldBatch(relation summaryRelation, parentIDs m
 		fkFieldName = relation.fkFieldName
 	}
 
-	type summaryAccumulator struct {
-		count int64
-		sum   float64
-		has   bool
-		min   float64
-		max   float64
-	}
 	acc := make(map[storage.ID]summaryAccumulator, len(parentIDs))
 	for parentID := range parentIDs {
 		acc[parentID] = summaryAccumulator{}
@@ -3780,8 +3773,8 @@ func (e *Engine) evaluateSummaryFieldBatch(relation summaryRelation, parentIDs m
 		if !summaryFiltersMatch(e.Org, childState.Definition, child, relation.field.SummaryFilterItems) {
 			continue
 		}
-		current := acc[parentID]
 		if operation == "count" && childFieldName == "" {
+			current := acc[parentID]
 			current.count++
 			acc[parentID] = current
 			continue
@@ -3790,50 +3783,20 @@ func (e *Engine) evaluateSummaryFieldBatch(relation summaryRelation, parentIDs m
 		if !ok {
 			continue
 		}
-		number, ok := summaryNumericValue(value)
-		if !ok {
+		current := acc[parentID]
+		if !current.add(operation, value) {
 			continue
-		}
-		current.count++
-		current.sum += number
-		if !current.has {
-			current.has = true
-			current.min = number
-			current.max = number
-		} else {
-			if number < current.min {
-				current.min = number
-			}
-			if number > current.max {
-				current.max = number
-			}
 		}
 		acc[parentID] = current
 	}
 
 	values := make(map[storage.ID]storage.Value, len(parentIDs))
 	for parentID := range parentIDs {
-		current := acc[parentID]
-		switch operation {
-		case "count":
-			values[parentID] = storage.IntegerValue(current.count)
-		case "", "sum":
-			values[parentID] = storage.DecimalValue(strconv.FormatFloat(current.sum, 'f', -1, 64))
-		case "max":
-			if !current.has {
-				values[parentID] = storage.NullValue()
-			} else {
-				values[parentID] = storage.DecimalValue(strconv.FormatFloat(current.max, 'f', -1, 64))
-			}
-		case "min":
-			if !current.has {
-				values[parentID] = storage.NullValue()
-			} else {
-				values[parentID] = storage.DecimalValue(strconv.FormatFloat(current.min, 'f', -1, 64))
-			}
-		default:
+		value, ok := acc[parentID].value(operation)
+		if !ok {
 			return nil, false
 		}
+		values[parentID] = value
 	}
 	return values, true
 }
@@ -3911,8 +3874,7 @@ func (e *Engine) evaluateSummaryField(parent storage.Record, field storage.Field
 	if !ok {
 		return storage.Value{}, false
 	}
-	values := make([]float64, 0)
-	count := int64(0)
+	acc := summaryAccumulator{}
 	for _, child := range childState.Records {
 		if child.System.IsDeleted || !storage.IDsEqual(idFromStorageValue(child.Fields[fkFieldName]), parent.ID) {
 			continue
@@ -3921,56 +3883,16 @@ func (e *Engine) evaluateSummaryField(parent storage.Record, field storage.Field
 			continue
 		}
 		if operation == "count" && childFieldName == "" {
-			count++
+			acc.count++
 			continue
 		}
 		value, ok := summaryRecordFieldValue(e.Org, childState.Definition, child, childFieldName)
 		if !ok {
 			continue
 		}
-		number, ok := summaryNumericValue(value)
-		if !ok {
-			continue
-		}
-		values = append(values, number)
+		acc.add(operation, value)
 	}
-	switch operation {
-	case "count":
-		if childFieldName == "" {
-			return storage.IntegerValue(count), true
-		}
-		return storage.IntegerValue(int64(len(values))), true
-	case "", "sum":
-		total := 0.0
-		for _, value := range values {
-			total += value
-		}
-		return storage.DecimalValue(strconv.FormatFloat(total, 'f', -1, 64)), true
-	case "max":
-		if len(values) == 0 {
-			return storage.NullValue(), true
-		}
-		max := values[0]
-		for _, value := range values[1:] {
-			if value > max {
-				max = value
-			}
-		}
-		return storage.DecimalValue(strconv.FormatFloat(max, 'f', -1, 64)), true
-	case "min":
-		if len(values) == 0 {
-			return storage.NullValue(), true
-		}
-		min := values[0]
-		for _, value := range values[1:] {
-			if value < min {
-				min = value
-			}
-		}
-		return storage.DecimalValue(strconv.FormatFloat(min, 'f', -1, 64)), true
-	default:
-		return storage.Value{}, false
-	}
+	return acc.value(operation)
 }
 
 func splitSummaryQualifiedField(name string) (string, string) {
@@ -4045,6 +3967,115 @@ func summaryValueMatchesText(value storage.Value, text string) bool {
 		return strings.EqualFold(text, "null") || text == ""
 	default:
 		return false
+	}
+}
+
+type summaryAccumulator struct {
+	count int64
+	sum   float64
+	has   bool
+	min   storage.Value
+	max   storage.Value
+}
+
+func (a *summaryAccumulator) add(operation string, value storage.Value) bool {
+	switch operation {
+	case "count":
+		a.count++
+		return true
+	case "", "sum":
+		number, ok := summaryNumericValue(value)
+		if !ok {
+			return false
+		}
+		a.count++
+		a.sum += number
+		return true
+	case "max", "min":
+		if _, ok := summaryComparableValue(value); !ok {
+			return false
+		}
+		a.count++
+		if !a.has {
+			a.has = true
+			a.min = value
+			a.max = value
+			return true
+		}
+		if cmp, ok := compareSummaryValues(value, a.min); ok && cmp < 0 {
+			a.min = value
+		}
+		if cmp, ok := compareSummaryValues(value, a.max); ok && cmp > 0 {
+			a.max = value
+		}
+		return true
+	default:
+		return false
+	}
+}
+
+func (a summaryAccumulator) value(operation string) (storage.Value, bool) {
+	switch operation {
+	case "count":
+		return storage.IntegerValue(a.count), true
+	case "", "sum":
+		return storage.DecimalValue(strconv.FormatFloat(a.sum, 'f', -1, 64)), true
+	case "max":
+		if !a.has {
+			return storage.NullValue(), true
+		}
+		return a.max, true
+	case "min":
+		if !a.has {
+			return storage.NullValue(), true
+		}
+		return a.min, true
+	default:
+		return storage.Value{}, false
+	}
+}
+
+type summaryComparable struct {
+	number  float64
+	text    string
+	numeric bool
+}
+
+func compareSummaryValues(left, right storage.Value) (int, bool) {
+	leftValue, ok := summaryComparableValue(left)
+	if !ok {
+		return 0, false
+	}
+	rightValue, ok := summaryComparableValue(right)
+	if !ok || leftValue.numeric != rightValue.numeric {
+		return 0, false
+	}
+	if leftValue.numeric {
+		switch {
+		case leftValue.number < rightValue.number:
+			return -1, true
+		case leftValue.number > rightValue.number:
+			return 1, true
+		default:
+			return 0, true
+		}
+	}
+	return strings.Compare(leftValue.text, rightValue.text), true
+}
+
+func summaryComparableValue(value storage.Value) (summaryComparable, bool) {
+	if number, ok := summaryNumericValue(value); ok {
+		return summaryComparable{number: number, numeric: true}, true
+	}
+	switch value.Kind {
+	case storage.ValueDate, storage.ValueDateTime:
+		text := strings.TrimSpace(value.String)
+		if text == "" {
+			return summaryComparable{}, false
+		}
+		return summaryComparable{text: text}, true
+	default:
+		return summaryComparable{}, false
 	}
 }
 

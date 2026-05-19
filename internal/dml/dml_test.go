@@ -396,6 +396,7 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 			KeyPrefix: "a00",
 			Fields: map[string]storage.Field{
 				"Name":            {APIName: "Name", Type: storage.FieldString},
+				"MaxDate__c":      {APIName: "MaxDate__c", Type: storage.FieldSummary, SummarizedField: "Child__c.AdjustedOn__c", SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "max"},
 				"MaxTerm__c":      {APIName: "MaxTerm__c", Type: storage.FieldSummary, SummarizedField: "Child__c.Term__c", SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "max"},
 				"Count__c":        {APIName: "Count__c", Type: storage.FieldSummary, SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "count"},
 				"Paid__c":         {APIName: "Paid__c", Type: storage.FieldDecimal},
@@ -412,6 +413,7 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 			KeyPrefix: "a01",
 			Fields: map[string]storage.Field{
 				"Parent__c":        {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
+				"AdjustedOn__c":    {APIName: "AdjustedOn__c", Type: storage.FieldDate},
 				"Term__c":          {APIName: "Term__c", Type: storage.FieldDecimal},
 				"Amount__c":        {APIName: "Amount__c", Type: storage.FieldDecimal},
 				"FormulaAmount__c": {APIName: "FormulaAmount__c", Type: storage.FieldDecimal, Formula: "Amount__c * 2"},
@@ -425,13 +427,16 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 		t.Fatalf("parent insert = %#v", parent[0])
 	}
 	children := engine.Insert([]storage.Record{
-		{Object: "Child__c", Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID), "Term__c": storage.DecimalValue("1"), "Amount__c": storage.DecimalValue("5")}},
-		{Object: "Child__c", Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID + "AAA"), "Term__c": storage.DecimalValue("12"), "Amount__c": storage.DecimalValue("7")}},
+		{Object: "Child__c", Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID), "AdjustedOn__c": storage.DateValue("2026-01-01"), "Term__c": storage.DecimalValue("1"), "Amount__c": storage.DecimalValue("5")}},
+		{Object: "Child__c", Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID + "AAA"), "AdjustedOn__c": storage.DateValue("2026-01-02"), "Term__c": storage.DecimalValue("12"), "Amount__c": storage.DecimalValue("7")}},
 	})
 	if !children[0].Success || !children[1].Success {
 		t.Fatalf("child insert = %#v", children)
 	}
 	stored := org.Objects["Parent__c"].Records[parent[0].ID]
+	if got := stored.Fields["MaxDate__c"].String; got != "2026-01-02" {
+		t.Fatalf("date max summary after insert = %q", got)
+	}
 	if got := stored.Fields["MaxTerm__c"].Decimal; got != "12" {
 		t.Fatalf("max summary after insert = %q", got)
 	}
@@ -473,11 +478,14 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 	if got := stored.Fields["FormulaTotal__c"].Decimal; got != "26" {
 		t.Fatalf("formula sum summary after formula-backed update = %q", got)
 	}
-	update := engine.Update([]storage.Record{{ID: children[1].ID, Object: "Child__c", Fields: map[string]storage.Value{"Term__c": storage.DecimalValue("2"), "Amount__c": storage.DecimalValue("3")}}})
+	update := engine.Update([]storage.Record{{ID: children[1].ID, Object: "Child__c", Fields: map[string]storage.Value{"AdjustedOn__c": storage.DateValue("2025-12-31"), "Term__c": storage.DecimalValue("2"), "Amount__c": storage.DecimalValue("3")}}})
 	if !update[0].Success {
 		t.Fatalf("child update = %#v", update[0])
 	}
 	stored = org.Objects["Parent__c"].Records[parent[0].ID]
+	if got := stored.Fields["MaxDate__c"].String; got != "2026-01-01" {
+		t.Fatalf("date max summary after update = %q", got)
+	}
 	if got := stored.Fields["MaxTerm__c"].Decimal; got != "2" {
 		t.Fatalf("max summary after update = %q", got)
 	}
@@ -495,6 +503,9 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 		t.Fatalf("child delete = %#v", deleteResult[0])
 	}
 	stored = org.Objects["Parent__c"].Records[parent[0].ID]
+	if got := stored.Fields["MaxDate__c"].String; got != "2026-01-01" {
+		t.Fatalf("date max summary after delete = %q", got)
+	}
 	if got := stored.Fields["MaxTerm__c"].Decimal; got != "1" {
 		t.Fatalf("max summary after delete = %q", got)
 	}
