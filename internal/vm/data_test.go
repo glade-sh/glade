@@ -7199,6 +7199,20 @@ System.assertNotEquals(first, clone);
 	}
 }
 
+func TestSObjectEqualityTreatsCustomRelationshipShellsAsSObjects(t *testing.T) {
+	left := Object("Line__c")
+	left.Fields["Product__r"] = Object("Product__r")
+	right := Object("Line__c")
+	right.Fields["Product__r"] = Object("Product__r")
+	if !left.Equal(right) {
+		t.Fatalf("expected matching custom relationship shells to be equal")
+	}
+	right.Fields["Product__r"].Fields["Name"] = String("Changed")
+	if left.Equal(right) {
+		t.Fatalf("expected relationship shell field differences to be unequal")
+	}
+}
+
 func TestExecNamespacedCustomObjectAndFieldAliases(t *testing.T) {
 	program, err := CompileAnonymous(`
 pkg__Thing__c item = new pkg__Thing__c(pkg__Name__c = 'Acme');

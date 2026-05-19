@@ -311,7 +311,8 @@ func sObjectValueType(typeName string) bool {
 	key := strings.ToLower(typeName)
 	return strings.EqualFold(typeName, "sObject") || strings.EqualFold(typeName, "AggregateResult") ||
 		isCommonSObjectTypeName(typeName) || strings.HasSuffix(key, "__c") ||
-		strings.HasSuffix(key, "__e") || strings.HasSuffix(key, "__mdt")
+		strings.HasSuffix(key, "__e") || strings.HasSuffix(key, "__mdt") ||
+		strings.HasSuffix(key, "__r")
 }
 
 func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
