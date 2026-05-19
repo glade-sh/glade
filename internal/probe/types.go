@@ -44,6 +44,7 @@ type GapReport struct {
 	Unsupported  int                    `json:"unsupported"`
 	Behavioral   int                    `json:"behavioral"`
 	Entries      []GapEntry             `json:"entries"`
+	TraceDiffs   []TraceDiff            `json:"traceDiffs,omitempty"`
 	Timings      []Timing               `json:"timings,omitempty"`
 	ProbeTimings []ProbeTiming          `json:"probeTimings,omitempty"`
 	OrgShape     map[string]interface{} `json:"orgShape,omitempty"`
@@ -83,6 +84,16 @@ type ProbeTiming struct {
 	ProbeIDs   []string `json:"probeIds,omitempty"`
 	Mode       string   `json:"mode"`
 	DurationMS int64    `json:"durationMs"`
+}
+
+type TraceDiff struct {
+	ProbeID         string `json:"probeId"`
+	Classification  string `json:"classification"`
+	OrgSignature    string `json:"orgSignature,omitempty"`
+	LocalSignature  string `json:"localSignature,omitempty"`
+	OrgEventCount   int    `json:"orgEventCount,omitempty"`
+	LocalEventCount int    `json:"localEventCount,omitempty"`
+	Details         string `json:"details,omitempty"`
 }
 
 // ProbeDebugLog stores raw org debug log content captured for probe execution.

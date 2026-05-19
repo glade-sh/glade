@@ -49,3 +49,33 @@ func TestSummarizeDebugLogsStableSignature(t *testing.T) {
 		t.Fatalf("signature mismatch: %q vs %q", a, b)
 	}
 }
+
+func TestCompareTraceSummariesClassification(t *testing.T) {
+	probeIDs := []string{"a", "b", "c"}
+	org := []DebugLogSummary{
+		{ProbeID: "a", Events: map[string]int{"METHOD_ENTRY": 1}, Signature: "org-a"},
+		{ProbeID: "b", Events: map[string]int{"METHOD_ENTRY": 1}, Signature: "same"},
+		{ProbeID: "c", Events: map[string]int{"METHOD_ENTRY": 1}, Signature: "org-c"},
+	}
+	local := []DebugLogSummary{
+		{ProbeID: "a", Events: map[string]int{"METHOD_ENTRY": 2}, Signature: "local-a"},
+		{ProbeID: "b", Events: map[string]int{"METHOD_ENTRY": 1}, Signature: "diff-order"},
+	}
+	diffs := CompareTraceSummaries(probeIDs, org, local)
+	if len(diffs) != 3 {
+		t.Fatalf("len(diffs)=%d want 3", len(diffs))
+	}
+	classByID := map[string]string{}
+	for _, diff := range diffs {
+		classByID[diff.ProbeID] = diff.Classification
+	}
+	if classByID["a"] != "trace_event_delta" {
+		t.Fatalf("a classification=%q", classByID["a"])
+	}
+	if classByID["b"] != "trace_signature_mismatch" {
+		t.Fatalf("b classification=%q", classByID["b"])
+	}
+	if classByID["c"] != "trace_missing" {
+		t.Fatalf("c classification=%q", classByID["c"])
+	}
+}
