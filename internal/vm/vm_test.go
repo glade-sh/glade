@@ -3059,6 +3059,7 @@ Map<String, Schema.SObjectField> fields = Invoice__c.SObjectType.getDescribe().f
 Schema.DescribeFieldResult amount = fields.get('TotalPayment__c').getDescribe();
 System.assertEquals('TotalPayment__c', amount.getName());
 System.assertEquals(0, amount.getReferenceTo().size());
+System.assertEquals(null, fields.get('InexistentField__c'));
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -3095,6 +3096,49 @@ System.assertEquals(null, new Account(CreatedById = UserInfo.getUserId()).getSOb
 	org := storage.NewOrgState()
 	storage.EnsureStandardObject(&org, "Account")
 	storage.EnsureStandardObject(&org, "User")
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecContactChildRelationshipSubqueriesStaySeparated(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme');
+insert account;
+Contact contact = new Contact(LastName = 'Provider', AccountId = account.Id);
+insert contact;
+Event eventRecord = new Event(Subject = 'license', WhoId = contact.Id);
+insert eventRecord;
+Case caseRecord = new Case(Subject = 'case', ContactId = contact.Id);
+insert caseRecord;
+Asset assetRecord = new Asset(Name = 'asset', ContactId = contact.Id);
+insert assetRecord;
+
+Contact queried = [
+  SELECT Id,
+    (SELECT Id, Subject FROM Events),
+    (SELECT Id, Subject FROM Cases),
+    (SELECT Id, Name FROM Assets)
+  FROM Contact
+  WHERE Id = :contact.Id
+  LIMIT 1
+];
+System.assertEquals(1, queried.getSObjects('Events').size());
+System.assertEquals(1, queried.getSObjects('Cases').size());
+System.assertEquals(1, queried.getSObjects('Assets').size());
+System.assertEquals('Event', queried.getSObjects('Events')[0].getSObjectType().getDescribe().getName());
+System.assertEquals('Case', queried.getSObjects('Cases')[0].getSObjectType().getDescribe().getName());
+System.assertEquals('Asset', queried.getSObjects('Assets')[0].getSObjectType().getDescribe().getName());
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	for _, objectName := range []string{"Account", "Asset", "Case", "Contact", "Event", "User"} {
+		storage.EnsureStandardObject(&org, objectName)
+	}
 	machine := New(nil)
 	machine.Org = &org
 	if _, err := machine.Execute(program); err != nil {

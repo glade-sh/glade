@@ -4036,6 +4036,8 @@ System.assert(!names.isEmpty());
 System.assert(names.add('b'));
 System.assert(!names.add('b'));
 System.assert(names.containsAll(new List<String>{'a', 'b'}));
+System.assert(!names.contains('A'));
+System.assert(!names.containsAll(new List<String>{'A'}));
 System.assert(names.remove('a'));
 System.assert(!names.contains('a'));
 System.assert(names.addAll(new List<String>{'c', 'd'}));

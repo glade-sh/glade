@@ -29688,7 +29688,7 @@ func (vm *VM) collectionContainsValue(values []Value, needle Value, result *Resu
 
 func (vm *VM) collectionIndexOfValue(values []Value, needle Value, result *Result) (int, error) {
 	for i, value := range values {
-		equal, err := vm.apexEquals(value, needle, result)
+		equal, err := vm.apexCollectionElementEquals(value, needle, result)
 		if err != nil {
 			return -1, err
 		}
@@ -29697,6 +29697,17 @@ func (vm *VM) collectionIndexOfValue(values []Value, needle Value, result *Resul
 		}
 	}
 	return -1, nil
+}
+
+func (vm *VM) apexCollectionElementEquals(left, right Value, result *Result) (bool, error) {
+	if collectionStringLike(left) || collectionStringLike(right) {
+		return left.Equal(right), nil
+	}
+	return vm.apexEquals(left, right, result)
+}
+
+func collectionStringLike(value Value) bool {
+	return value.Kind == ValueString || (value.Kind == ValueObject && strings.EqualFold(value.Type, "String"))
 }
 
 func (vm *VM) iterableCollectionMembers(value Value, result *Result, context string) ([]Value, error) {
@@ -34297,7 +34308,7 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 		if objectName != "" {
 			if vm.canSynthesizeSObjectFieldMapField(objectName) {
 				for _, alias := range vm.sObjectFieldMapLookupAliases(key.Text) {
-					if isLikelyReferenceIDField(alias) || isCustomFieldOrRelationshipType(alias) {
+					if isLikelyReferenceIDField(alias) || vm.canSynthesizeCustomSObjectFieldMapField(objectName, alias) {
 						return sObjectFieldToken(objectName, alias), true
 					}
 				}
@@ -34382,6 +34393,67 @@ func (vm *VM) canSynthesizeSObjectFieldMapField(objectName string) bool {
 		return true
 	}
 	return len(state.Definition.Fields) == 0 || isCustomObjectLikeName(state.Definition.APIName)
+}
+
+func (vm *VM) canSynthesizeCustomSObjectFieldMapField(objectName, fieldName string) bool {
+	if !isCustomFieldOrRelationshipType(fieldName) {
+		return false
+	}
+	if vm != nil && vm.Org != nil {
+		if target := vm.inferredCustomFieldReferenceTarget(objectName, fieldName); target != "" {
+			return true
+		}
+	}
+	return isLikelyNumericCustomField(fieldName)
+}
+
+func (vm *VM) inferredCustomFieldReferenceTarget(objectName, fieldName string) string {
+	if vm == nil || vm.Org == nil || !strings.HasSuffix(strings.ToLower(fieldName), "__c") {
+		return ""
+	}
+	candidates := []string{fieldName, stripAnyNamespaceToken(fieldName)}
+	if namespace := namespaceFromSchemaToken(objectName); namespace != "" {
+		candidates = append(candidates, storage.NamespaceTokenName(namespace, fieldName))
+	}
+	if vm.Org.Namespace != "" {
+		candidates = append(candidates, storage.NamespaceTokenName(vm.Org.Namespace, fieldName))
+	}
+	for _, candidate := range candidates {
+		if resolved, ok := storage.ResolveObjectName(*vm.Org, candidate); ok {
+			return resolved
+		}
+	}
+	return ""
+}
+
+func isLikelyNumericCustomField(fieldName string) bool {
+	if !strings.HasSuffix(strings.ToLower(fieldName), "__c") {
+		return false
+	}
+	base := strings.TrimSuffix(stripAnyNamespaceToken(fieldName), "__c")
+	base = strings.ToLower(base)
+	if base == "" {
+		return false
+	}
+	numericTerms := []string{
+		"amount", "balance", "cost", "count", "fee", "mrr", "payment", "price",
+		"quantity", "shipping", "subtotal", "tax", "total",
+	}
+	for _, term := range numericTerms {
+		if strings.Contains(base, term) {
+			return true
+		}
+	}
+	return false
+}
+
+func namespaceFromSchemaToken(name string) string {
+	first := strings.Index(name, "__")
+	last := strings.LastIndex(name, "__")
+	if first <= 0 || first >= last {
+		return ""
+	}
+	return name[:first]
 }
 
 func (vm *VM) populatedFieldsMapAliasLookup(receiver, key Value) (Value, bool) {
