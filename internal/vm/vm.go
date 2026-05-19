@@ -4407,7 +4407,13 @@ platformStaticCall:
 	case "ConnectApi.Communities.getCommunity":
 		return vm.connectAPICommunity(args)
 	case "ConnectApi.NamedCredentials.getNamedCredentials":
-		return vm.connectAPINamedCredentials(args)
+		return vm.connectAPINamedCredentialsGetNamedCredentials(args)
+	case "ConnectApi.NamedCredentials.createExternalCredential":
+		return vm.connectAPINamedCredentialsCreateExternalCredential(args)
+	case "ConnectApi.NamedCredentials.createNamedCredential":
+		return vm.connectAPINamedCredentialsCreateNamedCredential(args)
+	case "ConnectApi.NamedCredentials.getExternalCredential":
+		return vm.connectAPINamedCredentialsGetExternalCredential(args)
 	case "ConnectApi.UserProfiles.getUserProfile":
 		return vm.connectAPIUserProfile(args)
 	case "ConnectApi.UserProfiles.getPhoto":
@@ -6843,11 +6849,57 @@ func (vm *VM) connectAPICommunity(args []Value) (Value, error) {
 	return community, nil
 }
 
-func (vm *VM) connectAPINamedCredentials(args []Value) (Value, error) {
+func (vm *VM) connectAPINamedCredentialsGetNamedCredentials(args []Value) (Value, error) {
 	if len(args) != 0 {
 		return Null, fmt.Errorf("ConnectApi.NamedCredentials.getNamedCredentials expects 0 arguments")
 	}
 	return Object("ConnectApi.NamedCredentialList"), nil
+}
+
+func (vm *VM) connectAPINamedCredentialsCreateExternalCredential(args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("ConnectApi.NamedCredentials.createExternalCredential expects 1 argument")
+	}
+	if args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "ConnectApi.ExternalCredentialInput") {
+		return Null, fmt.Errorf("ConnectApi.NamedCredentials.createExternalCredential expects ConnectApi.ExternalCredentialInput")
+	}
+	external := Object("ConnectApi.ExternalCredential")
+	if developerName, ok := objectFieldFold(args[0], "developerName"); ok && developerName.Kind == ValueString {
+		external.Fields["developerName"] = String(developerName.Text)
+	}
+	if principals, ok := objectFieldFold(args[0], "principals"); ok {
+		external.Fields["principals"] = cloneValue(principals)
+	}
+	return external, nil
+}
+
+func (vm *VM) connectAPINamedCredentialsCreateNamedCredential(args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("ConnectApi.NamedCredentials.createNamedCredential expects 1 argument")
+	}
+	if args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "ConnectApi.NamedCredentialInput") {
+		return Null, fmt.Errorf("ConnectApi.NamedCredentials.createNamedCredential expects ConnectApi.NamedCredentialInput")
+	}
+	credential := Object("ConnectApi.NamedCredential")
+	if developerName, ok := objectFieldFold(args[0], "developerName"); ok && developerName.Kind == ValueString {
+		credential.Fields["developerName"] = String(developerName.Text)
+	}
+	if externalCredentials, ok := objectFieldFold(args[0], "externalCredentials"); ok {
+		credential.Fields["externalCredentials"] = cloneValue(externalCredentials)
+	}
+	if calloutURL, ok := objectFieldFold(args[0], "calloutUrl"); ok && calloutURL.Kind == ValueString {
+		credential.Fields["calloutUrl"] = String(calloutURL.Text)
+	}
+	return credential, nil
+}
+
+func (vm *VM) connectAPINamedCredentialsGetExternalCredential(args []Value) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, fmt.Errorf("ConnectApi.NamedCredentials.getExternalCredential expects 1 String argument")
+	}
+	external := Object("ConnectApi.ExternalCredential")
+	external.Fields["developerName"] = String(args[0].Text)
+	return external, nil
 }
 
 func (vm *VM) connectAPIUserProfile(args []Value) (Value, error) {
@@ -6893,6 +6945,18 @@ func scalarText(value Value) string {
 		}
 	}
 	return ""
+}
+
+func objectFieldFold(value Value, key string) (Value, bool) {
+	if value.Kind != ValueObject || value.Fields == nil {
+		return Null, false
+	}
+	for name, field := range value.Fields {
+		if strings.EqualFold(name, key) {
+			return field, true
+		}
+	}
+	return Null, false
 }
 
 func (vm *VM) customDataCachedValue(key string) (Value, bool) {

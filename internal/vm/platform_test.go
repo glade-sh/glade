@@ -1709,6 +1709,33 @@ System.assertNotEquals(null, page);
 	}
 }
 
+func TestExecConnectApiNamedCredentialsPrimaryFlow(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.ExternalCredentialInput externalInput = new ConnectApi.ExternalCredentialInput();
+externalInput.developerName = 'googleBooksAPIApex';
+externalInput.principals = new List<ConnectApi.ExternalCredentialPrincipalInput>();
+ConnectApi.ExternalCredential external = ConnectApi.NamedCredentials.createExternalCredential(externalInput);
+System.assertNotEquals(null, external);
+
+ConnectApi.NamedCredentialInput namedInput = new ConnectApi.NamedCredentialInput();
+namedInput.developerName = 'googleBooks';
+namedInput.calloutUrl = 'https://www.googleapis.com/books/v1';
+namedInput.externalCredentials = new List<ConnectApi.ExternalCredentialInput>{ externalInput };
+ConnectApi.NamedCredential named = ConnectApi.NamedCredentials.createNamedCredential(namedInput);
+System.assertNotEquals(null, named);
+
+ConnectApi.ExternalCredential fetched = ConnectApi.NamedCredentials.getExternalCredential('googleBooksAPIApex');
+System.assertNotEquals(null, fetched);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecConnectApiNextBestActionReadDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
 ConnectApi.Recommendation recommendation = ConnectApi.NextBestAction.getRecommendation('rec');
