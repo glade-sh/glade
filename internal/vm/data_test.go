@@ -1836,6 +1836,47 @@ System.assertEquals('Changed', account.Contacts[0].LastName);
 	}
 }
 
+func TestSynchronizeFabricatedSObjectRelationshipsClearsStaleChildren(t *testing.T) {
+	staleChild := Object("sfab_FabricatedSObject")
+	staleNode := Object("sfab_ChildRelationshipNode")
+	staleNode.Fields["fieldName"] = String("Lines__r")
+	staleNode.Fields["children"] = List(staleChild)
+	otherNode := Object("sfab_FieldValuePairNode")
+	otherNode.Fields["fieldName"] = String("Name")
+
+	fabricated := Object("sfab_FabricatedSObject")
+	fabricated.Fields["nodes"] = List(otherNode, staleNode)
+
+	childrenByRelation := Map()
+	relationKey := mapKey(String("Lines__r"))
+	childrenByRelation.Map[relationKey] = List()
+	childrenByRelation.MapKeys[relationKey] = String("Lines__r")
+
+	wrapper := Object("AnyFabricator")
+	wrapper.Fields["childrenByRelation"] = childrenByRelation
+	wrapper.Fields["fabricatedSObject"] = fabricated
+
+	synced := New(nil).synchronizeFabricatedSObjectRelationships(wrapper)
+	_, syncedFabricated, ok := objectFieldValue(synced, "fabricatedSObject")
+	if !ok {
+		t.Fatal("expected fabricatedSObject")
+	}
+	_, syncedNodes, ok := objectFieldValue(syncedFabricated, "nodes")
+	if !ok || syncedNodes.Kind != ValueList {
+		t.Fatal("expected synchronized nodes")
+	}
+	if len(syncedNodes.List) != 2 {
+		t.Fatalf("expected stale child node replaced, got %d nodes", len(syncedNodes.List))
+	}
+	_, children, ok := objectFieldValue(syncedNodes.List[1], "children")
+	if !ok || children.Kind != ValueList {
+		t.Fatal("expected child relationship node children")
+	}
+	if len(children.List) != 0 {
+		t.Fatalf("expected empty current relationship children, got %d", len(children.List))
+	}
+}
+
 func TestExecDateDefaultFormulaCoercesToDate(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');

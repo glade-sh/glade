@@ -30339,6 +30339,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			return Null, err
 		}
 	}
+	if receiver.Kind == ValueObject && apexMethodMemberName(method.Name) == "toSObject" {
+		receiver = vm.synchronizeFabricatedSObjectRelationships(receiver)
+	}
 	constructorKey := ""
 	if method.IsConstructor {
 		constructorKey = constructorCallKey(method)
@@ -30513,6 +30516,93 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	return value, nil
+}
+
+func (vm *VM) synchronizeFabricatedSObjectRelationships(value Value) Value {
+	childrenName, childrenByRelation, ok := objectFieldValue(value, "childrenByRelation")
+	if !ok || childrenByRelation.Kind != ValueMap {
+		return value
+	}
+	fabricatedName, fabricated, ok := objectFieldValue(value, "fabricatedSObject")
+	if !ok || fabricated.Kind != ValueObject {
+		return value
+	}
+	nodesName, nodes, ok := objectFieldValue(fabricated, "nodes")
+	if !ok || nodes.Kind != ValueList {
+		return value
+	}
+
+	var childNodeType string
+	for _, node := range nodes.List {
+		if node.Kind == ValueObject && objectHasFields(node, "fieldName", "children") {
+			childNodeType = node.Type
+			break
+		}
+	}
+	if childNodeType == "" {
+		if _, ok := vm.lookupClass("sfab_ChildRelationshipNode"); !ok {
+			return value
+		}
+		childNodeType = "sfab_ChildRelationshipNode"
+	}
+
+	relationships := make(map[string]Value, len(childrenByRelation.Map))
+	relationshipOrder := make([]string, 0, len(childrenByRelation.Map))
+	for rawKey, childList := range childrenByRelation.Map {
+		relation := mapStoredKey(childrenByRelation, rawKey).String()
+		if relation == "" || childList.Kind != ValueList {
+			continue
+		}
+		fabricatedChildren := List()
+		for i, child := range childList.List {
+			child = vm.synchronizeFabricatedSObjectRelationships(child)
+			childList.List[i] = child
+			if _, childFabricated, ok := objectFieldValue(child, "fabricatedSObject"); ok && childFabricated.Kind == ValueObject {
+				fabricatedChildren.List = append(fabricatedChildren.List, childFabricated)
+			}
+		}
+		childrenByRelation.Map[rawKey] = childList
+		relationships[relation] = fabricatedChildren
+		relationshipOrder = append(relationshipOrder, relation)
+	}
+	if len(relationships) == 0 {
+		return value
+	}
+
+	filtered := make([]Value, 0, len(nodes.List)+len(relationships))
+	for _, node := range nodes.List {
+		if node.Kind == ValueObject {
+			if _, fieldName, ok := objectFieldValue(node, "fieldName"); ok && fieldName.Kind == ValueString {
+				if _, replace := relationships[fieldName.Text]; replace && objectHasFields(node, "children") {
+					continue
+				}
+			}
+		}
+		filtered = append(filtered, node)
+	}
+	for _, relation := range relationshipOrder {
+		node := Object(childNodeType)
+		node.Fields["fieldName"] = String(relation)
+		node.Fields["children"] = relationships[relation]
+		filtered = append(filtered, node)
+	}
+	nodes.List = filtered
+	fabricated.Fields[nodesName] = nodes
+	value.Fields[fabricatedName] = fabricated
+	value.Fields[childrenName] = childrenByRelation
+	return value
+}
+
+func objectHasFields(value Value, names ...string) bool {
+	if value.Kind != ValueObject {
+		return false
+	}
+	for _, name := range names {
+		if _, _, ok := objectFieldValue(value, name); !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func (vm *VM) inferEmptySObjectListRuntimeType(returnType string, value Value, args []Value) string {
