@@ -7,6 +7,49 @@ import (
 	"github.com/open-aer/oaer/internal/storage"
 )
 
+func TestVMRecordFieldPathPreservesMissingNestedParentRelationshipNull(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Line__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Line__c",
+			Relations: []storage.Relationship{{
+				Field:              "Product__c",
+				ParentObjects:      []string{"Product__c"},
+				ParentRelationship: "Product__r",
+			}},
+		},
+	}
+	org.Objects["Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Product__c",
+			Relations: []storage.Relationship{{
+				Field:              "Event__c",
+				ParentObjects:      []string{"Event__c"},
+				ParentRelationship: "Event__r",
+			}},
+		},
+	}
+	org.Objects["Event__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Event__c"}}
+
+	machine := New(nil)
+	machine.SetOrg(&org)
+	value := machine.vmValueFromRecord(storage.Record{
+		Object: "Line__c",
+		Fields: map[string]storage.Value{
+			"Product__r.Event__r": storage.NullValue(),
+			"Product__r.event__r": storage.StringValue("wrong-shell"),
+		},
+	})
+
+	event, err := machine.lookupPath(value, []string{"Product__r", "Event__r"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if event.Kind != ValueNull || event.Type != "Event__c" || !isRelationshipNull(event) {
+		t.Fatalf("event relationship = %#v", event)
+	}
+}
+
 func TestExecRegisteredStaticMethod(t *testing.T) {
 	methodProgram, err := CompileAnonymous("return a + b;")
 	if err != nil {

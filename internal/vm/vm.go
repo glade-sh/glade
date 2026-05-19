@@ -15157,7 +15157,14 @@ func (vm *VM) putVMRecordFieldPath(root Value, objectName, field string, fieldVa
 			currentObject = next.Type
 		}
 	}
-	current.Fields[parts[len(parts)-1]] = fieldValue
+	leaf := parts[len(parts)-1]
+	if fieldValue.Kind == ValueNull {
+		if parentType, ok := vm.parentRelationshipObjectType(currentObject, leaf); ok {
+			fieldValue.Type = parentType
+			fieldValue.Runtime = relationshipNullRuntime
+		}
+	}
+	current.Fields[leaf] = fieldValue
 }
 
 func (vm *VM) parentRelationshipObjectType(objectName, relationshipName string) (string, bool) {
@@ -21394,6 +21401,9 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 	normalized := strings.ToLower(name)
 	if value, ok := object.Fields[name]; ok {
 		if value.Kind == ValueNull {
+			if isRelationshipNull(value) {
+				return name, value, true
+			}
 			for candidate, alternate := range object.Fields {
 				if candidate != name && strings.ToLower(candidate) == normalized && alternate.Kind != ValueNull {
 					return candidate, alternate, true

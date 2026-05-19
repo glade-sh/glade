@@ -1558,6 +1558,13 @@ func TestExecuteProjectsParentRelationshipField(t *testing.T) {
 					"ParentId": storage.IDValue("001000000000001"),
 				},
 			},
+			"001000000000003": {
+				ID:     "001000000000003",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"Name": storage.StringValue("NoParent"),
+				},
+			},
 		},
 	}
 	org.Objects["Contact"] = storage.ObjectState{
@@ -1582,6 +1589,13 @@ func TestExecuteProjectsParentRelationshipField(t *testing.T) {
 				Object: "Contact",
 				Fields: map[string]storage.Value{
 					"AccountId": storage.IDValue("001000000000002"),
+				},
+			},
+			"003000000000003": {
+				ID:     "003000000000003",
+				Object: "Contact",
+				Fields: map[string]storage.Value{
+					"AccountId": storage.IDValue("001000000000003"),
 				},
 			},
 		},
@@ -1615,6 +1629,19 @@ func TestExecuteProjectsParentRelationshipField(t *testing.T) {
 	}
 	if value := result.Records[0].Fields["Account.Parent.Id"]; value.Kind != storage.ValueID || value.ID != "001000000000001" {
 		t.Fatalf("multi-hop Account.Parent.Id = %#v", value)
+	}
+	result, err = ParseAndExecute(org, "SELECT Id, Account.Parent.Name FROM Contact WHERE Id = '003000000000003'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("missing parent relationship rows = %#v", result.Records)
+	}
+	if value := result.Records[0].Fields["Account.Parent"]; value.Kind != storage.ValueNull {
+		t.Fatalf("missing parent relationship = %#v", value)
+	}
+	if _, ok := result.Records[0].Fields["Account.Parent.Name"]; ok {
+		t.Fatalf("missing parent field should not be projected as a nested value: %#v", result.Records[0].Fields)
 	}
 }
 

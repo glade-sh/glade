@@ -2071,21 +2071,19 @@ func lookupRecordByIDInOrg(org storage.OrgState, id storage.ID) (string, storage
 }
 
 func relationshipLookupMissing(org storage.OrgState, record storage.Record, field string) (string, bool) {
-	parts := strings.SplitN(field, ".", 2)
-	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+	parts := strings.Split(field, ".")
+	if len(parts) < 2 {
 		return "", false
 	}
-	objectName := record.Object
-	if canonical, resolved := storage.ResolveObjectName(org, objectName); resolved {
-		objectName = canonical
-	}
-	object, ok := org.Objects[objectName]
-	if !ok {
-		return "", false
-	}
-	for _, relation := range matchingParentRelations(org.Namespace, object.Definition, parts[0]) {
-		parentID, ok := recordValue(org, object.Definition, record, relation.Field)
-		return parts[0], !ok || parentID.Kind == storage.ValueNull
+	for i := 1; i < len(parts); i++ {
+		relationship := strings.Join(parts[:i], ".")
+		if relationship == "" {
+			continue
+		}
+		value, ok := relationshipValue(org, record, relationship+".Id")
+		if ok && value.Kind == storage.ValueNull {
+			return relationship, true
+		}
 	}
 	return "", false
 }
