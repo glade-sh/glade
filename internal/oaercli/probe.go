@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"github.com/open-aer/oaer/internal/config"
@@ -17,7 +18,7 @@ func runProbe(ctx context.Context, args []string, w io.Writer) error {
 	}
 
 	if len(args) == 0 {
-		return fmt.Errorf("usage: oaer probe <subcommand> [args...]\n  subcommands: org, local, deploy")
+		return fmt.Errorf("usage: oaer probe <subcommand> [args...]\n  subcommands: org, local, deploy, summarize")
 	}
 
 	subcommand := args[0]
@@ -32,9 +33,71 @@ func runProbe(ctx context.Context, args []string, w io.Writer) error {
 		return runProbeDeploy(ctx, subargs, w)
 	case "tooling-snippet":
 		return runProbeToolingSnippet(ctx, subargs, w)
+	case "summarize":
+		return runProbeSummarize(ctx, subargs, w)
 	default:
 		return fmt.Errorf("unknown probe subcommand %q", subcommand)
 	}
+}
+
+func runProbeSummarize(ctx context.Context, args []string, w io.Writer) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if len(args) == 0 {
+		return fmt.Errorf("usage: oaer probe summarize <gap-report.json> [--json]")
+	}
+	reportPath := ""
+	asJSON := false
+	for _, arg := range args {
+		switch arg {
+		case "--json":
+			asJSON = true
+		default:
+			if strings.HasPrefix(arg, "-") {
+				return fmt.Errorf("unknown flag %q", arg)
+			}
+			if reportPath != "" {
+				return fmt.Errorf("probe summarize accepts a single report path")
+			}
+			reportPath = arg
+		}
+	}
+	if reportPath == "" {
+		return fmt.Errorf("probe summarize requires a gap report path")
+	}
+
+	summary, err := probe.SummarizeGapReport(reportPath)
+	if err != nil {
+		return err
+	}
+
+	if asJSON {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(summary)
+	}
+
+	fmt.Fprintf(w, "total: %d\n", summary.Total)
+	printMap := func(label string, counts map[string]int) {
+		fmt.Fprintf(w, "%s:\n", label)
+		keys := make([]string, 0, len(counts))
+		for key := range counts {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			fmt.Fprintf(w, "  %s: %d\n", key, counts[key])
+		}
+	}
+	printMap("byGapType", summary.ByGapType)
+	printMap("byFamily", summary.ByFamily)
+	printMap("byDiffShape", summary.ByDiffShape)
+	fmt.Fprintf(w, "unsupportedIds: %d\n", len(summary.UnsupportedIDs))
+	for _, id := range summary.UnsupportedIDs {
+		fmt.Fprintf(w, "  - %s\n", id)
+	}
+	return nil
 }
 
 func runProbeOrg(ctx context.Context, args []string, w io.Writer) error {

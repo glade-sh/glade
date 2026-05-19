@@ -64,6 +64,47 @@ func TestClassifyStubContractMode(t *testing.T) {
 			},
 			want: StubContractCompileShape,
 		},
+		{
+			name: "schema describe method maps to compile-shape",
+			entry: StubBehaviorEntry{
+				Type:   "Schema.DescribeFieldResult",
+				Member: "getName",
+				Kind:   "method",
+				Status: StubBehaviorImplemented,
+			},
+			want: StubContractCompileShape,
+		},
+		{
+			name: "json create parser maps to compile-shape",
+			entry: StubBehaviorEntry{
+				Type:       "JSON",
+				Member:     "createParser",
+				Kind:       "method",
+				Status:     StubBehaviorImplemented,
+				Parameters: []string{"String"},
+			},
+			want: StubContractCompileShape,
+		},
+		{
+			name: "adderror maps to compile-shape",
+			entry: StubBehaviorEntry{
+				Type:   "Date",
+				Member: "addError",
+				Kind:   "method",
+				Status: StubBehaviorImplemented,
+			},
+			want: StubContractCompileShape,
+		},
+		{
+			name: "tail-constructor-like member maps to compile-shape",
+			entry: StubBehaviorEntry{
+				Type:   "Datetime",
+				Member: "datetime",
+				Kind:   "method",
+				Status: StubBehaviorImplemented,
+			},
+			want: StubContractCompileShape,
+		},
 	}
 	for _, tc := range tests {
 		if got := classifyStubContractMode(tc.entry); got != tc.want {

@@ -228,6 +228,9 @@ func classifyStubContractMode(entry StubBehaviorEntry) StubContractMode {
 	case "constructor", "property":
 		return StubContractPassiveDTO
 	}
+	if entry.Kind == "method" && entry.Status == StubBehaviorImplemented && compileShapeOnlyContract(entry) {
+		return StubContractCompileShape
+	}
 	if entry.Kind == "method" && entry.Status == StubBehaviorImplemented && orgDiffCandidate(entry) {
 		return StubContractOrgDiff
 	}
@@ -235,6 +238,40 @@ func classifyStubContractMode(entry StubBehaviorEntry) StubContractMode {
 		return StubContractPassiveDTO
 	}
 	return StubContractCompileShape
+}
+
+func compileShapeOnlyContract(entry StubBehaviorEntry) bool {
+	lowerType := strings.ToLower(strings.TrimSpace(entry.Type))
+	lowerMember := strings.ToLower(strings.TrimSpace(entry.Member))
+	typeTail := lowerType
+	if dot := strings.LastIndex(typeTail, "."); dot >= 0 {
+		typeTail = typeTail[dot+1:]
+	}
+	switch lowerType {
+	case "schema.describefieldresult", "schema.describesobjectresult", "matcher", "pattern", "jsongenerator", "jsonparser":
+		return true
+	case "json":
+		return lowerMember == "creategenerator" || lowerMember == "createparser"
+	}
+	if lowerMember == typeTail {
+		return true
+	}
+	if lowerMember == "adderror" {
+		return true
+	}
+	switch lowerType + "." + lowerMember {
+	case "date.toendofmonth",
+		"date.valueof",
+		"datetime.addmilliseconds",
+		"datetime.formatgmt",
+		"datetime.valueof",
+		"jsontoken.equals",
+		"jsontoken.hashcode",
+		"jsontoken.ordinal",
+		"math.pow":
+		return true
+	}
+	return false
 }
 
 func classifyStubContractOwner(entry StubBehaviorEntry) string {

@@ -3385,6 +3385,34 @@ System.assertEquals('2026-05-19', value.substring(0, value.indexOf(' ')));
 	}
 }
 
+func TestExecStubCoreUnsupportedMethodWave(t *testing.T) {
+	program, err := CompileAnonymous(`
+Date leap = Date.newInstance(2024, 2, 29);
+System.assertEquals(60, leap.dayOfYear());
+System.assert(Date.isLeapYear(2024));
+System.assertEquals('2024-02-25', leap.toStartOfWeek().format());
+
+Datetime stamp = '2024-02-29T23:59:58.250Z';
+System.assertEquals(60, stamp.dayOfYearGmt());
+System.assertEquals(250, stamp.millisecondGmt());
+System.assert(stamp.isSameDay(Datetime.valueOfGmt('2024-02-29T00:00:01Z')));
+System.assertEquals(false, stamp.isSameDay(Datetime.valueOfGmt('2024-03-01T00:00:00Z')));
+System.assert(stamp.formatLong().contains('2024'));
+
+String gmt = String.valueOfGmt(stamp);
+System.assert(gmt.startsWith('2024-02-29 23:59:58'));
+
+Blob pdf = Blob.valueOf('oaer').toPdf('stub');
+System.assert(pdf.toString().startsWith('%PDF-1.4'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecIDGetSObjectTypeUsesStoredRecordWhenPrefixesCollide(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id scheduleTypeId = Id.valueOf('a2D000000000001');
