@@ -7471,7 +7471,8 @@ System.assertEquals('1970-01-01T00:00:00Z', unixEpoch.formatGmt());
 Datetime leapDay = Datetime.valueOfGmt('2024-02-29 23:59:58Z');
 System.assertEquals('2024-02-29T23:59:58Z', leapDay.formatGmt());
 Datetime fractional = Datetime.valueOfGmt('2024-02-29 23:59:58.250Z');
-System.assertEquals('2024-02-29T23:59:58.25Z', fractional.formatGmt());
+System.assertEquals('2024-02-29T23:59:58Z', fractional.formatGmt());
+System.assertEquals(0, fractional.millisecond());
 Datetime offset = Datetime.valueOfGmt('2024-02-29 18:29:58-05:30');
 System.assertEquals('2024-02-29T23:59:58Z', offset.formatGmt());
 Datetime assigned = '2024-02-29 23:59:58+0000';
@@ -7485,9 +7486,31 @@ System.assertEquals('2024-02-29T23:59:58Z', assigned.formatGmt());
 	}
 }
 
+func TestExecDatetimeValueOfTruncatesFractionalSeconds(t *testing.T) {
+	program, err := CompileAnonymous(`
+Datetime spaceSeparated = Datetime.valueOfGmt('2024-02-29 23:59:58.250Z');
+Datetime isoSeparated = Datetime.valueOfGmt('2024-02-29T23:59:58.250Z');
+Datetime localValue = Datetime.valueOf('2024-02-29 23:59:58.250');
+Datetime expectedGmt = Datetime.valueOfGmt('2024-02-29 23:59:58Z');
+Datetime expectedLocal = Datetime.valueOf('2024-02-29 23:59:58');
+System.assertEquals(expectedGmt, spaceSeparated);
+System.assertEquals(expectedGmt, isoSeparated);
+System.assertEquals(expectedLocal, localValue);
+System.assertEquals(0, spaceSeparated.millisecond());
+System.assertEquals(0, isoSeparated.millisecond());
+System.assertEquals(0, localValue.millisecond());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatetimePatternFormatting(t *testing.T) {
 	program, err := CompileAnonymous(`
-Datetime stamp = Datetime.valueOfGmt('2024-02-29T23:05:06.250Z');
+Datetime stamp = Datetime.newInstanceGmt(2024, 2, 29, 23, 5, 6).addMilliseconds(250);
 System.assertEquals('2024-02-29 23:05:06.250 +0000 UTC', stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS Z z'));
 System.assertEquals('Thu, Feb 29 2024 11:05 PM', stamp.formatGmt('EEE, MMM d yyyy h:mm a'));
 System.assertEquals('2024-03-01 04:35:06.250 +0530 GMT+05:30', stamp.format('yyyy-MM-dd HH:mm:ss.SSS Z z', 'GMT+05:30'));

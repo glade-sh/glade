@@ -50,6 +50,21 @@ func TestVMRecordFieldPathPreservesMissingNestedParentRelationshipNull(t *testin
 	}
 }
 
+func TestCoerceAssignableAcceptsNamespaceAliasWhenNamespaceMatchesCurrentClass(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "verifiable", Namespace: "verifiable"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "responseData", Namespace: "verifiable"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "verifiable"
+	value := Object("verifiable.responseData")
+	if _, err := machine.coerceAssignable("responseData", value); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRegisteredStaticMethod(t *testing.T) {
 	methodProgram, err := CompileAnonymous("return a + b;")
 	if err != nil {

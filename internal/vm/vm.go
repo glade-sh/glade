@@ -3775,6 +3775,9 @@ platformStaticCall:
 		if err != nil {
 			return Null, newExceptionError("System.TypeException", "Invalid date/time: "+text)
 		}
+		if strings.Contains(text, ".") {
+			value = value.Truncate(time.Second)
+		}
 		out := platformScalar("Datetime", formatPlatformDatetime(value))
 		if callee == "Datetime.valueOfGmt" && strings.Contains(text, "T") && strings.Contains(text, ".") {
 			out.Fields["legacyIsoFractionalTruncate"] = Bool(true)
@@ -28312,6 +28315,9 @@ func (vm *VM) resolveNestedTypeInClassHierarchy(className, typeName string) (str
 		for _, ownerCandidate := range lexicalOwnerCandidates(owner) {
 			candidate := ownerCandidate + "." + typeName
 			if class, ok := vm.lookupClass(candidate); ok {
+				if isNamespaceClassAlias(candidate, class) {
+					return class.Name, true
+				}
 				if strings.Contains(candidate, ".") && !strings.Contains(class.Name, ".") {
 					return candidate, true
 				}
@@ -28325,8 +28331,14 @@ func (vm *VM) resolveNestedTypeInClassHierarchy(className, typeName string) (str
 				break
 			}
 			seenSupers[key] = true
-			candidate = super + "." + typeName
+			candidate := super + "." + typeName
 			if class, ok := vm.lookupClass(candidate); ok {
+				if isNamespaceClassAlias(candidate, class) {
+					return class.Name, true
+				}
+				if strings.Contains(candidate, ".") && !strings.Contains(class.Name, ".") {
+					return candidate, true
+				}
 				return class.Name, true
 			}
 		}
@@ -28337,6 +28349,24 @@ func (vm *VM) resolveNestedTypeInClassHierarchy(className, typeName string) (str
 		owner = owner[:dot]
 	}
 	return "", false
+}
+
+func isNamespaceClassAlias(candidate string, class Class) bool {
+	return class.Namespace != "" &&
+		!strings.Contains(class.Name, ".") &&
+		strings.EqualFold(candidate, class.Namespace+"."+class.Name)
+}
+
+func lexicalOwnerCandidates(owner string) []string {
+	owner = strings.TrimSpace(owner)
+	if owner == "" {
+		return nil
+	}
+	candidates := []string{owner}
+	if short := shortTypeName(owner); short != "" && !strings.EqualFold(short, owner) {
+		candidates = append(candidates, short)
+	}
+	return candidates
 }
 
 func (vm *VM) superClassName(className string) string {
