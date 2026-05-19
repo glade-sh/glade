@@ -15362,6 +15362,8 @@ func soqlLiteral(value Value) string {
 		return "'" + strings.ReplaceAll(value.Text, "'", "''") + "'"
 	case ValueInt:
 		return fmt.Sprintf("%d", value.Int)
+	case ValueDecimal:
+		return decimalStorageText(value)
 	case ValueBool:
 		if value.Bool {
 			return "true"

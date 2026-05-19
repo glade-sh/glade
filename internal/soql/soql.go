@@ -3871,6 +3871,7 @@ func (p *parser) parsePrimaryCondition() (Condition, error) {
 	if valueToken == "" {
 		return Condition{}, p.errorf("expected WHERE value")
 	}
+	valueToken = p.signedLiteralToken(valueToken)
 	value, value2, isRange, err := literalAt(valueToken, p.now)
 	if err != nil {
 		return Condition{}, err
@@ -3883,6 +3884,7 @@ func (p *parser) parsePrimaryCondition() (Condition, error) {
 			if tok == "" {
 				return Condition{}, p.errorf("expected WHERE value")
 			}
+			tok = p.signedLiteralToken(tok)
 			nextValue, _, nextRange, err := literalAt(tok, p.now)
 			if err != nil {
 				return Condition{}, err
@@ -3935,6 +3937,18 @@ func (p *parser) parseConditionField() (string, error) {
 	return field, nil
 }
 
+func (p *parser) signedLiteralToken(tok string) string {
+	if tok != "-" && tok != "+" {
+		return tok
+	}
+	next := p.peek().text
+	if next == "" || strings.ContainsRune(",)(", rune(next[0])) {
+		return tok
+	}
+	p.advance()
+	return tok + next
+}
+
 func (p *parser) parseOperator() (string, error) {
 	tok := p.advance().text
 	switch tok {
@@ -3967,6 +3981,7 @@ func (p *parser) parseInOperand() ([]storage.Value, *Query, error) {
 		if tok == "" {
 			return nil, nil, p.errorf("expected value after IN")
 		}
+		tok = p.signedLiteralToken(tok)
 		value, _, isRange, err := literalAt(tok, p.now)
 		if err != nil {
 			return nil, nil, err
@@ -3998,6 +4013,7 @@ func (p *parser) parseInOperand() ([]storage.Value, *Query, error) {
 		if tok == "" {
 			return nil, nil, p.errorf("expected value in IN list")
 		}
+		tok = p.signedLiteralToken(tok)
 		value, _, isRange, err := literalAt(tok, p.now)
 		if err != nil {
 			return nil, nil, err
@@ -4088,6 +4104,11 @@ func literalAt(text string, now time.Time) (storage.Value, storage.Value, bool, 
 		inner := strings.TrimSuffix(strings.TrimPrefix(text, "'"), "'")
 		return storage.StringValue(strings.ReplaceAll(inner, "''", "'")), storage.Value{}, false, nil
 	default:
+		if looksDecimalLiteral(text) {
+			if _, ok := new(big.Rat).SetString(text); ok {
+				return storage.DecimalValue(text), storage.Value{}, false, nil
+			}
+		}
 		if t, ok := parseISODateTime(text); ok {
 			return storage.DateTimeValue(t.Format(time.RFC3339)), storage.Value{}, false, nil
 		}
@@ -4100,6 +4121,20 @@ func literalAt(text string, now time.Time) (storage.Value, storage.Value, bool, 
 		}
 		return storage.IntegerValue(value), storage.Value{}, false, nil
 	}
+}
+
+func looksDecimalLiteral(text string) bool {
+	trimmed := strings.TrimSpace(text)
+	if trimmed == "" {
+		return false
+	}
+	if trimmed[0] == '-' || trimmed[0] == '+' {
+		trimmed = trimmed[1:]
+	}
+	if trimmed == "" {
+		return false
+	}
+	return strings.ContainsAny(trimmed, ".eE")
 }
 
 func dateLiteral(text string, now time.Time) (storage.Value, storage.Value, bool) {

@@ -1836,6 +1836,29 @@ System.assertEquals('Changed', account.Contacts[0].LastName);
 	}
 }
 
+func TestExecSOQLNegativeDecimalBindMatchesDecimalField(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Refund');
+account.put('PaymentAmount__c', -10);
+insert account;
+Decimal refundPrice = -10;
+System.assertEquals(1, [SELECT Id FROM Account WHERE PaymentAmount__c = :refundPrice].size());
+System.assertEquals(1, [SELECT Id FROM Account WHERE PaymentAmount__c = -10.00].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["PaymentAmount__c"] = storage.Field{APIName: "PaymentAmount__c", Type: storage.FieldDecimal}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestSynchronizeFabricatedSObjectRelationshipsClearsStaleChildren(t *testing.T) {
 	staleChild := Object("sfab_FabricatedSObject")
 	staleNode := Object("sfab_ChildRelationshipNode")
