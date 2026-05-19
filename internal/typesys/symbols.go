@@ -145,6 +145,7 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 			})
 			continue
 		}
+		depSchema = namespaceDependencySchema(depSchema, dep.Namespace)
 		beforeTypes := len(idx.Types)
 		appendProjectSymbols(&idx, parser, *dep.Project, true, dep.Namespace, dep.Version, seenTypes)
 		idx.Objects = append(idx.Objects, depSchema.Objects...)
@@ -472,6 +473,80 @@ func namespaceTypeKey(namespace, name string) string {
 		return strings.ToLower(name)
 	}
 	return strings.ToLower(namespace + "." + name)
+}
+
+func namespaceDependencySchema(in schema.Schema, namespace string) schema.Schema {
+	namespace = strings.TrimSpace(namespace)
+	if namespace == "" {
+		return in
+	}
+	out := in
+	out.Objects = make([]schema.Object, len(in.Objects))
+	for i, object := range in.Objects {
+		object.Name = namespaceAPIName(namespace, object.Name)
+		for j, field := range object.Fields {
+			field.Name = namespaceAPIName(namespace, field.Name)
+			for k, referenceTo := range field.ReferenceTo {
+				field.ReferenceTo[k] = namespaceAPIName(namespace, referenceTo)
+			}
+			field.RelationshipName = namespaceAPIName(namespace, field.RelationshipName)
+			field.ChildRelationshipName = namespaceAPIName(namespace, field.ChildRelationshipName)
+			field.SummarizedField = namespaceAPIName(namespace, field.SummarizedField)
+			field.SummaryForeignKey = namespaceAPIName(namespace, field.SummaryForeignKey)
+			for k, filter := range field.SummaryFilterItems {
+				filter.Field = namespaceAPIName(namespace, filter.Field)
+				field.SummaryFilterItems[k] = filter
+			}
+			object.Fields[j] = field
+		}
+		for j, rule := range object.ValidationRules {
+			rule.ErrorDisplayField = namespaceAPIName(namespace, rule.ErrorDisplayField)
+			object.ValidationRules[j] = rule
+		}
+		out.Objects[i] = object
+	}
+	out.CustomMetadataRecords = make([]schema.CustomMetadataRecord, len(in.CustomMetadataRecords))
+	for i, record := range in.CustomMetadataRecords {
+		record.ObjectName = namespaceAPIName(namespace, record.ObjectName)
+		record.FullName = namespaceMetadataFullName(namespace, record.FullName)
+		for j, value := range record.Values {
+			value.Field = namespaceAPIName(namespace, value.Field)
+			record.Values[j] = value
+		}
+		out.CustomMetadataRecords[i] = record
+	}
+	return out
+}
+
+func namespaceMetadataFullName(namespace, fullName string) string {
+	objectName, developerName, ok := strings.Cut(fullName, ".")
+	if !ok {
+		return namespaceAPIName(namespace, fullName)
+	}
+	return namespaceAPIName(namespace, objectName) + "." + developerName
+}
+
+func namespaceAPIName(namespace, name string) string {
+	if namespace == "" || name == "" || !customAPIName(name) || hasNamespaceToken(name) {
+		return name
+	}
+	return namespace + "__" + name
+}
+
+func customAPIName(name string) bool {
+	lower := strings.ToLower(name)
+	for _, suffix := range []string{"__c", "__r", "__e", "__mdt", "__b"} {
+		if strings.HasSuffix(lower, suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasNamespaceToken(name string) bool {
+	first := strings.Index(name, "__")
+	last := strings.LastIndex(name, "__")
+	return first > 0 && first < last
 }
 
 type seenTypeSymbol struct {

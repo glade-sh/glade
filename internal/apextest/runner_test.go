@@ -3960,6 +3960,54 @@ public class AssetProbe {
 	}
 }
 
+func TestOrgFromIndexIncludesProjectReferencedCustomLookupFields(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/znu__Order__c/znu__Order__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/znu__Entity__c/znu__Entity__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Entity</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/OrderProbe.cls"), `
+public class OrderProbe {
+	public static void touch() {
+		Schema.SObjectField field = znu__Order__c.znu__Entity__c;
+	}
+}
+`)
+	index := loadTestIndex(t, root)
+
+	org := orgFromIndex(index)
+	state := org.Objects["znu__Order__c"]
+	field, ok := state.Definition.Fields["znu__Entity__c"]
+	if !ok {
+		t.Fatalf("znu__Order__c.znu__Entity__c was not inferred; fields=%#v", state.Definition.Fields)
+	}
+	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "znu__Entity__c" || field.RelationshipName != "znu__Entity__r" {
+		t.Fatalf("znu__Order__c.znu__Entity__c field = %#v", field)
+	}
+	if !parentRelationshipKnown(state.Definition, "znu__Entity__r") {
+		t.Fatalf("znu__Entity__r relationship missing: %#v", state.Definition.Relations)
+	}
+}
+
+func TestOrgFromIndexInfersProjectReferencedCustomCurrencyDefaults(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/znu__Order__c/znu__Order__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/OrderProbe.cls"), `
+public class OrderProbe {
+	public static void touch() {
+		Schema.SObjectField field = znu__Order__c.znu__TotalTax__c;
+	}
+}
+`)
+	index := loadTestIndex(t, root)
+
+	org := orgFromIndex(index)
+	field := org.Objects["znu__Order__c"].Definition.Fields["znu__TotalTax__c"]
+	if field.Type != storage.FieldDecimal || field.DefaultValue != "0" {
+		t.Fatalf("znu__TotalTax__c field = %#v", field)
+	}
+}
+
 func TestOrgFromIndexDoesNotInferStandardParentRelationshipAsField(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

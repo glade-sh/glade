@@ -3053,6 +3053,33 @@ System.assertEquals('NU__BillTo__r', billTo.getRelationshipName());
 	}
 }
 
+func TestExecSObjectFieldMapSynthesizesMissingCustomFieldOnPartialCustomObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = Invoice__c.SObjectType.getDescribe().fields.getMap();
+Schema.DescribeFieldResult amount = fields.get('TotalPayment__c').getDescribe();
+System.assertEquals('TotalPayment__c', amount.getName());
+System.assertEquals(0, amount.getReferenceTo().size());
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Invoice__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Invoice__c",
+			Fields: map[string]storage.Field{
+				"Known__c": {APIName: "Known__c", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectGetSObjectUsesSyntheticReferenceFieldRelationship(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account();

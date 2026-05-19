@@ -20795,7 +20795,7 @@ func syntheticSchemaField(fieldName string) storage.Field {
 	if fieldName == "" || (!apexIdentifierStartsUpper(fieldName) && !isCustomFieldOrRelationshipType(fieldName)) {
 		return storage.Field{}
 	}
-	field := storage.Field{APIName: fieldName, Label: fieldName, Type: storage.FieldString}
+	field := storage.Field{APIName: fieldName, Label: fieldName, Type: storage.FieldString, DisplayType: "STRING"}
 	switch {
 	case strings.EqualFold(fieldName, "Id") || strings.HasSuffix(fieldName, "Id"):
 		field.Type = storage.FieldReference
@@ -34334,7 +34334,7 @@ func (vm *VM) canSynthesizeSObjectFieldMapField(objectName string) bool {
 	if !ok {
 		return true
 	}
-	return len(state.Definition.Fields) == 0
+	return len(state.Definition.Fields) == 0 || isCustomObjectLikeName(state.Definition.APIName)
 }
 
 func (vm *VM) populatedFieldsMapAliasLookup(receiver, key Value) (Value, bool) {

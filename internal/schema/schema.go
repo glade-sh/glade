@@ -240,6 +240,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		if err != nil {
 			return Schema{}, err
 		}
+		field = namespaceObjectField(objectName, field)
 		applyValueSet(&field, valueSets)
 		object := byName[objectName]
 		if object == nil {
@@ -494,6 +495,7 @@ func loadObject(path string) (Object, error) {
 	for _, rawField := range raw.Fields {
 		field := fieldFromXML(rawField, "")
 		if field.Name != "" {
+			field = namespaceObjectField(object.Name, field)
 			object.Fields = append(object.Fields, field)
 		}
 	}
@@ -529,6 +531,14 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 	if name == "" {
 		name = fallback
 	}
+	relationshipName := raw.RelationshipName
+	childRelationshipName := raw.ChildRelationshipName
+	if strings.HasSuffix(name, "__c") && relationshipName != "" && !strings.HasSuffix(relationshipName, "__r") {
+		if childRelationshipName == "" {
+			childRelationshipName = relationshipName + "__r"
+		}
+		relationshipName = strings.TrimSuffix(name, "__c") + "__r"
+	}
 	return Field{
 		Name:                  name,
 		Label:                 raw.Label,
@@ -537,8 +547,8 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		Precision:             raw.Precision,
 		Scale:                 raw.Scale,
 		ReferenceTo:           raw.ReferenceTo,
-		RelationshipName:      raw.RelationshipName,
-		ChildRelationshipName: raw.ChildRelationshipName,
+		RelationshipName:      relationshipName,
+		ChildRelationshipName: childRelationshipName,
 		DeleteConstraint:      raw.DeleteConstraint,
 		DefaultValue:          strings.TrimSpace(raw.DefaultValue),
 		Required:              raw.Required,
@@ -553,6 +563,61 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		ValueSetName:          strings.TrimSpace(raw.ValueSet.Name),
 		PicklistValues:        picklistValues(raw.ValueSet.Definition.Values),
 	}
+}
+
+func namespaceObjectField(objectName string, field Field) Field {
+	namespace := namespaceFromAPIName(objectName)
+	if namespace == "" {
+		return field
+	}
+	field.Name = namespaceAPIName(namespace, field.Name)
+	for i, referenceTo := range field.ReferenceTo {
+		field.ReferenceTo[i] = namespaceAPIName(namespace, referenceTo)
+	}
+	field.RelationshipName = namespaceAPIName(namespace, field.RelationshipName)
+	field.ChildRelationshipName = namespaceAPIName(namespace, field.ChildRelationshipName)
+	field.SummarizedField = namespaceAPIName(namespace, field.SummarizedField)
+	field.SummaryForeignKey = namespaceAPIName(namespace, field.SummaryForeignKey)
+	for i, filter := range field.SummaryFilterItems {
+		filter.Field = namespaceAPIName(namespace, filter.Field)
+		field.SummaryFilterItems[i] = filter
+	}
+	return field
+}
+
+func namespaceFromAPIName(name string) string {
+	if !isCustomAPIName(name) {
+		return ""
+	}
+	first := strings.Index(name, "__")
+	last := strings.LastIndex(name, "__")
+	if first <= 0 || first >= last {
+		return ""
+	}
+	return name[:first]
+}
+
+func namespaceAPIName(namespace, name string) string {
+	if namespace == "" || name == "" || !isCustomAPIName(name) || hasNamespaceToken(name) {
+		return name
+	}
+	return namespace + "__" + name
+}
+
+func isCustomAPIName(name string) bool {
+	lower := strings.ToLower(name)
+	for _, suffix := range []string{"__c", "__r", "__e", "__mdt", "__b"} {
+		if strings.HasSuffix(lower, suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasNamespaceToken(name string) bool {
+	first := strings.Index(name, "__")
+	last := strings.LastIndex(name, "__")
+	return first > 0 && first < last
 }
 
 func loadValueSets(p project.Project) (map[string][]PicklistValue, error) {

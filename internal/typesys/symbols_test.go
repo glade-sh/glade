@@ -114,6 +114,53 @@ func TestBuildLoadsManagedPackageArtifactSymbols(t *testing.T) {
 	}
 }
 
+func TestBuildNamespacesSourceBackedDependencySchema(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	objectPath := filepath.Join(depRoot, "force-app/main/default/objects/Order__c/Order__c.object-meta.xml")
+	fieldPath := filepath.Join(depRoot, "force-app/main/default/objects/Order__c/fields/TransactionDate__c.field-meta.xml")
+	lookupPath := filepath.Join(depRoot, "force-app/main/default/objects/Order__c/fields/Entity__c.field-meta.xml")
+	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order</label></CustomObject>`)
+	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>TransactionDate__c</fullName><type>Date</type></CustomField>`)
+	writeFile(t, lookupPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Entity__c</fullName><type>Lookup</type><referenceTo>Entity__c</referenceTo><relationshipName>Entity__r</relationshipName></CustomField>`)
+
+	depProject := project.Project{
+		Root:        depRoot,
+		Namespace:   "znu",
+		ObjectFiles: []string{objectPath},
+		FieldFiles:  []string{fieldPath, lookupPath},
+	}
+	idx := Build(project.Project{
+		Root: root,
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:  "znu",
+			SourceRoot: depRoot,
+			Status:     "loaded",
+			Project:    &depProject,
+		}},
+	}, schema.Schema{})
+
+	objects := map[string]schema.Object{}
+	for _, object := range idx.Objects {
+		objects[object.Name] = object
+	}
+	order, ok := objects["znu__Order__c"]
+	if !ok {
+		t.Fatalf("objects = %#v", idx.Objects)
+	}
+	fields := map[string]schema.Field{}
+	for _, field := range order.Fields {
+		fields[field.Name] = field
+	}
+	if _, ok := fields["znu__TransactionDate__c"]; !ok {
+		t.Fatalf("fields = %#v", order.Fields)
+	}
+	entity := fields["znu__Entity__c"]
+	if entity.RelationshipName != "znu__Entity__r" || len(entity.ReferenceTo) != 1 || entity.ReferenceTo[0] != "znu__Entity__c" {
+		t.Fatalf("entity field = %#v", entity)
+	}
+}
+
 func TestBuildIndexDiscoversTests(t *testing.T) {
 	root := t.TempDir()
 	classPath := filepath.Join(root, "HelloTest.cls")

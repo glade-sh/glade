@@ -134,6 +134,40 @@ func TestLoadProjectInfersMissingReferencedCustomObjects(t *testing.T) {
 	}
 }
 
+func TestLoadProjectNormalizesLookupParentAndChildRelationshipNames(t *testing.T) {
+	root := t.TempDir()
+	objectPath := filepath.Join(root, "force-app/main/objects/Order__c/Order__c.object-meta.xml")
+	fieldPath := filepath.Join(root, "force-app/main/objects/Order__c/fields/Entity__c.field-meta.xml")
+	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order</label></CustomObject>`)
+	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Entity__c</fullName><type>Lookup</type><referenceTo>Entity__c</referenceTo><relationshipName>Orders</relationshipName></CustomField>`)
+
+	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	field := objectsByName(s.Objects)["Order__c"].Fields[0]
+	if field.RelationshipName != "Entity__r" || field.ChildRelationshipName != "Orders__r" {
+		t.Fatalf("field = %#v", field)
+	}
+}
+
+func TestLoadProjectNamespacesFieldsUnderNamespacedObject(t *testing.T) {
+	root := t.TempDir()
+	objectPath := filepath.Join(root, "force-app/main/objects/znu__Order__c/znu__Order__c.object-meta.xml")
+	fieldPath := filepath.Join(root, "force-app/main/objects/znu__Order__c/fields/Entity__c.field-meta.xml")
+	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order</label></CustomObject>`)
+	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Entity__c</fullName><type>Lookup</type><referenceTo>Entity__c</referenceTo><relationshipName>Orders</relationshipName></CustomField>`)
+
+	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	field := objectsByName(s.Objects)["znu__Order__c"].Fields[0]
+	if field.Name != "znu__Entity__c" || field.ReferenceTo[0] != "znu__Entity__c" || field.RelationshipName != "znu__Entity__r" || field.ChildRelationshipName != "znu__Orders__r" {
+		t.Fatalf("field = %#v", field)
+	}
+}
+
 func TestLoadProjectNormalizesLegacyObjectAndCustomMetadata(t *testing.T) {
 	root := t.TempDir()
 	objectPath := filepath.Join(root, "src/objects/Feature__mdt.object")

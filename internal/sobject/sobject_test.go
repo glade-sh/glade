@@ -138,6 +138,44 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	}
 }
 
+func TestBuildDescribeRegistryMergesDuplicateObjects(t *testing.T) {
+	registry := BuildDescribeRegistry(schema.Schema{Objects: []schema.Object{
+		{
+			Name: "znu__Order__c",
+			Fields: []schema.Field{
+				{Name: "znu__Cart__c", Type: "Lookup", ReferenceTo: []string{"znu__Cart__c"}, RelationshipName: "znu__Cart__r"},
+			},
+		},
+		{
+			Name: "znu__Order__c",
+			Fields: []schema.Field{
+				{Name: "znu__Entity__c", Type: "Lookup", ReferenceTo: []string{"znu__Entity__c"}, RelationshipName: "znu__Entity__r"},
+			},
+		},
+	}})
+
+	describe, err := registry.Describe("znu__Order__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := describe.Fields["znu__Cart__c"]; !ok {
+		t.Fatalf("missing root field: %#v", describe.Fields)
+	}
+	entity := describe.Fields["znu__Entity__c"]
+	if entity.RelationshipName != "znu__Entity__r" || len(entity.ReferenceTo) != 1 || entity.ReferenceTo[0] != "znu__Entity__c" {
+		t.Fatalf("entity field = %#v", entity)
+	}
+	found := false
+	for _, relation := range describe.Relationships {
+		if relation.Field == "znu__Entity__c" && relation.ParentRelationship == "znu__Entity__r" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("relationships = %#v", describe.Relationships)
+	}
+}
+
 func TestDescribeDefinitionConversionsPreserveFieldDescribeMetadata(t *testing.T) {
 	describe := DescribeSObjectResult{
 		Name: "Account",

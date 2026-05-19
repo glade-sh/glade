@@ -200,8 +200,7 @@ type DescribeRecordTypeInfo struct {
 }
 
 func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
-	objects := make([]schema.Object, len(s.Objects))
-	copy(objects, s.Objects)
+	objects := mergeSchemaObjects(s.Objects)
 	sort.Slice(objects, func(i, j int) bool { return objects[i].Name < objects[j].Name })
 	prefixes := storage.AssignDeterministicPrefixes(objectNames(objects), nil)
 
@@ -342,6 +341,115 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 		registry.Objects[object.Name] = FromObjectDefinition(definition)
 	}
 	return registry
+}
+
+func mergeSchemaObjects(objects []schema.Object) []schema.Object {
+	if len(objects) < 2 {
+		out := make([]schema.Object, len(objects))
+		copy(out, objects)
+		return out
+	}
+	byName := make(map[string]int, len(objects))
+	out := make([]schema.Object, 0, len(objects))
+	for _, object := range objects {
+		key := strings.ToLower(strings.TrimSpace(object.Name))
+		if key == "" {
+			out = append(out, object)
+			continue
+		}
+		if idx, ok := byName[key]; ok {
+			out[idx] = mergeSchemaObject(out[idx], object)
+			continue
+		}
+		byName[key] = len(out)
+		out = append(out, object)
+	}
+	return out
+}
+
+func mergeSchemaObject(base, overlay schema.Object) schema.Object {
+	if strings.TrimSpace(base.Name) == "" {
+		base.Name = overlay.Name
+	}
+	if overlay.Label != "" {
+		base.Label = overlay.Label
+	}
+	if overlay.PluralLabel != "" {
+		base.PluralLabel = overlay.PluralLabel
+	}
+	if overlay.SharingModel != "" {
+		base.SharingModel = overlay.SharingModel
+	}
+	if overlay.CustomSettingsType != "" {
+		base.CustomSettingsType = overlay.CustomSettingsType
+	}
+	if overlay.NameField.Type != "" || overlay.NameField.Label != "" || overlay.NameField.DisplayFormat != "" {
+		base.NameField = overlay.NameField
+	}
+	base.Fields = mergeSchemaFields(base.Fields, overlay.Fields)
+	base.RecordTypes = mergeSchemaRecordTypes(base.RecordTypes, overlay.RecordTypes)
+	base.ValidationRules = mergeSchemaValidationRules(base.ValidationRules, overlay.ValidationRules)
+	return base
+}
+
+func mergeSchemaFields(base, overlay []schema.Field) []schema.Field {
+	byName := make(map[string]int, len(base)+len(overlay))
+	out := append([]schema.Field(nil), base...)
+	for i, field := range out {
+		byName[strings.ToLower(strings.TrimSpace(field.Name))] = i
+	}
+	for _, field := range overlay {
+		key := strings.ToLower(strings.TrimSpace(field.Name))
+		if idx, ok := byName[key]; key != "" && ok {
+			out[idx] = field
+			continue
+		}
+		if key != "" {
+			byName[key] = len(out)
+		}
+		out = append(out, field)
+	}
+	return out
+}
+
+func mergeSchemaRecordTypes(base, overlay []schema.RecordType) []schema.RecordType {
+	byName := make(map[string]int, len(base)+len(overlay))
+	out := append([]schema.RecordType(nil), base...)
+	for i, recordType := range out {
+		byName[strings.ToLower(strings.TrimSpace(recordType.DeveloperName))] = i
+	}
+	for _, recordType := range overlay {
+		key := strings.ToLower(strings.TrimSpace(recordType.DeveloperName))
+		if idx, ok := byName[key]; key != "" && ok {
+			out[idx] = recordType
+			continue
+		}
+		if key != "" {
+			byName[key] = len(out)
+		}
+		out = append(out, recordType)
+	}
+	return out
+}
+
+func mergeSchemaValidationRules(base, overlay []schema.ValidationRule) []schema.ValidationRule {
+	byName := make(map[string]int, len(base)+len(overlay))
+	out := append([]schema.ValidationRule(nil), base...)
+	for i, rule := range out {
+		byName[strings.ToLower(strings.TrimSpace(rule.Name))] = i
+	}
+	for _, rule := range overlay {
+		key := strings.ToLower(strings.TrimSpace(rule.Name))
+		if idx, ok := byName[key]; key != "" && ok {
+			out[idx] = rule
+			continue
+		}
+		if key != "" {
+			byName[key] = len(out)
+		}
+		out = append(out, rule)
+	}
+	return out
 }
 
 func (r DescribeRegistry) GlobalDescribe() map[string]DescribeSObjectResult {

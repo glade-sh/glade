@@ -1720,8 +1720,8 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 	return org
 }
 
-var apexStaticFieldReferencePattern = regexp.MustCompile(`\b([A-Z][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)\b`)
-var apexTypedVariablePattern = regexp.MustCompile(`\b([A-Z][A-Za-z0-9_]*)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
+var apexStaticFieldReferencePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)\b`)
+var apexTypedVariablePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
 var apexVariableFieldReferencePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)\b`)
 
 var projectReferencedStandardFieldCache sync.Map
@@ -1755,7 +1755,7 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 			if len(match) != 3 {
 				continue
 			}
-			if _, ok := org.Objects[match[1]]; ok && storage.IsKnownStandardObject(match[1]) {
+			if _, ok := org.Objects[match[1]]; ok {
 				varTypes[match[2]] = match[1]
 			}
 		}
@@ -1802,7 +1802,7 @@ func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[st
 		return
 	}
 	state, ok := org.Objects[objectName]
-	if !ok || !storage.IsKnownStandardObject(objectName) {
+	if !ok {
 		return
 	}
 	if _, ok := storage.ResolveFieldName(state.Definition, org.Namespace, fieldName); ok {
@@ -1814,7 +1814,7 @@ func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[st
 	if inferred[objectName] == nil {
 		inferred[objectName] = make(map[string]storage.Field)
 	}
-	inferred[objectName][fieldName] = inferredReferencedStandardField(fieldName)
+	inferred[objectName][fieldName] = inferredReferencedField(*org, objectName, fieldName)
 }
 
 func parentRelationshipKnown(definition storage.ObjectDefinition, name string) bool {
@@ -1840,9 +1840,28 @@ func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]ma
 				continue
 			}
 			state.Definition.Fields[fieldName] = field
+			if field.Type == storage.FieldReference && field.RelationshipName != "" && len(field.ReferenceTo) > 0 && !parentRelationshipKnown(state.Definition, field.RelationshipName) {
+				state.Definition.Relations = append(state.Definition.Relations, storage.Relationship{
+					Field:              field.APIName,
+					ParentObjects:      append([]string(nil), field.ReferenceTo...),
+					ParentRelationship: field.RelationshipName,
+					Polymorphic:        len(field.ReferenceTo) > 1,
+				})
+			}
 		}
 		org.Objects[objectName] = state
 	}
+}
+
+func inferredReferencedField(org storage.OrgState, objectName, fieldName string) storage.Field {
+	field := inferredReferencedStandardField(fieldName)
+	if target := inferredLookupTarget(org, objectName, fieldName); target != "" {
+		field.Type = storage.FieldReference
+		field.DisplayType = "REFERENCE"
+		field.ReferenceTo = []string{target}
+		field.RelationshipName = inferredLookupRelationshipName(fieldName)
+	}
+	return field
 }
 
 func inferredReferencedStandardField(fieldName string) storage.Field {
@@ -1858,11 +1877,49 @@ func inferredReferencedStandardField(fieldName string) storage.Field {
 	case strings.Contains(fieldName, "Date"):
 		field.Type = storage.FieldDate
 		field.DisplayType = "DATE"
-	case strings.Contains(fieldName, "Amount"), strings.Contains(fieldName, "Price"), strings.Contains(fieldName, "Mrr"), strings.Contains(fieldName, "Quantity"):
+	case strings.Contains(fieldName, "Amount"), strings.Contains(fieldName, "Balance"), strings.Contains(fieldName, "Mrr"),
+		strings.Contains(fieldName, "Payment"), strings.Contains(fieldName, "Price"), strings.Contains(fieldName, "Quantity"),
+		strings.Contains(fieldName, "Shipping"), strings.Contains(fieldName, "Tax"), strings.Contains(fieldName, "Total"):
 		field.Type = storage.FieldDecimal
 		field.DisplayType = "DOUBLE"
+		field.DefaultValue = "0"
 	}
 	return field
+}
+
+func inferredLookupTarget(org storage.OrgState, objectName, fieldName string) string {
+	if !strings.HasSuffix(strings.ToLower(fieldName), "__c") {
+		return ""
+	}
+	candidates := []string{fieldName}
+	if namespace := namespaceFromSchemaName(objectName); namespace != "" {
+		candidates = append(candidates, storage.NamespaceTokenName(namespace, fieldName))
+	}
+	if org.Namespace != "" {
+		candidates = append(candidates, storage.NamespaceTokenName(org.Namespace, fieldName))
+	}
+	for _, candidate := range candidates {
+		if resolved, ok := storage.ResolveObjectName(org, candidate); ok {
+			return resolved
+		}
+	}
+	return ""
+}
+
+func inferredLookupRelationshipName(fieldName string) string {
+	if strings.HasSuffix(strings.ToLower(fieldName), "__c") {
+		return fieldName[:len(fieldName)-len("__c")] + "__r"
+	}
+	return strings.TrimSuffix(fieldName, "Id")
+}
+
+func namespaceFromSchemaName(name string) string {
+	first := strings.Index(name, "__")
+	last := strings.LastIndex(name, "__")
+	if first <= 0 || first >= last {
+		return ""
+	}
+	return name[:first]
 }
 
 type profileRecordTypeVisibilityXML struct {
