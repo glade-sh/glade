@@ -2665,6 +2665,48 @@ TEXT(ParentBundleSubtype__c) != 'Assembled')`, &orgWithSetup, childDefinition, s
 	}
 }
 
+func TestValidationFormulaSupportsABSWithRelationshipField(t *testing.T) {
+	childDefinition := storage.ObjectDefinition{
+		APIName: "CartPayment__c",
+		Fields: map[string]storage.Field{
+			"Cart__c":          {APIName: "Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"Cart__c"}, RelationshipName: "Cart__r"},
+			"PaymentAmount__c": {APIName: "PaymentAmount__c", Type: storage.FieldDecimal},
+		},
+	}
+	parentDefinition := storage.ObjectDefinition{
+		APIName: "Cart__c",
+		Fields: map[string]storage.Field{
+			"Balance__c": {APIName: "Balance__c", Type: storage.FieldDecimal},
+		},
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"CartPayment__c": {Definition: childDefinition},
+		"Cart__c": {
+			Definition: parentDefinition,
+			Records: map[storage.ID]storage.Record{
+				"a01000000000001": {
+					ID:     "a01000000000001",
+					Object: "Cart__c",
+					Fields: map[string]storage.Value{
+						"Balance__c": storage.DecimalValue("0"),
+					},
+				},
+			},
+		},
+	}}
+
+	matches, ok := evaluateValidationFormulaInOrg("ABS(PaymentAmount__c) > ABS(Cart__r.Balance__c)", &org, childDefinition, storage.Record{
+		Object: "CartPayment__c",
+		Fields: map[string]storage.Value{
+			"Cart__c":          storage.IDValue("a01000000000001"),
+			"PaymentAmount__c": storage.DecimalValue("-10"),
+		},
+	}, nil, true)
+	if !ok || !matches {
+		t.Fatalf("abs relationship validation = %v, ok=%v; want true", matches, ok)
+	}
+}
+
 func TestStandaloneRecordTypeNameDefaultEvaluatesFromRecordTypeID(t *testing.T) {
 	definition := storage.ObjectDefinition{
 		APIName: "DeferredRevenueMethod__c",

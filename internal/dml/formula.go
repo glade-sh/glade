@@ -794,6 +794,15 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaNumber, number: math.Floor(number)}, true
+	case "ABS":
+		if len(args) != 1 {
+			return formulaValue{}, false
+		}
+		number, ok := args[0].asNumber()
+		if !ok {
+			return formulaValue{}, false
+		}
+		return formulaValue{kind: formulaNumber, number: math.Abs(number)}, true
 	case "MOD":
 		if len(args) != 2 {
 			return formulaValue{}, false
