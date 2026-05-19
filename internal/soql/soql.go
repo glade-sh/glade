@@ -2529,6 +2529,9 @@ func recordFieldValue(org storage.OrgState, record storage.Record, field string)
 }
 
 func calculatedFieldValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field string) (storage.Value, bool) {
+	if canonical, ok := storage.ResolveFieldName(definition, org.Namespace, field); ok {
+		field = canonical
+	}
 	fieldDef, ok := definition.Fields[field]
 	if !ok || strings.TrimSpace(fieldDef.Formula) == "" {
 		return storage.Value{}, false

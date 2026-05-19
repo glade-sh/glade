@@ -1863,6 +1863,70 @@ func TestExecuteEvaluatesTextFormulaFieldsInWhere(t *testing.T) {
 	}
 }
 
+func TestExecuteEvaluatesDateFormulaOverrideFieldsInWhere(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "NU"
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"LapsedOnOverride__c": {APIName: "LapsedOnOverride__c", Type: storage.FieldDate},
+				"LapsedOn__c": {
+					APIName:     "LapsedOn__c",
+					Type:        storage.FieldCalculated,
+					DisplayType: "DATE",
+					Formula: `IF(ISBLANK(LapsedOnOverride__c), (IF(Membership__r.Pending__c,
+            null,
+            IF(!ISBLANK(Membership__r.EndDateOverride__c),
+            Membership__r.EndDate__c + 1,
+            IF(ISPICKVAL(Membership__r.MembershipType2__r.GracePeriodUnit__c, 'Day') ,
+            Membership__r.EndDate__c + Membership__r.MembershipType2__r.GracePeriod__c + 1,
+            DATE(
+            YEAR(Membership__r.EndDate__c) + FLOOR((MONTH(Membership__r.EndDate__c) + Membership__r.MembershipType2__r.GracePeriod__c) / 12),
+            MOD(MONTH(Membership__r.EndDate__c) + Membership__r.MembershipType2__r.GracePeriod__c, 12) + 1,
+            1
+            )
+            )
+            ))), LapsedOnOverride__c)`,
+				},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {
+				ID:     "001000000000001",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"NU__LapsedOnOverride__c": storage.DateValue("2026-05-02"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, LapsedOn__c FROM Account WHERE LapsedOn__c = 2026-05-02")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["LapsedOn__c"].String != "2026-05-02" {
+		t.Fatalf("date formula override result = %#v", result)
+	}
+
+	result, err = ParseAndExecute(org, "SELECT Id, LapsedOn__c FROM Account WHERE NU__LapsedOn__c = 2026-05-02")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["LapsedOn__c"].String != "2026-05-02" {
+		t.Fatalf("namespaced date formula override result = %#v", result)
+	}
+
+	result, err = ParseAndExecute(org, "SELECT Id FROM Account WHERE NU__LapsedOn__c = 2026-05-02")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("namespaced date formula filter-only result = %#v", result)
+	}
+}
+
 func TestExecuteEvaluatesParentFormulaField(t *testing.T) {
 	org := storage.NewOrgState()
 	batchDefinition := storage.ObjectDefinition{

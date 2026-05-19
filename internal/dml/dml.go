@@ -3379,6 +3379,12 @@ func workflowLiteralValue(field storage.Field, literal string) (storage.Value, b
 				return storage.BooleanValue(false), false, true
 			}
 			return storage.Value{}, false, false
+		case "DATE":
+			return storage.DateValue(literal), false, true
+		case "DATETIME":
+			return storage.DateTimeValue(literal), false, true
+		case "ID":
+			return storage.IDValue(storage.ID(literal)), false, true
 		default:
 			return storage.StringValue(literal), false, true
 		}
