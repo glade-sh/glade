@@ -1,7 +1,10 @@
 package probe
 
 import (
+	"sync"
 	"testing"
+
+	"github.com/open-aer/oaer/internal/capability"
 )
 
 func ptr(s string) *string { return &s }
@@ -105,5 +108,55 @@ func TestCompareVolatileProbesIgnoreExactValue(t *testing.T) {
 		if gap := Compare(golden, local); gap != nil {
 			t.Fatalf("%s expected no gap, got %+v", id, gap)
 		}
+	}
+}
+
+func TestCompareStubContractUnsupportedVsCompileEquivalent(t *testing.T) {
+	stubContractProbeByID = map[string]capability.StubContractProbeSpec{
+		"stub.connectapi.example": {
+			ID:   "stub.connectapi.example",
+			Kind: "method",
+			Mode: capability.StubContractOrgDiff,
+		},
+	}
+	stubContractProbeOnce = sync.Once{}
+	stubContractProbeOnce.Do(func() {})
+	golden := ProbeResult{ProbeID: "stub.connectapi.example", ExceptionType: ptr("System.UnsupportedOperationException")}
+	local := ProbeResult{ProbeID: "stub.connectapi.example", ExceptionType: ptr("System.CompileException")}
+	if gap := Compare(golden, local); gap != nil {
+		t.Fatalf("expected no gap for metadata-scoped stub contract equivalence, got %+v", gap)
+	}
+}
+
+func TestCompareUnsupportedVsCompileNonStubStillGap(t *testing.T) {
+	golden := ProbeResult{ProbeID: "p1", ExceptionType: ptr("System.UnsupportedOperationException")}
+	local := ProbeResult{ProbeID: "p1", ExceptionType: ptr("System.CompileException")}
+	gap := Compare(golden, local)
+	if gap == nil {
+		t.Fatal("expected gap")
+	}
+	if gap.GapType != GapTypeBehavioral {
+		t.Fatalf("expected behavioral, got %s", gap.GapType)
+	}
+}
+
+func TestCompareStubContractRuntimeMismatchStillGap(t *testing.T) {
+	stubContractProbeByID = map[string]capability.StubContractProbeSpec{
+		"stub.connectapi.example.runtime": {
+			ID:   "stub.connectapi.example.runtime",
+			Kind: "method",
+			Mode: capability.StubContractOrgDiff,
+		},
+	}
+	stubContractProbeOnce = sync.Once{}
+	stubContractProbeOnce.Do(func() {})
+	golden := ProbeResult{ProbeID: "stub.connectapi.example.runtime", ExceptionType: ptr("System.UnsupportedOperationException")}
+	local := ProbeResult{ProbeID: "stub.connectapi.example.runtime", ExceptionType: ptr("ExecutionError")}
+	gap := Compare(golden, local)
+	if gap == nil {
+		t.Fatal("expected gap")
+	}
+	if gap.GapType != GapTypeBehavioral {
+		t.Fatalf("expected behavioral, got %s", gap.GapType)
 	}
 }
