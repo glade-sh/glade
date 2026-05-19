@@ -61,6 +61,9 @@ func (l *LocalExecutor) CaptureLocal(probeIDs []string) (map[string]ProbeResult,
 	if workers > len(probeIDs) {
 		workers = len(probeIDs)
 	}
+	// VM runtime registration in this path mutates shared state and is not safe
+	// under concurrent worker execution.
+	workers = 1
 	type localJob struct {
 		index int
 		id    string
@@ -102,7 +105,17 @@ func (l *LocalExecutor) CaptureLocal(probeIDs []string) (map[string]ProbeResult,
 	orderedTimings := make([]ProbeTiming, len(probeIDs))
 	for item := range out {
 		if item.err != nil {
-			return nil, nil, fmt.Errorf("probe %s: %w", item.id, item.err)
+			errType := "ExecutionError"
+			errMsg := item.err.Error()
+			results[item.id] = ProbeResult{
+				ProbeID:          item.id,
+				Category:         "Stub Contracts",
+				Result:           nil,
+				ExceptionType:    strPtr(errType),
+				ExceptionMessage: strPtr(errMsg),
+			}
+			orderedTimings[item.index] = item.timing
+			continue
 		}
 		results[item.id] = item.result
 		orderedTimings[item.index] = item.timing
@@ -189,6 +202,19 @@ func seedProbeData(org *storage.OrgState) error {
 
 func (l *LocalExecutor) runProbe(index typesys.Index, org storage.OrgState, probeID string) (ProbeResult, error) {
 	code := fmt.Sprintf("System.debug(ProbeRunner.run('%s'));", probeID)
+	if isStubContractProbeID(probeID) {
+		spec, ok := stubContractProbeSpecByID(probeID)
+		if !ok {
+			return ProbeResult{
+				ProbeID:          probeID,
+				Category:         "Stub Contracts",
+				Result:           nil,
+				ExceptionType:    strPtr("UnknownProbeException"),
+				ExceptionMessage: strPtr("No generated stub contract probe spec found"),
+			}, nil
+		}
+		code = buildLocalStubContractProbeCode(spec)
+	}
 
 	program, err := vm.CompileAnonymous(code)
 	if err != nil {

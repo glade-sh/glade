@@ -180,9 +180,9 @@ func (s *SFDXExecutor) CaptureToolingSnippet(probeDir string, snippet ToolingSni
 	if err != nil {
 		return ToolingSnippetResult{}, err
 	}
-	outputBytes, cli, err := s.runWithSF(probeDir, source)
+	outputBytes, cli, err := s.runWithSF(probeDir, source, probeRunTimeout())
 	if err != nil {
-		outputBytes, cli, err = s.runWithSFDX(probeDir, source)
+		outputBytes, cli, err = s.runWithSFDX(probeDir, source, probeRunTimeout())
 		if err != nil {
 			return ToolingSnippetResult{}, err
 		}

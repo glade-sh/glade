@@ -214,6 +214,10 @@ Compat subcommands:
   dashboard     Generate compatibility dashboard.
   gaps          Generate known gaps document.
   stdlib        Generate standard library coverage document.
+  stub-contracts
+                Report generated stub behavioral contract policy.
+  stub-discovery
+                Execute generated stub probes and report implementation candidates.
   stub-behavior
                 Report generated platform stub behavior status.
   tooling-fixtures
@@ -1834,6 +1838,10 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return runCompatStandardObjects(args[1:], w)
 	case "stub-behavior":
 		return runCompatStubBehavior(args[1:], w)
+	case "stub-contracts":
+		return runCompatStubContracts(args[1:], w)
+	case "stub-discovery":
+		return runCompatStubDiscovery(args[1:], w)
 	case "stub-inventory":
 		return runCompatStubInventory(args[1:], w)
 	case "product-namespaces":
@@ -1872,7 +1880,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 }
 
 func compatUsage() string {
-	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--parallel-methods] [--progress] [--analyze] [--profile-on-timeout] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
+	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--parallel-methods] [--progress] [--analyze] [--profile-on-timeout] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-contracts [--source <dir>] [--json|--output <path>|--check <path>] | stub-discovery [--source <dir>] [--project <probe-sfdx-dir>] [--tier smoke|core|full|local] [--limit <n>] [--no-exec] [--json|--output <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
 }
 
 type postParityReadiness struct {
@@ -3206,6 +3214,488 @@ func runCompatStubBehavior(args []string, w io.Writer) error {
 		fmt.Fprintf(w, "unknown: %d\n", report.Totals.Unknown)
 		return nil
 	}
+}
+
+func runCompatStubContracts(args []string, w io.Writer) error {
+	sourceRoot := filepath.Join("example-projects", "stubs")
+	outputPath := ""
+	checkPath := ""
+	probeManifestPath := ""
+	probeTier := "full"
+	jsonOut := false
+	usage := "usage: oaer compat stub-contracts [--source <dir>] [--json|--output <path>|--check <path>] [--probe-manifest <path>] [--probe-tier smoke|core|full|local]"
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--source":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			sourceRoot = args[i]
+		case "--json":
+			jsonOut = true
+		case "--output":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			outputPath = args[i]
+		case "--check":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			checkPath = args[i]
+		case "--probe-manifest":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			probeManifestPath = args[i]
+		case "--probe-tier":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			probeTier = strings.ToLower(strings.TrimSpace(args[i]))
+			switch probeTier {
+			case "smoke", "core", "full", "local":
+			default:
+				return errors.New(usage)
+			}
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	requested := 0
+	for _, set := range []bool{jsonOut, outputPath != "", checkPath != ""} {
+		if set {
+			requested++
+		}
+	}
+	if requested > 1 {
+		return errors.New("use only one of --json, --output, or --check")
+	}
+	report, err := capability.BuildStubContractReport(sourceRoot)
+	if err != nil {
+		return err
+	}
+	if probeManifestPath != "" {
+		specs := capability.BuildStubContractProbeManifest(report, probeTier)
+		var manifestBuf strings.Builder
+		if err := capability.WriteStubContractProbeManifestJSON(&manifestBuf, specs); err != nil {
+			return err
+		}
+		if err := os.WriteFile(probeManifestPath, []byte(manifestBuf.String()), 0o644); err != nil {
+			return err
+		}
+		fmt.Fprintf(w, "%s: wrote %d probe specs (tier=%s)\n", probeManifestPath, len(specs), probeTier)
+	}
+	switch {
+	case jsonOut:
+		return capability.WriteStubContractsJSON(w, report)
+	case outputPath != "":
+		var buf strings.Builder
+		if err := writeStubContractsOutput(&buf, report, outputPath); err != nil {
+			return err
+		}
+		return os.WriteFile(outputPath, []byte(buf.String()), 0o644)
+	case checkPath != "":
+		var buf strings.Builder
+		if err := writeStubContractsOutput(&buf, report, checkPath); err != nil {
+			return err
+		}
+		existing, err := os.ReadFile(checkPath)
+		if err != nil {
+			return err
+		}
+		if string(existing) != buf.String() {
+			return fmt.Errorf("stub contracts drift: run `oaer compat stub-contracts --output %s`", checkPath)
+		}
+		fmt.Fprintf(w, "%s: up to date\n", checkPath)
+		return nil
+	default:
+		fmt.Fprintf(w, "entries: %d\n", report.Totals.Entries)
+		fmt.Fprintf(w, "types: %d\n", report.Totals.Types)
+		fmt.Fprintf(w, "members: %d\n", report.Totals.Members)
+		fmt.Fprintf(w, "withProbe: %d\n", report.Totals.WithProbe)
+		fmt.Fprintf(w, "org-diff: %d\n", report.Totals.ByMode[string(capability.StubContractOrgDiff)])
+		fmt.Fprintf(w, "local-contract: %d\n", report.Totals.ByMode[string(capability.StubContractLocalOnly)])
+		fmt.Fprintf(w, "passive-dto: %d\n", report.Totals.ByMode[string(capability.StubContractPassiveDTO)])
+		fmt.Fprintf(w, "compile-shape: %d\n", report.Totals.ByMode[string(capability.StubContractCompileShape)])
+		return nil
+	}
+}
+
+func writeStubContractsOutput(w io.Writer, report capability.StubContractReport, path string) error {
+	if strings.EqualFold(filepath.Ext(path), ".json") {
+		return capability.WriteStubContractsJSON(w, report)
+	}
+	return capability.WriteStubContractsMarkdown(w, report)
+}
+
+type stubDiscoveryReport struct {
+	Target            string                        `json:"target"`
+	Source            string                        `json:"source"`
+	Tier              string                        `json:"tier"`
+	ProbeProject      string                        `json:"probeProject"`
+	Requested         int                           `json:"requested"`
+	Executed          int                           `json:"executed"`
+	GeneratedAtUTC    string                        `json:"generatedAtUtc"`
+	OutcomeCounts     map[string]int                `json:"outcomeCounts"`
+	OddityRiskCounts  map[string]int                `json:"oddityRiskCounts"`
+	Candidates        []stubDiscoveryCandidate      `json:"candidates"`
+	TopImplementation []stubDiscoveryCandidateBrief `json:"topImplementation"`
+}
+
+type stubDiscoveryCandidate struct {
+	ProbeID       string   `json:"probeId"`
+	ContractID    string   `json:"contractId"`
+	Type          string   `json:"type"`
+	Member        string   `json:"member,omitempty"`
+	Kind          string   `json:"kind"`
+	Mode          string   `json:"mode"`
+	Owner         string   `json:"owner"`
+	Outcome       string   `json:"outcome"`
+	ExceptionType string   `json:"exceptionType,omitempty"`
+	ExceptionMsg  string   `json:"exceptionMessage,omitempty"`
+	OddityRisk    string   `json:"oddityRisk,omitempty"`
+	EdgeTags      []string `json:"edgeTags,omitempty"`
+	Normalization string   `json:"normalization,omitempty"`
+	FailureShape  string   `json:"failureShape,omitempty"`
+	NextAction    string   `json:"nextAction"`
+}
+
+type stubDiscoveryCandidateBrief struct {
+	ContractID string `json:"contractId"`
+	ProbeID    string `json:"probeId"`
+	Owner      string `json:"owner"`
+	Outcome    string `json:"outcome"`
+	OddityRisk string `json:"oddityRisk,omitempty"`
+	NextAction string `json:"nextAction"`
+}
+
+func runCompatStubDiscovery(args []string, w io.Writer) error {
+	sourceRoot := filepath.Join("example-projects", "stubs")
+	probeProject := filepath.Join("probes", "sfdx")
+	tier := "smoke"
+	limit := 200
+	noExec := false
+	jsonOut := false
+	outputPath := ""
+	usage := "usage: oaer compat stub-discovery [--source <dir>] [--project <probe-sfdx-dir>] [--tier smoke|core|full|local] [--limit <n>] [--no-exec] [--json|--output <path>]"
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--source":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			sourceRoot = args[i]
+		case "--project":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			probeProject = args[i]
+		case "--tier":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			tier = strings.ToLower(strings.TrimSpace(args[i]))
+			switch tier {
+			case "smoke", "core", "full", "local":
+			default:
+				return errors.New(usage)
+			}
+		case "--limit":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			n, err := strconv.Atoi(args[i])
+			if err != nil || n <= 0 {
+				return errors.New(usage)
+			}
+			limit = n
+		case "--no-exec":
+			noExec = true
+		case "--json":
+			jsonOut = true
+		case "--output":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			outputPath = args[i]
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if jsonOut && outputPath != "" {
+		return errors.New("use only one of --json or --output")
+	}
+	contracts, err := capability.BuildStubContractReport(sourceRoot)
+	if err != nil {
+		return err
+	}
+	manifest := capability.BuildStubContractProbeManifest(contracts, tier)
+	if len(manifest) == 0 {
+		return errors.New("stub discovery manifest is empty for requested tier")
+	}
+	if limit > len(manifest) {
+		limit = len(manifest)
+	}
+	contractByID := map[string]capability.StubContractEntry{}
+	for _, entry := range contracts.Entries {
+		contractByID[entry.ID] = entry
+	}
+	selected := manifest[:limit]
+	probeIDs := make([]string, 0, len(selected))
+	for _, spec := range selected {
+		probeIDs = append(probeIDs, spec.ID)
+	}
+	results := map[string]probe.ProbeResult{}
+	if !noExec {
+		localExec := &probe.LocalExecutor{ProbeDir: probeProject}
+		var captureErr error
+		results, _, captureErr = localExec.CaptureLocal(probeIDs)
+		if captureErr != nil {
+			return captureErr
+		}
+	}
+	report := stubDiscoveryReport{
+		Target:           "stub contract implementation discovery",
+		Source:           sourceRoot,
+		Tier:             tier,
+		ProbeProject:     probeProject,
+		Requested:        len(selected),
+		Executed:         len(results),
+		GeneratedAtUTC:   time.Now().UTC().Format(time.RFC3339),
+		OutcomeCounts:    map[string]int{},
+		OddityRiskCounts: map[string]int{},
+		Candidates:       make([]stubDiscoveryCandidate, 0, len(selected)),
+	}
+	for _, spec := range selected {
+		contract := contractByID[spec.ContractID]
+		candidate := stubDiscoveryCandidate{}
+		if noExec {
+			candidate = buildStubDiscoveryCandidateNoExec(spec, contract)
+		} else {
+			result, ok := results[spec.ID]
+			if !ok {
+				continue
+			}
+			candidate = buildStubDiscoveryCandidate(spec, contract, result)
+		}
+		report.Candidates = append(report.Candidates, candidate)
+		report.OutcomeCounts[candidate.Outcome]++
+		if candidate.OddityRisk != "" {
+			report.OddityRiskCounts[candidate.OddityRisk]++
+		}
+	}
+	sort.SliceStable(report.Candidates, func(i, j int) bool {
+		ri := stubDiscoveryPriority(report.Candidates[i])
+		rj := stubDiscoveryPriority(report.Candidates[j])
+		if ri != rj {
+			return ri > rj
+		}
+		return report.Candidates[i].ContractID < report.Candidates[j].ContractID
+	})
+	top := 50
+	if top > len(report.Candidates) {
+		top = len(report.Candidates)
+	}
+	report.TopImplementation = make([]stubDiscoveryCandidateBrief, 0, top)
+	for _, c := range report.Candidates[:top] {
+		report.TopImplementation = append(report.TopImplementation, stubDiscoveryCandidateBrief{
+			ContractID: c.ContractID,
+			ProbeID:    c.ProbeID,
+			Owner:      c.Owner,
+			Outcome:    c.Outcome,
+			OddityRisk: c.OddityRisk,
+			NextAction: c.NextAction,
+		})
+	}
+	switch {
+	case jsonOut:
+		return writeStubDiscoveryJSON(w, report)
+	case outputPath != "":
+		var b strings.Builder
+		if strings.EqualFold(filepath.Ext(outputPath), ".json") {
+			if err := writeStubDiscoveryJSON(&b, report); err != nil {
+				return err
+			}
+		} else {
+			if err := writeStubDiscoveryMarkdown(&b, report); err != nil {
+				return err
+			}
+		}
+		return os.WriteFile(outputPath, []byte(b.String()), 0o644)
+	default:
+		fmt.Fprintf(w, "executed: %d/%d (tier=%s, no-exec=%t)\n", report.Executed, report.Requested, report.Tier, noExec)
+		fmt.Fprintf(w, "outcomes: returns=%d unsupported=%d exception=%d compile_error=%d missing=%d\n",
+			report.OutcomeCounts["returns"], report.OutcomeCounts["unsupported"], report.OutcomeCounts["exception"], report.OutcomeCounts["compile_error"], report.OutcomeCounts["missing"])
+		fmt.Fprintf(w, "discovery: needs_org_probe=%d needs_local_probe=%d unverified=%d\n",
+			report.OutcomeCounts["needs_org_probe"], report.OutcomeCounts["needs_local_probe"], report.OutcomeCounts["unverified"])
+		fmt.Fprintf(w, "oddity-risk: high=%d medium=%d low=%d\n",
+			report.OddityRiskCounts["high"], report.OddityRiskCounts["medium"], report.OddityRiskCounts["low"])
+		return nil
+	}
+}
+
+func buildStubDiscoveryCandidateNoExec(spec capability.StubContractProbeSpec, contract capability.StubContractEntry) stubDiscoveryCandidate {
+	outcome := "unverified"
+	if contract.Mode == capability.StubContractOrgDiff {
+		outcome = "needs_org_probe"
+	}
+	if contract.Mode == capability.StubContractLocalOnly {
+		outcome = "needs_local_probe"
+	}
+	return stubDiscoveryCandidate{
+		ProbeID:       spec.ID,
+		ContractID:    spec.ContractID,
+		Type:          contract.Type,
+		Member:        contract.Member,
+		Kind:          contract.Kind,
+		Mode:          string(contract.Mode),
+		Owner:         contract.Owner,
+		Outcome:       outcome,
+		OddityRisk:    contract.OddityRisk,
+		EdgeTags:      append([]string(nil), contract.EdgeTags...),
+		Normalization: contract.Normalization,
+		FailureShape:  contract.FailureShape,
+		NextAction:    stubDiscoveryNextAction(contract, outcome),
+	}
+}
+
+func buildStubDiscoveryCandidate(spec capability.StubContractProbeSpec, contract capability.StubContractEntry, result probe.ProbeResult) stubDiscoveryCandidate {
+	outcome := "returns"
+	excType := ""
+	excMsg := ""
+	if result.ExceptionType != nil {
+		excType = *result.ExceptionType
+		if result.ExceptionMessage != nil {
+			excMsg = *result.ExceptionMessage
+		}
+		switch {
+		case strings.Contains(strings.ToLower(excType), "unsupported") || strings.Contains(strings.ToLower(excMsg), "unsupported"):
+			outcome = "unsupported"
+		case strings.Contains(strings.ToLower(excType), "unknownprobeexception"):
+			outcome = "missing"
+		case strings.Contains(strings.ToLower(excType), "compile"):
+			outcome = "compile_error"
+		default:
+			outcome = "exception"
+		}
+	}
+	return stubDiscoveryCandidate{
+		ProbeID:       spec.ID,
+		ContractID:    spec.ContractID,
+		Type:          contract.Type,
+		Member:        contract.Member,
+		Kind:          contract.Kind,
+		Mode:          string(contract.Mode),
+		Owner:         contract.Owner,
+		Outcome:       outcome,
+		ExceptionType: excType,
+		ExceptionMsg:  excMsg,
+		OddityRisk:    contract.OddityRisk,
+		EdgeTags:      append([]string(nil), contract.EdgeTags...),
+		Normalization: contract.Normalization,
+		FailureShape:  contract.FailureShape,
+		NextAction:    stubDiscoveryNextAction(contract, outcome),
+	}
+}
+
+func stubDiscoveryNextAction(contract capability.StubContractEntry, outcome string) string {
+	switch outcome {
+	case "needs_org_probe":
+		return "execute org probe and record golden behavior for parity implementation"
+	case "needs_local_probe":
+		return "execute local probe and confirm deterministic unsupported or passive-local behavior"
+	case "unverified":
+		return "run probe execution for this contract and classify observed behavior"
+	case "returns":
+		if contract.Mode == capability.StubContractOrgDiff {
+			return "run org-diff probe and compare payload parity"
+		}
+		return "retain behavior and add regression fixture"
+	case "unsupported":
+		return "decide keep-unsupported or implement deterministic local model"
+	case "compile_error":
+		return "fix parser/sema/runtime call shape for this signature"
+	case "missing":
+		return "repair generated probe invocation template for this signature"
+	default:
+		return "capture exception shape and implement Apex-compatible behavior"
+	}
+}
+
+func stubDiscoveryPriority(c stubDiscoveryCandidate) int {
+	score := 0
+	switch c.Outcome {
+	case "compile_error":
+		score += 400
+	case "missing":
+		score += 350
+	case "exception":
+		score += 300
+	case "unsupported":
+		score += 200
+	default:
+		score += 100
+	}
+	switch c.OddityRisk {
+	case "high":
+		score += 30
+	case "medium":
+		score += 20
+	case "low":
+		score += 10
+	}
+	if c.Mode == string(capability.StubContractOrgDiff) {
+		score += 15
+	}
+	return score
+}
+
+func writeStubDiscoveryJSON(w io.Writer, report stubDiscoveryReport) error {
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(report)
+}
+
+func writeStubDiscoveryMarkdown(w io.Writer, report stubDiscoveryReport) error {
+	if _, err := fmt.Fprintln(w, "# Stub Discovery"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "\nTier: `%s`\n", report.Tier); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "- Executed: %d/%d\n", report.Executed, report.Requested); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "- Outcomes: returns=%d unsupported=%d exception=%d compile_error=%d missing=%d\n",
+		report.OutcomeCounts["returns"], report.OutcomeCounts["unsupported"], report.OutcomeCounts["exception"], report.OutcomeCounts["compile_error"], report.OutcomeCounts["missing"]); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "\n## Top Implementation Candidates"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "| Contract | Probe | Owner | Outcome | Risk | Next |"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "| --- | --- | --- | --- | --- | --- |"); err != nil {
+		return err
+	}
+	for _, c := range report.TopImplementation {
+		if _, err := fmt.Fprintf(w, "| `%s` | `%s` | %s | `%s` | `%s` | %s |\n", c.ContractID, c.ProbeID, c.Owner, c.Outcome, c.OddityRisk, c.NextAction); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func writeStubBehaviorOutput(w io.Writer, report capability.StubBehaviorReport, path string) error {
