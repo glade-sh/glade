@@ -29222,6 +29222,12 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		decimal.Text = strconv.FormatInt(value.Int, 10)
 		return decimal, nil
 	}
+	if (strings.EqualFold(typeName, "Integer") || strings.EqualFold(typeName, "Long")) && untypedIntegralDecimalLiteral(value) {
+		if value.Decimal < float64(math.MinInt64) || value.Decimal > float64(math.MaxInt64) {
+			return Null, fmt.Errorf("cannot assign decimal to %s", typeName)
+		}
+		return Int(int64(value.Decimal)), nil
+	}
 	if collectionBase(typeName) == "List" && value.Kind == ValueList {
 		if value.Runtime == "" && value.Type != "" && !strings.EqualFold(value.Type, typeName) {
 			value.Runtime = value.Type
@@ -29487,6 +29493,13 @@ func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
 		return Null, err
 	}
 	return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", runtimeValueTypeName(value), targetType))
+}
+
+func untypedIntegralDecimalLiteral(value Value) bool {
+	if value.Kind != ValueDecimal || value.Type != "" || value.Static != "" {
+		return false
+	}
+	return math.Trunc(value.Decimal) == value.Decimal
 }
 
 func typeExceptionTargetName(typeName string) string {

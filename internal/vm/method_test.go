@@ -101,6 +101,71 @@ System.assertEquals(null, holder.Cart.Batch__c);
 	}
 }
 
+func TestExecIntegerPropertyAssignmentThroughIndexedListUsesIntegerLiteral(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Item> items = new List<Item>{ new Item() };
+items[0].PaymentSortOrder = 200;
+System.assertEquals(200, items[0].PaymentSortOrder);
+Holder holder = new Holder();
+holder.Items = items;
+holder.getItems()[0].PaymentSortOrder = 100;
+System.assertEquals(100, holder.getItems()[0].PaymentSortOrder);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Item",
+		Fields: map[string]Field{
+			"PaymentSortOrder": {Name: "PaymentSortOrder", Type: "Integer", Property: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	methodProgram, err := CompileAnonymous("return this.Items;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Holder",
+		Fields: map[string]Field{
+			"Items": {Name: "Items", Type: "List<Item>", Property: true},
+		},
+		Methods: map[string]Method{
+			"getItems": {
+				Name:       "Holder.getItems",
+				ClassName:  "Holder",
+				ReturnType: "List<Item>",
+				Program:    methodProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCoerceUntypedIntegralDecimalToInteger(t *testing.T) {
+	machine := New(nil)
+	decimal := Decimal(200)
+	decimal.Text = "200.0"
+	coerced, err := machine.coerceAssignable("Integer", decimal)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if coerced.Kind != ValueInt || coerced.Int != 200 {
+		t.Fatalf("coerced = %#v, want integer 200", coerced)
+	}
+	typedDecimal := decimal
+	typedDecimal.Static = "Decimal"
+	if _, err := machine.coerceAssignable("Integer", typedDecimal); err == nil {
+		t.Fatal("typed Decimal assigned to Integer without error")
+	}
+}
+
 func TestExecRegisteredStaticMethodMatchesNestedSObjectCollectionMap(t *testing.T) {
 	methodProgram, err := CompileAnonymous("return values.size();")
 	if err != nil {
