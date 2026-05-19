@@ -555,13 +555,22 @@ func DefaultValueForRecordField(definition ObjectDefinition, record Record, fiel
 		if value, ok := defaultPicklistValueForRecordType(definition, record, field); ok {
 			return value, true
 		}
-	}
-	if value, ok := DefaultValueForField(field); ok {
-		return value, true
+		if value, ok := DefaultValueForField(field); ok {
+			return value, true
+		}
 	}
 	raw := strings.TrimSpace(field.DefaultValue)
 	if raw == "" {
 		return Value{}, false
+	}
+	if raw == "$RecordType.Name" || raw == "$RecordType.DeveloperName" {
+		value := defaultConditionValue(definition, record, raw)
+		if value != "" {
+			return defaultValueFromRaw(field, value)
+		}
+	}
+	if value, ok := DefaultValueForField(field); ok {
+		return value, true
 	}
 	condition, trueValue, falseValue, ok := splitDefaultIF(raw)
 	if !ok {
@@ -863,6 +872,11 @@ func ResolveObjectName(org OrgState, name string) (string, bool) {
 func richerNamespacedObjectMatch(org OrgState, name string, exact ObjectState) (string, bool) {
 	if hasNamespaceToken(name) || !isCustomAPIName(name) {
 		return "", false
+	}
+	if prefixed := NamespaceTokenName(org.Namespace, name); prefixed != name {
+		if state, ok := org.Objects[prefixed]; ok && objectDefinitionRicher(state.Definition, exact.Definition) {
+			return prefixed, true
+		}
 	}
 	var match string
 	var matched ObjectState

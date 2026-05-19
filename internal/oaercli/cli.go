@@ -214,6 +214,8 @@ Compat subcommands:
   dashboard     Generate compatibility dashboard.
   gaps          Generate known gaps document.
   stdlib        Generate standard library coverage document.
+  stub-contracts
+                Report generated stub behavioral contract policy.
   stub-behavior
                 Report generated platform stub behavior status.
   tooling-fixtures
@@ -1834,6 +1836,8 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return runCompatStandardObjects(args[1:], w)
 	case "stub-behavior":
 		return runCompatStubBehavior(args[1:], w)
+	case "stub-contracts":
+		return runCompatStubContracts(args[1:], w)
 	case "stub-inventory":
 		return runCompatStubInventory(args[1:], w)
 	case "product-namespaces":
@@ -1872,7 +1876,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 }
 
 func compatUsage() string {
-	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--parallel-methods] [--progress] [--analyze] [--profile-on-timeout] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
+	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--parallel-methods] [--progress] [--analyze] [--profile-on-timeout] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-contracts [--source <dir>] [--json|--output <path>|--check <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
 }
 
 type postParityReadiness struct {
@@ -3206,6 +3210,124 @@ func runCompatStubBehavior(args []string, w io.Writer) error {
 		fmt.Fprintf(w, "unknown: %d\n", report.Totals.Unknown)
 		return nil
 	}
+}
+
+func runCompatStubContracts(args []string, w io.Writer) error {
+	sourceRoot := filepath.Join("example-projects", "stubs")
+	outputPath := ""
+	checkPath := ""
+	probeManifestPath := ""
+	probeTier := "full"
+	jsonOut := false
+	usage := "usage: oaer compat stub-contracts [--source <dir>] [--json|--output <path>|--check <path>] [--probe-manifest <path>] [--probe-tier smoke|core|full|local]"
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--source":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			sourceRoot = args[i]
+		case "--json":
+			jsonOut = true
+		case "--output":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			outputPath = args[i]
+		case "--check":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			checkPath = args[i]
+		case "--probe-manifest":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			probeManifestPath = args[i]
+		case "--probe-tier":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			probeTier = strings.ToLower(strings.TrimSpace(args[i]))
+			switch probeTier {
+			case "smoke", "core", "full", "local":
+			default:
+				return errors.New(usage)
+			}
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	requested := 0
+	for _, set := range []bool{jsonOut, outputPath != "", checkPath != ""} {
+		if set {
+			requested++
+		}
+	}
+	if requested > 1 {
+		return errors.New("use only one of --json, --output, or --check")
+	}
+	report, err := capability.BuildStubContractReport(sourceRoot)
+	if err != nil {
+		return err
+	}
+	if probeManifestPath != "" {
+		specs := capability.BuildStubContractProbeManifest(report, probeTier)
+		var manifestBuf strings.Builder
+		if err := capability.WriteStubContractProbeManifestJSON(&manifestBuf, specs); err != nil {
+			return err
+		}
+		if err := os.WriteFile(probeManifestPath, []byte(manifestBuf.String()), 0o644); err != nil {
+			return err
+		}
+		fmt.Fprintf(w, "%s: wrote %d probe specs (tier=%s)\n", probeManifestPath, len(specs), probeTier)
+	}
+	switch {
+	case jsonOut:
+		return capability.WriteStubContractsJSON(w, report)
+	case outputPath != "":
+		var buf strings.Builder
+		if err := writeStubContractsOutput(&buf, report, outputPath); err != nil {
+			return err
+		}
+		return os.WriteFile(outputPath, []byte(buf.String()), 0o644)
+	case checkPath != "":
+		var buf strings.Builder
+		if err := writeStubContractsOutput(&buf, report, checkPath); err != nil {
+			return err
+		}
+		existing, err := os.ReadFile(checkPath)
+		if err != nil {
+			return err
+		}
+		if string(existing) != buf.String() {
+			return fmt.Errorf("stub contracts drift: run `oaer compat stub-contracts --output %s`", checkPath)
+		}
+		fmt.Fprintf(w, "%s: up to date\n", checkPath)
+		return nil
+	default:
+		fmt.Fprintf(w, "entries: %d\n", report.Totals.Entries)
+		fmt.Fprintf(w, "types: %d\n", report.Totals.Types)
+		fmt.Fprintf(w, "members: %d\n", report.Totals.Members)
+		fmt.Fprintf(w, "withProbe: %d\n", report.Totals.WithProbe)
+		fmt.Fprintf(w, "org-diff: %d\n", report.Totals.ByMode[string(capability.StubContractOrgDiff)])
+		fmt.Fprintf(w, "local-contract: %d\n", report.Totals.ByMode[string(capability.StubContractLocalOnly)])
+		fmt.Fprintf(w, "passive-dto: %d\n", report.Totals.ByMode[string(capability.StubContractPassiveDTO)])
+		fmt.Fprintf(w, "compile-shape: %d\n", report.Totals.ByMode[string(capability.StubContractCompileShape)])
+		return nil
+	}
+}
+
+func writeStubContractsOutput(w io.Writer, report capability.StubContractReport, path string) error {
+	if strings.EqualFold(filepath.Ext(path), ".json") {
+		return capability.WriteStubContractsJSON(w, report)
+	}
+	return capability.WriteStubContractsMarkdown(w, report)
 }
 
 func writeStubBehaviorOutput(w io.Writer, report capability.StubBehaviorReport, path string) error {

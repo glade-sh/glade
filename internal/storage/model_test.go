@@ -150,6 +150,32 @@ func TestDefaultValueForFieldUsesPicklistDefaultEntry(t *testing.T) {
 	}
 }
 
+func TestDefaultValueForRecordFieldFallsBackToPicklistDefaultEntry(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "GLAccount__c",
+		RecordTypes: []RecordTypeInfo{{
+			ID:            "012000000000001AAA",
+			DeveloperName: "Default",
+			Name:          "Default",
+			Active:        true,
+			Available:     true,
+		}},
+	}
+	got, ok := DefaultValueForRecordField(definition, Record{
+		Fields: map[string]Value{"RecordTypeId": IDValue("012000000000001AAA")},
+	}, Field{
+		APIName: "Status__c",
+		Type:    FieldPicklist,
+		PicklistValues: []PicklistValue{
+			{Value: "Active", Default: true, Active: true},
+			{Value: "Inactive", Active: true},
+		},
+	})
+	if !ok || got.Kind != ValueString || got.String != "Active" {
+		t.Fatalf("record picklist default = %#v, %v; want Active", got, ok)
+	}
+}
+
 func TestDefaultValueForRecordFieldEvaluatesRecordTypeIF(t *testing.T) {
 	definition := ObjectDefinition{
 		APIName: "Product__c",

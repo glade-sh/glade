@@ -1,6 +1,12 @@
 package probe
 
-import "strings"
+import (
+	"encoding/json"
+	"os"
+	"strings"
+
+	"github.com/open-aer/oaer/internal/capability"
+)
 
 const (
 	ProbeVersion    = "2026-05-06"
@@ -120,8 +126,18 @@ func defaultProbeSpecs() []ProbeSpec {
 		"shape.describe-field-type-token",
 	}
 	specs := make([]ProbeSpec, 0, len(ids))
+	seen := map[string]struct{}{}
 	for _, id := range ids {
-		specs = append(specs, classifyProbe(id))
+		spec := classifyProbe(id)
+		specs = append(specs, spec)
+		seen[spec.ID] = struct{}{}
+	}
+	for _, generated := range loadGeneratedStubContractProbeSpecs() {
+		if _, ok := seen[generated.ID]; ok {
+			continue
+		}
+		specs = append(specs, generated)
+		seen[generated.ID] = struct{}{}
 	}
 	return specs
 }
@@ -208,9 +224,66 @@ func probeIDsForTier(tier string) []string {
 	specs := defaultProbeSpecs()
 	ids := make([]string, 0, len(specs))
 	for _, spec := range specs {
-		if tier == "" || tier == "full" || spec.Tier == tier {
+		if tier == "" || tier == "full" || probeTierMatches(tier, spec.Tier) {
 			ids = append(ids, spec.ID)
 		}
 	}
 	return ids
+}
+
+// ProbeIDsForTier returns probe IDs for the named tier.
+// Tiers include built-in and generated stub-contract tiers.
+func ProbeIDsForTier(tier string) []string {
+	return probeIDsForTier(strings.ToLower(strings.TrimSpace(tier)))
+}
+
+func probeTierMatches(requested, actual string) bool {
+	switch requested {
+	case "core":
+		return actual == "core" || actual == "smoke"
+	default:
+		return requested == actual
+	}
+}
+
+func loadGeneratedStubContractProbeSpecs() []ProbeSpec {
+	const manifestPath = "docs/generated/STUB_CONTRACT_PROBE_MANIFEST.json"
+	data, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return nil
+	}
+	var manifest []capability.StubContractProbeSpec
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return nil
+	}
+	out := make([]ProbeSpec, 0, len(manifest))
+	for _, spec := range manifest {
+		isolation := ProbeIsolationPure
+		if spec.Mode == capability.StubContractLocalOnly {
+			isolation = ProbeIsolationStateful
+		}
+		out = append(out, ProbeSpec{
+			ID:              spec.ID,
+			Category:        "Stub Contracts",
+			Isolation:       isolation,
+			CanBatch:        spec.CanBatch,
+			Tier:            normalizeGeneratedTier(spec.Tier),
+			SeedProfile:     "base",
+			RequiresFeature: nil,
+		})
+	}
+	return out
+}
+
+func normalizeGeneratedTier(tier string) string {
+	switch strings.ToLower(strings.TrimSpace(tier)) {
+	case "smoke":
+		return "smoke"
+	case "core":
+		return "core"
+	case "local":
+		return "local"
+	default:
+		return "full"
+	}
 }

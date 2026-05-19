@@ -2502,6 +2502,59 @@ func TestExecuteSemiJoinAndAntiJoinPredicates(t *testing.T) {
 	}
 }
 
+func TestExecuteRepeatedSemiJoinDoesNotReuseResolvedValues(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}},
+		},
+	}
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Contact",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+
+	query := "SELECT Id, Name FROM Account WHERE Name = 'Acme' AND Id IN (SELECT AccountId FROM Contact WHERE LastName = 'Smith')"
+	result, err := ParseAndExecute(org, query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 0 {
+		t.Fatalf("initial semi join result = %#v", result)
+	}
+
+	contact := org.Objects["Contact"]
+	contact.Records["003000000000001"] = storage.Record{
+		ID:     "003000000000001",
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"LastName":  storage.StringValue("Smith"),
+			"AccountId": storage.IDValue("001000000000001"),
+		},
+	}
+	org.Objects["Contact"] = contact
+
+	result, err = ParseAndExecute(org, query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].ID != "001000000000001" {
+		t.Fatalf("repeated semi join result = %#v", result)
+	}
+}
+
 func TestExecuteSemiJoinSubqueryErrors(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{

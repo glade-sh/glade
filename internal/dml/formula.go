@@ -453,7 +453,7 @@ func (p *formulaParser) parsePriorValueFunction() (formulaValue, bool) {
 		return formulaValue{}, false
 	}
 	if p.prior == nil {
-		return formulaValue{kind: formulaNull}, true
+		return p.valueForRecordField(p.record, token.text), true
 	}
 	return p.valueForRecordField(*p.prior, token.text), true
 }
@@ -510,6 +510,9 @@ func (p *formulaParser) valueForRecordField(record storage.Record, field string)
 	if field == "$RecordType.Name" || field == "$RecordType.DeveloperName" {
 		return formulaValue{kind: formulaString, text: formulaRecordTypeValue(p.definition, record, field)}
 	}
+	if value, ok := p.setupFieldValue(field); ok {
+		return value
+	}
 	if strings.Contains(field, ".") {
 		if value, ok := formulaRelationshipFieldValue(p.org, p.definition, record, field, p.evaluating); ok {
 			return value
@@ -557,6 +560,71 @@ func (p *formulaParser) valueForRecordField(record storage.Record, field string)
 		}
 	}
 	return formulaFieldValue(record, field)
+}
+
+func (p *formulaParser) setupFieldValue(field string) (formulaValue, bool) {
+	if p.org == nil || !strings.HasPrefix(field, "$Setup.") {
+		return formulaValue{}, false
+	}
+	parts := strings.Split(field, ".")
+	if len(parts) != 3 || strings.TrimSpace(parts[1]) == "" || strings.TrimSpace(parts[2]) == "" {
+		return formulaValue{kind: formulaNull}, true
+	}
+	objectName, ok := storage.ResolveObjectName(*p.org, parts[1])
+	if !ok {
+		return formulaValue{kind: formulaNull}, true
+	}
+	object := p.org.Objects[objectName]
+	definition := object.Definition
+	if !storage.IsCustomSettingDefinition(definition) {
+		return formulaValue{kind: formulaNull}, true
+	}
+	fieldName := parts[2]
+	if resolved, ok := storage.ResolveFieldName(definition, p.org.Namespace, fieldName); ok {
+		fieldName = resolved
+	}
+	fieldDef, hasField := definition.Fields[fieldName]
+	if !hasField {
+		return formulaValue{kind: formulaNull}, true
+	}
+	record, found := setupCustomSettingRecord(*p.org, object)
+	if found {
+		return formulaFieldValueForDefinition(record, fieldName, fieldDef), true
+	}
+	if value, ok := defaultValueForRecordField(p.org, definition, storage.Record{Object: objectName, Fields: map[string]storage.Value{}}, fieldDef); ok {
+		return formulaStorageValueForDefinition(value, fieldDef), true
+	}
+	return formulaValue{kind: formulaNull, fieldType: fieldDef.Type, display: strings.ToUpper(fieldDef.DisplayType)}, true
+}
+
+func setupCustomSettingRecord(org storage.OrgState, object storage.ObjectState) (storage.Record, bool) {
+	orgID := strings.TrimSpace(org.OrgID)
+	if orgID == "" {
+		orgID = "00D000000000001"
+	}
+	records := make([]storage.Record, 0, len(object.Records))
+	for _, record := range object.Records {
+		records = append(records, record)
+	}
+	sort.Slice(records, func(i, j int) bool {
+		return string(records[i].ID) < string(records[j].ID)
+	})
+	for _, record := range records {
+		if record.System.IsDeleted {
+			continue
+		}
+		if strings.EqualFold(object.Definition.Metadata["customSettingsType"], "Hierarchy") {
+			if value, ok := record.GetField("SetupOwnerId"); ok && value.Kind == storage.ValueString && strings.TrimSpace(value.String) == orgID {
+				return record, true
+			}
+			if value, ok := record.GetField("Name"); ok && value.Kind == storage.ValueString && strings.TrimSpace(value.String) == orgID {
+				return record, true
+			}
+			continue
+		}
+		return record, true
+	}
+	return storage.Record{}, false
 }
 
 func formulaRecordTypeValue(definition storage.ObjectDefinition, record storage.Record, field string) string {
@@ -764,7 +832,7 @@ func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.Obj
 		if !ok {
 			return formulaValue{}, false
 		}
-		value, ok := currentRecord.Fields[lookupField.APIName]
+		value, ok := formulaRecordField(currentRecord, lookupField.APIName)
 		if !ok || value.Kind == storage.ValueNull {
 			return formulaValue{kind: formulaNull}, true
 		}
@@ -813,6 +881,11 @@ func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.Obj
 			}
 		}
 	}
+	if fieldDef, ok := currentDefinition.Fields[last]; ok {
+		if value, ok := formulaRecordField(currentRecord, last); ok && value.Kind != storage.ValueNull {
+			return formulaStorageValueForDefinition(value, fieldDef), true
+		}
+	}
 	if fieldDef, ok := currentDefinition.Fields[last]; ok && strings.TrimSpace(fieldDef.DefaultValue) != "" {
 		if value, ok := defaultValueForRecordField(org, currentDefinition, currentRecord, fieldDef); ok {
 			return formulaStorageValueForDefinition(value, fieldDef), true
@@ -825,6 +898,17 @@ func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.Obj
 }
 
 func relationshipLookupField(definition storage.ObjectDefinition, namespace, relationship string) (storage.Field, bool) {
+	for _, lookupName := range relationshipLookupCandidates(relationship) {
+		if canonical, ok := storage.ResolveFieldName(definition, namespace, lookupName); ok {
+			field := definition.Fields[canonical]
+			if field.APIName == "" {
+				field.APIName = canonical
+			}
+			if len(field.ReferenceTo) > 0 {
+				return field, true
+			}
+		}
+	}
 	names := make([]string, 0, len(definition.Fields))
 	for name := range definition.Fields {
 		names = append(names, name)
@@ -843,6 +927,21 @@ func relationshipLookupField(definition storage.ObjectDefinition, namespace, rel
 		}
 	}
 	return storage.Field{}, false
+}
+
+func relationshipLookupCandidates(relationship string) []string {
+	relationship = strings.TrimSpace(relationship)
+	if relationship == "" {
+		return nil
+	}
+	candidates := []string(nil)
+	if strings.HasSuffix(relationship, "__r") {
+		candidates = append(candidates, strings.TrimSuffix(relationship, "__r")+"__c")
+	}
+	if !strings.HasSuffix(relationship, "__r") && !strings.HasSuffix(relationship, "Id") {
+		candidates = append(candidates, relationship+"Id")
+	}
+	return candidates
 }
 
 func relationshipNameMatches(namespace string, field storage.Field, relationship string) bool {

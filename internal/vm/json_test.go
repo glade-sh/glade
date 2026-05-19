@@ -1366,6 +1366,66 @@ System.assertEquals(null, decoded.Children__r[0].Parent__r.Name);
 	}
 }
 
+func TestExecJSONDeserializeNamespacedChildRecordParentShellUsesUnqualifiedLookup(t *testing.T) {
+	program, err := CompileAnonymous(`
+Parent__c decoded = JSON.deserialize('{"Children__r":{"totalSize":1,"done":true,"records":[{"Product2__c":"a02000000000001AAA"}]}}', Parent__c.class);
+System.assertEquals(null, decoded.Children__r[0].Product2__r.Event2__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Namespace: "NU", Objects: map[string]storage.ObjectState{
+		"Parent__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Parent__c",
+				KeyPrefix: "a01",
+				Fields:    map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Product__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Product__c",
+				KeyPrefix: "a02",
+				Fields: map[string]storage.Field{
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Event2__c": {APIName: "Event2__c", Type: storage.FieldReference, ReferenceTo: []string{"Event__c"}, RelationshipName: "Event2__r"},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"NU__Container__c": {APIName: "NU__Container__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Children"},
+					"NU__Product2__c":  {APIName: "NU__Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}, RelationshipName: "Product2__r"},
+				},
+				Relations: []storage.Relationship{
+					{
+						Field:              "NU__Container__c",
+						ParentObjects:      []string{"Parent__c"},
+						ParentRelationship: "Children",
+						ChildRelationship:  "Children__r",
+					},
+					{
+						Field:              "NU__Product2__c",
+						ParentObjects:      []string{"Product__c"},
+						ParentRelationship: "Product2__r",
+					},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeSObjectChildRelationshipFromSerializedMapSupportsGetSObjects(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Object> payload = new Map<String, Object>();

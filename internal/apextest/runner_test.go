@@ -555,7 +555,7 @@ public virtual class FactoryBase {
 public class Application {
   private static final List<SObjectType> OBJECTS = new List<SObjectType>{ Thing__c.SObjectType };
   public static final FactoryBase.ServiceFactory Service = new FactoryBase.ServiceFactory(
-    new Map<Type, Type>{ ILocatorService.class => LocatorServiceImpl.class, IOtherLocatorService.class => OtherLocatorServiceImpl.class }
+    new Map<Type, Type>{ ILocatorService.class => LocatorServiceImpl.class, IOtherLocatorService.class => OtherLocatorServiceImpl.class, IStaticIntervalService.class => StaticIntervalServiceImpl.class }
   );
 }
 `)
@@ -583,10 +583,32 @@ public class OtherLocatorServiceImpl implements IOtherLocatorService {
   }
 }
 `)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/IStaticIntervalService.cls"), `
+public interface IStaticIntervalService {
+  List<String> intervals(String name);
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/StaticIntervalServiceImpl.cls"), `
+public class StaticIntervalServiceImpl implements IStaticIntervalService {
+  public static List<String> intervals(String name) {
+    return new List<String>{ name, 'daily' };
+  }
+  public static List<String> viaSelf() {
+    return intervals('self');
+  }
+  public static List<String> shadowedStatic() {
+    StaticIntervalServiceImpl staticIntervalServiceImpl = new StaticIntervalServiceImpl();
+    return StaticIntervalServiceImpl.intervals('shadow');
+  }
+}
+`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/LocatorFacade.cls"), `
 public class LocatorFacade {
   public static String name() {
     return ((ILocatorService) Application.Service.newInstance(ILocatorService.class)).name();
+  }
+  public static List<String> intervals() {
+    return ((IStaticIntervalService) Application.Service.newInstance(IStaticIntervalService.class)).intervals('trail');
   }
 }
 `)
@@ -618,6 +640,9 @@ public class MapOverloadProbe {
 private class LocatorFactoryTest {
   @isTest static void locatesService() {
     System.assertEquals('located', LocatorFacade.name());
+    System.assertEquals(new List<String>{ 'trail', 'daily' }, LocatorFacade.intervals());
+    System.assertEquals(new List<String>{ 'self', 'daily' }, StaticIntervalServiceImpl.viaSelf());
+    System.assertEquals(new List<String>{ 'shadow', 'daily' }, StaticIntervalServiceImpl.shadowedStatic());
     System.assertEquals('sobject', MapOverloadProbe.choose(new Map<SObjectType, Type>{ Thing__c.SObjectType => LocatorServiceImpl.class }));
     System.assertEquals(1, MapOverloadProbe.keyCount(new Map<SObjectType, Type>{ Thing__c.SObjectType => LocatorServiceImpl.class }));
     System.assertEquals('locator', MapOverloadProbe.typeKeyRoundTrip(new Map<Type, String>{ LocatorServiceImpl.class => 'locator' }));

@@ -1356,6 +1356,13 @@ func stringStatic(callee string, args []Value) (Value, error) {
 		if args[0].Kind == ValueNull {
 			return Value{Kind: ValueNull, Type: "String"}, nil
 		}
+		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Date") {
+			text, err := platformScalarText(args[0], "Date")
+			if err != nil {
+				return Null, err
+			}
+			return String(text), nil
+		}
 		if idText, ok := typedIDValueText(args[0]); ok {
 			return String(displayIDText(idText)), nil
 		}

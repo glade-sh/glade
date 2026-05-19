@@ -5,6 +5,24 @@ generated Apex platform types and standard SObject metadata. The source contract
 is `example-projects/stubs`; behavior must be implemented from public Salesforce
 docs, owned compatibility fixtures, or black-box scratch-org probes.
 
+## Implemented Contract Corpus
+
+The contract-corpus workflow is now implemented and generated.
+
+- `oaer compat stub-contracts --output docs/generated/STUB_CONTRACTS.json`
+  emits one row per generated stub type/member with:
+  - behavior status
+  - contract mode (`org-diff`, `local-contract`, `passive-dto`, `compile-shape`)
+  - implementation owner lane
+  - oddity metadata (`normalization`, `failureShape`, `oddityRisk`, `edgeTags`)
+- `oaer compat stub-contracts --probe-manifest docs/generated/STUB_CONTRACT_PROBE_MANIFEST.json --probe-tier <smoke|core|full|local>`
+  emits discoverable probe specs for generated stub contracts.
+- `oaer probe local <stub.probe.id>` executes generated stub contract probes
+  even when `ProbeRunner` has no handwritten probe registration.
+
+This establishes discovery coverage across generated stubs while preserving
+explicit unsupported surfaces and odd-behavior tracking for implementation work.
+
 ## Current Baseline
 
 The declaration breadth gate is `oaer compat stub-inventory --json`.

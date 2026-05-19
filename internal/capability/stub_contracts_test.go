@@ -1,0 +1,101 @@
+package capability
+
+import "testing"
+
+func TestBuildStubContractReport(t *testing.T) {
+	report, err := BuildStubContractReport("../../example-projects/stubs")
+	if err != nil {
+		t.Fatalf("build report: %v", err)
+	}
+	if report.SchemaVersion != StubContractsSchemaVersion {
+		t.Fatalf("schemaVersion = %d, want %d", report.SchemaVersion, StubContractsSchemaVersion)
+	}
+	if report.Totals.Entries == 0 || len(report.Entries) == 0 {
+		t.Fatalf("expected non-empty entries")
+	}
+	if report.Totals.WithProbe == 0 {
+		t.Fatalf("expected at least one probe-backed contract")
+	}
+	if report.Totals.ByMode[string(StubContractPassiveDTO)] == 0 {
+		t.Fatalf("expected passive-dto contracts")
+	}
+	foundString := false
+	for _, entry := range report.Entries {
+		if entry.Type == "String" && entry.Member != "" {
+			foundString = true
+			if entry.OddityRisk == "" || len(entry.EdgeTags) == 0 {
+				t.Fatalf("expected oddity metadata for String member: %#v", entry)
+			}
+			break
+		}
+	}
+	if !foundString {
+		t.Fatalf("expected String member contract entry")
+	}
+}
+
+func TestClassifyStubContractMode(t *testing.T) {
+	tests := []struct {
+		name  string
+		entry StubBehaviorEntry
+		want  StubContractMode
+	}{
+		{
+			name: "unsupported maps to local-contract",
+			entry: StubBehaviorEntry{
+				Kind:   "method",
+				Status: StubBehaviorUnsupported,
+			},
+			want: StubContractLocalOnly,
+		},
+		{
+			name: "property maps to passive-dto",
+			entry: StubBehaviorEntry{
+				Kind:   "property",
+				Status: StubBehaviorPassiveDefault,
+			},
+			want: StubContractPassiveDTO,
+		},
+		{
+			name: "unknown method maps to compile-shape",
+			entry: StubBehaviorEntry{
+				Kind:   "method",
+				Status: StubBehaviorUnknown,
+			},
+			want: StubContractCompileShape,
+		},
+	}
+	for _, tc := range tests {
+		if got := classifyStubContractMode(tc.entry); got != tc.want {
+			t.Fatalf("%s: mode = %q, want %q", tc.name, got, tc.want)
+		}
+	}
+}
+
+func TestStubContractProbeIDStable(t *testing.T) {
+	entry := StubBehaviorEntry{
+		Type:   "Schema.DescribeSObjectResult",
+		Member: "getLocalName",
+	}
+	if got := stubContractProbeID(entry); got != "stub.schema-describesobjectresult.getlocalname" {
+		t.Fatalf("probe id = %q", got)
+	}
+}
+
+func TestBuildStubContractProbeManifest(t *testing.T) {
+	report := StubContractReport{
+		Entries: []StubContractEntry{
+			{ID: "String.trim()", Type: "String", Member: "trim", Kind: "method", Mode: StubContractOrgDiff, ProbeID: "stub.string.trim"},
+			{ID: "CustomDto.value()", Type: "CustomDto", Member: "value", Kind: "method", Mode: StubContractPassiveDTO},
+			{ID: "Network.call()", Type: "Network", Member: "call", Kind: "method", Mode: StubContractLocalOnly},
+		},
+	}
+	core := BuildStubContractProbeManifest(report, "core")
+	if len(core) != 1 || core[0].ID != "stub.string.trim" {
+		t.Fatalf("core manifest = %#v", core)
+	}
+	full := BuildStubContractProbeManifest(report, "full")
+	if len(full) != 3 {
+		t.Fatalf("full manifest len = %d, want 3", len(full))
+	}
+}

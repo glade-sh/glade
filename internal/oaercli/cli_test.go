@@ -1123,6 +1123,66 @@ func TestRunCompatStubBehaviorJSONAndCheck(t *testing.T) {
 	}
 }
 
+func TestRunCompatStubContractsJSONAndCheck(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "stub-contracts", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub contracts json exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"schemaVersion": 1`,
+		`"target": "generated Apex stub behavioral contracts"`,
+		`"mode": "`,
+		`"owner": "`,
+		`"org-diff"`,
+		`"passive-dto"`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stub contracts stdout missing %q: %q", want, stdout.String())
+		}
+	}
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "stub-contracts.json")
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "stub-contracts", "--output", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub contracts output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "stub-contracts", "--check", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub contracts check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatStubContractsProbeManifest(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	dir := t.TempDir()
+	manifestPath := filepath.Join(dir, "stub-probe-manifest.json")
+	code := Run(context.Background(), []string{"compat", "stub-contracts", "--probe-manifest", manifestPath, "--probe-tier", "core"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub contracts probe manifest exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "wrote") || !strings.Contains(stdout.String(), "tier=core") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+	content, err := os.ReadFile(manifestPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{`"mode": "org-diff"`, `"contractId":`, `"requiresOrgProbe": true`} {
+		if !strings.Contains(string(content), want) {
+			t.Fatalf("manifest missing %q: %q", want, string(content))
+		}
+	}
+}
+
 func TestRunCompatStubInventoryOutputAndCheck(t *testing.T) {
 	sourceRoot := t.TempDir()
 	writeTestFile(t, filepath.Join(sourceRoot, "apex-system-stubs", "System", "String.cls"), `global class String {
@@ -1732,7 +1792,7 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("seed exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), `"schemaVersion": 1`) || !strings.Contains(stdout.String(), `"Account": 1`) || !strings.Contains(stdout.String(), `"users": 1`) {
+	if !strings.Contains(stdout.String(), `"schemaVersion": 1`) || !strings.Contains(stdout.String(), `"Account": 1`) || !strings.Contains(stdout.String(), `"users": 2`) {
 		t.Fatalf("seed stdout = %q", stdout.String())
 	}
 
@@ -1742,7 +1802,7 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("inspect exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "schemaVersion: 1") || !strings.Contains(stdout.String(), "Account: 1") || !strings.Contains(stdout.String(), "User: 1") {
+	if !strings.Contains(stdout.String(), "schemaVersion: 1") || !strings.Contains(stdout.String(), "Account: 1") || !strings.Contains(stdout.String(), "User: 2") {
 		t.Fatalf("inspect stdout = %q", stdout.String())
 	}
 
@@ -1762,7 +1822,7 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("reset exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), `"Account": 0`) || !strings.Contains(stdout.String(), `"users": 1`) {
+	if !strings.Contains(stdout.String(), `"Account": 0`) || !strings.Contains(stdout.String(), `"users": 2`) {
 		t.Fatalf("reset stdout = %q", stdout.String())
 	}
 }

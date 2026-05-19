@@ -2748,6 +2748,34 @@ System.assertEquals('PractitionerId', fields.get('Credentialification.Practition
 	}
 }
 
+func TestExecSObjectFieldMapDoesNotSynthesizeUnknownMetadataField(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = Widget__c.SObjectType.getDescribe().fields.getMap();
+System.assertEquals(null, fields.get('Missing__c'));
+System.assertEquals(null, fields.get('Widget__c.Missing__c'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Widget__c",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.Org = &org
+	result, err := machine.Execute(program)
+	t.Logf("debug=%v", result.Debug)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectFieldMapAcceptsNamespaceAlias(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectField> fields = Credentialing_Workflow__c.SObjectType.getDescribe().fields.getMap();

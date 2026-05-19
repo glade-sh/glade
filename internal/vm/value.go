@@ -266,6 +266,13 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 			if strings.EqualFold(v.Type, "Id") && strings.EqualFold(other.Type, "Id") && value.Kind == ValueString && otherValue.Kind == ValueString {
 				return apexIDTextEqual(value.Text, otherValue.Text)
 			}
+			if strings.EqualFold(v.Type, "Date") && strings.EqualFold(other.Type, "Date") {
+				leftDate, leftErr := parsePlatformDate(v)
+				rightDate, rightErr := parsePlatformDate(other)
+				if leftErr == nil && rightErr == nil {
+					return leftDate.Year() == rightDate.Year() && leftDate.Month() == rightDate.Month() && leftDate.Day() == rightDate.Day()
+				}
+			}
 			if sameDateAndMidnightDatetime(v, other) || sameDateAndMidnightDatetime(other, v) {
 				return true
 			}
@@ -284,7 +291,8 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 }
 
 func sameDateAndMidnightDatetime(dateValue, datetimeValue Value) bool {
-	if !strings.EqualFold(dateValue.Type, "Date") || !strings.EqualFold(datetimeValue.Type, "Datetime") {
+	if !strings.EqualFold(dateValue.Type, "Date") ||
+		(!strings.EqualFold(datetimeValue.Type, "Datetime") && !strings.EqualFold(datetimeValue.Type, "DateTime")) {
 		return false
 	}
 	date, err := parsePlatformDate(dateValue)

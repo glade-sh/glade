@@ -641,6 +641,60 @@ System.assertEquals('matched', values.get(right));
 	}
 }
 
+func TestExecMapKeyUsesObjectIdentityWithoutCustomHashCode(t *testing.T) {
+	program, err := CompileAnonymous(`
+Key left = new Key('same');
+Key right = new Key('same');
+Map<Key, String> values = new Map<Key, String>{
+	left => 'left',
+	right => 'right'
+};
+System.assertEquals(2, values.size());
+System.assertEquals('left', values.get(left));
+System.assertEquals('right', values.get(right));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctorProgram, err := CompileAnonymous("Code = code;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Key",
+		Fields: map[string]Field{
+			"Code": {Name: "Code", Type: "String"},
+		},
+		Constructors: []Method{{Name: "Key.<init>", ClassName: "Key", Params: []Param{{Name: "code", Type: "String"}}, Program: ctorProgram}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCastsDatetimeToDate(t *testing.T) {
+	program, err := CompileAnonymous(`
+Datetime source = Datetime.newInstance(2026, 5, 2, 9, 30, 0);
+Date actual = (Date)source;
+System.assertEquals(Date.newInstance(2026, 5, 2), actual);
+Date normalized = (Date)Date.valueOf('2026-05-02 00:00:00');
+System.assertEquals(Date.newInstance(2026, 5, 2), normalized);
+System.assertEquals(Date.valueOf('2026-05-02 00:00:00'), Date.newInstance(2026, 5, 2));
+System.assertEquals(DateTime.newInstance(2026, 5, 2, 0, 0, 0), Date.newInstance(2026, 5, 2));
+System.assertEquals(Date.valueOf('2026-05-02 00:00:00'), '2026-05-02');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeOverloadResolutionUsesTypedNullCasts(t *testing.T) {
 	program, err := CompileAnonymous(`
 Selector selector = new Selector();
@@ -889,6 +943,241 @@ System.assertEquals('handled', proxy.getPaymentLinesByIDs(new Set<Id>()));
 					{Name: "listOfArgs", Type: "List<Object>"},
 				},
 				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestCreateStubDispatchesThroughStaticField(t *testing.T) {
+	providerProgram, err := CompileAnonymous(`
+Count = Count + 1;
+System.assertEquals('fetch', stubbedMethodName);
+return 'handled';
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	controllerProgram, err := CompileAnonymous(`return service.fetch(recordId);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	realProgram, err := CompileAnonymous(`return 'real';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Provider provider = new Provider();
+Controller.service = (Service)Test.createStub(Service.class, provider);
+System.assertEquals('handled', Controller.fetch('003000000000001'));
+System.assertEquals(1, provider.Count);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "Service",
+		Methods: map[string]Method{
+			"fetch": {
+				Name:       "Service.fetch",
+				ClassName:  "Service",
+				ReturnType: "String",
+				Params:     []Param{{Name: "recordId", Type: "Id"}},
+				Program:    realProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Controller",
+		StaticFields: map[string]Field{
+			"service": {Name: "service", Type: "Service", Static: true},
+		},
+		Methods: map[string]Method{
+			"fetch": {
+				Name:       "Controller.fetch",
+				ClassName:  "Controller",
+				ReturnType: "String",
+				IsStatic:   true,
+				Params:     []Param{{Name: "recordId", Type: "Id"}},
+				Program:    controllerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"StubProvider"},
+		Fields: map[string]Field{
+			"Count": {Name: "Count", Type: "Integer", InitialValue: Int(0)},
+		},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:       "Provider.handleMethodCall",
+				ClassName:  "Provider",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestCreateStubDispatchesThroughStaticFieldFromWrapperProvider(t *testing.T) {
+	constructorProgram, err := CompileAnonymous(`this.stub = Test.createStub(classType, this);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	forTypeProgram, err := CompileAnonymous(`return new Mock(type);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	providerProgram, err := CompileAnonymous(`
+Count = Count + 1;
+return 'handled';
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	controllerProgram, err := CompileAnonymous(`return service.fetch(recordId);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	realProgram, err := CompileAnonymous(`return 'real';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Mock mock = Mock.forType(Service.class);
+Controller.service = (Service)mock.stub;
+System.assertEquals('handled', Controller.fetch('003000000000001'));
+System.assertEquals(1, mock.Count);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "Service",
+		Methods: map[string]Method{
+			"fetch": {
+				Name:       "Service.fetch",
+				ClassName:  "Service",
+				ReturnType: "String",
+				Params:     []Param{{Name: "recordId", Type: "Id"}},
+				Program:    realProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Controller",
+		StaticFields: map[string]Field{
+			"service": {Name: "service", Type: "Service", Static: true},
+		},
+		Methods: map[string]Method{
+			"fetch": {
+				Name:       "Controller.fetch",
+				ClassName:  "Controller",
+				ReturnType: "String",
+				IsStatic:   true,
+				Params:     []Param{{Name: "recordId", Type: "Id"}},
+				Program:    controllerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Mock",
+		Interfaces: []string{"StubProvider"},
+		Constructors: []Method{{
+			Name:          "Mock.<init>",
+			ClassName:     "Mock",
+			Params:        []Param{{Name: "classType", Type: "Type"}},
+			Program:       constructorProgram,
+			IsConstructor: true,
+		}},
+		Fields: map[string]Field{
+			"stub":  {Name: "stub", Type: "Object"},
+			"Count": {Name: "Count", Type: "Integer", InitialValue: Int(0)},
+		},
+		Methods: map[string]Method{
+			"forType": {
+				Name:       "Mock.forType",
+				ClassName:  "Mock",
+				ReturnType: "Mock",
+				IsStatic:   true,
+				Params:     []Param{{Name: "type", Type: "Type"}},
+				Program:    forTypeProgram,
+			},
+			"handleMethodCall": {
+				Name:       "Mock.handleMethodCall",
+				ClassName:  "Mock",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecExactTypeStaticCallWinsOverCaseFoldedLocal(t *testing.T) {
+	createProgram, err := CompileAnonymous(`return 'made';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Service service = null;
+System.assertEquals('made', Service.create());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Service",
+		Methods: map[string]Method{
+			"create": {
+				Name:       "Service.create",
+				ClassName:  "Service",
+				ReturnType: "String",
+				IsStatic:   true,
+				Program:    createProgram,
 			},
 		},
 	}); err != nil {
@@ -1180,6 +1469,45 @@ func TestFrameworkSObjectUnitOfWorkHandleRegisterTypeFastPath(t *testing.T) {
 	}
 	if got := uow.Fields["m_relationships"].Map[mapKey(String("Account"))]; got.Type != "framework_SObjectUnitOfWork.Relationships" {
 		t.Fatalf("relationships type = %q", got.Type)
+	}
+}
+
+func TestExecUserRelationshipsClassDispatchesAddMethod(t *testing.T) {
+	addProgram, err := CompileAnonymous("this.touched = true;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+UnitOfWork.Relationships relations = new UnitOfWork.Relationships();
+relations.add(new Account());
+System.assertEquals(true, relations.touched);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "UnitOfWork"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "UnitOfWork.Relationships",
+		Fields: map[string]Field{
+			"touched": {Name: "touched", Type: "Boolean", InitialValue: Bool(false)},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{
+		Name:      "UnitOfWork.Relationships.add",
+		ClassName: "UnitOfWork.Relationships",
+		Params:    []Param{{Name: "record", Type: "Object"}},
+		Program:   addProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -1933,6 +2261,51 @@ System.assertEquals('child', c.choose(new Child()));
 	}
 }
 
+func TestExecCastStaticTypeParticipatesInOverloadCacheKey(t *testing.T) {
+	childProgram, err := CompileAnonymous("this.register((Base)left, (Base)right);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	baseProgram, err := CompileAnonymous("called = 'base';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Registrar registrar = new Registrar();
+Child child = new Child();
+registrar.register(child, child);
+System.assertEquals('base', registrar.called);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Base"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Child", SuperClass: "Base"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Registrar",
+		Fields: map[string]Field{
+			"called": {Name: "called", Type: "String"},
+		},
+		Methods: map[string]Method{
+			"register": {Name: "Registrar.register", ClassName: "Registrar", Params: []Param{{Name: "left", Type: "Child"}, {Name: "right", Type: "Child"}}, Program: childProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	machine.MethodOverloads["Registrar.register"] = []Method{
+		{Name: "Registrar.register", ClassName: "Registrar", Params: []Param{{Name: "left", Type: "Child"}, {Name: "right", Type: "Child"}}, Program: childProgram},
+		{Name: "Registrar.register", ClassName: "Registrar", Params: []Param{{Name: "left", Type: "Base"}, {Name: "right", Type: "Base"}}, Program: baseProgram},
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTestCreateStubFallsThroughExplicitPropertyGetterWhenProviderReturnsNull(t *testing.T) {
 	getterProgram, err := CompileAnonymous("return value();")
 	if err != nil {
@@ -2437,6 +2810,226 @@ func TestExecPropertyAccessorMethods(t *testing.T) {
 		Name: "Box",
 		Fields: map[string]Field{
 			"backing": {Name: "backing", Type: "String"},
+			"Name": {
+				Name:     "Name",
+				Type:     "String",
+				Property: true,
+				Getter:   &Method{Name: "Box.Name.get", ClassName: "Box", ReturnType: "String", Program: getter},
+				Setter:   &Method{Name: "Box.Name.set", ClassName: "Box", Params: []Param{{Name: "value", Type: "String"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecIndexedPropertyAssignmentCallsSetter(t *testing.T) {
+	getter, err := CompileAnonymous("return backing;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`
+backing = value;
+Touched = true;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<Box> boxes = new List<Box>{ new Box() };
+boxes[0].Name = 'acme';
+System.assertEquals('acme', boxes[0].Name);
+System.assertEquals(true, boxes[0].Touched);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"backing": {Name: "backing", Type: "String"},
+			"Touched": {Name: "Touched", Type: "Boolean"},
+			"Name": {
+				Name:     "Name",
+				Type:     "String",
+				Property: true,
+				Getter:   &Method{Name: "Box.Name.get", ClassName: "Box", ReturnType: "String", Program: getter},
+				Setter:   &Method{Name: "Box.Name.set", ClassName: "Box", Params: []Param{{Name: "value", Type: "String"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMethodResultIndexedPropertyAssignmentCallsSetter(t *testing.T) {
+	getter, err := CompileAnonymous("return backing;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`
+backing = value;
+Touched = true;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rowsGetter, err := CompileAnonymous("return rows;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Holder holder = new Holder();
+holder.rows = new List<Box>();
+holder.rows.add(new Box());
+holder.getRows()[0].Name = 'acme';
+System.assertEquals('acme', holder.getRows()[0].Name);
+System.assertEquals(true, holder.getRows()[0].Touched);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"backing": {Name: "backing", Type: "String"},
+			"Touched": {Name: "Touched", Type: "Boolean"},
+			"Name": {
+				Name:     "Name",
+				Type:     "String",
+				Property: true,
+				Getter:   &Method{Name: "Box.Name.get", ClassName: "Box", ReturnType: "String", Program: getter},
+				Setter:   &Method{Name: "Box.Name.set", ClassName: "Box", Params: []Param{{Name: "value", Type: "String"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Holder",
+		Fields: map[string]Field{
+			"rows": {Name: "rows", Type: "List<Box>"},
+		},
+		Methods: map[string]Method{
+			"getRows": {Name: "Holder.getRows", ClassName: "Holder", ReturnType: "List<Box>", Program: rowsGetter},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMethodResultIndexedPropertySetterNotifiesObserver(t *testing.T) {
+	setter, err := CompileAnonymous(`
+backing = value;
+for (Counter observer : observers) {
+	if (observer.Count == null) {
+		observer.Count = 0;
+	}
+	observer.Count++;
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rowsGetter, err := CompileAnonymous("return rows;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Holder holder = new Holder();
+holder.rows = new List<Box>();
+holder.rows.add(new Box());
+Counter counter = new Counter();
+holder.getRows()[0].observers = new List<Counter>();
+holder.getRows()[0].observers.add(counter);
+holder.getRows()[0].Name = 'acme';
+System.assertEquals(1, counter.Count);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Counter",
+		Fields: map[string]Field{
+			"Count": {Name: "Count", Type: "Integer"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"backing":   {Name: "backing", Type: "String"},
+			"observers": {Name: "observers", Type: "List<Counter>"},
+			"Name": {
+				Name:     "Name",
+				Type:     "String",
+				Property: true,
+				Setter:   &Method{Name: "Box.Name.set", ClassName: "Box", Params: []Param{{Name: "value", Type: "String"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Holder",
+		Fields: map[string]Field{
+			"rows": {Name: "rows", Type: "List<Box>"},
+		},
+		Methods: map[string]Method{
+			"getRows": {Name: "Holder.getRows", ClassName: "Holder", ReturnType: "List<Box>", Program: rowsGetter},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNestedPropertySetterOnDifferentInstanceCallsSetter(t *testing.T) {
+	getter, err := CompileAnonymous("return backing;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`
+backing = value;
+if (Other != null && value == 'outer') {
+	Other.Name = 'nested';
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Box first = new Box();
+Box second = new Box();
+first.Other = second;
+first.Name = 'outer';
+System.assertEquals('outer', first.Name);
+System.assertEquals('nested', second.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"backing": {Name: "backing", Type: "String"},
+			"Other":   {Name: "Other", Type: "Box"},
 			"Name": {
 				Name:     "Name",
 				Type:     "String",

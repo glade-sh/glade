@@ -53,6 +53,17 @@ func (s *SFDXExecutor) CaptureGolden(probeDir string, probeIDs []string) (map[st
 	s.OrgShape = shape
 	for i := 0; i < len(probeIDs); {
 		id := probeIDs[i]
+		if isStubContractProbeID(id) {
+			start := time.Now()
+			result, err := s.runProbe(probeDir, id)
+			if err != nil {
+				return nil, nil, fmt.Errorf("probe %s: %w", id, err)
+			}
+			results[id] = result
+			timings = append(timings, ProbeTiming{Phase: "golden", ProbeID: id, Mode: "single", DurationMS: time.Since(start).Milliseconds()})
+			i++
+			continue
+		}
 		spec := probeSpecByID(id)
 		if spec.CanBatch {
 			batch := []string{id}
@@ -111,6 +122,13 @@ func (s *SFDXExecutor) CaptureGolden(probeDir string, probeIDs []string) (map[st
 
 func (s *SFDXExecutor) runProbe(probeDir, probeID string) (ProbeResult, error) {
 	code := fmt.Sprintf("System.assert(false, 'OAER_PROBE:' + ProbeRunner.run('%s'));", probeID)
+	if isStubContractProbeID(probeID) {
+		spec, ok := stubContractProbeSpecByID(probeID)
+		if !ok {
+			return ProbeResult{}, fmt.Errorf("missing generated stub contract probe spec for %s", probeID)
+		}
+		code = buildOrgStubContractProbeCode(spec)
+	}
 	jsonStr, logs, err := s.runProbeCodeJSON(probeDir, code)
 	if err != nil {
 		if strings.Contains(logs, "daily usage limit of apex log headers") {

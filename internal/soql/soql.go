@@ -45,15 +45,72 @@ func cachedParsedQuery(input string, now time.Time) (Query, bool) {
 		return Query{}, false
 	}
 	query, ok := value.(Query)
-	return query, ok
+	if !ok {
+		return Query{}, false
+	}
+	return cloneQuery(query), true
 }
 
 func storeParsedQuery(input string, now time.Time, query Query) {
-	parsedQueryCache.Store(parsedQueryCacheKey(input, now), query)
+	parsedQueryCache.Store(parsedQueryCacheKey(input, now), cloneQuery(query))
 }
 
 func parsedQueryCacheKey(input string, now time.Time) string {
 	return now.UTC().Truncate(time.Minute).Format("2006-01-02T15:04") + "\x00" + input
+}
+
+func cloneQuery(query Query) Query {
+	query.Fields = append([]string(nil), query.Fields...)
+	query.ChildQueries = append([]ChildQuery(nil), query.ChildQueries...)
+	for i := range query.ChildQueries {
+		query.ChildQueries[i].Query = cloneQuery(query.ChildQueries[i].Query)
+	}
+	query.Typeofs = append([]TypeofSpec(nil), query.Typeofs...)
+	for i := range query.Typeofs {
+		query.Typeofs[i].When = cloneStringSliceMap(query.Typeofs[i].When)
+		query.Typeofs[i].Else = append([]string(nil), query.Typeofs[i].Else...)
+	}
+	query.Order = append([]OrderSpec(nil), query.Order...)
+	query.GroupBy = append([]string(nil), query.GroupBy...)
+	query.Aggregates = append([]Aggregate(nil), query.Aggregates...)
+	query.HavingAggregates = append([]Aggregate(nil), query.HavingAggregates...)
+	if query.Where != nil {
+		where := cloneCondition(*query.Where)
+		query.Where = &where
+	}
+	if query.Having != nil {
+		having := cloneCondition(*query.Having)
+		query.Having = &having
+	}
+	return query
+}
+
+func cloneCondition(condition Condition) Condition {
+	condition.And = append([]Condition(nil), condition.And...)
+	for i := range condition.And {
+		condition.And[i] = cloneCondition(condition.And[i])
+	}
+	condition.Or = append([]Condition(nil), condition.Or...)
+	for i := range condition.Or {
+		condition.Or[i] = cloneCondition(condition.Or[i])
+	}
+	condition.Values = append([]storage.Value(nil), condition.Values...)
+	if condition.Subquery != nil {
+		subquery := cloneQuery(*condition.Subquery)
+		condition.Subquery = &subquery
+	}
+	return condition
+}
+
+func cloneStringSliceMap(in map[string][]string) map[string][]string {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string][]string, len(in))
+	for key, value := range in {
+		out[key] = append([]string(nil), value...)
+	}
+	return out
 }
 
 type OrderSpec struct {

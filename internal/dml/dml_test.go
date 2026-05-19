@@ -1245,6 +1245,29 @@ func TestDMLStripsUnchangedNonUpdateableFieldsBeforeUpdateValidation(t *testing.
 		t.Fatalf("unchanged parent update = %#v", unchanged)
 	}
 
+	org.Objects["Child__c"].Definition.Fields["ReadonlyText__c"] = storage.Field{
+		APIName:    "ReadonlyText__c",
+		Type:       storage.FieldString,
+		Updateable: storage.BoolFlag(false),
+	}
+	org.Objects["Child__c"].Definition.Fields["FormulaText__c"] = storage.Field{
+		APIName: "FormulaText__c",
+		Type:    storage.FieldString,
+		Formula: `"selected"`,
+	}
+	nullAbsent := engine.Update([]storage.Record{{
+		ID:     child[0].ID,
+		Object: "Child__c",
+		Fields: map[string]storage.Value{
+			"Name":            storage.StringValue("Updated Again"),
+			"ReadonlyText__c": storage.NullValue(),
+		},
+		ExplicitNulls: map[string]bool{"FormulaText__c": true},
+	}})
+	if !nullAbsent[0].Success {
+		t.Fatalf("null absent readonly update = %#v", nullAbsent)
+	}
+
 	changed := engine.Update([]storage.Record{{
 		ID:     child[0].ID,
 		Object: "Child__c",
@@ -1876,6 +1899,40 @@ func TestValidationRules(t *testing.T) {
 	}
 }
 
+func TestValidationRulePriorValueOnInsertUsesCurrentValue(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.ValidationRules = []storage.ValidationRule{{
+		Name:                  "ReadOnlyAfterCreate",
+		Active:                true,
+		ErrorConditionFormula: `PRIORVALUE(Name) != Name`,
+		ErrorMessage:          "rating changed",
+		ErrorDisplayField:     "Name",
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Acme"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	update := engine.Update([]storage.Record{{
+		ID:     insert[0].ID,
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Other"),
+		},
+	}})
+	if update[0].Success || update[0].Error != "rating changed" {
+		t.Fatalf("update = %#v", update)
+	}
+}
+
 func TestValidationRulesUseFormulaScaleForPercentFields(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
@@ -2439,7 +2496,7 @@ func TestRelationshipFormulaEvaluatesParentFormulaBackedField(t *testing.T) {
 			"InventoryUsed__c":   {APIName: "InventoryUsed__c", Type: storage.FieldDecimal},
 			"InventoryOnHand__c": {APIName: "InventoryOnHand__c", Type: storage.FieldDecimal, Formula: "Inventory__c - InventoryUsed__c"},
 			"RecordTypeName__c":  {APIName: "RecordTypeName__c", Type: storage.FieldString, DefaultValue: "$RecordType.Name"},
-			"TrackInventory__c":  {APIName: "TrackInventory__c", Type: storage.FieldBoolean},
+			"TrackInventory__c":  {APIName: "TrackInventory__c", Type: storage.FieldBoolean, DefaultValue: "false"},
 		},
 	}
 	org := storage.OrgState{Objects: map[string]storage.ObjectState{
@@ -2525,13 +2582,59 @@ TEXT(ParentBundleSubtype__c) != 'Assembled')`, &org, childDefinition, storage.Re
 	if !ok || !matches {
 		t.Fatalf("exact cart inventory validation = %v, ok=%v; want true", matches, ok)
 	}
+	orgWithSetup := org
+	productWithMerchandise := orgWithSetup.Objects["Product__c"]
+	merchandiseRecord := productWithMerchandise.Records["a01000000000001"]
+	merchandiseRecord.Fields["RecordTypeName__c"] = storage.StringValue("Merchandise")
+	productWithMerchandise.Records["a01000000000001"] = merchandiseRecord
+	orgWithSetup.Objects["Product__c"] = productWithMerchandise
+	orgWithSetup.Objects["NimbleAMSPublicSettings__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "NimbleAMSPublicSettings__c",
+			Metadata: map[string]string{
+				"kind":               "customSetting",
+				"customSettingsType": "Hierarchy",
+			},
+			Fields: map[string]storage.Field{
+				"Name":                       {APIName: "Name", Type: storage.FieldString},
+				"CanBackorderStaffView__c":   {APIName: "CanBackorderStaffView__c", Type: storage.FieldBoolean},
+				"OtherBackorderSetting__c":   {APIName: "OtherBackorderSetting__c", Type: storage.FieldBoolean},
+				"UnrelatedBackorderFlag__c":  {APIName: "UnrelatedBackorderFlag__c", Type: storage.FieldBoolean},
+				"UnrelatedBackorderValue__c": {APIName: "UnrelatedBackorderValue__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0s000000000001": {
+				ID:     "a0s000000000001",
+				Object: "NimbleAMSPublicSettings__c",
+				Fields: map[string]storage.Value{
+					"Name":                     storage.StringValue("00D000000000001"),
+					"CanBackorderStaffView__c": storage.BooleanValue(true),
+				},
+			},
+		},
+	}
+	matches, ok = evaluateValidationFormulaInOrg(`AND(Product2__r.TrackInventory__c,
+Product2__r.RecordTypeName__c != 'Merchandise' || !$Setup.NimbleAMSPublicSettings__c.CanBackorderStaffView__c,
+Quantity__c - IF(ISNEW(), 0, PRIORVALUE(Quantity__c)) > Product2__r.InventoryOnHand__c,
+ISBLANK(OrderItemLine__c) || (!ISNEW() && Quantity__c > PRIORVALUE(Quantity__c)),
+TEXT(ParentBundleSubtype__c) != 'Assembled')`, &orgWithSetup, childDefinition, storage.Record{
+		Object: "Line__c",
+		Fields: map[string]storage.Value{
+			"Product2__c": storage.IDValue("a01000000000001"),
+			"Quantity__c": storage.DecimalValue("1001"),
+		},
+	}, nil, true)
+	if !ok || matches {
+		t.Fatalf("setup-backed cart inventory validation = %v, ok=%v; want false", matches, ok)
+	}
 	namespacedProductDefinition := productDefinition
 	namespacedProductDefinition.Fields = map[string]storage.Field{
 		"NU__Inventory__c":       {APIName: "NU__Inventory__c", Type: storage.FieldDecimal},
 		"NU__InventoryUsed__c":   {APIName: "NU__InventoryUsed__c", Type: storage.FieldDecimal},
 		"NU__InventoryOnHand__c": {APIName: "NU__InventoryOnHand__c", Type: storage.FieldDecimal, Formula: "Inventory__c - InventoryUsed__c"},
 		"NU__RecordTypeName__c":  {APIName: "NU__RecordTypeName__c", Type: storage.FieldString, DefaultValue: "$RecordType.Name"},
-		"NU__TrackInventory__c":  {APIName: "NU__TrackInventory__c", Type: storage.FieldBoolean},
+		"NU__TrackInventory__c":  {APIName: "NU__TrackInventory__c", Type: storage.FieldBoolean, DefaultValue: "false"},
 	}
 	namespacedOrg := org
 	namespacedOrg.Namespace = "NU"
@@ -2546,6 +2649,82 @@ TEXT(ParentBundleSubtype__c) != 'Assembled')`, &org, childDefinition, storage.Re
 	}, nil, true)
 	if !ok || !matches {
 		t.Fatalf("namespaced parent boolean field = %v, ok=%v; want true", matches, ok)
+	}
+	namespacedChildDefinition := childDefinition
+	namespacedChildDefinition.Fields = map[string]storage.Field{
+		"NU__Product2__c": {APIName: "NU__Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}},
+	}
+	matches, ok = evaluateValidationFormulaInOrg("Product2__r.TrackInventory__c", &namespacedOrg, namespacedChildDefinition, storage.Record{
+		Object: "Line__c",
+		Fields: map[string]storage.Value{
+			"Product2__c": storage.IDValue("a01000000000001"),
+		},
+	}, nil, true)
+	if !ok || !matches {
+		t.Fatalf("namespaced relationship lookup field = %v, ok=%v; want true", matches, ok)
+	}
+}
+
+func TestStandaloneRecordTypeNameDefaultEvaluatesFromRecordTypeID(t *testing.T) {
+	definition := storage.ObjectDefinition{
+		APIName: "DeferredRevenueMethod__c",
+		Fields: map[string]storage.Field{
+			"RecordTypeId":      {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}},
+			"RecordTypeName__c": {APIName: "RecordTypeName__c", Type: storage.FieldString, DefaultValue: "$RecordType.Name"},
+		},
+		RecordTypes: []storage.RecordTypeInfo{{
+			ID:            "012000000000001",
+			Name:          "Membership",
+			DeveloperName: "Membership",
+			Active:        true,
+			Available:     true,
+		}},
+	}
+	value, ok := defaultValueForRecordField(nil, definition, storage.Record{
+		Object: "DeferredRevenueMethod__c",
+		Fields: map[string]storage.Value{
+			"RecordTypeId": storage.IDValue("012000000000001"),
+		},
+	}, definition.Fields["RecordTypeName__c"])
+	if !ok || value.Kind != storage.ValueString || value.String != "Membership" {
+		t.Fatalf("record type name default = %#v, ok=%v; want Membership", value, ok)
+	}
+}
+
+func TestInsertRefreshesStaleRecordTypeNameDefault(t *testing.T) {
+	definition := storage.ObjectDefinition{
+		APIName:   "DeferredRevenueMethod__c",
+		KeyPrefix: "a6p",
+		Fields: map[string]storage.Field{
+			"RecordTypeId":      {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}},
+			"RecordTypeName__c": {APIName: "RecordTypeName__c", Type: storage.FieldString, DefaultValue: "$RecordType.Name"},
+		},
+		RecordTypes: []storage.RecordTypeInfo{
+			{ID: "012000000000020", Name: "Coupon", DeveloperName: "Coupon", Active: true, Available: true, Default: true},
+			{ID: "012000000000021", Name: "Membership", DeveloperName: "Membership", Active: true, Available: true},
+		},
+	}
+	org := storage.NewOrgState()
+	org.Objects["DeferredRevenueMethod__c"] = storage.ObjectState{
+		Definition: definition,
+		Records:    map[storage.ID]storage.Record{},
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "DeferredRevenueMethod__c",
+		Fields: map[string]storage.Value{
+			"RecordTypeId":      storage.IDValue("012000000000021"),
+			"RecordTypeName__c": storage.StringValue("Coupon"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	record := org.Objects["DeferredRevenueMethod__c"].Records[insert[0].ID]
+	value, ok := record.GetField("RecordTypeName__c")
+	if !ok || value.Kind != storage.ValueString || value.String != "Membership" {
+		t.Fatalf("record type name after insert = %#v, ok=%v; want Membership", value, ok)
 	}
 }
 

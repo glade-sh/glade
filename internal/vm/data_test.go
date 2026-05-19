@@ -50,6 +50,9 @@ System.assertEquals(0, empty.size());
 		Records: make(map[storage.ID]storage.Record),
 	}
 	machine.SetOrg(&org)
+	if relationshipType, ok := machine.jsonSObjectChildRelationshipType("Product__c", "ProductFrequencyLinks__r"); !ok || relationshipType != "List<ProductFrequencyLink__c>" {
+		t.Fatalf("derived child relationship type = %q, ok=%v", relationshipType, ok)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -441,6 +444,57 @@ func TestQueriedSObjectFieldsMarksLookupForDerivedRelationshipProjection(t *test
 	}
 }
 
+func TestQueriedSObjectFieldsTreatsObjectQualifiedFieldAsDirectField(t *testing.T) {
+	machine := New(nil)
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"OrderItem__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "OrderItem__c",
+				Fields: map[string]storage.Field{
+					"Id":               {APIName: "Id", Type: storage.FieldID},
+					"TotalShipping__c": {APIName: "TotalShipping__c", Type: storage.FieldDecimal},
+				},
+			},
+		},
+	}}
+	machine.SetOrg(&org)
+
+	fields := machine.queriedSObjectFields("SELECT OrderItem__c.Id, OrderItem__c.TotalShipping__c FROM OrderItem__c")
+	if !fields["totalshipping__c"] {
+		t.Fatalf("object-qualified projection did not mark direct field: %#v", fields)
+	}
+	if fields["orderitem__c"] {
+		t.Fatalf("object-qualified projection was treated as a relationship: %#v", fields)
+	}
+}
+
+func TestUnqueriedFieldCheckResolvesNamespacedSelectedField(t *testing.T) {
+	machine := New(nil)
+	org := storage.OrgState{
+		Namespace: "nu",
+		Objects: map[string]storage.ObjectState{
+			"OrderItem__c": {
+				Definition: storage.ObjectDefinition{
+					APIName: "OrderItem__c",
+					Fields: map[string]storage.Field{
+						"Id":               {APIName: "Id", Type: storage.FieldID},
+						"TotalShipping__c": {APIName: "TotalShipping__c", Type: storage.FieldDecimal},
+					},
+				},
+			},
+		},
+	}
+	machine.SetOrg(&org)
+	row := Object("OrderItem__c")
+	row.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue("OrderItem__c", map[string]bool{
+		"nu__totalshipping__c": true,
+	})
+
+	if err := machine.unqueriedSObjectFieldError(row, "TotalShipping__c", true); err != nil {
+		t.Fatalf("unqualified access to selected namespaced field returned error: %v", err)
+	}
+}
+
 func TestExecRelationshipProjectionHydratesLookupField(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<SObject> rows = Database.query('SELECT Parent__r.Id FROM Child__c');
@@ -752,6 +806,43 @@ func TestExecLookupIDDoesNotHydrateUnloadedParentRelationship(t *testing.T) {
 	}
 	if value.Kind != ValueNull {
 		t.Fatalf("unloaded parent relationship = %#v, want null", value)
+	}
+}
+
+func TestExecUnsavedChildRelationshipShellsNestedField(t *testing.T) {
+	machine := New(nil)
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Child__c",
+				Fields: map[string]storage.Field{
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Parent__c",
+					ParentObjects:      []string{"Account"},
+					ParentRelationship: "Parent__r",
+				}},
+			},
+		},
+		"Account": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Account",
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+		},
+	}}
+	machine.SetOrg(&org)
+	child := Object("Child__c")
+	value, err := machine.lookupPath(child, []string{"Parent__r", "Name"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueNull {
+		t.Fatalf("unsaved parent nested field = %#v, want null", value)
 	}
 }
 
@@ -1168,9 +1259,57 @@ System.assertEquals(null, child.Parent__r.Name);
 	}
 }
 
+func TestExecDMLReturnedParentRelationshipDoesNotLoadFromLookupID(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account parent = new Account(Name = 'Acme');
+insert parent;
+Child__c child = new Child__c(Parent__c = parent.Id);
+insert child;
+System.assertEquals(null, child.Parent__r.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Account": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Account",
+				KeyPrefix: "001",
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Parent__c",
+					ParentObjects:      []string{"Account"},
+					ParentRelationship: "Parent__r",
+				}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMissingOptionalParentRelationshipNestedFieldIsNull(t *testing.T) {
 	program, err := CompileAnonymous(`
 Child__c child = new Child__c();
+System.assertEquals(null, child.Parent__r);
 System.assertEquals(null, child.Parent__r.Name);
 `)
 	if err != nil {
@@ -2181,6 +2320,8 @@ User userFromConstructor = new User(FirstName = 'Local', LastName = 'User');
 System.assert(!userFromConstructor.getPopulatedFieldsAsMap().containsKey('Id'));
 TemplateSettings__c settings = (TemplateSettings__c)TemplateSettings__c.SObjectType.newSObject(null, true);
 System.assertEquals('resetcss', settings.DefaultCSS__c);
+GLAccount__c account = (GLAccount__c)GLAccount__c.SObjectType.newSObject(null, true);
+System.assertEquals('Active', account.Status__c);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2194,6 +2335,31 @@ System.assertEquals('resetcss', settings.DefaultCSS__c);
 				"Id":            {APIName: "Id", Type: storage.FieldID},
 				"DefaultCSS__c": {APIName: "DefaultCSS__c", Type: storage.FieldString, DefaultValue: "'resetcss'"},
 			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["GLAccount__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "GLAccount__c",
+			Fields: map[string]storage.Field{
+				"Id":           {APIName: "Id", Type: storage.FieldID},
+				"RecordTypeId": {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}},
+				"Status__c": {
+					APIName: "Status__c",
+					Type:    storage.FieldPicklist,
+					PicklistValues: []storage.PicklistValue{
+						{Value: "Active", Default: true, Active: true},
+						{Value: "Inactive", Active: true},
+					},
+				},
+			},
+			RecordTypes: []storage.RecordTypeInfo{{
+				ID:            "012000000000002AAA",
+				DeveloperName: "Default",
+				Name:          "Default",
+				Active:        true,
+				Available:     true,
+			}},
 		},
 		Records: map[storage.ID]storage.Record{},
 	}
@@ -2518,6 +2684,167 @@ System.assertEquals('Birch', a.get('Name'));
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectPutPropagatesThroughObjectFieldAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account contact = new Account();
+Map<String, Object> holder = new Map<String, Object>();
+holder.put('Record', contact);
+SObject alias = (SObject)holder.get('Record');
+alias.put(Account.Name, 'Smith');
+System.assertEquals('Smith', contact.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDMLInsertPropagatesIDThroughObjectAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme');
+List<SObject> accounts = new List<SObject>();
+accounts.add(account);
+Map<String, Object> aliases = new Map<String, Object>();
+aliases.put('account', account);
+insert accounts;
+System.assert(account.Id != null);
+System.assertEquals(account.Id, accounts[0].Id);
+SObject alias = (SObject)aliases.get('account');
+System.assertEquals(account.Id, alias.Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectRelationshipResolutionThroughObjectMapAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+Parent__c account = new Parent__c(Name = 'Parent');
+Child__c contact = new Child__c(Name = 'Child');
+Map<String, Object> relationship = new Map<String, Object>();
+relationship.put('Record', contact);
+relationship.put('RelatedTo', account);
+List<SObject> accounts = new List<SObject>();
+accounts.add(account);
+insert accounts;
+SObject record = (SObject)relationship.get('Record');
+SObject relatedTo = (SObject)relationship.get('RelatedTo');
+System.assertEquals('Child__c', record.getSObjectType().getDescribe().getName());
+System.assertEquals(account.Id, relatedTo.Id);
+record.put('Parent__c', relatedTo.Id);
+System.assertEquals(account.Id, contact.Parent__c);
+insert contact;
+Child__c stored = [SELECT Parent__c FROM Child__c WHERE Id = :contact.Id];
+System.assertEquals(account.Id, stored.Parent__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Parent__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Id":   {APIName: "Id", Type: storage.FieldID},
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Child__c",
+			KeyPrefix: "a02",
+			Fields: map[string]storage.Field{
+				"Id":        {APIName: "Id", Type: storage.FieldID},
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNestedParentRelationshipUsesStoredLookupField(t *testing.T) {
+	program, err := CompileAnonymous(`
+Grandparent__c grandparent = new Grandparent__c(Name = 'Grand');
+insert grandparent;
+Parent__c parent = new Parent__c(Name = 'Parent', Grandparent__c = grandparent.Id);
+insert parent;
+Child__c child = new Child__c(Name = 'Child', Parent__c = parent.Id);
+insert child;
+Child__c stored = [SELECT Parent__c FROM Child__c WHERE Id = :child.Id];
+System.assertEquals('Grand', stored.Parent__r.Grandparent__r.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Grandparent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Grandparent__c",
+			KeyPrefix: "a03",
+			Fields: map[string]storage.Field{
+				"Id":   {APIName: "Id", Type: storage.FieldID},
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Parent__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Id":             {APIName: "Id", Type: storage.FieldID},
+				"Name":           {APIName: "Name", Type: storage.FieldString},
+				"Grandparent__c": {APIName: "Grandparent__c", Type: storage.FieldReference, ReferenceTo: []string{"Grandparent__c"}},
+			},
+			Relations: []storage.Relationship{
+				{Field: "Grandparent__c", ParentObjects: []string{"Grandparent__c"}, ParentRelationship: "Grandparent__r"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Child__c",
+			KeyPrefix: "a02",
+			Fields: map[string]storage.Field{
+				"Id":        {APIName: "Id", Type: storage.FieldID},
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
+			},
+			Relations: []storage.Relationship{
+				{Field: "Parent__c", ParentObjects: []string{"Parent__c"}, ParentRelationship: "Parent__r"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -3751,6 +4078,9 @@ System.assertEquals(null, inMemory.RecordType.Name);
 Product__c explicitRelationship = new Product__c(RecordTypeId = couponTypeId);
 explicitRelationship.RecordType = new RecordType(Name = 'Explicit');
 System.assertEquals('Explicit', explicitRelationship.RecordType.Name);
+Product__c insertedRelationship = new Product__c(Name = 'Inserted Coupon', RecordTypeId = couponTypeId);
+insert insertedRelationship;
+System.assertEquals(null, insertedRelationship.RecordType.Name);
 insert new Product__c(Name = 'Coupon Product', RecordTypeId = couponTypeId);
 Product__c product = [SELECT Id, RecordType.Name FROM Product__c LIMIT 1];
 System.assertEquals('Coupon', product.RecordType.Name);
@@ -4201,11 +4531,10 @@ System.assertEquals(1, ((List<Child__c>)populated.get('Children__r')).size());
 	}
 }
 
-func TestExecTypedNullSObjectFieldAccessReturnsNull(t *testing.T) {
+func TestExecTypedNullParentRelationshipFieldAccessReturnsNull(t *testing.T) {
 	program, err := CompileAnonymous(`
-Account accountRecord;
-System.assertEquals(null, accountRecord.Name);
 Contact contactRecord;
+contactRecord = new Contact();
 System.assertEquals(null, contactRecord.Account.Name);
 `)
 	if err != nil {
@@ -4232,6 +4561,22 @@ System.assertEquals(null, contactRecord.Account.Name);
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecTypedNullSObjectVariableFieldAccessThrows(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account accountRecord;
+String name = accountRecord.Name;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err == nil {
+		t.Fatal("expected null SObject variable dereference to fail")
 	}
 }
 
@@ -4393,6 +4738,82 @@ System.assertEquals(3, [SELECT Id FROM Widget__c].size());
 	machine := New(nil)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRunAsUserCanQueryCurrentUserWithSharing(t *testing.T) {
+	program, err := CompileAnonymous(`
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User'];
+User u = new User(
+	Username = 'visible-user@example.invalid',
+	Alias = 'vuser',
+	Email = 'visible-user@example.invalid',
+	LastName = 'Visible',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+System.runAs(u) {
+	User row = [SELECT Id FROM User WHERE Id = :UserInfo.getUserId() LIMIT 1];
+	System.assertEquals(UserInfo.getUserId(), row.Id);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "SharingProbe", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "SharingProbe"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecBeforeTriggerPreservesExplicitNullForDefaultedField(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Widget__c row : Trigger.new) {
+	Date observed = row.RenewalDate__c;
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Widget__c row = new Widget__c(Name = 'Explicit Null', RenewalDate__c = null);
+insert row;
+Widget__c stored = [SELECT Id, RenewalDate__c FROM Widget__c WHERE Id = :row.Id];
+System.assertEquals(null, stored.RenewalDate__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name":           {APIName: "Name", Type: storage.FieldString},
+				"RenewalDate__c": {APIName: "RenewalDate__c", Type: storage.FieldDate, DefaultValue: "TODAY()"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{Name: "WidgetBeforeInsert", Object: "Widget__c", Timing: triggerTimingBefore, Operation: "insert", Program: triggerProgram}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -4850,6 +5271,55 @@ System.assertEquals(0, account.Children__r.size());
 				ParentRelationship: "Account__r",
 				ChildRelationship:  "Children__r",
 			}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMissingChildRelationshipDerivedFromLookupFieldDefaultsToEmptyList(t *testing.T) {
+	program, err := CompileAnonymous(`
+Product__c product = new Product__c(Name = 'Widget');
+System.assert(product.ProductFrequencyLinks__r.isEmpty());
+Integer count = 0;
+for (ProductFrequencyLink__c link : product.ProductFrequencyLinks__r) {
+	count++;
+}
+System.assertEquals(0, count);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:     "Product__c",
+			PluralLabel: "Products",
+			KeyPrefix:   "a01",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["ProductFrequencyLink__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:     "ProductFrequencyLink__c",
+			Label:       "Product Frequency Link",
+			PluralLabel: "Product Frequency Links",
+			KeyPrefix:   "a02",
+			Fields: map[string]storage.Field{
+				"Product__c": {
+					APIName:          "Product__c",
+					Type:             storage.FieldReference,
+					ReferenceTo:      []string{"Product__c"},
+					RelationshipName: "ProductFrequencyLinks",
+				},
+			},
 		},
 		Records: map[storage.ID]storage.Record{},
 	}
@@ -5822,7 +6292,7 @@ func TestExecMissingCalculatedNumericFieldDefaultsToZero(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme', Amount__c = 2, Paid__c = 3);
 insert a;
-System.assertEquals('-1', String.valueOf(a.Balance__c));
+System.assertEquals('0', String.valueOf(a.Balance__c));
 Account row = [SELECT Id, Balance__c FROM Account WHERE Id = :a.Id];
 System.assertEquals('-1', String.valueOf(row.Balance__c));
 `)
@@ -7290,6 +7760,37 @@ System.assertEquals('Keep After', survivors.get(0).Name);
 	}); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDMLUpdateIgnoresUnmodifiedReadonlyQueriedField(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = [SELECT Name, ReadonlyText__c FROM Account WHERE Id = '001000000000001' LIMIT 1];
+account.Name = 'Updated';
+update account;
+Account stored = [SELECT Name FROM Account WHERE Id = '001000000000001' LIMIT 1];
+System.assertEquals('Updated', stored.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := singleSOQLAssignmentOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["ReadonlyText__c"] = storage.Field{
+		APIName:    "ReadonlyText__c",
+		Type:       storage.FieldString,
+		Formula:    `"selected"`,
+		Updateable: storage.BoolFlag(false),
+	}
+	record := account.Records["001000000000001"]
+	record.Fields["ReadonlyText__c"] = storage.StringValue("selected")
+	account.Records["001000000000001"] = record
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

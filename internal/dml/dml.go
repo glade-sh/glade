@@ -797,7 +797,12 @@ func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefiniti
 		record.Fields = make(map[string]storage.Value)
 	}
 	for name, field := range definition.Fields {
-		if _, ok := formulaRecordField(*record, name); ok {
+		if existing, ok := formulaRecordField(*record, name); ok {
+			if shouldRefreshRecordTypeDerivedDefault(definition, *record, field, existing) {
+				if value, ok := defaultValueForRecordField(org, definition, *record, field); ok {
+					record.Fields[name] = value
+				}
+			}
 			continue
 		}
 		if strings.EqualFold(name, "RecordTypeId") {
@@ -810,6 +815,33 @@ func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefiniti
 			record.Fields[name] = value
 		}
 	}
+}
+
+func shouldRefreshRecordTypeDerivedDefault(definition storage.ObjectDefinition, record storage.Record, field storage.Field, existing storage.Value) bool {
+	rawDefault := strings.TrimSpace(field.DefaultValue)
+	if !strings.EqualFold(rawDefault, "$RecordType.Name") && !strings.EqualFold(rawDefault, "$RecordType.DeveloperName") {
+		return false
+	}
+	currentDefault := formulaRecordTypeValue(definition, record, rawDefault)
+	if currentDefault == "" {
+		return false
+	}
+	existingText := strings.TrimSpace(workflowValueString(existing))
+	if existingText == "" || strings.EqualFold(existingText, currentDefault) {
+		return false
+	}
+	for _, recordType := range definition.RecordTypes {
+		candidate := recordType.Name
+		if strings.EqualFold(rawDefault, "$RecordType.DeveloperName") {
+			candidate = recordType.DeveloperName
+		} else if candidate == "" {
+			candidate = recordType.DeveloperName
+		}
+		if candidate != "" && strings.EqualFold(existingText, candidate) {
+			return true
+		}
+	}
+	return false
 }
 
 func applyDefaultRecordTypeID(definition storage.ObjectDefinition, record *storage.Record) {
@@ -876,6 +908,11 @@ func defaultRecordType(recordTypes []storage.RecordTypeInfo) (storage.RecordType
 
 func defaultValueForRecordField(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field) (storage.Value, bool) {
 	rawDefault := strings.TrimSpace(field.DefaultValue)
+	if strings.EqualFold(rawDefault, "$RecordType.Name") || strings.EqualFold(rawDefault, "$RecordType.DeveloperName") {
+		if value, _, ok := workflowLiteralValue(field, formulaRecordTypeValue(definition, record, rawDefault)); ok {
+			return value, true
+		}
+	}
 	if org != nil && (strings.Contains(rawDefault, "$RecordType") || formulaDefaultShouldEvaluate(field, rawDefault)) {
 		if value, _, ok := EvaluateRecordFormulaValueInOrg(rawDefault, field, org, definition, record); ok {
 			return value, true
@@ -2262,6 +2299,10 @@ func stripUnchangedNonUpdateableFields(definition storage.ObjectDefinition, name
 			continue
 		}
 		existingValue, ok := existing.GetField(canonical)
+		if !ok && value.Kind == storage.ValueNull && !existing.HasExplicitNull(canonical) {
+			delete(record.Fields, field)
+			continue
+		}
 		if ok && storageValuesEqual(fieldDef, value, existingValue) {
 			delete(record.Fields, field)
 		}
@@ -2280,7 +2321,7 @@ func stripUnchangedNonUpdateableFields(definition storage.ObjectDefinition, name
 			continue
 		}
 		existingValue, ok := existing.GetField(canonical)
-		if ok && existingValue.Kind == storage.ValueNull {
+		if (!ok && !existing.HasExplicitNull(canonical)) || (ok && existingValue.Kind == storage.ValueNull) {
 			delete(record.ExplicitNulls, field)
 		}
 	}

@@ -61,6 +61,9 @@ func (l *LocalExecutor) CaptureLocal(probeIDs []string) (map[string]ProbeResult,
 	if workers > len(probeIDs) {
 		workers = len(probeIDs)
 	}
+	// VM runtime registration in this path mutates shared state and is not safe
+	// under concurrent worker execution.
+	workers = 1
 	type localJob struct {
 		index int
 		id    string
@@ -189,14 +192,45 @@ func seedProbeData(org *storage.OrgState) error {
 
 func (l *LocalExecutor) runProbe(index typesys.Index, org storage.OrgState, probeID string) (ProbeResult, error) {
 	code := fmt.Sprintf("System.debug(ProbeRunner.run('%s'));", probeID)
+	if isStubContractProbeID(probeID) {
+		spec, ok := stubContractProbeSpecByID(probeID)
+		if !ok {
+			return ProbeResult{
+				ProbeID:          probeID,
+				Category:         "Stub Contracts",
+				Result:           nil,
+				ExceptionType:    strPtr("UnknownProbeException"),
+				ExceptionMessage: strPtr("No generated stub contract probe spec found"),
+			}, nil
+		}
+		code = buildLocalStubContractProbeCode(spec)
+	}
 
 	program, err := vm.CompileAnonymous(code)
 	if err != nil {
+		if isStubContractProbeID(probeID) {
+			return ProbeResult{
+				ProbeID:          probeID,
+				Category:         "Stub Contracts",
+				Result:           nil,
+				ExceptionType:    strPtr("CompileError"),
+				ExceptionMessage: strPtr(err.Error()),
+			}, nil
+		}
 		return ProbeResult{}, fmt.Errorf("compile anonymous: %w", err)
 	}
 
 	machine := vm.New(nil)
 	if err := apextest.RegisterProjectRuntime(machine, index); err != nil {
+		if isStubContractProbeID(probeID) {
+			return ProbeResult{
+				ProbeID:          probeID,
+				Category:         "Stub Contracts",
+				Result:           nil,
+				ExceptionType:    strPtr("RegisterRuntimeError"),
+				ExceptionMessage: strPtr(err.Error()),
+			}, nil
+		}
 		return ProbeResult{}, fmt.Errorf("register project runtime: %w", err)
 	}
 	machine.SetOrg(&org)

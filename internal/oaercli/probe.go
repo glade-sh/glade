@@ -128,6 +128,7 @@ func runProbeOrg(ctx context.Context, args []string, w io.Writer) error {
 func runProbeLocal(ctx context.Context, args []string, w io.Writer) error {
 	probeDir := "probes/sfdx"
 	outputDir := "probes/output"
+	tier := ""
 	var probeIDs []string
 	var features []string
 
@@ -152,6 +153,12 @@ func runProbeLocal(ctx context.Context, args []string, w io.Writer) error {
 			}
 			features = append(features, args[i+1])
 			i++
+		case "--tier":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--tier requires a value")
+			}
+			tier = strings.TrimSpace(args[i+1])
+			i++
 		default:
 			if strings.HasPrefix(arg, "-") {
 				return fmt.Errorf("unknown flag %q", arg)
@@ -166,8 +173,11 @@ func runProbeLocal(ctx context.Context, args []string, w io.Writer) error {
 		features = append(features, cfg.Org.Features...)
 	}
 
+	if len(probeIDs) == 0 && tier != "" {
+		probeIDs = probe.ProbeIDsForTier(tier)
+	}
 	if len(probeIDs) == 0 {
-		return fmt.Errorf("probe local requires at least one probe id")
+		return fmt.Errorf("probe local requires at least one probe id or --tier")
 	}
 
 	localExec := &probe.LocalExecutor{ProbeDir: probeDir, Features: features}
@@ -200,6 +210,19 @@ func runProbeLocal(ctx context.Context, args []string, w io.Writer) error {
 			status = "EXCEPTION"
 		}
 		fmt.Fprintf(w, "%s => %v (%s)\n", r.ProbeID, r.Result, status)
+	}
+	byException := map[string]int{}
+	okCount := 0
+	for _, r := range results {
+		if r.ExceptionType == nil {
+			okCount++
+			continue
+		}
+		byException[*r.ExceptionType]++
+	}
+	fmt.Fprintf(w, "\nSummary: ok=%d exception=%d\n", okCount, len(results)-okCount)
+	for name, count := range byException {
+		fmt.Fprintf(w, "exception[%s]=%d\n", name, count)
 	}
 
 	fmt.Fprintf(w, "\nLocal probe run complete: %d probes executed.\n", len(results))
