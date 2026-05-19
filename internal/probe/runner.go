@@ -215,10 +215,22 @@ func validateOrgShape(shape map[string]interface{}, probeIDs []string, features 
 	if rows, ok := numericShapeValue(shape["probeTestObjectRows"]); !ok || rows != 3 {
 		return fmt.Errorf("probeTestObjectRows = %v, want 3", shape["probeTestObjectRows"])
 	}
-	if count, ok := numericShapeValue(shape["probeCount"]); !ok || count < float64(len(probeIDs)) {
-		return fmt.Errorf("probeCount = %v, want at least %d", shape["probeCount"], len(probeIDs))
+	expectedDeployedProbeCount := deployedProbeCount(probeIDs)
+	if count, ok := numericShapeValue(shape["probeCount"]); !ok || count < float64(expectedDeployedProbeCount) {
+		return fmt.Errorf("probeCount = %v, want at least %d", shape["probeCount"], expectedDeployedProbeCount)
 	}
 	return nil
+}
+
+func deployedProbeCount(probeIDs []string) int {
+	count := 0
+	for _, id := range probeIDs {
+		if isStubContractProbeID(id) {
+			continue
+		}
+		count++
+	}
+	return count
 }
 
 func numericShapeValue(value interface{}) (float64, bool) {
