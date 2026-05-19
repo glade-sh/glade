@@ -773,6 +773,137 @@ func TestCompileStringEndingWithEscapedQuote(t *testing.T) {
 	}
 }
 
+func TestExecMapObjectKeysUseUserClassIdentity(t *testing.T) {
+	program, err := CompileAnonymous(`
+Probe first = new Probe();
+first.Key = 'one';
+Probe second = new Probe();
+second.Key = 'one';
+Map<Object, Object> values = new Map<Object, Object>();
+values.put(first, 'first');
+values.put(second, 'second');
+System.assertEquals(2, values.size());
+System.assertEquals('first', values.get(first));
+System.assertEquals('second', values.get(second));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:   "Probe",
+		Fields: map[string]Field{"Key": {Name: "Key", Type: "String"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMapObjectKeysUseUserClassIdentityForSObjectNameShadow(t *testing.T) {
+	program, err := CompileAnonymous(`
+OrderItem first = new OrderItem();
+first.Key = 'one';
+OrderItem second = new OrderItem();
+second.Key = 'one';
+Map<Object, Object> values = new Map<Object, Object>();
+values.put(first, 'first');
+values.put(second, 'second');
+System.assertEquals(2, values.size());
+System.assertEquals('first', values.get(first));
+System.assertEquals('second', values.get(second));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Wrapper"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "OrderItem",
+		SuperClass: "Wrapper",
+		Fields:     map[string]Field{"Key": {Name: "Key", Type: "String"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListOfConcreteObjectsAssignsToListObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Account> accounts = new List<Account>{ new Account(Name = 'Acme'), new Account(Name = 'Global') };
+List<Object> objects = accounts;
+System.assertEquals(2, objects.size());
+System.assertEquals('Acme', ((Account)objects[0]).Name);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInheritedMethodDispatchesUnqualifiedVirtualCallToReceiverType(t *testing.T) {
+	baseHasIds, err := CompileAnonymous(`return ids() != null;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	childIds, err := CompileAnonymous(`return new Set<Id>{ '001000000000001AAA' };`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Base value = new Child();
+System.assert(value.hasIds());
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Methods: map[string]Method{
+			"hasIds": {
+				Name:       "Base.hasIds",
+				ClassName:  "Base",
+				ReturnType: "Boolean",
+				Program:    baseHasIds,
+			},
+			"ids": {
+				Name:       "Base.ids",
+				ClassName:  "Base",
+				ReturnType: "Set<Id>",
+				Modifiers:  []string{"abstract"},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Base",
+		Methods: map[string]Method{
+			"ids": {
+				Name:       "Child.ids",
+				ClassName:  "Child",
+				ReturnType: "Set<Id>",
+				Modifiers:  []string{"override"},
+				Program:    childIds,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCompileAcceptsLongLiteralSuffix(t *testing.T) {
 	program, err := CompileAnonymous(`System.assertEquals(9, 9L);`)
 	if err != nil {

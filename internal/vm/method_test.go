@@ -3322,6 +3322,61 @@ System.assertEquals(true, b.check());
 	}
 }
 
+func TestExecNestedPassiveGeneratedPropertySetterPropagatesToParent(t *testing.T) {
+	empty, err := CompileAnonymous("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Parent p = new Parent();
+p.Recorder.Stubbing = true;
+System.assertEquals(true, p.Recorder.Stubbing);
+p.Recorder.Stubbing = false;
+System.assertEquals(false, p.Recorder.Stubbing);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Recorder",
+		Fields: map[string]Field{
+			"Stubbing": {
+				Name:     "Stubbing",
+				Type:     "Boolean",
+				Property: true,
+				Getter: &Method{
+					Name:       "Recorder.Stubbing.get",
+					ClassName:  "Recorder",
+					ReturnType: "Boolean",
+					Program:    empty,
+					Modifiers:  []string{"passive-generated"},
+				},
+				Setter: &Method{
+					Name:      "Recorder.Stubbing.set",
+					ClassName: "Recorder",
+					Params:    []Param{{Name: "value", Type: "Boolean"}},
+					Program:   empty,
+					Modifiers: []string{"passive-generated"},
+				},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Parent",
+		Fields: map[string]Field{
+			"Recorder": {Name: "Recorder", Type: "Recorder", InitialValue: Object("Recorder")},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDottedAssignmentUsesIntermediatePropertyGetter(t *testing.T) {
 	getter, err := CompileAnonymous(`
 if (child == null) {

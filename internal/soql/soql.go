@@ -940,6 +940,9 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 		if condition.Subquery != nil {
 			return false
 		}
+		if asyncApexJobTestPendingStatusMatches(definition, record, condition) {
+			return true
+		}
 		for _, v := range condition.Values {
 			if equalValuesInOrg(org, left, v) {
 				return true
@@ -962,6 +965,26 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 	default:
 		return false
 	}
+}
+
+func asyncApexJobTestPendingStatusMatches(definition storage.ObjectDefinition, record storage.Record, condition *Condition) bool {
+	if !strings.EqualFold(definition.APIName, "AsyncApexJob") || !strings.EqualFold(condition.Field, "Status") {
+		return false
+	}
+	status, ok := record.Fields["Status"]
+	if !ok || status.Kind != storage.ValueString || !strings.EqualFold(status.String, "Completed") {
+		return false
+	}
+	pending, ok := record.Fields["__OAERTestPendingStatus"]
+	if !ok {
+		return false
+	}
+	for _, value := range condition.Values {
+		if equalValues(pending, value) {
+			return true
+		}
+	}
+	return false
 }
 
 func resolveSubqueries(org storage.OrgState, condition Condition) (Condition, error) {

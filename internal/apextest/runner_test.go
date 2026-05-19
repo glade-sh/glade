@@ -2828,12 +2828,20 @@ private class AsyncContextIdsTest {
     List<AsyncApexJob> batches = [SELECT Id, Status, JobType, TotalJobItems, JobItemsProcessed, NumberOfErrors, CompletedDate FROM AsyncApexJob WHERE Id = '707000000000002'];
     System.assertEquals(1, batches.size());
     AsyncApexJob batch = batches.get(0);
-    System.assertEquals('Queued', batch.Status);
+    System.assertEquals('Completed', batch.Status);
     System.assertEquals('BatchApex', batch.JobType);
     System.assertEquals(2, batch.TotalJobItems);
     System.assertEquals(2, batch.JobItemsProcessed);
     System.assertEquals(0, batch.NumberOfErrors);
     System.assertNotEquals(null, batch.CompletedDate);
+    List<AsyncApexJob> pendingBatches = [
+      SELECT Id
+      FROM AsyncApexJob
+      WHERE Status IN ('Preparing', 'Processing', 'Queued', 'Holding')
+      AND JobType = 'BatchApex'
+      AND Id = '707000000000002'
+    ];
+    System.assertEquals(1, pendingBatches.size());
     List<CronTrigger> crons = [SELECT Id, State, CronExpression, CronJobDetail FROM CronTrigger];
     System.assertEquals(1, crons.size());
     CronTrigger cron = crons.get(0);

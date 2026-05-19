@@ -67,6 +67,7 @@ type VM struct {
 	triggerMatchCache        map[string][]Trigger
 	Stdout                   io.Writer
 	callStack                []callFrame
+	scopeStack               []map[string]Value
 	currentClass             string
 	currentMethod            Method
 	testContext              *TestContext
@@ -10118,7 +10119,7 @@ func (vm *VM) markCompletedBatchJobVisiblePendingInTest(job AsyncJob) {
 	if record.ID == "" {
 		return
 	}
-	record.Fields["Status"] = storage.StringValue("Queued")
+	record.Fields["__OAERTestPendingStatus"] = storage.StringValue("Queued")
 	object.Records[record.ID] = record
 	vm.Org.Objects["AsyncApexJob"] = object
 }
@@ -21440,6 +21441,15 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 	return vm.callMethodWithReceiver(*field.Getter, receiver, nil, resultForLookup())
 }
 
+func propertyAccessorMethod(method Method) bool {
+	if method.Name == "" || method.ClassName == "" {
+		return false
+	}
+	suffix := strings.TrimPrefix(method.Name, method.ClassName+".")
+	return strings.Contains(suffix, ".") &&
+		(strings.HasSuffix(strings.ToLower(suffix), ".get") || strings.HasSuffix(strings.ToLower(suffix), ".set"))
+}
+
 func (vm *VM) callStubProxyGetter(receiver Value, fieldName, returnType string) (Value, bool, error) {
 	provider := vm.currentStubProvider(receiver)
 	resolvedReturnType := vm.resolveTypeNameInClass(receiver.Type, returnType)
@@ -22736,6 +22746,9 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 				}
 			}()
 			_, err := vm.callMethodWithReceiver(*def.Setter, current, []Value{value}, resultForLookup())
+			if err == nil {
+				propagate(current)
+			}
 			return err
 		}
 		setExplicitSObjectField(&current, actualName, value)
@@ -30258,7 +30271,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	if len(args) != len(method.Params) {
 		return Null, fmt.Errorf("%s expects %d arguments", method.Name, len(method.Params))
 	}
-	if isStubProxy(receiver) {
+	if isStubProxy(receiver) && !propertyAccessorMethod(method) {
 		if value, handled, err := vm.callStubProxyMember(receiver, apexMethodMemberName(method.Name), args, result); handled || err != nil {
 			return value, err
 		}
@@ -30381,6 +30394,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	callerTypes := vm.VarTypes
 	callerClass := vm.currentClass
 	callerMethod := vm.currentMethod
+	vm.scopeStack = append(vm.scopeStack, caller)
 	vm.Globals = frame
 	vm.VarTypes = frameTypes
 	vm.currentClass = method.ClassName
@@ -30407,6 +30421,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		vm.VarTypes = callerTypes
 		vm.currentClass = callerClass
 		vm.currentMethod = callerMethod
+		vm.scopeStack = vm.scopeStack[:len(vm.scopeStack)-1]
 	}()
 
 	out, err := vm.executeProgram(method.Program, result)
@@ -34027,7 +34042,8 @@ func (vm *VM) apexObjectHashMapKey(value Value) (string, bool) {
 	if isStubProxy(value) {
 		return "", false
 	}
-	if value.Kind != ValueObject || value.Type == "" || sObjectValueType(value.Type) ||
+	if value.Kind != ValueObject || value.Type == "" ||
+		(sObjectValueType(value.Type) && !vm.userClassShadowsSObjectType(value.Type)) ||
 		strings.HasPrefix(value.Type, "Schema.") || platformScalarObject(value.Type) ||
 		strings.EqualFold(value.Type, "Type") {
 		return "", false
@@ -34050,6 +34066,14 @@ func (vm *VM) apexObjectHashMapKey(value Value) (string, bool) {
 		return "", false
 	}
 	return string(ValueObject) + ":" + value.Type + ":hash:" + strconv.FormatInt(result.Int, 10), true
+}
+
+func (vm *VM) userClassShadowsSObjectType(typeName string) bool {
+	class, ok := vm.lookupClass(typeName)
+	if !ok || class.SuperClass == "" {
+		return false
+	}
+	return !strings.EqualFold(class.SuperClass, "SObject")
 }
 
 func (vm *VM) frameworkQualifiedMethodMapKey(value Value) (string, bool) {
@@ -34840,18 +34864,20 @@ func frameworkApexMocksProviderHasRecorder(provider Value) bool {
 func (vm *VM) findLiveStubProvider(provider Value) (Value, bool) {
 	var candidate Value
 	found := false
-	for _, value := range vm.Globals {
-		if value.Kind != ValueObject || !strings.EqualFold(value.Type, provider.Type) {
-			continue
-		}
-		if stubProviderStateFlagSet(value) {
-			return value, true
-		}
-		if !found {
-			candidate = value
-			found = true
-		} else {
-			candidate = Null
+	for _, scope := range vm.liveScopes() {
+		for _, value := range scope {
+			if value.Kind != ValueObject || !strings.EqualFold(value.Type, provider.Type) {
+				continue
+			}
+			if stubProviderStateFlagSet(value) {
+				return value, true
+			}
+			if !found {
+				candidate = value
+				found = true
+			} else {
+				candidate = Null
+			}
 		}
 	}
 	return candidate, found && candidate.Kind == ValueObject
@@ -34870,8 +34896,10 @@ func (vm *VM) findValueByRef(ref uint64) (Value, bool) {
 	if ref == 0 {
 		return Null, false
 	}
-	if value, ok := directValueByRefInScope(vm.Globals, ref); ok {
-		return value, true
+	for _, scope := range vm.liveScopes() {
+		if value, ok := directValueByRefInScope(scope, ref); ok {
+			return value, true
+		}
 	}
 	for _, class := range vm.Classes {
 		for _, field := range class.StaticFields {
@@ -34880,8 +34908,10 @@ func (vm *VM) findValueByRef(ref uint64) (Value, bool) {
 			}
 		}
 	}
-	if value, ok := findValueByRefInScope(vm.Globals, ref, make(map[uint64]bool)); ok {
-		return value, true
+	for _, scope := range vm.liveScopes() {
+		if value, ok := findValueByRefInScope(scope, ref, make(map[uint64]bool)); ok {
+			return value, true
+		}
 	}
 	for _, class := range vm.Classes {
 		for _, field := range class.StaticFields {
@@ -34891,6 +34921,15 @@ func (vm *VM) findValueByRef(ref uint64) (Value, bool) {
 		}
 	}
 	return Null, false
+}
+
+func (vm *VM) liveScopes() []map[string]Value {
+	scopes := make([]map[string]Value, 0, len(vm.scopeStack)+1)
+	scopes = append(scopes, vm.Globals)
+	for i := len(vm.scopeStack) - 1; i >= 0; i-- {
+		scopes = append(scopes, vm.scopeStack[i])
+	}
+	return scopes
 }
 
 func directValueByRefInScope(scope map[string]Value, ref uint64) (Value, bool) {
