@@ -3431,7 +3431,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("String.valueOf expects 1 argument")
 		}
 		if args[0].Kind == ValueNull {
-			return Null, newExceptionError("System.CompileException", "Unexpected token '<EOF>'.")
+			return Value{Kind: ValueNull, Type: "String"}, nil
 		}
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Date") {
 			text, err := platformScalarText(args[0], "Date")
@@ -3737,6 +3737,9 @@ platformStaticCall:
 			}
 		}
 		year, month, day := int(args[0].Int), int(args[1].Int), int(args[2].Int)
+		if year == 0 {
+			year = 1
+		}
 		hour, minute, second := 0, 0, 0
 		if len(args) == 6 {
 			hour, minute, second = int(args[3].Int), int(args[4].Int), int(args[5].Int)
@@ -28331,15 +28334,17 @@ func (vm *VM) resolveNestedTypeInClassHierarchy(className, typeName string) (str
 				break
 			}
 			seenSupers[key] = true
-			candidate := super + "." + typeName
-			if class, ok := vm.lookupClass(candidate); ok {
-				if isNamespaceClassAlias(candidate, class) {
+			for _, ownerCandidate := range lexicalOwnerCandidates(super) {
+				candidate := ownerCandidate + "." + typeName
+				if class, ok := vm.lookupClass(candidate); ok {
+					if isNamespaceClassAlias(candidate, class) {
+						return class.Name, true
+					}
+					if strings.Contains(candidate, ".") && !strings.Contains(class.Name, ".") {
+						return candidate, true
+					}
 					return class.Name, true
 				}
-				if strings.Contains(candidate, ".") && !strings.Contains(class.Name, ".") {
-					return candidate, true
-				}
-				return class.Name, true
 			}
 		}
 		dot := strings.LastIndex(owner, ".")
@@ -28983,6 +28988,14 @@ func platformTokenTypeAlias(typeName, target string) bool {
 	case strings.EqualFold(typeName, "Schema.SObjectField") && strings.EqualFold(target, "SObjectField"):
 		return true
 	case strings.EqualFold(typeName, "SObjectField") && strings.EqualFold(target, "Schema.SObjectField"):
+		return true
+	case strings.EqualFold(typeName, "Schema.FieldSet") && strings.EqualFold(target, "FieldSet"):
+		return true
+	case strings.EqualFold(typeName, "FieldSet") && strings.EqualFold(target, "Schema.FieldSet"):
+		return true
+	case strings.EqualFold(typeName, "Schema.FieldSetMember") && strings.EqualFold(target, "FieldSetMember"):
+		return true
+	case strings.EqualFold(typeName, "FieldSetMember") && strings.EqualFold(target, "Schema.FieldSetMember"):
 		return true
 	case strings.EqualFold(typeName, "Schema.DescribeFieldResult") && strings.EqualFold(target, "DescribeFieldResult"):
 		return true
@@ -35704,6 +35717,9 @@ func (vm *VM) callFrameworkSObjectDescribeMember(receiver Value, method string, 
 func (vm *VM) callFrameworkStaticMember(className, method string, args []Value) (Value, bool, error) {
 	switch {
 	case managedTriggerHandlerManagerType(className) && managedTriggerHandlerManagerMethod(method):
+		if _, ok := vm.resolveClassName(className); ok {
+			return Null, false, nil
+		}
 		if len(args) > 1 {
 			return Null, true, fmt.Errorf("%s.%s expects at most one argument", className, method)
 		}
@@ -45010,6 +45026,9 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 	if value, updated, mutated, handled, err := vm.callPassivePlatformDTOCollectionMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, handled, err
 	}
+	if vm.receiverHasRegisteredInstanceMethod(receiver, method, args) {
+		return Null, receiver, false, false, nil
+	}
 	if suffix, ok := passiveAccessorSuffix(method, "set"); ok {
 		if len(args) != 1 {
 			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 argument", receiver.Type, method)
@@ -45108,6 +45127,29 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 		return Bool(false), receiver, false, true, nil
 	}
 	return Null, receiver, false, false, nil
+}
+
+func (vm *VM) receiverHasRegisteredInstanceMethod(receiver Value, method string, args []Value) bool {
+	if receiver.Kind != ValueObject {
+		return false
+	}
+	candidates := []string{runtimeObjectType(receiver), receiver.Type, receiver.Static}
+	seen := make(map[string]bool, len(candidates))
+	for _, candidate := range candidates {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "" {
+			continue
+		}
+		key := strings.ToLower(candidate)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		if _, ok, ambiguous := vm.resolveInstanceMethodForArgs(candidate, method, args); ok || ambiguous {
+			return true
+		}
+	}
+	return false
 }
 
 func callPrefCenterLoadFormDataMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {

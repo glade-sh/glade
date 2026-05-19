@@ -1513,7 +1513,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		}
 	case "Decimal.valueOf", "Double.valueOf":
 		if args[0].Kind == ValueNull {
-			return Null, nil
+			return Null, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
 		}
 		switch args[0].Kind {
 		case ValueDecimal:
