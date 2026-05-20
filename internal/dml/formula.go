@@ -678,6 +678,14 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaBool, bool: args[0].blank()}, true
+	case "BLANKVALUE":
+		if len(args) != 2 {
+			return formulaValue{}, false
+		}
+		if args[0].blank() {
+			return args[1], true
+		}
+		return args[0], true
 	case "ISNULL":
 		if len(args) != 1 {
 			return formulaValue{}, false

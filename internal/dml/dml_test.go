@@ -2489,6 +2489,54 @@ func TestCalculatedFormulaEvaluatesNestedParentCalculatedField(t *testing.T) {
 	}
 }
 
+func TestCalculatedFormulaBlankValueUsesParentFallback(t *testing.T) {
+	displayField := storage.Field{APIName: "ProductDisplayName__c", Type: storage.FieldCalculated, DisplayType: "STRING", Formula: `BLANKVALUE(ProductNameOverride__c, Product__r.Name)`}
+	linkDefinition := storage.ObjectDefinition{
+		APIName: "MembershipTypeProductLink__c",
+		Fields: map[string]storage.Field{
+			"ProductNameOverride__c": {APIName: "ProductNameOverride__c", Type: storage.FieldString},
+			"Product__c":             {APIName: "Product__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}},
+			"ProductDisplayName__c":  displayField,
+		},
+		Relations: []storage.Relationship{{
+			Field:              "Product__c",
+			ParentObjects:      []string{"Product__c"},
+			ParentRelationship: "Product__r",
+		}},
+	}
+	productDefinition := storage.ObjectDefinition{
+		APIName: "Product__c",
+		Fields: map[string]storage.Field{
+			"Name": {APIName: "Name", Type: storage.FieldString},
+		},
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"MembershipTypeProductLink__c": {Definition: linkDefinition},
+		"Product__c": {
+			Definition: productDefinition,
+			Records: map[storage.ID]storage.Record{
+				"a01000000000001": {ID: "a01000000000001", Object: "Product__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Peanut Butter")}},
+			},
+		},
+	}}
+	record := storage.Record{
+		Object: "MembershipTypeProductLink__c",
+		Fields: map[string]storage.Value{
+			"Product__c": storage.IDValue("a01000000000001"),
+		},
+	}
+	value, _, ok := EvaluateRecordFormulaValueInOrg(displayField.Formula, displayField, &org, linkDefinition, record)
+	if !ok || value.Kind != storage.ValueString || value.String != "Peanut Butter" {
+		t.Fatalf("blankvalue parent fallback = %#v, ok=%v; want Peanut Butter", value, ok)
+	}
+
+	record.Fields["ProductNameOverride__c"] = storage.StringValue("New Product Name")
+	value, _, ok = EvaluateRecordFormulaValueInOrg(displayField.Formula, displayField, &org, linkDefinition, record)
+	if !ok || value.Kind != storage.ValueString || value.String != "New Product Name" {
+		t.Fatalf("blankvalue override = %#v, ok=%v; want New Product Name", value, ok)
+	}
+}
+
 func TestRelationshipFormulaEvaluatesParentFormulaBackedField(t *testing.T) {
 	childDefinition := storage.ObjectDefinition{
 		APIName: "Line__c",
