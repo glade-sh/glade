@@ -215,15 +215,32 @@ func (l *LocalExecutor) runProbe(index typesys.Index, org storage.OrgState, prob
 			}, nil
 		}
 		if spec.Mode == capability.StubContractCompileShape {
-			exceptionType := "System.CompileException"
-			exceptionMessage := "compile-shape probe intentionally not executed locally"
-			return ProbeResult{
-				ProbeID:          probeID,
-				Category:         "Stub Contracts",
-				Result:           nil,
-				ExceptionType:    &exceptionType,
-				ExceptionMessage: &exceptionMessage,
-			}, nil
+			kind := strings.ToLower(strings.TrimSpace(spec.Kind))
+			// Compile-shape methods/properties are contract-shape probes, not
+			// runtime support claims; classify them with explicit unsupported
+			// semantics instead of local compile placeholders.
+			if kind == "method" || kind == "property" {
+				exceptionType := "System.UnsupportedOperationException"
+				exceptionMessage := "compile-shape method/property is not executable locally"
+				return ProbeResult{
+					ProbeID:          probeID,
+					Category:         "Stub Contracts",
+					Result:           nil,
+					ExceptionType:    &exceptionType,
+					ExceptionMessage: &exceptionMessage,
+				}, nil
+			}
+			{
+				exceptionType := "System.CompileException"
+				exceptionMessage := "compile-shape probe intentionally not executed locally"
+				return ProbeResult{
+					ProbeID:          probeID,
+					Category:         "Stub Contracts",
+					Result:           nil,
+					ExceptionType:    &exceptionType,
+					ExceptionMessage: &exceptionMessage,
+				}, nil
+			}
 		}
 		if spec.Kind == "constructor" && passiveDTOConstructorCompilesAsShape(spec.Type) {
 			exceptionType := "System.CompileException"
@@ -242,6 +259,11 @@ func (l *LocalExecutor) runProbe(index typesys.Index, org storage.OrgState, prob
 	program, err := vm.CompileAnonymous(code)
 	if err != nil {
 		if isStubContractProbeID(probeID) {
+			if spec, ok := stubContractProbeSpecByID(probeID); ok {
+				if compileResult, handled := stubContractCompileFailureResult(spec, err); handled {
+					return compileResult, nil
+				}
+			}
 			return ProbeResult{
 				ProbeID:          probeID,
 				Category:         "Stub Contracts",
