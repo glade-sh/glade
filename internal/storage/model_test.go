@@ -648,6 +648,14 @@ func TestApplyOrgShapeMultiCurrencyCreatesOrganizationFlag(t *testing.T) {
 	if !orgRecord.Fields["IsMultiCurrencyEnabled"].Boolean {
 		t.Fatalf("multi-currency flag was not applied: %#v", orgRecord.Fields)
 	}
+	currencyType := org.Objects["CurrencyType"]
+	if len(currencyType.Records) != 1 {
+		t.Fatalf("CurrencyType records = %d, want 1", len(currencyType.Records))
+	}
+	corporate := currencyType.Records["01L000000000001"]
+	if corporate.Fields["IsoCode"].String != "USD" || !corporate.Fields["IsCorporate"].Boolean || !corporate.Fields["IsActive"].Boolean {
+		t.Fatalf("CurrencyType corporate row = %#v", corporate.Fields)
+	}
 }
 
 func TestEnsureDeterministicPlatformDataSeedsCommonSalesObjects(t *testing.T) {
@@ -712,6 +720,7 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	EnsureStandardObject(&org, "Lead")
 	EnsureStandardObject(&org, "Opportunity")
 	EnsureStandardObject(&org, "CampaignMember")
+	EnsureStandardObject(&org, "CampaignMemberStatus")
 	EnsureStandardObject(&org, "OpportunityContactRole")
 	EnsureStandardObject(&org, "OrderItem")
 	EnsureStandardObject(&org, "OpportunityLineItem")
@@ -725,6 +734,9 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	}
 	if !IsKnownStandardObject("CampaignMember") {
 		t.Fatalf("CampaignMember should be recognized as a generated standard object")
+	}
+	if !IsKnownStandardObject("CampaignMemberStatus") {
+		t.Fatalf("CampaignMemberStatus should be recognized as a standard object")
 	}
 	if field, ok := org.Objects["Lead"].Definition.Fields["LastName"]; !ok || !field.Required {
 		t.Fatalf("Lead.LastName field = %#v, %v", field, ok)
@@ -746,6 +758,18 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	}
 	if field, ok := org.Objects["CampaignMember"].Definition.Fields["Status"]; !ok || field.Type != FieldPicklist {
 		t.Fatalf("CampaignMember.Status field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["CampaignMemberStatus"].Definition.Fields["CampaignId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Campaign" {
+		t.Fatalf("CampaignMemberStatus.CampaignId field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["CampaignMemberStatus"].Definition.Fields["Label"]; !ok || field.Type != FieldString {
+		t.Fatalf("CampaignMemberStatus.Label field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["CampaignMemberStatus"].Definition.Fields["SortOrder"]; !ok || field.Type != FieldInteger {
+		t.Fatalf("CampaignMemberStatus.SortOrder field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["CampaignMemberStatus"].Definition.Fields["IsDefault"]; !ok || field.Type != FieldBoolean {
+		t.Fatalf("CampaignMemberStatus.IsDefault field = %#v, %v", field, ok)
 	}
 	if field, ok := org.Objects["Opportunity"].Definition.Fields["StageName"]; !ok || !field.Required {
 		t.Fatalf("Opportunity.StageName field = %#v, %v", field, ok)

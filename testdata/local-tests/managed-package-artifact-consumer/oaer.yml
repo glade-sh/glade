@@ -1,0 +1,2 @@
+project:
+  managedPackageDependencies: ["znu:artifact:../managed-package-artifact/znu.oaer-package.json:1.0"]

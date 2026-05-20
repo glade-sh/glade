@@ -4002,6 +4002,37 @@ try {
 	}
 }
 
+func TestResolveUniqueNestedTypeNameCachesAndInvalidates(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Outer"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Outer.Nested"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "Outer.Harness"
+
+	resolved, ok := machine.resolveUniqueNestedTypeName("Nested")
+	if !ok || resolved != "Outer.Nested" {
+		t.Fatalf("resolve Nested = %q, %v; want Outer.Nested, true", resolved, ok)
+	}
+	if len(machine.uniqueNestedTypeCache) == 0 {
+		t.Fatalf("resolveUniqueNestedTypeName did not populate cache")
+	}
+
+	machine.currentClass = "Outer.Harness"
+	if resolved, ok := machine.resolveUniqueNestedTypeName("Later"); ok || resolved != "" {
+		t.Fatalf("resolve Later before registration = %q, %v; want empty, false", resolved, ok)
+	}
+	if err := machine.RegisterClass(Class{Name: "Outer.Later"}); err != nil {
+		t.Fatal(err)
+	}
+	resolved, ok = machine.resolveUniqueNestedTypeName("Later")
+	if !ok || resolved != "Outer.Later" {
+		t.Fatalf("resolve Later after registration = %q, %v; want Outer.Later, true", resolved, ok)
+	}
+}
+
 func TestExecCustomExceptionConstructorCanSetMessage(t *testing.T) {
 	ctor, err := CompileAnonymous(`this.setMessage(message);`)
 	if err != nil {
@@ -4070,6 +4101,23 @@ System.assertEquals('calls', String.valueOf(mode));
 	if err := machine.RegisterClass(Class{Name: "VerificationMode"}); err != nil {
 		t.Fatal(err)
 	}
+	if err := machine.RegisterClass(Class{Name: "VerificationMode.ModeName", EnumValues: []string{"times", "calls"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecUserEnumNameMethodIsCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object mode = VerificationMode.ModeName.calls;
+System.assertEquals('calls', mode.Name());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
 	if err := machine.RegisterClass(Class{Name: "VerificationMode.ModeName", EnumValues: []string{"times", "calls"}}); err != nil {
 		t.Fatal(err)
 	}

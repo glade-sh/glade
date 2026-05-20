@@ -112,6 +112,7 @@ func (vm *VM) RegisterClass(class Class) error {
 		vm.Classes = make(map[string]Class)
 	}
 	vm.methodResolveCache = nil
+	vm.uniqueNestedTypeCache = nil
 	for name, method := range class.Methods {
 		if method.Name == "" {
 			method.Name = class.Name + "." + name

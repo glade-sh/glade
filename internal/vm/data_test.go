@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/open-aer/oaer/internal/dml"
+	"github.com/open-aer/oaer/internal/ir"
 	"github.com/open-aer/oaer/internal/storage"
 )
 
@@ -615,6 +616,20 @@ System.assertEquals(0, touched);
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
+
+	queried := Object("Child__c")
+	queried.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue("Child__c", map[string]bool{"parent__r": true})
+	parent := Object("Account")
+	parent.Fields["Id"] = String("001000000000001AAA")
+	setExplicitSObjectField(&queried, "Parent__r", parent)
+	markQueriedSObjectField(&queried, "Parent__r")
+	value, err := machine.lookupPath(queried, []string{"Parent__c"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueNull {
+		t.Fatalf("explicit parent relationship backfilled lookup: %#v", value)
+	}
 }
 
 func TestExecLoadedRelationshipAllowsMissingLookupRepair(t *testing.T) {
@@ -737,6 +752,50 @@ System.assertEquals(null, child.Parent__c);
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestLookupExplicitNullParentRelationshipWithLookupIDUsesTypedShellForNestedField(t *testing.T) {
+	machine := New(nil)
+	org := storage.OrgState{Namespace: "NU", Objects: map[string]storage.ObjectState{
+		"CartItemLine__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "CartItemLine__c",
+				Fields: map[string]storage.Field{
+					"Id":          {APIName: "Id", Type: storage.FieldID},
+					"Product2__c": {APIName: "Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}, RelationshipName: "Product2__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Product2__c",
+					ParentObjects:      []string{"Product__c"},
+					ParentRelationship: "Product2__r",
+				}},
+			},
+		},
+		"Product__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Product__c",
+				Fields: map[string]storage.Field{
+					"Id":                   {APIName: "Id", Type: storage.FieldID},
+					"RecurringEligible__c": {APIName: "RecurringEligible__c", Type: storage.FieldBoolean, DefaultValue: "false"},
+				},
+			},
+		},
+	}}
+	machine.SetOrg(&org)
+	line := Object("CartItemLine__c")
+	line.Fields["Product2__c"] = String("aHA000000000006")
+	setExplicitSObjectField(&line, "Product2__r", Null)
+	relationship, err := machine.lookupPath(line, []string{"Product2__r"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, err := machine.lookupPath(relationship, []string{"RecurringEligible__c"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueBool || value.Bool {
+		t.Fatalf("nested checkbox through explicit null relationship = %#v, want false", value)
 	}
 }
 
@@ -2374,6 +2433,70 @@ System.assertEquals(false, describe.isDeprecatedAndHidden());
 	}
 }
 
+func TestExecSObjectFieldTokenCoercesToDescribeFieldResult(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeFieldResult field = Schema.SObjectType.Account.fields.Name;
+System.assertEquals('Name', field.getName());
+System.assertEquals(Schema.DisplayType.STRING, field.getType());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeFieldResultDefaultFormulaCanStripQuoteCharacters(t *testing.T) {
+	program, err := CompileAnonymous(`
+String ns = String.valueOf(Account.Advancement_Namespace__c.getDescribe().getDefaultValueFormula()).remove('\"');
+System.assertEquals('gem', ns);
+Schema.DescribeSObjectResult[] desc = Schema.describeSObjects(new String[]{ns + '__Advancement_Setting__mdt'});
+System.assertEquals('gem__Advancement_Setting__mdt', desc[0].getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Advancement_Namespace__c"] = storage.Field{APIName: "Advancement_Namespace__c", Type: storage.FieldString, DefaultValue: `"gem"`}
+	org.Objects["Account"] = account
+	org.Objects["gem__Advancement_Setting__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "gem__Advancement_Setting__mdt", Fields: map[string]storage.Field{}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeSObjectsUnknownObjectIsCatchable(t *testing.T) {
+	program, err := CompileAnonymous(`
+String caught = '';
+try {
+	Schema.describeSObjects(new String[]{'Missing__c'});
+	System.assert(false, 'expected describe failure');
+} catch (Exception e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assertEquals('System.SObjectException:Schema.describeSObjects unknown object Missing__c', caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSwitchOnDisplayTypeMatchesUnqualifiedCaseNames(t *testing.T) {
 	program, err := CompileAnonymous(`
 String label = '';
@@ -3215,6 +3338,34 @@ System.assert(populated.containsKey('Id'));
 System.assert(populated.containsKey('Name'));
 System.assert(populated.containsKey('Phone'));
 System.assertEquals(null, populated.get('Phone'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecGetPopulatedFieldsAsMapOmitsDMLAuditFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+Map<String,Object> populated = a.getPopulatedFieldsAsMap();
+System.assert(populated.containsKey('Id'));
+System.assert(populated.containsKey('Name'));
+System.assert(!populated.containsKey('CreatedDate'));
+System.assert(!populated.containsKey('LastModifiedDate'));
+System.assert(!populated.containsKey('SystemModstamp'));
+System.assert(!populated.containsKey('OwnerId'));
+System.assert(!populated.containsKey('IsDeleted'));
+Account queried = [SELECT Id, CreatedDate, SystemModstamp FROM Account WHERE Id = :a.Id];
+Map<String,Object> queriedPopulated = queried.getPopulatedFieldsAsMap();
+System.assert(queriedPopulated.containsKey('CreatedDate'));
+System.assert(queriedPopulated.containsKey('SystemModstamp'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5969,6 +6120,44 @@ System.assert(caught);
 	}
 }
 
+func TestExecDatabaseQuerySingleSObjectNoRowsIsCatchableQueryException(t *testing.T) {
+	program, err := CompileAnonymous(`
+String caught = '';
+try {
+	SObject row = Database.query('SELECT Id, Name FROM Account WHERE Name = \'No Such Account\' LIMIT 1');
+	System.assert(false, 'expected query exception');
+} catch (QueryException qe) {
+	caught = qe.getTypeName() + ':' + qe.getMessage();
+}
+System.assertEquals('System.QueryException:List has no rows for assignment to SObject', caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMissingManagedListCustomSettingGetAllReturnsEmptyMap(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,npe4__Relationship_Auto_Create__c> settings = npe4__Relationship_Auto_Create__c.getAll();
+System.assertEquals(0, settings.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDMLCoercesDateIntoDateTimeField(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme', LastSeen__c = Date.newInstance(2026, 5, 2));
@@ -6031,6 +6220,51 @@ System.assertEquals('Changed', changed.Name);
 				"Account__c":  {APIName: "Account__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account__r"},
 				"Amount__c":   {APIName: "Amount__c", Type: storage.FieldDecimal},
 				"IsCoupon__c": {APIName: "IsCoupon__c", Type: storage.FieldBoolean},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSummaryFieldUsesExplicitJSONValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+Widget__c row = (Widget__c)JSON.deserialize('{"Id":"a01000000000001","NU__SubTotal__c":10}', Widget__c.class);
+System.assertEquals(10, row.SubTotal__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Namespace = "NU"
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"SubTotal__c": {
+					APIName:           "SubTotal__c",
+					Type:              storage.FieldSummary,
+					DisplayType:       "DECIMAL",
+					SummarizedField:   "WidgetLine__c.Amount__c",
+					SummaryForeignKey: "WidgetLine__c.Widget__c",
+					SummaryOperation:  "sum",
+				},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["WidgetLine__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "WidgetLine__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Widget__c": {APIName: "Widget__c", Type: storage.FieldReference, ReferenceTo: []string{"Widget__c"}, RelationshipName: "Widget__r"},
+				"Amount__c": {APIName: "Amount__c", Type: storage.FieldDecimal},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -8137,6 +8371,63 @@ System.assertEquals('Keep After', survivors.get(0).Name);
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestNeedsEarlyDMLRollbackSnapshotSkipsSinglePlainInsert(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+
+	if machine.needsEarlyDMLRollbackSnapshot("insert", []storage.Record{{Object: "Account"}}, true) {
+		t.Fatalf("single plain insert should not need an early full-org rollback snapshot")
+	}
+}
+
+func TestNeedsEarlyDMLRollbackSnapshotKeepsRiskyCases(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+
+	if !machine.needsEarlyDMLRollbackSnapshot("insert", []storage.Record{{Object: "Account"}, {Object: "Account"}}, true) {
+		t.Fatalf("batch all-or-none insert needs an early rollback snapshot")
+	}
+
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeInsert",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+		Program:   ir.Program{},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if !machine.needsEarlyDMLRollbackSnapshot("insert", []storage.Record{{Object: "Account"}}, true) {
+		t.Fatalf("triggered insert needs an early rollback snapshot")
+	}
+
+	machine = New(nil)
+	child := storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Line__c",
+		Fields:  map[string]storage.Field{},
+	}}
+	parent := storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Parent__c",
+		Fields: map[string]storage.Field{
+			"Total__c": {
+				APIName:           "Total__c",
+				Type:              storage.FieldSummary,
+				SummarizedField:   "Line__c.Amount__c",
+				SummaryForeignKey: "Line__c.Parent__c",
+			},
+		},
+	}}
+	org = storage.NewOrgState()
+	org.Objects["Line__c"] = child
+	org.Objects["Parent__c"] = parent
+	machine.SetOrg(&org)
+	if !machine.needsEarlyDMLRollbackSnapshot("insert", []storage.Record{{Object: "Line__c"}}, true) {
+		t.Fatalf("summary side-effect insert needs an early rollback snapshot")
 	}
 }
 

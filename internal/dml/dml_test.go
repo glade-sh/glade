@@ -2176,6 +2176,67 @@ func TestValidationRulesResolveParentRelationshipFields(t *testing.T) {
 	}
 }
 
+func TestValidationRulesResolveParentFormulaFields(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Payment__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Payment__c",
+			KeyPrefix: "a12",
+			Fields: map[string]storage.Field{
+				"Name":                      {APIName: "Name", Type: storage.FieldString},
+				"IsCredit__c":               {APIName: "IsCredit__c", Type: storage.FieldBoolean},
+				"PaymentAmount__c":          {APIName: "PaymentAmount__c", Type: storage.FieldDecimal},
+				"TotalPaymentApplied__c":    {APIName: "TotalPaymentApplied__c", Type: storage.FieldSummary, SummaryOperation: "sum", SummaryForeignKey: "PaymentLine__c.Payment__c", SummarizedField: "PaymentLine__c.PaymentAmount__c"},
+				"AvailableCreditBalance__c": {APIName: "AvailableCreditBalance__c", Type: storage.FieldCalculated, Formula: "IF(IsCredit__c, PaymentAmount__c - TotalPaymentApplied__c, 0)"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["CartPayment__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "CartPayment__c",
+			KeyPrefix: "a13",
+			Fields: map[string]storage.Field{
+				"Name":             {APIName: "Name", Type: storage.FieldString},
+				"PaymentAmount__c": {APIName: "PaymentAmount__c", Type: storage.FieldDecimal},
+				"CreditPayment__c": {APIName: "CreditPayment__c", Type: storage.FieldReference, ReferenceTo: []string{"Payment__c"}, RelationshipName: "CreditCartPayments"},
+			},
+			ValidationRules: []storage.ValidationRule{{
+				Name:                  "PrepaymentAmountCannotExceedBalance",
+				Active:                true,
+				ErrorConditionFormula: "IsBlank(CreditPayment__c) = false && PaymentAmount__c > CreditPayment__r.AvailableCreditBalance__c",
+				ErrorMessage:          "The prepayment amount cannot exceed the available credit balance on the prepayment.",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	credit := engine.Insert([]storage.Record{{
+		Object: "Payment__c",
+		Fields: map[string]storage.Value{
+			"Name":             storage.StringValue("Credit"),
+			"IsCredit__c":      storage.BooleanValue(true),
+			"PaymentAmount__c": storage.DecimalValue("9"),
+		},
+	}})
+	if !credit[0].Success {
+		t.Fatalf("credit insert = %#v", credit)
+	}
+
+	applied := engine.Upsert([]storage.Record{{
+		Object: "CartPayment__c",
+		Fields: map[string]storage.Value{
+			"Name":             storage.StringValue("Applied"),
+			"PaymentAmount__c": storage.DecimalValue("10"),
+			"CreditPayment__c": storage.IDValue(storage.ID(string(credit[0].ID) + "AAA")),
+		},
+	}})
+	if applied[0].Success || applied[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" || applied[0].Error != "The prepayment amount cannot exceed the available credit balance on the prepayment." {
+		t.Fatalf("over-applied credit insert = %#v", applied)
+	}
+}
+
 func TestInsertAllowsTaskWhatIDToReferenceCustomObject(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureStandardObject(&org, "Task")

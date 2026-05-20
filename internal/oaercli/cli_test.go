@@ -121,6 +121,126 @@ func TestRunCompatRun(t *testing.T) {
 	}
 }
 
+func TestRunCompatOracleTestsDiffsFixtureRuns(t *testing.T) {
+	root := t.TempDir()
+	goldenPath := filepath.Join(root, "salesforce.json")
+	localPath := filepath.Join(root, "local.json")
+	writeTestFile(t, goldenPath, `{
+  "schemaVersion": 1,
+  "source": "salesforce",
+  "project": "fixture",
+  "testClass": "AccountOracleTest",
+  "testMethod": "createsRecord",
+  "status": "pass",
+  "events": [{"type": "soql", "sequence": 1, "query": "SELECT Id FROM Account"}]
+}`)
+	writeTestFile(t, localPath, `{
+  "schemaVersion": 1,
+  "source": "oaer",
+  "project": "fixture",
+  "testClass": "AccountOracleTest",
+  "testMethod": "createsRecord",
+  "status": "pass",
+  "events": [{"type": "dml", "sequence": 1, "operation": "insert", "object": "Account"}]
+}`)
+	runsDir := filepath.Join(root, "runs")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "oracle-tests", "--salesforce-run", goldenPath, "--local-run", localPath, "--runs-dir", runsDir, "--run-id", "test-run", "--json"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	for _, want := range []string{
+		`"target": "Salesforce oracle parity"`,
+		`"outcome": "trace_mismatch"`,
+		`"artifactDir":`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stdout missing %q: %q", want, stdout.String())
+		}
+	}
+	if _, err := os.Stat(filepath.Join(runsDir, "test-run", "oracle", "diff.json")); err != nil {
+		t.Fatalf("diff artifact not written: %v", err)
+	}
+}
+
+func TestRunCompatOracleTestsRejectsUnsafeRunID(t *testing.T) {
+	root := t.TempDir()
+	goldenPath := filepath.Join(root, "salesforce.json")
+	localPath := filepath.Join(root, "local.json")
+	writeTestFile(t, goldenPath, `{"schemaVersion":1,"source":"salesforce","testClass":"AccountOracleTest","status":"pass"}`)
+	writeTestFile(t, localPath, `{"schemaVersion":1,"source":"oaer","testClass":"AccountOracleTest","status":"pass"}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "oracle-tests", "--salesforce-run", goldenPath, "--local-run", localPath, "--runs-dir", filepath.Join(root, "runs"), "--run-id", "../escape", "--json"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if _, err := os.Stat(filepath.Join(root, "escape", "oracle", "diff.json")); !os.IsNotExist(err) {
+		t.Fatalf("unsafe artifact path was written, stat err = %v", err)
+	}
+}
+
+func TestRunCompatOracleTestsRejectsAnonymousComparisonWithoutLocalRun(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "oracle-tests", "--anonymous", "System.debug('x');", "--target-org", "fake", "--json"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "--anonymous") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunCompatOracleTestsGoldenOnlyIsNotParityReady(t *testing.T) {
+	root := t.TempDir()
+	goldenPath := filepath.Join(root, "salesforce.json")
+	writeTestFile(t, goldenPath, `{"schemaVersion":1,"source":"salesforce","testClass":"AccountOracleTest","status":"pass"}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "oracle-tests", "--salesforce-run", goldenPath, "--golden-only", "--runs-dir", filepath.Join(root, "runs"), "--run-id", "golden", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"goldenOnly": true`) || !strings.Contains(stdout.String(), `"ready": false`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatOracleTestsCheckCorpus(t *testing.T) {
+	root := t.TempDir()
+	goldenPath := filepath.Join(root, "salesforce.json")
+	localPath := filepath.Join(root, "local.json")
+	writeTestFile(t, goldenPath, `{"schemaVersion":1,"source":"salesforce","testClass":"AccountOracleTest","testMethod":"createsRecord","status":"pass"}`)
+	writeTestFile(t, localPath, `{"schemaVersion":1,"source":"oaer","testClass":"AccountOracleTest","testMethod":"createsRecord","status":"pass"}`)
+	baselinePath := filepath.Join(root, "baseline.json")
+	writeTestFile(t, baselinePath, `{
+  "target": "oracle parity corpus",
+  "cases": [
+    {
+      "name": "passing-fixture",
+      "project": "fixture",
+      "salesforceRun": "salesforce.json",
+      "localRun": "local.json",
+      "ready": true,
+      "summary": {"total": 1, "pass": 1},
+      "outcomes": [
+        {"class": "AccountOracleTest", "method": "createsRecord", "outcome": "pass"}
+      ]
+    }
+  ]
+}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "oracle-tests", "--check", baselinePath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"target": "oracle parity corpus"`) || !strings.Contains(stdout.String(), `"ready": true`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunCompatMVP(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"compat", "mvp"}, &stdout, &stderr)

@@ -653,7 +653,13 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 		group := groups[key]
 		fields := make(map[string]storage.Value, len(group.values)+len(query.Aggregates))
 		for _, field := range query.GroupBy {
-			fields[field] = group.values[field].Clone()
+			value := group.values[field].Clone()
+			fields[field] = value
+			if alias := aggregateGroupFieldImplicitAlias(field); alias != "" {
+				if _, exists := fields[alias]; !exists {
+					fields[alias] = value.Clone()
+				}
+			}
 		}
 		for _, field := range query.Fields {
 			if expr, ok := parseSelectFieldExpression(field); ok && expr.Alias != "" {
@@ -727,6 +733,15 @@ func groupingSets(fields []string, mode string) []map[string]bool {
 		}
 		return []map[string]bool{active}
 	}
+}
+
+func aggregateGroupFieldImplicitAlias(field string) string {
+	field = strings.TrimSpace(field)
+	if field == "" || strings.ContainsAny(field, "()") || !strings.Contains(field, ".") {
+		return ""
+	}
+	parts := strings.Split(field, ".")
+	return strings.TrimSpace(parts[len(parts)-1])
 }
 
 func aggregateRecordValue(record storage.Record, field string) storage.Value {

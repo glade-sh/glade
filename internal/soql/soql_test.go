@@ -763,6 +763,61 @@ func TestExecuteAggregateQueries(t *testing.T) {
 	assertStorageDecimal(t, fields["averageRevenue"], "216.6666666667")
 }
 
+func TestExecuteAggregateGroupByRelationshipFieldAddsLeafAlias(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Event__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Event__c",
+			Fields:  map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a8G000000000001": {ID: "a8G000000000001", Object: "Event__c"},
+		},
+	}
+	org.Objects["Registration2__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Registration2__c",
+			Fields: map[string]storage.Field{
+				"Id":        {APIName: "Id", Type: storage.FieldID},
+				"Event2__c": {APIName: "Event2__c", Type: storage.FieldReference, ReferenceTo: []string{"Event__c"}, RelationshipName: "Event2__r"},
+			},
+			Relations: []storage.Relationship{{Field: "Event2__c", ParentObjects: []string{"Event__c"}, ParentRelationship: "Event2__r"}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a1R000000000001": {ID: "a1R000000000001", Object: "Registration2__c", Fields: map[string]storage.Value{"Event2__c": storage.IDValue("a8G000000000001")}},
+		},
+	}
+	org.Objects["EventBadge__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "EventBadge__c",
+			Fields: map[string]storage.Field{
+				"Id":               {APIName: "Id", Type: storage.FieldID},
+				"Registration2__c": {APIName: "Registration2__c", Type: storage.FieldReference, ReferenceTo: []string{"Registration2__c"}, RelationshipName: "Registration2__r"},
+			},
+			Relations: []storage.Relationship{{Field: "Registration2__c", ParentObjects: []string{"Registration2__c"}, ParentRelationship: "Registration2__r"}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a8B000000000001": {ID: "a8B000000000001", Object: "EventBadge__c", Fields: map[string]storage.Value{"Registration2__c": storage.IDValue("a1R000000000001")}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Registration2__r.Event2__c, COUNT(Id) recordCount FROM EventBadge__c GROUP BY Registration2__r.Event2__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("result = %#v", result)
+	}
+	fields := result.Records[0].Fields
+	if got := fields["Registration2__r.Event2__c"].ID; got != "a8G000000000001" {
+		t.Fatalf("full path group field = %q", got)
+	}
+	if got := fields["Event2__c"].ID; got != "a8G000000000001" {
+		t.Fatalf("leaf group alias = %q", got)
+	}
+	assertStorageInt(t, fields["recordCount"], 1)
+}
+
 func TestExecuteSelectFieldFunctions(t *testing.T) {
 	org := aggregateTestOrg()
 	account := org.Objects["Account"]

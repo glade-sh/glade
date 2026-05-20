@@ -141,6 +141,8 @@ func lex(source string) ([]token, error) {
 						text.WriteByte('\'')
 					case '\\':
 						text.WriteByte('\\')
+					case '"':
+						text.WriteByte('"')
 					case 'n':
 						text.WriteByte('\n')
 					case 'r':

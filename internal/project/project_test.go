@@ -273,6 +273,86 @@ func TestLoadManagedPackageArtifactDependency(t *testing.T) {
 	}
 }
 
+func TestLoadReportsManagedPackageArtifactVersionMismatch(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "packages", "znu.oaer-package.json"), `{"namespace":"znu","version":"1.0"}`)
+	writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "consumer", "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:artifact:../packages/znu.oaer-package.json:2.0"]
+`)
+
+	p, err := Load(filepath.Join(root, "consumer"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 || p.ManagedPackageDependencies[0].Status != "version_mismatch" {
+		t.Fatalf("dependencies = %#v", p.ManagedPackageDependencies)
+	}
+	if len(p.DependencyDiagnostics) != 1 || p.DependencyDiagnostics[0].Code != "dependency_version_mismatch" {
+		t.Fatalf("diagnostics = %#v", p.DependencyDiagnostics)
+	}
+}
+
+func TestLoadReportsManagedPackageArtifactMissingVersionAsLoadError(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "packages", "znu.oaer-package.json"), `{"namespace":"znu"}`)
+	writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "consumer", "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:artifact:../packages/znu.oaer-package.json:2.0"]
+`)
+
+	p, err := Load(filepath.Join(root, "consumer"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 || p.ManagedPackageDependencies[0].Status != "load_error" {
+		t.Fatalf("dependencies = %#v", p.ManagedPackageDependencies)
+	}
+	if len(p.DependencyDiagnostics) != 1 || p.DependencyDiagnostics[0].Code != "dependency_load_error" {
+		t.Fatalf("diagnostics = %#v", p.DependencyDiagnostics)
+	}
+}
+
+func TestLoadReportsEmptyManagedPackageArtifactAsLoadError(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "packages", "znu.oaer-package.json"), `{}`)
+	writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "consumer", "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:artifact:../packages/znu.oaer-package.json"]
+`)
+
+	p, err := Load(filepath.Join(root, "consumer"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 || p.ManagedPackageDependencies[0].Status != "load_error" {
+		t.Fatalf("dependencies = %#v", p.ManagedPackageDependencies)
+	}
+	if len(p.DependencyDiagnostics) != 1 || p.DependencyDiagnostics[0].Code != "dependency_load_error" {
+		t.Fatalf("diagnostics = %#v", p.DependencyDiagnostics)
+	}
+}
+
+func TestLoadReportsMalformedManagedPackageArtifactAsLoadError(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "packages", "znu.oaer-package.json"), `{`)
+	writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "consumer", "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:artifact:../packages/znu.oaer-package.json"]
+`)
+
+	p, err := Load(filepath.Join(root, "consumer"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 || p.ManagedPackageDependencies[0].Status != "load_error" {
+		t.Fatalf("dependencies = %#v", p.ManagedPackageDependencies)
+	}
+	if len(p.DependencyDiagnostics) != 1 || p.DependencyDiagnostics[0].Code != "dependency_load_error" {
+		t.Fatalf("diagnostics = %#v", p.DependencyDiagnostics)
+	}
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

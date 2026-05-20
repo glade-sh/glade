@@ -1776,6 +1776,15 @@ func TestFrameworkMatcherFastPathMatchesCommonMatchers(t *testing.T) {
 		t.Fatalf("matched=%v handled=%v for AnyString, want true true", matched, handled)
 	}
 
+	methodArg.Fields["argValues"] = List(platformScalar("Id", "a5B000000000001AAA"))
+	matched, handled, err = machine.frameworkMatchesAllArgs(methodArg, List(anyString))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled || !matched {
+		t.Fatalf("matched=%v handled=%v for AnyString Id argument, want true true", matched, handled)
+	}
+
 	expectedAccount := Object("Account")
 	expectedAccount.Fields["Name"] = String("Acme")
 	actualAccount := expectedAccount

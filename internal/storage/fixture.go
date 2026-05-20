@@ -364,6 +364,21 @@ func applyPersonAccounts(org *OrgState) {
 
 func applyMultiCurrency(org *OrgState) {
 	setOrganizationFlag(org, "IsMultiCurrencyEnabled", true)
+	EnsureStandardObject(org, "CurrencyType")
+	putSeedRecord(org, "CurrencyType", Record{
+		ID:     "01L000000000001",
+		Object: "CurrencyType",
+		Fields: map[string]Value{
+			"IsoCode":          StringValue("USD"),
+			"ConversionRate":   DecimalValue("1"),
+			"DecimalPlaces":    IntegerValue(2),
+			"IsActive":         BooleanValue(true),
+			"IsCorporate":      BooleanValue(true),
+			"SystemModstamp":   DateTimeValue("2000-01-01T00:00:00Z"),
+			"LastModifiedDate": DateTimeValue("2000-01-01T00:00:00Z"),
+			"CreatedDate":      DateTimeValue("2000-01-01T00:00:00Z"),
+		},
+	})
 	EnsureStandardObject(org, "DatedConversionRate")
 	putSeedRecord(org, "DatedConversionRate", Record{
 		ID:     "04w000000000001",

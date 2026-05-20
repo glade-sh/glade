@@ -1319,6 +1319,65 @@ System.assertEquals('001B000001DVM9t', parent.toString());
 	}
 }
 
+func TestExecJSONDeserializeSObjectReferenceFieldPrefersIdConstructor(t *testing.T) {
+	idCtor, err := CompileAnonymous(`
+this.Failed = false;
+this.ScheduleOrderId = orderId;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stringCtor, err := CompileAnonymous(`
+this.Failed = true;
+this.ErrorMessage = errorMessage;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account decoded = JSON.deserialize('{"ParentId":"001B000001DVM9t"}', Account.class);
+JsonIdCtorProbe result = new JsonIdCtorProbe(decoded.ParentId);
+System.assertEquals(false, result.Failed);
+System.assertEquals(decoded.ParentId, result.ScheduleOrderId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "JsonIdCtorProbe",
+		Fields: map[string]Field{
+			"ErrorMessage":    {Name: "ErrorMessage", Type: "String"},
+			"Failed":          {Name: "Failed", Type: "Boolean"},
+			"ScheduleOrderId": {Name: "ScheduleOrderId", Type: "Id"},
+		},
+		Constructors: []Method{
+			{
+				Name:      "JsonIdCtorProbe",
+				ClassName: "JsonIdCtorProbe",
+				Params:    []Param{{Name: "orderId", Type: "Id"}},
+				Program:   idCtor,
+			},
+			{
+				Name:      "JsonIdCtorProbe",
+				ClassName: "JsonIdCtorProbe",
+				Params:    []Param{{Name: "errorMessage", Type: "String"}},
+				Program:   stringCtor,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["ParentId"] = storage.Field{APIName: "ParentId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeSObjectAllowsFabricatedIdValue(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account decoded = JSON.deserialize('{"Id":"id-1","Name":"Acme"}', Account.class);

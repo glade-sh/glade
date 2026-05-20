@@ -587,7 +587,8 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					reportProgress(opts, TestProgress{Event: "setup_done", ClassName: className, DurationMS: time.Since(started).Milliseconds(), Status: progressStatus(setupErr)})
 				}
 				if opts.ParallelMethods && len(classIndexes[className]) > 1 {
-					runClassMethodIndexes(ctx, classIndexes[className], planned, results, setupOrg, setupErr, setupRandom, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts)
+					methodParallelism := methodParallelismForClassRun(opts.Parallelism, parallelism, len(classIndexes[className]))
+					runClassMethodIndexes(ctx, classIndexes[className], planned, results, setupOrg, setupErr, setupRandom, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, methodParallelism)
 					continue
 				}
 				for _, i := range classIndexes[className] {
@@ -622,8 +623,27 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 	wg.Wait()
 }
 
-func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCasePlan, results []testreport.Case, setupOrg storage.OrgState, setupErr error, setupRandom uint64, setupShared bool, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options) {
-	parallelism := opts.Parallelism
+func methodParallelismForClassRun(totalParallelism, classParallelism, methods int) int {
+	if methods <= 1 {
+		return 1
+	}
+	if totalParallelism <= 1 {
+		return 1
+	}
+	if classParallelism <= 1 {
+		classParallelism = 1
+	}
+	parallelism := totalParallelism / classParallelism
+	if parallelism < 1 {
+		parallelism = 1
+	}
+	if parallelism > methods {
+		parallelism = methods
+	}
+	return parallelism
+}
+
+func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCasePlan, results []testreport.Case, setupOrg storage.OrgState, setupErr error, setupRandom uint64, setupShared bool, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, parallelism int) {
 	emitProgress := opts.Progress != nil
 	if parallelism <= 1 {
 		parallelism = 1
@@ -1727,8 +1747,14 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 }
 
 var apexStaticFieldReferencePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)\b`)
+var apexSchemaSObjectTypeFieldReferencePattern = regexp.MustCompile(`(?i:\bSchema\.SObjectType\.)([A-Za-z_][A-Za-z0-9_]*)(?i:\.fields\.)([A-Za-z][A-Za-z0-9_]*)\b`)
+var apexSObjectTypeFieldReferencePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)(?i:\.SObjectType\.fields\.)([A-Za-z][A-Za-z0-9_]*)\b`)
+var apexSObjectLiteralPattern = regexp.MustCompile(`(?s)\b([A-Za-z_][A-Za-z0-9_]*)\s*\((.*?)\)`)
+var apexNamedArgumentPattern = regexp.MustCompile(`\b([A-Za-z][A-Za-z0-9_]*)\s*=`)
 var apexTypedVariablePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
 var apexVariableFieldReferencePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)\b`)
+var apexVariableFieldBooleanRightLiteralPattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)\s*(?:==|!=|=)\s*(?i:\btrue\b|\bfalse\b)`)
+var apexVariableFieldBooleanLeftLiteralPattern = regexp.MustCompile(`(?i:\btrue\b|\bfalse\b)\s*(?:==|!=)\s*([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)\b`)
 
 var projectReferencedStandardFieldCache sync.Map
 
@@ -1745,6 +1771,7 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 		}
 	}
 	inferred := make(map[string]map[string]storage.Field)
+	hints := make(map[string]map[string]storage.FieldType)
 	cache := sourceCacheFor(caches)
 	seenFiles := make(map[string]bool)
 	for _, typ := range index.Types {
@@ -1756,8 +1783,9 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 		if err != nil {
 			continue
 		}
+		scanSource := apexReferenceScanSource(source)
 		varTypes := make(map[string]string)
-		for _, match := range apexTypedVariablePattern.FindAllStringSubmatch(source, -1) {
+		for _, match := range apexTypedVariablePattern.FindAllStringSubmatch(scanSource, -1) {
 			if len(match) != 3 {
 				continue
 			}
@@ -1765,27 +1793,179 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 				varTypes[match[2]] = match[1]
 			}
 		}
-		for _, match := range apexStaticFieldReferencePattern.FindAllStringSubmatchIndex(source, -1) {
-			if len(match) != 6 || apexMemberReferenceIsCall(source, match[1]) {
+		for _, match := range apexVariableFieldBooleanRightLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+			if len(match) != 6 {
 				continue
 			}
-			recordProjectReferencedStandardField(org, inferred, source[match[2]:match[3]], source[match[4]:match[5]])
-		}
-		for _, match := range apexVariableFieldReferencePattern.FindAllStringSubmatchIndex(source, -1) {
-			if len(match) != 6 || apexMemberReferenceIsCall(source, match[1]) {
-				continue
-			}
-			objectName, ok := varTypes[source[match[2]:match[3]]]
+			objectName, ok := varTypes[scanSource[match[2]:match[3]]]
 			if !ok {
 				continue
 			}
-			recordProjectReferencedStandardField(org, inferred, objectName, source[match[4]:match[5]])
+			recordProjectReferencedStandardFieldHint(hints, objectName, scanSource[match[4]:match[5]], storage.FieldBoolean)
+		}
+		for _, match := range apexVariableFieldBooleanLeftLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+			if len(match) != 6 {
+				continue
+			}
+			objectName, ok := varTypes[scanSource[match[2]:match[3]]]
+			if !ok {
+				continue
+			}
+			recordProjectReferencedStandardFieldHint(hints, objectName, scanSource[match[4]:match[5]], storage.FieldBoolean)
+		}
+		for _, match := range apexSchemaSObjectTypeFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
+			if len(match) != 6 {
+				continue
+			}
+			objectName := scanSource[match[2]:match[3]]
+			fieldName := scanSource[match[4]:match[5]]
+			recordProjectReferencedStandardField(org, inferred, objectName, fieldName, projectReferencedStandardFieldHint(hints, objectName, fieldName))
+		}
+		for _, match := range apexSObjectTypeFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
+			if len(match) != 6 {
+				continue
+			}
+			objectName := scanSource[match[2]:match[3]]
+			fieldName := scanSource[match[4]:match[5]]
+			recordProjectReferencedStandardField(org, inferred, objectName, fieldName, projectReferencedStandardFieldHint(hints, objectName, fieldName))
+		}
+		for _, match := range apexSObjectLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+			if len(match) != 6 {
+				continue
+			}
+			objectName := scanSource[match[2]:match[3]]
+			if _, ok := org.Objects[objectName]; !ok {
+				continue
+			}
+			body := scanSource[match[4]:match[5]]
+			for _, argMatch := range apexNamedArgumentPattern.FindAllStringSubmatchIndex(body, -1) {
+				if len(argMatch) != 4 {
+					continue
+				}
+				fieldName := body[argMatch[2]:argMatch[3]]
+				hintedType := projectReferencedStandardFieldHint(hints, objectName, fieldName)
+				if hintedType == "" && apexNamedArgumentBoolLiteral(body[argMatch[1]:]) {
+					hintedType = storage.FieldBoolean
+				}
+				if hintedType == "" && apexNamedArgumentNumericLiteral(body[argMatch[1]:]) {
+					hintedType = storage.FieldDecimal
+				}
+				recordProjectReferencedStandardField(org, inferred, objectName, fieldName, hintedType)
+			}
+		}
+		for _, match := range apexStaticFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
+			if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
+				continue
+			}
+			objectName := scanSource[match[2]:match[3]]
+			fieldName := scanSource[match[4]:match[5]]
+			recordProjectReferencedStandardField(org, inferred, objectName, fieldName, projectReferencedStandardFieldHint(hints, objectName, fieldName))
+		}
+		for _, match := range apexVariableFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
+			if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
+				continue
+			}
+			objectName, ok := varTypes[scanSource[match[2]:match[3]]]
+			if !ok {
+				continue
+			}
+			fieldName := scanSource[match[4]:match[5]]
+			recordProjectReferencedStandardField(org, inferred, objectName, fieldName, projectReferencedStandardFieldHint(hints, objectName, fieldName))
 		}
 	}
 	if cacheKey != "" {
 		projectReferencedStandardFieldCache.Store(cacheKey, inferred)
 	}
 	applyReferencedStandardFieldSet(org, inferred)
+}
+
+func apexReferenceScanSource(source string) string {
+	out := []byte(source)
+	mask := func(start, end int) {
+		if start < 0 {
+			start = 0
+		}
+		if end > len(out) {
+			end = len(out)
+		}
+		for i := start; i < end; i++ {
+			if out[i] != '\n' && out[i] != '\r' {
+				out[i] = ' '
+			}
+		}
+	}
+	for i := 0; i < len(out); {
+		switch {
+		case i+1 < len(out) && out[i] == '/' && out[i+1] == '/':
+			start := i
+			i += 2
+			for i < len(out) && out[i] != '\n' && out[i] != '\r' {
+				i++
+			}
+			mask(start, i)
+		case i+1 < len(out) && out[i] == '/' && out[i+1] == '*':
+			start := i
+			i += 2
+			for i+1 < len(out) && !(out[i] == '*' && out[i+1] == '/') {
+				i++
+			}
+			if i+1 < len(out) {
+				i += 2
+			}
+			mask(start, i)
+		case out[i] == '\'':
+			start := i
+			i++
+			for i < len(out) {
+				if out[i] == '\'' {
+					if i+1 < len(out) && out[i+1] == '\'' {
+						i += 2
+						continue
+					}
+					i++
+					break
+				}
+				if out[i] == '\\' && i+1 < len(out) {
+					i += 2
+					continue
+				}
+				i++
+			}
+			mask(start, i)
+		default:
+			i++
+		}
+	}
+	return string(out)
+}
+
+func apexNamedArgumentBoolLiteral(rest string) bool {
+	rest = strings.TrimSpace(rest)
+	lower := strings.ToLower(rest)
+	return strings.HasPrefix(lower, "true") || strings.HasPrefix(lower, "false")
+}
+
+func apexNamedArgumentNumericLiteral(rest string) bool {
+	rest = strings.TrimSpace(rest)
+	if rest == "" {
+		return false
+	}
+	if rest[0] == '-' || rest[0] == '+' {
+		rest = strings.TrimSpace(rest[1:])
+	}
+	if rest == "" || rest[0] < '0' || rest[0] > '9' {
+		return false
+	}
+	for i := 1; i < len(rest); i++ {
+		if rest[i] >= '0' && rest[i] <= '9' {
+			continue
+		}
+		if rest[i] == '.' && i+1 < len(rest) && rest[i+1] >= '0' && rest[i+1] <= '9' {
+			continue
+		}
+		return rest[i] == ',' || rest[i] == ')' || rest[i] == ' ' || rest[i] == '\t' || rest[i] == '\r' || rest[i] == '\n'
+	}
+	return true
 }
 
 func apexMemberReferenceIsCall(source string, end int) bool {
@@ -1803,8 +1983,22 @@ func apexMemberReferenceIsCall(source string, end int) bool {
 	return false
 }
 
-func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[string]map[string]storage.Field, objectName, fieldName string) {
-	if fieldName == "SObjectType" || fieldName == "Fields" {
+func recordProjectReferencedStandardFieldHint(hints map[string]map[string]storage.FieldType, objectName, fieldName string, fieldType storage.FieldType) {
+	if hints[objectName] == nil {
+		hints[objectName] = make(map[string]storage.FieldType)
+	}
+	hints[objectName][fieldName] = fieldType
+}
+
+func projectReferencedStandardFieldHint(hints map[string]map[string]storage.FieldType, objectName, fieldName string) storage.FieldType {
+	if hints[objectName] == nil {
+		return ""
+	}
+	return hints[objectName][fieldName]
+}
+
+func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[string]map[string]storage.Field, objectName, fieldName string, hintedType storage.FieldType) {
+	if strings.EqualFold(fieldName, "SObjectType") || strings.EqualFold(fieldName, "Fields") {
 		return
 	}
 	state, ok := org.Objects[objectName]
@@ -1820,7 +2014,27 @@ func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[st
 	if inferred[objectName] == nil {
 		inferred[objectName] = make(map[string]storage.Field)
 	}
-	inferred[objectName][fieldName] = inferredReferencedField(*org, objectName, fieldName)
+	field := inferredReferencedField(*org, objectName, fieldName, hintedType)
+	if existingName, existing, ok := projectReferencedInferredField(inferred[objectName], fieldName); ok {
+		if existing.Type != storage.FieldString && field.Type == storage.FieldString {
+			return
+		}
+		if existing.Type == storage.FieldString && field.Type != storage.FieldString {
+			delete(inferred[objectName], existingName)
+			inferred[objectName][fieldName] = field
+		}
+		return
+	}
+	inferred[objectName][fieldName] = field
+}
+
+func projectReferencedInferredField(fields map[string]storage.Field, fieldName string) (string, storage.Field, bool) {
+	for existingName, field := range fields {
+		if strings.EqualFold(existingName, fieldName) {
+			return existingName, field, true
+		}
+	}
+	return "", storage.Field{}, false
 }
 
 func parentRelationshipKnown(definition storage.ObjectDefinition, name string) bool {
@@ -1859,8 +2073,8 @@ func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]ma
 	}
 }
 
-func inferredReferencedField(org storage.OrgState, objectName, fieldName string) storage.Field {
-	field := inferredReferencedStandardField(fieldName)
+func inferredReferencedField(org storage.OrgState, objectName, fieldName string, hintedType storage.FieldType) storage.Field {
+	field := inferredReferencedStandardField(fieldName, hintedType)
 	if target := inferredLookupTarget(org, objectName, fieldName); target != "" {
 		field.Type = storage.FieldReference
 		field.DisplayType = "REFERENCE"
@@ -1870,20 +2084,31 @@ func inferredReferencedField(org storage.OrgState, objectName, fieldName string)
 	return field
 }
 
-func inferredReferencedStandardField(fieldName string) storage.Field {
+func inferredReferencedStandardField(fieldName string, hintedType storage.FieldType) storage.Field {
 	field := storage.Field{APIName: fieldName, Label: fieldName, Type: storage.FieldString, DisplayType: "STRING"}
+	if hintedType == storage.FieldBoolean {
+		field.Type = storage.FieldBoolean
+		field.DisplayType = "BOOLEAN"
+		return field
+	}
+	if hintedType == storage.FieldDecimal {
+		field.Type = storage.FieldDecimal
+		field.DisplayType = "DOUBLE"
+		field.DefaultValue = "0"
+		return field
+	}
 	switch {
 	case strings.HasSuffix(fieldName, "Id"):
 		field.Type = storage.FieldReference
 		field.DisplayType = "REFERENCE"
 		field.RelationshipName = strings.TrimSuffix(fieldName, "Id")
-	case strings.HasPrefix(fieldName, "Is"), strings.HasPrefix(fieldName, "Has"):
+	case inferredBooleanFieldName(fieldName):
 		field.Type = storage.FieldBoolean
 		field.DisplayType = "BOOLEAN"
 	case strings.Contains(fieldName, "Date"):
 		field.Type = storage.FieldDate
 		field.DisplayType = "DATE"
-	case strings.Contains(fieldName, "Amount"), strings.Contains(fieldName, "Balance"), strings.Contains(fieldName, "Mrr"),
+	case inferredNumericFieldName(fieldName), strings.Contains(fieldName, "Amount"), strings.Contains(fieldName, "Balance"), strings.Contains(fieldName, "Mrr"),
 		strings.Contains(fieldName, "Payment"), strings.Contains(fieldName, "Price"), strings.Contains(fieldName, "Quantity"),
 		strings.Contains(fieldName, "Shipping"), strings.Contains(fieldName, "Tax"), strings.Contains(fieldName, "Total"):
 		field.Type = storage.FieldDecimal
@@ -1891,6 +2116,41 @@ func inferredReferencedStandardField(fieldName string) storage.Field {
 		field.DefaultValue = "0"
 	}
 	return field
+}
+
+func inferredBooleanFieldName(fieldName string) bool {
+	base := storage.StripAnyNamespaceToken(fieldName)
+	lower := strings.ToLower(base)
+	for _, suffix := range []string{"__c", "__e", "__mdt"} {
+		if strings.HasSuffix(lower, suffix) {
+			base = base[:len(base)-len(suffix)]
+			lower = lower[:len(lower)-len(suffix)]
+			break
+		}
+	}
+	if strings.HasPrefix(base, "Is") || strings.HasPrefix(base, "Has") || strings.Contains(base, "Is") {
+		return true
+	}
+	switch lower {
+	case "private", "active", "enabled", "disabled", "default", "primary":
+		return true
+	default:
+		return false
+	}
+}
+
+func inferredNumericFieldName(fieldName string) bool {
+	base := storage.StripAnyNamespaceToken(fieldName)
+	lower := strings.ToLower(base)
+	for _, suffix := range []string{"__c", "__e", "__mdt"} {
+		if strings.HasSuffix(lower, suffix) {
+			base = base[:len(base)-len(suffix)]
+			lower = lower[:len(lower)-len(suffix)]
+			break
+		}
+	}
+	compact := strings.ReplaceAll(lower, "_", "")
+	return strings.HasPrefix(compact, "numberof")
 }
 
 func inferredLookupTarget(org storage.OrgState, objectName, fieldName string) string {

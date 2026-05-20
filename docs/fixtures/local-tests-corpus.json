@@ -27,6 +27,46 @@
       ]
     },
     {
+      "project": "../../testdata/local-tests/vm-exception-dispatch",
+      "ready": true,
+      "summary": {
+        "total": 1,
+        "pass": 1,
+        "fail": 0,
+        "unsupported": 0,
+        "loadError": 0,
+        "compileError": 0,
+        "internalError": 0
+      },
+      "outcomes": [
+        {
+          "class": "VMExceptionDispatchTest",
+          "method": "interfaceDispatchRethrowFinallyAndExceptionMetadata",
+          "outcome": "pass"
+        }
+      ]
+    },
+    {
+      "project": "../../testdata/local-tests/standard-object-shape",
+      "ready": true,
+      "summary": {
+        "total": 1,
+        "pass": 1,
+        "fail": 0,
+        "unsupported": 0,
+        "loadError": 0,
+        "compileError": 0,
+        "internalError": 0
+      },
+      "outcomes": [
+        {
+          "class": "StandardObjectShapeTest",
+          "method": "campaignMemberStatusShapeCompilesAndRuns",
+          "outcome": "pass"
+        }
+      ]
+    },
+    {
       "project": "../../testdata/local-tests/enterprise-composed",
       "ready": true,
       "summary": {
@@ -312,6 +352,26 @@
         {
           "class": "FlowTest",
           "method": "recordTriggeredFlowFieldUpdateRunsDuringDml",
+          "outcome": "pass"
+        }
+      ]
+    },
+    {
+      "project": "../../testdata/local-tests/managed-package-artifact-consumer",
+      "ready": true,
+      "summary": {
+        "total": 1,
+        "pass": 1,
+        "fail": 0,
+        "unsupported": 0,
+        "loadError": 0,
+        "compileError": 0,
+        "internalError": 0
+      },
+      "outcomes": [
+        {
+          "class": "ArtifactConsumerTest",
+          "method": "resolvesArtifactDependencyTypeShape",
           "outcome": "pass"
         }
       ]

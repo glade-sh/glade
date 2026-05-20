@@ -3714,6 +3714,47 @@ System.assertEquals('external-one', (String)cart.getCustomField('ExternalKey__c'
 	}
 }
 
+func TestExecGeneratedPlatformDTOGetterReadsMatchingField(t *testing.T) {
+	program, err := CompileAnonymous(`
+commercepromotions.PromotionRequest request = new commercepromotions.PromotionRequest();
+Object direct = request.buyerAccountId;
+Object getter = request.getBuyerAccountId();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := New(nil).Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := result.Vars["direct"]; got.Kind != ValueNull {
+		t.Fatalf("direct buyerAccountId = %#v vars=%#v", got, result.Vars)
+	}
+	if got := result.Vars["getter"]; got.Kind != ValueNull {
+		t.Fatalf("getter buyerAccountId = %#v vars=%#v", got, result.Vars)
+	}
+}
+
+func TestGeneratedPlatformDTOCallValueMemberReadsMatchingField(t *testing.T) {
+	machine := New(nil)
+	receiver, err := machine.constructValue("commercepromotions.PromotionRequest", nil, nil, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine.Globals["request"] = receiver
+	machine.VarTypes["request"] = "commercepromotions.PromotionRequest"
+	got, handled, err := machine.callValueMember("request", receiver, "getBuyerAccountId", nil, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled {
+		t.Fatal("getBuyerAccountId was not handled")
+	}
+	if got.Kind != ValueNull {
+		t.Fatalf("getBuyerAccountId = %#v receiver=%#v", got, receiver)
+	}
+}
+
 func TestConstructPassiveGeneratedPlatformDTONamedArgsBindProperties(t *testing.T) {
 	vm := New(nil)
 	if err := vm.RegisterClass(Class{
@@ -3763,6 +3804,68 @@ func TestConstructPassiveGeneratedPlatformDTONamedArgsBindProperties(t *testing.
 	}
 	if _, ok := value.Fields["param1"]; ok {
 		t.Fatalf("unexpected placeholder constructor field: %#v", value.Fields)
+	}
+}
+
+func TestConstructPassiveGeneratedPlatformDTOPositionalArgsBindParameters(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "CommerceBuyGrp.BuyerGroupRequest",
+		Namespace:  "CommerceBuyGrp",
+		SuperClass: "Object",
+		Access:     "global",
+		Constructors: []Method{{
+			Name:          "CommerceBuyGrp.BuyerGroupRequest.<init>",
+			ClassName:     "CommerceBuyGrp.BuyerGroupRequest",
+			IsConstructor: true,
+			Access:        "global",
+			Params: []Param{
+				{Name: "storeId", Type: "String"},
+				{Name: "accountId", Type: "String"},
+				{Name: "requestContextParameters", Type: "Map<String,Object>"},
+			},
+		}},
+		Methods: map[string]Method{
+			"getStoreId": {
+				Name:       "CommerceBuyGrp.BuyerGroupRequest.getStoreId",
+				ClassName:  "CommerceBuyGrp.BuyerGroupRequest",
+				ReturnType: "String",
+				Access:     "global",
+				Modifiers:  []string{"passive-generated"},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	value, err := machine.constructValue("CommerceBuyGrp.BuyerGroupRequest", []Value{String("store-one"), String("account-one"), Map()}, nil, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := value.Fields["storeId"]; got.Kind != ValueString || got.Text != "store-one" {
+		t.Fatalf("storeId = %#v fields=%#v", got, value.Fields)
+	}
+	machine.Globals["request"] = value
+	machine.VarTypes["request"] = "CommerceBuyGrp.BuyerGroupRequest"
+	got, handled, err := machine.callValueMember("request", value, "getStoreId", nil, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled {
+		t.Fatal("getStoreId was not handled")
+	}
+	if got.Kind != ValueString || got.Text != "store-one" {
+		t.Fatalf("getStoreId = %#v fields=%#v", got, value.Fields)
+	}
+}
+
+func TestConstructGeneratedPlatformDTOPositionalArgsBindParameters(t *testing.T) {
+	machine := New(nil)
+	value, err := machine.constructValue("CommerceBuyGrp.BuyerGroupRequest", []Value{String("store-one"), String("account-one"), Map()}, nil, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := value.Fields["storeId"]; got.Kind != ValueString || got.Text != "store-one" {
+		t.Fatalf("storeId = %#v fields=%#v", got, value.Fields)
 	}
 }
 
@@ -3939,6 +4042,56 @@ try {
 				t.Fatalf("err = %v, want %q", err, tc.want)
 			}
 		})
+	}
+}
+
+func TestExecRenderStoredVisualforceEmailTemplateContent(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage rendered = Messaging.renderStoredEmailTemplate('00X000000000004AAA', null, null);
+System.assert(rendered.getHtmlBody().contains('src="http://example.com/logo.png"'));
+System.assert(rendered.getHtmlBody().contains('href="http://example.com/reset"'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "EmailTemplate")
+	templateObject := org.Objects["EmailTemplate"]
+	templateObject.Records["00X000000000004AAA"] = storage.Record{
+		ID:     "00X000000000004AAA",
+		Object: "EmailTemplate",
+		Fields: map[string]storage.Value{
+			"Subject":      storage.StringValue("Reset"),
+			"TemplateType": storage.StringValue("visualforce"),
+			"Body": storage.StringValue(`<messaging:emailTemplate subject="Reset" recipientType="Contact">
+<messaging:htmlEmailBody>
+<apex:outputText escape="false" value="{!'<img src=\"'}"/><c:EmailContent key="Logo"/><apex:outputText escape="false" value="{!'\"/>'}"/>
+<apex:outputText escape="false" value="{!'<a href=\"'}"/>
+<nu:EmailContent key="Link"/>
+<apex:outputText escape="false" value="{!'\">Reset</a>'}"/>
+</messaging:htmlEmailBody>
+</messaging:emailTemplate>`),
+		},
+	}
+	org.Objects["EmailTemplate"] = templateObject
+	machine := New(nil)
+	machine.SetOrg(&org)
+	content := Map()
+	content.Type = "Map<String,String>"
+	content.Map[mapKey(String("Logo"))] = String("http://example.com/logo.png")
+	content.MapKeys[mapKey(String("Logo"))] = String("Logo")
+	content.MapOrder = append(content.MapOrder, mapKey(String("Logo")))
+	content.Map[mapKey(String("Link"))] = String("http://example.com/reset")
+	content.MapKeys[mapKey(String("Link"))] = String("Link")
+	content.MapOrder = append(content.MapOrder, mapKey(String("Link")))
+	machine.Classes["EmailContent"] = Class{
+		Name: "EmailContent",
+		StaticFields: map[string]Field{
+			"contentMap": {Name: "contentMap", Type: "Map<String,String>", Static: true, Value: content},
+		},
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -5197,6 +5350,42 @@ System.assertEquals(null, namespaced);
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTypeForNameUsesBuiltinPrecedenceInsideClassMethod(t *testing.T) {
+	resolveProgram, err := CompileAnonymous(`return Type.forName(Account.SObjectType.getDescribe().getName());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+TypeForNameProbe probe = new TypeForNameProbe();
+probe.Type = 'local';
+Type resolved = probe.resolve();
+System.assertEquals('Account', resolved.getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "TypeForNameProbe",
+		Fields: map[string]Field{
+			"Type": {Name: "Type", Type: "String"},
+		},
+		Methods: map[string]Method{
+			"resolve": {
+				Name:       "TypeForNameProbe.resolve",
+				ClassName:  "TypeForNameProbe",
+				ReturnType: "Type",
+				Program:    resolveProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -7553,6 +7742,20 @@ func TestExecDateTimeConstructorsRejectInvalidParts(t *testing.T) {
 		if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "invalid") {
 			t.Fatalf("source %q err = %v", source, err)
 		}
+	}
+}
+
+func TestExecDateNewInstanceAcceptsMonthDayYearUIParts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Date day = Date.newInstance(4, 20, 2020);
+System.assertEquals(Date.newInstance(2020, 4, 20), day);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

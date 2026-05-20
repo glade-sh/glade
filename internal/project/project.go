@@ -3,6 +3,7 @@ package project
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -337,13 +338,14 @@ func loadManagedPackageDependencies(configured []config.ManagedPackageDependency
 		}
 		if dep.ArtifactPath != "" {
 			if err := loadManagedPackageArtifactMetadata(dep.ArtifactPath, &projectDep); err != nil {
-				projectDep.Status = "missing"
+				status, code := managedPackageArtifactDiagnostic(err)
+				projectDep.Status = status
 				diagnostics = append(diagnostics, DependencyDiagnostic{
 					Namespace:  dep.Namespace,
 					SourceRoot: dep.ArtifactPath,
 					Version:    dep.Version,
-					Status:     "missing",
-					Code:       "dependency_missing",
+					Status:     status,
+					Code:       code,
 					Message:    err.Error(),
 				})
 				deps = append(deps, projectDep)
@@ -393,27 +395,64 @@ func loadManagedPackageDependencies(configured []config.ManagedPackageDependency
 	return deps, diagnostics
 }
 
+type managedPackageArtifactError struct {
+	status  string
+	code    string
+	message string
+}
+
+func (e managedPackageArtifactError) Error() string {
+	return e.message
+}
+
+func newManagedPackageArtifactError(status, code, message string) error {
+	return managedPackageArtifactError{status: status, code: code, message: message}
+}
+
+func managedPackageArtifactDiagnostic(err error) (string, string) {
+	var artifactErr managedPackageArtifactError
+	if errors.As(err, &artifactErr) {
+		return artifactErr.status, artifactErr.code
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return "missing", "dependency_missing"
+	}
+	return "load_error", "dependency_load_error"
+}
+
 func loadManagedPackageArtifactMetadata(path string, dep *ManagedPackageDependency) error {
 	info, err := os.Stat(path)
 	if err != nil {
-		return err
+		if errors.Is(err, os.ErrNotExist) {
+			return newManagedPackageArtifactError("missing", "dependency_missing", "managed package dependency artifact not found")
+		}
+		return newManagedPackageArtifactError("load_error", "dependency_load_error", err.Error())
 	}
 	if info.IsDir() {
-		return errors.New("managed package dependency artifact path is a directory")
+		return newManagedPackageArtifactError("load_error", "dependency_load_error", "managed package dependency artifact path is a directory")
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return err
+		return newManagedPackageArtifactError("load_error", "dependency_load_error", err.Error())
 	}
 	var metadata struct {
 		Namespace string `json:"namespace"`
 		Version   string `json:"version"`
 	}
 	if err := json.Unmarshal(data, &metadata); err != nil {
-		return err
+		return newManagedPackageArtifactError("load_error", "dependency_load_error", err.Error())
 	}
-	if metadata.Namespace != "" && !strings.EqualFold(metadata.Namespace, dep.Namespace) {
-		return errors.New("managed package dependency artifact namespace does not match configured namespace")
+	if strings.TrimSpace(metadata.Namespace) == "" {
+		return newManagedPackageArtifactError("load_error", "dependency_load_error", "managed package dependency artifact namespace is required")
+	}
+	if !strings.EqualFold(metadata.Namespace, dep.Namespace) {
+		return newManagedPackageArtifactError("load_error", "dependency_load_error", "managed package dependency artifact namespace does not match configured namespace")
+	}
+	if dep.Version != "" && strings.TrimSpace(metadata.Version) == "" {
+		return newManagedPackageArtifactError("load_error", "dependency_load_error", "managed package dependency artifact version is required when config pins a version")
+	}
+	if dep.Version != "" && dep.Version != metadata.Version {
+		return newManagedPackageArtifactError("version_mismatch", "dependency_version_mismatch", fmt.Sprintf("managed package dependency artifact version %q does not match configured version %q", metadata.Version, dep.Version))
 	}
 	if dep.Version == "" {
 		dep.Version = metadata.Version

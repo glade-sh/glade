@@ -29,23 +29,25 @@ type ToolingSnippetReport struct {
 }
 
 type ToolingSnippetResult struct {
-	ID               string                     `json:"id"`
-	Category         string                     `json:"category,omitempty"`
-	Source           string                     `json:"source"`
-	CLI              string                     `json:"cli"`
-	Status           int                        `json:"status"`
-	Compiled         bool                       `json:"compiled"`
-	Executed         bool                       `json:"executed"`
-	Success          bool                       `json:"success"`
-	Line             int                        `json:"line,omitempty"`
-	Column           int                        `json:"column,omitempty"`
-	CompileProblem   string                     `json:"compileProblem,omitempty"`
-	ExceptionType    string                     `json:"exceptionType,omitempty"`
-	ExceptionMessage string                     `json:"exceptionMessage,omitempty"`
-	LogsCaptured     bool                       `json:"logsCaptured"`
-	RawShape         ToolingSnippetRawShape     `json:"rawShape"`
-	Fixture          *ToolingSnippetFixture     `json:"fixture,omitempty"`
-	Diagnostics      []ToolingSnippetDiagnostic `json:"diagnostics,omitempty"`
+	ID                  string                     `json:"id"`
+	Category            string                     `json:"category,omitempty"`
+	Source              string                     `json:"source"`
+	CLI                 string                     `json:"cli"`
+	Status              int                        `json:"status"`
+	Compiled            bool                       `json:"compiled"`
+	Executed            bool                       `json:"executed"`
+	Success             bool                       `json:"success"`
+	Line                int                        `json:"line,omitempty"`
+	Column              int                        `json:"column,omitempty"`
+	CompileProblem      string                     `json:"compileProblem,omitempty"`
+	ExceptionType       string                     `json:"exceptionType,omitempty"`
+	ExceptionMessage    string                     `json:"exceptionMessage,omitempty"`
+	ExceptionStackTrace string                     `json:"exceptionStackTrace,omitempty"`
+	LogsCaptured        bool                       `json:"logsCaptured"`
+	RawLogs             string                     `json:"rawLogs,omitempty"`
+	RawShape            ToolingSnippetRawShape     `json:"rawShape"`
+	Fixture             *ToolingSnippetFixture     `json:"fixture,omitempty"`
+	Diagnostics         []ToolingSnippetDiagnostic `json:"diagnostics,omitempty"`
 }
 
 type ToolingSnippetDiagnostic struct {
@@ -200,21 +202,23 @@ func ParseToolingSnippetOutput(id, category, source, cli string, outputBytes []b
 		body, payloadKey = output.Data, "data"
 	}
 	result := ToolingSnippetResult{
-		ID:               id,
-		Category:         category,
-		Source:           source,
-		CLI:              cli,
-		Status:           output.Status,
-		Compiled:         body.Compiled,
-		Executed:         body.Executed,
-		Success:          body.Success,
-		Line:             int(body.Line),
-		Column:           int(body.Column),
-		CompileProblem:   body.CompileProblem,
-		ExceptionMessage: body.ExceptionMessage,
-		LogsCaptured:     body.Logs != "",
-		RawShape:         toolingSnippetRawShape(outputBytes, payloadKey),
-		Fixture:          &ToolingSnippetFixture{CommandKind: "tooling-execute-anonymous", Compiled: body.Compiled, Executed: body.Executed, Success: body.Success},
+		ID:                  id,
+		Category:            category,
+		Source:              source,
+		CLI:                 cli,
+		Status:              output.Status,
+		Compiled:            body.Compiled,
+		Executed:            body.Executed,
+		Success:             body.Success,
+		Line:                int(body.Line),
+		Column:              int(body.Column),
+		CompileProblem:      body.CompileProblem,
+		ExceptionMessage:    body.ExceptionMessage,
+		ExceptionStackTrace: body.ExceptionStackTrace,
+		LogsCaptured:        body.Logs != "",
+		RawLogs:             body.Logs,
+		RawShape:            toolingSnippetRawShape(outputBytes, payloadKey),
+		Fixture:             &ToolingSnippetFixture{CommandKind: "tooling-execute-anonymous", Compiled: body.Compiled, Executed: body.Executed, Success: body.Success},
 	}
 	result.ExceptionType = exceptionTypeFromMessage(body.ExceptionMessage)
 	if body.CompileProblem != "" {

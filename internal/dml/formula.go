@@ -994,7 +994,7 @@ func formulaParentRecord(org storage.OrgState, lookupField storage.Field, id sto
 			continue
 		}
 		target := org.Objects[canonical]
-		record, ok := target.Records[id]
+		_, record, ok := storage.LookupRecordByID(target.Records, id)
 		if ok && !record.System.IsDeleted {
 			return record, target.Definition, true
 		}

@@ -422,6 +422,32 @@ func TestRunLocalTestsOrgLikeRunnerFixtureReady(t *testing.T) {
 	}
 }
 
+func TestRunLocalTestsVMExceptionDispatchFixtureReady(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "vm-exception-dispatch")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.Ready {
+		t.Fatalf("ready = false, summary = %#v outcomes = %#v", report.Summary, report.Outcomes)
+	}
+	if report.Summary.Total != 1 || report.Summary.Pass != 1 || report.Summary.CompileErrors != 0 || report.Summary.Unsupported != 0 {
+		t.Fatalf("summary = %#v", report.Summary)
+	}
+}
+
+func TestRunLocalTestsStandardObjectShapeFixtureReady(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "standard-object-shape")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.Ready {
+		t.Fatalf("ready = false, summary = %#v outcomes = %#v", report.Summary, report.Outcomes)
+	}
+	if report.Summary.Total != 1 || report.Summary.Pass != 1 || report.Summary.CompileErrors != 0 || report.Summary.Unsupported != 0 {
+		t.Fatalf("summary = %#v", report.Summary)
+	}
+}
+
 func TestRunLocalTestsEnterpriseComposedFixtureReady(t *testing.T) {
 	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "enterprise-composed")})
 	if err != nil {
@@ -453,7 +479,7 @@ func TestCheckLocalTestCorpusFixture(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CheckLocalTestCorpus error = %v, report = %#v", err, report)
 	}
-	if !report.Ready || len(report.Projects) != 13 {
+	if !report.Ready || len(report.Projects) != 16 {
 		t.Fatalf("report = %#v", report)
 	}
 }
