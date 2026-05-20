@@ -4903,6 +4903,55 @@ System.assertEquals(2, [SELECT Id FROM Widget__c].size());
 	}
 }
 
+func TestExecWithSharingRunAsSystemAdministratorBypassesPrivateSharing(t *testing.T) {
+	program, err := CompileAnonymous(`
+Profile admin = [SELECT Id FROM Profile WHERE Name = 'System Administrator'];
+User u = new User(
+	Username = 'sharing-admin@example.invalid',
+	Alias = 'sadmin',
+	Email = 'sharing-admin@example.invalid',
+	LastName = 'Admin',
+	ProfileId = admin.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+System.runAs(u) {
+	System.assertEquals(2, [SELECT Id FROM Widget__c].size());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:      "Widget__c",
+			KeyPrefix:    "a00",
+			SharingModel: "Private",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {ID: "a00000000000001", Object: "Widget__c", System: storage.SystemFields{OwnerID: "005000000000001"}},
+			"a00000000000002": {ID: "a00000000000002", Object: "Widget__c", System: storage.SystemFields{OwnerID: "005000000000002"}},
+		},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "SharingProbe", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "SharingProbe"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRunAsInsertPreservesExistingCustomObjectRows(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new List<Widget__c>{new Widget__c(Name = 'one'), new Widget__c(Name = 'two')};

@@ -11207,6 +11207,9 @@ func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result
 	if vm.soqlObjectHasPublicReadSharing(query.Object) {
 		return result
 	}
+	if vm.currentUserBypassesRecordSharing() {
+		return result
+	}
 	userID := vm.currentUserID()
 	if userID == "" {
 		return result
@@ -11242,6 +11245,56 @@ func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result
 	result.Records = records
 	result.Rows = len(records)
 	return result
+}
+
+func (vm *VM) currentUserBypassesRecordSharing() bool {
+	if vm == nil || vm.Org == nil {
+		return false
+	}
+	user := vm.executionUser
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	if objectBoolField(user, "PermissionsViewAllData") || objectBoolField(user, "PermissionsModifyAllData") {
+		return true
+	}
+	if userHasPermission(user, "ViewAllData") || userHasPermission(user, "ModifyAllData") {
+		return true
+	}
+	profileID := stringField(user, "ProfileId")
+	if vm.currentProfileIsSystemAdministrator(profileID) {
+		return true
+	}
+	if vm.recordHasAnyBooleanPermission("Profile", profileID, "PermissionsViewAllData", "PermissionsModifyAllData") {
+		return true
+	}
+	for _, permissionSetID := range vm.assignedPermissionSetIDs(stringField(user, "Id")) {
+		if vm.recordHasAnyBooleanPermission("PermissionSet", permissionSetID, "PermissionsViewAllData", "PermissionsModifyAllData") {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) recordHasAnyBooleanPermission(objectName, recordID string, fields ...string) bool {
+	if recordID == "" || vm == nil || vm.Org == nil {
+		return false
+	}
+	state, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return false
+	}
+	record, ok := state.Records[storage.ID(recordID)]
+	if !ok {
+		return false
+	}
+	for _, field := range fields {
+		value, ok := record.GetField(field)
+		if ok && value.Kind == storage.ValueBoolean && value.Boolean {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) currentUserCanSeeSharedRecord(objectName string, record storage.Record, userID string) bool {
