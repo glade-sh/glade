@@ -5408,6 +5408,23 @@ System.assertNotEquals(null, qualified);
 	}
 }
 
+func TestExecTypeForNameNamespacedNestedClassPreservesNamespace(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type inner = Type.forName('NU', 'SystemUtilTest.TestInnerClass');
+System.assertEquals('NU.SystemUtilTest.TestInnerClass', inner.getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "SystemUtilTest.TestInnerClass", Namespace: "NU"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTypeNewInstanceAbstractClassIsCatchable(t *testing.T) {
 	program, err := CompileAnonymous(`
 Type t = Type.forName('AbstractThing');
