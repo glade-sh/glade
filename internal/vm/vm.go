@@ -30735,7 +30735,6 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			if updated, ok := frame["this"]; ok && valueAliasMatch(receiver, updated) {
 				vm.propagateValueMutationToScope(vm.Globals, receiver, updated)
 				vm.propagateValueMutationToStatics(receiver, updated)
-				vm.propagateUpdatedValueAliases(vm.Globals, updated)
 			}
 		}
 		return value, nil
@@ -30839,7 +30838,6 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		if updated, ok := frame["this"]; ok && valueAliasMatch(receiver, updated) {
 			vm.propagateValueMutationToScope(caller, receiver, updated)
 			vm.propagateValueMutationToStatics(receiver, updated)
-			vm.propagateUpdatedValueAliases(caller, updated)
 		}
 	}
 	if method.IsConstructor {
@@ -35058,54 +35056,55 @@ func (vm *VM) propagateValueMutationToScope(scope map[string]Value, previous, up
 }
 
 func (vm *VM) propagateUpdatedValueAliases(scope map[string]Value, updated Value) {
+	if len(scope) == 0 {
+		return
+	}
+	topLevelAliases := make(map[uint64][]string)
+	for name, value := range scope {
+		if value.Ref != 0 && value.Ref != updated.Ref {
+			topLevelAliases[value.Ref] = append(topLevelAliases[value.Ref], name)
+		}
+	}
+	if len(topLevelAliases) == 0 {
+		return
+	}
 	seen := make(map[uint64]bool)
-	var walk func(Value)
-	walk = func(value Value) {
+	var walk func(Value, bool)
+	walk = func(value Value, root bool) {
 		if value.Ref != 0 {
 			if seen[value.Ref] {
 				return
 			}
 			seen[value.Ref] = true
-			vm.replaceUpdatedValueAliasInScope(scope, value)
-			vm.replaceUpdatedValueAliasInStatics(value)
+			if !root {
+				for _, name := range topLevelAliases[value.Ref] {
+					scope[name] = value
+				}
+			}
 		}
 		switch value.Kind {
 		case ValueObject:
 			for _, child := range value.Fields {
-				walk(child)
+				walk(child, false)
 			}
 		case ValueMap:
 			for _, child := range value.Map {
-				walk(child)
+				walk(child, false)
 			}
 			for _, child := range value.MapKeys {
-				walk(child)
+				walk(child, false)
 			}
 		case ValueList:
 			for _, child := range value.List {
-				walk(child)
+				walk(child, false)
 			}
 		case ValueSet:
 			for _, child := range value.Set {
-				walk(child)
+				walk(child, false)
 			}
 		}
 	}
-	walk(updated)
-}
-
-func (vm *VM) replaceUpdatedValueAliasInScope(scope map[string]Value, updated Value) {
-	if updated.Ref == 0 {
-		return
-	}
-	seen := make(map[uint64]bool)
-	for name, value := range scope {
-		clearRefSeen(seen)
-		replaced, changed := replaceValueAlias(value, updated, updated, seen)
-		if changed {
-			scope[name] = replaced
-		}
-	}
+	walk(updated, true)
 }
 
 func cloneValuePreserveRefs(value Value) Value {
@@ -35185,35 +35184,6 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 		for fieldName, field := range class.StaticFields {
 			clearRefSeen(seen)
 			replaced, fieldChanged := replaceValueAlias(field.Value, previous, updated, seen)
-			if fieldChanged {
-				field.Value = replaced
-				class.StaticFields[fieldName] = field
-				changed = true
-			}
-		}
-		if changed {
-			vm.Classes[className] = class
-			vm.rememberStaticValueRefs(updated)
-		}
-	}
-}
-
-func (vm *VM) replaceUpdatedValueAliasInStatics(updated Value) {
-	if updated.Ref == 0 {
-		return
-	}
-	if vm.staticValueRefs == nil {
-		vm.staticValueRefs = vm.collectStaticValueRefs()
-	}
-	if !vm.staticValueRefs[updated.Ref] {
-		return
-	}
-	for className, class := range vm.Classes {
-		changed := false
-		seen := make(map[uint64]bool)
-		for fieldName, field := range class.StaticFields {
-			clearRefSeen(seen)
-			replaced, fieldChanged := replaceValueAlias(field.Value, updated, updated, seen)
 			if fieldChanged {
 				field.Value = replaced
 				class.StaticFields[fieldName] = field
