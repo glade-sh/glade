@@ -23864,8 +23864,8 @@ func (vm *VM) typeForName(namespace, name string) Value {
 	}
 	if namespace != "" {
 		for _, candidate := range namespaceTypeNameCandidates(namespace, name) {
-			if resolved, ok := vm.resolveClassName(candidate); ok {
-				return platformScalar("Type", resolved)
+			if class, ok := vm.lookupClass(candidate); ok {
+				return platformScalar("Type", typeForNameClassToken(namespace, class))
 			}
 		}
 		return Null
@@ -23898,6 +23898,17 @@ func namespaceTypeNameCandidates(namespace, name string) []string {
 		candidates = append(candidates, name)
 	}
 	return candidates
+}
+
+func typeForNameClassToken(namespace string, class Class) string {
+	namespace = strings.TrimSpace(namespace)
+	if class.Namespace == "" || namespace == "" || !strings.EqualFold(namespace, class.Namespace) || !strings.Contains(class.Name, ".") {
+		return class.Name
+	}
+	if prefix, _, ok := strings.Cut(class.Name, "."); ok && strings.EqualFold(prefix, class.Namespace) {
+		return class.Name
+	}
+	return class.Namespace + "." + class.Name
 }
 
 func (vm *VM) resolveTypeNameToken(name string) (string, bool) {
