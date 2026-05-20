@@ -30784,6 +30784,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	if value, handled := vm.generatedUnsupportedFamilyExplicitMethodDefault(method, receiver, args); handled {
 		return value, nil
 	}
+	if err, handled := vm.generatedUnsupportedFamilyExplicitMethodError(method, receiver, args); handled {
+		return Null, err
+	}
 	if methodHasModifier(method.Modifiers, "passive-generated") {
 		className := method.ClassName
 		if className == "" {
@@ -30795,6 +30798,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		if generatedFamilyUnsupportedTypePrefix(className) {
 			if value, handled := vm.generatedUnsupportedFamilyExplicitMethodDefault(method, receiver, args); handled {
 				return value, nil
+			}
+			if err, handled := vm.generatedUnsupportedFamilyExplicitMethodError(method, receiver, args); handled {
+				return Null, err
 			}
 			return Null, newExceptionError("UnsupportedOperationException", method.Name+" local stub surface")
 		}
@@ -31164,6 +31170,53 @@ func (vm *VM) generatedUnsupportedFamilyExplicitMethodDefault(method Method, rec
 		return value, true
 	default:
 		return Null, false
+	}
+}
+
+func (vm *VM) generatedUnsupportedFamilyExplicitMethodError(method Method, receiver Value, args []Value) (error, bool) {
+	className := method.ClassName
+	if className == "" && receiver.Kind == ValueObject {
+		className = receiver.Type
+	}
+	key := generatedUnsupportedFamilyKey(className, apexMethodMemberName(method.Name))
+	switch key {
+	case "cartextension.checkoutcreateorder.createorder",
+		"lxscheduler.schedulerresources.getappointmentcandidates",
+		"lxscheduler.schedulerresources.getappointmentslots",
+		"commercepayments.authorizationresponse.setpaymentmethodtokenizationresponse",
+		"commercepayments.authorizationresponse.setretrycategory",
+		"commercepayments.authorizationresponse.setretrydecision",
+		"commercepayments.authorizationreversalresponse.setretrycategory",
+		"commercepayments.authorizationreversalresponse.setretrydecision",
+		"commercepayments.bankpaymentmethodresponse.setaccountholdertype",
+		"commercepayments.bankpaymentmethodresponse.setaccounttype",
+		"commercepayments.bankpaymentmethodresponse.setbanktype",
+		"commercepayments.bankpaymentmethodresponse.setstandardentryclasscode",
+		"commercepayments.capturenotification.setretrycategory",
+		"commercepayments.capturenotification.setretrydecision",
+		"commercepayments.captureresponse.setretrycategory",
+		"commercepayments.captureresponse.setretrydecision",
+		"commercepayments.cardpaymentmethodresponse.setcardcategory",
+		"commercepayments.cardpaymentmethodresponse.setcardtypecategory",
+		"commercepayments.notificationclient.record",
+		"commercepayments.paymentmethoddetailsresponse.setalternativepaymentmethod",
+		"commercepayments.paymentmethoddetailsresponse.setcardpaymentmethod",
+		"commercepayments.paymentmethodtokenizationresponse.setretrycategory",
+		"commercepayments.paymentmethodtokenizationresponse.setretrydecision",
+		"commercepayments.postauthorizationresponse.setpaymentmethoddetails",
+		"commercepayments.postauthorizationresponse.setpaymentmethodtokenizationresponse",
+		"commercepayments.postauthorizationresponse.setretrycategory",
+		"commercepayments.postauthorizationresponse.setretrydecision",
+		"commercepayments.referencedrefundnotification.setretrycategory",
+		"commercepayments.referencedrefundnotification.setretrydecision",
+		"commercepayments.referencedrefundresponse.setretrycategory",
+		"commercepayments.referencedrefundresponse.setretrydecision",
+		"commercepayments.saleresponse.setpaymentmethodtokenizationresponse",
+		"commercepayments.saleresponse.setretrycategory",
+		"commercepayments.saleresponse.setretrydecision":
+		return newExceptionError("System.NullPointerException", method.Name+" requires non-null arguments"), true
+	default:
+		return nil, false
 	}
 }
 
