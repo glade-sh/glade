@@ -1466,6 +1466,122 @@ System.assertEquals('001000000000001AAA', child.Parent__r.Id);
 	}
 }
 
+func TestExecJSONDeserializeSObjectSyntheticParentRelationship(t *testing.T) {
+	program, err := CompileAnonymous(`
+Child__c child = (Child__c)JSON.deserialize('{"Parent__r":{"Id":"a01000000000001AAA","Name":"Parent"}}', Child__c.class);
+System.assertEquals('Parent', child.Parent__r.Name);
+System.assertEquals('a01000000000001AAA', child.Parent__r.Id);
+
+Membership__c membership = (Membership__c)JSON.deserialize('{"StartDate__c":"2026-05-01","EndDate__c":"2026-05-31T00:00:00.000Z","OrderItemLine__r":{"Id":"a02000000000001AAA","OrderItem__c":"a03000000000001AAA"}}', Membership__c.class);
+System.assertEquals(Date.newInstance(2026, 5, 1), membership.StartDate__c);
+System.assertEquals('a03000000000001AAA', membership.OrderItemLine__r.OrderItem__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Parent__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Parent__c",
+				KeyPrefix: "a01",
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Membership__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Membership__c",
+				KeyPrefix: "a04",
+				Fields: map[string]storage.Field{
+					"Id":               {APIName: "Id", Type: storage.FieldID},
+					"StartDate__c":     {APIName: "StartDate__c", Type: storage.FieldDate},
+					"EndDate__c":       {APIName: "EndDate__c", Type: storage.FieldDateTime},
+					"OrderItemLine__c": {APIName: "OrderItemLine__c", Type: storage.FieldReference, ReferenceTo: []string{"OrderItemLine__c"}},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"OrderItemLine__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "OrderItemLine__c",
+				KeyPrefix: "a02",
+				Fields: map[string]storage.Field{
+					"Id":           {APIName: "Id", Type: storage.FieldID},
+					"OrderItem__c": {APIName: "OrderItem__c", Type: storage.FieldReference, ReferenceTo: []string{"OrderItem__c"}},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"OrderItem__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "OrderItem__c",
+				KeyPrefix: "a03",
+				Fields: map[string]storage.Field{
+					"Id": {APIName: "Id", Type: storage.FieldID},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecLookupIdOnlyParentRelationshipComparesNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+Child__c child = new Child__c(Parent__c = 'a01000000000001AAA');
+System.assertEquals(null, child.Parent__r);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Parent__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Parent__c",
+				KeyPrefix: "a01",
+				Fields: map[string]storage.Field{
+					"Id": {APIName: "Id", Type: storage.FieldID},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeParentRelationshipAliasesShareLoadedParent(t *testing.T) {
 	program, err := CompileAnonymous(`
 Child__c child = (Child__c)JSON.deserialize('{"pkg__Parent__r":{"Id":"001000000000001AAA","Name":"First"},"Parent__r":{"Id":"001000000000002AAA","Name":"Second"}}', Child__c.class);

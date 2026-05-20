@@ -19128,6 +19128,12 @@ func (vm *VM) jsonSObjectParentRelationshipType(typeName, relationshipName strin
 		}
 		return relation.ParentObjects[0], true
 	}
+	if relation, ok := vm.syntheticParentRelationship(object.Definition, relationshipName); ok {
+		if len(relation.ParentObjects) == 0 {
+			return "", false
+		}
+		return relation.ParentObjects[0], true
+	}
 	return "", false
 }
 
@@ -22363,7 +22369,9 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				canonical := vm.resolveSObjectFieldName(current.Type, part)
 				if value, ok := vm.missingSObjectFieldValue(current, canonical); ok {
 					if value.Kind == ValueNull && i < len(parts)-1 {
-						if shell, hasShell := vm.parentRelationshipShell(current, canonical); hasShell {
+						if shell, hasShell := vm.parentRelationshipValueFromLookupID(current, canonical); hasShell && shell.Kind == ValueObject {
+							value = shell
+						} else if shell, hasShell := vm.parentRelationshipShell(current, canonical); hasShell {
 							value = shell
 						}
 					}
@@ -22443,7 +22451,9 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			}
 			if value, ok := vm.missingSObjectFieldValue(current, canonicalPart); ok {
 				if value.Kind == ValueNull && i < len(parts)-1 {
-					if shell, hasShell := vm.parentRelationshipShell(current, canonicalPart); hasShell {
+					if shell, hasShell := vm.parentRelationshipValueFromLookupID(current, canonicalPart); hasShell && shell.Kind == ValueObject {
+						value = shell
+					} else if shell, hasShell := vm.parentRelationshipShell(current, canonicalPart); hasShell {
 						value = shell
 					}
 				}
@@ -39470,10 +39480,10 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 	if isExplicitSObjectField(receiver, field) {
 		return Null, true
 	}
-	if value, ok := vm.parentRelationshipValueFromLookupID(receiver, field); ok {
+	if value, ok := vm.parentRelationshipValue(receiver, field); ok {
 		return value, true
 	}
-	if value, ok := vm.parentRelationshipValue(receiver, field); ok {
+	if value, ok := vm.parentRelationshipValueFromLookupID(receiver, field); ok {
 		return value, true
 	}
 	definition, fieldDef, ok := vm.sObjectFieldDefinition(receiver.Type, field)
@@ -39906,6 +39916,20 @@ func (vm *VM) syntheticParentRelationship(definition storage.ObjectDefinition, r
 		case "field":
 			return storage.Relationship{Field: "FieldId", ParentObjects: []string{"FieldDefinition"}, ParentRelationship: "Field"}, true
 		}
+	}
+	for name, field := range definition.Fields {
+		apiName := field.APIName
+		if apiName == "" {
+			apiName = name
+		}
+		if field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
+			continue
+		}
+		if !vmParentRelationshipNameMatches(vm.Org.Namespace, apiName, relationshipName) {
+			continue
+		}
+		parentRelationship := vm.parentRelationshipNameForReferenceField(definition, field)
+		return storage.Relationship{Field: apiName, ParentObjects: append([]string(nil), field.ReferenceTo...), ParentRelationship: parentRelationship, Polymorphic: len(field.ReferenceTo) > 1}, true
 	}
 	for _, fieldName := range []string{relationshipName + "Id", lookupFieldRelationshipName(relationshipName)} {
 		fieldName = strings.TrimSpace(fieldName)

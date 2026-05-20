@@ -2940,6 +2940,67 @@ func TestWorkflowFieldUpdateResolvesNamespacedCriteriaAndSourceFields(t *testing
 	}
 }
 
+func TestWorkflowFieldUpdateResolvesRelationshipFormulaOnIdOnlyUpdate(t *testing.T) {
+	org := storage.NewOrgState()
+	parentDefinition := storage.ObjectDefinition{
+		APIName:   "Parent__c",
+		KeyPrefix: "a01",
+		Fields: map[string]storage.Field{
+			"Name":     {APIName: "Name", Type: storage.FieldString},
+			"Email__c": {APIName: "Email__c", Type: storage.FieldString},
+		},
+	}
+	childDefinition := storage.ObjectDefinition{
+		APIName:   "Child__c",
+		KeyPrefix: "a02",
+		Fields: map[string]storage.Field{
+			"Name":         {APIName: "Name", Type: storage.FieldString},
+			"Parent__c":    {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
+			"EmailCopy__c": {APIName: "EmailCopy__c", Type: storage.FieldString},
+		},
+		WorkflowRules: []storage.WorkflowRule{{
+			Name:    "CopyParentEmail",
+			Active:  true,
+			Formula: "!ISBLANK(Parent__r.Email__c)",
+			FieldUpdates: []storage.WorkflowFieldUpdate{{
+				Name:    "SetEmailCopy",
+				Field:   "EmailCopy__c",
+				Formula: "Parent__r.Email__c",
+			}},
+		}},
+	}
+	org.Objects["Parent__c"] = storage.ObjectState{Definition: parentDefinition, Records: map[storage.ID]storage.Record{}}
+	org.Objects["Child__c"] = storage.ObjectState{Definition: childDefinition, Records: map[storage.ID]storage.Record{}}
+	engine := NewEngine(&org)
+
+	parent := engine.Insert([]storage.Record{{Object: "Parent__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Parent")}}})
+	if !parent[0].Success {
+		t.Fatalf("parent insert = %#v", parent)
+	}
+	child := engine.Insert([]storage.Record{{Object: "Child__c", Fields: map[string]storage.Value{
+		"Name":      storage.StringValue("Child"),
+		"Parent__c": storage.IDValue(parent[0].ID),
+	}}})
+	if !child[0].Success {
+		t.Fatalf("child insert = %#v", child)
+	}
+	if _, ok := org.Objects["Child__c"].Records[child[0].ID].Fields["EmailCopy__c"]; ok {
+		t.Fatalf("workflow should not copy blank parent email: %#v", org.Objects["Child__c"].Records[child[0].ID])
+	}
+
+	parentUpdate := engine.Update([]storage.Record{{ID: parent[0].ID, Object: "Parent__c", Fields: map[string]storage.Value{"Email__c": storage.StringValue("test@example.com")}}})
+	if !parentUpdate[0].Success {
+		t.Fatalf("parent update = %#v", parentUpdate)
+	}
+	childUpdate := engine.Update([]storage.Record{{ID: child[0].ID, Object: "Child__c"}})
+	if !childUpdate[0].Success {
+		t.Fatalf("child update = %#v", childUpdate)
+	}
+	if got := org.Objects["Child__c"].Records[child[0].ID].Fields["EmailCopy__c"].String; got != "test@example.com" {
+		t.Fatalf("relationship workflow formula copy = %q", got)
+	}
+}
+
 func TestFlowRuleFormulaAndFormulaFieldUpdates(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
