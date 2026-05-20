@@ -7,7 +7,7 @@ private class VisualforcePagesTest {
     Test.setCurrentPageReference(Page.OrderList);
     ApexPages.currentPage().getParameters().put('id', '001000000000101AAA');
 
-    System.assertEquals('/apex/OrderList', System.currentPageReference().getUrl());
+    System.assertEquals('/apex/OrderList?id=001000000000101AAA', System.currentPageReference().getUrl());
     System.assertEquals('001000000000101AAA', ApexPages.currentPage().getParameters().get('id'));
   }
 
