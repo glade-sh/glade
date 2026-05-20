@@ -37,6 +37,7 @@ type Engine struct {
 
 type Options struct {
 	AllowFieldTruncation bool
+	AllowUpdateDeleted   bool
 }
 
 type SummaryUpdate struct {
@@ -1367,7 +1368,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if !ok {
 		return fmt.Errorf("dml: record %s does not exist", record.ID)
 	}
-	if existing.System.IsDeleted {
+	if existing.System.IsDeleted && !e.Options.AllowUpdateDeleted {
 		return fmt.Errorf("dml: record %s is deleted", record.ID)
 	}
 	stripUnchangedNonUpdateableFields(object.Definition, e.Org.Namespace, &record, existing)

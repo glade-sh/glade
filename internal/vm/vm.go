@@ -13587,6 +13587,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	}
 	engine := vm.newDeferredAutomationDMLEngine(result)
 	engine.Options = options
+	if op == "update" && vm.inAfterUndeleteTrigger() {
+		engine.Options.AllowUpdateDeleted = true
+	}
 	if !allOrNone && vm.hasAfterTriggerForDML(op, records) {
 		ensureBackup()
 	}
@@ -13708,6 +13711,18 @@ func (vm *VM) rebuildDMLObjectIndexes(records []storage.Record, results []dml.Re
 		seen[key] = true
 		storage.RebuildObjectIndexes(vm.Org, objectName)
 	}
+}
+
+func (vm *VM) inAfterUndeleteTrigger() bool {
+	if vm == nil || vm.triggerGlobals == nil {
+		return false
+	}
+	isAfter, ok := vm.triggerGlobals["Trigger.isAfter"]
+	if !ok || isAfter.Kind != ValueBool || !isAfter.Bool {
+		return false
+	}
+	isUndelete, ok := vm.triggerGlobals["Trigger.isUndelete"]
+	return ok && isUndelete.Kind == ValueBool && isUndelete.Bool
 }
 
 func hasDMLSuccess(results []dml.Result) bool {

@@ -8930,6 +8930,68 @@ System.assert(!a.IsDeleted);
 	}
 }
 
+func TestExecAfterUndeleteCanUpdateRelatedDeletedRecord(t *testing.T) {
+	afterChildUndelete, err := CompileAnonymous(`
+Child__c child = (Child__c)Trigger.new.get(0);
+update new Parent__c(Id = child.Parent__c, Count__c = 1);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Parent__c parent = new Parent__c(Name = 'Parent');
+insert parent;
+Child__c child = new Child__c(Name = 'Child', Parent__c = parent.Id);
+insert child;
+delete parent;
+delete child;
+undelete child;
+undelete parent;
+Parent__c restored = [SELECT Count__c FROM Parent__c WHERE Id = :parent.Id];
+System.assertEquals(1, restored.Count__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Parent__c",
+			KeyPrefix: "a10",
+			Fields: map[string]storage.Field{
+				"Name":     {APIName: "Name", Type: storage.FieldString},
+				"Count__c": {APIName: "Count__c", Type: storage.FieldDecimal},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Child__c",
+			KeyPrefix: "a11",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "ChildAfterUndelete",
+		Object:    "Child__c",
+		Timing:    triggerTimingAfter,
+		Operation: "undelete",
+		Program:   afterChildUndelete,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecUpsertFiresInsertAndUpdateTriggers(t *testing.T) {
 	beforeInsert, err := CompileAnonymous(`
 for (Account a : Trigger.new) {
