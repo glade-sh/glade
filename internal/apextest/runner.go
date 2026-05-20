@@ -46,8 +46,14 @@ type Options struct {
 
 type permissionSetMetadata struct {
 	Label            string                          `xml:"label"`
+	CustomPermission []permissionSetCustomPermission `xml:"customPermissions"`
 	FieldPermissions []permissionSetFieldPermission  `xml:"fieldPermissions"`
 	ObjectPermission []permissionSetObjectPermission `xml:"objectPermissions"`
+}
+
+type permissionSetCustomPermission struct {
+	Enabled bool   `xml:"enabled"`
+	Name    string `xml:"name"`
 }
 
 type permissionSetFieldPermission struct {
@@ -2103,10 +2109,33 @@ func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project) 
 				},
 			}
 		}
+		if metadata, ok := readPermissionSetMetadata(file); ok {
+			customPermissions := permissionSetCustomPermissionValues(metadata)
+			if len(customPermissions) > 0 {
+				record := state.Records[id]
+				if record.Fields == nil {
+					record.Fields = make(map[string]storage.Value)
+				}
+				record.Fields["CustomPermissions"] = storage.ListValue(customPermissions...)
+				state.Records[id] = record
+			}
+		}
 		applyProjectPermissionSetMetadataPermissions(org, file, string(id), &generator)
 	}
 	org.IDSequences = generator.Sequences
 	org.Objects["PermissionSet"] = state
+}
+
+func permissionSetCustomPermissionValues(metadata permissionSetMetadata) []storage.Value {
+	var out []storage.Value
+	for _, permission := range metadata.CustomPermission {
+		name := strings.TrimSpace(permission.Name)
+		if name == "" || !permission.Enabled {
+			continue
+		}
+		out = append(out, storage.StringValue(name))
+	}
+	return out
 }
 
 func readPermissionSetMetadata(file string) (permissionSetMetadata, bool) {

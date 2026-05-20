@@ -50,6 +50,46 @@ func TestVMRecordFieldPathPreservesMissingNestedParentRelationshipNull(t *testin
 	}
 }
 
+func TestExecSObjectPropertyGetterNullSupportsFieldAccess(t *testing.T) {
+	getterProgram, err := CompileAnonymous(`return null;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	methodProgram, err := CompileAnonymous(`return null;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Harness h = new Harness();
+System.assertEquals(null, h.AccountValue);
+System.assertEquals(null, h.AccountValue.Name);
+try {
+    String name = h.getAccountValue().Name;
+    System.assert(false, 'method null SObject dereference should throw');
+} catch (System.NullPointerException e) {
+    System.assert(e.getMessage().contains('Attempt to de-reference a null object'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Harness",
+		Fields: map[string]Field{
+			"AccountValue": {Name: "AccountValue", Type: "Account", Property: true, Getter: &Method{Name: "Harness.AccountValue.get", ClassName: "Harness", ReturnType: "Account", Program: getterProgram}},
+		},
+		Methods: map[string]Method{
+			"getAccountValue": {Name: "Harness.getAccountValue", ClassName: "Harness", ReturnType: "Account", Program: methodProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCoerceAssignableAcceptsNamespaceAliasWhenNamespaceMatchesCurrentClass(t *testing.T) {
 	machine := New(nil)
 	if err := machine.RegisterClass(Class{Name: "verifiable", Namespace: "verifiable"}); err != nil {

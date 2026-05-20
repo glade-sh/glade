@@ -2486,6 +2486,43 @@ System.assertEquals(null, Packaging.getCurrentPackageId());
 	}
 }
 
+func TestExecFeatureManagementUsesAssignedPermissionSetCustomPermissions(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.runAs(new User(Id = '005-user-a')) {
+    System.assert(FeatureManagement.checkPermission('ManageMembership'));
+    System.assert(!FeatureManagement.checkPermission('OtherPermission'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "PermissionSet")
+	storage.EnsureStandardObject(&org, "PermissionSetAssignment")
+	org.Objects["PermissionSet"].Records["0PS000000000101"] = storage.Record{
+		ID:     "0PS000000000101",
+		Object: "PermissionSet",
+		Fields: map[string]storage.Value{
+			"Name":              storage.StringValue("LocalPermissions"),
+			"CustomPermissions": storage.ListValue(storage.StringValue("ManageMembership")),
+		},
+	}
+	org.Objects["PermissionSetAssignment"].Records["0Pa000000000101"] = storage.Record{
+		ID:     "0Pa000000000101",
+		Object: "PermissionSetAssignment",
+		Fields: map[string]storage.Value{
+			"AssigneeId":      storage.IDValue("005-user-a"),
+			"PermissionSetId": storage.IDValue("0PS000000000101"),
+		},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatacloudFindDuplicatesLocalEmptyResults(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Datacloud.FindDuplicatesResult> byRecord = Datacloud.FindDuplicates.findDuplicates(new List<SObject>{new Account(Name = 'Acme')});

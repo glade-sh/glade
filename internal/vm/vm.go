@@ -4336,10 +4336,7 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("FeatureManagement.checkPermission expects String")
 		}
-		if vm.testContext != nil && userHasPermission(vm.testContext.CurrentUser, args[0].Text) {
-			return Bool(true), nil
-		}
-		if userHasPermission(vm.executionUser, args[0].Text) {
+		if vm.currentUserHasPermission(args[0].Text) {
 			return Bool(true), nil
 		}
 		return Bool(false), nil
@@ -7473,6 +7470,60 @@ func userHasPermission(user Value, permission string) bool {
 				if item.Kind == ValueString && strings.EqualFold(item.Text, permission) {
 					return true
 				}
+			}
+		}
+	}
+	return false
+}
+
+func (vm *VM) currentUserHasPermission(permission string) bool {
+	user := vm.executionUser
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	if userHasPermission(user, permission) {
+		return true
+	}
+	for _, permissionSetID := range vm.assignedPermissionSetIDs(stringField(user, "Id")) {
+		if vm.permissionSetHasPermission(permissionSetID, permission) {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) permissionSetHasPermission(permissionSetID, permission string) bool {
+	if vm == nil || vm.Org == nil || strings.TrimSpace(permissionSetID) == "" {
+		return false
+	}
+	state, ok := vm.Org.Objects["PermissionSet"]
+	if !ok {
+		return false
+	}
+	record, ok := state.Records[storage.ID(permissionSetID)]
+	if !ok {
+		return false
+	}
+	for _, field := range []string{"Permissions", "PermissionSets", "CustomPermissions"} {
+		value, ok := record.GetField(field)
+		if !ok {
+			continue
+		}
+		if storagePermissionValueMatches(value, permission) {
+			return true
+		}
+	}
+	return false
+}
+
+func storagePermissionValueMatches(value storage.Value, permission string) bool {
+	if value.Kind == storage.ValueString && strings.EqualFold(strings.TrimSpace(value.String), strings.TrimSpace(permission)) {
+		return true
+	}
+	if value.Kind == storage.ValueList {
+		for _, item := range value.List {
+			if storagePermissionValueMatches(item, permission) {
+				return true
 			}
 		}
 	}
@@ -21765,7 +21816,16 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 			delete(vm.activeGetters, key)
 		}
 	}()
-	return vm.callMethodWithReceiver(*field.Getter, receiver, nil, resultForLookup())
+	value, err := vm.callMethodWithReceiver(*field.Getter, receiver, nil, resultForLookup())
+	if err != nil {
+		return value, err
+	}
+	fieldType := vm.resolveTypeNameInClass(owner, field.Type)
+	if value.Kind == ValueNull && vm.isSObjectLikeType(fieldType) {
+		value.Type = fieldType
+		value.Runtime = relationshipNullRuntime
+	}
+	return value, nil
 }
 
 func propertyAccessorMethod(method Method) bool {
