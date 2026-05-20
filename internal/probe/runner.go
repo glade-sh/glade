@@ -37,6 +37,7 @@ func Run(cfg Config) (*GapReport, error) {
 	goldenStart := time.Now()
 	var golden map[string]ProbeResult
 	var goldenTimings []ProbeTiming
+	var debugLogs []ProbeDebugLog
 	var err error
 	if cfg.UseGoldenCache {
 		cachePath := goldenCachePath(cfg)
@@ -59,13 +60,15 @@ func Run(cfg Config) (*GapReport, error) {
 		var orgShape map[string]interface{}
 		switch executor {
 		case "rest":
-			goldenExec := &RestExecutor{OrgAlias: cfg.OrgAlias}
+			goldenExec := &RestExecutor{OrgAlias: cfg.OrgAlias, CaptureDebugLog: cfg.CaptureDebugLog}
 			golden, goldenTimings, err = goldenExec.CaptureGolden(cfg.ProbeDir, cfg.ProbeIDs)
 			orgShape = goldenExec.OrgShape
+			debugLogs = append(debugLogs, goldenExec.DebugLogs...)
 		case "sf":
-			goldenExec := &SFDXExecutor{OrgAlias: cfg.OrgAlias}
+			goldenExec := &SFDXExecutor{OrgAlias: cfg.OrgAlias, CaptureDebugLog: cfg.CaptureDebugLog}
 			golden, goldenTimings, err = goldenExec.CaptureGolden(cfg.ProbeDir, cfg.ProbeIDs)
 			orgShape = goldenExec.OrgShape
+			debugLogs = append(debugLogs, goldenExec.DebugLogs...)
 		default:
 			return nil, fmt.Errorf("unknown golden executor %q (expected rest or sf)", executor)
 		}
@@ -84,7 +87,14 @@ func Run(cfg Config) (*GapReport, error) {
 	fmt.Println("\n=== Phase 2: Local Replay (oaer VM) ===")
 	localStart := time.Now()
 	localExec := &LocalExecutor{ProbeDir: cfg.ProbeDir, Features: cfg.Features}
-	local, localTimings, err := localExec.CaptureLocal(cfg.ProbeIDs)
+	var local map[string]ProbeResult
+	var localTimings []ProbeTiming
+	var localTraceSummaries []DebugLogSummary
+	if cfg.CaptureDebugLog {
+		local, localTimings, localTraceSummaries, err = localExec.CaptureLocalWithTrace(cfg.ProbeIDs)
+	} else {
+		local, localTimings, err = localExec.CaptureLocal(cfg.ProbeIDs)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("local replay failed: %w", err)
 	}
@@ -154,6 +164,26 @@ func Run(cfg Config) (*GapReport, error) {
 				return report, fmt.Errorf("write golden cache: %w", err)
 			}
 			fmt.Printf("Wrote golden cache to %s\n", cachePath)
+		}
+		if cfg.CaptureDebugLog && !cfg.UseGoldenCache {
+			debugLogPath := filepath.Join(cfg.OutputDir, "debug-logs.json")
+			if err := WriteDebugLogs(debugLogs, debugLogPath); err != nil {
+				return report, fmt.Errorf("write debug logs: %w", err)
+			}
+			fmt.Printf("Wrote debug logs to %s\n", debugLogPath)
+			summaryPath := filepath.Join(cfg.OutputDir, "debug-log-summaries.json")
+			summaries := SummarizeDebugLogs(debugLogs)
+			if err := WriteDebugLogSummaries(summaries, summaryPath); err != nil {
+				return report, fmt.Errorf("write debug log summaries: %w", err)
+			}
+			fmt.Printf("Wrote debug log summaries to %s\n", summaryPath)
+			localSummaryPath := filepath.Join(cfg.OutputDir, "local-trace-summaries.json")
+			if err := WriteDebugLogSummaries(localTraceSummaries, localSummaryPath); err != nil {
+				return report, fmt.Errorf("write local trace summaries: %w", err)
+			}
+			fmt.Printf("Wrote local trace summaries to %s\n", localSummaryPath)
+			report.TraceDiffs = CompareTraceSummaries(cfg.ProbeIDs, summaries, localTraceSummaries)
+			fmt.Printf("Trace diff summary: %s\n", formatTraceDiffSummary(report.TraceDiffs))
 		}
 		trendPath := filepath.Join(cfg.OutputDir, "probe-history.jsonl")
 		if err := AppendTrend(trendPath, trendEntry(report)); err != nil {
