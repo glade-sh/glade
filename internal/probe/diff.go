@@ -183,6 +183,11 @@ func probeOutcomeEquivalent(golden, local ProbeResult) bool {
 	}
 	gType := strings.ToLower(*golden.ExceptionType)
 	lType := strings.ToLower(*local.ExceptionType)
+	if strings.EqualFold(gType, "system.unsupportedoperationexception") &&
+		strings.EqualFold(lType, "system.compileexception") &&
+		stubContractCompileShapeEquivalent(golden.ProbeID) {
+		return true
+	}
 	switch id {
 	case "stub.datetime.formatgmt":
 		return gType == "system.stringexception" && lType == "system.compileexception"

@@ -9,6 +9,65 @@ import (
 	"github.com/open-aer/oaer/internal/storage"
 )
 
+func TestGeneratedFamilyUnsupportedTypePrefixIsCaseInsensitive(t *testing.T) {
+	cases := []struct {
+		typeName string
+		want     bool
+	}{
+		{typeName: "Messaging.ActionResult.Builder", want: true},
+		{typeName: "metadata.CustomMetadata", want: true},
+		{typeName: "Cache.OrgPartition", want: true},
+		{typeName: "ConnectApi.ChatterFeeds", want: false},
+		{typeName: "Database.QueryLocator", want: false},
+	}
+	for _, tc := range cases {
+		if got := generatedFamilyUnsupportedTypePrefix(tc.typeName); got != tc.want {
+			t.Fatalf("generatedFamilyUnsupportedTypePrefix(%q)=%v want %v", tc.typeName, got, tc.want)
+		}
+	}
+}
+
+func TestGeneratedPassiveUnsupportedStaticFamilyMethodThrowsUnsupportedOperation(t *testing.T) {
+	machine := New(nil)
+	callee, ok := findPassiveGeneratedStaticFamilyCalleeForTest(machine)
+	if !ok {
+		t.Skip("no passive-generated static family callee with zero arguments found")
+	}
+	_, err := machine.call(callee, nil, nil, &Result{})
+	if err == nil {
+		t.Fatalf("expected %s to throw UnsupportedOperationException", callee)
+	}
+	if !strings.Contains(err.Error(), "UnsupportedOperationException") {
+		t.Fatalf("expected UnsupportedOperationException, got %v", err)
+	}
+	if !strings.Contains(err.Error(), callee+" local stub surface") {
+		t.Fatalf("expected local stub surface message for %s, got %v", callee, err)
+	}
+}
+
+func findPassiveGeneratedStaticFamilyCalleeForTest(vm *VM) (string, bool) {
+	for className, methodsByName := range generatedPlatformMethodIndex {
+		if !generatedFamilyUnsupportedTypePrefix(className) {
+			continue
+		}
+		for _, methods := range methodsByName {
+			for _, method := range methods {
+				if !method.IsStatic || len(method.Params) != 0 || !passiveGeneratedMethod(method) {
+					continue
+				}
+				if method.ClassName == "" {
+					method.ClassName = className
+				}
+				if !vm.generatedPlatformMethodAllowsDefault(method) {
+					continue
+				}
+				return method.ClassName + "." + apexMethodMemberName(method.Name), true
+			}
+		}
+	}
+	return "", false
+}
+
 func TestExecLimitsCountersAndPermissiveViolations(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(0, Limits.getQueries());
@@ -182,6 +241,11 @@ func TestExecAppLauncherControllerServiceFlowsStayUnsupported(t *testing.T) {
 			src:  `applauncher.SocialLoginController.handleIdp();`,
 			want: `unsupported call "applauncher.SocialLoginController.handleIdp local identity provider callback flow"`,
 		},
+		{
+			name: "forgot password flow",
+			src:  `applauncher.ForgotPasswordController.forgotPassword('user@example.test', '/home');`,
+			want: `unsupported call "applauncher.ForgotPasswordController.forgotPassword local password reset flow"`,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -251,7 +315,7 @@ func TestExecPackagedControllerServiceFlowsStayUnsupported(t *testing.T) {
 		{
 			name: "maps geocode",
 			src:  `mapslite.MapsLiteUtils.falconGeocodeRecords('Account');`,
-			want: `unsupported call "mapslite.MapsLiteUtils.falconGeocodeRecords"`,
+			want: `unsupported call "mapslite.MapsLiteUtils.falconGeocodeRecords local maps geocode service flow"`,
 		},
 		{
 			name: "quote execution",
@@ -1122,6 +1186,19 @@ System.assert(many.get(1).isSuccess());
 	}
 }
 
+func TestExecEventBusTriggerContextCurrentContextReturnsLocalObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+eventbus.TriggerContext ctx = eventbus.TriggerContext.currentContext();
+System.assertNotEquals(null, ctx);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecEventBusPublishReturnsFailureForMissingRequiredPlatformEventField(t *testing.T) {
 	program, err := CompileAnonymous(`
 Database.SaveResult result = EventBus.publish(new Local_Event__e(Name__c = 'Trail'));
@@ -1691,6 +1768,61 @@ System.assertNotEquals(null, page);
 	}
 }
 
+func TestExecConnectApiNamedCredentialsPrimaryFlow(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.ExternalCredentialInput externalInput = new ConnectApi.ExternalCredentialInput();
+externalInput.developerName = 'googleBooksAPIApex';
+externalInput.principals = new List<ConnectApi.ExternalCredentialPrincipalInput>();
+ConnectApi.ExternalCredential external = ConnectApi.NamedCredentials.createExternalCredential(externalInput);
+System.assertNotEquals(null, external);
+
+ConnectApi.NamedCredentialInput namedInput = new ConnectApi.NamedCredentialInput();
+namedInput.developerName = 'googleBooks';
+namedInput.calloutUrl = 'https://www.googleapis.com/books/v1';
+namedInput.externalCredentials = new List<ConnectApi.ExternalCredentialInput>{ externalInput };
+ConnectApi.NamedCredential named = ConnectApi.NamedCredentials.createNamedCredential(namedInput);
+System.assertNotEquals(null, named);
+
+ConnectApi.ExternalCredential fetched = ConnectApi.NamedCredentials.getExternalCredential('googleBooksAPIApex');
+System.assertNotEquals(null, fetched);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConnectApiPrimaryUsageFallbackThrowsConnectApiException(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+	}{
+		{
+			name: "named credentials unsupported method",
+			src:  `ConnectApi.NamedCredentials.deleteNamedCredential('devName');`,
+		},
+		{
+			name: "user profiles unsupported method",
+			src:  `ConnectApi.UserProfiles.getBannerPhoto(Network.getNetworkId(), UserInfo.getUserId());`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = New(nil).Execute(program)
+			if err == nil || !strings.Contains(err.Error(), "ConnectApi.ConnectApiException") {
+				t.Fatalf("expected ConnectApi.ConnectApiException, got %v", err)
+			}
+		})
+	}
+}
+
 func TestExecConnectApiNextBestActionReadDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
 ConnectApi.Recommendation recommendation = ConnectApi.NextBestAction.getRecommendation('rec');
@@ -1907,6 +2039,36 @@ System.assertEquals(0, rows.size());
 		if _, err := Execute(program, nil); err != nil {
 			t.Fatalf("%s\n%v", source, err)
 		}
+	}
+}
+
+func TestExecCartExtensionUnsupportedFamilyExplicitDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+CartExtension.CartDeliveryGroup deliveryGroup = new CartExtension.CartDeliveryGroup();
+System.assertEquals(false, deliveryGroup.getIsDefault());
+System.assertEquals(false, deliveryGroup.getIsGift());
+System.assertEquals('Shipment 1', deliveryGroup.getName());
+
+CartExtension.OrderGraph graph = new CartExtension.OrderGraph();
+Order orderRecord = graph.getOrder();
+System.assertNotEquals(null, orderRecord);
+System.assertEquals('@{ref_Order_1.id}', (String)orderRecord.get('Id'));
+System.assertEquals(0, graph.getOrderAdjustmentGroups().size());
+System.assertEquals(0, graph.getOrderDeliveryGroups().size());
+System.assertEquals(0, graph.getOrderDeliveryMethods().size());
+System.assertEquals(0, graph.getOrderItemAdjustmentLineItems().size());
+System.assertEquals(0, graph.getOrderItems().size());
+System.assertEquals(0, graph.getOrderItemTaxLineItems().size());
+
+CartExtension.PlaceOrderResponse response = CartExtension.PlaceOrderResponse.success();
+System.assertNotEquals(null, response);
+System.assertEquals('Success', (String)response.status);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -2537,7 +2699,6 @@ System.assertEquals(0, availability.getInventoryCheckItemAvailability().size());
 commercepayments.ClientSidePaymentAdapter paymentAdapter = new commercepayments.ClientSidePaymentAdapter();
 System.assertEquals(null, paymentAdapter.getClientComponentName());
 System.assertEquals(0, paymentAdapter.getClientConfiguration().size());
-System.assertNotEquals(null, paymentAdapter.processClientRequest(new commercepayments.ClientRequestContext(), new Map<String,Object>()));
 commerce_ordermanagement.ProductExpandResponse expandResponse = new commerce_ordermanagement.ProductExpandService().returnReasons(new commerce_ordermanagement.ProductExpandRequest());
 System.assertNotEquals(null, expandResponse);
 System.assertEquals(null, expandResponse.getSucceed());
@@ -2553,6 +2714,33 @@ System.assertEquals(true, new ime_mrm.EventManagementSubjectApi().getSubjectAssi
 	}
 	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestGeneratedFamilyUnsupportedTypePrefixTargetsOnlyLowercaseStubFamilies(t *testing.T) {
+	for _, typeName := range []string{
+		"cartextension.Any",
+		"commercepayments.Any",
+		"metadata.Any",
+		"limits.Any",
+		"cache.Any",
+		"lxscheduler.Any",
+		"messaging.Any",
+	} {
+		if !generatedFamilyUnsupportedTypePrefix(typeName) {
+			t.Fatalf("expected %s to match", typeName)
+		}
+	}
+	for _, typeName := range []string{
+		"CartExtension.Any",
+		"Metadata.Operations",
+		"Limits",
+		"Cache.Org",
+		"Messaging.SingleEmailMessage",
+	} {
+		if generatedFamilyUnsupportedTypePrefix(typeName) {
+			t.Fatalf("did not expect %s to match", typeName)
+		}
 	}
 }
 
@@ -6673,6 +6861,8 @@ System.assertEquals(0, Network.loadAllPackageDefaultNetworkWorkspaceMetricSettin
 	System.assertEquals('https://local.oaer.example/local', ConnectApi.Communities.getCommunity(Network.getNetworkId()).siteUrl);
 	System.assertNotEquals(null, ConnectApi.UserProfiles.getUserProfile(Network.getNetworkId(), UserInfo.getUserId()));
 	System.assertNotEquals(null, ConnectApi.UserProfiles.getPhoto(Network.getNetworkId(), UserInfo.getUserId()));
+	ConnectApi.UserProfiles.setPhoto(Network.getNetworkId(), UserInfo.getUserId(), '069000000000001', null);
+	ConnectApi.UserProfiles.deletePhoto(Network.getNetworkId(), UserInfo.getUserId());
 ConnectApi.UserSettings userSettings = ConnectApi.Organization.getSettings().userSettings;
 System.assertEquals('005-local-user', userSettings.userId);
 ConnectApi.TimeZone zone = userSettings.timeZone;

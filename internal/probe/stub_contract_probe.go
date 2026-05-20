@@ -45,6 +45,22 @@ func isStubContractProbeID(id string) bool {
 	return strings.HasPrefix(id, "stub.")
 }
 
+func stubContractCompileShapeEquivalent(id string) bool {
+	spec, ok := stubContractProbeSpecByID(id)
+	if !ok {
+		return false
+	}
+	if !strings.EqualFold(spec.Kind, "method") {
+		return false
+	}
+	switch spec.Mode {
+	case capability.StubContractOrgDiff, capability.StubContractCompileShape:
+		return true
+	default:
+		return false
+	}
+}
+
 type apexCompileError struct {
 	Problem string
 }

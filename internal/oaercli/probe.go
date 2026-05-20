@@ -45,14 +45,17 @@ func runProbeSummarize(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 {
-		return fmt.Errorf("usage: oaer probe summarize <gap-report.json> [--json]")
+		return fmt.Errorf("usage: oaer probe summarize <gap-report.json> [--json] [--top-stub]")
 	}
 	reportPath := ""
 	asJSON := false
+	topStub := false
 	for _, arg := range args {
 		switch arg {
 		case "--json":
 			asJSON = true
+		case "--top-stub":
+			topStub = true
 		default:
 			if strings.HasPrefix(arg, "-") {
 				return fmt.Errorf("unknown flag %q", arg)
@@ -93,11 +96,47 @@ func runProbeSummarize(ctx context.Context, args []string, w io.Writer) error {
 	printMap("byGapType", summary.ByGapType)
 	printMap("byFamily", summary.ByFamily)
 	printMap("byDiffShape", summary.ByDiffShape)
+	if topStub {
+		fmt.Fprintf(w, "topStubSuperfamilies:\n")
+		for _, row := range probeTopCounts(summary.StubSuperfamilyCounts, 10) {
+			fmt.Fprintf(w, "  %s: %d\n", row.Name, row.Count)
+		}
+		fmt.Fprintf(w, "topDiffShapes:\n")
+		for _, row := range probeTopCounts(summary.ByDiffShape, 10) {
+			fmt.Fprintf(w, "  %s: %d\n", row.Name, row.Count)
+		}
+		if len(summary.TraceClassificationCounts) > 0 {
+			fmt.Fprintf(w, "traceClassificationCounts:\n")
+			for _, row := range probeTopCounts(summary.TraceClassificationCounts, len(summary.TraceClassificationCounts)) {
+				fmt.Fprintf(w, "  %s: %d\n", row.Name, row.Count)
+			}
+		}
+	}
 	fmt.Fprintf(w, "unsupportedIds: %d\n", len(summary.UnsupportedIDs))
 	for _, id := range summary.UnsupportedIDs {
 		fmt.Fprintf(w, "  - %s\n", id)
 	}
 	return nil
+}
+
+func probeTopCounts(counts map[string]int, limit int) []probe.SummaryCount {
+	if limit <= 0 {
+		return []probe.SummaryCount{}
+	}
+	rows := make([]probe.SummaryCount, 0, len(counts))
+	for name, count := range counts {
+		rows = append(rows, probe.SummaryCount{Name: name, Count: count})
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].Count != rows[j].Count {
+			return rows[i].Count > rows[j].Count
+		}
+		return rows[i].Name < rows[j].Name
+	})
+	if limit > len(rows) {
+		limit = len(rows)
+	}
+	return rows[:limit]
 }
 
 func runProbeOrg(ctx context.Context, args []string, w io.Writer) error {

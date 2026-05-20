@@ -2840,6 +2840,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 platformStaticCall:
 	callee = normalizeStaticCallCasing(callee)
+	if value, handled, err := vm.callConnectAPIPrimaryUsageStaticOutcome(callee, args); handled || err != nil {
+		return value, err
+	}
 	if value, handled, err := vm.callConnectAPITestFixtureStatic(callee, args); handled || err != nil {
 		return value, err
 	}
@@ -2877,6 +2880,12 @@ platformStaticCall:
 		if value, ok := vm.limitValue(strings.TrimPrefix(callee, "Limits.")); ok {
 			return value, nil
 		}
+	}
+	if strings.EqualFold(callee, "eventbus.TriggerContext.currentContext") {
+		if len(args) != 0 {
+			return Null, fmt.Errorf("eventbus.TriggerContext.currentContext expects 0 arguments")
+		}
+		return Object("eventbus.TriggerContext"), nil
 	}
 
 	switch callee {
@@ -4400,6 +4409,22 @@ platformStaticCall:
 		return Object("ConnectApi.FollowingPage"), nil
 	case "ConnectApi.Communities.getCommunity":
 		return vm.connectAPICommunity(args)
+	case "ConnectApi.NamedCredentials.getNamedCredentials":
+		return vm.connectAPINamedCredentialsGetNamedCredentials(args)
+	case "ConnectApi.NamedCredentials.createExternalCredential":
+		return vm.connectAPINamedCredentialsCreateExternalCredential(args)
+	case "ConnectApi.NamedCredentials.createNamedCredential":
+		return vm.connectAPINamedCredentialsCreateNamedCredential(args)
+	case "ConnectApi.NamedCredentials.getExternalCredential":
+		return vm.connectAPINamedCredentialsGetExternalCredential(args)
+	case "ConnectApi.UserProfiles.getUserProfile":
+		return vm.connectAPIUserProfile(args)
+	case "ConnectApi.UserProfiles.getPhoto":
+		return vm.connectAPIUserPhoto(args)
+	case "ConnectApi.UserProfiles.setPhoto":
+		return vm.connectAPIUserSetPhoto(args)
+	case "ConnectApi.UserProfiles.deletePhoto":
+		return vm.connectAPIUserDeletePhoto(args)
 	case "Metadata.Operations.enqueueDeployment":
 		return vm.metadataEnqueueDeployment(args, result)
 	case "Metadata.Operations.checkDeployStatus":
@@ -5531,6 +5556,18 @@ platformStaticCall:
 	default:
 		if strings.HasPrefix(callee, "Crypto.") {
 			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
+		}
+		if value, handled := vm.generatedUnsupportedFamilyExplicitStaticDefault(callee, args); handled {
+			return value, nil
+		}
+		if vm.generatedPassiveUnsupportedStaticCallee(callee, args) {
+			return Null, newExceptionError("UnsupportedOperationException", callee+" local stub surface")
+		}
+		if generatedFamilyUnsupportedStaticCallee(callee) {
+			if value, handled := vm.generatedUnsupportedFamilyExplicitStaticDefault(callee, args); handled {
+				return value, nil
+			}
+			return Null, newExceptionError("UnsupportedOperationException", callee+" local stub surface")
 		}
 		if value, handled := vm.generatedPlatformStaticDefault(callee, args); handled {
 			return value, nil
@@ -6824,6 +6861,92 @@ func (vm *VM) connectAPICommunity(args []Value) (Value, error) {
 	return community, nil
 }
 
+func (vm *VM) connectAPINamedCredentialsGetNamedCredentials(args []Value) (Value, error) {
+	if len(args) != 0 {
+		return Null, fmt.Errorf("ConnectApi.NamedCredentials.getNamedCredentials expects 0 arguments")
+	}
+	return Object("ConnectApi.NamedCredentialList"), nil
+}
+
+func (vm *VM) connectAPINamedCredentialsCreateExternalCredential(args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("ConnectApi.NamedCredentials.createExternalCredential expects 1 argument")
+	}
+	if args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "ConnectApi.ExternalCredentialInput") {
+		return Null, fmt.Errorf("ConnectApi.NamedCredentials.createExternalCredential expects ConnectApi.ExternalCredentialInput")
+	}
+	external := Object("ConnectApi.ExternalCredential")
+	if developerName, ok := objectFieldFold(args[0], "developerName"); ok && developerName.Kind == ValueString {
+		external.Fields["developerName"] = String(developerName.Text)
+	}
+	if principals, ok := objectFieldFold(args[0], "principals"); ok {
+		external.Fields["principals"] = cloneValue(principals)
+	}
+	return external, nil
+}
+
+func (vm *VM) connectAPINamedCredentialsCreateNamedCredential(args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("ConnectApi.NamedCredentials.createNamedCredential expects 1 argument")
+	}
+	if args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "ConnectApi.NamedCredentialInput") {
+		return Null, fmt.Errorf("ConnectApi.NamedCredentials.createNamedCredential expects ConnectApi.NamedCredentialInput")
+	}
+	credential := Object("ConnectApi.NamedCredential")
+	if developerName, ok := objectFieldFold(args[0], "developerName"); ok && developerName.Kind == ValueString {
+		credential.Fields["developerName"] = String(developerName.Text)
+	}
+	if externalCredentials, ok := objectFieldFold(args[0], "externalCredentials"); ok {
+		credential.Fields["externalCredentials"] = cloneValue(externalCredentials)
+	}
+	if calloutURL, ok := objectFieldFold(args[0], "calloutUrl"); ok && calloutURL.Kind == ValueString {
+		credential.Fields["calloutUrl"] = String(calloutURL.Text)
+	}
+	return credential, nil
+}
+
+func (vm *VM) connectAPINamedCredentialsGetExternalCredential(args []Value) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, fmt.Errorf("ConnectApi.NamedCredentials.getExternalCredential expects 1 String argument")
+	}
+	external := Object("ConnectApi.ExternalCredential")
+	external.Fields["developerName"] = String(args[0].Text)
+	return external, nil
+}
+
+func (vm *VM) connectAPIUserProfile(args []Value) (Value, error) {
+	if len(args) != 2 {
+		return Null, fmt.Errorf("ConnectApi.UserProfiles.getUserProfile expects 2 arguments")
+	}
+	profile := Object("ConnectApi.UserProfile")
+	profile.Fields["id"] = String(scalarText(args[1]))
+	profile.Fields["communityId"] = String(scalarText(args[0]))
+	return profile, nil
+}
+
+func (vm *VM) connectAPIUserPhoto(args []Value) (Value, error) {
+	if len(args) != 2 {
+		return Null, fmt.Errorf("ConnectApi.UserProfiles.getPhoto expects 2 arguments")
+	}
+	photo := Object("ConnectApi.Photo")
+	photo.Fields["id"] = String(scalarText(args[1]))
+	return photo, nil
+}
+
+func (vm *VM) connectAPIUserSetPhoto(args []Value) (Value, error) {
+	if len(args) != 4 {
+		return Null, fmt.Errorf("ConnectApi.UserProfiles.setPhoto expects 4 arguments")
+	}
+	return Null, nil
+}
+
+func (vm *VM) connectAPIUserDeletePhoto(args []Value) (Value, error) {
+	if len(args) != 2 {
+		return Null, fmt.Errorf("ConnectApi.UserProfiles.deletePhoto expects 2 arguments")
+	}
+	return Null, nil
+}
+
 func scalarText(value Value) string {
 	switch value.Kind {
 	case ValueString:
@@ -6834,6 +6957,18 @@ func scalarText(value Value) string {
 		}
 	}
 	return ""
+}
+
+func objectFieldFold(value Value, key string) (Value, bool) {
+	if value.Kind != ValueObject || value.Fields == nil {
+		return Null, false
+	}
+	for name, field := range value.Fields {
+		if strings.EqualFold(name, key) {
+			return field, true
+		}
+	}
+	return Null, false
 }
 
 func (vm *VM) customDataCachedValue(key string) (Value, bool) {
@@ -30713,12 +30848,40 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	if commerceClassName == "" && receiver.Kind == ValueObject {
 		commerceClassName = receiver.Type
 	}
+	if strings.EqualFold(commerceClassName, "commercepayments.ClientSidePaymentAdapter") &&
+		strings.EqualFold(apexMethodMemberName(method.Name), "processClientRequest") {
+		return Null, newExceptionError("UnsupportedOperationException", method.Name+" local stub surface")
+	}
 	if strings.EqualFold(commerceClassName, "CartExtension.CheckoutPlaceOrder") &&
 		commerceLocalHarnessRuntimeMethod(commerceClassName, apexMethodMemberName(method.Name)) {
 		if method.ClassName == "" {
 			method.ClassName = commerceClassName
 		}
 		return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), nil
+	}
+	if value, handled := vm.generatedUnsupportedFamilyExplicitMethodDefault(method, receiver, args); handled {
+		return value, nil
+	}
+	if err, handled := vm.generatedUnsupportedFamilyExplicitMethodError(method, receiver, args); handled {
+		return Null, err
+	}
+	if methodHasModifier(method.Modifiers, "passive-generated") {
+		className := method.ClassName
+		if className == "" {
+			className = receiver.Type
+		}
+		if connectAPIPrimaryUsageClass(className) && !connectAPIPrimaryUsageAllowedMethod(className, apexMethodMemberName(method.Name)) {
+			return Null, newExceptionError("ConnectApi.ConnectApiException", method.Name+" is not supported in local tests")
+		}
+		if generatedFamilyUnsupportedTypePrefix(className) {
+			if value, handled := vm.generatedUnsupportedFamilyExplicitMethodDefault(method, receiver, args); handled {
+				return value, nil
+			}
+			if err, handled := vm.generatedUnsupportedFamilyExplicitMethodError(method, receiver, args); handled {
+				return Null, err
+			}
+			return Null, newExceptionError("UnsupportedOperationException", method.Name+" local stub surface")
+		}
 	}
 	if vm.generatedOptionalWrapperType(method.ClassName) {
 		if value, handled := vm.generatedOptionalWrapperStaticDefault(method.ClassName, apexMethodMemberName(method.Name), args); handled {
@@ -31023,6 +31186,151 @@ func passiveGeneratedMethod(method Method) bool {
 		len(method.Program.Instructions) == 0
 }
 
+func generatedFamilyUnsupportedStaticCallee(callee string) bool {
+	className, _, ok := strings.Cut(callee, ".")
+	if !ok {
+		return false
+	}
+	return generatedFamilyUnsupportedTypePrefix(className)
+}
+
+func generatedFamilyUnsupportedTypePrefix(typeName string) bool {
+	trimmed := strings.ToLower(strings.TrimSpace(typeName))
+	if trimmed == "" {
+		return false
+	}
+	for _, family := range []string{
+		"cartextension",
+		"commercepayments",
+		"metadata",
+		"limits",
+		"cache",
+		"lxscheduler",
+		"messaging",
+	} {
+		if trimmed == family || strings.HasPrefix(trimmed, family+".") {
+			return true
+		}
+	}
+	return false
+}
+
+func generatedUnsupportedFamilyKey(className, methodName string) string {
+	return strings.ToLower(strings.TrimSpace(className) + "." + strings.TrimSpace(methodName))
+}
+
+func (vm *VM) generatedUnsupportedFamilyExplicitMethodDefault(method Method, receiver Value, args []Value) (Value, bool) {
+	className := method.ClassName
+	if className == "" && receiver.Kind == ValueObject {
+		className = receiver.Type
+	}
+	key := generatedUnsupportedFamilyKey(className, apexMethodMemberName(method.Name))
+	switch key {
+	case "cartextension.cartdeliverygroup.getisdefault":
+		return Bool(false), true
+	case "cartextension.cartdeliverygroup.getisgift":
+		return Bool(false), true
+	case "cartextension.cartdeliverygroup.getname":
+		return String("Shipment 1"), true
+	case "cartextension.ordergraph.getorder":
+		order := Object("Order")
+		order.Fields["Id"] = String("@{ref_Order_1.id}")
+		return order, true
+	case "cartextension.ordergraph.getorderadjustmentgroups",
+		"cartextension.ordergraph.getorderdeliverygroups",
+		"cartextension.ordergraph.getorderdeliverymethods",
+		"cartextension.ordergraph.getorderitemadjustmentlineitems",
+		"cartextension.ordergraph.getorderitems",
+		"cartextension.ordergraph.getorderitemtaxlineitems":
+		return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), true
+	case "cartextension.placeorderresponse.success":
+		value := Object("CartExtension.PlaceOrderResponse")
+		value.Fields["delegate"] = Null
+		value.Fields["status"] = String("Success")
+		return value, true
+	default:
+		return Null, false
+	}
+}
+
+func (vm *VM) generatedUnsupportedFamilyExplicitMethodError(method Method, receiver Value, args []Value) (error, bool) {
+	className := method.ClassName
+	if className == "" && receiver.Kind == ValueObject {
+		className = receiver.Type
+	}
+	key := generatedUnsupportedFamilyKey(className, apexMethodMemberName(method.Name))
+	switch key {
+	case "cartextension.checkoutcreateorder.createorder",
+		"lxscheduler.schedulerresources.getappointmentcandidates",
+		"lxscheduler.schedulerresources.getappointmentslots",
+		"commercepayments.authorizationresponse.setpaymentmethodtokenizationresponse",
+		"commercepayments.authorizationresponse.setretrycategory",
+		"commercepayments.authorizationresponse.setretrydecision",
+		"commercepayments.authorizationreversalresponse.setretrycategory",
+		"commercepayments.authorizationreversalresponse.setretrydecision",
+		"commercepayments.bankpaymentmethodresponse.setaccountholdertype",
+		"commercepayments.bankpaymentmethodresponse.setaccounttype",
+		"commercepayments.bankpaymentmethodresponse.setbanktype",
+		"commercepayments.bankpaymentmethodresponse.setstandardentryclasscode",
+		"commercepayments.capturenotification.setretrycategory",
+		"commercepayments.capturenotification.setretrydecision",
+		"commercepayments.captureresponse.setretrycategory",
+		"commercepayments.captureresponse.setretrydecision",
+		"commercepayments.cardpaymentmethodresponse.setcardcategory",
+		"commercepayments.cardpaymentmethodresponse.setcardtypecategory",
+		"commercepayments.notificationclient.record",
+		"commercepayments.paymentmethoddetailsresponse.setalternativepaymentmethod",
+		"commercepayments.paymentmethoddetailsresponse.setcardpaymentmethod",
+		"commercepayments.paymentmethodtokenizationresponse.setretrycategory",
+		"commercepayments.paymentmethodtokenizationresponse.setretrydecision",
+		"commercepayments.postauthorizationresponse.setpaymentmethoddetails",
+		"commercepayments.postauthorizationresponse.setpaymentmethodtokenizationresponse",
+		"commercepayments.postauthorizationresponse.setretrycategory",
+		"commercepayments.postauthorizationresponse.setretrydecision",
+		"commercepayments.referencedrefundnotification.setretrycategory",
+		"commercepayments.referencedrefundnotification.setretrydecision",
+		"commercepayments.referencedrefundresponse.setretrycategory",
+		"commercepayments.referencedrefundresponse.setretrydecision",
+		"commercepayments.saleresponse.setpaymentmethodtokenizationresponse",
+		"commercepayments.saleresponse.setretrycategory",
+		"commercepayments.saleresponse.setretrydecision":
+		return newExceptionError("System.NullPointerException", method.Name+" requires non-null arguments"), true
+	default:
+		return nil, false
+	}
+}
+
+func (vm *VM) generatedUnsupportedFamilyExplicitStaticDefault(callee string, args []Value) (Value, bool) {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok {
+		return Null, false
+	}
+	switch generatedUnsupportedFamilyKey(className, methodName) {
+	case "cartextension.placeorderresponse.success":
+		value := Object("CartExtension.PlaceOrderResponse")
+		value.Fields["delegate"] = Null
+		value.Fields["status"] = String("Success")
+		return value, true
+	default:
+		return Null, false
+	}
+}
+
+func (vm *VM) generatedPassiveUnsupportedStaticCallee(callee string, args []Value) bool {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok {
+		return false
+	}
+	if !generatedFamilyUnsupportedTypePrefix(className) {
+		return false
+	}
+	method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, true)
+	if !ok {
+		return false
+	}
+	return passiveGeneratedMethod(method)
+}
+
 func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value, receiver Value) Value {
 	returnType := vm.resolveTypeNameInClass(method.ClassName, method.ReturnType)
 	if returnType == "" || strings.EqualFold(returnType, "void") {
@@ -31163,6 +31471,22 @@ func (vm *VM) newGeneratedPlatformObjectSeen(generated generatedPlatformType, se
 	for _, name := range generated.FieldOrder {
 		field := generated.Fields[name]
 		object.Fields[name] = vm.generatedPlatformDefaultValueSeen(field.Type, field.InitialValue, seen)
+	}
+	if strings.EqualFold(generated.Name, "CartExtension.CartDeliveryGroup") {
+		object.Fields["isDefault"] = Bool(false)
+		object.Fields["isGift"] = Bool(false)
+		object.Fields["name"] = String("Shipment 1")
+	}
+	if strings.EqualFold(generated.Name, "CartExtension.OrderGraph") {
+		order := Object("Order")
+		order.Fields["Id"] = String("@{ref_Order_1.id}")
+		object.Fields["order"] = order
+		object.Fields["orderAdjustmentGroups"] = typedList("List<CartExtension.OrderAdjustmentGroup>")
+		object.Fields["orderDeliveryGroups"] = typedList("List<CartExtension.OrderDeliveryGroup>")
+		object.Fields["orderDeliveryMethods"] = typedList("List<CartExtension.OrderDeliveryMethod>")
+		object.Fields["orderItemAdjustmentLineItems"] = typedList("List<CartExtension.OrderItemAdjustmentLineItem>")
+		object.Fields["orderItems"] = typedList("List<CartExtension.OrderItem>")
+		object.Fields["orderItemTaxLineItems"] = typedList("List<CartExtension.OrderItemTaxLineItem>")
 	}
 	delete(seen, key)
 	return object
@@ -31677,6 +32001,19 @@ func (vm *VM) callAppLauncherControllerStatic(callee string, args []Value) (Valu
 		case "handleidp":
 			return Null, true, unsupportedCallError(callee + " local identity provider callback flow")
 		}
+	case "applauncher.forgotpasswordcontroller":
+		switch name {
+		case "setexperienceid":
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("%s expects 1 argument", callee)
+			}
+			return String(""), true, nil
+		case "forgotpassword":
+			if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+				return Null, true, fmt.Errorf("%s expects username and redirect URL Strings", callee)
+			}
+			return Null, true, unsupportedCallError(callee + " local password reset flow")
+		}
 	}
 	return Null, false, nil
 }
@@ -31756,6 +32093,45 @@ func (vm *VM) callConnectAPIReadOnlyStaticDefault(callee string, args []Value) (
 		return Null, false
 	}
 	return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
+}
+
+func (vm *VM) callConnectAPIPrimaryUsageStaticOutcome(callee string, args []Value) (Value, bool, error) {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok || !connectAPIPrimaryUsageClass(className) {
+		return Null, false, nil
+	}
+	if connectAPIPrimaryUsageAllowedMethod(className, methodName) {
+		return Null, false, nil
+	}
+	return Null, true, newExceptionError("ConnectApi.ConnectApiException", callee+" is not supported in local tests")
+}
+
+func connectAPIPrimaryUsageClass(className string) bool {
+	switch strings.ToLower(strings.TrimSpace(className)) {
+	case "connectapi.namedcredentials", "connectapi.userprofiles":
+		return true
+	default:
+		return false
+	}
+}
+
+func connectAPIPrimaryUsageAllowedMethod(className, methodName string) bool {
+	classLower := strings.ToLower(strings.TrimSpace(className))
+	methodLower := strings.ToLower(strings.TrimSpace(methodName))
+	switch classLower {
+	case "connectapi.namedcredentials":
+		return methodLower == "getnamedcredentials" ||
+			methodLower == "createexternalcredential" ||
+			methodLower == "createnamedcredential" ||
+			methodLower == "getexternalcredential"
+	case "connectapi.userprofiles":
+		return methodLower == "getuserprofile" ||
+			methodLower == "getphoto" ||
+			methodLower == "setphoto" ||
+			methodLower == "deletephoto"
+	default:
+		return false
+	}
 }
 
 func connectAPIReadOnlyHarnessType(typeName string) bool {
@@ -32518,6 +32894,10 @@ func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Val
 		if !vm.generatedPlatformMethodAllowsDefault(method) {
 			continue
 		}
+		if strings.EqualFold(method.ClassName, "commercepayments.ClientSidePaymentAdapter") &&
+			strings.EqualFold(apexMethodMemberName(method.Name), "processClientRequest") {
+			continue
+		}
 		return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), true
 	}
 	return Null, false
@@ -32711,6 +33091,12 @@ func (vm *VM) callPackagedControllerStatic(callee string, args []Value) (Value, 
 	if packagedControllerUnsupportedMethod(className, methodName) {
 		return Null, true, unsupportedCallError(callee)
 	}
+	if strings.EqualFold(className, "mapslite.MapsLiteUtils") && strings.EqualFold(methodName, "falconGeocodeRecords") {
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, true, fmt.Errorf("%s expects 1 String argument", callee)
+		}
+		return Null, true, unsupportedCallError(callee + " local maps geocode service flow")
+	}
 	if !packagedControllerDefaultMethod(className, methodName) {
 		return Null, false, nil
 	}
@@ -32780,8 +33166,6 @@ func packagedControllerUnsupportedMethod(typeName, methodName string) bool {
 		return strings.HasPrefix(name, "forget") || strings.HasPrefix(name, "mask") || strings.HasPrefix(name, "performunarchive")
 	case "applauncher.ChangePasswordController":
 		return strings.HasPrefix(name, "changepass")
-	case "applauncher.ForgotPasswordController":
-		return name == "forgotpassword"
 	case "setup_service_livemessage.MessagingChannelAppleDomainController":
 		return name == "uploaddomainverificationcertificate"
 	case "publicsectrsltn.AssessmentResponses":
@@ -32791,8 +33175,6 @@ func packagedControllerUnsupportedMethod(typeName, methodName string) bool {
 		return name == "execute" || name == "executeblacktabrequest"
 	case "omnichannel.RouteWorkApexController":
 		return name == "routework"
-	case "mapslite.MapsLiteUtils":
-		return name == "falcongeocoderecords"
 	case "embeddedMessaging.EmbeddedMessagingSessionHandler":
 		return name == "handlerequestwithsfdcsession"
 	default:
