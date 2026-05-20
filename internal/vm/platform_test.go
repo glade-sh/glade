@@ -5536,6 +5536,55 @@ System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'batch finish'].size
 	}
 }
 
+func TestExecStopTestDrainsQueueableEnqueuedByBatch(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<SObject>{ new Account(Name = 'scope') };`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`System.enqueueJob(new QueueWorker());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queueProgram, err := CompileAnonymous(`insert new Account(Name = 'queueable from batch');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+Database.executeBatch(new BatchWorker(), 200);
+Test.stopTest();
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'queueable from batch'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "BatchWorker",
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "QueueWorker",
+		Interfaces: []string{"Queueable"},
+		Methods: map[string]Method{
+			"execute": {Name: "QueueWorker.execute", ClassName: "QueueWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: queueProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecAsyncJobsDoNotMutateCallerInstances(t *testing.T) {
 	batchStart, err := CompileAnonymous(`return new List<SObject>{ new Account(Name = 'scope') };`)
 	if err != nil {

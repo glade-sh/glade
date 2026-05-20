@@ -1450,7 +1450,14 @@ func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (ex
 				continue
 			}
 			previous, existed := vm.Globals[catchClause.Name]
-			vm.Globals[catchClause.Name] = out.thrown
+			previousType, typeExisted := vm.VarTypes[catchClause.Name]
+			caught := out.thrown
+			catchType := vm.catchVariableType(catchClause)
+			if catchType != "" {
+				caught.Static = catchType
+				vm.VarTypes[catchClause.Name] = catchType
+			}
+			vm.Globals[catchClause.Name] = caught
 			vm.activeExceptions = append(vm.activeExceptions, activeException{value: out.thrown, stack: out.thrownStack})
 			out, err = vm.executeProgram(ir.Program{Instructions: catchClause.Body, Source: source}, result)
 			vm.activeExceptions = vm.activeExceptions[:len(vm.activeExceptions)-1]
@@ -1458,6 +1465,11 @@ func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (ex
 				vm.Globals[catchClause.Name] = previous
 			} else {
 				delete(vm.Globals, catchClause.Name)
+			}
+			if typeExisted {
+				vm.VarTypes[catchClause.Name] = previousType
+			} else {
+				delete(vm.VarTypes, catchClause.Name)
 			}
 			if err != nil {
 				return execOutcome{}, err
@@ -1475,6 +1487,13 @@ func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (ex
 		}
 	}
 	return out, nil
+}
+
+func (vm *VM) catchVariableType(catchClause ir.CatchClause) string {
+	if len(catchClause.Types) != 1 {
+		return ""
+	}
+	return vm.resolveTypeNameInClass(vm.currentClass, catchClause.Types[0])
 }
 
 func (vm *VM) executeSwitch(source string, inst ir.Instruction, result *Result) (execOutcome, error) {
@@ -9723,6 +9742,9 @@ func asyncOptionsInt(options Value, fieldName string) (int, bool) {
 }
 
 func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
+	if vm.currentAsyncKind == "BatchApex" {
+		return true
+	}
 	if vm.currentAsyncKind != "Queueable" {
 		return false
 	}

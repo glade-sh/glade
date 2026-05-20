@@ -1629,6 +1629,44 @@ System.assertEquals('set', QueryFactory.selectFields(new Set<String>()));
 	}
 }
 
+func TestExecCatchVariableStaticTypeDrivesOverloadResolution(t *testing.T) {
+	exceptionProgram, err := CompileAnonymous(`return 'Exception';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dmlProgram, err := CompileAnonymous(`return 'DmlException';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+try {
+    throw new DmlException('blocked');
+} catch (Exception e) {
+    System.assertEquals('Exception', CatchProbe.describe(e));
+}
+try {
+    throw new DmlException('blocked');
+} catch (DmlException e) {
+    System.assertEquals('DmlException', CatchProbe.describe(e));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, method := range []Method{
+		{Name: "CatchProbe.describe", ReturnType: "String", Params: []Param{{Name: "value", Type: "Exception"}}, Program: exceptionProgram},
+		{Name: "CatchProbe.describe", ReturnType: "String", Params: []Param{{Name: "value", Type: "DmlException"}}, Program: dmlProgram},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecOverloadResolutionAllowsSetForIterableParameterByElementValues(t *testing.T) {
 	iterableProgram, err := CompileAnonymous(`return 'iterable';`)
 	if err != nil {
