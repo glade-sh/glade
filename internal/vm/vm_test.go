@@ -3665,6 +3665,40 @@ System.assert(counts.containsKey('a'));
 	}
 }
 
+func TestExecMethodParameterMapPropagatesNestedCollectionAliases(t *testing.T) {
+	methodProgram, err := CompileAnonymous(`
+Set<String> values = (Set<String>)context.get('values');
+values.add('applied');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Set<String> values = new Set<String>();
+Map<String, Object> context = new Map<String, Object>{'values' => values};
+Util.apply(context);
+System.assertEquals(1, values.size());
+System.assertEquals(1, ((Set<String>)context.get('values')).size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterMethod(Method{
+		Name:       "Util.apply",
+		ClassName:  "Util",
+		IsStatic:   true,
+		ReturnType: "void",
+		Params:     []Param{{Name: "context", Type: "Map<String,Object>"}},
+		Program:    methodProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecForBreakContinueDoWhileSwitchAndEnhancedFor(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Integer> xs = new List<Integer>{1, 2, 3, 4};
