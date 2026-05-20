@@ -43,6 +43,34 @@ project:
 	}
 }
 
+func TestParseYAMLSubsetAllowsArtifactNamedSourceDependency(t *testing.T) {
+	cfg, err := parseYAMLSubset(`
+project:
+  managedPackageDependencies: ["znu:artifact"]
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dep := cfg.Project.ManagedPackageDependencies[0]
+	if dep.SourceRoot != "artifact" || dep.ArtifactPath != "" {
+		t.Fatalf("dependency = %#v", dep)
+	}
+}
+
+func TestParseYAMLSubsetAllowsArtifactNamedSourceDependencyWithVersion(t *testing.T) {
+	cfg, err := parseYAMLSubset(`
+project:
+  managedPackageDependencies: ["znu:artifact:1.0"]
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dep := cfg.Project.ManagedPackageDependencies[0]
+	if dep.SourceRoot != "artifact" || dep.ArtifactPath != "" || dep.Version != "1.0" {
+		t.Fatalf("dependency = %#v", dep)
+	}
+}
+
 func TestParseYAMLSubsetRejectsDuplicateManagedPackageDependencyNamespace(t *testing.T) {
 	if _, err := parseYAMLSubset(`
 project:
@@ -97,5 +125,28 @@ project:
 	}
 	if dep.SourceRoot != "" {
 		t.Fatalf("source root = %q, want empty", dep.SourceRoot)
+	}
+}
+
+func TestLoadFileParsesManagedPackageArtifactVersion(t *testing.T) {
+	root := t.TempDir()
+	cfgPath := filepath.Join(root, "nested", "oaer.yml")
+	if err := os.MkdirAll(filepath.Dir(cfgPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(cfgPath, []byte(`
+project:
+  managedPackageDependencies: ["znu:artifact:../packages/znu.oaer-package.json:2.0"]
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadFile(cfgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dep := cfg.Project.ManagedPackageDependencies[0]
+	want := filepath.Clean(filepath.Join(root, "packages", "znu.oaer-package.json"))
+	if dep.ArtifactPath != want || dep.Version != "2.0" {
+		t.Fatalf("dependency = %#v", dep)
 	}
 }

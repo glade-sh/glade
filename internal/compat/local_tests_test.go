@@ -453,7 +453,7 @@ func TestCheckLocalTestCorpusFixture(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CheckLocalTestCorpus error = %v, report = %#v", err, report)
 	}
-	if !report.Ready || len(report.Projects) != 13 {
+	if !report.Ready || len(report.Projects) != 14 {
 		t.Fatalf("report = %#v", report)
 	}
 }

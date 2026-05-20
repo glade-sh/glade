@@ -161,22 +161,29 @@ func parseManagedPackageDependencies(values []string) ([]ManagedPackageDependenc
 	seen := make(map[string]bool)
 	deps := make([]ManagedPackageDependency, 0, len(values))
 	for _, value := range values {
-		parts := strings.SplitN(strings.TrimSpace(value), ":", 3)
-		if len(parts) < 2 {
+		namespace, spec, ok := strings.Cut(strings.TrimSpace(value), ":")
+		if !ok {
 			return nil, fmt.Errorf("invalid managed package dependency %q: expected namespace:path[:version]", value)
 		}
-		namespace := strings.TrimSpace(parts[0])
-		sourceRoot := strings.TrimSpace(parts[1])
+		namespace = strings.TrimSpace(namespace)
+		spec = strings.TrimSpace(spec)
+		sourceRoot := spec
 		artifactPath := ""
 		version := ""
-		if sourceRoot == "artifact" {
-			if len(parts) != 3 || strings.TrimSpace(parts[2]) == "" {
-				return nil, fmt.Errorf("invalid managed package dependency %q: expected namespace:artifact:path", value)
+		if strings.HasPrefix(spec, "artifact:") && managedPackageArtifactSpecLooksLikePath(strings.TrimSpace(strings.TrimPrefix(spec, "artifact:"))) {
+			artifactSpec := strings.TrimSpace(strings.TrimPrefix(spec, "artifact:"))
+			if artifactSpec == "" {
+				return nil, fmt.Errorf("invalid managed package dependency %q: expected namespace:artifact:path[:version]", value)
 			}
-			artifactPath = strings.TrimSpace(parts[2])
+			artifactPath = artifactSpec
+			if path, requiredVersion, ok := strings.Cut(artifactSpec, ":"); ok {
+				artifactPath = strings.TrimSpace(path)
+				version = strings.TrimSpace(requiredVersion)
+			}
 			sourceRoot = ""
-		} else if len(parts) == 3 {
-			version = strings.TrimSpace(parts[2])
+		} else if path, requiredVersion, ok := strings.Cut(spec, ":"); ok {
+			sourceRoot = strings.TrimSpace(path)
+			version = strings.TrimSpace(requiredVersion)
 		}
 		if namespace == "" || (sourceRoot == "" && artifactPath == "") {
 			return nil, fmt.Errorf("invalid managed package dependency %q: namespace and path are required", value)
@@ -194,6 +201,13 @@ func parseManagedPackageDependencies(values []string) ([]ManagedPackageDependenc
 		})
 	}
 	return deps, nil
+}
+
+func managedPackageArtifactSpecLooksLikePath(spec string) bool {
+	if spec == "" {
+		return true
+	}
+	return strings.ContainsAny(spec, `/\`) || strings.HasSuffix(strings.ToLower(spec), ".json")
 }
 
 func resolveManagedPackageDependencyPaths(cfg *Config, baseDir string) {
