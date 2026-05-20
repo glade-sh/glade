@@ -200,6 +200,29 @@ func TestExecPatternQuoteRejectsBadArgumentShape(t *testing.T) {
 	}
 }
 
+func TestExecPatternMatchesArgumentErrorsAreCatchable(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+	Pattern.matches(null, 'x');
+	System.assert(false, 'expected null regex to throw');
+} catch (System.NullPointerException e) {
+	System.assert(e.getMessage().contains('Pattern.matches expects String argument'));
+}
+try {
+	Pattern.matches('[0-9]+', null);
+	System.assert(false, 'expected null input to throw');
+} catch (System.NullPointerException e) {
+	System.assert(e.getMessage().contains('Pattern.matches expects String argument'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPatternRejectsJavaOnlyRegex(t *testing.T) {
 	tests := []struct {
 		name    string

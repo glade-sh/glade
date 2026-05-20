@@ -1679,11 +1679,11 @@ func patternMatches(args []Value) (Value, error) {
 	}
 	pattern, err := stringArg("Pattern.matches", args[:1])
 	if err != nil {
-		return Null, fmt.Errorf("Pattern.matches expects regex and input Strings")
+		return Null, err
 	}
 	input, err := stringArg("Pattern.matches", args[1:])
 	if err != nil {
-		return Null, fmt.Errorf("Pattern.matches expects regex and input Strings")
+		return Null, err
 	}
 	source, negativeLookaheads, err := compilePatternMatchesSource(pattern)
 	if err != nil {

@@ -16851,6 +16851,7 @@ func daysInMonth(year int, month time.Month) int {
 }
 
 func parseDatetimeText(text string) (time.Time, error) {
+	text = normalizeDatetimeShortTimezoneOffset(strings.TrimSpace(text))
 	for _, layout := range []string{
 		time.RFC3339Nano,
 		"2006-01-02 15:04:05.999999999Z07:00",
@@ -16871,6 +16872,29 @@ func parseDatetimeText(text string) (time.Time, error) {
 		}
 	}
 	return time.Time{}, fmt.Errorf("unsupported Datetime value %q", text)
+}
+
+var datetimeShortTimezoneOffsetPattern = regexp.MustCompile(`^(.+[T ][0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]+)?)([+-])([0-9]{1,2})$`)
+var datetimeUnsignedShortTimezoneOffsetPattern = regexp.MustCompile(`^(.+[T ][0-9]{2}:[0-9]{2}:[0-9]{2})([0-9]{1,2})$`)
+
+func normalizeDatetimeShortTimezoneOffset(text string) string {
+	matches := datetimeShortTimezoneOffsetPattern.FindStringSubmatch(text)
+	if matches != nil {
+		hour, err := strconv.Atoi(matches[3])
+		if err != nil {
+			return text
+		}
+		return fmt.Sprintf("%s%s%02d:00", matches[1], matches[2], hour)
+	}
+	matches = datetimeUnsignedShortTimezoneOffsetPattern.FindStringSubmatch(text)
+	if matches == nil {
+		return text
+	}
+	hour, err := strconv.Atoi(matches[2])
+	if err != nil || hour > 14 {
+		return text
+	}
+	return fmt.Sprintf("%s+%02d:00", matches[1], hour)
 }
 
 func parseDatetimeTextAllowDateOnly(text string) (time.Time, error) {
