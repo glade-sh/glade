@@ -29,6 +29,9 @@ func TestParseToolingSnippetOutputSuccessShape(t *testing.T) {
 	if result.Fixture == nil || result.Fixture.CommandKind != "tooling-execute-anonymous" || !result.Fixture.Success {
 		t.Fatalf("fixture = %#v", result.Fixture)
 	}
+	if result.RawLogs != "USER_DEBUG|[1]|DEBUG|ok" {
+		t.Fatalf("raw logs = %q", result.RawLogs)
+	}
 }
 
 func TestParseToolingSnippetOutputCompileErrorShape(t *testing.T) {

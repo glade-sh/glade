@@ -8,7 +8,7 @@ private class VisualforceControllerContractTest {
 
     Test.setCurrentPage(Page.AccountView);
     ApexPages.currentPage().getParameters().put('id', '001000000000001AAA');
-    System.assertEquals('/apex/AccountView', ApexPages.currentPage().getUrl());
+    System.assertEquals('/apex/AccountView?id=001000000000001AAA', ApexPages.currentPage().getUrl());
     System.assertEquals('001000000000001AAA', ApexPages.currentPage().getParameters().get('id'));
   }
 
