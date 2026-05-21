@@ -50,6 +50,11 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
   <templateType>custom</templateType>
   <available>true</available>
 </EmailTemplate>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/documents/GLExport.documentFolder-meta.xml"), `<DocumentFolder>
+  <accessType>Public</accessType>
+  <name>GL Export</name>
+  <publicFolderAccess>ReadWrite</publicFolderAccess>
+</DocumentFolder>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/namedCredentials/Billing.namedCredential"), `<NamedCredential><endpoint>https://billing.example.test</endpoint><protocol>NoAuthentication</protocol></NamedCredential>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/remoteSiteSettings/Maps.remoteSite"), `<RemoteSiteSetting><url>https://maps.example.test</url></RemoteSiteSetting>`)
 
@@ -116,6 +121,16 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	}
 	if got := template.Fields["Subject"].String; got != "Welcome subject" {
 		t.Fatalf("EmailTemplate Subject = %q", got)
+	}
+	folder := org.Objects["Folder"].Records["00l000000000001"]
+	if got := folder.Fields["Name"].String; got != "GL Export" {
+		t.Fatalf("Folder Name = %q", got)
+	}
+	if got := folder.Fields["DeveloperName"].String; got != "GLExport" {
+		t.Fatalf("Folder DeveloperName = %q", got)
+	}
+	if got := folder.Fields["Type"].String; got != "Document" {
+		t.Fatalf("Folder Type = %q", got)
 	}
 }
 

@@ -21,7 +21,7 @@
   },
   "expected": {
     "error": {
-      "type": "Error",
+      "type": "System.StringException",
       "message": "Datetime.format unsupported pattern token \"QQ\""
     }
   }

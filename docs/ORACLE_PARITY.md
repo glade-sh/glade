@@ -7,6 +7,7 @@ Current skeleton:
 
 - normalizes IDs, timestamps, generated usernames, stack line noise, records, side effects, and trace events
 - parses Apex logs for method calls, SOQL, DML, exceptions, limits, `USER_DEBUG`, and `OAER_ORACLE:` payloads
+- can opt into recent Apex log capture for focused Salesforce test runs with `--fetch-logs`
 - adapts OAER `testreport.Run` results into `OracleRun`
 - diffs fixture or live runner output and writes compact artifacts under `.oaer/runs/<run-id>/oracle/`
 
@@ -36,9 +37,20 @@ go run ./cmd/oaer compat oracle-tests \
   --json
 ```
 
+Focused Salesforce run with recent Apex logs:
+
+```bash
+go run ./cmd/oaer compat oracle-tests \
+  --project example-projects/src-nmb-nutpl-develop \
+  --target-org oaer-probe-lab \
+  --filter SomeTest.someMethod \
+  --golden-only \
+  --fetch-logs \
+  --json
+```
+
 Remaining work:
 
-- fetch Apex logs and Tooling records for full Salesforce test runs
 - enable targeted finest logging for selected classes and methods
 - add VM trace hooks for final side effects and unsupported fences not already in traces
 - promote at least one `src-nmb-nutpl-develop` Salesforce-vs-OAER passing test into a checked oracle fixture

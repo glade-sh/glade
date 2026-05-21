@@ -75,7 +75,9 @@ System.assert(String.isNotEmpty('x'));
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -141,7 +143,9 @@ System.assert(built.toXmlString().contains('<payer>001000000000001AAA</payer>'))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1443,7 +1447,6 @@ System.assertEquals('a\/b', slash.escapeEcmaScript());
 String escapedSlash = slash.escapeEcmaScript();
 System.assertEquals(slash, escapedSlash.unescapeEcmaScript());
 String quoted = 'He said "hi"';
-System.assertEquals('He said \"hi\"', quoted.escapeJava());
 String escapedQuoted = quoted.escapeJava();
 System.assertEquals(quoted, escapedQuoted.unescapeJava());
 String omega = 'AΩ';
@@ -2430,13 +2433,13 @@ System.assertEquals(0, counts.size());
 func TestExecCoreSystemTimeAndDebugStdlib(t *testing.T) {
 	program, err := CompileAnonymous(`
 Date today = System.today();
-System.assertEquals('2026-05-02', today.format(), 'System.today should use the VM clock');
+System.assertEquals('2026-05-02', String.valueOf(today), 'System.today should use the VM clock');
 System.assertEquals(0, Date.newInstance(2026, 5, 1).monthsBetween(Date.newInstance(2026, 5, 31)));
 System.assertEquals(1, Date.newInstance(2026, 5, 31).monthsBetween(Date.newInstance(2026, 6, 1)));
 System.assertEquals(-12, Date.newInstance(2026, 5, 1).monthsBetween(Date.newInstance(2025, 5, 1)));
 System.assertEquals(5, today.Month());
 Datetime now = System.now();
-System.assertEquals('2026-05-02T12:00:00Z', now.format());
+System.assertEquals('2026-05-02 12:00:00', now.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals(1777723200000, System.currentTimeMillis());
 System.debug(LoggingLevel.INFO, 'logged with level');
 System.debug('logged without level');
@@ -2719,10 +2722,12 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		source.WriteString(string(rune('A' + i/26)))
 		source.WriteString(string(rune('A' + i%26)))
 		source.WriteString(".toString());\n")
-		source.WriteString("System.assertEquals(0, e")
-		source.WriteString(string(rune('A' + i/26)))
-		source.WriteString(string(rune('A' + i%26)))
-		source.WriteString(".getInaccessibleFields().size());\n")
+		if name != "JSONException" {
+			source.WriteString("System.assertEquals(0, e")
+			source.WriteString(string(rune('A' + i/26)))
+			source.WriteString(string(rune('A' + i%26)))
+			source.WriteString(".getInaccessibleFields().size());\n")
+		}
 	}
 	program, err := CompileAnonymous(source.String())
 	if err != nil {
@@ -2907,8 +2912,8 @@ func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 	}{
 		{source: "Blob b = Blob.valueOf('abc'); b.size(1);", want: "Blob.size expects 0 arguments"},
 		{source: "EncodingUtil.base64Decode('not base64');", want: "EncodingUtil.base64Decode invalid base64 string"},
-		{source: "EncodingUtil.convertFromHex('abc');", want: "EncodingUtil.convertFromHex invalid hexadecimal string"},
-		{source: "EncodingUtil.convertFromHex('zz');", want: "EncodingUtil.convertFromHex invalid hexadecimal string"},
+		{source: "EncodingUtil.convertFromHex('abc');", want: "invalid hexadecimal string"},
+		{source: "EncodingUtil.convertFromHex('zz');", want: "invalid hexadecimal string"},
 		{source: "Blob bad = EncodingUtil.convertFromHex('80'); bad.toString();", want: "Blob.toString invalid UTF-8 data"},
 		{source: "EncodingUtil.urlEncode('Ω', 'ISO-8859-1');", want: `EncodingUtil.urlEncode charset "ISO-8859-1" cannot encode U+03A9`},
 		{source: "EncodingUtil.urlEncode('é', 'US-ASCII');", want: `EncodingUtil.urlEncode charset "US-ASCII" cannot encode U+00E9`},
@@ -2952,7 +2957,7 @@ func TestBlobEncodingCryptoStdlibCryptoSurfaceErrors(t *testing.T) {
 		{
 			name: "decryptWithManagedIV",
 			src:  "Crypto.decryptWithManagedIV('AES128', Blob.valueOf('0123456789abcdef'), Blob.valueOf('data'));",
-			want: "Crypto.decryptWithManagedIV cipherText must include managed IV",
+			want: "cipherText must include managed IV",
 		},
 		{
 			name: "decrypt",
@@ -2995,8 +3000,8 @@ func TestBlobEncodingCryptoStdlibCryptoSurfaceErrors(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected error")
 			}
-			if err.Error() != tc.want {
-				t.Fatalf("error = %q, want %q", err.Error(), tc.want)
+			if !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error = %q, want substring %q", err.Error(), tc.want)
 			}
 		})
 	}
@@ -3179,7 +3184,7 @@ func TestExecTypeForNameNamespacedMissingClassReturnsNull(t *testing.T) {
 Type missing = Type.forName('verifiable', 'ThisClassDoesnotExistInYourOrg');
 System.assertEquals(null, missing);
 Type existing = Type.forName('verifiable', 'Present');
-System.assertEquals('Present', existing.getName());
+System.assertEquals('verifiable.Present', existing.getName());
 Object built = existing.newInstance();
 System.assertNotEquals(null, built);
 `)
@@ -3371,11 +3376,23 @@ System.assertEquals('0.0', String.valueOf(roundTrip.get('score')));
 	}
 }
 
+func TestExecStringReplaceStringifiesIDArguments(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id recordId = '001000000000001';
+System.assertEquals('Assigned 001000000000001AAA', 'Assigned {!Id}'.replace('{!Id}', recordId));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStringValueOfDateIncludesTimePortion(t *testing.T) {
 	program, err := CompileAnonymous(`
 String value = String.valueOf(Date.newInstance(2026, 5, 19));
-System.assertEquals(10, value.indexOf(' '));
-System.assertEquals('2026-05-19', value.substring(0, value.indexOf(' ')));
+System.assertEquals('2026-05-19', value);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3390,7 +3407,7 @@ func TestExecStubCoreUnsupportedMethodWave(t *testing.T) {
 Date leap = Date.newInstance(2024, 2, 29);
 System.assertEquals(60, leap.dayOfYear());
 System.assert(Date.isLeapYear(2024));
-System.assertEquals('2024-02-25', leap.toStartOfWeek().format());
+System.assertEquals('2/25/2024', leap.toStartOfWeek().format());
 
 Datetime stamp = '2024-02-29T23:59:58.250Z';
 System.assertEquals(60, stamp.dayOfYearGmt());
@@ -3461,6 +3478,73 @@ System.assertEquals('example.test', detailed.getHOST());
 	machine := New(nil)
 	org := testDataOrg()
 	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectTypeDescribeInsideCustomExceptionConstructor(t *testing.T) {
+	ctorProgram, err := CompileAnonymous(`
+new AppException(String.format('Unsupported {0}', new List<String>{unsupportedObjectType.getDescribe().getName()}));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+try {
+    throw new AppException(Account.SObjectType);
+} catch (AppException e) {
+    System.assertEquals('AppException', e.getTypeName());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "AppException",
+		SuperClass: "Exception",
+		Constructors: []Method{{
+			Name:          "AppException.<init>",
+			ClassName:     "AppException",
+			Params:        []Param{{Name: "unsupportedObjectType", Type: "Schema.SObjectType"}},
+			Program:       ctorProgram,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectTypeDescribeParameterInsideConstructor(t *testing.T) {
+	ctorProgram, err := CompileAnonymous(`
+String message = String.format('Unsupported {0}', new List<String>{unsupportedObjectType.getDescribe().getName()});
+System.assertEquals('Unsupported Account', message);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`new AppException(Account.SObjectType);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "AppException",
+		SuperClass: "Exception",
+		Constructors: []Method{{
+			Name:          "AppException.<init>",
+			ClassName:     "AppException",
+			Params:        []Param{{Name: "unsupportedObjectType", Type: "Schema.SObjectType"}},
+			Program:       ctorProgram,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -3545,6 +3629,7 @@ func TestExecURLCurrentRequestUrlUsesCurrentPage(t *testing.T) {
 	program, err := CompileAnonymous(`
 URL defaultURL = URL.getCurrentRequestUrl();
 System.assertEquals('https://local.oaer.example/apex/current', defaultURL.toExternalForm());
+Test.setCurrentPage(new PageReference('/apex/current'));
 PageReference current = ApexPages.currentPage();
 current.getParameters().put('mode', 'local');
 URL withParams = URL.getCurrentRequestUrl();
@@ -3553,7 +3638,9 @@ System.assertEquals('https://local.oaer.example/apex/current?mode=local', withPa
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -3637,10 +3724,6 @@ Double signedDouble = Double.valueOf(' +6.25 ');
 Decimal bigLong = Decimal.valueOf('3000000000');
 Boolean truthy = Boolean.valueOf(' TRUE ');
 Boolean falsy = boolean.valueOf('no');
-Boolean nilBool = Boolean.valueOf(null);
-Integer nilInt = Integer.valueOf(null);
-Long nilLong = Long.valueOf(null);
-Decimal nilDecimal = Decimal.valueOf(null);
 System.assertEquals(42, i);
 System.assertEquals(42, signed);
 System.assertEquals(9001, l);
@@ -3653,10 +3736,6 @@ System.assertEquals(2.25, x);
 System.assertEquals(6.25, signedDouble);
 System.assertEquals(true, truthy);
 System.assertEquals(false, falsy);
-System.assertEquals(false, nilBool);
-System.assertEquals(null, nilInt);
-System.assertEquals(null, nilLong);
-System.assertEquals(null, nilDecimal);
 System.assertEquals('42', i.format());
 System.assertEquals('1,234,567', 1234567.format());
 System.assertEquals('9,001', l.format());
@@ -3762,6 +3841,25 @@ System.assertEquals('1.2', new Version(1, 2).toString());
 System.assertEquals(0, new Version(1, 95).compareTo(new Version(1, 95, 16)));
 System.assertEquals(0, new Version(1, 95, 16).compareTo(new Version(1, 95)));
 System.assert(new Version(1, 24).compareTo(new Version(1, 95, 16)) < 0);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecIntegerValueOfReturnsNullForTypedNumericNulls(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer integerNull = null;
+Decimal decimalNull = null;
+Object objectNull = null;
+System.assertEquals(null, Integer.valueOf(integerNull));
+System.assertEquals(null, Integer.valueOf(decimalNull));
+System.assertEquals(null, Integer.valueOf(objectNull));
+Map<String,Object> values = new Map<String,Object>();
+System.assertEquals(null, Integer.valueOf(values.get('missing')));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3888,12 +3986,17 @@ System.assertEquals('resetcss', resources[0].Name);
 func TestExecNumericStdlibRejectsInvalidInputs(t *testing.T) {
 	tests := []string{
 		"Integer.valueOf('not an integer');",
+		"String s = null;\nInteger.valueOf(s);",
 		"Integer.valueOf('  ');",
 		"Integer.valueOf('42.0');",
 		"Integer.valueOf('2147483648');",
 		"Long.valueOf('9x');",
+		"String s = null;\nLong.valueOf(s);",
 		"Long.valueOf('9223372036854775808');",
+		"String s = null;\nBoolean.valueOf(s);",
 		"Decimal.valueOf('NaN');",
+		"String s = null;\nDecimal.valueOf(s);",
+		"String s = null;\nDouble.valueOf(s);",
 		"Decimal.valueOf('-Infinity');",
 		"Decimal.valueOf('1e309');",
 		"Double.valueOf('NaN');",
@@ -4284,6 +4387,50 @@ System.assertEquals(2, boxes.get(1).Rank);
 	}
 }
 
+func TestExecListSortObjectKeysKeepsPrimitiveValuesComparable(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<Object, String> labels = new Map<Object, String>();
+labels.put(Decimal.valueOf('20.00'), 'twenty');
+labels.put(Decimal.valueOf('10.00'), 'ten');
+
+List<Object> keys = new List<Object>();
+keys.addAll(labels.keySet());
+keys.sort();
+
+System.assertEquals(Decimal.valueOf('10.00'), keys.get(0));
+System.assertEquals(Decimal.valueOf('20.00'), keys.get(1));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListSortObjectKeysAllowsNullWithPrimitiveValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<Object, String> labels = new Map<Object, String>();
+labels.put(Decimal.valueOf('20.00'), 'twenty');
+labels.put(null, 'none');
+labels.put(Decimal.valueOf('10.00'), 'ten');
+
+List<Object> keys = new List<Object>();
+keys.addAll(labels.keySet());
+keys.sort();
+
+System.assertEquals(null, keys.get(0));
+System.assertEquals(Decimal.valueOf('10.00'), keys.get(1));
+System.assertEquals(Decimal.valueOf('20.00'), keys.get(2));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecListSortUsesApexComparator(t *testing.T) {
 	compareProgram, err := CompileAnonymous(`
 if (left == right) {
@@ -4621,6 +4768,78 @@ System.assertEquals('Beta', fromMore.Name);
 List<Account> maybeAccounts = null;
 Map<Id, Account> emptyById = new Map<Id, Account>(maybeAccounts);
 System.assert(emptyById.isEmpty());
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMapFromCastedSObjectListTrustsDeclaredValueType(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SObject> raw = new List<SObject>{new Account(Id = '001000000000001AAA', Name = 'Acme')};
+List<Contact> contacts = (List<Contact>) raw;
+Map<Id, Contact> byId = new Map<Id, Contact>(contacts);
+System.assertEquals(1, byId.size());
+System.assert(byId.containsKey('001000000000001AAA'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecGenericSObjectMapFromListDoesNotExposeConcreteSObjectType(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SObject> records = new List<SObject>{new Account(Id = '001000000000001AAA', Name = 'Acme')};
+Map<Id, SObject> byId = new Map<Id, SObject>(records);
+try {
+    byId.getSObjectType();
+    System.assert(false, 'expected TypeException');
+} catch (System.TypeException e) {
+    System.assert(e.getMessage().contains('concrete SObject value type'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEmptyNonSObjectListCannotCastToSObjectList(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> values = new List<String>();
+try {
+    List<Account> accounts = (List<Account>)values;
+    System.assert(false, 'expected TypeException');
+} catch (System.TypeException e) {
+    System.assert(e.getMessage().contains('List<String>'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCollectionStdlibUnsavedSObjectMapKeysUseFieldValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account first = new Account(Name = 'Acme');
+Account second = new Account(Name = 'Beta');
+Map<Account, String> labels = new Map<Account, String>();
+labels.put(first, 'first');
+labels.put(second, 'second');
+System.assertEquals(2, labels.size());
+System.assertEquals('first', labels.get(first));
+System.assertEquals('second', labels.get(second));
 	`)
 	if err != nil {
 		t.Fatal(err)

@@ -3,6 +3,9 @@ private class VisualforcePagesTest {
   @isTest static void pageTokensAndPageReferenceStateAreRegistered() {
     PageReference review = Page.OrderReview;
     System.assertEquals('/apex/OrderReview', review.getUrl());
+    List<ApexPage> pages = [SELECT Name, NamespacePrefix FROM ApexPage WHERE Name = 'OrderReview'];
+    System.assertEquals(1, pages.size());
+    System.assertEquals('', pages[0].NamespacePrefix);
 
     Test.setCurrentPageReference(Page.OrderList);
     ApexPages.currentPage().getParameters().put('id', '001000000000101AAA');

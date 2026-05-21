@@ -112,6 +112,41 @@ func TestUpdateRequiredFieldToNullFails(t *testing.T) {
 	}
 }
 
+func TestUpdateCustomObjectNameFieldToNullSucceeds(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Widget__c",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Widget")},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+
+	update := engine.Update([]storage.Record{{
+		ID:            insert[0].ID,
+		Object:        "Widget__c",
+		ExplicitNulls: map[string]bool{"Name": true},
+	}})
+	if !update[0].Success {
+		t.Fatalf("custom object name null update = %#v", update)
+	}
+	if stored := org.Objects["Widget__c"].Records[insert[0].ID]; !stored.HasExplicitNull("Name") {
+		t.Fatalf("stored explicit nulls = %#v fields = %#v", stored.ExplicitNulls, stored.Fields)
+	}
+}
+
 func TestUpdateStandardNameFieldToBlankFails(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureStandardObject(&org, "Account")
@@ -263,6 +298,46 @@ func TestUpdateRequiredFieldCaseVariantCanonicalizesAlias(t *testing.T) {
 	stored := org.Objects["Account"].Records[insert[0].ID]
 	if got := stored.Fields["Name"].String; got != "Renamed" {
 		t.Fatalf("stored name = %q", got)
+	}
+}
+
+func TestUpdateCanonicalAliasReplacesStoredNamespacedField(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "NU"
+	org.Objects["ExternalPaymentProfile__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "ExternalPaymentProfile__c",
+			KeyPrefix: "a10",
+			Fields: map[string]storage.Field{
+				"FirstName__c": {APIName: "FirstName__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a10000000000001AAA": {
+				Object: "ExternalPaymentProfile__c",
+				ID:     "a10000000000001AAA",
+				Fields: map[string]storage.Value{
+					"NU__FirstName__c": storage.StringValue("Eric"),
+				},
+			},
+		},
+	}
+	engine := NewEngine(&org)
+
+	update := engine.Update([]storage.Record{{
+		ID:     "a10000000000001AAA",
+		Object: "ExternalPaymentProfile__c",
+		Fields: map[string]storage.Value{"FirstName__c": storage.StringValue("Eddy")},
+	}})
+	if !update[0].Success {
+		t.Fatalf("update = %#v", update[0])
+	}
+	stored := org.Objects["ExternalPaymentProfile__c"].Records["a10000000000001AAA"]
+	if _, ok := stored.Fields["NU__FirstName__c"]; ok {
+		t.Fatalf("stored namespaced alias remained: %#v", stored.Fields)
+	}
+	if got := stored.Fields["FirstName__c"].String; got != "Eddy" {
+		t.Fatalf("stored first name = %q", got)
 	}
 }
 
@@ -927,6 +1002,24 @@ func TestInsertPersonAccountCreatesSyntheticPersonContact(t *testing.T) {
 	if got := contact.Fields["MobilePhone"].String; got != "555-0101" {
 		t.Fatalf("person contact mobile after update = %q", got)
 	}
+	clearAddress := engine.Update([]storage.Record{{
+		Object: "Account",
+		ID:     insert[0].ID,
+		ExplicitNulls: map[string]bool{
+			"PersonMailingCountryCode": true,
+			"PersonOtherStreet":        true,
+		},
+	}})
+	if !clearAddress[0].Success {
+		t.Fatalf("clear address update = %#v", clearAddress[0])
+	}
+	contact = org.Objects["Contact"].Records[contactID]
+	if _, ok := contact.Fields["MailingCountryCode"]; ok {
+		t.Fatalf("person contact mailing country code was not cleared: %#v", contact.Fields["MailingCountryCode"])
+	}
+	if _, ok := contact.Fields["OtherStreet"]; ok {
+		t.Fatalf("person contact other street was not cleared: %#v", contact.Fields["OtherStreet"])
+	}
 }
 
 func TestInsertEmailMessageCreatesToRelations(t *testing.T) {
@@ -990,6 +1083,39 @@ func TestInsertContactPopulatesCompoundName(t *testing.T) {
 	contact := org.Objects["Contact"].Records[insert[0].ID]
 	if got := contact.Fields["Name"].String; got != "Query Factory" {
 		t.Fatalf("contact name = %q", got)
+	}
+}
+
+func TestInsertPersonAccountRollbackRemovesAccountWhenSyntheticContactFails(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	contact := org.Objects["Contact"]
+	contact.Definition.ValidationRules = []storage.ValidationRule{{
+		Active:                true,
+		ErrorConditionFormula: `LastName = "Blocked"`,
+		ErrorMessage:          "blocked contact",
+	}}
+	org.Objects["Contact"] = contact
+	beforeAccounts := len(org.Objects["Account"].Records)
+	beforeContacts := len(org.Objects["Contact"].Records)
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"FirstName": storage.StringValue("Ada"),
+			"LastName":  storage.StringValue("Blocked"),
+		},
+	}})
+	if len(insert) != 1 || insert[0].Success {
+		t.Fatalf("insert = %#v, want failed synthetic contact", insert)
+	}
+	if got := len(org.Objects["Account"].Records); got != beforeAccounts {
+		t.Fatalf("accounts after rollback = %d, want %d", got, beforeAccounts)
+	}
+	if got := len(org.Objects["Contact"].Records); got != beforeContacts {
+		t.Fatalf("contacts after rollback = %d, want %d", got, beforeContacts)
 	}
 }
 
@@ -1744,6 +1870,47 @@ func TestUpsertWithExplicitExternalID(t *testing.T) {
 	}
 }
 
+func TestUpsertWithExplicitIDFieldUsesRecordID(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+
+	update := engine.UpsertWithExternalID([]storage.Record{{
+		ID:     insert[0].ID,
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Changed"),
+		},
+	}}, "Id")
+	if !update[0].Success || update[0].Created || update[0].ID != insert[0].ID {
+		t.Fatalf("explicit id update = %#v", update)
+	}
+	if got := org.Objects["Account"].Records[insert[0].ID].Fields["Name"].String; got != "Changed" {
+		t.Fatalf("updated name = %q", got)
+	}
+
+	updateFromField := engine.UpsertWithExternalID([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Id":   storage.IDValue(insert[0].ID),
+			"Name": storage.StringValue("Changed Again"),
+		},
+	}}, "Id")
+	if !updateFromField[0].Success || updateFromField[0].Created || updateFromField[0].ID != insert[0].ID {
+		t.Fatalf("explicit id field update = %#v", updateFromField)
+	}
+	if got := org.Objects["Account"].Records[insert[0].ID].Fields["Name"].String; got != "Changed Again" {
+		t.Fatalf("updated name from field = %q", got)
+	}
+}
+
 func TestReferenceValidationRestrictedDeleteAndUndelete(t *testing.T) {
 	org := testOrg()
 	org.Objects["Contact"] = storage.ObjectState{
@@ -2176,6 +2343,274 @@ func TestValidationRulesResolveParentRelationshipFields(t *testing.T) {
 	}
 }
 
+func TestValidationRuleNullInequalityDoesNotMatch(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Account",
+			KeyPrefix: "001",
+			Fields: map[string]storage.Field{
+				"Name":   {APIName: "Name", Type: storage.FieldString},
+				"Score":  {APIName: "Score", Type: storage.FieldDecimal},
+				"Target": {APIName: "Target", Type: storage.FieldDecimal},
+			},
+			ValidationRules: []storage.ValidationRule{{
+				Name:                  "TargetDiffers",
+				Active:                true,
+				ErrorConditionFormula: "Score <> Target",
+				ErrorMessage:          "target differs",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	missingTarget := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":  storage.StringValue("Acme"),
+			"Score": storage.DecimalValue("12"),
+		},
+	}})
+	if !missingTarget[0].Success {
+		t.Fatalf("missing target insert = %#v", missingTarget)
+	}
+
+	differentTarget := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":   storage.StringValue("Other"),
+			"Score":  storage.DecimalValue("12"),
+			"Target": storage.DecimalValue("13"),
+		},
+	}})
+	if differentTarget[0].Success || differentTarget[0].Error != "target differs" {
+		t.Fatalf("different target insert = %#v", differentTarget)
+	}
+}
+
+func TestValidationRulesSupportIsChangedWithParentRelationshipFields(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["DeferredSchedule__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "DeferredSchedule__c",
+			KeyPrefix: "a14",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["OrderItemLine__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "OrderItemLine__c",
+			KeyPrefix: "a15",
+			Fields: map[string]storage.Field{
+				"Name":                {APIName: "Name", Type: storage.FieldString},
+				"DeferredSchedule__c": {APIName: "DeferredSchedule__c", Type: storage.FieldReference, ReferenceTo: []string{"DeferredSchedule__c"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Membership__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Membership__c",
+			KeyPrefix: "a16",
+			Fields: map[string]storage.Field{
+				"Name":               {APIName: "Name", Type: storage.FieldString},
+				"StartDate__c":       {APIName: "StartDate__c", Type: storage.FieldDate},
+				"EndDate__c":         {APIName: "EndDate__c", Type: storage.FieldDate},
+				"EndDateOverride__c": {APIName: "EndDateOverride__c", Type: storage.FieldDate},
+				"OrderItemLine__c":   {APIName: "OrderItemLine__c", Type: storage.FieldReference, ReferenceTo: []string{"OrderItemLine__c"}},
+			},
+			ValidationRules: []storage.ValidationRule{{
+				Name:   "TermUnchangeableForDeferredMembership",
+				Active: true,
+				ErrorConditionFormula: `AND(
+OR(
+ISCHANGED(StartDate__c),
+AND(ISCHANGED(EndDate__c), !ISCHANGED(EndDateOverride__c))
+),
+IsBlank(OrderItemLine__c) = False,
+IsBlank(OrderItemLine__r.DeferredSchedule__c) = False
+)`,
+				ErrorMessage: "deferred membership term cannot change",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	schedule := engine.Insert([]storage.Record{{Object: "DeferredSchedule__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Schedule")}}})
+	if !schedule[0].Success {
+		t.Fatalf("schedule insert = %#v", schedule)
+	}
+	line := engine.Insert([]storage.Record{{
+		Object: "OrderItemLine__c",
+		Fields: map[string]storage.Value{
+			"Name":                storage.StringValue("Line"),
+			"DeferredSchedule__c": storage.IDValue(schedule[0].ID),
+		},
+	}})
+	if !line[0].Success {
+		t.Fatalf("line insert = %#v", line)
+	}
+	membership := engine.Insert([]storage.Record{{
+		Object: "Membership__c",
+		Fields: map[string]storage.Value{
+			"Name":             storage.StringValue("Membership"),
+			"StartDate__c":     storage.DateValue("2026-01-01"),
+			"EndDate__c":       storage.DateValue("2026-12-31"),
+			"OrderItemLine__c": storage.IDValue(line[0].ID),
+		},
+	}})
+	if !membership[0].Success {
+		t.Fatalf("membership insert = %#v", membership)
+	}
+
+	update := engine.Update([]storage.Record{{
+		ID:     membership[0].ID,
+		Object: "Membership__c",
+		Fields: map[string]storage.Value{
+			"EndDate__c": storage.DateValue("2026-02-28"),
+		},
+	}})
+	if update[0].Success || update[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" || update[0].Error != "deferred membership term cannot change" {
+		t.Fatalf("membership term update = %#v", update)
+	}
+}
+
+func TestValidationRulesIsChangedIgnoresStatusTransitionSideEffects(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Batch__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Batch__c",
+			KeyPrefix: "a17",
+			Fields: map[string]storage.Field{
+				"Name":        {APIName: "Name", Type: storage.FieldString},
+				"Status__c":   {APIName: "Status__c", Type: storage.FieldString},
+				"PostedOn__c": {APIName: "PostedOn__c", Type: storage.FieldDate},
+			},
+			ValidationRules: []storage.ValidationRule{{
+				Name:                  "Cannot_Edit_Posted_Or_Exported",
+				Active:                true,
+				ErrorConditionFormula: `AND(!ISChanged(Status__c), OR(Text(Status__c) = 'Posted', Text(Status__c) = 'Exported'))`,
+				ErrorMessage:          "Batches with a status of Posted or Exported cannot be edited.",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Batch__c",
+		Fields: map[string]storage.Value{
+			"Name":      storage.StringValue("Batch"),
+			"Status__c": storage.StringValue("Open"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+
+	post := engine.Update([]storage.Record{{
+		ID:     insert[0].ID,
+		Object: "Batch__c",
+		Fields: map[string]storage.Value{
+			"Status__c":   storage.StringValue("Posted"),
+			"PostedOn__c": storage.DateValue("2026-05-20"),
+		},
+	}})
+	if !post[0].Success {
+		t.Fatalf("post transition = %#v", post)
+	}
+
+	editPosted := engine.Update([]storage.Record{{
+		ID:     insert[0].ID,
+		Object: "Batch__c",
+		Fields: map[string]storage.Value{
+			"PostedOn__c": storage.DateValue("2026-05-21"),
+		},
+	}})
+	if editPosted[0].Success || editPosted[0].Error != "Batches with a status of Posted or Exported cannot be edited." {
+		t.Fatalf("posted edit = %#v", editPosted)
+	}
+}
+
+func TestWorkflowFieldUpdateKeepsValidationIsChangedContext(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Batch__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Batch__c",
+			KeyPrefix: "a17",
+			Fields: map[string]storage.Field{
+				"Name":        {APIName: "Name", Type: storage.FieldString},
+				"Status__c":   {APIName: "Status__c", Type: storage.FieldString},
+				"PostedOn__c": {APIName: "PostedOn__c", Type: storage.FieldDate},
+			},
+			ValidationRules: []storage.ValidationRule{{
+				Name:                  "Cannot_Edit_Posted_Or_Exported",
+				Active:                true,
+				ErrorConditionFormula: `AND(!ISChanged(Status__c), OR(Text(Status__c) = 'Posted', Text(Status__c) = 'Exported'))`,
+				ErrorMessage:          "Batches with a status of Posted or Exported cannot be edited.",
+			}},
+			WorkflowRules: []storage.WorkflowRule{{
+				Name:   "Batch Posted On Population",
+				Active: true,
+				Criteria: []storage.WorkflowCriteriaItem{{
+					Field:     "Status__c",
+					Operation: "equals",
+					Value:     "Posted",
+				}},
+				FieldUpdates: []storage.WorkflowFieldUpdate{{
+					Name:    "BatchPostedOnPopulation",
+					Field:   "PostedOn__c",
+					Formula: "Today()",
+				}},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	engine.Now = func() time.Time { return time.Date(2026, 5, 20, 9, 0, 0, 0, time.UTC) }
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Batch__c",
+		Fields: map[string]storage.Value{
+			"Name":      storage.StringValue("Manual"),
+			"Status__c": storage.StringValue("Open"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	post := engine.Update([]storage.Record{{
+		ID:     insert[0].ID,
+		Object: "Batch__c",
+		Fields: map[string]storage.Value{
+			"Status__c": storage.StringValue("Posted"),
+		},
+	}})
+	if !post[0].Success {
+		t.Fatalf("post = %#v", post)
+	}
+	posted := org.Objects["Batch__c"].Records[insert[0].ID]
+	if got := posted.Fields["PostedOn__c"].String; got != "2026-05-20" {
+		t.Fatalf("posted on = %q", got)
+	}
+
+	edit := engine.Update([]storage.Record{{
+		ID:     insert[0].ID,
+		Object: "Batch__c",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Edited"),
+		},
+	}})
+	if edit[0].Success || edit[0].Error != "Batches with a status of Posted or Exported cannot be edited." {
+		t.Fatalf("posted edit = %#v", edit)
+	}
+}
+
 func TestValidationRulesResolveParentFormulaFields(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Payment__c"] = storage.ObjectState{
@@ -2400,6 +2835,79 @@ func TestCalculatedFormulaSupportsCaseAndLower(t *testing.T) {
 	})
 	if !ok || value.Kind != storage.ValueString || value.String != "No" {
 		t.Fatalf("override formula = %#v, ok=%v; want No", value, ok)
+	}
+}
+
+func TestCalculatedFormulaSupportsRoundAndImage(t *testing.T) {
+	amountField := storage.Field{
+		APIName:     "RecognitionAmount__c",
+		Type:        storage.FieldCalculated,
+		DisplayType: "CURRENCY",
+		Formula:     `Round(Floor(DeferredAmount__c / DeferredTerm__c * 100) / 100, 2)`,
+	}
+	healthField := storage.Field{
+		APIName:     "RecognitionHealth__c",
+		Type:        storage.FieldCalculated,
+		DisplayType: "STRING",
+		Formula: `IF(OR((RecognizedAmount__c != Round((DeferredTerm__c - RemainingRecognitionCount__c) * RecognitionAmount__c, 2) && RemainingRecognitionCount__c > 0),
+(RecognizedAmount__c != DeferredAmount__c && RemainingRecognitionCount__c = 0)),
+IMAGE('/resource/' + $Setup.Namespace__c.Prefix__c + 'StatusIcons/ERROR.png', 'Status'),
+IMAGE('/resource/' + $Setup.Namespace__c.Prefix__c + 'StatusIcons/OK.png', 'Status'))`,
+	}
+	definition := storage.ObjectDefinition{
+		APIName: "DeferredSchedule__c",
+		Fields: map[string]storage.Field{
+			"DeferredAmount__c":            {APIName: "DeferredAmount__c", Type: storage.FieldDecimal},
+			"DeferredTerm__c":              {APIName: "DeferredTerm__c", Type: storage.FieldDecimal},
+			"RecognizedAmount__c":          {APIName: "RecognizedAmount__c", Type: storage.FieldDecimal},
+			"RemainingRecognitionCount__c": {APIName: "RemainingRecognitionCount__c", Type: storage.FieldDecimal},
+			"RecognitionAmount__c":         amountField,
+			"RecognitionHealth__c":         healthField,
+		},
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{"DeferredSchedule__c": {Definition: definition}}}
+	record := storage.Record{
+		Object: "DeferredSchedule__c",
+		Fields: map[string]storage.Value{
+			"DeferredAmount__c":            storage.DecimalValue("6405578.59"),
+			"DeferredTerm__c":              storage.DecimalValue("12"),
+			"RecognizedAmount__c":          storage.DecimalValue("4804183.89"),
+			"RemainingRecognitionCount__c": storage.DecimalValue("3"),
+		},
+	}
+
+	value, _, ok := EvaluateRecordFormulaValueInOrg(amountField.Formula, amountField, &org, definition, record)
+	if !ok || value.Kind != storage.ValueDecimal || value.Decimal != "533798.21" {
+		t.Fatalf("recognition amount formula = %#v, ok=%v; want 533798.21", value, ok)
+	}
+
+	value, _, ok = EvaluateRecordFormulaValueInOrg(healthField.Formula, healthField, &org, definition, record)
+	if !ok || value.Kind != storage.ValueString || !strings.Contains(value.String, "OK.png") {
+		t.Fatalf("recognition health formula = %#v, ok=%v; want OK image", value, ok)
+	}
+}
+
+func TestCalculatedFormulaSupportsSubstituteAndBR(t *testing.T) {
+	field := storage.Field{APIName: "Address__c", Type: storage.FieldCalculated, DisplayType: "STRING", Formula: `SUBSTITUTE(Street__c, '\n', '<br />') & BR() & City__c`}
+	definition := storage.ObjectDefinition{
+		APIName: "Account",
+		Fields: map[string]storage.Field{
+			"Street__c":  {APIName: "Street__c", Type: storage.FieldString},
+			"City__c":    {APIName: "City__c", Type: storage.FieldString},
+			"Address__c": field,
+		},
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{"Account": {Definition: definition}}}
+
+	value, _, ok := EvaluateRecordFormulaValueInOrg(field.Formula, field, &org, definition, storage.Record{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Street__c": storage.StringValue(`Line1\nLine2`),
+			"City__c":   storage.StringValue("Austin"),
+		},
+	})
+	if !ok || value.Kind != storage.ValueString || value.String != "Line1<br />Line2<br />Austin" {
+		t.Fatalf("address formula = %#v, ok=%v; want substituted text", value, ok)
 	}
 }
 

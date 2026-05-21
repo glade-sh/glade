@@ -30,6 +30,7 @@ type LocalTestOptions struct {
 	Class               string
 	ClassList           []string
 	ClassFile           string
+	StartClass          string
 	Method              string
 	BlockersOnly        bool
 	TraceBlocked        bool
@@ -579,19 +580,8 @@ func localTestParallelism(options LocalTestOptions) int {
 	return 1
 }
 
-func shouldParallelizeFocusedMethods(options LocalTestOptions) bool {
-	return strings.TrimSpace(options.Class) != "" && strings.TrimSpace(options.Method) == ""
-}
-
-func shouldParallelizeMethods(options LocalTestOptions, parallelism, totalCases int) bool {
-	if options.ParallelMethods {
-		return true
-	}
-	if shouldParallelizeFocusedMethods(options) {
-		return true
-	}
-	_ = totalCases
-	return false
+func shouldParallelizeMethods(options LocalTestOptions, _ int, _ int) bool {
+	return options.ParallelMethods
 }
 
 func localTestProgressReporter(w io.Writer) func(apextest.TestProgress) {
@@ -875,6 +865,9 @@ func filterLocalTestCases(cases []apextest.TestCase, options LocalTestOptions) [
 
 func matchesLocalTestCase(className, methodName string, options LocalTestOptions) bool {
 	if options.Class != "" && !strings.EqualFold(className, options.Class) {
+		return false
+	}
+	if strings.TrimSpace(options.StartClass) != "" && strings.ToLower(className) < strings.ToLower(strings.TrimSpace(options.StartClass)) {
 		return false
 	}
 	if len(options.ClassList) != 0 && !localTestClassListContains(options.ClassList, className) {

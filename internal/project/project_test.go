@@ -31,6 +31,7 @@ func TestLoadSFDXProject(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/contentassets/Logo.asset-meta.xml"), "<ContentAsset/>")
 	writeFile(t, filepath.Join(root, "force-app/main/email/welcome.email"), "Welcome body")
 	writeFile(t, filepath.Join(root, "force-app/main/email/welcome.email-meta.xml"), "<EmailTemplate/>")
+	writeFile(t, filepath.Join(root, "force-app/main/documents/GLExport.documentFolder-meta.xml"), "<DocumentFolder/>")
 	writeFile(t, filepath.Join(root, "force-app/main/namedCredentials/Api.namedCredential"), "<NamedCredential/>")
 	writeFile(t, filepath.Join(root, "force-app/main/remoteSiteSettings/Api.remoteSite"), "<RemoteSiteSetting/>")
 	writeFile(t, filepath.Join(root, "force-app/main/customMetadata/Feature.Default.md"), "<CustomMetadata/>")
@@ -71,7 +72,7 @@ func TestLoadSFDXProject(t *testing.T) {
 	if len(p.ApexFiles) != 2 || len(p.ObjectFiles) != 2 || len(p.FieldFiles) != 1 || len(p.FieldSetFiles) != 1 || len(p.RecordTypeFiles) != 1 || len(p.ValidationRuleFiles) != 1 {
 		t.Fatalf("unexpected file counts: %#v", p)
 	}
-	if len(p.LabelFiles) != 1 || len(p.TranslationFiles) != 1 || len(p.StaticResourceFiles) != 2 || len(p.StaticResourceMetas) != 2 || len(p.ContentAssetFiles) != 1 || len(p.ContentAssetMetas) != 1 || len(p.EmailTemplateFiles) != 2 || len(p.NamedCredentialFiles) != 1 || len(p.RemoteSiteFiles) != 1 || len(p.CustomMetadataFiles) != 3 {
+	if len(p.LabelFiles) != 1 || len(p.TranslationFiles) != 1 || len(p.StaticResourceFiles) != 2 || len(p.StaticResourceMetas) != 2 || len(p.ContentAssetFiles) != 1 || len(p.ContentAssetMetas) != 1 || len(p.EmailTemplateFiles) != 2 || len(p.FolderFiles) != 1 || len(p.NamedCredentialFiles) != 1 || len(p.RemoteSiteFiles) != 1 || len(p.CustomMetadataFiles) != 3 {
 		t.Fatalf("unexpected legacy metadata file counts: %#v", p)
 	}
 	if len(p.WorkflowFiles) != 2 {

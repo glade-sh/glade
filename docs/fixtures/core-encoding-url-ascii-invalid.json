@@ -10,18 +10,18 @@
   "source": [
     {
       "path": "anonymous.apex",
-      "content": "EncodingUtil.urlEncode('\u00e9', 'US-ASCII');"
+      "content": "EncodingUtil.urlEncode('é', 'US-ASCII');"
     }
   ],
   "command": {
     "kind": "exec",
     "args": [
-      "EncodingUtil.urlEncode('\u00e9', 'US-ASCII');"
+      "EncodingUtil.urlEncode('é', 'US-ASCII');"
     ]
   },
   "expected": {
     "error": {
-      "type": "Error",
+      "type": "System.StringException",
       "message": "EncodingUtil.urlEncode charset \"US-ASCII\" cannot encode U+00E9"
     }
   }

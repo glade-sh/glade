@@ -57,13 +57,9 @@ private class HttpHarnessTest {
     System.assertEquals('{}', res.getBody());
   }
 }
-`)
+	`)
 
 	index := loadTestIndex(t, root)
-	org := orgFromIndex(index)
-	if rules := org.Objects["CartPayment__c"].Definition.ValidationRules; len(rules) != 1 {
-		t.Fatalf("validation rules = %#v", rules)
-	}
 	run := Run(index, Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)

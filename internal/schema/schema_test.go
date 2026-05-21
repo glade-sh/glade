@@ -29,7 +29,7 @@ func TestLoadProject(t *testing.T) {
 	writeFile(t, rootFieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Legacy__c</fullName><label>Legacy</label><type>Text</type></CustomField>`)
 	writeFile(t, recordTypePath, `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Business</fullName><label>Business Thing</label><active>true</active><default>true</default><description>Business records</description><picklistValues><picklist>State__c</picklist><values><fullName>AL</fullName><default>true</default></values><values><fullName>PA</fullName><default>false</default></values></picklistValues></RecordType>`)
 	writeFile(t, lowercaseRecordTypePath, `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><label>Consumer Thing</label><active>false</active></RecordType>`)
-	writeFile(t, validationRulePath, `<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Block</fullName><active>true</active><errorConditionFormula>Parent__c = "Blocked"</errorConditionFormula><errorMessage>blocked by rule</errorMessage><errorDisplayField>Parent__c</errorDisplayField></ValidationRule>`)
+	writeFile(t, validationRulePath, `<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Block</fullName><active>true</active><errorConditionFormula>Parent__c = "Blocked"</errorConditionFormula><errorMessage>blocked by &quot;rule&quot; and &#39;apostrophe&#39;</errorMessage><errorDisplayField>Parent__c</errorDisplayField></ValidationRule>`)
 
 	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath, globalPicklistFieldPath, formulaFieldPath, encryptedFieldPath, rootFieldPath}, GlobalValueSetFiles: []string{valueSetPath}, RecordTypeFiles: []string{recordTypePath, lowercaseRecordTypePath}, ValidationRuleFiles: []string{validationRulePath}})
 	if err != nil {
@@ -86,7 +86,7 @@ func TestLoadProject(t *testing.T) {
 		t.Fatalf("record types = %#v", recordTypes)
 	}
 	rules := s.Objects[0].ValidationRules
-	if len(rules) != 1 || rules[0].Name != "Block" || !rules[0].Active || rules[0].ErrorMessage != "blocked by rule" || rules[0].ErrorDisplayField != "Parent__c" {
+	if len(rules) != 1 || rules[0].Name != "Block" || !rules[0].Active || rules[0].ErrorMessage != `blocked by "rule" and 'apostrophe'` || rules[0].ErrorDisplayField != "Parent__c" {
 		t.Fatalf("validation rules = %#v", rules)
 	}
 }

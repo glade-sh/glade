@@ -27,7 +27,7 @@ func TestParseForView(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if query.Object != "Account" || query.Limit != 1 || query.ForUpdate {
+	if query.Object != "Account" || query.Limit != 1 || query.ForUpdate || !query.ForView {
 		t.Fatalf("query = %#v", query)
 	}
 }
@@ -147,6 +147,39 @@ func TestExecuteResolvesLowercaseIdAsStandardField(t *testing.T) {
 	}
 	if result.Rows != 1 {
 		t.Fatalf("numeric Id literal rows = %d", result.Rows)
+	}
+}
+
+func TestExecuteProjectsOrganizationTimeZoneDefault(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Organization"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Organization",
+			Fields: map[string]storage.Field{
+				"TimeZoneSidKey": {APIName: "TimeZoneSidKey", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"00D000000000001": {
+				ID:     "00D000000000001",
+				Object: "Organization",
+				Fields: map[string]storage.Value{
+					"Name": storage.StringValue("Local Org"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, TimeZoneSidKey FROM Organization")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d", result.Rows)
+	}
+	value := result.Records[0].Fields["TimeZoneSidKey"]
+	if value.Kind != storage.ValueString || value.String != "UTC" {
+		t.Fatalf("TimeZoneSidKey = %#v", value)
 	}
 }
 
@@ -1945,6 +1978,44 @@ func TestExecuteEvaluatesTextFormulaFieldsInWhere(t *testing.T) {
 	}
 }
 
+func TestExecuteEvaluatesDateDifferenceFormulaFields(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Now = func() time.Time { return time.Date(2026, 5, 21, 12, 0, 0, 0, time.UTC) }
+	org.Objects["Order__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Order__c",
+			Fields: map[string]storage.Field{
+				"InvoiceDate__c": {APIName: "InvoiceDate__c", Type: storage.FieldDate},
+				"Balance__c":     {APIName: "Balance__c", Type: storage.FieldDecimal},
+				"InvoiceDaysOutstanding__c": {
+					APIName:     "InvoiceDaysOutstanding__c",
+					Type:        storage.FieldCalculated,
+					DisplayType: "DOUBLE",
+					Formula:     "IF(IsBlank(InvoiceDate__c) || Balance__c == 0, 0, Today() - InvoiceDate__c)",
+				},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {
+				ID:     "a01000000000001",
+				Object: "Order__c",
+				Fields: map[string]storage.Value{
+					"InvoiceDate__c": storage.DateValue("2026-04-21"),
+					"Balance__c":     storage.DecimalValue("25"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, InvoiceDaysOutstanding__c FROM Order__c WHERE InvoiceDaysOutstanding__c <= 30")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["InvoiceDaysOutstanding__c"].Decimal != "30" {
+		t.Fatalf("date difference formula result = %#v", result)
+	}
+}
+
 func TestExecuteEvaluatesDateFormulaOverrideFieldsInWhere(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Namespace = "NU"
@@ -2222,6 +2293,20 @@ func TestExecuteValidatesSystemParentFieldsWithLazyStandardParent(t *testing.T) 
 	}
 	if _, err := ParseAndExecute(org, "SELECT Id, CreatedBy.Email, LastModifiedBy.Title, Owner.Username FROM Audit_Target__c"); err != nil {
 		t.Fatalf("expected virtual system parent fields to validate, got %v", err)
+	}
+}
+
+func TestExecuteVirtualSchemaHydrationDoesNotMutateCallerOrg(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+
+	if _, err := ParseAndExecute(org, "SELECT Id FROM Account"); err != nil {
+		t.Fatal(err)
+	}
+	for _, objectName := range []string{"EntityDefinition", "EntityParticle", "RelationshipDomain", "UserEntityAccess", "UserFieldAccess"} {
+		if _, ok := org.Objects[objectName]; ok {
+			t.Fatalf("query should not add %s to the caller org", objectName)
+		}
 	}
 }
 

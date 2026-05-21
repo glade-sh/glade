@@ -852,6 +852,7 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	machine.SetTestSeeAllData(testCase.SeeAllData)
+	machine.ResetLimits()
 	result, err := machine.ExecuteInClass(invokeProgram, testCase.ClassName)
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {

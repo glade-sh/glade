@@ -24,8 +24,10 @@ func runCompatOracleTests(ctx context.Context, args []string, w io.Writer) error
 	anonymous := ""
 	checkPath := ""
 	waitMinutes := 10
+	logLimit := 0
 	jsonOut := false
 	goldenOnly := false
+	fetchLogs := false
 
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
@@ -93,6 +95,18 @@ func runCompatOracleTests(ctx context.Context, args []string, w io.Writer) error
 			}
 			waitMinutes = parsed
 			i++
+		case "--log-limit":
+			if i+1 >= len(args) {
+				return errors.New("--log-limit requires a value")
+			}
+			parsed, err := strconv.Atoi(args[i+1])
+			if err != nil || parsed <= 0 {
+				return errors.New("--log-limit must be a positive integer")
+			}
+			logLimit = parsed
+			i++
+		case "--fetch-logs":
+			fetchLogs = true
 		case "--golden-only":
 			goldenOnly = true
 		case "--json":
@@ -103,8 +117,8 @@ func runCompatOracleTests(ctx context.Context, args []string, w io.Writer) error
 	}
 
 	if strings.TrimSpace(checkPath) != "" {
-		if project != "." || targetOrg != "" || filter != "" || salesforceRunPath != "" || localRunPath != "" || runsDir != ".oaer/runs" || runID != "" || anonymous != "" || goldenOnly || waitMinutes != 10 {
-			return errors.New("--check cannot be combined with --project, --target-org, --filter, --salesforce-run, --local-run, --golden-only, --anonymous, --runs-dir, --run-id, or --wait")
+		if project != "." || targetOrg != "" || filter != "" || salesforceRunPath != "" || localRunPath != "" || runsDir != ".oaer/runs" || runID != "" || anonymous != "" || goldenOnly || fetchLogs || logLimit != 0 || waitMinutes != 10 {
+			return errors.New("--check cannot be combined with --project, --target-org, --filter, --salesforce-run, --local-run, --golden-only, --anonymous, --runs-dir, --run-id, --fetch-logs, --log-limit, or --wait")
 		}
 		report, err := oracle.CheckCorpus(checkPath)
 		if jsonOut {
@@ -128,7 +142,7 @@ func runCompatOracleTests(ctx context.Context, args []string, w io.Writer) error
 	}
 	artifactDir := filepath.Join(runsDir, runID, "oracle")
 
-	salesforceRuns, err := loadOrRunSalesforceOracle(ctx, project, targetOrg, filter, salesforceRunPath, anonymous, waitMinutes)
+	salesforceRuns, err := loadOrRunSalesforceOracle(ctx, project, targetOrg, filter, salesforceRunPath, anonymous, waitMinutes, fetchLogs, logLimit)
 	if err != nil {
 		report := oracle.InfrastructureReport(project, runID, artifactDir, err.Error())
 		if persistErr := oracle.PersistArtifacts(artifactDir, nil, nil, report.Comparisons, report); persistErr != nil {
@@ -197,7 +211,7 @@ func validateOracleRunID(runID string) error {
 	return nil
 }
 
-func loadOrRunSalesforceOracle(ctx context.Context, project, targetOrg, filter, path, anonymous string, waitMinutes int) ([]oracle.OracleRun, error) {
+func loadOrRunSalesforceOracle(ctx context.Context, project, targetOrg, filter, path, anonymous string, waitMinutes int, fetchLogs bool, logLimit int) ([]oracle.OracleRun, error) {
 	if strings.TrimSpace(path) != "" {
 		return oracle.ReadRuns(path)
 	}
@@ -212,10 +226,12 @@ func loadOrRunSalesforceOracle(ctx context.Context, project, targetOrg, filter, 
 		return []oracle.OracleRun{run}, nil
 	}
 	return (oracle.SalesforceRunner{}).RunTests(ctx, oracle.SalesforceRunOptions{
-		Project:    project,
-		OrgAlias:   targetOrg,
-		Filter:     filter,
-		WaitMinute: waitMinutes,
+		Project:     project,
+		OrgAlias:    targetOrg,
+		Filter:      filter,
+		WaitMinute:  waitMinutes,
+		CaptureLogs: fetchLogs,
+		LogLimit:    logLimit,
 	})
 }
 

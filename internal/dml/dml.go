@@ -22,12 +22,14 @@ type Engine struct {
 	WorkflowEmailer   func(storage.WorkflowEmailAlert, storage.Record) error
 	AutomationTracer  func(name string, args map[string]any)
 	DeferAutomation   bool
+	PriorRecords      map[storage.ID]storage.Record
 
 	workflowDepth  int
 	flowDepth      int
 	summaryOrder   []string
 	summaryUpdates map[string]SummaryUpdate
 	automationRoll map[string]bool
+	uniqueBatch    *uniqueBatchContext
 	uniqueFieldMap map[string]bool
 	activeValRules map[string]bool
 	uniqueFields   map[string][]string
@@ -36,8 +38,9 @@ type Engine struct {
 }
 
 type Options struct {
-	AllowFieldTruncation bool
-	AllowUpdateDeleted   bool
+	AllowFieldTruncation      bool
+	AllowUpdateDeleted        bool
+	AllowBatchUniqueValueSwap bool
 }
 
 type SummaryUpdate struct {
@@ -91,10 +94,14 @@ func NewEngine(org *storage.OrgState) Engine {
 	}
 	ids := storage.NewRuntimeIDGenerator(prefixes)
 	ids.Sequences = copySequences(org.IDSequences)
+	now := func() time.Time { return time.Now().UTC() }
+	if org.Now != nil {
+		now = org.Now
+	}
 	return Engine{
 		Org:            org,
 		IDs:            ids,
-		Now:            func() time.Time { return time.Now().UTC() },
+		Now:            now,
 		UserID:         "005000000000001",
 		automationRoll: make(map[string]bool),
 		uniqueFieldMap: make(map[string]bool),
@@ -103,6 +110,13 @@ func NewEngine(org *storage.OrgState) Engine {
 		uniqueIndexes:  make(map[string]map[string]map[storage.ID]bool),
 		summaryByChild: make(map[string][]summaryRelation),
 	}
+}
+
+func (e *Engine) syncOrgClock() {
+	if e == nil || e.Org == nil || e.Now == nil {
+		return
+	}
+	e.Org.Now = e.Now
 }
 
 func (e Engine) systemTimestamp() string {
@@ -121,6 +135,7 @@ func (e Engine) systemUserID() storage.ID {
 }
 
 func (e *Engine) Insert(records []storage.Record) []Result {
+	e.syncOrgClock()
 	results := make([]Result, len(records))
 	for i, record := range records {
 		id, err := e.insertOne(record)
@@ -135,7 +150,10 @@ func (e *Engine) Insert(records []storage.Record) []Result {
 }
 
 func (e *Engine) Update(records []storage.Record) []Result {
+	e.syncOrgClock()
 	results := make([]Result, len(records))
+	restoreUniqueBatch := e.beginUniqueBatchContext(records)
+	defer restoreUniqueBatch()
 	for i, record := range records {
 		if err := e.updateOne(record); err != nil {
 			results[i] = resultFromError(record.ID, err)
@@ -147,6 +165,7 @@ func (e *Engine) Update(records []storage.Record) []Result {
 }
 
 func (e *Engine) Delete(records []storage.Record) []Result {
+	e.syncOrgClock()
 	results := make([]Result, len(records))
 	ctx := e.buildDeleteContext()
 	for i, record := range records {
@@ -168,7 +187,10 @@ func (e *Engine) UpsertWithExternalID(records []storage.Record, externalIDField 
 }
 
 func (e *Engine) upsert(records []storage.Record, externalIDField string) []Result {
+	e.syncOrgClock()
 	results := make([]Result, len(records))
+	restoreUniqueBatch := e.beginUniqueBatchContext(records)
+	defer restoreUniqueBatch()
 	for i, record := range records {
 		if record.ID == "" {
 			id, created, err := e.upsertByExternalID(record, externalIDField)
@@ -194,6 +216,7 @@ func (e *Engine) upsert(records []storage.Record, externalIDField string) []Resu
 }
 
 func (e *Engine) Undelete(records []storage.Record) []Result {
+	e.syncOrgClock()
 	results := make([]Result, len(records))
 	for i, record := range records {
 		if record.ID == "" {
@@ -232,6 +255,7 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 }
 
 func (e *Engine) EmptyRecycleBin(records []storage.Record) []Result {
+	e.syncOrgClock()
 	results := make([]Result, len(records))
 	for i, record := range records {
 		if record.ID == "" {
@@ -264,14 +288,17 @@ func (e *Engine) EmptyRecycleBin(records []storage.Record) []Result {
 }
 
 func (e *Engine) Lock(records []storage.Record) []Result {
+	e.syncOrgClock()
 	return e.setLock(records, true)
 }
 
 func (e *Engine) Unlock(records []storage.Record) []Result {
+	e.syncOrgClock()
 	return e.setLock(records, false)
 }
 
 func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Result {
+	e.syncOrgClock()
 	results := make([]Result, len(duplicates))
 	object, objectName, err := e.object(master.Object)
 	if err != nil {
@@ -495,11 +522,14 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err := e.validateUnique(objectName, object.Definition, record, ""); err != nil {
 		return "", err
 	}
-	needsRollback := strings.EqualFold(objectName, "ContentVersion") || createPersonContact || (!e.DeferAutomation && hasObjectAutomation(object.Definition))
+	needsFullRollback := strings.EqualFold(objectName, "ContentVersion") || (!e.DeferAutomation && hasObjectAutomation(object.Definition))
+	needsPersonRollback := createPersonContact && !needsFullRollback
 	var rollbackOrg storage.OrgState
 	var rollbackSequences map[string]uint64
-	if needsRollback {
+	if needsFullRollback {
 		rollbackOrg = e.Org.CloneRuntime()
+		rollbackSequences = copySequences(e.IDs.Sequences)
+	} else if needsPersonRollback {
 		rollbackSequences = copySequences(e.IDs.Sequences)
 	}
 	if record.ID == "" {
@@ -563,9 +593,13 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	}
 	if createPersonContact {
 		if err := e.afterInsertPersonAccount(record); err != nil {
-			*e.Org = rollbackOrg
-			e.IDs.Sequences = rollbackSequences
-			e.clearUniqueIndexes()
+			if needsFullRollback {
+				*e.Org = rollbackOrg
+				e.IDs.Sequences = rollbackSequences
+				e.clearUniqueIndexes()
+			} else {
+				e.rollbackInsertedRecord(objectName, object.Definition, record, rollbackSequences)
+			}
 			return "", err
 		}
 	}
@@ -589,6 +623,22 @@ func normalizeNameFields(objectName string, definition storage.ObjectDefinition,
 		return
 	}
 	normalizePersonAccountFields(objectName, definition, record)
+}
+
+func (e *Engine) rollbackInsertedRecord(objectName string, definition storage.ObjectDefinition, record storage.Record, sequences map[string]uint64) {
+	if e == nil || e.Org == nil || record.ID == "" {
+		return
+	}
+	object, ok := e.Org.Objects[objectName]
+	if ok && object.Records != nil {
+		delete(object.Records, record.ID)
+		e.Org.Objects[objectName] = object
+	}
+	e.removeUniqueIndexRecord(objectName, definition, record)
+	if sequences != nil {
+		e.IDs.Sequences = copySequences(sequences)
+		e.Org.IDSequences = copySequences(sequences)
+	}
 }
 
 func normalizeFirstLastName(definition storage.ObjectDefinition, record *storage.Record) {
@@ -1244,22 +1294,8 @@ func personContactFields(account storage.Record) map[string]storage.Value {
 	fields := map[string]storage.Value{
 		"AccountId": storage.IDValue(account.ID),
 	}
-	copyPersonContactField(fields, account, "FirstName", "FirstName")
-	copyPersonContactField(fields, account, "LastName", "LastName")
-	copyPersonContactField(fields, account, "PersonEmail", "Email")
-	copyPersonContactField(fields, account, "PersonHomePhone", "HomePhone")
-	copyPersonContactField(fields, account, "PersonMobilePhone", "MobilePhone")
-	copyPersonContactField(fields, account, "PersonTitle", "Title")
-	copyPersonContactField(fields, account, "PersonDepartment", "Department")
-	copyPersonContactField(fields, account, "PersonBirthdate", "Birthdate")
-	copyPersonContactField(fields, account, "PersonDoNotCall", "DoNotCall")
-	copyPersonContactField(fields, account, "PersonHasOptedOutOfEmail", "HasOptedOutOfEmail")
-	copyPersonContactField(fields, account, "PersonHasOptedOutOfFax", "HasOptedOutOfFax")
-	copyPersonContactField(fields, account, "PersonEmailBouncedReason", "EmailBouncedReason")
-	copyPersonContactField(fields, account, "PersonEmailBouncedDate", "EmailBouncedDate")
-	for _, suffix := range []string{"Street", "City", "State", "StateCode", "PostalCode", "Country", "CountryCode"} {
-		copyPersonContactField(fields, account, "PersonMailing"+suffix, "Mailing"+suffix)
-		copyPersonContactField(fields, account, "PersonOther"+suffix, "Other"+suffix)
+	for _, mapping := range personContactFieldMappings() {
+		copyPersonContactField(fields, account, mapping.account, mapping.contact)
 	}
 	if _, ok := fields["LastName"]; !ok || fields["LastName"].Kind == storage.ValueNull {
 		fields["LastName"] = storage.StringValue(stringField(account.Fields, "Name"))
@@ -1272,8 +1308,38 @@ func personContactFields(account storage.Record) map[string]storage.Value {
 	return fields
 }
 
+type personContactFieldMapping struct {
+	account string
+	contact string
+}
+
+func personContactFieldMappings() []personContactFieldMapping {
+	mappings := []personContactFieldMapping{
+		{"FirstName", "FirstName"},
+		{"LastName", "LastName"},
+		{"PersonEmail", "Email"},
+		{"PersonHomePhone", "HomePhone"},
+		{"PersonMobilePhone", "MobilePhone"},
+		{"PersonTitle", "Title"},
+		{"PersonDepartment", "Department"},
+		{"PersonBirthdate", "Birthdate"},
+		{"PersonDoNotCall", "DoNotCall"},
+		{"PersonHasOptedOutOfEmail", "HasOptedOutOfEmail"},
+		{"PersonHasOptedOutOfFax", "HasOptedOutOfFax"},
+		{"PersonEmailBouncedReason", "EmailBouncedReason"},
+		{"PersonEmailBouncedDate", "EmailBouncedDate"},
+	}
+	for _, suffix := range []string{"Street", "City", "State", "StateCode", "PostalCode", "Country", "CountryCode"} {
+		mappings = append(mappings,
+			personContactFieldMapping{"PersonMailing" + suffix, "Mailing" + suffix},
+			personContactFieldMapping{"PersonOther" + suffix, "Other" + suffix},
+		)
+	}
+	return mappings
+}
+
 func copyPersonContactField(fields map[string]storage.Value, account storage.Record, source, target string) {
-	if value, ok := account.Fields[source]; ok {
+	if value, ok := account.GetField(source); ok {
 		fields[target] = value.Clone()
 	}
 }
@@ -1299,10 +1365,29 @@ func (e *Engine) syncPersonContact(account storage.Record) error {
 	}
 	for field, value := range personContactFields(account) {
 		contact.Fields[field] = value.Clone()
+		delete(contact.ExplicitNulls, field)
 	}
+	clearExplicitPersonContactFields(&contact, account)
 	contactObject.Records[contactID] = contact
 	e.Org.Objects["Contact"] = contactObject
 	return nil
+}
+
+func clearExplicitPersonContactFields(contact *storage.Record, account storage.Record) {
+	if contact == nil {
+		return
+	}
+	for _, mapping := range personContactFieldMappings() {
+		if !account.HasExplicitNull(mapping.account) {
+			continue
+		}
+		deleteCaseInsensitiveField(contact.Fields, mapping.contact)
+		delete(contact.Fields, mapping.contact)
+		if contact.ExplicitNulls == nil {
+			contact.ExplicitNulls = make(map[string]bool)
+		}
+		contact.ExplicitNulls[mapping.contact] = true
+	}
 }
 
 func deleteCaseInsensitiveField(fields map[string]storage.Value, field string) {
@@ -1314,6 +1399,46 @@ func deleteCaseInsensitiveField(fields map[string]storage.Value, field string) {
 			delete(fields, existing)
 		}
 	}
+}
+
+func deleteCaseInsensitiveFieldAlias(definition storage.ObjectDefinition, namespace string, fields map[string]storage.Value, field string) {
+	if fields == nil || field == "" {
+		return
+	}
+	for existing := range fields {
+		if existing == field {
+			continue
+		}
+		if dmlFieldAliasMatches(definition, namespace, existing, field) {
+			delete(fields, existing)
+		}
+	}
+}
+
+func deleteCaseInsensitiveNullAlias(definition storage.ObjectDefinition, namespace string, fields map[string]bool, field string) {
+	if fields == nil || field == "" {
+		return
+	}
+	for existing := range fields {
+		if existing == field {
+			continue
+		}
+		if dmlFieldAliasMatches(definition, namespace, existing, field) {
+			delete(fields, existing)
+		}
+	}
+}
+
+func dmlFieldAliasMatches(definition storage.ObjectDefinition, namespace, existing, field string) bool {
+	if strings.EqualFold(existing, field) {
+		return true
+	}
+	canonicalField, ok := storage.ResolveFieldName(definition, namespace, field)
+	if !ok {
+		return false
+	}
+	canonicalExisting, ok := storage.ResolveFieldName(definition, namespace, existing)
+	return ok && strings.EqualFold(canonicalExisting, canonicalField)
 }
 
 func fileExtension(path string) string {
@@ -1397,13 +1522,15 @@ func (e *Engine) updateOne(record storage.Record) error {
 		finalRecord.ExplicitNulls = make(map[string]bool)
 	}
 	for field, value := range record.Fields {
-		deleteCaseInsensitiveField(finalRecord.Fields, field)
+		deleteCaseInsensitiveFieldAlias(object.Definition, e.Org.Namespace, finalRecord.Fields, field)
+		deleteCaseInsensitiveNullAlias(object.Definition, e.Org.Namespace, finalRecord.ExplicitNulls, field)
 		finalRecord.Fields[field] = value.Clone()
 		delete(finalRecord.ExplicitNulls, field)
 	}
 	for field, isNull := range record.ExplicitNulls {
 		if isNull {
-			deleteCaseInsensitiveField(finalRecord.Fields, field)
+			deleteCaseInsensitiveFieldAlias(object.Definition, e.Org.Namespace, finalRecord.Fields, field)
+			deleteCaseInsensitiveNullAlias(object.Definition, e.Org.Namespace, finalRecord.ExplicitNulls, field)
 			delete(finalRecord.Fields, field)
 			finalRecord.ExplicitNulls[field] = true
 		}
@@ -1411,7 +1538,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err := validateRequiredUpdate(object.Definition, record); err != nil {
 		return err
 	}
-	priorRecord := existing.Clone()
+	priorRecord := e.priorRecordForValidation(record.ID, existing)
 	if err := e.validateValidationRules(objectName, object.Definition, finalRecord, &priorRecord, false); err != nil {
 		return err
 	}
@@ -1431,11 +1558,15 @@ func (e *Engine) updateOne(record storage.Record) error {
 	stamp := e.systemTimestamp()
 	oldRecord := existing.Clone()
 	for field, value := range record.Fields {
+		deleteCaseInsensitiveFieldAlias(object.Definition, e.Org.Namespace, existing.Fields, field)
+		deleteCaseInsensitiveNullAlias(object.Definition, e.Org.Namespace, existing.ExplicitNulls, field)
 		existing.Fields[field] = value.Clone()
 		delete(existing.ExplicitNulls, field)
 	}
 	for field, isNull := range record.ExplicitNulls {
 		if isNull {
+			deleteCaseInsensitiveFieldAlias(object.Definition, e.Org.Namespace, existing.Fields, field)
+			deleteCaseInsensitiveNullAlias(object.Definition, e.Org.Namespace, existing.ExplicitNulls, field)
 			delete(existing.Fields, field)
 			existing.ExplicitNulls[field] = true
 		}
@@ -1458,7 +1589,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 		}
 	}
 	if !e.DeferAutomation {
-		if err := e.ApplyAutomation(objectName, storedID); err != nil {
+		if err := e.withPriorRecordForAutomation(storedID, oldRecord, func() error {
+			return e.ApplyAutomation(objectName, storedID)
+		}); err != nil {
 			*e.Org = rollbackOrg
 			e.IDs.Sequences = rollbackSequences
 			e.clearUniqueIndexes()
@@ -1466,6 +1599,34 @@ func (e *Engine) updateOne(record storage.Record) error {
 		}
 	}
 	return nil
+}
+
+func (e *Engine) priorRecordForValidation(id storage.ID, fallback storage.Record) storage.Record {
+	if e != nil && e.PriorRecords != nil && id != "" {
+		if _, prior, ok := storage.LookupRecordByID(e.PriorRecords, id); ok {
+			return prior.Clone()
+		}
+	}
+	return fallback.Clone()
+}
+
+func (e *Engine) withPriorRecordForAutomation(id storage.ID, prior storage.Record, fn func() error) error {
+	if e == nil || id == "" {
+		return fn()
+	}
+	if e.PriorRecords == nil {
+		e.PriorRecords = map[storage.ID]storage.Record{id: prior.Clone()}
+		defer func() {
+			e.PriorRecords = nil
+		}()
+		return fn()
+	}
+	if _, _, ok := storage.LookupRecordByID(e.PriorRecords, id); ok {
+		return fn()
+	}
+	e.PriorRecords[id] = prior.Clone()
+	defer delete(e.PriorRecords, id)
+	return fn()
 }
 
 func stripStoredCalculatedFields(definition storage.ObjectDefinition, record *storage.Record) {
@@ -1560,6 +1721,20 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 	if err != nil {
 		return "", false, err
 	}
+	if isExplicitIDUpsertField(object.Definition, e.Org.Namespace, externalIDField) {
+		record = recordWithExplicitIDField(object.Definition, e.Org.Namespace, record)
+		if record.ID == "" {
+			id, err := e.insertOne(record)
+			return id, true, err
+		}
+		if err := e.validateUpsertIDReference(record); err != nil {
+			return "", false, err
+		}
+		if err := e.updateOne(record); err != nil {
+			return "", false, err
+		}
+		return record.ID, false, nil
+	}
 	field, value, ok, err := upsertExternalID(object.Definition, e.Org.Namespace, record, externalIDField)
 	if err != nil {
 		return "", false, err
@@ -1591,6 +1766,33 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 		return "", false, err
 	}
 	return record.ID, false, nil
+}
+
+func isExplicitIDUpsertField(definition storage.ObjectDefinition, namespace, fieldName string) bool {
+	fieldName = strings.TrimSpace(fieldName)
+	if fieldName == "" {
+		return false
+	}
+	if canonical, ok := storage.ResolveFieldName(definition, namespace, fieldName); ok {
+		return strings.EqualFold(canonical, "Id")
+	}
+	return strings.EqualFold(fieldName, "Id")
+}
+
+func recordWithExplicitIDField(definition storage.ObjectDefinition, namespace string, record storage.Record) storage.Record {
+	if record.ID != "" {
+		return record
+	}
+	for fieldName, value := range record.Fields {
+		if !isExplicitIDUpsertField(definition, namespace, fieldName) {
+			continue
+		}
+		if id := idFromStorageValue(value); id != "" {
+			record.ID = id
+		}
+		return record
+	}
+	return record
 }
 
 func (e *Engine) validateUpsertIDReference(record storage.Record) error {
@@ -2240,6 +2442,9 @@ func validateRequiredUpdate(definition storage.ObjectDefinition, record storage.
 			continue
 		}
 		if record.HasExplicitNull(name) {
+			if allowRequiredUpdateExplicitNull(definition, field, name) {
+				continue
+			}
 			missing = append(missing, name)
 		}
 	}
@@ -2287,6 +2492,16 @@ func requiredFieldOrder(field string) int {
 
 func isDMLRequiredField(field storage.Field) bool {
 	return field.Required
+}
+
+func allowRequiredUpdateExplicitNull(definition storage.ObjectDefinition, field storage.Field, fieldName string) bool {
+	if field.Type != storage.FieldString {
+		return false
+	}
+	if !strings.EqualFold(fieldName, "Name") && !strings.EqualFold(field.APIName, "Name") {
+		return false
+	}
+	return strings.HasSuffix(strings.ToLower(definition.APIName), "__c")
 }
 
 func stripReadOnlyUpdateFields(definition storage.ObjectDefinition, namespace string, record *storage.Record) {
@@ -2518,11 +2733,102 @@ func (e *Engine) validateUnique(objectName string, definition storage.ObjectDefi
 				if id == currentID {
 					continue
 				}
+				if e.uniqueBatchIgnoresConflict(objectName, fieldName, currentID, id, key) {
+					continue
+				}
 				return dmlErrorf("DUPLICATE_VALUE", []string{fieldName}, "dml: duplicate value %s.%s", objectName, fieldName)
 			}
 		}
 	}
 	return nil
+}
+
+type uniqueBatchContext struct {
+	finalKeys map[string]map[storage.ID]map[string]bool
+}
+
+func (e *Engine) beginUniqueBatchContext(records []storage.Record) func() {
+	if e == nil || !e.Options.AllowBatchUniqueValueSwap || len(records) < 2 {
+		return func() {}
+	}
+	previous := e.uniqueBatch
+	e.uniqueBatch = e.newUniqueBatchContext(records)
+	return func() {
+		e.uniqueBatch = previous
+	}
+}
+
+func (e *Engine) newUniqueBatchContext(records []storage.Record) *uniqueBatchContext {
+	if e == nil || e.Org == nil {
+		return nil
+	}
+	ctx := &uniqueBatchContext{finalKeys: make(map[string]map[storage.ID]map[string]bool)}
+	for _, record := range records {
+		objectName, ok := storage.ResolveObjectName(*e.Org, record.Object)
+		if !ok {
+			continue
+		}
+		object := e.Org.Objects[objectName]
+		if len(e.uniqueFieldNames(objectName, object.Definition)) == 0 || record.ID == "" {
+			continue
+		}
+		storedID, existing, ok := storage.LookupRecordByID(object.Records, record.ID)
+		if !ok {
+			continue
+		}
+		for _, fieldName := range e.uniqueFieldNames(objectName, object.Definition) {
+			value, ok := batchFinalUniqueValue(record, existing, fieldName)
+			if !ok || value.Kind == storage.ValueNull {
+				continue
+			}
+			indexKey := uniqueIndexKey(objectName, fieldName)
+			byID := ctx.finalKeys[indexKey]
+			if byID == nil {
+				byID = make(map[storage.ID]map[string]bool)
+				ctx.finalKeys[indexKey] = byID
+			}
+			keys := byID[storedID]
+			if keys == nil {
+				keys = make(map[string]bool)
+				byID[storedID] = keys
+			}
+			for _, key := range uniqueValueKeys(object.Definition.Fields[fieldName], value) {
+				keys[key] = true
+			}
+		}
+	}
+	if len(ctx.finalKeys) == 0 {
+		return nil
+	}
+	return ctx
+}
+
+func batchFinalUniqueValue(record storage.Record, existing storage.Record, fieldName string) (storage.Value, bool) {
+	if record.HasExplicitNull(fieldName) {
+		return storage.NullValue(), true
+	}
+	if value, ok := record.GetField(fieldName); ok {
+		return value, true
+	}
+	return existing.GetField(fieldName)
+}
+
+func (e *Engine) uniqueBatchIgnoresConflict(objectName, fieldName string, currentID, conflictID storage.ID, key string) bool {
+	if e == nil || e.uniqueBatch == nil || currentID == "" || conflictID == "" {
+		return false
+	}
+	byID := e.uniqueBatch.finalKeys[uniqueIndexKey(objectName, fieldName)]
+	if len(byID) == 0 {
+		return false
+	}
+	if _, ok := byID[currentID]; !ok {
+		return false
+	}
+	conflictKeys := byID[conflictID]
+	if len(conflictKeys) == 0 {
+		return false
+	}
+	return !conflictKeys[key]
 }
 
 func (e *Engine) uniqueIndexForField(objectName string, definition storage.ObjectDefinition, fieldName string) map[string]map[storage.ID]bool {
@@ -2752,7 +3058,8 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return err
 	}
-	if err := e.validateValidationRules(objectName, object.Definition, record, nil, false); err != nil {
+	priorRecord := e.priorRecordForValidation(id, previous)
+	if err := e.validateValidationRules(objectName, object.Definition, record, &priorRecord, false); err != nil {
 		return err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
@@ -2982,7 +3289,8 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return err
 	}
-	if err := e.validateValidationRules(objectName, object.Definition, record, nil, false); err != nil {
+	priorRecord := e.priorRecordForValidation(id, previous)
+	if err := e.validateValidationRules(objectName, object.Definition, record, &priorRecord, false); err != nil {
 		return err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {

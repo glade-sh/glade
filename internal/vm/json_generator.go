@@ -53,15 +53,17 @@ func callJSONGeneratorMember(receiver Value, method string, args []Value) (Value
 		updated, err := jsonGeneratorWriteFieldName(receiver, args[0].Text)
 		return Null, updated, true, true, err
 	case "writeString":
-		if len(args) != 1 || args[0].Kind != ValueString {
+		value, ok := jsonGeneratorStringArgument(args, 0)
+		if len(args) != 1 || !ok {
 			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeString expects String")
 		}
-		return jsonGeneratorWriteScalar(receiver, args[0])
+		return jsonGeneratorWriteScalar(receiver, value)
 	case "writeStringField":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+		value, ok := jsonGeneratorStringArgument(args, 1)
+		if len(args) != 2 || args[0].Kind != ValueString || !ok {
 			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeStringField expects String field name and String value")
 		}
-		return jsonGeneratorWriteField(receiver, args[0].Text, args[1])
+		return jsonGeneratorWriteField(receiver, args[0].Text, value)
 	case "writeObject":
 		if len(args) != 1 {
 			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeObject expects Object")
@@ -535,7 +537,12 @@ func jsonPlatformScalarFromValue(value Value) (any, bool) {
 		typeName = rest
 	}
 	switch typeName {
-	case "Date", "Datetime", "Time", "URL":
+	case "Date", "Datetime", "URL":
+		return text.Text, true
+	case "Time":
+		if clock, err := parseTimeText(text.Text); err == nil {
+			return clock + "Z", true
+		}
 		return text.Text, true
 	case "Blob":
 		return base64.StdEncoding.EncodeToString([]byte(text.Text)), true
@@ -593,6 +600,24 @@ func jsonGeneratorIntField(receiver Value, field string) Value {
 
 func jsonGeneratorIsNumber(value Value) bool {
 	return value.Kind == ValueInt || value.Kind == ValueDecimal
+}
+
+func jsonGeneratorStringArgument(args []Value, index int) (Value, bool) {
+	if index < 0 || index >= len(args) {
+		return Null, false
+	}
+	value := args[index]
+	if value.Kind == ValueString {
+		return value, true
+	}
+	if jsonGeneratorIsPlatformScalar(value, "Id") {
+		raw, err := platformScalarText(value, "Id")
+		if err != nil {
+			return Null, false
+		}
+		return String(raw), true
+	}
+	return Null, false
 }
 
 func jsonGeneratorIsPlatformScalar(value Value, typeName string) bool {

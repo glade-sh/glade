@@ -21,7 +21,7 @@
   },
   "expected": {
     "error": {
-      "type": "UnsupportedFeature",
+      "type": "System.StringException",
       "message": "unsupported call \"EncodingUtil.urlEncode charset \\\"UTF-16\\\"\""
     }
   }

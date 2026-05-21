@@ -15,10 +15,12 @@ import (
 )
 
 type SalesforceRunOptions struct {
-	Project    string
-	OrgAlias   string
-	Filter     string
-	WaitMinute int
+	Project     string
+	OrgAlias    string
+	Filter      string
+	WaitMinute  int
+	CaptureLogs bool
+	LogLimit    int
 }
 
 type SalesforceRunner struct {
@@ -35,6 +37,14 @@ type ApexLogObservation struct {
 	Events        []OracleEvent        `json:"events,omitempty"`
 	DebugPayloads []OracleDebugPayload `json:"debugPayloads,omitempty"`
 	Limits        []OracleLimit        `json:"limits,omitempty"`
+}
+
+type ApexLogRecord struct {
+	ID        string `json:"Id"`
+	Operation string `json:"Operation"`
+	Request   string `json:"Request"`
+	StartTime string `json:"StartTime"`
+	Raw       string `json:"-"`
 }
 
 func (r SalesforceRunner) RunTests(ctx context.Context, opts SalesforceRunOptions) ([]OracleRun, error) {
@@ -68,7 +78,17 @@ func (r SalesforceRunner) RunTests(ctx context.Context, opts SalesforceRunOption
 		}
 		return nil, fmt.Errorf("sf apex run test failed: %w (stderr: %s)", err, strings.TrimSpace(string(stderr)))
 	}
-	return ParseSalesforceTestResultJSON(opts.Project, opts.OrgAlias, stdout)
+	runs, err := ParseSalesforceTestResultJSON(opts.Project, opts.OrgAlias, stdout)
+	if err != nil {
+		return nil, err
+	}
+	if opts.CaptureLogs {
+		runs, err = r.attachRecentApexLogs(ctx, runner, opts, runs)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return runs, nil
 }
 
 func (r SalesforceRunner) RunAnonymous(probeDir, orgAlias, id, category, source string) (OracleRun, error) {
@@ -91,6 +111,82 @@ func (ExecCommandRunner) Run(ctx context.Context, dir, name string, args ...stri
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	return stdout.Bytes(), stderr.Bytes(), err
+}
+
+func (r SalesforceRunner) attachRecentApexLogs(ctx context.Context, runner CommandRunner, opts SalesforceRunOptions, runs []OracleRun) ([]OracleRun, error) {
+	if opts.LogLimit <= 0 {
+		opts.LogLimit = len(runs)*3 + 20
+	}
+	logs, err := r.fetchRecentApexLogs(ctx, runner, opts)
+	if err != nil {
+		return nil, err
+	}
+	if len(logs) == 0 {
+		return runs, nil
+	}
+	out := make([]OracleRun, len(runs))
+	copy(out, runs)
+	for i := range out {
+		for _, log := range logs {
+			if !apexLogMatchesRun(log.Raw, out[i]) {
+				continue
+			}
+			obs := ParseApexLog(log.Raw)
+			out[i].Events = append(out[i].Events, obs.Events...)
+			out[i].DebugPayloads = append(out[i].DebugPayloads, obs.DebugPayloads...)
+			out[i].Limits = append(out[i].Limits, obs.Limits...)
+			out[i].RawArtifacts = append(out[i].RawArtifacts, OracleArtifact{Type: "ApexLog", Path: log.ID, Raw: log.Raw})
+		}
+		out[i] = NormalizeRun(out[i])
+	}
+	return out, nil
+}
+
+func (r SalesforceRunner) fetchRecentApexLogs(ctx context.Context, runner CommandRunner, opts SalesforceRunOptions) ([]ApexLogRecord, error) {
+	limit := opts.LogLimit
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit < 20 {
+		limit = 20
+	}
+	query := fmt.Sprintf("SELECT Id, Operation, Request, StartTime FROM ApexLog ORDER BY StartTime DESC LIMIT %d", limit)
+	stdout, stderr, err := runner.Run(ctx, opts.Project, "sf", "data", "query", "--use-tooling-api", "--target-org", opts.OrgAlias, "--query", query, "--json")
+	if err != nil {
+		return nil, fmt.Errorf("sf data query ApexLog failed: %w (stderr: %s)", err, strings.TrimSpace(string(stderr)))
+	}
+	var output struct {
+		Result struct {
+			Records []ApexLogRecord `json:"records"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(stdout, &output); err != nil {
+		return nil, fmt.Errorf("parse ApexLog query JSON: %w", err)
+	}
+	logs := make([]ApexLogRecord, 0, len(output.Result.Records))
+	for _, record := range output.Result.Records {
+		if strings.TrimSpace(record.ID) == "" {
+			continue
+		}
+		raw, fetchStderr, fetchErr := runner.Run(ctx, opts.Project, "sf", "apex", "get", "log", "--target-org", opts.OrgAlias, "--log-id", record.ID)
+		if fetchErr != nil {
+			return nil, fmt.Errorf("sf apex get log %s failed: %w (stderr: %s)", record.ID, fetchErr, strings.TrimSpace(string(fetchStderr)))
+		}
+		record.Raw = string(raw)
+		logs = append(logs, record)
+	}
+	return logs, nil
+}
+
+func apexLogMatchesRun(raw string, run OracleRun) bool {
+	lower := strings.ToLower(raw)
+	if strings.TrimSpace(run.TestClass) != "" && !strings.Contains(lower, strings.ToLower(run.TestClass)) {
+		return false
+	}
+	if strings.TrimSpace(run.TestMethod) != "" && !strings.Contains(lower, strings.ToLower(run.TestMethod)) {
+		return false
+	}
+	return true
 }
 
 func ParseSalesforceTestResultJSON(project, orgAlias string, raw []byte) ([]OracleRun, error) {

@@ -93,6 +93,20 @@ type emailTemplateXML struct {
 	Active        *bool  `xml:"available"`
 }
 
+type folderXML struct {
+	Name               string `xml:"name"`
+	AccessType         string `xml:"accessType"`
+	PublicFolderAccess string `xml:"publicFolderAccess"`
+}
+
+type visualforcePageXML struct {
+	APIVersion                string `xml:"apiVersion"`
+	AvailableInTouch          *bool  `xml:"availableInTouch"`
+	ConfirmationTokenRequired *bool  `xml:"confirmationTokenRequired"`
+	Description               string `xml:"description"`
+	Label                     string `xml:"label"`
+}
+
 func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 	var registry storage.MetadataRegistry
 	for _, path := range p.LabelFiles {
@@ -171,6 +185,10 @@ func ApplyProject(org *storage.OrgState, p project.Project) error {
 	}
 	org.Metadata = registry
 	ensureMetadataObjects(org)
+	if err := ensureFolderObject(org, p.FolderFiles, p.Namespace); err != nil {
+		return err
+	}
+	ensureApexPageObject(org, p.VisualforcePageFiles, p.Namespace)
 	return nil
 }
 
@@ -735,6 +753,61 @@ func ensureMetadataObjects(org *storage.OrgState) {
 	}
 }
 
+func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace string) {
+	if org == nil || len(pageFiles) == 0 {
+		return
+	}
+	object := storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "ApexPage",
+			Label:     "Apex Page",
+			KeyPrefix: "066",
+			Fields: map[string]storage.Field{
+				"Id":                          {APIName: "Id", Label: "Record ID", Type: storage.FieldID},
+				"Name":                        {APIName: "Name", Label: "Name", Type: storage.FieldString},
+				"NamespacePrefix":             {APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: storage.FieldString},
+				"ApiVersion":                  {APIName: "ApiVersion", Label: "API Version", Type: storage.FieldDecimal},
+				"ControllerKey":               {APIName: "ControllerKey", Label: "Controller Key", Type: storage.FieldString},
+				"ControllerType":              {APIName: "ControllerType", Label: "Controller Type", Type: storage.FieldString},
+				"Description":                 {APIName: "Description", Label: "Description", Type: storage.FieldString},
+				"IsAvailableInTouch":          {APIName: "IsAvailableInTouch", Label: "Available in Touch", Type: storage.FieldBoolean},
+				"IsConfirmationTokenRequired": {APIName: "IsConfirmationTokenRequired", Label: "Confirmation Token Required", Type: storage.FieldBoolean},
+				"Markup":                      {APIName: "Markup", Label: "Markup", Type: storage.FieldString},
+				"MasterLabel":                 {APIName: "MasterLabel", Label: "Master Label", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	paths := append([]string(nil), pageFiles...)
+	sort.Strings(paths)
+	for i, path := range paths {
+		name := visualforcePageName(path)
+		if name == "" {
+			continue
+		}
+		meta := loadVisualforcePageMeta(path + "-meta.xml")
+		markup := ""
+		if data, err := os.ReadFile(path); err == nil {
+			markup = string(data)
+		}
+		id := storage.ID("066" + leftPad(i+1, 12))
+		object.Records[id] = storage.Record{ID: id, Object: "ApexPage", Fields: map[string]storage.Value{
+			"Id":                          storage.IDValue(id),
+			"Name":                        storage.StringValue(name),
+			"NamespacePrefix":             storage.StringValue(namespace),
+			"ApiVersion":                  visualforcePageAPIVersion(meta.APIVersion),
+			"ControllerKey":               storage.NullValue(),
+			"ControllerType":              storage.NullValue(),
+			"Description":                 storage.StringValue(meta.Description),
+			"IsAvailableInTouch":          storage.BooleanValue(meta.AvailableInTouch != nil && *meta.AvailableInTouch),
+			"IsConfirmationTokenRequired": storage.BooleanValue(meta.ConfirmationTokenRequired != nil && *meta.ConfirmationTokenRequired),
+			"Markup":                      storage.StringValue(markup),
+			"MasterLabel":                 storage.StringValue(firstNonEmpty(meta.Label, name)),
+		}}
+	}
+	org.Objects["ApexPage"] = object
+}
+
 func ensureStaticResourceObject(org *storage.OrgState) {
 	object := storage.ObjectState{
 		Definition: storage.ObjectDefinition{
@@ -791,6 +864,143 @@ func ensureEmailTemplateObject(org *storage.OrgState) {
 		}}
 	}
 	org.Objects["EmailTemplate"] = object
+}
+
+func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace string) error {
+	if org == nil || len(folderFiles) == 0 {
+		return nil
+	}
+	if org.Objects == nil {
+		org.Objects = make(map[string]storage.ObjectState)
+	}
+	object := org.Objects["Folder"]
+	if object.Definition.APIName == "" {
+		object.Definition.APIName = "Folder"
+	}
+	if object.Definition.Label == "" {
+		object.Definition.Label = "Folder"
+	}
+	if object.Definition.PluralLabel == "" {
+		object.Definition.PluralLabel = "Folders"
+	}
+	if object.Definition.KeyPrefix == "" {
+		object.Definition.KeyPrefix = "00l"
+	}
+	if object.Records == nil {
+		object.Records = make(map[storage.ID]storage.Record)
+	}
+	ensureFolderFields(&object.Definition)
+
+	paths := append([]string(nil), folderFiles...)
+	sort.Strings(paths)
+	for i, path := range paths {
+		meta, err := loadFolderMeta(path)
+		if err != nil {
+			return err
+		}
+		developerName := folderDeveloperName(path)
+		name := firstNonEmpty(meta.Name, developerName)
+		if name == "" {
+			continue
+		}
+		namespaceValue := storage.NullValue()
+		if strings.TrimSpace(namespace) != "" {
+			namespaceValue = storage.StringValue(strings.TrimSpace(namespace))
+		}
+		id := storage.ID("00l" + leftPad(i+1, 12))
+		object.Records[id] = storage.Record{ID: id, Object: "Folder", Fields: map[string]storage.Value{
+			"Id":                 storage.IDValue(id),
+			"Name":               storage.StringValue(name),
+			"DeveloperName":      storage.StringValue(developerName),
+			"Type":               storage.StringValue(folderTypeFromPath(path)),
+			"NamespacePrefix":    namespaceValue,
+			"AccessType":         storage.StringValue(strings.TrimSpace(meta.AccessType)),
+			"PublicFolderAccess": storage.StringValue(strings.TrimSpace(meta.PublicFolderAccess)),
+		}}
+	}
+	org.Objects["Folder"] = object
+	return nil
+}
+
+func ensureFolderFields(definition *storage.ObjectDefinition) {
+	if definition.Fields == nil {
+		definition.Fields = make(map[string]storage.Field)
+	}
+	for _, field := range []storage.Field{
+		{APIName: "Id", Label: "Record ID", Type: storage.FieldID},
+		{APIName: "Name", Label: "Name", Type: storage.FieldString},
+		{APIName: "DeveloperName", Label: "Developer Name", Type: storage.FieldString},
+		{APIName: "Type", Label: "Type", Type: storage.FieldString},
+		{APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: storage.FieldString},
+		{APIName: "AccessType", Label: "Access Type", Type: storage.FieldString},
+		{APIName: "PublicFolderAccess", Label: "Public Folder Access", Type: storage.FieldString},
+	} {
+		if _, ok := definition.Fields[field.APIName]; !ok {
+			definition.Fields[field.APIName] = field
+		}
+	}
+}
+
+func loadFolderMeta(path string) (folderXML, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return folderXML{}, err
+	}
+	var raw folderXML
+	if len(strings.TrimSpace(string(data))) > 0 {
+		if err := xml.Unmarshal(data, &raw); err != nil {
+			return folderXML{}, err
+		}
+	}
+	return raw, nil
+}
+
+func folderDeveloperName(path string) string {
+	return metadataNameFromPath(path,
+		".documentFolder-meta.xml",
+		".emailFolder-meta.xml",
+		".reportFolder-meta.xml",
+		".dashboardFolder-meta.xml",
+	)
+}
+
+func folderTypeFromPath(path string) string {
+	lower := strings.ToLower(filepath.Base(path))
+	switch {
+	case strings.HasSuffix(lower, ".documentfolder-meta.xml"):
+		return "Document"
+	case strings.HasSuffix(lower, ".emailfolder-meta.xml"):
+		return "Email"
+	case strings.HasSuffix(lower, ".reportfolder-meta.xml"):
+		return "Report"
+	case strings.HasSuffix(lower, ".dashboardfolder-meta.xml"):
+		return "Dashboard"
+	default:
+		return ""
+	}
+}
+
+func visualforcePageName(path string) string {
+	base := filepath.Base(path)
+	return trimKnownSuffix(base, ".page")
+}
+
+func loadVisualforcePageMeta(path string) visualforcePageXML {
+	var page visualforcePageXML
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return page
+	}
+	_ = xml.Unmarshal(data, &page)
+	return page
+}
+
+func visualforcePageAPIVersion(raw string) storage.Value {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return storage.NullValue()
+	}
+	return storage.DecimalValue(raw)
 }
 
 func sortRegistry(registry *storage.MetadataRegistry) {

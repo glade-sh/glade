@@ -1,6 +1,10 @@
 package oracle
 
-import "testing"
+import (
+	"context"
+	"strings"
+	"testing"
+)
 
 func TestParseApexLogBuildsNormalizedEventsAndPayloads(t *testing.T) {
 	log := `13:11:10.0 (123)|METHOD_ENTRY|[1]|01p8c000000AAAA|AccountOracleTest.createsRecord()
@@ -63,5 +67,70 @@ func TestParseSalesforceTestResultJSONMapsTestOutcomes(t *testing.T) {
 	}
 	if runs[0].Project != "fixture" || runs[0].OrgAlias != "oaer-probe-lab" || runs[0].Status != OracleStatusPass || runs[0].DurationMS != 17 {
 		t.Fatalf("run = %#v", runs[0])
+	}
+}
+
+func TestSalesforceRunnerCanAttachRecentApexLogsForFocusedRun(t *testing.T) {
+	runner := &fakeSalesforceCommandRunner{}
+	runs, err := (SalesforceRunner{CommandRunner: runner}).RunTests(context.Background(), SalesforceRunOptions{
+		Project:     "fixture",
+		OrgAlias:    "oaer-probe-lab",
+		Filter:      "AccountOracleTest.createsRecord",
+		CaptureLogs: true,
+		LogLimit:    3,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(runs) != 1 {
+		t.Fatalf("runs = %#v", runs)
+	}
+	if len(runs[0].Events) == 0 || runs[0].Events[0].Type != OracleEventSOQL {
+		t.Fatalf("events = %#v", runs[0].Events)
+	}
+	if len(runs[0].DebugPayloads) != 1 || runs[0].DebugPayloads[0].Label != "done" {
+		t.Fatalf("debug payloads = %#v", runs[0].DebugPayloads)
+	}
+	if len(runs[0].RawArtifacts) != 2 || runs[0].RawArtifacts[1].Type != "ApexLog" || runs[0].RawArtifacts[1].Path != "07L000000000001" {
+		t.Fatalf("artifacts = %#v", runs[0].RawArtifacts)
+	}
+	if !runner.sawDataQuery || !runner.sawGetLog {
+		t.Fatalf("expected data query and log fetch, calls = %#v", runner.calls)
+	}
+}
+
+type fakeSalesforceCommandRunner struct {
+	calls        []string
+	sawDataQuery bool
+	sawGetLog    bool
+}
+
+func (r *fakeSalesforceCommandRunner) Run(ctx context.Context, dir, name string, args ...string) ([]byte, []byte, error) {
+	r.calls = append(r.calls, name+" "+strings.Join(args, " "))
+	joined := strings.Join(args, " ")
+	switch {
+	case strings.Contains(joined, "apex run test"):
+		return []byte(`{
+  "status": 0,
+  "result": {
+    "tests": [{
+      "ApexClass": {"Name": "AccountOracleTest"},
+      "MethodName": "createsRecord",
+      "Outcome": "Pass",
+      "RunTime": 17,
+      "QueueItemId": "709000000000001"
+    }]
+  }
+}`), nil, nil
+	case strings.Contains(joined, "data query") && strings.Contains(joined, "ApexLog"):
+		r.sawDataQuery = true
+		return []byte(`{"result":{"records":[{"Id":"07L000000000001","Operation":"AccountOracleTest.createsRecord","Request":"Api","StartTime":"2026-05-20T12:00:00.000+0000"}]}}`), nil, nil
+	case strings.Contains(joined, "apex get log") && strings.Contains(joined, "07L000000000001"):
+		r.sawGetLog = true
+		return []byte(`13:11:10.0 (456)|SOQL_EXECUTE_BEGIN|[2]|Aggregations:0|SELECT Id FROM Account
+13:11:10.0 (999)|USER_DEBUG|[4]|DEBUG|OAER_ORACLE:{"label":"done","value":{"ok":true}}
+13:11:10.0 (123)|METHOD_ENTRY|[1]|01p000000000001|AccountOracleTest.createsRecord()`), nil, nil
+	default:
+		return nil, []byte("unexpected command"), context.Canceled
 	}
 }

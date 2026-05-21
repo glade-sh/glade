@@ -760,23 +760,26 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		}
 		return Int(int64(stringOrdinalIndexOf(receiver.Text, needle, ordinal, true))), true, nil
 	case "replace":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+		target, replacement, ok := stringReplacementArgs(args)
+		if !ok {
 			return Null, true, fmt.Errorf("String.replace expects target and replacement Strings")
 		}
-		if args[0].Text == "" {
+		if target == "" {
 			return receiver, true, nil
 		}
-		return String(strings.ReplaceAll(receiver.Text, args[0].Text, args[1].Text)), true, nil
+		return String(strings.ReplaceAll(receiver.Text, target, replacement)), true, nil
 	case "replaceOnce":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+		target, replacement, ok := stringReplacementArgs(args)
+		if !ok {
 			return Null, true, fmt.Errorf("String.replaceOnce expects target and replacement Strings")
 		}
-		return String(stringReplaceLiteral(receiver.Text, args[0].Text, args[1].Text, false, true)), true, nil
+		return String(stringReplaceLiteral(receiver.Text, target, replacement, false, true)), true, nil
 	case "replaceIgnoreCase":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+		target, replacement, ok := stringReplacementArgs(args)
+		if !ok {
 			return Null, true, fmt.Errorf("String.replaceIgnoreCase expects target and replacement Strings")
 		}
-		return String(stringReplaceLiteral(receiver.Text, args[0].Text, args[1].Text, true, false)), true, nil
+		return String(stringReplaceLiteral(receiver.Text, target, replacement, true, false)), true, nil
 	case "replaceAll":
 		replaced, err := stringRegexReplace("String.replaceAll", receiver.Text, args, true)
 		if err != nil {
@@ -1468,7 +1471,10 @@ func numericStatic(callee string, args []Value) (Value, error) {
 	case "Integer.valueOf":
 		switch args[0].Kind {
 		case ValueNull:
-			return Null, nil
+			if integerValueOfNullReturnsNull(args[0]) {
+				return Null, nil
+			}
+			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 		case ValueInt:
 			converted, err := int32FromFloat(callee, float64(args[0].Int))
 			if err != nil {
@@ -1493,7 +1499,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 	case "Long.valueOf":
 		switch args[0].Kind {
 		case ValueNull:
-			return Null, nil
+			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 		case ValueInt:
 			return args[0], nil
 		case ValueDecimal:
@@ -1513,7 +1519,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		}
 	case "Decimal.valueOf", "Double.valueOf":
 		if args[0].Kind == ValueNull {
-			return Null, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
+			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 		}
 		switch args[0].Kind {
 		case ValueDecimal:
@@ -1537,6 +1543,19 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		}
 	default:
 		return Null, unsupportedCallError(callee)
+	}
+}
+
+func integerValueOfNullReturnsNull(value Value) bool {
+	typeName := strings.TrimSpace(value.Type)
+	if rest, ok := stripLeadingSystemNamespace(typeName); ok {
+		typeName = rest
+	}
+	switch typeName {
+	case "Integer", "Decimal", "Object":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -2768,11 +2787,6 @@ func mapSObjectTypeName(receiver Value) string {
 	if valueType := mapConcreteSObjectValueType(receiver.Type); valueType != "" {
 		return valueType
 	}
-	for _, item := range receiver.Map {
-		if item.Kind == ValueObject && item.Type != "" && item.Type != "Object" && !strings.EqualFold(item.Type, "sObject") {
-			return item.Type
-		}
-	}
 	return ""
 }
 
@@ -2803,6 +2817,31 @@ func stringArg(name string, args []Value) (string, error) {
 		return "", newExceptionError("System.TypeException", fmt.Sprintf("%s expects String argument", name))
 	}
 	return args[0].Text, nil
+}
+
+func stringReplacementArgs(args []Value) (string, string, bool) {
+	if len(args) != 2 {
+		return "", "", false
+	}
+	target, ok := stringReplacementText(args[0])
+	if !ok {
+		return "", "", false
+	}
+	replacement, ok := stringReplacementText(args[1])
+	if !ok {
+		return "", "", false
+	}
+	return target, replacement, true
+}
+
+func stringReplacementText(value Value) (string, bool) {
+	if idText, ok := typedIDValueText(value); ok {
+		return displayIDText(idText), true
+	}
+	if value.Kind != ValueString {
+		return "", false
+	}
+	return value.Text, true
 }
 
 func stringIntArg(name string, args []Value) (int, error) {

@@ -36,6 +36,28 @@ System.assert(gen.isClosed());
 	}
 }
 
+func TestExecJSONGeneratorWriteStringAcceptsIdValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id accountId = '001000000000001AAA';
+JSONGenerator gen = JSON.createGenerator(false);
+gen.writeStartObject();
+gen.writeStringField('accountId', accountId);
+gen.writeFieldName('ids');
+gen.writeStartArray();
+gen.writeString(accountId);
+gen.writeEndArray();
+gen.writeEndObject();
+System.assertEquals('{"accountId":"001000000000001AAA","ids":["001000000000001AAA"]}', gen.getAsString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONParserGeneratorMethodsAreCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = json.CREATEGENERATOR(false);
@@ -1214,6 +1236,66 @@ func TestTypedValueFromJSONResolvesNestedFieldTypes(t *testing.T) {
 	}
 }
 
+func TestTypedValueFromJSONResolvesNamespacedInnerSObjectWrapperFields(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "Outer.Response",
+		Namespace: "NU",
+		Fields: map[string]Field{
+			"CartItems": {Name: "CartItems", Type: "List<CartItemWrapper>", Access: "public"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "Outer.CartItemWrapper",
+		Namespace: "NU",
+		Fields: map[string]Field{
+			"CartItem": {Name: "CartItem", Type: "CartItem__c", Access: "public"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "CartItem__c",
+			Fields: map[string]storage.Field{
+				"Id":           {APIName: "Id", Type: storage.FieldID},
+				"OrderItem__c": {APIName: "OrderItem__c", Type: storage.FieldReference, ReferenceTo: []string{"OrderItem__c"}},
+				"Total__c":     {APIName: "Total__c", Type: storage.FieldDecimal},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	value, err := machine.typedValueFromJSON("NU.Outer.Response", map[string]any{
+		"CartItems": []any{
+			map[string]any{
+				"CartItem": map[string]any{"OrderItem__c": "a01000000000001", "Total__c": int64(5)},
+			},
+		},
+	}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	items := value.Fields["CartItems"]
+	if items.Kind != ValueList || len(items.List) != 1 {
+		t.Fatalf("CartItems = %#v", items)
+	}
+	wrapper := items.List[0]
+	cartItem := wrapper.Fields["CartItem"]
+	if cartItem.Kind != ValueObject || cartItem.Type != "CartItem__c" {
+		t.Fatalf("CartItem = %#v", cartItem)
+	}
+	if got := cartItem.Fields["OrderItem__c"].Text; got != "a01000000000001" {
+		t.Fatalf("OrderItem__c = %q", got)
+	}
+	if got := cartItem.Fields["Total__c"].Decimal; got != 5 {
+		t.Fatalf("Total__c = %v", got)
+	}
+}
+
 func TestExecJSONDeserializeDatabaseResultDTOs(t *testing.T) {
 	program, err := CompileAnonymous(`
 Database.SaveResult saved = JSON.deserialize('{"success":false,"id":null,"errors":[{"statusCode":"UNABLE_TO_LOCK_ROW","message":"locked","fields":["Name"]}]}', Database.SaveResult.class);
@@ -1313,6 +1395,42 @@ System.assertEquals('001B000001DVM9t', parent.toString());
 	account.Definition.Fields["Active__c"] = storage.Field{APIName: "Active__c", Type: storage.FieldBoolean}
 	account.Definition.Fields["ParentId"] = storage.Field{APIName: "ParentId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}}
 	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeSObjectDoesNotApplyMetadataDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+CartItem__c decoded = (CartItem__c)JSON.deserialize('{"Id":"a00000000000001AAA"}', CartItem__c.class);
+System.assertEquals(null, decoded.TotalTax__c);
+System.assert(decoded.isSet(CartItem__c.TotalTax__c.getDescribe().getName()));
+System.assert(!decoded.getPopulatedFieldsAsMap().containsKey('TotalTax__c'));
+System.assertEquals(false, decoded.Recurring__c);
+System.assert(decoded.isSet(CartItem__c.Recurring__c.getDescribe().getName()));
+System.assert(!decoded.getPopulatedFieldsAsMap().containsKey('Recurring__c'));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "CartItem__c",
+			Fields: map[string]storage.Field{
+				"Id":          {APIName: "Id", Type: storage.FieldID},
+				"TotalTax__c": {APIName: "TotalTax__c", Type: storage.FieldDecimal, DefaultValue: "0"},
+				"Recurring__c": {
+					APIName:      "Recurring__c",
+					Type:         storage.FieldBoolean,
+					DefaultValue: "false",
+				},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -1426,6 +1544,8 @@ System.assertEquals('One', contacts[0].LastName);
 System.assertEquals(true, contacts[0].DoNotCall);
 System.assertEquals('Two', contacts[1].LastName);
 System.assertEquals(false, contacts[1].DoNotCall);
+Account decodedArray = JSON.deserialize('{"Name":"Acme","Contacts":[{"attributes":{"type":"Contact"},"LastName":"Three"}]}', Account.class);
+System.assertEquals('Three', decodedArray.Contacts[0].LastName);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2009,7 +2129,7 @@ gen.writeEndObject();
 String text = gen.getAsString();
 System.assert(text.contains('"date":"2024-02-29"'));
 System.assert(text.contains('"when":"2024-02-29T12:34:56Z"'));
-System.assert(text.contains('"clock":"05:06:07"'));
+System.assert(text.contains('"clock":"05:06:07.000Z"'));
 System.assert(text.contains('"id":"001B000001DVM9t"'));
 System.assert(text.contains('"blob":"YWJj"'));
 System.assert(text.contains('"nested"'));

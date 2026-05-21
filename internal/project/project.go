@@ -32,6 +32,7 @@ type Project struct {
 	ContentAssetFiles          []string                   `json:"contentAssetFiles,omitempty"`
 	ContentAssetMetas          []string                   `json:"contentAssetMetas,omitempty"`
 	EmailTemplateFiles         []string                   `json:"emailTemplateFiles,omitempty"`
+	FolderFiles                []string                   `json:"folderFiles,omitempty"`
 	NamedCredentialFiles       []string                   `json:"namedCredentialFiles"`
 	RemoteSiteFiles            []string                   `json:"remoteSiteFiles"`
 	CustomMetadataFiles        []string                   `json:"customMetadataFiles"`
@@ -275,6 +276,7 @@ func load(root string, stack map[string]bool) (Project, error) {
 	sort.Strings(p.ContentAssetFiles)
 	sort.Strings(p.ContentAssetMetas)
 	sort.Strings(p.EmailTemplateFiles)
+	sort.Strings(p.FolderFiles)
 	sort.Strings(p.NamedCredentialFiles)
 	sort.Strings(p.RemoteSiteFiles)
 	sort.Strings(p.CustomMetadataFiles)
@@ -562,6 +564,8 @@ func collectFiles(root string, p *Project) error {
 			p.ContentAssetFiles = append(p.ContentAssetFiles, path)
 		case strings.HasSuffix(lower, ".email"), strings.HasSuffix(lower, ".email-meta.xml"):
 			p.EmailTemplateFiles = append(p.EmailTemplateFiles, path)
+		case isFolderMetadataPath(lower):
+			p.FolderFiles = append(p.FolderFiles, path)
 		case strings.HasSuffix(lower, ".namedcredential"), strings.HasSuffix(lower, ".namedcredential-meta.xml"):
 			p.NamedCredentialFiles = append(p.NamedCredentialFiles, path)
 		case strings.HasSuffix(lower, ".remotesite"), strings.HasSuffix(lower, ".remotesite-meta.xml"):
@@ -640,6 +644,20 @@ func isStaticResourceContentFile(path string) bool {
 		}
 		name := strings.ToLower(parts[len(parts)-1])
 		return !strings.HasSuffix(name, "-meta.xml") && !strings.HasSuffix(name, ".xml")
+	}
+	return false
+}
+
+func isFolderMetadataPath(path string) bool {
+	for _, suffix := range []string{
+		".documentfolder-meta.xml",
+		".emailfolder-meta.xml",
+		".reportfolder-meta.xml",
+		".dashboardfolder-meta.xml",
+	} {
+		if strings.HasSuffix(path, suffix) {
+			return true
+		}
 	}
 	return false
 }

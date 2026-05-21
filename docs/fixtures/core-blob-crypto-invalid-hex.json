@@ -21,8 +21,8 @@
   },
   "expected": {
     "error": {
-      "type": "Error",
-      "message": "EncodingUtil.convertFromHex invalid hexadecimal string"
+      "type": "System.InvalidParameterValueException",
+      "message": "invalid hexadecimal string"
     }
   }
 }

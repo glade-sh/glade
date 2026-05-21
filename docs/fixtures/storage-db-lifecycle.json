@@ -19,17 +19,17 @@
       "exportedSequences": 12,
       "importedAccountRows": 1,
       "importedProfiles": 6,
-      "importedRecords": 24,
-      "importedUsers": 1,
+      "importedRecords": 31,
+      "importedUsers": 2,
       "ok": true,
-      "permissions": 3,
+      "permissions": 9,
       "profiles": 6,
       "resetAccountRows": 0,
-      "resetRecords": 23,
+      "resetRecords": 30,
       "schemaVersion": 1,
       "seedAccountRows": 1,
-      "seedRecords": 24,
-      "users": 1
+      "seedRecords": 31,
+      "users": 2
     }
   }
 }

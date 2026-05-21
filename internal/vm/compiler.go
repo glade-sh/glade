@@ -1316,6 +1316,16 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 		if tok.text == "[" {
 			return p.parseSOQLLiteral(tok.pos)
 		}
+		if tok.text == "." && p.peek(tokenNumber, "") {
+			number := p.advance()
+			text := "." + number.text
+			if parsed, isDecimal := parseNumberTokenText(text); !isDecimal {
+				return ir.Expr{}, fmt.Errorf("invalid decimal %q at byte %d", text, tok.pos)
+			} else if _, err := strconv.ParseFloat(parsed, 64); err != nil {
+				return ir.Expr{}, fmt.Errorf("invalid decimal %q at byte %d", text, tok.pos)
+			}
+			return ir.Expr{Kind: ir.ExprLiteral, Value: text}, nil
+		}
 	}
 	return ir.Expr{}, fmt.Errorf("unexpected token %q at byte %d", p.tokens[p.pos-1].text, p.tokens[p.pos-1].pos)
 }

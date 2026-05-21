@@ -1037,21 +1037,28 @@ func maxRecordTypeSequence(org OrgState) uint64 {
 
 func ensureRecordTypeObject(org *OrgState) {
 	ensureObject(org, "RecordType", "012", map[string]Field{
-		"Name":          {APIName: "Name", Type: FieldString},
-		"DeveloperName": {APIName: "DeveloperName", Type: FieldString},
-		"SobjectType":   {APIName: "SobjectType", Type: FieldString},
-		"IsActive":      {APIName: "IsActive", Type: FieldBoolean},
-		"Description":   {APIName: "Description", Type: FieldString},
+		"Name":            {APIName: "Name", Type: FieldString},
+		"DeveloperName":   {APIName: "DeveloperName", Type: FieldString},
+		"NamespacePrefix": {APIName: "NamespacePrefix", Type: FieldString},
+		"SobjectType":     {APIName: "SobjectType", Type: FieldString},
+		"IsActive":        {APIName: "IsActive", Type: FieldBoolean},
+		"Description":     {APIName: "Description", Type: FieldString},
 	})
 }
 
 func ensureRecordTypeRecords(org *OrgState) {
 	usedIDs := make(map[ID]bool)
 	usedIDObjects := make(map[ID]string)
+	existingRecordTypes := make(map[string]ID)
 	if recordTypeObject := org.Objects["RecordType"]; len(recordTypeObject.Records) > 0 {
 		for id, record := range recordTypeObject.Records {
 			usedIDs[id] = true
-			usedIDObjects[id] = record.Fields["SobjectType"].String
+			objectName := record.Fields["SobjectType"].String
+			usedIDObjects[id] = objectName
+			developerName := record.Fields["DeveloperName"].String
+			if objectName != "" && developerName != "" {
+				existingRecordTypes[recordTypeSeedKey(objectName, developerName, recordTypeSeedNamespace(record))] = id
+			}
 		}
 	}
 	next := uint64(1)
@@ -1073,6 +1080,16 @@ func ensureRecordTypeRecords(org *OrgState) {
 		}
 		EnsureRecordTypeIDField(&object.Definition)
 		for i, info := range object.Definition.RecordTypes {
+			namespacePrefix := recordTypeNamespacePrefix(*org, info)
+			if info.ID == "" {
+				if existingID, ok := existingRecordTypes[recordTypeSeedKey(objectName, info.DeveloperName, namespacePrefix)]; ok {
+					info.ID = existingID
+				} else if namespacePrefix != "" {
+					if existingID, ok := existingRecordTypes[recordTypeSeedKey(objectName, info.DeveloperName, "")]; ok {
+						info.ID = existingID
+					}
+				}
+			}
 			if info.ID == "" || (usedIDs[info.ID] && !strings.EqualFold(usedIDObjects[info.ID], objectName)) {
 				info.ID, next = nextUnusedRecordTypeID(usedIDs, next)
 			}
@@ -1086,16 +1103,37 @@ func ensureRecordTypeRecords(org *OrgState) {
 				ID:     info.ID,
 				Object: "RecordType",
 				Fields: map[string]Value{
-					"Name":          StringValue(info.Name),
-					"DeveloperName": StringValue(info.DeveloperName),
-					"SobjectType":   StringValue(objectName),
-					"IsActive":      BooleanValue(info.Active),
-					"Description":   StringValue(info.Description),
+					"Name":            StringValue(info.Name),
+					"DeveloperName":   StringValue(info.DeveloperName),
+					"NamespacePrefix": StringValue(namespacePrefix),
+					"SobjectType":     StringValue(objectName),
+					"IsActive":        BooleanValue(info.Active),
+					"Description":     StringValue(info.Description),
 				},
 			})
+			existingRecordTypes[recordTypeSeedKey(objectName, info.DeveloperName, namespacePrefix)] = info.ID
 		}
 		org.Objects[objectName] = object
 	}
+}
+
+func recordTypeSeedKey(objectName, developerName, namespace string) string {
+	return strings.ToLower(objectName) + "\x00" + strings.ToLower(developerName) + "\x00" + strings.ToLower(namespace)
+}
+
+func recordTypeSeedNamespace(record Record) string {
+	value, ok := record.Fields["NamespacePrefix"]
+	if !ok || value.Kind != ValueString {
+		return ""
+	}
+	return strings.TrimSpace(value.String)
+}
+
+func recordTypeNamespacePrefix(org OrgState, info RecordTypeInfo) string {
+	if org.Namespace == "" || strings.EqualFold(info.DeveloperName, "Master") {
+		return ""
+	}
+	return org.Namespace
 }
 
 func nextUnusedRecordTypeID(used map[ID]bool, start uint64) (ID, uint64) {
@@ -1240,8 +1278,45 @@ func putSeedRecord(org *OrgState, objectName string, record Record) {
 	if _, exists := object.Records[record.ID]; exists {
 		return
 	}
-	object.Records[record.ID] = record.Clone()
+	seeded := record.Clone()
+	stampSeedSystemFields(&seeded)
+	object.Records[record.ID] = seeded
 	org.Objects[objectName] = object
+}
+
+const (
+	deterministicSeedSystemTimestamp = "2000-01-01T00:00:00Z"
+	deterministicSeedSystemUserID    = ID("005000000000001")
+)
+
+func stampSeedSystemFields(record *Record) {
+	if record == nil {
+		return
+	}
+	if record.System.CreatedDate == "" {
+		record.System.CreatedDate = seedSystemDateTime(record, "CreatedDate")
+	}
+	if record.System.LastModifiedDate == "" {
+		record.System.LastModifiedDate = seedSystemDateTime(record, "LastModifiedDate")
+	}
+	if record.System.SystemModstamp == "" {
+		record.System.SystemModstamp = seedSystemDateTime(record, "SystemModstamp")
+	}
+	if record.System.CreatedByID == "" {
+		record.System.CreatedByID = deterministicSeedSystemUserID
+	}
+	if record.System.LastModifiedByID == "" {
+		record.System.LastModifiedByID = deterministicSeedSystemUserID
+	}
+}
+
+func seedSystemDateTime(record *Record, fieldName string) string {
+	if record != nil {
+		if value, ok := record.GetField(fieldName); ok && value.Kind == ValueDateTime && strings.TrimSpace(value.String) != "" {
+			return value.String
+		}
+	}
+	return deterministicSeedSystemTimestamp
 }
 
 func cloneValues(in map[string]Value) map[string]Value {

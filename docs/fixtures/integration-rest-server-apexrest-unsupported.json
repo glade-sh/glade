@@ -28,14 +28,14 @@
       "ok": true,
       "persistedAccounts": 0,
       "persistedObjects": 23,
-      "persistedRecords": 23,
-      "permissions": 3,
+      "persistedRecords": 30,
+      "permissions": 9,
       "profiles": 6,
       "requests": 1,
       "statuses": [
         501
       ],
-      "users": 1
+      "users": 2
     }
   }
 }

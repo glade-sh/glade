@@ -568,6 +568,14 @@ func mapKey(v Value) string {
 		if isStubProxy(v) {
 			return string(v.Kind) + ":" + v.Type + ":ref:" + strconv.FormatUint(v.Ref, 10)
 		}
+		if sObjectValueType(v.Type) {
+			if key, ok := objectIDFieldMapKey(v); ok {
+				return key
+			}
+			if key, ok := stableSObjectFieldMapKey(v, make(map[uint64]bool)); ok {
+				return key
+			}
+		}
 		if key, ok := stableObjectFieldMapKey(v, make(map[uint64]bool)); ok {
 			return key
 		}
@@ -576,10 +584,8 @@ func mapKey(v Value) string {
 		}
 	}
 	if v.Kind == ValueObject && v.Type != "" {
-		if id, ok := v.Fields["Id"]; ok {
-			if text, ok := idValueText(id); ok && text != "" {
-				return string(v.Kind) + ":" + v.Type + ":" + canonicalIDMapKey(text)
-			}
+		if key, ok := objectIDFieldMapKey(v); ok {
+			return key
 		}
 	}
 	if v.Kind == ValueString && strings.EqualFold(v.Type, "Id") && looksLikeID(v.Text) {
@@ -591,8 +597,31 @@ func mapKey(v Value) string {
 	return string(v.Kind) + ":" + v.String()
 }
 
+func objectIDFieldMapKey(v Value) (string, bool) {
+	if v.Kind != ValueObject || v.Type == "" {
+		return "", false
+	}
+	id, ok := v.Fields["Id"]
+	if !ok {
+		return "", false
+	}
+	text, ok := idValueText(id)
+	if !ok || text == "" {
+		return "", false
+	}
+	return string(v.Kind) + ":" + v.Type + ":" + canonicalIDMapKey(text), true
+}
+
 func stableObjectFieldMapKey(v Value, seen map[uint64]bool) (string, bool) {
-	if v.Type == "" || len(v.Fields) == 0 || sObjectValueType(v.Type) {
+	return stableFieldMapKey(v, seen, false)
+}
+
+func stableSObjectFieldMapKey(v Value, seen map[uint64]bool) (string, bool) {
+	return stableFieldMapKey(v, seen, true)
+}
+
+func stableFieldMapKey(v Value, seen map[uint64]bool, allowSObject bool) (string, bool) {
+	if v.Type == "" || len(v.Fields) == 0 || (!allowSObject && sObjectValueType(v.Type)) {
 		return "", false
 	}
 	if v.Ref != 0 {
@@ -645,6 +674,14 @@ func mapKeyWithSeen(v Value, seen map[uint64]bool) string {
 	if v.Kind == ValueObject {
 		if isStubProxy(v) {
 			return string(v.Kind) + ":" + v.Type + ":ref:" + strconv.FormatUint(v.Ref, 10)
+		}
+		if sObjectValueType(v.Type) {
+			if key, ok := objectIDFieldMapKey(v); ok {
+				return key
+			}
+			if key, ok := stableSObjectFieldMapKey(v, seen); ok {
+				return key
+			}
 		}
 		if key, ok := stableObjectFieldMapKey(v, seen); ok {
 			return key

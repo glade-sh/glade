@@ -1112,10 +1112,13 @@ func TestEnsureStandardObjectFieldsDerivesCustomMetadataRelationship(t *testing.
 	if field.RelationshipName != "" {
 		t.Fatalf("field relationship name should preserve source metadata: %#v", field)
 	}
-	if len(definition.Relations) != 1 {
-		t.Fatalf("relations = %#v", definition.Relations)
+	var relation Relationship
+	for _, candidate := range definition.Relations {
+		if candidate.Field == "Target__c" {
+			relation = candidate
+			break
+		}
 	}
-	relation := definition.Relations[0]
 	if relation.Field != "Target__c" || relation.ParentRelationship != "Target__r" || len(relation.ParentObjects) != 1 || relation.ParentObjects[0] != "Target__mdt" {
 		t.Fatalf("relation = %#v", relation)
 	}

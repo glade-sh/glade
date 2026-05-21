@@ -86,6 +86,11 @@ System.assert(Limits.getCpuTime() > 0);
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	account := org.Objects["Account"]
+	nameField := account.Definition.Fields["Name"]
+	nameField.Required = true
+	account.Definition.Fields["Name"] = nameField
+	org.Objects["Account"] = account
 	machine.SetOrg(&org)
 	machine.SetLimitCaps(LimitCaps{
 		Queries:       0,
@@ -103,6 +108,41 @@ System.assert(Limits.getCpuTime() > 0);
 	}
 	if len(result.LimitViolations) == 0 || result.LimitViolations[0].Name != "queries" {
 		t.Fatalf("violations = %#v", result.LimitViolations)
+	}
+}
+
+func TestExecCustomMetadataSOQLDoesNotSpendQueryLimits(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Feature__mdt> rows = [SELECT Id, DeveloperName FROM Feature__mdt];
+System.assertEquals(1, rows.size());
+System.assertEquals(0, Limits.getQueries());
+System.assertEquals(0, Limits.getQueryRows());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Feature__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Feature__mdt",
+			Fields: map[string]storage.Field{
+				"DeveloperName": {APIName: "DeveloperName", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"m01000000000001": {
+				ID:     "m01000000000001",
+				Object: "Feature__mdt",
+				Fields: map[string]storage.Value{
+					"DeveloperName": storage.StringValue("Default"),
+				},
+			},
+		},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -184,6 +224,7 @@ System.assertEquals('Hello', email.getSubject());
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -535,6 +576,33 @@ System.assertEquals(account.Id, inlineRows[0].Id);
 	}
 }
 
+func TestExecSearchQueryOrdersFixedSearchResultsByReturningField(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account testAccount = new Account(Name = 'Test Account');
+Account anotherAccount = new Account(Name = 'Another Account');
+insert new List<Account>{testAccount, anotherAccount};
+Test.setFixedSearchResults(new List<Id>{testAccount.Id, anotherAccount.Id});
+List<Account> rows = (List<Account>)Search.query('FIND {Account*} IN ALL FIELDS RETURNING Account(Id, Name ORDER BY Name)')[0];
+System.assertEquals(2, rows.size());
+System.assertEquals(anotherAccount.Id, rows[0].Id);
+System.assertEquals(testAccount.Id, rows[1].Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSearchQueryReturnsDeterministicEmptyRows(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<List<SObject>> rows = Search.query('FIND {Missing*} IN ALL FIELDS RETURNING Account(Id), Contact(Id)', null);
@@ -546,6 +614,7 @@ System.assertEquals(0, rows[1].size());
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -2426,7 +2495,14 @@ Account decoded = JSON.deserializeStrict('{"Name":"Acme","NoSuchField__c":"x"}',
 
 func TestExecApexPagesCurrentPageAndSeverityEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
-PageReference before = ApexPages.currentPage();
+PageReference defaultPage = ApexPages.currentPage();
+System.assertEquals(null, defaultPage);
+System.assertEquals(null, System.currentPageReference());
+System.assert(ApexPages.currentPage() != null);
+ApexPages.currentPage().getParameters().put('default', 'ready');
+System.assertEquals('ready', ApexPages.currentPage().getParameters().get('default'));
+PageReference before = new PageReference('/apex/Before');
+Test.setCurrentPage(before);
 before.getParameters().put('before', 'yes');
 System.assertEquals('yes', ApexPages.currentPage().getParameters().get('before'));
 PageReference replacement = new PageReference('/apex/Replaced');
@@ -2769,11 +2845,9 @@ func TestGeneratedFamilyUnsupportedTypePrefixTargetsOnlyLowercaseStubFamilies(t 
 		}
 	}
 	for _, typeName := range []string{
-		"CartExtension.Any",
-		"Metadata.Operations",
-		"Limits",
-		"Cache.Org",
-		"Messaging.SingleEmailMessage",
+		"ConnectApi.ChatterFeeds",
+		"Database.QueryLocator",
+		"System.HttpRequest",
 	} {
 		if generatedFamilyUnsupportedTypePrefix(typeName) {
 			t.Fatalf("did not expect %s to match", typeName)
@@ -3129,6 +3203,7 @@ page.getParameters().put('id', '001B000001DVM9t');
 page.getHeaders().put('X-Test', 'yes');
 System.assertEquals('001B000001DVM9t', page.getParameters().get('id'));
 System.assertEquals('yes', page.getHeaders().get('X-Test'));
+Test.setCurrentPage(new PageReference('/apex/current'));
 PageReference current = ApexPages.currentPage();
 System.assertEquals('/apex/current', current.getUrl());
 current.getHeaders().put('Accept', 'text/html');
@@ -3164,6 +3239,7 @@ System.assertEquals(5, ApexPages.getMessages().size());
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -3344,6 +3420,23 @@ System.assert(setController.getHasPrevious());
 	}
 }
 
+func TestExecStandardControllerViewUsesTypedIDField(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id accountId = Id.valueOf('001000000000001');
+Account account = new Account(Id = accountId, Name = 'Existing');
+ApexPages.StandardController controller = new ApexPages.StandardController(account);
+System.assertEquals('/001000000000001', controller.view().getUrl());
+System.assertEquals(accountId, Id.valueOf(controller.view().getUrl().replace('/', '')));
+System.assertEquals('/001000000000001', controller.cancel().getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSelectOptionAcceptsIdValues(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id accountId = '001B000001DVM9t';
@@ -3379,6 +3472,23 @@ System.assertEquals('/apex/AccountView', Page.AccountView.getUrl());
 	}
 	if _, err := machine.Execute(missing); err == nil || err.Error() != "unknown Visualforce page Page.Missing" {
 		t.Fatalf("err = %v, want unknown Visualforce page", err)
+	}
+}
+
+func TestExecComponentApexDefaultsSupportExpressionsAndChildren(t *testing.T) {
+	program, err := CompileAnonymous(`
+Component.Apex.Column column = new Component.Apex.Column();
+column.expressions.value = '{!row.value}';
+System.assertEquals('{!row.value}', column.expressions.value);
+Component.Apex.PageBlockTable table = new Component.Apex.PageBlockTable();
+table.childComponents.add(column);
+System.assertEquals(1, table.childComponents.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -5425,6 +5535,55 @@ System.assertEquals('NU.SystemUtilTest.TestInnerClass', inner.getName());
 	}
 }
 
+func TestExecClassLiteralGetNameUsesOrgNamespace(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('NU.LocalThing', LocalThing.class.getName());
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "NU"
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{Name: "LocalThing"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedNestedTypeNewInstanceMatchesInheritedInterface(t *testing.T) {
+	makeProgram, err := CompileAnonymous(`return Type.forName('NU', 'PaymentGatewayServiceTest.MockPaymentGatewayWithTwoPhase').newInstance();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Object gateway = PaymentGatewayFactory.make();
+System.assert(gateway instanceof IPaymentGateway2);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "IPaymentGateway2", Namespace: "NU", IsInterface: true},
+		{Name: "PaymentGatewayServiceTest.MockPaymentGateway", Namespace: "NU", Interfaces: []string{"IPaymentGateway2"}},
+		{Name: "PaymentGatewayServiceTest.MockPaymentGatewayWithTwoPhase", Namespace: "NU", SuperClass: "MockPaymentGateway"},
+		{Name: "PaymentGatewayFactory", Namespace: "NU", Access: "global", Methods: map[string]Method{
+			"make": {Name: "PaymentGatewayFactory.make", ClassName: "PaymentGatewayFactory", Access: "global", IsStatic: true, ReturnType: "Object", Program: makeProgram},
+		}},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTypeNewInstanceAbstractClassIsCatchable(t *testing.T) {
 	program, err := CompileAnonymous(`
 Type t = Type.forName('AbstractThing');
@@ -5674,7 +5833,7 @@ Account account = new Account(Name = 'Backdated');
 insert account;
 Test.setCreatedDate(account.Id, Datetime.newInstanceGmt(2026, 1, 2, 3, 4, 5));
 Account row = [SELECT Id, CreatedDate FROM Account WHERE Id = :account.Id];
-System.assertEquals('2026-01-02T03:04:05Z', row.CreatedDate.format());
+System.assertEquals('2026-01-02 03:04:05', row.CreatedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5788,6 +5947,96 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'queueable from batc
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecBatchFinishInheritedSchedulerCanEnqueueQueueable(t *testing.T) {
+	parentStart, err := CompileAnonymous(`return new List<SObject>();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parentFinish, err := CompileAnonymous(`new ChildScheduler().ensureScheduled();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ensureScheduled, err := CompileAnonymous(`
+if (testShouldSchedule && !typesAlreadyScheduledFor.contains(ChildScheduler.class)) {
+	typesAlreadyScheduledFor.add(ChildScheduler.class);
+	System.enqueueJob(new QueueWorker());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queueExecute, err := CompileAnonymous(`Database.executeBatch(new FollowupBatch(), 200);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	followupStart, err := CompileAnonymous(`return new List<SObject>();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+BaseScheduler.testShouldSchedule = true;
+new ChildScheduler().ensureScheduled();
+Test.startTest();
+Database.executeBatch(new ParentBatch(), 200);
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "BaseScheduler",
+		StaticFields: map[string]Field{
+			"testShouldSchedule":       {Name: "testShouldSchedule", Type: "Boolean", Static: true, Value: Bool(false), InitialValue: Bool(false)},
+			"typesAlreadyScheduledFor": {Name: "typesAlreadyScheduledFor", Type: "Set<Type>", Static: true, Value: Set(), InitialValue: Set()},
+		},
+		Methods: map[string]Method{
+			"ensureScheduled": {Name: "BaseScheduler.ensureScheduled", ClassName: "BaseScheduler", ReturnType: "void", Program: ensureScheduled},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "ChildScheduler", SuperClass: "BaseScheduler"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "ParentBatch",
+		Methods: map[string]Method{
+			"start":  {Name: "ParentBatch.start", ClassName: "ParentBatch", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: parentStart},
+			"finish": {Name: "ParentBatch.finish", ClassName: "ParentBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: parentFinish},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "QueueWorker",
+		Interfaces: []string{"Queueable"},
+		Methods: map[string]Method{
+			"execute": {Name: "QueueWorker.execute", ClassName: "QueueWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: queueExecute},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "FollowupBatch",
+		Methods: map[string]Method{
+			"start": {Name: "FollowupBatch.start", ClassName: "FollowupBatch", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: followupStart},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	jobs := org.Objects["AsyncApexJob"].Records
+	if len(jobs) != 4 {
+		t.Fatalf("AsyncApexJob records = %d, want 4: %#v", len(jobs), jobs)
 	}
 }
 
@@ -6376,9 +6625,9 @@ Test.stopTest();
 		t.Fatal(err)
 	}
 	queueProgram, err := CompileAnonymous(`
-System.assertEquals(true, System.AsyncInfo.hasMaxStackDepth());
+System.assertEquals(false, System.AsyncInfo.hasMaxStackDepth());
 System.assertEquals(1, System.AsyncInfo.getCurrentQueueableStackDepth());
-System.assert(System.AsyncInfo.getMaximumQueueableStackDepth() > 0);
+System.assertEquals(0, System.AsyncInfo.getMaximumQueueableStackDepth());
 System.assertEquals(0, System.AsyncInfo.getMinimumQueueableDelayInMinutes());
 `)
 	if err != nil {
@@ -6760,6 +7009,58 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'second batch ran'].
 	}
 }
 
+func TestExecBatchFinishDoesNotReenqueueAfterInstanceCursorCleared(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<Integer>{1};`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`
+this.nextCursor = 'cursor';
+this.nextCursor = null;
+insert new Account(Name = 'cursor batch ran');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishProgram, err := CompileAnonymous(`
+if (String.isNotBlank(this.nextCursor)) {
+	Database.executeBatch(this, 1);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+Database.executeBatch(new CursorBatch(), 1);
+Test.stopTest();
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'cursor batch ran'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "CursorBatch",
+		Fields: map[string]Field{
+			"nextCursor": {Name: "nextCursor", Type: "String"},
+		},
+		Methods: map[string]Method{
+			"start":   {Name: "CursorBatch.start", ClassName: "CursorBatch", ReturnType: "Iterable<Integer>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "CursorBatch.execute", ClassName: "CursorBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Integer>"}}, Program: executeProgram},
+			"finish":  {Name: "CursorBatch.finish", ClassName: "CursorBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecAbortJobUnknownRecordsAreTypedUnsupported(t *testing.T) {
 	cases := []struct {
 		name string
@@ -6879,7 +7180,7 @@ System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username =
   System.assertEquals('System', UserInfo.getFirstName());
   System.assertEquals('User', UserInfo.getLastName());
   System.assertEquals('system@example.invalid', UserInfo.getUserEmail());
-  System.assertEquals('00D000000000001', UserInfo.getOrganizationId());
+  System.assertEquals('00D000000000001EAA', UserInfo.getOrganizationId());
   System.assertEquals('', UserInfo.getSessionId());
   System.assertEquals('de_DE', UserInfo.getLocale());
   System.assertEquals('fr', UserInfo.getLanguage());
@@ -6932,7 +7233,7 @@ System.assertEquals(-28800000, tz.getOffset(winter));
 System.assertEquals(-25200000, tz.getOffset(summer));
 System.assertEquals('2024-02-29 15:05:06 -0800 PST', winter.format('yyyy-MM-dd HH:mm:ss Z z'));
 System.assertEquals('2024-07-01 05:00:00 -0700 PDT', summer.format('yyyy-MM-dd HH:mm:ss Z z'));
-System.assertEquals('2024-02-29T15:05:06-08:00', winter.format());
+System.assertEquals('2/29/2024, 3:05 PM', winter.format());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -6957,7 +7258,7 @@ System.assertEquals('America/New_York', eastern.getID());
 System.assertEquals(-18000000, eastern.getOffset(winter));
 System.assertEquals(-14400000, eastern.getOffset(summer));
 System.assertEquals('2024-02-29 18:05:06 -0500 EST', winter.format('yyyy-MM-dd HH:mm:ss Z z'));
-System.assertEquals('2024-07-01T08:00:00-04:00', summer.format());
+System.assertEquals('7/1/2024, 8:00 AM', summer.format());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -6982,7 +7283,7 @@ System.assertEquals('America/Denver', mountain.getID());
 System.assertEquals(-25200000, mountain.getOffset(winter));
 System.assertEquals(-21600000, mountain.getOffset(summer));
 System.assertEquals('2024-02-29 16:05:06 -0700 MST', winter.format('yyyy-MM-dd HH:mm:ss Z z'));
-System.assertEquals('2024-07-01T06:00:00-06:00', summer.format());
+System.assertEquals('7/1/2024, 6:00 AM', summer.format());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -7003,10 +7304,10 @@ System.assertEquals('2024-07-01T06:00:00-06:00', summer.format());
 func TestExecDatetimeLocalConstructionAndComponentsUseCurrentUserTimeZone(t *testing.T) {
 	program, err := CompileAnonymous(`
 Datetime winterLocal = Datetime.newInstance(2024, 2, 29, 23, 5, 6);
-System.assertEquals('2024-03-01T07:05:06Z', winterLocal.formatGmt());
-System.assertEquals('2024-02-29T23:05:06-08:00', winterLocal.format());
-System.assertEquals('2024-02-29', winterLocal.date().format());
-System.assertEquals('2024-03-01', winterLocal.dateGmt().format());
+System.assertEquals('2024-03-01 07:05:06', winterLocal.formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals('2/29/2024, 11:05 PM', winterLocal.format());
+System.assertEquals('2024-02-29', String.valueOf(winterLocal.date()));
+System.assertEquals('2024-03-01', String.valueOf(winterLocal.dateGmt()));
 System.assertEquals(Time.newInstance(23, 5, 6, 0), winterLocal.time());
 System.assertEquals(Time.newInstance(7, 5, 6, 0), winterLocal.timeGmt());
 System.assertEquals(2024, winterLocal.year());
@@ -7023,27 +7324,27 @@ System.assertEquals(5, winterLocal.minuteGmt());
 System.assertEquals(6, winterLocal.secondGmt());
 
 Datetime fromDateTime = Datetime.newInstance(Date.newInstance(2024, 7, 1), Time.newInstance(5, 30, 0, 250));
-System.assertEquals('2024-07-01T12:30:00.25Z', fromDateTime.formatGmt());
-System.assertEquals('2024-07-01T05:30:00.25-07:00', fromDateTime.format());
+System.assertEquals('2024-07-01 12:30:00.250', fromDateTime.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'));
+System.assertEquals('7/1/2024, 5:30 AM', fromDateTime.format());
 String nullTimeZone;
 System.assertEquals('2024-07-01', fromDateTime.format('yyyy-MM-dd', nullTimeZone));
 System.assertEquals(Date.newInstance(2024, 7, 1), fromDateTime.dateGMT());
 Datetime fromDateTimeGmt = Datetime.newInstanceGmt(Date.newInstance(2024, 7, 1), Time.newInstance(5, 30, 0, 250));
-System.assertEquals('2024-07-01T05:30:00.25Z', fromDateTimeGmt.formatGmt());
+System.assertEquals('2024-07-01 05:30:00.250', fromDateTimeGmt.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'));
 
 Datetime fromMillis = Datetime.newInstance(winterLocal.getTime());
 System.assertEquals(winterLocal, fromMillis);
 System.assertEquals(0, Datetime.newInstance(0).getTime());
 
 Datetime gap = Datetime.newInstance(2024, 3, 10, 2, 30, 0);
-System.assertEquals('2024-03-10T10:30:00Z', gap.formatGmt());
-System.assertEquals('2024-03-10T03:30:00-07:00', gap.format());
+System.assertEquals('2024-03-10 10:30:00', gap.formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals('3/10/2024, 3:30 AM', gap.format());
 System.assertEquals(3, gap.hour());
 System.assertEquals(10, gap.hourGmt());
 
 Datetime overlap = Datetime.newInstance(2024, 11, 3, 1, 30, 0);
-System.assertEquals('2024-11-03T08:30:00Z', overlap.formatGmt());
-System.assertEquals('2024-11-03T01:30:00-07:00', overlap.format());
+System.assertEquals('2024-11-03 08:30:00', overlap.formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals('11/3/2024, 1:30 AM', overlap.format());
 System.assertEquals(1, overlap.hour());
 System.assertEquals(8, overlap.hourGmt());
 `)
@@ -7067,14 +7368,14 @@ func TestExecDatetimeLocalConstructionUsesRunAsTimeZone(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.runAs(new User(Id = '005-ny-user', TimeZoneSidKey = 'America/New_York')) {
     Datetime stamp = Datetime.newInstance(Date.newInstance(2024, 7, 1), Time.newInstance(8, 0, 0, 0));
-    System.assertEquals('2024-07-01T12:00:00Z', stamp.formatGmt());
+    System.assertEquals('2024-07-01 12:00:00', stamp.formatGmt('yyyy-MM-dd HH:mm:ss'));
     System.assertEquals(8, stamp.hour());
     System.assertEquals(12, stamp.hourGmt());
-    System.assertEquals('2024-07-01', stamp.date().format());
+    System.assertEquals('2024-07-01', String.valueOf(stamp.date()));
 }
 System.runAs(new User(Id = '005-panama-user', TimeZoneSidKey = 'America/Panama')) {
     Datetime stamp = Datetime.newInstance(Date.newInstance(2014, 11, 4), Time.newInstance(0, 0, 0, 0));
-    System.assertEquals('2014-11-04T05:00:00Z', stamp.formatGmt());
+    System.assertEquals('2014-11-04 05:00:00', stamp.formatGmt('yyyy-MM-dd HH:mm:ss'));
 }
 `)
 	if err != nil {
@@ -7309,6 +7610,7 @@ Map<String,Object> params = page.getParameters();
 params.put('id', '001');
 Map<String,Object> paramsAgain = page.getParameters();
 System.assertEquals('001', paramsAgain.get('id'));
+Test.setCurrentPage(new PageReference('/apex/current'));
 PageReference current = ApexPages.currentPage();
 System.assertEquals('/apex/current', current.getUrl());
 URL base = URL.getSalesforceBaseUrl();
@@ -7320,6 +7622,7 @@ System.assertEquals('https://local.oaer.example', orgUrl.toString());
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -7641,18 +7944,19 @@ System.assertEquals(12.35, amount.setScale(2));
 System.assertEquals(12, amount.intValue());
 System.assertEquals(12, amount.round());
 Date d = Date.today();
-System.assertEquals('2026-05-02', d.format());
+System.assertEquals('2026-05-02', String.valueOf(d));
 System.assertEquals(2026, d.year());
 System.assertEquals(5, d.month());
 System.assertEquals(2, d.day());
 Date later = d.addDays(3);
 System.assertEquals(3, d.daysBetween(later));
+System.assertEquals(d.addDays(1), d.AddDays(1));
 System.assertEquals(d.addDays(3), d + 3);
 System.assertEquals(d.addDays(-2), d - 2);
 Date nextMonth = d.addMonths(1);
-System.assertEquals('2026-06-02', nextMonth.format());
+System.assertEquals('2026-06-02', String.valueOf(nextMonth));
 Date nextYear = d.addYears(1);
-System.assertEquals('2027-05-02', nextYear.format());
+System.assertEquals('2027-05-02', String.valueOf(nextYear));
 Date parsedDate = Date.valueOf('2026-05-04');
 System.assertEquals(2, d.daysBetween(parsedDate));
 Object parsedDateObjectText = '2026-05-04';
@@ -7672,35 +7976,39 @@ System.assertEquals(null, Date.valueOf(nullDateObject));
 System.assertEquals(2026, Date.parse('01/01/2026').year());
 System.assertEquals(2026, Date.parse('01/01/26').year());
 Datetime dt = Datetime.now();
-String dtText = dt.format();
-System.assert(dtText.startsWith('2026-05-02T12:00:00'));
+String dtText = dt.formatGmt('yyyy-MM-dd HH:mm:ss');
+System.assert(dtText.startsWith('2026-05-02 12:00:00'));
 Date dtDate = dt.date();
-System.assertEquals('2026-05-02', dtDate.format());
+System.assertEquals('2026-05-02', String.valueOf(dtDate));
 Datetime made = Datetime.newInstance(2026, 5, 2, 1, 2, 3);
-System.assertEquals('2026-05-02T01:02:03Z', made.format());
+System.assertEquals('2026-05-02 01:02:03', made.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals(1777683723000, made.getTime());
 Datetime madePlusHour = made.addHours(1);
-System.assertEquals('2026-05-02T02:02:03Z', madePlusHour.format());
+System.assertEquals('2026-05-02 02:02:03', madePlusHour.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime madePlusMinutes = made.addMinutes(2);
-System.assertEquals('2026-05-02T01:04:03Z', madePlusMinutes.format());
+System.assertEquals('2026-05-02 01:04:03', madePlusMinutes.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime madePlusSeconds = made.addSeconds(3);
-System.assertEquals('2026-05-02T01:02:06Z', madePlusSeconds.format());
+System.assertEquals('2026-05-02 01:02:06', madePlusSeconds.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime madePlusDay = made.addDays(1);
-System.assertEquals('2026-05-03T01:02:03Z', madePlusDay.format());
+System.assertEquals('2026-05-03 01:02:03', madePlusDay.formatGmt('yyyy-MM-dd HH:mm:ss'));
 	Datetime parsedDt = Datetime.valueOf('2026-05-02 01:02:03');
-	String madeText = made.format();
-	String parsedDtText = parsedDt.format();
+	String madeText = made.formatGmt('yyyy-MM-dd HH:mm:ss');
+	String parsedDtText = parsedDt.formatGmt('yyyy-MM-dd HH:mm:ss');
 	System.assertEquals(madeText, parsedDtText);
 	Object parsedDtObjectText = '2026-05-02 01:02:03';
-	System.assertEquals(madeText, Datetime.valueOf(parsedDtObjectText).format());
-	System.assertEquals('2026-05-02T08:02:03Z', Datetime.valueOf('2026-05-02 01:02:03-7').format());
-	System.assertEquals('2026-05-02T01:02:03Z', Datetime.valueOf('2026-05-02 01:02:030').format());
+	System.assertEquals(madeText, Datetime.valueOf(parsedDtObjectText).formatGmt('yyyy-MM-dd HH:mm:ss'));
+	System.assertEquals('2026-05-02 08:02:03', Datetime.valueOf('2026-05-02 01:02:03-7').formatGmt('yyyy-MM-dd HH:mm:ss'));
+	System.assertEquals('2026-05-02 01:02:03', Datetime.valueOf('2026-05-02 01:02:030').formatGmt('yyyy-MM-dd HH:mm:ss'));
 	Object parsedDtObject = parsedDt;
-	System.assertEquals(madeText, Datetime.valueOf(parsedDtObject).format());
+	System.assertEquals(madeText, Datetime.valueOf(parsedDtObject).formatGmt('yyyy-MM-dd HH:mm:ss'));
 	Time tm = Time.valueOf('01:02:03');
 System.assertEquals(1, tm.hour());
 System.assertEquals(2, tm.minute());
 System.assertEquals(3, tm.second());
+Time midnightUtc = Time.valueOf('00:00:00.000Z');
+System.assertEquals(0, midnightUtc.hour());
+System.assertEquals(0, midnightUtc.minute());
+System.assertEquals(0, midnightUtc.second());
 String encoded = EncodingUtil.base64Encode(Blob.valueOf('abc'));
 System.assertEquals('YWJj', encoded);
 Blob decoded = EncodingUtil.base64Decode(encoded);
@@ -7780,15 +8088,15 @@ func TestExecDateDatetimeDeterministicInstanceMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 Date leap = Date.newInstance(2024, 1, 31);
 Date nextMonth = leap.addMonths(1);
-System.assertEquals('2024-02-29', nextMonth.format());
+System.assertEquals('2024-02-29', String.valueOf(nextMonth));
 Date marchEnd = Date.newInstance(2024, 3, 31);
 Date previousMonth = marchEnd.addMonths(-1);
-System.assertEquals('2024-02-29', previousMonth.format());
+System.assertEquals('2024-02-29', String.valueOf(previousMonth));
 Date leapDay = Date.newInstance(2024, 2, 29);
 Date nextYear = leapDay.addYears(1);
-System.assertEquals('2025-02-28', nextYear.format());
+System.assertEquals('2025-02-28', String.valueOf(nextYear));
 Date previousYear = leapDay.addYears(-1);
-System.assertEquals('2023-02-28', previousYear.format());
+System.assertEquals('2023-02-28', String.valueOf(previousYear));
 System.assertEquals(31, leap.day());
 System.assertEquals(1, leap.month());
 System.assertEquals(2024, leap.year());
@@ -7796,8 +8104,8 @@ System.assertEquals(29, Date.daysInMonth(2024, 2));
 System.assertEquals(28, Date.daysInMonth(2025, 2));
 Date monthStart = leap.toStartOfMonth();
 Date monthEnd = leap.toEndOfMonth();
-System.assertEquals('2024-01-01', monthStart.format());
-System.assertEquals('2024-01-31', monthEnd.format());
+System.assertEquals('2024-01-01', String.valueOf(monthStart));
+System.assertEquals('2024-01-31', String.valueOf(monthEnd));
 Date due = leap.addDays(10);
 System.assertEquals(10, leap.daysBetween(due));
 System.assertEquals(-10, due.daysBetween(leap));
@@ -7807,21 +8115,21 @@ System.assertEquals(expectedNextDay, nextDay);
 
 Datetime stamp = Datetime.newInstance(2024, 1, 31, 23, 58, 59);
 Datetime stampNextMonth = stamp.addMonths(1);
-System.assertEquals('2024-02-29T23:58:59Z', stampNextMonth.format());
+System.assertEquals('2024-02-29 23:58:59', stampNextMonth.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime stampPreviousMonth = stamp.addMonths(-1);
-System.assertEquals('2023-12-31T23:58:59Z', stampPreviousMonth.format());
+System.assertEquals('2023-12-31 23:58:59', stampPreviousMonth.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime leapStamp = Datetime.newInstance(2024, 2, 29, 1, 2, 3);
 Datetime leapStampNextYear = leapStamp.addYears(1);
-System.assertEquals('2025-02-28T01:02:03Z', leapStampNextYear.format());
+System.assertEquals('2025-02-28 01:02:03', leapStampNextYear.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime leapStampPreviousYear = leapStamp.addYears(-1);
-System.assertEquals('2023-02-28T01:02:03Z', leapStampPreviousYear.format());
+System.assertEquals('2023-02-28 01:02:03', leapStampPreviousYear.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime plusHour = stamp.addHours(1);
 Datetime plusMinutes = plusHour.addMinutes(2);
 Datetime plusSeconds = plusMinutes.addSeconds(3);
-System.assertEquals('2024-02-01T01:01:02Z', plusSeconds.format());
+System.assertEquals('2024-02-01 01:01:02', plusSeconds.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime tomorrowStamp = stamp.addDays(1);
 Date tomorrowDate = tomorrowStamp.date();
-System.assertEquals('2024-02-01', tomorrowDate.format());
+System.assertEquals('2024-02-01', String.valueOf(tomorrowDate));
 System.assertEquals(2024, stamp.year());
 System.assertEquals(1, stamp.month());
 System.assertEquals(31, stamp.day());
@@ -7829,7 +8137,7 @@ System.assertEquals(23, stamp.hour());
 System.assertEquals(58, stamp.minute());
 System.assertEquals(59, stamp.second());
 Datetime midnight = Datetime.newInstance(2024, 1, 31);
-System.assertEquals('2024-01-31T00:00:00Z', midnight.format());
+System.assertEquals('2024-01-31 00:00:00', midnight.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime sameStamp = Datetime.newInstance(2024, 1, 31, 23, 58, 59);
 System.assertEquals(sameStamp, stamp);
 `)
@@ -7864,22 +8172,22 @@ func TestExecUserInfoGetTimeZoneRejectsUnsupportedCurrentUserZone(t *testing.T) 
 func TestExecTimeDatetimeGmtAndTimeZoneMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 Date today = Date.today();
-System.assertEquals('2026-05-02', today.format());
+System.assertEquals('2026-05-02', String.valueOf(today));
 
 Datetime nowStamp = Datetime.now();
-System.assertEquals('2026-05-02T12:00:00Z', nowStamp.formatGmt());
+System.assertEquals('2026-05-02 12:00:00', nowStamp.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals(nowStamp, DateTime.Now());
 Datetime gmt = Datetime.newInstanceGmt(2024, 2, 29, 23, 59, 58);
 Date gmtDate = gmt.dateGmt();
-System.assertEquals('2024-02-29', gmtDate.format());
+System.assertEquals('2024-02-29', String.valueOf(gmtDate));
 System.assertEquals(Time.newInstance(23, 59, 58, 0), gmt.timeGmt());
 Datetime parsedGmt = Datetime.valueOfGmt('2024-02-29 23:59:58');
-System.assertEquals('2024-02-29T23:59:58Z', parsedGmt.formatGmt());
+System.assertEquals('2024-02-29 23:59:58', parsedGmt.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime fractionalGmt = Datetime.valueOfGmt('2024-02-29T23:59:58.250Z');
-System.assertEquals('2024-02-29T23:59:58Z', fractionalGmt.formatGmt());
+System.assertEquals('2024-02-29 23:59:58', fractionalGmt.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals(0, fractionalGmt.millisecond());
 Datetime plusMillis = fractionalGmt.addMilliseconds(750);
-System.assertEquals('2024-02-29T23:59:58.75Z', plusMillis.formatGmt());
+System.assertEquals('2024-02-29 23:59:58.750', plusMillis.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'));
 System.assertEquals(750, plusMillis.millisecond());
 
 Time clock = Time.newInstance(23, 59, 58, 250);
@@ -7888,13 +8196,13 @@ System.assertEquals(59, clock.minute());
 System.assertEquals(58, clock.second());
 System.assertEquals(250, clock.millisecond());
 Time plusSeconds = clock.addSeconds(2);
-System.assertEquals('00:00:00.250', plusSeconds.format());
+System.assertEquals('00:00:00.250Z', plusSeconds.toString());
 Time plusMilliseconds = clock.addMilliseconds(750);
-System.assertEquals('23:59:59', plusMilliseconds.format());
+System.assertEquals('23:59:59.000Z', plusMilliseconds.toString());
 Time plusHours = clock.addHours(1);
-System.assertEquals('00:59:58.250', plusHours.format());
+System.assertEquals('00:59:58.250Z', plusHours.toString());
 Time plusMinutes = clock.addMinutes(-1);
-System.assertEquals('23:58:58.250', plusMinutes.format());
+System.assertEquals('23:58:58.250Z', plusMinutes.toString());
 System.assertEquals(Time.newInstance(12, 34, 56, 789), Time.valueOf('12:34:56.789'));
 
 TimeZone utc = TimeZone.getTimeZone('UTC');
@@ -7967,16 +8275,16 @@ System.assertEquals(36000000, sydney.getOffset(summerNoon));
 func TestExecDatetimeParsesSpaceSeparatedUtcOffsetText(t *testing.T) {
 	program, err := CompileAnonymous(`
 Datetime unixEpoch = Datetime.valueOfGmt('1970-01-01 00:00:00Z');
-System.assertEquals('1970-01-01T00:00:00Z', unixEpoch.formatGmt());
+System.assertEquals('1970-01-01 00:00:00', unixEpoch.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime leapDay = Datetime.valueOfGmt('2024-02-29 23:59:58Z');
-System.assertEquals('2024-02-29T23:59:58Z', leapDay.formatGmt());
+System.assertEquals('2024-02-29 23:59:58', leapDay.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime fractional = Datetime.valueOfGmt('2024-02-29 23:59:58.250Z');
-System.assertEquals('2024-02-29T23:59:58Z', fractional.formatGmt());
+System.assertEquals('2024-02-29 23:59:58', fractional.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals(0, fractional.millisecond());
 Datetime offset = Datetime.valueOfGmt('2024-02-29 18:29:58-05:30');
-System.assertEquals('2024-02-29T23:59:58Z', offset.formatGmt());
+System.assertEquals('2024-02-29 23:59:58', offset.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime assigned = '2024-02-29 23:59:58+0000';
-System.assertEquals('2024-02-29T23:59:58Z', assigned.formatGmt());
+System.assertEquals('2024-02-29 23:59:58', assigned.formatGmt('yyyy-MM-dd HH:mm:ss'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -8029,8 +8337,11 @@ System.assertEquals('2024-02-29 23:05:06 +0000 GMT', stamp.format('yyyy-MM-dd HH
 System.assertEquals('2024-07-01 13:00:00 +0100 BST', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'Europe/London'));
 System.assertEquals('2024-03-01 00:05:06 +0100 CET', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Europe/Berlin'));
 System.assertEquals('2024-07-01 14:00:00 +0200 CEST', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'Europe/Berlin'));
+System.assertEquals('2024-03-01 06:05:06 +0700 ICT', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Asia/Ho_Chi_Minh'));
 System.assertEquals('2024-03-01 08:05:06 +0900 JST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Asia/Tokyo'));
 System.assertEquals('2024-07-01 21:00:00 +0900 JST', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'Asia/Tokyo'));
+System.assertEquals('2024-02-29 13:05:06 -1000 HST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Pacific/Honolulu'));
+System.assertEquals('2024-02-29 12:05:06 -1100 SST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Pacific/Pago_Pago'));
 System.assertEquals('2024-03-01 10:05:06 +1100 AEDT', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Australia/Sydney'));
 System.assertEquals('2024-07-01 22:00:00 +1000 AEST', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'Australia/Sydney'));
 `)
@@ -8082,7 +8393,7 @@ func TestExecDatetimePatternFormattingRejectsUnsupportedEdges(t *testing.T) {
 		{
 			name: "unknown named timezone",
 			src:  `Datetime stamp = Datetime.now(); stamp.format('yyyy-MM-dd', 'America/Phoenix');`,
-			want: "unsupported call",
+			want: "Invalid timezone",
 		},
 		{
 			name: "unsupported token",
@@ -8157,7 +8468,7 @@ System.assert(caught);
 func TestExecDateTimeStringAssignmentPreservesFractionalSeconds(t *testing.T) {
 	program, err := CompileAnonymous(`
 Datetime dt = '2024-01-15T10:30:45.123Z';
-System.assertEquals('2024-01-15T10:30:45.123Z', dt.formatGmt());
+System.assertEquals('2024-01-15 10:30:45.123', dt.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -8317,10 +8628,10 @@ Object locale = opts.LocaleOptions;
 System.assertNotEquals(null, locale);
 
 Object copied = opts.clone();
-System.assertEquals(false, copied.OptAllOrNone);
+System.assertEquals(false, copied.OptAllOrNone, 'cloned OptAllOrNone');
 System.assertEquals(true, copied.AllowFieldTruncation);
 System.assertEquals(true, copied.EmailHeader.TriggerUserEmail);
-System.assertEquals(false, copied.EmailHeader.triggerOtherEmail);
+System.assertEquals(false, copied.EmailHeader.triggerOtherEmail, 'cloned triggerOtherEmail');
 System.assertEquals(true, copied.DuplicateRuleHeader.AllowSave);
 System.assertEquals(true, copied.AssignmentRuleHeader.UseDefaultRule);
 System.assertEquals('01Q000000000001', copied.AssignmentRuleHeader.AssignmentRuleId);
@@ -8349,15 +8660,15 @@ System.assert(results.get(1).isSuccess());
 
 Database.DMLOptions lowerOpts = new Database.DMLOptions();
 lowerOpts.optAllOrNone = false;
-List<Database.SaveResult> lowerResults = Database.insert(new List<Account>{new Account()}, lowerOpts);
+List<Database.SaveResult> lowerResults = Database.insert(new List<Account>{new Account(Bogus__c = 'nope')}, lowerOpts);
 System.assertEquals(1, lowerResults.size());
-System.assertEquals(false, lowerResults.get(0).isSuccess());
+System.assertEquals(false, lowerResults.get(0).isSuccess(), 'lower optAllOrNone failed result');
 
 Database.DMLOptions upperOpts = new Database.DMLOptions();
 upperOpts.OptAllOrNone = false;
-List<Database.SaveResult> upperResults = Database.insert(new List<Account>{new Account()}, upperOpts);
+List<Database.SaveResult> upperResults = Database.insert(new List<Account>{new Account(Bogus__c = 'nope')}, upperOpts);
 System.assertEquals(1, upperResults.size());
-System.assertEquals(false, upperResults.get(0).isSuccess());
+System.assertEquals(false, upperResults.get(0).isSuccess(), 'upper OptAllOrNone failed result');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -8400,11 +8711,11 @@ System.assertEquals('INVALID_FIELD_FOR_INSERT_UPDATE', badUpdateError.getStatusC
 System.assertEquals('Score__c', badUpdateError.getFields().get(0));
 
 Account upsertNew = new Account(Name = 'Upsert New', External_Key__c = 'ext-1');
-Database.UpsertResult upsertCreated = Database.upsert(upsertNew, false);
+Database.UpsertResult upsertCreated = Database.upsert(upsertNew, Account.External_Key__c, false);
 System.assert(upsertCreated.isSuccess());
 System.assert(upsertCreated.isCreated());
 Account upsertExisting = new Account(External_Key__c = 'EXT-1', Name = 'Upsert Changed');
-Database.UpsertResult upsertUpdated = Database.upsert(upsertExisting, false);
+Database.UpsertResult upsertUpdated = Database.upsert(upsertExisting, Account.External_Key__c, false);
 System.assert(upsertUpdated.isSuccess());
 System.assert(!upsertUpdated.isCreated());
 System.assertEquals(upsertCreated.getId(), upsertUpdated.getId());
@@ -9005,6 +9316,164 @@ System.assertEquals('B-body', second.getBody());
 	machine := New(nil)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecHttpCalloutMockStaticCounterPersistsAcrossRespondCalls(t *testing.T) {
+	respondProgram, err := CompileAnonymous(`
+HttpResponse res = new HttpResponse();
+res.setStatusCode(200);
+res.setBody(String.valueOf(idx));
+idx++;
+return res;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.setMock('HttpCalloutMock', new CounterMock());
+HttpRequest req = new HttpRequest();
+req.setEndpoint('https://example.test/counter');
+req.setMethod('GET');
+System.assertEquals('0', new Http().send(req).getBody());
+System.assertEquals('1', new Http().send(req).getBody());
+System.assertEquals(2, CounterMock.idx);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "CounterMock",
+		StaticFields: map[string]Field{
+			"idx": {Name: "idx", Type: "Integer", Static: true, Value: Int(0), InitialValue: Int(0)},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{
+		Name:       "CounterMock.respond",
+		ClassName:  "CounterMock",
+		ReturnType: "HttpResponse",
+		Params:     []Param{{Name: "req", Type: "HttpRequest"}},
+		Program:    respondProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecChainedBatchPreservesHttpMockStaticStateAcrossDrainPasses(t *testing.T) {
+	respondProgram, err := CompileAnonymous(`
+HttpResponse res = new HttpResponse();
+res.setStatusCode(200);
+res.setBody(String.valueOf(idx));
+idx++;
+return res;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	startProgram, err := CompileAnonymous(`return new List<Integer>{1};`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`
+HttpRequest req = new HttpRequest();
+req.setEndpoint('https://example.test/page');
+req.setMethod('GET');
+String body = new Http().send(req).getBody();
+insert new Account(Name = 'page-' + body);
+Integer seen = [SELECT COUNT() FROM Account WHERE Name LIKE 'page-%'];
+cursor = seen < 3 ? body : null;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishProgram, err := CompileAnonymous(`
+if (String.isNotBlank(cursor)) {
+    Database.executeBatch(this, 1);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.setMock('HttpCalloutMock', new CounterMock());
+Test.startTest();
+Database.executeBatch(new PagedBatch(), 1);
+Test.stopTest();
+System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'page-0']);
+System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'page-1']);
+System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'page-2']);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "CounterMock",
+		StaticFields: map[string]Field{
+			"idx": {Name: "idx", Type: "Integer", Static: true, Value: Int(0), InitialValue: Int(0)},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{
+		Name:       "CounterMock.respond",
+		ClassName:  "CounterMock",
+		ReturnType: "HttpResponse",
+		Params:     []Param{{Name: "req", Type: "HttpRequest"}},
+		Program:    respondProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "PagedBatch",
+		Fields: map[string]Field{
+			"cursor": {Name: "cursor", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{
+		Name:       "PagedBatch.start",
+		ClassName:  "PagedBatch",
+		ReturnType: "Iterable<Integer>",
+		Params:     []Param{{Name: "bc", Type: "Database.BatchableContext"}},
+		Program:    startProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{
+		Name:       "PagedBatch.execute",
+		ClassName:  "PagedBatch",
+		ReturnType: "void",
+		Params: []Param{
+			{Name: "bc", Type: "Database.BatchableContext"},
+			{Name: "scope", Type: "List<Integer>"},
+		},
+		Program: executeProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{
+		Name:       "PagedBatch.finish",
+		ClassName:  "PagedBatch",
+		ReturnType: "void",
+		Params:     []Param{{Name: "bc", Type: "Database.BatchableContext"}},
+		Program:    finishProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

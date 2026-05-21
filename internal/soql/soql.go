@@ -27,6 +27,7 @@ type Query struct {
 	Offset           int
 	Count            bool
 	ForUpdate        bool
+	ForView          bool
 	AllRows          bool
 	SecurityMode     string
 	Aggregates       []Aggregate
@@ -210,6 +211,7 @@ func ParseAt(input string, now time.Time) (Query, error) {
 }
 
 func Execute(org storage.OrgState, query Query) (Result, error) {
+	org = org.Clone()
 	hydrateVirtualSchemaObjects(&org)
 	objectName, ok := storage.ResolveObjectName(org, query.Object)
 	if !ok {
@@ -1222,7 +1224,7 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 		relations = append(relations, syntheticSystemChildRelationships(childDefinition)...)
 		for _, relation := range relations {
 			rank, matched := childRelationshipMatchRank(org.Namespace, relation, childDefinition, relationship)
-			if !matched || rank >= bestRank {
+			if !matched || !childRelationshipCandidatePreferred(rank, relation, bestRank, bestRelation) {
 				continue
 			}
 			for _, candidate := range relation.ParentObjects {
@@ -1249,6 +1251,33 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 		return bestObject, bestRelation, true
 	}
 	return "", storage.Relationship{}, false
+}
+
+func childRelationshipCandidatePreferred(rank int, relation storage.Relationship, bestRank int, bestRelation storage.Relationship) bool {
+	if rank < bestRank {
+		return true
+	}
+	if rank > bestRank || bestRank == 99 {
+		return false
+	}
+	return childRelationshipFieldPriority(relation.Field) < childRelationshipFieldPriority(bestRelation.Field)
+}
+
+func childRelationshipFieldPriority(field string) int {
+	canonical, ok := canonicalSystemFieldName(field)
+	if !ok {
+		return 0
+	}
+	switch canonical {
+	case "CreatedById":
+		return 10
+	case "LastModifiedById":
+		return 11
+	case "OwnerId":
+		return 12
+	default:
+		return 20
+	}
 }
 
 func syntheticContentDocumentLinkRelationship(definition storage.ObjectDefinition) []storage.Relationship {
@@ -2095,12 +2124,28 @@ func relationshipLookupMissing(org storage.OrgState, record storage.Record, fiel
 		if relationship == "" {
 			continue
 		}
+		if !relationshipLookupPathKnown(org, record, relationship) {
+			continue
+		}
 		value, ok := relationshipValue(org, record, relationship+".Id")
 		if ok && value.Kind == storage.ValueNull {
 			return relationship, true
 		}
 	}
 	return "", false
+}
+
+func relationshipLookupPathKnown(org storage.OrgState, record storage.Record, relationship string) bool {
+	first, _, _ := strings.Cut(relationship, ".")
+	objectName := record.Object
+	if canonical, ok := storage.ResolveObjectName(org, objectName); ok {
+		objectName = canonical
+	}
+	object, ok := org.Objects[objectName]
+	if !ok {
+		return false
+	}
+	return len(matchingParentRelations(org.Namespace, object.Definition, first)) > 0
 }
 
 func entityDefinitionRelationshipValue(value storage.Value, field string) (storage.Value, bool) {
@@ -2250,10 +2295,46 @@ func matchingParentRelations(namespace string, definition storage.ObjectDefiniti
 	if len(matches) > 0 {
 		return matches
 	}
+	for name, field := range definition.Fields {
+		apiName := field.APIName
+		if apiName == "" {
+			apiName = name
+		}
+		if field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
+			continue
+		}
+		parentRelationship := field.RelationshipName
+		if parentRelationship == "" {
+			parentRelationship = derivedParentRelationshipName(apiName)
+		}
+		relation := storage.Relationship{
+			Field:              apiName,
+			ParentObjects:      append([]string(nil), field.ReferenceTo...),
+			ParentRelationship: parentRelationship,
+			Polymorphic:        len(field.ReferenceTo) > 1,
+		}
+		if parentRelationshipNameMatches(namespace, relation, candidate) {
+			matches = append(matches, relation)
+		}
+	}
+	if len(matches) > 0 {
+		return matches
+	}
 	if relation, ok := systemParentRelationship(definition, candidate); ok {
 		return []storage.Relationship{relation}
 	}
 	return nil
+}
+
+func derivedParentRelationshipName(fieldName string) string {
+	fieldName = strings.TrimSpace(fieldName)
+	if strings.HasSuffix(fieldName, "__c") {
+		return strings.TrimSuffix(fieldName, "__c") + "__r"
+	}
+	if strings.HasSuffix(fieldName, "Id") && len(fieldName) > len("Id") {
+		return strings.TrimSuffix(fieldName, "Id")
+	}
+	return ""
 }
 
 func systemParentRelationship(definition storage.ObjectDefinition, candidate string) (storage.Relationship, bool) {
@@ -2322,6 +2403,9 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	}
 	if canonical, ok := canonicalSystemFieldName(field); ok {
 		field = canonical
+	}
+	if strings.EqualFold(record.Object, "Organization") && strings.EqualFold(field, "TimeZoneSidKey") {
+		return storage.StringValue("UTC"), true
 	}
 	switch field {
 	case "CreatedDate":
@@ -2628,6 +2712,10 @@ func contactNameValue(record storage.Record) (storage.Value, bool) {
 }
 
 func equalValues(left, right storage.Value) bool {
+	if (left.Kind == storage.ValueNull && right.Kind == storage.ValueString && right.String == "") ||
+		(right.Kind == storage.ValueNull && left.Kind == storage.ValueString && left.String == "") {
+		return true
+	}
 	if leftNumber, rightNumber, ok := numericValues(left, right); ok {
 		return leftNumber.Cmp(rightNumber) == 0
 	}
@@ -3086,7 +3174,7 @@ func (p *parser) parseQuery() (Query, error) {
 			case p.matchWord("UPDATE"):
 				q.ForUpdate = true
 			case p.matchWord("VIEW"):
-				// FOR VIEW only affects Salesforce tracking metadata; local query rows are unchanged.
+				q.ForView = true
 			default:
 				return Query{}, p.errorf("expected UPDATE or VIEW after FOR")
 			}

@@ -21,8 +21,8 @@
   },
   "expected": {
     "error": {
-      "type": "UnsupportedFeature",
-      "message": "unsupported call \"Type.newInstance namespace/package reflection for pkg.Thing\""
+      "type": "NullPointerException",
+      "message": "Attempt to de-reference a null object"
     }
   }
 }

@@ -285,11 +285,21 @@ func (p *formulaParser) parseAdditive() (formulaValue, bool) {
 		}
 		leftNumber, leftOK := left.asNumber()
 		rightNumber, rightOK := right.asNumber()
+		if op == "-" && (left.kind == formulaDate || looksLikeFormulaDate(left.asString())) && (right.kind == formulaDate || looksLikeFormulaDate(right.asString())) {
+			if days, ok := formulaDateDiffDays(left.asString(), right.asString()); ok {
+				left = formulaValue{kind: formulaNumber, number: days}
+				continue
+			}
+		}
 		if (left.kind == formulaDate || looksLikeFormulaDate(left.asString())) && rightOK {
 			if updated, ok := formulaDateAddDays(left.asString(), rightNumber, op); ok {
 				left = updated
 				continue
 			}
+		}
+		if op == "+" && (left.kind == formulaString || right.kind == formulaString) {
+			left = formulaValue{kind: formulaString, text: left.asString() + right.asString()}
+			continue
 		}
 		if !leftOK || !rightOK {
 			return formulaValue{}, false
@@ -365,6 +375,9 @@ func (p *formulaParser) parsePrimary() (formulaValue, bool) {
 			}
 			if strings.EqualFold(token.text, "PRIORVALUE") {
 				return p.parsePriorValueFunction()
+			}
+			if strings.EqualFold(token.text, "ISCHANGED") {
+				return p.parseIsChangedFunction()
 			}
 			args, ok := p.parseArguments()
 			if !ok {
@@ -456,6 +469,23 @@ func (p *formulaParser) parsePriorValueFunction() (formulaValue, bool) {
 		return p.valueForRecordField(p.record, token.text), true
 	}
 	return p.valueForRecordField(*p.prior, token.text), true
+}
+
+func (p *formulaParser) parseIsChangedFunction() (formulaValue, bool) {
+	token := p.peek()
+	if token.typ != formulaTokenIdent {
+		return formulaValue{}, false
+	}
+	p.pos++
+	if !p.matchSymbol(")") {
+		return formulaValue{}, false
+	}
+	if p.prior == nil {
+		return formulaValue{kind: formulaBool, bool: false}, true
+	}
+	current := p.valueForRecordField(p.record, token.text)
+	prior := p.valueForRecordField(*p.prior, token.text)
+	return formulaValue{kind: formulaBool, bool: !compareFormulaValues(current, prior, "=")}, true
 }
 
 func (p *formulaParser) skipFormulaArgument() bool {
@@ -696,6 +726,16 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaBool, bool: strings.Contains(args[0].asString(), args[1].asString())}, true
+	case "SUBSTITUTE":
+		if len(args) != 3 {
+			return formulaValue{}, false
+		}
+		return formulaValue{kind: formulaString, text: strings.ReplaceAll(args[0].asString(), args[1].asString(), args[2].asString())}, true
+	case "BR":
+		if len(args) != 0 {
+			return formulaValue{}, false
+		}
+		return formulaValue{kind: formulaString, text: "<br />"}, true
 	case "CASE":
 		if len(args) < 4 {
 			return formulaValue{}, false
@@ -802,6 +842,23 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaNumber, number: math.Floor(number)}, true
+	case "ROUND":
+		if len(args) != 2 {
+			return formulaValue{}, false
+		}
+		number, ok := args[0].asNumber()
+		if !ok {
+			return formulaValue{}, false
+		}
+		scale, ok := formulaIntArg(args[1])
+		if !ok {
+			return formulaValue{}, false
+		}
+		rounded, ok := formulaRound(number, scale)
+		if !ok {
+			return formulaValue{}, false
+		}
+		return formulaValue{kind: formulaNumber, number: rounded}, true
 	case "ABS":
 		if len(args) != 1 {
 			return formulaValue{}, false
@@ -832,6 +889,28 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaNumber, number: float64(len(args[0].asString()))}, true
+	case "IMAGE":
+		if len(args) < 2 || len(args) > 4 {
+			return formulaValue{}, false
+		}
+		src := args[0].asString()
+		alt := args[1].asString()
+		if len(args) == 2 {
+			return formulaValue{kind: formulaString, text: `<img src="` + html.EscapeString(src) + `" alt="` + html.EscapeString(alt) + `" />`}, true
+		}
+		height := args[2].asString()
+		width := ""
+		if len(args) == 4 {
+			width = args[3].asString()
+		}
+		text := `<img src="` + html.EscapeString(src) + `" alt="` + html.EscapeString(alt) + `"`
+		if height != "" {
+			text += ` height="` + html.EscapeString(height) + `"`
+		}
+		if width != "" {
+			text += ` width="` + html.EscapeString(width) + `"`
+		}
+		return formulaValue{kind: formulaString, text: text + ` />`}, true
 	default:
 		return formulaValue{}, false
 	}
@@ -1104,7 +1183,7 @@ func compareFormulaValues(left, right formulaValue, op string) bool {
 		case "=":
 			return left.kind == formulaNull && right.kind == formulaNull
 		case "!=", "<>":
-			return left.kind != right.kind
+			return false
 		default:
 			return false
 		}
@@ -1225,6 +1304,27 @@ func formulaIntArg(value formulaValue) (int, bool) {
 	return int(number), true
 }
 
+func formulaRound(number float64, scale int) (float64, bool) {
+	if math.IsNaN(number) || math.IsInf(number, 0) {
+		return 0, false
+	}
+	factor := math.Pow10(absInt(scale))
+	if factor == 0 || math.IsInf(factor, 0) {
+		return 0, false
+	}
+	if scale >= 0 {
+		return math.Round(number*factor) / factor, true
+	}
+	return math.Round(number/factor) * factor, true
+}
+
+func absInt(value int) int {
+	if value < 0 {
+		return -value
+	}
+	return value
+}
+
 func formulaDateAddDays(dateText string, days float64, op string) (formulaValue, bool) {
 	date, ok := parseFormulaDate(dateText)
 	if !ok {
@@ -1234,6 +1334,18 @@ func formulaDateAddDays(dateText string, days float64, op string) (formulaValue,
 		days = -days
 	}
 	return formulaValue{kind: formulaDate, text: date.AddDate(0, 0, int(days)).Format("2006-01-02")}, true
+}
+
+func formulaDateDiffDays(leftText, rightText string) (float64, bool) {
+	left, ok := parseFormulaDate(leftText)
+	if !ok {
+		return 0, false
+	}
+	right, ok := parseFormulaDate(rightText)
+	if !ok {
+		return 0, false
+	}
+	return left.Sub(right).Hours() / 24, true
 }
 
 func parseFormulaDate(text string) (time.Time, bool) {

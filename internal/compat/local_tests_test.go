@@ -82,6 +82,24 @@ func TestRunLocalTestsFiltersClassList(t *testing.T) {
 	}
 }
 
+func TestRunLocalTestsStartsAtClass(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{
+		Project:    filepath.Join("..", "..", "testdata", "local-tests", "basic"),
+		StartClass: "PassingTest",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.CasesDiscovered != 2 {
+		t.Fatalf("casesDiscovered = %d, want 2: %#v", report.CasesDiscovered, report.Outcomes)
+	}
+	for _, outcome := range report.Outcomes {
+		if outcome.Class == "FailingTest" {
+			t.Fatalf("start class included earlier class: %#v", report.Outcomes)
+		}
+	}
+}
+
 func TestRunLocalTestsStopsAfterMaxFailureGroups(t *testing.T) {
 	root := t.TempDir()
 	writeLocalTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -220,6 +238,15 @@ func TestLocalTestParallelismCapsFocusedClassRuns(t *testing.T) {
 	}
 	if got := localTestParallelism(LocalTestOptions{Class: "CartSubmitterTest", Method: "runs"}); got != 1 {
 		t.Fatalf("focused method parallelism = %d, want 1", got)
+	}
+}
+
+func TestShouldParallelizeMethodsRequiresExplicitFlag(t *testing.T) {
+	if shouldParallelizeMethods(LocalTestOptions{Class: "CartSubmitterTest"}, 4, 12) {
+		t.Fatalf("focused class run should keep methods serial unless requested")
+	}
+	if !shouldParallelizeMethods(LocalTestOptions{Class: "CartSubmitterTest", ParallelMethods: true}, 4, 12) {
+		t.Fatalf("focused class run should allow explicit method parallelism")
 	}
 }
 

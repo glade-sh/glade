@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/open-aer/oaer/internal/vm"
 	"github.com/open-aer/oaer/internal/watch"
 )
 
@@ -31,6 +32,34 @@ func TestRunUnknownCommand(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), `unknown command "wat"`) {
 		t.Fatalf("stderr did not include diagnostic: %q", stderr.String())
+	}
+}
+
+func TestOrgForProjectAccountAddressFieldsExposeFirstComponent(t *testing.T) {
+	root := filepath.Join("..", "..", "example-projects", "src-nmb-nu-develop")
+	org, err := orgForProject(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := vm.CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = Schema.SObjectType.Account.fields.getMap();
+for (String fieldName : fields.keySet()) {
+    Schema.DescribeFieldResult describe = fields.get(fieldName).getDescribe();
+    if (describe.getType() != Schema.DisplayType.Address) {
+        continue;
+    }
+    String prefix = fieldName.removeEnd('address');
+    String firstComponent = prefix + 'street';
+    System.assertNotEquals(null, fields.get(firstComponent), fieldName + ' missing ' + firstComponent);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := vm.New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -370,6 +399,25 @@ func TestRunCompatLocalTestsBlockersOnlyAndFilters(t *testing.T) {
 	}
 	if strings.Contains(stdout.String(), "PassingTest") || strings.Contains(stdout.String(), "UnsupportedTest") {
 		t.Fatalf("stdout included unfiltered tests: %q", stdout.String())
+	}
+}
+
+func TestRunCompatLocalTestsStartClass(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"compat", "local-tests",
+		"--project", "../../testdata/local-tests/basic",
+		"--start-class", "PassingTest",
+		"--json",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if strings.Contains(stdout.String(), `"class": "FailingTest"`) {
+		t.Fatalf("stdout included class before start: %q", stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"class": "PassingTest"`) || !strings.Contains(stdout.String(), `"class": "UnsupportedTest"`) {
+		t.Fatalf("stdout missing tail classes: %q", stdout.String())
 	}
 }
 
@@ -1949,7 +1997,7 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("seed exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), `"schemaVersion": 1`) || !strings.Contains(stdout.String(), `"Account": 1`) || !strings.Contains(stdout.String(), `"users": 1`) {
+	if !strings.Contains(stdout.String(), `"schemaVersion": 1`) || !strings.Contains(stdout.String(), `"Account": 1`) || !strings.Contains(stdout.String(), `"users": 2`) {
 		t.Fatalf("seed stdout = %q", stdout.String())
 	}
 
@@ -1959,7 +2007,7 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("inspect exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "schemaVersion: 1") || !strings.Contains(stdout.String(), "Account: 1") || !strings.Contains(stdout.String(), "User: 1") {
+	if !strings.Contains(stdout.String(), "schemaVersion: 1") || !strings.Contains(stdout.String(), "Account: 1") || !strings.Contains(stdout.String(), "User: 2") {
 		t.Fatalf("inspect stdout = %q", stdout.String())
 	}
 
@@ -1979,7 +2027,7 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("reset exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), `"Account": 0`) || !strings.Contains(stdout.String(), `"users": 1`) {
+	if !strings.Contains(stdout.String(), `"Account": 0`) || !strings.Contains(stdout.String(), `"users": 2`) {
 		t.Fatalf("reset stdout = %q", stdout.String())
 	}
 }

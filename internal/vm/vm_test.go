@@ -720,8 +720,8 @@ func TestExecDateTimeMinusIntegerAndMathExceptionAreCatchable(t *testing.T) {
 Datetime current = Datetime.valueOfGmt('2024-02-29 12:00:00');
 Datetime next = current + 1;
 Datetime prior = current - 5;
-System.assertEquals('2024-03-01T12:00:00Z', String.valueOf(next));
-System.assertEquals('2024-02-24T12:00:00Z', String.valueOf(prior));
+System.assertEquals('2024-03-01 12:00:00', String.valueOf(next));
+System.assertEquals('2024-02-24 12:00:00', String.valueOf(prior));
 Date day = Date.newInstance(2024, 2, 29);
 System.assertEquals(Date.newInstance(2024, 3, 1), day + 1);
 System.assertEquals(Date.newInstance(2024, 2, 28), day - 1);
@@ -754,7 +754,9 @@ System.assert(day < noon);
 System.assert(day <= midnight);
 System.assert(day > prior);
 System.assert(day >= midnight);
-	`)
+System.assert(day > '2024-02-28');
+System.assert('2024-03-01' > day);
+		`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2098,6 +2100,34 @@ System.assertEquals('{Alpha, Beta}', String.valueOf(new Set<String>{'Alpha', 'Be
 	}
 }
 
+func TestExecStringValueOfSObjectFieldUsesNamespacedFieldAPIName(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = Schema.SObjectType.Account.fields.getMap();
+String tokenName = String.valueOf(Account.PrimaryAffiliation__c);
+System.assertEquals(Account.PrimaryAffiliation__c.getDescribe().getName(), tokenName);
+System.assert(fields.keySet().contains(tokenName.toLowerCase()), tokenName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Namespace = "NU"
+	storage.EnsureStandardObject(&org, "Account")
+	account := org.Objects["Account"]
+	account.Definition.Fields["PrimaryAffiliation__c"] = storage.Field{
+		APIName:          "PrimaryAffiliation__c",
+		Type:             storage.FieldReference,
+		ReferenceTo:      []string{"Account"},
+		RelationshipName: "PrimaryAffiliation__r",
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectFieldTokenUsesStandardOverlayFallback(t *testing.T) {
 	program, err := CompileAnonymous("System.assertEquals('FirstName', String.valueOf(Account.FirstName));")
 	if err != nil {
@@ -2119,6 +2149,32 @@ func TestExecSObjectFieldTokenUsesStandardOverlayFallback(t *testing.T) {
 	if _, ok := definition.Fields["FirstName"]; !ok {
 		t.Fatalf("standard Account overlay missing FirstName")
 	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCalculatedFieldDescribeNotCreateableOrUpdateable(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeFieldResult fullName = Account.FullName__c.getDescribe();
+System.assertEquals(true, fullName.isCalculated());
+System.assertEquals(false, fullName.isCreateable());
+System.assertEquals(false, fullName.isUpdateable());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["FullName__c"] = storage.Field{
+		APIName:     "FullName__c",
+		Label:       "Full Name",
+		Type:        storage.FieldCalculated,
+		DisplayType: "STRING",
+	}
+	org.Objects["Account"] = account
 	machine := New(nil)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
@@ -2713,6 +2769,19 @@ func TestExecDecimalArithmeticSuppressesBinaryFloatNoise(t *testing.T) {
 	program, err := CompileAnonymous(`
 Decimal balance = 100 - 91.63;
 System.assertEquals(8.37, balance);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecLeadingDotDecimalLiteral(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal half = .5;
+System.assertEquals(0.5, half);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4069,6 +4138,69 @@ System.assertEquals('blocked', message);
 	}
 }
 
+func TestExecCustomExceptionConstructorCanChainToInheritedMessageConstructor(t *testing.T) {
+	ctor, err := CompileAnonymous(`this(message);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+AppException ex = new AppException('blocked', true);
+System.assertEquals('blocked', ex.getMessage());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "AppException",
+		SuperClass: "Exception",
+		Constructors: []Method{{
+			Name:          "AppException.<init>",
+			ClassName:     "AppException",
+			Params:        []Param{{Name: "message", Type: "String"}, {Name: "display", Type: "Boolean"}},
+			Program:       ctor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCustomExceptionMethodCanCallInheritedMessageUnqualified(t *testing.T) {
+	userMessage, err := CompileAnonymous(`return getMessage();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+AppException ex = new AppException('blocked');
+System.assertEquals('blocked', ex.userMessage());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "AppException",
+		SuperClass: "Exception",
+		Methods: map[string]Method{
+			"userMessage": {
+				Name:       "AppException.userMessage",
+				ClassName:  "AppException",
+				ReturnType: "String",
+				Program:    userMessage,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecNestedEnumStaticValue(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object direction = TriggerConstants.Direction.ToCustomer;
@@ -4399,6 +4531,91 @@ System.assert(!stack.contains('rethrow outside catch block'));
 	}
 	machine := New(nil)
 	if err := machine.RegisterMethod(Method{Name: "Util.thrower", ReturnType: "void", Program: throwProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCaughtExceptionStackTraceUsesApexFrameFormat(t *testing.T) {
+	throwProgram, err := CompileAnonymous(`
+throw new DmlException('boom');
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+String stack = '';
+try {
+	Thrower.fail();
+} catch (DmlException e) {
+	stack = e.getStackTraceString();
+}
+	System.assert(stack.startsWith('Class.NU.Thrower.fail: line '), stack);
+	System.assert(!stack.contains('.cls:'), stack);
+		`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Namespace = "NU"
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name:      "Thrower",
+		Namespace: "NU",
+		Access:    "global",
+		Methods: map[string]Method{
+			"fail": {ReturnType: "void", Program: throwProgram, IsStatic: true, Access: "global"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDMLExceptionStackRestoresCallerStatementAfterTriggers(t *testing.T) {
+	dmlProgram, err := CompileAnonymous(`insert new Account();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	triggerProgram, err := CompileAnonymous(`TriggerHelper.touch();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	helperProgram, err := CompileAnonymous(`String marker = 'trigger';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+String stack = '';
+try {
+	Harness.run();
+} catch (DmlException e) {
+	stack = e.getStackTraceString();
+}
+System.assert(stack.startsWith('Class.Harness.run: line '), stack);
+System.assert(!stack.contains('TriggerHelper.touch'), stack);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Name"] = storage.Field{APIName: "Name", Type: storage.FieldString, Required: true}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterMethod(Method{Name: "Harness.run", ReturnType: "void", Program: dmlProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "TriggerHelper.touch", ReturnType: "void", Program: helperProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{Name: "AccountTrigger", Object: "Account", Timing: triggerTimingBefore, Operation: "insert", Program: triggerProgram}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {

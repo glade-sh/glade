@@ -340,6 +340,10 @@ func comparablePlatformTemporal(left, right Value) ([2]time.Time, bool) {
 }
 
 func comparablePlatformTemporalValue(value Value) (time.Time, bool) {
+	if value.Kind == ValueString {
+		parsed, err := parseDatetimeTextAllowDateOnly(value.Text)
+		return parsed.UTC(), err == nil
+	}
 	if value.Kind != ValueObject {
 		return time.Time{}, false
 	}
