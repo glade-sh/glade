@@ -231,6 +231,42 @@ func TestInsertStoresBlankOptionalTextAsNull(t *testing.T) {
 	}
 }
 
+func TestUpdateExplicitNullAfterRuntimeSnapshot(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name":           {APIName: "Name", Type: storage.FieldString, Required: true},
+				"Description__c": {APIName: "Description__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {
+				ID:     "a00000000000001",
+				Object: "Widget__c",
+				Fields: map[string]storage.Value{"Name": storage.StringValue("Widget")},
+			},
+		},
+	}
+	engine := NewEngine(&org)
+
+	_ = storage.SnapshotRuntimeOrg(&org)
+	update := engine.Update([]storage.Record{{
+		ID:            "a00000000000001",
+		Object:        "Widget__c",
+		ExplicitNulls: map[string]bool{"Description__c": true},
+	}})
+	if !update[0].Success {
+		t.Fatalf("update = %#v", update[0])
+	}
+	stored := org.Objects["Widget__c"].Records["a00000000000001"]
+	if !stored.HasExplicitNull("Description__c") {
+		t.Fatalf("Description__c explicit null missing: %#v", stored.ExplicitNulls)
+	}
+}
+
 func TestInsertRejectsOverlongSingleLineText(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
@@ -4271,6 +4307,43 @@ func TestContentVersionCreatesDocumentAndLinks(t *testing.T) {
 	}})
 	if !explicitLink[0].Success || !strings.HasPrefix(string(explicitLink[0].ID), "06A") || explicitLink[0].ID == autoLink.ID {
 		t.Fatalf("explicit link insert = %#v", explicitLink)
+	}
+}
+
+func TestSnapshotContentVersionSideEffectsDoNotMutateBaseOrg(t *testing.T) {
+	base := fileTestOrg()
+	snapshot := storage.NewRuntimeTemplate(base).CloneSnapshotOrg()
+	engine := NewEngine(&snapshot)
+	account := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !account[0].Success {
+		t.Fatalf("account insert = %#v", account)
+	}
+	version := engine.Insert([]storage.Record{{
+		Object: "ContentVersion",
+		Fields: map[string]storage.Value{
+			"Title":                  storage.StringValue("Spec"),
+			"PathOnClient":           storage.StringValue("docs/spec.pdf"),
+			"VersionData":            storage.BlobValue("pdf bytes"),
+			"FirstPublishLocationId": storage.IDValue(account[0].ID),
+		},
+	}})
+	if !version[0].Success {
+		t.Fatalf("content version insert = %#v", version)
+	}
+	if got := len(base.Objects["Account"].Records); got != 0 {
+		t.Fatalf("base accounts after snapshot insert = %d", got)
+	}
+	if got := len(base.Objects["ContentVersion"].Records); got != 0 {
+		t.Fatalf("base content versions after snapshot insert = %d", got)
+	}
+	if got := len(base.Objects["ContentDocument"].Records); got != 0 {
+		t.Fatalf("base content documents after snapshot insert = %d", got)
+	}
+	if got := len(base.Objects["ContentDocumentLink"].Records); got != 0 {
+		t.Fatalf("base content document links after snapshot insert = %d", got)
 	}
 }
 

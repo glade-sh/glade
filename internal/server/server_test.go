@@ -3955,7 +3955,8 @@ func TestCompositeSObjectsPartialFailureCommitsSuccessWithRowError(t *testing.T)
 		t.Fatalf("partial composite errors = %#v", rows[1]["errors"])
 	}
 	firstError, ok := errors[0].(map[string]any)
-	if !ok || firstError["statusCode"] != "REQUIRED_FIELD_MISSING" || !strings.Contains(firstError["message"].(string), "Account.Name") {
+	fields, fieldsOK := firstError["fields"].([]any)
+	if !ok || firstError["statusCode"] != "REQUIRED_FIELD_MISSING" || !strings.Contains(firstError["message"].(string), "Name") || !fieldsOK || len(fields) != 1 || fields[0] != "Name" {
 		t.Fatalf("partial composite error row = %#v", firstError)
 	}
 }

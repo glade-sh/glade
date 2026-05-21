@@ -211,9 +211,16 @@ func ParseAt(input string, now time.Time) (Query, error) {
 }
 
 func Execute(org storage.OrgState, query Query) (Result, error) {
-	org = org.Clone()
-	hydrateVirtualSchemaObjects(&org)
 	objectName, ok := storage.ResolveObjectName(org, query.Object)
+	if !ok && shouldHydrateVirtualSchemaForQuery(query.Object) {
+		org = org.Clone()
+		hydrateVirtualSchemaObjects(&org)
+		objectName, ok = storage.ResolveObjectName(org, query.Object)
+	} else if ok && shouldHydrateVirtualSchemaForQuery(objectName) {
+		org = org.Clone()
+		hydrateVirtualSchemaObjects(&org)
+		objectName, ok = storage.ResolveObjectName(org, query.Object)
+	}
 	if !ok {
 		return Result{}, fmt.Errorf("soql: unknown object %s", query.Object)
 	}
@@ -300,6 +307,10 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 	return Result{Records: records, Rows: len(records)}, nil
 }
 
+func shouldHydrateVirtualSchemaForQuery(objectName string) bool {
+	return isVirtualSchemaObjectName(objectName) || isUserAccessVirtualSchemaObjectName(objectName)
+}
+
 func hydrateVirtualSchemaObjects(org *storage.OrgState) {
 	if org == nil {
 		return
@@ -310,6 +321,7 @@ func hydrateVirtualSchemaObjects(org *storage.OrgState) {
 	}
 	for _, objectName := range []string{"EntityDefinition", "EntityParticle", "RelationshipDomain", "UserEntityAccess", "UserFieldAccess"} {
 		storage.EnsureStandardObject(org, objectName)
+		storage.EnsureMutableObjectRecords(org, objectName)
 	}
 	entityDefinitions := org.Objects["EntityDefinition"]
 	entityParticles := org.Objects["EntityParticle"]
@@ -415,6 +427,8 @@ func setVirtualSchemaHydrationStamp(org *storage.OrgState, stamp string) {
 	if !ok {
 		return
 	}
+	storage.EnsureMutableObjectDefinition(org, "EntityDefinition")
+	entityDefinitions = org.Objects["EntityDefinition"]
 	if entityDefinitions.Definition.Metadata == nil {
 		entityDefinitions.Definition.Metadata = make(map[string]string)
 	}

@@ -20,6 +20,7 @@ import (
 	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/sema"
+	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/testreport"
 	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/watch"
@@ -47,11 +48,20 @@ type LocalTestOptions struct {
 	CPUProfilePath      string
 	MemProfilePath      string
 	PerfJSONPath        string
+	ShardCount          int
+	ShardIndex          int
+	WriteClassShards    string
+	DurationHistoryPath string
 }
 
 type LocalTestPhaseTiming struct {
-	Name       string `json:"name"`
-	DurationMS int64  `json:"durationMs"`
+	Name            string `json:"name"`
+	DurationMS      int64  `json:"durationMs"`
+	HeapAllocBytes  uint64 `json:"heapAllocBytes,omitempty"`
+	TotalAllocBytes uint64 `json:"totalAllocBytes,omitempty"`
+	Mallocs         uint64 `json:"mallocs,omitempty"`
+	Frees           uint64 `json:"frees,omitempty"`
+	NumGC           uint32 `json:"numGC,omitempty"`
 }
 
 type LocalTestReport struct {
@@ -81,6 +91,8 @@ type LocalTestPerfSummary struct {
 	Summary         LocalTestSummary       `json:"summary"`
 	Phases          []LocalTestPhaseTiming `json:"phases,omitempty"`
 	TopSlowClasses  []LocalTestPerfClass   `json:"topSlowClasses,omitempty"`
+	TopCloneClasses []LocalTestCloneClass  `json:"topCloneClasses,omitempty"`
+	CloneStats      LocalTestCloneStats    `json:"cloneStats"`
 	CPUProfilePath  string                 `json:"cpuProfilePath,omitempty"`
 	MemProfilePath  string                 `json:"memProfilePath,omitempty"`
 }
@@ -89,6 +101,21 @@ type LocalTestPerfClass struct {
 	Class      string `json:"class"`
 	DurationMS int64  `json:"durationMs"`
 	Tests      int    `json:"tests"`
+}
+
+type LocalTestCloneStats struct {
+	CloneRuntimeOrgCalls       uint64 `json:"cloneRuntimeOrgCalls"`
+	CloneRuntimeCalls          uint64 `json:"cloneRuntimeCalls"`
+	CloneRollbackSnapshotCalls uint64 `json:"cloneRollbackSnapshotCalls"`
+	JournalRollbacks           uint64 `json:"journalRollbacks,omitempty"`
+	CloneFallbacks             uint64 `json:"cloneFallbacks,omitempty"`
+}
+
+type LocalTestCloneClass struct {
+	Class       string `json:"class"`
+	SetupClones uint64 `json:"setupClones,omitempty"`
+	TestClones  uint64 `json:"testClones,omitempty"`
+	DurationMS  int64  `json:"durationMs,omitempty"`
 }
 
 type LocalTestSummary struct {
@@ -168,6 +195,7 @@ type LocalTestCorpusProjectResult struct {
 
 func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 	started := time.Now()
+	resetLocalTestPerfCounters(options)
 	root := options.Project
 	if strings.TrimSpace(root) == "" {
 		root = "."
@@ -263,6 +291,43 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 	})
 	report.CasesDiscovered = len(cases)
 	recordLocalTestPhase(&report, options, fmt.Sprintf("discover_done total=%d", len(cases)), started)
+	durations, err := loadLocalTestDurationHistory(options.DurationHistoryPath)
+	if err != nil {
+		return LocalTestReport{}, err
+	}
+	if strings.TrimSpace(options.WriteClassShards) != "" {
+		recordLocalTestPhase(&report, options, "shard_write_start", started)
+		shardCount := options.ShardCount
+		if shardCount <= 0 {
+			shardCount = parallelism
+		}
+		if shardCount <= 0 {
+			shardCount = 1
+		}
+		if err := writeLocalTestClassShardFiles(options.WriteClassShards, planLocalTestClassShards(cases, durations, shardCount)); err != nil {
+			return LocalTestReport{}, err
+		}
+		recordLocalTestPhase(&report, options, fmt.Sprintf("shard_write_done shards=%d", shardCount), started)
+		finalizeLocalTestReport(&report, options, started)
+		if stopProfile != nil {
+			if stopErr := stopProfile(); stopErr != nil {
+				return LocalTestReport{}, stopErr
+			}
+			stopProfile = nil
+		}
+		if err := maybeWriteLocalTestPerfJSON(report, options); err != nil {
+			return LocalTestReport{}, err
+		}
+		return report, nil
+	}
+	if options.ShardCount > 0 {
+		sharded, err := selectLocalTestShard(cases, durations, options.ShardCount, options.ShardIndex)
+		if err != nil {
+			return LocalTestReport{}, err
+		}
+		cases = sharded
+		recordLocalTestPhase(&report, options, fmt.Sprintf("shard_select index=%d count=%d cases=%d", options.ShardIndex, options.ShardCount, len(cases)), started)
+	}
 
 	if shouldAnalyzeLocalTests(options, len(cases)) {
 		recordLocalTestPhase(&report, options, "analyze_start", started)
@@ -309,6 +374,14 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		return LocalTestReport{}, err
 	}
 	return report, nil
+}
+
+func resetLocalTestPerfCounters(options LocalTestOptions) {
+	if strings.TrimSpace(options.PerfJSONPath) == "" {
+		return
+	}
+	apextest.ResetPerfCounters()
+	storage.ResetCloneStats()
 }
 
 func startLocalTestProfiler(options LocalTestOptions) (func() error, error) {
@@ -374,6 +447,8 @@ func maybeWriteLocalTestPerfJSON(report LocalTestReport, options LocalTestOption
 }
 
 func localTestPerfSummary(report LocalTestReport, options LocalTestOptions) LocalTestPerfSummary {
+	apexStats := apextest.SnapshotPerfCounters()
+	storageStats := storage.SnapshotCloneStats()
 	perf := LocalTestPerfSummary{
 		GeneratedAt:     time.Now().UTC().Format(time.RFC3339),
 		Project:         report.Project,
@@ -382,11 +457,56 @@ func localTestPerfSummary(report LocalTestReport, options LocalTestOptions) Loca
 		CasesRun:        report.CasesRun,
 		Summary:         report.Summary,
 		Phases:          append([]LocalTestPhaseTiming(nil), report.Phases...),
-		CPUProfilePath:  strings.TrimSpace(options.CPUProfilePath),
-		MemProfilePath:  strings.TrimSpace(options.MemProfilePath),
+		CloneStats: LocalTestCloneStats{
+			CloneRuntimeOrgCalls:       apexStats.CloneRuntimeOrgCalls,
+			CloneRuntimeCalls:          storageStats.CloneRuntimeCalls,
+			CloneRollbackSnapshotCalls: storageStats.CloneRollbackSnapshotCalls,
+			JournalRollbacks:           apexStats.JournalRollbacks,
+			CloneFallbacks:             apexStats.CloneFallbacks,
+		},
+		CPUProfilePath: strings.TrimSpace(options.CPUProfilePath),
+		MemProfilePath: strings.TrimSpace(options.MemProfilePath),
 	}
 	perf.TopSlowClasses = localTestTopSlowClasses(report.Outcomes, 15)
+	perf.TopCloneClasses = localTestTopCloneClasses(apexStats.CloneClasses, report.Outcomes, 15)
 	return perf
+}
+
+func localTestTopCloneClasses(classes []apextest.PerfCloneClass, outcomes []LocalTestOutcome, limit int) []LocalTestCloneClass {
+	if limit <= 0 || len(classes) == 0 {
+		return nil
+	}
+	durations := make(map[string]int64, len(classes))
+	for _, outcome := range outcomes {
+		if strings.TrimSpace(outcome.Class) == "" {
+			continue
+		}
+		durations[outcome.Class] += outcome.DurationMS
+	}
+	out := make([]LocalTestCloneClass, 0, len(classes))
+	for _, class := range classes {
+		out = append(out, LocalTestCloneClass{
+			Class:       class.Class,
+			SetupClones: class.SetupClones,
+			TestClones:  class.TestClones,
+			DurationMS:  durations[class.Class],
+		})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		left := out[i].SetupClones + out[i].TestClones
+		right := out[j].SetupClones + out[j].TestClones
+		if left == right {
+			if out[i].DurationMS == out[j].DurationMS {
+				return out[i].Class < out[j].Class
+			}
+			return out[i].DurationMS > out[j].DurationMS
+		}
+		return left > right
+	})
+	if len(out) > limit {
+		out = out[:limit]
+	}
+	return out
 }
 
 func localTestTopSlowClasses(outcomes []LocalTestOutcome, limit int) []LocalTestPerfClass {
@@ -433,7 +553,17 @@ func reportLocalTestPhase(options LocalTestOptions, event string, started time.T
 
 func recordLocalTestPhase(report *LocalTestReport, options LocalTestOptions, event string, started time.Time) {
 	duration := time.Since(started).Milliseconds()
-	report.Phases = append(report.Phases, LocalTestPhaseTiming{Name: event, DurationMS: duration})
+	var mem runtime.MemStats
+	runtime.ReadMemStats(&mem)
+	report.Phases = append(report.Phases, LocalTestPhaseTiming{
+		Name:            event,
+		DurationMS:      duration,
+		HeapAllocBytes:  mem.HeapAlloc,
+		TotalAllocBytes: mem.TotalAlloc,
+		Mallocs:         mem.Mallocs,
+		Frees:           mem.Frees,
+		NumGC:           mem.NumGC,
+	})
 	if options.ProgressWriter != nil {
 		fmt.Fprintf(options.ProgressWriter, "local-tests phase %s durationMs=%d\n", event, duration)
 	}
@@ -572,16 +702,29 @@ func localTestParallelism(options LocalTestOptions) int {
 		if procs < 2 {
 			return procs
 		}
-		if procs < 4 {
+		if procs < 8 {
 			return procs
 		}
-		return 4
+		return 8
 	}
-	return 1
+	procs := runtime.GOMAXPROCS(0)
+	if procs < 1 {
+		return 1
+	}
+	if procs > 8 {
+		return 8
+	}
+	return procs
 }
 
-func shouldParallelizeMethods(options LocalTestOptions, _ int, _ int) bool {
-	return options.ParallelMethods
+func shouldParallelizeMethods(options LocalTestOptions, parallelism int, totalCases int) bool {
+	if options.ParallelMethods {
+		return true
+	}
+	if parallelism <= 1 || totalCases < 8 || strings.TrimSpace(options.Method) != "" {
+		return false
+	}
+	return strings.TrimSpace(options.Class) != ""
 }
 
 func localTestProgressReporter(w io.Writer) func(apextest.TestProgress) {

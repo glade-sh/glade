@@ -1893,6 +1893,61 @@ private class SampleTest {
 	}
 }
 
+func TestRunTestDaemonFilterUsesWarmService(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/WarmOneTest.cls"), `
+@isTest
+private class WarmOneTest {
+  @isTest static void passes() {
+    System.assertEquals(2, 1 + 1);
+  }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/WarmTwoTest.cls"), `
+@isTest
+private class WarmTwoTest {
+  @isTest static void passes() {
+    System.assertEquals(3, 1 + 2);
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--daemon", "--filter", "WarmOneTest", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"total": 1`) || !strings.Contains(stdout.String(), `"passed": 1`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+	if strings.Contains(stdout.String(), "WarmTwoTest") {
+		t.Fatalf("daemon filter ran unselected class: %q", stdout.String())
+	}
+}
+
+func TestRunTestDaemonWatchOnceStreamsEvents(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/SampleTest.cls"), `
+@isTest
+private class SampleTest {
+  @isTest static void passes() {
+    System.assert(true);
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--daemon", "--watch-once"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"event":"watch.started"`) || !strings.Contains(stdout.String(), `"event":"watch.run_finished"`) {
+		t.Fatalf("watch stdout = %q", stdout.String())
+	}
+}
+
 func TestWatchIndexUpdateUsesIncrementalForApexOnlyChanges(t *testing.T) {
 	root := t.TempDir()
 	classPath := filepath.Join(root, "Sample.cls")

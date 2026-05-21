@@ -12,30 +12,30 @@ import (
 )
 
 func BenchmarkRunTestSuite(b *testing.B) {
-	root := b.TempDir()
-	writeBenchmarkApexTestProject(b, root, 20, false)
-	index := benchmarkLoadTestIndex(b, root)
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		run := Run(index, Options{})
-		summary := run.Summary()
-		if summary.Total != 20 || summary.Passed != 20 {
-			b.Fatalf("summary = %#v", summary)
-		}
+	for _, tests := range []int{100, 500, 1000} {
+		b.Run(fmt.Sprintf("methods=%d/setup=false", tests), func(b *testing.B) {
+			benchmarkRunTestSuite(b, tests, false)
+		})
+		b.Run(fmt.Sprintf("methods=%d/setup=true", tests), func(b *testing.B) {
+			benchmarkRunTestSuite(b, tests, true)
+		})
 	}
 }
 
 func BenchmarkRunTestSuiteWithClassSetup(b *testing.B) {
+	benchmarkRunTestSuite(b, 100, true)
+}
+
+func benchmarkRunTestSuite(b *testing.B, tests int, withSetup bool) {
 	root := b.TempDir()
-	writeBenchmarkApexTestProject(b, root, 20, true)
+	writeBenchmarkApexTestProject(b, root, tests, withSetup)
 	index := benchmarkLoadTestIndex(b, root)
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		run := Run(index, Options{})
 		summary := run.Summary()
-		if summary.Total != 20 || summary.Passed != 20 {
+		if summary.Total != tests || summary.Passed != tests {
 			b.Fatalf("summary = %#v", summary)
 		}
 	}

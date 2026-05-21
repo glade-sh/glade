@@ -121,6 +121,22 @@ stdio adapter and register an `oaer-apex` debug type. Use this
 }
 ```
 
+## Warm Test Service
+
+The internal `testdaemon` package keeps project load, schema, and type index
+state warm for repeated editor and watch loops. `oaer test --daemon` uses this
+service for focused runs, `--changed-since`, and watch mode:
+
+- `RunFilter(filter)` runs a focused test selection against the warm index.
+- `RunChangedSince(ref)` uses git file changes and affected-test selection, with
+  the current full-run fallback when impact is broad.
+- `Reload()` refreshes the full project state when incremental impact is not
+  safe to infer.
+
+Keep cold one-shot `oaer test` behavior separate from this service. Use
+`oaer test --daemon --watch` or `oaer test --daemon --changed-since main` for
+repeated local loops where avoiding project reload is the main win.
+
 The current DAP server supports initialize, breakpoints, continue, pause, next,
 step-in, step-out, stack trace, scopes, variables, evaluate, watch expressions,
 and disconnect. Live VM pause hooks can stop before statements at breakpoints

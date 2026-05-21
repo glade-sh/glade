@@ -51,90 +51,97 @@ const (
 )
 
 type VM struct {
-	Globals                  map[string]Value
-	VarTypes                 map[string]string
-	Methods                  map[string]Method
-	MethodOverloads          map[string][]Method
-	MethodFolded             map[string][]Method
-	methodCandidates         map[string][]Method
-	methodResolveCache       map[string]methodResolution
-	Classes                  map[string]Class
-	classLookup              map[string]Class
-	enumLookup               map[string]enumClassLookup
-	enumSuffixLookup         map[string]enumClassLookup
-	uniqueNestedTypeCache    map[string]uniqueNestedTypeLookup
-	Org                      *storage.OrgState
-	Triggers                 map[string][]Trigger
-	triggerMatchCache        map[string][]Trigger
-	Stdout                   io.Writer
-	callStack                []callFrame
-	scopeStack               []map[string]Value
-	currentClass             string
-	currentMethod            Method
-	testContext              *TestContext
-	localAsyncJobs           []AsyncJob
-	localAsyncSeq            int
-	localAsyncDrain          bool
-	localAsyncChain          bool
-	executionUser            Value
-	limits                   Limits
-	limitCaps                LimitCaps
-	limitMode                LimitMode
-	limitViolations          []LimitViolation
-	fakeNow                  time.Time
-	currentAsyncKind         string
-	currentQueueableDepth    int
-	currentQueueableMaxDepth int
-	currentFinalizer         Value
-	activeExceptions         []activeException
-	currentStatement         callFrame
-	hasStatement             bool
-	triggerDepth             int
-	installContextDepth      int
-	savepoints               map[string]storage.OrgState
-	emailSavepoints          map[string][]CapturedEmail
-	savepointOrder           map[string]int
-	nextSavepoint            int
-	pageMessages             []Value
-	currentPage              Value
-	pageReferences           map[string]string
-	fixedSearchResults       []Value
-	sfsqlqueryRows           []Value
-	sfsqlqueryMetadata       []Value
-	platformCache            map[string]map[string]cacheEntry
-	cacheScanLocators        map[string][]cacheScanItem
-	cacheScanSeq             int
-	capturedEmails           []CapturedEmail
-	restRequest              Value
-	restResponse             Value
-	serverBaseURL            string
-	metadataDeploys          map[string]Value
-	reportInstances          map[string]Value
-	pushUpgradeCustoms       map[string]pushUpgradeCustomization
-	debugHooks               DebugHooks
-	hasDebugHooks            bool
-	traceEnabled             bool
-	ctx                      context.Context
-	activeGetters            map[string]int
-	activeSetters            map[string]int
-	triggerGlobals           map[string]Value
-	cryptoRandomSeq          uint64
-	staticInitState          map[string]staticInitState
-	lastAmbiguous            *overloadDiagnostic
-	activeConstructors       map[string]int
-	describeCache            map[string]Value
-	fieldDescribeCache       map[string]Value
-	globalDescribeCache      *Value
-	describeTabsCache        *Value
-	describeDefCache         map[string]storage.ObjectDefinition
-	customDataCache          map[string]Value
-	childRelCache            map[string][]Value
-	jsonChildRelTypeCache    map[string]jsonRelationshipTypeLookup
-	loadedChildRelCache      map[string]loadedChildRelationshipLookup
-	objectNameCache          map[string]objectNameLookup
-	recentlyViewed           map[string]map[storage.ID]recentlyViewedEntry
-	metadataCacheStamp       string
-	staticValueRefs          map[uint64]bool
+	Globals                   map[string]Value
+	VarTypes                  map[string]string
+	Methods                   map[string]Method
+	MethodOverloads           map[string][]Method
+	MethodFolded              map[string][]Method
+	methodCandidates          map[string][]Method
+	methodResolveCache        map[string]methodResolution
+	Classes                   map[string]Class
+	classLookup               map[string]Class
+	enumLookup                map[string]enumClassLookup
+	enumSuffixLookup          map[string]enumClassLookup
+	uniqueNestedTypeCache     map[string]uniqueNestedTypeLookup
+	Org                       *storage.OrgState
+	Triggers                  map[string][]Trigger
+	triggerMatchCache         map[string][]Trigger
+	Stdout                    io.Writer
+	callStack                 []callFrame
+	scopeStack                []map[string]Value
+	currentClass              string
+	currentMethod             Method
+	testContext               *TestContext
+	localAsyncJobs            []AsyncJob
+	localAsyncSeq             int
+	localAsyncDrain           bool
+	localAsyncChain           bool
+	executionUser             Value
+	limits                    Limits
+	limitCaps                 LimitCaps
+	limitMode                 LimitMode
+	limitViolations           []LimitViolation
+	fakeNow                   time.Time
+	currentAsyncKind          string
+	currentQueueableDepth     int
+	currentQueueableMaxDepth  int
+	currentFinalizer          Value
+	activeExceptions          []activeException
+	currentStatement          callFrame
+	hasStatement              bool
+	triggerDepth              int
+	installContextDepth       int
+	savepoints                map[string]storage.OrgState
+	emailSavepoints           map[string][]CapturedEmail
+	savepointOrder            map[string]int
+	nextSavepoint             int
+	pageMessages              []Value
+	currentPage               Value
+	pageReferences            map[string]string
+	fixedSearchResults        []Value
+	sfsqlqueryRows            []Value
+	sfsqlqueryMetadata        []Value
+	platformCache             map[string]map[string]cacheEntry
+	cacheScanLocators         map[string][]cacheScanItem
+	cacheScanSeq              int
+	capturedEmails            []CapturedEmail
+	restRequest               Value
+	restResponse              Value
+	serverBaseURL             string
+	metadataDeploys           map[string]Value
+	reportInstances           map[string]Value
+	pushUpgradeCustoms        map[string]pushUpgradeCustomization
+	debugHooks                DebugHooks
+	hasDebugHooks             bool
+	traceEnabled              bool
+	ctx                       context.Context
+	activeGetters             map[string]int
+	activeSetters             map[string]int
+	triggerGlobals            map[string]Value
+	cryptoRandomSeq           uint64
+	staticInitState           map[string]staticInitState
+	lastAmbiguous             *overloadDiagnostic
+	activeConstructors        map[string]int
+	describeCache             map[string]Value
+	fieldDescribeCache        map[string]Value
+	globalDescribeCache       *Value
+	describeTabsCache         *Value
+	describeDefCache          map[string]storage.ObjectDefinition
+	customDataCache           map[string]Value
+	childRelCache             map[string][]Value
+	jsonChildRelTypeCache     map[string]jsonRelationshipTypeLookup
+	loadedChildRelCache       map[string]loadedChildRelationshipLookup
+	objectNameCache           map[string]objectNameLookup
+	recentlyViewed            map[string]map[storage.ID]recentlyViewedEntry
+	metadataCacheStamp        string
+	isolationJournal          *storage.IsolationJournal
+	staticValueRefs           map[uint64]bool
+	frameworkRecorderRollback *frameworkMethodCountRecorderRollback
+}
+
+type frameworkMethodCountRecorderRollback struct {
+	previous *frameworkMethodCountRecorderRollback
+	values   map[string]Value
 }
 
 type recentlyViewedEntry struct {
@@ -398,7 +405,14 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	clone.staticInitState = copyStaticInitStateMap(vm.staticInitState)
 	clone.pageReferences = copyStringMap(vm.pageReferences)
 	clone.platformCache = copyCacheMap(vm.platformCache)
+	clone.isolationJournal = vm.isolationJournal
 	return clone
+}
+
+func (vm *VM) SetIsolationJournal(journal *storage.IsolationJournal) {
+	if vm != nil {
+		vm.isolationJournal = journal
+	}
 }
 
 func (vm *VM) SetTraceEnabled(enabled bool) {
@@ -624,6 +638,7 @@ func (vm *VM) SetContext(ctx context.Context) {
 
 func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	engine := dml.NewEngine(vm.Org)
+	engine.IsolationJournal = vm.isolationJournal
 	engine.Now = func() time.Time { return vm.fakeNow }
 	if userID := vm.currentUserID(); userID != "" {
 		engine.UserID = storage.ID(userID)
@@ -3440,7 +3455,7 @@ platformStaticCall:
 		}
 		vm.nextSavepoint++
 		id := fmt.Sprintf("sp-%d", vm.nextSavepoint)
-		vm.savepoints[id] = cloneRuntimeOrgState(*vm.Org)
+		vm.savepoints[id] = snapshotRuntimeOrgState(vm.Org)
 		vm.emailSavepoints[id] = append([]CapturedEmail(nil), vm.capturedEmails...)
 		vm.savepointOrder[id] = vm.nextSavepoint
 		savepoint := Object("System.Savepoint")
@@ -13291,7 +13306,7 @@ func (vm *VM) executeDatabaseTreeSave(args []Value, result *Result) (Value, erro
 	if listInput {
 		roots = args[0].List
 	}
-	backup := cloneRuntimeOrgState(*vm.Org)
+	backup := snapshotRuntimeOrgState(vm.Org)
 	values := make([]Value, 0, len(roots))
 	for i := range roots {
 		value, err := vm.treeSaveOne(roots[i], result)
@@ -13539,7 +13554,7 @@ func (vm *VM) executeDatabaseConvertLead(args []Value, result *Result) (Value, e
 	}
 	var backup storage.OrgState
 	if allOrNone {
-		backup = cloneRuntimeOrgState(*vm.Org)
+		backup = snapshotRuntimeOrgState(vm.Org)
 	}
 	values := make([]Value, 0, len(converts))
 	for _, convert := range converts {
@@ -13889,7 +13904,7 @@ func (vm *VM) applyDatabaseRecordAction(op string, value Value, allOrNone bool, 
 	})
 	var backup storage.OrgState
 	if allOrNone {
-		backup = cloneRuntimeOrgState(*vm.Org)
+		backup = snapshotRuntimeOrgState(vm.Org)
 	}
 	engine := vm.newDMLEngine(result)
 	var results []dml.Result
@@ -14093,7 +14108,7 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 	})
 	var backup storage.OrgState
 	if allOrNone {
-		backup = cloneRuntimeOrgState(*vm.Org)
+		backup = snapshotRuntimeOrgState(vm.Org)
 	}
 	masterBefore, err := vm.oldRecords("update", master)
 	if err != nil {
@@ -14509,7 +14524,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		if backupReady {
 			return
 		}
-		backup = cloneRuntimeOrgState(*vm.Org)
+		backup = snapshotRuntimeOrgState(vm.Org)
 		backupReady = true
 	}
 	if vm.needsEarlyDMLRollbackSnapshot(op, records, allOrNone) {
@@ -15007,7 +15022,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		if backupReady {
 			return
 		}
-		backup = cloneRuntimeOrgState(*vm.Org)
+		backup = snapshotRuntimeOrgState(vm.Org)
 		backupReady = true
 	}
 	if allOrNone {
@@ -16875,6 +16890,10 @@ func cloneRuntimeOrgState(org storage.OrgState) storage.OrgState {
 		}
 	}
 	return out
+}
+
+func snapshotRuntimeOrgState(org *storage.OrgState) storage.OrgState {
+	return storage.SnapshotRuntimeOrg(org)
 }
 
 func cloneRuntimeSnapshotRecord(record storage.Record) storage.Record {
@@ -29259,11 +29278,12 @@ func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result)
 		if initializer.ClassName == "" {
 			initializer.ClassName = class.Name
 		}
-		recorderSnapshot := vm.frameworkMethodCountRecorderSnapshot()
+		recorderRollback := vm.beginFrameworkMethodCountRecorderRollback()
 		if _, err := vm.callMethodWithReceiver(initializer, object, nil, result); err != nil {
-			vm.restoreFrameworkMethodCountRecorderSnapshot(recorderSnapshot)
+			vm.endFrameworkMethodCountRecorderRollback(recorderRollback, true)
 			return err
 		}
+		vm.endFrameworkMethodCountRecorderRollback(recorderRollback, false)
 	}
 	return nil
 }
@@ -37897,8 +37917,11 @@ func (vm *VM) invalidateStaticValueRefs() {
 }
 
 func (vm *VM) invalidateStaticValueRefsForChange(previous, updated Value) {
-	if valueHasRef(previous, make(map[uint64]bool)) || valueHasRef(updated, make(map[uint64]bool)) {
-		vm.invalidateStaticValueRefs()
+	if vm.staticValueRefs == nil {
+		return
+	}
+	if valueHasRef(updated, make(map[uint64]bool)) {
+		collectValueRefs(updated, vm.staticValueRefs, make(map[uint64]bool))
 	}
 }
 
@@ -41105,30 +41128,6 @@ func (vm *VM) frameworkRecordMethodInvocation(invocation Value) error {
 	return nil
 }
 
-func (vm *VM) frameworkMethodCountRecorderSnapshot() map[string]Value {
-	if _, ok := vm.Classes["framework_MethodCountRecorder"]; !ok {
-		if _, ok := vm.Classes["fflib_MethodCountRecorder"]; !ok {
-			return nil
-		}
-	}
-	snapshot := make(map[string]Value, 2)
-	for _, name := range []string{"methodArgumentsByTypeName", "orderedMethodCalls"} {
-		if value, ok := vm.frameworkMethodCountRecorderStatic(name); ok {
-			snapshot[name] = cloneValue(value)
-		}
-	}
-	return snapshot
-}
-
-func (vm *VM) restoreFrameworkMethodCountRecorderSnapshot(snapshot map[string]Value) {
-	if snapshot == nil {
-		return
-	}
-	for name, value := range snapshot {
-		vm.setFrameworkMethodCountRecorderStatic(name, cloneValue(value))
-	}
-}
-
 func (vm *VM) callStackHasFieldInitializerForType(typeName string) bool {
 	typeName = strings.ToLower(typeName)
 	for _, frame := range vm.callStack {
@@ -41196,6 +41195,7 @@ func (vm *VM) setFrameworkMethodCountRecorderStatic(name string, value Value) {
 		found := false
 		for fieldName, field := range class.StaticFields {
 			if strings.EqualFold(fieldName, name) {
+				vm.captureFrameworkMethodCountRecorderRollback(fieldName, field.Value)
 				field.Value = value
 				class.StaticFields[fieldName] = field
 				found = true
@@ -41215,6 +41215,39 @@ func (vm *VM) setFrameworkMethodCountRecorderStatic(name string, value Value) {
 	if updated {
 		return
 	}
+}
+
+func (vm *VM) beginFrameworkMethodCountRecorderRollback() *frameworkMethodCountRecorderRollback {
+	rollback := &frameworkMethodCountRecorderRollback{
+		previous: vm.frameworkRecorderRollback,
+		values:   make(map[string]Value, 2),
+	}
+	vm.frameworkRecorderRollback = rollback
+	return rollback
+}
+
+func (vm *VM) endFrameworkMethodCountRecorderRollback(rollback *frameworkMethodCountRecorderRollback, restore bool) {
+	if rollback == nil {
+		return
+	}
+	vm.frameworkRecorderRollback = rollback.previous
+	if !restore {
+		return
+	}
+	for name, value := range rollback.values {
+		vm.setFrameworkMethodCountRecorderStatic(name, cloneValue(value))
+	}
+}
+
+func (vm *VM) captureFrameworkMethodCountRecorderRollback(name string, value Value) {
+	rollback := vm.frameworkRecorderRollback
+	if rollback == nil {
+		return
+	}
+	if _, exists := rollback.values[name]; exists {
+		return
+	}
+	rollback.values[name] = cloneValue(value)
 }
 
 func stubReturnCanUseReceiver(returnType string, receiver Value) bool {

@@ -91,6 +91,8 @@ private class SeeAllDataTest {
 }
 
 func TestCloneRuntimeOrgIsolatesRecordsAndDefinitions(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
 	org := storage.NewOrgState()
 	org.OrgID = "00D000000000001"
 	org.Objects["Account"] = storage.ObjectState{
@@ -112,14 +114,23 @@ func TestCloneRuntimeOrgIsolatesRecordsAndDefinitions(t *testing.T) {
 	cloned := cloneRuntimeOrg(org)
 	account := cloned.Objects["Account"]
 	account.Records["001000000000001"].Fields["Name"] = storage.StringValue("Changed")
-	account.Definition.Fields["RuntimeOnly__c"] = storage.Field{APIName: "RuntimeOnly__c", Type: storage.FieldString}
 	cloned.Objects["Account"] = account
+	if _, clonedDef := storage.EnsureMutableObjectDefinition(&cloned, "Account"); !clonedDef {
+		t.Fatalf("definition was not made mutable")
+	}
+	accountValue := cloned.Objects["Account"]
+	accountValue.Definition.Fields["RuntimeOnly__c"] = storage.Field{APIName: "RuntimeOnly__c", Type: storage.FieldString}
+	cloned.Objects["Account"] = accountValue
 
 	if got := org.Objects["Account"].Records["001000000000001"].Fields["Name"].String; got != "Acme" {
 		t.Fatalf("clone shared records with base org: %q", got)
 	}
 	if _, ok := org.Objects["Account"].Definition.Fields["RuntimeOnly__c"]; ok {
 		t.Fatalf("runtime clone shared definition fields with base org")
+	}
+	stats := SnapshotPerfCounters()
+	if stats.CloneRuntimeOrgCalls != 1 {
+		t.Fatalf("cloneRuntimeOrg calls = %d, want 1", stats.CloneRuntimeOrgCalls)
 	}
 }
 
@@ -435,6 +446,25 @@ private class DataRequestTest {
 	}
 	if strings.Contains(body, "nextTest") || !strings.Contains(body, `'it\'s'`) {
 		t.Fatalf("body = %q", body)
+	}
+}
+
+func TestSourcePositionPrefixPreservesLineAndColumnWithoutFullPadding(t *testing.T) {
+	source := "class Sample {\n    @isTest\n    static void test() { System.assert(true);\n    }\n}"
+	bodyStart := strings.Index(source, "System.assert")
+	if bodyStart < 0 {
+		t.Fatal("body marker not found")
+	}
+	prefix := sourcePositionPrefix(source[:bodyStart])
+	if strings.Count(prefix, "\n") != strings.Count(source[:bodyStart], "\n") {
+		t.Fatalf("prefix newlines = %d, want %d", strings.Count(prefix, "\n"), strings.Count(source[:bodyStart], "\n"))
+	}
+	lastLine := prefix[strings.LastIndex(prefix, "\n")+1:]
+	if len(lastLine) != 25 {
+		t.Fatalf("prefix final column padding = %d, want 25", len(lastLine))
+	}
+	if len(prefix) >= bodyStart {
+		t.Fatalf("prefix length = %d, want less than %d", len(prefix), bodyStart)
 	}
 }
 

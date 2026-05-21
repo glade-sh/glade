@@ -787,6 +787,57 @@ func TestResetStaticsClonesExplicitCollectionInitializers(t *testing.T) {
 	}
 }
 
+func TestStaticValueRefCacheExtendsOnStaticAssignment(t *testing.T) {
+	machine := New(nil)
+	oldValue := List(String("old"))
+	newValue := List(String("new"))
+	machine.staticValueRefs = map[uint64]bool{oldValue.Ref: true}
+
+	machine.invalidateStaticValueRefsForChange(oldValue, newValue)
+
+	if machine.staticValueRefs == nil {
+		t.Fatalf("static ref cache was discarded")
+	}
+	if !machine.staticValueRefs[newValue.Ref] {
+		t.Fatalf("new static ref %d was not remembered: %#v", newValue.Ref, machine.staticValueRefs)
+	}
+}
+
+func TestFrameworkMethodCountRecorderRollbackCapturesOnFirstWrite(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "framework_MethodCountRecorder",
+		StaticFields: map[string]Field{
+			"orderedMethodCalls": {Name: "orderedMethodCalls", Type: "List<framework_InvocationOnMock>", Static: true, Value: List(String("old"))},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	rollback := machine.beginFrameworkMethodCountRecorderRollback()
+	if len(rollback.values) != 0 {
+		t.Fatalf("rollback captured before write: %#v", rollback.values)
+	}
+	updated, ok := machine.frameworkMethodCountRecorderStatic("orderedMethodCalls")
+	if !ok {
+		t.Fatalf("missing recorder static")
+	}
+	updated.List = append(updated.List, String("new"))
+	machine.setFrameworkMethodCountRecorderStatic("orderedMethodCalls", updated)
+	if len(rollback.values) != 1 {
+		t.Fatalf("rollback did not capture first write: %#v", rollback.values)
+	}
+	machine.endFrameworkMethodCountRecorderRollback(rollback, true)
+
+	restored, ok := machine.frameworkMethodCountRecorderStatic("orderedMethodCalls")
+	if !ok {
+		t.Fatalf("missing restored recorder static")
+	}
+	if len(restored.List) != 1 || restored.List[0].Text != "old" {
+		t.Fatalf("restored recorder = %#v", restored)
+	}
+}
+
 func TestCustomObjectMapKeyUsesStableFieldValues(t *testing.T) {
 	firstMock := Object("Mocked")
 	secondMock := Object("Mocked")

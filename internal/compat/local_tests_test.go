@@ -1,6 +1,7 @@
 package compat
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -30,6 +31,43 @@ func TestRunLocalTestsClassifiesBasicFixture(t *testing.T) {
 	}
 	if failing.TraceEvents == 0 || failing.ProfileEvents == 0 || len(failing.ProfileCategories) == 0 {
 		t.Fatalf("failing outcome missing trace/profile summary: %#v", failing)
+	}
+}
+
+func TestRunLocalTestsPerfJSONIncludesCloneAndAllocationCounters(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "perf.json")
+	report, err := RunLocalTests(LocalTestOptions{
+		Project:      filepath.Join("..", "..", "testdata", "local-tests", "basic"),
+		PerfJSONPath: path,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.CasesRun == 0 {
+		t.Fatalf("expected local tests to run: %#v", report)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var perf LocalTestPerfSummary
+	if err := json.Unmarshal(data, &perf); err != nil {
+		t.Fatal(err)
+	}
+	if perf.CloneStats.CloneRuntimeOrgCalls == 0 {
+		t.Fatalf("cloneRuntimeOrg calls were not counted: %#v", perf.CloneStats)
+	}
+	if perf.CloneStats.CloneRuntimeCalls == 0 {
+		t.Fatalf("runtime clone calls were not counted: %#v", perf.CloneStats)
+	}
+	if len(perf.TopCloneClasses) == 0 {
+		t.Fatalf("topCloneClasses missing: %#v", perf)
+	}
+	if perf.TopCloneClasses[0].TestClones == 0 && perf.TopCloneClasses[0].SetupClones == 0 {
+		t.Fatalf("topCloneClasses missing clone counts: %#v", perf.TopCloneClasses)
+	}
+	if len(perf.Phases) == 0 || perf.Phases[0].TotalAllocBytes == 0 {
+		t.Fatalf("phase allocation counters missing: %#v", perf.Phases)
 	}
 }
 
@@ -230,8 +268,8 @@ func TestLocalTestParallelismCapsFocusedClassRuns(t *testing.T) {
 	if got := localTestParallelism(LocalTestOptions{}); got < 1 || got > 8 {
 		t.Fatalf("full-project default parallelism = %d, want 1..8", got)
 	}
-	if got := localTestParallelism(LocalTestOptions{Class: "CartSubmitterTest"}); got > 4 {
-		t.Fatalf("focused class parallelism = %d, want at most 4", got)
+	if got := localTestParallelism(LocalTestOptions{Class: "CartSubmitterTest"}); got < 1 || got > 8 {
+		t.Fatalf("focused class parallelism = %d, want 1..8", got)
 	}
 	if got := localTestParallelism(LocalTestOptions{Class: "CartSubmitterTest", Parallelism: 4}); got != 4 {
 		t.Fatalf("explicit focused class parallelism = %d, want 4", got)
@@ -241,9 +279,18 @@ func TestLocalTestParallelismCapsFocusedClassRuns(t *testing.T) {
 	}
 }
 
-func TestShouldParallelizeMethodsRequiresExplicitFlag(t *testing.T) {
-	if shouldParallelizeMethods(LocalTestOptions{Class: "CartSubmitterTest"}, 4, 12) {
-		t.Fatalf("focused class run should keep methods serial unless requested")
+func TestShouldParallelizeMethodsForLargeFocusedClasses(t *testing.T) {
+	if !shouldParallelizeMethods(LocalTestOptions{Class: "CartSubmitterTest"}, 4, 12) {
+		t.Fatalf("large focused class run should parallelize methods by default")
+	}
+	if shouldParallelizeMethods(LocalTestOptions{Class: "SmallTest"}, 4, 3) {
+		t.Fatalf("small focused class run should keep methods serial")
+	}
+	if shouldParallelizeMethods(LocalTestOptions{Class: "CartSubmitterTest", Method: "runs"}, 4, 12) {
+		t.Fatalf("focused method run should keep methods serial")
+	}
+	if shouldParallelizeMethods(LocalTestOptions{Class: "CartSubmitterTest"}, 1, 12) {
+		t.Fatalf("explicit serial focused class run should keep methods serial")
 	}
 	if !shouldParallelizeMethods(LocalTestOptions{Class: "CartSubmitterTest", ParallelMethods: true}, 4, 12) {
 		t.Fatalf("focused class run should allow explicit method parallelism")

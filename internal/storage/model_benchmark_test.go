@@ -29,6 +29,18 @@ func BenchmarkOrgStateCloneRollbackSnapshot(b *testing.B) {
 	}
 }
 
+func BenchmarkRuntimeTemplateCloneRuntimeOrg(b *testing.B) {
+	template := NewRuntimeTemplate(benchmarkOrgState(60, 450))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		cloned := template.CloneRuntimeOrg()
+		if len(cloned.Objects) == 0 {
+			b.Fatal("expected cloned objects")
+		}
+	}
+}
+
 func BenchmarkOrgStateClone(b *testing.B) {
 	org := benchmarkOrgState(60, 450)
 	b.ReportAllocs()

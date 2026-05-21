@@ -158,9 +158,11 @@ type EmailTemplateMetadata struct {
 }
 
 type ObjectState struct {
-	Definition ObjectDefinition    `json:"definition"`
-	Records    map[ID]Record       `json:"records"`
-	Indexes    map[string]IndexSet `json:"indexes,omitempty"`
+	Definition    ObjectDefinition    `json:"definition"`
+	Records       map[ID]Record       `json:"records"`
+	Indexes       map[string]IndexSet `json:"indexes,omitempty"`
+	RecordsShared bool                `json:"-"`
+	IndexesShared bool                `json:"-"`
 }
 
 type ObjectDefinition struct {
@@ -1221,6 +1223,7 @@ func (o OrgState) Clone() OrgState {
 // so parallel test setup and execution can infer runtime metadata without
 // sharing mutable maps.
 func (o OrgState) CloneRuntime() OrgState {
+	cloneStats.cloneRuntime.Add(1)
 	out := o
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
@@ -1246,6 +1249,7 @@ func (o OrgState) CloneRuntime() OrgState {
 // CloneRollbackSnapshot returns an isolated org copy for DML rollback scopes.
 // It mirrors CloneRuntime for correctness.
 func (o OrgState) CloneRollbackSnapshot() OrgState {
+	cloneStats.cloneRollbackSnapshot.Add(1)
 	return o.CloneRuntime()
 }
 

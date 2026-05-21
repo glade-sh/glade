@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { createWriteStream, readFileSync, writeFileSync } from "node:fs";
+import { createWriteStream, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join, relative } from "node:path";
@@ -10,6 +10,9 @@ const repoRoot = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 const timeoutSeconds = Number.parseInt(process.env.OAER_BASELINE_TIMEOUT_SECONDS || "30", 10);
 const timeoutMs = timeoutSeconds * 1000;
 const outputPath = process.argv[2] || "docs/fixtures/local-tests-example-projects.json";
+const configuredBin = (process.env.OAER_BIN || "").trim();
+const defaultBin = join(repoRoot, "bin", "oaer-perf");
+const oaerBin = configuredBin || (existsSync(defaultBin) ? defaultBin : "");
 
 const projects = [
   "example-projects/NPSP-rel-3.237",
@@ -100,25 +103,39 @@ function runProject(project) {
 	const tempDir = mkdtempSync(join(tmpdir(), "oaer-local-tests-"));
 	const stdoutPath = join(tempDir, "stdout.json");
 	const stderrPath = join(tempDir, "stderr.txt");
-	const command = `go run ./cmd/oaer compat local-tests --project ${project} --json --timeout ${timeoutMs} --top-failures 8`;
+	const command = oaerBin
+		? `${relative(repoRoot, oaerBin) || oaerBin} compat local-tests --project ${project} --json --timeout ${timeoutMs} --top-failures 8`
+		: `go run ./cmd/oaer compat local-tests --project ${project} --json --timeout ${timeoutMs} --top-failures 8`;
+	const spawnCommand = oaerBin || "go";
+	const spawnArgs = oaerBin ? [
+		"compat",
+		"local-tests",
+		"--project",
+		project,
+		"--json",
+		"--timeout",
+		String(timeoutMs),
+		"--top-failures",
+		"8",
+	] : [
+		"run",
+		"./cmd/oaer",
+		"compat",
+		"local-tests",
+		"--project",
+		project,
+		"--json",
+		"--timeout",
+		String(timeoutMs),
+		"--top-failures",
+		"8",
+	];
 	const started = Date.now();
 
 	return new Promise((resolve) => {
 		const stdout = createWriteStream(stdoutPath);
 		const stderr = createWriteStream(stderrPath);
-		const child = spawn("go", [
-			"run",
-			"./cmd/oaer",
-			"compat",
-			"local-tests",
-			"--project",
-			project,
-			"--json",
-			"--timeout",
-			String(timeoutMs),
-			"--top-failures",
-			"8",
-		], { cwd: repoRoot, stdio: ["ignore", "pipe", "pipe"] });
+		const child = spawn(spawnCommand, spawnArgs, { cwd: repoRoot, stdio: ["ignore", "pipe", "pipe"] });
 
     child.stdout.pipe(stdout);
     child.stderr.pipe(stderr);
@@ -217,7 +234,9 @@ const artifact = {
   generatedAt: new Date().toISOString(),
 	timeoutSupport: {
 		compatLocalTestsTimeoutFlag: true,
-		command: `go run ./cmd/oaer compat local-tests --project <project> --json --timeout ${timeoutMs} --top-failures 8`,
+		command: oaerBin
+			? `${relative(repoRoot, oaerBin) || oaerBin} compat local-tests --project <project> --json --timeout ${timeoutMs} --top-failures 8`
+			: `go run ./cmd/oaer compat local-tests --project <project> --json --timeout ${timeoutMs} --top-failures 8`,
 	},
   projects: results,
 };

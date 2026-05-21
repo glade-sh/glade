@@ -357,6 +357,23 @@ Keep this out of the cold one-shot path. The daemon helps editor/watch loops:
 
 ## Final Integration Gate
 
+## Implementation Results
+
+Measured on this worktree on 2026-05-21:
+
+- `src-nmb-nutpl-develop`: baseline `/tmp/oaer-perf-runs/nutpl-lane1/local-tests.perf.json` was `29.104s` for `761/761` pass, with `762` runtime org clones and `762` rollback clones.
+- `src-nmb-nutpl-develop`: final `/tmp/oaer-perf-runs/main-nutpl-final-20260521T182715Z/perf.json` was `14.938s` for `761/761` pass, with `762` runtime org clone requests and `908` rollback snapshot requests.
+- `src-nmb-nutpl-develop` speedup: `14.166s` cut, `48.7%` faster wall time, about `1.95x` baseline throughput.
+- `testdata/local-tests/basic`: baseline `/tmp/oaer-perf-runs/lane1-basic/local-tests.perf.json` was `359ms`; final `/tmp/oaer-perf-runs/20260521T151453Z/local-tests.perf.json` was `204ms`, a `155ms` cut and `43.2%` faster wall time.
+- `src-nmb-nu-develop CartItemTest`: prior journal run `/tmp/oaer-perf-runs/nu-cartitem-journal/local-tests.perf.json` was `118.428s`; final `/tmp/oaer-perf-runs/nu-cartitem-20260521T151536Z/perf.json` was `115.446s`, a `2.982s` cut and `2.5%` faster wall time.
+- `src-nmb-nu-develop CartSubmitterTest`: default focused-class auto method parallelism first completed `163/163` in `99.178s` at `/tmp/oaer-perf-runs/nu-cartsubmitter-default-auto8-20260521T154929Z/perf.json`; the prior serial focused-class run was still running after more than `8m`.
+- `src-nmb-nu-develop CartSubmitterTest`: final `/tmp/oaer-perf-runs/main-nu-cartsubmitter-final-safeclone-20260521T182742Z/perf.json` was `50.437s` for `163/163` pass, with `163` runtime org clone requests and `2875` rollback snapshot requests.
+- `src-nmb-nu-develop CartSubmitterTest` speedup against the `99.178s` auto-parallel baseline: `48.741s` cut, `49.1%` faster wall time, about `1.97x` baseline throughput. Against the unfinished serial baseline, the measured lower bound is more than `429s` cut and more than `9.5x` throughput.
+- `src-nmb-nu-develop CartSubmitterTest.submit_refundCart_expectSuccess`: baseline method sample was `16.013s`; after compact method-body source prefixes and SOQL virtual-schema hydration gating it was `15.023s`, a `990ms` cut and `6.2%` faster wall time.
+- `src-nmb-nu-develop CartSubmitterTest.convertCartToOrder_nullCart_expectNullOrder`: baseline method sample was `8.441s`; compact source prefixes moved it to `8.101s`, a `340ms` cut and `4.0%` faster wall time. The remaining cost is dominated by cold project/runtime setup.
+- `sf-cred-pkg-develop`: final blockers-only sentinel `/tmp/oaer-perf-runs/main-sfcred-blockers-green-final-20260521T182013Z/perf.json` ran `4274` cases with no blocker outcomes in `414.101s`.
+- Runner isolation journaling remains covered by unit tests, but default local-test execution uses clone isolation after `WorkHistoryUpsertSyncEventActionTest` proved a journal gap in the sf-cred sentinel.
+
 After all lanes land:
 
 ```bash

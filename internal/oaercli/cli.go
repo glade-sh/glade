@@ -39,6 +39,7 @@ import (
 	"github.com/open-aer/oaer/internal/server"
 	"github.com/open-aer/oaer/internal/sobject"
 	"github.com/open-aer/oaer/internal/storage"
+	"github.com/open-aer/oaer/internal/testdaemon"
 	"github.com/open-aer/oaer/internal/testreport"
 	"github.com/open-aer/oaer/internal/trace"
 	"github.com/open-aer/oaer/internal/typesys"
@@ -748,6 +749,7 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	limitMode := vm.LimitMode("")
 	watchMode := false
 	watchOnce := false
+	daemonMode := false
 	debug := false
 	traceBlocked := false
 	slowTestThresholdMS := int64(0)
@@ -836,6 +838,8 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 		case "--watch-once":
 			watchMode = true
 			watchOnce = true
+		case "--daemon":
+			daemonMode = true
 		case "--debug":
 			debug = true
 		case "--debounce":
@@ -872,16 +876,60 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 		}
 	}()
 
+	testOpts := apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS, ParallelMethods: parallelMethods}
+	if parallelMethods {
+		testOpts.Parallelism = runtime.GOMAXPROCS(0)
+	}
+	if daemonMode {
+		daemon, err := testdaemon.New(root)
+		if err != nil {
+			return testreport.Run{}, err
+		}
+		if watchMode {
+			return runWatchTestsDaemon(ctx, root, daemon, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
+		}
+		var result testreport.Run
+		if strings.TrimSpace(changedSince) != "" {
+			run, _, err := daemon.RunChangedSinceOptions(changedSince, testOpts)
+			if err != nil {
+				return testreport.Run{}, err
+			}
+			result = run
+		} else {
+			result = daemon.RunOptions(testOpts)
+		}
+		if stopProfile != nil {
+			if stopErr := stopProfile(); stopErr != nil {
+				return result, stopErr
+			}
+			stopProfile = nil
+		}
+		if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath); err != nil {
+			return result, err
+		}
+		if debug {
+			return result, serveDAPSnapshot(testRunSnapshot(result), w)
+		}
+		if junitPath != "" {
+			if err := writeJUnitFile(junitPath, result); err != nil {
+				return result, err
+			}
+		}
+		switch format {
+		case "json":
+			return result, testreport.WriteJSON(w, result)
+		case "compat-json":
+			return result, compat.WriteLocalTestJSON(w, compat.LocalTestReportFromRun(root, result))
+		default:
+			return result, testreport.WriteConsole(w, result)
+		}
+	}
 	index, err := loadIndex(root)
 	if err != nil {
 		return testreport.Run{}, err
 	}
 	if watchMode {
 		return runWatchTests(ctx, root, index, apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS}, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
-	}
-	testOpts := apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS, ParallelMethods: parallelMethods}
-	if parallelMethods {
-		testOpts.Parallelism = runtime.GOMAXPROCS(0)
 	}
 	var result testreport.Run
 	if strings.TrimSpace(changedSince) != "" {
@@ -1195,6 +1243,96 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 	}
 }
 
+func runWatchTestsDaemon(ctx context.Context, root string, daemon *testdaemon.Daemon, opts apextest.Options, cfg watch.Config, once bool, w io.Writer) (testreport.Run, error) {
+	cfg = cfg.Normalized()
+	if cfg.Root == "" {
+		cfg.Root = root
+	}
+	previous, err := watch.CaptureSnapshot(root)
+	if err != nil {
+		return testreport.Run{}, err
+	}
+	watcher, backend, err := watch.NewBackendWatcher(ctx, cfg, previous)
+	if err != nil {
+		return testreport.Run{}, err
+	}
+	defer watcher.Close()
+	cfg.Backend = backend
+	if err := writeJSONLine(w, watch.NewWatchStartedEvent(time.Now().UTC(), cfg)); err != nil {
+		return testreport.Run{}, err
+	}
+	runID := 1
+	result := testreport.Run{Name: "oaer test"}
+	initialSelection := watch.TestSelection{Mode: watch.SelectionAll, TestClasses: nil, Reason: "initial watch run"}
+	activeRunID := runID
+	cancelRun, runDone := startDaemonWatchRun(ctx, daemon, opts, initialSelection, runID)
+	defer cancelRun()
+	if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), runID, nil)); err != nil {
+		return result, err
+	}
+	if once {
+		select {
+		case <-ctx.Done():
+			return result, ctx.Err()
+		case finished := <-runDone:
+			result = finished.Result
+			if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
+				return result, err
+			}
+			return result, nil
+		}
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			cancelRun()
+			return result, ctx.Err()
+		case finished := <-runDone:
+			if finished.RunID != activeRunID {
+				continue
+			}
+			result = finished.Result
+			runDone = nil
+			if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
+				return result, err
+			}
+		case err, ok := <-watcher.Errors():
+			if !ok {
+				return result, nil
+			}
+			_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), err.Error(), root))
+		case changes, ok := <-watcher.Changes():
+			if !ok {
+				return result, nil
+			}
+			if err := writeJSONLine(w, watch.NewChangesEvent(time.Now().UTC(), changes)); err != nil {
+				return result, err
+			}
+			if err := writeJSONLine(w, watch.NewDebouncedEvent(time.Now().UTC(), cfg, changes)); err != nil {
+				return result, err
+			}
+			if err := daemon.UpdateChanges(changes); err != nil {
+				_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), err.Error(), root))
+				continue
+			}
+			selection := daemon.SelectAffected(changes)
+			if err := writeJSONLine(w, watch.NewTestsSelectedEvent(time.Now().UTC(), selection)); err != nil {
+				return result, err
+			}
+			if selection.Mode == watch.SelectionNone {
+				continue
+			}
+			cancelRun()
+			runID++
+			activeRunID = runID
+			cancelRun, runDone = startDaemonWatchRun(ctx, daemon, opts, selection, runID)
+			if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), runID, selection.TestClasses)); err != nil {
+				return result, err
+			}
+		}
+	}
+}
+
 type watchRunResult struct {
 	RunID  int
 	Result testreport.Run
@@ -1207,6 +1345,18 @@ func startWatchRun(ctx context.Context, index typesys.Index, opts apextest.Optio
 		done <- watchRunResult{
 			RunID:  runID,
 			Result: runSelectedTestsContext(runCtx, index, opts, selection),
+		}
+	}()
+	return cancel, done
+}
+
+func startDaemonWatchRun(ctx context.Context, daemon *testdaemon.Daemon, opts apextest.Options, selection watch.TestSelection, runID int) (context.CancelFunc, <-chan watchRunResult) {
+	runCtx, cancel := context.WithCancel(ctx)
+	done := make(chan watchRunResult, 1)
+	go func() {
+		done <- watchRunResult{
+			RunID:  runID,
+			Result: daemon.RunSelectionContext(runCtx, opts, selection),
 		}
 	}()
 	return cancel, done
@@ -1882,7 +2032,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 }
 
 func compatUsage() string {
-	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--start-class <name>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--parallel-methods] [--progress] [--analyze] [--profile-on-timeout] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--json] [--check <path>] | oracle-tests [--project <root>] [--target-org <alias>] [--filter <class[.method]>] [--salesforce-run <path>] [--local-run <path>] [--golden-only] [--anonymous <apex>] [--fetch-logs] [--log-limit <n>] [--runs-dir <path>] [--run-id <id>] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-contracts [--source <dir>] [--json|--output <path>|--check <path>] | stub-discovery [--source <dir>] [--project <probe-sfdx-dir>] [--tier smoke|core|full|local] [--limit <n>] [--no-exec] [--json|--output <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
+	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--start-class <name>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--parallel-methods] [--shard-count <n>] [--shard-index <i>] [--write-class-shards <dir>] [--duration-history <path>] [--progress] [--analyze] [--profile-on-timeout] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--json] [--check <path>] | oracle-tests [--project <root>] [--target-org <alias>] [--filter <class[.method]>] [--salesforce-run <path>] [--local-run <path>] [--golden-only] [--anonymous <apex>] [--fetch-logs] [--log-limit <n>] [--runs-dir <path>] [--run-id <id>] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-contracts [--source <dir>] [--json|--output <path>|--check <path>] | stub-discovery [--source <dir>] [--project <probe-sfdx-dir>] [--tier smoke|core|full|local] [--limit <n>] [--no-exec] [--json|--output <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
 }
 
 type postParityReadiness struct {
@@ -1973,6 +2123,38 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 			options.ProfileOnTimeout = true
 		case "--parallel-methods":
 			options.ParallelMethods = true
+		case "--shard-count":
+			if i+1 >= len(args) {
+				return errors.New("--shard-count requires a value")
+			}
+			parsed, err := strconv.Atoi(args[i+1])
+			if err != nil || parsed < 0 {
+				return fmt.Errorf("--shard-count must be a non-negative integer")
+			}
+			options.ShardCount = parsed
+			i++
+		case "--shard-index":
+			if i+1 >= len(args) {
+				return errors.New("--shard-index requires a value")
+			}
+			parsed, err := strconv.Atoi(args[i+1])
+			if err != nil || parsed < 0 {
+				return fmt.Errorf("--shard-index must be a non-negative integer")
+			}
+			options.ShardIndex = parsed
+			i++
+		case "--write-class-shards":
+			if i+1 >= len(args) {
+				return errors.New("--write-class-shards requires a path")
+			}
+			options.WriteClassShards = args[i+1]
+			i++
+		case "--duration-history":
+			if i+1 >= len(args) {
+				return errors.New("--duration-history requires a path")
+			}
+			options.DurationHistoryPath = args[i+1]
+			i++
 		case "--cpu-profile":
 			if i+1 >= len(args) {
 				return errors.New("--cpu-profile requires a path")
@@ -2042,8 +2224,8 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 		}
 	}
 	if checkPath != "" {
-		if options.Project != "." || options.Class != "" || len(options.ClassList) != 0 || options.ClassFile != "" || options.StartClass != "" || options.Method != "" || options.BlockersOnly || options.TraceBlocked || options.SlowTestThresholdMS != 0 || options.TopFailures != 0 || options.MaxFailureGroups != 0 || options.TimeoutMS != 0 || options.Parallelism != 0 || options.ProgressWriter != nil || options.ForceAnalysis || options.ProfileOnTimeout || options.ChangedSince != "" || options.ParallelMethods || options.CPUProfilePath != "" || options.MemProfilePath != "" || options.PerfJSONPath != "" {
-			return errors.New("--check cannot be combined with --project, --class, --class-list, --class-file, --start-class, --method, --changed-since, --parallel-methods, --blockers-only, --trace-blockers, --slow-test-ms, --top-failures, --max-failure-groups, --timeout, --parallel, --progress, --analyze, --profile-on-timeout, --cpu-profile, --mem-profile, or --perf-json")
+		if options.Project != "." || options.Class != "" || len(options.ClassList) != 0 || options.ClassFile != "" || options.StartClass != "" || options.Method != "" || options.BlockersOnly || options.TraceBlocked || options.SlowTestThresholdMS != 0 || options.TopFailures != 0 || options.MaxFailureGroups != 0 || options.TimeoutMS != 0 || options.Parallelism != 0 || options.ProgressWriter != nil || options.ForceAnalysis || options.ProfileOnTimeout || options.ChangedSince != "" || options.ParallelMethods || options.ShardCount != 0 || options.ShardIndex != 0 || options.WriteClassShards != "" || options.DurationHistoryPath != "" || options.CPUProfilePath != "" || options.MemProfilePath != "" || options.PerfJSONPath != "" {
+			return errors.New("--check cannot be combined with --project, --class, --class-list, --class-file, --start-class, --method, --changed-since, --parallel-methods, --shard-count, --shard-index, --write-class-shards, --duration-history, --blockers-only, --trace-blockers, --slow-test-ms, --top-failures, --max-failure-groups, --timeout, --parallel, --progress, --analyze, --profile-on-timeout, --cpu-profile, --mem-profile, or --perf-json")
 		}
 		report, err := compat.CheckLocalTestCorpus(checkPath)
 		if jsonOut {

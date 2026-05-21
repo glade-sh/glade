@@ -23,6 +23,7 @@ type Engine struct {
 	AutomationTracer  func(name string, args map[string]any)
 	DeferAutomation   bool
 	PriorRecords      map[storage.ID]storage.Record
+	IsolationJournal  *storage.IsolationJournal
 
 	workflowDepth  int
 	flowDepth      int
@@ -149,6 +150,16 @@ func (e *Engine) Insert(records []storage.Record) []Result {
 	return results
 }
 
+func (e *Engine) recordJournalSequence(objectName string) {
+	if e == nil || e.IsolationJournal == nil || e.Org == nil || objectName == "" {
+		return
+	}
+	if canonical, ok := storage.ResolveObjectName(*e.Org, objectName); ok {
+		objectName = canonical
+	}
+	e.IsolationJournal.RecordSequence(objectName)
+}
+
 func (e *Engine) Update(records []storage.Record) []Result {
 	e.syncOrgClock()
 	results := make([]Result, len(records))
@@ -241,7 +252,14 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 			results[i] = failedResult(record.ID, fmt.Sprintf("dml: record %s is not deleted", record.ID), "ENTITY_IS_NOT_DELETED", nil)
 			continue
 		}
+		if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
+			object = e.Org.Objects[objectName]
+			storedID, stored, _ = storage.LookupRecordByID(object.Records, record.ID)
+		}
 		stamp := e.systemTimestamp()
+		if e.IsolationJournal != nil {
+			e.IsolationJournal.RecordUpdate(objectName, storedID, stored)
+		}
 		stored.System.IsDeleted = false
 		stored.System.LastModifiedDate = stamp
 		stored.System.SystemModstamp = stamp
@@ -279,6 +297,9 @@ func (e *Engine) EmptyRecycleBin(records []storage.Record) []Result {
 		if !stored.System.IsDeleted {
 			results[i] = failedResult(record.ID, fmt.Sprintf("dml: record %s is not in the recycle bin", record.ID), "ENTITY_IS_NOT_IN_RECYCLE_BIN", nil)
 			continue
+		}
+		if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
+			object = e.Org.Objects[objectName]
 		}
 		delete(object.Records, storedID)
 		e.Org.Objects[objectName] = object
@@ -348,6 +369,10 @@ func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Res
 			results[i] = resultFromError(duplicate.ID, fmt.Errorf("dml: merge duplicate %s does not exist", duplicate.ID))
 			continue
 		}
+		if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
+			object = e.Org.Objects[objectName]
+			storedDuplicateID, storedDuplicate, _ = storage.LookupRecordByID(object.Records, duplicate.ID)
+		}
 		duplicate.ID = storedDuplicateID
 		updatedRelatedIDs := e.reparentLookups(objectName, duplicate.ID, master.ID)
 		stamp := e.systemTimestamp()
@@ -405,6 +430,10 @@ func (e *Engine) setLock(records []storage.Record, locked bool) []Result {
 			results[i] = resultFromError(record.ID, fmt.Errorf("dml: record %s does not exist", record.ID))
 			continue
 		}
+		if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
+			object = e.Org.Objects[objectName]
+			storedID, stored, _ = storage.LookupRecordByID(object.Records, record.ID)
+		}
 		stored.System.Locked = locked
 		object.Records[storedID] = stored
 		e.Org.Objects[objectName] = object
@@ -426,6 +455,10 @@ func (e *Engine) reparentLookups(parentObject string, oldID, newID storage.ID) [
 				if !ok || idFromStorageValue(value) != oldID {
 					continue
 				}
+				if _, cloned := storage.EnsureMutableObjectRecords(e.Org, childObjectName); cloned {
+					childObject = e.Org.Objects[childObjectName]
+					record = childObject.Records[id]
+				}
 				record.Fields[relation.Field] = storage.IDValue(newID)
 				childObject.Records[id] = record
 				seen[id] = struct{}{}
@@ -446,7 +479,7 @@ func (e *Engine) reparentLookups(parentObject string, oldID, newID storage.ID) [
 }
 
 func (e *Engine) WithTransaction(fn func(*Engine) error) error {
-	before := e.Org.CloneRollbackSnapshot()
+	before := storage.SnapshotRuntimeOrg(e.Org)
 	if err := fn(e); err != nil {
 		*e.Org = before
 		e.IDs.Sequences = copySequences(before.IDSequences)
@@ -527,12 +560,13 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	var rollbackOrg storage.OrgState
 	var rollbackSequences map[string]uint64
 	if needsFullRollback {
-		rollbackOrg = e.Org.CloneRuntime()
+		rollbackOrg = storage.SnapshotRuntimeOrg(e.Org)
 		rollbackSequences = copySequences(e.IDs.Sequences)
 	} else if needsPersonRollback {
 		rollbackSequences = copySequences(e.IDs.Sequences)
 	}
 	if record.ID == "" {
+		e.recordJournalSequence(objectName)
 		id, err := e.IDs.Next(objectName)
 		if err != nil {
 			return "", err
@@ -544,6 +578,9 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	}
 	if _, exists := object.Records[record.ID]; exists {
 		return "", dmlErrorf("DUPLICATE_VALUE", []string{"Id"}, "dml: duplicate id %s", record.ID)
+	}
+	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
+		object = e.Org.Objects[objectName]
 	}
 	stamp := e.systemTimestamp()
 	userID := e.systemUserID()
@@ -567,6 +604,9 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	}
 	if object.Records == nil {
 		object.Records = make(map[storage.ID]storage.Record)
+	}
+	if e.IsolationJournal != nil {
+		e.IsolationJournal.RecordInsert(objectName, record.ID)
 	}
 	object.Records[record.ID] = record.Clone()
 	e.Org.Objects[objectName] = object
@@ -1049,6 +1089,7 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 			return err
 		}
 		contentDocumentID = id
+		storage.EnsureMutableObjectRecords(e.Org, "ContentVersion")
 		contentVersionObject := e.Org.Objects["ContentVersion"]
 		stored := contentVersionObject.Records[version.ID]
 		if stored.Fields == nil {
@@ -1058,6 +1099,7 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 		contentVersionObject.Records[version.ID] = stored
 		e.Org.Objects["ContentVersion"] = contentVersionObject
 	} else {
+		storage.EnsureMutableObjectRecords(e.Org, "ContentDocument")
 		contentDocumentObject := e.Org.Objects["ContentDocument"]
 		document, exists := contentDocumentObject.Records[contentDocumentID]
 		if !exists {
@@ -1103,6 +1145,7 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 }
 
 func (e *Engine) afterInsertContentDistribution(id storage.ID) {
+	storage.EnsureMutableObjectRecords(e.Org, "ContentDistribution")
 	object := e.Org.Objects["ContentDistribution"]
 	record, ok := object.Records[id]
 	if !ok {
@@ -1200,6 +1243,9 @@ func (e *Engine) insertPlatformRecord(record storage.Record) (storage.ID, error)
 	if _, exists := object.Records[record.ID]; exists {
 		return "", dmlErrorf("DUPLICATE_VALUE", []string{"Id"}, "dml: duplicate id %s", record.ID)
 	}
+	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
+		object = e.Org.Objects[objectName]
+	}
 	stamp := e.systemTimestamp()
 	userID := e.systemUserID()
 	if record.System.CreatedDate == "" {
@@ -1249,6 +1295,7 @@ func (e *Engine) contentDocumentSize(version storage.Record) (int64, bool) {
 }
 
 func (e *Engine) markLatestContentVersion(contentDocumentID storage.ID, latestVersionID storage.ID) {
+	storage.EnsureMutableObjectRecords(e.Org, "ContentVersion")
 	contentVersionObject := e.Org.Objects["ContentVersion"]
 	changed := false
 	for id, stored := range contentVersionObject.Records {
@@ -1279,6 +1326,7 @@ func (e *Engine) afterInsertPersonAccount(account storage.Record) error {
 	if err != nil {
 		return err
 	}
+	storage.EnsureMutableObjectRecords(e.Org, "Account")
 	accountObject := e.Org.Objects["Account"]
 	stored := accountObject.Records[account.ID]
 	if stored.Fields == nil {
@@ -1359,6 +1407,10 @@ func (e *Engine) syncPersonContact(account storage.Record) error {
 	contact, ok := contactObject.Records[contactID]
 	if !ok || contact.System.IsDeleted {
 		return nil
+	}
+	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, "Contact"); cloned {
+		contactObject = e.Org.Objects["Contact"]
+		contact = contactObject.Records[contactID]
 	}
 	if contact.Fields == nil {
 		contact.Fields = make(map[string]storage.Value)
@@ -1542,18 +1594,22 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err := e.validateValidationRules(objectName, object.Definition, finalRecord, &priorRecord, false); err != nil {
 		return err
 	}
+	needsRollback := !e.DeferAutomation && hasObjectAutomation(object.Definition)
+	var rollbackOrg storage.OrgState
+	var rollbackSequences map[string]uint64
+	if needsRollback {
+		rollbackOrg = storage.SnapshotRuntimeOrg(e.Org)
+		rollbackSequences = copySequences(e.IDs.Sequences)
+	}
+	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
+		object = e.Org.Objects[objectName]
+		storedID, existing, _ = storage.LookupRecordByID(object.Records, record.ID)
+	}
 	if existing.Fields == nil {
 		existing.Fields = make(map[string]storage.Value)
 	}
 	if existing.ExplicitNulls == nil {
 		existing.ExplicitNulls = make(map[string]bool)
-	}
-	needsRollback := !e.DeferAutomation && hasObjectAutomation(object.Definition)
-	var rollbackOrg storage.OrgState
-	var rollbackSequences map[string]uint64
-	if needsRollback {
-		rollbackOrg = e.Org.CloneRuntime()
-		rollbackSequences = copySequences(e.IDs.Sequences)
 	}
 	stamp := e.systemTimestamp()
 	oldRecord := existing.Clone()
@@ -1575,6 +1631,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 	existing.System.LastModifiedDate = stamp
 	existing.System.SystemModstamp = stamp
 	existing.System.LastModifiedByID = e.systemUserID()
+	if e.IsolationJournal != nil {
+		e.IsolationJournal.RecordUpdate(objectName, storedID, oldRecord)
+	}
 	object.Records[storedID] = existing
 	e.Org.Objects[objectName] = object
 	e.removeUniqueIndexRecord(objectName, object.Definition, oldRecord)
@@ -1697,7 +1756,14 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	if err := e.validateDeleteReferences(objectName, id, ctx); err != nil {
 		return err
 	}
+	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
+		object = e.Org.Objects[objectName]
+		storedID, stored, _ = storage.LookupRecordByID(object.Records, id)
+	}
 	stamp := e.systemTimestamp()
+	if e.IsolationJournal != nil {
+		e.IsolationJournal.RecordUpdate(objectName, storedID, stored)
+	}
 	stored.System.IsDeleted = true
 	stored.System.LastModifiedDate = stamp
 	stored.System.SystemModstamp = stamp
@@ -3065,6 +3131,9 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
 		return err
 	}
+	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
+		object = e.Org.Objects[objectName]
+	}
 	stamp := e.systemTimestamp()
 	record.System.LastModifiedDate = stamp
 	record.System.SystemModstamp = stamp
@@ -3295,6 +3364,9 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
 		return err
+	}
+	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
+		object = e.Org.Objects[objectName]
 	}
 	stamp := e.systemTimestamp()
 	record.System.LastModifiedDate = stamp
@@ -4011,6 +4083,10 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 			}
 			if storageValuesEqual(relation.field, oldValue, value) {
 				continue
+			}
+			if _, cloned := storage.EnsureMutableObjectRecords(e.Org, parentObjectName); cloned {
+				parentObject = e.Org.Objects[parentObjectName]
+				storedParentID, parentRecord, _ = storage.LookupRecordByID(parentObject.Records, parentID)
 			}
 			beforeParent := parentRecord.Clone()
 			if parentRecord.Fields == nil {

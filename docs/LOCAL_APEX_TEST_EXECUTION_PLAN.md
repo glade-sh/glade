@@ -85,6 +85,38 @@ frontier is no longer `sf-cred-pkg`; it is the remaining example-project
 compile/runtime gaps, especially managed-package dependency artifacts for
 `znu` and NPSP standard object/type coverage.
 
+Performance baseline runs should build the CLI once before sweeping the corpus:
+
+```bash
+scripts/build-oaer-for-perf.sh
+OAER_BIN=./bin/oaer-perf node scripts/baseline-local-tests-example-projects.mjs
+```
+
+For measured PGO experiments, feed a representative `compat local-tests` CPU
+profile to the same build script:
+
+```bash
+PGO_PROFILE=/tmp/oaer-perf/<run>/local-tests.cpu.pprof scripts/build-oaer-for-perf.sh
+```
+
+Do not commit `default.pgo` until the profile is stable and representative
+enough for release builds.
+
+The perf build uses the normal local Go environment by default because the
+current Apex parser adapter requires CGO. Set `CGO_ENABLED` only when verifying
+a parser build that supports it.
+
+For repeated editor loops, keep the test service warm:
+
+```bash
+oaer test --project force-app --daemon --filter MyClassTest
+oaer test --project force-app --daemon --changed-since main --json
+oaer test --project force-app --daemon --watch
+```
+
+The warm path keeps project load, schema, and type index state behind the loop.
+Cold one-shot runs still use the regular `oaer test` path.
+
 ## Execution Objective
 
 The product goal is a local edit-test loop for Apex projects that is much

@@ -150,7 +150,7 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_done", DurationMS: time.Since(started).Milliseconds(), Status: "pass"})
 	}
-	org := runtime.Org
+	org := runtime.Template.CloneRuntimeOrg()
 	initializeTestOrg(&org)
 	baseMachine := runtime.BaseMachine.CloneRuntime(nil)
 	baseMachine.SetTraceEnabled(false)
@@ -235,6 +235,7 @@ type runtimeCacheEntry struct {
 	Triggers      []vm.Trigger
 	TriggerErrors []error
 	Org           storage.OrgState
+	Template      storage.RuntimeTemplate
 	PageNames     []string
 	BaseMachine   *vm.VM
 	BaseErr       error
@@ -293,6 +294,7 @@ func cloneRuntimeCacheEntry(in runtimeCacheEntry) runtimeCacheEntry {
 		Triggers:      in.Triggers,
 		TriggerErrors: in.TriggerErrors,
 		Org:           in.Org,
+		Template:      in.Template,
 		PageNames:     in.PageNames,
 		BaseMachine:   in.BaseMachine,
 		BaseErr:       in.BaseErr,
@@ -312,6 +314,7 @@ func runtimeFromIndex(index typesys.Index, sources sourceCache) (runtimeCacheKey
 	classes := compileProjectClasses(index, methods, sources)
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
 	org := orgFromIndex(index, sources)
+	template := storage.NewRuntimeTemplate(org)
 	pageNames := visualforcePageNames(index)
 	baseMachine := vm.New(nil)
 	baseMachine.SetTraceEnabled(false)
@@ -323,6 +326,7 @@ func runtimeFromIndex(index typesys.Index, sources sourceCache) (runtimeCacheKey
 		Triggers:      triggers,
 		TriggerErrors: triggerErrors,
 		Org:           org,
+		Template:      template,
 		PageNames:     pageNames,
 		BaseMachine:   baseMachine,
 		BaseErr:       baseErr,
@@ -422,7 +426,7 @@ func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm
 			}
 			started := time.Now()
 			setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
-			setupOrg, setupRandom, setupErr, shared := prepareTestSetupOrg(setupCtx, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
+			setupOrg, setupRandom, setupErr, shared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
 			if setupCancel != nil {
 				setupCancel()
 			}
@@ -453,7 +457,7 @@ func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm
 				}
 				started := time.Now()
 				setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
-				setupOrg, setupRandom, setupErr, shared := prepareTestSetupOrg(setupCtx, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
+				setupOrg, setupRandom, setupErr, shared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
 				if setupCancel != nil {
 					setupCancel()
 				}
@@ -498,7 +502,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 			}
 			caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
 			cloneOrg := len(planned) > 1 || plan.SetupShared
-			results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg)
+			results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, nil)
 			if caseCancel != nil {
 				caseCancel()
 			}
@@ -535,7 +539,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 					}
 					caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
 					cloneOrg := len(planned) > 1 || plan.SetupShared
-					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg)
+					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, nil)
 					if caseCancel != nil {
 						caseCancel()
 					}
@@ -579,7 +583,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 				}
 				started := time.Now()
 				setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
-				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
+				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
 				if setupCancel != nil {
 					setupCancel()
 				}
@@ -605,7 +609,10 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					}
 					caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
 					cloneOrg := len(classIndexes[className]) > 1 || plan.SetupShared
-					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg)
+					if cloneOrg {
+						recordCloneFallback()
+					}
+					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, nil)
 					if caseCancel != nil {
 						caseCancel()
 					}
@@ -670,7 +677,7 @@ func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCas
 					reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 				}
 				caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
-				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, true)
+				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, true, nil)
 				if caseCancel != nil {
 					caseCancel()
 				}
@@ -710,7 +717,7 @@ func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, result
 					reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 				}
 				caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
-				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, len(planned) > 1)
+				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, len(planned) > 1, nil)
 				if caseCancel != nil {
 					caseCancel()
 				}
@@ -754,7 +761,7 @@ func initializeTestOrg(org *storage.OrgState) {
 	machine.EnableTestContext()
 }
 
-func prepareTestSetupOrg(ctx context.Context, baseMachine *vm.VM, baseRuntimeErr error, setups []vm.Method, setupErr error, setupPrograms []ir.Program, setupProgramErr error, triggerErrors []error, org storage.OrgState, opts Options) (storage.OrgState, uint64, error, bool) {
+func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.VM, baseRuntimeErr error, setups []vm.Method, setupErr error, setupPrograms []ir.Program, setupProgramErr error, triggerErrors []error, org storage.OrgState, opts Options) (storage.OrgState, uint64, error, bool) {
 	if err := ctx.Err(); err != nil {
 		return org, 0, err, true
 	}
@@ -773,7 +780,7 @@ func prepareTestSetupOrg(ctx context.Context, baseMachine *vm.VM, baseRuntimeErr
 	if len(setups) == 0 {
 		return org, 0, nil, true
 	}
-	setupOrg := cloneRuntimeOrg(org)
+	setupOrg := cloneRuntimeOrgForClass(org, className, "setup")
 	machine := baseMachine.CloneRuntime(nil)
 	machine.SetTraceEnabled(false)
 	if opts.LimitMode != "" {
@@ -796,7 +803,7 @@ func prepareTestSetupOrg(ctx context.Context, baseMachine *vm.VM, baseRuntimeErr
 	return setupOrg, machine.DeterministicRandomState(), nil, false
 }
 
-func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invokeProgram ir.Program, invokeErr error, baseMachine *vm.VM, baseRuntimeErr error, setupErr error, triggerErrors []error, org storage.OrgState, setupRandom uint64, opts Options, cloneOrg bool) testreport.Case {
+func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invokeProgram ir.Program, invokeErr error, baseMachine *vm.VM, baseRuntimeErr error, setupErr error, triggerErrors []error, org storage.OrgState, setupRandom uint64, opts Options, cloneOrg bool, journal *storage.IsolationJournal) testreport.Case {
 	if err := ctx.Err(); err != nil {
 		return canceledCase(testCase, err)
 	}
@@ -847,9 +854,14 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 	}
 	machine.SetContext(ctx)
 	if cloneOrg {
-		org = cloneRuntimeOrg(org)
+		org = cloneRuntimeOrgForClass(org, testCase.ClassName, "test")
 	}
-	machine.SetOrg(&org)
+	if journal != nil && !cloneOrg {
+		machine.SetOrg(journal.Org())
+	} else {
+		machine.SetOrg(&org)
+	}
+	machine.SetIsolationJournal(journal)
 	machine.EnableTestContext()
 	machine.SetTestSeeAllData(testCase.SeeAllData)
 	machine.ResetLimits()
@@ -929,6 +941,12 @@ func registerRuntime(machine *vm.VM, methods map[string]vm.Method, classes []vm.
 }
 
 func cloneRuntimeOrg(org storage.OrgState) storage.OrgState {
+	recordCloneRuntimeOrg("", "")
+	return org.CloneRollbackSnapshot()
+}
+
+func cloneRuntimeOrgForClass(org storage.OrgState, className, phase string) storage.OrgState {
+	recordCloneRuntimeOrg(className, phase)
 	return org.CloneRollbackSnapshot()
 }
 
@@ -3515,13 +3533,28 @@ func extractMethodBodyFromText(source string, start int, text string, open int) 
 
 func sourcePositionPrefix(source string) string {
 	var b strings.Builder
-	b.Grow(len(source))
-	for _, r := range source {
-		if r == '\n' || r == '\r' {
-			b.WriteRune(r)
-			continue
+	lastLineStart := 0
+	for i := 0; i < len(source); i++ {
+		switch source[i] {
+		case '\r':
+			b.WriteByte('\r')
+			if i+1 < len(source) && source[i+1] == '\n' {
+				i++
+				b.WriteByte('\n')
+			}
+			lastLineStart = i + 1
+		case '\n':
+			b.WriteByte('\n')
+			lastLineStart = i + 1
 		}
-		b.WriteByte(' ')
+	}
+	for i := lastLineStart; i < len(source); i++ {
+		switch source[i] {
+		case '\r', '\n':
+			continue
+		default:
+			b.WriteByte(' ')
+		}
 	}
 	return b.String()
 }
