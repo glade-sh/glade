@@ -5839,6 +5839,36 @@ System.assertEquals('Austin', queriedAddress.getCity());
 	}
 }
 
+func TestExecSOQLCompoundAddressSupportsDirectFieldAccess(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(
+	Name = 'Acme',
+	BillingStreet = '12 Lake Road',
+	BillingCity = 'Port Alsworth',
+	BillingState = 'Alaska',
+	BillingPostalCode = '99653',
+	BillingCountry = 'United States'
+);
+insert account;
+Account queried = [SELECT Id, BillingAddress FROM Account WHERE Id = :account.Id LIMIT 1];
+System.assertEquals('12 Lake Road', queried.BillingAddress.street);
+System.assertEquals('Port Alsworth', queried.BillingAddress.getCity());
+System.assertEquals('Alaska', queried.BillingAddress.state);
+System.assertEquals('99653', queried.BillingAddress.postalCode);
+System.assertEquals('United States', queried.BillingAddress.country);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSystemAddressCastWorksWhenUserAddressClassExists(t *testing.T) {
 	program, err := CompileAnonymous(`
 Contact contact = new Contact(LastName = 'Trail');

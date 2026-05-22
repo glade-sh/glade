@@ -127,3 +127,24 @@ func TestWorkspaceSaveFileVersionConflict(t *testing.T) {
 		t.Fatalf("SaveFile() with stale version succeeded")
 	}
 }
+
+func TestWorkspaceDeletesClassFiles(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	path := "force-app/main/default/classes/Extra.cls"
+	if _, err := ws.SaveFile(FileSaveRequest{Path: path, Content: "public class Extra {}", Version: 0}); err != nil {
+		t.Fatalf("SaveFile() error = %v", err)
+	}
+
+	if err := ws.DeleteFile(path); err != nil {
+		t.Fatalf("DeleteFile() error = %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(ws.Root, path)); !os.IsNotExist(err) {
+		t.Fatalf("deleted file stat error = %v", err)
+	}
+	if err := ws.DeleteFile("sfdx-project.json"); err == nil {
+		t.Fatalf("DeleteFile(sfdx-project.json) succeeded")
+	}
+}

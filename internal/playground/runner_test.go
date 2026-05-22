@@ -32,6 +32,35 @@ func TestRunnerExecutesAnonymousAgainstWorkspaceClass(t *testing.T) {
 	}
 }
 
+func TestRunnerBaselineOrgSupportsAccountCompoundAddress(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	runner := NewRunner(ws, RunnerOptions{Version: "test"})
+
+	result, err := runner.Run(t.Context(), RunRequest{
+		AnonymousBody: `
+Account account = new Account(Name = 'Acme', BillingStreet = '12 Lake Road', BillingCity = 'Port Alsworth');
+insert account;
+Account queried = [SELECT Id, BillingAddress FROM Account WHERE Id = :account.Id LIMIT 1];
+System.debug(queried.BillingAddress.street + ' / ' + queried.BillingAddress.city);
+`,
+		Mode:      RunModeScratch,
+		LimitMode: "permissive",
+		UseCache:  false,
+	})
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if result.Status != RunStatusPass {
+		t.Fatalf("status = %q diagnostics=%#v error=%s", result.Status, result.Diagnostics, result.ErrorMessage)
+	}
+	if len(result.Logs) != 1 || result.Logs[0] != "12 Lake Road / Port Alsworth" {
+		t.Fatalf("logs = %#v", result.Logs)
+	}
+}
+
 func TestRunnerUsesCacheForRepeatedRun(t *testing.T) {
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {

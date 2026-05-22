@@ -18,7 +18,7 @@ import {
   Save,
   Search,
   Sun,
-  Terminal,
+  Trash2,
   Zap,
 } from "lucide-react"
 
@@ -26,7 +26,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CodeEditor } from "@/components/CodeEditor"
 import { cn } from "@/lib/utils"
@@ -160,7 +159,7 @@ function valuePreview(value: unknown) {
 
 function statusVariant(status: string): "success" | "warning" | "danger" | "outline" {
   if (status === "Pass" || status === "pass") return "success"
-  if (status === "Running" || status === "Auto run" || status === "Loading") return "warning"
+  if (status === "Running" || status === "Loading" || status === "Saving" || status === "Deleting") return "warning"
   if (status === "Error" || status.includes("error")) return "danger"
   return "outline"
 }
@@ -179,7 +178,6 @@ export default function App() {
   const [anonymous, setAnonymous] = useState("")
   const [mode, setMode] = useState<"scratch" | "persist">("scratch")
   const [limitMode, setLimitMode] = useState("permissive")
-  const [autoRun, setAutoRun] = useState(true)
   const [status, setStatus] = useState("Loading")
   const [cacheState, setCacheState] = useState<"stale" | "fresh" | "hit">("stale")
   const [result, setResult] = useState<RunResult | null>(null)
@@ -199,9 +197,7 @@ export default function App() {
   const anonymousRef = useRef("")
   const modeRef = useRef<"scratch" | "persist">("scratch")
   const limitModeRef = useRef("permissive")
-  const autoRunRef = useRef(true)
   const dirtyRef = useRef<Set<string>>(new Set())
-  const timerRef = useRef<number | null>(null)
   const editSeqRef = useRef(0)
   const runSeqRef = useRef(0)
 
@@ -241,10 +237,6 @@ export default function App() {
   useEffect(() => {
     limitModeRef.current = limitMode
   }, [limitMode])
-
-  useEffect(() => {
-    autoRunRef.current = autoRun
-  }, [autoRun])
 
   const replaceDirty = useCallback((next: Set<string>) => {
     dirtyRef.current = next
@@ -317,16 +309,13 @@ export default function App() {
   }, [saveFile])
 
   const run = useCallback(
-    async (origin: "manual" | "auto" = "manual") => {
+    async () => {
       const runSeq = runSeqRef.current + 1
       runSeqRef.current = runSeq
       const startedAtEditSeq = editSeqRef.current
-      if (timerRef.current) {
-        window.clearTimeout(timerRef.current)
-        timerRef.current = null
-      }
-      setStatus(origin === "auto" ? "Auto run" : "Running")
+      setStatus("Running")
       setProblemMessage("")
+      setResult(null)
       setRunning(true)
       try {
         const dirty = new Set(dirtyRef.current)
@@ -339,7 +328,7 @@ export default function App() {
           await saveFile(anon, anonymousRef.current)
         }
         if (!shouldApplyRunResult({ startedAtEditSeq, currentEditSeq: editSeqRef.current })) {
-          setStatus(autoRunRef.current ? "Queued" : "Ready")
+          setStatus("Ready")
           return
         }
         const next = await api<RunResult>("run", {
@@ -373,14 +362,6 @@ export default function App() {
     },
     [saveFile],
   )
-
-  const scheduleAuto = useCallback(() => {
-    if (!autoRunRef.current) return
-    if (timerRef.current) window.clearTimeout(timerRef.current)
-    timerRef.current = window.setTimeout(() => {
-      void run("auto")
-    }, 750)
-  }, [run])
 
   const openFile = useCallback(async (path: string) => {
     const metadata = metaRef.current
@@ -460,9 +441,6 @@ export default function App() {
       setProblemMessage(error instanceof Error ? error.message : String(error))
       setStatus("Error")
     })
-    return () => {
-      if (timerRef.current) window.clearTimeout(timerRef.current)
-    }
   }, [loadWorkspace])
 
   useEffect(() => {
@@ -523,7 +501,6 @@ export default function App() {
     const files = meta?.files ?? []
     return [
       { label: "Classes", icon: FileCode2, files: files.filter((file) => file.kind === "class" || file.kind === "trigger") },
-      { label: "Execute", icon: Terminal, files: files.filter((file) => file.kind === "anonymous") },
       { label: "Data", icon: Database, files: files.filter((file) => file.kind === "data") },
       { label: "Metadata", icon: Braces, files: files.filter((file) => file.kind === "metadata" || file.kind === "other") },
     ].filter((group) => group.files.length > 0)
@@ -547,14 +524,12 @@ export default function App() {
     contentRef.current = { ...contentRef.current, [sourcePath]: value }
     setContentByPath((current) => ({ ...current, [sourcePath]: value }))
     markDirty(sourcePath)
-    scheduleAuto()
   }
 
   const onAnonymousChange = (value: string) => {
     anonymousRef.current = value
     setAnonymous(value)
     markDirty(anonymousPath)
-    scheduleAuto()
   }
 
   const createClass = async () => {
@@ -574,10 +549,6 @@ export default function App() {
     if (!selectedExample || !canLoadExamples) return
     if (dirtyRef.current.size > 0 && !window.confirm("Load example and replace this scratch workspace?")) return
     runSeqRef.current += 1
-    if (timerRef.current) {
-      window.clearTimeout(timerRef.current)
-      timerRef.current = null
-    }
     setRunning(false)
     setStatus("Loading")
     setProblemMessage("")
@@ -589,6 +560,20 @@ export default function App() {
     })
     await applyWorkspace(workspace, { loadLatest: false })
   }, [applyWorkspace, canLoadExamples, selectedExample])
+
+  const deleteWorkspaceFile = async (path: string) => {
+    if (!window.confirm(`Delete ${fileName(path)} from this workspace?`)) return
+    runSeqRef.current += 1
+    setRunning(false)
+    setStatus("Deleting")
+    setProblemMessage("")
+    setResult(null)
+    await api(`files?path=${encodeURIComponent(path)}`, { method: "DELETE" })
+    const workspace = await api<WorkspaceMetadata>("workspace")
+    const preferred = sourcePathRef.current === path ? undefined : sourcePathRef.current
+    setCacheState("stale")
+    await applyWorkspace(workspace, { preferred, loadLatest: false })
+  }
 
   const resetOrg = async () => {
     setStatus("Resetting")
@@ -650,7 +635,6 @@ export default function App() {
               modeRef.current = next
               setMode(next)
               setCacheState("stale")
-              scheduleAuto()
             }}
           >
             <SelectTrigger className="w-[118px]">
@@ -667,7 +651,6 @@ export default function App() {
               limitModeRef.current = value
               setLimitMode(value)
               setCacheState("stale")
-              scheduleAuto()
             }}
           >
             <SelectTrigger className="w-[132px]">
@@ -678,16 +661,6 @@ export default function App() {
               <SelectItem value="strict">strict</SelectItem>
             </SelectContent>
           </Select>
-          <label className="flex h-9 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground">
-            <Switch
-              checked={autoRun}
-              onCheckedChange={(checked) => {
-                autoRunRef.current = checked
-                setAutoRun(checked)
-              }}
-            />
-            Auto
-          </label>
           <Button variant="outline" size="icon" onClick={saveAndHandle} title="Save">
             <Save />
           </Button>
@@ -716,8 +689,9 @@ export default function App() {
               <FolderTree className="size-4 text-primary" />
               <h2 className="text-sm font-semibold">Workspace</h2>
             </div>
-            <Button size="icon" variant="ghost" onClick={() => void createClass()} title="New class">
+            <Button size="sm" variant="outline" onClick={() => void createClass()} title="New class">
               <Plus />
+              Class
             </Button>
           </header>
           <div className="space-y-2 border-b border-border p-2">
@@ -776,28 +750,46 @@ export default function App() {
                         const selected = file.path === activePath || file.path === sourcePath
                         const dirty = dirtyPaths.has(file.path)
                         return (
-                          <button
+                          <div
                             key={file.path}
                             className={cn("file-row", selected && "selected")}
-                            onClick={() => {
-                              void openFile(file.path).catch((error) => {
-                                setProblemMessage(error instanceof Error ? error.message : String(error))
-                                setStatus("Error")
-                              })
-                            }}
                           >
-                            <span className="min-w-0 flex-1">
+                            <button
+                              className="min-w-0 flex-1 border-0 bg-transparent p-0 text-left text-inherit"
+                              onClick={() => {
+                                void openFile(file.path).catch((error) => {
+                                  setProblemMessage(error instanceof Error ? error.message : String(error))
+                                  setStatus("Error")
+                                })
+                              }}
+                            >
                               <span className="block truncate text-xs font-medium">{fileName(file.path)}</span>
                               <span className="block truncate font-mono text-[10px] text-muted-foreground">
                                 {file.path}
                               </span>
-                            </span>
+                            </button>
                             <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] text-muted-foreground">
                               {dirty ? <CircleDashed className="size-3 text-amber-500" /> : null}
                               v{file.version}
                               <span>{formatBytes(file.size)}</span>
                             </span>
-                          </button>
+                            {file.kind === "class" || file.kind === "trigger" ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+                                title={`Delete ${fileName(file.path)}`}
+                                onClick={() => {
+                                  void deleteWorkspaceFile(file.path).catch((error) => {
+                                    setProblemMessage(error instanceof Error ? error.message : String(error))
+                                    setStatus("Error")
+                                  })
+                                }}
+                              >
+                                <Trash2 />
+                              </Button>
+                            ) : null}
+                          </div>
                         )
                       })}
                     </div>
