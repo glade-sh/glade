@@ -3,7 +3,7 @@ import { expect, test, vi } from "vitest"
 
 import App from "./App"
 
-test("renders Apex editors and Database as separate work surfaces", () => {
+test("renders Database as a center workspace tab", () => {
   vi.stubGlobal("localStorage", {
     getItem: () => "dark",
     setItem: () => undefined,
@@ -14,10 +14,11 @@ test("renders Apex editors and Database as separate work surfaces", () => {
   expect(html).toContain("Apex Source")
   expect(html).toContain("Execute Anonymous")
   expect(html).toContain("Database")
-  expect(html).toContain("database-work-surface")
+  expect(html).toContain('data-testid="workspace-database-tab"')
+  expect(html).not.toContain("database-work-surface")
 })
 
-test("renders database object filter controls", () => {
+test("does not render database filters before the Database tab opens", () => {
   vi.stubGlobal("localStorage", {
     getItem: () => "dark",
     setItem: () => undefined,
@@ -25,8 +26,8 @@ test("renders database object filter controls", () => {
 
   const html = renderToString(<App />)
 
-  expect(html).toContain("System records")
-  expect(html).toContain("Custom SObjects")
-  expect(html).toContain("Custom metadata")
-  expect(html).toContain("Custom settings")
+  expect(html).not.toContain("System records")
+  expect(html).not.toContain("Custom SObjects")
+  expect(html).not.toContain("Custom metadata")
+  expect(html).not.toContain("Custom settings")
 })
