@@ -125,6 +125,24 @@ type OrgDiff struct {
 	DeletedIDs  []string `json:"deletedIds,omitempty"`
 }
 
+type DatabaseSnapshot struct {
+	Objects []DatabaseObject `json:"objects"`
+}
+
+type DatabaseObject struct {
+	Name        string        `json:"name"`
+	Label       string        `json:"label,omitempty"`
+	KeyPrefix   string        `json:"keyPrefix,omitempty"`
+	Columns     []string      `json:"columns"`
+	RecordCount int           `json:"recordCount"`
+	Rows        []DatabaseRow `json:"rows"`
+}
+
+type DatabaseRow struct {
+	ID     string         `json:"id"`
+	Fields map[string]any `json:"fields"`
+}
+
 type RunnerOptions struct {
 	Version string
 	Org     *vmOrgStore

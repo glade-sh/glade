@@ -42,6 +42,105 @@ func TestServerWorkspaceAndRunRoutes(t *testing.T) {
 	}
 }
 
+func TestServerDatabaseRouteShowsLatestScratchRunRows(t *testing.T) {
+	dataRoot := t.TempDir()
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test"})
+
+	body, _ := json.Marshal(RunRequest{
+		AnonymousBody: "Account account = new Account(Name = 'Browse Me'); insert account;",
+		Mode:          RunModeScratch,
+		LimitMode:     "permissive",
+		UseCache:      false,
+	})
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/playground/api/run", bytes.NewReader(body))
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("run status = %d body=%s", rec.Code, rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodGet, "/playground/api/database", nil)
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("database status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var snapshot DatabaseSnapshot
+	if err := json.Unmarshal(rec.Body.Bytes(), &snapshot); err != nil {
+		t.Fatalf("decode snapshot: %v", err)
+	}
+	account := databaseObjectByName(snapshot, "Account")
+	if account == nil {
+		t.Fatalf("Account object missing: %#v", snapshot.Objects)
+	}
+	if account.RecordCount != 1 || len(account.Rows) != 1 {
+		t.Fatalf("Account rows = %d %#v", account.RecordCount, account.Rows)
+	}
+	if got := account.Rows[0].Fields["Name"]; got != "Browse Me" {
+		t.Fatalf("Account.Name = %#v", got)
+	}
+}
+
+func TestServerDatabaseRouteReexecutesWhenCachedResultHasNoOrgSnapshot(t *testing.T) {
+	dataRoot := t.TempDir()
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test"})
+	runBody, _ := json.Marshal(RunRequest{
+		AnonymousBody: "Account account = new Account(Name = 'After Reset'); insert account;",
+		Mode:          RunModeScratch,
+		LimitMode:     "permissive",
+		UseCache:      true,
+	})
+
+	for i := 0; i < 2; i++ {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPost, "/playground/api/run", bytes.NewReader(runBody))
+		handler.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("run %d status = %d body=%s", i, rec.Code, rec.Body.String())
+		}
+		if i == 0 {
+			reset := httptest.NewRecorder()
+			resetReq := httptest.NewRequest(http.MethodPost, "/playground/api/reset", nil)
+			handler.ServeHTTP(reset, resetReq)
+			if reset.Code != http.StatusOK {
+				t.Fatalf("reset status = %d body=%s", reset.Code, reset.Body.String())
+			}
+		}
+	}
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/playground/api/database", nil)
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("database status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var snapshot DatabaseSnapshot
+	if err := json.Unmarshal(rec.Body.Bytes(), &snapshot); err != nil {
+		t.Fatalf("decode snapshot: %v", err)
+	}
+	account := databaseObjectByName(snapshot, "Account")
+	if account == nil || account.RecordCount != 1 {
+		t.Fatalf("Account rows after cached rerun = %#v", account)
+	}
+}
+
+func databaseObjectByName(snapshot DatabaseSnapshot, name string) *DatabaseObject {
+	for i := range snapshot.Objects {
+		if snapshot.Objects[i].Name == name {
+			return &snapshot.Objects[i]
+		}
+	}
+	return nil
+}
+
 func TestWorkspaceMetadataIgnoresDotFilesAndDirectories(t *testing.T) {
 	dataRoot := t.TempDir()
 	root := filepath.Join(dataRoot, "workspaces", "default")

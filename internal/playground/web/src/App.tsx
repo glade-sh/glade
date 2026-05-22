@@ -111,6 +111,24 @@ type RunResult = {
   startedAt?: string
 }
 
+type DatabaseSnapshot = {
+  objects: DatabaseObject[]
+}
+
+type DatabaseObject = {
+  name: string
+  label?: string
+  keyPrefix?: string
+  columns: string[]
+  recordCount: number
+  rows: DatabaseRow[]
+}
+
+type DatabaseRow = {
+  id: string
+  fields: Record<string, unknown>
+}
+
 async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(API_BASE + path, {
     ...init,
@@ -193,6 +211,9 @@ export default function App() {
   const [canLoadExamples, setCanLoadExamples] = useState(true)
   const [classSearch, setClassSearch] = useState("")
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set())
+  const [database, setDatabase] = useState<DatabaseSnapshot>({ objects: [] })
+  const [selectedDatabaseObject, setSelectedDatabaseObject] = useState("")
+  const [databaseSearch, setDatabaseSearch] = useState("")
 
   const metaRef = useRef<WorkspaceMetadata | null>(null)
   const versionsRef = useRef<Record<string, number>>({})
@@ -205,6 +226,15 @@ export default function App() {
   const dirtyRef = useRef<Set<string>>(new Set())
   const editSeqRef = useRef(0)
   const runSeqRef = useRef(0)
+
+  const refreshDatabase = useCallback(async () => {
+    const snapshot = await api<DatabaseSnapshot>("database")
+    setDatabase(snapshot)
+    setSelectedDatabaseObject((current) => {
+      if (current && snapshot.objects.some((object) => object.name === current)) return current
+      return snapshot.objects.find((object) => object.recordCount > 0)?.name ?? snapshot.objects[0]?.name ?? ""
+    })
+  }, [])
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark")
@@ -354,6 +384,7 @@ export default function App() {
         setResult(next)
         setStatus(next.status === "pass" ? "Pass" : "Error")
         setCacheState(next.cacheHit ? "hit" : "fresh")
+        void refreshDatabase().catch(() => undefined)
       } catch (error) {
         if (runSeq === runSeqRef.current) {
           setProblemMessage(error instanceof Error ? error.message : String(error))
@@ -365,7 +396,7 @@ export default function App() {
         }
       }
     },
-    [saveFile],
+    [refreshDatabase, saveFile],
   )
 
   const openFile = useCallback(async (path: string) => {
@@ -428,9 +459,10 @@ export default function App() {
           setCacheState(latest.result.cacheHit ? "hit" : "fresh")
         }
       }
+      void refreshDatabase().catch(() => undefined)
       setStatus("Ready")
     },
-    [openFile, replaceDirty],
+    [openFile, refreshDatabase, replaceDirty],
   )
 
   const loadWorkspace = useCallback(
@@ -516,6 +548,16 @@ export default function App() {
   const vars = result?.vars ?? []
   const limits = result?.limits ?? {}
   const orgDiff = result?.orgDiff ?? []
+  const visibleDatabaseObjects = useMemo(() => {
+    const needle = databaseSearch.trim().toLowerCase()
+    if (!needle) return database.objects
+    return database.objects.filter((object) => {
+      return object.name.toLowerCase().includes(needle) || (object.label ?? "").toLowerCase().includes(needle)
+    })
+  }, [database.objects, databaseSearch])
+  const activeDatabaseObject = useMemo(() => {
+    return database.objects.find((object) => object.name === selectedDatabaseObject) ?? visibleDatabaseObjects[0]
+  }, [database.objects, selectedDatabaseObject, visibleDatabaseObjects])
   const cacheLabel = cacheState === "hit" ? "cache hit" : cacheState === "fresh" ? "cache fresh" : "cache stale"
   const selectedExampleDetails = useMemo(
     () => examples.find((example) => example.id === selectedExample),
@@ -562,7 +604,8 @@ export default function App() {
       body: JSON.stringify({ id: selectedExample }),
     })
     await applyWorkspace(workspace, { loadLatest: false })
-  }, [applyWorkspace, canLoadExamples, selectedExample])
+    void refreshDatabase().catch(() => undefined)
+  }, [applyWorkspace, canLoadExamples, refreshDatabase, selectedExample])
 
   const deleteWorkspaceFile = async (path: string) => {
     if (!window.confirm(`Delete ${fileName(path)} from this workspace?`)) return
@@ -581,6 +624,7 @@ export default function App() {
   const resetOrg = async () => {
     setStatus("Resetting")
     await api("reset", { method: "POST" })
+    await refreshDatabase()
     setCacheState("stale")
     setStatus("Ready")
   }
@@ -588,6 +632,7 @@ export default function App() {
   const seedOrg = async () => {
     setStatus("Seeding")
     await api("seed", { method: "POST" })
+    await refreshDatabase()
     setCacheState("stale")
     setStatus("Seeded")
   }
@@ -911,11 +956,12 @@ export default function App() {
           </div>
 
           <Tabs defaultValue="logs" className="flex min-h-0 flex-1 flex-col px-3 pb-3">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="logs">Logs</TabsTrigger>
               <TabsTrigger value="vars">Vars</TabsTrigger>
               <TabsTrigger value="problems">Problems</TabsTrigger>
               <TabsTrigger value="limits">Limits</TabsTrigger>
+              <TabsTrigger value="database">Data</TabsTrigger>
               <TabsTrigger value="trace">Trace</TabsTrigger>
             </TabsList>
             <TabsContent value="logs" className="min-h-0 flex-1">
@@ -981,6 +1027,76 @@ export default function App() {
                   </tbody>
                 </table>
               </ScrollArea>
+            </TabsContent>
+            <TabsContent value="database" className="min-h-0 flex-1">
+              <div className="database-browser result-box">
+                <div className="database-sidebar">
+                  <label className="database-search">
+                    <Search className="size-3.5 shrink-0" />
+                    <input
+                      value={databaseSearch}
+                      onChange={(event) => setDatabaseSearch(event.target.value)}
+                      placeholder="Find object"
+                    />
+                  </label>
+                  <ScrollArea className="min-h-0 flex-1">
+                    <div className="space-y-1 p-2">
+                      {visibleDatabaseObjects.length ? (
+                        visibleDatabaseObjects.map((object) => (
+                          <button
+                            key={object.name}
+                            className={cn("database-object", activeDatabaseObject?.name === object.name && "selected")}
+                            onClick={() => setSelectedDatabaseObject(object.name)}
+                            title={object.name}
+                          >
+                            <Database className="size-3.5 shrink-0 text-primary" />
+                            <span className="min-w-0 flex-1 truncate">{object.name}</span>
+                            <span className="font-mono text-[10px] text-muted-foreground">{object.recordCount}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-2 py-3 text-xs text-muted-foreground">No objects</div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+                <div className="database-table-wrap">
+                  <div className="database-table-header">
+                    <div className="min-w-0">
+                      <div className="truncate text-xs font-semibold">{activeDatabaseObject?.name ?? "No object"}</div>
+                      <div className="truncate text-[11px] text-muted-foreground">
+                        {activeDatabaseObject
+                          ? `${activeDatabaseObject.recordCount} rows${activeDatabaseObject.label ? ` · ${activeDatabaseObject.label}` : ""}`
+                          : "Run code or seed data to inspect records"}
+                      </div>
+                    </div>
+                  </div>
+                  <ScrollArea className="min-h-0 flex-1">
+                    {activeDatabaseObject?.rows.length ? (
+                      <table className="database-table">
+                        <thead>
+                          <tr>
+                            {activeDatabaseObject.columns.map((column) => (
+                              <th key={column}>{column}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {activeDatabaseObject.rows.map((row) => (
+                            <tr key={row.id}>
+                              {activeDatabaseObject.columns.map((column) => (
+                                <td key={column}>{valuePreview(row.fields[column])}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="p-3 text-sm text-muted-foreground">No rows</div>
+                    )}
+                  </ScrollArea>
+                </div>
+              </div>
             </TabsContent>
             <TabsContent value="trace" className="min-h-0 flex-1">
               <ScrollArea className="result-box">

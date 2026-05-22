@@ -62,6 +62,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"found": ok, "result": latest})
+	case r.Method == http.MethodGet && r.URL.Path == "/playground/api/database":
+		writeJSON(w, http.StatusOK, databaseSnapshot(s.runner.CurrentOrg()))
 	case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/playground/assets/"):
 		s.serveStaticAsset(w, r)
 	case r.Method == http.MethodGet && (r.URL.Path == "/playground/" || r.URL.Path == "/playground"):

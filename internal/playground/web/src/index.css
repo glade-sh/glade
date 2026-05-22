@@ -340,6 +340,107 @@ textarea {
   font-weight: 500;
 }
 
+.database-browser {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: minmax(140px, 34%) minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.database-sidebar {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+}
+
+.database-search {
+  display: flex;
+  height: 36px;
+  align-items: center;
+  gap: 7px;
+  border-bottom: 1px solid var(--border);
+  padding: 0 9px;
+  color: var(--muted-foreground);
+}
+
+.database-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 12px;
+}
+
+.database-object {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  padding: 6px 7px;
+  color: var(--foreground);
+  text-align: left;
+}
+
+.database-object:hover {
+  background: var(--muted);
+}
+
+.database-object.selected {
+  border-color: color-mix(in oklch, var(--primary) 55%, var(--border));
+  background: color-mix(in oklch, var(--primary) 10%, var(--pane));
+}
+
+.database-table-wrap {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.database-table-header {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding: 5px 9px;
+}
+
+.database-table {
+  min-width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+
+.database-table th,
+.database-table td {
+  max-width: 220px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 7px 8px;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.database-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: color-mix(in oklch, var(--muted) 60%, var(--background));
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+
 .problem {
   display: flex;
   align-items: flex-start;

@@ -33,6 +33,8 @@ type Runner struct {
 	version            string
 	cache              *ResultCache
 	store              *vmOrgStore
+	lastOrg            *storage.OrgState
+	lastOrgCacheKey    string
 	loadWorkspaceIndex workspaceIndexLoader
 	runtimeTemplate    *cachedRuntimeTemplate
 	mu                 sync.Mutex
@@ -76,14 +78,31 @@ func (r *Runner) Org() storage.OrgState {
 	return r.store.org.Clone()
 }
 
+func (r *Runner) CurrentOrg() storage.OrgState {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.lastOrg != nil {
+		return r.lastOrg.Clone()
+	}
+	r.store.mu.Lock()
+	defer r.store.mu.Unlock()
+	return r.store.org.Clone()
+}
+
 func (r *Runner) Reset() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.store.mu.Lock()
 	defer r.store.mu.Unlock()
 	r.store.org = baselineOrg()
+	r.lastOrg = nil
+	r.lastOrgCacheKey = ""
 	_ = saveDBOrg(r.store.db, r.store.org)
 }
 
 func (r *Runner) Seed(reader io.Reader) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	fixture, err := storage.ReadFixture(reader)
 	if err != nil {
 		return err
@@ -98,6 +117,8 @@ func (r *Runner) Seed(reader io.Reader) error {
 		return err
 	}
 	r.store.org = org
+	r.lastOrg = nil
+	r.lastOrgCacheKey = ""
 	return saveDBOrg(r.store.db, org)
 }
 
@@ -132,7 +153,7 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 	if req.UseCache {
 		if cached, ok, err := r.cache.Load(cacheKey); err != nil {
 			return RunResult{}, err
-		} else if ok {
+		} else if ok && r.lastOrg != nil && r.lastOrgCacheKey == cacheKey {
 			cached.CacheHit = true
 			return cached, nil
 		}
@@ -188,6 +209,9 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 	result.Vars = varsFromVM(vmResult.Vars)
 	result.OrgDiff = diffOrg(before, runOrg)
 	result.CompletedAt = time.Now().UTC()
+	latest := runOrg.Clone()
+	r.lastOrg = &latest
+	r.lastOrgCacheKey = cacheKey
 
 	if execErr != nil {
 		result.Status = RunStatusRuntimeError
