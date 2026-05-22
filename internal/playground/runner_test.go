@@ -4,6 +4,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/open-aer/oaer/internal/diagnostic"
+	"github.com/open-aer/oaer/internal/typesys"
 )
 
 func TestRunnerExecutesAnonymousAgainstWorkspaceClass(t *testing.T) {
@@ -168,6 +171,37 @@ func TestRunnerRecompilesWorkspaceClassAfterSourceChange(t *testing.T) {
 	}
 	if len(secondRun.Logs) != 1 || secondRun.Logs[0] != "second" {
 		t.Fatalf("second logs = %#v", secondRun.Logs)
+	}
+}
+
+func TestRunnerCachesProjectRuntimeBetweenAnonymousRuns(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	runner := NewRunner(ws, RunnerOptions{Version: "test"})
+	loads := 0
+	runner.loadWorkspaceIndex = func(root string) (typesys.Index, []diagnostic.Diagnostic, error) {
+		loads++
+		return loadWorkspaceIndex(root)
+	}
+
+	for _, body := range []string{"System.debug('one');", "System.debug('two');"} {
+		result, err := runner.Run(t.Context(), RunRequest{
+			AnonymousBody: body,
+			Mode:          RunModeScratch,
+			LimitMode:     "permissive",
+			UseCache:      false,
+		})
+		if err != nil {
+			t.Fatalf("Run() error = %v", err)
+		}
+		if result.Status != RunStatusPass {
+			t.Fatalf("status = %q diagnostics=%#v error=%s", result.Status, result.Diagnostics, result.ErrorMessage)
+		}
+	}
+	if loads != 1 {
+		t.Fatalf("workspace loads = %d, want 1", loads)
 	}
 }
 

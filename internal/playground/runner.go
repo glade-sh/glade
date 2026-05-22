@@ -29,11 +29,23 @@ type vmOrgStore struct {
 }
 
 type Runner struct {
-	workspace *Workspace
-	version   string
-	cache     *ResultCache
-	store     *vmOrgStore
-	mu        sync.Mutex
+	workspace          *Workspace
+	version            string
+	cache              *ResultCache
+	store              *vmOrgStore
+	loadWorkspaceIndex workspaceIndexLoader
+	runtimeTemplate    *cachedRuntimeTemplate
+	mu                 sync.Mutex
+}
+
+type workspaceIndexLoader func(string) (typesys.Index, []diagnostic.Diagnostic, error)
+
+type cachedRuntimeTemplate struct {
+	workspaceHash string
+	projectRoot   string
+	version       string
+	template      *vm.VM
+	diagnostics   []diagnostic.Diagnostic
 }
 
 func NewRunner(workspace *Workspace, opts RunnerOptions) *Runner {
@@ -49,10 +61,11 @@ func NewRunner(workspace *Workspace, opts RunnerOptions) *Runner {
 		}
 	}
 	return &Runner{
-		workspace: workspace,
-		version:   version,
-		cache:     NewResultCache(filepath.Join(workspace.DataRoot, "cache")),
-		store:     store,
+		workspace:          workspace,
+		version:            version,
+		cache:              NewResultCache(filepath.Join(workspace.DataRoot, "cache")),
+		store:              store,
+		loadWorkspaceIndex: loadWorkspaceIndex,
 	}
 }
 
@@ -133,7 +146,7 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 	}
 
 	compileStart := time.Now()
-	index, indexDiagnostics, err := loadWorkspaceIndex(r.workspace.ProjectRoot)
+	template, indexDiagnostics, err := r.loadRuntimeTemplate(workspaceHash)
 	if err != nil {
 		result.Status = RunStatusCompileError
 		result.Diagnostics = append(result.Diagnostics, Diagnostic{Severity: "error", Message: err.Error()})
@@ -142,15 +155,6 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 	}
 	result.Diagnostics = append(result.Diagnostics, diagnosticsFromIndex(indexDiagnostics)...)
 
-	template := vm.New(nil)
-	template.SetTraceEnabled(true)
-	if err := apextest.RegisterProjectRuntimeForRequest(template, index); err != nil {
-		result.Status = RunStatusCompileError
-		result.Diagnostics = append(result.Diagnostics, Diagnostic{Severity: "error", Message: err.Error()})
-		result.CompileMS = millisSince(compileStart)
-		result.CompletedAt = time.Now().UTC()
-		return result, nil
-	}
 	program, err := vm.CompileAnonymous(req.AnonymousBody)
 	result.CompileMS = millisSince(compileStart)
 	if err != nil {
@@ -201,6 +205,32 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 		return RunResult{}, err
 	}
 	return result, nil
+}
+
+func (r *Runner) loadRuntimeTemplate(workspaceHash string) (*vm.VM, []diagnostic.Diagnostic, error) {
+	if r.runtimeTemplate != nil &&
+		r.runtimeTemplate.workspaceHash == workspaceHash &&
+		r.runtimeTemplate.projectRoot == r.workspace.ProjectRoot &&
+		r.runtimeTemplate.version == r.version {
+		return r.runtimeTemplate.template, append([]diagnostic.Diagnostic(nil), r.runtimeTemplate.diagnostics...), nil
+	}
+	index, indexDiagnostics, err := r.loadWorkspaceIndex(r.workspace.ProjectRoot)
+	if err != nil {
+		return nil, nil, err
+	}
+	template := vm.New(nil)
+	template.SetTraceEnabled(true)
+	if err := apextest.RegisterProjectRuntimeForRequest(template, index); err != nil {
+		return nil, indexDiagnostics, err
+	}
+	r.runtimeTemplate = &cachedRuntimeTemplate{
+		workspaceHash: workspaceHash,
+		projectRoot:   r.workspace.ProjectRoot,
+		version:       r.version,
+		template:      template,
+		diagnostics:   append([]diagnostic.Diagnostic(nil), indexDiagnostics...),
+	}
+	return template, append([]diagnostic.Diagnostic(nil), indexDiagnostics...), nil
 }
 
 func loadOrCreateDBOrg(path string) storage.OrgState {
