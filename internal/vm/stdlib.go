@@ -681,13 +681,13 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		}
 		return Bool(strings.HasSuffix(strings.ToLower(receiver.Text), strings.ToLower(suffix))), true, nil
 	case "toLowerCase":
-		if len(args) != 0 {
-			return Null, true, fmt.Errorf("String.toLowerCase expects 0 arguments")
+		if len(args) > 1 {
+			return Null, true, fmt.Errorf("String.toLowerCase expects 0 or 1 arguments")
 		}
 		return String(strings.ToLower(receiver.Text)), true, nil
 	case "toUpperCase":
-		if len(args) != 0 {
-			return Null, true, fmt.Errorf("String.toUpperCase expects 0 arguments")
+		if len(args) > 1 {
+			return Null, true, fmt.Errorf("String.toUpperCase expects 0 or 1 arguments")
 		}
 		return String(strings.ToUpper(receiver.Text)), true, nil
 	case "trim":
@@ -1704,7 +1704,7 @@ func patternMatches(args []Value) (Value, error) {
 	if err != nil {
 		return Null, err
 	}
-	source, negativeLookaheads, err := compilePatternMatchesSource(pattern)
+	source, positiveLookaheads, negativeLookaheads, err := compilePatternMatchesSource(pattern)
 	if err != nil {
 		return Null, err
 	}
@@ -1714,6 +1714,14 @@ func patternMatches(args []Value) (Value, error) {
 	}
 	indices := re.FindStringIndex(input)
 	matched := indices != nil && indices[0] == 0 && indices[1] == len(input)
+	if matched {
+		for _, lookahead := range positiveLookaheads {
+			if !regexLookaheadMatches(lookahead, input, 0) {
+				matched = false
+				break
+			}
+		}
+	}
 	if matched {
 		for _, lookahead := range negativeLookaheads {
 			if negativeRegexLookaheadMatches(lookahead, input) {
@@ -1764,31 +1772,41 @@ type regexNegativeLookaheadAssertion struct {
 	Lookahead string
 }
 
-func compilePatternMatchesSource(source string) (string, []regexNegativeLookaheadAssertion, error) {
+func compilePatternMatchesSource(source string) (string, []string, []regexNegativeLookaheadAssertion, error) {
 	regexpSource, err := javaRegexQuoteEscapesToGo(source)
 	if err != nil {
-		return "", nil, unsupportedCallError("Pattern.matches " + err.Error())
+		return "", nil, nil, unsupportedCallError("Pattern.matches " + err.Error())
 	}
+	var positiveLookaheads []string
+	regexpSource, positiveLookaheads = stripLeadingPositiveLookaheadAssertions(regexpSource)
 	var negativeLookaheads []regexNegativeLookaheadAssertion
 	regexpSource, negativeLookaheads = stripNegativeLookaheadAssertions(regexpSource)
 	if stripped, _, ok := stripTerminalPositiveLookahead(regexpSource); ok {
 		regexpSource = stripped
 	}
 	if feature := unsupportedJavaRegexFeature(regexpSource); feature != "" {
-		return "", nil, unsupportedCallError("Pattern.matches " + feature)
+		return "", nil, nil, unsupportedCallError("Pattern.matches " + feature)
+	}
+	for _, lookahead := range positiveLookaheads {
+		if feature := unsupportedJavaRegexFeature(lookahead); feature != "" {
+			return "", nil, nil, unsupportedCallError("Pattern.matches " + feature)
+		}
+		if _, err := regexp.Compile("^(?:" + lookahead + ")"); err != nil {
+			return "", nil, nil, newPatternSyntaxExceptionError(source, err)
+		}
 	}
 	for _, lookahead := range negativeLookaheads {
 		if feature := unsupportedJavaRegexFeature(lookahead.Lookahead); feature != "" {
-			return "", nil, unsupportedCallError("Pattern.matches " + feature)
+			return "", nil, nil, unsupportedCallError("Pattern.matches " + feature)
 		}
 		if _, err := regexp.Compile("^(?:" + lookahead.Prefix + ")"); err != nil {
-			return "", nil, newPatternSyntaxExceptionError(source, err)
+			return "", nil, nil, newPatternSyntaxExceptionError(source, err)
 		}
 		if _, err := regexp.Compile("^(?:" + lookahead.Lookahead + ")"); err != nil {
-			return "", nil, newPatternSyntaxExceptionError(source, err)
+			return "", nil, nil, newPatternSyntaxExceptionError(source, err)
 		}
 	}
-	return regexpSource, negativeLookaheads, nil
+	return regexpSource, positiveLookaheads, negativeLookaheads, nil
 }
 
 func compilePatternSourceWithMetadata(callee, source string, flags int64) (string, string, error) {
@@ -2764,12 +2782,48 @@ func callMapStdlibMember(receiver Value, method string, args []Value) (Value, Va
 			return Null, receiver, false, true, fmt.Errorf("Map.remove expects 1 argument")
 		}
 		key := mapKey(args[0])
+		if foldedKey, ok := caseInsensitiveStringMapStoredKey(receiver, args[0]); ok {
+			key = foldedKey
+		}
 		value, ok := receiver.Map[key]
 		if ok {
 			delete(receiver.Map, key)
 			return value, receiver, true, true, nil
 		}
 		return Null, receiver, false, true, nil
+	case "get":
+		if !caseInsensitiveStringMap(receiver) {
+			return Null, receiver, false, false, nil
+		}
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("Map.get expects 1 argument")
+		}
+		key := mapKey(args[0])
+		value, ok := receiver.Map[key]
+		if !ok {
+			if foldedKey, found := caseInsensitiveStringMapStoredKey(receiver, args[0]); found {
+				value, ok = receiver.Map[foldedKey]
+			}
+		}
+		if !ok || value.Kind == ValueNull && value.Type == "" {
+			return missingMapValue(receiver), receiver, false, true, nil
+		}
+		return value, receiver, false, true, nil
+	case "containsKey":
+		if !caseInsensitiveStringMap(receiver) {
+			return Null, receiver, false, false, nil
+		}
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("Map.containsKey expects 1 argument")
+		}
+		key := mapKey(args[0])
+		_, ok := receiver.Map[key]
+		if !ok {
+			if foldedKey, found := caseInsensitiveStringMapStoredKey(receiver, args[0]); found {
+				_, ok = receiver.Map[foldedKey]
+			}
+		}
+		return Bool(ok), receiver, false, true, nil
 	case "getSObjectType":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Map.getSObjectType expects 0 arguments")
@@ -3813,6 +3867,19 @@ func stripNegativeLookaheadAssertions(source string) (string, []regexNegativeLoo
 		i++
 	}
 	return out.String(), lookaheads
+}
+
+func stripLeadingPositiveLookaheadAssertions(source string) (string, []string) {
+	var lookaheads []string
+	for strings.HasPrefix(source, "(?=") {
+		end := regexGroupEnd(source, 0)
+		if end < 0 {
+			break
+		}
+		lookaheads = append(lookaheads, source[3:end])
+		source = source[end+1:]
+	}
+	return source, lookaheads
 }
 
 func regexGroupEnd(source string, start int) int {

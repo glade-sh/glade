@@ -721,10 +721,7 @@ func shouldParallelizeMethods(options LocalTestOptions, parallelism int, totalCa
 	if options.ParallelMethods {
 		return true
 	}
-	if parallelism <= 1 || totalCases < 8 || strings.TrimSpace(options.Method) != "" {
-		return false
-	}
-	return strings.TrimSpace(options.Class) != ""
+	return false
 }
 
 func localTestProgressReporter(w io.Writer) func(apextest.TestProgress) {

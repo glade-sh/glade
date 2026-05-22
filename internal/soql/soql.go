@@ -24,6 +24,7 @@ type Query struct {
 	OrderDesc        bool
 	Order            []OrderSpec
 	Limit            int
+	HasLimit         bool
 	Offset           int
 	Count            bool
 	ForUpdate        bool
@@ -281,7 +282,7 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 				return aggregateOrderedBefore(records[i], records[j], query.Order)
 			})
 		}
-		records = applyWindow(records, query.Offset, query.Limit)
+		records = applyWindow(records, query.Offset, query.Limit, query.HasLimit)
 		return Result{Records: records, Rows: len(records)}, nil
 	}
 	if len(query.Order) > 0 {
@@ -289,7 +290,7 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 			return recordsOrderedBefore(org, object.Definition, matchedRecords[i], matchedRecords[j], query.Order)
 		})
 	}
-	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit)
+	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit, query.HasLimit)
 	records := make([]storage.Record, 0, len(matchedRecords))
 	for _, record := range matchedRecords {
 		if query.ForUpdate && record.System.Locked {
@@ -595,14 +596,17 @@ func indexedCandidateIDs(object storage.ObjectState, where *Condition, allRows b
 	return storage.LookupIndex(object, where.Field, where.Value)
 }
 
-func applyWindow[T any](records []T, offset, limit int) []T {
+func applyWindow[T any](records []T, offset, limit int, hasLimit bool) []T {
 	if offset > 0 {
 		if offset >= len(records) {
 			return nil
 		}
 		records = records[offset:]
 	}
-	if limit > 0 && limit < len(records) {
+	if hasLimit && limit <= 0 {
+		return nil
+	}
+	if hasLimit && limit < len(records) {
 		return records[:limit]
 	}
 	return records
@@ -967,6 +971,8 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 		return likeMatch(left, condition.Value)
 	case "NOT LIKE":
 		return !likeMatch(left, condition.Value)
+	case "INCLUDES":
+		return includesMatch(org, left, condition.Value)
 	case "IN":
 		if condition.Subquery != nil {
 			return false
@@ -1213,7 +1219,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 			return recordsOrderedBefore(org, childObject.Definition, matched[i], matched[j], query.Order)
 		})
 	}
-	matched = applyWindow(matched, query.Offset, query.Limit)
+	matched = applyWindow(matched, query.Offset, query.Limit, query.HasLimit)
 	out := make([]storage.Record, 0, len(matched))
 	for _, child := range matched {
 		projected, err := projectRecord(org, childObject.Definition, child, query.Fields, nil, query.Typeofs)
@@ -2988,6 +2994,45 @@ func likeMatch(left, right storage.Value) bool {
 	return matchLikePattern(left.String, right.String)
 }
 
+func includesMatch(org storage.OrgState, left, right storage.Value) bool {
+	if left.Kind != storage.ValueString || right.Kind != storage.ValueString {
+		return false
+	}
+	wants := splitMultiPicklistValue(right.String)
+	if len(wants) == 0 {
+		return false
+	}
+	haves := splitMultiPicklistValue(left.String)
+	if len(haves) == 0 {
+		return false
+	}
+	for _, want := range wants {
+		found := false
+		for _, have := range haves {
+			if equalValuesInOrg(org, storage.StringValue(have), storage.StringValue(want)) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+func splitMultiPicklistValue(text string) []string {
+	parts := strings.Split(text, ";")
+	values := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			values = append(values, part)
+		}
+	}
+	return values
+}
+
 func matchLikePattern(text, pattern string) bool {
 	// Dynamic programming approach for SQL LIKE matching.
 	// % matches any sequence, _ matches any single character.
@@ -3180,6 +3225,7 @@ func (p *parser) parseQuery() (Query, error) {
 				return Query{}, err
 			}
 			q.Limit = limit
+			q.HasLimit = true
 		case p.matchWord("OFFSET"):
 			offset, err := p.parseInt()
 			if err != nil {
@@ -4176,6 +4222,9 @@ func (p *parser) signedLiteralToken(tok string) string {
 
 func (p *parser) parseOperator() (string, error) {
 	tok := p.advance().text
+	if tok == "<" && p.match(">") {
+		return "!=", nil
+	}
 	switch tok {
 	case "=", "!=", ">", "<", ">=", "<=":
 		return tok, nil
@@ -4184,6 +4233,9 @@ func (p *parser) parseOperator() (string, error) {
 	word := tok
 	if strings.EqualFold(word, "LIKE") {
 		return "LIKE", nil
+	}
+	if strings.EqualFold(word, "INCLUDES") {
+		return "INCLUDES", nil
 	}
 	if strings.EqualFold(word, "IN") {
 		return "IN", nil

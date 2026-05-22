@@ -1280,6 +1280,19 @@ System.assertEquals('REQUIRED_FIELD_MISSING', String.valueOf(result.getErrors()[
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	profile := org.Objects["Profile"]
+	if profile.Records == nil {
+		profile.Records = make(map[storage.ID]storage.Record)
+	}
+	profile.Records["00e000000000099"] = storage.Record{
+		ID:     "00e000000000099",
+		Object: "Profile",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Community Hub Login User"),
+		},
+	}
+	org.Objects["Profile"] = profile
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName:   "Local_Event__e",
@@ -1310,6 +1323,18 @@ System.assertEquals(0, result.getErrors().size());
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	profile := org.Objects["Profile"]
+	if profile.Records == nil {
+		profile.Records = make(map[storage.ID]storage.Record)
+	}
+	profile.Records["00e000000000099"] = storage.Record{
+		ID:     "00e000000000099",
+		Object: "Profile",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Community Hub Login User"),
+		},
+	}
+	org.Objects["Profile"] = profile
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName:   "Local_Event__e",
@@ -1643,6 +1668,68 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'explicit platform e
 		Methods: map[string]Method{
 			"execute": {Name: "QueueWorker.execute", ClassName: "QueueWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: queueProgram},
 		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStopTestPlatformEventDeliveryUsesAutomatedProcessUser(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+System.assertEquals('AutomatedProcess', UserInfo.getUserType());
+insert new Account(Name = UserInfo.getUserType());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Community Hub Login User' LIMIT 1];
+System.runAs(new User(Id = '005-community-user', ProfileId = p.Id, Username = 'community@example.test')) {
+	Test.startTest();
+	EventBus.publish(new Local_Event__e(Name__c = 'Trail'));
+	Test.stopTest();
+}
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'AutomatedProcess'].size());
+System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'PowerCustomerSuccess'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	profile := org.Objects["Profile"]
+	if profile.Records == nil {
+		profile.Records = make(map[storage.ID]storage.Record)
+	}
+	profile.Records["00e000000000099"] = storage.Record{
+		ID:     "00e000000000099",
+		Object: "Profile",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Community Hub Login User"),
+		},
+	}
+	org.Objects["Profile"] = profile
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Event__e",
+			KeyPrefix: "e00",
+			Fields: map[string]storage.Field{
+				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "LocalEventUserTrigger",
+		Object:    "Local_Event__e",
+		Timing:    triggerTimingAfter,
+		Operation: "insert",
+		Program:   triggerProgram,
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -2121,7 +2208,7 @@ System.assertEquals('Shipment 1', deliveryGroup.getName());
 CartExtension.OrderGraph graph = new CartExtension.OrderGraph();
 Order orderRecord = graph.getOrder();
 System.assertNotEquals(null, orderRecord);
-System.assertEquals('@{ref_Order_1.id}', (String)orderRecord.get('Id'));
+System.assertEquals('@{ref_Order_1.id}', (String)orderRecord.get('id'));
 System.assertEquals(0, graph.getOrderAdjustmentGroups().size());
 System.assertEquals(0, graph.getOrderDeliveryGroups().size());
 System.assertEquals(0, graph.getOrderDeliveryMethods().size());
@@ -2496,9 +2583,10 @@ Account decoded = JSON.deserializeStrict('{"Name":"Acme","NoSuchField__c":"x"}',
 func TestExecApexPagesCurrentPageAndSeverityEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 PageReference defaultPage = ApexPages.currentPage();
-System.assertEquals(null, defaultPage);
-System.assertEquals(null, System.currentPageReference());
-System.assertEquals(null, ApexPages.currentPage());
+System.assertNotEquals(null, defaultPage);
+System.assertEquals('/apex/current', defaultPage.getUrl());
+System.assertEquals('/apex/current', System.currentPageReference().getUrl());
+System.assertEquals('/apex/current', ApexPages.currentPage().getUrl());
 ApexPages.currentPage().getParameters().put('default', 'ready');
 System.assertEquals('ready', ApexPages.currentPage().getParameters().get('default'));
 PageReference before = new PageReference('/apex/Before');
@@ -2541,7 +2629,7 @@ System.assertEquals('Detail', message.getDetail());
 
 func TestExecTestStartTestInitializesDefaultCurrentPage(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals(null, ApexPages.currentPage());
+System.assertNotEquals(null, ApexPages.currentPage());
 Test.startTest();
 System.assertNotEquals(null, ApexPages.currentPage());
 System.assertEquals('/apex/current', ApexPages.currentPage().getUrl());
@@ -3263,6 +3351,19 @@ System.assertEquals(5, ApexPages.getMessages().size());
 	}
 }
 
+func TestExecVisualforceComponentNamespaceAssignableToApexPagesComponent(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.Component component = new Component.AccountDetail();
+System.assertNotEquals(null, component);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPageReferenceLocalMapsStartTypedAndMutable(t *testing.T) {
 	program, err := CompileAnonymous(`
 PageReference blank = new PageReference();
@@ -3276,6 +3377,40 @@ blank.getHeaders().put('Accept', 'text/html');
 System.assertEquals('001B000001DVM9t', blank.getParameters().get('id'));
 System.assertEquals('?id=001B000001DVM9t', blank.getUrl());
 System.assertEquals('text/html', blank.getHeaders().get('Accept'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPageReferenceParametersAreCaseInsensitive(t *testing.T) {
+	directPage := newPageReference("")
+	directParams := directPage.Fields["parameters"]
+	directVM := New(nil)
+	if _, handled, err := directVM.callValueMember("", directParams, "put", []Value{String("Id"), String("value")}, &Result{}); err != nil || !handled {
+		t.Fatalf("direct put handled=%t err=%v", handled, err)
+	}
+	if got, handled, err := directVM.callValueMember("", directParams, "get", []Value{String("Id")}, &Result{}); err != nil || !handled || got.Kind != ValueString || got.Text != "value" {
+		t.Fatalf("direct get got=%#v handled=%t err=%v params=%#v", got, handled, err, directParams)
+	}
+
+	program, err := CompileAnonymous(`
+Map<String,String> plain = new Map<String,String>();
+plain.put('Id', 'plain');
+System.assertEquals('plain', plain.get('Id'));
+PageReference blank = new PageReference();
+blank.getParameters().put('Foo', 'bar');
+System.assertEquals('bar', blank.getParameters().get('Foo'));
+blank.getParameters().put('Id', '001000000000001');
+System.assertEquals(2, blank.getParameters().size());
+System.assertEquals('001000000000001', blank.getParameters().get('Id'));
+System.assertEquals('001000000000001', blank.getParameters().get('id'));
+System.assert(blank.getParameters().containsKey('ID'));
+System.assertEquals('001000000000001', blank.getParameters().remove('iD'));
+System.assertEquals(null, blank.getParameters().get('Id'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3382,6 +3517,19 @@ PageReference page = new PageReference('/apex/Order');
 page.getParameters().put('recordId', recordId);
 System.assertEquals('001000000000001AAA', page.getParameters().get('recordId'));
 System.assertEquals('/apex/Order?recordId=001000000000001AAA', page.getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPageReferenceGetUrlEncodesRawQueryValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+PageReference page = new PageReference('/ss/apex/znu__Login?startUrl=productdetails?id=aO9000000000001CAA');
+System.assertEquals('/ss/apex/znu__Login?startUrl=productdetails%3Fid%3DaO9000000000001CAA', page.getUrl());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3498,6 +3646,9 @@ func TestExecComponentApexDefaultsSupportExpressionsAndChildren(t *testing.T) {
 Component.Apex.Column column = new Component.Apex.Column();
 column.expressions.value = '{!row.value}';
 System.assertEquals('{!row.value}', column.expressions.value);
+Component.Apex.OutputText output = new Component.Apex.OutputText();
+output.Expressions.Value = '{!$Label.Done}';
+System.assertEquals('{!$Label.Done}', output.Value);
 Component.Apex.PageBlockTable table = new Component.Apex.PageBlockTable();
 table.childComponents.add(column);
 System.assertEquals(1, table.childComponents.size());
@@ -5478,6 +5629,24 @@ System.assertEquals(null, namespaced);
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNetworkGetNetworkIdFallbackIsValidId(t *testing.T) {
+	program, err := CompileAnonymous(`
+String networkId = Network.getNetworkId();
+System.assertEquals('0DB000000000001', networkId);
+System.assertEquals(networkId, Id.valueOf(networkId).toString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	delete(org.Objects, "Network")
+	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -7492,6 +7661,121 @@ System.setPassword(UserInfo.getUserId(), 'local-secret');
 	storage.ApplyOrgShape(&org, []string{"MultiCurrency", "Sites", "Communities"})
 	machine := New(nil)
 	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNetworkGetNetworkIdFallbackIsApexIDShaped(t *testing.T) {
+	program, err := CompileAnonymous(`
+String networkId = Network.getNetworkId();
+System.assertEquals('0DB000000000001', networkId);
+Id.valueOf(networkId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRunAsHonorsExplicitGuestUserType(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.runAs(new User(Id = '005-guest-user', ProfileId = '00e000000000007', Username = 'guest@example.test', UserType = 'Guest')) {
+	System.assertEquals('Guest', UserInfo.getUserType());
+	System.assertEquals(true, Auth.CommunitiesUtil.isGuestUser());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRunAsDefaultsProfileOnlyUserTypeToStandard(t *testing.T) {
+	program, err := CompileAnonymous(`
+	Profile p = [SELECT Id FROM Profile WHERE Name = 'Community Hub Login User' LIMIT 1];
+	System.runAs(new User(Id = '005-community-user', ProfileId = p.Id, Username = 'community@example.test')) {
+		System.assertEquals('Standard', UserInfo.getUserType());
+	}
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	profile := org.Objects["Profile"]
+	profile.Records["00e000000000099"] = storage.Record{
+		ID:     "00e000000000099",
+		Object: "Profile",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Community Hub Login User"),
+		},
+	}
+	org.Objects["Profile"] = profile
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRunAsPreservesStaticSingletonInstanceFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+Cache.Instance.DefaultAccount;
+System.runAs(new User(Id = '005-community-user', UserType = 'CspLitePortal')) {
+	System.assertNotEquals(null, Cache.Instance.DefaultAccount);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	getterProgram, err := CompileAnonymous(`
+if (DefaultAccount == null) {
+	DefaultAccount = new Account(Name = 'cached');
+}
+return DefaultAccount;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	instanceGetterProgram, err := CompileAnonymous(`
+if (Instance == null) {
+	Instance = new Cache();
+}
+return Instance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "Cache",
+		StaticFields: map[string]Field{
+			"Instance": {Name: "Instance", Type: "Cache", Static: true, Property: true, Getter: &Method{Name: "Cache.Instance.get", ClassName: "Cache", IsStatic: true, ReturnType: "Cache", Program: instanceGetterProgram}},
+		},
+		Fields: map[string]Field{
+			"DefaultAccount": {Name: "DefaultAccount", Type: "Account", Property: true, Getter: &Method{Name: "Cache.DefaultAccount.get", ClassName: "Cache", ReturnType: "Account", Program: getterProgram}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

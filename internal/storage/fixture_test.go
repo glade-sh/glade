@@ -230,13 +230,13 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	for _, objectName := range []string{"Organization", "UserRole", "User", "Profile", "UserLicense", "PermissionSet", "PermissionSetAssignment", "RecordType"} {
 		want := 1
 		if objectName == "Profile" {
-			want = 6
+			want = 7
 		}
 		if objectName == "User" {
 			want = 2
 		}
 		if objectName == "PermissionSet" {
-			want = 8
+			want = 9
 		}
 		if objectName == "UserLicense" {
 			want = 2
@@ -275,8 +275,11 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if _, ok := org.Objects["RecordType"].Records[recordTypeID]; !ok {
 		t.Fatalf("missing RecordType record %s: %#v", recordTypeID, org.Objects["RecordType"].Records)
 	}
-	if len(org.Objects["User"].Records) != 2 || len(org.Objects["Profile"].Records) != 6 || len(org.Objects["UserLicense"].Records) != 2 {
+	if len(org.Objects["User"].Records) != 2 || len(org.Objects["Profile"].Records) != 7 || len(org.Objects["UserLicense"].Records) != 2 {
 		t.Fatalf("platform records = %#v", InspectOrg("", org))
+	}
+	if _, ok := findRecordByStringField(org.Objects["Profile"].Records, "Name", "Customer Community Guest User"); !ok {
+		t.Fatalf("missing guest profile: %#v", org.Objects["Profile"].Records)
 	}
 	user, ok := org.Objects["User"].Records["005000000000001"]
 	if !ok {
@@ -329,6 +332,9 @@ func TestEnsureDeterministicPlatformDataSkipsUsedRecordTypeIDs(t *testing.T) {
 	if record.Fields["SobjectType"].String != "Account" {
 		t.Fatalf("record type record = %#v", record)
 	}
+	if record.Fields["IsPersonType"].Kind != ValueBoolean || record.Fields["IsPersonType"].Boolean {
+		t.Fatalf("account business record type person flag = %#v", record)
+	}
 }
 
 func TestEnsureDeterministicPlatformDataSeedsCustomObjectRecordTypes(t *testing.T) {
@@ -368,6 +374,33 @@ func TestEnsureDeterministicPlatformDataSeedsCustomObjectRecordTypes(t *testing.
 	}
 }
 
+func TestEnsureDeterministicPlatformDataSeedsAccountPersonTypeRecordTypes(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["Account"] = ObjectState{
+		Definition: ObjectDefinition{
+			APIName:   "Account",
+			KeyPrefix: "001",
+			Fields:    map[string]Field{"Name": {APIName: "Name", Type: FieldString}},
+			RecordTypes: []RecordTypeInfo{
+				{DeveloperName: "Organization", Name: "Organization", Active: true, Available: true},
+				{DeveloperName: "Individual", Name: "Individual", Active: true, Available: true},
+			},
+		},
+		Records: make(map[ID]Record),
+	}
+	EnsureDeterministicPlatformData(&org)
+
+	for _, info := range org.Objects["Account"].Definition.RecordTypes {
+		record := org.Objects["RecordType"].Records[info.ID]
+		if info.DeveloperName == "Individual" && !record.Fields["IsPersonType"].Boolean {
+			t.Fatalf("individual record type = %#v", record)
+		}
+		if info.DeveloperName == "Organization" && record.Fields["IsPersonType"].Boolean {
+			t.Fatalf("organization record type = %#v", record)
+		}
+	}
+}
+
 func TestEnsureDeterministicPlatformDataAdvancesRecordTypeSequenceToMaxID(t *testing.T) {
 	org := NewOrgState()
 	org.Objects["RecordType"] = ObjectState{
@@ -402,4 +435,13 @@ func containsStringFold(values []string, want string) bool {
 		}
 	}
 	return false
+}
+
+func findRecordByStringField(records map[ID]Record, fieldName, want string) (Record, bool) {
+	for _, record := range records {
+		if value, ok := record.Fields[fieldName]; ok && strings.EqualFold(value.String, want) {
+			return record, true
+		}
+	}
+	return Record{}, false
 }

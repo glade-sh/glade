@@ -7,6 +7,7 @@ import (
 
 	"github.com/open-aer/oaer/internal/dml"
 	"github.com/open-aer/oaer/internal/ir"
+	"github.com/open-aer/oaer/internal/soql"
 	"github.com/open-aer/oaer/internal/storage"
 )
 
@@ -105,6 +106,25 @@ func TestExecRecordTypeNamespacePrefixMatchesProjectNamespace(t *testing.T) {
 	program, err := CompileAnonymous(`
 RecordType rt = [SELECT Id, NamespacePrefix FROM RecordType WHERE DeveloperName = 'Business_Account' AND NamespacePrefix = 'pkg'];
 System.assertEquals('pkg', rt.NamespacePrefix);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+}
+
+func TestExecRecordTypeRowsAssignToSchemaRecordTypeList(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = accountWithBusinessRecordType()
+	storage.EnsureDeterministicPlatformData(&org)
+	program, err := CompileAnonymous(`
+List<Schema.RecordType> recordTypes = [SELECT Id, Description FROM RecordType WHERE SObjectType = 'Account'];
+System.assertEquals(1, recordTypes.size());
+System.assertEquals('012000000000001', recordTypes[0].Id);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1832,6 +1852,54 @@ System.assert(caught);
 	}
 }
 
+func TestExecDirectSObjectFieldAccessDefaultsStoredNullCustomField(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Cart__c(Name = 'Cart');
+Cart__c cart = [SELECT Id FROM Cart__c WHERE Name = 'Cart' LIMIT 1];
+System.assertEquals(null, cart.Purpose__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Cart__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Cart__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name":       {APIName: "Name", Type: storage.FieldString},
+				"Purpose__c": {APIName: "Purpose__c", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFieldSetMemberGetTypeReturnsDisplayType(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Account",
+			KeyPrefix: "001",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Label: "Account Name", Type: storage.FieldString, DisplayType: "STRING"},
+			},
+		},
+	}
+	machine.SetOrg(&org)
+	member := machine.fieldSetMemberValue("Account", org.Objects["Account"].Definition, storage.FieldSetMemberMetadata{Field: "Name"})
+	fieldType := member.Fields["type"]
+	if fieldType.Type != "Schema.DisplayType" || !strings.EqualFold(fieldType.Text, "STRING") {
+		t.Fatalf("field set member type = %#v, want Schema.DisplayType.STRING", fieldType)
+	}
+}
+
 func TestExecDirectSObjectFieldAccessAllowsAssignedUnqueriedField(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');
@@ -1847,6 +1915,47 @@ System.assertEquals('Renamed', acct.Name);
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecConstructedSObjectWithExistingIDDoesNotBackfillStoredFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account stored = new Account(Name = 'Stored');
+insert stored;
+
+Account fabricated = new Account();
+fabricated.Id = stored.Id;
+System.assertEquals(null, fabricated.get(Account.Name));
+System.assertEquals(null, fabricated.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestQueriedSObjectFieldsIncludeUnqualifiedManagedField(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "znu"
+	org.Objects["znu__Cart__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName:   "znu__Cart__c",
+		KeyPrefix: "a00",
+		Fields: map[string]storage.Field{
+			"Id":              {APIName: "Id", Type: storage.FieldID},
+			"znu__Purpose__c": {APIName: "znu__Purpose__c", Type: storage.FieldString},
+		},
+	}}
+	machine.SetOrg(&org)
+	cart := Object("znu__Cart__c")
+	cart.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue("znu__Cart__c", map[string]bool{"purpose__c": true})
+	if !machine.queriedSObjectFieldsIncludes(cart, "znu__Purpose__c") {
+		t.Fatalf("unqualified managed field was not treated as queried")
 	}
 }
 
@@ -6237,6 +6346,51 @@ System.assertEquals(3, [SELECT Id FROM Account].size());
 	}
 }
 
+func TestExecWithSharingPortalUserSeesContactAccount(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(1, [SELECT Id FROM Account].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Contact")
+	account := org.Objects["Account"]
+	account.Definition.SharingModel = "Private"
+	account.Records = map[storage.ID]storage.Record{
+		"001000000000001": {ID: "001000000000001", Object: "Account", System: storage.SystemFields{OwnerID: "005000000000001"}},
+		"001000000000002": {ID: "001000000000002", Object: "Account", System: storage.SystemFields{OwnerID: "005000000000001"}},
+	}
+	org.Objects["Account"] = account
+	contact := org.Objects["Contact"]
+	contact.Records = map[storage.ID]storage.Record{
+		"003000000000001": {
+			ID:     "003000000000001",
+			Object: "Contact",
+			Fields: map[string]storage.Value{
+				"AccountId": storage.IDValue("001000000000002"),
+			},
+		},
+	}
+	org.Objects["Contact"] = contact
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.SetCurrentUser(storage.Record{
+		ID:     "005000000000002",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"Id":        storage.IDValue("005000000000002"),
+			"ContactId": storage.IDValue("003000000000001"),
+		},
+	})
+	if err := machine.RegisterClass(Class{Name: "SharingProbe", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "SharingProbe"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTestContextWithSharingSeesRunAsOwnedTestData(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(2, [SELECT Id FROM Widget__c].size());
@@ -6320,6 +6474,68 @@ System.runAs(u) {
 	}
 }
 
+func TestExecWithoutSharingCalleeOverridesWithSharingCaller(t *testing.T) {
+	selectorProgram, err := CompileAnonymous(`
+return Database.query('SELECT Id FROM Widget__c ORDER BY Name');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals(2, Selector.rows().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:      "Widget__c",
+			KeyPrefix:    "a00",
+			SharingModel: "Private",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {ID: "a00000000000001", Object: "Widget__c", System: storage.SystemFields{OwnerID: "005000000000001"}, Fields: map[string]storage.Value{"Name": storage.StringValue("Owned")}},
+			"a00000000000002": {ID: "a00000000000002", Object: "Widget__c", System: storage.SystemFields{OwnerID: "005000000000002"}, Fields: map[string]storage.Value{"Name": storage.StringValue("Other")}},
+		},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.SetCurrentUser(storage.Record{ID: "005000000000001", Object: "User", Fields: map[string]storage.Value{"Id": storage.IDValue("005000000000001")}})
+	if err := machine.RegisterClass(Class{Name: "Controller", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Selector", Modifiers: []string{"without sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "Selector.rows", ClassName: "Selector", IsStatic: true, ReturnType: "List<SObject>", Program: selectorProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "Controller"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCurrentClassSharingModeUsesNearestExplicitFrame(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Controller", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Selector", Modifiers: []string{"without sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	machine.callStack = []callFrame{
+		{Symbol: "Controller.run"},
+		{Symbol: "Selector.rows"},
+	}
+	if machine.currentClassHasSharingMode("with sharing") {
+		t.Fatal("with sharing leaked past explicit without sharing callee")
+	}
+}
+
 func TestExecRunAsInsertPreservesExistingCustomObjectRows(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new List<Widget__c>{new Widget__c(Name = 'one'), new Widget__c(Name = 'two')};
@@ -6389,6 +6605,130 @@ System.runAs(u) {
 	}
 	if _, err := machine.ExecuteInClass(program, "SharingProbe"); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecRunAsUserCanQueryOwnContactAccountWithSharing(t *testing.T) {
+	program, err := CompileAnonymous(`
+User u = [SELECT Id, ContactId FROM User WHERE Id = '005000000000777' LIMIT 1];
+System.runAs(u) {
+	System.assertEquals('005000000000777', UserInfo.getUserId());
+	List<Account> rows = [SELECT Id FROM Account WHERE Id = '001000000000777'];
+	System.assertEquals(1, rows.size());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.SharingModel = "Private"
+	account.Records["001000000000777"] = storage.Record{
+		ID:     "001000000000777",
+		Object: "Account",
+		System: storage.SystemFields{OwnerID: "005000000000001"},
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Member Account"),
+		},
+	}
+	org.Objects["Account"] = account
+	contact := org.Objects["Contact"]
+	if contact.Records == nil {
+		contact.Records = make(map[storage.ID]storage.Record)
+	}
+	contact.Records["003000000000777"] = storage.Record{
+		ID:     "003000000000777",
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"AccountId": storage.IDValue("001000000000777"),
+			"LastName":  storage.StringValue("Member"),
+		},
+	}
+	org.Objects["Contact"] = contact
+	user := org.Objects["User"]
+	if user.Definition.Fields == nil {
+		user.Definition.Fields = make(map[string]storage.Field)
+	}
+	user.Definition.Fields["ContactId"] = storage.Field{APIName: "ContactId", Type: storage.FieldReference, ReferenceTo: []string{"Contact"}}
+	if user.Records == nil {
+		user.Records = make(map[storage.ID]storage.Record)
+	}
+	user.Records["005000000000777"] = storage.Record{
+		ID:     "005000000000777",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"Id":        storage.IDValue("005000000000777"),
+			"ContactId": storage.IDValue("003000000000777"),
+			"Username":  storage.StringValue("member@example.test"),
+		},
+	}
+	org.Objects["User"] = user
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "SharingProbe", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "SharingProbe"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSOQLSharingAllowsCurrentUsersContactAccount(t *testing.T) {
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.SharingModel = "Private"
+	accountRecord := storage.Record{
+		ID:     "001000000000777",
+		Object: "Account",
+		System: storage.SystemFields{OwnerID: "005000000000001"},
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Member Account"),
+		},
+	}
+	account.Records["001000000000777"] = accountRecord
+	org.Objects["Account"] = account
+	contact := org.Objects["Contact"]
+	if contact.Records == nil {
+		contact.Records = make(map[storage.ID]storage.Record)
+	}
+	contact.Records["003000000000777"] = storage.Record{
+		ID:     "003000000000777",
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"AccountId": storage.IDValue("001000000000777"),
+			"LastName":  storage.StringValue("Member"),
+		},
+	}
+	org.Objects["Contact"] = contact
+	userRecord := storage.Record{
+		ID:     "005000000000777",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"Id":        storage.IDValue("005000000000777"),
+			"ContactId": storage.IDValue("003000000000777"),
+			"Username":  storage.StringValue("member@example.test"),
+		},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	machine.testContext.RunAsDepth = 1
+	machine.testContext.CurrentUser = vmValueFromRecord(userRecord)
+	machine.currentClass = "SharingProbe"
+	if err := machine.RegisterClass(Class{Name: "SharingProbe", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if !machine.currentClassHasSharingMode("with sharing") {
+		t.Fatal("test setup lost with sharing mode")
+	}
+	if machine.soqlObjectHasPublicReadSharing("Account") {
+		t.Fatal("test setup left Account publicly readable")
+	}
+	result := soql.Result{Rows: 1, Records: []storage.Record{accountRecord}}
+	filtered := machine.applySOQLSharing(soql.Query{Object: "Account"}, result)
+	if len(filtered.Records) != 1 {
+		t.Fatalf("filtered records = %d, want current user's contact account visible", len(filtered.Records))
 	}
 }
 
@@ -6814,7 +7154,7 @@ System.assertEquals(2, members.size());
 Object nameMember = members.get(0);
 System.assertEquals('Name', nameMember.getFieldPath());
 System.assertEquals('Account Name', nameMember.getLabel());
-System.assertEquals(Schema.SOAPType.STRING, nameMember.getType());
+System.assertEquals(Schema.DisplayType.STRING, nameMember.getType());
 System.assertEquals(Account.Name, nameMember.getSObjectField());
 System.assert(nameMember.getRequired());
 System.assert(nameMember.getDbRequired());
@@ -8965,6 +9305,462 @@ System.assertEquals(1, rows.size());
 	}
 }
 
+func TestExecDatabaseInsertGenericListPropagatesIDs(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme');
+List<SObject> records = new List<SObject>{account};
+Database.insert(records);
+System.assertNotEquals(null, account.Id);
+Account stored = [SELECT Id FROM Account WHERE Id = :account.Id];
+System.assertEquals(account.Id, stored.Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseInsertSingleSObjectPropagatesID(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme');
+Database.insert(account);
+System.assertNotEquals(null, account.Id);
+Account stored = [SELECT Id FROM Account WHERE Id = :account.Id];
+System.assertEquals(account.Id, stored.Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRecordFromValuePrefersPackageLocalFieldAliasOverCanonicalDefault(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "znu"
+	org.Objects["znu__Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "znu__Product__c",
+			KeyPrefix: "a12",
+			Fields: map[string]storage.Field{
+				"znu__RevenueGLAccount__c": {APIName: "znu__RevenueGLAccount__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__GLAccount__c"}},
+			},
+		},
+	}
+	machine.SetOrg(&org)
+	product := Object("znu__Product__c")
+	setExplicitSObjectField(&product, "znu__RevenueGLAccount__c", platformScalar("Id", "aNQ000000000001"))
+	setExplicitSObjectField(&product, "RevenueGLAccount__c", platformScalar("Id", "aNQ000000000002"))
+	record, err := machine.recordFromValue(&product)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := record.Fields["znu__RevenueGLAccount__c"]
+	if got.ID != "aNQ000000000002" {
+		t.Fatalf("RevenueGLAccount = %#v, want package-local alias value", got)
+	}
+}
+
+func TestExecDatabaseInsertGenericListAfterClearingPlaceholderIDPropagatesID(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme');
+account.Id = '001000000000999AAA';
+List<SObject> records = new List<SObject>{account};
+for (SObject record : records) {
+	record.Id = null;
+}
+Database.insert(records);
+System.assertNotEquals(null, account.Id);
+System.assertNotEquals('001000000000999AAA', account.Id);
+Account stored = [SELECT Id FROM Account WHERE Id = :account.Id];
+System.assertEquals(account.Id, stored.Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectPutFieldTokenPersistsThroughGenericListInsert(t *testing.T) {
+	program, err := CompileAnonymous(`
+SObject record = Account.SObjectType.newSObject(null, true);
+record.put(Account.Name, 'Test Org');
+List<SObject> records = new List<SObject>{record};
+Database.insert(records);
+List<Account> rows = [SELECT Id, Name FROM Account WHERE Name = 'Test Org'];
+System.assertEquals(1, rows.size());
+System.assertEquals('Test Org', rows[0].Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMapHeldSObjectPutFieldTokenPersistsThroughGenericListInsert(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> order = new List<String>();
+Map<String, List<SObject>> byType = new Map<String, List<SObject>>();
+SObject record = Account.SObjectType.newSObject(null, true);
+record.put(Account.Name, 'Test Org');
+String typeName = record.getSObjectType().getDescribe().getName();
+List<SObject> bucket = byType.get(typeName);
+if (bucket == null) {
+    bucket = new List<SObject>();
+    byType.put(typeName, bucket);
+    order.add(typeName);
+}
+bucket.add(record);
+for (String orderedType : order) {
+    List<SObject> inserts = byType.get(orderedType);
+    for (SObject inserted : inserts) {
+        inserted.Id = null;
+    }
+    Database.insert(inserts);
+}
+List<Account> rows = [SELECT Id, Name FROM Account WHERE Name = 'Test Org'];
+System.assertEquals(1, rows.size());
+System.assertEquals('Test Org', rows[0].Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecGenericListInsertKeepsRecordTypeIdWhenExplicitMarkerIsLost(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id businessRecordTypeId = '012RL00000CgP6aYAF';
+SObject record = Account.SObjectType.newSObject(null, true);
+record.put(Account.Name, 'Test Org');
+record.put(Account.RecordTypeId, businessRecordTypeId);
+List<SObject> records = new List<SObject>{record};
+Database.insert(records);
+Account stored = [SELECT Id, RecordTypeId FROM Account WHERE Name = 'Test Org'];
+System.assertEquals(businessRecordTypeId, stored.RecordTypeId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRecordsFromValueMergesSObjectAliasesFromCallerScope(t *testing.T) {
+	rich := Object("Account")
+	rich.Ref = 42
+	rich.Fields["Name"] = String("Test Org")
+	thin := Object("Account")
+	thin.Ref = 42
+	thin.Fields["Id"] = platformScalar("Id", "001000000000999AAA")
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.Globals["records"] = List(thin)
+	machine.scopeStack = []map[string]Value{{"record": rich}}
+	records, _, err := machine.recordsFromValue(machine.Globals["records"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(records) != 1 {
+		t.Fatalf("records len = %d", len(records))
+	}
+	if got, ok := records[0].GetField("Name"); !ok || got.String != "Test Org" {
+		t.Fatalf("merged Name = %#v ok=%v", got, ok)
+	}
+}
+
+func TestExecSObjectFieldAssignmentPropagatesToSameIDAliasBeforeInsert(t *testing.T) {
+	program, err := CompileAnonymous(`
+SObject cached = new Account(Id = '001000000000999AAA', Name = 'Old');
+Account account = (Account)cached;
+account.Name = 'Castro';
+cached.Id = null;
+Database.insert(new List<SObject>{cached});
+List<Account> rows = [SELECT Id, Name FROM Account WHERE Name = 'Castro'];
+System.assertEquals(1, rows.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDMLMergesSObjectAliasesFromStaticCache(t *testing.T) {
+	loadProgram, err := CompileAnonymous(`
+Cached = new Account(Id = '001000000000999AAA', Name = 'Old');
+return (Account)Cached;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	saveProgram, err := CompileAnonymous(`
+Cached.Id = null;
+insert new List<SObject>{ Cached };
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runProgram, err := CompileAnonymous(`
+Account account = AliasCache.load();
+account.Name = 'New';
+AliasCache.save();
+List<Account> rows = [SELECT Id, Name FROM Account WHERE Name = 'New'];
+System.assertEquals(1, rows.size());
+System.assertEquals(rows[0].Id, account.Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testProgram, err := CompileAnonymous(`
+AliasHarness.run();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "AliasCache",
+		StaticFields: map[string]Field{
+			"Cached": {Name: "Cached", Type: "SObject", Static: true},
+		},
+		Methods: map[string]Method{
+			"load#": {Name: "AliasCache.load", ClassName: "AliasCache", ReturnType: "Account", Program: loadProgram, IsStatic: true},
+			"save#": {Name: "AliasCache.save", ClassName: "AliasCache", ReturnType: "void", Program: saveProgram, IsStatic: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "AliasHarness",
+		Methods: map[string]Method{
+			"run#": {Name: "AliasHarness.run", ClassName: "AliasHarness", ReturnType: "void", Program: runProgram, IsStatic: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(testProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListIndexedSObjectAliasPersistsFieldMutation(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SObject> records = new List<SObject>{ new Account(Id = '001000000000999AAA', Name = 'Old') };
+Account first = (Account)records[0];
+Account second = (Account)records[0];
+first.Name = 'New';
+records[0].Id = null;
+insert records;
+List<Account> rows = [SELECT Id, Name FROM Account WHERE Name = 'New'];
+System.assertEquals(1, rows.size());
+System.assertEquals(rows[0].Id, first.Id);
+System.assertEquals(rows[0].Id, second.Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecObjectHeldConcreteSObjectListCastPreservesAliases(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account original = new Account(Id = '001000000000999AAA', Name = 'Old');
+Object cachedData = new List<Account>{ original };
+Account account = (Account)((List<SObject>)cachedData)[0];
+account.Name = 'New';
+List<SObject> records = (List<SObject>)cachedData;
+records[0].Id = null;
+insert records;
+List<Account> rows = [SELECT Id, Name FROM Account WHERE Name = 'New'];
+System.assertEquals(1, rows.size());
+System.assertEquals(rows[0].Id, account.Id);
+System.assertEquals(rows[0].Id, original.Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMapHeldConcreteSObjectListCastPreservesAliases(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account original = new Account(Id = '001000000000999AAA', Name = 'Old');
+Map<String,Object> recordsByDataSource = new Map<String,Object>();
+recordsByDataSource.put('DataSource$NewAccount', new List<Account>{ original });
+Account account = (Account)((List<SObject>)recordsByDataSource.get('DataSource$NewAccount'))[0];
+account.Name = 'New';
+Object cachedData = recordsByDataSource.get('DataSource$NewAccount');
+List<SObject> records = (List<SObject>)cachedData;
+records[0].Id = null;
+insert records;
+List<Account> rows = [SELECT Id, Name FROM Account WHERE Name = 'New'];
+System.assertEquals(1, rows.size());
+System.assertEquals(rows[0].Id, account.Id);
+System.assertEquals(rows[0].Id, original.Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecQueryServiceSaveNoOpsUnqueriedDataSource(t *testing.T) {
+	program, err := CompileAnonymous(`
+QueryService service = new QueryService();
+service.save('MissingDataSource', new UnitOfWork());
+service.recordsByDataSource.put('BadDataSource', 'not records');
+Boolean caught = false;
+try {
+	service.save('BadDataSource', new UnitOfWork());
+} catch (InvalidOperationException e) {
+	caught = true;
+}
+System.assert(caught, 'cached non-list data should still fail');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	saveProgram, err := CompileAnonymous(`
+Object cachedData = recordsByDataSource.get(dataSourceTypeName);
+if (!(cachedData instanceof List<SObject>)) {
+	throw new InvalidOperationException('Cannot save without a save operation implemented: ' + dataSourceTypeName);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctorProgram, err := CompileAnonymous(`
+recordsByDataSource = new Map<String,Object>();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "UnitOfWork",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "InvalidOperationException",
+		SuperClass: "Exception",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "QueryService",
+		Constructors: []Method{{
+			Name:          "QueryService.<init>",
+			ClassName:     "QueryService",
+			IsConstructor: true,
+			Program:       ctorProgram,
+		}},
+		Fields: map[string]Field{
+			"recordsByDataSource": {Name: "recordsByDataSource", Type: "Map<String,Object>"},
+		},
+		Methods: map[string]Method{
+			"save#String#UnitOfWork": {
+				Name:       "QueryService.save",
+				ClassName:  "QueryService",
+				ReturnType: "void",
+				Params: []Param{
+					{Name: "dataSourceTypeName", Type: "String"},
+					{Name: "unitOfWork", Type: "UnitOfWork"},
+				},
+				Program: saveProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPersonAccountSignalUsesPersonRecordTypeDefault(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account company = new Account(Name = 'Company');
+insert company;
+Account person = new Account(LastName = 'Castro');
+insert person;
+System.assertEquals('Business', [SELECT RecordType.DeveloperName FROM Account WHERE Id = :company.Id].RecordType.DeveloperName);
+System.assertEquals('Individual', [SELECT RecordType.DeveloperName FROM Account WHERE Id = :person.Id].RecordType.DeveloperName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	account := org.Objects["Account"]
+	account.Definition.RecordTypes = []storage.RecordTypeInfo{
+		{ID: "012000000000001", DeveloperName: "Business", Name: "Business", Active: true, Available: true, Default: true},
+		{ID: "012000000000002", DeveloperName: "Individual", Name: "Individual", Active: true, Available: true},
+	}
+	org.Objects["Account"] = account
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestApplyDMLTestNameDefaultsWithPartialInsert(t *testing.T) {
 	machine := New(nil)
 	org := testDataOrg()
@@ -10830,6 +11626,39 @@ func TestTriggerContextListsCarryConcreteSObjectType(t *testing.T) {
 	}
 	if score := machine.conversionScore("List<ActionEvent__e>", newList); score < 0 {
 		t.Fatalf("Trigger.new should be assignable to concrete List<ActionEvent__e>, score=%d", score)
+	}
+}
+
+func TestNamespacedCustomMetadataListAssignsToLocalType(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "znu"
+	machine.Org = &org
+
+	records := List(Object("znu__EventHandler__mdt"))
+	records.Type = "List<znu__EventHandler__mdt>"
+
+	coerced, err := machine.coerceAssignable("List<EventHandler__mdt>", records)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if coerced.Type != "List<EventHandler__mdt>" {
+		t.Fatalf("coerced type = %q, want List<EventHandler__mdt>", coerced.Type)
+	}
+}
+
+func TestNamespacedCustomMetadataListAssignsUsingCurrentClassNamespace(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "EventHandlerService", Namespace: "znu"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "EventHandlerService"
+
+	records := List(Object("znu__EventHandler__mdt"))
+	records.Type = "List<znu__EventHandler__mdt>"
+
+	if _, err := machine.coerceAssignable("List<EventHandler__mdt>", records); err != nil {
+		t.Fatal(err)
 	}
 }
 

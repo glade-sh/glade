@@ -997,8 +997,361 @@ public class SharedTestHelper {
 		t.Fatalf("discovered dependency test helpers as runnable cases: %#v", cases)
 	}
 	methods := compileProjectMethods(index)
-	if _, ok := methods["SharedTestHelper.value#"]; !ok {
+	found := false
+	for _, method := range methods {
+		if method.Name == "SharedTestHelper.value" {
+			found = true
+			break
+		}
+	}
+	if !found {
 		t.Fatalf("dependency @isTest helper method was not compiled; methods=%#v", methods)
+	}
+}
+
+func TestCompileProjectClassesKeepsDuplicateDependencyMethodsSeparate(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"NU","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/Shared.cls"), `
+public class Shared {
+  private String DepMarker;
+  public String depOnly() {
+    return DepMarker;
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+  defaultNamespace: znu
+  managedPackageDependencies: ["znu:../dep:1.0"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/Shared.cls"), `
+public class Shared {
+  private String LocalMarker;
+  public String localOnly() {
+    return LocalMarker;
+  }
+}
+`)
+
+	index := loadTestIndex(t, consumerRoot)
+	methods := compileProjectMethods(index)
+	classes := compileProjectClasses(index, methods)
+	for _, class := range classes {
+		if _, ok := class.Fields["LocalMarker"]; !ok {
+			continue
+		}
+		if _, ok := class.Methods["depOnly#"]; ok {
+			t.Fatalf("local duplicate class received dependency method: %#v", class.Methods)
+		}
+		return
+	}
+	t.Fatalf("local duplicate class not found: %#v", classes)
+}
+
+func TestCompileProjectMethodsKeepsDuplicateSameSignatureMethodsSeparate(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"NU","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/SObjectTestData.cls"), `
+public abstract class SObjectTestData {
+  public abstract String getSObjectType();
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+  defaultNamespace: znu
+  managedPackageDependencies: ["znu:../dep:1.0"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/SObjectTestData.cls"), `
+public abstract class SObjectTestData {
+  protected abstract String getSObjectType();
+}
+`)
+
+	index := loadTestIndex(t, consumerRoot)
+	methods := compileProjectMethods(index)
+	count := 0
+	for _, method := range methods {
+		if method.Name == "SObjectTestData.getSObjectType" {
+			count++
+		}
+	}
+	if count != 2 {
+		t.Fatalf("compiled %d duplicate getSObjectType methods, want 2; methods=%#v", count, methods)
+	}
+}
+
+func TestRunDependencyDuplicateSelectorUsesDependencyProjection(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/DuplicateSelector.cls"), `
+public class DuplicateSelector {
+  public static DuplicateSelector Instance {
+    get {
+      if (Instance == null) {
+        Instance = new DuplicateSelector();
+      }
+      return Instance;
+    }
+    private set;
+  }
+  public List<Account> selectById(Set<Id> ids) {
+    return Database.query('SELECT ' + fieldList() + ' FROM Account WHERE Id IN :ids');
+  }
+  private String fieldList() {
+    return 'Id,Name,AccountNumber';
+  }
+}
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/DependencyCartService.cls"), `
+public class DependencyCartService {
+  public static String accountNumber(Id accountId) {
+    Account account = DuplicateSelector.Instance.selectById(new Set<Id>{accountId})[0];
+    return account.AccountNumber;
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:../dep:1.0"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/DuplicateSelector.cls"), `
+public class DuplicateSelector {
+  public List<Account> selectById(Set<Id> ids) {
+    return Database.query('SELECT ' + fieldList() + ' FROM Account WHERE Id IN :ids');
+  }
+  private String fieldList() {
+    return 'Id,Name';
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/DuplicateSelectorProjectionTest.cls"), `
+@isTest
+private class DuplicateSelectorProjectionTest {
+  @isTest static void dependencyProjectionWinsForDependencyCaller() {
+    Account account = new Account(Name = 'Acme', AccountNumber = '42');
+    insert account;
+    System.assertEquals('42', DependencyCartService.accountNumber(account.Id));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, consumerRoot), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunDependencyDuplicateSuperCallUsesDependencyBaseMethod(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/DuplicateSelector.cls"), `
+public virtual class DuplicateSelector {
+  public virtual List<Account> selectById(Set<Id> ids) {
+    return Database.query('SELECT ' + fieldList() + ' FROM Account WHERE Id IN :ids');
+  }
+  protected virtual String fieldList() {
+    return 'Id,Name,AccountNumber';
+  }
+  public class Impl extends DuplicateSelector {
+    public override List<Account> selectById(Set<Id> ids) {
+      return super.selectById(ids);
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/DependencyCartService.cls"), `
+public class DependencyCartService {
+  public static String accountNumber(Id accountId) {
+    Account account = new DuplicateSelector.Impl().selectById(new Set<Id>{accountId})[0];
+    return account.AccountNumber;
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:../dep:1.0"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/DuplicateSelector.cls"), `
+public virtual class DuplicateSelector {
+  public virtual List<Account> selectById(Set<Id> ids) {
+    return Database.query('SELECT ' + fieldList() + ' FROM Account WHERE Id IN :ids');
+  }
+  protected virtual String fieldList() {
+    return 'Id,Name';
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/DuplicateSelectorSuperTest.cls"), `
+@isTest
+private class DuplicateSelectorSuperTest {
+  @isTest static void dependencySuperUsesDependencyBaseMethod() {
+    Account account = new Account(Name = 'Acme', AccountNumber = '42');
+    insert account;
+    System.assertEquals('42', DependencyCartService.accountNumber(account.Id));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, consumerRoot), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunDependencyDuplicateClassUsesDependencyFieldShape(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/DuplicateNode.cls"), `
+public class DuplicateNode {
+  protected String field;
+  public DuplicateNode(String field) {
+    this.field = field;
+  }
+  public String value() {
+    return field;
+  }
+}
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/DependencyNodeService.cls"), `
+public class DependencyNodeService {
+  public static String value() {
+    return new DuplicateNode('Name').value();
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:../dep:1.0"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/DuplicateNode.cls"), `
+public class DuplicateNode {
+  protected Schema.SObjectField field;
+  public DuplicateNode(Schema.SObjectField field) {
+    this.field = field;
+  }
+  public String value() {
+    return field.getDescribe().getName();
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/DuplicateNodeFieldTest.cls"), `
+@isTest
+private class DuplicateNodeFieldTest {
+  @isTest static void dependencyFieldShapeWinsForDependencyCaller() {
+    System.assertEquals('Name', DependencyNodeService.value());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, consumerRoot), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunProjectDuplicateClassKeepsProjectReceiverState(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/OperationResult.cls"), `
+public class OperationResult {
+  public enum OperationStatus { SUCCESS, FAILURE }
+  public OperationStatus Status { get; set; }
+  public OperationResult() {
+    Status = OperationStatus.SUCCESS;
+  }
+  public static OperationResult newInstance() {
+    return new OperationResult();
+  }
+  public static void addErrorMessage(OperationResult result, String errMsg) {
+    result.Status = OperationStatus.FAILURE;
+  }
+  public void addErrorMessage(String errMsg) {
+    OperationResult.addErrorMessage(this, errMsg);
+  }
+  public Boolean isSuccessful() {
+    return Status == OperationStatus.SUCCESS;
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:../dep:1.0"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/OperationResult.cls"), `
+public class OperationResult {
+  private Status resultStatus;
+  private List<Message> messages;
+  public enum Status { SUCCESS, ERROR }
+  private OperationResult() {
+    resultStatus = Status.SUCCESS;
+    messages = new List<Message>();
+  }
+  public static OperationResult newInstance() {
+    return new OperationResult();
+  }
+  public OperationResult addErrorMessage(String message) {
+    resultStatus = Status.ERROR;
+    messages.add(new ErrorMessage(message));
+    return this;
+  }
+  public Boolean isSuccessful() {
+    return resultStatus == Status.SUCCESS;
+  }
+  public Boolean isNotSuccessful() {
+    return !isSuccessful();
+  }
+  private virtual class Message {
+    protected String messageStr;
+    protected OperationResult.Status messageStatus;
+    public Message(String messageStr) {
+      messageStatus = OperationResult.Status.SUCCESS;
+      this.messageStr = messageStr;
+    }
+  }
+  private class ErrorMessage extends Message {
+    public ErrorMessage(String messageStr) {
+      super(messageStr);
+      this.messageStatus = OperationResult.Status.ERROR;
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/OperationResponse.cls"), `
+public class OperationResponse {
+  public OperationResult Result { get; private set; }
+  public OperationResponse(OperationResult failedResult) {
+    this.Result = failedResult;
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/OperationResultTest.cls"), `
+@isTest
+private class OperationResultTest {
+  @isTest static void projectDuplicateReceiverStateWins() {
+    OperationResult result = OperationResult.newInstance();
+    result.addErrorMessage('failed');
+    System.assert(result.isNotSuccessful(), 'consumer result should stay failed');
+    OperationResponse response = new OperationResponse(result);
+    System.assert(response.Result.isNotSuccessful(), 'response result should stay failed');
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, consumerRoot), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
 	}
 }
 
@@ -1887,6 +2240,83 @@ private class MoodTest {
 `)
 
 	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestRunExecutesNestedEnumValues(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Result.cls"), `
+public class Result {
+  public enum Status {
+    SUCCESS,
+    ERROR
+  }
+  private Status value;
+  public Result() {
+    value = Status.SUCCESS;
+  }
+  public Boolean ok() {
+    return value == Status.SUCCESS;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ResultTest.cls"), `
+@isTest
+private class ResultTest {
+  @isTest static void nestedEnumValueResolvesInsideOwner() {
+    System.assertEquals(true, new Result().ok());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestRunNestedEnumValueBeatsMergedDependencyField(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/Result.cls"), `
+global class Result {
+  global String Status { get; set; }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:../dep:1.0"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/Result.cls"), `
+global class Result {
+  public enum Status {
+    SUCCESS,
+    ERROR
+  }
+  private Status value;
+  private Result() {
+    value = Status.SUCCESS;
+  }
+  global static Boolean ok() {
+    return new Result().value == Status.SUCCESS;
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/ResultTest.cls"), `
+@isTest
+private class ResultTest {
+  @isTest static void nestedEnumValueResolvesBeforeMergedField() {
+    System.assertEquals(true, Result.ok());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, consumerRoot), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v run=%#v", got, run)
 	}
@@ -3086,6 +3516,112 @@ private class RunAsDMLTest {
     List<Thing__c> rows = [SELECT Id, LastModifiedById FROM Thing__c];
     System.assertEquals(1, rows.size());
     System.assertEquals('005000000000999', rows[0].LastModifiedById);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunAsPersistsUserContactRelationship(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/RunAsContactTest.cls"), `
+@isTest
+private class RunAsContactTest {
+  @isTest static void queriesContactAccount() {
+    Account account = new Account(Name = 'acct');
+    insert account;
+    Contact contact = new Contact(LastName = 'member', AccountId = account.Id);
+    insert contact;
+    User u = new User(ProfileId = '00e000000000006', Username = 'user-a@example.test', ContactId = contact.Id);
+
+    System.runAs(u) {
+      System.assertNotEquals(null, UserInfo.getUserId());
+      User current = [SELECT Contact.AccountId FROM User WHERE Id = :UserInfo.getUserId()];
+      System.assertEquals(account.Id, current.Contact.AccountId);
+    }
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunAsPersistsNamespacedPersonContactRelationship(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"znu"}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/PersonContact__c.field-meta.xml"), `
+<CustomField>
+  <fullName>PersonContact__c</fullName>
+  <type>Lookup</type>
+  <referenceTo>Contact</referenceTo>
+  <relationshipName>PersonContact</relationshipName>
+</CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/PersonAccount/recordTypes/Individual.recordType-meta.xml"), `
+<RecordType>
+  <fullName>Individual</fullName>
+  <label>Individual</label>
+  <active>true</active>
+</RecordType>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/RunAsPersonContactTest.cls"), `
+@isTest
+private class RunAsPersonContactTest {
+  @isTest static void queriesPersonContactAccount() {
+    Id recordTypeId = [SELECT Id FROM RecordType WHERE SobjectType = 'Account' AND DeveloperName = 'Individual' LIMIT 1].Id;
+    Account account = new Account(FirstName = 'Ada', LastName = 'Lovelace', RecordTypeId = recordTypeId);
+    insert account;
+    Account stored = [SELECT znu__PersonContact__c FROM Account WHERE Id = :account.Id LIMIT 1];
+    System.assertNotEquals(null, stored.znu__PersonContact__c);
+    User u = new User(ProfileId = '00e000000000006', Username = 'person-user@example.test', ContactId = stored.znu__PersonContact__c);
+
+    System.runAs(u) {
+      User current = [SELECT Contact.AccountId FROM User WHERE Id = :UserInfo.getUserId()];
+      System.assertEquals(account.Id, current.Contact.AccountId);
+    }
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunAsUserCanQueryOwnContactAccountWithSharing(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"znu"}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `
+<CustomObject>
+  <sharingModel>Private</sharingModel>
+</CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AccountSelector.cls"), `
+public with sharing class AccountSelector {
+  public List<Account> selectById(Set<Id> accountIds) {
+    return Database.query('SELECT Id, Name FROM Account WHERE Id IN :accountIds');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/RunAsContactAccountSharingTest.cls"), `
+@isTest
+private class RunAsContactAccountSharingTest {
+  @isTest static void canQueryOwnContactAccountWithSharing() {
+    Account account = new Account(Name = 'acct');
+    insert account;
+    Contact contact = new Contact(AccountId = account.Id, LastName = 'member');
+    insert contact;
+    User u = new User(ProfileId = '00e000000000006', Username = 'community@example.test', ContactId = contact.Id);
+
+    System.runAs(u) {
+      System.assertEquals(1, new AccountSelector().selectById(new Set<Id>{account.Id}).size());
+    }
   }
 }
 `)
@@ -4384,14 +4920,20 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 	org := orgFromIndex(loadTestIndex(t, root))
 	profiles := org.Objects["Profile"].Records
 	foundProfile := false
+	foundGuestProfile := false
 	for _, record := range profiles {
 		if record.Fields["Name"].String == "Nimble AMS Standard" {
 			foundProfile = true
-			break
+		}
+		if record.Fields["Name"].String == "Customer Community Guest User" {
+			foundGuestProfile = true
 		}
 	}
 	if !foundProfile {
 		t.Fatalf("project profile row was not created; records=%#v", profiles)
+	}
+	if !foundGuestProfile {
+		t.Fatalf("guest profile row was overwritten; records=%#v", profiles)
 	}
 	if !recordWithFieldValueExists(org.Objects["PermissionSet"], "Name", "Read_access_to_Account_Shipping_Address") {
 		t.Fatalf("project permission set row was not created; records=%#v", org.Objects["PermissionSet"].Records)
@@ -4404,6 +4946,51 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 	}
 	if !recordWithFieldValueExists(org.Objects["PermissionSetGroup"], "DeveloperName", "Permission_Set_Group_for_testing") {
 		t.Fatalf("project permission set group row was not created; records=%#v", org.Objects["PermissionSetGroup"].Records)
+	}
+}
+
+func TestOrgFromIndexAddsProfileVisiblePersonAccountRecordTypes(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/PersonAccount/PersonAccount.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Person Account</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/PersonAccount/recordTypes/Individual.recordType-meta.xml"), `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Individual</fullName><label>Individual</label><active>true</active></RecordType>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/profiles/Community.profile-meta.xml"), `<Profile xmlns="http://soap.sforce.com/2006/04/metadata">
+  <recordTypeVisibilities>
+    <default>true</default>
+    <recordType>PersonAccount.pkg__Individual</recordType>
+    <visible>true</visible>
+  </recordTypeVisibilities>
+</Profile>`)
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	account := org.Objects["Account"]
+	foundDefinition := false
+	for _, recordType := range account.Definition.RecordTypes {
+		if recordType.DeveloperName == "Individual" && recordType.Name == "Individual" && !recordType.Default {
+			foundDefinition = true
+			break
+		}
+	}
+	if !foundDefinition {
+		t.Fatalf("Account record types missing profile-visible Individual: %#v", account.Definition.RecordTypes)
+	}
+	foundRecord := false
+	for _, record := range org.Objects["RecordType"].Records {
+		if record.Fields["SobjectType"].String == "PersonAccount" {
+			t.Fatalf("RecordType rows should fold PersonAccount into Account: %#v", org.Objects["RecordType"].Records)
+		}
+		if record.Fields["SobjectType"].String == "Account" && record.Fields["DeveloperName"].String == "Individual" && record.Fields["Name"].String == "Individual" {
+			foundRecord = true
+			break
+		}
+	}
+	if !foundRecord {
+		t.Fatalf("RecordType rows missing Account.Individual: %#v", org.Objects["RecordType"].Records)
+	}
+	for _, record := range org.Objects["RecordType"].Records {
+		if record.Fields["SobjectType"].String == "PersonAccount" {
+			t.Fatalf("PersonAccount record type row leaked into RecordType: %#v", record)
+		}
 	}
 }
 

@@ -53,6 +53,10 @@ type fieldSetXML struct {
 	AvailableFields []fieldSetMemberXML `xml:"availableFields"`
 }
 
+type objectFieldSetsXML struct {
+	FieldSets []fieldSetXML `xml:"fieldSets"`
+}
+
 type fieldSetMemberXML struct {
 	Field    string `xml:"field"`
 	Required bool   `xml:"isRequired"`
@@ -160,6 +164,13 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 		}
 		registry.FieldSets = append(registry.FieldSets, fieldSet)
 	}
+	for _, path := range p.ObjectFiles {
+		fieldSets, err := loadObjectFieldSets(path)
+		if err != nil {
+			return storage.MetadataRegistry{}, err
+		}
+		registry.FieldSets = append(registry.FieldSets, fieldSets...)
+	}
 	for _, path := range p.NamedCredentialFiles {
 		endpoint, err := loadNamedCredential(path)
 		if err != nil {
@@ -179,7 +190,7 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 }
 
 func ApplyProject(org *storage.OrgState, p project.Project) error {
-	registry, err := LoadProject(p)
+	registry, err := LoadProjectWithDependencies(p)
 	if err != nil {
 		return err
 	}
@@ -190,6 +201,41 @@ func ApplyProject(org *storage.OrgState, p project.Project) error {
 	}
 	ensureApexPageObject(org, p.VisualforcePageFiles, p.Namespace)
 	return nil
+}
+
+func LoadProjectWithDependencies(p project.Project) (storage.MetadataRegistry, error) {
+	registry, err := LoadProject(p)
+	if err != nil {
+		return storage.MetadataRegistry{}, err
+	}
+	for _, dep := range p.ManagedPackageDependencies {
+		if dep.Status != "loaded" || dep.Project == nil {
+			continue
+		}
+		depRegistry, err := LoadProjectWithDependencies(*dep.Project)
+		if err != nil {
+			return storage.MetadataRegistry{}, err
+		}
+		mergeRegistry(&registry, depRegistry)
+	}
+	sortRegistry(&registry)
+	return registry, nil
+}
+
+func mergeRegistry(dst *storage.MetadataRegistry, src storage.MetadataRegistry) {
+	if dst == nil {
+		return
+	}
+	dst.Labels = append(dst.Labels, src.Labels...)
+	dst.ManagedLabelNamespaces = append(dst.ManagedLabelNamespaces, src.ManagedLabelNamespaces...)
+	dst.DataCategoryGroups = append(dst.DataCategoryGroups, src.DataCategoryGroups...)
+	dst.StaticResources = append(dst.StaticResources, src.StaticResources...)
+	dst.ContentAssets = append(dst.ContentAssets, src.ContentAssets...)
+	dst.EmailTemplates = append(dst.EmailTemplates, src.EmailTemplates...)
+	dst.Tabs = append(dst.Tabs, src.Tabs...)
+	dst.QuickActions = append(dst.QuickActions, src.QuickActions...)
+	dst.FieldSets = append(dst.FieldSets, src.FieldSets...)
+	dst.Endpoints = append(dst.Endpoints, src.Endpoints...)
 }
 
 func StaticResourceURL(name string) string {
@@ -287,9 +333,36 @@ func loadFieldSet(path string) (storage.FieldSetMetadata, error) {
 			return storage.FieldSetMetadata{}, err
 		}
 	}
+	return fieldSetFromXML(raw, objectNameFromFieldSetPath(path), metadataNameFromPath(path, ".fieldSet-meta.xml", ".fieldSet"), path), nil
+}
+
+func loadObjectFieldSets(path string) ([]storage.FieldSetMetadata, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var raw objectFieldSetsXML
+	if len(strings.TrimSpace(string(data))) > 0 {
+		if err := xml.Unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+	}
+	out := make([]storage.FieldSetMetadata, 0, len(raw.FieldSets))
+	objectName := objectNameFromObjectPath(path)
+	for _, rawFieldSet := range raw.FieldSets {
+		fieldSet := fieldSetFromXML(rawFieldSet, objectName, "", path)
+		if fieldSet.Name == "" {
+			continue
+		}
+		out = append(out, fieldSet)
+	}
+	return out, nil
+}
+
+func fieldSetFromXML(raw fieldSetXML, objectName, fallbackName, path string) storage.FieldSetMetadata {
 	name := strings.TrimSpace(raw.FullName)
 	if name == "" {
-		name = metadataNameFromPath(path, ".fieldSet-meta.xml", ".fieldSet")
+		name = fallbackName
 	}
 	members := make([]storage.FieldSetMemberMetadata, 0, len(raw.DisplayedFields)+len(raw.AvailableFields))
 	for _, member := range append(raw.DisplayedFields, raw.AvailableFields...) {
@@ -300,12 +373,12 @@ func loadFieldSet(path string) (storage.FieldSetMetadata, error) {
 		members = append(members, storage.FieldSetMemberMetadata{Field: field, Required: member.Required})
 	}
 	return storage.FieldSetMetadata{
-		ObjectName: objectNameFromFieldSetPath(path),
+		ObjectName: objectName,
 		Name:       name,
 		Label:      strings.TrimSpace(raw.Label),
 		Fields:     members,
 		File:       path,
-	}, nil
+	}
 }
 
 func objectNameFromFieldSetPath(path string) string {
@@ -318,6 +391,16 @@ func objectNameFromFieldSetPath(path string) string {
 		return ""
 	}
 	return filepath.Base(objectDir)
+}
+
+func objectNameFromObjectPath(path string) string {
+	base := filepath.Base(path)
+	for _, suffix := range []string{".object-meta.xml", ".object"} {
+		if strings.HasSuffix(base, suffix) {
+			return strings.TrimSuffix(base, suffix)
+		}
+	}
+	return ""
 }
 
 func metadataNameFromPath(path string, suffixes ...string) string {

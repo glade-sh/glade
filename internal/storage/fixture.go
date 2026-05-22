@@ -721,6 +721,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	standardPlatformUserProfileID := ID("00e000000000004")
 	standardUserProfileID := ID("00e000000000005")
 	marketingUserProfileID := ID("00e000000000006")
+	guestProfileID := ID("00e000000000007")
 	salesforceLicenseID := ID("100000000000001")
 	chatterExternalLicenseID := ID("100000000000002")
 	roleID := ID("00E000000000001")
@@ -775,6 +776,11 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		ID:     chatterExternalProfileID,
 		Object: "Profile",
 		Fields: profileSeedFields("Chatter External User", chatterExternalLicenseID),
+	})
+	putSeedRecord(org, "Profile", Record{
+		ID:     guestProfileID,
+		Object: "Profile",
+		Fields: profileSeedFields("Customer Community Guest User", chatterExternalLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     standardPlatformUserProfileID,
@@ -883,6 +889,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	seedProfileOwnedPermissionSet(ID("0PS000000000006"), "Standard Platform User", standardPlatformUserProfileID)
 	seedProfileOwnedPermissionSet(ID("0PS000000000007"), "Standard User", standardUserProfileID)
 	seedProfileOwnedPermissionSet(ID("0PS000000000008"), "Marketing User", marketingUserProfileID)
+	seedProfileOwnedPermissionSet(ID("0PS000000000009"), "Customer Community Guest User", guestProfileID)
 	putSeedRecord(org, "PermissionSetAssignment", Record{
 		ID:     assignmentID,
 		Object: "PermissionSetAssignment",
@@ -932,11 +939,11 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	}
 	for object, sequence := range map[string]uint64{
 		"Organization":            1,
-		"Profile":                 6,
+		"Profile":                 7,
 		"UserLicense":             2,
 		"UserRole":                1,
 		"User":                    2,
-		"PermissionSet":           8,
+		"PermissionSet":           9,
 		"PermissionSetAssignment": 1,
 		"FieldPermissions":        1,
 		"ObjectPermissions":       2,
@@ -1042,6 +1049,7 @@ func ensureRecordTypeObject(org *OrgState) {
 		"NamespacePrefix": {APIName: "NamespacePrefix", Type: FieldString},
 		"SobjectType":     {APIName: "SobjectType", Type: FieldString},
 		"IsActive":        {APIName: "IsActive", Type: FieldBoolean},
+		"IsPersonType":    {APIName: "IsPersonType", Type: FieldBoolean},
 		"Description":     {APIName: "Description", Type: FieldString},
 	})
 }
@@ -1108,6 +1116,7 @@ func ensureRecordTypeRecords(org *OrgState) {
 					"NamespacePrefix": StringValue(namespacePrefix),
 					"SobjectType":     StringValue(objectName),
 					"IsActive":        BooleanValue(info.Active),
+					"IsPersonType":    BooleanValue(recordTypeIsPersonType(objectName, info)),
 					"Description":     StringValue(info.Description),
 				},
 			})
@@ -1127,6 +1136,24 @@ func recordTypeSeedNamespace(record Record) string {
 		return ""
 	}
 	return strings.TrimSpace(value.String)
+}
+
+func recordTypeIsPersonType(objectName string, info RecordTypeInfo) bool {
+	if !strings.EqualFold(objectName, "Account") {
+		return false
+	}
+	developerName := strings.ToLower(strings.TrimSpace(info.DeveloperName))
+	name := strings.ToLower(strings.TrimSpace(info.Name))
+	for _, value := range []string{developerName, name} {
+		switch value {
+		case "individual", "personaccount", "person_account", "person account":
+			return true
+		}
+		if strings.Contains(value, "person") {
+			return true
+		}
+	}
+	return false
 }
 
 func recordTypeNamespacePrefix(org OrgState, info RecordTypeInfo) string {
@@ -1275,7 +1302,18 @@ func hasParentRelationship(relations []Relationship, name string) bool {
 
 func putSeedRecord(org *OrgState, objectName string, record Record) {
 	object := org.Objects[objectName]
-	if _, exists := object.Records[record.ID]; exists {
+	if existing, exists := object.Records[record.ID]; exists {
+		if existing.Fields == nil {
+			existing.Fields = make(map[string]Value)
+		}
+		for field, value := range record.Fields {
+			if _, ok := existing.Fields[field]; !ok {
+				existing.Fields[field] = value
+			}
+		}
+		stampSeedSystemFields(&existing)
+		object.Records[record.ID] = existing
+		org.Objects[objectName] = object
 		return
 	}
 	seeded := record.Clone()

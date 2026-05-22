@@ -1937,6 +1937,120 @@ System.assert(record.get(createdDateField) != System.now());
 	}
 }
 
+func TestExecNamespacedSObjectFieldMapKeysStayDistinct(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<Schema.SObjectField, Object> values = new Map<Schema.SObjectField, Object>();
+values.put(znu__Product__c.znu__RevenueGLAccount__c, 'gl');
+values.put(znu__Product__c.znu__Entity__c, 'entity');
+System.assertEquals(2, values.size(), String.valueOf(values.keySet()));
+System.assertEquals('gl', values.get(znu__Product__c.znu__RevenueGLAccount__c));
+System.assertEquals('entity', values.get(znu__Product__c.znu__Entity__c));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "znu"
+	org.Objects["znu__Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "znu__Product__c",
+			KeyPrefix: "a12",
+			Fields: map[string]storage.Field{
+				"znu__RevenueGLAccount__c": {APIName: "znu__RevenueGLAccount__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__GLAccount__c"}},
+				"znu__Entity__c":           {APIName: "znu__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__Entity__c"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedSObjectFieldSetRemoveAllMatchesEquivalentTokens(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> described = znu__Product__c.SObjectType.getDescribe().fields.getMap();
+Map<Schema.SObjectField, Object> defaults = new Map<Schema.SObjectField, Object>{
+  described.get('znu__RevenueGLAccount__c') => 'default gl',
+  described.get('znu__Entity__c') => 'default entity'
+};
+Map<Schema.SObjectField, Object> custom = new Map<Schema.SObjectField, Object>{
+  znu__Product__c.znu__RevenueGLAccount__c => 'custom gl'
+};
+Set<Schema.SObjectField> fields = defaults.keySet().clone();
+fields.removeAll(custom.keySet());
+System.assertEquals(false, fields.contains(znu__Product__c.znu__RevenueGLAccount__c), String.valueOf(fields));
+System.assertEquals(true, fields.contains(znu__Product__c.znu__Entity__c), String.valueOf(fields));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "znu"
+	org.Objects["znu__Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "znu__Product__c",
+			KeyPrefix: "a12",
+			Fields: map[string]storage.Field{
+				"znu__RevenueGLAccount__c": {APIName: "znu__RevenueGLAccount__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__GLAccount__c"}},
+				"znu__Entity__c":           {APIName: "znu__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__Entity__c"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecBuildNamespacedSObjectFromDefaultAndCustomFieldMaps(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<Schema.SObjectField, Object> defaults = new Map<Schema.SObjectField, Object>{
+  znu__Product__c.znu__RevenueGLAccount__c => 'default gl',
+  znu__Product__c.znu__Entity__c => 'default entity'
+};
+Map<Schema.SObjectField, Object> custom = new Map<Schema.SObjectField, Object>();
+custom.put(znu__Product__c.znu__RevenueGLAccount__c, 'custom gl');
+custom.put(znu__Product__c.znu__Entity__c, 'custom entity');
+SObject instance = znu__Product__c.SObjectType.newSObject(null, true);
+Set<Schema.SObjectField> defaultFields = defaults.keySet().clone();
+defaultFields.removeAll(custom.keySet());
+for (Schema.SObjectField field : defaultFields) {
+  instance.put(field, defaults.get(field));
+}
+for (Schema.SObjectField field : custom.keySet()) {
+  instance.put(field, custom.get(field));
+}
+System.assertEquals('custom gl', instance.get(znu__Product__c.znu__RevenueGLAccount__c), String.valueOf(instance.getPopulatedFieldsAsMap()));
+System.assertEquals('custom entity', instance.get(znu__Product__c.znu__Entity__c), String.valueOf(instance.getPopulatedFieldsAsMap()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "znu"
+	org.Objects["znu__Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "znu__Product__c",
+			KeyPrefix: "a12",
+			Fields: map[string]storage.Field{
+				"znu__RevenueGLAccount__c": {APIName: "znu__RevenueGLAccount__c", Type: storage.FieldString},
+				"znu__Entity__c":           {APIName: "znu__Entity__c", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCastsSObjectListMapValuesToConcreteSObjectLists(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id ownerId = '005000000000001AAA';

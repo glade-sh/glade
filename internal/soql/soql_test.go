@@ -32,6 +32,69 @@ func TestParseForView(t *testing.T) {
 	}
 }
 
+func TestParseNotEqualAngleOperatorBeforeNull(t *testing.T) {
+	query, err := Parse("SELECT Id FROM CartItem__c WHERE OrderItem__c <> NULL")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if query.Where.Op != "!=" || query.Where.Value.Kind != storage.ValueNull {
+		t.Fatalf("where = %#v, want != null", query.Where)
+	}
+}
+
+func TestExecuteWhereIncludesMatchesSemicolonDelimitedValues(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Product__c",
+			Fields: map[string]storage.Field{
+				"Name":            {APIName: "Name", Type: storage.FieldString},
+				"PriceClasses__c": {APIName: "PriceClasses__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {
+				ID:     "a01000000000001",
+				Object: "Product__c",
+				Fields: map[string]storage.Value{
+					"Name":            storage.StringValue("Member Shirt"),
+					"PriceClasses__c": storage.StringValue("Member;VIP"),
+				},
+			},
+			"a01000000000002": {
+				ID:     "a01000000000002",
+				Object: "Product__c",
+				Fields: map[string]storage.Value{
+					"Name":            storage.StringValue("Public Hat"),
+					"PriceClasses__c": storage.StringValue("Public"),
+				},
+			},
+			"a01000000000003": {
+				ID:     "a01000000000003",
+				Object: "Product__c",
+				Fields: map[string]storage.Value{
+					"Name": storage.StringValue("Blank Mug"),
+				},
+			},
+		},
+	}
+
+	query, err := Parse("SELECT Id FROM Product__c WHERE PriceClasses__c INCLUDES('Member')")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if query.Where.Op != "INCLUDES" || query.Where.Value.String != "Member" {
+		t.Fatalf("where = %#v, want INCLUDES Member", query.Where)
+	}
+	result, err := Execute(org, query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].ID != "a01000000000001" {
+		t.Fatalf("records = %#v, want member product only", result.Records)
+	}
+}
+
 func TestParseCountQuery(t *testing.T) {
 	query, err := Parse("SELECT COUNT() FROM Account")
 	if err != nil {
@@ -1313,6 +1376,14 @@ func TestExecuteFiltersProjectsAndOrders(t *testing.T) {
 	}
 	if _, ok := record.Fields["Active"]; ok {
 		t.Fatalf("unprojected field leaked: %#v", record.Fields)
+	}
+
+	result, err = ParseAndExecute(org, "SELECT Id, Name FROM Account WHERE Active = true ORDER BY Name LIMIT 0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 0 || len(result.Records) != 0 {
+		t.Fatalf("limit zero result = %#v", result)
 	}
 
 	result, err = ParseAndExecute(org, "SELECT Id, Name FROM Account WHERE Active = true ORDER BY Name DESC LIMIT 1")

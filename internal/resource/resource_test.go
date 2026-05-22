@@ -41,6 +41,13 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
   <displayedFields><field>Name</field><isRequired>true</isRequired></displayedFields>
   <availableFields><field>Rating</field></availableFields>
 </FieldSet>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `<CustomObject>
+  <fieldSets>
+    <fullName>InlineSummary</fullName>
+    <label>Inline Summary</label>
+    <displayedFields><field>Phone</field><isRequired>true</isRequired></displayedFields>
+  </fieldSets>
+</CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/email/welcome.email"), "Hello {!Recipient.FirstName}")
 	writeFile(t, filepath.Join(root, "force-app/main/default/email/welcome.email-meta.xml"), `<EmailTemplate>
   <fullName>unfiled$public/welcome</fullName>
@@ -102,7 +109,7 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	if len(registry.QuickActions) != 1 || registry.QuickActions[0].Name != "Account.NewTask" || registry.QuickActions[0].TargetObject != "Account" || registry.QuickActions[0].Label != "New Task" {
 		t.Fatalf("quick actions = %#v", registry.QuickActions)
 	}
-	if len(registry.FieldSets) != 1 || registry.FieldSets[0].ObjectName != "Account" || registry.FieldSets[0].Name != "Summary" || len(registry.FieldSets[0].Fields) != 2 || !registry.FieldSets[0].Fields[0].Required {
+	if len(registry.FieldSets) != 2 || registry.FieldSets[0].ObjectName != "Account" || registry.FieldSets[0].Name != "InlineSummary" || len(registry.FieldSets[0].Fields) != 1 || !registry.FieldSets[0].Fields[0].Required || registry.FieldSets[1].Name != "Summary" || len(registry.FieldSets[1].Fields) != 2 {
 		t.Fatalf("field sets = %#v", registry.FieldSets)
 	}
 	if len(registry.EmailTemplates) != 1 || registry.EmailTemplates[0].DeveloperName != "welcome" || registry.EmailTemplates[0].Body != "Hello {!Recipient.FirstName}" {
@@ -161,6 +168,34 @@ func TestLoadProjectDiscoversUnpackagedStaticResourceFiles(t *testing.T) {
 		}
 	}
 	t.Fatalf("resetcss StaticResource record was not created; records=%#v", object.Records)
+}
+
+func TestApplyProjectIncludesLoadedDependencyFieldSets(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/Account/fieldSets/BillMeAddress.fieldSet-meta.xml"), `<FieldSet>
+  <fullName>BillMeAddress</fullName>
+  <label>Bill Me Address</label>
+  <displayedFields><field>BillingStreet</field></displayedFields>
+</FieldSet>`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:../dep:1.0"]
+`)
+
+	p, err := project.Load(consumerRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	if err := ApplyProject(&org, p); err != nil {
+		t.Fatal(err)
+	}
+	if len(org.Metadata.FieldSets) != 1 || org.Metadata.FieldSets[0].ObjectName != "Account" || org.Metadata.FieldSets[0].Name != "BillMeAddress" {
+		t.Fatalf("field sets = %#v", org.Metadata.FieldSets)
+	}
 }
 
 func writeFile(t *testing.T, path, content string) {

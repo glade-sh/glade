@@ -1101,6 +1101,7 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, ca
 			IsAbstract:   hasModifier(typ.Modifiers, "abstract"),
 			IsInterface:  typ.Kind == apexast.DeclarationInterface,
 			IsTest:       typ.IsTest,
+			Dependency:   typ.Dependency,
 			Fields:       make(map[string]vm.Field),
 			StaticFields: make(map[string]vm.Field),
 			Methods:      make(map[string]vm.Method),
@@ -1119,19 +1120,21 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, ca
 		if typ.Kind == apexast.DeclarationEnum {
 			class.EnumValues = parseEnumValues(typeSource)
 		}
-		for _, method := range methodsByClass[typ.Name] {
+		for _, method := range methodsByClass[projectMethodOwnerKey(typ.Name, typ.File)] {
 			class.Methods[methodShortName(method.Name)+methodParamKey(method.Params)] = method
 		}
 		for _, member := range typ.Members {
 			switch member.Kind {
 			case apexast.DeclarationField, apexast.DeclarationProperty:
 				field := vm.Field{
-					Name:      member.Name,
-					Type:      qualifyNestedTypeNameInType(typ.Name, member.Type, knownTypes),
-					Static:    hasModifier(member.Modifiers, "static"),
-					Access:    accessModifier(member.Modifiers),
-					Modifiers: append([]string(nil), member.Modifiers...),
-					Property:  member.Kind == apexast.DeclarationProperty,
+					Name:       member.Name,
+					Type:       qualifyNestedTypeNameInType(typ.Name, member.Type, knownTypes),
+					Static:     hasModifier(member.Modifiers, "static"),
+					Access:     accessModifier(member.Modifiers),
+					Modifiers:  append([]string(nil), member.Modifiers...),
+					Property:   member.Kind == apexast.DeclarationProperty,
+					File:       typ.File,
+					Dependency: typ.Dependency,
 				}
 				if member.Kind == apexast.DeclarationProperty {
 					attachPropertyAccessors(&field, typ.Name, typ.File, member, source)
@@ -1354,9 +1357,14 @@ func typeSymbolRuntimeName(typ typesys.TypeSymbol) string {
 func projectMethodsByClass(methods map[string]vm.Method) map[string][]vm.Method {
 	out := make(map[string][]vm.Method)
 	for _, method := range methods {
-		out[method.ClassName] = append(out[method.ClassName], method)
+		key := projectMethodOwnerKey(method.ClassName, method.File)
+		out[key] = append(out[key], method)
 	}
 	return out
+}
+
+func projectMethodOwnerKey(className, file string) string {
+	return strings.ToLower(strings.TrimSpace(className)) + "\x00" + filepath.Clean(file)
 }
 
 func knownTypeNames(types []typesys.TypeSymbol) map[string]bool {
@@ -1455,11 +1463,12 @@ func attachPropertyAccessors(field *vm.Field, className, file string, member typ
 
 func compileProjectMethods(index typesys.Index, caches ...sourceCache) map[string]vm.Method {
 	type methodCompileJob struct {
-		ClassName string
-		Kind      apexast.DeclarationKind
-		Member    typesys.MemberSymbol
-		File      string
-		Source    string
+		ClassName  string
+		Kind       apexast.DeclarationKind
+		Member     typesys.MemberSymbol
+		File       string
+		Source     string
+		Dependency bool
 	}
 	type methodCompileResult struct {
 		Key    string
@@ -1486,11 +1495,12 @@ func compileProjectMethods(index typesys.Index, caches ...sourceCache) map[strin
 				sourceLoaded = true
 			}
 			jobs = append(jobs, methodCompileJob{
-				ClassName: typ.Name,
-				Kind:      typ.Kind,
-				Member:    member,
-				File:      typ.File,
-				Source:    source,
+				ClassName:  typ.Name,
+				Kind:       typ.Kind,
+				Member:     member,
+				File:       typ.File,
+				Source:     source,
+				Dependency: typ.Dependency,
 			})
 		}
 	}
@@ -1501,18 +1511,21 @@ func compileProjectMethods(index typesys.Index, caches ...sourceCache) map[strin
 		if job.Kind == apexast.DeclarationInterface {
 			method, err := compileProjectMethodSignature(job.ClassName, member.Name, member.Type, append(member.Modifiers, "abstract"), job.File, member.Range, job.Source)
 			if err == nil {
-				results[i] = methodCompileResult{Key: method.Name + methodParamKey(method.Params), Method: method}
+				method.Dependency = job.Dependency
+				results[i] = methodCompileResult{Key: projectMethodMapKey(method), Method: method}
 			}
 			return
 		}
 		method, err := compileProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, job.Source)
 		if err != nil {
 			if unsupported, ok := unsupportedProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, job.Source, err); ok {
-				results[i] = methodCompileResult{Key: unsupported.Name + methodParamKey(unsupported.Params), Method: unsupported}
+				unsupported.Dependency = job.Dependency
+				results[i] = methodCompileResult{Key: projectMethodMapKey(unsupported), Method: unsupported}
 			}
 			return
 		}
-		results[i] = methodCompileResult{Key: method.Name + methodParamKey(method.Params), Method: method}
+		method.Dependency = job.Dependency
+		results[i] = methodCompileResult{Key: projectMethodMapKey(method), Method: method}
 	}
 	workers := compileWorkers(len(jobs))
 	if workers <= 1 {
@@ -1545,6 +1558,10 @@ func compileProjectMethods(index typesys.Index, caches ...sourceCache) map[strin
 		}
 	}
 	return out
+}
+
+func projectMethodMapKey(method vm.Method) string {
+	return method.Name + methodParamKey(method.Params) + "\x00" + filepath.Clean(method.File)
 }
 
 func compileWorkers(total int) int {
@@ -1758,6 +1775,7 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 		storage.ApplyOrgShape(&org, features)
 	}
 	applyProjectReferencedStandardFields(&org, index, caches...)
+	foldPersonAccountObjectIntoAccount(&org)
 	applyApexClassRecords(&org, index, caches...)
 	_ = storage.ApplyCustomMetadataRecords(&org, index.CustomMetadataRecords)
 	var loadedProject *project.Project
@@ -1777,6 +1795,9 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 		storage.ApplyOrgShape(&org, features)
 	}
 	if loadedProject != nil {
+		if applyProjectProfileRecordTypes(&org, *loadedProject) {
+			storage.EnsureDeterministicPlatformData(&org)
+		}
 		applyProjectProfileRecordTypeDefaults(&org, *loadedProject)
 		applyProjectProfileRecords(&org, *loadedProject)
 		applyProjectPermissionSetRecords(&org, *loadedProject)
@@ -1784,6 +1805,38 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 	}
 	normalizeOrgKeyPrefixes(&org)
 	return org
+}
+
+func foldPersonAccountObjectIntoAccount(org *storage.OrgState) {
+	if org == nil {
+		return
+	}
+	personAccount, ok := org.Objects["PersonAccount"]
+	if !ok {
+		return
+	}
+	account, ok := org.Objects["Account"]
+	if !ok {
+		delete(org.Objects, "PersonAccount")
+		return
+	}
+	storage.EnsureStandardObjectFieldsForFeatures(&account.Definition, []string{"PersonAccounts"})
+	for _, recordType := range personAccount.Definition.RecordTypes {
+		if profileRecordTypeExists(account.Definition.RecordTypes, recordType.DeveloperName) {
+			continue
+		}
+		account.Definition.RecordTypes = append(account.Definition.RecordTypes, recordType)
+	}
+	org.Objects["Account"] = account
+	if recordTypes, ok := org.Objects["RecordType"]; ok {
+		for id, record := range recordTypes.Records {
+			if strings.EqualFold(record.Fields["SobjectType"].String, "PersonAccount") {
+				delete(recordTypes.Records, id)
+			}
+		}
+		org.Objects["RecordType"] = recordTypes
+	}
+	delete(org.Objects, "PersonAccount")
 }
 
 var apexStaticFieldReferencePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)\b`)
@@ -2238,13 +2291,112 @@ type profileXML struct {
 	RecordTypeVisibilities []profileRecordTypeVisibilityXML `xml:"recordTypeVisibilities"`
 }
 
+func applyProjectProfileRecordTypes(org *storage.OrgState, p project.Project) bool {
+	if org == nil || len(p.ProfileFiles) == 0 {
+		return false
+	}
+	changed := false
+	for _, file := range sortedProfileFilesForDefaults(p.ProfileFiles) {
+		for _, visibility := range loadProfileRecordTypeVisibilities(file) {
+			canonicalObject, ok := profileRecordTypeObjectName(*org, visibility.ObjectName)
+			if !ok {
+				continue
+			}
+			state := org.Objects[canonicalObject]
+			if profileRecordTypeExists(state.Definition.RecordTypes, visibility.DeveloperName) {
+				continue
+			}
+			state.Definition.RecordTypes = append(state.Definition.RecordTypes, storage.RecordTypeInfo{
+				DeveloperName: visibility.DeveloperName,
+				Name:          visibility.Name,
+				Active:        true,
+				Available:     true,
+				Default:       visibility.Default && !visibility.PersonAccount,
+			})
+			org.Objects[canonicalObject] = state
+			changed = true
+		}
+	}
+	return changed
+}
+
+type projectProfileRecordTypeVisibility struct {
+	ObjectName    string
+	DeveloperName string
+	Name          string
+	Default       bool
+	PersonAccount bool
+}
+
+func loadProfileRecordTypeVisibilities(file string) map[string]projectProfileRecordTypeVisibility {
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return nil
+	}
+	var raw profileXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return nil
+	}
+	out := make(map[string]projectProfileRecordTypeVisibility)
+	for _, visibility := range raw.RecordTypeVisibilities {
+		if !visibility.Visible {
+			continue
+		}
+		objectName, developerName, ok := strings.Cut(strings.TrimSpace(visibility.RecordType), ".")
+		if !ok || objectName == "" || developerName == "" {
+			continue
+		}
+		developerName = stripRecordTypeNamespaceToken(developerName)
+		key := strings.ToLower(objectName) + "\x00" + strings.ToLower(developerName)
+		if _, exists := out[key]; exists {
+			continue
+		}
+		out[key] = projectProfileRecordTypeVisibility{
+			ObjectName:    objectName,
+			DeveloperName: developerName,
+			Name:          strings.ReplaceAll(developerName, "_", " "),
+			Default:       visibility.Default,
+			PersonAccount: strings.EqualFold(objectName, "PersonAccount"),
+		}
+	}
+	return out
+}
+
+func profileRecordTypeObjectName(org storage.OrgState, objectName string) (string, bool) {
+	if strings.EqualFold(objectName, "PersonAccount") {
+		return storage.ResolveObjectName(org, "Account")
+	}
+	return storage.ResolveObjectName(org, objectName)
+}
+
+func stripRecordTypeNamespaceToken(name string) string {
+	name = strings.TrimSpace(name)
+	idx := strings.Index(name, "__")
+	if idx <= 0 || idx+2 >= len(name) {
+		return name
+	}
+	return name[idx+2:]
+}
+
+func profileRecordTypeExists(recordTypes []storage.RecordTypeInfo, developerName string) bool {
+	for _, recordType := range recordTypes {
+		if strings.EqualFold(recordType.DeveloperName, developerName) {
+			return true
+		}
+		if strings.EqualFold(recordType.Name, developerName) {
+			return true
+		}
+	}
+	return false
+}
+
 func applyProjectProfileRecordTypeDefaults(org *storage.OrgState, p project.Project) {
 	if org == nil || len(p.ProfileFiles) == 0 {
 		return
 	}
 	defaults := projectProfileRecordTypeDefaults(p.ProfileFiles)
 	for objectName, developerName := range defaults {
-		canonicalObject, ok := storage.ResolveObjectName(*org, objectName)
+		canonicalObject, ok := profileRecordTypeObjectName(*org, objectName)
 		if !ok {
 			continue
 		}
@@ -2307,6 +2459,10 @@ func loadProfileRecordTypeDefaults(file string) map[string]string {
 		if !ok || objectName == "" || developerName == "" {
 			continue
 		}
+		if strings.EqualFold(objectName, "PersonAccount") {
+			continue
+		}
+		developerName = stripRecordTypeNamespaceToken(developerName)
 		if _, exists := out[objectName]; !exists {
 			out[objectName] = developerName
 		}

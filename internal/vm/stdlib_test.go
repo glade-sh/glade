@@ -22,6 +22,8 @@ System.assert(s.startsWith('Ab'));
 System.assert(s.endsWith('Def'));
 System.assertEquals('abcdef', s.toLowerCase());
 System.assertEquals('ABCDEF', s.toUpperCase());
+System.assertEquals('abcdef', s.toLowerCase('en_US'));
+System.assertEquals('ABCDEF', s.toUpperCase('en_US'));
 String lowerName = 'hello maximillian';
 String upperName = 'Hello max';
 System.assertEquals('Hello maximillian', lowerName.capitalize());
@@ -506,6 +508,9 @@ System.assertEquals('001000000000001', page.getParameters().get('id'));
 System.assertEquals('view', page.getParameters().get('mode'));
 page.getHeaders().put('X-Local', 'yes');
 page.setCookies(new List<Cookie>{new Cookie('sid', 'abc', '/', 60, true, 'Lax', true)});
+System.Cookie systemCookie = new System.Cookie('theme', 'dark', null, 100, false);
+System.assertEquals('theme', systemCookie.getName());
+System.assertEquals(null, systemCookie.getPath());
 System.assertEquals('001000000000001', page.getParameters().get('id'));
 System.assertEquals('001000000000001', page.getparameters().get('id'));
 System.assertEquals('yes', page.getHeaders().get('X-Local'));
@@ -1883,6 +1888,25 @@ System.assert(Pattern.matches(passwordPattern, 'abc123!!'));
 System.assert(!Pattern.matches(passwordPattern, '12345678'));
 System.assert(!Pattern.matches(passwordPattern, 'abcdefgh'));
 System.assert(!Pattern.matches(passwordPattern, 'a1!'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPatternMatchesSupportsLeadingPositiveLookaheads(t *testing.T) {
+	program, err := CompileAnonymous(`
+String alphaNumeric = '(?=.*\\d)(?=.*[a-zA-Z]).*';
+String caseNumeric = '(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).*';
+System.assert(Pattern.matches(alphaNumeric, 'a1a1a1a1'));
+System.assert(!Pattern.matches(alphaNumeric, 'aaaaaaaa'));
+System.assert(!Pattern.matches(alphaNumeric, '11111111'));
+System.assert(Pattern.matches(caseNumeric, 'a1A1a1A1'));
+System.assert(!Pattern.matches(caseNumeric, 'a1a1a1a1'));
+System.assert(!Pattern.matches(caseNumeric, 'A1A1A1A1'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4930,6 +4954,21 @@ List<Account> values = byId.values();
 System.assertEquals('second', values[0].Name);
 System.assertEquals('first', values[1].Name);
 	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSetRemoveAllMatchesSObjectFieldTokensByValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+Set<Schema.SObjectField> fields = new Set<Schema.SObjectField>{User.ContactId, User.Email};
+fields.removeAll(new Set<Schema.SObjectField>{User.ContactId});
+System.assert(!fields.contains(User.ContactId));
+System.assert(fields.contains(User.Email));
+`)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -719,6 +719,258 @@ func TestExecStaticInitializersRunLazilyOnFirstClassUse(t *testing.T) {
 	}
 }
 
+func TestDuplicateClassStaticInitializersPreferProjectLast(t *testing.T) {
+	projectInit, err := CompileAnonymous("selector = 'project';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dependencyInit, err := CompileAnonymous("selector = 'dependency';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	getProgram, err := CompileAnonymous("return selector;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "AccountSelectorTest",
+		Namespace: "znu",
+		StaticFields: map[string]Field{
+			"selector": {Name: "selector", Type: "String", Static: true},
+		},
+		StaticInitializers: []Method{{
+			Name:      "AccountSelectorTest.<static_project>",
+			ClassName: "AccountSelectorTest",
+			Program:   projectInit,
+			IsStatic:  true,
+		}},
+		Methods: map[string]Method{
+			"get": {Name: "AccountSelectorTest.get", ClassName: "AccountSelectorTest", ReturnType: "String", IsStatic: true, Program: getProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "AccountSelectorTest",
+		Namespace:  "znu",
+		Dependency: true,
+		StaticFields: map[string]Field{
+			"selector": {Name: "selector", Type: "String", Static: true},
+		},
+		StaticInitializers: []Method{{
+			Name:      "AccountSelectorTest.<static_dependency>",
+			ClassName: "AccountSelectorTest",
+			Program:   dependencyInit,
+			IsStatic:  true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	value, err := machine.CallStatic("AccountSelectorTest.get", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueString || value.Text != "project" {
+		t.Fatalf("selector = %#v, want project", value)
+	}
+}
+
+func TestDuplicateClassNullOverloadPrefersProjectMethod(t *testing.T) {
+	projectSelect, err := CompileAnonymous("return 'project';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dependencySelect, err := CompileAnonymous("return 'dependency';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	caller, err := CompileAnonymous("return new AdditionalSettingSelector().selectById(null);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "AdditionalSettingSelector",
+		Namespace: "znu",
+		Methods: map[string]Method{
+			"selectById": {
+				Name:       "AdditionalSettingSelector.selectById",
+				ClassName:  "AdditionalSettingSelector",
+				ReturnType: "String",
+				Params:     []Param{{Name: "idParam", Type: "Id"}},
+				Program:    projectSelect,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "AdditionalSettingSelector",
+		Namespace:  "znu",
+		Dependency: true,
+		Methods: map[string]Method{
+			"selectById": {
+				Name:       "AdditionalSettingSelector.selectById",
+				ClassName:  "AdditionalSettingSelector",
+				ReturnType: "String",
+				Params:     []Param{{Name: "idSet", Type: "Set<Id>"}},
+				Program:    dependencySelect,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "Caller",
+		Namespace: "znu",
+		Methods: map[string]Method{
+			"run": {Name: "Caller.run", ClassName: "Caller", ReturnType: "String", IsStatic: true, Program: caller},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	value, err := machine.CallStatic("Caller.run", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueString || value.Text != "project" {
+		t.Fatalf("selectById(null) = %#v, want project", value)
+	}
+}
+
+func TestDuplicateSuperclassImplicitConstructorPrefersSubclassProvenance(t *testing.T) {
+	dependencyCtor, err := CompileAnonymous("ObserversReady = true; PageNumber = 1;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	projectCtor, err := CompileAnonymous("PageSize = 10; PageNumber = 1;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	subclassCtor, err := CompileAnonymous("super();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+StorePagination pagination = new StorePagination();
+System.assertEquals(true, pagination.ObserversReady);
+System.assertEquals(10, pagination.PageSize);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Pageable",
+		Dependency: true,
+		Fields: map[string]Field{
+			"PageSize":   {Name: "PageSize", Type: "Integer", Property: true},
+			"PageNumber": {Name: "PageNumber", Type: "Integer", Property: true},
+			"ObserversReady": {
+				Name:     "ObserversReady",
+				Type:     "Boolean",
+				Property: true,
+			},
+		},
+		Constructors: []Method{{
+			Name:          "Pageable.<init>",
+			ClassName:     "Pageable",
+			IsConstructor: true,
+			Program:       dependencyCtor,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Pageable",
+		Fields: map[string]Field{
+			"PageSize":   {Name: "PageSize", Type: "Integer", Property: true},
+			"PageNumber": {Name: "PageNumber", Type: "Integer", Property: true},
+			"ObserversReady": {
+				Name:     "ObserversReady",
+				Type:     "Boolean",
+				Property: true,
+			},
+		},
+		Constructors: []Method{{
+			Name:          "Pageable.<init>",
+			ClassName:     "Pageable",
+			IsConstructor: true,
+			Program:       projectCtor,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "StorePagination",
+		SuperClass: "Pageable",
+		Constructors: []Method{{
+			Name:          "StorePagination.<init>",
+			ClassName:     "StorePagination",
+			IsConstructor: true,
+			Program:       subclassCtor,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecIntegerPropertyGetterArithmetic(t *testing.T) {
+	program, err := CompileAnonymous(`
+Pageable pager = new Pageable();
+System.assertEquals(10, pager.PageSize);
+System.assertEquals(0, pager.Offset);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pageIndex, err := CompileAnonymous("return PageNumber - 1;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	offset, err := CompileAnonymous("return PageSize * PageIndex;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	init, err := CompileAnonymous("PageSize = 10; PageNumber = 1;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Pageable",
+		Fields: map[string]Field{
+			"PageSize":   {Name: "PageSize", Type: "Integer"},
+			"PageNumber": {Name: "PageNumber", Type: "Integer"},
+			"PageIndex": {
+				Name:   "PageIndex",
+				Type:   "Integer",
+				Getter: &Method{Name: "Pageable.PageIndex.get", ClassName: "Pageable", ReturnType: "Integer", Program: pageIndex},
+			},
+			"Offset": {
+				Name:   "Offset",
+				Type:   "Integer",
+				Getter: &Method{Name: "Pageable.Offset.get", ClassName: "Pageable", ReturnType: "Integer", Program: offset},
+			},
+		},
+		Constructors: []Method{{
+			Name:          "Pageable.<init>",
+			ClassName:     "Pageable",
+			IsConstructor: true,
+			Program:       init,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCloneRuntimeKeepsStaticStateIsolated(t *testing.T) {
 	getProgram, err := CompileAnonymous("return seed;")
 	if err != nil {
@@ -2356,6 +2608,64 @@ System.assertEquals(7, c.score());
 	}
 }
 
+func TestExecSuperConstructorOverloadUsesDeclaredArgumentType(t *testing.T) {
+	objectCtor, err := CompileAnonymous("kind = 'object';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	stringCtor, err := CompileAnonymous("kind = 'string';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childCtor, err := CompileAnonymous("super(parameter);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	kindProgram, err := CompileAnonymous("return kind;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+ChildMessage message = new ChildMessage('Pay Later - Bill Me');
+System.assertEquals('object', message.kindValue());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "BaseMessage",
+		Fields: map[string]Field{
+			"kind": {Name: "kind", Type: "String"},
+		},
+		Constructors: []Method{
+			{Name: "BaseMessage.<init>", ClassName: "BaseMessage", Params: []Param{{Name: "parameter", Type: "Object"}}, Program: objectCtor, IsConstructor: true},
+			{Name: "BaseMessage.<init>", ClassName: "BaseMessage", Params: []Param{{Name: "eventName", Type: "String"}}, Program: stringCtor, IsConstructor: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "ChildMessage",
+		SuperClass: "BaseMessage",
+		Constructors: []Method{{
+			Name:          "ChildMessage.<init>",
+			ClassName:     "ChildMessage",
+			Params:        []Param{{Name: "parameter", Type: "Object"}},
+			Program:       childCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"kindvalue": {Name: "ChildMessage.kindValue", ClassName: "ChildMessage", ReturnType: "String", Program: kindProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecConstructorCanReadInheritedFieldAfterSuper(t *testing.T) {
 	parentCtor, err := CompileAnonymous("base = seed;")
 	if err != nil {
@@ -3738,6 +4048,157 @@ System.assertEquals('nested', second.Name);
 	}
 }
 
+func TestRegisterClassMergesDuplicateNamespaceClassMembers(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Shared",
+		Namespace:  "znu",
+		IsAbstract: true,
+		Dependency: true,
+		Fields: map[string]Field{
+			"DepOnly": {Name: "DepOnly", Type: "String"},
+			"Shared":  {Name: "Shared", Type: "DependencyType"},
+		},
+		Methods: map[string]Method{
+			"depOnly#": {Name: "Shared.depOnly", ClassName: "Shared", ReturnType: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "Shared",
+		Namespace: "znu",
+		Fields: map[string]Field{
+			"LocalOnly": {Name: "LocalOnly", Type: "String"},
+			"Shared":    {Name: "Shared", Type: "LocalType"},
+		},
+		Methods: map[string]Method{
+			"localOnly#": {Name: "Shared.localOnly", ClassName: "Shared", ReturnType: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	class, ok := machine.lookupClass("Shared")
+	if !ok {
+		t.Fatal("Shared class not registered")
+	}
+	if _, ok := class.Fields["DepOnly"]; !ok {
+		t.Fatalf("dependency field missing after duplicate registration: %#v", class.Fields)
+	}
+	if _, ok := class.Fields["LocalOnly"]; !ok {
+		t.Fatalf("local field missing after duplicate registration: %#v", class.Fields)
+	}
+	if _, ok := class.Methods["depOnly#"]; !ok {
+		t.Fatalf("dependency method missing after duplicate registration: %#v", class.Methods)
+	}
+	if _, ok := class.Methods["localOnly#"]; !ok {
+		t.Fatalf("local method missing after duplicate registration: %#v", class.Methods)
+	}
+	if class.IsAbstract {
+		t.Fatal("incoming concrete duplicate should override dependency abstract flag")
+	}
+	if class.Fields["Shared"].Type != "LocalType" {
+		t.Fatalf("project field should override dependency field, got %#v", class.Fields["Shared"])
+	}
+}
+
+func TestRegisterClassKeepsProjectMemberWhenDependencyRegistersLater(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "Shared",
+		Namespace: "znu",
+		Fields: map[string]Field{
+			"Shared": {Name: "Shared", Type: "LocalType"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Shared",
+		Namespace:  "znu",
+		Dependency: true,
+		Fields: map[string]Field{
+			"Shared": {Name: "Shared", Type: "DependencyType"},
+			"Dep":    {Name: "Dep", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	class, ok := machine.lookupClass("Shared")
+	if !ok {
+		t.Fatal("Shared class not registered")
+	}
+	if class.Fields["Shared"].Type != "LocalType" {
+		t.Fatalf("project field should survive later dependency duplicate, got %#v", class.Fields["Shared"])
+	}
+	if _, ok := class.Fields["Dep"]; !ok {
+		t.Fatalf("dependency-only field should be preserved: %#v", class.Fields)
+	}
+}
+
+func TestRegisterClassDuplicateMethodKeepsWidestVisibleSurface(t *testing.T) {
+	getLocal, err := CompileAnonymous("return 'Account';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	run, err := CompileAnonymous(`
+SObjectTestData data = new AccountTestData();
+return data.getSObjectType();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("System.assertEquals('Account', Runner.run());")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "SObjectTestData",
+		Namespace: "znu",
+		Methods: map[string]Method{
+			"getSObjectType": {Name: "SObjectTestData.getSObjectType", ClassName: "SObjectTestData", ReturnType: "String", Access: "protected", Modifiers: []string{"abstract"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "SObjectTestData",
+		Namespace:  "znu",
+		Dependency: true,
+		Methods: map[string]Method{
+			"getSObjectType": {Name: "SObjectTestData.getSObjectType", ClassName: "SObjectTestData", ReturnType: "String", Access: "public", Modifiers: []string{"abstract"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "AccountTestData",
+		Namespace:  "znu",
+		SuperClass: "SObjectTestData",
+		Methods: map[string]Method{
+			"getSObjectType": {Name: "AccountTestData.getSObjectType", ClassName: "AccountTestData", ReturnType: "String", Access: "protected", Program: getLocal},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "Runner",
+		Namespace: "znu",
+		Access:    "global",
+		Methods: map[string]Method{
+			"run": {Name: "Runner.run", ClassName: "Runner", ReturnType: "String", IsStatic: true, Access: "global", Program: run},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPassiveGeneratedPropertySetterMutatesBackingField(t *testing.T) {
 	empty, err := CompileAnonymous("")
 	if err != nil {
@@ -4118,6 +4579,720 @@ System.assertEquals(1, b.Items.size());
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecPropertyGetterSelfAssignmentWithSetterUpdatesBackingValue(t *testing.T) {
+	getter, err := CompileAnonymous(`
+if (Name == null) {
+	Name = 'Acme';
+}
+return Name;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`return;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Box b = new Box();
+System.assertEquals('Acme', b.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"Name": {
+				Name:     "Name",
+				Type:     "String",
+				Property: true,
+				Getter:   &Method{Name: "Box.Name.get", ClassName: "Box", ReturnType: "String", Program: getter},
+				Setter:   &Method{Name: "Box.Name.set", ClassName: "Box", Params: []Param{{Name: "value", Type: "String"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPropertyGetterSelfAssignmentCachesBackingValueAcrossCalls(t *testing.T) {
+	getter, err := CompileAnonymous(`
+if (DefaultRecord == null) {
+	DefaultRecord = new Box();
+	DefaultRecord.Name = 'Acme';
+}
+return DefaultRecord;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`return;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Cache cache = new Cache();
+Box first = cache.DefaultRecord;
+first.Name = 'Changed';
+Box second = cache.DefaultRecord;
+System.assertEquals('Changed', second.Name);
+System.assertEquals(first, second);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Cache",
+		Fields: map[string]Field{
+			"DefaultRecord": {
+				Name:     "DefaultRecord",
+				Type:     "Box",
+				Property: true,
+				Getter:   &Method{Name: "Cache.DefaultRecord.get", ClassName: "Cache", ReturnType: "Box", Program: getter},
+				Setter:   &Method{Name: "Cache.DefaultRecord.set", ClassName: "Cache", Params: []Param{{Name: "value", Type: "Box"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedPropertyGetterSelfAssignmentCachesBackingValueAcrossCalls(t *testing.T) {
+	getter, err := CompileAnonymous(`
+if (DefaultRecord == null) {
+	DefaultRecord = new znu.Box();
+	DefaultRecord.Name = 'Acme';
+}
+return DefaultRecord;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`return;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+znu.Cache cache = new znu.Cache();
+znu.Box first = cache.DefaultRecord;
+first.Name = 'Changed';
+znu.Box second = cache.DefaultRecord;
+System.assertEquals('Changed', second.Name);
+System.assertEquals(first, second);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "znu.Box",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "znu.Cache",
+		Fields: map[string]Field{
+			"DefaultRecord": {
+				Name:     "DefaultRecord",
+				Type:     "znu.Box",
+				Property: true,
+				Getter:   &Method{Name: "znu.Cache.DefaultRecord.get", ClassName: "znu.Cache", ReturnType: "znu.Box", Program: getter},
+				Setter:   &Method{Name: "znu.Cache.DefaultRecord.set", ClassName: "znu.Cache", Params: []Param{{Name: "value", Type: "znu.Box"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStaticPropertyGetterSelfAssignmentWithSetterUpdatesBackingValue(t *testing.T) {
+	getter, err := CompileAnonymous(`
+if (Instance == null) {
+	Instance = new Box();
+}
+return Instance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`return;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertNotEquals(null, BoxService.Instance);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Box"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "BoxService",
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:     "Instance",
+				Type:     "Box",
+				Static:   true,
+				Property: true,
+				Getter:   &Method{Name: "BoxService.Instance.get", ClassName: "BoxService", ReturnType: "Box", Program: getter},
+				Setter:   &Method{Name: "BoxService.Instance.set", ClassName: "BoxService", Params: []Param{{Name: "value", Type: "Box"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStaticPropertyGetterSelfAssignmentCachesBackingValueAcrossCalls(t *testing.T) {
+	getter, err := CompileAnonymous(`
+if (Instance == null) {
+	Instance = new Box();
+}
+return Instance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`return;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Box first = BoxService.Instance;
+first.Name = 'Changed';
+Box second = BoxService.Instance;
+System.assertEquals('Changed', second.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "BoxService",
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:     "Instance",
+				Type:     "Box",
+				Static:   true,
+				Property: true,
+				Getter:   &Method{Name: "BoxService.Instance.get", ClassName: "BoxService", ReturnType: "Box", Program: getter},
+				Setter:   &Method{Name: "BoxService.Instance.set", ClassName: "BoxService", Params: []Param{{Name: "value", Type: "Box"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedStaticPropertyGetterSelfAssignmentCachesBackingValueAcrossCalls(t *testing.T) {
+	getter, err := CompileAnonymous(`
+if (Instance == null) {
+	Instance = new znu.Box();
+}
+return Instance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`return;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+znu.Box first = znu.BoxService.Instance;
+first.Name = 'Changed';
+znu.Box second = znu.BoxService.Instance;
+System.assertEquals('Changed', second.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "znu.Box",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "znu.BoxService",
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:     "Instance",
+				Type:     "znu.Box",
+				Static:   true,
+				Property: true,
+				Getter:   &Method{Name: "znu.BoxService.Instance.get", ClassName: "znu.BoxService", ReturnType: "znu.Box", Program: getter},
+				Setter:   &Method{Name: "znu.BoxService.Instance.set", ClassName: "znu.BoxService", Params: []Param{{Name: "value", Type: "znu.Box"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStaticSingletonInstancePropertySelfAssignmentPersistsOnSingleton(t *testing.T) {
+	instanceGetter, err := CompileAnonymous(`
+if (Instance == null) {
+	Instance = new Cache();
+}
+return Instance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defaultGetter, err := CompileAnonymous(`
+if (DefaultRecord == null) {
+	DefaultRecord = new Box();
+	DefaultRecord.Name = 'Acme';
+}
+return DefaultRecord;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`return;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Box first = Cache.Instance.DefaultRecord;
+Box second = Cache.Instance.DefaultRecord;
+System.assertEquals(first.Name, second.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Cache",
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:     "Instance",
+				Type:     "Cache",
+				Static:   true,
+				Property: true,
+				Getter:   &Method{Name: "Cache.Instance.get", ClassName: "Cache", ReturnType: "Cache", Program: instanceGetter},
+				Setter:   &Method{Name: "Cache.Instance.set", ClassName: "Cache", Params: []Param{{Name: "value", Type: "Cache"}}, Program: setter},
+			},
+		},
+		Fields: map[string]Field{
+			"DefaultRecord": {
+				Name:     "DefaultRecord",
+				Type:     "Box",
+				Property: true,
+				Getter:   &Method{Name: "Cache.DefaultRecord.get", ClassName: "Cache", ReturnType: "Box", Program: defaultGetter},
+				Setter:   &Method{Name: "Cache.DefaultRecord.set", ClassName: "Cache", Params: []Param{{Name: "value", Type: "Box"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedStaticPropertyGetterSelfAssignmentDispatchesInstanceMethod(t *testing.T) {
+	getter, err := CompileAnonymous(`
+if (Instance == null) {
+	Instance = new znu.Box();
+}
+return Instance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`return;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	touch, err := CompileAnonymous(`return 'touched';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('touched', znu.BoxService.Instance.touch());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "znu.Box",
+		Methods: map[string]Method{
+			"touch": {Name: "znu.Box.touch", ClassName: "znu.Box", ReturnType: "String", Program: touch},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "znu.BoxService",
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:     "Instance",
+				Type:     "znu.Box",
+				Static:   true,
+				Property: true,
+				Getter:   &Method{Name: "znu.BoxService.Instance.get", ClassName: "znu.BoxService", ReturnType: "znu.Box", Program: getter},
+				Setter:   &Method{Name: "znu.BoxService.Instance.set", ClassName: "znu.BoxService", Params: []Param{{Name: "value", Type: "znu.Box"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedClassNewExpressionPrefersSameNamespace(t *testing.T) {
+	getter, err := CompileAnonymous(`
+if (Instance == null) {
+	Instance = new Box();
+}
+return Instance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`return;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	namespacedTouch, err := CompileAnonymous(`return 'namespaced';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	localTouch, err := CompileAnonymous(`return 'local';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('namespaced', znu.BoxService.Instance.touch());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Methods: map[string]Method{
+			"touch": {Name: "Box.touch", ClassName: "Box", ReturnType: "String", Program: localTouch},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "znu.Box",
+		Methods: map[string]Method{
+			"touch": {Name: "znu.Box.touch", ClassName: "znu.Box", ReturnType: "String", Program: namespacedTouch},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "znu.BoxService",
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:     "Instance",
+				Type:     "znu.Box",
+				Static:   true,
+				Property: true,
+				Getter:   &Method{Name: "znu.BoxService.Instance.get", ClassName: "znu.BoxService", ReturnType: "znu.Box", Program: getter},
+				Setter:   &Method{Name: "znu.BoxService.Instance.set", ClassName: "znu.BoxService", Params: []Param{{Name: "value", Type: "znu.Box"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDependencySingletonDuplicateClassKeepsDependencyMethod(t *testing.T) {
+	getter, err := CompileAnonymous(`
+if (Instance == null) {
+	Instance = new PaymentOptions();
+}
+return Instance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`return;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	selected, err := CompileAnonymous(`return 'selected';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	run, err := CompileAnonymous(`
+return znu.PaymentOptionsService.Instance.getSelectedPaymentOption(new znu.PaymentOptionsService.Request());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('selected', znu.Runner.run());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "PaymentOptions",
+		Namespace: "znu",
+		Methods: map[string]Method{
+			"localOnly": {Name: "PaymentOptions.localOnly", ClassName: "PaymentOptions", ReturnType: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "PaymentOptions",
+		Namespace:  "znu",
+		Access:     "global",
+		Dependency: true,
+		Methods: map[string]Method{
+			"getSelectedPaymentOption": {
+				Name:       "PaymentOptions.getSelectedPaymentOption",
+				ClassName:  "PaymentOptions",
+				ReturnType: "String",
+				Access:     "global",
+				Params:     []Param{{Name: "request", Type: "PaymentOptionsService.Request"}},
+				Program:    selected,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "PaymentOptionsService",
+		Namespace: "znu",
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:     "Instance",
+				Type:     "PaymentOptionsService",
+				Static:   true,
+				Property: true,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "PaymentOptionsService",
+		Namespace:  "znu",
+		Access:     "global",
+		Dependency: true,
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:     "Instance",
+				Type:     "PaymentOptions",
+				Access:   "global",
+				Static:   true,
+				Property: true,
+				Getter:   &Method{Name: "PaymentOptionsService.Instance.get", ClassName: "PaymentOptionsService", ReturnType: "PaymentOptions", Access: "global", Program: getter},
+				Setter:   &Method{Name: "PaymentOptionsService.Instance.set", ClassName: "PaymentOptionsService", Params: []Param{{Name: "value", Type: "PaymentOptions"}}, Access: "private", Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "PaymentOptionsService.Request",
+		Namespace:  "znu",
+		Access:     "global",
+		Dependency: true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "Runner",
+		Namespace: "znu",
+		Access:    "global",
+		Methods: map[string]Method{
+			"run": {Name: "Runner.run", ClassName: "Runner", ReturnType: "String", IsStatic: true, Access: "global", Program: run},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestLookupDuplicateStaticFieldKeepsSelectedStorageSlot(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "PaymentOptionsService",
+		Namespace: "znu",
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:   "Instance",
+				Type:   "PaymentOptionsService",
+				Static: true,
+				File:   "consumer/PaymentOptionsService.cls",
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "PaymentOptionsService",
+		Namespace:  "znu",
+		Dependency: true,
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:   "Instance",
+				Type:   "PaymentOptions",
+				Static: true,
+				File:   "dependency/PaymentOptionsService.cls",
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	field, _, ok := machine.lookupStaticFieldForReceiver("znu.PaymentOptionsService", "Instance", true)
+	if !ok {
+		t.Fatal("dependency static field was not found")
+	}
+	if got := staticFieldStorageName("Instance", field); got == "Instance" {
+		t.Fatalf("duplicate dependency field storage key collapsed to %q", got)
+	}
+}
+
+func TestExecNamespacedStaticSingletonAliasesShareInstanceState(t *testing.T) {
+	instanceGetter, err := CompileAnonymous(`
+if (Instance == null) {
+	Instance = new EntityTestData();
+}
+return Instance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	entityGetter, err := CompileAnonymous(`
+if (DefaultEntity == null) {
+	DefaultEntity = new Account(Name = 'default');
+}
+return DefaultEntity;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`return;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+EntityTestData data = znu.EntityTestData.Instance;
+Account first = data.DefaultEntity;
+first.Name = 'changed';
+Account second = EntityTestData.Instance.DefaultEntity;
+System.assertEquals('changed', second.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "EntityTestData",
+		Namespace: "znu",
+		Access:    "global",
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:     "Instance",
+				Type:     "EntityTestData",
+				Access:   "global",
+				Static:   true,
+				Property: true,
+				Getter:   &Method{Name: "EntityTestData.Instance.get", ClassName: "EntityTestData", ReturnType: "EntityTestData", Access: "global", Program: instanceGetter},
+				Setter:   &Method{Name: "EntityTestData.Instance.set", ClassName: "EntityTestData", Params: []Param{{Name: "value", Type: "EntityTestData"}}, Access: "global", Program: setter},
+			},
+		},
+		Fields: map[string]Field{
+			"DefaultEntity": {
+				Name:     "DefaultEntity",
+				Type:     "Account",
+				Access:   "global",
+				Property: true,
+				Getter:   &Method{Name: "EntityTestData.DefaultEntity.get", ClassName: "EntityTestData", ReturnType: "Account", Access: "global", Program: entityGetter},
+				Setter:   &Method{Name: "EntityTestData.DefaultEntity.set", ClassName: "EntityTestData", Params: []Param{{Name: "value", Type: "Account"}}, Access: "global", Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestConversionScoreAllowsNamespacedNestedTypeForUnqualifiedParameter(t *testing.T) {
+	machine := New(nil)
+	if got := machine.conversionScore("PaymentOptionsService.Request", Object("znu.PaymentOptionsService.Request")); got < 0 {
+		t.Fatalf("conversionScore = %d, want assignable", got)
 	}
 }
 
@@ -5453,6 +6628,44 @@ System.assertEquals('List<SObject>', Provider.paramType);
 				Program: providerProgram,
 			},
 		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecUserMethodDatabaseInsertPropagatesSObjectIDToCaller(t *testing.T) {
+	insertProgram, err := CompileAnonymous(`return Database.insert(record);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme');
+new DMLWrapper().insertRecords(account);
+System.assertNotEquals(null, account.Id);
+Account stored = [SELECT Id FROM Account WHERE Id = :account.Id];
+System.assertEquals(account.Id, stored.Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "DMLWrapper",
+		Methods: map[string]Method{
+			"insertRecords": {
+				Name:       "DMLWrapper.insertRecords",
+				ClassName:  "DMLWrapper",
+				ReturnType: "Database.SaveResult",
+				Params:     []Param{{Name: "record", Type: "SObject"}},
+				Program:    insertProgram,
+			},
+		},
+		Constructors: []Method{{Name: "DMLWrapper.<init>", ClassName: "DMLWrapper", ReturnType: "void", IsConstructor: true}},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -7715,6 +8928,51 @@ System.assertEquals(1, Util.acceptMarker(new Child()));
 	}
 }
 
+func TestExecVirtualDispatchUsesRuntimeTypeForBaseTypedParameter(t *testing.T) {
+	baseTypeProgram, err := CompileAnonymous("return Base.class;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childTypeProgram, err := CompileAnonymous("return Child.class;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	helperProgram, err := CompileAnonymous("return message.getType().getName();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Base base = new Child();
+System.assertEquals('Child', base.getType().getName());
+System.assertEquals('Child', Helper.eventName(new Child()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "Base"},
+		{Name: "Child", SuperClass: "Base"},
+		{Name: "Helper"},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, method := range []Method{
+		{Name: "Base.getType", ClassName: "Base", ReturnType: "Type", Program: baseTypeProgram},
+		{Name: "Child.getType", ClassName: "Child", ReturnType: "Type", Program: childTypeProgram},
+		{Name: "Helper.eventName", ClassName: "Helper", IsStatic: true, ReturnType: "String", Params: []Param{{Name: "message", Type: "Base"}}, Program: helperProgram},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStaticListMutationPersistsAcrossStaticMethods(t *testing.T) {
 	addProgram, err := CompileAnonymous("values.add(value);")
 	if err != nil {
@@ -8065,5 +9323,39 @@ func TestExecWhileLoopIterationGuard(t *testing.T) {
 	}
 	if _, err := Execute(program, nil); err == nil {
 		t.Fatal("expected loop guard error")
+	}
+}
+
+func TestRegisterClassDropsSelfSuperclassAfterDependencyMerge(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "HostedCheckoutJavaScriptHandler",
+		Namespace:  "znu",
+		Dependency: true,
+		Fields: map[string]Field{
+			"DependencyField": {Name: "DependencyField", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "HostedCheckoutJavaScriptHandler",
+		Namespace:  "znu",
+		SuperClass: "znu.HostedCheckoutJavaScriptHandler",
+		Fields: map[string]Field{
+			"LocalField": {Name: "LocalField", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	class := machine.Classes["HostedCheckoutJavaScriptHandler"]
+	if class.SuperClass != "" {
+		t.Fatalf("merged superclass = %q, want empty self-reference removed", class.SuperClass)
+	}
+	if _, ok := class.Fields["DependencyField"]; !ok {
+		t.Fatalf("dependency field was not merged: %#v", class.Fields)
+	}
+	if _, ok := class.Fields["LocalField"]; !ok {
+		t.Fatalf("local field was not merged: %#v", class.Fields)
 	}
 }

@@ -280,8 +280,8 @@ func TestLocalTestParallelismCapsFocusedClassRuns(t *testing.T) {
 }
 
 func TestShouldParallelizeMethodsForLargeFocusedClasses(t *testing.T) {
-	if !shouldParallelizeMethods(LocalTestOptions{Class: "CartSubmitterTest"}, 4, 12) {
-		t.Fatalf("large focused class run should parallelize methods by default")
+	if shouldParallelizeMethods(LocalTestOptions{Class: "CartSubmitterTest"}, 4, 12) {
+		t.Fatalf("large focused class run should keep methods serial by default")
 	}
 	if shouldParallelizeMethods(LocalTestOptions{Class: "SmallTest"}, 4, 3) {
 		t.Fatalf("small focused class run should keep methods serial")

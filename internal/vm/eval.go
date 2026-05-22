@@ -489,7 +489,7 @@ func coerceAssignable(typeName string, value Value) (Value, error) {
 		return value, nil
 	}
 	if value.Kind == ValueObject {
-		if strings.EqualFold(typeName, value.Type) {
+		if strings.EqualFold(typeName, value.Type) || platformTokenTypeAlias(value.Type, typeName) {
 			return value, nil
 		}
 		return Null, fmt.Errorf("cannot assign %s to %s", value.Type, typeName)

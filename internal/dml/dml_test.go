@@ -1119,6 +1119,209 @@ func TestInsertPersonAccountCreatesSyntheticPersonContact(t *testing.T) {
 	}
 }
 
+func TestInsertPersonAccountRequiresLastName(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"RecordTypeId": storage.IDValue(personAccountRecordTypeID(t, org)),
+			"LastName":     storage.NullValue(),
+			"PersonEmail":  storage.StringValue("ada@example.invalid"),
+		},
+	}})
+
+	if len(insert) != 1 || insert[0].Success || insert[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" {
+		t.Fatalf("insert result = %#v", insert)
+	}
+	if insert[0].Error != "Required fields are missing: [LastName]" {
+		t.Fatalf("insert error = %q", insert[0].Error)
+	}
+}
+
+func TestInsertPersonAccountWithoutRecordTypeUsesPersonRecordType(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"FirstName":   storage.StringValue("Eric"),
+			"LastName":    storage.StringValue("Clapton"),
+			"PersonEmail": storage.StringValue("eric@example.invalid"),
+		},
+	}})
+
+	if len(insert) != 1 || !insert[0].Success {
+		t.Fatalf("insert result = %#v", insert)
+	}
+	stored := org.Objects["Account"].Records[insert[0].ID]
+	if got, want := idFromStorageValue(stored.Fields["RecordTypeId"]), personAccountRecordTypeID(t, org); got != want {
+		t.Fatalf("record type = %s, want %s; fields=%#v", got, want, stored.Fields)
+	}
+	if !stored.Fields["IsPersonAccount"].Boolean {
+		t.Fatalf("person account flag was not set: %#v", stored.Fields)
+	}
+	if idFromStorageValue(stored.Fields["PersonContactId"]) == "" {
+		t.Fatalf("person contact was not created: %#v", stored.Fields)
+	}
+}
+
+func TestInsertOrganizationAccountInPersonAccountOrgRequiresName(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"OwnerId": storage.IDValue("005000000000001"),
+		},
+	}})
+
+	if len(insert) != 1 || insert[0].Success || insert[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" {
+		t.Fatalf("insert result = %#v", insert)
+	}
+	if insert[0].Error != "Required fields are missing: [Name]" {
+		t.Fatalf("insert error = %q", insert[0].Error)
+	}
+}
+
+func TestInsertOrganizationAccountIgnoresFalseStringPersonDefaults(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	account := org.Objects["Account"]
+	account.Definition.RecordTypes = append(account.Definition.RecordTypes, storage.RecordTypeInfo{
+		ID:            "012000000000ORG",
+		DeveloperName: "Organization",
+		Name:          "Organization",
+		Active:        true,
+		Available:     true,
+	})
+	org.Objects["Account"] = account
+	storage.EnsureDeterministicPlatformData(&org)
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"RecordTypeId":             storage.IDValue("012000000000ORG"),
+			"Name":                     storage.StringValue("Test Org"),
+			"PersonDoNotCall":          storage.StringValue("false"),
+			"PersonHasOptedOutOfEmail": storage.BooleanValue(false),
+		},
+	}})
+
+	if len(insert) != 1 || !insert[0].Success {
+		t.Fatalf("insert result = %#v", insert)
+	}
+	stored := org.Objects["Account"].Records[insert[0].ID]
+	if got := idFromStorageValue(stored.Fields["RecordTypeId"]); got != "012000000000ORG" {
+		t.Fatalf("record type = %s; fields=%#v", got, stored.Fields)
+	}
+	if stored.Fields["IsPersonAccount"].Boolean {
+		t.Fatalf("person account flag was set: %#v", stored.Fields)
+	}
+}
+
+func TestInsertOrganizationAccountRecordTypeWithPersonNameFieldsUsesPersonAccount(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	account := org.Objects["Account"]
+	account.Definition.RecordTypes = append(account.Definition.RecordTypes, storage.RecordTypeInfo{
+		ID:            "012000000000ORG",
+		DeveloperName: "Organization",
+		Name:          "Organization",
+		Active:        true,
+		Available:     true,
+	})
+	org.Objects["Account"] = account
+	storage.EnsureDeterministicPlatformData(&org)
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"RecordTypeId": storage.IDValue("012000000000ORG"),
+			"Name":         storage.StringValue("Test Org"),
+			"FirstName":    storage.StringValue("Eric"),
+			"LastName":     storage.StringValue("Clapton"),
+			"PersonEmail":  storage.StringValue("eric@example.invalid"),
+		},
+	}})
+
+	if len(insert) != 1 || !insert[0].Success {
+		t.Fatalf("insert result = %#v", insert)
+	}
+	stored := org.Objects["Account"].Records[insert[0].ID]
+	if got := stored.Fields["Name"].String; got != "Eric Clapton" {
+		t.Fatalf("account name = %q", got)
+	}
+	if got, want := idFromStorageValue(stored.Fields["RecordTypeId"]), personAccountRecordTypeID(t, org); got != want {
+		t.Fatalf("record type = %s, want %s; fields=%#v", got, want, stored.Fields)
+	}
+	if !stored.Fields["IsPersonAccount"].Boolean {
+		t.Fatalf("person account flag was not set: %#v", stored.Fields)
+	}
+	if idFromStorageValue(stored.Fields["PersonContactId"]) == "" {
+		t.Fatalf("person contact was not created: %#v", stored.Fields)
+	}
+}
+
+func personAccountRecordTypeID(t *testing.T, org storage.OrgState) storage.ID {
+	t.Helper()
+	for _, recordType := range org.Objects["Account"].Definition.RecordTypes {
+		if recordType.DeveloperName == "PersonAccount" {
+			return recordType.ID
+		}
+	}
+	t.Fatalf("missing PersonAccount record type: %#v", org.Objects["Account"].Definition.RecordTypes)
+	return ""
+}
+
+func TestInsertPersonAccountPopulatesNamespacedPersonContactAlias(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "znu"
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	account := org.Objects["Account"]
+	account.Definition.Fields["znu__PersonContact__c"] = storage.Field{
+		APIName:          "znu__PersonContact__c",
+		Type:             storage.FieldReference,
+		ReferenceTo:      []string{"Contact"},
+		RelationshipName: "znu__PersonContact__r",
+	}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"FirstName": storage.StringValue("Ada"),
+			"LastName":  storage.StringValue("Lovelace"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	accountRecord := org.Objects["Account"].Records[insert[0].ID]
+	contactID := accountRecord.Fields["PersonContactId"].ID
+	if contactID == "" {
+		t.Fatalf("PersonContactId was not populated: %#v", accountRecord.Fields)
+	}
+	if got := accountRecord.Fields["znu__PersonContact__c"].ID; got != contactID {
+		t.Fatalf("znu__PersonContact__c = %q, want %q; fields=%#v", got, contactID, accountRecord.Fields)
+	}
+}
+
 func TestInsertEmailMessageCreatesToRelations(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
@@ -3609,6 +3812,99 @@ func TestWorkflowFieldUpdateCriteriaTrueFalseAndVisibleAfterDML(t *testing.T) {
 	}
 	if got := org.Objects["Account"].Records[miss[0].ID].Fields["Status__c"].String; got != "Active" {
 		t.Fatalf("workflow status after update = %q", got)
+	}
+}
+
+func TestWorkflowFieldUpdateBooleanNumericLiteral(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Active__c"] = storage.Field{APIName: "Active__c", Type: storage.FieldBoolean}
+	account.Definition.Fields["Primary__c"] = storage.Field{APIName: "Primary__c", Type: storage.FieldBoolean}
+	account.Definition.WorkflowRules = []storage.WorkflowRule{{
+		Name:   "SetBooleans",
+		Active: true,
+		FieldUpdates: []storage.WorkflowFieldUpdate{
+			{Name: "SetInactive", Field: "Active__c", LiteralValue: "0"},
+			{Name: "SetPrimary", Field: "Primary__c", LiteralValue: "1"},
+		},
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	result := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme"), "Active__c": storage.BooleanValue(true)},
+	}})
+	if !result[0].Success {
+		t.Fatalf("insert = %#v", result)
+	}
+	record := org.Objects["Account"].Records[result[0].ID]
+	if got := record.Fields["Active__c"].Boolean; got {
+		t.Fatalf("numeric false literal = %v", got)
+	}
+	if got := record.Fields["Primary__c"].Boolean; !got {
+		t.Fatalf("numeric true literal = %v", got)
+	}
+}
+
+func TestWorkflowNotEqualBlankCriteriaDoesNotMatchMissingOrBlankField(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["RemovalReason__c"] = storage.Field{APIName: "RemovalReason__c", Type: storage.FieldString}
+	account.Definition.Fields["Status__c"] = storage.Field{APIName: "Status__c", Type: storage.FieldString}
+	account.Definition.WorkflowRules = []storage.WorkflowRule{{
+		Name:   "MarkInactive",
+		Active: true,
+		Criteria: []storage.WorkflowCriteriaItem{{
+			Field:     "RemovalReason__c",
+			Operation: "notEqual",
+		}},
+		FieldUpdates: []storage.WorkflowFieldUpdate{{
+			Name:         "SetInactive",
+			Field:        "Status__c",
+			LiteralValue: "Inactive",
+		}},
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	missing := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Missing")},
+	}})
+	if !missing[0].Success {
+		t.Fatalf("missing insert = %#v", missing)
+	}
+	if _, ok := org.Objects["Account"].Records[missing[0].ID].Fields["Status__c"]; ok {
+		t.Fatalf("workflow should not match missing blank criterion: %#v", org.Objects["Account"].Records[missing[0].ID])
+	}
+
+	blank := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":             storage.StringValue("Blank"),
+			"RemovalReason__c": storage.StringValue(""),
+		},
+	}})
+	if !blank[0].Success {
+		t.Fatalf("blank insert = %#v", blank)
+	}
+	if _, ok := org.Objects["Account"].Records[blank[0].ID].Fields["Status__c"]; ok {
+		t.Fatalf("workflow should not match explicit blank criterion: %#v", org.Objects["Account"].Records[blank[0].ID])
+	}
+
+	hit := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":             storage.StringValue("Hit"),
+			"RemovalReason__c": storage.StringValue("Moved"),
+		},
+	}})
+	if !hit[0].Success {
+		t.Fatalf("hit insert = %#v", hit)
+	}
+	if got := org.Objects["Account"].Records[hit[0].ID].Fields["Status__c"].String; got != "Inactive" {
+		t.Fatalf("workflow status after nonblank value = %q", got)
 	}
 }
 
