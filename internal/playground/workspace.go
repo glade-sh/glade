@@ -68,6 +68,12 @@ func (w *Workspace) ensureDefaultFiles() error {
 			}
 			return err
 		}
+		if path != w.Root && strings.HasPrefix(d.Name(), ".") {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
 		if d.IsDir() {
 			return nil
 		}
@@ -447,6 +453,12 @@ func (w *Workspace) listFilesLocked() ([]WorkspaceFile, error) {
 	if err := filepath.WalkDir(w.Root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
+		}
+		if path != w.Root && strings.HasPrefix(entry.Name(), ".") {
+			if entry.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
 		}
 		if entry.IsDir() {
 			return nil

@@ -33,7 +33,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CodeEditor } from "@/components/CodeEditor"
 import { cn } from "@/lib/utils"
 import { applySavedContent, shouldApplyRunResult } from "@/lib/save-state"
-import { buildWorkspaceTree, filterWorkspaceFiles, type WorkspaceTreeNode } from "@/lib/workspace-files"
+import {
+  buildWorkspaceTree,
+  defaultOpenFolderPaths,
+  filterWorkspaceFiles,
+  type WorkspaceTreeNode,
+} from "@/lib/workspace-files"
 
 const API_BASE = "/playground/api/"
 
@@ -404,6 +409,7 @@ export default function App() {
       setMeta(workspace)
       setVersions(nextVersions)
       setLimitMode(workspace.limitMode || "permissive")
+      setOpenFolders(defaultOpenFolderPaths(workspace.files))
       setAnonymousPath(anonymousFile?.path ?? "anonymous.apex")
       setAnonymous(workspace.anonymousBody ?? "")
       setContentByPath(nextContent)
@@ -637,7 +643,7 @@ export default function App() {
   const renderSourceTree = (nodes: WorkspaceTreeNode<WorkspaceFile>[], level = 0) =>
     nodes.map((node) => {
       if (node.kind === "folder") {
-        const open = level === 0 || classSearch.trim() !== "" || openFolders.has(node.path)
+        const open = classSearch.trim() !== "" || openFolders.has(node.path)
         return (
           <div key={node.id}>
             <button
@@ -771,8 +777,8 @@ export default function App() {
         </div>
       </header>
 
-      <main className="grid min-h-0 flex-1 grid-cols-[280px_minmax(420px,1fr)_minmax(360px,430px)] gap-3 p-3 max-xl:grid-cols-[250px_minmax(420px,1fr)] max-xl:[&_.output-pane]:col-span-2 max-lg:grid-cols-1 max-lg:overflow-auto">
-        <aside className="pane flex min-h-0 flex-col">
+      <main className="grid min-h-0 flex-1 grid-cols-[minmax(260px,300px)_minmax(420px,1fr)_minmax(360px,430px)] gap-3 overflow-hidden p-3 max-xl:grid-cols-[minmax(240px,280px)_minmax(420px,1fr)] max-xl:[&_.output-pane]:col-span-2 max-lg:grid-cols-1 max-lg:overflow-auto">
+        <aside className="pane flex min-h-0 min-w-0 flex-col overflow-hidden">
           <header className="pane-header">
             <div className="flex items-center gap-2">
               <FolderTree className="size-4 text-primary" />
@@ -829,7 +835,7 @@ export default function App() {
             </div>
           ) : null}
           <ScrollArea className="min-h-0 flex-1">
-            <div className="space-y-4 p-3">
+            <div className="min-w-0 space-y-4 p-3">
               {groups.map((group) => {
                 const Icon = group.icon
                 return (
@@ -859,10 +865,7 @@ export default function App() {
                         const selected = file.path === activePath || file.path === sourcePath
                         const dirty = dirtyPaths.has(file.path)
                         return (
-                          <div
-                            key={file.path}
-                            className={cn("file-row", selected && "selected")}
-                          >
+                          <div key={file.path} className={cn("file-row min-w-0", selected && "selected")}>
                             <button
                               className="min-w-0 flex-1 border-0 bg-transparent p-0 text-left text-inherit"
                               onClick={() => {

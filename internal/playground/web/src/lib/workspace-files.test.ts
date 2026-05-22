@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { buildWorkspaceTree, filterWorkspaceFiles } from "@/lib/workspace-files"
+import { buildWorkspaceTree, defaultOpenFolderPaths, filterWorkspaceFiles } from "@/lib/workspace-files"
 
 describe("filterWorkspaceFiles", () => {
   it("filters class and trigger files by full path", () => {
@@ -59,5 +59,17 @@ describe("buildWorkspaceTree", () => {
     const tree = buildWorkspaceTree(files, "Invoice")
 
     expect(tree.map((node) => node.name)).toEqual(["packages"])
+  })
+})
+
+describe("defaultOpenFolderPaths", () => {
+  it("opens only the first root folder level by default", () => {
+    const files = [
+      { path: "force-app/main/default/classes/AccountService.cls", kind: "class" },
+      { path: "packages/billing/force-app/main/default/classes/InvoiceService.cls", kind: "class" },
+      { path: "seed.json", kind: "data" },
+    ]
+
+    expect([...defaultOpenFolderPaths(files)].sort()).toEqual(["force-app", "packages"])
   })
 })

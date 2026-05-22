@@ -47,6 +47,10 @@ export function buildWorkspaceTree<T extends WorkspaceFileLike>(files: T[], sear
   return root
 }
 
+export function defaultOpenFolderPaths<T extends WorkspaceFileLike>(files: T[]) {
+  return new Set(buildWorkspaceTree(files).map((node) => node.path))
+}
+
 function compareTreeNodes<T extends WorkspaceFileLike>(left: WorkspaceTreeNode<T>, right: WorkspaceTreeNode<T>) {
   if (left.kind !== right.kind) return left.kind === "folder" ? -1 : 1
   return left.name.localeCompare(right.name)

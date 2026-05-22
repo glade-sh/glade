@@ -42,6 +42,33 @@ func TestServerWorkspaceAndRunRoutes(t *testing.T) {
 	}
 }
 
+func TestWorkspaceMetadataIgnoresDotFilesAndDirectories(t *testing.T) {
+	dataRoot := t.TempDir()
+	root := filepath.Join(dataRoot, "workspaces", "default")
+	writePlaygroundTestFile(t, filepath.Join(root, ".claude/settings.json"), "{}")
+	writePlaygroundTestFile(t, filepath.Join(root, ".claude/worktrees/tmp/force-app/main/default/classes/HiddenProbe.cls"), "public class HiddenProbe {}")
+
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	meta, err := ws.Metadata()
+	if err != nil {
+		t.Fatalf("Metadata() error = %v", err)
+	}
+	for _, file := range meta.Files {
+		if strings.HasPrefix(file.Path, ".") || strings.Contains(file.Path, "/.") {
+			t.Fatalf("dot path listed in workspace metadata: %#v", file)
+		}
+	}
+	if len(meta.Files) == 0 {
+		t.Fatalf("metadata files = %#v, want default scratch files", meta.Files)
+	}
+	if meta.AnonymousBody == "" {
+		t.Fatalf("anonymous body was not initialized")
+	}
+}
+
 func TestServerServesEmbeddedPlaygroundUI(t *testing.T) {
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
