@@ -667,6 +667,77 @@ export default function App() {
     })
   }
 
+  const databaseBrowser = (
+    <div className="database-browser">
+      <div className="database-sidebar">
+        <label className="database-search">
+          <Search className="size-3.5 shrink-0" />
+          <input
+            value={databaseSearch}
+            onChange={(event) => setDatabaseSearch(event.target.value)}
+            placeholder="Find object"
+          />
+        </label>
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="space-y-1 p-2">
+            {visibleDatabaseObjects.length ? (
+              visibleDatabaseObjects.map((object) => (
+                <button
+                  key={object.name}
+                  className={cn("database-object", activeDatabaseObject?.name === object.name && "selected")}
+                  onClick={() => setSelectedDatabaseObject(object.name)}
+                  title={object.name}
+                >
+                  <Database className="size-3.5 shrink-0 text-primary" />
+                  <span className="min-w-0 flex-1 truncate">{object.name}</span>
+                  <span className="font-mono text-[10px] text-muted-foreground">{object.recordCount}</span>
+                </button>
+              ))
+            ) : (
+              <div className="px-2 py-3 text-xs text-muted-foreground">No objects</div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+      <div className="database-table-wrap">
+        <div className="database-table-header">
+          <div className="min-w-0">
+            <div className="truncate text-xs font-semibold">{activeDatabaseObject?.name ?? "No object"}</div>
+            <div className="truncate text-[11px] text-muted-foreground">
+              {activeDatabaseObject
+                ? `${activeDatabaseObject.recordCount} rows${activeDatabaseObject.label ? ` · ${activeDatabaseObject.label}` : ""}`
+                : "Run code or seed data to inspect records"}
+            </div>
+          </div>
+        </div>
+        <ScrollArea className="min-h-0 flex-1">
+          {activeDatabaseObject?.rows.length ? (
+            <table className="database-table">
+              <thead>
+                <tr>
+                  {activeDatabaseObject.columns.map((column) => (
+                    <th key={column}>{column}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {activeDatabaseObject.rows.map((row) => (
+                  <tr key={row.id}>
+                    {activeDatabaseObject.columns.map((column) => (
+                      <td key={column}>{valuePreview(row.fields[column])}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="p-3 text-sm text-muted-foreground">No rows</div>
+          )}
+        </ScrollArea>
+      </div>
+    </div>
+  )
+
   const renderSourceTree = (nodes: WorkspaceTreeNode<WorkspaceFile>[], level = 0) =>
     nodes.map((node) => {
       if (node.kind === "folder") {
@@ -896,22 +967,35 @@ export default function App() {
           </ScrollArea>
         </aside>
 
-        <section className="grid min-h-0 grid-rows-[minmax(0,1.25fr)_minmax(230px,0.75fr)] gap-3">
-          <CodeEditor
-            title="Apex Source"
-            subtitle={sourcePath || "No source file selected"}
-            value={sourceContent}
-            onChange={onSourceChange}
-          />
-          <CodeEditor
-            title="Execute Anonymous"
-            subtitle={anonymousPath}
-            value={anonymous}
-            onChange={onAnonymousChange}
-            runLabel={running ? "Running" : "Run"}
-            running={running}
-            onRun={runAndHandle}
-          />
+        <section className="min-h-0">
+          <Tabs defaultValue="apex" className="flex h-full min-h-0 flex-col">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="apex">Apex</TabsTrigger>
+              <TabsTrigger value="database">Database</TabsTrigger>
+            </TabsList>
+            <TabsContent value="apex" className="min-h-0 flex-1">
+              <div className="grid h-full min-h-0 grid-rows-[minmax(0,1.25fr)_minmax(230px,0.75fr)] gap-3">
+                <CodeEditor
+                  title="Apex Source"
+                  subtitle={sourcePath || "No source file selected"}
+                  value={sourceContent}
+                  onChange={onSourceChange}
+                />
+                <CodeEditor
+                  title="Execute Anonymous"
+                  subtitle={anonymousPath}
+                  value={anonymous}
+                  onChange={onAnonymousChange}
+                  runLabel={running ? "Running" : "Run"}
+                  running={running}
+                  onRun={runAndHandle}
+                />
+              </div>
+            </TabsContent>
+            <TabsContent value="database" className="min-h-0 flex-1">
+              <div className="h-full min-h-0">{databaseBrowser}</div>
+            </TabsContent>
+          </Tabs>
         </section>
 
         <aside className="pane output-pane min-h-0">
@@ -956,12 +1040,11 @@ export default function App() {
           </div>
 
           <Tabs defaultValue="logs" className="flex min-h-0 flex-1 flex-col px-3 pb-3">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="logs">Logs</TabsTrigger>
               <TabsTrigger value="vars">Vars</TabsTrigger>
               <TabsTrigger value="problems">Problems</TabsTrigger>
               <TabsTrigger value="limits">Limits</TabsTrigger>
-              <TabsTrigger value="database">Data</TabsTrigger>
               <TabsTrigger value="trace">Trace</TabsTrigger>
             </TabsList>
             <TabsContent value="logs" className="min-h-0 flex-1">
@@ -1027,76 +1110,6 @@ export default function App() {
                   </tbody>
                 </table>
               </ScrollArea>
-            </TabsContent>
-            <TabsContent value="database" className="min-h-0 flex-1">
-              <div className="database-browser result-box">
-                <div className="database-sidebar">
-                  <label className="database-search">
-                    <Search className="size-3.5 shrink-0" />
-                    <input
-                      value={databaseSearch}
-                      onChange={(event) => setDatabaseSearch(event.target.value)}
-                      placeholder="Find object"
-                    />
-                  </label>
-                  <ScrollArea className="min-h-0 flex-1">
-                    <div className="space-y-1 p-2">
-                      {visibleDatabaseObjects.length ? (
-                        visibleDatabaseObjects.map((object) => (
-                          <button
-                            key={object.name}
-                            className={cn("database-object", activeDatabaseObject?.name === object.name && "selected")}
-                            onClick={() => setSelectedDatabaseObject(object.name)}
-                            title={object.name}
-                          >
-                            <Database className="size-3.5 shrink-0 text-primary" />
-                            <span className="min-w-0 flex-1 truncate">{object.name}</span>
-                            <span className="font-mono text-[10px] text-muted-foreground">{object.recordCount}</span>
-                          </button>
-                        ))
-                      ) : (
-                        <div className="px-2 py-3 text-xs text-muted-foreground">No objects</div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </div>
-                <div className="database-table-wrap">
-                  <div className="database-table-header">
-                    <div className="min-w-0">
-                      <div className="truncate text-xs font-semibold">{activeDatabaseObject?.name ?? "No object"}</div>
-                      <div className="truncate text-[11px] text-muted-foreground">
-                        {activeDatabaseObject
-                          ? `${activeDatabaseObject.recordCount} rows${activeDatabaseObject.label ? ` · ${activeDatabaseObject.label}` : ""}`
-                          : "Run code or seed data to inspect records"}
-                      </div>
-                    </div>
-                  </div>
-                  <ScrollArea className="min-h-0 flex-1">
-                    {activeDatabaseObject?.rows.length ? (
-                      <table className="database-table">
-                        <thead>
-                          <tr>
-                            {activeDatabaseObject.columns.map((column) => (
-                              <th key={column}>{column}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {activeDatabaseObject.rows.map((row) => (
-                            <tr key={row.id}>
-                              {activeDatabaseObject.columns.map((column) => (
-                                <td key={column}>{valuePreview(row.fields[column])}</td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <div className="p-3 text-sm text-muted-foreground">No rows</div>
-                    )}
-                  </ScrollArea>
-                </div>
-              </div>
             </TabsContent>
             <TabsContent value="trace" className="min-h-0 flex-1">
               <ScrollArea className="result-box">
