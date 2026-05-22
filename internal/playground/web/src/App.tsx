@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   BookOpen,
-  Braces,
   Boxes,
   CheckCircle2,
   ChevronRight,
@@ -34,9 +33,9 @@ import { CodeEditor } from "@/components/CodeEditor"
 import { cn } from "@/lib/utils"
 import { applySavedContent, shouldApplyRunResult } from "@/lib/save-state"
 import {
-  buildWorkspaceTree,
   defaultOpenFolderPaths,
-  filterWorkspaceFiles,
+  sourceFileIconName,
+  workspaceSidebarGroups,
   type WorkspaceTreeNode,
 } from "@/lib/workspace-files"
 
@@ -149,11 +148,6 @@ function fileName(path: string) {
 function shortHash(hash?: string) {
   if (!hash) return "-"
   return hash.length > 18 ? `${hash.slice(0, 16)}...` : hash
-}
-
-function formatBytes(size: number) {
-  if (size < 1024) return `${size} B`
-  return `${(size / 1024).toFixed(1)} KB`
 }
 
 function valuePreview(value: unknown) {
@@ -512,19 +506,7 @@ export default function App() {
 
   const groups = useMemo(() => {
     const files = meta?.files ?? []
-    const sourceCount = files.filter((file) => file.kind === "class" || file.kind === "trigger").length
-    const groups = [
-      {
-        label: "Classes",
-        icon: FileCode2,
-        files: filterWorkspaceFiles(files, classSearch),
-        tree: buildWorkspaceTree(files, classSearch),
-        forceVisible: sourceCount > 0 || classSearch.trim() !== "",
-      },
-      { label: "Data", icon: Database, files: files.filter((file) => file.kind === "data") },
-      { label: "Metadata", icon: Braces, files: files.filter((file) => file.kind === "metadata" || file.kind === "other") },
-    ]
-    return groups.filter((group) => group.files.length > 0 || group.forceVisible)
+    return workspaceSidebarGroups(files, classSearch).filter((group) => group.files.length > 0 || group.forceVisible)
   }, [classSearch, meta?.files])
 
   const sourceContent = sourcePath ? contentByPath[sourcePath] ?? "" : ""
@@ -648,7 +630,7 @@ export default function App() {
           <div key={node.id}>
             <button
               className="tree-row"
-              style={{ paddingLeft: `${8 + level * 14}px` }}
+              style={{ paddingLeft: `${8 + level * 13}px` }}
               onClick={() => toggleFolder(node.path)}
               title={node.path}
             >
@@ -664,12 +646,14 @@ export default function App() {
       if (!file) return null
       const selected = file.path === activePath || file.path === sourcePath
       const dirty = dirtyPaths.has(file.path)
+      const FileIcon = sourceFileIconName(file) === "trigger" ? Zap : FileCode2
       return (
         <div
           key={node.id}
-          className={cn("tree-row file-row", selected && "selected")}
-          style={{ paddingLeft: `${28 + level * 14}px` }}
+          className={cn("tree-row tree-file-row file-row", selected && "selected")}
+          style={{ paddingLeft: `${22 + level * 13}px` }}
         >
+          <FileIcon className={cn("tree-icon", file.kind === "trigger" ? "text-amber-500" : "text-primary")} />
           <button
             className="min-w-0 flex-1 border-0 bg-transparent p-0 text-left text-inherit"
             onClick={() => {
@@ -835,75 +819,30 @@ export default function App() {
             </div>
           ) : null}
           <ScrollArea className="min-h-0 flex-1">
-            <div className="min-w-0 space-y-4 p-3">
+            <div className="min-w-0 space-y-3 p-3 pr-5">
               {groups.map((group) => {
-                const Icon = group.icon
                 return (
                   <div key={group.label}>
                     <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase text-muted-foreground">
-                      <Icon className="size-3.5" />
+                      <FileCode2 className="size-3.5" />
                       {group.label}
                     </div>
-                    {group.label === "Classes" ? (
-                      <label className="mb-2 flex h-8 items-center gap-2 rounded-md border border-border bg-background/70 px-2 text-muted-foreground">
-                        <Search className="size-3.5" />
-                        <input
-                          className="min-w-0 flex-1 border-0 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
-                          value={classSearch}
-                          onChange={(event) => setClassSearch(event.target.value)}
-                          placeholder="Search classes"
-                        />
-                      </label>
-                    ) : null}
-                    <div className="space-y-1">
-                      {group.files.length === 0 && group.label === "Classes" ? (
+                    <label className="mb-2 flex h-8 w-full min-w-0 items-center gap-2 rounded-md border border-border bg-background/70 px-2 text-muted-foreground">
+                      <Search className="size-3.5 shrink-0" />
+                      <input
+                        className="min-w-0 flex-1 border-0 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
+                        value={classSearch}
+                        onChange={(event) => setClassSearch(event.target.value)}
+                        placeholder="Search classes"
+                      />
+                    </label>
+                    <div className="space-y-0.5">
+                      {group.files.length === 0 ? (
                         <div className="rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
                           No matching classes
                         </div>
                       ) : null}
-                      {group.label === "Classes" ? renderSourceTree(group.tree ?? []) : group.files.map((file) => {
-                        const selected = file.path === activePath || file.path === sourcePath
-                        const dirty = dirtyPaths.has(file.path)
-                        return (
-                          <div key={file.path} className={cn("file-row min-w-0", selected && "selected")}>
-                            <button
-                              className="min-w-0 flex-1 border-0 bg-transparent p-0 text-left text-inherit"
-                              onClick={() => {
-                                void openFile(file.path).catch((error) => {
-                                  setProblemMessage(error instanceof Error ? error.message : String(error))
-                                  setStatus("Error")
-                                })
-                              }}
-                            >
-                              <span className="block truncate text-xs font-medium">{fileName(file.path)}</span>
-                              <span className="block truncate font-mono text-[10px] text-muted-foreground">
-                                {file.path}
-                              </span>
-                            </button>
-                            <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] text-muted-foreground">
-                              {dirty ? <CircleDashed className="size-3 text-amber-500" /> : null}
-                              v{file.version}
-                              <span>{formatBytes(file.size)}</span>
-                            </span>
-                            {file.kind === "class" || file.kind === "trigger" ? (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
-                                title={`Delete ${fileName(file.path)}`}
-                                onClick={() => {
-                                  void deleteWorkspaceFile(file.path).catch((error) => {
-                                    setProblemMessage(error instanceof Error ? error.message : String(error))
-                                    setStatus("Error")
-                                  })
-                                }}
-                              >
-                                <Trash2 />
-                              </Button>
-                            ) : null}
-                          </div>
-                        )
-                      })}
+                      {renderSourceTree(group.tree)}
                     </div>
                   </div>
                 )

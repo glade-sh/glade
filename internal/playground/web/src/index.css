@@ -113,10 +113,10 @@ textarea {
   width: 100%;
   min-width: 0;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   border: 1px solid transparent;
   border-radius: 6px;
-  padding: 7px 8px;
+  padding: 5px 8px;
   color: var(--foreground);
   text-align: left;
   transition: background-color 140ms ease, border-color 140ms ease;
@@ -133,16 +133,23 @@ textarea {
 
 .tree-row {
   display: flex;
-  min-height: 30px;
+  min-height: 26px;
   width: 100%;
   min-width: 0;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   border: 1px solid transparent;
   border-radius: 5px;
   background: transparent;
   color: var(--foreground);
   text-align: left;
+}
+
+.tree-file-row {
+  min-height: 26px;
+  padding-top: 3px;
+  padding-right: 6px;
+  padding-bottom: 3px;
 }
 
 .tree-row:hover {

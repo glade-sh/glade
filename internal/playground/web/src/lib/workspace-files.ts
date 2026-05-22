@@ -12,6 +12,13 @@ export type WorkspaceTreeNode<T extends WorkspaceFileLike = WorkspaceFileLike> =
   children: WorkspaceTreeNode<T>[]
 }
 
+export type WorkspaceSidebarGroup<T extends WorkspaceFileLike = WorkspaceFileLike> = {
+  label: "Classes"
+  files: T[]
+  tree: WorkspaceTreeNode<T>[]
+  forceVisible: boolean
+}
+
 export function filterWorkspaceFiles<T extends WorkspaceFileLike>(files: T[], search: string): T[] {
   const query = search.trim().toLowerCase()
   const sourceFiles = files.filter((file) => file.kind === "class" || file.kind === "trigger")
@@ -49,6 +56,23 @@ export function buildWorkspaceTree<T extends WorkspaceFileLike>(files: T[], sear
 
 export function defaultOpenFolderPaths<T extends WorkspaceFileLike>(files: T[]) {
   return new Set(buildWorkspaceTree(files).map((node) => node.path))
+}
+
+export function workspaceSidebarGroups<T extends WorkspaceFileLike>(files: T[], search: string): WorkspaceSidebarGroup<T>[] {
+  const sourceCount = files.filter((file) => file.kind === "class" || file.kind === "trigger").length
+  const sourceFiles = filterWorkspaceFiles(files, search)
+  return [
+    {
+      label: "Classes",
+      files: sourceFiles,
+      tree: buildWorkspaceTree(files, search),
+      forceVisible: sourceCount > 0 || search.trim() !== "",
+    },
+  ]
+}
+
+export function sourceFileIconName(file: WorkspaceFileLike) {
+  return file.kind === "trigger" ? "trigger" : "class"
 }
 
 function compareTreeNodes<T extends WorkspaceFileLike>(left: WorkspaceTreeNode<T>, right: WorkspaceTreeNode<T>) {

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest"
 
-import { buildWorkspaceTree, defaultOpenFolderPaths, filterWorkspaceFiles } from "@/lib/workspace-files"
+import {
+  buildWorkspaceTree,
+  defaultOpenFolderPaths,
+  filterWorkspaceFiles,
+  sourceFileIconName,
+  workspaceSidebarGroups,
+} from "@/lib/workspace-files"
 
 describe("filterWorkspaceFiles", () => {
   it("filters class and trigger files by full path", () => {
@@ -71,5 +77,39 @@ describe("defaultOpenFolderPaths", () => {
     ]
 
     expect([...defaultOpenFolderPaths(files)].sort()).toEqual(["force-app", "packages"])
+  })
+})
+
+describe("workspaceSidebarGroups", () => {
+  it("shows only the source tree and omits metadata/data clutter", () => {
+    const files = [
+      { path: "force-app/main/default/classes/AccountService.cls", kind: "class" },
+      { path: "force-app/main/default/triggers/AccountTrigger.trigger", kind: "trigger" },
+      { path: "sfdx-project.json", kind: "metadata" },
+      { path: "config/settings.json", kind: "metadata" },
+      { path: "seed.json", kind: "data" },
+    ]
+
+    const groups = workspaceSidebarGroups(files, "")
+
+    expect(groups.map((group) => group.label)).toEqual(["Classes"])
+    expect(groups[0].files.map((file) => file.path)).toEqual([
+      "force-app/main/default/classes/AccountService.cls",
+      "force-app/main/default/triggers/AccountTrigger.trigger",
+    ])
+  })
+
+  it("keeps the source group visible when search has no matches", () => {
+    const groups = workspaceSidebarGroups([{ path: "force-app/main/default/classes/AccountService.cls", kind: "class" }], "Nope")
+
+    expect(groups).toHaveLength(1)
+    expect(groups[0].forceVisible).toBe(true)
+  })
+})
+
+describe("sourceFileIconName", () => {
+  it("distinguishes classes and triggers", () => {
+    expect(sourceFileIconName({ path: "force-app/main/default/classes/AccountService.cls", kind: "class" })).toBe("class")
+    expect(sourceFileIconName({ path: "force-app/main/default/triggers/AccountTrigger.trigger", kind: "trigger" })).toBe("trigger")
   })
 })
