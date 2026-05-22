@@ -1,6 +1,7 @@
 package playground
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -57,6 +58,38 @@ System.debug(queried.BillingAddress.street + ' / ' + queried.BillingAddress.city
 		t.Fatalf("status = %q diagnostics=%#v error=%s", result.Status, result.Diagnostics, result.ErrorMessage)
 	}
 	if len(result.Logs) != 1 || result.Logs[0] != "12 Lake Road / Port Alsworth" {
+		t.Fatalf("logs = %#v", result.Logs)
+	}
+}
+
+func TestRunnerTreatsNamespacedProjectAsLocalSource(t *testing.T) {
+	projectRoot := t.TempDir()
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-project","namespace":"verifiable","sourceApiVersion":"65.0"}`)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/NextGenSettingService.cls"), `public class NextGenSettingService {
+  public static String activateNextGenSetting() {
+    return 'activated';
+  }
+}
+`)
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ProjectRoot: projectRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	runner := NewRunner(ws, RunnerOptions{Version: "test"})
+
+	result, err := runner.Run(t.Context(), RunRequest{
+		AnonymousBody: "System.debug(NextGenSettingService.activateNextGenSetting());",
+		Mode:          RunModeScratch,
+		LimitMode:     "permissive",
+		UseCache:      false,
+	})
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if result.Status != RunStatusPass {
+		t.Fatalf("status = %q diagnostics=%#v error=%s", result.Status, result.Diagnostics, result.ErrorMessage)
+	}
+	if len(result.Logs) != 1 || result.Logs[0] != "activated" {
 		t.Fatalf("logs = %#v", result.Logs)
 	}
 }

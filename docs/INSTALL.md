@@ -158,6 +158,10 @@ oaer playground --examples --db .oaer/playground/org.sqlite
 oaer playground --project . --db .oaer/playground/org.sqlite
 ```
 
+The foreground project runs as local source in the playground, even when its
+SFDX descriptor declares a package namespace. Managed package dependencies keep
+their configured namespaces.
+
 Use `--project-ref name=path` to add local SFDX folders to the scratch
 workspace's project selector without editing them in place. Loading a reference
 copies supported `.cls`, `.trigger`, `.apex`, `.json`, `.xml`, `.yml`, and

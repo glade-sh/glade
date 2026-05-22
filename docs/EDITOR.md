@@ -26,6 +26,10 @@ Point it at a project when you want to edit that folder directly:
 oaer playground --project . --db .oaer/playground/org.sqlite --open
 ```
 
+The foreground project runs as local source for execute-anonymous calls, even
+when `sfdx-project.json` declares a namespace. Configured managed package
+dependencies still run as dependencies.
+
 Use one or more `--project-ref name=path` flags when you want selectable local
 project folders copied into the scratch playground instead of editing the folder
 directly. Project references are available only in the managed scratch

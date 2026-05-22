@@ -234,6 +234,7 @@ func loadWorkspaceIndex(root string) (typesys.Index, []diagnostic.Diagnostic, er
 	if err != nil {
 		return typesys.Index{}, nil, err
 	}
+	p.Namespace = ""
 	s, err := oaerschema.LoadProject(p)
 	if err != nil {
 		index := typesys.Build(p, oaerschema.Schema{})
