@@ -448,6 +448,17 @@ func (w *Workspace) Hash() (string, error) {
 	return w.hashLocked(files)
 }
 
+func (w *Workspace) RuntimeSourceHash() (string, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	files, err := w.listFilesLocked()
+	if err != nil {
+		return "", err
+	}
+	return w.hashLocked(selectRuntimeSourceFiles(files))
+}
+
 func (w *Workspace) listFilesLocked() ([]WorkspaceFile, error) {
 	var files []WorkspaceFile
 	if err := filepath.WalkDir(w.Root, func(path string, entry fs.DirEntry, err error) error {
@@ -503,6 +514,17 @@ func (w *Workspace) hashLocked(files []WorkspaceFile) (string, error) {
 		h.Write([]byte{0})
 	}
 	return "sha256:" + hex.EncodeToString(h.Sum(nil)), nil
+}
+
+func selectRuntimeSourceFiles(files []WorkspaceFile) []WorkspaceFile {
+	out := make([]WorkspaceFile, 0, len(files))
+	for _, file := range files {
+		if file.Kind == "anonymous" || file.Kind == "data" {
+			continue
+		}
+		out = append(out, file)
+	}
+	return out
 }
 
 func slashRel(root, path string) string {

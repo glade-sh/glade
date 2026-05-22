@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { applySavedContent, shouldApplyRunResult } from "@/lib/save-state"
+import { applySavedContent, pathsToSaveBeforeRun, shouldApplyRunResult } from "@/lib/save-state"
 
 describe("applySavedContent", () => {
   it("keeps a file dirty when a newer edit exists after a save started", () => {
@@ -35,5 +35,16 @@ describe("shouldApplyRunResult", () => {
 
   it("accepts a run result when the editor has not changed since the run started", () => {
     expect(shouldApplyRunResult({ startedAtEditSeq: 4, currentEditSeq: 4 })).toBe(true)
+  })
+})
+
+describe("pathsToSaveBeforeRun", () => {
+  it("saves dirty source before run but keeps anonymous execution ephemeral", () => {
+    const paths = pathsToSaveBeforeRun({
+      dirtyPaths: new Set(["force-app/main/default/classes/AccountPlayground.cls", "anonymous.apex"]),
+      sourcePath: "force-app/main/default/classes/AccountPlayground.cls",
+    })
+
+    expect(paths).toEqual(["force-app/main/default/classes/AccountPlayground.cls"])
   })
 })

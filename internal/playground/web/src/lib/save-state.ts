@@ -34,3 +34,13 @@ type ShouldApplyRunResultInput = {
 export function shouldApplyRunResult({ startedAtEditSeq, currentEditSeq }: ShouldApplyRunResultInput) {
   return startedAtEditSeq === currentEditSeq
 }
+
+type PathsToSaveBeforeRunInput = {
+  dirtyPaths: ReadonlySet<string>
+  sourcePath: string
+}
+
+export function pathsToSaveBeforeRun({ dirtyPaths, sourcePath }: PathsToSaveBeforeRunInput) {
+  if (!sourcePath || !dirtyPaths.has(sourcePath)) return []
+  return [sourcePath]
+}

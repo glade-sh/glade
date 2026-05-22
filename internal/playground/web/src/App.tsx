@@ -31,7 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CodeEditor } from "@/components/CodeEditor"
 import { cn } from "@/lib/utils"
-import { applySavedContent, shouldApplyRunResult } from "@/lib/save-state"
+import { applySavedContent, pathsToSaveBeforeRun, shouldApplyRunResult } from "@/lib/save-state"
 import {
   defaultOpenFolderPaths,
   sourceFileIconName,
@@ -367,13 +367,8 @@ export default function App() {
       setRunning(true)
       try {
         const dirty = new Set(dirtyRef.current)
-        const source = sourcePathRef.current
-        const anon = anonymousPathRef.current
-        if (source && dirty.has(source)) {
-          await saveFile(source, contentRef.current[source] ?? "")
-        }
-        if (anon && dirty.has(anon)) {
-          await saveFile(anon, anonymousRef.current)
+        for (const path of pathsToSaveBeforeRun({ dirtyPaths: dirty, sourcePath: sourcePathRef.current })) {
+          await saveFile(path, contentRef.current[path] ?? "")
         }
         if (!shouldApplyRunResult({ startedAtEditSeq, currentEditSeq: editSeqRef.current })) {
           setStatus("Ready")

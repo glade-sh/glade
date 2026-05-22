@@ -140,6 +140,10 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 	if err != nil {
 		return RunResult{}, err
 	}
+	runtimeSourceHash, err := r.workspace.RuntimeSourceHash()
+	if err != nil {
+		return RunResult{}, err
+	}
 	seedHash := fileHash(filepath.Join(r.workspace.Root, "seed.json"))
 	cacheKey := CacheKey{
 		WorkspaceHash: workspaceHash,
@@ -168,7 +172,7 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 	}
 
 	compileStart := time.Now()
-	runtime, indexDiagnostics, err := r.loadRuntimeTemplate(workspaceHash)
+	runtime, indexDiagnostics, err := r.loadRuntimeTemplate(runtimeSourceHash)
 	if err != nil {
 		result.Status = RunStatusCompileError
 		result.Diagnostics = append(result.Diagnostics, Diagnostic{Severity: "error", Message: err.Error()})

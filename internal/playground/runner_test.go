@@ -251,6 +251,52 @@ func TestRunnerCachesProjectRuntimeBetweenAnonymousRuns(t *testing.T) {
 	}
 }
 
+func TestRunnerKeepsProjectRuntimeAfterAnonymousFileSave(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	meta, err := ws.Metadata()
+	if err != nil {
+		t.Fatalf("Metadata() error = %v", err)
+	}
+	versions := make(map[string]int)
+	for _, file := range meta.Files {
+		versions[file.Path] = file.Version
+	}
+	runner := NewRunner(ws, RunnerOptions{Version: "test"})
+	loads := 0
+	runner.loadWorkspaceIndex = func(root string) (typesys.Index, []diagnostic.Diagnostic, error) {
+		loads++
+		return loadWorkspaceIndex(root)
+	}
+
+	for _, body := range []string{"System.debug('before');", "System.debug('after');"} {
+		result, err := runner.Run(t.Context(), RunRequest{
+			AnonymousBody: body,
+			Mode:          RunModeScratch,
+			LimitMode:     "permissive",
+			UseCache:      false,
+		})
+		if err != nil {
+			t.Fatalf("Run() error = %v", err)
+		}
+		if result.Status != RunStatusPass {
+			t.Fatalf("status = %q diagnostics=%#v error=%s", result.Status, result.Diagnostics, result.ErrorMessage)
+		}
+		if body == "System.debug('before');" {
+			save, err := ws.SaveFile(FileSaveRequest{Path: "anonymous.apex", Content: "System.debug('saved');\n", Version: versions["anonymous.apex"]})
+			if err != nil {
+				t.Fatalf("SaveFile() error = %v", err)
+			}
+			versions["anonymous.apex"] = save.File.Version
+		}
+	}
+	if loads != 1 {
+		t.Fatalf("workspace loads = %d, want 1", loads)
+	}
+}
+
 func TestExampleProjectsRunAnonymous(t *testing.T) {
 	for _, example := range ListExampleProjects() {
 		t.Run(example.ID, func(t *testing.T) {
