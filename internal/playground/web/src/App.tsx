@@ -4,11 +4,14 @@ import {
   Braces,
   Boxes,
   CheckCircle2,
+  ChevronRight,
   CircleAlert,
   CircleDashed,
   Command,
   Database,
   FileCode2,
+  Folder,
+  FolderOpen,
   FolderTree,
   Moon,
   Play,
@@ -30,7 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CodeEditor } from "@/components/CodeEditor"
 import { cn } from "@/lib/utils"
 import { applySavedContent, shouldApplyRunResult } from "@/lib/save-state"
-import { filterWorkspaceFiles } from "@/lib/workspace-files"
+import { buildWorkspaceTree, filterWorkspaceFiles, type WorkspaceTreeNode } from "@/lib/workspace-files"
 
 const API_BASE = "/playground/api/"
 
@@ -190,6 +193,7 @@ export default function App() {
   const [selectedExample, setSelectedExample] = useState("")
   const [canLoadExamples, setCanLoadExamples] = useState(true)
   const [classSearch, setClassSearch] = useState("")
+  const [openFolders, setOpenFolders] = useState<Set<string>>(new Set())
 
   const metaRef = useRef<WorkspaceMetadata | null>(null)
   const versionsRef = useRef<Record<string, number>>({})
@@ -508,6 +512,7 @@ export default function App() {
         label: "Classes",
         icon: FileCode2,
         files: filterWorkspaceFiles(files, classSearch),
+        tree: buildWorkspaceTree(files, classSearch),
         forceVisible: sourceCount > 0 || classSearch.trim() !== "",
       },
       { label: "Data", icon: Database, files: files.filter((file) => file.kind === "data") },
@@ -619,6 +624,80 @@ export default function App() {
       setStatus("Error")
     })
   }
+
+  const toggleFolder = (path: string) => {
+    setOpenFolders((current) => {
+      const next = new Set(current)
+      if (next.has(path)) next.delete(path)
+      else next.add(path)
+      return next
+    })
+  }
+
+  const renderSourceTree = (nodes: WorkspaceTreeNode<WorkspaceFile>[], level = 0) =>
+    nodes.map((node) => {
+      if (node.kind === "folder") {
+        const open = level === 0 || classSearch.trim() !== "" || openFolders.has(node.path)
+        return (
+          <div key={node.id}>
+            <button
+              className="tree-row"
+              style={{ paddingLeft: `${8 + level * 14}px` }}
+              onClick={() => toggleFolder(node.path)}
+              title={node.path}
+            >
+              <ChevronRight className={cn("tree-chevron", open && "open")} />
+              {open ? <FolderOpen className="tree-icon text-primary" /> : <Folder className="tree-icon" />}
+              <span className="tree-name">{node.name}</span>
+            </button>
+            {open ? <div>{renderSourceTree(node.children, level + 1)}</div> : null}
+          </div>
+        )
+      }
+      const file = node.file
+      if (!file) return null
+      const selected = file.path === activePath || file.path === sourcePath
+      const dirty = dirtyPaths.has(file.path)
+      return (
+        <div
+          key={node.id}
+          className={cn("tree-row file-row", selected && "selected")}
+          style={{ paddingLeft: `${28 + level * 14}px` }}
+        >
+          <button
+            className="min-w-0 flex-1 border-0 bg-transparent p-0 text-left text-inherit"
+            onClick={() => {
+              void openFile(file.path).catch((error) => {
+                setProblemMessage(error instanceof Error ? error.message : String(error))
+                setStatus("Error")
+              })
+            }}
+            title={file.path}
+          >
+            <span className="tree-name text-xs font-medium">{fileName(file.path)}</span>
+          </button>
+          <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] text-muted-foreground">
+            {dirty ? <CircleDashed className="size-3 text-amber-500" /> : null}
+          </span>
+          {file.kind === "class" || file.kind === "trigger" ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+              title={`Delete ${fileName(file.path)}`}
+              onClick={() => {
+                void deleteWorkspaceFile(file.path).catch((error) => {
+                  setProblemMessage(error instanceof Error ? error.message : String(error))
+                  setStatus("Error")
+                })
+              }}
+            >
+              <Trash2 />
+            </Button>
+          ) : null}
+        </div>
+      )
+    })
 
   return (
     <div className="flex h-screen min-h-[720px] flex-col bg-background text-foreground">
@@ -776,7 +855,7 @@ export default function App() {
                           No matching classes
                         </div>
                       ) : null}
-                      {group.files.map((file) => {
+                      {group.label === "Classes" ? renderSourceTree(group.tree ?? []) : group.files.map((file) => {
                         const selected = file.path === activePath || file.path === sourcePath
                         const dirty = dirtyPaths.has(file.path)
                         return (

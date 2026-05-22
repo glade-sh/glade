@@ -130,6 +130,51 @@ textarea {
   background: color-mix(in oklch, var(--primary) 10%, var(--pane));
 }
 
+.tree-row {
+  display: flex;
+  min-height: 30px;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--foreground);
+  text-align: left;
+}
+
+.tree-row:hover {
+  background: var(--muted);
+}
+
+.tree-chevron {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  color: var(--muted-foreground);
+  transition: transform 120ms ease;
+}
+
+.tree-chevron.open {
+  transform: rotate(90deg);
+}
+
+.tree-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  color: var(--muted-foreground);
+}
+
+.tree-name {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .editor-shell {
   display: grid;
   min-height: 0;
