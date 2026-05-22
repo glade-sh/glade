@@ -101,7 +101,7 @@ func (s *Server) handleLoadExample(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) listExamples() []ExampleProject {
-	examples := []ExampleProject(nil)
+	examples := make([]ExampleProject, 0)
 	if s.showExamples && len(s.projectRefs) == 0 {
 		examples = ListExampleProjects()
 	}

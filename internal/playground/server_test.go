@@ -189,6 +189,9 @@ func TestServerHidesBuiltInExamplesUnlessEnabled(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &listed); err != nil {
 		t.Fatalf("decode examples: %v", err)
 	}
+	if !strings.Contains(rec.Body.String(), `"examples":[]`) {
+		t.Fatalf("examples should be an empty array, body=%s", rec.Body.String())
+	}
 	if len(listed.Examples) != 0 {
 		t.Fatalf("examples = %#v", listed.Examples)
 	}

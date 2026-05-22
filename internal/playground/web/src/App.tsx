@@ -450,9 +450,10 @@ export default function App() {
     void api<{ examples: ExampleProject[]; canLoad: boolean }>("examples")
       .then((body) => {
         if (cancelled) return
-        setExamples(body.examples)
+        const nextExamples = body.examples ?? []
+        setExamples(nextExamples)
         setCanLoadExamples(body.canLoad)
-        setSelectedExample((current) => current || body.examples[0]?.id || "")
+        setSelectedExample((current) => current || nextExamples[0]?.id || "")
       })
       .catch(() => {
         if (!cancelled) setCanLoadExamples(false)
