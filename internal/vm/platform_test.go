@@ -2498,7 +2498,7 @@ func TestExecApexPagesCurrentPageAndSeverityEdges(t *testing.T) {
 PageReference defaultPage = ApexPages.currentPage();
 System.assertEquals(null, defaultPage);
 System.assertEquals(null, System.currentPageReference());
-System.assert(ApexPages.currentPage() != null);
+System.assertEquals(null, ApexPages.currentPage());
 ApexPages.currentPage().getParameters().put('default', 'ready');
 System.assertEquals('ready', ApexPages.currentPage().getParameters().get('default'));
 PageReference before = new PageReference('/apex/Before');
@@ -2534,6 +2534,24 @@ System.assertEquals('Detail', message.getDetail());
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	machine.RegisterPageReference("AccountView")
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestStartTestInitializesDefaultCurrentPage(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(null, ApexPages.currentPage());
+Test.startTest();
+System.assertNotEquals(null, ApexPages.currentPage());
+System.assertEquals('/apex/current', ApexPages.currentPage().getUrl());
+Test.stopTest();
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

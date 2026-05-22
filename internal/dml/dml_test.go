@@ -628,6 +628,67 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 	}
 }
 
+func TestDMLRecalculatesSummaryFieldsWithNestedFormulaAndDefaultFilter(t *testing.T) {
+	org := testOrg()
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Parent__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"SubTotal__c": {
+					APIName:           "SubTotal__c",
+					Type:              storage.FieldSummary,
+					DisplayType:       "Currency",
+					SummarizedField:   "Child__c.Total__c",
+					SummaryForeignKey: "Child__c.Parent__c",
+					SummaryOperation:  "sum",
+					SummaryFilterItems: []storage.SummaryFilterItem{{
+						Field:     "Child__c.IsCoupon__c",
+						Operation: "equals",
+						Value:     "False",
+					}},
+				},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Child__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Parent__c":    {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
+				"Quantity__c":  {APIName: "Quantity__c", Type: storage.FieldInteger},
+				"UnitPrice__c": {APIName: "UnitPrice__c", Type: storage.FieldDecimal},
+				"SubTotal__c":  {APIName: "SubTotal__c", Type: storage.FieldCalculated, DisplayType: "Currency", Formula: "Quantity__c * UnitPrice__c"},
+				"Total__c":     {APIName: "Total__c", Type: storage.FieldCalculated, DisplayType: "Currency", Formula: "SubTotal__c"},
+				"IsCoupon__c":  {APIName: "IsCoupon__c", Type: storage.FieldBoolean, DefaultValue: "false"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	parent := engine.Insert([]storage.Record{{Object: "Parent__c"}})
+	if !parent[0].Success {
+		t.Fatalf("parent insert = %#v", parent[0])
+	}
+	child := engine.Insert([]storage.Record{{
+		Object: "Child__c",
+		Fields: map[string]storage.Value{
+			"Parent__c":    storage.IDValue(parent[0].ID),
+			"Quantity__c":  storage.IntegerValue(1),
+			"UnitPrice__c": storage.DecimalValue("38.50"),
+		},
+	}})
+	if !child[0].Success {
+		t.Fatalf("child insert = %#v", child[0])
+	}
+	stored := org.Objects["Parent__c"].Records[parent[0].ID]
+	if got := stored.Fields["SubTotal__c"].Decimal; got != "38.5" && got != "38.50" {
+		t.Fatalf("nested formula summary = %q, want 38.50", got)
+	}
+}
+
 func TestDMLCascadesSummaryFieldRecalculation(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Grandparent__c"] = storage.ObjectState{
@@ -1211,7 +1272,7 @@ func TestDatabaseErrorDetailsForRequiredDuplicateAndValidationFailures(t *testin
 		Name:                  "BlockBadName",
 		Active:                true,
 		ErrorConditionFormula: `Name = "Blocked"`,
-		ErrorMessage:          "blocked by validation rule",
+		ErrorMessage:          `blocked by "validation" rule`,
 		ErrorDisplayField:     "Name",
 	}}
 	org.Objects["Account"] = account
@@ -2083,7 +2144,7 @@ func TestValidationRules(t *testing.T) {
 		Name:                  "BlockBadName",
 		Active:                true,
 		ErrorConditionFormula: `Name = "Blocked"`,
-		ErrorMessage:          "blocked by validation rule",
+		ErrorMessage:          `blocked by "validation" rule`,
 		ErrorDisplayField:     "Name",
 	}}
 	org.Objects["Account"] = account
@@ -2108,7 +2169,7 @@ func TestValidationRules(t *testing.T) {
 		Object: "Account",
 		Fields: map[string]storage.Value{"Name": storage.StringValue("Blocked")},
 	}})
-	if blockedUpdate[0].Success || blockedUpdate[0].Error != "blocked by validation rule" {
+	if blockedUpdate[0].Success || blockedUpdate[0].Error != "blocked by &quot;validation&quot; rule" {
 		t.Fatalf("blocked update = %#v", blockedUpdate)
 	}
 }

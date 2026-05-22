@@ -2651,6 +2651,9 @@ func calculatedFieldValue(org storage.OrgState, definition storage.ObjectDefinit
 	}
 	fieldDef, ok := definition.Fields[field]
 	if !ok || strings.TrimSpace(fieldDef.Formula) == "" {
+		if ok && fieldDef.Type == storage.FieldSummary {
+			return dml.EvaluateRecordSummaryValueInOrg(fieldDef, &org, definition, record)
+		}
 		return storage.Value{}, false
 	}
 	return calculatedRecordValue(org, definition, record, fieldDef)

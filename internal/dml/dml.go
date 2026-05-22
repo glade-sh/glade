@@ -3022,6 +3022,7 @@ func (e *Engine) validateValidationRules(objectName string, definition storage.O
 		if message == "" {
 			message = fmt.Sprintf("dml: validation rule %s failed", rule.Name)
 		}
+		message = validationRuleErrorMessage(message)
 		fields := []string(nil)
 		if rule.ErrorDisplayField != "" {
 			fields = []string{rule.ErrorDisplayField}
@@ -3029,6 +3030,10 @@ func (e *Engine) validateValidationRules(objectName string, definition storage.O
 		return dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", fields, "%s", message)
 	}
 	return nil
+}
+
+func validationRuleErrorMessage(message string) string {
+	return strings.ReplaceAll(message, `"`, "&quot;")
 }
 
 func evaluateValidationFormula(formula string, record storage.Record) (bool, bool) {
@@ -4329,6 +4334,17 @@ func (e *Engine) evaluateSummaryField(parent storage.Record, field storage.Field
 		acc.add(operation, value)
 	}
 	return acc.value(operation)
+}
+
+func EvaluateRecordSummaryValueInOrg(field storage.Field, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record) (storage.Value, bool) {
+	if org == nil {
+		return storage.Value{}, false
+	}
+	if record.Object == "" {
+		record.Object = definition.APIName
+	}
+	engine := NewEngine(org)
+	return engine.evaluateSummaryField(record, field)
 }
 
 func splitSummaryQualifiedField(name string) (string, string) {

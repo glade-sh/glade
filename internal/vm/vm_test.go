@@ -1394,10 +1394,10 @@ System.assertEquals(Account.SObjectType, records.getSObjectType());
 	}
 }
 
-func TestExecListSObjectTypeInfersEmptySelectorReturnFromIDSet(t *testing.T) {
+func TestExecListSObjectTypeInfersEmptySelectorReturnFromSOQL(t *testing.T) {
 	selectProgram, err := CompileAnonymous(`
-return new List<SObject>();
-`)
+return [SELECT Id FROM Account WHERE Id IN :ids];
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}

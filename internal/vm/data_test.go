@@ -598,6 +598,69 @@ System.assertEquals(Schema.SOAPType.ID, ownerField.getDescribe().getSOAPType());
 	}
 }
 
+func TestExecJSONDeserializedCustomSObjectGetByFieldToken(t *testing.T) {
+	program, err := CompileAnonymous(`
+OrderItem__c row = (OrderItem__c)JSON.deserialize('{"TransactionDate__c":"2026-05-02"}', OrderItem__c.class);
+System.assertEquals(Date.newInstance(2026, 5, 2), row.TransactionDate__c);
+System.assertEquals(Date.newInstance(2026, 5, 2), row.get(OrderItem__c.TransactionDate__c));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["OrderItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "OrderItem__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Id":                 {APIName: "Id", Type: storage.FieldID},
+				"TransactionDate__c": {APIName: "TransactionDate__c", Type: storage.FieldCalculated, DisplayType: "DATE", Formula: "Order__r.TransactionDate__c"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTypedNullSObjectPropertyFieldAccessReturnsNullValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+Holder holder = new Holder();
+System.assertEquals(null, holder.CartItem.Customer__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "CartItem__c",
+			KeyPrefix: "a02",
+			Fields: map[string]storage.Field{
+				"Id":          {APIName: "Id", Type: storage.FieldID},
+				"Customer__c": {APIName: "Customer__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "Holder",
+		Fields: map[string]Field{
+			"CartItem": {Name: "CartItem", Type: "CartItem__c", Property: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSchemaSObjectFieldMapKeySetReturnsCanonicalFieldNames(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectField> fields = Schema.SObjectType.Account.fields.getMap();
@@ -7203,6 +7266,59 @@ row.Name = 'Changed';
 update row;
 Account changed = [SELECT Name FROM Account WHERE Id = :parent.Id LIMIT 1];
 System.assertEquals('Changed', changed.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["SubTotal__c"] = storage.Field{
+		APIName:           "SubTotal__c",
+		Type:              storage.FieldSummary,
+		DisplayType:       "DECIMAL",
+		SummarizedField:   "WidgetLine__c.Amount__c",
+		SummaryForeignKey: "WidgetLine__c.Account__c",
+		SummaryOperation:  "sum",
+		SummaryFilterItems: []storage.SummaryFilterItem{{
+			Field:     "WidgetLine__c.IsCoupon__c",
+			Operation: "equals",
+			Value:     "False",
+		}},
+	}
+	org.Objects["Account"] = account
+	org.Objects["WidgetLine__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "WidgetLine__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Account__c":  {APIName: "Account__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account__r"},
+				"Amount__c":   {APIName: "Amount__c", Type: storage.FieldDecimal},
+				"IsCoupon__c": {APIName: "IsCoupon__c", Type: storage.FieldBoolean},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSummaryFieldDoesNotMutatePreviouslyQueriedParentAfterChildDelete(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account parent = new Account(Name = 'Acme');
+insert parent;
+WidgetLine__c line = new WidgetLine__c(Account__c = parent.Id, Amount__c = 7, IsCoupon__c = false);
+insert line;
+Account queried = [SELECT SubTotal__c FROM Account WHERE Id = :parent.Id LIMIT 1];
+System.assert(queried.getPopulatedFieldsAsMap().containsKey('SubTotal__c'), 'queried subtotal should be populated');
+System.assertEquals(7, queried.SubTotal__c, 'queried subtotal before child delete');
+delete line;
+System.assert(queried.getPopulatedFieldsAsMap().containsKey('SubTotal__c'), 'queried subtotal should remain populated');
+System.assertEquals(7, queried.SubTotal__c, 'queried subtotal after child delete');
+Account fresh = [SELECT SubTotal__c FROM Account WHERE Id = :parent.Id LIMIT 1];
+System.assertEquals(0, fresh.SubTotal__c, 'fresh subtotal after child delete');
 `)
 	if err != nil {
 		t.Fatal(err)

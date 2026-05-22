@@ -2146,7 +2146,7 @@ func (vm *VM) evalBinary(op string, left, right Value, result *Result) (Value, e
 		return evalBinary(op, left, right)
 	case "==", "!=":
 		if (isImplicitCurrentPageNull(left) && right.Kind == ValueNull) || (left.Kind == ValueNull && isImplicitCurrentPageNull(right)) {
-			return Bool(op == "!="), nil
+			return Bool(op == "=="), nil
 		}
 		equal, err := vm.apexEquals(left, right, result)
 		if err != nil {
@@ -9150,6 +9150,9 @@ func (vm *VM) testStart() (Value, error) {
 	}
 	vm.testContext.Started = true
 	vm.testContext.Stopped = false
+	if vm.currentPage.Kind == "" {
+		vm.currentPage = newPageReference("/apex/current")
+	}
 	vm.testContext.AsyncStartIndex = len(vm.testContext.AsyncJobs)
 	vm.testContext.PlatformEventStartIndex = len(vm.testContext.PlatformEvents)
 	vm.deferPreStartAsyncJobRecords()
@@ -10889,7 +10892,7 @@ func (vm *VM) executeSOQL(raw string, execResult *Result) (Value, error) {
 	out := List(values...)
 	if len(values) > 0 && values[0].Type != "" {
 		out.Type = "List<" + values[0].Type + ">"
-	} else if objectName := vm.soqlResultObjectName(raw); objectName != "" {
+	} else if objectName := vm.soqlResultObjectNameWithExpander(raw, vm.expandSOQLBinds); objectName != "" {
 		out.Type = "List<" + objectName + ">"
 	}
 	return out, nil
@@ -10903,7 +10906,7 @@ func (vm *VM) executeSOQLWithAccessLevel(raw string, accessLevel Value, execResu
 	out := List(values...)
 	if len(values) > 0 && values[0].Type != "" {
 		out.Type = "List<" + values[0].Type + ">"
-	} else if objectName := vm.soqlResultObjectName(raw); objectName != "" {
+	} else if objectName := vm.soqlResultObjectNameWithExpander(raw, vm.expandSOQLBinds); objectName != "" {
 		out.Type = "List<" + objectName + ">"
 	}
 	return out, nil
@@ -10960,7 +10963,9 @@ func (vm *VM) executeSOQLWithBindMap(raw string, binds Value, execResult *Result
 	out := List(values...)
 	if len(values) > 0 && values[0].Type != "" {
 		out.Type = "List<" + values[0].Type + ">"
-	} else if objectName := vm.soqlResultObjectName(raw); objectName != "" {
+	} else if objectName := vm.soqlResultObjectNameWithExpander(raw, func(query string) (string, error) {
+		return vm.expandSOQLBindsFromMap(query, binds)
+	}); objectName != "" {
 		out.Type = "List<" + objectName + ">"
 	}
 	return out, nil
@@ -10976,10 +10981,22 @@ func (vm *VM) executeSOQLWithBindMapAccessLevel(raw string, binds Value, accessL
 	out := List(values...)
 	if len(values) > 0 && values[0].Type != "" {
 		out.Type = "List<" + values[0].Type + ">"
-	} else if objectName := vm.soqlResultObjectName(raw); objectName != "" {
+	} else if objectName := vm.soqlResultObjectNameWithExpander(raw, func(query string) (string, error) {
+		return vm.expandSOQLBindsFromMap(query, binds)
+	}); objectName != "" {
 		out.Type = "List<" + objectName + ">"
 	}
 	return out, nil
+}
+
+func (vm *VM) soqlResultObjectNameWithExpander(raw string, expand func(string) (string, error)) string {
+	queryText := raw
+	if expand != nil {
+		if expanded, err := expand(raw); err == nil {
+			queryText = expanded
+		}
+	}
+	return vm.soqlResultObjectName(queryText)
 }
 
 func (vm *VM) soqlResultObjectName(raw string) string {
@@ -11006,6 +11023,9 @@ func (vm *VM) executeSOQLForType(raw, typeName string, result *Result) (Value, e
 	}
 	if collectionBase(typeName) == "List" || typeName == "Object" {
 		if collectionBase(typeName) == "List" {
+			if value.Runtime == "" && value.Type != "" && !strings.EqualFold(value.Type, typeName) {
+				value.Runtime = value.Type
+			}
 			value.Type = typeName
 		}
 		return value, nil
@@ -23878,12 +23898,15 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			if vm.isSObjectLikeType(current.Type) {
 				if defaultValue, ok := vm.defaultNullSObjectAccessValue(current.Type); ok {
 					current = defaultValue
-				} else if isRelationshipNull(current) {
+				} else if isRelationshipNull(current) || i > 0 {
 					if value, ok := vm.relationshipNullFieldAccessValue(current.Type, part); ok {
 						current = value
 						continue
 					}
-					return Null, nil
+					if isRelationshipNull(current) {
+						return Null, nil
+					}
+					return Null, newNullDereferenceError("while accessing " + strings.Join(parts[:i+1], "."))
 				} else {
 					return Null, newNullDereferenceError("while accessing " + strings.Join(parts[:i+1], "."))
 				}
@@ -24084,7 +24107,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			}
 			if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists {
 				value = coerceStoredSObjectFieldRuntimeValue(value, fieldDef)
-				if fieldDef.Type == storage.FieldSummary && !isExplicitSObjectField(current, canonicalPart) {
+				if fieldDef.Type == storage.FieldSummary && !isExplicitSObjectField(current, canonicalPart) && !vm.queriedSObjectFieldsIncludes(current, canonicalPart) {
 					if summaryValue, hasSummary := vm.evaluateSummaryField(current, fieldDef); hasSummary {
 						value = vmValueFromStorage(summaryValue)
 						current = value
@@ -29620,6 +29643,16 @@ func (vm *VM) callChainedConstructor(callee string, args []Value, result *Result
 		if len(args) == 0 {
 			return Null, nil
 		}
+		if callee == "super" {
+			updated, handled, err := vm.constructFrameworkSObjectDomainBase(targetClass.Name, receiver, args)
+			if handled || err != nil {
+				if err != nil {
+					return Null, err
+				}
+				vm.Globals["this"] = updated
+				return Null, nil
+			}
+		}
 		if isExceptionType(targetClass.Name) {
 			handled, err := applyExceptionConstructorArgs(&receiver, args)
 			if err != nil {
@@ -29669,6 +29702,34 @@ func constructorCallKey(method Method) string {
 		parts = append(parts, param.Type)
 	}
 	return strings.Join(parts, "\x00")
+}
+
+func (vm *VM) constructFrameworkSObjectDomainBase(className string, receiver Value, args []Value) (Value, bool, error) {
+	if !isFrameworkSObjectDomainClassName(className) {
+		return receiver, false, nil
+	}
+	if len(args) != 1 {
+		return receiver, true, fmt.Errorf("%s constructor expects List<SObject>", className)
+	}
+	records, err := vm.coerceAssignable("List<SObject>", args[0])
+	if err != nil {
+		return receiver, true, err
+	}
+	if receiver.Fields == nil {
+		receiver.Fields = make(map[string]Value)
+	}
+	receiver.Fields["Records"] = records
+	receiver.Fields["SObjectDescribe"] = Object("DescribeSObjectSharingControl")
+	return receiver, true, nil
+}
+
+func isFrameworkSObjectDomainClassName(className string) bool {
+	switch strings.ToLower(strings.TrimSpace(className)) {
+	case "sobjectdomain", "framework_sobjectdomain", "fflib_sobjectdomain":
+		return true
+	default:
+		return false
+	}
 }
 
 func sameConstructorSignature(left, right Method) bool {
@@ -33228,8 +33289,8 @@ func (vm *VM) inferEmptySObjectListRuntimeType(returnType string, value Value, a
 	if !ok || !strings.EqualFold(elementType, "SObject") {
 		return ""
 	}
-	for _, arg := range args {
-		if objectName := vm.sObjectNameFromIDSetValue(arg); objectName != "" {
+	if queryText := inlineSOQLQueryText(value); queryText != "" {
+		if objectName := vm.soqlResultObjectNameWithExpander(queryText, vm.expandSOQLBinds); objectName != "" {
 			return "List<" + objectName + ">"
 		}
 	}
@@ -41337,7 +41398,10 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			if strings.TrimSpace(fieldDef.Formula) != "" && calculatedDateFormulaBlankValue(fieldDef, value) {
 				return Null, true, nil
 			}
-			if fieldDef.Type == storage.FieldCalculated && shouldEvaluateSObjectFormulaField(receiver, fieldDef) {
+			if fieldDef.Type == storage.FieldCalculated &&
+				!isExplicitSObjectField(receiver, field) &&
+				!vm.queriedSObjectFieldsIncludes(receiver, field) &&
+				shouldEvaluateSObjectFormulaField(receiver, fieldDef) {
 				if record, ok := vm.formulaRecordFromSObject(receiver); ok {
 					if evaluated, _, ok := dml.EvaluateRecordFormulaValueInOrg(fieldDef.Formula, fieldDef, vm.Org, definition, record); ok {
 						formulaValue := vmValueFromStorage(evaluated)
@@ -41347,11 +41411,6 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 						return formulaValue, true, nil
 					}
 				}
-			}
-		}
-		if _, fieldDef, exists := vm.sObjectFieldDefinition(receiver.Type, field); exists && fieldDef.Type == storage.FieldSummary {
-			if summaryValue, ok := vm.evaluateSummaryField(receiver, fieldDef); ok {
-				return vmValueFromStorage(summaryValue), true, nil
 			}
 		}
 		if value.Kind == ValueNull {

@@ -4121,6 +4121,202 @@ System.assertEquals(1, b.Items.size());
 	}
 }
 
+func TestExecConstructorStoresPropertyBackingValueForSelfReferentialGetter(t *testing.T) {
+	getter, err := CompileAnonymous(`
+if (Result == null) {
+	Result = new OperationResult();
+}
+return Result;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctor, err := CompileAnonymous(`this.Result = opResult;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	isNotSuccessful, err := CompileAnonymous(`return !Success;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resultCtor, err := CompileAnonymous(`Success = true;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+OperationResult failed = new OperationResult();
+failed.Success = false;
+Response response = new Response(failed);
+System.assert(response.Result.isNotSuccessful(), 'expected constructor-assigned result to remain failed');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "OperationResult",
+		Fields: map[string]Field{
+			"Success": {Name: "Success", Type: "Boolean", Property: true},
+		},
+		Constructors: []Method{{
+			Name:          "OperationResult",
+			ClassName:     "OperationResult",
+			IsConstructor: true,
+			Program:       resultCtor,
+		}},
+		Methods: map[string]Method{
+			"isNotSuccessful": {Name: "OperationResult.isNotSuccessful", ClassName: "OperationResult", ReturnType: "Boolean", Program: isNotSuccessful},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Response",
+		Fields: map[string]Field{
+			"Result": {
+				Name:     "Result",
+				Type:     "OperationResult",
+				Property: true,
+				Getter:   &Method{Name: "Response.Result.get", ClassName: "Response", ReturnType: "OperationResult", Program: getter},
+			},
+		},
+		Constructors: []Method{{
+			Name:          "Response",
+			ClassName:     "Response",
+			IsConstructor: true,
+			Params:        []Param{{Name: "opResult", Type: "OperationResult"}},
+			Program:       ctor,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInheritedWrapperGetterReadsSObjectFieldToken(t *testing.T) {
+	getValueFromField, err := CompileAnonymous(`
+if (this.record == null) {
+	return null;
+}
+return this.record.get(field);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	transactionDateGetter, err := CompileAnonymous(`
+if (TransactionDate == null) {
+	TransactionDate = (Date)getValueFromField(OrderItem__c.TransactionDate__c);
+}
+return TransactionDate;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctor, err := CompileAnonymous(`this.record = row;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	newInstance, err := CompileAnonymous(`return new AdjustmentOrderItem(row);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	orderItemNewInstance, err := CompileAnonymous(`return AdjustmentOrderItem.newInstance(row);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+OrderItem__C row = (OrderItem__c)JSON.deserialize('{"TransactionDate__c":"2026-05-02"}', OrderItem__c.class);
+OrderItem wrapper = OrderItem.newInstance(row);
+System.assertEquals(Date.newInstance(2026, 5, 2), wrapper.TransactionDate);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["OrderItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "OrderItem__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Id":                 {APIName: "Id", Type: storage.FieldID},
+				"TransactionDate__c": {APIName: "TransactionDate__c", Type: storage.FieldDate},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "SObjectWrapper",
+		Fields: map[string]Field{
+			"record": {Name: "record", Type: "SObject", Access: "protected"},
+		},
+		Methods: map[string]Method{
+			"getValueFromField": {
+				Name:       "SObjectWrapper.getValueFromField",
+				ClassName:  "SObjectWrapper",
+				ReturnType: "Object",
+				Params:     []Param{{Name: "field", Type: "Schema.SObjectField"}},
+				Program:    getValueFromField,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "OrderItem",
+		SuperClass: "SObjectWrapper",
+		Fields: map[string]Field{
+			"TransactionDate": {
+				Name:     "TransactionDate",
+				Type:     "Date",
+				Property: true,
+				Getter:   &Method{Name: "OrderItem.TransactionDate.get", ClassName: "OrderItem", ReturnType: "Date", Program: transactionDateGetter},
+			},
+		},
+		Methods: map[string]Method{
+			"newInstance": {
+				Name:       "OrderItem.newInstance",
+				ClassName:  "OrderItem",
+				IsStatic:   true,
+				ReturnType: "OrderItem",
+				Params:     []Param{{Name: "row", Type: "OrderItem__c"}},
+				Program:    orderItemNewInstance,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "AdjustmentOrderItem",
+		SuperClass: "OrderItem",
+		Constructors: []Method{{
+			Name:          "AdjustmentOrderItem",
+			ClassName:     "AdjustmentOrderItem",
+			IsConstructor: true,
+			Params:        []Param{{Name: "row", Type: "OrderItem__c"}},
+			Program:       ctor,
+		}},
+		Methods: map[string]Method{
+			"newInstance": {
+				Name:       "AdjustmentOrderItem.newInstance",
+				ClassName:  "AdjustmentOrderItem",
+				IsStatic:   true,
+				ReturnType: "AdjustmentOrderItem",
+				Params:     []Param{{Name: "row", Type: "OrderItem__c"}},
+				Program:    newInstance,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecListLiteralKeepsNestedListElement(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<String> names = new List<String>{ 'Ada' };
@@ -6616,6 +6812,302 @@ System.assertEquals(1, Limits.getQueries());
 		SuperClass: "Manager",
 		Methods: map[string]Method{
 			"rows": {Name: "Manager.Child.rows", ClassName: "Manager.Child", ReturnType: "List<Account>", Program: childRowsProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSOQLIDSetDoesNotReturnSiblingObjectRows(t *testing.T) {
+	program, err := CompileAnonymous(`
+Set<Id> eventIds = new Set<Id>{'a00000000000001AAA'};
+System.assertEquals(0, [SELECT Id FROM Account WHERE Id IN :eventIds].size());
+List<Account> dynamicRows = Database.query('SELECT Id FROM Account WHERE Id IN :eventIds');
+System.assertEquals(0, dynamicRows.size());
+System.assertEquals(1, [SELECT Id FROM Event__c WHERE Id IN :eventIds].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Id": {APIName: "Id", Type: storage.FieldID},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["Event__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Event__c",
+			Fields: map[string]storage.Field{
+				"Id": {APIName: "Id", Type: storage.FieldID},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {ID: "a00000000000001", Object: "Event__c"},
+		},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSiblingStaticPropertySingletonsKeepInheritedDispatchSeparate(t *testing.T) {
+	baseRowsProgram, err := CompileAnonymous("return queryRows(ids);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	baseQueryProgram, err := CompileAnonymous("return new List<SObject>();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	accountGetterProgram, err := CompileAnonymous(`
+if (Instance == null || Test.isRunningTest()) {
+    Instance = WithSharingInstance;
+}
+return Instance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	accountSharingGetterProgram, err := CompileAnonymous(`
+if (WithSharingInstance == null) {
+    WithSharingInstance = new AccountManager.WithSharing();
+}
+return WithSharingInstance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	accountRowsProgram, err := CompileAnonymous("return [SELECT Id FROM Account WHERE Id IN :ids];")
+	if err != nil {
+		t.Fatal(err)
+	}
+	accountRowsTypedProgram, err := CompileAnonymous("return (List<Account>) rows(ids);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	accountWhoProgram, err := CompileAnonymous("return 'account';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	accountChildRowsProgram, err := CompileAnonymous("return super.queryRows(ids);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	accountChildTypedProgram, err := CompileAnonymous("return super.accounts(ids);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	accountChildWhoProgram, err := CompileAnonymous("return super.who();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	eventGetterProgram, err := CompileAnonymous(`
+if (Instance == null || Test.isRunningTest()) {
+    Instance = new EventManager.WithSharing();
+}
+return Instance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	eventRowsProgram, err := CompileAnonymous("return [SELECT Id FROM Event__c WHERE Id IN :ids];")
+	if err != nil {
+		t.Fatal(err)
+	}
+	eventRowsTypedProgram, err := CompileAnonymous("return (List<Event__c>) rows(ids);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	eventWhoProgram, err := CompileAnonymous("return 'event';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	eventChildRowsProgram, err := CompileAnonymous("return super.queryRows(ids);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	eventChildTypedProgram, err := CompileAnonymous("return super.events(ids);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	eventChildWhoProgram, err := CompileAnonymous("return super.who();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Set<Id> eventIds = new Set<Id>{'a00000000000001AAA'};
+System.assertEquals(0, [SELECT Id FROM Account WHERE Id IN :eventIds].size());
+System.assertEquals(1, [SELECT Id FROM Event__c WHERE Id IN :eventIds].size());
+System.assertEquals(1, EventManager.Instance.events(eventIds).size());
+System.assertEquals('account', AccountManager.Instance.who());
+List<Account> accounts = AccountManager.Instance.accounts(eventIds);
+System.assertEquals(0, accounts.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Id": {APIName: "Id", Type: storage.FieldID},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["Event__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Event__c",
+			Fields: map[string]storage.Field{
+				"Id": {APIName: "Id", Type: storage.FieldID},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {ID: "a00000000000001", Object: "Event__c"},
+		},
+	}
+
+	machine := New(nil)
+	machine.EnableTestContext()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name:       "ManagerBase",
+		IsAbstract: true,
+		Methods: map[string]Method{
+			"rows":      {Name: "ManagerBase.rows", ClassName: "ManagerBase", ReturnType: "List<SObject>", Params: []Param{{Name: "ids", Type: "Set<Id>"}}, Program: baseRowsProgram},
+			"queryRows": {Name: "ManagerBase.queryRows", ClassName: "ManagerBase", ReturnType: "List<SObject>", Params: []Param{{Name: "ids", Type: "Set<Id>"}}, Program: baseQueryProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "AccountManager",
+		SuperClass: "ManagerBase",
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:     "Instance",
+				Type:     "AccountManager",
+				Static:   true,
+				Property: true,
+				Getter:   &Method{Name: "AccountManager.Instance.get", ClassName: "AccountManager", ReturnType: "AccountManager", IsStatic: true, Program: accountGetterProgram},
+			},
+			"WithSharingInstance": {
+				Name:     "WithSharingInstance",
+				Type:     "AccountManager",
+				Static:   true,
+				Property: true,
+				Getter:   &Method{Name: "AccountManager.WithSharingInstance.get", ClassName: "AccountManager", ReturnType: "AccountManager", IsStatic: true, Program: accountSharingGetterProgram},
+			},
+		},
+		Methods: map[string]Method{
+			"queryRows": {Name: "AccountManager.queryRows", ClassName: "AccountManager", ReturnType: "List<SObject>", Params: []Param{{Name: "ids", Type: "Set<Id>"}}, Program: accountRowsProgram},
+			"accounts":  {Name: "AccountManager.accounts", ClassName: "AccountManager", ReturnType: "List<Account>", Params: []Param{{Name: "ids", Type: "Set<Id>"}}, Program: accountRowsTypedProgram},
+			"who":       {Name: "AccountManager.who", ClassName: "AccountManager", ReturnType: "String", Program: accountWhoProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "AccountManager.WithSharing",
+		SuperClass: "AccountManager",
+		Methods: map[string]Method{
+			"queryRows": {Name: "AccountManager.WithSharing.queryRows", ClassName: "AccountManager.WithSharing", ReturnType: "List<SObject>", Params: []Param{{Name: "ids", Type: "Set<Id>"}}, Program: accountChildRowsProgram},
+			"accounts":  {Name: "AccountManager.WithSharing.accounts", ClassName: "AccountManager.WithSharing", ReturnType: "List<Account>", Params: []Param{{Name: "ids", Type: "Set<Id>"}}, Program: accountChildTypedProgram},
+			"who":       {Name: "AccountManager.WithSharing.who", ClassName: "AccountManager.WithSharing", ReturnType: "String", Program: accountChildWhoProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "EventManager",
+		SuperClass: "ManagerBase",
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:     "Instance",
+				Type:     "EventManager",
+				Static:   true,
+				Property: true,
+				Getter:   &Method{Name: "EventManager.Instance.get", ClassName: "EventManager", ReturnType: "EventManager", IsStatic: true, Program: eventGetterProgram},
+			},
+		},
+		Methods: map[string]Method{
+			"queryRows": {Name: "EventManager.queryRows", ClassName: "EventManager", ReturnType: "List<SObject>", Params: []Param{{Name: "ids", Type: "Set<Id>"}}, Program: eventRowsProgram},
+			"events":    {Name: "EventManager.events", ClassName: "EventManager", ReturnType: "List<Event__c>", Params: []Param{{Name: "ids", Type: "Set<Id>"}}, Program: eventRowsTypedProgram},
+			"who":       {Name: "EventManager.who", ClassName: "EventManager", ReturnType: "String", Program: eventWhoProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "EventManager.WithSharing",
+		SuperClass: "EventManager",
+		Methods: map[string]Method{
+			"queryRows": {Name: "EventManager.WithSharing.queryRows", ClassName: "EventManager.WithSharing", ReturnType: "List<SObject>", Params: []Param{{Name: "ids", Type: "Set<Id>"}}, Program: eventChildRowsProgram},
+			"events":    {Name: "EventManager.WithSharing.events", ClassName: "EventManager.WithSharing", ReturnType: "List<Event__c>", Params: []Param{{Name: "ids", Type: "Set<Id>"}}, Program: eventChildTypedProgram},
+			"who":       {Name: "EventManager.WithSharing.who", ClassName: "EventManager.WithSharing", ReturnType: "String", Program: eventChildWhoProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectDomainSuperConstructorStoresRecords(t *testing.T) {
+	constructorProgram, err := CompileAnonymous("super(records);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sizeProgram, err := CompileAnonymous("return Records.size();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<SObject> records = new List<SObject>{new Account(Name = 'Acme')};
+AccountDomain domain = new AccountDomain(records);
+System.assertEquals(1, domain.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "SObjectDomain",
+		Fields: map[string]Field{
+			"Records":         {Name: "Records", Type: "List<SObject>"},
+			"SObjectDescribe": {Name: "SObjectDescribe", Type: "Object"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "AccountDomain",
+		SuperClass: "SObjectDomain",
+		Constructors: []Method{{
+			Name:          "AccountDomain.<init>",
+			ClassName:     "AccountDomain",
+			ReturnType:    "void",
+			IsConstructor: true,
+			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
+			Program:       constructorProgram,
+		}},
+		Methods: map[string]Method{
+			"size": {Name: "AccountDomain.size", ClassName: "AccountDomain", ReturnType: "Integer", Program: sizeProgram},
 		},
 	}); err != nil {
 		t.Fatal(err)
