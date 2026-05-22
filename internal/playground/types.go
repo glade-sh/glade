@@ -43,10 +43,11 @@ type WorkspaceMetadata struct {
 }
 
 type WorkspaceFile struct {
-	Path    string `json:"path"`
-	Kind    string `json:"kind"`
-	Version int    `json:"version"`
-	Size    int64  `json:"size"`
+	Path     string `json:"path"`
+	Kind     string `json:"kind"`
+	Version  int    `json:"version"`
+	Size     int64  `json:"size"`
+	ReadOnly bool   `json:"readOnly,omitempty"`
 }
 
 type FileSaveRequest struct {

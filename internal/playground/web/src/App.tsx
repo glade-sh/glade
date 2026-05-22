@@ -46,6 +46,7 @@ type WorkspaceFile = {
   kind: "class" | "trigger" | "anonymous" | "data" | "metadata" | "other"
   version: number
   size: number
+  readOnly?: boolean
 }
 
 type WorkspaceMetadata = {
@@ -549,6 +550,8 @@ export default function App() {
     return workspaceSidebarGroups(files, classSearch).filter((group) => group.files.length > 0 || group.forceVisible)
   }, [classSearch, meta?.files])
 
+  const activeSourceFile = useMemo(() => meta?.files.find((file) => file.path === sourcePath), [meta?.files, sourcePath])
+  const sourceReadOnly = activeSourceFile?.readOnly ?? false
   const sourceContent = sourcePath ? contentByPath[sourcePath] ?? "" : ""
   const runTime = result ? `${(result.compileMs ?? 0) + (result.executeMs ?? 0)} ms` : "-"
   const logs = result?.logs ?? []
@@ -589,7 +592,7 @@ export default function App() {
   )
 
   const onSourceChange = (value: string) => {
-    if (!sourcePath) return
+    if (!sourcePath || sourceReadOnly) return
     contentRef.current = { ...contentRef.current, [sourcePath]: value }
     setContentByPath((current) => ({ ...current, [sourcePath]: value }))
     markDirty(sourcePath)
@@ -821,7 +824,7 @@ export default function App() {
           <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] text-muted-foreground">
             {dirty ? <CircleDashed className="size-3 text-amber-500" /> : null}
           </span>
-          {file.kind === "class" || file.kind === "trigger" ? (
+          {!file.readOnly && (file.kind === "class" || file.kind === "trigger") ? (
             <Button
               variant="ghost"
               size="icon"
@@ -1019,6 +1022,7 @@ export default function App() {
                   contextTitle={sourcePath || "No source file selected"}
                   value={sourceContent}
                   onChange={onSourceChange}
+                  readOnly={sourceReadOnly}
                 />
                 <CodeEditor
                   title="Execute Anonymous"

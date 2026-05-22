@@ -15,6 +15,7 @@ import (
 )
 
 const maxPlaygroundFileSize = 512 * 1024
+const readOnlyManifestFile = ".oaer-playground-readonly.json"
 
 type Workspace struct {
 	ID          string
@@ -26,6 +27,7 @@ type Workspace struct {
 
 	mu       sync.Mutex
 	versions map[string]int
+	readOnly map[string]bool
 }
 
 func OpenWorkspace(opts WorkspaceOptions) (*Workspace, error) {
@@ -49,8 +51,12 @@ func OpenWorkspace(opts WorkspaceOptions) (*Workspace, error) {
 		DataRoot:    dataRoot,
 		Managed:     managed,
 		versions:    make(map[string]int),
+		readOnly:    make(map[string]bool),
 	}
 	if err := ws.ensureDefaultFiles(); err != nil {
+		return nil, err
+	}
+	if err := ws.loadReadOnlyManifest(); err != nil {
 		return nil, err
 	}
 	if err := ws.refreshVersions(); err != nil {
@@ -129,7 +135,7 @@ func (w *Workspace) LoadExample(id string) (WorkspaceMetadata, error) {
 	if !ok {
 		return WorkspaceMetadata{}, fmt.Errorf("unknown playground example %q", id)
 	}
-	return w.loadFiles(example.ID, example.Files)
+	return w.loadFiles(example.ID, example.Files, false)
 }
 
 func (w *Workspace) LoadProjectReference(ref ProjectReference) (WorkspaceMetadata, error) {
@@ -137,10 +143,10 @@ func (w *Workspace) LoadProjectReference(ref ProjectReference) (WorkspaceMetadat
 	if err != nil {
 		return WorkspaceMetadata{}, err
 	}
-	return w.loadFiles(ref.ID, files)
+	return w.loadFiles(ref.ID, files, true)
 }
 
-func (w *Workspace) loadFiles(sourceID string, files map[string]string) (WorkspaceMetadata, error) {
+func (w *Workspace) loadFiles(sourceID string, files map[string]string, readOnly bool) (WorkspaceMetadata, error) {
 	if !w.Managed {
 		return WorkspaceMetadata{}, errors.New("playground projects can only be loaded into the managed scratch workspace")
 	}
@@ -154,6 +160,7 @@ func (w *Workspace) loadFiles(sourceID string, files map[string]string) (Workspa
 		return WorkspaceMetadata{}, err
 	}
 	w.versions = make(map[string]int)
+	w.readOnly = make(map[string]bool)
 	paths := make([]string, 0, len(files))
 	for path := range files {
 		paths = append(paths, path)
@@ -174,10 +181,21 @@ func (w *Workspace) loadFiles(sourceID string, files map[string]string) (Workspa
 			return WorkspaceMetadata{}, err
 		}
 		w.versions[rel] = 1
+		if readOnly && isProjectReferenceReadOnlyPath(rel) {
+			w.readOnly[rel] = true
+		}
+	}
+	if err := w.writeReadOnlyManifestLocked(); err != nil {
+		w.mu.Unlock()
+		return WorkspaceMetadata{}, err
 	}
 	w.ExampleID = sourceID
 	w.mu.Unlock()
 	return w.Metadata()
+}
+
+func isProjectReferenceReadOnlyPath(path string) bool {
+	return fileKind(path) != "anonymous"
 }
 
 func collectProjectReferenceFiles(ref ProjectReference) (map[string]string, error) {
@@ -286,6 +304,45 @@ func (w *Workspace) refreshVersions() error {
 	return nil
 }
 
+func (w *Workspace) loadReadOnlyManifest() error {
+	path := filepath.Join(w.Root, readOnlyManifestFile)
+	data, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	var paths []string
+	if err := json.Unmarshal(data, &paths); err != nil {
+		return err
+	}
+	w.readOnly = make(map[string]bool, len(paths))
+	for _, path := range paths {
+		path = strings.TrimSpace(strings.ReplaceAll(path, "\\", "/"))
+		if path != "" {
+			w.readOnly[path] = true
+		}
+	}
+	return nil
+}
+
+func (w *Workspace) writeReadOnlyManifestLocked() error {
+	path := filepath.Join(w.Root, readOnlyManifestFile)
+	if len(w.readOnly) == 0 {
+		if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+		return nil
+	}
+	paths := make([]string, 0, len(w.readOnly))
+	for rel := range w.readOnly {
+		paths = append(paths, rel)
+	}
+	sort.Strings(paths)
+	return writeJSONFile(path, paths)
+}
+
 func (w *Workspace) SafePath(rel string) (string, error) {
 	rel = strings.TrimSpace(strings.ReplaceAll(rel, "\\", "/"))
 	if rel == "" {
@@ -339,6 +396,9 @@ func (w *Workspace) SaveFile(req FileSaveRequest) (FileSaveResponse, error) {
 	}
 	rel := slashRel(w.Root, path)
 	current := w.versions[rel]
+	if w.readOnly[rel] {
+		return FileSaveResponse{}, ErrReadOnlyFile{Path: rel}
+	}
 	if current > 0 && req.Version != current {
 		return FileSaveResponse{}, ErrVersionConflict{Path: rel, Expected: current, Got: req.Version}
 	}
@@ -371,10 +431,14 @@ func (w *Workspace) DeleteFile(rel string) error {
 	if err != nil {
 		return err
 	}
+	rel = slashRel(w.Root, path)
+	if w.readOnly[rel] {
+		return ErrReadOnlyFile{Path: rel}
+	}
 	if filepath.Base(path) == "sfdx-project.json" {
 		return errors.New("sfdx-project.json cannot be deleted")
 	}
-	delete(w.versions, slashRel(w.Root, path))
+	delete(w.versions, rel)
 	return os.Remove(path)
 }
 
@@ -488,7 +552,7 @@ func (w *Workspace) listFilesLocked() ([]WorkspaceFile, error) {
 		if version == 0 {
 			version = 1
 		}
-		files = append(files, WorkspaceFile{Path: rel, Kind: fileKind(rel), Version: version, Size: info.Size()})
+		files = append(files, WorkspaceFile{Path: rel, Kind: fileKind(rel), Version: version, Size: info.Size(), ReadOnly: w.readOnly[rel]})
 		return nil
 	}); err != nil {
 		return nil, err
@@ -563,6 +627,14 @@ type ErrVersionConflict struct {
 
 func (e ErrVersionConflict) Error() string {
 	return fmt.Sprintf("stale version for %s: got %d, want %d", e.Path, e.Got, e.Expected)
+}
+
+type ErrReadOnlyFile struct {
+	Path string
+}
+
+func (e ErrReadOnlyFile) Error() string {
+	return fmt.Sprintf("read-only project file: %s", e.Path)
 }
 
 func writeJSONFile(path string, v any) error {

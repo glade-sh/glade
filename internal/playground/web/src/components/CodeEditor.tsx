@@ -18,6 +18,7 @@ type CodeEditorProps = {
   className?: string
   runLabel?: string
   running?: boolean
+  readOnly?: boolean
   onRun?: () => void
 }
 
@@ -31,6 +32,7 @@ export function CodeEditor({
   className,
   runLabel,
   running = false,
+  readOnly = false,
   onRun,
 }: CodeEditorProps) {
   const highlightRef = useRef<HTMLPreElement>(null)
@@ -87,6 +89,7 @@ export function CodeEditor({
           <textarea
             className="editor-input"
             value={value}
+            readOnly={readOnly}
             spellCheck={false}
             onChange={(event) => onChange(event.target.value)}
             onScroll={(event) => {

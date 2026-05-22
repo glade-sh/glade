@@ -128,6 +128,54 @@ func TestWorkspaceSaveFileVersionConflict(t *testing.T) {
 	}
 }
 
+func TestWorkspaceProjectReferenceFilesAreReadOnly(t *testing.T) {
+	projectRoot := t.TempDir()
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-ref","namespace":"","sourceApiVersion":"65.0"}`)
+	projectPath := "force-app/main/default/classes/Locked.cls"
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, projectPath), `public class Locked {}`)
+
+	dataRoot := t.TempDir()
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	meta, err := ws.LoadProjectReference(ProjectReference{ID: "local", Name: "Local", Path: projectRoot})
+	if err != nil {
+		t.Fatalf("LoadProjectReference() error = %v", err)
+	}
+	locked := workspaceFileByPath(meta.Files, projectPath)
+	if locked == nil {
+		t.Fatalf("%s missing from metadata", projectPath)
+	}
+	if !locked.ReadOnly {
+		t.Fatalf("%s readOnly = false, want true", projectPath)
+	}
+
+	if _, err := ws.SaveFile(FileSaveRequest{Path: projectPath, Content: `public class Locked { public static Integer x(){ return 1; } }`, Version: locked.Version}); err == nil {
+		t.Fatalf("SaveFile() on read-only project file succeeded")
+	}
+
+	scratchPath := "force-app/main/default/classes/ScratchOneOff.cls"
+	if _, err := ws.SaveFile(FileSaveRequest{Path: scratchPath, Content: `public class ScratchOneOff {}`, Version: 0}); err != nil {
+		t.Fatalf("SaveFile() scratch class error = %v", err)
+	}
+
+	reopened, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("reopen OpenWorkspace() error = %v", err)
+	}
+	reopenedMeta, err := reopened.Metadata()
+	if err != nil {
+		t.Fatalf("reopened Metadata() error = %v", err)
+	}
+	if file := workspaceFileByPath(reopenedMeta.Files, projectPath); file == nil || !file.ReadOnly {
+		t.Fatalf("reopened project file = %#v, want readOnly", file)
+	}
+	if file := workspaceFileByPath(reopenedMeta.Files, scratchPath); file == nil || file.ReadOnly {
+		t.Fatalf("scratch file = %#v, want editable", file)
+	}
+}
+
 func TestWorkspaceDeletesClassFiles(t *testing.T) {
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
@@ -147,4 +195,13 @@ func TestWorkspaceDeletesClassFiles(t *testing.T) {
 	if err := ws.DeleteFile("sfdx-project.json"); err == nil {
 		t.Fatalf("DeleteFile(sfdx-project.json) succeeded")
 	}
+}
+
+func workspaceFileByPath(files []WorkspaceFile, path string) *WorkspaceFile {
+	for i := range files {
+		if files[i].Path == path {
+			return &files[i]
+		}
+	}
+	return nil
 }

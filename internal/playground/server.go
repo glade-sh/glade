@@ -243,6 +243,11 @@ func (s *Server) handleSaveFile(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := s.workspace.SaveFile(req)
 	if err != nil {
+		var readOnly ErrReadOnlyFile
+		if errors.As(err, &readOnly) {
+			writeError(w, http.StatusForbidden, err.Error())
+			return
+		}
 		var conflict ErrVersionConflict
 		if errors.As(err, &conflict) {
 			writeError(w, http.StatusConflict, err.Error())
@@ -257,6 +262,11 @@ func (s *Server) handleSaveFile(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleDeleteFile(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Query().Get("path")
 	if err := s.workspace.DeleteFile(path); err != nil {
+		var readOnly ErrReadOnlyFile
+		if errors.As(err, &readOnly) {
+			writeError(w, http.StatusForbidden, err.Error())
+			return
+		}
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
