@@ -134,8 +134,8 @@ textarea {
 .tree-row {
   display: flex;
   min-height: 26px;
-  width: 100%;
-  min-width: 0;
+  width: max-content;
+  min-width: 100%;
   align-items: center;
   gap: 5px;
   border: 1px solid transparent;
@@ -181,6 +181,28 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.workspace-tree-search {
+  width: 100%;
+}
+
+.workspace-tree-scroll {
+  overflow: auto;
+}
+
+.workspace-tree-content {
+  width: max-content;
+  min-width: 100%;
+}
+
+.workspace-tree-content .tree-name {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.workspace-tree-content .tree-file-row > button {
+  flex: 0 0 auto;
 }
 
 .editor-shell {

@@ -975,25 +975,25 @@ export default function App() {
               ) : null}
             </div>
           ) : null}
-          <ScrollArea className="min-h-0 flex-1">
-            <div className="min-w-0 space-y-3 p-3 pr-5">
-              {groups.map((group) => {
-                return (
-                  <div key={group.label}>
-                    <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase text-muted-foreground">
-                      <FileCode2 className="size-3.5" />
-                      {group.label}
-                    </div>
-                    <label className="mb-2 flex h-8 w-full min-w-0 items-center gap-2 rounded-md border border-border bg-background/70 px-2 text-muted-foreground">
-                      <Search className="size-3.5 shrink-0" />
-                      <input
-                        className="min-w-0 flex-1 border-0 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
-                        value={classSearch}
-                        onChange={(event) => setClassSearch(event.target.value)}
-                        placeholder="Search classes"
-                      />
-                    </label>
-                    <div className="space-y-0.5">
+          <div className="flex min-h-0 flex-1 flex-col p-3">
+            {groups.map((group) => {
+              return (
+                <div key={group.label} className="flex min-h-0 flex-1 flex-col">
+                  <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase text-muted-foreground">
+                    <FileCode2 className="size-3.5" />
+                    {group.label}
+                  </div>
+                  <label className="workspace-tree-search mb-2 flex h-8 min-w-0 items-center gap-2 rounded-md border border-border bg-background/70 px-2 text-muted-foreground">
+                    <Search className="size-3.5 shrink-0" />
+                    <input
+                      className="min-w-0 flex-1 border-0 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
+                      value={classSearch}
+                      onChange={(event) => setClassSearch(event.target.value)}
+                      placeholder="Search classes"
+                    />
+                  </label>
+                  <div className="workspace-tree-scroll min-h-0 flex-1">
+                    <div className="workspace-tree-content space-y-0.5 pr-3">
                       {group.files.length === 0 ? (
                         <div className="rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
                           No matching classes
@@ -1002,10 +1002,10 @@ export default function App() {
                       {renderSourceTree(group.tree)}
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          </ScrollArea>
+                </div>
+              )
+            })}
+          </div>
         </aside>
 
         <section className="min-h-0">
