@@ -522,6 +522,12 @@ func collectFiles(root string, p *Project) error {
 		if err != nil {
 			return err
 		}
+		if path != root && strings.HasPrefix(d.Name(), ".") {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
 		if d.IsDir() {
 			if shouldSkipDir(d.Name()) && path != root {
 				return filepath.SkipDir
@@ -618,6 +624,9 @@ func collectFiles(root string, p *Project) error {
 }
 
 func shouldSkipDir(name string) bool {
+	if strings.HasPrefix(name, ".") {
+		return true
+	}
 	switch name {
 	case ".git", ".sfdx", ".sf", ".claude", "node_modules", ".idea", ".vscode", ".DS_Store", "__tests__":
 		return true

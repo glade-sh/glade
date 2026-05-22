@@ -191,6 +191,12 @@ func collectProjectReferenceFiles(ref ProjectReference) (map[string]string, erro
 		if err != nil {
 			return err
 		}
+		if path != root && strings.HasPrefix(entry.Name(), ".") {
+			if entry.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
 		if entry.IsDir() {
 			if shouldSkipProjectReferenceDir(entry.Name()) && path != root {
 				return filepath.SkipDir
@@ -222,7 +228,11 @@ func collectProjectReferenceFiles(ref ProjectReference) (map[string]string, erro
 	}
 	if _, ok := files["sfdx-project.json"]; !ok {
 		files["sfdx-project.json"] = sfdxProjectJSON
+	} else {
+		files["sfdx-project.json"] = projectReferenceSFDXProjectJSON(files["sfdx-project.json"])
 	}
+	delete(files, "oaer.yml")
+	delete(files, "oaer.yaml")
 	if _, ok := files["anonymous.apex"]; !ok {
 		files["anonymous.apex"] = "System.debug('Loaded local project reference');\n"
 	}
@@ -233,12 +243,28 @@ func collectProjectReferenceFiles(ref ProjectReference) (map[string]string, erro
 }
 
 func shouldSkipProjectReferenceDir(name string) bool {
+	if strings.HasPrefix(name, ".") {
+		return true
+	}
 	switch name {
 	case ".git", ".hg", ".svn", ".sf", ".sfdx", ".oaer", "node_modules", "dist", "bin":
 		return true
 	default:
 		return false
 	}
+}
+
+func projectReferenceSFDXProjectJSON(content string) string {
+	var cfg map[string]any
+	if err := json.Unmarshal([]byte(content), &cfg); err != nil {
+		return sfdxProjectJSON
+	}
+	cfg["namespace"] = ""
+	data, err := json.Marshal(cfg)
+	if err != nil {
+		return sfdxProjectJSON
+	}
+	return string(data) + "\n"
 }
 
 func (w *Workspace) refreshVersions() error {
@@ -484,7 +510,10 @@ func fileKind(path string) string {
 	case ".apex":
 		return "anonymous"
 	case ".json":
-		return "data"
+		if strings.EqualFold(filepath.Base(path), "seed.json") {
+			return "data"
+		}
+		return "metadata"
 	case ".xml", ".yml", ".yaml":
 		return "metadata"
 	default:

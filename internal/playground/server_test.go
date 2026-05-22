@@ -210,6 +210,12 @@ func TestServerListsLoadsAndRunsLocalProjectReference(t *testing.T) {
 `)
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "packages/app/force-app/main/default/classes/NestedProbe.cls"), `public class NestedProbe {}
 `)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, ".claude/worktrees/tmp/force-app/main/default/classes/HiddenProbe.cls"), `public class HiddenProbe {}
+`)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/.DotProbe.cls"), `public class DotProbe {}
+`)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, ".scratch.json"), `{"not":"data"}`)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "config/settings.json"), `{"not":"seed"}`)
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/Oversize.cls"), strings.Repeat("x", maxPlaygroundFileSize+1))
 
 	dataRoot := t.TempDir()
@@ -291,6 +297,14 @@ func TestServerListsLoadsAndRunsLocalProjectReference(t *testing.T) {
 	if !foundNested {
 		t.Fatalf("nested folder path not retained: %#v", meta.Files)
 	}
+	for _, file := range meta.Files {
+		if strings.HasPrefix(file.Path, ".") || strings.Contains(file.Path, "/.") {
+			t.Fatalf("dot path loaded from project reference: %#v", file)
+		}
+		if file.Path == "config/settings.json" && file.Kind == "data" {
+			t.Fatalf("non-seed json classified as data: %#v", file)
+		}
+	}
 
 	body, _ = json.Marshal(RunRequest{AnonymousBody: meta.AnonymousBody, Mode: RunModeScratch, LimitMode: "permissive", UseCache: false})
 	rec = httptest.NewRecorder()
@@ -330,6 +344,75 @@ func TestServerListsLoadsAndRunsLocalProjectReference(t *testing.T) {
 	}
 	if meta.ExampleID != "" {
 		t.Fatalf("reopened example id = %q, want empty without expensive project-ref match", meta.ExampleID)
+	}
+}
+
+func TestServerLoadsProjectReferenceAsLocalSource(t *testing.T) {
+	projectRoot := t.TempDir()
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-ref","namespace":"verifiable","sourceApiVersion":"65.0"}`)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/NextGenSettingService.cls"), `public class NextGenSettingService {
+  public static String activateNextGenSetting() {
+    return 'activated';
+  }
+}
+`)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "anonymous.apex"), `System.debug(NextGenSettingService.activateNextGenSetting());
+`)
+
+	dataRoot := t.TempDir()
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	handler := NewServer(ws, ServerOptions{
+		Version: "test",
+		ProjectReferences: []ProjectReference{{
+			Name: "Namespaced Local Source",
+			Path: projectRoot,
+		}},
+	})
+
+	listRec := httptest.NewRecorder()
+	listReq := httptest.NewRequest(http.MethodGet, "/playground/api/examples", nil)
+	handler.ServeHTTP(listRec, listReq)
+	if listRec.Code != http.StatusOK {
+		t.Fatalf("examples status = %d body=%s", listRec.Code, listRec.Body.String())
+	}
+	var listed struct {
+		Examples []ExampleProject `json:"examples"`
+	}
+	if err := json.Unmarshal(listRec.Body.Bytes(), &listed); err != nil {
+		t.Fatalf("decode examples: %v", err)
+	}
+	if len(listed.Examples) != 1 {
+		t.Fatalf("examples = %#v", listed.Examples)
+	}
+
+	loadBody, _ := json.Marshal(map[string]string{"id": listed.Examples[0].ID})
+	loadRec := httptest.NewRecorder()
+	loadReq := httptest.NewRequest(http.MethodPost, "/playground/api/examples/load", bytes.NewReader(loadBody))
+	handler.ServeHTTP(loadRec, loadReq)
+	if loadRec.Code != http.StatusOK {
+		t.Fatalf("load local ref status = %d body=%s", loadRec.Code, loadRec.Body.String())
+	}
+	var meta WorkspaceMetadata
+	if err := json.Unmarshal(loadRec.Body.Bytes(), &meta); err != nil {
+		t.Fatalf("decode workspace: %v", err)
+	}
+
+	runBody, _ := json.Marshal(RunRequest{AnonymousBody: meta.AnonymousBody, Mode: RunModeScratch, LimitMode: "permissive", UseCache: false})
+	runRec := httptest.NewRecorder()
+	runReq := httptest.NewRequest(http.MethodPost, "/playground/api/run", bytes.NewReader(runBody))
+	handler.ServeHTTP(runRec, runReq)
+	if runRec.Code != http.StatusOK {
+		t.Fatalf("run status = %d body=%s", runRec.Code, runRec.Body.String())
+	}
+	var result RunResult
+	if err := json.Unmarshal(runRec.Body.Bytes(), &result); err != nil {
+		t.Fatalf("decode result: %v", err)
+	}
+	if result.Status != RunStatusPass || len(result.Logs) != 1 || result.Logs[0] != "activated" {
+		t.Fatalf("result = %#v", result)
 	}
 }
 

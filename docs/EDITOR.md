@@ -30,7 +30,9 @@ Use one or more `--project-ref name=path` flags when you want selectable local
 project folders copied into the scratch playground instead of editing the folder
 directly. Project references are available only in the managed scratch
 workspace, not when `--project` is used. Built-in examples are hidden while
-project references are configured.
+project references are configured. Project references skip dot files and dot
+directories, clear the copied SFDX namespace so classes run as local source, and
+treat only `seed.json` as playground data.
 
 Keyboard shortcuts in the web UI:
 

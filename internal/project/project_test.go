@@ -205,6 +205,25 @@ func TestLoadSkipsStaticResourceVendorTrees(t *testing.T) {
 	}
 }
 
+func TestLoadSkipsDotDirectoriesAndFiles(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/Good.cls"), "public class Good {}")
+	writeFile(t, filepath.Join(root, "force-app/.cache/classes/Bad.cls"), "public class Bad {}")
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/.Hidden.cls"), "public class Hidden {}")
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ApexFiles) != 1 {
+		t.Fatalf("apex files = %#v, want only Good.cls", p.ApexFiles)
+	}
+	if filepath.Base(p.ApexFiles[0]) != "Good.cls" {
+		t.Fatalf("apex files = %#v, want only Good.cls", p.ApexFiles)
+	}
+}
+
 func TestLoadManagedPackageDependencies(t *testing.T) {
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "deps", "znu")

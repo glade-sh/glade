@@ -162,9 +162,12 @@ Use `--project-ref name=path` to add local SFDX folders to the scratch
 workspace's project selector without editing them in place. Loading a reference
 copies supported `.cls`, `.trigger`, `.apex`, `.json`, `.xml`, `.yml`, and
 `.yaml` files into the managed scratch workspace while preserving their relative
-folder paths. Built-in examples are hidden when project references are supplied.
-If the folder has no `anonymous.apex` or `seed.json`, the loader adds default
-scratch files:
+folder paths. Dot files and dot directories are skipped. The copied project is
+treated as local source: the copied `sfdx-project.json` namespace is cleared and
+top-level `oaer.yml`/`oaer.yaml` files are not imported. Built-in examples are
+hidden when project references are supplied. If the folder has no
+`anonymous.apex` or `seed.json`, the loader adds default scratch files. Only
+`seed.json` is treated as playground data; other JSON files remain metadata:
 
 ```bash
 oaer playground --project-ref "Local Probe=../some-sfdx-project" --open
