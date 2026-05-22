@@ -1025,6 +1025,10 @@ func RegisterProjectRuntimeForRequest(machine *vm.VM, index typesys.Index) error
 	return registerBaseRuntime(machine, methods, classes, triggers)
 }
 
+func OrgFromIndex(index typesys.Index) storage.OrgState {
+	return orgFromIndex(index)
+}
+
 func visualforcePageNames(index typesys.Index) []string {
 	if index.Project.Root == "" {
 		return nil

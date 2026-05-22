@@ -97,6 +97,52 @@ func TestRunnerTreatsNamespacedProjectAsLocalSource(t *testing.T) {
 	}
 }
 
+func TestRunnerLoadsProjectReferenceCustomObjectSchema(t *testing.T) {
+	projectRoot := t.TempDir()
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-project","namespace":"verifiable","sourceApiVersion":"65.0"}`)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/NextGenSettingService.cls"), `public class NextGenSettingService {
+  public static void activateNextGenSetting() {
+    VerifiableProtectedListSetting__c setting = new VerifiableProtectedListSetting__c();
+    upsert setting;
+    System.debug('activated');
+  }
+}
+`)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/objects/VerifiableProtectedListSetting__c/VerifiableProtectedListSetting__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Verifiable Protected List Setting</label>
+  <pluralLabel>Verifiable Protected List Settings</pluralLabel>
+  <customSettingsType>List</customSettingsType>
+  <visibility>Protected</visibility>
+</CustomObject>`)
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	if _, err := ws.LoadProjectReference(ProjectReference{ID: "local", Path: projectRoot}); err != nil {
+		t.Fatalf("LoadProjectReference() error = %v", err)
+	}
+	runner := NewRunner(ws, RunnerOptions{Version: "test"})
+
+	result, err := runner.Run(t.Context(), RunRequest{
+		AnonymousBody: "NextGenSettingService.activateNextGenSetting();",
+		Mode:          RunModeScratch,
+		LimitMode:     "permissive",
+		UseCache:      false,
+	})
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if result.Status != RunStatusPass {
+		t.Fatalf("status = %q diagnostics=%#v error=%s", result.Status, result.Diagnostics, result.ErrorMessage)
+	}
+	if len(result.Logs) != 1 || result.Logs[0] != "activated" {
+		t.Fatalf("logs = %#v", result.Logs)
+	}
+	if len(result.OrgDiff) == 0 || result.OrgDiff[0].Object != "VerifiableProtectedListSetting__c" || result.OrgDiff[0].Inserted != 1 {
+		t.Fatalf("org diff = %#v", result.OrgDiff)
+	}
+}
+
 func TestRunnerUsesCacheForRepeatedRun(t *testing.T) {
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {

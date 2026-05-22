@@ -45,6 +45,7 @@ type cachedRuntimeTemplate struct {
 	projectRoot   string
 	version       string
 	template      *vm.VM
+	org           storage.OrgState
 	diagnostics   []diagnostic.Diagnostic
 }
 
@@ -146,7 +147,7 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 	}
 
 	compileStart := time.Now()
-	template, indexDiagnostics, err := r.loadRuntimeTemplate(workspaceHash)
+	runtime, indexDiagnostics, err := r.loadRuntimeTemplate(workspaceHash)
 	if err != nil {
 		result.Status = RunStatusCompileError
 		result.Diagnostics = append(result.Diagnostics, Diagnostic{Severity: "error", Message: err.Error()})
@@ -165,11 +166,11 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 	}
 
 	r.store.mu.Lock()
-	before := r.store.org.Clone()
+	before := mergeOrgSchema(r.store.org, runtime.org)
 	runOrg := before.Clone()
 	r.store.mu.Unlock()
 
-	machine := template.CloneRuntime(nil)
+	machine := runtime.template.CloneRuntime(nil)
 	machine.SetContext(ctx)
 	machine.SetTraceEnabled(true)
 	machine.SetLimitMode(req.LimitMode)
@@ -207,12 +208,12 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 	return result, nil
 }
 
-func (r *Runner) loadRuntimeTemplate(workspaceHash string) (*vm.VM, []diagnostic.Diagnostic, error) {
+func (r *Runner) loadRuntimeTemplate(workspaceHash string) (*cachedRuntimeTemplate, []diagnostic.Diagnostic, error) {
 	if r.runtimeTemplate != nil &&
 		r.runtimeTemplate.workspaceHash == workspaceHash &&
 		r.runtimeTemplate.projectRoot == r.workspace.ProjectRoot &&
 		r.runtimeTemplate.version == r.version {
-		return r.runtimeTemplate.template, append([]diagnostic.Diagnostic(nil), r.runtimeTemplate.diagnostics...), nil
+		return r.runtimeTemplate, append([]diagnostic.Diagnostic(nil), r.runtimeTemplate.diagnostics...), nil
 	}
 	index, indexDiagnostics, err := r.loadWorkspaceIndex(r.workspace.ProjectRoot)
 	if err != nil {
@@ -228,9 +229,63 @@ func (r *Runner) loadRuntimeTemplate(workspaceHash string) (*vm.VM, []diagnostic
 		projectRoot:   r.workspace.ProjectRoot,
 		version:       r.version,
 		template:      template,
+		org:           apextest.OrgFromIndex(index),
 		diagnostics:   append([]diagnostic.Diagnostic(nil), indexDiagnostics...),
 	}
-	return template, append([]diagnostic.Diagnostic(nil), indexDiagnostics...), nil
+	return r.runtimeTemplate, append([]diagnostic.Diagnostic(nil), indexDiagnostics...), nil
+}
+
+func mergeOrgSchema(base storage.OrgState, schemaOrg storage.OrgState) storage.OrgState {
+	out := base.Clone()
+	if out.Objects == nil {
+		out.Objects = make(map[string]storage.ObjectState)
+	}
+	for name, schemaObject := range schemaOrg.Objects {
+		incoming := schemaObject.Clone()
+		existing, ok := out.Objects[name]
+		if !ok {
+			out.Objects[name] = incoming
+			continue
+		}
+		existing.Definition = mergeObjectDefinition(existing.Definition, incoming.Definition)
+		if existing.Records == nil {
+			existing.Records = make(map[storage.ID]storage.Record)
+		}
+		for id, record := range incoming.Records {
+			if _, hasRecord := existing.Records[id]; !hasRecord {
+				existing.Records[id] = record.Clone()
+			}
+		}
+		out.Objects[name] = existing
+	}
+	if out.Namespace == "" {
+		out.Namespace = schemaOrg.Namespace
+	}
+	if out.APIVersion == "" {
+		out.APIVersion = schemaOrg.APIVersion
+	}
+	return out
+}
+
+func mergeObjectDefinition(existing, incoming storage.ObjectDefinition) storage.ObjectDefinition {
+	if incoming.APIName == "" {
+		return existing
+	}
+	merged := incoming
+	if merged.KeyPrefix == "" {
+		merged.KeyPrefix = existing.KeyPrefix
+	}
+	if len(existing.Fields) > 0 {
+		fields := make(map[string]storage.Field, len(existing.Fields)+len(incoming.Fields))
+		for name, field := range existing.Fields {
+			fields[name] = field
+		}
+		for name, field := range incoming.Fields {
+			fields[name] = field
+		}
+		merged.Fields = fields
+	}
+	return merged
 }
 
 func loadOrCreateDBOrg(path string) storage.OrgState {
