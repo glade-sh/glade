@@ -2,6 +2,7 @@ package playground
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/open-aer/oaer/internal/storage"
 )
@@ -48,10 +49,52 @@ func databaseObject(name string, object storage.ObjectState) DatabaseObject {
 	return DatabaseObject{
 		Name:        name,
 		Label:       object.Definition.Label,
+		Kind:        databaseObjectKind(object.Definition),
 		KeyPrefix:   object.Definition.KeyPrefix,
 		Columns:     columns,
 		RecordCount: len(object.Records),
 		Rows:        rows,
+	}
+}
+
+func databaseObjectKind(definition storage.ObjectDefinition) string {
+	name := definition.APIName
+	if storage.IsCustomMetadataDefinition(definition) {
+		return "custom_metadata"
+	}
+	if storage.IsCustomSettingDefinition(definition) {
+		return "custom_setting"
+	}
+	if isSystemRecordObject(name) {
+		return "system"
+	}
+	if isCustomObjectName(name) {
+		return "custom"
+	}
+	return "standard"
+}
+
+func isCustomObjectName(name string) bool {
+	lower := strings.ToLower(strings.TrimSpace(name))
+	for _, suffix := range []string{"__c", "__e", "__b"} {
+		if strings.HasSuffix(lower, suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+func isSystemRecordObject(name string) bool {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "apexclass", "apexcomponent", "apexpage", "apextrigger",
+		"customapplication", "customnotificationtype",
+		"fieldpermissions", "objectpermissions",
+		"permissionset", "permissionsetassignment", "permissionsetgroup",
+		"profile", "recordtype", "staticresource", "tabdefinition",
+		"user", "userrole":
+		return true
+	default:
+		return false
 	}
 }
 

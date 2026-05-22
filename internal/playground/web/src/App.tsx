@@ -118,11 +118,14 @@ type DatabaseSnapshot = {
 type DatabaseObject = {
   name: string
   label?: string
+  kind: DatabaseObjectKind
   keyPrefix?: string
   columns: string[]
   recordCount: number
   rows: DatabaseRow[]
 }
+
+type DatabaseObjectKind = "all" | "standard" | "custom" | "system" | "custom_metadata" | "custom_setting"
 
 type DatabaseRow = {
   id: string
@@ -185,6 +188,15 @@ function statusVariant(status: string): "success" | "warning" | "danger" | "outl
   return "outline"
 }
 
+const databaseKindFilters: { value: DatabaseObjectKind; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "standard", label: "Standard SObjects" },
+  { value: "custom", label: "Custom SObjects" },
+  { value: "system", label: "System records" },
+  { value: "custom_metadata", label: "Custom metadata" },
+  { value: "custom_setting", label: "Custom settings" },
+]
+
 export default function App() {
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     const saved = localStorage.getItem("oaer-playground-theme")
@@ -214,6 +226,7 @@ export default function App() {
   const [database, setDatabase] = useState<DatabaseSnapshot>({ objects: [] })
   const [selectedDatabaseObject, setSelectedDatabaseObject] = useState("")
   const [databaseSearch, setDatabaseSearch] = useState("")
+  const [databaseKind, setDatabaseKind] = useState<DatabaseObjectKind>("all")
 
   const metaRef = useRef<WorkspaceMetadata | null>(null)
   const versionsRef = useRef<Record<string, number>>({})
@@ -550,14 +563,30 @@ export default function App() {
   const orgDiff = result?.orgDiff ?? []
   const visibleDatabaseObjects = useMemo(() => {
     const needle = databaseSearch.trim().toLowerCase()
-    if (!needle) return database.objects
-    return database.objects.filter((object) => {
+    const kindFiltered =
+      databaseKind === "all" ? database.objects : database.objects.filter((object) => object.kind === databaseKind)
+    if (!needle) return kindFiltered
+    return kindFiltered.filter((object) => {
       return object.name.toLowerCase().includes(needle) || (object.label ?? "").toLowerCase().includes(needle)
     })
-  }, [database.objects, databaseSearch])
+  }, [database.objects, databaseKind, databaseSearch])
   const activeDatabaseObject = useMemo(() => {
-    return database.objects.find((object) => object.name === selectedDatabaseObject) ?? visibleDatabaseObjects[0]
-  }, [database.objects, selectedDatabaseObject, visibleDatabaseObjects])
+    return visibleDatabaseObjects.find((object) => object.name === selectedDatabaseObject) ?? visibleDatabaseObjects[0]
+  }, [selectedDatabaseObject, visibleDatabaseObjects])
+  const databaseKindCounts = useMemo(() => {
+    const counts: Record<DatabaseObjectKind, number> = {
+      all: database.objects.length,
+      standard: 0,
+      custom: 0,
+      system: 0,
+      custom_metadata: 0,
+      custom_setting: 0,
+    }
+    for (const object of database.objects) {
+      counts[object.kind] = (counts[object.kind] ?? 0) + 1
+    }
+    return counts
+  }, [database.objects])
   const cacheLabel = cacheState === "hit" ? "cache hit" : cacheState === "fresh" ? "cache fresh" : "cache stale"
   const selectedExampleDetails = useMemo(
     () => examples.find((example) => example.id === selectedExample),
@@ -670,6 +699,18 @@ export default function App() {
   const databaseBrowser = (
     <div className="database-browser">
       <div className="database-sidebar">
+        <div className="database-filter-strip">
+          {databaseKindFilters.map((filter) => (
+            <button
+              key={filter.value}
+              className={cn("database-filter", databaseKind === filter.value && "selected")}
+              onClick={() => setDatabaseKind(filter.value)}
+            >
+              <span>{filter.label}</span>
+              <strong>{databaseKindCounts[filter.value] ?? 0}</strong>
+            </button>
+          ))}
+        </div>
         <label className="database-search">
           <Search className="size-3.5 shrink-0" />
           <input
@@ -992,7 +1033,7 @@ export default function App() {
                 />
               </div>
             </TabsContent>
-            <TabsContent value="database" className="min-h-0 flex-1">
+            <TabsContent value="database" className="min-h-0 flex-1" forceMount>
               <div className="h-full min-h-0">{databaseBrowser}</div>
             </TabsContent>
           </Tabs>

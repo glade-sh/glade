@@ -132,6 +132,7 @@ type DatabaseSnapshot struct {
 type DatabaseObject struct {
 	Name        string        `json:"name"`
 	Label       string        `json:"label,omitempty"`
+	Kind        string        `json:"kind"`
 	KeyPrefix   string        `json:"keyPrefix,omitempty"`
 	Columns     []string      `json:"columns"`
 	RecordCount int           `json:"recordCount"`

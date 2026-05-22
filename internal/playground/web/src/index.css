@@ -359,6 +359,51 @@ textarea {
   border-right: 1px solid var(--border);
 }
 
+.database-filter-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  border-bottom: 1px solid var(--border);
+  padding: 8px;
+}
+
+.database-filter {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in oklch, var(--muted) 28%, transparent);
+  padding: 5px 6px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.database-filter span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.database-filter strong {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.database-filter:hover,
+.database-filter.selected {
+  border-color: color-mix(in oklch, var(--primary) 55%, var(--border));
+  background: color-mix(in oklch, var(--primary) 10%, var(--pane));
+  color: var(--foreground);
+}
+
 .database-search {
   display: flex;
   height: 36px;
