@@ -1639,6 +1639,7 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 	workspaceID := "default"
 	projectRoot := ""
 	projectRefs := []playground.ProjectReference{}
+	showExamples := false
 	limitMode := vm.LimitModePermissive
 	openBrowser := false
 	once := false
@@ -1672,6 +1673,8 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 			}
 			projectRefs = append(projectRefs, ref)
 			i++
+		case "--examples":
+			showExamples = true
 		case "--data-root":
 			if i+1 >= len(args) {
 				return errors.New("--data-root requires a value")
@@ -1717,6 +1720,7 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 		DBPath:            dbPath,
 		DefaultLimitMode:  limitMode,
 		ProjectReferences: projectRefs,
+		ShowExamples:      showExamples,
 	})
 	url := "http://" + addr + "/playground/"
 	fmt.Fprintf(w, "oaer playground: %s\n", url)

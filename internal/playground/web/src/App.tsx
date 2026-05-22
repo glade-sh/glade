@@ -30,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CodeEditor } from "@/components/CodeEditor"
 import { cn } from "@/lib/utils"
 import { applySavedContent, shouldApplyRunResult } from "@/lib/save-state"
+import { filterWorkspaceFiles } from "@/lib/workspace-files"
 
 const API_BASE = "/playground/api/"
 
@@ -188,6 +189,7 @@ export default function App() {
   const [examples, setExamples] = useState<ExampleProject[]>([])
   const [selectedExample, setSelectedExample] = useState("")
   const [canLoadExamples, setCanLoadExamples] = useState(true)
+  const [classSearch, setClassSearch] = useState("")
 
   const metaRef = useRef<WorkspaceMetadata | null>(null)
   const versionsRef = useRef<Record<string, number>>({})
@@ -499,12 +501,19 @@ export default function App() {
 
   const groups = useMemo(() => {
     const files = meta?.files ?? []
-    return [
-      { label: "Classes", icon: FileCode2, files: files.filter((file) => file.kind === "class" || file.kind === "trigger") },
+    const sourceCount = files.filter((file) => file.kind === "class" || file.kind === "trigger").length
+    const groups = [
+      {
+        label: "Classes",
+        icon: FileCode2,
+        files: filterWorkspaceFiles(files, classSearch),
+        forceVisible: sourceCount > 0 || classSearch.trim() !== "",
+      },
       { label: "Data", icon: Database, files: files.filter((file) => file.kind === "data") },
       { label: "Metadata", icon: Braces, files: files.filter((file) => file.kind === "metadata" || file.kind === "other") },
-    ].filter((group) => group.files.length > 0)
-  }, [meta?.files])
+    ]
+    return groups.filter((group) => group.files.length > 0 || group.forceVisible)
+  }, [classSearch, meta?.files])
 
   const sourceContent = sourcePath ? contentByPath[sourcePath] ?? "" : ""
   const runTime = result ? `${(result.compileMs ?? 0) + (result.executeMs ?? 0)} ms` : "-"
@@ -694,47 +703,51 @@ export default function App() {
               Class
             </Button>
           </header>
-          <div className="space-y-2 border-b border-border p-2">
-            <div className="flex gap-2">
-              <Select value={selectedExample} onValueChange={setSelectedExample}>
-                <SelectTrigger className="h-8 min-w-0 flex-1">
-                  <SelectValue placeholder="Examples" />
-                </SelectTrigger>
-                <SelectContent>
-                  {examples.map((example) => (
-                    <SelectItem key={example.id} value={example.id}>
-                      {example.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                className="h-8 shrink-0"
-                variant="outline"
-                onClick={loadExampleAndHandle}
-                disabled={!canLoadExamples || !selectedExample}
-                title={canLoadExamples ? "Load example" : "Examples load only in scratch workspaces"}
-              >
-                <BookOpen />
-                Load
-              </Button>
-            </div>
-            {selectedExampleDetails ? (
-              <div className="space-y-1 px-1 pb-1">
-                <p className="line-clamp-2 text-[11px] leading-4 text-muted-foreground">
-                  {selectedExampleDetails.description}
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  <Badge variant="outline">{selectedExampleDetails.fileCount} files</Badge>
-                  {(selectedExampleDetails.tags ?? []).map((tag) => (
-                    <Badge key={tag} variant="outline">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
+          {examples.length > 0 ? (
+            <div className="space-y-2 border-b border-border p-2">
+              <div className="flex gap-2">
+                <Select value={selectedExample} onValueChange={setSelectedExample}>
+                  <SelectTrigger className="h-8 min-w-0 flex-1">
+                    <SelectValue placeholder="Projects" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {examples.map((example) => (
+                      <SelectItem key={example.id} value={example.id}>
+                        {example.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  className="h-8 shrink-0"
+                  variant="outline"
+                  onClick={loadExampleAndHandle}
+                  disabled={!canLoadExamples || !selectedExample}
+                  title={canLoadExamples ? "Load project" : "Project loading only works in scratch workspaces"}
+                >
+                  <BookOpen />
+                  Load
+                </Button>
               </div>
-            ) : null}
-          </div>
+              {selectedExampleDetails ? (
+                <div className="space-y-1 px-1 pb-1">
+                  <p className="line-clamp-2 text-[11px] leading-4 text-muted-foreground">
+                    {selectedExampleDetails.description}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedExampleDetails.fileCount > 0 ? (
+                      <Badge variant="outline">{selectedExampleDetails.fileCount} files</Badge>
+                    ) : null}
+                    {(selectedExampleDetails.tags ?? []).map((tag) => (
+                      <Badge key={tag} variant="outline">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           <ScrollArea className="min-h-0 flex-1">
             <div className="space-y-4 p-3">
               {groups.map((group) => {
@@ -745,7 +758,23 @@ export default function App() {
                       <Icon className="size-3.5" />
                       {group.label}
                     </div>
+                    {group.label === "Classes" ? (
+                      <label className="mb-2 flex h-8 items-center gap-2 rounded-md border border-border bg-background/70 px-2 text-muted-foreground">
+                        <Search className="size-3.5" />
+                        <input
+                          className="min-w-0 flex-1 border-0 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
+                          value={classSearch}
+                          onChange={(event) => setClassSearch(event.target.value)}
+                          placeholder="Search classes"
+                        />
+                      </label>
+                    ) : null}
                     <div className="space-y-1">
+                      {group.files.length === 0 && group.label === "Classes" ? (
+                        <div className="rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
+                          No matching classes
+                        </div>
+                      ) : null}
                       {group.files.map((file) => {
                         const selected = file.path === activePath || file.path === sourcePath
                         const dirty = dirtyPaths.has(file.path)

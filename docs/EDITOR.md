@@ -10,14 +10,14 @@ with polling fallback.
 
 `oaer playground` starts a local web UI for quick Apex experiments. It is useful
 when you want a DotNetFiddle-style loop: edit class files, write execute
-anonymous Apex that calls those classes, run on save or on demand, and inspect
-cached output, variables, limits, traces, diagnostics, and org changes.
+anonymous Apex that calls those classes, run on demand, and inspect cached
+output, variables, limits, traces, diagnostics, and org changes.
 
-Scratch mode includes built-in example projects for DML, SOQL, triggers,
-relationships, maps, and limit counters:
+Pass `--examples` when you want the built-in scratch examples for DML, SOQL,
+triggers, relationships, maps, and limit counters:
 
 ```bash
-oaer playground --db .oaer/playground/org.sqlite --open
+oaer playground --db .oaer/playground/org.sqlite --examples --open
 ```
 
 Point it at a project when you want to edit that folder directly:
@@ -29,7 +29,8 @@ oaer playground --project . --db .oaer/playground/org.sqlite --open
 Use one or more `--project-ref name=path` flags when you want selectable local
 project folders copied into the scratch playground instead of editing the folder
 directly. Project references are available only in the managed scratch
-workspace, not when `--project` is used.
+workspace, not when `--project` is used. Built-in examples are hidden while
+project references are configured.
 
 Keyboard shortcuts in the web UI:
 

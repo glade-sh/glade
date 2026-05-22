@@ -145,10 +145,14 @@ oaer playground --db .oaer/playground/org.sqlite --addr 127.0.0.1:1789 --open
 ```
 
 The playground stores scratch files under `.oaer/playground/workspaces/default`
-when no project is supplied. The scratch workspace includes built-in example
+when no project is supplied. Pass `--examples` to include built-in example
 projects for DML, SOQL, triggers, relationships, maps, and governor-limit
 counters. Point the playground at an existing SFDX project to edit that
 project's supported files directly:
+
+```bash
+oaer playground --examples --db .oaer/playground/org.sqlite
+```
 
 ```bash
 oaer playground --project . --db .oaer/playground/org.sqlite
@@ -157,8 +161,10 @@ oaer playground --project . --db .oaer/playground/org.sqlite
 Use `--project-ref name=path` to add local SFDX folders to the scratch
 workspace's project selector without editing them in place. Loading a reference
 copies supported `.cls`, `.trigger`, `.apex`, `.json`, `.xml`, `.yml`, and
-`.yaml` files into the managed scratch workspace. If the folder has no
-`anonymous.apex` or `seed.json`, the loader adds default scratch files:
+`.yaml` files into the managed scratch workspace while preserving their relative
+folder paths. Built-in examples are hidden when project references are supplied.
+If the folder has no `anonymous.apex` or `seed.json`, the loader adds default
+scratch files:
 
 ```bash
 oaer playground --project-ref "Local Probe=../some-sfdx-project" --open

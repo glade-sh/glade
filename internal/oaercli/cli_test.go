@@ -1734,6 +1734,24 @@ func TestRunPlaygroundProjectRefFlag(t *testing.T) {
 	}
 }
 
+func TestRunPlaygroundExamplesFlag(t *testing.T) {
+	root := t.TempDir()
+	dbPath := filepath.Join(t.TempDir(), "playground.sqlite")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"playground",
+		"--workspace", "default",
+		"--data-root", root,
+		"--db", dbPath,
+		"--examples",
+		"--once",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+}
+
 func TestRunPlaygroundUnknownFlag(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"playground", "--bogus"}, &stdout, &stderr)

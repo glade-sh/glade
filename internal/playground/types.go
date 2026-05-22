@@ -136,4 +136,5 @@ type ServerOptions struct {
 	DBPath            string
 	DefaultLimitMode  vm.LimitMode
 	ProjectReferences []ProjectReference
+	ShowExamples      bool
 }

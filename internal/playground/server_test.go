@@ -107,7 +107,7 @@ func TestServerListsLoadsAndRunsExampleProject(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenWorkspace() error = %v", err)
 	}
-	handler := NewServer(ws, ServerOptions{Version: "test"})
+	handler := NewServer(ws, ServerOptions{Version: "test", ShowExamples: true})
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/playground/api/examples", nil)
@@ -169,6 +169,31 @@ func TestServerListsLoadsAndRunsExampleProject(t *testing.T) {
 	}
 }
 
+func TestServerHidesBuiltInExamplesUnlessEnabled(t *testing.T) {
+	dataRoot := t.TempDir()
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test"})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/playground/api/examples", nil)
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("examples status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var listed struct {
+		Examples []ExampleProject `json:"examples"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &listed); err != nil {
+		t.Fatalf("decode examples: %v", err)
+	}
+	if len(listed.Examples) != 0 {
+		t.Fatalf("examples = %#v", listed.Examples)
+	}
+}
+
 func TestServerListsLoadsAndRunsLocalProjectReference(t *testing.T) {
 	projectRoot := t.TempDir()
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-ref","namespace":"","sourceApiVersion":"65.0"}`)
@@ -180,6 +205,9 @@ func TestServerListsLoadsAndRunsLocalProjectReference(t *testing.T) {
 `)
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "anonymous.apex"), `System.debug(LocalProbe.run());
 `)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "packages/app/force-app/main/default/classes/NestedProbe.cls"), `public class NestedProbe {}
+`)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/Oversize.cls"), strings.Repeat("x", maxPlaygroundFileSize+1))
 
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
@@ -208,9 +236,12 @@ func TestServerListsLoadsAndRunsLocalProjectReference(t *testing.T) {
 	}
 	refID := ""
 	for _, example := range listed.Examples {
+		if example.Source != "local" {
+			t.Fatalf("project ref list included built-in example: %#v", example)
+		}
 		if example.Source == "local" && example.Name == "Local Probe" {
 			refID = example.ID
-			if example.FileCount < 3 {
+			if example.FileCount != 0 {
 				t.Fatalf("local ref file count = %d", example.FileCount)
 			}
 			break
@@ -221,6 +252,16 @@ func TestServerListsLoadsAndRunsLocalProjectReference(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(map[string]string{"id": refID})
+	rec = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/playground/api/examples/load", bytes.NewReader(body))
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "exceeds") {
+		t.Fatalf("oversize load status = %d body=%s", rec.Code, rec.Body.String())
+	}
+
+	if err := os.Remove(filepath.Join(projectRoot, "force-app/main/default/classes/Oversize.cls")); err != nil {
+		t.Fatal(err)
+	}
 	rec = httptest.NewRecorder()
 	req = httptest.NewRequest(http.MethodPost, "/playground/api/examples/load", bytes.NewReader(body))
 	handler.ServeHTTP(rec, req)
@@ -236,6 +277,16 @@ func TestServerListsLoadsAndRunsLocalProjectReference(t *testing.T) {
 	}
 	if !strings.Contains(meta.AnonymousBody, "LocalProbe.run") {
 		t.Fatalf("anonymous body = %q", meta.AnonymousBody)
+	}
+	foundNested := false
+	for _, file := range meta.Files {
+		if file.Path == "packages/app/force-app/main/default/classes/NestedProbe.cls" {
+			foundNested = true
+			break
+		}
+	}
+	if !foundNested {
+		t.Fatalf("nested folder path not retained: %#v", meta.Files)
 	}
 
 	body, _ = json.Marshal(RunRequest{AnonymousBody: meta.AnonymousBody, Mode: RunModeScratch, LimitMode: "permissive", UseCache: false})
@@ -274,8 +325,8 @@ func TestServerListsLoadsAndRunsLocalProjectReference(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &meta); err != nil {
 		t.Fatalf("decode reopened workspace: %v", err)
 	}
-	if meta.ExampleID != refID {
-		t.Fatalf("reopened example id = %q, want %q", meta.ExampleID, refID)
+	if meta.ExampleID != "" {
+		t.Fatalf("reopened example id = %q, want empty without expensive project-ref match", meta.ExampleID)
 	}
 }
 

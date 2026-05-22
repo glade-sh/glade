@@ -19,6 +19,7 @@ type Server struct {
 	runner           *Runner
 	defaultLimitMode vm.LimitMode
 	projectRefs      []ProjectReference
+	showExamples     bool
 }
 
 func NewServer(workspace *Workspace, opts ServerOptions) *Server {
@@ -31,6 +32,7 @@ func NewServer(workspace *Workspace, opts ServerOptions) *Server {
 		runner:           NewRunner(workspace, RunnerOptions{Version: opts.Version, DBPath: opts.DBPath}),
 		defaultLimitMode: mode,
 		projectRefs:      normalizeProjectReferences(opts.ProjectReferences),
+		showExamples:     opts.ShowExamples,
 	}
 }
 
@@ -99,7 +101,10 @@ func (s *Server) handleLoadExample(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) listExamples() []ExampleProject {
-	examples := ListExampleProjects()
+	examples := []ExampleProject(nil)
+	if s.showExamples && len(s.projectRefs) == 0 {
+		examples = ListExampleProjects()
+	}
 	for _, ref := range s.projectRefs {
 		examples = append(examples, s.projectReferenceExample(ref))
 	}
@@ -113,10 +118,6 @@ func (s *Server) listExamples() []ExampleProject {
 }
 
 func (s *Server) projectReferenceExample(ref ProjectReference) ExampleProject {
-	fileCount := 0
-	if files, err := collectProjectReferenceFiles(ref); err == nil {
-		fileCount = len(files)
-	}
 	tags := append([]string{"local"}, ref.Tags...)
 	description := ref.Description
 	if description == "" {
@@ -127,15 +128,22 @@ func (s *Server) projectReferenceExample(ref ProjectReference) ExampleProject {
 		Name:        ref.Name,
 		Description: description,
 		Tags:        tags,
-		FileCount:   fileCount,
+		FileCount:   0,
 		Source:      "local",
 		Path:        ref.Path,
 	}
 }
 
 func (s *Server) loadSource(id string) (WorkspaceMetadata, error) {
-	if _, ok := exampleTemplateByID(id); ok {
-		return s.workspace.LoadExample(id)
+	if s.showExamples && len(s.projectRefs) == 0 {
+		if _, ok := exampleTemplateByID(id); ok {
+			return s.workspace.LoadExample(id)
+		}
+	}
+	if len(s.projectRefs) == 0 {
+		if _, ok := exampleTemplateByID(id); ok {
+			return WorkspaceMetadata{}, fmt.Errorf("built-in playground examples require --examples")
+		}
 	}
 	for _, ref := range s.projectRefs {
 		if ref.ID == id {
@@ -221,42 +229,8 @@ func (s *Server) handleWorkspace(w http.ResponseWriter) {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	s.applyProjectReferenceID(&meta)
 	meta.LimitMode = s.defaultLimitMode
 	writeJSON(w, http.StatusOK, meta)
-}
-
-func (s *Server) applyProjectReferenceID(meta *WorkspaceMetadata) {
-	if meta.ExampleID != "" {
-		return
-	}
-	for _, ref := range s.projectRefs {
-		files, err := collectProjectReferenceFiles(ref)
-		if err != nil {
-			continue
-		}
-		if workspaceMatchesFiles(s.workspace.Root, meta.Files, files) {
-			meta.ExampleID = ref.ID
-			return
-		}
-	}
-}
-
-func workspaceMatchesFiles(root string, workspaceFiles []WorkspaceFile, sourceFiles map[string]string) bool {
-	if len(workspaceFiles) != len(sourceFiles) {
-		return false
-	}
-	for _, file := range workspaceFiles {
-		want, ok := sourceFiles[file.Path]
-		if !ok {
-			return false
-		}
-		data, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(file.Path)))
-		if err != nil || string(data) != want {
-			return false
-		}
-	}
-	return true
 }
 
 func (s *Server) handleSaveFile(w http.ResponseWriter, r *http.Request) {
