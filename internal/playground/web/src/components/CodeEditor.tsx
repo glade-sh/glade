@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils"
 type CodeEditorProps = {
   title: string
   subtitle?: string
+  contextLabel?: string
+  contextTitle?: string
   value: string
   onChange: (value: string) => void
   className?: string
@@ -22,6 +24,8 @@ type CodeEditorProps = {
 export function CodeEditor({
   title,
   subtitle,
+  contextLabel,
+  contextTitle,
   value,
   onChange,
   className,
@@ -45,14 +49,22 @@ export function CodeEditor({
   return (
     <section className={cn("pane flex min-h-0 flex-col", className)}>
       <header className="pane-header">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="truncate text-sm font-semibold">{title}</h2>
-            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-              {lineCount} ln
-            </span>
-          </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-sm font-semibold">{title}</h2>
           {subtitle ? <p className="truncate font-mono text-[11px] text-muted-foreground">{subtitle}</p> : null}
+        </div>
+        <div className="flex min-w-0 shrink items-center gap-2">
+          {contextLabel ? (
+            <span
+              className="max-w-[220px] truncate font-mono text-[11px] text-muted-foreground"
+              title={contextTitle ?? contextLabel}
+            >
+              {contextLabel}
+            </span>
+          ) : null}
+          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+            {lineCount} ln
+          </span>
         </div>
         {onRun ? (
           <Button size="sm" onClick={onRun} disabled={running} title="Run">

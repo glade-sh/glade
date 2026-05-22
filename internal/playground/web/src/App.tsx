@@ -1008,35 +1008,32 @@ export default function App() {
           </ScrollArea>
         </aside>
 
-        <section className="min-h-0">
-          <Tabs defaultValue="apex" className="flex h-full min-h-0 flex-col">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="apex">Apex</TabsTrigger>
-              <TabsTrigger value="database">Database</TabsTrigger>
-            </TabsList>
-            <TabsContent value="apex" className="min-h-0 flex-1">
-              <div className="grid h-full min-h-0 grid-rows-[minmax(0,1.25fr)_minmax(230px,0.75fr)] gap-3">
-                <CodeEditor
-                  title="Apex Source"
-                  subtitle={sourcePath || "No source file selected"}
-                  value={sourceContent}
-                  onChange={onSourceChange}
-                />
-                <CodeEditor
-                  title="Execute Anonymous"
-                  subtitle={anonymousPath}
-                  value={anonymous}
-                  onChange={onAnonymousChange}
-                  runLabel={running ? "Running" : "Run"}
-                  running={running}
-                  onRun={runAndHandle}
-                />
+        <section className="grid min-h-0 grid-rows-[minmax(0,1.05fr)_minmax(190px,0.62fr)_minmax(260px,0.78fr)] gap-3">
+          <CodeEditor
+            title="Apex Source"
+            contextLabel={sourcePath ? fileName(sourcePath) : "No source"}
+            contextTitle={sourcePath || "No source file selected"}
+            value={sourceContent}
+            onChange={onSourceChange}
+          />
+          <CodeEditor
+            title="Execute Anonymous"
+            value={anonymous}
+            onChange={onAnonymousChange}
+            runLabel={running ? "Running" : "Run"}
+            running={running}
+            onRun={runAndHandle}
+          />
+          <section className="pane database-work-surface flex min-h-0 flex-col">
+            <header className="pane-header">
+              <div className="flex min-w-0 items-center gap-2">
+                <Database className="size-4 text-primary" />
+                <h2 className="truncate text-sm font-semibold">Database</h2>
               </div>
-            </TabsContent>
-            <TabsContent value="database" className="min-h-0 flex-1" forceMount>
-              <div className="h-full min-h-0">{databaseBrowser}</div>
-            </TabsContent>
-          </Tabs>
+              <span className="font-mono text-[10px] text-muted-foreground">{database.objects.length} objects</span>
+            </header>
+            <div className="min-h-0 flex-1">{databaseBrowser}</div>
+          </section>
         </section>
 
         <aside className="pane output-pane min-h-0">

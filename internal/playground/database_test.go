@@ -1,10 +1,38 @@
 package playground
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/open-aer/oaer/internal/storage"
 )
+
+func TestDatabaseSnapshotSortsObjectsByName(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Zulu__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Zulu__c"},
+		Records: map[storage.ID]storage.Record{
+			"001": {ID: "001", Object: "Zulu__c"},
+			"002": {ID: "002", Object: "Zulu__c"},
+		},
+	}
+	org.Objects["Alpha__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Alpha__c"},
+	}
+	org.Objects["Middle__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Middle__c"},
+		Records: map[storage.ID]storage.Record{
+			"003": {ID: "003", Object: "Middle__c"},
+		},
+	}
+
+	snapshot := databaseSnapshot(org)
+	got := []string{snapshot.Objects[0].Name, snapshot.Objects[1].Name, snapshot.Objects[2].Name}
+	want := []string{"Alpha__c", "Middle__c", "Zulu__c"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("object order = %v, want %v", got, want)
+	}
+}
 
 func TestDatabaseSnapshotClassifiesObjectKinds(t *testing.T) {
 	org := storage.NewOrgState()

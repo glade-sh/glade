@@ -3,7 +3,7 @@ import { expect, test, vi } from "vitest"
 
 import App from "./App"
 
-test("renders Apex and Database as primary workspace tabs", () => {
+test("renders Apex editors and Database as separate work surfaces", () => {
   vi.stubGlobal("localStorage", {
     getItem: () => "dark",
     setItem: () => undefined,
@@ -11,8 +11,10 @@ test("renders Apex and Database as primary workspace tabs", () => {
 
   const html = renderToString(<App />)
 
-  expect(html).toContain("Apex")
+  expect(html).toContain("Apex Source")
+  expect(html).toContain("Execute Anonymous")
   expect(html).toContain("Database")
+  expect(html).toContain("database-work-surface")
 })
 
 test("renders database object filter controls", () => {

@@ -345,9 +345,6 @@ textarea {
   height: 100%;
   min-height: 0;
   grid-template-columns: minmax(140px, 34%) minmax(0, 1fr);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: color-mix(in oklch, var(--background) 90%, black 10%);
   overflow: hidden;
 }
 

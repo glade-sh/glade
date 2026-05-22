@@ -14,14 +14,7 @@ func databaseSnapshot(org storage.OrgState) DatabaseSnapshot {
 	for name := range org.Objects {
 		names = append(names, name)
 	}
-	sort.Slice(names, func(i, j int) bool {
-		left := org.Objects[names[i]]
-		right := org.Objects[names[j]]
-		if len(left.Records) != len(right.Records) {
-			return len(left.Records) > len(right.Records)
-		}
-		return names[i] < names[j]
-	})
+	sort.Strings(names)
 
 	objects := make([]DatabaseObject, 0, len(names))
 	for _, name := range names {
