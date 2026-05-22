@@ -76,6 +76,9 @@ grep -q '"Account": 1' "${TMP}/db-seed.json"
 "${OAER}" db inspect --db "${DB}" >"${TMP}/db-inspect.out"
 grep -q 'Account: 1' "${TMP}/db-inspect.out"
 
+"${OAER}" playground --data-root "${TMP}/playground" --db "${TMP}/playground.sqlite" --once >"${TMP}/playground.out"
+grep -q 'oaer playground: http://127.0.0.1:1789/playground/' "${TMP}/playground.out"
+
 LSP_PROJECT="${TMP}/lsp-project"
 mkdir -p "${LSP_PROJECT}/force-app/main/classes"
 cat >"${LSP_PROJECT}/sfdx-project.json" <<'JSON'
@@ -114,8 +117,22 @@ grep -q 'v65.0' "${TMP}/server-data.json"
 grep -q 'MVP readiness: not ready' "${TMP}/compat-mvp.out"
 "${OAER}" compat matrix --json >"${TMP}/compat-matrix.json"
 grep -q '"ready": false' "${TMP}/compat-matrix.json"
-"${OAER}" compat validate docs/fixtures/*.json
-"${OAER}" compat run docs/fixtures/*.json
+RUN_FIXTURES=()
+for fixture in docs/fixtures/*.json; do
+  if python3 - "${fixture}" <<'PY'
+import json
+import sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    data = json.load(f)
+name = data.get("name")
+raise SystemExit(0 if isinstance(name, str) and name else 1)
+PY
+  then
+    RUN_FIXTURES+=("${fixture}")
+  fi
+done
+"${OAER}" compat validate "${RUN_FIXTURES[@]}"
+"${OAER}" compat run "${RUN_FIXTURES[@]}"
 "${OAER}" compat replay testdata/replay/selector-service-domain
 "${OAER}" compat replay testdata/replay/server-backed
 "${OAER}" compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md

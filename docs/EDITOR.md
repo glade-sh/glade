@@ -6,6 +6,42 @@ preview: DAP has live VM pause/step primitives, LSP uses full-project indexing
 at startup with open-buffer overlays, and watch mode uses native file watching
 with polling fallback.
 
+## Browser Playground
+
+`oaer playground` starts a local web UI for quick Apex experiments. It is useful
+when you want a DotNetFiddle-style loop: edit class files, write execute
+anonymous Apex that calls those classes, run on save or on demand, and inspect
+cached output, variables, limits, traces, diagnostics, and org changes.
+
+Scratch mode includes built-in example projects for DML, SOQL, triggers,
+relationships, maps, and limit counters:
+
+```bash
+oaer playground --db .oaer/playground/org.sqlite --open
+```
+
+Point it at a project when you want to edit that folder directly:
+
+```bash
+oaer playground --project . --db .oaer/playground/org.sqlite --open
+```
+
+Use one or more `--project-ref name=path` flags when you want selectable local
+project folders copied into the scratch playground instead of editing the folder
+directly. Project references are available only in the managed scratch
+workspace, not when `--project` is used.
+
+Keyboard shortcuts in the web UI:
+
+- `Cmd/Ctrl+Enter`: run execute anonymous.
+- `Cmd/Ctrl+S`: save the active file.
+- `Cmd/Ctrl+K`: open the command palette.
+- `Cmd/Ctrl+Shift+R`: reset the local org.
+
+The playground uses the same local compiler, project runtime registration, VM,
+and storage layers as CLI execution. It is a browser-first editor loop, not a
+hosted service.
+
 ## VS Code Tasks
 
 Create `.vscode/tasks.json` in a Salesforce project to run the same checks that

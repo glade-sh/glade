@@ -150,6 +150,17 @@ func TestRunCompatRun(t *testing.T) {
 	}
 }
 
+func TestRunCompatReplay(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "replay", "../../testdata/replay/selector-service-domain"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "Replay selector-service-domain: passed") {
+		t.Fatalf("stdout did not include replay status: %q", stdout.String())
+	}
+}
+
 func TestRunCompatOracleTestsDiffsFixtureRuns(t *testing.T) {
 	root := t.TempDir()
 	goldenPath := filepath.Join(root, "salesforce.json")
@@ -1686,6 +1697,51 @@ func TestRunExecFailure(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "System.AssertException") {
 		t.Fatalf("stderr did not include assertion failure: %q", stderr.String())
+	}
+}
+
+func TestRunPlaygroundOnce(t *testing.T) {
+	root := t.TempDir()
+	dbPath := filepath.Join(t.TempDir(), "playground.sqlite")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"playground", "--workspace", "default", "--data-root", root, "--db", dbPath, "--once"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "oaer playground:") || !strings.Contains(stdout.String(), "/playground/") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunPlaygroundProjectRefFlag(t *testing.T) {
+	root := t.TempDir()
+	projectRoot := t.TempDir()
+	dbPath := filepath.Join(t.TempDir(), "playground.sqlite")
+	writeTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"playground",
+		"--workspace", "default",
+		"--data-root", root,
+		"--db", dbPath,
+		"--project-ref", "Local Probe=" + projectRoot,
+		"--once",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+}
+
+func TestRunPlaygroundUnknownFlag(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"playground", "--bogus"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), `unknown flag "--bogus"`) {
+		t.Fatalf("stderr = %q", stderr.String())
 	}
 }
 

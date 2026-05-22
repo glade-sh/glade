@@ -19,6 +19,12 @@ Compatibility status:
 
 Release engineering:
 
+- Added `oaer playground`, a local Apex playground web UI with workspace files,
+  execute-anonymous runs, cached results, logs, variables, limits, trace output,
+  diagnostics, org diffs, reset/seed controls, and a slick developer-focused
+  browser shell.
+- Added richer playground examples and `--project-ref name=path` so local SFDX
+  folders can appear in the playground selector and load into scratch.
 - Added tag-driven release artifact builds for macOS, Linux, and Windows.
 - Added release-readiness labels for server examples, MVP, Apex parity, legacy
   local tests, declarative automation, and Visualforce/Aura/LWC controller-test

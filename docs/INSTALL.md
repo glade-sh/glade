@@ -134,6 +134,40 @@ Tooling `executeAnonymous` still uses the VM's local default user context. Do
 not expose `oaer server` to untrusted networks without an authenticating reverse
 proxy.
 
+## Local Apex Playground
+
+Use `oaer playground` for a local browser workbench with a file tree, Apex class
+editor, execute-anonymous pane, cached results, logs, variables, limits, traces,
+and org diff output.
+
+```bash
+oaer playground --db .oaer/playground/org.sqlite --addr 127.0.0.1:1789 --open
+```
+
+The playground stores scratch files under `.oaer/playground/workspaces/default`
+when no project is supplied. The scratch workspace includes built-in example
+projects for DML, SOQL, triggers, relationships, maps, and governor-limit
+counters. Point the playground at an existing SFDX project to edit that
+project's supported files directly:
+
+```bash
+oaer playground --project . --db .oaer/playground/org.sqlite
+```
+
+Use `--project-ref name=path` to add local SFDX folders to the scratch
+workspace's project selector without editing them in place. Loading a reference
+copies supported `.cls`, `.trigger`, `.apex`, `.json`, `.xml`, `.yml`, and
+`.yaml` files into the managed scratch workspace. If the folder has no
+`anonymous.apex` or `seed.json`, the loader adds default scratch files:
+
+```bash
+oaer playground --project-ref "Local Probe=../some-sfdx-project" --open
+```
+
+It binds to localhost by default. Do not expose it to untrusted networks; it runs
+local Apex through the OAER VM and can mutate the selected local org database in
+persist mode.
+
 ## Homebrew
 
 Homebrew distribution is not published yet. A future tap formula should use the

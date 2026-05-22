@@ -270,6 +270,21 @@ func runtimeKey(index typesys.Index) runtimeCacheKey {
 		_, _ = h.Write([]byte(s))
 		_, _ = h.Write([]byte{0})
 	}
+	seenFiles := make(map[string]bool)
+	writeFileBody := func(file string) {
+		if file == "" || seenFiles[file] {
+			return
+		}
+		seenFiles[file] = true
+		write("file:" + file)
+		data, err := os.ReadFile(file)
+		if err != nil {
+			write("read-error:" + err.Error())
+			return
+		}
+		_, _ = h.Write(data)
+		_, _ = h.Write([]byte{0})
+	}
 	write(index.Project.Root)
 	write(index.Project.Namespace)
 	write(index.Project.SourceAPIVersion)
@@ -278,11 +293,13 @@ func runtimeKey(index typesys.Index) runtimeCacheKey {
 		write(typ.File)
 		write(typ.Name)
 		write(typ.Namespace)
+		writeFileBody(typ.File)
 	}
 	for _, trig := range index.Triggers {
 		write(trig.File)
 		write(trig.Name)
 		write(trig.ObjectName)
+		writeFileBody(trig.File)
 	}
 	return runtimeCacheKey(hex.EncodeToString(h.Sum(nil)))
 }

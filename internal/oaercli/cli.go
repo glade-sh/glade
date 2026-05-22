@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
@@ -29,6 +30,7 @@ import (
 	"github.com/open-aer/oaer/internal/examplescan"
 	"github.com/open-aer/oaer/internal/lsp"
 	"github.com/open-aer/oaer/internal/packageartifact"
+	"github.com/open-aer/oaer/internal/playground"
 	"github.com/open-aer/oaer/internal/probe"
 	"github.com/open-aer/oaer/internal/profile"
 	"github.com/open-aer/oaer/internal/project"
@@ -146,6 +148,12 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
+	case "playground":
+		if err := runPlayground(ctx, args[1:], stdout); err != nil {
+			fmt.Fprintf(stderr, "oaer: %v\n", err)
+			return 1
+		}
+		return 0
 	case "db":
 		if err := runDB(ctx, args[1:], stdout); err != nil {
 			fmt.Fprintf(stderr, "oaer: %v\n", err)
@@ -197,9 +205,11 @@ Commands:
   test      Discover and run supported Apex tests.
   lsp       Run the Language Server Protocol server over stdio.
   profile   Analyze oaer trace output.
-  package   Build managed package artifacts.
-  server    Start the local Salesforce-compatible API baseline.
-  db        Seed, reset, export, and inspect a persistent local database.
+	  package   Build managed package artifacts.
+	  server    Start the local Salesforce-compatible API baseline.
+	  playground
+	            Start the local Apex playground web UI.
+	  db        Seed, reset, export, and inspect a persistent local database.
   compat    Validate fixtures and report capability readiness.
   probe     Run org probes to discover gaps against a real Salesforce org.
   help      Print this help text.
@@ -1619,6 +1629,128 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 	return http.ListenAndServe(addr, handler)
 }
 
+func runPlayground(ctx context.Context, args []string, w io.Writer) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	addr := "127.0.0.1:1789"
+	dbPath := filepath.Join(".oaer", "playground", "org.sqlite")
+	dataRoot := filepath.Join(".oaer", "playground")
+	workspaceID := "default"
+	projectRoot := ""
+	projectRefs := []playground.ProjectReference{}
+	limitMode := vm.LimitModePermissive
+	openBrowser := false
+	once := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--addr":
+			if i+1 >= len(args) {
+				return errors.New("--addr requires a value")
+			}
+			addr = args[i+1]
+			i++
+		case "--db":
+			if i+1 >= len(args) {
+				return errors.New("--db requires a path")
+			}
+			dbPath = args[i+1]
+			i++
+		case "--project":
+			if i+1 >= len(args) {
+				return errors.New("--project requires a value")
+			}
+			projectRoot = args[i+1]
+			i++
+		case "--project-ref":
+			if i+1 >= len(args) {
+				return errors.New("--project-ref requires a value")
+			}
+			ref, err := parsePlaygroundProjectRef(args[i+1])
+			if err != nil {
+				return err
+			}
+			projectRefs = append(projectRefs, ref)
+			i++
+		case "--data-root":
+			if i+1 >= len(args) {
+				return errors.New("--data-root requires a value")
+			}
+			dataRoot = args[i+1]
+			i++
+		case "--workspace":
+			if i+1 >= len(args) {
+				return errors.New("--workspace requires a value")
+			}
+			workspaceID = args[i+1]
+			i++
+		case "--limit-mode":
+			if i+1 >= len(args) {
+				return errors.New("--limit-mode requires a value")
+			}
+			mode, err := parseLimitMode(args[i+1])
+			if err != nil {
+				return err
+			}
+			limitMode = mode
+			i++
+		case "--open":
+			openBrowser = true
+		case "--no-open":
+			openBrowser = false
+		case "--once":
+			once = true
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	ws, err := playground.OpenWorkspace(playground.WorkspaceOptions{
+		DataRoot:    dataRoot,
+		ID:          workspaceID,
+		ProjectRoot: projectRoot,
+	})
+	if err != nil {
+		return err
+	}
+	handler := playground.NewServer(ws, playground.ServerOptions{
+		Version:           Version,
+		DBPath:            dbPath,
+		DefaultLimitMode:  limitMode,
+		ProjectReferences: projectRefs,
+	})
+	url := "http://" + addr + "/playground/"
+	fmt.Fprintf(w, "oaer playground: %s\n", url)
+	if once {
+		_ = handler
+		return nil
+	}
+	if openBrowser {
+		_ = openURL(url)
+	}
+	return http.ListenAndServe(addr, handler)
+}
+
+func parsePlaygroundProjectRef(value string) (playground.ProjectReference, error) {
+	parts := strings.SplitN(value, "=", 2)
+	if len(parts) != 2 || strings.TrimSpace(parts[0]) == "" || strings.TrimSpace(parts[1]) == "" {
+		return playground.ProjectReference{}, errors.New("--project-ref must be name=path")
+	}
+	return playground.ProjectReference{Name: strings.TrimSpace(parts[0]), Path: strings.TrimSpace(parts[1])}, nil
+}
+
+func openURL(url string) error {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", url)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	default:
+		cmd = exec.Command("xdg-open", url)
+	}
+	return cmd.Start()
+}
+
 func serverSourceMetadata(root string) (server.SourceMetadata, error) {
 	p, err := project.Load(root)
 	if err != nil {
@@ -1968,6 +2100,8 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return runCompatLocalTests(args[1:], w)
 	case "oracle-tests":
 		return runCompatOracleTests(ctx, args[1:], w)
+	case "replay":
+		return runCompatReplay(args[1:], w)
 	case "ui-controllers":
 		return runCompatUIControllers(args[1:], w)
 	case "examples":
@@ -2032,7 +2166,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 }
 
 func compatUsage() string {
-	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--start-class <name>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--parallel-methods] [--shard-count <n>] [--shard-index <i>] [--write-class-shards <dir>] [--duration-history <path>] [--progress] [--analyze] [--profile-on-timeout] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--json] [--check <path>] | oracle-tests [--project <root>] [--target-org <alias>] [--filter <class[.method]>] [--salesforce-run <path>] [--local-run <path>] [--golden-only] [--anonymous <apex>] [--fetch-logs] [--log-limit <n>] [--runs-dir <path>] [--run-id <id>] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-contracts [--source <dir>] [--json|--output <path>|--check <path>] | stub-discovery [--source <dir>] [--project <probe-sfdx-dir>] [--tier smoke|core|full|local] [--limit <n>] [--no-exec] [--json|--output <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
+	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--start-class <name>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--parallel-methods] [--shard-count <n>] [--shard-index <i>] [--write-class-shards <dir>] [--duration-history <path>] [--progress] [--analyze] [--profile-on-timeout] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--json] [--check <path>] | oracle-tests [--project <root>] [--target-org <alias>] [--filter <class[.method]>] [--salesforce-run <path>] [--local-run <path>] [--golden-only] [--anonymous <apex>] [--fetch-logs] [--log-limit <n>] [--runs-dir <path>] [--run-id <id>] [--json] [--check <path>] | replay [--json] [--continue-on-error] [--artifacts <dir>] <bundle-dir...> | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-contracts [--source <dir>] [--json|--output <path>|--check <path>] | stub-discovery [--source <dir>] [--project <probe-sfdx-dir>] [--tier smoke|core|full|local] [--limit <n>] [--no-exec] [--json|--output <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
 }
 
 type postParityReadiness struct {
@@ -2245,6 +2379,54 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 		return compat.WriteLocalTestJSON(w, report)
 	}
 	compat.WriteLocalTestText(w, report)
+	return nil
+}
+
+func runCompatReplay(args []string, w io.Writer) error {
+	jsonOut := false
+	continueOnError := false
+	artifactsDir := ""
+	paths := []string{}
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--json":
+			jsonOut = true
+		case "--continue-on-error":
+			continueOnError = true
+		case "--artifacts":
+			if i+1 >= len(args) {
+				return errors.New("--artifacts requires a path")
+			}
+			artifactsDir = args[i+1]
+			i++
+		default:
+			if strings.HasPrefix(args[i], "-") {
+				return fmt.Errorf("unknown flag %q", args[i])
+			}
+			paths = append(paths, args[i])
+		}
+	}
+	if len(paths) == 0 {
+		return errors.New("usage: oaer compat replay [--json] [--continue-on-error] [--artifacts <dir>] <bundle-dir...>")
+	}
+	report, err := compat.RunReplayBundles(paths, compat.ReplayOptions{
+		ContinueOnError: continueOnError,
+		ArtifactsDir:    artifactsDir,
+		CommandArgs:     append([]string{"compat", "replay"}, args...),
+	})
+	if err != nil {
+		return err
+	}
+	if jsonOut {
+		if err := compat.WriteReplayJSON(w, report); err != nil {
+			return err
+		}
+	} else {
+		compat.WriteReplayText(w, report)
+	}
+	if !report.OK {
+		return errors.New("compat replay failed")
+	}
 	return nil
 }
 

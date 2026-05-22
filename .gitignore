@@ -3,6 +3,8 @@
 /dist/
 /oaer
 /coverage.out
+/.oaer/
+node_modules/
 /example-projects
 /probes/sfdx/.sf/
 /probes/sfdx/.sfdx/
