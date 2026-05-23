@@ -11,24 +11,35 @@ func TestWriteConsole(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	const want = `PASS AccountTest.testCreatesAccount (12ms)
-FAIL AccountTest.testRejectsBlankName (5ms)
-  System.AssertException: Expected true
-  expected true but was false
-  at AccountTest.testRejectsBlankName (force-app/main/classes/AccountTest.cls:42:9)
-SKIP BillingTest.testGateway (0ms)
-  feature flag disabled
-COMPILE BrokenTest (compile_error, 7ms)
-  ApexParser: Missing ';'
-  at BrokenTest (force-app/main/classes/BrokenTest.cls:3:17)
-ERROR CrashTest.testThrows (runtime_error, 10ms)
-  NullPointerException: Attempt to de-reference a null object
-UNSUPPORTED FutureTest.testCallout (unsupported, 2ms)
-  callouts are not supported yet
-result: 1 passed, 1 failed, 1 skipped, 3 errors, 6 total, 36ms
+	const want = `Selected 6 tests.
+
+PASS AccountTest.testCreatesAccount  12ms
+FAIL AccountTest.testRejectsBlankName  5ms
+SKIP BillingTest.testGateway  0ms
+COMPILE BrokenTest  7ms
+ERROR CrashTest.testThrows  10ms
+UNSUPPORTED FutureTest.testCallout  2ms
+
+System.AssertException: Expected true
+expected true but was false
+
+at AccountTest.testRejectsBlankName:42
+
+Result: 1 passed, 1 failed, 1 skipped, 1 compile error, 1 runtime error, 1 unsupported, 6 total, 36ms
 `
 	if got := out.String(); got != want {
 		t.Fatalf("console output mismatch\nwant:\n%s\ngot:\n%s", want, got)
+	}
+}
+
+func TestWriteConsoleWithReportPath(t *testing.T) {
+	var out bytes.Buffer
+	if err := WriteConsoleWithOptions(&out, sampleRun(), ConsoleOptions{ReportPath: ".oaer/runs/latest/summary.md"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := out.String(); !bytes.Contains([]byte(got), []byte("Report: .oaer/runs/latest/summary.md\n")) {
+		t.Fatalf("console output missing report path:\n%s", got)
 	}
 }
 

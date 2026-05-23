@@ -1,6 +1,7 @@
 package oaercli
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -36,6 +37,7 @@ import (
 	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/projectscan"
 	"github.com/open-aer/oaer/internal/resource"
+	"github.com/open-aer/oaer/internal/runartifact"
 	oaerschema "github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/sema"
 	"github.com/open-aer/oaer/internal/server"
@@ -60,6 +62,10 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 
 	switch args[0] {
 	case "help", "-h", "--help":
+		if len(args) > 1 {
+			printHelpTopic(stdout, args[1:])
+			return 0
+		}
 		printHelp(stdout)
 		return 0
 	case "version", "--version":
@@ -121,6 +127,25 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		}
 		summary := result.Summary()
 		if summary.Failed > 0 || summary.Errors > 0 {
+			return 1
+		}
+		return 0
+	case "dev":
+		result, ranTests, err := runDev(ctx, args[1:], stdout)
+		if err != nil {
+			fmt.Fprintf(stderr, "oaer: %v\n", err)
+			return 1
+		}
+		if ranTests {
+			summary := result.Summary()
+			if summary.Failed > 0 || summary.Errors > 0 {
+				return 1
+			}
+		}
+		return 0
+	case "report":
+		if err := runReport(args[1:], stdout); err != nil {
+			fmt.Fprintf(stderr, "oaer: %v\n", err)
 			return 1
 		}
 		return 0
@@ -188,52 +213,129 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 }
 
 func printHelp(w io.Writer) {
-	fmt.Fprint(w, strings.TrimSpace(`
-oaer is a clean-room local Apex runtime.
+	fmt.Fprint(w, `oaer is a clean-room local Apex runtime.
 
 Usage:
   oaer <command> [flags]
 
 Commands:
-  version   Print the oaer version.
-  doctor    Print environment and project configuration status.
-  parse     Parse Apex source files.
-  inspect   Inspect indexed project symbols and unsupported project gaps.
-  schema    Load local Salesforce metadata schema.
-  check     Run semantic checks over a project.
-  exec      Execute anonymous Apex.
-  test      Discover and run supported Apex tests.
-  lsp       Run the Language Server Protocol server over stdio.
-  profile   Analyze oaer trace output.
-	  package   Build managed package artifacts.
-	  server    Start the local Salesforce-compatible API baseline.
-	  playground
-	            Start the local Apex playground web UI.
-	  db        Seed, reset, export, and inspect a persistent local database.
-  compat    Validate fixtures and report capability readiness.
-  probe     Run org probes to discover gaps against a real Salesforce org.
-  help      Print this help text.
+  version        Print the oaer version.
+  doctor         Print environment and project configuration status.
+  parse          Parse Apex source files.
+  inspect        Inspect indexed project symbols and unsupported project gaps.
+  schema         Load local Salesforce metadata schema.
+  check          Run semantic checks over a project.
+  exec           Execute anonymous Apex.
+  test           Discover and run supported Apex tests.
+  dev            Run the human-focused local development cockpit.
+  report         List, show, export, and clean saved run reports.
+  lsp            Run the Language Server Protocol server over stdio.
+  profile        Analyze oaer trace output.
+  package        Build managed package artifacts.
+  server         Start the local Salesforce-compatible API baseline.
+  playground     Start the local Apex playground web UI.
+  db             Seed, reset, export, and inspect a persistent local database.
+  compat         Validate fixtures and report capability readiness.
+  probe          Run org probes to discover gaps against a real Salesforce org.
+  help           Print this help text.
 
 Compat subcommands:
-  validate      Validate compatibility fixture files.
-  run           Validate and execute fixtures.
-  matrix        Print the full capability matrix.
-  mvp           Print MVP readiness report.
-  local-tests   Report local Apex test execution readiness.
-  examples      Scan example projects and report support status.
-  post-parity   Scan a project for unsupported surfaces.
-  dashboard     Generate compatibility dashboard.
-  gaps          Generate known gaps document.
-  stdlib        Generate standard library coverage document.
-  stub-contracts
-                Report generated stub behavioral contract policy.
-  stub-discovery
-                Execute generated stub probes and report implementation candidates.
-  stub-behavior
-                Report generated platform stub behavior status.
-  tooling-fixtures
-                Validate captured Tooling snippet oracle reports.
+  validate           Validate compatibility fixture files.
+  run                Validate and execute fixtures.
+  matrix             Print the full capability matrix.
+  mvp                Print MVP readiness report.
+  local-tests        Report local Apex test execution readiness.
+  examples           Scan example projects and report support status.
+  post-parity        Scan a project for unsupported surfaces.
+  dashboard          Generate compatibility dashboard.
+  gaps               Generate known gaps document.
+  stdlib             Generate standard library coverage document.
+  stub-contracts     Report generated stub behavioral contract policy.
+  stub-discovery     Execute generated stub probes and report implementation candidates.
+  stub-behavior      Report generated platform stub behavior status.
+  tooling-fixtures   Validate captured Tooling snippet oracle reports.
+`)
+}
+
+func printHelpTopic(w io.Writer, args []string) {
+	if len(args) == 0 {
+		printHelp(w)
+		return
+	}
+	switch args[0] {
+	case "test":
+		printTestHelp(w)
+	case "compat":
+		if len(args) > 1 && args[1] == "local-tests" {
+			printCompatLocalTestsHelp(w)
+			return
+		}
+		printCompatHelp(w)
+	default:
+		printHelp(w)
+	}
+}
+
+func printTestHelp(w io.Writer) {
+	fmt.Fprint(w, strings.TrimSpace(`
+Run local Apex tests.
+
+Usage:
+  oaer test [--project <root>] [--filter <pattern>] [--json] [--junit <path>] [--watch|--watch-once]
+
+Common flags:
+  --project <root>          Project root. Defaults to current directory.
+  --filter <pattern>        Run matching test classes or methods.
+  --json                    Write JSON test results.
+  --junit <path>            Write JUnit XML results.
+  --watch                   Watch source files and emit NDJSON events.
+  --watch-once              Run one watch cycle and exit.
+  --changed-since <ref>     Select tests affected since a git ref.
+  --limit-mode <mode>       Use strict or permissive governor limits.
+
+Examples:
+  oaer test --project force-app
+  oaer test --project . --filter AccountServiceTest
+  oaer test --project . --watch
 `)+"\n")
+}
+
+func printCompatHelp(w io.Writer) {
+	fmt.Fprintf(w, "%s\n\nExamples:\n  oaer compat mvp --json\n  oaer compat local-tests --project . --json\n", compatUsage())
+}
+
+func printCompatLocalTestsHelp(w io.Writer) {
+	fmt.Fprint(w, strings.TrimSpace(`
+Report local Apex test execution readiness.
+
+Usage:
+  oaer compat local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--method <name>] [--json]
+
+Common flags:
+  --project <root>          Project root. Defaults to current directory.
+  --class <name>            Run one Apex test class.
+  --class-list <a,b>        Run a comma-separated list of test classes.
+  --class-file <path>       Run classes listed in a file.
+  --start-class <name>      Resume from a class name in sorted order.
+  --method <name>           Run one test method when paired with --class.
+  --changed-since <ref>     Select tests affected since a git ref.
+  --blockers-only           Print only blocking failures.
+  --top-failures <n>        Limit failure groups in human output.
+  --timeout <ms-per-test>   Per-test timeout in milliseconds.
+  --parallel <n>            Run test classes with n workers.
+  --progress                Print progress while running.
+  --json                    Write JSON readiness results.
+  --check <path>            Compare results with a checked baseline.
+
+Examples:
+  oaer compat local-tests --project . --json
+  oaer compat local-tests --project . --class AccountServiceTest
+  oaer compat local-tests --project . --class-file tests.txt --top-failures 10
+`)+"\n")
+}
+
+func isHelpArg(arg string) bool {
+	return arg == "help" || arg == "-h" || arg == "--help"
 }
 
 func runPackage(ctx context.Context, args []string, w io.Writer) error {
@@ -663,6 +765,491 @@ func loadIndex(root string) (typesys.Index, error) {
 	return typesys.Build(p, s), nil
 }
 
+func runDev(ctx context.Context, args []string, w io.Writer) (testreport.Run, bool, error) {
+	if len(args) > 0 {
+		switch args[0] {
+		case "test":
+			result, err := runDevTest(ctx, args[1:], w)
+			return result, true, err
+		case "watch":
+			result, err := runDevTest(ctx, append(args[1:], "--watch"), w)
+			return result, true, err
+		case "help", "-h", "--help":
+			printDevHelp(w)
+			return testreport.Run{}, false, nil
+		}
+	}
+	return testreport.Run{}, false, runDevStatus(args, w)
+}
+
+func printDevHelp(w io.Writer) {
+	fmt.Fprint(w, strings.TrimSpace(`
+Use the human-focused local development cockpit.
+
+Usage:
+  oaer dev [--project <root>]
+  oaer dev test [--project <root>] [--class <name>|--test <Class.method>|--changed|--failed] [--out <runs-dir>]
+  oaer dev watch [--project <root>] [--out <runs-dir>]
+`)+"\n")
+}
+
+func runDevStatus(args []string, w io.Writer) error {
+	root := "."
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--project":
+			if i+1 >= len(args) {
+				return errors.New("--project requires a value")
+			}
+			root = args[i+1]
+			i++
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	p, err := project.Load(root)
+	if err != nil {
+		return err
+	}
+	index, err := loadIndex(root)
+	if err != nil {
+		return err
+	}
+	classes, tests := countDevApexTypes(index)
+	metadata := "loaded"
+	for _, diag := range index.Diagnostics {
+		if diag.Code == "OAERSCHEMA001" {
+			metadata = "load error"
+			break
+		}
+	}
+	fmt.Fprintf(w, "Project: %s\n", p.Root)
+	fmt.Fprintf(w, "Package dirs: %d\n", len(p.PackageDirectories))
+	fmt.Fprintf(w, "Apex classes: %d\n", classes)
+	fmt.Fprintf(w, "Apex tests: %d\n", tests)
+	fmt.Fprintf(w, "Metadata: %s\n", metadata)
+	fmt.Fprintf(w, "Last run: %s\n", devLastRun(filepath.Join(p.Root, ".oaer", "runs")))
+	fmt.Fprint(w, "\nNext:\n")
+	fmt.Fprintf(w, "  oaer dev test --project %s\n", p.Root)
+	fmt.Fprintf(w, "  oaer dev watch --project %s\n", p.Root)
+	return nil
+}
+
+func devLastRun(runsDir string) string {
+	latest, err := readLatest(runsDir)
+	if err != nil || latest.RunID == "" {
+		return "none"
+	}
+	return latest.RunID
+}
+
+func countDevApexTypes(index typesys.Index) (classes int, tests int) {
+	for _, typ := range index.Types {
+		if typ.Dependency || typ.Kind != apexast.DeclarationClass {
+			continue
+		}
+		classes++
+		if typ.IsTest {
+			tests++
+		}
+	}
+	return classes, tests
+}
+
+func runDevTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, error) {
+	root := "."
+	outRoot := filepath.Join(".oaer", "runs")
+	filter := ""
+	changed := false
+	failed := false
+	watchMode := false
+	watchOnce := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--project":
+			if i+1 >= len(args) {
+				return testreport.Run{}, errors.New("--project requires a value")
+			}
+			root = args[i+1]
+			i++
+		case "--out":
+			if i+1 >= len(args) {
+				return testreport.Run{}, errors.New("--out requires a path")
+			}
+			outRoot = args[i+1]
+			i++
+		case "--all":
+		case "--class":
+			if i+1 >= len(args) {
+				return testreport.Run{}, errors.New("--class requires a value")
+			}
+			filter = args[i+1]
+			i++
+		case "--test":
+			if i+1 >= len(args) {
+				return testreport.Run{}, errors.New("--test requires a value")
+			}
+			filter = args[i+1]
+			i++
+		case "--changed":
+			changed = true
+		case "--failed":
+			failed = true
+		case "--watch":
+			watchMode = true
+		case "--watch-once":
+			watchMode = true
+			watchOnce = true
+		default:
+			return testreport.Run{}, fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if watchMode {
+		return runDevWatch(ctx, root, outRoot, watchOnce, w)
+	}
+	testArgs := []string{"--project", root}
+	if filter != "" {
+		testArgs = append(testArgs, "--filter", filter)
+	}
+	if failed {
+		failedFilter, err := latestFailedFilter(outRoot)
+		if err != nil {
+			return testreport.Run{}, err
+		}
+		if failedFilter == "" {
+			fmt.Fprint(w, "No failed tests in latest run.\n")
+			return testreport.Run{}, nil
+		}
+		testArgs = append(testArgs, "--filter", failedFilter)
+	}
+	if changed {
+		testArgs = append(testArgs, "--changed-since", "HEAD")
+	}
+	result, err := runTest(ctx, testArgs, io.Discard)
+	if err != nil {
+		return result, err
+	}
+	run, err := writeDevTestArtifacts(outRoot, root, result, nil)
+	if err != nil {
+		return result, err
+	}
+	return result, testreport.WriteConsoleWithOptions(w, result, testreport.ConsoleOptions{ReportPath: run.Path("summary.md")})
+}
+
+func latestFailedFilter(outRoot string) (string, error) {
+	latest, err := readLatest(outRoot)
+	if err != nil {
+		return "", err
+	}
+	data, err := os.ReadFile(latest.ResultsPath)
+	if err != nil {
+		return "", err
+	}
+	var result testreport.Run
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", err
+	}
+	for _, suite := range result.Suites {
+		for _, testCase := range suite.Cases {
+			status := testCase.Status
+			if status == "" {
+				status = testreport.StatusPass
+			}
+			if status == testreport.StatusPass || status == testreport.StatusSkipped {
+				continue
+			}
+			if testCase.ClassName != "" && testCase.MethodName != "" {
+				return testCase.ClassName + "." + testCase.MethodName, nil
+			}
+			if testCase.ClassName != "" {
+				return testCase.ClassName, nil
+			}
+			if testCase.Name != "" {
+				return testCase.Name, nil
+			}
+			return suite.Name, nil
+		}
+	}
+	return "", nil
+}
+
+func writeDevTestArtifacts(outRoot, projectRoot string, result testreport.Run, events []byte) (runartifact.Run, error) {
+	run, err := runartifact.Open(outRoot, "", time.Now())
+	if err != nil {
+		return runartifact.Run{}, err
+	}
+	summaryPath := run.Path("summary.md")
+	resultsPath := run.Path("results.json")
+	if err := run.WriteJSON("run.json", map[string]any{
+		"project":   projectRoot,
+		"runId":     run.ID,
+		"createdAt": run.CreatedAt,
+	}); err != nil {
+		return run, err
+	}
+	var summary strings.Builder
+	if err := testreport.WriteConsole(&summary, result); err != nil {
+		return run, err
+	}
+	if err := run.WriteText("summary.md", summary.String()); err != nil {
+		return run, err
+	}
+	if err := run.WriteJSON("results.json", result); err != nil {
+		return run, err
+	}
+	var junit strings.Builder
+	if err := testreport.WriteJUnitXML(&junit, result); err != nil {
+		return run, err
+	}
+	if err := run.WriteText("junit.xml", junit.String()); err != nil {
+		return run, err
+	}
+	if err := run.WriteJSON("selection.json", map[string]any{"project": projectRoot}); err != nil {
+		return run, err
+	}
+	if events == nil {
+		events = []byte{}
+	}
+	if err := run.WriteText("events.ndjson", string(events)); err != nil {
+		return run, err
+	}
+	if err := run.WriteLatest(outRoot, runartifact.Latest{SummaryPath: summaryPath, ResultsPath: resultsPath}); err != nil {
+		return run, err
+	}
+	return run, nil
+}
+
+func runDevWatch(ctx context.Context, root, outRoot string, once bool, w io.Writer) (testreport.Run, error) {
+	index, err := loadIndex(root)
+	if err != nil {
+		return testreport.Run{}, err
+	}
+	fmt.Fprintf(w, "Watching %s.\n", watchDisplayRoot(root))
+	fmt.Fprint(w, "Strategy: affected tests\n\n")
+	var events bytes.Buffer
+	result, err := runWatchTests(ctx, root, index, apextest.Options{}, watch.Config{Root: root}, once, &events)
+	if err != nil {
+		return result, err
+	}
+	run, err := writeDevTestArtifacts(outRoot, root, result, events.Bytes())
+	if err != nil {
+		return result, err
+	}
+	return result, testreport.WriteConsoleWithOptions(w, result, testreport.ConsoleOptions{ReportPath: run.Path("summary.md")})
+}
+
+func watchDisplayRoot(root string) string {
+	if strings.TrimSpace(root) == "" || root == "." {
+		return "current project"
+	}
+	return filepath.Base(filepath.Clean(root))
+}
+
+func runReport(args []string, w io.Writer) error {
+	if len(args) == 0 || isHelpArg(args[0]) {
+		return errors.New("usage: oaer report list|show latest|export latest|clean [--runs-dir <path>]")
+	}
+	switch args[0] {
+	case "list":
+		runsDir, _, err := parseReportArgs(args[1:])
+		if err != nil {
+			return err
+		}
+		return runReportList(runsDir, w)
+	case "show":
+		if len(args) < 2 || args[1] != "latest" {
+			return errors.New("usage: oaer report show latest [--runs-dir <path>]")
+		}
+		runsDir, _, err := parseReportArgs(args[2:])
+		if err != nil {
+			return err
+		}
+		return runReportShowLatest(runsDir, w)
+	case "export":
+		if len(args) < 2 || args[1] != "latest" {
+			return errors.New("usage: oaer report export latest --output <path> [--runs-dir <path>]")
+		}
+		runsDir, output, err := parseReportArgs(args[2:])
+		if err != nil {
+			return err
+		}
+		if output == "" {
+			return errors.New("--output is required")
+		}
+		return runReportExportLatest(runsDir, output, w)
+	case "clean":
+		runsDir, _, keep, err := parseReportCleanArgs(args[1:])
+		if err != nil {
+			return err
+		}
+		removed, err := runartifact.Clean(runsDir, keep)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(w, "Removed %d %s.\n", removed, pluralRun(removed))
+		return nil
+	default:
+		return fmt.Errorf("unknown report command %q", args[0])
+	}
+}
+
+func parseReportArgs(args []string) (runsDir string, output string, err error) {
+	runsDir = filepath.Join(".oaer", "runs")
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--runs-dir":
+			if i+1 >= len(args) {
+				return "", "", errors.New("--runs-dir requires a path")
+			}
+			runsDir = args[i+1]
+			i++
+		case "--output":
+			if i+1 >= len(args) {
+				return "", "", errors.New("--output requires a path")
+			}
+			output = args[i+1]
+			i++
+		default:
+			return "", "", fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	return runsDir, output, nil
+}
+
+func parseReportCleanArgs(args []string) (runsDir string, output string, keep int, err error) {
+	runsDir = filepath.Join(".oaer", "runs")
+	keep = 10
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--runs-dir":
+			if i+1 >= len(args) {
+				return "", "", 0, errors.New("--runs-dir requires a path")
+			}
+			runsDir = args[i+1]
+			i++
+		case "--keep":
+			if i+1 >= len(args) {
+				return "", "", 0, errors.New("--keep requires a value")
+			}
+			parsed, parseErr := strconv.Atoi(args[i+1])
+			if parseErr != nil || parsed < 0 {
+				return "", "", 0, errors.New("--keep must be a non-negative integer")
+			}
+			keep = parsed
+			i++
+		default:
+			return "", "", 0, fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	return runsDir, output, keep, nil
+}
+
+func runReportList(runsDir string, w io.Writer) error {
+	entries, err := os.ReadDir(runsDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Fprint(w, "No runs.\n")
+			return nil
+		}
+		return err
+	}
+	latest, _ := readLatest(runsDir)
+	count := 0
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		label := entry.Name()
+		if latest.RunID == entry.Name() {
+			label += " latest"
+		}
+		fmt.Fprintln(w, label)
+		count++
+	}
+	if count == 0 {
+		fmt.Fprint(w, "No runs.\n")
+	}
+	return nil
+}
+
+func runReportShowLatest(runsDir string, w io.Writer) error {
+	latest, err := readLatest(runsDir)
+	if err != nil {
+		return err
+	}
+	data, err := os.ReadFile(latest.SummaryPath)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(data)
+	return err
+}
+
+func runReportExportLatest(runsDir, output string, w io.Writer) error {
+	latest, err := readLatest(runsDir)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(output), 0o755); err != nil {
+		return err
+	}
+	file, err := os.Create(output)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	zw := zip.NewWriter(file)
+	err = filepath.WalkDir(latest.RunDir, func(path string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		rel, err := filepath.Rel(latest.RunDir, path)
+		if err != nil {
+			return err
+		}
+		writer, err := zw.Create(rel)
+		if err != nil {
+			return err
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		_, err = writer.Write(data)
+		return err
+	})
+	if closeErr := zw.Close(); err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(w, "Exported %s\n", output)
+	return nil
+}
+
+func readLatest(runsDir string) (runartifact.Latest, error) {
+	data, err := os.ReadFile(filepath.Join(runsDir, "latest.json"))
+	if err != nil {
+		return runartifact.Latest{}, err
+	}
+	var latest runartifact.Latest
+	if err := json.Unmarshal(data, &latest); err != nil {
+		return runartifact.Latest{}, err
+	}
+	return latest, nil
+}
+
+func pluralRun(n int) string {
+	if n == 1 {
+		return "run"
+	}
+	return "runs"
+}
+
 func runExec(ctx context.Context, args []string, w io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -750,6 +1337,10 @@ func serveDAPSnapshot(snapshot dap.Snapshot, w io.Writer) error {
 func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, error) {
 	if err := ctx.Err(); err != nil {
 		return testreport.Run{}, err
+	}
+	if len(args) > 0 && isHelpArg(args[0]) {
+		printTestHelp(w)
+		return testreport.Run{}, nil
 	}
 
 	root := "."
@@ -2095,6 +2686,10 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 	if len(args) == 0 {
 		return errors.New(compatUsage())
 	}
+	if isHelpArg(args[0]) {
+		printCompatHelp(w)
+		return nil
+	}
 	switch args[0] {
 	case "matrix", "mvp":
 		return runCompatCapabilities(args[1:], w)
@@ -2186,6 +2781,10 @@ type postParityReadiness struct {
 }
 
 func runCompatLocalTests(args []string, w io.Writer) error {
+	if len(args) > 0 && isHelpArg(args[0]) {
+		printCompatLocalTestsHelp(w)
+		return nil
+	}
 	options := compat.LocalTestOptions{Project: "."}
 	jsonOut := false
 	checkPath := ""

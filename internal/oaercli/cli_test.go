@@ -35,6 +35,233 @@ func TestRunUnknownCommand(t *testing.T) {
 	}
 }
 
+func TestRunCommandHelp(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+		want []string
+	}{
+		{
+			name: "test flag help",
+			args: []string{"test", "--help"},
+			want: []string{"Usage:", "oaer test", "--project <root>", "--watch"},
+		},
+		{
+			name: "help test",
+			args: []string{"help", "test"},
+			want: []string{"Usage:", "oaer test", "--project <root>", "--watch"},
+		},
+		{
+			name: "compat local-tests flag help",
+			args: []string{"compat", "local-tests", "--help"},
+			want: []string{"Usage:", "oaer compat local-tests", "--class <name>", "--json"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			code := Run(context.Background(), tt.args, &stdout, &stderr)
+			if code != 0 {
+				t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+			}
+			if stderr.Len() != 0 {
+				t.Fatalf("stderr = %q, want empty", stderr.String())
+			}
+			got := stdout.String()
+			for _, want := range tt.want {
+				if !strings.Contains(got, want) {
+					t.Fatalf("stdout missing %q:\n%s", want, got)
+				}
+			}
+		})
+	}
+}
+
+func TestRunTopLevelHelpAlignment(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), nil, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	got := stdout.String()
+	for _, want := range []string{
+		"  package        Build managed package artifacts.",
+		"  server         Start the local Salesforce-compatible API baseline.",
+		"  playground     Start the local Apex playground web UI.",
+		"  db             Seed, reset, export, and inspect a persistent local database.",
+		"  stub-contracts     Report generated stub behavioral contract policy.",
+		"  stub-discovery     Execute generated stub probes and report implementation candidates.",
+		"  stub-behavior      Report generated platform stub behavior status.",
+		"  tooling-fixtures   Validate captured Tooling snippet oracle reports.",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("stdout missing aligned line %q:\n%s", want, got)
+		}
+	}
+	for _, bad := range []string{
+		"\t  package",
+		"\n            Start the local Apex playground web UI.",
+		"\n                Report generated stub behavioral contract policy.",
+	} {
+		if strings.Contains(got, bad) {
+			t.Fatalf("stdout contains bad indentation %q:\n%s", bad, got)
+		}
+	}
+}
+
+func TestRunDevStatus(t *testing.T) {
+	root := t.TempDir()
+	writeTestProject(t, root)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"dev", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	got := stdout.String()
+	for _, want := range []string{
+		"Project: " + root,
+		"Package dirs: 1",
+		"Apex classes: 2",
+		"Apex tests: 1",
+		"Metadata: loaded",
+		"Next:",
+		"oaer dev test --project " + root,
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("stdout missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestRunDevTestWritesArtifacts(t *testing.T) {
+	root := t.TempDir()
+	writeTestProject(t, root)
+	runsDir := filepath.Join(root, ".oaer", "runs")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"dev", "test", "--project", root, "--out", runsDir}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	got := stdout.String()
+	for _, want := range []string{"Selected 1 test.", "PASS MathUtilTest.adds", "Result: 1 passed", "Report: "} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("stdout missing %q:\n%s", want, got)
+		}
+	}
+	latestPath := filepath.Join(runsDir, "latest.json")
+	if _, err := os.Stat(latestPath); err != nil {
+		t.Fatalf("latest pointer missing: %v", err)
+	}
+	data, err := os.ReadFile(latestPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), `"summaryPath"`) || !strings.Contains(string(data), `"resultsPath"`) {
+		t.Fatalf("latest pointer missing paths: %s", data)
+	}
+}
+
+func TestRunDevWatchOnceUsesHumanOutput(t *testing.T) {
+	root := t.TempDir()
+	writeTestProject(t, root)
+	runsDir := filepath.Join(root, ".oaer", "runs")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"dev", "watch", "--project", root, "--watch-once", "--out", runsDir}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	got := stdout.String()
+	for _, want := range []string{"Watching ", "Strategy: affected tests", "Result: 1 passed", "Report: "} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("stdout missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, `"event":"watch.started"`) {
+		t.Fatalf("dev watch leaked raw NDJSON:\n%s", got)
+	}
+}
+
+func TestRunReportCommands(t *testing.T) {
+	root := t.TempDir()
+	writeTestProject(t, root)
+	runsDir := filepath.Join(root, ".oaer", "runs")
+
+	var devOut, devErr bytes.Buffer
+	code := Run(context.Background(), []string{"dev", "test", "--project", root, "--out", runsDir}, &devOut, &devErr)
+	if code != 0 {
+		t.Fatalf("dev test exit code = %d, stderr=%q stdout=%q", code, devErr.String(), devOut.String())
+	}
+
+	var listOut, listErr bytes.Buffer
+	code = Run(context.Background(), []string{"report", "list", "--runs-dir", runsDir}, &listOut, &listErr)
+	if code != 0 {
+		t.Fatalf("report list exit code = %d, stderr=%q", code, listErr.String())
+	}
+	if got := listOut.String(); !strings.Contains(got, "202") || !strings.Contains(got, "latest") {
+		t.Fatalf("report list output = %q", got)
+	}
+
+	var showOut, showErr bytes.Buffer
+	code = Run(context.Background(), []string{"report", "show", "latest", "--runs-dir", runsDir}, &showOut, &showErr)
+	if code != 0 {
+		t.Fatalf("report show exit code = %d, stderr=%q", code, showErr.String())
+	}
+	if got := showOut.String(); !strings.Contains(got, "Result: 1 passed") {
+		t.Fatalf("report show output = %q", got)
+	}
+
+	zipPath := filepath.Join(root, "report.zip")
+	var exportOut, exportErr bytes.Buffer
+	code = Run(context.Background(), []string{"report", "export", "latest", "--runs-dir", runsDir, "--output", zipPath}, &exportOut, &exportErr)
+	if code != 0 {
+		t.Fatalf("report export exit code = %d, stderr=%q", code, exportErr.String())
+	}
+	if _, err := os.Stat(zipPath); err != nil {
+		t.Fatalf("zip missing: %v", err)
+	}
+
+	var cleanOut, cleanErr bytes.Buffer
+	code = Run(context.Background(), []string{"report", "clean", "--runs-dir", runsDir, "--keep", "0"}, &cleanOut, &cleanErr)
+	if code != 0 {
+		t.Fatalf("report clean exit code = %d, stderr=%q", code, cleanErr.String())
+	}
+	if got := cleanOut.String(); !strings.Contains(got, "Removed 1 run.") {
+		t.Fatalf("clean output = %q", got)
+	}
+}
+
+func TestRunDevTestFailedRerunsLatestFailure(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/FailingTest.cls"), `
+@isTest
+private class FailingTest {
+  @isTest static void fails() {
+    System.assertEquals(2, 1);
+  }
+}
+`)
+	runsDir := filepath.Join(root, ".oaer", "runs")
+	var firstOut, firstErr bytes.Buffer
+	code := Run(context.Background(), []string{"dev", "test", "--project", root, "--out", runsDir}, &firstOut, &firstErr)
+	if code != 1 {
+		t.Fatalf("first run exit code = %d, want 1; stderr=%q stdout=%q", code, firstErr.String(), firstOut.String())
+	}
+
+	var rerunOut, rerunErr bytes.Buffer
+	code = Run(context.Background(), []string{"dev", "test", "--project", root, "--out", runsDir, "--failed"}, &rerunOut, &rerunErr)
+	if code != 1 {
+		t.Fatalf("rerun exit code = %d, want 1; stderr=%q stdout=%q", code, rerunErr.String(), rerunOut.String())
+	}
+	got := rerunOut.String()
+	if !strings.Contains(got, "Selected 1 test.") || !strings.Contains(got, "FAIL FailingTest.fails") {
+		t.Fatalf("rerun output = %q", got)
+	}
+}
+
 func TestOrgForProjectAccountAddressFieldsExposeFirstComponent(t *testing.T) {
 	root := filepath.Join("..", "..", "example-projects", "src-nmb-nu-develop")
 	org, err := orgForProject(root)
@@ -2225,4 +2452,24 @@ func writeTestFile(t *testing.T, path, content string) {
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func writeTestProject(t *testing.T, root string) {
+	t.Helper()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/MathUtil.cls"), `
+public class MathUtil {
+  public static Integer add(Integer a, Integer b) {
+    return a + b;
+  }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/MathUtilTest.cls"), `
+@isTest
+private class MathUtilTest {
+  @isTest static void adds() {
+    System.assertEquals(3, MathUtil.add(1, 2));
+  }
+}
+`)
 }
