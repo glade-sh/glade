@@ -56,6 +56,11 @@ func TestRunCommandHelp(t *testing.T) {
 			args: []string{"compat", "local-tests", "--help"},
 			want: []string{"Usage:", "oaer compat local-tests", "--class <name>", "--json"},
 		},
+		{
+			name: "compat oracle flag help",
+			args: []string{"compat", "oracle", "--help"},
+			want: []string{"Usage:", "oaer compat oracle", "inventory", "run-salesforce"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -505,6 +510,58 @@ func TestRunCompatOracleTestsCheckCorpus(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), `"target": "oracle parity corpus"`) || !strings.Contains(stdout.String(), `"ready": true`) {
 		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatOracleNextWithRunID(t *testing.T) {
+	root := t.TempDir()
+	runID := "oracle-next"
+	runDir := filepath.Join(root, "runs", runID)
+	if err := os.MkdirAll(runDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	writeTestFile(t, filepath.Join(runDir, "work-queue.json"), `{
+  "schemaVersion": 1,
+  "target": "apex oracle work queue",
+  "items": [
+    {"id":"work.0001","probeId":"p1","surfaceId":"S.A()","area":"stdlib.core","shard":0,"generatedClass":"A","methodName":"m","status":"planned"},
+    {"id":"work.0002","probeId":"p2","surfaceId":"S.B()","area":"stdlib.core","shard":1,"generatedClass":"B","methodName":"m","status":"complete"}
+  ]
+}`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "oracle", "next", "--run-id", runID, "--runs-dir", filepath.Join(root, "runs"), "--limit", "10", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"count": 1`) || !strings.Contains(stdout.String(), `"work.0001"`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatOracleResumeReadsLedger(t *testing.T) {
+	root := t.TempDir()
+	runID := "oracle-resume"
+	runDir := filepath.Join(root, "runs", runID)
+	if err := os.MkdirAll(runDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	writeTestFile(t, filepath.Join(runDir, "work-queue.json"), `{
+  "schemaVersion": 1,
+  "target": "apex oracle work queue",
+  "items": [
+    {"id":"work.0001","probeId":"p1","surfaceId":"S.A()","area":"stdlib.core","shard":0,"generatedClass":"A","methodName":"m","status":"planned"}
+  ]
+}`)
+	writeTestFile(t, filepath.Join(runDir, "ledger.jsonl"), `{"timestamp":"2026-05-22T00:00:00Z","runId":"oracle-resume","step":"generate","status":"ok"}`+"\n")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "oracle", "resume", "--run-id", runID, "--runs-dir", filepath.Join(root, "runs")}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	for _, want := range []string{"ledgerRows: 1", "pending: 1", "work.0001"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stdout missing %q: %q", want, stdout.String())
+		}
 	}
 }
 

@@ -61,9 +61,11 @@ func (r SalesforceRunner) RunTests(ctx context.Context, opts SalesforceRunOption
 	args := []string{
 		"apex", "run", "test",
 		"--target-org", opts.OrgAlias,
-		"--tests", opts.Filter,
 		"--wait", strconv.Itoa(wait),
 		"--result-format", "json",
+	}
+	for _, className := range splitOracleTestFilter(opts.Filter) {
+		args = append(args, "--tests", className)
 	}
 	runner := r.CommandRunner
 	if runner == nil {
@@ -89,6 +91,26 @@ func (r SalesforceRunner) RunTests(ctx context.Context, opts SalesforceRunOption
 		}
 	}
 	return runs, nil
+}
+
+func splitOracleTestFilter(filter string) []string {
+	raw := strings.FieldsFunc(filter, func(r rune) bool {
+		return r == ',' || r == '|' || r == '\n' || r == '\r' || r == '\t' || r == ' '
+	})
+	out := make([]string, 0, len(raw))
+	seen := map[string]struct{}{}
+	for _, item := range raw {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		if _, ok := seen[item]; ok {
+			continue
+		}
+		seen[item] = struct{}{}
+		out = append(out, item)
+	}
+	return out
 }
 
 func (r SalesforceRunner) RunAnonymous(probeDir, orgAlias, id, category, source string) (OracleRun, error) {

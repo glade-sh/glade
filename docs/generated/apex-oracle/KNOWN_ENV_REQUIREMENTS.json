@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "target": "oracle environment requirements",
+  "requirements": [
+    {
+      "id": "base-enterprise",
+      "description": "Scratch org with Apex test execution and Tooling API access"
+    },
+    {
+      "id": "enterprise-full-probe-lab",
+      "description": "Feature-rich scratch org for org-shape-sensitive probes"
+    }
+  ]
+}
