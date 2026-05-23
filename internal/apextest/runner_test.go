@@ -1147,6 +1147,46 @@ private class DuplicateSelectorProjectionTest {
 	}
 }
 
+func TestRunConsumerNamespaceAccessibleDuplicatePrefersConsumerNamespace(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/SharedHelper.cls"), `
+public class SharedHelper {
+  public static String value() {
+    return 'dep';
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:../dep:1.0"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/SharedHelper.cls"), `
+@NamespaceAccessible
+public class SharedHelper {
+  @NamespaceAccessible
+  public static String value() {
+    return 'local';
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/SharedHelperTest.cls"), `
+@isTest
+private class SharedHelperTest {
+  @isTest static void unqualifiedTypeUsesConsumerNamespace() {
+    System.assertEquals('local', SharedHelper.value());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, consumerRoot), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestRunDependencyDuplicateSuperCallUsesDependencyBaseMethod(t *testing.T) {
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
