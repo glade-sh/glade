@@ -522,7 +522,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err := validateFieldWriteability(object.Definition, e.Org.Namespace, record, true); err != nil {
 		return "", err
 	}
-	createPersonContact := objectName == "Account" && shouldCreatePersonContact(record)
+	createPersonContact := objectName == "Account" && isPersonAccountRecord(record)
 	applyDefaultRecordTypeID(object.Definition, &record)
 	applyFieldDefaults(e.Org, object.Definition, &record)
 	applyAutoNumberName(object.Definition, e.IDs.Sequences[objectName]+1, &record)
@@ -537,9 +537,6 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 		return "", err
 	}
 	applyNameFallbackFromCustomName(object.Definition, &record)
-	if err := validateAccountRequiredFieldsForPersonAccountOrg(objectName, object.Definition, record); err != nil {
-		return "", err
-	}
 	if err := validateRequired(object.Definition, record); err != nil {
 		return "", err
 	}
@@ -717,24 +714,6 @@ func normalizePersonAccountFields(objectName string, definition storage.ObjectDe
 	if record.Fields == nil {
 		record.Fields = make(map[string]storage.Value)
 	}
-	if isPerson, known := accountRecordTypePersonKind(definition, *record); known {
-		if !isPerson && hasPersonAccountSignal(*record) {
-			if personRecordType, ok := personAccountRecordType(definition.RecordTypes); ok {
-				record.Fields["RecordTypeId"] = storage.IDValue(personRecordType.ID)
-				record.Fields["IsPersonAccount"] = storage.BooleanValue(true)
-				normalizeFirstLastName(definition, record)
-				return
-			}
-		}
-		if _, ok := definition.Fields["IsPersonAccount"]; ok {
-			record.Fields["IsPersonAccount"] = storage.BooleanValue(isPerson)
-		}
-		if !isPerson {
-			return
-		}
-		normalizeFirstLastName(definition, record)
-		return
-	}
 	if !hasPersonAccountSignal(*record) {
 		return
 	}
@@ -746,48 +725,13 @@ func hasPersonAccountSignal(record storage.Record) bool {
 	return hasPersonAccountFieldSignal(record)
 }
 
-func accountRecordTypePersonKind(definition storage.ObjectDefinition, record storage.Record) (bool, bool) {
-	recordTypeID := idFromStorageValue(record.Fields["RecordTypeId"])
-	if recordTypeID == "" {
-		return false, false
-	}
-	for _, recordType := range definition.RecordTypes {
-		if recordType.ID != recordTypeID {
-			continue
-		}
-		name := strings.ToLower(strings.TrimSpace(recordType.DeveloperName))
-		if name == "" {
-			name = strings.ToLower(strings.TrimSpace(recordType.Name))
-		}
-		switch name {
-		case "personaccount", "individual":
-			return true, true
-		case "business", "business_account", "organization":
-			return false, true
-		default:
-			return false, true
-		}
-	}
-	return false, false
-}
-
 func hasPersonAccountFieldSignal(record storage.Record) bool {
 	for field, value := range record.Fields {
-		if (strings.HasPrefix(field, "Person") || field == "FirstName" || field == "LastName") && nonDefaultPersonFieldValue(field, value) {
+		if (strings.HasPrefix(field, "Person") || field == "FirstName" || field == "LastName") && nonDefaultPersonValue(value) {
 			return true
 		}
 	}
 	return false
-}
-
-func nonDefaultPersonFieldValue(field string, value storage.Value) bool {
-	if strings.HasPrefix(field, "Person") && value.Kind == storage.ValueString {
-		text := strings.TrimSpace(value.String)
-		if strings.EqualFold(text, "false") || text == "0" {
-			return false
-		}
-	}
-	return nonDefaultPersonValue(value)
 }
 
 func nonDefaultPersonValue(value storage.Value) bool {
@@ -815,44 +759,6 @@ func isPersonAccountRecord(record storage.Record) bool {
 		return hasPersonAccountFieldSignal(record) || idFromStorageValue(record.Fields["PersonContactId"]) != ""
 	}
 	return false
-}
-
-func shouldCreatePersonContact(record storage.Record) bool {
-	if value, ok := record.Fields["IsPersonAccount"]; ok && value.Kind == storage.ValueBoolean {
-		return isPersonAccountRecord(record)
-	}
-	return hasPersonAccountSignal(record)
-}
-
-func validateAccountRequiredFieldsForPersonAccountOrg(objectName string, definition storage.ObjectDefinition, record storage.Record) error {
-	if !strings.EqualFold(objectName, "Account") {
-		return nil
-	}
-	if _, ok := definition.Fields["IsPersonAccount"]; !ok {
-		return nil
-	}
-	if isPerson, known := accountRecordTypePersonKind(definition, record); known {
-		if isPerson {
-			if value, ok := record.GetField("LastName"); ok && strings.TrimSpace(value.String) != "" {
-				return nil
-			}
-			return dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", []string{"LastName"}, "Required fields are missing: [LastName]")
-		}
-		if value, ok := record.GetField("Name"); ok && strings.TrimSpace(value.String) != "" {
-			return nil
-		}
-		return dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", []string{"Name"}, "Required fields are missing: [Name]")
-	}
-	if hasPersonAccountSignal(record) {
-		if value, ok := record.GetField("LastName"); ok && strings.TrimSpace(value.String) != "" {
-			return nil
-		}
-		return dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", []string{"LastName"}, "Required fields are missing: [LastName]")
-	}
-	if value, ok := record.GetField("Name"); ok && strings.TrimSpace(value.String) != "" {
-		return nil
-	}
-	return dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", []string{"Name"}, "Required fields are missing: [Name]")
 }
 
 func stringField(fields map[string]storage.Value, name string) string {
@@ -1044,32 +950,10 @@ func applyDefaultRecordTypeID(definition storage.ObjectDefinition, record *stora
 		return
 	}
 	recordType, ok := defaultRecordType(definition.RecordTypes)
-	if strings.EqualFold(definition.APIName, "Account") && hasPersonAccountSignal(*record) {
-		if personRecordType, personOK := personAccountRecordType(definition.RecordTypes); personOK {
-			recordType = personRecordType
-			ok = true
-		}
-	}
 	if !ok || recordType.ID == "" {
 		return
 	}
 	record.Fields["RecordTypeId"] = storage.IDValue(recordType.ID)
-}
-
-func personAccountRecordType(recordTypes []storage.RecordTypeInfo) (storage.RecordTypeInfo, bool) {
-	for _, recordType := range recordTypes {
-		if !recordType.Active || !recordType.Available {
-			continue
-		}
-		name := strings.ToLower(strings.TrimSpace(recordType.DeveloperName))
-		if name == "" {
-			name = strings.ToLower(strings.TrimSpace(recordType.Name))
-		}
-		if name == "personaccount" || name == "individual" {
-			return recordType, true
-		}
-	}
-	return storage.RecordTypeInfo{}, false
 }
 
 func defaultRecordType(recordTypes []storage.RecordTypeInfo) (storage.RecordTypeInfo, bool) {
@@ -1449,25 +1333,9 @@ func (e *Engine) afterInsertPersonAccount(account storage.Record) error {
 		stored.Fields = make(map[string]storage.Value)
 	}
 	stored.Fields["PersonContactId"] = storage.IDValue(contactID)
-	populatePersonContactAliases(accountObject.Definition, stored.Fields, contactID)
 	accountObject.Records[account.ID] = stored
 	e.Org.Objects["Account"] = accountObject
 	return nil
-}
-
-func populatePersonContactAliases(definition storage.ObjectDefinition, fields map[string]storage.Value, contactID storage.ID) {
-	if contactID == "" || fields == nil {
-		return
-	}
-	for fieldName, field := range definition.Fields {
-		apiName := field.APIName
-		if strings.TrimSpace(apiName) == "" {
-			apiName = fieldName
-		}
-		if strings.EqualFold(storage.StripAnyNamespaceToken(apiName), "PersonContact__c") {
-			fields[apiName] = storage.IDValue(contactID)
-		}
-	}
 }
 
 func personContactFields(account storage.Record) map[string]storage.Value {
@@ -3851,14 +3719,8 @@ func evaluateWorkflowCriteria(item storage.WorkflowCriteriaItem, record storage.
 	want := trimFormulaLiteral(item.Value)
 	switch strings.ToLower(strings.TrimSpace(item.Operation)) {
 	case "", "equals", "equal", "eq":
-		if want == "" {
-			return validationFieldBlank(record, field), true
-		}
 		return validationFieldEquals(record, field, want), true
 	case "notequal", "not equal", "notequals", "not equals", "ne":
-		if want == "" {
-			return !validationFieldBlank(record, field), true
-		}
 		return !validationFieldEquals(record, field, want), true
 	case "greaterthan", "greater than", "gt":
 		return compareFormulaValues(formulaFieldValue(record, field), formulaValue{kind: formulaString, text: want}, ">"), true
@@ -3947,8 +3809,11 @@ func workflowLiteralValue(field storage.Field, literal string) (storage.Value, b
 		case "DECIMAL", "DOUBLE", "CURRENCY", "PERCENT":
 			return storage.DecimalValue(literal), false, true
 		case "BOOLEAN":
-			if value, ok := workflowBooleanLiteral(literal); ok {
-				return storage.BooleanValue(value), false, true
+			if strings.EqualFold(literal, "true") {
+				return storage.BooleanValue(true), false, true
+			}
+			if strings.EqualFold(literal, "false") {
+				return storage.BooleanValue(false), false, true
 			}
 			return storage.Value{}, false, false
 		case "DATE":
@@ -3961,8 +3826,11 @@ func workflowLiteralValue(field storage.Field, literal string) (storage.Value, b
 			return storage.StringValue(literal), false, true
 		}
 	case storage.FieldBoolean:
-		if value, ok := workflowBooleanLiteral(literal); ok {
-			return storage.BooleanValue(value), false, true
+		if strings.EqualFold(literal, "true") {
+			return storage.BooleanValue(true), false, true
+		}
+		if strings.EqualFold(literal, "false") {
+			return storage.BooleanValue(false), false, true
 		}
 		return storage.Value{}, false, false
 	case storage.FieldInteger:
@@ -3981,17 +3849,6 @@ func workflowLiteralValue(field storage.Field, literal string) (storage.Value, b
 		return storage.DateTimeValue(literal), false, true
 	default:
 		return storage.StringValue(literal), false, true
-	}
-}
-
-func workflowBooleanLiteral(literal string) (bool, bool) {
-	switch strings.ToLower(strings.TrimSpace(literal)) {
-	case "true", "1":
-		return true, true
-	case "false", "0":
-		return false, true
-	default:
-		return false, false
 	}
 }
 
