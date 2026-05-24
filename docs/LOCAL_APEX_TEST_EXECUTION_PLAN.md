@@ -205,7 +205,7 @@ the next phase. The current static/readiness inventory is green, and the fast
 NUTPL runtime sentinel now passes end to end. The other five example projects
 still stop at measured compile-gap frontiers, so the project does not yet have
 full runtime support for all example projects. Treat scratch-org pass results as
-the behavioral target: failures in these projects are GLADE parity gaps unless
+the behavioral target: failures in these projects are Glade parity gaps unless
 proven otherwise.
 
 Current example-project set:
@@ -251,7 +251,7 @@ Current blockers:
 - `nams-workspace` references installed package Apex such as `znu.Pluggable`
   and installed package schema such as `znu__CartItemLine__c`.
 - Treating those as ordinary current-project compile gaps hides the real
-  prerequisite: GLADE needs the `znu` managed package contract loaded first.
+  prerequisite: Glade needs the `znu` managed package contract loaded first.
 
 Tasks:
 
@@ -742,10 +742,10 @@ The JSON should classify each test method into one terminal outcome:
 - `pass`: completed with matching local runtime behavior.
 - `fail`: test assertion, uncaught Apex exception, DML validation error, or
   other runtime failure that would be a real test failure.
-- `unsupported`: blocked by a known unsupported GLADE capability.
+- `unsupported`: blocked by a known unsupported Glade capability.
 - `load_error`: project metadata or Apex source could not be loaded.
 - `compile_error`: sema/type/indexing failure before execution.
-- `internal_error`: GLADE bug, panic recovery, or malformed diagnostic.
+- `internal_error`: Glade bug, panic recovery, or malformed diagnostic.
 
 Each blocked test should include:
 
@@ -1220,7 +1220,7 @@ Exit criteria:
 
 - Local test execution has a single transaction discipline shared by Apex, DML,
   triggers, async, Workflow, Flow, captured email, files, and rollback.
-- Failing tests are distinguishable from unsupported GLADE behavior.
+- Failing tests are distinguishable from unsupported Glade behavior.
 
 ## Phase 8: Corpus Baselines And Release Gates
 

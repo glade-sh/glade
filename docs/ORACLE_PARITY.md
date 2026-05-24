@@ -1,6 +1,6 @@
 # Oracle Parity
 
-`glade compat oracle-tests` compares Salesforce observations with GLADE observations.
+`glade compat oracle-tests` compares Salesforce observations with Glade observations.
 The pass/fail input is normalized JSON, not raw debug log text.
 
 Current skeleton:
@@ -8,7 +8,7 @@ Current skeleton:
 - normalizes IDs, timestamps, generated usernames, stack line noise, records, side effects, and trace events
 - parses Apex logs for method calls, SOQL, DML, exceptions, limits, `USER_DEBUG`, and `GLADE_ORACLE:` payloads
 - can opt into recent Apex log capture for focused Salesforce test runs with `--fetch-logs`
-- adapts GLADE `testreport.Run` results into `OracleRun`
+- adapts Glade `testreport.Run` results into `OracleRun`
 - diffs fixture or live runner output and writes compact artifacts under `.glade/runs/<run-id>/oracle/`
 
 Fixture diff:
@@ -53,4 +53,4 @@ Remaining work:
 
 - enable targeted finest logging for selected classes and methods
 - add VM trace hooks for final side effects and unsupported fences not already in traces
-- promote at least one `src-nmb-nutpl-develop` Salesforce-vs-GLADE passing test into a checked oracle fixture
+- promote at least one `src-nmb-nutpl-develop` Salesforce-vs-Glade passing test into a checked oracle fixture

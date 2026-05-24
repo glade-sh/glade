@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build GLADE toward Salesforce-like Apex execution where the same Apex project run in Salesforce and GLADE produces the same test outcomes, observable side effects, and normalized traces.
+**Goal:** Build Glade toward Salesforce-like Apex execution where the same Apex project run in Salesforce and Glade produces the same test outcomes, observable side effects, and normalized traces.
 
 **Architecture:** Use a batch-first implementation strategy. Build broad platform slices from public Salesforce behavior, stub catalogs, project metadata, scratch-org describes, and black-box oracle runs before using enterprise projects as corpus gates. Validate with owned fixtures, then large example projects, then future external projects.
 
@@ -18,10 +18,10 @@ This plan avoids the slow loop of fixing one failing enterprise test at a time. 
 
 The work has two tracks:
 
-1. **Breadth track:** make GLADE accept and classify as much Salesforce Apex and org shape as practical. This covers symbols, generated stubs, standard objects, metadata, package dependencies, and explicit unsupported fences.
+1. **Breadth track:** make Glade accept and classify as much Salesforce Apex and org shape as practical. This covers symbols, generated stubs, standard objects, metadata, package dependencies, and explicit unsupported fences.
 2. **Depth track:** make supported behavior match Salesforce. This covers VM semantics, DML, SOQL, triggers, test isolation, platform APIs, debug/oracle traces, and final data state.
 
-The harness must compare Salesforce and GLADE at stable observation points. Raw debug logs help diagnose. They should not be the only oracle. The durable oracle is normalized JSON: test result, exception, stack, debug payloads, SOQL/DML events, limits, async drain, emitted side effects, and selected final records.
+The harness must compare Salesforce and Glade at stable observation points. Raw debug logs help diagnose. They should not be the only oracle. The durable oracle is normalized JSON: test result, exception, stack, debug payloads, SOQL/DML events, limits, async drain, emitted side effects, and selected final records.
 
 ## Current Inventory
 
@@ -72,7 +72,7 @@ Do not claim "perfect Salesforce" as one undivided milestone. Use release claims
 | Shape breadth | Projects compile or fail with typed dependency/unsupported diagnostics. | `compat local-tests --blockers-only` on all example projects. |
 | Runtime breadth | All discovered tests receive pass/fail/unsupported/runtime_gap outcomes, not compile gaps. | `docs/fixtures/local-tests-example-projects.json`. |
 | Behavioral depth | Supported tests match Salesforce outcome and normalized trace. | New `compat oracle-tests` gate. |
-| Enterprise parity | Current enterprise corpus matches Salesforce for supported claims. | Per-project Salesforce-vs-GLADE baseline. |
+| Enterprise parity | Current enterprise corpus matches Salesforce for supported claims. | Per-project Salesforce-vs-Glade baseline. |
 | Expansion ready | Adding a new project gives a structured inventory, not a new custom implementation path. | New project onboarding command and report. |
 
 ## Workstream A: Salesforce Oracle Harness
@@ -122,11 +122,11 @@ go test ./internal/oracle ./internal/probe
 go run ./cmd/glade compat oracle-tests --project example-projects/src-nmb-nutpl-develop --target-org glade-probe-lab --filter <small-test> --golden-only --json
 ```
 
-### Batch A3: GLADE Runner And Diff
+### Batch A3: Glade Runner And Diff
 
 - [ ] Make `glade test` emit the same `OracleRun` shape for selected tests.
 - [ ] Add VM trace hooks where missing for SOQL, DML, trigger dispatch, email capture, file/content capture, async enqueue/drain, limit increments, and unsupported fences.
-- [ ] Add `compat oracle-tests` to run Salesforce and GLADE, then produce `pass`, `trace_mismatch`, `state_mismatch`, `exception_mismatch`, `unsupported`, `compile_gap`, and `infrastructure_error`.
+- [ ] Add `compat oracle-tests` to run Salesforce and Glade, then produce `pass`, `trace_mismatch`, `state_mismatch`, `exception_mismatch`, `unsupported`, `compile_gap`, and `infrastructure_error`.
 - [ ] Persist compact artifacts under `.glade/runs/<run-id>/oracle/`.
 
 Validation:
@@ -518,8 +518,8 @@ Visualforce=INFO
 
 A platform surface is "supported" only when:
 
-- GLADE compiles representative Apex accepted by Salesforce.
-- GLADE runtime output matches Salesforce for owned fixtures.
+- Glade compiles representative Apex accepted by Salesforce.
+- Glade runtime output matches Salesforce for owned fixtures.
 - Oracle diff passes for at least one black-box scratch-org probe where practical.
 - Enterprise corpus tests that use the surface pass or move to a different blocker.
 - Unsupported cloud-only behavior has a typed diagnostic.

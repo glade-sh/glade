@@ -192,7 +192,7 @@ glade db inspect --db .glade/local-org.sqlite --json
 glade server --db .glade/local-org.sqlite --addr 127.0.0.1:8080
 ```
 
-Server-side GLADE endpoints mirror the fixture lifecycle:
+Server-side Glade endpoints mirror the fixture lifecycle:
 
 ```bash
 curl -s -X GET  http://127.0.0.1:8080/services/data/v65.0/glade/fixture

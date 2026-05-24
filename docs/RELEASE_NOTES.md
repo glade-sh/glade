@@ -75,7 +75,7 @@ Release engineering:
 - Expanded deterministic platform seed data with Organization, UserRole,
   enriched User/PermissionSet metadata, and RecordType records from local object
   metadata.
-- Added scoped GLADE reset endpoints for deterministic data, user/platform,
+- Added scoped Glade reset endpoints for deterministic data, user/platform,
   limits, and async reset requests while preserving full-reset compatibility.
 - Documented persistent server database setup, fixture/reset lifecycle commands,
   and operational checks for saved mutations and rollback-on-failure behavior.
@@ -89,7 +89,7 @@ Release engineering:
   queryAll, Tooling `executeAnonymous` success/failure/rollback and unsupported
   Tooling object errors, Composite sObject reference IDs/partial success/
   all-or-none rollback, explicit unsupported Composite batch responses,
-  Salesforce-shaped errors, GLADE fixture seed/export/reset, and SQLite
+  Salesforce-shaped errors, Glade fixture seed/export/reset, and SQLite
   persistence.
 - Added `glade compat replay` for deterministic directory replay bundles,
   ordered in-process compat steps, JSON/text gate reports, checked expected

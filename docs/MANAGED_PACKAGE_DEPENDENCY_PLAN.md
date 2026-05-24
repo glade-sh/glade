@@ -3,9 +3,9 @@
 Status date: 2026-05-19.
 
 This plan covers Salesforce managed-package dependencies for local Apex test
-execution when GLADE has access to the dependency package source code. The first
+execution when Glade has access to the dependency package source code. The first
 implementation should be intentionally source-backed and explicit: a consuming
-project config points GLADE at local dependency project roots, their namespaces,
+project config points Glade at local dependency project roots, their namespaces,
 and optionally the package version they represent. Later implementations can
 cache those inputs as version-pinned package artifacts.
 
@@ -19,7 +19,7 @@ The immediate motivator is the enterprise example-project corpus. Projects such
 as `src-nmb-nc-develop` and `nams-workspace` reference the installed `znu`
 managed package through Apex namespace references like `znu.Address` and
 schema-token references like `znu__CartItemLine__c`. Those references should not
-be classified as ordinary project compile gaps until GLADE has attempted to load
+be classified as ordinary project compile gaps until Glade has attempted to load
 the prerequisite managed package dependency.
 
 ## Objective
@@ -31,7 +31,7 @@ The first release claim should be:
 
 - A project can declare one or more local source-backed managed package
   dependencies.
-- GLADE loads dependency package symbols, schema, and metadata before current
+- Glade loads dependency package symbols, schema, and metadata before current
   project symbols.
 - Cross-namespace access follows Salesforce managed-package rules: consuming
   packages can only access dependency Apex APIs that are externally visible,
@@ -43,7 +43,7 @@ The first release claim should be:
   `dependency_access_denied`, not broad `compile_gap` noise.
 
 This is not a plan to infer arbitrary package behavior from consuming code. If
-the dependency is required, GLADE should load a real dependency source tree or a
+the dependency is required, Glade should load a real dependency source tree or a
 previously built package artifact.
 
 ## First-Iteration Configuration
@@ -115,7 +115,7 @@ and SFDX package dependency discovery after the explicit path config works.
 ## Package Artifact Model
 
 Even in the source-backed first iteration, build an internal package artifact
-model. It gives GLADE one representation for live source dependencies and
+model. It gives Glade one representation for live source dependencies and
 eventual cached dependency artifacts.
 
 Artifact identity:
@@ -157,7 +157,7 @@ Metadata contract:
 
 Runtime contract:
 
-- Source-backed dependency code should compile to IR and run where GLADE supports
+- Source-backed dependency code should compile to IR and run where Glade supports
   the language/runtime features used by the dependency.
 - Unsupported dependency behavior should produce package-scoped unsupported
   diagnostics that identify the package namespace, version, type/member, and
@@ -272,14 +272,14 @@ Outcome classification should distinguish:
 - `dependency_version_mismatch`: a required version is not the loaded version.
 - `dependency_access_denied`: dependency contract exists but global access rules
   reject the reference.
-- `compile_gap`: dependency loaded successfully, but GLADE cannot compile
+- `compile_gap`: dependency loaded successfully, but Glade cannot compile
   supported project code.
 - `runtime_gap`: dependency loaded and code compiled, but runtime behavior is
   incomplete.
 
 This separation matters because a missing `znu` artifact is a setup problem,
 while an inaccessible `znu` member is likely a real source/package-boundary
-problem, and a failing dependency method body is an GLADE runtime fidelity gap.
+problem, and a failing dependency method body is an Glade runtime fidelity gap.
 
 ## Implementation Phases
 
@@ -441,14 +441,14 @@ go run ./cmd/glade test --project testdata/local-tests/managed-package-access --
 Exit criteria:
 
 - Public dependency APIs are rejected across namespace boundaries.
-- Global dependency APIs compile and run when their bodies use supported GLADE
+- Global dependency APIs compile and run when their bodies use supported Glade
   runtime features.
 - Runtime access cannot bypass sema access rules.
 
 ### Phase MP5: Source-Backed Runtime Execution
 
 Goal: execute dependency global APIs from source when the dependency body is
-within GLADE-supported runtime behavior.
+within Glade-supported runtime behavior.
 
 Primary write scope: `internal/ir`, `internal/vm`, `internal/apextest`,
 `internal/dml`, `internal/storage`.
@@ -603,7 +603,7 @@ runtime behavior. The dependency should be loaded as an installed package.
 
 ## Open Questions
 
-- How should GLADE represent protected extension points in managed package code
+- How should Glade represent protected extension points in managed package code
   if enterprise projects use inheritance across namespace boundaries?
 - Which package-version identifier should be canonical when local source does
   not include a `04t` id?

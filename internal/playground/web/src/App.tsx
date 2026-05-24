@@ -845,23 +845,25 @@ export default function App() {
     })
 
   return (
-    <div className="flex h-screen min-h-[720px] flex-col bg-background text-foreground">
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/95 px-4">
+    <div className="playground-shell flex h-screen min-h-[720px] flex-col bg-background text-foreground">
+      <header className="topbar flex h-16 shrink-0 items-center justify-between px-4">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="grid size-9 place-items-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-            OA
-          </div>
+          <div className="brand-mark text-sm">G</div>
           <div className="min-w-0">
-            <h1 className="truncate text-sm font-semibold">GLADE Apex Playground</h1>
+            <h1 className="truncate text-sm font-semibold">Glade Playground</h1>
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span>local Apex workbench</span>
+              <span className="text-muted-foreground/50">/</span>
               <span>{meta?.id ?? "default"}</span>
-              <span className="font-mono">{shortHash(meta?.workspaceHash)}</span>
+              <span className="workspace-hash font-mono">{shortHash(meta?.workspaceHash)}</span>
             </div>
           </div>
-          <Badge variant={statusVariant(status)}>{status}</Badge>
-          <Badge variant={cacheState === "stale" ? "warning" : "success"}>{cacheLabel}</Badge>
+          <div className="status-badges flex items-center gap-2">
+            <Badge variant={statusVariant(status)}>{status}</Badge>
+            <Badge variant={cacheState === "stale" ? "warning" : "success"}>{cacheLabel}</Badge>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="topbar-actions flex items-center gap-2">
           <Select
             value={mode}
             onValueChange={(value) => {
@@ -902,8 +904,14 @@ export default function App() {
             <Play />
             Run
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setCommandOpen(true)} title="Command">
+          <Button className="topbar-command font-mono text-xs" variant="ghost" onClick={() => setCommandOpen(true)} title="Command">
             <Command />
+            /
+          </Button>
+          <Button variant="ghost" asChild>
+            <a href="https://glade.sh" target="_blank" rel="noreferrer">
+              Docs
+            </a>
           </Button>
           <Button
             variant="ghost"
@@ -916,7 +924,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="grid min-h-0 flex-1 grid-cols-[minmax(260px,300px)_minmax(420px,1fr)_minmax(360px,430px)] gap-3 overflow-hidden p-3 max-xl:grid-cols-[minmax(240px,280px)_minmax(420px,1fr)] max-xl:[&_.output-pane]:col-span-2 max-lg:grid-cols-1 max-lg:overflow-auto">
+      <main className="playground-main grid min-h-0 flex-1 gap-3 overflow-hidden p-3">
         <aside className="pane flex min-h-0 min-w-0 flex-col overflow-hidden">
           <header className="pane-header">
             <div className="flex items-center gap-2">
@@ -1015,7 +1023,7 @@ export default function App() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="apex" className="min-h-0 flex-1">
-              <div className="grid h-full min-h-0 grid-rows-[minmax(0,1.25fr)_minmax(230px,0.75fr)] gap-3">
+              <div className="editor-grid grid h-full min-h-0 gap-3">
                 <CodeEditor
                   title="Apex Source"
                   contextLabel={sourcePath ? fileName(sourcePath) : "No source"}
@@ -1044,7 +1052,7 @@ export default function App() {
           <header className="pane-header">
             <div className="flex min-w-0 items-center gap-2">
               {status === "Pass" ? (
-                <CheckCircle2 className="size-4 text-violet-400" />
+                <CheckCircle2 className="size-4 text-primary" />
               ) : status === "Error" ? (
                 <CircleAlert className="size-4 text-red-500" />
               ) : (
@@ -1167,7 +1175,8 @@ export default function App() {
           <div className="command-panel" onMouseDown={(event) => event.stopPropagation()}>
             <div className="flex items-center gap-2 border-b border-border px-3 py-2 text-sm text-muted-foreground">
               <Search className="size-4" />
-              <span>Command</span>
+              <span className="font-mono text-primary">glade</span>
+              <span className="ml-auto text-[11px]">esc</span>
             </div>
             <div className="p-2">
               {[

@@ -1,7 +1,7 @@
 # Example Project Compatibility Harness
 
 The `glade compat examples` command inventories local Salesforce-shaped projects and reports
-what GLADE supports, what is unsupported, and what blocks progress.
+what Glade supports, what is unsupported, and what blocks progress.
 
 ## Running the Harness
 

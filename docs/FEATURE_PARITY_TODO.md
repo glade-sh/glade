@@ -631,7 +631,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [x] Complete `/services/data` resource discovery for commonly used REST
   resources.
   - [x] Advertise version, root resources, SObject, query/queryAll, limits,
-    Tooling, Composite, and GLADE fixture/reset links with request-versioned
+    Tooling, Composite, and Glade fixture/reset links with request-versioned
     URLs.
 - [x] Expand SObject REST resources: describe, layout-adjacent metadata where
   useful, recent, query, queryAll, and record CRUD edge cases.
@@ -649,7 +649,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `ApexLog`, and `TraceFlag` are not modeled.
 - [ ] Add more REST resources used by local integrations and editor tooling.
   - Current covered resources are the local data, limits, Tooling,
-    Composite-sObjects, and GLADE fixture/reset subset. Broader resources should
+    Composite-sObjects, and Glade fixture/reset subset. Broader resources should
     be added only with black-box fixtures.
 - [x] Add Composite API coverage beyond baseline sObject insert, including
   all-or-none rollback and reference ID behavior.
@@ -673,7 +673,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
   executeAnonymous, composite, errors, auth stubs, and persistence.
   - [x] `docs/fixtures/server-black-box.json` now covers resource discovery,
     OAuth/id stubs, SObject CRUD/describe/recent/query/queryAll, Tooling,
-    Composite sObjects, explicit unsupported Composite batch, GLADE
+    Composite sObjects, explicit unsupported Composite batch, Glade
     fixture/reset, error arrays, and SQLite persistence after reset.
 
 ## 9. Compatibility, Hardening, And Release

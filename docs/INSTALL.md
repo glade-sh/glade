@@ -231,7 +231,7 @@ glade playground --project-ref "Local Probe=../some-sfdx-project" --open
 ```
 
 It binds to localhost by default. Do not expose it to untrusted networks; it runs
-local Apex through the GLADE VM and can mutate the selected local org database in
+local Apex through the Glade VM and can mutate the selected local org database in
 persist mode.
 
 ## Homebrew

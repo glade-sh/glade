@@ -29,8 +29,8 @@ The declaration breadth gate is `glade compat stub-inventory --json`.
 
 Current checked baseline:
 
-- System/product stub source types missing generated GLADE types: 0
-- SObject stub source objects missing active GLADE objects: 0
+- System/product stub source types missing generated Glade types: 0
+- SObject stub source objects missing active Glade objects: 0
 - SObject stub fields missing after supported feature gates: 0
 - SObject stub fields missing only because their org feature gate is disabled
   remain reported separately from unsupported field gaps.

@@ -31,7 +31,7 @@ edit that file by hand.
 
 The describe baseline is the authoritative source for rich metadata such as key
 prefixes, picklists, record types, and feature-gated fields. It does not cover
-every platform object that large legacy projects reference. GLADE therefore also
+every platform object that large legacy projects reference. Glade therefore also
 keeps a generated SObject field overlay derived from public Apex stub shape
 data.
 
