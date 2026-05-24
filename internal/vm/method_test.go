@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestVMRecordFieldPathPreservesMissingNestedParentRelationshipNull(t *testing.T) {
@@ -1982,7 +1982,7 @@ func TestCurrentStubProviderPrefersActiveFrameworkApexMocksProvider(t *testing.T
 	attached := Object("framework_ApexMocks")
 	attached.Fields["methodReturnValueRecorder"] = Object("framework_MethodReturnValueRecorder")
 	proxy := Object("IService__sfdc_ApexStub")
-	proxy.Fields["__oaerStubProvider"] = attached
+	proxy.Fields["__gladeStubProvider"] = attached
 
 	live := Object("framework_ApexMocks")
 	live.Fields["verifying"] = Bool(true)
@@ -2000,7 +2000,7 @@ func TestCurrentStubProviderKeepsReceiverProviderWhenAnotherApexMocksProviderIsV
 	lineProvider := Object("fflib_ApexMocks")
 	lineProvider.Fields["methodReturnValueRecorder"] = Object("fflib_MethodReturnValueRecorder")
 	lineProxy := Object("PaymentLineBase__sfdc_ApexStub")
-	lineProxy.Fields["__oaerStubProvider"] = lineProvider
+	lineProxy.Fields["__gladeStubProvider"] = lineProvider
 	machine.Globals["line"] = lineProxy
 
 	verifyingProvider := Object("fflib_ApexMocks")
@@ -2021,7 +2021,7 @@ func TestCurrentStubProviderPrefersUniqueLiveFrameworkApexMocksProviderOverSnaps
 	attachedRecorder.Fields["Stubbing"] = Bool(true)
 	attached.Fields["methodReturnValueRecorder"] = attachedRecorder
 	proxy := Object("IService__sfdc_ApexStub")
-	proxy.Fields["__oaerStubProvider"] = attached
+	proxy.Fields["__gladeStubProvider"] = attached
 
 	live := Object("framework_ApexMocks")
 	liveRecorder := Object("framework_MethodReturnValueRecorder")
@@ -2045,7 +2045,7 @@ func TestPropagateUpdatedValueAliasesKeepsCompleteApexMocksProvider(t *testing.T
 	snapshot := Object("fflib_ApexMocks")
 	snapshot.Ref = live.Ref
 	proxy := Object("ExchangeRatesApiV1Service")
-	proxy.Fields["__oaerStubProvider"] = snapshot
+	proxy.Fields["__gladeStubProvider"] = snapshot
 	updated := typedList("List<Object>")
 	updated.List = append(updated.List, proxy)
 
@@ -8731,7 +8731,7 @@ func TestTypeHashCodeUsesTypeName(t *testing.T) {
 
 func TestStubProxyStringUsesGeneratedApexStubTypeName(t *testing.T) {
 	proxy := Object("MockedList")
-	proxy.Fields["__oaerStubbedType"] = String("MockedList")
+	proxy.Fields["__gladeStubbedType"] = String("MockedList")
 	got := proxy.String()
 	if !strings.HasPrefix(got, "MockedList__sfdc_ApexStub:") {
 		t.Fatalf("proxy string = %q", got)

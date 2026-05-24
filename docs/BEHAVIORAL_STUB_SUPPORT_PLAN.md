@@ -9,15 +9,15 @@ docs, owned compatibility fixtures, or black-box scratch-org probes.
 
 The contract-corpus workflow is now implemented and generated.
 
-- `oaer compat stub-contracts --output docs/generated/STUB_CONTRACTS.json`
+- `glade compat stub-contracts --output docs/generated/STUB_CONTRACTS.json`
   emits one row per generated stub type/member with:
   - behavior status
   - contract mode (`org-diff`, `local-contract`, `passive-dto`, `compile-shape`)
   - implementation owner lane
   - oddity metadata (`normalization`, `failureShape`, `oddityRisk`, `edgeTags`)
-- `oaer compat stub-contracts --probe-manifest docs/generated/STUB_CONTRACT_PROBE_MANIFEST.json --probe-tier <smoke|core|full|local>`
+- `glade compat stub-contracts --probe-manifest docs/generated/STUB_CONTRACT_PROBE_MANIFEST.json --probe-tier <smoke|core|full|local>`
   emits discoverable probe specs for generated stub contracts.
-- `oaer probe local <stub.probe.id>` executes generated stub contract probes
+- `glade probe local <stub.probe.id>` executes generated stub contract probes
   even when `ProbeRunner` has no handwritten probe registration.
 
 This establishes discovery coverage across generated stubs while preserving
@@ -25,12 +25,12 @@ explicit unsupported surfaces and odd-behavior tracking for implementation work.
 
 ## Current Baseline
 
-The declaration breadth gate is `oaer compat stub-inventory --json`.
+The declaration breadth gate is `glade compat stub-inventory --json`.
 
 Current checked baseline:
 
-- System/product stub source types missing generated OAER types: 0
-- SObject stub source objects missing active OAER objects: 0
+- System/product stub source types missing generated GLADE types: 0
+- SObject stub source objects missing active GLADE objects: 0
 - SObject stub fields missing after supported feature gates: 0
 - SObject stub fields missing only because their org feature gate is disabled
   remain reported separately from unsupported field gaps.
@@ -38,7 +38,7 @@ Current checked baseline:
 
 ## Phase 1: Behavior Inventory Gate
 
-Deliverable: `oaer compat stub-behavior --json`.
+Deliverable: `glade compat stub-behavior --json`.
 
 Track every generated constructor, method, and property with one status:
 
@@ -165,10 +165,10 @@ Exit gate:
 
 ## Phase 8: Scratch-Org Probe Harness
 
-Use `oaer-probe-lab` / `oaer-probe-org` for ambiguous behavior:
+Use `glade-probe-lab` / `glade-probe-org` for ambiguous behavior:
 
 ```bash
-echo "System.debug('probe');" | sf apex run --target-org oaer-probe-org
+echo "System.debug('probe');" | sf apex run --target-org glade-probe-org
 ```
 
 Deliverables:
@@ -182,8 +182,8 @@ Deliverables:
 
 Add release-ready gates:
 
-- `oaer compat stub-inventory --check ...`
-- `oaer compat stub-behavior --check ...`
+- `glade compat stub-inventory --check ...`
+- `glade compat stub-behavior --check ...`
 - required core APIs must be `implemented` or explicitly `unsupported`
 - no `unknown` behavior in core namespaces
 - no silent passive-default behavior for side-effecting service calls

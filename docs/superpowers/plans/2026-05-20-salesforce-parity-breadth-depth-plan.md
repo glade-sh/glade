@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build OAER toward Salesforce-like Apex execution where the same Apex project run in Salesforce and OAER produces the same test outcomes, observable side effects, and normalized traces.
+**Goal:** Build GLADE toward Salesforce-like Apex execution where the same Apex project run in Salesforce and GLADE produces the same test outcomes, observable side effects, and normalized traces.
 
 **Architecture:** Use a batch-first implementation strategy. Build broad platform slices from public Salesforce behavior, stub catalogs, project metadata, scratch-org describes, and black-box oracle runs before using enterprise projects as corpus gates. Validate with owned fixtures, then large example projects, then future external projects.
 
-**Tech Stack:** Go 1.26, `cmd/oaer`, `internal/apexast`, `internal/typesys`, `internal/sema`, `internal/ir`, `internal/vm`, `internal/apextest`, `internal/schema`, `internal/storage`, `internal/soql`, `internal/dml`, `internal/probe`, `internal/compat`, Salesforce CLI scratch orgs, Tooling API `executeAnonymous`, Apex test logs.
+**Tech Stack:** Go 1.26, `cmd/glade`, `internal/apexast`, `internal/typesys`, `internal/sema`, `internal/ir`, `internal/vm`, `internal/apextest`, `internal/schema`, `internal/storage`, `internal/soql`, `internal/dml`, `internal/probe`, `internal/compat`, Salesforce CLI scratch orgs, Tooling API `executeAnonymous`, Apex test logs.
 
 ---
 
@@ -18,10 +18,10 @@ This plan avoids the slow loop of fixing one failing enterprise test at a time. 
 
 The work has two tracks:
 
-1. **Breadth track:** make OAER accept and classify as much Salesforce Apex and org shape as practical. This covers symbols, generated stubs, standard objects, metadata, package dependencies, and explicit unsupported fences.
+1. **Breadth track:** make GLADE accept and classify as much Salesforce Apex and org shape as practical. This covers symbols, generated stubs, standard objects, metadata, package dependencies, and explicit unsupported fences.
 2. **Depth track:** make supported behavior match Salesforce. This covers VM semantics, DML, SOQL, triggers, test isolation, platform APIs, debug/oracle traces, and final data state.
 
-The harness must compare Salesforce and OAER at stable observation points. Raw debug logs help diagnose. They should not be the only oracle. The durable oracle is normalized JSON: test result, exception, stack, debug payloads, SOQL/DML events, limits, async drain, emitted side effects, and selected final records.
+The harness must compare Salesforce and GLADE at stable observation points. Raw debug logs help diagnose. They should not be the only oracle. The durable oracle is normalized JSON: test result, exception, stack, debug payloads, SOQL/DML events, limits, async drain, emitted side effects, and selected final records.
 
 ## Current Inventory
 
@@ -72,7 +72,7 @@ Do not claim "perfect Salesforce" as one undivided milestone. Use release claims
 | Shape breadth | Projects compile or fail with typed dependency/unsupported diagnostics. | `compat local-tests --blockers-only` on all example projects. |
 | Runtime breadth | All discovered tests receive pass/fail/unsupported/runtime_gap outcomes, not compile gaps. | `docs/fixtures/local-tests-example-projects.json`. |
 | Behavioral depth | Supported tests match Salesforce outcome and normalized trace. | New `compat oracle-tests` gate. |
-| Enterprise parity | Current enterprise corpus matches Salesforce for supported claims. | Per-project Salesforce-vs-OAER baseline. |
+| Enterprise parity | Current enterprise corpus matches Salesforce for supported claims. | Per-project Salesforce-vs-GLADE baseline. |
 | Expansion ready | Adding a new project gives a structured inventory, not a new custom implementation path. | New project onboarding command and report. |
 
 ## Workstream A: Salesforce Oracle Harness
@@ -88,7 +88,7 @@ Do not claim "perfect Salesforce" as one undivided milestone. Use release claims
 - Create: `internal/oracle/local_runner.go`
 - Create: `internal/oracle/report.go`
 - Create: `internal/oracle/*_test.go`
-- Modify: `internal/oaercli/compat.go`
+- Modify: `internal/gladecli/compat.go`
 - Modify: `internal/probe/tooling_snippet.go`
 - Modify: `internal/apextest`
 - Create: `docs/fixtures/oracle/*.json`
@@ -113,27 +113,27 @@ go test ./internal/oracle
 - [ ] Add a runner mode for anonymous Apex snippets, used for narrow language/platform probes.
 - [ ] Add finest logging only for targeted classes/methods. Do not collect finest logs for whole-project full runs by default.
 - [ ] Parse Apex logs into normalized events for SOQL, DML, method entry/exit, exceptions, limits, and `USER_DEBUG`.
-- [ ] Support opt-in `System.debug('OAER_ORACLE:' + JSON.serialize(payload))` markers for precise state capture.
+- [ ] Support opt-in `System.debug('GLADE_ORACLE:' + JSON.serialize(payload))` markers for precise state capture.
 
 Validation:
 
 ```bash
 go test ./internal/oracle ./internal/probe
-go run ./cmd/oaer compat oracle-tests --project example-projects/src-nmb-nutpl-develop --target-org oaer-probe-lab --filter <small-test> --golden-only --json
+go run ./cmd/glade compat oracle-tests --project example-projects/src-nmb-nutpl-develop --target-org glade-probe-lab --filter <small-test> --golden-only --json
 ```
 
-### Batch A3: OAER Runner And Diff
+### Batch A3: GLADE Runner And Diff
 
-- [ ] Make `oaer test` emit the same `OracleRun` shape for selected tests.
+- [ ] Make `glade test` emit the same `OracleRun` shape for selected tests.
 - [ ] Add VM trace hooks where missing for SOQL, DML, trigger dispatch, email capture, file/content capture, async enqueue/drain, limit increments, and unsupported fences.
-- [ ] Add `compat oracle-tests` to run Salesforce and OAER, then produce `pass`, `trace_mismatch`, `state_mismatch`, `exception_mismatch`, `unsupported`, `compile_gap`, and `infrastructure_error`.
-- [ ] Persist compact artifacts under `.oaer/runs/<run-id>/oracle/`.
+- [ ] Add `compat oracle-tests` to run Salesforce and GLADE, then produce `pass`, `trace_mismatch`, `state_mismatch`, `exception_mismatch`, `unsupported`, `compile_gap`, and `infrastructure_error`.
+- [ ] Persist compact artifacts under `.glade/runs/<run-id>/oracle/`.
 
 Validation:
 
 ```bash
 go test ./internal/oracle ./internal/apextest ./internal/vm
-go run ./cmd/oaer compat oracle-tests --project example-projects/src-nmb-nutpl-develop --target-org oaer-probe-lab --filter <small-test> --json
+go run ./cmd/glade compat oracle-tests --project example-projects/src-nmb-nutpl-develop --target-org glade-probe-lab --filter <small-test> --json
 ```
 
 Exit criteria:
@@ -167,8 +167,8 @@ Validation:
 
 ```bash
 go test ./internal/apexast ./internal/typesys ./internal/sema ./internal/ir ./internal/vm
-go run ./cmd/oaer parse ./example-projects --json
-go run ./cmd/oaer compat local-tests --project ./example-projects --blockers-only --top-failures 50 --json
+go run ./cmd/glade parse ./example-projects --json
+go run ./cmd/glade compat local-tests --project ./example-projects --blockers-only --top-failures 50 --json
 ```
 
 ### Batch B2: Standard Object And Field Breadth
@@ -182,13 +182,13 @@ Validation:
 
 ```bash
 go test ./internal/schema ./internal/storage ./internal/typesys ./internal/sema
-go run ./cmd/oaer schema load --project ./example-projects/NPSP-rel-3.237 --json
-go run ./cmd/oaer compat local-tests --project ./example-projects/NPSP-rel-3.237 --blockers-only --top-failures 20 --json
+go run ./cmd/glade schema load --project ./example-projects/NPSP-rel-3.237 --json
+go run ./cmd/glade compat local-tests --project ./example-projects/NPSP-rel-3.237 --blockers-only --top-failures 20 --json
 ```
 
 ### Batch B3: Managed Package Dependency Artifacts
 
-- [ ] Implement source-backed and artifact-backed managed package dependency loading from `oaer.yml`.
+- [ ] Implement source-backed and artifact-backed managed package dependency loading from `glade.yml`.
 - [ ] Export only subscriber-visible `global` Apex contracts across namespaces.
 - [ ] Load namespaced objects, fields, labels, resources, custom metadata, and dependency schema before consumer projects.
 - [ ] Add explicit outcomes: `dependency_missing`, `dependency_version_mismatch`, `dependency_load_error`, `dependency_access_denied`.
@@ -198,9 +198,9 @@ Validation:
 
 ```bash
 go test ./internal/config ./internal/project ./internal/typesys ./internal/sema ./internal/schema ./internal/vm ./internal/compat
-go run ./cmd/oaer test --project testdata/local-tests/managed-package-consumer --json
-go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nc-develop --blockers-only --top-failures 20 --json
-go run ./cmd/oaer compat local-tests --project example-projects/nams-workspace --blockers-only --top-failures 20 --json
+go run ./cmd/glade test --project testdata/local-tests/managed-package-consumer --json
+go run ./cmd/glade compat local-tests --project example-projects/src-nmb-nc-develop --blockers-only --top-failures 20 --json
+go run ./cmd/glade compat local-tests --project example-projects/nams-workspace --blockers-only --top-failures 20 --json
 ```
 
 Exit criteria:
@@ -230,7 +230,7 @@ Validation:
 
 ```bash
 go test ./internal/apextest ./internal/vm ./internal/testreport
-go run ./cmd/oaer test --project testdata/local-tests/org-like-runner --json
+go run ./cmd/glade test --project testdata/local-tests/org-like-runner --json
 ```
 
 ### Batch C2: Dispatch, Object, And Exception Semantics
@@ -243,8 +243,8 @@ Validation:
 
 ```bash
 go test ./internal/vm
-go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --json
-go run ./cmd/oaer test --project example-projects/sf-cred-pkg-develop --parallel 4 --json
+go run ./cmd/glade test --project example-projects/src-nmb-nutpl-develop --json
+go run ./cmd/glade test --project example-projects/sf-cred-pkg-develop --parallel 4 --json
 ```
 
 ### Batch C3: Mock Framework Semantics
@@ -257,7 +257,7 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/apextest
-go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --filter Mock --json
+go run ./cmd/glade test --project example-projects/src-nmb-nutpl-develop --filter Mock --json
 ```
 
 Exit criteria:
@@ -289,7 +289,7 @@ Validation:
 
 ```bash
 go test ./internal/soql ./internal/schema ./internal/sobject ./internal/vm
-go run ./cmd/oaer compat oracle-tests --suite schema-soql --target-org oaer-probe-lab --json
+go run ./cmd/glade compat oracle-tests --suite schema-soql --target-org glade-probe-lab --json
 ```
 
 ### Batch D2: DML, Triggers, Transactions
@@ -302,7 +302,7 @@ Validation:
 
 ```bash
 go test ./internal/dml ./internal/storage ./internal/vm ./internal/apextest
-go run ./cmd/oaer test --project testdata/local-tests/data-platform-dml --json
+go run ./cmd/glade test --project testdata/local-tests/data-platform-dml --json
 ```
 
 Exit criteria:
@@ -333,8 +333,8 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/capability
-go run ./cmd/oaer compat stdlib --check docs/STDLIB_COVERAGE.md
-go run ./cmd/oaer probe summarize probes/output/stub-full/gap-report.json --top-stub
+go run ./cmd/glade compat stdlib --check docs/STDLIB_COVERAGE.md
+go run ./cmd/glade probe summarize probes/output/stub-full/gap-report.json --top-stub
 ```
 
 ### Batch E2: Enterprise Platform APIs
@@ -347,8 +347,8 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/apextest ./internal/resource
-go run ./cmd/oaer test --project testdata/local-tests/platform-apis --json
-go run ./cmd/oaer compat oracle-tests --suite platform-apis --target-org oaer-probe-lab --json
+go run ./cmd/glade test --project testdata/local-tests/platform-apis --json
+go run ./cmd/glade compat oracle-tests --suite platform-apis --target-org glade-probe-lab --json
 ```
 
 ### Batch E3: ConnectApi Scope
@@ -361,7 +361,7 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/typesys ./internal/sema
-go run ./cmd/oaer compat local-tests --project ./example-projects --blockers-only --top-failures 50 --json
+go run ./cmd/glade compat local-tests --project ./example-projects --blockers-only --top-failures 50 --json
 ```
 
 Exit criteria:
@@ -393,7 +393,7 @@ Validation:
 
 ```bash
 go test ./internal/project ./internal/schema ./internal/storage ./internal/resource
-go run ./cmd/oaer compat post-parity --project ./example-projects --json --require-ready
+go run ./cmd/glade compat post-parity --project ./example-projects --json --require-ready
 ```
 
 ### Batch F2: Test-Visible UI And Declarative Behavior
@@ -406,9 +406,9 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/apextest ./internal/storage
-go run ./cmd/oaer test --project testdata/local-tests/ui-controller-contracts --json
-go run ./cmd/oaer test --project testdata/local-tests/workflow --json
-go run ./cmd/oaer test --project testdata/local-tests/flow --json
+go run ./cmd/glade test --project testdata/local-tests/ui-controller-contracts --json
+go run ./cmd/glade test --project testdata/local-tests/workflow --json
+go run ./cmd/glade test --project testdata/local-tests/flow --json
 ```
 
 Exit criteria:
@@ -440,7 +440,7 @@ Validation:
 
 ```bash
 go test ./internal/compat ./internal/projectscan
-go run ./cmd/oaer compat project-inventory --project ./example-projects/sf-cred-pkg-develop --json
+go run ./cmd/glade compat project-inventory --project ./example-projects/sf-cred-pkg-develop --json
 ```
 
 ### Batch G2: Corpus Gates
@@ -454,9 +454,9 @@ Validation:
 
 ```bash
 go test ./...
-go run ./cmd/oaer compat local-tests --check docs/fixtures/local-tests-corpus.json
-go run ./cmd/oaer compat local-tests --check docs/fixtures/local-tests-example-projects.json
-go run ./cmd/oaer compat oracle-tests --check docs/fixtures/oracle-example-projects.json
+go run ./cmd/glade compat local-tests --check docs/fixtures/local-tests-corpus.json
+go run ./cmd/glade compat local-tests --check docs/fixtures/local-tests-example-projects.json
+go run ./cmd/glade compat oracle-tests --check docs/fixtures/oracle-example-projects.json
 ```
 
 Exit criteria:
@@ -482,7 +482,7 @@ Each batch should be implemented in a worktree. Each batch should land broad tes
 
 | Squad | Write scope | First deliverable |
 | --- | --- | --- |
-| Oracle | `internal/oracle`, `internal/oaercli`, `internal/probe`, trace output | `compat oracle-tests` working on one NUTPL test. |
+| Oracle | `internal/oracle`, `internal/gladecli`, `internal/probe`, trace output | `compat oracle-tests` working on one NUTPL test. |
 | Shape | `internal/apexast`, `internal/typesys`, `internal/sema`, `internal/schema`, `internal/project` | Four compile-frontier projects move to runtime/dependency outcomes. |
 | VM | `internal/vm`, `internal/ir`, `internal/apextest` | Broad lifecycle/dispatch/exception fixture suite green. |
 | Data | `internal/soql`, `internal/dml`, `internal/storage`, `internal/sobject` | SOQL/DML/trigger oracle fixtures green. |
@@ -497,7 +497,7 @@ Use debug logs as a microscope, not as the whole measuring stick.
 - Finest logs are valuable for targeted tests and probes.
 - Full-project finest logs are too noisy and slow for default runs.
 - Parse logs into normalized events.
-- Prefer explicit `OAER_ORACLE:` JSON debug payloads where a test needs exact state comparison.
+- Prefer explicit `GLADE_ORACLE:` JSON debug payloads where a test needs exact state comparison.
 - Keep raw logs as artifacts for investigation.
 - Do not make pass/fail depend on raw line-for-line log text.
 
@@ -518,8 +518,8 @@ Visualforce=INFO
 
 A platform surface is "supported" only when:
 
-- OAER compiles representative Apex accepted by Salesforce.
-- OAER runtime output matches Salesforce for owned fixtures.
+- GLADE compiles representative Apex accepted by Salesforce.
+- GLADE runtime output matches Salesforce for owned fixtures.
 - Oracle diff passes for at least one black-box scratch-org probe where practical.
 - Enterprise corpus tests that use the surface pass or move to a different blocker.
 - Unsupported cloud-only behavior has a typed diagnostic.
@@ -531,27 +531,27 @@ Fast checks:
 
 ```bash
 go test ./internal/oracle ./internal/apextest ./internal/vm ./internal/sema ./internal/typesys
-go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nutpl-develop --parallel 4 --json
+go run ./cmd/glade compat local-tests --project example-projects/src-nmb-nutpl-develop --parallel 4 --json
 ```
 
 Medium checks:
 
 ```bash
 go test ./internal/soql ./internal/dml ./internal/storage ./internal/schema ./internal/project ./internal/compat
-go run ./cmd/oaer compat local-tests --project example-projects/sf-cred-pkg-develop --parallel 4 --timeout 30000 --top-failures 20 --json
-go run ./cmd/oaer compat post-parity --project ./example-projects --json --require-ready
+go run ./cmd/glade compat local-tests --project example-projects/sf-cred-pkg-develop --parallel 4 --timeout 30000 --top-failures 20 --json
+go run ./cmd/glade compat post-parity --project ./example-projects --json --require-ready
 ```
 
 Full checks:
 
 ```bash
 go test ./...
-go run ./cmd/oaer compat local-tests --check docs/fixtures/local-tests-corpus.json
-go run ./cmd/oaer compat local-tests --check docs/fixtures/local-tests-example-projects.json
-go run ./cmd/oaer compat oracle-tests --check docs/fixtures/oracle-example-projects.json
-go run ./cmd/oaer compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
-go run ./cmd/oaer compat gaps --check docs/KNOWN_GAPS.md
-go run ./cmd/oaer compat stdlib --check docs/STDLIB_COVERAGE.md
+go run ./cmd/glade compat local-tests --check docs/fixtures/local-tests-corpus.json
+go run ./cmd/glade compat local-tests --check docs/fixtures/local-tests-example-projects.json
+go run ./cmd/glade compat oracle-tests --check docs/fixtures/oracle-example-projects.json
+go run ./cmd/glade compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
+go run ./cmd/glade compat gaps --check docs/KNOWN_GAPS.md
+go run ./cmd/glade compat stdlib --check docs/STDLIB_COVERAGE.md
 ```
 
 ## First Batch To Start

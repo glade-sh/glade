@@ -337,4 +337,4 @@ System.debug('queries: ' + Limits.getQueries());
 	},
 }
 
-const sfdxProjectJSON = `{"packageDirectories":[{"path":"force-app","default":true}],"name":"oaer-playground-example","namespace":"","sourceApiVersion":"65.0"}` + "\n"
+const sfdxProjectJSON = `{"packageDirectories":[{"path":"force-app","default":true}],"name":"glade-playground-example","namespace":"","sourceApiVersion":"65.0"}` + "\n"

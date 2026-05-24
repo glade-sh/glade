@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-const standardFieldsOverlayMarker = "__oaer_standard_fields_overlay"
+const standardFieldsOverlayMarker = "__glade_standard_fields_overlay"
 
 // EnsureStandardObjectFields adds public Salesforce standard fields for objects
 // whose project metadata commonly only carries custom-field deltas.

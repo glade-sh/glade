@@ -1,20 +1,20 @@
 # Oracle Parity
 
-`oaer compat oracle-tests` compares Salesforce observations with OAER observations.
+`glade compat oracle-tests` compares Salesforce observations with GLADE observations.
 The pass/fail input is normalized JSON, not raw debug log text.
 
 Current skeleton:
 
 - normalizes IDs, timestamps, generated usernames, stack line noise, records, side effects, and trace events
-- parses Apex logs for method calls, SOQL, DML, exceptions, limits, `USER_DEBUG`, and `OAER_ORACLE:` payloads
+- parses Apex logs for method calls, SOQL, DML, exceptions, limits, `USER_DEBUG`, and `GLADE_ORACLE:` payloads
 - can opt into recent Apex log capture for focused Salesforce test runs with `--fetch-logs`
-- adapts OAER `testreport.Run` results into `OracleRun`
-- diffs fixture or live runner output and writes compact artifacts under `.oaer/runs/<run-id>/oracle/`
+- adapts GLADE `testreport.Run` results into `OracleRun`
+- diffs fixture or live runner output and writes compact artifacts under `.glade/runs/<run-id>/oracle/`
 
 Fixture diff:
 
 ```bash
-go run ./cmd/oaer compat oracle-tests \
+go run ./cmd/glade compat oracle-tests \
   --salesforce-run docs/fixtures/oracle/passing-test-salesforce.json \
   --local-run docs/fixtures/oracle/passing-test-local.json \
   --json
@@ -23,7 +23,7 @@ go run ./cmd/oaer compat oracle-tests \
 Forced trace mismatch:
 
 ```bash
-go run ./cmd/oaer compat oracle-tests \
+go run ./cmd/glade compat oracle-tests \
   --salesforce-run docs/fixtures/oracle/passing-test-salesforce.json \
   --local-run docs/fixtures/oracle/trace-mismatch-local.json \
   --json
@@ -32,7 +32,7 @@ go run ./cmd/oaer compat oracle-tests \
 Checked fixture corpus:
 
 ```bash
-go run ./cmd/oaer compat oracle-tests \
+go run ./cmd/glade compat oracle-tests \
   --check docs/fixtures/oracle/fixture-corpus.json \
   --json
 ```
@@ -40,9 +40,9 @@ go run ./cmd/oaer compat oracle-tests \
 Focused Salesforce run with recent Apex logs:
 
 ```bash
-go run ./cmd/oaer compat oracle-tests \
+go run ./cmd/glade compat oracle-tests \
   --project example-projects/src-nmb-nutpl-develop \
-  --target-org oaer-probe-lab \
+  --target-org glade-probe-lab \
   --filter SomeTest.someMethod \
   --golden-only \
   --fetch-logs \
@@ -53,4 +53,4 @@ Remaining work:
 
 - enable targeted finest logging for selected classes and methods
 - add VM trace hooks for final side effects and unsupported fences not already in traces
-- promote at least one `src-nmb-nutpl-develop` Salesforce-vs-OAER passing test into a checked oracle fixture
+- promote at least one `src-nmb-nutpl-develop` Salesforce-vs-GLADE passing test into a checked oracle fixture

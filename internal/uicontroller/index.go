@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/apexast"
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 type Index struct {

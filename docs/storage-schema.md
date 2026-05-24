@@ -148,7 +148,7 @@ state so later transaction code can take defensive snapshots.
 
 ## Fixture Import And Export
 
-The storage fixture envelope uses `version: "oaer.storage.v1"` and contains:
+The storage fixture envelope uses `version: "glade.storage.v1"` and contains:
 
 - `org`: org ID, API version, and namespace.
 - `objects`: named object blocks with records.
@@ -170,15 +170,15 @@ Import happens in two passes:
 
 Export sorts object names, record IDs, field names, and explicit-null lists to
 keep compatibility fixtures stable in source control. The CLI exposes this
-through `oaer db seed`, `oaer db reset`, `oaer db export`, and
-`oaer db inspect --db <path>`.
+through `glade db seed`, `glade db reset`, `glade db export`, and
+`glade db inspect --db <path>`.
 
 `fieldRefs` can resolve fixture relationships by alias so fixtures do not need
 to hard-code generated record IDs.
 
 ## Persistent Server Lifecycle
 
-`oaer server --db <path>` loads the SQLite org state at startup and saves every
+`glade server --db <path>` loads the SQLite org state at startup and saves every
 mutating request after it succeeds. If a REST create/update/delete, fixture load,
 reset, composite insert, or Tooling `executeAnonymous` request fails, the server
 keeps the prior org state and does not save the failed mutation.
@@ -186,24 +186,24 @@ keeps the prior org state and does not save the failed mutation.
 The same database file can be prepared and inspected through the CLI:
 
 ```bash
-oaer db reset --db .oaer/local-org.sqlite --json
-oaer db seed --db .oaer/local-org.sqlite fixtures/base-org.json --json
-oaer db inspect --db .oaer/local-org.sqlite --json
-oaer server --db .oaer/local-org.sqlite --addr 127.0.0.1:8080
+glade db reset --db .glade/local-org.sqlite --json
+glade db seed --db .glade/local-org.sqlite fixtures/base-org.json --json
+glade db inspect --db .glade/local-org.sqlite --json
+glade server --db .glade/local-org.sqlite --addr 127.0.0.1:8080
 ```
 
-Server-side OAER endpoints mirror the fixture lifecycle:
+Server-side GLADE endpoints mirror the fixture lifecycle:
 
 ```bash
-curl -s -X GET  http://127.0.0.1:8080/services/data/v65.0/oaer/fixture
-curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/oaer/fixture \
+curl -s -X GET  http://127.0.0.1:8080/services/data/v65.0/glade/fixture
+curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/glade/fixture \
   -H 'content-type: application/json' --data @fixtures/base-org.json
-curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/oaer/reset
-curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/oaer/reset/data
-curl -s -X POST 'http://127.0.0.1:8080/services/data/v65.0/oaer/reset?scope=users,limits,async'
+curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/glade/reset
+curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/glade/reset/data
+curl -s -X POST 'http://127.0.0.1:8080/services/data/v65.0/glade/reset?scope=users,limits,async'
 ```
 
-`/oaer/reset` with no scope performs the full deterministic reset. Scoped resets
+`/glade/reset` with no scope performs the full deterministic reset. Scoped resets
 accept path segments, repeated or comma-separated `scope` query parameters, or a
 JSON body with `scope` or `scopes`. Supported scopes are `all`, `data`, `users`,
 `platform`, `limits`, and `async`. The `data` scope clears non-platform records
@@ -214,7 +214,7 @@ no-ops.
 
 Operational checks for a persistent server should verify three things:
 
-1. `oaer db inspect --db <path> --json` reports the expected schema version,
+1. `glade db inspect --db <path> --json` reports the expected schema version,
    object count, record count, and ID sequence count.
 2. A mutating server request changes the same counts after restart, proving the
    mutation reached SQLite.

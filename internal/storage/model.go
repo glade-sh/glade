@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const FixtureVersion = "oaer.storage.v1"
+const FixtureVersion = "glade.storage.v1"
 
 // DefaultRESTAPIVersion is the REST API release string advertised by local HTTP
 // surfaces when [OrgState.APIVersion] is empty (no leading "v").
@@ -1283,7 +1283,7 @@ func hasRuntimeMutableMetadata(metadata map[string]string) bool {
 		return false
 	}
 	for key := range metadata {
-		if strings.HasPrefix(key, "__oaer_") {
+		if strings.HasPrefix(key, "__glade_") {
 			continue
 		}
 		return true

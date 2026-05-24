@@ -32,7 +32,7 @@ func TestWriteJSON(t *testing.T) {
 	if err := json.Unmarshal(out.Bytes(), &decoded); err != nil {
 		t.Fatal(err)
 	}
-	if decoded.Target != "full-featured aer-parity MVP" {
+	if decoded.Target != "full-featured glade-parity MVP" {
 		t.Fatalf("target = %q", decoded.Target)
 	}
 }

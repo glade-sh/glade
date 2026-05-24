@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/capability"
+	"github.com/glade-sh/glade/internal/capability"
 )
 
 func TestStubContractInvocationCodeStaticMethod(t *testing.T) {
@@ -46,7 +46,7 @@ func TestStubContractInvocationCodeValueTypeReceiver(t *testing.T) {
 		Parameters: []string{"Object"},
 	}
 	code := stubContractInvocationCode(spec)
-	if strings.Contains(code, "new Blob()") || !strings.Contains(code, "Blob.valueOf('oaer')") {
+	if strings.Contains(code, "new Blob()") || !strings.Contains(code, "Blob.valueOf('glade')") {
 		t.Fatalf("unexpected Blob receiver invocation: %q", code)
 	}
 }
@@ -64,7 +64,7 @@ func TestStubContractCompileFailureResult(t *testing.T) {
 
 func TestDefaultApexArgForType(t *testing.T) {
 	tests := map[string]string{
-		"String":       "'oaer'",
+		"String":       "'glade'",
 		"Integer":      "1",
 		"Boolean":      "true",
 		"List<String>": "new List<String>()",

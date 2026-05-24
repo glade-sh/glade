@@ -3,8 +3,8 @@ package apexast
 import (
 	"strings"
 
-	external "github.com/open-aer/apex-parser"
-	"github.com/open-aer/oaer/internal/diagnostic"
+	external "github.com/glade-sh/apex-parser"
+	"github.com/glade-sh/glade/internal/diagnostic"
 )
 
 type Parser struct {

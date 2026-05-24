@@ -8,10 +8,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/dml"
-	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/trace"
-	"github.com/open-aer/oaer/internal/vm"
+	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/trace"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 type PostParityTraceFixture struct {

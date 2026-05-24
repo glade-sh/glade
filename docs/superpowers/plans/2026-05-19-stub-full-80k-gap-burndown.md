@@ -6,7 +6,7 @@
 
 **Architecture:** Keep the existing probe pipeline and add targeted normalization plus runtime stub behavior changes. Treat this as a three-lane burn-down: (1) classify known expected outcomes, (2) enforce consistent stub exception contracts, (3) add minimal semantic behavior where contracts are not enough.
 
-**Tech Stack:** Go (`internal/probe`, `internal/vm`, `internal/capability`), `jq` for analysis, existing probe harness (`cmd/oaer probe`).
+**Tech Stack:** Go (`internal/probe`, `internal/vm`, `internal/capability`), `jq` for analysis, existing probe harness (`cmd/glade probe`).
 
 ---
 
@@ -28,7 +28,7 @@ This says most burn-down value is in ConnectApi outcome shaping, not broad VM fe
 **Files:**
 - Modify: `internal/probe/gap_summary.go`
 - Modify: `internal/probe/gap_summary_test.go`
-- Modify: `internal/oaercli/probe.go`
+- Modify: `internal/gladecli/probe.go`
 
 - [ ] **Step 1: Add dedicated stub summary buckets**
 
@@ -49,12 +49,12 @@ Add fixture-driven tests that assert deterministic ordering and counts.
 
 Run:
 `go test ./internal/probe -run 'TestSummarize'`
-`go test ./internal/oaercli -run 'TestRunProbeSummarize'`
+`go test ./internal/gladecli -run 'TestRunProbeSummarize'`
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add internal/probe/gap_summary.go internal/probe/gap_summary_test.go internal/oaercli/probe.go
+git add internal/probe/gap_summary.go internal/probe/gap_summary_test.go internal/gladecli/probe.go
 git commit -m "probe: add stub-focused summary metrics for full-tier triage"
 ```
 
@@ -200,7 +200,7 @@ git commit -m "vm: resolve remaining unsupported probe outcomes with explicit co
 - [ ] **Step 1: Run full probe with debug capture**
 
 Run:
-`go run ./cmd/oaer probe org --target-org oaer-probe-lab --tier full --output probes/output/stub-full --capture-debug-log`
+`go run ./cmd/glade probe org --target-org glade-probe-lab --tier full --output probes/output/stub-full --capture-debug-log`
 
 - [ ] **Step 2: Capture before/after metrics**
 

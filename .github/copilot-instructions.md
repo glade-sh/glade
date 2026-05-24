@@ -16,9 +16,9 @@ status or checking off parity tasks.
 Keep generated docs in sync after capability changes:
 
 ```bash
-go run ./cmd/oaer compat dashboard --output docs/COMPATIBILITY_DASHBOARD.md
-go run ./cmd/oaer compat gaps --output docs/KNOWN_GAPS.md
-go run ./cmd/oaer compat stdlib --output docs/STDLIB_COVERAGE.md
+go run ./cmd/glade compat dashboard --output docs/COMPATIBILITY_DASHBOARD.md
+go run ./cmd/glade compat gaps --output docs/KNOWN_GAPS.md
+go run ./cmd/glade compat stdlib --output docs/STDLIB_COVERAGE.md
 ```
 
-Do not stage or commit the built `oaer` binary unless explicitly requested.
+Do not stage or commit the built `glade` binary unless explicitly requested.

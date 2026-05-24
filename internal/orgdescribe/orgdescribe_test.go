@@ -3,7 +3,7 @@ package orgdescribe
 import (
 	"testing"
 
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestCatalogToObjectDefinitionsStitchesChildRelationships(t *testing.T) {

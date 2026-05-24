@@ -1,6 +1,6 @@
-# oaer Org Probe Project
+# glade Org Probe Project
 
-This directory contains the deployable Salesforce DX project used by `oaer probe org` to discover gaps between local oaer behavior and a real Salesforce org.
+This directory contains the deployable Salesforce DX project used by `glade probe org` to discover gaps between local glade behavior and a real Salesforce org.
 
 ## Directory Layout
 
@@ -25,7 +25,7 @@ Use the provided definition file to create a feature-rich Enterprise scratch org
 ```bash
 sf org create scratch \
   --definition-file probes/sfdx/config/project-scratch-def.json \
-  --alias oaer-probe-lab \
+  --alias glade-probe-lab \
   --duration-days 7 \
   --target-dev-hub <your-dev-hub>
 ```
@@ -41,7 +41,7 @@ The definition enables:
 ## Deploying Probes
 
 ```bash
-go run ./cmd/oaer probe deploy --target-org oaer-probe-lab
+go run ./cmd/glade probe deploy --target-org glade-probe-lab
 ```
 
 The deploy command pushes the SFDX source, assigns `ProbeDataAccess`, clears
@@ -53,16 +53,16 @@ execution rather than a separate cleanup plus tree import.
 
 ```bash
 # Run all probes
-go run ./cmd/oaer probe org --target-org oaer-probe-lab
+go run ./cmd/glade probe org --target-org glade-probe-lab
 
 # Run a specific probe
-go run ./cmd/oaer probe org --target-org oaer-probe-lab stdlib.math.divide-scale
+go run ./cmd/glade probe org --target-org glade-probe-lab stdlib.math.divide-scale
 
 # Custom output directory
-go run ./cmd/oaer probe org --target-org oaer-probe-lab --output probes/output
+go run ./cmd/glade probe org --target-org glade-probe-lab --output probes/output
 
 # Run local-only probes without touching gap-report.json
-go run ./cmd/oaer probe local stdlib.math.divide-scale --feature MultiCurrency
+go run ./cmd/glade probe local stdlib.math.divide-scale --feature MultiCurrency
 ```
 
 `probe org` groups safe probes into batched Apex executions and runs stateful or

@@ -11,7 +11,7 @@ func TestSummarizeDebugLogs(t *testing.T) {
 			Log: "11:00:00.0 (100)|METHOD_ENTRY|[1]|Foo.bar()\n" +
 				"11:00:00.0 (200)|STATEMENT_EXECUTE|[2]\n" +
 				"11:00:00.0 (300)|METHOD_ENTRY|[3]|Foo.baz()\n" +
-				"11:00:00.0 (400)|USER_DEBUG|[4]|DEBUG|OAER_PROBE",
+				"11:00:00.0 (400)|USER_DEBUG|[4]|DEBUG|GLADE_PROBE",
 		},
 	}
 	summaries := SummarizeDebugLogs(logs)

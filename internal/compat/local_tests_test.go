@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/testreport"
+	"github.com/glade-sh/glade/internal/testreport"
 )
 
 func TestRunLocalTestsClassifiesBasicFixture(t *testing.T) {
@@ -292,8 +292,8 @@ func TestAutoParallelismForCases(t *testing.T) {
 }
 
 func TestAutoTuneLocalTestOptionsUsesShardEnv(t *testing.T) {
-	t.Setenv("OAER_SHARD_COUNT", "6")
-	t.Setenv("OAER_SHARD_INDEX", "2")
+	t.Setenv("GLADE_SHARD_COUNT", "6")
+	t.Setenv("GLADE_SHARD_INDEX", "2")
 	options, parallelism := autoTuneLocalTestOptions(LocalTestOptions{
 		AutoTune:       true,
 		AutoShardCount: true,

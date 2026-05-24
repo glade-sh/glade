@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/dml"
-	"github.com/open-aer/oaer/internal/ir"
-	"github.com/open-aer/oaer/internal/soql"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/soql"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestExecSObjectDMLAndSOQL(t *testing.T) {
@@ -12892,7 +12892,7 @@ func TestExecCustomDataStaticRecordsAreReadOnly(t *testing.T) {
 	}{
 		{"field assignment", "Feature__mdt cfg = Feature__mdt.getInstance('Default'); cfg.Enabled__c = false;", "cannot modify read-only custom metadata"},
 		{"dml", "Feature__mdt cfg = Feature__mdt.getInstance('Default'); update cfg;", "DML cannot modify read-only custom metadata"},
-		{"field assignment without org resolution", "Ghost__mdt cfg = new Ghost__mdt(); cfg.__oaer_readonly = 'custom metadata'; cfg.Enabled__c = false;", "cannot modify read-only custom metadata"},
+		{"field assignment without org resolution", "Ghost__mdt cfg = new Ghost__mdt(); cfg.__glade_readonly = 'custom metadata'; cfg.Enabled__c = false;", "cannot modify read-only custom metadata"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -9,11 +9,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/open-aer/oaer/internal/apexast"
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/packageartifact"
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/schema"
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/packageartifact"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
 )
 
 type Index struct {
@@ -97,7 +97,7 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 		if recovered := recover(); recovered != nil {
 			idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
-				Code:     "OAERTYPE000",
+				Code:     "GLADETYPE000",
 				Message:  fmt.Sprintf("internal type-index panic: %v", recovered),
 			})
 		}
@@ -431,7 +431,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 	if err != nil {
 		out.Diagnostics = append(out.Diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
-			Code:     "OAERTYPE000",
+			Code:     "GLADETYPE000",
 			Message:  err.Error(),
 			File:     path,
 		})
@@ -598,7 +598,7 @@ func UpdateApexFiles(previous Index, changedPaths, deletedPaths []string) (idx I
 		if err != nil {
 			idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
-				Code:     "OAERTYPE000",
+				Code:     "GLADETYPE000",
 				Message:  err.Error(),
 				File:     path,
 			})
@@ -771,7 +771,7 @@ func hasModifier(modifiers []string, expected string) bool {
 func duplicateDiagnostic(current, previous TypeSymbol) diagnostic.Diagnostic {
 	return diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
-		Code:     "OAERTYPE001",
+		Code:     "GLADETYPE001",
 		Message:  fmt.Sprintf("duplicate top-level symbol %q; first seen in %s", current.Name, previous.File),
 		File:     current.File,
 		Range:    &current.Range,

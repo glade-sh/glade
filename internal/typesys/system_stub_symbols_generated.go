@@ -2,7 +2,7 @@
 
 package typesys
 
-import "github.com/open-aer/oaer/internal/apexast"
+import "github.com/glade-sh/glade/internal/apexast"
 
 var systemStubSymbolSpecs = []StandardSymbolSpec{
 	{

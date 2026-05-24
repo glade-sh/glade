@@ -11,15 +11,15 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/automation"
-	metadatapkg "github.com/open-aer/oaer/internal/metadata"
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/resource"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/typesys"
-	"github.com/open-aer/oaer/internal/uicontroller"
-	"github.com/open-aer/oaer/internal/visualforce"
+	"github.com/glade-sh/glade/internal/automation"
+	metadatapkg "github.com/glade-sh/glade/internal/metadata"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/resource"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/uicontroller"
+	"github.com/glade-sh/glade/internal/visualforce"
 )
 
 type Report struct {

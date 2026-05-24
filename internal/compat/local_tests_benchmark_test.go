@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/sema"
+	"github.com/glade-sh/glade/internal/sema"
 )
 
 func BenchmarkAnalyzeSFCredPkg(b *testing.B) {

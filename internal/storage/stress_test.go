@@ -8,7 +8,7 @@ import (
 
 func TestStressSQLiteLargeFixtureRoundTrip(t *testing.T) {
 	const records = 1200
-	store, err := OpenSQLite(filepath.Join(t.TempDir(), "oaer.db"))
+	store, err := OpenSQLite(filepath.Join(t.TempDir(), "glade.db"))
 	if err != nil {
 		t.Fatal(err)
 	}

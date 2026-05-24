@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func BenchmarkServerQueryRoute(b *testing.B) {

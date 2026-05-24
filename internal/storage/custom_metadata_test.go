@@ -3,7 +3,7 @@ package storage
 import (
 	"testing"
 
-	"github.com/open-aer/oaer/internal/schema"
+	"github.com/glade-sh/glade/internal/schema"
 )
 
 func TestApplyCustomMetadataRecordsAssignsDistinctPrefixesAcrossTypes(t *testing.T) {

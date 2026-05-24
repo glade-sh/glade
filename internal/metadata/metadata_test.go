@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/project"
+	"github.com/glade-sh/glade/internal/project"
 )
 
 func TestLoadProjectIndexesLegacyReadOnlyMetadata(t *testing.T) {

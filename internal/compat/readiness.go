@@ -10,11 +10,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/sema"
-	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 type ReadinessReport struct {
@@ -52,13 +52,13 @@ func AnalyzeReadiness(root string) (ReadinessReport, error) {
 	}
 	proj, err := project.Load(root)
 	if err != nil {
-		report.addBlocker(blockerFromError("project", "OAERPROJECT001", err))
+		report.addBlocker(blockerFromError("project", "GLADEPROJECT001", err))
 		return report, nil
 	}
 	report.Project = proj.Root
 	sch, err := schema.LoadProject(proj)
 	if err != nil {
-		report.addBlocker(blockerFromError("schema", "OAERSCHEMA001", err))
+		report.addBlocker(blockerFromError("schema", "GLADESCHEMA001", err))
 		return report, nil
 	}
 	result := sema.Analyze(typesys.Build(proj, sch))

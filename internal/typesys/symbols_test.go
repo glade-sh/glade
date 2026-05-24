@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/schema"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
 )
 
 func TestBuildIndex(t *testing.T) {
@@ -66,7 +66,7 @@ func TestBuildIndexAllowsDuplicateTypesAcrossPackageDirectories(t *testing.T) {
 
 func TestBuildLoadsManagedPackageArtifactSymbols(t *testing.T) {
 	root := t.TempDir()
-	artifactPath := filepath.Join(root, "znu.oaer-package.json")
+	artifactPath := filepath.Join(root, "znu.glade-package.json")
 	if err := os.WriteFile(artifactPath, []byte(`{
   "namespace": "znu",
   "version": "1.0",

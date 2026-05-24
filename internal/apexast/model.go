@@ -1,6 +1,6 @@
 package apexast
 
-import "github.com/open-aer/oaer/internal/diagnostic"
+import "github.com/glade-sh/glade/internal/diagnostic"
 
 type File struct {
 	Path         string                  `json:"path"`

@@ -6,7 +6,7 @@ import (
 )
 
 func TestSQLiteStorePersistsOrgState(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "oaer.db")
+	path := filepath.Join(t.TempDir(), "glade.db")
 	store, err := OpenSQLite(path)
 	if err != nil {
 		t.Fatal(err)
@@ -43,7 +43,7 @@ func TestSQLiteStorePersistsOrgState(t *testing.T) {
 }
 
 func TestSQLiteStoreAppliesMigrations(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "oaer.db")
+	path := filepath.Join(t.TempDir(), "glade.db")
 	store, err := OpenSQLite(path)
 	if err != nil {
 		t.Fatal(err)
@@ -73,7 +73,7 @@ func TestSQLiteStoreAppliesMigrations(t *testing.T) {
 }
 
 func TestSQLiteStoreSavesAndLoadsLargeFixture(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "oaer.db")
+	path := filepath.Join(t.TempDir(), "glade.db")
 	store, err := OpenSQLite(path)
 	if err != nil {
 		t.Fatal(err)

@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/sobject"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sobject"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestParseSimpleQuery(t *testing.T) {

@@ -263,9 +263,9 @@ func validateRun(run OracleRun) error {
 		return fmt.Errorf("schemaVersion = %d, want %d", run.SchemaVersion, SchemaVersion)
 	}
 	switch strings.ToLower(strings.TrimSpace(run.Source)) {
-	case "salesforce", "oaer":
+	case "salesforce", "glade":
 	default:
-		return fmt.Errorf("source must be salesforce or oaer")
+		return fmt.Errorf("source must be salesforce or glade")
 	}
 	switch run.Status {
 	case OracleStatusPass, OracleStatusFail, OracleStatusSkipped, OracleStatusUnsupported, OracleStatusCompileError, OracleStatusRuntimeError, OracleStatusInfrastructureError:

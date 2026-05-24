@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/apextest"
+	"github.com/glade-sh/glade/internal/apextest"
 )
 
 type localTestClassShard struct {

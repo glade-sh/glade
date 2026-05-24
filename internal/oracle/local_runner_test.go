@@ -3,7 +3,7 @@ package oracle
 import (
 	"testing"
 
-	"github.com/open-aer/oaer/internal/testreport"
+	"github.com/glade-sh/glade/internal/testreport"
 )
 
 func TestLocalRunsFromTestReportAdaptsCases(t *testing.T) {

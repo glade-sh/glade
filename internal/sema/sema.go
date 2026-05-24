@@ -11,14 +11,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/open-aer/oaer/internal/apexast"
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/ir"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/soql"
-	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/typesys"
-	"github.com/open-aer/oaer/internal/vm"
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/soql"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 type Result struct {
@@ -90,7 +90,7 @@ func (a *Analyzer) Analyze(index typesys.Index) (result Result) {
 		if recovered := recover(); recovered != nil {
 			result.Diagnostics = append(result.Diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
-				Code:     "OAERSEMA000",
+				Code:     "GLADESEMA000",
 				Message:  fmt.Sprintf("internal sema panic: %v", recovered),
 			})
 			result.Summary.Diagnostics = len(result.Diagnostics)
@@ -195,7 +195,7 @@ func (a *Analyzer) checkTriggers(index typesys.Index) []diagnostic.Diagnostic {
 		}
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
-			Code:     "OAERSEMA001",
+			Code:     "GLADESEMA001",
 			Message:  fmt.Sprintf("trigger %q references unknown SObject %q", trigger.Name, trigger.ObjectName),
 			File:     trigger.File,
 			Range:    &trigger.Range,
@@ -220,7 +220,7 @@ func (a *Analyzer) checkMemberTypes(index typesys.Index) []diagnostic.Diagnostic
 				}
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
-					Code:     "OAERSEMA002",
+					Code:     "GLADESEMA002",
 					Message:  fmt.Sprintf("%s %q references unknown type %q", member.Kind, member.Name, ref),
 					File:     typ.File,
 					Range:    &member.Range,
@@ -248,7 +248,7 @@ func (a *Analyzer) checkMethodParameters(index typesys.Index) []diagnostic.Diagn
 					}
 					diagnostics = append(diagnostics, diagnostic.Diagnostic{
 						Severity: diagnostic.Error,
-						Code:     "OAERSEMA004",
+						Code:     "GLADESEMA004",
 						Message:  fmt.Sprintf("%s %q parameter %q references unknown type %q", member.Kind, member.Name, param.Name, ref),
 						File:     typ.File,
 						Range:    &param.Range,
@@ -270,7 +270,7 @@ func (a *Analyzer) checkSchemaReferences(index typesys.Index) []diagnostic.Diagn
 				}
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
-					Code:     "OAERSEMA003",
+					Code:     "GLADESEMA003",
 					Message:  fmt.Sprintf("field %s.%s references unknown SObject %q", object.Name, field.Name, referenceTo),
 				})
 			}
@@ -328,7 +328,7 @@ func checkMemberAnnotations(typ typesys.TypeSymbol, member typesys.MemberSymbol)
 func annotationDiagnostic(file string, rng diagnostic.Range, detail string) diagnostic.Diagnostic {
 	return diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA026",
+		Code:     "GLADESEMA026",
 		Message:  "invalid annotation usage: " + detail,
 		File:     file,
 		Range:    &rng,
@@ -341,7 +341,7 @@ func (a *Analyzer) checkVisibility(index typesys.Index) []diagnostic.Diagnostic 
 		if hasAnyModifier(typ.Modifiers, "public", "global") {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
-				Code:     "OAERSEMA005",
+				Code:     "GLADESEMA005",
 				Message:  fmt.Sprintf("%s %q cannot be both public and global", typ.Kind, typ.Name),
 				File:     typ.File,
 				Range:    &typ.Range,
@@ -354,7 +354,7 @@ func (a *Analyzer) checkVisibility(index typesys.Index) []diagnostic.Diagnostic 
 			if hasModifier(member.Modifiers, "private") || hasModifier(member.Modifiers, "protected") {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
-					Code:     "OAERSEMA005",
+					Code:     "GLADESEMA005",
 					Message:  fmt.Sprintf("interface method %q cannot be private or protected", member.Name),
 					File:     typ.File,
 					Range:    &member.Range,
@@ -507,7 +507,7 @@ func (a *Analyzer) checkInheritanceContracts(index typesys.Index) []diagnostic.D
 			if hasModifier(member.Modifiers, "override") && !hasInheritedMethodSignature(model, typ, member) {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
-					Code:     "OAERSEMA016",
+					Code:     "GLADESEMA016",
 					Message:  fmt.Sprintf("method %q is marked override but no inherited method has the same signature", member.Name),
 					File:     typ.File,
 					Range:    &member.Range,
@@ -516,7 +516,7 @@ func (a *Analyzer) checkInheritanceContracts(index typesys.Index) []diagnostic.D
 			if hasModifier(member.Modifiers, "abstract") && !abstractClass {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
-					Code:     "OAERSEMA017",
+					Code:     "GLADESEMA017",
 					Message:  fmt.Sprintf("concrete class %q declares abstract method %q", typ.Name, member.Name),
 					File:     typ.File,
 					Range:    &member.Range,
@@ -533,7 +533,7 @@ func (a *Analyzer) checkInheritanceContracts(index typesys.Index) []diagnostic.D
 			}
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
-				Code:     "OAERSEMA017",
+				Code:     "GLADESEMA017",
 				Message:  fmt.Sprintf("concrete class %q must implement %s method %q from %q", typ.Name, requirement.sourceKind, requirement.member.Name, requirement.owner),
 				File:     typ.File,
 				Range:    &typ.Range,
@@ -746,9 +746,9 @@ type typeMembers struct {
 	fields       map[string]typesys.MemberSymbol
 }
 
-const semaCurrentTypeScopeKey = "__oaer_current_type"
-const semaInferenceDepthScopeKey = "__oaer_inference_depth"
-const semaSyntheticStandardSObjectFieldModifier = "__oaer_standard_sobject_field"
+const semaCurrentTypeScopeKey = "__glade_current_type"
+const semaInferenceDepthScopeKey = "__glade_inference_depth"
+const semaSyntheticStandardSObjectFieldModifier = "__glade_standard_sobject_field"
 
 func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnostic {
 	model := buildTypeMembers(index)
@@ -1567,7 +1567,7 @@ func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSy
 			if !a.hasKnown(ref) {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
-					Code:     "OAERSEMA006",
+					Code:     "GLADESEMA006",
 					Message:  fmt.Sprintf("%s %q constructs unknown type %q", member.Kind, member.Name, ref),
 					File:     typ.File,
 					Range:    semaRange(source, bodyOffset+ctor.start, bodyOffset+ctor.end),
@@ -1580,7 +1580,7 @@ func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSy
 			if target, ok := constructability[normalizeName(ref)]; ok && !isConstructableType(target) {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
-					Code:     "OAERSEMA015",
+					Code:     "GLADESEMA015",
 					Message:  fmt.Sprintf("%s %q constructs non-instantiable %s %q", member.Kind, member.Name, target.Kind, target.Name),
 					File:     typ.File,
 					Range:    semaRange(source, bodyOffset+ctor.start, bodyOffset+ctor.end),
@@ -1607,7 +1607,7 @@ func dedupeBodyDiagnostics(diagnostics []diagnostic.Diagnostic) []diagnostic.Dia
 		key := ""
 		if diag.Range != nil {
 			switch diag.Code {
-			case "OAERSEMA006", "OAERSEMA008", "OAERSEMA009", "OAERSEMA010", "OAERSEMA011", "OAERSEMA015", "OAERSEMA018", "OAERSEMA019", "OAERSEMA020", "OAERSEMA022", "OAERSEMA023", "OAERSEMA024", "OAERSEMA025", "OAERSEMA026", "OAERSEMA027", "OAERSEMA028":
+			case "GLADESEMA006", "GLADESEMA008", "GLADESEMA009", "GLADESEMA010", "GLADESEMA011", "GLADESEMA015", "GLADESEMA018", "GLADESEMA019", "GLADESEMA020", "GLADESEMA022", "GLADESEMA023", "GLADESEMA024", "GLADESEMA025", "GLADESEMA026", "GLADESEMA027", "GLADESEMA028":
 				key = fmt.Sprintf("%s:%s:%d", diag.File, diag.Code, diag.Range.Start.Line)
 			}
 		}
@@ -2189,7 +2189,7 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 		} else if !a.irVariableKnown(expr.Name, *scope, model, typ.Name) && !isLikelyTypeReference(expr.Name) {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
-				Code:     "OAERSEMA013",
+				Code:     "GLADESEMA013",
 				Message:  fmt.Sprintf("%s %q reads unknown variable %q", member.Kind, member.Name, expr.Name),
 				File:     typ.File,
 				Range:    semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Name))),
@@ -2440,7 +2440,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	}
 	return []diagnostic.Diagnostic{{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA009",
+		Code:     "GLADESEMA009",
 		Message:  fmt.Sprintf("%s %q has no matching overload for call %q with %d argument(s)", member.Kind, member.Name, expr.Callee, len(expr.Args)),
 		File:     typ.File,
 		Range:    semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee))),
@@ -2496,7 +2496,7 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 		if !a.hasKnown(ref) {
 			return []diagnostic.Diagnostic{{
 				Severity: diagnostic.Error,
-				Code:     "OAERSEMA006",
+				Code:     "GLADESEMA006",
 				Message:  fmt.Sprintf("%s %q constructs unknown type %q", member.Kind, member.Name, ref),
 				File:     typ.File,
 				Range:    semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName))),
@@ -2506,7 +2506,7 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 	if target, ok := constructability[normalizeName(resolvedTypeName)]; ok && !isConstructableType(target) {
 		return []diagnostic.Diagnostic{{
 			Severity: diagnostic.Error,
-			Code:     "OAERSEMA015",
+			Code:     "GLADESEMA015",
 			Message:  fmt.Sprintf("%s %q constructs non-instantiable %s %q", member.Kind, member.Name, target.Kind, target.Name),
 			File:     typ.File,
 			Range:    semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName))),
@@ -2711,7 +2711,7 @@ func (a *Analyzer) checkIRAssignmentType(typ typesys.TypeSymbol, member typesys.
 	}
 	return []diagnostic.Diagnostic{{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA018",
+		Code:     "GLADESEMA018",
 		Message:  fmt.Sprintf("%s %q %s %s with %s", member.Kind, member.Name, verb, target, valueType),
 		File:     typ.File,
 		Range:    semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(target))),
@@ -2775,7 +2775,7 @@ func (a *Analyzer) checkIRConditionType(typ typesys.TypeSymbol, member typesys.M
 	}
 	return []diagnostic.Diagnostic{{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA020",
+		Code:     "GLADESEMA020",
 		Message:  fmt.Sprintf("%s %q uses %s expression as a Boolean condition", member.Kind, member.Name, valueType),
 		File:     typ.File,
 		Range:    semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(valueType))),
@@ -2797,7 +2797,7 @@ func (a *Analyzer) checkIRForEachType(typ typesys.TypeSymbol, member typesys.Mem
 	if !ok {
 		return []diagnostic.Diagnostic{{
 			Severity: diagnostic.Error,
-			Code:     "OAERSEMA024",
+			Code:     "GLADESEMA024",
 			Message:  fmt.Sprintf("%s %q enhanced-for iterates non-collection type %s", member.Kind, member.Name, iterableType),
 			File:     typ.File,
 			Range:    semaRange(source, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(iterableType))),
@@ -2815,7 +2815,7 @@ func (a *Analyzer) checkIRForEachType(typ typesys.TypeSymbol, member typesys.Mem
 	}
 	return []diagnostic.Diagnostic{{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA024",
+		Code:     "GLADESEMA024",
 		Message:  fmt.Sprintf("%s %q enhanced-for assigns %s elements to %s variable %q", member.Kind, member.Name, elementType, targetType, inst.Name),
 		File:     typ.File,
 		Range:    semaRange(source, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(inst.Name))),
@@ -3137,7 +3137,7 @@ func (a *Analyzer) irVariableDiagnostic(typ typesys.TypeSymbol, member typesys.M
 	}
 	return diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA021",
+		Code:     "GLADESEMA021",
 		Message:  fmt.Sprintf("%s %q references unknown field %q on %s", member.Kind, member.Name, field, receiverType),
 		File:     typ.File,
 		Range:    semaRange(source, start, start+max(1, len(name))),
@@ -3240,7 +3240,7 @@ func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.Memb
 			if !a.hasKnown(ref) {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
-					Code:     "OAERSEMA006",
+					Code:     "GLADESEMA006",
 					Message:  fmt.Sprintf("%s %q declares enhanced-for local %q with unknown type %q", member.Kind, member.Name, name, ref),
 					File:     typ.File,
 					Range:    semaRange(source, bodyOffset+match[2], bodyOffset+match[3]),
@@ -3276,7 +3276,7 @@ func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.Memb
 			if !a.hasKnown(ref) {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
-					Code:     "OAERSEMA006",
+					Code:     "GLADESEMA006",
 					Message:  fmt.Sprintf("%s %q declares for local %q with unknown type %q", member.Kind, member.Name, local.name, ref),
 					File:     typ.File,
 					Range:    semaRange(source, bodyOffset+local.start, bodyOffset+local.start+len(local.typeName)),
@@ -3294,7 +3294,7 @@ func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.Memb
 			if !a.hasKnown(ref) {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
-					Code:     "OAERSEMA006",
+					Code:     "GLADESEMA006",
 					Message:  fmt.Sprintf("%s %q declares catch local %q with unknown type %q", member.Kind, member.Name, name, ref),
 					File:     typ.File,
 					Range:    semaRange(source, bodyOffset+match[2], bodyOffset+match[3]),
@@ -3431,7 +3431,7 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 		}
 		return []diagnostic.Diagnostic{{
 			Severity: diagnostic.Error,
-			Code:     "OAERSEMA014",
+			Code:     "GLADESEMA014",
 			Message:  fmt.Sprintf("%s %q redeclares local variable %q in the same scope", member.Kind, member.Name, name),
 			File:     typ.File,
 			Range:    semaRange(source, bodyOffset+match[4], bodyOffset+match[5]),
@@ -3441,7 +3441,7 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 		if !a.hasKnown(ref) {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
-				Code:     "OAERSEMA006",
+				Code:     "GLADESEMA006",
 				Message:  fmt.Sprintf("%s %q declares local %q with unknown type %q", member.Kind, member.Name, name, ref),
 				File:     typ.File,
 				Range:    semaRange(source, bodyOffset+match[2], bodyOffset+match[3]),
@@ -3455,7 +3455,7 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 		if valueType != "" && valueType != "null" && !semaAssignableToType(resolvedTypeName, valueType, model) {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
-				Code:     "OAERSEMA018",
+				Code:     "GLADESEMA018",
 				Message:  fmt.Sprintf("%s %q initializes %s local %q with %s", member.Kind, member.Name, typeName, name, valueType),
 				File:     typ.File,
 				Range:    semaRange(source, bodyOffset+value.start, bodyOffset+value.end),
@@ -3691,7 +3691,7 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 			}
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
-				Code:     "OAERSEMA018",
+				Code:     "GLADESEMA018",
 				Message:  fmt.Sprintf("%s %q assigns %s to %s variable %q", member.Kind, member.Name, valueType, targetType, target),
 				File:     typ.File,
 				Range:    semaRange(source, bodyOffset+value.start, bodyOffset+value.end),
@@ -3703,7 +3703,7 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		}
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
-			Code:     "OAERSEMA013",
+			Code:     "GLADESEMA013",
 			Message:  fmt.Sprintf("%s %q assigns unknown variable %q", member.Kind, member.Name, target),
 			File:     typ.File,
 			Range:    semaRange(source, bodyOffset+match[2], bodyOffset+match[3]),
@@ -3833,7 +3833,7 @@ func semaExprContainsComparison(expr string) bool {
 func returnTypeDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, detail string, start, end int, source string) diagnostic.Diagnostic {
 	return diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA019",
+		Code:     "GLADESEMA019",
 		Message:  fmt.Sprintf("%s %q has invalid return: %s", member.Kind, member.Name, detail),
 		File:     typ.File,
 		Range:    semaRange(source, start, end),
@@ -4003,7 +4003,7 @@ func checkSemaTernaryCondition(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if conditionType != "" && !strings.EqualFold(conditionType, "Boolean") {
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
-			Code:     "OAERSEMA020",
+			Code:     "GLADESEMA020",
 			Message:  fmt.Sprintf("%s %q uses %s expression as a ternary condition", member.Kind, member.Name, conditionType),
 			File:     typ.File,
 			Range:    semaRange(source, conditionStart, conditionStart+max(1, len(condition))),
@@ -4070,7 +4070,7 @@ func (a *Analyzer) expressionTypeReferenceDiagnostics(typ typesys.TypeSymbol, me
 		if !a.hasKnown(ref) {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
-				Code:     "OAERSEMA006",
+				Code:     "GLADESEMA006",
 				Message:  fmt.Sprintf("%s %q references unknown expression type %q", member.Kind, member.Name, ref),
 				File:     typ.File,
 				Range:    semaRange(source, start, start+max(1, len(typeName))),
@@ -4371,7 +4371,7 @@ func (a *Analyzer) diagnoseConstructorChain(typ typesys.TypeSymbol, member types
 func constructorDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee, detail string, start, end int, source string) diagnostic.Diagnostic {
 	return diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA011",
+		Code:     "GLADESEMA011",
 		Message:  fmt.Sprintf("%s %q has invalid %s(...) call: %s", member.Kind, member.Name, callee, detail),
 		File:     typ.File,
 		Range:    semaRange(source, start, end),
@@ -4488,7 +4488,7 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 	}
 	return []diagnostic.Diagnostic{{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA009",
+		Code:     "GLADESEMA009",
 		Message:  fmt.Sprintf("%s %q has no matching overload for call %q with %d argument(s)", member.Kind, member.Name, callee, len(args)),
 		File:     typ.File,
 		Range:    semaRange(source, start, end),
@@ -4686,7 +4686,7 @@ func checkSemaStaticAccess(from typesys.TypeSymbol, context typesys.MemberSymbol
 func staticAccessDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee, detail string, start, end int, source string) diagnostic.Diagnostic {
 	return diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA027",
+		Code:     "GLADESEMA027",
 		Message:  fmt.Sprintf("%s %q has invalid static access for %q: %s", member.Kind, member.Name, callee, detail),
 		File:     typ.File,
 		Range:    semaRange(source, start, end),
@@ -4696,7 +4696,7 @@ func staticAccessDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol,
 func unsupportedLocalFeatureDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, feature string, start, end int, source string) diagnostic.Diagnostic {
 	return diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA028",
+		Code:     "GLADESEMA028",
 		Message:  fmt.Sprintf("%s %q uses unsupported local feature %q", member.Kind, member.Name, feature),
 		File:     typ.File,
 		Range:    semaRange(source, start, end),
@@ -4706,7 +4706,7 @@ func unsupportedLocalFeatureDiagnostic(typ typesys.TypeSymbol, member typesys.Me
 func ambiguousCallDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, argc, start, end int, source string) diagnostic.Diagnostic {
 	return diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA022",
+		Code:     "GLADESEMA022",
 		Message:  fmt.Sprintf("%s %q has ambiguous overloads for call %q with %d argument(s)", member.Kind, member.Name, callee, argc),
 		File:     typ.File,
 		Range:    semaRange(source, start, end),
@@ -4735,7 +4735,7 @@ func checkSemaMemberAccess(from typesys.TypeSymbol, context typesys.MemberSymbol
 	}
 	return diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA010",
+		Code:     "GLADESEMA010",
 		Message:  fmt.Sprintf("%s %q cannot access %s %s %q", context.Kind, context.Name, access, target.member.Kind, callee),
 		File:     from.File,
 		Range:    semaRange(source, start, end),
@@ -7490,7 +7490,7 @@ func semaArgsMatch(params, args []string, model map[string]typeMembers) bool {
 func collectionCallDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, method string, argc, start, end int, source string) diagnostic.Diagnostic {
 	return diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA023",
+		Code:     "GLADESEMA023",
 		Message:  fmt.Sprintf("%s %q has invalid collection call %q with %d argument(s)", member.Kind, member.Name, method, argc),
 		File:     typ.File,
 		Range:    semaRange(source, start, end),
@@ -7500,7 +7500,7 @@ func collectionCallDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbo
 func collectionConstructorDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, typeName string, argc, start int, source string) diagnostic.Diagnostic {
 	return diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA025",
+		Code:     "GLADESEMA025",
 		Message:  fmt.Sprintf("%s %q has invalid %s initializer with %d argument(s)", member.Kind, member.Name, typeName, argc),
 		File:     typ.File,
 		Range:    semaRange(source, start, start+max(1, len(typeName))),
@@ -7989,7 +7989,7 @@ func checkUnknownCallArgs(typ typesys.TypeSymbol, member typesys.MemberSymbol, a
 		}
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
-			Code:     "OAERSEMA013",
+			Code:     "GLADESEMA013",
 			Message:  fmt.Sprintf("%s %q references unknown variable %q", member.Kind, member.Name, name),
 			File:     typ.File,
 			Range:    semaRange(source, bodyOffset+arg.start, bodyOffset+arg.end),
@@ -8001,7 +8001,7 @@ func checkUnknownCallArgs(typ typesys.TypeSymbol, member typesys.MemberSymbol, a
 func unknownCallDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, start, end int, source string) diagnostic.Diagnostic {
 	return diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
-		Code:     "OAERSEMA008",
+		Code:     "GLADESEMA008",
 		Message:  fmt.Sprintf("%s %q calls unknown method %q", member.Kind, member.Name, callee),
 		File:     typ.File,
 		Range:    semaRange(source, start, end),

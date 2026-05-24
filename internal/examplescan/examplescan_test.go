@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/diagnostic"
 )
 
 func TestScanSFDXProject(t *testing.T) {
@@ -212,8 +212,8 @@ func TestScanReportsMalformedMetadataAsDiagnostic(t *testing.T) {
 	if len(report.Diagnostics.ObservedBlockers) != 1 {
 		t.Fatalf("observed blockers = %#v, want one metadata blocker", report.Diagnostics.ObservedBlockers)
 	}
-	if report.Diagnostics.ObservedBlockers[0].Code != "OAEREXAMPLE002" {
-		t.Fatalf("diagnostic code = %q, want OAEREXAMPLE002", report.Diagnostics.ObservedBlockers[0].Code)
+	if report.Diagnostics.ObservedBlockers[0].Code != "GLADEEXAMPLE002" {
+		t.Fatalf("diagnostic code = %q, want GLADEEXAMPLE002", report.Diagnostics.ObservedBlockers[0].Code)
 	}
 }
 

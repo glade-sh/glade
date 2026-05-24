@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "source": "salesforce",
   "project": "oracle-fixture",
-  "orgAlias": "oaer-probe-lab",
+  "orgAlias": "glade-probe-lab",
   "testClass": "AccountOracleTest",
   "testMethod": "createsRecord",
   "status": "pass",

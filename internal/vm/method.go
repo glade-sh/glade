@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/ir"
+	"github.com/glade-sh/glade/internal/ir"
 )
 
 type Param struct {

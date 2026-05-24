@@ -34,14 +34,14 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/open-aer/oaer/internal/apexast"
-	"github.com/open-aer/oaer/internal/dml"
-	"github.com/open-aer/oaer/internal/ir"
-	"github.com/open-aer/oaer/internal/resource"
-	"github.com/open-aer/oaer/internal/soql"
-	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/trace"
-	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/resource"
+	"github.com/glade-sh/glade/internal/soql"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/trace"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 const maxLoopIterations = 1000000
@@ -5808,7 +5808,7 @@ func (vm *VM) salesforceBaseURL() string {
 	if vm.serverBaseURL != "" {
 		return vm.serverBaseURL
 	}
-	return "https://local.oaer.example"
+	return "https://local.glade.example"
 }
 
 func (vm *VM) currentRequestURL() string {
@@ -5838,7 +5838,7 @@ func (vm *VM) fileFieldURL(objectID, fieldName Value) string {
 
 func (vm *VM) currentRequestValue() Value {
 	request := Object("Request")
-	request.Fields["requestId"] = String("oaer-request-000000000001")
+	request.Fields["requestId"] = String("glade-request-000000000001")
 	request.Fields["quiddity"] = vm.currentQuiddityValue()
 	return request
 }
@@ -5891,7 +5891,7 @@ func (vm *VM) requestVersionValue() Value {
 	out.Fields["major"] = Int(int64(major))
 	out.Fields["minor"] = Int(int64(minor))
 	out.Fields["patch"] = Int(0)
-	out.Fields["__oaerPatchSpecified"] = Bool(true)
+	out.Fields["__gladePatchSpecified"] = Bool(true)
 	return out
 }
 
@@ -5916,7 +5916,7 @@ func (vm *VM) callRequestMember(receiver Value, method string, args []Value) (Va
 		if value, ok := receiver.Fields["requestId"]; ok && value.Kind == ValueString {
 			return value, receiver, false, true, nil
 		}
-		return String("oaer-request-000000000001"), receiver, false, true, nil
+		return String("glade-request-000000000001"), receiver, false, true, nil
 	case "getQuiddity":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Request.getQuiddity expects 0 arguments")
@@ -8925,8 +8925,8 @@ func (vm *VM) testCreateStub(args []Value) (Value, error) {
 		return Null, unsupportedCallError("Test.createStub local proxy for unknown type " + stubbedType)
 	}
 	proxy := Object(stubbedType)
-	proxy.Fields["__oaerStubProvider"] = args[1]
-	proxy.Fields["__oaerStubbedType"] = String(stubbedType)
+	proxy.Fields["__gladeStubProvider"] = args[1]
+	proxy.Fields["__gladeStubbedType"] = String(stubbedType)
 	if _, ok := vm.lookupClass(stubbedType); ok {
 		// Test.createStub should return a proxy without executing user constructors
 		// or instance initializers of the stubbed type.
@@ -9566,7 +9566,7 @@ func (vm *VM) executeObjectForEach(source string, inst ir.Instruction, result *R
 	_, existed := vm.Globals[inst.Name]
 	previous := vm.Globals[inst.Name]
 	previousType, hadType := vm.VarTypes[inst.Name]
-	const iteratorName = "__oaer_for_each_iterator"
+	const iteratorName = "__glade_for_each_iterator"
 	previousIterator, hadIterator := vm.Globals[iteratorName]
 	previousIteratorType, hadIteratorType := vm.VarTypes[iteratorName]
 	defer func() {
@@ -10242,7 +10242,7 @@ func (vm *VM) batchScopeValues(value Value, result *Result) ([]Value, error) {
 }
 
 func (vm *VM) collectIteratorValues(iterator Value, result *Result) ([]Value, error) {
-	const iteratorName = "__oaer_batch_iterator"
+	const iteratorName = "__glade_batch_iterator"
 	previousIterator, hadIterator := vm.Globals[iteratorName]
 	previousIteratorType, hadIteratorType := vm.VarTypes[iteratorName]
 	defer func() {
@@ -10638,7 +10638,7 @@ func (vm *VM) markCompletedBatchJobVisiblePendingInTest(job AsyncJob) {
 	if record.ID == "" {
 		return
 	}
-	record.Fields["__OAERTestPendingStatus"] = storage.StringValue("Queued")
+	record.Fields["__GLADETestPendingStatus"] = storage.StringValue("Queued")
 	object.Records[record.ID] = record
 	vm.Org.Objects["AsyncApexJob"] = object
 }
@@ -19029,7 +19029,7 @@ func decryptAESCBC(algorithm string, privateKey, initializationVector, cipherTex
 }
 
 func managedIV(privateKey, clearText []byte) []byte {
-	sum := sha256.Sum256(append(append([]byte("oaer-managed-iv:"), privateKey...), clearText...))
+	sum := sha256.Sum256(append(append([]byte("glade-managed-iv:"), privateKey...), clearText...))
 	iv := make([]byte, aes.BlockSize)
 	copy(iv, sum[:aes.BlockSize])
 	return iv
@@ -20244,7 +20244,7 @@ func (vm *VM) callReceiverSetterReturningReceiver(receiver Value, setter Method,
 	if vm.Globals == nil {
 		vm.Globals = make(map[string]Value)
 	}
-	key := "__oaer_json_receiver"
+	key := "__glade_json_receiver"
 	for {
 		if _, exists := vm.Globals[key]; !exists {
 			break
@@ -23194,9 +23194,9 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 }
 
 const (
-	safeNavigationNullRuntime      = "__oaer_safe_navigation_null"
-	relationshipNullRuntime        = "__oaer_relationship_null"
-	implicitCurrentPageNullRuntime = "__oaer_implicit_current_page_null"
+	safeNavigationNullRuntime      = "__glade_safe_navigation_null"
+	relationshipNullRuntime        = "__glade_relationship_null"
+	implicitCurrentPageNullRuntime = "__glade_implicit_current_page_null"
 )
 
 func safeNavigationNull() Value {
@@ -26349,29 +26349,29 @@ func localDomainHostname(kind, packageName string) string {
 	}
 	switch strings.ToLower(kind) {
 	case "contenthostname":
-		return "oaer.content.local"
+		return "glade.content.local"
 	case "experiencecloudsitesbuilderhostname":
-		return "oaer.builder.sites.local"
+		return "glade.builder.sites.local"
 	case "experiencecloudsiteshostname":
-		return "oaer.sites.local"
+		return "glade.sites.local"
 	case "experiencecloudsiteslivepreviewhostname":
-		return "oaer.live-preview.sites.local"
+		return "glade.live-preview.sites.local"
 	case "experiencecloudsitespreviewhostname":
-		return "oaer.preview.sites.local"
+		return "glade.preview.sites.local"
 	case "lightningcontainercomponenthostname":
-		return packagePrefix + "oaer.lightning-container.local"
+		return packagePrefix + "glade.lightning-container.local"
 	case "lightninghostname":
-		return "oaer.lightning.local"
+		return "glade.lightning.local"
 	case "orgmydomainhostname", "org_my_domain":
-		return "oaer.my.salesforce.local"
+		return "glade.my.salesforce.local"
 	case "salesforcesiteshostname":
-		return "oaer.salesforce-sites.local"
+		return "glade.salesforce-sites.local"
 	case "setuphostname":
-		return "oaer.setup.local"
+		return "glade.setup.local"
 	case "visualforcehostname":
-		return packagePrefix + "oaer.visualforce.local"
+		return packagePrefix + "glade.visualforce.local"
 	default:
-		return "oaer.my.salesforce.local"
+		return "glade.my.salesforce.local"
 	}
 }
 
@@ -29072,7 +29072,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if len(args) == 2 {
 			version.Fields["patch"] = Int(0)
 		}
-		version.Fields["__oaerPatchSpecified"] = Bool(len(args) == 3)
+		version.Fields["__gladePatchSpecified"] = Bool(len(args) == 3)
 		return version, nil
 	case "Metadata.DeployContainer":
 		if len(args) != 0 {
@@ -32647,7 +32647,7 @@ func caseInsensitiveStringMap(receiver Value) bool {
 		return true
 	}
 	if receiver.MapKeys != nil {
-		if flag, ok := receiver.MapKeys["__oaer_case_insensitive_string_keys"]; ok && flag.Kind == ValueBool && flag.Bool {
+		if flag, ok := receiver.MapKeys["__glade_case_insensitive_string_keys"]; ok && flag.Kind == ValueBool && flag.Bool {
 			return true
 		}
 	}
@@ -32728,7 +32728,7 @@ func (vm *VM) iterableCollectionMembers(value Value, result *Result, context str
 				return nil, fmt.Errorf("%s expects List, Set, or Iterable: %w", context, err)
 			}
 		}
-		const iteratorName = "__oaer_add_all_iterator"
+		const iteratorName = "__glade_add_all_iterator"
 		previousIterator, hadIterator := vm.Globals[iteratorName]
 		previousIteratorType, hadIteratorType := vm.VarTypes[iteratorName]
 		defer func() {
@@ -36821,7 +36821,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			vm.propagateCollectionMutation(previous, receiver)
 			return Null, true, nil
 		case "addToRelationship":
-			updated, err := listAppendSObjects(receiver, "__oaer_added_to_relationship", args, "List.addToRelationship")
+			updated, err := listAppendSObjects(receiver, "__glade_added_to_relationship", args, "List.addToRelationship")
 			if err != nil {
 				return Null, true, err
 			}
@@ -36830,7 +36830,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			return Null, true, nil
 		case "markForDelete":
-			updated, err := listAppendSObjects(receiver, "__oaer_marked_for_delete", args, "List.markForDelete")
+			updated, err := listAppendSObjects(receiver, "__glade_marked_for_delete", args, "List.markForDelete")
 			if err != nil {
 				return Null, true, err
 			}
@@ -36842,12 +36842,12 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("List.getAddedToRelationship expects 0 arguments")
 			}
-			return listRelationshipValues(receiver, "__oaer_added_to_relationship"), true, nil
+			return listRelationshipValues(receiver, "__glade_added_to_relationship"), true, nil
 		case "getMarkedForDeletion":
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("List.getMarkedForDeletion expects 0 arguments")
 			}
-			return listRelationshipValues(receiver, "__oaer_marked_for_delete"), true, nil
+			return listRelationshipValues(receiver, "__glade_marked_for_delete"), true, nil
 		case "size":
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("List.size expects 0 arguments")
@@ -38890,12 +38890,12 @@ func isStubProxy(receiver Value) bool {
 	if receiver.Kind != ValueObject {
 		return false
 	}
-	provider, ok := receiver.Fields["__oaerStubProvider"]
+	provider, ok := receiver.Fields["__gladeStubProvider"]
 	return ok && provider.Kind == ValueObject
 }
 
 func (vm *VM) currentStubProvider(receiver Value) Value {
-	provider := receiver.Fields["__oaerStubProvider"]
+	provider := receiver.Fields["__gladeStubProvider"]
 	if provider.Kind != ValueObject || provider.Ref == 0 {
 		return provider
 	}
@@ -42430,16 +42430,16 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 }
 
 const (
-	sobjectErrorsField                       = "__oaer_errors"
-	sobjectReadOnlyField                     = "__oaer_readonly"
-	sobjectQueriedFieldsField                = "__oaer_queried_fields"
-	sobjectExplicitFieldsField               = "__oaer_explicit_fields"
-	sobjectSetFieldsField                    = "__oaer_set_fields"
-	sobjectUserSetFieldsField                = "__oaer_user_set_fields"
-	sobjectDMLAccessibleField                = "__oaer_dml_accessible"
-	sobjectTriggerField                      = "__oaer_trigger_record"
-	sobjectParentProjectionField             = "__oaer_parent_projection"
-	sobjectPopulatedFieldsAliasContainsField = "__oaer_populated_fields_alias_contains"
+	sobjectErrorsField                       = "__glade_errors"
+	sobjectReadOnlyField                     = "__glade_readonly"
+	sobjectQueriedFieldsField                = "__glade_queried_fields"
+	sobjectExplicitFieldsField               = "__glade_explicit_fields"
+	sobjectSetFieldsField                    = "__glade_set_fields"
+	sobjectUserSetFieldsField                = "__glade_user_set_fields"
+	sobjectDMLAccessibleField                = "__glade_dml_accessible"
+	sobjectTriggerField                      = "__glade_trigger_record"
+	sobjectParentProjectionField             = "__glade_parent_projection"
+	sobjectPopulatedFieldsAliasContainsField = "__glade_populated_fields_alias_contains"
 )
 
 func isInternalSObjectField(field string) bool {
@@ -45803,7 +45803,7 @@ func versionValueString(version Value) string {
 }
 
 func versionPatchSpecified(version Value) bool {
-	value, ok := version.Fields["__oaerPatchSpecified"]
+	value, ok := version.Fields["__gladePatchSpecified"]
 	return ok && value.Kind == ValueBool && value.Bool
 }
 
@@ -52052,7 +52052,7 @@ func callOrgInstrumentationServiceMember(receiver Value, method string, args []V
 		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "HttpRequest") {
 			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationService.propagateContext expects HttpRequest")
 		}
-		httpSetHeader(args[0], "x-oaer-instrumentation-context", String("local"))
+		httpSetHeader(args[0], "x-glade-instrumentation-context", String("local"))
 		return Null, receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil

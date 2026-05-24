@@ -182,7 +182,7 @@ func TestServerServesEmbeddedPlaygroundUI(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("ui status = %d body=%s", rec.Code, rec.Body.String())
 	}
-	if !strings.Contains(rec.Body.String(), "OAER Apex Playground") || !strings.Contains(rec.Body.String(), "/playground/api/run") {
+	if !strings.Contains(rec.Body.String(), "GLADE Apex Playground") || !strings.Contains(rec.Body.String(), "/playground/api/run") {
 		t.Fatalf("ui body = %q", rec.Body.String())
 	}
 	if !strings.Contains(rec.Body.String(), `id="root"`) || !strings.Contains(rec.Body.String(), `/playground/assets/app.js`) {

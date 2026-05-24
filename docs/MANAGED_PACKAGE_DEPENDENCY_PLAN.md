@@ -3,13 +3,13 @@
 Status date: 2026-05-19.
 
 This plan covers Salesforce managed-package dependencies for local Apex test
-execution when OAER has access to the dependency package source code. The first
+execution when GLADE has access to the dependency package source code. The first
 implementation should be intentionally source-backed and explicit: a consuming
-project config points OAER at local dependency project roots, their namespaces,
+project config points GLADE at local dependency project roots, their namespaces,
 and optionally the package version they represent. Later implementations can
 cache those inputs as version-pinned package artifacts.
 
-Current implementation note: `oaer.yml` source-backed and artifact-backed
+Current implementation note: `glade.yml` source-backed and artifact-backed
 dependency config, dependency project loading, dependency JSON reporting,
 dependency symbol/schema loading, and a first package artifact model now exist.
 The remaining plan should focus on stronger cross-namespace access enforcement
@@ -19,19 +19,19 @@ The immediate motivator is the enterprise example-project corpus. Projects such
 as `src-nmb-nc-develop` and `nams-workspace` reference the installed `znu`
 managed package through Apex namespace references like `znu.Address` and
 schema-token references like `znu__CartItemLine__c`. Those references should not
-be classified as ordinary project compile gaps until OAER has attempted to load
+be classified as ordinary project compile gaps until GLADE has attempted to load
 the prerequisite managed package dependency.
 
 ## Objective
 
-Make `oaer test` and `compat local-tests` resolve installed managed-package
+Make `glade test` and `compat local-tests` resolve installed managed-package
 dependencies before compiling and running the consuming project.
 
 The first release claim should be:
 
 - A project can declare one or more local source-backed managed package
   dependencies.
-- OAER loads dependency package symbols, schema, and metadata before current
+- GLADE loads dependency package symbols, schema, and metadata before current
   project symbols.
 - Cross-namespace access follows Salesforce managed-package rules: consuming
   packages can only access dependency Apex APIs that are externally visible,
@@ -43,12 +43,12 @@ The first release claim should be:
   `dependency_access_denied`, not broad `compile_gap` noise.
 
 This is not a plan to infer arbitrary package behavior from consuming code. If
-the dependency is required, OAER should load a real dependency source tree or a
+the dependency is required, GLADE should load a real dependency source tree or a
 previously built package artifact.
 
 ## First-Iteration Configuration
 
-Use `oaer.yml` for the first iteration because it already carries local
+Use `glade.yml` for the first iteration because it already carries local
 project-level settings and avoids needing to interpret every CumulusCI or SFDX
 dependency shape up front.
 
@@ -88,7 +88,7 @@ project:
   root: .
   defaultNamespace: namz
   managedPackageDependencies: [
-    "znu:artifact:../.oaer/packages/znu/package.oaer.json"
+    "znu:artifact:../.glade/packages/znu/package.glade.json"
   ]
 ```
 
@@ -106,7 +106,7 @@ managedPackageDependencies:
     project: /Users/matt/Dev/packages/znu
     versionId: 04t000000000000AAA
     versionNumber: 1.42.0
-    artifact: .oaer/packages/znu/04t000000000000AAA/package.json
+    artifact: .glade/packages/znu/04t000000000000AAA/package.json
 ```
 
 Do not block the first implementation on automatic CumulusCI parsing. Add CCI
@@ -115,7 +115,7 @@ and SFDX package dependency discovery after the explicit path config works.
 ## Package Artifact Model
 
 Even in the source-backed first iteration, build an internal package artifact
-model. It gives OAER one representation for live source dependencies and
+model. It gives GLADE one representation for live source dependencies and
 eventual cached dependency artifacts.
 
 Artifact identity:
@@ -157,7 +157,7 @@ Metadata contract:
 
 Runtime contract:
 
-- Source-backed dependency code should compile to IR and run where OAER supports
+- Source-backed dependency code should compile to IR and run where GLADE supports
   the language/runtime features used by the dependency.
 - Unsupported dependency behavior should produce package-scoped unsupported
   diagnostics that identify the package namespace, version, type/member, and
@@ -242,7 +242,7 @@ Useful diagnostics:
 
 ## CLI And JSON Behavior
 
-`oaer test --json` and `compat local-tests --json` should report dependency
+`glade test --json` and `compat local-tests --json` should report dependency
 loading explicitly.
 
 Add a dependency section:
@@ -272,14 +272,14 @@ Outcome classification should distinguish:
 - `dependency_version_mismatch`: a required version is not the loaded version.
 - `dependency_access_denied`: dependency contract exists but global access rules
   reject the reference.
-- `compile_gap`: dependency loaded successfully, but OAER cannot compile
+- `compile_gap`: dependency loaded successfully, but GLADE cannot compile
   supported project code.
 - `runtime_gap`: dependency loaded and code compiled, but runtime behavior is
   incomplete.
 
 This separation matters because a missing `znu` artifact is a setup problem,
 while an inaccessible `znu` member is likely a real source/package-boundary
-problem, and a failing dependency method body is an OAER runtime fidelity gap.
+problem, and a failing dependency method body is an GLADE runtime fidelity gap.
 
 ## Implementation Phases
 
@@ -288,17 +288,17 @@ problem, and a failing dependency method body is an OAER runtime fidelity gap.
 Goal: let users point a project at local source-backed managed package
 dependencies.
 
-Current status: mostly implemented for source-backed dependencies. `oaer.yml`
+Current status: mostly implemented for source-backed dependencies. `glade.yml`
 parses `project.managedPackageDependencies`, resolves relative source paths,
 loads dependency projects, reports missing/load errors, and carries dependency
 summaries into test and compatibility JSON.
 
-Primary write scope: `internal/config`, `internal/project`, `internal/oaercli`,
+Primary write scope: `internal/config`, `internal/project`, `internal/gladecli`,
 `internal/compat`.
 
 Tasks:
 
-- Extend `oaer.yml` parsing with `project.managedPackageDependencies` as an
+- Extend `glade.yml` parsing with `project.managedPackageDependencies` as an
   inline list of `namespace:path[:version]` entries.
 - Add a typed config model for managed package dependencies.
 - Resolve dependency paths relative to the config file directory unless they are
@@ -312,8 +312,8 @@ Tasks:
 Validation:
 
 ```bash
-go test ./internal/config ./internal/project ./internal/oaercli ./internal/compat
-go run ./cmd/oaer test --project testdata/local-tests/managed-package-consumer --json
+go test ./internal/config ./internal/project ./internal/gladecli ./internal/compat
+go run ./cmd/glade test --project testdata/local-tests/managed-package-consumer --json
 ```
 
 Exit criteria:
@@ -335,11 +335,11 @@ objects/fields/custom metadata records, labels, static resources, source root,
 source API version, and source hash. The builder command is:
 
 ```bash
-go run ./cmd/oaer package build \
+go run ./cmd/glade package build \
   --project example-projects/src-nmb-nu-develop \
   --namespace znu \
   --version src-nmb-nu-develop@<source-hash-or-git-sha> \
-  --output example-projects/.oaer/packages/znu/package.oaer.json
+  --output example-projects/.glade/packages/znu/package.glade.json
 ```
 
 Primary write scope: new `internal/packageartifact` or `internal/managedpkg`,
@@ -359,7 +359,7 @@ Validation:
 
 ```bash
 go test ./internal/packageartifact ./internal/typesys ./internal/schema
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/managed-package-consumer --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/managed-package-consumer --json
 ```
 
 Exit criteria:
@@ -399,8 +399,8 @@ Validation:
 
 ```bash
 go test ./internal/typesys ./internal/sema ./internal/schema ./internal/soql
-go run ./cmd/oaer test --project testdata/local-tests/managed-package-consumer --json
-go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nc-develop --timeout 30000 --top-failures 8 --json
+go run ./cmd/glade test --project testdata/local-tests/managed-package-consumer --json
+go run ./cmd/glade compat local-tests --project example-projects/src-nmb-nc-develop --timeout 30000 --top-failures 8 --json
 ```
 
 Exit criteria:
@@ -435,20 +435,20 @@ Validation:
 
 ```bash
 go test ./internal/sema ./internal/vm ./internal/apextest
-go run ./cmd/oaer test --project testdata/local-tests/managed-package-access --json
+go run ./cmd/glade test --project testdata/local-tests/managed-package-access --json
 ```
 
 Exit criteria:
 
 - Public dependency APIs are rejected across namespace boundaries.
-- Global dependency APIs compile and run when their bodies use supported OAER
+- Global dependency APIs compile and run when their bodies use supported GLADE
   runtime features.
 - Runtime access cannot bypass sema access rules.
 
 ### Phase MP5: Source-Backed Runtime Execution
 
 Goal: execute dependency global APIs from source when the dependency body is
-within OAER-supported runtime behavior.
+within GLADE-supported runtime behavior.
 
 Primary write scope: `internal/ir`, `internal/vm`, `internal/apextest`,
 `internal/dml`, `internal/storage`.
@@ -470,7 +470,7 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/apextest ./internal/dml ./internal/storage
-go run ./cmd/oaer test --project testdata/local-tests/managed-package-runtime --json
+go run ./cmd/glade test --project testdata/local-tests/managed-package-runtime --json
 ```
 
 Exit criteria:
@@ -486,9 +486,9 @@ Exit criteria:
 Goal: make dependency loading reproducible and fast without reparsing full
 source trees on every local test run.
 
-Current status: the contract path is implemented. `oaer package build` writes a
+Current status: the contract path is implemented. `glade package build` writes a
 stable JSON artifact with an explicit installed namespace and source hash, and
-`oaer.yml` can load it with `namespace:artifact:path`. The remaining cache work
+`glade.yml` can load it with `namespace:artifact:path`. The remaining cache work
 is version mismatch handling, invalidation policy, endpoint-gap reporting for
 global signatures that reference non-exported types, and optional compiled IR.
 
@@ -496,13 +496,13 @@ Primary write scope: `internal/packageartifact`, cache storage, CLI plumbing.
 
 Tasks:
 
-- Keep `oaer package build --project <dependency-root> --namespace <installed-ns>
+- Keep `glade package build --project <dependency-root> --namespace <installed-ns>
   --version <version> --output <artifact>` as the artifact build surface.
 - Serialize package contracts into a stable JSON artifact; compiled IR can be
   added later after the contract path proves useful.
 - Record source hashes and fail closed when a configured version expects a
   different artifact.
-- Load artifact files from `oaer.yml` when present. The first contract loader is
+- Load artifact files from `glade.yml` when present. The first contract loader is
   done; runtime execution from compiled artifact bodies is later work.
 - Add cache invalidation for source-backed dependencies when the source hash
   changes.
@@ -510,9 +510,9 @@ Tasks:
 Validation:
 
 ```bash
-go test ./internal/packageartifact ./internal/oaercli
-go run ./cmd/oaer package build --project testdata/local-tests/managed-package-dependency --namespace znu --version 04tTEST --output /tmp/znu.oaer-package.json
-go run ./cmd/oaer test --project testdata/local-tests/managed-package-consumer --json
+go test ./internal/packageartifact ./internal/gladecli
+go run ./cmd/glade package build --project testdata/local-tests/managed-package-dependency --namespace znu --version 04tTEST --output /tmp/znu.glade-package.json
+go run ./cmd/glade test --project testdata/local-tests/managed-package-consumer --json
 ```
 
 Exit criteria:
@@ -535,15 +535,15 @@ Tasks:
 - Read CumulusCI dependency declarations and namespace/package metadata where
   present.
 - Map discovered package names or version ids to local package artifact roots
-  through `oaer.yml` aliases.
-- Keep explicit `oaer.yml` entries as the override when tooling metadata is
+  through `glade.yml` aliases.
+- Keep explicit `glade.yml` entries as the override when tooling metadata is
   ambiguous.
 
 Validation:
 
 ```bash
 go test ./internal/project ./internal/config
-go run ./cmd/oaer compat local-tests --project example-projects/nams-workspace --timeout 30000 --top-failures 8 --json
+go run ./cmd/glade compat local-tests --project example-projects/nams-workspace --timeout 30000 --top-failures 8 --json
 ```
 
 Exit criteria:
@@ -582,14 +582,14 @@ For the current corpus, the plan should be applied in this order:
 2. Build a compact package artifact:
 
    ```bash
-   go run ./cmd/oaer package build \
+   go run ./cmd/glade package build \
      --project example-projects/src-nmb-nu-develop \
      --namespace znu \
      --version src-nmb-nu-develop@<source-hash-or-git-sha> \
-     --output example-projects/.oaer/packages/znu/package.oaer.json
+     --output example-projects/.glade/packages/znu/package.glade.json
    ```
 
-3. Add a local `oaer.yml` for the consuming example project that maps `znu` to
+3. Add a local `glade.yml` for the consuming example project that maps `znu` to
    that artifact, then fall back to source-backed config only when artifact
    loading is not enough for the specific test.
 4. Run `compat local-tests` and confirm the top blocker changes from unknown
@@ -603,7 +603,7 @@ runtime behavior. The dependency should be loaded as an installed package.
 
 ## Open Questions
 
-- How should OAER represent protected extension points in managed package code
+- How should GLADE represent protected extension points in managed package code
   if enterprise projects use inheritance across namespace boundaries?
 - Which package-version identifier should be canonical when local source does
   not include a `04t` id?

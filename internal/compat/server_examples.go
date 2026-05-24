@@ -14,13 +14,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/apextest"
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/server"
-	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/typesys"
-	"github.com/open-aer/oaer/internal/vm"
+	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/server"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 const serverExampleAPIVersion = "61.0"
@@ -221,12 +221,12 @@ func runServerExampleProject(root, rel string) (ServerExampleProjectReport, erro
 }
 
 func runServerExampleProbes(root, projectPath string, fixture storage.Fixture, probes []serverExampleProbe) ([]ServerExampleProbeResult, error) {
-	workDir, err := os.MkdirTemp(root, ".oaer-server-example-harness-*")
+	workDir, err := os.MkdirTemp(root, ".glade-server-example-harness-*")
 	if err != nil {
 		return nil, err
 	}
 	defer os.RemoveAll(workDir)
-	store, err := storage.OpenSQLite(filepath.Join(workDir, "oaer.db"))
+	store, err := storage.OpenSQLite(filepath.Join(workDir, "glade.db"))
 	if err != nil {
 		return nil, err
 	}
@@ -753,7 +753,7 @@ func serverExampleProbes(routes []ServerExampleRestRoute, seeded bool) []serverE
 		{Name: "resource-discovery", Family: "core-rest", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0"},
 		{Name: "limits", Family: "core-rest", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0/limits"},
 		{Name: "sobjects", Family: "sobjects", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0/sobjects"},
-		{Name: "oaer-state", Family: "seed-data", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0/oaer/state"},
+		{Name: "glade-state", Family: "seed-data", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0/glade/state"},
 		{Name: "tooling-discovery", Family: "tooling", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: "/services/data/v61.0/tooling"},
 		{Name: "tooling-apexclass-describe", Family: "tooling", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: "/services/data/v61.0/tooling/sobjects/ApexClass/describe"},
 		{Name: "metadata-describe", Family: "metadata", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: "/services/data/v61.0/metadata/describe"},
@@ -797,7 +797,7 @@ func serverExampleApexRESTPath(route ServerExampleRestRoute) string {
 	}
 	childPath := strings.Trim(route.ProbePath, "/")
 	if childPath == "" {
-		childPath = "oaer-probe"
+		childPath = "glade-probe"
 	}
 	if path == "/" {
 		return "/" + childPath

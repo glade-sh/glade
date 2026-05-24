@@ -10,7 +10,7 @@ func TestNormalizeRunRedactsUnstableValuesButPreservesMeaning(t *testing.T) {
 	run := OracleRun{
 		SchemaVersion: 1,
 		Project:       "/tmp/project",
-		OrgAlias:      "oaer-probe-lab",
+		OrgAlias:      "glade-probe-lab",
 		TestClass:     "AccountOracleTest",
 		TestMethod:    "createsRecord",
 		Status:        OracleStatusPass,

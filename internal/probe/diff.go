@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// Compare evaluates a golden (org) response against a local (oaer) response and
+// Compare evaluates a golden (org) response against a local (glade) response and
 // returns a GapEntry if they differ. Returns nil when responses are equivalent.
 func Compare(golden, local ProbeResult) *GapEntry {
 	if golden.ProbeID != local.ProbeID {

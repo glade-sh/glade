@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/open-aer/oaer/internal/ir"
+	"github.com/glade-sh/glade/internal/ir"
 )
 
 func CompileAnonymous(source string) (ir.Program, error) {

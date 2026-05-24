@@ -1,6 +1,6 @@
 # Clean-Room Policy
 
-`oaer` is a clean-room implementation of a local Apex runtime. Contributors
+`glade` is a clean-room implementation of a local Apex runtime. Contributors
 must use public documentation, public grammars, open file formats, owned test
 fixtures, and black-box behavioral tests.
 
@@ -38,7 +38,7 @@ should come from Salesforce itself or from a written public specification, not
 from proprietary implementation internals.
 
 When runtime behavior is ambiguous, confirm it against the connected scratch org
-before changing `oaer`. Use `nu-dx-org` for small executable probes:
+before changing `glade`. Use `nu-dx-org` for small executable probes:
 
 ```bash
 echo "System.debug('Hello from CLI');" | sf apex run --target-org nu-dx-org

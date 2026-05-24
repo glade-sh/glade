@@ -6,7 +6,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 const StandardObjectCoverageSchemaVersion = 1

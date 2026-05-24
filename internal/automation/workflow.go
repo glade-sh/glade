@@ -8,9 +8,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 type Index struct {
@@ -261,7 +261,7 @@ func unsupported(path, rule, message string) diagnostic.Diagnostic {
 	if rule != "" {
 		message = rule + ": " + message
 	}
-	return diagnostic.Diagnostic{Severity: diagnostic.Warning, Code: "OAERAUTO001", Message: message, File: path}
+	return diagnostic.Diagnostic{Severity: diagnostic.Warning, Code: "GLADEAUTO001", Message: message, File: path}
 }
 
 func objectNameFromWorkflowPath(path string) string {

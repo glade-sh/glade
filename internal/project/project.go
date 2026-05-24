@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/config"
+	"github.com/glade-sh/glade/internal/config"
 )
 
 type Project struct {
@@ -212,15 +212,15 @@ func load(root string, stack map[string]bool) (Project, error) {
 	if err != nil {
 		return Project{}, err
 	}
-	cfgPath := filepath.Join(absRoot, "oaer.yml")
-	oaerCfg, cfgErr := config.LoadFile(cfgPath)
+	cfgPath := filepath.Join(absRoot, "glade.yml")
+	gladeCfg, cfgErr := config.LoadFile(cfgPath)
 	if errors.Is(cfgErr, os.ErrNotExist) {
 		cfgErr = config.ErrNotFound
 	}
 	if cfgErr == nil {
 		cfgDir := filepath.Dir(cfgPath)
-		if oaerCfg.Project.Root != "" {
-			configuredRoot := oaerCfg.Project.Root
+		if gladeCfg.Project.Root != "" {
+			configuredRoot := gladeCfg.Project.Root
 			if !filepath.IsAbs(configuredRoot) {
 				configuredRoot = filepath.Join(cfgDir, filepath.FromSlash(configuredRoot))
 			}
@@ -228,11 +228,11 @@ func load(root string, stack map[string]bool) (Project, error) {
 				return load(cleaned, stack)
 			}
 		}
-		if len(oaerCfg.Project.PackageDirs) > 0 {
-			cfg.PackageDirectories = packageDirectoriesFromConfig(oaerCfg.Project.PackageDirs)
+		if len(gladeCfg.Project.PackageDirs) > 0 {
+			cfg.PackageDirectories = packageDirectoriesFromConfig(gladeCfg.Project.PackageDirs)
 		}
-		if oaerCfg.Project.DefaultNamespace != "" {
-			cfg.Namespace = oaerCfg.Project.DefaultNamespace
+		if gladeCfg.Project.DefaultNamespace != "" {
+			cfg.Namespace = gladeCfg.Project.DefaultNamespace
 		}
 	}
 	if len(cfg.PackageDirectories) == 0 {
@@ -246,7 +246,7 @@ func load(root string, stack map[string]bool) (Project, error) {
 		PackageDirectories: cfg.PackageDirectories,
 	}
 	if cfgErr == nil {
-		p.ManagedPackageDependencies, p.DependencyDiagnostics = loadManagedPackageDependencies(oaerCfg.Project.ManagedPackageDependencies, stack)
+		p.ManagedPackageDependencies, p.DependencyDiagnostics = loadManagedPackageDependencies(gladeCfg.Project.ManagedPackageDependencies, stack)
 	}
 
 	for _, pkgRoot := range packageRoots(absRoot, p.PackageDirectories) {

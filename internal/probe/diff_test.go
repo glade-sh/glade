@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/capability"
+	"github.com/glade-sh/glade/internal/capability"
 )
 
 func ptr(s string) *string { return &s }

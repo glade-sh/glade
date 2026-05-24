@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/apexast"
-	"github.com/open-aer/oaer/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/diagnostic"
 )
 
 type DocumentURI string
@@ -278,7 +278,7 @@ func schemaURI(parts ...string) DocumentURI {
 	for _, part := range parts {
 		escaped = append(escaped, url.PathEscape(part))
 	}
-	return DocumentURI("oaer-schema:///" + strings.Join(escaped, "/"))
+	return DocumentURI("glade-schema:///" + strings.Join(escaped, "/"))
 }
 
 func hasScheme(value string) bool {

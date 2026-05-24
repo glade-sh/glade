@@ -328,7 +328,7 @@ func setOrganizationFlag(org *OrgState, fieldName string, enabled bool) {
 		object.Records["00D000000000001"] = Record{
 			ID:     "00D000000000001",
 			Object: "Organization",
-			Fields: map[string]Value{"Name": StringValue("OAER Local Org")},
+			Fields: map[string]Value{"Name": StringValue("GLADE Local Org")},
 		}
 	}
 	object.Definition.Fields[fieldName] = Field{APIName: fieldName, Type: FieldBoolean}
@@ -742,7 +742,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		ID:     orgID,
 		Object: "Organization",
 		Fields: map[string]Value{
-			"Name":                 StringValue("OAER Local Org"),
+			"Name":                 StringValue("GLADE Local Org"),
 			"InstanceName":         StringValue("LOCAL"),
 			"IsSandbox":            BooleanValue(true),
 			"DefaultLocaleSidKey":  StringValue("en_US"),
@@ -848,8 +848,8 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		ID:     permissionSetID,
 		Object: "PermissionSet",
 		Fields: map[string]Value{
-			"Name":             StringValue("OaerBaseline"),
-			"Label":            StringValue("OAER Baseline"),
+			"Name":             StringValue("GladeBaseline"),
+			"Label":            StringValue("GLADE Baseline"),
 			"Type":             StringValue("Regular"),
 			"IsCustom":         BooleanValue(false),
 			"IsOwnedByProfile": BooleanValue(false),

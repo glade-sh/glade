@@ -3,7 +3,7 @@ package vm
 import (
 	"testing"
 
-	"github.com/open-aer/oaer/internal/trace"
+	"github.com/glade-sh/glade/internal/trace"
 )
 
 func TestInvokeLWCMethodSerializesWrapperReturn(t *testing.T) {

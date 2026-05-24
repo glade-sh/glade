@@ -1,10 +1,10 @@
-module github.com/open-aer/oaer
+module github.com/glade-sh/glade
 
 go 1.26
 
 require (
 	github.com/fsnotify/fsnotify v1.10.0
-	github.com/open-aer/apex-parser v0.1.0
+	github.com/glade-sh/apex-parser v0.1.0
 	modernc.org/sqlite v1.50.0
 )
 
@@ -25,4 +25,4 @@ require (
 	modernc.org/memory v1.11.0 // indirect
 )
 
-replace github.com/open-aer/apex-parser => ../oaer-apex-parser
+replace github.com/glade-sh/apex-parser => ../glade-apex-parser

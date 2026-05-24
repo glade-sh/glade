@@ -11,10 +11,10 @@ Usage:
 Options:
   --target-org <alias>                Salesforce org alias for generated shard scripts.
   --run-id <id>                       Run ID. Default: full-all-apex-YYYYmmdd-HHMMSS
-  --runs-dir <dir>                    Default: .oaer/oracle/runs
+  --runs-dir <dir>                    Default: .glade/oracle/runs
   --example-input <dir>               Default: example-projects
-  --runtime-inventory <file>          Default: .oaer/runtime-path-inventory-with-stubs.json
-  --runtime-markdown <file>           Default: .oaer/runtime-path-inventory-with-stubs.md
+  --runtime-inventory <file>          Default: .glade/runtime-path-inventory-with-stubs.json
+  --runtime-markdown <file>           Default: .glade/runtime-path-inventory-with-stubs.md
   --inventory-out <file>              Default: docs/generated/apex-oracle/INVENTORY.json
   --domains-out <file>                Default: docs/generated/apex-oracle/DOMAINS.json
   --manifest-out <file>               Default: docs/generated/apex-oracle/PROBE_MANIFEST.json
@@ -28,10 +28,10 @@ USAGE
 
 TARGET_ORG=""
 RUN_ID="full-all-apex-$(date +%Y%m%d-%H%M%S)"
-RUNS_DIR=".oaer/oracle/runs"
+RUNS_DIR=".glade/oracle/runs"
 EXAMPLE_INPUT="example-projects"
-RUNTIME_INVENTORY=".oaer/runtime-path-inventory-with-stubs.json"
-RUNTIME_MD=".oaer/runtime-path-inventory-with-stubs.md"
+RUNTIME_INVENTORY=".glade/runtime-path-inventory-with-stubs.json"
+RUNTIME_MD=".glade/runtime-path-inventory-with-stubs.md"
 INVENTORY_OUT="docs/generated/apex-oracle/INVENTORY.json"
 DOMAINS_OUT="docs/generated/apex-oracle/DOMAINS.json"
 MANIFEST_OUT="docs/generated/apex-oracle/PROBE_MANIFEST.json"
@@ -69,13 +69,13 @@ if [[ -z "$TARGET_ORG" ]]; then
 fi
 
 echo "[1/8] doctor"
-go run ./cmd/oaer compat oracle doctor --json
+go run ./cmd/glade compat oracle doctor --json
 
 echo "[2/8] oracle inventory from stubs"
-go run ./cmd/oaer compat oracle inventory --stubs example-projects/stubs --output "$INVENTORY_OUT"
+go run ./cmd/glade compat oracle inventory --stubs example-projects/stubs --output "$INVENTORY_OUT"
 
 echo "[3/8] oracle domains"
-go run ./cmd/oaer compat oracle domains --output "$DOMAINS_OUT"
+go run ./cmd/glade compat oracle domains --output "$DOMAINS_OUT"
 
 if [[ "$SKIP_RUNTIME_INVENTORY" -eq 0 ]]; then
   echo "[4/8] runtime path inventory from example projects + stubs"
@@ -89,7 +89,7 @@ else
 fi
 
 echo "[5/8] plan full oracle queue (ALL stubs)"
-go run ./cmd/oaer compat oracle plan \
+go run ./cmd/glade compat oracle plan \
   --inventory "$INVENTORY_OUT" \
   --domains "$DOMAINS_OUT" \
   --manifest "$MANIFEST_OUT" \
@@ -104,13 +104,13 @@ go run ./scripts/oracle-runtime-queue-prioritize.go \
   --report "$RANK_REPORT_OUT"
 
 echo "[7/8] generate Apex probes from ranked full queue"
-go run ./cmd/oaer compat oracle generate \
+go run ./cmd/glade compat oracle generate \
   --run-id "$RUN_ID" \
   --runs-dir "$RUNS_DIR" \
   --work-queue "$RANKED_QUEUE_OUT"
 
 echo "[8/8] generate shard scripts"
-go run ./cmd/oaer compat oracle scripts \
+go run ./cmd/glade compat oracle scripts \
   --run-id "$RUN_ID" \
   --runs-dir "$RUNS_DIR" \
   --work-queue "$RANKED_QUEUE_OUT" \

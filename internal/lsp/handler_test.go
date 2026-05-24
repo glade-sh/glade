@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/apexast"
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/testreport"
-	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func TestHandleJSONInitializeAndShutdown(t *testing.T) {
@@ -62,7 +62,7 @@ func TestBuildPublishDiagnosticsConvertsRanges(t *testing.T) {
 	payload := BuildPublishDiagnostics(uriFromPath(file), []diagnostic.Diagnostic{
 		{
 			Severity: diagnostic.Error,
-			Code:     "OAERTEST001",
+			Code:     "GLADETEST001",
 			Message:  "broken",
 			File:     file,
 			Range:    &diagRange,
@@ -79,7 +79,7 @@ func TestBuildPublishDiagnosticsConvertsRanges(t *testing.T) {
 		t.Fatalf("diagnostics = %#v", payload.Diagnostics)
 	}
 	got := payload.Diagnostics[0]
-	if got.Severity != diagnosticSeverityError || got.Code != "OAERTEST001" || got.Source != "oaer" {
+	if got.Severity != diagnosticSeverityError || got.Code != "GLADETEST001" || got.Source != "glade" {
 		t.Fatalf("diagnostic = %#v", got)
 	}
 	if got.Range.Start.Line != 1 || got.Range.Start.Character != 2 || got.Range.End.Character != 11 {
@@ -127,7 +127,7 @@ func TestDidCloseRestoresProjectDiagnostics(t *testing.T) {
 	file := idx.Types[0].File
 	idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
-		Code:     "OAERCHECK",
+		Code:     "GLADECHECK",
 		Message:  "check diagnostic",
 		File:     file,
 		Range: &diagnostic.Range{
@@ -178,7 +178,7 @@ func TestPublishTestDiagnosticsUsesProblemStackFrames(t *testing.T) {
 		t.Fatalf("diagnostics = %#v", payload.Diagnostics)
 	}
 	diag := payload.Diagnostics[0]
-	if diag.Code != "OAERTEST001" || diag.Range.Start.Line != 6 || !strings.Contains(diag.Message, "InvoiceServiceTest.fails") {
+	if diag.Code != "GLADETEST001" || diag.Range.Start.Line != 6 || !strings.Contains(diag.Message, "InvoiceServiceTest.fails") {
 		t.Fatalf("diagnostic = %#v", diag)
 	}
 }

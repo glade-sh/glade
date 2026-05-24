@@ -6,7 +6,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/open-aer/oaer/internal/trace"
+	"github.com/glade-sh/glade/internal/trace"
 )
 
 type Report struct {
@@ -204,7 +204,7 @@ func WriteJSON(w io.Writer, report Report) error {
 }
 
 func WriteMarkdown(w io.Writer, report Report) error {
-	if _, err := fmt.Fprintf(w, "# oaer profile\n\nEvents: %d\n\n", report.Events); err != nil {
+	if _, err := fmt.Fprintf(w, "# glade profile\n\nEvents: %d\n\n", report.Events); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintf(w, "## Runtime summary\n\nSOQL: %d queries / %d rows\n\nDML: %d statements / %d rows\n\nCallouts: %d\n\nAsync: %d jobs\n\nEmail: %d invocations\n\nCPU: %d ms\n\nHeap: %d bytes\n\n", report.Limits.SOQLQueries, report.Limits.SOQLRows, report.Limits.DML, report.Limits.DMLRows, report.Limits.Callouts, report.Limits.AsyncJobs, report.Limits.EmailInvocations, report.Limits.CPUTimeMS, report.Limits.HeapSize); err != nil {

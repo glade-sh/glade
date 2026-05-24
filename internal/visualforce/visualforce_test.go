@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestLoadProjectIndexesPagesAndComponents(t *testing.T) {

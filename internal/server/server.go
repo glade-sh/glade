@@ -19,13 +19,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/open-aer/oaer/internal/apexast"
-	"github.com/open-aer/oaer/internal/apextest"
-	"github.com/open-aer/oaer/internal/dml"
-	"github.com/open-aer/oaer/internal/soql"
-	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/typesys"
-	"github.com/open-aer/oaer/internal/vm"
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/soql"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 type Server struct {
@@ -65,7 +65,7 @@ type apiVersionEntry struct {
 	URL     string `json:"url"`
 }
 
-const localOAuthUnsupportedMessage = "Full OAuth flows and token issuance are not implemented by the local server; use deterministic local user stubs via /services/oauth2/userinfo, /id/{org}/{user}, X-OAER-User-Id, or Authorization: Bearer <userId>"
+const localOAuthUnsupportedMessage = "Full OAuth flows and token issuance are not implemented by the local server; use deterministic local user stubs via /services/oauth2/userinfo, /id/{org}/{user}, X-GLADE-User-Id, or Authorization: Bearer <userId>"
 
 const apexRestUnsupportedMessage = "Apex @RestResource dispatch is not implemented in the local server"
 
@@ -100,13 +100,13 @@ var unsupportedRESTNamespaces = map[string]string{
 	"wave":         "Wave",
 }
 
-type oaerStatePayload struct {
+type gladeStatePayload struct {
 	LocalOnly   bool                   `json:"localOnly"`
 	Summary     storage.InspectSummary `json:"summary"`
 	ResetScopes []resetScopeInfo       `json:"resetScopes"`
 }
 
-type oaerResetPayload struct {
+type gladeResetPayload struct {
 	Success    bool                   `json:"success"`
 	Scopes     []string               `json:"scopes"`
 	NoOpScopes []string               `json:"noOpScopes,omitempty"`
@@ -120,7 +120,7 @@ const (
 	fixtureLoadModeReplace fixtureLoadMode = "replace"
 )
 
-type oaerDiscoveryPayload struct {
+type gladeDiscoveryPayload struct {
 	LocalOnly bool              `json:"localOnly"`
 	URLs      map[string]string `json:"urls"`
 }
@@ -243,8 +243,8 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request) {
 		s.handleMetadataREST(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "composite":
 		s.handleComposite(w, r, parts[2], rest[1:])
-	case len(rest) >= 1 && rest[0] == "oaer":
-		s.handleOAER(w, r, rest[1:])
+	case len(rest) >= 1 && rest[0] == "glade":
+		s.handleGLADE(w, r, rest[1:])
 	case len(rest) >= 1:
 		if message, ok := unsupportedRESTNamespaceMessage(rest[0]); ok {
 			if r.Method != http.MethodGet {
@@ -1031,10 +1031,10 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, version st
 	}
 }
 
-func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []string) {
+func (s *Server) handleGLADE(w http.ResponseWriter, r *http.Request, parts []string) {
 	switch {
 	case len(parts) == 0 && r.Method == http.MethodGet:
-		writeJSON(w, http.StatusOK, oaerDiscovery(versionFromRequest(r)))
+		writeJSON(w, http.StatusOK, gladeDiscovery(versionFromRequest(r)))
 	case len(parts) >= 1 && parts[0] == "reset" && r.Method == http.MethodPost:
 		scopes, err := resetScopes(r, parts[1:])
 		if err != nil {
@@ -1047,14 +1047,14 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 			writeSalesforceError(w, errStoreFailure, err.Error())
 			return
 		}
-		writeJSON(w, http.StatusOK, oaerResetPayload{
+		writeJSON(w, http.StatusOK, gladeResetPayload{
 			Success:    true,
 			Scopes:     scopes,
 			NoOpScopes: noOpResetScopes(scopes),
 			Summary:    storage.InspectOrg("", *s.Org),
 		})
 	case len(parts) == 1 && (parts[0] == "state" || parts[0] == "inspect") && r.Method == http.MethodGet:
-		writeJSON(w, http.StatusOK, oaerStatePayload{
+		writeJSON(w, http.StatusOK, gladeStatePayload{
 			LocalOnly:   true,
 			Summary:     storage.InspectOrg("", *s.Org),
 			ResetScopes: resetScopeSupport(),
@@ -1103,7 +1103,7 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 	case len(parts) == 1 && parts[0] == "fixture":
 		writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 	default:
-		writeSalesforceError(w, errUnknownOAER)
+		writeSalesforceError(w, errUnknownGLADE)
 	}
 }
 
@@ -1133,9 +1133,9 @@ func validateFixtureExportRequest(r *http.Request) error {
 	return nil
 }
 
-func oaerDiscovery(version string) oaerDiscoveryPayload {
-	base := "/services/data/" + version + "/oaer"
-	return oaerDiscoveryPayload{
+func gladeDiscovery(version string) gladeDiscoveryPayload {
+	base := "/services/data/" + version + "/glade"
+	return gladeDiscoveryPayload{
 		LocalOnly: true,
 		URLs: map[string]string{
 			"fixture": base + "/fixture",
@@ -1655,7 +1655,7 @@ func writeUnsupportedToolingTestRun(w http.ResponseWriter, r *http.Request, endp
 	if _, ok := decodeOptionalJSONObject(w, r); !ok {
 		return
 	}
-	writeSalesforceError(w, errUnsupportedFeature, "Tooling "+endpoint+" is not implemented in the local server; use oaer test for local Apex test execution")
+	writeSalesforceError(w, errUnsupportedFeature, "Tooling "+endpoint+" is not implemented in the local server; use glade test for local Apex test execution")
 }
 
 func decodeOptionalJSONObject(w http.ResponseWriter, r *http.Request) (map[string]json.RawMessage, bool) {
@@ -1695,7 +1695,7 @@ func writeUnsupportedMetadataREST(w http.ResponseWriter, r *http.Request, versio
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, "Metadata REST component read and discovery are not implemented in the local server; use source files and oaer inspect/check for local metadata state")
+		writeSalesforceError(w, errUnsupportedFeature, "Metadata REST component read and discovery are not implemented in the local server; use source files and glade inspect/check for local metadata state")
 	case len(parts) == 1 && parts[0] == "retrieveRequest":
 		if !methodAllowed(r, http.MethodPost) {
 			writeMethodNotAllowed(w, http.MethodPost)
@@ -1725,7 +1725,7 @@ func writeUnsupportedMetadataREST(w http.ResponseWriter, r *http.Request, versio
 		if _, ok := decodeOptionalJSONObject(w, r); !ok {
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, "Metadata REST deploy requests are not implemented in the local server; use source files and oaer check/test for local validation")
+		writeSalesforceError(w, errUnsupportedFeature, "Metadata REST deploy requests are not implemented in the local server; use source files and glade check/test for local validation")
 	case len(parts) == 2 && parts[0] == "deployRequest":
 		if !methodAllowed(r, http.MethodGet) {
 			writeMethodNotAllowed(w, http.MethodGet)
@@ -1791,7 +1791,7 @@ func (s *Server) handleMetadataREST(w http.ResponseWriter, r *http.Request, vers
 			return
 		}
 		if !s.Source.hasData() {
-			writeSalesforceError(w, errUnsupportedFeature, "Metadata REST component read and discovery are not implemented in the local server; use source files and oaer inspect/check for local metadata state")
+			writeSalesforceError(w, errUnsupportedFeature, "Metadata REST component read and discovery are not implemented in the local server; use source files and glade inspect/check for local metadata state")
 			return
 		}
 		writeJSON(w, http.StatusOK, s.metadataComponentsPayload(parts[1], ""))
@@ -1801,7 +1801,7 @@ func (s *Server) handleMetadataREST(w http.ResponseWriter, r *http.Request, vers
 			return
 		}
 		if !s.Source.hasData() {
-			writeSalesforceError(w, errUnsupportedFeature, "Metadata REST component read and discovery are not implemented in the local server; use source files and oaer inspect/check for local metadata state")
+			writeSalesforceError(w, errUnsupportedFeature, "Metadata REST component read and discovery are not implemented in the local server; use source files and glade inspect/check for local metadata state")
 			return
 		}
 		component, ok := s.Source.componentBy[metadataComponentKey(parts[1], parts[2])]
@@ -2566,7 +2566,7 @@ func newCompositeHTTPRequest(parent *http.Request, method, target string, body i
 	}
 	requestURL := target
 	if strings.HasPrefix(target, "/") {
-		requestURL = "http://local.oaer.test" + target
+		requestURL = "http://local.glade.test" + target
 	}
 	req, err := http.NewRequest(method, requestURL, body)
 	if err != nil {
@@ -3320,7 +3320,7 @@ func (s *Server) storeQueryLocator(state queryLocatorState) string {
 		s.queryLocators = make(map[string]queryLocatorState)
 	}
 	s.nextQueryID++
-	locator := fmt.Sprintf("oaerql%06d", s.nextQueryID)
+	locator := fmt.Sprintf("gladeql%06d", s.nextQueryID)
 	s.queryLocators[locator] = state
 	s.queryOrder = append(s.queryOrder, locator)
 	for len(s.queryOrder) > maxQueryLocators {
@@ -3521,7 +3521,7 @@ func (s *Server) currentUser(r *http.Request, pathUserID storage.ID) storage.Rec
 }
 
 func selectedUserID(r *http.Request, pathUserID storage.ID) storage.ID {
-	if value := strings.TrimSpace(r.Header.Get("X-OAER-User-Id")); value != "" {
+	if value := strings.TrimSpace(r.Header.Get("X-GLADE-User-Id")); value != "" {
 		return storage.ID(value)
 	}
 	if value := bearerUserID(r.Header.Get("Authorization")); value != "" {
@@ -4654,7 +4654,7 @@ func isMetadataReadDiscoveryRoute(name string) bool {
 func metadataReadDiscoveryUnsupportedMessage(name string) string {
 	switch name {
 	case "components":
-		return "Metadata REST component discovery is not implemented in the local server; use source files and oaer inspect/check for local metadata state"
+		return "Metadata REST component discovery is not implemented in the local server; use source files and glade inspect/check for local metadata state"
 	case "describe", "describeMetadata":
 		return "Metadata REST describeMetadata is not implemented in the local server; use SObject describe and project metadata files for local shape information"
 	case "listMetadata":
@@ -4685,7 +4685,7 @@ func resourceDiscoveryPayload(version string) map[string]string {
 		"jobs":         base + "/jobs",
 		"limits":       base + "/limits",
 		"metadata":     base + "/metadata",
-		"oaer":         base + "/oaer",
+		"glade":         base + "/glade",
 		"process":      base + "/process",
 		"query":        base + "/query",
 		"queryAll":     base + "/queryAll",
@@ -4705,7 +4705,7 @@ func (s *Server) apiVersionDiscoveryPayload() []apiVersionEntry {
 	adv := s.advertisedRESTAPIVersion()
 	return []apiVersionEntry{{
 		Version: adv,
-		Label:   "OAER Local API v" + adv,
+		Label:   "GLADE Local API v" + adv,
 		URL:     "/services/data/v" + adv,
 	}}
 }

@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestDatabaseSnapshotSortsObjectsByName(t *testing.T) {

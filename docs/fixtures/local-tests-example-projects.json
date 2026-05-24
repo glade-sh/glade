@@ -3,12 +3,12 @@
   "generatedAt": "2026-05-18T23:59:00.000Z",
   "timeoutSupport": {
     "compatLocalTestsTimeoutFlag": true,
-    "command": "go run ./cmd/oaer compat local-tests --project <project> --json --timeout 30000 --top-failures 8"
+    "command": "go run ./cmd/glade compat local-tests --project <project> --json --timeout 30000 --top-failures 8"
   },
   "projects": [
     {
       "project": "example-projects/NPSP-rel-3.237",
-      "command": "go run ./cmd/oaer compat local-tests --project example-projects/NPSP-rel-3.237 --json --timeout 30000 --top-failures 8",
+      "command": "go run ./cmd/glade compat local-tests --project example-projects/NPSP-rel-3.237 --json --timeout 30000 --top-failures 8",
       "timeoutSeconds": 30,
       "timedOut": false,
       "exitCode": 0,
@@ -27,11 +27,11 @@
       },
       "topOutcomeBlockers": [
         {
-          "key": "compile_gap|compile|oaersema002|CON_AddToCampaign.cls|42|field \"<symbol>\" references unknown type \"<symbol>\"",
+          "key": "compile_gap|compile|gladesema002|CON_AddToCampaign.cls|42|field \"<symbol>\" references unknown type \"<symbol>\"",
           "count": 3986,
           "outcome": "compile_gap",
           "phase": "compile",
-          "capabilityId": "oaersema002",
+          "capabilityId": "gladesema002",
           "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/CON_AddToCampaign.cls",
           "line": 42,
           "error": "field \"MAPcampaignMemberStatuses\" references unknown type \"CampaignMemberStatus\""
@@ -39,58 +39,58 @@
       ],
       "topDiagnostics": [
         {
-          "key": "OAERSEMA013|BDI_Donations_TEST3.cls|method \"<symbol>\" reads unknown variable \"<symbol>\"",
+          "key": "GLADESEMA013|BDI_Donations_TEST3.cls|method \"<symbol>\" reads unknown variable \"<symbol>\"",
           "count": 74,
-          "code": "OAERSEMA013",
+          "code": "GLADESEMA013",
           "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/BDI_Donations_TEST3.cls",
           "message": "method \"donationMatchRules1\" reads unknown variable \"label.bdiMatched\""
         },
         {
-          "key": "OAERSEMA013|RD2_ScheduleService_TEST.cls|method \"<symbol>\" references unknown variable \"<symbol>\"",
+          "key": "GLADESEMA013|RD2_ScheduleService_TEST.cls|method \"<symbol>\" references unknown variable \"<symbol>\"",
           "count": 73,
-          "code": "OAERSEMA013",
+          "code": "GLADESEMA013",
           "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/RD2_ScheduleService_TEST.cls",
           "message": "method \"shouldGenerateNextDonationDateLastDayInFebruaryWhenDayIs29\" references unknown variable \"startDate\""
         },
         {
-          "key": "OAERSEMA013|BDI_DataImport_TEST2.cls|method \"<symbol>\" reads unknown variable \"<symbol>\"",
+          "key": "GLADESEMA013|BDI_DataImport_TEST2.cls|method \"<symbol>\" reads unknown variable \"<symbol>\"",
           "count": 57,
-          "code": "OAERSEMA013",
+          "code": "GLADESEMA013",
           "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/BDI_DataImport_TEST2.cls",
           "message": "method \"ManyDIDuplicateEmailNewContacts\" reads unknown variable \"label.bdiCreated\""
         },
         {
-          "key": "OAERSEMA013|HH_NameSpec_TEST.cls|method \"<symbol>\" references unknown variable \"<symbol>\"",
+          "key": "GLADESEMA013|HH_NameSpec_TEST.cls|method \"<symbol>\" references unknown variable \"<symbol>\"",
           "count": 56,
-          "code": "OAERSEMA013",
+          "code": "GLADESEMA013",
           "file": "example-projects/NPSP-rel-3.237/force-app/test/HH_NameSpec_TEST.cls",
           "message": "method \"OneContact\" references unknown variable \"listCon\""
         },
         {
-          "key": "OAERSEMA008|CRLP_DefaultConfigBuilder_SVC.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|CRLP_DefaultConfigBuilder_SVC.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 47,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/CRLP_DefaultConfigBuilder_SVC.cls",
           "message": "method \"buildDefaultFilterGroups\" calls unknown method \"CMT_FilterRule.FilterOperation.EQUALS.name\""
         },
         {
-          "key": "OAERSEMA022|RD2_OpportunityEvaluationService_TEST.cls|method \"<symbol>\" has ambiguous overloads for call \"<symbol>\" with <n> argument(s)",
+          "key": "GLADESEMA022|RD2_OpportunityEvaluationService_TEST.cls|method \"<symbol>\" has ambiguous overloads for call \"<symbol>\" with <n> argument(s)",
           "count": 35,
-          "code": "OAERSEMA022",
+          "code": "GLADESEMA022",
           "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/RD2_OpportunityEvaluationService_TEST.cls",
           "message": "method \"shouldDetermineIfNewOrPreExistingRecurringDonation\" has ambiguous overloads for call \"withAccount\" with 1 argument(s)"
         },
         {
-          "key": "OAERSEMA010|framework_SObjects2Test.cls|method \"<symbol>\" cannot access protected method \"<symbol>\"",
+          "key": "GLADESEMA010|framework_SObjects2Test.cls|method \"<symbol>\" cannot access protected method \"<symbol>\"",
           "count": 32,
-          "code": "OAERSEMA010",
+          "code": "GLADESEMA010",
           "file": "example-projects/NPSP-rel-3.237/force-app/infrastructure/apex-extensions/tests/classes/domains/framework_SObjects2Test.cls",
           "message": "method \"itShouldAddErrorMessage\" cannot access protected method \"domain.addError\""
         },
         {
-          "key": "OAERSEMA013|STG_PanelHealthCheck_CTRL.cls|method \"<symbol>\" reads unknown variable \"<symbol>\"",
+          "key": "GLADESEMA013|STG_PanelHealthCheck_CTRL.cls|method \"<symbol>\" reads unknown variable \"<symbol>\"",
           "count": 32,
-          "code": "OAERSEMA013",
+          "code": "GLADESEMA013",
           "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/STG_PanelHealthCheck_CTRL.cls",
           "message": "method \"verifyAccountModel\" reads unknown variable \"label.healthDetailsHHAccountModel\""
         }
@@ -98,7 +98,7 @@
     },
     {
       "project": "example-projects/src-nmb-nc-develop",
-      "command": "go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nc-develop --json --timeout 30000 --top-failures 8",
+      "command": "go run ./cmd/glade compat local-tests --project example-projects/src-nmb-nc-develop --json --timeout 30000 --top-failures 8",
       "timeoutSeconds": 30,
       "timedOut": false,
       "exitCode": 0,
@@ -117,11 +117,11 @@
       },
       "topOutcomeBlockers": [
         {
-          "key": "compile_gap|compile|oaersema002|AddressMessage.cls|8|field \"<symbol>\" references unknown type \"<symbol>\"",
+          "key": "compile_gap|compile|gladesema002|AddressMessage.cls|8|field \"<symbol>\" references unknown type \"<symbol>\"",
           "count": 9761,
           "outcome": "compile_gap",
           "phase": "compile",
-          "capabilityId": "oaersema002",
+          "capabilityId": "gladesema002",
           "file": "example-projects/src-nmb-nc-develop/src/classes/AddressMessage.cls",
           "line": 8,
           "error": "field \"address\" references unknown type \"znu.Address\""
@@ -129,58 +129,58 @@
       ],
       "topDiagnostics": [
         {
-          "key": "OAERSEMA008|NavigationInstallData.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|NavigationInstallData.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 96,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/src-nmb-nc-develop/src/classes/NavigationInstallData.cls",
           "message": "method \"createProfileSnapshotNavigationMenuItem\" calls unknown method \"withTitle\""
         },
         {
-          "key": "OAERSEMA008|JoinRenewButton2Test.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|JoinRenewButton2Test.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 89,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/src-nmb-nc-develop/src/classes/JoinRenewButton2Test.cls",
           "message": "method \"execute_withOutstandingInvoicesForAssociatedAccount_expectCartFromOrderAction\" calls unknown method \"setField\""
         },
         {
-          "key": "OAERSEMA008|BillingAddressComponentControllerTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|BillingAddressComponentControllerTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 76,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/src-nmb-nc-develop/src/classes/BillingAddressComponentControllerTest.cls",
           "message": "method \"doHandleMessage_paymentOptionSelected_creditCard_expectShouldRender\" calls unknown method \"getName\""
         },
         {
-          "key": "OAERSEMA008|ItemLineDisplayTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|ItemLineDisplayTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 76,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/src-nmb-nc-develop/src/classes/ItemLineDisplayTest.cls",
           "message": "method \"isPartOfBundle_forCartItemLine_expectTrue\" calls unknown method \"setField\""
         },
         {
-          "key": "OAERSEMA006|PaymentOptionsTest.cls|method \"<symbol>\" constructs unknown type \"<symbol>\"",
+          "key": "GLADESEMA006|PaymentOptionsTest.cls|method \"<symbol>\" constructs unknown type \"<symbol>\"",
           "count": 57,
-          "code": "OAERSEMA006",
+          "code": "GLADESEMA006",
           "file": "example-projects/src-nmb-nc-develop/src/classes/PaymentOptionsTest.cls",
           "message": "method \"getOptions_onePaymentOption_expectNoOptionsAndMessageSent\" constructs unknown type \"znu.PaymentOptions.IOption2\""
         },
         {
-          "key": "OAERSEMA006|CartItemSelectorTest.cls|method \"<symbol>\" declares local \"<symbol>\" with unknown type \"<symbol>\"",
+          "key": "GLADESEMA006|CartItemSelectorTest.cls|method \"<symbol>\" declares local \"<symbol>\" with unknown type \"<symbol>\"",
           "count": 53,
-          "code": "OAERSEMA006",
+          "code": "GLADESEMA006",
           "file": "example-projects/src-nmb-nc-develop/src/classes/CartItemSelectorTest.cls",
           "message": "method \"setup\" declares local \"cartItems\" with unknown type \"znu__CartItem__c\""
         },
         {
-          "key": "OAERSEMA006|PaymentOptionsTest.cls|method \"<symbol>\" declares local \"<symbol>\" with unknown type \"<symbol>\"",
+          "key": "GLADESEMA006|PaymentOptionsTest.cls|method \"<symbol>\" declares local \"<symbol>\" with unknown type \"<symbol>\"",
           "count": 51,
-          "code": "OAERSEMA006",
+          "code": "GLADESEMA006",
           "file": "example-projects/src-nmb-nc-develop/src/classes/PaymentOptionsTest.cls",
           "message": "method \"setupCartWithBalance\" declares local \"userCartItem\" with unknown type \"znu__CartItem__c\""
         },
         {
-          "key": "OAERSEMA008|DynamicCheckoutSubmitButtonTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|DynamicCheckoutSubmitButtonTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 51,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/src-nmb-nc-develop/src/classes/DynamicCheckoutSubmitButtonTest.cls",
           "message": "method \"getShouldRender_scheduledPaymentSelected_correctMessage_expectFalse\" calls unknown method \"setField\""
         }
@@ -188,7 +188,7 @@
     },
     {
       "project": "example-projects/src-nmb-nu-develop",
-      "command": "go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nu-develop --json --timeout 30000 --top-failures 8",
+      "command": "go run ./cmd/glade compat local-tests --project example-projects/src-nmb-nu-develop --json --timeout 30000 --top-failures 8",
       "timeoutSeconds": 30,
       "timedOut": false,
       "exitCode": 0,
@@ -207,11 +207,11 @@
       },
       "topOutcomeBlockers": [
         {
-          "key": "compile_gap|compile|oaersema013|AccountManager.cls|703|method \"<symbol>\" assigns unknown variable \"<symbol>\"",
+          "key": "compile_gap|compile|gladesema013|AccountManager.cls|703|method \"<symbol>\" assigns unknown variable \"<symbol>\"",
           "count": 11526,
           "outcome": "compile_gap",
           "phase": "compile",
-          "capabilityId": "oaersema013",
+          "capabilityId": "gladesema013",
           "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/AccountManager.cls",
           "line": 703,
           "error": "method \"getNameAndEvent\" assigns unknown variable \"Status__c\""
@@ -219,58 +219,58 @@
       ],
       "topDiagnostics": [
         {
-          "key": "OAERSEMA008|TransactionGenerator2Test.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|TransactionGenerator2Test.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 2220,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TransactionGenerator2Test.cls",
           "message": "method \"createProduct\" calls unknown method \"setField\""
         },
         {
-          "key": "OAERSEMA008|CartSubmitterTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|CartSubmitterTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 682,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/CartSubmitterTest.cls",
           "message": "method \"submit_refundCart_expectSuccess\" calls unknown method \"setField\""
         },
         {
-          "key": "OAERSEMA008|TestOrderPaymentController.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|TestOrderPaymentController.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 226,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TestOrderPaymentController.cls",
           "message": "method \"paymentAmountChanged_refundWithHosted_expectNegativePaymentNotAllowedMessageNotDisplayed\" calls unknown method \"setField\""
         },
         {
-          "key": "OAERSEMA008|DeferredScheduleTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|DeferredScheduleTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 224,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/DeferredScheduleTest.cls",
           "message": "method \"getDifferenceInExpectedAmount_correctRecognizedAmount_expectZero\" calls unknown method \"setField\""
         },
         {
-          "key": "OAERSEMA008|TestAddressUtils.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|TestAddressUtils.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 194,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/utility/classes/TestAddressUtils.cls",
           "message": "method \"getShipToAddressFromAccount_withShippingAddress_expectShipToAddress\" calls unknown method \"setField\""
         },
         {
-          "key": "OAERSEMA008|TestCartSubmitter.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|TestCartSubmitter.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 160,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TestCartSubmitter.cls",
           "message": "method \"submit_newCouponCartSubmission_expectCouponCreated\" calls unknown method \"then\""
         },
         {
-          "key": "OAERSEMA008|TestAutomaticSalesTax.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|TestAutomaticSalesTax.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 149,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TestAutomaticSalesTax.cls",
           "message": "method \"recalculateTax_NoTaxableLinesOnCartItem_expectSalesTaxRemovedFromCartItem\" calls unknown method \"setField\""
         },
         {
-          "key": "OAERSEMA008|TestOrderController.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|TestOrderController.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 124,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TestOrderController.cls",
           "message": "method \"fullAdjustmentEditItemTest\" calls unknown method \"modifiedItem.OrderItemLines__r.size\""
         }
@@ -278,7 +278,7 @@
     },
     {
       "project": "example-projects/src-nmb-nutpl-develop",
-      "command": "go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nutpl-develop --json --timeout 30000 --top-failures 8",
+      "command": "go run ./cmd/glade compat local-tests --project example-projects/src-nmb-nutpl-develop --json --timeout 30000 --top-failures 8",
       "timeoutSeconds": 30,
       "timedOut": false,
       "exitCode": 0,
@@ -299,7 +299,7 @@
     },
     {
       "project": "example-projects/sf-cred-pkg-develop",
-      "command": "go run ./cmd/oaer compat local-tests --project example-projects/sf-cred-pkg-develop --parallel 4 --json --timeout 30000 --top-failures 20",
+      "command": "go run ./cmd/glade compat local-tests --project example-projects/sf-cred-pkg-develop --parallel 4 --json --timeout 30000 --top-failures 20",
       "timeoutSeconds": 30,
       "timedOut": false,
       "exitCode": 0,
@@ -320,7 +320,7 @@
     },
     {
       "project": "example-projects/nams-workspace",
-      "command": "go run ./cmd/oaer compat local-tests --project example-projects/nams-workspace --json --timeout 30000 --top-failures 8",
+      "command": "go run ./cmd/glade compat local-tests --project example-projects/nams-workspace --json --timeout 30000 --top-failures 8",
       "timeoutSeconds": 30,
       "timedOut": false,
       "exitCode": 0,
@@ -339,11 +339,11 @@
       },
       "topOutcomeBlockers": [
         {
-          "key": "compile_gap|compile|oaersema002|AddProgramsToProformaOrderHelper.cls|30|method \"<symbol>\" references unknown type \"<symbol>\"",
+          "key": "compile_gap|compile|gladesema002|AddProgramsToProformaOrderHelper.cls|30|method \"<symbol>\" references unknown type \"<symbol>\"",
           "count": 5716,
           "outcome": "compile_gap",
           "phase": "compile",
-          "capabilityId": "oaersema002",
+          "capabilityId": "gladesema002",
           "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/unpackaged/invocables/classes/AddProgramsToProformaOrderHelper.cls",
           "line": 30,
           "error": "method \"getIdConditionPlugin\" references unknown type \"znu.Pluggable\""
@@ -351,58 +351,58 @@
       ],
       "topDiagnostics": [
         {
-          "key": "OAERSEMA008|CartToOrderConverterTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|CartToOrderConverterTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 127,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/nu-nams-orders/api/helper/CartToOrderConverterTest.cls",
           "message": "method \"convert_withBillingHistory_expectCartInformationCorrectlyTranslated\" calls unknown method \"setField\""
         },
         {
-          "key": "OAERSEMA010|CommerceCheckoutUiTest.cls|method \"<symbol>\" cannot access private property \"<symbol>\"",
+          "key": "GLADESEMA010|CommerceCheckoutUiTest.cls|method \"<symbol>\" cannot access private property \"<symbol>\"",
           "count": 108,
-          "code": "OAERSEMA010",
+          "code": "GLADESEMA010",
           "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/nams-commerce/features/store/ui/classes/CommerceCheckoutUiTest.cls",
           "message": "method \"canGetOrderSummary\" cannot access private property \"GetOrderSummary\""
         },
         {
-          "key": "OAERSEMA008|OrderToCartConverterTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|OrderToCartConverterTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 95,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/nu-nams-orders/api/helper/OrderToCartConverterTest.cls",
           "message": "method \"expectOrderInformationCorrectlyConverted\" calls unknown method \"setField\""
         },
         {
-          "key": "OAERSEMA009|R.cls|method \"<symbol>\" has no matching overload for call \"<symbol>\" with <n> argument(s)",
+          "key": "GLADESEMA009|R.cls|method \"<symbol>\" has no matching overload for call \"<symbol>\" with <n> argument(s)",
           "count": 80,
-          "code": "OAERSEMA009",
+          "code": "GLADESEMA009",
           "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/headless/libraries/R.apex/src/classes/R.cls",
           "message": "method \"exec\" has no matching overload for call \"toString\" with 1 argument(s)"
         },
         {
-          "key": "OAERSEMA008|StoredPaymentMethodsRepositoryImplTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|StoredPaymentMethodsRepositoryImplTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 76,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/nu-nams-orders/api/payments/domain/repository/StoredPaymentMethodsRepositoryImplTest.cls",
           "message": "method \"canGetStoredPaymentMethodsById\" calls unknown method \"setField\""
         },
         {
-          "key": "OAERSEMA021|CardPointePaymentGatewayService.cls|method \"<symbol>\" references unknown field \"<symbol>\" on CardPointePaymentGatewayService",
+          "key": "GLADESEMA021|CardPointePaymentGatewayService.cls|method \"<symbol>\" references unknown field \"<symbol>\" on CardPointePaymentGatewayService",
           "count": 60,
-          "code": "OAERSEMA021",
+          "code": "GLADESEMA021",
           "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-cardpointe/sfdx-source/namz-nu-cardpointe/classes/CardPointePaymentGatewayService.cls",
           "message": "method \"buildAddAndUpdateProfileRequest\" references unknown field \"request.BillingStreet\" on CardPointePaymentGatewayService"
         },
         {
-          "key": "OAERSEMA008|SyncProformaLineToCartLineTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "key": "GLADESEMA008|SyncProformaLineToCartLineTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 54,
-          "code": "OAERSEMA008",
+          "code": "GLADESEMA008",
           "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/nams-commerce/triggers/trigger-handlers/SyncProformaLineToCartLineTest.cls",
           "message": "method \"afterUpdate_noCartItemLine_expectNoUpdate\" calls unknown method \"setField\""
         },
         {
-          "key": "OAERSEMA010|sfab_FabricatedSObjectTest.cls|method \"<symbol>\" cannot access private method \"<symbol>\"",
+          "key": "GLADESEMA010|sfab_FabricatedSObjectTest.cls|method \"<symbol>\" cannot access private method \"<symbol>\"",
           "count": 53,
-          "code": "OAERSEMA010",
+          "code": "GLADESEMA010",
           "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/headless/libraries/SObjectFabricator/classes/sfab_FabricatedSObjectTest.cls",
           "message": "method \"constructor_expectFieldsSetViaSObjectField\" cannot access private method \"fabricatedAccount.getNumberOfNodes\""
         }

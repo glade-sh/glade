@@ -5,7 +5,7 @@
       "default": true
     }
   ],
-  "name": "oaer-org-probes",
+  "name": "glade-org-probes",
   "namespace": "",
   "sfdcLoginUrl": "https://login.salesforce.com",
   "sourceApiVersion": "60.0"

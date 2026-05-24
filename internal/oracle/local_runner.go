@@ -3,8 +3,8 @@ package oracle
 import (
 	"strings"
 
-	"github.com/open-aer/oaer/internal/testreport"
-	"github.com/open-aer/oaer/internal/trace"
+	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/trace"
 )
 
 func LocalRunsFromTestReport(project string, report testreport.Run) []OracleRun {
@@ -17,7 +17,7 @@ func LocalRunsFromTestReport(project string, report testreport.Run) []OracleRun 
 			}
 			run := OracleRun{
 				SchemaVersion: SchemaVersion,
-				Source:        "oaer",
+				Source:        "glade",
 				Project:       project,
 				TestClass:     className,
 				TestMethod:    testCase.MethodName,

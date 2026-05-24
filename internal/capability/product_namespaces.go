@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 const ProductNamespaceSchemaVersion = 1

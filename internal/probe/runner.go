@@ -84,7 +84,7 @@ func Run(cfg Config) (*GapReport, error) {
 	report.ProbeTimings = append(report.ProbeTimings, goldenTimings...)
 	fmt.Printf("Captured %d golden responses\n", len(golden))
 
-	fmt.Println("\n=== Phase 2: Local Replay (oaer VM) ===")
+	fmt.Println("\n=== Phase 2: Local Replay (glade VM) ===")
 	localStart := time.Now()
 	localExec := &LocalExecutor{ProbeDir: cfg.ProbeDir, Features: cfg.Features}
 	var local map[string]ProbeResult

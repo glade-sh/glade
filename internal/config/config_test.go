@@ -82,7 +82,7 @@ project:
 
 func TestLoadFileResolvesManagedPackageDependencyPaths(t *testing.T) {
 	root := t.TempDir()
-	cfgPath := filepath.Join(root, "nested", "oaer.yml")
+	cfgPath := filepath.Join(root, "nested", "glade.yml")
 	if err := os.MkdirAll(filepath.Dir(cfgPath), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -104,13 +104,13 @@ project:
 
 func TestLoadFileResolvesManagedPackageArtifactPaths(t *testing.T) {
 	root := t.TempDir()
-	cfgPath := filepath.Join(root, "nested", "oaer.yml")
+	cfgPath := filepath.Join(root, "nested", "glade.yml")
 	if err := os.MkdirAll(filepath.Dir(cfgPath), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(cfgPath, []byte(`
 project:
-  managedPackageDependencies: ["znu:artifact:../packages/znu.oaer-package.json"]
+  managedPackageDependencies: ["znu:artifact:../packages/znu.glade-package.json"]
 `), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ project:
 		t.Fatal(err)
 	}
 	dep := cfg.Project.ManagedPackageDependencies[0]
-	want := filepath.Clean(filepath.Join(root, "packages", "znu.oaer-package.json"))
+	want := filepath.Clean(filepath.Join(root, "packages", "znu.glade-package.json"))
 	if dep.ArtifactPath != want {
 		t.Fatalf("artifact path = %q, want %q", dep.ArtifactPath, want)
 	}
@@ -130,13 +130,13 @@ project:
 
 func TestLoadFileParsesManagedPackageArtifactVersion(t *testing.T) {
 	root := t.TempDir()
-	cfgPath := filepath.Join(root, "nested", "oaer.yml")
+	cfgPath := filepath.Join(root, "nested", "glade.yml")
 	if err := os.MkdirAll(filepath.Dir(cfgPath), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(cfgPath, []byte(`
 project:
-  managedPackageDependencies: ["znu:artifact:../packages/znu.oaer-package.json:2.0"]
+  managedPackageDependencies: ["znu:artifact:../packages/znu.glade-package.json:2.0"]
 `), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +145,7 @@ project:
 		t.Fatal(err)
 	}
 	dep := cfg.Project.ManagedPackageDependencies[0]
-	want := filepath.Clean(filepath.Join(root, "packages", "znu.oaer-package.json"))
+	want := filepath.Clean(filepath.Join(root, "packages", "znu.glade-package.json"))
 	if dep.ArtifactPath != want || dep.Version != "2.0" {
 		t.Fatalf("dependency = %#v", dep)
 	}

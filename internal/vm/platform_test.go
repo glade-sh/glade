@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/ir"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestGeneratedFamilyUnsupportedTypePrefixIsCaseInsensitive(t *testing.T) {
@@ -253,10 +253,10 @@ System.assertEquals('', applauncher.SelfRegisterController.setExperienceId('0DB-
 
 System.assertEquals(0, applauncher.SocialLoginController.getAuthProviders().size());
 System.assertEquals(0, applauncher.SocialLoginController.getSamlProviders().size());
-System.assertEquals('https://local.oaer.example/services/auth/sso/LocalProvider?startURL=%2Fstart', applauncher.SocialLoginController.getSsoUrl('/start', 'LocalProvider'));
-System.assertEquals('https://local.oaer.example/services/auth/sso/LocalProvider?startURL=%2Fstart', applauncher.SocialLoginController.getCommunityDomainSsoUrl('/start', 'LocalProvider'));
-System.assertEquals('https://local.oaer.example/services/auth/saml/SamlProvider?startURL=%2Fstart', applauncher.SocialLoginController.getSamlSsoUrl('/start', 'SamlProvider'));
-System.assertEquals('https://local.oaer.example/services/auth/saml/SamlProvider?startURL=%2Fstart', applauncher.SocialLoginController.getSamlSsoUrlNoCache('/start', 'SamlProvider'));
+System.assertEquals('https://local.glade.example/services/auth/sso/LocalProvider?startURL=%2Fstart', applauncher.SocialLoginController.getSsoUrl('/start', 'LocalProvider'));
+System.assertEquals('https://local.glade.example/services/auth/sso/LocalProvider?startURL=%2Fstart', applauncher.SocialLoginController.getCommunityDomainSsoUrl('/start', 'LocalProvider'));
+System.assertEquals('https://local.glade.example/services/auth/saml/SamlProvider?startURL=%2Fstart', applauncher.SocialLoginController.getSamlSsoUrl('/start', 'SamlProvider'));
+System.assertEquals('https://local.glade.example/services/auth/saml/SamlProvider?startURL=%2Fstart', applauncher.SocialLoginController.getSamlSsoUrlNoCache('/start', 'SamlProvider'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -7593,7 +7593,7 @@ func TestExecOrgShapeBackedSiteNetworkAndCurrencyCalls(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assert(UserInfo.isMultiCurrencyOrganization());
 System.assertEquals('0DM000000000001', Site.getSiteId());
-System.assertEquals('https://local.oaer.example/local', Site.getBaseUrl());
+System.assertEquals('https://local.glade.example/local', Site.getBaseUrl());
 System.assertEquals('', Site.getBaseRequestUrl());
 System.assertEquals('', Site.getBaseSecureUrl());
 System.assertEquals('', Site.getBaseCustomUrl());
@@ -7627,18 +7627,18 @@ System.assertEquals('005000000000E01', Site.createPortalUser(portalUser, '001000
 System.assertEquals('/next', Site.login('external@example.invalid', 'secret', '/next').getUrl());
 Site.validatePassword(externalUser, 'secret', 'secret');
 System.assertEquals('0DB000000000001', Network.getNetworkId());
-System.assertEquals('https://local.oaer.example/local/login', Network.getLoginUrl(Network.getNetworkId()));
+System.assertEquals('https://local.glade.example/local/login', Network.getLoginUrl(Network.getNetworkId()));
 System.assertEquals('/local', Network.communitiesLanding().getUrl());
 System.assertEquals('/start', Network.forwardToAuthPage('/start').getUrl());
 System.assertEquals('/start', Network.forwardToAuthPage('/start', 'Site').getUrl());
-System.assertEquals('https://local.oaer.example/local/secur/logout.jsp', Network.getLogoutUrl(Network.getNetworkId()));
-System.assertEquals('https://local.oaer.example/local/SelfRegister', Network.getSelfRegUrl(Network.getNetworkId()));
+System.assertEquals('https://local.glade.example/local/secur/logout.jsp', Network.getLogoutUrl(Network.getNetworkId()));
+System.assertEquals('https://local.glade.example/local/SelfRegister', Network.getSelfRegUrl(Network.getNetworkId()));
 System.assertEquals('707000000000001', Network.createExternalUserAsync(externalUser, new Contact(), new Account()));
 System.assertEquals('707000000000001', Network.createRecordAsync('selfRegistration', externalUser));
 System.assertEquals(0, Network.loadAllPackageDefaultNetworkDashboardSettings());
 System.assertEquals(0, Network.loadAllPackageDefaultNetworkPulseSettings());
 System.assertEquals(0, Network.loadAllPackageDefaultNetworkWorkspaceMetricSettings());
-	System.assertEquals('https://local.oaer.example/local', ConnectApi.Communities.getCommunity(Network.getNetworkId()).siteUrl);
+	System.assertEquals('https://local.glade.example/local', ConnectApi.Communities.getCommunity(Network.getNetworkId()).siteUrl);
 	System.assertNotEquals(null, ConnectApi.UserProfiles.getUserProfile(Network.getNetworkId(), UserInfo.getUserId()));
 	System.assertNotEquals(null, ConnectApi.UserProfiles.getPhoto(Network.getNetworkId(), UserInfo.getUserId()));
 	ConnectApi.UserProfiles.setPhoto(Network.getNetworkId(), UserInfo.getUserId(), '069000000000001', null);
@@ -7916,9 +7916,9 @@ Test.setCurrentPage(new PageReference('/apex/current'));
 PageReference current = ApexPages.currentPage();
 System.assertEquals('/apex/current', current.getUrl());
 URL base = URL.getSalesforceBaseUrl();
-System.assertEquals('https://local.oaer.example', base.toExternalForm());
+System.assertEquals('https://local.glade.example', base.toExternalForm());
 URL orgUrl = URL.getOrgDomainUrl();
-System.assertEquals('https://local.oaer.example', orgUrl.toString());
+System.assertEquals('https://local.glade.example', orgUrl.toString());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -9390,13 +9390,13 @@ undelete as system systemAccount;
 func TestExecRequestGetCurrentBasics(t *testing.T) {
 	program, err := CompileAnonymous(`
 Request request = Request.getCurrent();
-System.assertEquals('oaer-request-000000000001', request.getRequestId());
+System.assertEquals('glade-request-000000000001', request.getRequestId());
 System.assertEquals(Quiddity.SYNCHRONOUS, request.getQuiddity());
-System.assertEquals('oaer-request-000000000001', System.Request.getCurrent().getRequestId());
-System.assertEquals('oaer-request-000000000001', RequestImpl.getCurrent().getRequestId());
+System.assertEquals('glade-request-000000000001', System.Request.getCurrent().getRequestId());
+System.assertEquals('glade-request-000000000001', RequestImpl.getCurrent().getRequestId());
 UIRequest uiRequest = UIRequest.getCurrent();
-System.assertEquals('local.oaer.example', uiRequest.getRequestHeader('host'));
-System.assertEquals('local.oaer.example', uiRequest.getRequestHeader('Host'));
+System.assertEquals('local.glade.example', uiRequest.getRequestHeader('host'));
+System.assertEquals('local.glade.example', uiRequest.getRequestHeader('Host'));
 System.assertEquals(null, uiRequest.getRequestHeader('x-missing'));
 `)
 	if err != nil {

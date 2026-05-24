@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/project"
-	oaerschema "github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/glade-sh/glade/internal/project"
+	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func BenchmarkRunTestSuite(b *testing.B) {
@@ -79,7 +79,7 @@ func benchmarkLoadTestIndex(b *testing.B, root string) typesys.Index {
 	if err != nil {
 		b.Fatal(err)
 	}
-	s, err := oaerschema.LoadProject(p)
+	s, err := gladeschema.LoadProject(p)
 	if err != nil {
 		b.Fatal(err)
 	}

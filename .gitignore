@@ -1,9 +1,9 @@
 .DS_Store
 /bin/
 /dist/
-/oaer
+/glade
 /coverage.out
-/.oaer/
+/.glade/
 node_modules/
 /example-projects
 /probes/sfdx/.sf/

@@ -1,6 +1,6 @@
 # Editor Integration
 
-`oaer` exposes editor-facing entry points through normal CLI commands. The
+`glade` exposes editor-facing entry points through normal CLI commands. The
 current baseline is useful for local Apex development, but it is still a
 preview: DAP has live VM pause/step primitives, LSP uses full-project indexing
 at startup with open-buffer overlays, and watch mode uses native file watching
@@ -8,7 +8,7 @@ with polling fallback.
 
 ## Browser Playground
 
-`oaer playground` starts a local web UI for quick Apex experiments. It is useful
+`glade playground` starts a local web UI for quick Apex experiments. It is useful
 when you want a DotNetFiddle-style loop: edit class files, write execute
 anonymous Apex that calls those classes, run on demand, and inspect cached
 output, variables, limits, traces, diagnostics, and org changes.
@@ -17,13 +17,13 @@ Pass `--examples` when you want the built-in scratch examples for DML, SOQL,
 triggers, relationships, maps, and limit counters:
 
 ```bash
-oaer playground --db .oaer/playground/org.sqlite --examples --open
+glade playground --db .glade/playground/org.sqlite --examples --open
 ```
 
 Point it at a project when you want to edit that folder directly:
 
 ```bash
-oaer playground --project . --db .oaer/playground/org.sqlite --open
+glade playground --project . --db .glade/playground/org.sqlite --open
 ```
 
 The foreground project runs as local source for execute-anonymous calls, even
@@ -59,25 +59,25 @@ CI and terminal workflows use.
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "oaer: check",
+      "label": "glade: check",
       "type": "shell",
-      "command": "oaer",
+      "command": "glade",
       "args": ["check", "--project", "${workspaceFolder}"],
       "group": "build",
       "problemMatcher": []
     },
     {
-      "label": "oaer: test",
+      "label": "glade: test",
       "type": "shell",
-      "command": "oaer",
+      "command": "glade",
       "args": ["test", "--project", "${workspaceFolder}", "--json"],
       "group": "test",
       "problemMatcher": []
     },
     {
-      "label": "oaer: watch tests",
+      "label": "glade: watch tests",
       "type": "shell",
-      "command": "oaer",
+      "command": "glade",
       "args": [
         "test",
         "--project",
@@ -90,9 +90,9 @@ CI and terminal workflows use.
       "problemMatcher": []
     },
     {
-      "label": "oaer: diagnostics once",
+      "label": "glade: diagnostics once",
       "type": "shell",
-      "command": "oaer",
+      "command": "glade",
       "args": [
         "lsp",
         "--project",
@@ -107,9 +107,9 @@ CI and terminal workflows use.
 
 ## VS Code Debug Launch Examples
 
-`oaer exec --debug` and `oaer test --debug` speak Debug Adapter Protocol over
+`glade exec --debug` and `glade test --debug` speak Debug Adapter Protocol over
 stdio. VS Code needs an extension or DAP client configuration that can launch a
-stdio adapter and register an `oaer-apex` debug type. Use this
+stdio adapter and register an `glade-apex` debug type. Use this
 `.vscode/launch.json` shape as the project-side contract for that adapter.
 
 ```json
@@ -117,18 +117,18 @@ stdio adapter and register an `oaer-apex` debug type. Use this
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "oaer: debug all tests",
-      "type": "oaer-apex",
+      "name": "glade: debug all tests",
+      "type": "glade-apex",
       "request": "launch",
-      "program": "oaer",
+      "program": "glade",
       "args": ["test", "--project", "${workspaceFolder}", "--debug"],
       "cwd": "${workspaceFolder}"
     },
     {
-      "name": "oaer: debug one test class",
-      "type": "oaer-apex",
+      "name": "glade: debug one test class",
+      "type": "glade-apex",
       "request": "launch",
-      "program": "oaer",
+      "program": "glade",
       "args": [
         "test",
         "--project",
@@ -140,10 +140,10 @@ stdio adapter and register an `oaer-apex` debug type. Use this
       "cwd": "${workspaceFolder}"
     },
     {
-      "name": "oaer: debug anonymous Apex",
-      "type": "oaer-apex",
+      "name": "glade: debug anonymous Apex",
+      "type": "glade-apex",
       "request": "launch",
-      "program": "oaer",
+      "program": "glade",
       "args": ["exec", "--debug", "${input:anonymousApex}"],
       "cwd": "${workspaceFolder}"
     }
@@ -158,7 +158,7 @@ stdio adapter and register an `oaer-apex` debug type. Use this
       "id": "anonymousApex",
       "type": "promptString",
       "description": "Anonymous Apex to run",
-      "default": "System.debug('hello from oaer');"
+      "default": "System.debug('hello from glade');"
     }
   ]
 }
@@ -167,7 +167,7 @@ stdio adapter and register an `oaer-apex` debug type. Use this
 ## Warm Test Service
 
 The internal `testdaemon` package keeps project load, schema, and type index
-state warm for repeated editor and watch loops. `oaer test --daemon` uses this
+state warm for repeated editor and watch loops. `glade test --daemon` uses this
 service for focused runs, `--changed-since`, and watch mode:
 
 - `RunFilter(filter)` runs a focused test selection against the warm index.
@@ -176,8 +176,8 @@ service for focused runs, `--changed-since`, and watch mode:
 - `Reload()` refreshes the full project state when incremental impact is not
   safe to infer.
 
-Keep cold one-shot `oaer test` behavior separate from this service. Use
-`oaer test --daemon --watch` or `oaer test --daemon --changed-since main` for
+Keep cold one-shot `glade test` behavior separate from this service. Use
+`glade test --daemon --watch` or `glade test --daemon --changed-since main` for
 repeated local loops where avoiding project reload is the main win.
 
 The current DAP server supports initialize, breakpoints, continue, pause, next,
@@ -188,21 +188,21 @@ parity work.
 
 ## LSP Wiring
 
-`oaer lsp --project <root>` runs an LSP server over stdio. Configure editor
+`glade lsp --project <root>` runs an LSP server over stdio. Configure editor
 clients to start that command from the workspace root and treat `*.cls` and
 `*.trigger` files as Apex. The current server provides initialize/shutdown,
 incremental text document sync, open-buffer parse diagnostics, project
-diagnostics shaped like `oaer check`, test-result diagnostics from stack frames,
+diagnostics shaped like `glade check`, test-result diagnostics from stack frames,
 document and workspace symbols, semantic tokens, definition, references, rename,
 hover, and completion for Apex symbols, schema fields, and keywords from the
 project index.
 
 ```json
 {
-  "command": "oaer",
+  "command": "glade",
   "args": ["lsp", "--project", "${workspaceFolder}"],
   "filetypes": ["apex", "cls", "trigger"],
-  "rootPatterns": ["oaer.yml", "sfdx-project.json"]
+  "rootPatterns": ["glade.yml", "sfdx-project.json"]
 }
 ```
 
@@ -210,7 +210,7 @@ For a one-shot diagnostics check without starting a long-lived language client,
 run:
 
 ```bash
-oaer lsp --project . --diagnostics-once
+glade lsp --project . --diagnostics-once
 ```
 
 ## Watch And Reports
@@ -221,23 +221,23 @@ always include `runId`; `watch.run_started` always includes `testClasses` as an
 array, empty for the initial all-test run.
 
 ```bash
-oaer test --project . --watch --debounce 750ms --watch-backend auto
+glade test --project . --watch --debounce 750ms --watch-backend auto
 ```
 
 For CI or editor tasks that need a single machine-readable run, use:
 
 ```bash
-oaer test --project . --json
-oaer test --project . --junit reports/oaer-junit.xml
-oaer check --project . --json
+glade test --project . --json
+glade test --project . --junit reports/glade-junit.xml
+glade check --project . --json
 ```
 
-Trace analysis stays native to `oaer`:
+Trace analysis stays native to `glade`:
 
 ```bash
-oaer exec --trace reports/trace.json 'System.debug(1);'
-oaer profile analyze reports/trace.json
-oaer profile analyze reports/trace.json --json
+glade exec --trace reports/trace.json 'System.debug(1);'
+glade profile analyze reports/trace.json
+glade profile analyze reports/trace.json --json
 ```
 
 The Markdown and JSON reports include hot events, category counts, runtime

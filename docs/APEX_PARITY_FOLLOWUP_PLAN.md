@@ -5,7 +5,7 @@ Status date: 2026-05-14.
 This plan follows `docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md`. The local-test plan
 is the near-term product path: make the six enterprise example projects run
 locally with scratch-org-like test behavior. This follow-up plan is broader. It
-tracks the work needed for `oaer` to become a comprehensive Apex compatibility
+tracks the work needed for `glade` to become a comprehensive Apex compatibility
 runtime and tooling stack, beyond the first local-test claim.
 
 Current checkpoint: `src-nmb-nutpl-develop` is the first green
@@ -18,9 +18,9 @@ green or explicitly accepted.
 
 The goal is not to clone every Salesforce service. The goal is to make public
 Apex language behavior, public platform APIs, metadata-driven data behavior, and
-developer tooling predictable enough that real Apex projects can use `oaer` as
+developer tooling predictable enough that real Apex projects can use `glade` as
 their default local feedback loop. For unsupported external platform behavior,
-`oaer` should provide explicit diagnostics or deterministic local contracts
+`glade` should provide explicit diagnostics or deterministic local contracts
 instead of silent no-ops.
 
 ## Relationship To Existing Plans
@@ -90,8 +90,8 @@ Validation:
 
 ```bash
 go test ./internal/apexast ./internal/typesys ./internal/sema ./internal/ir ./internal/vm
-go run ./cmd/oaer parse ./example-projects --json
-go run ./cmd/oaer check --project ./example-projects/src-nmb-nutpl-develop --json
+go run ./cmd/glade parse ./example-projects --json
+go run ./cmd/glade check --project ./example-projects/src-nmb-nutpl-develop --json
 ```
 
 Exit criteria:
@@ -129,7 +129,7 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/apextest
-go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --json
+go run ./cmd/glade test --project example-projects/src-nmb-nutpl-develop --json
 ```
 
 Exit criteria:
@@ -169,8 +169,8 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/capability
-go run ./cmd/oaer compat stdlib --check docs/STDLIB_COVERAGE.md
-go run ./cmd/oaer compat mvp --json
+go run ./cmd/glade compat stdlib --check docs/STDLIB_COVERAGE.md
+go run ./cmd/glade compat mvp --json
 ```
 
 Exit criteria:
@@ -209,8 +209,8 @@ Validation:
 
 ```bash
 go test ./internal/metadata ./internal/schema ./internal/storage ./internal/resource ./internal/project
-go run ./cmd/oaer schema load --project ./example-projects/src-nmb-nu-develop --json
-go run ./cmd/oaer compat post-parity --project ./example-projects --json
+go run ./cmd/glade schema load --project ./example-projects/src-nmb-nu-develop --json
+go run ./cmd/glade compat post-parity --project ./example-projects --json
 ```
 
 Exit criteria:
@@ -250,7 +250,7 @@ Validation:
 
 ```bash
 go test ./internal/soql ./internal/sobject ./internal/storage ./internal/vm
-go run ./cmd/oaer test --project example-projects/NPSP-rel-3.237 --filter <selector-sentinel> --json
+go run ./cmd/glade test --project example-projects/NPSP-rel-3.237 --filter <selector-sentinel> --json
 ```
 
 Exit criteria:
@@ -289,7 +289,7 @@ Validation:
 
 ```bash
 go test ./internal/dml ./internal/automation ./internal/storage ./internal/vm
-go run ./cmd/oaer test --project example-projects/src-nmb-nu-develop --filter <automation-sentinel> --json
+go run ./cmd/glade test --project example-projects/src-nmb-nu-develop --filter <automation-sentinel> --json
 ```
 
 Exit criteria:
@@ -321,8 +321,8 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/apextest
-go run ./cmd/oaer compat run docs/fixtures/async-*.json
-go run ./cmd/oaer compat run docs/fixtures/limits-*.json
+go run ./cmd/glade compat run docs/fixtures/async-*.json
+go run ./cmd/glade compat run docs/fixtures/limits-*.json
 ```
 
 Exit criteria:
@@ -356,7 +356,7 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/storage ./internal/soql ./internal/dml
-go run ./cmd/oaer test --project example-projects/nams-workspace --filter <security-sentinel> --json
+go run ./cmd/glade test --project example-projects/nams-workspace --filter <security-sentinel> --json
 ```
 
 Exit criteria:
@@ -367,7 +367,7 @@ Exit criteria:
 ### P9: Tooling, Server, Editor, And Developer Loop
 
 Primary scope: `internal/lsp`, `internal/dap`, `internal/watch`,
-`internal/profile`, `internal/server`, `internal/oaercli`.
+`internal/profile`, `internal/server`, `internal/gladecli`.
 
 Goals:
 
@@ -376,7 +376,7 @@ Goals:
 
 Tasks:
 
-- Improve `oaer test --changed-since`, `--watch`, caching, invalidation, and
+- Improve `glade test --changed-since`, `--watch`, caching, invalidation, and
   affected-test selection.
 - Make LSP diagnostics, hover, completion, definition, references, rename, and
   semantic tokens reflect the same symbol/sema/runtime model as tests.
@@ -389,7 +389,7 @@ Tasks:
 Validation:
 
 ```bash
-go test ./internal/lsp ./internal/dap ./internal/watch ./internal/profile ./internal/server ./internal/oaercli
+go test ./internal/lsp ./internal/dap ./internal/watch ./internal/profile ./internal/server ./internal/gladecli
 scripts/smoke.sh
 ```
 
@@ -414,9 +414,9 @@ Tasks:
 - Maintain generated docs:
 
 ```bash
-go run ./cmd/oaer compat dashboard --output docs/COMPATIBILITY_DASHBOARD.md
-go run ./cmd/oaer compat gaps --output docs/KNOWN_GAPS.md
-go run ./cmd/oaer compat stdlib --output docs/STDLIB_COVERAGE.md
+go run ./cmd/glade compat dashboard --output docs/COMPATIBILITY_DASHBOARD.md
+go run ./cmd/glade compat gaps --output docs/KNOWN_GAPS.md
+go run ./cmd/glade compat stdlib --output docs/STDLIB_COVERAGE.md
 ```
 
 - Add dashboards for local-test corpus, enterprise runtime blockers, stdlib
@@ -431,10 +431,10 @@ Validation:
 
 ```bash
 go test ./...
-go run ./cmd/oaer compat mvp --require-ready
-go run ./cmd/oaer compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
-go run ./cmd/oaer compat gaps --check docs/KNOWN_GAPS.md
-go run ./cmd/oaer compat stdlib --check docs/STDLIB_COVERAGE.md
+go run ./cmd/glade compat mvp --require-ready
+go run ./cmd/glade compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
+go run ./cmd/glade compat gaps --check docs/KNOWN_GAPS.md
+go run ./cmd/glade compat stdlib --check docs/STDLIB_COVERAGE.md
 scripts/smoke.sh
 ```
 

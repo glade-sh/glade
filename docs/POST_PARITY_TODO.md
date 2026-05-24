@@ -3,7 +3,7 @@
 Status date: 2026-05-07.
 
 This is the follow-on work after `docs/FEATURE_PARITY_TODO.md` is complete.
-It assumes `oaer` can already parse, check, and run real Apex tests with
+It assumes `glade` can already parse, check, and run real Apex tests with
 credible SObject, SOQL, DML, trigger, async, limit, fixture, server, LSP, DAP,
 and compatibility behavior.
 
@@ -45,7 +45,7 @@ Current checked status:
   `pass=101 fail=0 unsupported=0 missing=0`.
 - The broader post-parity readiness inventory is green for the checked
   `example-projects` corpus. A May 7, 2026
-  `oaer compat post-parity --project ./example-projects --json` run reported
+  `glade compat post-parity --project ./example-projects --json` run reported
   50,457 files scanned, 0 findings, 0 test-blocking findings, 0 surfaces, 114
   reports, and 7 dashboards.
   This means the known
@@ -97,7 +97,7 @@ The motivating audit targets are anonymized large old projects:
 ## Suggested Completion Order
 
 1. Test-impact inventory: make the general project gap scanner report unsupported
-   metadata and platform APIs that can block `oaer test`, especially
+   metadata and platform APIs that can block `glade test`, especially
    Visualforce/Aura/LWC Apex controllers, Workflow, Flow, Process Builder,
    labels, email templates, site context, metadata APIs, endpoint metadata,
    static resources, content assets, and legacy Metadata API source files.
@@ -120,7 +120,7 @@ The motivating audit targets are anonymized large old projects:
    `System.Callable`, `Test.createStub`, named credential, and remote site APIs.
 7. Enterprise test release gates: add black-box fixtures and stress tests based
    on large old projects, then publish post-parity dashboards and gap reports
-   focused on what still blocks `oaer test`.
+   focused on what still blocks `glade test`.
 8. Local UI/API running: after local tests pass, add optional Visualforce,
    Aura, LWC, Experience Cloud, email rendering, and local server execution
    surfaces for interactive or integration-style running.
@@ -128,7 +128,7 @@ The motivating audit targets are anonymized large old projects:
 ## Critical Path For Full Local Test Running
 
 This is the shortest path to running broad legacy-project Apex tests after the
-initial parity todo is complete. It is based on `oaer inspect gaps` output from
+initial parity todo is complete. It is based on `glade inspect gaps` output from
 the anonymized large-project corpus.
 
 The highest-count blockers are not the same as the safest implementation order.
@@ -302,7 +302,7 @@ rules for deciding whether a task belongs here:
 
 ## Part I: Local Test Running First
 
-This part is the first post-parity milestone. It exists to make `oaer test`
+This part is the first post-parity milestone. It exists to make `glade test`
 work for large old projects. Work here may load UI metadata and execute UI
 controllers, but it should not require rendering pages, serving Aura/LWC, or
 simulating a browser.
@@ -310,7 +310,7 @@ simulating a browser.
 ## Post-Parity Local Test Gate
 
 - [ ] Add a post-parity capability area separate from the MVP parity gate.
-- [x] Add `oaer compat post-parity` or an equivalent dashboard view that reports
+- [x] Add `glade compat post-parity` or an equivalent dashboard view that reports
   local-test-impacting legacy UI, declarative automation, metadata, and platform
   namespace support.
 - [ ] Keep post-parity failures non-blocking for MVP release promotion, but
@@ -326,11 +326,11 @@ simulating a browser.
 
 ## 1. Project Audit And Gap Reporting
 
-First implementation: `oaer inspect gaps [--project <root>] [--json]` scans
+First implementation: `glade inspect gaps [--project <root>] [--json]` scans
 projects read-only and reports unsupported or not-yet-aligned surfaces by
 capability, stage, metadata type, file, line, symbol, examples, and top
 blockers. The scanner is general-purpose so it can evaluate any Salesforce
-project against `oaer` support, not just post-parity work.
+project against `glade` support, not just post-parity work.
 
 - [x] Add a project gap scanner for unsupported or not-yet-aligned surfaces:
   - [x] Visualforce pages, components, controllers, extensions, `Page.*`
@@ -901,12 +901,12 @@ This part starts after large legacy projects can run their Apex tests locally.
 It is for running or serving UI/API surfaces, rendering user-facing artifacts,
 and simulating browser or Experience Cloud behavior. Nothing in this part
 should block the first post-parity goal unless a local test fixture proves the
-same behavior is needed for `oaer test`.
+same behavior is needed for `glade test`.
 
 ## 20. Local Running Of Legacy UI And API Surfaces
 
 This section is for running or serving legacy UI/API surfaces, not for the first
-goal of getting `oaer test` green on old projects.
+goal of getting `glade test` green on old projects.
 
 - [ ] Add Visualforce page resource stubs:
   - [ ] Resolve page URL.

@@ -14,11 +14,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/typesys"
-	"github.com/open-aer/oaer/internal/vm"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 func assertQueryRecordShape(t *testing.T, record map[string]any, objectName, id, url string) {
@@ -116,7 +116,7 @@ func TestVersionDiscoveryRoot(t *testing.T) {
 		if len(versions) != 1 {
 			t.Fatalf("%s versions = %#v", path, versions)
 		}
-		if versions[0].Version != "65.0" || versions[0].Label != "OAER Local API v65.0" || versions[0].URL != "/services/data/v65.0" {
+		if versions[0].Version != "65.0" || versions[0].Label != "GLADE Local API v65.0" || versions[0].URL != "/services/data/v65.0" {
 			t.Fatalf("%s version entry = %#v", path, versions[0])
 		}
 	}
@@ -504,7 +504,7 @@ func TestQueryPaginationFirstAndNextPage(t *testing.T) {
 	if firstPayload.TotalSize != 3 || firstPayload.Done || len(firstPayload.Records) != 2 {
 		t.Fatalf("first payload = %#v", firstPayload)
 	}
-	if firstPayload.NextRecordsURL != "/services/data/v61.0/query/oaerql000001-2" {
+	if firstPayload.NextRecordsURL != "/services/data/v61.0/query/gladeql000001-2" {
 		t.Fatalf("nextRecordsUrl = %q", firstPayload.NextRecordsURL)
 	}
 	assertQueryRecordShape(t, firstPayload.Records[0], "Account", "001000000000001", "/services/data/v61.0/sobjects/Account/001000000000001")
@@ -573,7 +573,7 @@ func TestQueryPaginationDefaultBatchSizeBoundary(t *testing.T) {
 	if payload.TotalSize != maxQueryBatchSize+1 || payload.Done || len(payload.Records) != maxQueryBatchSize {
 		t.Fatalf("default batch payload = total=%d done=%v records=%d body=%s", payload.TotalSize, payload.Done, len(payload.Records), recorder.Body.String())
 	}
-	if payload.NextRecordsURL != "/services/data/v61.0/query/oaerql000001-2000" {
+	if payload.NextRecordsURL != "/services/data/v61.0/query/gladeql000001-2000" {
 		t.Fatalf("nextRecordsUrl = %q", payload.NextRecordsURL)
 	}
 }
@@ -590,7 +590,7 @@ func TestQueryPaginationMaxExplicitBatchSizeBoundary(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("query status = %d body=%s", recorder.Code, recorder.Body.String())
 	}
-	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"totalSize":2001`)) || !bytes.Contains(recorder.Body.Bytes(), []byte(`"done":false`)) || !bytes.Contains(recorder.Body.Bytes(), []byte(`"nextRecordsUrl":"/services/data/v61.0/query/oaerql000001-2000"`)) {
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"totalSize":2001`)) || !bytes.Contains(recorder.Body.Bytes(), []byte(`"done":false`)) || !bytes.Contains(recorder.Body.Bytes(), []byte(`"nextRecordsUrl":"/services/data/v61.0/query/gladeql000001-2000"`)) {
 		t.Fatalf("max explicit batch payload = %s", recorder.Body.String())
 	}
 }
@@ -646,7 +646,7 @@ func TestQueryMoreRowsRemainSnapshotAfterOrgMutation(t *testing.T) {
 	org.Objects["Account"] = object
 
 	next := httptest.NewRecorder()
-	handler.ServeHTTP(next, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/oaerql000001-2", nil))
+	handler.ServeHTTP(next, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/gladeql000001-2", nil))
 	if next.Code != http.StatusOK {
 		t.Fatalf("next status = %d body=%s", next.Code, next.Body.String())
 	}
@@ -660,7 +660,7 @@ func TestQueryMoreUnknownLocator(t *testing.T) {
 	handler := New(&org)
 
 	recorder := httptest.NewRecorder()
-	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/oaerql999999-2", nil))
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/gladeql999999-2", nil))
 	if recorder.Code != http.StatusNotFound || !bytes.Contains(recorder.Body.Bytes(), []byte("NOT_FOUND")) {
 		t.Fatalf("status = %d body=%s", recorder.Code, recorder.Body.String())
 	}
@@ -672,7 +672,7 @@ func TestQueryMoreMalformedAndExpiredLocators(t *testing.T) {
 	addAccountForTest(&org, "001000000000002", "B")
 	handler := New(&org)
 
-	for _, token := range []string{"not-a-locator", "oaerql000001-x", "oaerql000001--1"} {
+	for _, token := range []string{"not-a-locator", "gladeql000001-x", "gladeql000001--1"} {
 		t.Run("malformed "+token, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/"+token, nil))
@@ -690,7 +690,7 @@ func TestQueryMoreMalformedAndExpiredLocators(t *testing.T) {
 		}
 	}
 	expired := httptest.NewRecorder()
-	handler.ServeHTTP(expired, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/oaerql000001-1", nil))
+	handler.ServeHTTP(expired, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/gladeql000001-1", nil))
 	if expired.Code != http.StatusNotFound || !bytes.Contains(expired.Body.Bytes(), []byte("query locator not found or expired")) {
 		t.Fatalf("expired status = %d body=%s", expired.Code, expired.Body.String())
 	}
@@ -708,7 +708,7 @@ func TestQueryMoreMethodBoundary(t *testing.T) {
 		t.Fatalf("first status = %d body=%s", first.Code, first.Body.String())
 	}
 	recorder := httptest.NewRecorder()
-	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/query/oaerql000001-1", nil))
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/query/gladeql000001-1", nil))
 	if recorder.Code != http.StatusMethodNotAllowed || recorder.Header().Get("Allow") != http.MethodGet {
 		t.Fatalf("method boundary status=%d allow=%q body=%s", recorder.Code, recorder.Header().Get("Allow"), recorder.Body.String())
 	}
@@ -728,7 +728,7 @@ func TestQueryMoreRejectsOffsetAtEnd(t *testing.T) {
 	}
 
 	recorder := httptest.NewRecorder()
-	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/oaerql000001-3", nil))
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/gladeql000001-3", nil))
 	if recorder.Code != http.StatusNotFound || !bytes.Contains(recorder.Body.Bytes(), []byte("NOT_FOUND")) {
 		t.Fatalf("status = %d body=%s", recorder.Code, recorder.Body.String())
 	}
@@ -1721,7 +1721,7 @@ func TestRequestedAPIVersionAppearsInSObjectURLs(t *testing.T) {
 	if err := json.Unmarshal(query.Body.Bytes(), &queryPayload); err != nil {
 		t.Fatal(err)
 	}
-	if queryPayload.NextRecordsURL != "/services/data/v60.0/query/oaerql000001-2" {
+	if queryPayload.NextRecordsURL != "/services/data/v60.0/query/gladeql000001-2" {
 		t.Fatalf("query nextRecordsUrl = %q", queryPayload.NextRecordsURL)
 	}
 }
@@ -1753,7 +1753,7 @@ func TestResourceDiscoveryIncludesStableServerEndpoints(t *testing.T) {
 				"jobs":         base + "/jobs",
 				"limits":       base + "/limits",
 				"metadata":     base + "/metadata",
-				"oaer":         base + "/oaer",
+				"glade":         base + "/glade",
 				"process":      base + "/process",
 				"query":        base + "/query",
 				"queryAll":     base + "/queryAll",
@@ -2984,14 +2984,14 @@ func TestApexRestNearbyUnknownEndpointUnchanged(t *testing.T) {
 	}
 }
 
-func TestOAERFixtureAndResetEndpointsPersist(t *testing.T) {
+func TestGLADEFixtureAndResetEndpointsPersist(t *testing.T) {
 	org := testOrg()
 	store := &memoryStore{}
 	handler := NewWithStore(&org, store)
 
 	seed := httptest.NewRecorder()
-	handler.ServeHTTP(seed, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/fixture", strings.NewReader(`{
-  "version":"oaer.storage.v1",
+	handler.ServeHTTP(seed, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/glade/fixture", strings.NewReader(`{
+  "version":"glade.storage.v1",
   "objects":[{"name":"Account","records":[{"alias":"acme","fields":{"Name":{"kind":"string","string":"Acme"}}}]}]
 }`)))
 	if seed.Code != http.StatusOK {
@@ -3002,13 +3002,13 @@ func TestOAERFixtureAndResetEndpointsPersist(t *testing.T) {
 	}
 
 	exported := httptest.NewRecorder()
-	handler.ServeHTTP(exported, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/oaer/fixture", nil))
+	handler.ServeHTTP(exported, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/glade/fixture", nil))
 	if exported.Code != http.StatusOK || !bytes.Contains(exported.Body.Bytes(), []byte(`"Acme"`)) {
 		t.Fatalf("export status = %d body=%s", exported.Code, exported.Body.String())
 	}
 
 	reset := httptest.NewRecorder()
-	handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset", nil))
+	handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/glade/reset", nil))
 	if reset.Code != http.StatusOK {
 		t.Fatalf("reset status = %d body=%s", reset.Code, reset.Body.String())
 	}
@@ -3017,44 +3017,44 @@ func TestOAERFixtureAndResetEndpointsPersist(t *testing.T) {
 	}
 }
 
-func TestOAERRootDiscoveryAdvertisesLocalStateRoutes(t *testing.T) {
+func TestGLADERootDiscoveryAdvertisesLocalStateRoutes(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
 
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/oaer", nil))
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/glade", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
 	}
-	var payload oaerDiscoveryPayload
+	var payload gladeDiscoveryPayload
 	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
 		t.Fatal(err)
 	}
-	if !payload.LocalOnly || payload.URLs["state"] != "/services/data/v61.0/oaer/state" || payload.URLs["fixture"] != "/services/data/v61.0/oaer/fixture" || payload.URLs["reset"] != "/services/data/v61.0/oaer/reset" {
+	if !payload.LocalOnly || payload.URLs["state"] != "/services/data/v61.0/glade/state" || payload.URLs["fixture"] != "/services/data/v61.0/glade/fixture" || payload.URLs["reset"] != "/services/data/v61.0/glade/reset" {
 		t.Fatalf("discovery payload = %#v", payload)
 	}
 
 	post := httptest.NewRecorder()
-	handler.ServeHTTP(post, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer", strings.NewReader(`{}`)))
+	handler.ServeHTTP(post, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/glade", strings.NewReader(`{}`)))
 	assertSalesforceError(t, post, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
 	if got, want := post.Header().Get("Allow"), "GET"; got != want {
 		t.Fatalf("Allow = %q, want %q", got, want)
 	}
 }
 
-func TestOAERFixtureUnsupportedVersionIsInvalidFixture(t *testing.T) {
+func TestGLADEFixtureUnsupportedVersionIsInvalidFixture(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
 
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/fixture", strings.NewReader(`{"version":"oaer.storage.v0"}`)))
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/glade/fixture", strings.NewReader(`{"version":"glade.storage.v0"}`)))
 	assertSalesforceError(t, rec, http.StatusBadRequest, "INVALID_FIXTURE", "unsupported fixture version")
 	if got := len(org.Objects["Account"].Records); got != 0 {
 		t.Fatalf("account records after rejected fixture load = %d", got)
 	}
 }
 
-func TestOAERFixtureReplaceModeClearsPreviousDataAndPersists(t *testing.T) {
+func TestGLADEFixtureReplaceModeClearsPreviousDataAndPersists(t *testing.T) {
 	org := testOrg()
 	addAccountForTest(&org, "001000000000001", "Old")
 	storage.EnsureDeterministicPlatformData(&org)
@@ -3062,8 +3062,8 @@ func TestOAERFixtureReplaceModeClearsPreviousDataAndPersists(t *testing.T) {
 	handler := NewWithStore(&org, store)
 
 	replace := httptest.NewRecorder()
-	handler.ServeHTTP(replace, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/fixture?mode=replace", strings.NewReader(`{
-  "version":"oaer.storage.v1",
+	handler.ServeHTTP(replace, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/glade/fixture?mode=replace", strings.NewReader(`{
+  "version":"glade.storage.v1",
   "objects":[{"name":"Account","records":[{"id":"001000000000901","fields":{"Name":{"kind":"string","string":"New"}}}]}]
 }`)))
 	if replace.Code != http.StatusOK {
@@ -3087,8 +3087,8 @@ func TestOAERFixtureReplaceModeClearsPreviousDataAndPersists(t *testing.T) {
 	}
 }
 
-func TestOAERFixtureReplacePersistsAcrossSQLiteRestartAndExport(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "oaer.db")
+func TestGLADEFixtureReplacePersistsAcrossSQLiteRestartAndExport(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "glade.db")
 	store, err := storage.OpenSQLite(dbPath)
 	if err != nil {
 		t.Fatal(err)
@@ -3098,8 +3098,8 @@ func TestOAERFixtureReplacePersistsAcrossSQLiteRestartAndExport(t *testing.T) {
 	handler := NewWithStore(&org, store)
 
 	replace := httptest.NewRecorder()
-	handler.ServeHTTP(replace, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/fixture?mode=replace", strings.NewReader(`{
-  "version":"oaer.storage.v1",
+	handler.ServeHTTP(replace, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/glade/fixture?mode=replace", strings.NewReader(`{
+  "version":"glade.storage.v1",
   "objects":[{"name":"Account","records":[{"id":"001000000000901","fields":{"Name":{"kind":"string","string":"Restart New"}}}]}]
 }`)))
 	if replace.Code != http.StatusOK {
@@ -3121,7 +3121,7 @@ func TestOAERFixtureReplacePersistsAcrossSQLiteRestartAndExport(t *testing.T) {
 	restarted := NewWithStore(&restartedOrg, restartedStore)
 
 	exported := httptest.NewRecorder()
-	restarted.ServeHTTP(exported, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/oaer/fixture", nil))
+	restarted.ServeHTTP(exported, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/glade/fixture", nil))
 	if exported.Code != http.StatusOK {
 		t.Fatalf("export status = %d body=%s", exported.Code, exported.Body.String())
 	}
@@ -3133,7 +3133,7 @@ func TestOAERFixtureReplacePersistsAcrossSQLiteRestartAndExport(t *testing.T) {
 	}
 }
 
-func TestOAERFixtureModeValidationUsesSalesforceErrorsAndDoesNotMutate(t *testing.T) {
+func TestGLADEFixtureModeValidationUsesSalesforceErrorsAndDoesNotMutate(t *testing.T) {
 	org := testOrg()
 	addAccountForTest(&org, "001000000000001", "Old")
 	handler := New(&org)
@@ -3148,21 +3148,21 @@ func TestOAERFixtureModeValidationUsesSalesforceErrorsAndDoesNotMutate(t *testin
 		{
 			name:    "export rejects load mode",
 			method:  http.MethodGet,
-			path:    "/services/data/v61.0/oaer/fixture?mode=replace",
+			path:    "/services/data/v61.0/glade/fixture?mode=replace",
 			message: "fixture export does not accept load mode",
 		},
 		{
 			name:    "load rejects unknown mode",
 			method:  http.MethodPost,
-			path:    "/services/data/v61.0/oaer/fixture?mode=clobber",
-			body:    `{"version":"oaer.storage.v1","objects":[]}`,
+			path:    "/services/data/v61.0/glade/fixture?mode=clobber",
+			body:    `{"version":"glade.storage.v1","objects":[]}`,
 			message: "unknown fixture load mode",
 		},
 		{
 			name:    "load rejects duplicate mode",
 			method:  http.MethodPost,
-			path:    "/services/data/v61.0/oaer/fixture?mode=replace&mode=merge",
-			body:    `{"version":"oaer.storage.v1","objects":[]}`,
+			path:    "/services/data/v61.0/glade/fixture?mode=replace&mode=merge",
+			body:    `{"version":"glade.storage.v1","objects":[]}`,
 			message: "fixture load mode must be specified once",
 		},
 	} {
@@ -3177,7 +3177,7 @@ func TestOAERFixtureModeValidationUsesSalesforceErrorsAndDoesNotMutate(t *testin
 	}
 }
 
-func TestOAERResetBodyValidationUsesSalesforceErrorsAndDoesNotMutate(t *testing.T) {
+func TestGLADEResetBodyValidationUsesSalesforceErrorsAndDoesNotMutate(t *testing.T) {
 	for _, tt := range []struct {
 		name    string
 		path    string
@@ -3186,19 +3186,19 @@ func TestOAERResetBodyValidationUsesSalesforceErrorsAndDoesNotMutate(t *testing.
 	}{
 		{
 			name:    "path scope still validates malformed body",
-			path:    "/services/data/v61.0/oaer/reset/data",
+			path:    "/services/data/v61.0/glade/reset/data",
 			body:    `{`,
 			message: "unexpected EOF",
 		},
 		{
 			name:    "query scope still validates unknown body fields",
-			path:    "/services/data/v61.0/oaer/reset?scope=data",
+			path:    "/services/data/v61.0/glade/reset?scope=data",
 			body:    `{"unknown":["data"]}`,
 			message: `unknown field "unknown"`,
 		},
 		{
 			name:    "rejects multiple JSON values",
-			path:    "/services/data/v61.0/oaer/reset",
+			path:    "/services/data/v61.0/glade/reset",
 			body:    `{"scope":"data"} {"scope":"users"}`,
 			message: "reset body must contain a single JSON object",
 		},
@@ -3218,13 +3218,13 @@ func TestOAERResetBodyValidationUsesSalesforceErrorsAndDoesNotMutate(t *testing.
 	}
 }
 
-func TestOAERResetBodyCombinesWithQueryScopes(t *testing.T) {
+func TestGLADEResetBodyCombinesWithQueryScopes(t *testing.T) {
 	org := testOrg()
 	addAccountForTest(&org, "001000000000001", "Old")
 	handler := New(&org)
 
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset?scope=limits", strings.NewReader(`{"scope":"data","scopes":["async"]}`)))
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/glade/reset?scope=limits", strings.NewReader(`{"scope":"data","scopes":["async"]}`)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("reset status = %d body=%s", rec.Code, rec.Body.String())
 	}
@@ -3239,7 +3239,7 @@ func TestOAERResetBodyCombinesWithQueryScopes(t *testing.T) {
 	}
 }
 
-func TestOAERScopedResetEndpoints(t *testing.T) {
+func TestGLADEScopedResetEndpoints(t *testing.T) {
 	org := testOrg()
 	storage.EnsureDeterministicPlatformData(&org)
 	org.Objects["Account"].Records["001000000000001"] = storage.Record{
@@ -3261,7 +3261,7 @@ func TestOAERScopedResetEndpoints(t *testing.T) {
 	handler := New(&org)
 
 	resetData := httptest.NewRecorder()
-	handler.ServeHTTP(resetData, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset/data", nil))
+	handler.ServeHTTP(resetData, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/glade/reset/data", nil))
 	if resetData.Code != http.StatusOK {
 		t.Fatalf("reset data status = %d body=%s", resetData.Code, resetData.Body.String())
 	}
@@ -3273,7 +3273,7 @@ func TestOAERScopedResetEndpoints(t *testing.T) {
 	}
 
 	resetUsers := httptest.NewRecorder()
-	handler.ServeHTTP(resetUsers, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset", strings.NewReader(`{"scopes":["users","limits","async"]}`)))
+	handler.ServeHTTP(resetUsers, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/glade/reset", strings.NewReader(`{"scopes":["users","limits","async"]}`)))
 	if resetUsers.Code != http.StatusOK {
 		t.Fatalf("reset users status = %d body=%s", resetUsers.Code, resetUsers.Body.String())
 	}
@@ -3294,7 +3294,7 @@ func TestOAERScopedResetEndpoints(t *testing.T) {
 	}
 }
 
-func TestOAERStateEndpointReportsSummaryAndResetSupport(t *testing.T) {
+func TestGLADEStateEndpointReportsSummaryAndResetSupport(t *testing.T) {
 	org := testOrg()
 	storage.EnsureDeterministicPlatformData(&org)
 	org.Objects["Account"].Records["001000000000001"] = storage.Record{
@@ -3308,7 +3308,7 @@ func TestOAERStateEndpointReportsSummaryAndResetSupport(t *testing.T) {
 	handler := New(&org)
 
 	state := httptest.NewRecorder()
-	handler.ServeHTTP(state, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/oaer/state", nil))
+	handler.ServeHTTP(state, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/glade/state", nil))
 	if state.Code != http.StatusOK {
 		t.Fatalf("state status = %d body=%s", state.Code, state.Body.String())
 	}
@@ -3332,13 +3332,13 @@ func TestOAERStateEndpointReportsSummaryAndResetSupport(t *testing.T) {
 		}
 	}
 	inspect := httptest.NewRecorder()
-	handler.ServeHTTP(inspect, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/oaer/inspect", nil))
+	handler.ServeHTTP(inspect, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/glade/inspect", nil))
 	if inspect.Code != http.StatusOK || !bytes.Contains(inspect.Body.Bytes(), []byte(`"resetScopes"`)) {
 		t.Fatalf("inspect status = %d body=%s", inspect.Code, inspect.Body.String())
 	}
 }
 
-func TestOAERResetScopesPreserveAndClearExpectedState(t *testing.T) {
+func TestGLADEResetScopesPreserveAndClearExpectedState(t *testing.T) {
 	tests := []struct {
 		name         string
 		scope        string
@@ -3359,7 +3359,7 @@ func TestOAERResetScopesPreserveAndClearExpectedState(t *testing.T) {
 			handler := New(&org)
 
 			reset := httptest.NewRecorder()
-			handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset?scope="+tt.scope, nil))
+			handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/glade/reset?scope="+tt.scope, nil))
 			if reset.Code != http.StatusOK {
 				t.Fatalf("reset status = %d body=%s", reset.Code, reset.Body.String())
 			}
@@ -3380,18 +3380,18 @@ func TestOAERResetScopesPreserveAndClearExpectedState(t *testing.T) {
 	}
 }
 
-func TestOAERScopedResetRejectsUnknownScope(t *testing.T) {
+func TestGLADEScopedResetRejectsUnknownScope(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
 
 	reset := httptest.NewRecorder()
-	handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset/nope", nil))
+	handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/glade/reset/nope", nil))
 	if reset.Code != http.StatusBadRequest {
 		t.Fatalf("reset status = %d body=%s", reset.Code, reset.Body.String())
 	}
 }
 
-func TestOAERScopedResetDeduplicatesAndAllWins(t *testing.T) {
+func TestGLADEScopedResetDeduplicatesAndAllWins(t *testing.T) {
 	org := testOrg()
 	storage.EnsureDeterministicPlatformData(&org)
 	org.Objects["Account"].Records["001000000000001"] = storage.Record{
@@ -3404,7 +3404,7 @@ func TestOAERScopedResetDeduplicatesAndAllWins(t *testing.T) {
 	handler := New(&org)
 
 	reset := httptest.NewRecorder()
-	handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset?scope=all,data,data", nil))
+	handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/glade/reset?scope=all,data,data", nil))
 	if reset.Code != http.StatusOK {
 		t.Fatalf("reset status = %d body=%s", reset.Code, reset.Body.String())
 	}
@@ -3419,14 +3419,14 @@ func TestOAERScopedResetDeduplicatesAndAllWins(t *testing.T) {
 	}
 }
 
-func TestOAERFixtureAndResetDoNotMutateOrgOnStoreFailure(t *testing.T) {
+func TestGLADEFixtureAndResetDoNotMutateOrgOnStoreFailure(t *testing.T) {
 	t.Run("fixture", func(t *testing.T) {
 		org := testOrg()
 		handler := NewWithStore(&org, &failingStore{})
 
 		seed := httptest.NewRecorder()
-		handler.ServeHTTP(seed, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/fixture", strings.NewReader(`{
-  "version":"oaer.storage.v1",
+		handler.ServeHTTP(seed, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/glade/fixture", strings.NewReader(`{
+  "version":"glade.storage.v1",
   "objects":[{"name":"Account","records":[{"alias":"acme","fields":{"Name":{"kind":"string","string":"Acme"}}}]}]
 }`)))
 		assertSalesforceError(t, seed, http.StatusInternalServerError, "SERVER_ERROR", "store failed")
@@ -3439,7 +3439,7 @@ func TestOAERFixtureAndResetDoNotMutateOrgOnStoreFailure(t *testing.T) {
 		handler := NewWithStore(&org, &failingStore{})
 
 		reset := httptest.NewRecorder()
-		handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset/data", nil))
+		handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/glade/reset/data", nil))
 		assertSalesforceError(t, reset, http.StatusInternalServerError, "SERVER_ERROR", "store failed")
 		summary := storage.InspectOrg("", org)
 		if summary.ByObject["Account"] != 1 || summary.Users != 2 {
@@ -3594,7 +3594,7 @@ func TestLocalUserContextHeaderSelectsUserForIdentity(t *testing.T) {
 	handler := New(&org)
 
 	req := httptest.NewRequest(http.MethodGet, "/id/00D000000000001/005000000000001", nil)
-	req.Header.Set("X-OAER-User-Id", "005000000000123")
+	req.Header.Set("X-GLADE-User-Id", "005000000000123")
 	identity := httptest.NewRecorder()
 	handler.ServeHTTP(identity, req)
 	if identity.Code != http.StatusOK {
@@ -3616,7 +3616,7 @@ func TestLocalUserContextUnknownHeaderFallsBackToDeterministicDefault(t *testing
 	handler := New(&org)
 
 	req := httptest.NewRequest(http.MethodGet, "/services/oauth2/userinfo", nil)
-	req.Header.Set("X-OAER-User-Id", "005999999999999")
+	req.Header.Set("X-GLADE-User-Id", "005999999999999")
 	userinfo := httptest.NewRecorder()
 	handler.ServeHTTP(userinfo, req)
 	if userinfo.Code != http.StatusOK {
@@ -3724,7 +3724,7 @@ func TestOAuthTokenReturnsDeterministicLocalBearer(t *testing.T) {
 	handler := New(&org)
 
 	req := httptest.NewRequest(http.MethodPost, "/services/oauth2/token", strings.NewReader("grant_type=password"))
-	req.Header.Set("X-OAER-User-Id", "005000000000123")
+	req.Header.Set("X-GLADE-User-Id", "005000000000123")
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
@@ -4682,7 +4682,7 @@ func TestToolingExecuteAnonymousStillAcceptsJSONWithoutContentType(t *testing.T)
 }
 
 func TestToolingExecuteAnonymousPersistsAcrossSQLiteBackedCalls(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "oaer.db")
+	dbPath := filepath.Join(t.TempDir(), "glade.db")
 	store, err := storage.OpenSQLite(dbPath)
 	if err != nil {
 		t.Fatal(err)
@@ -4867,7 +4867,7 @@ insert new Account(Name = 'Header User');
 		t.Fatal(err)
 	}
 	req := httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(string(payload)))
-	req.Header.Set("X-OAER-User-Id", string(userID))
+	req.Header.Set("X-GLADE-User-Id", string(userID))
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK || !bytes.Contains(rec.Body.Bytes(), []byte(`"success":true`)) {

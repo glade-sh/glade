@@ -7,12 +7,12 @@ import { basename, join, relative } from "node:path";
 import { spawn } from "node:child_process";
 
 const repoRoot = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
-const timeoutSeconds = Number.parseInt(process.env.OAER_BASELINE_TIMEOUT_SECONDS || "30", 10);
+const timeoutSeconds = Number.parseInt(process.env.GLADE_BASELINE_TIMEOUT_SECONDS || "30", 10);
 const timeoutMs = timeoutSeconds * 1000;
 const outputPath = process.argv[2] || "docs/fixtures/local-tests-example-projects.json";
-const configuredBin = (process.env.OAER_BIN || "").trim();
-const defaultBin = join(repoRoot, "bin", "oaer-perf");
-const oaerBin = configuredBin || (existsSync(defaultBin) ? defaultBin : "");
+const configuredBin = (process.env.GLADE_BIN || "").trim();
+const defaultBin = join(repoRoot, "bin", "glade-perf");
+const gladeBin = configuredBin || (existsSync(defaultBin) ? defaultBin : "");
 
 const projects = [
   "example-projects/NPSP-rel-3.237",
@@ -100,14 +100,14 @@ function summarizeReport(project, report, elapsedMs, command) {
 }
 
 function runProject(project) {
-	const tempDir = mkdtempSync(join(tmpdir(), "oaer-local-tests-"));
+	const tempDir = mkdtempSync(join(tmpdir(), "glade-local-tests-"));
 	const stdoutPath = join(tempDir, "stdout.json");
 	const stderrPath = join(tempDir, "stderr.txt");
-	const command = oaerBin
-		? `${relative(repoRoot, oaerBin) || oaerBin} compat local-tests --project ${project} --json --timeout ${timeoutMs} --top-failures 8`
-		: `go run ./cmd/oaer compat local-tests --project ${project} --json --timeout ${timeoutMs} --top-failures 8`;
-	const spawnCommand = oaerBin || "go";
-	const spawnArgs = oaerBin ? [
+	const command = gladeBin
+		? `${relative(repoRoot, gladeBin) || gladeBin} compat local-tests --project ${project} --json --timeout ${timeoutMs} --top-failures 8`
+		: `go run ./cmd/glade compat local-tests --project ${project} --json --timeout ${timeoutMs} --top-failures 8`;
+	const spawnCommand = gladeBin || "go";
+	const spawnArgs = gladeBin ? [
 		"compat",
 		"local-tests",
 		"--project",
@@ -119,7 +119,7 @@ function runProject(project) {
 		"8",
 	] : [
 		"run",
-		"./cmd/oaer",
+		"./cmd/glade",
 		"compat",
 		"local-tests",
 		"--project",
@@ -234,9 +234,9 @@ const artifact = {
   generatedAt: new Date().toISOString(),
 	timeoutSupport: {
 		compatLocalTestsTimeoutFlag: true,
-		command: oaerBin
-			? `${relative(repoRoot, oaerBin) || oaerBin} compat local-tests --project <project> --json --timeout ${timeoutMs} --top-failures 8`
-			: `go run ./cmd/oaer compat local-tests --project <project> --json --timeout ${timeoutMs} --top-failures 8`,
+		command: gladeBin
+			? `${relative(repoRoot, gladeBin) || gladeBin} compat local-tests --project <project> --json --timeout ${timeoutMs} --top-failures 8`
+			: `go run ./cmd/glade compat local-tests --project <project> --json --timeout ${timeoutMs} --top-failures 8`,
 	},
   projects: results,
 };

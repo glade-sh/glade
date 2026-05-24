@@ -121,13 +121,13 @@ func BuildSalesforceCoverageReportWithTooling(catalog Catalog, tooling *ToolingC
 		Entries:         len(catalog.Entries),
 		NextGates: []SalesforceCoverageNextGate{{
 			Name:    "docs inventory",
-			Command: "go run ./cmd/oaer compat docs-inventory --source <salesforce-docs> --json",
+			Command: "go run ./cmd/glade compat docs-inventory --source <salesforce-docs> --json",
 		}, {
 			Name:    "capability catalog",
-			Command: "go run ./cmd/oaer compat catalog --inventory <inventory.json> --json",
+			Command: "go run ./cmd/glade compat catalog --inventory <inventory.json> --json",
 		}, {
 			Name:    "coverage manifest",
-			Command: "go run ./cmd/oaer compat salesforce-coverage --source <salesforce-docs> --tooling-completions <completions.json> --tooling-symbols <apex-class-symbols.json> --json",
+			Command: "go run ./cmd/glade compat salesforce-coverage --source <salesforce-docs> --tooling-completions <completions.json> --tooling-symbols <apex-class-symbols.json> --json",
 		}},
 	}
 	for _, area := range areas {

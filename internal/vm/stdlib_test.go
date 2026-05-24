@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/resource"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/resource"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestExecStringStdlibMethods(t *testing.T) {
@@ -622,19 +622,19 @@ func TestExecDomainValueObjects(t *testing.T) {
 String orgHost = DomainCreator.getOrgMyDomainHostname();
 String setupHost = DomainCreator.getSetupHostname();
 String vfHost = DomainCreator.getVisualforceHostname('pkg');
-System.assertEquals('oaer.my.salesforce.local', orgHost);
-System.assertEquals('oaer.setup.local', setupHost);
-System.assertEquals('pkg--oaer.visualforce.local', vfHost);
+System.assertEquals('glade.my.salesforce.local', orgHost);
+System.assertEquals('glade.setup.local', setupHost);
+System.assertEquals('pkg--glade.visualforce.local', vfHost);
 Domain orgDomain = DomainParser.parse(orgHost);
 Domain vfDomain = DomainParser.parse('https://' + vfHost + '/apex/Home');
 Domain urlDomain = DomainParser.parse(new URL('https://Example.TEST/apex/Home'));
-System.assertEquals('oaer', orgDomain.getMyDomainName());
+System.assertEquals('glade', orgDomain.getMyDomainName());
 System.assertEquals('', orgDomain.getPackageName());
 System.assertEquals(null, orgDomain.getSandboxName());
 System.assertEquals('pkg', vfDomain.getPackageName());
 System.assertEquals('example.test', urlDomain.toString());
-System.assertEquals('pkg--oaer.visualforce.local', vfDomain.toString());
-System.assertEquals('oaer.my.salesforce.local', new Domain().toString());
+System.assertEquals('pkg--glade.visualforce.local', vfDomain.toString());
+System.assertEquals('glade.my.salesforce.local', new Domain().toString());
 Domain cloned = (Domain)vfDomain.clone();
 System.assertEquals(vfDomain.toString(), cloned.toString());
 `)
@@ -2216,7 +2216,7 @@ op.endWithStatus(metricContext, 200);
 OrgInstrumentationService service = new OrgInstrumentationService();
 HttpRequest req = new HttpRequest();
 service.propagateContext(req);
-System.assertEquals('local', req.getHeader('x-oaer-instrumentation-context'));
+System.assertEquals('local', req.getHeader('x-glade-instrumentation-context'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2336,10 +2336,10 @@ System.assertEquals(left.hashCode(), right.hashCode());
 System.assertEquals('List[1]', left.toString());
 
 URL base = URL.getOrgDomainUrl();
-System.assertEquals('https://local.oaer.example', base.toExternalForm());
-System.assertEquals('https://local.oaer.example/servlet/servlet.FileDownload?field=Logo__c&id=001B000001DVM9t', URL.getFileFieldURL('001B000001DVM9t', 'Logo__c'));
+System.assertEquals('https://local.glade.example', base.toExternalForm());
+System.assertEquals('https://local.glade.example/servlet/servlet.FileDownload?field=Logo__c&id=001B000001DVM9t', URL.getFileFieldURL('001B000001DVM9t', 'Logo__c'));
 System.assertEquals('https', base.getProtocol());
-System.assertEquals('local.oaer.example', base.getHost());
+System.assertEquals('local.glade.example', base.getHost());
 System.assertEquals(443, base.getDefaultPort());
 System.assertEquals(-1, base.getPort());
 URL detailed = new URL('https://example.test:8443/apex/Page?id=001#top');
@@ -3443,7 +3443,7 @@ System.assert(stamp.formatLong().contains('2024'));
 String gmt = String.valueOfGmt(stamp);
 System.assert(gmt.startsWith('2024-02-29 23:59:58'));
 
-Blob pdf = Blob.valueOf('oaer').toPdf('stub');
+Blob pdf = Blob.valueOf('glade').toPdf('stub');
 System.assert(pdf.toString().startsWith('%PDF-1.4'));
 `)
 	if err != nil {
@@ -3652,12 +3652,12 @@ unknown.getSObjectType();
 func TestExecURLCurrentRequestUrlUsesCurrentPage(t *testing.T) {
 	program, err := CompileAnonymous(`
 URL defaultURL = URL.getCurrentRequestUrl();
-System.assertEquals('https://local.oaer.example/apex/current', defaultURL.toExternalForm());
+System.assertEquals('https://local.glade.example/apex/current', defaultURL.toExternalForm());
 Test.setCurrentPage(new PageReference('/apex/current'));
 PageReference current = ApexPages.currentPage();
 current.getParameters().put('mode', 'local');
 URL withParams = URL.getCurrentRequestUrl();
-System.assertEquals('https://local.oaer.example/apex/current?mode=local', withParams.toExternalForm());
+System.assertEquals('https://local.glade.example/apex/current?mode=local', withParams.toExternalForm());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4732,15 +4732,15 @@ func TestCollectionStdlibCloneValuePreservesApexMocksProviderCycles(t *testing.T
 	provider := Object("framework_ApexMocks")
 	recorder := Object("framework_MethodReturnValueRecorder")
 	proxy := Object("ISchemaService")
-	proxy.Fields["__oaerStubProvider"] = provider
+	proxy.Fields["__gladeStubProvider"] = provider
 	recorder.Fields["proxy"] = proxy
 	provider.Fields["methodReturnValueRecorder"] = recorder
 
 	cloned := cloneValue(provider)
-	if cloned.Fields["methodReturnValueRecorder"].Fields["proxy"].Fields["__oaerStubProvider"].Fields["methodReturnValueRecorder"].Kind == ValueNull {
+	if cloned.Fields["methodReturnValueRecorder"].Fields["proxy"].Fields["__gladeStubProvider"].Fields["methodReturnValueRecorder"].Kind == ValueNull {
 		t.Fatalf("cloned ApexMocks provider cycle lost recorder field")
 	}
-	if cloned.Fields["methodReturnValueRecorder"].Fields["proxy"].Fields["__oaerStubProvider"].Fields["methodReturnValueRecorder"].Type != "framework_MethodReturnValueRecorder" {
+	if cloned.Fields["methodReturnValueRecorder"].Fields["proxy"].Fields["__gladeStubProvider"].Fields["methodReturnValueRecorder"].Type != "framework_MethodReturnValueRecorder" {
 		t.Fatalf("cloned ApexMocks provider cycle did not preserve recorder object")
 	}
 }

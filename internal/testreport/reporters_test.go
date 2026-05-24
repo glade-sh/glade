@@ -34,11 +34,11 @@ Result: 1 passed, 1 failed, 1 skipped, 1 compile error, 1 runtime error, 1 unsup
 
 func TestWriteConsoleWithReportPath(t *testing.T) {
 	var out bytes.Buffer
-	if err := WriteConsoleWithOptions(&out, sampleRun(), ConsoleOptions{ReportPath: ".oaer/runs/latest/summary.md"}); err != nil {
+	if err := WriteConsoleWithOptions(&out, sampleRun(), ConsoleOptions{ReportPath: ".glade/runs/latest/summary.md"}); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := out.String(); !bytes.Contains([]byte(got), []byte("Report: .oaer/runs/latest/summary.md\n")) {
+	if got := out.String(); !bytes.Contains([]byte(got), []byte("Report: .glade/runs/latest/summary.md\n")) {
 		t.Fatalf("console output missing report path:\n%s", got)
 	}
 }

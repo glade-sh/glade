@@ -3,8 +3,8 @@ package playground
 import (
 	"time"
 
-	"github.com/open-aer/oaer/internal/trace"
-	"github.com/open-aer/oaer/internal/vm"
+	"github.com/glade-sh/glade/internal/trace"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 type WorkspaceOptions struct {

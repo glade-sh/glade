@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/open-aer/oaer/internal/dml"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 type Query struct {
@@ -39,7 +39,7 @@ type Query struct {
 
 var parsedQueryCache sync.Map
 
-const virtualSchemaHydrationStampKey = "__oaer_virtual_schema_hydration_stamp"
+const virtualSchemaHydrationStampKey = "__glade_virtual_schema_hydration_stamp"
 
 func cachedParsedQuery(input string, now time.Time) (Query, bool) {
 	value, ok := parsedQueryCache.Load(parsedQueryCacheKey(input, now))
@@ -1012,7 +1012,7 @@ func asyncApexJobTestPendingStatusMatches(definition storage.ObjectDefinition, r
 	if !ok || status.Kind != storage.ValueString || !strings.EqualFold(status.String, "Completed") {
 		return false
 	}
-	pending, ok := record.Fields["__OAERTestPendingStatus"]
+	pending, ok := record.Fields["__GLADETestPendingStatus"]
 	if !ok {
 		return false
 	}

@@ -200,7 +200,7 @@ const databaseKindFilters: { value: DatabaseObjectKind; label: string }[] = [
 
 export default function App() {
   const [theme, setTheme] = useState<"dark" | "light">(() => {
-    const saved = localStorage.getItem("oaer-playground-theme")
+    const saved = localStorage.getItem("glade-playground-theme")
     return saved === "light" ? "light" : "dark"
   })
   const [meta, setMeta] = useState<WorkspaceMetadata | null>(null)
@@ -252,7 +252,7 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark")
-    localStorage.setItem("oaer-playground-theme", theme)
+    localStorage.setItem("glade-playground-theme", theme)
   }, [theme])
 
   useEffect(() => {
@@ -852,7 +852,7 @@ export default function App() {
             OA
           </div>
           <div className="min-w-0">
-            <h1 className="truncate text-sm font-semibold">OAER Apex Playground</h1>
+            <h1 className="truncate text-sm font-semibold">GLADE Apex Playground</h1>
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
               <span>{meta?.id ?? "default"}</span>
               <span className="font-mono">{shortHash(meta?.workspaceHash)}</span>

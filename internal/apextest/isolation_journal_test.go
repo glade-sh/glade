@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/dml"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestIsolationJournalRestoresInsertUpdateDeleteAndSequences(t *testing.T) {

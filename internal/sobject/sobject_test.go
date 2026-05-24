@@ -3,8 +3,8 @@ package sobject
 import (
 	"testing"
 
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestValueTracksFieldsAndExplicitNulls(t *testing.T) {

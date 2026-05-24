@@ -1,17 +1,17 @@
 # Architecture
 
-`oaer` is organized as a set of narrow packages that can be tested separately
+`glade` is organized as a set of narrow packages that can be tested separately
 and composed by the CLI.
 
 ## Current Packages
 
-- `cmd/oaer`: executable entry point.
-- `internal/oaercli`: command routing and user-facing CLI behavior.
+- `cmd/glade`: executable entry point.
+- `internal/gladecli`: command routing and user-facing CLI behavior.
 - `internal/apexast`: parser adapter and stable source model over the local
   tree-sitter Apex parser module.
 - `internal/apexdocs`: public Apex documentation inventory extraction, diffing,
   and stable JSON generation for the broad support catalog.
-- `internal/config`: `oaer.yml` discovery and parsing.
+- `internal/config`: `glade.yml` discovery and parsing.
 - `internal/diagnostic`: shared diagnostic model for parser, semantic analysis,
   runtime, and CLI.
 - `internal/project`: SFDX package directory discovery and source file
@@ -47,7 +47,7 @@ and composed by the CLI.
   all-or-none result shaping, validation, rollback snapshots, and trigger
   invocation hooks for the supported VM paths.
 - `internal/dap`: Debug Adapter Protocol framing, request/response handling,
-  and snapshot sessions used by `oaer exec --debug` and `oaer test --debug`.
+  and snapshot sessions used by `glade exec --debug` and `glade test --debug`.
 - `internal/lsp`: stdio LSP/JSON-RPC server backed by the project index for
   initialize/shutdown, diagnostics, symbols, hover, and completion basics.
 - `internal/watch`: file classification, snapshot diffing, native/polling watch

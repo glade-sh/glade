@@ -3,9 +3,9 @@ package testreport
 import (
 	"encoding/json"
 
-	"github.com/open-aer/oaer/internal/profile"
-	"github.com/open-aer/oaer/internal/trace"
-	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/glade-sh/glade/internal/profile"
+	"github.com/glade-sh/glade/internal/trace"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 type Status string

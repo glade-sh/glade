@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 const maxDatabaseBrowserRows = 200

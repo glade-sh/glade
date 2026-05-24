@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/schema"
+	"github.com/glade-sh/glade/internal/schema"
 )
 
 type UnsupportedMetadataError struct {

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/trace"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/trace"
 )
 
 func TestExecAssertEquals(t *testing.T) {
@@ -1797,7 +1797,7 @@ func TestExecUserInfoGetDefaultCurrency(t *testing.T) {
 }
 
 func TestExecUserInfoOrganizationName(t *testing.T) {
-	program, err := CompileAnonymous(`System.assertEquals('OAER Local Org', UserInfo.getOrganizationName());`)
+	program, err := CompileAnonymous(`System.assertEquals('GLADE Local Org', UserInfo.getOrganizationName());`)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -30,7 +30,7 @@ func BenchmarkSQLiteStoreSaveAndLoadLargeFixture(b *testing.B) {
 	baseDir := b.TempDir()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		store, err := OpenSQLite(filepath.Join(baseDir, fmt.Sprintf("oaer-%d.db", i)))
+		store, err := OpenSQLite(filepath.Join(baseDir, fmt.Sprintf("glade-%d.db", i)))
 		if err != nil {
 			b.Fatal(err)
 		}

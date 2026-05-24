@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestLoadProjectWorkflowFieldUpdatesAndDiagnostics(t *testing.T) {
@@ -173,7 +173,7 @@ func TestLoadProjectFlowFieldUpdatesAndDiagnostics(t *testing.T) {
 	if len(rules) != 1 || rules[0].Name != "Widget_Status" || len(rules[0].Criteria) != 1 || len(rules[0].FieldUpdates) != 1 {
 		t.Fatalf("rules = %#v", rules)
 	}
-	if len(idx.Diagnostics) != 1 || idx.Diagnostics[0].Code != "OAERAUTO002" {
+	if len(idx.Diagnostics) != 1 || idx.Diagnostics[0].Code != "GLADEAUTO002" {
 		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
 	}
 }
@@ -321,7 +321,7 @@ func TestLoadProjectFlowApexActionCalls(t *testing.T) {
 	if len(actions) != 1 || actions[0].ClassName != "WidgetFlowAction" || actions[0].MethodName != "run" {
 		t.Fatalf("actions = %#v", actions)
 	}
-	if len(idx.Diagnostics) != 1 || idx.Diagnostics[0].Code != "OAERAUTO002" {
+	if len(idx.Diagnostics) != 1 || idx.Diagnostics[0].Code != "GLADEAUTO002" {
 		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
 	}
 }
@@ -376,7 +376,7 @@ func TestLoadProjectFlowProcessBuilderFormulaAndTypedValues(t *testing.T) {
 	if rule.FieldUpdates[2].SourceField != "Score__c" {
 		t.Fatalf("source update = %#v", rule.FieldUpdates[2])
 	}
-	if len(idx.Diagnostics) != 1 || idx.Diagnostics[0].Code != "OAERAUTO002" || !strings.Contains(idx.Diagnostics[0].Message, "record lookup") {
+	if len(idx.Diagnostics) != 1 || idx.Diagnostics[0].Code != "GLADEAUTO002" || !strings.Contains(idx.Diagnostics[0].Message, "record lookup") {
 		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
 	}
 }

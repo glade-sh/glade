@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/capability"
+	"github.com/glade-sh/glade/internal/capability"
 )
 
 const (

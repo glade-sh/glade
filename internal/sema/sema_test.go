@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/apexast"
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func TestAnalyzeResolvesMemberTypes(t *testing.T) {
@@ -80,7 +80,7 @@ func TestAnalyzeUnknownMemberType(t *testing.T) {
 	if !result.HasErrors() {
 		t.Fatalf("expected diagnostic: %#v", result.Diagnostics)
 	}
-	if result.Diagnostics[0].Code != "OAERSEMA002" {
+	if result.Diagnostics[0].Code != "GLADESEMA002" {
 		t.Fatalf("diagnostic = %#v", result.Diagnostics[0])
 	}
 }
@@ -111,7 +111,7 @@ func TestAnalyzeMethodParameterTypes(t *testing.T) {
 	if !result.HasErrors() {
 		t.Fatalf("expected diagnostic: %#v", result.Diagnostics)
 	}
-	if len(result.Diagnostics) != 1 || result.Diagnostics[0].Code != "OAERSEMA004" {
+	if len(result.Diagnostics) != 1 || result.Diagnostics[0].Code != "GLADESEMA004" {
 		t.Fatalf("diagnostics = %#v", result.Diagnostics)
 	}
 }
@@ -1060,7 +1060,7 @@ public class UsesSObjectTypeFields {
 	}, schema.Schema{})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if (diag.Code == "OAERSEMA021" || diag.Code == "OAERSEMA008") && strings.Contains(diag.Message, "SObjectType.fields") {
+		if (diag.Code == "GLADESEMA021" || diag.Code == "GLADESEMA008") && strings.Contains(diag.Message, "SObjectType.fields") {
 			t.Fatalf("SObjectType.fields tokens should be recognized: %#v", result.Diagnostics)
 		}
 	}
@@ -1148,7 +1148,7 @@ public class UsesMultilineSOQL {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA006" && (strings.Contains(diag.Message, "unknown type \"SELECT\"") || strings.Contains(diag.Message, "unknown type \"WHERE\"")) {
+		if diag.Code == "GLADESEMA006" && (strings.Contains(diag.Message, "unknown type \"SELECT\"") || strings.Contains(diag.Message, "unknown type \"WHERE\"")) {
 			t.Fatalf("SOQL query should not be treated as a local declaration: %#v", result.Diagnostics)
 		}
 	}
@@ -1331,7 +1331,7 @@ public class UsesCoalesce {
 	}, schema.Schema{})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "__coalesce") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "__coalesce") {
 			t.Fatalf("null coalescing should not report synthetic call: %#v", result.Diagnostics)
 		}
 	}
@@ -1355,7 +1355,7 @@ public class UsesPlatformMethods {
 	}, schema.Schema{})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && (strings.Contains(diag.Message, "setScale") || strings.Contains(diag.Message, "getErrors") || strings.Contains(diag.Message, "hasErrors")) {
+		if diag.Code == "GLADESEMA008" && (strings.Contains(diag.Message, "setScale") || strings.Contains(diag.Message, "getErrors") || strings.Contains(diag.Message, "hasErrors")) {
 			t.Fatalf("platform methods should be recognized: %#v", result.Diagnostics)
 		}
 	}
@@ -1401,7 +1401,7 @@ public class UsesCloneAndDate {
 	}, schema.Schema{})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if (diag.Code == "OAERSEMA008" || diag.Code == "OAERSEMA023") && (strings.Contains(diag.Message, "addYears") || strings.Contains(diag.Message, "addDays") || strings.Contains(diag.Message, "clone")) {
+		if (diag.Code == "GLADESEMA008" || diag.Code == "GLADESEMA023") && (strings.Contains(diag.Message, "addYears") || strings.Contains(diag.Message, "addDays") || strings.Contains(diag.Message, "clone")) {
 			t.Fatalf("date arithmetic and SObject clone overloads should be recognized: %#v", result.Diagnostics)
 		}
 	}
@@ -1472,7 +1472,7 @@ public class SalesTaxRequest {
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
 		switch diag.Code {
-		case "OAERSEMA006", "OAERSEMA008", "OAERSEMA011", "OAERSEMA019", "OAERSEMA021":
+		case "GLADESEMA006", "GLADESEMA008", "GLADESEMA011", "GLADESEMA019", "GLADESEMA021":
 			t.Fatalf("platform seams should be recognized: %#v", result.Diagnostics)
 		}
 	}
@@ -1494,7 +1494,7 @@ public class UsesFallbackProperties {
 	}, schema.Schema{})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if (diag.Code == "OAERSEMA008" || diag.Code == "OAERSEMA023") && (strings.Contains(diag.Message, "addYears") || strings.Contains(diag.Message, "MembershipTermInfos")) {
+		if (diag.Code == "GLADESEMA008" || diag.Code == "GLADESEMA023") && (strings.Contains(diag.Message, "addYears") || strings.Contains(diag.Message, "MembershipTermInfos")) {
 			t.Fatalf("fallback property names should provide Date/List types: %#v", result.Diagnostics)
 		}
 	}
@@ -1521,7 +1521,7 @@ public class UsesCommaLocals {
 	}, schema.Schema{Objects: []schema.Object{{Name: "CartItem__c"}}})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA013" && (strings.Contains(diag.Message, "membershipItem") || strings.Contains(diag.Message, "primaryDonationItem") || strings.Contains(diag.Message, "secondaryDonationItem")) {
+		if diag.Code == "GLADESEMA013" && (strings.Contains(diag.Message, "membershipItem") || strings.Contains(diag.Message, "primaryDonationItem") || strings.Contains(diag.Message, "secondaryDonationItem")) {
 			t.Fatalf("comma-separated locals should be visible: %#v", result.Diagnostics)
 		}
 	}
@@ -1552,7 +1552,7 @@ public class UsesApexClassBody {
 	}, schema.Schema{})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA009" && strings.Contains(diag.Message, "classImplementsITestData") {
+		if diag.Code == "GLADESEMA009" && strings.Contains(diag.Message, "classImplementsITestData") {
 			t.Fatalf("ApexClass.Body should match String overloads: %#v", result.Diagnostics)
 		}
 	}
@@ -1664,7 +1664,7 @@ public class Order {
 	}, schema.Schema{})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA018" && strings.Contains(diag.Message, "Schema.SObjectField") {
+		if diag.Code == "GLADESEMA018" && strings.Contains(diag.Message, "Schema.SObjectField") {
 			t.Fatalf("unexpected field token diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -1823,7 +1823,7 @@ public class UsesGeneratedStubStaticAccess {
 	result := Analyze(index)
 	var staticAccessDiagnostics int
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA027" {
+		if diag.Code == "GLADESEMA027" {
 			staticAccessDiagnostics++
 		}
 	}
@@ -2366,7 +2366,7 @@ public class UsesNestedCollectionAdd {
 	}, schema.Schema{Objects: []schema.Object{{Name: "MembershipTypeProductLink__c"}}})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA023" && strings.Contains(diag.Message, "add") {
+		if diag.Code == "GLADESEMA023" && strings.Contains(diag.Message, "add") {
 			t.Fatalf("nested collection add should use the local element type: %#v", result.Diagnostics)
 		}
 	}
@@ -2398,7 +2398,7 @@ public class UsesNewList extends BaseTest {
 	}, schema.Schema{})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA022" && strings.Contains(diag.Message, "newList") {
+		if diag.Code == "GLADESEMA022" && strings.Contains(diag.Message, "newList") {
 			t.Fatalf("newList helper should tolerate untyped expression arguments: %#v", result.Diagnostics)
 		}
 	}
@@ -2425,7 +2425,7 @@ public class UsesEnum {
 	}, schema.Schema{})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && (strings.Contains(diag.Message, "values") || strings.Contains(diag.Message, "valueOf")) {
+		if diag.Code == "GLADESEMA008" && (strings.Contains(diag.Message, "values") || strings.Contains(diag.Message, "valueOf")) {
 			t.Fatalf("enum static methods should be recognized: %#v", diag)
 		}
 	}
@@ -2960,7 +2960,7 @@ func TestAnalyzeVisibilityBaseline(t *testing.T) {
 		t.Fatalf("diagnostics = %#v", result.Diagnostics)
 	}
 	for _, diag := range result.Diagnostics {
-		if diag.Code != "OAERSEMA005" {
+		if diag.Code != "GLADESEMA005" {
 			t.Fatalf("diagnostic = %#v", diag)
 		}
 	}
@@ -3017,7 +3017,7 @@ public class Hello {
 	for _, diag := range result.Diagnostics {
 		codes[diag.Code] = true
 	}
-	for _, code := range []string{"OAERSEMA006", "OAERSEMA013", "OAERSEMA008"} {
+	for _, code := range []string{"GLADESEMA006", "GLADESEMA013", "GLADESEMA008"} {
 		if !codes[code] {
 			t.Fatalf("missing %s in diagnostics: %#v", code, result.Diagnostics)
 		}
@@ -3048,7 +3048,7 @@ public class Uses {
 	result := Analyze(index)
 	count := 0
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA015" {
+		if diag.Code == "GLADESEMA015" {
 			count++
 		}
 	}
@@ -3071,7 +3071,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA013" && strings.Contains(diag.Message, "delimiter") {
+		if diag.Code == "GLADESEMA013" && strings.Contains(diag.Message, "delimiter") {
 			t.Fatalf("unexpected delimiter diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3127,7 +3127,7 @@ public class SelectorFactory {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA013" && strings.Contains(diag.Message, "domainSObjectType") {
+		if diag.Code == "GLADESEMA013" && strings.Contains(diag.Message, "domainSObjectType") {
 			t.Fatalf("unexpected SObjectType local diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3163,7 +3163,7 @@ public class OrderLine {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA009" && strings.Contains(diag.Message, "Product.newInstance") {
+		if diag.Code == "GLADESEMA009" && strings.Contains(diag.Message, "Product.newInstance") {
 			t.Fatalf("unexpected relationship field overload diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3201,7 +3201,7 @@ public class AffiliationTestData {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "insertRecord") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "insertRecord") {
 			t.Fatalf("unexpected map literal chained-call diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3235,8 +3235,8 @@ public class Handler {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if (diag.Code == "OAERSEMA008" && strings.Contains(strings.ToLower(diag.Message), "adderror")) ||
-			(diag.Code == "OAERSEMA013" && strings.Contains(strings.ToLower(diag.Message), "trigger.isinsert")) {
+		if (diag.Code == "GLADESEMA008" && strings.Contains(strings.ToLower(diag.Message), "adderror")) ||
+			(diag.Code == "GLADESEMA013" && strings.Contains(strings.ToLower(diag.Message), "trigger.isinsert")) {
 			t.Fatalf("unexpected SObject addError/Trigger diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3275,7 +3275,7 @@ public class Handler {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA022" && strings.Contains(diag.Message, "groupSObjectsByIdField") {
+		if diag.Code == "GLADESEMA022" && strings.Contains(diag.Message, "groupSObjectsByIdField") {
 			t.Fatalf("unexpected describe getName overload ambiguity: %#v", result.Diagnostics)
 		}
 	}
@@ -3303,7 +3303,7 @@ public class Handler {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "getSObjectType") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "getSObjectType") {
 			t.Fatalf("unexpected SObject map getSObjectType diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3337,9 +3337,9 @@ public class ApexClassSelector {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if (diag.Code == "OAERSEMA019" && strings.Contains(diag.Message, "selectById")) ||
-			(diag.Code == "OAERSEMA021" && strings.Contains(diag.Message, "ApexClass")) ||
-			(diag.Code == "OAERSEMA025" && strings.Contains(diag.Message, "Schema.SObjectField")) {
+		if (diag.Code == "GLADESEMA019" && strings.Contains(diag.Message, "selectById")) ||
+			(diag.Code == "GLADESEMA021" && strings.Contains(diag.Message, "ApexClass")) ||
+			(diag.Code == "GLADESEMA025" && strings.Contains(diag.Message, "Schema.SObjectField")) {
 			t.Fatalf("unexpected ApexClass selector diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3360,7 +3360,7 @@ public class Handler {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "recordType.get") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "recordType.get") {
 			t.Fatalf("unexpected concrete SObject get diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3379,7 +3379,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "getPopulatedFieldsAsMap") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "getPopulatedFieldsAsMap") {
 			t.Fatalf("unexpected getPopulatedFieldsAsMap diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3400,7 +3400,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA006" && (strings.Contains(diag.Message, "CronJobDetail") || strings.Contains(diag.Message, "CronTrigger")) {
+		if diag.Code == "GLADESEMA006" && (strings.Contains(diag.Message, "CronJobDetail") || strings.Contains(diag.Message, "CronTrigger")) {
 			t.Fatalf("unexpected cron standard object diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3437,7 +3437,7 @@ public class EventDomain extends Domain {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA003" || diag.Code == "OAERSEMA004" {
+		if diag.Code == "GLADESEMA003" || diag.Code == "GLADESEMA004" {
 			t.Fatalf("unexpected platform-event list downcast diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3458,7 +3458,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && (strings.Contains(diag.Message, "clone") || strings.Contains(diag.Message, "addError")) {
+		if diag.Code == "GLADESEMA008" && (strings.Contains(diag.Message, "clone") || strings.Contains(diag.Message, "addError")) {
 			t.Fatalf("unexpected SObject instance method diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3487,7 +3487,7 @@ public class Handler {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA011" && strings.Contains(diag.Message, "EventHandlerResponse") {
+		if diag.Code == "GLADESEMA011" && strings.Contains(diag.Message, "EventHandlerResponse") {
 			t.Fatalf("unexpected enum/Object constructor ambiguity: %#v", result.Diagnostics)
 		}
 	}
@@ -3508,7 +3508,7 @@ public class AttachmentService {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA011" && strings.Contains(diag.Message, "AttachmentService") {
+		if diag.Code == "GLADESEMA011" && strings.Contains(diag.Message, "AttachmentService") {
 			t.Fatalf("unexpected this constructor diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3538,7 +3538,7 @@ public class Uses {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA022" && strings.Contains(diag.Message, "Schedule.newInstance") {
+		if diag.Code == "GLADESEMA022" && strings.Contains(diag.Message, "Schedule.newInstance") {
 			t.Fatalf("unexpected Schedule.newInstance ambiguity: %#v", result.Diagnostics)
 		}
 	}
@@ -3566,7 +3566,7 @@ public class Uses {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA018" && strings.Contains(diag.Message, "AccountEvaluator") {
+		if diag.Code == "GLADESEMA018" && strings.Contains(diag.Message, "AccountEvaluator") {
 			t.Fatalf("unexpected chained constructor return diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3587,7 +3587,7 @@ public class BillMe {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA019" && strings.Contains(diag.Message, "Status") {
+		if diag.Code == "GLADESEMA019" && strings.Contains(diag.Message, "Status") {
 			t.Fatalf("unexpected nested generic return diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3606,7 +3606,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "size") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "size") {
 			t.Fatalf("unexpected chained size diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3625,7 +3625,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "keySet") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "keySet") {
 			t.Fatalf("unexpected chained keySet diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3681,7 +3681,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "selectById") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "selectById") {
 			t.Fatalf("unexpected chained factory diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3700,7 +3700,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA011" && strings.Contains(diag.Message, "StandardSetController") {
+		if diag.Code == "GLADESEMA011" && strings.Contains(diag.Message, "StandardSetController") {
 			t.Fatalf("unexpected StandardSetController diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3719,7 +3719,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA023" && strings.Contains(diag.Message, "hasMessages") {
+		if diag.Code == "GLADESEMA023" && strings.Contains(diag.Message, "hasMessages") {
 			t.Fatalf("unexpected ApexPages.hasMessages diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3739,7 +3739,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA013" && strings.Contains(diag.Message, "TEST_FAILURE") {
+		if diag.Code == "GLADESEMA013" && strings.Contains(diag.Message, "TEST_FAILURE") {
 			t.Fatalf("unexpected final local variable diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3777,7 +3777,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA022" && strings.Contains(diag.Message, "registerDeleted") {
+		if diag.Code == "GLADESEMA022" && strings.Contains(diag.Message, "registerDeleted") {
 			t.Fatalf("unexpected static property chain overload diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3796,7 +3796,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA023" && strings.Contains(diag.Message, "getSObject") {
+		if diag.Code == "GLADESEMA023" && strings.Contains(diag.Message, "getSObject") {
 			t.Fatalf("unexpected SObject.getSObject diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3816,7 +3816,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA019" && strings.Contains(diag.Message, "must return Boolean") {
+		if diag.Code == "GLADESEMA019" && strings.Contains(diag.Message, "must return Boolean") {
 			t.Fatalf("unexpected return diagnostic after comment: %#v", result.Diagnostics)
 		}
 	}
@@ -3835,7 +3835,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA023" && strings.Contains(diag.Message, "deepClone") {
+		if diag.Code == "GLADESEMA023" && strings.Contains(diag.Message, "deepClone") {
 			t.Fatalf("unexpected List.deepClone diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3856,7 +3856,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "size") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "size") {
 			t.Fatalf("unexpected chained size diagnostic after less-than: %#v", result.Diagnostics)
 		}
 	}
@@ -3884,7 +3884,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA019" && strings.Contains(diag.Message, "SubTotal__c") {
+		if diag.Code == "GLADESEMA019" && strings.Contains(diag.Message, "SubTotal__c") {
 			t.Fatalf("unexpected summary field return diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3908,7 +3908,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "putSObject") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "putSObject") {
 			t.Fatalf("unexpected SObject.putSObject diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3939,7 +3939,7 @@ public class Hello extends Base {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "getRecordTypeId") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "getRecordTypeId") {
 			t.Fatalf("unexpected map initializer chained call diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -3960,7 +3960,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(strings.ToLower(diag.Message), "with") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(strings.ToLower(diag.Message), "with") {
 			t.Fatalf("unexpected fluent with diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4004,7 +4004,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "convertRecord") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "convertRecord") {
 			t.Fatalf("unexpected nested static factory chained call diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4023,7 +4023,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "getName") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "getName") {
 			t.Fatalf("unexpected getClass().getName diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4059,7 +4059,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "getName") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "getName") {
 			t.Fatalf("unexpected nested getClass().getName diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4082,7 +4082,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA019" && strings.Contains(diag.Message, "String from Boolean") {
+		if diag.Code == "GLADESEMA019" && strings.Contains(diag.Message, "String from Boolean") {
 			t.Fatalf("unexpected cast comparison return diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4103,7 +4103,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "CreatedDate.Date") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "CreatedDate.Date") {
 			t.Fatalf("unexpected datetime date diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4130,7 +4130,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA022" && strings.Contains(diag.Message, "getPrices") {
+		if diag.Code == "GLADESEMA022" && strings.Contains(diag.Message, "getPrices") {
 			t.Fatalf("unexpected same-return overload ambiguity: %#v", result.Diagnostics)
 		}
 	}
@@ -4151,7 +4151,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "PriceClasses__c.contains") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "PriceClasses__c.contains") {
 			t.Fatalf("unexpected fallback string field contains diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4182,7 +4182,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA018" && strings.Contains(diag.Message, `variable "item"`) {
+		if diag.Code == "GLADESEMA018" && strings.Contains(diag.Message, `variable "item"`) {
 			t.Fatalf("unexpected shadowed item assignment diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4201,7 +4201,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA006" && strings.Contains(diag.Message, "AuraHandledException") {
+		if diag.Code == "GLADESEMA006" && strings.Contains(diag.Message, "AuraHandledException") {
 			t.Fatalf("unexpected AuraHandledException diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4220,7 +4220,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "getDefaultValueFormula") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "getDefaultValueFormula") {
 			t.Fatalf("unexpected getDefaultValueFormula diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4249,7 +4249,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "toString") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "toString") {
 			t.Fatalf("unexpected toString diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4270,7 +4270,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" {
+		if diag.Code == "GLADESEMA008" {
 			t.Fatalf("unexpected unknown method diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4293,7 +4293,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "newlit:List<PaymentLine__c>") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "newlit:List<PaymentLine__c>") {
 			t.Fatalf("unexpected newlit diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4312,7 +4312,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "getChildElement") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "getChildElement") {
 			t.Fatalf("unexpected getChildElement diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4331,7 +4331,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "newInstance") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "newInstance") {
 			t.Fatalf("unexpected newInstance diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4350,7 +4350,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "getOrganizationName") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "getOrganizationName") {
 			t.Fatalf("unexpected UserInfo diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4369,7 +4369,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA009" && strings.Contains(diag.Message, "Messaging.sendEmail") {
+		if diag.Code == "GLADESEMA009" && strings.Contains(diag.Message, "Messaging.sendEmail") {
 			t.Fatalf("unexpected Messaging.sendEmail diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4400,7 +4400,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA009" && strings.Contains(diag.Message, "Logger.log") {
+		if diag.Code == "GLADESEMA009" && strings.Contains(diag.Message, "Logger.log") {
 			t.Fatalf("unexpected standard exception subtype diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4419,7 +4419,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA019" && strings.Contains(diag.Message, "Iterable<Object>") {
+		if diag.Code == "GLADESEMA019" && strings.Contains(diag.Message, "Iterable<Object>") {
 			t.Fatalf("unexpected Iterable return diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4440,7 +4440,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && (strings.Contains(diag.Message, ".start") || strings.Contains(diag.Message, ".execute") || strings.Contains(diag.Message, ".finish")) {
+		if diag.Code == "GLADESEMA008" && (strings.Contains(diag.Message, ".start") || strings.Contains(diag.Message, ".execute") || strings.Contains(diag.Message, ".finish")) {
 			t.Fatalf("unexpected Database.Batchable diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4472,7 +4472,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA008" && (strings.Contains(diag.Message, "getQuery") || strings.Contains(diag.Message, "iterator") || strings.Contains(diag.Message, "hasNext") || strings.Contains(diag.Message, "next")) {
+		if diag.Code == "GLADESEMA008" && (strings.Contains(diag.Message, "getQuery") || strings.Contains(diag.Message, "iterator") || strings.Contains(diag.Message, "hasNext") || strings.Contains(diag.Message, "next")) {
 			t.Fatalf("unexpected query locator/iterable diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4495,7 +4495,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA013" {
+		if diag.Code == "GLADESEMA013" {
 			t.Fatalf("unexpected named-argument assignment diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -4528,13 +4528,13 @@ public class Hello {
 	returns := 0
 	conditions := 0
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA018" {
+		if diag.Code == "GLADESEMA018" {
 			assignments++
 		}
-		if diag.Code == "OAERSEMA019" {
+		if diag.Code == "GLADESEMA019" {
 			returns++
 		}
-		if diag.Code == "OAERSEMA020" {
+		if diag.Code == "GLADESEMA020" {
 			conditions++
 		}
 	}
@@ -4566,15 +4566,15 @@ public class Hello {
 	count := 0
 	unknownTypes := 0
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA018" {
+		if diag.Code == "GLADESEMA018" {
 			count++
 		}
-		if diag.Code == "OAERSEMA006" {
+		if diag.Code == "GLADESEMA006" {
 			unknownTypes++
 		}
 	}
 	if count != 2 || unknownTypes != 2 {
-		t.Fatalf("cast diagnostics OAERSEMA018=%d OAERSEMA006=%d diagnostics=%#v", count, unknownTypes, result.Diagnostics)
+		t.Fatalf("cast diagnostics GLADESEMA018=%d GLADESEMA006=%d diagnostics=%#v", count, unknownTypes, result.Diagnostics)
 	}
 }
 
@@ -4604,12 +4604,12 @@ public class Hello {
 	result := Analyze(index)
 	count := 0
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA019" {
+		if diag.Code == "GLADESEMA019" {
 			count++
 		}
 	}
 	if count != 3 {
-		t.Fatalf("OAERSEMA019 count = %d diagnostics=%#v", count, result.Diagnostics)
+		t.Fatalf("GLADESEMA019 count = %d diagnostics=%#v", count, result.Diagnostics)
 	}
 }
 
@@ -4654,7 +4654,7 @@ public class Hello {
 	result := Analyze(index)
 	count := 0
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA019" && strings.Contains(diag.Message, "on all paths") {
+		if diag.Code == "GLADESEMA019" && strings.Contains(diag.Message, "on all paths") {
 			count++
 		}
 	}
@@ -4697,7 +4697,7 @@ public class Hello {
 	for _, diag := range result.Diagnostics {
 		counts[diag.Code]++
 	}
-	if counts["OAERSEMA018"] != 2 || counts["OAERSEMA009"] != 0 || counts["OAERSEMA019"] != 0 {
+	if counts["GLADESEMA018"] != 2 || counts["GLADESEMA009"] != 0 || counts["GLADESEMA019"] != 0 {
 		t.Fatalf("diagnostic counts = %#v diagnostics=%#v", counts, result.Diagnostics)
 	}
 }
@@ -4728,12 +4728,12 @@ public class Hello {
 	result := Analyze(index)
 	var got bool
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA009" {
+		if diag.Code == "GLADESEMA009" {
 			got = true
 		}
 	}
 	if !got {
-		t.Fatalf("expected OAERSEMA009: %#v", result.Diagnostics)
+		t.Fatalf("expected GLADESEMA009: %#v", result.Diagnostics)
 	}
 }
 
@@ -4862,7 +4862,7 @@ public class StandardRegistrationValidator {
 	})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA013" {
+		if diag.Code == "GLADESEMA013" {
 			t.Fatalf("unexpected unknown variable diagnostic for comma declarator: %#v", result.Diagnostics)
 		}
 	}
@@ -4899,8 +4899,8 @@ public class Service {
 	}}, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Name", Type: "String"}}}}})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA010" {
-			t.Fatalf("unexpected OAERSEMA010 diagnostics: %#v", result.Diagnostics)
+		if diag.Code == "GLADESEMA010" {
+			t.Fatalf("unexpected GLADESEMA010 diagnostics: %#v", result.Diagnostics)
 		}
 	}
 }
@@ -4947,8 +4947,8 @@ public class Processor {
 	}}, schema.Schema{})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA014" {
-			t.Fatalf("unexpected OAERSEMA014 diagnostics: %#v", result.Diagnostics)
+		if diag.Code == "GLADESEMA014" {
+			t.Fatalf("unexpected GLADESEMA014 diagnostics: %#v", result.Diagnostics)
 		}
 	}
 }
@@ -4973,8 +4973,8 @@ public class TestSubscriptions {
 	}}, schema.Schema{})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA015" {
-			t.Fatalf("unexpected OAERSEMA015 diagnostics: %#v", result.Diagnostics)
+		if diag.Code == "GLADESEMA015" {
+			t.Fatalf("unexpected GLADESEMA015 diagnostics: %#v", result.Diagnostics)
 		}
 	}
 }
@@ -5037,12 +5037,12 @@ public class Hello {
 	result := Analyze(index)
 	count := 0
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA009" {
+		if diag.Code == "GLADESEMA009" {
 			count++
 		}
 	}
 	if count != 2 {
-		t.Fatalf("OAERSEMA009 count = %d diagnostics=%#v", count, result.Diagnostics)
+		t.Fatalf("GLADESEMA009 count = %d diagnostics=%#v", count, result.Diagnostics)
 	}
 }
 
@@ -5135,12 +5135,12 @@ public class Hello {
 	result := Analyze(index)
 	found := false
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA022" {
+		if diag.Code == "GLADESEMA022" {
 			found = true
 		}
 	}
 	if !found {
-		t.Fatalf("expected OAERSEMA022: %#v", result.Diagnostics)
+		t.Fatalf("expected GLADESEMA022: %#v", result.Diagnostics)
 	}
 }
 
@@ -5241,7 +5241,7 @@ public class Child extends Base {
 	for _, diag := range result.Diagnostics {
 		counts[diag.Code]++
 	}
-	if counts["OAERSEMA018"] != 1 || counts["OAERSEMA019"] != 1 {
+	if counts["GLADESEMA018"] != 1 || counts["GLADESEMA019"] != 1 {
 		t.Fatalf("diagnostic counts = %#v diagnostics=%#v", counts, result.Diagnostics)
 	}
 }
@@ -5290,12 +5290,12 @@ public class Uses {
 	result := Analyze(index)
 	count := 0
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA018" {
+		if diag.Code == "GLADESEMA018" {
 			count++
 		}
 	}
 	if count != 1 {
-		t.Fatalf("OAERSEMA018 count = %d diagnostics=%#v", count, result.Diagnostics)
+		t.Fatalf("GLADESEMA018 count = %d diagnostics=%#v", count, result.Diagnostics)
 	}
 }
 
@@ -5337,7 +5337,7 @@ public class Bad extends Base implements Worker {
 	for _, diag := range result.Diagnostics {
 		counts[diag.Code]++
 	}
-	if counts["OAERSEMA016"] != 1 || counts["OAERSEMA017"] != 3 {
+	if counts["GLADESEMA016"] != 1 || counts["GLADESEMA017"] != 3 {
 		t.Fatalf("diagnostic counts = %#v diagnostics=%#v", counts, result.Diagnostics)
 	}
 }
@@ -5354,7 +5354,7 @@ func TestAnalyzeSkipsInheritanceContractsForPackageArtifacts(t *testing.T) {
 	}}})
 
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA016" || diag.Code == "OAERSEMA017" {
+		if diag.Code == "GLADESEMA016" || diag.Code == "GLADESEMA017" {
 			t.Fatalf("artifact contract should not be revalidated: %#v", result.Diagnostics)
 		}
 	}
@@ -5371,7 +5371,7 @@ func TestAnalyzeDoesNotRequirePlatformStubsToSatisfyInterfaces(t *testing.T) {
 		Modifiers:  []string{"global"},
 	}}})
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA017" && strings.Contains(diag.Message, "OrderItem") && strings.Contains(diag.Message, "compareTo") {
+		if diag.Code == "GLADESEMA017" && strings.Contains(diag.Message, "OrderItem") && strings.Contains(diag.Message, "compareTo") {
 			t.Fatalf("platform stubs should not be revalidated as user Apex: %#v", result.Diagnostics)
 		}
 	}
@@ -5402,7 +5402,7 @@ public interface Context {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA016" || diag.Code == "OAERSEMA017" {
+		if diag.Code == "GLADESEMA016" || diag.Code == "GLADESEMA017" {
 			t.Fatalf("nested sibling inheritance should satisfy override contracts: %#v", result.Diagnostics)
 		}
 	}
@@ -5476,7 +5476,7 @@ public class Callback extends Metadata.DeployCallbackContext {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA016" {
+		if diag.Code == "GLADESEMA016" {
 			t.Fatalf("platform base overrides should satisfy override contracts: %#v", result.Diagnostics)
 		}
 	}
@@ -5527,12 +5527,12 @@ public class Plain {
 	result := Analyze(index)
 	var count int
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA011" {
+		if diag.Code == "GLADESEMA011" {
 			count++
 		}
 	}
 	if count != 2 {
-		t.Fatalf("OAERSEMA011 count = %d diagnostics=%#v", count, result.Diagnostics)
+		t.Fatalf("GLADESEMA011 count = %d diagnostics=%#v", count, result.Diagnostics)
 	}
 }
 
@@ -5580,12 +5580,12 @@ public class Intruder {
 	result := Analyze(index)
 	var count int
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA010" {
+		if diag.Code == "GLADESEMA010" {
 			count++
 		}
 	}
 	if count != 2 {
-		t.Fatalf("OAERSEMA010 count = %d diagnostics=%#v", count, result.Diagnostics)
+		t.Fatalf("GLADESEMA010 count = %d diagnostics=%#v", count, result.Diagnostics)
 	}
 }
 
@@ -5620,12 +5620,12 @@ public class Intruder {
 	result := Analyze(index)
 	count := 0
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA010" {
+		if diag.Code == "GLADESEMA010" {
 			count++
 		}
 	}
 	if count != 1 {
-		t.Fatalf("OAERSEMA010 count = %d diagnostics=%#v", count, result.Diagnostics)
+		t.Fatalf("GLADESEMA010 count = %d diagnostics=%#v", count, result.Diagnostics)
 	}
 }
 
@@ -5661,12 +5661,12 @@ public class IntruderCtor {
 	result := Analyze(index)
 	count := 0
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA010" {
+		if diag.Code == "GLADESEMA010" {
 			count++
 		}
 	}
 	if count != 1 {
-		t.Fatalf("OAERSEMA010 count = %d diagnostics=%#v", count, result.Diagnostics)
+		t.Fatalf("GLADESEMA010 count = %d diagnostics=%#v", count, result.Diagnostics)
 	}
 }
 
@@ -5716,12 +5716,12 @@ public class BadAnnotations {
 	result := Analyze(index)
 	count := 0
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA026" {
+		if diag.Code == "GLADESEMA026" {
 			count++
 		}
 	}
 	if count != 6 {
-		t.Fatalf("OAERSEMA026 count = %d diagnostics=%#v", count, result.Diagnostics)
+		t.Fatalf("GLADESEMA026 count = %d diagnostics=%#v", count, result.Diagnostics)
 	}
 }
 
@@ -5756,12 +5756,12 @@ public class Caller {
 	result := Analyze(index)
 	count := 0
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA027" {
+		if diag.Code == "GLADESEMA027" {
 			count++
 		}
 	}
 	if count != 3 {
-		t.Fatalf("OAERSEMA027 count = %d diagnostics=%#v", count, result.Diagnostics)
+		t.Fatalf("GLADESEMA027 count = %d diagnostics=%#v", count, result.Diagnostics)
 	}
 }
 
@@ -5788,7 +5788,7 @@ public class Caller {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA027" && strings.Contains(diag.Message, "Factory.newInstance") {
+		if diag.Code == "GLADESEMA027" && strings.Contains(diag.Message, "Factory.newInstance") {
 			t.Fatalf("local should not shadow its type inside its own initializer: %#v", result.Diagnostics)
 		}
 	}
@@ -5831,12 +5831,12 @@ public class Intruder {
 	result := Analyze(index)
 	count := 0
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA010" {
+		if diag.Code == "GLADESEMA010" {
 			count++
 		}
 	}
 	if count != 3 {
-		t.Fatalf("OAERSEMA010 count = %d diagnostics=%#v", count, result.Diagnostics)
+		t.Fatalf("GLADESEMA010 count = %d diagnostics=%#v", count, result.Diagnostics)
 	}
 }
 
@@ -5849,7 +5849,7 @@ func TestAnalyzeTriggerObject(t *testing.T) {
 	if !result.HasErrors() {
 		t.Fatalf("expected diagnostic: %#v", result.Diagnostics)
 	}
-	if result.Diagnostics[0].Code != "OAERSEMA001" {
+	if result.Diagnostics[0].Code != "GLADESEMA001" {
 		t.Fatalf("diagnostic = %#v", result.Diagnostics[0])
 	}
 }

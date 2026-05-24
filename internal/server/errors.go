@@ -18,7 +18,7 @@ const (
 	errUnknownObject        serverErrorKind = "unknown_object"
 	errUnknownRecord        serverErrorKind = "unknown_record"
 	errUnknownSObject       serverErrorKind = "unknown_sobject_endpoint"
-	errUnknownOAER          serverErrorKind = "unknown_oaer_endpoint"
+	errUnknownGLADE          serverErrorKind = "unknown_glade_endpoint"
 	errUnknownTooling       serverErrorKind = "unknown_tooling_endpoint"
 	errUnknownComposite     serverErrorKind = "unknown_composite_endpoint"
 	errMethodNotAllowed     serverErrorKind = "method_not_allowed"
@@ -46,7 +46,7 @@ var serverErrorSpecs = map[serverErrorKind]serverErrorSpec{
 	errUnknownObject:        {status: http.StatusNotFound, code: "NOT_FOUND", message: "unknown object"},
 	errUnknownRecord:        {status: http.StatusNotFound, code: "NOT_FOUND", message: "record not found"},
 	errUnknownSObject:       {status: http.StatusNotFound, code: "NOT_FOUND", message: "unknown sobject endpoint"},
-	errUnknownOAER:          {status: http.StatusNotFound, code: "NOT_FOUND", message: "unknown oaer endpoint"},
+	errUnknownGLADE:          {status: http.StatusNotFound, code: "NOT_FOUND", message: "unknown glade endpoint"},
 	errUnknownTooling:       {status: http.StatusNotFound, code: "NOT_FOUND", message: "unknown tooling endpoint"},
 	errUnknownComposite:     {status: http.StatusNotFound, code: "NOT_FOUND", message: "unknown composite endpoint"},
 	errMethodNotAllowed:     {status: http.StatusMethodNotAllowed, code: "METHOD_NOT_ALLOWED", message: "method not allowed"},

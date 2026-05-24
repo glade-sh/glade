@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/project"
+	"github.com/glade-sh/glade/internal/project"
 )
 
 type Schema struct {

@@ -1,13 +1,13 @@
 # Release Policy
 
-`oaer` releases are tagged as `vMAJOR.MINOR.PATCH`. The release workflow builds
+`glade` releases are tagged as `vMAJOR.MINOR.PATCH`. The release workflow builds
 platform archives and `SHA256SUMS.txt` from the tagged source.
 
 ## Compatibility Gate
 
 A release can be promoted as MVP-ready only when:
 
-- `oaer compat mvp --require-ready` exits successfully and reports
+- `glade compat mvp --require-ready` exits successfully and reports
   `MVP readiness: ready`.
 - Every `requiredForMVP` capability in `internal/capability` is `supported`.
 - Any feature marked `supported` has compatibility fixtures.
@@ -21,16 +21,16 @@ Until that gate is green, releases must be described as preview builds.
 Use these labels narrowly. They are claims about checked gates from the current
 source tree, not broad promises that every Salesforce behavior is implemented.
 
-- `server-examples-green`: `oaer compat server-examples` reports no failing,
+- `server-examples-green`: `glade compat server-examples` reports no failing,
   unsupported, or missing probes for the checked server-example corpus.
-- `mvp-ready`: `oaer compat mvp --require-ready` passes, every MVP-required
+- `mvp-ready`: `glade compat mvp --require-ready` passes, every MVP-required
   capability is `supported`, and generated compatibility docs are in sync.
 - `apex-parity-ready`: the parser, semantic checker, VM, stdlib, storage,
   DML/SOQL, test runner, and local API compatibility fixtures that define the
   Apex parity surface pass from source.
-- `legacy-project-test-ready`: `oaer compat local-tests --check
+- `legacy-project-test-ready`: `glade compat local-tests --check
   docs/fixtures/local-tests-corpus.json` passes for owned fixtures modeled
-  after large legacy projects, and `oaer compat post-parity --json` reports no
+  after large legacy projects, and `glade compat post-parity --json` reports no
   test-blocking findings for the checked example-project inventory.
 - `declarative-automation-test-ready`: the local-test corpus covers Workflow,
   record-triggered or Process Builder-shaped Flow, invocable Apex actions, DML
@@ -66,7 +66,7 @@ must document the migration path.
 
 Each release note should include:
 
-- Compatibility status: output summary from `oaer compat mvp`.
+- Compatibility status: output summary from `glade compat mvp`.
 - Supported-platform artifacts and checksum verification instructions.
 - New capabilities promoted to `supported`, including fixture coverage.
 - Known gaps and unsupported-feature diagnostics that changed.

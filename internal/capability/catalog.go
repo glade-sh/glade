@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/apexdocs"
+	"github.com/glade-sh/glade/internal/apexdocs"
 )
 
 const CatalogSchemaVersion = 1

@@ -151,7 +151,7 @@ func stubProxyTypeName(value Value) (string, bool) {
 	if value.Kind != ValueObject {
 		return "", false
 	}
-	raw, ok := value.Fields["__oaerStubbedType"]
+	raw, ok := value.Fields["__gladeStubbedType"]
 	if !ok || raw.Kind != ValueString || raw.Text == "" {
 		return "", false
 	}
@@ -633,7 +633,7 @@ func stableFieldMapKey(v Value, seen map[uint64]bool, allowSObject bool) (string
 	}
 	names := make([]string, 0, len(v.Fields))
 	for name := range v.Fields {
-		if strings.HasPrefix(name, "__oaer") {
+		if strings.HasPrefix(name, "__glade") {
 			continue
 		}
 		names = append(names, name)

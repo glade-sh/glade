@@ -1,6 +1,6 @@
 package typesys
 
-import "github.com/open-aer/oaer/internal/apexast"
+import "github.com/glade-sh/glade/internal/apexast"
 
 // Code generated from public Salesforce product namespace declarations. DO NOT EDIT.
 

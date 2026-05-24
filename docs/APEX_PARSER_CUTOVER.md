@@ -1,10 +1,10 @@
 # Apex parser cutover
 
-`oaer` now uses the local tree-sitter Apex parser module for declaration
+`glade` now uses the local tree-sitter Apex parser module for declaration
 parsing:
 
 ```text
-github.com/open-aer/apex-parser v0.1.0 => ../oaer-apex-parser
+github.com/glade-sh/apex-parser v0.1.0 => ../glade-apex-parser
 ```
 
 This local cutover replaces the former direct parser dependencies:
@@ -15,11 +15,11 @@ This local cutover replaces the former direct parser dependencies:
 The parser module lives at:
 
 ```text
-/Users/matt/Dev/oaer-apex-parser
+/Users/matt/Dev/glade-apex-parser
 ```
 
 The module is local-only for now. Do not remove the `replace` directive until
-`github.com/open-aer/apex-parser` is published or otherwise reachable by CI.
+`github.com/glade-sh/apex-parser` is published or otherwise reachable by CI.
 
 ## Scope
 
@@ -71,15 +71,15 @@ old ANTLR BenchmarkParseClass-12      ~6.5 ms/op    ~6.45 MB/op   ~81,935 allocs
 Keep the parser module beside this repository:
 
 ```text
-/Users/matt/Dev/oaer
-/Users/matt/Dev/oaer-apex-parser
+/Users/matt/Dev/glade
+/Users/matt/Dev/glade-apex-parser
 ```
 
 The relevant module entries are:
 
 ```text
-require github.com/open-aer/apex-parser v0.1.0
-replace github.com/open-aer/apex-parser => ../oaer-apex-parser
+require github.com/glade-sh/apex-parser v0.1.0
+replace github.com/glade-sh/apex-parser => ../glade-apex-parser
 ```
 
 After changes in either repo, run:
@@ -106,15 +106,15 @@ go test ./internal/apexast ./internal/typesys -run '^$' -bench=. -benchmem
 Run the parser module's example-project corpus test:
 
 ```sh
-cd /Users/matt/Dev/oaer-apex-parser
+cd /Users/matt/Dev/glade-apex-parser
 go test -count=1 ./...
 ```
 
-Run project-level smoke checks from `oaer`:
+Run project-level smoke checks from `glade`:
 
 ```sh
-go run ./cmd/oaer check --project path/to/project --json
-go run ./cmd/oaer compat replay testdata/replay/selector-service-domain
+go run ./cmd/glade check --project path/to/project --json
+go run ./cmd/glade compat replay testdata/replay/selector-service-domain
 scripts/smoke.sh
 ```
 
@@ -128,7 +128,7 @@ For the local-only cutover, use normal local CGO-enabled builds:
 
 ```sh
 go test ./...
-go build -o oaer ./cmd/oaer
+go build -o glade ./cmd/glade
 ```
 
 Remote release builds still need a separate decision. `scripts/release-build.sh`
@@ -140,7 +140,7 @@ tree-sitter parser release unless the no-CGO diagnostic fallback is acceptable.
 No data migration is involved. To roll back:
 
 1. Restore the old `internal/apexast/parser.go`.
-2. Remove `github.com/open-aer/apex-parser` from `go.mod`.
+2. Remove `github.com/glade-sh/apex-parser` from `go.mod`.
 3. Remove the local `replace` directive.
 4. Run `go mod tidy`.
 5. Run `go test ./...`.

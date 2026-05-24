@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 const ReplaySchemaVersion = 1
@@ -104,7 +104,7 @@ type ReplaySuiteSum struct {
 
 type ArtifactEnvironment struct {
 	SchemaVersion int      `json:"schemaVersion"`
-	Version       string   `json:"oaerVersion,omitempty"`
+	Version       string   `json:"gladeVersion,omitempty"`
 	GoVersion     string   `json:"goVersion"`
 	OS            string   `json:"os"`
 	Arch          string   `json:"arch"`
@@ -366,7 +366,7 @@ func runReplayStep(root string, bundle ReplayBundle, step ReplayStep) ReplayStep
 		err = fmt.Errorf("replay step %q reported ok=false", step.Name)
 	}
 	if err != nil {
-		diag := diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "OAERREPLAY001", Message: err.Error()}
+		diag := diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADEREPLAY001", Message: err.Error()}
 		if isUnsupportedMessage(err.Error()) {
 			diag.Code = "UNSUPPORTED_FEATURE"
 		}

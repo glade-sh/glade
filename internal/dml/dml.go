@@ -9,7 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 type Engine struct {
@@ -1154,7 +1154,7 @@ func (e *Engine) afterInsertContentDistribution(id storage.ID) {
 	if record.Fields == nil {
 		record.Fields = make(map[string]storage.Value)
 	}
-	base := "https://oaer.local/content/" + string(id)
+	base := "https://glade.local/content/" + string(id)
 	if _, ok := record.Fields["ContentDownloadUrl"]; !ok {
 		record.Fields["ContentDownloadUrl"] = storage.StringValue(base + "/download")
 	}

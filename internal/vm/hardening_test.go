@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/ir"
+	"github.com/glade-sh/glade/internal/ir"
 )
 
 func TestNoPanicOnMalformedOrUnsupportedProgram(t *testing.T) {

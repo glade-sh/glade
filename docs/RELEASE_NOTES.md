@@ -19,7 +19,7 @@ Compatibility status:
 
 Release engineering:
 
-- Added `oaer playground`, a local Apex playground web UI with workspace files,
+- Added `glade playground`, a local Apex playground web UI with workspace files,
   execute-anonymous runs, cached results, logs, variables, limits, trace output,
   diagnostics, org diffs, reset/seed controls, and a slick developer-focused
   browser shell.
@@ -55,13 +55,13 @@ Release engineering:
 - Added manual, CI, and future Homebrew installation guidance.
 - Added editor integration docs with VS Code tasks, debug launch examples, LSP
   wiring, watch mode, and report commands.
-- Added a fail-fast `oaer compat mvp --require-ready` gate and CI visibility
+- Added a fail-fast `glade compat mvp --require-ready` gate and CI visibility
   for machine-readable MVP readiness.
 - Added compatibility fixture support and smoke coverage for expected
   unsupported-feature diagnostics.
 - Added typed `UnsupportedFeature` VM errors for unimplemented stdlib/platform
   calls while preserving fixture-compatible message text.
-- Added `oaer compat stdlib` plus generated `docs/STDLIB_COVERAGE.md` coverage
+- Added `glade compat stdlib` plus generated `docs/STDLIB_COVERAGE.md` coverage
   for supported and partial standard-library/platform APIs.
 - Tuned SQLite fixture persistence with transaction-scoped prepared inserts,
   storage pragmas, and large-fixture save/load coverage.
@@ -75,7 +75,7 @@ Release engineering:
 - Expanded deterministic platform seed data with Organization, UserRole,
   enriched User/PermissionSet metadata, and RecordType records from local object
   metadata.
-- Added scoped OAER reset endpoints for deterministic data, user/platform,
+- Added scoped GLADE reset endpoints for deterministic data, user/platform,
   limits, and async reset requests while preserving full-reset compatibility.
 - Documented persistent server database setup, fixture/reset lifecycle commands,
   and operational checks for saved mutations and rollback-on-failure behavior.
@@ -89,12 +89,12 @@ Release engineering:
   queryAll, Tooling `executeAnonymous` success/failure/rollback and unsupported
   Tooling object errors, Composite sObject reference IDs/partial success/
   all-or-none rollback, explicit unsupported Composite batch responses,
-  Salesforce-shaped errors, OAER fixture seed/export/reset, and SQLite
+  Salesforce-shaped errors, GLADE fixture seed/export/reset, and SQLite
   persistence.
-- Added `oaer compat replay` for deterministic directory replay bundles,
+- Added `glade compat replay` for deterministic directory replay bundles,
   ordered in-process compat steps, JSON/text gate reports, checked expected
   outputs, path-escape validation, and redacted artifact export.
-- Added `oaer compat readiness --project <root>` to report local project
+- Added `glade compat readiness --project <root>` to report local project
   blockers by parser, project, schema, sema, stdlib, SOQL, DML, trigger, limit,
   storage, server, and unknown categories without mutating source or database
   state.
@@ -120,10 +120,10 @@ Release engineering:
 - Added LSP semantic tokens, definition, references, prepare-rename/rename
   workspace edits, and richer completion for Apex members, schema fields, and
   keywords.
-- Aligned LSP diagnostics with the shared `oaer check` diagnostic model,
+- Aligned LSP diagnostics with the shared `glade check` diagnostic model,
   restored project diagnostics when edited buffers close, and added test-result
   diagnostics from failure stack frames.
-- Added `oaer test --watch --watch-backend auto|native|poll` with `fsnotify`
+- Added `glade test --watch --watch-backend auto|native|poll` with `fsnotify`
   native watching, polling fallback, backend reporting, and run IDs in watch
   JSON events.
 - Added Apex-only incremental watch re-indexing and dependency-graph
@@ -135,7 +135,7 @@ Release engineering:
 - Expanded native trace/profile events across describe, callout, email, async,
   trigger, and final limit-summary activity, with profile attribution for the
   added platform/resource counters.
-- Expanded `oaer profile analyze` native JSON/Markdown reports with hot-event,
+- Expanded `glade profile analyze` native JSON/Markdown reports with hot-event,
   category, runtime-section, and governor/resource summary views so local
   runtime analysis no longer depends on apexrr-style external reporting.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
@@ -224,7 +224,7 @@ Release engineering:
 - Add deterministic SOQL and DML row-work costs to CPU limit accounting.
 - Added `Limits.getBatchJobs`, `getLimitBatchJobs`, `getScheduledJobs`, and
   `getLimitScheduledJobs`.
-- Added strict/permissive limit-mode selection to `oaer server` Tooling
+- Added strict/permissive limit-mode selection to `glade server` Tooling
   `executeAnonymous` and compatibility exec/test fixtures.
 - Added common JSON overload support for `serialize` suppress-null behavior,
   `serializePretty`, and `deserializeStrict`.

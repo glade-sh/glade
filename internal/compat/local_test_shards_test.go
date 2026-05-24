@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/apextest"
+	"github.com/glade-sh/glade/internal/apextest"
 )
 
 func TestPlanLocalTestClassShardsSeparatesSlowClasses(t *testing.T) {

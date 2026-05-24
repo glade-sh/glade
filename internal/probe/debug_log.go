@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/trace"
+	"github.com/glade-sh/glade/internal/trace"
 )
 
 // DebugLogSummary captures a stable, comparison-friendly shape for an org debug log.

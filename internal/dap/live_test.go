@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-aer/oaer/internal/vm"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 func TestLiveSessionContinueStepAndDisconnect(t *testing.T) {

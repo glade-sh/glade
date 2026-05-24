@@ -17,6 +17,6 @@ public class {{.ClassName}} {
             payload.put('exceptionType', ex.getTypeName());
             payload.put('exceptionMessage', ex.getMessage());
         }
-        System.debug(LoggingLevel.ERROR, 'OAER_ORACLE ' + JSON.serialize(payload));
+        System.debug(LoggingLevel.ERROR, 'GLADE_ORACLE ' + JSON.serialize(payload));
     }
 }

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/apexast"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func BenchmarkWorkspaceSymbols(b *testing.B) {

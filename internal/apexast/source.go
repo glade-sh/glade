@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/diagnostic"
 )
 
 type LineMap struct {

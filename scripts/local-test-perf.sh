@@ -3,19 +3,19 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-perf_root="${OAER_PERF_ROOT:-/tmp/oaer-perf}"
+perf_root="${GLADE_PERF_ROOT:-/tmp/glade-perf}"
 if [[ -e "$perf_root" && ! -d "$perf_root" ]]; then
-  perf_root="/tmp/oaer-perf-runs"
+  perf_root="/tmp/glade-perf-runs"
 fi
-out_dir="${OAER_PERF_DIR:-$perf_root/$timestamp}"
-binary="${OAER_BIN:-$repo_root/bin/oaer-perf}"
+out_dir="${GLADE_PERF_DIR:-$perf_root/$timestamp}"
+binary="${GLADE_BIN:-$repo_root/bin/glade-perf}"
 project="${1:-example-projects/src-nmb-nutpl-develop}"
-parallel="${OAER_PARALLEL:-$(sysctl -n hw.logicalcpu 2>/dev/null || nproc 2>/dev/null || printf '1')}"
+parallel="${GLADE_PARALLEL:-$(sysctl -n hw.logicalcpu 2>/dev/null || nproc 2>/dev/null || printf '1')}"
 
 mkdir -p "$out_dir" "$repo_root/bin"
 
 if [[ ! -x "$binary" ]]; then
-  go build -trimpath -o "$binary" "$repo_root/cmd/oaer"
+  go build -trimpath -o "$binary" "$repo_root/cmd/glade"
 fi
 
 perf_json="$out_dir/local-tests.perf.json"
@@ -26,7 +26,7 @@ summary="$out_dir/local-tests.summary.json"
 "$binary" compat local-tests \
   --project "$repo_root/$project" \
   --json \
-  --timeout "${OAER_TIMEOUT_MS:-60000}" \
+  --timeout "${GLADE_TIMEOUT_MS:-60000}" \
   --parallel "$parallel" \
   --parallel-methods \
   --perf-json "$perf_json" \

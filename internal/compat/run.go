@@ -11,16 +11,16 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/apexast"
-	"github.com/open-aer/oaer/internal/apextest"
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/sema"
-	"github.com/open-aer/oaer/internal/server"
-	"github.com/open-aer/oaer/internal/sobject"
-	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/typesys"
-	"github.com/open-aer/oaer/internal/vm"
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/server"
+	"github.com/glade-sh/glade/internal/sobject"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 type RunResult struct {
@@ -70,7 +70,7 @@ func runParseFixture(fixture Fixture) (RunResult, error) {
 }
 
 func runCheckFixture(fixture Fixture) (RunResult, error) {
-	root, err := os.MkdirTemp("", "oaer-compat-check-*")
+	root, err := os.MkdirTemp("", "glade-compat-check-*")
 	if err != nil {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
@@ -167,7 +167,7 @@ func runExecFixture(fixture Fixture) (RunResult, error) {
 }
 
 func registerFixtureSourceClasses(machine *vm.VM, fixture Fixture) error {
-	root, err := os.MkdirTemp("", "oaer-compat-exec-source-*")
+	root, err := os.MkdirTemp("", "glade-compat-exec-source-*")
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,7 @@ func fixtureHasModifier(modifiers []string, want string) bool {
 }
 
 func orgFromFixture(fixture Fixture) (storage.OrgState, error) {
-	root, err := os.MkdirTemp("", "oaer-compat-exec-*")
+	root, err := os.MkdirTemp("", "glade-compat-exec-*")
 	if err != nil {
 		return storage.OrgState{}, err
 	}
@@ -295,7 +295,7 @@ func orgFromFixture(fixture Fixture) (storage.OrgState, error) {
 }
 
 func runTestFixture(fixture Fixture) (RunResult, error) {
-	root, err := os.MkdirTemp("", "oaer-compat-test-*")
+	root, err := os.MkdirTemp("", "glade-compat-test-*")
 	if err != nil {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
@@ -411,12 +411,12 @@ func fixtureLimitMode(raw string) (vm.LimitMode, error) {
 }
 
 func runDBFixture(fixture Fixture) (RunResult, error) {
-	root, err := os.MkdirTemp("", "oaer-compat-db-*")
+	root, err := os.MkdirTemp("", "glade-compat-db-*")
 	if err != nil {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
 	defer os.RemoveAll(root)
-	store, err := storage.OpenSQLite(filepath.Join(root, "oaer.db"))
+	store, err := storage.OpenSQLite(filepath.Join(root, "glade.db"))
 	if err != nil {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
@@ -471,12 +471,12 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 	if len(fixture.ServerRequests) == 0 {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, fmt.Errorf("server fixture requires serverRequests")
 	}
-	root, err := os.MkdirTemp(".", ".oaer-compat-server-*")
+	root, err := os.MkdirTemp(".", ".glade-compat-server-*")
 	if err != nil {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
 	defer os.RemoveAll(root)
-	dbPath := filepath.Join(root, "oaer.db")
+	dbPath := filepath.Join(root, "glade.db")
 	var serverIndex *typesys.Index
 	if len(fixture.Source) > 0 || len(fixture.Schema) > 0 {
 		if err := writeFixtureFiles(root, fixture); err != nil {

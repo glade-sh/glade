@@ -2,18 +2,18 @@
 
 Status date: 2026-05-07.
 
-This is the remaining work to get `oaer` to credible feature parity with aer,
-then beyond it. The current baselines are broad, but `oaer compat mvp` is still
+This is the remaining work to get `glade` to credible feature parity with glade,
+then beyond it. The current baselines are broad, but `glade compat mvp` is still
 expected to report not ready until every required capability is supported and
 covered by compatibility fixtures.
 
 Current checked status:
 
-- `oaer compat mvp --json`: not ready; 4 of 21 required capabilities are
+- `glade compat mvp --json`: not ready; 4 of 21 required capabilities are
   supported and 17 remain partial.
-- `oaer compat server-examples --json`: `pass=101 fail=0 unsupported=0
+- `glade compat server-examples --json`: `pass=101 fail=0 unsupported=0
   missing=0`.
-- `oaer compat local-tests --project example-projects/src-nmb-nutpl-develop
+- `glade compat local-tests --project example-projects/src-nmb-nutpl-develop
   --timeout 30000 --top-failures 8 --json`: `total=761 pass=761`.
 - Full example-project runtime support is still incomplete; the current
   six-project baseline is tracked in
@@ -51,7 +51,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
 
 - [ ] Make every `requiredForMVP` capability in `internal/capability`
   `supported`.
-- [ ] Keep `oaer compat mvp` as the release gate for calling the project
+- [ ] Keep `glade compat mvp` as the release gate for calling the project
   MVP-ready.
 - [ ] Require compatibility coverage before changing a feature from `partial`
   to `supported`.
@@ -427,7 +427,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
     with max values.
 - [x] Add configurable strict/permissive limit modes for CLI, tests, server,
   and compatibility fixtures.
-  - [x] Wire `--limit-mode` through `oaer exec`, `oaer test`, and `oaer server`
+  - [x] Wire `--limit-mode` through `glade exec`, `glade test`, and `glade server`
     Tooling `executeAnonymous`.
   - [x] Add `limitMode` support for compatibility exec/test fixtures.
 - [x] Complete `System`, `Test`, `Database`, `Schema`, `Limits`, and `JSON`
@@ -478,7 +478,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
     VM/stdlib calls while preserving fixture-compatible message text.
   - [x] Keep ordinary runtime errors out of unsupported-feature classification.
 - [x] Generate and publish a standard-library coverage matrix.
-  - [x] Add `oaer compat stdlib` with Markdown, JSON, output, and drift-check
+  - [x] Add `glade compat stdlib` with Markdown, JSON, output, and drift-check
     modes backed by `internal/capability`.
   - [x] Publish generated coverage at `docs/STDLIB_COVERAGE.md`.
 
@@ -521,11 +521,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Rebuild user/platform baseline records deterministically for users and
     platform resets.
 - [x] Add persistent server database lifecycle docs and operational checks.
-  - [x] Document `oaer server --db` startup, DB seed/inspect/export/reset
+  - [x] Document `glade server --db` startup, DB seed/inspect/export/reset
     preparation, server fixture/reset endpoints, and restart persistence checks.
   - [x] Document operational checks for saved mutations and rollback-on-failure
     commit boundaries.
-- [x] Add import/export compatibility tests for `oaer db seed/reset/export/
+- [x] Add import/export compatibility tests for `glade db seed/reset/export/
   inspect`.
   - [x] Add a DB lifecycle compatibility fixture that seeds SQLite storage,
     inspects schema/data counts, exports the fixture shape, and verifies reset
@@ -567,7 +567,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
     list/set numeric indexes, map string keys, and nested combinations without
     re-running VM code.
 - [x] Add VS Code launch/task examples and editor documentation.
-- [x] Expand `oaer lsp` with incremental document sync.
+- [x] Expand `glade lsp` with incremental document sync.
   - [x] Handle `textDocument/didOpen`, `didChange`, and `didClose`, apply
     full-document or ranged incremental text edits to in-memory overlays, publish
     parse diagnostics from open buffers, and clear diagnostics on close.
@@ -578,12 +578,12 @@ a Salesforce-shaped local API server without silently wrong behavior.
     definitions from cursor words to Apex/schema symbols, scan project/open
     buffers for references, build workspace edits for rename, and include
     members, schema fields, and Apex keywords in completion.
-- [x] Make LSP diagnostics match `oaer check` and test results consistently.
+- [x] Make LSP diagnostics match `glade check` and test results consistently.
   - [x] Publish project sema/type diagnostics through the same diagnostic model
-    used by `oaer check`, overlay open-buffer parse diagnostics while editing,
+    used by `glade check`, overlay open-buffer parse diagnostics while editing,
     restore project diagnostics on close, and expose test-result diagnostics
     from failure stack frames.
-- [x] Add native OS watcher backends for `oaer test --watch`.
+- [x] Add native OS watcher backends for `glade test --watch`.
   - [x] Add `fsnotify` native watching with recursive directory registration,
     automatic fallback to polling in `auto` mode, explicit
     `--watch-backend auto|native|poll` selection, backend reporting in
@@ -610,7 +610,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
     counters.
 - [x] Add native reports that fully replace apexrr-style analysis for local
   runtime data.
-  - [x] Extend `oaer profile analyze` JSON and Markdown output with native
+  - [x] Extend `glade profile analyze` JSON and Markdown output with native
     runtime sections for hot events, categories, statements, methods, SOQL, DML,
     triggers, describe, callouts, async, platform events, and governor/resource
     summary counters.
@@ -619,7 +619,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
 
 - [x] Complete auth/user context stubs enough for local integrations.
   - [x] Accept local bearer tokens, expose deterministic `/id` and
-    `/services/oauth2/userinfo` payloads, and support `X-OAER-User-Id` for
+    `/services/oauth2/userinfo` payloads, and support `X-GLADE-User-Id` for
     selecting existing local users without echoing unknown IDs.
   - **Limitation**: this is a deterministic local testing stub, not OAuth
     security.
@@ -631,7 +631,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [x] Complete `/services/data` resource discovery for commonly used REST
   resources.
   - [x] Advertise version, root resources, SObject, query/queryAll, limits,
-    Tooling, Composite, and OAER fixture/reset links with request-versioned
+    Tooling, Composite, and GLADE fixture/reset links with request-versioned
     URLs.
 - [x] Expand SObject REST resources: describe, layout-adjacent metadata where
   useful, recent, query, queryAll, and record CRUD edge cases.
@@ -649,7 +649,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `ApexLog`, and `TraceFlag` are not modeled.
 - [ ] Add more REST resources used by local integrations and editor tooling.
   - Current covered resources are the local data, limits, Tooling,
-    Composite-sObjects, and OAER fixture/reset subset. Broader resources should
+    Composite-sObjects, and GLADE fixture/reset subset. Broader resources should
     be added only with black-box fixtures.
 - [x] Add Composite API coverage beyond baseline sObject insert, including
   all-or-none rollback and reference ID behavior.
@@ -673,7 +673,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
   executeAnonymous, composite, errors, auth stubs, and persistence.
   - [x] `docs/fixtures/server-black-box.json` now covers resource discovery,
     OAuth/id stubs, SObject CRUD/describe/recent/query/queryAll, Tooling,
-    Composite sObjects, explicit unsupported Composite batch, OAER
+    Composite sObjects, explicit unsupported Composite batch, GLADE
     fixture/reset, error arrays, and SQLite persistence after reset.
 
 ## 9. Compatibility, Hardening, And Release
@@ -713,10 +713,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
   db, server, lsp diagnostics, profile, and compat commands.
 - [x] Add deterministic replay bundles and a project readiness report for local
   integration gates.
-  - [x] `oaer compat replay` loads directory bundles, runs ordered in-process
+  - [x] `glade compat replay` loads directory bundles, runs ordered in-process
     compat steps, emits stable JSON/text reports, rejects path escapes, and can
     export redacted failure artifacts.
-  - [x] `oaer compat readiness --project <root>` reports parser, project,
+  - [x] `glade compat readiness --project <root>` reports parser, project,
     schema, sema, stdlib, SOQL, DML, trigger, limit, storage, server, and unknown
     blockers without mutating the project.
   - [x] Add bounded replay smoke coverage for selector/service/domain and

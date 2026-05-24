@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/ir"
+	"github.com/glade-sh/glade/internal/ir"
 )
 
 type DebugPauseReason string
@@ -225,7 +225,7 @@ func preserveRepeatedCloneReference(value Value) bool {
 	if strings.EqualFold(value.Type, "framework_ApexMocks") {
 		return true
 	}
-	if _, ok := value.Fields["__oaerStubProvider"]; ok {
+	if _, ok := value.Fields["__gladeStubProvider"]; ok {
 		return true
 	}
 	return false

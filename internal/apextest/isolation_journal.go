@@ -1,6 +1,6 @@
 package apextest
 
-import "github.com/open-aer/oaer/internal/storage"
+import "github.com/glade-sh/glade/internal/storage"
 
 type IsolationMode string
 

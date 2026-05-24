@@ -16,15 +16,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/open-aer/oaer/internal/apextest"
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/sema"
-	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/testreport"
-	"github.com/open-aer/oaer/internal/typesys"
-	"github.com/open-aer/oaer/internal/watch"
+	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/watch"
 )
 
 type LocalTestOptions struct {
@@ -745,12 +745,12 @@ func autoTuneLocalTestOptions(options LocalTestOptions, totalCases int, parallel
 		parallelism = autoParallelismForCases(totalCases)
 	}
 	if options.ShardCount == 0 && options.AutoShardCount {
-		if shardCount, ok := localTestEnvInt("OAER_SHARD_COUNT"); ok && shardCount > 0 {
+		if shardCount, ok := localTestEnvInt("GLADE_SHARD_COUNT"); ok && shardCount > 0 {
 			options.ShardCount = shardCount
 		}
 	}
 	if options.ShardIndex == 0 && options.AutoShardIndex && options.ShardCount > 0 {
-		if shardIndex, ok := localTestEnvInt("OAER_SHARD_INDEX"); ok && shardIndex >= 0 {
+		if shardIndex, ok := localTestEnvInt("GLADE_SHARD_INDEX"); ok && shardIndex >= 0 {
 			options.ShardIndex = shardIndex
 		}
 	}
@@ -1026,7 +1026,7 @@ func loadLocalTestIndex(root string) (typesys.Index, []diagnostic.Diagnostic, er
 		index := typesys.Build(p, schema.Schema{})
 		diag := diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
-			Code:     "OAERSCHEMA001",
+			Code:     "GLADESCHEMA001",
 			Message:  fmt.Sprintf("metadata schema load failed: %v", err),
 		}
 		index.Diagnostics = append(index.Diagnostics, diag)
@@ -1213,7 +1213,7 @@ func localTestCapabilityID(phase, code, message string) string {
 	case strings.Contains(text, "parse"):
 		return "apex.parse"
 	case strings.Contains(text, "panic") || strings.Contains(text, "internal"):
-		return "oaer.internal"
+		return "glade.internal"
 	case phase != "":
 		return "apex.test." + strings.ReplaceAll(phase, "_", "-")
 	default:

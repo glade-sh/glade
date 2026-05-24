@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/open-aer/oaer/internal/capability"
+	"github.com/glade-sh/glade/internal/capability"
 )
 
 var (
@@ -116,7 +116,7 @@ try {
   payload.put('exceptionType', ex.getTypeName());
   payload.put('exceptionMessage', ex.getMessage());
 }
-System.assert(false, 'OAER_PROBE:' + JSON.serialize(payload));`, spec.ID, invoke)
+System.assert(false, 'GLADE_PROBE:' + JSON.serialize(payload));`, spec.ID, invoke)
 }
 
 func stubContractInvocationCode(spec capability.StubContractProbeSpec) string {
@@ -135,23 +135,23 @@ func stubContractInvocationCode(spec capability.StubContractProbeSpec) string {
 	}
 	switch spec.Kind {
 	case "constructor":
-		return fmt.Sprintf("%s oaerObj = new %s(%s); resultValue = oaerObj;", typeName, typeName, argText)
+		return fmt.Sprintf("%s gladeObj = new %s(%s); resultValue = gladeObj;", typeName, typeName, argText)
 	case "property":
 		if spec.Static {
 			return fmt.Sprintf("resultValue = %s.%s;", typeName, spec.Member)
 		}
-		return fmt.Sprintf("%s oaerObj = %s; resultValue = oaerObj.%s;", typeName, defaultApexReceiverForType(typeName), spec.Member)
+		return fmt.Sprintf("%s gladeObj = %s; resultValue = gladeObj.%s;", typeName, defaultApexReceiverForType(typeName), spec.Member)
 	default:
 		if strings.EqualFold(returnType, "void") {
 			if spec.Static {
 				return fmt.Sprintf("%s.%s(%s); resultValue = 'void';", typeName, spec.Member, argText)
 			}
-			return fmt.Sprintf("%s oaerObj = %s; oaerObj.%s(%s); resultValue = 'void';", typeName, defaultApexReceiverForType(typeName), spec.Member, argText)
+			return fmt.Sprintf("%s gladeObj = %s; gladeObj.%s(%s); resultValue = 'void';", typeName, defaultApexReceiverForType(typeName), spec.Member, argText)
 		}
 		if spec.Static {
 			return fmt.Sprintf("resultValue = %s.%s(%s);", typeName, spec.Member, argText)
 		}
-		return fmt.Sprintf("%s oaerObj = %s; resultValue = oaerObj.%s(%s);", typeName, defaultApexReceiverForType(typeName), spec.Member, argText)
+		return fmt.Sprintf("%s gladeObj = %s; resultValue = gladeObj.%s(%s);", typeName, defaultApexReceiverForType(typeName), spec.Member, argText)
 	}
 }
 
@@ -160,9 +160,9 @@ func defaultApexReceiverForType(typeName string) string {
 	lower := strings.ToLower(trimmed)
 	switch lower {
 	case "blob":
-		return "Blob.valueOf('oaer')"
+		return "Blob.valueOf('glade')"
 	case "string":
-		return "'oaer'"
+		return "'glade'"
 	case "boolean":
 		return "true"
 	case "integer", "int", "long", "short", "byte":
@@ -197,7 +197,7 @@ func defaultApexArgForType(typeName string) string {
 	lower := strings.ToLower(trimmed)
 	switch {
 	case lower == "string":
-		return "'oaer'"
+		return "'glade'"
 	case lower == "boolean":
 		return "true"
 	case lower == "integer" || lower == "int" || lower == "long" || lower == "short" || lower == "byte":
@@ -213,7 +213,7 @@ func defaultApexArgForType(typeName string) string {
 	case lower == "time":
 		return "Time.newInstance(3, 4, 5, 0)"
 	case lower == "blob":
-		return "Blob.valueOf('oaer')"
+		return "Blob.valueOf('glade')"
 	case strings.HasPrefix(lower, "list<"):
 		return fmt.Sprintf("new %s()", trimmed)
 	case strings.HasPrefix(lower, "set<"):

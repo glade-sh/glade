@@ -5,7 +5,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/open-aer/oaer/internal/capability"
+	"github.com/glade-sh/glade/internal/capability"
 )
 
 type EvidenceReport struct {

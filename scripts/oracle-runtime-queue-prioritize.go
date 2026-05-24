@@ -142,7 +142,7 @@ func filepathBase(path string) string {
 }
 
 func main() {
-	runtimePath := flag.String("runtime-inventory", ".oaer/runtime-path-inventory-with-stubs.json", "runtime inventory JSON")
+	runtimePath := flag.String("runtime-inventory", ".glade/runtime-path-inventory-with-stubs.json", "runtime inventory JSON")
 	queuePath := flag.String("work-queue", "docs/generated/apex-oracle/WORK_QUEUE.json", "input work queue")
 	outPath := flag.String("output", "docs/generated/apex-oracle/WORK_QUEUE.runtime-ranked.json", "output work queue")
 	reportPath := flag.String("report", "docs/generated/apex-oracle/RUNTIME_QUEUE_REPORT.json", "output report")

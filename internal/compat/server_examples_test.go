@@ -8,14 +8,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/soql"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/soql"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestServerExampleHarnessReportsSeedsRoutesAndBlockers(t *testing.T) {
-	root := localTestDir(t, ".oaer-test-server-examples")
+	root := localTestDir(t, ".glade-test-server-examples")
 	testProjects := []string{
 		"example-projects/alpha-pkg-develop",
 		"example-projects/beta-pkg-develop",
@@ -75,7 +75,7 @@ global with sharing class WidgetEndpoint {
 }
 
 func TestServerExampleHarnessReportsNoProjects(t *testing.T) {
-	root := localTestDir(t, ".oaer-test-server-examples-empty")
+	root := localTestDir(t, ".glade-test-server-examples-empty")
 	report, err := RunServerExampleHarness(root)
 	if err != nil {
 		t.Fatal(err)
@@ -141,7 +141,7 @@ func TestServerExampleApexRESTWildcardProbeAddsSyntheticChildPath(t *testing.T) 
 	}}, false)
 
 	got := probes[len(probes)-1].Path
-	if got != "/services/apexrest/api/oaer-probe" {
+	if got != "/services/apexrest/api/glade-probe" {
 		t.Fatalf("wildcard probe path = %q", got)
 	}
 }
@@ -420,7 +420,7 @@ func TestServerExampleSyntheticSeedsSkipObjectsAbsentFromSchema(t *testing.T) {
 }
 
 func TestServerExampleCustomMetadataSeedsModernFiles(t *testing.T) {
-	root := localTestDir(t, ".oaer-test-server-example-cmdt")
+	root := localTestDir(t, ".glade-test-server-example-cmdt")
 	projectPath := filepath.Join(root, "example-projects", "synthetic-package")
 	writeServerExampleTestFile(t, filepath.Join(projectPath, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeServerExampleTestFile(t, filepath.Join(projectPath, "force-app", "main", "default", "objects", "RouteConfig__mdt", "RouteConfig__mdt.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Route Config</label></CustomObject>`)
@@ -486,7 +486,7 @@ func writeServerExampleTestFile(t *testing.T, path, content string) {
 }
 
 func TestDiscoverServerExampleRestRoutesSkipsClaudeWorktrees(t *testing.T) {
-	root := localTestDir(t, ".oaer-test-server-examples-worktree")
+	root := localTestDir(t, ".glade-test-server-examples-worktree")
 	projectPath := filepath.Join(root, "example-projects", "worktree-pkg-develop")
 	classesDir := filepath.Join(projectPath, "force-app", "main", "default", "classes")
 	if err := os.MkdirAll(classesDir, 0o755); err != nil {

@@ -3,8 +3,8 @@ package dap
 import (
 	"sync"
 
-	"github.com/open-aer/oaer/internal/ir"
-	"github.com/open-aer/oaer/internal/vm"
+	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 type LiveSession struct {

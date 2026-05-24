@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/open-aer/oaer/internal/capability"
+	"github.com/glade-sh/glade/internal/capability"
 )
 
 // RestExecutor captures golden responses using Tooling API executeAnonymous.
@@ -54,7 +54,7 @@ func (r *RestExecutor) CaptureGolden(probeDir string, probeIDs []string) (map[st
 				Category:         "Skipped",
 				Result:           nil,
 				ExceptionType:    strPtr("SkippedProbe"),
-				ExceptionMessage: strPtr("probe skipped by OAER_PROBE_SKIP_IDS"),
+				ExceptionMessage: strPtr("probe skipped by GLADE_PROBE_SKIP_IDS"),
 			}
 			timings = append(timings, ProbeTiming{Phase: "golden", ProbeID: id, Mode: "skipped", DurationMS: 0})
 			i++
@@ -213,7 +213,7 @@ func (r *RestExecutor) ensureAuth() error {
 }
 
 func (r *RestExecutor) preflightShape() (map[string]interface{}, error) {
-	jsonStr, _, err := r.runProbeCodeJSON("System.assert(false, 'OAER_PROBE:' + ProbeRunner.preflight());")
+	jsonStr, _, err := r.runProbeCodeJSON("System.assert(false, 'GLADE_PROBE:' + ProbeRunner.preflight());")
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (r *RestExecutor) preflightShape() (map[string]interface{}, error) {
 }
 
 func (r *RestExecutor) runProbe(probeID string) (ProbeResult, error) {
-	code := fmt.Sprintf("System.assert(false, 'OAER_PROBE:' + ProbeRunner.run('%s'));", probeID)
+	code := fmt.Sprintf("System.assert(false, 'GLADE_PROBE:' + ProbeRunner.run('%s'));", probeID)
 	var stubSpec capability.StubContractProbeSpec
 	isStub := false
 	if isStubContractProbeID(probeID) {
@@ -260,7 +260,7 @@ func (r *RestExecutor) runProbe(probeID string) (ProbeResult, error) {
 }
 
 func (r *RestExecutor) runProbeBatch(probeIDs []string) ([]ProbeResult, string, error) {
-	code := fmt.Sprintf("System.assert(false, 'OAER_PROBE:' + ProbeRunner.runMany(new List<String>{%s}));", apexStringList(probeIDs))
+	code := fmt.Sprintf("System.assert(false, 'GLADE_PROBE:' + ProbeRunner.runMany(new List<String>{%s}));", apexStringList(probeIDs))
 	jsonStr, logs, err := r.runProbeCodeJSON(code)
 	if err != nil {
 		if strings.Contains(logs, "daily usage limit of apex log headers") {
@@ -276,7 +276,7 @@ func (r *RestExecutor) runProbeBatch(probeIDs []string) ([]ProbeResult, string, 
 }
 
 func (r *RestExecutor) runProbeBatchIsolated(probeIDs []string) ([]ProbeResult, string, error) {
-	code := fmt.Sprintf("System.assert(false, 'OAER_PROBE:' + ProbeRunner.runManyIsolated(new List<String>{%s}));", apexStringList(probeIDs))
+	code := fmt.Sprintf("System.assert(false, 'GLADE_PROBE:' + ProbeRunner.runManyIsolated(new List<String>{%s}));", apexStringList(probeIDs))
 	jsonStr, logs, err := r.runProbeCodeJSON(code)
 	if err != nil {
 		if strings.Contains(logs, "daily usage limit of apex log headers") {

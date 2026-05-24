@@ -56,12 +56,12 @@ func TestEnsureStandardObjectFieldsUsesCustomRelationshipNameAsChildRelationship
 }
 
 func TestReadFixtureReportsUnsupportedVersionAsTypedError(t *testing.T) {
-	_, err := ReadFixture(strings.NewReader(`{"version":"oaer.storage.v0"}`))
+	_, err := ReadFixture(strings.NewReader(`{"version":"glade.storage.v0"}`))
 	var versionErr UnsupportedFixtureVersionError
 	if !errors.As(err, &versionErr) {
 		t.Fatalf("error = %T %v, want UnsupportedFixtureVersionError", err, err)
 	}
-	if versionErr.Version != "oaer.storage.v0" {
+	if versionErr.Version != "glade.storage.v0" {
 		t.Fatalf("version = %q", versionErr.Version)
 	}
 }

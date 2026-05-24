@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/open-aer/oaer/internal/capability"
+	"github.com/glade-sh/glade/internal/capability"
 )
 
 const OrchestratorSchemaVersion = 1
@@ -24,8 +24,8 @@ const (
 	SurfaceCompileShapeKnown SurfaceStatus = "compile_shape_known"
 	SurfaceRuntimeShapeKnown SurfaceStatus = "runtime_shape_known"
 	SurfaceSalesforceSeen    SurfaceStatus = "salesforce_observed"
-	SurfaceOAERMatched       SurfaceStatus = "oaer_matched"
-	SurfaceOAERUnsupported   SurfaceStatus = "oaer_unsupported"
+	SurfaceGLADEMatched       SurfaceStatus = "glade_matched"
+	SurfaceGLADEUnsupported   SurfaceStatus = "glade_unsupported"
 	SurfaceEnvRequired       SurfaceStatus = "env_required"
 	SurfaceManualReview      SurfaceStatus = "manual_review"
 )
@@ -140,7 +140,7 @@ func BuildInventory(stubRoot string) (Inventory, error) {
 		case capability.StubContractOrgDiff:
 			status = SurfaceRuntimeShapeKnown
 		case capability.StubContractLocalOnly:
-			status = SurfaceOAERUnsupported
+			status = SurfaceGLADEUnsupported
 		case capability.StubContractPassiveDTO:
 			status = SurfaceRuntimeShapeKnown
 		case capability.StubContractCompileShape:
@@ -209,12 +209,12 @@ func BuildManifest(inv Inventory, area string, limit int) ProbeManifest {
 		}
 		token := strings.ReplaceAll(s.Area, ".", "_")
 		probeID := fmt.Sprintf("%s.%04d", token, i+1)
-		cls := fmt.Sprintf("OAER_Oracle_%s_%04d", token, i+1)
+		cls := fmt.Sprintf("GLADE_Oracle_%s_%04d", token, i+1)
 		mode := "compile-shape"
 		switch s.Status {
 		case SurfaceRuntimeShapeKnown:
 			mode = "org-diff"
-		case SurfaceOAERUnsupported:
+		case SurfaceGLADEUnsupported:
 			mode = "local-contract"
 		case SurfaceEnvRequired:
 			mode = "env-required"
@@ -293,7 +293,7 @@ func GenerateApex(queue WorkQueue, runDir string) error {
 		return err
 	}
 	for _, item := range queue.Items {
-		content := fmt.Sprintf("@IsTest\npublic class %s {\n    @IsTest\n    public static void %s() {\n        Map<String, Object> payload = new Map<String, Object>();\n        payload.put('probeId', '%s');\n        payload.put('surfaceId', '%s');\n        payload.put('area', '%s');\n        try {\n            payload.put('status', 'generated');\n            payload.put('result', null);\n            payload.put('exceptionType', null);\n            payload.put('exceptionMessage', null);\n        } catch (Exception ex) {\n            payload.put('status', 'exception');\n            payload.put('result', null);\n            payload.put('exceptionType', ex.getTypeName());\n            payload.put('exceptionMessage', ex.getMessage());\n        }\n        System.debug(LoggingLevel.ERROR, 'OAER_ORACLE ' + JSON.serialize(payload));\n    }\n}\n", item.GeneratedClass, item.MethodName, item.ProbeID, escapeApex(item.SurfaceID), escapeApex(item.Area))
+		content := fmt.Sprintf("@IsTest\npublic class %s {\n    @IsTest\n    public static void %s() {\n        Map<String, Object> payload = new Map<String, Object>();\n        payload.put('probeId', '%s');\n        payload.put('surfaceId', '%s');\n        payload.put('area', '%s');\n        try {\n            payload.put('status', 'generated');\n            payload.put('result', null);\n            payload.put('exceptionType', null);\n            payload.put('exceptionMessage', null);\n        } catch (Exception ex) {\n            payload.put('status', 'exception');\n            payload.put('result', null);\n            payload.put('exceptionType', ex.getTypeName());\n            payload.put('exceptionMessage', ex.getMessage());\n        }\n        System.debug(LoggingLevel.ERROR, 'GLADE_ORACLE ' + JSON.serialize(payload));\n    }\n}\n", item.GeneratedClass, item.MethodName, item.ProbeID, escapeApex(item.SurfaceID), escapeApex(item.Area))
 		clsPath := filepath.Join(classesDir, item.GeneratedClass+".cls")
 		metaPath := clsPath + "-meta.xml"
 		if err := os.WriteFile(clsPath, []byte(content), 0o644); err != nil {
@@ -315,17 +315,17 @@ func GenerateScripts(queue WorkQueue, runID, runsDir, targetOrg, outDir string, 
 		return err
 	}
 	for shard := 0; shard < shardCount; shard++ {
-		script := fmt.Sprintf("#!/usr/bin/env bash\nset -euo pipefail\nRUN_ID=%q\nRUNS_DIR=%q\nTARGET_ORG=%q\nSHARD=%d\ngo run ./cmd/oaer compat oracle run-salesforce --run-id \"$RUN_ID\" --runs-dir \"$RUNS_DIR\" --target-org \"$TARGET_ORG\" --shard \"$SHARD\" --fetch-logs --log-limit 200\nGO_RUN_OAER=${GO_RUN_OAER:-1}\nif [ \"$GO_RUN_OAER\" = \"1\" ]; then\n  go run ./cmd/oaer compat oracle run-oaer --run-id \"$RUN_ID\" --runs-dir \"$RUNS_DIR\" --shard \"$SHARD\"\n  go run ./cmd/oaer compat oracle diff --run-id \"$RUN_ID\" --runs-dir \"$RUNS_DIR\" --shard \"$SHARD\"\nfi\n", runID, runsDir, targetOrg, shard)
+		script := fmt.Sprintf("#!/usr/bin/env bash\nset -euo pipefail\nRUN_ID=%q\nRUNS_DIR=%q\nTARGET_ORG=%q\nSHARD=%d\ngo run ./cmd/glade compat oracle run-salesforce --run-id \"$RUN_ID\" --runs-dir \"$RUNS_DIR\" --target-org \"$TARGET_ORG\" --shard \"$SHARD\" --fetch-logs --log-limit 200\nGO_RUN_GLADE=${GO_RUN_GLADE:-1}\nif [ \"$GO_RUN_GLADE\" = \"1\" ]; then\n  go run ./cmd/glade compat oracle run-glade --run-id \"$RUN_ID\" --runs-dir \"$RUNS_DIR\" --shard \"$SHARD\"\n  go run ./cmd/glade compat oracle diff --run-id \"$RUN_ID\" --runs-dir \"$RUNS_DIR\" --shard \"$SHARD\"\nfi\n", runID, runsDir, targetOrg, shard)
 		path := filepath.Join(outDir, fmt.Sprintf("06-run-shard-%03d.sh", shard))
 		if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
 			return err
 		}
 	}
-	resume := "#!/usr/bin/env bash\nset -euo pipefail\ngo run ./cmd/oaer compat oracle resume \"$@\"\n"
+	resume := "#!/usr/bin/env bash\nset -euo pipefail\ngo run ./cmd/glade compat oracle resume \"$@\"\n"
 	if err := os.WriteFile(filepath.Join(outDir, "resume-failed.sh"), []byte(resume), 0o755); err != nil {
 		return err
 	}
-	promote := fmt.Sprintf("#!/usr/bin/env bash\nset -euo pipefail\ngo run ./cmd/oaer compat oracle promote --run-id %q --runs-dir %q\n", runID, runsDir)
+	promote := fmt.Sprintf("#!/usr/bin/env bash\nset -euo pipefail\ngo run ./cmd/glade compat oracle promote --run-id %q --runs-dir %q\n", runID, runsDir)
 	if err := os.WriteFile(filepath.Join(outDir, "promote-passing.sh"), []byte(promote), 0o755); err != nil {
 		return err
 	}
@@ -333,7 +333,7 @@ func GenerateScripts(queue WorkQueue, runID, runsDir, targetOrg, outDir string, 
 	if err := os.WriteFile(filepath.Join(outDir, "nightly-full.sh"), []byte(nightly), 0o755); err != nil {
 		return err
 	}
-	nextAgent := fmt.Sprintf("#!/usr/bin/env bash\nset -euo pipefail\ngo run ./cmd/oaer compat oracle next --run-id %q --runs-dir %q --limit 25 --json\n", runID, runsDir)
+	nextAgent := fmt.Sprintf("#!/usr/bin/env bash\nset -euo pipefail\ngo run ./cmd/glade compat oracle next --run-id %q --runs-dir %q --limit 25 --json\n", runID, runsDir)
 	if err := os.WriteFile(filepath.Join(outDir, "next-agent-batch.sh"), []byte(nextAgent), 0o755); err != nil {
 		return err
 	}

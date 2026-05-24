@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 type Value struct {

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/open-aer/oaer/internal/probe"
+	"github.com/glade-sh/glade/internal/probe"
 )
 
 type SalesforceRunOptions struct {
@@ -356,7 +356,7 @@ func ParseApexLog(log string) ApexLogObservation {
 }
 
 func parseOracleDebugPayload(sequence int, message string) (OracleDebugPayload, bool) {
-	const marker = "OAER_ORACLE:"
+	const marker = "GLADE_ORACLE:"
 	idx := strings.Index(message, marker)
 	if idx < 0 {
 		return OracleDebugPayload{}, false

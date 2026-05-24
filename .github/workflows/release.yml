@@ -29,7 +29,7 @@ jobs:
         run: scripts/release-build.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: oaer-release-artifacts
+          name: glade-release-artifacts
           path: dist/*
           if-no-files-found: error
       - name: Publish GitHub Release

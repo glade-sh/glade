@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/schema"
+	"github.com/glade-sh/glade/internal/schema"
 )
 
 func TestResolveFieldNameResolvesIdCaseInsensitive(t *testing.T) {

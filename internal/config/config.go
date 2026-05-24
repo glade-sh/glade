@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var ErrNotFound = errors.New("oaer config not found")
+var ErrNotFound = errors.New("glade config not found")
 
 type Config struct {
 	Project ProjectConfig `json:"project"`
@@ -40,7 +40,7 @@ func LoadNearest(start string) (Config, string, error) {
 	}
 
 	for {
-		path := filepath.Join(dir, "oaer.yml")
+		path := filepath.Join(dir, "glade.yml")
 		if _, err := os.Stat(path); err == nil {
 			cfg, err := LoadFile(path)
 			return cfg, path, err
@@ -85,7 +85,7 @@ func parseYAMLSubset(src string) (Config, error) {
 
 		key, value, ok := strings.Cut(line, ":")
 		if !ok {
-			return Config{}, fmt.Errorf("oaer.yml:%d: expected key: value", lineNo+1)
+			return Config{}, fmt.Errorf("glade.yml:%d: expected key: value", lineNo+1)
 		}
 		key = strings.TrimSpace(key)
 		value = strings.TrimSpace(value)
@@ -98,27 +98,27 @@ func parseYAMLSubset(src string) (Config, error) {
 		case "project.packageDirs":
 			values, err := parseInlineList(value)
 			if err != nil {
-				return Config{}, fmt.Errorf("oaer.yml:%d: %w", lineNo+1, err)
+				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
 			}
 			cfg.Project.PackageDirs = values
 		case "project.managedPackageDependencies":
 			values, err := parseInlineList(value)
 			if err != nil {
-				return Config{}, fmt.Errorf("oaer.yml:%d: %w", lineNo+1, err)
+				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
 			}
 			deps, err := parseManagedPackageDependencies(values)
 			if err != nil {
-				return Config{}, fmt.Errorf("oaer.yml:%d: %w", lineNo+1, err)
+				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
 			}
 			cfg.Project.ManagedPackageDependencies = deps
 		case "org.features":
 			values, err := parseInlineList(value)
 			if err != nil {
-				return Config{}, fmt.Errorf("oaer.yml:%d: %w", lineNo+1, err)
+				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
 			}
 			cfg.Org.Features = values
 		default:
-			return Config{}, fmt.Errorf("oaer.yml:%d: unsupported config key %q", lineNo+1, key)
+			return Config{}, fmt.Errorf("glade.yml:%d: unsupported config key %q", lineNo+1, key)
 		}
 	}
 

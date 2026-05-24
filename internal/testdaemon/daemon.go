@@ -5,12 +5,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/open-aer/oaer/internal/apextest"
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/testreport"
-	"github.com/open-aer/oaer/internal/typesys"
-	"github.com/open-aer/oaer/internal/watch"
+	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/watch"
 )
 
 type Daemon struct {
@@ -46,7 +46,7 @@ func (d *Daemon) RunSelectionContext(ctx context.Context, opts apextest.Options,
 		opts.Filter = selection.TestClasses[0]
 	}
 	if selection.Mode == watch.SelectionNone {
-		return testreport.Run{Name: "oaer test"}
+		return testreport.Run{Name: "glade test"}
 	}
 	return apextest.RunContext(ctx, index, opts)
 }
@@ -68,7 +68,7 @@ func (d *Daemon) RunChangedSinceOptions(ref string, opts apextest.Options) (test
 		opts.Filter = selection.TestClasses[0]
 	}
 	if selection.Mode == watch.SelectionNone {
-		return testreport.Run{Name: "oaer test"}, selection, nil
+		return testreport.Run{Name: "glade test"}, selection, nil
 	}
 	return apextest.Run(index, opts), selection, nil
 }

@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/apexast"
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/project"
-	oaerschema "github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/testreport"
-	"github.com/open-aer/oaer/internal/typesys"
-	"github.com/open-aer/oaer/internal/vm"
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/project"
+	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 func TestRunExecutesAnonymousSubsetTestMethods(t *testing.T) {
@@ -988,7 +988,7 @@ public class SharedTestHelper {
 }
 `)
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   managedPackageDependencies: ["znu:../dep:1.0"]
 `)
 	index := loadTestIndex(t, consumerRoot)
@@ -1023,7 +1023,7 @@ public class Shared {
 }
 `)
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   defaultNamespace: znu
   managedPackageDependencies: ["znu:../dep:1.0"]
 `)
@@ -1061,7 +1061,7 @@ public abstract class SObjectTestData {
   public abstract String getSObjectType();
 }
 `)
-	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   defaultNamespace: znu
   managedPackageDependencies: ["znu:../dep:1.0"]
 `)
@@ -1117,7 +1117,7 @@ public class DependencyCartService {
 }
 `)
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   managedPackageDependencies: ["znu:../dep:1.0"]
 `)
 	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/DuplicateSelector.cls"), `
@@ -1160,7 +1160,7 @@ public class SharedHelper {
 }
 `)
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   managedPackageDependencies: ["znu:../dep:1.0"]
 `)
 	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/SharedHelper.cls"), `
@@ -1216,7 +1216,7 @@ public class DependencyCartService {
 }
 `)
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   managedPackageDependencies: ["znu:../dep:1.0"]
 `)
 	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/DuplicateSelector.cls"), `
@@ -1270,7 +1270,7 @@ public class DependencyNodeService {
 }
 `)
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   managedPackageDependencies: ["znu:../dep:1.0"]
 `)
 	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/DuplicateNode.cls"), `
@@ -1326,7 +1326,7 @@ public class OperationResult {
 }
 `)
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   managedPackageDependencies: ["znu:../dep:1.0"]
 `)
 	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/OperationResult.cls"), `
@@ -2329,7 +2329,7 @@ global class Result {
 }
 `)
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   managedPackageDependencies: ["znu:../dep:1.0"]
 `)
 	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/Result.cls"), `
@@ -4604,7 +4604,7 @@ func loadTestIndex(t *testing.T, root string) typesys.Index {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := oaerschema.LoadProject(p)
+	s, err := gladeschema.LoadProject(p)
 	if err != nil {
 		t.Fatal(err)
 	}

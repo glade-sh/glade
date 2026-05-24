@@ -16,10 +16,10 @@ trap cleanup EXIT
 
 cd "${ROOT}"
 
-go build -o "${TMP}/oaer" ./cmd/oaer
-OAER="${TMP}/oaer"
+go build -o "${TMP}/glade" ./cmd/glade
+GLADE="${TMP}/glade"
 
-"${OAER}" version >/dev/null
+"${GLADE}" version >/dev/null
 
 PROJECT="${TMP}/project"
 mkdir -p "${PROJECT}/force-app/main/classes"
@@ -42,25 +42,25 @@ private class SampleTest {
 }
 APEX
 
-"${OAER}" parse "${PROJECT}/force-app/main/classes/Sample.cls" --json >"${TMP}/parse.json"
+"${GLADE}" parse "${PROJECT}/force-app/main/classes/Sample.cls" --json >"${TMP}/parse.json"
 grep -q '"name": "Sample"' "${TMP}/parse.json"
 
-"${OAER}" check --project "${PROJECT}" --json >"${TMP}/check.json"
+"${GLADE}" check --project "${PROJECT}" --json >"${TMP}/check.json"
 grep -q '"diagnostics": 0' "${TMP}/check.json"
 
-"${OAER}" exec --trace "${TMP}/trace.json" "Integer x = 1 + 1; System.assertEquals(2, x); System.debug('x=' + x);" >"${TMP}/exec.out"
+"${GLADE}" exec --trace "${TMP}/trace.json" "Integer x = 1 + 1; System.assertEquals(2, x); System.debug('x=' + x);" >"${TMP}/exec.out"
 grep -q 'x=2' "${TMP}/exec.out"
 
-"${OAER}" profile analyze "${TMP}/trace.json" --json >"${TMP}/profile.json"
+"${GLADE}" profile analyze "${TMP}/trace.json" --json >"${TMP}/profile.json"
 grep -q '"events"' "${TMP}/profile.json"
 
-"${OAER}" test --project "${PROJECT}" --json >"${TMP}/test.json"
+"${GLADE}" test --project "${PROJECT}" --json >"${TMP}/test.json"
 grep -q '"passed": 1' "${TMP}/test.json"
 
-DB="${TMP}/oaer.db"
+DB="${TMP}/glade.db"
 cat >"${TMP}/fixture.json" <<'JSON'
 {
-  "version": "oaer.storage.v1",
+  "version": "glade.storage.v1",
   "objects": [
     {
       "name": "Account",
@@ -71,13 +71,13 @@ cat >"${TMP}/fixture.json" <<'JSON'
   ]
 }
 JSON
-"${OAER}" db seed --db "${DB}" "${TMP}/fixture.json" --json >"${TMP}/db-seed.json"
+"${GLADE}" db seed --db "${DB}" "${TMP}/fixture.json" --json >"${TMP}/db-seed.json"
 grep -q '"Account": 1' "${TMP}/db-seed.json"
-"${OAER}" db inspect --db "${DB}" >"${TMP}/db-inspect.out"
+"${GLADE}" db inspect --db "${DB}" >"${TMP}/db-inspect.out"
 grep -q 'Account: 1' "${TMP}/db-inspect.out"
 
-"${OAER}" playground --data-root "${TMP}/playground" --db "${TMP}/playground.sqlite" --once >"${TMP}/playground.out"
-grep -q 'oaer playground: http://127.0.0.1:1789/playground/' "${TMP}/playground.out"
+"${GLADE}" playground --data-root "${TMP}/playground" --db "${TMP}/playground.sqlite" --once >"${TMP}/playground.out"
+grep -q 'glade playground: http://127.0.0.1:1789/playground/' "${TMP}/playground.out"
 
 LSP_PROJECT="${TMP}/lsp-project"
 mkdir -p "${LSP_PROJECT}/force-app/main/classes"
@@ -91,7 +91,7 @@ public class Broken {
   }
 }
 APEX
-"${OAER}" lsp --project "${LSP_PROJECT}" --diagnostics-once >"${TMP}/lsp.out"
+"${GLADE}" lsp --project "${LSP_PROJECT}" --diagnostics-once >"${TMP}/lsp.out"
 grep -q 'textDocument/publishDiagnostics' "${TMP}/lsp.out"
 
 ADDR="$(python3 - <<'PY'
@@ -103,7 +103,7 @@ s.close()
 print(f"{host}:{port}")
 PY
 )"
-"${OAER}" server --addr "${ADDR}" --db "${DB}" --project "${PROJECT}" >"${TMP}/server.log" 2>&1 &
+"${GLADE}" server --addr "${ADDR}" --db "${DB}" --project "${PROJECT}" >"${TMP}/server.log" 2>&1 &
 SERVER_PID="$!"
 for _ in $(seq 1 50); do
   if curl -fsS "http://${ADDR}/services/data" >"${TMP}/server-data.json" 2>/dev/null; then
@@ -113,9 +113,9 @@ for _ in $(seq 1 50); do
 done
 grep -q 'v65.0' "${TMP}/server-data.json"
 
-"${OAER}" compat mvp >"${TMP}/compat-mvp.out"
+"${GLADE}" compat mvp >"${TMP}/compat-mvp.out"
 grep -q 'MVP readiness: not ready' "${TMP}/compat-mvp.out"
-"${OAER}" compat matrix --json >"${TMP}/compat-matrix.json"
+"${GLADE}" compat matrix --json >"${TMP}/compat-matrix.json"
 grep -q '"ready": false' "${TMP}/compat-matrix.json"
 RUN_FIXTURES=()
 for fixture in docs/fixtures/*.json; do
@@ -131,13 +131,13 @@ PY
     RUN_FIXTURES+=("${fixture}")
   fi
 done
-"${OAER}" compat validate "${RUN_FIXTURES[@]}"
-"${OAER}" compat run "${RUN_FIXTURES[@]}"
-"${OAER}" compat replay testdata/replay/selector-service-domain
-"${OAER}" compat replay testdata/replay/server-backed
-"${OAER}" compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
-"${OAER}" compat gaps --check docs/KNOWN_GAPS.md
-"${OAER}" compat stdlib --check docs/STDLIB_COVERAGE.md
-OAER_BIN="${OAER}" scripts/apex-docs-support-gate.sh
+"${GLADE}" compat validate "${RUN_FIXTURES[@]}"
+"${GLADE}" compat run "${RUN_FIXTURES[@]}"
+"${GLADE}" compat replay testdata/replay/selector-service-domain
+"${GLADE}" compat replay testdata/replay/server-backed
+"${GLADE}" compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
+"${GLADE}" compat gaps --check docs/KNOWN_GAPS.md
+"${GLADE}" compat stdlib --check docs/STDLIB_COVERAGE.md
+GLADE_BIN="${GLADE}" scripts/apex-docs-support-gate.sh
 
 echo "smoke: ok"

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 type formulaKind int

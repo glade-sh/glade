@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/apexast"
-	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 const StubBehaviorSchemaVersion = 1

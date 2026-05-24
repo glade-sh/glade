@@ -13,13 +13,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/open-aer/oaer/internal/apextest"
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/project"
-	oaerschema "github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/typesys"
-	"github.com/open-aer/oaer/internal/vm"
+	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/project"
+	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 type vmOrgStore struct {
@@ -348,12 +348,12 @@ func loadWorkspaceIndex(root string) (typesys.Index, []diagnostic.Diagnostic, er
 		return typesys.Index{}, nil, err
 	}
 	p.Namespace = ""
-	s, err := oaerschema.LoadProject(p)
+	s, err := gladeschema.LoadProject(p)
 	if err != nil {
-		index := typesys.Build(p, oaerschema.Schema{})
+		index := typesys.Build(p, gladeschema.Schema{})
 		index.Diagnostics = append(index.Diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
-			Code:     "OAERSCHEMA001",
+			Code:     "GLADESCHEMA001",
 			Message:  fmt.Sprintf("metadata schema load failed: %v", err),
 		})
 		return index, index.Diagnostics, nil

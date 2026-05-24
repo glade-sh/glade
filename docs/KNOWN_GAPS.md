@@ -2,7 +2,7 @@
 
 Generated from `internal/capability`.
 
-The MVP target is `full-featured aer-parity MVP`. This document lists required capabilities that are not yet `supported`.
+The MVP target is `full-featured glade-parity MVP`. This document lists required capabilities that are not yet `supported`.
 
 ## Summary
 
@@ -50,39 +50,39 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 
 ## Developer experience
 
-### `dap.command`: VS Code debug flow through oaer test/exec --debug
+### `dap.command`: VS Code debug flow through glade test/exec --debug
 
 - Status: `partial`
-- Gap: DAP content-length transport, setBreakpoints, continue/pause/next/stepIn/stepOut/disconnect, stackTrace with trace-provided line/column positions, scopes, variables, evaluate, VM debug pause hooks, live statement breakpoint stops with stack/locals/static snapshots, stack-depth live stepping, Locals/Statics/Trigger scopes with object, SObject, exception, and collection children, and paused-context watch expressions for locals, fields, statics, Trigger values, list/set indexes, and map keys are wired. Full IDE launch/run integration still uses oaer exec/test --debug snapshot sessions while richer live adapter orchestration remains incomplete.
+- Gap: DAP content-length transport, setBreakpoints, continue/pause/next/stepIn/stepOut/disconnect, stackTrace with trace-provided line/column positions, scopes, variables, evaluate, VM debug pause hooks, live statement breakpoint stops with stack/locals/static snapshots, stack-depth live stepping, Locals/Statics/Trigger scopes with object, SObject, exception, and collection children, and paused-context watch expressions for locals, fields, statics, Trigger values, list/set indexes, and map keys are wired. Full IDE launch/run integration still uses glade exec/test --debug snapshot sessions while richer live adapter orchestration remains incomplete.
 
-### `lsp.command`: oaer lsp core editor features
+### `lsp.command`: glade lsp core editor features
 
 - Status: `partial`
-- Gap: oaer lsp now runs a stdio LSP transport with initialize, diagnostics matching the shared oaer check diagnostic model, open-buffer parse overlays, test-result diagnostics from stack frames, incremental text document sync through didOpen/didChange/didClose overlays, document/workspace symbols, semantic tokens, definition, references, prepare-rename/rename workspace edits, hover, and completion for Apex types, members, SObjects, fields, and keywords. Deeper context-aware completion remains incomplete.
+- Gap: glade lsp now runs a stdio LSP transport with initialize, diagnostics matching the shared glade check diagnostic model, open-buffer parse overlays, test-result diagnostics from stack frames, incremental text document sync through didOpen/didChange/didClose overlays, document/workspace symbols, semantic tokens, definition, references, prepare-rename/rename workspace edits, hover, and completion for Apex types, members, SObjects, fields, and keywords. Deeper context-aware completion remains incomplete.
 
 ### `profile.native`: Native trace/profile reports
 
 - Status: `partial`
 - Gap: Trace/profile reports aggregate statements, methods, SOQL, DML, describe, callout, email, async enqueue/run, trigger, and limit-summary events into native JSON/Markdown reports with hot-event, category, runtime-section, SOQL/DML row-delta, and platform/resource counter attribution. pprof-compatible CPU output and per-statement wall-clock timing remain incomplete.
 
-### `watch.command`: oaer test --watch affected-test loop
+### `watch.command`: glade test --watch affected-test loop
 
 - Status: `partial`
-- Gap: oaer test --watch now supports fsnotify native watching with recursive directory registration, automatic polling fallback, explicit --watch-backend auto|native|poll selection, debounce, versioned newline-delimited JSON events with stable run IDs and test class arrays, incremental Apex-only type-index updates, dependency-graph affected-test selection, cancellable in-flight VM/test reruns, and stale run-result suppression. Profile/trace-driven watch reports remain incomplete.
+- Gap: glade test --watch now supports fsnotify native watching with recursive directory registration, automatic polling fallback, explicit --watch-backend auto|native|poll selection, debounce, versioned newline-delimited JSON events with stable run IDs and test class arrays, incremental Apex-only type-index updates, dependency-graph affected-test selection, cancellable in-flight VM/test reruns, and stale run-result suppression. Profile/trace-driven watch reports remain incomplete.
 
 ## Limits
 
 ### `limits.core`: Governor counters and strict/permissive enforcement
 
 - Status: `partial`
-- Gap: The VM now tracks SOQL queries/rows including projected child relationship rows, DML statements/rows including cascade-delete child rows, deterministic live heap approximation across locals and mutated collections, deterministic CPU cost from statements plus SOQL/DML row work, callouts, aggregate async jobs, future calls, queueable jobs, batch jobs, scheduled jobs, and email invocations. Limits.* exposes current and max counters for supported SOQL, DML, heap, CPU, callout, aggregate async, future, queueable, batch, scheduled, and email counters, Test.startTest/Test.stopTest reset and restore test windows, permissive mode records violations, strict mode raises System.LimitException, and oaer exec/test/server plus compatibility exec/test fixtures accept limit-mode selection. Exact Salesforce accounting and configurable per-test caps remain incomplete.
+- Gap: The VM now tracks SOQL queries/rows including projected child relationship rows, DML statements/rows including cascade-delete child rows, deterministic live heap approximation across locals and mutated collections, deterministic CPU cost from statements plus SOQL/DML row work, callouts, aggregate async jobs, future calls, queueable jobs, batch jobs, scheduled jobs, and email invocations. Limits.* exposes current and max counters for supported SOQL, DML, heap, CPU, callout, aggregate async, future, queueable, batch, scheduled, and email counters, Test.startTest/Test.stopTest reset and restore test windows, permissive mode records violations, strict mode raises System.LimitException, and glade exec/test/server plus compatibility exec/test fixtures accept limit-mode selection. Exact Salesforce accounting and configurable per-test caps remain incomplete.
 
 ## Local API server
 
 ### `server.local-api`: Salesforce-shaped local API with CRUD/query/executeAnonymous
 
 - Status: `partial`
-- Gap: Version/root discovery, SObject CRUD with normal REST JSON payloads and explicit nulls, describe/recent, query/queryAll with REST-shaped attributes and soft-deleted row visibility, limits, OAuth userinfo/id stubs with local user selection, Tooling executeAnonymous GET/POST success and failure shapes, supported local-object Tooling queries, Composite sObject insert with referenceId/partial success/allOrNone rollback, Salesforce-shaped error arrays, SQLite persistence, and OAER fixture/scoped reset endpoints are wired with black-box compatibility coverage. Full auth, unmodeled Tooling objects, Composite batch/Graph, Bulk API, layout metadata, and broader REST resources remain incomplete or explicitly unsupported.
+- Gap: Version/root discovery, SObject CRUD with normal REST JSON payloads and explicit nulls, describe/recent, query/queryAll with REST-shaped attributes and soft-deleted row visibility, limits, OAuth userinfo/id stubs with local user selection, Tooling executeAnonymous GET/POST success and failure shapes, supported local-object Tooling queries, Composite sObject insert with referenceId/partial success/allOrNone rollback, Salesforce-shaped error arrays, SQLite persistence, and GLADE fixture/scoped reset endpoints are wired with black-box compatibility coverage. Full auth, unmodeled Tooling objects, Composite batch/Graph, Bulk API, layout metadata, and broader REST resources remain incomplete or explicitly unsupported.
 
 ## Release
 

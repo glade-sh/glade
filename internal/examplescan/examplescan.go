@@ -10,12 +10,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/projectscan"
-	oaerschema "github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/sema"
-	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/projectscan"
+	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 // Report is the top-level machine-readable example-project inventory.
@@ -181,7 +181,7 @@ func Scan(root string, opts Options) (Report, error) {
 		if err != nil {
 			scanDiagnostics = append(scanDiagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
-				Code:     "OAEREXAMPLE001",
+				Code:     "GLADEEXAMPLE001",
 				Message:  fmt.Sprintf("surface scan failed: %v", err),
 			})
 		} else {
@@ -196,7 +196,7 @@ func Scan(root string, opts Options) (Report, error) {
 		if err != nil {
 			scanDiagnostics = append(scanDiagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
-				Code:     "OAEREXAMPLE002",
+				Code:     "GLADEEXAMPLE002",
 				Message:  fmt.Sprintf("metadata schema load failed: %v", err),
 			})
 		} else {
@@ -491,7 +491,7 @@ func inventoryApex(root string, proj project.Project, skip map[string]bool) (Ape
 }
 
 func buildIndex(proj project.Project) (typesys.Index, error) {
-	s, err := oaerschema.LoadProject(proj)
+	s, err := gladeschema.LoadProject(proj)
 	if err != nil {
 		return typesys.Index{}, err
 	}
@@ -562,16 +562,16 @@ func classifyDiagnostic(code, message string) string {
 	if strings.Contains(lower, "unknown type") || strings.Contains(lower, "unknown sobject") || strings.Contains(lower, "references unknown") {
 		return "observed-blocker"
 	}
-	if strings.Contains(lower, "panic") || strings.Contains(code, "OAERSEMA000") {
+	if strings.Contains(lower, "panic") || strings.Contains(code, "GLADESEMA000") {
 		return "observed-blocker"
 	}
-	if strings.HasPrefix(code, "OAEREXAMPLE") {
+	if strings.HasPrefix(code, "GLADEEXAMPLE") {
 		return "observed-blocker"
 	}
 	if strings.Contains(lower, "parity") || strings.Contains(lower, "differs") {
 		return "observed-parity-gap"
 	}
-	if strings.HasPrefix(code, "OAERSEMA") || strings.HasPrefix(code, "OAERAST") {
+	if strings.HasPrefix(code, "GLADESEMA") || strings.HasPrefix(code, "GLADEAST") {
 		return "observed-blocker"
 	}
 	return "unobserved-parity-followup"

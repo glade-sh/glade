@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
@@ -181,7 +181,7 @@ func TestApplyProjectIncludesLoadedDependencyFieldSets(t *testing.T) {
   <displayedFields><field>BillingStreet</field></displayedFields>
 </FieldSet>`)
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   managedPackageDependencies: ["znu:../dep:1.0"]
 `)
 

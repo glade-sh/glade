@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/vm"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 type Server struct {

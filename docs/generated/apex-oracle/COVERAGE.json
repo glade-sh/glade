@@ -4,7 +4,7 @@
   "generatedAt": "2026-05-23T03:35:42.494869Z",
   "byStatus": {
     "compile_shape_known": 33916,
-    "oaer_unsupported": 673,
+    "glade_unsupported": 673,
     "runtime_shape_known": 48211
   },
   "byArea": {

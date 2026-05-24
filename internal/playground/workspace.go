@@ -15,7 +15,7 @@ import (
 )
 
 const maxPlaygroundFileSize = 512 * 1024
-const readOnlyManifestFile = ".oaer-playground-readonly.json"
+const readOnlyManifestFile = ".glade-playground-readonly.json"
 
 type Workspace struct {
 	ID          string
@@ -37,7 +37,7 @@ func OpenWorkspace(opts WorkspaceOptions) (*Workspace, error) {
 	}
 	dataRoot := opts.DataRoot
 	if dataRoot == "" {
-		dataRoot = filepath.Join(".oaer", "playground")
+		dataRoot = filepath.Join(".glade", "playground")
 	}
 	root := opts.ProjectRoot
 	managed := root == ""
@@ -96,7 +96,7 @@ func (w *Workspace) ensureDefaultFiles() error {
 	}
 
 	defaults := map[string]string{
-		"sfdx-project.json": `{"packageDirectories":[{"path":"force-app","default":true}],"name":"oaer-playground","namespace":"","sourceApiVersion":"65.0"}` + "\n",
+		"sfdx-project.json": `{"packageDirectories":[{"path":"force-app","default":true}],"name":"glade-playground","namespace":"","sourceApiVersion":"65.0"}` + "\n",
 		"force-app/main/default/classes/AccountPlayground.cls": `public class AccountPlayground {
   public static Account makeAccount(String name) {
     Account account = new Account(Name = name);
@@ -255,8 +255,8 @@ func collectProjectReferenceFiles(ref ProjectReference) (map[string]string, erro
 	} else {
 		files["sfdx-project.json"] = projectReferenceSFDXProjectJSON(files["sfdx-project.json"])
 	}
-	delete(files, "oaer.yml")
-	delete(files, "oaer.yaml")
+	delete(files, "glade.yml")
+	delete(files, "glade.yaml")
 	if _, ok := files["anonymous.apex"]; !ok {
 		files["anonymous.apex"] = "System.debug('Loaded local project reference');\n"
 	}
@@ -271,7 +271,7 @@ func shouldSkipProjectReferenceDir(name string) bool {
 		return true
 	}
 	switch name {
-	case ".git", ".hg", ".svn", ".sf", ".sfdx", ".oaer", "node_modules", "dist", "bin":
+	case ".git", ".hg", ".svn", ".sf", ".sfdx", ".glade", "node_modules", "dist", "bin":
 		return true
 	default:
 		return false

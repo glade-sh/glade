@@ -7,7 +7,7 @@
       "path": "/services/data",
       "status": 200,
       "contains": [
-        "OAER Local API v65.0",
+        "GLADE Local API v65.0",
         "\"version\":\"65.0\"",
         "/services/data/v65.0"
       ]
@@ -22,7 +22,7 @@
         "queryAll",
         "tooling",
         "composite",
-        "oaer"
+        "glade"
       ]
     },
     {
@@ -45,9 +45,9 @@
       ]
     },
     {
-      "name": "oaer-root",
+      "name": "glade-root",
       "method": "GET",
-      "path": "/services/data/v65.0/oaer",
+      "path": "/services/data/v65.0/glade",
       "status": 200,
       "contains": [
         "fixture",
@@ -344,10 +344,10 @@
       ]
     },
     {
-      "name": "oaer-fixture-seed",
+      "name": "glade-fixture-seed",
       "method": "POST",
-      "path": "/services/data/v65.0/oaer/fixture",
-      "body": "{\"version\":\"oaer.storage.v1\",\"objects\":[{\"name\":\"Account\",\"records\":[{\"alias\":\"fixture\",\"fields\":{\"Name\":{\"kind\":\"string\",\"string\":\"Fixture Seed\"}}}]}]}",
+      "path": "/services/data/v65.0/glade/fixture",
+      "body": "{\"version\":\"glade.storage.v1\",\"objects\":[{\"name\":\"Account\",\"records\":[{\"alias\":\"fixture\",\"fields\":{\"Name\":{\"kind\":\"string\",\"string\":\"Fixture Seed\"}}}]}]}",
       "status": 200,
       "contains": [
         "\"success\":true",
@@ -355,19 +355,19 @@
       ]
     },
     {
-      "name": "oaer-fixture-export",
+      "name": "glade-fixture-export",
       "method": "GET",
-      "path": "/services/data/v65.0/oaer/fixture",
+      "path": "/services/data/v65.0/glade/fixture",
       "status": 200,
       "contains": [
-        "\"version\":\"oaer.storage.v1\"",
+        "\"version\":\"glade.storage.v1\"",
         "Fixture Seed"
       ]
     },
     {
       "name": "scoped-reset-users-limits-async",
       "method": "POST",
-      "path": "/services/data/v65.0/oaer/reset",
+      "path": "/services/data/v65.0/glade/reset",
       "body": "{\"scopes\":[\"users\",\"limits\",\"async\"]}",
       "status": 200,
       "contains": [
@@ -378,7 +378,7 @@
     {
       "name": "scoped-reset-platform",
       "method": "POST",
-      "path": "/services/data/v65.0/oaer/reset",
+      "path": "/services/data/v65.0/glade/reset",
       "body": "{\"scopes\":[\"platform\"]}",
       "status": 200,
       "contains": [
@@ -389,7 +389,7 @@
     {
       "name": "scoped-reset",
       "method": "POST",
-      "path": "/services/data/v65.0/oaer/reset/data",
+      "path": "/services/data/v65.0/glade/reset/data",
       "status": 200,
       "contains": [
         "\"scopes\":[\"data\"]"
@@ -398,7 +398,7 @@
     {
       "name": "default-reset",
       "method": "POST",
-      "path": "/services/data/v65.0/oaer/reset",
+      "path": "/services/data/v65.0/glade/reset",
       "status": 200,
       "contains": [
         "\"scopes\":[\"all\"]",

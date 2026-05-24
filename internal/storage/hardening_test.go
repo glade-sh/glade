@@ -10,7 +10,7 @@ func TestNoPanicOnMalformedFixtures(t *testing.T) {
 		"",
 		"{",
 		`{"version":"wrong"}`,
-		`{"version":"oaer.storage.v1","objects":[{"name":"Account","records":[{"id":"bad-id"}]}]}`,
+		`{"version":"glade.storage.v1","objects":[{"name":"Account","records":[{"id":"bad-id"}]}]}`,
 	}
 	for _, input := range inputs {
 		assertNoPanic(t, func() {

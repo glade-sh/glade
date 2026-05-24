@@ -5,12 +5,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/apexast"
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/sema"
-	"github.com/open-aer/oaer/internal/testreport"
-	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 type Handler struct {
@@ -55,7 +55,7 @@ func (h *Handler) Initialize(_ InitializeParams) InitializeResult {
 			RenameProvider:         RenameOptions{PrepareProvider: true},
 			SemanticTokensProvider: SemanticTokensOptions{Legend: semanticTokensLegend(), Full: true},
 		},
-		ServerInfo: &ServerInfo{Name: "oaer"},
+		ServerInfo: &ServerInfo{Name: "glade"},
 	}
 }
 
@@ -177,7 +177,7 @@ func TestDiagnostics(run testreport.Run) []diagnostic.Diagnostic {
 			}
 			diag := diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
-				Code:     "OAERTEST001",
+				Code:     "GLADETEST001",
 				Message:  message,
 				File:     frame.File,
 			}
@@ -218,7 +218,7 @@ func BuildPublishDiagnostics(uri DocumentURI, diagnostics []diagnostic.Diagnosti
 		lspDiag := Diagnostic{
 			Severity: lspSeverity(diag.Severity),
 			Code:     diag.Code,
-			Source:   "oaer",
+			Source:   "glade",
 			Message:  diag.Message,
 		}
 		if diag.Range != nil {

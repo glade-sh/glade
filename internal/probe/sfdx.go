@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/open-aer/oaer/internal/capability"
+	"github.com/glade-sh/glade/internal/capability"
 )
 
 // SFDXExecutor captures golden responses by running probes against a real
@@ -32,7 +32,7 @@ const apexRunTimeout = 90 * time.Second
 
 // PreflightShape captures the scratch org shape before golden execution.
 func (s *SFDXExecutor) PreflightShape(probeDir string) (map[string]interface{}, error) {
-	jsonStr, _, err := s.runProbeCodeJSON(probeDir, "System.assert(false, 'OAER_PROBE:' + ProbeRunner.preflight());", probeRunTimeout())
+	jsonStr, _, err := s.runProbeCodeJSON(probeDir, "System.assert(false, 'GLADE_PROBE:' + ProbeRunner.preflight());", probeRunTimeout())
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (s *SFDXExecutor) CaptureGolden(probeDir string, probeIDs []string) (map[st
 				Category:         "Skipped",
 				Result:           nil,
 				ExceptionType:    strPtr("SkippedProbe"),
-				ExceptionMessage: strPtr("probe skipped by OAER_PROBE_SKIP_IDS"),
+				ExceptionMessage: strPtr("probe skipped by GLADE_PROBE_SKIP_IDS"),
 			}
 			timings = append(timings, ProbeTiming{Phase: "golden", ProbeID: id, Mode: "skipped", DurationMS: 0})
 			i++
@@ -194,12 +194,12 @@ func (s *SFDXExecutor) CaptureGolden(probeDir string, probeIDs []string) (map[st
 func probeBatchSizes() (int, int) {
 	maxBatch := maxGoldenBatchSize
 	maxIsolatedBatch := maxIsolatedGoldenBatchSize
-	if v := strings.TrimSpace(os.Getenv("OAER_PROBE_MAX_BATCH")); v != "" {
+	if v := strings.TrimSpace(os.Getenv("GLADE_PROBE_MAX_BATCH")); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			maxBatch = n
 		}
 	}
-	if v := strings.TrimSpace(os.Getenv("OAER_PROBE_MAX_ISOLATED_BATCH")); v != "" {
+	if v := strings.TrimSpace(os.Getenv("GLADE_PROBE_MAX_ISOLATED_BATCH")); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			maxIsolatedBatch = n
 		}
@@ -208,7 +208,7 @@ func probeBatchSizes() (int, int) {
 }
 
 func (s *SFDXExecutor) runProbe(probeDir, probeID string) (ProbeResult, error) {
-	code := fmt.Sprintf("System.assert(false, 'OAER_PROBE:' + ProbeRunner.run('%s'));", probeID)
+	code := fmt.Sprintf("System.assert(false, 'GLADE_PROBE:' + ProbeRunner.run('%s'));", probeID)
 	var stubSpec capability.StubContractProbeSpec
 	isStub := false
 	if isStubContractProbeID(probeID) {
@@ -243,7 +243,7 @@ func (s *SFDXExecutor) runProbe(probeDir, probeID string) (ProbeResult, error) {
 }
 
 func (s *SFDXExecutor) runProbeBatch(probeDir string, probeIDs []string, timeout time.Duration) ([]ProbeResult, string, error) {
-	code := fmt.Sprintf("System.assert(false, 'OAER_PROBE:' + ProbeRunner.runMany(new List<String>{%s}));", apexStringList(probeIDs))
+	code := fmt.Sprintf("System.assert(false, 'GLADE_PROBE:' + ProbeRunner.runMany(new List<String>{%s}));", apexStringList(probeIDs))
 	jsonStr, logs, err := s.runProbeCodeJSON(probeDir, code, timeout)
 	if err != nil {
 		if strings.Contains(logs, "daily usage limit of apex log headers") {
@@ -261,7 +261,7 @@ func (s *SFDXExecutor) runProbeBatch(probeDir string, probeIDs []string, timeout
 }
 
 func (s *SFDXExecutor) runProbeBatchIsolated(probeDir string, probeIDs []string, timeout time.Duration) ([]ProbeResult, string, error) {
-	code := fmt.Sprintf("System.assert(false, 'OAER_PROBE:' + ProbeRunner.runManyIsolated(new List<String>{%s}));", apexStringList(probeIDs))
+	code := fmt.Sprintf("System.assert(false, 'GLADE_PROBE:' + ProbeRunner.runManyIsolated(new List<String>{%s}));", apexStringList(probeIDs))
 	jsonStr, logs, err := s.runProbeCodeJSON(probeDir, code, timeout)
 	if err != nil {
 		if strings.Contains(logs, "daily usage limit of apex log headers") {
@@ -353,7 +353,7 @@ func (s *SFDXExecutor) runProbeCodeJSON(probeDir, code string, timeout time.Dura
 
 // runWithSF uses the modern "sf" CLI which requires a file path (-f).
 func (s *SFDXExecutor) runWithSF(probeDir, code string, timeout time.Duration) ([]byte, string, error) {
-	tmpDir, err := os.MkdirTemp("", "oaer-probe-sf-*")
+	tmpDir, err := os.MkdirTemp("", "glade-probe-sf-*")
 	if err != nil {
 		return nil, "sf", fmt.Errorf("create temp dir: %w", err)
 	}
@@ -382,7 +382,7 @@ func (s *SFDXExecutor) runWithSF(probeDir, code string, timeout time.Duration) (
 
 // runWithSFDX uses the legacy "sfdx" CLI which requires a file path (-f).
 func (s *SFDXExecutor) runWithSFDX(probeDir, code string, timeout time.Duration) ([]byte, string, error) {
-	tmpDir, err := os.MkdirTemp("", "oaer-probe-*")
+	tmpDir, err := os.MkdirTemp("", "glade-probe-*")
 	if err != nil {
 		return nil, "sfdx", fmt.Errorf("create temp dir: %w", err)
 	}
@@ -436,7 +436,7 @@ func runWithHardTimeout(cmd *exec.Cmd, stdout, stderr *bytes.Buffer, timeout tim
 }
 
 func probeRunTimeout() time.Duration {
-	if v := strings.TrimSpace(os.Getenv("OAER_APEX_RUN_TIMEOUT_SEC")); v != "" {
+	if v := strings.TrimSpace(os.Getenv("GLADE_APEX_RUN_TIMEOUT_SEC")); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			return time.Duration(n) * time.Second
 		}
@@ -445,12 +445,12 @@ func probeRunTimeout() time.Duration {
 }
 
 func probeVerbose() bool {
-	v := strings.ToLower(strings.TrimSpace(os.Getenv("OAER_PROBE_VERBOSE")))
+	v := strings.ToLower(strings.TrimSpace(os.Getenv("GLADE_PROBE_VERBOSE")))
 	return v == "1" || v == "true" || v == "yes" || v == "on"
 }
 
 func shouldSkipProbe(id string) bool {
-	raw := strings.TrimSpace(os.Getenv("OAER_PROBE_SKIP_IDS"))
+	raw := strings.TrimSpace(os.Getenv("GLADE_PROBE_SKIP_IDS"))
 	if raw == "" {
 		return false
 	}
@@ -478,7 +478,7 @@ func extractDebugJSON(logs string) (string, error) {
 }
 
 func extractAssertionJSON(message string) (string, bool) {
-	const marker = "OAER_PROBE:"
+	const marker = "GLADE_PROBE:"
 	idx := strings.Index(message, marker)
 	if idx < 0 {
 		return "", false

@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 type flowXML struct {
@@ -915,5 +915,5 @@ func flowUnsupported(path, flowName, message string) diagnostic.Diagnostic {
 	if flowName != "" {
 		message = flowName + ": " + message
 	}
-	return diagnostic.Diagnostic{Severity: diagnostic.Warning, Code: "OAERAUTO002", Message: message, File: path}
+	return diagnostic.Diagnostic{Severity: diagnostic.Warning, Code: "GLADEAUTO002", Message: message, File: path}
 }

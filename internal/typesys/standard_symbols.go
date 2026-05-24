@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/open-aer/oaer/internal/apexast"
+	"github.com/glade-sh/glade/internal/apexast"
 )
 
 type StandardSymbolSpec struct {

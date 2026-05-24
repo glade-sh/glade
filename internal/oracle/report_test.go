@@ -63,7 +63,7 @@ func TestCheckCorpusDiffsRelativeFixtureRuns(t *testing.T) {
 	}
 	if err := os.WriteFile(filepath.Join(dir, "local.json"), []byte(`{
   "schemaVersion": 1,
-  "source": "oaer",
+  "source": "glade",
   "project": "fixture",
   "testClass": "AccountOracleTest",
   "testMethod": "createsRecord",

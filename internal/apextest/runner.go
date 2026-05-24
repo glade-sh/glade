@@ -16,21 +16,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/open-aer/oaer/internal/apexast"
-	"github.com/open-aer/oaer/internal/automation"
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/ir"
-	"github.com/open-aer/oaer/internal/profile"
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/resource"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/sobject"
-	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/testreport"
-	"github.com/open-aer/oaer/internal/trace"
-	"github.com/open-aer/oaer/internal/typesys"
-	"github.com/open-aer/oaer/internal/visualforce"
-	"github.com/open-aer/oaer/internal/vm"
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/automation"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/profile"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/resource"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sobject"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/trace"
+	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/visualforce"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 type Options struct {
@@ -202,7 +202,7 @@ assemble:
 		}
 	}
 
-	run := testreport.Run{Name: "oaer test"}
+	run := testreport.Run{Name: "glade test"}
 	for _, name := range order {
 		run.Suites = append(run.Suites, testreport.Suite{Name: name, Cases: suites[name]})
 	}

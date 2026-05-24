@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-aer/oaer/internal/storage"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestInsertUpdateDelete(t *testing.T) {

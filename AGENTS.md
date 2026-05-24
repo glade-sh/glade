@@ -214,18 +214,18 @@ Oververbosity: low
 
 ---
 
-## Project: oaer
+## Project: glade
 
-This repo is `oaer`, a clean-room, open source local Apex runtime written in Go.
+This repo is `glade`, a clean-room, open source local Apex runtime written in Go.
 It parses, type-checks, and executes Salesforce Apex code locally, backed by an
 in-memory data runtime and an optional SQLite persistence layer. Keep work tied
 to public Salesforce behavior, public grammars, owned fixtures, and black-box
-compatibility tests. Do not use proprietary AER internals as an implementation
+compatibility tests. Do not use proprietary GLADE internals as an implementation
 source.
 
 ### Overview
 
-`oaer` is a single-binary CLI tool and library that provides:
+`glade` is a single-binary CLI tool and library that provides:
 
 - **Apex front end**: parsing, symbol indexing, and semantic analysis for Apex
   classes, triggers, and SOQL.
@@ -239,17 +239,17 @@ source.
   readiness gate, JSON fixtures, and generated documentation.
 
 The project is organized as narrow, separately testable `internal/` packages
-composed by the CLI in `internal/oaercli`.
+composed by the CLI in `internal/gladecli`.
 
 ### Technology Stack
 
 - **Language**: Go 1.26
-- **Module**: `github.com/open-aer/oaer`
+- **Module**: `github.com/glade-sh/glade`
 - **Key dependencies**:
-  - `github.com/open-aer/apex-parser` — local tree-sitter Apex parser module
+  - `github.com/glade-sh/apex-parser` — local tree-sitter Apex parser module
     wrapped behind `internal/apexast`.
   - `modernc.org/sqlite` — pure-Go SQLite for persistent org storage.
-- **Configuration**: `oaer.yml` (minimal YAML-subset parser in
+- **Configuration**: `glade.yml` (minimal YAML-subset parser in
   `internal/config`; only scalar and inline-list values are supported).
 - **Project discovery**: `sfdx-project.json` for SFDX package directory layout.
 
@@ -257,10 +257,10 @@ composed by the CLI in `internal/oaercli`.
 
 | Package | Responsibility |
 | --- | --- |
-| `cmd/oaer` | Executable entry point. |
-| `internal/oaercli` | Command routing, flags, and user-facing CLI behavior. |
+| `cmd/glade` | Executable entry point. |
+| `internal/gladecli` | Command routing, flags, and user-facing CLI behavior. |
 | `internal/apexast` | Parser adapter and stable source model over the local tree-sitter Apex parser module. |
-| `internal/config` | `oaer.yml` discovery and parsing. |
+| `internal/config` | `glade.yml` discovery and parsing. |
 | `internal/diagnostic` | Shared diagnostic model for parser, semantic analysis, runtime, and CLI. |
 | `internal/project` | SFDX package directory discovery and source file collection. |
 | `internal/schema` | Metadata API custom object, field, picklist, and record type model. |
@@ -301,25 +301,25 @@ composed by the CLI in `internal/oaercli`.
 Build the CLI:
 
 ```bash
-go build -o oaer ./cmd/oaer
+go build -o glade ./cmd/glade
 ```
 
 Run locally:
 
 ```bash
-./oaer version
-./oaer doctor
-./oaer parse <paths...> [--json]
-./oaer inspect symbols [--project <root>] [--json]
-./oaer schema load [--project <root>] [--json]
-./oaer check [--project <root>] [--json]
-./oaer exec [--json] [--trace <path>] [--limit-mode strict|permissive] '<anonymous apex>'
-./oaer test [--project <root>] [--filter <pattern>] [--json|--junit <path>] [--limit-mode <mode>] [--watch|--watch-once] [--debug]
-./oaer lsp [--project <root>] [--diagnostics-once]
-./oaer profile analyze <trace.json> [--json]
-./oaer server [--addr <host:port>] [--db <path>] [--project <root>]
-./oaer db seed|reset|export|inspect --db <path> [--project <root>] [--json] [fixture.json]
-./oaer compat mvp|matrix|dashboard|gaps|stdlib|validate|run ...
+./glade version
+./glade doctor
+./glade parse <paths...> [--json]
+./glade inspect symbols [--project <root>] [--json]
+./glade schema load [--project <root>] [--json]
+./glade check [--project <root>] [--json]
+./glade exec [--json] [--trace <path>] [--limit-mode strict|permissive] '<anonymous apex>'
+./glade test [--project <root>] [--filter <pattern>] [--json|--junit <path>] [--limit-mode <mode>] [--watch|--watch-once] [--debug]
+./glade lsp [--project <root>] [--diagnostics-once]
+./glade profile analyze <trace.json> [--json]
+./glade server [--addr <host:port>] [--db <path>] [--project <root>]
+./glade db seed|reset|export|inspect --db <path> [--project <root>] [--json] [fixture.json]
+./glade compat mvp|matrix|dashboard|gaps|stdlib|validate|run ...
 ```
 
 ### Testing
@@ -359,10 +359,10 @@ go test -run '^$' -bench . ./internal/apexast ./internal/typesys ./internal/sema
 #### Compatibility and Smoke Tests
 
 ```bash
-go run ./cmd/oaer compat mvp --json
-go run ./cmd/oaer compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
-go run ./cmd/oaer compat gaps --check docs/KNOWN_GAPS.md
-go run ./cmd/oaer compat stdlib --check docs/STDLIB_COVERAGE.md
+go run ./cmd/glade compat mvp --json
+go run ./cmd/glade compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
+go run ./cmd/glade compat gaps --check docs/KNOWN_GAPS.md
+go run ./cmd/glade compat stdlib --check docs/STDLIB_COVERAGE.md
 scripts/smoke.sh
 ```
 
@@ -390,7 +390,7 @@ startup, and compat commands.
 ### Working Rules
 
 - Current priority, as of 2026-05-06, is full local Apex test execution support:
-  make `oaer test` run broad Salesforce-shaped projects with org-like metadata
+  make `glade test` run broad Salesforce-shaped projects with org-like metadata
   resolution, test isolation, platform APIs, DML/trigger behavior, declarative
   side effects, and explicit unsupported diagnostics.
 - Use `docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md` for squad-sized implementation
@@ -408,21 +408,21 @@ startup, and compat commands.
   measured compile-gap frontiers, so future unsupported runtime cases should
   remain explicit when they are outside the current support claim.
 - Keep the parser behind `internal/apexast`. The current parser module is
-  `github.com/open-aer/apex-parser` with a local replacement; parser cutover
+  `github.com/glade-sh/apex-parser` with a local replacement; parser cutover
   details live in `docs/APEX_PARSER_CUTOVER.md`.
 - When moving a capability from `partial` to `supported`, add compatibility
   coverage first.
 - Update generated docs after capability changes:
 
 ```bash
-go run ./cmd/oaer compat dashboard --output docs/COMPATIBILITY_DASHBOARD.md
-go run ./cmd/oaer compat gaps --output docs/KNOWN_GAPS.md
-go run ./cmd/oaer compat stdlib --output docs/STDLIB_COVERAGE.md
+go run ./cmd/glade compat dashboard --output docs/COMPATIBILITY_DASHBOARD.md
+go run ./cmd/glade compat gaps --output docs/KNOWN_GAPS.md
+go run ./cmd/glade compat stdlib --output docs/STDLIB_COVERAGE.md
 ```
 
-- Do not introduce proprietary AER internals as implementation sources.
+- Do not introduce proprietary GLADE internals as implementation sources.
 - Do not check in `.DS_Store`, `/bin/`, `/dist/`, or `coverage.out`.
-- Do not stage or commit the built `oaer` binary unless the user explicitly asks
+- Do not stage or commit the built `glade` binary unless the user explicitly asks
   for a binary update.
 
 ### Local-Test Execution Work Order
@@ -459,7 +459,7 @@ feature has a status:
 - `unsupported` — fails with a stable diagnostic before or during execution.
 - `unknown` — not evaluated yet.
 
-The MVP gate is `oaer compat mvp`. The project is not considered MVP-ready until
+The MVP gate is `glade compat mvp`. The project is not considered MVP-ready until
 every required capability is `supported`. CI enforces this gate and verifies that
 generated docs are in sync.
 
@@ -490,16 +490,16 @@ generated docs are in sync.
   Windows (amd64), plus `SHA256SUMS.txt`.
 - Build script: `scripts/release-build.sh` (uses `CGO_ENABLED=0` and
   `-trimpath`).
-- A release can be promoted as MVP-ready only when `oaer compat mvp --require-ready`
+- A release can be promoted as MVP-ready only when `glade compat mvp --require-ready`
   exits successfully and every `requiredForMVP` capability is `supported`.
 - Until the MVP gate is green, releases must be described as preview builds.
 
 ### Security Considerations
 
-- `oaer exec` compiles and runs arbitrary Apex expressions. In multi-tenant or
+- `glade exec` compiles and runs arbitrary Apex expressions. In multi-tenant or
   server contexts, treat user-supplied Apex as untrusted code and run it inside
   appropriate sandboxing.
-- The local API server (`oaer server`) exposes a Salesforce-shaped REST surface.
+- The local API server (`glade server`) exposes a Salesforce-shaped REST surface.
   It does not implement full OAuth or authentication; do not expose it to
   untrusted networks without an authenticating reverse proxy.
 - SQLite database files (`--db`) contain org state and record data. Protect them

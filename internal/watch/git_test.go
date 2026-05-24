@@ -13,8 +13,8 @@ func TestGitChangesSinceReturnsWatchableChanges(t *testing.T) {
 	}
 	root := t.TempDir()
 	runGit(t, root, "init")
-	runGit(t, root, "config", "user.email", "oaer@example.test")
-	runGit(t, root, "config", "user.name", "OAER")
+	runGit(t, root, "config", "user.email", "glade@example.test")
+	runGit(t, root, "config", "user.name", "GLADE")
 	classPath := filepath.Join(root, "force-app", "main", "default", "classes", "PassingTest.cls")
 	if err := os.MkdirAll(filepath.Dir(classPath), 0o755); err != nil {
 		t.Fatal(err)

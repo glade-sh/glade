@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION="${VERSION:-$(git -C "${ROOT}" describe --tags --always --dirty 2>/dev/null || echo dev)}"
 DIST_DIR="${DIST_DIR:-${ROOT}/dist}"
-LDFLAGS="-s -w -X github.com/open-aer/oaer/internal/oaercli.Version=${VERSION}"
+LDFLAGS="-s -w -X github.com/glade-sh/glade/internal/gladecli.Version=${VERSION}"
 
 platforms=(
   "darwin/amd64"
@@ -20,19 +20,19 @@ mkdir -p "${DIST_DIR}"
 for platform in "${platforms[@]}"; do
   goos="${platform%%/*}"
   goarch="${platform##*/}"
-  name="oaer_${VERSION}_${goos}_${goarch}"
+  name="glade_${VERSION}_${goos}_${goarch}"
   workdir="$(mktemp -d)"
-  binary="oaer"
+  binary="glade"
   archive="${name}.tar.gz"
 
   if [[ "${goos}" == "windows" ]]; then
-    binary="oaer.exe"
+    binary="glade.exe"
     archive="${name}.zip"
   fi
 
   (
     cd "${ROOT}"
-    CGO_ENABLED=0 GOOS="${goos}" GOARCH="${goarch}" go build -trimpath -ldflags "${LDFLAGS}" -o "${workdir}/${binary}" ./cmd/oaer
+    CGO_ENABLED=0 GOOS="${goos}" GOARCH="${goarch}" go build -trimpath -ldflags "${LDFLAGS}" -o "${workdir}/${binary}" ./cmd/glade
   )
   cp "${ROOT}/LICENSE" "${workdir}/LICENSE"
 

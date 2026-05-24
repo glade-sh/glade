@@ -1,6 +1,6 @@
 # Standard Object Schema Baseline
 
-`oaer` treats Salesforce standard object metadata as runtime data, not as
+`glade` treats Salesforce standard object metadata as runtime data, not as
 project metadata. SFDX projects usually include only custom object metadata and
 custom-field deltas, so the local runtime has to provide the standard spread
 that Salesforce normally exposes through describe calls.
@@ -8,7 +8,7 @@ that Salesforce normally exposes through describe calls.
 ## Source Of Truth
 
 The checked-in standard baseline is generated from public Salesforce describe
-responses captured from the `oaer-probe-lab` scratch org. The scratch org shape
+responses captured from the `glade-probe-lab` scratch org. The scratch org shape
 lives in `probes/sfdx/config/project-scratch-def.json` and enables a broad
 Enterprise feature set including Sales Cloud, Service Cloud, Person Accounts,
 Orders, Quotes, Products and Schedules, Multi-Currency, State and Country
@@ -19,7 +19,7 @@ Regenerate the catalog with:
 ```bash
 mkdir -p tmp/standard-describes
 for obj in Account Contact Opportunity OpportunityContactRole Lead Order OrderItem Quote Pricebook2 Product2 Campaign CampaignMember Case Asset Contract Task Event User RecordType EmailTemplate ContentVersion ContentDocument ContentDocumentLink Attachment Document Organization UserRole Profile PermissionSet PermissionSetAssignment; do
-  sf sobject describe --sobject "$obj" --target-org oaer-probe-lab --json > "tmp/standard-describes/$obj.json"
+  sf sobject describe --sobject "$obj" --target-org glade-probe-lab --json > "tmp/standard-describes/$obj.json"
 done
 node scripts/generate-standard-schema.mjs tmp/standard-describes internal/storage/standard_schema_generated.go
 ```
@@ -31,7 +31,7 @@ edit that file by hand.
 
 The describe baseline is the authoritative source for rich metadata such as key
 prefixes, picklists, record types, and feature-gated fields. It does not cover
-every platform object that large legacy projects reference. OAER therefore also
+every platform object that large legacy projects reference. GLADE therefore also
 keeps a generated SObject field overlay derived from public Apex stub shape
 data.
 

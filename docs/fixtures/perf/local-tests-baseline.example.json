@@ -44,6 +44,6 @@
     "cloneRuntimeCalls": 0,
     "cloneRollbackSnapshotCalls": 0
   },
-  "cpuProfilePath": "/tmp/oaer-perf/20260521T000000Z/local-tests.cpu.pprof",
-  "memProfilePath": "/tmp/oaer-perf/20260521T000000Z/local-tests.mem.pprof"
+  "cpuProfilePath": "/tmp/glade-perf/20260521T000000Z/local-tests.cpu.pprof",
+  "memProfilePath": "/tmp/glade-perf/20260521T000000Z/local-tests.mem.pprof"
 }

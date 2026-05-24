@@ -5,7 +5,7 @@ import { spawnSync } from "node:child_process";
 
 const repoRoot = path.resolve(new URL("..", import.meta.url).pathname);
 const localInputDir = path.join(repoRoot, "example-projects", "stubs", "apex-sobject-stubs");
-const siblingInputDir = path.resolve(repoRoot, "..", "oaer", "example-projects", "stubs", "apex-sobject-stubs");
+const siblingInputDir = path.resolve(repoRoot, "..", "glade", "example-projects", "stubs", "apex-sobject-stubs");
 const defaultInputDir = fs.existsSync(localInputDir)
   ? localInputDir
   : fs.existsSync(siblingInputDir)

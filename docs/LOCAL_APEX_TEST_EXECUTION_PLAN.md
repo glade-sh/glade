@@ -50,7 +50,7 @@ Current execution status as of May 18, 2026: `sf-cred-pkg-develop` is the first
 large package with a fully green local runtime pass. The validated command is:
 
 ```bash
-go run ./cmd/oaer compat local-tests \
+go run ./cmd/glade compat local-tests \
   --project ./example-projects/sf-cred-pkg-develop \
   --parallel 4 \
   --timeout 30000 \
@@ -68,7 +68,7 @@ For future blocker triage on other large projects, cap the run by distinct
 failure groups instead of executing every discovered test:
 
 ```bash
-go run ./cmd/oaer compat local-tests \
+go run ./cmd/glade compat local-tests \
   --project ./example-projects/sf-cred-pkg-develop \
   --blockers-only \
   --top-failures 20 \
@@ -81,7 +81,7 @@ go run ./cmd/oaer compat local-tests \
 Auto mode note: when no explicit parallel or shard flags are supplied,
 `compat local-tests` now auto-tunes class parallelism for full-project runs.
 For sharded execution, use `--parallel auto --shard-count auto --shard-index auto`
-with `OAER_SHARD_COUNT` and `OAER_SHARD_INDEX`.
+with `GLADE_SHARD_COUNT` and `GLADE_SHARD_INDEX`.
 
 May 18, 2026 performance note: serial `sf-cred-pkg` runs took about 24.3
 minutes. After fixing deterministic custom data lookup for duplicate logical
@@ -93,15 +93,15 @@ compile/runtime gaps, especially managed-package dependency artifacts for
 Performance baseline runs should build the CLI once before sweeping the corpus:
 
 ```bash
-scripts/build-oaer-for-perf.sh
-OAER_BIN=./bin/oaer-perf node scripts/baseline-local-tests-example-projects.mjs
+scripts/build-glade-for-perf.sh
+GLADE_BIN=./bin/glade-perf node scripts/baseline-local-tests-example-projects.mjs
 ```
 
 For measured PGO experiments, feed a representative `compat local-tests` CPU
 profile to the same build script:
 
 ```bash
-PGO_PROFILE=/tmp/oaer-perf/<run>/local-tests.cpu.pprof scripts/build-oaer-for-perf.sh
+PGO_PROFILE=/tmp/glade-perf/<run>/local-tests.cpu.pprof scripts/build-glade-for-perf.sh
 ```
 
 Do not commit `default.pgo` until the profile is stable and representative
@@ -114,13 +114,13 @@ a parser build that supports it.
 For repeated editor loops, keep the test service warm:
 
 ```bash
-oaer test --project force-app --daemon --filter MyClassTest
-oaer test --project force-app --daemon --changed-since main --json
-oaer test --project force-app --daemon --watch
+glade test --project force-app --daemon --filter MyClassTest
+glade test --project force-app --daemon --changed-since main --json
+glade test --project force-app --daemon --watch
 ```
 
 The warm path keeps project load, schema, and type index state behind the loop.
-Cold one-shot runs still use the regular `oaer test` path.
+Cold one-shot runs still use the regular `glade test` path.
 
 ## Execution Objective
 
@@ -141,13 +141,13 @@ release claim is:
 Target command shape:
 
 ```bash
-oaer test --project . --filter MyClassTest --json
-oaer test --project . --changed-since main --json
-oaer test --project . --watch --watch-backend auto --json
+glade test --project . --filter MyClassTest --json
+glade test --project . --changed-since main --json
+glade test --project . --watch --watch-backend auto --json
 ```
 
 The compatibility commands below are the engineering gates. The user-facing
-success path is still `oaer test`.
+success path is still `glade test`.
 
 ## Milestone Ladder
 
@@ -155,8 +155,8 @@ These milestones are ordered by developer value, not by feature count.
 
 | Milestone | Claim | Required gate |
 | --- | --- | --- |
-| M0: Server examples green | Local Salesforce-shaped API probes work for the checked corpus. | `go run ./cmd/oaer compat server-examples --json` reports no fail, unsupported, or missing probes. |
-| M1: Local-test gate exists | Every discovered test method receives `pass`, `fail`, `unsupported`, `load_error`, `compile_error`, or `internal_error`. | `go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json` |
+| M0: Server examples green | Local Salesforce-shaped API probes work for the checked corpus. | `go run ./cmd/glade compat server-examples --json` reports no fail, unsupported, or missing probes. |
+| M1: Local-test gate exists | Every discovered test method receives `pass`, `fail`, `unsupported`, `load_error`, `compile_error`, or `internal_error`. | `go run ./cmd/glade compat local-tests --project testdata/local-tests/basic --json` |
 | M2: Metadata-resolved tests | Legacy objects, custom metadata records, labels, resources, endpoints, and presentation metadata load well enough that metadata load/resolve blockers fall sharply. | `compat local-tests` plus `compat post-parity --json` show reduced `load` and `resolve` blockers. |
 | M3: Controller-test ready | Visualforce controller tests, `Page.*`, `PageReference`, `ApexPages`, Aura Apex discovery, and LWC Apex imports execute or produce precise unsupported diagnostics. | `compat local-tests --project testdata/local-tests/ui-controller-contracts --json` |
 | M4: Platform-test ready | `System.Callable`, `Test.createStub`, Site/Network/Auth, ConnectApi org settings, Platform Cache, and endpoint resolution work for local tests. | `compat local-tests --project testdata/local-tests/platform-apis --json` |
@@ -190,9 +190,9 @@ remote test startup. Preserve that advantage as features are added:
 Performance gates should be added once M1 exists:
 
 ```bash
-oaer test --project testdata/local-tests/basic --filter PassingTest --json
-oaer test --project testdata/local-tests/org-like-runner --changed-since main --json
-oaer test --project testdata/local-tests/org-like-runner --watch --watch-once --json
+glade test --project testdata/local-tests/basic --filter PassingTest --json
+glade test --project testdata/local-tests/org-like-runner --changed-since main --json
+glade test --project testdata/local-tests/org-like-runner --watch --watch-once --json
 ```
 
 The exact millisecond budget should be set from baseline measurements on the
@@ -205,7 +205,7 @@ the next phase. The current static/readiness inventory is green, and the fast
 NUTPL runtime sentinel now passes end to end. The other five example projects
 still stop at measured compile-gap frontiers, so the project does not yet have
 full runtime support for all example projects. Treat scratch-org pass results as
-the behavioral target: failures in these projects are OAER parity gaps unless
+the behavioral target: failures in these projects are GLADE parity gaps unless
 proven otherwise.
 
 Current example-project set:
@@ -223,11 +223,11 @@ Current measured runtime frontier:
 
 | Gate | Current signal |
 | --- | --- |
-| Static/readiness inventory | `go run ./cmd/oaer compat post-parity --project ./example-projects --json` reports `filesScanned=59482 findings=0 testBlockingFindings=0 surfaces=0 reports=114 dashboards=7`. |
-| Fast runtime green sentinel | `go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nutpl-develop --timeout 30000 --top-failures 8 --json` reports `total=761 pass=761 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0 topFailures=null durationMs=51589`; `--parallel 4` also reports `total=761 pass=761` in `durationMs=22350`. |
-| Large-package green runtime sentinel | `go run ./cmd/oaer compat local-tests --project example-projects/sf-cred-pkg-develop --parallel 4 --timeout 60000 --top-failures 20 --json --blockers-only` reports `casesRun=4274` with no blocker outcomes (`durationMs=601908`). |
+| Static/readiness inventory | `go run ./cmd/glade compat post-parity --project ./example-projects --json` reports `filesScanned=59482 findings=0 testBlockingFindings=0 surfaces=0 reports=114 dashboards=7`. |
+| Fast runtime green sentinel | `go run ./cmd/glade compat local-tests --project example-projects/src-nmb-nutpl-develop --timeout 30000 --top-failures 8 --json` reports `total=761 pass=761 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0 topFailures=null durationMs=51589`; `--parallel 4` also reports `total=761 pass=761` in `durationMs=22350`. |
+| Large-package green runtime sentinel | `go run ./cmd/glade compat local-tests --project example-projects/sf-cred-pkg-develop --parallel 4 --timeout 60000 --top-failures 20 --json --blockers-only` reports `casesRun=4274` with no blocker outcomes (`durationMs=601908`). |
 | Six-project runtime baseline | `docs/fixtures/local-tests-example-projects.json` tracks measured example-project frontiers; `src-nmb-nutpl-develop` and `sf-cred-pkg-develop` are green while the other unresolved projects remain measured gap frontiers. |
-| Scale runtime sentinel | `go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nc-develop --timeout 30000 --top-failures 8 --json` returns structured compile-gap output rather than timing out or stack-overflowing; the current top blocker is missing `znu.Address`. |
+| Scale runtime sentinel | `go run ./cmd/glade compat local-tests --project example-projects/src-nmb-nc-develop --timeout 30000 --top-failures 8 --json` returns structured compile-gap output rather than timing out or stack-overflowing; the current top blocker is missing `znu.Address`. |
 | Unit/regression suite | `go test ./...` must stay green after every merge. |
 
 ### Runtime Closure Phases
@@ -251,11 +251,11 @@ Current blockers:
 - `nams-workspace` references installed package Apex such as `znu.Pluggable`
   and installed package schema such as `znu__CartItemLine__c`.
 - Treating those as ordinary current-project compile gaps hides the real
-  prerequisite: OAER needs the `znu` managed package contract loaded first.
+  prerequisite: GLADE needs the `znu` managed package contract loaded first.
 
 Tasks:
 
-- Add explicit first-iteration dependency config in `oaer.yml`, mapping a
+- Add explicit first-iteration dependency config in `glade.yml`, mapping a
   namespace to either a local source project root and optional package version
   or a compact package artifact through `namespace:artifact:path`.
 - Build a source-backed managed package artifact model for Apex contracts,
@@ -277,10 +277,10 @@ Validation:
 
 ```bash
 go test ./internal/config ./internal/project ./internal/typesys ./internal/sema ./internal/schema ./internal/vm ./internal/compat
-go run ./cmd/oaer test --project testdata/local-tests/managed-package-consumer --json
-go run ./cmd/oaer test --project testdata/local-tests/managed-package-access --json
-go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nc-develop --timeout 30000 --top-failures 8 --json
-go run ./cmd/oaer compat local-tests --project example-projects/nams-workspace --timeout 30000 --top-failures 8 --json
+go run ./cmd/glade test --project testdata/local-tests/managed-package-consumer --json
+go run ./cmd/glade test --project testdata/local-tests/managed-package-access --json
+go run ./cmd/glade compat local-tests --project example-projects/src-nmb-nc-develop --timeout 30000 --top-failures 8 --json
+go run ./cmd/glade compat local-tests --project example-projects/nams-workspace --timeout 30000 --top-failures 8 --json
 ```
 
 Exit criteria:
@@ -318,9 +318,9 @@ Validation:
 
 ```bash
 go test ./internal/compat ./internal/apextest ./internal/testreport
-go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --json
-go run ./cmd/oaer test --project example-projects/src-nmb-nc-develop --filter <focused-sentinel> --json
-go run ./cmd/oaer compat post-parity --project ./example-projects --json
+go run ./cmd/glade test --project example-projects/src-nmb-nutpl-develop --json
+go run ./cmd/glade test --project example-projects/src-nmb-nc-develop --filter <focused-sentinel> --json
+go run ./cmd/glade compat post-parity --project ./example-projects --json
 ```
 
 E1 baseline artifact:
@@ -329,14 +329,14 @@ E1 baseline artifact:
   six-project runtime baseline.
 - Generated with
   `node scripts/baseline-local-tests-example-projects.mjs`, which runs
-  `go run ./cmd/oaer compat local-tests --project <project> --json --timeout 30000 --top-failures 8`
+  `go run ./cmd/glade compat local-tests --project <project> --json --timeout 30000 --top-failures 8`
   per project and records compact summaries plus top blocker families.
 - `compat local-tests --timeout`, `--top-failures`, and
   `--profile-on-timeout` are now implemented in the compatibility reporting
   path, so large-project runs return structured timeout outcomes instead of
   relying on shell-level process termination.
 - Static/readiness gate remains green:
-  `go run ./cmd/oaer compat post-parity --project ./example-projects --json --require-ready`
+  `go run ./cmd/glade compat post-parity --project ./example-projects --json --require-ready`
   reports `filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0`.
 
 Measured May 7, 2026 E1 baseline after native timeout/top-failure reporting,
@@ -420,8 +420,8 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/apextest
-go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --filter AnyOrderTest --json
-go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --filter InOrderTest --json
+go run ./cmd/glade test --project example-projects/src-nmb-nutpl-develop --filter AnyOrderTest --json
+go run ./cmd/glade test --project example-projects/src-nmb-nutpl-develop --filter InOrderTest --json
 ```
 
 Exit criteria:
@@ -464,8 +464,8 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/sema ./internal/apexast
-go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --filter HtmlElement --json
-go run ./cmd/oaer compat post-parity --project ./example-projects --json
+go run ./cmd/glade test --project example-projects/src-nmb-nutpl-develop --filter HtmlElement --json
+go run ./cmd/glade compat post-parity --project ./example-projects --json
 ```
 
 Exit criteria:
@@ -512,8 +512,8 @@ Validation:
 
 ```bash
 go test ./internal/storage ./internal/sobject ./internal/vm ./internal/soql
-go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --json
-go run ./cmd/oaer test --project example-projects/sf-cred-pkg-develop --filter <schema-heavy-sentinel> --json
+go run ./cmd/glade test --project example-projects/src-nmb-nutpl-develop --json
+go run ./cmd/glade test --project example-projects/sf-cred-pkg-develop --filter <schema-heavy-sentinel> --json
 ```
 
 Exit criteria:
@@ -556,8 +556,8 @@ Validation:
 
 ```bash
 go test ./internal/dml ./internal/storage ./internal/apextest ./internal/vm
-go run ./cmd/oaer test --project example-projects/src-nmb-nc-develop --filter <mixed-dml-sentinel> --json
-go run ./cmd/oaer test --project example-projects/nams-workspace --filter <setup-sentinel> --json
+go run ./cmd/glade test --project example-projects/src-nmb-nc-develop --filter <mixed-dml-sentinel> --json
+go run ./cmd/glade test --project example-projects/nams-workspace --filter <setup-sentinel> --json
 ```
 
 Exit criteria:
@@ -594,7 +594,7 @@ Validation:
 
 ```bash
 go test ./internal/soql ./internal/sobject ./internal/vm ./internal/sema
-go run ./cmd/oaer test --project example-projects/NPSP-rel-3.237 --filter <selector-sentinel> --json
+go run ./cmd/glade test --project example-projects/NPSP-rel-3.237 --filter <selector-sentinel> --json
 ```
 
 Exit criteria:
@@ -625,8 +625,8 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/resource ./internal/uicontroller ./internal/visualforce
-go run ./cmd/oaer test --project example-projects/src-nmb-nu-develop --filter <ui-controller-sentinel> --json
-go run ./cmd/oaer test --project example-projects/sf-cred-pkg-develop --filter <endpoint-sentinel> --json
+go run ./cmd/glade test --project example-projects/src-nmb-nu-develop --filter <ui-controller-sentinel> --json
+go run ./cmd/glade test --project example-projects/sf-cred-pkg-develop --filter <endpoint-sentinel> --json
 ```
 
 Exit criteria:
@@ -657,8 +657,8 @@ Validation:
 
 ```bash
 go test ./internal/automation ./internal/dml ./internal/storage ./internal/vm
-go run ./cmd/oaer test --project example-projects/src-nmb-nu-develop --filter <automation-sentinel> --json
-go run ./cmd/oaer test --project example-projects/nams-workspace --filter <automation-sentinel> --json
+go run ./cmd/glade test --project example-projects/src-nmb-nu-develop --filter <automation-sentinel> --json
+go run ./cmd/glade test --project example-projects/nams-workspace --filter <automation-sentinel> --json
 ```
 
 Exit criteria:
@@ -691,13 +691,13 @@ Validation:
 
 ```bash
 go test ./...
-go run ./cmd/oaer compat local-tests --check docs/fixtures/local-tests-corpus.json
-go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --json
-go run ./cmd/oaer test --project example-projects/src-nmb-nc-develop --json
-go run ./cmd/oaer test --project example-projects/src-nmb-nu-develop --json
-go run ./cmd/oaer test --project example-projects/sf-cred-pkg-develop --json
-go run ./cmd/oaer test --project example-projects/nams-workspace --json
-go run ./cmd/oaer test --project example-projects/NPSP-rel-3.237 --json
+go run ./cmd/glade compat local-tests --check docs/fixtures/local-tests-corpus.json
+go run ./cmd/glade test --project example-projects/src-nmb-nutpl-develop --json
+go run ./cmd/glade test --project example-projects/src-nmb-nc-develop --json
+go run ./cmd/glade test --project example-projects/src-nmb-nu-develop --json
+go run ./cmd/glade test --project example-projects/sf-cred-pkg-develop --json
+go run ./cmd/glade test --project example-projects/nams-workspace --json
+go run ./cmd/glade test --project example-projects/NPSP-rel-3.237 --json
 ```
 
 Exit criteria:
@@ -734,7 +734,7 @@ Exit criteria:
 The main new gate should be a local-test compatibility command:
 
 ```bash
-go run ./cmd/oaer compat local-tests --project path/to/project --json
+go run ./cmd/glade compat local-tests --project path/to/project --json
 ```
 
 The JSON should classify each test method into one terminal outcome:
@@ -742,10 +742,10 @@ The JSON should classify each test method into one terminal outcome:
 - `pass`: completed with matching local runtime behavior.
 - `fail`: test assertion, uncaught Apex exception, DML validation error, or
   other runtime failure that would be a real test failure.
-- `unsupported`: blocked by a known unsupported OAER capability.
+- `unsupported`: blocked by a known unsupported GLADE capability.
 - `load_error`: project metadata or Apex source could not be loaded.
 - `compile_error`: sema/type/indexing failure before execution.
-- `internal_error`: OAER bug, panic recovery, or malformed diagnostic.
+- `internal_error`: GLADE bug, panic recovery, or malformed diagnostic.
 
 Each blocked test should include:
 
@@ -771,8 +771,8 @@ Shared setup:
 ```bash
 git status --short --branch
 go test ./...
-go run ./cmd/oaer compat server-examples --json
-go run ./cmd/oaer compat post-parity --json
+go run ./cmd/glade compat server-examples --json
+go run ./cmd/glade compat post-parity --json
 ```
 
 Parallel agents should work in separate worktrees with non-overlapping write
@@ -780,7 +780,7 @@ sets. Suggested branch names:
 
 | Lane | Branch | Primary write scope |
 | --- | --- | --- |
-| Gate | `codex/local-test-gate` | `internal/compat`, `internal/oaercli`, docs |
+| Gate | `codex/local-test-gate` | `internal/compat`, `internal/gladecli`, docs |
 | Metadata core | `codex/local-test-metadata-core` | `internal/metadata`, `internal/schema`, `internal/project` |
 | Metadata resources | `codex/local-test-resources` | `internal/metadata`, `internal/storage`, `internal/vm` resource APIs |
 | UI contracts | `codex/local-test-ui-contracts` | `internal/visualforce`, `internal/uicontroller`, `internal/vm`, `internal/apextest` |
@@ -825,8 +825,8 @@ Non-overlap guidance:
 Validation:
 
 ```bash
-go test ./internal/compat ./internal/oaercli ./internal/apextest
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json
+go test ./internal/compat ./internal/gladecli ./internal/apextest
+go run ./cmd/glade compat local-tests --project testdata/local-tests/basic --json
 ```
 
 Exit criteria:
@@ -863,7 +863,7 @@ Validation:
 
 ```bash
 go test ./internal/metadata ./internal/schema ./internal/storage ./internal/soql
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/custom-metadata --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/custom-metadata --json
 ```
 
 ### Phase 2B: Labels, Translations, Resources, And Endpoints
@@ -884,7 +884,7 @@ Validation:
 
 ```bash
 go test ./internal/metadata ./internal/vm ./internal/visualforce
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/resources-labels --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/resources-labels --json
 ```
 
 ### Phase 2C: Permissions And Presentation Metadata
@@ -918,7 +918,7 @@ Validation:
 
 ```bash
 go test ./internal/metadata ./internal/schema ./internal/sobject ./internal/vm
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/presentation-metadata --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/presentation-metadata --json
 ```
 
 Exit criteria for Phase 2:
@@ -950,7 +950,7 @@ Validation:
 
 ```bash
 go test ./internal/visualforce ./internal/uicontroller ./internal/sema
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/visualforce-index --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/visualforce-index --json
 ```
 
 ### Phase 3B: PageReference And ApexPages Test State
@@ -968,7 +968,7 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/apextest ./internal/visualforce
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/page-reference --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/page-reference --json
 ```
 
 ### Phase 3C: Controller Invocation Contracts
@@ -988,7 +988,7 @@ Validation:
 
 ```bash
 go test ./internal/uicontroller ./internal/vm ./internal/apextest
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/ui-controller-contracts --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/ui-controller-contracts --json
 ```
 
 Exit criteria for Phase 3:
@@ -1026,7 +1026,7 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/apextest ./internal/storage
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/platform-apis --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/platform-apis --json
 ```
 
 Exit criteria:
@@ -1057,7 +1057,7 @@ Validation:
 
 ```bash
 go test ./internal/storage ./internal/dml ./internal/vm ./internal/apextest
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/files-email --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/files-email --json
 ```
 
 Exit criteria:
@@ -1088,7 +1088,7 @@ Validation:
 
 ```bash
 go test ./internal/automation ./internal/dml ./internal/apextest ./internal/trace
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/workflow --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/workflow --json
 ```
 
 ### Phase 6B: Flow And Process Builder
@@ -1106,7 +1106,7 @@ Validation:
 
 ```bash
 go test ./internal/automation ./internal/vm ./internal/dml ./internal/apextest
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/flow --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/flow --json
 ```
 
 Exit criteria:
@@ -1133,7 +1133,7 @@ parity. Current supported slices:
   update formulas can drive same-record mutations.
 - Flow Apex action calls can invoke static `@InvocableMethod` methods through
   the VM for the modeled list-input shape.
-- Unsupported Flow nodes report stable `OAERAUTO002` diagnostics with node type,
+- Unsupported Flow nodes report stable `GLADEAUTO002` diagnostics with node type,
   node name, and metadata file.
 
 Keep these remaining surfaces tracked before claiming
@@ -1165,7 +1165,7 @@ Keep these remaining surfaces tracked before claiming
 
 ## Phase 7: Org-Like Test Runner Fidelity
 
-Goal: tighten the core `oaer test` behavior once metadata and side-effect
+Goal: tighten the core `glade test` behavior once metadata and side-effect
 surfaces exist.
 
 Initial implementation status:
@@ -1187,7 +1187,7 @@ Initial implementation status:
   synchronous after-insert trigger path used by tests. Broader Salesforce event
   bus semantics, publish callbacks, replay IDs, and asynchronous subscriber
   ordering remain outside the current claim.
-- Added `oaer test --compat-json` so the user-facing test command can emit the
+- Added `glade test --compat-json` so the user-facing test command can emit the
   same readiness-shaped per-test outcome schema as `compat local-tests`.
 
 Primary lanes: Gate, Platform APIs, Declarative.
@@ -1203,24 +1203,24 @@ Tasks:
 - Verify DML save-order composition: validation, before triggers, DML write,
   after triggers, workflow, flow, async enqueue, rollback.
 - Added per-test trace/profile summaries for blocked local-test outcomes and
-  `--slow-test-ms` slow-test capture for `oaer test --compat-json` and
+  `--slow-test-ms` slow-test capture for `glade test --compat-json` and
   `compat local-tests`.
-- Add `oaer test --compat-json` or equivalent output compatible with the
+- Add `glade test --compat-json` or equivalent output compatible with the
   local-test gate.
 
 Validation:
 
 ```bash
 go test ./internal/apextest ./internal/vm ./internal/dml ./internal/automation
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/org-like-runner --json
-go run ./cmd/oaer test --project testdata/local-tests/org-like-runner --compat-json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/org-like-runner --json
+go run ./cmd/glade test --project testdata/local-tests/org-like-runner --compat-json
 ```
 
 Exit criteria:
 
 - Local test execution has a single transaction discipline shared by Apex, DML,
   triggers, async, Workflow, Flow, captured email, files, and rollback.
-- Failing tests are distinguishable from unsupported OAER behavior.
+- Failing tests are distinguishable from unsupported GLADE behavior.
 
 ## Phase 8: Corpus Baselines And Release Gates
 
@@ -1282,16 +1282,16 @@ Validation:
 
 ```bash
 go test ./...
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/org-like-runner --json
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/resources-labels --json
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/ui-controller-contracts --json
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/platform-apis --json
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/files-email --json
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/workflow --json
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/flow --json
-go run ./cmd/oaer compat local-tests --check docs/fixtures/local-tests-corpus.json
-go run ./cmd/oaer compat ui-controllers --check docs/fixtures/ui-controller-discovery.json
-go run ./cmd/oaer compat post-parity --json --require-ready
+go run ./cmd/glade compat local-tests --project testdata/local-tests/org-like-runner --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/resources-labels --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/ui-controller-contracts --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/platform-apis --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/files-email --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/workflow --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/flow --json
+go run ./cmd/glade compat local-tests --check docs/fixtures/local-tests-corpus.json
+go run ./cmd/glade compat ui-controllers --check docs/fixtures/ui-controller-discovery.json
+go run ./cmd/glade compat post-parity --json --require-ready
 ```
 
 Exit criteria:
@@ -1306,7 +1306,7 @@ Use these labels consistently in release notes, dashboards, and issue triage:
 
 - `server-examples-green`: the Salesforce-shaped local API route corpus passes
   with no failing, unsupported, or missing probes.
-- `mvp-ready`: every capability required by `oaer compat mvp --require-ready`
+- `mvp-ready`: every capability required by `glade compat mvp --require-ready`
   is `supported`, and generated compatibility docs are in sync.
 - `legacy-project-test-ready`: `compat local-tests --check
   docs/fixtures/local-tests-corpus.json` is green for the owned local-test
@@ -1333,14 +1333,14 @@ After each merge:
 
 ```bash
 go test ./...
-go run ./cmd/oaer compat server-examples --json
-go run ./cmd/oaer compat post-parity --json
+go run ./cmd/glade compat server-examples --json
+go run ./cmd/glade compat post-parity --json
 ```
 
 When `compat local-tests` exists, add:
 
 ```bash
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/basic --json
 ```
 
 Clean up merged worktrees and branches immediately after their commits are on
@@ -1388,12 +1388,12 @@ browser rendering.
 
 ### Lane A: Local-Test Gate
 
-Owner scope: `internal/compat`, `internal/oaercli`, `internal/apextest`, docs.
+Owner scope: `internal/compat`, `internal/gladecli`, `internal/apextest`, docs.
 
 Deliverables:
 
-- Add `oaer compat local-tests`.
-- Reuse `oaer test` discovery and execution; do not add a second test runner.
+- Add `glade compat local-tests`.
+- Reuse `glade test` discovery and execution; do not add a second test runner.
 - Emit stable JSON with project summary, test outcomes, blocker stage,
   capability ID, source location, related metadata file, and timing.
 - Add `--project`, `--class`, `--method`, `--blockers-only`, `--json`, and
@@ -1404,8 +1404,8 @@ Deliverables:
 Validation:
 
 ```bash
-go test ./internal/compat ./internal/oaercli ./internal/apextest
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json
+go test ./internal/compat ./internal/gladecli ./internal/apextest
+go run ./cmd/glade compat local-tests --project testdata/local-tests/basic --json
 ```
 
 Merge requirement: this lane merges first. Other lanes may add temporary tests,
@@ -1432,7 +1432,7 @@ Validation:
 
 ```bash
 go test ./internal/project ./internal/schema ./internal/storage ./internal/soql ./internal/vm
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/custom-metadata --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/custom-metadata --json
 ```
 
 Expected movement: reduce `custommetadata.legacy-records` and
@@ -1458,7 +1458,7 @@ Validation:
 
 ```bash
 go test ./internal/schema ./internal/storage ./internal/vm
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/resources-labels --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/resources-labels --json
 ```
 
 Expected movement: reduce `labels.localization`, `staticresources.urlfor`, and
@@ -1484,8 +1484,8 @@ Validation:
 
 ```bash
 go test ./internal/visualforce ./internal/uicontroller ./internal/apextest ./internal/vm
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/page-reference --json
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/ui-controller-contracts --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/page-reference --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/ui-controller-contracts --json
 ```
 
 Expected movement: reduce `visualforce.controller-test` and
@@ -1497,9 +1497,9 @@ After each lane merge:
 
 ```bash
 go test ./...
-go run ./cmd/oaer compat server-examples --json
-go run ./cmd/oaer compat post-parity --json
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json
+go run ./cmd/glade compat server-examples --json
+go run ./cmd/glade compat post-parity --json
+go run ./cmd/glade compat local-tests --project testdata/local-tests/basic --json
 ```
 
 After all four lanes merged, the post-parity readiness inventory moved to:

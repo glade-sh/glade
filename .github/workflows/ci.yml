@@ -14,10 +14,10 @@ jobs:
           go-version-file: go.mod
       - run: go vet ./...
       - run: go test ./...
-      - run: go run ./cmd/oaer compat mvp --json
-      - run: go run ./cmd/oaer compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
-      - run: go run ./cmd/oaer compat gaps --check docs/KNOWN_GAPS.md
-      - run: go run ./cmd/oaer compat stdlib --check docs/STDLIB_COVERAGE.md
+      - run: go run ./cmd/glade compat mvp --json
+      - run: go run ./cmd/glade compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
+      - run: go run ./cmd/glade compat gaps --check docs/KNOWN_GAPS.md
+      - run: go run ./cmd/glade compat stdlib --check docs/STDLIB_COVERAGE.md
       - run: scripts/apex-docs-support-gate.sh
       - run: scripts/smoke.sh
       - run: go test -race ./...
@@ -30,6 +30,6 @@ jobs:
         with:
           go-version-file: go.mod
       - run: go test ./...
-      - run: go run ./cmd/oaer compat local-tests --check docs/fixtures/local-tests-corpus.json
-      - run: go run ./cmd/oaer compat post-parity --json --require-ready
-      - run: go run ./cmd/oaer compat ui-controllers --check docs/fixtures/ui-controller-discovery.json
+      - run: go run ./cmd/glade compat local-tests --check docs/fixtures/local-tests-corpus.json
+      - run: go run ./cmd/glade compat post-parity --json --require-ready
+      - run: go run ./cmd/glade compat ui-controllers --check docs/fixtures/ui-controller-discovery.json

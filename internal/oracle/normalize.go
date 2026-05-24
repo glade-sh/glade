@@ -9,7 +9,7 @@ import (
 
 var (
 	timestampPattern         = regexp.MustCompile(`\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})\b`)
-	generatedUsernamePattern = regexp.MustCompile(`\b(?:test|user|oaer)[A-Za-z0-9._+-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b`)
+	generatedUsernamePattern = regexp.MustCompile(`\b(?:test|user|glade)[A-Za-z0-9._+-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b`)
 	sfIDPattern              = regexp.MustCompile(`\b(?:00D|001|003|005|006|00Q|500|701|707|08e|750|a[0-9A-Za-z]{2})[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\b`)
 	stackLinePattern         = regexp.MustCompile(`(?i)line \d+, column \d+`)
 )

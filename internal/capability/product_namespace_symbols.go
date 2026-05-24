@@ -137,7 +137,7 @@ func WriteProductNamespaceSymbolsGo(w io.Writer, catalog Catalog, tooling *Tooli
 	var b strings.Builder
 	b.WriteString("package typesys\n\n")
 	if productNamespaceSpecsUseApexAST(specs) {
-		b.WriteString("import \"github.com/open-aer/oaer/internal/apexast\"\n\n")
+		b.WriteString("import \"github.com/glade-sh/glade/internal/apexast\"\n\n")
 	}
 	b.WriteString("// Code generated from public Salesforce product namespace declarations. DO NOT EDIT.\n\n")
 	b.WriteString("var productNamespaceSymbolSpecs = []StandardSymbolSpec{\n")

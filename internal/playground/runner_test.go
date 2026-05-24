@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/diagnostic"
-	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func TestRunnerExecutesAnonymousAgainstWorkspaceClass(t *testing.T) {

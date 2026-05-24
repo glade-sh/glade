@@ -9,17 +9,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/open-aer/oaer/internal/apextest"
-	"github.com/open-aer/oaer/internal/capability"
-	"github.com/open-aer/oaer/internal/project"
-	"github.com/open-aer/oaer/internal/schema"
-	"github.com/open-aer/oaer/internal/sobject"
-	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/typesys"
-	"github.com/open-aer/oaer/internal/vm"
+	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/capability"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sobject"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
-// LocalExecutor captures responses by running probes against the local oaer VM.
+// LocalExecutor captures responses by running probes against the local glade VM.
 type LocalExecutor struct {
 	ProbeDir string
 	Features []string
@@ -282,7 +282,7 @@ func seedProbeData(org *storage.OrgState) error {
 			ID:     "001000000000101AAA",
 			Object: "Account",
 			Fields: map[string]storage.Value{
-				"Name": storage.StringValue("OAER Probe Account"),
+				"Name": storage.StringValue("GLADE Probe Account"),
 			},
 		}
 		org.Objects["Account"] = account

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/open-aer/oaer/internal/apexast"
+	"github.com/glade-sh/glade/internal/apexast"
 )
 
 func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) {

@@ -573,15 +573,15 @@
   "nextGates": [
     {
       "name": "docs inventory",
-      "command": "go run ./cmd/oaer compat docs-inventory --source \u003csalesforce-docs\u003e --json"
+      "command": "go run ./cmd/glade compat docs-inventory --source \u003csalesforce-docs\u003e --json"
     },
     {
       "name": "capability catalog",
-      "command": "go run ./cmd/oaer compat catalog --inventory \u003cinventory.json\u003e --json"
+      "command": "go run ./cmd/glade compat catalog --inventory \u003cinventory.json\u003e --json"
     },
     {
       "name": "coverage manifest",
-      "command": "go run ./cmd/oaer compat salesforce-coverage --source \u003csalesforce-docs\u003e --tooling-completions \u003ccompletions.json\u003e --tooling-symbols \u003capex-class-symbols.json\u003e --json"
+      "command": "go run ./cmd/glade compat salesforce-coverage --source \u003csalesforce-docs\u003e --tooling-completions \u003ccompletions.json\u003e --tooling-symbols \u003capex-class-symbols.json\u003e --json"
     }
   ]
 }
