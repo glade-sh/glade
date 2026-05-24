@@ -1,11 +1,8 @@
 import { useMemo, useRef } from "react"
-import Prism from "prismjs"
-import "prismjs/components/prism-clike"
-import "prismjs/components/prism-sql"
-import "prismjs/components/prism-apex"
 import { Play } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { highlightApex } from "@/lib/apex-highlight"
 import { cn } from "@/lib/utils"
 
 type CodeEditorProps = {
@@ -38,10 +35,7 @@ export function CodeEditor({
   const highlightRef = useRef<HTMLPreElement>(null)
   const gutterRef = useRef<HTMLPreElement>(null)
   const lineCount = Math.max(1, value.split("\n").length)
-  const highlighted = useMemo(() => {
-    const grammar = Prism.languages.apex ?? Prism.languages.clike
-    return Prism.highlight(value, grammar, "apex")
-  }, [value])
+  const highlighted = useMemo(() => highlightApex(value), [value])
   const gutter = useMemo(
     () =>
       Array.from({ length: lineCount }, (_, index) => String(index + 1).padStart(2, " ")).join("\n"),
