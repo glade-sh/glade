@@ -601,27 +601,27 @@ func runCompatOracleRunGLADE(ctx context.Context, args []string, w io.Writer) er
 	if err != nil {
 		return err
 	}
-	classNames := []string{}
+	localFilters := []string{}
 	if strings.TrimSpace(filter) == "" {
 		queue, qErr := loadQueueForRun(queuePath, runsDir, runID)
 		if qErr != nil {
 			return errors.New("--filter is required when queue is unavailable")
 		}
 		queue = oracle.QueueForShard(queue, shard, area)
-		classNames = oracle.ClassNames(queue)
-		if len(classNames) == 0 {
+		localFilters = oracleLocalFiltersForQueue(queue)
+		if len(localFilters) == 0 {
 			return fmt.Errorf("no classes found for shard=%d area=%q", shard, area)
 		}
 		project = filepath.Join(runsDir, runID, "generated", "sfdx")
 	} else {
-		classNames = splitOracleFilterClasses(filter)
+		localFilters = splitOracleFilterClasses(filter)
 	}
-	runs := make([]oracle.OracleRun, 0, len(classNames))
-	if len(classNames) == 0 {
-		classNames = []string{filter}
+	runs := make([]oracle.OracleRun, 0, len(localFilters))
+	if len(localFilters) == 0 {
+		localFilters = []string{filter}
 	}
-	for _, className := range classNames {
-		classRuns, runErr := loadOrRunLocalOracle(ctx, project, className, "")
+	for _, localFilter := range localFilters {
+		classRuns, runErr := loadOrRunLocalOracle(ctx, project, localFilter, "")
 		if runErr != nil {
 			err = runErr
 			break
@@ -645,6 +645,21 @@ func runCompatOracleRunGLADE(ctx context.Context, args []string, w io.Writer) er
 	}
 	fmt.Fprintf(w, "glade: %s\n", obsPath)
 	return nil
+}
+
+func oracleLocalFiltersForQueue(queue oracle.WorkQueue) []string {
+	localFilters := make([]string, 0, len(queue.Items))
+	for _, item := range queue.Items {
+		if strings.TrimSpace(item.GeneratedClass) == "" {
+			continue
+		}
+		localFilter := item.GeneratedClass
+		if strings.TrimSpace(item.MethodName) != "" {
+			localFilter += "." + item.MethodName
+		}
+		localFilters = append(localFilters, localFilter)
+	}
+	return localFilters
 }
 
 func splitOracleFilterClasses(filter string) []string {

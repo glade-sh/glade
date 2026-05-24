@@ -2137,7 +2137,7 @@ func (vm *VM) registeredMethodCandidates(name string) []Method {
 	out := make([]Method, 0, len(exact)+len(folded))
 	seen := make(map[string]bool, len(exact)+len(folded))
 	appendUnique := func(method Method) {
-		key := method.ClassName + "\x00" + method.Name + "\x00" + methodSignature(method) + "\x00" + strconv.FormatBool(method.IsStatic) + "\x00" + strconv.FormatBool(method.Dependency) + "\x00" + method.File
+		key := registeredMethodCandidateKey(method)
 		if seen[key] {
 			return
 		}
@@ -2204,9 +2204,9 @@ func (vm *VM) matchMethodByArgs(candidates []Method, args []Value) (Method, bool
 
 func (vm *VM) preferMethodCandidate(candidate, existing Method) bool {
 	if vm.currentMethod.Dependency {
-		return candidate.Dependency && !existing.Dependency
+		return methodOrigin(candidate) == symbolOriginDependency && methodOrigin(existing) != symbolOriginDependency
 	}
-	return !candidate.Dependency && existing.Dependency
+	return methodOrigin(candidate) == symbolOriginProject && methodOrigin(existing) != symbolOriginProject
 }
 
 func (vm *VM) sortMethodCandidatesForCaller(methods []Method) {
@@ -2227,10 +2227,7 @@ func (vm *VM) sortMethodCandidatesForCaller(methods []Method) {
 }
 
 func (vm *VM) methodCandidateRank(method Method) int {
-	if vm.currentMethod.Dependency == method.Dependency {
-		return 0
-	}
-	return 1
+	return dependencyPreferenceRank(methodOrigin(method), vm.currentMethod.Dependency)
 }
 
 func (vm *VM) methodApplicable(candidate Method, args []Value) bool {

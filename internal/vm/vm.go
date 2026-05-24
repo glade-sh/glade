@@ -6378,10 +6378,7 @@ func (vm *VM) lookupFieldInMapWithOptions(fields map[string]Field, fieldName str
 		if candidate == requested || field.Name == requested {
 			score += 16
 		}
-		if preferDependency && field.Dependency {
-			score += 32
-		}
-		if !preferDependency && !field.Dependency {
+		if dependencyPreferenceRank(fieldOrigin(field), preferDependency) == 0 {
 			score += 32
 		}
 		if !found || score > bestScore {
@@ -6395,7 +6392,7 @@ func (vm *VM) lookupFieldInMapWithOptions(fields map[string]Field, fieldName str
 
 func (vm *VM) fieldProvenanceScore(field Field) int {
 	score := 0
-	if field.Dependency {
+	if fieldOrigin(field) == symbolOriginDependency {
 		score += 8
 	}
 	if field.Type != "" {
