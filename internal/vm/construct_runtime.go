@@ -2137,7 +2137,7 @@ func (vm *VM) registeredMethodCandidates(name string) []Method {
 	out := make([]Method, 0, len(exact)+len(folded))
 	seen := make(map[string]bool, len(exact)+len(folded))
 	appendUnique := func(method Method) {
-		key := method.ClassName + "\x00" + method.Name + "\x00" + methodSignature(method) + "\x00" + strconv.FormatBool(method.IsStatic)
+		key := method.ClassName + "\x00" + method.Name + "\x00" + methodSignature(method) + "\x00" + strconv.FormatBool(method.IsStatic) + "\x00" + strconv.FormatBool(method.Dependency) + "\x00" + method.File
 		if seen[key] {
 			return
 		}
@@ -2157,6 +2157,11 @@ func (vm *VM) registeredMethodCandidates(name string) []Method {
 func (vm *VM) methodResolveCacheKey(kind, typeName, method string, args []Value) string {
 	var b strings.Builder
 	b.WriteString(kind)
+	if vm.currentMethod.Dependency {
+		b.WriteString(":dependency")
+	} else {
+		b.WriteString(":project")
+	}
 	b.WriteByte('|')
 	b.WriteString(strings.ToLower(typeName))
 	b.WriteByte('|')
@@ -2175,7 +2180,7 @@ func (vm *VM) matchMethodByArgs(candidates []Method, args []Value) (Method, bool
 		if vm.methodApplicable(candidate, args) {
 			signature := candidate.ClassName + "\x00" + methodParamSignature(candidate) + "\x00" + strconv.FormatBool(candidate.IsStatic)
 			if index, exists := seen[signature]; exists {
-				if applicable[index].Dependency && !candidate.Dependency {
+				if vm.preferMethodCandidate(candidate, applicable[index]) {
 					applicable[index] = candidate
 				}
 				continue
@@ -2184,6 +2189,7 @@ func (vm *VM) matchMethodByArgs(candidates []Method, args []Value) (Method, bool
 			applicable = append(applicable, candidate)
 		}
 	}
+	vm.sortMethodCandidatesForCaller(applicable)
 	target, ok, ambiguous := vm.bestMethodBySpecificity(applicable, args)
 	if ambiguous {
 		vm.lastAmbiguous = &overloadDiagnostic{
@@ -2194,6 +2200,37 @@ func (vm *VM) matchMethodByArgs(candidates []Method, args []Value) (Method, bool
 		vm.lastAmbiguous = nil
 	}
 	return target, ok, ambiguous
+}
+
+func (vm *VM) preferMethodCandidate(candidate, existing Method) bool {
+	if vm.currentMethod.Dependency {
+		return candidate.Dependency && !existing.Dependency
+	}
+	return !candidate.Dependency && existing.Dependency
+}
+
+func (vm *VM) sortMethodCandidatesForCaller(methods []Method) {
+	sort.SliceStable(methods, func(i, j int) bool {
+		left := vm.methodCandidateRank(methods[i])
+		right := vm.methodCandidateRank(methods[j])
+		if left != right {
+			return left < right
+		}
+		if methods[i].ClassName != methods[j].ClassName {
+			return methods[i].ClassName < methods[j].ClassName
+		}
+		if methods[i].Name != methods[j].Name {
+			return methods[i].Name < methods[j].Name
+		}
+		return methods[i].File < methods[j].File
+	})
+}
+
+func (vm *VM) methodCandidateRank(method Method) int {
+	if vm.currentMethod.Dependency == method.Dependency {
+		return 0
+	}
+	return 1
 }
 
 func (vm *VM) methodApplicable(candidate Method, args []Value) bool {

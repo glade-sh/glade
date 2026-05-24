@@ -3567,9 +3567,8 @@ private class RunAsDMLTest {
 }
 
 func TestRunAsPersistsUserContactRelationship(t *testing.T) {
-	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/classes/RunAsContactTest.cls"), `
+	project := newSalesforceSurfaceProject(t, `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	project.writeClass("RunAsContactTest", `
 @isTest
 private class RunAsContactTest {
   @isTest static void queriesContactAccount() {
@@ -3588,29 +3587,25 @@ private class RunAsContactTest {
 }
 `)
 
-	run := Run(loadTestIndex(t, root), Options{})
-	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
-		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
-	}
+	project.assertSinglePassingRun()
 }
 
 func TestRunAsPersistsNamespacedPersonContactRelationship(t *testing.T) {
-	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"znu"}`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/PersonContact__c.field-meta.xml"), `
+	project := newSalesforceSurfaceProject(t, `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"znu"}`)
+	project.writeField("Account", "PersonContact__c", `
 <CustomField>
   <fullName>PersonContact__c</fullName>
   <type>Lookup</type>
   <referenceTo>Contact</referenceTo>
   <relationshipName>PersonContact</relationshipName>
 </CustomField>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/PersonAccount/recordTypes/Individual.recordType-meta.xml"), `
+	project.writeRecordType("PersonAccount", "Individual", `
 <RecordType>
   <fullName>Individual</fullName>
   <label>Individual</label>
   <active>true</active>
 </RecordType>`)
-	writeFile(t, filepath.Join(root, "force-app/main/classes/RunAsPersonContactTest.cls"), `
+	project.writeClass("RunAsPersonContactTest", `
 @isTest
 private class RunAsPersonContactTest {
   @isTest static void queriesPersonContactAccount() {
@@ -3629,10 +3624,7 @@ private class RunAsPersonContactTest {
 }
 `)
 
-	run := Run(loadTestIndex(t, root), Options{})
-	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
-		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
-	}
+	project.assertSinglePassingRun()
 }
 
 func TestRunAsUserCanQueryOwnContactAccountWithSharing(t *testing.T) {

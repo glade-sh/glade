@@ -6417,6 +6417,11 @@ func staticFieldStorageName(requested string, field Field) string {
 func (vm *VM) staticFieldWritebackKey(owner, requested string, field Field) string {
 	class, ok := vm.Classes[owner]
 	if ok {
+		if storageName := strings.TrimSpace(field.StorageName); storageName != "" {
+			if _, exists := class.StaticFields[storageName]; exists {
+				return storageName
+			}
+		}
 		normalized := strings.ToLower(strings.TrimSpace(requested))
 		for key := range class.StaticFields {
 			if strings.ToLower(strings.TrimSpace(key)) == normalized {

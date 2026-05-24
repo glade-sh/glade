@@ -520,7 +520,8 @@ func (vm *VM) declaredReceiverType(receiverName string) string {
 	if !ok {
 		return ""
 	}
-	if field, _, ok := vm.lookupStaticField(className, memberName); ok {
+	preferDependency := vm.classMemberReferenceUsesExplicitNamespace(receiverName, className)
+	if field, _, ok := vm.lookupStaticFieldForReceiver(className, memberName, preferDependency); ok {
 		return field.Type
 	}
 	return ""
@@ -535,7 +536,8 @@ func (vm *VM) callStaticPropertyReceiverMember(callee string, args []Value, resu
 	for split := len(parts) - 2; split >= 1; split-- {
 		className := strings.Join(parts[:split], ".")
 		fieldName := parts[split]
-		field, owner, ok := vm.lookupStaticField(className, fieldName)
+		preferDependency := vm.classMemberReferenceUsesExplicitNamespace(strings.Join(parts[:split+1], "."), className)
+		field, owner, ok := vm.lookupStaticFieldForReceiver(className, fieldName, preferDependency)
 		if !ok {
 			continue
 		}
@@ -545,7 +547,7 @@ func (vm *VM) callStaticPropertyReceiverMember(callee string, args []Value, resu
 		if err := vm.ensureClassInitialized(owner); err != nil {
 			return Null, true, err
 		}
-		field, _, _ = vm.lookupStaticField(owner, fieldName)
+		field, _, _ = vm.lookupStaticFieldForReceiver(owner, fieldName, preferDependency)
 		receiver := field.Value
 		if field.Getter != nil {
 			var err error

@@ -348,6 +348,10 @@ func (vm *VM) classMemberReferenceUsesExplicitNamespace(name, className string) 
 	if len(parts) < 3 {
 		return false
 	}
+	classParts := strings.Split(className, ".")
+	if len(classParts) > 1 && strings.EqualFold(parts[0], classParts[0]) {
+		return true
+	}
 	namespace := vm.classNamespace(className)
 	return namespace != "" && strings.EqualFold(parts[0], namespace)
 }
@@ -1826,7 +1830,7 @@ func (vm *VM) assign(name string, value Value) error {
 							class.StaticFields = make(map[string]Field)
 						}
 						class.StaticFields[vm.staticFieldWritebackKey(owner, memberName, field)] = field
-						vm.Classes[owner] = class
+						vm.storeClassAliases(class)
 						vm.invalidateStaticValueRefsForChange(oldValue, value)
 						return nil
 					}
@@ -1849,7 +1853,7 @@ func (vm *VM) assign(name string, value Value) error {
 							class.StaticFields = make(map[string]Field)
 						}
 						class.StaticFields[vm.staticFieldWritebackKey(owner, memberName, field)] = field
-						vm.Classes[owner] = class
+						vm.storeClassAliases(class)
 						vm.invalidateStaticValueRefsForChange(oldValue, value)
 					}
 					return nil
@@ -1861,7 +1865,7 @@ func (vm *VM) assign(name string, value Value) error {
 					class.StaticFields = make(map[string]Field)
 				}
 				class.StaticFields[vm.staticFieldWritebackKey(owner, memberName, field)] = field
-				vm.Classes[owner] = class
+				vm.storeClassAliases(class)
 				vm.invalidateStaticValueRefsForChange(oldValue, value)
 				return nil
 			}
@@ -1984,7 +1988,7 @@ func (vm *VM) assign(name string, value Value) error {
 						class.StaticFields = make(map[string]Field)
 					}
 					class.StaticFields[vm.staticFieldWritebackKey(owner, name, field)] = field
-					vm.Classes[owner] = class
+					vm.storeClassAliases(class)
 					vm.invalidateStaticValueRefsForChange(oldValue, value)
 					return nil
 				}
@@ -2007,7 +2011,7 @@ func (vm *VM) assign(name string, value Value) error {
 						class.StaticFields = make(map[string]Field)
 					}
 					class.StaticFields[vm.staticFieldWritebackKey(owner, name, field)] = field
-					vm.Classes[owner] = class
+					vm.storeClassAliases(class)
 					vm.invalidateStaticValueRefsForChange(oldValue, value)
 				}
 				return nil
@@ -2019,7 +2023,7 @@ func (vm *VM) assign(name string, value Value) error {
 				class.StaticFields = make(map[string]Field)
 			}
 			class.StaticFields[vm.staticFieldWritebackKey(owner, name, field)] = field
-			vm.Classes[owner] = class
+			vm.storeClassAliases(class)
 			vm.invalidateStaticValueRefsForChange(oldValue, value)
 			return nil
 		}
