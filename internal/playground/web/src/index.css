@@ -49,7 +49,9 @@
   color-scheme: dark;
   --background: #080b12;
   --foreground: #f8faf8;
-  --pane: #0d1118;
+  --pane: #0b1017;
+  --pane-raised: #0f151e;
+  --well: #06090f;
   --muted: #121923;
   --muted-foreground: rgba(248, 250, 248, 0.58);
   --border: rgba(255, 255, 255, 0.12);
@@ -81,7 +83,7 @@ body {
   font-size: 13px;
   letter-spacing: 0;
   background:
-    radial-gradient(circle at 50% -10%, color-mix(in oklch, var(--primary) 16%, transparent), transparent 32rem),
+    radial-gradient(circle at 50% -10%, rgba(216, 243, 220, 0.11), transparent 32rem),
     var(--background);
   color: var(--foreground);
   text-rendering: geometricPrecision;
@@ -97,7 +99,7 @@ textarea {
   border-radius: 10px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 34%),
-    color-mix(in oklch, var(--pane) 90%, transparent);
+    var(--pane);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 18px 50px rgba(0, 0, 0, 0.22);
@@ -157,12 +159,12 @@ textarea {
   background: var(--primary);
   color: var(--primary-foreground);
   font-weight: 800;
-  box-shadow: 0 0 28px color-mix(in oklch, var(--primary) 18%, transparent);
+  box-shadow: 0 0 28px rgba(216, 243, 220, 0.16);
 }
 
 .topbar {
   border-bottom: 1px solid var(--border);
-  background: color-mix(in oklch, var(--background) 92%, transparent);
+  background: rgba(8, 11, 18, 0.94);
   backdrop-filter: blur(16px);
 }
 
@@ -194,12 +196,12 @@ textarea {
 }
 
 .file-row:hover {
-  background: color-mix(in oklch, var(--primary) 8%, var(--muted));
+  background: rgba(216, 243, 220, 0.07);
 }
 
 .file-row.selected {
-  border-color: color-mix(in oklch, var(--primary) 42%, var(--border));
-  background: color-mix(in oklch, var(--primary) 12%, var(--pane));
+  border-color: rgba(216, 243, 220, 0.34);
+  background: rgba(216, 243, 220, 0.09);
 }
 
 .tree-row {
@@ -224,7 +226,7 @@ textarea {
 }
 
 .tree-row:hover {
-  background: color-mix(in oklch, var(--primary) 8%, var(--muted));
+  background: rgba(216, 243, 220, 0.07);
 }
 
 .tree-chevron {
@@ -281,7 +283,7 @@ textarea {
   min-height: 0;
   flex: 1;
   grid-template-columns: 48px minmax(0, 1fr);
-  background: color-mix(in oklch, var(--background) 94%, black 6%);
+  background: var(--well);
 }
 
 .editor-gutter,
@@ -375,7 +377,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 7px;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--pane-raised);
 }
 
 .metric span {
@@ -401,7 +403,7 @@ textarea {
   min-height: 260px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: color-mix(in oklch, var(--background) 94%, black 6%);
+  background: var(--well);
 }
 
 .result-box pre {
@@ -465,7 +467,7 @@ textarea {
   gap: 6px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: color-mix(in oklch, var(--muted) 28%, transparent);
+  background: var(--pane-raised);
   padding: 5px 6px;
   color: var(--muted-foreground);
   font-size: 11px;
@@ -489,8 +491,8 @@ textarea {
 
 .database-filter:hover,
 .database-filter.selected {
-  border-color: color-mix(in oklch, var(--primary) 42%, var(--border));
-  background: color-mix(in oklch, var(--primary) 12%, var(--pane));
+  border-color: rgba(216, 243, 220, 0.34);
+  background: rgba(216, 243, 220, 0.09);
   color: var(--foreground);
 }
 
@@ -529,12 +531,12 @@ textarea {
 }
 
 .database-object:hover {
-  background: color-mix(in oklch, var(--primary) 8%, var(--muted));
+  background: rgba(216, 243, 220, 0.07);
 }
 
 .database-object.selected {
-  border-color: color-mix(in oklch, var(--primary) 42%, var(--border));
-  background: color-mix(in oklch, var(--primary) 12%, var(--pane));
+  border-color: rgba(216, 243, 220, 0.34);
+  background: rgba(216, 243, 220, 0.09);
 }
 
 .database-table-wrap {
@@ -575,7 +577,7 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: color-mix(in oklch, var(--muted) 60%, var(--background));
+  background: var(--pane-raised);
   color: var(--muted-foreground);
   font-weight: 600;
 }
@@ -587,7 +589,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 8px;
-  background: color-mix(in oklch, var(--muted) 35%, transparent);
+  background: var(--pane-raised);
 }
 
 .problem.danger {
