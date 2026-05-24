@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Glade | Orgless Apex Runtime</title>
+    <meta
+      name="description"
+      content="Install Glade, an orgless Apex runtime for local development, test runs, SOQL, DML, and Salesforce-shaped integration tests."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%23080b12"/><text x="32" y="39" text-anchor="middle" font-family="Arial" font-size="28" font-weight="700" fill="%23d8f3dc">G</text></svg>'
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              ink: "#080b12",
+              panel: "#0e131b",
+              line: "#222a36",
+              mint: "#d8f3dc",
+              glow: "#9ff3c3"
+            },
+            fontFamily: {
+              sans: ["Space Grotesk", "ui-sans-serif", "system-ui", "sans-serif"],
+              mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"]
+            }
+          }
+        }
+      };
+    </script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        max-width: 100%;
+        overflow-x: hidden;
+        background: #080b12;
+        color: white;
+      }
+
+      body {
+        font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+      }
+
+      .ambient-glade {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .ambient-glade::before {
+        position: absolute;
+        inset: -20rem -8rem auto;
+        height: 38rem;
+        content: "";
+        background:
+          radial-gradient(circle at 50% 26%, rgba(216, 243, 220, 0.11), transparent 38%),
+          radial-gradient(circle at 20% 48%, rgba(125, 211, 252, 0.055), transparent 32%);
+        filter: blur(28px);
+        opacity: 0.75;
+        pointer-events: none;
+      }
+
+      .ambient-glade::after {
+        position: absolute;
+        inset: 0;
+        content: "";
+        background-image:
+          linear-gradient(115deg, transparent 0 48%, rgba(216, 243, 220, 0.018) 49%, transparent 50%),
+          linear-gradient(115deg, transparent 0 66%, rgba(216, 243, 220, 0.012) 67%, transparent 68%);
+        background-size: 540px 100%, 760px 100%;
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      .scanline {
+        background-image: repeating-linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0.018) 0,
+          rgba(255, 255, 255, 0.018) 1px,
+          transparent 1px,
+          transparent 9px
+        );
+      }
+
+      .grid-faint {
+        background-image:
+          linear-gradient(rgba(216, 243, 220, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(216, 243, 220, 0.045) 1px, transparent 1px);
+        background-size: 30px 30px;
+      }
+
+      .shell-surface {
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.08),
+          0 18px 50px rgba(0, 0, 0, 0.28);
+      }
+
+      .hero-title {
+        letter-spacing: -0.08em;
+        text-shadow: 0 0 42px rgba(216, 243, 220, 0.18);
+      }
+
+      .terminal-bezel {
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.075), transparent 34%),
+          rgba(255, 255, 255, 0.045);
+      }
+
+      .terminal-bezel::before {
+        position: absolute;
+        inset: 0;
+        content: "";
+        border-radius: inherit;
+        padding: 1px;
+        background: linear-gradient(135deg, rgba(216, 243, 220, 0.34), rgba(255, 255, 255, 0.06), rgba(125, 211, 252, 0.2));
+        mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        mask-composite: exclude;
+        pointer-events: none;
+      }
+
+      .keycap {
+        box-shadow:
+          inset 0 -1px 0 rgba(0, 0, 0, 0.6),
+          inset 0 1px 0 rgba(255, 255, 255, 0.09);
+      }
+
+      .command-panel {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(8px) scale(0.98);
+        transition: opacity 160ms ease, transform 160ms ease;
+      }
+
+      .command-panel[data-open="true"] {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0) scale(1);
+      }
+
+      .cursor::after {
+        content: "";
+        display: inline-block;
+        height: 1.05em;
+        width: 0.55em;
+        margin-left: 0.35rem;
+        transform: translateY(0.16em);
+        background: #d8f3dc;
+        animation: blink 1.15s steps(2, start) infinite;
+      }
+
+      @keyframes blink {
+        0%,
+        45% {
+          opacity: 1;
+        }
+        46%,
+        100% {
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-ink text-white antialiased">
+    <header class="sticky top-0 z-50 border-b border-white/10 bg-ink/[0.92] backdrop-blur">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
+        <a href="#" class="flex items-center gap-3 font-semibold">
+          <span class="grid h-8 w-8 place-items-center rounded bg-mint text-sm font-bold text-ink">G</span>
+          <span>Glade</span>
+        </a>
+        <nav class="hidden items-center gap-6 text-sm text-white/[0.58] md:flex">
+          <a class="hover:text-white" href="#install">Install</a>
+          <a class="hover:text-white" href="#commands">Commands</a>
+          <a class="hover:text-white" href="#docs">Docs</a>
+        </nav>
+        <div class="hidden items-center gap-2 sm:flex">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded border border-white/[0.15] bg-white/5 px-3 py-2 text-sm font-medium text-white hover:bg-white/10"
+            data-command-open
+          >
+            <i data-lucide="terminal" class="h-4 w-4"></i>
+            <span class="font-mono text-xs text-white/60">/</span>
+          </button>
+          <a
+            href="https://github.com/glade-sh/glade"
+            class="inline-flex items-center gap-2 rounded border border-white/[0.15] bg-white/5 px-3 py-2 text-sm font-medium text-white hover:bg-white/10"
+          >
+            <i data-lucide="github" class="h-4 w-4"></i>
+            GitHub
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="ambient-glade scanline border-b border-white/10">
+        <div class="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-5 py-20 text-center md:py-28">
+          <p class="mb-5 inline-flex border border-mint/25 bg-mint/[0.08] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-mint">
+            Orgless Apex runtime
+          </p>
+          <h1 class="hero-title text-7xl font-semibold leading-none md:text-9xl">Glade</h1>
+          <p class="mt-7 max-w-3xl text-xl leading-9 text-white/[0.72]">
+            Local Apex development and testing without waiting on a Salesforce org.
+            Run checks, tests, SOQL, DML, triggers, and local API flows from one binary.
+          </p>
+
+          <div id="install" class="shell-surface mt-10 w-full max-w-3xl rounded border border-white/[0.15] bg-white/[0.045] p-3 text-left">
+            <div class="flex flex-col gap-3 md:flex-row md:items-center">
+              <code id="install-command" class="cursor block min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-xs text-mint sm:text-sm">
+                curl -fsSL https://glade.sh/install.sh | sh
+              </code>
+              <button
+                type="button"
+                class="inline-flex w-full items-center justify-center gap-2 rounded bg-mint px-3 py-2 text-sm font-semibold text-ink hover:bg-white md:w-auto"
+                data-copy-target="install-command"
+              >
+                <i data-lucide="copy" class="h-4 w-4"></i>
+                Copy
+              </button>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2 border-t border-white/10 pt-3 text-xs text-white/[0.42]">
+              <span class="rounded bg-white/[0.045] px-2 py-1">latest release</span>
+              <span class="rounded bg-white/[0.045] px-2 py-1">macOS + Linux</span>
+              <span class="rounded bg-white/[0.045] px-2 py-1">installs to ~/.local/bin</span>
+            </div>
+          </div>
+
+          <div class="mt-8 flex flex-wrap justify-center gap-3 text-sm text-white/70">
+            <span class="rounded border border-white/[0.12] bg-white/[0.035] px-3 py-2"><span class="mr-2 text-mint">●</span>Single binary for local Apex loops.</span>
+            <span class="rounded border border-white/[0.12] bg-white/[0.035] px-3 py-2"><span class="mr-2 text-sky-200">●</span>JSON and JUnit output for CI.</span>
+            <span class="rounded border border-white/[0.12] bg-white/[0.035] px-3 py-2"><span class="mr-2 text-amber-200">●</span>Compatibility gates for release claims.</span>
+          </div>
+
+          <div class="terminal-bezel shell-surface relative mt-10 w-full max-w-4xl overflow-hidden rounded-xl border border-white/10 p-3 text-left">
+            <div class="flex items-center justify-between border-b border-white/10 px-2 pb-3">
+              <div class="flex gap-1.5">
+                <span class="h-2.5 w-2.5 rounded-full bg-red-300/70"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-amber-200/70"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-mint/80"></span>
+              </div>
+              <div class="flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-white/[0.34]">
+                <span>local</span>
+                <span class="text-white/[0.18]">/</span>
+                <span>org: none</span>
+              </div>
+            </div>
+            <div class="grid gap-4 p-3 md:grid-cols-[1fr_14rem]">
+              <pre class="overflow-x-auto rounded bg-ink/[0.85] p-4 font-mono text-xs leading-6 text-white/[0.72]"><code><span class="text-white/[0.35]">$</span> glade test --project . --json
+<span class="text-mint">ok</span> loaded Apex source
+<span class="text-mint">ok</span> built local symbol graph
+<span class="text-mint">ok</span> ran tests with isolated storage
+<span class="text-white/[0.35]">-&gt;</span> wrote reports/glade-results.json</code></pre>
+              <div class="grid gap-2 text-xs">
+                <div class="rounded border border-white/10 bg-ink/70 p-3">
+                  <div class="text-white/[0.38]">hotkey</div>
+                  <div class="mt-2 flex items-center gap-1.5 font-mono text-white/[0.74]">
+                    <span class="keycap rounded bg-white/10 px-2 py-1">⌘</span>
+                    <span class="keycap rounded bg-white/10 px-2 py-1">K</span>
+                    <span class="text-white/[0.28]">or</span>
+                    <span class="keycap rounded bg-white/10 px-2 py-1">/</span>
+                  </div>
+                </div>
+                <div class="rounded border border-white/10 bg-ink/70 p-3">
+                  <div class="text-white/[0.38]">runtime</div>
+                  <div class="mt-2 font-mono text-mint">parse -&gt; check -&gt; execute</div>
+                </div>
+                <div class="rounded border border-white/10 bg-ink/70 p-3">
+                  <div class="text-white/[0.38]">output</div>
+                  <div class="mt-2 font-mono text-sky-200">JSON + JUnit</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="commands" class="grid-faint border-b border-white/10 bg-[#0a0f16] py-16">
+        <div class="mx-auto max-w-5xl px-5 text-center">
+          <h2 class="text-3xl font-semibold md:text-4xl">The loop is command first.</h2>
+          <p class="mx-auto mt-4 max-w-2xl leading-7 text-white/[0.64]">
+            Install Glade once, point it at an SFDX project, and run the same local runtime from terminal, editor tasks, CI, or a local API server.
+          </p>
+          <div class="mt-9 grid gap-4 text-left md:grid-cols-3">
+            <article class="shell-surface rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="file-check" class="mb-8 h-6 w-6 text-mint"></i>
+              <h3 class="font-semibold">Check source</h3>
+              <p class="mt-1 text-xs text-white/[0.42]">No deploy. No scratch org warmup.</p>
+              <pre class="mt-4 overflow-x-auto rounded bg-ink p-3 font-mono text-xs text-mint"><code><span class="text-white/[0.35]">$</span> glade check --project . --json</code></pre>
+            </article>
+            <article class="shell-surface rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="flask-conical" class="mb-8 h-6 w-6 text-sky-200"></i>
+              <h3 class="font-semibold">Run tests</h3>
+              <p class="mt-1 text-xs text-white/[0.42]">Machine-readable by default when CI needs it.</p>
+              <pre class="mt-4 overflow-x-auto rounded bg-ink p-3 font-mono text-xs text-mint"><code><span class="text-white/[0.35]">$</span> glade test --project . --json</code></pre>
+            </article>
+            <article class="shell-surface rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="server" class="mb-8 h-6 w-6 text-amber-200"></i>
+              <h3 class="font-semibold">Run API tests</h3>
+              <p class="mt-1 text-xs text-white/[0.42]">Local REST shape, local data, repeatable reset.</p>
+              <pre class="mt-4 overflow-x-auto rounded bg-ink p-3 font-mono text-xs text-mint"><code><span class="text-white/[0.35]">$</span> glade server --db local.sqlite</code></pre>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="border-b border-white/10 bg-ink py-16">
+        <div class="mx-auto max-w-5xl px-5 text-center">
+          <h2 class="text-3xl font-semibold md:text-4xl">The same runtime everywhere.</h2>
+          <div class="mx-auto mt-8 grid max-w-3xl gap-3 text-left">
+            <div class="group grid grid-cols-[2.5rem_1fr] gap-4 rounded border border-white/10 bg-white/[0.04] p-4 text-white/[0.72] transition hover:border-mint/30 hover:bg-white/[0.065]">
+              <span class="font-mono text-sm font-semibold text-mint">01</span>
+              <p><strong class="text-white">Parse and index.</strong> Apex files, triggers, schema metadata, and project layout become a local symbol graph.</p>
+            </div>
+            <div class="group grid grid-cols-[2.5rem_1fr] gap-4 rounded border border-white/10 bg-white/[0.04] p-4 text-white/[0.72] transition hover:border-mint/30 hover:bg-white/[0.065]">
+              <span class="font-mono text-sm font-semibold text-mint">02</span>
+              <p><strong class="text-white">Check and lower.</strong> Diagnostics are shaped for machines, then supported code lowers into executable IR.</p>
+            </div>
+            <div class="group grid grid-cols-[2.5rem_1fr] gap-4 rounded border border-white/10 bg-white/[0.04] p-4 text-white/[0.72] transition hover:border-mint/30 hover:bg-white/[0.065]">
+              <span class="font-mono text-sm font-semibold text-mint">03</span>
+              <p><strong class="text-white">Execute locally.</strong> The VM routes SObjects, SOQL, DML, triggers, limits, storage, and common platform APIs.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="docs" class="grid-faint bg-[#0a0f16] py-16">
+        <div class="mx-auto max-w-5xl px-5 text-center">
+          <h2 class="text-3xl font-semibold md:text-4xl">Use it, wire it, ship it.</h2>
+          <div class="mt-9 grid gap-4 text-left md:grid-cols-4">
+            <a class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]" href="https://github.com/glade-sh/glade/tree/main/docs/INSTALL.md">
+              <i data-lucide="download" class="mb-7 h-5 w-5 text-mint"></i>
+              <h3 class="font-semibold">Install</h3>
+              <p class="mt-2 text-sm text-white/60">Manual, CI, server, and playground setup.</p>
+            </a>
+            <a class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]" href="https://github.com/glade-sh/glade/tree/main/docs/EDITOR.md">
+              <i data-lucide="panel-left" class="mb-7 h-5 w-5 text-sky-200"></i>
+              <h3 class="font-semibold">Editor</h3>
+              <p class="mt-2 text-sm text-white/60">Tasks, LSP, DAP, watch mode, and reports.</p>
+            </a>
+            <a class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]" href="https://github.com/glade-sh/glade/tree/main/docs/COMPATIBILITY_DASHBOARD.md">
+              <i data-lucide="gauge" class="mb-7 h-5 w-5 text-mint"></i>
+              <h3 class="font-semibold">Compatibility</h3>
+              <p class="mt-2 text-sm text-white/60">Current support surface and status.</p>
+            </a>
+            <a class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]" href="https://github.com/glade-sh/glade/tree/main/docs/DISTRIBUTION_WORKFLOW.md">
+              <i data-lucide="ship" class="mb-7 h-5 w-5 text-amber-200"></i>
+              <h3 class="font-semibold">Release</h3>
+              <p class="mt-2 text-sm text-white/60">Tags, checksums, artifacts, and tap updates.</p>
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="border-t border-white/10 bg-ink px-5 py-8 text-sm text-white/[0.58]">
+      <div class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 text-center md:flex-row md:text-left">
+        <p><span class="font-mono text-mint">127.0.0.1</span> is a fine place to test Apex.</p>
+        <div class="flex gap-4">
+          <a class="hover:text-white" href="https://github.com/glade-sh/glade">GitHub</a>
+          <a class="hover:text-white" href="https://glade.sh/install.sh">install.sh</a>
+        </div>
+      </div>
+    </footer>
+
+    <div
+      class="command-panel fixed inset-0 z-[80] flex items-start justify-center bg-black/60 px-5 pt-24 backdrop-blur-sm"
+      data-command-panel
+      data-open="false"
+      aria-hidden="true"
+    >
+      <div class="w-full max-w-xl overflow-hidden rounded border border-white/[0.14] bg-[#0d1118] shadow-2xl">
+        <div class="flex items-center gap-3 border-b border-white/10 px-4 py-3">
+          <i data-lucide="search" class="h-4 w-4 text-white/[0.42]"></i>
+          <span class="font-mono text-sm text-mint">glade</span>
+          <button class="ml-auto text-xs text-white/[0.42] hover:text-white" type="button" data-command-close>esc</button>
+        </div>
+        <div class="divide-y divide-white/[0.08] text-sm">
+          <a class="block px-4 py-3 hover:bg-white/[0.055]" href="#install" data-command-link>
+            <div class="font-medium">Install</div>
+            <code class="mt-1 block font-mono text-xs text-mint">curl -fsSL https://glade.sh/install.sh | sh</code>
+          </a>
+          <a class="block px-4 py-3 hover:bg-white/[0.055]" href="#commands" data-command-link>
+            <div class="font-medium">Check source</div>
+            <code class="mt-1 block font-mono text-xs text-mint">glade check --project . --json</code>
+          </a>
+          <a class="block px-4 py-3 hover:bg-white/[0.055]" href="#commands" data-command-link>
+            <div class="font-medium">Run tests</div>
+            <code class="mt-1 block font-mono text-xs text-mint">glade test --project . --json</code>
+          </a>
+          <a class="block px-4 py-3 hover:bg-white/[0.055]" href="#docs" data-command-link>
+            <div class="font-medium">Open docs</div>
+            <code class="mt-1 block font-mono text-xs text-white/[0.45]">install, editor, compatibility, release</code>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      lucide.createIcons();
+
+      const commandPanel = document.querySelector("[data-command-panel]");
+      const setCommandOpen = (open) => {
+        commandPanel.dataset.open = String(open);
+        commandPanel.setAttribute("aria-hidden", String(!open));
+      };
+
+      document.querySelectorAll("[data-command-open]").forEach((button) => {
+        button.addEventListener("click", () => setCommandOpen(true));
+      });
+
+      document.querySelectorAll("[data-command-close], [data-command-link]").forEach((node) => {
+        node.addEventListener("click", () => setCommandOpen(false));
+      });
+
+      commandPanel.addEventListener("click", (event) => {
+        if (event.target === commandPanel) {
+          setCommandOpen(false);
+        }
+      });
+
+      window.addEventListener("keydown", (event) => {
+        const target = event.target;
+        const isTyping = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target?.isContentEditable;
+        if (!isTyping && (event.key === "/" || (event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey)))) {
+          event.preventDefault();
+          setCommandOpen(true);
+        }
+        if (event.key === "Escape") {
+          setCommandOpen(false);
+        }
+      });
+
+      document.querySelectorAll("[data-copy-target]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const target = document.getElementById(button.dataset.copyTarget);
+          const text = target.textContent.trim();
+          await navigator.clipboard.writeText(text);
+          button.innerHTML = '<i data-lucide="check" class="h-4 w-4"></i>Copied';
+          lucide.createIcons();
+          window.setTimeout(() => {
+            button.innerHTML = '<i data-lucide="copy" class="h-4 w-4"></i>Copy';
+            lucide.createIcons();
+          }, 1400);
+        });
+      });
+    </script>
+  </body>
+</html>

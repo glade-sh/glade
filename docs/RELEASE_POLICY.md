@@ -75,6 +75,46 @@ Each release note should include:
 
 Use [`docs/RELEASE_NOTES.md`](RELEASE_NOTES.md) as the ongoing release log.
 
+## Distribution Workflow
+
+Use this workflow for an easy, repeatable distribution pass.
+
+1. Prepare release branch state.
+   - Run the required gates from current source.
+   - Confirm docs reflect the current command names and setup steps.
+
+2. Cut and push a tag.
+
+```bash
+git tag vX.Y.Z
+git push <remote> vX.Y.Z
+```
+
+3. Let the `Release` workflow publish artifacts.
+   - Artifacts are built to `dist/` for macOS, Linux, and Windows.
+   - `SHA256SUMS.txt` is published with the release assets.
+
+4. Verify install from release artifacts.
+
+```bash
+curl -L -o glade_vX.Y.Z_linux_amd64.tar.gz "<release-asset-url>"
+curl -L -o SHA256SUMS.txt "<checksums-url>"
+grep "  \./glade_vX.Y.Z_linux_amd64.tar.gz$" SHA256SUMS.txt | shasum -a 256 -c -
+tar -xzf glade_vX.Y.Z_linux_amd64.tar.gz
+./glade version
+```
+
+5. Update distribution channels.
+   - Update the Homebrew tap formula (`glade.rb`) URL and SHA256.
+   - Validate `brew install` and `glade version`.
+
+6. Publish release notes.
+   - Copy compatibility status from `glade compat mvp`.
+   - Call out new supported capabilities and remaining known gaps.
+
+For an operator-oriented command checklist, use
+[`docs/DISTRIBUTION_WORKFLOW.md`](DISTRIBUTION_WORKFLOW.md).
+
 ## Benchmark Checks
 
 Performance-sensitive changes should run the benchmark suite for the touched
