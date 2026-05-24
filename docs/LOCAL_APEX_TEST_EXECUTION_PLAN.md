@@ -78,6 +78,11 @@ go run ./cmd/oaer compat local-tests \
   --json
 ```
 
+Auto mode note: when no explicit parallel or shard flags are supplied,
+`compat local-tests` now auto-tunes class parallelism for full-project runs.
+For sharded execution, use `--parallel auto --shard-count auto --shard-index auto`
+with `OAER_SHARD_COUNT` and `OAER_SHARD_INDEX`.
+
 May 18, 2026 performance note: serial `sf-cred-pkg` runs took about 24.3
 minutes. After fixing deterministic custom data lookup for duplicate logical
 records, `--parallel 4` is green and runs in about 8.7 minutes. The next runtime

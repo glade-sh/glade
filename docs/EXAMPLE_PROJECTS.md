@@ -89,6 +89,28 @@ go run ./cmd/oaer compat local-tests \
   --json
 ```
 
+Default full-project runs now auto-tune class parallelism. For most local runs,
+start with:
+
+```bash
+go run ./cmd/oaer compat local-tests \
+  --project example-projects/src-nmb-nu-develop \
+  --json
+```
+
+When running in sharded CI, use auto shard selectors with env wiring:
+
+```bash
+OAER_SHARD_COUNT=6 OAER_SHARD_INDEX=2 \
+go run ./cmd/oaer compat local-tests \
+  --project example-projects/src-nmb-nu-develop \
+  --parallel auto \
+  --shard-count auto \
+  --shard-index auto \
+  --duration-history /path/to/perf.json \
+  --json
+```
+
 Focused class or method run:
 
 ```bash

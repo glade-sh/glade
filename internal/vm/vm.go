@@ -60,6 +60,9 @@ type VM struct {
 	methodResolveCache        map[string]methodResolution
 	Classes                   map[string]Class
 	classLookup               map[string]Class
+	namespaceClassLookup      map[string]map[string]Class
+	classNamespaceCache       map[string]string
+	classForAccessCache       map[string]classForAccessLookup
 	enumLookup                map[string]enumClassLookup
 	enumSuffixLookup          map[string]enumClassLookup
 	uniqueNestedTypeCache     map[string]uniqueNestedTypeLookup
@@ -166,6 +169,11 @@ type loadedChildRelationshipLookup struct {
 type objectNameLookup struct {
 	Name string
 	OK   bool
+}
+
+type classForAccessLookup struct {
+	Class Class
+	OK    bool
 }
 
 type pushUpgradeCustomization struct {
@@ -356,6 +364,9 @@ func New(stdout io.Writer) *VM {
 		methodResolveCache:    make(map[string]methodResolution),
 		Classes:               make(map[string]Class),
 		classLookup:           make(map[string]Class),
+		namespaceClassLookup:  make(map[string]map[string]Class),
+		classNamespaceCache:   make(map[string]string),
+		classForAccessCache:   make(map[string]classForAccessLookup),
 		enumLookup:            make(map[string]enumClassLookup),
 		enumSuffixLookup:      make(map[string]enumClassLookup),
 		uniqueNestedTypeCache: make(map[string]uniqueNestedTypeLookup),
@@ -25224,6 +25235,15 @@ func (vm *VM) checkNamespaceAccess(ownerClass, access, member string) error {
 }
 
 func (vm *VM) classNamespace(className string) string {
+	if vm.classNamespaceCache == nil {
+		vm.classNamespaceCache = make(map[string]string)
+	}
+	cacheKey := canonicalClassLookupKey(className)
+	if cacheKey != "" {
+		if namespace, ok := vm.classNamespaceCache[cacheKey]; ok {
+			return namespace
+		}
+	}
 	class, ok := vm.Classes[className]
 	if !ok {
 		if resolved, found := vm.resolveClassName(className); found {
@@ -25234,11 +25254,21 @@ func (vm *VM) classNamespace(className string) string {
 		for _, triggers := range vm.Triggers {
 			for _, trigger := range triggers {
 				if strings.EqualFold(trigger.Name, className) {
-					return trigger.Namespace
+					namespace := trigger.Namespace
+					if cacheKey != "" {
+						vm.classNamespaceCache[cacheKey] = namespace
+					}
+					return namespace
 				}
 			}
 		}
+		if cacheKey != "" {
+			vm.classNamespaceCache[cacheKey] = ""
+		}
 		return ""
+	}
+	if cacheKey != "" {
+		vm.classNamespaceCache[cacheKey] = class.Namespace
 	}
 	return class.Namespace
 }
@@ -25254,19 +25284,30 @@ func (vm *VM) currentCallerNamespace() string {
 }
 
 func (vm *VM) classForAccess(className string) (Class, bool) {
+	if vm.classForAccessCache == nil {
+		vm.classForAccessCache = make(map[string]classForAccessLookup)
+	}
+	cacheKey := canonicalClassLookupKey(className) + "|" + canonicalClassLookupKey(vm.currentClass) + "|" + canonicalClassLookupKey(vm.currentNamespace)
+	if cached, ok := vm.classForAccessCache[cacheKey]; ok {
+		return cached.Class, cached.OK
+	}
+	store := func(class Class, ok bool) (Class, bool) {
+		vm.classForAccessCache[cacheKey] = classForAccessLookup{Class: class, OK: ok}
+		return class, ok
+	}
 	if className != "" && !strings.Contains(className, ".") && vm.currentClass != "" {
 		if currentNS := strings.TrimSpace(vm.currentNamespace); currentNS != "" {
 			if class, ok := vm.lookupClassInNamespace(currentNS, className); ok {
-				return class, true
+				return store(class, true)
 			}
 		}
 		if callerNS := vm.classNamespace(vm.currentClass); callerNS != "" {
 			if class, ok := vm.lookupClassInNamespace(callerNS, className); ok {
-				return class, true
+				return store(class, true)
 			}
 		}
 		if class, ok := vm.lookupClassInNamespace("", className); ok {
-			return class, true
+			return store(class, true)
 		}
 	}
 	class, ok := vm.Classes[className]
@@ -25275,23 +25316,37 @@ func (vm *VM) classForAccess(className string) (Class, bool) {
 			class, ok = vm.Classes[resolved]
 		}
 	}
-	return class, ok
+	return store(class, ok)
 }
 
 func (vm *VM) lookupClassInNamespace(namespace, className string) (Class, bool) {
+	if vm.namespaceClassLookup == nil {
+		vm.namespaceClassLookup = make(map[string]map[string]Class)
+	}
 	className = strings.TrimSpace(className)
 	if className == "" {
 		return Class{}, false
 	}
+	nsKey := strings.ToLower(strings.TrimSpace(namespace))
+	shortKey := strings.ToLower(shortTypeName(className))
+	if classesByShort, ok := vm.namespaceClassLookup[nsKey]; ok {
+		class, found := classesByShort[shortKey]
+		return class, found
+	}
+	classesByShort := make(map[string]Class)
 	for _, class := range vm.Classes {
-		if !strings.EqualFold(class.Namespace, strings.TrimSpace(namespace)) {
+		if strings.ToLower(strings.TrimSpace(class.Namespace)) != nsKey {
 			continue
 		}
-		if strings.EqualFold(shortTypeName(class.Name), shortTypeName(className)) {
-			return class, true
+		nameKey := strings.ToLower(shortTypeName(class.Name))
+		if _, exists := classesByShort[nameKey]; exists {
+			continue
 		}
+		classesByShort[nameKey] = class
 	}
-	return Class{}, false
+	vm.namespaceClassLookup[nsKey] = classesByShort
+	class, found := classesByShort[shortKey]
+	return class, found
 }
 
 func (vm *VM) isSubclass(child, parent string) bool {
@@ -25559,6 +25614,7 @@ func (vm *VM) storeClassAliases(class Class) {
 	if existing, exists := vm.Classes[class.Name]; !exists || shouldReplaceShortClassAlias(existing, class) {
 		vm.Classes[class.Name] = class
 	}
+	vm.resetClassAccessCaches()
 	vm.enumLookup = nil
 	vm.enumSuffixLookup = nil
 	vm.storeClassLookupAlias(class.Name, class)
@@ -25596,6 +25652,7 @@ func (vm *VM) storeClassLookupAlias(name string, class Class) {
 }
 
 func (vm *VM) rebuildClassLookup() {
+	vm.resetClassAccessCaches()
 	vm.classLookup = make(map[string]Class, len(vm.Classes)*2)
 	for alias, class := range vm.Classes {
 		vm.storeClassLookupAlias(alias, class)
@@ -25604,6 +25661,12 @@ func (vm *VM) rebuildClassLookup() {
 			vm.storeClassLookupAlias(class.Namespace+"."+class.Name, class)
 		}
 	}
+}
+
+func (vm *VM) resetClassAccessCaches() {
+	vm.namespaceClassLookup = make(map[string]map[string]Class)
+	vm.classNamespaceCache = make(map[string]string)
+	vm.classForAccessCache = make(map[string]classForAccessLookup)
 }
 
 func canonicalClassLookupKey(name string) string {
@@ -28628,20 +28691,20 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		return row, nil
 	}
-		if class, ok := vm.Classes[typeName]; ok {
-			if class.IsInterface {
-				return Null, fmt.Errorf("cannot instantiate interface %s", typeName)
+	if class, ok := vm.Classes[typeName]; ok {
+		if class.IsInterface {
+			return Null, fmt.Errorf("cannot instantiate interface %s", typeName)
+		}
+		// Standard/custom SObject constructor forms (for example `new Product2(Name='x')`)
+		// should not be blocked by unrelated package class aliases that share the same name.
+		if !vm.isSObjectType(typeName) {
+			if err := vm.checkClassAccess(class.Name, typeName); err != nil {
+				return Null, err
 			}
-			// Standard/custom SObject constructor forms (for example `new Product2(Name='x')`)
-			// should not be blocked by unrelated package class aliases that share the same name.
-			if !vm.isSObjectType(typeName) {
-				if err := vm.checkClassAccess(class.Name, typeName); err != nil {
-					return Null, err
-				}
-			}
-			if class.IsAbstract {
-				return Null, fmt.Errorf("cannot instantiate abstract class %s", typeName)
-			}
+		}
+		if class.IsAbstract {
+			return Null, fmt.Errorf("cannot instantiate abstract class %s", typeName)
+		}
 		if len(class.EnumValues) > 0 {
 			return Null, fmt.Errorf("cannot instantiate enum %s", typeName)
 		}
@@ -30572,13 +30635,13 @@ func (vm *VM) registeredMethodCandidates(name string) []Method {
 	}
 	out := make([]Method, 0, len(exact)+len(folded))
 	seen := make(map[string]bool, len(exact)+len(folded))
-		appendUnique := func(method Method) {
-			key := method.ClassName + "\x00" + method.Name + "\x00" + methodSignature(method) + "\x00" + strconv.FormatBool(method.IsStatic)
-			if seen[key] {
-				return
-			}
-			seen[key] = true
-			out = append(out, method)
+	appendUnique := func(method Method) {
+		key := method.ClassName + "\x00" + method.Name + "\x00" + methodSignature(method) + "\x00" + strconv.FormatBool(method.IsStatic)
+		if seen[key] {
+			return
+		}
+		seen[key] = true
+		out = append(out, method)
 	}
 	for _, method := range exact {
 		appendUnique(method)

@@ -323,7 +323,10 @@ Common flags:
   --blockers-only           Print only blocking failures.
   --top-failures <n>        Limit failure groups in human output.
   --timeout <ms-per-test>   Per-test timeout in milliseconds.
-  --parallel <n>            Run test classes with n workers.
+  --parallel <n|auto>       Run test classes with n workers.
+  --shard-count <n|auto>    Select one shard from a balanced class plan.
+  --shard-index <i|auto>    Shard index to execute.
+  --duration-history <path> Optional perf JSON used to weight class sharding.
   --progress                Print progress while running.
   --json                    Write JSON readiness results.
   --check <path>            Compare results with a checked baseline.
@@ -2768,7 +2771,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 }
 
 func compatUsage() string {
-	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--start-class <name>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--parallel-methods] [--shard-count <n>] [--shard-index <i>] [--write-class-shards <dir>] [--duration-history <path>] [--progress] [--analyze] [--profile-on-timeout] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--json] [--check <path>] | oracle <subcommand> [flags] | oracle-tests [--project <root>] [--target-org <alias>] [--filter <class[.method]>] [--salesforce-run <path>] [--local-run <path>] [--golden-only] [--anonymous <apex>] [--fetch-logs] [--log-limit <n>] [--runs-dir <path>] [--run-id <id>] [--json] [--check <path>] | replay [--json] [--continue-on-error] [--artifacts <dir>] <bundle-dir...> | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-contracts [--source <dir>] [--json|--output <path>|--check <path>] | stub-discovery [--source <dir>] [--project <probe-sfdx-dir>] [--tier smoke|core|full|local] [--limit <n>] [--no-exec] [--json|--output <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
+	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--start-class <name>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n|auto>] [--parallel-methods] [--shard-count <n|auto>] [--shard-index <i|auto>] [--write-class-shards <dir>] [--duration-history <path>] [--progress] [--analyze] [--profile-on-timeout] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--json] [--check <path>] | oracle <subcommand> [flags] | oracle-tests [--project <root>] [--target-org <alias>] [--filter <class[.method]>] [--salesforce-run <path>] [--local-run <path>] [--golden-only] [--anonymous <apex>] [--fetch-logs] [--log-limit <n>] [--runs-dir <path>] [--run-id <id>] [--json] [--check <path>] | replay [--json] [--continue-on-error] [--artifacts <dir>] <bundle-dir...> | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-contracts [--source <dir>] [--json|--output <path>|--check <path>] | stub-discovery [--source <dir>] [--project <probe-sfdx-dir>] [--tier smoke|core|full|local] [--limit <n>] [--no-exec] [--json|--output <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
 }
 
 type postParityReadiness struct {
@@ -2849,6 +2852,11 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 			if i+1 >= len(args) {
 				return errors.New("--parallel requires a value")
 			}
+			if strings.EqualFold(strings.TrimSpace(args[i+1]), "auto") {
+				options.AutoTune = true
+				i++
+				continue
+			}
 			parsed, err := strconv.Atoi(args[i+1])
 			if err != nil || parsed < 0 {
 				return fmt.Errorf("--parallel must be a non-negative integer")
@@ -2867,6 +2875,12 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 			if i+1 >= len(args) {
 				return errors.New("--shard-count requires a value")
 			}
+			if strings.EqualFold(strings.TrimSpace(args[i+1]), "auto") {
+				options.AutoTune = true
+				options.AutoShardCount = true
+				i++
+				continue
+			}
 			parsed, err := strconv.Atoi(args[i+1])
 			if err != nil || parsed < 0 {
 				return fmt.Errorf("--shard-count must be a non-negative integer")
@@ -2876,6 +2890,12 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 		case "--shard-index":
 			if i+1 >= len(args) {
 				return errors.New("--shard-index requires a value")
+			}
+			if strings.EqualFold(strings.TrimSpace(args[i+1]), "auto") {
+				options.AutoTune = true
+				options.AutoShardIndex = true
+				i++
+				continue
 			}
 			parsed, err := strconv.Atoi(args[i+1])
 			if err != nil || parsed < 0 {
@@ -2962,6 +2982,22 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 		default:
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
+	}
+	if options.Project == "." &&
+		options.Class == "" &&
+		len(options.ClassList) == 0 &&
+		options.ClassFile == "" &&
+		options.StartClass == "" &&
+		options.Method == "" &&
+		options.ChangedSince == "" &&
+		options.Parallelism == 0 &&
+		options.ShardCount == 0 &&
+		options.ShardIndex == 0 &&
+		!options.ParallelMethods &&
+		!options.ForceAnalysis {
+		options.AutoTune = true
+		options.AutoShardCount = true
+		options.AutoShardIndex = true
 	}
 	if checkPath != "" {
 		if options.Project != "." || options.Class != "" || len(options.ClassList) != 0 || options.ClassFile != "" || options.StartClass != "" || options.Method != "" || options.BlockersOnly || options.TraceBlocked || options.SlowTestThresholdMS != 0 || options.TopFailures != 0 || options.MaxFailureGroups != 0 || options.TimeoutMS != 0 || options.Parallelism != 0 || options.ProgressWriter != nil || options.ForceAnalysis || options.ProfileOnTimeout || options.ChangedSince != "" || options.ParallelMethods || options.ShardCount != 0 || options.ShardIndex != 0 || options.WriteClassShards != "" || options.DurationHistoryPath != "" || options.CPUProfilePath != "" || options.MemProfilePath != "" || options.PerfJSONPath != "" {

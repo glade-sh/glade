@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -52,6 +53,9 @@ type LocalTestOptions struct {
 	ShardIndex          int
 	WriteClassShards    string
 	DurationHistoryPath string
+	AutoTune            bool
+	AutoShardCount      bool
+	AutoShardIndex      bool
 }
 
 type LocalTestPhaseTiming struct {
@@ -294,6 +298,12 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 	durations, err := loadLocalTestDurationHistory(options.DurationHistoryPath)
 	if err != nil {
 		return LocalTestReport{}, err
+	}
+	options, parallelism = autoTuneLocalTestOptions(options, len(cases), parallelism)
+	testOpts.Parallelism = parallelism
+	testOpts.ParallelMethods = shouldParallelizeMethods(options, parallelism, len(cases))
+	if options.AutoTune {
+		recordLocalTestPhase(&report, options, fmt.Sprintf("auto_tune parallel=%d shardIndex=%d shardCount=%d methodParallel=%t", parallelism, options.ShardIndex, options.ShardCount, testOpts.ParallelMethods), started)
 	}
 	if strings.TrimSpace(options.WriteClassShards) != "" {
 		recordLocalTestPhase(&report, options, "shard_write_start", started)
@@ -721,7 +731,70 @@ func shouldParallelizeMethods(options LocalTestOptions, parallelism int, totalCa
 	if options.ParallelMethods {
 		return true
 	}
+	if options.AutoTune && strings.TrimSpace(options.Method) == "" && strings.TrimSpace(options.Class) != "" && parallelism > 1 && totalCases >= 24 {
+		return true
+	}
 	return false
+}
+
+func autoTuneLocalTestOptions(options LocalTestOptions, totalCases int, parallelism int) (LocalTestOptions, int) {
+	if !options.AutoTune {
+		return options, parallelism
+	}
+	if options.Parallelism == 0 {
+		parallelism = autoParallelismForCases(totalCases)
+	}
+	if options.ShardCount == 0 && options.AutoShardCount {
+		if shardCount, ok := localTestEnvInt("OAER_SHARD_COUNT"); ok && shardCount > 0 {
+			options.ShardCount = shardCount
+		}
+	}
+	if options.ShardIndex == 0 && options.AutoShardIndex && options.ShardCount > 0 {
+		if shardIndex, ok := localTestEnvInt("OAER_SHARD_INDEX"); ok && shardIndex >= 0 {
+			options.ShardIndex = shardIndex
+		}
+	}
+	if options.ShardCount > 0 && options.ShardIndex >= options.ShardCount {
+		options.ShardIndex = 0
+	}
+	return options, parallelism
+}
+
+func autoParallelismForCases(totalCases int) int {
+	procs := runtime.GOMAXPROCS(0)
+	if procs < 1 {
+		procs = 1
+	}
+	if procs > 12 {
+		procs = 12
+	}
+	switch {
+	case totalCases <= 16:
+		if procs > 2 {
+			return 2
+		}
+	case totalCases <= 200:
+		if procs > 4 {
+			return 4
+		}
+	case totalCases <= 1200:
+		if procs > 8 {
+			return 8
+		}
+	}
+	return procs
+}
+
+func localTestEnvInt(name string) (int, bool) {
+	raw, ok := os.LookupEnv(name)
+	if !ok || strings.TrimSpace(raw) == "" {
+		return 0, false
+	}
+	parsed, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil {
+		return 0, false
+	}
+	return parsed, true
 }
 
 func localTestProgressReporter(w io.Writer) func(apextest.TestProgress) {

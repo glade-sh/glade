@@ -279,6 +279,37 @@ func TestLocalTestParallelismCapsFocusedClassRuns(t *testing.T) {
 	}
 }
 
+func TestAutoParallelismForCases(t *testing.T) {
+	if got := autoParallelismForCases(10); got < 1 || got > 2 {
+		t.Fatalf("auto parallelism for tiny suite = %d, want 1..2", got)
+	}
+	if got := autoParallelismForCases(100); got < 1 || got > 4 {
+		t.Fatalf("auto parallelism for small suite = %d, want 1..4", got)
+	}
+	if got := autoParallelismForCases(800); got < 1 || got > 8 {
+		t.Fatalf("auto parallelism for medium suite = %d, want 1..8", got)
+	}
+}
+
+func TestAutoTuneLocalTestOptionsUsesShardEnv(t *testing.T) {
+	t.Setenv("OAER_SHARD_COUNT", "6")
+	t.Setenv("OAER_SHARD_INDEX", "2")
+	options, parallelism := autoTuneLocalTestOptions(LocalTestOptions{
+		AutoTune:       true,
+		AutoShardCount: true,
+		AutoShardIndex: true,
+	}, 2000, 1)
+	if options.ShardCount != 6 {
+		t.Fatalf("ShardCount = %d, want 6", options.ShardCount)
+	}
+	if options.ShardIndex != 2 {
+		t.Fatalf("ShardIndex = %d, want 2", options.ShardIndex)
+	}
+	if parallelism < 1 {
+		t.Fatalf("parallelism = %d, want >= 1", parallelism)
+	}
+}
+
 func TestShouldParallelizeMethodsForLargeFocusedClasses(t *testing.T) {
 	if shouldParallelizeMethods(LocalTestOptions{Class: "CartSubmitterTest"}, 4, 12) {
 		t.Fatalf("large focused class run should keep methods serial by default")
