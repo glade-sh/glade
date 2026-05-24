@@ -1,0 +1,69 @@
+# Architecture Standards
+
+This guide records the standards for reducing god files and keeping future
+changes small enough to review. It follows Go's own project-layout guidance,
+Effective Go, Go code review comments, and the Go package-name guidance.
+
+## Package Boundaries
+
+- Keep implementation packages under `internal/` unless the API is intended for
+  external users.
+- Split a large file inside its current package before creating a new package.
+  A same-package split keeps APIs stable and lowers refactor risk.
+- Create a new package only when a subsystem has its own data model, tests, and
+  callers that do not need the parent package's private state.
+- Name packages with short lower-case nouns. Do not use `util`, `common`,
+  `helpers`, `types`, or `interfaces`.
+- Keep package dependencies acyclic. If two packages need each other's private
+  details, they are not ready to split.
+
+## File Boundaries
+
+- A file should have one clear job. Prefer `dispatch.go`, `dml_runtime.go`, and
+  `platform_signatures.go` over broad names like `runtime.go`.
+- Keep types close to the code that owns their invariants.
+- Keep generated files separate from handwritten files.
+- Move code mechanically first. Change behavior only in a separate patch with
+  tests that prove the behavior.
+- When splitting a file, preserve declaration order within each moved group
+  unless a small reorder removes a compile cycle or duplicate helper.
+
+## Interfaces And APIs
+
+- Define interfaces at the consumer, not beside the implementation.
+- Do not add an interface for a single concrete type unless it makes a test,
+  boundary, or package split simpler now.
+- Keep exported APIs narrow. Prefer passing concrete project models already used
+  by the package.
+- Every exported type, function, method, const, or var needs a doc comment.
+- Prefer explicit unsupported diagnostics or errors over silent fallbacks.
+
+## Runtime And Compatibility
+
+- Keep Salesforce behavior claims tied to compatibility fixtures, owned tests,
+  or public Salesforce documentation.
+- Do not use proprietary GLADE internals as an implementation source.
+- User Apex, metadata, fixtures, and API requests must not panic the CLI or
+  server. Panics in those paths are bugs.
+- Preserve source ranges through parse, semantic analysis, IR, VM, trace, LSP,
+  DAP, profile, and test reporting.
+- Capability status changes require capability coverage and regenerated docs.
+
+## Validation
+
+- Record the pre-refactor baseline before broad mechanical moves.
+- Run the smallest package test that covers the moved code after each slice.
+- If the baseline is red before refactoring, compare new failures against the
+  recorded baseline instead of claiming a full green tree.
+- Use `gofmt` after Go source moves.
+- Run `go test ./...` before finishing. Report any remaining failures plainly.
+
+## Current Refactor Targets
+
+- `internal/vm/vm.go`: split dispatch, platform object member handling, DML
+  runtime glue, SOQL runtime glue, describe caches, constructor handling, and
+  runtime state into responsibility files under package `vm`.
+- `internal/sema/sema.go`: split platform signatures, type-member model
+  building, body-call checks, and schema resolution under package `sema`.
+- `internal/gladecli/cli.go`: split command families into same-package files
+  while keeping `Run` as the command router.

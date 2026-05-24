@@ -580,6 +580,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"Salutation":        {APIName: "Salutation", Type: FieldPicklist},
 		"CommunityNickname": {APIName: "CommunityNickname", Type: FieldString},
 		"AccountId":         {APIName: "AccountId", Type: FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
+		"ContactId":         {APIName: "ContactId", Type: FieldReference, ReferenceTo: []string{"Contact"}, RelationshipName: "Contact"},
 		"ProfileId":         {APIName: "ProfileId", Type: FieldReference, ReferenceTo: []string{"Profile"}, RelationshipName: "Profile"},
 		"UserRoleId":        {APIName: "UserRoleId", Type: FieldReference, ReferenceTo: []string{"UserRole"}, RelationshipName: "UserRole"},
 		"IsActive":          {APIName: "IsActive", Type: FieldBoolean},

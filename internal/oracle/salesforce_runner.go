@@ -54,6 +54,7 @@ func (r SalesforceRunner) RunTests(ctx context.Context, opts SalesforceRunOption
 	if strings.TrimSpace(opts.Filter) == "" {
 		return nil, errors.New("filter is required for Salesforce oracle test runs")
 	}
+	expectedClasses := splitOracleTestFilter(opts.Filter)
 	wait := opts.WaitMinute
 	if wait <= 0 {
 		wait = 10
@@ -64,7 +65,7 @@ func (r SalesforceRunner) RunTests(ctx context.Context, opts SalesforceRunOption
 		"--wait", strconv.Itoa(wait),
 		"--result-format", "json",
 	}
-	for _, className := range splitOracleTestFilter(opts.Filter) {
+	for _, className := range expectedClasses {
 		args = append(args, "--tests", className)
 	}
 	runner := r.CommandRunner
@@ -75,12 +76,26 @@ func (r SalesforceRunner) RunTests(ctx context.Context, opts SalesforceRunOption
 	if err != nil {
 		if len(stdout) > 0 {
 			if runs, parseErr := ParseSalesforceTestResultJSON(opts.Project, opts.OrgAlias, stdout); parseErr == nil {
+				runs, retryErr := r.retryMissingSalesforceClasses(ctx, runner, opts, expectedClasses, runs)
+				if retryErr != nil {
+					return nil, retryErr
+				}
+				if opts.CaptureLogs {
+					runs, retryErr = r.attachRecentApexLogs(ctx, runner, opts, runs)
+					if retryErr != nil {
+						return nil, retryErr
+					}
+				}
 				return runs, nil
 			}
 		}
 		return nil, fmt.Errorf("sf apex run test failed: %w (stderr: %s)", err, strings.TrimSpace(string(stderr)))
 	}
 	runs, err := ParseSalesforceTestResultJSON(opts.Project, opts.OrgAlias, stdout)
+	if err != nil {
+		return nil, err
+	}
+	runs, err = r.retryMissingSalesforceClasses(ctx, runner, opts, expectedClasses, runs)
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +106,102 @@ func (r SalesforceRunner) RunTests(ctx context.Context, opts SalesforceRunOption
 		}
 	}
 	return runs, nil
+}
+
+func (r SalesforceRunner) retryMissingSalesforceClasses(ctx context.Context, runner CommandRunner, opts SalesforceRunOptions, expectedClasses []string, runs []OracleRun) ([]OracleRun, error) {
+	missing := missingSalesforceClasses(expectedClasses, runs)
+	if len(missing) == 0 {
+		return runs, nil
+	}
+	wait := opts.WaitMinute
+	if wait <= 0 {
+		wait = 10
+	}
+	out := append([]OracleRun(nil), runs...)
+	for _, className := range missing {
+		stdout, stderr, err := runner.Run(
+			ctx,
+			opts.Project,
+			"sf",
+			"apex", "run", "test",
+			"--target-org", opts.OrgAlias,
+			"--wait", strconv.Itoa(wait),
+			"--result-format", "json",
+			"--tests", className,
+		)
+		if len(stdout) > 0 {
+			if classRuns, parseErr := ParseSalesforceTestResultJSON(opts.Project, opts.OrgAlias, stdout); parseErr == nil && len(classRuns) > 0 {
+				out = append(out, classRuns...)
+				continue
+			}
+		}
+		message := strings.TrimSpace(string(stderr))
+		if err != nil && message == "" {
+			message = err.Error()
+		}
+		out = append(out, NormalizeRun(OracleRun{
+			SchemaVersion: SchemaVersion,
+			Source:        "salesforce",
+			Project:       opts.Project,
+			OrgAlias:      opts.OrgAlias,
+			TestClass:     salesforceExpectedClassName(className),
+			TestMethod:    salesforceExpectedMethodName(className),
+			Status:        OracleStatusInfrastructureError,
+			Exception:     &OracleException{Type: "SalesforceTestRunError", Message: message},
+		}))
+	}
+	return out, nil
+}
+
+func missingSalesforceClasses(expectedClasses []string, runs []OracleRun) []string {
+	seen := map[string]struct{}{}
+	for _, run := range runs {
+		if strings.TrimSpace(run.TestClass) == "" {
+			continue
+		}
+		seen[run.TestClass] = struct{}{}
+	}
+	missing := make([]string, 0)
+	for _, className := range expectedClasses {
+		if strings.TrimSpace(className) == "" {
+			continue
+		}
+		if _, ok := seen[salesforceExpectedClassName(className)]; ok {
+			continue
+		}
+		missing = append(missing, className)
+	}
+	return missing
+}
+
+func salesforceExpectedClassName(testName string) string {
+	testName = strings.TrimSpace(testName)
+	if idx := strings.Index(testName, "."); idx > 0 {
+		return testName[:idx]
+	}
+	return testName
+}
+
+func salesforceExpectedMethodName(testName string) string {
+	testName = strings.TrimSpace(testName)
+	if idx := strings.Index(testName, "."); idx > 0 && idx < len(testName)-1 {
+		return testName[idx+1:]
+	}
+	return probeMethodNameFromGeneratedClass(testName)
+}
+
+func probeMethodNameFromGeneratedClass(className string) string {
+	idx := strings.LastIndex(className, "_")
+	if idx < 0 || idx == len(className)-1 {
+		return ""
+	}
+	suffix := className[idx+1:]
+	for _, r := range suffix {
+		if r < '0' || r > '9' {
+			return ""
+		}
+	}
+	return "probe_" + suffix
 }
 
 func splitOracleTestFilter(filter string) []string {

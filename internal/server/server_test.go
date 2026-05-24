@@ -1753,7 +1753,7 @@ func TestResourceDiscoveryIncludesStableServerEndpoints(t *testing.T) {
 				"jobs":         base + "/jobs",
 				"limits":       base + "/limits",
 				"metadata":     base + "/metadata",
-				"glade":         base + "/glade",
+				"glade":        base + "/glade",
 				"process":      base + "/process",
 				"query":        base + "/query",
 				"queryAll":     base + "/queryAll",
@@ -3347,11 +3347,11 @@ func TestGLADEResetScopesPreserveAndClearExpectedState(t *testing.T) {
 		wantProfiles int
 		wantNoOps    string
 	}{
-		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 6},
-		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 6},
-		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 6},
-		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 6},
-		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 6, wantNoOps: "limits,async"},
+		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 7},
+		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 7},
+		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 7},
+		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 7},
+		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 7, wantNoOps: "limits,async"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

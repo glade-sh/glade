@@ -2358,7 +2358,7 @@ private class ResultTest {
 
 	run := Run(loadTestIndex(t, consumerRoot), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
-		t.Fatalf("summary = %#v run=%#v", got, run)
+		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
 	}
 }
 

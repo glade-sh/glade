@@ -24,8 +24,8 @@ const (
 	SurfaceCompileShapeKnown SurfaceStatus = "compile_shape_known"
 	SurfaceRuntimeShapeKnown SurfaceStatus = "runtime_shape_known"
 	SurfaceSalesforceSeen    SurfaceStatus = "salesforce_observed"
-	SurfaceGLADEMatched       SurfaceStatus = "glade_matched"
-	SurfaceGLADEUnsupported   SurfaceStatus = "glade_unsupported"
+	SurfaceGLADEMatched      SurfaceStatus = "glade_matched"
+	SurfaceGLADEUnsupported  SurfaceStatus = "glade_unsupported"
 	SurfaceEnvRequired       SurfaceStatus = "env_required"
 	SurfaceManualReview      SurfaceStatus = "manual_review"
 )
@@ -329,8 +329,11 @@ func GenerateScripts(queue WorkQueue, runID, runsDir, targetOrg, outDir string, 
 	if err := os.WriteFile(filepath.Join(outDir, "promote-passing.sh"), []byte(promote), 0o755); err != nil {
 		return err
 	}
-	nightly := fmt.Sprintf("#!/usr/bin/env bash\nset -euo pipefail\nfor f in %q/06-run-shard-*.sh; do bash \"$f\"; done\n", outDir)
-	if err := os.WriteFile(filepath.Join(outDir, "nightly-full.sh"), []byte(nightly), 0o755); err != nil {
+	runAll := fmt.Sprintf("#!/usr/bin/env bash\nset -uo pipefail\nFAILURES=0\nfor f in %q/06-run-shard-*.sh; do\n  echo \"running $f\"\n  if bash \"$f\"; then\n    echo \"ok $f\"\n  else\n    rc=$?\n    echo \"failed $f exit=$rc\"\n    FAILURES=$((FAILURES + 1))\n  fi\ndone\necho \"shardsFailed=$FAILURES\"\nif [ \"${GLADE_ORACLE_STRICT:-0}\" = \"1\" ] && [ \"$FAILURES\" -gt 0 ]; then\n  exit 1\nfi\n", outDir)
+	if err := os.WriteFile(filepath.Join(outDir, "nightly-full.sh"), []byte(runAll), 0o755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(filepath.Join(outDir, "07-run-all-shards.sh"), []byte(runAll), 0o755); err != nil {
 		return err
 	}
 	nextAgent := fmt.Sprintf("#!/usr/bin/env bash\nset -euo pipefail\ngo run ./cmd/glade compat oracle next --run-id %q --runs-dir %q --limit 25 --json\n", runID, runsDir)

@@ -2,6 +2,7 @@ package oracle
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -99,6 +100,31 @@ func TestSalesforceRunnerCanAttachRecentApexLogsForFocusedRun(t *testing.T) {
 	}
 }
 
+func TestSalesforceRunnerRetriesMissingBatchClasses(t *testing.T) {
+	runner := &partialSalesforceCommandRunner{}
+	runs, err := (SalesforceRunner{CommandRunner: runner}).RunTests(context.Background(), SalesforceRunOptions{
+		Project:  "fixture",
+		OrgAlias: "glade-probe-lab",
+		Filter:   "GLADE_Oracle_stdlib_misc_11130,GLADE_Oracle_stdlib_misc_11131",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(runs) != 2 {
+		t.Fatalf("runs = %#v", runs)
+	}
+	seen := map[string]bool{}
+	for _, run := range runs {
+		seen[run.TestClass] = true
+	}
+	if !seen["GLADE_Oracle_stdlib_misc_11130"] || !seen["GLADE_Oracle_stdlib_misc_11131"] {
+		t.Fatalf("runs = %#v", runs)
+	}
+	if runner.apexRunCalls != 2 {
+		t.Fatalf("expected batch plus one retry, calls=%d all=%#v", runner.apexRunCalls, runner.calls)
+	}
+}
+
 type fakeSalesforceCommandRunner struct {
 	calls        []string
 	sawDataQuery bool
@@ -133,4 +159,40 @@ func (r *fakeSalesforceCommandRunner) Run(ctx context.Context, dir, name string,
 	default:
 		return nil, []byte("unexpected command"), context.Canceled
 	}
+}
+
+type partialSalesforceCommandRunner struct {
+	calls        []string
+	apexRunCalls int
+}
+
+func (r *partialSalesforceCommandRunner) Run(ctx context.Context, dir, name string, args ...string) ([]byte, []byte, error) {
+	joined := strings.Join(args, " ")
+	r.calls = append(r.calls, name+" "+joined)
+	if !strings.Contains(joined, "apex run test") {
+		return nil, []byte("unexpected command"), errors.New("unexpected command")
+	}
+	r.apexRunCalls++
+	switch {
+	case strings.Contains(joined, "GLADE_Oracle_stdlib_misc_11130") && strings.Contains(joined, "GLADE_Oracle_stdlib_misc_11131"):
+		return salesforceTestJSON("GLADE_Oracle_stdlib_misc_11130", "probe_11130"), nil, nil
+	case strings.Contains(joined, "GLADE_Oracle_stdlib_misc_11131"):
+		return salesforceTestJSON("GLADE_Oracle_stdlib_misc_11131", "probe_11131"), nil, nil
+	default:
+		return nil, []byte("unexpected class"), errors.New("unexpected class")
+	}
+}
+
+func salesforceTestJSON(className, methodName string) []byte {
+	return []byte(`{
+  "status": 0,
+  "result": {
+    "tests": [{
+      "ApexClass": {"Name": "` + className + `"},
+      "MethodName": "` + methodName + `",
+      "Outcome": "Pass",
+      "RunTime": 17
+    }]
+  }
+}`)
 }

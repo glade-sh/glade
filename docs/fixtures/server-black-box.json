@@ -425,9 +425,9 @@
       "ok": true,
       "persistedAccounts": 1,
       "persistedObjects": 23,
-      "persistedRecords": 30,
-      "permissions": 9,
-      "profiles": 6,
+      "persistedRecords": 32,
+      "permissions": 10,
+      "profiles": 7,
       "requests": 39,
       "statuses": [
         200,
