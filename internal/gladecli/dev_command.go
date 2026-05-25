@@ -186,7 +186,7 @@ func runDevTest(ctx context.Context, args []string, w io.Writer) (testreport.Run
 	if changed {
 		testArgs = append(testArgs, "--changed-since", "HEAD")
 	}
-	result, err := runTest(ctx, testArgs, io.Discard)
+	result, err := runTest(ctx, testArgs, io.Discard, nil)
 	if err != nil {
 		return result, err
 	}

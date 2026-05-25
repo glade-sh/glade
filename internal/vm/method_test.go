@@ -2723,6 +2723,117 @@ System.assertEquals('object', message.kindValue());
 	}
 }
 
+func TestExecStubProxyReturnCarriesDeclaredStaticTypeIntoSuperConstructor(t *testing.T) {
+	baseCtor, err := CompileAnonymous("count = items.size();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childCtor, err := CompileAnonymous("super(source.getItems());")
+	if err != nil {
+		t.Fatal(err)
+	}
+	providerProgram, err := CompileAnonymous("return Items;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Provider provider = new Provider();
+provider.Items = new List<Item>{ new Item() };
+Source source = (Source)Test.createStub(Source.class, provider);
+Child child = new Child(source);
+System.assertEquals(1, child.count);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "Item"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Source",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"StubProvider"},
+		Fields: map[string]Field{
+			"Items": {Name: "Items", Type: "Object"},
+		},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:       "Provider.handleMethodCall",
+				ClassName:  "Provider",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Fields: map[string]Field{
+			"count": {Name: "count", Type: "Integer"},
+		},
+		Constructors: []Method{{
+			Name:          "Base.<init>",
+			ClassName:     "Base",
+			Params:        []Param{{Name: "items", Type: "List<Object>"}},
+			Program:       baseCtor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Base",
+		Fields: map[string]Field{
+			"count": {Name: "count", Type: "Integer"},
+		},
+		Constructors: []Method{{
+			Name:          "Child.<init>",
+			ClassName:     "Child",
+			Params:        []Param{{Name: "source", Type: "Source"}},
+			Program:       childCtor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPreferStaticArgumentTypesKeepsCollectionRuntimeOverPlainObject(t *testing.T) {
+	items := typedList("List<OrderItem>")
+	items.Static = "Object"
+	args := preferStaticArgumentTypes([]Value{items})
+	if got := valueTypeName(args[0]); got != "List<OrderItem>" {
+		t.Fatalf("argument type = %q, want List<OrderItem>", got)
+	}
+}
+
+func TestConversionScoreAcceptsObjectWrappedIdValue(t *testing.T) {
+	value := Object("Object")
+	value.Fields["value"] = String("001000000000001")
+	if score := New(nil).conversionScore("Id", value); score < 0 {
+		t.Fatalf("Id conversion score = %d, want applicable", score)
+	}
+}
+
 func TestExecConstructorCanReadInheritedFieldAfterSuper(t *testing.T) {
 	parentCtor, err := CompileAnonymous("base = seed;")
 	if err != nil {
@@ -9383,11 +9494,67 @@ func TestDisplayStringPreservesPackageQualifiedStubProxyName(t *testing.T) {
 	}
 }
 
-func TestDisplayStringStripsPackageFromFFLibVerifierQualifiedMethod(t *testing.T) {
+func TestDisplayStringPreservesExternalPackageFromFFLibVerifierQualifiedMethod(t *testing.T) {
 	machine := New(nil)
 	machine.currentMethod = Method{Name: "pkgx.fflib_MethodVerifier.throwException", ClassName: "pkgx.fflib_MethodVerifier"}
 	qm := Object("pkgx.fflib_QualifiedMethod")
 	qm.Fields["typeName"] = String("pkgx.fflib_MyList__sfdc_ApexStub")
+	qm.Fields["methodName"] = String("add")
+	qm.Fields["methodArgTypes"] = List(platformScalar("Type", "String"))
+	got, err := machine.displayString(qm, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "pkgx.fflib_MyList__sfdc_ApexStub.add(String)" {
+		t.Fatalf("display string = %q", got)
+	}
+}
+
+func TestDisplayStringStripsCurrentNamespaceFromFFLibVerifierQualifiedMethod(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "verifiable"
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name:      "fflib_QualifiedMethod",
+		Namespace: "verifiable",
+		Fields: map[string]Field{
+			"typeName": {Name: "typeName", Type: "String", Modifiers: []string{"public", "final"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentMethod = Method{Name: "verifiable.fflib_MethodVerifier.throwException", ClassName: "verifiable.fflib_MethodVerifier"}
+	qm := Object("verifiable.fflib_QualifiedMethod")
+	qm.Fields["typeName"] = String("verifiable.fflib_MyList__sfdc_ApexStub")
+	qm.Fields["methodName"] = String("add")
+	qm.Fields["methodArgTypes"] = List(platformScalar("Type", "String"))
+	got, err := machine.displayString(qm, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "fflib_MyList__sfdc_ApexStub.add(String)" {
+		t.Fatalf("display string = %q", got)
+	}
+}
+
+func TestDisplayStringStripsCurrentNamespaceForPrivateFFLibVerifierQualifiedMethod(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "NU"
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name:      "fflib_QualifiedMethod",
+		Namespace: "NU",
+		Fields: map[string]Field{
+			"typeName": {Name: "typeName", Type: "String", Modifiers: []string{"private"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentMethod = Method{Name: "NU.fflib_MethodVerifier.throwException", ClassName: "NU.fflib_MethodVerifier"}
+	qm := Object("NU.fflib_QualifiedMethod")
+	qm.Fields["typeName"] = String("NU.fflib_MyList__sfdc_ApexStub")
 	qm.Fields["methodName"] = String("add")
 	qm.Fields["methodArgTypes"] = List(platformScalar("Type", "String"))
 	got, err := machine.displayString(qm, &Result{})

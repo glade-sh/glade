@@ -292,11 +292,12 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 	}
 	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit, query.HasLimit)
 	records := make([]storage.Record, 0, len(matchedRecords))
+	childCache := newChildRelationshipQueryCache()
 	for _, record := range matchedRecords {
 		if query.ForUpdate && record.System.Locked {
 			return Result{}, fmt.Errorf("soql: unable to lock row %s", record.ID)
 		}
-		projected, err := projectRecord(org, object.Definition, record, query.Fields, query.ChildQueries, query.Typeofs)
+		projected, err := projectRecord(org, object.Definition, record, query.Fields, query.ChildQueries, query.Typeofs, childCache)
 		if err != nil {
 			return Result{}, err
 		}
@@ -1073,7 +1074,25 @@ func subqueryRecordValue(org storage.OrgState, record storage.Record, field stri
 	return value, ok
 }
 
-func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fields []string, childQueries []ChildQuery, typeofs []TypeofSpec) (storage.Record, error) {
+type childRelationshipQueryCache struct {
+	indexes  map[string]map[storage.ID][]string
+	prepared map[string]preparedChildRelationshipQuery
+}
+
+type preparedChildRelationshipQuery struct {
+	childObjectName string
+	relation        storage.Relationship
+	query           Query
+}
+
+func newChildRelationshipQueryCache() *childRelationshipQueryCache {
+	return &childRelationshipQueryCache{
+		indexes:  make(map[string]map[storage.ID][]string),
+		prepared: make(map[string]preparedChildRelationshipQuery),
+	}
+}
+
+func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fields []string, childQueries []ChildQuery, typeofs []TypeofSpec, childCache *childRelationshipQueryCache) (storage.Record, error) {
 	out := storage.Record{
 		ID:            record.ID,
 		Object:        record.Object,
@@ -1128,7 +1147,7 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 		}
 	}
 	for _, childQuery := range childQueries {
-		records, err := executeChildRelationshipQuery(org, definition, record, childQuery)
+		records, err := executeChildRelationshipQuery(org, definition, record, childQuery, childCache)
 		if err != nil {
 			return storage.Record{}, err
 		}
@@ -1157,41 +1176,24 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 	return out, nil
 }
 
-func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storage.ObjectDefinition, parent storage.Record, childQuery ChildQuery) ([]storage.Record, error) {
-	childObjectName, relation, ok := childRelationship(org, parentDefinition, childQuery.Relationship)
-	if !ok {
-		return nil, fmt.Errorf("soql: unknown child relationship %s on %s", childQuery.Relationship, parentDefinition.APIName)
-	}
-	childObject := org.Objects[childObjectName]
-	query := childQuery.Query
-	query.Object = childObjectName
-	if len(query.ChildQueries) > 0 {
-		return nil, fmt.Errorf("soql: nested child relationship subqueries are not supported")
-	}
-	if query.Count || len(query.Aggregates) > 0 || len(query.GroupBy) > 0 || query.Having != nil {
-		return nil, fmt.Errorf("soql: aggregate child relationship subqueries are not supported")
-	}
-	fields, err := expandFieldsFunctions(childObject.Definition, query.Fields)
+func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storage.ObjectDefinition, parent storage.Record, childQuery ChildQuery, childCache *childRelationshipQueryCache) ([]storage.Record, error) {
+	prepared, err := prepareChildRelationshipQuery(org, parentDefinition, childQuery, childCache)
 	if err != nil {
 		return nil, err
 	}
-	query.Fields = fields
-	if err := validateQueryReferences(org, childObject.Definition, query, query.SecurityMode); err != nil {
-		return nil, err
-	}
-	if query.Where != nil {
-		condition, err := resolveSubqueries(org, *query.Where)
-		if err != nil {
-			return nil, err
-		}
-		query.Where = &condition
-	}
+	childObjectName := prepared.childObjectName
+	relation := prepared.relation
+	query := prepared.query
+	childObject := org.Objects[childObjectName]
 	var ids []string
 	if indexed, ok := storage.LookupIndex(childObject, relation.Field, storage.IDValue(parent.ID)); ok && !isSystemRelationshipField(relation.Field) {
 		ids = make([]string, 0, len(indexed))
 		for _, id := range indexed {
 			ids = append(ids, string(id))
 		}
+	} else if !isSystemRelationshipField(relation.Field) {
+		index := childRelationshipIndex(org, childObjectName, childObject, relation.Field, childCache)
+		ids = append([]string(nil), index[parent.ID]...)
 	} else {
 		ids = make([]string, 0, len(childObject.Records))
 		for id := range childObject.Records {
@@ -1222,13 +1224,85 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	matched = applyWindow(matched, query.Offset, query.Limit, query.HasLimit)
 	out := make([]storage.Record, 0, len(matched))
 	for _, child := range matched {
-		projected, err := projectRecord(org, childObject.Definition, child, query.Fields, nil, query.Typeofs)
+		projected, err := projectRecord(org, childObject.Definition, child, query.Fields, nil, query.Typeofs, childCache)
 		if err != nil {
 			return nil, err
 		}
 		out = append(out, projected)
 	}
 	return out, nil
+}
+
+func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storage.ObjectDefinition, childQuery ChildQuery, childCache *childRelationshipQueryCache) (preparedChildRelationshipQuery, error) {
+	key := strings.ToLower(parentDefinition.APIName + "." + childQuery.Relationship)
+	if childCache != nil {
+		if prepared, ok := childCache.prepared[key]; ok {
+			return prepared, nil
+		}
+	}
+	childObjectName, relation, ok := childRelationship(org, parentDefinition, childQuery.Relationship)
+	if !ok {
+		return preparedChildRelationshipQuery{}, fmt.Errorf("soql: unknown child relationship %s on %s", childQuery.Relationship, parentDefinition.APIName)
+	}
+	childObject := org.Objects[childObjectName]
+	query := childQuery.Query
+	query.Object = childObjectName
+	if len(query.ChildQueries) > 0 {
+		return preparedChildRelationshipQuery{}, fmt.Errorf("soql: nested child relationship subqueries are not supported")
+	}
+	if query.Count || len(query.Aggregates) > 0 || len(query.GroupBy) > 0 || query.Having != nil {
+		return preparedChildRelationshipQuery{}, fmt.Errorf("soql: aggregate child relationship subqueries are not supported")
+	}
+	fields, err := expandFieldsFunctions(childObject.Definition, query.Fields)
+	if err != nil {
+		return preparedChildRelationshipQuery{}, err
+	}
+	query.Fields = fields
+	if err := validateQueryReferences(org, childObject.Definition, query, query.SecurityMode); err != nil {
+		return preparedChildRelationshipQuery{}, err
+	}
+	if query.Where != nil {
+		condition, err := resolveSubqueries(org, *query.Where)
+		if err != nil {
+			return preparedChildRelationshipQuery{}, err
+		}
+		query.Where = &condition
+	}
+	prepared := preparedChildRelationshipQuery{childObjectName: childObjectName, relation: relation, query: query}
+	if childCache != nil {
+		childCache.prepared[key] = prepared
+	}
+	return prepared, nil
+}
+
+func childRelationshipIndex(org storage.OrgState, childObjectName string, childObject storage.ObjectState, field string, childCache *childRelationshipQueryCache) map[storage.ID][]string {
+	if childCache == nil {
+		childCache = newChildRelationshipQueryCache()
+	}
+	key := strings.ToLower(childObjectName + "." + field)
+	if index, ok := childCache.indexes[key]; ok {
+		return index
+	}
+	index := make(map[storage.ID][]string)
+	for id, record := range childObject.Records {
+		if record.System.IsDeleted {
+			continue
+		}
+		value, ok := recordValue(org, childObject.Definition, record, field)
+		if !ok {
+			continue
+		}
+		parentID := idFromValue(value)
+		if parentID == "" {
+			continue
+		}
+		index[parentID] = append(index[parentID], string(id))
+	}
+	for parentID := range index {
+		sort.Strings(index[parentID])
+	}
+	childCache.indexes[key] = index
+	return index
 }
 
 func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string) (string, storage.Relationship, bool) {

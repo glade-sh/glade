@@ -2077,6 +2077,34 @@ private class SampleTest {
 	}
 }
 
+func TestRunTestProgressWritesToStderr(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/SampleTest.cls"), `
+@isTest
+private class SampleTest {
+  @isTest static void passes() {
+    System.assertEquals(2, 1 + 1);
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "Result: 1 passed") {
+		t.Fatalf("stdout did not include console result: %q", stdout.String())
+	}
+	got := stderr.String()
+	for _, want := range []string{"Progress:", "1/1", "elapsed=", "eta=", "SampleTest.passes"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("stderr missing %q:\n%s", want, got)
+		}
+	}
+}
+
 func TestRunTestCompatJSON(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

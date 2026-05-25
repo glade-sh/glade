@@ -481,6 +481,9 @@ platformStaticCall:
 		if err != nil {
 			return Null, err
 		}
+		if !equal && args[0].Kind == ValueString && args[1].Kind == ValueString {
+			equal = vm.equalCurrentNamespaceApexStubText(args[0].Text, args[1].Text)
+		}
 		if !equal {
 			expected, err := vm.displayString(args[0], result)
 			if err != nil {
@@ -2255,12 +2258,20 @@ platformStaticCall:
 			return Null, fmt.Errorf("wave.Templates.getSObjects expects 0 arguments")
 		}
 		return typedList("List<Map<String,Object>>"), nil
-	case "ApexPages.currentPage", "System.currentPageReference":
+	case "ApexPages.currentPage":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		if vm.currentPage.Kind == "" {
-			vm.currentPage = newPageReference("/apex/current")
+			return implicitCurrentPageNull(), nil
+		}
+		return vm.currentPage, nil
+	case "System.currentPageReference":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		if vm.currentPage.Kind == "" {
+			return implicitCurrentPageNull(), nil
 		}
 		return vm.currentPage, nil
 	case "Formula.builder", "formula.builder", "System.Formula.builder", "System.formula.builder":

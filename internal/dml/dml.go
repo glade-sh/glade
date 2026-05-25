@@ -36,9 +36,10 @@ type Engine struct {
 }
 
 type Options struct {
-	AllowFieldTruncation      bool
-	AllowUpdateDeleted        bool
-	AllowBatchUniqueValueSwap bool
+	AllowFieldTruncation         bool
+	AllowUpdateDeleted           bool
+	AllowBatchUniqueValueSwap    bool
+	SuppressPersonContactAliases bool
 }
 
 type SummaryUpdate struct {

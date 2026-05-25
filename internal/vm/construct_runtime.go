@@ -1444,6 +1444,9 @@ func preferStaticArgumentTypes(args []Value) []Value {
 		if out[i].Static == "" {
 			continue
 		}
+		if strings.EqualFold(out[i].Static, "Object") && (collectionBase(out[i].Type) != "" || isMapType(out[i].Type)) {
+			continue
+		}
 		out[i].Type = out[i].Static
 		out[i].Runtime = ""
 	}
@@ -3337,7 +3340,7 @@ func (vm *VM) evalInstanceOf(value Value, target string) Value {
 		return Bool(false)
 	}
 	if value.Kind == ValueNull {
-		return Bool(strings.EqualFold(value.Type, "Object") && (collectionBase(target) != "" || isMapType(target)))
+		return Bool(false)
 	}
 	if strings.EqualFold(target, "Id") && value.Kind == ValueString {
 		return Bool(validateApexIDShape(value.Text) == nil)
@@ -3589,6 +3592,15 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 				return String(apexIDTo18(idText)), nil
 			}
 			return String(idText), nil
+		}
+	}
+	if strings.EqualFold(typeName, "Id") && value.Kind == ValueObject && strings.EqualFold(value.Type, "Object") {
+		idText, ok := platformScalarObjectText(value)
+		if ok {
+			if err := validateApexIDShape(idText); err != nil {
+				return Null, newExceptionError("StringException", strings.TrimPrefix(err.Error(), "System.StringException: "))
+			}
+			return platformScalar("Id", idText), nil
 		}
 	}
 	if value.Kind == ValueString {

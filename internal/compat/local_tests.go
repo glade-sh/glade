@@ -781,6 +781,10 @@ func autoParallelismForCases(totalCases int) int {
 		if procs > 8 {
 			return 8
 		}
+	default:
+		if procs > 4 {
+			return 4
+		}
 	}
 	return procs
 }

@@ -289,6 +289,9 @@ func TestAutoParallelismForCases(t *testing.T) {
 	if got := autoParallelismForCases(800); got < 1 || got > 8 {
 		t.Fatalf("auto parallelism for medium suite = %d, want 1..8", got)
 	}
+	if got := autoParallelismForCases(5000); got < 1 || got > 4 {
+		t.Fatalf("auto parallelism for large suite = %d, want 1..4", got)
+	}
 }
 
 func TestAutoTuneLocalTestOptionsUsesShardEnv(t *testing.T) {

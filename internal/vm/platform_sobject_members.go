@@ -104,6 +104,24 @@ func (vm *VM) defaultObjectDisplayString(value Value) string {
 	return shortName + strings.TrimPrefix(text, value.Type)
 }
 
+func (vm *VM) equalCurrentNamespaceApexStubText(left, right string) bool {
+	if vm == nil || vm.Org == nil || strings.TrimSpace(vm.Org.Namespace) == "" {
+		return false
+	}
+	if !strings.Contains(left, "__sfdc_ApexStub") || !strings.Contains(right, "__sfdc_ApexStub") {
+		return false
+	}
+	return vm.normalizeCurrentNamespaceApexStubText(left) == vm.normalizeCurrentNamespaceApexStubText(right)
+}
+
+func (vm *VM) normalizeCurrentNamespaceApexStubText(text string) string {
+	namespace := strings.TrimSpace(vm.Org.Namespace)
+	if namespace == "" || !strings.Contains(text, "__sfdc_ApexStub") {
+		return text
+	}
+	return strings.ReplaceAll(text, namespace+".", "")
+}
+
 func (vm *VM) frameworkQualifiedMethodVerifierDisplayString(value Value, result *Result) (string, bool, error) {
 	if value.Kind != ValueObject || !strings.EqualFold(frameworkMockSupportType(value.Type), "QualifiedMethod") {
 		return "", false, nil
@@ -113,7 +131,9 @@ func (vm *VM) frameworkQualifiedMethodVerifierDisplayString(value Value, result 
 	}
 	typeName := objectStringField(value, "typeName")
 	if before, after, ok := strings.Cut(typeName, "."); ok && before != "" && strings.Contains(after, "__sfdc_ApexStub") {
-		typeName = after
+		if vm != nil && vm.Org != nil && strings.EqualFold(before, strings.TrimSpace(vm.Org.Namespace)) {
+			typeName = after
+		}
 	}
 	methodName := objectStringField(value, "methodName")
 	_, argTypes, _ := objectFieldValue(value, "methodArgTypes")
@@ -398,11 +418,21 @@ func isTriggerSObject(value Value) bool {
 	return ok && marker.Kind == ValueBool && marker.Bool
 }
 
+func isParentProjectionSObject(value Value) bool {
+	if value.Kind != ValueObject || value.Fields == nil {
+		return false
+	}
+	marker, ok := value.Fields[sobjectParentProjectionField]
+	return ok && marker.Kind == ValueBool && marker.Bool
+}
+
 func queriedSObjectFieldsValue(objectName string, fields map[string]bool) Value {
 	value := Map()
 	value.Type = "Map<String,Boolean>"
 	value.Map[mapKey(String("object"))] = String(objectName)
 	value.MapKeys[mapKey(String("object"))] = String("object")
+	value.Map[mapKey(String("id"))] = Bool(true)
+	value.MapKeys[mapKey(String("id"))] = String("id")
 	for field := range fields {
 		value.Map[mapKey(String(field))] = Bool(true)
 		value.MapKeys[mapKey(String(field))] = String(field)
@@ -576,7 +606,11 @@ func (vm *VM) unqueriedStoredMissingFieldCanDefaultNull(receiver Value, field st
 	if resolved, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, field); ok {
 		canonical = resolved
 	}
-	if _, ok := object.Definition.Fields[canonical]; !ok {
+	fieldDef, ok := object.Definition.Fields[canonical]
+	if !ok {
+		return false
+	}
+	if fieldDef.Type != storage.FieldReference {
 		return false
 	}
 	if unqueriedStoredDefaultFieldMustRemainHidden(canonical) {

@@ -323,7 +323,7 @@ func validatePersonAccountRequiredFields(objectName string, record storage.Recor
 	if strings.TrimSpace(stringField(record.Fields, "LastName")) != "" {
 		return nil
 	}
-	return dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", []string{"LastName"}, "Required fields are missing: [LastName]")
+	return dmlErrorf("REQUIRED_FIELD_MISSING", []string{"LastName"}, "Required fields are missing: [LastName]")
 }
 
 func validateAccountNameRequiredFields(objectName string, definition storage.ObjectDefinition, record storage.Record) error {
@@ -336,7 +336,7 @@ func validateAccountNameRequiredFields(objectName string, definition storage.Obj
 	if strings.TrimSpace(stringField(record.Fields, "Name")) != "" {
 		return nil
 	}
-	return dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", []string{"Name"}, "Required fields are missing: [Name]")
+	return dmlErrorf("REQUIRED_FIELD_MISSING", []string{"Name"}, "Required fields are missing: [Name]")
 }
 
 func defaultRecordTypeForRecord(objectName string, recordTypes []storage.RecordTypeInfo, record storage.Record) (storage.RecordTypeInfo, bool) {
@@ -749,7 +749,7 @@ func (e *Engine) afterInsertPersonAccount(account storage.Record) error {
 		stored.Fields = make(map[string]storage.Value)
 	}
 	stored.Fields["PersonContactId"] = storage.IDValue(contactID)
-	if e.Org.Namespace != "" {
+	if e.Org.Namespace != "" && !e.Options.SuppressPersonContactAliases {
 		for fieldName := range accountObject.Definition.Fields {
 			if strings.EqualFold(storage.StripNamespaceToken(e.Org.Namespace, fieldName), "PersonContact__c") {
 				stored.Fields[fieldName] = storage.IDValue(contactID)

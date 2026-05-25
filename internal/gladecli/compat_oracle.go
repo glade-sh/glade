@@ -243,7 +243,7 @@ func loadOrRunLocalOracle(ctx context.Context, project, filter, path string) ([]
 	if strings.TrimSpace(filter) != "" {
 		args = append(args, "--filter", filter)
 	}
-	run, err := runTest(ctx, args, io.Discard)
+	run, err := runTest(ctx, args, io.Discard, nil)
 	if err != nil {
 		return nil, err
 	}

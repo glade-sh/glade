@@ -1438,6 +1438,11 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 		} else if !ok && canonicalPart != part {
 			_, value, ok = objectFieldValue(current, part)
 		}
+		if !ok || (!isSObjectSystemField(canonicalPart) && !isParentProjectionSObject(current)) {
+			if err := vm.unqueriedSObjectFieldError(current, canonicalPart, false); err != nil {
+				return Null, err
+			}
+		}
 		if ok {
 			if value.Kind == ValueNull {
 				if relationshipType, hasChildRelationship := vm.jsonSObjectChildRelationshipType(current.Type, canonicalPart); hasChildRelationship && !vm.sObjectParentRelationshipField(current.Type, canonicalPart) {
@@ -1514,9 +1519,6 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			if value, hasComponentExpression := componentApexExpressionValue(current, part); hasComponentExpression {
 				current = value
 				continue
-			}
-			if err := vm.unqueriedSObjectFieldError(current, canonicalPart, false); err != nil {
-				return Null, err
 			}
 			if value, ok := vm.missingSObjectFieldValue(current, canonicalPart); ok {
 				if value.Kind == ValueNull && i < len(parts)-1 {

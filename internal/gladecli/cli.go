@@ -96,7 +96,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		}
 		return 0
 	case "test":
-		result, err := runTest(ctx, args[1:], stdout)
+		result, err := runTest(ctx, args[1:], stdout, stderr)
 		if err != nil {
 			fmt.Fprintf(stderr, "glade: %v\n", err)
 			return 1
@@ -265,6 +265,7 @@ Common flags:
   --filter <pattern>        Run matching test classes or methods.
   --json                    Write JSON test results.
   --junit <path>            Write JUnit XML results.
+  --progress                Print bounded progress to stderr.
   --watch                   Watch source files and emit NDJSON events.
   --watch-once              Run one watch cycle and exit.
   --changed-since <ref>     Select tests affected since a git ref.

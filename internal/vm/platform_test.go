@@ -2583,12 +2583,8 @@ Account decoded = JSON.deserializeStrict('{"Name":"Acme","NoSuchField__c":"x"}',
 func TestExecApexPagesCurrentPageAndSeverityEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 PageReference defaultPage = ApexPages.currentPage();
-System.assertNotEquals(null, defaultPage);
-System.assertEquals('/apex/current', defaultPage.getUrl());
-System.assertEquals('/apex/current', System.currentPageReference().getUrl());
-System.assertEquals('/apex/current', ApexPages.currentPage().getUrl());
-ApexPages.currentPage().getParameters().put('default', 'ready');
-System.assertEquals('ready', ApexPages.currentPage().getParameters().get('default'));
+System.assertEquals(null, defaultPage);
+System.assertEquals(null, System.currentPageReference());
 PageReference before = new PageReference('/apex/Before');
 Test.setCurrentPage(before);
 before.getParameters().put('before', 'yes');
@@ -2629,7 +2625,10 @@ System.assertEquals('Detail', message.getDetail());
 
 func TestExecTestStartTestInitializesDefaultCurrentPage(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertNotEquals(null, ApexPages.currentPage());
+System.assertEquals(null, ApexPages.currentPage());
+System.assertEquals(null, System.currentPageReference());
+System.assertEquals('/apex/current', ApexPages.currentPage().getUrl());
+System.assertEquals('/apex/current', System.currentPageReference().getUrl());
 Test.startTest();
 System.assertNotEquals(null, ApexPages.currentPage());
 System.assertEquals('/apex/current', ApexPages.currentPage().getUrl());
@@ -2640,6 +2639,25 @@ Test.stopTest();
 	}
 	machine := New(nil)
 	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAssertEqualsTreatsCurrentNamespaceApexStubMessagesAsEquivalent(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(
+    'Wanted but not invoked: fflib_MyList__sfdc_ApexStub.add(String).',
+    'Wanted but not invoked: NU.fflib_MyList__sfdc_ApexStub.add(String).'
+);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "NU"
+	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

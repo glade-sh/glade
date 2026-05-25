@@ -1852,11 +1852,17 @@ System.assert(caught);
 	}
 }
 
-func TestExecDirectSObjectFieldAccessDefaultsStoredNullCustomField(t *testing.T) {
+func TestExecDirectSObjectFieldAccessThrowsForStoredNullUnqueriedCustomField(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Cart__c(Name = 'Cart');
 Cart__c cart = [SELECT Id FROM Cart__c WHERE Name = 'Cart' LIMIT 1];
-System.assertEquals(null, cart.Purpose__c);
+Boolean caught = false;
+try {
+	String purpose = cart.Purpose__c;
+} catch (SObjectException e) {
+	caught = e.getMessage().contains('without querying the requested field');
+}
+System.assert(caught);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -9660,10 +9666,16 @@ System.assertEquals(rows[0].Id, original.Id);
 	}
 }
 
-func TestExecQueryServiceSaveNoOpsUnqueriedDataSource(t *testing.T) {
+func TestExecQueryServiceSaveRejectsMissingAndNonListDataSource(t *testing.T) {
 	program, err := CompileAnonymous(`
 QueryService service = new QueryService();
-service.save('MissingDataSource', new UnitOfWork());
+Boolean missingCaught = false;
+try {
+	service.save('MissingDataSource', new UnitOfWork());
+} catch (InvalidOperationException e) {
+	missingCaught = true;
+}
+System.assert(missingCaught, 'missing cached data should fail');
 service.recordsByDataSource.put('BadDataSource', 'not records');
 Boolean caught = false;
 try {

@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
@@ -23,7 +24,7 @@ import (
 	"github.com/glade-sh/glade/internal/watch"
 )
 
-func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, error) {
+func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Writer) (testreport.Run, error) {
 	if err := ctx.Err(); err != nil {
 		return testreport.Run{}, err
 	}
@@ -41,6 +42,7 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	watchOnce := false
 	daemonMode := false
 	debug := false
+	progress := false
 	traceBlocked := false
 	slowTestThresholdMS := int64(0)
 	changedSince := ""
@@ -132,6 +134,8 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 			daemonMode = true
 		case "--debug":
 			debug = true
+		case "--progress":
+			progress = true
 		case "--debounce":
 			if i+1 >= len(args) {
 				return testreport.Run{}, errors.New("--debounce requires a duration")
@@ -166,7 +170,15 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 		}
 	}()
 
+	var progressReporter *cliTestProgressReporter
+	if progress {
+		progressReporter = newCLITestProgressReporter(progressW)
+		defer progressReporter.finish()
+	}
 	testOpts := apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS, ParallelMethods: parallelMethods}
+	if progress {
+		testOpts.Progress = progressReporter.handle
+	}
 	if parallelMethods {
 		testOpts.Parallelism = runtime.GOMAXPROCS(0)
 	}
@@ -187,6 +199,9 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 			result = run
 		} else {
 			result = daemon.RunOptions(testOpts)
+		}
+		if progressReporter != nil {
+			progressReporter.finish()
 		}
 		if stopProfile != nil {
 			if stopErr := stopProfile(); stopErr != nil {
@@ -219,7 +234,7 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 		return testreport.Run{}, err
 	}
 	if watchMode {
-		return runWatchTests(ctx, root, index, apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS}, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
+		return runWatchTests(ctx, root, index, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 	}
 	var result testreport.Run
 	if strings.TrimSpace(changedSince) != "" {
@@ -229,9 +244,19 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 			return testreport.Run{}, err
 		}
 		cases = filterSelectedTestCases(cases, selection)
+		if progressReporter != nil {
+			progressReporter.setTotal(len(cases))
+		}
 		result = apextest.RunCasesContext(ctx, index, testOpts, cases)
 	} else {
-		result = apextest.Run(index, testOpts)
+		cases := apextest.Discover(index, testOpts)
+		if progressReporter != nil {
+			progressReporter.setTotal(len(cases))
+		}
+		result = apextest.RunCasesContext(ctx, index, testOpts, cases)
+	}
+	if progressReporter != nil {
+		progressReporter.finish()
 	}
 	if stopProfile != nil {
 		if stopErr := stopProfile(); stopErr != nil {
@@ -259,6 +284,163 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	default:
 		return result, testreport.WriteConsole(w, result)
 	}
+}
+
+type cliTestProgressReporter struct {
+	w        io.Writer
+	started  time.Time
+	last     time.Time
+	total    int
+	done     int
+	passed   int
+	failed   int
+	errors   int
+	active   string
+	terminal bool
+	printed  bool
+	mu       sync.Mutex
+	finished bool
+}
+
+func newCLITestProgressReporter(w io.Writer) *cliTestProgressReporter {
+	return &cliTestProgressReporter{
+		w:        w,
+		started:  time.Now(),
+		terminal: isTerminalWriter(w),
+	}
+}
+
+func (r *cliTestProgressReporter) setTotal(total int) {
+	if r == nil {
+		return
+	}
+	r.mu.Lock()
+	r.total = total
+	r.mu.Unlock()
+}
+
+func (r *cliTestProgressReporter) handle(progress apextest.TestProgress) {
+	if r == nil || r.w == nil {
+		return
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.started.IsZero() {
+		r.started = time.Now()
+	}
+	important := false
+	name := progress.ClassName
+	if progress.MethodName != "" {
+		name += "." + progress.MethodName
+	}
+	switch progress.Event {
+	case "test_start", "setup_start":
+		r.active = name
+	case "test_done":
+		r.done++
+		switch testreport.Status(progress.Status) {
+		case testreport.StatusPass:
+			r.passed++
+		case testreport.StatusFail:
+			r.failed++
+			important = r.failed <= 10
+		case testreport.StatusCompileError, testreport.StatusRuntimeError, testreport.StatusUnsupported:
+			r.errors++
+			important = r.errors <= 10
+		}
+		r.active = name
+	case "setup_done":
+		if progress.Status != "pass" {
+			r.errors++
+			important = r.errors <= 10
+		}
+		r.active = name
+	}
+	if r.terminal {
+		r.writeLine(true)
+		return
+	}
+	now := time.Now()
+	if !r.printed || r.done == r.total || important || r.done%25 == 0 || now.Sub(r.last) >= 2*time.Second {
+		r.writeLine(false)
+	}
+}
+
+func (r *cliTestProgressReporter) finish() {
+	if r == nil || r.w == nil {
+		return
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.finished {
+		return
+	}
+	r.finished = true
+	if r.printed && r.terminal {
+		fmt.Fprint(r.w, "\n")
+		return
+	}
+	if r.printed {
+		return
+	}
+	r.writeLine(false)
+}
+
+func (r *cliTestProgressReporter) writeLine(redraw bool) {
+	line := fmt.Sprintf("Progress: %s elapsed=%s eta=%s pass=%d fail=%d error=%d",
+		r.countText(), formatProgressDuration(time.Since(r.started)), r.etaText(), r.passed, r.failed, r.errors)
+	if r.active != "" {
+		line += " running=" + r.active
+	}
+	if redraw {
+		fmt.Fprintf(r.w, "\r\x1b[K%s", line)
+	} else {
+		fmt.Fprintln(r.w, line)
+	}
+	r.printed = true
+	r.last = time.Now()
+}
+
+func (r *cliTestProgressReporter) countText() string {
+	if r.total > 0 {
+		return fmt.Sprintf("%d/%d", r.done, r.total)
+	}
+	return fmt.Sprintf("%d done", r.done)
+}
+
+func (r *cliTestProgressReporter) etaText() string {
+	if r.total <= 0 || r.done <= 0 || r.done >= r.total {
+		return "0s"
+	}
+	elapsed := time.Since(r.started)
+	remaining := time.Duration(int64(elapsed) * int64(r.total-r.done) / int64(r.done))
+	return formatProgressDuration(remaining)
+}
+
+func formatProgressDuration(d time.Duration) string {
+	if d < 0 {
+		d = 0
+	}
+	d = d.Round(time.Second)
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d/time.Second))
+	}
+	if d < time.Hour {
+		return fmt.Sprintf("%dm%02ds", int(d/time.Minute), int((d%time.Minute)/time.Second))
+	}
+	return fmt.Sprintf("%dh%02dm", int(d/time.Hour), int((d%time.Hour)/time.Minute))
+}
+
+func isTerminalWriter(w io.Writer) bool {
+	file, ok := w.(*os.File)
+	if !ok || file == nil {
+		return false
+	}
+	info, err := file.Stat()
+	if err != nil {
+		return false
+	}
+	return info.Mode()&os.ModeCharDevice != 0
 }
 
 type runPerfSummary struct {

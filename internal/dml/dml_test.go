@@ -1134,7 +1134,7 @@ func TestInsertPersonAccountRequiresLastName(t *testing.T) {
 		},
 	}})
 
-	if len(insert) != 1 || insert[0].Success || insert[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" {
+	if len(insert) != 1 || insert[0].Success || insert[0].StatusCode != "REQUIRED_FIELD_MISSING" {
 		t.Fatalf("insert result = %#v", insert)
 	}
 	if insert[0].Error != "Required fields are missing: [LastName]" {
@@ -1185,7 +1185,7 @@ func TestInsertOrganizationAccountInPersonAccountOrgRequiresName(t *testing.T) {
 		},
 	}})
 
-	if len(insert) != 1 || insert[0].Success || insert[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" {
+	if len(insert) != 1 || insert[0].Success || insert[0].StatusCode != "REQUIRED_FIELD_MISSING" {
 		t.Fatalf("insert result = %#v", insert)
 	}
 	if insert[0].Error != "Required fields are missing: [Name]" {
@@ -1319,6 +1319,41 @@ func TestInsertPersonAccountPopulatesNamespacedPersonContactAlias(t *testing.T) 
 	}
 	if got := accountRecord.Fields["znu__PersonContact__c"].ID; got != contactID {
 		t.Fatalf("znu__PersonContact__c = %q, want %q; fields=%#v", got, contactID, accountRecord.Fields)
+	}
+}
+
+func TestInsertPersonAccountCanSuppressNamespacedPersonContactAlias(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "znu"
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	account := org.Objects["Account"]
+	account.Definition.Fields["znu__PersonContact__c"] = storage.Field{
+		APIName:          "znu__PersonContact__c",
+		Type:             storage.FieldReference,
+		ReferenceTo:      []string{"Contact"},
+		RelationshipName: "znu__PersonContact__r",
+	}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+	engine.Options.SuppressPersonContactAliases = true
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"FirstName": storage.StringValue("Ada"),
+			"LastName":  storage.StringValue("Lovelace"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	accountRecord := org.Objects["Account"].Records[insert[0].ID]
+	if accountRecord.Fields["PersonContactId"].ID == "" {
+		t.Fatalf("PersonContactId was not populated: %#v", accountRecord.Fields)
+	}
+	if got := accountRecord.Fields["znu__PersonContact__c"].ID; got != "" {
+		t.Fatalf("znu__PersonContact__c = %q, want blank; fields=%#v", got, accountRecord.Fields)
 	}
 }
 

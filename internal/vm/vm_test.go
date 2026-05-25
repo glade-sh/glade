@@ -2787,6 +2787,19 @@ System.assert(!(mapObject instanceof Map<Integer, SObject>), 'Map<String,Account
 	}
 }
 
+func TestExecInstanceOfNullCollectionIsFalse(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object values = null;
+System.assert(!(values instanceof List<Object>));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecInstanceOfHonorsNumericWidening(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer count = 3;

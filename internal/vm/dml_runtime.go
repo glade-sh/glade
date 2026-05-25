@@ -1876,6 +1876,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	engine := vm.newDeferredAutomationDMLEngine(result)
 	engine.Options = options
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
+	if vm.triggerHandlerManagerDisablesAllTriggers() {
+		engine.Options.SuppressPersonContactAliases = true
+	}
 	engine.PriorRecords = dmlPriorRecordsByID(before)
 	if op == "update" && vm.inAfterUndeleteTrigger() {
 		engine.Options.AllowUpdateDeleted = true
@@ -1976,6 +1979,30 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		vm.clearCustomDataCache()
 	}
 	return results, nil
+}
+
+func (vm *VM) triggerHandlerManagerDisablesAllTriggers() bool {
+	if vm == nil {
+		return false
+	}
+	for _, className := range []string{"TriggerHandlerManager", "NU.TriggerHandlerManager"} {
+		field, _, ok := vm.lookupStaticField(className, "DisableAllTriggers")
+		if !ok {
+			continue
+		}
+		return field.Value.Kind == ValueBool && field.Value.Bool
+	}
+	for className := range vm.Classes {
+		if !strings.EqualFold(lastTypeSegment(className), "TriggerHandlerManager") {
+			continue
+		}
+		field, _, ok := vm.lookupStaticField(className, "DisableAllTriggers")
+		if !ok {
+			continue
+		}
+		return field.Value.Kind == ValueBool && field.Value.Bool
+	}
+	return false
 }
 
 func (vm *VM) rebuildDMLObjectIndexes(records []storage.Record, results []dml.Result) {
