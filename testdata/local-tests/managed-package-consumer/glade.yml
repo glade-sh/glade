@@ -1,2 +1,2 @@
 project:
-  managedPackageDependencies: ["znu:../managed-package-dependency:1.0"]
+  managedPackageDependencies: ["pkgx:../managed-package-dependency:1.0"]

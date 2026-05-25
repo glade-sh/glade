@@ -418,6 +418,64 @@ private class MatcherProbeTest {
 	}
 }
 
+func TestRuntimeSObjectMatcherTreatsUnqueriedAuditFieldAsMismatch(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/TrailMatcherDefinitions.cls"), `
+public class TrailMatcherDefinitions {
+  public class SObjectWith {
+    private Map<Schema.SObjectField, Object> toMatch;
+    public SObjectWith(Map<Schema.SObjectField, Object> toMatch) {
+      this.toMatch = toMatch;
+    }
+    public Boolean matches(Object arg) {
+      if (arg != null && arg instanceof SObject) {
+        SObject record = (SObject)arg;
+        for (Schema.SObjectField fieldToken : this.toMatch.keySet()) {
+          Object valueToMatch = this.toMatch.get(fieldToken);
+          try {
+            if (record.get(fieldToken) != valueToMatch) {
+              return false;
+            }
+          } catch (Exception e) {
+            return false;
+          }
+        }
+        return true;
+      }
+      return false;
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/TrailMatcherDefinitionsTest.cls"), `
+@IsTest
+private class TrailMatcherDefinitionsTest {
+  @IsTest static void unqueriedAuditFieldIsMismatch() {
+    SObject inserted = Account.SObjectType.newSObject();
+    inserted.put('Name', 'Acme');
+    insert inserted;
+    Id accountId = inserted.Id;
+    SObject queried = Database.query('SELECT Id, Name FROM Account WHERE Id = :accountId LIMIT 1');
+    Map<String, Schema.SObjectField> fields = Account.SObjectType.getDescribe().fields.getMap();
+    Map<Schema.SObjectField, Object> expected = new Map<Schema.SObjectField, Object>{
+      fields.get('CreatedDate') => System.now()
+    };
+    System.assert(!new TrailMatcherDefinitions.SObjectWith(expected).matches(queried));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		var problem *testreport.Problem
+		if len(run.Suites) > 0 && len(run.Suites[0].Cases) > 0 {
+			problem = run.Suites[0].Cases[0].Problem
+		}
+		t.Fatalf("summary = %#v problem = %#v cases = %#v", summary, problem, run.Suites[0].Cases)
+	}
+}
+
 func TestExtractMethodBodyHandlesBackslashEscapedApexStrings(t *testing.T) {
 	source := `@IsTest
 private class DataRequestTest {

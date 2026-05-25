@@ -41,6 +41,9 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 			return text, nil
 		}
 	}
+	if _, ok := stubProxyTypeName(value); ok {
+		return value.String(), nil
+	}
 	if strings.EqualFold(value.Type, "Date") {
 		if text, err := platformScalarText(value, "Date"); err == nil {
 			return text + " 00:00:00", nil
@@ -69,6 +72,9 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 	if isExceptionType(value.Type) {
 		return exceptionToString(value), nil
 	}
+	if text, ok, err := vm.frameworkQualifiedMethodVerifierDisplayString(value, result); ok || err != nil {
+		return text, err
+	}
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(value.Type, "toString", nil)
 	if ambiguous {
 		return "", vm.ambiguousOverloadError("toString", nil)
@@ -96,6 +102,38 @@ func (vm *VM) defaultObjectDisplayString(value Value) string {
 	}
 	shortName := value.Type[strings.LastIndex(value.Type, ".")+1:]
 	return shortName + strings.TrimPrefix(text, value.Type)
+}
+
+func (vm *VM) frameworkQualifiedMethodVerifierDisplayString(value Value, result *Result) (string, bool, error) {
+	if value.Kind != ValueObject || !strings.EqualFold(frameworkMockSupportType(value.Type), "QualifiedMethod") {
+		return "", false, nil
+	}
+	if !vm.inFrameworkMethodVerifierFrame() {
+		return "", false, nil
+	}
+	typeName := objectStringField(value, "typeName")
+	if before, after, ok := strings.Cut(typeName, "."); ok && before != "" && strings.Contains(after, "__sfdc_ApexStub") {
+		typeName = after
+	}
+	methodName := objectStringField(value, "methodName")
+	_, argTypes, _ := objectFieldValue(value, "methodArgTypes")
+	argsText, err := vm.displayString(argTypes, result)
+	if err != nil {
+		return "", true, err
+	}
+	return typeName + "." + methodName + argsText, true, nil
+}
+
+func (vm *VM) inFrameworkMethodVerifierFrame() bool {
+	if strings.EqualFold(frameworkMockSupportType(vm.currentMethod.ClassName), "MethodVerifier") {
+		return true
+	}
+	for _, frame := range vm.callStack {
+		if strings.EqualFold(frameworkMockSupportType(classNameFromMethod(frame.Symbol)), "MethodVerifier") {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) displayList(values []Value, result *Result) (string, error) {
@@ -478,6 +516,9 @@ func (vm *VM) unqueriedStoredDefaultFieldValue(receiver Value, field string) (Va
 	if !ok {
 		return Null, false
 	}
+	if unqueriedStoredDefaultFieldMustRemainHidden(canonical) {
+		return Null, false
+	}
 	if strings.TrimSpace(fieldDef.DefaultValue) == "" {
 		return Null, false
 	}
@@ -510,6 +551,15 @@ func (vm *VM) unqueriedStoredDefaultFieldValue(receiver Value, field string) (Va
 	return vmValueFromStorage(defaultValue), true
 }
 
+func unqueriedStoredDefaultFieldMustRemainHidden(field string) bool {
+	switch strings.ToLower(strings.TrimSpace(field)) {
+	case "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid", "systemmodstamp", "isdeleted":
+		return true
+	default:
+		return false
+	}
+}
+
 func (vm *VM) unqueriedStoredMissingFieldCanDefaultNull(receiver Value, field string) bool {
 	if vm == nil || vm.Org == nil || receiver.Kind != ValueObject || receiver.Fields == nil {
 		return false
@@ -527,6 +577,9 @@ func (vm *VM) unqueriedStoredMissingFieldCanDefaultNull(receiver Value, field st
 		canonical = resolved
 	}
 	if _, ok := object.Definition.Fields[canonical]; !ok {
+		return false
+	}
+	if unqueriedStoredDefaultFieldMustRemainHidden(canonical) {
 		return false
 	}
 	id := sObjectIDFromFields(receiver.Fields)
@@ -564,10 +617,34 @@ func (vm *VM) lazyChildRelationshipValue(receiver Value, field string) (Value, b
 	if !ok {
 		parentObject = receiver.Type
 	}
+	lookup := vm.lazyChildRelationshipLookup(parentObject, field)
+	if !lookup.OK {
+		return Null, false
+	}
 	parentID := sObjectIDFromFields(receiver.Fields)
-	childType := ""
 	children := []Value(nil)
 	seen := map[storage.ID]bool{}
+	for _, target := range lookup.Targets {
+		childState, ok := vm.Org.Objects[target.ChildName]
+		if !ok {
+			continue
+		}
+		children = vm.appendLazyChildRelationshipRecords(children, seen, target.ChildName, childState, target.LookupField, parentID)
+	}
+	list := List(children...)
+	list.Type = "List<" + lookup.ChildType + ">"
+	return list, true
+}
+
+func (vm *VM) lazyChildRelationshipLookup(parentObject, field string) lazyChildRelationshipLookup {
+	key := strings.ToLower(strings.TrimSpace(parentObject)) + "\x00" + strings.ToLower(strings.TrimSpace(field))
+	if vm.lazyChildRelCache == nil {
+		vm.lazyChildRelCache = make(map[string]lazyChildRelationshipLookup)
+	}
+	if cached, ok := vm.lazyChildRelCache[key]; ok {
+		return cached
+	}
+	lookup := lazyChildRelationshipLookup{}
 	for childName, childState := range vm.Org.Objects {
 		for _, relation := range childState.Definition.Relations {
 			if !relationshipTargetsObject(relation, parentObject) || strings.TrimSpace(relation.Field) == "" {
@@ -580,10 +657,10 @@ func (vm *VM) lazyChildRelationshipValue(receiver Value, field string) (Value, b
 			if childRelationshipName == "" || !vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, field) {
 				continue
 			}
-			if childType == "" {
-				childType = childName
+			if lookup.ChildType == "" {
+				lookup.ChildType = childName
 			}
-			children = vm.appendLazyChildRelationshipRecords(children, seen, childName, childState, relation.Field, parentID)
+			lookup.Targets = append(lookup.Targets, lazyChildRelationshipTarget{ChildName: childName, LookupField: relation.Field})
 		}
 		for fieldName, fieldDef := range childState.Definition.Fields {
 			if fieldDef.Type != storage.FieldReference || len(fieldDef.ReferenceTo) == 0 {
@@ -599,19 +676,22 @@ func (vm *VM) lazyChildRelationshipValue(receiver Value, field string) (Value, b
 				if !vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, field) {
 					continue
 				}
-				if childType == "" {
-					childType = childName
+				if lookup.ChildType == "" {
+					lookup.ChildType = childName
 				}
-				children = vm.appendLazyChildRelationshipRecords(children, seen, childName, childState, fieldDef.APIName, parentID)
+				lookup.Targets = append(lookup.Targets, lazyChildRelationshipTarget{ChildName: childName, LookupField: fieldDef.APIName})
 			}
 		}
 	}
-	if childType == "" {
-		return Null, false
+	lookup.OK = lookup.ChildType != ""
+	vm.lazyChildRelCache[key] = lookup
+	return lookup
+}
+
+func (vm *VM) clearLazyChildRelationshipCache() {
+	if vm.lazyChildRelCache != nil {
+		vm.lazyChildRelCache = make(map[string]lazyChildRelationshipLookup)
 	}
-	list := List(children...)
-	list.Type = "List<" + childType + ">"
-	return list, true
 }
 
 func (vm *VM) appendLazyChildRelationshipRecords(out []Value, seen map[storage.ID]bool, childName string, childState storage.ObjectState, lookupField string, parentID storage.ID) []Value {

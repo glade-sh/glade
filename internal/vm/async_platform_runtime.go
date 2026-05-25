@@ -376,6 +376,7 @@ func (vm *VM) clearMetadataCaches() {
 	vm.childRelCache = make(map[string][]Value)
 	vm.jsonChildRelTypeCache = make(map[string]jsonRelationshipTypeLookup)
 	vm.loadedChildRelCache = make(map[string]loadedChildRelationshipLookup)
+	vm.lazyChildRelCache = make(map[string]lazyChildRelationshipLookup)
 	vm.objectNameCache = make(map[string]objectNameLookup)
 	vm.metadataCacheStamp = ""
 	vm.clearCustomDataCache()

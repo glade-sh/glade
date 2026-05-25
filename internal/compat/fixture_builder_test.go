@@ -27,12 +27,12 @@ func TestFixtureBuilderCreatesRunnableParseFixture(t *testing.T) {
 func TestFixtureBuilderNamesProjectDefaults(t *testing.T) {
 	fixture := NewFixtureBuilder("builder-check").
 		WithDefaultPackageDirectory("force-app").
-		WithNamespace("znu").
+		WithNamespace("pkgx").
 		WithSource("force-app/main/classes/Hello.cls", "public class Hello {}").
 		Check().
 		Build()
 
-	if fixture.Project.Namespace != "znu" {
+	if fixture.Project.Namespace != "pkgx" {
 		t.Fatalf("namespace = %q", fixture.Project.Namespace)
 	}
 	if len(fixture.Project.PackageDirectories) != 1 || !fixture.Project.PackageDirectories[0].Default {

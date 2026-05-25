@@ -622,7 +622,18 @@ func propertyAccessorMethod(method Method) bool {
 	if method.Name == "" || method.ClassName == "" {
 		return false
 	}
-	suffix := strings.TrimPrefix(method.Name, method.ClassName+".")
+	suffix := method.Name
+	prefix := method.ClassName + "."
+	if strings.HasPrefix(strings.ToLower(suffix), strings.ToLower(prefix)) {
+		suffix = suffix[len(prefix):]
+	} else {
+		qualifiedPrefix := "." + method.ClassName + "."
+		index := strings.LastIndex(strings.ToLower(suffix), strings.ToLower(qualifiedPrefix))
+		if index < 0 {
+			return false
+		}
+		suffix = suffix[index+len(qualifiedPrefix):]
+	}
 	return strings.Contains(suffix, ".") &&
 		(strings.HasSuffix(strings.ToLower(suffix), ".get") || strings.HasSuffix(strings.ToLower(suffix), ".set"))
 }
@@ -1823,15 +1834,8 @@ func (vm *VM) assign(name string, value Value) error {
 					storageName := staticFieldStorageName(memberName, field)
 					key := owner + "." + storageName
 					if vm.activeSetters[key] > 0 {
-						oldValue := field.Value
-						field.Value = value
 						class := vm.Classes[owner]
-						if class.StaticFields == nil {
-							class.StaticFields = make(map[string]Field)
-						}
-						class.StaticFields[vm.staticFieldWritebackKey(owner, memberName, field)] = field
-						vm.storeClassAliases(class)
-						vm.invalidateStaticValueRefsForChange(oldValue, value)
+						vm.writeStaticFieldValue(owner, memberName, class, field, value)
 						return nil
 					}
 					vm.activeSetters[key]++
@@ -1846,27 +1850,13 @@ func (vm *VM) assign(name string, value Value) error {
 						return err
 					}
 					if vm.isCurrentGetter(field.Getter) {
-						oldValue := field.Value
-						field.Value = value
 						class := vm.Classes[owner]
-						if class.StaticFields == nil {
-							class.StaticFields = make(map[string]Field)
-						}
-						class.StaticFields[vm.staticFieldWritebackKey(owner, memberName, field)] = field
-						vm.storeClassAliases(class)
-						vm.invalidateStaticValueRefsForChange(oldValue, value)
+						vm.writeStaticFieldValue(owner, memberName, class, field, value)
 					}
 					return nil
 				}
-				oldValue := field.Value
-				field.Value = value
 				class := vm.Classes[owner]
-				if class.StaticFields == nil {
-					class.StaticFields = make(map[string]Field)
-				}
-				class.StaticFields[vm.staticFieldWritebackKey(owner, memberName, field)] = field
-				vm.storeClassAliases(class)
-				vm.invalidateStaticValueRefsForChange(oldValue, value)
+				vm.writeStaticFieldValue(owner, memberName, class, field, value)
 				return nil
 			}
 		}
@@ -1981,15 +1971,8 @@ func (vm *VM) assign(name string, value Value) error {
 				storageName := staticFieldStorageName(name, field)
 				key := owner + "." + storageName
 				if vm.activeSetters[key] > 0 {
-					oldValue := field.Value
-					field.Value = value
 					class := vm.Classes[owner]
-					if class.StaticFields == nil {
-						class.StaticFields = make(map[string]Field)
-					}
-					class.StaticFields[vm.staticFieldWritebackKey(owner, name, field)] = field
-					vm.storeClassAliases(class)
-					vm.invalidateStaticValueRefsForChange(oldValue, value)
+					vm.writeStaticFieldValue(owner, name, class, field, value)
 					return nil
 				}
 				vm.activeSetters[key]++
@@ -2004,31 +1987,32 @@ func (vm *VM) assign(name string, value Value) error {
 					return err
 				}
 				if vm.isCurrentGetter(field.Getter) {
-					oldValue := field.Value
-					field.Value = value
 					class := vm.Classes[owner]
-					if class.StaticFields == nil {
-						class.StaticFields = make(map[string]Field)
-					}
-					class.StaticFields[vm.staticFieldWritebackKey(owner, name, field)] = field
-					vm.storeClassAliases(class)
-					vm.invalidateStaticValueRefsForChange(oldValue, value)
+					vm.writeStaticFieldValue(owner, name, class, field, value)
 				}
 				return nil
 			}
-			oldValue := field.Value
-			field.Value = value
 			class := vm.Classes[owner]
-			if class.StaticFields == nil {
-				class.StaticFields = make(map[string]Field)
-			}
-			class.StaticFields[vm.staticFieldWritebackKey(owner, name, field)] = field
-			vm.storeClassAliases(class)
-			vm.invalidateStaticValueRefsForChange(oldValue, value)
+			vm.writeStaticFieldValue(owner, name, class, field, value)
 			return nil
 		}
 	}
 	return fmt.Errorf("unknown variable %q", name)
+}
+
+func (vm *VM) writeStaticFieldValue(owner, memberName string, class Class, field Field, value Value) {
+	field.Value = value
+	if class.StaticFields == nil {
+		class.StaticFields = make(map[string]Field)
+	}
+	fieldKey := vm.staticFieldWritebackKey(owner, memberName, field)
+	class.StaticFields[fieldKey] = field
+	vm.storeClassValue(class)
+	className := class.Name
+	if className == "" {
+		className = owner
+	}
+	vm.rememberStaticValueRefsInField(value, staticFieldRef{ClassName: className, FieldName: fieldKey})
 }
 
 func (vm *VM) assignPath(root Value, parts []string, value Value) error {

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Finish the next large parity slice by making source-backed and artifact-backed managed package dependencies resolve, enforce access rules, and run enough local contract behavior to move `znu` package blockers out of the example-project compile frontier.
+**Goal:** Finish the next large parity slice by making source-backed and artifact-backed managed package dependencies resolve, enforce access rules, and run enough local contract behavior to move `pkgx` package blockers out of the example-project compile frontier.
 
 **Architecture:** Treat managed packages as installed dependency contracts, not current-project source. Load dependency symbols and schema before the consuming project, preserve dependency provenance through sema and VM lookup, enforce cross-namespace `global` visibility, and classify unresolved package behavior as dependency-scoped diagnostics.
 
@@ -14,15 +14,15 @@
 
 The current large-project frontier points at installed package contracts before deeper runtime behavior:
 
-- `src-nmb-nc-develop` is blocked first by unknown managed Apex type `znu.Address`.
-- `nams-workspace` is blocked first by unknown managed Apex type `znu.Pluggable`.
+- `src-nmb-nc-develop` is blocked first by unknown managed Apex type `pkgx.TrailAddress`.
+- `nams-workspace` is blocked first by unknown managed Apex type `pkgx.TrailPlugin`.
 - The checked managed-package plan says source-backed and artifact-backed dependency config, loading, symbol/schema loading, and first artifact support already exist; the remaining work is stronger cross-namespace access enforcement and applying artifact-backed contracts to `nams-workspace`.
 
 This slice is the best next log to roll because it unlocks two measured example-project fronts and prevents broad compile-gap counts from hiding the next real runtime families.
 
 ## Alternatives Considered
 
-1. **Managed package dependency closure.** Recommended. It attacks the current `znu` blockers and strengthens a general Salesforce package model.
+1. **Managed package dependency closure.** Recommended. It attacks the current `pkgx` blockers and strengthens a general Salesforce package model.
 2. **SOQL and dynamic relationship fidelity.** Valuable, but it comes after package contracts compile enough code to expose selector/runtime failures.
 3. **Platform/UI controller APIs.** Valuable, but the unresolved projects still need dependency surfaces before controller tests can give clean signal.
 
@@ -54,22 +54,22 @@ go run ./cmd/glade compat local-tests --project example-projects/src-nmb-nc-deve
 go run ./cmd/glade compat local-tests --project example-projects/nams-workspace --timeout 30000 --top-failures 8 --json
 ```
 
-Expected before this slice: top failures still name missing or inaccessible `znu` Apex/schema surfaces, or dependency diagnostics show the next exact package setup issue.
+Expected before this slice: top failures still name missing or inaccessible `pkgx` Apex/schema surfaces, or dependency diagnostics show the next exact package setup issue.
 
-- [ ] **Step 2: Build the local `znu` package artifact**
+- [ ] **Step 2: Build the local `pkgx` package artifact**
 
 Run:
 
 ```bash
-mkdir -p example-projects/.glade/packages/znu
+mkdir -p example-projects/.glade/packages/pkgx
 go run ./cmd/glade package build \
   --project example-projects/src-nmb-nu-develop \
-  --namespace znu \
+  --namespace pkgx \
   --version src-nmb-nu-develop@local \
-  --output example-projects/.glade/packages/znu/package.glade.json
+  --output example-projects/.glade/packages/pkgx/package.glade.json
 ```
 
-Expected: artifact contains global Apex types, global members, and installed namespace schema for `znu`.
+Expected: artifact contains global Apex types, global members, and installed namespace schema for `pkgx`.
 
 ### Task 2: Enforce Cross-Namespace Access In Sema
 
@@ -84,15 +84,15 @@ Add test cases proving:
 
 ```apex
 // dependency package
-global class VisibleService {
+global class TrailVisibleService {
     global static String ok() { return 'ok'; }
     public static String hidden() { return 'hidden'; }
 }
 
 // consuming package
 public class Consumer {
-    public static String allowed() { return znu.VisibleService.ok(); }
-    public static String denied() { return znu.VisibleService.hidden(); }
+    public static String allowed() { return pkgx.TrailVisibleService.ok(); }
+    public static String denied() { return pkgx.TrailVisibleService.hidden(); }
 }
 ```
 
@@ -128,19 +128,19 @@ Expected: dependency access tests pass and existing visibility tests remain gree
 Add tests for duplicate project and dependency class names:
 
 ```apex
-// dependency package znu
-global class DependencyCartService {
+// dependency package pkgx
+global class TrailCartService {
     global static String value() { return 'dependency'; }
 }
 
 // consuming project
-public class DependencyCartService {
+public class TrailCartService {
     public static String value() { return 'project'; }
 }
 
 public class Consumer {
     public static String dependencyValue() {
-        return znu.DependencyCartService.value();
+        return pkgx.TrailCartService.value();
     }
 }
 ```
@@ -179,7 +179,7 @@ Create or extend `testdata/local-tests/managed-package-runtime` with:
 
 ```apex
 // dependency package
-global class DependencyService {
+global class TrailService {
     global static String externalValue() {
         return DependencyHelper.internalValue();
     }
@@ -194,7 +194,7 @@ public class DependencyHelper {
 @IsTest
 private class ManagedRuntimeTest {
     @IsTest static void callsDependencyGlobalApi() {
-        System.assertEquals('from dependency', znu.DependencyService.externalValue());
+        System.assertEquals('from dependency', pkgx.TrailService.externalValue());
     }
 }
 ```
@@ -220,15 +220,15 @@ Expected: the consumer test passes and no dependency test class runs by default.
 
 **Files:**
 - Modify only local fixture/config files under `example-projects` if they are checked-in fixtures.
-- Do not hard-code `znu` in production runtime code.
+- Do not hard-code `pkgx` in production runtime code.
 
-- [ ] **Step 1: Wire `znu` artifact config for focused runs**
+- [ ] **Step 1: Wire `pkgx` artifact config for focused runs**
 
 Use:
 
 ```yaml
 project:
-  managedPackageDependencies: ["znu:artifact:../.glade/packages/znu/package.glade.json:src-nmb-nu-develop@local"]
+  managedPackageDependencies: ["pkgx:artifact:../.glade/packages/pkgx/package.glade.json:src-nmb-nu-develop@local"]
 ```
 
 Expected: local runs report the artifact as loaded.
@@ -242,7 +242,7 @@ go run ./cmd/glade compat local-tests --project example-projects/src-nmb-nc-deve
 go run ./cmd/glade compat local-tests --project example-projects/nams-workspace --timeout 30000 --top-failures 8 --json
 ```
 
-Expected: `znu.Address`, `znu.Pluggable`, and `znu__CartItemLine__c` no longer appear as plain unknown type/SObject blockers. Remaining failures are compile gaps, runtime gaps, access diagnostics, or unsupported diagnostics with package context.
+Expected: `pkgx.TrailAddress`, `pkgx.TrailPlugin`, and `pkgx__TrailLine__c` no longer appear as plain unknown type/SObject blockers. Remaining failures are compile gaps, runtime gaps, access diagnostics, or unsupported diagnostics with package context.
 
 ### Task 6: Update Gates And Docs
 
@@ -286,10 +286,10 @@ go run ./cmd/glade compat salesforce-coverage --check docs/generated/SALESFORCE_
 go run ./cmd/glade compat salesforce-coverage --check docs/generated/SALESFORCE_COVERAGE_MANIFEST.json
 ```
 
-Expected: all commands exit 0. Example-project probes show a new top blocker beyond plain missing `znu` dependency contracts.
+Expected: all commands exit 0. Example-project probes show a new top blocker beyond plain missing `pkgx` dependency contracts.
 
 ## Stop Conditions
 
-- Do not add current-project stubs for `znu` classes or `znu__*` objects.
+- Do not add current-project stubs for `pkgx` classes or `pkgx__*` objects.
 - Do not promote managed-package dependency support to `supported` until access enforcement, artifact loading, source-backed runtime execution, and fixture coverage all pass.
-- If the local `znu` source/artifact is unavailable, stop at a clean `dependency_missing` or `dependency_load_error` diagnostic and keep production code general.
+- If the local `pkgx` source/artifact is unavailable, stop at a clean `dependency_missing` or `dependency_load_error` diagnostic and keep production code general.

@@ -6155,6 +6155,9 @@ System.assertEquals('C', queried.Children__r[0].Name);
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
+	if len(machine.lazyChildRelCache) == 0 {
+		t.Fatalf("lazy child relationship lookup cache was not populated")
+	}
 }
 
 func TestExecQueriedChildRelationshipMapExposesRuntimeSuffixAlias(t *testing.T) {

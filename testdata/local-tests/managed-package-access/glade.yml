@@ -1,0 +1,2 @@
+project:
+  managedPackageDependencies: ["pkgx:../managed-package-access-dependency:1.0"]

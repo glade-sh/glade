@@ -179,6 +179,9 @@ func (vm *VM) RegisterClass(class Class) error {
 		if class.Namespace != "" && !strings.HasPrefix(method.Name, class.Namespace+".") {
 			alias := method
 			alias.Name = class.Namespace + "." + method.Name
+			if class.Dependency && alias.ClassName != "" && !strings.HasPrefix(alias.ClassName, class.Namespace+".") {
+				alias.ClassName = class.Namespace + "." + alias.ClassName
+			}
 			if err := vm.RegisterMethod(alias); err != nil {
 				return err
 			}
@@ -210,6 +213,9 @@ func (vm *VM) unregisterClassMethods(class Class) {
 		if class.Namespace != "" && !strings.HasPrefix(method.Name, class.Namespace+".") {
 			alias := method
 			alias.Name = class.Namespace + "." + method.Name
+			if class.Dependency && alias.ClassName != "" && !strings.HasPrefix(alias.ClassName, class.Namespace+".") {
+				alias.ClassName = class.Namespace + "." + alias.ClassName
+			}
 			vm.unregisterMethod(alias)
 		}
 	}

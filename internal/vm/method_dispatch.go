@@ -94,6 +94,17 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		paramType := vm.resolveTypeNameInClass(method.ClassName, param.Type)
 		coerced, err := vm.coerceAssignable(paramType, args[i])
 		if err != nil {
+			if alternate, ok, ambiguous := vm.resolveInstanceMethodForArgs(method.ClassName, apexMethodMemberName(method.Name), args); ok && !ambiguous && methodSignature(alternate) != methodSignature(method) {
+				return vm.callAccessibleAlternateMethodWithReceiver(alternate, receiver, args, result)
+			}
+			for superClass := vm.superClassName(method.ClassName); superClass != ""; superClass = vm.superClassName(superClass) {
+				if alternate, ok, ambiguous := vm.resolveInstanceMethodForArgs(superClass, apexMethodMemberName(method.Name), args); ok && !ambiguous {
+					return vm.callAccessibleAlternateMethodWithReceiver(alternate, receiver, args, result)
+				}
+			}
+			if alternate, ok := vm.alternateMethodWithCoercibleArgs(method, args); ok {
+				return vm.callAccessibleAlternateMethodWithReceiver(alternate, receiver, args, result)
+			}
 			return Null, fmt.Errorf("%s parameter %s: %w", method.Name, param.Name, err)
 		}
 		coerced.Static = paramType
@@ -299,6 +310,42 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	return value, nil
+}
+
+func (vm *VM) callAccessibleAlternateMethodWithReceiver(method Method, receiver Value, args []Value, result *Result) (Value, error) {
+	if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
+		return Null, err
+	}
+	return vm.callMethodWithReceiver(method, receiver, args, result)
+}
+
+func (vm *VM) alternateMethodWithCoercibleArgs(method Method, args []Value) (Method, bool) {
+	candidates := vm.registeredMethodCandidates(method.Name)
+	if len(candidates) == 0 {
+		return Method{}, false
+	}
+	coercible := make([]Method, 0, len(candidates))
+	for _, candidate := range candidates {
+		if candidate.IsStatic != method.IsStatic || methodSignature(candidate) == methodSignature(method) || len(candidate.Params) != len(args) {
+			continue
+		}
+		fits := true
+		for i, param := range candidate.Params {
+			paramType := vm.resolveTypeNameInClass(candidate.ClassName, param.Type)
+			if _, err := vm.coerceAssignable(paramType, args[i]); err != nil {
+				fits = false
+				break
+			}
+		}
+		if fits {
+			coercible = append(coercible, candidate)
+		}
+	}
+	target, ok, ambiguous := vm.matchMethodByArgs(coercible, args)
+	if !ok || ambiguous {
+		return Method{}, false
+	}
+	return target, true
 }
 
 func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bool, error) {
@@ -2768,28 +2815,33 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 	if sameAliasValue(previous, updated) {
 		return
 	}
-	if vm.staticValueRefs == nil {
-		vm.staticValueRefs = vm.collectStaticValueRefs()
+	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
+		vm.staticValueRefs, vm.staticValueRefFields = vm.collectStaticValueRefs()
 	}
 	if !vm.staticValueRefs[previous.Ref] {
 		return
 	}
-	for className, class := range vm.Classes {
-		changed := false
-		seen := make(map[uint64]bool)
-		for fieldName, field := range class.StaticFields {
-			clearRefSeen(seen)
-			replaced, fieldChanged := replaceValueAlias(field.Value, previous, updated, seen)
-			if fieldChanged {
-				field.Value = replaced
-				class.StaticFields[fieldName] = field
-				changed = true
-			}
+	locations := vm.staticValueRefFields[previous.Ref]
+	if len(locations) == 0 {
+		return
+	}
+	for _, location := range locations {
+		class, ok := vm.Classes[location.ClassName]
+		if !ok || class.StaticFields == nil {
+			continue
 		}
-		if changed {
-			vm.Classes[className] = class
-			vm.rememberStaticValueRefs(updated)
+		field, ok := class.StaticFields[location.FieldName]
+		if !ok {
+			continue
 		}
+		replaced, changed := replaceValueAlias(field.Value, previous, updated, make(map[uint64]bool))
+		if !changed {
+			continue
+		}
+		field.Value = replaced
+		class.StaticFields[location.FieldName] = field
+		vm.Classes[location.ClassName] = class
+		vm.rememberStaticValueRefsInField(updated, location)
 	}
 }
 
@@ -2800,17 +2852,23 @@ func (vm *VM) rememberStaticValueRefs(value Value) {
 	collectValueRefs(value, vm.staticValueRefs, make(map[uint64]bool))
 }
 
+func (vm *VM) rememberStaticValueRefsInField(value Value, location staticFieldRef) {
+	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
+		return
+	}
+	collectStaticFieldValueRefs(value, vm.staticValueRefs, vm.staticValueRefFields, location, make(map[uint64]bool))
+}
+
 func (vm *VM) invalidateStaticValueRefs() {
 	vm.staticValueRefs = nil
+	vm.staticValueRefFields = nil
 }
 
 func (vm *VM) invalidateStaticValueRefsForChange(previous, updated Value) {
 	if vm.staticValueRefs == nil {
 		return
 	}
-	if valueHasRef(updated, make(map[uint64]bool)) {
-		collectValueRefs(updated, vm.staticValueRefs, make(map[uint64]bool))
-	}
+	vm.invalidateStaticValueRefs()
 }
 
 func valueHasRef(value Value, seen map[uint64]bool) bool {
@@ -2854,15 +2912,15 @@ func valueHasRef(value Value, seen map[uint64]bool) bool {
 	return false
 }
 
-func (vm *VM) collectStaticValueRefs() map[uint64]bool {
+func (vm *VM) collectStaticValueRefs() (map[uint64]bool, map[uint64][]staticFieldRef) {
 	refs := make(map[uint64]bool)
-	seen := make(map[uint64]bool)
-	for _, class := range vm.Classes {
-		for _, field := range class.StaticFields {
-			collectValueRefs(field.Value, refs, seen)
+	fields := make(map[uint64][]staticFieldRef)
+	for className, class := range vm.Classes {
+		for fieldName, field := range class.StaticFields {
+			collectStaticFieldValueRefs(field.Value, refs, fields, staticFieldRef{ClassName: className, FieldName: fieldName}, make(map[uint64]bool))
 		}
 	}
-	return refs
+	return refs, fields
 }
 
 func collectValueRefs(value Value, refs, seen map[uint64]bool) {
@@ -2894,6 +2952,47 @@ func collectValueRefs(value Value, refs, seen map[uint64]bool) {
 			collectValueRefs(child, refs, seen)
 		}
 	}
+}
+
+func collectStaticFieldValueRefs(value Value, refs map[uint64]bool, fields map[uint64][]staticFieldRef, location staticFieldRef, seen map[uint64]bool) {
+	if value.Ref != 0 {
+		if seen[value.Ref] {
+			return
+		}
+		seen[value.Ref] = true
+		refs[value.Ref] = true
+		fields[value.Ref] = appendStaticFieldRef(fields[value.Ref], location)
+	}
+	switch value.Kind {
+	case ValueObject:
+		for _, child := range value.Fields {
+			collectStaticFieldValueRefs(child, refs, fields, location, seen)
+		}
+	case ValueMap:
+		for _, child := range value.Map {
+			collectStaticFieldValueRefs(child, refs, fields, location, seen)
+		}
+		for _, child := range value.MapKeys {
+			collectStaticFieldValueRefs(child, refs, fields, location, seen)
+		}
+	case ValueList:
+		for _, child := range value.List {
+			collectStaticFieldValueRefs(child, refs, fields, location, seen)
+		}
+	case ValueSet:
+		for _, child := range value.Set {
+			collectStaticFieldValueRefs(child, refs, fields, location, seen)
+		}
+	}
+}
+
+func appendStaticFieldRef(locations []staticFieldRef, location staticFieldRef) []staticFieldRef {
+	for _, existing := range locations {
+		if existing == location {
+			return locations
+		}
+	}
+	return append(locations, location)
 }
 
 func replaceCollectionAlias(value, previous, updated Value, seen map[uint64]bool) (Value, bool) {
@@ -3400,17 +3499,51 @@ func (vm *VM) frameworkStubQualifiedMethod(receiver Value, target Method) Value 
 }
 
 func (vm *VM) unstubbedFrameworkMockReturnFallback(receiver Value, method string, target Method, args []Value, result *Result) (Value, bool, error) {
-	if strings.EqualFold(receiver.Type, "IUnitOfWorkService") &&
-		strings.EqualFold(method, "getInstance") &&
-		strings.EqualFold(target.ReturnType, "ISecureUnitOfWork") {
+	if concreteType, ok := vm.unstubbedUnitOfWorkFallbackType(receiver.Type, method, target); ok {
 		ctorArgs := args
 		if len(ctorArgs) == 0 {
 			ctorArgs = []Value{typedList("List<Schema.SObjectType>")}
 		}
-		value, err := vm.constructValue("SecureUnitOfWork", ctorArgs, nil, result)
+		value, err := vm.constructValue(concreteType, ctorArgs, nil, result)
 		return value, true, err
 	}
 	return Null, false, nil
+}
+
+func (vm *VM) unstubbedUnitOfWorkFallbackType(receiverType, method string, target Method) (string, bool) {
+	if !strings.EqualFold(method, "getInstance") {
+		return "", false
+	}
+	if !strings.HasSuffix(strings.ToLower(shortTypeName(receiverType)), "unitofworkservice") {
+		return "", false
+	}
+	returnType := vm.resolveTypeNameInClass(target.ClassName, target.ReturnType)
+	returnShort := shortTypeName(returnType)
+	if len(returnShort) < 2 || returnShort[0] != 'I' || !strings.HasSuffix(strings.ToLower(returnShort), "unitofwork") {
+		return "", false
+	}
+	concreteShort := returnShort[1:]
+	qualifier := typeQualifier(returnType)
+	if qualifier == "" {
+		qualifier = typeQualifier(receiverType)
+	}
+	concreteType := qualifier + concreteShort
+	if _, ok := vm.resolveClassName(concreteType); ok {
+		return concreteType, true
+	}
+	if qualifier != "" {
+		if _, ok := vm.resolveClassName(concreteShort); ok {
+			return concreteShort, true
+		}
+	}
+	return "", false
+}
+
+func typeQualifier(typeName string) string {
+	if i := strings.LastIndex(typeName, "."); i >= 0 {
+		return typeName[:i+1]
+	}
+	return ""
 }
 
 func frameworkMismatchedStubReturnFallback(returnType string, value Value, provider Value) (Value, bool) {
@@ -5708,6 +5841,14 @@ func frameworkMockSupportType(typeName string) string {
 			return typeName[len(prefix):]
 		}
 	}
+	short := shortTypeName(typeName)
+	if short != typeName {
+		for _, prefix := range []string{"framework_", "fflib_"} {
+			if strings.HasPrefix(strings.ToLower(short), strings.ToLower(prefix)) {
+				return short[len(prefix):]
+			}
+		}
+	}
 	return ""
 }
 
@@ -6086,6 +6227,7 @@ func (vm *VM) setFrameworkMethodCountRecorderStatic(name string, value Value) {
 				vm.captureFrameworkMethodCountRecorderRollback(fieldName, field.Value)
 				field.Value = value
 				class.StaticFields[fieldName] = field
+				vm.rememberStaticValueRefsInField(value, staticFieldRef{ClassName: class.Name, FieldName: fieldName})
 				found = true
 				break
 			}
@@ -6095,9 +6237,10 @@ func (vm *VM) setFrameworkMethodCountRecorderStatic(name string, value Value) {
 				class.StaticFields = make(map[string]Field)
 			}
 			class.StaticFields[name] = Field{Name: name, Type: value.Type, Static: true, Value: value, InitialValue: value}
+			vm.rememberStaticValueRefsInField(value, staticFieldRef{ClassName: class.Name, FieldName: name})
 		}
 		vm.Classes[class.Name] = class
-		vm.storeClassAliases(class)
+		vm.storeClassValue(class)
 		updated = true
 	}
 	if updated {

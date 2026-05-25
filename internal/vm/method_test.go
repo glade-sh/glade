@@ -1044,14 +1044,71 @@ func TestStaticValueRefCacheExtendsOnStaticAssignment(t *testing.T) {
 	oldValue := List(String("old"))
 	newValue := List(String("new"))
 	machine.staticValueRefs = map[uint64]bool{oldValue.Ref: true}
-
-	machine.invalidateStaticValueRefsForChange(oldValue, newValue)
-
-	if machine.staticValueRefs == nil {
-		t.Fatalf("static ref cache was discarded")
+	machine.staticValueRefFields = map[uint64][]staticFieldRef{
+		oldValue.Ref: []staticFieldRef{{ClassName: "TrailRegistry", FieldName: "values"}},
 	}
-	if !machine.staticValueRefs[newValue.Ref] {
-		t.Fatalf("new static ref %d was not remembered: %#v", newValue.Ref, machine.staticValueRefs)
+
+	machine.rememberStaticValueRefsInField(newValue, staticFieldRef{ClassName: "TrailRegistry", FieldName: "values"})
+
+	if machine.staticValueRefs != nil {
+		if !machine.staticValueRefs[newValue.Ref] {
+			t.Fatalf("new static ref %d was not remembered: %#v", newValue.Ref, machine.staticValueRefs)
+		}
+	}
+	locations := machine.staticValueRefFields[newValue.Ref]
+	if len(locations) != 1 || locations[0].FieldName != "values" {
+		t.Fatalf("new static ref locations = %#v", locations)
+	}
+}
+
+func TestStaticValueRefIndexTracksContainingFields(t *testing.T) {
+	machine := New(nil)
+	target := List(String("old"))
+	other := List(String("other"))
+	machine.Classes["TrailRegistry"] = Class{
+		Name: "TrailRegistry",
+		StaticFields: map[string]Field{
+			"target": {Name: "target", Type: "List<String>", Value: target},
+			"other":  {Name: "other", Type: "List<String>", Value: other},
+		},
+	}
+
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	locations := machine.staticValueRefFields[target.Ref]
+	if len(locations) != 1 {
+		t.Fatalf("target ref locations = %#v, want one", locations)
+	}
+	if locations[0].ClassName != "TrailRegistry" || locations[0].FieldName != "target" {
+		t.Fatalf("target ref location = %#v", locations[0])
+	}
+	if got := machine.staticValueRefFields[other.Ref]; len(got) != 1 || got[0].FieldName != "other" {
+		t.Fatalf("other ref locations = %#v", got)
+	}
+}
+
+func TestStaticClassValueWritePreservesLookupCaches(t *testing.T) {
+	machine := New(nil)
+	class := Class{
+		Name:      "TrailRegistry",
+		Namespace: "trailns",
+		StaticFields: map[string]Field{
+			"values": {Name: "values", Type: "List<String>", Value: List(String("old"))},
+		},
+	}
+	if err := machine.RegisterClass(class); err != nil {
+		t.Fatal(err)
+	}
+	machine.namespaceClassLookup["trailns"] = map[string]Class{"sentinel": {Name: "Sentinel"}}
+
+	class.StaticFields["values"] = Field{Name: "values", Type: "List<String>", Value: List(String("new"))}
+	machine.storeClassValue(class)
+
+	if _, ok := machine.namespaceClassLookup["trailns"]["sentinel"]; !ok {
+		t.Fatalf("namespace lookup cache was reset")
+	}
+	if got := machine.Classes["trailns.TrailRegistry"].StaticFields["values"].Value; got.Kind != ValueList || len(got.List) != 1 || got.List[0].Text != "new" {
+		t.Fatalf("qualified class static field = %#v", got)
 	}
 }
 
@@ -3190,6 +3247,458 @@ System.assertEquals('child', c.choose(new Child()));
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecOverloadResolutionPrefersSObjectTypeTokenOverDescribeCoercion(t *testing.T) {
+	tokenProgram, err := CompileAnonymous("return 'token';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	describeProgram, err := CompileAnonymous("return 'describe';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('token', DescribeChooser.pick(Account.SObjectType));
+System.assertEquals('describe', DescribeChooser.pick(Account.SObjectType.getDescribe()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "DescribeChooser"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.MethodOverloads["DescribeChooser.pick"] = []Method{
+		{Name: "DescribeChooser.pick", ClassName: "DescribeChooser", Params: []Param{{Name: "token", Type: "Schema.SObjectType"}}, ReturnType: "String", Program: tokenProgram, IsStatic: true},
+		{Name: "DescribeChooser.pick", ClassName: "DescribeChooser", Params: []Param{{Name: "describe", Type: "Schema.DescribeSObjectResult"}}, ReturnType: "String", Program: describeProgram, IsStatic: true},
+	}
+	token := Object("SObjectType")
+	token.Static = "SObjectType"
+	target, ok, ambiguous := machine.matchMethodByArgs(machine.MethodOverloads["DescribeChooser.pick"], []Value{token})
+	targetType := ""
+	if len(target.Params) > 0 {
+		targetType = target.Params[0].Type
+	}
+	if !ok || ambiguous || targetType != "Schema.SObjectType" {
+		t.Fatalf("matchMethodByArgs = %q ok=%v ambiguous=%v; want Schema.SObjectType", targetType, ok, ambiguous)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecExplicitCastSelectsBroadCollectionAndObjectOverload(t *testing.T) {
+	narrowProgram, err := CompileAnonymous("return TrailFactory.make((List<Object>) rows, (Object) token);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	broadProgram, err := CompileAnonymous("return 'broad';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<SObject> rows = new List<SObject>{ new Account(Name = 'a') };
+System.assertEquals('broad', TrailFactory.make(rows, Account.SObjectType));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "TrailFactory"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.MethodOverloads["TrailFactory.make"] = []Method{
+		{Name: "TrailFactory.make", ClassName: "TrailFactory", Params: []Param{{Name: "rows", Type: "List<SObject>"}, {Name: "token", Type: "Schema.SObjectType"}}, ReturnType: "String", Program: narrowProgram, IsStatic: true},
+		{Name: "TrailFactory.make", ClassName: "TrailFactory", Params: []Param{{Name: "rows", Type: "List<Object>"}, {Name: "token", Type: "Object"}}, ReturnType: "String", Program: broadProgram, IsStatic: true},
+	}
+	rows := List(Object("Account"))
+	rows.Type = "List<SObject>"
+	rows.Static = "List<SObject>"
+	token := sObjectTypeToken("Account")
+	_, firstOK, firstAmbiguous := machine.resolveStaticMethodForArgs("TrailFactory", "make", []Value{rows, token})
+	if !firstOK || firstAmbiguous {
+		t.Fatalf("first resolve ok=%v ambiguous=%v", firstOK, firstAmbiguous)
+	}
+	castRows, err := machine.coerceCast("List<Object>", rows)
+	if err != nil {
+		t.Fatal(err)
+	}
+	castToken, err := machine.coerceCast("Object", token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	target, ok, ambiguous := machine.matchMethodByArgs(machine.MethodOverloads["TrailFactory.make"], []Value{castRows, castToken})
+	targetType := ""
+	if len(target.Params) == 2 {
+		targetType = target.Params[0].Type + "," + target.Params[1].Type
+	}
+	if !ok || ambiguous || targetType != "List<Object>,Object" {
+		t.Fatalf("matchMethodByArgs = %q ok=%v ambiguous=%v; args=%s,%s; want List<Object>,Object", targetType, ok, ambiguous, valueShape(castRows), valueShape(castToken))
+	}
+	target, ok, ambiguous = machine.resolveStaticMethodForArgs("TrailFactory", "make", []Value{castRows, castToken})
+	targetType = ""
+	if len(target.Params) == 2 {
+		targetType = target.Params[0].Type + "," + target.Params[1].Type
+	}
+	if !ok || ambiguous || targetType != "List<Object>,Object" {
+		t.Fatalf("resolveStaticMethodForArgs = %q ok=%v ambiguous=%v; args=%s,%s; want List<Object>,Object", targetType, ok, ambiguous, valueShape(castRows), valueShape(castToken))
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPrivateMemberAccessAllowsNamespaceQualifiedCurrentClass(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "fflib_SObjectDomain", Namespace: "pkg"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "pkg.fflib_SObjectDomain"
+	machine.currentMethod = Method{ClassName: "pkg.fflib_SObjectDomain"}
+	if err := machine.checkMemberAccess("fflib_SObjectDomain", "private", "fflib_SObjectDomain.TriggerEventByClass"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPrivateMemberAccessDoesNotShareNestedShortNames(t *testing.T) {
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "PineOuter.Inner"},
+		{Name: "SpruceOuter.Inner"},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	machine.currentClass = "PineOuter.Inner"
+	machine.currentMethod = Method{ClassName: "PineOuter.Inner"}
+	if err := machine.checkMemberAccess("SpruceOuter.Inner", "private", "SpruceOuter.Inner.secret"); err == nil {
+		t.Fatal("private members on unrelated nested classes should not share access")
+	}
+}
+
+func TestOverloadResolutionRejectsSiblingInterfaceWhenParentInterfaceMatches(t *testing.T) {
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "fflib_IDomain"},
+		{Name: "fflib_IObjects", Interfaces: []string{"fflib_IDomain"}},
+		{Name: "fflib_ISObjects", Interfaces: []string{"fflib_IObjects"}},
+		{Name: "fflib_ISObjectDomain", Interfaces: []string{"fflib_IDomain"}},
+		{Name: "IWidgetLedger", Namespace: "pkg", Interfaces: []string{"fflib_ISObjects"}},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	candidates := []Method{
+		{Name: "DomainFactory.setMock", ClassName: "DomainFactory", Params: []Param{{Name: "mockDomain", Type: "fflib_ISObjectDomain"}}},
+		{Name: "DomainFactory.setMock", ClassName: "DomainFactory", Params: []Param{{Name: "mockDomain", Type: "fflib_IDomain"}}},
+	}
+	mock := Object("pkg.IWidgetLedger")
+	mock.Static = "pkg.IWidgetLedger"
+	target, ok, ambiguous := machine.matchMethodByArgs(candidates, []Value{mock})
+	targetType := ""
+	if len(target.Params) > 0 {
+		targetType = target.Params[0].Type
+	}
+	if !ok || ambiguous || targetType != "fflib_IDomain" {
+		t.Fatalf("matchMethodByArgs = %q ok=%v ambiguous=%v; want fflib_IDomain", targetType, ok, ambiguous)
+	}
+}
+
+func TestOverloadResolutionFollowsNamespacedIntermediateInterface(t *testing.T) {
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "fflib_IDomain", IsInterface: true},
+		{Name: "fflib_IObjects", IsInterface: true, Interfaces: []string{"fflib_IDomain"}},
+		{Name: "fflib_ISObjects", IsInterface: true, Interfaces: []string{"fflib_IObjects"}},
+		{Name: "fflib_ISObjectDomain", IsInterface: true, Interfaces: []string{"fflib_IDomain"}},
+		{Name: "TrailRegistrable", Namespace: "pkg", IsInterface: true, Interfaces: []string{"fflib_ISObjects"}},
+		{Name: "TrailLedger", Namespace: "pkg", IsInterface: true, Interfaces: []string{"TrailRegistrable"}},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	candidates := []Method{
+		{Name: "DomainFactory.setMock", ClassName: "DomainFactory", Params: []Param{{Name: "mockDomain", Type: "fflib_ISObjectDomain"}}},
+		{Name: "DomainFactory.setMock", ClassName: "DomainFactory", Params: []Param{{Name: "mockDomain", Type: "fflib_IDomain"}}},
+	}
+	mock := Object("pkg.TrailLedger")
+	mock.Static = "pkg.TrailLedger"
+	target, ok, ambiguous := machine.matchMethodByArgs(candidates, []Value{mock})
+	targetType := ""
+	if len(target.Params) > 0 {
+		targetType = target.Params[0].Type
+	}
+	if !ok || ambiguous || targetType != "fflib_IDomain" {
+		t.Fatalf("matchMethodByArgs = %q ok=%v ambiguous=%v; want fflib_IDomain", targetType, ok, ambiguous)
+	}
+}
+
+func TestFirstRegisteredMethodByAritySkipsInapplicableOverload(t *testing.T) {
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "fflib_IDomain", IsInterface: true},
+		{Name: "fflib_IObjects", IsInterface: true, Interfaces: []string{"fflib_IDomain"}},
+		{Name: "fflib_ISObjects", IsInterface: true, Interfaces: []string{"fflib_IObjects"}},
+		{Name: "fflib_ISObjectDomain", IsInterface: true, Interfaces: []string{"fflib_IDomain"}},
+		{Name: "TrailLedger", Namespace: "pkg", IsInterface: true, Interfaces: []string{"fflib_ISObjects"}},
+		{Name: "fflib_Application.DomainFactory", Access: "global"},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	machine.MethodOverloads["fflib_Application.DomainFactory.setMock"] = []Method{
+		{Name: "fflib_Application.DomainFactory.setMock", ClassName: "fflib_Application.DomainFactory", Params: []Param{{Name: "mockDomain", Type: "fflib_ISObjectDomain"}}},
+		{Name: "fflib_Application.DomainFactory.setMock", ClassName: "fflib_Application.DomainFactory", Params: []Param{{Name: "mockDomain", Type: "fflib_IDomain"}}},
+	}
+	mock := Object("pkg.TrailLedger")
+	mock.Static = "pkg.TrailLedger"
+	target, ok := machine.firstRegisteredMethodByArity("fflib_Application.DomainFactory", "setMock", []Value{mock})
+	targetType := ""
+	if len(target.Params) > 0 {
+		targetType = target.Params[0].Type
+	}
+	if !ok || targetType != "fflib_IDomain" {
+		t.Fatalf("firstRegisteredMethodByArity = %q ok=%v; want fflib_IDomain", targetType, ok)
+	}
+}
+
+func TestCallMethodRetriesCoercibleOverloadAfterParameterMismatch(t *testing.T) {
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "fflib_IDomain", IsInterface: true},
+		{Name: "fflib_IObjects", IsInterface: true, Interfaces: []string{"fflib_IDomain"}},
+		{Name: "fflib_ISObjects", IsInterface: true, Interfaces: []string{"fflib_IObjects"}},
+		{Name: "fflib_ISObjectDomain", IsInterface: true, Interfaces: []string{"fflib_IDomain"}},
+		{Name: "TrailLedger", Namespace: "pkg", IsInterface: true, Interfaces: []string{"fflib_ISObjects"}},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	objectDomainProgram, err := CompileAnonymous(`return 'sobject';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	domainProgram, err := CompileAnonymous(`return 'domain';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first := Method{Name: "DomainFactory.setMock", ClassName: "DomainFactory", ReturnType: "String", Params: []Param{{Name: "mockDomain", Type: "fflib_ISObjectDomain"}}, Program: objectDomainProgram}
+	second := Method{Name: "DomainFactory.setMock", ClassName: "DomainFactory", ReturnType: "String", Params: []Param{{Name: "mockDomain", Type: "fflib_IDomain"}}, Program: domainProgram}
+	machine.MethodOverloads["DomainFactory.setMock"] = []Method{first, second}
+	mock := Object("pkg.TrailLedger")
+	mock.Static = "pkg.TrailLedger"
+	got, err := machine.callMethodWithReceiver(first, Null, []Value{mock}, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Kind != ValueString || got.Text != "domain" {
+		t.Fatalf("callMethodWithReceiver returned %s; want domain", got.String())
+	}
+}
+
+func TestCallMethodRetryDoesNotBypassPrivateAlternateAccess(t *testing.T) {
+	machine := New(nil)
+	publicProgram, err := CompileAnonymous(`return 'public';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	privateProgram, err := CompileAnonymous(`return 'private';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "TrailDoor"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "TrailOutside"}); err != nil {
+		t.Fatal(err)
+	}
+	publicMethod := Method{Name: "TrailDoor.choose", ClassName: "TrailDoor", Access: "public", ReturnType: "String", Params: []Param{{Name: "item", Type: "TrailNeedle"}}, Program: publicProgram}
+	privateMethod := Method{Name: "TrailDoor.choose", ClassName: "TrailDoor", Access: "private", ReturnType: "String", Params: []Param{{Name: "item", Type: "Object"}}, Program: privateProgram}
+	machine.MethodOverloads["TrailDoor.choose"] = []Method{publicMethod, privateMethod}
+	machine.currentClass = "TrailOutside"
+	machine.currentMethod = Method{ClassName: "TrailOutside"}
+	if got, err := machine.callMethodWithReceiver(publicMethod, Object("TrailDoor"), []Value{Object("TrailTwig")}, &Result{}); err == nil {
+		t.Fatalf("private alternate returned %s; want access error", got.String())
+	}
+}
+
+func TestCallMethodRetriesInheritedOverloadAfterParameterMismatch(t *testing.T) {
+	machine := New(nil)
+	baseProgram, err := CompileAnonymous(`return 'base';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	childProgram, err := CompileAnonymous(`return 'child';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, class := range []Class{
+		{Name: "fflib_ISObjectUnitOfWork", IsInterface: true},
+		{Name: "TrailSecureWork", Namespace: "pkg", IsInterface: true, Interfaces: []string{"fflib_ISObjectUnitOfWork"}},
+		{Name: "TrailOptionsWork", Namespace: "pkg", IsInterface: true, Interfaces: []string{"fflib_ISObjectUnitOfWork"}},
+		{Name: "BaseFactory", Methods: map[string]Method{
+			"setMock": {Name: "BaseFactory.setMock", ClassName: "BaseFactory", ReturnType: "String", Params: []Param{{Name: "work", Type: "fflib_ISObjectUnitOfWork"}}, Program: baseProgram},
+		}},
+		{Name: "ChildFactory", SuperClass: "BaseFactory", Methods: map[string]Method{
+			"setMock": {Name: "ChildFactory.setMock", ClassName: "ChildFactory", ReturnType: "String", Params: []Param{{Name: "work", Type: "TrailOptionsWork"}}, Program: childProgram},
+		}},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mock := Object("pkg.TrailSecureWork")
+	mock.Static = "pkg.TrailSecureWork"
+	child := machine.Methods["ChildFactory.setMock"]
+	got, err := machine.callMethodWithReceiver(child, Null, []Value{mock}, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Kind != ValueString || got.Text != "base" {
+		t.Fatalf("callMethodWithReceiver returned %s; want base", got.String())
+	}
+}
+
+func TestExecStubInterfaceOverloadRejectsSiblingInterface(t *testing.T) {
+	program, err := CompileAnonymous(`
+fflib_Application.DomainFactory factory = new fflib_Application.DomainFactory();
+IWidgetLedger mock = (IWidgetLedger)Test.createStub(IWidgetLedger.class, new Provider());
+System.assertEquals('domain', factory.setMock(mock));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	for _, class := range []Class{
+		{Name: "fflib_IDomain", IsInterface: true},
+		{Name: "fflib_IObjects", IsInterface: true, Interfaces: []string{"fflib_IDomain"}},
+		{Name: "fflib_ISObjects", IsInterface: true, Interfaces: []string{"fflib_IObjects"}},
+		{Name: "fflib_ISObjectDomain", IsInterface: true, Interfaces: []string{"fflib_IDomain"}},
+		{Name: "IWidgetLedger", Namespace: "acme", IsInterface: true, Interfaces: []string{"fflib_ISObjects"}},
+		{Name: "Provider", Interfaces: []string{"StubProvider"}},
+		{Name: "fflib_Application.DomainFactory", Namespace: "acme", Access: "global"},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	objectDomainProgram, err := CompileAnonymous(`return 'sobject';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	domainProgram, err := CompileAnonymous(`return 'domain';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine.MethodOverloads["fflib_Application.DomainFactory.setMock"] = []Method{
+		{Name: "fflib_Application.DomainFactory.setMock", ClassName: "fflib_Application.DomainFactory", Access: "global", ReturnType: "String", Params: []Param{{Name: "mockDomain", Type: "fflib_ISObjectDomain"}}, Program: objectDomainProgram},
+		{Name: "fflib_Application.DomainFactory.setMock", ClassName: "fflib_Application.DomainFactory", Access: "global", ReturnType: "String", Params: []Param{{Name: "mockDomain", Type: "fflib_IDomain"}}, Program: domainProgram},
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexMocksInterfaceOverloadRejectsSiblingInterface(t *testing.T) {
+	mockProgram, err := CompileAnonymous(`return Test.createStub(classToMock, this);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+fflib_Application.DomainFactory factory = new fflib_Application.DomainFactory();
+fflib_ApexMocks mocks = new fflib_ApexMocks();
+TrailLedger mock = (TrailLedger)mocks.mock(TrailLedger.class);
+System.assertEquals('domain', factory.setMock(mock));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	for _, class := range []Class{
+		{Name: "fflib_IDomain", IsInterface: true},
+		{Name: "fflib_IObjects", IsInterface: true, Interfaces: []string{"fflib_IDomain"}},
+		{Name: "fflib_ISObjects", IsInterface: true, Interfaces: []string{"fflib_IObjects"}},
+		{Name: "fflib_ISObjectDomain", IsInterface: true, Interfaces: []string{"fflib_IDomain"}},
+		{Name: "TrailRegistrable", Namespace: "pkg", IsInterface: true, Interfaces: []string{"fflib_ISObjects"}},
+		{Name: "TrailLedger", Namespace: "pkg", IsInterface: true, Interfaces: []string{"TrailRegistrable"}},
+		{Name: "fflib_ApexMocks", Interfaces: []string{"StubProvider"}, Methods: map[string]Method{
+			"mock": {Name: "fflib_ApexMocks.mock", ClassName: "fflib_ApexMocks", ReturnType: "Object", Params: []Param{{Name: "classToMock", Type: "Type"}}, Program: mockProgram},
+		}},
+		{Name: "fflib_Application.DomainFactory", Access: "global"},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	objectDomainProgram, err := CompileAnonymous(`return 'sobject';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	domainProgram, err := CompileAnonymous(`return 'domain';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine.MethodOverloads["fflib_Application.DomainFactory.setMock"] = []Method{
+		{Name: "fflib_Application.DomainFactory.setMock", ClassName: "fflib_Application.DomainFactory", Access: "global", ReturnType: "String", Params: []Param{{Name: "mockDomain", Type: "fflib_ISObjectDomain"}}, Program: objectDomainProgram},
+		{Name: "fflib_Application.DomainFactory.setMock", ClassName: "fflib_Application.DomainFactory", Access: "global", ReturnType: "String", Params: []Param{{Name: "mockDomain", Type: "fflib_IDomain"}}, Program: domainProgram},
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUnstubbedFrameworkUnitOfWorkFallbackAllowsNamespacedService(t *testing.T) {
+	ctorProgram, err := CompileAnonymous(``)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "IStoneUnitOfWorkService", Namespace: "trailns", Access: "global", IsInterface: true},
+		{Name: "IBirchUnitOfWork", Namespace: "trailns", Access: "global", IsInterface: true},
+		{
+			Name:       "BirchUnitOfWork",
+			Namespace:  "trailns",
+			Access:     "global",
+			Interfaces: []string{"IBirchUnitOfWork"},
+			Constructors: []Method{{
+				Name:          "BirchUnitOfWork.<init>",
+				ClassName:     "BirchUnitOfWork",
+				Params:        []Param{{Name: "types", Type: "List<Schema.SObjectType>"}},
+				Program:       ctorProgram,
+				IsConstructor: true,
+			}},
+		},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	receiver := Object("trailns.IStoneUnitOfWorkService")
+	target := Method{
+		Name:       "trailns.IStoneUnitOfWorkService.getInstance",
+		ClassName:  "trailns.IStoneUnitOfWorkService",
+		ReturnType: "IBirchUnitOfWork",
+	}
+	value, ok, err := machine.unstubbedFrameworkMockReturnFallback(receiver, "getInstance", target, nil, resultForLookup())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("fallback not handled")
+	}
+	if value.Kind != ValueObject || !strings.EqualFold(value.Type, "trailns.BirchUnitOfWork") {
+		t.Fatalf("fallback = %#v, want trailns.BirchUnitOfWork object", value)
 	}
 }
 
@@ -7337,6 +7846,85 @@ String value = pkg.Secret.pub();
 	}
 }
 
+func TestRuntimeNamespacedDependencyDispatchPrefersDependencyDuplicate(t *testing.T) {
+	projectProgram, err := CompileAnonymous("return 'project';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dependencyProgram, err := CompileAnonymous("return 'dependency';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("System.assertEquals('dependency', pkgx.TrailLedgerService.value());")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:   "TrailLedgerService",
+		Access: "public",
+		Methods: map[string]Method{
+			"value": {Name: "TrailLedgerService.value", ClassName: "TrailLedgerService", ReturnType: "String", IsStatic: true, Access: "public", Program: projectProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "TrailLedgerService",
+		Namespace:  "pkgx",
+		Dependency: true,
+		Access:     "global",
+		Methods: map[string]Method{
+			"value": {Name: "TrailLedgerService.value", ClassName: "TrailLedgerService", ReturnType: "String", IsStatic: true, Access: "global", Program: dependencyProgram, Dependency: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeNamespacedDependencyDuplicateStillRequiresGlobalMember(t *testing.T) {
+	projectProgram, err := CompileAnonymous("return 'project';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dependencyProgram, err := CompileAnonymous("return 'dependency';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("String value = pkgx.TrailLedgerService.value();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:   "TrailLedgerService",
+		Access: "public",
+		Methods: map[string]Method{
+			"value": {Name: "TrailLedgerService.value", ClassName: "TrailLedgerService", ReturnType: "String", IsStatic: true, Access: "public", Program: projectProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "TrailLedgerService",
+		Namespace:  "pkgx",
+		Dependency: true,
+		Access:     "global",
+		Methods: map[string]Method{
+			"value": {Name: "TrailLedgerService.value", ClassName: "TrailLedgerService", ReturnType: "String", IsStatic: true, Access: "public", Program: dependencyProgram, Dependency: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "not global") {
+		t.Fatalf("err = %v, want namespace member visibility error", err)
+	}
+}
+
 func TestRuntimeAllowsPublicAccessInsideCurrentNamespace(t *testing.T) {
 	helperProgram, err := CompileAnonymous("return 'public';")
 	if err != nil {
@@ -8729,6 +9317,47 @@ func TestTypeHashCodeUsesTypeName(t *testing.T) {
 	}
 }
 
+func TestFrameworkMockSupportTypeAllowsPackageQualifiedFFLib(t *testing.T) {
+	if got := frameworkMockSupportType("pkgx.fflib_ApexMocks"); got != "ApexMocks" {
+		t.Fatalf("support type = %q, want ApexMocks", got)
+	}
+}
+
+func TestPropertyAccessorMethodIgnoresPackageQualifiedPlainMethod(t *testing.T) {
+	if propertyAccessorMethod(Method{Name: "pkgx.TrailList.get", ClassName: "TrailList"}) {
+		t.Fatal("package-qualified method was treated as a property accessor")
+	}
+	if !propertyAccessorMethod(Method{Name: "pkgx.TrailList.items.get", ClassName: "TrailList"}) {
+		t.Fatal("package-qualified getter was not treated as a property accessor")
+	}
+}
+
+func TestConversionScoreDoesNotTreatSObjectListAsSingleSObject(t *testing.T) {
+	machine := New(nil)
+	row := Object("Trail_Setting__c")
+	rows := List(row)
+	rows.Type = "List<Trail_Setting__c>"
+	rows.Static = "Object"
+	if score := machine.conversionScore("SObject", rows); score >= 0 {
+		t.Fatalf("List<Trail_Setting__c> scored %d for SObject", score)
+	}
+	if score := machine.conversionScore("List<SObject>", rows); score < 0 {
+		t.Fatalf("List<Trail_Setting__c> did not score for List<SObject>: %d", score)
+	}
+}
+
+func TestConversionScorePrefersRuntimeTypeOverStaticObject(t *testing.T) {
+	machine := New(nil)
+	value := Object("TrailModel")
+	value.Static = "Object"
+	if score := machine.conversionScore("TrailModel", value); score < 900 {
+		t.Fatalf("TrailModel score = %d, want a runtime-type match", score)
+	}
+	if score := machine.conversionScore("List<TrailModel>", value); score >= 0 {
+		t.Fatalf("object scored %d for List<TrailModel>", score)
+	}
+}
+
 func TestStubProxyStringUsesGeneratedApexStubTypeName(t *testing.T) {
 	proxy := Object("MockedList")
 	proxy.Fields["__gladeStubbedType"] = String("MockedList")
@@ -8738,10 +9367,67 @@ func TestStubProxyStringUsesGeneratedApexStubTypeName(t *testing.T) {
 	}
 }
 
+func TestDisplayStringPreservesPackageQualifiedStubProxyName(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "TrailList", Namespace: "pkgx"}); err != nil {
+		t.Fatal(err)
+	}
+	proxy := Object("pkgx.TrailList")
+	proxy.Fields["__gladeStubbedType"] = String("pkgx.TrailList")
+	got, err := machine.displayString(proxy, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(got, "pkgx.TrailList__sfdc_ApexStub:") {
+		t.Fatalf("display string = %q", got)
+	}
+}
+
+func TestDisplayStringStripsPackageFromFFLibVerifierQualifiedMethod(t *testing.T) {
+	machine := New(nil)
+	machine.currentMethod = Method{Name: "pkgx.fflib_MethodVerifier.throwException", ClassName: "pkgx.fflib_MethodVerifier"}
+	qm := Object("pkgx.fflib_QualifiedMethod")
+	qm.Fields["typeName"] = String("pkgx.fflib_MyList__sfdc_ApexStub")
+	qm.Fields["methodName"] = String("add")
+	qm.Fields["methodArgTypes"] = List(platformScalar("Type", "String"))
+	got, err := machine.displayString(qm, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "fflib_MyList__sfdc_ApexStub.add(String)" {
+		t.Fatalf("display string = %q", got)
+	}
+}
+
+func TestCreateStubPreservesPackageQualifiedTypeToken(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "pkgx"
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "TrailList", Namespace: "pkgx"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Provider", Interfaces: []string{"StubProvider"}}); err != nil {
+		t.Fatal(err)
+	}
+	proxy, err := machine.testCreateStub([]Value{
+		{Kind: ValueObject, Type: "Type", Text: "TrailList"},
+		Object("Provider"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := proxy.String()
+	if !strings.HasPrefix(got, "pkgx.TrailList__sfdc_ApexStub:") {
+		t.Fatalf("proxy string = %q", got)
+	}
+}
+
 func TestExecUserObjectEqualityUsesIdentity(t *testing.T) {
 	program, err := CompileAnonymous(`
-Box first = new Box();
-Box second = new Box();
+	Box first = new Box();
+	Box second = new Box();
 Box alias = first;
 System.assertNotEquals(first, second);
 System.assertEquals(first, alias);

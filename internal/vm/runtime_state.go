@@ -108,12 +108,19 @@ type VM struct {
 	childRelCache             map[string][]Value
 	jsonChildRelTypeCache     map[string]jsonRelationshipTypeLookup
 	loadedChildRelCache       map[string]loadedChildRelationshipLookup
+	lazyChildRelCache         map[string]lazyChildRelationshipLookup
 	objectNameCache           map[string]objectNameLookup
 	recentlyViewed            map[string]map[storage.ID]recentlyViewedEntry
 	metadataCacheStamp        string
 	isolationJournal          *storage.IsolationJournal
 	staticValueRefs           map[uint64]bool
+	staticValueRefFields      map[uint64][]staticFieldRef
 	frameworkRecorderRollback *frameworkMethodCountRecorderRollback
+}
+
+type staticFieldRef struct {
+	ClassName string
+	FieldName string
 }
 
 type frameworkMethodCountRecorderRollback struct {
@@ -126,6 +133,17 @@ type recentlyViewedEntry struct {
 	ObjectName string
 	Name       string
 	ViewedAt   string
+}
+
+type lazyChildRelationshipLookup struct {
+	ChildType string
+	Targets   []lazyChildRelationshipTarget
+	OK        bool
+}
+
+type lazyChildRelationshipTarget struct {
+	ChildName   string
+	LookupField string
 }
 
 type jsonRelationshipTypeLookup struct {
@@ -369,6 +387,7 @@ func New(stdout io.Writer) *VM {
 		childRelCache:         make(map[string][]Value),
 		jsonChildRelTypeCache: make(map[string]jsonRelationshipTypeLookup),
 		loadedChildRelCache:   make(map[string]loadedChildRelationshipLookup),
+		lazyChildRelCache:     make(map[string]lazyChildRelationshipLookup),
 		objectNameCache:       make(map[string]objectNameLookup),
 		recentlyViewed:        make(map[string]map[storage.ID]recentlyViewedEntry),
 	}

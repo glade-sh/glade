@@ -1601,6 +1601,9 @@ func (vm *VM) testCreateStub(args []Value) (Value, error) {
 	}
 	if resolved, ok := vm.resolveClassName(stubbedType); ok {
 		stubbedType = resolved
+		if class, classOK := vm.lookupClass(resolved); classOK {
+			stubbedType = vm.classTypeToken(class)
+		}
 	} else {
 		return Null, unsupportedCallError("Test.createStub local proxy for unknown type " + stubbedType)
 	}
@@ -6530,14 +6533,14 @@ func (vm *VM) checkMemberAccess(ownerClass, access, member string, modifierSets 
 		if vm.currentClassIsTest() && vm.hasTestVisibleAncestorMember(ownerClass, member) {
 			return nil
 		}
-		if sameOrNestedTypeFold(vm.currentClass, ownerClass) || sameLexicalTopLevel(vm.currentClass, ownerClass) {
+		if vm.sameAccessScope(vm.currentClass, ownerClass) {
 			return nil
 		}
 		methodOwner := vm.currentMethod.ClassName
 		if methodOwner == "" {
 			methodOwner = classNameFromMethod(vm.currentMethod.Name)
 		}
-		if sameOrNestedTypeFold(methodOwner, ownerClass) || sameLexicalTopLevel(methodOwner, ownerClass) {
+		if vm.sameAccessScope(methodOwner, ownerClass) {
 			return nil
 		}
 	case "protected":
@@ -6547,14 +6550,14 @@ func (vm *VM) checkMemberAccess(ownerClass, access, member string, modifierSets 
 		if vm.currentClassIsTest() && vm.hasTestVisibleAncestorMember(ownerClass, member) {
 			return nil
 		}
-		if sameOrNestedTypeFold(vm.currentClass, ownerClass) || sameLexicalTopLevel(vm.currentClass, ownerClass) || vm.isSubclass(vm.currentClass, ownerClass) || vm.isSubclass(ownerClass, vm.currentClass) {
+		if vm.sameAccessScope(vm.currentClass, ownerClass) || vm.isSubclass(vm.currentClass, ownerClass) || vm.isSubclass(ownerClass, vm.currentClass) {
 			return nil
 		}
 		methodOwner := vm.currentMethod.ClassName
 		if methodOwner == "" {
 			methodOwner = classNameFromMethod(vm.currentMethod.Name)
 		}
-		if sameOrNestedTypeFold(methodOwner, ownerClass) || sameLexicalTopLevel(methodOwner, ownerClass) || vm.isSubclass(methodOwner, ownerClass) || vm.isSubclass(ownerClass, methodOwner) {
+		if vm.sameAccessScope(methodOwner, ownerClass) || vm.isSubclass(methodOwner, ownerClass) || vm.isSubclass(ownerClass, methodOwner) {
 			return nil
 		}
 	default:
@@ -6593,6 +6596,32 @@ func sameLexicalTopLevel(a, b string) bool {
 	aTop, aNested := lexicalTopLevel(a)
 	bTop, bNested := lexicalTopLevel(b)
 	return aNested && bNested && strings.EqualFold(aTop, bTop)
+}
+
+func (vm *VM) sameAccessScope(left, right string) bool {
+	for _, leftName := range vm.accessScopeNames(left) {
+		for _, rightName := range vm.accessScopeNames(right) {
+			if sameOrNestedTypeFold(leftName, rightName) || sameLexicalTopLevel(leftName, rightName) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (vm *VM) accessScopeNames(name string) []string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil
+	}
+	out := []string{name}
+	if class, ok := vm.classForAccess(name); ok {
+		out = append(out, class.Name)
+		if class.Namespace != "" && !strings.Contains(class.Name, ".") {
+			out = append(out, class.Namespace+"."+class.Name)
+		}
+	}
+	return out
 }
 
 func sameOrNestedTypeFold(left, right string) bool {
@@ -7024,6 +7053,9 @@ func (vm *VM) resolveClassName(typeName string) (string, bool) {
 		}
 	}
 	if class, ok := vm.lookupClass(typeName); ok {
+		if strings.Contains(typeName, ".") && class.Namespace != "" && !strings.Contains(class.Name, ".") {
+			return class.Namespace + "." + class.Name, true
+		}
 		return class.Name, true
 	}
 	return "", false
@@ -7087,6 +7119,16 @@ func (vm *VM) storeClassLookupAlias(name string, class Class) {
 		return
 	}
 	vm.classLookup[canonicalClassLookupKey(name)] = class
+}
+
+func (vm *VM) storeClassValue(class Class) {
+	if vm.Classes == nil {
+		vm.Classes = make(map[string]Class)
+	}
+	vm.Classes[class.Name] = class
+	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
+		vm.Classes[class.Namespace+"."+class.Name] = class
+	}
 }
 
 func (vm *VM) rebuildClassLookup() {
@@ -10122,6 +10164,7 @@ func (vm *VM) describeFromSObjectFieldToken(value Value) (Value, error) {
 func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
 	coerced, err := vm.coerceAssignable(typeName, value)
 	if err == nil {
+		coerced.Static = typeName
 		return coerced, nil
 	}
 	targetType := typeExceptionTargetName(typeName)
