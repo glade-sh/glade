@@ -95,32 +95,34 @@ func AssignDeterministicPrefixes(objectNames []string, explicit map[string]strin
 	return out
 }
 
+var standardKeyPrefixBaseData = map[string]string{
+	"Account":                 "001",
+	"Contact":                 "003",
+	"User":                    "005",
+	"Opportunity":             "006",
+	"OpportunityLineItem":     "00k",
+	"RecordType":              "012",
+	"Attachment":              "00P",
+	"Document":                "015",
+	"Organization":            "00D",
+	"Group":                   "00G",
+	"UserRole":                "00E",
+	"Profile":                 "00e",
+	"UserLicense":             "100",
+	"ContentVersion":          "068",
+	"ContentDocument":         "069",
+	"ContentDocumentLink":     "06A",
+	"EmailTemplate":           "00X",
+	"PermissionSet":           "0PS",
+	"PermissionSetAssignment": "0Pa",
+	"PricebookEntry":          "01u",
+	"FieldPermissions":        "0FP",
+	"ObjectPermissions":       "110",
+	"SetupEntityAccess":       "0J0",
+}
+
 func StandardKeyPrefixes() map[string]string {
-	prefixes := map[string]string{
-		"Account":                 "001",
-		"Contact":                 "003",
-		"User":                    "005",
-		"Opportunity":             "006",
-		"OpportunityLineItem":     "00k",
-		"RecordType":              "012",
-		"Attachment":              "00P",
-		"Document":                "015",
-		"Organization":            "00D",
-		"Group":                   "00G",
-		"UserRole":                "00E",
-		"Profile":                 "00e",
-		"UserLicense":             "100",
-		"ContentVersion":          "068",
-		"ContentDocument":         "069",
-		"ContentDocumentLink":     "06A",
-		"EmailTemplate":           "00X",
-		"PermissionSet":           "0PS",
-		"PermissionSetAssignment": "0Pa",
-		"PricebookEntry":          "01u",
-		"FieldPermissions":        "0FP",
-		"ObjectPermissions":       "110",
-		"SetupEntityAccess":       "0J0",
-	}
+	prefixes := copyStringMap(standardKeyPrefixBaseData)
 	for object, prefix := range standardObjectKeyPrefixes() {
 		if prefix != "" {
 			prefixes[object] = prefix

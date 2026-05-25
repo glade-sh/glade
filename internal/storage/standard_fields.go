@@ -452,7 +452,7 @@ func isKnownStandardObjectExact(objectName string) bool {
 	if objectName == "" {
 		return false
 	}
-	if StandardKeyPrefixes()[objectName] != "" {
+	if standardKeyPrefixBaseData[objectName] != "" || standardObjectKeyPrefixData[objectName] != "" {
 		return true
 	}
 	if _, ok := standardObjectCatalogData[objectName]; ok {
@@ -512,7 +512,10 @@ func standardObjectLookupKey(name string) string {
 
 func buildKnownStandardObjectNameSet() map[string]bool {
 	names := make(map[string]bool)
-	for name := range StandardKeyPrefixes() {
+	for name := range standardKeyPrefixBaseData {
+		names[name] = true
+	}
+	for name := range standardObjectKeyPrefixData {
 		names[name] = true
 	}
 	for name := range standardObjectCatalogData {

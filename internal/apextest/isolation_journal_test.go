@@ -104,8 +104,8 @@ private class JournalReuseTest {
 	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
 		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
 	}
-	if got := SnapshotPerfCounters().CloneRuntimeOrgCalls; got != 3 {
-		t.Fatalf("cloneRuntimeOrg calls = %d, want setup plus method clones", got)
+	if got := SnapshotPerfCounters().CloneRuntimeOrgCalls; got != 1 {
+		t.Fatalf("cloneRuntimeOrg calls = %d, want setup clone only", got)
 	}
 }
 

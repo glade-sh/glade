@@ -612,6 +612,10 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					runClassMethodIndexes(ctx, classIndexes[className], planned, results, setupOrg, setupErr, setupRandom, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, methodParallelism)
 					continue
 				}
+				var journal *storage.IsolationJournal
+				if !setupShared && setupErr == nil {
+					journal = storage.NewIsolationJournal(&setupOrg)
+				}
 				for _, i := range classIndexes[className] {
 					if results[i].Status != "" {
 						continue
@@ -626,12 +630,24 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					}
 					caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
 					cloneOrg := len(classIndexes[className]) > 1 || plan.SetupShared
+					var mark storage.IsolationMark
+					if journal != nil {
+						cloneOrg = false
+						mark = journal.Mark()
+					}
 					if cloneOrg {
 						recordCloneFallback()
 					}
-					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, nil)
+					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, journal)
 					if caseCancel != nil {
 						caseCancel()
+					}
+					if journal != nil {
+						if err := journal.Rollback(mark); err != nil && results[i].Status == testreport.StatusPass {
+							results[i].Status = testreport.StatusUnsupported
+							results[i].Problem = problem("UnsupportedFeature", err.Error(), plan.TestCase)
+						}
+						recordJournalRollback()
 					}
 					if emitProgress {
 						reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})

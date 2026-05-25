@@ -3000,10 +3000,17 @@ func replaceCollectionAlias(value, previous, updated Value, seen map[uint64]bool
 }
 
 func replaceValueAlias(value, previous, updated Value, seen map[uint64]bool) (Value, bool) {
-	if valueAliasMatch(previous, value) {
-		return updated, true
+	if previous.Ref == 0 {
+		return value, false
 	}
+	return replaceValueAliasRef(value, previous.Ref, previous.Kind, updated, seen)
+}
+
+func replaceValueAliasRef(value Value, previousRef uint64, previousKind ValueKind, updated Value, seen map[uint64]bool) (Value, bool) {
 	if value.Ref != 0 {
+		if value.Ref == previousRef && value.Kind == previousKind {
+			return updated, true
+		}
 		if seen[value.Ref] {
 			return value, false
 		}
@@ -3013,7 +3020,7 @@ func replaceValueAlias(value, previous, updated Value, seen map[uint64]bool) (Va
 	switch value.Kind {
 	case ValueObject:
 		for name, child := range value.Fields {
-			replaced, childChanged := replaceValueAlias(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAliasRef(child, previousRef, previousKind, updated, seen)
 			if childChanged {
 				value.Fields[name] = replaced
 				changed = true
@@ -3021,14 +3028,14 @@ func replaceValueAlias(value, previous, updated Value, seen map[uint64]bool) (Va
 		}
 	case ValueMap:
 		for key, child := range value.Map {
-			replaced, childChanged := replaceValueAlias(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAliasRef(child, previousRef, previousKind, updated, seen)
 			if childChanged {
 				value.Map[key] = replaced
 				changed = true
 			}
 		}
 		for key, child := range value.MapKeys {
-			replaced, childChanged := replaceValueAlias(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAliasRef(child, previousRef, previousKind, updated, seen)
 			if childChanged {
 				value.MapKeys[key] = replaced
 				changed = true
@@ -3036,7 +3043,7 @@ func replaceValueAlias(value, previous, updated Value, seen map[uint64]bool) (Va
 		}
 	case ValueList:
 		for i, child := range value.List {
-			replaced, childChanged := replaceValueAlias(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAliasRef(child, previousRef, previousKind, updated, seen)
 			if childChanged {
 				value.List[i] = replaced
 				changed = true
@@ -3044,7 +3051,7 @@ func replaceValueAlias(value, previous, updated Value, seen map[uint64]bool) (Va
 		}
 	case ValueSet:
 		for i, child := range value.Set {
-			replaced, childChanged := replaceValueAlias(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAliasRef(child, previousRef, previousKind, updated, seen)
 			if childChanged {
 				value.Set[i] = replaced
 				changed = true
@@ -3059,7 +3066,7 @@ func collectionAliasMatch(left, right Value) bool {
 }
 
 func sameAliasValue(left, right Value) bool {
-	return valueAliasMatch(left, right) && left.Equal(right)
+	return left.Ref != 0 && left.Ref == right.Ref && left.Kind == right.Kind && left.Equal(right)
 }
 
 func clearRefSeen(seen map[uint64]bool) {
