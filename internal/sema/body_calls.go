@@ -88,7 +88,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 					continue
 				}
 				if _, scoped := scope[normalizeName(receiverExpr)]; !scoped {
-					if classMembers, ok := model[normalizeName(receiverExpr)]; ok {
+					if classMembers, lookupName, ok := semaClassMembersForReceiver(model, typ, receiverExpr); ok {
 						if enumDiagnostics, handled := checkSemaEnumCall(typ, member, classMembers.name, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model); handled {
 							diagnostics = append(diagnostics, enumDiagnostics...)
 							continue
@@ -97,7 +97,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 							diagnostics = append(diagnostics, platformDiagnostics...)
 							continue
 						}
-						diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveMemberMethods(model, classMembers.name, method), args, haveArgs, "class", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
+						diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveMemberMethods(model, lookupName, method), args, haveArgs, "class", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
 						continue
 					}
 				}
@@ -132,12 +132,12 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				}
 				continue
 			}
-			if classMembers, ok := model[normalizeName(receiver)]; ok {
+			if classMembers, lookupName, ok := semaClassMembersForReceiver(model, typ, receiver); ok {
 				if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, classMembers.name, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "class"); handled {
 					diagnostics = append(diagnostics, platformDiagnostics...)
 					continue
 				}
-				diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveMemberMethods(model, classMembers.name, method), args, haveArgs, "class", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
+				diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveMemberMethods(model, lookupName, method), args, haveArgs, "class", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
 				continue
 			}
 			continue
@@ -145,13 +145,39 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 		if a.hasKnown(callee) {
 			continue
 		}
-		classMembers, ok := model[normalizeName(typ.Name)]
+		_, lookupName, ok := semaCurrentClassMembers(model, typ)
 		if !ok {
 			continue
 		}
-		diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveImplicitMemberMethods(model, classMembers.name, callee), args, haveArgs, "implicit", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
+		diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveImplicitMemberMethods(model, lookupName, callee), args, haveArgs, "implicit", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
 	}
 	return diagnostics
+}
+
+func semaClassMembersForReceiver(model map[string]typeMembers, current typesys.TypeSymbol, receiver string) (typeMembers, string, bool) {
+	if members, ok := model[normalizeName(receiver)]; ok {
+		return members, receiver, true
+	}
+	if current.Dependency && current.Namespace != "" && !strings.Contains(receiver, ".") {
+		qualified := current.Namespace + "." + receiver
+		if members, ok := model[normalizeName(qualified)]; ok {
+			return members, qualified, true
+		}
+	}
+	return typeMembers{}, "", false
+}
+
+func semaCurrentClassMembers(model map[string]typeMembers, current typesys.TypeSymbol) (typeMembers, string, bool) {
+	if members, ok := model[normalizeName(current.Name)]; ok {
+		return members, current.Name, true
+	}
+	if current.Dependency && current.Namespace != "" {
+		qualified := current.Namespace + "." + current.Name
+		if members, ok := model[normalizeName(qualified)]; ok {
+			return members, qualified, true
+		}
+	}
+	return typeMembers{}, "", false
 }
 
 func semaChainedMethodMatchesCallee(callee, method string) bool {

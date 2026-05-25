@@ -1,0 +1,2 @@
+project:
+  managedPackageDependencies: ["pkgx:../managed-package-runtime-dependency:1.0"]

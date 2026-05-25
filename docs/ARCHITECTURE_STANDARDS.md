@@ -42,6 +42,13 @@ Effective Go, Go code review comments, and the Go package-name guidance.
 
 - Keep Salesforce behavior claims tied to compatibility fixtures, owned tests,
   or public Salesforce documentation.
+- Register future Salesforce surface work in `internal/surface` before widening
+  runtime, server, capability, or compatibility behavior. Each descriptor should
+  name its owner package and focused test command.
+- Use `internal/compat.FixtureBuilder` for new code-created compatibility
+  fixtures before dropping down to raw `Fixture` literals.
+- Keep project-vs-dependency provenance explicit. VM duplicate symbol work
+  should use named provenance helpers instead of open-coded boolean ranking.
 - Do not use proprietary GLADE internals as an implementation source.
 - User Apex, metadata, fixtures, and API requests must not panic the CLI or
   server. Panics in those paths are bugs.

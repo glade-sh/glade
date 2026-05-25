@@ -5692,12 +5692,15 @@ func TestExecTypeForNameNamespaceAcceptsQualifiedName(t *testing.T) {
 	program, err := CompileAnonymous(`
 Type qualified = Type.forName('pkg', 'pkg.Thing');
 System.assertNotEquals(null, qualified);
-`)
+System.assertEquals('pkg.Thing', qualified.getName());
+Object value = Type.forName('pkg', 'Thing').newInstance();
+System.Assert.isInstanceOfType(value, qualified);
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "Thing", Namespace: "pkg"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "Thing", Namespace: "pkg", Access: "global"}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {

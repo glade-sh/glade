@@ -1373,7 +1373,11 @@ func (vm *VM) callChainedConstructor(callee string, args []Value, result *Result
 			return Null, fmt.Errorf("unknown superclass %q", class.SuperClass)
 		}
 	}
-	target, found, ambiguous := vm.matchConstructor(targetClass, args)
+	matchArgs := args
+	if callee == "super" {
+		matchArgs = preferStaticArgumentTypes(args)
+	}
+	target, found, ambiguous := vm.matchConstructor(targetClass, matchArgs)
 	if ambiguous {
 		return Null, fmt.Errorf("ambiguous %s constructor with %d argument(s)", targetClass.Name, len(args))
 	}
@@ -1431,6 +1435,19 @@ func (vm *VM) callChainedConstructor(callee string, args []Value, result *Result
 	}
 	_, err := vm.callConstructorWithReceiver(targetClass, target, receiver, args, result)
 	return Null, err
+}
+
+func preferStaticArgumentTypes(args []Value) []Value {
+	out := make([]Value, len(args))
+	copy(out, args)
+	for i := range out {
+		if out[i].Static == "" {
+			continue
+		}
+		out[i].Type = out[i].Static
+		out[i].Runtime = ""
+	}
+	return out
 }
 
 func (vm *VM) callConstructorWithReceiver(class Class, target Method, receiver Value, args []Value, result *Result) (Value, error) {
@@ -1685,7 +1702,7 @@ func (vm *VM) firstRegisteredMethodByAritySeen(typeName, method string, args []V
 			return Method{}, false
 		}
 		seen[typeName] = true
-		if target, ok := vm.firstInstanceMethodByArity(typeName+"."+method, len(args)); ok && vm.methodApplicable(target, args) {
+		if target, ok := vm.firstApplicableInstanceMethodByArity(typeName+"."+method, args); ok {
 			return target, true
 		}
 		class, ok := vm.lookupClass(typeName)
@@ -1724,6 +1741,20 @@ func (vm *VM) firstInstanceMethodByArity(name string, arity int) (Method, bool) 
 		}
 	}
 	if method, ok := vm.Methods[name]; ok && !method.IsStatic && len(method.Params) == arity {
+		return method, true
+	}
+	return Method{}, false
+}
+
+func (vm *VM) firstApplicableInstanceMethodByArity(name string, args []Value) (Method, bool) {
+	candidates := vm.registeredMethodCandidates(name)
+	for _, candidate := range candidates {
+		if candidate.IsStatic || len(candidate.Params) != len(args) || !vm.methodApplicable(candidate, args) {
+			continue
+		}
+		return candidate, true
+	}
+	if method, ok := vm.Methods[name]; ok && !method.IsStatic && len(method.Params) == len(args) && vm.methodApplicable(method, args) {
 		return method, true
 	}
 	return Method{}, false
@@ -2137,7 +2168,7 @@ func (vm *VM) registeredMethodCandidates(name string) []Method {
 	out := make([]Method, 0, len(exact)+len(folded))
 	seen := make(map[string]bool, len(exact)+len(folded))
 	appendUnique := func(method Method) {
-		key := method.ClassName + "\x00" + method.Name + "\x00" + methodSignature(method) + "\x00" + strconv.FormatBool(method.IsStatic) + "\x00" + strconv.FormatBool(method.Dependency) + "\x00" + method.File
+		key := registeredMethodCandidateKey(method)
 		if seen[key] {
 			return
 		}
@@ -2204,9 +2235,9 @@ func (vm *VM) matchMethodByArgs(candidates []Method, args []Value) (Method, bool
 
 func (vm *VM) preferMethodCandidate(candidate, existing Method) bool {
 	if vm.currentMethod.Dependency {
-		return candidate.Dependency && !existing.Dependency
+		return methodOrigin(candidate) == symbolOriginDependency && methodOrigin(existing) != symbolOriginDependency
 	}
-	return !candidate.Dependency && existing.Dependency
+	return methodOrigin(candidate) == symbolOriginProject && methodOrigin(existing) != symbolOriginProject
 }
 
 func (vm *VM) sortMethodCandidatesForCaller(methods []Method) {
@@ -2227,10 +2258,7 @@ func (vm *VM) sortMethodCandidatesForCaller(methods []Method) {
 }
 
 func (vm *VM) methodCandidateRank(method Method) int {
-	if vm.currentMethod.Dependency == method.Dependency {
-		return 0
-	}
-	return 1
+	return dependencyPreferenceRank(methodOrigin(method), vm.currentMethod.Dependency)
 }
 
 func (vm *VM) methodApplicable(candidate Method, args []Value) bool {
@@ -2745,15 +2773,18 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 		if strings.EqualFold(paramType, value.Static) {
 			return 1000
 		}
+		if platformTokenTypeAlias(value.Static, paramType) {
+			return 1000
+		}
 		if vm.typeAssignableTo(value.Static, paramType) {
 			return 900
-		}
-		if strings.EqualFold(value.Static, "Object") {
-			return 1
 		}
 	}
 	valueType := valueTypeName(value)
 	if strings.EqualFold(paramType, valueType) {
+		return 1000
+	}
+	if platformTokenTypeAlias(valueType, paramType) {
 		return 1000
 	}
 	if isDescribeSObjectResultType(paramType) && isSObjectTypeToken(value) {
@@ -2799,6 +2830,9 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 		if distance, ok := vm.typeDistance(value.Type, paramType, make(map[string]bool)); ok {
 			return 800 - distance
 		}
+	}
+	if value.Kind == ValueList && collectionBase(paramType) == "" && vm.isSObjectLikeType(paramType) {
+		return -1
 	}
 	if err := vm.ensureAssignable(paramType, value); err != nil {
 		return -1
@@ -3165,6 +3199,9 @@ func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
 	if strings.EqualFold(typeName, target) {
 		return true
 	}
+	if vm.classNamesReferToSameRuntimeType(typeName, target) {
+		return true
+	}
 	if !strings.Contains(target, ".") && strings.EqualFold(shortTypeName(typeName), target) {
 		return true
 	}
@@ -3205,6 +3242,27 @@ func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
 		if !strings.Contains(iface, ".") && vm.typeMatches(class.Name+"."+iface, target, seen) {
 			return true
 		}
+	}
+	return false
+}
+
+func (vm *VM) classNamesReferToSameRuntimeType(left, right string) bool {
+	if strings.TrimSpace(left) == "" || strings.TrimSpace(right) == "" {
+		return false
+	}
+	if !strings.EqualFold(shortTypeName(left), shortTypeName(right)) {
+		return false
+	}
+	leftClass, leftOK := vm.lookupClass(left)
+	rightClass, rightOK := vm.lookupClass(right)
+	if leftOK && rightOK {
+		return strings.EqualFold(vm.classTypeToken(leftClass), vm.classTypeToken(rightClass))
+	}
+	if leftOK {
+		return strings.EqualFold(vm.classTypeToken(leftClass), right)
+	}
+	if rightOK {
+		return strings.EqualFold(left, vm.classTypeToken(rightClass))
 	}
 	return false
 }

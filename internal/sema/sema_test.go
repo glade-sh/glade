@@ -5360,6 +5360,76 @@ func TestAnalyzeSkipsInheritanceContractsForPackageArtifacts(t *testing.T) {
 	}
 }
 
+func TestAnalyzeManagedPackageAccessRules(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	if err := os.MkdirAll(depRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(consumerRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeSemaFile(t, filepath.Join(depRoot, "TrailService.cls"), `
+global class TrailService {
+  global static String ok() {
+    return TrailHelper.internalValue();
+  }
+  public static String hidden() {
+    return 'hidden';
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(depRoot, "TrailHelper.cls"), `
+public class TrailHelper {
+  public static String internalValue() {
+    return 'from dependency';
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(consumerRoot, "CabinConsumer.cls"), `
+public class CabinConsumer {
+  public static String allowed() {
+    return pkgx.TrailService.ok();
+  }
+  public static String denied() {
+    return pkgx.TrailService.hidden();
+  }
+}
+`)
+	depProject := project.Project{
+		Root:      depRoot,
+		Namespace: "pkgx",
+		ApexFiles: []string{
+			filepath.Join(depRoot, "TrailService.cls"),
+			filepath.Join(depRoot, "TrailHelper.cls"),
+		},
+	}
+	index := typesys.Build(project.Project{
+		Root: consumerRoot,
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:  "pkgx",
+			SourceRoot: depRoot,
+			Version:    "1.0",
+			Project:    &depProject,
+			Status:     "loaded",
+		}},
+		ApexFiles: []string{filepath.Join(consumerRoot, "CabinConsumer.cls")},
+	}, schema.Schema{})
+
+	result := Analyze(index)
+	counts := map[string]int{}
+	for _, diag := range result.Diagnostics {
+		counts[diag.Code]++
+		if diag.Code == "GLADESEMA008" {
+			t.Fatalf("dependency member access should not be reported as unknown method: %#v", result.Diagnostics)
+		}
+	}
+	if counts["dependency_member_access_denied"] != 1 {
+		t.Fatalf("diagnostic counts = %#v diagnostics=%#v", counts, result.Diagnostics)
+	}
+}
+
 func TestAnalyzeDoesNotRequirePlatformStubsToSatisfyInterfaces(t *testing.T) {
 	result := Analyze(typesys.Index{Types: []typesys.TypeSymbol{{
 		Kind:       apexast.DeclarationClass,

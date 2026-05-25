@@ -5,18 +5,17 @@
   "probeProject": "probes/sfdx",
   "requested": 250,
   "executed": 250,
-  "generatedAtUtc": "2026-05-19T04:22:21Z",
+  "generatedAtUtc": "2026-05-24T19:40:33Z",
   "outcomeCounts": {
-    "exception": 243,
-    "returns": 6,
-    "unsupported": 1
+    "exception": 244,
+    "returns": 6
   },
   "oddityRiskCounts": {
     "medium": 245
   },
   "candidates": [
     {
-      "probeId": "stub.accesstype.valueof",
+      "probeId": "stub.accesstype.valueof.sig-string",
       "contractId": "AccessType.valueOf(String)",
       "type": "AccessType",
       "member": "valueOf",
@@ -34,7 +33,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.apexpages-severity.valueof",
+      "probeId": "stub.apexpages-severity.valueof.sig-string",
       "contractId": "ApexPages.Severity.valueOf(String)",
       "type": "ApexPages.Severity",
       "member": "valueOf",
@@ -52,7 +51,25 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cache-visibility.valueof",
+      "probeId": "stub.boolean.valueof.sig-object",
+      "contractId": "Boolean.valueOf(Object)",
+      "type": "Boolean",
+      "member": "valueOf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "exceptionType": "System.NullPointerException",
+      "exceptionMessage": "Argument cannot be null.",
+      "oddityRisk": "medium",
+      "edgeTags": [
+        "parse-errors"
+      ],
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
+      "probeId": "stub.cache-visibility.valueof.sig-string",
       "contractId": "Cache.Visibility.valueOf(String)",
       "type": "Cache.Visibility",
       "member": "valueOf",
@@ -70,7 +87,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.callbackstatus.valueof",
+      "probeId": "stub.callbackstatus.valueof.sig-string",
       "contractId": "CallbackStatus.valueOf(String)",
       "type": "CallbackStatus",
       "member": "valueOf",
@@ -88,7 +105,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.canvas-contexttypeenum.valueof",
+      "probeId": "stub.canvas-contexttypeenum.valueof.sig-string",
       "contractId": "Canvas.ContextTypeEnum.valueOf(String)",
       "type": "Canvas.ContextTypeEnum",
       "member": "valueOf",
@@ -106,7 +123,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-adjustmentamountscopeenum.valueof",
+      "probeId": "stub.cartextension-adjustmentamountscopeenum.valueof.sig-string",
       "contractId": "CartExtension.AdjustmentAmountScopeEnum.valueOf(String)",
       "type": "CartExtension.AdjustmentAmountScopeEnum",
       "member": "valueOf",
@@ -124,7 +141,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-adjustmenttypeenum.valueof",
+      "probeId": "stub.cartextension-adjustmenttypeenum.valueof.sig-string",
       "contractId": "CartExtension.AdjustmentTypeEnum.valueOf(String)",
       "type": "CartExtension.AdjustmentTypeEnum",
       "member": "valueOf",
@@ -142,7 +159,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-associateditempricingenum.valueof",
+      "probeId": "stub.cartextension-associateditempricingenum.valueof.sig-string",
       "contractId": "CartExtension.AssociatedItemPricingEnum.valueOf(String)",
       "type": "CartExtension.AssociatedItemPricingEnum",
       "member": "valueOf",
@@ -160,7 +177,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-billingfrequencyenum.valueof",
+      "probeId": "stub.cartextension-billingfrequencyenum.valueof.sig-string",
       "contractId": "CartExtension.BillingFrequencyEnum.valueOf(String)",
       "type": "CartExtension.BillingFrequencyEnum",
       "member": "valueOf",
@@ -178,7 +195,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-cartadjustmenttargettypeenum.valueof",
+      "probeId": "stub.cartextension-cartadjustmenttargettypeenum.valueof.sig-string",
       "contractId": "CartExtension.CartAdjustmentTargetTypeEnum.valueOf(String)",
       "type": "CartExtension.CartAdjustmentTargetTypeEnum",
       "member": "valueOf",
@@ -196,7 +213,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-cartitemsubtypeenum.valueof",
+      "probeId": "stub.cartextension-cartitemsubtypeenum.valueof.sig-string",
       "contractId": "CartExtension.CartItemSubTypeEnum.valueOf(String)",
       "type": "CartExtension.CartItemSubTypeEnum",
       "member": "valueOf",
@@ -214,7 +231,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-cartstatusenum.valueof",
+      "probeId": "stub.cartextension-cartstatusenum.valueof.sig-string",
       "contractId": "CartExtension.CartStatusEnum.valueOf(String)",
       "type": "CartExtension.CartStatusEnum",
       "member": "valueOf",
@@ -232,7 +249,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-cartvalidationoutputlevelenum.valueof",
+      "probeId": "stub.cartextension-cartvalidationoutputlevelenum.valueof.sig-string",
       "contractId": "CartExtension.CartValidationOutputLevelEnum.valueOf(String)",
       "type": "CartExtension.CartValidationOutputLevelEnum",
       "member": "valueOf",
@@ -250,7 +267,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-cartvalidationoutputtypeenum.valueof",
+      "probeId": "stub.cartextension-cartvalidationoutputtypeenum.valueof.sig-string",
       "contractId": "CartExtension.CartValidationOutputTypeEnum.valueOf(String)",
       "type": "CartExtension.CartValidationOutputTypeEnum",
       "member": "valueOf",
@@ -268,7 +285,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-configureduringsaleenum.valueof",
+      "probeId": "stub.cartextension-configureduringsaleenum.valueof.sig-string",
       "contractId": "CartExtension.ConfigureDuringSaleEnum.valueOf(String)",
       "type": "CartExtension.ConfigureDuringSaleEnum",
       "member": "valueOf",
@@ -286,7 +303,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-periodboundaryenum.valueof",
+      "probeId": "stub.cartextension-periodboundaryenum.valueof.sig-string",
       "contractId": "CartExtension.PeriodBoundaryEnum.valueOf(String)",
       "type": "CartExtension.PeriodBoundaryEnum",
       "member": "valueOf",
@@ -304,7 +321,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-priceadjustmentsourceenum.valueof",
+      "probeId": "stub.cartextension-priceadjustmentsourceenum.valueof.sig-string",
       "contractId": "CartExtension.PriceAdjustmentSourceEnum.valueOf(String)",
       "type": "CartExtension.PriceAdjustmentSourceEnum",
       "member": "valueOf",
@@ -322,7 +339,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-productclass.valueof",
+      "probeId": "stub.cartextension-productclass.valueof.sig-string",
       "contractId": "CartExtension.ProductClass.valueOf(String)",
       "type": "CartExtension.ProductClass",
       "member": "valueOf",
@@ -340,7 +357,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-quantityscalemethodenum.valueof",
+      "probeId": "stub.cartextension-quantityscalemethodenum.valueof.sig-string",
       "contractId": "CartExtension.QuantityScaleMethodEnum.valueOf(String)",
       "type": "CartExtension.QuantityScaleMethodEnum",
       "member": "valueOf",
@@ -358,7 +375,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-roundingmethodenum.valueof",
+      "probeId": "stub.cartextension-roundingmethodenum.valueof.sig-string",
       "contractId": "CartExtension.RoundingMethodEnum.valueOf(String)",
       "type": "CartExtension.RoundingMethodEnum",
       "member": "valueOf",
@@ -376,7 +393,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-salesitemtypeenum.valueof",
+      "probeId": "stub.cartextension-salesitemtypeenum.valueof.sig-string",
       "contractId": "CartExtension.SalesItemTypeEnum.valueOf(String)",
       "type": "CartExtension.SalesItemTypeEnum",
       "member": "valueOf",
@@ -394,7 +411,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-sellingmodeltype.valueof",
+      "probeId": "stub.cartextension-sellingmodeltype.valueof.sig-string",
       "contractId": "CartExtension.SellingModelType.valueOf(String)",
       "type": "CartExtension.SellingModelType",
       "member": "valueOf",
@@ -412,7 +429,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-stockcheckmethod.valueof",
+      "probeId": "stub.cartextension-stockcheckmethod.valueof.sig-string",
       "contractId": "CartExtension.StockCheckMethod.valueOf(String)",
       "type": "CartExtension.StockCheckMethod",
       "member": "valueOf",
@@ -430,7 +447,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-taxlocaletypeenum.valueof",
+      "probeId": "stub.cartextension-taxlocaletypeenum.valueof.sig-string",
       "contractId": "CartExtension.TaxLocaleTypeEnum.valueOf(String)",
       "type": "CartExtension.TaxLocaleTypeEnum",
       "member": "valueOf",
@@ -448,7 +465,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-taxtypeenum.valueof",
+      "probeId": "stub.cartextension-taxtypeenum.valueof.sig-string",
       "contractId": "CartExtension.TaxTypeEnum.valueOf(String)",
       "type": "CartExtension.TaxTypeEnum",
       "member": "valueOf",
@@ -466,7 +483,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-timeunitenum.valueof",
+      "probeId": "stub.cartextension-timeunitenum.valueof.sig-string",
       "contractId": "CartExtension.TimeUnitEnum.valueOf(String)",
       "type": "CartExtension.TimeUnitEnum",
       "member": "valueOf",
@@ -484,7 +501,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.cartextension-webstoretypeenum.valueof",
+      "probeId": "stub.cartextension-webstoretypeenum.valueof.sig-string",
       "contractId": "CartExtension.WebStoreTypeEnum.valueOf(String)",
       "type": "CartExtension.WebStoreTypeEnum",
       "member": "valueOf",
@@ -502,7 +519,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commerceextension-resolutionstates.valueof",
+      "probeId": "stub.commerceextension-resolutionstates.valueof.sig-string",
       "contractId": "CommerceExtension.ResolutionStates.valueOf(String)",
       "type": "CommerceExtension.ResolutionStates",
       "member": "valueOf",
@@ -520,7 +537,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-abnexperimentactionenum.valueof",
+      "probeId": "stub.connectapi-abnexperimentactionenum.valueof.sig-string",
       "contractId": "ConnectApi.ABnExperimentActionEnum.valueOf(String)",
       "type": "ConnectApi.ABnExperimentActionEnum",
       "member": "valueOf",
@@ -538,7 +555,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-aimodelvisibilityenum.valueof",
+      "probeId": "stub.connectapi-aimodelvisibilityenum.valueof.sig-string",
       "contractId": "ConnectApi.AIModelVisibilityEnum.valueOf(String)",
       "type": "ConnectApi.AIModelVisibilityEnum",
       "member": "valueOf",
@@ -556,7 +573,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-accountengagementdatastreamtypeenum.valueof",
+      "probeId": "stub.connectapi-accountengagementdatastreamtypeenum.valueof.sig-string",
       "contractId": "ConnectApi.AccountEngagementDataStreamTypeEnum.valueOf(String)",
       "type": "ConnectApi.AccountEngagementDataStreamTypeEnum",
       "member": "valueOf",
@@ -574,7 +591,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-accountholdertype.valueof",
+      "probeId": "stub.connectapi-accountholdertype.valueof.sig-string",
       "contractId": "ConnectApi.AccountHolderType.valueOf(String)",
       "type": "ConnectApi.AccountHolderType",
       "member": "valueOf",
@@ -592,7 +609,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-accountrelationshiptypeenum.valueof",
+      "probeId": "stub.connectapi-accountrelationshiptypeenum.valueof.sig-string",
       "contractId": "ConnectApi.AccountRelationshipTypeEnum.valueOf(String)",
       "type": "ConnectApi.AccountRelationshipTypeEnum",
       "member": "valueOf",
@@ -610,7 +627,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-accounttype.valueof",
+      "probeId": "stub.connectapi-accounttype.valueof.sig-string",
       "contractId": "ConnectApi.AccountType.valueOf(String)",
       "type": "ConnectApi.AccountType",
       "member": "valueOf",
@@ -628,7 +645,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-achievementcontributortypeenum.valueof",
+      "probeId": "stub.connectapi-achievementcontributortypeenum.valueof.sig-string",
       "contractId": "ConnectApi.AchievementContributorTypeEnum.valueOf(String)",
       "type": "ConnectApi.AchievementContributorTypeEnum",
       "member": "valueOf",
@@ -646,7 +663,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-achievementmappingtypeenum.valueof",
+      "probeId": "stub.connectapi-achievementmappingtypeenum.valueof.sig-string",
       "contractId": "ConnectApi.AchievementMappingTypeEnum.valueOf(String)",
       "type": "ConnectApi.AchievementMappingTypeEnum",
       "member": "valueOf",
@@ -664,7 +681,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-actionlinkexecutionsallowed.valueof",
+      "probeId": "stub.connectapi-actionlinkexecutionsallowed.valueof.sig-string",
       "contractId": "ConnectApi.ActionLinkExecutionsAllowed.valueOf(String)",
       "type": "ConnectApi.ActionLinkExecutionsAllowed",
       "member": "valueOf",
@@ -682,7 +699,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-actionlinktype.valueof",
+      "probeId": "stub.connectapi-actionlinktype.valueof.sig-string",
       "contractId": "ConnectApi.ActionLinkType.valueOf(String)",
       "type": "ConnectApi.ActionLinkType",
       "member": "valueOf",
@@ -700,7 +717,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-activationinternaldmotype.valueof",
+      "probeId": "stub.connectapi-activationinternaldmotype.valueof.sig-string",
       "contractId": "ConnectApi.ActivationInternalDMOType.valueOf(String)",
       "type": "ConnectApi.ActivationInternalDMOType",
       "member": "valueOf",
@@ -718,7 +735,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-activationplatformcreationtype.valueof",
+      "probeId": "stub.connectapi-activationplatformcreationtype.valueof.sig-string",
       "contractId": "ConnectApi.ActivationPlatformCreationType.valueOf(String)",
       "type": "ConnectApi.ActivationPlatformCreationType",
       "member": "valueOf",
@@ -736,7 +753,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-activationplatformcustomerfilesource.valueof",
+      "probeId": "stub.connectapi-activationplatformcustomerfilesource.valueof.sig-string",
       "contractId": "ConnectApi.ActivationPlatformCustomerFileSource.valueOf(String)",
       "type": "ConnectApi.ActivationPlatformCustomerFileSource",
       "member": "valueOf",
@@ -754,7 +771,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-activationplatformprivacytype.valueof",
+      "probeId": "stub.connectapi-activationplatformprivacytype.valueof.sig-string",
       "contractId": "ConnectApi.ActivationPlatformPrivacyType.valueOf(String)",
       "type": "ConnectApi.ActivationPlatformPrivacyType",
       "member": "valueOf",
@@ -772,7 +789,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-activationplatformstatus.valueof",
+      "probeId": "stub.connectapi-activationplatformstatus.valueof.sig-string",
       "contractId": "ConnectApi.ActivationPlatformStatus.valueOf(String)",
       "type": "ConnectApi.ActivationPlatformStatus",
       "member": "valueOf",
@@ -790,7 +807,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-activationplatformtype.valueof",
+      "probeId": "stub.connectapi-activationplatformtype.valueof.sig-string",
       "contractId": "ConnectApi.ActivationPlatformType.valueOf(String)",
       "type": "ConnectApi.ActivationPlatformType",
       "member": "valueOf",
@@ -808,7 +825,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-activationstatus.valueof",
+      "probeId": "stub.connectapi-activationstatus.valueof.sig-string",
       "contractId": "ConnectApi.ActivationStatus.valueOf(String)",
       "type": "ConnectApi.ActivationStatus",
       "member": "valueOf",
@@ -826,7 +843,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-activationtargetstatus.valueof",
+      "probeId": "stub.connectapi-activationtargetstatus.valueof.sig-string",
       "contractId": "ConnectApi.ActivationTargetStatus.valueOf(String)",
       "type": "ConnectApi.ActivationTargetStatus",
       "member": "valueOf",
@@ -844,7 +861,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-activationtype.valueof",
+      "probeId": "stub.connectapi-activationtype.valueof.sig-string",
       "contractId": "ConnectApi.ActivationType.valueOf(String)",
       "type": "ConnectApi.ActivationType",
       "member": "valueOf",
@@ -862,7 +879,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-activitysharingtype.valueof",
+      "probeId": "stub.connectapi-activitysharingtype.valueof.sig-string",
       "contractId": "ConnectApi.ActivitySharingType.valueOf(String)",
       "type": "ConnectApi.ActivitySharingType",
       "member": "valueOf",
@@ -880,7 +897,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-adjustmentamountscope.valueof",
+      "probeId": "stub.connectapi-adjustmentamountscope.valueof.sig-string",
       "contractId": "ConnectApi.AdjustmentAmountScope.valueOf(String)",
       "type": "ConnectApi.AdjustmentAmountScope",
       "member": "valueOf",
@@ -898,7 +915,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-adjustmenttype.valueof",
+      "probeId": "stub.connectapi-adjustmenttype.valueof.sig-string",
       "contractId": "ConnectApi.AdjustmentType.valueOf(String)",
       "type": "ConnectApi.AdjustmentType",
       "member": "valueOf",
@@ -916,7 +933,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-agentcontextstatusenum.valueof",
+      "probeId": "stub.connectapi-agentcontextstatusenum.valueof.sig-string",
       "contractId": "ConnectApi.AgentContextStatusEnum.valueOf(String)",
       "type": "ConnectApi.AgentContextStatusEnum",
       "member": "valueOf",
@@ -934,7 +951,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-analysisfielddatapropertyenum.valueof",
+      "probeId": "stub.connectapi-analysisfielddatapropertyenum.valueof.sig-string",
       "contractId": "ConnectApi.AnalysisFieldDataPropertyEnum.valueOf(String)",
       "type": "ConnectApi.AnalysisFieldDataPropertyEnum",
       "member": "valueOf",
@@ -952,7 +969,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-analyticslicensetype.valueof",
+      "probeId": "stub.connectapi-analyticslicensetype.valueof.sig-string",
       "contractId": "ConnectApi.AnalyticsLicenseType.valueOf(String)",
       "type": "ConnectApi.AnalyticsLicenseType",
       "member": "valueOf",
@@ -970,7 +987,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-animaltype.valueof",
+      "probeId": "stub.connectapi-animaltype.valueof.sig-string",
       "contractId": "ConnectApi.AnimalType.valueOf(String)",
       "type": "ConnectApi.AnimalType",
       "member": "valueOf",
@@ -988,7 +1005,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-apierrorcodeenum.valueof",
+      "probeId": "stub.connectapi-apierrorcodeenum.valueof.sig-string",
       "contractId": "ConnectApi.ApiErrorCodeEnum.valueOf(String)",
       "type": "ConnectApi.ApiErrorCodeEnum",
       "member": "valueOf",
@@ -1006,7 +1023,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-apifamilytypeenumwrapper.valueof",
+      "probeId": "stub.connectapi-apifamilytypeenumwrapper.valueof.sig-string",
       "contractId": "ConnectApi.ApiFamilyTypeEnumWrapper.valueOf(String)",
       "type": "ConnectApi.ApiFamilyTypeEnumWrapper",
       "member": "valueOf",
@@ -1024,7 +1041,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-apiresponsestatuscode.valueof",
+      "probeId": "stub.connectapi-apiresponsestatuscode.valueof.sig-string",
       "contractId": "ConnectApi.ApiResponseStatusCode.valueOf(String)",
       "type": "ConnectApi.ApiResponseStatusCode",
       "member": "valueOf",
@@ -1042,7 +1059,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-application.valueof",
+      "probeId": "stub.connectapi-application.valueof.sig-string",
       "contractId": "ConnectApi.Application.valueOf(String)",
       "type": "ConnectApi.Application",
       "member": "valueOf",
@@ -1060,7 +1077,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-appointmentmode.valueof",
+      "probeId": "stub.connectapi-appointmentmode.valueof.sig-string",
       "contractId": "ConnectApi.AppointmentMode.valueOf(String)",
       "type": "ConnectApi.AppointmentMode",
       "member": "valueOf",
@@ -1078,7 +1095,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-articlerecommendationschanneltype.valueof",
+      "probeId": "stub.connectapi-articlerecommendationschanneltype.valueof.sig-string",
       "contractId": "ConnectApi.ArticleRecommendationsChannelType.valueOf(String)",
       "type": "ConnectApi.ArticleRecommendationsChannelType",
       "member": "valueOf",
@@ -1096,7 +1113,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-articlestatus.valueof",
+      "probeId": "stub.connectapi-articlestatus.valueof.sig-string",
       "contractId": "ConnectApi.ArticleStatus.valueOf(String)",
       "type": "ConnectApi.ArticleStatus",
       "member": "valueOf",
@@ -1114,7 +1131,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-articletopicjobtype.valueof",
+      "probeId": "stub.connectapi-articletopicjobtype.valueof.sig-string",
       "contractId": "ConnectApi.ArticleTopicJobType.valueOf(String)",
       "type": "ConnectApi.ArticleTopicJobType",
       "member": "valueOf",
@@ -1132,7 +1149,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-assessmentsearchderivedstatusenum.valueof",
+      "probeId": "stub.connectapi-assessmentsearchderivedstatusenum.valueof.sig-string",
       "contractId": "ConnectApi.AssessmentSearchDerivedStatusEnum.valueOf(String)",
       "type": "ConnectApi.AssessmentSearchDerivedStatusEnum",
       "member": "valueOf",
@@ -1150,7 +1167,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-assetmgmtarcactiontype.valueof",
+      "probeId": "stub.connectapi-assetmgmtarcactiontype.valueof.sig-string",
       "contractId": "ConnectApi.AssetMgmtARCActionType.valueOf(String)",
       "type": "ConnectApi.AssetMgmtARCActionType",
       "member": "valueOf",
@@ -1168,7 +1185,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-assetmgmtactionsubtype.valueof",
+      "probeId": "stub.connectapi-assetmgmtactionsubtype.valueof.sig-string",
       "contractId": "ConnectApi.AssetMgmtActionSubType.valueOf(String)",
       "type": "ConnectApi.AssetMgmtActionSubType",
       "member": "valueOf",
@@ -1186,7 +1203,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-assetmgmtamendmenttype.valueof",
+      "probeId": "stub.connectapi-assetmgmtamendmenttype.valueof.sig-string",
       "contractId": "ConnectApi.AssetMgmtAmendmentType.valueOf(String)",
       "type": "ConnectApi.AssetMgmtAmendmentType",
       "member": "valueOf",
@@ -1204,7 +1221,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-assetmgmtcancellationtype.valueof",
+      "probeId": "stub.connectapi-assetmgmtcancellationtype.valueof.sig-string",
       "contractId": "ConnectApi.AssetMgmtCancellationType.valueOf(String)",
       "type": "ConnectApi.AssetMgmtCancellationType",
       "member": "valueOf",
@@ -1222,7 +1239,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-assetmgmtreturnpolicytype.valueof",
+      "probeId": "stub.connectapi-assetmgmtreturnpolicytype.valueof.sig-string",
       "contractId": "ConnectApi.AssetMgmtReturnPolicyType.valueOf(String)",
       "type": "ConnectApi.AssetMgmtReturnPolicyType",
       "member": "valueOf",
@@ -1240,7 +1257,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-asyncoperationstatus.valueof",
+      "probeId": "stub.connectapi-asyncoperationstatus.valueof.sig-string",
       "contractId": "ConnectApi.AsyncOperationStatus.valueOf(String)",
       "type": "ConnectApi.AsyncOperationStatus",
       "member": "valueOf",
@@ -1258,7 +1275,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-attributecreationstrategyenum.valueof",
+      "probeId": "stub.connectapi-attributecreationstrategyenum.valueof.sig-string",
       "contractId": "ConnectApi.AttributeCreationStrategyEnum.valueOf(String)",
       "type": "ConnectApi.AttributeCreationStrategyEnum",
       "member": "valueOf",
@@ -1276,7 +1293,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-attributetypeenum.valueof",
+      "probeId": "stub.connectapi-attributetypeenum.valueof.sig-string",
       "contractId": "ConnectApi.AttributeTypeEnum.valueOf(String)",
       "type": "ConnectApi.AttributeTypeEnum",
       "member": "valueOf",
@@ -1294,7 +1311,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-audiencecriteriaoperator.valueof",
+      "probeId": "stub.connectapi-audiencecriteriaoperator.valueof.sig-string",
       "contractId": "ConnectApi.AudienceCriteriaOperator.valueOf(String)",
       "type": "ConnectApi.AudienceCriteriaOperator",
       "member": "valueOf",
@@ -1312,7 +1329,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-audiencecriteriatype.valueof",
+      "probeId": "stub.connectapi-audiencecriteriatype.valueof.sig-string",
       "contractId": "ConnectApi.AudienceCriteriaType.valueOf(String)",
       "type": "ConnectApi.AudienceCriteriaType",
       "member": "valueOf",
@@ -1330,7 +1347,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-audiencedmodeltatype.valueof",
+      "probeId": "stub.connectapi-audiencedmodeltatype.valueof.sig-string",
       "contractId": "ConnectApi.AudienceDMODeltaType.valueOf(String)",
       "type": "ConnectApi.AudienceDMODeltaType",
       "member": "valueOf",
@@ -1348,7 +1365,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-authprovidertypeenum.valueof",
+      "probeId": "stub.connectapi-authprovidertypeenum.valueof.sig-string",
       "contractId": "ConnectApi.AuthProviderTypeEnum.valueOf(String)",
       "type": "ConnectApi.AuthProviderTypeEnum",
       "member": "valueOf",
@@ -1366,7 +1383,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-availabilitystatusenum.valueof",
+      "probeId": "stub.connectapi-availabilitystatusenum.valueof.sig-string",
       "contractId": "ConnectApi.AvailabilityStatusEnum.valueOf(String)",
       "type": "ConnectApi.AvailabilityStatusEnum",
       "member": "valueOf",
@@ -1384,7 +1401,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-banktype.valueof",
+      "probeId": "stub.connectapi-banktype.valueof.sig-string",
       "contractId": "ConnectApi.BankType.valueOf(String)",
       "type": "ConnectApi.BankType",
       "member": "valueOf",
@@ -1402,7 +1419,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-bannerstyle.valueof",
+      "probeId": "stub.connectapi-bannerstyle.valueof.sig-string",
       "contractId": "ConnectApi.BannerStyle.valueOf(String)",
       "type": "ConnectApi.BannerStyle",
       "member": "valueOf",
@@ -1420,7 +1437,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-batchcriteriafieldsforinvoicerunenum.valueof",
+      "probeId": "stub.connectapi-batchcriteriafieldsforinvoicerunenum.valueof.sig-string",
       "contractId": "ConnectApi.BatchCriteriaFieldsForInvoiceRunEnum.valueOf(String)",
       "type": "ConnectApi.BatchCriteriaFieldsForInvoiceRunEnum",
       "member": "valueOf",
@@ -1438,7 +1455,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-batchcriteriaobjectsforinvoicerunenum.valueof",
+      "probeId": "stub.connectapi-batchcriteriaobjectsforinvoicerunenum.valueof.sig-string",
       "contractId": "ConnectApi.BatchCriteriaObjectsForInvoiceRunEnum.valueOf(String)",
       "type": "ConnectApi.BatchCriteriaObjectsForInvoiceRunEnum",
       "member": "valueOf",
@@ -1456,7 +1473,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-batchcriteriaoperationenum.valueof",
+      "probeId": "stub.connectapi-batchcriteriaoperationenum.valueof.sig-string",
       "contractId": "ConnectApi.BatchCriteriaOperationEnum.valueOf(String)",
       "type": "ConnectApi.BatchCriteriaOperationEnum",
       "member": "valueOf",
@@ -1474,7 +1491,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-batchinvoicestatusenum.valueof",
+      "probeId": "stub.connectapi-batchinvoicestatusenum.valueof.sig-string",
       "contractId": "ConnectApi.BatchInvoiceStatusEnum.valueOf(String)",
       "type": "ConnectApi.BatchInvoiceStatusEnum",
       "member": "valueOf",
@@ -1492,7 +1509,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-batchschedulerstatusenum.valueof",
+      "probeId": "stub.connectapi-batchschedulerstatusenum.valueof.sig-string",
       "contractId": "ConnectApi.BatchSchedulerStatusEnum.valueOf(String)",
       "type": "ConnectApi.BatchSchedulerStatusEnum",
       "member": "valueOf",
@@ -1510,7 +1527,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-billingfrequency.valueof",
+      "probeId": "stub.connectapi-billingfrequency.valueof.sig-string",
       "contractId": "ConnectApi.BillingFrequency.valueOf(String)",
       "type": "ConnectApi.BillingFrequency",
       "member": "valueOf",
@@ -1528,7 +1545,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-billingmethodenum.valueof",
+      "probeId": "stub.connectapi-billingmethodenum.valueof.sig-string",
       "contractId": "ConnectApi.BillingMethodEnum.valueOf(String)",
       "type": "ConnectApi.BillingMethodEnum",
       "member": "valueOf",
@@ -1546,7 +1563,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-billingschedulestatusenum.valueof",
+      "probeId": "stub.connectapi-billingschedulestatusenum.valueof.sig-string",
       "contractId": "ConnectApi.BillingScheduleStatusEnum.valueOf(String)",
       "type": "ConnectApi.BillingScheduleStatusEnum",
       "member": "valueOf",
@@ -1564,7 +1581,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-billingstatusenum.valueof",
+      "probeId": "stub.connectapi-billingstatusenum.valueof.sig-string",
       "contractId": "ConnectApi.BillingStatusEnum.valueOf(String)",
       "type": "ConnectApi.BillingStatusEnum",
       "member": "valueOf",
@@ -1582,7 +1599,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-billingtypeenum.valueof",
+      "probeId": "stub.connectapi-billingtypeenum.valueof.sig-string",
       "contractId": "ConnectApi.BillingTypeEnum.valueOf(String)",
       "type": "ConnectApi.BillingTypeEnum",
       "member": "valueOf",
@@ -1600,7 +1617,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-bookingstatus.valueof",
+      "probeId": "stub.connectapi-bookingstatus.valueof.sig-string",
       "contractId": "ConnectApi.BookingStatus.valueOf(String)",
       "type": "ConnectApi.BookingStatus",
       "member": "valueOf",
@@ -1618,7 +1635,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-botllmprompttemplatetype.valueof",
+      "probeId": "stub.connectapi-botllmprompttemplatetype.valueof.sig-string",
       "contractId": "ConnectApi.BotLLMPromptTemplateType.valueOf(String)",
       "type": "ConnectApi.BotLLMPromptTemplateType",
       "member": "valueOf",
@@ -1636,7 +1653,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-botllmprovidertype.valueof",
+      "probeId": "stub.connectapi-botllmprovidertype.valueof.sig-string",
       "contractId": "ConnectApi.BotLLMProviderType.valueOf(String)",
       "type": "ConnectApi.BotLLMProviderType",
       "member": "valueOf",
@@ -1654,7 +1671,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-botversionactivationstatus.valueof",
+      "probeId": "stub.connectapi-botversionactivationstatus.valueof.sig-string",
       "contractId": "ConnectApi.BotVersionActivationStatus.valueOf(String)",
       "type": "ConnectApi.BotVersionActivationStatus",
       "member": "valueOf",
@@ -1672,7 +1689,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-broadcastresponseaction.valueof",
+      "probeId": "stub.connectapi-broadcastresponseaction.valueof.sig-string",
       "contractId": "ConnectApi.BroadcastResponseAction.valueOf(String)",
       "type": "ConnectApi.BroadcastResponseAction",
       "member": "valueOf",
@@ -1690,7 +1707,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-bulkupdatestatusenum.valueof",
+      "probeId": "stub.connectapi-bulkupdatestatusenum.valueof.sig-string",
       "contractId": "ConnectApi.BulkUpdateStatusEnum.valueOf(String)",
       "type": "ConnectApi.BulkUpdateStatusEnum",
       "member": "valueOf",
@@ -1708,7 +1725,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-bulkupdatetargetstatusenum.valueof",
+      "probeId": "stub.connectapi-bulkupdatetargetstatusenum.valueof.sig-string",
       "contractId": "ConnectApi.BulkUpdateTargetStatusEnum.valueOf(String)",
       "type": "ConnectApi.BulkUpdateTargetStatusEnum",
       "member": "valueOf",
@@ -1726,7 +1743,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-bundletype.valueof",
+      "probeId": "stub.connectapi-bundletype.valueof.sig-string",
       "contractId": "ConnectApi.BundleType.valueOf(String)",
       "type": "ConnectApi.BundleType",
       "member": "valueOf",
@@ -1744,7 +1761,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-buyerprofileinitmethodenum.valueof",
+      "probeId": "stub.connectapi-buyerprofileinitmethodenum.valueof.sig-string",
       "contractId": "ConnectApi.BuyerProfileInitMethodEnum.valueOf(String)",
       "type": "ConnectApi.BuyerProfileInitMethodEnum",
       "member": "valueOf",
@@ -1762,7 +1779,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-buyerprofileinittypeenum.valueof",
+      "probeId": "stub.connectapi-buyerprofileinittypeenum.valueof.sig-string",
       "contractId": "ConnectApi.BuyerProfileInitTypeEnum.valueOf(String)",
       "type": "ConnectApi.BuyerProfileInitTypeEnum",
       "member": "valueOf",
@@ -1780,7 +1797,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cachestoragetype.valueof",
+      "probeId": "stub.connectapi-cachestoragetype.valueof.sig-string",
       "contractId": "ConnectApi.CacheStorageType.valueOf(String)",
       "type": "ConnectApi.CacheStorageType",
       "member": "valueOf",
@@ -1798,7 +1815,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-calcinsighthistorypublishscheduleinterval.valueof",
+      "probeId": "stub.connectapi-calcinsighthistorypublishscheduleinterval.valueof.sig-string",
       "contractId": "ConnectApi.CalcInsightHistoryPublishScheduleInterval.valueOf(String)",
       "type": "ConnectApi.CalcInsightHistoryPublishScheduleInterval",
       "member": "valueOf",
@@ -1816,7 +1833,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-calculatetaxtyperequest.valueof",
+      "probeId": "stub.connectapi-calculatetaxtyperequest.valueof.sig-string",
       "contractId": "ConnectApi.CalculateTaxTypeRequest.valueOf(String)",
       "type": "ConnectApi.CalculateTaxTypeRequest",
       "member": "valueOf",
@@ -1834,7 +1851,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-calculatedinsightdefinitiontypeenum.valueof",
+      "probeId": "stub.connectapi-calculatedinsightdefinitiontypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CalculatedInsightDefinitionTypeEnum.valueOf(String)",
       "type": "ConnectApi.CalculatedInsightDefinitionTypeEnum",
       "member": "valueOf",
@@ -1852,7 +1869,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-calculatedinsightpublishscheduleinterval.valueof",
+      "probeId": "stub.connectapi-calculatedinsightpublishscheduleinterval.valueof.sig-string",
       "contractId": "ConnectApi.CalculatedInsightPublishScheduleInterval.valueOf(String)",
       "type": "ConnectApi.CalculatedInsightPublishScheduleInterval",
       "member": "valueOf",
@@ -1870,7 +1887,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-calendertypeenum.valueof",
+      "probeId": "stub.connectapi-calendertypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CalenderTypeEnum.valueOf(String)",
       "type": "ConnectApi.CalenderTypeEnum",
       "member": "valueOf",
@@ -1888,7 +1905,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-calloutstatus.valueof",
+      "probeId": "stub.connectapi-calloutstatus.valueof.sig-string",
       "contractId": "ConnectApi.CalloutStatus.valueOf(String)",
       "type": "ConnectApi.CalloutStatus",
       "member": "valueOf",
@@ -1906,7 +1923,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cardcategory.valueof",
+      "probeId": "stub.connectapi-cardcategory.valueof.sig-string",
       "contractId": "ConnectApi.CardCategory.valueOf(String)",
       "type": "ConnectApi.CardCategory",
       "member": "valueOf",
@@ -1924,7 +1941,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cardtype.valueof",
+      "probeId": "stub.connectapi-cardtype.valueof.sig-string",
       "contractId": "ConnectApi.CardType.valueOf(String)",
       "type": "ConnectApi.CardType",
       "member": "valueOf",
@@ -1942,7 +1959,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cartitemsortorder.valueof",
+      "probeId": "stub.connectapi-cartitemsortorder.valueof.sig-string",
       "contractId": "ConnectApi.CartItemSortOrder.valueOf(String)",
       "type": "ConnectApi.CartItemSortOrder",
       "member": "valueOf",
@@ -1960,7 +1977,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cartitemsubtype.valueof",
+      "probeId": "stub.connectapi-cartitemsubtype.valueof.sig-string",
       "contractId": "ConnectApi.CartItemSubType.valueOf(String)",
       "type": "ConnectApi.CartItemSubType",
       "member": "valueOf",
@@ -1978,7 +1995,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cartitemtype.valueof",
+      "probeId": "stub.connectapi-cartitemtype.valueof.sig-string",
       "contractId": "ConnectApi.CartItemType.valueOf(String)",
       "type": "ConnectApi.CartItemType",
       "member": "valueOf",
@@ -1996,7 +2013,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cartmessageseverity.valueof",
+      "probeId": "stub.connectapi-cartmessageseverity.valueof.sig-string",
       "contractId": "ConnectApi.CartMessageSeverity.valueOf(String)",
       "type": "ConnectApi.CartMessageSeverity",
       "member": "valueOf",
@@ -2014,7 +2031,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cartpromotiontype.valueof",
+      "probeId": "stub.connectapi-cartpromotiontype.valueof.sig-string",
       "contractId": "ConnectApi.CartPromotionType.valueOf(String)",
       "type": "ConnectApi.CartPromotionType",
       "member": "valueOf",
@@ -2032,7 +2049,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cartsortorder.valueof",
+      "probeId": "stub.connectapi-cartsortorder.valueof.sig-string",
       "contractId": "ConnectApi.CartSortOrder.valueOf(String)",
       "type": "ConnectApi.CartSortOrder",
       "member": "valueOf",
@@ -2050,7 +2067,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cartstatus.valueof",
+      "probeId": "stub.connectapi-cartstatus.valueof.sig-string",
       "contractId": "ConnectApi.CartStatus.valueOf(String)",
       "type": "ConnectApi.CartStatus",
       "member": "valueOf",
@@ -2068,7 +2085,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-carttaxtype.valueof",
+      "probeId": "stub.connectapi-carttaxtype.valueof.sig-string",
       "contractId": "ConnectApi.CartTaxType.valueOf(String)",
       "type": "ConnectApi.CartTaxType",
       "member": "valueOf",
@@ -2086,7 +2103,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-carttype.valueof",
+      "probeId": "stub.connectapi-carttype.valueof.sig-string",
       "contractId": "ConnectApi.CartType.valueOf(String)",
       "type": "ConnectApi.CartType",
       "member": "valueOf",
@@ -2104,7 +2121,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-caseactortype.valueof",
+      "probeId": "stub.connectapi-caseactortype.valueof.sig-string",
       "contractId": "ConnectApi.CaseActorType.valueOf(String)",
       "type": "ConnectApi.CaseActorType",
       "member": "valueOf",
@@ -2122,7 +2139,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-casecommenteventtype.valueof",
+      "probeId": "stub.connectapi-casecommenteventtype.valueof.sig-string",
       "contractId": "ConnectApi.CaseCommentEventType.valueOf(String)",
       "type": "ConnectApi.CaseCommentEventType",
       "member": "valueOf",
@@ -2140,7 +2157,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-catalogratespreferenceenum.valueof",
+      "probeId": "stub.connectapi-catalogratespreferenceenum.valueof.sig-string",
       "contractId": "ConnectApi.CatalogRatesPreferenceEnum.valueOf(String)",
       "type": "ConnectApi.CatalogRatesPreferenceEnum",
       "member": "valueOf",
@@ -2158,7 +2175,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpcatalogedgeinputtypeenum.valueof",
+      "probeId": "stub.connectapi-cdpcatalogedgeinputtypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpCatalogEdgeInputTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpCatalogEdgeInputTypeEnum",
       "member": "valueOf",
@@ -2176,7 +2193,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpcataloggenreenum2.valueof",
+      "probeId": "stub.connectapi-cdpcataloggenreenum2.valueof.sig-string",
       "contractId": "ConnectApi.CdpCatalogGenreEnum2.valueOf(String)",
       "type": "ConnectApi.CdpCatalogGenreEnum2",
       "member": "valueOf",
@@ -2194,7 +2211,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpdayofweekenum.valueof",
+      "probeId": "stub.connectapi-cdpdayofweekenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpDayOfWeekEnum.valueOf(String)",
       "type": "ConnectApi.CdpDayOfWeekEnum",
       "member": "valueOf",
@@ -2212,7 +2229,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpfieldlineageinputtypeenum.valueof",
+      "probeId": "stub.connectapi-cdpfieldlineageinputtypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpFieldLineageInputTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpFieldLineageInputTypeEnum",
       "member": "valueOf",
@@ -2230,7 +2247,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpidentityresolutionconfigurationtype.valueof",
+      "probeId": "stub.connectapi-cdpidentityresolutionconfigurationtype.valueof.sig-string",
       "contractId": "ConnectApi.CdpIdentityResolutionConfigurationType.valueOf(String)",
       "type": "ConnectApi.CdpIdentityResolutionConfigurationType",
       "member": "valueOf",
@@ -2248,7 +2265,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpidentityresolutionmatchmethodtype.valueof",
+      "probeId": "stub.connectapi-cdpidentityresolutionmatchmethodtype.valueof.sig-string",
       "contractId": "ConnectApi.CdpIdentityResolutionMatchMethodType.valueOf(String)",
       "type": "ConnectApi.CdpIdentityResolutionMatchMethodType",
       "member": "valueOf",
@@ -2266,7 +2283,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpidentityresolutionreconciliationruletype.valueof",
+      "probeId": "stub.connectapi-cdpidentityresolutionreconciliationruletype.valueof.sig-string",
       "contractId": "ConnectApi.CdpIdentityResolutionReconciliationRuleType.valueOf(String)",
       "type": "ConnectApi.CdpIdentityResolutionReconciliationRuleType",
       "member": "valueOf",
@@ -2284,7 +2301,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpidentityresolutionrunnowresultcode.valueof",
+      "probeId": "stub.connectapi-cdpidentityresolutionrunnowresultcode.valueof.sig-string",
       "contractId": "ConnectApi.CdpIdentityResolutionRunNowResultCode.valueOf(String)",
       "type": "ConnectApi.CdpIdentityResolutionRunNowResultCode",
       "member": "valueOf",
@@ -2302,7 +2319,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlactivepartitiontypeenum.valueof",
+      "probeId": "stub.connectapi-cdpmlactivepartitiontypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlActivePartitionTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlActivePartitionTypeEnum",
       "member": "valueOf",
@@ -2320,7 +2337,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlconfiguredmodelstatusenum.valueof",
+      "probeId": "stub.connectapi-cdpmlconfiguredmodelstatusenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlConfiguredModelStatusEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlConfiguredModelStatusEnum",
       "member": "valueOf",
@@ -2338,7 +2355,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlcustomizablefieldtypeenum.valueof",
+      "probeId": "stub.connectapi-cdpmlcustomizablefieldtypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlCustomizableFieldTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlCustomizableFieldTypeEnum",
       "member": "valueOf",
@@ -2356,7 +2373,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlfielddatatypeenum.valueof",
+      "probeId": "stub.connectapi-cdpmlfielddatatypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlFieldDataTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlFieldDataTypeEnum",
       "member": "valueOf",
@@ -2374,7 +2391,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlfilterfieldtypeenum.valueof",
+      "probeId": "stub.connectapi-cdpmlfilterfieldtypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlFilterFieldTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlFilterFieldTypeEnum",
       "member": "valueOf",
@@ -2392,7 +2409,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlfiltervaluetypeenum.valueof",
+      "probeId": "stub.connectapi-cdpmlfiltervaluetypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlFilterValueTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlFilterValueTypeEnum",
       "member": "valueOf",
@@ -2410,7 +2427,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlfoundationalmodelmainversionenum.valueof",
+      "probeId": "stub.connectapi-cdpmlfoundationalmodelmainversionenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlFoundationalModelMainVersionEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlFoundationalModelMainVersionEnum",
       "member": "valueOf",
@@ -2428,7 +2445,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmllivemetrictypeenum.valueof",
+      "probeId": "stub.connectapi-cdpmllivemetrictypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlLiveMetricTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlLiveMetricTypeEnum",
       "member": "valueOf",
@@ -2446,7 +2463,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlmetricassettypeenum.valueof",
+      "probeId": "stub.connectapi-cdpmlmetricassettypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlMetricAssetTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlMetricAssetTypeEnum",
       "member": "valueOf",
@@ -2464,7 +2481,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlmetricspanenum.valueof",
+      "probeId": "stub.connectapi-cdpmlmetricspanenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlMetricSpanEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlMetricSpanEnum",
       "member": "valueOf",
@@ -2482,7 +2499,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlmodelartifactruntimetypeenum.valueof",
+      "probeId": "stub.connectapi-cdpmlmodelartifactruntimetypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlModelArtifactRuntimeTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlModelArtifactRuntimeTypeEnum",
       "member": "valueOf",
@@ -2500,7 +2517,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlmodelpredictiontypeenum.valueof",
+      "probeId": "stub.connectapi-cdpmlmodelpredictiontypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlModelPredictionTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlModelPredictionTypeEnum",
       "member": "valueOf",
@@ -2518,7 +2535,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlpredictaggregatefunctionstatusenum.valueof",
+      "probeId": "stub.connectapi-cdpmlpredictaggregatefunctionstatusenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlPredictAggregateFunctionStatusEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlPredictAggregateFunctionStatusEnum",
       "member": "valueOf",
@@ -2536,7 +2553,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlpredictaggregatefunctiontypeenum.valueof",
+      "probeId": "stub.connectapi-cdpmlpredictaggregatefunctiontypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlPredictAggregateFunctionTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlPredictAggregateFunctionTypeEnum",
       "member": "valueOf",
@@ -2554,7 +2571,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlpredictstatusenum.valueof",
+      "probeId": "stub.connectapi-cdpmlpredictstatusenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlPredictStatusEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlPredictStatusEnum",
       "member": "valueOf",
@@ -2572,7 +2589,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlpredicttypeenum.valueof",
+      "probeId": "stub.connectapi-cdpmlpredicttypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlPredictTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlPredictTypeEnum",
       "member": "valueOf",
@@ -2590,7 +2607,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmlpredictionerrorcodeenum.valueof",
+      "probeId": "stub.connectapi-cdpmlpredictionerrorcodeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlPredictionErrorCodeEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlPredictionErrorCodeEnum",
       "member": "valueOf",
@@ -2608,7 +2625,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpmltransformationtypeenum.valueof",
+      "probeId": "stub.connectapi-cdpmltransformationtypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpMlTransformationTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpMlTransformationTypeEnum",
       "member": "valueOf",
@@ -2626,7 +2643,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationaggregateoperatorenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationaggregateoperatorenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationAggregateOperatorEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationAggregateOperatorEnum",
       "member": "valueOf",
@@ -2644,7 +2661,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationconditiontypeenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationconditiontypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationConditionTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationConditionTypeEnum",
       "member": "valueOf",
@@ -2662,7 +2679,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationconjunctiveoperatorenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationconjunctiveoperatorenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationConjunctiveOperatorEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationConjunctiveOperatorEnum",
       "member": "valueOf",
@@ -2680,7 +2697,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationconstrainttypeenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationconstrainttypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationConstraintTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationConstraintTypeEnum",
       "member": "valueOf",
@@ -2698,7 +2715,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationcontributiontypeenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationcontributiontypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationContributionTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationContributionTypeEnum",
       "member": "valueOf",
@@ -2716,7 +2733,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationdynamicrecordtypeenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationdynamicrecordtypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationDynamicRecordTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationDynamicRecordTypeEnum",
       "member": "valueOf",
@@ -2734,7 +2751,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationfieldtypeenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationfieldtypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationFieldTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationFieldTypeEnum",
       "member": "valueOf",
@@ -2752,7 +2769,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationfilterfieldtypeenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationfilterfieldtypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationFilterFieldTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationFilterFieldTypeEnum",
       "member": "valueOf",
@@ -2770,7 +2787,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationinputtypeenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationinputtypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationInputTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationInputTypeEnum",
       "member": "valueOf",
@@ -2788,7 +2805,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationjoberrorreasonenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationjoberrorreasonenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationJobErrorReasonEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationJobErrorReasonEnum",
       "member": "valueOf",
@@ -2806,7 +2823,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationjobstatusenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationjobstatusenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationJobStatusEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationJobStatusEnum",
       "member": "valueOf",
@@ -2824,7 +2841,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationjoinoperatorenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationjoinoperatorenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationJoinOperatorEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationJoinOperatorEnum",
       "member": "valueOf",
@@ -2842,7 +2859,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationjointypeenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationjointypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationJoinTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationJoinTypeEnum",
       "member": "valueOf",
@@ -2860,7 +2877,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationobjectiveenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationobjectiveenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationObjectiveEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationObjectiveEnum",
       "member": "valueOf",
@@ -2878,7 +2895,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationoutputtypeenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationoutputtypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationOutputTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationOutputTypeEnum",
       "member": "valueOf",
@@ -2896,7 +2913,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationpredictiontypeenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationpredictiontypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationPredictionTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationPredictionTypeEnum",
       "member": "valueOf",
@@ -2914,7 +2931,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationrunparametersalgorithmenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationrunparametersalgorithmenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationRunParametersAlgorithmEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationRunParametersAlgorithmEnum",
       "member": "valueOf",
@@ -2932,7 +2949,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpoptimizationsourcetypeenum.valueof",
+      "probeId": "stub.connectapi-cdpoptimizationsourcetypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpOptimizationSourceTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpOptimizationSourceTypeEnum",
       "member": "valueOf",
@@ -2950,7 +2967,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cdpschedulefrequencytypeenum.valueof",
+      "probeId": "stub.connectapi-cdpschedulefrequencytypeenum.valueof.sig-string",
       "contractId": "ConnectApi.CdpScheduleFrequencyTypeEnum.valueOf(String)",
       "type": "ConnectApi.CdpScheduleFrequencyTypeEnum",
       "member": "valueOf",
@@ -2968,7 +2985,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-changetype.valueof",
+      "probeId": "stub.connectapi-changetype.valueof.sig-string",
       "contractId": "ConnectApi.ChangeType.valueOf(String)",
       "type": "ConnectApi.ChangeType",
       "member": "valueOf",
@@ -2986,7 +3003,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-checkoutsessionstate.valueof",
+      "probeId": "stub.connectapi-checkoutsessionstate.valueof.sig-string",
       "contractId": "ConnectApi.CheckoutSessionState.valueOf(String)",
       "type": "ConnectApi.CheckoutSessionState",
       "member": "valueOf",
@@ -3004,7 +3021,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-cloudprovidertype.valueof",
+      "probeId": "stub.connectapi-cloudprovidertype.valueof.sig-string",
       "contractId": "ConnectApi.CloudProviderType.valueOf(String)",
       "type": "ConnectApi.CloudProviderType",
       "member": "valueOf",
@@ -3022,7 +3039,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commenttype.valueof",
+      "probeId": "stub.connectapi-commenttype.valueof.sig-string",
       "contractId": "ConnectApi.CommentType.valueOf(String)",
       "type": "ConnectApi.CommentType",
       "member": "valueOf",
@@ -3040,7 +3057,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commerceaddresssort.valueof",
+      "probeId": "stub.connectapi-commerceaddresssort.valueof.sig-string",
       "contractId": "ConnectApi.CommerceAddressSort.valueOf(String)",
       "type": "ConnectApi.CommerceAddressSort",
       "member": "valueOf",
@@ -3058,7 +3075,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commercecatalogattributetype.valueof",
+      "probeId": "stub.connectapi-commercecatalogattributetype.valueof.sig-string",
       "contractId": "ConnectApi.CommerceCatalogAttributeType.valueOf(String)",
       "type": "ConnectApi.CommerceCatalogAttributeType",
       "member": "valueOf",
@@ -3076,7 +3093,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commerceeinsteinactivityjobstatusenum.valueof",
+      "probeId": "stub.connectapi-commerceeinsteinactivityjobstatusenum.valueof.sig-string",
       "contractId": "ConnectApi.CommerceEinsteinActivityJobStatusEnum.valueOf(String)",
       "type": "ConnectApi.CommerceEinsteinActivityJobStatusEnum",
       "member": "valueOf",
@@ -3094,7 +3111,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commerceeinsteinstatusenum.valueof",
+      "probeId": "stub.connectapi-commerceeinsteinstatusenum.valueof.sig-string",
       "contractId": "ConnectApi.CommerceEinsteinStatusEnum.valueOf(String)",
       "type": "ConnectApi.CommerceEinsteinStatusEnum",
       "member": "valueOf",
@@ -3112,7 +3129,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commercesearchattributetype.valueof",
+      "probeId": "stub.connectapi-commercesearchattributetype.valueof.sig-string",
       "contractId": "ConnectApi.CommerceSearchAttributeType.valueOf(String)",
       "type": "ConnectApi.CommerceSearchAttributeType",
       "member": "valueOf",
@@ -3130,7 +3147,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commercesearchfacetdisplaytype.valueof",
+      "probeId": "stub.connectapi-commercesearchfacetdisplaytype.valueof.sig-string",
       "contractId": "ConnectApi.CommerceSearchFacetDisplayType.valueOf(String)",
       "type": "ConnectApi.CommerceSearchFacetDisplayType",
       "member": "valueOf",
@@ -3148,7 +3165,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commercesearchfacettype.valueof",
+      "probeId": "stub.connectapi-commercesearchfacettype.valueof.sig-string",
       "contractId": "ConnectApi.CommerceSearchFacetType.valueOf(String)",
       "type": "ConnectApi.CommerceSearchFacetType",
       "member": "valueOf",
@@ -3166,7 +3183,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commercesearchgroupingoption.valueof",
+      "probeId": "stub.connectapi-commercesearchgroupingoption.valueof.sig-string",
       "contractId": "ConnectApi.CommerceSearchGroupingOption.valueOf(String)",
       "type": "ConnectApi.CommerceSearchGroupingOption",
       "member": "valueOf",
@@ -3184,7 +3201,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commercesearchindexbuildtype.valueof",
+      "probeId": "stub.connectapi-commercesearchindexbuildtype.valueof.sig-string",
       "contractId": "ConnectApi.CommerceSearchIndexBuildType.valueOf(String)",
       "type": "ConnectApi.CommerceSearchIndexBuildType",
       "member": "valueOf",
@@ -3202,7 +3219,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commercesearchindexcreationtype.valueof",
+      "probeId": "stub.connectapi-commercesearchindexcreationtype.valueof.sig-string",
       "contractId": "ConnectApi.CommerceSearchIndexCreationType.valueOf(String)",
       "type": "ConnectApi.CommerceSearchIndexCreationType",
       "member": "valueOf",
@@ -3220,7 +3237,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commercesearchindexstatus.valueof",
+      "probeId": "stub.connectapi-commercesearchindexstatus.valueof.sig-string",
       "contractId": "ConnectApi.CommerceSearchIndexStatus.valueOf(String)",
       "type": "ConnectApi.CommerceSearchIndexStatus",
       "member": "valueOf",
@@ -3238,7 +3255,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commercesearchindexusage.valueof",
+      "probeId": "stub.connectapi-commercesearchindexusage.valueof.sig-string",
       "contractId": "ConnectApi.CommerceSearchIndexUsage.valueOf(String)",
       "type": "ConnectApi.CommerceSearchIndexUsage",
       "member": "valueOf",
@@ -3256,7 +3273,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commercesearchquerycontexttype.valueof",
+      "probeId": "stub.connectapi-commercesearchquerycontexttype.valueof.sig-string",
       "contractId": "ConnectApi.CommerceSearchQueryContextType.valueOf(String)",
       "type": "ConnectApi.CommerceSearchQueryContextType",
       "member": "valueOf",
@@ -3274,7 +3291,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commercesearchsortruledirection.valueof",
+      "probeId": "stub.connectapi-commercesearchsortruledirection.valueof.sig-string",
       "contractId": "ConnectApi.CommerceSearchSortRuleDirection.valueOf(String)",
       "type": "ConnectApi.CommerceSearchSortRuleDirection",
       "member": "valueOf",
@@ -3292,7 +3309,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commercesearchsortruletype.valueof",
+      "probeId": "stub.connectapi-commercesearchsortruletype.valueof.sig-string",
       "contractId": "ConnectApi.CommerceSearchSortRuleType.valueOf(String)",
       "type": "ConnectApi.CommerceSearchSortRuleType",
       "member": "valueOf",
@@ -3310,7 +3327,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commercesearchtopproducttype.valueof",
+      "probeId": "stub.connectapi-commercesearchtopproducttype.valueof.sig-string",
       "contractId": "ConnectApi.CommerceSearchTopProductType.valueOf(String)",
       "type": "ConnectApi.CommerceSearchTopProductType",
       "member": "valueOf",
@@ -3328,7 +3345,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commercesubscriptionsortorder.valueof",
+      "probeId": "stub.connectapi-commercesubscriptionsortorder.valueof.sig-string",
       "contractId": "ConnectApi.CommerceSubscriptionSortOrder.valueOf(String)",
       "type": "ConnectApi.CommerceSubscriptionSortOrder",
       "member": "valueOf",
@@ -3346,7 +3363,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-commerequotessortorder.valueof",
+      "probeId": "stub.connectapi-commerequotessortorder.valueof.sig-string",
       "contractId": "ConnectApi.CommereQuotesSortOrder.valueOf(String)",
       "type": "ConnectApi.CommereQuotesSortOrder",
       "member": "valueOf",
@@ -3364,7 +3381,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-communityflagreasontype.valueof",
+      "probeId": "stub.connectapi-communityflagreasontype.valueof.sig-string",
       "contractId": "ConnectApi.CommunityFlagReasonType.valueOf(String)",
       "type": "ConnectApi.CommunityFlagReasonType",
       "member": "valueOf",
@@ -3382,7 +3399,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-communityflagtype.valueof",
+      "probeId": "stub.connectapi-communityflagtype.valueof.sig-string",
       "contractId": "ConnectApi.CommunityFlagType.valueOf(String)",
       "type": "ConnectApi.CommunityFlagType",
       "member": "valueOf",
@@ -3400,7 +3417,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-communityflagvisibility.valueof",
+      "probeId": "stub.connectapi-communityflagvisibility.valueof.sig-string",
       "contractId": "ConnectApi.CommunityFlagVisibility.valueOf(String)",
       "type": "ConnectApi.CommunityFlagVisibility",
       "member": "valueOf",
@@ -3418,7 +3435,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-communitystatus.valueof",
+      "probeId": "stub.connectapi-communitystatus.valueof.sig-string",
       "contractId": "ConnectApi.CommunityStatus.valueOf(String)",
       "type": "ConnectApi.CommunityStatus",
       "member": "valueOf",
@@ -3436,7 +3453,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-compliancecontrolloggingstatus.valueof",
+      "probeId": "stub.connectapi-compliancecontrolloggingstatus.valueof.sig-string",
       "contractId": "ConnectApi.ComplianceControlLoggingStatus.valueOf(String)",
       "type": "ConnectApi.ComplianceControlLoggingStatus",
       "member": "valueOf",
@@ -3454,7 +3471,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-compliancecontrolstatus.valueof",
+      "probeId": "stub.connectapi-compliancecontrolstatus.valueof.sig-string",
       "contractId": "ConnectApi.ComplianceControlStatus.valueOf(String)",
       "type": "ConnectApi.ComplianceControlStatus",
       "member": "valueOf",
@@ -3472,7 +3489,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-complianceprocedurestatus.valueof",
+      "probeId": "stub.connectapi-complianceprocedurestatus.valueof.sig-string",
       "contractId": "ConnectApi.ComplianceProcedureStatus.valueOf(String)",
       "type": "ConnectApi.ComplianceProcedureStatus",
       "member": "valueOf",
@@ -3490,7 +3507,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-compressionformatenum.valueof",
+      "probeId": "stub.connectapi-compressionformatenum.valueof.sig-string",
       "contractId": "ConnectApi.CompressionFormatEnum.valueOf(String)",
       "type": "ConnectApi.CompressionFormatEnum",
       "member": "valueOf",
@@ -3508,7 +3525,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-configuratorexecutionenum.valueof",
+      "probeId": "stub.connectapi-configuratorexecutionenum.valueof.sig-string",
       "contractId": "ConnectApi.ConfiguratorExecutionEnum.valueOf(String)",
       "type": "ConnectApi.ConfiguratorExecutionEnum",
       "member": "valueOf",
@@ -3526,7 +3543,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-connectcommercesearchsortrulelabelsuffix.valueof",
+      "probeId": "stub.connectapi-connectcommercesearchsortrulelabelsuffix.valueof.sig-string",
       "contractId": "ConnectApi.ConnectCommerceSearchSortRuleLabelSuffix.valueOf(String)",
       "type": "ConnectApi.ConnectCommerceSearchSortRuleLabelSuffix",
       "member": "valueOf",
@@ -3544,7 +3561,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-connectcommercesearchsortstandardfield.valueof",
+      "probeId": "stub.connectapi-connectcommercesearchsortstandardfield.valueof.sig-string",
       "contractId": "ConnectApi.ConnectCommerceSearchSortStandardField.valueOf(String)",
       "type": "ConnectApi.ConnectCommerceSearchSortStandardField",
       "member": "valueOf",
@@ -3562,7 +3579,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-connectimagegenerationbackground.valueof",
+      "probeId": "stub.connectapi-connectimagegenerationbackground.valueof.sig-string",
       "contractId": "ConnectApi.ConnectImageGenerationBackground.valueOf(String)",
       "type": "ConnectApi.ConnectImageGenerationBackground",
       "member": "valueOf",
@@ -3580,7 +3597,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-connectimagegenerationmodel.valueof",
+      "probeId": "stub.connectapi-connectimagegenerationmodel.valueof.sig-string",
       "contractId": "ConnectApi.ConnectImageGenerationModel.valueOf(String)",
       "type": "ConnectApi.ConnectImageGenerationModel",
       "member": "valueOf",
@@ -3598,7 +3615,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-connectimagegenerationoutputformat.valueof",
+      "probeId": "stub.connectapi-connectimagegenerationoutputformat.valueof.sig-string",
       "contractId": "ConnectApi.ConnectImageGenerationOutputFormat.valueOf(String)",
       "type": "ConnectApi.ConnectImageGenerationOutputFormat",
       "member": "valueOf",
@@ -3616,7 +3633,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-connectimagegenerationquality.valueof",
+      "probeId": "stub.connectapi-connectimagegenerationquality.valueof.sig-string",
       "contractId": "ConnectApi.ConnectImageGenerationQuality.valueOf(String)",
       "type": "ConnectApi.ConnectImageGenerationQuality",
       "member": "valueOf",
@@ -3634,7 +3651,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-connectimagegenerationsize.valueof",
+      "probeId": "stub.connectapi-connectimagegenerationsize.valueof.sig-string",
       "contractId": "ConnectApi.ConnectImageGenerationSize.valueOf(String)",
       "type": "ConnectApi.ConnectImageGenerationSize",
       "member": "valueOf",
@@ -3652,7 +3669,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-connectinsightunitenum.valueof",
+      "probeId": "stub.connectapi-connectinsightunitenum.valueof.sig-string",
       "contractId": "ConnectApi.ConnectInsightUnitEnum.valueOf(String)",
       "type": "ConnectApi.ConnectInsightUnitEnum",
       "member": "valueOf",
@@ -3670,7 +3687,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-connectmanagedcontentchanneltype.valueof",
+      "probeId": "stub.connectapi-connectmanagedcontentchanneltype.valueof.sig-string",
       "contractId": "ConnectApi.ConnectManagedContentChannelType.valueOf(String)",
       "type": "ConnectApi.ConnectManagedContentChannelType",
       "member": "valueOf",
@@ -3688,7 +3705,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-connectmanagedcontentdeploymenttype.valueof",
+      "probeId": "stub.connectapi-connectmanagedcontentdeploymenttype.valueof.sig-string",
       "contractId": "ConnectApi.ConnectManagedContentDeploymentType.valueOf(String)",
       "type": "ConnectApi.ConnectManagedContentDeploymentType",
       "member": "valueOf",
@@ -3706,7 +3723,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-connectmanagedcontentmediatype.valueof",
+      "probeId": "stub.connectapi-connectmanagedcontentmediatype.valueof.sig-string",
       "contractId": "ConnectApi.ConnectManagedContentMediaType.valueOf(String)",
       "type": "ConnectApi.ConnectManagedContentMediaType",
       "member": "valueOf",
@@ -3724,7 +3741,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-connectmanagedcontentnodetype.valueof",
+      "probeId": "stub.connectapi-connectmanagedcontentnodetype.valueof.sig-string",
       "contractId": "ConnectApi.ConnectManagedContentNodeType.valueOf(String)",
       "type": "ConnectApi.ConnectManagedContentNodeType",
       "member": "valueOf",
@@ -3742,7 +3759,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.connectapi-connectionschematypeenum.valueof",
+      "probeId": "stub.connectapi-connectionschematypeenum.valueof.sig-string",
       "contractId": "ConnectApi.ConnectionSchemaTypeEnum.valueOf(String)",
       "type": "ConnectApi.ConnectionSchemaTypeEnum",
       "member": "valueOf",
@@ -3760,7 +3777,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commerce_inventory-reservationchangetype.valueof",
+      "probeId": "stub.commerce_inventory-reservationchangetype.valueof.sig-string",
       "contractId": "commerce_inventory.ReservationChangeType.valueOf(String)",
       "type": "commerce_inventory.ReservationChangeType",
       "member": "valueOf",
@@ -3778,7 +3795,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commerceorders-catalogratespreferenceenum.valueof",
+      "probeId": "stub.commerceorders-catalogratespreferenceenum.valueof.sig-string",
       "contractId": "commerceorders.CatalogRatesPreferenceEnum.valueOf(String)",
       "type": "commerceorders.CatalogRatesPreferenceEnum",
       "member": "valueOf",
@@ -3796,7 +3813,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commerceorders-configurationinputenum.valueof",
+      "probeId": "stub.commerceorders-configurationinputenum.valueof.sig-string",
       "contractId": "commerceorders.ConfigurationInputEnum.valueOf(String)",
       "type": "commerceorders.ConfigurationInputEnum",
       "member": "valueOf",
@@ -3814,7 +3831,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commerceorders-pricingpreferenceenum.valueof",
+      "probeId": "stub.commerceorders-pricingpreferenceenum.valueof.sig-string",
       "contractId": "commerceorders.PricingPreferenceEnum.valueOf(String)",
       "type": "commerceorders.PricingPreferenceEnum",
       "member": "valueOf",
@@ -3832,7 +3849,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepayments-accountholdertype.valueof",
+      "probeId": "stub.commercepayments-accountholdertype.valueof.sig-string",
       "contractId": "commercepayments.AccountHolderType.valueOf(String)",
       "type": "commercepayments.AccountHolderType",
       "member": "valueOf",
@@ -3850,7 +3867,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepayments-accounttype.valueof",
+      "probeId": "stub.commercepayments-accounttype.valueof.sig-string",
       "contractId": "commercepayments.AccountType.valueOf(String)",
       "type": "commercepayments.AccountType",
       "member": "valueOf",
@@ -3868,7 +3885,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepayments-banktype.valueof",
+      "probeId": "stub.commercepayments-banktype.valueof.sig-string",
       "contractId": "commercepayments.BankType.valueOf(String)",
       "type": "commercepayments.BankType",
       "member": "valueOf",
@@ -3886,7 +3903,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepayments-cardcategory.valueof",
+      "probeId": "stub.commercepayments-cardcategory.valueof.sig-string",
       "contractId": "commercepayments.CardCategory.valueOf(String)",
       "type": "commercepayments.CardCategory",
       "member": "valueOf",
@@ -3904,7 +3921,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepayments-cardtype.valueof",
+      "probeId": "stub.commercepayments-cardtype.valueof.sig-string",
       "contractId": "commercepayments.CardType.valueOf(String)",
       "type": "commercepayments.CardType",
       "member": "valueOf",
@@ -3922,7 +3939,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepayments-notificationstatus.valueof",
+      "probeId": "stub.commercepayments-notificationstatus.valueof.sig-string",
       "contractId": "commercepayments.NotificationStatus.valueOf(String)",
       "type": "commercepayments.NotificationStatus",
       "member": "valueOf",
@@ -3940,7 +3957,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepayments-paymentmethodidtype.valueof",
+      "probeId": "stub.commercepayments-paymentmethodidtype.valueof.sig-string",
       "contractId": "commercepayments.PaymentMethodIdType.valueOf(String)",
       "type": "commercepayments.PaymentMethodIdType",
       "member": "valueOf",
@@ -3958,7 +3975,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepayments-requesttype.valueof",
+      "probeId": "stub.commercepayments-requesttype.valueof.sig-string",
       "contractId": "commercepayments.RequestType.valueOf(String)",
       "type": "commercepayments.RequestType",
       "member": "valueOf",
@@ -3976,7 +3993,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepayments-retrycategory.valueof",
+      "probeId": "stub.commercepayments-retrycategory.valueof.sig-string",
       "contractId": "commercepayments.RetryCategory.valueOf(String)",
       "type": "commercepayments.RetryCategory",
       "member": "valueOf",
@@ -3994,7 +4011,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepayments-retrydecision.valueof",
+      "probeId": "stub.commercepayments-retrydecision.valueof.sig-string",
       "contractId": "commercepayments.RetryDecision.valueOf(String)",
       "type": "commercepayments.RetryDecision",
       "member": "valueOf",
@@ -4012,7 +4029,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepayments-salesforceresultcode.valueof",
+      "probeId": "stub.commercepayments-salesforceresultcode.valueof.sig-string",
       "contractId": "commercepayments.SalesforceResultCode.valueOf(String)",
       "type": "commercepayments.SalesforceResultCode",
       "member": "valueOf",
@@ -4030,7 +4047,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepayments-standardentryclasscode.valueof",
+      "probeId": "stub.commercepayments-standardentryclasscode.valueof.sig-string",
       "contractId": "commercepayments.StandardEntryClassCode.valueOf(String)",
       "type": "commercepayments.StandardEntryClassCode",
       "member": "valueOf",
@@ -4048,7 +4065,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepricing-reductionmethod.valueof",
+      "probeId": "stub.commercepricing-reductionmethod.valueof.sig-string",
       "contractId": "commercepricing.ReductionMethod.valueOf(String)",
       "type": "commercepricing.ReductionMethod",
       "member": "valueOf",
@@ -4066,7 +4083,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepricing-roundingmode.valueof",
+      "probeId": "stub.commercepricing-roundingmode.valueof.sig-string",
       "contractId": "commercepricing.RoundingMode.valueOf(String)",
       "type": "commercepricing.RoundingMode",
       "member": "valueOf",
@@ -4084,7 +4101,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepromotions-adjustmenttype.valueof",
+      "probeId": "stub.commercepromotions-adjustmenttype.valueof.sig-string",
       "contractId": "commercepromotions.AdjustmentType.valueOf(String)",
       "type": "commercepromotions.AdjustmentType",
       "member": "valueOf",
@@ -4102,7 +4119,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepromotions-associationstatus.valueof",
+      "probeId": "stub.commercepromotions-associationstatus.valueof.sig-string",
       "contractId": "commercepromotions.AssociationStatus.valueOf(String)",
       "type": "commercepromotions.AssociationStatus",
       "member": "valueOf",
@@ -4120,7 +4137,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepromotions-couponinfo-errorcode.valueof",
+      "probeId": "stub.commercepromotions-couponinfo-errorcode.valueof.sig-string",
       "contractId": "commercepromotions.CouponInfo.ErrorCode.valueOf(String)",
       "type": "commercepromotions.CouponInfo.ErrorCode",
       "member": "valueOf",
@@ -4138,7 +4155,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepromotions-errorcode.valueof",
+      "probeId": "stub.commercepromotions-errorcode.valueof.sig-string",
       "contractId": "commercepromotions.ErrorCode.valueOf(String)",
       "type": "commercepromotions.ErrorCode",
       "member": "valueOf",
@@ -4156,7 +4173,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepromotions-promotiontarget-adjustmenttype.valueof",
+      "probeId": "stub.commercepromotions-promotiontarget-adjustmenttype.valueof.sig-string",
       "contractId": "commercepromotions.PromotionTarget.AdjustmentType.valueOf(String)",
       "type": "commercepromotions.PromotionTarget.AdjustmentType",
       "member": "valueOf",
@@ -4174,7 +4191,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepromotions-promotiontarget-associationstatus.valueof",
+      "probeId": "stub.commercepromotions-promotiontarget-associationstatus.valueof.sig-string",
       "contractId": "commercepromotions.PromotionTarget.AssociationStatus.valueOf(String)",
       "type": "commercepromotions.PromotionTarget.AssociationStatus",
       "member": "valueOf",
@@ -4192,7 +4209,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepromotions-promotiontarget-targettype.valueof",
+      "probeId": "stub.commercepromotions-promotiontarget-targettype.valueof.sig-string",
       "contractId": "commercepromotions.PromotionTarget.TargetType.valueOf(String)",
       "type": "commercepromotions.PromotionTarget.TargetType",
       "member": "valueOf",
@@ -4210,7 +4227,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercepromotions-targettype.valueof",
+      "probeId": "stub.commercepromotions-targettype.valueof.sig-string",
       "contractId": "commercepromotions.TargetType.valueOf(String)",
       "type": "commercepromotions.TargetType",
       "member": "valueOf",
@@ -4228,7 +4245,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercestoretax-taxadjustmenttype.valueof",
+      "probeId": "stub.commercestoretax-taxadjustmenttype.valueof.sig-string",
       "contractId": "commercestoretax.TaxAdjustmentType.valueOf(String)",
       "type": "commercestoretax.TaxAdjustmentType",
       "member": "valueOf",
@@ -4246,7 +4263,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercestoretax-taxlocaletype.valueof",
+      "probeId": "stub.commercestoretax-taxlocaletype.valueof.sig-string",
       "contractId": "commercestoretax.TaxLocaleType.valueOf(String)",
       "type": "commercestoretax.TaxLocaleType",
       "member": "valueOf",
@@ -4264,7 +4281,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercetax-calculatetaxtype.valueof",
+      "probeId": "stub.commercetax-calculatetaxtype.valueof.sig-string",
       "contractId": "commercetax.CalculateTaxType.valueOf(String)",
       "type": "commercetax.CalculateTaxType",
       "member": "valueOf",
@@ -4282,7 +4299,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercetax-requesttype.valueof",
+      "probeId": "stub.commercetax-requesttype.valueof.sig-string",
       "contractId": "commercetax.RequestType.valueOf(String)",
       "type": "commercetax.RequestType",
       "member": "valueOf",
@@ -4300,7 +4317,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercetax-resultcode.valueof",
+      "probeId": "stub.commercetax-resultcode.valueof.sig-string",
       "contractId": "commercetax.ResultCode.valueOf(String)",
       "type": "commercetax.ResultCode",
       "member": "valueOf",
@@ -4318,7 +4335,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercetax-taxtransactionstatus.valueof",
+      "probeId": "stub.commercetax-taxtransactionstatus.valueof.sig-string",
       "contractId": "commercetax.TaxTransactionStatus.valueOf(String)",
       "type": "commercetax.TaxTransactionStatus",
       "member": "valueOf",
@@ -4336,7 +4353,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.commercetax-taxtransactiontype.valueof",
+      "probeId": "stub.commercetax-taxtransactiontype.valueof.sig-string",
       "contractId": "commercetax.TaxTransactionType.valueOf(String)",
       "type": "commercetax.TaxTransactionType",
       "member": "valueOf",
@@ -4354,7 +4371,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.compression-level.valueof",
+      "probeId": "stub.compression-level.valueof.sig-string",
       "contractId": "compression.Level.valueOf(String)",
       "type": "compression.Level",
       "member": "valueOf",
@@ -4372,7 +4389,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.compression-method.valueof",
+      "probeId": "stub.compression-method.valueof.sig-string",
       "contractId": "compression.Method.valueOf(String)",
       "type": "compression.Method",
       "member": "valueOf",
@@ -4390,21 +4407,7 @@
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
-      "probeId": "stub.blob.topdf",
-      "contractId": "Blob.toPdf(String)",
-      "type": "Blob",
-      "member": "toPdf",
-      "kind": "method",
-      "mode": "org-diff",
-      "owner": "vm-stdlib",
-      "outcome": "unsupported",
-      "exceptionType": "UnsupportedFeature",
-      "exceptionMessage": "unsupported call \"Blob.toPdf\"",
-      "failureShape": "exception type/message parity, including null and bounds errors",
-      "nextAction": "decide keep-unsupported or implement deterministic local model"
-    },
-    {
-      "probeId": "stub.blob.valueof",
+      "probeId": "stub.blob.valueof.sig-string",
       "contractId": "Blob.valueOf(String)",
       "type": "Blob",
       "member": "valueOf",
@@ -4420,23 +4423,7 @@
       "nextAction": "run org-diff probe and compare payload parity"
     },
     {
-      "probeId": "stub.boolean.valueof",
-      "contractId": "Boolean.valueOf(Object)",
-      "type": "Boolean",
-      "member": "valueOf",
-      "kind": "method",
-      "mode": "org-diff",
-      "owner": "vm-stdlib",
-      "outcome": "returns",
-      "oddityRisk": "medium",
-      "edgeTags": [
-        "parse-errors"
-      ],
-      "failureShape": "exception type/message parity, including null and bounds errors",
-      "nextAction": "run org-diff probe and compare payload parity"
-    },
-    {
-      "probeId": "stub.blob.equals",
+      "probeId": "stub.blob.equals.sig-object",
       "contractId": "Blob.equals(Object)",
       "type": "Blob",
       "member": "equals",
@@ -4474,6 +4461,18 @@
       "nextAction": "run org-diff probe and compare payload parity"
     },
     {
+      "probeId": "stub.blob.topdf.sig-string",
+      "contractId": "Blob.toPdf(String)",
+      "type": "Blob",
+      "member": "toPdf",
+      "kind": "method",
+      "mode": "org-diff",
+      "owner": "vm-stdlib",
+      "outcome": "returns",
+      "failureShape": "exception type/message parity, including null and bounds errors",
+      "nextAction": "run org-diff probe and compare payload parity"
+    },
+    {
       "probeId": "stub.blob.tostring",
       "contractId": "Blob.toString()",
       "type": "Blob",
@@ -4489,7 +4488,7 @@
   "topImplementation": [
     {
       "contractId": "AccessType.valueOf(String)",
-      "probeId": "stub.accesstype.valueof",
+      "probeId": "stub.accesstype.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4497,15 +4496,23 @@
     },
     {
       "contractId": "ApexPages.Severity.valueOf(String)",
-      "probeId": "stub.apexpages-severity.valueof",
+      "probeId": "stub.apexpages-severity.valueof.sig-string",
       "owner": "ui-runtime",
       "outcome": "exception",
       "oddityRisk": "medium",
       "nextAction": "capture exception shape and implement Apex-compatible behavior"
     },
     {
+      "contractId": "Boolean.valueOf(Object)",
+      "probeId": "stub.boolean.valueof.sig-object",
+      "owner": "vm-stdlib",
+      "outcome": "exception",
+      "oddityRisk": "medium",
+      "nextAction": "capture exception shape and implement Apex-compatible behavior"
+    },
+    {
       "contractId": "Cache.Visibility.valueOf(String)",
-      "probeId": "stub.cache-visibility.valueof",
+      "probeId": "stub.cache-visibility.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4513,7 +4520,7 @@
     },
     {
       "contractId": "CallbackStatus.valueOf(String)",
-      "probeId": "stub.callbackstatus.valueof",
+      "probeId": "stub.callbackstatus.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4521,7 +4528,7 @@
     },
     {
       "contractId": "Canvas.ContextTypeEnum.valueOf(String)",
-      "probeId": "stub.canvas-contexttypeenum.valueof",
+      "probeId": "stub.canvas-contexttypeenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4529,7 +4536,7 @@
     },
     {
       "contractId": "CartExtension.AdjustmentAmountScopeEnum.valueOf(String)",
-      "probeId": "stub.cartextension-adjustmentamountscopeenum.valueof",
+      "probeId": "stub.cartextension-adjustmentamountscopeenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4537,7 +4544,7 @@
     },
     {
       "contractId": "CartExtension.AdjustmentTypeEnum.valueOf(String)",
-      "probeId": "stub.cartextension-adjustmenttypeenum.valueof",
+      "probeId": "stub.cartextension-adjustmenttypeenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4545,7 +4552,7 @@
     },
     {
       "contractId": "CartExtension.AssociatedItemPricingEnum.valueOf(String)",
-      "probeId": "stub.cartextension-associateditempricingenum.valueof",
+      "probeId": "stub.cartextension-associateditempricingenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4553,7 +4560,7 @@
     },
     {
       "contractId": "CartExtension.BillingFrequencyEnum.valueOf(String)",
-      "probeId": "stub.cartextension-billingfrequencyenum.valueof",
+      "probeId": "stub.cartextension-billingfrequencyenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4561,7 +4568,7 @@
     },
     {
       "contractId": "CartExtension.CartAdjustmentTargetTypeEnum.valueOf(String)",
-      "probeId": "stub.cartextension-cartadjustmenttargettypeenum.valueof",
+      "probeId": "stub.cartextension-cartadjustmenttargettypeenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4569,7 +4576,7 @@
     },
     {
       "contractId": "CartExtension.CartItemSubTypeEnum.valueOf(String)",
-      "probeId": "stub.cartextension-cartitemsubtypeenum.valueof",
+      "probeId": "stub.cartextension-cartitemsubtypeenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4577,7 +4584,7 @@
     },
     {
       "contractId": "CartExtension.CartStatusEnum.valueOf(String)",
-      "probeId": "stub.cartextension-cartstatusenum.valueof",
+      "probeId": "stub.cartextension-cartstatusenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4585,7 +4592,7 @@
     },
     {
       "contractId": "CartExtension.CartValidationOutputLevelEnum.valueOf(String)",
-      "probeId": "stub.cartextension-cartvalidationoutputlevelenum.valueof",
+      "probeId": "stub.cartextension-cartvalidationoutputlevelenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4593,7 +4600,7 @@
     },
     {
       "contractId": "CartExtension.CartValidationOutputTypeEnum.valueOf(String)",
-      "probeId": "stub.cartextension-cartvalidationoutputtypeenum.valueof",
+      "probeId": "stub.cartextension-cartvalidationoutputtypeenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4601,7 +4608,7 @@
     },
     {
       "contractId": "CartExtension.ConfigureDuringSaleEnum.valueOf(String)",
-      "probeId": "stub.cartextension-configureduringsaleenum.valueof",
+      "probeId": "stub.cartextension-configureduringsaleenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4609,7 +4616,7 @@
     },
     {
       "contractId": "CartExtension.PeriodBoundaryEnum.valueOf(String)",
-      "probeId": "stub.cartextension-periodboundaryenum.valueof",
+      "probeId": "stub.cartextension-periodboundaryenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4617,7 +4624,7 @@
     },
     {
       "contractId": "CartExtension.PriceAdjustmentSourceEnum.valueOf(String)",
-      "probeId": "stub.cartextension-priceadjustmentsourceenum.valueof",
+      "probeId": "stub.cartextension-priceadjustmentsourceenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4625,7 +4632,7 @@
     },
     {
       "contractId": "CartExtension.ProductClass.valueOf(String)",
-      "probeId": "stub.cartextension-productclass.valueof",
+      "probeId": "stub.cartextension-productclass.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4633,7 +4640,7 @@
     },
     {
       "contractId": "CartExtension.QuantityScaleMethodEnum.valueOf(String)",
-      "probeId": "stub.cartextension-quantityscalemethodenum.valueof",
+      "probeId": "stub.cartextension-quantityscalemethodenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4641,7 +4648,7 @@
     },
     {
       "contractId": "CartExtension.RoundingMethodEnum.valueOf(String)",
-      "probeId": "stub.cartextension-roundingmethodenum.valueof",
+      "probeId": "stub.cartextension-roundingmethodenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4649,7 +4656,7 @@
     },
     {
       "contractId": "CartExtension.SalesItemTypeEnum.valueOf(String)",
-      "probeId": "stub.cartextension-salesitemtypeenum.valueof",
+      "probeId": "stub.cartextension-salesitemtypeenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4657,7 +4664,7 @@
     },
     {
       "contractId": "CartExtension.SellingModelType.valueOf(String)",
-      "probeId": "stub.cartextension-sellingmodeltype.valueof",
+      "probeId": "stub.cartextension-sellingmodeltype.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4665,7 +4672,7 @@
     },
     {
       "contractId": "CartExtension.StockCheckMethod.valueOf(String)",
-      "probeId": "stub.cartextension-stockcheckmethod.valueof",
+      "probeId": "stub.cartextension-stockcheckmethod.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4673,7 +4680,7 @@
     },
     {
       "contractId": "CartExtension.TaxLocaleTypeEnum.valueOf(String)",
-      "probeId": "stub.cartextension-taxlocaletypeenum.valueof",
+      "probeId": "stub.cartextension-taxlocaletypeenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4681,7 +4688,7 @@
     },
     {
       "contractId": "CartExtension.TaxTypeEnum.valueOf(String)",
-      "probeId": "stub.cartextension-taxtypeenum.valueof",
+      "probeId": "stub.cartextension-taxtypeenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4689,7 +4696,7 @@
     },
     {
       "contractId": "CartExtension.TimeUnitEnum.valueOf(String)",
-      "probeId": "stub.cartextension-timeunitenum.valueof",
+      "probeId": "stub.cartextension-timeunitenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4697,7 +4704,7 @@
     },
     {
       "contractId": "CartExtension.WebStoreTypeEnum.valueOf(String)",
-      "probeId": "stub.cartextension-webstoretypeenum.valueof",
+      "probeId": "stub.cartextension-webstoretypeenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4705,7 +4712,7 @@
     },
     {
       "contractId": "CommerceExtension.ResolutionStates.valueOf(String)",
-      "probeId": "stub.commerceextension-resolutionstates.valueof",
+      "probeId": "stub.commerceextension-resolutionstates.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4713,7 +4720,7 @@
     },
     {
       "contractId": "ConnectApi.ABnExperimentActionEnum.valueOf(String)",
-      "probeId": "stub.connectapi-abnexperimentactionenum.valueof",
+      "probeId": "stub.connectapi-abnexperimentactionenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4721,7 +4728,7 @@
     },
     {
       "contractId": "ConnectApi.AIModelVisibilityEnum.valueOf(String)",
-      "probeId": "stub.connectapi-aimodelvisibilityenum.valueof",
+      "probeId": "stub.connectapi-aimodelvisibilityenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4729,7 +4736,7 @@
     },
     {
       "contractId": "ConnectApi.AccountEngagementDataStreamTypeEnum.valueOf(String)",
-      "probeId": "stub.connectapi-accountengagementdatastreamtypeenum.valueof",
+      "probeId": "stub.connectapi-accountengagementdatastreamtypeenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4737,7 +4744,7 @@
     },
     {
       "contractId": "ConnectApi.AccountHolderType.valueOf(String)",
-      "probeId": "stub.connectapi-accountholdertype.valueof",
+      "probeId": "stub.connectapi-accountholdertype.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4745,7 +4752,7 @@
     },
     {
       "contractId": "ConnectApi.AccountRelationshipTypeEnum.valueOf(String)",
-      "probeId": "stub.connectapi-accountrelationshiptypeenum.valueof",
+      "probeId": "stub.connectapi-accountrelationshiptypeenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4753,7 +4760,7 @@
     },
     {
       "contractId": "ConnectApi.AccountType.valueOf(String)",
-      "probeId": "stub.connectapi-accounttype.valueof",
+      "probeId": "stub.connectapi-accounttype.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4761,7 +4768,7 @@
     },
     {
       "contractId": "ConnectApi.AchievementContributorTypeEnum.valueOf(String)",
-      "probeId": "stub.connectapi-achievementcontributortypeenum.valueof",
+      "probeId": "stub.connectapi-achievementcontributortypeenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4769,7 +4776,7 @@
     },
     {
       "contractId": "ConnectApi.AchievementMappingTypeEnum.valueOf(String)",
-      "probeId": "stub.connectapi-achievementmappingtypeenum.valueof",
+      "probeId": "stub.connectapi-achievementmappingtypeenum.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4777,7 +4784,7 @@
     },
     {
       "contractId": "ConnectApi.ActionLinkExecutionsAllowed.valueOf(String)",
-      "probeId": "stub.connectapi-actionlinkexecutionsallowed.valueof",
+      "probeId": "stub.connectapi-actionlinkexecutionsallowed.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4785,7 +4792,7 @@
     },
     {
       "contractId": "ConnectApi.ActionLinkType.valueOf(String)",
-      "probeId": "stub.connectapi-actionlinktype.valueof",
+      "probeId": "stub.connectapi-actionlinktype.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4793,7 +4800,7 @@
     },
     {
       "contractId": "ConnectApi.ActivationInternalDMOType.valueOf(String)",
-      "probeId": "stub.connectapi-activationinternaldmotype.valueof",
+      "probeId": "stub.connectapi-activationinternaldmotype.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4801,7 +4808,7 @@
     },
     {
       "contractId": "ConnectApi.ActivationPlatformCreationType.valueOf(String)",
-      "probeId": "stub.connectapi-activationplatformcreationtype.valueof",
+      "probeId": "stub.connectapi-activationplatformcreationtype.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4809,7 +4816,7 @@
     },
     {
       "contractId": "ConnectApi.ActivationPlatformCustomerFileSource.valueOf(String)",
-      "probeId": "stub.connectapi-activationplatformcustomerfilesource.valueof",
+      "probeId": "stub.connectapi-activationplatformcustomerfilesource.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4817,7 +4824,7 @@
     },
     {
       "contractId": "ConnectApi.ActivationPlatformPrivacyType.valueOf(String)",
-      "probeId": "stub.connectapi-activationplatformprivacytype.valueof",
+      "probeId": "stub.connectapi-activationplatformprivacytype.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4825,7 +4832,7 @@
     },
     {
       "contractId": "ConnectApi.ActivationPlatformStatus.valueOf(String)",
-      "probeId": "stub.connectapi-activationplatformstatus.valueof",
+      "probeId": "stub.connectapi-activationplatformstatus.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4833,7 +4840,7 @@
     },
     {
       "contractId": "ConnectApi.ActivationPlatformType.valueOf(String)",
-      "probeId": "stub.connectapi-activationplatformtype.valueof",
+      "probeId": "stub.connectapi-activationplatformtype.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4841,7 +4848,7 @@
     },
     {
       "contractId": "ConnectApi.ActivationStatus.valueOf(String)",
-      "probeId": "stub.connectapi-activationstatus.valueof",
+      "probeId": "stub.connectapi-activationstatus.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4849,7 +4856,7 @@
     },
     {
       "contractId": "ConnectApi.ActivationTargetStatus.valueOf(String)",
-      "probeId": "stub.connectapi-activationtargetstatus.valueof",
+      "probeId": "stub.connectapi-activationtargetstatus.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4857,7 +4864,7 @@
     },
     {
       "contractId": "ConnectApi.ActivationType.valueOf(String)",
-      "probeId": "stub.connectapi-activationtype.valueof",
+      "probeId": "stub.connectapi-activationtype.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4865,7 +4872,7 @@
     },
     {
       "contractId": "ConnectApi.ActivitySharingType.valueOf(String)",
-      "probeId": "stub.connectapi-activitysharingtype.valueof",
+      "probeId": "stub.connectapi-activitysharingtype.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",
@@ -4873,15 +4880,7 @@
     },
     {
       "contractId": "ConnectApi.AdjustmentAmountScope.valueOf(String)",
-      "probeId": "stub.connectapi-adjustmentamountscope.valueof",
-      "owner": "vm-stdlib",
-      "outcome": "exception",
-      "oddityRisk": "medium",
-      "nextAction": "capture exception shape and implement Apex-compatible behavior"
-    },
-    {
-      "contractId": "ConnectApi.AdjustmentType.valueOf(String)",
-      "probeId": "stub.connectapi-adjustmenttype.valueof",
+      "probeId": "stub.connectapi-adjustmentamountscope.valueof.sig-string",
       "owner": "vm-stdlib",
       "outcome": "exception",
       "oddityRisk": "medium",

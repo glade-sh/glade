@@ -1,8 +1,8 @@
 @IsTest
-private class ArtifactConsumerTest {
+private class TrailArtifactConsumerTest {
     @IsTest
     static void resolvesArtifactDependencyTypeShape() {
-        znu.DependencyService service;
+        pkgx.TrailPackageService service;
         System.assertEquals(true, service == null);
     }
 }

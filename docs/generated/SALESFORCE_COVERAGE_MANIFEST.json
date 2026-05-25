@@ -10,11 +10,11 @@
       "entries": 968,
       "documents": 104,
       "members": 864,
-      "supported": 101,
+      "supported": 102,
       "partial": 32,
       "stub": 0,
       "unsupported": 0,
-      "unknown": 835,
+      "unknown": 834,
       "topUnknown": [
         {
           "symbol": "AccessLevel",
@@ -84,11 +84,11 @@
       "entries": 835,
       "documents": 135,
       "members": 700,
-      "supported": 58,
-      "partial": 5,
+      "supported": 59,
+      "partial": 12,
       "stub": 0,
       "unsupported": 0,
-      "unknown": 772,
+      "unknown": 764,
       "topUnknown": [
         {
           "symbol": "Approval",
@@ -159,10 +159,10 @@
       "documents": 129,
       "members": 632,
       "supported": 6,
-      "partial": 13,
+      "partial": 20,
       "stub": 0,
       "unsupported": 0,
-      "unknown": 742,
+      "unknown": 735,
       "topUnknown": [
         {
           "symbol": "ApexPages",
@@ -319,10 +319,10 @@
       "documents": 19,
       "members": 110,
       "supported": 1,
-      "partial": 4,
+      "partial": 7,
       "stub": 0,
       "unsupported": 0,
-      "unknown": 124,
+      "unknown": 121,
       "topUnknown": [
         {
           "symbol": "AsyncInfo",
@@ -388,11 +388,11 @@
     }
   ],
   "totals": {
-    "supported": 166,
-    "partial": 54,
+    "supported": 168,
+    "partial": 71,
     "stub": 0,
     "unsupported": 1092,
-    "unknown": 7089
+    "unknown": 7070
   },
   "tooling": {
     "source": "tooling_system_symbols.json.gz",
@@ -404,8 +404,8 @@
     "members": 73326,
     "systemDefaultNamespaceClasses": 198,
     "systemDefaultNamespaceMembers": 3280,
-    "concreteRuntimeApis": 117,
-    "concreteRuntimeApisInTooling": 116,
+    "concreteRuntimeApis": 134,
+    "concreteRuntimeApisInTooling": 133,
     "concreteRuntimeApisMissing": 1,
     "catalogSystemEntries": 2693,
     "catalogSystemEntriesInTooling": 1985,

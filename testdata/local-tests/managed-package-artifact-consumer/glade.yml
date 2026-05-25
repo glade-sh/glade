@@ -1,2 +1,2 @@
 project:
-  managedPackageDependencies: ["znu:artifact:../managed-package-artifact/znu.glade-package.json:1.0"]
+  managedPackageDependencies: ["pkgx:artifact:../managed-package-artifact/pkgx.glade-package.json:1.0"]

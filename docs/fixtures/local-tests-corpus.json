@@ -370,7 +370,7 @@
       },
       "outcomes": [
         {
-          "class": "ArtifactConsumerTest",
+          "class": "TrailArtifactConsumerTest",
           "method": "resolvesArtifactDependencyTypeShape",
           "outcome": "pass"
         }
