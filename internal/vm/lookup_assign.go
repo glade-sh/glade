@@ -268,6 +268,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 				}
 			}
 		}
+		if value, ok := managedNestedEnumLiteralValue(parts); ok {
+			return value, nil
+		}
 	}
 	if len(parts) == 3 && apexIdentifierStartsUpper(parts[0]) && apexIdentifierStartsUpper(parts[1]) && apexIdentifierStartsUpper(parts[2]) {
 		return Value{Kind: ValueObject, Type: parts[0] + "." + parts[1], Text: parts[2]}, nil
@@ -316,6 +319,21 @@ func (vm *VM) lookup(name string) (Value, error) {
 		}
 	}
 	return Null, fmt.Errorf("unknown variable %q", name)
+}
+
+func managedNestedEnumLiteralValue(parts []string) (Value, bool) {
+	if len(parts) < 3 {
+		return Null, false
+	}
+	literal := strings.TrimSpace(parts[len(parts)-1])
+	if literal == "" || !apexIdentifierStartsUpper(literal) || strings.ToUpper(literal) != literal {
+		return Null, false
+	}
+	typeName := strings.Join(parts[:len(parts)-1], ".")
+	if !looksManagedQualifiedType(strings.Join(parts[:2], ".")) {
+		return Null, false
+	}
+	return Value{Kind: ValueObject, Type: typeName, Text: literal}, true
 }
 
 func (vm *VM) lookupContextClasses() []string {
@@ -422,7 +440,15 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 	}
 	normalized := strings.ToLower(name)
 	if value, ok := object.Fields[name]; ok {
+		if !isExplicitSObjectField(object, name) {
+			if aliasName, aliasValue, aliasOK := explicitAliasObjectFieldValue(object, name); aliasOK {
+				return aliasName, aliasValue, true
+			}
+		}
 		if value.Kind == ValueNull {
+			if isExplicitSObjectField(object, name) {
+				return name, value, true
+			}
 			if isRelationshipNull(value) {
 				return name, value, true
 			}
@@ -456,6 +482,21 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 	}
 	if matched {
 		return matchedName, matchedValue, true
+	}
+	return "", Null, false
+}
+
+func explicitAliasObjectFieldValue(object Value, name string) (string, Value, bool) {
+	loweredName := strings.ToLower(name)
+	stripped := strings.ToLower(storage.StripAnyNamespaceToken(name))
+	for candidate, value := range object.Fields {
+		if candidate == name || !isExplicitSObjectField(object, candidate) {
+			continue
+		}
+		candidateLower := strings.ToLower(candidate)
+		if candidateLower == loweredName || strings.ToLower(storage.StripAnyNamespaceToken(candidate)) == stripped {
+			return candidate, value, true
+		}
 	}
 	return "", Null, false
 }
@@ -622,20 +663,30 @@ func propertyAccessorMethod(method Method) bool {
 	if method.Name == "" || method.ClassName == "" {
 		return false
 	}
-	suffix := method.Name
-	prefix := method.ClassName + "."
-	if strings.HasPrefix(strings.ToLower(suffix), strings.ToLower(prefix)) {
-		suffix = suffix[len(prefix):]
-	} else {
-		qualifiedPrefix := "." + method.ClassName + "."
-		index := strings.LastIndex(strings.ToLower(suffix), strings.ToLower(qualifiedPrefix))
-		if index < 0 {
-			return false
-		}
-		suffix = suffix[index+len(qualifiedPrefix):]
+	suffix, ok := propertyAccessorSuffix(method.Name, method.ClassName)
+	if !ok {
+		return false
 	}
 	return strings.Contains(suffix, ".") &&
 		(strings.HasSuffix(strings.ToLower(suffix), ".get") || strings.HasSuffix(strings.ToLower(suffix), ".set"))
+}
+
+func propertyAccessorSuffix(methodName, className string) (string, bool) {
+	for _, owner := range []string{className, shortTypeName(className)} {
+		if owner == "" {
+			continue
+		}
+		prefix := owner + "."
+		if strings.HasPrefix(strings.ToLower(methodName), strings.ToLower(prefix)) {
+			return methodName[len(prefix):], true
+		}
+		qualifiedPrefix := "." + owner + "."
+		index := strings.LastIndex(strings.ToLower(methodName), strings.ToLower(qualifiedPrefix))
+		if index >= 0 {
+			return methodName[index+len(qualifiedPrefix):], true
+		}
+	}
+	return "", false
 }
 
 func stubProxyCanInterceptMethod(method Method) bool {
@@ -1492,6 +1543,14 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				}
 			}
 			if isExplicitSObjectField(current, canonicalPart) {
+				if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists && fieldDef.Type == storage.FieldBoolean {
+					if defaultValue, ok := storage.DefaultValueForField(fieldDef); ok {
+						current = vmValueFromStorage(defaultValue)
+					} else {
+						current = Bool(false)
+					}
+					continue
+				}
 				if typedNull, hasTypedNull := vm.explicitParentRelationshipNullValue(current, canonicalPart); hasTypedNull {
 					current = typedNull
 					continue
@@ -1711,12 +1770,6 @@ func (vm *VM) currentGetterStoredValue(owner string, field Field, value Value) V
 
 func (vm *VM) assign(name string, value Value) error {
 	value = plainNull(value)
-	if (vm.currentClass == "TriggerHandlerManager" || vm.currentMethod.ClassName == "TriggerHandlerManager") &&
-		(vm.classNamespace(vm.currentClass) == "znu" || vm.classNamespace(vm.currentMethod.ClassName) == "znu") &&
-		strings.EqualFold(name, "disabledTriggers") &&
-		value.Kind == ValueSet {
-		name = "disabledTriggerSteps"
-	}
 	if actual, ok := vm.lookupGlobalName(name); ok {
 		if typeName := vm.VarTypes[actual]; typeName != "" {
 			coerced, err := vm.coerceAssignable(typeName, value)
@@ -1746,7 +1799,8 @@ func (vm *VM) assign(name string, value Value) error {
 							if err := vm.checkMemberAccess(owner, field.Access, owner+"."+actualName, field.Modifiers); err != nil {
 								return err
 							}
-							coerced, err := vm.coerceAssignable(field.Type, value)
+							fieldType := vm.resolveTypeNameInClass(owner, field.Type)
+							coerced, err := vm.coerceAssignable(fieldType, value)
 							if err != nil {
 								return fmt.Errorf("%s.%s: %w", owner, actualName, err)
 							}
@@ -1827,7 +1881,8 @@ func (vm *VM) assign(name string, value Value) error {
 					return err
 				}
 				field, _, _ = vm.lookupStaticFieldForReceiver(owner, memberName, preferDependency)
-				coerced, err := vm.coerceAssignable(field.Type, value)
+				fieldType := vm.resolveTypeNameInClass(owner, field.Type)
+				coerced, err := vm.coerceAssignable(fieldType, value)
 				if err != nil {
 					return fmt.Errorf("%s.%s: %w", owner, memberName, err)
 				}
@@ -1872,7 +1927,8 @@ func (vm *VM) assign(name string, value Value) error {
 				if err := vm.checkMemberAccess(owner, def.Access, owner+"."+name, def.Modifiers); err != nil {
 					return err
 				}
-				coerced, err := vm.coerceAssignable(def.Type, value)
+				fieldType := vm.resolveTypeNameInClass(owner, def.Type)
+				coerced, err := vm.coerceAssignable(fieldType, value)
 				if err != nil {
 					return fmt.Errorf("%s.%s: %w", this.Type, name, err)
 				}
@@ -1918,7 +1974,8 @@ func (vm *VM) assign(name string, value Value) error {
 			if err := vm.checkMemberAccess(owner, def.Access, owner+"."+actualName, def.Modifiers); err != nil {
 				return err
 			}
-			coerced, err := vm.coerceAssignable(def.Type, value)
+			fieldType := vm.resolveTypeNameInClass(owner, def.Type)
+			coerced, err := vm.coerceAssignable(fieldType, value)
 			if err != nil {
 				return fmt.Errorf("%s.%s: %w", this.Type, name, err)
 			}
@@ -1964,7 +2021,8 @@ func (vm *VM) assign(name string, value Value) error {
 				return err
 			}
 			field, _, _ = vm.lookupStaticFieldForReceiver(owner, name, vm.currentMethod.Dependency)
-			coerced, err := vm.coerceAssignable(field.Type, value)
+			fieldType := vm.resolveTypeNameInClass(owner, field.Type)
+			coerced, err := vm.coerceAssignable(fieldType, value)
 			if err != nil {
 				return fmt.Errorf("%s.%s: %w", owner, name, err)
 			}
@@ -2022,6 +2080,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		return fmt.Errorf("empty assignment target")
 	}
 	value = plainNull(value)
+	previousRoot := cloneValuePreserveRefs(root)
 	current := root
 	type pathParent struct {
 		object Value
@@ -2036,6 +2095,8 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			}
 			updated = parent.object
 		}
+		vm.propagateValueMutationToScope(vm.Globals, previousRoot, root)
+		vm.propagateValueMutationToStatics(previousRoot, root)
 	}
 	for i, part := range parts[:len(parts)-1] {
 		if current.Kind == ValueNull {
@@ -2116,7 +2177,8 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		if err := vm.checkMemberAccess(owner, def.Access, owner+"."+actualName, def.Modifiers); err != nil {
 			return err
 		}
-		coerced, err := vm.coerceAssignable(def.Type, value)
+		fieldType := vm.resolveTypeNameInClass(owner, def.Type)
+		coerced, err := vm.coerceAssignable(fieldType, value)
 		if err != nil {
 			return fmt.Errorf("%s.%s: %w", current.Type, fieldName, err)
 		}

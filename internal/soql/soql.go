@@ -1316,6 +1316,9 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 		relations := append([]storage.Relationship(nil), childDefinition.Relations...)
 		relations = append(relations, syntheticContentDocumentLinkRelationship(childDefinition)...)
 		relations = append(relations, syntheticSystemChildRelationships(childDefinition)...)
+		if relation, ok := syntheticPrefixedCustomChildRelationship(org, parentDefinition, childDefinition, relationship); ok {
+			relations = append(relations, relation)
+		}
 		for _, relation := range relations {
 			rank, matched := childRelationshipMatchRank(org.Namespace, relation, childDefinition, relationship)
 			if !matched || !childRelationshipCandidatePreferred(rank, relation, bestRank, bestRelation) {
@@ -1332,7 +1335,9 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 				if !ok {
 					resolved = candidate
 				}
-				if strings.EqualFold(resolved, parentName) || strings.EqualFold(storage.StripNamespaceToken(org.Namespace, resolved), storage.StripNamespaceToken(org.Namespace, parentName)) {
+				if strings.EqualFold(resolved, parentName) ||
+					strings.EqualFold(storage.StripNamespaceToken(org.Namespace, resolved), storage.StripNamespaceToken(org.Namespace, parentName)) ||
+					strings.EqualFold(storage.StripAnyNamespaceToken(resolved), storage.StripAnyNamespaceToken(parentName)) {
 					bestRank = rank
 					bestObject = childObjectName
 					bestRelation = relation
@@ -1345,6 +1350,29 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 		return bestObject, bestRelation, true
 	}
 	return "", storage.Relationship{}, false
+}
+
+func syntheticPrefixedCustomChildRelationship(org storage.OrgState, parentDefinition, childDefinition storage.ObjectDefinition, queryName string) (storage.Relationship, bool) {
+	parentName := strings.TrimSpace(parentDefinition.APIName)
+	childName := strings.TrimSpace(childDefinition.APIName)
+	if !customObjectLikeSOQLName(parentName) || !customObjectLikeSOQLName(childName) {
+		return storage.Relationship{}, false
+	}
+	parentBase := strings.TrimSuffix(parentName, "__c")
+	childBase := strings.TrimSuffix(childName, "__c")
+	if parentBase == "" || childBase == "" || !strings.HasPrefix(strings.ToLower(childBase), strings.ToLower(parentBase)) || strings.EqualFold(parentBase, childBase) {
+		return storage.Relationship{}, false
+	}
+	childRelationship := childBase + "s__r"
+	if !childRelationshipNameMatches(org.Namespace, childRelationship, queryName) {
+		return storage.Relationship{}, false
+	}
+	return storage.Relationship{
+		Field:              parentName,
+		ParentObjects:      []string{parentName},
+		ParentRelationship: parentBase + "__r",
+		ChildRelationship:  childRelationship,
+	}, true
 }
 
 func childRelationshipCandidatePreferred(rank int, relation storage.Relationship, bestRank int, bestRelation storage.Relationship) bool {
@@ -1437,19 +1465,13 @@ func hasSOQLRelationForField(relations []storage.Relationship, fieldName string)
 
 func childRelationshipMatchRank(namespace string, relation storage.Relationship, definition storage.ObjectDefinition, queryName string) (int, bool) {
 	if relation.ChildRelationship != "" {
-		if relationshipNameMatches(namespace, relation.ChildRelationship, queryName) {
-			return 0, true
-		}
-		if childRelationshipNameMatches(namespace, relation.ChildRelationship, queryName) {
-			return 1, true
+		if rank, ok := childRelationshipNameMatchRank(namespace, relation.ChildRelationship, queryName); ok {
+			return rank, true
 		}
 	}
 	derived := derivedChildRelationshipName(definition)
-	if relationshipNameMatches(namespace, derived, queryName) {
-		return 2, true
-	}
-	if childRelationshipNameMatches(namespace, derived, queryName) {
-		return 3, true
+	if rank, ok := childRelationshipNameMatchRank(namespace, derived, queryName); ok {
+		return rank + 10, true
 	}
 	return 99, false
 }
@@ -1462,17 +1484,53 @@ func childRelationshipNameFromObject(objectName string) string {
 }
 
 func childRelationshipNameMatches(namespace, metadataName, queryName string) bool {
-	if relationshipNameMatches(namespace, metadataName, queryName) {
-		return true
+	_, ok := childRelationshipNameMatchRank(namespace, metadataName, queryName)
+	return ok
+}
+
+func childRelationshipNameMatchRank(namespace, metadataName, queryName string) (int, bool) {
+	if rank, ok := relationshipNameMatchRank(namespace, metadataName, queryName); ok {
+		return rank, true
 	}
 	strippedQuery := storage.StripNamespaceToken(namespace, queryName)
-	if strings.HasSuffix(strings.ToLower(strippedQuery), "__r") && strings.EqualFold(metadataName+"__r", strippedQuery) {
-		return true
+	if strings.HasSuffix(strings.ToLower(strippedQuery), "__r") {
+		if rank, ok := relationshipNameMatchRank(namespace, metadataName+"__r", strippedQuery); ok {
+			return rank + 1, true
+		}
 	}
-	if strings.HasSuffix(strings.ToLower(metadataName), "__r") && strings.EqualFold(strings.TrimSuffix(metadataName, metadataName[len(metadataName)-3:]), strippedQuery) {
-		return true
+	if strings.HasSuffix(strings.ToLower(metadataName), "__r") {
+		base := strings.TrimSuffix(metadataName, metadataName[len(metadataName)-3:])
+		if rank, ok := relationshipNameMatchRank(namespace, base, strippedQuery); ok {
+			return rank + 1, true
+		}
 	}
-	return false
+	return 99, false
+}
+
+func relationshipNameMatchRank(namespace, canonical, candidate string) (int, bool) {
+	if canonical == candidate || strings.EqualFold(canonical, candidate) {
+		return 0, true
+	}
+	strippedCanonical := canonical
+	strippedCandidate := candidate
+	if namespace != "" {
+		strippedCanonical = storage.StripNamespaceToken(namespace, canonical)
+		strippedCandidate = storage.StripNamespaceToken(namespace, candidate)
+		if canonical == strippedCandidate ||
+			strings.EqualFold(canonical, strippedCandidate) ||
+			strippedCanonical == candidate ||
+			strings.EqualFold(strippedCanonical, candidate) ||
+			strippedCanonical == strippedCandidate ||
+			strings.EqualFold(strippedCanonical, strippedCandidate) {
+			return 1, true
+		}
+	}
+	anyCanonical := storage.StripAnyNamespaceToken(canonical)
+	anyCandidate := storage.StripAnyNamespaceToken(candidate)
+	if anyCanonical == anyCandidate || strings.EqualFold(anyCanonical, anyCandidate) {
+		return 4, true
+	}
+	return 99, false
 }
 
 func derivedChildRelationshipName(definition storage.ObjectDefinition) string {

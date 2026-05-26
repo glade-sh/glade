@@ -26,3 +26,18 @@ func TestRegisteredMethodCandidateKeyKeepsDuplicateOrigins(t *testing.T) {
 		t.Fatalf("candidate keys collapsed duplicate origins: %q", gotLeft)
 	}
 }
+
+func TestRegisteredMethodSourceAliasKeyCollapsesNamespaceAlias(t *testing.T) {
+	left := Method{
+		Name:      "fflib_MethodVerifier.throwException",
+		ClassName: "fflib_MethodVerifier",
+		Params:    []Param{{Name: "qm", Type: "fflib_QualifiedMethod"}},
+		File:      "force-app/fflib/classes/fflib_MethodVerifier.cls",
+		Line:      55,
+	}
+	right := left
+	right.ClassName = "verifiable.fflib_MethodVerifier"
+	if gotLeft, gotRight := registeredMethodSourceAliasKey(left), registeredMethodSourceAliasKey(right); gotLeft != gotRight {
+		t.Fatalf("source alias keys differ: %q != %q", gotLeft, gotRight)
+	}
+}

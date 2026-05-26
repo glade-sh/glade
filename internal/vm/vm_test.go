@@ -41,6 +41,95 @@ func TestCommonSObjectTypeNamesIncludesGeneratedStandardObjects(t *testing.T) {
 	}
 }
 
+func TestRecordFromValueKeepsParentRelationshipShellForDMLValidationFormula(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Product__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Entity__c": {APIName: "Entity__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {
+				ID:     "a01000000000001",
+				Object: "Product__c",
+				Fields: map[string]storage.Value{
+					"Entity__c": storage.StringValue("Member"),
+				},
+			},
+		},
+	}
+	org.Objects["CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "CartItem__c",
+			KeyPrefix: "a02",
+			Fields: map[string]storage.Field{
+				"Entity__c": {APIName: "Entity__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["Line__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Line__c",
+			KeyPrefix: "a03",
+			Fields: map[string]storage.Field{
+				"Product__c":  {APIName: "Product__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}},
+				"CartItem__c": {APIName: "CartItem__c", Type: storage.FieldReference, ReferenceTo: []string{"CartItem__c"}},
+			},
+			ValidationRules: []storage.ValidationRule{{
+				Name:                  "ProductEntityMatchesCartItem",
+				Active:                true,
+				ErrorConditionFormula: "ISBLANK(CartItem__r.Entity__c) || Product__r.Entity__c <> CartItem__r.Entity__c",
+				ErrorMessage:          "The product entity must match the cart item's entity.",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+
+	line := Object("Line__c")
+	line.Fields["Product__c"] = String("a01000000000001")
+	line.Fields["CartItem__c"] = String("a02000000000001")
+	cartItem := Object("CartItem__c")
+	cartItem.Fields["Entity__c"] = String("Member")
+	line.Fields["CartItem__r"] = cartItem
+
+	machine := New(nil)
+	machine.Org = &org
+	record, err := machine.recordFromValue(&line)
+	if err != nil {
+		t.Fatal(err)
+	}
+	engine := machine.newDMLEngine(&Result{})
+	results := engine.Insert([]storage.Record{record})
+	if !results[0].Success {
+		t.Fatalf("insert with relationship shell = %#v; want success", results[0])
+	}
+	stored := org.Objects["Line__c"].Records[results[0].ID]
+	if len(stored.ParentRelationships) != 0 {
+		t.Fatalf("stored record kept parent relationship shell: %#v", stored.ParentRelationships)
+	}
+}
+
+func TestSameAliasValueIgnoresMapIterationOrder(t *testing.T) {
+	left := typedMap("Map<String,Object>")
+	left.Ref = 10
+	left.Map[mapKey(String("a"))] = String("A")
+	left.Map[mapKey(String("b"))] = String("B")
+	left.MapKeys[mapKey(String("a"))] = String("a")
+	left.MapKeys[mapKey(String("b"))] = String("b")
+	left.MapOrder = []string{mapKey(String("a")), mapKey(String("b"))}
+
+	right := cloneValue(left)
+	right.Ref = left.Ref
+	right.MapOrder = []string{mapKey(String("b")), mapKey(String("a"))}
+	if !sameAliasValue(left, right) {
+		t.Fatalf("sameAliasValue should ignore map iteration order for unchanged alias content")
+	}
+}
+
 func TestExecGeneratedPlatformStaticMethodFallsBackToTypedDefault(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Id> similar = Answers.findSimilar(new Account(Name = 'Acme'));
@@ -50,6 +139,107 @@ System.assertEquals(0, similarIdeas.size());
 System.assertEquals(0, Ideas.getAllRecentReplies('005000000000001', '0DB000000000001').size());
 System.assertEquals(0, Ideas.getReadRecentReplies('005000000000001', '0DB000000000001').size());
 System.assertEquals(0, Ideas.getUnreadRecentReplies('005000000000001', '0DB000000000001').size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectTypeMapDoesNotMatchDifferentStandardObjectFromIdPrefix(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<SObjectType, String> names = new Map<SObjectType, String>{
+	Contact.SObjectType => 'contact'
+};
+Id accountId = '001000000000001';
+System.assertEquals(null, names.get(accountId.getSObjectType()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEnumSwitchNullFallsThroughToElse(t *testing.T) {
+	program, err := CompileAnonymous(`
+VerifiableDataset.Dataset datasetType = null;
+Boolean caught = false;
+try {
+	switch on datasetType {
+		when Npi {
+		}
+		when else {
+			throw new AuraHandledException('Unsupported object type.');
+		}
+	}
+} catch (Exception e) {
+	caught = true;
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "VerifiableDataset.Dataset", EnumValues: []string{"Npi"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEnumSwitchNullDoesNotMatchNullStaticCaseExpression(t *testing.T) {
+	program, err := CompileAnonymous(`
+Probe.Kind datasetType = null;
+Boolean caught = false;
+try {
+	switch on datasetType {
+		when Npi {
+		}
+		when else {
+			throw new AuraHandledException('Unsupported object type.');
+		}
+	}
+} catch (Exception e) {
+	caught = true;
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:         "Probe",
+		StaticFields: map[string]Field{"Npi": {Name: "Npi", Type: "Probe.Kind", Static: true}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Probe.Kind", EnumValues: []string{"Npi"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "Probe"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSwitchNullMatchesWhenNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+String branch = 'none';
+switch on null {
+	when null {
+		branch = 'null';
+	}
+	when else {
+		branch = 'else';
+	}
+}
+System.assertEquals('null', branch);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -803,6 +993,57 @@ System.assertEquals('second', values.get(second));
 	}
 }
 
+func TestExecReturnedMapPreservesUserObjectKeys(t *testing.T) {
+	methodProgram, err := CompileAnonymous(`
+Map<Probe, String> values = new Map<Probe, String>();
+values.put(first, 'first');
+values.put(second, 'second');
+return values;
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Probe first = new Probe();
+first.Key = 'same';
+Probe second = new Probe();
+second.Key = 'same';
+Map<Probe, String> values = Holder.make(first, second);
+System.assertEquals(2, values.size());
+System.assertEquals('first', values.get(first));
+System.assertEquals('second', values.get(second));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:   "Probe",
+		Fields: map[string]Field{"Key": {Name: "Key", Type: "String"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Holder"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{
+		Name:       "Holder.make",
+		ClassName:  "Holder",
+		IsStatic:   true,
+		ReturnType: "Map<Probe,String>",
+		Params: []Param{
+			{Name: "first", Type: "Probe"},
+			{Name: "second", Type: "Probe"},
+		},
+		Program: methodProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMapObjectKeysUseUserClassIdentityForSObjectNameShadow(t *testing.T) {
 	program, err := CompileAnonymous(`
 OrderItem first = new OrderItem();
@@ -1499,6 +1740,52 @@ System.assert(uniqueValues.contains('first'));
 	}
 }
 
+func TestExecObjectMutationPropagatesIntoSetElementAliases(t *testing.T) {
+	addState, err := CompileAnonymous(`
+this.states = new Set<String>();
+this.states.add(value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Holder holder = new Holder();
+holder.nodes = new Set<Node>();
+Node node = new Node();
+holder.nodes.add(node);
+node.addState('Cart');
+for (Node current : holder.nodes) {
+	System.assert(current.states.contains('Cart'), String.valueOf(current.states));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Node",
+		Fields: map[string]Field{
+			"states": {Name: "states", Type: "Set<String>"},
+		},
+		Methods: map[string]Method{
+			"addState": {Name: "Node.addState", ClassName: "Node", Params: []Param{{Name: "value", Type: "String"}}, Program: addState},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Holder",
+		Fields: map[string]Field{
+			"nodes": {Name: "nodes", Type: "Set<Node>"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecShiftOperatorsAndCompoundAssignment(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer value = 3;
@@ -1931,6 +2218,27 @@ System.assert(record.get(createdDateField) != System.now());
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTaskOwnerDescribeKeepsPolymorphicReferenceTargets(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Schema.SObjectType> references = Task.OwnerId.getDescribe().getReferenceTo();
+System.assertEquals(2, references.size(), String.valueOf(references));
+System.assertEquals('Group', references[0].getDescribe().getName());
+System.assertEquals('User', references[1].getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Task")
+	storage.EnsureStandardObject(&org, "Group")
+	storage.EnsureStandardObject(&org, "User")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -2470,6 +2778,54 @@ System.assertEquals('Lookup__c', fieldDescribe.getLocalName());
 	}
 }
 
+func TestExecForeignNamespacedSObjectDescribeNameKeepsNamespace(t *testing.T) {
+	program, err := CompileAnonymous(`
+znu__OrderItem__c record = new znu__OrderItem__c();
+Schema.DescribeSObjectResult describe = record.getSObjectType().getDescribe();
+System.assertEquals('znu__OrderItem__c', describe.getName());
+System.assertEquals('OrderItem__c', describe.getLocalName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "namz"
+	org.Objects["znu__OrderItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "znu__OrderItem__c",
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringValueOfSObjectTypeUsesOrgNamespace(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('pkg__Widget__c', String.valueOf(Widget__c.SObjectType));
+System.assertEquals('pkg__Widget__c', String.valueOf(Widget__c.class));
+System.assertEquals('Account', String.valueOf(Account.SObjectType));
+System.assertEquals('Account', String.valueOf(Account.class));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Widget__c"},
+		Records:    make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecNestedListInitializerPreservesInnerList(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<List<Contact>> nested = new List<List<Contact>>{ new List<Contact>{ new Contact(LastName = 'One'), new Contact(LastName = 'Two') } };
@@ -2608,6 +2964,23 @@ System.assertEquals(Contact.LastName, Schema.Contact.SObjectType.fields.lastName
 System.assertEquals(Account.AccountNumber, Schema.Account.SObjectType.fields.AccountNumber);
 System.assertEquals(Account.AccountNumber, Account.SObjectType.getDescribe().fields.getMap().get('AccountNumber'));
 System.assertEquals(Account.AccountNumber, Account.SObjectType.getDescribe().fields.getMap().get('accountnumber'));
+System.assertEquals(null, Account.SObjectType.getDescribe().fields.getMap().get('Contacts'));
+Schema.SObjectField missingChildRelationshipField = Account.SObjectType.getDescribe().fields.getMap().get('Contacts');
+System.assert(missingChildRelationshipField == null);
+if (missingChildRelationshipField == null) {
+  System.assert(true);
+} else {
+  System.assert(false, 'missing child relationship field should enter null branch');
+}
+String accountTypeName = String.valueOf(Account.class);
+Schema.SObjectField globalDescribeMissingChildRelationshipField = Schema.getGlobalDescribe()
+  .get(accountTypeName)
+  .getDescribe()
+  .fields
+  .getMap()
+  .get('Contacts');
+System.assertEquals(null, globalDescribeMissingChildRelationshipField);
+System.assert(globalDescribeMissingChildRelationshipField == null);
 System.assertEquals(Account.SObjectType, Schema.Account.getSObjectType());
 Boolean sawContacts = false;
 for (Schema.ChildRelationship relationship : Account.SObjectType.getDescribe().getChildRelationships()) {
@@ -2621,6 +2994,100 @@ System.assert(sawContacts);
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeSObjectDoesNotDeriveSelfReferenceChildRelationship(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean sawDerivedPlural = false;
+for (Schema.ChildRelationship relationship : Self_Link__c.SObjectType.getDescribe().getChildRelationships()) {
+  if (relationship.getRelationshipName() == 'SelfLinks__r') {
+    sawDerivedPlural = true;
+  }
+}
+System.assertEquals(false, sawDerivedPlural);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Self_Link__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:     "Self_Link__c",
+			Label:       "Self Link",
+			PluralLabel: "Self Links",
+			KeyPrefix:   "a01",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Self_Link__c"}, RelationshipName: "Parent__r"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringReturnFromUserMethodWorksAsSchemaMapKey(t *testing.T) {
+	ctorProgram, err := CompileAnonymous(`this.sType = sType;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	nameProgram, err := CompileAnonymous(`return String.valueOf(sType);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+String accountTypeName = new TypeNameHolder(Account.class).name();
+System.assertEquals('Account', accountTypeName);
+Schema.SObjectField childRelationshipAsField = Schema.getGlobalDescribe()
+  .get(accountTypeName)
+  .getDescribe()
+  .fields
+  .getMap()
+  .get('Contacts');
+System.assertEquals(null, childRelationshipAsField);
+System.assert(childRelationshipAsField == null);
+Schema.SObjectField nullSafeChildRelationshipAsField = Schema.getGlobalDescribe()
+  ?.get(accountTypeName)
+  ?.getDescribe()
+  ?.fields
+  ?.getMap()
+  .get('Contacts');
+System.assertEquals(null, nullSafeChildRelationshipAsField);
+System.assert(nullSafeChildRelationshipAsField == null);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "TypeNameHolder",
+		Fields: map[string]Field{
+			"sType": {Name: "sType", Type: "Type"},
+		},
+		Constructors: []Method{{
+			Name:          "TypeNameHolder",
+			ClassName:     "TypeNameHolder",
+			IsConstructor: true,
+			Params:        []Param{{Name: "sType", Type: "Type"}},
+			Program:       ctorProgram,
+		}},
+		Methods: map[string]Method{
+			"name": {Name: "TypeNameHolder.name", ClassName: "TypeNameHolder", ReturnType: "String", Program: nameProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	org := storage.NewOrgState()
 	storage.EnsureStandardObject(&org, "Account")
 	storage.EnsureStandardObject(&org, "Contact")
@@ -3252,6 +3719,38 @@ System.assertEquals(Credentialing_Workflow__c.ChecklistNotes__c, fields.get('VER
 	}
 }
 
+func TestExecSObjectFieldMapKeySetOrderUsesCanonicalFieldsBeforeAliases(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = Account.SObjectType.getDescribe().fields.getMap();
+List<String> names = new List<String>(fields.keySet());
+System.assertNotEquals(null, fields.get('nu__primaryaffiliation__c'));
+System.assertEquals('NU__PrimaryAffiliation__c', fields.get('nu__primaryaffiliation__c').getDescribe().getName());
+System.assert(names.indexOf('ownerid') < names.indexOf('nu__primaryaffiliation__c'), String.valueOf(names));
+System.assert(names.indexOf('parentid') < names.indexOf('nu__primaryaffiliation__c'), String.valueOf(names));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "NU"
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"OwnerId":               {APIName: "OwnerId", Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Owner"},
+				"ParentId":              {APIName: "ParentId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent"},
+				"PrimaryAffiliation__c": {APIName: "PrimaryAffiliation__c", Type: storage.FieldReference, ReferenceTo: []string{"Affiliation__c"}, RelationshipName: "PrimaryAffiliation__r"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectFieldMapIncludesReferenceRelationshipAliases(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectField> fields = License_Verification__c.SObjectType.getDescribe().fields.getMap();
@@ -3263,6 +3762,9 @@ System.assertEquals('CreatedBy', createdBy.getRelationshipName());
 Schema.DescribeFieldResult provider = fields.get('Provider__c').getDescribe();
 System.assertEquals('NU__Provider__c', provider.getName());
 System.assertEquals('NU__Provider__r', provider.getRelationshipName());
+Schema.DescribeFieldResult providerRelationship = fields.get('NU__Provider__r').getDescribe();
+System.assertEquals('NU__Provider__c', providerRelationship.getName());
+System.assertEquals('NU__Provider__r', providerRelationship.getRelationshipName());
 Schema.DescribeFieldResult billTo = fields.get('BillTo__c').getDescribe();
 System.assertEquals('NU__BillTo__r', billTo.getRelationshipName());
 	`)
@@ -3306,6 +3808,41 @@ System.assertEquals(null, fields.get('InexistentField__c'));
 			Fields: map[string]storage.Field{
 				"Known__c": {APIName: "Known__c", Type: storage.FieldString},
 			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectFieldMapSynthesizesMissingCustomRelationshipOnPartialCustomObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = znu__Product__c.SObjectType.getDescribe().fields.getMap();
+Schema.DescribeFieldResult eventField = fields.get('znu__Event2__r').getDescribe();
+System.assertEquals('znu__Event2__c', eventField.getName());
+System.assertEquals('znu__Event2__r', eventField.getRelationshipName());
+System.assertEquals(1, eventField.getReferenceTo().size());
+System.assertEquals('znu__Event__c', eventField.getReferenceTo()[0].getDescribe().getName());
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["znu__Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "znu__Product__c",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["znu__Event__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "znu__Event__c",
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
@@ -3415,6 +3952,51 @@ System.assert(found, 'custom child relationship');
 	}
 }
 
+func TestExecDescribeChildRelationshipMatchesNamespacedSObjectTypeToken(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.SObjectType childType = Schema.getGlobalDescribe().get('pkg__Invoice__c');
+System.assertNotEquals(null, childType);
+System.assertEquals(childType, Invoice__c.SObjectType);
+SObjectType unqualifiedChildType = Invoice__c.SObjectType;
+System.assertEquals(childType, unqualifiedChildType);
+Boolean found = false;
+for (Schema.ChildRelationship relationship : Account.SObjectType.getDescribe().getChildRelationships()) {
+    if (relationship.getChildSObject() == unqualifiedChildType &&
+        relationship.getField().getDescribe().getName() == 'pkg__Account__c' &&
+        relationship.getRelationshipName() == 'pkg__Invoices__r') {
+        found = true;
+    }
+}
+System.assert(found, 'namespaced custom child relationship token');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	storage.EnsureStandardObject(&org, "Account")
+	org.Objects["Invoice__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Invoice__c",
+			Fields: map[string]storage.Field{
+				"Account__c": {APIName: "Account__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account__r", ChildRelationshipName: "Invoices__r"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Account__c",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account__r",
+				ChildRelationship:  "Invoices__r",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPropertyAssignmentIsCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous(`
 Mapping mapping = new Mapping();
@@ -3435,6 +4017,50 @@ System.assertEquals(Account.Name, mapping.checklistNotes);
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestRegisterClassStampsPropertyAccessorOwner(t *testing.T) {
+	getterProgram, err := CompileAnonymous(`return null;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "Owner",
+		Namespace: "pkg",
+		StaticFields: map[string]Field{
+			"Mock": {Name: "Mock", Type: "Object", Static: true, Property: true, Getter: &Method{Name: "Owner.Mock.get", ReturnType: "Object", Program: getterProgram}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	field := machine.Classes["Owner"].StaticFields["Mock"]
+	if field.Getter == nil || field.Getter.ClassName != "pkg.Owner" {
+		t.Fatalf("getter ClassName = %#v, want pkg.Owner", field.Getter)
+	}
+}
+
+func TestConstructNamespacedSourceClassCollectionFieldsDefaultNull(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "Model",
+		Namespace: "pkg",
+		Access:    "global",
+		Fields: map[string]Field{
+			"Names": {Name: "Names", Type: "List<String>", Property: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	value, err := machine.constructValue("pkg.Model", nil, nil, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := value.Fields["Names"]
+	if names.Kind != ValueNull {
+		t.Fatalf("Names default = %#v, want null", names)
 	}
 }
 
@@ -3499,6 +4125,100 @@ System.assertEquals(null, child.LastModifiedById);
 	}
 	machine := New(nil)
 	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSOQLLoadedCustomMetadataChildRelationshipDotAccess(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<StateConfiguration__mdt> configs = [
+	SELECT QualifiedApiName, IsActive__c,
+		(SELECT QualifiedApiName, IsActive__c, FromStates__c, ToState__c FROM StateTransitions__r WHERE IsActive__c = TRUE)
+	FROM StateConfiguration__mdt
+	WHERE IsActive__c = TRUE
+];
+Integer transitionCount = 0;
+for (StateConfiguration__mdt config : configs) {
+	if (config.QualifiedApiName == 'OrderGraph') {
+		for (StateTransition__mdt transitionRecord : config.StateTransitions__r) {
+			if (transitionRecord.QualifiedApiName == 'order_submit_as_proforma') {
+				transitionCount++;
+				System.assertEquals('Cart', transitionRecord.FromStates__c);
+				System.assertEquals('Pro forma', transitionRecord.ToState__c);
+			}
+		}
+	}
+}
+System.assertEquals(1, transitionCount);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["StateConfiguration__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "StateConfiguration__mdt",
+			Fields: map[string]storage.Field{
+				"IsActive__c": {APIName: "IsActive__c", Type: storage.FieldBoolean},
+			},
+			Metadata: map[string]string{"kind": "customMetadata"},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0j000000000001": {
+				ID:     "a0j000000000001",
+				Object: "StateConfiguration__mdt",
+				Fields: map[string]storage.Value{
+					"DeveloperName":      storage.StringValue("OrderGraph"),
+					"QualifiedApiName":   storage.StringValue("OrderGraph"),
+					"NamespacePrefix":    storage.StringValue("pkg"),
+					"MasterLabel":        storage.StringValue("Order Graph"),
+					"Label":              storage.StringValue("Order Graph"),
+					"IsActive__c":        storage.BooleanValue(true),
+					"SupportedStates__c": storage.StringValue("Cart,Pro forma"),
+				},
+			},
+		},
+	}
+	org.Objects["StateTransition__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "StateTransition__mdt",
+			Fields: map[string]storage.Field{
+				"IsActive__c":           {APIName: "IsActive__c", Type: storage.FieldBoolean},
+				"FromStates__c":         {APIName: "FromStates__c", Type: storage.FieldString},
+				"ToState__c":            {APIName: "ToState__c", Type: storage.FieldString},
+				"StateConfiguration__c": {APIName: "StateConfiguration__c", Type: storage.FieldReference, ReferenceTo: []string{"StateConfiguration__mdt"}, RelationshipName: "StateConfiguration__r", ChildRelationshipName: "StateTransitions__r"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "StateConfiguration__c",
+				ParentObjects:      []string{"StateConfiguration__mdt"},
+				ParentRelationship: "StateConfiguration__r",
+				ChildRelationship:  "StateTransitions__r",
+			}},
+			Metadata: map[string]string{"kind": "customMetadata"},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0l000000000002": {
+				ID:     "a0l000000000002",
+				Object: "StateTransition__mdt",
+				Fields: map[string]storage.Value{
+					"DeveloperName":         storage.StringValue("order_submit_as_proforma"),
+					"QualifiedApiName":      storage.StringValue("order_submit_as_proforma"),
+					"NamespacePrefix":       storage.StringValue("pkg"),
+					"MasterLabel":           storage.StringValue("Submit As Proforma"),
+					"Label":                 storage.StringValue("Submit As Proforma"),
+					"IsActive__c":           storage.BooleanValue(true),
+					"FromStates__c":         storage.StringValue("Cart"),
+					"ToState__c":            storage.StringValue("Pro forma"),
+					"StateConfiguration__c": storage.IDValue("a0j000000000001"),
+				},
+			},
+		},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -4198,6 +4918,40 @@ try {
 	}
 }
 
+func TestExecUnqualifiedNestedExceptionThrownFromOwnerCarriesMessage(t *testing.T) {
+	raiseProgram, err := CompileAnonymous(`throw new NestedException('blocked');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+String message = '';
+try {
+	Outer.raise();
+} catch (Outer.NestedException e) {
+	message = e.getMessage();
+}
+System.assertEquals('blocked', message);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Outer",
+		Methods: map[string]Method{
+			"raise": {Name: "Outer.raise", ClassName: "Outer", IsStatic: true, ReturnType: "void", Program: raiseProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Outer.NestedException", SuperClass: "Exception"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestResolveUniqueNestedTypeNameCachesAndInvalidates(t *testing.T) {
 	machine := New(nil)
 	if err := machine.RegisterClass(Class{Name: "Outer"}); err != nil {
@@ -4226,6 +4980,222 @@ func TestResolveUniqueNestedTypeNameCachesAndInvalidates(t *testing.T) {
 	resolved, ok = machine.resolveUniqueNestedTypeName("Later")
 	if !ok || resolved != "Outer.Later" {
 		t.Fatalf("resolve Later after registration = %q, %v; want Outer.Later, true", resolved, ok)
+	}
+}
+
+func TestResolveUniqueNestedTypeNameFromTopLevelCurrentClass(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Outer", Namespace: "pkg"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Outer.Domain", Namespace: "pkg"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "pkg.Outer"
+
+	resolved, ok := machine.resolveUniqueNestedTypeName("Domain")
+	if !ok || resolved != "Outer.Domain" {
+		t.Fatalf("resolve Domain = %q, %v; want Outer.Domain, true", resolved, ok)
+	}
+}
+
+func TestResolveUniqueNestedTypeNameFallsBackToOnlyNestedSuffix(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Outer.Domain", Namespace: "pkg"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "pkg.Harness"
+
+	resolved, ok := machine.resolveUniqueNestedTypeName("Domain")
+	if !ok || resolved != "pkg.Outer.Domain" {
+		t.Fatalf("resolve Domain = %q, %v; want pkg.Outer.Domain, true", resolved, ok)
+	}
+}
+
+func TestResolveOnlyNestedTypeNameFindsUnambiguousSuffix(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Outer.Domain", Namespace: "pkg"}); err != nil {
+		t.Fatal(err)
+	}
+
+	resolved, ok := machine.resolveOnlyNestedTypeName("Domain")
+	if !ok || resolved != "Outer.Domain" {
+		t.Fatalf("resolve only Domain = %q, %v; want Outer.Domain, true", resolved, ok)
+	}
+}
+
+func TestResolveOnlyNestedTypeNameCachesAndInvalidates(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Outer.Nested"}); err != nil {
+		t.Fatal(err)
+	}
+
+	resolved, ok := machine.resolveOnlyNestedTypeName("Nested")
+	if !ok || resolved != "Outer.Nested" {
+		t.Fatalf("resolve Nested = %q, %v; want Outer.Nested, true", resolved, ok)
+	}
+	if len(machine.onlyNestedTypeCache) == 0 {
+		t.Fatalf("resolveOnlyNestedTypeName did not populate cache")
+	}
+	if len(machine.classNameSearchCache) == 0 {
+		t.Fatalf("resolveOnlyNestedTypeName did not populate class name search cache")
+	}
+
+	if resolved, ok := machine.resolveOnlyNestedTypeName("Later"); ok || resolved != "" {
+		t.Fatalf("resolve Later before registration = %q, %v; want empty, false", resolved, ok)
+	}
+	if err := machine.RegisterClass(Class{Name: "Outer.Later"}); err != nil {
+		t.Fatal(err)
+	}
+	if machine.classNameSearchCache != nil {
+		t.Fatalf("RegisterClass did not invalidate class name search cache")
+	}
+	resolved, ok = machine.resolveOnlyNestedTypeName("Later")
+	if !ok || resolved != "Outer.Later" {
+		t.Fatalf("resolve Later after registration = %q, %v; want Outer.Later, true", resolved, ok)
+	}
+}
+
+func TestResolveTopLevelClassNameCachesAndInvalidates(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Widget"}); err != nil {
+		t.Fatal(err)
+	}
+
+	resolved, ok := machine.resolveTopLevelClassName("Widget")
+	if !ok || resolved != "Widget" {
+		t.Fatalf("resolve Widget = %q, %v; want Widget, true", resolved, ok)
+	}
+	if len(machine.topLevelTypeCache) == 0 {
+		t.Fatalf("resolveTopLevelClassName did not populate cache")
+	}
+	if resolved, ok := machine.resolveTopLevelClassName("Later"); ok || resolved != "" {
+		t.Fatalf("resolve Later before registration = %q, %v; want empty, false", resolved, ok)
+	}
+	if err := machine.RegisterClass(Class{Name: "Later"}); err != nil {
+		t.Fatal(err)
+	}
+	if machine.topLevelTypeCache != nil {
+		t.Fatalf("RegisterClass did not invalidate top-level type cache")
+	}
+	resolved, ok = machine.resolveTopLevelClassName("Later")
+	if !ok || resolved != "Later" {
+		t.Fatalf("resolve Later after registration = %q, %v; want Later, true", resolved, ok)
+	}
+}
+
+func TestConstructBareRuntimeVersionDoesNotResolveToGeneratedNestedType(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Package.Version"}); err != nil {
+		t.Fatal(err)
+	}
+
+	value, err := machine.constructValue("version", []Value{Int(1), Int(19)}, nil, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Type != "Version" {
+		t.Fatalf("construct Version type = %q; want Version", value.Type)
+	}
+}
+
+func TestConstructBareStandardSObjectDoesNotResolveToGeneratedNestedType(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "ConnectApi.Task"}); err != nil {
+		t.Fatal(err)
+	}
+
+	value, err := machine.constructValue("Task", nil, map[string]Value{"Subject": String("Call")}, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Type != "Task" {
+		t.Fatalf("construct Task type = %q; want Task", value.Type)
+	}
+}
+
+func TestConstructBareTopLevelClassDoesNotResolveToNestedEnumWithSameShortName(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "ParameterSet", Namespace: "pkg"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "TransferNpdbRequestModel.ParameterSet",
+		Namespace:  "pkg",
+		EnumValues: []string{"SSN_PARAMETER_SET"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentNamespace = "pkg"
+
+	value, err := machine.constructValue("ParameterSet", nil, nil, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Type != "pkg.ParameterSet" {
+		t.Fatalf("construct ParameterSet type = %q; want pkg.ParameterSet", value.Type)
+	}
+}
+
+func TestLookupClassInNamespacePrefersTopLevelAndRejectsAmbiguousNestedShortName(t *testing.T) {
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "WrapperA.FileModel", Namespace: "pkg"},
+		{Name: "FileModel", Namespace: "pkg"},
+		{Name: "WrapperB.FileModel", Namespace: "pkg"},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	class, ok := machine.lookupClassInNamespace("pkg", "FileModel")
+	if !ok || class.Name != "FileModel" {
+		t.Fatalf("lookup FileModel = %q, %v; want top-level FileModel, true", class.Name, ok)
+	}
+
+	machine = New(nil)
+	for _, class := range []Class{
+		{Name: "WrapperA.FileModel", Namespace: "pkg"},
+		{Name: "WrapperB.FileModel", Namespace: "pkg"},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if class, ok := machine.lookupClassInNamespace("pkg", "FileModel"); ok {
+		t.Fatalf("lookup ambiguous FileModel = %q, true; want false", class.Name)
+	}
+}
+
+func TestConstructUnqualifiedNestedTypeUsesCurrentMethodOwnerBeforePlatformShortName(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Domain"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Outer", Namespace: "pkg"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "Outer.Domain",
+		Namespace: "pkg",
+		Constructors: []Method{{
+			Name:          "Outer.Domain.<init>",
+			ClassName:     "Outer.Domain",
+			IsConstructor: true,
+			Params:        []Param{{Name: "items", Type: "List<Object>"}},
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentMethod = Method{Name: "pkg.Outer.make"}
+
+	value, err := machine.constructValue("Domain", []Value{List()}, nil, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Type != "pkg.Outer.Domain" {
+		t.Fatalf("constructed type = %q, want pkg.Outer.Domain", value.Type)
 	}
 }
 
@@ -4361,6 +5331,33 @@ System.assertEquals('calls', String.valueOf(mode));
 		t.Fatal(err)
 	}
 	if err := machine.RegisterClass(Class{Name: "VerificationMode.ModeName", EnumValues: []string{"times", "calls"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedShortEnumEqualityUsesExecutingNamespace(t *testing.T) {
+	methodProgram, err := CompileAnonymous(`
+System.assertEquals(true, TokenType.RIGHT_PAREN == TokenType.RIGHT_PAREN);
+return TokenType.RIGHT_PAREN == TokenType.RIGHT_PAREN;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`System.assertEquals(true, pkg.Parser.check());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "pkg.TokenType", Namespace: "pkg", EnumValues: []string{"LEFT_PAREN", "RIGHT_PAREN"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "pkg.Parser", Namespace: "pkg", Access: "global"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "pkg.Parser.check", ClassName: "pkg.Parser", ReturnType: "Boolean", IsStatic: true, Access: "global", Program: methodProgram}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {

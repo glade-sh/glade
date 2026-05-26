@@ -36,10 +36,9 @@ type Engine struct {
 }
 
 type Options struct {
-	AllowFieldTruncation         bool
-	AllowUpdateDeleted           bool
-	AllowBatchUniqueValueSwap    bool
-	SuppressPersonContactAliases bool
+	AllowFieldTruncation      bool
+	AllowUpdateDeleted        bool
+	AllowBatchUniqueValueSwap bool
 }
 
 type SummaryUpdate struct {
@@ -612,7 +611,9 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if e.IsolationJournal != nil {
 		e.IsolationJournal.RecordInsert(objectName, record.ID)
 	}
-	object.Records[record.ID] = record.Clone()
+	storedRecord := record.Clone()
+	storedRecord.ParentRelationships = nil
+	object.Records[record.ID] = storedRecord
 	e.Org.Objects[objectName] = object
 	e.addUniqueIndexRecord(objectName, object.Definition, record)
 	e.recalculateSummaryFieldsForChildren(objectName, record)

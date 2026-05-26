@@ -273,6 +273,7 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 	report.Dependencies = append(report.Dependencies, index.Dependencies...)
 	report.Diagnostics = append(report.Diagnostics, loadDiagnostics...)
 
+	progress := newLocalTestProgressReporter(options.ProgressWriter)
 	recordLocalTestPhase(&report, options, "discover_start", started)
 	parallelism := localTestParallelism(options)
 	testOpts := apextest.Options{
@@ -281,7 +282,7 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		SlowTestThresholdMS: options.SlowTestThresholdMS,
 		TimeoutMS:           options.TimeoutMS,
 		Parallelism:         parallelism,
-		Progress:            localTestProgressReporter(options.ProgressWriter),
+		Progress:            progress.handle,
 	}
 	cases := apextest.Discover(index, testOpts)
 	cases = filterLocalTestCases(cases, options)
@@ -302,6 +303,7 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 	options, parallelism = autoTuneLocalTestOptions(options, len(cases), parallelism)
 	testOpts.Parallelism = parallelism
 	testOpts.ParallelMethods = shouldParallelizeMethods(options, parallelism, len(cases))
+	testOpts.ClassDurationMS = durations
 	if options.AutoTune {
 		recordLocalTestPhase(&report, options, fmt.Sprintf("auto_tune parallel=%d shardIndex=%d shardCount=%d methodParallel=%t", parallelism, options.ShardIndex, options.ShardCount, testOpts.ParallelMethods), started)
 	}
@@ -338,6 +340,7 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		cases = sharded
 		recordLocalTestPhase(&report, options, fmt.Sprintf("shard_select index=%d count=%d cases=%d", options.ShardIndex, options.ShardCount, len(cases)), started)
 	}
+	progress.setTotal(len(cases))
 
 	if shouldAnalyzeLocalTests(options, len(cases)) {
 		recordLocalTestPhase(&report, options, "analyze_start", started)
@@ -369,6 +372,7 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 	}
 	recordLocalTestPhase(&report, options, "run_start", started)
 	runOutcomes, casesRun, triageStopped := runLocalTestCases(index, testOpts, cases, projectLabel, options, started)
+	progress.finish()
 	report.Outcomes = append(report.Outcomes, runOutcomes...)
 	report.CasesRun = casesRun
 	report.TriageStopped = triageStopped
@@ -557,7 +561,8 @@ func localTestTopSlowClasses(outcomes []LocalTestOutcome, limit int) []LocalTest
 
 func reportLocalTestPhase(options LocalTestOptions, event string, started time.Time) {
 	if options.ProgressWriter != nil {
-		fmt.Fprintf(options.ProgressWriter, "local-tests phase %s durationMs=%d\n", event, time.Since(started).Milliseconds())
+		elapsed := time.Since(started)
+		fmt.Fprintf(options.ProgressWriter, "Phase: %s elapsed=%s\n", event, formatLocalTestProgressDuration(elapsed))
 	}
 }
 
@@ -575,7 +580,7 @@ func recordLocalTestPhase(report *LocalTestReport, options LocalTestOptions, eve
 		NumGC:           mem.NumGC,
 	})
 	if options.ProgressWriter != nil {
-		fmt.Fprintf(options.ProgressWriter, "local-tests phase %s durationMs=%d\n", event, duration)
+		fmt.Fprintf(options.ProgressWriter, "Phase: %s elapsed=%s\n", event, formatLocalTestProgressDuration(time.Duration(duration)*time.Millisecond))
 	}
 }
 
@@ -801,24 +806,141 @@ func localTestEnvInt(name string) (int, bool) {
 	return parsed, true
 }
 
-func localTestProgressReporter(w io.Writer) func(apextest.TestProgress) {
-	if w == nil {
-		return nil
+type localTestProgressReporter struct {
+	w        io.Writer
+	started  time.Time
+	last     time.Time
+	total    int
+	done     int
+	passed   int
+	failed   int
+	errors   int
+	active   string
+	printed  bool
+	finished bool
+	mu       sync.Mutex
+}
+
+func newLocalTestProgressReporter(w io.Writer) *localTestProgressReporter {
+	return &localTestProgressReporter{
+		w:       w,
+		started: time.Now(),
 	}
-	var mu sync.Mutex
-	return func(progress apextest.TestProgress) {
-		mu.Lock()
-		defer mu.Unlock()
-		name := progress.ClassName
-		if progress.MethodName != "" {
-			name += "." + progress.MethodName
-		}
-		if progress.DurationMS > 0 || progress.Status != "" {
-			fmt.Fprintf(w, "local-tests %s %s status=%s durationMs=%d\n", progress.Event, name, progress.Status, progress.DurationMS)
-			return
-		}
-		fmt.Fprintf(w, "local-tests %s %s\n", progress.Event, name)
+}
+
+func (r *localTestProgressReporter) setTotal(total int) {
+	if r == nil {
+		return
 	}
+	r.mu.Lock()
+	r.total = total
+	r.mu.Unlock()
+}
+
+func (r *localTestProgressReporter) handle(progress apextest.TestProgress) {
+	if r == nil || r.w == nil {
+		return
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.started.IsZero() {
+		r.started = time.Now()
+	}
+	important := false
+	completed := false
+	name := progress.ClassName
+	if progress.MethodName != "" {
+		name += "." + progress.MethodName
+	}
+	switch progress.Event {
+	case "compile_start":
+		r.active = "compile"
+	case "compile_done":
+		r.active = "compile"
+		important = progress.Status != "" && progress.Status != "pass"
+	case "setup_start", "test_start":
+		r.active = name
+	case "setup_done":
+		r.active = name
+		if progress.Status != "" && progress.Status != "pass" {
+			r.errors++
+			important = r.errors <= 10
+		}
+	case "test_done":
+		r.done++
+		completed = true
+		r.active = name
+		switch testreport.Status(progress.Status) {
+		case testreport.StatusPass:
+			r.passed++
+		case testreport.StatusFail:
+			r.failed++
+			important = r.failed <= 10
+		default:
+			r.errors++
+			important = r.errors <= 10
+		}
+	}
+	now := time.Now()
+	if !r.printed || r.done == r.total || important || (completed && r.done > 0 && r.done%25 == 0) || now.Sub(r.last) >= 2*time.Second {
+		r.writeLine()
+	}
+}
+
+func (r *localTestProgressReporter) finish() {
+	if r == nil || r.w == nil {
+		return
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.finished {
+		return
+	}
+	r.finished = true
+	if !r.printed || r.done < r.total {
+		r.writeLine()
+	}
+}
+
+func (r *localTestProgressReporter) writeLine() {
+	line := fmt.Sprintf("Progress: %s elapsed=%s eta=%s pass=%d fail=%d error=%d",
+		r.countText(), formatLocalTestProgressDuration(time.Since(r.started)), r.etaText(), r.passed, r.failed, r.errors)
+	if r.active != "" {
+		line += " running=" + r.active
+	}
+	fmt.Fprintln(r.w, line)
+	r.printed = true
+	r.last = time.Now()
+}
+
+func (r *localTestProgressReporter) countText() string {
+	if r.total > 0 {
+		return fmt.Sprintf("%d/%d", r.done, r.total)
+	}
+	return fmt.Sprintf("%d done", r.done)
+}
+
+func (r *localTestProgressReporter) etaText() string {
+	if r.total <= 0 || r.done <= 0 || r.done >= r.total {
+		return "0s"
+	}
+	elapsed := time.Since(r.started)
+	remaining := time.Duration(int64(elapsed) * int64(r.total-r.done) / int64(r.done))
+	return formatLocalTestProgressDuration(remaining)
+}
+
+func formatLocalTestProgressDuration(d time.Duration) string {
+	if d < 0 {
+		d = 0
+	}
+	d = d.Round(time.Second)
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d/time.Second))
+	}
+	if d < time.Hour {
+		return fmt.Sprintf("%dm%02ds", int(d/time.Minute), int((d%time.Minute)/time.Second))
+	}
+	return fmt.Sprintf("%dh%02dm", int(d/time.Hour), int((d%time.Hour)/time.Minute))
 }
 
 func shouldTraceFocusedLocalTests(options LocalTestOptions) bool {

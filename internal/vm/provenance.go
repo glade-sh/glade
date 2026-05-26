@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -42,5 +43,33 @@ func registeredMethodCandidateKey(method Method) string {
 		strconv.FormatBool(method.IsStatic),
 		string(methodOrigin(method)),
 		method.File,
+	}, "\x00")
+}
+
+func registeredMethodSourceAliasKey(method Method) string {
+	owner := strings.TrimSpace(method.ClassName)
+	methodOwner := strings.TrimSpace(classNameFromMethod(method.Name))
+	if owner == "" {
+		owner = methodOwner
+	}
+	if methodOwner != "" && strings.HasSuffix(strings.ToLower(owner), "."+strings.ToLower(methodOwner)) {
+		owner = methodOwner
+	}
+	file := ""
+	if strings.TrimSpace(method.File) != "" {
+		file = filepath.Clean(method.File)
+		if file == "." {
+			file = ""
+		}
+	}
+	return strings.Join([]string{
+		owner,
+		apexMethodMemberName(method.Name),
+		methodParamSignature(method),
+		strconv.FormatBool(method.IsStatic),
+		string(methodOrigin(method)),
+		file,
+		strconv.Itoa(method.Line),
+		strconv.Itoa(method.Column),
 	}, "\x00")
 }

@@ -36,6 +36,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	if value, handled, err := vm.callBuiltinStaticFieldMember(callee, args, result); handled || err != nil {
 		return value, err
 	}
+	if value, handled, err := vm.callClassLiteralReceiverMember(callee, args, result); handled || err != nil {
+		return value, err
+	}
 	if !strings.Contains(callee, ".") {
 		for _, contextClass := range vm.lookupContextClasses() {
 			if method, ok, ambiguous := vm.matchRegisteredStaticMethod(contextClass+"."+callee, args); ok {
@@ -238,7 +241,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if value, handled, err := vm.callManagedSingletonChain(callee, args); handled || err != nil {
 			return value, err
 		}
-		if value, handled, err := vm.callManagedStaticFactory(typeName, methodName, args); handled || err != nil {
+		if value, handled, err := vm.callManagedStaticFactory(typeName, methodName, args, result); handled || err != nil {
 			return value, err
 		}
 		if _, classExists := vm.resolveClassName(typeName); !classExists {
@@ -2483,6 +2486,11 @@ platformStaticCall:
 			return Null, fmt.Errorf("Location.newInstance expects latitude and longitude")
 		}
 		return newLocation(args[0], args[1]), nil
+	case "Address.newInstance", "System.Address.newInstance":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Address.newInstance expects 0 arguments")
+		}
+		return Object("Address"), nil
 	case "Location.getDistance":
 		if len(args) != 3 || args[0].Kind != ValueObject || args[1].Kind != ValueObject || args[2].Kind != ValueString {
 			return Null, fmt.Errorf("Location.getDistance expects two Locations and unit String")

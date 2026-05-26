@@ -1876,9 +1876,6 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	engine := vm.newDeferredAutomationDMLEngine(result)
 	engine.Options = options
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
-	if vm.triggerHandlerManagerDisablesAllTriggers() {
-		engine.Options.SuppressPersonContactAliases = true
-	}
 	engine.PriorRecords = dmlPriorRecordsByID(before)
 	if op == "update" && vm.inAfterUndeleteTrigger() {
 		engine.Options.AllowUpdateDeleted = true
@@ -1979,30 +1976,6 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		vm.clearCustomDataCache()
 	}
 	return results, nil
-}
-
-func (vm *VM) triggerHandlerManagerDisablesAllTriggers() bool {
-	if vm == nil {
-		return false
-	}
-	for _, className := range []string{"TriggerHandlerManager", "NU.TriggerHandlerManager"} {
-		field, _, ok := vm.lookupStaticField(className, "DisableAllTriggers")
-		if !ok {
-			continue
-		}
-		return field.Value.Kind == ValueBool && field.Value.Bool
-	}
-	for className := range vm.Classes {
-		if !strings.EqualFold(lastTypeSegment(className), "TriggerHandlerManager") {
-			continue
-		}
-		field, _, ok := vm.lookupStaticField(className, "DisableAllTriggers")
-		if !ok {
-			continue
-		}
-		return field.Value.Kind == ValueBool && field.Value.Bool
-	}
-	return false
 }
 
 func (vm *VM) rebuildDMLObjectIndexes(records []storage.Record, results []dml.Result) {
@@ -2972,6 +2945,11 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		}
 		if fieldValue.Kind == ValueObject && !strings.EqualFold(fieldValue.Type, "Id") && (vm.isParentRelationshipField(definition, field) || isLikelyParentRelationshipFieldName(field)) {
 			if lookupField, ok := vm.parentRelationshipField(objectType, field); ok {
+				if parentRecord, ok, err := vm.parentRelationshipRecordFromValue(fieldValue); err != nil {
+					return storage.Record{}, err
+				} else if ok {
+					vm.storeParentRelationshipRecord(&record, definition, lookupField, field, parentRecord)
+				}
 				if _, hasLookup := record.GetField(lookupField); !hasLookup && !record.HasExplicitNull(lookupField) {
 					if parentID := sObjectIDFromFields(fieldValue.Fields); parentID != "" {
 						record.Fields[lookupField] = storage.IDValue(parentID)
@@ -3057,6 +3035,112 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		}
 	}
 	return record, nil
+}
+
+func (vm *VM) parentRelationshipRecordFromValue(value Value) (storage.Record, bool, error) {
+	if value.Kind != ValueObject || strings.EqualFold(value.Type, "Id") {
+		return storage.Record{}, false, nil
+	}
+	objectType := value.Type
+	var definition storage.ObjectDefinition
+	if vm != nil && vm.Org != nil {
+		if canonical, ok := vm.resolveObjectName(objectType); ok {
+			objectType = canonical
+			definition = vm.Org.Objects[canonical].Definition
+			definition = cloneDescribeObjectDefinition(definition)
+			storage.EnsureStandardObjectFields(&definition)
+		}
+	}
+	record := storage.Record{
+		Object:        objectType,
+		Fields:        make(map[string]storage.Value),
+		ExplicitNulls: make(map[string]bool),
+	}
+	if id := sObjectIDFromFields(value.Fields); id != "" {
+		record.ID = id
+	}
+	for field, fieldValue := range value.Fields {
+		if isInternalSObjectField(field) || strings.EqualFold(field, "Id") {
+			continue
+		}
+		if strings.Contains(field, ".") && !isExplicitSObjectField(value, field) {
+			continue
+		}
+		canonicalField := field
+		if definition.APIName != "" {
+			if resolved, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field); ok {
+				canonicalField = resolved
+			}
+		}
+		if fieldValue.Kind == ValueList && definition.APIName != "" && vm.isChildRelationshipField(definition, field) {
+			continue
+		}
+		if fieldValue.Kind == ValueObject && !strings.EqualFold(fieldValue.Type, "Id") && (vm.isParentRelationshipField(definition, field) || isLikelyParentRelationshipFieldName(field)) {
+			if lookupField, ok := vm.parentRelationshipField(objectType, field); ok {
+				if parentRecord, ok, err := vm.parentRelationshipRecordFromValue(fieldValue); err != nil {
+					return storage.Record{}, false, err
+				} else if ok {
+					vm.storeParentRelationshipRecord(&record, definition, lookupField, field, parentRecord)
+				}
+				if _, hasLookup := record.GetField(lookupField); !hasLookup && !record.HasExplicitNull(lookupField) {
+					if parentID := sObjectIDFromFields(fieldValue.Fields); parentID != "" {
+						record.Fields[lookupField] = storage.IDValue(parentID)
+					} else if parentID, err := vm.resolveParentRelationshipReferenceID(nil, fieldValue); err != nil {
+						return storage.Record{}, false, err
+					} else if parentID != "" {
+						record.Fields[lookupField] = storage.IDValue(parentID)
+					}
+				}
+			}
+			continue
+		}
+		if fieldValue.Kind == ValueObject || fieldValue.Kind == ValueList {
+			continue
+		}
+		converted, err := storageValueFromVM(fieldValue)
+		if definition.APIName != "" {
+			if fieldDef, ok := definition.Fields[canonicalField]; ok {
+				converted, err = storageValueFromVMForField(fieldValue, fieldDef.Type)
+			}
+		}
+		if err != nil {
+			return storage.Record{}, false, fmt.Errorf("%s.%s: %w", value.Type, field, err)
+		}
+		if converted.Kind == storage.ValueNull {
+			record.ExplicitNulls[canonicalField] = true
+			delete(record.Fields, canonicalField)
+		} else {
+			record.Fields[canonicalField] = converted
+			delete(record.ExplicitNulls, canonicalField)
+		}
+	}
+	return record, true, nil
+}
+
+func (vm *VM) storeParentRelationshipRecord(record *storage.Record, definition storage.ObjectDefinition, lookupField, relationship string, parent storage.Record) {
+	if record == nil {
+		return
+	}
+	if record.ParentRelationships == nil {
+		record.ParentRelationships = make(map[string]storage.Record)
+	}
+	for _, name := range vm.parentRelationshipStorageNames(definition, lookupField, relationship) {
+		if strings.TrimSpace(name) == "" {
+			continue
+		}
+		record.ParentRelationships[name] = parent.Clone()
+	}
+}
+
+func (vm *VM) parentRelationshipStorageNames(definition storage.ObjectDefinition, lookupField, relationship string) []string {
+	names := []string{relationship}
+	if parentRelationship, ok := vm.parentRelationshipNameForField(definition, lookupField); ok {
+		names = append(names, parentRelationship)
+	}
+	if derived := lookupFieldRelationshipName(lookupField); derived != "" {
+		names = append(names, derived)
+	}
+	return names
 }
 
 func (vm *VM) OrgNamespace() string {
@@ -4667,6 +4751,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	callerClass := vm.currentClass
 	callerNamespace := vm.currentNamespace
 	callerTriggerGlobals := vm.triggerGlobals
+	callerTriggerNamespaces := vm.activeTriggerNamespaces
 	callerStatement := vm.currentStatement
 	callerHasStatement := vm.hasStatement
 	frame := make(map[string]Value)
@@ -4678,22 +4763,20 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	vm.triggerGlobals = frame
 	vm.currentClass = trigger.Name
 	vm.currentNamespace = strings.TrimSpace(trigger.Namespace)
+	if vm.currentNamespace != "" {
+		vm.activeTriggerNamespaces = append(vm.activeTriggerNamespaces, vm.currentNamespace)
+	}
 	vm.callStack = append(vm.callStack, callFrame{Symbol: trigger.Name, File: trigger.File, Line: trigger.Line, Column: trigger.Column})
 	defer func() {
 		vm.callStack = vm.callStack[:len(vm.callStack)-1]
 		vm.Globals = caller
 		vm.triggerGlobals = callerTriggerGlobals
+		vm.activeTriggerNamespaces = callerTriggerNamespaces
 		vm.currentClass = callerClass
 		vm.currentNamespace = callerNamespace
 		vm.currentStatement = callerStatement
 		vm.hasStatement = callerHasStatement
 	}()
-	if vm.testContext != nil &&
-		strings.EqualFold(trigger.Namespace, "znu") &&
-		strings.EqualFold(trigger.Name, "AccountTriggers") &&
-		strings.EqualFold(trigger.Operation, "insert") {
-		return nil, nil
-	}
 	out, err := vm.executeProgram(trigger.Program, result)
 	updated := frame["Trigger.new"]
 	if trigger.Operation == "delete" {

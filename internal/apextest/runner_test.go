@@ -19,7 +19,7 @@ import (
 
 func TestRunExecutesAnonymousSubsetTestMethods(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"verifiable","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/MathTest.cls"), `
 @isTest
 private class MathTest {
@@ -39,6 +39,81 @@ private class MathTest {
 	summary := run.Summary()
 	if summary.Total != 1 || summary.Passed != 1 {
 		t.Fatalf("summary = %#v", summary)
+	}
+}
+
+func TestSortClassRunOrderUsesDurationHistory(t *testing.T) {
+	classOrder := []string{"ShortMany", "LongOne", "Middle"}
+	classIndexes := map[string][]int{
+		"ShortMany": {0, 1, 2, 3},
+		"LongOne":   {4},
+		"Middle":    {5, 6},
+	}
+	sortClassRunOrder(classOrder, classIndexes, map[string]int64{
+		"LongOne": 90000,
+		"Middle":  10000,
+	})
+	want := []string{"LongOne", "Middle", "ShortMany"}
+	for i := range want {
+		if classOrder[i] != want[i] {
+			t.Fatalf("classOrder[%d] = %q, want %q (order=%v)", i, classOrder[i], want[i], classOrder)
+		}
+	}
+}
+
+func TestSortClassRunOrderFallsBackToMethodCount(t *testing.T) {
+	classOrder := []string{"One", "Three", "Two"}
+	classIndexes := map[string][]int{
+		"One":   {0},
+		"Three": {1, 2, 3},
+		"Two":   {4, 5},
+	}
+	sortClassRunOrder(classOrder, classIndexes, nil)
+	want := []string{"Three", "Two", "One"}
+	for i := range want {
+		if classOrder[i] != want[i] {
+			t.Fatalf("classOrder[%d] = %q, want %q (order=%v)", i, classOrder[i], want[i], classOrder)
+		}
+	}
+}
+
+func TestEnsureProjectDataReferencedObjectFieldPreservesExistingLookupTarget(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "pkg__Facility__c")
+	org.Objects["FacilityLicense__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "FacilityLicense__c",
+			Fields: map[string]storage.Field{
+				"Facility__c": {
+					APIName:               "Facility__c",
+					Type:                  storage.FieldReference,
+					DisplayType:           "REFERENCE",
+					ReferenceTo:           []string{"Account"},
+					RelationshipName:      "Facility__r",
+					ChildRelationshipName: "FacilityLicenses__r",
+				},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Facility__c",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Facility__r",
+				ChildRelationship:  "FacilityLicenses__r",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+
+	ensureProjectDataReferencedObjectField(&org, "FacilityLicense__c", "Facility__c", "")
+
+	state := org.Objects["FacilityLicense__c"]
+	field := state.Definition.Fields["Facility__c"]
+	if len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Account" {
+		t.Fatalf("ReferenceTo = %v, want [Account]", field.ReferenceTo)
+	}
+	if len(state.Definition.Relations) != 1 || len(state.Definition.Relations[0].ParentObjects) != 1 || state.Definition.Relations[0].ParentObjects[0] != "Account" {
+		t.Fatalf("Relations = %#v, want existing Account relationship", state.Definition.Relations)
 	}
 }
 
@@ -1245,6 +1320,339 @@ private class SharedHelperTest {
 	}
 }
 
+func TestRunNamespacedDependencyNestedConstructorStaysInDependencyNamespace(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/Module.cls"), `
+global class Module {}
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/Binding.cls"), `
+global class Binding {
+  global class Resolver {
+    global String Source;
+    global Resolver(List<Module> modules) {
+      Source = 'dep';
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/Injector.cls"), `
+global class Injector {
+  global static String make() {
+    Binding.Resolver resolver = new Binding.Resolver(new List<Module>{ new Module() });
+    return resolver.Source;
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
+  managedPackageDependencies: ["znu:../dep:1.0"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/Module.cls"), `
+public class Module {}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/Binding.cls"), `
+public class Binding {
+  public class Resolver {
+    public String Source;
+    public Resolver(List<Module> modules) {
+      Source = 'local';
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/InjectorTest.cls"), `
+@isTest
+private class InjectorTest {
+  @isTest static void dependencyKeepsItsNestedType() {
+    System.assertEquals('dep', znu.Injector.make());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, consumerRoot), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestNamespacedEnumConstructorFieldEqualityUsesNamespaceType(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/TokenType.cls"), `
+public enum TokenType {
+  LEFT_PAREN, RIGHT_PAREN
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Token.cls"), `
+public class Token {
+  public final TokenType type;
+  public Token(TokenType type) {
+    this.type = type;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Parser.cls"), `
+public class Parser {
+  public static Boolean check() {
+    Token token = new Token(TokenType.RIGHT_PAREN);
+    System.assertNotEquals(null, token.type);
+    System.assertEquals('RIGHT_PAREN', String.valueOf(token.type));
+    System.assertEquals(true, token.type.equals(token.type));
+    System.assertEquals('RIGHT_PAREN', String.valueOf(TokenType.RIGHT_PAREN));
+    System.assertEquals(true, token.type.equals(TokenType.RIGHT_PAREN));
+    return token.type == TokenType.RIGHT_PAREN;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ParserTest.cls"), `
+@isTest
+private class ParserTest {
+  @isTest static void enumFieldMatchesShortLiteral() {
+    System.assertEquals(true, Parser.check());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestNestedEnumNamedRecordTypeWinsOverSObjectFieldToken(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/EnumCollisionService.cls"), `
+public class EnumCollisionService {
+  public enum RecordType { PRODUCT, PURCHASE }
+  private static final Map<RecordType, String> TYPE_BY_STRING =
+    new Map<RecordType, String>{
+      RecordType.PRODUCT => 'product',
+      RecordType.PURCHASE => 'purchase'
+    };
+  public static String product() {
+    return TYPE_BY_STRING.get(RecordType.PRODUCT);
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/EnumCollisionServiceTest.cls"), `
+@isTest
+private class EnumCollisionServiceTest {
+  @isTest static void nestedEnumNamedRecordTypeWins() {
+    System.assertEquals('product', EnumCollisionService.product());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestStandardSObjectConstructorWinsOverNestedClassWithSameName(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Model.cls"), `
+public class Model {
+  public class Contact {
+    public String firstName;
+  }
+  public static SObject makeContact() {
+    return new Contact(FirstName = 'Ada', LastName = 'Lovelace');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/OtherModel.cls"), `
+public class OtherModel {
+  public class Account {
+    public String name;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/OtherService.cls"), `
+public class OtherService {
+  public static SObject makeAccount() {
+    return new Account(Name = 'Acme');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ModelTest.cls"), `
+@isTest
+private class ModelTest {
+  @isTest static void sobjectConstructorWins() {
+    SObject row = Model.makeContact();
+    System.assertEquals(Contact.SObjectType, row.getSObjectType());
+    System.assertEquals('Ada', (String)row.get('FirstName'));
+  }
+  @isTest static void unrelatedNestedTypeDoesNotWin() {
+    SObject row = OtherService.makeAccount();
+    System.assertEquals(Account.SObjectType, row.getSObjectType());
+    System.assertEquals('Acme', (String)row.get('Name'));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestNamespacedTypeParameterCanBeForwardedToCreateStub(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Widget.cls"), `
+public interface Widget {
+  String name();
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Provider.cls"), `
+public class Provider implements System.StubProvider {
+  public Object handleMethodCall(Object stubbedObject, String stubbedMethodName, Type returnType, List<Type> listOfParamTypes, List<String> listOfParamNames, List<Object> listOfArgs) {
+    return 'ok';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Monitor.cls"), `
+public class Monitor {
+  public enum Type { Example }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Mocks.cls"), `
+public class Mocks extends Provider {
+  public Object mock(Type classToMock) {
+    return Test.createStub(classToMock, this);
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/MocksTest.cls"), `
+@isTest
+private class MocksTest {
+  private static final Mocks MY_MOCKS = new Mocks();
+  private static final Widget MY_WIDGET = (Widget)MY_MOCKS.mock(Widget.class);
+  @isTest static void forwardsTypeParameter() {
+    Widget widget = (Widget)new Mocks().mock(Widget.class);
+    System.assertEquals('ok', widget.name());
+    System.assertEquals('ok', MY_WIDGET.name());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunNamespacedDependencyNestedSubclassStaysInDependencyNamespace(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/Binding.cls"), `
+global abstract class Binding {
+  global String Source;
+  global enum BindingType { Apex }
+  private static final Map<BindingType, Type> impls =
+    new Map<BindingType, Type> {
+      BindingType.Apex => ApexBinding.class
+    };
+  global static Binding newInstance() {
+    return (Binding) impls.get(BindingType.Apex).newInstance();
+  }
+  private class ApexBinding extends Binding {
+    private ApexBinding() {
+      Source = 'dep';
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/Module.cls"), `
+global class Module {
+  private List<Binding> bindings = new List<Binding>();
+  global String addBinding() {
+    Binding binding = Binding.newInstance();
+    bindings.add(binding);
+    return binding.Source;
+  }
+  global static String make() {
+    return new Module().addBinding();
+  }
+}
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/Injector.cls"), `
+global class Injector {
+  global class CustomMetadataModule extends Module {
+  }
+  global static String makeCustom() {
+    return new CustomMetadataModule().addBinding();
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
+  managedPackageDependencies: ["znu:../dep:1.0"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/Binding.cls"), `
+public abstract class Binding {
+  public String Source;
+  public enum BindingType { Apex }
+  private static final Map<BindingType, Type> impls =
+    new Map<BindingType, Type> {
+      BindingType.Apex => ApexBinding.class
+    };
+  public static Binding newInstance() {
+    return (Binding) impls.get(BindingType.Apex).newInstance();
+  }
+  private class ApexBinding extends Binding {
+    private ApexBinding() {
+      Source = 'local';
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/Module.cls"), `
+public class Module {
+  private List<Binding> bindings = new List<Binding>();
+  public String addBinding() {
+    Binding binding = Binding.newInstance();
+    bindings.add(binding);
+    return binding.Source;
+  }
+  public static String make() {
+    return new Module().addBinding();
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/Injector.cls"), `
+public class Injector {
+  public class CustomMetadataModule extends Module {
+  }
+  public static String makeCustom() {
+    return new CustomMetadataModule().addBinding();
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/ModuleTest.cls"), `
+@isTest
+private class ModuleTest {
+  @isTest static void dependencyKeepsItsNestedSubclass() {
+    System.assertEquals('dep', znu.Module.make());
+    System.assertEquals('dep', znu.Injector.makeCustom());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, consumerRoot), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestRunDependencyDuplicateSuperCallUsesDependencyBaseMethod(t *testing.T) {
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
@@ -1711,6 +2119,61 @@ private class GreeterTest {
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunSObjectTypeEnumMapMissingKeyFallsThroughSwitchElse(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Widget__c/Widget__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Widget</label><pluralLabel>Widgets</pluralLabel><nameField><type>Text</type><label>Name</label></nameField></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/fflib_IDGenerator.cls"), `
+public class fflib_IDGenerator {
+  private static Integer fakeIdCount = 0;
+  private static final String ID_PATTERN = '000000000000';
+  public static Id generate(Schema.SObjectType sobjectType) {
+    String keyPrefix = sobjectType.getDescribe().getKeyPrefix();
+    fakeIdCount++;
+    String fakeIdPrefix = ID_PATTERN.substring(0, ID_PATTERN.length() - String.valueOf(fakeIdCount).length());
+    return Id.valueOf(keyPrefix + fakeIdPrefix + fakeIdCount);
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SObjectTypeMapSwitchProbe.cls"), `
+public class SObjectTypeMapSwitchProbe {
+  public enum Dataset { Widget }
+  public static Map<SObjectType, Dataset> objectTypeToDataset = new Map<SObjectType, Dataset>{
+    Widget__c.SObjectType => Dataset.Widget
+  };
+  public static void requireSupported(Id recordId) {
+    Dataset datasetType = objectTypeToDataset.get(recordId.getSObjectType());
+    switch on datasetType {
+      when Widget {
+      }
+      when else {
+        throw new AuraHandledException('Unsupported object type.');
+      }
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SObjectTypeMapSwitchProbeTest.cls"), `
+@isTest
+private class SObjectTypeMapSwitchProbeTest {
+  @isTest static void accountIsNotMapped() {
+    Boolean caught = false;
+    try {
+      SObjectTypeMapSwitchProbe.requireSupported(fflib_IDGenerator.generate(Account.SObjectType));
+    } catch (Exception e) {
+      caught = true;
+    }
+    System.assert(caught);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
 	}
 }
 
@@ -3013,6 +3476,38 @@ private class MarkJobTest {
 	}
 }
 
+func TestRunDrainsQueueableWithMultiMethodCloneIsolation(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/MultiMethodJob.cls"), `
+public class MultiMethodJob implements Queueable {
+  public void execute(QueueableContext qc) {
+    insert new Account(Name = 'multi async ran');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/MultiMethodJobTest.cls"), `
+@isTest
+private class MultiMethodJobTest {
+  @isTest static void firstDrainsQueue() {
+    Test.startTest();
+    System.enqueueJob(new MultiMethodJob());
+    Test.stopTest();
+    System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'multi async ran']);
+  }
+
+  @isTest static void secondSeesFreshData() {
+    System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'multi async ran']);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
 func TestRunDoesNotDrainQueueableEnqueuedBeforeStartTest(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -3648,18 +4143,11 @@ private class RunAsContactTest {
 	project.assertSinglePassingRun()
 }
 
-func TestRunAsPersistsNamespacedPersonContactRelationship(t *testing.T) {
+func TestRunAsPersistsStandardPersonContactRelationship(t *testing.T) {
 	project := newSalesforceSurfaceProject(t, `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"znu"}`)
-	project.writeField("Account", "PersonContact__c", `
-<CustomField>
-  <fullName>PersonContact__c</fullName>
-  <type>Lookup</type>
-  <referenceTo>Contact</referenceTo>
-  <relationshipName>PersonContact</relationshipName>
-</CustomField>`)
 	project.writeRecordType("PersonAccount", "Individual", `
-<RecordType>
-  <fullName>Individual</fullName>
+	<RecordType>
+	  <fullName>Individual</fullName>
   <label>Individual</label>
   <active>true</active>
 </RecordType>`)
@@ -3667,12 +4155,12 @@ func TestRunAsPersistsNamespacedPersonContactRelationship(t *testing.T) {
 @isTest
 private class RunAsPersonContactTest {
   @isTest static void queriesPersonContactAccount() {
-    Id recordTypeId = [SELECT Id FROM RecordType WHERE SobjectType = 'Account' AND DeveloperName = 'Individual' LIMIT 1].Id;
-    Account account = new Account(FirstName = 'Ada', LastName = 'Lovelace', RecordTypeId = recordTypeId);
-    insert account;
-    Account stored = [SELECT znu__PersonContact__c FROM Account WHERE Id = :account.Id LIMIT 1];
-    System.assertNotEquals(null, stored.znu__PersonContact__c);
-    User u = new User(ProfileId = '00e000000000006', Username = 'person-user@example.test', ContactId = stored.znu__PersonContact__c);
+	    Id recordTypeId = [SELECT Id FROM RecordType WHERE SobjectType = 'Account' AND DeveloperName = 'Individual' LIMIT 1].Id;
+	    Account account = new Account(FirstName = 'Ada', LastName = 'Lovelace', RecordTypeId = recordTypeId);
+	    insert account;
+	    Account stored = [SELECT PersonContactId FROM Account WHERE Id = :account.Id LIMIT 1];
+	    System.assertNotEquals(null, stored.PersonContactId);
+	    User u = new User(ProfileId = '00e000000000006', Username = 'person-user@example.test', ContactId = stored.PersonContactId);
 
     System.runAs(u) {
       User current = [SELECT Contact.AccountId FROM User WHERE Id = :UserInfo.getUserId()];
@@ -4078,6 +4566,135 @@ public class StaticEndpointService {
 	}
 	if value.Kind != vm.ValueString || value.Text != "external" {
 		t.Fatalf("endpoint = %#v, want external", value)
+	}
+}
+
+func TestProjectRuntimeStaticFieldKeepsCommonSObjectWhenNestedTypeSharesName(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SetupDataMapping.cls"), `
+public class SetupDataMapping {
+  public Organization organization;
+
+  public class Organization {
+    public String sfObject;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/constants.cls"), `
+public class constants {
+  public static final Organization ORG = [
+    SELECT Id
+    FROM Organization
+    LIMIT 1
+  ];
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/test/classes/ConstantsStaticFieldTest.cls"), `
+@isTest
+private class ConstantsStaticFieldTest {
+  @isTest static void orgUsesStandardSObject() {
+    System.assertEquals('Organization', constants.ORG.getSObjectType().getDescribe().getName());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunNestedConstructorNamedLikeStandardSObjectWinsInLexicalOwner(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Wrapper.cls"), `
+public class Wrapper {
+  public static String makeName(ContentDocumentLink link) {
+    Attachment item = new Attachment(link);
+    return item.name;
+  }
+
+  public class Attachment {
+    public String name;
+
+    public Attachment(ContentDocumentLink link) {
+      this.name = 'wrapped';
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/test/classes/WrapperTest.cls"), `
+@isTest
+private class WrapperTest {
+  @isTest static void nestedAttachmentConstructorWins() {
+    System.assertEquals('wrapped', Wrapper.makeName(new ContentDocumentLink()));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunNestedInterfaceClassLiteralSupportsTypeIsAssignableFrom(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ScriptHandler.cls"), `
+public class ScriptHandler {
+  public interface Runnable {
+    void run();
+  }
+
+  public class Impl implements Runnable {
+    public void run() {}
+  }
+
+  public static Boolean accepts(Type scriptType) {
+    return Runnable.class.isAssignableFrom(scriptType);
+  }
+
+  public static Boolean acceptsByName(String scriptName) {
+    Type scriptType = Type.forName(scriptName);
+    return Runnable.class.isAssignableFrom(scriptType);
+  }
+
+  public static Boolean rejectsByName(String scriptName) {
+    Type scriptType = Type.forName(scriptName);
+    return Runnable.class.isAssignableFrom(scriptType) == false;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/test/classes/ScriptHandlerTest.cls"), `
+@isTest
+private class ScriptHandlerTest {
+  public class TestImpl implements ScriptHandler.Runnable {
+    public void run() {}
+  }
+
+  @isTest static void nestedInterfaceLiteralIsAssignable() {
+    System.assertEquals(true, ScriptHandler.accepts(ScriptHandler.Impl.class));
+  }
+
+  @isTest static void nestedInterfaceLiteralIsAssignableFromForName() {
+    System.assertEquals(true, ScriptHandler.acceptsByName('pkg.ScriptHandler.Impl'));
+  }
+
+  @isTest static void nestedInterfaceLiteralIsAssignableFromTestNestedForName() {
+    System.assertEquals(true, ScriptHandler.acceptsByName('pkg.ScriptHandlerTest.TestImpl'));
+  }
+
+  @isTest static void nestedInterfaceLiteralComparisonKeepsArgument() {
+    System.assertEquals(false, ScriptHandler.rejectsByName('pkg.ScriptHandlerTest.TestImpl'));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 4 || got.Passed != 4 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
 	}
 }
 
@@ -4830,6 +5447,29 @@ public class OrderProbe {
 	}
 }
 
+func TestOrgFromIndexIncludesProjectReferencedManagedFieldTokens(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PasscodeProbe.cls"), `
+public class PasscodeProbe {
+	public static void touch() {
+		Schema.SObjectField field = znu__Passcode__c.znu__Code__c;
+	}
+}
+`)
+	index := loadTestIndex(t, root)
+
+	org := orgFromIndex(index)
+	state, ok := org.Objects["znu__Passcode__c"]
+	if !ok {
+		t.Fatalf("znu__Passcode__c object was not inferred")
+	}
+	field := state.Definition.Fields["znu__Code__c"]
+	if field.Type != storage.FieldString || field.DisplayType != "STRING" {
+		t.Fatalf("znu__Passcode__c.znu__Code__c field = %#v", field)
+	}
+}
+
 func TestOrgFromIndexInfersProjectReferencedCustomCurrencyDefaults(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -5039,6 +5679,429 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 	}
 }
 
+func TestOrgFromIndexUsesPermissionSetsToSeedManagedObjectShape(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/NUObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__Affiliation__c.znu__Account__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__Affiliation__c.znu__IsCompanyManager__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__Affiliation__c.znu__BillMeEnabled__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__Affiliation__c.znu__AllowCoWorkerRegistration__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__Affiliation__c.znu__Hidden__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__OrderItem__c.znu__PriceClass__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__OrderItem__c.znu__Customer__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__ExternalPaymentProfile__c.znu__PaymentType__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__ExternalPaymentProfile__c.znu__PaymentTypeIssuerName__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__Product__c.znu__TrackInventory__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <recordTypeVisibilities>
+    <default>false</default>
+    <recordType>znu__ProductLink__c.znu__BundleProduct</recordType>
+    <visible>true</visible>
+  </recordTypeVisibilities>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>znu__PriceClass__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>znu__Affiliation__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+</PermissionSet>`)
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	affiliation, ok := org.Objects["znu__Affiliation__c"]
+	if !ok {
+		t.Fatalf("managed permission-set object was not seeded")
+	}
+	if affiliation.Definition.Fields["znu__IsCompanyManager__c"].Type != storage.FieldBoolean {
+		t.Fatalf("boolean permission field = %#v", affiliation.Definition.Fields["znu__IsCompanyManager__c"])
+	}
+	if affiliation.Definition.Fields["znu__BillMeEnabled__c"].Type != storage.FieldBoolean {
+		t.Fatalf("enabled permission field = %#v", affiliation.Definition.Fields["znu__BillMeEnabled__c"])
+	}
+	if affiliation.Definition.Fields["znu__AllowCoWorkerRegistration__c"].Type != storage.FieldBoolean {
+		t.Fatalf("allow permission field = %#v", affiliation.Definition.Fields["znu__AllowCoWorkerRegistration__c"])
+	}
+	if affiliation.Definition.Fields["znu__Hidden__c"].Type != storage.FieldBoolean {
+		t.Fatalf("hidden permission field = %#v", affiliation.Definition.Fields["znu__Hidden__c"])
+	}
+	accountField := affiliation.Definition.Fields["znu__Account__c"]
+	if accountField.Type != storage.FieldReference || len(accountField.ReferenceTo) != 1 || accountField.ReferenceTo[0] != "Account" {
+		t.Fatalf("lookup permission field = %#v", accountField)
+	}
+	if !parentRelationshipKnown(affiliation.Definition, "znu__Account__r") {
+		t.Fatalf("lookup relationship missing: %#v", affiliation.Definition.Relations)
+	}
+	orderItem, ok := org.Objects["znu__OrderItem__c"]
+	if !ok {
+		t.Fatalf("managed permission-set order item object was not seeded")
+	}
+	priceClassField := orderItem.Definition.Fields["znu__PriceClass__c"]
+	if priceClassField.Type != storage.FieldReference || len(priceClassField.ReferenceTo) != 1 || priceClassField.ReferenceTo[0] != "znu__PriceClass__c" {
+		t.Fatalf("price class lookup field = %#v", priceClassField)
+	}
+	customerField := orderItem.Definition.Fields["znu__Customer__c"]
+	if customerField.Type != storage.FieldReference || len(customerField.ReferenceTo) != 1 || customerField.ReferenceTo[0] != "Account" {
+		t.Fatalf("customer lookup field = %#v", customerField)
+	}
+	productLink, ok := org.Objects["znu__ProductLink__c"]
+	if !ok {
+		t.Fatalf("managed permission-set product link object was not seeded")
+	}
+	if len(productLink.Definition.RecordTypes) != 1 || productLink.Definition.RecordTypes[0].DeveloperName != "BundleProduct" || productLink.Definition.RecordTypes[0].Name != "Bundle Product" {
+		t.Fatalf("product link record types = %#v", productLink.Definition.RecordTypes)
+	}
+	externalProfile := org.Objects["znu__ExternalPaymentProfile__c"]
+	if field := externalProfile.Definition.Fields["znu__PaymentType__c"]; field.Type != storage.FieldString {
+		t.Fatalf("payment type field = %#v", field)
+	}
+	if field := externalProfile.Definition.Fields["znu__PaymentTypeIssuerName__c"]; field.Type != storage.FieldString {
+		t.Fatalf("payment issuer name field = %#v", field)
+	}
+	product := org.Objects["znu__Product__c"]
+	if field := product.Definition.Fields["znu__TrackInventory__c"]; field.Type != storage.FieldBoolean {
+		t.Fatalf("track inventory field = %#v", field)
+	}
+}
+
+func TestOrgFromIndexPermissionSetLookupUpgradesEarlyNumericInference(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/znu__OrderItem__c/znu__OrderItem__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order Item</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/PriceClassShapeHarness.cls"), `
+public class PriceClassShapeHarness {
+  public void touch() {
+    znu__OrderItem__c item = new znu__OrderItem__c(znu__PriceClass__c = 1);
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/NUObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__OrderItem__c.znu__PriceClass__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>znu__PriceClass__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+</PermissionSet>`)
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	orderItem := org.Objects["znu__OrderItem__c"]
+	field := orderItem.Definition.Fields["znu__PriceClass__c"]
+	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "znu__PriceClass__c" {
+		t.Fatalf("price class field = %#v", field)
+	}
+}
+
+func TestOrgFromIndexPermissionSetBooleanUpgradesEarlyStringInference(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/znu__Product__c/znu__Product__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Product</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/ProductShapeHarness.cls"), `
+public class ProductShapeHarness {
+  public void touch() {
+    znu__Product__c product = new znu__Product__c(znu__TrackInventory__c = 'false');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/NUObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__Product__c.znu__TrackInventory__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+</PermissionSet>`)
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	product := org.Objects["znu__Product__c"]
+	if field := product.Definition.Fields["znu__TrackInventory__c"]; field.Type != storage.FieldBoolean {
+		t.Fatalf("track inventory field = %#v", field)
+	}
+}
+
+func TestOrgFromIndexPermissionSetInfersCustomLookupChildRelationship(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/NUObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__Product__c.znu__Event__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__Product__c.znu__Event2__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>znu__Product__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>znu__Event__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+</PermissionSet>`)
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	product := org.Objects["znu__Product__c"]
+	for _, relation := range product.Definition.Relations {
+		if relation.Field == "znu__Event2__c" {
+			if len(relation.ParentObjects) != 1 || relation.ParentObjects[0] != "znu__Event__c" || relation.ChildRelationship != "znu__Products2__r" {
+				t.Fatalf("Event2 relation = %#v", relation)
+			}
+			return
+		}
+	}
+	t.Fatalf("Event2 relation missing: %#v", product.Definition.Relations)
+}
+
+func TestOrgFromIndexPermissionSetInfersPrefixedCustomLookupChildRelationship(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/NUObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>znu__ProductLink__c.znu__ParentProduct__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>znu__Product__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>znu__ProductLink__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+</PermissionSet>`)
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	productLink := org.Objects["znu__ProductLink__c"]
+	field := productLink.Definition.Fields["znu__ParentProduct__c"]
+	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "znu__Product__c" {
+		t.Fatalf("parent product field = %#v", field)
+	}
+	for _, relation := range productLink.Definition.Relations {
+		if relation.Field == "znu__ParentProduct__c" {
+			if relation.ChildRelationship != "znu__ParentProducts__r" {
+				t.Fatalf("parent product relation = %#v", relation)
+			}
+			return
+		}
+	}
+	t.Fatalf("parent product relation missing: %#v", productLink.Definition.Relations)
+}
+
+func TestOrgFromIndexUsesDataRelationshipReferencesToSeedManagedChildRelationship(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "data/Event_Questions.json"), `{
+  "records": {
+    "znu__EventQuestion__c": [
+      {
+        "znu__ExternalID__c": "Q1",
+        "znu__QuestionText__c": "Dietary needs?",
+        "znu__IsRequired__c": true,
+        "znu__Event__r.znu__ExternalID__c": "E1"
+      }
+    ]
+  }
+}`)
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	eventQuestion := org.Objects["znu__EventQuestion__c"]
+	field := eventQuestion.Definition.Fields["znu__Event__c"]
+	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "znu__Event__c" {
+		t.Fatalf("event question event field = %#v", field)
+	}
+	if field := eventQuestion.Definition.Fields["znu__QuestionText__c"]; field.Type != storage.FieldString {
+		t.Fatalf("event question text field = %#v", field)
+	}
+	if field := eventQuestion.Definition.Fields["znu__IsRequired__c"]; field.Type != storage.FieldBoolean {
+		t.Fatalf("event question required field = %#v", field)
+	}
+	for _, relation := range eventQuestion.Definition.Relations {
+		if relation.Field == "znu__Event__c" {
+			if relation.ChildRelationship != "znu__EventQuestions__r" {
+				t.Fatalf("event question relation = %#v", relation)
+			}
+			return
+		}
+	}
+	t.Fatalf("event question event relation missing: %#v", eventQuestion.Definition.Relations)
+}
+
+func TestOrgFromIndexSeedsNAMSProducts2ChildRelationship(t *testing.T) {
+	root := filepath.Join("..", "..", "example-projects", "nams-workspace")
+	if _, err := os.Stat(filepath.Join(root, "sfdx-project.json")); err != nil {
+		t.Skip("NAMS example project is not available")
+	}
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	product := org.Objects["znu__Product__c"]
+	field := product.Definition.Fields["znu__Event2__c"]
+	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "znu__Event__c" {
+		t.Fatalf("Event2 field = %#v", field)
+	}
+	trackInventory := product.Definition.Fields["znu__TrackInventory__c"]
+	if trackInventory.Type != storage.FieldBoolean || trackInventory.DefaultValue != "false" {
+		t.Fatalf("TrackInventory field = %#v", trackInventory)
+	}
+	for _, relation := range product.Definition.Relations {
+		if relation.Field == "znu__Event2__c" {
+			if relation.ChildRelationship != "znu__Products2__r" {
+				t.Fatalf("Event2 relation = %#v", relation)
+			}
+			return
+		}
+	}
+	t.Fatalf("Event2 relation missing: %#v", product.Definition.Relations)
+}
+
+func TestOrgFromIndexKeepsValidCustomMetadataWhenAnotherRecordHasUnknownField(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Feature__mdt/Feature__mdt.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Feature</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Feature__mdt/fields/Enabled__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Enabled__c</fullName><label>Enabled</label><type>Checkbox</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/customMetadata/Feature.Bad.md-meta.xml"), `<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata"><label>Bad</label><values><field>Missing__c</field><value>true</value></values></CustomMetadata>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/bindings/Feature.Good.md-meta.xml"), `<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata"><label>Good</label><values><field>Enabled__c</field><value>true</value></values></CustomMetadata>`)
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	for _, record := range org.Objects["Feature__mdt"].Records {
+		if record.Fields["DeveloperName"].String == "Good" && record.Fields["Enabled__c"].Boolean {
+			return
+		}
+	}
+	t.Fatalf("valid custom metadata record missing: %#v", org.Objects["Feature__mdt"].Records)
+}
+
+func TestRunClonedMethodsKeepCustomMetadataChildRelationships(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/StateConfiguration__mdt/StateConfiguration__mdt.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>State Configuration</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/StateConfiguration__mdt/fields/IsActive__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>IsActive__c</fullName><label>Is Active</label><type>Checkbox</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/StateConfiguration__mdt/fields/SupportedStates__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>SupportedStates__c</fullName><label>Supported States</label><type>Text</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/StateTransition__mdt/StateTransition__mdt.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>State Transition</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/StateTransition__mdt/fields/IsActive__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>IsActive__c</fullName><label>Is Active</label><type>Checkbox</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/StateTransition__mdt/fields/FromStates__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>FromStates__c</fullName><label>From States</label><type>Text</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/StateTransition__mdt/fields/ToState__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>ToState__c</fullName><label>To State</label><type>Text</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/StateTransition__mdt/fields/StateConfiguration__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>StateConfiguration__c</fullName><label>State Configuration</label><type>MetadataRelationship</type><referenceTo>StateConfiguration__mdt</referenceTo><relationshipName>StateConfiguration__r</relationshipName><childRelationshipName>StateTransitions__r</childRelationshipName></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/customMetadata/StateConfiguration.OrderGraph.md-meta.xml"), `<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order Graph</label><values><field>IsActive__c</field><value>true</value></values><values><field>SupportedStates__c</field><value>Cart,Pro forma</value></values></CustomMetadata>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/customMetadata/StateTransition.order_submit_as_proforma.md-meta.xml"), `<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata"><label>Submit as pro forma</label><values><field>IsActive__c</field><value>true</value></values><values><field>FromStates__c</field><value>Cart</value></values><values><field>ToState__c</field><value>Pro forma</value></values><values><field>StateConfiguration__c</field><value>OrderGraph</value></values></CustomMetadata>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/MetadataChildCloneTest.cls"), `
+@IsTest
+private class MetadataChildCloneTest {
+  @IsTest static void firstCloneRun() {
+    assertChildRows();
+  }
+
+  @IsTest static void secondCloneRun() {
+    assertChildRows();
+  }
+
+  private static void assertChildRows() {
+    List<StateConfiguration__mdt> configs = [
+      SELECT QualifiedApiName, SupportedStates__c,
+        (SELECT QualifiedApiName, FromStates__c, ToState__c FROM StateTransitions__r WHERE IsActive__c = TRUE)
+      FROM StateConfiguration__mdt
+      WHERE IsActive__c = TRUE
+    ];
+    System.assertEquals(1, configs.size());
+    Integer childCount = 0;
+    for (StateTransition__mdt transitionRecord : configs[0].StateTransitions__r) {
+      childCount++;
+      System.assertEquals('order_submit_as_proforma', transitionRecord.QualifiedApiName);
+      System.assertEquals('Cart', transitionRecord.FromStates__c);
+      System.assertEquals('Pro forma', transitionRecord.ToState__c);
+    }
+    System.assertEquals(1, childCount);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
+		t.Fatalf("summary = %#v case0=%#v case1=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[1])
+	}
+}
+
 func TestOrgFromIndexAddsProfileVisiblePersonAccountRecordTypes(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -5081,6 +6144,164 @@ func TestOrgFromIndexAddsProfileVisiblePersonAccountRecordTypes(t *testing.T) {
 		if record.Fields["SobjectType"].String == "PersonAccount" {
 			t.Fatalf("PersonAccount record type row leaked into RecordType: %#v", record)
 		}
+	}
+}
+
+func TestOrgFromIndexAddsProjectReferencedRecordTypes(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Product__c/pkg__Product__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Product</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__ProductLink__c/pkg__ProductLink__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Product Link</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/ReferencedRecordTypesTest.cls"), `
+@IsTest
+private class ReferencedRecordTypesTest {
+  @IsTest static void referencedRecordTypesHaveIds() {
+    Id bundle = SObjectType.pkg__Product__c.getRecordTypeInfosByName().get('Bundle').getRecordTypeId();
+    Id bundleProduct = pkg__ProductLink__c.SObjectType.getDescribe().getRecordTypeInfosByDeveloperName().get('BundleProduct').getRecordTypeId();
+    System.assertNotEquals(null, bundle);
+    System.assertNotEquals(null, bundleProduct);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestOrgFromIndexMergesManagedDependencyRecordTypesWithConsumerOverlay(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"znu"}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/Product__c/Product__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Product</label></CustomObject>`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/Product__c/recordTypes/Membership.recordType-meta.xml"), `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Membership</fullName><label>Membership</label><active>true</active></RecordType>`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/Product__c/recordTypes/Merchandise.recordType-meta.xml"), `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Merchandise</fullName><label>Merchandise</label><active>true</active></RecordType>`)
+
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"namz"}`)
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
+  managedPackageDependencies: ["znu:../dep"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/objects/znu__Product__c/znu__Product__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Product Overlay</label></CustomObject>`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/objects/znu__Product__c/recordTypes/Program.recordType-meta.xml"), `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Program</fullName><label>Program</label><active>true</active></RecordType>`)
+
+	org := orgFromIndex(loadTestIndex(t, consumerRoot))
+	product, ok := org.Objects["znu__Product__c"]
+	if !ok {
+		t.Fatalf("product object missing")
+	}
+	recordTypes := map[string]bool{}
+	for _, recordType := range product.Definition.RecordTypes {
+		recordTypes[recordType.DeveloperName] = true
+		if recordType.ID == "" {
+			t.Fatalf("record type missing id: %#v", recordType)
+		}
+	}
+	for _, name := range []string{"Membership", "Merchandise", "Program"} {
+		if !recordTypes[name] {
+			t.Fatalf("record types missing %s: %#v", name, product.Definition.RecordTypes)
+		}
+	}
+}
+
+func TestManagedDependencyClassResolvesOwnSObjectRecordTypes(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"znu"}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/Product__c/Product__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Product</label></CustomObject>`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/Product__c/recordTypes/Merchandise.recordType-meta.xml"), `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Merchandise</fullName><label>Merchandise</label><active>true</active></RecordType>`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/classes/ProductRecordTypes.cls"), `
+global class ProductRecordTypes {
+  global static Boolean hasMerchandise() {
+    Map<String, Schema.RecordTypeInfo> byName = Schema.SObjectType.Product__c.getRecordTypeInfosByName();
+    return byName.containsKey('Merchandise') && byName.get('Merchandise').isAvailable();
+  }
+}
+`)
+
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"namz"}`)
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
+  managedPackageDependencies: ["znu:../dep"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/objects/znu__Product__c/znu__Product__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Product Overlay</label></CustomObject>`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/objects/znu__Product__c/recordTypes/Program.recordType-meta.xml"), `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Program</fullName><label>Program</label><active>true</active></RecordType>`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/classes/ProductRecordTypesConsumerTest.cls"), `
+@IsTest
+private class ProductRecordTypesConsumerTest {
+  @IsTest static void dependencyClassSeesDependencyRecordTypes() {
+    System.assert(znu.ProductRecordTypes.hasMerchandise());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, consumerRoot), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestManagedDependencyTriggerResolvesOwnShortClassCollision(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"znu"}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/Widget__c/Widget__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Widget</label><pluralLabel>Widgets</pluralLabel><nameField><type>Text</type><label>Name</label></nameField></CustomObject>`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/classes/TriggerHandlersBase.cls"), `
+global virtual class TriggerHandlersBase {
+  global virtual void run() {}
+}
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/classes/WidgetTriggerHandlers.cls"), `
+public class WidgetTriggerHandlers extends TriggerHandlersBase {
+  public override void run() {
+    DispatchState.Value = 'znu';
+  }
+}
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/classes/DispatchState.cls"), `
+global class DispatchState {
+  global static String Value;
+}
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/classes/TriggerHandlerManager.cls"), `
+global class TriggerHandlerManager {
+  global static void executeHandlers(String triggerName, TriggerHandlersBase handler) {
+    handler.run();
+  }
+}
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/triggers/WidgetTrigger.trigger"), `
+trigger WidgetTrigger on Widget__c (before insert) {
+  TriggerHandlerManager.executeHandlers('WidgetTrigger', new WidgetTriggerHandlers());
+}
+`)
+
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"namz"}`)
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
+  managedPackageDependencies: ["znu:../dep"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/classes/TriggerHandlerManager.cls"), `
+public class TriggerHandlerManager {
+  public static void executeHandlers(String triggerName, Object handler) {
+    znu.DispatchState.Value = 'namz';
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/classes/DependencyTriggerCollisionTest.cls"), `
+@IsTest
+private class DependencyTriggerCollisionTest {
+  @IsTest static void dependencyTriggerUsesDependencyManager() {
+    insert new znu__Widget__c(Name = 'one');
+    System.assertEquals('znu', znu.DispatchState.Value);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, consumerRoot), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
 	}
 }
 

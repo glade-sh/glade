@@ -135,6 +135,7 @@ func (vm *VM) RegisterClass(class Class) error {
 	if class.Name == "" {
 		return fmt.Errorf("class name is required")
 	}
+	ownerName := runtimeClassName(class)
 	if class.Fields == nil {
 		class.Fields = make(map[string]Field)
 	}
@@ -143,8 +144,12 @@ func (vm *VM) RegisterClass(class Class) error {
 	}
 	class.FieldOrder = orderedFieldNames(class.Fields, class.FieldOrder)
 	class.StaticFieldOrder = orderedFieldNames(class.StaticFields, class.StaticFieldOrder)
+	for name, field := range class.Fields {
+		class.Fields[name] = stampFieldAccessorOwners(ownerName, class.Name, name, field)
+	}
 	for _, name := range class.StaticFieldOrder {
 		field := class.StaticFields[name]
+		field = stampFieldAccessorOwners(ownerName, class.Name, name, field)
 		if field.InitialValue.Kind == "" {
 			field.InitialValue = defaultStaticFieldValue(class.Name, name, field.Type, field.Value)
 		}
@@ -160,6 +165,9 @@ func (vm *VM) RegisterClass(class Class) error {
 	}
 	vm.methodResolveCache = nil
 	vm.uniqueNestedTypeCache = nil
+	vm.onlyNestedTypeCache = nil
+	vm.topLevelTypeCache = nil
+	vm.classNameSearchCache = nil
 	existingClass, mergeWithExisting := vm.duplicateClassForMerge(class)
 	if mergeWithExisting {
 		vm.unregisterClassMethods(existingClass)
@@ -169,8 +177,8 @@ func (vm *VM) RegisterClass(class Class) error {
 		if method.Name == "" {
 			method.Name = class.Name + "." + name
 		}
-		if method.ClassName == "" {
-			method.ClassName = class.Name
+		if method.ClassName == "" || strings.EqualFold(method.ClassName, class.Name) {
+			method.ClassName = ownerName
 		}
 		class.Methods[name] = method
 		if err := vm.RegisterMethod(method); err != nil {
@@ -179,7 +187,7 @@ func (vm *VM) RegisterClass(class Class) error {
 		if class.Namespace != "" && !strings.HasPrefix(method.Name, class.Namespace+".") {
 			alias := method
 			alias.Name = class.Namespace + "." + method.Name
-			if class.Dependency && alias.ClassName != "" && !strings.HasPrefix(alias.ClassName, class.Namespace+".") {
+			if alias.ClassName != "" && !strings.HasPrefix(alias.ClassName, class.Namespace+".") {
 				alias.ClassName = class.Namespace + "." + alias.ClassName
 			}
 			if err := vm.RegisterMethod(alias); err != nil {
@@ -191,8 +199,8 @@ func (vm *VM) RegisterClass(class Class) error {
 		if class.Constructors[i].Name == "" {
 			class.Constructors[i].Name = class.Name + ".<init>"
 		}
-		if class.Constructors[i].ClassName == "" {
-			class.Constructors[i].ClassName = class.Name
+		if class.Constructors[i].ClassName == "" || strings.EqualFold(class.Constructors[i].ClassName, class.Name) {
+			class.Constructors[i].ClassName = ownerName
 		}
 		class.Constructors[i].IsConstructor = true
 	}
@@ -207,13 +215,37 @@ func (vm *VM) RegisterClass(class Class) error {
 	return nil
 }
 
+func stampFieldAccessorOwners(ownerName, className, fieldName string, field Field) Field {
+	if field.Getter != nil {
+		getter := *field.Getter
+		if getter.Name == "" {
+			getter.Name = className + "." + fieldName + ".get"
+		}
+		if getter.ClassName == "" || strings.EqualFold(getter.ClassName, className) {
+			getter.ClassName = ownerName
+		}
+		field.Getter = &getter
+	}
+	if field.Setter != nil {
+		setter := *field.Setter
+		if setter.Name == "" {
+			setter.Name = className + "." + fieldName + ".set"
+		}
+		if setter.ClassName == "" || strings.EqualFold(setter.ClassName, className) {
+			setter.ClassName = ownerName
+		}
+		field.Setter = &setter
+	}
+	return field
+}
+
 func (vm *VM) unregisterClassMethods(class Class) {
 	for _, method := range class.Methods {
 		vm.unregisterMethod(method)
 		if class.Namespace != "" && !strings.HasPrefix(method.Name, class.Namespace+".") {
 			alias := method
 			alias.Name = class.Namespace + "." + method.Name
-			if class.Dependency && alias.ClassName != "" && !strings.HasPrefix(alias.ClassName, class.Namespace+".") {
+			if alias.ClassName != "" && !strings.HasPrefix(alias.ClassName, class.Namespace+".") {
 				alias.ClassName = class.Namespace + "." + alias.ClassName
 			}
 			vm.unregisterMethod(alias)
@@ -473,12 +505,13 @@ func orderedFieldNames(fields map[string]Field, order []string) []string {
 }
 
 func (vm *VM) runStaticInitializers(class Class) error {
+	owner := runtimeClassName(class)
 	for _, initializer := range class.StaticInitializers {
 		if initializer.Name == "" {
 			initializer.Name = class.Name + ".<static_init>"
 		}
-		if initializer.ClassName == "" {
-			initializer.ClassName = class.Name
+		if owner != "" {
+			initializer.ClassName = owner
 		}
 		initializer.IsStatic = true
 		if _, err := vm.callMethod(initializer, nil, &Result{}); err != nil {
@@ -489,11 +522,11 @@ func (vm *VM) runStaticInitializers(class Class) error {
 }
 
 func (vm *VM) ensureClassInitialized(className string) error {
-	class, ok := vm.Classes[className]
+	class, ok := vm.lookupClass(className)
 	if !ok {
 		return nil
 	}
-	canonical := class.Name
+	canonical := runtimeClassName(class)
 	if vm.staticInitState == nil {
 		vm.staticInitState = make(map[string]staticInitState)
 	}
@@ -502,8 +535,8 @@ func (vm *VM) ensureClassInitialized(className string) error {
 		return nil
 	}
 	vm.staticInitState[canonical] = staticInitRunning
-	if class.SuperClass != "" {
-		if err := vm.ensureClassInitialized(class.SuperClass); err != nil {
+	if superClass := vm.resolvedSuperClassName(class); superClass != "" {
+		if err := vm.ensureClassInitialized(superClass); err != nil {
 			vm.staticInitState[canonical] = staticInitUninitialized
 			return err
 		}
@@ -513,6 +546,9 @@ func (vm *VM) ensureClassInitialized(className string) error {
 		return err
 	}
 	vm.staticInitState[canonical] = staticInitDone
+	if class.Namespace == "" {
+		vm.staticInitState[class.Name] = staticInitDone
+	}
 	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
 		vm.staticInitState[class.Namespace+"."+class.Name] = staticInitDone
 	}

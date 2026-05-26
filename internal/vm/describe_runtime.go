@@ -50,7 +50,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 		field.APIName = apiName
 		field = describeFieldWithSystemOverlay(field)
 		token := vm.sObjectFieldTokenFromField(name, field)
-		vm.addSObjectFieldMapEntry(&fieldsMap, name, apiName, token)
+		vm.addSObjectFieldMapFieldEntry(&fieldsMap, name, definition, field, token)
 	}
 	defaultFieldNames := []string{"Id", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"}
 	if isCustomObjectLikeName(definition.APIName) {
@@ -189,9 +189,24 @@ func cloneDescribeObjectDefinition(definition storage.ObjectDefinition) storage.
 func (vm *VM) addSObjectFieldMapEntry(fieldsMap *Value, objectName, fieldName string, token Value) {
 	for _, alias := range vm.sObjectFieldMapAliases(objectName, fieldName) {
 		key := mapKey(String(alias))
+		if _, exists := fieldsMap.Map[key]; !exists {
+			fieldsMap.MapOrder = append(fieldsMap.MapOrder, key)
+		}
 		fieldsMap.Map[key] = token
 		fieldsMap.MapKeys[key] = String(alias)
 	}
+}
+
+func (vm *VM) addSObjectFieldMapFieldEntry(fieldsMap *Value, objectName string, definition storage.ObjectDefinition, field storage.Field, token Value) {
+	vm.addSObjectFieldMapEntry(fieldsMap, objectName, field.APIName, token)
+	if field.Type != storage.FieldReference {
+		return
+	}
+	relationshipName := vm.parentRelationshipNameForReferenceField(definition, field)
+	if relationshipName == "" || !isCustomFieldOrRelationshipType(relationshipName) {
+		return
+	}
+	vm.addSObjectFieldMapEntry(fieldsMap, objectName, relationshipName, token)
 }
 
 func (vm *VM) sObjectFieldMapAliases(objectName, fieldName string) []string {
@@ -213,9 +228,17 @@ func (vm *VM) sObjectFieldMapAliases(objectName, fieldName string) []string {
 		}
 	}
 	add(fieldName)
+	if strippedField := stripAnyNamespaceToken(fieldName); strippedField != fieldName {
+		add(strippedField)
+	}
 	if objectName != "" {
 		add(objectName + "." + fieldName)
 		add(localSchemaName(objectName) + "." + fieldName)
+		if strippedField := stripAnyNamespaceToken(fieldName); strippedField != fieldName {
+			add(objectName + "." + strippedField)
+			add(localSchemaName(objectName) + "." + strippedField)
+			add(stripAnyNamespaceToken(objectName) + "." + strippedField)
+		}
 	}
 	if vm.Org != nil && vm.Org.Namespace != "" {
 		add(storage.NamespaceTokenName(vm.Org.Namespace, fieldName))
@@ -263,7 +286,7 @@ func (vm *VM) describeChildRelationships(name string) []Value {
 		})
 		for _, relationship := range relationships {
 			if relationshipTargetsObject(relationship, name) {
-				if relationship.ChildRelationship == "" && canDeriveChildRelationshipName(relationship) {
+				if relationship.ChildRelationship == "" && canDeriveChildRelationshipName(name, childName, relationship) {
 					relationship.ChildRelationship = derivedVMChildRelationshipName(childDefinition)
 				}
 				childRelationships = append(childRelationships, vm.childRelationshipValue(childName, relationship))
@@ -526,11 +549,37 @@ func isCustomFieldOrRelationshipType(name string) bool {
 
 func relationshipTargetsObject(relationship storage.Relationship, objectName string) bool {
 	for _, parent := range relationship.ParentObjects {
-		if strings.EqualFold(parent, objectName) || strings.EqualFold(stripAnyNamespaceToken(parent), stripAnyNamespaceToken(objectName)) {
+		if strings.EqualFold(parent, objectName) ||
+			strings.EqualFold(stripAnyNamespaceToken(parent), stripAnyNamespaceToken(objectName)) ||
+			strings.EqualFold(stripStandardObjectNamespaceToken(parent), stripStandardObjectNamespaceToken(objectName)) {
 			return true
 		}
 	}
 	return false
+}
+
+func stripStandardObjectNamespaceToken(name string) string {
+	first := strings.Index(name, "__")
+	if first <= 0 || first+2 >= len(name) {
+		return name
+	}
+	rest := name[first+2:]
+	if strings.Contains(rest, "__") {
+		return stripAnyNamespaceToken(name)
+	}
+	if isCustomAPISuffix(rest) {
+		return name
+	}
+	return rest
+}
+
+func isCustomAPISuffix(name string) bool {
+	switch strings.ToLower(name) {
+	case "c", "r", "mdt", "e", "b", "x", "kav", "ka":
+		return true
+	default:
+		return false
+	}
 }
 
 func (vm *VM) childRelationshipValue(childObject string, relationship storage.Relationship) Value {
@@ -578,10 +627,19 @@ func syntheticSystemParentRelationsForDefinition(definition storage.ObjectDefini
 	return relations
 }
 
-func canDeriveChildRelationshipName(relationship storage.Relationship) bool {
+func canDeriveChildRelationshipName(parentObject, childObject string, relationship storage.Relationship) bool {
+	if sameSObjectName(parentObject, childObject) {
+		return false
+	}
 	return !strings.EqualFold(relationship.Field, "CreatedById") &&
 		!strings.EqualFold(relationship.Field, "LastModifiedById") &&
 		!strings.EqualFold(relationship.Field, "OwnerId")
+}
+
+func sameSObjectName(a, b string) bool {
+	return strings.EqualFold(a, b) ||
+		strings.EqualFold(stripAnyNamespaceToken(a), stripAnyNamespaceToken(b)) ||
+		strings.EqualFold(stripStandardObjectNamespaceToken(a), stripStandardObjectNamespaceToken(b))
 }
 
 func hasRelationForField(relations []storage.Relationship, fieldName string) bool {
@@ -752,13 +810,14 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	}
 	fieldName, ok = storage.ResolveFieldName(definition, namespace, fieldName)
 	if !ok {
+		fieldName = requestedFieldName
 		if systemField, systemOK := syntheticSObjectSystemField(fieldName); systemOK {
 			fieldName = systemField.APIName
 			field := systemField
 			return vm.describeSyntheticFieldValue(objectName, fieldName, field)
 		}
 		if vm.canSynthesizeSchemaField(objectName) {
-			if field := syntheticSchemaField(fieldName); field.APIName != "" {
+			if field := vm.syntheticSchemaFieldForObject(objectName, fieldName); field.APIName != "" {
 				return vm.describeSyntheticFieldValue(objectName, field.APIName, field)
 			}
 		}
@@ -1109,6 +1168,12 @@ func describeFieldWithSystemOverlay(field storage.Field) storage.Field {
 	if field.Sortable != nil {
 		systemField.Sortable = field.Sortable
 	}
+	if len(field.ReferenceTo) != 0 {
+		systemField.ReferenceTo = append([]string(nil), field.ReferenceTo...)
+	}
+	if field.RelationshipName != "" {
+		systemField.RelationshipName = field.RelationshipName
+	}
 	return systemField
 }
 
@@ -1135,6 +1200,25 @@ func syntheticSchemaField(fieldName string) storage.Field {
 		field.Type = storage.FieldBoolean
 		field.DisplayType = "BOOLEAN"
 	}
+	return field
+}
+
+func (vm *VM) syntheticSchemaFieldForObject(objectName, fieldName string) storage.Field {
+	field := syntheticSchemaField(fieldName)
+	if field.APIName == "" || vm == nil || vm.Org == nil {
+		return field
+	}
+	if !strings.HasSuffix(strings.ToLower(field.APIName), "__c") {
+		return field
+	}
+	target := vm.inferredCustomFieldReferenceTarget(objectName, field.APIName)
+	if target == "" {
+		return field
+	}
+	field.Type = storage.FieldReference
+	field.DisplayType = "REFERENCE"
+	field.ReferenceTo = []string{target}
+	field.RelationshipName = lookupFieldRelationshipName(field.APIName)
 	return field
 }
 

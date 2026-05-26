@@ -312,6 +312,22 @@ func (vm *VM) apexMethodFrameSymbol(method Method) string {
 	if className == "" {
 		className = classNameFromMethod(symbol)
 	}
+	if !strings.Contains(className, ".") {
+		if namespace := strings.TrimSpace(vm.currentExecutionNamespace()); namespace != "" {
+			if class, ok := vm.lookupClassInNamespace(namespace, className); ok {
+				className = runtimeClassName(class)
+			} else if class, ok := vm.lookupClass(namespace + "." + className); ok {
+				className = runtimeClassName(class)
+			}
+		} else if vm.Org != nil && strings.TrimSpace(vm.Org.Namespace) != "" {
+			namespace := strings.TrimSpace(vm.Org.Namespace)
+			if class, ok := vm.lookupClassInNamespace(namespace, className); ok {
+				className = runtimeClassName(class)
+			} else if class, ok := vm.lookupClass(namespace + "." + className); ok {
+				className = runtimeClassName(class)
+			}
+		}
+	}
 	if symbol == "" || className == "" {
 		return symbol
 	}
@@ -334,6 +350,16 @@ func (vm *VM) apexMethodFrameSymbol(method Method) string {
 	}
 	if strings.HasPrefix(lowerSymbol, lowerClass+".") {
 		return token + symbol[len(className):]
+	}
+	shortClass := shortTypeName(className)
+	lowerShortClass := strings.ToLower(shortClass)
+	if shortClass != "" && !strings.EqualFold(shortClass, className) {
+		if lowerSymbol == lowerShortClass {
+			return token
+		}
+		if strings.HasPrefix(lowerSymbol, lowerShortClass+".") {
+			return token + symbol[len(shortClass):]
+		}
 	}
 	return symbol
 }
@@ -648,6 +674,9 @@ func (vm *VM) executeSwitch(source string, inst ir.Instruction, result *Result) 
 				}
 				return out, nil
 			}
+			if value.Kind == ValueNull {
+				continue
+			}
 			caseValue, err := vm.eval(expr, result)
 			if err != nil {
 				matches, handled := switchCaseEnumNameMatch(value, expr, err)
@@ -693,7 +722,8 @@ func (vm *VM) executeSwitch(source string, inst ir.Instruction, result *Result) 
 
 func switchCaseEnumLiteralMatch(value Value, expr ir.Expr) bool {
 	if value.Kind == ValueNull {
-		return expr.Kind == ir.ExprVariable && strings.EqualFold(expr.Name, "null")
+		return (expr.Kind == ir.ExprVariable && strings.EqualFold(expr.Name, "null")) ||
+			(expr.Kind == ir.ExprLiteral && strings.EqualFold(expr.Value, "null"))
 	}
 	if value.Kind != ValueObject || value.Text == "" {
 		return false

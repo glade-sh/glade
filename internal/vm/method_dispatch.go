@@ -90,9 +90,10 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	frame := make(map[string]Value, len(method.Params))
 	frameTypes := make(map[string]string, len(method.Params))
 	paramSnapshots := make(map[string]Value, len(method.Params))
+	resolutionClass := vm.methodTypeResolutionClass(method)
 	for i, param := range method.Params {
-		paramType := vm.resolveTypeNameInClass(method.ClassName, param.Type)
-		coerced, err := vm.coerceAssignable(paramType, args[i])
+		paramType := vm.resolveTypeNameInClass(resolutionClass, param.Type)
+		coerced, err := vm.coerceAssignable(paramType, vm.valueWithTypesResolvedInClass(resolutionClass, args[i]))
 		if err != nil {
 			if alternate, ok, ambiguous := vm.resolveInstanceMethodForArgs(method.ClassName, apexMethodMemberName(method.Name), args); ok && !ambiguous && methodSignature(alternate) != methodSignature(method) {
 				return vm.callAccessibleAlternateMethodWithReceiver(alternate, receiver, args, result)
@@ -114,6 +115,10 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	}
 	if receiver.Kind != ValueNull {
 		frame["this"] = receiver
+	}
+	receiverSnapshot := Value{}
+	if receiver.Kind != ValueNull {
+		receiverSnapshot = cloneValuePreserveRefs(receiver)
 	}
 	commerceClassName := method.ClassName
 	if commerceClassName == "" && receiver.Kind == ValueObject {
@@ -184,9 +189,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			}
 		}
 		if receiver.Kind != ValueNull {
-			if updated, ok := frame["this"]; ok && valueAliasMatch(receiver, updated) {
-				vm.propagateValueMutationToScope(vm.Globals, receiver, updated)
-				vm.propagateValueMutationToStatics(receiver, updated)
+			if updated, ok := frame["this"]; ok && valueAliasMatch(receiverSnapshot, updated) {
+				vm.propagateValueMutationToScope(vm.Globals, receiverSnapshot, updated)
+				vm.propagateValueMutationToStatics(receiverSnapshot, updated)
 			}
 		}
 		return value, nil
@@ -299,9 +304,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	if receiver.Kind != ValueNull {
-		if updated, ok := frame["this"]; ok && valueAliasMatch(receiver, updated) {
-			vm.propagateValueMutationToScope(caller, receiver, updated)
-			vm.propagateValueMutationToStatics(receiver, updated)
+		if updated, ok := frame["this"]; ok && valueAliasMatch(receiverSnapshot, updated) {
+			vm.propagateValueMutationToScope(caller, receiverSnapshot, updated)
+			vm.propagateValueMutationToStatics(receiverSnapshot, updated)
 		}
 	}
 	if method.IsConstructor {
@@ -616,6 +621,29 @@ func (vm *VM) callStaticPropertyReceiverMember(callee string, args []Value, resu
 	return Null, false, nil
 }
 
+func (vm *VM) callClassLiteralReceiverMember(callee string, args []Value, result *Result) (Value, bool, error) {
+	lower := strings.ToLower(callee)
+	index := strings.LastIndex(lower, ".class.")
+	if index < 0 {
+		return Null, false, nil
+	}
+	method := callee[index+len(".class."):]
+	if method == "" || strings.Contains(method, ".") {
+		return Null, false, nil
+	}
+	receiverName := callee[:index+len(".class")]
+	receiver, err := vm.lookup(receiverName)
+	if err != nil {
+		return Null, false, nil
+	}
+	if strings.EqualFold(receiver.Type, "Type") {
+		if value, handled, err := vm.callTypeObjectMember(receiver, method, args, result); handled || err != nil {
+			return value, true, err
+		}
+	}
+	return vm.callValueMember(receiverName, receiver, method, args, result)
+}
+
 func (vm *VM) callSObjectFieldAddError(path []string, args []Value) (Value, bool, error) {
 	if len(path) != 2 {
 		return Null, false, nil
@@ -693,6 +721,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 					return Null, true, err
 				}
 			}
+		}
+	}
+	if receiver.Kind == ValueObject && strings.EqualFold(receiver.Type, "Type") {
+		if value, handled, err := vm.callTypeObjectMember(receiver, method, args, result); handled || err != nil {
+			return value, true, err
 		}
 	}
 	if value, handled, err := vm.callGeneratedOptionalWrapperMember(receiver, method, args); handled || err != nil {
@@ -795,6 +828,8 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				accessMethod := target
 				if receiverType := vm.VarTypes[receiverName]; receiverType != "" {
 					accessMethod = vm.dispatchAccessMethod(receiverType, target, method, args)
+				} else if receiver.Static != "" {
+					accessMethod = vm.dispatchAccessMethod(receiver.Static, target, method, args)
 				}
 				if err := vm.checkMemberAccess(accessMethod.ClassName, accessMethod.Access, accessMethod.Name, accessMethod.Modifiers); err != nil {
 					return Null, true, err
@@ -878,6 +913,8 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		accessMethod := target
 		if receiverType := vm.VarTypes[receiverName]; receiverType != "" {
 			accessMethod = vm.dispatchAccessMethod(receiverType, target, method, args)
+		} else if receiver.Static != "" {
+			accessMethod = vm.dispatchAccessMethod(receiver.Static, target, method, args)
 		}
 		if err := vm.checkMemberAccess(accessMethod.ClassName, accessMethod.Access, accessMethod.Name, accessMethod.Modifiers); err != nil {
 			return Null, true, err
@@ -1451,6 +1488,9 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, fmt.Errorf("Map.get expects 1 argument")
 			}
 			key := vm.mapLookupKey(receiver, args[0])
+			if objectName, ok := sObjectFieldMapObjectName(receiver); ok && args[0].Kind == ValueString && vm.sObjectFieldMapKeyIsChildRelationship(objectName, args[0].Text) && !vm.sObjectFieldMapDirectValueMatchesKey(receiver, key, args[0].Text) {
+				return missingMapValue(receiver), true, nil
+			}
 			value, ok := receiver.Map[key]
 			if !ok {
 				value, ok = vm.namespaceStringMapLookup(receiver, args[0])
@@ -1483,6 +1523,9 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, fmt.Errorf("Map.containsKey expects 1 argument")
 			}
 			key := vm.mapLookupKey(receiver, args[0])
+			if objectName, ok := sObjectFieldMapObjectName(receiver); ok && args[0].Kind == ValueString && vm.sObjectFieldMapKeyIsChildRelationship(objectName, args[0].Text) && !vm.sObjectFieldMapDirectValueMatchesKey(receiver, key, args[0].Text) {
+				return Bool(false), true, nil
+			}
 			_, ok := receiver.Map[key]
 			if !ok {
 				_, ok = vm.namespaceStringMapLookup(receiver, args[0])
@@ -2097,6 +2140,9 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 		return Null, false
 	}
 	if objectName, ok := sObjectFieldMapObjectName(receiver); ok || receiver.Type == "Schema.SObjectFieldMap" {
+		if objectName != "" && vm.sObjectFieldMapKeyIsChildRelationship(objectName, key.Text) {
+			return Null, true
+		}
 		for _, alias := range vm.sObjectFieldMapLookupAliases(key.Text) {
 			if value, ok := receiver.Map[mapKey(String(alias))]; ok {
 				return value, true
@@ -2105,6 +2151,12 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 		if objectName != "" {
 			if vm.canSynthesizeSObjectFieldMapField(objectName) {
 				for _, alias := range vm.sObjectFieldMapLookupAliases(key.Text) {
+					if lookupField, ok := customRelationshipLookupFieldName(alias); ok {
+						if vm.canSynthesizeCustomSObjectFieldMapField(objectName, alias) {
+							return vm.sObjectFieldToken(objectName, lookupField), true
+						}
+						continue
+					}
 					if isLikelyReferenceIDField(alias) || vm.canSynthesizeCustomSObjectFieldMapField(objectName, alias) {
 						return vm.sObjectFieldToken(objectName, alias), true
 					}
@@ -2143,6 +2195,49 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 		}
 	}
 	return Null, false
+}
+
+func (vm *VM) sObjectFieldMapKeyIsChildRelationship(objectName, fieldName string) bool {
+	if vm == nil || vm.Org == nil || strings.TrimSpace(objectName) == "" || strings.TrimSpace(fieldName) == "" {
+		return false
+	}
+	aliases := vm.sObjectFieldMapLookupAliases(fieldName)
+	for _, relationship := range vm.describeChildRelationships(objectName) {
+		if relationship.Kind != ValueObject {
+			continue
+		}
+		name, ok := relationship.Fields["relationshipName"]
+		if !ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "" {
+			continue
+		}
+		for _, alias := range aliases {
+			if vmRelationshipNameMatches(vm.Org.Namespace, name.Text, alias) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (vm *VM) sObjectFieldMapDirectValueMatchesKey(receiver Value, encodedKey, fieldName string) bool {
+	value, ok := receiver.Map[encodedKey]
+	if !ok {
+		return false
+	}
+	canonical, ok := sObjectFieldMapCanonicalFieldName(value)
+	if !ok {
+		return false
+	}
+	namespace := ""
+	if vm != nil && vm.Org != nil {
+		namespace = vm.Org.Namespace
+	}
+	for _, alias := range vm.sObjectFieldMapLookupAliases(fieldName) {
+		if schemaSObjectFieldMapKeyMatches(namespace, canonical, alias) {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) specialMapContainsKey(receiver, key Value) bool {
@@ -2238,6 +2333,12 @@ func (vm *VM) canSynthesizeSObjectFieldMapField(objectName string) bool {
 }
 
 func (vm *VM) canSynthesizeCustomSObjectFieldMapField(objectName, fieldName string) bool {
+	if lookupField, ok := customRelationshipLookupFieldName(fieldName); ok {
+		if vm != nil && vm.Org != nil {
+			return vm.inferredCustomFieldReferenceTarget(objectName, lookupField) != ""
+		}
+		return false
+	}
 	if !isCustomFieldOrRelationshipType(fieldName) {
 		return false
 	}
@@ -2254,6 +2355,15 @@ func (vm *VM) inferredCustomFieldReferenceTarget(objectName, fieldName string) s
 		return ""
 	}
 	candidates := []string{fieldName, stripAnyNamespaceToken(fieldName)}
+	if strippedNumbered := stripTrailingDigitsFromCustomField(stripAnyNamespaceToken(fieldName)); strippedNumbered != "" {
+		candidates = append(candidates, strippedNumbered)
+		if namespace := namespaceFromSchemaToken(fieldName); namespace != "" {
+			candidates = append(candidates, storage.NamespaceTokenName(namespace, strippedNumbered))
+		}
+		if namespace := namespaceFromSchemaToken(objectName); namespace != "" {
+			candidates = append(candidates, storage.NamespaceTokenName(namespace, strippedNumbered))
+		}
+	}
 	if namespace := namespaceFromSchemaToken(objectName); namespace != "" {
 		candidates = append(candidates, storage.NamespaceTokenName(namespace, fieldName))
 	}
@@ -2266,6 +2376,35 @@ func (vm *VM) inferredCustomFieldReferenceTarget(objectName, fieldName string) s
 		}
 	}
 	return ""
+}
+
+func customRelationshipLookupFieldName(name string) (string, bool) {
+	name = strings.TrimSpace(name)
+	if dot := strings.LastIndex(name, "."); dot >= 0 && dot+1 < len(name) {
+		name = name[dot+1:]
+	}
+	if !strings.HasSuffix(strings.ToLower(name), "__r") {
+		return "", false
+	}
+	return name[:len(name)-3] + "__c", true
+}
+
+func stripTrailingDigitsFromCustomField(fieldName string) string {
+	if !strings.HasSuffix(strings.ToLower(fieldName), "__c") {
+		return ""
+	}
+	base := fieldName[:len(fieldName)-3]
+	for len(base) > 0 {
+		last := base[len(base)-1]
+		if last < '0' || last > '9' {
+			break
+		}
+		base = base[:len(base)-1]
+	}
+	if base == "" || base == fieldName[:len(fieldName)-3] {
+		return ""
+	}
+	return base + "__c"
 }
 
 func isLikelyNumericCustomField(fieldName string) bool {
@@ -2537,6 +2676,9 @@ func (vm *VM) declaredReceiverIsEnum(receiverName string) bool {
 
 func (vm *VM) mapKeysEqual(storedKey, lookupKey Value) (bool, error) {
 	if equal, ok := vm.frameworkQualifiedMethodKeysEqual(storedKey, lookupKey); ok {
+		return equal, nil
+	}
+	if equal, handled := vm.resolvedEnumValuesEqual(storedKey, lookupKey); handled {
 		return equal, nil
 	}
 	if storedKey.Kind == ValueObject {
@@ -3066,7 +3208,84 @@ func collectionAliasMatch(left, right Value) bool {
 }
 
 func sameAliasValue(left, right Value) bool {
-	return left.Ref != 0 && left.Ref == right.Ref && left.Kind == right.Kind && left.Equal(right)
+	if left.Ref == 0 || left.Ref != right.Ref || left.Kind != right.Kind {
+		return false
+	}
+	return sameAliasContent(left, right, make(map[[2]uint64]bool))
+}
+
+func sameAliasContent(left, right Value, seen map[[2]uint64]bool) bool {
+	if left.Kind != right.Kind || left.Type != right.Type || left.Text != right.Text || left.Static != right.Static || left.Runtime != right.Runtime {
+		return false
+	}
+	if left.Ref != 0 && right.Ref != 0 {
+		key := [2]uint64{left.Ref, right.Ref}
+		if seen[key] {
+			return true
+		}
+		seen[key] = true
+	}
+	switch left.Kind {
+	case ValueObject:
+		if len(left.Fields) != len(right.Fields) {
+			return false
+		}
+		for name, leftValue := range left.Fields {
+			rightValue, ok := right.Fields[name]
+			if !ok || !sameAliasContent(leftValue, rightValue, seen) {
+				return false
+			}
+		}
+		return true
+	case ValueList:
+		if len(left.List) != len(right.List) {
+			return false
+		}
+		for i := range left.List {
+			if !sameAliasContent(left.List[i], right.List[i], seen) {
+				return false
+			}
+		}
+		return true
+	case ValueSet:
+		if len(left.Set) != len(right.Set) {
+			return false
+		}
+		rightValues := append([]Value(nil), right.Set...)
+		for _, leftValue := range left.Set {
+			match := -1
+			for i, rightValue := range rightValues {
+				if sameAliasContent(leftValue, rightValue, seen) {
+					match = i
+					break
+				}
+			}
+			if match < 0 {
+				return false
+			}
+			rightValues = append(rightValues[:match], rightValues[match+1:]...)
+		}
+		return true
+	case ValueMap:
+		if len(left.Map) != len(right.Map) || len(left.MapKeys) != len(right.MapKeys) {
+			return false
+		}
+		for key, leftValue := range left.Map {
+			rightValue, ok := right.Map[key]
+			if !ok || !sameAliasContent(leftValue, rightValue, seen) {
+				return false
+			}
+		}
+		for key, leftValue := range left.MapKeys {
+			rightValue, ok := right.MapKeys[key]
+			if !ok || !sameAliasContent(leftValue, rightValue, seen) {
+				return false
+			}
+		}
+		return true
+	default:
+		return left.Equal(right)
+	}
 }
 
 func clearRefSeen(seen map[uint64]bool) {
@@ -3580,14 +3799,6 @@ func (vm *VM) callFrameworkSObjectDescribeMember(receiver Value, method string, 
 
 func (vm *VM) callFrameworkStaticMember(className, method string, args []Value) (Value, bool, error) {
 	switch {
-	case managedTriggerHandlerManagerType(className) && managedTriggerHandlerManagerMethod(method):
-		if _, ok := vm.resolveClassName(className); ok {
-			return Null, false, nil
-		}
-		if len(args) > 1 {
-			return Null, true, fmt.Errorf("%s.%s expects at most one argument", className, method)
-		}
-		return Null, true, nil
 	case strings.EqualFold(className, "framework_SObjectDomain") && strings.EqualFold(method, "triggerHandler"):
 		return vm.callFrameworkSObjectDomainTriggerHandler(args)
 	case strings.EqualFold(frameworkMockSupportType(className), "ApexMocks") && strings.EqualFold(method, "extractTypeName"):
@@ -3620,17 +3831,6 @@ func (vm *VM) callFrameworkStaticMember(className, method string, args []Value) 
 	default:
 		return Null, false, nil
 	}
-}
-
-func managedTriggerHandlerManagerType(className string) bool {
-	return strings.EqualFold(shortTypeName(className), "TriggerHandlerManager")
-}
-
-func managedTriggerHandlerManagerMethod(method string) bool {
-	name := strings.ToLower(apexMethodMemberName(method))
-	return strings.HasPrefix(name, "disabletrigger") ||
-		strings.HasPrefix(name, "enabletrigger") ||
-		strings.HasPrefix(name, "reenabletrigger")
 }
 
 func (vm *VM) callManagedAPIChain(callee string, args []Value) (Value, bool, error) {
@@ -3687,7 +3887,7 @@ func (vm *VM) callManagedSingletonChain(callee string, args []Value) (Value, boo
 	return managedPassiveReturnForMethod(className, method, args)
 }
 
-func (vm *VM) callManagedStaticFactory(typeName, method string, args []Value) (Value, bool, error) {
+func (vm *VM) callManagedStaticFactory(typeName, method string, args []Value, result *Result) (Value, bool, error) {
 	if !looksManagedQualifiedType(typeName) {
 		return Null, false, nil
 	}
@@ -3704,6 +3904,13 @@ func (vm *VM) callManagedStaticFactory(typeName, method string, args []Value) (V
 	default:
 		return managedPassiveReturnForMethod(typeName, method, args)
 	}
+}
+
+func managedQualifiedTypeParts(typeName string) (string, string, bool) {
+	namespace, className, ok := strings.Cut(typeName, ".")
+	namespace = strings.TrimSpace(namespace)
+	className = strings.TrimSpace(className)
+	return namespace, className, ok && namespace != "" && className != ""
 }
 
 func (vm *VM) callManagedPassiveMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -5618,7 +5825,7 @@ func (vm *VM) resolveFrameworkSObjectUnitOfWorkRelationships(receiver Value, obj
 			continue
 		}
 		if strings.EqualFold(relationship.Type, "framework_SObjectUnitOfWork.Relationship") {
-			if err := vm.resolveFrameworkSObjectUnitOfWorkRelationship(relationship); err != nil {
+			if err := vm.resolveFrameworkSObjectUnitOfWorkRelationship(receiver, relationship); err != nil {
 				return err
 			}
 			continue
@@ -5637,7 +5844,7 @@ func (vm *VM) resolveFrameworkSObjectUnitOfWorkRelationships(receiver Value, obj
 	return nil
 }
 
-func (vm *VM) resolveFrameworkSObjectUnitOfWorkRelationship(relationship Value) error {
+func (vm *VM) resolveFrameworkSObjectUnitOfWorkRelationship(receiver Value, relationship Value) error {
 	_, record, hasRecord := objectFieldValue(relationship, "Record")
 	_, relatedToField, hasField := objectFieldValue(relationship, "RelatedToField")
 	_, relatedTo, hasRelated := objectFieldValue(relationship, "RelatedTo")
@@ -5652,8 +5859,15 @@ func (vm *VM) resolveFrameworkSObjectUnitOfWorkRelationship(relationship Value) 
 	if err != nil {
 		return err
 	}
+	previous := cloneValuePreserveRefs(record)
 	setExplicitSObjectField(&record, fieldName, relatedID)
 	relationship.Fields["Record"] = record
+	replaced, changed := replaceValueAlias(receiver, previous, record, make(map[uint64]bool))
+	if changed && replaced.Kind == ValueObject {
+		receiver.Fields = replaced.Fields
+	}
+	vm.propagateValueMutationToScope(vm.Globals, previous, record)
+	vm.propagateValueMutationToStatics(previous, record)
 	return nil
 }
 
@@ -6569,7 +6783,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.getSObjectType expects 0 arguments")
 		}
 		typeName := runtimeObjectType(receiver)
-		if hasNamespaceTokenInSchemaName(typeName) {
+		if vm.sObjectTypeDescribeShouldUseLocalName(typeName) {
 			token := sObjectTypeToken(typeName)
 			token.Fields["localNameHint"] = Bool(true)
 			return token, true, nil
@@ -6705,4 +6919,31 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 	default:
 		return Null, false, nil
 	}
+}
+
+func (vm *VM) sObjectTypeDescribeShouldUseLocalName(typeName string) bool {
+	if !hasNamespaceTokenInSchemaName(typeName) {
+		return false
+	}
+	namespace := namespaceTokenInSchemaName(typeName)
+	if namespace == "" {
+		return false
+	}
+	currentNamespace := strings.TrimSpace(vm.currentCallerNamespace())
+	if currentNamespace != "" {
+		return strings.EqualFold(namespace, currentNamespace)
+	}
+	if vm != nil && vm.Org != nil {
+		return strings.EqualFold(namespace, strings.TrimSpace(vm.Org.Namespace))
+	}
+	return false
+}
+
+func namespaceTokenInSchemaName(name string) string {
+	first := strings.Index(name, "__")
+	last := strings.LastIndex(name, "__")
+	if first <= 0 || first >= last {
+		return ""
+	}
+	return name[:first]
 }

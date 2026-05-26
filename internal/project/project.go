@@ -108,7 +108,50 @@ func OrgShapeFeatures(root string) []string {
 			features = append(features, scratchSettingsFeatures(def.Settings)...)
 		}
 	}
+	for _, path := range cumulusCIOrgConfigFiles(root) {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		var def scratchOrgDefinition
+		if err := json.Unmarshal(data, &def); err == nil {
+			features = append(features, def.Features...)
+			features = append(features, scratchSettingsFeatures(def.Settings)...)
+		}
+	}
 	return dedupeStrings(features)
+}
+
+func cumulusCIOrgConfigFiles(root string) []string {
+	seen := make(map[string]bool)
+	var paths []string
+	for _, name := range []string{"cumulusci.yml", "cumulusci.template.yml"} {
+		data, err := os.ReadFile(filepath.Join(root, name))
+		if err != nil {
+			continue
+		}
+		for _, line := range strings.Split(string(data), "\n") {
+			line = strings.TrimSpace(line)
+			if !strings.HasPrefix(line, "config_file:") {
+				continue
+			}
+			path := strings.TrimSpace(strings.TrimPrefix(line, "config_file:"))
+			path = strings.Trim(path, `"'`)
+			if path == "" || filepath.IsAbs(path) || !strings.HasSuffix(strings.ToLower(path), ".json") {
+				continue
+			}
+			full := filepath.Clean(filepath.Join(root, path))
+			if !strings.HasPrefix(full, filepath.Clean(root)+string(os.PathSeparator)) {
+				continue
+			}
+			if !seen[full] {
+				seen[full] = true
+				paths = append(paths, full)
+			}
+		}
+	}
+	sort.Strings(paths)
+	return paths
 }
 
 func scratchSettingsFeatures(settings map[string]any) []string {
@@ -190,10 +233,10 @@ type sfdxProject struct {
 }
 
 func Load(root string) (Project, error) {
-	return load(root, nil)
+	return load(root, nil, false)
 }
 
-func load(root string, stack map[string]bool) (Project, error) {
+func load(root string, stack map[string]bool, dependency bool) (Project, error) {
 	absRoot, err := filepath.Abs(root)
 	if err != nil {
 		return Project{}, err
@@ -225,7 +268,7 @@ func load(root string, stack map[string]bool) (Project, error) {
 				configuredRoot = filepath.Join(cfgDir, filepath.FromSlash(configuredRoot))
 			}
 			if cleaned := filepath.Clean(configuredRoot); cleaned != absRoot {
-				return load(cleaned, stack)
+				return load(cleaned, stack, dependency)
 			}
 		}
 		if len(gladeCfg.Project.PackageDirs) > 0 {
@@ -238,6 +281,9 @@ func load(root string, stack map[string]bool) (Project, error) {
 	if len(cfg.PackageDirectories) == 0 {
 		cfg.PackageDirectories = []PackageDirectory{{Path: "."}}
 	}
+	if dependency {
+		cfg.PackageDirectories = dependencyPackageDirectories(cfg.PackageDirectories)
+	}
 
 	p := Project{
 		Root:               absRoot,
@@ -249,7 +295,7 @@ func load(root string, stack map[string]bool) (Project, error) {
 		p.ManagedPackageDependencies, p.DependencyDiagnostics = loadManagedPackageDependencies(gladeCfg.Project.ManagedPackageDependencies, stack)
 	}
 
-	for _, pkgRoot := range packageRoots(absRoot, p.PackageDirectories) {
+	for _, pkgRoot := range packageRoots(absRoot, p.PackageDirectories, !dependency) {
 		if _, err := os.Stat(pkgRoot); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
@@ -315,6 +361,19 @@ func packageDirectoriesFromConfig(paths []string) []PackageDirectory {
 	return out
 }
 
+func dependencyPackageDirectories(dirs []PackageDirectory) []PackageDirectory {
+	var defaults []PackageDirectory
+	for _, dir := range dirs {
+		if dir.Default {
+			defaults = append(defaults, dir)
+		}
+	}
+	if len(defaults) > 0 {
+		return defaults
+	}
+	return dirs
+}
+
 func loadManagedPackageDependencies(configured []config.ManagedPackageDependency, stack map[string]bool) ([]ManagedPackageDependency, []DependencyDiagnostic) {
 	deps := make([]ManagedPackageDependency, 0, len(configured))
 	var diagnostics []DependencyDiagnostic
@@ -375,7 +434,7 @@ func loadManagedPackageDependencies(configured []config.ManagedPackageDependency
 			deps = append(deps, projectDep)
 			continue
 		}
-		loaded, err := load(dep.SourceRoot, stack)
+		loaded, err := load(dep.SourceRoot, stack, true)
 		if err != nil {
 			projectDep.Status = "load_error"
 			diagnostics = append(diagnostics, DependencyDiagnostic{
@@ -479,7 +538,7 @@ func loadSFDXProject(root string) (sfdxProject, error) {
 	return cfg, nil
 }
 
-func packageRoots(root string, packageDirs []PackageDirectory) []string {
+func packageRoots(root string, packageDirs []PackageDirectory, includeConventionalRoots bool) []string {
 	seen := make(map[string]bool)
 	var roots []string
 	add := func(rel string) {
@@ -495,6 +554,9 @@ func packageRoots(root string, packageDirs []PackageDirectory) []string {
 	}
 	for _, pkg := range packageDirs {
 		add(pkg.Path)
+	}
+	if !includeConventionalRoots {
+		return roots
 	}
 	for _, rel := range []string{"src", "force-app", "sfdx-source", "unpackaged"} {
 		abs := filepath.Clean(filepath.Join(root, filepath.FromSlash(rel)))

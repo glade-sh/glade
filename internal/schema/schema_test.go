@@ -168,6 +168,46 @@ func TestLoadProjectNamespacesFieldsUnderNamespacedObject(t *testing.T) {
 	}
 }
 
+func TestLoadProjectUsesProjectNamespaceForExtensionFieldOnForeignNamespacedObject(t *testing.T) {
+	root := t.TempDir()
+	objectPath := filepath.Join(root, "force-app/main/objects/znu__Order__c/znu__Order__c.object-meta.xml")
+	fieldPath := filepath.Join(root, "force-app/main/objects/znu__Order__c/fields/State__c.field-meta.xml")
+	validationRulePath := filepath.Join(root, "force-app/main/objects/znu__Order__c/validationRules/Block.validationRule-meta.xml")
+	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order</label></CustomObject>`)
+	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>State__c</fullName><type>Picklist</type></CustomField>`)
+	writeFile(t, validationRulePath, `<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Block</fullName><active>true</active><errorConditionFormula>State__c = "Blocked"</errorConditionFormula><errorMessage>blocked</errorMessage></ValidationRule>`)
+
+	s, err := LoadProject(project.Project{Namespace: "namz", ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath}, ValidationRuleFiles: []string{validationRulePath}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	object := objectsByName(s.Objects)["znu__Order__c"]
+	field := object.Fields[0]
+	if field.Name != "namz__State__c" {
+		t.Fatalf("field = %#v", field)
+	}
+	if len(object.ValidationRules) != 1 || object.ValidationRules[0].Namespace != "namz" {
+		t.Fatalf("validation rules = %#v", object.ValidationRules)
+	}
+}
+
+func TestLoadProjectUsesObjectNamespaceForValidationRuleWhenProjectNamespaceEmpty(t *testing.T) {
+	root := t.TempDir()
+	objectPath := filepath.Join(root, "force-app/main/objects/znu__Order__c/znu__Order__c.object-meta.xml")
+	validationRulePath := filepath.Join(root, "force-app/main/objects/znu__Order__c/validationRules/Block.validationRule-meta.xml")
+	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order</label></CustomObject>`)
+	writeFile(t, validationRulePath, `<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Block</fullName><active>true</active><errorConditionFormula>Entity__c = "Blocked"</errorConditionFormula><errorMessage>blocked</errorMessage></ValidationRule>`)
+
+	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath}, ValidationRuleFiles: []string{validationRulePath}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rules := objectsByName(s.Objects)["znu__Order__c"].ValidationRules
+	if len(rules) != 1 || rules[0].Namespace != "znu" {
+		t.Fatalf("validation rules = %#v", rules)
+	}
+}
+
 func TestLoadProjectNormalizesLegacyObjectAndCustomMetadata(t *testing.T) {
 	root := t.TempDir()
 	objectPath := filepath.Join(root, "src/objects/Feature__mdt.object")

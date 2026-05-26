@@ -1207,9 +1207,10 @@ func (vm *VM) enqueueFuture(method Method, args []Value, result *Result) (Value,
 		return Null, fmt.Errorf("%s expects %d arguments", method.Name, len(method.Params))
 	}
 	coercedArgs := make([]Value, len(args))
+	resolutionClass := vm.methodTypeResolutionClass(method)
 	for i, param := range method.Params {
-		paramType := vm.resolveTypeNameInClass(method.ClassName, param.Type)
-		coerced, err := vm.coerceAssignable(paramType, args[i])
+		paramType := vm.resolveTypeNameInClass(resolutionClass, param.Type)
+		coerced, err := vm.coerceAssignable(paramType, vm.valueWithTypesResolvedInClass(resolutionClass, args[i]))
 		if err != nil {
 			return Null, fmt.Errorf("%s parameter %s: %w", method.Name, param.Name, err)
 		}
@@ -1861,7 +1862,7 @@ func testMockTypeName(value Value) (string, bool) {
 		}
 		return value.Text, true
 	case ValueObject:
-		if value.Type == "Type" && value.Text != "" {
+		if (strings.EqualFold(value.Type, "Type") || strings.EqualFold(value.Static, "Type") || strings.EqualFold(value.Runtime, "Type")) && value.Text != "" {
 			return value.Text, true
 		}
 	}
@@ -4688,7 +4689,7 @@ func readApexDatePatternLiteral(pattern string, start int) (int, string, error) 
 func formatApexDatetimeToken(value time.Time, token, zoneID, zoneLabel string, offset time.Duration) (string, error) {
 	count := len(token)
 	switch token[0] {
-	case 'y':
+	case 'y', 'Y':
 		year := value.Year()
 		if count == 2 {
 			return fmt.Sprintf("%02d", year%100), nil
@@ -5520,7 +5521,11 @@ func signatureDigestAlgorithm(algorithm string) (string, error) {
 }
 
 func aesKeySizeForAlgorithm(algorithm string) (int, error) {
-	switch normalizeCryptoAlgorithm(algorithm) {
+	normalized := normalizeCryptoAlgorithm(algorithm)
+	if strings.HasSuffix(normalized, "CBC") {
+		normalized = strings.TrimSuffix(normalized, "CBC")
+	}
+	switch normalized {
 	case "AES128":
 		return 16, nil
 	case "AES192":
@@ -6312,9 +6317,9 @@ func (vm *VM) lookupFieldForReceiver(typeName, fieldName string, preferDependenc
 			return Field{}, "", false
 		}
 		if field, ok := vm.lookupFieldInMapWithOptions(class.Fields, fieldName, preferDependency); ok {
-			return field, class.Name, true
+			return field, runtimeClassName(class), true
 		}
-		typeName = class.SuperClass
+		typeName = vm.resolvedSuperClassName(class)
 	}
 	return Field{}, "", false
 }
@@ -6323,7 +6328,7 @@ func (vm *VM) lookupReceiverField(typeName, fieldName string) (Field, string, bo
 	if vm.currentClass != "" && (strings.EqualFold(typeName, vm.currentClass) || vm.isSubclass(typeName, vm.currentClass)) {
 		if class, ok := vm.Classes[vm.currentClass]; ok {
 			if field, ok := vm.lookupFieldInMapWithOptions(class.Fields, fieldName, vm.currentMethod.Dependency); ok {
-				return field, class.Name, true
+				return field, runtimeClassName(class), true
 			}
 		}
 	}
@@ -6345,9 +6350,9 @@ func (vm *VM) lookupStaticFieldForReceiver(typeName, fieldName string, preferDep
 				if field.Value.Kind == "" {
 					field.Value = defaultValue(field.Type, field.InitialValue)
 				}
-				return field, class.Name, true
+				return field, runtimeClassName(class), true
 			}
-			current = class.SuperClass
+			current = vm.resolvedSuperClassName(class)
 		}
 		dot := strings.LastIndex(search, ".")
 		if dot < 0 {
@@ -6517,10 +6522,10 @@ func builtinStaticField(typeName, fieldName string) (Value, bool) {
 }
 
 func (vm *VM) checkMemberAccess(ownerClass, access, member string, modifierSets ...[]string) error {
-	if err := vm.checkClassAccess(ownerClass, member); err != nil {
+	if err := vm.checkClassAccess(ownerClass, member, modifierSets...); err != nil {
 		return err
 	}
-	if err := vm.checkNamespaceAccess(ownerClass, access, member); err != nil {
+	if err := vm.checkNamespaceAccess(ownerClass, access, member, modifierSets...); err != nil {
 		return err
 	}
 	switch strings.ToLower(access) {
@@ -6539,6 +6544,10 @@ func (vm *VM) checkMemberAccess(ownerClass, access, member string, modifierSets 
 		methodOwner := vm.currentMethod.ClassName
 		if methodOwner == "" {
 			methodOwner = classNameFromMethod(vm.currentMethod.Name)
+		} else if vm.classNamespace(methodOwner) == "" {
+			if owner := classNameFromMethod(vm.currentMethod.Name); owner != "" {
+				methodOwner = owner
+			}
 		}
 		if vm.sameAccessScope(methodOwner, ownerClass) {
 			return nil
@@ -6556,6 +6565,10 @@ func (vm *VM) checkMemberAccess(ownerClass, access, member string, modifierSets 
 		methodOwner := vm.currentMethod.ClassName
 		if methodOwner == "" {
 			methodOwner = classNameFromMethod(vm.currentMethod.Name)
+		} else if vm.classNamespace(methodOwner) == "" {
+			if owner := classNameFromMethod(vm.currentMethod.Name); owner != "" {
+				methodOwner = owner
+			}
 		}
 		if vm.sameAccessScope(methodOwner, ownerClass) || vm.isSubclass(methodOwner, ownerClass) || vm.isSubclass(ownerClass, methodOwner) {
 			return nil
@@ -6617,8 +6630,8 @@ func (vm *VM) accessScopeNames(name string) []string {
 	out := []string{name}
 	if class, ok := vm.classForAccess(name); ok {
 		out = append(out, class.Name)
-		if class.Namespace != "" && !strings.Contains(class.Name, ".") {
-			out = append(out, class.Namespace+"."+class.Name)
+		if class.Namespace != "" {
+			out = append(out, runtimeClassName(class))
 		}
 	}
 	return out
@@ -6643,9 +6656,12 @@ func lexicalTopLevel(className string) (string, bool) {
 	return className[:dot], true
 }
 
-func (vm *VM) checkClassAccess(ownerClass, member string) error {
+func (vm *VM) checkClassAccess(ownerClass, member string, modifierSets ...[]string) error {
 	class, ok := vm.classForAccess(ownerClass)
 	if !ok || class.Namespace == "" {
+		return nil
+	}
+	if vm.memberAccessScopeMatches(ownerClass) {
 		return nil
 	}
 	callerNS := vm.currentCallerNamespace()
@@ -6654,6 +6670,12 @@ func (vm *VM) checkClassAccess(ownerClass, member string) error {
 	}
 	switch strings.ToLower(class.Access) {
 	case "global", "webservice":
+		return nil
+	}
+	if hasAnyMethodModifier([][]string{class.Modifiers}, "namespaceaccessible") || hasAnyMethodModifier(modifierSets, "namespaceaccessible") {
+		return nil
+	}
+	if vm.hasAccessibleInheritedMember(ownerClass, member) {
 		return nil
 	}
 	if vm.currentClass == "" {
@@ -6678,13 +6700,16 @@ func hasAnyMethodModifier(modifierSets [][]string, expected string) bool {
 	return false
 }
 
-func (vm *VM) checkNamespaceAccess(ownerClass, access, member string) error {
+func (vm *VM) checkNamespaceAccess(ownerClass, access, member string, modifierSets ...[]string) error {
 	class, ok := vm.classForAccess(ownerClass)
 	ownerNS := ""
 	if ok {
 		ownerNS = class.Namespace
 	}
 	if ownerNS == "" {
+		return nil
+	}
+	if vm.memberAccessScopeMatches(ownerClass) {
 		return nil
 	}
 	callerNS := vm.currentCallerNamespace()
@@ -6695,10 +6720,131 @@ func (vm *VM) checkNamespaceAccess(ownerClass, access, member string) error {
 	case "global", "webservice":
 		return nil
 	}
+	if hasAnyMethodModifier(modifierSets, "namespaceaccessible") {
+		return nil
+	}
+	if vm.hasAccessibleInheritedMember(ownerClass, member) {
+		return nil
+	}
 	if vm.currentClass == "" {
 		return fmt.Errorf("%s is not global and not visible outside namespace %s", member, ownerNS)
 	}
 	return fmt.Errorf("%s is not global and not visible from namespace %s", member, callerNS)
+}
+
+func (vm *VM) hasAccessibleInheritedMember(ownerClass, member string) bool {
+	memberName := apexMethodMemberName(member)
+	if memberName == "" {
+		return false
+	}
+	class, ok := vm.classForAccess(ownerClass)
+	if !ok {
+		return false
+	}
+	return vm.hasAccessibleInheritedMemberFromClass(class, memberName, make(map[string]bool))
+}
+
+func (vm *VM) hasAccessibleInheritedMemberFromClass(class Class, memberName string, seen map[string]bool) bool {
+	className := runtimeClassName(class)
+	if className == "" || seen[strings.ToLower(className)] {
+		return false
+	}
+	seen[strings.ToLower(className)] = true
+	for _, parentName := range append([]string{vm.resolvedSuperClassName(class)}, vm.resolvedInterfaceNames(class)...) {
+		parentName = strings.TrimSpace(parentName)
+		if parentName == "" {
+			continue
+		}
+		if vm.classHasAccessibleMember(parentName, memberName) {
+			return true
+		}
+		parent, ok := vm.classForAccess(parentName)
+		if !ok {
+			continue
+		}
+		if vm.hasAccessibleInheritedMemberFromClass(parent, memberName, seen) {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) classHasAccessibleMember(className, memberName string) bool {
+	className = strings.TrimSpace(className)
+	if className == "" || memberName == "" {
+		return false
+	}
+	names := []string{className}
+	if class, ok := vm.classForAccess(className); ok {
+		names = append(names, class.Name, runtimeClassName(class), shortTypeName(class.Name))
+	}
+	seen := make(map[string]bool, len(names))
+	for _, name := range names {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		key := strings.ToLower(name)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		if vm.methodSurfaceAccessible(name+"."+memberName, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) methodSurfaceAccessible(methodKey, ownerClass string) bool {
+	for _, method := range vm.MethodOverloads[methodKey] {
+		if vm.memberSurfaceMethodAccessible(method, ownerClass) {
+			return true
+		}
+	}
+	if method, ok := vm.Methods[methodKey]; ok && vm.memberSurfaceMethodAccessible(method, ownerClass) {
+		return true
+	}
+	return false
+}
+
+func (vm *VM) memberSurfaceMethodAccessible(method Method, ownerClass string) bool {
+	if !vm.methodClassMatchesAccessOwner(method.ClassName, ownerClass) {
+		return false
+	}
+	switch strings.ToLower(method.Access) {
+	case "global", "webservice":
+		return true
+	}
+	return methodHasModifier(method.Modifiers, "namespaceaccessible")
+}
+
+func (vm *VM) methodClassMatchesAccessOwner(methodClass, ownerClass string) bool {
+	methodClass = strings.TrimSpace(methodClass)
+	ownerClass = strings.TrimSpace(ownerClass)
+	if methodClass == "" || ownerClass == "" {
+		return true
+	}
+	if strings.EqualFold(methodClass, ownerClass) || vm.sameAccessScope(methodClass, ownerClass) {
+		return true
+	}
+	methodOwner, methodOK := vm.classForAccess(methodClass)
+	accessOwner, ownerOK := vm.classForAccess(ownerClass)
+	if methodOK && ownerOK {
+		return strings.EqualFold(runtimeClassName(methodOwner), runtimeClassName(accessOwner))
+	}
+	return false
+}
+
+func (vm *VM) memberAccessScopeMatches(ownerClass string) bool {
+	if vm.sameAccessScope(vm.currentClass, ownerClass) {
+		return true
+	}
+	methodOwner := vm.currentMethod.ClassName
+	if methodOwner == "" {
+		methodOwner = classNameFromMethod(vm.currentMethod.Name)
+	}
+	return vm.sameAccessScope(methodOwner, ownerClass)
 }
 
 func (vm *VM) classNamespace(className string) string {
@@ -6711,10 +6857,10 @@ func (vm *VM) classNamespace(className string) string {
 			return namespace
 		}
 	}
-	class, ok := vm.Classes[className]
+	class, ok := vm.lookupClass(className)
 	if !ok {
 		if resolved, found := vm.resolveClassName(className); found {
-			class, ok = vm.Classes[resolved]
+			class, ok = vm.lookupClass(resolved)
 		}
 	}
 	if !ok {
@@ -6741,13 +6887,72 @@ func (vm *VM) classNamespace(className string) string {
 }
 
 func (vm *VM) currentCallerNamespace() string {
-	if ns := strings.TrimSpace(vm.currentNamespace); ns != "" {
+	if count := len(vm.activeTriggerNamespaces); count > 0 {
+		if ns := strings.TrimSpace(vm.activeTriggerNamespaces[count-1]); ns != "" {
+			return ns
+		}
+	}
+	if ns := vm.activeTriggerNamespace(); ns != "" {
 		return ns
+	}
+	if ns := vm.currentTriggerNamespace(); ns != "" {
+		return ns
+	}
+	if strings.TrimSpace(vm.currentClass) != "" && vm.classNamespace(vm.currentClass) == "" {
+		if ns := strings.TrimSpace(vm.currentNamespace); ns != "" {
+			return ns
+		}
+	}
+	if ns := vm.classNamespace(vm.currentMethod.ClassName); ns != "" {
+		return ns
+	}
+	if owner := classNameFromMethod(vm.currentMethod.Name); owner != "" && !strings.EqualFold(owner, vm.currentMethod.ClassName) {
+		if ns := vm.classNamespace(owner); ns != "" {
+			return ns
+		}
 	}
 	if ns := vm.classNamespace(vm.currentClass); ns != "" {
 		return ns
 	}
-	return vm.classNamespace(vm.currentMethod.ClassName)
+	if ns := strings.TrimSpace(vm.currentNamespace); ns != "" {
+		return ns
+	}
+	return ""
+}
+
+func (vm *VM) currentTriggerNamespace() string {
+	if strings.TrimSpace(vm.currentClass) == "" {
+		return ""
+	}
+	return vm.triggerNamespaceByName(vm.currentClass)
+}
+
+func (vm *VM) activeTriggerNamespace() string {
+	for i := len(vm.callStack) - 1; i >= 0; i-- {
+		symbol := strings.TrimSpace(vm.callStack[i].Symbol)
+		if symbol == "" {
+			continue
+		}
+		if ns := vm.triggerNamespaceByName(symbol); ns != "" {
+			return ns
+		}
+	}
+	return ""
+}
+
+func (vm *VM) triggerNamespaceByName(name string) string {
+	for _, triggers := range vm.Triggers {
+		for _, trigger := range triggers {
+			if !strings.EqualFold(trigger.Name, name) {
+				continue
+			}
+			if ns := strings.TrimSpace(trigger.Namespace); ns != "" {
+				return ns
+			}
+			return strings.TrimSpace(vm.currentNamespace)
+		}
+	}
+	return ""
 }
 
 func (vm *VM) classForAccess(className string) (Class, bool) {
@@ -6788,7 +6993,7 @@ func (vm *VM) classForAccess(className string) (Class, bool) {
 
 func (vm *VM) lookupClassInNamespace(namespace, className string) (Class, bool) {
 	if vm.namespaceClassLookup == nil {
-		vm.namespaceClassLookup = make(map[string]map[string]Class)
+		vm.namespaceClassLookup = make(map[string]map[string]namespaceClassLookup)
 	}
 	className = strings.TrimSpace(className)
 	if className == "" {
@@ -6797,35 +7002,66 @@ func (vm *VM) lookupClassInNamespace(namespace, className string) (Class, bool) 
 	nsKey := strings.ToLower(strings.TrimSpace(namespace))
 	shortKey := strings.ToLower(shortTypeName(className))
 	if classesByShort, ok := vm.namespaceClassLookup[nsKey]; ok {
-		class, found := classesByShort[shortKey]
-		return class, found
+		result, found := classesByShort[shortKey]
+		if !found || !result.OK {
+			return Class{}, false
+		}
+		return result.Class, true
 	}
-	classesByShort := make(map[string]Class)
-	for _, class := range vm.Classes {
+	classesByShort := make(map[string]namespaceClassLookup)
+	for _, entry := range vm.classNameSearchEntries() {
+		class, ok := vm.lookupClass(entry.Name)
+		if !ok {
+			continue
+		}
 		if strings.ToLower(strings.TrimSpace(class.Namespace)) != nsKey {
 			continue
 		}
-		nameKey := strings.ToLower(shortTypeName(class.Name))
-		if _, exists := classesByShort[nameKey]; exists {
+		if !strings.Contains(class.Name, ".") {
+			key := strings.ToLower(strings.TrimSpace(class.Name))
+			classesByShort[key] = namespaceClassLookup{Class: class, OK: true}
 			continue
 		}
-		classesByShort[nameKey] = class
+		key := strings.ToLower(shortTypeName(class.Name))
+		if existing, exists := classesByShort[key]; exists {
+			if existing.OK && strings.Contains(existing.Class.Name, ".") && !strings.EqualFold(existing.Class.Name, class.Name) {
+				classesByShort[key] = namespaceClassLookup{}
+			}
+			continue
+		}
+		classesByShort[key] = namespaceClassLookup{Class: class, OK: true}
 	}
 	vm.namespaceClassLookup[nsKey] = classesByShort
-	class, found := classesByShort[shortKey]
-	return class, found
+	result, found := classesByShort[shortKey]
+	if !found || !result.OK {
+		return Class{}, false
+	}
+	return result.Class, true
 }
 
 func (vm *VM) isSubclass(child, parent string) bool {
+	if resolved, ok := vm.resolveClassName(child); ok {
+		child = resolved
+	}
+	if resolved, ok := vm.resolveClassName(parent); ok {
+		parent = resolved
+	}
+	seen := make(map[string]bool)
 	for child != "" {
-		class, ok := vm.Classes[child]
+		key := canonicalClassLookupKey(child)
+		if seen[key] {
+			return false
+		}
+		seen[key] = true
+		class, ok := vm.lookupClass(child)
 		if !ok {
 			return false
 		}
-		if strings.EqualFold(class.SuperClass, parent) {
+		superClass := vm.resolvedSuperClassName(class)
+		if strings.EqualFold(superClass, parent) || vm.classNamesReferToSameRuntimeType(superClass, parent) {
 			return true
 		}
-		child = class.SuperClass
+		child = superClass
 	}
 	return false
 }
@@ -6834,6 +7070,11 @@ func (vm *VM) splitClassMember(name string) (string, string, bool) {
 	parts := strings.Split(name, ".")
 	for i := len(parts) - 1; i > 0; i-- {
 		className := strings.Join(parts[:i], ".")
+		if !strings.Contains(className, ".") && vm.currentClass != "" {
+			if resolved, ok := vm.resolveNestedTypeInClassHierarchy(vm.currentClass, className); ok {
+				return resolved, strings.Join(parts[i:], "."), true
+			}
+		}
 		if resolved, ok := vm.resolveClassName(className); ok {
 			return resolved, strings.Join(parts[i:], "."), true
 		}
@@ -7047,14 +7288,34 @@ func isCommonSObjectTypeName(name string) bool {
 }
 
 func (vm *VM) resolveClassName(typeName string) (string, bool) {
+	if isCommonSObjectTypeName(typeName) {
+		return typeName, true
+	}
 	if !strings.Contains(typeName, ".") && vm.currentClass != "" {
 		if resolved, ok := vm.resolveNestedTypeInClassHierarchy(vm.currentClass, typeName); ok {
+			if namespace := strings.TrimSpace(vm.currentExecutionNamespace()); namespace != "" {
+				if class, found := vm.lookupClassInNamespace(namespace, typeName); found && strings.EqualFold(resolved, class.Name) {
+					return runtimeClassName(class), true
+				}
+			}
 			return resolved, true
+		}
+		if namespace := strings.TrimSpace(vm.currentExecutionNamespace()); namespace != "" {
+			if class, ok := vm.lookupClassInNamespace(namespace, typeName); ok {
+				return runtimeClassName(class), true
+			}
+		}
+	}
+	if strings.Contains(typeName, ".") && vm.currentClass != "" {
+		if namespace := strings.TrimSpace(vm.currentExecutionNamespace()); namespace != "" {
+			if class, ok := vm.lookupClass(namespace + "." + typeName); ok {
+				return runtimeClassName(class), true
+			}
 		}
 	}
 	if class, ok := vm.lookupClass(typeName); ok {
-		if strings.Contains(typeName, ".") && class.Namespace != "" && !strings.Contains(class.Name, ".") {
-			return class.Namespace + "." + class.Name, true
+		if strings.Contains(typeName, ".") && class.Namespace != "" {
+			return runtimeClassName(class), true
 		}
 		return class.Name, true
 	}
@@ -7088,13 +7349,10 @@ func (vm *VM) storeClassAliases(class Class) {
 	vm.enumLookup = nil
 	vm.enumSuffixLookup = nil
 	vm.storeClassLookupAlias(class.Name, class)
-	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
-		qualified := class.Namespace + "." + class.Name
+	if class.Namespace != "" {
+		qualified := runtimeClassName(class)
 		vm.Classes[qualified] = class
 		vm.storeClassLookupAlias(qualified, class)
-	}
-	if class.Namespace != "" {
-		vm.storeClassLookupAlias(class.Namespace+"."+class.Name, class)
 	}
 }
 
@@ -7125,10 +7383,25 @@ func (vm *VM) storeClassValue(class Class) {
 	if vm.Classes == nil {
 		vm.Classes = make(map[string]Class)
 	}
-	vm.Classes[class.Name] = class
+	if existing, exists := vm.Classes[class.Name]; !exists || shouldReplaceShortClassAlias(existing, class) {
+		vm.Classes[class.Name] = class
+	}
+	vm.Classes[runtimeClassName(class)] = class
 	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
 		vm.Classes[class.Namespace+"."+class.Name] = class
 	}
+}
+
+func runtimeClassName(class Class) string {
+	name := strings.TrimSpace(class.Name)
+	namespace := strings.TrimSpace(class.Namespace)
+	if name == "" || namespace == "" {
+		return name
+	}
+	if strings.HasPrefix(strings.ToLower(name), strings.ToLower(namespace)+".") {
+		return name
+	}
+	return namespace + "." + name
 }
 
 func (vm *VM) rebuildClassLookup() {
@@ -7144,7 +7417,7 @@ func (vm *VM) rebuildClassLookup() {
 }
 
 func (vm *VM) resetClassAccessCaches() {
-	vm.namespaceClassLookup = make(map[string]map[string]Class)
+	vm.namespaceClassLookup = make(map[string]map[string]namespaceClassLookup)
 	vm.classNamespaceCache = make(map[string]string)
 	vm.classForAccessCache = make(map[string]classForAccessLookup)
 }
@@ -9875,23 +10148,35 @@ func typedSet(typeName string) Value {
 	return value
 }
 
+var canonicalRuntimeTypeNames = []string{
+	"HttpRequest", "HttpResponse", "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock",
+	"RestRequest", "RestResponse", "Continuation", "PageReference", "VisualEditor.DataRow",
+	"VisualEditor.DynamicPickListRows", "Dom.Document", "Auth.UserData", "Auth.VerificationResult",
+	"Auth.AuthConfiguration", "Auth.JWT", "Metadata.DeployContainer", "Metadata.CustomMetadata",
+	"Metadata.CustomMetadataValue", "Metadata.CustomObject", "Metadata.CustomField", "Metadata.Metadata",
+	"Metadata.DeployResult", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext",
+	"Metadata.AsyncResult", "SelectOption", "ApexPages.StandardController", "ApexPages.StandardSetController",
+	"ApexPages.Message", "Messaging.SendEmailResult", "Messaging.EmailFileAttachment", "Messaging.SingleEmailMessage",
+	"Messaging.MassEmailMessage", "Messaging.SendEmailOptions", "Messaging.CustomNotification",
+	"Messaging.PushNotification", "Messaging.ActionResult", "Messaging.ActionableNotification",
+	"Messaging.ActionResult.Builder", "Messaging.ActionableNotification.Builder", "Messaging.Builder",
+	"Messaging.InboundEmail", "Messaging.InboundEnvelope", "Messaging.InboundEmailResult",
+	"Messaging.RenderEmailTemplateBodyResult", "Messaging.RenderEmailTemplateError", "URL", "Version", "InstallContext",
+}
+
+func isCanonicalRuntimeTypeName(typeName string) bool {
+	typeName = strings.TrimSpace(typeName)
+	for _, known := range canonicalRuntimeTypeNames {
+		if strings.EqualFold(typeName, known) {
+			return true
+		}
+	}
+	return false
+}
+
 func canonicalRuntimeTypeName(typeName string) string {
 	typeName = strings.TrimSpace(typeName)
-	for _, known := range []string{
-		"HttpRequest", "HttpResponse", "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock",
-		"RestRequest", "RestResponse", "Continuation", "PageReference", "VisualEditor.DataRow",
-		"VisualEditor.DynamicPickListRows", "Dom.Document", "Auth.UserData", "Auth.VerificationResult",
-		"Auth.AuthConfiguration", "Auth.JWT", "Metadata.DeployContainer", "Metadata.CustomMetadata",
-		"Metadata.CustomMetadataValue", "Metadata.CustomObject", "Metadata.CustomField", "Metadata.Metadata",
-		"Metadata.DeployResult", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext",
-		"Metadata.AsyncResult", "SelectOption", "ApexPages.StandardController", "ApexPages.StandardSetController",
-		"ApexPages.Message", "Messaging.SendEmailResult", "Messaging.EmailFileAttachment", "Messaging.SingleEmailMessage",
-		"Messaging.MassEmailMessage", "Messaging.SendEmailOptions", "Messaging.CustomNotification",
-		"Messaging.PushNotification", "Messaging.ActionResult", "Messaging.ActionableNotification",
-		"Messaging.ActionResult.Builder", "Messaging.ActionableNotification.Builder", "Messaging.Builder",
-		"Messaging.InboundEmail", "Messaging.InboundEnvelope", "Messaging.InboundEmailResult",
-		"Messaging.RenderEmailTemplateBodyResult", "Messaging.RenderEmailTemplateError", "URL", "Version", "InstallContext",
-	} {
+	for _, known := range canonicalRuntimeTypeNames {
 		if strings.EqualFold(typeName, known) {
 			return known
 		}
@@ -10005,11 +10290,14 @@ func (vm *VM) resolveUniqueNestedTypeName(typeName string) (string, bool) {
 	if typeName == "" || strings.Contains(typeName, ".") || vm.currentClass == "" {
 		return "", false
 	}
-	currentTop, currentNested := lexicalTopLevel(vm.currentClass)
-	if !currentNested {
+	if isCommonSObjectTypeName(typeName) {
 		return "", false
 	}
-	currentTopKey := strings.ToLower(currentTop)
+	currentTops := vm.currentLexicalTopCandidates()
+	if len(currentTops) == 0 {
+		return "", false
+	}
+	currentTopKey := strings.ToLower(strings.Join(currentTops, "\x01"))
 	typeKey := strings.ToLower(typeName)
 	cacheKey := currentTopKey + "\x00" + typeKey
 	if vm.uniqueNestedTypeCache != nil {
@@ -10020,19 +10308,176 @@ func (vm *VM) resolveUniqueNestedTypeName(typeName string) (string, bool) {
 		vm.uniqueNestedTypeCache = make(map[string]uniqueNestedTypeLookup)
 	}
 	suffix := "." + typeKey
-	for name := range vm.Classes {
-		nameKey := strings.ToLower(name)
-		if !strings.HasSuffix(nameKey, suffix) {
+	for _, entry := range vm.classNameSearchEntries() {
+		if !strings.HasSuffix(entry.Lower, suffix) {
 			continue
 		}
-		candidateTop, candidateNested := lexicalTopLevel(name)
-		if candidateNested && strings.EqualFold(candidateTop, currentTop) {
-			vm.uniqueNestedTypeCache[cacheKey] = uniqueNestedTypeLookup{Name: name, OK: true}
-			return name, true
+		for _, currentTop := range currentTops {
+			if nestedTypeBelongsToTop(entry.Name, currentTop) {
+				vm.uniqueNestedTypeCache[cacheKey] = uniqueNestedTypeLookup{Name: entry.Name, OK: true}
+				return entry.Name, true
+			}
 		}
+	}
+	var unique string
+	for _, entry := range vm.classNameSearchEntries() {
+		if !strings.HasSuffix(entry.Lower, suffix) {
+			continue
+		}
+		if _, ok := vm.lookupClass(typeName); ok {
+			continue
+		}
+		candidate := entry.Name
+		if class, ok := vm.lookupClass(entry.Name); ok {
+			candidate = class.Name
+		}
+		if unique != "" && !strings.EqualFold(unique, candidate) {
+			vm.uniqueNestedTypeCache[cacheKey] = uniqueNestedTypeLookup{}
+			return "", false
+		}
+		unique = candidate
+	}
+	if unique != "" {
+		vm.uniqueNestedTypeCache[cacheKey] = uniqueNestedTypeLookup{Name: unique, OK: true}
+		return unique, true
 	}
 	vm.uniqueNestedTypeCache[cacheKey] = uniqueNestedTypeLookup{}
 	return "", false
+}
+
+func (vm *VM) resolveTopLevelClassName(typeName string) (string, bool) {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" || strings.Contains(typeName, ".") {
+		return "", false
+	}
+	currentNamespace := strings.TrimSpace(vm.currentExecutionNamespace())
+	cacheKey := strings.ToLower(currentNamespace) + "|" + strings.ToLower(typeName)
+	if vm.topLevelTypeCache != nil {
+		if cached, ok := vm.topLevelTypeCache[cacheKey]; ok {
+			return cached.Name, cached.OK
+		}
+	} else {
+		vm.topLevelTypeCache = make(map[string]uniqueNestedTypeLookup)
+	}
+	var unique string
+	for _, entry := range vm.classNameSearchEntries() {
+		class, ok := vm.lookupClass(entry.Name)
+		if !ok || strings.Contains(class.Name, ".") || !strings.EqualFold(class.Name, typeName) {
+			continue
+		}
+		candidate := runtimeClassName(class)
+		if currentNamespace != "" && strings.EqualFold(class.Namespace, currentNamespace) {
+			vm.topLevelTypeCache[cacheKey] = uniqueNestedTypeLookup{Name: candidate, OK: true}
+			return candidate, true
+		}
+		if unique != "" && !strings.EqualFold(unique, candidate) {
+			vm.topLevelTypeCache[cacheKey] = uniqueNestedTypeLookup{}
+			return "", false
+		}
+		unique = candidate
+	}
+	if unique == "" {
+		vm.topLevelTypeCache[cacheKey] = uniqueNestedTypeLookup{}
+		return "", false
+	}
+	vm.topLevelTypeCache[cacheKey] = uniqueNestedTypeLookup{Name: unique, OK: true}
+	return unique, true
+}
+
+func (vm *VM) classNameSearchEntries() []classNameSearchEntry {
+	if vm.classNameSearchCache != nil {
+		return vm.classNameSearchCache
+	}
+	classNames := make([]string, 0, len(vm.Classes))
+	for name := range vm.Classes {
+		classNames = append(classNames, name)
+	}
+	sort.Strings(classNames)
+	vm.classNameSearchCache = make([]classNameSearchEntry, 0, len(classNames))
+	for _, name := range classNames {
+		vm.classNameSearchCache = append(vm.classNameSearchCache, classNameSearchEntry{
+			Name:  name,
+			Lower: strings.ToLower(name),
+		})
+	}
+	return vm.classNameSearchCache
+}
+
+func (vm *VM) currentLexicalTopCandidates() []string {
+	seen := map[string]bool{}
+	out := []string{}
+	add := func(name string) {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			return
+		}
+		if dot := strings.IndexByte(name, '.'); dot > 0 {
+			name = name[:dot]
+		}
+		key := strings.ToLower(name)
+		if seen[key] {
+			return
+		}
+		seen[key] = true
+		out = append(out, name)
+	}
+	add(vm.currentClass)
+	if short := shortTypeName(vm.currentClass); short != "" && !strings.EqualFold(short, vm.currentClass) {
+		add(short)
+	}
+	if class, ok := vm.lookupClass(vm.currentClass); ok {
+		add(class.Name)
+		if class.Namespace != "" {
+			add(runtimeClassName(class))
+		}
+	}
+	return out
+}
+
+func nestedTypeBelongsToTop(name, top string) bool {
+	name = strings.TrimSpace(name)
+	top = strings.TrimSpace(top)
+	if name == "" || top == "" {
+		return false
+	}
+	return strings.HasPrefix(strings.ToLower(name), strings.ToLower(top)+".")
+}
+
+func (vm *VM) resolveOnlyNestedTypeName(typeName string) (string, bool) {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" || strings.Contains(typeName, ".") {
+		return "", false
+	}
+	typeKey := strings.ToLower(typeName)
+	if vm.onlyNestedTypeCache != nil {
+		if cached, ok := vm.onlyNestedTypeCache[typeKey]; ok {
+			return cached.Name, cached.OK
+		}
+	} else {
+		vm.onlyNestedTypeCache = make(map[string]uniqueNestedTypeLookup)
+	}
+	suffix := "." + typeKey
+	unique := ""
+	for _, entry := range vm.classNameSearchEntries() {
+		if !strings.HasSuffix(entry.Lower, suffix) {
+			continue
+		}
+		candidate := entry.Name
+		if class, ok := vm.lookupClass(entry.Name); ok {
+			candidate = class.Name
+		}
+		if unique != "" && !strings.EqualFold(unique, candidate) {
+			vm.onlyNestedTypeCache[typeKey] = uniqueNestedTypeLookup{}
+			return "", false
+		}
+		unique = candidate
+	}
+	if unique == "" {
+		vm.onlyNestedTypeCache[typeKey] = uniqueNestedTypeLookup{}
+		return "", false
+	}
+	vm.onlyNestedTypeCache[typeKey] = uniqueNestedTypeLookup{Name: unique, OK: true}
+	return unique, true
 }
 
 func (vm *VM) queryLocatorIterable(typeName string, value Value) (Value, error) {
@@ -10067,7 +10512,7 @@ func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
 		vm.enumLookup = make(map[string]enumClassLookup)
 	}
 	if enumType, ok := vm.resolveClassName(typeName); ok {
-		if class, ok := vm.Classes[enumType]; ok && len(class.EnumValues) > 0 {
+		if class, ok := vm.lookupClass(enumType); ok && len(class.EnumValues) > 0 {
 			vm.enumLookup[cacheKey] = enumClassLookup{Class: class, OK: true}
 			return class, true
 		}
@@ -11096,7 +11541,31 @@ func (vm *VM) rawStackFrames() []callFrame {
 	if vm.hasStatement && vm.currentStatement.Line > 0 {
 		frames = append(frames, vm.currentStatement)
 	}
+	for i := range frames {
+		frames[i].Symbol = vm.qualifyStackFrameSymbol(frames[i].Symbol)
+	}
 	return frames
+}
+
+func (vm *VM) qualifyStackFrameSymbol(symbol string) string {
+	symbol = strings.TrimSpace(symbol)
+	if symbol == "" || strings.HasPrefix(strings.ToLower(symbol), "class.") || strings.HasPrefix(strings.ToLower(symbol), "trigger.") {
+		return symbol
+	}
+	dot := strings.LastIndex(symbol, ".")
+	if dot <= 0 {
+		return symbol
+	}
+	className := symbol[:dot]
+	class, ok := vm.lookupClass(className)
+	if !ok {
+		return symbol
+	}
+	token := vm.classTypeToken(class)
+	if token == "" || strings.EqualFold(token, className) {
+		return symbol
+	}
+	return token + symbol[len(className):]
 }
 
 func stackFrames(frames []callFrame) []StackFrame {
@@ -11529,6 +11998,10 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 	if !ok || generated.Kind == apexast.DeclarationInterface || generated.Kind == apexast.DeclarationEnum || vm.isSObjectLikeType(generated.Name) {
 		return Null, false, nil
 	}
+	if strings.EqualFold(generated.Name, "Auth.AuthConfiguration") {
+		value, err := constructAuthConfigurationValue(args, namedArgs)
+		return value, true, err
+	}
 	if sfsqlquerySafeHarnessType(generated.Name) {
 		return vm.constructSfsqlqueryHarnessValue(generated, args, namedArgs)
 	}
@@ -11667,6 +12140,11 @@ func (vm *VM) generatedPlatformInstanceField(receiver Value, fieldName string) (
 	field, _, ok := vm.generatedPlatformField(receiver.Type, fieldName, false)
 	if !ok {
 		return Null, false
+	}
+	if vm.isSObjectLikeType(receiver.Type) {
+		if _, value, ok := objectFieldValue(receiver, fieldName); ok {
+			return value, true
+		}
 	}
 	if _, value, ok := objectFieldValue(receiver, field.Name); ok {
 		return value, true

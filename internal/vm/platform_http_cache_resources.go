@@ -155,6 +155,13 @@ func callAddressMember(receiver Value, method string, args []Value) (Value, Valu
 		value, err := locationDistance(receiver, args[0], args[1].Text)
 		return value, receiver, false, true, err
 	}
+	if suffix, ok := passiveAccessorSuffix(method, "with"); ok {
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("Address.%s expects 1 argument", method)
+		}
+		receiver.Fields[passiveAccessorFieldName(receiver, suffix)] = args[0]
+		return receiver, receiver, true, true, nil
+	}
 	if len(args) != 0 {
 		return Null, receiver, false, true, fmt.Errorf("Address.%s expects 0 arguments", method)
 	}

@@ -53,11 +53,13 @@ func ApplyCustomMetadataRecords(org *OrgState, records []schema.CustomMetadataRe
 	generator := NewIDGenerator(prefixesForOrg(*org))
 	generator.Sequences = copySequences(org.IDSequences)
 	pending := make([]customMetadataPendingRecord, 0, len(ordered))
+	affectedObjects := make(map[string]bool)
 	for _, source := range ordered {
 		objectName, state, err := customMetadataState(org, source)
 		if err != nil {
 			return err
 		}
+		affectedObjects[objectName] = true
 		id, err := generator.Next(objectName)
 		if err != nil {
 			return UnsupportedMetadataError{File: source.File, Feature: "custom metadata record", Message: err.Error()}
@@ -110,6 +112,9 @@ func ApplyCustomMetadataRecords(org *OrgState, records []schema.CustomMetadataRe
 		if sequence > org.IDSequences[object] {
 			org.IDSequences[object] = sequence
 		}
+	}
+	for objectName := range affectedObjects {
+		RebuildObjectIndexes(org, objectName)
 	}
 	return nil
 }
@@ -314,12 +319,11 @@ func labelOrDeveloperName(label, developerName string) string {
 }
 
 func customMetadataNamespace(namespace, objectName string) string {
+	if objectNamespace := customMetadataObjectNamespace(objectName); objectNamespace != "" {
+		return objectNamespace
+	}
 	if namespace == "" || objectName == "" {
 		return ""
-	}
-	prefix := namespace + "__"
-	if len(objectName) >= len(prefix) && strings.EqualFold(objectName[:len(prefix)], prefix) {
-		return namespace
 	}
 	if hasAPISuffix(objectName, "__mdt") && !hasNamespaceToken(objectName) {
 		return namespace
@@ -328,10 +332,21 @@ func customMetadataNamespace(namespace, objectName string) string {
 }
 
 func customMetadataQualifiedName(namespace, objectName, developerName string) string {
-	if customMetadataNamespace(namespace, objectName) != "" {
-		return namespace + "__" + developerName
+	if objectNamespace := customMetadataObjectNamespace(objectName); objectNamespace != "" {
+		return objectNamespace + "__" + developerName
 	}
 	return developerName
+}
+
+func customMetadataObjectNamespace(objectName string) string {
+	if !hasNamespaceToken(objectName) || !hasAPISuffix(objectName, "__mdt") {
+		return ""
+	}
+	idx := strings.Index(objectName, "__")
+	if idx <= 0 {
+		return ""
+	}
+	return objectName[:idx]
 }
 
 func firstString(record Record, fields ...string) string {

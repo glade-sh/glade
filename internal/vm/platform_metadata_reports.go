@@ -1287,10 +1287,39 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	if generated, ok := generatedPlatformTypeIndex[strings.ToLower(receiver.Type)]; ok && generated.Kind == apexast.DeclarationEnum {
 		return callGeneratedPlatformEnumMember(generated, receiver, method, args)
 	}
-	class, ok := vm.Classes[receiver.Type]
+	class, ok := vm.resolveEnumClass(receiver.Type)
 	if !ok || len(class.EnumValues) == 0 {
+		if receiver.Text != "" && looksManagedQualifiedType(receiver.Type) {
+			return callManagedEnumMember(receiver, method, args)
+		}
 		return Null, false, nil
 	}
+	if method == "equals" {
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("%s.equals expects 1 argument", receiver.Type)
+		}
+		equal, _ := vm.resolvedEnumValuesEqual(receiver, args[0])
+		return Bool(equal), true, nil
+	}
+	if len(args) != 0 {
+		return Null, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+	}
+	switch method {
+	case "name", "toString":
+		return String(receiver.Text), true, nil
+	case "ordinal":
+		for i, name := range class.EnumValues {
+			if name == receiver.Text {
+				return Int(int64(i)), true, nil
+			}
+		}
+		return Int(-1), true, nil
+	default:
+		return Null, false, nil
+	}
+}
+
+func callManagedEnumMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	if method == "equals" {
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("%s.equals expects 1 argument", receiver.Type)
@@ -1304,10 +1333,8 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	case "name", "toString":
 		return String(receiver.Text), true, nil
 	case "ordinal":
-		for i, name := range class.EnumValues {
-			if name == receiver.Text {
-				return Int(int64(i)), true, nil
-			}
+		if ordinal, ok := receiver.Fields["ordinal"]; ok && ordinal.Kind == ValueInt {
+			return ordinal, true, nil
 		}
 		return Int(-1), true, nil
 	default:
@@ -1345,7 +1372,25 @@ func enumValuesEqual(left, right Value) bool {
 	if right.Kind != ValueObject {
 		return false
 	}
-	return strings.EqualFold(left.Type, right.Type) && left.Text == right.Text
+	return (strings.EqualFold(left.Type, right.Type) || namespaceQualifiedTypeEquivalent(left.Type, right.Type)) && left.Text == right.Text
+}
+
+func (vm *VM) resolvedEnumValuesEqual(left, right Value) (bool, bool) {
+	if left.Kind != ValueObject || right.Kind != ValueObject || left.Text == "" || right.Text == "" {
+		return false, false
+	}
+	leftClass, leftOK := vm.resolveEnumClass(left.Type)
+	rightClass, rightOK := vm.resolveEnumClass(right.Type)
+	if leftOK || rightOK {
+		if !leftOK || !rightOK {
+			return false, true
+		}
+		return strings.EqualFold(leftClass.Name, rightClass.Name) && left.Text == right.Text, true
+	}
+	if strings.EqualFold(left.Type, right.Type) || namespaceQualifiedTypeEquivalent(left.Type, right.Type) {
+		return left.Text == right.Text, true
+	}
+	return false, false
 }
 
 func metadataDeployDetailsObject() Value {

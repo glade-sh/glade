@@ -118,6 +118,33 @@ func TestOrgShapeFeaturesLoadsScratchDefinition(t *testing.T) {
 	}
 }
 
+func TestOrgShapeFeaturesLoadsCumulusCIOrgDefinitions(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "cumulusci.yml"), `
+orgs:
+  scratch:
+    dev:
+      config_file: orgs/dev.json
+`)
+	writeFile(t, filepath.Join(root, "orgs/dev.json"), `{
+  "features": ["Communities", "PersonAccounts"],
+  "settings": {
+    "chatterSettings": {"enableChatter": true}
+  }
+}`)
+
+	got := OrgShapeFeatures(root)
+	want := []string{"Communities", "PersonAccounts", "Chatter"}
+	if len(got) != len(want) {
+		t.Fatalf("features = %#v, want %#v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("features = %#v, want %#v", got, want)
+		}
+	}
+}
+
 func TestLoadLegacySrcLayout(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "src/classes/Legacy.cls"), "public class Legacy {}")
@@ -149,6 +176,21 @@ func TestLoadSupplementsConventionalUnpackagedRoot(t *testing.T) {
 	}
 	if len(p.ApexFiles) != 2 {
 		t.Fatalf("apex files = %d, want 2: %#v", len(p.ApexFiles), p.ApexFiles)
+	}
+}
+
+func TestLoadDiscoversCustomMetadataRecordsOutsideCustomMetadataFolder(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	path := filepath.Join(root, "force-app/main/default/bindings/di_Binding.PaymentsApiPaymentFactory.md-meta.xml")
+	writeFile(t, path, `<CustomMetadata><label>Payments API Payment Factory</label></CustomMetadata>`)
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.CustomMetadataFiles) != 1 || p.CustomMetadataFiles[0] != path {
+		t.Fatalf("custom metadata files = %#v", p.CustomMetadataFiles)
 	}
 }
 
@@ -228,8 +270,9 @@ func TestLoadManagedPackageDependencies(t *testing.T) {
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "deps", "znu")
 	consumerRoot := filepath.Join(root, "consumer")
-	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true},{"path":"unpackaged"}]}`)
 	writeFile(t, filepath.Join(depRoot, "force-app/main/default/classes/Visible.cls"), "global class Visible {}")
+	writeFile(t, filepath.Join(depRoot, "unpackaged/main/default/classes/HiddenSetup.cls"), "public class HiddenSetup {}")
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   managedPackageDependencies: ["znu:../deps/znu:1.0"]
@@ -249,6 +292,9 @@ func TestLoadManagedPackageDependencies(t *testing.T) {
 	}
 	if dep.Project.Namespace != "znu" || len(dep.Project.ApexFiles) != 1 {
 		t.Fatalf("loaded dependency project = %#v", dep.Project)
+	}
+	if filepath.Base(dep.Project.ApexFiles[0]) != "Visible.cls" {
+		t.Fatalf("loaded dependency apex files = %#v", dep.Project.ApexFiles)
 	}
 }
 

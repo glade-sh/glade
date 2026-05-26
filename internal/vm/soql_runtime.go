@@ -55,6 +55,9 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 	}
 	executeQuery := query
 	executeQuery.SecurityMode = ""
+	if resolved, ok := vm.resolveObjectName(executeQuery.Object); ok {
+		executeQuery.Object = resolved
+	}
 	vm.normalizeSOQLRelationshipGroupBy(&executeQuery)
 	executeOrg := vm.Org
 	if strings.EqualFold(executeQuery.Object, "UserRecordAccess") {

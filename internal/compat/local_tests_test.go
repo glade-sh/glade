@@ -1,11 +1,13 @@
 package compat
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/testreport"
@@ -31,6 +33,36 @@ func TestRunLocalTestsClassifiesBasicFixture(t *testing.T) {
 	}
 	if failing.TraceEvents == 0 || failing.ProfileEvents == 0 || len(failing.ProfileCategories) == 0 {
 		t.Fatalf("failing outcome missing trace/profile summary: %#v", failing)
+	}
+}
+
+func TestRunLocalTestsProgressShowsCountsElapsedAndETA(t *testing.T) {
+	var progress bytes.Buffer
+	report, err := RunLocalTests(LocalTestOptions{
+		Project:        filepath.Join("..", "..", "testdata", "local-tests", "basic"),
+		ProgressWriter: &progress,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.CasesRun != 3 {
+		t.Fatalf("casesRun = %d, want 3", report.CasesRun)
+	}
+	out := progress.String()
+	for _, want := range []string{
+		"Phase: load_start elapsed=",
+		"Phase: run_start elapsed=",
+		"Progress: 3/3",
+		"elapsed=",
+		"eta=",
+		"pass=1",
+		"fail=2",
+		"error=0",
+		"running=UnsupportedTest.unsupported",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("progress missing %q:\n%s", want, out)
+		}
 	}
 }
 

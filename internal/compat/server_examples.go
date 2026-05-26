@@ -592,6 +592,7 @@ func serverExampleValidationRules(values []schema.ValidationRule) []storage.Vali
 	for _, value := range values {
 		out = append(out, storage.ValidationRule{
 			Name:                  value.Name,
+			Namespace:             value.Namespace,
 			Active:                value.Active,
 			ErrorConditionFormula: value.ErrorConditionFormula,
 			ErrorMessage:          value.ErrorMessage,

@@ -85,6 +85,98 @@ func TestDMLRejectsInvalidSystemOwnerIDPrefix(t *testing.T) {
 	}
 }
 
+func TestValidationFormulaResolvesForeignNamespacedRelationshipFields(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "namz"
+	org.Objects["znu__Entity__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "znu__Entity__c", KeyPrefix: "a01", Fields: map[string]storage.Field{
+			"Name": {APIName: "Name", Type: storage.FieldString},
+		}},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001EAA": {ID: "a01000000000001EAA", Object: "znu__Entity__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Primary")}},
+		},
+	}
+	org.Objects["znu__Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "znu__Product__c", KeyPrefix: "a02", Fields: map[string]storage.Field{
+			"znu__Entity__c": {APIName: "znu__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__Entity__c"}, RelationshipName: "znu__Entity__r"},
+		}},
+		Records: map[storage.ID]storage.Record{
+			"a02000000000001EAA": {ID: "a02000000000001EAA", Object: "znu__Product__c", Fields: map[string]storage.Value{"znu__Entity__c": storage.IDValue("a01000000000001EAA")}},
+		},
+	}
+	org.Objects["znu__CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "znu__CartItem__c", KeyPrefix: "a03", Fields: map[string]storage.Field{
+			"znu__Entity__c": {APIName: "znu__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__Entity__c"}, RelationshipName: "znu__Entity__r"},
+		}},
+		Records: map[storage.ID]storage.Record{
+			"a03000000000001EAA": {ID: "a03000000000001EAA", Object: "znu__CartItem__c", Fields: map[string]storage.Value{"znu__Entity__c": storage.IDValue("a01000000000001EAA")}},
+		},
+	}
+	org.Objects["znu__CartItemLine__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "znu__CartItemLine__c",
+			KeyPrefix: "a04",
+			Fields: map[string]storage.Field{
+				"znu__Product2__c": {APIName: "znu__Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__Product__c"}, RelationshipName: "znu__Product2__r"},
+				"znu__CartItem__c": {APIName: "znu__CartItem__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__CartItem__c"}, RelationshipName: "znu__CartItem__r"},
+			},
+			ValidationRules: []storage.ValidationRule{{
+				Name:                  "EntityMustMatch",
+				Active:                true,
+				ErrorConditionFormula: "Product2__r.Entity__c <> CartItem__r.Entity__c",
+				ErrorMessage:          "entity mismatch",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+
+	engine := NewEngine(&org)
+	result := engine.Insert([]storage.Record{{
+		Object: "znu__CartItemLine__c",
+		Fields: map[string]storage.Value{
+			"znu__Product2__c": storage.IDValue("a02000000000001EAA"),
+			"znu__CartItem__c": storage.IDValue("a03000000000001EAA"),
+		},
+	}})
+	if !result[0].Success {
+		t.Fatalf("insert = %#v", result)
+	}
+}
+
+func TestValidationFormulaUsesObjectNamespaceBeforeOrgNamespace(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "namz"
+	org.Objects["znu__Line__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "znu__Line__c",
+			KeyPrefix: "a04",
+			Fields: map[string]storage.Field{
+				"znu__Entity__c":  {APIName: "znu__Entity__c", Type: storage.FieldString},
+				"namz__Entity__c": {APIName: "namz__Entity__c", Type: storage.FieldString},
+			},
+			ValidationRules: []storage.ValidationRule{{
+				Name:                  "EntityMustMatch",
+				Active:                true,
+				ErrorConditionFormula: `Entity__c = "wrong"`,
+				ErrorMessage:          "entity mismatch",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+
+	engine := NewEngine(&org)
+	result := engine.Insert([]storage.Record{{
+		Object: "znu__Line__c",
+		Fields: map[string]storage.Value{
+			"znu__Entity__c":  storage.StringValue("right"),
+			"namz__Entity__c": storage.StringValue("wrong"),
+		},
+	}})
+	if !result[0].Success {
+		t.Fatalf("insert = %#v", result)
+	}
+}
+
 func TestUpdateRequiredFieldToNullFails(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)
@@ -1287,7 +1379,7 @@ func personAccountRecordTypeID(t *testing.T, org storage.OrgState) storage.ID {
 	return ""
 }
 
-func TestInsertPersonAccountPopulatesNamespacedPersonContactAlias(t *testing.T) {
+func TestInsertPersonAccountDoesNotPopulateCustomPersonContactAlias(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Namespace = "znu"
 	storage.EnsureDeterministicPlatformData(&org)
@@ -1317,43 +1409,8 @@ func TestInsertPersonAccountPopulatesNamespacedPersonContactAlias(t *testing.T) 
 	if contactID == "" {
 		t.Fatalf("PersonContactId was not populated: %#v", accountRecord.Fields)
 	}
-	if got := accountRecord.Fields["znu__PersonContact__c"].ID; got != contactID {
-		t.Fatalf("znu__PersonContact__c = %q, want %q; fields=%#v", got, contactID, accountRecord.Fields)
-	}
-}
-
-func TestInsertPersonAccountCanSuppressNamespacedPersonContactAlias(t *testing.T) {
-	org := storage.NewOrgState()
-	org.Namespace = "znu"
-	storage.EnsureDeterministicPlatformData(&org)
-	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
-	account := org.Objects["Account"]
-	account.Definition.Fields["znu__PersonContact__c"] = storage.Field{
-		APIName:          "znu__PersonContact__c",
-		Type:             storage.FieldReference,
-		ReferenceTo:      []string{"Contact"},
-		RelationshipName: "znu__PersonContact__r",
-	}
-	org.Objects["Account"] = account
-	engine := NewEngine(&org)
-	engine.Options.SuppressPersonContactAliases = true
-
-	insert := engine.Insert([]storage.Record{{
-		Object: "Account",
-		Fields: map[string]storage.Value{
-			"FirstName": storage.StringValue("Ada"),
-			"LastName":  storage.StringValue("Lovelace"),
-		},
-	}})
-	if !insert[0].Success {
-		t.Fatalf("insert = %#v", insert[0])
-	}
-	accountRecord := org.Objects["Account"].Records[insert[0].ID]
-	if accountRecord.Fields["PersonContactId"].ID == "" {
-		t.Fatalf("PersonContactId was not populated: %#v", accountRecord.Fields)
-	}
-	if got := accountRecord.Fields["znu__PersonContact__c"].ID; got != "" {
-		t.Fatalf("znu__PersonContact__c = %q, want blank; fields=%#v", got, accountRecord.Fields)
+	if got := accountRecord.Fields["znu__PersonContact__c"]; got.Kind != "" {
+		t.Fatalf("znu__PersonContact__c = %#v, want unset; fields=%#v", got, accountRecord.Fields)
 	}
 }
 
@@ -3004,6 +3061,132 @@ func TestValidationRulesResolveParentFormulaFields(t *testing.T) {
 	}})
 	if applied[0].Success || applied[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" || applied[0].Error != "The prepayment amount cannot exceed the available credit balance on the prepayment." {
 		t.Fatalf("over-applied credit insert = %#v", applied)
+	}
+}
+
+func TestValidationRulesReadTransientParentRelationshipShells(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Product__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Entity__c": {APIName: "Entity__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {
+				ID:     "a01000000000001",
+				Object: "Product__c",
+				Fields: map[string]storage.Value{
+					"Entity__c": storage.StringValue("Member"),
+				},
+			},
+		},
+	}
+	org.Objects["CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "CartItem__c",
+			KeyPrefix: "a02",
+			Fields: map[string]storage.Field{
+				"Entity__c": {APIName: "Entity__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["Line__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Line__c",
+			KeyPrefix: "a03",
+			Fields: map[string]storage.Field{
+				"Product__c":  {APIName: "Product__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}},
+				"CartItem__c": {APIName: "CartItem__c", Type: storage.FieldReference, ReferenceTo: []string{"CartItem__c"}},
+			},
+			ValidationRules: []storage.ValidationRule{{
+				Name:                  "ProductEntityMatchesCartItem",
+				Active:                true,
+				ErrorConditionFormula: "ISBLANK(CartItem__r.Entity__c) || Product__r.Entity__c <> CartItem__r.Entity__c",
+				ErrorMessage:          "The product entity must match the cart item's entity.",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+
+	engine := NewEngine(&org)
+	withoutShell := engine.Insert([]storage.Record{{
+		Object: "Line__c",
+		Fields: map[string]storage.Value{
+			"Product__c":  storage.IDValue("a01000000000001"),
+			"CartItem__c": storage.IDValue("a02000000000001"),
+		},
+	}})
+	if withoutShell[0].Success || withoutShell[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" {
+		t.Fatalf("insert without relationship shell = %#v; want validation failure", withoutShell[0])
+	}
+
+	withShell := engine.Insert([]storage.Record{{
+		Object: "Line__c",
+		Fields: map[string]storage.Value{
+			"Product__c":  storage.IDValue("a01000000000001"),
+			"CartItem__c": storage.IDValue("a02000000000001"),
+		},
+		ParentRelationships: map[string]storage.Record{
+			"CartItem__r": {
+				Object: "CartItem__c",
+				Fields: map[string]storage.Value{
+					"Entity__c": storage.StringValue("Member"),
+				},
+			},
+		},
+	}})
+	if !withShell[0].Success {
+		t.Fatalf("insert with relationship shell = %#v; want success", withShell[0])
+	}
+	stored := org.Objects["Line__c"].Records[withShell[0].ID]
+	if len(stored.ParentRelationships) != 0 {
+		t.Fatalf("stored record kept parent relationship shell: %#v", stored.ParentRelationships)
+	}
+}
+
+func TestValidationFormulaComparesReferenceIDsByApexIdentity(t *testing.T) {
+	parentDefinition := storage.ObjectDefinition{
+		APIName: "Parent__c",
+		Fields: map[string]storage.Field{
+			"Entity__c": {APIName: "Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"Entity__c"}},
+		},
+	}
+	childDefinition := storage.ObjectDefinition{
+		APIName: "Child__c",
+		Fields: map[string]storage.Field{
+			"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
+			"Entity__c": {APIName: "Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"Entity__c"}},
+		},
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Parent__c": {
+			Definition: parentDefinition,
+			Records: map[storage.ID]storage.Record{
+				"a01000000000001": {
+					ID:     "a01000000000001",
+					Object: "Parent__c",
+					Fields: map[string]storage.Value{
+						"Entity__c": storage.IDValue("a0E000000000001"),
+					},
+				},
+			},
+		},
+		"Child__c": {Definition: childDefinition},
+	}}
+
+	matches, ok := evaluateValidationFormulaInOrg("Parent__r.Entity__c <> Entity__c", &org, childDefinition, storage.Record{
+		Object: "Child__c",
+		Fields: map[string]storage.Value{
+			"Parent__c": storage.IDValue("a01000000000001"),
+			"Entity__c": storage.IDValue("a0E000000000001AAA"),
+		},
+	}, nil, true)
+	if !ok || matches {
+		t.Fatalf("15/18 character id comparison = %v, ok=%v; want false", matches, ok)
 	}
 }
 

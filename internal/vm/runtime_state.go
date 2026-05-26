@@ -33,12 +33,15 @@ type VM struct {
 	methodResolveCache        map[string]methodResolution
 	Classes                   map[string]Class
 	classLookup               map[string]Class
-	namespaceClassLookup      map[string]map[string]Class
+	namespaceClassLookup      map[string]map[string]namespaceClassLookup
 	classNamespaceCache       map[string]string
 	classForAccessCache       map[string]classForAccessLookup
 	enumLookup                map[string]enumClassLookup
 	enumSuffixLookup          map[string]enumClassLookup
 	uniqueNestedTypeCache     map[string]uniqueNestedTypeLookup
+	onlyNestedTypeCache       map[string]uniqueNestedTypeLookup
+	topLevelTypeCache         map[string]uniqueNestedTypeLookup
+	classNameSearchCache      []classNameSearchEntry
 	Org                       *storage.OrgState
 	Triggers                  map[string][]Trigger
 	triggerMatchCache         map[string][]Trigger
@@ -67,6 +70,7 @@ type VM struct {
 	currentStatement          callFrame
 	hasStatement              bool
 	triggerDepth              int
+	activeTriggerNamespaces   []string
 	installContextDepth       int
 	savepoints                map[string]storage.OrgState
 	emailSavepoints           map[string][]CapturedEmail
@@ -105,6 +109,7 @@ type VM struct {
 	describeTabsCache         *Value
 	describeDefCache          map[string]storage.ObjectDefinition
 	customDataCache           map[string]Value
+	managedFeatureFlags       map[string]bool
 	childRelCache             map[string][]Value
 	jsonChildRelTypeCache     map[string]jsonRelationshipTypeLookup
 	loadedChildRelCache       map[string]loadedChildRelationshipLookup
@@ -182,6 +187,16 @@ type enumClassLookup struct {
 type uniqueNestedTypeLookup struct {
 	Name string
 	OK   bool
+}
+
+type classNameSearchEntry struct {
+	Name  string
+	Lower string
+}
+
+type namespaceClassLookup struct {
+	Class Class
+	OK    bool
 }
 
 type methodResolution struct {
@@ -355,12 +370,14 @@ func New(stdout io.Writer) *VM {
 		methodResolveCache:    make(map[string]methodResolution),
 		Classes:               make(map[string]Class),
 		classLookup:           make(map[string]Class),
-		namespaceClassLookup:  make(map[string]map[string]Class),
+		namespaceClassLookup:  make(map[string]map[string]namespaceClassLookup),
 		classNamespaceCache:   make(map[string]string),
 		classForAccessCache:   make(map[string]classForAccessLookup),
 		enumLookup:            make(map[string]enumClassLookup),
 		enumSuffixLookup:      make(map[string]enumClassLookup),
 		uniqueNestedTypeCache: make(map[string]uniqueNestedTypeLookup),
+		onlyNestedTypeCache:   make(map[string]uniqueNestedTypeLookup),
+		topLevelTypeCache:     make(map[string]uniqueNestedTypeLookup),
 		Triggers:              make(map[string][]Trigger),
 		triggerMatchCache:     make(map[string][]Trigger),
 		Stdout:                stdout,
@@ -384,6 +401,7 @@ func New(stdout io.Writer) *VM {
 		fieldDescribeCache:    make(map[string]Value),
 		describeDefCache:      make(map[string]storage.ObjectDefinition),
 		customDataCache:       make(map[string]Value),
+		managedFeatureFlags:   make(map[string]bool),
 		childRelCache:         make(map[string][]Value),
 		jsonChildRelTypeCache: make(map[string]jsonRelationshipTypeLookup),
 		loadedChildRelCache:   make(map[string]loadedChildRelationshipLookup),

@@ -749,13 +749,6 @@ func (e *Engine) afterInsertPersonAccount(account storage.Record) error {
 		stored.Fields = make(map[string]storage.Value)
 	}
 	stored.Fields["PersonContactId"] = storage.IDValue(contactID)
-	if e.Org.Namespace != "" && !e.Options.SuppressPersonContactAliases {
-		for fieldName := range accountObject.Definition.Fields {
-			if strings.EqualFold(storage.StripNamespaceToken(e.Org.Namespace, fieldName), "PersonContact__c") {
-				stored.Fields[fieldName] = storage.IDValue(contactID)
-			}
-		}
-	}
 	accountObject.Records[account.ID] = stored
 	e.Org.Objects["Account"] = accountObject
 	return nil

@@ -28,6 +28,9 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 	}
 	if value.Type == "Type" {
 		if text := typeValueText(value); text != "" {
+			if objectName, ok := vm.resolveObjectName(text); ok {
+				return vm.describeObjectName(objectName), nil
+			}
 			return text, nil
 		}
 	}
@@ -52,6 +55,11 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 	if strings.EqualFold(value.Type, "Schema.SObjectField") {
 		if fieldName, ok := value.Fields["field"]; ok && fieldName.Kind == ValueString {
 			return fieldName.Text, nil
+		}
+	}
+	if strings.EqualFold(value.Type, "Schema.SObjectType") {
+		if objectName, ok := value.Fields["object"]; ok && objectName.Kind == ValueString {
+			return vm.describeObjectName(objectName.Text), nil
 		}
 	}
 	if value.Type == "LoggingLevel" && isLoggingLevelName(value.Text) {
@@ -273,14 +281,15 @@ func markExplicitSObjectField(value *Value, field string) {
 }
 
 func isExplicitSObjectField(value Value, field string) bool {
-	if value.Fields == nil || strings.TrimSpace(field) == "" {
+	field = strings.TrimSpace(field)
+	if value.Fields == nil || field == "" {
 		return false
 	}
 	selected, ok := value.Fields[sobjectExplicitFieldsField]
 	if !ok || selected.Kind != ValueMap {
 		return false
 	}
-	flag, ok := selected.Map[mapKey(String(strings.ToLower(field)))]
+	flag, ok := selected.Map["string:"+strings.ToLower(field)]
 	return ok && flag.Kind == ValueBool && flag.Bool
 }
 
@@ -685,7 +694,7 @@ func (vm *VM) lazyChildRelationshipLookup(parentObject, field string) lazyChildR
 				continue
 			}
 			childRelationshipName := relation.ChildRelationship
-			if childRelationshipName == "" {
+			if childRelationshipName == "" && canDeriveChildRelationshipName(parentObject, childName, relation) {
 				childRelationshipName = derivedVMChildRelationshipName(childState.Definition)
 			}
 			if childRelationshipName == "" || !vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, field) {
@@ -819,13 +828,13 @@ func (vm *VM) loadedChildRelationshipLookup(receiverType, parentObject, field st
 	lookup := loadedChildRelationshipLookup{
 		ParentRelationshipExists: vm.sObjectParentRelationshipField(receiverType, field),
 	}
-	for _, childState := range vm.Org.Objects {
+	for childName, childState := range vm.Org.Objects {
 		for _, relation := range childState.Definition.Relations {
 			if !relationshipTargetsObject(relation, parentObject) {
 				continue
 			}
 			childRelationshipName := relation.ChildRelationship
-			if childRelationshipName == "" && canDeriveChildRelationshipName(relation) {
+			if childRelationshipName == "" && canDeriveChildRelationshipName(parentObject, childName, relation) {
 				childRelationshipName = derivedVMChildRelationshipName(childState.Definition)
 			}
 			if childRelationshipName == "" || !vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, field) {
@@ -1075,15 +1084,44 @@ func (vm *VM) resolveObjectName(name string) (string, bool) {
 	if key == "" {
 		return "", false
 	}
+	namespace := strings.ToLower(strings.TrimSpace(vm.currentCallerNamespace()))
+	cacheKey := namespace + "|" + key
 	if vm.objectNameCache == nil {
 		vm.objectNameCache = make(map[string]objectNameLookup)
 	}
-	if cached, ok := vm.objectNameCache[key]; ok {
+	if cached, ok := vm.objectNameCache[cacheKey]; ok {
 		return cached.Name, cached.OK
 	}
+	if resolved, ok := vm.resolveObjectNameInExecutionNamespace(name); ok {
+		vm.objectNameCache[cacheKey] = objectNameLookup{Name: resolved, OK: true}
+		return resolved, true
+	}
 	resolved, ok := storage.ResolveObjectName(*vm.Org, name)
-	vm.objectNameCache[key] = objectNameLookup{Name: resolved, OK: ok}
+	vm.objectNameCache[cacheKey] = objectNameLookup{Name: resolved, OK: ok}
 	return resolved, ok
+}
+
+func (vm *VM) resolveObjectNameInExecutionNamespace(name string) (string, bool) {
+	if vm == nil || vm.Org == nil {
+		return "", false
+	}
+	namespace := strings.TrimSpace(vm.currentCallerNamespace())
+	if namespace == "" {
+		return "", false
+	}
+	prefixed := storage.NamespaceTokenName(namespace, name)
+	if prefixed == name {
+		return "", false
+	}
+	if _, ok := vm.Org.Objects[prefixed]; ok {
+		return prefixed, true
+	}
+	for candidate := range vm.Org.Objects {
+		if strings.EqualFold(candidate, prefixed) {
+			return candidate, true
+		}
+	}
+	return "", false
 }
 
 func (vm *VM) resolveSObjectFieldName(typeName, field string) string {
@@ -1161,6 +1199,9 @@ func (vm *VM) sObjectFieldDefinition(typeName, field string) (storage.ObjectDefi
 func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, bool) {
 	if isExplicitSObjectField(receiver, field) {
 		if _, fieldDef, ok := vm.sObjectFieldDefinition(receiver.Type, field); ok {
+			if defaultValue, ok := storage.DefaultValueForField(fieldDef); ok {
+				return vmValueFromStorage(defaultValue), true
+			}
 			return storageFieldNullValue(fieldDef), true
 		}
 		return Null, true

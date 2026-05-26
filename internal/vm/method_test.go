@@ -50,6 +50,37 @@ func TestVMRecordFieldPathPreservesMissingNestedParentRelationshipNull(t *testin
 	}
 }
 
+func TestManagedNestedEnumLiteralCanBeUsedAsMapKey(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<znu.BankAccountDetail.AccountTypeOption, String> names =
+    new Map<znu.BankAccountDetail.AccountTypeOption, String>{
+        znu.BankAccountDetail.AccountTypeOption.CHECKING => 'CHECKING'
+    };
+System.assertEquals('CHECKING', names.get(znu.BankAccountDetail.AccountTypeOption.CHECKING));
+System.assertEquals('CHECKING', znu.BankAccountDetail.AccountTypeOption.CHECKING.name());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestManagedEnumLiteralCanBeUsedAsValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object status = znu.OperationStatus.SUCCESS;
+System.assertEquals('SUCCESS', znu.OperationStatus.SUCCESS.name());
+System.assertEquals(znu.OperationStatus.SUCCESS, status);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectPropertyGetterNullSupportsFieldAccess(t *testing.T) {
 	getterProgram, err := CompileAnonymous(`return null;`)
 	if err != nil {
@@ -102,6 +133,75 @@ func TestCoerceAssignableAcceptsNamespaceAliasWhenNamespaceMatchesCurrentClass(t
 	value := Object("verifiable.responseData")
 	if _, err := machine.coerceAssignable("responseData", value); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestCoerceAssignableAcceptsCurrentNamespaceQualifiedShortAlias(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Mock", Namespace: "verifiable"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "verifiable.Mock"
+	value := Object("verifiable.Mock")
+	if _, err := machine.coerceAssignable("Mock", value); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCoerceAssignableAcceptsCurrentNamespaceQualifiedNestedShortAlias(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "SetupDataMapping.License", Namespace: "verifiable"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "verifiable.SetupDataMapping"
+	value := Object("verifiable.SetupDataMapping.License")
+	if _, err := machine.coerceAssignable("License", value); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCoerceAssignableAcceptsOrgNamespaceQualifiedNestedShortAlias(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	org.Namespace = "verifiable"
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{Name: "SetupDataMapping.License", Namespace: "verifiable"}); err != nil {
+		t.Fatal(err)
+	}
+	value := Object("verifiable.SetupDataMapping.License")
+	if _, err := machine.coerceAssignable("License", value); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCoerceAssignablePreservesUserObjectMapKeys(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Probe", Namespace: "ns"}); err != nil {
+		t.Fatal(err)
+	}
+	first := Object("ns.Probe")
+	first.Fields["Key"] = String("same")
+	second := Object("ns.Probe")
+	second.Fields["Key"] = String("same")
+	values := Map()
+	values.Type = "Map<Probe,String>"
+	firstKey := machine.mapKey(first)
+	secondKey := machine.mapKey(second)
+	values.Map[firstKey] = String("first")
+	values.Map[secondKey] = String("second")
+	values.MapKeys[firstKey] = first
+	values.MapKeys[secondKey] = second
+	values.MapOrder = []string{firstKey, secondKey}
+
+	coerced, err := machine.coerceAssignable("Map<ns.Probe,String>", values)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := coerced.Map[machine.mapKey(first)]; got.Kind != ValueString || got.Text != "first" {
+		t.Fatalf("first map value = %#v", got)
+	}
+	if got := coerced.Map[machine.mapKey(second)]; got.Kind != ValueString || got.Text != "second" {
+		t.Fatalf("second map value = %#v", got)
 	}
 }
 
@@ -776,6 +876,653 @@ func TestDuplicateClassStaticInitializersPreferProjectLast(t *testing.T) {
 	}
 }
 
+func TestNamespacedDependencyStaticInitializerUsesQualifiedOwner(t *testing.T) {
+	projectInit, err := CompileAnonymous("items = new Set<String>();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dependencyInit, err := CompileAnonymous("items = new Map<String, Integer>();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	countProgram, err := CompileAnonymous("return items.size();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "Shared",
+		Namespace: "local",
+		StaticFields: map[string]Field{
+			"items": {Name: "items", Type: "Set<String>", Static: true},
+		},
+		StaticInitializers: []Method{{
+			Name:      "Shared.<static_local>",
+			ClassName: "Shared",
+			Program:   projectInit,
+			IsStatic:  true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Shared",
+		Namespace:  "pkg",
+		Dependency: true,
+		StaticFields: map[string]Field{
+			"items": {Name: "items", Type: "Map<String, Integer>", Static: true},
+		},
+		StaticInitializers: []Method{{
+			Name:      "Shared.<static_dependency>",
+			ClassName: "Shared",
+			Program:   dependencyInit,
+			IsStatic:  true,
+		}},
+		Methods: map[string]Method{
+			"count": {Name: "Shared.count", ClassName: "Shared", ReturnType: "Integer", IsStatic: true, Program: countProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	value, err := machine.CallStatic("pkg.Shared.count", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueInt || value.Int != 0 {
+		t.Fatalf("pkg.Shared.count = %#v, want 0", value)
+	}
+	local, ok := machine.lookupClass("Shared")
+	if !ok {
+		t.Fatal("local Shared alias missing")
+	}
+	if got := local.StaticFields["items"]; got.Type != "Set<String>" || got.Value.Kind == ValueMap {
+		t.Fatalf("local items = %#v, want local set field", got)
+	}
+	dependency, ok := machine.lookupClass("pkg.Shared")
+	if !ok {
+		t.Fatal("pkg.Shared alias missing")
+	}
+	if got := dependency.StaticFields["items"].Value; got.Kind != ValueMap {
+		t.Fatalf("pkg items = %#v, want map", got)
+	}
+}
+
+func TestNamespacedDependencyUnqualifiedStaticMemberPrefersCurrentNamespace(t *testing.T) {
+	runProgram, err := CompileAnonymous("return Helper.Org;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "Helper",
+		Namespace: "local",
+		StaticFields: map[string]Field{
+			"Org": {Name: "Org", Type: "Helper", Static: true, Access: "public", Value: Object("local.Helper")},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Helper",
+		Namespace:  "pkg",
+		Dependency: true,
+		StaticFields: map[string]Field{
+			"Org": {Name: "Org", Type: "Helper", Static: true, Access: "public", Value: Object("pkg.Helper")},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Runner",
+		Namespace:  "pkg",
+		Dependency: true,
+		Methods: map[string]Method{
+			"run": {Name: "Runner.run", ClassName: "Runner", ReturnType: "Helper", IsStatic: true, Access: "public", Program: runProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "pkg.Runner"
+	if resolved, ok := machine.resolveClassName("Helper"); !ok || resolved != "pkg.Helper" {
+		t.Fatalf("resolve Helper from pkg.Runner = %q, %v; want pkg.Helper", resolved, ok)
+	}
+	machine.currentClass = ""
+
+	value, err := machine.CallStatic("pkg.Runner.run", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueObject || value.Type != "pkg.Helper" {
+		t.Fatalf("pkg.Runner.run = %#v, want pkg.Helper", value)
+	}
+}
+
+func TestNamespacedDependencyUnqualifiedNestedNewPrefersCurrentNamespace(t *testing.T) {
+	runProgram, err := CompileAnonymous("return new Inner();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Outer.Inner", Namespace: "local"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Outer.Inner", Namespace: "pkg", Dependency: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Outer",
+		Namespace:  "pkg",
+		Dependency: true,
+		Methods: map[string]Method{
+			"run": {Name: "Outer.run", ClassName: "Outer", ReturnType: "Object", IsStatic: true, Access: "public", Program: runProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	value, err := machine.CallStatic("pkg.Outer.run", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueObject || value.Type != "pkg.Outer.Inner" {
+		t.Fatalf("pkg.Outer.run = %#v, want pkg.Outer.Inner", value)
+	}
+}
+
+func TestNamespacedNestedTypeDoesNotShadowStandardSObjectConstructor(t *testing.T) {
+	runProgram, err := CompileAnonymous("return new Contact(LastName = 'Pike');")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Model.Contact", Namespace: "pkg"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "Model",
+		Namespace: "pkg",
+		Methods: map[string]Method{
+			"run": {Name: "Model.run", ClassName: "Model", ReturnType: "Object", IsStatic: true, Access: "public", Program: runProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	machine.SetOrg(&org)
+
+	value, err := machine.CallStatic("pkg.Model.run", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueObject || value.Type != "Contact" {
+		t.Fatalf("pkg.Model.run = %#v, want Contact SObject", value)
+	}
+}
+
+func TestNamespacedNestedEnumValueOfUsesQualifiedAlias(t *testing.T) {
+	program, err := CompileAnonymous("return Model.Kind.valueOf('Pine');")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Model.Kind", Namespace: "pkg", EnumValues: []string{"Pine", "Spruce"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "Runner",
+		Namespace: "pkg",
+		Methods: map[string]Method{
+			"run": {Name: "Runner.run", ClassName: "Runner", ReturnType: "Object", IsStatic: true, Access: "public", Program: program},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	value, err := machine.CallStatic("pkg.Runner.run", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueObject || value.Type != "Model.Kind" || value.Text != "Pine" {
+		t.Fatalf("pkg.Runner.run = %#v, want Model.Kind.Pine", value)
+	}
+}
+
+func TestNamespacedDependencyUnqualifiedSuperclassPrefersCurrentNamespace(t *testing.T) {
+	localCtor, err := CompileAnonymous("Origin = 'local';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dependencyCtor, err := CompileAnonymous("Origin = 'pkg';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runProgram, err := CompileAnonymous(`
+Child child = new Child();
+return child.Origin;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "Base",
+		Namespace: "local",
+		Fields: map[string]Field{
+			"Origin": {Name: "Origin", Type: "String", Access: "public"},
+		},
+		Constructors: []Method{{Name: "Base.<init>", ClassName: "Base", Access: "public", Program: localCtor}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Base",
+		Namespace:  "pkg",
+		Dependency: true,
+		Fields: map[string]Field{
+			"Origin": {Name: "Origin", Type: "String", Access: "public"},
+		},
+		Constructors: []Method{{Name: "Base.<init>", ClassName: "Base", Access: "public", Program: dependencyCtor}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Child", Namespace: "pkg", Dependency: true, SuperClass: "Base"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Runner",
+		Namespace:  "pkg",
+		Dependency: true,
+		Methods: map[string]Method{
+			"run": {Name: "Runner.run", ClassName: "Runner", ReturnType: "String", IsStatic: true, Access: "public", Program: runProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	value, err := machine.CallStatic("pkg.Runner.run", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueString || value.Text != "pkg" {
+		t.Fatalf("pkg.Runner.run = %#v, want pkg", value)
+	}
+}
+
+func TestNamespacedDependencyConstructorUsesQualifiedOwnerForPrivateSuperclassCall(t *testing.T) {
+	baseCtor, err := CompileAnonymous("init();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	initProgram, err := CompileAnonymous("ready = true;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runProgram, err := CompileAnonymous("return new Child();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "Base",
+		Namespace: "local",
+		StaticFields: map[string]Field{
+			"ready": {Name: "ready", Type: "Boolean", Static: true, Access: "private"},
+		},
+		Constructors: []Method{{Name: "Base.<init>", ClassName: "Base", IsConstructor: true, Access: "public", Program: baseCtor}},
+		Methods: map[string]Method{
+			"init": {Name: "Base.init", ClassName: "Base", Access: "private", Program: initProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Base",
+		Namespace:  "pkg",
+		Dependency: true,
+		StaticFields: map[string]Field{
+			"ready": {Name: "ready", Type: "Boolean", Static: true, Access: "private"},
+		},
+		Constructors: []Method{{Name: "Base.<init>", ClassName: "Base", IsConstructor: true, Access: "public", Program: baseCtor}},
+		Methods: map[string]Method{
+			"init": {Name: "Base.init", ClassName: "Base", Access: "private", Program: initProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Child", Namespace: "pkg", Dependency: true, SuperClass: "Base"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Runner",
+		Namespace:  "pkg",
+		Dependency: true,
+		Methods: map[string]Method{
+			"run": {Name: "Runner.run", ClassName: "Runner", ReturnType: "Object", IsStatic: true, Access: "public", Program: runProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := machine.CallStatic("pkg.Runner.run", nil); err != nil {
+		t.Fatal(err)
+	}
+	dependency, ok := machine.lookupClass("pkg.Base")
+	if !ok {
+		t.Fatal("pkg.Base alias missing")
+	}
+	if got := dependency.StaticFields["ready"].Value; got.Kind != ValueBool || !got.Bool {
+		t.Fatalf("pkg.Base.ready = %#v, want true", got)
+	}
+}
+
+func TestRegisterNamespacedDuplicateConstructorsKeepQualifiedOwner(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:         "Shared",
+		Namespace:    "local",
+		Constructors: []Method{{Name: "Shared.<init>", ClassName: "Shared"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:         "Shared",
+		Namespace:    "pkg",
+		Dependency:   true,
+		Constructors: []Method{{Name: "Shared.<init>", ClassName: "Shared"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	dependency, ok := machine.lookupClass("pkg.Shared")
+	if !ok {
+		t.Fatal("pkg.Shared alias missing")
+	}
+	if got := dependency.Constructors[0].ClassName; got != "pkg.Shared" {
+		t.Fatalf("dependency constructor ClassName = %q, want pkg.Shared", got)
+	}
+}
+
+func TestNamespacedNestedConstructorParameterUsesCurrentNamespace(t *testing.T) {
+	resolverCtor, err := CompileAnonymous("Seen = modules;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	injectorCtor, err := CompileAnonymous("Resolver = new Binding.Resolver(modules);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runProgram, err := CompileAnonymous(`
+Injector injector = new Injector(new List<Module>{ new Module() });
+return injector.Resolver;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, namespace := range []string{"local", "pkg"} {
+		dependency := namespace == "pkg"
+		if err := machine.RegisterClass(Class{Name: "Module", Namespace: namespace, Dependency: dependency}); err != nil {
+			t.Fatal(err)
+		}
+		if err := machine.RegisterClass(Class{
+			Name:       "Binding.Resolver",
+			Namespace:  namespace,
+			Dependency: dependency,
+			Fields: map[string]Field{
+				"Seen": {Name: "Seen", Type: "List<Module>", Access: "public"},
+			},
+			Constructors: []Method{{
+				Name:      "Binding.Resolver.<init>",
+				ClassName: "Binding.Resolver",
+				Access:    "public",
+				Params:    []Param{{Name: "modules", Type: "List<Module>"}},
+				Program:   resolverCtor,
+			}},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Injector",
+		Namespace:  "pkg",
+		Dependency: true,
+		Fields: map[string]Field{
+			"Resolver": {Name: "Resolver", Type: "Binding.Resolver", Access: "public"},
+		},
+		Constructors: []Method{{
+			Name:      "Injector.<init>",
+			ClassName: "Injector",
+			Access:    "public",
+			Params:    []Param{{Name: "modules", Type: "List<Module>"}},
+			Program:   injectorCtor,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Runner",
+		Namespace:  "pkg",
+		Dependency: true,
+		Methods: map[string]Method{
+			"run": {Name: "Runner.run", ClassName: "Runner", ReturnType: "Object", IsStatic: true, Access: "public", Program: runProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	value, err := machine.CallStatic("pkg.Runner.run", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueObject || value.Type != "pkg.Binding.Resolver" {
+		t.Fatalf("pkg.Runner.run = %#v, want pkg.Binding.Resolver", value)
+	}
+}
+
+func TestExplicitNamespacedStaticInitializerKeepsPackageConstructorOwner(t *testing.T) {
+	resolverCtor, err := CompileAnonymous("Seen = modules;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	injectorCtor, err := CompileAnonymous("Resolver = new Binding.Resolver(modules);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	staticInit, err := CompileAnonymous("Org = new Injector(new List<Module>{ new Module() });")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, namespace := range []string{"local", "pkg"} {
+		dependency := namespace == "pkg"
+		if err := machine.RegisterClass(Class{Name: "Module", Namespace: namespace, Dependency: dependency}); err != nil {
+			t.Fatal(err)
+		}
+		if err := machine.RegisterClass(Class{
+			Name:       "Binding.Resolver",
+			Namespace:  namespace,
+			Dependency: dependency,
+			Fields: map[string]Field{
+				"Seen": {Name: "Seen", Type: "List<Module>", Access: "public"},
+			},
+			Constructors: []Method{{
+				Name:      "Binding.Resolver.<init>",
+				ClassName: "Binding.Resolver",
+				Access:    "public",
+				Params:    []Param{{Name: "modules", Type: "List<Module>"}},
+				Program:   resolverCtor,
+			}},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, namespace := range []string{"local", "pkg"} {
+		dependency := namespace == "pkg"
+		class := Class{
+			Name:       "Injector",
+			Namespace:  namespace,
+			Dependency: dependency,
+			Fields: map[string]Field{
+				"Resolver": {Name: "Resolver", Type: "Binding.Resolver", Access: "public"},
+			},
+			StaticFields: map[string]Field{
+				"Org": {Name: "Org", Type: "Injector", Static: true, Access: "public"},
+			},
+			Constructors: []Method{{
+				Name:      "Injector.<init>",
+				ClassName: "Injector",
+				Access:    "public",
+				Params:    []Param{{Name: "modules", Type: "List<Module>"}},
+				Program:   injectorCtor,
+			}},
+		}
+		if dependency {
+			class.StaticInitializers = []Method{{
+				Name:      "Injector.<static_init>",
+				ClassName: "Injector",
+				IsStatic:  true,
+				Program:   staticInit,
+			}}
+		}
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := machine.ensureClassInitialized("pkg.Injector"); err != nil {
+		t.Fatal(err)
+	}
+	dependency, ok := machine.lookupClass("pkg.Injector")
+	if !ok {
+		t.Fatal("pkg.Injector alias missing")
+	}
+	value := dependency.StaticFields["Org"].Value.Fields["Resolver"]
+	if value.Kind != ValueObject || value.Type != "pkg.Binding.Resolver" {
+		t.Fatalf("pkg.Injector.Org.Resolver = %#v, want pkg.Binding.Resolver", value)
+	}
+}
+
+func TestNamespacedNestedPrivateMemberAllowsShortCurrentClass(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "Outer.Inner",
+		Namespace: "pkg",
+		Methods: map[string]Method{
+			"secret": {Name: "Outer.Inner.secret", ClassName: "Outer.Inner", Access: "private"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "Outer.Inner"
+	machine.currentMethod = Method{Name: "Outer.Inner.secret", ClassName: "Outer.Inner"}
+
+	if err := machine.checkMemberAccess("pkg.Outer.Inner", "private", "pkg.Outer.Inner.secret"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestNamespacedNestedPrivateMemberAllowsShortCurrentClassWithDependencyDuplicate(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Outer.Inner", Namespace: "namz"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Outer.Inner", Namespace: "znu", Dependency: true}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "Outer.Inner"
+	machine.currentMethod = Method{Name: "Outer.Inner.secret", ClassName: "Outer.Inner"}
+
+	if err := machine.checkMemberAccess("namz.Outer.Inner", "private", "namz.Outer.Inner.secret"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestNamespacedNestedAccessCanInferNamespaceFromShortInnerName(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "Outer",
+		Namespace: "pkg",
+		StaticFields: map[string]Field{
+			"flag": {Name: "flag", Type: "Boolean", Static: true, Access: "private"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Outer.Inner", Namespace: "pkg"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "Inner"
+	machine.currentMethod = Method{Name: "Outer.Inner.touch", ClassName: "Inner"}
+
+	if err := machine.checkMemberAccess("pkg.Outer", "private", "pkg.Outer.flag"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestNamespacedConcreteOverrideUsesAccessibleInheritedSurface(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "ProductBase",
+		Namespace: "znu",
+		Access:    "global",
+		Methods: map[string]Method{
+			"getId": {Name: "ProductBase.getId", ClassName: "ProductBase", Access: "global", Modifiers: []string{"abstract"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Product2",
+		Namespace:  "znu",
+		SuperClass: "ProductBase",
+		Access:     "public",
+		Methods: map[string]Method{
+			"getId": {Name: "Product2.getId", ClassName: "Product2", Access: "public"},
+			"name":  {Name: "Product2.name", ClassName: "Product2", Access: "public"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Consumer", Namespace: "namz"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "namz.Consumer"
+	machine.currentMethod = Method{Name: "Consumer.run", ClassName: "namz.Consumer"}
+
+	if err := machine.checkMemberAccess("znu.Product2", "public", "znu.Product2.getId"); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.checkMemberAccess("znu.Product2", "public", "znu.Product2.name"); err == nil {
+		t.Fatal("public member on hidden namespaced class should still be blocked without accessible surface")
+	}
+}
+
+func TestNamespaceAccessiblePublicMemberAllowsCrossNamespaceAccess(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "PackageHelper",
+		Namespace: "znu",
+		Access:    "public",
+		Methods: map[string]Method{
+			"value": {Name: "PackageHelper.value", ClassName: "PackageHelper", Access: "public", Modifiers: []string{"@NamespaceAccessible"}},
+			"local": {Name: "PackageHelper.local", ClassName: "PackageHelper", Access: "public"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Consumer", Namespace: "namz"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "namz.Consumer"
+	machine.currentMethod = Method{Name: "Consumer.run", ClassName: "namz.Consumer"}
+
+	if err := machine.checkMemberAccess("znu.PackageHelper", "public", "znu.PackageHelper.value", []string{"@NamespaceAccessible"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.checkMemberAccess("znu.PackageHelper", "public", "znu.PackageHelper.local"); err == nil {
+		t.Fatal("plain public member on hidden namespaced class should remain blocked")
+	}
+}
+
 func TestDuplicateClassNullOverloadPrefersProjectMethod(t *testing.T) {
 	projectSelect, err := CompileAnonymous("return 'project';")
 	if err != nil {
@@ -1099,7 +1846,7 @@ func TestStaticClassValueWritePreservesLookupCaches(t *testing.T) {
 	if err := machine.RegisterClass(class); err != nil {
 		t.Fatal(err)
 	}
-	machine.namespaceClassLookup["trailns"] = map[string]Class{"sentinel": {Name: "Sentinel"}}
+	machine.namespaceClassLookup["trailns"] = map[string]namespaceClassLookup{"sentinel": {Class: Class{Name: "Sentinel"}, OK: true}}
 
 	class.StaticFields["values"] = Field{Name: "values", Type: "List<String>", Value: List(String("new"))}
 	machine.storeClassValue(class)
@@ -2140,6 +2887,22 @@ func TestFrameworkQualifiedMethodMapKeyNormalizesFflibTypes(t *testing.T) {
 	}
 }
 
+func TestMapKeysEqualMatchesNamespacedEnumAlias(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "ExprTokenType", Namespace: "NU", EnumValues: []string{"Equals"}}); err != nil {
+		t.Fatal(err)
+	}
+	stored := Value{Kind: ValueObject, Type: "NU.ExprTokenType", Text: "Equals"}
+	lookup := Value{Kind: ValueObject, Type: "ExprTokenType", Text: "Equals"}
+	equal, err := machine.mapKeysEqual(stored, lookup)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !equal {
+		t.Fatalf("expected namespaced enum alias keys to compare equal")
+	}
+}
+
 func TestManagedSuperclassConstructorCallIsPassiveWhenSuperclassIsExternal(t *testing.T) {
 	ctorProgram, err := CompileAnonymous("super('related');")
 	if err != nil {
@@ -2455,26 +3218,6 @@ func TestFrameworkSObjectUnitOfWorkSendEmailWorkFastPath(t *testing.T) {
 	}
 	if machine.limits.EmailInvokes != 1 {
 		t.Fatalf("email invocations = %d, want 1", machine.limits.EmailInvokes)
-	}
-}
-
-func TestManagedTriggerHandlerManagerStaticTogglesAreNoops(t *testing.T) {
-	machine := New(nil)
-	for _, method := range []string{"disableTriggerStep", "enableTriggerStep", "reenableTriggerForThisRequest"} {
-		if _, handled, err := machine.callFrameworkStaticMember("znu.TriggerHandlerManager", method, []Value{String("StepName")}); err != nil {
-			t.Fatal(err)
-		} else if !handled {
-			t.Fatalf("%s was not handled", method)
-		}
-	}
-
-	if err := machine.RegisterClass(Class{Name: "TriggerHandlerManager"}); err != nil {
-		t.Fatal(err)
-	}
-	if _, handled, err := machine.callFrameworkStaticMember("TriggerHandlerManager", "disableTriggerForThisRequest", []Value{String("StepName")}); err != nil {
-		t.Fatal(err)
-	} else if handled {
-		t.Fatal("real TriggerHandlerManager class should not be handled by managed fallback")
 	}
 }
 
@@ -3400,6 +4143,72 @@ System.assertEquals('describe', DescribeChooser.pick(Account.SObjectType.getDesc
 	}
 }
 
+func TestOverloadResolutionCollapsesNamespaceAliasForSameSourceMethod(t *testing.T) {
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "fflib_MethodVerifier", Namespace: "verifiable"},
+		{Name: "fflib_QualifiedMethod", Namespace: "verifiable"},
+		{Name: "fflib_MethodArgValues", Namespace: "verifiable"},
+		{Name: "fflib_IMatcher", Namespace: "verifiable", IsInterface: true},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	machine.currentNamespace = "verifiable"
+	candidates := []Method{
+		{
+			Name:      "fflib_MethodVerifier.throwException",
+			ClassName: "fflib_MethodVerifier",
+			Params: []Param{
+				{Name: "qm", Type: "fflib_QualifiedMethod"},
+				{Name: "inOrder", Type: "String"},
+				{Name: "expectedCount", Type: "Integer"},
+				{Name: "qualifier", Type: "String"},
+				{Name: "methodCount", Type: "Integer"},
+				{Name: "customAssertMessage", Type: "String"},
+				{Name: "expectedArguments", Type: "fflib_MethodArgValues"},
+				{Name: "expectedMatchers", Type: "List<fflib_IMatcher>"},
+				{Name: "actualArguments", Type: "List<fflib_MethodArgValues>"},
+			},
+			File: "/tmp/fflib_MethodVerifier.cls",
+			Line: 55,
+		},
+		{
+			Name:      "fflib_MethodVerifier.throwException",
+			ClassName: "verifiable.fflib_MethodVerifier",
+			Params: []Param{
+				{Name: "qm", Type: "fflib_QualifiedMethod"},
+				{Name: "inOrder", Type: "String"},
+				{Name: "expectedCount", Type: "Integer"},
+				{Name: "qualifier", Type: "String"},
+				{Name: "methodCount", Type: "Integer"},
+				{Name: "customAssertMessage", Type: "String"},
+				{Name: "expectedArguments", Type: "fflib_MethodArgValues"},
+				{Name: "expectedMatchers", Type: "List<fflib_IMatcher>"},
+				{Name: "actualArguments", Type: "List<fflib_MethodArgValues>"},
+			},
+			File: "/tmp/fflib_MethodVerifier.cls",
+			Line: 55,
+		},
+	}
+	qm := Object("verifiable.fflib_QualifiedMethod")
+	qm.Static = "verifiable.fflib_QualifiedMethod"
+	expected := Object("verifiable.fflib_MethodArgValues")
+	expected.Static = "verifiable.fflib_MethodArgValues"
+	actual := List(Object("verifiable.fflib_MethodArgValues"))
+	actual.Type = "List<fflib_MethodArgValues>"
+	actual.Static = "List<fflib_MethodArgValues>"
+	args := []Value{qm, String("message"), Int(1), String(""), Int(0), Null, expected, Null, actual}
+	target, ok, ambiguous := machine.matchMethodByArgs(candidates, args)
+	if !ok || ambiguous {
+		t.Fatalf("matchMethodByArgs ok=%v ambiguous=%v; want one aliased method", ok, ambiguous)
+	}
+	if target.Name != "fflib_MethodVerifier.throwException" {
+		t.Fatalf("target = %q, want fflib_MethodVerifier.throwException", target.Name)
+	}
+}
+
 func TestExecExplicitCastSelectsBroadCollectionAndObjectOverload(t *testing.T) {
 	narrowProgram, err := CompileAnonymous("return TrailFactory.make((List<Object>) rows, (Object) token);")
 	if err != nil {
@@ -3470,6 +4279,40 @@ func TestPrivateMemberAccessAllowsNamespaceQualifiedCurrentClass(t *testing.T) {
 	machine.currentMethod = Method{ClassName: "pkg.fflib_SObjectDomain"}
 	if err := machine.checkMemberAccess("fflib_SObjectDomain", "private", "fflib_SObjectDomain.TriggerEventByClass"); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestLookupReceiverFieldUsesNamespacedDeclaringClassForInheritedMethod(t *testing.T) {
+	machine := New(nil)
+	for _, class := range []Class{
+		{
+			Name:      "BaseFactory",
+			Namespace: "pkg",
+			Fields: map[string]Field{
+				"mock": {Name: "mock", Type: "BaseInterface"},
+			},
+		},
+		{
+			Name:       "App.SubFactory",
+			Namespace:  "pkg",
+			SuperClass: "BaseFactory",
+			Fields: map[string]Field{
+				"mock": {Name: "mock", Type: "SubInterface"},
+			},
+		},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	machine.currentClass = "pkg.BaseFactory"
+	machine.currentMethod = Method{ClassName: "pkg.BaseFactory"}
+	field, owner, ok := machine.lookupReceiverField("pkg.App.SubFactory", "mock")
+	if !ok {
+		t.Fatal("lookupReceiverField did not find mock")
+	}
+	if owner != "pkg.BaseFactory" || field.Type != "BaseInterface" {
+		t.Fatalf("lookupReceiverField owner=%q type=%q; want pkg.BaseFactory BaseInterface", owner, field.Type)
 	}
 }
 
@@ -3767,6 +4610,87 @@ System.assertEquals('domain', factory.setMock(mock));
 	}
 }
 
+func TestRuntimeResolvesNamespacedShortInterfaceArgumentForStaticOverload(t *testing.T) {
+	mockProgram, err := CompileAnonymous(`return Test.createStub(classToMock, this);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	setProgram, err := CompileAnonymous(`return 'set';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testProgram, err := CompileAnonymous(`
+fflib_ApexMocks mocks = new fflib_ApexMocks();
+ILogger mockLogger = (ILogger)mocks.mock(ILogger.class);
+System.assertEquals('set', Logger.setMockLogger('dev', mockLogger));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	for _, class := range []Class{
+		{Name: "ILogger", Namespace: "namz", IsInterface: true},
+		{Name: "fflib_ApexMocks", Interfaces: []string{"StubProvider"}, Methods: map[string]Method{
+			"mock": {Name: "fflib_ApexMocks.mock", ClassName: "fflib_ApexMocks", ReturnType: "Object", Params: []Param{{Name: "classToMock", Type: "Type"}}, Program: mockProgram},
+		}},
+		{Name: "Logger", Namespace: "namz", Methods: map[string]Method{
+			"setMockLogger#String#ILogger": {Name: "Logger.setMockLogger", ClassName: "Logger", IsStatic: true, Access: "public", ReturnType: "String", Params: []Param{{Name: "purpose", Type: "String"}, {Name: "mockLogger", Type: "ILogger"}}, Program: setProgram},
+		}},
+		{Name: "LoggerTest", Namespace: "namz", IsTest: true, Methods: map[string]Method{
+			"run": {Name: "LoggerTest.run", ClassName: "LoggerTest", IsStatic: true, Access: "private", Program: testProgram},
+		}},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	method := machine.Methods["namz.LoggerTest.run"]
+	if _, err := machine.callMethod(method, nil, &Result{}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestResolveTypeNameInClassDoesNotInventNestedNameForNamespacedTopLevel(t *testing.T) {
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "Logger", Namespace: "namz"},
+		{Name: "ILogger", Namespace: "namz", IsInterface: true},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := machine.resolveTypeNameInClass("Logger", "ILogger"); got != "namz.ILogger" {
+		t.Fatalf("resolved type = %q; want namz.ILogger", got)
+	}
+	if got := machine.resolveTypeNameInClass("Logger", "Logger.ILogger"); got != "namz.ILogger" {
+		t.Fatalf("resolved dotted type = %q; want namz.ILogger", got)
+	}
+	if !machine.typeAssignableTo("namz.ILogger", "Logger.ILogger") {
+		t.Fatalf("namz.ILogger should be assignable to owner-qualified top-level alias")
+	}
+}
+
+func TestResolveTypeNameInClassKeepsCommonSObjectOutsideLexicalNestedOwner(t *testing.T) {
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "constants", Namespace: "verifiable"},
+		{Name: "SetupDataMapping", Namespace: "verifiable"},
+		{Name: "SetupDataMapping.Organization", Namespace: "verifiable"},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := machine.resolveTypeNameInClass("verifiable.constants", "Organization"); got != "Organization" {
+		t.Fatalf("resolved constants Organization = %q; want Organization", got)
+	}
+	if got := machine.resolveTypeNameInClass("verifiable.SetupDataMapping", "Organization"); got != "verifiable.SetupDataMapping.Organization" {
+		t.Fatalf("resolved nested Organization = %q; want verifiable.SetupDataMapping.Organization", got)
+	}
+}
+
 func TestUnstubbedFrameworkUnitOfWorkFallbackAllowsNamespacedService(t *testing.T) {
 	ctorProgram, err := CompileAnonymous(``)
 	if err != nil {
@@ -4043,6 +4967,12 @@ System.assertEquals('mocked', proxy.Name);
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestStubProxyDoesNotInterceptNamespacedShortPropertyAccessor(t *testing.T) {
+	if !propertyAccessorMethod(Method{Name: "OrderItem.EntityId.get", ClassName: "NU.OrderItem"}) {
+		t.Fatal("namespaced class with short accessor name should be recognized as a property accessor")
 	}
 }
 
@@ -4551,6 +5481,44 @@ System.assertEquals(true, holder.getRows()[0].Touched);
 	}
 }
 
+func TestExecMethodResultListAddMutatesBackingField(t *testing.T) {
+	rowsGetter, err := CompileAnonymous(`
+if (rows == null) {
+	rows = new List<Box>();
+}
+return rows;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Holder holder = new Holder();
+holder.getRows().add(new Box());
+System.assertEquals(1, holder.getRows().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Box"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Holder",
+		Fields: map[string]Field{
+			"rows": {Name: "rows", Type: "List<Box>"},
+		},
+		Methods: map[string]Method{
+			"getRows": {Name: "Holder.getRows", ClassName: "Holder", ReturnType: "List<Box>", Program: rowsGetter},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMethodResultIndexedPropertySetterNotifiesObserver(t *testing.T) {
 	setter, err := CompileAnonymous(`
 backing = value;
@@ -4720,6 +5688,20 @@ func TestRegisterClassMergesDuplicateNamespaceClassMembers(t *testing.T) {
 	}
 	if class.Fields["Shared"].Type != "LocalType" {
 		t.Fatalf("project field should override dependency field, got %#v", class.Fields["Shared"])
+	}
+}
+
+func TestMatchMethodByArgsDeduplicatesNamespaceOwnerAliases(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Harness", Namespace: "pkg"}); err != nil {
+		t.Fatal(err)
+	}
+	first := Method{Name: "Harness.run", ClassName: "Harness", Params: []Param{{Name: "value", Type: "String"}}}
+	second := Method{Name: "pkg.Harness.run", ClassName: "pkg.Harness", Params: []Param{{Name: "value", Type: "String"}}}
+
+	method, ok, ambiguous := machine.matchMethodByArgs([]Method{first, second}, []Value{String("x")})
+	if !ok || ambiguous {
+		t.Fatalf("match ok=%v ambiguous=%v method=%#v", ok, ambiguous, method)
 	}
 }
 
@@ -6346,30 +7328,6 @@ System.assertEquals(true, StaticSettingsHolder.check());
 	}
 }
 
-func TestManagedAPIStaticPropertyChainUsesPassiveExternalObject(t *testing.T) {
-	program, err := CompileAnonymous(`
-znu.ProductsApiV1Retriever retriever = znu.ProductsApi.v1.retriever();
-znu.ProductsApiRetriever baseRetriever = znu.ProductsApi.v1.retriever();
-System.assertNotEquals(null, retriever);
-System.assertNotEquals(null, baseRetriever);
-System.assertNotEquals(null, retriever.with(new znu.QPlugin.Fields(new Set<String>{ 'Name' })));
-System.assertEquals(0, retriever.getById(new Set<Id>{ '001000000000001AAA' }).size());
-znu.BulkPriceClassRequest request = new znu.BulkPriceClassRequest();
-request.Requests.addAll(new List<Object>());
-System.assertEquals(0, request.Requests.size());
-System.assertNotEquals(null, znu.ProductPricingInfo.newInstance());
-System.assertEquals(false, znu.CurrenciesApi.v1.isMultiCurrencyEnabled());
-System.assertNotEquals(null, znu.NimbleAmsSettingsService.Instance.getDefaultEntityId());
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	machine := New(nil)
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestRuntimeUnqualifiedInstanceCallIgnoresSubclassStaticMethod(t *testing.T) {
 	create, err := CompileAnonymous(`
 SObject recordToInsert = build();
@@ -7954,6 +8912,102 @@ String value = pkg.Secret.pub();
 	_, err = machine.Execute(program)
 	if err == nil || !strings.Contains(err.Error(), "not global") {
 		t.Fatalf("err = %v, want namespace visibility error", err)
+	}
+}
+
+func TestRuntimeNamespaceQualifiedInheritanceAssignable(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<znu.Pluggable> plugins = new List<znu.Pluggable>();
+plugins.add(new znu.QPlugin.Condition());
+znu.Pluggable related = (znu.Pluggable)new znu.QPlugin.RelatedFields();
+System.assertEquals(2, plugins.size() + (related == null ? 0 : 1));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "Pluggable", Namespace: "znu", Access: "global", IsAbstract: true},
+		{Name: "QPlugin", Namespace: "znu", Access: "global", IsAbstract: true, SuperClass: "Pluggable"},
+		{Name: "QPlugin.Condition", Namespace: "znu", Access: "global", SuperClass: "QPlugin"},
+		{Name: "QPlugin.RelatedFields", Namespace: "znu", Access: "global", SuperClass: "QPlugin"},
+		{Name: "QPlugin", Namespace: "namz", Access: "global", IsAbstract: true},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeUsesGlobalDeclaredSurfaceForPublicConcreteOverride(t *testing.T) {
+	getProgram, err := CompileAnonymous("return new CurrencyWrapper();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	isoProgram, err := CompileAnonymous("return 'USD';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+znu.CurrencyBase currencyBase = znu.CurrencyService.getOrgDefaultCurrency();
+System.assertEquals('USD', currencyBase.getIsoCode());
+System.assertEquals('USD', znu.CurrencyService.getOrgDefaultCurrency().getIsoCode());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{
+			Name: "CurrencyBase", Namespace: "znu", Access: "global", IsAbstract: true,
+			Methods: map[string]Method{
+				"getIsoCode": {Name: "CurrencyBase.getIsoCode", ClassName: "CurrencyBase", ReturnType: "String", Access: "global", Modifiers: []string{"abstract"}},
+			},
+		},
+		{
+			Name: "CurrencyWrapper", Namespace: "znu", Access: "public", SuperClass: "CurrencyBase",
+			Methods: map[string]Method{
+				"getIsoCode": {Name: "CurrencyWrapper.getIsoCode", ClassName: "CurrencyWrapper", ReturnType: "String", Access: "public", Modifiers: []string{"override"}, Program: isoProgram},
+			},
+		},
+		{
+			Name: "CurrencyService", Namespace: "znu", Access: "global",
+			Methods: map[string]Method{
+				"getOrgDefaultCurrency": {Name: "CurrencyService.getOrgDefaultCurrency", ClassName: "CurrencyService", ReturnType: "CurrencyBase", Access: "global", IsStatic: true, Program: getProgram},
+			},
+		},
+		{Name: "ConsumerTest", Namespace: "namz", Access: "public", IsTest: true},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.ExecuteInClass(program, "ConsumerTest"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeSObjectConstructorWinsOverDependencyClassAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+Product2 product = new Product2(Name = 'Membership');
+System.assertEquals('Product2', product.getSObjectType().getDescribe().getName());
+System.assertEquals('Membership', product.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Product2")
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{Name: "Product2", Namespace: "znu", Access: "public", Dependency: true}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

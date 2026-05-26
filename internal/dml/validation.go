@@ -1144,7 +1144,7 @@ func (e *Engine) validateValidationRules(objectName string, definition storage.O
 		return nil
 	}
 	for _, rule := range activeRules {
-		matches, ok := evaluateValidationFormulaInOrg(rule.ErrorConditionFormula, e.Org, definition, record, prior, isNew)
+		matches, ok := evaluateValidationFormulaInOrgWithNamespace(rule.ErrorConditionFormula, rule.Namespace, e.Org, definition, record, prior, isNew)
 		if !ok || !matches {
 			continue
 		}
@@ -1172,4 +1172,8 @@ func evaluateValidationFormula(formula string, record storage.Record) (bool, boo
 
 func evaluateValidationFormulaInOrg(formula string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, prior *storage.Record, isNew bool) (bool, bool) {
 	return evaluateRecordFormulaInOrgWithContext(formula, org, definition, record, prior, isNew)
+}
+
+func evaluateValidationFormulaInOrgWithNamespace(formula, namespace string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, prior *storage.Record, isNew bool) (bool, bool) {
+	return evaluateRecordFormulaInOrgWithNamespace(formula, namespace, org, definition, record, prior, isNew)
 }

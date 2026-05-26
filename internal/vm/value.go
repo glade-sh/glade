@@ -279,7 +279,7 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 			return strings.EqualFold(v.Type, other.Type) && value.equal(otherValue, seen)
 		}
 		if v.Text != "" || other.Text != "" {
-			return strings.EqualFold(v.Type, other.Type) && v.Text == other.Text
+			return (strings.EqualFold(v.Type, other.Type) || namespaceQualifiedTypeEquivalent(v.Type, other.Type)) && v.Text == other.Text
 		}
 		if sObjectValueType(v.Type) && sObjectValueType(other.Type) {
 			return sObjectValuesEqual(v, other, seen)
@@ -413,7 +413,8 @@ func valueIdentityEqual(left, right Value) bool {
 		if left.Kind == ValueObject && schemaTokenIdentityEqual(left, right) {
 			return true
 		}
-		if left.Kind == ValueObject && left.Text != "" && right.Text != "" && strings.EqualFold(left.Type, right.Type) {
+		if left.Kind == ValueObject && left.Text != "" && right.Text != "" &&
+			(strings.EqualFold(left.Type, right.Type) || namespaceQualifiedTypeEquivalent(left.Type, right.Type)) {
 			return strings.EqualFold(left.Text, right.Text)
 		}
 		return left.Ref != 0 && left.Ref == right.Ref

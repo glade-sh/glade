@@ -73,6 +73,12 @@ func (e *Engine) updateOne(record storage.Record) error {
 			finalRecord.ExplicitNulls[field] = true
 		}
 	}
+	if record.ParentRelationships != nil {
+		finalRecord.ParentRelationships = make(map[string]storage.Record, len(record.ParentRelationships))
+		for name, parent := range record.ParentRelationships {
+			finalRecord.ParentRelationships[name] = parent.Clone()
+		}
+	}
 	if err := validateRequiredUpdate(object.Definition, record); err != nil {
 		return err
 	}

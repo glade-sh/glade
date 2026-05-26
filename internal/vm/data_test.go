@@ -848,6 +848,23 @@ func TestUnqueriedFieldCheckResolvesNamespacedSelectedField(t *testing.T) {
 	}
 }
 
+func TestExplicitAliasObjectFieldValueResolvesNamespacedSelectedField(t *testing.T) {
+	row := Object("OrderItem__c")
+	row.Fields["nu__TotalShipping__c"] = Decimal(12.34)
+	markExplicitSObjectField(&row, "nu__TotalShipping__c")
+
+	field, value, ok := explicitAliasObjectFieldValue(row, "TotalShipping__c")
+	if !ok {
+		t.Fatalf("expected namespaced selected field alias to resolve")
+	}
+	if field != "nu__TotalShipping__c" {
+		t.Fatalf("resolved field = %q, want nu__TotalShipping__c", field)
+	}
+	if value.Kind != ValueDecimal || value.Decimal != 12.34 {
+		t.Fatalf("resolved value = %#v", value)
+	}
+}
+
 func TestExecRelationshipProjectionHydratesLookupField(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<SObject> rows = Database.query('SELECT Parent__r.Id FROM Child__c');
@@ -2955,6 +2972,29 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE PaymentAmount__c = -10.00].
 	}
 }
 
+func TestExecExplicitNullBooleanSObjectFieldDefaultsFalse(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account();
+account.put('Active__c', null);
+System.assertEquals(false, account.Active__c);
+if (account.Active__c) {
+  System.assert(false, 'default false checkbox should not enter if branch');
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Active__c"] = storage.Field{APIName: "Active__c", Type: storage.FieldBoolean, DisplayType: "BOOLEAN", DefaultValue: "false"}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestSynchronizeFabricatedSObjectRelationshipsClearsStaleChildren(t *testing.T) {
 	staleChild := Object("sfab_FabricatedSObject")
 	staleNode := Object("sfab_ChildRelationshipNode")
@@ -5022,6 +5062,44 @@ System.assertEquals('Scheduled Batch', byName.get('Scheduled').getName());
 	}
 }
 
+func TestExecSObjectTypeResolvesUnqualifiedCustomObjectInExecutingNamespace(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.RecordTypeInfo> byName = Schema.SObjectType.Product__c.getRecordTypeInfosByName();
+System.assert(byName.containsKey('Membership'), 'expected dependency namespace record type');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "namz"
+	org.Objects["namz__Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "namz__Product__c", Fields: map[string]storage.Field{}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	org.Objects["znu__Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "znu__Product__c",
+			Fields:  map[string]storage.Field{},
+			RecordTypes: []storage.RecordTypeInfo{{
+				DeveloperName: "Membership",
+				Name:          "Membership",
+				Active:        true,
+				Available:     true,
+			}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	storage.EnsureDeterministicPlatformData(&org)
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{Name: "Harness", Namespace: "znu"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "Harness"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRecordTypeInfoActiveRecordTypeDefaultsAvailable(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object info = Batch__c.SObjectType.getDescribe().getRecordTypeInfosByName().get('Scheduled Batch');
@@ -5509,6 +5587,11 @@ func TestRelationshipTargetsObjectMatchesNamespacedObjectName(t *testing.T) {
 	if !relationshipTargetsObject(relationship, "verifiable__Education__c") {
 		t.Fatal("expected local parent target to match namespaced object API name")
 	}
+
+	relationship = storage.Relationship{ParentObjects: []string{"verifiable__Account"}}
+	if !relationshipTargetsObject(relationship, "Account") {
+		t.Fatal("expected namespaced standard parent target to match standard object API name")
+	}
 }
 
 func TestDescribeChildRelationshipNameUsesNamespacedCustomRelationshipAPIName(t *testing.T) {
@@ -5954,6 +6037,28 @@ System.assertEquals('Austin', queriedAddress.getCity());
 	}
 }
 
+func TestExecAddressFluentSettersPopulateComponents(t *testing.T) {
+	program, err := CompileAnonymous(`
+Address address = Address.newInstance()
+    .withStreet('12 Lake Road')
+    .withCity('Port Alsworth')
+    .withState('Alaska')
+    .withPostalCode('99653')
+    .withCountry('United States');
+System.assertEquals('12 Lake Road', address.getStreet());
+System.assertEquals('Port Alsworth', address.getCity());
+System.assertEquals('Alaska', address.getState());
+System.assertEquals('99653', address.getPostalCode());
+System.assertEquals('United States', address.getCountry());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLCompoundAddressSupportsDirectFieldAccess(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(
@@ -6021,6 +6126,64 @@ func TestCoerceCastAcceptsSystemQualifiedPlatformObject(t *testing.T) {
 	}
 	if coerced.Type != "Address" || coerced.Fields["street"].Text != "1234 Main" {
 		t.Fatalf("coerced = %#v", coerced)
+	}
+}
+
+func TestValueWithTypesResolvedInClassPreservesSystemQualifiedPlatformObject(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "MergeAccountsController.Address"}); err != nil {
+		t.Fatal(err)
+	}
+	address := Object("Address")
+	address.Static = "System.Address"
+	address.Fields["street"] = String("1234 Main")
+	resolved := machine.valueWithTypesResolvedInClass("MergeAccountsController.Address", address)
+	if resolved.Type != "Address" || resolved.Static != "System.Address" {
+		t.Fatalf("resolved = %#v", resolved)
+	}
+	coerced, err := machine.coerceAssignable("System.Address", resolved)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if coerced.Type != "Address" || coerced.Fields["street"].Text != "1234 Main" {
+		t.Fatalf("coerced = %#v", coerced)
+	}
+}
+
+func TestValueWithTypesResolvedInClassPreservesSchemaQualifiedPlatformObject(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "MergeAccountsController.FieldSetMember"}); err != nil {
+		t.Fatal(err)
+	}
+	member := Object("Schema.FieldSetMember")
+	member.Static = "Schema.FieldSetMember"
+	member.Fields["fieldPath"] = String("Name")
+	resolved := machine.valueWithTypesResolvedInClass("MergeAccountsController", member)
+	if resolved.Type != "Schema.FieldSetMember" || resolved.Static != "Schema.FieldSetMember" {
+		t.Fatalf("resolved = %#v", resolved)
+	}
+	coerced, err := machine.coerceAssignable("Schema.FieldSetMember", resolved)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if coerced.Type != "Schema.FieldSetMember" || coerced.Fields["fieldPath"].Text != "Name" {
+		t.Fatalf("coerced = %#v", coerced)
+	}
+}
+
+func TestResolveTypeNameInClassPrefersSchemaFieldSetMemberOutsideLexicalNestedOwner(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "MergeAccountsController.FieldSetMember"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "FieldSetService"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := machine.resolveTypeNameInClass("FieldSetService", "FieldSetMember"); got != "Schema.FieldSetMember" {
+		t.Fatalf("FieldSetService FieldSetMember resolved to %q", got)
+	}
+	if got := machine.resolveTypeNameInClass("MergeAccountsController", "FieldSetMember"); got != "MergeAccountsController.FieldSetMember" {
+		t.Fatalf("MergeAccountsController FieldSetMember resolved to %q", got)
 	}
 }
 
@@ -6776,6 +6939,75 @@ System.assertEquals(null, stored.RenewalDate__c);
 	if err := machine.RegisterTrigger(Trigger{Name: "WidgetBeforeInsert", Object: "Widget__c", Timing: triggerTimingBefore, Operation: "insert", Program: triggerProgram}); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTriggerUsesTriggerNamespaceForPublicHandlerConstruction(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+new ProductTriggerHandlers();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runProgram, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme');
+insert account;
+return 'ok';
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`return namz.Runner.run();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{Name: "ProductTriggerHandlers", Namespace: "znu", Access: "public"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "Runner",
+		Namespace: "namz",
+		Access:    "global",
+		Methods: map[string]Method{
+			"run": {Name: "Runner.run", ClassName: "Runner", ReturnType: "String", Access: "global", IsStatic: true, Program: runProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{Name: "ProductTrigger", Namespace: "znu", Object: "Account", Timing: triggerTimingBefore, Operation: "insert", Program: triggerProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedSObjectFieldMapIncludesBareFieldAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+String fieldName = Schema.SObjectType.znu__Membership__c.Fields.Account2__c.Name;
+System.assertEquals('znu__Account2__c', fieldName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Namespace = "namz"
+	org.Objects["znu__Membership__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "znu__Membership__c",
+			Fields: map[string]storage.Field{
+				"znu__Account2__c": {APIName: "znu__Account2__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -10363,6 +10595,44 @@ System.assertEquals('v1', record.get(externalIdField));
 		Name: "LocalAccountSelector",
 		Methods: map[string]Method{
 			"selectSObjectsById": {Name: "LocalAccountSelector.selectSObjectsById", ClassName: "LocalAccountSelector", ReturnType: "List<SObject>", Params: []Param{{Name: "idSet", Type: "Set<Id>"}}, IsStatic: true, Access: "public", Program: selectByID},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSOQLUsesCurrentNamespaceObjectForDependencyClass(t *testing.T) {
+	countProducts, err := CompileAnonymous(`return [SELECT Id FROM Product__c].size();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`System.assertEquals(1, znu.InventoryManager.countProducts());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Namespace = "namz"
+	org.Objects["Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Product__c", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	org.Objects["znu__Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "znu__Product__c", Fields: map[string]storage.Field{"znu__TrackInventory__c": {APIName: "znu__TrackInventory__c", Type: storage.FieldBoolean}}},
+		Records: map[storage.ID]storage.Record{
+			"a0P000000000001": {ID: "a0P000000000001", Object: "znu__Product__c", Fields: map[string]storage.Value{"znu__TrackInventory__c": storage.BooleanValue(true)}},
+		},
+	}
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name:      "InventoryManager",
+		Namespace: "znu",
+		Access:    "global",
+		Methods: map[string]Method{
+			"countProducts": {Name: "InventoryManager.countProducts", ClassName: "InventoryManager", ReturnType: "Integer", IsStatic: true, Access: "global", Program: countProducts},
 		},
 	}); err != nil {
 		t.Fatal(err)

@@ -330,6 +330,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 		for _, rule := range object.ValidationRules {
 			describe.ValidationRules = append(describe.ValidationRules, storage.ValidationRule{
 				Name:                  rule.Name,
+				Namespace:             rule.Namespace,
 				Active:                rule.Active,
 				ErrorConditionFormula: rule.ErrorConditionFormula,
 				ErrorMessage:          rule.ErrorMessage,

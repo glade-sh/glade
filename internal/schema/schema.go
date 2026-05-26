@@ -83,6 +83,7 @@ type RecordType struct {
 
 type ValidationRule struct {
 	Name                  string `json:"name"`
+	Namespace             string `json:"namespace,omitempty"`
 	Active                bool   `json:"active,omitempty"`
 	ErrorConditionFormula string `json:"errorConditionFormula,omitempty"`
 	ErrorMessage          string `json:"errorMessage,omitempty"`
@@ -224,7 +225,7 @@ func LoadProject(p project.Project) (Schema, error) {
 	}
 
 	for _, path := range p.ObjectFiles {
-		object, err := loadObject(path)
+		object, err := loadObject(path, p.Namespace)
 		if err != nil {
 			return Schema{}, err
 		}
@@ -240,7 +241,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		if err != nil {
 			return Schema{}, err
 		}
-		field = namespaceObjectField(objectName, field)
+		field = namespaceObjectField(p.Namespace, objectName, field)
 		applyValueSet(&field, valueSets)
 		object := byName[objectName]
 		if object == nil {
@@ -272,7 +273,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		if objectName == "" {
 			continue
 		}
-		rule, err := loadValidationRule(path)
+		rule, err := loadValidationRule(path, validationRuleSourceNamespace(p.Namespace, objectName))
 		if err != nil {
 			return Schema{}, err
 		}
@@ -356,7 +357,7 @@ func isCustomEntityName(name string) bool {
 	return false
 }
 
-func loadValidationRule(path string) (ValidationRule, error) {
+func loadValidationRule(path, namespace string) (ValidationRule, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return ValidationRule{}, err
@@ -371,6 +372,7 @@ func loadValidationRule(path string) (ValidationRule, error) {
 	}
 	return ValidationRule{
 		Name:                  name,
+		Namespace:             namespace,
 		Active:                raw.Active,
 		ErrorConditionFormula: strings.TrimSpace(raw.ErrorConditionFormula),
 		ErrorMessage:          raw.ErrorMessage,
@@ -378,13 +380,14 @@ func loadValidationRule(path string) (ValidationRule, error) {
 	}, nil
 }
 
-func validationRuleFromXML(raw validationRuleXML, fallback string) ValidationRule {
+func validationRuleFromXML(raw validationRuleXML, fallback, namespace string) ValidationRule {
 	name := strings.TrimSpace(raw.FullName)
 	if name == "" {
 		name = fallback
 	}
 	return ValidationRule{
 		Name:                  name,
+		Namespace:             namespace,
 		Active:                raw.Active,
 		ErrorConditionFormula: strings.TrimSpace(raw.ErrorConditionFormula),
 		ErrorMessage:          raw.ErrorMessage,
@@ -471,7 +474,7 @@ func recordTypePicklistDefaults(values []recordTypePicklistXML) map[string]strin
 	return defaults
 }
 
-func loadObject(path string) (Object, error) {
+func loadObject(path, projectNamespace string) (Object, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Object{}, err
@@ -495,7 +498,7 @@ func loadObject(path string) (Object, error) {
 	for _, rawField := range raw.Fields {
 		field := fieldFromXML(rawField, "")
 		if field.Name != "" {
-			field = namespaceObjectField(object.Name, field)
+			field = namespaceObjectField(projectNamespace, object.Name, field)
 			object.Fields = append(object.Fields, field)
 		}
 	}
@@ -506,7 +509,7 @@ func loadObject(path string) (Object, error) {
 		}
 	}
 	for _, rawRule := range raw.ValidationRules {
-		rule := validationRuleFromXML(rawRule, "")
+		rule := validationRuleFromXML(rawRule, "", validationRuleSourceNamespace(projectNamespace, object.Name))
 		if rule.Name != "" {
 			object.ValidationRules = append(object.ValidationRules, rule)
 		}
@@ -565,8 +568,11 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 	}
 }
 
-func namespaceObjectField(objectName string, field Field) Field {
+func namespaceObjectField(projectNamespace, objectName string, field Field) Field {
 	namespace := namespaceFromAPIName(objectName)
+	if projectNamespace != "" && namespace != "" && !strings.EqualFold(namespace, projectNamespace) {
+		namespace = projectNamespace
+	}
 	if namespace == "" {
 		return field
 	}
@@ -583,6 +589,13 @@ func namespaceObjectField(objectName string, field Field) Field {
 		field.SummaryFilterItems[i] = filter
 	}
 	return field
+}
+
+func validationRuleSourceNamespace(projectNamespace, objectName string) string {
+	if projectNamespace != "" {
+		return projectNamespace
+	}
+	return namespaceFromAPIName(objectName)
 }
 
 func namespaceFromAPIName(name string) string {

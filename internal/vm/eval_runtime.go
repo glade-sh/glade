@@ -339,6 +339,9 @@ func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 			return strings.EqualFold(text, right.Text), nil
 		}
 	}
+	if equal, handled := vm.resolvedEnumValuesEqual(left, right); handled {
+		return equal, nil
+	}
 	if left.Kind == ValueString && right.Kind == ValueString {
 		if looksLikeID(left.Text) && looksLikeID(right.Text) {
 			return apexIDTextEqual(left.Text, right.Text), nil

@@ -277,6 +277,7 @@ type RecordTypeInfo struct {
 
 type ValidationRule struct {
 	Name                  string `json:"name"`
+	Namespace             string `json:"namespace,omitempty"`
 	Active                bool   `json:"active,omitempty"`
 	ErrorConditionFormula string `json:"errorConditionFormula,omitempty"`
 	ErrorMessage          string `json:"errorMessage,omitempty"`
@@ -399,12 +400,13 @@ type Relationship struct {
 }
 
 type Record struct {
-	ID            ID                  `json:"id"`
-	Object        string              `json:"object"`
-	Fields        map[string]Value    `json:"fields,omitempty"`
-	Children      map[string][]Record `json:"children,omitempty"`
-	ExplicitNulls map[string]bool     `json:"explicitNulls,omitempty"`
-	System        SystemFields        `json:"system,omitempty"`
+	ID                  ID                  `json:"id"`
+	Object              string              `json:"object"`
+	Fields              map[string]Value    `json:"fields,omitempty"`
+	Children            map[string][]Record `json:"children,omitempty"`
+	ParentRelationships map[string]Record   `json:"-"`
+	ExplicitNulls       map[string]bool     `json:"explicitNulls,omitempty"`
+	System              SystemFields        `json:"system,omitempty"`
 }
 
 func (r Record) GetField(name string) (Value, bool) {
@@ -1089,6 +1091,12 @@ func (r Record) Clone() Record {
 			for i, record := range records {
 				out.Children[name][i] = record.Clone()
 			}
+		}
+	}
+	if r.ParentRelationships != nil {
+		out.ParentRelationships = make(map[string]Record, len(r.ParentRelationships))
+		for name, record := range r.ParentRelationships {
+			out.ParentRelationships[name] = record.Clone()
 		}
 	}
 	return out

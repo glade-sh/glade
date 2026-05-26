@@ -132,6 +132,9 @@ func buildStubBehaviorMemberEntry(symbol typesys.TypeSymbol, typeName string, me
 		Status:     StubBehaviorUnknown,
 		Notes:      "no runtime behavior evidence recorded yet",
 	}
+	if member.Kind == apexast.DeclarationProperty && symbolHasZeroArgMethod(symbol, member.Name) {
+		entry.ID = typeName + "." + member.Name
+	}
 	if member.Kind == apexast.DeclarationConstructor || member.Kind == apexast.DeclarationProperty {
 		entry.Status = StubBehaviorPassiveDefault
 		entry.Notes = "shape is available; behavior is passive/default unless runtime code special-cases it"
@@ -2974,6 +2977,15 @@ func stubBehaviorMemberID(typeName string, member typesys.MemberSymbol) string {
 		return typeName + ".<init>(" + strings.Join(stubBehaviorParameterTypes(member.Parameters), ",") + ")"
 	}
 	return typeName + "." + member.Name + "(" + strings.Join(stubBehaviorParameterTypes(member.Parameters), ",") + ")"
+}
+
+func symbolHasZeroArgMethod(symbol typesys.TypeSymbol, name string) bool {
+	for _, member := range symbol.Members {
+		if member.Kind == apexast.DeclarationMethod && strings.EqualFold(member.Name, name) && len(member.Parameters) == 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func stubBehaviorMemberStatic(member typesys.MemberSymbol) bool {

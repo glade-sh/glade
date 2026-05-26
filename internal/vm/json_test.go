@@ -1197,6 +1197,48 @@ System.assert(strictCaught);
 	}
 }
 
+func TestExecJSONDeserializeTypedApexClassMatchesLowerCamelFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+JsonVerification decoded = (JsonVerification)JSON.deserialize('{"id":"V-7","lastUpdated":"2026-05-25T10:11:12Z","providerInfo":{"providerId":"P-1"}}', JsonVerification.class);
+System.assertEquals('V-7', decoded.Id);
+System.assertEquals(Datetime.valueOfGmt('2026-05-25 10:11:12'), decoded.LastUpdated);
+System.assertEquals('P-1', decoded.ProviderInfo.ProviderId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "JsonBaseRecord",
+		Fields: map[string]Field{
+			"Id": {Name: "Id", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "JsonProviderInfo",
+		Fields: map[string]Field{
+			"ProviderId": {Name: "ProviderId", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "JsonVerification",
+		SuperClass: "JsonBaseRecord",
+		Fields: map[string]Field{
+			"LastUpdated":  {Name: "LastUpdated", Type: "Datetime"},
+			"ProviderInfo": {Name: "ProviderInfo", Type: "JsonProviderInfo"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestTypedValueFromJSONResolvesNestedFieldTypes(t *testing.T) {
 	machine := New(nil)
 	if err := machine.RegisterClass(Class{
@@ -1437,6 +1479,43 @@ System.assert(!decoded.getPopulatedFieldsAsMap().containsKey('Recurring__c'));
 	}
 }
 
+func TestExecJSONSerializeMapPreservesExplicitNullForSObjectFieldWithMetadataDefault(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Object> fields = new Map<String, Object>{
+  'Id' => 'a00000000000001AAA',
+  'TotalTax__c' => null,
+  'TaxableItemLineCount__c' => 1
+};
+String payload = JSON.serialize(fields);
+System.assert(payload.contains('"TotalTax__c":null'), payload);
+CartItem__c decoded = (CartItem__c)JSON.deserialize(payload, CartItem__c.class);
+System.assertEquals(null, decoded.TotalTax__c);
+System.assert(decoded.isSet('TotalTax__c'));
+System.assert(decoded.getPopulatedFieldsAsMap().containsKey('TotalTax__c'));
+System.assertEquals(1, decoded.TaxableItemLineCount__c);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "CartItem__c",
+			Fields: map[string]storage.Field{
+				"Id":                      {APIName: "Id", Type: storage.FieldID},
+				"TotalTax__c":             {APIName: "TotalTax__c", Type: storage.FieldDecimal, DefaultValue: "0"},
+				"TaxableItemLineCount__c": {APIName: "TaxableItemLineCount__c", Type: storage.FieldDecimal},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeSObjectReferenceFieldPrefersIdConstructor(t *testing.T) {
 	idCtor, err := CompileAnonymous(`
 this.Failed = false;
@@ -1527,6 +1606,25 @@ System.assertEquals('Acme', decoded.Name);
 	account := org.Objects["Account"]
 	account.Definition.Fields["ParentId"] = storage.Field{APIName: "ParentId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}}
 	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeSObjectBlobFieldUsesSchemaType(t *testing.T) {
+	program, err := CompileAnonymous(`
+Attachment decoded = (Attachment)JSON.deserialize('{"Body":"YWJj"}', Attachment.class);
+System.assertEquals(Blob.valueOf('abc'), decoded.Body);
+Attachment plain = (Attachment)JSON.deserialize('{"Body":"abc"}', Attachment.class);
+System.assertEquals(Blob.valueOf('abc'), plain.Body);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)

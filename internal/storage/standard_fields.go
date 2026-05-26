@@ -1016,11 +1016,16 @@ func enrichStandardField(existing *Field, field Field) {
 	if len(existing.ReferenceTo) == 0 && len(field.ReferenceTo) != 0 {
 		existing.ReferenceTo = append([]string(nil), field.ReferenceTo...)
 	} else if len(field.ReferenceTo) != 0 {
-		existing.ReferenceTo = appendUniqueStringsFold(existing.ReferenceTo, field.ReferenceTo...)
+		existing.ReferenceTo = mergeStandardReferenceTargets(existing.ReferenceTo, field.ReferenceTo)
 	}
 	if len(existing.PicklistValues) == 0 && len(field.PicklistValues) != 0 {
 		existing.PicklistValues = append([]PicklistValue(nil), field.PicklistValues...)
 	}
+}
+
+func mergeStandardReferenceTargets(existing, standard []string) []string {
+	merged := append([]string(nil), standard...)
+	return appendUniqueStringsFold(merged, existing...)
 }
 
 func mergeStandardRelationships(definition *ObjectDefinition, relationships []Relationship) {
@@ -1031,7 +1036,7 @@ func mergeStandardRelationships(definition *ObjectDefinition, relationships []Re
 		found := false
 		for i, existing := range definition.Relations {
 			if sameStandardRelationship(existing, relationship) {
-				definition.Relations[i].ParentObjects = appendUniqueStringsFold(definition.Relations[i].ParentObjects, relationship.ParentObjects...)
+				definition.Relations[i].ParentObjects = mergeStandardReferenceTargets(definition.Relations[i].ParentObjects, relationship.ParentObjects)
 				if definition.Relations[i].ParentRelationship == "" && relationship.ParentRelationship != "" {
 					definition.Relations[i].ParentRelationship = relationship.ParentRelationship
 				}
@@ -1216,7 +1221,7 @@ func ensureStandardRelationship(definition *ObjectDefinition, field Field) {
 				continue
 			}
 			definition.Relations[i].ParentRelationship = relationshipName
-			definition.Relations[i].ParentObjects = appendUniqueStringsFold(definition.Relations[i].ParentObjects, field.ReferenceTo...)
+			definition.Relations[i].ParentObjects = mergeStandardReferenceTargets(definition.Relations[i].ParentObjects, field.ReferenceTo)
 			if definition.Relations[i].ChildRelationship == "" && childRelationshipName != "" {
 				definition.Relations[i].ChildRelationship = childRelationshipName
 			}

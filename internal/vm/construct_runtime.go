@@ -14,22 +14,43 @@ import (
 )
 
 func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs map[string]Value, result *Result, literalArgs bool) (Value, error) {
-	if resolved := vm.resolveTypeNameInClass(vm.currentClass, typeName); resolved != "" && !strings.EqualFold(resolved, typeName) {
-		typeName = resolved
-	} else if resolved, ok := vm.resolveClassName(typeName); ok {
-		if !strings.Contains(typeName, ".") && !strings.Contains(resolved, ".") {
-			if nested, nestedOK := vm.resolveUniqueNestedTypeName(typeName); nestedOK {
-				typeName = nested
+	if isCanonicalRuntimeTypeName(typeName) {
+		typeName = canonicalRuntimeTypeName(typeName)
+	}
+	if !strings.Contains(typeName, ".") && isCommonSObjectTypeName(typeName) && len(namedArgs) == 0 {
+		if resolved := vm.resolveNestedTypeNameInCurrentExecutionContext(typeName); resolved != "" && vm.classConstructorCanAccept(resolved, args, namedArgs) {
+			typeName = resolved
+		} else if resolved, ok := vm.resolveCurrentNamespaceTopLevelClassName(typeName); ok && vm.classConstructorCanAccept(resolved, args, namedArgs) {
+			typeName = resolved
+		}
+	}
+	if collectionBase(typeName) == "" && !isMapType(typeName) && !isCanonicalRuntimeTypeName(typeName) && !vm.isSObjectType(typeName) && !isCommonSObjectTypeName(typeName) {
+		if resolved := vm.resolveTypeNameInCurrentExecutionContext(typeName); resolved != "" && !strings.EqualFold(resolved, typeName) {
+			typeName = resolved
+		} else if resolved, ok := vm.resolveTopLevelClassName(typeName); ok {
+			typeName = resolved
+		} else if resolved, ok := vm.resolveClassName(typeName); ok {
+			if !strings.Contains(typeName, ".") && !strings.Contains(resolved, ".") {
+				if nested, nestedOK := vm.resolveUniqueNestedTypeName(typeName); nestedOK {
+					typeName = nested
+				} else {
+					typeName = resolved
+				}
 			} else {
 				typeName = resolved
 			}
-		} else {
+		} else if resolved, ok := vm.resolveUniqueNestedTypeName(typeName); ok {
 			typeName = resolved
+		} else {
+			typeName = canonicalRuntimeTypeName(typeName)
 		}
-	} else if resolved, ok := vm.resolveUniqueNestedTypeName(typeName); ok {
-		typeName = resolved
-	} else {
-		typeName = canonicalRuntimeTypeName(typeName)
+	}
+	if collectionBase(typeName) == "" && !isMapType(typeName) && !strings.Contains(typeName, ".") && !isCommonSObjectTypeName(typeName) && !isCanonicalRuntimeTypeName(typeName) {
+		if _, ok := vm.lookupClass(typeName); !ok {
+			if nested, nestedOK := vm.resolveOnlyNestedTypeName(typeName); nestedOK {
+				typeName = nested
+			}
+		}
 	}
 	switch {
 	case collectionBase(typeName) == "List":
@@ -160,16 +181,13 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		return row, nil
 	}
-	if class, ok := vm.Classes[typeName]; ok {
+	if class, ok := vm.lookupClass(typeName); ok && !vm.isSObjectType(typeName) && !platformVersionTypeName(typeName) {
+		typeName = runtimeClassName(class)
 		if class.IsInterface {
 			return Null, fmt.Errorf("cannot instantiate interface %s", typeName)
 		}
-		// Standard/custom SObject constructor forms (for example `new Product2(Name='x')`)
-		// should not be blocked by unrelated package class aliases that share the same name.
-		if !vm.isSObjectType(typeName) {
-			if err := vm.checkClassAccess(class.Name, typeName); err != nil {
-				return Null, err
-			}
+		if err := vm.checkClassAccess(typeName, typeName); err != nil {
+			return Null, err
 		}
 		if class.IsAbstract {
 			return Null, fmt.Errorf("cannot instantiate abstract class %s", typeName)
@@ -180,11 +198,11 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if value, handled, err := vm.constructFrameworkFastDTO(typeName, args, namedArgs); handled || err != nil {
 			return value, err
 		}
-		if err := vm.ensureClassInitialized(class.Name); err != nil {
+		if err := vm.ensureClassInitialized(typeName); err != nil {
 			return Null, err
 		}
 		class, _ = vm.lookupClass(typeName)
-		passiveDTO := passiveRuntimeClass(class) && vm.isPassivePlatformDTOType(typeName)
+		passiveDTO := generatedPlatformTypeName(typeName) && passiveRuntimeClass(class) && vm.isPassivePlatformDTOType(typeName)
 		frameworkUOWRuntime := vm.isSObjectUnitOfWorkRuntimeType(typeName)
 		object := Object(typeName)
 		if !passiveDTO {
@@ -507,16 +525,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		return newAuthVerificationResult(args[0], args[1], args[2]), nil
 	case "Auth.AuthConfiguration":
-		if len(args) != 2 || len(namedArgs) != 0 {
-			return Null, fmt.Errorf("Auth.AuthConfiguration constructor expects community URL and start URL")
-		}
-		config := Object("Auth.AuthConfiguration")
-		config.Fields["communityUrl"] = args[0]
-		config.Fields["startUrl"] = args[1]
-		authConfig := Object("Auth.AuthConfig")
-		authConfig.Fields["Url"] = args[0]
-		config.Fields["authConfig"] = authConfig
-		return config, nil
+		return constructAuthConfigurationValue(args, namedArgs)
 	case "Auth.JWT":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Auth.JWT constructor expects 0 arguments")
@@ -526,7 +535,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			jwt.Fields[field] = value
 		}
 		return jwt, nil
-	case "Version":
+	case "Version", "Package.Version":
 		if len(args) != 2 && len(args) != 3 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("Version constructor expects major, minor[, patch]")
 		}
@@ -936,6 +945,103 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	return object, nil
 }
 
+func platformVersionTypeName(typeName string) bool {
+	return strings.EqualFold(typeName, "Version") || strings.EqualFold(typeName, "Package.Version")
+}
+
+func (vm *VM) classConstructorCanAccept(typeName string, args []Value, namedArgs map[string]Value) bool {
+	if len(namedArgs) != 0 {
+		return false
+	}
+	class, ok := vm.lookupClass(typeName)
+	if !ok {
+		return false
+	}
+	if len(namedArgs) != 0 {
+		_, _, ok, ambiguous := vm.matchConstructorWithNamedArgs(class, args, namedArgs)
+		return ok && !ambiguous
+	}
+	_, ok, ambiguous := vm.matchConstructor(class, args)
+	return ok && !ambiguous
+}
+
+func (vm *VM) resolveCurrentNamespaceTopLevelClassName(typeName string) (string, bool) {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" || strings.Contains(typeName, ".") {
+		return "", false
+	}
+	for _, owner := range vm.currentTypeResolutionOwners() {
+		if class, ok := vm.lookupClass(owner); ok {
+			namespace := strings.TrimSpace(class.Namespace)
+			if namespace != "" {
+				if candidate, found := vm.lookupClassInNamespace(namespace, typeName); found && !strings.Contains(candidate.Name, ".") {
+					return runtimeClassName(candidate), true
+				}
+				continue
+			}
+			if candidate, found := vm.lookupClass(typeName); found && strings.TrimSpace(candidate.Namespace) == "" && !strings.Contains(candidate.Name, ".") {
+				return candidate.Name, true
+			}
+		}
+	}
+	return "", false
+}
+
+func (vm *VM) resolveTypeNameInCurrentExecutionContext(typeName string) string {
+	for _, owner := range vm.currentTypeResolutionOwners() {
+		if resolved := vm.resolveTypeNameInClass(owner, typeName); resolved != "" && !strings.EqualFold(resolved, typeName) {
+			return resolved
+		}
+	}
+	return vm.resolveTypeNameInClass(vm.currentClass, typeName)
+}
+
+func (vm *VM) resolveNestedTypeNameInCurrentExecutionContext(typeName string) string {
+	if strings.TrimSpace(typeName) == "" || strings.Contains(typeName, ".") {
+		return ""
+	}
+	for _, owner := range vm.currentTypeResolutionOwners() {
+		if resolved, ok := vm.resolveNestedTypeInClassHierarchy(owner, typeName); ok {
+			return resolved
+		}
+	}
+	return ""
+}
+
+func (vm *VM) currentTypeResolutionOwners() []string {
+	seen := map[string]bool{}
+	var owners []string
+	add := func(owner string) {
+		owner = strings.TrimSpace(owner)
+		if owner == "" {
+			return
+		}
+		key := strings.ToLower(owner)
+		if seen[key] {
+			return
+		}
+		seen[key] = true
+		owners = append(owners, owner)
+	}
+	add(vm.currentClass)
+	add(vm.currentMethod.ClassName)
+	add(classNameFromMethod(vm.currentMethod.Name))
+	return owners
+}
+
+func constructAuthConfigurationValue(args []Value, namedArgs map[string]Value) (Value, error) {
+	if len(args) != 2 || len(namedArgs) != 0 {
+		return Null, fmt.Errorf("Auth.AuthConfiguration constructor expects community URL and start URL")
+	}
+	config := Object("Auth.AuthConfiguration")
+	config.Fields["communityUrl"] = args[0]
+	config.Fields["startUrl"] = args[1]
+	authConfig := Object("Auth.AuthConfig")
+	authConfig.Fields["Url"] = args[0]
+	config.Fields["authConfig"] = authConfig
+	return config, nil
+}
+
 func applyExceptionConstructorArgs(object *Value, args []Value) (bool, error) {
 	switch len(args) {
 	case 0:
@@ -1022,8 +1128,8 @@ func validateURLConstructorValue(raw string) error {
 }
 
 func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result) error {
-	if class.SuperClass != "" {
-		if superClass, ok := vm.Classes[class.SuperClass]; ok {
+	if superName := vm.resolvedSuperClassName(class); superName != "" {
+		if superClass, ok := vm.lookupClass(superName); ok {
 			if err := vm.runInstanceInitializers(superClass, object, result); err != nil {
 				return err
 			}
@@ -1033,8 +1139,8 @@ func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result)
 		if initializer.Name == "" {
 			initializer.Name = class.Name + ".<init_block>"
 		}
-		if initializer.ClassName == "" {
-			initializer.ClassName = class.Name
+		if owner := runtimeClassName(class); owner != "" {
+			initializer.ClassName = owner
 		}
 		recorderRollback := vm.beginFrameworkMethodCountRecorderRollback()
 		if _, err := vm.callMethodWithReceiver(initializer, object, nil, result); err != nil {
@@ -1070,7 +1176,13 @@ func isThrownAuraHandledExceptionWithoutExplicitMessage(value Value) bool {
 func typeNewInstanceAllowsDottedBuiltin(typeName string) bool {
 	return isExceptionType(typeName) ||
 		strings.HasPrefix(typeName, "Schema.") ||
-		typeName == "ApexPages.Message"
+		typeName == "ApexPages.Message" ||
+		typeNewInstanceAllowsDottedCollection(typeName)
+}
+
+func typeNewInstanceAllowsDottedCollection(typeName string) bool {
+	base := collectionBase(typeName)
+	return base == "List" || base == "Set" || isMapType(typeName)
 }
 
 func typeNewInstanceUnsupportedBuiltin(typeName string) (string, bool) {
@@ -1086,12 +1198,12 @@ func typeNewInstanceUnsupportedBuiltin(typeName string) (string, bool) {
 }
 
 func (vm *VM) initializeFields(object *Value, typeName string) {
-	class, ok := vm.Classes[typeName]
+	class, ok := vm.lookupClass(typeName)
 	if !ok {
 		return
 	}
-	if class.SuperClass != "" {
-		vm.initializeFields(object, class.SuperClass)
+	if superName := vm.resolvedSuperClassName(class); superName != "" {
+		vm.initializeFields(object, superName)
 	}
 	for _, name := range orderedFieldNames(class.Fields, class.FieldOrder) {
 		field := class.Fields[name]
@@ -1108,12 +1220,12 @@ func (vm *VM) initializeFields(object *Value, typeName string) {
 }
 
 func (vm *VM) initializePassiveCollectionFields(object *Value, typeName string) {
-	class, ok := vm.Classes[typeName]
+	class, ok := vm.lookupClass(typeName)
 	if !ok {
 		return
 	}
-	if class.SuperClass != "" {
-		vm.initializePassiveCollectionFields(object, class.SuperClass)
+	if superName := vm.resolvedSuperClassName(class); superName != "" {
+		vm.initializePassiveCollectionFields(object, superName)
 	}
 	for _, name := range orderedFieldNames(class.Fields, class.FieldOrder) {
 		field := class.Fields[name]
@@ -1314,10 +1426,11 @@ func passiveGeneratedPlaceholderSuffix(suffix string) bool {
 }
 
 func (vm *VM) callImplicitSuperConstructor(class Class, ctor Method, object Value, result *Result) error {
-	if class.SuperClass == "" || constructorHasExplicitChain(ctor) {
+	superName := vm.resolvedSuperClassName(class)
+	if superName == "" || constructorHasExplicitChain(ctor) {
 		return nil
 	}
-	superClass, ok := vm.lookupClass(class.SuperClass)
+	superClass, ok := vm.lookupClass(superName)
 	if !ok {
 		return nil
 	}
@@ -1358,19 +1471,20 @@ func (vm *VM) callChainedConstructor(callee string, args []Value, result *Result
 	}
 	targetClass := class
 	if callee == "super" {
-		if class.SuperClass == "" {
+		superName := vm.resolvedSuperClassName(class)
+		if superName == "" {
 			if len(args) == 0 {
 				return Null, nil
 			}
 			return Null, fmt.Errorf("%s has no superclass constructor", receiver.Type)
 		}
 		var found bool
-		targetClass, found = vm.Classes[class.SuperClass]
+		targetClass, found = vm.lookupClass(superName)
 		if !found {
-			if looksManagedQualifiedType(class.SuperClass) {
+			if looksManagedQualifiedType(superName) {
 				return Null, nil
 			}
-			return Null, fmt.Errorf("unknown superclass %q", class.SuperClass)
+			return Null, fmt.Errorf("unknown superclass %q", superName)
 		}
 	}
 	matchArgs := args
@@ -1460,6 +1574,9 @@ func (vm *VM) callConstructorWithReceiver(class Class, target Method, receiver V
 	}
 	current := receiver
 	for _, ctor := range constructors {
+		if owner := runtimeClassName(class); owner != "" {
+			ctor.ClassName = owner
+		}
 		constructed, err := vm.callMethodWithReceiver(ctor, current, args, result)
 		if err != nil {
 			return Null, err
@@ -1549,8 +1666,8 @@ func (vm *VM) resolveInstanceMethodSeen(typeName, method string, seen map[string
 		if !ok {
 			break
 		}
-		interfaces = append(interfaces, class.Interfaces...)
-		typeName = class.SuperClass
+		interfaces = append(interfaces, vm.resolvedInterfaceNames(class)...)
+		typeName = vm.resolvedSuperClassName(class)
 	}
 	for _, iface := range interfaces {
 		if target, ok := vm.resolveInterfaceMethodSeen(iface, method, seen); ok {
@@ -1613,8 +1730,8 @@ func (vm *VM) resolveInstanceMethodByAritySeen(typeName, method string, arity in
 		if !ok {
 			break
 		}
-		interfaces = append(interfaces, class.Interfaces...)
-		typeName = class.SuperClass
+		interfaces = append(interfaces, vm.resolvedInterfaceNames(class)...)
+		typeName = vm.resolvedSuperClassName(class)
 	}
 	for _, iface := range interfaces {
 		if target, ok, ambiguous := vm.resolveInstanceMethodByAritySeen(iface, method, arity, seen); ok || ambiguous {
@@ -1712,8 +1829,8 @@ func (vm *VM) firstRegisteredMethodByAritySeen(typeName, method string, args []V
 		if !ok {
 			break
 		}
-		interfaces = append(interfaces, class.Interfaces...)
-		typeName = class.SuperClass
+		interfaces = append(interfaces, vm.resolvedInterfaceNames(class)...)
+		typeName = vm.resolvedSuperClassName(class)
 	}
 	for _, iface := range interfaces {
 		if target, ok := vm.firstRegisteredMethodByAritySeen(iface, method, args, seen); ok {
@@ -1905,8 +2022,8 @@ func (vm *VM) resolveInstanceMethodForArgsSeen(typeName, method string, args []V
 		if !ok {
 			break
 		}
-		interfaces = append(interfaces, class.Interfaces...)
-		typeName = class.SuperClass
+		interfaces = append(interfaces, vm.resolvedInterfaceNames(class)...)
+		typeName = vm.resolvedSuperClassName(class)
 	}
 	for _, iface := range interfaces {
 		if target, ok, ambiguous := vm.resolveInterfaceMethodForArgsSeen(iface, method, args, seen); ok || ambiguous {
@@ -1928,7 +2045,7 @@ func (vm *VM) resolveInterfaceMethodSeen(typeName, method string, seen map[strin
 	if !ok {
 		return Method{}, false
 	}
-	for _, iface := range class.Interfaces {
+	for _, iface := range vm.resolvedInterfaceNames(class) {
 		if target, ok := vm.resolveInterfaceMethodSeen(iface, method, seen); ok {
 			return target, true
 		}
@@ -1948,7 +2065,7 @@ func (vm *VM) resolveInterfaceMethodForArgsSeen(typeName, method string, args []
 	if !ok {
 		return Method{}, false, false
 	}
-	for _, iface := range class.Interfaces {
+	for _, iface := range vm.resolvedInterfaceNames(class) {
 		if target, ok, ambiguous := vm.resolveInterfaceMethodForArgsSeen(iface, method, args, seen); ok || ambiguous {
 			return target, ok, ambiguous
 		}
@@ -1979,7 +2096,7 @@ func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) 
 			if !ok {
 				break
 			}
-			searchType = class.SuperClass
+			searchType = vm.resolvedSuperClassName(class)
 		}
 	}
 	if vm.methodResolveCache == nil {
@@ -2062,12 +2179,13 @@ func (vm *VM) matchRegisteredStaticMethod(name string, args []Value) (Method, bo
 	if !ok || !method.IsStatic || len(method.Params) != len(args) {
 		return Method{}, false, false
 	}
+	resolutionClass := vm.methodTypeResolutionClass(method)
 	for i, param := range method.Params {
-		paramType := vm.resolveTypeNameInClass(method.ClassName, param.Type)
+		paramType := vm.resolveTypeNameInClass(resolutionClass, param.Type)
 		if paramType == "" {
 			paramType = param.Type
 		}
-		if err := vm.ensureAssignable(paramType, args[i]); err != nil {
+		if err := vm.ensureAssignable(paramType, vm.valueWithTypesResolvedInClass(resolutionClass, args[i])); err != nil {
 			return Method{}, false, false
 		}
 	}
@@ -2092,8 +2210,10 @@ func (vm *VM) matchRegisteredMethod(name string, args []Value) (Method, bool, bo
 	if len(method.Params) != len(args) {
 		return Method{}, false, false
 	}
+	resolutionClass := vm.methodTypeResolutionClass(method)
 	for i, param := range method.Params {
-		if err := vm.ensureAssignable(param.Type, args[i]); err != nil {
+		paramType := vm.resolveTypeNameInClass(resolutionClass, param.Type)
+		if err := vm.ensureAssignable(paramType, vm.valueWithTypesResolvedInClass(resolutionClass, args[i])); err != nil {
 			return Method{}, false, false
 		}
 	}
@@ -2117,8 +2237,10 @@ func (vm *VM) matchRegisteredMethodInNamespace(namespace, name string, args []Va
 	if len(method.Params) != len(args) {
 		return Method{}, false, false
 	}
+	resolutionClass := vm.methodTypeResolutionClass(method)
 	for i, param := range method.Params {
-		if err := vm.ensureAssignable(param.Type, args[i]); err != nil {
+		paramType := vm.resolveTypeNameInClass(resolutionClass, param.Type)
+		if err := vm.ensureAssignable(paramType, vm.valueWithTypesResolvedInClass(resolutionClass, args[i])); err != nil {
 			return Method{}, false, false
 		}
 	}
@@ -2142,8 +2264,10 @@ func (vm *VM) matchRegisteredInstanceMethod(name string, args []Value) (Method, 
 	if len(method.Params) != len(args) {
 		return Method{}, false, false
 	}
+	resolutionClass := vm.methodTypeResolutionClass(method)
 	for i, param := range method.Params {
-		if err := vm.ensureAssignable(param.Type, args[i]); err != nil {
+		paramType := vm.resolveTypeNameInClass(resolutionClass, param.Type)
+		if err := vm.ensureAssignable(paramType, vm.valueWithTypesResolvedInClass(resolutionClass, args[i])); err != nil {
 			return Method{}, false, false
 		}
 	}
@@ -2212,7 +2336,7 @@ func (vm *VM) matchMethodByArgs(candidates []Method, args []Value) (Method, bool
 	seen := make(map[string]int, len(candidates))
 	for _, candidate := range candidates {
 		if vm.methodApplicable(candidate, args) {
-			signature := candidate.ClassName + "\x00" + methodParamSignature(candidate) + "\x00" + strconv.FormatBool(candidate.IsStatic)
+			signature := registeredMethodSourceAliasKey(candidate)
 			if index, exists := seen[signature]; exists {
 				if vm.preferMethodCandidate(candidate, applicable[index]) {
 					applicable[index] = candidate
@@ -2269,12 +2393,60 @@ func (vm *VM) methodApplicable(candidate Method, args []Value) bool {
 		return false
 	}
 	for i, param := range candidate.Params {
-		paramType := vm.resolveTypeNameInClass(candidate.ClassName, param.Type)
-		if vm.conversionScore(paramType, args[i]) < 0 {
+		resolutionClass := vm.methodTypeResolutionClass(candidate)
+		paramType := vm.resolveTypeNameInClass(resolutionClass, param.Type)
+		if vm.conversionScore(paramType, vm.valueWithTypesResolvedInClass(resolutionClass, args[i])) < 0 {
 			return false
 		}
 	}
 	return true
+}
+
+func (vm *VM) methodTypeResolutionClass(method Method) string {
+	className := strings.TrimSpace(method.ClassName)
+	if className == "" {
+		return classNameFromMethod(method.Name)
+	}
+	if resolved, ok := vm.resolveClassName(className); ok {
+		return resolved
+	}
+	return className
+}
+
+func (vm *VM) valueWithTypesResolvedInClass(className string, value Value) Value {
+	resolve := func(typeName string) string {
+		if strings.TrimSpace(typeName) == "" || strings.EqualFold(typeName, "Type") {
+			return typeName
+		}
+		return vm.resolveTypeNameInClass(className, typeName)
+	}
+	resolveValueRuntimeType := func(typeName string) string {
+		if vm.platformQualifiedStaticTypeMatches(value.Static, typeName) {
+			return typeName
+		}
+		return resolve(typeName)
+	}
+	value.Static = resolve(value.Static)
+	value.Runtime = resolveValueRuntimeType(value.Runtime)
+	if value.Kind == ValueObject && !strings.EqualFold(value.Type, "Type") {
+		value.Type = resolveValueRuntimeType(value.Type)
+	}
+	return value
+}
+
+func (vm *VM) platformQualifiedStaticTypeMatches(staticType, runtimeType string) bool {
+	if strings.TrimSpace(staticType) == "" || strings.TrimSpace(runtimeType) == "" {
+		return false
+	}
+	if short, ok := stripLeadingSystemNamespace(staticType); ok && strings.EqualFold(short, runtimeType) {
+		return true
+	}
+	if !strings.Contains(staticType, ".") || !strings.EqualFold(shortTypeName(staticType), runtimeType) {
+		return false
+	}
+	return generatedPlatformTypeName(staticType) ||
+		isCanonicalRuntimeTypeName(staticType) ||
+		platformVersionTypeName(staticType)
 }
 
 func (vm *VM) ambiguousOverloadError(callee string, args []Value) error {
@@ -2383,8 +2555,9 @@ func (vm *VM) bestMethodByConversionScore(applicable []Method, args []Value) (Me
 		}
 		score := 0
 		for j, param := range candidate.Params {
-			paramType := vm.resolveTypeNameInClass(candidate.ClassName, param.Type)
-			part := vm.conversionScore(paramType, args[j])
+			resolutionClass := vm.methodTypeResolutionClass(candidate)
+			paramType := vm.resolveTypeNameInClass(resolutionClass, param.Type)
+			part := vm.conversionScore(paramType, vm.valueWithTypesResolvedInClass(resolutionClass, args[j]))
 			if part < 0 {
 				return Method{}, false
 			}
@@ -2412,10 +2585,12 @@ func (vm *VM) compareMethodSpecificityForArgs(left, right Method, args []Value) 
 	leftBetter := false
 	rightBetter := false
 	for i, arg := range args {
-		leftType := vm.resolveTypeNameInClass(left.ClassName, left.Params[i].Type)
-		rightType := vm.resolveTypeNameInClass(right.ClassName, right.Params[i].Type)
-		leftScore := vm.conversionScore(leftType, arg)
-		rightScore := vm.conversionScore(rightType, arg)
+		leftResolutionClass := vm.methodTypeResolutionClass(left)
+		rightResolutionClass := vm.methodTypeResolutionClass(right)
+		leftType := vm.resolveTypeNameInClass(leftResolutionClass, left.Params[i].Type)
+		rightType := vm.resolveTypeNameInClass(rightResolutionClass, right.Params[i].Type)
+		leftScore := vm.conversionScore(leftType, vm.valueWithTypesResolvedInClass(leftResolutionClass, arg))
+		rightScore := vm.conversionScore(rightType, vm.valueWithTypesResolvedInClass(rightResolutionClass, arg))
 		switch {
 		case leftScore > rightScore:
 			leftBetter = true
@@ -2469,6 +2644,9 @@ func (vm *VM) resolveTypeNameInClass(className, typeName string) string {
 	if typeName == "" {
 		return typeName
 	}
+	if strings.EqualFold(typeName, "Type") {
+		return "Type"
+	}
 	if base := collectionBase(typeName); base != "" {
 		element, ok := collectionElementType(typeName)
 		if !ok {
@@ -2479,13 +2657,74 @@ func (vm *VM) resolveTypeNameInClass(className, typeName string) string {
 	if keyType, valueType, ok := mapTypeArgs(typeName); ok {
 		return "Map<" + vm.resolveTypeNameInClass(className, keyType) + "," + vm.resolveTypeNameInClass(className, valueType) + ">"
 	}
+	if strings.Contains(typeName, ".") && className != "" {
+		if owner, member, ok := strings.Cut(typeName, "."); ok && strings.EqualFold(owner, shortTypeName(className)) {
+			if nested, nestedOK := vm.lookupClass(typeName); nestedOK && strings.Contains(nested.Name, ".") {
+				return typeName
+			}
+			if class, classOK := vm.lookupClass(className); classOK {
+				if namespace := strings.TrimSpace(class.Namespace); namespace != "" {
+					if topLevel, topLevelOK := vm.lookupClassInNamespace(namespace, member); topLevelOK && !strings.Contains(topLevel.Name, ".") {
+						return runtimeClassName(topLevel)
+					}
+				}
+			}
+		}
+	}
 	if strings.Contains(typeName, ".") || className == "" {
 		return typeName
+	}
+	if platformType, ok := platformShortTypeAlias(typeName); ok {
+		if nested, nestedOK := vm.resolveExactNestedTypeInClassHierarchy(className, typeName); nestedOK {
+			return nested
+		}
+		return platformType
 	}
 	if resolved, ok := vm.resolveNestedTypeInClassHierarchy(className, typeName); ok {
 		return resolved
 	}
+	if isCommonSObjectTypeName(typeName) {
+		return typeName
+	}
+	if class, ok := vm.lookupClass(className); ok {
+		if namespace := strings.TrimSpace(class.Namespace); namespace != "" {
+			if sameNamespaceClass, ok := vm.lookupClassInNamespace(namespace, typeName); ok {
+				return runtimeClassName(sameNamespaceClass)
+			}
+		}
+	}
 	return typeName
+}
+
+func (vm *VM) resolveExactNestedTypeInClassHierarchy(className, typeName string) (string, bool) {
+	for owner := className; owner != ""; {
+		for _, ownerCandidate := range lexicalOwnerCandidates(owner) {
+			candidate := ownerCandidate + "." + typeName
+			if class, ok := vm.Classes[candidate]; ok && strings.Contains(class.Name, ".") {
+				return runtimeClassName(class), true
+			}
+		}
+		seenSupers := map[string]bool{}
+		for super := vm.superClassName(owner); super != ""; super = vm.superClassName(super) {
+			key := strings.ToLower(super)
+			if seenSupers[key] {
+				break
+			}
+			seenSupers[key] = true
+			for _, ownerCandidate := range lexicalOwnerCandidates(super) {
+				candidate := ownerCandidate + "." + typeName
+				if class, ok := vm.Classes[candidate]; ok && strings.Contains(class.Name, ".") {
+					return runtimeClassName(class), true
+				}
+			}
+		}
+		dot := strings.LastIndex(owner, ".")
+		if dot < 0 {
+			break
+		}
+		owner = owner[:dot]
+	}
+	return "", false
 }
 
 func (vm *VM) resolveNestedTypeInClassHierarchy(className, typeName string) (string, bool) {
@@ -2493,8 +2732,14 @@ func (vm *VM) resolveNestedTypeInClassHierarchy(className, typeName string) (str
 		for _, ownerCandidate := range lexicalOwnerCandidates(owner) {
 			candidate := ownerCandidate + "." + typeName
 			if class, ok := vm.lookupClass(candidate); ok {
+				if namespacedRuntimeClassMatch(candidate, class) {
+					return runtimeClassName(class), true
+				}
 				if isNamespaceClassAlias(candidate, class) {
 					return class.Name, true
+				}
+				if class.Namespace != "" && !strings.Contains(class.Name, ".") && strings.Contains(candidate, ".") {
+					continue
 				}
 				if strings.Contains(candidate, ".") && !strings.Contains(class.Name, ".") {
 					return candidate, true
@@ -2512,8 +2757,14 @@ func (vm *VM) resolveNestedTypeInClassHierarchy(className, typeName string) (str
 			for _, ownerCandidate := range lexicalOwnerCandidates(super) {
 				candidate := ownerCandidate + "." + typeName
 				if class, ok := vm.lookupClass(candidate); ok {
+					if namespacedRuntimeClassMatch(candidate, class) {
+						return runtimeClassName(class), true
+					}
 					if isNamespaceClassAlias(candidate, class) {
 						return class.Name, true
+					}
+					if class.Namespace != "" && !strings.Contains(class.Name, ".") && strings.Contains(candidate, ".") {
+						continue
 					}
 					if strings.Contains(candidate, ".") && !strings.Contains(class.Name, ".") {
 						return candidate, true
@@ -2537,6 +2788,10 @@ func isNamespaceClassAlias(candidate string, class Class) bool {
 		strings.EqualFold(candidate, class.Namespace+"."+class.Name)
 }
 
+func namespacedRuntimeClassMatch(candidate string, class Class) bool {
+	return class.Namespace != "" && strings.EqualFold(candidate, runtimeClassName(class))
+}
+
 func lexicalOwnerCandidates(owner string) []string {
 	owner = strings.TrimSpace(owner)
 	if owner == "" {
@@ -2549,12 +2804,98 @@ func lexicalOwnerCandidates(owner string) []string {
 	return candidates
 }
 
+func (vm *VM) resolveLexicalNestedTypeName(owner, typeName string) (string, bool) {
+	for owner = strings.TrimSpace(owner); owner != ""; {
+		for _, ownerCandidate := range lexicalOwnerCandidates(owner) {
+			candidate := ownerCandidate + "." + typeName
+			if class, ok := vm.lookupClass(candidate); ok {
+				if namespacedRuntimeClassMatch(candidate, class) {
+					return runtimeClassName(class), true
+				}
+				if isNamespaceClassAlias(candidate, class) {
+					return class.Name, true
+				}
+				if class.Namespace != "" && !strings.Contains(class.Name, ".") && strings.Contains(candidate, ".") {
+					continue
+				}
+				if strings.Contains(candidate, ".") && !strings.Contains(class.Name, ".") {
+					return candidate, true
+				}
+				return class.Name, true
+			}
+		}
+		dot := strings.LastIndex(owner, ".")
+		if dot < 0 {
+			break
+		}
+		owner = owner[:dot]
+	}
+	return "", false
+}
+
 func (vm *VM) superClassName(className string) string {
 	class, ok := vm.lookupClass(className)
 	if !ok {
 		return ""
 	}
-	return class.SuperClass
+	return vm.resolvedSuperClassName(class)
+}
+
+func (vm *VM) resolvedSuperClassName(class Class) string {
+	superName := strings.TrimSpace(class.SuperClass)
+	if superName == "" {
+		return ""
+	}
+	if strings.Contains(superName, ".") {
+		if resolved, ok := vm.resolveClassName(superName); ok {
+			return resolved
+		}
+		return superName
+	}
+	if resolved, ok := vm.resolveLexicalNestedTypeName(class.Name, superName); ok {
+		return resolved
+	}
+	if namespace := strings.TrimSpace(class.Namespace); namespace != "" {
+		if superClass, ok := vm.lookupClassInNamespace(namespace, superName); ok {
+			return runtimeClassName(superClass)
+		}
+	}
+	return superName
+}
+
+func (vm *VM) resolvedInterfaceName(class Class, interfaceName string) string {
+	interfaceName = strings.TrimSpace(interfaceName)
+	if interfaceName == "" {
+		return ""
+	}
+	if strings.Contains(interfaceName, ".") {
+		if resolved, ok := vm.resolveClassName(interfaceName); ok {
+			return resolved
+		}
+		return interfaceName
+	}
+	if resolved, ok := vm.resolveLexicalNestedTypeName(class.Name, interfaceName); ok {
+		return resolved
+	}
+	if namespace := strings.TrimSpace(class.Namespace); namespace != "" {
+		if iface, ok := vm.lookupClassInNamespace(namespace, interfaceName); ok {
+			return runtimeClassName(iface)
+		}
+	}
+	return interfaceName
+}
+
+func (vm *VM) resolvedInterfaceNames(class Class) []string {
+	if len(class.Interfaces) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(class.Interfaces))
+	for _, interfaceName := range class.Interfaces {
+		if resolved := vm.resolvedInterfaceName(class, interfaceName); resolved != "" {
+			out = append(out, resolved)
+		}
+	}
+	return out
 }
 
 func (vm *VM) compareTypeSpecificity(left, right string) int {
@@ -2579,6 +2920,12 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 	from = canonicalRuntimePlatformType(from)
 	to = canonicalRuntimePlatformType(to)
 	if strings.EqualFold(from, to) || strings.EqualFold(to, "Object") {
+		return true
+	}
+	if vm.namespaceAliasEquivalent(from, to) {
+		return true
+	}
+	if vm.namespaceTopLevelMemberAliasEquivalent(from, to) {
 		return true
 	}
 	if namespaceQualifiedTypeEquivalent(from, to) {
@@ -2653,6 +3000,49 @@ func namespaceQualifiedTypeEquivalent(left, right string) bool {
 	}
 	return strings.EqualFold(stripLeadingTypeNamespace(left), right) ||
 		strings.EqualFold(left, stripLeadingTypeNamespace(right))
+}
+
+func (vm *VM) namespaceAliasEquivalent(left, right string) bool {
+	left = strings.TrimSpace(left)
+	right = strings.TrimSpace(right)
+	if left == "" || right == "" || (strings.Contains(left, ".") == strings.Contains(right, ".")) {
+		return false
+	}
+	qualified, short := left, right
+	if !strings.Contains(qualified, ".") {
+		qualified, short = right, left
+	}
+	namespace, name, ok := strings.Cut(qualified, ".")
+	if !ok || strings.Contains(name, ".") || !strings.EqualFold(name, short) {
+		return false
+	}
+	if callerNS := vm.currentCallerNamespace(); callerNS != "" && strings.EqualFold(namespace, callerNS) {
+		return true
+	}
+	if vm.Org != nil && strings.EqualFold(namespace, strings.TrimSpace(vm.Org.Namespace)) {
+		return true
+	}
+	return false
+}
+
+func (vm *VM) namespaceTopLevelMemberAliasEquivalent(left, right string) bool {
+	return vm.namespaceTopLevelMemberAliasOneWay(left, right) || vm.namespaceTopLevelMemberAliasOneWay(right, left)
+}
+
+func (vm *VM) namespaceTopLevelMemberAliasOneWay(source, target string) bool {
+	sourceClass, ok := vm.lookupClass(source)
+	if !ok || strings.TrimSpace(sourceClass.Namespace) == "" || !strings.Contains(target, ".") {
+		return false
+	}
+	owner, member, ok := strings.Cut(target, ".")
+	if !ok || strings.EqualFold(owner, sourceClass.Namespace) {
+		return false
+	}
+	topLevel, ok := vm.lookupClassInNamespace(sourceClass.Namespace, member)
+	if !ok || strings.Contains(topLevel.Name, ".") {
+		return false
+	}
+	return strings.EqualFold(vm.classTypeToken(sourceClass), vm.classTypeToken(topLevel))
 }
 
 func stripLeadingTypeNamespace(typeName string) string {
@@ -2951,7 +3341,7 @@ func (vm *VM) typeDistance(typeName, target string, seen map[string]bool) (int, 
 	if typeName == "" || seen[typeName] {
 		return 0, false
 	}
-	if strings.EqualFold(typeName, target) {
+	if strings.EqualFold(typeName, target) || vm.classNamesReferToSameRuntimeType(typeName, target) {
 		return 0, true
 	}
 	seen[typeName] = true
@@ -2961,19 +3351,22 @@ func (vm *VM) typeDistance(typeName, target string, seen map[string]bool) (int, 
 	}
 	best := 0
 	found := false
-	if distance, ok := vm.typeDistance(class.SuperClass, target, seen); ok {
-		best = distance + 1
-		found = true
+	if superName := vm.resolvedSuperClassName(class); superName != "" {
+		if distance, ok := vm.typeDistance(superName, target, seen); ok {
+			best = distance + 1
+			found = true
+		}
 	}
 	for _, iface := range class.Interfaces {
-		if distance, ok := vm.typeDistance(iface, target, seen); ok {
+		resolvedInterface := vm.resolvedInterfaceName(class, iface)
+		if distance, ok := vm.typeDistance(resolvedInterface, target, seen); ok {
 			distance++
 			if !found || distance < best {
 				best = distance
 				found = true
 			}
 		}
-		if !strings.Contains(iface, ".") {
+		if !strings.Contains(resolvedInterface, ".") {
 			if distance, ok := vm.typeDistance(class.Name+"."+iface, target, seen); ok {
 				distance++
 				if !found || distance < best {
@@ -3225,24 +3618,25 @@ func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
 	if !ok {
 		return false
 	}
-	if class.SuperClass != "" {
-		if !strings.Contains(class.SuperClass, ".") {
-			if nestedSuperClass, ok := nestedSiblingTypeName(class.Name, class.SuperClass); ok && vm.typeMatches(nestedSuperClass, target, seen) {
+	if superName := vm.resolvedSuperClassName(class); superName != "" {
+		if !strings.Contains(superName, ".") {
+			if nestedSuperClass, ok := nestedSiblingTypeName(class.Name, superName); ok && vm.typeMatches(nestedSuperClass, target, seen) {
 				return true
 			}
 		}
-		if vm.typeMatches(class.SuperClass, target, seen) {
+		if vm.typeMatches(superName, target, seen) {
 			return true
 		}
 	}
 	for _, iface := range class.Interfaces {
-		if strings.EqualFold(shortTypeName(iface), shortTypeName(target)) {
+		resolvedInterface := vm.resolvedInterfaceName(class, iface)
+		if strings.EqualFold(shortTypeName(resolvedInterface), shortTypeName(target)) {
 			return true
 		}
-		if vm.typeMatches(iface, target, seen) {
+		if vm.typeMatches(resolvedInterface, target, seen) {
 			return true
 		}
-		if !strings.Contains(iface, ".") && vm.typeMatches(class.Name+"."+iface, target, seen) {
+		if !strings.Contains(resolvedInterface, ".") && vm.typeMatches(class.Name+"."+iface, target, seen) {
 			return true
 		}
 	}
@@ -3281,6 +3675,25 @@ func nestedSiblingTypeName(className, typeName string) (string, bool) {
 	return className[:dot+1] + typeName, true
 }
 
+func platformShortTypeAlias(typeName string) (string, bool) {
+	switch strings.TrimSpace(typeName) {
+	case "SObjectType":
+		return "Schema.SObjectType", true
+	case "SObjectField":
+		return "Schema.SObjectField", true
+	case "FieldSet":
+		return "Schema.FieldSet", true
+	case "FieldSetMember":
+		return "Schema.FieldSetMember", true
+	case "DescribeFieldResult":
+		return "Schema.DescribeFieldResult", true
+	case "DescribeSObjectResult":
+		return "Schema.DescribeSObjectResult", true
+	default:
+		return "", false
+	}
+}
+
 func platformTokenTypeAlias(typeName, target string) bool {
 	switch {
 	case strings.EqualFold(typeName, "Schema.SObjectType") && strings.EqualFold(target, "SObjectType"):
@@ -3310,6 +3723,8 @@ func platformTokenTypeAlias(typeName, target string) bool {
 	case strings.EqualFold(typeName, "PageReference") && strings.EqualFold(target, "ApexPages.PageReference"):
 		return true
 	case strings.EqualFold(typeName, "ApexPages.PageReference") && strings.EqualFold(target, "PageReference"):
+		return true
+	case platformVersionTypeName(typeName) && platformVersionTypeName(target):
 		return true
 	default:
 		return false
@@ -3688,7 +4103,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			return vm.describeFromSObjectFieldToken(value)
 		}
 		if class, ok := vm.resolveEnumClass(typeName); ok && len(class.EnumValues) > 0 {
-			if strings.EqualFold(value.Type, class.Name) {
+			if strings.EqualFold(value.Type, class.Name) || vm.typeAssignableTo(value.Type, class.Name) || namespaceQualifiedTypeEquivalent(value.Type, class.Name) {
 				return Value{Kind: ValueObject, Type: class.Name, Text: value.Text}, nil
 			}
 		}
@@ -3890,7 +4305,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			if err != nil {
 				return Null, fmt.Errorf("value: %w", err)
 			}
-			entries = append(entries, coercedEntry{key: mapKey(coercedKey), keyValue: coercedKey, value: coercedValue})
+			entries = append(entries, coercedEntry{key: vm.mapKey(coercedKey), keyValue: coercedKey, value: coercedValue})
 		}
 		for rawKey := range value.Map {
 			delete(value.Map, rawKey)

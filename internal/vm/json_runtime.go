@@ -788,6 +788,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 	if vm.isSObjectLikeType(typeName) {
 		vm.markJSONDeserializedSObjectFields(&obj, typeName)
 	}
+	typedObjectIsSObject := vm.isSObjectLikeType(typeName)
 	fields, ok := jsonObjectMap(raw)
 	if !ok {
 		return Null, jsonTypeMappingError(typeName, raw)
@@ -816,52 +817,60 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		if jsonSObjectLowercaseIDShadowedByCanonical(fields, key) {
 			continue
 		}
-		if handled, err := vm.applyDottedSObjectJSONField(&obj, typeName, key, item, strict); handled || err != nil {
-			if err != nil {
-				return Null, err
+		if typedObjectIsSObject {
+			if handled, err := vm.applyDottedSObjectJSONField(&obj, typeName, key, item, strict); handled || err != nil {
+				if err != nil {
+					return Null, err
+				}
+				continue
 			}
-			continue
 		}
-		if relationshipType, ok := vm.jsonSObjectChildRelationshipType(typeName, key); ok {
-			if _, hasRecords := jsonQueryResultRecords(item); hasRecords {
+		if typedObjectIsSObject {
+			if relationshipType, ok := vm.jsonSObjectChildRelationshipType(typeName, key); ok {
+				if _, hasRecords := jsonQueryResultRecords(item); hasRecords {
+					value, err := vm.typedValueFromJSON(relationshipType, item, strict)
+					if err != nil {
+						return Null, err
+					}
+					obj.Fields[key] = value
+					continue
+				}
+				if _, isArray := item.([]any); isArray {
+					value, err := vm.typedValueFromJSON(relationshipType, item, strict)
+					if err != nil {
+						return Null, err
+					}
+					obj.Fields[key] = value
+					continue
+				}
+			}
+		}
+		if typedObjectIsSObject {
+			if relationshipType, ok := vm.jsonSObjectParentRelationshipType(typeName, key); ok {
 				value, err := vm.typedValueFromJSON(relationshipType, item, strict)
 				if err != nil {
 					return Null, err
 				}
-				obj.Fields[key] = value
+				vm.setSObjectParentRelationshipValue(&obj, typeName, key, value)
 				continue
 			}
-			if _, isArray := item.([]any); isArray {
-				value, err := vm.typedValueFromJSON(relationshipType, item, strict)
+		}
+		if typedObjectIsSObject {
+			if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
+				value, err := vm.typedSObjectFieldValueFromJSON(fieldType, item, strict)
 				if err != nil {
 					return Null, err
 				}
-				obj.Fields[key] = value
+				if vm.jsonSObjectFieldIsIDLike(typeName, key) {
+					value = markJSONSObjectIDValue(value)
+				}
+				fieldName := vm.resolveSObjectFieldName(typeName, key)
+				obj.Fields[fieldName] = value
+				markExplicitSObjectField(&obj, fieldName)
 				continue
 			}
 		}
-		if relationshipType, ok := vm.jsonSObjectParentRelationshipType(typeName, key); ok {
-			value, err := vm.typedValueFromJSON(relationshipType, item, strict)
-			if err != nil {
-				return Null, err
-			}
-			vm.setSObjectParentRelationshipValue(&obj, typeName, key, value)
-			continue
-		}
-		if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
-			value, err := vm.typedValueFromJSON(fieldType, item, strict)
-			if err != nil {
-				return Null, err
-			}
-			if vm.jsonSObjectFieldIsIDLike(typeName, key) {
-				value = markJSONSObjectIDValue(value)
-			}
-			fieldName := vm.resolveSObjectFieldName(typeName, key)
-			obj.Fields[fieldName] = value
-			markExplicitSObjectField(&obj, fieldName)
-			continue
-		}
-		if vm.isSObjectLikeType(typeName) {
+		if typedObjectIsSObject {
 			fieldName := vm.resolveSObjectFieldName(typeName, key)
 			if !strings.EqualFold(fieldName, key) {
 				if fieldType, ok := vm.jsonSObjectFieldType(typeName, fieldName); ok {
@@ -899,7 +908,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			if fieldName == "" {
 				fieldName = key
 			}
-			if vm.isSObjectLikeType(typeName) {
+			if typedObjectIsSObject {
 				fieldName = vm.resolveSObjectFieldName(typeName, fieldName)
 				obj.Fields[fieldName] = value
 				markExplicitSObjectField(&obj, fieldName)
@@ -1107,7 +1116,7 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 		fieldName := vm.resolveSObjectFieldName(typeName, key)
 		if !strings.EqualFold(fieldName, key) {
 			if fieldType, ok := vm.jsonSObjectFieldType(typeName, fieldName); ok {
-				value, err := vm.typedValueFromJSON(fieldType, item, strict)
+				value, err := vm.typedSObjectFieldValueFromJSON(fieldType, item, strict)
 				if err != nil {
 					return Null, err
 				}
@@ -1123,6 +1132,18 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 	}
 	vm.hydrateParentLookupFields(obj)
 	return obj, nil
+}
+
+func (vm *VM) typedSObjectFieldValueFromJSON(fieldType string, raw any, strict bool) (Value, error) {
+	value, err := vm.typedValueFromJSON(fieldType, raw, strict)
+	if err == nil || !strings.EqualFold(fieldType, "Blob") {
+		return value, err
+	}
+	text, ok := raw.(string)
+	if !ok {
+		return value, err
+	}
+	return platformScalar("Blob", text), nil
 }
 
 func jsonSObjectLowercaseIDShadowedByCanonical(fields map[string]any, key string) bool {
@@ -1247,7 +1268,7 @@ func (vm *VM) applyDottedSObjectJSONField(obj *Value, typeName, key string, item
 		return true, nil
 	}
 	if fieldType, ok := vm.jsonSObjectFieldType(relationshipType, childPath); ok {
-		value, err := vm.typedValueFromJSON(fieldType, item, strict)
+		value, err := vm.typedSObjectFieldValueFromJSON(fieldType, item, strict)
 		if err != nil {
 			return true, err
 		}
@@ -1302,6 +1323,8 @@ func (vm *VM) jsonSObjectFieldType(typeName, fieldName string) (string, bool) {
 		return "Integer", true
 	case storage.FieldDecimal:
 		return "Decimal", true
+	case storage.FieldBlob:
+		return "Blob", true
 	case storage.FieldDate:
 		return "Date", true
 	case storage.FieldDateTime:
@@ -1485,7 +1508,7 @@ func vmFieldChildRelationshipNames(definition storage.ObjectDefinition, field st
 
 func (vm *VM) isJSONTypedObjectTarget(typeName string) bool {
 	typeName = vm.resolveJSONTypeName(typeName)
-	if _, ok := vm.Classes[typeName]; ok {
+	if _, ok := vm.lookupClass(typeName); ok {
 		return true
 	}
 	if vm.isSObjectLikeType(typeName) {

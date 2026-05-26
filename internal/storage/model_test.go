@@ -1158,7 +1158,7 @@ func TestApplyCustomMetadataRecordsMaterializesDeterministicRows(t *testing.T) {
 		t.Fatal(err)
 	}
 	target := onlyRecord(t, org.Objects["Target__mdt"].Records)
-	if target.Fields["QualifiedApiName"].String != "pkg__Target" || target.Fields["Description__c"].String != "Target row" {
+	if target.Fields["QualifiedApiName"].String != "Target" || target.Fields["Description__c"].String != "Target row" {
 		t.Fatalf("target record = %#v", target)
 	}
 	feature := onlyRecord(t, org.Objects["Feature__mdt"].Records)

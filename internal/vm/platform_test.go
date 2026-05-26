@@ -2351,6 +2351,41 @@ System.assertEquals('https://local.example/services/auth/sso/local?startURL=/sta
 	}
 }
 
+func TestAuthConfigurationCommunityUsingSiteAsContainerDefaultsFalse(t *testing.T) {
+	program, err := CompileAnonymous(`
+auth.AuthConfiguration config = new auth.AuthConfiguration('https://local.example', '');
+System.assertEquals(false, config.isCommunityUsingSiteAsContainer());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGeneratedAuthConfigurationConstructorAcceptsCommunityUrlAndStartUrl(t *testing.T) {
+	machine := New(nil)
+	value, handled, err := machine.constructGeneratedPlatformValue("Auth.AuthConfiguration", []Value{String("https://local.example"), String("")}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled {
+		t.Fatal("generated Auth.AuthConfiguration constructor was not handled")
+	}
+	result, _, _, handled, err := machine.callPlatformObjectMember(value, "isCommunityUsingSiteAsContainer", nil, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled {
+		t.Fatal("isCommunityUsingSiteAsContainer was not handled")
+	}
+	if result.Kind != ValueBool || result.Bool {
+		t.Fatalf("isCommunityUsingSiteAsContainer = %#v, want false", result)
+	}
+}
+
 func TestExecLocalAsyncDrainRunsQueuedJobsOutsideTestContext(t *testing.T) {
 	jobProgram, err := CompileAnonymous(`insert new Account(Name = 'async ran');`)
 	if err != nil {
@@ -5633,6 +5668,64 @@ func TestUnitOfWorkCommitPersistsChildBucketWithDeferredRelationship(t *testing.
 	}
 }
 
+func TestUnitOfWorkRelationshipResolutionUpdatesCopiedRecordAlias(t *testing.T) {
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Parent__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Parent__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a01",
+				Fields: map[string]storage.Field{
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Name":      {APIName: "Name", Type: storage.FieldString},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{
+		List(sObjectTypeToken("Parent__c"), sObjectTypeToken("Child__c")),
+	}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent := Object("Parent__c")
+	parent.Fields["Name"] = String("Parent")
+	child := Object("Child__c")
+	child.Fields["Name"] = String("Child")
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{child}, nil); err != nil {
+		t.Fatal(err)
+	}
+	copiedChild := cloneValuePreserveRefs(child)
+	if err := machine.addFrameworkSObjectUnitOfWorkRelationship(uow, "Child__c", copiedChild, sObjectFieldToken("Child__c", "Parent__c"), parent); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "commitwork", nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	for _, row := range machine.Org.Objects["Child__c"].Records {
+		if row.Fields["Parent__c"].Kind != storage.ValueID {
+			t.Fatalf("child parent lookup = %#v", row.Fields["Parent__c"])
+		}
+	}
+}
+
 func TestExecTypeForNameAndNewInstance(t *testing.T) {
 	program, err := CompileAnonymous(`
 Type accountType = Type.forName('Account');
@@ -5782,6 +5875,133 @@ System.assert(gateway instanceof IPaymentGateway2);
 		{Name: "PaymentGatewayFactory", Namespace: "NU", Access: "global", Methods: map[string]Method{
 			"make": {Name: "PaymentGatewayFactory.make", ClassName: "PaymentGatewayFactory", Access: "global", IsStatic: true, ReturnType: "Object", Program: makeProgram},
 		}},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedNestedTypeNewInstanceMatchesInheritedInterfaceWithQualifiedNestedSuperclass(t *testing.T) {
+	makeProgram, err := CompileAnonymous(`return Type.forName(null, 'PaymentGatewayServiceTest.MockPaymentGatewayWithTwoPhase').newInstance();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Object gateway = PaymentGatewayFactory.make();
+System.assert(gateway instanceof IPaymentGateway2);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "IPaymentGateway2", Namespace: "NU", IsInterface: true},
+		{Name: "PaymentGatewayServiceTest.MockPaymentGateway", Namespace: "NU", Interfaces: []string{"IPaymentGateway2"}},
+		{Name: "PaymentGatewayServiceTest.MockPaymentGatewayWithTwoPhase", Namespace: "NU", SuperClass: "PaymentGatewayServiceTest.MockPaymentGateway"},
+		{Name: "PaymentGatewayFactory", Namespace: "NU", Access: "global", Methods: map[string]Method{
+			"make": {Name: "PaymentGatewayFactory.make", ClassName: "PaymentGatewayFactory", Access: "global", IsStatic: true, ReturnType: "Object", Program: makeProgram},
+		}},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNestedSuperclassShadowsSameNamespaceTopLevelClass(t *testing.T) {
+	makeProgram, err := CompileAnonymous(`return Type.forName(null, 'PaymentGatewayServiceTest.MockPaymentGatewayWithTwoPhase').newInstance();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Object gateway = PaymentGatewayFactory.make();
+System.assert(gateway instanceof IPaymentGateway2);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "IPaymentGateway", Namespace: "NU", IsInterface: true},
+		{Name: "IPaymentGateway2", Namespace: "NU", IsInterface: true},
+		{Name: "MockPaymentGateway", Namespace: "NU", Interfaces: []string{"IPaymentGateway"}},
+		{Name: "PaymentGatewayServiceTest.MockPaymentGateway", Namespace: "NU", Interfaces: []string{"IPaymentGateway2"}},
+		{Name: "PaymentGatewayServiceTest.MockPaymentGatewayWithTwoPhase", Namespace: "NU", SuperClass: "MockPaymentGateway"},
+		{Name: "PaymentGatewayFactory", Namespace: "NU", Access: "global", Methods: map[string]Method{
+			"make": {Name: "PaymentGatewayFactory.make", ClassName: "PaymentGatewayFactory", Access: "global", IsStatic: true, ReturnType: "Object", Program: makeProgram},
+		}},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListUpcastUsesUserClassWhenElementNameShadowsSObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<AdjustmentOrder> adjustments = new List<AdjustmentOrder>();
+List<Order> orders = (List<Order>) adjustments;
+System.assertEquals(0, orders.size());
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "Order", Namespace: "NU"},
+		{Name: "AdjustmentOrder", Namespace: "NU", SuperClass: "Order"},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMapGetFindsNamespacedEnumKeyWithShortDeclaredType(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<ExprTokenType, Integer> precedences = new Map<ExprTokenType, Integer> {
+    ExprTokenType.Equals => 3
+};
+System.assertEquals(3, precedences.get(ExprTokenType.Equals));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "ExprTokenType", Namespace: "NU", EnumValues: []string{"Equals"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTypeNewInstanceAllowsNamespacedGenericCollection(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type itemType = Type.forName('namz', 'PriceAdjustment');
+List<IPersistenceSupport> items = (List<IPersistenceSupport>) Type.forName('List<' + itemType.getName() + '>').newInstance();
+System.assertEquals(0, items.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "IPersistenceSupport", Namespace: "namz", IsInterface: true},
+		{Name: "PriceAdjustment", Namespace: "namz", Interfaces: []string{"IPersistenceSupport"}},
 	} {
 		if err := machine.RegisterClass(class); err != nil {
 			t.Fatal(err)
@@ -7440,6 +7660,7 @@ System.assertEquals('America/Los_Angeles', tz.getDisplayName());
 System.assertEquals(-28800000, tz.getOffset(winter));
 System.assertEquals(-25200000, tz.getOffset(summer));
 System.assertEquals('2024-02-29 15:05:06 -0800 PST', winter.format('yyyy-MM-dd HH:mm:ss Z z'));
+System.assertEquals('Feb 29, 2024', winter.format('MMM dd, YYYY'));
 System.assertEquals('2024-07-01 05:00:00 -0700 PDT', summer.format('yyyy-MM-dd HH:mm:ss Z z'));
 System.assertEquals('2/29/2024, 3:05 PM', winter.format());
 `)

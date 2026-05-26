@@ -231,6 +231,9 @@ func canvasContextJSON(receiver Value) (string, error) {
 
 func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	if value, handled, err := vm.callTypeObjectMember(receiver, method, args, result); handled || err != nil {
+		return value, receiver, false, true, err
+	}
 	if value, updated, mutated, handled, err := vm.callRegisteredPlatformObjectMemberPhase("early", receiver, method, args, result); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
@@ -1238,16 +1241,22 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, err
 			}
 			if systemField, ok := syntheticSObjectSystemField(fieldValue.Text); ok {
-				describe.Fields["type"] = schemaDisplayTypeValue(systemField.DisplayType)
-				describe.Fields["soapType"] = schemaSOAPTypeValue(soapTypeForStorageField(systemField))
-				if systemField.RelationshipName != "" {
+				if _, ok := describe.Fields["type"]; !ok {
+					describe.Fields["type"] = schemaDisplayTypeValue(systemField.DisplayType)
+				}
+				if _, ok := describe.Fields["soapType"]; !ok {
+					describe.Fields["soapType"] = schemaSOAPTypeValue(soapTypeForStorageField(systemField))
+				}
+				if relationship, ok := describe.Fields["relationshipName"]; systemField.RelationshipName != "" && (!ok || relationship.Kind == ValueNull) {
 					describe.Fields["relationshipName"] = String(systemField.RelationshipName)
 				}
-				references := make([]Value, 0, len(systemField.ReferenceTo))
-				for _, target := range systemField.ReferenceTo {
-					references = append(references, sObjectTypeToken(target))
+				if existing, ok := describe.Fields["referenceTo"]; !ok || existing.Kind != ValueList || len(existing.List) == 0 {
+					references := make([]Value, 0, len(systemField.ReferenceTo))
+					for _, target := range systemField.ReferenceTo {
+						references = append(references, sObjectTypeToken(target))
+					}
+					describe.Fields["referenceTo"] = List(references...)
 				}
-				describe.Fields["referenceTo"] = List(references...)
 			}
 			if name, ok := describe.Fields["name"]; (!ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "") && strings.TrimSpace(fieldValue.Text) != "" {
 				describe.Fields["name"] = String(fieldValue.Text)
@@ -2265,65 +2274,6 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return message, receiver, false, true, nil
 			}
 			return String(receiver.String()), receiver, false, true, nil
-		}
-	case "Type":
-		if method == "getName" || method == "toString" {
-			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Type.%s expects 0 arguments", method)
-			}
-			if value, ok := receiver.Fields["value"]; ok && value.Kind == ValueString {
-				return value, receiver, false, true, nil
-			}
-			return String(receiver.Text), receiver, false, true, nil
-		}
-		if method == "getNamespace" || method == "getPackageName" {
-			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Type.%s expects 0 arguments", method)
-			}
-			typeName := typeValueName(receiver)
-			if prefix, _, ok := strings.Cut(typeName, "."); ok {
-				return String(prefix), receiver, false, true, nil
-			}
-			return Null, receiver, false, true, nil
-		}
-		if method == "equals" {
-			if len(args) != 1 {
-				return Null, receiver, false, true, fmt.Errorf("Type.equals expects 1 argument")
-			}
-			return Bool(receiver.Equal(args[0])), receiver, false, true, nil
-		}
-		if method == "hashCode" {
-			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Type.hashCode expects 0 arguments")
-			}
-			return Int(int64(valueHashCode(receiver))), receiver, false, true, nil
-		}
-		if method == "newInstance" {
-			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Type.newInstance expects 0 arguments")
-			}
-			typeName := typeValueName(receiver)
-			if unsupported, ok := typeNewInstanceUnsupportedBuiltin(typeName); ok {
-				return Null, receiver, false, true, unsupportedCallError("Type.newInstance uninstantiable built-in " + unsupported)
-			}
-			if strings.Contains(typeName, ".") {
-				if _, ok := vm.resolveClassName(typeName); !ok && !typeNewInstanceAllowsDottedBuiltin(typeName) {
-					return Null, receiver, false, true, unsupportedCallError("Type.newInstance namespace/package reflection for " + typeName)
-				}
-			}
-			value, err := vm.constructValue(typeName, nil, nil, result)
-			if err != nil {
-				return Null, receiver, false, true, newExceptionError("TypeException", err.Error())
-			}
-			return value, receiver, false, true, err
-		}
-		if method == "isAssignableFrom" {
-			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Type" {
-				return Null, receiver, false, true, fmt.Errorf("Type.isAssignableFrom expects Type")
-			}
-			target := typeValueName(receiver)
-			source := typeValueName(args[0])
-			return Bool(vm.typeMatches(source, target, make(map[string]bool))), receiver, false, true, nil
 		}
 	case "Schema.DescribeSObjectResult", "DescribeSObjectResult":
 		switch method {
@@ -3680,6 +3630,67 @@ func (vm *VM) callPassivePlatformDTOFluentMember(receiver Value, method string, 
 		return built, receiver, false, true, nil
 	}
 	return Null, receiver, false, false, nil
+}
+
+func (vm *VM) callTypeObjectMember(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	if !strings.EqualFold(receiver.Type, "Type") {
+		return Null, false, nil
+	}
+	switch method {
+	case "getName", "toString":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Type.%s expects 0 arguments", method)
+		}
+		if value, ok := receiver.Fields["value"]; ok && value.Kind == ValueString {
+			return value, true, nil
+		}
+		return String(receiver.Text), true, nil
+	case "getNamespace", "getPackageName":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Type.%s expects 0 arguments", method)
+		}
+		typeName := typeValueName(receiver)
+		if prefix, _, ok := strings.Cut(typeName, "."); ok {
+			return String(prefix), true, nil
+		}
+		return Null, true, nil
+	case "equals":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("Type.equals expects 1 argument")
+		}
+		return Bool(receiver.Equal(args[0])), true, nil
+	case "hashCode":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Type.hashCode expects 0 arguments")
+		}
+		return Int(int64(valueHashCode(receiver))), true, nil
+	case "newInstance":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Type.newInstance expects 0 arguments")
+		}
+		typeName := typeValueName(receiver)
+		if unsupported, ok := typeNewInstanceUnsupportedBuiltin(typeName); ok {
+			return Null, true, unsupportedCallError("Type.newInstance uninstantiable built-in " + unsupported)
+		}
+		if strings.Contains(typeName, ".") {
+			if _, ok := vm.resolveClassName(typeName); !ok && !typeNewInstanceAllowsDottedBuiltin(typeName) {
+				return Null, true, unsupportedCallError("Type.newInstance namespace/package reflection for " + typeName)
+			}
+		}
+		value, err := vm.constructValue(typeName, nil, nil, result)
+		if err != nil {
+			return Null, true, newExceptionError("TypeException", err.Error())
+		}
+		return value, true, nil
+	case "isAssignableFrom":
+		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "Type") {
+			return Null, true, fmt.Errorf("Type.isAssignableFrom expects Type")
+		}
+		target := typeValueName(receiver)
+		source := typeValueName(args[0])
+		return Bool(vm.typeMatches(source, target, make(map[string]bool))), true, nil
+	}
+	return Null, false, nil
 }
 
 func (vm *VM) normalizeBuiltPassivePlatformDTO(object *Value) {

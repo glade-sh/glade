@@ -47,6 +47,7 @@ func evaluateRecordFormulaInOrg(formula string, org *storage.OrgState, definitio
 		record:     record,
 		org:        org,
 		definition: definition,
+		namespace:  formulaSourceNamespace("", definition),
 	}
 	value, ok := parser.parseExpression()
 	if !ok || parser.peek().typ != formulaTokenEOF {
@@ -56,11 +57,16 @@ func evaluateRecordFormulaInOrg(formula string, org *storage.OrgState, definitio
 }
 
 func evaluateRecordFormulaInOrgWithContext(formula string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, prior *storage.Record, isNew bool) (bool, bool) {
+	return evaluateRecordFormulaInOrgWithNamespace(formula, "", org, definition, record, prior, isNew)
+}
+
+func evaluateRecordFormulaInOrgWithNamespace(formula, namespace string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, prior *storage.Record, isNew bool) (bool, bool) {
 	parser := formulaParser{
 		tokens:     tokenizeFormula(html.UnescapeString(formula)),
 		record:     record,
 		org:        org,
 		definition: definition,
+		namespace:  formulaSourceNamespace(namespace, definition),
 		prior:      prior,
 		isNew:      isNew,
 	}
@@ -90,6 +96,7 @@ func EvaluateRecordFormulaValueInOrg(formula string, field storage.Field, org *s
 		org:        org,
 		definition: definition,
 		evaluating: make(map[string]bool),
+		namespace:  formulaFieldSourceNamespace("", definition, field),
 	}
 	value, ok := parser.parseExpression()
 	if !ok || parser.peek().typ != formulaTokenEOF {
@@ -195,9 +202,37 @@ type formulaParser struct {
 	record     storage.Record
 	org        *storage.OrgState
 	definition storage.ObjectDefinition
+	namespace  string
 	evaluating map[string]bool
 	prior      *storage.Record
 	isNew      bool
+}
+
+func (p *formulaParser) resolutionNamespace(definition storage.ObjectDefinition) string {
+	return formulaSourceNamespace(p.namespace, definition)
+}
+
+func formulaSourceNamespace(namespace string, definition storage.ObjectDefinition) string {
+	if namespace = strings.TrimSpace(namespace); namespace != "" {
+		return namespace
+	}
+	return namespaceFromAPIName(definition.APIName)
+}
+
+func formulaFieldSourceNamespace(fallback string, definition storage.ObjectDefinition, field storage.Field) string {
+	if namespace := namespaceFromAPIName(field.APIName); namespace != "" {
+		return namespace
+	}
+	return formulaSourceNamespace(fallback, definition)
+}
+
+func namespaceFromAPIName(name string) string {
+	first := strings.Index(name, "__")
+	last := strings.LastIndex(name, "__")
+	if first <= 0 || first >= last {
+		return ""
+	}
+	return name[:first]
 }
 
 func (p *formulaParser) parseExpression() (formulaValue, bool) {
@@ -537,6 +572,7 @@ func (p *formulaParser) valueForRecordField(record storage.Record, field string)
 	if p.org == nil {
 		return formulaFieldValue(record, field)
 	}
+	namespace := p.resolutionNamespace(p.definition)
 	if field == "$RecordType.Name" || field == "$RecordType.DeveloperName" {
 		return formulaValue{kind: formulaString, text: formulaRecordTypeValue(p.definition, record, field)}
 	}
@@ -544,11 +580,11 @@ func (p *formulaParser) valueForRecordField(record storage.Record, field string)
 		return value
 	}
 	if strings.Contains(field, ".") {
-		if value, ok := formulaRelationshipFieldValue(p.org, p.definition, record, field, p.evaluating); ok {
+		if value, ok := formulaRelationshipFieldValue(p.org, p.definition, record, field, namespace, p.evaluating); ok {
 			return value
 		}
 	}
-	if resolved, ok := storage.ResolveFieldName(p.definition, p.org.Namespace, field); ok {
+	if resolved, ok := storage.ResolveFieldName(p.definition, namespace, field); ok {
 		field = resolved
 	}
 	if p.definition.APIName != "" {
@@ -572,6 +608,7 @@ func (p *formulaParser) valueForRecordField(record storage.Record, field string)
 					record:     record,
 					org:        p.org,
 					definition: p.definition,
+					namespace:  formulaFieldSourceNamespace(p.namespace, p.definition, fieldDef),
 					evaluating: p.evaluating,
 					prior:      p.prior,
 					isNew:      p.isNew,
@@ -610,7 +647,7 @@ func (p *formulaParser) setupFieldValue(field string) (formulaValue, bool) {
 		return formulaValue{kind: formulaNull}, true
 	}
 	fieldName := parts[2]
-	if resolved, ok := storage.ResolveFieldName(definition, p.org.Namespace, fieldName); ok {
+	if resolved, ok := storage.ResolveFieldName(definition, p.resolutionNamespace(definition), fieldName); ok {
 		fieldName = resolved
 	}
 	fieldDef, hasField := definition.Fields[fieldName]
@@ -916,7 +953,7 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 	}
 }
 
-func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fieldPath string, evaluating map[string]bool) (formulaValue, bool) {
+func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fieldPath, namespace string, evaluating map[string]bool) (formulaValue, bool) {
 	parts := strings.Split(fieldPath, ".")
 	if org == nil || len(parts) < 2 {
 		return formulaValue{}, false
@@ -924,9 +961,15 @@ func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.Obj
 	currentDefinition := definition
 	currentRecord := record
 	for _, relationship := range parts[:len(parts)-1] {
-		lookupField, ok := relationshipLookupField(currentDefinition, org.Namespace, relationship)
+		resolutionNamespace := formulaSourceNamespace(namespace, currentDefinition)
+		lookupField, ok := relationshipLookupField(currentDefinition, resolutionNamespace, relationship)
 		if !ok {
 			return formulaValue{}, false
+		}
+		if parentRecord, parentDefinition, ok := formulaParentRelationshipRecord(*org, currentRecord, lookupField, relationship, resolutionNamespace); ok {
+			currentRecord = parentRecord
+			currentDefinition = parentDefinition
+			continue
 		}
 		value, ok := formulaRecordField(currentRecord, lookupField.APIName)
 		if !ok || value.Kind == storage.ValueNull {
@@ -944,7 +987,8 @@ func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.Obj
 		currentDefinition = parentDefinition
 	}
 	last := parts[len(parts)-1]
-	if resolved, ok := storage.ResolveFieldName(currentDefinition, org.Namespace, last); ok {
+	resolutionNamespace := formulaSourceNamespace(namespace, currentDefinition)
+	if resolved, ok := storage.ResolveFieldName(currentDefinition, resolutionNamespace, last); ok {
 		last = resolved
 	}
 	if fieldDef, ok := currentDefinition.Fields[last]; ok {
@@ -968,6 +1012,7 @@ func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.Obj
 				record:     currentRecord,
 				org:        org,
 				definition: currentDefinition,
+				namespace:  formulaFieldSourceNamespace(namespace, currentDefinition, fieldDef),
 				evaluating: evaluating,
 			}
 			value, ok := nested.parseExpression()
@@ -1079,6 +1124,61 @@ func formulaParentRecord(org storage.OrgState, lookupField storage.Field, id sto
 		}
 	}
 	return storage.Record{}, storage.ObjectDefinition{}, false
+}
+
+func formulaParentRelationshipRecord(org storage.OrgState, record storage.Record, lookupField storage.Field, relationship, namespace string) (storage.Record, storage.ObjectDefinition, bool) {
+	if len(record.ParentRelationships) == 0 {
+		return storage.Record{}, storage.ObjectDefinition{}, false
+	}
+	for name, parent := range record.ParentRelationships {
+		if !formulaRelationshipAliasMatches(namespace, lookupField, relationship, name) {
+			continue
+		}
+		if definition, ok := formulaRelationshipRecordDefinition(org, lookupField, parent); ok {
+			return parent, definition, true
+		}
+	}
+	return storage.Record{}, storage.ObjectDefinition{}, false
+}
+
+func formulaRelationshipRecordDefinition(org storage.OrgState, lookupField storage.Field, record storage.Record) (storage.ObjectDefinition, bool) {
+	if strings.TrimSpace(record.Object) != "" {
+		if canonical, ok := storage.ResolveObjectName(org, record.Object); ok {
+			return org.Objects[canonical].Definition, true
+		}
+	}
+	for _, targetName := range lookupField.ReferenceTo {
+		if canonical, ok := storage.ResolveObjectName(org, targetName); ok {
+			return org.Objects[canonical].Definition, true
+		}
+	}
+	return storage.ObjectDefinition{}, false
+}
+
+func formulaRelationshipAliasMatches(namespace string, lookupField storage.Field, relationship, stored string) bool {
+	candidates := append([]string{relationship}, formulaRelationshipNames(lookupField)...)
+	for _, candidate := range candidates {
+		if formulaRelationshipNameEqual(namespace, candidate, stored) {
+			return true
+		}
+	}
+	return false
+}
+
+func formulaRelationshipNameEqual(namespace, left, right string) bool {
+	if strings.EqualFold(left, right) {
+		return true
+	}
+	if strings.EqualFold(storage.StripAnyNamespaceToken(left), storage.StripAnyNamespaceToken(right)) {
+		return true
+	}
+	if namespace != "" && (strings.EqualFold(storage.NamespaceTokenName(namespace, left), right) ||
+		strings.EqualFold(storage.NamespaceTokenName(namespace, right), left) ||
+		strings.EqualFold(storage.StripNamespaceToken(namespace, left), right) ||
+		strings.EqualFold(storage.StripNamespaceToken(namespace, right), left)) {
+		return true
+	}
+	return false
 }
 
 func formulaFieldValue(record storage.Record, field string) formulaValue {
@@ -1222,6 +1322,16 @@ func compareFormulaValues(left, right formulaValue, op string) bool {
 	}
 	ls := left.asString()
 	rs := right.asString()
+	if (left.idLike() || right.idLike()) && (op == "=" || op == "==" || op == "!=" || op == "<>") {
+		if equal, ok := formulaIDTextEqual(ls, rs); ok {
+			switch op {
+			case "=", "==":
+				return equal
+			case "!=", "<>":
+				return !equal
+			}
+		}
+	}
 	switch op {
 	case "=", "==":
 		return ls == rs
@@ -1238,6 +1348,22 @@ func compareFormulaValues(left, right formulaValue, op string) bool {
 	default:
 		return false
 	}
+}
+
+func (v formulaValue) idLike() bool {
+	return v.fieldType == storage.FieldID || v.fieldType == storage.FieldReference || strings.EqualFold(v.display, "ID")
+}
+
+func formulaIDTextEqual(left, right string) (bool, bool) {
+	left = strings.TrimSpace(left)
+	right = strings.TrimSpace(right)
+	if storage.ValidateID(storage.ID(left)) != nil || storage.ValidateID(storage.ID(right)) != nil {
+		return false, false
+	}
+	if len(left) >= 15 && len(right) >= 15 {
+		return left[:15] == right[:15], true
+	}
+	return left == right, true
 }
 
 func (v formulaValue) truthy() bool {

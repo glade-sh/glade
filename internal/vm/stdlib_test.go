@@ -2086,6 +2086,9 @@ System.assertEquals('93ce19c2c83297061f55dadc424d14c3', EncodingUtil.convertToHe
 System.assertEquals('hello', Crypto.decrypt('AES256', key, iv, encrypted).toString());
 Blob normalized = Crypto.encrypt(' aes-256 ', key, iv, Blob.valueOf('hello'));
 System.assertEquals(EncodingUtil.convertToHex(encrypted), EncodingUtil.convertToHex(normalized));
+Blob cbc = Crypto.encrypt('AES256-CBC', key, iv, Blob.valueOf('hello'));
+System.assertEquals(EncodingUtil.convertToHex(encrypted), EncodingUtil.convertToHex(cbc));
+System.assertEquals('hello', Crypto.decrypt('AES256-CBC', key, iv, cbc).toString());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2101,6 +2104,9 @@ Blob key = Blob.valueOf('0123456789abcdef0123456789abcdef');
 Blob encrypted = Crypto.encryptWithManagedIV('AES256', key, Blob.valueOf('hello'));
 System.assertEquals(32, encrypted.size());
 System.assertEquals('hello', Crypto.decryptWithManagedIV('AES256', key, encrypted).toString());
+Blob cbc = Crypto.encryptWithManagedIV('AES256-CBC', key, Blob.valueOf('hello'));
+System.assertEquals(32, cbc.size());
+System.assertEquals('hello', Crypto.decryptWithManagedIV('AES256-CBC', key, cbc).toString());
 Blob signature = Crypto.sign('RSA-SHA512', Blob.valueOf('hello'), Blob.valueOf('private'));
 System.assert(Crypto.verify('RSA-SHA512', Blob.valueOf('hello'), signature, Blob.valueOf('public')));
 System.assert(!Crypto.verify('RSA-SHA512', Blob.valueOf('changed'), signature, Blob.valueOf('public')));
@@ -2659,6 +2665,7 @@ func TestExecNamespacedNestedExceptionGetTypeName(t *testing.T) {
 Exception e = new pkg.Outer.InnerException('blocked');
 System.assertEquals('pkg.Outer.InnerException', e.getTypeName());
 System.assertEquals('pkg.Outer.InnerException', pkg.Outer.InnerException.class.getName());
+System.assertEquals('blocked', e.getMessage());
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -3865,6 +3872,9 @@ System.assertEquals('1.2', new Version(1, 2).toString());
 System.assertEquals(0, new Version(1, 95).compareTo(new Version(1, 95, 16)));
 System.assertEquals(0, new Version(1, 95, 16).compareTo(new Version(1, 95)));
 System.assert(new Version(1, 24).compareTo(new Version(1, 95, 16)) < 0);
+Package.Version packageVersion = new Package.Version(1, 19);
+System.assertEquals('1.19', packageVersion.toString());
+System.assertEquals(0, packageVersion.compareTo(new Package.Version(1, 19, 7)));
 `)
 	if err != nil {
 		t.Fatal(err)

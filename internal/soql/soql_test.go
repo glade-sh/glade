@@ -664,8 +664,21 @@ func TestExecuteSOQLOverLoadedCustomMetadataRecords(t *testing.T) {
 	for name, describe := range registry.Objects {
 		org.Objects[name] = storage.ObjectState{Definition: sobject.ToObjectDefinition(describe), Records: map[storage.ID]storage.Record{}}
 	}
-	if err := storage.ApplyCustomMetadataRecords(&org, sch.CustomMetadataRecords); err != nil {
-		t.Fatal(err)
+	pending := append([]schema.CustomMetadataRecord(nil), sch.CustomMetadataRecords...)
+	for len(pending) > 0 {
+		next := make([]schema.CustomMetadataRecord, 0, len(pending))
+		progressed := false
+		for _, record := range pending {
+			if err := storage.ApplyCustomMetadataRecords(&org, []schema.CustomMetadataRecord{record}); err != nil {
+				next = append(next, record)
+				continue
+			}
+			progressed = true
+		}
+		if !progressed {
+			break
+		}
+		pending = next
 	}
 
 	result, err := ParseAndExecute(org, "SELECT DeveloperName, Enabled__c, Target__r.Description__c FROM Feature__mdt WHERE Target__r.QualifiedApiName = 'Target'")
@@ -678,6 +691,158 @@ func TestExecuteSOQLOverLoadedCustomMetadataRecords(t *testing.T) {
 	record := result.Records[0]
 	if record.Fields["DeveloperName"].String != "Default" || !record.Fields["Enabled__c"].Boolean || record.Fields["Target__r.Description__c"].String != "Target row" {
 		t.Fatalf("record = %#v", record)
+	}
+}
+
+func TestExecuteCustomMetadataChildRelationshipUsesLocalQualifiedNames(t *testing.T) {
+	sch := schema.Schema{Objects: []schema.Object{
+		{
+			Name: "StateConfiguration__mdt",
+			Fields: []schema.Field{
+				{Name: "DeveloperName", Type: "Text"},
+				{Name: "MasterLabel", Type: "Text"},
+				{Name: "Language", Type: "Text"},
+				{Name: "NamespacePrefix", Type: "Text"},
+				{Name: "Label", Type: "Text"},
+				{Name: "IsActive__c", Type: "Checkbox"},
+				{Name: "SupportedStates__c", Type: "Text"},
+			},
+		},
+		{
+			Name: "StateTransition__mdt",
+			Fields: []schema.Field{
+				{Name: "IsActive__c", Type: "Checkbox"},
+				{Name: "FromStates__c", Type: "Text"},
+				{Name: "ToState__c", Type: "Text"},
+				{Name: "StateConfiguration__c", Type: "MetadataRelationship", ReferenceTo: []string{"StateConfiguration__mdt"}, RelationshipName: "StateConfiguration__r", ChildRelationshipName: "StateTransitions__r"},
+			},
+		},
+		{
+			Name: "StateTransitionCallback__mdt",
+			Fields: []schema.Field{
+				{Name: "IsActive__c", Type: "Checkbox"},
+				{Name: "ActionName__c", Type: "Text"},
+				{Name: "ClassName__c", Type: "Text"},
+				{Name: "SortOrder__c", Type: "Number"},
+				{Name: "StateConfiguration__c", Type: "MetadataRelationship", ReferenceTo: []string{"StateConfiguration__mdt"}, RelationshipName: "StateConfiguration__r", ChildRelationshipName: "StateTransitionCallbacks__r"},
+				{Name: "TriggeringTransition__c", Type: "MetadataRelationship", ReferenceTo: []string{"StateTransition__mdt"}, RelationshipName: "TriggeringTransition__r", ChildRelationshipName: "StateTransitionCallbacks__r"},
+			},
+		},
+	}, CustomMetadataRecords: []schema.CustomMetadataRecord{
+		{FullName: "StateConfiguration.OrderGraph", ObjectName: "StateConfiguration__mdt", DeveloperName: "OrderGraph", Values: []schema.CustomMetadataValue{{Field: "MasterLabel", Value: "Order Graph"}, {Field: "IsActive__c", Value: "true"}, {Field: "SupportedStates__c", Value: "Cart,Pro forma"}}},
+		{FullName: "StateConfiguration.PaymentGraph", ObjectName: "StateConfiguration__mdt", DeveloperName: "PaymentGraph", Values: []schema.CustomMetadataValue{{Field: "MasterLabel", Value: "Payment Graph"}, {Field: "IsActive__c", Value: "true"}, {Field: "SupportedStates__c", Value: "Intent,Authorized"}}},
+		{FullName: "StateTransition.order_submit_as_proforma", ObjectName: "StateTransition__mdt", DeveloperName: "order_submit_as_proforma", Values: []schema.CustomMetadataValue{{Field: "IsActive__c", Value: "true"}, {Field: "FromStates__c", Value: "Cart"}, {Field: "ToState__c", Value: "Pro forma"}, {Field: "StateConfiguration__c", Value: "OrderGraph"}}},
+		{FullName: "StateTransition.payment_authorize", ObjectName: "StateTransition__mdt", DeveloperName: "payment_authorize", Values: []schema.CustomMetadataValue{{Field: "IsActive__c", Value: "true"}, {Field: "FromStates__c", Value: "Intent"}, {Field: "ToState__c", Value: "Authorized"}, {Field: "StateConfiguration__c", Value: "PaymentGraph"}}},
+		{FullName: "StateTransitionCallback.order_convert_carts_to_orders", ObjectName: "StateTransitionCallback__mdt", DeveloperName: "order_convert_carts_to_orders", Values: []schema.CustomMetadataValue{{Field: "IsActive__c", Value: "true"}, {Field: "ActionName__c", Value: "convert_carts_to_orders"}, {Field: "ClassName__c", Value: "ConvertCartsToOrdersCallback"}, {Field: "SortOrder__c", Value: "0.0"}, {Field: "StateConfiguration__c", Value: "OrderGraph"}, {Field: "TriggeringTransition__c", Value: "order_submit_as_proforma"}}},
+	}}
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	registry := sobject.BuildDescribeRegistry(sch)
+	for name, describe := range registry.Objects {
+		org.Objects[name] = storage.ObjectState{Definition: sobject.ToObjectDefinition(describe), Records: map[storage.ID]storage.Record{}}
+	}
+	if err := storage.ApplyCustomMetadataRecords(&org, sch.CustomMetadataRecords); err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := ParseAndExecute(org, "SELECT QualifiedApiName, (SELECT QualifiedApiName, FromStates__c FROM StateTransitions__r WHERE IsActive__c = TRUE) FROM StateConfiguration__mdt WHERE QualifiedApiName = 'OrderGraph'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d", result.Rows)
+	}
+	children := result.Records[0].Children["StateTransitions__r"]
+	if len(children) != 1 {
+		t.Fatalf("children = %#v", result.Records[0].Children)
+	}
+	if got := children[0].Fields["QualifiedApiName"].String; got != "order_submit_as_proforma" {
+		t.Fatalf("child QualifiedApiName = %q", got)
+	}
+
+	result, err = ParseAndExecute(org, "SELECT QualifiedApiName, (SELECT QualifiedApiName, ActionName__c, TriggeringTransition__r.QualifiedApiName FROM StateTransitionCallbacks__r WHERE IsActive__c = TRUE) FROM StateConfiguration__mdt WHERE QualifiedApiName = 'OrderGraph'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	callbacks := result.Records[0].Children["StateTransitionCallbacks__r"]
+	if len(callbacks) != 1 {
+		t.Fatalf("callbacks = %#v", result.Records[0].Children)
+	}
+	if got := callbacks[0].Fields["QualifiedApiName"].String; got != "order_convert_carts_to_orders" {
+		t.Fatalf("callback QualifiedApiName = %q", got)
+	}
+	if got := callbacks[0].Fields["TriggeringTransition__r.QualifiedApiName"].String; got != "order_submit_as_proforma" {
+		t.Fatalf("callback triggering transition = %q", got)
+	}
+
+	result, err = ParseAndExecute(org, "SELECT QualifiedApiName, (SELECT QualifiedApiName, FromStates__c FROM StateTransitions__r WHERE IsActive__c = TRUE), (SELECT QualifiedApiName, ActionName__c, TriggeringTransition__r.QualifiedApiName FROM StateTransitionCallbacks__r WHERE IsActive__c = TRUE) FROM StateConfiguration__mdt WHERE QualifiedApiName = 'OrderGraph'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	transitions := result.Records[0].Children["StateTransitions__r"]
+	callbacks = result.Records[0].Children["StateTransitionCallbacks__r"]
+	if len(transitions) != 1 || len(callbacks) != 1 {
+		t.Fatalf("combined children = %#v", result.Records[0].Children)
+	}
+	if got := transitions[0].Fields["QualifiedApiName"].String; got != "order_submit_as_proforma" {
+		t.Fatalf("combined transition QualifiedApiName = %q", got)
+	}
+	if got := callbacks[0].Fields["TriggeringTransition__r.QualifiedApiName"].String; got != "order_submit_as_proforma" {
+		t.Fatalf("combined callback triggering transition = %q", got)
+	}
+
+	result, err = ParseAndExecute(org, "SELECT Id,DeveloperName,MasterLabel,Language,NamespacePrefix,Label,QualifiedApiName,IsActive__c,SupportedStates__c, (SELECT Id, QualifiedApiName, IsActive__c, FromStates__c, ToState__c FROM StateTransitions__r WHERE IsActive__c = TRUE), (SELECT Id, QualifiedApiName, IsActive__c, ActionName__c, ClassName__c, SortOrder__c, TriggeringTransition__r.QualifiedApiName, Type__c FROM StateTransitionCallbacks__r WHERE IsActive__c = TRUE) FROM StateConfiguration__mdt WHERE IsActive__c = TRUE ORDER BY MasterLabel, NamespacePrefix")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var orderGraph storage.Record
+	for _, record := range result.Records {
+		if record.Fields["QualifiedApiName"].String == "OrderGraph" {
+			orderGraph = record
+		}
+	}
+	transitions = orderGraph.Children["StateTransitions__r"]
+	callbacks = orderGraph.Children["StateTransitionCallbacks__r"]
+	if len(transitions) != 1 || len(callbacks) != 1 {
+		t.Fatalf("all-active children = %#v", orderGraph.Children)
+	}
+	if got := transitions[0].Fields["QualifiedApiName"].String; got != "order_submit_as_proforma" {
+		t.Fatalf("all-active transition QualifiedApiName = %q", got)
+	}
+
+	clonedOrg := org.CloneRuntime()
+	result, err = ParseAndExecute(clonedOrg, "SELECT Id,DeveloperName,MasterLabel,Language,NamespacePrefix,Label,QualifiedApiName,IsActive__c,SupportedStates__c, (SELECT Id, QualifiedApiName, IsActive__c, FromStates__c, ToState__c FROM StateTransitions__r WHERE IsActive__c = TRUE), (SELECT Id, QualifiedApiName, IsActive__c, ActionName__c, ClassName__c, SortOrder__c, TriggeringTransition__r.QualifiedApiName, Type__c FROM StateTransitionCallbacks__r WHERE IsActive__c = TRUE) FROM StateConfiguration__mdt WHERE IsActive__c = TRUE ORDER BY MasterLabel, NamespacePrefix")
+	if err != nil {
+		t.Fatal(err)
+	}
+	orderGraph = storage.Record{}
+	for _, record := range result.Records {
+		if record.Fields["QualifiedApiName"].String == "OrderGraph" {
+			orderGraph = record
+		}
+	}
+	transitions = orderGraph.Children["StateTransitions__r"]
+	callbacks = orderGraph.Children["StateTransitionCallbacks__r"]
+	if len(transitions) != 1 || len(callbacks) != 1 {
+		t.Fatalf("cloned all-active children = %#v", orderGraph.Children)
+	}
+
+	templateOrg := storage.NewRuntimeTemplate(org).CloneRuntimeOrg()
+	methodOrg := templateOrg.CloneRollbackSnapshot()
+	result, err = ParseAndExecute(methodOrg, "SELECT Id,DeveloperName,MasterLabel,Language,NamespacePrefix,Label,QualifiedApiName,IsActive__c,SupportedStates__c, (SELECT Id, QualifiedApiName, IsActive__c, FromStates__c, ToState__c FROM StateTransitions__r WHERE IsActive__c = TRUE), (SELECT Id, QualifiedApiName, IsActive__c, ActionName__c, ClassName__c, SortOrder__c, TriggeringTransition__r.QualifiedApiName, Type__c FROM StateTransitionCallbacks__r WHERE IsActive__c = TRUE) FROM StateConfiguration__mdt WHERE IsActive__c = TRUE ORDER BY MasterLabel, NamespacePrefix")
+	if err != nil {
+		t.Fatal(err)
+	}
+	orderGraph = storage.Record{}
+	for _, record := range result.Records {
+		if record.Fields["QualifiedApiName"].String == "OrderGraph" {
+			orderGraph = record
+		}
+	}
+	transitions = orderGraph.Children["StateTransitions__r"]
+	callbacks = orderGraph.Children["StateTransitionCallbacks__r"]
+	if len(transitions) != 1 || len(callbacks) != 1 {
+		t.Fatalf("template method children = %#v", orderGraph.Children)
 	}
 }
 
@@ -2608,6 +2773,40 @@ func TestExecuteCustomChildRelationshipSubqueryAcceptsRuntimeSuffix(t *testing.T
 	}
 }
 
+func TestExecuteCustomChildRelationshipSubqueryInfersPrefixedLinkObject(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["znu__MembershipType__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "znu__MembershipType__c",
+			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0r000000000001": {ID: "a0r000000000001", Object: "znu__MembershipType__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Regular")}},
+		},
+	}
+	org.Objects["znu__MembershipTypeProductLink__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "znu__MembershipTypeProductLink__c",
+			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0q000000000001": {ID: "a0q000000000001", Object: "znu__MembershipTypeProductLink__c", Fields: map[string]storage.Value{
+				"Name":                   storage.StringValue("Link"),
+				"znu__MembershipType__c": storage.IDValue("a0r000000000001"),
+			}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id, Name FROM znu__MembershipTypeProductLinks__r) FROM znu__MembershipType__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	children := result.Records[0].Children["znu__MembershipTypeProductLinks__r"]
+	if len(children) != 1 || children[0].Fields["Name"].String != "Link" {
+		t.Fatalf("children = %#v", children)
+	}
+}
+
 func TestExecuteCustomParentRelationshipFilterUsesDerivedName(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Cart__c"] = storage.ObjectState{
@@ -2811,6 +3010,126 @@ func TestExecuteCustomChildRelationshipSubqueryAcceptsNamespacedRelationship(t *
 	children := result.Records[0].Children["pkg__CartItems__r"]
 	if len(children) != 1 || children[0].Fields["Name"].String != "Line" {
 		t.Fatalf("children = %#v", children)
+	}
+}
+
+func TestExecuteChildRelationshipSubqueryMatchesDependencyNamespacedParentAlias(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "namz"
+	org.Objects["Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Product__c",
+			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0P000000000001": {ID: "a0P000000000001", Object: "Product__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Membership")}},
+		},
+	}
+	org.Objects["znu__SpecialPrice__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "znu__SpecialPrice__c",
+			Fields: map[string]storage.Field{
+				"Name":            {APIName: "Name", Type: storage.FieldString},
+				"znu__Product__c": {APIName: "znu__Product__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__Product__c"}},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "znu__Product__c",
+				ParentObjects:      []string{"znu__Product__c"},
+				ParentRelationship: "znu__Product__r",
+				ChildRelationship:  "znu__SpecialPrices__r",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0S000000000001": {ID: "a0S000000000001", Object: "znu__SpecialPrice__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Early"), "znu__Product__c": storage.IDValue("a0P000000000001")}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id, Name FROM SpecialPrices__r) FROM Product__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	children := result.Records[0].Children["SpecialPrices__r"]
+	if len(children) != 1 || children[0].Fields["Name"].String != "Early" {
+		t.Fatalf("children = %#v", children)
+	}
+}
+
+func TestExecuteChildRelationshipSubqueryPrefersLocalRelationshipOverDependencyNamespaceCollision(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "namz"
+	org.Objects["StateConfiguration__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "StateConfiguration__mdt",
+			Fields: map[string]storage.Field{
+				"IsActive__c": {APIName: "IsActive__c", Type: storage.FieldBoolean},
+			},
+			Metadata: map[string]string{"kind": "customMetadata"},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0j000000000001": {
+				ID:     "a0j000000000001",
+				Object: "StateConfiguration__mdt",
+				Fields: map[string]storage.Value{
+					"QualifiedApiName": storage.StringValue("OrderGraph"),
+					"IsActive__c":      storage.BooleanValue(true),
+				},
+			},
+		},
+	}
+	localDefinition := storage.ObjectDefinition{
+		APIName: "StateTransition__mdt",
+		Fields: map[string]storage.Field{
+			"IsActive__c":           {APIName: "IsActive__c", Type: storage.FieldBoolean},
+			"FromStates__c":         {APIName: "FromStates__c", Type: storage.FieldString},
+			"StateConfiguration__c": {APIName: "StateConfiguration__c", Type: storage.FieldReference, ReferenceTo: []string{"StateConfiguration__mdt"}, RelationshipName: "StateConfiguration__r", ChildRelationshipName: "StateTransitions__r"},
+		},
+		Relations: []storage.Relationship{{
+			Field:              "StateConfiguration__c",
+			ParentObjects:      []string{"StateConfiguration__mdt"},
+			ParentRelationship: "StateConfiguration__r",
+			ChildRelationship:  "StateTransitions__r",
+		}},
+		Metadata: map[string]string{"kind": "customMetadata"},
+	}
+	org.Objects["znu__StateTransition__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "znu__StateTransition__mdt",
+			Fields: map[string]storage.Field{
+				"znu__StateConfiguration__c": {APIName: "znu__StateConfiguration__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__StateConfiguration__mdt"}, RelationshipName: "znu__StateConfiguration__r", ChildRelationshipName: "znu__StateTransitions__r"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "znu__StateConfiguration__c",
+				ParentObjects:      []string{"znu__StateConfiguration__mdt"},
+				ParentRelationship: "znu__StateConfiguration__r",
+				ChildRelationship:  "znu__StateTransitions__r",
+			}},
+			Metadata: map[string]string{"kind": "customMetadata"},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["StateTransition__mdt"] = storage.ObjectState{
+		Definition: localDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a0l000000000002": {
+				ID:     "a0l000000000002",
+				Object: "StateTransition__mdt",
+				Fields: map[string]storage.Value{
+					"QualifiedApiName":      storage.StringValue("order_submit_as_proforma"),
+					"IsActive__c":           storage.BooleanValue(true),
+					"FromStates__c":         storage.StringValue("Cart"),
+					"StateConfiguration__c": storage.IDValue("a0j000000000001"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT QualifiedApiName, (SELECT QualifiedApiName, FromStates__c FROM StateTransitions__r WHERE IsActive__c = TRUE) FROM StateConfiguration__mdt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	children := result.Records[0].Children["StateTransitions__r"]
+	if len(children) != 1 || children[0].Fields["QualifiedApiName"].String != "order_submit_as_proforma" {
+		t.Fatalf("children = %#v", result.Records[0].Children)
 	}
 }
 

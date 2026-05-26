@@ -7,12 +7,9 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"sort"
-	"strings"
 
 	"github.com/glade-sh/glade/internal/automation"
-	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/resource"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
@@ -162,83 +159,8 @@ func orgForProject(root string) (storage.OrgState, error) {
 		}
 	}
 	storage.EnsureDeterministicPlatformData(&org)
-	storage.ApplyOrgShape(&org, orgShapeFeatures(root))
+	storage.ApplyOrgShape(&org, project.OrgShapeFeatures(root))
 	return org, nil
-}
-
-type scratchOrgDefinition struct {
-	Features []string       `json:"features"`
-	Settings map[string]any `json:"settings"`
-}
-
-func orgShapeFeatures(root string) []string {
-	features := make([]string, 0)
-	if cfg, _, err := config.LoadNearest(root); err == nil {
-		features = append(features, cfg.Org.Features...)
-	}
-	for _, name := range []string{
-		"project-scratch-def.json",
-		"hc-project-scratch-def.json",
-	} {
-		path := filepath.Join(root, "config", name)
-		data, err := os.ReadFile(path)
-		if err != nil {
-			continue
-		}
-		var def scratchOrgDefinition
-		if err := json.Unmarshal(data, &def); err == nil {
-			features = append(features, def.Features...)
-			features = append(features, scratchSettingsFeatures(def.Settings)...)
-		}
-	}
-	return dedupeStrings(features)
-}
-
-func scratchSettingsFeatures(settings map[string]any) []string {
-	var features []string
-	if nestedBool(settings, "communitiesSettings", "enableNetworksEnabled") || nestedBool(settings, "communitiesSettings", "enableOotbProfExtUserOpsEnable") {
-		features = append(features, "Communities")
-	}
-	if nestedBool(settings, "chatterSettings", "enableChatter") {
-		features = append(features, "Chatter")
-	}
-	if nestedBool(settings, "lightningExperienceSettings", "enableS1DesktopEnabled") {
-		features = append(features, "LightningExperience")
-	}
-	if _, ok := settings["userManagementSettings"]; ok {
-		features = append(features, "EnableSetPasswordInApi")
-	}
-	return features
-}
-
-func nestedBool(root map[string]any, path ...string) bool {
-	var current any = root
-	for _, key := range path {
-		next, ok := current.(map[string]any)
-		if !ok {
-			return false
-		}
-		current, ok = next[key]
-		if !ok {
-			return false
-		}
-	}
-	value, ok := current.(bool)
-	return ok && value
-}
-
-func dedupeStrings(values []string) []string {
-	seen := make(map[string]bool, len(values))
-	out := make([]string, 0, len(values))
-	for _, value := range values {
-		value = strings.TrimSpace(value)
-		if value == "" || seen[value] {
-			continue
-		}
-		seen[value] = true
-		out = append(out, value)
-	}
-	return out
 }
 
 func writeDBInspect(w io.Writer, path string, org storage.OrgState, jsonOut bool, schemaVersion int) error {
