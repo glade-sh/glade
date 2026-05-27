@@ -45,7 +45,7 @@ type VM struct {
 	classNameSearchCache      []classNameSearchEntry
 	Org                       *storage.OrgState
 	Triggers                  map[string][]Trigger
-	triggerMatchCache         map[string][]Trigger
+	triggerMatchCache         *triggerMatchCache
 	triggerNamespaceCache     map[triggerNamespaceLookupKey]string
 	Stdout                    io.Writer
 	callStack                 []callFrame
@@ -387,7 +387,7 @@ func New(stdout io.Writer) *VM {
 		onlyNestedTypeCache:   make(map[string]uniqueNestedTypeLookup),
 		topLevelTypeCache:     make(map[string]uniqueNestedTypeLookup),
 		Triggers:              make(map[string][]Trigger),
-		triggerMatchCache:     make(map[string][]Trigger),
+		triggerMatchCache:     newTriggerMatchCache(),
 		triggerNamespaceCache: make(map[triggerNamespaceLookupKey]string),
 		Stdout:                stdout,
 		limitCaps:             defaultLimitCaps(),
@@ -431,7 +431,10 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	clone.Classes = copyClassMap(vm.Classes)
 	clone.rebuildClassLookup()
 	clone.Triggers = copyTriggerSliceMap(vm.Triggers)
-	clone.triggerMatchCache = make(map[string][]Trigger)
+	// triggerMatchCache is computed from Triggers; share the pointer so we
+	// only populate it once across all clones in a run. Concurrent test
+	// methods are protected by the cache's RWMutex.
+	clone.triggerMatchCache = vm.triggerMatchCache
 	clone.traceEnabled = vm.traceEnabled
 	clone.staticInitState = copyStaticInitStateMap(vm.staticInitState)
 	clone.pageReferences = copyStringMap(vm.pageReferences)
@@ -859,7 +862,7 @@ func (vm *VM) clearTriggerMatchCache() {
 	if vm == nil {
 		return
 	}
-	vm.triggerMatchCache = make(map[string][]Trigger)
+	vm.triggerMatchCache.reset()
 	vm.triggerNamespaceCache = make(map[triggerNamespaceLookupKey]string)
 }
 

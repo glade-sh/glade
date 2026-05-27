@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
@@ -4638,10 +4639,10 @@ func (vm *VM) triggersForOperation(object, timing, op string) []Trigger {
 		return nil
 	}
 	if vm.triggerMatchCache == nil {
-		vm.triggerMatchCache = make(map[string][]Trigger)
+		vm.triggerMatchCache = newTriggerMatchCache()
 	}
 	cacheKey := strings.ToLower(object) + "|" + timing + "|" + op
-	if cached, ok := vm.triggerMatchCache[cacheKey]; ok {
+	if cached, ok := vm.triggerMatchCache.load(cacheKey); ok {
 		return cached
 	}
 	triggers := make([]Trigger, 0, len(vm.Triggers[object]))
@@ -4661,8 +4662,49 @@ func (vm *VM) triggersForOperation(object, timing, op string) []Trigger {
 			}
 		}
 	}
-	vm.triggerMatchCache[cacheKey] = triggers
+	vm.triggerMatchCache.store(cacheKey, triggers)
 	return triggers
+}
+
+// triggerMatchCache is shared across clones produced by CloneRuntime so that
+// repeated DML in test methods does not rebuild the same trigger lookup
+// table for every test. Reads dominate; an RWMutex keeps the hot path cheap
+// without locking out concurrent --parallel-methods workers.
+type triggerMatchCache struct {
+	mu      sync.RWMutex
+	entries map[string][]Trigger
+}
+
+func newTriggerMatchCache() *triggerMatchCache {
+	return &triggerMatchCache{entries: make(map[string][]Trigger)}
+}
+
+func (c *triggerMatchCache) load(key string) ([]Trigger, bool) {
+	if c == nil {
+		return nil, false
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	value, ok := c.entries[key]
+	return value, ok
+}
+
+func (c *triggerMatchCache) store(key string, value []Trigger) {
+	if c == nil {
+		return
+	}
+	c.mu.Lock()
+	c.entries[key] = value
+	c.mu.Unlock()
+}
+
+func (c *triggerMatchCache) reset() {
+	if c == nil {
+		return
+	}
+	c.mu.Lock()
+	c.entries = make(map[string][]Trigger)
+	c.mu.Unlock()
 }
 
 func (vm *VM) runTriggersByObject(timing, op string, records, oldRecords []storage.Record, result *Result) ([]dml.Result, []storage.Record, error) {
