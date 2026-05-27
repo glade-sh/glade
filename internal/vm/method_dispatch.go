@@ -3846,23 +3846,45 @@ func (vm *VM) findValueByRef(ref uint64) (Value, bool) {
 			return value, true
 		}
 	}
-	for _, class := range vm.Classes {
-		for _, field := range class.StaticFields {
-			if field.Value.Ref == ref {
-				return field.Value, true
-			}
-		}
+	if value, ok := vm.staticFieldValueByRef(ref); ok {
+		return value, true
 	}
 	for _, scope := range vm.liveScopes() {
 		if value, ok := findValueByRefInScope(scope, ref, make(map[uint64]bool)); ok {
 			return value, true
 		}
 	}
-	for _, class := range vm.Classes {
-		for _, field := range class.StaticFields {
-			if value, ok := findValueByRef(field.Value, ref, make(map[uint64]bool)); ok {
-				return value, true
-			}
+	return Null, false
+}
+
+// staticFieldValueByRef consults the per-VM reverse index built by
+// collectStaticValueRefs. It avoids scanning every class for every lookup;
+// nams profiles showed findValueByRef at 184 s cum / 15 % CPU when this
+// walked all classes × all static fields per ref.
+func (vm *VM) staticFieldValueByRef(ref uint64) (Value, bool) {
+	if ref == 0 {
+		return Null, false
+	}
+	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
+		vm.staticValueRefs, vm.staticValueRefFields = vm.collectStaticValueRefs()
+	}
+	if !vm.staticValueRefs[ref] {
+		return Null, false
+	}
+	for _, location := range vm.staticValueRefFields[ref] {
+		class, ok := vm.Classes[location.ClassName]
+		if !ok {
+			continue
+		}
+		field, ok := class.StaticFields[location.FieldName]
+		if !ok {
+			continue
+		}
+		if field.Value.Ref == ref {
+			return field.Value, true
+		}
+		if value, ok := findValueByRef(field.Value, ref, make(map[uint64]bool)); ok {
+			return value, true
 		}
 	}
 	return Null, false
