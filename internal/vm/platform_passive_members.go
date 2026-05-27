@@ -831,6 +831,14 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return value, receiver, false, true, nil
 			}
 			return Null, receiver, false, true, nil
+		case "isUpgrade":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("InstallContext.isUpgrade expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["PreviousVersion"]; ok && value.Kind != ValueNull {
+				return Bool(true), receiver, false, true, nil
+			}
+			return Bool(false), receiver, false, true, nil
 		case "isPush":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("InstallContext.isPush expects 0 arguments")

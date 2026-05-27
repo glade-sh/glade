@@ -5030,8 +5030,10 @@ Test.testInstall(new InstallScript(), new Version(1, 47, 0), false);
 	}
 	onInstall, err := CompileAnonymous(`
 if (context.previousVersion() == null) {
+	System.assert(!context.isUpgrade());
 	insert new Account(Name = 'Installed');
 } else {
+	System.assert(context.isUpgrade());
 	System.assert(context.previousVersion().compareTo(new Version(1, 47, 1)) < 0);
 	System.assertEquals('1.47.0', context.previousVersion().toString());
 	System.assert(!context.isPush());
