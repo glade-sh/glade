@@ -1918,6 +1918,7 @@ var apexStaticFieldReferencePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9
 var apexSchemaSObjectTypeFieldReferencePattern = regexp.MustCompile(`(?i:\bSchema\.SObjectType\.)([A-Za-z_][A-Za-z0-9_]*)(?i:\.fields\.)([A-Za-z][A-Za-z0-9_]*)\b`)
 var apexSObjectTypeFieldReferencePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)(?i:\.SObjectType\.fields\.)([A-Za-z][A-Za-z0-9_]*)\b`)
 var apexSObjectLiteralPattern = regexp.MustCompile(`(?s)\b([A-Za-z_][A-Za-z0-9_]*)\s*\((.*?)\)`)
+var apexNewSObjectLiteralPattern = regexp.MustCompile(`(?s)\bnew\s+([A-Za-z_][A-Za-z0-9_]*)\s*\((.*?)\)`)
 var apexNamedArgumentPattern = regexp.MustCompile(`\b([A-Za-z][A-Za-z0-9_]*)\s*=`)
 var apexTypedVariablePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
 var apexVariableFieldReferencePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)\b`)
@@ -1997,30 +1998,8 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 			fieldName := scanSource[match[4]:match[5]]
 			recordProjectReferencedStandardField(org, inferred, objectName, fieldName, projectReferencedStandardFieldHint(hints, objectName, fieldName))
 		}
-		for _, match := range apexSObjectLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
-			if len(match) != 6 {
-				continue
-			}
-			objectName := scanSource[match[2]:match[3]]
-			if _, ok := org.Objects[objectName]; !ok {
-				continue
-			}
-			body := scanSource[match[4]:match[5]]
-			for _, argMatch := range apexNamedArgumentPattern.FindAllStringSubmatchIndex(body, -1) {
-				if len(argMatch) != 4 {
-					continue
-				}
-				fieldName := body[argMatch[2]:argMatch[3]]
-				hintedType := projectReferencedStandardFieldHint(hints, objectName, fieldName)
-				if hintedType == "" && apexNamedArgumentBoolLiteral(body[argMatch[1]:]) {
-					hintedType = storage.FieldBoolean
-				}
-				if hintedType == "" && apexNamedArgumentNumericLiteral(body[argMatch[1]:]) {
-					hintedType = storage.FieldDecimal
-				}
-				recordProjectReferencedStandardField(org, inferred, objectName, fieldName, hintedType)
-			}
-		}
+		recordProjectReferencedSObjectLiteralFields(org, inferred, hints, scanSource, apexNewSObjectLiteralPattern)
+		recordProjectReferencedSObjectLiteralFields(org, inferred, hints, scanSource, apexSObjectLiteralPattern)
 		for _, match := range apexStaticFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
 			if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
 				continue
@@ -2136,6 +2115,33 @@ func apexNamedArgumentNumericLiteral(rest string) bool {
 	return true
 }
 
+func recordProjectReferencedSObjectLiteralFields(org *storage.OrgState, inferred map[string]map[string]storage.Field, hints map[string]map[string]storage.FieldType, scanSource string, pattern *regexp.Regexp) {
+	for _, match := range pattern.FindAllStringSubmatchIndex(scanSource, -1) {
+		if len(match) != 6 {
+			continue
+		}
+		objectName := scanSource[match[2]:match[3]]
+		if _, ok := org.Objects[objectName]; !ok {
+			continue
+		}
+		body := scanSource[match[4]:match[5]]
+		for _, argMatch := range apexNamedArgumentPattern.FindAllStringSubmatchIndex(body, -1) {
+			if len(argMatch) != 4 {
+				continue
+			}
+			fieldName := body[argMatch[2]:argMatch[3]]
+			hintedType := projectReferencedStandardFieldHint(hints, objectName, fieldName)
+			if hintedType == "" && apexNamedArgumentBoolLiteral(body[argMatch[1]:]) {
+				hintedType = storage.FieldBoolean
+			}
+			if hintedType == "" && apexNamedArgumentNumericLiteral(body[argMatch[1]:]) {
+				hintedType = storage.FieldDecimal
+			}
+			recordProjectReferencedStandardField(org, inferred, objectName, fieldName, hintedType)
+		}
+	}
+}
+
 func apexMemberReferenceIsCall(source string, end int) bool {
 	for end < len(source) {
 		switch source[end] {
@@ -2176,7 +2182,15 @@ func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[st
 	if !ok {
 		return
 	}
-	if _, ok := storage.ResolveFieldName(state.Definition, org.Namespace, fieldName); ok {
+	if existingName, ok := storage.ResolveFieldName(state.Definition, org.Namespace, fieldName); ok {
+		if hintedType != "" {
+			existing := state.Definition.Fields[existingName]
+			replacement := inferredReferencedStandardField(existing.APIName, hintedType)
+			if projectReferencedFieldCanUpgrade(existing, replacement) {
+				state.Definition.Fields[existingName] = replacement
+				org.Objects[objectName] = state
+			}
+		}
 		return
 	}
 	if parentRelationshipKnown(state.Definition, fieldName) {
@@ -2567,6 +2581,10 @@ type projectDataFieldReference struct {
 
 var apexRecordTypeInfoCallRE = regexp.MustCompile(`(?is)(?:(?:Schema\s*\.\s*)?SObjectType\s*\.\s*([A-Za-z_][A-Za-z0-9_]*(?:__[A-Za-z0-9_]+)*)(?:\s*\.\s*getDescribe\s*\(\s*\))?|([A-Za-z_][A-Za-z0-9_]*(?:__[A-Za-z0-9_]+)*)\s*\.\s*SObjectType(?:\s*\.\s*getDescribe\s*\(\s*\))?)\s*\.\s*getRecordTypeInfosBy(Name|DeveloperName)\s*\(\s*\)\s*\.\s*get\s*\(\s*['"]([^'"]+)['"]\s*\)`)
 var dataRecordTypeQueryRE = regexp.MustCompile(`(?is)FROM\s+RecordType\b[^"\n]*\bSObjectType\s*=\s*'([^']+)'[^"\n]*\bName\s*=\s*'([^']+)'`)
+var apexGetSObjectTypeReturnRE = regexp.MustCompile(`(?is)\bgetSObjectType\s*\(\s*\)\s*\{.*?\breturn\s+([A-Za-z_][A-Za-z0-9_]*(?:__[A-Za-z0-9_]+)*)\s*\.\s*SObjectType\s*;`)
+var apexStaticFinalStringRE = regexp.MustCompile(`(?is)\bstatic\s+final\s+String\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*['"]([^'"]+)['"]`)
+var apexGetRecordTypeIdCallRE = regexp.MustCompile(`(?is)\bgetRecordTypeId\s*\(\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z_][A-Za-z0-9_]*))\s*\)`)
+var apexRecordTypeStringMethodRE = regexp.MustCompile(`(?is)\b([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*String\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*\{([^{}]*)\}`)
 
 func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project) {
 	if org == nil {
@@ -2613,7 +2631,8 @@ func projectReferencedRecordTypes(p project.Project) []projectRecordTypeReferenc
 		if err != nil {
 			continue
 		}
-		for _, match := range apexRecordTypeInfoCallRE.FindAllStringSubmatch(string(data), -1) {
+		source := string(data)
+		for _, match := range apexRecordTypeInfoCallRE.FindAllStringSubmatch(source, -1) {
 			objectName := match[1]
 			if objectName == "" {
 				objectName = match[2]
@@ -2628,6 +2647,9 @@ func projectReferencedRecordTypes(p project.Project) []projectRecordTypeReferenc
 				ref.DeveloperName = recordTypeDeveloperNameFromLabel(value)
 				ref.Name = value
 			}
+			add(ref)
+		}
+		for _, ref := range projectReferencedTestDataHelperRecordTypes(source) {
 			add(ref)
 		}
 	}
@@ -2652,6 +2674,73 @@ func projectReferencedRecordTypes(p project.Project) []projectRecordTypeReferenc
 		return refs[i].DeveloperName < refs[j].DeveloperName
 	})
 	return refs
+}
+
+func projectReferencedTestDataHelperRecordTypes(source string) []projectRecordTypeReference {
+	objectMatch := apexGetSObjectTypeReturnRE.FindStringSubmatch(source)
+	if len(objectMatch) != 2 {
+		return nil
+	}
+	objectName := objectMatch[1]
+	constants := make(map[string]string)
+	for _, match := range apexStaticFinalStringRE.FindAllStringSubmatch(source, -1) {
+		if len(match) == 3 {
+			constants[match[1]] = match[2]
+		}
+	}
+	var refs []projectRecordTypeReference
+	for _, match := range apexGetRecordTypeIdCallRE.FindAllStringSubmatch(source, -1) {
+		if name := projectRecordTypeNameFromCallArg(match, constants); name != "" {
+			refs = append(refs, projectRecordTypeReference{
+				ObjectName:    objectName,
+				DeveloperName: recordTypeDeveloperNameFromLabel(name),
+				Name:          name,
+			})
+		}
+	}
+	for _, forwardingMethod := range apexRecordTypeForwardingMethods(source) {
+		callRE := regexp.MustCompile(`(?is)\b` + regexp.QuoteMeta(forwardingMethod) + `\s*\(\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z_][A-Za-z0-9_]*))\s*\)`)
+		for _, match := range callRE.FindAllStringSubmatch(source, -1) {
+			if name := projectRecordTypeNameFromCallArg(match, constants); name != "" {
+				refs = append(refs, projectRecordTypeReference{
+					ObjectName:    objectName,
+					DeveloperName: recordTypeDeveloperNameFromLabel(name),
+					Name:          name,
+				})
+			}
+		}
+	}
+	return refs
+}
+
+func apexRecordTypeForwardingMethods(source string) []string {
+	seen := make(map[string]bool)
+	var methods []string
+	for _, match := range apexRecordTypeStringMethodRE.FindAllStringSubmatch(source, -1) {
+		if len(match) < 4 || seen[match[1]] {
+			continue
+		}
+		if !regexp.MustCompile(`(?is)\bgetRecordTypeId\s*\(\s*` + regexp.QuoteMeta(match[2]) + `\s*\)`).MatchString(match[3]) {
+			continue
+		}
+		seen[match[1]] = true
+		methods = append(methods, match[1])
+	}
+	return methods
+}
+
+func projectRecordTypeNameFromCallArg(match []string, constants map[string]string) string {
+	if len(match) != 4 {
+		return ""
+	}
+	name := match[1]
+	if name == "" {
+		name = match[2]
+	}
+	if name == "" && match[3] != "" {
+		name = constants[match[3]]
+	}
+	return strings.TrimSpace(name)
 }
 
 func applyProjectDataRelationshipReferences(org *storage.OrgState, p project.Project) {
@@ -3474,6 +3563,18 @@ func permissionReferencedFieldCanUpgrade(existing, replacement storage.Field) bo
 		return false
 	}
 	if replacement.Type != storage.FieldReference || existing.Type == storage.FieldReference || len(existing.ReferenceTo) > 0 || existing.RelationshipName != "" {
+		return false
+	}
+	for _, hintedType := range []storage.FieldType{"", storage.FieldBoolean, storage.FieldDecimal} {
+		if inferredStandardFieldShapeEqual(existing, inferredReferencedStandardField(existing.APIName, hintedType)) {
+			return true
+		}
+	}
+	return false
+}
+
+func projectReferencedFieldCanUpgrade(existing, replacement storage.Field) bool {
+	if replacement.Type == storage.FieldString || existing.Type == replacement.Type {
 		return false
 	}
 	for _, hintedType := range []storage.FieldType{"", storage.FieldBoolean, storage.FieldDecimal} {

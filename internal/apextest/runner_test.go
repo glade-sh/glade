@@ -5475,6 +5475,74 @@ public class SObjectLiteralProbe {
 	}
 }
 
+func TestOrgFromIndexInfersNamespacedSObjectLiteralBooleanFields(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/znu__ProcessingFee__c/znu__ProcessingFee__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Processing Fee</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ProcessingFeeProbe.cls"), `
+public class ProcessingFeeProbe {
+	public static void touch() {
+		List<znu__ProcessingFee__c> fees = new List<znu__ProcessingFee__c>();
+		fees.add(new znu__ProcessingFee__c(znu__Mandatory__c = false));
+	}
+}
+`)
+	org := orgFromIndex(loadTestIndex(t, root))
+	field := org.Objects["znu__ProcessingFee__c"].Definition.Fields["znu__Mandatory__c"]
+	if field.Type != storage.FieldBoolean || field.DisplayType != "BOOLEAN" {
+		t.Fatalf("znu__ProcessingFee__c.znu__Mandatory__c field = %#v", field)
+	}
+}
+
+func TestOrgFromIndexUpgradesInferredFieldWhenLaterLiteralProvidesTypeHint(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/znu__ProcessingFee__c/znu__ProcessingFee__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Processing Fee</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AProcessingFeeService.cls"), `
+public class AProcessingFeeService {
+	public static Object mandatory(znu__ProcessingFee__c fee) {
+		return fee.znu__Mandatory__c;
+	}
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ZProcessingFeeTest.cls"), `
+public class ZProcessingFeeTest {
+	public static void touch() {
+		znu__ProcessingFee__c fee = new znu__ProcessingFee__c(znu__Mandatory__c = false);
+	}
+}
+`)
+	org := orgFromIndex(loadTestIndex(t, root))
+	field := org.Objects["znu__ProcessingFee__c"].Definition.Fields["znu__Mandatory__c"]
+	if field.Type != storage.FieldBoolean || field.DisplayType != "BOOLEAN" {
+		t.Fatalf("znu__ProcessingFee__c.znu__Mandatory__c field = %#v", field)
+	}
+}
+
+func TestRecordProjectReferencedStandardFieldUpgradesExistingInferredShape(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["znu__ProcessingFee__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "znu__ProcessingFee__c",
+			Fields:  map[string]storage.Field{},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	inferred := map[string]map[string]storage.Field{}
+	recordProjectReferencedStandardField(&org, inferred, "znu__ProcessingFee__c", "znu__Mandatory__c", "")
+	applyReferencedStandardFieldSet(&org, inferred)
+	field := org.Objects["znu__ProcessingFee__c"].Definition.Fields["znu__Mandatory__c"]
+	if field.Type != storage.FieldString {
+		t.Fatalf("initial inferred field = %#v", field)
+	}
+
+	recordProjectReferencedStandardField(&org, map[string]map[string]storage.Field{}, "znu__ProcessingFee__c", "znu__Mandatory__c", storage.FieldBoolean)
+	field = org.Objects["znu__ProcessingFee__c"].Definition.Fields["znu__Mandatory__c"]
+	if field.Type != storage.FieldBoolean || field.DisplayType != "BOOLEAN" {
+		t.Fatalf("upgraded inferred field = %#v", field)
+	}
+}
+
 func TestOrgFromIndexIncludesProjectReferencedCustomLookupFields(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -6286,6 +6354,46 @@ private class ReferencedRecordTypesTest {
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestOrgFromIndexAddsRecordTypesReferencedByTestDataHelpers(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Product__c/pkg__Product__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Product</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/ProductTestData.cls"), `
+@IsTest
+private class ProductTestData {
+  private static final String PROD_RECORD_TYPE_PROCESSING_FEE = 'Processing Fee';
+  public Schema.SObjectType getSObjectType() {
+    return pkg__Product__c.SObjectType;
+  }
+  public Id processingFeeRecordTypeId() {
+    return forRecordType(PROD_RECORD_TYPE_PROCESSING_FEE);
+  }
+  public Id forRecordType(String recordTypeName) {
+    return getRecordTypeId(recordTypeName);
+  }
+  protected Id getRecordTypeId(String name) {
+    return getSObjectType().getDescribe().getRecordTypeInfosByName().get(name).getRecordTypeId();
+  }
+}
+`)
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	product, ok := org.Objects["pkg__Product__c"]
+	if !ok {
+		t.Fatalf("product object missing")
+	}
+	found := false
+	for _, recordType := range product.Definition.RecordTypes {
+		if recordType.DeveloperName == "ProcessingFee" && recordType.Name == "Processing Fee" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("Processing Fee record type missing: %#v", product.Definition.RecordTypes)
 	}
 }
 
