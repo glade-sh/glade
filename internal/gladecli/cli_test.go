@@ -1833,7 +1833,7 @@ func TestRunInspectSymbolsJSON(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), `"name": "Hello"`) || !strings.Contains(stdout.String(), `"name": "Thing__c"`) {
+	if !strings.Contains(stdout.String(), `"name": "Hello"`) || !strings.Contains(stdout.String(), `"name": "pkg__Thing__c"`) {
 		t.Fatalf("stdout did not include symbols and schema: %q", stdout.String())
 	}
 }
