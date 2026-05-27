@@ -1769,10 +1769,10 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if vm.Org == nil {
 		return nil, fmt.Errorf("DML requires org state")
 	}
-	bulkPrevious := Null
+	bulkPrevious := aliasSnapshot{}
 	bulkPropagate := value.Kind == ValueList && value.Ref != 0
 	if bulkPropagate {
-		bulkPrevious = cloneValuePreserveRefs(value)
+		bulkPrevious = snapshotAlias(value)
 	}
 	records, targets, err := vm.recordsFromValue(value)
 	if err != nil {
@@ -1918,17 +1918,17 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	}
 	for i, dmlResult := range engineResults {
 		if dmlResult.Success && i < len(targets) && targets[i] != nil {
-			previous := cloneValuePreserveRefs(*targets[i])
+			previous := snapshotAlias(*targets[i])
 			vm.populateDMLResultFields(targets[i], engineResults[i:i+1])
 			if !bulkPropagate {
-				vm.propagateValueMutationToScope(vm.Globals, previous, *targets[i])
-				vm.propagateValueMutationToStatics(previous, *targets[i])
+				vm.propagateAliasSnapshotToScope(vm.Globals, previous, *targets[i])
+				vm.propagateAliasSnapshotToStatics(previous, *targets[i])
 			}
 		}
 	}
 	if bulkPropagate {
-		vm.propagateValueMutationToScope(vm.Globals, bulkPrevious, value)
-		vm.propagateValueMutationToStatics(bulkPrevious, value)
+		vm.propagateAliasSnapshotToScope(vm.Globals, bulkPrevious, value)
+		vm.propagateAliasSnapshotToStatics(bulkPrevious, value)
 	}
 	afterInputRecords, afterInputBefore, afterInputResults := successfulDMLInputs(records, before, engineResults)
 	afterRecords := afterInputRecords
@@ -2462,10 +2462,10 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 	}
 	for i, dmlResult := range engineResults {
 		if dmlResult.Success && i < len(targets) && targets[i] != nil {
-			previous := cloneValuePreserveRefs(*targets[i])
+			previous := snapshotAlias(*targets[i])
 			vm.populateDMLResultFields(targets[i], engineResults[i:i+1])
-			vm.propagateValueMutationToScope(vm.Globals, previous, *targets[i])
-			vm.propagateValueMutationToStatics(previous, *targets[i])
+			vm.propagateAliasSnapshotToScope(vm.Globals, previous, *targets[i])
+			vm.propagateAliasSnapshotToStatics(previous, *targets[i])
 		}
 	}
 	for _, kind := range []string{"insert", "update"} {

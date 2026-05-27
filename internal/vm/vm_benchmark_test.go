@@ -1,6 +1,9 @@
 package vm
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func BenchmarkExecTriggerDML(b *testing.B) {
 	triggerProgram, err := CompileAnonymous(`
@@ -35,6 +38,120 @@ for (Integer i = 0; i < 25; i++) {
 		}
 		if _, err := machine.Execute(program); err != nil {
 			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkCloneValuePreserveRefsLargeOrderGraph(b *testing.B) {
+	root := Object("OrderGraph")
+	lines := List()
+	for i := 0; i < 200; i++ {
+		line := Object("OrderLine")
+		line.Fields["Name"] = String(fmt.Sprintf("line-%d", i))
+		line.Fields["Price"] = Decimal(float64(i))
+		line.Fields["Children"] = List(Object("Adjustment"), Object("Agreement"))
+		lines.List = append(lines.List, line)
+	}
+	root.Fields["Lines"] = lines
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		cloned := cloneValuePreserveRefs(root)
+		if cloned.Ref != root.Ref {
+			b.Fatalf("clone lost root ref")
+		}
+	}
+}
+
+func BenchmarkReplaceValueAliasLargeOrderGraph(b *testing.B) {
+	root := Object("OrderGraph")
+	groups := List()
+	for i := 0; i < 50; i++ {
+		group := Object("OrderGroup")
+		group.Fields["Name"] = String(fmt.Sprintf("group-%d", i))
+		lines := List()
+		for j := 0; j < 4; j++ {
+			line := Object("OrderLine")
+			line.Fields["Name"] = String(fmt.Sprintf("group-%d-line-%d", i, j))
+			line.Fields["Children"] = List(Object("Adjustment"), Object("Agreement"))
+			metadata := Map()
+			priceKey := mapKey(String("price"))
+			metadata.Map[priceKey] = Decimal(float64(i*10 + j))
+			metadata.MapKeys[priceKey] = String("price")
+			metadata.MapOrder = append(metadata.MapOrder, priceKey)
+			line.Fields["Metadata"] = metadata
+			lines.List = append(lines.List, line)
+		}
+		group.Fields["Lines"] = lines
+		groups.List = append(groups.List, group)
+	}
+
+	previous := List()
+	for i := 0; i < 200; i++ {
+		previous.List = append(previous.List, Object("OrderLine"))
+	}
+	updated := previous
+	updated.List = append(updated.List, Object("OrderLine"))
+	targetGroup := Object("OrderGroup")
+	targetGroup.Fields["Lines"] = previous
+	groups.List = append(groups.List, targetGroup)
+	root.Fields["Groups"] = groups
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		seen := make(map[uint64]bool)
+		replaced, changed := replaceValueAlias(root, previous, updated, seen)
+		replacedGroups := replaced.Fields["Groups"].List
+		replacedLines := replacedGroups[len(replacedGroups)-1].Fields["Lines"].List
+		if !changed || len(replacedLines) != 201 {
+			b.Fatalf("alias was not replaced")
+		}
+	}
+}
+
+func BenchmarkReplaceAliasSnapshotLargeOrderGraph(b *testing.B) {
+	root := Object("OrderGraph")
+	groups := List()
+	for i := 0; i < 50; i++ {
+		group := Object("OrderGroup")
+		group.Fields["Name"] = String(fmt.Sprintf("group-%d", i))
+		lines := List()
+		for j := 0; j < 4; j++ {
+			line := Object("OrderLine")
+			line.Fields["Name"] = String(fmt.Sprintf("group-%d-line-%d", i, j))
+			line.Fields["Children"] = List(Object("Adjustment"), Object("Agreement"))
+			metadata := Map()
+			priceKey := mapKey(String("price"))
+			metadata.Map[priceKey] = Decimal(float64(i*10 + j))
+			metadata.MapKeys[priceKey] = String("price")
+			metadata.MapOrder = append(metadata.MapOrder, priceKey)
+			line.Fields["Metadata"] = metadata
+			lines.List = append(lines.List, line)
+		}
+		group.Fields["Lines"] = lines
+		groups.List = append(groups.List, group)
+	}
+
+	previous := List()
+	for i := 0; i < 200; i++ {
+		previous.List = append(previous.List, Object("OrderLine"))
+	}
+	updated := previous
+	updated.List = append(updated.List, Object("OrderLine"))
+	targetGroup := Object("OrderGroup")
+	targetGroup.Fields["Lines"] = previous
+	groups.List = append(groups.List, targetGroup)
+	root.Fields["Groups"] = groups
+	snapshot := snapshotAlias(previous)
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		seen := make(map[uint64]bool)
+		replaced, changed := replaceAliasSnapshot(root, snapshot, updated, seen)
+		replacedGroups := replaced.Fields["Groups"].List
+		replacedLines := replacedGroups[len(replacedGroups)-1].Fields["Lines"].List
+		if !changed || len(replacedLines) != 201 {
+			b.Fatalf("alias was not replaced")
 		}
 	}
 }

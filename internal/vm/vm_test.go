@@ -130,6 +130,89 @@ func TestSameAliasValueIgnoresMapIterationOrder(t *testing.T) {
 	}
 }
 
+func TestReplaceAliasSnapshotReplacesMatchingRefAndKind(t *testing.T) {
+	target := Object("Account")
+	target.Ref = 42
+	root := List(target)
+	snapshot := snapshotAlias(target)
+	updated := target
+	updated.Fields["Name"] = String("Acme")
+
+	replaced, changed := replaceAliasSnapshot(root, snapshot, updated, make(map[uint64]bool))
+	if !changed {
+		t.Fatalf("replaceAliasSnapshot changed = false, want true")
+	}
+	if got := replaced.List[0].Fields["Name"].Text; got != "Acme" {
+		t.Fatalf("replaced alias Name = %q, want Acme", got)
+	}
+}
+
+func TestAliasSnapshotMutationPropagationSkipsNoopMetadataChange(t *testing.T) {
+	original := Object("Account")
+	original.Ref = 42
+	original.Static = "Account"
+	original.Runtime = "Account"
+	original.Fields["Name"] = String("Acme")
+	updated := original
+	updated.Static = "Object"
+	updated.Runtime = "Object"
+
+	machine := New(nil)
+	scope := map[string]Value{"account": original}
+	changed := machine.propagateAliasSnapshotMutationToScope(scope, snapshotAlias(updated), original, updated)
+	if changed {
+		t.Fatal("noop metadata coercion propagated as a mutation")
+	}
+	if got := scope["account"].Static; got != "Account" {
+		t.Fatalf("account static type = %q, want Account", got)
+	}
+}
+
+func TestAliasSnapshotMutationPropagationSkipsNestedNoopMetadataChange(t *testing.T) {
+	child := List(String("Acme"))
+	child.Ref = 43
+	original := Object("Account")
+	original.Ref = 42
+	original.Static = "Account"
+	original.Runtime = "Account"
+	original.Fields["Names"] = child
+	updated := original
+	updated.Static = "Object"
+	updated.Runtime = "Object"
+
+	machine := New(nil)
+	scope := map[string]Value{"account": original, "names": child}
+	changed := machine.propagateAliasSnapshotMutationToScope(scope, snapshotAlias(updated), original, updated)
+	if changed {
+		t.Fatal("nested noop metadata coercion propagated as a root mutation")
+	}
+	if got := scope["account"].Static; got != "Account" {
+		t.Fatalf("account static type = %q, want Account", got)
+	}
+	if got := scope["names"].List[0].Text; got != "Acme" {
+		t.Fatalf("names[0] = %q, want Acme", got)
+	}
+}
+
+func TestAliasSnapshotMutationPropagationKeepsRealDataChange(t *testing.T) {
+	original := Object("Account")
+	original.Ref = 42
+	original.Fields["Name"] = String("Acme")
+	updated := Object("Account")
+	updated.Ref = original.Ref
+	updated.Fields["Name"] = String("Smith")
+
+	machine := New(nil)
+	scope := map[string]Value{"account": original}
+	changed := machine.propagateAliasSnapshotMutationToScope(scope, snapshotAlias(updated), original, updated)
+	if !changed {
+		t.Fatal("data mutation did not propagate")
+	}
+	if got := scope["account"].Fields["Name"].Text; got != "Smith" {
+		t.Fatalf("account Name = %q, want Smith", got)
+	}
+}
+
 func TestExecGeneratedPlatformStaticMethodFallsBackToTypedDefault(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Id> similar = Answers.findSimilar(new Account(Name = 'Acme'));

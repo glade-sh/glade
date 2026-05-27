@@ -81,6 +81,33 @@ System.assertEquals(znu.OperationStatus.SUCCESS, status);
 	}
 }
 
+func TestLargeReceiverMutationPreservesAliases(t *testing.T) {
+	program, err := CompileAnonymous(`
+Box first = new Box();
+first.values = new List<String>();
+Box second = first;
+for (Integer i = 0; i < 50; i++) {
+	first.values.add('v' + i);
+}
+System.assertEquals(50, second.values.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"values": {Name: "values", Type: "List<String>"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectPropertyGetterNullSupportsFieldAccess(t *testing.T) {
 	getterProgram, err := CompileAnonymous(`return null;`)
 	if err != nil {

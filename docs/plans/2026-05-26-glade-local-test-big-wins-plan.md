@@ -12,9 +12,9 @@
 
 ## Progress Ledger
 
-- [ ] Task 1: Record focused baselines from the current slow methods.
-- [ ] Task 2: Add VM value snapshot and alias propagation benchmarks.
-- [ ] Task 3: Reduce `cloneValuePreserveRefsSeen` allocation pressure.
+- [x] Task 1: Record focused baselines from the current slow methods.
+- [x] Task 2: Add VM value snapshot and alias propagation benchmarks.
+- [x] Task 3: Reduce `cloneValuePreserveRefsSeen` allocation pressure.
 - [ ] Task 4: Reduce broad alias replacement walks.
 - [ ] Task 5: Split long classes across the fixed worker budget.
 - [ ] Task 6: Replace safe per-method org deep clones with copy-on-write snapshots or journal rollback.
@@ -102,7 +102,7 @@ Baseline facts from the investigation:
 - Modify: `docs/plans/2026-05-26-glade-local-test-big-wins-plan.md`
 - No production code changes.
 
-- [ ] **Step 1: Build one profiling binary**
+- [x] **Step 1: Build one profiling binary**
 
 Run:
 
@@ -112,7 +112,9 @@ GOCACHE=/tmp/glade-go-build GOMAXPROCS=4 go build -o /tmp/glade-localtest-curren
 
 Expected: exit code `0`.
 
-- [ ] **Step 2: Refresh the NU focused profile**
+Result: exit code `0`. Built from `/Users/matt/Dev/glade-local-test-big-wins`.
+
+- [x] **Step 2: Refresh the NU focused profile**
 
 Run:
 
@@ -130,7 +132,25 @@ Run:
 
 Expected: one outcome. Either pass or known timeout. Preserve `durationMs`, total allocations, and top profile functions in this plan.
 
-- [ ] **Step 3: Refresh the NAMS focused profile**
+Result: exit code `0`. Ran with `--project /Users/matt/Dev/glade/example-projects/src-nmb-nu-develop`.
+
+One outcome. Pass. Outcome `durationMs=112566`. Perf run `durationMs=130395`.
+
+Allocation total: `40861.34MB` by pprof. Perf `totalAllocBytes=42790843864` at `run_done`.
+
+Selected CPU cumulative:
+
+- `replaceValueAliasRef`: `41.46s` cum, `25.41s` flat.
+- `cloneValuePreserveRefsSeen`: `13.97s` cum, `3.33s` flat.
+- `sameAliasContent`: `17.01s` cum, `6.92s` flat.
+
+Top allocation:
+
+- `cloneValuePreserveRefsSeen`: `28244.45MB`.
+- `replaceValueAliasRef`: `3003.56MB`.
+- `sameAliasContent`: `1612.01MB`.
+
+- [x] **Step 3: Refresh the NAMS focused profile**
 
 Run:
 
@@ -148,7 +168,27 @@ Run:
 
 Expected: one outcome. If it times out, the timeout must be at the method boundary, not load or discover.
 
-- [ ] **Step 4: Print the profile tops**
+Result: exit code `0`. Ran with `--project /Users/matt/Dev/glade/example-projects/nams-workspace`.
+
+One outcome. Timeout. Outcome `durationMs=301624`. Perf run `durationMs=310021`.
+
+The timeout reached the method run. Load finished at `1372ms`. Discovery finished at `1375ms`. Run finished at `310000ms`.
+
+Allocation total: `136755.47MB` by pprof. Perf `totalAllocBytes=143748679656` at `run_done`.
+
+Top CPU cumulative:
+
+- `cloneValuePreserveRefsSeen`: `114.50s` cum, `9.01s` flat.
+- `replaceValueAliasRef`: `65.62s` cum, `34.48s` flat.
+- `sameAliasContent`: `23.22s` cum, `8.59s` flat.
+
+Top allocation:
+
+- `cloneValuePreserveRefsSeen`: `123087.02MB`.
+- `replaceValueAliasRef`: `4066.44MB`.
+- `sameAliasContent`: `1817.14MB`.
+
+- [x] **Step 4: Print the profile tops**
 
 Run:
 
@@ -161,6 +201,10 @@ go tool pprof -alloc_space -top /tmp/nams-membershipbilling.mem | head -80
 
 Expected: `cloneValuePreserveRefsSeen` and `replaceValueAliasRef` remain first-order costs. If not, update this plan before cutting code.
 
+Result: profile tops printed. `cloneValuePreserveRefsSeen` and `replaceValueAliasRef` remain first-order costs.
+
+Note: the worktree does not contain the large `example-projects` directories. Baselines used the original checkout paths under `/Users/matt/Dev/glade/example-projects`. No symlink. No copy.
+
 ---
 
 ### Task 2: Add VM Snapshot And Alias Benchmarks
@@ -169,7 +213,7 @@ Expected: `cloneValuePreserveRefsSeen` and `replaceValueAliasRef` remain first-o
 - Modify: `internal/vm/vm_benchmark_test.go`
 - Modify: `internal/vm/method_test.go`
 
-- [ ] **Step 1: Add a large nested value benchmark**
+- [x] **Step 1: Add a large nested value benchmark**
 
 Add a benchmark near the existing VM benchmarks:
 
@@ -196,33 +240,54 @@ func BenchmarkCloneValuePreserveRefsLargeOrderGraph(b *testing.B) {
 }
 ```
 
-- [ ] **Step 2: Add an alias replacement benchmark**
+- [x] **Step 2: Add an alias replacement benchmark**
 
-Add:
+Add. The final benchmark should bury the target alias after many non-matching
+nested values so Task 4 measures the broad walk, not a direct child hit:
 
 ```go
 func BenchmarkReplaceValueAliasLargeOrderGraph(b *testing.B) {
 	root := Object("OrderGraph")
-	previous := List()
-	for i := 0; i < 200; i++ {
-		previous.List = append(previous.List, Object("OrderLine"))
+	groups := List()
+	var previous Value
+	var updated Value
+	var targetPath string
+	for groupIndex := 0; groupIndex < 50; groupIndex++ {
+		group := Object("OrderGroup")
+		lines := List()
+		for lineIndex := 0; lineIndex < 20; lineIndex++ {
+			line := Object("OrderLine")
+			line.Fields["Name"] = String(fmt.Sprintf("line-%d-%d", groupIndex, lineIndex))
+			line.Fields["Meta"] = Map()
+			line.Fields["Meta"].Map[mapKey(String("status"))] = String("draft")
+			line.Fields["Meta"].MapKeys[mapKey(String("status"))] = String("status")
+			lines.List = append(lines.List, line)
+		}
+		if groupIndex == 49 {
+			previous = List(Object("OrderLine"))
+			updated = previous
+			updated.List = append(updated.List, Object("OrderLine"))
+			group.Fields["TargetLines"] = previous
+			targetPath = "TargetLines"
+		}
+		group.Fields["Lines"] = lines
+		groups.List = append(groups.List, group)
 	}
-	updated := previous
-	updated.List = append(updated.List, Object("OrderLine"))
-	root.Fields["Lines"] = previous
+	root.Fields["Groups"] = groups
 
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		seen := make(map[uint64]bool)
 		replaced, changed := replaceValueAlias(root, previous, updated, seen)
-		if !changed || len(replaced.Fields["Lines"].List) != 201 {
+		finalGroup := replaced.Fields["Groups"].List[49]
+		if !changed || len(finalGroup.Fields[targetPath].List) != 2 {
 			b.Fatalf("alias was not replaced")
 		}
 	}
 }
 ```
 
-- [ ] **Step 3: Add a receiver alias correctness test**
+- [x] **Step 3: Add a receiver alias correctness test**
 
 Add:
 
@@ -250,7 +315,7 @@ public class LargeReceiverMutation {
 
 If `runApex` does not exist in the chosen file, use the local helper pattern already present in `internal/vm/*_test.go`. Do not invent a new test harness.
 
-- [ ] **Step 4: Run the benchmarks before implementation**
+- [x] **Step 4: Run the benchmarks before implementation**
 
 Run:
 
@@ -261,6 +326,12 @@ go test -run '^$' -bench 'Benchmark(CloneValuePreserveRefsLargeOrderGraph|Replac
 
 Expected: correctness passes. Benchmarks record the starting allocation and ns/op budget.
 
+Result:
+
+- `go test -run 'TestLargeReceiverMutationPreservesAliases' ./internal/vm`: pass.
+- `BenchmarkCloneValuePreserveRefsLargeOrderGraph-12`: `137895 ns/op`, `328064 B/op`, `1604 allocs/op`.
+- `BenchmarkReplaceValueAliasLargeOrderGraph-12`: `134244 ns/op`, `74347 B/op`, `20 allocs/op`.
+
 ---
 
 ### Task 3: Reduce Value Snapshot Allocation
@@ -270,9 +341,9 @@ Expected: correctness passes. Benchmarks record the starting allocation and ns/o
 - Modify: `internal/vm/dml_runtime.go`
 - Modify: `internal/vm/lookup_assign.go`
 - Modify: `internal/vm/vm_benchmark_test.go`
-- Modify: `internal/vm/method_test.go`
+- Modify: `internal/vm/vm_test.go`
 
-- [ ] **Step 1: Classify snapshot call sites**
+- [x] **Step 1: Classify snapshot call sites**
 
 Inspect these lines and write down which need a deep snapshot and which only need an alias token:
 
@@ -287,7 +358,23 @@ Expected hot call sites:
 - `internal/vm/lookup_assign.go` assignment root snapshots.
 - `internal/vm/method_dispatch.go` `SObject.put` snapshots.
 
-- [ ] **Step 2: Add a lightweight alias snapshot helper**
+Result:
+
+- Alias token: `method_dispatch.go` parameter and receiver snapshots. These
+  call sites only need the old ref/kind to propagate a still-aliased object,
+  list, set, or map back to caller scope/statics.
+- Alias token: `dml_runtime.go` bulk DML list snapshots and per-target DML
+  result snapshots. `populateDMLResultFields` mutates known DML targets.
+- Alias token: `lookup_assign.go` assignment root snapshots. The assignment
+  path has already mutated the root before propagation.
+- Alias token: `method_dispatch.go` `SObject.put`, `putSObject`, and framework
+  SObjectUnitOfWork relationship snapshots. These paths perform explicit field
+  mutation before alias propagation.
+- Deep snapshot retained: `cloneValuePreserveRefs` itself, the clone benchmark,
+  and the `platform_test.go` copy helper. Production hot call sites no longer
+  call the deep snapshot.
+
+- [x] **Step 2: Add a lightweight alias snapshot helper**
 
 Add near `cloneValuePreserveRefs`:
 
@@ -306,7 +393,7 @@ func (s aliasSnapshot) valid() bool {
 }
 ```
 
-- [ ] **Step 3: Add replacement by alias snapshot**
+- [x] **Step 3: Add replacement by alias snapshot**
 
 Add:
 
@@ -319,7 +406,7 @@ func replaceAliasSnapshot(value Value, previous aliasSnapshot, updated Value, se
 }
 ```
 
-- [ ] **Step 4: Convert one hot path at a time**
+- [x] **Step 4: Convert one hot path at a time**
 
 Start with DML bulk propagation in `internal/vm/dml_runtime.go`.
 
@@ -337,7 +424,14 @@ bulkPrevious := snapshotAlias(value)
 
 Then call `replaceAliasSnapshot` or a scope helper that accepts `aliasSnapshot`.
 
-- [ ] **Step 5: Prove after each converted call site**
+Result:
+
+- Added `propagateAliasSnapshotToScope` and `propagateAliasSnapshotToStatics`.
+- Converted method parameter/receiver, DML bulk/per-target result,
+  assignment-root, SObject `put`/`putSObject`, and framework relationship
+  propagation call sites.
+
+- [x] **Step 5: Prove after each converted call site**
 
 Run:
 
@@ -348,11 +442,65 @@ go test -run '^$' -bench 'Benchmark(CloneValuePreserveRefsLargeOrderGraph|Replac
 
 Expected: tests pass. The clone benchmark may remain unchanged until all sites are converted, but focused slow-method allocation must drop before this task is complete.
 
-- [ ] **Step 6: Re-profile both slow methods**
+Result:
+
+- Added `TestReplaceAliasSnapshotReplacesMatchingRefAndKind`.
+- Red check: `go test ./internal/vm -run TestReplaceAliasSnapshotReplacesMatchingRefAndKind` failed to compile before helper implementation with `undefined: snapshotAlias` and `undefined: replaceAliasSnapshot`.
+- Green check: `go test ./internal/vm -run TestReplaceAliasSnapshotReplacesMatchingRefAndKind` passed in `0.932s`.
+- Required package check: `go test ./internal/vm` failed on nested type resolver tests:
+  `TestResolveUniqueNestedTypeNameFromTopLevelCurrentClass` and
+  `TestResolveUniqueNestedTypeNameFallsBackToOnlyNestedSuffix`; both resolved
+  `Domain` to `""`. These failures are outside the Task 3 alias paths.
+- Parent check: the same two tests fail at `c259b464`, before the Task 3
+  patch. With those pre-existing failures skipped,
+  `go test ./internal/vm -skip 'TestResolveUniqueNestedTypeName(FromTopLevelCurrentClass|FallsBackToOnlyNestedSuffix)'`
+  passed in `8.132s`.
+- Alias checks: `go test ./internal/vm -run 'TestReplaceAliasSnapshotReplacesMatchingRefAndKind|TestLargeReceiverMutationPreservesAliases' -count=1`
+  passed in `0.803s`.
+- Code quality fix: added
+  `TestAliasSnapshotMutationPropagationSkipsNoopMetadataChange`,
+  `TestAliasSnapshotMutationPropagationSkipsNestedNoopMetadataChange`, and
+  `TestAliasSnapshotMutationPropagationKeepsRealDataChange` after review found
+  that no-op method calls could propagate callee-only metadata. Focused alias
+  checks plus `TestExecMethodParameterMapPropagatesNestedCollectionAliases`
+  passed. The skipped VM package check passed in `8.060s`.
+- Required benchmark command plus the new alias benchmark passed:
+  - `BenchmarkCloneValuePreserveRefsLargeOrderGraph-12`: `138235 ns/op`, `328063 B/op`, `1604 allocs/op`.
+  - `BenchmarkReplaceValueAliasLargeOrderGraph-12`: `134535 ns/op`, `74349 B/op`, `20 allocs/op`.
+  - `BenchmarkReplaceAliasSnapshotLargeOrderGraph-12`: `134619 ns/op`, `74350 B/op`, `20 allocs/op`.
+
+- [x] **Step 6: Re-profile both slow methods**
 
 Run the two Task 1 focused profile commands again.
 
 Expected: `cloneValuePreserveRefsSeen` allocation drops by at least 10x on NAMS or NU. If it drops less, stop and inspect the remaining call site with `go tool pprof -list`.
+
+Result:
+
+- Build: `GOCACHE=/tmp/glade-go-build GOMAXPROCS=4 go build -o /tmp/glade-localtest-current ./cmd/glade` passed.
+- NU focused command passed: `total=1 pass=1`, total duration `173212ms`,
+  method duration `154649ms`, `run_done totalAllocBytes=15211493400`.
+  Allocation pprof total was `14369.20MB`. `cloneValuePreserveRefsSeen` no
+  longer appeared in the allocation top. Baseline was `28244.45MB`, so the
+  clone allocation drop is greater than 10x on NU. New top allocation:
+  `replaceValueAliasRef` `6576.47MB`.
+- NU CPU pprof top cumulative: `replaceValueAliasRef` `110.17s` cum,
+  `replaceAliasSnapshot` `94.15s` cum,
+  `propagateAliasSnapshotToScope` `88.99s` cum.
+- NAMS focused command still timed out: `total=1 timeout=1`, total duration
+  `309002ms`, method duration `300245ms`, top frame
+  `namz.PriceableOrder.createProductPricesMap`, `run_done totalAllocBytes=25900183960`.
+  Allocation pprof total was `24608.78MB`. `cloneValuePreserveRefsSeen` no
+  longer appeared in the allocation top. Baseline was `123087.02MB`, so the
+  clone allocation drop is greater than 10x on NAMS. New top allocation:
+  `replaceValueAliasRef` `15800.65MB`.
+- NAMS CPU pprof top cumulative: `replaceValueAliasRef` `222.63s` cum,
+  `replaceAliasSnapshot` `194.14s` cum,
+  `propagateAliasSnapshotToScope` `172.65s` cum.
+- Remaining hot call site from `go tool pprof -alloc_space -list replaceValueAliasRef /tmp/nams-membershipbilling.after-task3.mem`:
+  line `3227` map insert into `seen` allocated `15.43GB`; recursive walks were
+  `15.16GB` through object fields, `13.58GB` through list elements, and
+  `4.40GB` through map values. This is Task 4 territory.
 
 ---
 

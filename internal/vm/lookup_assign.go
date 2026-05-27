@@ -2080,7 +2080,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		return fmt.Errorf("empty assignment target")
 	}
 	value = plainNull(value)
-	previousRoot := cloneValuePreserveRefs(root)
+	previousRoot := snapshotAlias(root)
 	current := root
 	type pathParent struct {
 		object Value
@@ -2095,8 +2095,8 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			}
 			updated = parent.object
 		}
-		vm.propagateValueMutationToScope(vm.Globals, previousRoot, root)
-		vm.propagateValueMutationToStatics(previousRoot, root)
+		vm.propagateAliasSnapshotToScope(vm.Globals, previousRoot, root)
+		vm.propagateAliasSnapshotToStatics(previousRoot, root)
 	}
 	for i, part := range parts[:len(parts)-1] {
 		if current.Kind == ValueNull {

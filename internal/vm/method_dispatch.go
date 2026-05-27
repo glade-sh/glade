@@ -89,10 +89,12 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	}
 	frame := make(map[string]Value, len(method.Params))
 	frameTypes := make(map[string]string, len(method.Params))
-	paramSnapshots := make(map[string]Value, len(method.Params))
+	paramSnapshots := make(map[string]aliasSnapshot, len(method.Params))
+	paramOriginals := make(map[string]Value, len(method.Params))
 	resolutionClass := vm.methodTypeResolutionClass(method)
 	for i, param := range method.Params {
 		paramType := vm.resolveTypeNameInClass(resolutionClass, param.Type)
+		paramOriginals[param.Name] = args[i]
 		coerced, err := vm.coerceAssignable(paramType, vm.valueWithTypesResolvedInClass(resolutionClass, args[i]))
 		if err != nil {
 			if alternate, ok, ambiguous := vm.resolveInstanceMethodForArgs(method.ClassName, apexMethodMemberName(method.Name), args); ok && !ambiguous && methodSignature(alternate) != methodSignature(method) {
@@ -111,14 +113,15 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		coerced.Static = paramType
 		frame[param.Name] = coerced
 		frameTypes[param.Name] = paramType
-		paramSnapshots[param.Name] = cloneValuePreserveRefs(coerced)
+		paramSnapshots[param.Name] = snapshotAlias(coerced)
 	}
+	receiverOriginal := receiver
 	if receiver.Kind != ValueNull {
 		frame["this"] = receiver
 	}
-	receiverSnapshot := Value{}
+	receiverSnapshot := aliasSnapshot{}
 	if receiver.Kind != ValueNull {
-		receiverSnapshot = cloneValuePreserveRefs(receiver)
+		receiverSnapshot = snapshotAlias(receiver)
 	}
 	commerceClassName := method.ClassName
 	if commerceClassName == "" && receiver.Kind == ValueObject {
@@ -172,10 +175,11 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 				continue
 			}
 			previous := paramSnapshots[param.Name]
-			if valueAliasMatch(previous, updated) {
-				vm.propagateValueMutationToScope(vm.Globals, previous, updated)
-				vm.propagateValueMutationToStatics(previous, updated)
-				vm.propagateUpdatedValueAliases(vm.Globals, updated)
+			if valueAliasSnapshotMatch(previous, updated) {
+				if vm.propagateAliasSnapshotMutationToScope(vm.Globals, previous, paramOriginals[param.Name], updated) {
+					vm.propagateAliasSnapshotToStatics(previous, updated)
+					vm.propagateUpdatedValueAliases(vm.Globals, updated)
+				}
 				continue
 			}
 			for _, arg := range args {
@@ -189,9 +193,10 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			}
 		}
 		if receiver.Kind != ValueNull {
-			if updated, ok := frame["this"]; ok && valueAliasMatch(receiverSnapshot, updated) {
-				vm.propagateValueMutationToScope(vm.Globals, receiverSnapshot, updated)
-				vm.propagateValueMutationToStatics(receiverSnapshot, updated)
+			if updated, ok := frame["this"]; ok && valueAliasSnapshotMatch(receiverSnapshot, updated) {
+				if vm.propagateAliasSnapshotMutationToScope(vm.Globals, receiverSnapshot, receiverOriginal, updated) {
+					vm.propagateAliasSnapshotToStatics(receiverSnapshot, updated)
+				}
 			}
 		}
 		return value, nil
@@ -287,10 +292,11 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			continue
 		}
 		previous := paramSnapshots[param.Name]
-		if valueAliasMatch(previous, updated) {
-			vm.propagateValueMutationToScope(caller, previous, updated)
-			vm.propagateValueMutationToStatics(previous, updated)
-			vm.propagateUpdatedValueAliases(caller, updated)
+		if valueAliasSnapshotMatch(previous, updated) {
+			if vm.propagateAliasSnapshotMutationToScope(caller, previous, paramOriginals[param.Name], updated) {
+				vm.propagateAliasSnapshotToStatics(previous, updated)
+				vm.propagateUpdatedValueAliases(caller, updated)
+			}
 			continue
 		}
 		for _, arg := range args {
@@ -304,9 +310,10 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	if receiver.Kind != ValueNull {
-		if updated, ok := frame["this"]; ok && valueAliasMatch(receiverSnapshot, updated) {
-			vm.propagateValueMutationToScope(caller, receiverSnapshot, updated)
-			vm.propagateValueMutationToStatics(receiverSnapshot, updated)
+		if updated, ok := frame["this"]; ok && valueAliasSnapshotMatch(receiverSnapshot, updated) {
+			if vm.propagateAliasSnapshotMutationToScope(caller, receiverSnapshot, receiverOriginal, updated) {
+				vm.propagateAliasSnapshotToStatics(receiverSnapshot, updated)
+			}
 		}
 	}
 	if method.IsConstructor {
@@ -2896,6 +2903,19 @@ func cloneValuePreserveRefs(value Value) Value {
 	return cloneValuePreserveRefsSeen(value, make(map[uint64]bool))
 }
 
+type aliasSnapshot struct {
+	ref  uint64
+	kind ValueKind
+}
+
+func snapshotAlias(value Value) aliasSnapshot {
+	return aliasSnapshot{ref: value.Ref, kind: value.Kind}
+}
+
+func (s aliasSnapshot) valid() bool {
+	return s.ref != 0
+}
+
 func cloneValuePreserveRefsSeen(value Value, seen map[uint64]bool) Value {
 	out := value
 	if value.Ref != 0 {
@@ -2985,6 +3005,65 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 		vm.Classes[location.ClassName] = class
 		vm.rememberStaticValueRefsInField(updated, location)
 	}
+}
+
+func (vm *VM) propagateAliasSnapshotToScope(scope map[string]Value, previous aliasSnapshot, updated Value) {
+	if !previous.valid() {
+		return
+	}
+	seen := make(map[uint64]bool)
+	for name, value := range scope {
+		clearRefSeen(seen)
+		replaced, changed := replaceAliasSnapshot(value, previous, updated, seen)
+		if changed {
+			scope[name] = replaced
+		}
+	}
+}
+
+func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Value) {
+	if !previous.valid() {
+		return
+	}
+	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
+		vm.staticValueRefs, vm.staticValueRefFields = vm.collectStaticValueRefs()
+	}
+	if !vm.staticValueRefs[previous.ref] {
+		return
+	}
+	locations := vm.staticValueRefFields[previous.ref]
+	if len(locations) == 0 {
+		return
+	}
+	for _, location := range locations {
+		class, ok := vm.Classes[location.ClassName]
+		if !ok || class.StaticFields == nil {
+			continue
+		}
+		field, ok := class.StaticFields[location.FieldName]
+		if !ok {
+			continue
+		}
+		replaced, changed := replaceAliasSnapshot(field.Value, previous, updated, make(map[uint64]bool))
+		if !changed {
+			continue
+		}
+		field.Value = replaced
+		class.StaticFields[location.FieldName] = field
+		vm.Classes[location.ClassName] = class
+		vm.rememberStaticValueRefsInField(updated, location)
+	}
+}
+
+func (vm *VM) propagateAliasSnapshotMutationToScope(scope map[string]Value, previous aliasSnapshot, original, updated Value) bool {
+	if sameAliasRuntimeData(original, updated) {
+		if valueHasNestedAliasRef(original, previous.ref, make(map[uint64]bool)) {
+			vm.propagateUpdatedValueAliases(scope, updated)
+		}
+		return false
+	}
+	vm.propagateAliasSnapshotToScope(scope, previous, updated)
+	return true
 }
 
 func (vm *VM) rememberStaticValueRefs(value Value) {
@@ -3148,6 +3227,13 @@ func replaceValueAlias(value, previous, updated Value, seen map[uint64]bool) (Va
 	return replaceValueAliasRef(value, previous.Ref, previous.Kind, updated, seen)
 }
 
+func replaceAliasSnapshot(value Value, previous aliasSnapshot, updated Value, seen map[uint64]bool) (Value, bool) {
+	if !previous.valid() {
+		return value, false
+	}
+	return replaceValueAliasRef(value, previous.ref, previous.kind, updated, seen)
+}
+
 func replaceValueAliasRef(value Value, previousRef uint64, previousKind ValueKind, updated Value, seen map[uint64]bool) (Value, bool) {
 	if value.Ref != 0 {
 		if value.Ref == previousRef && value.Kind == previousKind {
@@ -3309,6 +3395,129 @@ func sameAliasContent(left, right Value, seen map[[2]uint64]bool) bool {
 	}
 }
 
+func sameAliasRuntimeData(left, right Value) bool {
+	return sameAliasRuntimeContent(left, right, make(map[[2]uint64]bool))
+}
+
+func sameAliasRuntimeContent(left, right Value, seen map[[2]uint64]bool) bool {
+	if left.Kind != right.Kind || left.Type != right.Type || left.Text != right.Text ||
+		left.Int != right.Int || left.Decimal != right.Decimal || left.Bool != right.Bool {
+		return false
+	}
+	if left.Ref != 0 && right.Ref != 0 {
+		key := [2]uint64{left.Ref, right.Ref}
+		if seen[key] {
+			return true
+		}
+		seen[key] = true
+	}
+	switch left.Kind {
+	case ValueObject:
+		if len(left.Fields) != len(right.Fields) {
+			return false
+		}
+		for name, leftValue := range left.Fields {
+			rightValue, ok := right.Fields[name]
+			if !ok || !sameAliasRuntimeContent(leftValue, rightValue, seen) {
+				return false
+			}
+		}
+		return true
+	case ValueList:
+		if len(left.List) != len(right.List) {
+			return false
+		}
+		for i := range left.List {
+			if !sameAliasRuntimeContent(left.List[i], right.List[i], seen) {
+				return false
+			}
+		}
+		return true
+	case ValueSet:
+		if len(left.Set) != len(right.Set) {
+			return false
+		}
+		rightValues := append([]Value(nil), right.Set...)
+		for _, leftValue := range left.Set {
+			match := -1
+			for i, rightValue := range rightValues {
+				if sameAliasRuntimeContent(leftValue, rightValue, seen) {
+					match = i
+					break
+				}
+			}
+			if match < 0 {
+				return false
+			}
+			rightValues = append(rightValues[:match], rightValues[match+1:]...)
+		}
+		return true
+	case ValueMap:
+		if len(left.Map) != len(right.Map) || len(left.MapKeys) != len(right.MapKeys) {
+			return false
+		}
+		for key, leftValue := range left.Map {
+			rightValue, ok := right.Map[key]
+			if !ok || !sameAliasRuntimeContent(leftValue, rightValue, seen) {
+				return false
+			}
+		}
+		for key, leftValue := range left.MapKeys {
+			rightValue, ok := right.MapKeys[key]
+			if !ok || !sameAliasRuntimeContent(leftValue, rightValue, seen) {
+				return false
+			}
+		}
+		return true
+	default:
+		return left.Equal(right)
+	}
+}
+
+func valueHasNestedAliasRef(value Value, rootRef uint64, seen map[uint64]bool) bool {
+	if value.Ref != 0 {
+		if seen[value.Ref] {
+			return false
+		}
+		seen[value.Ref] = true
+		if value.Ref != rootRef {
+			return true
+		}
+	}
+	switch value.Kind {
+	case ValueObject:
+		for _, child := range value.Fields {
+			if valueHasNestedAliasRef(child, rootRef, seen) {
+				return true
+			}
+		}
+	case ValueList:
+		for _, child := range value.List {
+			if valueHasNestedAliasRef(child, rootRef, seen) {
+				return true
+			}
+		}
+	case ValueSet:
+		for _, child := range value.Set {
+			if valueHasNestedAliasRef(child, rootRef, seen) {
+				return true
+			}
+		}
+	case ValueMap:
+		for _, child := range value.Map {
+			if valueHasNestedAliasRef(child, rootRef, seen) {
+				return true
+			}
+		}
+		for _, child := range value.MapKeys {
+			if valueHasNestedAliasRef(child, rootRef, seen) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func clearRefSeen(seen map[uint64]bool) {
 	for ref := range seen {
 		delete(seen, ref)
@@ -3325,6 +3534,10 @@ func valueAliasMatch(left, right Value) bool {
 	default:
 		return false
 	}
+}
+
+func valueAliasSnapshotMatch(left aliasSnapshot, right Value) bool {
+	return left.valid() && left.kind == right.Kind && left.ref == right.Ref
 }
 
 func sameCollectionType(left, right Value) bool {
@@ -5880,15 +6093,15 @@ func (vm *VM) resolveFrameworkSObjectUnitOfWorkRelationship(receiver Value, rela
 	if err != nil {
 		return err
 	}
-	previous := cloneValuePreserveRefs(record)
+	previous := snapshotAlias(record)
 	setExplicitSObjectField(&record, fieldName, relatedID)
 	relationship.Fields["Record"] = record
-	replaced, changed := replaceValueAlias(receiver, previous, record, make(map[uint64]bool))
+	replaced, changed := replaceAliasSnapshot(receiver, previous, record, make(map[uint64]bool))
 	if changed && replaced.Kind == ValueObject {
 		receiver.Fields = replaced.Fields
 	}
-	vm.propagateValueMutationToScope(vm.Globals, previous, record)
-	vm.propagateValueMutationToStatics(previous, record)
+	vm.propagateAliasSnapshotToScope(vm.Globals, previous, record)
+	vm.propagateAliasSnapshotToStatics(previous, record)
 	return nil
 }
 
@@ -6653,7 +6866,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if reason, ok := sobjectReadOnlyReason(receiver); ok {
 			return Null, true, fmt.Errorf("cannot modify read-only %s", reason)
 		}
-		previousReceiver := cloneValuePreserveRefs(receiver)
+		previousReceiver := snapshotAlias(receiver)
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
 		actualField, previous, ok := objectFieldValue(receiver, field)
 		if !ok {
@@ -6665,8 +6878,8 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		markSetSObjectField(&receiver, actualField)
 		markUserSetSObjectField(&receiver, actualField)
 		markQueriedSObjectField(&receiver, actualField)
-		vm.propagateValueMutationToScope(vm.Globals, previousReceiver, receiver)
-		vm.propagateValueMutationToStatics(previousReceiver, receiver)
+		vm.propagateAliasSnapshotToScope(vm.Globals, previousReceiver, receiver)
+		vm.propagateAliasSnapshotToStatics(previousReceiver, receiver)
 		return previous, true, nil
 	case "putSObject":
 		if len(args) != 2 {
@@ -6683,7 +6896,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if reason, ok := sobjectReadOnlyReason(receiver); ok {
 			return Null, true, fmt.Errorf("cannot modify read-only %s", reason)
 		}
-		previousReceiver := cloneValuePreserveRefs(receiver)
+		previousReceiver := snapshotAlias(receiver)
 		relationshipName := fieldArg
 		if fieldTokenArg {
 			field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
@@ -6698,8 +6911,8 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		}
 		setExplicitSObjectField(&receiver, relationshipName, args[1])
 		markQueriedSObjectField(&receiver, relationshipName)
-		vm.propagateValueMutationToScope(vm.Globals, previousReceiver, receiver)
-		vm.propagateValueMutationToStatics(previousReceiver, receiver)
+		vm.propagateAliasSnapshotToScope(vm.Globals, previousReceiver, receiver)
+		vm.propagateAliasSnapshotToStatics(previousReceiver, receiver)
 		return Null, true, nil
 	case "isSet":
 		if len(args) != 1 {
