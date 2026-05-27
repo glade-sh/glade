@@ -3184,6 +3184,9 @@ func replaceValueAliasRef(value Value, previousRef uint64, previousKind ValueKin
 			}
 		}
 	case ValueList:
+		if previousKind == ValueObject && listCannotContainObjectRef(value.List, previousRef) {
+			return value, false
+		}
 		for i, child := range value.List {
 			replaced, childChanged := replaceValueAliasRef(child, previousRef, previousKind, updated, seen)
 			if childChanged {
@@ -3192,6 +3195,9 @@ func replaceValueAliasRef(value Value, previousRef uint64, previousKind ValueKin
 			}
 		}
 	case ValueSet:
+		if previousKind == ValueObject && listCannotContainObjectRef(value.Set, previousRef) {
+			return value, false
+		}
 		for i, child := range value.Set {
 			replaced, childChanged := replaceValueAliasRef(child, previousRef, previousKind, updated, seen)
 			if childChanged {
@@ -3201,6 +3207,21 @@ func replaceValueAliasRef(value Value, previousRef uint64, previousKind ValueKin
 		}
 	}
 	return value, changed
+}
+
+func listCannotContainObjectRef(values []Value, previousRef uint64) bool {
+	if previousRef == 0 || len(values) < 32 {
+		return false
+	}
+	for _, value := range values {
+		if value.Kind != ValueObject || value.Ref == 0 {
+			return false
+		}
+		if value.Ref == previousRef {
+			return false
+		}
+	}
+	return true
 }
 
 func collectionAliasMatch(left, right Value) bool {

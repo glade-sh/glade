@@ -731,6 +731,20 @@ System.assertEquals(integerValue, decimalValue);
 	}
 }
 
+func TestExecDecimalStringConcatenationStripsInsignificantTrailingZeros(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('12', '' + 12.0);
+System.assertEquals('12.34', '' + 12.3400);
+System.assertEquals('12.3400', String.valueOf(12.3400));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecNumericLiteralSuffixes(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(1.1, 1.1d);

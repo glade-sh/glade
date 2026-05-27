@@ -147,6 +147,30 @@ func (v Value) String() string {
 	}
 }
 
+func decimalDisplayText(value Value) string {
+	text := value.Text
+	if text == "" {
+		text = strconv.FormatFloat(value.Decimal, 'f', -1, 64)
+	}
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return text
+	}
+	if strings.ContainsAny(text, "eE") {
+		if parsed, err := strconv.ParseFloat(text, 64); err == nil {
+			text = strconv.FormatFloat(parsed, 'f', -1, 64)
+		}
+	}
+	if strings.Contains(text, ".") {
+		text = strings.TrimRight(text, "0")
+		text = strings.TrimRight(text, ".")
+	}
+	if text == "-0" {
+		return "0"
+	}
+	return text
+}
+
 func stubProxyTypeName(value Value) (string, bool) {
 	if value.Kind != ValueObject {
 		return "", false
