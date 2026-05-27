@@ -7497,7 +7497,28 @@ func (vm *VM) resetClassAccessCaches() {
 }
 
 func canonicalClassLookupKey(name string) string {
-	return strings.ToLower(strings.TrimSpace(name))
+	// Apex identifiers are ASCII. Avoid the strings.ToLower allocation
+	// when no folding is required (most lookups in steady state).
+	trimmed := strings.TrimSpace(name)
+	needsFold := false
+	for i := 0; i < len(trimmed); i++ {
+		if c := trimmed[i]; c >= 'A' && c <= 'Z' {
+			needsFold = true
+			break
+		}
+	}
+	if !needsFold {
+		return trimmed
+	}
+	buf := make([]byte, len(trimmed))
+	for i := 0; i < len(trimmed); i++ {
+		c := trimmed[i]
+		if c >= 'A' && c <= 'Z' {
+			c += 'a' - 'A'
+		}
+		buf[i] = c
+	}
+	return string(buf)
 }
 
 func resultForLookup() *Result {
