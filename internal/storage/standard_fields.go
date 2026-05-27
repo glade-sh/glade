@@ -138,6 +138,10 @@ func isOwnerBackedObject(objectName string) bool {
 	}
 }
 
+func IsOwnerBackedObject(objectName string) bool {
+	return isOwnerBackedObject(objectName)
+}
+
 func ensureCommonRecordTypeField(definition *ObjectDefinition) {
 	switch {
 	case stringsEqualFold(definition.APIName, "Opportunity"):
@@ -647,6 +651,31 @@ func mergeStandardSObjectStubRelationships(definition *ObjectDefinition, feature
 		relationships = withoutPersonAccountRelationships(relationships)
 	}
 	mergeStandardRelationships(definition, relationships)
+}
+
+func VisitStandardObjectRelationships(objectName string, features []string, visit func(Relationship)) bool {
+	found := false
+	personAccounts := hasCanonicalFeature(features, "PersonAccounts")
+	if entry, ok := standardObjectCatalogEntryFor(objectName); ok {
+		for _, relationship := range entry.Definition.Relations {
+			if !personAccounts && isPersonAccountRelationship(relationship) {
+				continue
+			}
+			visit(relationship)
+		}
+		found = true
+	}
+	relationships, ok := standardSObjectStubRelationshipsFor(objectName)
+	if !ok {
+		return found
+	}
+	for _, relationship := range relationships {
+		if !personAccounts && isPersonAccountRelationship(relationship) {
+			continue
+		}
+		visit(relationship)
+	}
+	return true
 }
 
 func withoutPersonAccountFieldMap(fields map[string]Field) map[string]Field {

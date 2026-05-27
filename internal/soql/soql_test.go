@@ -2674,6 +2674,104 @@ func TestExecuteChildRelationshipSubqueryUsesSyntheticAuditRelationship(t *testi
 	}
 }
 
+func TestExecuteWithCacheReusesChildRelationshipResolutionOnly(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}},
+		},
+	}
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Contact",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+				ChildRelationship:  "Contacts",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"003000000000001": {ID: "003000000000001", Object: "Contact", Fields: map[string]storage.Value{"LastName": storage.StringValue("Alpha"), "AccountId": storage.IDValue("001000000000001")}},
+		},
+	}
+	cache := NewExecutionCache()
+	firstQuery, err := Parse("SELECT Id, (SELECT Id, LastName FROM Contacts) FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, err := ExecuteWithCache(org, firstQuery, cache)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := first.Records[0].Children["Contacts"][0].Fields["LastName"].String; got != "Alpha" {
+		t.Fatalf("first child LastName = %q", got)
+	}
+	contactState := org.Objects["Contact"]
+	contactState.Records["003000000000002"] = storage.Record{ID: "003000000000002", Object: "Contact", Fields: map[string]storage.Value{"LastName": storage.StringValue("Beta"), "AccountId": storage.IDValue("001000000000001")}}
+	org.Objects["Contact"] = contactState
+	secondQuery, err := Parse("SELECT Id, (SELECT Id, LastName FROM Contacts ORDER BY LastName DESC LIMIT 1) FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := ExecuteWithCache(org, secondQuery, cache)
+	if err != nil {
+		t.Fatal(err)
+	}
+	children := second.Records[0].Children["Contacts"]
+	if len(children) != 1 || children[0].Fields["LastName"].String != "Beta" {
+		t.Fatalf("second child rows = %#v", children)
+	}
+	if len(cache.childRelationships) != 1 {
+		t.Fatalf("child relationship cache entries = %d, want 1", len(cache.childRelationships))
+	}
+}
+
+func TestExecuteChildRelationshipUsesStandardRelationshipWithoutMetadataRelation(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}},
+		},
+	}
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Contact",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"003000000000001": {ID: "003000000000001", Object: "Contact", Fields: map[string]storage.Value{"LastName": storage.StringValue("Alpha"), "AccountId": storage.IDValue("001000000000001")}},
+		},
+	}
+	query, err := Parse("SELECT Id, (SELECT Id, LastName FROM Contacts) FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Execute(org, query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	children := result.Records[0].Children["Contacts"]
+	if len(children) != 1 || children[0].Fields["LastName"].String != "Alpha" {
+		t.Fatalf("children = %#v", children)
+	}
+}
+
 func TestExecuteChildRelationshipPrefersExplicitCustomRelationship(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{

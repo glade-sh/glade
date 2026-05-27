@@ -67,7 +67,7 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 		syntheticOrg := vm.orgWithSyntheticRecentlyViewed()
 		executeOrg = &syntheticOrg
 	}
-	result, err := soql.Execute(*executeOrg, executeQuery)
+	result, err := soql.ExecuteWithCache(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg))
 	if err != nil {
 		var unsupported *soql.UnsupportedFeatureError
 		if errors.As(err, &unsupported) {
@@ -104,6 +104,16 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 		"rows":  result.Rows,
 	})
 	return values, nil
+}
+
+func (vm *VM) soqlExecutionCacheForOrg(org *storage.OrgState) *soql.ExecutionCache {
+	if vm == nil || org == nil || vm.Org == nil || org != vm.Org {
+		return nil
+	}
+	if vm.soqlExecutionCache == nil {
+		vm.soqlExecutionCache = soql.NewExecutionCache()
+	}
+	return vm.soqlExecutionCache
 }
 
 func (vm *VM) soqlCountsQueryLimit(query soql.Query) bool {
@@ -1120,7 +1130,7 @@ func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result
 		visibleQuery.Aggregates = nil
 		visibleQuery.Fields = []string{"Id"}
 		visibleQuery.SecurityMode = ""
-		visibleResult, err := soql.Execute(*vm.Org, visibleQuery)
+		visibleResult, err := soql.ExecuteWithCache(*vm.Org, visibleQuery, vm.soqlExecutionCacheForOrg(vm.Org))
 		if err == nil {
 			visibleResult = vm.applySOQLSharing(visibleQuery, visibleResult)
 			count := storage.IntegerValue(int64(len(visibleResult.Records)))

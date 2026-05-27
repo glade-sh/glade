@@ -156,6 +156,20 @@ type Result struct {
 	Rows    int              `json:"rows"`
 }
 
+type ExecutionCache struct {
+	childRelationships map[string]childRelationshipResolution
+}
+
+type childRelationshipResolution struct {
+	childObjectName string
+	relation        storage.Relationship
+	ok              bool
+}
+
+func NewExecutionCache() *ExecutionCache {
+	return &ExecutionCache{}
+}
+
 type UnsupportedFeatureError struct {
 	Message string
 }
@@ -212,6 +226,10 @@ func ParseAt(input string, now time.Time) (Query, error) {
 }
 
 func Execute(org storage.OrgState, query Query) (Result, error) {
+	return ExecuteWithCache(org, query, nil)
+}
+
+func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) (Result, error) {
 	objectName, ok := storage.ResolveObjectName(org, query.Object)
 	if !ok && shouldHydrateVirtualSchemaForQuery(query.Object) {
 		org = org.Clone()
@@ -292,7 +310,7 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 	}
 	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit, query.HasLimit)
 	records := make([]storage.Record, 0, len(matchedRecords))
-	childCache := newChildRelationshipQueryCache()
+	childCache := newChildRelationshipQueryCache(cache)
 	for _, record := range matchedRecords {
 		if query.ForUpdate && record.System.Locked {
 			return Result{}, fmt.Errorf("soql: unable to lock row %s", record.ID)
@@ -1075,8 +1093,9 @@ func subqueryRecordValue(org storage.OrgState, record storage.Record, field stri
 }
 
 type childRelationshipQueryCache struct {
-	indexes  map[string]map[storage.ID][]string
-	prepared map[string]preparedChildRelationshipQuery
+	indexes   map[string]map[storage.ID][]string
+	prepared  map[string]preparedChildRelationshipQuery
+	execution *ExecutionCache
 }
 
 type preparedChildRelationshipQuery struct {
@@ -1085,10 +1104,11 @@ type preparedChildRelationshipQuery struct {
 	query           Query
 }
 
-func newChildRelationshipQueryCache() *childRelationshipQueryCache {
+func newChildRelationshipQueryCache(execution *ExecutionCache) *childRelationshipQueryCache {
 	return &childRelationshipQueryCache{
-		indexes:  make(map[string]map[storage.ID][]string),
-		prepared: make(map[string]preparedChildRelationshipQuery),
+		indexes:   make(map[string]map[storage.ID][]string),
+		prepared:  make(map[string]preparedChildRelationshipQuery),
+		execution: execution,
 	}
 }
 
@@ -1240,7 +1260,7 @@ func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 			return prepared, nil
 		}
 	}
-	childObjectName, relation, ok := childRelationship(org, parentDefinition, childQuery.Relationship)
+	childObjectName, relation, ok := childRelationshipCached(org, parentDefinition, childQuery.Relationship, childCache)
 	if !ok {
 		return preparedChildRelationshipQuery{}, fmt.Errorf("soql: unknown child relationship %s on %s", childQuery.Relationship, parentDefinition.APIName)
 	}
@@ -1277,7 +1297,7 @@ func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 
 func childRelationshipIndex(org storage.OrgState, childObjectName string, childObject storage.ObjectState, field string, childCache *childRelationshipQueryCache) map[storage.ID][]string {
 	if childCache == nil {
-		childCache = newChildRelationshipQueryCache()
+		childCache = newChildRelationshipQueryCache(nil)
 	}
 	key := strings.ToLower(childObjectName + "." + field)
 	if index, ok := childCache.indexes[key]; ok {
@@ -1305,24 +1325,38 @@ func childRelationshipIndex(org storage.OrgState, childObjectName string, childO
 	return index
 }
 
+func childRelationshipCached(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string, childCache *childRelationshipQueryCache) (string, storage.Relationship, bool) {
+	if childCache == nil || childCache.execution == nil {
+		return childRelationship(org, parentDefinition, relationship)
+	}
+	cache := childCache.execution
+	if cache.childRelationships == nil {
+		cache.childRelationships = make(map[string]childRelationshipResolution)
+	}
+	key := childRelationshipCacheKey(org.Namespace, parentDefinition.APIName, relationship)
+	if cached, ok := cache.childRelationships[key]; ok {
+		return cached.childObjectName, cached.relation, cached.ok
+	}
+	childObjectName, relation, ok := childRelationship(org, parentDefinition, relationship)
+	cache.childRelationships[key] = childRelationshipResolution{childObjectName: childObjectName, relation: relation, ok: ok}
+	return childObjectName, relation, ok
+}
+
+func childRelationshipCacheKey(namespace, parentName, relationship string) string {
+	return strings.ToLower(namespace) + "\x00" + strings.ToLower(parentName) + "\x00" + strings.ToLower(relationship)
+}
+
 func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string) (string, storage.Relationship, bool) {
 	parentName := parentDefinition.APIName
 	bestRank := 99
 	var bestObject string
 	var bestRelation storage.Relationship
 	for childObjectName, childObject := range org.Objects {
-		childDefinition := childObject.Definition.Clone()
-		storage.EnsureStandardObjectFields(&childDefinition)
-		relations := append([]storage.Relationship(nil), childDefinition.Relations...)
-		relations = append(relations, syntheticContentDocumentLinkRelationship(childDefinition)...)
-		relations = append(relations, syntheticSystemChildRelationships(childDefinition)...)
-		if relation, ok := syntheticPrefixedCustomChildRelationship(org, parentDefinition, childDefinition, relationship); ok {
-			relations = append(relations, relation)
-		}
-		for _, relation := range relations {
+		childDefinition := childObject.Definition
+		consider := func(relation storage.Relationship) {
 			rank, matched := childRelationshipMatchRank(org.Namespace, relation, childDefinition, relationship)
 			if !matched || !childRelationshipCandidatePreferred(rank, relation, bestRank, bestRelation) {
-				continue
+				return
 			}
 			for _, candidate := range relation.ParentObjects {
 				if candidate == "*" {
@@ -1344,6 +1378,20 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 					break
 				}
 			}
+		}
+		for _, relation := range childDefinition.Relations {
+			consider(relation)
+		}
+		storage.VisitStandardObjectRelationships(childDefinition.APIName, nil, consider)
+		for _, relation := range syntheticContentDocumentLinkRelationship(childDefinition) {
+			consider(relation)
+		}
+		visitSyntheticStandardSystemChildRelationships(childDefinition, consider)
+		for _, relation := range syntheticSystemChildRelationships(childDefinition) {
+			consider(relation)
+		}
+		if relation, ok := syntheticPrefixedCustomChildRelationship(org, parentDefinition, childDefinition, relationship); ok {
+			consider(relation)
 		}
 	}
 	if bestRank != 99 {
@@ -1429,6 +1477,36 @@ func isSystemRelationshipField(field string) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func visitSyntheticStandardSystemChildRelationships(definition storage.ObjectDefinition, visit func(storage.Relationship)) {
+	fields := []struct {
+		name         string
+		relationship string
+	}{
+		{name: "CreatedById", relationship: "CreatedBy"},
+		{name: "LastModifiedById", relationship: "LastModifiedBy"},
+	}
+	if storage.IsOwnerBackedObject(definition.APIName) {
+		fields = append(fields, struct {
+			name         string
+			relationship string
+		}{name: "OwnerId", relationship: "Owner"})
+	}
+	for _, field := range fields {
+		if hasSOQLRelationForField(definition.Relations, field.name) {
+			continue
+		}
+		if _, ok := fieldDefinitionsForReferenceField(definition, field.name); ok {
+			continue
+		}
+		visit(storage.Relationship{
+			Field:              field.name,
+			ParentObjects:      []string{"User"},
+			ParentRelationship: field.relationship,
+			ChildRelationship:  derivedChildRelationshipName(definition),
+		})
 	}
 }
 

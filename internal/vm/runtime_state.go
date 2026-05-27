@@ -12,6 +12,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/trace"
 )
@@ -109,6 +110,7 @@ type VM struct {
 	describeTabsCache         *Value
 	describeDefCache          map[string]storage.ObjectDefinition
 	customDataCache           map[string]Value
+	soqlExecutionCache        *soql.ExecutionCache
 	managedFeatureFlags       map[string]bool
 	childRelCache             map[string][]Value
 	jsonChildRelTypeCache     map[string]jsonRelationshipTypeLookup
