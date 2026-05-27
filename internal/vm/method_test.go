@@ -8946,8 +8946,9 @@ func TestRuntimeNamespaceQualifiedInheritanceAssignable(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<znu.Pluggable> plugins = new List<znu.Pluggable>();
 plugins.add(new znu.QPlugin.Condition());
+plugins.add(new znu.ProductsWithDefaultFieldsPlugin());
 znu.Pluggable related = (znu.Pluggable)new znu.QPlugin.RelatedFields();
-System.assertEquals(2, plugins.size() + (related == null ? 0 : 1));
+System.assertEquals(3, plugins.size() + (related == null ? 0 : 1));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -8957,8 +8958,12 @@ System.assertEquals(2, plugins.size() + (related == null ? 0 : 1));
 		{Name: "Pluggable", Namespace: "znu", Access: "global", IsAbstract: true},
 		{Name: "QPlugin", Namespace: "znu", Access: "global", IsAbstract: true, SuperClass: "Pluggable"},
 		{Name: "QPlugin.Condition", Namespace: "znu", Access: "global", SuperClass: "QPlugin"},
+		{Name: "QPlugin.Fields", Namespace: "znu", Access: "global", SuperClass: "QPlugin"},
 		{Name: "QPlugin.RelatedFields", Namespace: "znu", Access: "global", SuperClass: "QPlugin"},
+		{Name: "ProductsWithDefaultFieldsPlugin", Namespace: "znu", Access: "global", SuperClass: "QPlugin.Fields"},
+		{Name: "Pluggable", Namespace: "namz", Access: "global", IsAbstract: true},
 		{Name: "QPlugin", Namespace: "namz", Access: "global", IsAbstract: true},
+		{Name: "QPlugin.Fields", Namespace: "namz", Access: "global", SuperClass: "QPlugin"},
 	} {
 		if err := machine.RegisterClass(class); err != nil {
 			t.Fatal(err)

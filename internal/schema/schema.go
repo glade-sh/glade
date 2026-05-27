@@ -233,7 +233,7 @@ func LoadProject(p project.Project) (Schema, error) {
 	}
 
 	for _, path := range p.FieldFiles {
-		objectName := objectNameFromFieldPath(path)
+		objectName := namespaceProjectObjectName(p.Namespace, objectNameFromFieldPath(path))
 		if objectName == "" {
 			continue
 		}
@@ -252,7 +252,7 @@ func LoadProject(p project.Project) (Schema, error) {
 	}
 
 	for _, path := range p.RecordTypeFiles {
-		objectName := objectNameFromRecordTypePath(path)
+		objectName := namespaceProjectObjectName(p.Namespace, objectNameFromRecordTypePath(path))
 		if objectName == "" {
 			continue
 		}
@@ -269,7 +269,7 @@ func LoadProject(p project.Project) (Schema, error) {
 	}
 
 	for _, path := range p.ValidationRuleFiles {
-		objectName := objectNameFromValidationRulePath(path)
+		objectName := namespaceProjectObjectName(p.Namespace, objectNameFromValidationRulePath(path))
 		if objectName == "" {
 			continue
 		}
@@ -484,7 +484,7 @@ func loadObject(path, projectNamespace string) (Object, error) {
 		return Object{}, err
 	}
 	object := Object{
-		Name:               objectNameFromObjectPath(path),
+		Name:               namespaceProjectObjectName(projectNamespace, objectNameFromObjectPath(path)),
 		Label:              raw.Label,
 		PluralLabel:        raw.PluralLabel,
 		SharingModel:       raw.SharingModel,
@@ -589,6 +589,13 @@ func namespaceObjectField(projectNamespace, objectName string, field Field) Fiel
 		field.SummaryFilterItems[i] = filter
 	}
 	return field
+}
+
+func namespaceProjectObjectName(projectNamespace, objectName string) string {
+	if projectNamespace == "" || objectName == "" || hasNamespaceToken(objectName) || !isCustomEntityName(objectName) {
+		return objectName
+	}
+	return projectNamespace + "__" + objectName
 }
 
 func validationRuleSourceNamespace(projectNamespace, objectName string) string {

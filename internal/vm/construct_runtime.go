@@ -2846,6 +2846,11 @@ func (vm *VM) resolvedSuperClassName(class Class) string {
 	if superName == "" {
 		return ""
 	}
+	if namespace := strings.TrimSpace(class.Namespace); namespace != "" && strings.Contains(superName, ".") && !strings.HasPrefix(strings.ToLower(superName), strings.ToLower(namespace)+".") {
+		if superClass, ok := vm.lookupClass(namespace + "." + superName); ok {
+			return runtimeClassName(superClass)
+		}
+	}
 	if strings.Contains(superName, ".") {
 		if resolved, ok := vm.resolveClassName(superName); ok {
 			return resolved
@@ -2867,6 +2872,11 @@ func (vm *VM) resolvedInterfaceName(class Class, interfaceName string) string {
 	interfaceName = strings.TrimSpace(interfaceName)
 	if interfaceName == "" {
 		return ""
+	}
+	if namespace := strings.TrimSpace(class.Namespace); namespace != "" && strings.Contains(interfaceName, ".") && !strings.HasPrefix(strings.ToLower(interfaceName), strings.ToLower(namespace)+".") {
+		if iface, ok := vm.lookupClass(namespace + "." + interfaceName); ok {
+			return runtimeClassName(iface)
+		}
 	}
 	if strings.Contains(interfaceName, ".") {
 		if resolved, ok := vm.resolveClassName(interfaceName); ok {
