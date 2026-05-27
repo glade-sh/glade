@@ -82,6 +82,7 @@ type TestCase struct {
 	Range      diagnostic.Range
 	Body       string
 	SeeAllData bool
+	CostHint   int64 // generic, history-free cost signal used by the priority dispatcher
 }
 
 type TestProgress struct {
@@ -122,6 +123,7 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 				File:       typ.File,
 				Range:      member.Range,
 				SeeAllData: isSeeAllDataTest(member.Modifiers),
+				CostHint:   testCaseCostHint(typ.File),
 			})
 		}
 	}
@@ -587,13 +589,20 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 	if parallelism > 1 {
 		sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS)
 	}
-	jobs := make(chan string)
+	costHints := aggregateClassCostHints(classOrder, planned)
+	dispatcher := newClassDispatcher(classOrder, costHints, opts.ClassDurationMS)
+	defer dispatcher.close()
 	var wg sync.WaitGroup
 	for worker := 0; worker < parallelism; worker++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for className := range jobs {
+			for {
+				className, ok := dispatcher.next()
+				if !ok {
+					return
+				}
+				classStart := time.Now()
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
 				}
@@ -609,6 +618,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 				if opts.ParallelMethods && len(classIndexes[className]) > 1 {
 					methodParallelism := methodParallelismForClassRun(opts.Parallelism, parallelism, len(classIndexes[className]))
 					runClassMethodIndexes(ctx, classIndexes[className], planned, results, setupOrg, setupErr, setupRandom, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, methodParallelism)
+					dispatcher.recordObserved(className, time.Since(classStart).Milliseconds())
 					continue
 				}
 				for _, i := range classIndexes[className] {
@@ -636,14 +646,27 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 						reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
 					}
 				}
+				dispatcher.recordObserved(className, time.Since(classStart).Milliseconds())
 			}
 		}()
 	}
-	for _, className := range classOrder {
-		jobs <- className
-	}
-	close(jobs)
 	wg.Wait()
+}
+
+// aggregateClassCostHints sums the per-test CostHint values for every class
+// in classOrder. The signal is intentionally coarse — see testCaseCostHint.
+func aggregateClassCostHints(classOrder []string, planned []testCasePlan) map[string]int64 {
+	if len(classOrder) == 0 || len(planned) == 0 {
+		return nil
+	}
+	out := make(map[string]int64, len(classOrder))
+	for _, plan := range planned {
+		if plan.TestCase.ClassName == "" {
+			continue
+		}
+		out[plan.TestCase.ClassName] += plan.TestCase.CostHint
+	}
+	return out
 }
 
 func methodParallelismForClassRun(totalParallelism, classParallelism, methods int) int {
