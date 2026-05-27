@@ -8599,7 +8599,6 @@ System.assert(!ApexPages.hasMessages());
 
 func TestExecDateTimeConstructorsRejectInvalidParts(t *testing.T) {
 	for _, source := range []string{
-		`Date bad = Date.newInstance(2026, 13, 2);`,
 		`Datetime bad = Datetime.newInstance(2026, 5, 32, 1, 2, 3);`,
 		`Time bad = Time.newInstance(25, 0, 0);`,
 	} {
@@ -8618,6 +8617,10 @@ func TestExecDateNewInstanceAcceptsMonthDayYearUIParts(t *testing.T) {
 	program, err := CompileAnonymous(`
 Date day = Date.newInstance(4, 20, 2020);
 System.assertEquals(Date.newInstance(2020, 4, 20), day);
+System.assertEquals('0000-01-01', String.valueOf(Date.newInstance(0, 1, 1)));
+System.assertEquals('2027-01-02', String.valueOf(Date.newInstance(2026, 13, 2)));
+System.assertEquals('2017-11-30', String.valueOf(Date.newInstance(2018, 0, 0)));
+System.assertEquals('0000-01-01 01:02:03', Datetime.newInstanceGmt(Date.newInstance(0, 1, 1), Time.newInstance(1, 2, 3, 0)).formatGmt('yyyy-MM-dd HH:mm:ss'));
 `)
 	if err != nil {
 		t.Fatal(err)

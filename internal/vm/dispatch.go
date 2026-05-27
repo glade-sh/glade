@@ -1005,10 +1005,11 @@ platformStaticCall:
 			return Null, fmt.Errorf("Date.newInstance expects year, month, day integers")
 		}
 		year, month, day := normalizeDateNewInstanceParts(int(args[0].Int), int(args[1].Int), int(args[2].Int))
-		if err := validateDateParts(year, month, day); err != nil {
+		value, err := dateFromNewInstanceParts(year, month, day)
+		if err != nil {
 			return Null, err
 		}
-		return platformScalar("Date", fmt.Sprintf("%04d-%02d-%02d", year, month, day)), nil
+		return platformScalar("Date", value.Format("2006-01-02")), nil
 	case "Date.daysInMonth":
 		if len(args) != 2 || args[0].Kind != ValueInt || args[1].Kind != ValueInt {
 			return Null, fmt.Errorf("Date.daysInMonth expects year and month integers")
@@ -2486,7 +2487,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Location.newInstance expects latitude and longitude")
 		}
 		return newLocation(args[0], args[1]), nil
-	case "Address.newInstance", "System.Address.newInstance":
+	case "Address.newInstance":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Address.newInstance expects 0 arguments")
 		}

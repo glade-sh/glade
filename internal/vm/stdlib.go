@@ -4796,13 +4796,13 @@ func substring(text string, args []Value) (Value, bool, error) {
 	}
 	runes := []rune(text)
 	if start < 0 || start > len(runes) {
-		return Null, true, fmt.Errorf("String substring index out of bounds: %d", start)
+		return Null, true, newExceptionError("StringException", fmt.Sprintf("String substring index out of bounds: %d", start))
 	}
 	if end < 0 || end > len(runes) {
-		return Null, true, fmt.Errorf("String substring index out of bounds: %d", end)
+		return Null, true, newExceptionError("StringException", fmt.Sprintf("String substring index out of bounds: %d", end))
 	}
 	if start > end {
-		return Null, true, fmt.Errorf("String substring start index exceeds end index")
+		return Null, true, newExceptionError("StringException", "String substring start index exceeds end index")
 	}
 	return String(string(runes[start:end])), true, nil
 }

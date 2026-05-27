@@ -4485,7 +4485,7 @@ func parsePlatformDate(value Value) (time.Time, error) {
 	}
 	date, err := parseDateText(text)
 	if err != nil {
-		return time.Time{}, err
+		return parsePlatformDateText(text)
 	}
 	return date, nil
 }
@@ -4497,7 +4497,7 @@ func parsePlatformDatetime(value Value) (time.Time, error) {
 	}
 	parsed, err := parseDatetimeTextAllowDateOnly(text)
 	if err != nil {
-		return time.Time{}, err
+		return parsePlatformDatetimeText(text)
 	}
 	return parsed.UTC(), nil
 }
@@ -4611,6 +4611,48 @@ func parseDateText(text string) (time.Time, error) {
 		return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC), nil
 	}
 	return time.Time{}, fmt.Errorf("unsupported Date value %q", text)
+}
+
+func parsePlatformDateText(text string) (time.Time, error) {
+	text = strings.TrimSpace(text)
+	for _, layout := range []string{"2006-01-02", "2006-1-2"} {
+		if value, err := time.Parse(layout, text); err == nil {
+			if value.Year() < 0 || value.Year() > 9999 {
+				return time.Time{}, fmt.Errorf("unsupported Date value %q", text)
+			}
+			if value.Format("2006-01-02") != text {
+				return time.Time{}, fmt.Errorf("unsupported Date value %q", text)
+			}
+			return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC), nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("unsupported Date value %q", text)
+}
+
+func parsePlatformDatetimeText(text string) (time.Time, error) {
+	normalized := normalizeDatetimeShortTimezoneOffset(strings.TrimSpace(text))
+	for _, layout := range []string{
+		time.RFC3339Nano,
+		"2006-01-02 15:04:05.999999999Z07:00",
+		"2006-01-02 15:04:05.999999999Z0700",
+		"2006-01-02 15:04:05Z07:00",
+		"2006-01-02 15:04:05Z0700",
+		"2006-01-02 15:04:05.000",
+		"2006-01-02 15:04:05",
+		"2006-01-02T15:04:05.000",
+		"2006-01-02T15:04:05",
+	} {
+		if value, err := time.Parse(layout, normalized); err == nil {
+			if value.Year() < 0 || value.Year() > 9999 {
+				return time.Time{}, fmt.Errorf("unsupported Datetime value %q", text)
+			}
+			return value, nil
+		}
+	}
+	if value, err := parsePlatformDateText(text); err == nil {
+		return value, nil
+	}
+	return time.Time{}, fmt.Errorf("unsupported Datetime value %q", text)
 }
 
 func parseDateParseText(text string) (time.Time, error) {
@@ -4741,6 +4783,15 @@ func formatApexDatetimeToken(value time.Time, token, zoneID, zoneLabel string, o
 			return name, nil
 		}
 		return name[:3], nil
+	case 'u':
+		weekday := int(value.Weekday())
+		if weekday == 0 {
+			weekday = 7
+		}
+		return formatPaddedDateNumber(weekday, count), nil
+	case 'w':
+		_, week := value.ISOWeek()
+		return formatPaddedDateNumber(week, count), nil
 	case 'G', 'L', 'c', 'e':
 		return "", unsupportedCallError(fmt.Sprintf("Datetime.format locale-dependent pattern token %q", token))
 	case 'Z':
@@ -4790,6 +4841,14 @@ func normalizeDateNewInstanceParts(year, month, day int) (int, int, int) {
 		return day, year, month
 	}
 	return year, month, day
+}
+
+func dateFromNewInstanceParts(year, month, day int) (time.Time, error) {
+	value := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+	if value.Year() < 0 || value.Year() > 9999 {
+		return time.Time{}, newExceptionError("System.TypeException", fmt.Sprintf("invalid Date parts: year=%d month=%d day=%d", year, month, day))
+	}
+	return value, nil
 }
 
 func validateDateParts(year, month, day int) error {

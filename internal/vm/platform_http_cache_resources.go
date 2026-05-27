@@ -147,13 +147,29 @@ func callDomainMember(receiver Value, method string, args []Value) (Value, Value
 }
 
 func callAddressMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
-	method = canonicalStdlibMemberName(method, "getDistance")
-	if method == "getDistance" {
+	method = canonicalStdlibMemberName(method, "getDistance", "equals", "hashCode", "toString")
+	switch method {
+	case "getDistance":
 		if len(args) != 2 || args[0].Kind != ValueObject || args[1].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("Address.getDistance expects Location and unit String")
 		}
 		value, err := locationDistance(receiver, args[0], args[1].Text)
 		return value, receiver, false, true, err
+	case "equals":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("Address.equals expects 1 argument")
+		}
+		return Bool(receiver.Equal(args[0])), receiver, false, true, nil
+	case "hashCode":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Address.hashCode expects 0 arguments")
+		}
+		return Int(int64(valueHashCode(receiver))), receiver, false, true, nil
+	case "toString":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Address.toString expects 0 arguments")
+		}
+		return String(receiver.String()), receiver, false, true, nil
 	}
 	if suffix, ok := passiveAccessorSuffix(method, "with"); ok {
 		if len(args) != 1 {

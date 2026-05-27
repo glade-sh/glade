@@ -31,6 +31,12 @@ System.assertEquals('hello max', upperName.uncapitalize());
 System.assertEquals('cDef', s.substring(2));
 System.assertEquals('cD', s.substring(2, 4));
 System.assertEquals('bcD', s.Substring(1, 4));
+try {
+  s.substring(0, -1);
+  System.assert(false, 'expected substring to throw');
+} catch (StringException e) {
+  System.assert(e.getMessage().contains('out of bounds'));
+}
 System.assertEquals('abcdef', s.ToLowerCase());
 System.assert(s.containsIgnoreCase('CD'));
 System.assert(s.startsWithIgnoreCase('ab'));
@@ -544,6 +550,9 @@ System.assertEquals(37.7749, address.getLatitude());
 System.assert(left.getDistance(right, 'mi') > 300);
 System.assert(address.getDistance(right, 'mi') > 300);
 System.assert(Location.getDistance(left, right, 'km') > 500);
+System.assertEquals(37.7749, System.Location.newInstance(37.7749, -122.4194).getLatitude());
+System.assert(address.equals(address));
+System.assert(!address.equals(right));
 QueueableDuplicateSignature sig = QueueableDuplicateSignature.builder()
 	.addString('job')
 	.addInteger(42)
@@ -2470,6 +2479,8 @@ System.assertEquals(-12, Date.newInstance(2026, 5, 1).monthsBetween(Date.newInst
 System.assertEquals(5, today.Month());
 Datetime now = System.now();
 System.assertEquals('2026-05-02 12:00:00', now.formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals('6', now.formatGmt('u'));
+System.assertEquals('18', now.formatGmt('w'));
 System.assertEquals(1777723200000, System.currentTimeMillis());
 System.debug(LoggingLevel.INFO, 'logged with level');
 System.debug('logged without level');

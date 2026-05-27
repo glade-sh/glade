@@ -1052,15 +1052,47 @@ func visualforcePageNames(index typesys.Index) []string {
 	if err != nil {
 		return nil
 	}
+	names := make([]string, 0)
+	seen := make(map[string]bool)
+	appendVisualforcePageNames(&names, seen, p, false)
+	return names
+}
+
+func appendVisualforcePageNames(names *[]string, seen map[string]bool, p project.Project, dependency bool) {
+	for _, dep := range p.ManagedPackageDependencies {
+		if dep.Status != "loaded" || dep.Project == nil {
+			continue
+		}
+		appendVisualforcePageNames(names, seen, *dep.Project, true)
+	}
 	vf, err := visualforce.LoadProject(p)
 	if err != nil {
-		return nil
+		return
 	}
-	names := make([]string, 0, len(vf.Pages))
 	for _, page := range vf.Pages {
-		names = append(names, page.Name)
+		appendVisualforcePageName(names, seen, page.Name)
+		if dependency && p.Namespace != "" {
+			appendVisualforcePageName(names, seen, visualforceNamespacedPageName(p.Namespace, page.Name))
+		}
 	}
-	return names
+}
+
+func appendVisualforcePageName(names *[]string, seen map[string]bool, name string) {
+	key := strings.ToLower(strings.TrimSpace(name))
+	if key == "" || seen[key] {
+		return
+	}
+	seen[key] = true
+	*names = append(*names, name)
+}
+
+func visualforceNamespacedPageName(namespace, name string) string {
+	namespace = strings.TrimSpace(namespace)
+	name = strings.TrimSpace(name)
+	if namespace == "" || name == "" || strings.Contains(name, "__") {
+		return name
+	}
+	return namespace + "__" + name
 }
 
 func registerVisualforcePages(machine *vm.VM, names []string) {
@@ -3692,6 +3724,9 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 				source = data
 			}
 		}
+		if apexClassBodyHiddenFromProject(index.Project.Namespace, typ) {
+			source = ""
+		}
 		state.Records[id] = storage.Record{
 			ID:     id,
 			Object: "ApexClass",
@@ -3705,6 +3740,13 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 		}
 	}
 	org.Objects["ApexClass"] = state
+}
+
+func apexClassBodyHiddenFromProject(projectNamespace string, typ typesys.TypeSymbol) bool {
+	if !typ.Dependency {
+		return false
+	}
+	return !strings.EqualFold(strings.TrimSpace(projectNamespace), strings.TrimSpace(typ.Namespace))
 }
 
 type customApplicationMetadata struct {
@@ -3836,11 +3878,10 @@ func applyCustomNotificationTypeRecords(org *storage.OrgState, root string) {
 		if data, err := os.ReadFile(path); err == nil {
 			var meta customNotificationTypeMetadata
 			if xml.Unmarshal(data, &meta) == nil {
-				if strings.TrimSpace(meta.Name) != "" {
-					developerName = strings.TrimSpace(meta.Name)
-				}
 				if strings.TrimSpace(meta.MasterLabel) != "" {
 					label = strings.TrimSpace(meta.MasterLabel)
+				} else if strings.TrimSpace(meta.Name) != "" {
+					label = strings.TrimSpace(meta.Name)
 				}
 			}
 		}

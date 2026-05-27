@@ -4483,6 +4483,32 @@ private class VisualforceControllerContractTest {
 	}
 }
 
+func TestRunResolvesNamespacedDependencyVisualforcePageReferences(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/pages/Order.page"), `<apex:page/>`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
+  managedPackageDependencies: ["znu:../dep:1.0"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/classes/PageDependencyTest.cls"), `
+@isTest
+private class PageDependencyTest {
+  @isTest static void namespacedDependencyPageTokenResolves() {
+    PageReference page = Page.znu__Order;
+    System.assertEquals('/apex/znu__Order', page.getUrl());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, consumerRoot), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestRunResetsApexPagesStateBetweenTestMethods(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -5598,6 +5624,50 @@ public class WidgetTestData {
 	}
 }
 
+func TestOrgFromIndexHidesManagedDependencyApexClassSource(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/DependencyTestData.cls"), `
+@isTest
+public class DependencyTestData {
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
+  managedPackageDependencies: ["znu:../dep:1.0"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/LocalTestData.cls"), `
+public class LocalTestData {
+}
+`)
+
+	org := orgFromIndex(loadTestIndex(t, consumerRoot))
+	state := org.Objects["ApexClass"]
+	var foundDependency, foundLocal bool
+	for _, record := range state.Records {
+		switch record.Fields["Name"].String {
+		case "DependencyTestData":
+			foundDependency = true
+			if record.Fields["NamespacePrefix"].String != "znu" {
+				t.Fatalf("dependency NamespacePrefix = %#v", record.Fields["NamespacePrefix"])
+			}
+			if record.Fields["Body"].String != "" || record.Fields["LengthWithoutComments"].Integer != 0 {
+				t.Fatalf("dependency source was exposed: %#v", record.Fields)
+			}
+		case "LocalTestData":
+			foundLocal = true
+			if record.Fields["Body"].String == "" || record.Fields["LengthWithoutComments"].Integer == 0 {
+				t.Fatalf("local source was hidden: %#v", record.Fields)
+			}
+		}
+	}
+	if !foundDependency || !foundLocal {
+		t.Fatalf("ApexClass rows missing dependency=%v local=%v records=%#v", foundDependency, foundLocal, state.Records)
+	}
+}
+
 func TestOrgFromIndexIncludesCustomApplicationMenuRows(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -5621,6 +5691,23 @@ func TestOrgFromIndexIncludesCustomApplicationMenuRows(t *testing.T) {
 		if record.Fields["Name"].String != "Apex_Recipes" || record.Fields["ApplicationId"].ID != appID {
 			t.Fatalf("AppMenuItem fields = %#v, appID=%s", record.Fields, appID)
 		}
+	}
+}
+
+func TestOrgFromIndexUsesNotificationFileNameAsDeveloperName(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/notificationtypes/Processing_Complete.notiftype-meta.xml"), `<CustomNotificationType xmlns="http://soap.sforce.com/2006/04/metadata">
+  <customNotifTypeName>Processing Completed</customNotifTypeName>
+</CustomNotificationType>`)
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	state := org.Objects["CustomNotificationType"]
+	if !recordWithFieldValueExists(state, "DeveloperName", "Processing_Complete") {
+		t.Fatalf("notification developer name row was not created: %#v", state.Records)
+	}
+	if !recordWithFieldValueExists(state, "MasterLabel", "Processing Completed") {
+		t.Fatalf("notification label row was not created: %#v", state.Records)
 	}
 }
 
@@ -6008,11 +6095,13 @@ func TestOrgFromIndexUsesDataRelationshipReferencesToSeedManagedChildRelationshi
 	t.Fatalf("event question event relation missing: %#v", eventQuestion.Definition.Relations)
 }
 
-func TestOrgFromIndexSeedsNAMSProducts2ChildRelationship(t *testing.T) {
-	root := filepath.Join("..", "..", "example-projects", "nams-workspace")
-	if _, err := os.Stat(filepath.Join(root, "sfdx-project.json")); err != nil {
-		t.Skip("NAMS example project is not available")
-	}
+func TestOrgFromIndexLoadsCustomObjectLookupRelationshipAndCheckboxDefault(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/znu__Product__c/znu__Product__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Product</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/znu__Event__c/znu__Event__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Event</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/znu__Product__c/fields/znu__Event2__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>znu__Event2__c</fullName><type>Lookup</type><referenceTo>znu__Event__c</referenceTo><relationshipName>znu__Event2__r</relationshipName><childRelationshipName>znu__Products2__r</childRelationshipName></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/znu__Product__c/fields/znu__TrackInventory__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>znu__TrackInventory__c</fullName><type>Checkbox</type><defaultValue>false</defaultValue></CustomField>`)
 
 	org := orgFromIndex(loadTestIndex(t, root))
 	product := org.Objects["znu__Product__c"]
