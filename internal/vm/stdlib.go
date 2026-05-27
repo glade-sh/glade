@@ -1784,10 +1784,12 @@ func compilePatternMatchesSource(source string) (string, []string, []regexNegati
 	if stripped, _, ok := stripTerminalPositiveLookahead(regexpSource); ok {
 		regexpSource = stripped
 	}
+	regexpSource = stripFixedCountPossessiveQuantifiers(regexpSource)
 	if feature := unsupportedJavaRegexFeature(regexpSource); feature != "" {
 		return "", nil, nil, unsupportedCallError("Pattern.matches " + feature)
 	}
 	for _, lookahead := range positiveLookaheads {
+		lookahead = stripFixedCountPossessiveQuantifiers(lookahead)
 		if feature := unsupportedJavaRegexFeature(lookahead); feature != "" {
 			return "", nil, nil, unsupportedCallError("Pattern.matches " + feature)
 		}
@@ -1796,6 +1798,8 @@ func compilePatternMatchesSource(source string) (string, []string, []regexNegati
 		}
 	}
 	for _, lookahead := range negativeLookaheads {
+		lookahead.Lookahead = stripFixedCountPossessiveQuantifiers(lookahead.Lookahead)
+		lookahead.Prefix = stripFixedCountPossessiveQuantifiers(lookahead.Prefix)
 		if feature := unsupportedJavaRegexFeature(lookahead.Lookahead); feature != "" {
 			return "", nil, nil, unsupportedCallError("Pattern.matches " + feature)
 		}
@@ -1826,9 +1830,10 @@ func compilePatternSourceWithMetadata(callee, source string, flags int64) (strin
 			return "", "", unsupportedCallError(callee + " " + err.Error())
 		}
 		regexpSource = converted
+		regexpSource = stripFixedCountPossessiveQuantifiers(regexpSource)
 		if stripped, lookahead, ok := stripTerminalPositiveLookahead(regexpSource); ok {
 			regexpSource = stripped
-			lookaheadSource = lookahead
+			lookaheadSource = stripFixedCountPossessiveQuantifiers(lookahead)
 		}
 		if feature := unsupportedJavaRegexFeature(regexpSource); feature != "" {
 			return "", "", unsupportedCallError(callee + " " + feature)
@@ -3809,6 +3814,49 @@ func unsupportedJavaRegexFeature(source string) string {
 		}
 	}
 	return ""
+}
+
+func stripFixedCountPossessiveQuantifiers(source string) string {
+	var out strings.Builder
+	inClass := false
+	for i := 0; i < len(source); i++ {
+		ch := source[i]
+		switch ch {
+		case '\\':
+			out.WriteByte(ch)
+			if i+1 < len(source) {
+				i++
+				out.WriteByte(source[i])
+			}
+		case '[':
+			inClass = true
+			out.WriteByte(ch)
+		case ']':
+			inClass = false
+			out.WriteByte(ch)
+		case '}':
+			out.WriteByte(ch)
+			if !inClass && i+1 < len(source) && source[i+1] == '+' && fixedCountQuantifierEndsAt(source, i) {
+				i++
+			}
+		default:
+			out.WriteByte(ch)
+		}
+	}
+	return out.String()
+}
+
+func fixedCountQuantifierEndsAt(source string, end int) bool {
+	start := strings.LastIndexByte(source[:end], '{')
+	if start < 0 || start == end-1 {
+		return false
+	}
+	for i := start + 1; i < end; i++ {
+		if source[i] < '0' || source[i] > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func stripTerminalPositiveLookahead(source string) (string, string, bool) {

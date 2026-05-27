@@ -1089,7 +1089,7 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 			return Null, true, newExceptionError("TypeException", fmt.Sprintf("%s.valueOf expects String", typeName))
 		}
 		for i, name := range class.EnumValues {
-			if name == argText {
+			if strings.EqualFold(name, argText) {
 				value := Value{Kind: ValueObject, Type: class.Name, Text: name}
 				value.Fields = map[string]Value{"ordinal": Int(int64(i))}
 				return value, true, nil

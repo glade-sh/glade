@@ -5679,6 +5679,23 @@ System.assert(caught);
 	}
 }
 
+func TestExecUserEnumValueOfIsCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(BillingMode.AccountingMethod.CASH, BillingMode.AccountingMethod.valueOf('Cash'));
+System.assertEquals(BillingMode.AccountingMethod.CASH, BillingMode.AccountingMethod.valueOf('cash'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "BillingMode.AccountingMethod", EnumValues: []string{"CASH", "ACCRUAL"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecChainedAssignmentExpression(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer left;

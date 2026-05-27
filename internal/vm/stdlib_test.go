@@ -1925,6 +1925,33 @@ System.assert(!Pattern.matches(caseNumeric, 'A1A1A1A1'));
 	}
 }
 
+func TestExecPatternMatchesSupportsFixedCountPossessiveQuantifier(t *testing.T) {
+	program, err := CompileAnonymous(`
+String settledDatePattern = '$|^[0-9]{14}+$';
+System.assert(Pattern.matches(settledDatePattern, '20240101123456'));
+System.assert(Pattern.matches(settledDatePattern, ''));
+System.assert(!Pattern.matches(settledDatePattern, '20240101'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPatternMatchesRejectsVariablePossessiveQuantifier(t *testing.T) {
+	program, err := CompileAnonymous(`Pattern.matches('a++a', 'aa');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Execute(program, nil)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "possessive quantifiers") {
+		t.Fatalf("err = %#v, want unsupported possessive quantifier", err)
+	}
+}
+
 func TestStringRegexSplitRejectsNullableEdges(t *testing.T) {
 	var runtimeErr *RuntimeError
 	for _, pattern := range []string{`\b`, "^"} {
