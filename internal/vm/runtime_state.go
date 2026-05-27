@@ -504,7 +504,13 @@ func copyClassMap(in map[string]Class) map[string]Class {
 }
 
 func copyClass(class Class) Class {
-	class.Fields = copyFieldMap(class.Fields)
+	// class.Fields is the instance-field schema; it is set at RegisterClass
+	// time (method.go) and at platform-class generation time (vm.go). No
+	// per-test code mutates it, so per-clone duplication is pure waste —
+	// pointer-share with the base VM. StaticFields holds runtime values for
+	// each static slot, is mutated freely by tests, and the snapshot/reset
+	// paths (runWithFreshStatics, drainAsyncJobs) mutate it in place; it
+	// stays cloned. See W3 in docs/perf plan.
 	class.StaticFields = copyFieldMap(class.StaticFields)
 	return class
 }
