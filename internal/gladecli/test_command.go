@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"runtime/pprof"
 	"sort"
 	"strconv"
@@ -46,7 +47,10 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	traceBlocked := false
 	slowTestThresholdMS := int64(0)
 	changedSince := ""
-	parallelMethods := false
+	parallelMethods := true
+	parallelismOverride := 0
+	testTimeout := 5 * time.Minute
+	gcAggressive := false
 	cpuProfilePath := ""
 	memProfilePath := ""
 	perfJSONPath := ""
@@ -91,6 +95,33 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			i++
 		case "--parallel-methods":
 			parallelMethods = true
+		case "--no-parallel-methods":
+			parallelMethods = false
+		case "--parallelism":
+			if i+1 >= len(args) {
+				return testreport.Run{}, errors.New("--parallelism requires a value")
+			}
+			parsed, err := strconv.Atoi(args[i+1])
+			if err != nil || parsed < 0 {
+				return testreport.Run{}, fmt.Errorf("--parallelism must be a non-negative integer")
+			}
+			parallelismOverride = parsed
+			i++
+		case "--test-timeout":
+			if i+1 >= len(args) {
+				return testreport.Run{}, errors.New("--test-timeout requires a duration")
+			}
+			parsed, err := time.ParseDuration(args[i+1])
+			if err != nil {
+				return testreport.Run{}, fmt.Errorf("--test-timeout: %w", err)
+			}
+			if parsed < 0 {
+				return testreport.Run{}, errors.New("--test-timeout must be non-negative")
+			}
+			testTimeout = parsed
+			i++
+		case "--gc-aggressive":
+			gcAggressive = true
 		case "--cpu-profile":
 			if i+1 >= len(args) {
 				return testreport.Run{}, errors.New("--cpu-profile requires a path")
@@ -175,13 +206,17 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		progressReporter = newCLITestProgressReporter(progressW)
 		defer progressReporter.finish()
 	}
-	testOpts := apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS, ParallelMethods: parallelMethods}
+	testOpts := apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS, ParallelMethods: parallelMethods, TimeoutMS: testTimeout.Milliseconds()}
 	if progress {
 		testOpts.Progress = progressReporter.handle
 	}
-	if parallelMethods {
+	switch {
+	case parallelismOverride > 0:
+		testOpts.Parallelism = parallelismOverride
+	case parallelMethods:
 		testOpts.Parallelism = runtime.GOMAXPROCS(0)
 	}
+	applyTestMemoryLimits(gcAggressive)
 	if daemonMode {
 		daemon, err := testdaemon.New(root)
 		if err != nil {
@@ -570,4 +605,19 @@ func runTopSlowClasses(result testreport.Run, limit int) []runPerfClass {
 		classes = classes[:limit]
 	}
 	return classes
+}
+
+// applyTestMemoryLimits sets a default soft memory ceiling for `glade test`
+// so the runtime returns memory under pressure instead of growing without
+// bound on the long-tail of a clone-heavy workload. Honours an existing
+// GOMEMLIMIT environment variable: if the user set one, the runtime will
+// already have picked it up and we skip the override.
+func applyTestMemoryLimits(aggressive bool) {
+if os.Getenv("GOMEMLIMIT") == "" {
+// 4 GiB soft cap. Workloads that need more should set GOMEMLIMIT.
+debug.SetMemoryLimit(4 << 30)
+}
+if aggressive {
+debug.SetGCPercent(50)
+}
 }

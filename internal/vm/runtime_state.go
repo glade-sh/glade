@@ -45,7 +45,7 @@ type VM struct {
 	classNameSearchCache      []classNameSearchEntry
 	Org                       *storage.OrgState
 	Triggers                  map[string][]Trigger
-	triggerMatchCache         map[string][]Trigger
+	triggerMatchCache         *triggerMatchCache
 	triggerNamespaceCache     map[triggerNamespaceLookupKey]string
 	Stdout                    io.Writer
 	callStack                 []callFrame
@@ -114,7 +114,7 @@ type VM struct {
 	soqlExecutionCache        *soql.ExecutionCache
 	managedFeatureFlags       map[string]bool
 	childRelCache             map[string][]Value
-	jsonChildRelTypeCache     map[string]jsonRelationshipTypeLookup
+	jsonChildRelTypeCache     *jsonChildRelTypeLookupCache
 	loadedChildRelCache       map[string]loadedChildRelationshipLookup
 	lazyChildRelCache         map[string]lazyChildRelationshipLookup
 	objectNameCache           map[string]objectNameLookup
@@ -387,7 +387,7 @@ func New(stdout io.Writer) *VM {
 		onlyNestedTypeCache:   make(map[string]uniqueNestedTypeLookup),
 		topLevelTypeCache:     make(map[string]uniqueNestedTypeLookup),
 		Triggers:              make(map[string][]Trigger),
-		triggerMatchCache:     make(map[string][]Trigger),
+		triggerMatchCache:     newTriggerMatchCache(),
 		triggerNamespaceCache: make(map[triggerNamespaceLookupKey]string),
 		Stdout:                stdout,
 		limitCaps:             defaultLimitCaps(),
@@ -412,7 +412,7 @@ func New(stdout io.Writer) *VM {
 		customDataCache:       make(map[string]Value),
 		managedFeatureFlags:   make(map[string]bool),
 		childRelCache:         make(map[string][]Value),
-		jsonChildRelTypeCache: make(map[string]jsonRelationshipTypeLookup),
+		jsonChildRelTypeCache: newJSONChildRelTypeLookupCache(),
 		loadedChildRelCache:   make(map[string]loadedChildRelationshipLookup),
 		lazyChildRelCache:     make(map[string]lazyChildRelationshipLookup),
 		objectNameCache:       make(map[string]objectNameLookup),
@@ -431,12 +431,19 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	clone.Classes = copyClassMap(vm.Classes)
 	clone.rebuildClassLookup()
 	clone.Triggers = copyTriggerSliceMap(vm.Triggers)
-	clone.triggerMatchCache = make(map[string][]Trigger)
+	// triggerMatchCache is computed from Triggers; share the pointer so we
+	// only populate it once across all clones in a run. Concurrent test
+	// methods are protected by the cache's RWMutex.
+	clone.triggerMatchCache = vm.triggerMatchCache
 	clone.traceEnabled = vm.traceEnabled
 	clone.staticInitState = copyStaticInitStateMap(vm.staticInitState)
 	clone.pageReferences = copyStringMap(vm.pageReferences)
 	clone.platformCache = copyCacheMap(vm.platformCache)
 	clone.isolationJournal = vm.isolationJournal
+	// jsonChildRelTypeCache derives from schema definitions that are stable
+	// across clones in a typical test run; share it so the first DML in
+	// each test doesn't repopulate it.
+	clone.jsonChildRelTypeCache = vm.jsonChildRelTypeCache
 	return clone
 }
 
@@ -497,7 +504,13 @@ func copyClassMap(in map[string]Class) map[string]Class {
 }
 
 func copyClass(class Class) Class {
-	class.Fields = copyFieldMap(class.Fields)
+	// class.Fields is the instance-field schema; it is set at RegisterClass
+	// time (method.go) and at platform-class generation time (vm.go). No
+	// per-test code mutates it, so per-clone duplication is pure waste —
+	// pointer-share with the base VM. StaticFields holds runtime values for
+	// each static slot, is mutated freely by tests, and the snapshot/reset
+	// paths (runWithFreshStatics, drainAsyncJobs) mutate it in place; it
+	// stays cloned. See W3 in docs/perf plan.
 	class.StaticFields = copyFieldMap(class.StaticFields)
 	return class
 }
@@ -859,7 +872,7 @@ func (vm *VM) clearTriggerMatchCache() {
 	if vm == nil {
 		return
 	}
-	vm.triggerMatchCache = make(map[string][]Trigger)
+	vm.triggerMatchCache.reset()
 	vm.triggerNamespaceCache = make(map[triggerNamespaceLookupKey]string)
 }
 

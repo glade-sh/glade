@@ -912,22 +912,68 @@ func ensureReferenceTarget(definition *ObjectDefinition, fieldName string, targe
 }
 
 func appendUniqueStringsFold(values []string, additions ...string) []string {
+	// For small slices the linear scan dominates the work and avoids a map
+	// allocation. The crossover from benchmarks against the nams workspace
+	// is in the high single digits; pick 8 conservatively.
+	if len(values)+len(additions) <= 8 {
+		for _, addition := range additions {
+			if addition == "" {
+				continue
+			}
+			found := false
+			for _, value := range values {
+				if stringsEqualFold(value, addition) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				values = append(values, addition)
+			}
+		}
+		return values
+	}
+	seen := make(map[string]struct{}, len(values)+len(additions))
+	for _, value := range values {
+		seen[asciiFoldKey(value)] = struct{}{}
+	}
 	for _, addition := range additions {
 		if addition == "" {
 			continue
 		}
-		found := false
-		for _, value := range values {
-			if stringsEqualFold(value, addition) {
-				found = true
-				break
-			}
+		key := asciiFoldKey(addition)
+		if _, ok := seen[key]; ok {
+			continue
 		}
-		if !found {
-			values = append(values, addition)
-		}
+		seen[key] = struct{}{}
+		values = append(values, addition)
 	}
 	return values
+}
+
+// asciiFoldKey returns a lowercase ASCII fold of s without allocating when
+// the input is already lowercase. Apex identifiers are ASCII, so this is
+// both correct and cheaper than strings.ToLower in the common case.
+func asciiFoldKey(s string) string {
+	needsFold := false
+	for i := 0; i < len(s); i++ {
+		if c := s[i]; c >= 'A' && c <= 'Z' {
+			needsFold = true
+			break
+		}
+	}
+	if !needsFold {
+		return s
+	}
+	buf := make([]byte, len(s))
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c >= 'A' && c <= 'Z' {
+			c += 'a' - 'A'
+		}
+		buf[i] = c
+	}
+	return string(buf)
 }
 
 func mergeStandardFields(definition *ObjectDefinition, fields map[string]Field) {
