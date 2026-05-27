@@ -3439,6 +3439,44 @@ System.assertEquals('text/html', blank.getHeaders().get('Accept'));
 	}
 }
 
+func TestExecPageReferenceForResourceBuildsStaticResourceURL(t *testing.T) {
+	program, err := CompileAnonymous(`
+PageReference root = PageReference.forResource('MyStaticResource');
+System.assertEquals('/resource/MyStaticResource', root.getUrl());
+PageReference nested = PageReference.forResource('MyStaticResource', 'images/logo.svg');
+System.assertEquals('/resource/MyStaticResource/images/logo.svg', nested.getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPageReferenceForResourceRejectsMissingStaticResource(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+	PageReference.forResource('MissingStaticResource');
+} catch (Exception e) {
+	caught = true;
+	System.assertEquals('System.VisualforceException', e.getTypeName());
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Metadata.StaticResources = []storage.StaticResourceMetadata{{Name: "KnownStaticResource"}}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPageReferenceParametersAreCaseInsensitive(t *testing.T) {
 	directPage := newPageReference("")
 	directParams := directPage.Fields["parameters"]

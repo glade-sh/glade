@@ -961,6 +961,8 @@ platformStaticCall:
 		return patternMatches(args)
 	case "Pattern.quote":
 		return patternQuote(args)
+	case "PageReference.forResource":
+		return vm.pageReferenceForResource(args)
 	case "Matcher.quoteReplacement":
 		return matcherQuoteReplacement(args)
 	case "Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.rint", "Math.roundToLong", "Math.signum", "Math.sqrt", "Math.cbrt",
@@ -3047,4 +3049,52 @@ platformStaticCall:
 		}
 		return Null, unsupportedCallError(callee)
 	}
+}
+
+func (vm *VM) pageReferenceForResource(args []Value) (Value, error) {
+	if len(args) != 1 && len(args) != 2 {
+		return Null, fmt.Errorf("PageReference.forResource expects resource name and optional path")
+	}
+	if args[0].Kind != ValueString {
+		return Null, fmt.Errorf("PageReference.forResource expects resource name String")
+	}
+	resourceName := strings.Trim(args[0].Text, "/")
+	if resourceName == "" {
+		return newPageReference("/resource"), nil
+	}
+	if vm.Org != nil && !vm.staticResourceExists(resourceName) {
+		return Null, newExceptionError("VisualforceException", fmt.Sprintf("Static Resource named %s does not exist.", resourceName))
+	}
+	url := "/resource/" + resourceName
+	if len(args) == 2 {
+		if args[1].Kind != ValueString {
+			return Null, fmt.Errorf("PageReference.forResource expects path String")
+		}
+		path := strings.Trim(args[1].Text, "/")
+		if path != "" {
+			url += "/" + path
+		}
+	}
+	return newPageReference(url), nil
+}
+
+func (vm *VM) staticResourceExists(resourceName string) bool {
+	if vm == nil || vm.Org == nil {
+		return true
+	}
+	for _, resource := range vm.Org.Metadata.StaticResources {
+		if strings.EqualFold(resource.Name, resourceName) {
+			return true
+		}
+	}
+	object, ok := vm.Org.Objects["StaticResource"]
+	if !ok {
+		return false
+	}
+	for _, record := range object.Records {
+		if staticResourceNameMatches(record, resourceName) {
+			return true
+		}
+	}
+	return false
 }
