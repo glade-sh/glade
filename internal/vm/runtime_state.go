@@ -46,6 +46,7 @@ type VM struct {
 	Org                       *storage.OrgState
 	Triggers                  map[string][]Trigger
 	triggerMatchCache         map[string][]Trigger
+	triggerNamespaceCache     map[triggerNamespaceLookupKey]string
 	Stdout                    io.Writer
 	callStack                 []callFrame
 	scopeStack                []map[string]Value
@@ -167,6 +168,11 @@ type loadedChildRelationshipLookup struct {
 type objectNameLookup struct {
 	Name string
 	OK   bool
+}
+
+type triggerNamespaceLookupKey struct {
+	CurrentNamespace string
+	Name             string
 }
 
 type classForAccessLookup struct {
@@ -382,6 +388,7 @@ func New(stdout io.Writer) *VM {
 		topLevelTypeCache:     make(map[string]uniqueNestedTypeLookup),
 		Triggers:              make(map[string][]Trigger),
 		triggerMatchCache:     make(map[string][]Trigger),
+		triggerNamespaceCache: make(map[triggerNamespaceLookupKey]string),
 		Stdout:                stdout,
 		limitCaps:             defaultLimitCaps(),
 		limitMode:             LimitModePermissive,
@@ -853,6 +860,7 @@ func (vm *VM) clearTriggerMatchCache() {
 		return
 	}
 	vm.triggerMatchCache = make(map[string][]Trigger)
+	vm.triggerNamespaceCache = make(map[triggerNamespaceLookupKey]string)
 }
 
 func (vm *VM) EnableTestContext() {

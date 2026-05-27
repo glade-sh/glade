@@ -71,6 +71,23 @@ func BenchmarkEnsureStandardObjectFieldsFreshDefinition(b *testing.B) {
 	}
 }
 
+func BenchmarkResolveObjectNameLargeNamespacedOrg(b *testing.B) {
+	org := NewOrgState()
+	org.Namespace = "pkg"
+	for i := 0; i < 1000; i++ {
+		objectName := fmt.Sprintf("pkg__PerfObject%d__c", i)
+		org.Objects[objectName] = ObjectState{Definition: ObjectDefinition{APIName: objectName}}
+	}
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		name := fmt.Sprintf("PerfObject%d__c", i%1000)
+		resolved, ok := ResolveObjectName(org, name)
+		if !ok || resolved == "" {
+			b.Fatalf("ResolveObjectName(%s) = %q, %v", name, resolved, ok)
+		}
+	}
+}
+
 func benchmarkOrgState(objectCount, recordsPerObject int) OrgState {
 	org := NewOrgState()
 	for i := 0; i < objectCount; i++ {

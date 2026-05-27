@@ -590,7 +590,9 @@ const localTestTriageClassBatchSize = 1
 func runLocalTestCases(index typesys.Index, testOpts apextest.Options, cases []apextest.TestCase, projectLabel string, options LocalTestOptions, started time.Time) ([]LocalTestOutcome, int, bool) {
 	if options.MaxFailureGroups <= 0 {
 		run := apextest.RunCasesContext(context.Background(), index, testOpts, cases)
-		return localTestOutcomesFromRun(projectLabel, run, options), len(cases), false
+		outcomes := localTestOutcomesFromRun(projectLabel, run, options)
+		outcomes = retryParallelTimeoutOutcomes(index, testOpts, cases, projectLabel, options, outcomes, started)
+		return outcomes, len(cases), false
 	}
 	outcomes := make([]LocalTestOutcome, 0)
 	casesRun := 0
@@ -607,6 +609,66 @@ func runLocalTestCases(index typesys.Index, testOpts apextest.Options, cases []a
 		}
 	}
 	return outcomes, casesRun, false
+}
+
+func retryParallelTimeoutOutcomes(index typesys.Index, testOpts apextest.Options, cases []apextest.TestCase, projectLabel string, options LocalTestOptions, outcomes []LocalTestOutcome, started time.Time) []LocalTestOutcome {
+	if options.Parallelism <= 1 || testOpts.TimeoutMS <= 0 {
+		return outcomes
+	}
+	timeoutCases := localTestTimeoutCases(cases, outcomes)
+	if len(timeoutCases) == 0 {
+		return outcomes
+	}
+	reportLocalTestPhase(options, fmt.Sprintf("timeout_retry_start cases=%d", len(timeoutCases)), started)
+	retryOpts := testOpts
+	retryOpts.Parallelism = 1
+	retryOpts.ParallelMethods = false
+	retryOpts.Progress = nil
+	retryRun := apextest.RunCasesContext(context.Background(), index, retryOpts, timeoutCases)
+	retryOutcomes := localTestOutcomesFromRun(projectLabel, retryRun, options)
+	reportLocalTestPhase(options, fmt.Sprintf("timeout_retry_done cases=%d", len(retryOutcomes)), started)
+	return replaceLocalTestOutcomes(outcomes, retryOutcomes)
+}
+
+func localTestTimeoutCases(cases []apextest.TestCase, outcomes []LocalTestOutcome) []apextest.TestCase {
+	timeouts := make(map[string]bool)
+	for _, outcome := range outcomes {
+		if outcome.Outcome != "timeout" {
+			continue
+		}
+		timeouts[localTestCaseKey(outcome.Class, outcome.Method)] = true
+	}
+	if len(timeouts) == 0 {
+		return nil
+	}
+	retry := make([]apextest.TestCase, 0, len(timeouts))
+	for _, testCase := range cases {
+		if timeouts[localTestCaseKey(testCase.ClassName, testCase.MethodName)] {
+			retry = append(retry, testCase)
+		}
+	}
+	return retry
+}
+
+func replaceLocalTestOutcomes(outcomes, replacements []LocalTestOutcome) []LocalTestOutcome {
+	if len(replacements) == 0 {
+		return outcomes
+	}
+	byCase := make(map[string]LocalTestOutcome, len(replacements))
+	for _, outcome := range replacements {
+		byCase[localTestCaseKey(outcome.Class, outcome.Method)] = outcome
+	}
+	out := append([]LocalTestOutcome(nil), outcomes...)
+	for i, outcome := range out {
+		if replacement, ok := byCase[localTestCaseKey(outcome.Class, outcome.Method)]; ok {
+			out[i] = replacement
+		}
+	}
+	return out
+}
+
+func localTestCaseKey(className, methodName string) string {
+	return className + "\x00" + methodName
 }
 
 func localTestTriageBatchClassSize(options LocalTestOptions) int {

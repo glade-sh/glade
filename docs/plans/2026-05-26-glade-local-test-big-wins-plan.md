@@ -16,56 +16,98 @@
 - [x] Task 2: Add VM value snapshot and alias propagation benchmarks.
 - [x] Task 3: Reduce `cloneValuePreserveRefsSeen` allocation pressure.
 - [ ] Task 4: Reduce broad alias replacement walks.
-- [ ] Task 5: Split long classes across the fixed worker budget.
-- [ ] Task 6: Replace safe per-method org deep clones with copy-on-write snapshots or journal rollback.
-- [ ] Task 7: Teach duration history to read current `outcomes[]` artifacts.
-- [ ] Task 8: Validate focused targets and green sentinels.
+- [ ] Task 5: Reduce `collectStaticFieldValueRefs` per-field overhead.
+- [ ] Task 6: Avoid `cloneDescribeObjectDefinition` cloning during execution.
+- [ ] Task 7: Split long classes across the fixed worker budget.
+- [ ] Task 8: Replace safe per-method org deep clones with copy-on-write snapshots or journal rollback.
+- [ ] Task 9: Teach duration history to read current `outcomes[]` artifacts.
+- [ ] Task 10: Validate focused targets and green sentinels.
 
-## Current Evidence
+## Current Evidence (Post-Task-3 Profiling — 8 Methods Across sf-cred + NU)
 
-Do not start with a full NU or NAMS run.
+Binary: `/tmp/glade-localtest-current-forced` (forced rebuild, `b7bcda11` + `149cdebd` baseline).
 
-Use the saved artifacts first:
+### Table 1: All 8 Profiled Methods
 
-- `nu.json`
-- `nams.json`
-- `nutpl.json`
-- `sf-cred.json`
+| # | Project | Class.Method | Wall (ms) | Method (ms) | Outcome | pprof Alloc (MB) | perf totalAlloc |
+|---|---------|-------------|-----------|-------------|---------|-----------------|-----------------|
+| 1 | sf-cred | CredentialingWorkflowTriggerHandlerTest.deleteChild...WithChildren | 36,391 | 29,053 | pass | 4,586 | 4.87 GB |
+| 2 | sf-cred | CredentialingWorkflowTriggerHandlerTest.deleteChild...AndOrphan | 36,610 | 28,407 | pass | 4,666 | 4.85 GB |
+| 3 | sf-cred | FacilityCredentialingEventTriggerTest.deleteChild...WithChildren | 22,402 | 14,305 | pass | 4,704 | 5.00 GB |
+| 4 | sf-cred | FacilityCredentialingEventTriggerTest.deleteChild...AndOrphan | 21,407 | 13,392 | pass | 4,694 | 4.97 GB |
+| 5 | NU | BulkBillingTest.batchBulkBilling...Successful | 81,375 | 62,033 | pass | 10,875 | 11.41 GB |
+| 6 | NU | TestAffiliationTriggers.bulkInsert...Affiliations | 47,496 | 28,195 | pass | 7,470 | 7.75 GB |
+| 7 | NU | AffiliationTriggerHandlers2Test.bulkInsert...Affiliations | 56,711 | 37,489 | pass | 10,038 | 10.58 GB |
+| 8 | NU | BatchTotalUpdaterTest.maxBatchSize...Totals | 46,670 | 27,462 | pass | 6,208 | 6.50 GB |
 
-Current narrow profile targets:
+**All 8 passed.** NU methods are 2–3× slower than sf-cred and allocate 1.5–2.5× more.
 
-```bash
-/tmp/glade-localtest-current compat local-tests \
-  --project example-projects/src-nmb-nu-develop \
-  --class BulkBillingTest \
-  --method batchBulkBilling_membershipMatchingCriteria_expectBatchExecutionSuccessful \
-  --timeout 300000 \
-  --cpu-profile /tmp/nu-bulkbilling.cpu \
-  --mem-profile /tmp/nu-bulkbilling.mem \
-  --perf-json /tmp/nu-bulkbilling.perf.json \
-  --json > /tmp/nu-bulkbilling.json
-```
+### Table 2: Top Alloc-Space Functions (flat MB, % of total)
 
-```bash
-/tmp/glade-localtest-current compat local-tests \
-  --project example-projects/nams-workspace \
-  --class MembershipBillingSuite \
-  --method simplestRenewal_bulk_200importedMemberships \
-  --timeout 300000 \
-  --cpu-profile /tmp/nams-membershipbilling.cpu \
-  --mem-profile /tmp/nams-membershipbilling.mem \
-  --perf-json /tmp/nams-membershipbilling.perf.json \
-  --json > /tmp/nams-membershipbilling.json
-```
+| Function | sf-cred-1 | sf-cred-3 | NU-1 | NU-3 | NU-4 |
+|----------|-----------|-----------|------|------|------|
+| `replaceValueAliasRef` | 1,646 (35.9%) | 1,389 (29.5%) | 2,323 (21.4%) | 949 (9.5%) | — |
+| `bytealg.MakeNoZero` | 447 (9.8%) | 520 (11.1%) | 1,983 (18.2%) | 1,775 (17.7%) | 1,477 (23.8%) |
+| `sameAliasRuntimeContent` | — | 197 (4.2%) | 1,011 (9.3%) | 1,537 (15.3%) | — |
+| `propagateUpdatedValueAliases.func1` | — | 129 (2.8%) | 681 (6.3%) | 1,080 (10.8%) | — |
+| `collectStaticFieldValueRefs` | — | — | — | — | 1,823 (29.4%) |
+| `cloneDescribeObjectDefinition` | 246 (5.4%) | 212 (4.5%) | 317 (2.9%) | 443 (4.4%) | 117 (1.9%) |
+| `cloneCondition` | 221 (4.8%) | 213 (4.5%) | — | — | — |
 
-Baseline facts from the investigation:
+### Table 3: Top CPU Cumulative Functions (cum seconds, % of total)
 
-- NAMS `MembershipBillingSuite.simplestRenewal_bulk_200importedMemberships` timed out at `300009ms`.
-- That NAMS profile allocated about `193.6GB`; `175.8GB` was in `internal/vm.cloneValuePreserveRefsSeen`.
-- NAMS CPU showed `cloneValuePreserveRefsSeen` at about `282.96s` cumulative and `replaceValueAliasRef` at about `250.09s` cumulative.
-- NU `BulkBillingTest.batchBulkBilling_membershipMatchingCriteria_expectBatchExecutionSuccessful` passed in `118722ms`.
-- That NU profile allocated about `40.9GB`; `28.5GB` was in `internal/vm.cloneValuePreserveRefsSeen`.
-- Load and discover were small beside method execution.
+| Function | sf-cred-1 | sf-cred-2 | NU-1 | NU-4 |
+|----------|-----------|-----------|------|------|
+| `(*VM).call` / `callMethodWithReceiver` | 21.73 (58.6%) | 20.63 (55.4%) | 48.22 (60.6%) | 21.08 (44.9%) |
+| `replaceValueAliasRef` | — | 15.53 (41.7%) | — | — |
+| `collectStaticFieldValueRefs` | — | — | — | 34.11 (72.6%) |
+| `executeForEach` | — | — | 37.53 (47.2%) | — |
+| `(*VM).applyDML` | — | — | — | 20.24 (42.1%) in nu-2 |
+
+### Pprof -list Deep Dives
+
+#### `replaceValueAliasRef` (sf-cred-2, 49.40s cum / 6.39s flat, 132.7% of total)
+
+Hot lines:
+- **Line 3251** (Object Fields recursive call): 14.77s cum — by far the hottest
+- **Line 3277** (List recursive call): 12.17s cum
+- **Line 3259** (Map recursive call): 9.02s cum
+- **Line 3245** (`seen[value.Ref] = true`): 5.85s cum — map insert allocation
+- **Line 3266** (MapKeys recursive call): 1.98s cum
+
+The `seen` map allocation dominates. Every call allocates a fresh `map[uint64]bool`.
+
+#### `collectStaticFieldValueRefs` (NU-4, 34.11s cum / 3.62s flat, 72.6% of total)
+
+Hot lines:
+- **Line 3201** (List recursive walk): 11.82s cum
+- **Line 3190** (Object Fields recursive walk): 10.33s cum
+- **Line 3183** (`seen[value.Ref] = true`): 4.90s cum — map insert
+- **Line 3193-3197** (Map + MapKeys walks): 1.78s cum combined
+
+This function is called by `rememberStaticValueRefsInField` after every DML/trigger field mutation. Recursively walks ALL static value trees, collecting refs into a `seen` map and a `fields` map. The function is called **for every mutated field**, not once per mutation cycle.
+
+#### `propagateUpdatedValueAliases` (NU-3, 2.48s cum / 0.01s flat in outer, 8.01s cum / 0.52s flat in .func1)
+
+Hot lines in `.func1`:
+- **Line 2869** (`walk(updated, true)` call site): 2.47s cum
+- **Line 2836** (`seen[value.Ref] = true`): 1.05s cum
+
+Allocates two maps per call: `topLevelAliases` (line 2820) and `seen` (line 2829). Then recursively walks the entire updated value tree.
+
+### Key Observations
+
+1. **`replaceValueAliasRef` is still the #1 hot spot** despite Task 3 eliminating `cloneValuePreserveRefsSeen`. It accounts for 20–36% of all allocs and up to 41.7% cumulative CPU. The `seen` map allocation (line 3245) and recursive Object/List/Map walks are the root cause.
+
+2. **`sameAliasRuntimeContent` is a separate deep-comparison cost** (up to 15.3% alloc in NU-3). This is the function that decides whether alias propagation is needed at all. It recursively compares two entire Value trees.
+
+3. **`collectStaticFieldValueRefs` is a massive new finding** (29.4% alloc, 72.6% CPU in NU-4). Called per-field-mutation during DML/trigger cycles. The recursive walk is almost identical to `replaceValueAliasRef` but for a different purpose (collecting refs vs replacing them).
+
+4. **`propagateUpdatedValueAliases` allocates two maps per call** and walks the updated value tree. If the updated value has no refs (scalar), or no scope variables share its ref, the entire function is wasted.
+
+5. **NU-2 is anomalous**: `bytealg.MakeNoZero` is #1 alloc (2069MB) and `replaceValueAliasRef` is only 1030MB. CPU shows `applyDML` at 20.24s cum and `runTrigger` at 19.85s cum — this method triggers heavy DML workflows where the allocation is driven by trigger processing rather than alias propagation.
+
+6. **`cloneDescribeObjectDefinition`** (211–447MB) and **`cloneCondition`** (195–228MB) are consistent secondary costs. These clone schema metadata and SOQL query ASTs during load/discovery, not during execution.
 
 ## File Map
 
@@ -506,78 +548,69 @@ Result:
 
 ### Task 4: Reduce Broad Alias Replacement Walks
 
-**Files:**
-- Modify: `internal/vm/method_dispatch.go`
-- Modify: `internal/vm/runtime_state.go`
-- Modify: `internal/vm/vm_benchmark_test.go`
-- Modify: `internal/vm/method_test.go`
+**Status:** Partially done. Item 4a (scope-indexed approach) was in the original plan but not yet implemented.
 
-- [ ] **Step 1: Add a runtime alias index shape**
+**Updated evidence (2026-05-26):** `replaceValueAliasRef` is still the #1 hot spot with 14.77s in Object Fields recursive walk and 5.85s in `seen` map insertion. `propagateUpdatedValueAliases` allocates 681–1080MB in NU methods.
 
-Add fields to `VM`:
+#### 4a. Skip `propagateUpdatedValueAliases` when no scope variables alias the updated value
 
-```go
-valueRefRoots map[uint64][]string
-valueRefDirty bool
-```
+**Current behavior:** `propagateUpdatedValueAliases` builds a `topLevelAliases` map by scanning ALL scope variables, then recursively walks the entire updated value tree. This always allocates two maps (`topLevelAliases` and `seen`).
 
-Use this index only for top-level `Globals` at first. Do not index every nested value until profiles prove it.
+**Proposed change:** Add an early-return gate. If the updated value has `Ref == 0` (it's a leaf/scalar), return immediately — leaf values can never be aliased. Additionally, if no scope variable's `Ref` matches the updated value's `Ref` and none of its nested refs, skip the walk entirely.
 
-- [ ] **Step 2: Rebuild the top-level ref index lazily**
+**Estimated impact:** Eliminates 100% of `propagateUpdatedValueAliases` allocation for scalar mutations (common case: string/int/boolean assignments). For collection/object mutations where no scope alias exists, eliminates the recursive walk. This could save 680–1080MB in NU methods.
 
-Add:
+**Correctness risk:** Medium. Must handle the case where a Value has `Ref == 0` but contains nested values with refs (e.g., a newly-created list of objects). In that case, check for nested refs before skipping.
 
-```go
-func (vm *VM) rebuildValueRefRoots() {
-	vm.valueRefRoots = make(map[uint64][]string, len(vm.Globals))
-	for name, value := range vm.Globals {
-		if value.Ref != 0 {
-			vm.valueRefRoots[value.Ref] = append(vm.valueRefRoots[value.Ref], name)
-		}
-	}
-	vm.valueRefDirty = false
-}
-```
+#### 4b. Avoid `seen` map allocation in `replaceValueAliasRef` for shallow walks
 
-- [ ] **Step 3: Use the index in `propagateValueMutationToScope`**
+**Current behavior:** Every call to `replaceValueAliasRef` allocates a fresh `seen` map. The map insert at line 3245 accounts for 5.85s cum in sf-cred-2. For scope-variable-level replacements (where the previous ref is at the root of a scope variable), the walk is inherently shallow (depth ≤ 2).
 
-For `vm.Globals`, replace the full `for name, value := range scope` scan with indexed roots when the previous value has a ref. Keep the old full scan for non-global scopes.
+**Proposed change:** Use a small stack-allocated array (e.g., `[8]uint64`) for ref tracking when depth is below a threshold. Fall back to heap `map[uint64]bool` only when the array overflows.
 
-Expected behavior:
+**Estimated impact:** Eliminates the 5.85s of `seen` map allocation overhead. Combined with the `cloneValuePreserveRefsSeen` elimination from Task 3, this could push `replaceValueAliasRef` below 5s cum in sf-cred and ~20–30s cum in NU.
 
-- If no indexed roots reference the previous ref, return without walking every global.
-- If indexed roots exist, replace only those roots.
-- Preserve static propagation through the existing static field ref index.
+**Correctness risk:** Low. The ref-tracking is strictly for cycle detection. A bounded array with fallback preserves correctness.
 
-- [ ] **Step 4: Mark the index dirty on global writes**
+#### 4c. Skip `sameAliasRuntimeContent` when refs differ at the top level
 
-Update `storeReceiver`, assignment, method frame return writeback, and static/global mutation points that write top-level globals.
+**Current behavior:** `sameAliasRuntimeContent` recursively compares two Value trees to decide if alias propagation is needed. In NU-3, this allocates 1537MB (15.3%). For bulk DML and trigger-heavy methods, the two trees being compared can be very large (deeply nested SObjects with many fields/child records).
 
-Use a small helper:
+**Proposed change:** Add a shallow-compare gate before the deep recursive walk. If the top-level refs differ and the values are not collections, return `false` immediately. For collections, compare `len(List/Set/Map/Fields)` first — if lengths differ, return `false` without recursing.
 
-```go
-func (vm *VM) setGlobal(name string, value Value) {
-	vm.Globals[name] = value
-	vm.valueRefDirty = true
-}
-```
+**Estimated impact:** Significant for NU methods where trigger chains produce large Value trees. The shallow gate could eliminate 50–80% of deep comparisons where the trees differ early.
 
-Do not do a broad mechanical rewrite. Convert only writes that participate in local variable and receiver mutation paths.
-
-- [ ] **Step 5: Run correctness and benchmarks**
-
-Run:
-
-```bash
-go test ./internal/vm
-go test -run '^$' -bench 'BenchmarkReplaceValueAliasLargeOrderGraph$' -benchmem ./internal/vm
-```
-
-Expected: alias correctness holds. `replaceValueAliasRef` cumulative CPU drops on both focused profiles.
+**Correctness risk:** Low. This is purely an optimization of the comparison logic; the result must be identical.
 
 ---
 
-### Task 5: Split Long Classes Without Raising Parallelism
+### Task 5 (NEW): Reduce `collectStaticFieldValueRefs` Per-Field Overhead
+
+**Evidence:** NU-4 shows `collectStaticFieldValueRefs` at 34.11s cum (72.6% of total CPU) and 1823MB alloc (29.4%). This is called from `rememberStaticValueRefsInField` for **every field** mutated in a DML/trigger cycle.
+
+**Root cause:** When a trigger modifies multiple fields on an SObject (e.g., `record.put('Field1', v1); record.put('Field2', v2);`), each `put` call invokes `rememberStaticValueRefsInField`, which calls `collectStaticFieldValueRefs`, which recursively walks the entire Value tree of that field. For an SObject with 50 fields and 10 mutated fields, this means 10 full walks of the SObject tree.
+
+**Proposed change:** Batch field ref collection. Instead of calling `collectStaticFieldValueRefs` per field, mark the static value refs as dirty and defer collection until the end of the method call or DML cycle. Use a `staticValueRefsDirty bool` flag and a list of pending field locations. On next access, walk once.
+
+**Estimated impact:** Could reduce `collectStaticFieldValueRefs` CPU by 5–10× in trigger-heavy methods like NU-4. The allocation would drop proportionally.
+
+**Correctness risk:** High. The static value ref index must be consistent at all points where `propagateValueMutationToStatics` or `staticValueRefs` are read. A dirty flag must be cleared (rebuilt) before any read. The trigger/DML lifecycle must be carefully audited to ensure no read-before-rebuild gaps.
+
+---
+
+### Task 6 (NEW): Avoid `cloneDescribeObjectDefinition` Cloning During Execution
+
+**Evidence:** `cloneDescribeObjectDefinition` allocates 211–447MB across all methods. This is a stable 2–5% cost that appears during load/discovery but also during execution (SOQL describe, DML describe).
+
+**Proposed change:** Cache cloned describe definitions per object type. The describe data is read-only during execution; cloning it repeatedly is wasted work. Use a `sync.Map` or a simple `map[string]*DescribeObjectDefinition` guarded by the VM's existing mutex pattern.
+
+**Estimated impact:** 200–400MB allocation reduction per slow method. Small but consistent win across all workloads.
+
+**Correctness risk:** Low. Describe definitions are immutable during execution. The cache must be per-VM (not global) to preserve test isolation.
+
+---
+
+### Task 7: Split Long Classes Without Raising Parallelism
 
 **Files:**
 - Modify: `internal/apextest/runner.go`
@@ -648,7 +681,7 @@ Expected: no new leakage failures. Wall time should be lower than serial method 
 
 ---
 
-### Task 6: Use Copy-On-Write Or Journal Isolation For Safe Method Runs
+### Task 8: Use Copy-On-Write Or Journal Isolation For Safe Method Runs
 
 **Files:**
 - Modify: `internal/apextest/runner.go`
@@ -721,7 +754,7 @@ Expected: all pass. Any bypass of `EnsureMutableObjectRecords` must be fixed bef
 
 ---
 
-### Task 7: Read Duration History From Current Artifacts
+### Task 9: Read Duration History From Current Artifacts
 
 **Files:**
 - Modify: `internal/compat/local_test_shards.go`
@@ -782,7 +815,7 @@ Expected: duration history can use `nu.json` and `nams.json` as they exist today
 
 ---
 
-### Task 8: Focused Validation And Sentinel Proof
+### Task 10: Focused Validation And Sentinel Proof
 
 **Files:**
 - No new files unless tests require updates.
@@ -878,16 +911,37 @@ Expected: all pass.
 ## Risk Ledger
 
 - **High correctness risk:** replacing deep value snapshots with alias tokens. Apex pass-by-reference behavior must still hold for lists, maps, sets, SObjects, method params, receivers, and DML result field writeback.
+- **High correctness risk:** deferring `collectStaticFieldValueRefs` with a dirty flag (Task 5). The static value ref index must be consistent at all read points. Any gap between a field mutation and index rebuild could cause missed alias propagation.
 - **Medium correctness risk:** method splitting within a class. Setup data, static state, async jobs, mocks, and limits must remain method-isolated.
 - **Medium correctness risk:** copy-on-write test org isolation. Every write path must call `EnsureMutableObjectRecords` or equivalent before mutation.
+- **Medium correctness risk:** skipping `propagateUpdatedValueAliases` when no scope aliases exist (Task 4a). Must correctly handle nested refs within newly-created values.
+- **Low correctness risk:** stack-allocated ref array in `replaceValueAliasRef` (Task 4b). The ref-tracking is strictly for cycle detection; bounded array with fallback preserves correctness.
+- **Low correctness risk:** shallow-compare gate in `sameAliasRuntimeContent` (Task 4c). The comparison result must be identical; the optimization is purely structural.
+- **Low correctness risk:** caching `cloneDescribeObjectDefinition` (Task 6). Describe data is immutable during execution; cache must be per-VM for test isolation.
 - **Low correctness risk:** duration history loader for `outcomes[]`. It only affects ordering and sharding.
 
 ## Done Criteria
 
-- [ ] Focused NAMS method no longer spends most time in `cloneValuePreserveRefsSeen`.
+- [ ] P0 (Task 4a–4c): `replaceValueAliasRef` allocation drops by 2–4×; `sameAliasRuntimeContent` allocation drops proportionally.
+- [ ] P1 (Task 5): `collectStaticFieldValueRefs` CPU in NU-4 drops below 10s cum (from 34s).
+- [ ] P2 (Task 6): `cloneDescribeObjectDefinition` allocation drops by 80%+ during method execution.
+- [ ] Focused NAMS method no longer spends most time in `cloneValuePreserveRefsSeen` (done in Task 3).
 - [ ] Focused NU method stays green and materially faster.
 - [ ] Slow-class focused runs show no new correctness failures.
 - [ ] `src-nmb-nutpl-develop` and `sf-cred-pkg-develop` sentinels remain green with `--parallel 4`.
 - [ ] Package tests pass for `internal/vm`, `internal/apextest`, `internal/storage`, `internal/dml`, and `internal/compat`.
 - [ ] No project-specific behavior was added.
 - [ ] No proprietary implementation source was used.
+
+## Priority Summary (Updated 2026-05-26)
+
+| Priority | Task | Description | Est. Impact | Risk |
+|----------|------|-------------|-------------|------|
+| **P0** | 4a | Skip `propagateUpdatedValueAliases` when no scope aliases exist | 680–1080MB alloc cut in NU | Medium |
+| **P0** | 4b | Stack-allocated ref array in `replaceValueAliasRef` | 5.85s CPU + alloc cut | Low |
+| **P0** | 4c | Shallow-compare gate in `sameAliasRuntimeContent` | 500–1000MB alloc cut in NU | Low |
+| **P1** | 5 | Defer `collectStaticFieldValueRefs` via dirty flag | 5–10× CPU cut in NU-4 | High |
+| **P2** | 6 | Cache `cloneDescribeObjectDefinition` | 200–400MB alloc cut | Low |
+| **P3** | 7 | Split long classes across workers | Wall-time reduction for large classes | Medium |
+| **P3** | 8 | Copy-on-write org isolation | 2–5× clone overhead reduction | Medium |
+| **P4** | 9 | Duration history from outcomes[] | Better scheduling | Low |

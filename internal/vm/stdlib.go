@@ -2403,6 +2403,17 @@ func matcherFindIndices(matcher Value, re *regexp.Regexp, input string, region m
 		}
 		return indices, nil
 	}
+	if matcherFindCanUseRegionSlice(re.String()) {
+		searchStart := startByte
+		if searchStart < region.startByte {
+			searchStart = region.startByte
+		}
+		indices := re.FindStringSubmatchIndex(input[searchStart:region.endByte])
+		if indices != nil {
+			offsetRegexIndices(indices, searchStart)
+		}
+		return indices, nil
+	}
 	for _, indices := range re.FindAllStringSubmatchIndex(input, -1) {
 		if len(indices) < 2 || indices[0] < startByte || indices[0] < region.startByte {
 			continue
@@ -2415,6 +2426,14 @@ func matcherFindIndices(matcher Value, re *regexp.Regexp, input string, region m
 		}
 	}
 	return nil, nil
+}
+
+func matcherFindCanUseRegionSlice(source string) bool {
+	return !strings.ContainsAny(source, "^$") &&
+		!strings.Contains(source, `\A`) &&
+		!strings.Contains(source, `\z`) &&
+		!strings.Contains(source, `\b`) &&
+		!strings.Contains(source, `\B`)
 }
 
 func matcherFindIndicesWithTerminalLookahead(matcher Value, input string, region matcherRegionBounds, startByte int) ([]int, error) {

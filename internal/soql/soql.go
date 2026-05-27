@@ -50,7 +50,7 @@ func cachedParsedQuery(input string, now time.Time) (Query, bool) {
 	if !ok {
 		return Query{}, false
 	}
-	return cloneQuery(query), true
+	return cloneQueryForCacheHit(query), true
 }
 
 func storeParsedQuery(input string, now time.Time, query Query) {
@@ -87,6 +87,38 @@ func cloneQuery(query Query) Query {
 	return query
 }
 
+func cloneQueryForCacheHit(query Query) Query {
+	query.Fields = append([]string(nil), query.Fields...)
+	query.ChildQueries = append([]ChildQuery(nil), query.ChildQueries...)
+	for i := range query.ChildQueries {
+		query.ChildQueries[i].Query = cloneQueryForCacheHit(query.ChildQueries[i].Query)
+	}
+	query.Typeofs = append([]TypeofSpec(nil), query.Typeofs...)
+	for i := range query.Typeofs {
+		query.Typeofs[i].When = cloneStringSliceMap(query.Typeofs[i].When)
+		query.Typeofs[i].Else = append([]string(nil), query.Typeofs[i].Else...)
+	}
+	query.Order = append([]OrderSpec(nil), query.Order...)
+	query.GroupBy = append([]string(nil), query.GroupBy...)
+	query.Aggregates = append([]Aggregate(nil), query.Aggregates...)
+	query.HavingAggregates = append([]Aggregate(nil), query.HavingAggregates...)
+	if query.Where != nil {
+		where := *query.Where
+		if conditionContainsSubquery(where) {
+			where = cloneCondition(where)
+		}
+		query.Where = &where
+	}
+	if query.Having != nil {
+		having := *query.Having
+		if conditionContainsSubquery(having) {
+			having = cloneCondition(having)
+		}
+		query.Having = &having
+	}
+	return query
+}
+
 func cloneCondition(condition Condition) Condition {
 	condition.And = append([]Condition(nil), condition.And...)
 	for i := range condition.And {
@@ -102,6 +134,23 @@ func cloneCondition(condition Condition) Condition {
 		condition.Subquery = &subquery
 	}
 	return condition
+}
+
+func conditionContainsSubquery(condition Condition) bool {
+	if condition.Subquery != nil {
+		return true
+	}
+	for _, child := range condition.And {
+		if conditionContainsSubquery(child) {
+			return true
+		}
+	}
+	for _, child := range condition.Or {
+		if conditionContainsSubquery(child) {
+			return true
+		}
+	}
+	return false
 }
 
 func cloneStringSliceMap(in map[string][]string) map[string][]string {
@@ -261,14 +310,14 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 	if query.ForUpdate && queryHasAggregates(query) {
 		return Result{}, unsupportedSOQLErrorf("FOR UPDATE is not supported with aggregate queries")
 	}
-	if query.Where != nil {
+	if query.Where != nil && conditionContainsSubquery(*query.Where) {
 		condition, err := resolveSubqueries(org, *query.Where)
 		if err != nil {
 			return Result{}, err
 		}
 		query.Where = &condition
 	}
-	if query.Having != nil {
+	if query.Having != nil && conditionContainsSubquery(*query.Having) {
 		condition, err := resolveSubqueries(org, *query.Having)
 		if err != nil {
 			return Result{}, err
@@ -1281,7 +1330,7 @@ func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	if err := validateQueryReferences(org, childObject.Definition, query, query.SecurityMode); err != nil {
 		return preparedChildRelationshipQuery{}, err
 	}
-	if query.Where != nil {
+	if query.Where != nil && conditionContainsSubquery(*query.Where) {
 		condition, err := resolveSubqueries(org, *query.Where)
 		if err != nil {
 			return preparedChildRelationshipQuery{}, err

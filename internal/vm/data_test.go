@@ -10167,6 +10167,34 @@ System.assertEquals(0, rows.size());
 	}
 }
 
+func TestExecDMLRejectsNonNullCalculatedFieldWritesAsSaveResult(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+a.put('Score__c', 7);
+Object result = Database.insert(a, false);
+System.assert(!result.isSuccess());
+List<Object> errors = result.getErrors();
+System.assertEquals(1, errors.size());
+Object err = errors.get(0);
+System.assertEquals('INVALID_FIELD_FOR_INSERT_UPDATE', err.getStatusCode());
+System.assertEquals('Score__c', err.getFields().get(0));
+List<Account> rows = [SELECT Id FROM Account];
+System.assertEquals(0, rows.size());
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldCalculated, DisplayType: "INTEGER"}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecUpdateQueriedCalculatedFieldDoesNotWriteIt(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');

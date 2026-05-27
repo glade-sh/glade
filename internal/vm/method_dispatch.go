@@ -2806,6 +2806,10 @@ func (vm *VM) propagateValueMutationToScope(scope map[string]Value, previous, up
 	seen := make(map[uint64]bool)
 	for name, value := range scope {
 		clearRefSeen(seen)
+		if !valueContainsAliasRef(value, previous.Ref, previous.Kind, seen) {
+			continue
+		}
+		clearRefSeen(seen)
 		replaced, changed := replaceValueAlias(value, previous, updated, seen)
 		if changed {
 			scope[name] = replaced
@@ -2987,6 +2991,7 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 	if len(locations) == 0 {
 		return
 	}
+	seen := make(map[uint64]bool)
 	for _, location := range locations {
 		class, ok := vm.Classes[location.ClassName]
 		if !ok || class.StaticFields == nil {
@@ -2996,7 +3001,12 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 		if !ok {
 			continue
 		}
-		replaced, changed := replaceValueAlias(field.Value, previous, updated, make(map[uint64]bool))
+		clearRefSeen(seen)
+		if !valueContainsAliasRef(field.Value, previous.Ref, previous.Kind, seen) {
+			continue
+		}
+		clearRefSeen(seen)
+		replaced, changed := replaceValueAlias(field.Value, previous, updated, seen)
 		if !changed {
 			continue
 		}
@@ -3013,6 +3023,10 @@ func (vm *VM) propagateAliasSnapshotToScope(scope map[string]Value, previous ali
 	}
 	seen := make(map[uint64]bool)
 	for name, value := range scope {
+		clearRefSeen(seen)
+		if !valueContainsAliasRef(value, previous.ref, previous.kind, seen) {
+			continue
+		}
 		clearRefSeen(seen)
 		replaced, changed := replaceAliasSnapshot(value, previous, updated, seen)
 		if changed {
@@ -3035,6 +3049,7 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 	if len(locations) == 0 {
 		return
 	}
+	seen := make(map[uint64]bool)
 	for _, location := range locations {
 		class, ok := vm.Classes[location.ClassName]
 		if !ok || class.StaticFields == nil {
@@ -3044,7 +3059,12 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 		if !ok {
 			continue
 		}
-		replaced, changed := replaceAliasSnapshot(field.Value, previous, updated, make(map[uint64]bool))
+		clearRefSeen(seen)
+		if !valueContainsAliasRef(field.Value, previous.ref, previous.kind, seen) {
+			continue
+		}
+		clearRefSeen(seen)
+		replaced, changed := replaceAliasSnapshot(field.Value, previous, updated, seen)
 		if !changed {
 			continue
 		}
@@ -3056,7 +3076,10 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 }
 
 func (vm *VM) propagateAliasSnapshotMutationToScope(scope map[string]Value, previous aliasSnapshot, original, updated Value) bool {
-	if sameAliasRuntimeData(original, updated) {
+	if sameAliasListCollectionViewOnly(original, updated) {
+		return false
+	}
+	if sameAliasRuntimeData(original, updated) || sameAliasRuntimeDataWithCallerCollectionView(original, updated) {
 		if valueHasNestedAliasRef(original, previous.ref, make(map[uint64]bool)) {
 			vm.propagateUpdatedValueAliases(scope, updated)
 		}
@@ -3064,6 +3087,33 @@ func (vm *VM) propagateAliasSnapshotMutationToScope(scope map[string]Value, prev
 	}
 	vm.propagateAliasSnapshotToScope(scope, previous, updated)
 	return true
+}
+
+func sameAliasListCollectionViewOnly(original, updated Value) bool {
+	if original.Ref == 0 || original.Ref != updated.Ref || original.Kind != ValueList || updated.Kind != ValueList {
+		return false
+	}
+	if strings.EqualFold(original.Type, updated.Type) || collectionBase(original.Type) != "List" || collectionBase(updated.Type) != "List" {
+		return false
+	}
+	if len(original.List) != len(updated.List) {
+		return false
+	}
+	return true
+}
+
+func sameAliasRuntimeDataWithCallerCollectionView(original, updated Value) bool {
+	if original.Ref == 0 || original.Ref != updated.Ref || original.Kind != updated.Kind {
+		return false
+	}
+	switch original.Kind {
+	case ValueList, ValueSet, ValueMap:
+	default:
+		return false
+	}
+	callerView := updated
+	callerView.Type = original.Type
+	return sameAliasRuntimeData(original, callerView)
 }
 
 func (vm *VM) rememberStaticValueRefs(value Value) {
@@ -3136,9 +3186,11 @@ func valueHasRef(value Value, seen map[uint64]bool) bool {
 func (vm *VM) collectStaticValueRefs() (map[uint64]bool, map[uint64][]staticFieldRef) {
 	refs := make(map[uint64]bool)
 	fields := make(map[uint64][]staticFieldRef)
+	seen := make(map[uint64]bool)
 	for className, class := range vm.Classes {
 		for fieldName, field := range class.StaticFields {
-			collectStaticFieldValueRefs(field.Value, refs, fields, staticFieldRef{ClassName: className, FieldName: fieldName}, make(map[uint64]bool))
+			clearRefSeen(seen)
+			collectStaticFieldValueRefs(field.Value, refs, fields, staticFieldRef{ClassName: className, FieldName: fieldName}, seen)
 		}
 	}
 	return refs, fields
@@ -3247,6 +3299,9 @@ func replaceValueAliasRef(value Value, previousRef uint64, previousKind ValueKin
 	changed := false
 	switch value.Kind {
 	case ValueObject:
+		if previousKind == ValueObject && objectFieldsCannotContainObjectRef(value.Fields, previousRef) {
+			return value, false
+		}
 		for name, child := range value.Fields {
 			replaced, childChanged := replaceValueAliasRef(child, previousRef, previousKind, updated, seen)
 			if childChanged {
@@ -3255,6 +3310,9 @@ func replaceValueAliasRef(value Value, previousRef uint64, previousKind ValueKin
 			}
 		}
 	case ValueMap:
+		if previousKind == ValueObject && mapCannotContainObjectRef(value, previousRef) {
+			return value, false
+		}
 		for key, child := range value.Map {
 			replaced, childChanged := replaceValueAliasRef(child, previousRef, previousKind, updated, seen)
 			if childChanged {
@@ -3295,11 +3353,73 @@ func replaceValueAliasRef(value Value, previousRef uint64, previousKind ValueKin
 	return value, changed
 }
 
+func valueContainsAliasRef(value Value, previousRef uint64, previousKind ValueKind, seen map[uint64]bool) bool {
+	if previousRef == 0 {
+		return false
+	}
+	if value.Ref != 0 {
+		if value.Ref == previousRef && value.Kind == previousKind {
+			return true
+		}
+		if seen[value.Ref] {
+			return false
+		}
+		seen[value.Ref] = true
+	}
+	switch value.Kind {
+	case ValueObject:
+		if previousKind == ValueObject && objectFieldsCannotContainObjectRef(value.Fields, previousRef) {
+			return false
+		}
+		for _, child := range value.Fields {
+			if valueContainsAliasRef(child, previousRef, previousKind, seen) {
+				return true
+			}
+		}
+	case ValueMap:
+		if previousKind == ValueObject && mapCannotContainObjectRef(value, previousRef) {
+			return false
+		}
+		for _, child := range value.Map {
+			if valueContainsAliasRef(child, previousRef, previousKind, seen) {
+				return true
+			}
+		}
+		for _, child := range value.MapKeys {
+			if valueContainsAliasRef(child, previousRef, previousKind, seen) {
+				return true
+			}
+		}
+	case ValueList:
+		if previousKind == ValueObject && listCannotContainObjectRef(value.List, previousRef) {
+			return false
+		}
+		for _, child := range value.List {
+			if valueContainsAliasRef(child, previousRef, previousKind, seen) {
+				return true
+			}
+		}
+	case ValueSet:
+		if previousKind == ValueObject && listCannotContainObjectRef(value.Set, previousRef) {
+			return false
+		}
+		for _, child := range value.Set {
+			if valueContainsAliasRef(child, previousRef, previousKind, seen) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func listCannotContainObjectRef(values []Value, previousRef uint64) bool {
-	if previousRef == 0 || len(values) < 32 {
+	if previousRef == 0 || len(values) == 0 {
 		return false
 	}
 	for _, value := range values {
+		if valueCannotContainObjectRef(value, previousRef) {
+			continue
+		}
 		if value.Kind != ValueObject || value.Ref == 0 {
 			return false
 		}
@@ -3308,6 +3428,46 @@ func listCannotContainObjectRef(values []Value, previousRef uint64) bool {
 		}
 	}
 	return true
+}
+
+func objectFieldsCannotContainObjectRef(fields map[string]Value, previousRef uint64) bool {
+	if previousRef == 0 || len(fields) == 0 {
+		return false
+	}
+	for _, value := range fields {
+		if !valueCannotContainObjectRef(value, previousRef) {
+			return false
+		}
+	}
+	return true
+}
+
+func mapCannotContainObjectRef(value Value, previousRef uint64) bool {
+	if previousRef == 0 || len(value.Map)+len(value.MapKeys) == 0 {
+		return false
+	}
+	for _, child := range value.Map {
+		if !valueCannotContainObjectRef(child, previousRef) {
+			return false
+		}
+	}
+	for _, child := range value.MapKeys {
+		if !valueCannotContainObjectRef(child, previousRef) {
+			return false
+		}
+	}
+	return true
+}
+
+func valueCannotContainObjectRef(value Value, previousRef uint64) bool {
+	switch value.Kind {
+	case ValueNull, ValueInt, ValueDecimal, ValueBool, ValueString:
+		return true
+	case ValueObject:
+		return value.Ref != previousRef && len(value.Fields) == 0
+	default:
+		return false
+	}
 }
 
 func collectionAliasMatch(left, right Value) bool {
@@ -3402,6 +3562,9 @@ func sameAliasRuntimeData(left, right Value) bool {
 func sameAliasRuntimeContent(left, right Value, seen map[[2]uint64]bool) bool {
 	if left.Kind != right.Kind || left.Type != right.Type || left.Text != right.Text ||
 		left.Int != right.Int || left.Decimal != right.Decimal || left.Bool != right.Bool {
+		return false
+	}
+	if left.Ref != 0 && right.Ref != 0 && left.Ref != right.Ref {
 		return false
 	}
 	if left.Ref != 0 && right.Ref != 0 {

@@ -155,3 +155,64 @@ func BenchmarkReplaceAliasSnapshotLargeOrderGraph(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkSameAliasRuntimeContentLargeOrderGraph(b *testing.B) {
+	left := Object("OrderGraph")
+	right := left
+	for i := 0; i < 100; i++ {
+		line := Object("OrderLine")
+		line.Fields["Name"] = String(fmt.Sprintf("line-%d", i))
+		line.Fields["Children"] = List(Object("Adjustment"), Object("Agreement"))
+		left.Fields[fmt.Sprintf("Line%d", i)] = line
+		right.Fields[fmt.Sprintf("Line%d", i)] = line
+	}
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		if !sameAliasRuntimeData(left, right) {
+			b.Fatal("runtime content mismatch")
+		}
+	}
+}
+
+func BenchmarkCollectStaticFieldValueRefsLargeOrderGraph(b *testing.B) {
+	root := Object("OrderGraph")
+	for i := 0; i < 100; i++ {
+		line := Object("OrderLine")
+		line.Fields["Name"] = String(fmt.Sprintf("line-%d", i))
+		line.Fields["Children"] = List(Object("Adjustment"), Object("Agreement"))
+		root.Fields[fmt.Sprintf("Line%d", i)] = line
+	}
+	location := staticFieldRef{ClassName: "OrderService", FieldName: "Graph"}
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		refs := make(map[uint64]bool)
+		fields := make(map[uint64][]staticFieldRef)
+		collectStaticFieldValueRefs(root, refs, fields, location, make(map[uint64]bool))
+		if !refs[root.Ref] {
+			b.Fatal("root ref missing")
+		}
+	}
+}
+
+func BenchmarkTriggerNamespaceByName(b *testing.B) {
+	machine := New(nil)
+	machine.currentNamespace = "pkg"
+	for i := 0; i < 500; i++ {
+		if err := machine.RegisterTrigger(Trigger{
+			Name:      fmt.Sprintf("Trigger%d", i),
+			Object:    fmt.Sprintf("Object%d__c", i),
+			Timing:    triggerTimingBefore,
+			Operation: "insert",
+		}); err != nil {
+			b.Fatal(err)
+		}
+	}
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		if got := machine.triggerNamespaceByName("Trigger499"); got != "pkg" {
+			b.Fatalf("trigger namespace = %q, want pkg", got)
+		}
+	}
+}

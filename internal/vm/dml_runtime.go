@@ -2859,12 +2859,13 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 	}
 	objectType := value.Type
 	var definition storage.ObjectDefinition
+	sourceKeyPrefix := ""
 	if vm.Org != nil {
 		if canonical, ok := vm.resolveObjectName(objectType); ok {
 			objectType = canonical
-			definition = vm.Org.Objects[canonical].Definition
-			definition = cloneDescribeObjectDefinition(definition)
-			storage.EnsureStandardObjectFields(&definition)
+			sourceDefinition := vm.Org.Objects[canonical].Definition
+			sourceKeyPrefix = sourceDefinition.KeyPrefix
+			definition = vm.describePreparedDefinition(canonical, sourceDefinition)
 		}
 	}
 	record := storage.Record{
@@ -2877,7 +2878,7 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 	recordFieldSourceByAlias := make(map[string]string)
 	if id := sObjectIDFromFields(value.Fields); id != "" {
 		_, queried := value.Fields[sobjectQueriedFieldsField]
-		if queried || isExplicitSObjectField(*value, "Id") || definition.KeyPrefix == "" || strings.HasPrefix(string(id), definition.KeyPrefix) {
+		if queried || isExplicitSObjectField(*value, "Id") || sourceKeyPrefix == "" || strings.HasPrefix(string(id), sourceKeyPrefix) {
 			record.ID = id
 		}
 	}
@@ -3046,9 +3047,7 @@ func (vm *VM) parentRelationshipRecordFromValue(value Value) (storage.Record, bo
 	if vm != nil && vm.Org != nil {
 		if canonical, ok := vm.resolveObjectName(objectType); ok {
 			objectType = canonical
-			definition = vm.Org.Objects[canonical].Definition
-			definition = cloneDescribeObjectDefinition(definition)
-			storage.EnsureStandardObjectFields(&definition)
+			definition = vm.describePreparedDefinition(canonical, vm.Org.Objects[canonical].Definition)
 		}
 	}
 	record := storage.Record{
@@ -3873,6 +3872,8 @@ func storageValueFromVMForField(value Value, fieldType storage.FieldType) (stora
 		return storageValueFromVM(value)
 	}
 	switch fieldType {
+	case storage.FieldCalculated, storage.FieldSummary:
+		return storageValueFromVM(value)
 	case storage.FieldID, storage.FieldReference:
 		if value.Kind == ValueString {
 			return storage.IDValue(storage.ID(value.Text)), nil

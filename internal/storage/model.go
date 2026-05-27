@@ -3,6 +3,7 @@ package storage
 import (
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -37,6 +38,8 @@ type OrgState struct {
 	IDSequences  map[string]uint64      `json:"idSequences,omitempty"`
 	Transactions []TransactionFrame     `json:"transactions,omitempty"`
 	Now          func() time.Time       `json:"-"`
+
+	objectNameCache *sync.Map
 }
 
 type MetadataRegistry struct {
@@ -803,8 +806,9 @@ const (
 
 func NewOrgState() OrgState {
 	return OrgState{
-		Objects:     make(map[string]ObjectState),
-		IDSequences: make(map[string]uint64),
+		Objects:         make(map[string]ObjectState),
+		IDSequences:     make(map[string]uint64),
+		objectNameCache: &sync.Map{},
 	}
 }
 
@@ -820,26 +824,39 @@ func StripNamespaceToken(namespace, name string) string {
 }
 
 func ResolveObjectName(org OrgState, name string) (string, bool) {
+	cacheKey := strings.ToLower(strings.TrimSpace(org.Namespace)) + "|" + strconv.Itoa(len(org.Objects)) + "|" + strings.ToLower(strings.TrimSpace(name))
+	if org.objectNameCache != nil {
+		if cached, ok := org.objectNameCache.Load(cacheKey); ok {
+			if resolved, resolvedOK := cached.(string); resolvedOK && resolved != "" {
+				return resolved, true
+			}
+		}
+	}
 	if exact, ok := org.Objects[name]; ok {
 		if preferred, preferredOK := richerNamespacedObjectMatch(org, name, exact); preferredOK {
+			cacheResolvedObjectName(org, cacheKey, preferred)
 			return preferred, true
 		}
+		cacheResolvedObjectName(org, cacheKey, name)
 		return name, true
 	}
 	prefixed := NamespaceTokenName(org.Namespace, name)
 	if prefixed != name {
 		if _, ok := org.Objects[prefixed]; ok {
+			cacheResolvedObjectName(org, cacheKey, prefixed)
 			return prefixed, true
 		}
 	}
 	stripped := StripNamespaceToken(org.Namespace, name)
 	if stripped != name {
 		if _, ok := org.Objects[stripped]; ok {
+			cacheResolvedObjectName(org, cacheKey, stripped)
 			return stripped, true
 		}
 	}
 	for candidate := range org.Objects {
 		if strings.EqualFold(candidate, name) || strings.EqualFold(candidate, prefixed) || strings.EqualFold(candidate, stripped) {
+			cacheResolvedObjectName(org, cacheKey, candidate)
 			return candidate, true
 		}
 	}
@@ -847,10 +864,12 @@ func ResolveObjectName(org OrgState, name string) (string, bool) {
 		unqualified := StripAnyNamespaceToken(name)
 		if unqualified != name {
 			if _, ok := org.Objects[unqualified]; ok {
+				cacheResolvedObjectName(org, cacheKey, unqualified)
 				return unqualified, true
 			}
 			for candidate := range org.Objects {
 				if strings.EqualFold(candidate, unqualified) {
+					cacheResolvedObjectName(org, cacheKey, candidate)
 					return candidate, true
 				}
 			}
@@ -867,10 +886,18 @@ func ResolveObjectName(org OrgState, name string) (string, bool) {
 			}
 		}
 		if match != "" {
+			cacheResolvedObjectName(org, cacheKey, match)
 			return match, true
 		}
 	}
 	return "", false
+}
+
+func cacheResolvedObjectName(org OrgState, key, name string) {
+	if org.objectNameCache == nil || key == "" || name == "" {
+		return
+	}
+	org.objectNameCache.Store(key, name)
 }
 
 func richerNamespacedObjectMatch(org OrgState, name string, exact ObjectState) (string, bool) {
@@ -1205,6 +1232,7 @@ func (i IndexSet) Clone() IndexSet {
 
 func (o OrgState) Clone() OrgState {
 	out := o
+	out.objectNameCache = &sync.Map{}
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {
@@ -1233,6 +1261,7 @@ func (o OrgState) Clone() OrgState {
 func (o OrgState) CloneRuntime() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
+	out.objectNameCache = &sync.Map{}
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {

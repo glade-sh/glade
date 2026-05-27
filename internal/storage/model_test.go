@@ -302,6 +302,25 @@ func TestResolveObjectNamePrefersRicherNamespacedMatchOverSparseExactCustomObjec
 	}
 }
 
+func TestResolveObjectNameCacheTracksObjectCountChanges(t *testing.T) {
+	org := NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["Thing__c"] = ObjectState{Definition: ObjectDefinition{APIName: "Thing__c"}}
+
+	resolved, ok := ResolveObjectName(org, "Thing__c")
+	if !ok || resolved != "Thing__c" {
+		t.Fatalf("ResolveObjectName before add = %q, %v", resolved, ok)
+	}
+	org.Objects["pkg__Thing__c"] = ObjectState{Definition: ObjectDefinition{
+		APIName: "pkg__Thing__c",
+		Fields:  map[string]Field{"pkg__Name__c": {APIName: "pkg__Name__c", Type: FieldString}},
+	}}
+	resolved, ok = ResolveObjectName(org, "Thing__c")
+	if !ok || resolved != "pkg__Thing__c" {
+		t.Fatalf("ResolveObjectName after add = %q, %v", resolved, ok)
+	}
+}
+
 func TestEnsureStandardObjectFieldsAddsAccountWebsiteWithoutClobber(t *testing.T) {
 	definition := ObjectDefinition{
 		APIName: "Account",

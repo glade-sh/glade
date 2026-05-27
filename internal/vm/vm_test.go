@@ -113,6 +113,38 @@ func TestRecordFromValueKeepsParentRelationshipShellForDMLValidationFormula(t *t
 	}
 }
 
+func TestRecordFromValueUsesPreparedDescribeCache(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Widget__c",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+
+	value := Object("Widget__c")
+	value.Fields["Name"] = String("Trail stove")
+	if _, err := machine.recordFromValue(&value); err != nil {
+		t.Fatal(err)
+	}
+
+	cached, ok := machine.describeDefCache["widget__c"]
+	if !ok {
+		t.Fatal("recordFromValue did not use prepared describe cache")
+	}
+	if cached.KeyPrefix == "" {
+		t.Fatal("cached prepared definition has empty key prefix")
+	}
+	if got := org.Objects["Widget__c"].Definition.KeyPrefix; got != "" {
+		t.Fatalf("org definition key prefix was mutated to %q", got)
+	}
+}
+
 func TestSameAliasValueIgnoresMapIterationOrder(t *testing.T) {
 	left := typedMap("Map<String,Object>")
 	left.Ref = 10
@@ -144,6 +176,53 @@ func TestReplaceAliasSnapshotReplacesMatchingRefAndKind(t *testing.T) {
 	}
 	if got := replaced.List[0].Fields["Name"].Text; got != "Acme" {
 		t.Fatalf("replaced alias Name = %q, want Acme", got)
+	}
+}
+
+func TestReplaceAliasSnapshotSeenMapCanBeReused(t *testing.T) {
+	firstPrevious := Object("First")
+	firstUpdated := firstPrevious
+	firstUpdated.Fields["Name"] = String("updated")
+	firstRoot := Object("Root")
+	firstRoot.Fields["Child"] = firstPrevious
+
+	seen := make(map[uint64]bool)
+	firstReplaced, firstChanged := replaceAliasSnapshot(firstRoot, snapshotAlias(firstPrevious), firstUpdated, seen)
+	if !firstChanged {
+		t.Fatal("first replacement did not change")
+	}
+	if got := firstReplaced.Fields["Child"].Fields["Name"].Text; got != "updated" {
+		t.Fatalf("first replacement name = %q", got)
+	}
+
+	clearRefSeen(seen)
+
+	secondPrevious := Object("Second")
+	secondUpdated := secondPrevious
+	secondUpdated.Fields["Name"] = String("updated")
+	secondRoot := Object("Root")
+	secondRoot.Fields["Child"] = secondPrevious
+
+	secondReplaced, secondChanged := replaceAliasSnapshot(secondRoot, snapshotAlias(secondPrevious), secondUpdated, seen)
+	if !secondChanged {
+		t.Fatal("second replacement did not change")
+	}
+	if got := secondReplaced.Fields["Child"].Fields["Name"].Text; got != "updated" {
+		t.Fatalf("second replacement name = %q", got)
+	}
+}
+
+func TestTriggerNamespaceByNameCachesCurrentNamespaceFallback(t *testing.T) {
+	machine := New(nil)
+	machine.currentNamespace = "pkg"
+	if err := machine.RegisterTrigger(Trigger{Name: "AccountTrigger", Object: "Account", Timing: triggerTimingBefore, Operation: "insert"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := machine.triggerNamespaceByName("AccountTrigger"); got != "pkg" {
+		t.Fatalf("trigger namespace = %q, want pkg", got)
+	}
+	if machine.triggerNamespaceCache == nil || len(machine.triggerNamespaceCache) == 0 {
+		t.Fatal("trigger namespace lookup was not cached")
 	}
 }
 
@@ -1661,6 +1740,46 @@ System.assertEquals(11, Util.count(names));
 		t.Fatal(err)
 	}
 	if err := machine.RegisterMethod(Method{Name: "Util.count", ReturnType: "Integer", Params: []Param{{Name: "values", Type: "List<String>"}}, Program: listStringProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectListParameterCoercionDoesNotLeakIntoCallerOverloadResolution(t *testing.T) {
+	getIDsProgram, err := CompileAnonymous(`return new Set<Id>();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	accountProgram, err := CompileAnonymous(`return 'accounts';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	contactProgram, err := CompileAnonymous(`return 'contacts';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<Account> accounts = new List<Account>{ new Account(Name = 'Acme') };
+CollectionUtil.getSObjectIds(accounts);
+System.assertEquals('accounts', ProductPricingRequest.pick(accounts));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	if err := machine.RegisterMethod(Method{Name: "CollectionUtil.getSObjectIds", ReturnType: "Set<Id>", Params: []Param{{Name: "records", Type: "List<SObject>"}}, Program: getIDsProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "ProductPricingRequest.pick", ReturnType: "String", Params: []Param{{Name: "records", Type: "List<Account>"}}, Program: accountProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "ProductPricingRequest.pick", ReturnType: "String", Params: []Param{{Name: "records", Type: "List<Contact>"}}, Program: contactProgram}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {

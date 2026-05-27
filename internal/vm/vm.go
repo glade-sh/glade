@@ -6941,17 +6941,32 @@ func (vm *VM) activeTriggerNamespace() string {
 }
 
 func (vm *VM) triggerNamespaceByName(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return ""
+	}
+	cacheKey := triggerNamespaceLookupKey{CurrentNamespace: strings.TrimSpace(vm.currentNamespace), Name: name}
+	if vm.triggerNamespaceCache == nil {
+		vm.triggerNamespaceCache = make(map[triggerNamespaceLookupKey]string)
+	}
+	if cached, ok := vm.triggerNamespaceCache[cacheKey]; ok {
+		return cached
+	}
 	for _, triggers := range vm.Triggers {
 		for _, trigger := range triggers {
 			if !strings.EqualFold(trigger.Name, name) {
 				continue
 			}
 			if ns := strings.TrimSpace(trigger.Namespace); ns != "" {
+				vm.triggerNamespaceCache[cacheKey] = ns
 				return ns
 			}
-			return strings.TrimSpace(vm.currentNamespace)
+			ns := strings.TrimSpace(vm.currentNamespace)
+			vm.triggerNamespaceCache[cacheKey] = ns
+			return ns
 		}
 	}
+	vm.triggerNamespaceCache[cacheKey] = ""
 	return ""
 }
 
@@ -10290,9 +10305,7 @@ func (vm *VM) resolveUniqueNestedTypeName(typeName string) (string, bool) {
 	if typeName == "" || strings.Contains(typeName, ".") || vm.currentClass == "" {
 		return "", false
 	}
-	if isCommonSObjectTypeName(typeName) {
-		return "", false
-	}
+	commonSObjectType := isCommonSObjectTypeName(typeName)
 	currentTops := vm.currentLexicalTopCandidates()
 	if len(currentTops) == 0 {
 		return "", false
@@ -10318,6 +10331,10 @@ func (vm *VM) resolveUniqueNestedTypeName(typeName string) (string, bool) {
 				return entry.Name, true
 			}
 		}
+	}
+	if commonSObjectType {
+		vm.uniqueNestedTypeCache[cacheKey] = uniqueNestedTypeLookup{}
+		return "", false
 	}
 	var unique string
 	for _, entry := range vm.classNameSearchEntries() {

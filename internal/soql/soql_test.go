@@ -22,6 +22,28 @@ func TestParseSimpleQuery(t *testing.T) {
 	}
 }
 
+func TestCachedParsedQueryPlainWhereCanBeExecutedTwice(t *testing.T) {
+	now := time.Date(2026, 5, 26, 12, 0, 0, 0, time.UTC)
+	input := "SELECT Id FROM Account WHERE Name = 'Acme'"
+	first, err := ParseAt(input, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := ParseAt(input, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.Where == nil || second.Where == nil {
+		t.Fatal("parsed query missing where condition")
+	}
+	if first.Where == second.Where {
+		t.Fatal("cache hit reused top-level where pointer")
+	}
+	if first.Where.Field != second.Where.Field || first.Where.Value.String != second.Where.Value.String {
+		t.Fatalf("cache hit where = %#v, want %#v", second.Where, first.Where)
+	}
+}
+
 func TestParseForView(t *testing.T) {
 	query, err := Parse("SELECT Id, Name FROM Account LIMIT 1 FOR VIEW")
 	if err != nil {
