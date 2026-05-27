@@ -114,7 +114,7 @@ type VM struct {
 	soqlExecutionCache        *soql.ExecutionCache
 	managedFeatureFlags       map[string]bool
 	childRelCache             map[string][]Value
-	jsonChildRelTypeCache     map[string]jsonRelationshipTypeLookup
+	jsonChildRelTypeCache     *jsonChildRelTypeLookupCache
 	loadedChildRelCache       map[string]loadedChildRelationshipLookup
 	lazyChildRelCache         map[string]lazyChildRelationshipLookup
 	objectNameCache           map[string]objectNameLookup
@@ -412,7 +412,7 @@ func New(stdout io.Writer) *VM {
 		customDataCache:       make(map[string]Value),
 		managedFeatureFlags:   make(map[string]bool),
 		childRelCache:         make(map[string][]Value),
-		jsonChildRelTypeCache: make(map[string]jsonRelationshipTypeLookup),
+		jsonChildRelTypeCache: newJSONChildRelTypeLookupCache(),
 		loadedChildRelCache:   make(map[string]loadedChildRelationshipLookup),
 		lazyChildRelCache:     make(map[string]lazyChildRelationshipLookup),
 		objectNameCache:       make(map[string]objectNameLookup),
@@ -440,6 +440,10 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	clone.pageReferences = copyStringMap(vm.pageReferences)
 	clone.platformCache = copyCacheMap(vm.platformCache)
 	clone.isolationJournal = vm.isolationJournal
+	// jsonChildRelTypeCache derives from schema definitions that are stable
+	// across clones in a typical test run; share it so the first DML in
+	// each test doesn't repopulate it.
+	clone.jsonChildRelTypeCache = vm.jsonChildRelTypeCache
 	return clone
 }
 

@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -1445,14 +1446,14 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 		return "", false
 	}
 	cacheKey := strings.ToLower(strings.TrimSpace(typeName)) + "\x00" + strings.ToLower(strings.TrimSpace(relationshipName))
-	if cached, ok := vm.jsonChildRelTypeCache[cacheKey]; ok {
+	if cached, ok := vm.jsonChildRelTypeCache.load(cacheKey); ok {
 		return cached.Type, cached.OK
 	}
 	cacheResult := func(typeName string, ok bool) (string, bool) {
 		if vm.jsonChildRelTypeCache == nil {
-			vm.jsonChildRelTypeCache = make(map[string]jsonRelationshipTypeLookup)
+			vm.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
 		}
-		vm.jsonChildRelTypeCache[cacheKey] = jsonRelationshipTypeLookup{Type: typeName, OK: ok}
+		vm.jsonChildRelTypeCache.store(cacheKey, jsonRelationshipTypeLookup{Type: typeName, OK: ok})
 		return typeName, ok
 	}
 	parentObject, ok := vm.resolveObjectName(typeName)
@@ -1724,4 +1725,36 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		return uuidValue(parsed), true, nil
 	}
 	return Null, false, nil
+}
+
+// jsonChildRelTypeLookupCache memoizes (typeName, relationshipName) -> child
+// type lookups. The mapping derives from schema definitions which are stable
+// across clones for the lifetime of a test run, so CloneRuntime shares the
+// cache pointer; concurrent test methods are serialized by an RWMutex.
+type jsonChildRelTypeLookupCache struct {
+mu      sync.RWMutex
+entries map[string]jsonRelationshipTypeLookup
+}
+
+func newJSONChildRelTypeLookupCache() *jsonChildRelTypeLookupCache {
+return &jsonChildRelTypeLookupCache{entries: make(map[string]jsonRelationshipTypeLookup)}
+}
+
+func (c *jsonChildRelTypeLookupCache) load(key string) (jsonRelationshipTypeLookup, bool) {
+if c == nil {
+return jsonRelationshipTypeLookup{}, false
+}
+c.mu.RLock()
+defer c.mu.RUnlock()
+value, ok := c.entries[key]
+return value, ok
+}
+
+func (c *jsonChildRelTypeLookupCache) store(key string, value jsonRelationshipTypeLookup) {
+if c == nil {
+return
+}
+c.mu.Lock()
+c.entries[key] = value
+c.mu.Unlock()
 }
