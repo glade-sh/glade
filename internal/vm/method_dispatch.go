@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/glade-sh/glade/internal/dml"
@@ -2817,11 +2818,27 @@ func (vm *VM) propagateValueMutationToScope(scope map[string]Value, previous, up
 	}
 }
 
+var (
+	aliasRefSliceMapPool = sync.Pool{New: func() any { m := make(map[uint64][]string, 8); return &m }}
+	aliasRefSetPool      = sync.Pool{New: func() any { m := make(map[uint64]bool, 16); return &m }}
+)
+
 func (vm *VM) propagateUpdatedValueAliases(scope map[string]Value, updated Value) {
 	if len(scope) == 0 {
 		return
 	}
-	topLevelAliases := make(map[uint64][]string)
+	topLevelAliasesPtr := aliasRefSliceMapPool.Get().(*map[uint64][]string)
+	topLevelAliases := *topLevelAliasesPtr
+	clear(topLevelAliases)
+	defer func() {
+		// Drop large slices so the pool entry stays compact.
+		for k, v := range topLevelAliases {
+			if cap(v) > 16 {
+				delete(topLevelAliases, k)
+			}
+		}
+		aliasRefSliceMapPool.Put(topLevelAliasesPtr)
+	}()
 	for name, value := range scope {
 		if value.Ref != 0 && value.Ref != updated.Ref {
 			topLevelAliases[value.Ref] = append(topLevelAliases[value.Ref], name)
@@ -2830,7 +2847,10 @@ func (vm *VM) propagateUpdatedValueAliases(scope map[string]Value, updated Value
 	if len(topLevelAliases) == 0 {
 		return
 	}
-	seen := make(map[uint64]bool)
+	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+	seen := *seenPtr
+	clear(seen)
+	defer aliasRefSetPool.Put(seenPtr)
 	var walk func(Value, bool)
 	walk = func(value Value, root bool) {
 		if value.Ref != 0 {
@@ -3076,6 +3096,9 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 }
 
 func (vm *VM) propagateAliasSnapshotMutationToScope(scope map[string]Value, previous aliasSnapshot, original, updated Value) bool {
+	if !scopeHasAnyRef(scope) {
+		return false
+	}
 	if sameAliasListCollectionViewOnly(original, updated) {
 		return false
 	}
@@ -3087,6 +3110,19 @@ func (vm *VM) propagateAliasSnapshotMutationToScope(scope map[string]Value, prev
 	}
 	vm.propagateAliasSnapshotToScope(scope, previous, updated)
 	return true
+}
+
+// scopeHasAnyRef returns true if any binding in scope carries a non-zero
+// reference id. Most scopes during expression evaluation contain only
+// primitives or null; this lets us bail before invoking the deep
+// sameAliasRuntimeData comparison.
+func scopeHasAnyRef(scope map[string]Value) bool {
+	for _, value := range scope {
+		if value.Ref != 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func sameAliasListCollectionViewOnly(original, updated Value) bool {
