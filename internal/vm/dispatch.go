@@ -900,7 +900,7 @@ platformStaticCall:
 			return Value{Kind: ValueNull, Type: "String"}, nil
 		}
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Date") {
-			text, err := platformScalarText(args[0], "Date")
+			text, err := vm.displayString(args[0], result)
 			if err != nil {
 				return Null, err
 			}
@@ -1203,16 +1203,21 @@ platformStaticCall:
 				return Null, fmt.Errorf("%s expects integer parts", callee)
 			}
 		}
-		year, month, day := int(args[0].Int), int(args[1].Int), int(args[2].Int)
-		if year == 0 {
-			year = 1
+		year, month, day := normalizeDateNewInstanceParts(int(args[0].Int), int(args[1].Int), int(args[2].Int))
+		if err := validateDateParts(year, month, day); err != nil {
+			if year == 0 || month < 1 || month > 12 || day < 1 {
+				value, valueErr := dateFromNewInstanceParts(year, month, day)
+				if valueErr != nil {
+					return Null, valueErr
+				}
+				year, month, day = value.Year(), int(value.Month()), value.Day()
+			} else {
+				return Null, err
+			}
 		}
 		hour, minute, second := 0, 0, 0
 		if len(args) == 6 {
 			hour, minute, second = int(args[3].Int), int(args[4].Int), int(args[5].Int)
-		}
-		if err := validateDateParts(year, month, day); err != nil {
-			return Null, err
 		}
 		if err := validateTimeParts(hour, minute, second); err != nil {
 			return Null, err

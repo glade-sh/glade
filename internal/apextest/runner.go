@@ -2182,6 +2182,9 @@ func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[st
 	if parentRelationshipKnown(state.Definition, fieldName) {
 		return
 	}
+	if projectReferencedNameIsChildRelationship(*org, objectName, fieldName) {
+		return
+	}
 	if inferred[objectName] == nil {
 		inferred[objectName] = make(map[string]storage.Field)
 	}
@@ -2230,6 +2233,9 @@ func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]ma
 			if _, ok := storage.ResolveFieldName(state.Definition, org.Namespace, fieldName); ok {
 				continue
 			}
+			if projectReferencedNameIsChildRelationship(*org, objectName, fieldName) {
+				continue
+			}
 			state.Definition.Fields[fieldName] = field
 			if field.Type == storage.FieldReference && field.RelationshipName != "" && len(field.ReferenceTo) > 0 && !parentRelationshipKnown(state.Definition, field.RelationshipName) {
 				state.Definition.Relations = append(state.Definition.Relations, storage.Relationship{
@@ -2242,6 +2248,30 @@ func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]ma
 		}
 		org.Objects[objectName] = state
 	}
+}
+
+func projectReferencedNameIsChildRelationship(org storage.OrgState, objectName, name string) bool {
+	parentName, ok := storage.ResolveObjectName(org, objectName)
+	if !ok {
+		parentName = objectName
+	}
+	for _, child := range org.Objects {
+		for _, relation := range child.Definition.Relations {
+			if relation.ChildRelationship == "" || !strings.EqualFold(relation.ChildRelationship, name) {
+				continue
+			}
+			for _, parent := range relation.ParentObjects {
+				resolvedParent, ok := storage.ResolveObjectName(org, parent)
+				if !ok {
+					resolvedParent = parent
+				}
+				if strings.EqualFold(resolvedParent, parentName) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func inferredReferencedField(org storage.OrgState, objectName, fieldName string, hintedType storage.FieldType) storage.Field {

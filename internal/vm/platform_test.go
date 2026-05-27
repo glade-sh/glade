@@ -7735,8 +7735,8 @@ func TestExecDatetimeLocalConstructionAndComponentsUseCurrentUserTimeZone(t *tes
 Datetime winterLocal = Datetime.newInstance(2024, 2, 29, 23, 5, 6);
 System.assertEquals('2024-03-01 07:05:06', winterLocal.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals('2/29/2024, 11:05 PM', winterLocal.format());
-System.assertEquals('2024-02-29', String.valueOf(winterLocal.date()));
-System.assertEquals('2024-03-01', String.valueOf(winterLocal.dateGmt()));
+System.assertEquals('2024-02-29 00:00:00', String.valueOf(winterLocal.date()));
+System.assertEquals('2024-03-01 00:00:00', String.valueOf(winterLocal.dateGmt()));
 System.assertEquals(Time.newInstance(23, 5, 6, 0), winterLocal.time());
 System.assertEquals(Time.newInstance(7, 5, 6, 0), winterLocal.timeGmt());
 System.assertEquals(2024, winterLocal.year());
@@ -7800,7 +7800,7 @@ System.runAs(new User(Id = '005-ny-user', TimeZoneSidKey = 'America/New_York')) 
     System.assertEquals('2024-07-01 12:00:00', stamp.formatGmt('yyyy-MM-dd HH:mm:ss'));
     System.assertEquals(8, stamp.hour());
     System.assertEquals(12, stamp.hourGmt());
-    System.assertEquals('2024-07-01', String.valueOf(stamp.date()));
+    System.assertEquals('2024-07-01 00:00:00', String.valueOf(stamp.date()));
 }
 System.runAs(new User(Id = '005-panama-user', TimeZoneSidKey = 'America/Panama')) {
     Datetime stamp = Datetime.newInstance(Date.newInstance(2014, 11, 4), Time.newInstance(0, 0, 0, 0));
@@ -8488,7 +8488,7 @@ System.assertEquals(12.35, amount.setScale(2));
 System.assertEquals(12, amount.intValue());
 System.assertEquals(12, amount.round());
 Date d = Date.today();
-System.assertEquals('2026-05-02', String.valueOf(d));
+System.assertEquals('2026-05-02 00:00:00', String.valueOf(d));
 System.assertEquals(2026, d.year());
 System.assertEquals(5, d.month());
 System.assertEquals(2, d.day());
@@ -8498,9 +8498,9 @@ System.assertEquals(d.addDays(1), d.AddDays(1));
 System.assertEquals(d.addDays(3), d + 3);
 System.assertEquals(d.addDays(-2), d - 2);
 Date nextMonth = d.addMonths(1);
-System.assertEquals('2026-06-02', String.valueOf(nextMonth));
+System.assertEquals('2026-06-02 00:00:00', String.valueOf(nextMonth));
 Date nextYear = d.addYears(1);
-System.assertEquals('2027-05-02', String.valueOf(nextYear));
+System.assertEquals('2027-05-02 00:00:00', String.valueOf(nextYear));
 Date parsedDate = Date.valueOf('2026-05-04');
 System.assertEquals(2, d.daysBetween(parsedDate));
 Object parsedDateObjectText = '2026-05-04';
@@ -8523,7 +8523,7 @@ Datetime dt = Datetime.now();
 String dtText = dt.formatGmt('yyyy-MM-dd HH:mm:ss');
 System.assert(dtText.startsWith('2026-05-02 12:00:00'));
 Date dtDate = dt.date();
-System.assertEquals('2026-05-02', String.valueOf(dtDate));
+System.assertEquals('2026-05-02 00:00:00', String.valueOf(dtDate));
 Datetime made = Datetime.newInstance(2026, 5, 2, 1, 2, 3);
 System.assertEquals('2026-05-02 01:02:03', made.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals(1777683723000, made.getTime());
@@ -8617,10 +8617,12 @@ func TestExecDateNewInstanceAcceptsMonthDayYearUIParts(t *testing.T) {
 	program, err := CompileAnonymous(`
 Date day = Date.newInstance(4, 20, 2020);
 System.assertEquals(Date.newInstance(2020, 4, 20), day);
-System.assertEquals('0000-01-01', String.valueOf(Date.newInstance(0, 1, 1)));
-System.assertEquals('2027-01-02', String.valueOf(Date.newInstance(2026, 13, 2)));
-System.assertEquals('2017-11-30', String.valueOf(Date.newInstance(2018, 0, 0)));
+System.assertEquals('0000-01-01 00:00:00', String.valueOf(Date.newInstance(0, 1, 1)));
+System.assertEquals('2027-01-02 00:00:00', String.valueOf(Date.newInstance(2026, 13, 2)));
+System.assertEquals('2017-11-30 00:00:00', String.valueOf(Date.newInstance(2018, 0, 0)));
 System.assertEquals('0000-01-01 01:02:03', Datetime.newInstanceGmt(Date.newInstance(0, 1, 1), Time.newInstance(1, 2, 3, 0)).formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals('2024-01-01 00:00:00', Datetime.newInstanceGmt(1, 1, 2024).formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals('2017-11-30 00:00:00', Datetime.newInstanceGmt(2018, 0, 0).formatGmt('yyyy-MM-dd HH:mm:ss'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -8635,15 +8637,15 @@ func TestExecDateDatetimeDeterministicInstanceMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 Date leap = Date.newInstance(2024, 1, 31);
 Date nextMonth = leap.addMonths(1);
-System.assertEquals('2024-02-29', String.valueOf(nextMonth));
+System.assertEquals('2024-02-29 00:00:00', String.valueOf(nextMonth));
 Date marchEnd = Date.newInstance(2024, 3, 31);
 Date previousMonth = marchEnd.addMonths(-1);
-System.assertEquals('2024-02-29', String.valueOf(previousMonth));
+System.assertEquals('2024-02-29 00:00:00', String.valueOf(previousMonth));
 Date leapDay = Date.newInstance(2024, 2, 29);
 Date nextYear = leapDay.addYears(1);
-System.assertEquals('2025-02-28', String.valueOf(nextYear));
+System.assertEquals('2025-02-28 00:00:00', String.valueOf(nextYear));
 Date previousYear = leapDay.addYears(-1);
-System.assertEquals('2023-02-28', String.valueOf(previousYear));
+System.assertEquals('2023-02-28 00:00:00', String.valueOf(previousYear));
 System.assertEquals(31, leap.day());
 System.assertEquals(1, leap.month());
 System.assertEquals(2024, leap.year());
@@ -8651,8 +8653,8 @@ System.assertEquals(29, Date.daysInMonth(2024, 2));
 System.assertEquals(28, Date.daysInMonth(2025, 2));
 Date monthStart = leap.toStartOfMonth();
 Date monthEnd = leap.toEndOfMonth();
-System.assertEquals('2024-01-01', String.valueOf(monthStart));
-System.assertEquals('2024-01-31', String.valueOf(monthEnd));
+System.assertEquals('2024-01-01 00:00:00', String.valueOf(monthStart));
+System.assertEquals('2024-01-31 00:00:00', String.valueOf(monthEnd));
 Date due = leap.addDays(10);
 System.assertEquals(10, leap.daysBetween(due));
 System.assertEquals(-10, due.daysBetween(leap));
@@ -8676,7 +8678,7 @@ Datetime plusSeconds = plusMinutes.addSeconds(3);
 System.assertEquals('2024-02-01 01:01:02', plusSeconds.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime tomorrowStamp = stamp.addDays(1);
 Date tomorrowDate = tomorrowStamp.date();
-System.assertEquals('2024-02-01', String.valueOf(tomorrowDate));
+System.assertEquals('2024-02-01 00:00:00', String.valueOf(tomorrowDate));
 System.assertEquals(2024, stamp.year());
 System.assertEquals(1, stamp.month());
 System.assertEquals(31, stamp.day());
@@ -8719,14 +8721,14 @@ func TestExecUserInfoGetTimeZoneRejectsUnsupportedCurrentUserZone(t *testing.T) 
 func TestExecTimeDatetimeGmtAndTimeZoneMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 Date today = Date.today();
-System.assertEquals('2026-05-02', String.valueOf(today));
+System.assertEquals('2026-05-02 00:00:00', String.valueOf(today));
 
 Datetime nowStamp = Datetime.now();
 System.assertEquals('2026-05-02 12:00:00', nowStamp.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals(nowStamp, DateTime.Now());
 Datetime gmt = Datetime.newInstanceGmt(2024, 2, 29, 23, 59, 58);
 Date gmtDate = gmt.dateGmt();
-System.assertEquals('2024-02-29', String.valueOf(gmtDate));
+System.assertEquals('2024-02-29 00:00:00', String.valueOf(gmtDate));
 System.assertEquals(Time.newInstance(23, 59, 58, 0), gmt.timeGmt());
 Datetime parsedGmt = Datetime.valueOfGmt('2024-02-29 23:59:58');
 System.assertEquals('2024-02-29 23:59:58', parsedGmt.formatGmt('yyyy-MM-dd HH:mm:ss'));

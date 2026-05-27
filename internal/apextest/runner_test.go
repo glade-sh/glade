@@ -5414,6 +5414,36 @@ public class SchemaFieldProbe {
 	}
 }
 
+func TestOrgFromIndexDoesNotInferChildRelationshipNamesAsFields(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ChildRelationshipProbe.cls"), `
+public class ChildRelationshipProbe {
+	public static void touch(Account account) {
+		Object staticReference = Account.Contacts;
+		Object variableReference = account.Contacts;
+	}
+}
+`)
+	index := loadTestIndex(t, root)
+
+	org := orgFromIndex(index)
+	account := org.Objects["Account"]
+	if _, ok := account.Definition.Fields["Contacts"]; ok {
+		t.Fatalf("Account.Contacts was inferred as a field; fields=%#v", account.Definition.Fields)
+	}
+	foundRelationship := false
+	for _, relation := range org.Objects["Contact"].Definition.Relations {
+		if relation.ChildRelationship == "Contacts" {
+			foundRelationship = true
+			break
+		}
+	}
+	if !foundRelationship {
+		t.Fatalf("Contact -> Account child relationship Contacts missing; relations=%#v", org.Objects["Contact"].Definition.Relations)
+	}
+}
+
 func TestOrgFromIndexIncludesProjectReferencedSObjectLiteralFields(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

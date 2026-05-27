@@ -1189,13 +1189,13 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 	case "repeat":
 		if len(args) == 1 && args[0].Kind == ValueInt {
 			if args[0].Int < 0 {
-				return Null, true, fmt.Errorf("String.repeat expects non-negative count")
+				return String(""), true, nil
 			}
 			return String(strings.Repeat(receiver.Text, int(args[0].Int))), true, nil
 		}
 		if len(args) == 2 && args[0].Kind == ValueString && args[1].Kind == ValueInt {
 			if args[1].Int < 0 {
-				return Null, true, fmt.Errorf("String.repeat expects non-negative count")
+				return String(""), true, nil
 			}
 			parts := make([]string, int(args[1].Int))
 			for i := range parts {
