@@ -269,6 +269,11 @@ Common flags:
   --watch                   Watch source files and emit NDJSON events.
   --watch-once              Run one watch cycle and exit.
   --changed-since <ref>     Select tests affected since a git ref.
+  --parallel-methods        Run test methods in parallel (default).
+  --no-parallel-methods     Force serial method execution within a class.
+  --parallelism <n>         Worker count (default: GOMAXPROCS).
+  --test-timeout <dur>      Per-test timeout (default 5m, e.g. 30s, 2m).
+  --gc-aggressive           Run with GOGC=50 for memory-constrained hosts.
   --limit-mode <mode>       Use strict or permissive governor limits.
 
 Examples:
