@@ -132,6 +132,67 @@ func TestApplyCustomMetadataRecordsRebuildsRelationshipIndexesAfterResolvingRefs
 	}
 }
 
+func TestApplyCustomMetadataRecordsResolvesDependencyRelationshipByTargetType(t *testing.T) {
+	org := NewOrgState()
+	org.Namespace = "local"
+	callbackDefinition := ObjectDefinition{
+		APIName:  "pkg__Callback__mdt",
+		Metadata: map[string]string{"kind": "customMetadata"},
+		Fields:   map[string]Field{},
+	}
+	transitionDefinition := ObjectDefinition{
+		APIName:  "pkg__Transition__mdt",
+		Metadata: map[string]string{"kind": "customMetadata"},
+		Fields:   map[string]Field{},
+	}
+	bindingDefinition := ObjectDefinition{
+		APIName:  "pkg__TransitionCallback__mdt",
+		Metadata: map[string]string{"kind": "customMetadata"},
+		Fields: map[string]Field{
+			"pkg__Callback__c": {
+				APIName:          "pkg__Callback__c",
+				Type:             FieldReference,
+				ReferenceTo:      []string{"pkg__Callback__mdt"},
+				RelationshipName: "pkg__Callback__r",
+			},
+			"pkg__Transition__c": {
+				APIName:          "pkg__Transition__c",
+				Type:             FieldReference,
+				ReferenceTo:      []string{"pkg__Transition__mdt"},
+				RelationshipName: "pkg__Transition__r",
+			},
+		},
+	}
+	EnsureStandardObjectFields(&callbackDefinition)
+	EnsureStandardObjectFields(&transitionDefinition)
+	EnsureStandardObjectFields(&bindingDefinition)
+	org.Objects["pkg__Callback__mdt"] = ObjectState{Definition: callbackDefinition, Records: map[ID]Record{}}
+	org.Objects["pkg__Transition__mdt"] = ObjectState{Definition: transitionDefinition, Records: map[ID]Record{}}
+	org.Objects["pkg__TransitionCallback__mdt"] = ObjectState{Definition: bindingDefinition, Records: map[ID]Record{}}
+
+	err := ApplyCustomMetadataRecords(&org, []schema.CustomMetadataRecord{
+		{FullName: "pkg__Callback.Generate", ObjectName: "pkg__Callback__mdt", DeveloperName: "Generate"},
+		{FullName: "pkg__Transition.Submit", ObjectName: "pkg__Transition__mdt", DeveloperName: "Submit"},
+		{FullName: "pkg__TransitionCallback.GenerateOnSubmit", ObjectName: "pkg__TransitionCallback__mdt", DeveloperName: "GenerateOnSubmit", Values: []schema.CustomMetadataValue{
+			{Field: "Callback__c", Value: "Callback.Generate"},
+			{Field: "Transition__c", Value: "Transition.Submit"},
+		}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	callbackID := onlyRecordID(t, org.Objects["pkg__Callback__mdt"].Records)
+	transitionID := onlyRecordID(t, org.Objects["pkg__Transition__mdt"].Records)
+	binding := onlyRecord(t, org.Objects["pkg__TransitionCallback__mdt"].Records)
+	if got := binding.Fields["pkg__Callback__c"]; got.Kind != ValueID || got.ID != callbackID {
+		t.Fatalf("Callback__c = %#v, want %s", got, callbackID)
+	}
+	if got := binding.Fields["pkg__Transition__c"]; got.Kind != ValueID || got.ID != transitionID {
+		t.Fatalf("Transition__c = %#v, want %s", got, transitionID)
+	}
+}
+
 func onlyRecordID(t *testing.T, records map[ID]Record) ID {
 	t.Helper()
 	if len(records) != 1 {

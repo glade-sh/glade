@@ -58,6 +58,25 @@ System.assertEquals('{"accountId":"001000000000001AAA","ids":["001000000000001AA
 	}
 }
 
+func TestExecJSONOutputDoesNotEscapeHTMLCharacters(t *testing.T) {
+	program, err := CompileAnonymous(`
+JSONGenerator gen = JSON.createGenerator(false);
+gen.writeStartObject();
+gen.writeStringField('body', '<p>This email rocks</p>');
+gen.writeEndObject();
+System.assertEquals('{"body":"<p>This email rocks</p>"}', gen.getAsString());
+System.assertEquals('"<p>This email rocks</p>"', JSON.serialize('<p>This email rocks</p>'));
+System.assertEquals('"<p>This email rocks</p>"', JSON.serializePretty('<p>This email rocks</p>'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONParserGeneratorMethodsAreCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = json.CREATEGENERATOR(false);
@@ -473,29 +492,35 @@ gen.writeFieldName('bad');
 	}
 }
 
-func TestExecJSONGeneratorRejectsCloseAndClosedStateEdges(t *testing.T) {
+func TestExecJSONGeneratorCloseFinishesOpenOutput(t *testing.T) {
+	program, err := CompileAnonymous(`
+JSONGenerator emptyGen = JSON.createGenerator(false);
+emptyGen.close();
+System.assertEquals('', emptyGen.getAsString());
+
+JSONGenerator objectGen = JSON.createGenerator(false);
+objectGen.writeStartObject();
+System.assertEquals('{}', objectGen.getAsString());
+
+JSONGenerator pendingGen = JSON.createGenerator(false);
+pendingGen.writeStartObject();
+pendingGen.writeFieldName('x');
+System.assertEquals('{"x"}', pendingGen.getAsString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONGeneratorRejectsClosedStateWrite(t *testing.T) {
 	tests := []struct {
 		name   string
 		source string
 		want   string
 	}{
-		{
-			name: "close with no root",
-			source: `
-JSONGenerator gen = JSON.createGenerator(false);
-gen.close();
-`,
-			want: "cannot close before writing a root value",
-		},
-		{
-			name: "close with open object",
-			source: `
-JSONGenerator gen = JSON.createGenerator(false);
-gen.writeStartObject();
-gen.close();
-`,
-			want: "cannot close with open JSON containers",
-		},
 		{
 			name: "write after close",
 			source: `

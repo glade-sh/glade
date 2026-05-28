@@ -62,6 +62,33 @@ func TestInsertUpdateDelete(t *testing.T) {
 	}
 }
 
+func TestInsertAdvancesSystemTimestampsWhenClockIsFixed(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+	engine.Now = func() time.Time { return time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC) }
+
+	first := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("First")},
+	}})
+	second := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Second")},
+	}})
+	if !first[0].Success || !second[0].Success {
+		t.Fatalf("insert results = %#v %#v", first, second)
+	}
+
+	firstStamp := org.Objects["Account"].Records[first[0].ID].System.CreatedDate
+	secondStamp := org.Objects["Account"].Records[second[0].ID].System.CreatedDate
+	if firstStamp != "2026-05-02T12:00:00Z" {
+		t.Fatalf("first CreatedDate = %q", firstStamp)
+	}
+	if secondStamp != "2026-05-02T12:00:01Z" {
+		t.Fatalf("second CreatedDate = %q", secondStamp)
+	}
+}
+
 func TestDMLRejectsInvalidSystemOwnerIDPrefix(t *testing.T) {
 	org := testOrg()
 	org.Objects["Widget__c"] = storage.ObjectState{
@@ -4882,6 +4909,25 @@ func TestContentVersionCreatesDocumentAndLinks(t *testing.T) {
 	}})
 	if !explicitLink[0].Success || !strings.HasPrefix(string(explicitLink[0].ID), "06A") || explicitLink[0].ID == autoLink.ID {
 		t.Fatalf("explicit link insert = %#v", explicitLink)
+	}
+}
+
+func TestContentVersionRejectsEmptyVersionData(t *testing.T) {
+	org := fileTestOrg()
+	engine := NewEngine(&org)
+	result := engine.Insert([]storage.Record{{
+		Object: "ContentVersion",
+		Fields: map[string]storage.Value{
+			"Title":        storage.StringValue("Empty"),
+			"PathOnClient": storage.StringValue("docs/empty.txt"),
+			"VersionData":  storage.BlobValue(""),
+		},
+	}})
+	if len(result) != 1 || result[0].Success || result[0].StatusCode != "REQUIRED_FIELD_MISSING" {
+		t.Fatalf("content version insert = %#v", result)
+	}
+	if len(result[0].Fields) != 1 || result[0].Fields[0] != "VersionData" {
+		t.Fatalf("required fields = %#v", result[0].Fields)
 	}
 }
 

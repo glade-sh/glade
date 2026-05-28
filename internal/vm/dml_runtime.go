@@ -1700,6 +1700,70 @@ func hasDMLFailures(results []dml.Result) bool {
 	return false
 }
 
+func (vm *VM) preflightUpdateIdentityFailures(records []storage.Record) []dml.Result {
+	var out []dml.Result
+	for i, record := range records {
+		failure, failed := vm.preflightUpdateIdentityFailure(record)
+		if !failed {
+			if out != nil {
+				out[i] = dml.Result{ID: record.ID, Success: true}
+			}
+			continue
+		}
+		if out == nil {
+			out = make([]dml.Result, len(records))
+			for j := 0; j < i; j++ {
+				out[j] = dml.Result{ID: records[j].ID, Success: true}
+			}
+		}
+		out[i] = failure
+	}
+	return out
+}
+
+func (vm *VM) preflightUpdateIdentityFailure(record storage.Record) (dml.Result, bool) {
+	if record.ID == "" {
+		return dmlFailure(record.ID, "Id not specified in an update call:", "MISSING_ARGUMENT", []string{"Id"}), true
+	}
+	objectName := record.Object
+	if canonical, ok := vm.resolveObjectName(record.Object); ok {
+		objectName = canonical
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return dmlFailure(record.ID, "dml: unknown object "+record.Object, "INVALID_TYPE", nil), true
+	}
+	if storedID, existing, found := storage.LookupRecordByID(object.Records, record.ID); found {
+		if existing.System.IsDeleted {
+			if vm.inAfterUndeleteTrigger() {
+				return dml.Result{}, false
+			}
+			return dmlFailure(storedID, "dml: record "+string(record.ID)+" is deleted", "ENTITY_IS_DELETED", nil), true
+		}
+		return dml.Result{}, false
+	}
+	if prefix := object.Definition.KeyPrefix; prefix != "" && !strings.HasPrefix(string(record.ID), prefix) {
+		return dmlFailure(record.ID, "dml: id "+string(record.ID)+" does not belong to "+record.Object, "INVALID_FIELD", []string{"Id"}), true
+	}
+	return dmlFailure(record.ID, "invalid cross reference id", "INVALID_CROSS_REFERENCE_KEY", nil), true
+}
+
+func dmlFailure(id storage.ID, message, statusCode string, fields []string) dml.Result {
+	copiedFields := append([]string(nil), fields...)
+	return dml.Result{
+		ID:         id,
+		Success:    false,
+		Error:      message,
+		StatusCode: statusCode,
+		Fields:     copiedFields,
+		Errors: []dml.Error{{
+			Message:    message,
+			StatusCode: statusCode,
+			Fields:     append([]string(nil), copiedFields...),
+		}},
+	}
+}
+
 func dmlResultsFromTargets(records []storage.Record, targets []*Value) []dml.Result {
 	if len(targets) == 0 {
 		return nil
@@ -1814,6 +1878,22 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if err != nil {
 		return nil, err
 	}
+	var beforeFailures []dml.Result
+	var currentFailures []dml.Result
+	if op == "update" {
+		identityFailures := vm.preflightUpdateIdentityFailures(records)
+		if hasDMLFailures(identityFailures) {
+			appendDMLResultTrace(result, op, records, identityFailures)
+			if allOrNone {
+				return identityFailures, nil
+			}
+			records, before, targets = filterDMLInputs(records, before, targets, identityFailures)
+			if len(records) == 0 {
+				return identityFailures, nil
+			}
+			beforeFailures = identityFailures
+		}
+	}
 	var backup storage.OrgState
 	backupReady := false
 	ensureBackup := func() {
@@ -1826,18 +1906,25 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if vm.needsEarlyDMLRollbackSnapshot(op, records, allOrNone) {
 		ensureBackup()
 	}
-	var beforeFailures []dml.Result
 	originalUpdateRecords := records
 	beforeTriggerRecords := records
 	if op == "update" {
 		beforeTriggerRecords = vm.hydrateUpdateTriggerRecords(records, before)
 	}
 	if op != "undelete" {
-		beforeFailures, beforeTriggerRecords, err = vm.runTriggersByObject(triggerTimingBefore, op, beforeTriggerRecords, before, result)
+		triggerFailures, triggerRecords, triggerErr := vm.runTriggersByObject(triggerTimingBefore, op, beforeTriggerRecords, before, result)
+		beforeTriggerRecords = triggerRecords
+		err = triggerErr
 		if err != nil {
 			ensureBackup()
 			*vm.Org = backup
 			return nil, dmlExceptionFromTriggerError(op, err)
+		}
+		currentFailures = triggerFailures
+		if len(beforeFailures) > 0 {
+			beforeFailures = mergeDMLResults(beforeFailures, triggerFailures)
+		} else {
+			beforeFailures = triggerFailures
 		}
 		if op != "delete" {
 			if op == "update" {
@@ -1850,7 +1937,16 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		}
 		targetFailures := dmlResultsFromTargets(records, targets)
 		if hasDMLFailures(targetFailures) {
-			beforeFailures = mergeDMLResults(beforeFailures, targetFailures)
+			if len(beforeFailures) > 0 {
+				beforeFailures = mergeDMLResults(beforeFailures, targetFailures)
+			} else {
+				beforeFailures = targetFailures
+			}
+			if len(currentFailures) > 0 {
+				currentFailures = mergeDMLResults(currentFailures, targetFailures)
+			} else {
+				currentFailures = targetFailures
+			}
 		}
 	}
 	if hasDMLFailures(beforeFailures) {
@@ -1860,7 +1956,11 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 			*vm.Org = backup
 			return beforeFailures, nil
 		}
-		records, before, targets = filterDMLInputs(records, before, targets, beforeFailures)
+		filterFailures := beforeFailures
+		if len(currentFailures) > 0 {
+			filterFailures = currentFailures
+		}
+		records, before, targets = filterDMLInputs(records, before, targets, filterFailures)
 		if len(records) == 0 {
 			return beforeFailures, nil
 		}
@@ -3732,6 +3832,12 @@ func putVMFieldPath(root Value, field string, fieldValue Value) {
 
 func (vm *VM) putVMRecordFieldPath(root Value, objectName, field string, fieldValue Value) {
 	if !strings.Contains(field, ".") {
+		if fieldValue.Kind == ValueNull {
+			if parentType, ok := vm.parentRelationshipObjectType(objectName, field); ok {
+				fieldValue.Type = parentType
+				fieldValue.Runtime = relationshipNullRuntime
+			}
+		}
 		root.Fields[field] = fieldValue
 		return
 	}

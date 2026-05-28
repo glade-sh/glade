@@ -39,6 +39,9 @@ type OrgState struct {
 	Transactions []TransactionFrame     `json:"transactions,omitempty"`
 	Now          func() time.Time       `json:"-"`
 
+	SystemTimestampBase     string `json:"-"`
+	SystemTimestampSequence int64  `json:"-"`
+
 	objectNameCache *sync.Map
 }
 

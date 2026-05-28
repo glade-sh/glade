@@ -99,10 +99,11 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			if err != nil {
 				return Null, err
 			}
-			if condition.Kind != ValueBool {
-				return Null, fmt.Errorf("ternary condition requires Boolean, got %s", condition.Kind)
+			conditionValue, err := apexConditionBool(condition, "ternary condition")
+			if err != nil {
+				return Null, err
 			}
-			if condition.Bool {
+			if conditionValue {
 				return vm.eval(expr.Args[1], result)
 			}
 			return vm.eval(expr.Args[2], result)

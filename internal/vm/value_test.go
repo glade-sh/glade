@@ -10,6 +10,16 @@ func TestValueStringGenericObjectIncludesApexTypeDelimiter(t *testing.T) {
 	}
 }
 
+func TestValueStringGenericObjectIncludesFields(t *testing.T) {
+	value := Object("Query")
+	value.Fields["condition"] = String("Pro forma")
+	value.Fields["limit"] = Int(10)
+
+	if got := value.String(); got != "Query:{condition=Pro forma, limit=10}" {
+		t.Fatalf("String() = %q", got)
+	}
+}
+
 func TestApexIDTextEqualUsesFifteenCharacterCanonicalID(t *testing.T) {
 	if !apexIDTextEqual("012000000000001", "012000000000001AAA") {
 		t.Fatal("expected 15 and 18 character forms of the same Id to compare equal")

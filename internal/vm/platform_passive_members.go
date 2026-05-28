@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -222,7 +221,7 @@ func canvasContextJSON(receiver Value) (string, error) {
 			values[field] = value.Text
 		}
 	}
-	raw, err := json.Marshal(values)
+	raw, err := jsonMarshalNoEscape(values)
 	if err != nil {
 		return "", err
 	}
@@ -1057,7 +1056,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return Null, receiver, false, true, unsupportedCallError("AsyncOptions." + method + " local async options surface")
 		}
 	case "JSONGenerator":
-		return callJSONGeneratorMember(receiver, method, args)
+		return vm.callJSONGeneratorMember(receiver, method, args)
 	case "JSONParser":
 		return vm.callJSONParserMember(receiver, method, args)
 	case "Schema.SObjectType":
@@ -2796,6 +2795,26 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return value, receiver, false, true, nil
 			}
 			return String(""), receiver, false, true, nil
+		case "getUsernamePasswordEnabled":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Auth.AuthConfiguration.getUsernamePasswordEnabled expects 0 arguments")
+			}
+			return Bool(true), receiver, false, true, nil
+		case "getSelfRegistrationEnabled":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Auth.AuthConfiguration.getSelfRegistrationEnabled expects 0 arguments")
+			}
+			return Bool(false), receiver, false, true, nil
+		case "getSelfRegistrationUrl":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Auth.AuthConfiguration.getSelfRegistrationUrl expects 0 arguments")
+			}
+			return Null, receiver, false, true, nil
+		case "getForgotPasswordUrl":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Auth.AuthConfiguration.getForgotPasswordUrl expects 0 arguments")
+			}
+			return String("/ForgotPassword"), receiver, false, true, nil
 		case "isCommunityUsingSiteAsContainer":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Auth.AuthConfiguration.isCommunityUsingSiteAsContainer expects 0 arguments")
@@ -2821,7 +2840,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 				fields[field] = jsonFromValue(value, true)
 			}
-			data, err := json.Marshal(fields)
+			data, err := jsonMarshalNoEscape(fields)
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
@@ -3688,6 +3707,11 @@ func (vm *VM) callTypeObjectMember(receiver Value, method string, args []Value, 
 				return Null, true, unsupportedCallError("Type.newInstance namespace/package reflection for " + typeName)
 			}
 		}
+		previousReflectionType := vm.reflectionConstructType
+		vm.reflectionConstructType = typeName
+		defer func() {
+			vm.reflectionConstructType = previousReflectionType
+		}()
 		value, err := vm.constructValue(typeName, nil, nil, result)
 		if err != nil {
 			return Null, true, newExceptionError("TypeException", err.Error())

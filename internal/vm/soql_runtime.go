@@ -1545,6 +1545,17 @@ func (vm *VM) expandSOQLBindsWith(raw string, lookup func(string) (Value, error)
 			i = valueStart + end
 			continue
 		}
+		if isCall && call != nil {
+			value, err := call(nameString)
+			if err == nil {
+				if value.Kind == ValueList || value.Kind == ValueSet {
+					rewriteTrailingSOQLEqualsToIn(&out)
+				}
+				out.WriteString(soqlLiteral(value))
+				i = callEnd
+				continue
+			}
+		}
 		value, err := lookup(nameString)
 		if err != nil && isCall && call != nil {
 			value, err = call(nameString)

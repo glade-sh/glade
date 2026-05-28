@@ -141,6 +141,35 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	}
 }
 
+func TestApplyProjectLoadsDependencyFolders(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"znu"}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/documents/GLExport.documentFolder-meta.xml"), `<DocumentFolder>
+  <name>GL Export</name>
+</DocumentFolder>`)
+
+	depProject, err := project.Load(depRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := project.Project{
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace: "znu",
+			Status:    "loaded",
+			Project:   &depProject,
+		}},
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{}}
+	if err := ApplyProject(&org, p); err != nil {
+		t.Fatal(err)
+	}
+	folder := org.Objects["Folder"].Records["00l000000000001"]
+	if got := folder.Fields["Name"].String; got != "GL Export" {
+		t.Fatalf("Folder Name = %q", got)
+	}
+}
+
 func TestLoadProjectDiscoversUnpackagedStaticResourceFiles(t *testing.T) {
 	root := filepath.Join("..", "..", "example-projects", "src-nmb-nutpl-develop")
 	if _, err := os.Stat(filepath.Join(root, "sfdx-project.json")); err != nil {

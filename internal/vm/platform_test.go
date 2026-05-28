@@ -2365,6 +2365,43 @@ System.assertEquals(false, config.isCommunityUsingSiteAsContainer());
 	}
 }
 
+func TestAuthConfigurationLoginDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+Auth.AuthConfiguration config = new Auth.AuthConfiguration(Network.getNetworkId(), '');
+System.assertEquals(true, config.getUsernamePasswordEnabled());
+System.assertEquals(false, config.getSelfRegistrationEnabled());
+System.assertEquals(null, config.getSelfRegistrationUrl());
+System.assertEquals('/ForgotPassword', config.getForgotPasswordUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPageReferenceNullConstructorThrowsCatchableException(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+  new PageReference(null);
+  System.assert(false, 'expected exception');
+} catch (NullPointerException e) {
+  System.assertEquals('Argument 1 cannot be null', e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestGeneratedAuthConfigurationConstructorAcceptsCommunityUrlAndStartUrl(t *testing.T) {
 	machine := New(nil)
 	value, handled, err := machine.constructGeneratedPlatformValue("Auth.AuthConfiguration", []Value{String("https://local.example"), String("")}, nil)
@@ -3743,6 +3780,7 @@ System.assertEquals('{!$Label.Done}', output.Value);
 Component.Apex.PageBlockTable table = new Component.Apex.PageBlockTable();
 table.childComponents.add(column);
 System.assertEquals(1, table.childComponents.size());
+System.assertEquals(0, table.rows);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5749,6 +5787,66 @@ func TestUnitOfWorkCommitPersistsChildBucketWithDeferredRelationship(t *testing.
 	}
 }
 
+func TestUnitOfWorkCommitPersistsOutOfOrderRelationship(t *testing.T) {
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Parent__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Parent__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a01",
+				Fields: map[string]storage.Field{
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Name":      {APIName: "Name", Type: storage.FieldString},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Parent__c",
+					ParentObjects:      []string{"Parent__c"},
+					ParentRelationship: "Parent__r",
+				}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{
+		List(sObjectTypeToken("Child__c"), sObjectTypeToken("Parent__c")),
+		frameworkSObjectUnitOfWorkRelationshipBehaviorValue("AttemptResolveOutOfOrder"),
+	}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent := Object("Parent__c")
+	parent.Fields["Name"] = String("Parent")
+	child := Object("Child__c")
+	child.Fields["Name"] = String("Child")
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{child, sObjectFieldToken("Child__c", "Parent__c"), parent}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "commitwork", nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	for _, row := range machine.Org.Objects["Child__c"].Records {
+		if row.Fields["Parent__c"].Kind != storage.ValueID {
+			t.Fatalf("child parent lookup = %#v", row.Fields["Parent__c"])
+		}
+	}
+}
+
 func TestUnitOfWorkRelationshipResolutionUpdatesCopiedRecordAlias(t *testing.T) {
 	org := storage.OrgState{Objects: map[string]storage.ObjectState{
 		"Parent__c": {
@@ -6191,6 +6289,24 @@ System.assert(gateway instanceof IPaymentGateway2);
 		if err := machine.RegisterClass(class); err != nil {
 			t.Fatal(err)
 		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTypeNewInstanceAllowsPublicReflectedPackageClass(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object value = Type.forName('znu.PublicWorker').newInstance();
+System.assertNotEquals(null, value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.currentNamespace = "namz"
+	if err := machine.RegisterClass(Class{Name: "PublicWorker", Namespace: "znu", Access: "public"}); err != nil {
+		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)

@@ -3,6 +3,7 @@ package vm
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -12,6 +13,28 @@ import (
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 )
+
+func (vm *VM) collectionMutationType(receiver Value) string {
+	if collectionBase(receiver.Runtime) != "List" {
+		return receiver.Type
+	}
+	if receiver.Type == "" || strings.EqualFold(receiver.Runtime, receiver.Type) {
+		return receiver.Runtime
+	}
+	runtimeElement, runtimeOK := collectionElementType(receiver.Runtime)
+	declaredElement, declaredOK := collectionElementType(receiver.Type)
+	if !runtimeOK || !declaredOK {
+		return receiver.Type
+	}
+	if vm.typeAssignableTo(runtimeElement, declaredElement) {
+		return receiver.Runtime
+	}
+	return receiver.Type
+}
+
+func collectionStoreException(collectionType string, value Value) error {
+	return newExceptionError("System.TypeException", fmt.Sprintf("Collection store exception adding %s to %s", runtimeValueTypeName(value), typeExceptionAnyName(collectionType)))
+}
 
 func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value, result *Result) (Value, error) {
 	if len(vm.callStack) >= maxApexCallDepth {
@@ -71,6 +94,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			return Null, err
 		}
 	}
+	collectionMutationSeqBefore := vm.collectionMutationSeq
 	if receiver.Kind == ValueObject && apexMethodMemberName(method.Name) == "toSObject" {
 		receiver = vm.synchronizeFabricatedSObjectRelationships(receiver)
 	}
@@ -177,7 +201,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			}
 			previous := paramSnapshots[param.Name]
 			if valueAliasSnapshotMatch(previous, updated) {
-				if vm.propagateAliasSnapshotMutationToScope(vm.Globals, previous, paramOriginals[param.Name], updated) {
+				if vm.propagateAliasSnapshotMutationToScope(vm.Globals, previous, paramOriginals[param.Name], updated, vm.collectionMutationSeq != collectionMutationSeqBefore) {
 					vm.propagateAliasSnapshotToStatics(previous, updated)
 					vm.propagateUpdatedValueAliases(vm.Globals, updated)
 				}
@@ -195,7 +219,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 		if receiver.Kind != ValueNull {
 			if updated, ok := frame["this"]; ok && valueAliasSnapshotMatch(receiverSnapshot, updated) {
-				if vm.propagateAliasSnapshotMutationToScope(vm.Globals, receiverSnapshot, receiverOriginal, updated) {
+				if vm.propagateAliasSnapshotMutationToScope(vm.Globals, receiverSnapshot, receiverOriginal, updated, vm.collectionMutationSeq != collectionMutationSeqBefore) {
 					vm.propagateAliasSnapshotToStatics(receiverSnapshot, updated)
 				}
 			}
@@ -294,7 +318,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 		previous := paramSnapshots[param.Name]
 		if valueAliasSnapshotMatch(previous, updated) {
-			if vm.propagateAliasSnapshotMutationToScope(caller, previous, paramOriginals[param.Name], updated) {
+			if vm.propagateAliasSnapshotMutationToScope(caller, previous, paramOriginals[param.Name], updated, vm.collectionMutationSeq != collectionMutationSeqBefore) {
 				vm.propagateAliasSnapshotToStatics(previous, updated)
 				vm.propagateUpdatedValueAliases(caller, updated)
 			}
@@ -312,7 +336,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	}
 	if receiver.Kind != ValueNull {
 		if updated, ok := frame["this"]; ok && valueAliasSnapshotMatch(receiverSnapshot, updated) {
-			if vm.propagateAliasSnapshotMutationToScope(caller, receiverSnapshot, receiverOriginal, updated) {
+			if vm.propagateAliasSnapshotMutationToScope(caller, receiverSnapshot, receiverOriginal, updated, vm.collectionMutationSeq != collectionMutationSeqBefore) {
 				vm.propagateAliasSnapshotToStatics(receiverSnapshot, updated)
 			}
 		}
@@ -1000,9 +1024,10 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				}
 				valueArg = args[1]
 			}
-			item, err := vm.coerceCollectionElement(receiver.Type, valueArg)
+			mutationType := vm.collectionMutationType(receiver)
+			item, err := vm.coerceCollectionElement(mutationType, valueArg)
 			if err != nil {
-				return Null, true, fmt.Errorf("List.add: %w", err)
+				return Null, true, collectionStoreException(mutationType, valueArg)
 			}
 			if insertAt >= 0 {
 				receiver.List = append(receiver.List, Null)
@@ -1028,10 +1053,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, err
 			}
 			previous := receiver
+			mutationType := vm.collectionMutationType(receiver)
 			for _, value := range values {
-				item, err := vm.coerceCollectionElement(receiver.Type, value)
+				item, err := vm.coerceCollectionElement(mutationType, value)
 				if err != nil {
-					return Null, true, fmt.Errorf("List.addAll: %w", err)
+					return Null, true, collectionStoreException(mutationType, value)
 				}
 				receiver.List = append(receiver.List, item)
 			}
@@ -2307,10 +2333,18 @@ func (vm *VM) namespaceStringMapLookup(receiver Value, key Value) (Value, bool) 
 	if receiver.Kind != ValueMap || key.Kind != ValueString {
 		return Null, false
 	}
-	if !isCustomObjectLikeName(key.Text) && !strings.HasSuffix(strings.ToLower(key.Text), "__mdt") {
+	if !isCustomObjectLikeName(key.Text) && !strings.HasSuffix(strings.ToLower(key.Text), "__mdt") && !hasManagedStringNamespaceToken(key.Text) && strings.TrimSpace(vm.currentCallerNamespace()) == "" {
 		return Null, false
 	}
 	aliases := []string{key.Text, localSchemaName(key.Text)}
+	if base, ok := managedStringNamespaceBase(key.Text); ok {
+		aliases = append(aliases, base)
+		if namespace := strings.TrimSpace(vm.currentCallerNamespace()); namespace != "" {
+			aliases = append(aliases, namespace+"__"+base)
+		}
+	} else if namespace := strings.TrimSpace(vm.currentCallerNamespace()); namespace != "" && !strings.Contains(key.Text, "__") {
+		aliases = append(aliases, namespace+"__"+key.Text)
+	}
 	if vm.Org != nil && vm.Org.Namespace != "" {
 		aliases = append(aliases,
 			storage.NamespaceTokenName(vm.Org.Namespace, key.Text),
@@ -2333,6 +2367,27 @@ func (vm *VM) namespaceStringMapLookup(receiver Value, key Value) (Value, bool) 
 		}
 	}
 	return Null, false
+}
+
+func hasManagedStringNamespaceToken(value string) bool {
+	_, ok := managedStringNamespaceBase(value)
+	return ok
+}
+
+func managedStringNamespaceBase(value string) (string, bool) {
+	value = strings.TrimSpace(value)
+	if value == "" || strings.Count(value, "__") != 1 {
+		return "", false
+	}
+	namespace, base, ok := strings.Cut(value, "__")
+	if !ok || namespace == "" || base == "" {
+		return "", false
+	}
+	switch strings.ToLower(base) {
+	case "c", "e", "r", "mdt":
+		return "", false
+	}
+	return base, true
 }
 
 func (vm *VM) canSynthesizeSObjectFieldMapField(objectName string) bool {
@@ -2836,6 +2891,7 @@ func (vm *VM) propagateCollectionMutation(previous, updated Value) {
 	if !sameCollectionType(previous, updated) {
 		return
 	}
+	vm.collectionMutationSeq++
 	vm.propagateValueMutationToScope(vm.Globals, previous, updated)
 	vm.propagateValueMutationToStatics(previous, updated)
 }
@@ -2850,10 +2906,6 @@ func (vm *VM) propagateValueMutationToScope(scope map[string]Value, previous, up
 	}
 	seen := make(map[uint64]bool)
 	for name, value := range scope {
-		clearRefSeen(seen)
-		if !valueContainsAliasRef(value, previous.Ref, previous.Kind, seen) {
-			continue
-		}
 		clearRefSeen(seen)
 		replaced, changed := replaceValueAlias(value, previous, updated, seen)
 		if changed {
@@ -3066,10 +3118,6 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 			continue
 		}
 		clearRefSeen(seen)
-		if !valueContainsAliasRef(field.Value, previous.Ref, previous.Kind, seen) {
-			continue
-		}
-		clearRefSeen(seen)
 		replaced, changed := replaceValueAlias(field.Value, previous, updated, seen)
 		if !changed {
 			continue
@@ -3087,10 +3135,6 @@ func (vm *VM) propagateAliasSnapshotToScope(scope map[string]Value, previous ali
 	}
 	seen := make(map[uint64]bool)
 	for name, value := range scope {
-		clearRefSeen(seen)
-		if !valueContainsAliasRef(value, previous.ref, previous.kind, seen) {
-			continue
-		}
 		clearRefSeen(seen)
 		replaced, changed := replaceAliasSnapshot(value, previous, updated, seen)
 		if changed {
@@ -3124,10 +3168,6 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 			continue
 		}
 		clearRefSeen(seen)
-		if !valueContainsAliasRef(field.Value, previous.ref, previous.kind, seen) {
-			continue
-		}
-		clearRefSeen(seen)
 		replaced, changed := replaceAliasSnapshot(field.Value, previous, updated, seen)
 		if !changed {
 			continue
@@ -3139,11 +3179,23 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 	}
 }
 
-func (vm *VM) propagateAliasSnapshotMutationToScope(scope map[string]Value, previous aliasSnapshot, original, updated Value) bool {
+func (vm *VM) propagateAliasSnapshotMutationToScope(scope map[string]Value, previous aliasSnapshot, original, updated Value, refreshNestedCollections bool) bool {
 	if !scopeHasAnyRef(scope) {
 		return false
 	}
 	if sameAliasListCollectionViewOnly(original, updated) {
+		return false
+	}
+	if refreshNestedCollections && sameBackingAliasRefreshKind(updated.Kind) && vm.propagateTopLevelCollectionAliases(scope, updated) {
+		return true
+	}
+	if refreshNestedCollections && sameBackingAliasRefreshKind(updated.Kind) && vm.propagateCollectionValueAliasToScope(scope, original, updated) {
+		return true
+	}
+	if sameAliasRuntimeBacking(original, updated) {
+		if refreshNestedCollections && scopeHasNestedCollectionAliasNeedingRefresh(scope, updated) {
+			vm.propagateUpdatedValueAliases(scope, updated)
+		}
 		return false
 	}
 	if sameAliasRuntimeData(original, updated) || sameAliasRuntimeDataWithCallerCollectionView(original, updated) {
@@ -3154,6 +3206,157 @@ func (vm *VM) propagateAliasSnapshotMutationToScope(scope map[string]Value, prev
 	}
 	vm.propagateAliasSnapshotToScope(scope, previous, updated)
 	return true
+}
+
+func (vm *VM) propagateTopLevelCollectionAliases(scope map[string]Value, updated Value) bool {
+	if updated.Ref == 0 {
+		return false
+	}
+	changed := false
+	for name, value := range scope {
+		if value.Ref == 0 || value.Ref != updated.Ref || value.Kind != updated.Kind {
+			continue
+		}
+		replacement := updated
+		replacement.Type = value.Type
+		replacement.Static = value.Static
+		replacement.Runtime = value.Runtime
+		scope[name] = replacement
+		changed = true
+	}
+	return changed
+}
+
+func (vm *VM) propagateCollectionValueAliasToScope(scope map[string]Value, original, updated Value) bool {
+	if original.Ref == 0 || original.Ref != updated.Ref || original.Kind != updated.Kind {
+		return false
+	}
+	if sameAliasValue(original, updated) {
+		return false
+	}
+	seen := make(map[uint64]bool)
+	changed := false
+	for name, value := range scope {
+		clearRefSeen(seen)
+		replaced, replacedValue := replaceValueAlias(value, original, updated, seen)
+		if replacedValue {
+			scope[name] = replaced
+			changed = true
+		}
+	}
+	return changed
+}
+
+func sameAliasRuntimeBacking(original, updated Value) bool {
+	if original.Ref == 0 || original.Ref != updated.Ref || original.Kind != updated.Kind ||
+		original.Type != updated.Type || original.Text != updated.Text ||
+		original.Static != updated.Static || original.Runtime != updated.Runtime {
+		return false
+	}
+	switch original.Kind {
+	case ValueObject:
+		return sameMapBacking(original.Fields, updated.Fields)
+	case ValueMap:
+		return sameMapBacking(original.Map, updated.Map) &&
+			sameMapBacking(original.MapKeys, updated.MapKeys) &&
+			sameSliceBacking(original.MapOrder, updated.MapOrder)
+	case ValueList:
+		return sameSliceBacking(original.List, updated.List)
+	case ValueSet:
+		return sameSliceBacking(original.Set, updated.Set)
+	default:
+		return false
+	}
+}
+
+func sameMapBacking[K comparable, V any](left, right map[K]V) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	if len(left) == 0 {
+		return (left == nil) == (right == nil)
+	}
+	return reflect.ValueOf(left).Pointer() == reflect.ValueOf(right).Pointer()
+}
+
+func sameSliceBacking[T any](left, right []T) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	if len(left) == 0 {
+		return (left == nil) == (right == nil)
+	}
+	return reflect.ValueOf(left).Pointer() == reflect.ValueOf(right).Pointer()
+}
+
+func scopeHasNestedCollectionAliasNeedingRefresh(scope map[string]Value, updated Value) bool {
+	if updated.Ref == 0 || len(scope) == 0 {
+		return false
+	}
+	refs := make(map[uint64]bool)
+	for _, value := range scope {
+		if value.Ref == 0 || value.Ref == updated.Ref || !sameBackingAliasRefreshKind(value.Kind) {
+			continue
+		}
+		refs[value.Ref] = true
+	}
+	if len(refs) == 0 {
+		return false
+	}
+	return valueContainsNestedRefInSet(updated, updated.Ref, refs, make(map[uint64]bool))
+}
+
+func sameBackingAliasRefreshKind(kind ValueKind) bool {
+	switch kind {
+	case ValueList, ValueSet, ValueMap:
+		return true
+	default:
+		return false
+	}
+}
+
+func valueContainsNestedRefInSet(value Value, rootRef uint64, refs map[uint64]bool, seen map[uint64]bool) bool {
+	if value.Ref != 0 {
+		if seen[value.Ref] {
+			return false
+		}
+		seen[value.Ref] = true
+		if value.Ref != rootRef && refs[value.Ref] {
+			return true
+		}
+	}
+	switch value.Kind {
+	case ValueObject:
+		for _, child := range value.Fields {
+			if valueContainsNestedRefInSet(child, rootRef, refs, seen) {
+				return true
+			}
+		}
+	case ValueList:
+		for _, child := range value.List {
+			if valueContainsNestedRefInSet(child, rootRef, refs, seen) {
+				return true
+			}
+		}
+	case ValueSet:
+		for _, child := range value.Set {
+			if valueContainsNestedRefInSet(child, rootRef, refs, seen) {
+				return true
+			}
+		}
+	case ValueMap:
+		for _, child := range value.Map {
+			if valueContainsNestedRefInSet(child, rootRef, refs, seen) {
+				return true
+			}
+		}
+		for _, child := range value.MapKeys {
+			if valueContainsNestedRefInSet(child, rootRef, refs, seen) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // scopeHasAnyRef returns true if any binding in scope carries a non-zero
@@ -3379,7 +3582,7 @@ func replaceValueAliasRef(value Value, previousRef uint64, previousKind ValueKin
 	changed := false
 	switch value.Kind {
 	case ValueObject:
-		if previousKind == ValueObject && objectFieldsCannotContainObjectRef(value.Fields, previousRef) {
+		if objectFieldsCannotContainAliasRef(value.Fields, previousRef, previousKind) {
 			return value, false
 		}
 		for name, child := range value.Fields {
@@ -3390,7 +3593,7 @@ func replaceValueAliasRef(value Value, previousRef uint64, previousKind ValueKin
 			}
 		}
 	case ValueMap:
-		if previousKind == ValueObject && mapCannotContainObjectRef(value, previousRef) {
+		if mapCannotContainAliasRef(value, previousRef, previousKind) {
 			return value, false
 		}
 		for key, child := range value.Map {
@@ -3408,7 +3611,7 @@ func replaceValueAliasRef(value Value, previousRef uint64, previousKind ValueKin
 			}
 		}
 	case ValueList:
-		if previousKind == ValueObject && listCannotContainObjectRef(value.List, previousRef) {
+		if listCannotContainAliasRef(value.List, previousRef, previousKind) {
 			return value, false
 		}
 		for i, child := range value.List {
@@ -3419,7 +3622,7 @@ func replaceValueAliasRef(value Value, previousRef uint64, previousKind ValueKin
 			}
 		}
 	case ValueSet:
-		if previousKind == ValueObject && listCannotContainObjectRef(value.Set, previousRef) {
+		if listCannotContainAliasRef(value.Set, previousRef, previousKind) {
 			return value, false
 		}
 		for i, child := range value.Set {
@@ -3448,7 +3651,7 @@ func valueContainsAliasRef(value Value, previousRef uint64, previousKind ValueKi
 	}
 	switch value.Kind {
 	case ValueObject:
-		if previousKind == ValueObject && objectFieldsCannotContainObjectRef(value.Fields, previousRef) {
+		if objectFieldsCannotContainAliasRef(value.Fields, previousRef, previousKind) {
 			return false
 		}
 		for _, child := range value.Fields {
@@ -3457,7 +3660,7 @@ func valueContainsAliasRef(value Value, previousRef uint64, previousKind ValueKi
 			}
 		}
 	case ValueMap:
-		if previousKind == ValueObject && mapCannotContainObjectRef(value, previousRef) {
+		if mapCannotContainAliasRef(value, previousRef, previousKind) {
 			return false
 		}
 		for _, child := range value.Map {
@@ -3471,7 +3674,7 @@ func valueContainsAliasRef(value Value, previousRef uint64, previousKind ValueKi
 			}
 		}
 	case ValueList:
-		if previousKind == ValueObject && listCannotContainObjectRef(value.List, previousRef) {
+		if listCannotContainAliasRef(value.List, previousRef, previousKind) {
 			return false
 		}
 		for _, child := range value.List {
@@ -3480,7 +3683,7 @@ func valueContainsAliasRef(value Value, previousRef uint64, previousKind ValueKi
 			}
 		}
 	case ValueSet:
-		if previousKind == ValueObject && listCannotContainObjectRef(value.Set, previousRef) {
+		if listCannotContainAliasRef(value.Set, previousRef, previousKind) {
 			return false
 		}
 		for _, child := range value.Set {
@@ -3493,14 +3696,18 @@ func valueContainsAliasRef(value Value, previousRef uint64, previousKind ValueKi
 }
 
 func listCannotContainObjectRef(values []Value, previousRef uint64) bool {
+	return listCannotContainAliasRef(values, previousRef, ValueObject)
+}
+
+func listCannotContainAliasRef(values []Value, previousRef uint64, previousKind ValueKind) bool {
 	if previousRef == 0 || len(values) == 0 {
 		return false
 	}
 	for _, value := range values {
-		if valueCannotContainObjectRef(value, previousRef) {
+		if valueCannotContainAliasRef(value, previousRef, previousKind) {
 			continue
 		}
-		if value.Kind != ValueObject || value.Ref == 0 {
+		if value.Kind != previousKind || value.Ref == 0 {
 			return false
 		}
 		if value.Ref == previousRef {
@@ -3511,11 +3718,15 @@ func listCannotContainObjectRef(values []Value, previousRef uint64) bool {
 }
 
 func objectFieldsCannotContainObjectRef(fields map[string]Value, previousRef uint64) bool {
+	return objectFieldsCannotContainAliasRef(fields, previousRef, ValueObject)
+}
+
+func objectFieldsCannotContainAliasRef(fields map[string]Value, previousRef uint64, previousKind ValueKind) bool {
 	if previousRef == 0 || len(fields) == 0 {
 		return false
 	}
 	for _, value := range fields {
-		if !valueCannotContainObjectRef(value, previousRef) {
+		if !valueCannotContainAliasRef(value, previousRef, previousKind) {
 			return false
 		}
 	}
@@ -3523,16 +3734,20 @@ func objectFieldsCannotContainObjectRef(fields map[string]Value, previousRef uin
 }
 
 func mapCannotContainObjectRef(value Value, previousRef uint64) bool {
+	return mapCannotContainAliasRef(value, previousRef, ValueObject)
+}
+
+func mapCannotContainAliasRef(value Value, previousRef uint64, previousKind ValueKind) bool {
 	if previousRef == 0 || len(value.Map)+len(value.MapKeys) == 0 {
 		return false
 	}
 	for _, child := range value.Map {
-		if !valueCannotContainObjectRef(child, previousRef) {
+		if !valueCannotContainAliasRef(child, previousRef, previousKind) {
 			return false
 		}
 	}
 	for _, child := range value.MapKeys {
-		if !valueCannotContainObjectRef(child, previousRef) {
+		if !valueCannotContainAliasRef(child, previousRef, previousKind) {
 			return false
 		}
 	}
@@ -3540,11 +3755,24 @@ func mapCannotContainObjectRef(value Value, previousRef uint64) bool {
 }
 
 func valueCannotContainObjectRef(value Value, previousRef uint64) bool {
+	return valueCannotContainAliasRef(value, previousRef, ValueObject)
+}
+
+func valueCannotContainAliasRef(value Value, previousRef uint64, previousKind ValueKind) bool {
+	if value.Ref == previousRef && value.Kind == previousKind {
+		return false
+	}
 	switch value.Kind {
 	case ValueNull, ValueInt, ValueDecimal, ValueBool, ValueString:
 		return true
 	case ValueObject:
 		return value.Ref != previousRef && len(value.Fields) == 0
+	case ValueList:
+		return value.Ref != previousRef && len(value.List) == 0
+	case ValueSet:
+		return value.Ref != previousRef && len(value.Set) == 0
+	case ValueMap:
+		return value.Ref != previousRef && len(value.Map)+len(value.MapKeys) == 0
 	default:
 		return false
 	}
@@ -4145,7 +4373,26 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 		}
 		return Null, true, fmt.Errorf("stubbed %s.%s return: %w", receiver.Type, method, err)
 	}
+	coerced = normalizeFrameworkStubReturnValue(target.ReturnType, coerced, provider)
 	return coerced, true, nil
+}
+
+func normalizeFrameworkStubReturnValue(returnType string, value Value, provider Value) Value {
+	providerType := strings.ToLower(provider.Type)
+	if !strings.Contains(providerType, "framework") && !strings.Contains(providerType, "apexmocks") && !strings.Contains(providerType, "fflib") {
+		return value
+	}
+	if value.Kind != ValueList || len(value.List) != 0 {
+		return value
+	}
+	elementType, ok := collectionElementType(returnType)
+	if !ok || !strings.EqualFold(elementType, "SObject") {
+		return value
+	}
+	value.Type = returnType
+	value.Static = returnType
+	value.Runtime = ""
+	return value
 }
 
 func sObjectMemberCallShapeSupported(method string, args []Value) bool {
@@ -4687,7 +4934,7 @@ func (vm *VM) frameworkTriggerEventEnabled(domainClassName string) bool {
 		return true
 	}
 	event := Null
-	key := mapKey(vm.typeForName("", domainClassName))
+	key := mapKey(vm.typeForName("", domainClassName, false))
 	if value, ok := field.Value.Map[key]; ok {
 		event = value
 	} else {
@@ -6009,8 +6256,8 @@ func containsString(values []string, wanted string) bool {
 }
 
 func (vm *VM) constructFrameworkSObjectUnitOfWork(args []Value, namedArgs map[string]Value) (Value, error) {
-	if len(namedArgs) != 0 || (len(args) != 1 && len(args) != 2) || args[0].Kind != ValueList {
-		return Null, fmt.Errorf("framework_SObjectUnitOfWork constructor expects List<Schema.SObjectType>[, IDML]")
+	if len(namedArgs) != 0 || len(args) < 1 || len(args) > 3 || args[0].Kind != ValueList {
+		return Null, fmt.Errorf("framework_SObjectUnitOfWork constructor expects List<Schema.SObjectType>[, IDML][, UnresolvedRelationshipBehavior]")
 	}
 	uow := Object("framework_SObjectUnitOfWork")
 	sObjectTypes := List(append([]Value(nil), args[0].List...)...)
@@ -6028,10 +6275,22 @@ func (vm *VM) constructFrameworkSObjectUnitOfWork(args []Value, namedArgs map[st
 	emailWork := Object("framework_SObjectUnitOfWork.SendEmailWork")
 	emailWork.Fields["emails"] = typedList("List<Messaging.Email>")
 	uow.Fields["m_emailWork"] = emailWork
-	if len(args) == 2 {
+	uow.Fields["m_dml"] = Object("framework_SObjectUnitOfWork.SimpleDML")
+	uow.Fields["m_unresolvedRelationshipBehaviour"] = frameworkSObjectUnitOfWorkRelationshipBehaviorValue("IgnoreOutOfOrder")
+	switch len(args) {
+	case 2:
+		if behavior, ok := frameworkSObjectUnitOfWorkRelationshipBehaviorName(args[1]); ok {
+			uow.Fields["m_unresolvedRelationshipBehaviour"] = frameworkSObjectUnitOfWorkRelationshipBehaviorValue(behavior)
+		} else {
+			uow.Fields["m_dml"] = args[1]
+		}
+	case 3:
 		uow.Fields["m_dml"] = args[1]
-	} else {
-		uow.Fields["m_dml"] = Object("framework_SObjectUnitOfWork.SimpleDML")
+		behavior, ok := frameworkSObjectUnitOfWorkRelationshipBehaviorName(args[2])
+		if !ok {
+			return Null, fmt.Errorf("framework_SObjectUnitOfWork constructor expects UnresolvedRelationshipBehavior as third argument")
+		}
+		uow.Fields["m_unresolvedRelationshipBehaviour"] = frameworkSObjectUnitOfWorkRelationshipBehaviorValue(behavior)
 	}
 	for _, sObjectType := range args[0].List {
 		if _, handled, err := vm.callFrameworkSObjectUnitOfWorkHandleRegisterType(uow, []Value{sObjectType}); err != nil || !handled {
@@ -6043,6 +6302,33 @@ func (vm *VM) constructFrameworkSObjectUnitOfWork(args []Value, namedArgs map[st
 	}
 	uow.Fields["m_relationships"] = frameworkMapPut(uow.Fields["m_relationships"], String("Messaging.SingleEmailMessage"), frameworkUnitOfWorkRelationships())
 	return uow, nil
+}
+
+func frameworkSObjectUnitOfWorkRelationshipBehaviorName(value Value) (string, bool) {
+	text := strings.TrimSpace(value.Text)
+	if text == "" && value.Kind == ValueString {
+		text = strings.TrimSpace(value.Text)
+	}
+	switch strings.ToLower(text) {
+	case "attemptresolveoutoforder":
+		return "AttemptResolveOutOfOrder", true
+	case "ignoreoutoforder":
+		return "IgnoreOutOfOrder", true
+	default:
+		return "", false
+	}
+}
+
+func frameworkSObjectUnitOfWorkRelationshipBehaviorValue(name string) Value {
+	return Value{Kind: ValueObject, Type: "framework_SObjectUnitOfWork.UnresolvedRelationshipBehavior", Text: name}
+}
+
+func frameworkSObjectUnitOfWorkAttemptsOutOfOrder(receiver Value) bool {
+	if behavior, ok := receiver.Fields["m_unresolvedRelationshipBehaviour"]; ok {
+		name, ok := frameworkSObjectUnitOfWorkRelationshipBehaviorName(behavior)
+		return ok && strings.EqualFold(name, "AttemptResolveOutOfOrder")
+	}
+	return false
 }
 
 func (vm *VM) commitFrameworkSObjectUnitOfWork(receiver Value, result *Result) error {
@@ -6079,6 +6365,11 @@ func (vm *VM) commitFrameworkSObjectUnitOfWork(receiver Value, result *Result) e
 	}
 	if err := vm.applyFrameworkSObjectUnitOfWorkDML(receiver, "m_newListByType", "insert", result); err != nil {
 		return fail(err)
+	}
+	if frameworkSObjectUnitOfWorkAttemptsOutOfOrder(receiver) {
+		if err := vm.updateFrameworkSObjectUnitOfWorkOutOfOrderRelationships(receiver, result); err != nil {
+			return fail(err)
+		}
 	}
 	if err := vm.applyFrameworkSObjectUnitOfWorkDML(receiver, "m_dirtyMapByType", "update", result); err != nil {
 		return fail(err)
@@ -6385,6 +6676,91 @@ func (vm *VM) resolveFrameworkSObjectUnitOfWorkRelationship(receiver Value, rela
 	vm.propagateAliasSnapshotToScope(vm.Globals, previous, record)
 	vm.propagateAliasSnapshotToStatics(previous, record)
 	return nil
+}
+
+func (vm *VM) updateFrameworkSObjectUnitOfWorkOutOfOrderRelationships(receiver Value, result *Result) error {
+	bucket, ok := receiver.Fields["m_relationships"]
+	if !ok || bucket.Kind != ValueMap {
+		return nil
+	}
+	updates := typedList("List<SObject>")
+	seen := make(map[string]int)
+	for _, bucketKey := range bucket.MapOrder {
+		relationshipsValue, ok := bucket.Map[bucketKey]
+		if !ok || relationshipsValue.Kind != ValueObject {
+			continue
+		}
+		_, relationships, ok := objectFieldValue(relationshipsValue, "m_relationships")
+		if !ok || relationships.Kind != ValueList {
+			continue
+		}
+		for _, relationship := range relationships.List {
+			updateRecord, ok, err := vm.frameworkSObjectUnitOfWorkOutOfOrderUpdate(relationship)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				continue
+			}
+			updateKey := vm.mapKey(sObjectIDValue(updateRecord))
+			if existingIndex, exists := seen[updateKey]; exists {
+				updates.List[existingIndex] = mergeSparseSObjectUpdate(updates.List[existingIndex], updateRecord)
+				continue
+			}
+			seen[updateKey] = len(updates.List)
+			updates.List = append(updates.List, updateRecord)
+		}
+	}
+	if len(updates.List) == 0 {
+		return nil
+	}
+	if handled, err := vm.callFrameworkSObjectUnitOfWorkCustomDML(receiver, "update", updates, result); handled || err != nil {
+		return err
+	}
+	_, err := vm.executeDatabaseDML("update", []Value{updates}, result)
+	return err
+}
+
+func (vm *VM) frameworkSObjectUnitOfWorkOutOfOrderUpdate(relationship Value) (Value, bool, error) {
+	if relationship.Kind != ValueObject || !strings.EqualFold(relationship.Type, "framework_SObjectUnitOfWork.Relationship") {
+		return Null, false, nil
+	}
+	_, record, hasRecord := objectFieldValue(relationship, "Record")
+	_, relatedToField, hasField := objectFieldValue(relationship, "RelatedToField")
+	_, relatedTo, hasRelated := objectFieldValue(relationship, "RelatedTo")
+	if !hasRecord || !hasField || !hasRelated || record.Kind != ValueObject || relatedTo.Kind != ValueObject {
+		return Null, false, nil
+	}
+	recordID := sObjectIDValue(record)
+	relatedID := sObjectIDValue(relatedTo)
+	if recordID.Kind == ValueNull || relatedID.Kind == ValueNull {
+		return Null, false, nil
+	}
+	fieldName, err := vm.sObjectFieldArg(record.Type, relatedToField)
+	if err != nil {
+		return Null, false, err
+	}
+	current, _, err := vm.callSObjectMember(record, "get", []Value{relatedToField})
+	if err != nil {
+		return Null, false, err
+	}
+	if current.Equal(relatedID) {
+		return Null, false, nil
+	}
+	updateRecord := Object(record.Type)
+	updateRecord.Fields["Id"] = recordID
+	setExplicitSObjectField(&updateRecord, fieldName, relatedID)
+	return updateRecord, true, nil
+}
+
+func mergeSparseSObjectUpdate(existing, update Value) Value {
+	for field, value := range update.Fields {
+		if strings.EqualFold(field, "Id") || isInternalSObjectField(field) {
+			continue
+		}
+		setExplicitSObjectField(&existing, field, value)
+	}
+	return existing
 }
 
 func frameworkSObjectUnitOfWorkRecordLists(receiver Value, fieldName string) []Value {

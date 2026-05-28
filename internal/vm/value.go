@@ -141,10 +141,68 @@ func (v Value) String() string {
 		if message, ok := v.Fields["message"]; ok && message.Kind == ValueString {
 			return message.Text
 		}
+		if text, ok := objectFieldsString(v, make(map[uint64]bool)); ok {
+			return text
+		}
 		return fmt.Sprintf("%s:{}", v.Type)
 	default:
 		return fmt.Sprintf("<%s>", v.Kind)
 	}
+}
+
+func objectFieldsString(v Value, seen map[uint64]bool) (string, bool) {
+	if v.Kind != ValueObject || len(v.Fields) == 0 {
+		return "", false
+	}
+	if v.Ref != 0 {
+		if seen[v.Ref] {
+			return fmt.Sprintf("%s:{...}", v.Type), true
+		}
+		seen[v.Ref] = true
+		defer delete(seen, v.Ref)
+	}
+	keys := make([]string, 0, len(v.Fields))
+	for key := range v.Fields {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		parts = append(parts, key+"="+valueStringWithSeen(v.Fields[key], seen))
+	}
+	return fmt.Sprintf("%s:{%s}", v.Type, strings.Join(parts, ", ")), true
+}
+
+func valueStringWithSeen(v Value, seen map[uint64]bool) string {
+	switch v.Kind {
+	case ValueList:
+		parts := make([]string, 0, len(v.List))
+		for _, value := range v.List {
+			parts = append(parts, valueStringWithSeen(value, seen))
+		}
+		return "List[" + strings.Join(parts, ", ") + "]"
+	case ValueSet:
+		parts := make([]string, 0, len(v.Set))
+		for _, value := range v.Set {
+			parts = append(parts, valueStringWithSeen(value, seen))
+		}
+		return "Set[" + strings.Join(parts, ", ") + "]"
+	case ValueMap:
+		if len(v.Map) == 0 {
+			return "{}"
+		}
+		keys := sortedMapKeys(v.Map)
+		parts := make([]string, 0, len(keys))
+		for _, key := range keys {
+			parts = append(parts, valueFromMapKey(key).String()+"="+valueStringWithSeen(v.Map[key], seen))
+		}
+		return "Map{" + strings.Join(parts, ", ") + "}"
+	case ValueObject:
+		if text, ok := objectFieldsString(v, seen); ok {
+			return text
+		}
+	}
+	return v.String()
 }
 
 func decimalDisplayText(value Value) string {

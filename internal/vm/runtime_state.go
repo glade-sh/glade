@@ -53,6 +53,7 @@ type VM struct {
 	currentClass              string
 	currentNamespace          string
 	currentMethod             Method
+	reflectionConstructType   string
 	testContext               *TestContext
 	localAsyncJobs            []AsyncJob
 	localAsyncSeq             int
@@ -123,6 +124,7 @@ type VM struct {
 	isolationJournal          *storage.IsolationJournal
 	staticValueRefs           map[uint64]bool
 	staticValueRefFields      map[uint64][]staticFieldRef
+	collectionMutationSeq     uint64
 	frameworkRecorderRollback *frameworkMethodCountRecorderRollback
 }
 

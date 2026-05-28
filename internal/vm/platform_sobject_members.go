@@ -1249,13 +1249,21 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 	if value, ok := vm.parentRelationshipValueFromLookupID(receiver, field); ok {
 		return value, true
 	}
-	if value, ok := vm.lazyChildRelationshipValue(receiver, field); ok {
-		return value, true
+	_, hasQueriedFields := receiver.Fields[sobjectQueriedFieldsField]
+	if hasQueriedFields {
+		if value, ok := vm.lazyChildRelationshipValue(receiver, field); ok {
+			return value, true
+		}
 	}
 	if relationshipType, ok := vm.jsonSObjectChildRelationshipType(receiver.Type, field); ok {
 		children := List()
 		children.Type = relationshipType
 		return children, true
+	}
+	if !hasQueriedFields {
+		if value, ok := vm.lazyChildRelationshipValue(receiver, field); ok {
+			return value, true
+		}
 	}
 	definition, fieldDef, ok := vm.sObjectFieldDefinition(receiver.Type, field)
 	if !ok {
@@ -1625,6 +1633,8 @@ func (vm *VM) queriedSObjectFieldsIncludes(receiver Value, field string) bool {
 		if canonical, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, field); ok {
 			return queriedSObjectFieldsMapIncludes(selected, canonical) ||
 				queriedSObjectFieldsMapIncludes(selected, storage.NamespaceTokenName(vm.Org.Namespace, canonical)) ||
+				queriedSObjectFieldsMapIncludes(selected, storage.StripAnyNamespaceToken(canonical)) ||
+				queriedSObjectFieldsMapIncludes(selected, storage.StripAnyNamespaceToken(field)) ||
 				(vm.Org.Namespace != "" && queriedSObjectFieldsMapIncludes(selected, storage.StripNamespaceToken(vm.Org.Namespace, canonical)))
 		}
 	}

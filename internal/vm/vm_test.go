@@ -238,7 +238,7 @@ func TestAliasSnapshotMutationPropagationSkipsNoopMetadataChange(t *testing.T) {
 
 	machine := New(nil)
 	scope := map[string]Value{"account": original}
-	changed := machine.propagateAliasSnapshotMutationToScope(scope, snapshotAlias(updated), original, updated)
+	changed := machine.propagateAliasSnapshotMutationToScope(scope, snapshotAlias(updated), original, updated, false)
 	if changed {
 		t.Fatal("noop metadata coercion propagated as a mutation")
 	}
@@ -261,7 +261,7 @@ func TestAliasSnapshotMutationPropagationSkipsNestedNoopMetadataChange(t *testin
 
 	machine := New(nil)
 	scope := map[string]Value{"account": original, "names": child}
-	changed := machine.propagateAliasSnapshotMutationToScope(scope, snapshotAlias(updated), original, updated)
+	changed := machine.propagateAliasSnapshotMutationToScope(scope, snapshotAlias(updated), original, updated, false)
 	if changed {
 		t.Fatal("nested noop metadata coercion propagated as a root mutation")
 	}
@@ -270,6 +270,28 @@ func TestAliasSnapshotMutationPropagationSkipsNestedNoopMetadataChange(t *testin
 	}
 	if got := scope["names"].List[0].Text; got != "Acme" {
 		t.Fatalf("names[0] = %q, want Acme", got)
+	}
+}
+
+func TestAliasSnapshotMutationPropagationRefreshesNestedCollectionAlias(t *testing.T) {
+	items := List(String("Tax"))
+	items.Ref = 43
+	original := Object("Holder")
+	original.Ref = 42
+	original.Fields["Items"] = items
+	updated := original
+	trimmed := items
+	trimmed.List = trimmed.List[:0]
+	updated.Fields["Items"] = trimmed
+
+	machine := New(nil)
+	scope := map[string]Value{"holder": original, "items": items}
+	changed := machine.propagateAliasSnapshotMutationToScope(scope, snapshotAlias(updated), original, updated, true)
+	if changed {
+		t.Fatal("nested collection alias refresh propagated as a root mutation")
+	}
+	if got := len(scope["items"].List); got != 0 {
+		t.Fatalf("items size = %d, want 0", got)
 	}
 }
 
@@ -283,7 +305,7 @@ func TestAliasSnapshotMutationPropagationKeepsRealDataChange(t *testing.T) {
 
 	machine := New(nil)
 	scope := map[string]Value{"account": original}
-	changed := machine.propagateAliasSnapshotMutationToScope(scope, snapshotAlias(updated), original, updated)
+	changed := machine.propagateAliasSnapshotMutationToScope(scope, snapshotAlias(updated), original, updated, false)
 	if !changed {
 		t.Fatal("data mutation did not propagate")
 	}
@@ -1802,6 +1824,33 @@ System.assertEquals(Account.SObjectType, records.getSObjectType());
 	machine := New(nil)
 	org := storage.NewOrgState()
 	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListAddHonorsConcreteRuntimeElementType(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type accountListType = Type.forName('List<Account>');
+List<Object> records = (List<Object>)accountListType.newInstance();
+Boolean caught = false;
+try {
+	records.add(new Contact(LastName = 'Child'));
+} catch (System.TypeException e) {
+	caught = e.getMessage().contains('Collection store exception adding Contact to List<Account>');
+}
+System.assertEquals(true, caught);
+records.add(new Account(Name = 'Acme'));
+System.assertEquals(1, records.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -3975,6 +4024,33 @@ func TestExpandSOQLBindsEvaluatesChainedStaticCallExpression(t *testing.T) {
 	}
 }
 
+func TestExpandSOQLBindsEvaluatesInstanceMethodCall(t *testing.T) {
+	program, err := CompileAnonymous(`return IdValue;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Line", Fields: map[string]Field{
+		"IdValue": {Name: "IdValue", Type: "Id"},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "Line.getId", ClassName: "Line", ReturnType: "Id", Program: program}); err != nil {
+		t.Fatal(err)
+	}
+	line := Object("Line")
+	line.Fields["IdValue"] = platformScalar("Id", "a00000000000001AAA")
+	machine.Globals["line"] = line
+	got, err := machine.expandSOQLBinds("SELECT Id FROM PaymentLine__c WHERE Id = :line.getId()")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "SELECT Id FROM PaymentLine__c WHERE Id = 'a00000000000001AAA'"
+	if got != want {
+		t.Fatalf("query = %q, want %q", got, want)
+	}
+}
+
 func TestExecSOQLSingleSObjectAssignmentAndReturn(t *testing.T) {
 	selectorProgram, err := CompileAnonymous(`return [SELECT Id, Name FROM Account LIMIT 1];`)
 	if err != nil {
@@ -5100,6 +5176,124 @@ System.assertEquals(1, ((Set<String>)context.get('values')).size());
 	}
 }
 
+func TestExecMethodParameterListRemovePropagatesToCaller(t *testing.T) {
+	methodProgram, err := CompileAnonymous(`
+values.remove(0);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<String> values = new List<String>{'trail'};
+Util.removeFirst(values);
+System.assert(values.isEmpty());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterMethod(Method{
+		Name:       "Util.removeFirst",
+		ClassName:  "Util",
+		IsStatic:   true,
+		ReturnType: "void",
+		Params:     []Param{{Name: "values", Type: "List<String>"}},
+		Program:    methodProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInstanceMethodParameterListRemovePropagatesToCaller(t *testing.T) {
+	methodProgram, err := CompileAnonymous(`
+values.remove(0);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<String> values = new List<String>{'trail'};
+new Util().removeFirst(values);
+System.assert(values.isEmpty());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Util",
+		Methods: map[string]Method{
+			"removeFirst": {
+				Name:       "Util.removeFirst",
+				ClassName:  "Util",
+				ReturnType: "void",
+				Params:     []Param{{Name: "values", Type: "List<String>"}},
+				Program:    methodProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInstanceMethodIndexedListRemovePropagatesToCaller(t *testing.T) {
+	methodProgram, err := CompileAnonymous(`
+Item item;
+for (Integer i = 0; i < values.size(); i++) {
+	item = values[i];
+	if (item.Name.equals(target)) {
+		values.remove(i);
+		break;
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Item item = new Item();
+item.Name = 'trail';
+List<Item> values = new List<Item>{item};
+new Util().removeMatching(values, 'trail');
+System.assert(values.isEmpty());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Item",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Util",
+		Methods: map[string]Method{
+			"removeMatching": {
+				Name:       "Util.removeMatching",
+				ClassName:  "Util",
+				ReturnType: "void",
+				Params:     []Param{{Name: "values", Type: "List<Item>"}, {Name: "target", Type: "String"}},
+				Program:    methodProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecForBreakContinueDoWhileSwitchAndEnhancedFor(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Integer> xs = new List<Integer>{1, 2, 3, 4};
@@ -5149,6 +5343,27 @@ try {
 		System.debug(name);
 	}
 } catch (NullPointerException e) {
+	caught = true;
+}
+System.assertEquals(true, caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNullBooleanConditionIsCatchable(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean flag;
+Boolean caught = false;
+try {
+	if (flag) {
+		System.debug('true');
+	}
+} catch (System.NullPointerException e) {
 	caught = true;
 }
 System.assertEquals(true, caught);

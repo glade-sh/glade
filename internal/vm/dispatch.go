@@ -6,7 +6,6 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -1303,7 +1302,7 @@ platformStaticCall:
 			if args[0].Kind != ValueString {
 				return Null, fmt.Errorf("Type.forName expects String")
 			}
-			return vm.typeForName("", args[0].Text), nil
+			return vm.typeForName("", args[0].Text, false), nil
 		}
 		if args[0].Kind != ValueString && args[0].Kind != ValueNull {
 			return Null, fmt.Errorf("Type.forName expects namespace String or null")
@@ -1318,7 +1317,7 @@ platformStaticCall:
 		if args[0].Kind == ValueString {
 			namespace = args[0].Text
 		}
-		return vm.typeForName(namespace, args[1].Text), nil
+		return vm.typeForName(namespace, args[1].Text, true), nil
 	case "Test.getStandardPricebookId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Test.getStandardPricebookId expects 0 arguments")
@@ -1667,7 +1666,7 @@ platformStaticCall:
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Schema.SObjectField") {
 			return Null, jsonDeserializeException("Type cannot be serialized")
 		}
-		data, err := json.Marshal(vm.jsonFromValueForSerialize(args[0], suppressNulls))
+		data, err := jsonMarshalNoEscape(vm.jsonFromValueForSerialize(args[0], suppressNulls))
 		if err != nil {
 			return Null, jsonDeserializeException("%s", err.Error())
 		}
@@ -1683,7 +1682,7 @@ platformStaticCall:
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Schema.SObjectField") {
 			return Null, jsonDeserializeException("Type cannot be serialized")
 		}
-		data, err := json.MarshalIndent(vm.jsonFromValueForSerialize(args[0], suppressNulls), "", "  ")
+		data, err := jsonMarshalNoEscapeIndent(vm.jsonFromValueForSerialize(args[0], suppressNulls), "", "  ")
 		if err != nil {
 			return Null, jsonDeserializeException("%s", err.Error())
 		}

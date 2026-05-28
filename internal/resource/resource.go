@@ -196,11 +196,22 @@ func ApplyProject(org *storage.OrgState, p project.Project) error {
 	}
 	org.Metadata = registry
 	ensureMetadataObjects(org)
-	if err := ensureFolderObject(org, p.FolderFiles, p.Namespace); err != nil {
+	if err := ensureFolderObject(org, projectFolderFilesWithDependencies(p), p.Namespace); err != nil {
 		return err
 	}
 	ensureApexPageObject(org, p.VisualforcePageFiles, p.Namespace)
 	return nil
+}
+
+func projectFolderFilesWithDependencies(p project.Project) []string {
+	files := append([]string(nil), p.FolderFiles...)
+	for _, dep := range p.ManagedPackageDependencies {
+		if dep.Status != "loaded" || dep.Project == nil {
+			continue
+		}
+		files = append(files, projectFolderFilesWithDependencies(*dep.Project)...)
+	}
+	return files
 }
 
 func LoadProjectWithDependencies(p project.Project) (storage.MetadataRegistry, error) {

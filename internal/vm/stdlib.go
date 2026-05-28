@@ -860,6 +860,16 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if len(args) != 1 {
 			return Null, true, newExceptionError("System.NullPointerException", "String.equals expects 1 argument")
 		}
+		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id") {
+			if text, ok := platformScalarObjectText(args[0]); ok {
+				return Bool(apexIDTextEqual(receiver.Text, text)), true, nil
+			}
+		}
+		if strings.EqualFold(receiver.Type, "Id") || strings.EqualFold(args[0].Type, "Id") {
+			if other, ok := idValueText(args[0]); ok {
+				return Bool(apexIDTextEqual(receiver.Text, other)), true, nil
+			}
+		}
 		return Bool(receiver.Text == args[0].String()), true, nil
 	case "hashCode":
 		if len(args) != 0 {
@@ -4986,6 +4996,21 @@ func (vm *VM) callIdMember(receiver Value, method string, args []Value) (Value, 
 		return Null, false, nil
 	}
 	switch strings.ToLower(method) {
+	case "equals":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Bool(false), true, nil
+		}
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("Id.equals expects 1 argument")
+		}
+		other, ok := idValueText(args[0])
+		if !ok {
+			return Bool(false), true, nil
+		}
+		if err := validateApexID(other); err != nil {
+			return Null, true, err
+		}
+		return Bool(apexIDTextEqual(idText, other)), true, nil
 	case "tostring":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Id.toString expects 0 arguments")
@@ -5061,7 +5086,7 @@ func displayIDText(text string) string {
 
 func idMemberReceiver(value Value, method string) bool {
 	switch strings.ToLower(method) {
-	case "to15", "to18", "getsobjecttype":
+	case "equals", "to15", "to18", "getsobjecttype":
 	default:
 		return false
 	}

@@ -311,6 +311,18 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	}
 }
 
+func TestEnsureDeterministicPlatformDataHonorsConfiguredOrgID(t *testing.T) {
+	org := NewOrgState()
+	org.OrgID = "00D000000000000"
+	EnsureDeterministicPlatformData(&org)
+	if _, ok := org.Objects["Organization"].Records[ID(org.OrgID)]; !ok {
+		t.Fatalf("missing configured organization record: %#v", org.Objects["Organization"].Records)
+	}
+	if _, ok := org.Objects["Organization"].Records["00D000000000001"]; ok {
+		t.Fatalf("default organization record should not be added when org ID is configured")
+	}
+}
+
 func TestEnsureDeterministicPlatformDataSkipsUsedRecordTypeIDs(t *testing.T) {
 	org := NewOrgState()
 	org.Objects["RecordType"] = ObjectState{

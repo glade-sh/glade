@@ -336,6 +336,16 @@ func (vm *VM) describeObjectDefinition(objectName string) (string, storage.Objec
 	case strings.EqualFold(objectName, "AggregateResult"):
 		return "AggregateResult", storage.ObjectDefinition{APIName: "AggregateResult", Label: "Aggregate Result", PluralLabel: "Aggregate Results"}, true
 	case isCustomObjectLikeName(objectName):
+		if namespace := strings.TrimSpace(vm.currentCallerNamespace()); namespace != "" {
+			if namespaced := storage.NamespaceTokenName(namespace, objectName); namespaced != objectName {
+				return namespaced, storage.ObjectDefinition{
+					APIName:     namespaced,
+					Label:       namespaced,
+					PluralLabel: namespaced,
+					Fields:      map[string]storage.Field{},
+				}, true
+			}
+		}
 		return objectName, storage.ObjectDefinition{
 			APIName:     objectName,
 			Label:       objectName,
@@ -761,12 +771,75 @@ func (vm *VM) fieldSetMemberValue(objectName string, definition storage.ObjectDe
 		displayType = schemaDisplayTypeValue(display)
 		value.Fields["dbRequired"] = Bool(field.Required)
 		value.Fields["sObjectField"] = vm.sObjectFieldTokenFromField(objectName, field)
+	} else if relatedObjectName, field, ok := vm.resolveRelationshipFieldPath(definition, member.Field); ok {
+		if field.Label != "" {
+			label = field.Label
+		} else if field.APIName != "" {
+			label = field.APIName
+		}
+		display := field.DisplayType
+		if display == "" {
+			display = string(field.Type)
+		}
+		displayType = schemaDisplayTypeValue(display)
+		value.Fields["dbRequired"] = Bool(field.Required)
+		value.Fields["sObjectField"] = vm.sObjectFieldTokenFromField(relatedObjectName, field)
 	} else {
 		value.Fields["sObjectField"] = Value{Kind: ValueNull, Type: "Schema.SObjectField"}
 	}
 	value.Fields["label"] = String(label)
 	value.Fields["type"] = displayType
 	return value
+}
+
+func (vm *VM) resolveRelationshipFieldPath(definition storage.ObjectDefinition, fieldPath string) (string, storage.Field, bool) {
+	parts := strings.Split(strings.TrimSpace(fieldPath), ".")
+	if len(parts) < 2 {
+		return "", storage.Field{}, false
+	}
+	namespace := ""
+	if vm.Org != nil {
+		namespace = vm.Org.Namespace
+	}
+	currentDefinition := definition
+	currentObjectName := definition.APIName
+	for i, part := range parts[:len(parts)-1] {
+		fieldName, ok := resolveRelationshipFieldName(currentDefinition, namespace, part)
+		if !ok {
+			return "", storage.Field{}, false
+		}
+		field := currentDefinition.Fields[fieldName]
+		if len(field.ReferenceTo) == 0 {
+			return "", storage.Field{}, false
+		}
+		currentObjectName = field.ReferenceTo[0]
+		resolvedObjectName, resolvedDefinition, ok := vm.describeObjectDefinition(currentObjectName)
+		if !ok {
+			return "", storage.Field{}, false
+		}
+		currentObjectName = resolvedObjectName
+		currentDefinition = resolvedDefinition
+		if i == len(parts)-2 {
+			break
+		}
+	}
+	leafName, ok := storage.ResolveFieldName(currentDefinition, namespace, parts[len(parts)-1])
+	if !ok {
+		return "", storage.Field{}, false
+	}
+	return currentObjectName, currentDefinition.Fields[leafName], true
+}
+
+func resolveRelationshipFieldName(definition storage.ObjectDefinition, namespace, relationshipName string) (string, bool) {
+	for fieldName, field := range definition.Fields {
+		if field.RelationshipName == "" {
+			continue
+		}
+		if metadataObjectNameMatches(namespace, field.RelationshipName, relationshipName) {
+			return fieldName, true
+		}
+	}
+	return "", false
 }
 
 func metadataObjectNameMatches(namespace, canonical, candidate string) bool {
@@ -1114,6 +1187,11 @@ func syntheticSObjectSystemField(fieldName string) (storage.Field, bool) {
 func (vm *VM) describeObjectName(name string) string {
 	if vm == nil || vm.Org == nil {
 		return name
+	}
+	if namespace := strings.TrimSpace(vm.currentCallerNamespace()); namespace != "" {
+		if namespaced := storage.NamespaceTokenName(namespace, name); namespaced != name {
+			return namespaced
+		}
 	}
 	return storage.NamespaceTokenName(vm.Org.Namespace, name)
 }

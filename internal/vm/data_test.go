@@ -1024,6 +1024,7 @@ List<SObject> rows = Database.query('SELECT Id, Parent__r.Id, Parent__r.Name FRO
 System.assertEquals(1, rows.size());
 Child__c child = (Child__c)rows[0];
 System.assertEquals(null, child.Parent__r);
+System.assertEquals(null, child.Parent__r.Name);
 Integer touched = 0;
 if (child.Parent__r != null) {
 	touched++;
@@ -2103,6 +2104,25 @@ func TestExecUnqueriedLookupFieldDefaultsNull(t *testing.T) {
 	}
 }
 
+func TestQueriedSObjectFieldsIncludeNamespaceQualifiedFieldAlias(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "namz"
+	account := org.Objects["Account"]
+	if account.Definition.Fields == nil {
+		account.Definition.Fields = make(map[string]storage.Field)
+	}
+	account.Definition.Fields["znu__JoinOn__c"] = storage.Field{APIName: "znu__JoinOn__c", Type: storage.FieldDate}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+
+	acct := Object("Account")
+	acct.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue("Account", map[string]bool{"joinon__c": true})
+	if err := machine.unqueriedSObjectFieldError(acct, "znu__JoinOn__c", true); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDirectSObjectFieldAccessThrowsForUnqueriedField(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme', Secret__c = 'Hidden');
@@ -2504,6 +2524,18 @@ System.assertEquals(null, child.Parent__r.Name);
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestRelationshipNullInfersCustomRelationshipHopsWithoutMetadata(t *testing.T) {
+	machine := New(nil)
+	orderItem, ok := machine.relationshipNullFieldAccessValue("znu__OrderItemLine__c", "znu__OrderItem__r")
+	if !ok || orderItem.Kind != ValueNull || orderItem.Type != "znu__OrderItem__c" || !isRelationshipNull(orderItem) {
+		t.Fatalf("order item relationship = %#v, ok=%v", orderItem, ok)
+	}
+	orderID, ok := machine.relationshipNullFieldAccessValue(orderItem.Type, "znu__Order__c")
+	if !ok || orderID.Kind != ValueNull || orderID.Type != "Id" {
+		t.Fatalf("order id = %#v, ok=%v", orderID, ok)
 	}
 }
 
@@ -5365,6 +5397,55 @@ System.assert(byName.containsKey('Membership'), 'expected dependency namespace r
 	}
 }
 
+func TestExecMissingCustomObjectDescribeUsesExecutingNamespace(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeSObjectResult describe = NimbleAMSSettings__c.SObjectType.getDescribe();
+System.assertEquals('znu__NimbleAMSSettings__c', describe.getName());
+System.assertEquals('NimbleAMSSettings__c', describe.getLocalName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "namz"
+	org.Objects["NimbleAMSSettings__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "NimbleAMSSettings__c", Fields: map[string]storage.Field{}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{Name: "Harness", Namespace: "znu"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "Harness"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedStringMapLookupUsesExecutingNamespaceAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Boolean> flags = new Map<String, Boolean>();
+flags.put('znu__StoredPaymentMethodsSUM17', true);
+System.assert(flags.containsKey('StoredPaymentMethodsSUM17'));
+System.assert(flags.containsKey('NU__StoredPaymentMethodsSUM17'));
+System.assertEquals(true, flags.get('StoredPaymentMethodsSUM17'));
+System.assertEquals(true, flags.get('NU__StoredPaymentMethodsSUM17'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "namz"
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{Name: "Harness", Namespace: "znu"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "Harness"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRecordTypeInfoActiveRecordTypeDefaultsAvailable(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object info = Batch__c.SObjectType.getDescribe().getRecordTypeInfosByName().get('Scheduled Batch');
@@ -7795,6 +7876,51 @@ System.assert(!ratingMember.getDbRequired());
 	}
 }
 
+func TestExecDescribeFieldSetMemberRelationshipPathReturnsLeafFieldToken(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object affiliationDescribe = AccountAffiliation__c.SObjectType.getDescribe();
+Object chapterDirectory = affiliationDescribe.fieldSets.getMap().get('ChapterDirectory');
+Object member = chapterDirectory.getFields().get(0);
+System.assertEquals('Account__r.Name', member.getFieldPath());
+System.assertEquals(Schema.DisplayType.STRING, member.getType());
+System.assertEquals(Account.Name, member.getSObjectField());
+System.assertEquals('Name', member.getSObjectField().getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["AccountAffiliation__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "AccountAffiliation__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Account__c": {
+					APIName:          "Account__c",
+					Type:             storage.FieldReference,
+					DisplayType:      "REFERENCE",
+					ReferenceTo:      []string{"Account"},
+					RelationshipName: "Account__r",
+				},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Metadata.FieldSets = []storage.FieldSetMetadata{{
+		ObjectName: "AccountAffiliation__c",
+		Name:       "ChapterDirectory",
+		Label:      "Chapter Directory",
+		Fields: []storage.FieldSetMemberMetadata{
+			{Field: "Account__r.Name"},
+		},
+	}}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMissingSObjectChildRelationshipDefaultsToEmptyList(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'Acme');
@@ -9494,8 +9620,9 @@ return new fflib_SObjectUnitOfWork(sObjectTypes);
 	runProgram, err := CompileAnonymous(`
 fflib_SObjectUnitOfWork.mockInstance = (fflib_SObjectUnitOfWork)Test.createStub(fflib_SObjectUnitOfWork.class, new Provider());
 fflib_SObjectUnitOfWork actual = fflib_SObjectUnitOfWork.newInstance(new List<Schema.SObjectType>{ Contact.SObjectType });
+actual.registerDirty(new Contact(Id = '003000000000001', LastName = 'Trail'));
 actual.commitWork();
-System.assertEquals(1, Provider.calls);
+System.assertEquals(2, Provider.calls);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -9529,6 +9656,13 @@ System.assertEquals(1, Provider.calls);
 				ReturnType: "void",
 				Access:     "global",
 			},
+			"registerDirty": {
+				Name:       "fflib_SObjectUnitOfWork.registerDirty",
+				ClassName:  "fflib_SObjectUnitOfWork",
+				ReturnType: "void",
+				Params:     []Param{{Name: "record", Type: "SObject"}},
+				Access:     "global",
+			},
 		},
 		Access: "global",
 	}); err != nil {
@@ -9554,6 +9688,13 @@ System.assertEquals(1, Provider.calls);
 				Name:       "fflib_SObjectUnitOfWork.commitWork",
 				ClassName:  "fflib_SObjectUnitOfWork",
 				ReturnType: "void",
+				Access:     "global",
+			},
+			"registerDirty": {
+				Name:       "fflib_SObjectUnitOfWork.registerDirty",
+				ClassName:  "fflib_SObjectUnitOfWork",
+				ReturnType: "void",
+				Params:     []Param{{Name: "record", Type: "SObject"}},
 				Access:     "global",
 			},
 		},
@@ -10056,6 +10197,28 @@ System.assertEquals(0, a.Contacts.size());
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConstructedSObjectChildRelationshipDoesNotLazyLoadFromOrg(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account stored = new Account(Name = 'Acme');
+insert stored;
+insert new Contact(AccountId = stored.Id, LastName = 'Child');
+Account fabricated = new Account(Id = stored.Id);
+System.assertEquals(0, fabricated.Contacts.size());
+Account queried = [SELECT Id FROM Account WHERE Id = :stored.Id];
+System.assertEquals(1, queried.Contacts.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Contact")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -13170,6 +13333,55 @@ System.assert(missingID.contains('Id not specified in an update call:'), missing
 	account.Definition.Fields["ExternalSalesforceId__c"] = storage.Field{APIName: "ExternalSalesforceId__c", Type: storage.FieldString}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDMLUpdateMissingRecordDoesNotRunTriggers(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+	update new Account(Id = '001000000000001AAA', Name = 'Missing');
+} catch (DmlException e) {
+	caught = true;
+}
+System.assert(caught);
+System.assertEquals(0, TriggerProbe.calls);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	triggerProgram, err := CompileAnonymous(`TriggerProbe.touch();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	touchProgram, err := CompileAnonymous(`
+if (calls == null) {
+	calls = 0;
+}
+calls = calls + 1;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerProbe",
+		StaticFields: map[string]Field{
+			"calls": {Name: "calls", Type: "Integer", Static: true, Value: Int(0)},
+		},
+		Methods: map[string]Method{
+			"touch": {Name: "TriggerProbe.touch", ClassName: "TriggerProbe", ReturnType: "void", IsStatic: true, Program: touchProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{Name: "AccountBeforeUpdate", Object: "Account", Timing: triggerTimingBefore, Operation: "update", Program: triggerProgram}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

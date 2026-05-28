@@ -20,6 +20,23 @@ For macOS and Linux:
 curl -fsSL https://glade.sh/install.sh | sh
 ```
 
+Build and run from source:
+
+```bash
+git clone https://github.com/glade-sh/glade.git
+cd glade
+go build -o glade ./cmd/glade
+./glade version
+./glade doctor
+```
+
+During development, you can also run the CLI without installing a binary:
+
+```bash
+go run ./cmd/glade version
+go run ./cmd/glade check --project path/to/sfdx-project
+```
+
 ## Quick Start
 
 Prerequisites:

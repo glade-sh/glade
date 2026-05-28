@@ -123,6 +123,16 @@ func (e Engine) systemTimestamp() string {
 	if e.Now != nil {
 		now = e.Now().UTC()
 	}
+	if e.Org != nil {
+		base := now.Format(time.RFC3339)
+		if e.Org.SystemTimestampBase != base {
+			e.Org.SystemTimestampBase = base
+			e.Org.SystemTimestampSequence = 0
+		}
+		offset := e.Org.SystemTimestampSequence
+		e.Org.SystemTimestampSequence++
+		now = now.Add(time.Duration(offset) * time.Second)
+	}
 	return now.Format(time.RFC3339)
 }
 

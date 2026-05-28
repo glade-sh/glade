@@ -333,9 +333,13 @@ func setOrganizationFlag(org *OrgState, fieldName string, enabled bool) {
 	if object.Definition.Fields == nil {
 		object.Definition.Fields = make(map[string]Field)
 	}
+	orgID := strings.TrimSpace(org.OrgID)
+	if orgID == "" {
+		orgID = "00D000000000001"
+	}
 	if len(object.Records) == 0 {
-		object.Records["00D000000000001"] = Record{
-			ID:     "00D000000000001",
+		object.Records[ID(orgID)] = Record{
+			ID:     ID(orgID),
 			Object: "Organization",
 			Fields: map[string]Value{"Name": StringValue("GLADE Local Org")},
 		}
@@ -724,7 +728,10 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		}
 	}
 
-	orgID := ID("00D000000000001")
+	orgID := ID(strings.TrimSpace(org.OrgID))
+	if orgID == "" {
+		orgID = ID("00D000000000001")
+	}
 	profileID := ID("00e000000000001")
 	minimumAccessProfileID := ID("00e000000000002")
 	chatterExternalProfileID := ID("00e000000000003")

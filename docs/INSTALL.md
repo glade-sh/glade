@@ -34,16 +34,38 @@ glade version
 glade doctor
 ```
 
-## Build From Source
+## Build And Run From Source
 
-Use this path for Glade development:
+Use this path for Glade development or for trying the current repository state
+before a release is cut.
+
+Prerequisites:
+
+- Go 1.26 or newer
+- Git
 
 ```bash
-git clone <your-repo-url> glade
+git clone https://github.com/glade-sh/glade.git
 cd glade
 go build -o glade ./cmd/glade
-glade version
-glade doctor
+./glade version
+./glade doctor
+```
+
+Run the locally built binary against an SFDX project:
+
+```bash
+./glade check --project path/to/sfdx-project --json
+./glade test --project path/to/sfdx-project --json
+./glade exec "System.debug('hello from source build');"
+```
+
+During development, run commands directly from source without creating a binary:
+
+```bash
+go run ./cmd/glade version
+go run ./cmd/glade doctor
+go run ./cmd/glade check --project path/to/sfdx-project
 ```
 
 If you want `glade` on your `PATH`:

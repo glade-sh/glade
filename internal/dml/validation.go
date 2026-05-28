@@ -607,7 +607,7 @@ func validateRequired(definition storage.ObjectDefinition, record storage.Record
 			continue
 		}
 		if value, ok := record.GetField(name); ok {
-			if field.Type == storage.FieldString && strings.TrimSpace(value.String) == "" {
+			if requiredFieldValueIsBlank(field, value) {
 				missing = append(missing, name)
 			}
 			continue
@@ -632,7 +632,7 @@ func validateRequiredUpdate(definition storage.ObjectDefinition, record storage.
 			continue
 		}
 		if value, ok := record.GetField(name); ok {
-			if field.Type == storage.FieldString && strings.TrimSpace(value.String) == "" {
+			if requiredFieldValueIsBlank(field, value) {
 				missing = append(missing, name)
 			}
 			continue
@@ -649,6 +649,17 @@ func validateRequiredUpdate(definition storage.ObjectDefinition, record storage.
 		return dmlErrorf("REQUIRED_FIELD_MISSING", missing, "%s", requiredFieldsMessage(definition, missing))
 	}
 	return nil
+}
+
+func requiredFieldValueIsBlank(field storage.Field, value storage.Value) bool {
+	switch field.Type {
+	case storage.FieldString:
+		return strings.TrimSpace(value.String) == ""
+	case storage.FieldBlob:
+		return value.Kind == storage.ValueBlob && value.String == ""
+	default:
+		return false
+	}
 }
 
 func requiredFieldsMessage(definition storage.ObjectDefinition, missing []string) string {

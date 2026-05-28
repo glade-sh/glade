@@ -154,7 +154,22 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 		}
 		base := orderedJSONObject{}
 		seen := map[string]bool{}
+		getterNames := vm.jsonSerializableGetterNameSet(value.Type)
 		for _, fieldName := range vm.jsonSerializableFieldNames(value.Type) {
+			field, owner, fieldOK := vm.lookupField(value.Type, fieldName)
+			if fieldOK {
+				if field.Getter != nil && !field.Static {
+					getterValue, err := vm.callGetter(vm.getterOwner(owner, field), field, value)
+					if err == nil && !(suppressObjectNulls && getterValue.Kind == ValueNull) {
+						base = append(base, orderedJSONField{name: field.Name, value: vm.jsonFromValueForSerialize(getterValue, suppressObjectNulls)})
+						seen[strings.ToLower(field.Name)] = true
+					}
+					continue
+				}
+				if _, shadowed := getterNames[strings.ToLower(fieldName)]; shadowed {
+					continue
+				}
+			}
 			actualName, item, ok := objectFieldValue(value, fieldName)
 			if !ok {
 				continue
@@ -337,11 +352,11 @@ func (object orderedJSONObject) MarshalJSON() ([]byte, error) {
 		if i > 0 {
 			out.WriteByte(',')
 		}
-		name, err := json.Marshal(field.name)
+		name, err := jsonMarshalNoEscape(field.name)
 		if err != nil {
 			return nil, err
 		}
-		value, err := json.Marshal(field.value)
+		value, err := jsonMarshalNoEscape(field.value)
 		if err != nil {
 			return nil, err
 		}
@@ -351,6 +366,35 @@ func (object orderedJSONObject) MarshalJSON() ([]byte, error) {
 	}
 	out.WriteByte('}')
 	return out.Bytes(), nil
+}
+
+func jsonMarshalNoEscape(value any) ([]byte, error) {
+	var out bytes.Buffer
+	encoder := json.NewEncoder(&out)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(value); err != nil {
+		return nil, err
+	}
+	data := out.Bytes()
+	if len(data) > 0 && data[len(data)-1] == '\n' {
+		data = data[:len(data)-1]
+	}
+	return data, nil
+}
+
+func jsonMarshalNoEscapeIndent(value any, prefix, indent string) ([]byte, error) {
+	var out bytes.Buffer
+	encoder := json.NewEncoder(&out)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent(prefix, indent)
+	if err := encoder.Encode(value); err != nil {
+		return nil, err
+	}
+	data := out.Bytes()
+	if len(data) > 0 && data[len(data)-1] == '\n' {
+		data = data[:len(data)-1]
+	}
+	return data, nil
 }
 
 func orderedJSONMapKeys(value Value) []string {
@@ -420,6 +464,17 @@ func (vm *VM) jsonSerializableFieldNames(typeName string) []string {
 	}
 	visit(typeName)
 	return fields
+}
+
+func (vm *VM) jsonSerializableGetterNameSet(typeName string) map[string]struct{} {
+	out := make(map[string]struct{})
+	for _, field := range vm.jsonSerializableGetterFields(typeName) {
+		if field.Getter == nil || field.Static || field.Name == "" {
+			continue
+		}
+		out[strings.ToLower(field.Name)] = struct{}{}
+	}
+	return out
 }
 
 func (vm *VM) jsonSerializableGetterFields(typeName string) []Field {

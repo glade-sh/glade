@@ -2216,6 +2216,59 @@ System.assertEquals('handled', proxy.selectById((Set<Id>)placeholder, (List<Sche
 	}
 }
 
+func TestExecApexMocksErasesEmptyConcreteSObjectListToDeclaredSObjectList(t *testing.T) {
+	providerProgram, err := CompileAnonymous("return new List<Opportunity>();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Runner proxy = (Runner)Test.createStub(Runner.class, new fflib_ApexMocks());
+List<SObject> raw = proxy.run();
+List<Account> accounts = (List<Account>)raw;
+System.assertEquals(0, accounts.size());
+List<Logger__mdt> loggers = (List<Logger__mdt>)raw;
+System.assertEquals(0, loggers.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "Runner",
+		Methods: map[string]Method{
+			"run": {Name: "Runner.run", ClassName: "Runner", ReturnType: "List<SObject>"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "fflib_ApexMocks",
+		Interfaces: []string{"StubProvider"},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:       "fflib_ApexMocks.handleMethodCall",
+				ClassName:  "fflib_ApexMocks",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTestCreateStubReturnsReceiverForUnstubbedFluentSelfMethod(t *testing.T) {
 	providerProgram, err := CompileAnonymous("return null;")
 	if err != nil {
@@ -4741,6 +4794,37 @@ func TestResolveTypeNameInClassDoesNotInventNestedNameForNamespacedTopLevel(t *t
 	}
 	if !machine.typeAssignableTo("namz.ILogger", "Logger.ILogger") {
 		t.Fatalf("namz.ILogger should be assignable to owner-qualified top-level alias")
+	}
+}
+
+func TestRuntimeNamespacedSubclassAssignableToUnqualifiedSuperclass(t *testing.T) {
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "HistoryData", Namespace: "znu"},
+		{Name: "HistoryData", Namespace: "namz"},
+		{Name: "AccountAffiliationHistory", Namespace: "namz", SuperClass: "znu.HistoryData"},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if !machine.typeAssignableTo("namz.AccountAffiliationHistory", "HistoryData") {
+		t.Fatalf("namespaced subclass should be assignable to unqualified superclass")
+	}
+	value := Object("AccountAffiliationHistory")
+	value.Runtime = "namz.AccountAffiliationHistory"
+	if _, err := machine.coerceAssignable("HistoryData", value); err != nil {
+		t.Fatalf("runtime-qualified subclass should assign to unqualified superclass: %v", err)
+	}
+}
+
+func TestTypeMatchesNamespacedGenericElementToUnqualifiedElement(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "SelectListOption", Namespace: "namz"}); err != nil {
+		t.Fatal(err)
+	}
+	if !machine.typeMatches("List<namz.SelectListOption>", "List<SelectListOption>", make(map[string]bool)) {
+		t.Fatal("List<namz.SelectListOption> should match List<SelectListOption>")
 	}
 }
 
@@ -8569,6 +8653,69 @@ System.assertEquals(2, AsyncRegistry.size());
 	}
 }
 
+func TestExecAsyncDrainRestoresUninitializedStaticCollectionState(t *testing.T) {
+	initProgram, err := CompileAnonymous("LazyAsyncRegistry.Ids = new Set<String>{'a', 'b'};")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sizeProgram, err := CompileAnonymous("return Ids.size();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	jobProgram, err := CompileAnonymous("Integer size = LazyAsyncRegistry.size();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+System.enqueueJob(new LazyStaticCollectionJob());
+Test.stopTest();
+System.assertEquals(2, LazyAsyncRegistry.size());
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "LazyAsyncRegistry",
+		StaticFields: map[string]Field{
+			"Ids": {Name: "Ids", Type: "Set<String>", Static: true},
+		},
+		StaticFieldOrder: []string{"Ids"},
+		StaticInitializers: []Method{{
+			Name:      "LazyAsyncRegistry.<static_init>",
+			ClassName: "LazyAsyncRegistry",
+			IsStatic:  true,
+			Program:   initProgram,
+		}},
+		Methods: map[string]Method{
+			"size": {Name: "LazyAsyncRegistry.size", ClassName: "LazyAsyncRegistry", ReturnType: "Integer", IsStatic: true, Program: sizeProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "LazyStaticCollectionJob",
+		Interfaces: []string{"Queueable"},
+		Methods: map[string]Method{
+			"execute": {
+				Name:       "LazyStaticCollectionJob.execute",
+				ClassName:  "LazyStaticCollectionJob",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "QueueableContext"}},
+				Program:    jobProgram,
+			},
+		},
+		Constructors: []Method{{Name: "LazyStaticCollectionJob.<init>", ClassName: "LazyStaticCollectionJob", ReturnType: "void", IsConstructor: true}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeConstructorResolvesInheritedInnerClass(t *testing.T) {
 	innerCtor, err := CompileAnonymous("this.value = value;")
 	if err != nil {
@@ -9898,6 +10045,53 @@ System.assertEquals(1, [SELECT Id FROM Event__c WHERE Id IN :eventIds].size());
 	}
 	machine := New(nil)
 	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDynamicSOQLResolvesNamespacedObjectInCallerNamespace(t *testing.T) {
+	queryProgram, err := CompileAnonymous(`
+Set<Id> recordIds = new Set<Id>{'aOb00000000LFLUCA4'};
+List<SObject> rows = Database.query('SELECT Id FROM Product__c WHERE Id IN :recordIds');
+return rows.size();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals(1, znu.ProductQuery.run());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["znu__Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "znu__Product__c",
+			KeyPrefix: "aOb",
+			Fields: map[string]storage.Field{
+				"Id": {APIName: "Id", Type: storage.FieldID},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"aOb00000000LFLUCA4": {ID: "aOb00000000LFLUCA4", Object: "znu__Product__c"},
+		},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.activeTriggerNamespaces = []string{"namz"}
+	if err := machine.RegisterClass(Class{
+		Name:       "ProductQuery",
+		Namespace:  "znu",
+		Access:     "global",
+		Dependency: true,
+		Methods: map[string]Method{
+			"run": {Name: "ProductQuery.run", ClassName: "ProductQuery", ReturnType: "Integer", IsStatic: true, Access: "global", Program: queryProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

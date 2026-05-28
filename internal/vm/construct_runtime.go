@@ -13,6 +13,26 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+func (vm *VM) allowsReflectionClassConstruction(typeName string, class Class) bool {
+	if vm == nil || strings.TrimSpace(vm.reflectionConstructType) == "" {
+		return false
+	}
+	target := strings.TrimSpace(vm.reflectionConstructType)
+	return strings.EqualFold(target, typeName) ||
+		strings.EqualFold(target, class.Name) ||
+		strings.EqualFold(target, runtimeClassName(class)) ||
+		strings.EqualFold(target, vm.classTypeToken(class))
+}
+
+func reflectionConstructableAccess(access string) bool {
+	switch strings.ToLower(strings.TrimSpace(access)) {
+	case "public", "global", "webservice":
+		return true
+	default:
+		return false
+	}
+}
+
 func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs map[string]Value, result *Result, literalArgs bool) (Value, error) {
 	if isCanonicalRuntimeTypeName(typeName) {
 		typeName = canonicalRuntimeTypeName(typeName)
@@ -186,8 +206,14 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if class.IsInterface {
 			return Null, fmt.Errorf("cannot instantiate interface %s", typeName)
 		}
-		if err := vm.checkClassAccess(typeName, typeName); err != nil {
-			return Null, err
+		reflectionConstruction := vm.allowsReflectionClassConstruction(typeName, class)
+		if !reflectionConstruction {
+			if err := vm.checkClassAccess(typeName, typeName); err != nil {
+				return Null, err
+			}
+		}
+		if reflectionConstruction && vm.currentCallerNamespace() != class.Namespace && !reflectionConstructableAccess(class.Access) {
+			return Null, fmt.Errorf("%s is not instantiable through Type.newInstance", typeName)
 		}
 		if class.IsAbstract {
 			return Null, fmt.Errorf("cannot instantiate abstract class %s", typeName)
@@ -412,6 +438,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		rawURL := ""
 		if len(args) == 1 {
+			if args[0].Kind == ValueNull {
+				return Null, newExceptionError("NullPointerException", "Argument 1 cannot be null")
+			}
 			if args[0].Kind != ValueString {
 				return Null, fmt.Errorf("PageReference constructor expects URL String")
 			}
@@ -2993,11 +3022,42 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 			return vm.typeAssignableTo(fromKey, toKey) && vm.typeAssignableTo(fromValue, toValue)
 		}
 	}
+	if !strings.Contains(to, ".") && vm.typeHasShortAncestor(from, to, make(map[string]bool)) {
+		return true
+	}
 	if numericConversionScore(to, from) >= 0 {
 		return true
 	}
 	if _, ok := vm.typeDistance(from, to, make(map[string]bool)); ok {
 		return true
+	}
+	return false
+}
+
+func (vm *VM) typeHasShortAncestor(typeName, target string, seen map[string]bool) bool {
+	typeName = strings.TrimSpace(systemInterfaceAlias(typeName))
+	target = strings.TrimSpace(systemInterfaceAlias(target))
+	if typeName == "" || target == "" || strings.Contains(target, ".") || seen[typeName] {
+		return false
+	}
+	if resolved, ok := vm.resolveClassName(typeName); ok {
+		typeName = resolved
+	}
+	if strings.EqualFold(shortTypeName(typeName), target) {
+		return true
+	}
+	seen[typeName] = true
+	class, ok := vm.lookupClass(typeName)
+	if !ok {
+		return false
+	}
+	if superName := vm.resolvedSuperClassName(class); superName != "" && vm.typeHasShortAncestor(superName, target, seen) {
+		return true
+	}
+	for _, iface := range class.Interfaces {
+		if vm.typeHasShortAncestor(vm.resolvedInterfaceName(class, iface), target, seen) {
+			return true
+		}
 	}
 	return false
 }
@@ -3354,6 +3414,9 @@ func (vm *VM) typeDistance(typeName, target string, seen map[string]bool) (int, 
 	if strings.EqualFold(typeName, target) || vm.classNamesReferToSameRuntimeType(typeName, target) {
 		return 0, true
 	}
+	if !strings.Contains(target, ".") && strings.EqualFold(shortTypeName(typeName), target) {
+		return 0, true
+	}
 	seen[typeName] = true
 	class, ok := vm.lookupClass(typeName)
 	if !ok {
@@ -3607,6 +3670,13 @@ func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
 	}
 	if vm.classNamesReferToSameRuntimeType(typeName, target) {
 		return true
+	}
+	if collectionBase(typeName) != "" && strings.EqualFold(collectionBase(typeName), collectionBase(target)) {
+		fromElement, fromOK := collectionElementType(typeName)
+		toElement, toOK := collectionElementType(target)
+		if fromOK && toOK && (vm.typeAssignableTo(fromElement, toElement) || vm.typeMatches(fromElement, toElement, make(map[string]bool))) {
+			return true
+		}
 	}
 	if !strings.Contains(target, ".") && strings.EqualFold(shortTypeName(typeName), target) {
 		return true
@@ -4170,6 +4240,20 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 				value.Static = typeName
 			}
 			return value, nil
+		}
+		for _, valueType := range []string{value.Runtime, value.Static} {
+			if strings.TrimSpace(valueType) == "" || strings.EqualFold(valueType, value.Type) {
+				continue
+			}
+			if vm.typeAssignableTo(valueType, typeName) || vm.typeMatches(valueType, typeName, make(map[string]bool)) {
+				if !strings.EqualFold(typeName, "Object") && !strings.EqualFold(valueType, typeName) {
+					if value.Runtime == "" {
+						value.Runtime = valueType
+					}
+					value.Static = typeName
+				}
+				return value, nil
+			}
 		}
 		if managedAPIVersionedTypeAssignable(value.Type, typeName) {
 			if value.Runtime == "" {

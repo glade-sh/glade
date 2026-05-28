@@ -4851,6 +4851,63 @@ private class JSONAutoSetterMappingTest {
 	}
 }
 
+func TestRunJSONGeneratorRoundTripsCustomPropertyBackingField(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSONBackedPropertyPayload.cls"), `
+public class JSONBackedPropertyPayload {
+  private Boolean enabled = false;
+  public Boolean Enabled {
+    get { return enabled; }
+    set { enabled = value; }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSONBackedPropertyEnvelope.cls"), `
+public class JSONBackedPropertyEnvelope {
+  private JSONBackedPropertyPayload payload;
+  public JSONBackedPropertyPayload Payload {
+    get {
+      if (payload == null) {
+        payload = new JSONBackedPropertyPayload();
+      }
+      return payload;
+    }
+    set { payload = value; }
+  }
+  public void saveTo(Account account) {
+    JSONGenerator gen = JSON.createGenerator(false);
+    gen.writeStartObject();
+    gen.writeObjectField('Payload', payload);
+    gen.writeEndObject();
+    account.Description = gen.getAsString();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSONBackedPropertyTest.cls"), `
+@isTest
+private class JSONBackedPropertyTest {
+  @isTest static void generatorUsesCustomGetterNameForRoundTrip() {
+    Account account = new Account();
+    JSONBackedPropertyEnvelope envelope = new JSONBackedPropertyEnvelope();
+    envelope.Payload.Enabled = true;
+    envelope.saveTo(account);
+    System.assertEquals('{"Payload":{"Enabled":true}}', account.Description);
+    JSONBackedPropertyEnvelope restored = (JSONBackedPropertyEnvelope)JSON.deserialize(
+      account.Description,
+      JSONBackedPropertyEnvelope.class
+    );
+    System.assertEquals(true, restored.Payload.Enabled);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestRunPropertySetterSeesAutoPropertyAssignedInConstructor(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -6785,6 +6842,81 @@ private class NestedRequestTest {
     } catch (IllegalArgumentException e) {
       System.assertEquals('must override', e.getMessage());
     }
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunTypeForNameDoesNotResolveTopLevelTestClass(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ReflectiveTest.cls"), `
+@isTest
+private class ReflectiveTest {
+  public class Helper {
+    public String value() {
+      return 'ok';
+    }
+  }
+
+  @isTest static void topLevelTestClassIsHiddenButNestedHelperResolves() {
+    System.assertEquals(null, Type.forName('ReflectiveTest'));
+    Object helper = Type.forName('ReflectiveTest.Helper').newInstance();
+    System.assertEquals('ok', ((Helper) helper).value());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunTypeForNameResolvesQualifiedTopLevelTestClass(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ReflectiveQualifiedTest.cls"), `
+@isTest
+private class ReflectiveQualifiedTest {
+  @isTest static void qualifiedTestClassTokenResolves() {
+    System.assertEquals(null, Type.forName('ReflectiveQualifiedTest'));
+    Type qualified = Type.forName(ReflectiveQualifiedTest.class.getName());
+    System.assertNotEquals(null, qualified);
+    Object instance = qualified.newInstance();
+    System.assert(instance instanceof ReflectiveQualifiedTest);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunTypeForNameResolvesPublicTopLevelTestHelper(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ReflectiveHelper.cls"), `
+@isTest
+public class ReflectiveHelper {
+  public String value() {
+    return 'ok';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ReflectiveHelperTest.cls"), `
+@isTest
+private class ReflectiveHelperTest {
+  @isTest static void publicTopLevelTestHelperResolves() {
+    Object helper = Type.forName('ReflectiveHelper').newInstance();
+    System.assertEquals('ok', ((ReflectiveHelper) helper).value());
   }
 }
 `)

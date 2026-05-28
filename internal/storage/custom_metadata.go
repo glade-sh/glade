@@ -94,13 +94,13 @@ func ApplyCustomMetadataRecords(org *OrgState, records []schema.CustomMetadataRe
 		}
 		state := org.Objects[pendingRecord.objectName]
 		record := state.Records[pendingRecord.id]
-		for field, target := range pendingRecord.refs {
-			id, ok := resolveCustomMetadataRecordID(*org, target)
+		for field, ref := range pendingRecord.refs {
+			id, ok := resolveCustomMetadataRecordID(*org, ref.raw, ref.targets)
 			if !ok {
 				return UnsupportedMetadataError{
 					File:    pendingRecord.source.File,
 					Feature: "custom metadata relationship",
-					Message: fmt.Sprintf("cannot resolve %s value %q", field, target),
+					Message: fmt.Sprintf("cannot resolve %s value %q", field, ref.raw),
 				}
 			}
 			record.Fields[field] = IDValue(id)
@@ -154,7 +154,12 @@ type customMetadataPendingRecord struct {
 	objectName string
 	source     schema.CustomMetadataRecord
 	fields     map[string]Value
-	refs       map[string]string
+	refs       map[string]customMetadataReference
+}
+
+type customMetadataReference struct {
+	raw     string
+	targets []string
 }
 
 func customMetadataState(org *OrgState, source schema.CustomMetadataRecord) (string, ObjectState, error) {
@@ -188,7 +193,7 @@ func customMetadataState(org *OrgState, source schema.CustomMetadataRecord) (str
 	return objectName, state, nil
 }
 
-func customMetadataFields(org OrgState, definition ObjectDefinition, source schema.CustomMetadataRecord) (map[string]Value, map[string]string, error) {
+func customMetadataFields(org OrgState, definition ObjectDefinition, source schema.CustomMetadataRecord) (map[string]Value, map[string]customMetadataReference, error) {
 	fields := map[string]Value{
 		"DeveloperName":    StringValue(source.DeveloperName),
 		"MasterLabel":      StringValue(labelOrDeveloperName(source.Label, source.DeveloperName)),
@@ -196,7 +201,7 @@ func customMetadataFields(org OrgState, definition ObjectDefinition, source sche
 		"NamespacePrefix":  StringValue(customMetadataNamespace(org.Namespace, definition.APIName)),
 		"QualifiedApiName": StringValue(customMetadataQualifiedName(org.Namespace, definition.APIName, source.DeveloperName)),
 	}
-	refs := make(map[string]string)
+	refs := make(map[string]customMetadataReference)
 	for _, value := range source.Values {
 		fieldName, ok := ResolveFieldName(definition, org.Namespace, value.Field)
 		if !ok {
@@ -212,7 +217,10 @@ func customMetadataFields(org OrgState, definition ObjectDefinition, source sche
 			return nil, nil, UnsupportedMetadataError{File: source.File, Feature: "custom metadata field", Message: fmt.Sprintf("%s.%s %v", definition.APIName, fieldName, err)}
 		}
 		if isRef {
-			refs[fieldName] = value.Value
+			refs[fieldName] = customMetadataReference{
+				raw:     value.Value,
+				targets: append([]string(nil), field.ReferenceTo...),
+			}
 			continue
 		}
 		fields[fieldName] = converted
@@ -270,7 +278,7 @@ func fieldReferencesEntityDefinition(field Field) bool {
 	return false
 }
 
-func resolveCustomMetadataRecordID(org OrgState, raw string) (ID, bool) {
+func resolveCustomMetadataRecordID(org OrgState, raw string, targets []string) (ID, bool) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
 		return "", false
@@ -278,8 +286,11 @@ func resolveCustomMetadataRecordID(org OrgState, raw string) (ID, bool) {
 	if err := ValidateID(ID(raw)); err == nil {
 		return ID(raw), true
 	}
-	for _, state := range org.Objects {
+	for objectName, state := range org.Objects {
 		if !IsCustomMetadataDefinition(state.Definition) {
+			continue
+		}
+		if len(targets) > 0 && !customMetadataObjectMatchesTarget(org, objectName, state.Definition, targets) {
 			continue
 		}
 		for _, record := range state.Records {
@@ -293,17 +304,47 @@ func resolveCustomMetadataRecordID(org OrgState, raw string) (ID, bool) {
 	return "", false
 }
 
+func customMetadataObjectMatchesTarget(org OrgState, objectName string, definition ObjectDefinition, targets []string) bool {
+	for _, target := range targets {
+		target = strings.TrimSpace(target)
+		if target == "" {
+			continue
+		}
+		if resolved, ok := ResolveObjectName(org, target); ok {
+			if strings.EqualFold(resolved, objectName) || strings.EqualFold(resolved, definition.APIName) {
+				return true
+			}
+		}
+		if strings.EqualFold(target, objectName) || strings.EqualFold(target, definition.APIName) {
+			return true
+		}
+		if strings.EqualFold(StripAnyNamespaceToken(target), StripAnyNamespaceToken(objectName)) ||
+			strings.EqualFold(StripAnyNamespaceToken(target), StripAnyNamespaceToken(definition.APIName)) {
+			return true
+		}
+	}
+	return false
+}
+
 func customMetadataRecordNames(namespace string, definition ObjectDefinition, record Record) []string {
 	var out []string
 	developerName := firstString(record, "DeveloperName")
 	qualifiedName := firstString(record, "QualifiedApiName")
+	typeName := strings.TrimSuffix(definition.APIName, "__mdt")
+	localTypeName := strings.TrimSuffix(StripAnyNamespaceToken(definition.APIName), "__mdt")
 	if developerName != "" {
 		out = append(out, developerName)
-		out = append(out, strings.TrimSuffix(definition.APIName, "__mdt")+"."+developerName)
+		out = append(out, typeName+"."+developerName)
+		if localTypeName != "" && !strings.EqualFold(localTypeName, typeName) {
+			out = append(out, localTypeName+"."+developerName)
+		}
 	}
 	if qualifiedName != "" {
 		out = append(out, qualifiedName)
-		out = append(out, strings.TrimSuffix(definition.APIName, "__mdt")+"."+qualifiedName)
+		out = append(out, typeName+"."+qualifiedName)
+		if localTypeName != "" && !strings.EqualFold(localTypeName, typeName) {
+			out = append(out, localTypeName+"."+qualifiedName)
+		}
 	}
 	if namespace != "" && developerName != "" {
 		out = append(out, namespace+"__"+developerName)

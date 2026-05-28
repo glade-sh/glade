@@ -868,6 +868,64 @@ func TestExecuteCustomMetadataChildRelationshipUsesLocalQualifiedNames(t *testin
 	}
 }
 
+func TestExecuteChildRelationshipSubqueryStripsChildObjectQualifier(t *testing.T) {
+	org := storage.NewOrgState()
+	parentDefinition := storage.ObjectDefinition{
+		APIName: "Parent__c",
+		Fields: map[string]storage.Field{
+			"Name": {APIName: "Name", Type: storage.FieldString},
+		},
+		Relations: []storage.Relationship{{
+			Field:              "Parent__c",
+			ParentObjects:      []string{"Parent__c"},
+			ParentRelationship: "Parent__r",
+			ChildRelationship:  "Children__r",
+		}},
+	}
+	childDefinition := storage.ObjectDefinition{
+		APIName: "Child__c",
+		Fields: map[string]storage.Field{
+			"Name__c":   {APIName: "Name__c", Type: storage.FieldString},
+			"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
+		},
+		Relations: []storage.Relationship{{
+			Field:              "Parent__c",
+			ParentObjects:      []string{"Parent__c"},
+			ParentRelationship: "Parent__r",
+			ChildRelationship:  "Children__r",
+		}},
+	}
+	storage.EnsureStandardObjectFields(&parentDefinition)
+	storage.EnsureStandardObjectFields(&childDefinition)
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: parentDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {ID: "a00000000000001", Object: "Parent__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Parent")}},
+		},
+	}
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: childDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {ID: "a01000000000001", Object: "Child__c", Fields: map[string]storage.Value{
+				"Name__c":   storage.StringValue("Child"),
+				"Parent__c": storage.IDValue("a00000000000001"),
+			}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Child__c.Id, Child__c.Name__c FROM Children__r) FROM Parent__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	children := result.Records[0].Children["Children__r"]
+	if len(children) != 1 {
+		t.Fatalf("children = %#v", result.Records[0].Children)
+	}
+	if got := children[0].Fields["Name__c"]; got.Kind != storage.ValueString || got.String != "Child" {
+		t.Fatalf("child Name__c = %#v", got)
+	}
+}
+
 func TestExecuteEntityDefinitionMetadataRelationship(t *testing.T) {
 	sch := schema.Schema{Objects: []schema.Object{
 		{

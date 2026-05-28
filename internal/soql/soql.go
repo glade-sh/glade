@@ -1322,6 +1322,7 @@ func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	if query.Count || len(query.Aggregates) > 0 || len(query.GroupBy) > 0 || query.Having != nil {
 		return preparedChildRelationshipQuery{}, fmt.Errorf("soql: aggregate child relationship subqueries are not supported")
 	}
+	query.Fields = normalizeChildRelationshipSelectFields(org, childObjectName, childObject.Definition, query.Fields)
 	fields, err := expandFieldsFunctions(childObject.Definition, query.Fields)
 	if err != nil {
 		return preparedChildRelationshipQuery{}, err
@@ -1342,6 +1343,40 @@ func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		childCache.prepared[key] = prepared
 	}
 	return prepared, nil
+}
+
+func normalizeChildRelationshipSelectFields(org storage.OrgState, childObjectName string, definition storage.ObjectDefinition, fields []string) []string {
+	out := make([]string, len(fields))
+	for i, field := range fields {
+		out[i] = normalizeChildRelationshipSelectField(org, childObjectName, definition, field)
+	}
+	return out
+}
+
+func normalizeChildRelationshipSelectField(org storage.OrgState, childObjectName string, definition storage.ObjectDefinition, field string) string {
+	prefix, rest, ok := strings.Cut(field, ".")
+	if !ok || strings.TrimSpace(prefix) == "" || strings.TrimSpace(rest) == "" {
+		return field
+	}
+	if childRelationshipFieldQualifierMatches(org, childObjectName, definition, prefix) {
+		return rest
+	}
+	return field
+}
+
+func childRelationshipFieldQualifierMatches(org storage.OrgState, childObjectName string, definition storage.ObjectDefinition, prefix string) bool {
+	prefix = strings.TrimSpace(prefix)
+	if prefix == "" {
+		return false
+	}
+	if strings.EqualFold(prefix, childObjectName) || strings.EqualFold(prefix, definition.APIName) {
+		return true
+	}
+	if resolved, ok := storage.ResolveObjectName(org, prefix); ok {
+		return strings.EqualFold(resolved, childObjectName) || strings.EqualFold(resolved, definition.APIName)
+	}
+	return strings.EqualFold(storage.StripAnyNamespaceToken(prefix), storage.StripAnyNamespaceToken(childObjectName)) ||
+		strings.EqualFold(storage.StripAnyNamespaceToken(prefix), storage.StripAnyNamespaceToken(definition.APIName))
 }
 
 func childRelationshipIndex(org storage.OrgState, childObjectName string, childObject storage.ObjectState, field string, childCache *childRelationshipQueryCache) map[storage.ID][]string {
@@ -1863,7 +1898,8 @@ func validateQueryReferences(org storage.OrgState, definition storage.ObjectDefi
 			return childRelationshipUnavailableError(childQuery.Relationship, mode)
 		}
 		child := org.Objects[childName]
-		childFields, err := expandFieldsFunctions(child.Definition, childQuery.Query.Fields)
+		normalizedFields := normalizeChildRelationshipSelectFields(org, childName, child.Definition, childQuery.Query.Fields)
+		childFields, err := expandFieldsFunctions(child.Definition, normalizedFields)
 		if err != nil {
 			return err
 		}

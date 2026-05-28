@@ -1740,8 +1740,16 @@ func (vm *VM) defaultNullSObjectAccessValue(typeName string) (Value, bool) {
 }
 
 func (vm *VM) relationshipNullFieldAccessValue(typeName, field string) (Value, bool) {
+	if isCustomRelationshipFieldName(field) {
+		value := typedNull(relationshipNameObjectType(field))
+		value.Runtime = relationshipNullRuntime
+		return value, true
+	}
 	_, fieldDef, ok := vm.sObjectFieldDefinition(typeName, field)
 	if !ok {
+		if value, ok := inferredRelationshipNullFieldAccessValue(field); ok {
+			return value, true
+		}
 		return Null, false
 	}
 	if defaultValue, ok := storage.DefaultValueForField(fieldDef); ok {
@@ -1751,6 +1759,34 @@ func (vm *VM) relationshipNullFieldAccessValue(typeName, field string) (Value, b
 		return Bool(false), true
 	}
 	return storageFieldNullValue(fieldDef), true
+}
+
+func inferredRelationshipNullFieldAccessValue(field string) (Value, bool) {
+	field = strings.TrimSpace(field)
+	if field == "" {
+		return Null, false
+	}
+	if strings.HasSuffix(strings.ToLower(field), "__r") {
+		value := typedNull(relationshipNameObjectType(field))
+		value.Runtime = relationshipNullRuntime
+		return value, true
+	}
+	if strings.EqualFold(field, "Id") || strings.HasSuffix(strings.ToLower(field), "id") || strings.HasSuffix(strings.ToLower(field), "__c") {
+		return typedNull("Id"), true
+	}
+	return Null, true
+}
+
+func relationshipNameObjectType(relationship string) string {
+	relationship = strings.TrimSpace(relationship)
+	if strings.HasSuffix(strings.ToLower(relationship), "__r") {
+		return relationship[:len(relationship)-len("__r")] + "__c"
+	}
+	return relationship
+}
+
+func isCustomRelationshipFieldName(field string) bool {
+	return strings.HasSuffix(strings.ToLower(strings.TrimSpace(field)), "__r")
 }
 
 func (vm *VM) explicitParentRelationshipNullValue(receiver Value, relationshipName string) (Value, bool) {

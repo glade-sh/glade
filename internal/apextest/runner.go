@@ -1829,6 +1829,7 @@ func compileProjectTriggers(index typesys.Index, caches ...sourceCache) ([]vm.Tr
 func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 	org := storage.NewOrgState()
 	org.Namespace = index.Project.Namespace
+	org.OrgID = "00D000000000000"
 	registry := sobject.BuildDescribeRegistry(schemaFromIndex(index))
 	for name, describe := range registry.Objects {
 		org.Objects[name] = storage.ObjectState{

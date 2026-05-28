@@ -39,6 +39,16 @@ func (e *apexThrowError) Error() string {
 	return e.value.String()
 }
 
+func apexConditionBool(value Value, context string) (bool, error) {
+	if value.Kind == ValueBool {
+		return value.Bool, nil
+	}
+	if value.Kind == ValueNull {
+		return false, newNullDereferenceError(context)
+	}
+	return false, fmt.Errorf("%s requires Boolean, got %s", context, value.Kind)
+}
+
 func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, error) {
 	for seq, inst := range program.Instructions {
 		vm.limits.CPUTimeMS++
@@ -118,11 +128,12 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 			if err != nil {
 				return execOutcome{}, err
 			}
-			if condition.Kind != ValueBool {
-				return execOutcome{}, fmt.Errorf("if condition requires Boolean, got %s", condition.Kind)
+			conditionValue, err := apexConditionBool(condition, "if condition")
+			if err != nil {
+				return execOutcome{}, err
 			}
 			branch := inst.Else
-			if condition.Bool {
+			if conditionValue {
 				branch = inst.Then
 			}
 			if len(branch) > 0 {
@@ -373,10 +384,11 @@ func (vm *VM) executeWhile(source string, inst ir.Instruction, result *Result) (
 		if err != nil {
 			return execOutcome{}, err
 		}
-		if condition.Kind != ValueBool {
-			return execOutcome{}, fmt.Errorf("while condition requires Boolean, got %s", condition.Kind)
+		conditionValue, err := apexConditionBool(condition, "while condition")
+		if err != nil {
+			return execOutcome{}, err
 		}
-		if !condition.Bool {
+		if !conditionValue {
 			return execOutcome{}, nil
 		}
 		out, err := vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)
@@ -415,10 +427,11 @@ func (vm *VM) executeDoWhile(source string, inst ir.Instruction, result *Result)
 		if err != nil {
 			return execOutcome{}, err
 		}
-		if condition.Kind != ValueBool {
-			return execOutcome{}, fmt.Errorf("do/while condition requires Boolean, got %s", condition.Kind)
+		conditionValue, err := apexConditionBool(condition, "do/while condition")
+		if err != nil {
+			return execOutcome{}, err
 		}
-		if !condition.Bool {
+		if !conditionValue {
 			return execOutcome{}, nil
 		}
 	}
@@ -443,10 +456,11 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 		if err != nil {
 			return execOutcome{}, err
 		}
-		if condition.Kind != ValueBool {
-			return execOutcome{}, fmt.Errorf("for condition requires Boolean, got %s", condition.Kind)
+		conditionValue, err := apexConditionBool(condition, "for condition")
+		if err != nil {
+			return execOutcome{}, err
 		}
-		if !condition.Bool {
+		if !conditionValue {
 			return execOutcome{}, nil
 		}
 		out, err := vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)

@@ -2546,10 +2546,13 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 		*jobs = append((*jobs)[:jobIndex], (*jobs)[jobIndex+1:]...)
 		processed++
 		var collectionSnapshot map[string]map[string]Value
+		var collectionStaticInitSnapshot map[string]staticInitState
 		if vm.testContext != nil {
 			collectionSnapshot = vm.staticCollectionFieldSnapshot()
+			collectionStaticInitSnapshot = copyStaticInitStateMap(vm.staticInitState)
 			if err := vm.ResetTestAsyncStaticCollections(); err != nil {
 				vm.restoreStaticFieldSnapshot(collectionSnapshot)
+				vm.staticInitState = copyStaticInitStateMap(collectionStaticInitSnapshot)
 				return err
 			}
 		} else {
@@ -2566,6 +2569,7 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 		err := vm.runAsyncJob(job, result)
 		if collectionSnapshot != nil {
 			vm.restoreStaticFieldSnapshot(collectionSnapshot)
+			vm.staticInitState = copyStaticInitStateMap(collectionStaticInitSnapshot)
 		}
 		if err != nil {
 			vm.recordAsyncJob(job, "Failed", err.Error())
@@ -6978,6 +6982,16 @@ func (vm *VM) classNamespace(className string) string {
 }
 
 func (vm *VM) currentCallerNamespace() string {
+	if vm.currentMethodMatchesExecutionClass() {
+		if ns := vm.classNamespace(vm.currentMethod.ClassName); ns != "" {
+			return ns
+		}
+		if owner := classNameFromMethod(vm.currentMethod.Name); owner != "" && !strings.EqualFold(owner, vm.currentMethod.ClassName) {
+			if ns := vm.classNamespace(owner); ns != "" {
+				return ns
+			}
+		}
+	}
 	if count := len(vm.activeTriggerNamespaces); count > 0 {
 		if ns := strings.TrimSpace(vm.activeTriggerNamespaces[count-1]); ns != "" {
 			return ns
@@ -6994,14 +7008,6 @@ func (vm *VM) currentCallerNamespace() string {
 			return ns
 		}
 	}
-	if ns := vm.classNamespace(vm.currentMethod.ClassName); ns != "" {
-		return ns
-	}
-	if owner := classNameFromMethod(vm.currentMethod.Name); owner != "" && !strings.EqualFold(owner, vm.currentMethod.ClassName) {
-		if ns := vm.classNamespace(owner); ns != "" {
-			return ns
-		}
-	}
 	if ns := vm.classNamespace(vm.currentClass); ns != "" {
 		return ns
 	}
@@ -7009,6 +7015,15 @@ func (vm *VM) currentCallerNamespace() string {
 		return ns
 	}
 	return ""
+}
+
+func (vm *VM) currentMethodMatchesExecutionClass() bool {
+	methodClass := strings.TrimSpace(vm.currentMethod.ClassName)
+	if methodClass == "" {
+		return false
+	}
+	currentClass := strings.TrimSpace(vm.currentClass)
+	return currentClass == "" || vm.sameAccessScope(currentClass, methodClass)
 }
 
 func (vm *VM) currentTriggerNamespace() string {
@@ -7202,7 +7217,7 @@ func apexIdentifierStartsUpper(name string) bool {
 	return first >= 'A' && first <= 'Z'
 }
 
-func (vm *VM) typeForName(namespace, name string) Value {
+func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value {
 	if strings.TrimSpace(name) == "" {
 		return Null
 	}
@@ -7229,6 +7244,9 @@ func (vm *VM) typeForName(namespace, name string) Value {
 	}
 	if resolved, ok := vm.resolveClassName(name); ok {
 		if class, ok := vm.lookupClass(resolved); ok {
+			if !explicitNamespace && !strings.Contains(name, ".") && !typeForNameClassVisible(class) {
+				return Null
+			}
 			return platformScalar("Type", vm.classTypeToken(class))
 		}
 		return platformScalar("Type", resolved)
@@ -7245,6 +7263,18 @@ func (vm *VM) typeForName(namespace, name string) Value {
 		return platformScalar("Type", name)
 	}
 	return Null
+}
+
+func typeForNameClassVisible(class Class) bool {
+	if !class.IsTest || strings.Contains(class.Name, ".") {
+		return true
+	}
+	switch strings.ToLower(class.Access) {
+	case "public", "global":
+		return true
+	default:
+		return false
+	}
 }
 
 func namespaceTypeNameCandidates(namespace, name string) []string {
@@ -7805,7 +7835,7 @@ func dataWeaveValueAsString(value Value) string {
 	if text, ok := dataWeaveOrderedJSON(value); ok {
 		return text
 	}
-	data, err := json.MarshalIndent(jsonFromValue(value, false), "", "  ")
+	data, err := jsonMarshalNoEscapeIndent(jsonFromValue(value, false), "", "  ")
 	if err != nil {
 		return value.String()
 	}
@@ -7848,7 +7878,7 @@ func dataWeaveWriteJSONField(b *strings.Builder, value Value, field string, firs
 	if !first {
 		b.WriteString(",")
 	}
-	data, err := json.Marshal(jsonFromValue(item, false))
+	data, err := jsonMarshalNoEscape(jsonFromValue(item, false))
 	if err != nil {
 		data = []byte(strconv.Quote(item.String()))
 	}
@@ -12195,6 +12225,9 @@ func newComponentApexValue(typeName string, namedArgs map[string]Value) Value {
 	object.Fields["id"] = Null
 	object.Fields["parent"] = Null
 	object.Fields["rendered"] = Bool(true)
+	if strings.EqualFold(typeName, "Component.Apex.PageBlockTable") {
+		object.Fields["rows"] = Int(0)
+	}
 	for field, value := range namedArgs {
 		object.Fields[field] = value
 	}

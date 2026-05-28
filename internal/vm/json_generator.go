@@ -20,7 +20,7 @@ func newJSONGenerator(pretty bool) Value {
 	return gen
 }
 
-func callJSONGeneratorMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+func (vm *VM) callJSONGeneratorMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	if receiver.Type != "JSONGenerator" {
 		return Null, receiver, false, false, nil
 	}
@@ -68,12 +68,12 @@ func callJSONGeneratorMember(receiver Value, method string, args []Value) (Value
 		if len(args) != 1 {
 			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeObject expects Object")
 		}
-		return jsonGeneratorWriteAny(receiver, args[0])
+		return vm.jsonGeneratorWriteAny(receiver, args[0])
 	case "writeObjectField":
 		if len(args) != 2 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeObjectField expects String field name and Object value")
 		}
-		return jsonGeneratorWriteAnyField(receiver, args[0].Text, args[1])
+		return vm.jsonGeneratorWriteAnyField(receiver, args[0].Text, args[1])
 	case "writeNumber":
 		if len(args) != 1 || !jsonGeneratorIsNumber(args[0]) {
 			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeNumber expects numeric value")
@@ -285,12 +285,12 @@ func jsonGeneratorWriteField(receiver Value, name string, value Value) (Value, V
 	return jsonGeneratorWriteScalar(updated, value)
 }
 
-func jsonGeneratorWriteAnyField(receiver Value, name string, value Value) (Value, Value, bool, bool, error) {
+func (vm *VM) jsonGeneratorWriteAnyField(receiver Value, name string, value Value) (Value, Value, bool, bool, error) {
 	updated, err := jsonGeneratorWriteFieldName(receiver, name)
 	if err != nil {
 		return Null, updated, true, true, err
 	}
-	return jsonGeneratorWriteAny(updated, value)
+	return vm.jsonGeneratorWriteAny(updated, value)
 }
 
 func jsonGeneratorWriteFieldName(receiver Value, name string) (Value, error) {
@@ -345,7 +345,7 @@ func jsonGeneratorWriteScalar(receiver Value, value Value) (Value, Value, bool, 
 	return Null, updated, true, true, nil
 }
 
-func jsonGeneratorWriteAny(receiver Value, value Value) (Value, Value, bool, bool, error) {
+func (vm *VM) jsonGeneratorWriteAny(receiver Value, value Value) (Value, Value, bool, bool, error) {
 	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
 		return Null, receiver, false, true, err
 	}
@@ -353,7 +353,7 @@ func jsonGeneratorWriteAny(receiver Value, value Value) (Value, Value, bool, boo
 	if err != nil {
 		return Null, updated, true, true, err
 	}
-	rendered, err := jsonGeneratorRenderAny(value)
+	rendered, err := vm.jsonGeneratorRenderAny(value)
 	if err != nil {
 		return Null, updated, true, true, err
 	}
@@ -457,14 +457,30 @@ func jsonGeneratorClose(receiver Value) (Value, error) {
 	if jsonGeneratorBoolField(updated, "closed").Bool {
 		return updated, nil
 	}
-	if stack := jsonGeneratorStack(updated); len(stack.List) != 0 {
-		return updated, jsonGeneratorException("JSONGenerator cannot close with open JSON containers")
+	stack := jsonGeneratorStack(updated)
+	for len(stack.List) > 0 {
+		frame := stack.List[len(stack.List)-1]
+		kind := jsonGeneratorStringField(frame, "kind").Text
+		if kind == "object" {
+			if !jsonGeneratorBoolField(frame, "expectingField").Bool {
+				jsonGeneratorTrimPendingFieldSeparator(&updated)
+			}
+			jsonGeneratorAppend(&updated, "}")
+		} else {
+			jsonGeneratorAppend(&updated, "]")
+		}
+		stack.List = stack.List[:len(stack.List)-1]
 	}
-	if !jsonGeneratorBoolField(updated, "rootWritten").Bool {
-		return updated, jsonGeneratorException("JSONGenerator cannot close before writing a root value")
-	}
+	updated.Fields["stack"] = stack
 	updated.Fields["closed"] = Bool(true)
 	return updated, nil
+}
+
+func jsonGeneratorTrimPendingFieldSeparator(receiver *Value) {
+	current := jsonGeneratorStringField(*receiver, "out").Text
+	current = strings.TrimSuffix(current, ": ")
+	current = strings.TrimSuffix(current, ":")
+	receiver.Fields["out"] = String(current)
 }
 
 func jsonGeneratorEnsureOpen(receiver Value) error {
@@ -497,7 +513,7 @@ func jsonGeneratorRenderScalar(value Value) (string, error) {
 		return strconv.FormatFloat(value.Decimal, 'f', -1, 64), nil
 	case ValueObject:
 		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
-			data, err := json.Marshal(scalar)
+			data, err := jsonMarshalNoEscape(scalar)
 			if err != nil {
 				return "", err
 			}
@@ -513,8 +529,8 @@ func jsonGeneratorException(format string, args ...any) error {
 	return newExceptionError("JSONException", fmt.Sprintf(format, args...))
 }
 
-func jsonGeneratorRenderAny(value Value) (string, error) {
-	data, err := json.Marshal(jsonFromValue(value, false))
+func (vm *VM) jsonGeneratorRenderAny(value Value) (string, error) {
+	data, err := jsonMarshalNoEscape(vm.jsonFromValueForSerialize(value, false))
 	if err != nil {
 		return "", err
 	}
@@ -554,7 +570,7 @@ func jsonPlatformScalarFromValue(value Value) (any, bool) {
 }
 
 func jsonGeneratorQuote(text string) string {
-	data, err := json.Marshal(text)
+	data, err := jsonMarshalNoEscape(text)
 	if err != nil {
 		return "\"\""
 	}
