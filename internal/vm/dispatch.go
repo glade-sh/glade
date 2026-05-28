@@ -2756,7 +2756,11 @@ platformStaticCall:
 		if len(args) != 1 {
 			return Null, fmt.Errorf("UserInfo.hasPackageLicense expects 1 argument")
 		}
-		return Bool(vm.currentUserHasPackageLicense(args[0])), nil
+		licensed, err := vm.currentUserHasPackageLicense(args[0])
+		if err != nil {
+			return Null, err
+		}
+		return Bool(licensed), nil
 	case "UserInfo.isCurrentUserLicensed":
 		if len(args) != 1 {
 			return Null, fmt.Errorf("UserInfo.isCurrentUserLicensed expects 1 argument")
@@ -2766,7 +2770,11 @@ platformStaticCall:
 		if len(args) != 1 {
 			return Null, fmt.Errorf("UserInfo.isCurrentUserLicensedForPackage expects 1 argument")
 		}
-		return Bool(vm.currentUserHasPackageLicense(args[0])), nil
+		licensed, err := vm.currentUserHasPackageLicense(args[0])
+		if err != nil {
+			return Null, err
+		}
+		return Bool(licensed), nil
 	case "UserInfo.isMultiCurrencyOrganization":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.isMultiCurrencyOrganization expects 0 arguments")

@@ -581,6 +581,13 @@ func coerceCollectionValue(typeName string, value Value) (Value, error) {
 		if !ok {
 			return value, nil
 		}
+		if strings.EqualFold(elementType, "SObject") && len(value.List) == 0 {
+			if runtimeElementType, ok := collectionElementType(value.Runtime); ok && !collectionElementCarriesSObjectType(runtimeElementType) {
+				value.Runtime = ""
+			}
+			value.Static = typeName
+			return value, nil
+		}
 		for i, item := range value.List {
 			coerced, err := coerceAssignable(elementType, item)
 			if err != nil {
@@ -606,6 +613,17 @@ func coerceCollectionValue(typeName string, value Value) (Value, error) {
 		value.Set = out
 	}
 	return value, nil
+}
+
+func collectionElementCarriesSObjectType(typeName string) bool {
+	typeName = canonicalRuntimePlatformType(typeName)
+	if strings.EqualFold(typeName, "SObject") {
+		return true
+	}
+	if strings.EqualFold(typeName, "AggregateResult") {
+		return false
+	}
+	return isCommonSObjectTypeName(typeName) || isCustomObjectLikeName(typeName)
 }
 
 func constructValue(typeName string, args []Value) (Value, error) {

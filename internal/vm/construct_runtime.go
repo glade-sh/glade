@@ -4211,6 +4211,12 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			return value, nil
 		}
 		if strings.EqualFold(elementType, "SObject") {
+			if len(value.List) == 0 {
+				if runtimeElementType, ok := collectionElementType(value.Runtime); ok && !collectionElementCarriesSObjectType(runtimeElementType) {
+					value.Runtime = ""
+				}
+				value.Static = typeName
+			}
 			return value, nil
 		}
 		if len(value.List) == 0 && vm.isSObjectLikeType(elementType) {

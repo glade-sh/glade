@@ -2174,6 +2174,11 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 		return Null, false
 	}
 	if receiver.Type == "Schema.GlobalDescribeMap" {
+		if vm != nil && vm.Org != nil {
+			if resolved, ok := vm.resolveGlobalDescribeObjectName(key.Text); ok {
+				return sObjectTypeToken(resolved), true
+			}
+		}
 		for _, alias := range vm.schemaDescribeMapAliases(key.Text) {
 			if value, ok := receiver.Map[mapKey(String(alias))]; ok {
 				return value, true
@@ -2262,6 +2267,11 @@ func (vm *VM) specialMapContainsKey(receiver, key Value) bool {
 		return false
 	}
 	if receiver.Type == "Schema.GlobalDescribeMap" {
+		if vm != nil && vm.Org != nil {
+			if _, ok := vm.resolveGlobalDescribeObjectName(key.Text); ok {
+				return true
+			}
+		}
 		for _, alias := range vm.schemaDescribeMapAliases(key.Text) {
 			if _, ok := receiver.Map[mapKey(String(alias))]; ok {
 				return true
@@ -2654,6 +2664,40 @@ func stripAnyNamespaceToken(name string) string {
 		return rest
 	}
 	return name
+}
+
+func (vm *VM) resolveGlobalDescribeObjectName(name string) (string, bool) {
+	if vm == nil || vm.Org == nil {
+		return "", false
+	}
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return "", false
+	}
+	namespaces := []string{
+		strings.TrimSpace(vm.currentCallerNamespace()),
+		strings.TrimSpace(vm.Org.Namespace),
+	}
+	if isCustomObjectLikeName(name) && storage.StripAnyNamespaceToken(name) == name {
+		for _, namespace := range namespaces {
+			if namespace == "" {
+				continue
+			}
+			prefixed := storage.NamespaceTokenName(namespace, name)
+			if prefixed == name {
+				continue
+			}
+			if _, ok := vm.Org.Objects[prefixed]; ok {
+				return prefixed, true
+			}
+			for candidate := range vm.Org.Objects {
+				if strings.EqualFold(candidate, prefixed) {
+					return candidate, true
+				}
+			}
+		}
+	}
+	return vm.resolveObjectName(name)
 }
 
 func (vm *VM) objectKeyMapLookup(receiver Value, key Value) (Value, bool, error) {

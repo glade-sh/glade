@@ -101,6 +101,17 @@ func (vm *VM) shouldUseBuiltinStaticPrecedence(original, canonical string) bool 
 	if !ok {
 		return true
 	}
+	if _, ok := vm.lookupClass(root); ok {
+		return false
+	}
+	if namespace := strings.TrimSpace(vm.currentExecutionNamespace()); namespace != "" {
+		if _, ok := vm.lookupClassInNamespace(namespace, root); ok {
+			return false
+		}
+		if _, ok := vm.lookupClass(namespace + "." + root); ok {
+			return false
+		}
+	}
 	if _, ok := vm.Globals[root]; ok {
 		return false
 	}

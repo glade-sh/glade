@@ -6075,11 +6075,43 @@ func (vm *VM) schemaGlobalDescribe() Value {
 	for _, name := range names {
 		token := sObjectTypeToken(name)
 		for _, alias := range vm.schemaDescribeMapAliases(name) {
-			out.Map[mapKey(String(alias))] = token
+			vm.putSchemaGlobalDescribeAlias(&out, alias, name, token)
 		}
 	}
 	vm.globalDescribeCache = &out
 	return out
+}
+
+func (vm *VM) putSchemaGlobalDescribeAlias(out *Value, alias, objectName string, token Value) {
+	key := mapKey(String(alias))
+	if existing, ok := out.Map[key]; ok && !vm.schemaGlobalDescribeAliasShouldReplace(alias, objectName, existing) {
+		return
+	}
+	out.Map[key] = token
+}
+
+func (vm *VM) schemaGlobalDescribeAliasShouldReplace(alias, objectName string, existing Value) bool {
+	if vm == nil || vm.Org == nil || strings.TrimSpace(vm.Org.Namespace) == "" {
+		return true
+	}
+	existingObject, ok := existing.Fields["object"]
+	if !ok || existingObject.Kind != ValueString {
+		return true
+	}
+	if strings.EqualFold(alias, objectName) {
+		return true
+	}
+	namespace := vm.Org.Namespace
+	candidateCurrent := !strings.EqualFold(storage.StripNamespaceToken(namespace, objectName), objectName)
+	existingCurrent := !strings.EqualFold(storage.StripNamespaceToken(namespace, existingObject.Text), existingObject.Text)
+	switch {
+	case candidateCurrent && !existingCurrent:
+		return true
+	case !candidateCurrent && existingCurrent:
+		return false
+	default:
+		return true
+	}
 }
 
 func (vm *VM) schemaDescribeObjectName(value Value) (string, error) {

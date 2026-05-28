@@ -239,25 +239,35 @@ func (vm *VM) firstOrgRecordValue(objectName, field string) storage.Value {
 	return storage.Value{}
 }
 
-func (vm *VM) currentUserHasPackageLicense(packageID Value) bool {
+func (vm *VM) currentUserHasPackageLicense(packageID Value) (bool, error) {
 	packageIDText := strings.TrimSpace(packageID.String())
 	if packageIDText == "" || vm.Org == nil {
-		return false
+		return false, nil
+	}
+	if !looksLikeID(packageIDText) {
+		return false, newExceptionError("System.StringException", "Invalid id: "+packageIDText)
+	}
+	licenses, ok := vm.Org.Objects["PackageLicense"]
+	if !ok {
+		return false, newExceptionError("System.TypeException", "Package Not Found")
+	}
+	if _, ok := licenses.Records[storage.ID(packageIDText)]; !ok {
+		return false, newExceptionError("System.TypeException", "Package Not Found")
 	}
 	userID := vm.currentUserInfoField("Id", "005-local-user")
 	assignments, ok := vm.Org.Objects["UserPackageLicense"]
 	if !ok {
-		return false
+		return false, nil
 	}
 	for _, record := range assignments.Records {
 		if !storageFieldStringEqual(&record, "PackageLicenseId", packageIDText) {
 			continue
 		}
 		if storageFieldStringEqual(&record, "UserId", userID) || userID == "" {
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 func formatLocalPhoneNumber(countryCode, phoneNumber string) string {
@@ -292,7 +302,11 @@ func (vm *VM) currentUserLicensedForNamespace(namespace Value) bool {
 		if !vm.packageLicenseIsActive(&record) {
 			continue
 		}
-		if vm.currentUserHasPackageLicense(String(string(id))) {
+		licensed, err := vm.currentUserHasPackageLicense(String(string(id)))
+		if err != nil {
+			continue
+		}
+		if licensed {
 			return true
 		}
 	}

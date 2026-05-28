@@ -3062,6 +3062,50 @@ System.assertEquals('ContactId', standardFields.get('pkg__ContactId').getDescrib
 	}
 }
 
+func TestExecGlobalDescribeUnqualifiedCustomObjectPrefersCurrentNamespace(t *testing.T) {
+	program, err := CompileAnonymous(`
+	Map<String, Schema.SObjectType> globalDescribe = Schema.getGlobalDescribe();
+	Schema.SObjectType localType = globalDescribe.get('StateTransitionCallback__mdt');
+	Map<String, Schema.SObjectField> localFields = localType.getDescribe().fields.getMap();
+	System.assertNotEquals(null, localFields.get('pkg__TriggeringTransition__c'));
+	Schema.SObjectType dependencyType = Schema.getGlobalDescribe().get('dep__StateTransitionCallback__mdt');
+	Map<String, Schema.SObjectField> dependencyFields = dependencyType.getDescribe().fields.getMap();
+	System.assertNotEquals(null, dependencyFields.get('dep__TriggeringTransition__c'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["StateTransitionCallback__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{Fields: map[string]storage.Field{}},
+		Records:    make(map[storage.ID]storage.Record),
+	}
+	org.Objects["pkg__StateTransitionCallback__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "pkg__StateTransitionCallback__mdt",
+			Fields: map[string]storage.Field{
+				"pkg__TriggeringTransition__c": {APIName: "pkg__TriggeringTransition__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__StateTransition__mdt"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["dep__StateTransitionCallback__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "dep__StateTransitionCallback__mdt",
+			Fields: map[string]storage.Field{
+				"dep__TriggeringTransition__c": {APIName: "dep__TriggeringTransition__c", Type: storage.FieldReference, ReferenceTo: []string{"dep__StateTransition__mdt"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStandardSObjectCastDescribeMapKeepsOpportunityFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 Opportunity opp = new Opportunity(Name = 'Test Opportunity', Amount = 15000.05,
@@ -4130,6 +4174,58 @@ System.assertEquals('NU__BillTo__r', billTo.getRelationshipName());
 			Fields: map[string]storage.Field{
 				"Provider__c": {APIName: "Provider__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Provider__r"},
 				"BillTo__c":   {APIName: "BillTo__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Carts"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectFieldMapValuesExposeNamespacedCustomMetadataParentRelationship(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = StateTransitionCallback__mdt.SObjectType.getDescribe().fields.getMap();
+String relationshipName = StateTransitionCallback__mdt.TriggeringTransition__c.getDescribe().getRelationshipName();
+System.assertEquals('pkg__TriggeringTransition__r', relationshipName);
+System.assertNotEquals(null, fields.get(relationshipName));
+Boolean found = false;
+for (Schema.SObjectField field : fields.values()) {
+    Schema.DescribeFieldResult describe = field.getDescribe();
+    if (describe.getRelationshipName() == relationshipName && describe.getReferenceTo().size() > 0) {
+        found = true;
+    }
+}
+System.assertEquals(true, found);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["StateTransition__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:  "StateTransition__mdt",
+			Metadata: map[string]string{"kind": "customMetadata"},
+			Fields: map[string]storage.Field{
+				"QualifiedApiName": {APIName: "QualifiedApiName", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["StateTransitionCallback__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:  "StateTransitionCallback__mdt",
+			Metadata: map[string]string{"kind": "customMetadata"},
+			Fields: map[string]storage.Field{
+				"TriggeringTransition__c": {
+					APIName:          "TriggeringTransition__c",
+					Type:             storage.FieldReference,
+					ReferenceTo:      []string{"StateTransition__mdt"},
+					RelationshipName: "TriggeringTransition__r",
+				},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),

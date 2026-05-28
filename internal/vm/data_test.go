@@ -38,6 +38,7 @@ System.assertEquals(0, empty.size());
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	machine.EnableTestContext()
 	org := testDataOrg()
 	org.Objects["Product__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
@@ -186,6 +187,7 @@ for (Account account : accounts) {
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	machine.EnableTestContext()
 	org := testDataOrg()
 	storage.EnsureStandardObject(&org, "Account")
 	storage.EnsureStandardObject(&org, "UserRecordAccess")
@@ -6373,6 +6375,53 @@ System.assertEquals('United States', address.getCountry());
 	}
 }
 
+func TestExecNamespacedAddressClassWinsOverPlatformAddressForUnqualifiedStaticCall(t *testing.T) {
+	newInstanceProgram, err := CompileAnonymous(`
+Address address = new Address();
+address.Street = 'custom';
+return address;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runProgram, err := CompileAnonymous(`
+Address custom = Address.newInstance();
+System.assertEquals('custom', custom.Street);
+System.Address platformAddress = System.Address.newInstance();
+System.assertEquals(null, platformAddress.getStreet());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "Address",
+		Namespace: "pkg",
+		Fields: map[string]Field{
+			"Street": {Name: "Street", Type: "String"},
+		},
+		Methods: map[string]Method{
+			"newInstance": {Name: "Address.newInstance", ClassName: "Address", ReturnType: "Address", IsStatic: true, Access: "global", Program: newInstanceProgram},
+		},
+		Access: "global",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "Runner",
+		Namespace: "pkg",
+		Methods: map[string]Method{
+			"run": {Name: "Runner.run", ClassName: "Runner", ReturnType: "void", IsStatic: true, Access: "global", Program: runProgram},
+		},
+		Access: "global",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.call("Runner.run", nil, nil, &Result{}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLCompoundAddressSupportsDirectFieldAccess(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(
@@ -6395,6 +6444,7 @@ System.assertEquals('United States', queried.BillingAddress.country);
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	machine.EnableTestContext()
 	org := testDataOrg()
 	storage.EnsureStandardObject(&org, "Account")
 	machine.SetOrg(&org)
@@ -9345,6 +9395,218 @@ System.assertEquals(0, rows.size());
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEmptyDynamicSOQLNamespacedCustomMetadataKeepsObjectListType(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Logger__mdt> rows = Database.query('SELECT Id, pkg__IsActive__c FROM Logger__mdt WHERE pkg__IsActive__c = true');
+System.assertEquals(0, rows.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["pkg__Logger__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:  "pkg__Logger__mdt",
+			Metadata: map[string]string{"kind": "customMetadata"},
+			Fields: map[string]storage.Field{
+				"pkg__IsActive__c": {APIName: "pkg__IsActive__c", Type: storage.FieldBoolean},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEmptyDynamicSOQLFromSObjectListMethodCanAssignToConcreteList(t *testing.T) {
+	runProgram, err := CompileAnonymous(`
+return Database.query('SELECT Id, pkg__IsActive__c FROM Logger__mdt WHERE pkg__IsActive__c = true');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<Logger__mdt> rows = QueryRunner.run();
+System.assertEquals(0, rows.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["pkg__Logger__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:  "pkg__Logger__mdt",
+			Metadata: map[string]string{"kind": "customMetadata"},
+			Fields: map[string]storage.Field{
+				"pkg__IsActive__c": {APIName: "pkg__IsActive__c", Type: storage.FieldBoolean},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "QueryRunner",
+		Methods: map[string]Method{
+			"run": {Name: "QueryRunner.run", ClassName: "QueryRunner", ReturnType: "List<SObject>", IsStatic: true, Program: runProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEmptyAggregateResultListAssignedThroughSObjectListLosesAggregateRuntime(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SObject> rows = new List<AggregateResult>();
+List<Account> accounts = rows;
+System.assertEquals(0, accounts.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedUnitOfWorkNewInstanceHonorsMockInstance(t *testing.T) {
+	newInstanceProgram, err := CompileAnonymous(`
+if (mockInstance != null && Test.isRunningTest()) {
+	return mockInstance;
+}
+return new fflib_SObjectUnitOfWork(sObjectTypes);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runProgram, err := CompileAnonymous(`
+fflib_SObjectUnitOfWork.mockInstance = (fflib_SObjectUnitOfWork)Test.createStub(fflib_SObjectUnitOfWork.class, new Provider());
+fflib_SObjectUnitOfWork actual = fflib_SObjectUnitOfWork.newInstance(new List<Schema.SObjectType>{ Contact.SObjectType });
+actual.commitWork();
+System.assertEquals(1, Provider.calls);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name:       "fflib_SObjectUnitOfWork",
+		Namespace:  "dep",
+		Dependency: true,
+		StaticFields: map[string]Field{
+			"mockInstance": {Name: "mockInstance", Type: "fflib_SObjectUnitOfWork", Static: true},
+		},
+		Methods: map[string]Method{
+			"newInstance": {
+				Name:       "fflib_SObjectUnitOfWork.newInstance",
+				ClassName:  "fflib_SObjectUnitOfWork",
+				ReturnType: "fflib_SObjectUnitOfWork",
+				Params:     []Param{{Name: "sObjectTypes", Type: "List<Schema.SObjectType>"}},
+				IsStatic:   true,
+				Access:     "global",
+				Program:    newInstanceProgram,
+			},
+			"commitWork": {
+				Name:       "fflib_SObjectUnitOfWork.commitWork",
+				ClassName:  "fflib_SObjectUnitOfWork",
+				ReturnType: "void",
+				Access:     "global",
+			},
+		},
+		Access: "global",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "fflib_SObjectUnitOfWork",
+		Namespace: "pkg",
+		StaticFields: map[string]Field{
+			"mockInstance": {Name: "mockInstance", Type: "fflib_SObjectUnitOfWork", Static: true},
+		},
+		Methods: map[string]Method{
+			"newInstance": {
+				Name:       "fflib_SObjectUnitOfWork.newInstance",
+				ClassName:  "fflib_SObjectUnitOfWork",
+				ReturnType: "fflib_SObjectUnitOfWork",
+				Params:     []Param{{Name: "sObjectTypes", Type: "List<Schema.SObjectType>"}},
+				IsStatic:   true,
+				Access:     "global",
+				Program:    newInstanceProgram,
+			},
+			"commitWork": {
+				Name:       "fflib_SObjectUnitOfWork.commitWork",
+				ClassName:  "fflib_SObjectUnitOfWork",
+				ReturnType: "void",
+				Access:     "global",
+			},
+		},
+		Access: "global",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	providerProgram, err := CompileAnonymous(`
+if (calls == null) {
+	calls = 0;
+}
+calls = calls + 1;
+return null;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"StubProvider"},
+		StaticFields: map[string]Field{
+			"calls": {Name: "calls", Type: "Integer", Static: true},
+		},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:       "Provider.handleMethodCall",
+				ClassName:  "Provider",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "Runner",
+		Namespace: "pkg",
+		Methods: map[string]Method{
+			"run": {Name: "Runner.run", ClassName: "Runner", ReturnType: "void", IsStatic: true, Access: "global", Program: runProgram},
+		},
+		Access: "global",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.call("Runner.run", nil, nil, &Result{}); err != nil {
 		t.Fatal(err)
 	}
 }

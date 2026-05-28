@@ -3784,9 +3784,25 @@ System.assertEquals(true, copy.containsAllRows());
 
 func TestExecUserInfoPackageLicenseUsesOrgAssignments(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals(false, UserInfo.hasPackageLicense('050000000000001'));
+try {
+    UserInfo.hasPackageLicense('Dummy Id');
+    System.assert(false, 'expected invalid package id to throw');
+} catch (System.StringException e) {
+    System.assertEquals('Invalid id: Dummy Id', e.getMessage());
+}
+try {
+    UserInfo.hasPackageLicense('050000000000001');
+    System.assert(false, 'expected missing package to throw');
+} catch (System.TypeException e) {
+    System.assertEquals('Package Not Found', e.getMessage());
+}
 System.assertEquals(false, UserInfo.isCurrentUserLicensed('pkg'));
-System.assertEquals(false, UserInfo.isCurrentUserLicensedForPackage('050000000000001'));
+try {
+    UserInfo.isCurrentUserLicensedForPackage('050000000000001');
+    System.assert(false, 'expected missing package to throw');
+} catch (System.TypeException e) {
+    System.assertEquals('Package Not Found', e.getMessage());
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3823,12 +3839,23 @@ System.assertEquals(false, UserInfo.isCurrentUserLicensedForPackage('05000000000
 System.assertEquals(true, UserInfo.hasPackageLicense('050000000000001'));
 System.assertEquals(true, UserInfo.isCurrentUserLicensed('pkg'));
 System.assertEquals(true, UserInfo.isCurrentUserLicensedForPackage('050000000000001'));
+System.assertEquals(false, UserInfo.hasPackageLicense('050000000000002'));
 System.assertEquals(false, UserInfo.isCurrentUserLicensed('missing'));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine = New(nil)
+	packageLicenses := licensedOrg.Objects["PackageLicense"]
+	packageLicenses.Records["050000000000002"] = storage.Record{
+		ID:     "050000000000002",
+		Object: "PackageLicense",
+		Fields: map[string]storage.Value{
+			"NamespacePrefix": storage.StringValue("pkg2"),
+			"Status":          storage.StringValue("Active"),
+		},
+	}
+	licensedOrg.Objects["PackageLicense"] = packageLicenses
 	machine.SetOrg(&licensedOrg)
 	machine.executionUser = Object("User")
 	machine.executionUser.Fields["Id"] = String("005-local-user")

@@ -5323,6 +5323,38 @@ func TestOrgFromIndexIncludesGeneratedStandardSchema(t *testing.T) {
 	}
 }
 
+func TestOrgFromIndexPreservesNamespacedCustomMetadataParentRelationships(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/StateTransition__mdt/StateTransition__mdt.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>State Transition</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/StateTransitionCallback__mdt/StateTransitionCallback__mdt.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>State Transition Callback</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/StateTransitionCallback__mdt/fields/TriggeringTransition__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>TriggeringTransition__c</fullName><label>Triggering Transition</label><type>MetadataRelationship</type><referenceTo>StateTransition__mdt</referenceTo><relationshipName>StateTransitionCallbacks</relationshipName></CustomField>`)
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	program, err := vm.CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = StateTransitionCallback__mdt.SObjectType.getDescribe().fields.getMap();
+String relationshipName = StateTransitionCallback__mdt.TriggeringTransition__c.getDescribe().getRelationshipName();
+System.assertEquals('pkg__TriggeringTransition__r', relationshipName);
+System.assertNotEquals(null, fields.get(relationshipName));
+Boolean found = false;
+for (Schema.SObjectField field : fields.values()) {
+    Schema.DescribeFieldResult describe = field.getDescribe();
+    if (describe.getRelationshipName() == relationshipName && describe.getReferenceTo().size() > 0) {
+        found = true;
+    }
+}
+System.assertEquals(true, found);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := vm.New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestOrgFromIndexIncludesProjectReferencedStandardFields(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
