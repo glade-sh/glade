@@ -1780,6 +1780,27 @@ func TestCloneRuntimeKeepsStaticStateIsolated(t *testing.T) {
 	}
 }
 
+func TestCloneRuntimeDoesNotShareMethodMaps(t *testing.T) {
+	template := New(nil)
+	if err := template.RegisterMethod(Method{Name: "Trail.mark", ReturnType: "String"}); err != nil {
+		t.Fatal(err)
+	}
+	clone := template.CloneRuntime(nil)
+	if err := clone.RegisterMethod(Method{Name: "Trail.extra", ReturnType: "String"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, ok := template.Methods["Trail.extra"]; ok {
+		t.Fatalf("clone RegisterMethod mutated template Methods")
+	}
+	if _, ok := template.MethodOverloads["Trail.extra"]; ok {
+		t.Fatalf("clone RegisterMethod mutated template MethodOverloads")
+	}
+	if _, ok := template.MethodFolded["trail.extra"]; ok {
+		t.Fatalf("clone RegisterMethod mutated template MethodFolded")
+	}
+}
+
 func TestResetStaticsClonesExplicitCollectionInitializers(t *testing.T) {
 	machine := New(nil)
 	if err := machine.RegisterClass(Class{
@@ -1858,6 +1879,30 @@ func TestStaticValueRefIndexTracksContainingFields(t *testing.T) {
 	}
 	if got := machine.staticValueRefFields[other.Ref]; len(got) != 1 || got[0].FieldName != "other" {
 		t.Fatalf("other ref locations = %#v", got)
+	}
+}
+
+func TestFindValueByRefFallsBackWhenStaticRefIndexIsStale(t *testing.T) {
+	machine := New(nil)
+	target := Object("Provider")
+	holder := Map()
+	holder.Map[mapKey(String("provider"))] = target
+	holder.MapKeys[mapKey(String("provider"))] = String("provider")
+	machine.Classes["Registry"] = Class{
+		Name: "Registry",
+		StaticFields: map[string]Field{
+			"values": {Name: "values", Type: "Map<String,Object>", Value: holder},
+		},
+	}
+	machine.staticValueRefs = map[uint64]bool{}
+	machine.staticValueRefFields = map[uint64][]staticFieldRef{}
+
+	got, ok := machine.findValueByRef(target.Ref)
+	if !ok {
+		t.Fatalf("stale static ref index did not fall back")
+	}
+	if got.Ref != target.Ref {
+		t.Fatalf("found ref = %d, want %d", got.Ref, target.Ref)
 	}
 }
 

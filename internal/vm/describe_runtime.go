@@ -779,8 +779,9 @@ func metadataObjectNameMatches(namespace, canonical, candidate string) bool {
 	if namespace == "" {
 		return false
 	}
-	stripped := storage.StripNamespaceToken(namespace, candidate)
-	return strings.EqualFold(canonical, stripped)
+	strippedCanonical := storage.StripNamespaceToken(namespace, canonical)
+	strippedCandidate := storage.StripNamespaceToken(namespace, candidate)
+	return strings.EqualFold(strippedCanonical, strippedCandidate)
 }
 
 func recordTypeInfoValue(recordType storage.RecordTypeInfo) Value {

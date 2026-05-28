@@ -3823,22 +3823,7 @@ func storageStringValueEqualsText(value storage.Value, text string) bool {
 }
 
 func normalizeOrgKeyPrefixes(org *storage.OrgState) {
-	if org == nil {
-		return
-	}
-	names := make([]string, 0, len(org.Objects))
-	for name := range org.Objects {
-		names = append(names, name)
-	}
-	prefixes := storage.AssignDeterministicPrefixes(names, nil)
-	for name, prefix := range prefixes {
-		state, ok := org.Objects[name]
-		if !ok || prefix == "" {
-			continue
-		}
-		state.Definition.KeyPrefix = prefix
-		org.Objects[name] = state
-	}
+	storage.EnsureUniqueKeyPrefixes(org)
 }
 
 func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ...sourceCache) {

@@ -2160,6 +2160,27 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	if reason, ok := sobjectReadOnlyReason(current); ok {
 		return fmt.Errorf("cannot modify read-only %s", reason)
 	}
+	if vm.isSObjectLikeType(current.Type) && vm.sObjectParentRelationshipField(current.Type, fieldName) {
+		setExplicitSObjectField(&current, fieldName, value)
+		markSetSObjectField(&current, fieldName)
+		markUserSetSObjectField(&current, fieldName)
+		markQueriedSObjectField(&current, fieldName)
+		propagate(current)
+		return nil
+	}
+	if vm.isSObjectLikeType(current.Type) && value.Kind == ValueObject && vm.isSObjectLikeType(value.Type) {
+		if definition, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, fieldName); exists && fieldDef.Type == storage.FieldReference {
+			relationshipName := vm.parentRelationshipNameForReferenceField(definition, fieldDef)
+			if relationshipName != "" {
+				setExplicitSObjectField(&current, relationshipName, value)
+				markSetSObjectField(&current, relationshipName)
+				markUserSetSObjectField(&current, relationshipName)
+				markQueriedSObjectField(&current, relationshipName)
+				propagate(current)
+				return nil
+			}
+		}
+	}
 	if def, owner, ok := vm.lookupReceiverField(current.Type, fieldName); ok {
 		actualName := def.Name
 		if actualName == "" {

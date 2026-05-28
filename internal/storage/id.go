@@ -17,7 +17,7 @@ func IDsEqual(left, right ID) bool {
 	leftText := string(left)
 	rightText := string(right)
 	if len(leftText) >= 15 && len(rightText) >= 15 {
-		return strings.EqualFold(leftText[:15], rightText[:15])
+		return leftText[:15] == rightText[:15]
 	}
 	return leftText == rightText
 }
@@ -93,6 +93,59 @@ func AssignDeterministicPrefixes(objectNames []string, explicit map[string]strin
 		out[name] = prefix
 	}
 	return out
+}
+
+func EnsureUniqueKeyPrefixes(org *OrgState) {
+	if org == nil {
+		return
+	}
+	names := make([]string, 0, len(org.Objects))
+	for name := range org.Objects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	standard := StandardKeyPrefixes()
+	reserved := make(map[string]string, len(standard))
+	for object, prefix := range standard {
+		if prefix != "" {
+			reserved[prefix] = object
+		}
+	}
+	used := make(map[string]string, len(names))
+	nextCustom := 0
+	for _, name := range names {
+		state := org.Objects[name]
+		prefix := strings.TrimSpace(state.Definition.KeyPrefix)
+		if standardPrefix := standard[name]; standardPrefix != "" {
+			prefix = standardPrefix
+		}
+		if !keyPrefixAvailableForObject(prefix, name, used, reserved) {
+			for {
+				candidate := customPrefix(nextCustom)
+				nextCustom++
+				if keyPrefixAvailableForObject(candidate, name, used, reserved) {
+					prefix = candidate
+					break
+				}
+			}
+		}
+		state.Definition.KeyPrefix = prefix
+		org.Objects[name] = state
+		used[prefix] = name
+	}
+}
+
+func keyPrefixAvailableForObject(prefix, objectName string, used, reserved map[string]string) bool {
+	if len(prefix) != 3 {
+		return false
+	}
+	if owner := used[prefix]; owner != "" && !strings.EqualFold(owner, objectName) {
+		return false
+	}
+	if reservedObject := reserved[prefix]; reservedObject != "" && !strings.EqualFold(reservedObject, objectName) {
+		return false
+	}
+	return true
 }
 
 var standardKeyPrefixBaseData = map[string]string{

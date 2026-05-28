@@ -84,6 +84,7 @@ type summaryRelation struct {
 }
 
 func NewEngine(org *storage.OrgState) Engine {
+	storage.EnsureUniqueKeyPrefixes(org)
 	prefixes := make(map[string]string, len(org.Objects))
 	for name, object := range org.Objects {
 		if object.Definition.KeyPrefix != "" {

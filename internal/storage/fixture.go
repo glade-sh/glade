@@ -138,27 +138,31 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 	generator := NewIDGenerator(prefixesForOrg(*org))
 	generator.Sequences = copySequences(org.IDSequences)
 	for objectIndex, objectFixture := range fixture.Objects {
-		object, ok := org.Objects[objectFixture.Name]
+		objectName := objectFixture.Name
+		if resolved, ok := ResolveObjectName(*org, objectName); ok {
+			objectName = resolved
+		}
+		object, ok := org.Objects[objectName]
 		if !ok {
 			object = ObjectState{
 				Definition: ObjectDefinition{
-					APIName:   objectFixture.Name,
-					KeyPrefix: generator.Prefixes[objectFixture.Name],
+					APIName:   objectName,
+					KeyPrefix: generator.Prefixes[objectName],
 					Fields:    make(map[string]Field),
 				},
 				Records: make(map[ID]Record),
 			}
-			org.Objects[objectFixture.Name] = object
+			org.Objects[objectName] = object
 		}
 		if object.Records == nil {
 			object.Records = make(map[ID]Record)
-			org.Objects[objectFixture.Name] = object
+			org.Objects[objectName] = object
 		}
 		assignedIDs[objectIndex] = make([]ID, len(objectFixture.Records))
 		for i, fixtureRecord := range objectFixture.Records {
 			id := fixtureRecord.ID
 			if id == "" {
-				next, err := generator.Next(objectFixture.Name)
+				next, err := generator.Next(objectName)
 				if err != nil {
 					return err
 				}
@@ -169,22 +173,27 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 			}
 			assignedIDs[objectIndex][i] = id
 			if fixtureRecord.Alias != "" {
-				entry := fixtureAlias{Object: objectFixture.Name, ID: id}
+				entry := fixtureAlias{Object: objectName, ID: id}
 				if _, ok := aliases[fixtureRecord.Alias]; ok {
 					aliases[fixtureRecord.Alias] = fixtureAlias{Object: "", ID: ""}
 				} else {
 					aliases[fixtureRecord.Alias] = entry
 				}
 				aliases[objectFixture.Name+"."+fixtureRecord.Alias] = entry
+				aliases[objectName+"."+fixtureRecord.Alias] = entry
 			}
 		}
 	}
 	for objectIndex, objectFixture := range fixture.Objects {
-		object := org.Objects[objectFixture.Name]
+		objectName := objectFixture.Name
+		if resolved, ok := ResolveObjectName(*org, objectName); ok {
+			objectName = resolved
+		}
+		object := org.Objects[objectName]
 		for i, fixtureRecord := range objectFixture.Records {
 			record := Record{
 				ID:            assignedIDs[objectIndex][i],
-				Object:        objectFixture.Name,
+				Object:        objectName,
 				Fields:        cloneValues(fixtureRecord.Fields),
 				ExplicitNulls: make(map[string]bool),
 			}
@@ -196,7 +205,7 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 				if record.Fields == nil {
 					record.Fields = make(map[string]Value)
 				}
-				entry, err := resolveFixtureAlias(aliases, alias, objectFixture.Name, field)
+				entry, err := resolveFixtureAlias(aliases, alias, objectName, field)
 				if err != nil {
 					return err
 				}
@@ -204,7 +213,7 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 				if !ok {
 					fieldName = field
 				}
-				if err := validateFixtureReference(*org, objectFixture.Name, object.Definition, fieldName, entry); err != nil {
+				if err := validateFixtureReference(*org, objectName, object.Definition, fieldName, entry); err != nil {
 					return err
 				}
 				record.Fields[fieldName] = IDValue(entry.ID)
@@ -212,7 +221,7 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 			}
 			object.Records[record.ID] = record.Clone()
 		}
-		org.Objects[objectFixture.Name] = object
+		org.Objects[objectName] = object
 	}
 	for object, sequence := range fixture.IDSequences {
 		if sequence > generator.Sequences[object] {
@@ -1058,6 +1067,7 @@ func ensureRecordTypeObject(org *OrgState) {
 func ensureRecordTypeRecords(org *OrgState) {
 	usedIDs := make(map[ID]bool)
 	usedIDObjects := make(map[ID]string)
+	usedIDRecordTypes := make(map[ID]string)
 	existingRecordTypes := make(map[string]ID)
 	if recordTypeObject := org.Objects["RecordType"]; len(recordTypeObject.Records) > 0 {
 		for id, record := range recordTypeObject.Records {
@@ -1066,7 +1076,9 @@ func ensureRecordTypeRecords(org *OrgState) {
 			usedIDObjects[id] = objectName
 			developerName := record.Fields["DeveloperName"].String
 			if objectName != "" && developerName != "" {
-				existingRecordTypes[recordTypeSeedKey(objectName, developerName, recordTypeSeedNamespace(record))] = id
+				key := recordTypeSeedKey(objectName, developerName, recordTypeSeedNamespace(record))
+				existingRecordTypes[key] = id
+				usedIDRecordTypes[id] = key
 			}
 		}
 	}
@@ -1090,20 +1102,24 @@ func ensureRecordTypeRecords(org *OrgState) {
 		EnsureRecordTypeIDField(&object.Definition)
 		for i, info := range object.Definition.RecordTypes {
 			namespacePrefix := recordTypeNamespacePrefix(*org, info)
+			seedKey := recordTypeSeedKey(objectName, info.DeveloperName, namespacePrefix)
+			fallbackSeedKey := ""
 			if info.ID == "" {
-				if existingID, ok := existingRecordTypes[recordTypeSeedKey(objectName, info.DeveloperName, namespacePrefix)]; ok {
+				if existingID, ok := existingRecordTypes[seedKey]; ok {
 					info.ID = existingID
 				} else if namespacePrefix != "" {
-					if existingID, ok := existingRecordTypes[recordTypeSeedKey(objectName, info.DeveloperName, "")]; ok {
+					fallbackSeedKey = recordTypeSeedKey(objectName, info.DeveloperName, "")
+					if existingID, ok := existingRecordTypes[fallbackSeedKey]; ok {
 						info.ID = existingID
 					}
 				}
 			}
-			if info.ID == "" || (usedIDs[info.ID] && !strings.EqualFold(usedIDObjects[info.ID], objectName)) {
+			if info.ID == "" || !recordTypeIDReusable(info.ID, seedKey, fallbackSeedKey, usedIDs, usedIDObjects, usedIDRecordTypes, objectName) {
 				info.ID, next = nextUnusedRecordTypeID(usedIDs, next)
 			}
 			usedIDs[info.ID] = true
 			usedIDObjects[info.ID] = objectName
+			usedIDRecordTypes[info.ID] = seedKey
 			if info.Name == "" {
 				info.Name = info.DeveloperName
 			}
@@ -1121,10 +1137,20 @@ func ensureRecordTypeRecords(org *OrgState) {
 					"Description":     StringValue(info.Description),
 				},
 			})
-			existingRecordTypes[recordTypeSeedKey(objectName, info.DeveloperName, namespacePrefix)] = info.ID
+			existingRecordTypes[seedKey] = info.ID
 		}
 		org.Objects[objectName] = object
 	}
+}
+
+func recordTypeIDReusable(id ID, seedKey, fallbackSeedKey string, used map[ID]bool, usedObjects, usedRecordTypes map[ID]string, objectName string) bool {
+	if id == "" || !used[id] {
+		return true
+	}
+	if existingKey := usedRecordTypes[id]; existingKey != "" {
+		return existingKey == seedKey || (fallbackSeedKey != "" && existingKey == fallbackSeedKey)
+	}
+	return strings.EqualFold(usedObjects[id], objectName)
 }
 
 func recordTypeSeedKey(objectName, developerName, namespace string) string {

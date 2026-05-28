@@ -1404,7 +1404,7 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 		childDefinition := childObject.Definition
 		consider := func(relation storage.Relationship) {
 			rank, matched := childRelationshipMatchRank(org.Namespace, relation, childDefinition, relationship)
-			if !matched || !childRelationshipCandidatePreferred(rank, relation, bestRank, bestRelation) {
+			if !matched || !childRelationshipCandidatePreferred(org, childObjectName, rank, relation, bestObject, bestRank, bestRelation) {
 				return
 			}
 			for _, candidate := range relation.ParentObjects {
@@ -1472,14 +1472,27 @@ func syntheticPrefixedCustomChildRelationship(org storage.OrgState, parentDefini
 	}, true
 }
 
-func childRelationshipCandidatePreferred(rank int, relation storage.Relationship, bestRank int, bestRelation storage.Relationship) bool {
+func childRelationshipCandidatePreferred(org storage.OrgState, childObjectName string, rank int, relation storage.Relationship, bestObjectName string, bestRank int, bestRelation storage.Relationship) bool {
+	if bestRank == 99 {
+		return true
+	}
+	leftObjectPriority := childRelationshipObjectPriority(org, childObjectName)
+	rightObjectPriority := childRelationshipObjectPriority(org, bestObjectName)
+	if leftObjectPriority != rightObjectPriority {
+		return leftObjectPriority < rightObjectPriority
+	}
 	if rank < bestRank {
 		return true
 	}
-	if rank > bestRank || bestRank == 99 {
+	if rank > bestRank {
 		return false
 	}
-	return childRelationshipFieldPriority(relation.Field) < childRelationshipFieldPriority(bestRelation.Field)
+	leftFieldPriority := childRelationshipFieldPriority(relation.Field)
+	rightFieldPriority := childRelationshipFieldPriority(bestRelation.Field)
+	if leftFieldPriority != rightFieldPriority {
+		return leftFieldPriority < rightFieldPriority
+	}
+	return childRelationshipObjectPreferred(org, childObjectName, bestObjectName)
 }
 
 func childRelationshipFieldPriority(field string) int {
@@ -1497,6 +1510,37 @@ func childRelationshipFieldPriority(field string) int {
 	default:
 		return 20
 	}
+}
+
+func childRelationshipObjectPreferred(org storage.OrgState, left, right string) bool {
+	leftPriority := childRelationshipObjectPriority(org, left)
+	rightPriority := childRelationshipObjectPriority(org, right)
+	if leftPriority != rightPriority {
+		return leftPriority < rightPriority
+	}
+	leftState, leftOK := org.Objects[left]
+	rightState, rightOK := org.Objects[right]
+	if leftOK && rightOK {
+		leftScore := len(leftState.Definition.Fields) + len(leftState.Definition.Relations)
+		rightScore := len(rightState.Definition.Fields) + len(rightState.Definition.Relations)
+		if leftScore != rightScore {
+			return leftScore > rightScore
+		}
+	}
+	return left < right
+}
+
+func childRelationshipObjectPriority(org storage.OrgState, objectName string) int {
+	if org.Namespace != "" && strings.HasPrefix(strings.ToLower(objectName), strings.ToLower(org.Namespace)+"__") && customObjectLikeSOQLName(objectName) {
+		return 0
+	}
+	if customObjectLikeSOQLName(objectName) {
+		return 1
+	}
+	if storage.IsKnownStandardObject(objectName) {
+		return 2
+	}
+	return 3
 }
 
 func syntheticContentDocumentLinkRelationship(definition storage.ObjectDefinition) []storage.Relationship {

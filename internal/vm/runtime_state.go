@@ -425,9 +425,9 @@ func New(stdout io.Writer) *VM {
 // state, current user, and static field values remains request-local.
 func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	clone := New(stdout)
-	clone.Methods = vm.Methods
-	clone.MethodOverloads = vm.MethodOverloads
-	clone.MethodFolded = vm.MethodFolded
+	clone.Methods = copyMethodMap(vm.Methods)
+	clone.MethodOverloads = copyMethodSliceMap(vm.MethodOverloads)
+	clone.MethodFolded = copyMethodSliceMap(vm.MethodFolded)
 	clone.Classes = copyClassMap(vm.Classes)
 	clone.rebuildClassLookup()
 	clone.Triggers = copyTriggerSliceMap(vm.Triggers)
@@ -440,10 +440,6 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	clone.pageReferences = copyStringMap(vm.pageReferences)
 	clone.platformCache = copyCacheMap(vm.platformCache)
 	clone.isolationJournal = vm.isolationJournal
-	// jsonChildRelTypeCache derives from schema definitions that are stable
-	// across clones in a typical test run; share it so the first DML in
-	// each test doesn't repopulate it.
-	clone.jsonChildRelTypeCache = vm.jsonChildRelTypeCache
 	return clone
 }
 
@@ -504,13 +500,7 @@ func copyClassMap(in map[string]Class) map[string]Class {
 }
 
 func copyClass(class Class) Class {
-	// class.Fields is the instance-field schema; it is set at RegisterClass
-	// time (method.go) and at platform-class generation time (vm.go). No
-	// per-test code mutates it, so per-clone duplication is pure waste —
-	// pointer-share with the base VM. StaticFields holds runtime values for
-	// each static slot, is mutated freely by tests, and the snapshot/reset
-	// paths (runWithFreshStatics, drainAsyncJobs) mutate it in place; it
-	// stays cloned. See W3 in docs/perf plan.
+	class.Fields = copyFieldMap(class.Fields)
 	class.StaticFields = copyFieldMap(class.StaticFields)
 	return class
 }
@@ -626,24 +616,75 @@ func schemaCacheStampForOrg(org *storage.OrgState) string {
 	if org == nil {
 		return ""
 	}
-	objectCount := 0
-	fieldCount := 0
-	relationCount := 0
-	recordTypeCount := 0
-	for _, object := range org.Objects {
+	var builder strings.Builder
+	builder.WriteString(strings.ToLower(strings.TrimSpace(org.Namespace)))
+	builder.WriteByte('|')
+	objectNames := make([]string, 0, len(org.Objects))
+	for objectName, object := range org.Objects {
 		if strings.TrimSpace(object.Definition.APIName) == "" {
 			continue
 		}
-		objectCount++
-		fieldCount += len(object.Definition.Fields)
-		relationCount += len(object.Definition.Relations)
-		recordTypeCount += len(object.Definition.RecordTypes)
+		objectNames = append(objectNames, objectName)
 	}
-	return strings.ToLower(strings.TrimSpace(org.Namespace)) + "|" +
-		strconv.Itoa(objectCount) + "|" +
-		strconv.Itoa(fieldCount) + "|" +
-		strconv.Itoa(relationCount) + "|" +
-		strconv.Itoa(recordTypeCount)
+	sort.Strings(objectNames)
+	for _, objectName := range objectNames {
+		object := org.Objects[objectName]
+		definition := object.Definition
+		builder.WriteString(strings.ToLower(strings.TrimSpace(objectName)))
+		builder.WriteByte('=')
+		builder.WriteString(strings.ToLower(strings.TrimSpace(definition.APIName)))
+		builder.WriteByte(',')
+		builder.WriteString(strings.TrimSpace(definition.KeyPrefix))
+		builder.WriteByte(',')
+		builder.WriteString(strings.TrimSpace(definition.Label))
+		builder.WriteByte(',')
+		builder.WriteString(strings.TrimSpace(definition.PluralLabel))
+		builder.WriteByte(';')
+
+		fieldNames := make([]string, 0, len(definition.Fields))
+		for fieldName := range definition.Fields {
+			fieldNames = append(fieldNames, fieldName)
+		}
+		sort.Strings(fieldNames)
+		for _, fieldName := range fieldNames {
+			field := definition.Fields[fieldName]
+			builder.WriteString(strings.ToLower(strings.TrimSpace(fieldName)))
+			builder.WriteByte(':')
+			builder.WriteString(strings.TrimSpace(field.APIName))
+			builder.WriteByte(':')
+			builder.WriteString(string(field.Type))
+			builder.WriteByte(':')
+			builder.WriteString(strings.TrimSpace(field.RelationshipName))
+			builder.WriteByte(':')
+			builder.WriteString(strings.TrimSpace(field.ChildRelationshipName))
+			builder.WriteByte(':')
+			builder.WriteString(strings.Join(sortedStrings(field.ReferenceTo), ","))
+			builder.WriteByte(';')
+		}
+
+		for _, relation := range definition.Relations {
+			builder.WriteString(strings.TrimSpace(relation.Field))
+			builder.WriteByte(':')
+			builder.WriteString(strings.TrimSpace(relation.ParentRelationship))
+			builder.WriteByte(':')
+			builder.WriteString(strings.TrimSpace(relation.ChildRelationship))
+			builder.WriteByte(':')
+			builder.WriteString(strings.Join(sortedStrings(relation.ParentObjects), ","))
+			builder.WriteByte(';')
+		}
+		builder.WriteString(strconv.Itoa(len(definition.RecordTypes)))
+		builder.WriteByte('|')
+	}
+	return builder.String()
+}
+
+func sortedStrings(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	out := append([]string(nil), values...)
+	sort.Strings(out)
+	return out
 }
 
 func isPlaceholderCurrentUser(user Value) bool {

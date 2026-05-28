@@ -688,6 +688,7 @@ func (vm *VM) lazyChildRelationshipLookup(parentObject, field string) lazyChildR
 		return cached
 	}
 	lookup := lazyChildRelationshipLookup{}
+	childMatches := []string(nil)
 	for childName, childState := range vm.Org.Objects {
 		for _, relation := range childState.Definition.Relations {
 			if !relationshipTargetsObject(relation, parentObject) || strings.TrimSpace(relation.Field) == "" {
@@ -700,9 +701,7 @@ func (vm *VM) lazyChildRelationshipLookup(parentObject, field string) lazyChildR
 			if childRelationshipName == "" || !vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, field) {
 				continue
 			}
-			if lookup.ChildType == "" {
-				lookup.ChildType = childName
-			}
+			childMatches = appendUniqueStringFold(childMatches, childName)
 			lookup.Targets = append(lookup.Targets, lazyChildRelationshipTarget{ChildName: childName, LookupField: relation.Field})
 		}
 		for fieldName, fieldDef := range childState.Definition.Fields {
@@ -719,16 +718,31 @@ func (vm *VM) lazyChildRelationshipLookup(parentObject, field string) lazyChildR
 				if !vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, field) {
 					continue
 				}
-				if lookup.ChildType == "" {
-					lookup.ChildType = childName
-				}
+				childMatches = appendUniqueStringFold(childMatches, childName)
 				lookup.Targets = append(lookup.Targets, lazyChildRelationshipTarget{ChildName: childName, LookupField: fieldDef.APIName})
 			}
 		}
 	}
+	if childType := vm.bestChildRelationshipObject(childMatches); childType != "" {
+		lookup.ChildType = childType
+		lookup.Targets = lazyChildRelationshipTargetsForChild(lookup.Targets, childType)
+	}
 	lookup.OK = lookup.ChildType != ""
 	vm.lazyChildRelCache[key] = lookup
 	return lookup
+}
+
+func lazyChildRelationshipTargetsForChild(targets []lazyChildRelationshipTarget, childType string) []lazyChildRelationshipTarget {
+	if childType == "" || len(targets) == 0 {
+		return targets
+	}
+	out := targets[:0]
+	for _, target := range targets {
+		if strings.EqualFold(target.ChildName, childType) {
+			out = append(out, target)
+		}
+	}
+	return out
 }
 
 func (vm *VM) clearLazyChildRelationshipCache() {
@@ -1533,11 +1547,22 @@ func (vm *VM) lookupIDFromLoadedParentRelationship(receiver Value, definition st
 	if !vm.queriedSObjectFieldsIncludes(receiver, field) && !vm.queriedSObjectFieldsIncludes(receiver, relationship) {
 		return Null, false
 	}
-	_, parent, ok := objectFieldValue(receiver, relationship)
-	if !ok || parent.Kind != ValueObject {
-		return Null, false
+	relationshipAliases := uniqueNonEmptyStrings([]string{relationship, lookupFieldRelationshipName(field)})
+	var parent Value
+	for _, alias := range relationshipAliases {
+		if isExplicitSObjectField(receiver, alias) && !isExplicitSObjectField(receiver, field) {
+			return Null, false
+		}
+		actualName, candidate, candidateOK := objectFieldValue(receiver, alias)
+		if candidateOK && candidate.Kind == ValueObject && parent.Kind == "" {
+			if isExplicitSObjectField(receiver, actualName) && !isExplicitSObjectField(receiver, field) {
+				return Null, false
+			}
+			parent = candidate
+		}
 	}
-	if isExplicitSObjectField(receiver, relationship) && !isExplicitSObjectField(receiver, field) {
+	ok = parent.Kind == ValueObject
+	if !ok || parent.Kind != ValueObject {
 		return Null, false
 	}
 	if id := sObjectIDFromFields(parent.Fields); id != "" {
@@ -1602,10 +1627,10 @@ func (vm *VM) parentRelationshipValue(receiver Value, relationshipName string) (
 			!vmParentRelationshipNameMatches(vm.Org.Namespace, relation.Field, relationshipName) {
 			continue
 		}
-		return vm.parentRelationshipValueForRelation(receiver, relation), true
+		return vm.parentRelationshipValueForRelationName(receiver, relation, relationshipName), true
 	}
 	if relation, ok := vm.syntheticParentRelationship(object.Definition, relationshipName); ok {
-		return vm.parentRelationshipValueForRelation(receiver, relation), true
+		return vm.parentRelationshipValueForRelationName(receiver, relation, relationshipName), true
 	}
 	return Null, false
 }
@@ -1648,6 +1673,18 @@ func (vm *VM) hydrateQueriedRecordTypeRelationships(value Value) {
 }
 
 func (vm *VM) parentRelationshipValueForRelation(receiver Value, relation storage.Relationship) Value {
+	return vm.parentRelationshipValueForRelationName(receiver, relation, relation.ParentRelationship)
+}
+
+func (vm *VM) parentRelationshipValueForRelationName(receiver Value, relation storage.Relationship, relationshipName string) Value {
+	for _, alias := range parentRelationshipFieldAliases(relation, relationshipName) {
+		if _, relationship, ok := objectFieldValue(receiver, alias); ok && relationship.Kind == ValueObject {
+			if !vm.isSObjectLikeType(relationship.Type) && len(relation.ParentObjects) > 0 {
+				relationship.Type = relation.ParentObjects[0]
+			}
+			return relationship
+		}
+	}
 	if _, relationship, ok := objectFieldValue(receiver, relation.ParentRelationship); ok && relationship.Kind == ValueObject {
 		if !vm.isSObjectLikeType(relationship.Type) && len(relation.ParentObjects) > 0 {
 			relationship.Type = relation.ParentObjects[0]
@@ -1668,6 +1705,11 @@ func (vm *VM) parentRelationshipValueForRelation(receiver Value, relation storag
 		return vm.parentRelationshipTypedNull(relation)
 	}
 	return vm.parentRelationshipTypedNull(relation)
+}
+
+func parentRelationshipFieldAliases(relation storage.Relationship, relationshipName string) []string {
+	aliases := []string{relationshipName, relation.ParentRelationship, lookupFieldRelationshipName(relation.Field)}
+	return uniqueNonEmptyStrings(aliases)
 }
 
 func (vm *VM) syntheticParentRelationship(definition storage.ObjectDefinition, relationshipName string) (storage.Relationship, bool) {

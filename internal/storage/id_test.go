@@ -48,6 +48,15 @@ func TestRuntimeIDGeneratorKeepsLogicalSequencesButOffsetsIDBody(t *testing.T) {
 	}
 }
 
+func TestIDsEqualKeepsFifteenCharacterCaseSignificant(t *testing.T) {
+	if IDsEqual("aDa000000000001", "aDA000000000001") {
+		t.Fatal("15 character ids that differ by case must not compare equal")
+	}
+	if !IDsEqual("aDa000000000001", "aDa000000000001AAA") {
+		t.Fatal("15 and 18 character forms with the same first 15 chars should compare equal")
+	}
+}
+
 func TestAssignDeterministicPrefixesKeepsStandardAndExplicitPrefixes(t *testing.T) {
 	prefixes := AssignDeterministicPrefixes(
 		[]string{"Widget__c", "Account", "Alpha__c"},
@@ -62,6 +71,24 @@ func TestAssignDeterministicPrefixesKeepsStandardAndExplicitPrefixes(t *testing.
 	}
 	if prefixes["Alpha__c"] != "a00" {
 		t.Fatalf("Alpha__c prefix = %q", prefixes["Alpha__c"])
+	}
+}
+
+func TestEnsureUniqueKeyPrefixesReassignsDuplicateCustomPrefixes(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["Alpha__c"] = ObjectState{Definition: ObjectDefinition{APIName: "Alpha__c", KeyPrefix: "a00"}}
+	org.Objects["Beta__c"] = ObjectState{Definition: ObjectDefinition{APIName: "Beta__c", KeyPrefix: "a00"}}
+	org.Objects["Account"] = ObjectState{Definition: ObjectDefinition{APIName: "Account", KeyPrefix: "001"}}
+
+	EnsureUniqueKeyPrefixes(&org)
+
+	alpha := org.Objects["Alpha__c"].Definition.KeyPrefix
+	beta := org.Objects["Beta__c"].Definition.KeyPrefix
+	if alpha == "" || beta == "" || alpha == beta {
+		t.Fatalf("custom prefixes alpha=%q beta=%q, want unique", alpha, beta)
+	}
+	if got := org.Objects["Account"].Definition.KeyPrefix; got != "001" {
+		t.Fatalf("Account prefix = %q", got)
 	}
 }
 

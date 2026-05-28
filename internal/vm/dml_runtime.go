@@ -3625,18 +3625,19 @@ func (vm *VM) canonicalChildRelationshipName(parentObject, relationship string) 
 }
 
 func (vm *VM) childRelationshipListType(parentObject, relationship string, records []storage.Record) string {
-	for _, record := range records {
-		if strings.TrimSpace(record.Object) != "" {
-			return record.Object
-		}
-	}
 	if vm == nil || vm.Org == nil || strings.TrimSpace(parentObject) == "" || strings.TrimSpace(relationship) == "" {
+		for _, record := range records {
+			if strings.TrimSpace(record.Object) != "" {
+				return record.Object
+			}
+		}
 		return ""
 	}
 	canonicalParent, ok := vm.resolveObjectName(parentObject)
 	if !ok {
 		canonicalParent = parentObject
 	}
+	matches := make([]string, 0, 1)
 	for childName, childState := range vm.Org.Objects {
 		for _, relation := range childState.Definition.Relations {
 			if !relationshipTargetsObject(relation, canonicalParent) {
@@ -3647,8 +3648,16 @@ func (vm *VM) childRelationshipListType(parentObject, relationship string, recor
 				childRelationshipName = derivedVMChildRelationshipName(childState.Definition)
 			}
 			if childRelationshipName != "" && vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, relationship) {
-				return childName
+				matches = appendUniqueStringFold(matches, childName)
 			}
+		}
+	}
+	if childName := vm.bestChildRelationshipObject(matches); childName != "" {
+		return childName
+	}
+	for _, record := range records {
+		if strings.TrimSpace(record.Object) != "" {
+			return record.Object
 		}
 	}
 	return ""

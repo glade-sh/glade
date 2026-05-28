@@ -285,6 +285,7 @@ func orgFromFixture(fixture Fixture) (storage.OrgState, error) {
 			Records:    make(map[storage.ID]storage.Record),
 		}
 	}
+	assignFixtureObjectPrefixes(&org)
 	storage.EnsureDeterministicPlatformData(&org)
 	if len(fixture.SeedData) > 0 {
 		if err := storage.ApplyFixture(&org, storageFixture(fixture)); err != nil {
@@ -292,6 +293,27 @@ func orgFromFixture(fixture Fixture) (storage.OrgState, error) {
 		}
 	}
 	return org, nil
+}
+
+func assignFixtureObjectPrefixes(org *storage.OrgState) {
+	if org == nil || len(org.Objects) == 0 {
+		return
+	}
+	names := make([]string, 0, len(org.Objects))
+	explicit := make(map[string]string, len(org.Objects))
+	for name, state := range org.Objects {
+		names = append(names, name)
+		if state.Definition.KeyPrefix != "" {
+			explicit[name] = state.Definition.KeyPrefix
+		}
+	}
+	prefixes := storage.AssignDeterministicPrefixes(names, explicit)
+	for name, state := range org.Objects {
+		if state.Definition.KeyPrefix == "" {
+			state.Definition.KeyPrefix = prefixes[name]
+			org.Objects[name] = state
+		}
+	}
 }
 
 func runTestFixture(fixture Fixture) (RunResult, error) {

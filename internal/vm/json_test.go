@@ -1731,6 +1731,67 @@ System.assertEquals(null, decoded.Children__r[0].Parent__r.Name);
 	}
 }
 
+func TestExecJSONDeserializeManagedChildRelationshipPrefersCurrentPackageObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+Cart__c decoded = (Cart__c) JSON.deserialize('{"CartItems__r":{"totalSize":1,"done":true,"records":[{"Name":"Item"}]}}', Cart__c.class);
+List<CartItem__c> items = decoded.CartItems__r;
+System.assertEquals(1, items.size());
+System.assertEquals('Item', items[0].Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Namespace: "NU", Objects: map[string]storage.ObjectState{
+		"NU__Cart__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "NU__Cart__c",
+				KeyPrefix: "a01",
+				Fields:    map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"CartItem": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "CartItem",
+				KeyPrefix: "a02",
+				Fields: map[string]storage.Field{
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Cart__c",
+					ParentObjects:      []string{"Cart__c"},
+					ParentRelationship: "Cart__r",
+					ChildRelationship:  "CartItems__r",
+				}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"NU__CartItem__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "NU__CartItem__c",
+				KeyPrefix: "a03",
+				Fields: map[string]storage.Field{
+					"Id":          {APIName: "Id", Type: storage.FieldID},
+					"Name":        {APIName: "Name", Type: storage.FieldString},
+					"NU__Cart__c": {APIName: "NU__Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"NU__Cart__c"}, RelationshipName: "NU__Cart__r", ChildRelationshipName: "NU__CartItems__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "NU__Cart__c",
+					ParentObjects:      []string{"NU__Cart__c"},
+					ParentRelationship: "NU__Cart__r",
+					ChildRelationship:  "NU__CartItems__r",
+				}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeNamespacedChildRecordParentShellUsesUnqualifiedLookup(t *testing.T) {
 	program, err := CompileAnonymous(`
 Parent__c decoded = JSON.deserialize('{"Children__r":{"totalSize":1,"done":true,"records":[{"Product2__c":"a02000000000001AAA"}]}}', Parent__c.class);

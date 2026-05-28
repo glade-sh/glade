@@ -1460,6 +1460,7 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 	if !ok {
 		return cacheResult("", false)
 	}
+	matches := make([]string, 0, 1)
 	for childName, childState := range vm.Org.Objects {
 		childRelationshipName := ""
 		for _, relation := range childState.Definition.Relations {
@@ -1471,7 +1472,7 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 				childRelationshipName = derivedVMChildRelationshipName(childState.Definition)
 			}
 			if vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, relationshipName) {
-				return cacheResult("List<"+childName+">", true)
+				matches = appendUniqueStringFold(matches, childName)
 			}
 		}
 	}
@@ -1485,12 +1486,63 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 			}
 			for _, childRelationshipName := range vmFieldChildRelationshipNames(childState.Definition, field) {
 				if vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, relationshipName) {
-					return cacheResult("List<"+childName+">", true)
+					matches = appendUniqueStringFold(matches, childName)
 				}
 			}
 		}
 	}
+	if childName := vm.bestChildRelationshipObject(matches); childName != "" {
+		return cacheResult("List<"+childName+">", true)
+	}
 	return cacheResult("", false)
+}
+
+func (vm *VM) bestChildRelationshipObject(matches []string) string {
+	if len(matches) == 0 {
+		return ""
+	}
+	best := matches[0]
+	for _, candidate := range matches[1:] {
+		if vm.childRelationshipObjectLess(candidate, best) {
+			best = candidate
+		}
+	}
+	return best
+}
+
+func (vm *VM) childRelationshipObjectLess(left, right string) bool {
+	leftPriority := vm.childRelationshipObjectPriority(left)
+	rightPriority := vm.childRelationshipObjectPriority(right)
+	if leftPriority != rightPriority {
+		return leftPriority < rightPriority
+	}
+	if vm != nil && vm.Org != nil {
+		leftState, leftOK := vm.Org.Objects[left]
+		rightState, rightOK := vm.Org.Objects[right]
+		if leftOK && rightOK {
+			leftScore := len(leftState.Definition.Fields) + len(leftState.Definition.Relations)
+			rightScore := len(rightState.Definition.Fields) + len(rightState.Definition.Relations)
+			if leftScore != rightScore {
+				return leftScore > rightScore
+			}
+		}
+	}
+	return left < right
+}
+
+func (vm *VM) childRelationshipObjectPriority(objectName string) int {
+	if vm != nil && vm.Org != nil && vm.Org.Namespace != "" {
+		if strings.HasPrefix(strings.ToLower(objectName), strings.ToLower(vm.Org.Namespace)+"__") && isCustomObjectLikeName(objectName) {
+			return 0
+		}
+	}
+	if isCustomObjectLikeName(objectName) {
+		return 1
+	}
+	if isCommonSObjectTypeName(objectName) {
+		return 2
+	}
+	return 3
 }
 
 func vmFieldChildRelationshipNames(definition storage.ObjectDefinition, field storage.Field) []string {
@@ -1728,33 +1780,31 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 }
 
 // jsonChildRelTypeLookupCache memoizes (typeName, relationshipName) -> child
-// type lookups. The mapping derives from schema definitions which are stable
-// across clones for the lifetime of a test run, so CloneRuntime shares the
-// cache pointer; concurrent test methods are serialized by an RWMutex.
+// type lookups inside one runtime clone.
 type jsonChildRelTypeLookupCache struct {
-mu      sync.RWMutex
-entries map[string]jsonRelationshipTypeLookup
+	mu      sync.RWMutex
+	entries map[string]jsonRelationshipTypeLookup
 }
 
 func newJSONChildRelTypeLookupCache() *jsonChildRelTypeLookupCache {
-return &jsonChildRelTypeLookupCache{entries: make(map[string]jsonRelationshipTypeLookup)}
+	return &jsonChildRelTypeLookupCache{entries: make(map[string]jsonRelationshipTypeLookup)}
 }
 
 func (c *jsonChildRelTypeLookupCache) load(key string) (jsonRelationshipTypeLookup, bool) {
-if c == nil {
-return jsonRelationshipTypeLookup{}, false
-}
-c.mu.RLock()
-defer c.mu.RUnlock()
-value, ok := c.entries[key]
-return value, ok
+	if c == nil {
+		return jsonRelationshipTypeLookup{}, false
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	value, ok := c.entries[key]
+	return value, ok
 }
 
 func (c *jsonChildRelTypeLookupCache) store(key string, value jsonRelationshipTypeLookup) {
-if c == nil {
-return
-}
-c.mu.Lock()
-c.entries[key] = value
-c.mu.Unlock()
+	if c == nil {
+		return
+	}
+	c.mu.Lock()
+	c.entries[key] = value
+	c.mu.Unlock()
 }

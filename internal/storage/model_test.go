@@ -271,14 +271,14 @@ func TestResolveObjectNameKeepsOtherNamespace(t *testing.T) {
 	}
 }
 
-func TestResolveObjectNameKeepsExactCustomObjectMatch(t *testing.T) {
+func TestResolveObjectNamePrefersCurrentPackageCustomObjectOverExactMatch(t *testing.T) {
 	org := NewOrgState()
 	org.Namespace = "pkg"
 	org.Objects["pkg__Thing__c"] = ObjectState{Definition: ObjectDefinition{APIName: "pkg__Thing__c"}}
 	org.Objects["Thing__c"] = ObjectState{Definition: ObjectDefinition{APIName: "Thing__c"}}
 
 	resolved, ok := ResolveObjectName(org, "Thing__c")
-	if !ok || resolved != "Thing__c" {
+	if !ok || resolved != "pkg__Thing__c" {
 		t.Fatalf("ResolveObjectName(Thing__c) = %q, %v", resolved, ok)
 	}
 }

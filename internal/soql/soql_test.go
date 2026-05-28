@@ -2659,6 +2659,66 @@ func TestExecuteProjectsChildRelationshipSubquery(t *testing.T) {
 	}
 }
 
+func TestExecuteChildRelationshipSubqueryPrefersCurrentPackageObject(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "NU"
+	org.Objects["NU__RecurringPayment__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "NU__RecurringPayment__c",
+			KeyPrefix: "a10",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a10000000000001": {ID: "a10000000000001", Object: "NU__RecurringPayment__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Recurring")}},
+		},
+	}
+	org.Objects["Membership__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Membership__c",
+			Fields: map[string]storage.Field{
+				"RecurringPayment__c": {APIName: "RecurringPayment__c", Type: storage.FieldReference, ReferenceTo: []string{"NU__RecurringPayment__c"}, RelationshipName: "RecurringPayment__r", ChildRelationshipName: "Memberships__r"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "RecurringPayment__c",
+				ParentObjects:      []string{"NU__RecurringPayment__c"},
+				ParentRelationship: "RecurringPayment__r",
+				ChildRelationship:  "Memberships__r",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["NU__Membership__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "NU__Membership__c",
+			KeyPrefix: "a11",
+			Fields: map[string]storage.Field{
+				"NU__Balance__c":          {APIName: "NU__Balance__c", Type: storage.FieldDecimal},
+				"NU__RecurringPayment__c": {APIName: "NU__RecurringPayment__c", Type: storage.FieldReference, ReferenceTo: []string{"NU__RecurringPayment__c"}, RelationshipName: "NU__RecurringPayment__r", ChildRelationshipName: "NU__Memberships__r"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "NU__RecurringPayment__c",
+				ParentObjects:      []string{"NU__RecurringPayment__c"},
+				ParentRelationship: "NU__RecurringPayment__r",
+				ChildRelationship:  "NU__Memberships__r",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a11000000000001": {ID: "a11000000000001", Object: "NU__Membership__c", Fields: map[string]storage.Value{"NU__Balance__c": storage.DecimalValue("25"), "NU__RecurringPayment__c": storage.IDValue("a10000000000001")}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id, Balance__c FROM Memberships__r WHERE Balance__c > 0) FROM RecurringPayment__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	children := result.Records[0].Children["Memberships__r"]
+	if len(children) != 1 || children[0].Object != "NU__Membership__c" || children[0].Fields["NU__Balance__c"].Decimal != "25" {
+		t.Fatalf("current package children = %#v", children)
+	}
+}
+
 func TestExecuteChildRelationshipSubqueryUsesSyntheticAuditRelationship(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["User"] = storage.ObjectState{

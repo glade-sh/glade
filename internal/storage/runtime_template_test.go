@@ -24,6 +24,21 @@ func TestRuntimeTemplateSharesFrozenDefinitionsAndIsolatesRecords(t *testing.T) 
 	}
 }
 
+func TestRuntimeTemplateCloneRuntimeOrgUsesFreshObjectNameCache(t *testing.T) {
+	org := benchmarkOrgState(1, 0)
+	template := NewRuntimeTemplate(org)
+
+	first := template.CloneRuntimeOrg()
+	second := template.CloneRuntimeOrg()
+
+	if first.objectNameCache == nil || second.objectNameCache == nil {
+		t.Fatalf("runtime template clone missing object name cache")
+	}
+	if first.objectNameCache == org.objectNameCache || second.objectNameCache == org.objectNameCache || first.objectNameCache == second.objectNameCache {
+		t.Fatalf("runtime template clones shared object name cache")
+	}
+}
+
 func TestEnsureMutableObjectDefinitionClonesOnlyOneObject(t *testing.T) {
 	org := benchmarkOrgState(2, 1)
 	clone := NewRuntimeTemplate(org).CloneRuntimeOrg()

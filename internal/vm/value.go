@@ -229,7 +229,7 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 	case ValueBool:
 		return v.Bool == other.Bool
 	case ValueString:
-		if looksLikeID(v.Text) && looksLikeID(other.Text) {
+		if shouldCompareTextAsID(v.Text, other.Text) {
 			return apexIDTextEqual(v.Text, other.Text)
 		}
 		return v.Text == other.Text
@@ -340,7 +340,7 @@ func sObjectValueType(typeName string) bool {
 }
 
 func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
-	if !strings.EqualFold(left.Type, right.Type) {
+	if !sObjectValueTypesEqual(left.Type, right.Type) {
 		return false
 	}
 	for key, leftValue := range left.Fields {
@@ -370,6 +370,20 @@ func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
 		}
 	}
 	return true
+}
+
+func sObjectValueTypesEqual(left, right string) bool {
+	if strings.EqualFold(left, right) {
+		return true
+	}
+	leftBase := stripSObjectNamespacePrefix(canonicalRuntimePlatformType(left))
+	rightBase := stripSObjectNamespacePrefix(canonicalRuntimePlatformType(right))
+	if !strings.EqualFold(leftBase, rightBase) {
+		return false
+	}
+	leftNamespaced := !strings.EqualFold(leftBase, canonicalRuntimePlatformType(left))
+	rightNamespaced := !strings.EqualFold(rightBase, canonicalRuntimePlatformType(right))
+	return leftNamespaced != rightNamespaced
 }
 
 func sObjectMissingFieldEqualsImplicitDefault(owner Value, field string, value Value) bool {
@@ -403,14 +417,14 @@ func isStringComparableEnum(typeName string) bool {
 
 func apexIDTextEqual(left, right string) bool {
 	if len(left) >= 15 && len(right) >= 15 {
-		return strings.EqualFold(left[:15], right[:15])
+		return left[:15] == right[:15]
 	}
 	return left == right
 }
 
 func canonicalIDMapKey(value string) string {
 	if len(value) >= 15 {
-		return strings.ToLower(value[:15])
+		return value[:15]
 	}
 	return value
 }
@@ -426,6 +440,24 @@ func looksLikeID(value string) bool {
 		return false
 	}
 	return true
+}
+
+func looksLikeComparableIDText(value string) bool {
+	if !looksLikeID(value) || len(value) < 3 {
+		return false
+	}
+	_, ok := standardSObjectPrefixes[value[:3]]
+	return ok
+}
+
+func shouldCompareTextAsID(left, right string) bool {
+	if !looksLikeID(left) || !looksLikeID(right) {
+		return false
+	}
+	if looksLikeComparableIDText(left) || looksLikeComparableIDText(right) {
+		return true
+	}
+	return len(left) == 18 || len(right) == 18
 }
 
 func valueIdentityEqual(left, right Value) bool {

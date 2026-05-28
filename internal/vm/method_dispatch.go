@@ -3890,6 +3890,9 @@ func (vm *VM) findValueByRef(ref uint64) (Value, bool) {
 			return value, true
 		}
 	}
+	if value, ok := vm.scanStaticFieldValueByRef(ref); ok {
+		return value, true
+	}
 	return Null, false
 }
 
@@ -3921,6 +3924,20 @@ func (vm *VM) staticFieldValueByRef(ref uint64) (Value, bool) {
 		}
 		if value, ok := findValueByRef(field.Value, ref, make(map[uint64]bool)); ok {
 			return value, true
+		}
+	}
+	return Null, false
+}
+
+func (vm *VM) scanStaticFieldValueByRef(ref uint64) (Value, bool) {
+	for _, class := range vm.Classes {
+		for _, field := range class.StaticFields {
+			if field.Value.Ref == ref {
+				return field.Value, true
+			}
+			if value, ok := findValueByRef(field.Value, ref, make(map[uint64]bool)); ok {
+				return value, true
+			}
 		}
 	}
 	return Null, false
@@ -7238,11 +7255,6 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.getSObjectType expects 0 arguments")
 		}
 		typeName := runtimeObjectType(receiver)
-		if vm.sObjectTypeDescribeShouldUseLocalName(typeName) {
-			token := sObjectTypeToken(typeName)
-			token.Fields["localNameHint"] = Bool(true)
-			return token, true, nil
-		}
 		token, ok := vm.sObjectTypeTokenForName(typeName)
 		if !ok {
 			return Null, false, nil
@@ -7374,24 +7386,6 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 	default:
 		return Null, false, nil
 	}
-}
-
-func (vm *VM) sObjectTypeDescribeShouldUseLocalName(typeName string) bool {
-	if !hasNamespaceTokenInSchemaName(typeName) {
-		return false
-	}
-	namespace := namespaceTokenInSchemaName(typeName)
-	if namespace == "" {
-		return false
-	}
-	currentNamespace := strings.TrimSpace(vm.currentCallerNamespace())
-	if currentNamespace != "" {
-		return strings.EqualFold(namespace, currentNamespace)
-	}
-	if vm != nil && vm.Org != nil {
-		return strings.EqualFold(namespace, strings.TrimSpace(vm.Org.Namespace))
-	}
-	return false
 }
 
 func namespaceTokenInSchemaName(name string) string {

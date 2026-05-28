@@ -374,6 +374,35 @@ func TestEnsureDeterministicPlatformDataSeedsCustomObjectRecordTypes(t *testing.
 	}
 }
 
+func TestEnsureDeterministicPlatformDataSeparatesDuplicateRecordTypeIDsOnSameObject(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["Batch__c"] = ObjectState{
+		Definition: ObjectDefinition{
+			APIName:   "Batch__c",
+			KeyPrefix: "a00",
+			Fields:    map[string]Field{"Name": {APIName: "Name", Type: FieldString}},
+			RecordTypes: []RecordTypeInfo{
+				{ID: "012000000000003", DeveloperName: "Automatic", Name: "Automatic", Active: true, Available: true},
+				{ID: "012000000000003", DeveloperName: "Manual", Name: "Manual", Active: true, Available: true},
+			},
+		},
+		Records: make(map[ID]Record),
+	}
+	EnsureDeterministicPlatformData(&org)
+
+	recordTypes := org.Objects["Batch__c"].Definition.RecordTypes
+	if recordTypes[0].ID == "" || recordTypes[1].ID == "" || recordTypes[0].ID == recordTypes[1].ID {
+		t.Fatalf("record type ids = %#v", recordTypes)
+	}
+	recordTypeRecords := org.Objects["RecordType"].Records
+	for _, info := range recordTypes {
+		record := recordTypeRecords[info.ID]
+		if record.Fields["SobjectType"].String != "Batch__c" || record.Fields["DeveloperName"].String != info.DeveloperName || record.Fields["Name"].String != info.Name {
+			t.Fatalf("record type record for %s = %#v", info.DeveloperName, record)
+		}
+	}
+}
+
 func TestEnsureDeterministicPlatformDataSeedsAccountPersonTypeRecordTypes(t *testing.T) {
 	org := NewOrgState()
 	org.Objects["Account"] = ObjectState{

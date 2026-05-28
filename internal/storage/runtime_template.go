@@ -1,6 +1,9 @@
 package storage
 
-import "reflect"
+import (
+	"reflect"
+	"sync"
+)
 
 type RuntimeTemplate struct {
 	Org OrgState
@@ -13,6 +16,7 @@ func NewRuntimeTemplate(org OrgState) RuntimeTemplate {
 func (t RuntimeTemplate) CloneRuntimeOrg() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := t.Org
+	out.objectNameCache = &sync.Map{}
 	if t.Org.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(t.Org.Objects))
 		for name, object := range t.Org.Objects {

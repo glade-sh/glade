@@ -900,7 +900,7 @@ platformStaticCall:
 			return Value{Kind: ValueNull, Type: "String"}, nil
 		}
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Date") {
-			text, err := vm.displayString(args[0], result)
+			text, err := platformScalarText(args[0], "Date")
 			if err != nil {
 				return Null, err
 			}

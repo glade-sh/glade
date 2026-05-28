@@ -1133,7 +1133,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				"object":    objectName,
 			})
 			describe := vm.describeSObjectValue(objectName, definition)
-			if hint, ok := receiver.Fields["localNameHint"]; ok && hint.Kind == ValueBool && hint.Bool {
+			if vm.sObjectTypeDescribeShouldUseLocalName(objectName) {
+				describe = cloneValue(describe)
 				if name, ok := describe.Fields["name"]; ok && name.Kind == ValueString {
 					describe.Fields["name"] = String(localSchemaName(name.Text))
 				}
@@ -4390,4 +4391,25 @@ func passiveAccessorFieldName(receiver Value, suffix string) string {
 		return actual
 	}
 	return field
+}
+
+func (vm *VM) sObjectTypeDescribeShouldUseLocalName(typeName string) bool {
+	if vm == nil || vm.Org == nil {
+		return false
+	}
+	if !hasNamespaceTokenInSchemaName(typeName) {
+		return false
+	}
+	namespace := namespaceTokenInSchemaName(typeName)
+	if namespace == "" {
+		return false
+	}
+	if _, ok := vm.Org.Objects[localSchemaName(typeName)]; !ok {
+		return false
+	}
+	currentNamespace := strings.TrimSpace(vm.currentCallerNamespace())
+	if currentNamespace != "" {
+		return strings.EqualFold(namespace, currentNamespace)
+	}
+	return strings.EqualFold(namespace, strings.TrimSpace(vm.Org.Namespace))
 }

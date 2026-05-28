@@ -455,6 +455,92 @@ System.assertEquals(0, [SELECT Id FROM Detail__c].size());
 	}
 }
 
+func TestCloneRuntimeDoesNotShareJSONChildRelationshipTypeCache(t *testing.T) {
+	parentOnly := New(nil)
+	parentOnly.SetOrg(&storage.OrgState{
+		Objects: map[string]storage.ObjectState{
+			"Parent__c": {
+				Definition: storage.ObjectDefinition{
+					APIName: "Parent__c",
+					Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+				},
+			},
+		},
+	})
+	if _, ok := parentOnly.jsonSObjectChildRelationshipType("Parent__c", "Children__r"); ok {
+		t.Fatalf("parent-only org unexpectedly resolved child relationship")
+	}
+
+	withChild := parentOnly.CloneRuntime(nil)
+	withChild.SetOrg(&storage.OrgState{
+		Objects: map[string]storage.ObjectState{
+			"Parent__c": {
+				Definition: storage.ObjectDefinition{
+					APIName: "Parent__c",
+					Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+				},
+			},
+			"Child__c": {
+				Definition: storage.ObjectDefinition{
+					APIName: "Child__c",
+					Fields: map[string]storage.Field{
+						"Parent__c": {
+							APIName:               "Parent__c",
+							Type:                  storage.FieldReference,
+							ReferenceTo:           []string{"Parent__c"},
+							RelationshipName:      "Parent__r",
+							ChildRelationshipName: "Children__r",
+						},
+					},
+				},
+			},
+		},
+	})
+	if got, ok := withChild.jsonSObjectChildRelationshipType("Parent__c", "Children__r"); !ok || got != "List<Child__c>" {
+		t.Fatalf("clone child relationship type = %q, %v; want List<Child__c>, true", got, ok)
+	}
+}
+
+func TestSetOrgSameCountsClearsDescribeCachesWhenMetadataChanges(t *testing.T) {
+	machine := New(nil)
+	first := storage.NewOrgState()
+	first.Objects["Thing__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Thing__c",
+		Label:   "First Thing",
+		Fields: map[string]storage.Field{
+			"Name": {APIName: "Name", Type: storage.FieldString},
+		},
+	}}
+	second := storage.NewOrgState()
+	second.Objects["Thing__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Thing__c",
+		Label:   "Second Thing",
+		Fields: map[string]storage.Field{
+			"Name": {APIName: "Name", Type: storage.FieldString},
+		},
+	}}
+
+	machine.SetOrg(&first)
+	name, definition, ok := machine.describeObjectDefinition("Thing__c")
+	if !ok {
+		t.Fatalf("first object definition not found")
+	}
+	firstDescribe := machine.describeSObjectValue(name, definition)
+	if got := firstDescribe.Fields["label"].Text; got != "First Thing" {
+		t.Fatalf("first label = %q, want First Thing", got)
+	}
+
+	machine.SetOrg(&second)
+	name, definition, ok = machine.describeObjectDefinition("Thing__c")
+	if !ok {
+		t.Fatalf("second object definition not found")
+	}
+	secondDescribe := machine.describeSObjectValue(name, definition)
+	if got := secondDescribe.Fields["label"].Text; got != "Second Thing" {
+		t.Fatalf("second label = %q, want Second Thing", got)
+	}
+}
+
 func TestExecSObjectMapKeySetKeepsSObjectKeys(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
@@ -1247,6 +1333,7 @@ func TestExecAssignedParentRelationshipDoesNotPopulateLookupField(t *testing.T) 
 Account parent = new Account(Id = '001000000000001AAA');
 Child__c child = new Child__c();
 child.Parent__r = parent;
+System.assertEquals(parent, child.Parent__r);
 System.assertEquals(null, child.Parent__c);
 `)
 	if err != nil {
@@ -1278,6 +1365,177 @@ System.assertEquals(null, child.Parent__c);
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecAssignedParentRelationshipUsesLookupDerivedAliasWhenChildRelationshipDiffers(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account parent = new Account(Id = '001000000000001AAA');
+Child__c child = new Child__c();
+child.Parent__r = parent;
+System.assertEquals(parent, child.Parent__r);
+System.assertEquals(null, child.Parent__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Child__c",
+				Fields: map[string]storage.Field{
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "ChildRelationshipName"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Parent__c",
+					ParentObjects:      []string{"Account"},
+					ParentRelationship: "ChildRelationshipName",
+				}},
+			},
+		},
+		"Account": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Account",
+				Fields:  map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+			},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAssignedNamespacedParentRelationshipDoesNotPopulateLookupField(t *testing.T) {
+	program, err := CompileAnonymous(`
+DeferredSchedule__c deferredSchedule = new DeferredSchedule__c(Id = 'a010000000000001AAA');
+Transaction__c transactionRecord = new Transaction__c();
+transactionRecord.DeferredSchedule__r = deferredSchedule;
+System.assertEquals(deferredSchedule, transactionRecord.DeferredSchedule__r);
+System.assertEquals(null, transactionRecord.DeferredSchedule__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Namespace: "NU", Objects: map[string]storage.ObjectState{
+		"Transaction__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Transaction__c",
+				Fields: map[string]storage.Field{
+					"Id":                  {APIName: "Id", Type: storage.FieldID},
+					"DeferredSchedule__c": {APIName: "DeferredSchedule__c", Type: storage.FieldReference, ReferenceTo: []string{"DeferredSchedule__c"}, RelationshipName: "DeferredRevenueTransactions"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "DeferredSchedule__c",
+					ParentObjects:      []string{"DeferredSchedule__c"},
+					ParentRelationship: "DeferredRevenueTransactions",
+				}},
+			},
+		},
+		"DeferredSchedule__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "DeferredSchedule__c",
+				Fields:  map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+			},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestLookupExplicitParentRelationshipDoesNotBackfillLookupWhenChildRelationshipDiffers(t *testing.T) {
+	machine := New(nil)
+	org := storage.OrgState{Namespace: "NU", Objects: map[string]storage.ObjectState{
+		"Transaction__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Transaction__c",
+				Fields: map[string]storage.Field{
+					"Id":                  {APIName: "Id", Type: storage.FieldID},
+					"DeferredSchedule__c": {APIName: "DeferredSchedule__c", Type: storage.FieldReference, ReferenceTo: []string{"DeferredSchedule__c"}, RelationshipName: "DeferredRevenueTransactions"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "DeferredSchedule__c",
+					ParentObjects:      []string{"DeferredSchedule__c"},
+					ParentRelationship: "DeferredRevenueTransactions",
+				}},
+			},
+		},
+		"DeferredSchedule__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "DeferredSchedule__c",
+				Fields:  map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+			},
+		},
+	}}
+	machine.SetOrg(&org)
+	transaction := Object("Transaction__c")
+	transaction.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue("Transaction__c", map[string]bool{
+		"deferredschedule__c": true,
+		"deferredschedule__r": true,
+	})
+	deferredSchedule := Object("DeferredSchedule__c")
+	deferredSchedule.Fields["Id"] = String("a010000000000001AAA")
+	setExplicitSObjectField(&transaction, "DeferredSchedule__r", deferredSchedule)
+	value, err := machine.lookupPath(transaction, []string{"DeferredSchedule__c"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueNull {
+		t.Fatalf("explicit parent relationship backfilled lookup: %#v", value)
+	}
+	value, err = machine.lookupPath(transaction, []string{"NU__DeferredSchedule__c"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueNull {
+		t.Fatalf("explicit unqualified parent relationship backfilled namespaced lookup: %#v", value)
+	}
+}
+
+func TestAssignReferenceFieldWithSObjectStoresParentRelationshipSlot(t *testing.T) {
+	machine := New(nil)
+	org := storage.OrgState{Namespace: "NU", Objects: map[string]storage.ObjectState{
+		"Transaction__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Transaction__c",
+				Fields: map[string]storage.Field{
+					"Id":                  {APIName: "Id", Type: storage.FieldID},
+					"DeferredSchedule__c": {APIName: "DeferredSchedule__c", Type: storage.FieldReference, ReferenceTo: []string{"DeferredSchedule__c"}, RelationshipName: "DeferredRevenueTransactions"},
+				},
+			},
+		},
+		"DeferredSchedule__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "DeferredSchedule__c",
+				Fields:  map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+			},
+		},
+	}}
+	machine.SetOrg(&org)
+	transaction := Object("Transaction__c")
+	deferredSchedule := Object("DeferredSchedule__c")
+	deferredSchedule.Fields["Id"] = String("a010000000000001AAA")
+	if err := machine.assignPath(transaction, []string{"DeferredSchedule__c"}, deferredSchedule); err != nil {
+		t.Fatal(err)
+	}
+	lookup, err := machine.lookupPath(transaction, []string{"DeferredSchedule__c"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if lookup.Kind != ValueNull {
+		t.Fatalf("relationship assignment populated lookup: %#v", lookup)
+	}
+	relationship, err := machine.lookupPath(transaction, []string{"DeferredSchedule__r"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if relationship.Kind != ValueObject || relationship.Type != "DeferredSchedule__c" {
+		t.Fatalf("relationship slot = %#v", relationship)
 	}
 }
 
@@ -5296,6 +5554,57 @@ System.assertEquals('Blank', (String)nonCvoRows[0].get('Name'));
 			"012000000000102": {Object: "RecordType", ID: "012000000000102", Fields: map[string]storage.Value{"Name": storage.StringValue("Internal"), "DeveloperName": storage.StringValue("Internal"), "SobjectType": storage.StringValue("Batch__c")}},
 		},
 	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecManagedSOQLFiltersRecordTypeNameWithCurrentPackageObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id manualRecordTypeId = Batch__c.SObjectType.getDescribe().getRecordTypeInfosByName().get('Manual').getRecordTypeId();
+Entity__c entity = new Entity__c(Name = 'Primary');
+insert entity;
+Batch__c batch = new Batch__c(Name = 'Manual Batch', Entity__c = entity.Id, Status__c = 'Open', RecordTypeId = manualRecordTypeId);
+insert batch;
+List<Batch__c> rows = [SELECT Id, RecordType.Name FROM Batch__c WHERE RecordType.Name = 'Manual' AND Status__c = 'Open' AND Entity__c = :entity.Id];
+System.assertEquals(1, rows.size());
+System.assertEquals('Manual', rows[0].RecordType.Name);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "NU"
+	org.Objects["NU__Entity__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "NU__Entity__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["NU__Batch__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "NU__Batch__c",
+			KeyPrefix: "a02",
+			Fields: map[string]storage.Field{
+				"Name":          {APIName: "Name", Type: storage.FieldString},
+				"NU__Status__c": {APIName: "NU__Status__c", Type: storage.FieldString},
+				"NU__Entity__c": {APIName: "NU__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"NU__Entity__c"}, RelationshipName: "NU__Entity__r"},
+				"RecordTypeId":  {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},
+			},
+			Relations: []storage.Relationship{{Field: "RecordTypeId", ParentObjects: []string{"RecordType"}, ParentRelationship: "RecordType"}},
+			RecordTypes: []storage.RecordTypeInfo{
+				{ID: "012000000000101", DeveloperName: "Manual", Name: "Manual", Active: true, Available: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	storage.EnsureDeterministicPlatformData(&org)
 	machine := New(nil)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {

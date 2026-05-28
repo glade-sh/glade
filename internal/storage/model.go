@@ -832,6 +832,15 @@ func ResolveObjectName(org OrgState, name string) (string, bool) {
 			}
 		}
 	}
+	if org.Namespace != "" && !hasNamespaceToken(name) && isCustomAPIName(name) {
+		prefixed := NamespaceTokenName(org.Namespace, name)
+		if prefixed != name {
+			if _, ok := org.Objects[prefixed]; ok {
+				cacheResolvedObjectName(org, cacheKey, prefixed)
+				return prefixed, true
+			}
+		}
+	}
 	if exact, ok := org.Objects[name]; ok {
 		if preferred, preferredOK := richerNamespacedObjectMatch(org, name, exact); preferredOK {
 			cacheResolvedObjectName(org, cacheKey, preferred)

@@ -349,7 +349,7 @@ func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 		return equal, nil
 	}
 	if left.Kind == ValueString && right.Kind == ValueString {
-		if looksLikeID(left.Text) && looksLikeID(right.Text) {
+		if shouldCompareTextAsID(left.Text, right.Text) {
 			return apexIDTextEqual(left.Text, right.Text), nil
 		}
 		return strings.EqualFold(left.Text, right.Text), nil

@@ -3564,6 +3564,7 @@ func TestExecStringEqualityOperatorIsCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assert('Prepayment refunds are not allowed.' == 'Prepayment Refunds are not allowed.');
 System.assert(!('Prepayment refunds are not allowed.' != 'Prepayment Refunds are not allowed.'));
+System.assert('areaOfSpecialty' == 'AreaOfSpecialty');
 System.assert(new List<String>{'A'}.contains('A'));
 System.assert(!new List<String>{'A'}.contains('a'));
 `)

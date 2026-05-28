@@ -787,6 +787,15 @@ func (e *Engine) validateObjectID(definition storage.ObjectDefinition, record st
 		return nil
 	}
 	if !strings.HasPrefix(string(record.ID), definition.KeyPrefix) {
+		if e != nil && e.Org != nil {
+			if objectName, ok := storage.ResolveObjectName(*e.Org, record.Object); ok {
+				if object := e.Org.Objects[objectName]; object.Records != nil {
+					if _, _, ok := storage.LookupRecordByID(object.Records, record.ID); ok {
+						return nil
+					}
+				}
+			}
+		}
 		return dmlErrorf("INVALID_FIELD", []string{"Id"}, "dml: id %s does not belong to %s", record.ID, record.Object)
 	}
 	return nil

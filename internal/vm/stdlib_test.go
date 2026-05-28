@@ -2499,7 +2499,7 @@ System.assertEquals(0, counts.size());
 func TestExecCoreSystemTimeAndDebugStdlib(t *testing.T) {
 	program, err := CompileAnonymous(`
 Date today = System.today();
-System.assertEquals('2026-05-02 00:00:00', String.valueOf(today), 'System.today should use the VM clock');
+System.assertEquals('2026-05-02', String.valueOf(today), 'System.today should use the VM clock');
 System.assertEquals(0, Date.newInstance(2026, 5, 1).monthsBetween(Date.newInstance(2026, 5, 31)));
 System.assertEquals(1, Date.newInstance(2026, 5, 31).monthsBetween(Date.newInstance(2026, 6, 1)));
 System.assertEquals(-12, Date.newInstance(2026, 5, 1).monthsBetween(Date.newInstance(2025, 5, 1)));
@@ -3458,10 +3458,10 @@ System.assertEquals('Assigned 001000000000001AAA', 'Assigned {!Id}'.replace('{!I
 	}
 }
 
-func TestExecStringValueOfDateIncludesTimePortion(t *testing.T) {
+func TestExecStringValueOfDateUsesDateText(t *testing.T) {
 	program, err := CompileAnonymous(`
 String value = String.valueOf(Date.newInstance(2026, 5, 19));
-System.assertEquals('2026-05-19 00:00:00', value);
+System.assertEquals('2026-05-19', value);
 `)
 	if err != nil {
 		t.Fatal(err)
