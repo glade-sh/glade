@@ -2267,6 +2267,62 @@ System.assert(Account.Name != Account.Id);
 	}
 }
 
+func TestExecPicklistValuesAssignToUnqualifiedPicklistEntryList(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<PicklistEntry> entries = Account.Rating.getDescribe().getPicklistValues();
+System.assertEquals(1, entries.size());
+System.assertEquals('Warm', entries[0].getValue());
+System.assertEquals('Warm', entries[0].getLabel());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	storage.EnsureStandardObjectFields(&account.Definition)
+	account.Definition.Fields["Rating"] = storage.Field{
+		APIName:     "Rating",
+		Type:        storage.FieldPicklist,
+		DisplayType: "PICKLIST",
+		PicklistValues: []storage.PicklistValue{{
+			Value:   "Warm",
+			Label:   "Warm",
+			Active:  true,
+			Default: true,
+		}},
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestVMCoerceAssignableAllowsUnqualifiedPicklistEntry(t *testing.T) {
+	machine := New(nil)
+	entry := Object("Schema.PicklistEntry")
+	entry.Fields["value"] = String("Warm")
+	value := List(entry)
+
+	coerced, err := machine.coerceAssignable("List<PicklistEntry>", value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := coerced.List[0].Type; got != "Schema.PicklistEntry" {
+		t.Fatalf("coerced entry type = %q, want Schema.PicklistEntry", got)
+	}
+}
+
+func TestVMResolveTypeNameInClassMapsPicklistEntryToSchemaType(t *testing.T) {
+	machine := New(nil)
+	machine.RegisterClass(Class{Name: "ProductBundling"})
+
+	if got := machine.resolveTypeNameInClass("ProductBundling", "List<PicklistEntry>"); got != "List<Schema.PicklistEntry>" {
+		t.Fatalf("resolved type = %q, want List<Schema.PicklistEntry>", got)
+	}
+}
+
 func TestExecSchemaDisplayTypeReferenceComparesCaseInsensitively(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(Schema.DisplayType.Reference, Contact.AccountId.getDescribe().getType());
@@ -2779,6 +2835,34 @@ System.assert(fields.keySet().contains(tokenName.toLowerCase()), tokenName);
 		RelationshipName: "PrimaryAffiliation__r",
 	}
 	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectFieldTokenCanReferenceLookupTargetField(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.SObjectField fieldToken = Invoice__c.Account__c.Name;
+System.assertEquals('Name', String.valueOf(fieldToken));
+System.assertEquals('Name', fieldToken.getDescribe().getName());
+System.assertEquals('Account', fieldToken.getDescribe().getSObjectType().getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Invoice__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Invoice__c",
+			KeyPrefix: "a10",
+			Fields: map[string]storage.Field{
+				"Account__c": {APIName: "Account__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account__r"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)

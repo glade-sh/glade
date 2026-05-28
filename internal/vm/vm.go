@@ -9376,6 +9376,17 @@ func (vm *VM) sendEmail(args []Value, result *Result) (Value, error) {
 	return List(results...), nil
 }
 
+func (vm *VM) reserveEmailCapacity(callee string, args []Value, result *Result) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueInt {
+		return Null, fmt.Errorf("%s expects Integer", callee)
+	}
+	if args[0].Int < 0 {
+		return Null, fmt.Errorf("%s expects non-negative Integer", callee)
+	}
+	appendTrace(result, "apex.email.reserve", "apex.email", map[string]any{"method": callee, "capacity": args[0].Int})
+	return Null, nil
+}
+
 func (vm *VM) sendEmailMessage(args []Value, result *Result) (Value, error) {
 	if len(args) == 0 || len(args) > 2 {
 		return Null, fmt.Errorf("Messaging.sendEmailMessage expects email message Ids and optional allOrNothing")
@@ -12443,7 +12454,7 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	switch method {
 	case "setToAddresses", "setCcAddresses", "setBccAddresses", "setFileAttachments", "setEntityAttachments", "setDocumentAttachments", "setTargetObjectIds":
-		if len(args) != 1 || args[0].Kind != ValueList {
+		if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueNull) {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects List", method)
 		}
 		receiver.Fields[emailMessageFieldName(method)] = args[0]
@@ -12452,7 +12463,7 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 		"setCharset", "setInReplyTo", "setReferences", "setOrgWideEmailAddressId",
 		"setTargetObjectId", "setTemplateId", "setWhatId", "setOptOutPolicy", "setEmailPriority",
 		"setUnsubscribeComment":
-		if len(args) != 1 || (args[0].Kind != ValueString && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {
+		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueNull && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects String", method)
 		}
 		value := args[0]
@@ -12468,7 +12479,7 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 		receiver.Fields[emailMessageFieldName(method)] = args[0]
 		return Null, receiver, true, true, nil
 	case "setUnsubscribeUrls":
-		if len(args) != 1 || args[0].Kind != ValueList {
+		if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueNull) {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.setUnsubscribeUrls expects List")
 		}
 		receiver.Fields["unsubscribeUrls"] = args[0]
@@ -12497,13 +12508,13 @@ func callMassEmailMessageMember(receiver Value, method string, args []Value) (Va
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	switch method {
 	case "setTargetObjectIds", "setWhatIds":
-		if len(args) != 1 || args[0].Kind != ValueList {
+		if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueNull) {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects List", method)
 		}
 		receiver.Fields[emailMessageFieldName(method)] = args[0]
 		return Null, receiver, true, true, nil
 	case "setTemplateId", "setDescription", "setOptOutPolicy", "setEmailPriority", "setReplyTo", "setSenderDisplayName", "setSubject":
-		if len(args) != 1 || (args[0].Kind != ValueString && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {
+		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueNull && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects String", method)
 		}
 		value := args[0]
@@ -12596,7 +12607,7 @@ func (vm *VM) callCustomNotificationMember(receiver Value, method string, args [
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	switch method {
 	case "setBody", "setNotificationTypeId", "setSenderId", "setTargetId", "setTargetPageRef", "setTitle":
-		if len(args) != 1 || (args[0].Kind != ValueString && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {
+		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueNull && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.CustomNotification.%s expects String", method)
 		}
 		value := args[0]

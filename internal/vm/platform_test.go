@@ -3967,6 +3967,8 @@ System.assertEquals('trail.txt', msg.getFileAttachments().get(0).getFileName());
 Messaging.SingleEmailMessage second = new Messaging.SingleEmailMessage();
 second.setToAddresses(new List<String>{'second@example.test'});
 second.setPlainTextBody('Second body');
+Messaging.reserveSingleEmailCapacity(2);
+Messaging.reserveMassEmailCapacity(1);
 List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{msg, second}, false);
 System.assertEquals(1, Limits.getEmailInvocations());
 System.assertEquals(2, results.size());
@@ -3996,11 +3998,6 @@ System.assertEquals(0, results.get(0).getErrors().size());
 			name: "send-options overload",
 			src:  `Messaging.sendEmail(new List<Messaging.SingleEmailMessage>(), 'options');`,
 			want: `unsupported call "Messaging.sendEmail send options overloads"`,
-		},
-		{
-			name: "reserve capacity surface",
-			src:  `Messaging.reserveMassEmailCapacity(1);`,
-			want: `unsupported call "Messaging.reserveMassEmailCapacity local messaging transport/template surface"`,
 		},
 		{
 			name: "push notification surface",
@@ -4285,6 +4282,23 @@ System.assertEquals('open', actionable.getActionIdentifier());
 	org := emailTemplateTestOrg()
 	vm.SetOrg(&org)
 	if _, err := vm.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMessagingSettersAcceptNullOptionalArguments(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+email.setToAddresses(null);
+email.setCcAddresses(null);
+
+Messaging.CustomNotification custom = new Messaging.CustomNotification();
+custom.setSenderId(null);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

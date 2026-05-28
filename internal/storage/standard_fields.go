@@ -219,6 +219,12 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "LastName", Label: "Last Name", Type: FieldString},
 			{APIName: "MasterRecordId", Label: "Master Record ID", Type: FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "MasterRecord"},
 			{APIName: "NumberOfEmployees", Label: "Employees", Type: FieldInteger},
+			{APIName: "Ownership", Label: "Ownership", Type: FieldPicklist, PicklistValues: []PicklistValue{
+				{Value: "Public", Label: "Public", Active: true},
+				{Value: "Private", Label: "Private", Active: true},
+				{Value: "Subsidiary", Label: "Subsidiary", Active: true},
+				{Value: "Other", Label: "Other", Active: true},
+			}},
 			{APIName: "PersonBirthdate", Label: "Birthdate", Type: FieldDate},
 			{APIName: "PersonDepartment", Label: "Department", Type: FieldString},
 			{APIName: "PersonDoNotCall", Label: "Do Not Call", Type: FieldBoolean},

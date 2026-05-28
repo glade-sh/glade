@@ -2111,6 +2111,8 @@ platformStaticCall:
 		return vm.extractInboundEmail(args)
 	case "Messaging.renderStoredEmailTemplate":
 		return vm.renderStoredEmailTemplate(args)
+	case "Messaging.reserveSingleEmailCapacity", "Messaging.reserveMassEmailCapacity":
+		return vm.reserveEmailCapacity(callee, args, result)
 	case "Messaging.PushNotificationPayload.apple":
 		return messagingPushPayloadApple(args)
 	case "ApexPages.hasMessages":
@@ -2301,8 +2303,7 @@ platformStaticCall:
 		}
 		vm.currentPage = args[0]
 		return Null, nil
-	case "Messaging.reserveSingleEmailCapacity", "Messaging.reserveMassEmailCapacity",
-		"Messaging.sendPushNotification":
+	case "Messaging.sendPushNotification":
 		return Null, unsupportedCallError(callee + " local messaging transport/template surface")
 	case "URL.getSalesforceBaseUrl", "URL.getOrgDomainUrl":
 		if len(args) != 0 {

@@ -3699,6 +3699,8 @@ func platformShortTypeAlias(typeName string) (string, bool) {
 		return "Schema.DescribeFieldResult", true
 	case "DescribeSObjectResult":
 		return "Schema.DescribeSObjectResult", true
+	case "PicklistEntry":
+		return "Schema.PicklistEntry", true
 	default:
 		return "", false
 	}
@@ -3729,6 +3731,10 @@ func platformTokenTypeAlias(typeName, target string) bool {
 	case strings.EqualFold(typeName, "Schema.DescribeSObjectResult") && strings.EqualFold(target, "DescribeSObjectResult"):
 		return true
 	case strings.EqualFold(typeName, "DescribeSObjectResult") && strings.EqualFold(target, "Schema.DescribeSObjectResult"):
+		return true
+	case strings.EqualFold(typeName, "Schema.PicklistEntry") && strings.EqualFold(target, "PicklistEntry"):
+		return true
+	case strings.EqualFold(typeName, "PicklistEntry") && strings.EqualFold(target, "Schema.PicklistEntry"):
 		return true
 	case strings.EqualFold(typeName, "PageReference") && strings.EqualFold(target, "ApexPages.PageReference"):
 		return true

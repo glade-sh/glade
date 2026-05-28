@@ -763,6 +763,9 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	if field, ok := org.Objects["Account"].Definition.Fields["AccountNumber"]; !ok || field.Type != FieldString {
 		t.Fatalf("Account.AccountNumber field = %#v, %v", field, ok)
 	}
+	if field, ok := org.Objects["Account"].Definition.Fields["Ownership"]; !ok || field.Type != FieldPicklist || len(field.PicklistValues) == 0 || field.PicklistValues[0].Value == "" || !field.PicklistValues[0].Active {
+		t.Fatalf("Account.Ownership field = %#v, %v", field, ok)
+	}
 	if field, ok := org.Objects["CampaignMember"].Definition.Fields["CampaignId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Campaign" || !field.Required {
 		t.Fatalf("CampaignMember.CampaignId field = %#v, %v", field, ok)
 	}

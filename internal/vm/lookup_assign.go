@@ -272,6 +272,11 @@ func (vm *VM) lookup(name string) (Value, error) {
 			return value, nil
 		}
 	}
+	if len(parts) == 3 {
+		if token, ok := vm.lookupSObjectFieldToken(parts); ok {
+			return token, nil
+		}
+	}
 	if len(parts) == 3 && apexIdentifierStartsUpper(parts[0]) && apexIdentifierStartsUpper(parts[1]) && apexIdentifierStartsUpper(parts[2]) {
 		return Value{Kind: ValueObject, Type: parts[0] + "." + parts[1], Text: parts[2]}, nil
 	}
@@ -983,6 +988,9 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 	if len(parts) < 2 {
 		return Null, false
 	}
+	if len(parts) == 3 && !strings.EqualFold(parts[0], "Schema") && !strings.EqualFold(parts[1], "Fields") {
+		return vm.lookupSObjectRelationshipFieldToken(parts[0], parts[1], parts[2])
+	}
 	objectName := parts[0]
 	fieldName := ""
 	switch {
@@ -1038,6 +1046,68 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 		field.APIName = canonical
 	}
 	return vm.sObjectFieldTokenFromField(objectName, field), true
+}
+
+func (vm *VM) lookupSObjectRelationshipFieldToken(objectName, relationshipFieldName, targetFieldName string) (Value, bool) {
+	_, definition, ok := vm.describeObjectDefinition(objectName)
+	if !ok {
+		return Null, false
+	}
+	namespace := ""
+	if vm.Org != nil {
+		namespace = vm.Org.Namespace
+	}
+	canonicalRelationshipField, ok := storage.ResolveFieldName(definition, namespace, relationshipFieldName)
+	if !ok {
+		return Null, false
+	}
+	relationshipField := definition.Fields[canonicalRelationshipField]
+	if relationshipField.APIName == "" {
+		relationshipField.APIName = canonicalRelationshipField
+	}
+	if relationshipField.Type != storage.FieldReference || len(relationshipField.ReferenceTo) == 0 {
+		return Null, false
+	}
+	for _, targetObjectName := range relationshipField.ReferenceTo {
+		canonicalTarget, targetDefinition, targetOK := vm.describeObjectDefinition(targetObjectName)
+		if !targetOK {
+			continue
+		}
+		if targetField, ok := vm.resolveSObjectTokenField(canonicalTarget, targetDefinition, namespace, targetFieldName); ok {
+			return vm.sObjectFieldTokenFromField(canonicalTarget, targetField), true
+		}
+	}
+	return Null, false
+}
+
+func (vm *VM) resolveSObjectTokenField(objectName string, definition storage.ObjectDefinition, namespace, fieldName string) (storage.Field, bool) {
+	canonical, ok := storage.ResolveFieldName(definition, namespace, fieldName)
+	if !ok {
+		standardDefinition := definition.Clone()
+		storage.EnsureStandardObjectFieldsForFeatures(&standardDefinition, []string{"PersonAccounts"})
+		if standardField, standardOK := storage.ResolveFieldName(standardDefinition, namespace, fieldName); standardOK {
+			field := standardDefinition.Fields[standardField]
+			if field.APIName == "" {
+				field.APIName = standardField
+			}
+			return field, true
+		}
+		if vm.canSynthesizeSchemaField(objectName) {
+			synthetic := syntheticSchemaField(fieldName)
+			if synthetic.APIName != "" {
+				return synthetic, true
+			}
+		}
+		if !isSObjectSystemField(fieldName) {
+			return storage.Field{}, false
+		}
+		canonical = fieldName
+	}
+	field := definition.Fields[canonical]
+	if field.APIName == "" {
+		field.APIName = canonical
+	}
+	return field, true
 }
 
 func (vm *VM) canSynthesizeSchemaField(objectName string) bool {
