@@ -2440,6 +2440,25 @@ System.assert(record.get(createdDateField) != System.now());
 	}
 }
 
+func TestExecSObjectPutNullFieldTokenThrowsNullPointer(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account record = new Account();
+Schema.SObjectField fieldToken = Account.SObjectType.getDescribe().fields.getMap().get('Missing__c');
+try {
+  record.put(fieldToken, null);
+  System.assert(false, 'null field token should throw');
+} catch (System.NullPointerException e) {
+  System.assertEquals('Argument cannot be null.', e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTaskOwnerDescribeKeepsPolymorphicReferenceTargets(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Schema.SObjectType> references = Task.OwnerId.getDescribe().getReferenceTo();
@@ -2952,6 +2971,37 @@ System.assertEquals('ContactId', standardFields.get('pkg__ContactId').getDescrib
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStandardSObjectCastDescribeMapKeepsOpportunityFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+Opportunity opp = new Opportunity(Name = 'Test Opportunity', Amount = 15000.05,
+    CloseDate = Date.today().addDays(-30), StageName = 'Prospecting',
+    IsPrivate = false);
+SObject record = (SObject)opp;
+Map<String, Schema.SObjectField> fields = record.getSObjectType().getDescribe().fields.getMap();
+for (String fieldName : new List<String>{
+    'CloseDate',
+    'ExpectedRevenue',
+    'IsPrivate',
+    'IqScore',
+    'TotalOpportunityQuantity',
+    'StageName'
+}) {
+    System.assertNotEquals(null, fields.get(fieldName), fieldName);
+    System.assertNotEquals(null, fields.get(fieldName).getDescribe(), fieldName);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Opportunity")
 	machine := New(nil)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {

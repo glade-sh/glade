@@ -793,6 +793,18 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	if field, ok := org.Objects["Opportunity"].Definition.Fields["StageName"]; !ok || !field.Required {
 		t.Fatalf("Opportunity.StageName field = %#v, %v", field, ok)
 	}
+	if field, ok := org.Objects["Opportunity"].Definition.Fields["ExpectedRevenue"]; !ok || field.Type != FieldDecimal {
+		t.Fatalf("Opportunity.ExpectedRevenue field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["Opportunity"].Definition.Fields["IsPrivate"]; !ok || field.Type != FieldBoolean {
+		t.Fatalf("Opportunity.IsPrivate field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["Opportunity"].Definition.Fields["IqScore"]; !ok || field.Type != FieldInteger {
+		t.Fatalf("Opportunity.IqScore field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["Opportunity"].Definition.Fields["TotalOpportunityQuantity"]; !ok || field.Type != FieldDecimal {
+		t.Fatalf("Opportunity.TotalOpportunityQuantity field = %#v, %v", field, ok)
+	}
 	if field, ok := org.Objects["Opportunity"].Definition.Fields["RecordTypeId"]; !ok || field.Type != FieldReference {
 		t.Fatalf("Opportunity.RecordTypeId field = %#v, %v", field, ok)
 	}

@@ -4496,7 +4496,12 @@ System.assertEquals('Acme', previous);
 	a.put('Rating', null);
 	System.assert(a.isSet('Rating'), 'explicit null should count as set');
 	Schema.SObjectField missingField = null;
-	System.assertEquals(null, a.put(missingField, 'ignored'));
+	try {
+		a.put(missingField, 'ignored');
+		System.assert(false, 'null field token should throw');
+	} catch (System.NullPointerException e) {
+		System.assertEquals('Argument cannot be null.', e.getMessage());
+	}
 	Map<String,Object> populated = a.getPopulatedFieldsAsMap();
 	System.assertEquals(2, populated.size());
 System.assert(populated.containsKey('Name'), 'populated fields should include Name');
@@ -8470,6 +8475,42 @@ func TestExecNullSummaryFieldReevaluatesToZero(t *testing.T) {
 	}
 	if value.Kind != ValueDecimal || value.Decimal != 0 {
 		t.Fatalf("summary value = %#v, want decimal 0", value)
+	}
+}
+
+func TestExecMissingSummaryFieldOnNewSObjectReturnsEmptyAggregate(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme');
+System.assertEquals(0, account.get('SubTotal__c'));
+System.assertEquals(0, account.SubTotal__c);
+System.assertEquals(0, account.get('LineCount__c'));
+System.assertEquals(0, account.LineCount__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["SubTotal__c"] = storage.Field{
+		APIName:           "SubTotal__c",
+		Type:              storage.FieldSummary,
+		DisplayType:       "DECIMAL",
+		SummarizedField:   "WidgetLine__c.Amount__c",
+		SummaryForeignKey: "WidgetLine__c.Account__c",
+		SummaryOperation:  "sum",
+	}
+	account.Definition.Fields["LineCount__c"] = storage.Field{
+		APIName:           "LineCount__c",
+		Type:              storage.FieldSummary,
+		DisplayType:       "INTEGER",
+		SummaryForeignKey: "WidgetLine__c.Account__c",
+		SummaryOperation:  "count",
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

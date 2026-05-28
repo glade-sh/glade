@@ -5829,6 +5829,56 @@ System.assertEquals('Setup_Data__c', cache.get(Setup_Data__c.SObjectType).getNam
 	}
 }
 
+func TestExecCurrentPackageSObjectTypeStringMatchesDescribeName(t *testing.T) {
+	program, err := CompileAnonymous(`
+String describeName = Source__mdt.SObjectType.getDescribe().getName();
+System.assertEquals('Source__mdt', describeName);
+System.assertEquals(describeName, String.valueOf(Source__mdt.SObjectType));
+System.assertEquals(describeName, String.valueOf(Source__mdt.class));
+System.assertEquals(describeName, Source__mdt.class.getName());
+
+List<Schema.SObjectType> references = Container__mdt.Source__c.getDescribe().getReferenceTo();
+System.assertEquals(1, references.size());
+System.assertEquals(describeName, references[0].getDescribe().getName());
+System.assertEquals(describeName, String.valueOf(references[0]));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["Source__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Source__mdt",
+			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["pkg__Source__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "pkg__Source__mdt",
+			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["pkg__Container__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "pkg__Container__mdt",
+			Fields: map[string]storage.Field{
+				"Name":           {APIName: "Name", Type: storage.FieldString},
+				"pkg__Source__c": {APIName: "pkg__Source__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__Source__mdt"}, RelationshipName: "pkg__Source__r"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.currentNamespace = "pkg"
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectTypeDescribeKeepsManagedNameWithoutLocalObjectAlias(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals('pkg__Setting__c', Setting__c.SObjectType.getDescribe().getName());

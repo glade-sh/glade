@@ -29,7 +29,7 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 	if value.Type == "Type" {
 		if text := typeValueText(value); text != "" {
 			if objectName, ok := vm.resolveObjectName(text); ok {
-				return vm.describeObjectName(objectName), nil
+				return vm.sObjectTypeDisplayName(objectName), nil
 			}
 			return text, nil
 		}
@@ -59,7 +59,7 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 	}
 	if strings.EqualFold(value.Type, "Schema.SObjectType") {
 		if objectName, ok := value.Fields["object"]; ok && objectName.Kind == ValueString {
-			return vm.describeObjectName(objectName.Text), nil
+			return vm.sObjectTypeDisplayName(objectName.Text), nil
 		}
 	}
 	if value.Type == "LoggingLevel" && isLoggingLevelName(value.Text) {
@@ -110,6 +110,29 @@ func (vm *VM) defaultObjectDisplayString(value Value) string {
 	}
 	shortName := value.Type[strings.LastIndex(value.Type, ".")+1:]
 	return shortName + strings.TrimPrefix(text, value.Type)
+}
+
+func stringValueOfDate(value Value) (string, error) {
+	text, err := platformScalarText(value, "Date")
+	if err != nil {
+		return "", err
+	}
+	if strings.EqualFold(value.Static, "Object") {
+		return text + " 00:00:00", nil
+	}
+	return text, nil
+}
+
+func (vm *VM) sObjectTypeDisplayName(typeName string) string {
+	objectName := typeName
+	if resolved, ok := vm.resolveObjectName(typeName); ok {
+		objectName = resolved
+	}
+	displayName := vm.describeObjectName(objectName)
+	if vm.sObjectTypeDescribeShouldUseLocalName(objectName) {
+		return localSchemaName(displayName)
+	}
+	return displayName
 }
 
 func (vm *VM) equalCurrentNamespaceApexStubText(left, right string) bool {
@@ -1271,6 +1294,9 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 		if value, ok := vm.evaluateSummaryField(receiver, fieldDef); ok {
 			return vmValueFromStorage(value), true
 		}
+		if value, ok := emptySummaryStorageValue(fieldDef); ok {
+			return vmValueFromStorage(value), true
+		}
 		return storageFieldNullValue(fieldDef), true
 	}
 	if value, ok := vm.storedSObjectFieldValue(receiver, field); ok {
@@ -2024,6 +2050,17 @@ func (vm *VM) evaluateSummaryField(receiver Value, fieldDef storage.Field) (stor
 		return storage.DecimalValue("0"), true
 	}
 	return storage.DecimalValue(strconv.FormatFloat(total, 'f', -1, 64)), true
+}
+
+func emptySummaryStorageValue(fieldDef storage.Field) (storage.Value, bool) {
+	switch strings.ToLower(strings.TrimSpace(fieldDef.SummaryOperation)) {
+	case "count":
+		return storage.IntegerValue(0), true
+	case "sum":
+		return storage.DecimalValue("0"), true
+	default:
+		return storage.Value{}, false
+	}
 }
 
 func splitQualifiedField(name string) (string, string) {

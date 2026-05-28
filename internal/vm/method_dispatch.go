@@ -7097,7 +7097,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 				return Null, true, newExceptionError("SObjectException", err.Error())
 			}
 			if errors.Is(err, errSObjectFieldTokenNull) {
-				return Null, true, nil
+				return Null, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 			}
 			return Null, true, fmt.Errorf("SObject.put expects field name String or Schema.SObjectField and value")
 		}

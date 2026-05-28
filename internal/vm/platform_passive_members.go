@@ -2796,6 +2796,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return value, receiver, false, true, nil
 			}
 			return String(""), receiver, false, true, nil
+		case "isCommunityUsingSiteAsContainer":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Auth.AuthConfiguration.isCommunityUsingSiteAsContainer expects 0 arguments")
+			}
+			return Bool(false), receiver, false, true, nil
 		}
 	case "Auth.JWT":
 		switch method {
@@ -3650,10 +3655,7 @@ func (vm *VM) callTypeObjectMember(receiver Value, method string, args []Value, 
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Type.%s expects 0 arguments", method)
 		}
-		if value, ok := receiver.Fields["value"]; ok && value.Kind == ValueString {
-			return value, true, nil
-		}
-		return String(receiver.Text), true, nil
+		return String(vm.typeDisplayName(typeValueName(receiver))), true, nil
 	case "getNamespace", "getPackageName":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Type.%s expects 0 arguments", method)
@@ -3700,6 +3702,16 @@ func (vm *VM) callTypeObjectMember(receiver Value, method string, args []Value, 
 		return Bool(vm.typeMatches(source, target, make(map[string]bool))), true, nil
 	}
 	return Null, false, nil
+}
+
+func (vm *VM) typeDisplayName(typeName string) string {
+	if strings.TrimSpace(typeName) == "" {
+		return typeName
+	}
+	if objectName, ok := vm.resolveObjectName(typeName); ok {
+		return vm.sObjectTypeDisplayName(objectName)
+	}
+	return typeName
 }
 
 func (vm *VM) normalizeBuiltPassivePlatformDTO(object *Value) {

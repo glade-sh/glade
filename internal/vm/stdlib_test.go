@@ -3471,6 +3471,19 @@ System.assertEquals('2026-05-19', value);
 	}
 }
 
+func TestExecStringValueOfObjectDateUsesMidnightText(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object value = Date.newInstance(2026, 5, 19);
+System.assertEquals('2026-05-19 00:00:00', String.valueOf(value));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStringRepeatNegativeCountReturnsEmptyString(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals('', 'x'.repeat(-1));
