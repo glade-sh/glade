@@ -2757,6 +2757,19 @@ func (vm *VM) resolveExactNestedTypeInClassHierarchy(className, typeName string)
 }
 
 func (vm *VM) resolveNestedTypeInClassHierarchy(className, typeName string) (string, bool) {
+	key := nestedTypeKey{ClassName: className, TypeName: typeName}
+	if cached, ok := vm.nestedTypeHierarchyCache[key]; ok {
+		return cached.Name, cached.OK
+	}
+	name, ok := vm.resolveNestedTypeInClassHierarchyUncached(className, typeName)
+	if vm.nestedTypeHierarchyCache == nil {
+		vm.nestedTypeHierarchyCache = make(map[nestedTypeKey]nestedTypeResult)
+	}
+	vm.nestedTypeHierarchyCache[key] = nestedTypeResult{Name: name, OK: ok}
+	return name, ok
+}
+
+func (vm *VM) resolveNestedTypeInClassHierarchyUncached(className, typeName string) (string, bool) {
 	for owner := className; owner != ""; {
 		for _, ownerCandidate := range lexicalOwnerCandidates(owner) {
 			candidate := ownerCandidate + "." + typeName

@@ -6961,7 +6961,7 @@ func (vm *VM) classNamespace(className string) string {
 	if vm.classNamespaceCache == nil {
 		vm.classNamespaceCache = make(map[string]string)
 	}
-	cacheKey := canonicalClassLookupKey(className)
+	cacheKey := strings.TrimSpace(className)
 	if cacheKey != "" {
 		if namespace, ok := vm.classNamespaceCache[cacheKey]; ok {
 			return namespace
@@ -7093,9 +7093,13 @@ func (vm *VM) triggerNamespaceByName(name string) string {
 
 func (vm *VM) classForAccess(className string) (Class, bool) {
 	if vm.classForAccessCache == nil {
-		vm.classForAccessCache = make(map[string]classForAccessLookup)
+		vm.classForAccessCache = make(map[classForAccessKey]classForAccessLookup)
 	}
-	cacheKey := canonicalClassLookupKey(className) + "|" + canonicalClassLookupKey(vm.currentClass) + "|" + canonicalClassLookupKey(vm.currentNamespace)
+	cacheKey := classForAccessKey{
+		ClassName:        strings.TrimSpace(className),
+		CurrentClass:     strings.TrimSpace(vm.currentClass),
+		CurrentNamespace: strings.TrimSpace(vm.currentNamespace),
+	}
 	if cached, ok := vm.classForAccessCache[cacheKey]; ok {
 		return cached.Class, cached.OK
 	}
@@ -7478,7 +7482,7 @@ func (vm *VM) lookupClass(typeName string) (Class, bool) {
 		return class, true
 	}
 	if vm.sharedClassLookupKeys != nil {
-		if key, ok := vm.sharedClassLookupKeys[canonicalClassLookupKey(typeName)]; ok {
+		if key, ok := foldLookupStringMap(vm.sharedClassLookupKeys, typeName); ok {
 			if class, ok := vm.Classes[key]; ok {
 				return class, true
 			}
@@ -7488,7 +7492,7 @@ func (vm *VM) lookupClass(typeName string) (Class, bool) {
 	if vm.classLookup == nil {
 		vm.rebuildClassLookup()
 	}
-	if class, ok := vm.classLookup[canonicalClassLookupKey(typeName)]; ok {
+	if class, ok := foldLookupClassMap(vm.classLookup, typeName); ok {
 		return class, true
 	}
 	return Class{}, false
@@ -7662,7 +7666,8 @@ func (vm *VM) rebuildClassLookup() {
 func (vm *VM) resetClassAccessCaches() {
 	vm.namespaceClassLookup = make(map[string]map[string]namespaceClassLookup)
 	vm.classNamespaceCache = make(map[string]string)
-	vm.classForAccessCache = make(map[string]classForAccessLookup)
+	vm.classForAccessCache = make(map[classForAccessKey]classForAccessLookup)
+	vm.nestedTypeHierarchyCache = nil
 }
 
 func canonicalClassLookupKey(name string) string {
@@ -7688,6 +7693,74 @@ func canonicalClassLookupKey(name string) string {
 		buf[i] = c
 	}
 	return string(buf)
+}
+
+// foldClassKeyBuf is the max identifier length handled allocation-free by the
+// fold-lookup helpers. Apex class/namespace names are far shorter; longer names
+// fall back to the allocating canonicalClassLookupKey path.
+const foldClassKeyBuf = 256
+
+// foldLookupStringMap probes m with the case-folded form of name without
+// allocating. It relies on the Go compiler optimization that map indexing with
+// string([]byte) does not allocate when the conversion is inline at the index
+// expression. ASCII fold matches canonicalClassLookupKey for Apex identifiers.
+func foldLookupStringMap(m map[string]string, name string) (string, bool) {
+	trimmed := strings.TrimSpace(name)
+	needsFold := false
+	for i := 0; i < len(trimmed); i++ {
+		if c := trimmed[i]; c >= 'A' && c <= 'Z' {
+			needsFold = true
+			break
+		}
+	}
+	if !needsFold {
+		v, ok := m[trimmed]
+		return v, ok
+	}
+	if len(trimmed) <= foldClassKeyBuf {
+		var buf [foldClassKeyBuf]byte
+		for i := 0; i < len(trimmed); i++ {
+			c := trimmed[i]
+			if c >= 'A' && c <= 'Z' {
+				c += 'a' - 'A'
+			}
+			buf[i] = c
+		}
+		v, ok := m[string(buf[:len(trimmed)])]
+		return v, ok
+	}
+	v, ok := m[canonicalClassLookupKey(name)]
+	return v, ok
+}
+
+// foldLookupClassMap is foldLookupStringMap for the Class-valued classLookup.
+func foldLookupClassMap(m map[string]Class, name string) (Class, bool) {
+	trimmed := strings.TrimSpace(name)
+	needsFold := false
+	for i := 0; i < len(trimmed); i++ {
+		if c := trimmed[i]; c >= 'A' && c <= 'Z' {
+			needsFold = true
+			break
+		}
+	}
+	if !needsFold {
+		v, ok := m[trimmed]
+		return v, ok
+	}
+	if len(trimmed) <= foldClassKeyBuf {
+		var buf [foldClassKeyBuf]byte
+		for i := 0; i < len(trimmed); i++ {
+			c := trimmed[i]
+			if c >= 'A' && c <= 'Z' {
+				c += 'a' - 'A'
+			}
+			buf[i] = c
+		}
+		v, ok := m[string(buf[:len(trimmed)])]
+		return v, ok
+	}
+	v, ok := m[canonicalClassLookupKey(name)]
+	return v, ok
 }
 
 func resultForLookup() *Result {

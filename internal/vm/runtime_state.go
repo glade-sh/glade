@@ -39,7 +39,8 @@ type VM struct {
 	sharedClassCopyPlan       *classCopyPlan
 	namespaceClassLookup      map[string]map[string]namespaceClassLookup
 	classNamespaceCache       map[string]string
-	classForAccessCache       map[string]classForAccessLookup
+	classForAccessCache       map[classForAccessKey]classForAccessLookup
+	nestedTypeHierarchyCache  map[nestedTypeKey]nestedTypeResult
 	enumLookup                map[string]enumClassLookup
 	enumSuffixLookup          map[string]enumClassLookup
 	uniqueNestedTypeCache     map[string]uniqueNestedTypeLookup
@@ -184,6 +185,31 @@ type triggerNamespaceLookupKey struct {
 type classForAccessLookup struct {
 	Class Class
 	OK    bool
+}
+
+// classForAccessKey is the cache key for classForAccess. Using the raw
+// (whitespace-trimmed) name components as a struct key avoids the per-call
+// allocation of canonicalizing and concatenating three strings just to probe
+// the cache. Case variants get distinct entries, each resolved correctly by the
+// case-insensitive lookup logic, so correctness is unchanged.
+type classForAccessKey struct {
+	ClassName        string
+	CurrentClass     string
+	CurrentNamespace string
+}
+
+// nestedTypeKey memoizes resolveNestedTypeInClassHierarchy. The resolution is a
+// pure function of the (immutable) compiled class hierarchy, so per-VM caching
+// is safe: per-test clones never register new classes, and the access caches are
+// reset whenever class registration changes.
+type nestedTypeKey struct {
+	ClassName string
+	TypeName  string
+}
+
+type nestedTypeResult struct {
+	Name string
+	OK   bool
 }
 
 type pushUpgradeCustomization struct {
@@ -386,7 +412,7 @@ func New(stdout io.Writer) *VM {
 		classLookup:           make(map[string]Class),
 		namespaceClassLookup:  make(map[string]map[string]namespaceClassLookup),
 		classNamespaceCache:   make(map[string]string),
-		classForAccessCache:   make(map[string]classForAccessLookup),
+		classForAccessCache:   make(map[classForAccessKey]classForAccessLookup),
 		enumLookup:            make(map[string]enumClassLookup),
 		enumSuffixLookup:      make(map[string]enumClassLookup),
 		uniqueNestedTypeCache: make(map[string]uniqueNestedTypeLookup),
