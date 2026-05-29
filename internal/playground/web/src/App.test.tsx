@@ -3,9 +3,9 @@ import { expect, test, vi } from "vitest"
 
 import App from "./App"
 
-test("renders Database as a center workspace tab", () => {
+test("hides Database as a center workspace tab until Advanced is on", () => {
   vi.stubGlobal("localStorage", {
-    getItem: () => "dark",
+    getItem: (key: string) => (key === "glade-playground-theme" ? "dark" : "false"),
     setItem: () => undefined,
   })
 
@@ -13,6 +13,18 @@ test("renders Database as a center workspace tab", () => {
 
   expect(html).toContain("Apex Source")
   expect(html).toContain("Execute Anonymous")
+  expect(html).not.toContain('data-testid="workspace-database-tab"')
+  expect(html).not.toContain("database-work-surface")
+})
+
+test("renders Database as a center workspace tab when Advanced is on", () => {
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => (key === "glade-playground-advanced" ? "true" : "dark"),
+    setItem: () => undefined,
+  })
+
+  const html = renderToString(<App />)
+
   expect(html).toContain("Database")
   expect(html).toContain('data-testid="workspace-database-tab"')
   expect(html).not.toContain("database-work-surface")

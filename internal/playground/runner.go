@@ -199,6 +199,9 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 	machine.SetContext(ctx)
 	machine.SetTraceEnabled(true)
 	machine.SetLimitMode(req.LimitMode)
+	if req.LimitCaps != nil {
+		machine.SetLimitCaps(*req.LimitCaps)
+	}
 	machine.SetOrg(&runOrg)
 
 	execStart := time.Now()

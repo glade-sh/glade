@@ -6,7 +6,7 @@
     <title>Glade | Orgless Apex Runtime</title>
     <meta
       name="description"
-      content="Install Glade, an orgless Apex runtime for local development, test runs, SOQL, DML, and Salesforce-shaped integration tests."
+      content="Glade is an orgless Apex runtime that parses, type-checks, and runs Salesforce Apex locally for fast tests, SOQL, DML, triggers, editor support, CI, and local API flows."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -180,8 +180,10 @@
         </a>
         <nav class="hidden items-center gap-6 text-sm text-white/[0.58] md:flex">
           <a class="hover:text-white" href="#install">Install</a>
-          <a class="hover:text-white" href="#commands">Commands</a>
-          <a class="hover:text-white" href="#docs">Docs</a>
+          <a class="hover:text-white" href="#value">Value</a>
+          <a class="hover:text-white" href="#features">Features</a>
+          <a class="hover:text-white" href="/docs/">Docs</a>
+          <a class="hover:text-white" href="https://play.glade.sh/playground/">Playground</a>
         </nav>
         <div class="hidden items-center gap-2 sm:flex">
           <button
@@ -211,9 +213,26 @@
           </p>
           <h1 class="hero-title text-7xl font-semibold leading-none md:text-9xl">Glade</h1>
           <p class="mt-7 max-w-3xl text-xl leading-9 text-white/[0.72]">
-            Local Apex development and testing without waiting on a Salesforce org.
-            Run checks, tests, SOQL, DML, triggers, and local API flows from one binary.
+            Parse, type-check, and run Salesforce Apex on your machine with no scratch org and no org connection.
+            Fast tests, SOQL, DML, triggers, limits, editor tools, CI, and a local Salesforce-shaped API from one Go binary.
           </p>
+
+          <div class="mt-8 flex flex-wrap justify-center gap-3 text-sm">
+            <a
+              href="/docs/"
+              class="inline-flex items-center gap-2 rounded bg-mint px-4 py-2 font-semibold text-ink hover:bg-white"
+            >
+              <i data-lucide="book-open" class="h-4 w-4"></i>
+              Open docs
+            </a>
+            <a
+              href="https://play.glade.sh/playground/"
+              class="inline-flex items-center gap-2 rounded border border-white/[0.15] bg-white/5 px-4 py-2 font-semibold text-white hover:bg-white/10"
+            >
+              <i data-lucide="sparkles" class="h-4 w-4"></i>
+              Open playground
+            </a>
+          </div>
 
           <div id="install" class="shell-surface mt-10 w-full max-w-3xl rounded border border-white/[0.15] bg-white/[0.045] p-3 text-left">
             <div class="flex flex-col gap-3 md:flex-row md:items-center">
@@ -237,9 +256,9 @@
           </div>
 
           <div class="mt-8 flex flex-wrap justify-center gap-3 text-sm text-white/70">
-            <span class="rounded border border-white/[0.12] bg-white/[0.035] px-3 py-2"><span class="mr-2 text-mint">●</span>Single binary for local Apex loops.</span>
-            <span class="rounded border border-white/[0.12] bg-white/[0.035] px-3 py-2"><span class="mr-2 text-sky-200">●</span>JSON and JUnit output for CI.</span>
-            <span class="rounded border border-white/[0.12] bg-white/[0.035] px-3 py-2"><span class="mr-2 text-amber-200">●</span>Compatibility gates for release claims.</span>
+            <span class="rounded border border-white/[0.12] bg-white/[0.035] px-3 py-2"><span class="mr-2 text-mint">●</span>No scratch org. No org login.</span>
+            <span class="rounded border border-white/[0.12] bg-white/[0.035] px-3 py-2"><span class="mr-2 text-sky-200">●</span>Runs anywhere your CI can run Go binaries.</span>
+            <span class="rounded border border-white/[0.12] bg-white/[0.035] px-3 py-2"><span class="mr-2 text-amber-200">●</span>Compatibility gates for every support claim.</span>
           </div>
 
           <div class="terminal-bezel shell-surface relative mt-10 w-full max-w-4xl overflow-hidden rounded-xl border border-white/10 p-3 text-left">
@@ -285,7 +304,79 @@
         </div>
       </section>
 
-      <section id="commands" class="grid-faint border-b border-white/10 bg-[#0a0f16] py-16">
+      <section id="value" class="border-b border-white/10 bg-ink py-16">
+        <div class="mx-auto max-w-5xl px-5">
+          <div class="mx-auto max-w-3xl text-center">
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-mint">Why it fits the inner loop</p>
+            <h2 class="mt-3 text-3xl font-semibold md:text-4xl">Apex work without the org weather.</h2>
+            <p class="mt-4 leading-7 text-white/[0.64]">
+              Glade keeps the compile, test, data, and API loop on your machine. The same runtime follows from editor to CI to server.
+            </p>
+          </div>
+          <div class="mt-9 grid gap-4 md:grid-cols-4">
+            <article class="shell-surface rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="unlink" class="mb-7 h-5 w-5 text-mint"></i>
+              <h3 class="font-semibold">No scratch org</h3>
+              <p class="mt-2 text-sm leading-6 text-white/60">Run Apex locally with no org connection, deploy wait, or warm scratch org.</p>
+            </article>
+            <article class="shell-surface rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="repeat-2" class="mb-7 h-5 w-5 text-sky-200"></i>
+              <h3 class="font-semibold">Same runtime everywhere</h3>
+              <p class="mt-2 text-sm leading-6 text-white/60">CLI, editor, CI, and local server all route through one Apex runtime.</p>
+            </article>
+            <article class="shell-surface rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="git-branch" class="mb-7 h-5 w-5 text-amber-200"></i>
+              <h3 class="font-semibold">Fast affected tests</h3>
+              <p class="mt-2 text-sm leading-6 text-white/60">Build a local symbol graph and run the tests touched by a change.</p>
+            </article>
+            <article class="shell-surface rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="shield-check" class="mb-7 h-5 w-5 text-mint"></i>
+              <h3 class="font-semibold">Compatibility-tracked</h3>
+              <p class="mt-2 text-sm leading-6 text-white/60">Salesforce-shaped behavior is backed by fixtures, gates, and a dashboard.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="quickstart" class="grid-faint border-b border-white/10 bg-[#0a0f16] py-16">
+        <div class="mx-auto max-w-5xl px-5">
+          <div class="mx-auto max-w-3xl text-center">
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-mint">See it in 30 seconds</p>
+            <h2 class="mt-3 text-3xl font-semibold md:text-4xl">Three commands. Same local runtime.</h2>
+            <p class="mt-4 leading-7 text-white/[0.64]">
+              Start with tests, try anonymous Apex, then narrow the loop to files changed since main.
+            </p>
+          </div>
+          <div class="mt-9 grid gap-4 md:grid-cols-3">
+            <article class="shell-surface rounded border border-white/[0.12] bg-white/[0.05] p-5">
+              <div class="mb-4 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/[0.38]">
+                <i data-lucide="flask-conical" class="h-4 w-4 text-mint"></i>
+                test
+              </div>
+              <pre class="overflow-x-auto rounded bg-ink p-4 font-mono text-xs leading-6 text-mint"><code><span class="text-white/[0.35]">$</span> glade test --project .
+<span class="text-white/[0.35]">-&gt;</span> local Apex tests</code></pre>
+            </article>
+            <article class="shell-surface rounded border border-white/[0.12] bg-white/[0.05] p-5">
+              <div class="mb-4 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/[0.38]">
+                <i data-lucide="terminal" class="h-4 w-4 text-sky-200"></i>
+                exec
+              </div>
+              <pre class="overflow-x-auto rounded bg-ink p-4 font-mono text-xs leading-6 text-mint"><code><span class="text-white/[0.35]">$</span> glade exec 'System.debug(1+1);'
+<span class="text-white/[0.35]">-&gt;</span> USER_DEBUG 2</code></pre>
+            </article>
+            <article class="shell-surface rounded border border-white/[0.12] bg-white/[0.05] p-5">
+              <div class="mb-4 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/[0.38]">
+                <i data-lucide="git-pull-request" class="h-4 w-4 text-amber-200"></i>
+                changed
+              </div>
+              <pre class="overflow-x-auto rounded bg-ink p-4 font-mono text-xs leading-6 text-mint"><code><span class="text-white/[0.35]">$</span> glade test --changed-since origin/main
+<span class="text-white/[0.35]">-&gt;</span> affected tests only</code></pre>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="commands" class="border-b border-white/10 bg-ink py-16">
         <div class="mx-auto max-w-5xl px-5 text-center">
           <h2 class="text-3xl font-semibold md:text-4xl">The loop is command first.</h2>
           <p class="mx-auto mt-4 max-w-2xl leading-7 text-white/[0.64]">
@@ -314,6 +405,65 @@
         </div>
       </section>
 
+      <section id="features" class="grid-faint border-b border-white/10 bg-[#0a0f16] py-16">
+        <div class="mx-auto max-w-5xl px-5">
+          <div class="mx-auto max-w-3xl text-center">
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-mint">Runtime surface</p>
+            <h2 class="mt-3 text-3xl font-semibold md:text-4xl">The Apex pieces, cut to run locally.</h2>
+            <p class="mt-4 leading-7 text-white/[0.64]">
+              The parser, checker, VM, data runtime, tools, and compatibility fixtures all ship in the same binary.
+            </p>
+          </div>
+          <div class="mt-9 grid gap-4 text-left sm:grid-cols-2 lg:grid-cols-3">
+            <article class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="file-check" class="mb-7 h-5 w-5 text-mint"></i>
+              <h3 class="font-semibold">Parse &amp; type-check</h3>
+              <p class="mt-2 text-sm leading-6 text-white/60">Apex classes, triggers, schema metadata, diagnostics, and a local symbol graph.</p>
+            </article>
+            <article class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="flask-conical" class="mb-7 h-5 w-5 text-sky-200"></i>
+              <h3 class="font-semibold">Run Apex tests</h3>
+              <p class="mt-2 text-sm leading-6 text-white/60">Execute supported tests locally with isolated storage and machine-readable reports.</p>
+            </article>
+            <article class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="git-branch" class="mb-7 h-5 w-5 text-amber-200"></i>
+              <h3 class="font-semibold">Affected-test selection</h3>
+              <p class="mt-2 text-sm leading-6 text-white/60">Use source impact to run only tests touched by a change.</p>
+            </article>
+            <article class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="database" class="mb-7 h-5 w-5 text-mint"></i>
+              <h3 class="font-semibold">SOQL</h3>
+              <p class="mt-2 text-sm leading-6 text-white/60">Query local SObjects through a Salesforce-shaped in-memory runtime.</p>
+            </article>
+            <article class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="workflow" class="mb-7 h-5 w-5 text-sky-200"></i>
+              <h3 class="font-semibold">DML + triggers</h3>
+              <p class="mt-2 text-sm leading-6 text-white/60">Insert, update, delete, validate, roll back, and fire supported triggers.</p>
+            </article>
+            <article class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="gauge" class="mb-7 h-5 w-5 text-amber-200"></i>
+              <h3 class="font-semibold">Governor limits</h3>
+              <p class="mt-2 text-sm leading-6 text-white/60">Track runtime limits so local execution fails where supported behavior should fail.</p>
+            </article>
+            <article class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="panel-left" class="mb-7 h-5 w-5 text-mint"></i>
+              <h3 class="font-semibold">LSP + DAP</h3>
+              <p class="mt-2 text-sm leading-6 text-white/60">Editor diagnostics, tasks, debug snapshots, and watch-mode feedback.</p>
+            </article>
+            <article class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="server" class="mb-7 h-5 w-5 text-sky-200"></i>
+              <h3 class="font-semibold">Local HTTP API server</h3>
+              <p class="mt-2 text-sm leading-6 text-white/60">Exercise Salesforce-shaped REST flows against local data and SQLite persistence.</p>
+            </article>
+            <article class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]">
+              <i data-lucide="layout-dashboard" class="mb-7 h-5 w-5 text-amber-200"></i>
+              <h3 class="font-semibold">Compatibility dashboard</h3>
+              <p class="mt-2 text-sm leading-6 text-white/60">Status, gaps, fixtures, and gates make support claims visible.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <section class="border-b border-white/10 bg-ink py-16">
         <div class="mx-auto max-w-5xl px-5 text-center">
           <h2 class="text-3xl font-semibold md:text-4xl">The same runtime everywhere.</h2>
@@ -336,27 +486,30 @@
 
       <section id="docs" class="grid-faint bg-[#0a0f16] py-16">
         <div class="mx-auto max-w-5xl px-5 text-center">
-          <h2 class="text-3xl font-semibold md:text-4xl">Use it, wire it, ship it.</h2>
+          <h2 class="text-3xl font-semibold md:text-4xl">Use it, wire it, try it.</h2>
+          <p class="mx-auto mt-4 max-w-2xl leading-7 text-white/[0.64]">
+            Start in the docs, open the playground, or inspect the source when you need the grain of the runtime.
+          </p>
           <div class="mt-9 grid gap-4 text-left md:grid-cols-4">
-            <a class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]" href="https://github.com/glade-sh/glade/tree/main/docs/INSTALL.md">
-              <i data-lucide="download" class="mb-7 h-5 w-5 text-mint"></i>
-              <h3 class="font-semibold">Install</h3>
-              <p class="mt-2 text-sm text-white/60">Manual, CI, server, and playground setup.</p>
+            <a class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]" href="/docs/">
+              <i data-lucide="book-open" class="mb-7 h-5 w-5 text-mint"></i>
+              <h3 class="font-semibold">Open docs</h3>
+              <p class="mt-2 text-sm text-white/60">Install, editor setup, server use, and compatibility notes.</p>
             </a>
-            <a class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]" href="https://github.com/glade-sh/glade/tree/main/docs/EDITOR.md">
-              <i data-lucide="panel-left" class="mb-7 h-5 w-5 text-sky-200"></i>
-              <h3 class="font-semibold">Editor</h3>
-              <p class="mt-2 text-sm text-white/60">Tasks, LSP, DAP, watch mode, and reports.</p>
+            <a class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]" href="https://play.glade.sh/playground/">
+              <i data-lucide="sparkles" class="mb-7 h-5 w-5 text-sky-200"></i>
+              <h3 class="font-semibold">Open playground</h3>
+              <p class="mt-2 text-sm text-white/60">Try Apex snippets in a browser-backed Glade loop.</p>
             </a>
-            <a class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]" href="https://github.com/glade-sh/glade/tree/main/docs/COMPATIBILITY_DASHBOARD.md">
-              <i data-lucide="gauge" class="mb-7 h-5 w-5 text-mint"></i>
-              <h3 class="font-semibold">Compatibility</h3>
-              <p class="mt-2 text-sm text-white/60">Current support surface and status.</p>
+            <a class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]" href="https://github.com/glade-sh/glade">
+              <i data-lucide="github" class="mb-7 h-5 w-5 text-mint"></i>
+              <h3 class="font-semibold">GitHub</h3>
+              <p class="mt-2 text-sm text-white/60">Source, issues, releases, fixtures, and project history.</p>
             </a>
-            <a class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]" href="https://github.com/glade-sh/glade/tree/main/docs/DISTRIBUTION_WORKFLOW.md">
-              <i data-lucide="ship" class="mb-7 h-5 w-5 text-amber-200"></i>
-              <h3 class="font-semibold">Release</h3>
-              <p class="mt-2 text-sm text-white/60">Tags, checksums, artifacts, and tap updates.</p>
+            <a class="rounded border border-white/[0.12] bg-white/[0.05] p-5 transition hover:-translate-y-0.5 hover:border-mint/[0.45]" href="https://glade.sh/install.sh">
+              <i data-lucide="download" class="mb-7 h-5 w-5 text-amber-200"></i>
+              <h3 class="font-semibold">install.sh</h3>
+              <p class="mt-2 text-sm text-white/60">The same install script used by the command above.</p>
             </a>
           </div>
         </div>
@@ -367,6 +520,8 @@
       <div class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 text-center md:flex-row md:text-left">
         <p><span class="font-mono text-mint">127.0.0.1</span> is a fine place to test Apex.</p>
         <div class="flex gap-4">
+          <a class="hover:text-white" href="/docs/">Docs</a>
+          <a class="hover:text-white" href="https://play.glade.sh/playground/">Playground</a>
           <a class="hover:text-white" href="https://github.com/glade-sh/glade">GitHub</a>
           <a class="hover:text-white" href="https://glade.sh/install.sh">install.sh</a>
         </div>
@@ -398,9 +553,13 @@
             <div class="font-medium">Run tests</div>
             <code class="mt-1 block font-mono text-xs text-mint">glade test --project . --json</code>
           </a>
-          <a class="block px-4 py-3 hover:bg-white/[0.055]" href="#docs" data-command-link>
+          <a class="block px-4 py-3 hover:bg-white/[0.055]" href="/docs/" data-command-link>
             <div class="font-medium">Open docs</div>
-            <code class="mt-1 block font-mono text-xs text-white/[0.45]">install, editor, compatibility, release</code>
+            <code class="mt-1 block font-mono text-xs text-white/[0.45]">/docs/</code>
+          </a>
+          <a class="block px-4 py-3 hover:bg-white/[0.055]" href="https://play.glade.sh/playground/" data-command-link>
+            <div class="font-medium">Open playground</div>
+            <code class="mt-1 block font-mono text-xs text-white/[0.45]">play.glade.sh/playground</code>
           </a>
         </div>
       </div>

@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/glade-sh/glade/internal/playground"
 	"github.com/glade-sh/glade/internal/project"
@@ -106,6 +109,7 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	addr := "127.0.0.1:1789"
+	addrProvided := false
 	dbPath := filepath.Join(".glade", "playground", "org.sqlite")
 	dataRoot := filepath.Join(".glade", "playground")
 	workspaceID := "default"
@@ -115,6 +119,9 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 	limitMode := vm.LimitModePermissive
 	openBrowser := false
 	once := false
+	public := false
+	runTimeout := time.Duration(0)
+	ratePerMinute := 0
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--addr":
@@ -122,6 +129,7 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 				return errors.New("--addr requires a value")
 			}
 			addr = args[i+1]
+			addrProvided = true
 			i++
 		case "--db":
 			if i+1 >= len(args) {
@@ -147,6 +155,28 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 			i++
 		case "--examples":
 			showExamples = true
+		case "--public":
+			public = true
+		case "--run-timeout":
+			if i+1 >= len(args) {
+				return errors.New("--run-timeout requires a value")
+			}
+			d, err := time.ParseDuration(args[i+1])
+			if err != nil {
+				return err
+			}
+			runTimeout = d
+			i++
+		case "--rate-per-minute":
+			if i+1 >= len(args) {
+				return errors.New("--rate-per-minute requires a value")
+			}
+			n, err := strconv.Atoi(args[i+1])
+			if err != nil {
+				return err
+			}
+			ratePerMinute = n
+			i++
 		case "--data-root":
 			if i+1 >= len(args) {
 				return errors.New("--data-root requires a value")
@@ -179,6 +209,13 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
+	if public && !addrProvided {
+		port := strings.TrimSpace(os.Getenv("PORT"))
+		if port == "" {
+			port = "8080"
+		}
+		addr = "0.0.0.0:" + port
+	}
 	ws, err := playground.OpenWorkspace(playground.WorkspaceOptions{
 		DataRoot:    dataRoot,
 		ID:          workspaceID,
@@ -193,6 +230,9 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 		DefaultLimitMode:  limitMode,
 		ProjectReferences: projectRefs,
 		ShowExamples:      showExamples,
+		Public:            public,
+		RunTimeout:        runTimeout,
+		RatePerMinute:     ratePerMinute,
 	})
 	url := "http://" + addr + "/playground/"
 	fmt.Fprintf(w, "glade playground: %s\n", url)

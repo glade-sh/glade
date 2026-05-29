@@ -1,0 +1,16 @@
+.git
+.github
+.do
+bin
+dist
+node_modules
+example-projects
+coverage.out
+*.test
+*.prof
+*.trace
+*.jsonl
+*.log
+glade
+.glade
+.DS_Store

@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CodeEditor } from "@/components/CodeEditor"
 import { cn } from "@/lib/utils"
@@ -189,6 +190,32 @@ function statusVariant(status: string): "success" | "warning" | "danger" | "outl
   return "outline"
 }
 
+function deepLinkedExampleId() {
+  if (typeof window === "undefined") return ""
+  const search = new URLSearchParams(window.location.search).get("example")
+  if (search) return search
+  const hash = window.location.hash.replace(/^#/, "")
+  if (!hash) return ""
+  return new URLSearchParams(hash).get("example") || (hash.startsWith("example=") ? hash.slice("example=".length) : "")
+}
+
+function writeExampleLink(id: string) {
+  if (typeof window === "undefined") return
+  const url = new URL(window.location.href)
+  url.search = ""
+  url.searchParams.set("example", id)
+  window.history.replaceState({}, "", `${url.pathname}${url.search}`)
+}
+
+function resultDefaultTab(result: RunResult | null, problemMessage = "") {
+  if ((result?.logs?.length ?? 0) > 0) return "logs"
+  if ((result?.vars?.length ?? 0) > 0) return "vars"
+  if (Object.keys(result?.limits ?? {}).length > 0) return "limits"
+  if ((result?.orgDiff?.length ?? 0) > 0) return "orgDiff"
+  if (problemMessage || (result?.diagnostics?.length ?? 0) > 0 || result?.errorMessage) return "problems"
+  return "logs"
+}
+
 const databaseKindFilters: { value: DatabaseObjectKind; label: string }[] = [
   { value: "all", label: "All" },
   { value: "standard", label: "Standard SObjects" },
@@ -218,7 +245,9 @@ export default function App() {
   const [problemMessage, setProblemMessage] = useState("")
   const [running, setRunning] = useState(false)
   const [dirtyPaths, setDirtyPaths] = useState<Set<string>>(new Set())
+  const [advanced, setAdvanced] = useState(() => localStorage.getItem("glade-playground-advanced") === "true")
   const [commandOpen, setCommandOpen] = useState(false)
+  const [resultTab, setResultTab] = useState("logs")
   const [examples, setExamples] = useState<ExampleProject[]>([])
   const [selectedExample, setSelectedExample] = useState("")
   const [canLoadExamples, setCanLoadExamples] = useState(true)
@@ -238,6 +267,8 @@ export default function App() {
   const modeRef = useRef<"scratch" | "persist">("scratch")
   const limitModeRef = useRef("permissive")
   const dirtyRef = useRef<Set<string>>(new Set())
+  const advancedRef = useRef(advanced)
+  const canLoadExamplesRef = useRef(canLoadExamples)
   const editSeqRef = useRef(0)
   const runSeqRef = useRef(0)
 
@@ -286,6 +317,23 @@ export default function App() {
   useEffect(() => {
     limitModeRef.current = limitMode
   }, [limitMode])
+
+  useEffect(() => {
+    canLoadExamplesRef.current = canLoadExamples
+  }, [canLoadExamples])
+
+  useEffect(() => {
+    advancedRef.current = advanced
+    localStorage.setItem("glade-playground-advanced", advanced ? "true" : "false")
+    if (!advanced) {
+      setCommandOpen(false)
+      setResultTab((current) => (current === "trace" ? "logs" : current))
+      modeRef.current = "scratch"
+      limitModeRef.current = "permissive"
+      setMode("scratch")
+      setLimitMode("permissive")
+    }
+  }, [advanced])
 
   const replaceDirty = useCallback((next: Set<string>) => {
     dirtyRef.current = next
@@ -391,12 +439,14 @@ export default function App() {
           return
         }
         setResult(next)
+        setResultTab(resultDefaultTab(next))
         setStatus(next.status === "pass" ? "Pass" : "Error")
         setCacheState(next.cacheHit ? "hit" : "fresh")
         void refreshDatabase().catch(() => undefined)
       } catch (error) {
         if (runSeq === runSeqRef.current) {
           setProblemMessage(error instanceof Error ? error.message : String(error))
+          setResultTab("problems")
           setStatus("Error")
         }
       } finally {
@@ -484,31 +534,6 @@ export default function App() {
   )
 
   useEffect(() => {
-    void loadWorkspace().catch((error) => {
-      setProblemMessage(error instanceof Error ? error.message : String(error))
-      setStatus("Error")
-    })
-  }, [loadWorkspace])
-
-  useEffect(() => {
-    let cancelled = false
-    void api<{ examples: ExampleProject[]; canLoad: boolean }>("examples")
-      .then((body) => {
-        if (cancelled) return
-        const nextExamples = body.examples ?? []
-        setExamples(nextExamples)
-        setCanLoadExamples(body.canLoad)
-        setSelectedExample((current) => current || nextExamples[0]?.id || "")
-      })
-      .catch(() => {
-        if (!cancelled) setCanLoadExamples(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase()
       if ((event.metaKey || event.ctrlKey) && key === "enter") {
@@ -519,6 +544,7 @@ export default function App() {
         event.preventDefault()
         void saveDirty().catch((error) => {
           setProblemMessage(error instanceof Error ? error.message : String(error))
+          setResultTab("problems")
           setStatus("Error")
         })
       }
@@ -535,7 +561,7 @@ export default function App() {
             setStatus("Error")
           })
       }
-      if ((event.metaKey || event.ctrlKey) && key === "k") {
+      if (advancedRef.current && (event.metaKey || event.ctrlKey) && key === "k") {
         event.preventDefault()
         setCommandOpen(true)
       }
@@ -559,6 +585,8 @@ export default function App() {
   const vars = result?.vars ?? []
   const limits = result?.limits ?? {}
   const orgDiff = result?.orgDiff ?? []
+  const showExampleFirst = examples.length > 0 && canLoadExamples
+  const showWorkspaceTree = advanced || !showExampleFirst
   const visibleDatabaseObjects = useMemo(() => {
     const needle = databaseSearch.trim().toLowerCase()
     const kindFiltered =
@@ -586,11 +614,6 @@ export default function App() {
     return counts
   }, [database.objects])
   const cacheLabel = cacheState === "hit" ? "cache hit" : cacheState === "fresh" ? "cache fresh" : "cache stale"
-  const selectedExampleDetails = useMemo(
-    () => examples.find((example) => example.id === selectedExample),
-    [examples, selectedExample],
-  )
-
   const onSourceChange = (value: string) => {
     if (!sourcePath || sourceReadOnly) return
     contentRef.current = { ...contentRef.current, [sourcePath]: value }
@@ -617,22 +640,70 @@ export default function App() {
     setStatus("Saved")
   }
 
+  const loadExampleById = useCallback(
+    async (id: string, options: { confirmDirty?: boolean; updateUrl?: boolean } = {}) => {
+      if (!id || !canLoadExamplesRef.current) return
+      const shouldConfirm = options.confirmDirty ?? true
+      if (shouldConfirm && dirtyRef.current.size > 0 && !window.confirm("Load example and replace this scratch workspace?")) return
+      runSeqRef.current += 1
+      setRunning(false)
+      setStatus("Loading")
+      setProblemMessage("")
+      setResult(null)
+      setResultTab("logs")
+      setCacheState("stale")
+      setSelectedExample(id)
+      if (options.updateUrl ?? true) writeExampleLink(id)
+      const workspace = await api<WorkspaceMetadata>("examples/load", {
+        method: "POST",
+        body: JSON.stringify({ id }),
+      })
+      await applyWorkspace(workspace, { loadLatest: false })
+      void refreshDatabase().catch(() => undefined)
+    },
+    [applyWorkspace, refreshDatabase],
+  )
+
   const loadExample = useCallback(async () => {
-    if (!selectedExample || !canLoadExamples) return
-    if (dirtyRef.current.size > 0 && !window.confirm("Load example and replace this scratch workspace?")) return
-    runSeqRef.current += 1
-    setRunning(false)
-    setStatus("Loading")
-    setProblemMessage("")
-    setResult(null)
-    setCacheState("stale")
-    const workspace = await api<WorkspaceMetadata>("examples/load", {
-      method: "POST",
-      body: JSON.stringify({ id: selectedExample }),
+    await loadExampleById(selectedExample)
+  }, [loadExampleById, selectedExample])
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      setStatus("Loading")
+      let nextExamples: ExampleProject[] = []
+      let nextCanLoad = false
+      try {
+        const body = await api<{ examples: ExampleProject[]; canLoad: boolean }>("examples")
+        if (cancelled) return
+        nextExamples = body.examples ?? []
+        nextCanLoad = body.canLoad
+        setExamples(nextExamples)
+        canLoadExamplesRef.current = nextCanLoad
+        setCanLoadExamples(nextCanLoad)
+        const linked = deepLinkedExampleId()
+        const initial = linked && nextExamples.some((example) => example.id === linked) ? linked : nextExamples[0]?.id || ""
+        setSelectedExample(initial)
+        if (nextCanLoad && initial) {
+          await loadExampleById(initial, { confirmDirty: false, updateUrl: false })
+          return
+        }
+      } catch {
+        if (!cancelled) setCanLoadExamples(false)
+      }
+      if (cancelled) return
+      await loadWorkspace()
+    })().catch((error) => {
+      if (cancelled) return
+      setProblemMessage(error instanceof Error ? error.message : String(error))
+      setResultTab("problems")
+      setStatus("Error")
     })
-    await applyWorkspace(workspace, { loadLatest: false })
-    void refreshDatabase().catch(() => undefined)
-  }, [applyWorkspace, canLoadExamples, refreshDatabase, selectedExample])
+    return () => {
+      cancelled = true
+    }
+  }, [loadExampleById, loadWorkspace])
 
   const deleteWorkspaceFile = async (path: string) => {
     if (!window.confirm(`Delete ${fileName(path)} from this workspace?`)) return
@@ -667,6 +738,7 @@ export default function App() {
   const saveAndHandle = () => {
     void saveDirty().catch((error) => {
       setProblemMessage(error instanceof Error ? error.message : String(error))
+      setResultTab("problems")
       setStatus("Error")
     })
   }
@@ -674,6 +746,7 @@ export default function App() {
   const runAndHandle = () => {
     void run().catch((error) => {
       setProblemMessage(error instanceof Error ? error.message : String(error))
+      setResultTab("problems")
       setStatus("Error")
     })
   }
@@ -681,6 +754,7 @@ export default function App() {
   const loadExampleAndHandle = () => {
     void loadExample().catch((error) => {
       setProblemMessage(error instanceof Error ? error.message : String(error))
+      setResultTab("problems")
       setStatus("Error")
     })
   }
@@ -824,7 +898,7 @@ export default function App() {
           <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] text-muted-foreground">
             {dirty ? <CircleDashed className="size-3 text-amber-500" /> : null}
           </span>
-          {!file.readOnly && (file.kind === "class" || file.kind === "trigger") ? (
+          {advanced && !file.readOnly && (file.kind === "class" || file.kind === "trigger") ? (
             <Button
               variant="ghost"
               size="icon"
@@ -864,50 +938,63 @@ export default function App() {
           </div>
         </div>
         <div className="topbar-actions flex items-center gap-2">
-          <Select
-            value={mode}
-            onValueChange={(value) => {
-              const next = value as "scratch" | "persist"
-              modeRef.current = next
-              setMode(next)
-              setCacheState("stale")
-            }}
-          >
-            <SelectTrigger className="w-[118px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="scratch">scratch</SelectItem>
-              <SelectItem value="persist">persist</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={limitMode}
-            onValueChange={(value) => {
-              limitModeRef.current = value
-              setLimitMode(value)
-              setCacheState("stale")
-            }}
-          >
-            <SelectTrigger className="w-[132px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="permissive">permissive</SelectItem>
-              <SelectItem value="strict">strict</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="icon" onClick={saveAndHandle} title="Save">
-            <Save />
-          </Button>
-          <Button onClick={runAndHandle} disabled={running} title="Run">
+          {advanced ? (
+            <>
+              <Select
+                value={mode}
+                onValueChange={(value) => {
+                  const next = value as "scratch" | "persist"
+                  modeRef.current = next
+                  setMode(next)
+                  setCacheState("stale")
+                }}
+              >
+                <SelectTrigger className="w-[118px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="scratch">scratch</SelectItem>
+                  <SelectItem value="persist">persist</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={limitMode}
+                onValueChange={(value) => {
+                  limitModeRef.current = value
+                  setLimitMode(value)
+                  setCacheState("stale")
+                }}
+              >
+                <SelectTrigger className="w-[132px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="permissive">permissive</SelectItem>
+                  <SelectItem value="strict">strict</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="icon" onClick={saveAndHandle} title="Save">
+                <Save />
+              </Button>
+              <Button
+                className="topbar-command font-mono text-xs"
+                variant="ghost"
+                onClick={() => setCommandOpen(true)}
+                title="Command"
+              >
+                <Command />
+                /
+              </Button>
+            </>
+          ) : null}
+          <Button className="run-button" onClick={runAndHandle} disabled={running} title="Run">
             <Play />
             Run
           </Button>
-          <Button className="topbar-command font-mono text-xs" variant="ghost" onClick={() => setCommandOpen(true)} title="Command">
-            <Command />
-            /
-          </Button>
+          <label className="advanced-toggle flex items-center gap-2 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground">
+            <Switch id="advanced-toggle" checked={advanced} onCheckedChange={setAdvanced} aria-label="Show advanced tools" />
+            Advanced
+          </label>
           <Button variant="ghost" asChild>
             <a href="https://glade.sh" target="_blank" rel="noreferrer">
               Docs
@@ -928,124 +1015,142 @@ export default function App() {
         <aside className="pane flex min-h-0 min-w-0 flex-col overflow-hidden">
           <header className="pane-header">
             <div className="flex items-center gap-2">
-              <FolderTree className="size-4 text-primary" />
-              <h2 className="text-sm font-semibold">Workspace</h2>
+              {showExampleFirst ? <BookOpen className="size-4 text-primary" /> : <FolderTree className="size-4 text-primary" />}
+              <h2 className="text-sm font-semibold">{showExampleFirst ? "Examples" : "Workspace"}</h2>
             </div>
-            <Button size="sm" variant="outline" onClick={() => void createClass()} title="New class">
-              <Plus />
-              Class
-            </Button>
+            {advanced ? (
+              <Button size="sm" variant="outline" onClick={() => void createClass()} title="New class">
+                <Plus />
+                Class
+              </Button>
+            ) : null}
           </header>
-          {examples.length > 0 ? (
-            <div className="space-y-2 border-b border-border p-2">
-              <div className="flex gap-2">
-                <Select value={selectedExample} onValueChange={setSelectedExample}>
-                  <SelectTrigger className="h-8 min-w-0 flex-1">
-                    <SelectValue placeholder="Projects" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {examples.map((example) => (
-                      <SelectItem key={example.id} value={example.id}>
-                        {example.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  className="h-8 shrink-0"
-                  variant="outline"
-                  onClick={loadExampleAndHandle}
-                  disabled={!canLoadExamples || !selectedExample}
-                  title={canLoadExamples ? "Load project" : "Project loading only works in scratch workspaces"}
-                >
-                  <BookOpen />
-                  Load
-                </Button>
+          {showExampleFirst ? (
+            <ScrollArea className="examples-gallery min-h-0 flex-1">
+              <div className="space-y-2 p-3">
+                <p className="text-xs leading-5 text-muted-foreground">Pick a showcase, read the Apex, and press Run.</p>
+                {examples.map((example) => {
+                  const selected = example.id === selectedExample
+                  return (
+                    <button
+                      key={example.id}
+                      className={cn("example-card w-full", selected && "selected")}
+                      onClick={() => void loadExampleById(example.id).catch((error) => {
+                        setProblemMessage(error instanceof Error ? error.message : String(error))
+                        setResultTab("problems")
+                        setStatus("Error")
+                      })}
+                    >
+                      <span className="flex items-start justify-between gap-2">
+                        <span className="text-sm font-semibold text-foreground">{example.name}</span>
+                        {selected ? <Badge variant="success">loaded</Badge> : null}
+                      </span>
+                      <span className="mt-1 block text-left text-xs leading-5 text-muted-foreground">{example.description}</span>
+                      <span className="mt-2 flex flex-wrap gap-1">
+                        {(example.tags ?? []).map((tag) => (
+                          <Badge key={tag} variant="outline">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
-              {selectedExampleDetails ? (
-                <div className="space-y-1 px-1 pb-1">
-                  <p className="line-clamp-2 text-[11px] leading-4 text-muted-foreground">
-                    {selectedExampleDetails.description}
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {selectedExampleDetails.fileCount > 0 ? (
-                      <Badge variant="outline">{selectedExampleDetails.fileCount} files</Badge>
-                    ) : null}
-                    {(selectedExampleDetails.tags ?? []).map((tag) => (
-                      <Badge key={tag} variant="outline">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
+            </ScrollArea>
+          ) : examples.length > 0 ? (
+            <div className="border-b border-border p-3 text-xs leading-5 text-muted-foreground">
+              Built-in examples are listed, but this workspace cannot load them. Use Advanced to inspect files.
             </div>
           ) : null}
-          <div className="flex min-h-0 flex-1 flex-col p-3">
-            {groups.map((group) => {
-              return (
-                <div key={group.label} className="flex min-h-0 flex-1 flex-col">
-                  <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase text-muted-foreground">
-                    <FileCode2 className="size-3.5" />
-                    {group.label}
-                  </div>
-                  <label className="workspace-tree-search mb-2 flex h-8 min-w-0 items-center gap-2 rounded-md border border-border bg-background/70 px-2 text-muted-foreground">
-                    <Search className="size-3.5 shrink-0" />
-                    <input
-                      className="min-w-0 flex-1 border-0 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
-                      value={classSearch}
-                      onChange={(event) => setClassSearch(event.target.value)}
-                      placeholder="Search classes"
-                    />
-                  </label>
-                  <div className="workspace-tree-scroll min-h-0 flex-1">
-                    <div className="workspace-tree-content space-y-0.5 pr-3">
-                      {group.files.length === 0 ? (
-                        <div className="rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
-                          No matching classes
-                        </div>
-                      ) : null}
-                      {renderSourceTree(group.tree)}
+          {showWorkspaceTree ? (
+            <div className="flex min-h-0 flex-1 flex-col border-t border-border p-3">
+              {groups.map((group) => {
+                return (
+                  <div key={group.label} className="flex min-h-0 flex-1 flex-col">
+                    <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase text-muted-foreground">
+                      <FileCode2 className="size-3.5" />
+                      {group.label}
+                    </div>
+                    <label className="workspace-tree-search mb-2 flex h-8 min-w-0 items-center gap-2 rounded-md border border-border bg-background/70 px-2 text-muted-foreground">
+                      <Search className="size-3.5 shrink-0" />
+                      <input
+                        className="min-w-0 flex-1 border-0 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
+                        value={classSearch}
+                        onChange={(event) => setClassSearch(event.target.value)}
+                        placeholder="Search classes"
+                      />
+                    </label>
+                    <div className="workspace-tree-scroll min-h-0 flex-1">
+                      <div className="workspace-tree-content space-y-0.5 pr-3">
+                        {group.files.length === 0 ? (
+                          <div className="rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
+                            No matching classes
+                          </div>
+                        ) : null}
+                        {renderSourceTree(group.tree)}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          ) : null}
         </aside>
 
         <section className="min-h-0">
-          <Tabs defaultValue="apex" className="flex h-full min-h-0 flex-col">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="apex">Apex</TabsTrigger>
-              <TabsTrigger value="database" data-testid="workspace-database-tab">
-                Database
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="apex" className="min-h-0 flex-1">
-              <div className="editor-grid grid h-full min-h-0 gap-3">
-                <CodeEditor
-                  title="Apex Source"
-                  contextLabel={sourcePath ? fileName(sourcePath) : "No source"}
-                  contextTitle={sourcePath || "No source file selected"}
-                  value={sourceContent}
-                  onChange={onSourceChange}
-                  readOnly={sourceReadOnly}
-                />
-                <CodeEditor
-                  title="Execute Anonymous"
-                  value={anonymous}
-                  onChange={onAnonymousChange}
-                  runLabel={running ? "Running" : "Run"}
-                  running={running}
-                  onRun={runAndHandle}
-                />
-              </div>
-            </TabsContent>
-            <TabsContent value="database" className="min-h-0 flex-1">
-              <div className="h-full min-h-0">{databaseBrowser}</div>
-            </TabsContent>
-          </Tabs>
+          {advanced ? (
+            <Tabs defaultValue="apex" className="flex h-full min-h-0 flex-col">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="apex">Apex</TabsTrigger>
+                <TabsTrigger value="database" data-testid="workspace-database-tab">
+                  Database
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="apex" className="min-h-0 flex-1">
+                <div className="editor-grid grid h-full min-h-0 gap-3">
+                  <CodeEditor
+                    title="Apex Source"
+                    contextLabel={sourcePath ? fileName(sourcePath) : "No source"}
+                    contextTitle={sourcePath || "No source file selected"}
+                    value={sourceContent}
+                    onChange={onSourceChange}
+                    readOnly={sourceReadOnly}
+                  />
+                  <CodeEditor
+                    title="Execute Anonymous"
+                    value={anonymous}
+                    onChange={onAnonymousChange}
+                    runLabel={running ? "Running" : "Run"}
+                    running={running}
+                    onRun={runAndHandle}
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="database" className="min-h-0 flex-1">
+                <div className="h-full min-h-0">{databaseBrowser}</div>
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <div className="editor-grid grid h-full min-h-0 gap-3">
+              <CodeEditor
+                title="Apex Source"
+                contextLabel={sourcePath ? fileName(sourcePath) : "No source"}
+                contextTitle={sourcePath || "No source file selected"}
+                value={sourceContent}
+                onChange={onSourceChange}
+                readOnly={sourceReadOnly}
+              />
+              <CodeEditor
+                title="Execute Anonymous"
+                value={anonymous}
+                onChange={onAnonymousChange}
+                runLabel={running ? "Running" : "Run"}
+                running={running}
+                onRun={runAndHandle}
+              />
+            </div>
+          )}
         </section>
 
         <aside className="pane output-pane min-h-0">
@@ -1060,14 +1165,16 @@ export default function App() {
               )}
               <h2 className="truncate text-sm font-semibold">Output</h2>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => void seedOrg()} title="Seed data">
-                <Database />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => void resetOrg()} title="Reset org">
-                <RotateCcw />
-              </Button>
-            </div>
+            {advanced ? (
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={() => void seedOrg()} title="Seed data">
+                  <Database />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => void resetOrg()} title="Reset org">
+                  <RotateCcw />
+                </Button>
+              </div>
+            ) : null}
           </header>
 
           <div className="grid grid-cols-4 gap-2 p-3">
@@ -1089,13 +1196,14 @@ export default function App() {
             </div>
           </div>
 
-          <Tabs defaultValue="logs" className="flex min-h-0 flex-1 flex-col px-3 pb-3">
-            <TabsList className="grid w-full grid-cols-5">
+          <Tabs value={resultTab} onValueChange={setResultTab} className="flex min-h-0 flex-1 flex-col px-3 pb-3">
+            <TabsList className={cn("grid w-full", advanced ? "grid-cols-6" : "grid-cols-5")}>
               <TabsTrigger value="logs">Logs</TabsTrigger>
               <TabsTrigger value="vars">Vars</TabsTrigger>
-              <TabsTrigger value="problems">Problems</TabsTrigger>
               <TabsTrigger value="limits">Limits</TabsTrigger>
-              <TabsTrigger value="trace">Trace</TabsTrigger>
+              <TabsTrigger value="orgDiff">Org diff</TabsTrigger>
+              <TabsTrigger value="problems">Problems</TabsTrigger>
+              {advanced ? <TabsTrigger value="trace">Trace</TabsTrigger> : null}
             </TabsList>
             <TabsContent value="logs" className="min-h-0 flex-1">
               <ScrollArea className="result-box">
@@ -1145,32 +1253,55 @@ export default function App() {
               <ScrollArea className="result-box">
                 <table className="result-table">
                   <tbody>
-                    {Object.entries(limits).map(([key, value]) => (
-                      <tr key={key}>
-                        <th>{key}</th>
-                        <td>{value}</td>
+                    {Object.entries(limits).length ? (
+                      Object.entries(limits).map(([key, value]) => (
+                        <tr key={key}>
+                          <th>{key}</th>
+                          <td>{value}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td>No limits recorded</td>
                       </tr>
-                    ))}
-                    {orgDiff.map((item) => (
-                      <tr key={item.object}>
-                        <th>{item.object}</th>
-                        <td>{`+${item.inserted} ~${item.updated} -${item.deleted}`}</td>
-                      </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </ScrollArea>
             </TabsContent>
+            <TabsContent value="orgDiff" className="min-h-0 flex-1">
+              <ScrollArea className="result-box">
+                <table className="result-table">
+                  <tbody>
+                    {orgDiff.length ? (
+                      orgDiff.map((item) => (
+                        <tr key={item.object}>
+                          <th>{item.object}</th>
+                          <td>{`+${item.inserted} ~${item.updated} -${item.deleted}`}</td>
+                          <td>{item.insertedIds?.join(", ") || "-"}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td>No org changes</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </ScrollArea>
+            </TabsContent>
+            {advanced ? (
             <TabsContent value="trace" className="min-h-0 flex-1">
               <ScrollArea className="result-box">
                 <pre>{JSON.stringify(result?.trace ?? [], null, 2)}</pre>
               </ScrollArea>
             </TabsContent>
+            ) : null}
           </Tabs>
         </aside>
       </main>
 
-      {commandOpen ? (
+      {advanced && commandOpen ? (
         <div className="command-backdrop" onMouseDown={() => setCommandOpen(false)}>
           <div className="command-panel" onMouseDown={(event) => event.stopPropagation()}>
             <div className="flex items-center gap-2 border-b border-border px-3 py-2 text-sm text-muted-foreground">

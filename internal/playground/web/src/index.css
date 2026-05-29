@@ -634,6 +634,44 @@ textarea {
   color: oklch(0.72 0.17 25);
 }
 
+.run-button {
+  min-width: 92px;
+  border-color: rgba(159, 243, 195, 0.38);
+  box-shadow: 0 0 24px rgba(159, 243, 195, 0.1);
+}
+
+.advanced-toggle:hover {
+  border-color: rgba(216, 243, 220, 0.34);
+  color: var(--foreground);
+}
+
+.examples-gallery {
+  min-height: 0;
+}
+
+.example-card {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--pane-raised);
+  padding: 10px;
+  text-align: left;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.example-card:hover,
+.example-card.selected {
+  border-color: rgba(159, 243, 195, 0.44);
+  background: rgba(216, 243, 220, 0.08);
+}
+
+.example-card:hover {
+  transform: translateY(-1px);
+}
+
 .command-backdrop {
   position: fixed;
   inset: 0;

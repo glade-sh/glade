@@ -551,3 +551,55 @@ func writePlaygroundTestFile(t *testing.T, path, content string) {
 		t.Fatal(err)
 	}
 }
+
+func TestPublicServerRateLimitsMutatingEndpointsByForwardedIP(t *testing.T) {
+	dataRoot := t.TempDir()
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test", Public: true, RatePerMinute: 1})
+
+	for i, want := range []int{http.StatusOK, http.StatusTooManyRequests} {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPost, "/playground/api/reset", nil)
+		req.Header.Set("X-Forwarded-For", "203.0.113.10, 10.0.0.1")
+		handler.ServeHTTP(rec, req)
+		if rec.Code != want {
+			t.Fatalf("reset %d status = %d body=%s, want %d", i, rec.Code, rec.Body.String(), want)
+		}
+	}
+}
+
+func TestPublicServerForcesScratchStrictRun(t *testing.T) {
+	dataRoot := t.TempDir()
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test", Public: true})
+
+	body, _ := json.Marshal(RunRequest{
+		AnonymousBody: "Account account = new Account(Name = 'No Persist'); insert account;",
+		Mode:          RunModePersist,
+		LimitMode:     "permissive",
+		UseCache:      true,
+	})
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/playground/api/run", bytes.NewReader(body))
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("run status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var result RunResult
+	if err := json.Unmarshal(rec.Body.Bytes(), &result); err != nil {
+		t.Fatalf("decode result: %v", err)
+	}
+	if result.LimitMode != "strict" {
+		t.Fatalf("limit mode = %q, want strict", result.LimitMode)
+	}
+	org := handler.runner.Org()
+	if account := org.Objects["Account"]; len(account.Records) != 0 {
+		t.Fatalf("public persist wrote %d account records to shared org", len(account.Records))
+	}
+}

@@ -1,25 +1,42 @@
 package playground
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"mime"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/glade-sh/glade/internal/vm"
 )
 
+const (
+	defaultPublicRunTimeout        = 5 * time.Second
+	defaultPublicRatePerMinute     = 30
+	defaultPublicMaxWorkspaceFiles = 64
+	defaultPublicMaxWorkspaceBytes = 2 * 1024 * 1024
+)
+
 type Server struct {
-	workspace        *Workspace
-	runner           *Runner
-	defaultLimitMode vm.LimitMode
-	projectRefs      []ProjectReference
-	showExamples     bool
+	workspace         *Workspace
+	runner            *Runner
+	defaultLimitMode  vm.LimitMode
+	projectRefs       []ProjectReference
+	showExamples      bool
+	public            bool
+	runTimeout        time.Duration
+	publicLimitCaps   vm.LimitCaps
+	maxWorkspaceFiles int
+	maxWorkspaceBytes int64
+	rateLimiter       *fixedWindowRateLimiter
 }
 
 func NewServer(workspace *Workspace, opts ServerOptions) *Server {
@@ -27,16 +44,46 @@ func NewServer(workspace *Workspace, opts ServerOptions) *Server {
 	if mode == "" {
 		mode = vm.LimitModePermissive
 	}
+	runTimeout := opts.RunTimeout
+	if opts.Public && runTimeout == 0 {
+		runTimeout = defaultPublicRunTimeout
+	}
+	ratePerMinute := opts.RatePerMinute
+	if opts.Public && ratePerMinute == 0 {
+		ratePerMinute = defaultPublicRatePerMinute
+	}
+	maxWorkspaceFiles := opts.MaxWorkspaceFiles
+	if opts.Public && maxWorkspaceFiles == 0 {
+		maxWorkspaceFiles = defaultPublicMaxWorkspaceFiles
+	}
+	maxWorkspaceBytes := opts.MaxWorkspaceBytes
+	if opts.Public && maxWorkspaceBytes == 0 {
+		maxWorkspaceBytes = defaultPublicMaxWorkspaceBytes
+	}
+	publicLimitCaps := opts.PublicLimitCaps
+	if opts.Public && publicLimitCaps == (vm.LimitCaps{}) {
+		publicLimitCaps = defaultPublicLimitCaps()
+	}
 	return &Server{
-		workspace:        workspace,
-		runner:           NewRunner(workspace, RunnerOptions{Version: opts.Version, DBPath: opts.DBPath}),
-		defaultLimitMode: mode,
-		projectRefs:      normalizeProjectReferences(opts.ProjectReferences),
-		showExamples:     opts.ShowExamples,
+		workspace:         workspace,
+		runner:            NewRunner(workspace, RunnerOptions{Version: opts.Version, DBPath: opts.DBPath}),
+		defaultLimitMode:  mode,
+		projectRefs:       normalizeProjectReferences(opts.ProjectReferences),
+		showExamples:      opts.ShowExamples,
+		public:            opts.Public,
+		runTimeout:        runTimeout,
+		publicLimitCaps:   publicLimitCaps,
+		maxWorkspaceFiles: maxWorkspaceFiles,
+		maxWorkspaceBytes: maxWorkspaceBytes,
+		rateLimiter:       newFixedWindowRateLimiter(ratePerMinute),
 	}
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if s.public && isPublicLimitedEndpoint(r) && !s.rateLimiter.allow(clientIP(r), time.Now()) {
+		writeError(w, http.StatusTooManyRequests, "rate limit exceeded")
+		return
+	}
 	switch {
 	case r.Method == http.MethodGet && r.URL.Path == "/playground/api/workspace":
 		s.handleWorkspace(w)
@@ -98,8 +145,15 @@ func (s *Server) handleLoadExample(w http.ResponseWriter, r *http.Request) {
 	if s.runner.cache != nil {
 		_ = s.runner.cache.ClearLatest()
 	}
-	meta.LimitMode = s.defaultLimitMode
+	meta.LimitMode = s.effectiveLimitMode()
 	writeJSON(w, http.StatusOK, meta)
+}
+
+func (s *Server) effectiveLimitMode() vm.LimitMode {
+	if s.public {
+		return vm.LimitModeStrict
+	}
+	return s.defaultLimitMode
 }
 
 func (s *Server) listExamples() []ExampleProject {
@@ -231,7 +285,7 @@ func (s *Server) handleWorkspace(w http.ResponseWriter) {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	meta.LimitMode = s.defaultLimitMode
+	meta.LimitMode = s.effectiveLimitMode()
 	writeJSON(w, http.StatusOK, meta)
 }
 
@@ -240,6 +294,12 @@ func (s *Server) handleSaveFile(w http.ResponseWriter, r *http.Request) {
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
+	}
+	if s.public {
+		if err := s.checkPublicWorkspaceBudget(req); err != nil {
+			writeError(w, http.StatusRequestEntityTooLarge, err.Error())
+			return
+		}
 	}
 	resp, err := s.workspace.SaveFile(req)
 	if err != nil {
@@ -282,15 +342,38 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	if req.LimitMode == "" {
 		req.LimitMode = s.defaultLimitMode
 	}
-	result, err := s.runner.Run(r.Context(), req)
+	ctx := r.Context()
+	var cancel context.CancelFunc
+	if s.runTimeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, s.runTimeout)
+		defer cancel()
+	}
+	if s.public {
+		req.Mode = RunModeScratch
+		req.LimitMode = vm.LimitModeStrict
+		req.UseCache = false
+		req.LimitCaps = &s.publicLimitCaps
+	}
+	result, err := s.runner.Run(ctx, req)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if errors.Is(ctx.Err(), context.DeadlineExceeded) || strings.Contains(result.ErrorMessage, context.DeadlineExceeded.Error()) {
+		result.Status = RunStatusRuntimeError
+		result.ErrorMessage = "execution timed out"
+		result.Diagnostics = []Diagnostic{{Severity: "error", Message: "execution timed out"}}
+		writeJSON(w, http.StatusServiceUnavailable, result)
 		return
 	}
 	writeJSON(w, http.StatusOK, result)
 }
 
 func (s *Server) handleSeed(w http.ResponseWriter, r *http.Request) {
+	if s.public {
+		writeError(w, http.StatusForbidden, "seed is disabled in public playground mode")
+		return
+	}
 	reader := r.Body
 	if r.ContentLength == 0 {
 		file, err := os.Open(filepath.Join(s.workspace.Root, "seed.json"))
@@ -317,6 +400,121 @@ func (s *Server) serveWorkspaceFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.ServeFile(w, r, full)
+}
+
+func defaultPublicLimitCaps() vm.LimitCaps {
+	return vm.LimitCaps{
+		Queries:       25,
+		QueryRows:     5000,
+		DMLStatements: 20,
+		DMLRows:       1000,
+		HeapSize:      2 * 1024 * 1024,
+		CPUTimeMS:     2000,
+		Callouts:      0,
+		AsyncJobs:     0,
+		FutureCalls:   0,
+		QueueableJobs: 0,
+		BatchJobs:     0,
+		ScheduledJobs: 0,
+		EmailInvokes:  0,
+	}
+}
+
+func isPublicLimitedEndpoint(r *http.Request) bool {
+	switch r.URL.Path {
+	case "/playground/api/run", "/playground/api/examples/load", "/playground/api/files", "/playground/api/reset", "/playground/api/seed":
+		return r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodDelete
+	default:
+		return false
+	}
+}
+
+func clientIP(r *http.Request) string {
+	if forwarded := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); forwarded != "" {
+		first, _, _ := strings.Cut(forwarded, ",")
+		if first = strings.TrimSpace(first); first != "" {
+			return first
+		}
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err == nil && host != "" {
+		return host
+	}
+	return strings.TrimSpace(r.RemoteAddr)
+}
+
+type fixedWindowRateLimiter struct {
+	mu      sync.Mutex
+	limit   int
+	windows map[string]rateWindow
+}
+
+type rateWindow struct {
+	start time.Time
+	count int
+}
+
+func newFixedWindowRateLimiter(limit int) *fixedWindowRateLimiter {
+	return &fixedWindowRateLimiter{limit: limit, windows: make(map[string]rateWindow)}
+}
+
+func (l *fixedWindowRateLimiter) allow(key string, now time.Time) bool {
+	if l == nil || l.limit <= 0 {
+		return true
+	}
+	if key == "" {
+		key = "unknown"
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	window := l.windows[key]
+	if window.start.IsZero() || now.Sub(window.start) >= time.Minute {
+		l.windows[key] = rateWindow{start: now, count: 1}
+		l.pruneLocked(now)
+		return true
+	}
+	if window.count >= l.limit {
+		return false
+	}
+	window.count++
+	l.windows[key] = window
+	return true
+}
+
+func (l *fixedWindowRateLimiter) pruneLocked(now time.Time) {
+	for key, window := range l.windows {
+		if now.Sub(window.start) >= 2*time.Minute {
+			delete(l.windows, key)
+		}
+	}
+}
+
+func (s *Server) checkPublicWorkspaceBudget(req FileSaveRequest) error {
+	full, err := s.workspace.SafePath(req.Path)
+	if err != nil {
+		return err
+	}
+	rel := slashRel(s.workspace.Root, full)
+	meta, err := s.workspace.Metadata()
+	if err != nil {
+		return err
+	}
+	total := int64(len(req.Content))
+	found := false
+	for _, file := range meta.Files {
+		if file.Path == rel {
+			found = true
+			continue
+		}
+		total += file.Size
+	}
+	if !found && s.maxWorkspaceFiles > 0 && len(meta.Files) >= s.maxWorkspaceFiles {
+		return fmt.Errorf("workspace file limit exceeded: %d", s.maxWorkspaceFiles)
+	}
+	if s.maxWorkspaceBytes > 0 && total > s.maxWorkspaceBytes {
+		return fmt.Errorf("workspace size limit exceeded: %d bytes", s.maxWorkspaceBytes)
+	}
+	return nil
 }
 
 func decodeJSON(r *http.Request, out any) error {

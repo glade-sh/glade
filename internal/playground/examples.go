@@ -33,8 +33,8 @@ var exampleProjects = []exampleTemplate{
 	{
 		ExampleProject: ExampleProject{
 			ID:          "account-service",
-			Name:        "Account Service",
-			Description: "Factory and selector classes that insert Accounts, query them back, and report limits.",
+			Name:        "Account Factory + Selector",
+			Description: "One service inserts an Account, one reporter formats it, and SOQL reads back the saved fields.",
 			Tags:        []string{"DML", "SOQL", "classes"},
 		},
 		Files: map[string]string{
@@ -68,8 +68,8 @@ System.debug(Limits.getDmlStatements());
 	{
 		ExampleProject: ExampleProject{
 			ID:          "trigger-contact-task",
-			Name:        "Trigger Numbering",
-			Description: "Before-insert Account trigger stamps an AccountNumber before the caller queries the record.",
+			Name:        "Before Insert Trigger",
+			Description: "An Account trigger fills AccountNumber during insert, then the anonymous script queries the stamped row.",
 			Tags:        []string{"triggers", "DML", "SOQL"},
 		},
 		Files: map[string]string{
@@ -105,7 +105,7 @@ System.debug(account.AccountNumber);
 		ExampleProject: ExampleProject{
 			ID:          "collection-selector",
 			Name:        "Collection Selector",
-			Description: "List DML, selector filtering, and a report class that walks queried records.",
+			Description: "List DML seeds several Accounts, then selector and report classes filter Energy accounts.",
 			Tags:        []string{"collections", "SOQL", "reports"},
 		},
 		Files: map[string]string{
@@ -150,7 +150,7 @@ for (Account account : IndustrySelector.byIndustry('Energy')) {
 		ExampleProject: ExampleProject{
 			ID:          "persist-mode-ledger",
 			Name:        "Persist Mode Ledger",
-			Description: "Run in persist mode to watch Account records accumulate across executions.",
+			Description: "Flip Advanced to persist mode and run twice to see Accounts accumulate between executions.",
 			Tags:        []string{"persist", "org diff", "SOQL"},
 		},
 		Files: map[string]string{
@@ -175,7 +175,7 @@ System.debug('total accounts: ' + total);
 		ExampleProject: ExampleProject{
 			ID:          "bulk-trigger-rollup",
 			Name:        "Bulk Trigger Rollup",
-			Description: "Bulk insert path with a before-insert trigger, helper class, list DML, SOQL, and looped debug output.",
+			Description: "Bulk Account insert invokes a trigger for every row and prints the assigned auto numbers.",
 			Tags:        []string{"bulk", "triggers", "limits"},
 		},
 		Files: map[string]string{
@@ -223,7 +223,7 @@ System.debug('dml rows: ' + Limits.getDmlRows());
 		ExampleProject: ExampleProject{
 			ID:          "map-selector-drill",
 			Name:        "Map Selector Drill",
-			Description: "Seeds mixed Accounts, folds queried rows into a Map, and reads aggregate-like values from execute anonymous.",
+			Description: "SOQL rows are folded into a Map<String,Integer> so the script can read counts by industry.",
 			Tags:        []string{"maps", "SOQL", "collections"},
 		},
 		Files: map[string]string{
@@ -264,8 +264,8 @@ System.debug('Healthcare => ' + counts.get('Healthcare'));
 	{
 		ExampleProject: ExampleProject{
 			ID:          "contact-relationship-drill",
-			Name:        "Contact Relationship Drill",
-			Description: "Creates an Account and related Contacts, then queries by AccountId from execute anonymous.",
+			Name:        "Account + Contact Query",
+			Description: "Creates Contacts under one Account and queries them back by AccountId.",
 			Tags:        []string{"relationships", "contacts", "SOQL"},
 		},
 		Files: map[string]string{
@@ -301,9 +301,77 @@ System.debug('queries: ' + Limits.getQueries());
 	},
 	{
 		ExampleProject: ExampleProject{
+			ID:          "governor-limits-strict",
+			Name:        "Governor Limits (strict)",
+			Description: "Flip Advanced to strict to make governor counters enforce hard limits; permissive mode prints the same counters.",
+			Tags:        []string{"limits", "strict", "SOQL"},
+		},
+		Files: map[string]string{
+			"sfdx-project.json": sfdxProjectJSON,
+			"force-app/main/default/classes/StrictLimitShowcase.cls": `public class StrictLimitShowcase {
+  public static void seed(Integer count) {
+    List<Account> accounts = new List<Account>();
+    for (Integer i = 1; i <= count; i++) {
+      accounts.add(new Account(Name = 'Strict ' + String.valueOf(i)));
+    }
+    insert accounts;
+  }
+
+  public static Integer countAccounts() {
+    return [
+      SELECT Id, Name
+      FROM Account
+    ].size();
+  }
+}
+`,
+			"anonymous.apex": `StrictLimitShowcase.seed(3);
+Integer first = StrictLimitShowcase.countAccounts();
+Integer second = StrictLimitShowcase.countAccounts();
+System.debug('counts: ' + first + '/' + second);
+System.debug('queries used: ' + Limits.getQueries());
+System.debug('dml rows used: ' + Limits.getDmlRows());
+`,
+			"seed.json": "{}\n",
+		},
+	},
+	{
+		ExampleProject: ExampleProject{
+			ID:          "org-diff-dml",
+			Name:        "Org Diff after DML",
+			Description: "Inserts an Account, updates it, and leaves a clear inserted/updated footprint in Org diff.",
+			Tags:        []string{"org diff", "DML", "updates"},
+		},
+		Files: map[string]string{
+			"sfdx-project.json": sfdxProjectJSON,
+			"force-app/main/default/classes/OrgDiffShowcase.cls": `public class OrgDiffShowcase {
+  public static Account run() {
+    Account account = new Account(Name = 'Diff Seed', Industry = 'Energy');
+    insert account;
+    account.Industry = 'Manufacturing';
+    update account;
+    return [
+      SELECT Id, Name, Industry
+      FROM Account
+      WHERE Id = :account.Id
+      LIMIT 1
+    ];
+  }
+}
+`,
+			"anonymous.apex": `Account account = OrgDiffShowcase.run();
+System.debug(account.Name + ' => ' + account.Industry);
+System.debug('dml statements: ' + Limits.getDmlStatements());
+System.debug('dml rows: ' + Limits.getDmlRows());
+`,
+			"seed.json": "{}\n",
+		},
+	},
+	{
+		ExampleProject: ExampleProject{
 			ID:          "limit-counter-drill",
-			Name:        "Limit Counter Drill",
-			Description: "Runs list DML and two SOQL passes, then prints governor counters from execute anonymous.",
+			Name:        "Governor Counter Drill",
+			Description: "Runs DML plus repeated SOQL, then prints Limits counters that appear in the Results panel.",
 			Tags:        []string{"limits", "DML", "SOQL"},
 		},
 		Files: map[string]string{

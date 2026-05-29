@@ -78,10 +78,11 @@ const (
 )
 
 type RunRequest struct {
-	AnonymousBody string       `json:"anonymousBody"`
-	Mode          RunMode      `json:"mode"`
-	LimitMode     vm.LimitMode `json:"limitMode"`
-	UseCache      bool         `json:"useCache"`
+	AnonymousBody string        `json:"anonymousBody"`
+	Mode          RunMode       `json:"mode"`
+	LimitMode     vm.LimitMode  `json:"limitMode"`
+	UseCache      bool          `json:"useCache"`
+	LimitCaps     *vm.LimitCaps `json:"-"`
 }
 
 type RunResult struct {
@@ -157,4 +158,10 @@ type ServerOptions struct {
 	DefaultLimitMode  vm.LimitMode
 	ProjectReferences []ProjectReference
 	ShowExamples      bool
+	Public            bool
+	RunTimeout        time.Duration
+	RatePerMinute     int
+	PublicLimitCaps   vm.LimitCaps
+	MaxWorkspaceFiles int
+	MaxWorkspaceBytes int64
 }
