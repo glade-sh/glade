@@ -183,15 +183,23 @@ stdio adapter and register an `glade-apex` debug type. Use this
 
 ## Warm Test Service
 
-The internal `testdaemon` package keeps project load, schema, and type index
-state warm for repeated editor and watch loops. `glade test --daemon` uses this
-service for focused runs, `--changed-since`, and watch mode:
+The internal `testdaemon` package keeps project load, schema, type index, and
+the affected-test **reference graph** warm for repeated editor and watch loops.
+`glade test --daemon` uses this service for focused runs, `--changed-since`, and
+watch mode:
 
 - `RunFilter(filter)` runs a focused test selection against the warm index.
 - `RunChangedSince(ref)` uses git file changes and affected-test selection, with
-  the current full-run fallback when impact is broad.
-- `Reload()` refreshes the full project state when incremental impact is not
-  safe to infer.
+  the conservative full-run fallback when impact is broad (triggers, schema, or
+  a changed class no test reaches).
+- `Reload()` refreshes the full project state and rebuilds the reference graph
+  when incremental impact is not safe to infer.
+
+On each change the daemon refreshes the graph incrementally: a modified file is
+re-scanned on its own, while an added or deleted file triggers a full rebuild so
+cross-file edges are never missed. Selection then walks the graph's reverse
+edges to find every test that transitively reaches the changed types. See
+`docs/LOCAL_TESTING.md` for the user-facing workflow and event examples.
 
 Keep cold one-shot `glade test` behavior separate from this service. Use
 `glade test --daemon --watch` or `glade test --daemon --changed-since main` for

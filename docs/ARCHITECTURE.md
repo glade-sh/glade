@@ -52,7 +52,8 @@ and composed by the CLI.
   initialize/shutdown, diagnostics, symbols, hover, and completion basics.
 - `internal/watch`: file classification, snapshot diffing, native/polling watch
   backends, debounce, JSON events, cancellation, incremental Apex re-indexing,
-  and dependency-graph affected-test selection.
+  and reference-graph affected-test selection (reverse-reachability over a static
+  type-dependency graph, refreshed incrementally).
 - `internal/profile`: native trace/profile aggregation and JSON/Markdown
   reporting.
 - `internal/server`: Salesforce-shaped HTTP handler for supported SObject CRUD,

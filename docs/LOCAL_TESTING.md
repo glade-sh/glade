@@ -54,25 +54,93 @@ glade test --project . --parallelism 8 --json
 
 ## Run Tests Affected By Local Changes
 
-Use `--changed-since <git-ref>` to run tests selected from the dependency graph
-of changed files. The ref is passed to git, so common choices are `origin/main`,
-`main`, or a merge-base branch used by CI.
+Instead of running the whole suite on every edit, `glade` can run only the tests
+affected by your changes. This is the fast inner loop: change a class, run the
+handful of tests that exercise it, get a verdict in a fraction of the time.
+
+### How selection works (no extra steps)
+
+Selection is **fully static and automatic**. There is no profiling pass, no
+instrumentation run, and nothing to record or keep in sync. `glade` reads the
+type index it already builds for compilation and derives a **reference graph**:
+an edge means "type A uses type B" (B is named in A's source, or is A's
+superclass or an interface A implements).
+
+When a file changes, `glade` walks that graph **backwards** from the changed
+type to find every test that reaches it — directly or transitively through
+helper classes, base classes, and interfaces. So a change to a deep utility
+class that no test names by hand still selects the tests that depend on it
+through the call chain.
+
+This mirrors how the platform treats your org: compiled classes and their
+relationships are static metadata, so the dependency graph is a free byproduct
+of indexing. Only the data records change between tests, never the graph.
+
+Every watch event reports a `selection` with one of three modes:
+
+| Mode     | Meaning                                                                 |
+| -------- | ----------------------------------------------------------------------- |
+| `direct` | A precise set of test classes reaches the changed types. Only they run. |
+| `all`    | Conservative fallback — the full suite runs (see below).                |
+| `none`   | The change cannot affect any test (e.g. a change with no tests present).|
+
+To never skip a test that could catch a regression, selection falls back to
+`all` whenever it cannot prove a precise set:
+
+- a changed production class that no test reaches (it may be called dynamically);
+- a changed class not found in the type index;
+- a changed **trigger** (it can fire for any DML in any test);
+- changed **object or field metadata** (schema affects the whole org).
+
+### Run once against a git ref
+
+Use `--changed-since <git-ref>` to select tests from everything changed since a
+ref. The ref is passed to git, so common choices are `origin/main`, `main`, or
+the merge-base branch CI uses.
 
 ```bash
 git fetch origin main
 glade test --project . --changed-since origin/main --json
 ```
 
-For repeated local loops, keep the project warm with the test daemon:
+Only the selected classes execute. If the change set hits a trigger or schema,
+the full suite runs automatically.
+
+### Watch mode for editor-style feedback
+
+Watch mode re-runs on save and streams newline-delimited JSON (NDJSON) events.
+The first run covers the full set; each later run selects only affected tests.
+
+```bash
+glade test --project . --watch          # run continuously
+glade test --project . --watch-once     # run one cycle, then exit (good for CI hooks)
+```
+
+A typical event stream after editing one helper class (`InvoiceCalculator.cls`)
+that two test classes reach:
+
+```json
+{"event":"watch.started","time":"...","config":{...}}
+{"event":"watch.changes","time":"...","changes":[{"path":".../InvoiceCalculator.cls","op":"modified","kind":"apex_class","name":"InvoiceCalculator"}]}
+{"event":"watch.tests_selected","time":"...","selection":{"mode":"direct","testClasses":["InvoiceServiceTest","InvoiceSummaryTest"],"reason":"changed types reach affected tests"}}
+{"event":"watch.run_started","time":"...","runId":2,"testClasses":["InvoiceServiceTest","InvoiceSummaryTest"]}
+{"event":"watch.run_finished","time":"...","runId":2,"summary":{"total":9,"passed":9,"failed":0,"passedAll":true}}
+```
+
+Editing a trigger instead falls back to the full suite:
+
+```json
+{"event":"watch.tests_selected","time":"...","selection":{"mode":"all","reason":"changed trigger may affect any test"}}
+```
+
+### Keep the project warm with the daemon
+
+For repeated loops, `--daemon` holds a warm, incrementally-updated index and
+reference graph in a background service, so selection on each change is near
+instant — only the edited file is re-scanned, never the whole project.
 
 ```bash
 glade test --project . --daemon --changed-since origin/main --json
-```
-
-For editor-style feedback, use watch mode. The first run covers the full test
-set; later runs select affected tests from file changes:
-
-```bash
 glade test --project . --daemon --watch
 ```
 
