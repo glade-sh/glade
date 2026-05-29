@@ -42,6 +42,7 @@ go run ./cmd/glade check --project path/to/sfdx-project
 Prerequisites:
 
 - Glade on your `PATH`
+- an SFDX project on disk for local project commands
 
 Smoke-check:
 
@@ -50,11 +51,27 @@ glade version
 glade doctor
 ```
 
-Run on an SFDX project:
+Run Apex tests locally without a Salesforce org:
 
 ```bash
-glade check --project path/to/project --json
-glade test --project path/to/project --json
+cd path/to/sfdx-project
+glade check --project .
+glade test --project . --json
+```
+
+Run one class, one method, or only tests affected by local changes:
+
+```bash
+glade test --project . --filter AccountServiceTest --json
+glade test --project . --filter AccountServiceTest.testCreatesAccount --json
+glade test --project . --changed-since origin/main --json
+```
+
+For large compatibility triage runs, use the compatibility harness and its
+class-parallel worker flag:
+
+```bash
+glade compat local-tests --project . --parallel auto --json
 ```
 
 Run anonymous Apex:
@@ -71,6 +88,7 @@ See [docs/INSTALL.md](docs/INSTALL.md) for:
 - release-archive install
 - build from source
 - CI install patterns
+- local Apex testing without an org
 - persistent local server setup
 - playground setup
 - Homebrew tap workflow
@@ -89,6 +107,7 @@ Operator runbook: [docs/DISTRIBUTION_WORKFLOW.md](docs/DISTRIBUTION_WORKFLOW.md)
 ## Core Docs
 
 - [Start here docs map](docs/README.md)
+- [Local Apex testing](docs/LOCAL_TESTING.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Compatibility status](docs/COMPATIBILITY_DASHBOARD.md)
 - [Known gaps](docs/KNOWN_GAPS.md)

@@ -4296,8 +4296,18 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 		if strings.EqualFold(elementType, "SObject") {
 			if len(value.List) == 0 {
-				if runtimeElementType, ok := collectionElementType(value.Runtime); ok && !collectionElementCarriesSObjectType(runtimeElementType) {
-					value.Runtime = ""
+				for _, sourceType := range sourceTypes {
+					sourceElementType, ok := collectionElementType(sourceType)
+					if !ok || strings.EqualFold(sourceElementType, "SObject") || strings.EqualFold(sourceElementType, "Object") {
+						continue
+					}
+					if strings.EqualFold(sourceElementType, "AggregateResult") {
+						value.Runtime = ""
+						continue
+					}
+					if !collectionElementCarriesSObjectType(sourceElementType) {
+						return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", typeExceptionAnyName(sourceType), typeExceptionAnyName(typeName)))
+					}
 				}
 				value.Static = typeName
 			}

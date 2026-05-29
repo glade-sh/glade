@@ -52,7 +52,8 @@ hosted service.
 ## VS Code Tasks
 
 Create `.vscode/tasks.json` in a Salesforce project to run the same checks that
-CI and terminal workflows use.
+CI and terminal workflows use. These commands run against local source; they do
+not require a Salesforce org.
 
 ```json
 {
@@ -75,6 +76,21 @@ CI and terminal workflows use.
       "problemMatcher": []
     },
     {
+      "label": "glade: test changed since origin/main",
+      "type": "shell",
+      "command": "glade",
+      "args": [
+        "test",
+        "--project",
+        "${workspaceFolder}",
+        "--changed-since",
+        "origin/main",
+        "--json"
+      ],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
       "label": "glade: watch tests",
       "type": "shell",
       "command": "glade",
@@ -82,6 +98,7 @@ CI and terminal workflows use.
         "test",
         "--project",
         "${workspaceFolder}",
+        "--daemon",
         "--watch",
         "--debounce",
         "750ms"
@@ -180,6 +197,15 @@ Keep cold one-shot `glade test` behavior separate from this service. Use
 `glade test --daemon --watch` or `glade test --daemon --changed-since main` for
 repeated local loops where avoiding project reload is the main win.
 
+For the common local workflow, use `--changed-since` to select tests affected by
+changed Apex and metadata dependencies:
+
+```bash
+git fetch origin main
+glade test --project . --changed-since origin/main --json
+glade test --project . --daemon --changed-since origin/main --json
+```
+
 The current DAP server supports initialize, breakpoints, continue, pause, next,
 step-in, step-out, stack trace, scopes, variables, evaluate, watch expressions,
 and disconnect. Live VM pause hooks can stop before statements at breakpoints
@@ -228,6 +254,7 @@ For CI or editor tasks that need a single machine-readable run, use:
 
 ```bash
 glade test --project . --json
+glade test --project . --changed-since origin/main --json
 glade test --project . --junit reports/glade-junit.xml
 glade check --project . --json
 ```

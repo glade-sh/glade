@@ -6,8 +6,9 @@ of the way.
 ## If You Want To Use Glade
 
 1. Install and first run: [INSTALL.md](INSTALL.md)
-2. Day-to-day commands: [EDITOR.md](EDITOR.md)
-3. Current support surface:
+2. Run Apex tests without an org: [LOCAL_TESTING.md](LOCAL_TESTING.md)
+3. Day-to-day editor commands: [EDITOR.md](EDITOR.md)
+4. Current support surface:
    - [COMPATIBILITY_DASHBOARD.md](COMPATIBILITY_DASHBOARD.md)
    - [KNOWN_GAPS.md](KNOWN_GAPS.md)
    - [STDLIB_COVERAGE.md](STDLIB_COVERAGE.md)

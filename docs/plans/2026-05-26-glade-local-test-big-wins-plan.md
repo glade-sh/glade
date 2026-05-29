@@ -672,7 +672,6 @@ Run:
   --project example-projects/nams-workspace \
   --class MembershipBillingSuite \
   --parallel 4 \
-  --parallel-methods \
   --timeout 300000 \
   --json > /tmp/nams-membershipbilling-class-parallel.json
 ```

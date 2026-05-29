@@ -68,13 +68,27 @@ done
 
 ## Running Apex Tests Locally
 
+For day-to-day use in your own project, start with
+[LOCAL_TESTING.md](LOCAL_TESTING.md). This page keeps the example-project
+corpus and compatibility harness details close at hand.
+
 Use `glade test` when you want the local developer test runner shape for a
-single Salesforce project:
+single Salesforce project. It runs from source on disk and does not require a
+Salesforce org:
 
 ```bash
 go run ./cmd/glade test --project example-projects/src-nmb-nutpl-develop --json
 go run ./cmd/glade test --project example-projects/src-nmb-nutpl-develop --filter MyTestClass --json
 go run ./cmd/glade test --project example-projects/src-nmb-nutpl-develop --filter MyTestClass.testMethod --json
+```
+
+To run tests selected from changed-file dependencies:
+
+```bash
+go run ./cmd/glade test \
+  --project example-projects/src-nmb-nutpl-develop \
+  --changed-since origin/main \
+  --json
 ```
 
 For compatibility triage, prefer `compat local-tests`. It reports outcomes as
@@ -85,6 +99,7 @@ For compatibility triage, prefer `compat local-tests`. It reports outcomes as
 go run ./cmd/glade compat local-tests \
   --project example-projects/src-nmb-nutpl-develop \
   --timeout 30000 \
+  --parallel auto \
   --top-failures 8 \
   --json
 ```
@@ -95,6 +110,7 @@ start with:
 ```bash
 go run ./cmd/glade compat local-tests \
   --project example-projects/src-nmb-nu-develop \
+  --parallel auto \
   --json
 ```
 
@@ -120,6 +136,20 @@ go run ./cmd/glade compat local-tests \
   --method testSomeBehavior \
   --json
 ```
+
+Affected compatibility run:
+
+```bash
+go run ./cmd/glade compat local-tests \
+  --project example-projects/sf-cred-pkg-develop \
+  --changed-since origin/main \
+  --parallel auto \
+  --json
+```
+
+For `compat local-tests`, use `--parallel <n|auto>` for class workers. For
+day-to-day `glade test`, use `--parallelism <n>`; method-level parallelism is on
+by default there.
 
 Large-project blocker triage:
 

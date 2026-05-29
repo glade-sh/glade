@@ -41,6 +41,43 @@ func TestCommonSObjectTypeNamesIncludesGeneratedStandardObjects(t *testing.T) {
 	}
 }
 
+func TestDescribeFieldNameUsesCallerNamespaceWithoutOrgNamespace(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.currentNamespace = "NU"
+
+	if got := machine.describeFieldName("IsActive__c"); got != "NU__IsActive__c" {
+		t.Fatalf("describeFieldName() = %q, want NU__IsActive__c", got)
+	}
+}
+
+func TestCoerceEmptyNonSObjectListToSObjectListFails(t *testing.T) {
+	machine := New(nil)
+	value := typedList("List<TriggerStep>")
+
+	_, err := machine.coerceAssignable("List<SObject>", value)
+	if err == nil {
+		t.Fatal("expected empty List<TriggerStep> to fail assignment to List<SObject>")
+	}
+	if !strings.Contains(err.Error(), "Invalid conversion from runtime type List<TriggerStep> to List<SObject>") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestCoerceEmptySObjectListToSObjectListPasses(t *testing.T) {
+	machine := New(nil)
+	value := typedList("List<Account>")
+
+	coerced, err := machine.coerceAssignable("List<SObject>", value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if coerced.Type != "List<SObject>" {
+		t.Fatalf("coerced.Type = %q, want List<SObject>", coerced.Type)
+	}
+}
+
 func TestRecordFromValueKeepsParentRelationshipShellForDMLValidationFormula(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Product__c"] = storage.ObjectState{

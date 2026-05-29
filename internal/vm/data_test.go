@@ -5446,6 +5446,27 @@ System.assertEquals(true, flags.get('NU__StoredPaymentMethodsSUM17'));
 	}
 }
 
+func TestExecNamespacedStringMapLookupDoesNotAliasStringValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, String> operations = new Map<String, String>();
+operations.put('InstallmentPayment', 'Create');
+System.assertEquals(false, operations.containsKey('NS__InstallmentPayment'));
+System.assertEquals(null, operations.get('NS__InstallmentPayment'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{Name: "Harness", Namespace: "NU"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "Harness"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRecordTypeInfoActiveRecordTypeDefaultsAvailable(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object info = Batch__c.SObjectType.getDescribe().getRecordTypeInfosByName().get('Scheduled Batch');

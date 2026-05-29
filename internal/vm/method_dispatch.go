@@ -2333,6 +2333,9 @@ func (vm *VM) namespaceStringMapLookup(receiver Value, key Value) (Value, bool) 
 	if receiver.Kind != ValueMap || key.Kind != ValueString {
 		return Null, false
 	}
+	if _, valueType, ok := mapTypeArgs(receiver.Type); ok && strings.EqualFold(valueType, "String") {
+		return Null, false
+	}
 	if !isCustomObjectLikeName(key.Text) && !strings.HasSuffix(strings.ToLower(key.Text), "__mdt") && !hasManagedStringNamespaceToken(key.Text) && strings.TrimSpace(vm.currentCallerNamespace()) == "" {
 		return Null, false
 	}

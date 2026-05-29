@@ -14,7 +14,7 @@
 
 These recommendations come from the current repo, prior local-test frontier runs, and current Go/tree-sitter/SQLite documentation:
 
-- `compat local-tests` exposes `--parallel`, `--parallel-methods`, `--perf-json`, `--cpu-profile`, `--mem-profile`, `--changed-since`, and `--class-file`.
+- `compat local-tests` exposes `--parallel`, `--perf-json`, `--cpu-profile`, `--mem-profile`, `--changed-since`, and `--class-file`.
 - The example-project baseline script still shells through `go run ./cmd/glade`, which pays build/startup cost per project.
 - Full-suite `compat local-tests` routes through `localTestParallelism`, class batching, and `apextest.RunCasesContext`.
 - `apextest.runCase` clones the base VM and often calls `cloneRuntimeOrg` before every test method.
@@ -39,7 +39,6 @@ Primary command shape:
   --json \
   --timeout 60000 \
   --parallel "$(sysctl -n hw.logicalcpu)" \
-  --parallel-methods \
   --perf-json /tmp/glade-local-tests.perf.json \
   --cpu-profile /tmp/glade-local-tests.cpu.pprof \
   --mem-profile /tmp/glade-local-tests.mem.pprof
@@ -93,7 +92,6 @@ go run ./cmd/glade compat local-tests \
   --json \
   --timeout 60000 \
   --parallel "$(sysctl -n hw.logicalcpu)" \
-  --parallel-methods \
   --perf-json /tmp/glade-local-tests.perf.json \
   --cpu-profile /tmp/glade-local-tests.cpu.pprof \
   --mem-profile /tmp/glade-local-tests.mem.pprof
@@ -387,7 +385,6 @@ go test ./internal/storage ./internal/soql ./internal/dml ./internal/apextest ./
   --json \
   --timeout 60000 \
   --parallel "$(sysctl -n hw.logicalcpu)" \
-  --parallel-methods \
   --perf-json /tmp/glade-nutpl.perf.json \
   --cpu-profile /tmp/glade-nutpl.cpu.pprof \
   --mem-profile /tmp/glade-nutpl.mem.pprof
@@ -401,7 +398,6 @@ Run `src-nmb-nu-develop` after `src-nmb-nutpl-develop` moves cleanly:
   --json \
   --timeout 60000 \
   --parallel "$(sysctl -n hw.logicalcpu)" \
-  --parallel-methods \
   --perf-json /tmp/glade-nu.perf.json \
   --cpu-profile /tmp/glade-nu.cpu.pprof \
   --mem-profile /tmp/glade-nu.mem.pprof

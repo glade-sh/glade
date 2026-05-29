@@ -52,7 +52,8 @@ go build -o glade ./cmd/glade
 ./glade doctor
 ```
 
-Run the locally built binary against an SFDX project:
+Run the locally built binary against an SFDX project. No Salesforce org login is
+required for these local commands:
 
 ```bash
 ./glade check --project path/to/sfdx-project --json
@@ -77,12 +78,24 @@ glade version
 
 ## First Project Run
 
-Run parse/check/tests against an SFDX project:
+Run parse/check/tests against an SFDX project without connecting to an org:
 
 ```bash
-glade check --project path/to/project --json
-glade test --project path/to/project --json
+cd path/to/sfdx-project
+glade check --project .
+glade test --project . --json
 ```
+
+Run a focused class or only tests affected by changes since a git ref:
+
+```bash
+glade test --project . --filter AccountServiceTest --json
+glade test --project . --changed-since origin/main --json
+```
+
+See [LOCAL_TESTING.md](LOCAL_TESTING.md) for class/method filters,
+dependency-selected test runs, `compat local-tests`, anonymous Apex, and the
+playground.
 
 ## Manual Install
 

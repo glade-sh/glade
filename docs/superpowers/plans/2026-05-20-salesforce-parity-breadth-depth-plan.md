@@ -244,7 +244,7 @@ Validation:
 ```bash
 go test ./internal/vm
 go run ./cmd/glade test --project example-projects/src-nmb-nutpl-develop --json
-go run ./cmd/glade test --project example-projects/sf-cred-pkg-develop --parallel 4 --json
+go run ./cmd/glade test --project example-projects/sf-cred-pkg-develop --parallelism 4 --json
 ```
 
 ### Batch C3: Mock Framework Semantics
@@ -562,4 +562,3 @@ Start with two worktrees in parallel:
 2. **Shape breadth batch.** This unlocks more enterprise projects so the oracle has more timber to work.
 
 The first shape batch should include managed package artifacts, standard schema breadth for NPSP, and broad sema fixes for field/static resolution. That is the fastest way to move from two green projects to the full enterprise corpus.
-

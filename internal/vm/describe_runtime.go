@@ -1197,13 +1197,19 @@ func (vm *VM) describeObjectName(name string) string {
 }
 
 func (vm *VM) describeFieldName(name string) string {
-	if vm == nil || vm.Org == nil || vm.Org.Namespace == "" {
+	if vm == nil {
 		return name
 	}
 	if !isCustomSchemaName(name) && !strings.HasSuffix(strings.ToLower(name), "__mdt") {
 		return name
 	}
 	if hasNamespaceTokenInSchemaName(name) {
+		return name
+	}
+	if namespace := strings.TrimSpace(vm.currentCallerNamespace()); namespace != "" {
+		return namespace + "__" + name
+	}
+	if vm.Org == nil || vm.Org.Namespace == "" {
 		return name
 	}
 	return vm.Org.Namespace + "__" + name
