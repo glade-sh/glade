@@ -11,3 +11,12 @@ node_modules/
 /probes/output/
 /tmp/
 /.gocache/
+
+# Compiled Go test binaries (go test -c output)
+*.test
+
+# Ad-hoc compat run result dumps
+/nu.json
+/nutpl.json
+/nams.json
+/sf-cred.json

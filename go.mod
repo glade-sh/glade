@@ -25,4 +25,4 @@ require (
 	modernc.org/memory v1.11.0 // indirect
 )
 
-replace github.com/glade-sh/apex-parser => ../glade-apex-parser
+replace github.com/glade-sh/apex-parser => ./third_party/glade-apex-parser

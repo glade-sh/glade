@@ -1,0 +1,6 @@
+/.DS_Store
+/coverage.out
+/cpu.pprof
+/mem.pprof
+/tmp/
+/example-projects

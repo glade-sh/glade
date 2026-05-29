@@ -246,8 +246,8 @@ composed by the CLI in `internal/gladecli`.
 - **Language**: Go 1.26
 - **Module**: `github.com/glade-sh/glade`
 - **Key dependencies**:
-  - `github.com/glade-sh/apex-parser` — local tree-sitter Apex parser module
-    wrapped behind `internal/apexast`.
+  - `github.com/glade-sh/apex-parser` — tree-sitter Apex parser module, vendored
+    in-repo at `third_party/glade-apex-parser` and wrapped behind `internal/apexast`.
   - `modernc.org/sqlite` — pure-Go SQLite for persistent org storage.
 - **Configuration**: `glade.yml` (minimal YAML-subset parser in
   `internal/config`; only scalar and inline-list values are supported).
@@ -407,9 +407,9 @@ startup, and compat commands.
   at `total=761 pass=761`. The remaining checked example projects still have
   measured compile-gap frontiers, so future unsupported runtime cases should
   remain explicit when they are outside the current support claim.
-- Keep the parser behind `internal/apexast`. The current parser module is
-  `github.com/glade-sh/apex-parser` with a local replacement; parser cutover
-  details live in `docs/APEX_PARSER_CUTOVER.md`.
+- Keep the parser behind `internal/apexast`. The parser module is
+  `github.com/glade-sh/apex-parser`, vendored in-repo at
+  `third_party/glade-apex-parser`; parser details live in `docs/APEX_PARSER.md`.
 - When moving a capability from `partial` to `supported`, add compatibility
   coverage first.
 - Update generated docs after capability changes:
@@ -422,6 +422,9 @@ go run ./cmd/glade compat stdlib --output docs/STDLIB_COVERAGE.md
 
 - Do not introduce proprietary GLADE internals as implementation sources.
 - Do not check in `.DS_Store`, `/bin/`, `/dist/`, or `coverage.out`.
+- Do not check in compiled Go test binaries (`*.test`) or ad-hoc compat run
+  result dumps (e.g. `nu.json`, `nutpl.json`, `nams.json`, `sf-cred.json`); these
+  are regenerable artifacts and are gitignored.
 - Do not stage or commit the built `glade` binary unless the user explicitly asks
   for a binary update.
 
@@ -474,7 +477,7 @@ generated docs are in sync.
   execution beyond MVP parity.
 - `docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md` — squad-oriented implementation
   phases for full local Apex test execution.
-- `docs/APEX_PARSER_CUTOVER.md` — local parser module status and validation.
+- `docs/APEX_PARSER.md` — Apex parser module, CGO requirement, and validation.
 - `docs/RELEASE_NOTES.md` — ongoing release log.
 - `docs/RELEASE_POLICY.md` — release promotion and upgrade policy.
 - `docs/EDITOR.md` — VS Code tasks, DAP launch examples, and LSP wiring.

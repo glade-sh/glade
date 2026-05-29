@@ -6,7 +6,7 @@ agent development guidance in this repo.
 Current development focus is Section 8 Local API Server parity and integration
 gates. Do not duplicate deep core stdlib work from the separate stdlib
 worktrees. Do not pull in the parser proof-of-concept unless the task is the
-parser cutover documented in `docs/APEX_PARSER_CUTOVER.md`.
+parser work documented in `docs/APEX_PARSER.md`.
 
 For server/API work, use the shared runtime stack already in the repo:
 `storage`, `dml`, `soql`, `vm`, `apextest`, `compat`, and `capability`. Add

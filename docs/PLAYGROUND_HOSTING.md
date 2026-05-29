@@ -4,14 +4,28 @@
 
 ## Local container run
 
+The Apex parser (`github.com/glade-sh/apex-parser`) is vendored into this repo at
+`third_party/glade-apex-parser` and wired in through a `replace` directive in
+`go.mod`, so the image builds straight from the repo with no extra build context:
+
 ```bash
+# from the glade repo root
 docker build -t glade-playground .
 docker run --rm -p 8080:8080 -e PORT=8080 glade-playground
 ```
 
+Or use the helper:
+
+```bash
+scripts/build-playground-image.sh
+```
+
 Open <http://localhost:8080/playground/>.
 
-The image builds only the Go binary. The playground UI assets are embedded in `glade`, so no separate web build is needed.
+The image builds only the Go binary. The playground UI assets are embedded in
+`glade`, so no separate web build is needed. The build uses `CGO_ENABLED=1`
+because the Apex declaration parser is a tree-sitter (C) parser; the binary links
+against glibc and runs on a glibc base image.
 
 ## Hardened flags
 
@@ -34,19 +48,24 @@ The VM checks request context during execution and also uses the strict CPU cap.
 
 ## DigitalOcean App Platform
 
-`.do/app.yaml` defines one Dockerfile-backed web service:
+Because the parser is vendored into the repo, App Platform can build the image
+directly from the connected GitHub source. `.do/app.yaml` defines one web service
+that builds from the repo `Dockerfile`:
 
 ```bash
-doctl apps create --spec .do/app.yaml
+doctl apps create --spec .do/app.yaml      # first deploy
+doctl apps update <app-id> --spec .do/app.yaml   # subsequent deploys
 ```
 
-For an existing app:
+Update the `github.repo`/`branch` fields in `.do/app.yaml` to match your
+connection. With `deploy_on_push: true`, App Platform rebuilds on every push to
+the branch.
 
-```bash
-doctl apps update <app-id> --spec .do/app.yaml
-```
+If you prefer a prebuilt image instead of a source build, push one to a registry
+(`PUSH=1 REGISTRY=registry.digitalocean.com/<your-registry> scripts/build-playground-image.sh`)
+and point the service at it with an `image:` block in `.do/app.yaml`.
 
-Set the repository and branch in the App Platform UI, or let DigitalOcean auto-detect the Dockerfile from this repo. The service listens on port `8080` and health-checks `GET /playground/`.
+The service listens on port `8080` and health-checks `GET /playground/`.
 
 ## DNS for play.glade.sh
 

@@ -2,8 +2,14 @@ name: glade-playground
 region: nyc
 services:
   - name: web
+    # The Apex parser is vendored into the repo (third_party/glade-apex-parser),
+    # so App Platform can build the image directly from the connected source.
+    # Update `repo`/`branch` to match your GitHub connection.
+    github:
+      repo: glade-sh/glade
+      branch: main
+      deploy_on_push: true
     dockerfile_path: Dockerfile
-    source_dir: /
     http_port: 8080
     instance_count: 1
     instance_size_slug: basic-xxs
@@ -13,7 +19,6 @@ services:
       - key: PORT
         value: "8080"
         scope: RUN_TIME
-    run_command: /bin/sh -c 'exec glade playground --examples --public --addr 0.0.0.0:${PORT:-8080}'
 domains:
   - domain: play.glade.sh
     type: PRIMARY

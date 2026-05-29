@@ -100,8 +100,8 @@ Release engineering:
   state.
 - Added bounded replay smoke bundles for selector/service/domain and
   server-backed REST integration gates under `testdata/replay`.
-- Switched the local declaration parser from `apexfmt`/ANTLR to the local
-  tree-sitter Apex parser module through `internal/apexast`.
+- Uses a local tree-sitter Apex declaration parser module through
+  `internal/apexast`.
 - Added enterprise trigger-heavy, describe-heavy, namespace-heavy, and
   package-style compatibility fixtures, with SFDX namespace/package-directory
   support in schema-aware check fixtures.

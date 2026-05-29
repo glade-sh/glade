@@ -24,6 +24,7 @@ of the way.
 1. Runtime architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
 2. Storage model and DB behavior: [storage-schema.md](storage-schema.md)
 3. Example-project harness: [EXAMPLE_PROJECTS.md](EXAMPLE_PROJECTS.md)
+4. Apex declaration parser: [APEX_PARSER.md](APEX_PARSER.md)
 
 ## Planning And Backlog Docs
 
