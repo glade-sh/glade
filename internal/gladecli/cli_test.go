@@ -24,6 +24,22 @@ func TestRunVersion(t *testing.T) {
 	}
 }
 
+func TestRunDoctorReportsParser(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"doctor"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	out := stdout.String()
+	if !strings.Contains(out, "parser:") {
+		t.Fatalf("doctor output missing parser line:\n%s", out)
+	}
+	// This test binary is built with CGO, so the parser must be available.
+	if !strings.Contains(out, "parser: ok (tree-sitter)") {
+		t.Fatalf("expected parser ok in CGO build, got:\n%s", out)
+	}
+}
+
 func TestRunUnknownCommand(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"wat"}, &stdout, &stderr)

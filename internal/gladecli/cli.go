@@ -484,8 +484,26 @@ func runDoctor(ctx context.Context, w io.Writer) error {
 		}
 	}
 
+	fmt.Fprintf(w, "parser: %s\n", parserSelfCheck())
 	fmt.Fprintln(w, "status: ok")
 	return nil
+}
+
+// parserSelfCheck parses a trivial Apex class and reports whether the bundled
+// tree-sitter parser is available. Binaries built without CGO ship a stub that
+// emits APEXPARSECGO and cannot parse project sources; surfacing this in doctor
+// makes a broken distribution obvious right away.
+func parserSelfCheck() string {
+	file := apexast.NewParser().ParseSource("doctor.cls", "public class GladeDoctor {}")
+	for _, diag := range file.Diagnostics {
+		if diag.Code == "APEXPARSECGO" {
+			return "UNAVAILABLE (binary built without CGO; check/test/parse on project sources will fail)"
+		}
+	}
+	if file.Kind == apexast.FileKindClass || len(file.Declarations) > 0 {
+		return "ok (tree-sitter)"
+	}
+	return "UNAVAILABLE (could not parse a trivial class)"
 }
 
 func runParse(ctx context.Context, args []string, w io.Writer) (apexast.Result, error) {

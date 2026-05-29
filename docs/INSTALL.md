@@ -43,13 +43,18 @@ Prerequisites:
 
 - Go 1.26 or newer
 - Git
+- A C compiler with CGO enabled (CGO is on by default). glade's Apex parser is a
+  generated tree-sitter grammar that requires CGO; without it, `check`, `test`,
+  and `parse` on project sources fail with an `APEXPARSECGO` error. Install
+  Xcode Command Line Tools on macOS (`xcode-select --install`) or `build-essential`
+  on Debian/Ubuntu (`sudo apt-get install build-essential`).
 
 ```bash
 git clone https://github.com/glade-sh/glade.git
 cd glade
 go build -o glade ./cmd/glade
 ./glade version
-./glade doctor
+./glade doctor   # confirm: "parser: ok (tree-sitter)"
 ```
 
 Run the locally built binary against an SFDX project. No Salesforce org login is
@@ -96,6 +101,81 @@ glade test --project . --changed-since origin/main --json
 See [LOCAL_TESTING.md](LOCAL_TESTING.md) for class/method filters,
 dependency-selected test runs, `compat local-tests`, anonymous Apex, and the
 playground.
+
+## Distribute to a Few Machines (Pre-Release)
+
+Before publishing public releases you can hand `glade` to a handful of machines.
+The one rule to remember: **the binary is CGO-linked, so a build runs only on
+the same OS and CPU architecture it was built on.** Build per platform, then
+copy.
+
+### 1. Build a working binary
+
+On a machine of the target platform (for example, an Apple Silicon Mac for other
+Apple Silicon Macs):
+
+```bash
+scripts/build-local.sh
+```
+
+This builds a CGO-enabled host binary into `dist/`, verifies the parser is wired
+up (`doctor` must report `parser: ok`), and writes a `.tar.gz` (or `.zip` on
+Windows) plus a `.sha256`. Override the version or output directory with
+`VERSION=` and `DIST_DIR=`.
+
+### 2. Copy to the target machines
+
+Same OS and architecture only. For example:
+
+```bash
+scp dist/glade_*_darwin_arm64.tar.gz user@host:/tmp/
+```
+
+For a Linux server, build the archive on Linux (or in the bundled container —
+see below) and copy that.
+
+### 3. Install and verify on each machine
+
+```bash
+shasum -a 256 -c glade_*_darwin_arm64.tar.gz.sha256   # optional integrity check
+tar -xzf glade_*_darwin_arm64.tar.gz
+install -m 0755 glade ~/.local/bin/glade
+
+glade version
+glade doctor          # MUST show "parser: ok (tree-sitter)"
+```
+
+`glade doctor` is the acceptance check: if it prints `parser: UNAVAILABLE`, the
+binary was built without CGO and will not parse project Apex. Rebuild with a C
+compiler present.
+
+On macOS, Gatekeeper may quarantine an unsigned binary copied from another
+machine. Clear it with:
+
+```bash
+xattr -d com.apple.quarantine ~/.local/bin/glade
+```
+
+### Building a Linux binary from macOS
+
+CGO cross-compilation needs a target toolchain, so the simplest path is the
+bundled container, which builds on a glibc base:
+
+```bash
+docker build -t glade-local .
+docker create --name glade-extract glade-local
+docker cp glade-extract:/usr/local/bin/glade ./glade-linux
+docker rm glade-extract
+```
+
+Copy `glade-linux` to the Linux machine and verify with `glade doctor`. The
+Linux host's glibc must be compatible with the build base (Debian bookworm).
+
+### Alternative: build from source on each machine
+
+The most robust option when machines already have Go 1.26 and a C compiler is to
+build from source on each one (see "Build And Run From Source" above). No
+cross-compilation, no architecture mismatches.
 
 ## Manual Install
 

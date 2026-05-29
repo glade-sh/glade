@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WARNING: This cross-compiles with CGO_ENABLED=0. glade's Apex parser is a
+# generated tree-sitter grammar that REQUIRES CGO, so these artifacts cannot
+# parse project sources (check/test/parse fail with APEXPARSECGO). They are only
+# suitable for surfaces that do not parse Apex.
+#
+# For working binaries:
+#   - per host platform: scripts/build-local.sh (CGO enabled, host arch only)
+#   - cross-platform releases need per-target CGO toolchains (not yet wired here)
+# See docs/INSTALL.md and docs/APEX_PARSER.md.
+echo "WARNING: release-build.sh builds with CGO disabled; artifacts cannot parse Apex." >&2
+echo "         Use scripts/build-local.sh for a working host binary." >&2
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION="${VERSION:-$(git -C "${ROOT}" describe --tags --always --dirty 2>/dev/null || echo dev)}"
 DIST_DIR="${DIST_DIR:-${ROOT}/dist}"
