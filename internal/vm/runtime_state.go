@@ -694,7 +694,7 @@ func (vm *VM) RegisterPageReference(name string) {
 	if name == "" {
 		return
 	}
-	if strings.HasPrefix(strings.ToLower(name), "page.") {
+	if hasPrefixFold(name, "page.") {
 		name = name[len("Page."):]
 	}
 	if vm.pageReferences == nil {

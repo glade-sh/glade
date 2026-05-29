@@ -344,12 +344,12 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if strings.EqualFold(receiver.Type, "NLPPredictions.PredictionHandler") {
 		switch strings.ToLower(method) {
 		case "handlepredictionrequest":
-			if len(args) != 1 || args[0].Kind != ValueObject || !strings.HasPrefix(strings.ToLower(args[0].Type), "nlppredictions.predictionrequestcontext") {
+			if len(args) != 1 || args[0].Kind != ValueObject || !hasPrefixFold(args[0].Type, "nlppredictions.predictionrequestcontext") {
 				return Null, receiver, false, true, fmt.Errorf("NLPPredictions.PredictionHandler.handlePredictionRequest expects PredictionRequestContext")
 			}
 			return Null, receiver, false, true, nil
 		case "handlepredictionresponse":
-			if len(args) != 1 || args[0].Kind != ValueObject || !strings.HasPrefix(strings.ToLower(args[0].Type), "nlppredictions.predictionresponsecontext") {
+			if len(args) != 1 || args[0].Kind != ValueObject || !hasPrefixFold(args[0].Type, "nlppredictions.predictionresponsecontext") {
 				return Null, receiver, false, true, fmt.Errorf("NLPPredictions.PredictionHandler.handlePredictionResponse expects PredictionResponseContext")
 			}
 			return Null, receiver, false, true, nil
@@ -1079,7 +1079,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 			}
 			record := Object(objectName)
-			if strings.HasSuffix(strings.ToLower(objectName), "__e") {
+			if hasSuffixFold(objectName, "__e") {
 				putVMFieldPath(record, "EventUuid", String(vm.nextDeterministicUUID()))
 			}
 			if len(args) >= 1 && args[0].Kind != ValueNull {
@@ -3838,7 +3838,7 @@ func (vm *VM) generatedPlatformPassiveDTOShape(generated generatedPlatformType) 
 			if method.IsStatic && strings.EqualFold(method.Name, "builder") && strings.HasSuffix(method.ReturnType, ".Builder") {
 				continue
 			}
-			if !method.IsStatic && (strings.HasPrefix(strings.ToLower(method.Name), "get") || strings.HasPrefix(strings.ToLower(method.Name), "is")) {
+			if !method.IsStatic && (hasPrefixFold(method.Name, "get") || hasPrefixFold(method.Name, "is")) {
 				hasDataShape = true
 			}
 			if generatedPlatformPassiveDTOMethod(method) {

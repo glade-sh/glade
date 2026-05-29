@@ -650,7 +650,7 @@ func describeChildRelationshipName(namespace, childObject, relationshipName stri
 	if name == "" {
 		return name
 	}
-	if isCustomObjectLikeName(storage.StripNamespaceToken(namespace, childObject)) && !strings.HasSuffix(strings.ToLower(name), "__r") {
+	if isCustomObjectLikeName(storage.StripNamespaceToken(namespace, childObject)) && !hasSuffixFold(name, "__r") {
 		name += "__r"
 	}
 	return storage.NamespaceTokenName(namespace, name)
@@ -736,7 +736,7 @@ func fieldSetMapAliases(namespace, name string) []string {
 		}
 	}
 	add(name)
-	if namespace != "" && !strings.HasPrefix(strings.ToLower(name), strings.ToLower(namespace+"__")) {
+	if namespace != "" && !hasPrefixFold(name, namespace+"__") {
 		add(namespace + "__" + name)
 	}
 	if namespace != "" {
@@ -1104,7 +1104,7 @@ func (vm *VM) fieldDescribeCacheKeys(objectName, fieldName string) []string {
 func describeFieldReferenceTargets(definition storage.ObjectDefinition, field storage.Field) []string {
 	referenceTo := append([]string(nil), field.ReferenceTo...)
 	if field.Type == storage.FieldReference &&
-		strings.HasSuffix(strings.ToLower(definition.APIName), "__c") &&
+		hasSuffixFold(definition.APIName, "__c") &&
 		describeProviderIDAllowsUserTarget(definition, field) {
 		referenceTo = appendUniqueStringFold(referenceTo, "User")
 	}
@@ -1239,7 +1239,7 @@ func (vm *VM) describeFieldName(name string) string {
 	if vm == nil {
 		return name
 	}
-	if !isCustomSchemaName(name) && !strings.HasSuffix(strings.ToLower(name), "__mdt") {
+	if !isCustomSchemaName(name) && !hasSuffixFold(name, "__mdt") {
 		return name
 	}
 	if hasNamespaceTokenInSchemaName(name) {
@@ -1332,7 +1332,7 @@ func (vm *VM) syntheticSchemaFieldForObject(objectName, fieldName string) storag
 	if field.APIName == "" || vm == nil || vm.Org == nil {
 		return field
 	}
-	if !strings.HasSuffix(strings.ToLower(field.APIName), "__c") {
+	if !hasSuffixFold(field.APIName, "__c") {
 		return field
 	}
 	target := vm.inferredCustomFieldReferenceTarget(objectName, field.APIName)

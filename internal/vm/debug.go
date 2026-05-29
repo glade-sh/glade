@@ -158,6 +158,20 @@ func cloneValues(in map[string]Value) map[string]Value {
 }
 
 func cloneValue(value Value) Value {
+	switch value.Kind {
+	case ValueObject, ValueList, ValueSet, ValueMap:
+		return cloneValueWithSeen(value, make(map[uint64]bool))
+	}
+	// Scalars cannot contain cycles and carry no nested containers, so
+	// cloneValueWithSeen would return them unchanged. Skip the per-call
+	// seen-set allocation for the common scalar case (cloneValue is called
+	// per field across static-field and value clones). The defensive guard
+	// keeps the slow path for any non-container value that unexpectedly holds
+	// nested collections.
+	if value.Fields == nil && value.Map == nil && value.MapKeys == nil &&
+		value.List == nil && value.Set == nil && value.MapOrder == nil {
+		return value
+	}
 	return cloneValueWithSeen(value, make(map[uint64]bool))
 }
 

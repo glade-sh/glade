@@ -117,7 +117,7 @@ func schemaDisplayTypeValue(name string) Value {
 
 func namedEnumStaticValue(typeName string, names []string, name string) (Value, bool) {
 	prefix := typeName + "."
-	if !strings.HasPrefix(strings.ToLower(name), strings.ToLower(prefix)) {
+	if !hasPrefixFold(name, prefix) {
 		return Null, false
 	}
 	member := name[len(prefix):]
@@ -950,7 +950,7 @@ func metadataCustomMetadataNames(fullName string) (string, string) {
 		return "", strings.TrimSpace(fullName)
 	}
 	objectName := strings.TrimSpace(parts[0])
-	if !strings.HasSuffix(strings.ToLower(objectName), "__mdt") {
+	if !hasSuffixFold(objectName, "__mdt") {
 		objectName += "__mdt"
 	}
 	return objectName, strings.TrimSpace(parts[1])

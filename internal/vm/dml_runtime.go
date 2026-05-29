@@ -4159,7 +4159,7 @@ func sObjectFieldReadsAsNumeric(field storage.Field) bool {
 }
 
 func coerceLikelyCustomNumberRuntimeValue(fieldName string, value Value) Value {
-	if value.Kind != ValueInt || !strings.HasSuffix(strings.ToLower(fieldName), "__c") {
+	if value.Kind != ValueInt || !hasSuffixFold(fieldName, "__c") {
 		return value
 	}
 	text := strconv.FormatInt(value.Int, 10) + ".0"

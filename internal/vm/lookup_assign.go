@@ -60,7 +60,7 @@ func (vm *VM) lookup(name string) (Value, error) {
 	if value, ok := apexPagesSeverityStaticValue(name); ok {
 		return value, nil
 	}
-	if strings.HasSuffix(strings.ToLower(name), ".class") {
+	if hasSuffixFold(name, ".class") {
 		className := name[:len(name)-len(".class")]
 		if exceptionName := exceptionTypeName(className); isBuiltinExceptionType(exceptionName) {
 			return Value{Kind: ValueObject, Type: "Type", Text: "System." + exceptionName}, nil
@@ -458,7 +458,7 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 				return name, value, true
 			}
 			for candidate, alternate := range object.Fields {
-				if candidate != name && strings.ToLower(candidate) == normalized && alternate.Kind != ValueNull {
+				if candidate != name && strings.EqualFold(candidate, normalized) && alternate.Kind != ValueNull {
 					return candidate, alternate, true
 				}
 			}
@@ -466,7 +466,7 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 		return name, value, true
 	}
 	for candidate, value := range object.Fields {
-		if strings.ToLower(candidate) == normalized {
+		if strings.EqualFold(candidate, normalized) {
 			return candidate, value, true
 		}
 	}
@@ -673,7 +673,7 @@ func propertyAccessorMethod(method Method) bool {
 		return false
 	}
 	return strings.Contains(suffix, ".") &&
-		(strings.HasSuffix(strings.ToLower(suffix), ".get") || strings.HasSuffix(strings.ToLower(suffix), ".set"))
+		(hasSuffixFold(suffix, ".get") || hasSuffixFold(suffix, ".set"))
 }
 
 func propertyAccessorSuffix(methodName, className string) (string, bool) {
@@ -682,7 +682,7 @@ func propertyAccessorSuffix(methodName, className string) (string, bool) {
 			continue
 		}
 		prefix := owner + "."
-		if strings.HasPrefix(strings.ToLower(methodName), strings.ToLower(prefix)) {
+		if hasPrefixFold(methodName, prefix) {
 			return methodName[len(prefix):], true
 		}
 		qualifiedPrefix := "." + owner + "."
@@ -760,7 +760,7 @@ func (vm *VM) lookupGlobalName(name string) (string, bool) {
 	}
 	normalized := strings.ToLower(name)
 	for candidate := range vm.Globals {
-		if strings.ToLower(candidate) == normalized {
+		if strings.EqualFold(candidate, normalized) {
 			return candidate, true
 		}
 	}
@@ -773,7 +773,7 @@ func (vm *VM) lookupTriggerGlobal(name string) (Value, bool) {
 	}
 	normalized := strings.ToLower(name)
 	for candidate, value := range vm.triggerGlobals {
-		if strings.ToLower(candidate) == normalized {
+		if strings.EqualFold(candidate, normalized) {
 			return value, true
 		}
 	}
@@ -1766,12 +1766,12 @@ func inferredRelationshipNullFieldAccessValue(field string) (Value, bool) {
 	if field == "" {
 		return Null, false
 	}
-	if strings.HasSuffix(strings.ToLower(field), "__r") {
+	if hasSuffixFold(field, "__r") {
 		value := typedNull(relationshipNameObjectType(field))
 		value.Runtime = relationshipNullRuntime
 		return value, true
 	}
-	if strings.EqualFold(field, "Id") || strings.HasSuffix(strings.ToLower(field), "id") || strings.HasSuffix(strings.ToLower(field), "__c") {
+	if strings.EqualFold(field, "Id") || hasSuffixFold(field, "id") || hasSuffixFold(field, "__c") {
 		return typedNull("Id"), true
 	}
 	return Null, true
@@ -1779,14 +1779,14 @@ func inferredRelationshipNullFieldAccessValue(field string) (Value, bool) {
 
 func relationshipNameObjectType(relationship string) string {
 	relationship = strings.TrimSpace(relationship)
-	if strings.HasSuffix(strings.ToLower(relationship), "__r") {
+	if hasSuffixFold(relationship, "__r") {
 		return relationship[:len(relationship)-len("__r")] + "__c"
 	}
 	return relationship
 }
 
 func isCustomRelationshipFieldName(field string) bool {
-	return strings.HasSuffix(strings.ToLower(strings.TrimSpace(field)), "__r")
+	return hasSuffixFold(strings.TrimSpace(field), "__r")
 }
 
 func (vm *VM) explicitParentRelationshipNullValue(receiver Value, relationshipName string) (Value, bool) {
@@ -1860,7 +1860,7 @@ func (vm *VM) isCurrentGetter(getter *Method) bool {
 	if strings.EqualFold(getter.Name, vm.currentMethod.Name) {
 		return true
 	}
-	return strings.HasSuffix(strings.ToLower(vm.currentMethod.Name), "."+strings.ToLower(getter.Name))
+	return hasSuffixFold(vm.currentMethod.Name, "."+strings.ToLower(getter.Name))
 }
 
 func (vm *VM) currentGetterStoredValue(owner string, field Field, value Value) Value {

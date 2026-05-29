@@ -1502,7 +1502,7 @@ func (vm *VM) storedSObjectFieldValueIgnoringProjection(receiver Value, field st
 
 func compoundAddressComponentField(componentName, compoundName string) (string, bool) {
 	prefix := strings.TrimSuffix(compoundName, "Address")
-	if prefix == "" || !strings.HasPrefix(strings.ToLower(componentName), strings.ToLower(prefix)) {
+	if prefix == "" || !hasPrefixFold(componentName, prefix) {
 		return "", false
 	}
 	suffix := componentName[len(prefix):]

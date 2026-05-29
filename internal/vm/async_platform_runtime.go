@@ -37,7 +37,7 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		if err != nil {
 			return Null, err
 		}
-		if strings.HasSuffix(strings.ToLower(stored.Object), "__e") {
+		if hasSuffixFold(stored.Object, "__e") {
 			if field, ok := vm.missingRequiredPlatformEventField(stored); ok {
 				row := Object("Database.SaveResult")
 				row.Fields["success"] = Bool(false)
@@ -111,7 +111,7 @@ func (vm *VM) missingRequiredPlatformEventField(record storage.Record) (string, 
 			continue
 		}
 		value, ok := record.GetField(name)
-		if !ok && strings.HasSuffix(strings.ToLower(name), "__c") {
+		if !ok && hasSuffixFold(name, "__c") {
 			value, ok = record.GetField(name[:len(name)-3])
 		}
 		if !ok || value.Kind == storage.ValueNull {
@@ -134,7 +134,7 @@ func isLocalPlatformEventSystemRequiredField(field string) bool {
 }
 
 func platformEventUUID(record Value) (string, bool) {
-	if !strings.HasSuffix(strings.ToLower(record.Type), "__e") {
+	if !hasSuffixFold(record.Type, "__e") {
 		return "", false
 	}
 	_, value, ok := objectFieldValue(record, "EventUuid")
@@ -386,7 +386,7 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 	methodKey := strings.ToLower(method)
 	objectName, definition, kind, ok := vm.customDataObject(typeName)
 	if !ok {
-		if (methodKey == "getorgdefaults" || methodKey == "getvalues") && strings.HasSuffix(strings.ToLower(typeName), "__c") {
+		if (methodKey == "getorgdefaults" || methodKey == "getvalues") && hasSuffixFold(typeName, "__c") {
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("%s.%s expects 0 arguments", typeName, method)
 			}

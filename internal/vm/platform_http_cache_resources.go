@@ -804,7 +804,7 @@ func cacheFullyQualifiedPartition(namespace, partition string) string {
 	if partition == "" {
 		return namespace
 	}
-	if strings.HasPrefix(strings.ToLower(partition), strings.ToLower(namespace)+".") {
+	if hasPrefixFold(partition, strings.ToLower(namespace)+".") {
 		return partition
 	}
 	return namespace + "." + partition

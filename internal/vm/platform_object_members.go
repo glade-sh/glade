@@ -268,7 +268,7 @@ func stringValueOrEmpty(value Value) string {
 
 func (vm *VM) callAppLauncherControllerStatic(callee string, args []Value) (Value, bool, error) {
 	className, methodName, ok := vm.splitClassMember(callee)
-	if !ok || !strings.HasPrefix(strings.ToLower(className), "applauncher.") {
+	if !ok || !hasPrefixFold(className, "applauncher.") {
 		return Null, false, nil
 	}
 	name := strings.ToLower(methodName)
@@ -805,7 +805,7 @@ func (vm *VM) generatedPlatformStaticMethodByNameArity(className, methodName str
 }
 
 func connectAPITestSetterName(methodName string) bool {
-	return len(methodName) > len("setTest") && strings.HasPrefix(strings.ToLower(methodName), "settest")
+	return len(methodName) > len("setTest") && hasPrefixFold(methodName, "settest")
 }
 
 func connectAPITestSetterTarget(methodName string) string {
@@ -1782,7 +1782,7 @@ func bindGeneratedPlatformMethodArgs(object *Value, method Method, args []Value)
 			return
 		}
 		field := strings.TrimSpace(param.Name)
-		if field == "" || strings.HasPrefix(strings.ToLower(field), "arg") {
+		if field == "" || hasPrefixFold(field, "arg") {
 			continue
 		}
 		object.Fields[passiveAccessorFieldName(*object, field)] = args[i]

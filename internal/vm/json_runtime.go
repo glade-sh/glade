@@ -634,7 +634,7 @@ func normalizeJSONDeserializeError(err error) error {
 	if strings.HasPrefix(message, "JSON.deserializeStrict") {
 		return err
 	}
-	if strings.HasPrefix(strings.ToLower(message), "malformed json:") {
+	if hasPrefixFold(message, "malformed json:") {
 		return err
 	}
 	return fmt.Errorf("malformed JSON: %s", message)
@@ -1587,7 +1587,7 @@ func (vm *VM) childRelationshipObjectLess(left, right string) bool {
 
 func (vm *VM) childRelationshipObjectPriority(objectName string) int {
 	if vm != nil && vm.Org != nil && vm.Org.Namespace != "" {
-		if strings.HasPrefix(strings.ToLower(objectName), strings.ToLower(vm.Org.Namespace)+"__") && isCustomObjectLikeName(objectName) {
+		if hasPrefixFold(objectName, strings.ToLower(vm.Org.Namespace)+"__") && isCustomObjectLikeName(objectName) {
 			return 0
 		}
 	}

@@ -52,7 +52,7 @@ func registeredMethodSourceAliasKey(method Method) string {
 	if owner == "" {
 		owner = methodOwner
 	}
-	if methodOwner != "" && strings.HasSuffix(strings.ToLower(owner), "."+strings.ToLower(methodOwner)) {
+	if methodOwner != "" && hasSuffixFold(owner, "."+strings.ToLower(methodOwner)) {
 		owner = methodOwner
 	}
 	file := ""

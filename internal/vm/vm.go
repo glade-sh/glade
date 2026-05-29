@@ -151,7 +151,7 @@ func (vm *VM) customDataObject(typeName string) (string, storage.ObjectDefinitio
 }
 
 func syntheticListCustomSettingDefinition(typeName string) (storage.ObjectDefinition, bool) {
-	if !strings.HasSuffix(strings.ToLower(typeName), "__c") {
+	if !hasSuffixFold(typeName, "__c") {
 		return storage.ObjectDefinition{}, false
 	}
 	return storage.ObjectDefinition{
@@ -6040,11 +6040,11 @@ func (vm *VM) jsonStrictAllowsRelationshipPayload(typeName, key string, item any
 	if !vm.isSObjectLikeType(typeName) {
 		return false
 	}
-	if strings.HasSuffix(strings.ToLower(key), "__r") {
+	if hasSuffixFold(key, "__r") {
 		return true
 	}
 	if _, ok := jsonQueryResultRecords(item); ok {
-		return strings.HasSuffix(strings.ToLower(key), "s")
+		return hasSuffixFold(key, "s")
 	}
 	return false
 }
@@ -6253,7 +6253,7 @@ func (vm *VM) describeTabValue(tab storage.TabMetadata) Value {
 
 func describeTabSObjectName(tab storage.TabMetadata) string {
 	sObjectName := strings.TrimSpace(tab.SObjectName)
-	if sObjectName == "" && tab.Custom && strings.HasSuffix(strings.ToLower(tab.Name), "__c") {
+	if sObjectName == "" && tab.Custom && hasSuffixFold(tab.Name, "__c") {
 		sObjectName = tab.Name
 	}
 	return sObjectName
@@ -6749,6 +6749,13 @@ func hasSuffixFold(value, suffix string) bool {
 		return false
 	}
 	return strings.EqualFold(value[len(value)-len(suffix):], suffix)
+}
+
+func hasPrefixFold(value, prefix string) bool {
+	if len(value) < len(prefix) {
+		return false
+	}
+	return strings.EqualFold(value[:len(prefix)], prefix)
 }
 
 func lexicalTopLevel(className string) (string, bool) {
@@ -9212,7 +9219,7 @@ func (vm *VM) newPageReference(rawURL string) Value {
 
 func (vm *VM) normalizePageReferenceURL(rawURL string) string {
 	rawURL = strings.TrimSpace(rawURL)
-	if !strings.HasPrefix(strings.ToLower(rawURL), "page.") {
+	if !hasPrefixFold(rawURL, "page.") {
 		return rawURL
 	}
 	rest := rawURL[len("Page."):]
@@ -9635,7 +9642,7 @@ func emailFieldString(message Value, field string) string {
 	}
 	normalized := strings.ToLower(field)
 	for candidate, value := range message.Fields {
-		if strings.ToLower(candidate) == normalized {
+		if strings.EqualFold(candidate, normalized) {
 			if text := stringValue(value); text != "" {
 				return text
 			}
@@ -9651,7 +9658,7 @@ func emailFieldBool(message Value, field string) bool {
 	}
 	normalized := strings.ToLower(field)
 	for candidate, value := range message.Fields {
-		if strings.ToLower(candidate) == normalized && boolValue(value) {
+		if strings.EqualFold(candidate, normalized) && boolValue(value) {
 			return true
 		}
 	}
@@ -9666,7 +9673,7 @@ func emailFieldStrings(message Value, field string) []string {
 	}
 	normalized := strings.ToLower(field)
 	for candidate, value := range message.Fields {
-		if strings.ToLower(candidate) == normalized {
+		if strings.EqualFold(candidate, normalized) {
 			if values := stringsFromList(value); len(values) > 0 {
 				return values
 			}
@@ -10253,7 +10260,7 @@ func (vm *VM) visualforceEmailContentValue(key string) string {
 		return ""
 	}
 	for className, class := range vm.Classes {
-		if !strings.EqualFold(className, "EmailContent") && !strings.EqualFold(class.Name, "EmailContent") && !strings.HasSuffix(strings.ToLower(class.Name), ".emailcontent") {
+		if !strings.EqualFold(className, "EmailContent") && !strings.EqualFold(class.Name, "EmailContent") && !hasSuffixFold(class.Name, ".emailcontent") {
 			continue
 		}
 		for fieldName, field := range class.StaticFields {
@@ -10710,7 +10717,7 @@ func nestedTypeBelongsToTop(name, top string) bool {
 	if name == "" || top == "" {
 		return false
 	}
-	return strings.HasPrefix(strings.ToLower(name), strings.ToLower(top)+".")
+	return hasPrefixFold(name, strings.ToLower(top)+".")
 }
 
 func (vm *VM) resolveOnlyNestedTypeName(typeName string) (string, bool) {
@@ -11292,8 +11299,8 @@ func collectionIteratorType(collectionType string) string {
 
 func isIteratorValue(value Value) bool {
 	return value.Kind == ValueObject && (strings.EqualFold(value.Type, "Iterator") ||
-		strings.HasPrefix(strings.ToLower(value.Type), "iterator<") ||
-		strings.HasPrefix(strings.ToLower(value.Type), "system.iterator<") ||
+		hasPrefixFold(value.Type, "iterator<") ||
+		hasPrefixFold(value.Type, "system.iterator<") ||
 		value.Type == "Database.QueryLocatorIterator" ||
 		value.Type == "Database.QueryLocatorChunkIterator")
 }
@@ -11819,7 +11826,7 @@ func (vm *VM) rawStackFrames() []callFrame {
 
 func (vm *VM) qualifyStackFrameSymbol(symbol string) string {
 	symbol = strings.TrimSpace(symbol)
-	if symbol == "" || strings.HasPrefix(strings.ToLower(symbol), "class.") || strings.HasPrefix(strings.ToLower(symbol), "trigger.") {
+	if symbol == "" || hasPrefixFold(symbol, "class.") || hasPrefixFold(symbol, "trigger.") {
 		return symbol
 	}
 	dot := strings.LastIndex(symbol, ".")
@@ -12311,7 +12318,7 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 }
 
 func componentApexRuntimeType(typeName string) bool {
-	return strings.HasPrefix(strings.ToLower(strings.TrimSpace(typeName)), "component.apex.")
+	return hasPrefixFold(strings.TrimSpace(typeName), "component.apex.")
 }
 
 func newComponentApexValue(typeName string, namedArgs map[string]Value) Value {
@@ -12480,7 +12487,7 @@ func (vm *VM) generatedPlatformField(typeName, fieldName string, static bool) (F
 		}
 		normalized := strings.ToLower(fieldName)
 		for candidate, field := range fields {
-			if strings.ToLower(candidate) == normalized || (field.Name != "" && strings.ToLower(field.Name) == normalized) {
+			if strings.EqualFold(candidate, normalized) || (field.Name != "" && strings.EqualFold(field.Name, normalized)) {
 				if field.Name == "" {
 					field.Name = candidate
 				}

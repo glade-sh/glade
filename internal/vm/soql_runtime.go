@@ -1316,7 +1316,7 @@ func (vm *VM) normalizeSOQLRelationshipField(objectName, field string) (string, 
 }
 
 func (vm *VM) currentClassHasSharingMode(mode string) bool {
-	if strings.EqualFold(mode, "with sharing") && strings.HasSuffix(strings.ToLower(vm.currentClass), ".withsharing") {
+	if strings.EqualFold(mode, "with sharing") && hasSuffixFold(vm.currentClass, ".withsharing") {
 		return true
 	}
 	if stackMode, ok := vm.nearestCallStackSharingMode(); ok {
@@ -1329,7 +1329,7 @@ func (vm *VM) currentClassHasSharingMode(mode string) bool {
 func (vm *VM) nearestCallStackSharingMode() (string, bool) {
 	for i := len(vm.callStack) - 1; i >= 0; i-- {
 		className := classNameFromMethod(vm.callStack[i].Symbol)
-		if strings.HasSuffix(strings.ToLower(className), ".withsharing") {
+		if hasSuffixFold(className, ".withsharing") {
 			return "with sharing", true
 		}
 		if class, ok := vm.lookupClass(className); ok {

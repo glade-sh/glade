@@ -667,7 +667,7 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if err != nil {
 			return Null, true, err
 		}
-		return Bool(strings.HasPrefix(strings.ToLower(receiver.Text), strings.ToLower(prefix))), true, nil
+		return Bool(hasPrefixFold(receiver.Text, prefix)), true, nil
 	case "endsWith":
 		suffix, err := stringArg("String.endsWith", args)
 		if err != nil {
@@ -679,7 +679,7 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if err != nil {
 			return Null, true, err
 		}
-		return Bool(strings.HasSuffix(strings.ToLower(receiver.Text), strings.ToLower(suffix))), true, nil
+		return Bool(hasSuffixFold(receiver.Text, suffix)), true, nil
 	case "toLowerCase":
 		if len(args) > 1 {
 			return Null, true, fmt.Errorf("String.toLowerCase expects 0 or 1 arguments")
@@ -815,7 +815,7 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if err != nil {
 			return Null, true, err
 		}
-		if strings.HasPrefix(strings.ToLower(receiver.Text), strings.ToLower(prefix)) {
+		if hasPrefixFold(receiver.Text, prefix) {
 			return String(dropFirstRunes(receiver.Text, len([]rune(prefix)))), true, nil
 		}
 		return receiver, true, nil
@@ -830,7 +830,7 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if err != nil {
 			return Null, true, err
 		}
-		if strings.HasSuffix(strings.ToLower(receiver.Text), strings.ToLower(suffix)) {
+		if hasSuffixFold(receiver.Text, suffix) {
 			return String(dropLastRunes(receiver.Text, len([]rune(suffix)))), true, nil
 		}
 		return receiver, true, nil

@@ -2223,7 +2223,7 @@ func (vm *VM) matchRegisteredStaticMethod(name string, args []Value) (Method, bo
 
 func (vm *VM) matchRegisteredMethod(name string, args []Value) (Method, bool, bool) {
 	if strings.Contains(name, ".") && vm.currentClass != "" {
-		if callerNS := vm.classNamespace(vm.currentClass); callerNS != "" && !strings.HasPrefix(strings.ToLower(name), strings.ToLower(callerNS)+".") {
+		if callerNS := vm.classNamespace(vm.currentClass); callerNS != "" && !hasPrefixFold(name, strings.ToLower(callerNS)+".") {
 			if method, ok, ambiguous := vm.matchRegisteredMethodInNamespace(callerNS, name, args); ok || ambiguous {
 				return method, ok, ambiguous
 			}
@@ -2875,7 +2875,7 @@ func (vm *VM) resolvedSuperClassName(class Class) string {
 	if superName == "" {
 		return ""
 	}
-	if namespace := strings.TrimSpace(class.Namespace); namespace != "" && strings.Contains(superName, ".") && !strings.HasPrefix(strings.ToLower(superName), strings.ToLower(namespace)+".") {
+	if namespace := strings.TrimSpace(class.Namespace); namespace != "" && strings.Contains(superName, ".") && !hasPrefixFold(superName, strings.ToLower(namespace)+".") {
 		if superClass, ok := vm.lookupClass(namespace + "." + superName); ok {
 			return runtimeClassName(superClass)
 		}
@@ -2902,7 +2902,7 @@ func (vm *VM) resolvedInterfaceName(class Class, interfaceName string) string {
 	if interfaceName == "" {
 		return ""
 	}
-	if namespace := strings.TrimSpace(class.Namespace); namespace != "" && strings.Contains(interfaceName, ".") && !strings.HasPrefix(strings.ToLower(interfaceName), strings.ToLower(namespace)+".") {
+	if namespace := strings.TrimSpace(class.Namespace); namespace != "" && strings.Contains(interfaceName, ".") && !hasPrefixFold(interfaceName, strings.ToLower(namespace)+".") {
 		if iface, ok := vm.lookupClass(namespace + "." + interfaceName); ok {
 			return runtimeClassName(iface)
 		}
@@ -2970,7 +2970,7 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 	if namespaceQualifiedTypeEquivalent(from, to) {
 		return true
 	}
-	if strings.EqualFold(to, "ApexPages.Component") && strings.HasPrefix(strings.ToLower(strings.TrimSpace(from)), "component.") {
+	if strings.EqualFold(to, "ApexPages.Component") && hasPrefixFold(strings.TrimSpace(from), "component.") {
 		return true
 	}
 	if platformTokenTypeAlias(from, to) {
@@ -3140,10 +3140,10 @@ func stripSObjectNamespacePrefix(typeName string) string {
 	if !strings.Contains(typeName, "__") {
 		return typeName
 	}
-	if strings.HasSuffix(strings.ToLower(typeName), "__c") ||
-		strings.HasSuffix(strings.ToLower(typeName), "__mdt") ||
-		strings.HasSuffix(strings.ToLower(typeName), "__e") ||
-		strings.HasSuffix(strings.ToLower(typeName), "__x") {
+	if hasSuffixFold(typeName, "__c") ||
+		hasSuffixFold(typeName, "__mdt") ||
+		hasSuffixFold(typeName, "__e") ||
+		hasSuffixFold(typeName, "__x") {
 		parts := strings.SplitN(typeName, "__", 2)
 		if len(parts) == 2 && strings.Contains(parts[1], "__") {
 			return parts[1]
@@ -3965,7 +3965,7 @@ func (vm *VM) exceptionQualifiedTypeName(typeName string) string {
 	qualified := exceptionQualifiedTypeName(typeName)
 	if class, ok := vm.lookupClass(typeName); ok && strings.TrimSpace(class.Namespace) != "" {
 		prefix := class.Namespace + "."
-		if !strings.HasPrefix(strings.ToLower(qualified), strings.ToLower(prefix)) {
+		if !hasPrefixFold(qualified, prefix) {
 			return prefix + qualified
 		}
 	}

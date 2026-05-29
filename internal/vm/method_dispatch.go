@@ -560,15 +560,21 @@ func (vm *VM) lookupNamespaceStaticField(namespace, fieldName string) (Field, st
 }
 
 func (vm *VM) lookupStaticFieldStrict(typeName, fieldName string) (Field, string, bool) {
-	normalized := strings.ToLower(fieldName)
 	for search := typeName; search != ""; {
 		for current := search; current != ""; {
 			class, ok := vm.lookupClass(current)
 			if !ok {
 				break
 			}
+			if field, ok := class.StaticFields[fieldName]; ok {
+				if field.Name == "" {
+					field.Name = fieldName
+				}
+				field.StorageName = fieldName
+				return field, class.Name, true
+			}
 			for candidate, field := range class.StaticFields {
-				if strings.ToLower(candidate) != normalized {
+				if !strings.EqualFold(candidate, fieldName) {
 					continue
 				}
 				if field.Name == "" {
@@ -592,7 +598,7 @@ func (vm *VM) declaredReceiverType(receiverName string) string {
 	if typ := vm.VarTypes[receiverName]; typ != "" {
 		return typ
 	}
-	if strings.HasPrefix(strings.ToLower(receiverName), "this.") && vm.currentClass != "" {
+	if hasPrefixFold(receiverName, "this.") && vm.currentClass != "" {
 		parts := strings.Split(receiverName, ".")
 		if len(parts) > 1 {
 			if typ := vm.fieldPathTargetType(vm.currentClass, parts[1:]); typ != "" {
@@ -2336,7 +2342,7 @@ func (vm *VM) namespaceStringMapLookup(receiver Value, key Value) (Value, bool) 
 	if _, valueType, ok := mapTypeArgs(receiver.Type); ok && strings.EqualFold(valueType, "String") {
 		return Null, false
 	}
-	if !isCustomObjectLikeName(key.Text) && !strings.HasSuffix(strings.ToLower(key.Text), "__mdt") && !hasManagedStringNamespaceToken(key.Text) && strings.TrimSpace(vm.currentCallerNamespace()) == "" {
+	if !isCustomObjectLikeName(key.Text) && !hasSuffixFold(key.Text, "__mdt") && !hasManagedStringNamespaceToken(key.Text) && strings.TrimSpace(vm.currentCallerNamespace()) == "" {
 		return Null, false
 	}
 	aliases := []string{key.Text, localSchemaName(key.Text)}
@@ -2427,7 +2433,7 @@ func (vm *VM) canSynthesizeCustomSObjectFieldMapField(objectName, fieldName stri
 }
 
 func (vm *VM) inferredCustomFieldReferenceTarget(objectName, fieldName string) string {
-	if vm == nil || vm.Org == nil || !strings.HasSuffix(strings.ToLower(fieldName), "__c") {
+	if vm == nil || vm.Org == nil || !hasSuffixFold(fieldName, "__c") {
 		return ""
 	}
 	candidates := []string{fieldName, stripAnyNamespaceToken(fieldName)}
@@ -2459,14 +2465,14 @@ func customRelationshipLookupFieldName(name string) (string, bool) {
 	if dot := strings.LastIndex(name, "."); dot >= 0 && dot+1 < len(name) {
 		name = name[dot+1:]
 	}
-	if !strings.HasSuffix(strings.ToLower(name), "__r") {
+	if !hasSuffixFold(name, "__r") {
 		return "", false
 	}
 	return name[:len(name)-3] + "__c", true
 }
 
 func stripTrailingDigitsFromCustomField(fieldName string) string {
-	if !strings.HasSuffix(strings.ToLower(fieldName), "__c") {
+	if !hasSuffixFold(fieldName, "__c") {
 		return ""
 	}
 	base := fieldName[:len(fieldName)-3]
@@ -2484,7 +2490,7 @@ func stripTrailingDigitsFromCustomField(fieldName string) string {
 }
 
 func isLikelyNumericCustomField(fieldName string) bool {
-	if !strings.HasSuffix(strings.ToLower(fieldName), "__c") {
+	if !hasSuffixFold(fieldName, "__c") {
 		return false
 	}
 	base := strings.TrimSuffix(stripAnyNamespaceToken(fieldName), "__c")
@@ -4521,12 +4527,12 @@ func (vm *VM) unstubbedUnitOfWorkFallbackType(receiverType, method string, targe
 	if !strings.EqualFold(method, "getInstance") {
 		return "", false
 	}
-	if !strings.HasSuffix(strings.ToLower(shortTypeName(receiverType)), "unitofworkservice") {
+	if !hasSuffixFold(shortTypeName(receiverType), "unitofworkservice") {
 		return "", false
 	}
 	returnType := vm.resolveTypeNameInClass(target.ClassName, target.ReturnType)
 	returnShort := shortTypeName(returnType)
-	if len(returnShort) < 2 || returnShort[0] != 'I' || !strings.HasSuffix(strings.ToLower(returnShort), "unitofwork") {
+	if len(returnShort) < 2 || returnShort[0] != 'I' || !hasSuffixFold(returnShort, "unitofwork") {
 		return "", false
 	}
 	concreteShort := returnShort[1:]
@@ -4874,12 +4880,12 @@ func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(domai
 	var err error
 	if domain.Kind != ValueObject {
 		domain, err = vm.constructValue(domainClassName, []Value{records}, nil, resultForLookup())
-		if err != nil && strings.HasSuffix(strings.ToLower(domainClassName), ".constructor") {
+		if err != nil && hasSuffixFold(domainClassName, ".constructor") {
 			domain, err = vm.constructDomainThroughFrameworkConstructor(domainClassName, records)
 		}
 		if err != nil {
 			constructorName := domainClassName
-			if !strings.HasSuffix(strings.ToLower(constructorName), "constructor") {
+			if !hasSuffixFold(constructorName, "constructor") {
 				constructorName += ".Constructor"
 			}
 			domain, err = vm.constructDomainThroughFrameworkConstructor(constructorName, records)
@@ -5164,7 +5170,7 @@ func triggerBool(values map[string]Value, name string) bool {
 	}
 	normalized := strings.ToLower(name)
 	for candidate, value := range values {
-		if strings.ToLower(candidate) == normalized && value.Kind == ValueBool {
+		if strings.EqualFold(candidate, normalized) && value.Kind == ValueBool {
 			return value.Bool
 		}
 	}
@@ -5725,7 +5731,7 @@ func (vm *VM) frameworkSObjectDescribeField(token Value, fieldName string, imply
 		return Null, err
 	}
 	lookupName := fieldName
-	if strings.HasSuffix(strings.ToLower(lookupName), "__r") {
+	if hasSuffixFold(lookupName, "__r") {
 		lookupName = lookupName[:len(lookupName)-len("__r")] + "__c"
 	}
 	value := vm.frameworkNamespacedAttributeMapGet(fields, lookupName, implyNamespace, "")
@@ -5875,9 +5881,9 @@ func (vm *VM) callFrameworkSObjectUnitOfWorkMember(receiver Value, method string
 					return Null, true, err
 				}
 				relationshipName := fieldName
-				if strings.HasSuffix(strings.ToLower(relationshipName), "__c") {
+				if hasSuffixFold(relationshipName, "__c") {
 					relationshipName = relationshipName[:len(relationshipName)-3] + "__r"
-				} else if strings.HasSuffix(strings.ToLower(relationshipName), "id") {
+				} else if hasSuffixFold(relationshipName, "id") {
 					relationshipName = relationshipName[:len(relationshipName)-2]
 				}
 				relationship = Object("framework_SObjectUnitOfWork.RelationshipByExternalId")
@@ -5956,7 +5962,7 @@ func (vm *VM) isSObjectUnitOfWorkBaseType(typeName string) bool {
 	if strings.EqualFold(typeName, "framework_SObjectUnitOfWork") {
 		return true
 	}
-	return strings.EqualFold(typeName, "SObjectUnitOfWork") || strings.HasSuffix(strings.ToLower(typeName), "_sobjectunitofwork")
+	return strings.EqualFold(typeName, "SObjectUnitOfWork") || hasSuffixFold(typeName, "_sobjectunitofwork")
 }
 
 func (vm *VM) callFrameworkSObjectUnitOfWorkHandleRegisterType(receiver Value, args []Value) (Value, bool, error) {
@@ -6208,7 +6214,7 @@ func (vm *VM) resolveObjectBucketKey(bucket Value, objectName string) string {
 		if strings.EqualFold(existingValue.Text, objectName) {
 			return existingKey
 		}
-		if strings.ToLower(stripAnyNamespaceToken(existingValue.Text)) == normalizedWanted {
+		if strings.EqualFold(stripAnyNamespaceToken(existingValue.Text), normalizedWanted) {
 			return existingKey
 		}
 	}
@@ -6968,14 +6974,14 @@ func (vm *VM) callFrameworkMockRecorderMember(receiver Value, method string, arg
 
 func frameworkMockSupportType(typeName string) string {
 	for _, prefix := range []string{"framework_", "fflib_"} {
-		if strings.HasPrefix(strings.ToLower(typeName), strings.ToLower(prefix)) {
+		if hasPrefixFold(typeName, prefix) {
 			return typeName[len(prefix):]
 		}
 	}
 	short := shortTypeName(typeName)
 	if short != typeName {
 		for _, prefix := range []string{"framework_", "fflib_"} {
-			if strings.HasPrefix(strings.ToLower(short), strings.ToLower(prefix)) {
+			if hasPrefixFold(short, prefix) {
 				return short[len(prefix):]
 			}
 		}
