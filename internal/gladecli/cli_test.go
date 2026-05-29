@@ -1973,6 +1973,43 @@ func TestRunExecTraceFile(t *testing.T) {
 	}
 }
 
+func TestRunExecDebugLogFile(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "apex.log")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"exec", "--debug-log", logPath, "System.debug('hello world'); Integer x = 1;"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(content)
+	for _, want := range []string{
+		"APEX_CODE,DEBUG;",
+		"|EXECUTION_STARTED",
+		"|USER_DEBUG|",
+		"hello world",
+		"|CUMULATIVE_LIMIT_USAGE",
+		"|EXECUTION_FINISHED",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("debug log missing %q; got:\n%s", want, text)
+		}
+	}
+}
+
+func TestRunExecDebugLogStdout(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"exec", "--debug-log", "-", "System.debug('to stdout');"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "|EXECUTION_STARTED") || !strings.Contains(stdout.String(), "to stdout") {
+		t.Fatalf("expected debug log on stdout, got:\n%s", stdout.String())
+	}
+}
+
 func TestRunExecFailure(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"exec", "System.assertEquals(3, 1 + 1);"}, &stdout, &stderr)

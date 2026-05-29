@@ -277,3 +277,22 @@ glade profile analyze reports/trace.json --json
 
 The Markdown and JSON reports include hot events, category counts, runtime
 sections, and governor/resource summaries.
+
+## Salesforce-style debug log
+
+For a log that reads like the platform's Developer Console output — and to
+compare glade against a real org running the same code — emit a
+Salesforce-style debug log:
+
+```bash
+glade exec --debug-log reports/apex.log 'System.debug('"'"'hi'"'"'); Integer x = 1;'
+glade exec --debug-log - 'System.debug('"'"'hi'"'"');'   # write to stdout
+```
+
+The log uses the familiar `HH:MM:SS.mmm (nanos)|EVENT|details` format with
+`EXECUTION_STARTED`, `CODE_UNIT_STARTED`, `USER_DEBUG`, `SOQL_EXECUTE_BEGIN/END`,
+`DML_BEGIN/END`, `FATAL_ERROR`, and a `CUMULATIVE_LIMIT_USAGE` block. It is
+structurally faithful rather than byte-identical: high-signal events in true
+execution order. Capture the same anonymous Apex's org log and diff the two to
+confirm glade matches the platform.
+

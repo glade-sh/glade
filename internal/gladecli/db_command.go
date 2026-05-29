@@ -200,3 +200,19 @@ func writeTraceFile(path string, events []trace.Event) error {
 	defer file.Close()
 	return trace.WriteJSON(file, trace.NewDocument(events))
 }
+
+// writeDebugLog writes a Salesforce-style debug log to path. The sentinel "-"
+// writes to the command's stdout writer instead of a file.
+func writeDebugLog(path, log string, stdout io.Writer) error {
+	if path == "-" {
+		_, err := io.WriteString(stdout, log)
+		return err
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = io.WriteString(file, log)
+	return err
+}

@@ -313,7 +313,7 @@ Run locally:
 ./glade inspect symbols [--project <root>] [--json]
 ./glade schema load [--project <root>] [--json]
 ./glade check [--project <root>] [--json]
-./glade exec [--json] [--trace <path>] [--limit-mode strict|permissive] '<anonymous apex>'
+./glade exec [--json] [--trace <path>] [--debug-log <path>] [--limit-mode strict|permissive] '<anonymous apex>'
 ./glade test [--project <root>] [--filter <pattern>] [--json|--junit <path>] [--limit-mode <mode>] [--watch|--watch-once] [--debug]
 ./glade lsp [--project <root>] [--diagnostics-once]
 ./glade profile analyze <trace.json> [--json]

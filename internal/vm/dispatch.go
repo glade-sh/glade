@@ -541,10 +541,12 @@ platformStaticCall:
 			return Null, fmt.Errorf("System.debug expects message or logging level and message")
 		}
 		messageArg := args[0]
+		level := "DEBUG"
 		if len(args) == 2 {
 			if !isLoggingLevelValue(args[0]) {
 				return Null, fmt.Errorf("System.debug expects LoggingLevel as first argument")
 			}
+			level = args[0].Text
 			messageArg = args[1]
 		}
 		line, err := vm.displayString(messageArg, result)
@@ -552,6 +554,13 @@ platformStaticCall:
 			return Null, err
 		}
 		result.Debug = append(result.Debug, line)
+		if result.traceEnabled {
+			result.DebugEvents = append(result.DebugEvents, DebugEvent{
+				Level:    level,
+				Message:  line,
+				TracePos: len(result.Trace),
+			})
+		}
 		if vm.Stdout != nil {
 			fmt.Fprintln(vm.Stdout, line)
 		}

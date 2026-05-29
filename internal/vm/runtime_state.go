@@ -256,6 +256,7 @@ const (
 
 type Result struct {
 	Debug           []string         `json:"debug,omitempty"`
+	DebugEvents     []DebugEvent     `json:"debugEvents,omitempty"`
 	Vars            map[string]Value `json:"vars,omitempty"`
 	TraceFormat     string           `json:"traceFormat,omitempty"`
 	Trace           []trace.Event    `json:"trace,omitempty"`
@@ -287,6 +288,19 @@ type CapturedEmail struct {
 
 type sideEffectSnapshot struct {
 	capturedEmails []CapturedEmail
+}
+
+// DebugEvent records a System.debug invocation with its logging level and the
+// trace position at which it occurred. TracePos is len(Trace) at emit time, so
+// a Salesforce-style log formatter can interleave debug output with SOQL/DML
+// trace events in true execution order without mutating the trace stream
+// itself (which the oracle/parity tooling consumes). Captured only when tracing
+// is enabled.
+type DebugEvent struct {
+	Level    string `json:"level"`
+	Message  string `json:"message"`
+	Line     int    `json:"line,omitempty"`
+	TracePos int    `json:"tracePos"`
 }
 
 type StackFrame struct {

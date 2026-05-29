@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apexlog"
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -759,6 +760,7 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	jsonOut := false
 	debug := false
 	tracePath := ""
+	debugLogPath := ""
 	limitMode := vm.LimitMode("")
 	sourceParts := make([]string, 0, len(args))
 	for i := 0; i < len(args); i++ {
@@ -773,6 +775,12 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 				return errors.New("--trace requires a path")
 			}
 			tracePath = args[i+1]
+			i++
+		case "--debug-log":
+			if i+1 >= len(args) {
+				return errors.New("--debug-log requires a path (use - for stdout)")
+			}
+			debugLogPath = args[i+1]
 			i++
 		case "--limit-mode":
 			if i+1 >= len(args) {
@@ -789,7 +797,7 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		}
 	}
 	if len(sourceParts) == 0 {
-		return errors.New("usage: glade exec [--json] [--trace <path>] '<anonymous apex>'")
+		return errors.New("usage: glade exec [--json] [--trace <path>] [--debug-log <path>] '<anonymous apex>'")
 	}
 
 	program, err := vm.CompileAnonymous(strings.Join(sourceParts, " "))
@@ -802,13 +810,19 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		stdout = nil
 	}
 	machine := vm.New(stdout)
-	machine.SetTraceEnabled(tracePath != "" || debug || jsonOut)
+	machine.SetTraceEnabled(tracePath != "" || debug || jsonOut || debugLogPath != "")
 	if limitMode != "" {
 		machine.SetLimitMode(limitMode)
 	}
-	result, err := machine.Execute(program)
-	if err != nil {
-		return err
+	result, execErr := machine.Execute(program)
+	if debugLogPath != "" {
+		log := apexlog.Format(&result, execErr, apexlog.Options{})
+		if err := writeDebugLog(debugLogPath, log, w); err != nil {
+			return err
+		}
+	}
+	if execErr != nil {
+		return execErr
 	}
 	if tracePath != "" {
 		if err := writeTraceFile(tracePath, result.Trace); err != nil {
