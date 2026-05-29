@@ -114,7 +114,7 @@ type VM struct {
 	customDataCache           map[string]Value
 	soqlExecutionCache        *soql.ExecutionCache
 	managedFeatureFlags       map[string]bool
-	childRelCache             map[string][]Value
+	childRelCache             *childRelationshipCache
 	jsonChildRelTypeCache     *jsonChildRelTypeLookupCache
 	loadedChildRelCache       map[string]loadedChildRelationshipLookup
 	lazyChildRelCache         map[string]lazyChildRelationshipLookup
@@ -413,7 +413,7 @@ func New(stdout io.Writer) *VM {
 		describeDefCache:      make(map[string]storage.ObjectDefinition),
 		customDataCache:       make(map[string]Value),
 		managedFeatureFlags:   make(map[string]bool),
-		childRelCache:         make(map[string][]Value),
+		childRelCache:         newChildRelationshipCache(),
 		jsonChildRelTypeCache: newJSONChildRelTypeLookupCache(),
 		loadedChildRelCache:   make(map[string]loadedChildRelationshipLookup),
 		lazyChildRelCache:     make(map[string]lazyChildRelationshipLookup),
@@ -437,6 +437,16 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	// only populate it once across all clones in a run. Concurrent test
 	// methods are protected by the cache's RWMutex.
 	clone.triggerMatchCache = vm.triggerMatchCache
+	// Schema-derived describe caches depend only on object definitions and are
+	// immutable across test methods that share a schema. Share the pointers and
+	// the schema stamp so the first clone populates them and later clones reuse
+	// the result instead of rebuilding the O(objects x fields) scans. SetOrg
+	// keeps these caches while the schema stamp matches, and clearMetadataCaches
+	// installs fresh private instances for schema-mutating clones, preserving
+	// isolation. Both shared caches are RWMutex-protected for parallel workers.
+	clone.metadataCacheStamp = vm.metadataCacheStamp
+	clone.jsonChildRelTypeCache = vm.jsonChildRelTypeCache
+	clone.childRelCache = vm.childRelCache
 	clone.traceEnabled = vm.traceEnabled
 	clone.staticInitState = copyStaticInitStateMap(vm.staticInitState)
 	clone.pageReferences = copyStringMap(vm.pageReferences)
@@ -612,6 +622,19 @@ func (vm *VM) schemaCacheStamp() string {
 		return vm.metadataCacheStamp
 	}
 	return schemaCacheStampForOrg(vm.Org)
+}
+
+// PrimeMetadataSchema records the schema stamp for org without touching the org
+// or clearing caches. Priming the base machine before cloning lets every clone
+// inherit a non-empty stamp so SetOrg reuses the shared schema-describe caches
+// (CloneRuntime) instead of clearing them on each clone's first SetOrg.
+func (vm *VM) PrimeMetadataSchema(org *storage.OrgState) {
+	if vm == nil {
+		return
+	}
+	if stamp := schemaCacheStampForOrg(org); stamp != "" {
+		vm.metadataCacheStamp = stamp
+	}
 }
 
 func schemaCacheStampForOrg(org *storage.OrgState) string {

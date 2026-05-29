@@ -160,6 +160,9 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	baseMachine := runtime.BaseMachine.CloneRuntime(nil)
 	baseMachine.SetTraceEnabled(false)
 	baseMachine.EnableTestContext()
+	// Prime the schema stamp so per-test clones inherit it and reuse the shared
+	// schema-describe caches instead of rebuilding them on every clone.
+	baseMachine.PrimeMetadataSchema(&org)
 	baseRuntimeErr := runtime.BaseErr
 	if baseRuntimeErr == nil {
 		baseRuntimeErr = registerTestRuntime(baseMachine, append(flattenSetupMethods(setups), methodMapValues(testMethods)...))

@@ -5,10 +5,49 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 )
+
+// childRelationshipCache memoizes parent-object -> child relationship describe
+// values. The result depends only on the org schema (object definitions and
+// namespace), which is immutable across test methods that share a schema, so
+// the cache is shared across runtime clones produced by CloneRuntime. The
+// RWMutex makes concurrent reuse by parallel test workers safe. Schema-mutating
+// tests get a fresh private instance via clearMetadataCaches, preserving
+// isolation.
+type childRelationshipCache struct {
+	mu      sync.RWMutex
+	entries map[string][]Value
+}
+
+func newChildRelationshipCache() *childRelationshipCache {
+	return &childRelationshipCache{entries: make(map[string][]Value)}
+}
+
+func (c *childRelationshipCache) load(key string) ([]Value, bool) {
+	if c == nil {
+		return nil, false
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	value, ok := c.entries[key]
+	if !ok {
+		return nil, false
+	}
+	return append([]Value(nil), value...), true
+}
+
+func (c *childRelationshipCache) store(key string, value []Value) {
+	if c == nil {
+		return
+	}
+	c.mu.Lock()
+	c.entries[key] = append([]Value(nil), value...)
+	c.mu.Unlock()
+}
 
 func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinition) Value {
 	cacheKey := strings.ToLower(strings.TrimSpace(name))
@@ -263,10 +302,10 @@ func (vm *VM) describeChildRelationships(name string) []Value {
 		return nil
 	}
 	if vm.childRelCache == nil {
-		vm.childRelCache = make(map[string][]Value)
+		vm.childRelCache = newChildRelationshipCache()
 	}
-	if cached, ok := vm.childRelCache[target]; ok {
-		return append([]Value(nil), cached...)
+	if cached, ok := vm.childRelCache.load(target); ok {
+		return cached
 	}
 	childRelationships := make([]Value, 0)
 	childObjects := make([]string, 0, len(vm.Org.Objects))
@@ -293,7 +332,7 @@ func (vm *VM) describeChildRelationships(name string) []Value {
 			}
 		}
 	}
-	vm.childRelCache[target] = append([]Value(nil), childRelationships...)
+	vm.childRelCache.store(target, childRelationships)
 	return childRelationships
 }
 
