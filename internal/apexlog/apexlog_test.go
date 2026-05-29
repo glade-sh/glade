@@ -17,6 +17,7 @@ func TestFormatHeaderAndFraming(t *testing.T) {
 		t.Fatalf("unexpected header line: %q", lines[0])
 	}
 	mustContainInOrder(t, out,
+		"|USER_INFO|[EXTERNAL]|",
 		"|EXECUTION_STARTED",
 		"|CODE_UNIT_STARTED|[EXTERNAL]|execute_anonymous_apex",
 		"|CUMULATIVE_LIMIT_USAGE",

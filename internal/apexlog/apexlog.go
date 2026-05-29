@@ -26,12 +26,23 @@ type Options struct {
 	APIVersion string
 	// CodeUnit is the code-unit label. Defaults to "execute_anonymous_apex".
 	CodeUnit string
+	// User identity rendered on the USER_INFO line. Neutral local-runner
+	// defaults are used when empty.
+	UserID    string
+	Username  string
+	TimeZone  string
+	GMTOffset string
 }
 
 const (
 	defaultAPIVersion = "64.0"
 	defaultCodeUnit   = "execute_anonymous_apex"
 	headerCategories  = "APEX_CODE,DEBUG;APEX_PROFILING,INFO;CALLOUT,INFO;DB,INFO;NBA,INFO;SYSTEM,DEBUG;VALIDATION,INFO;VISUALFORCE,INFO;WAVE,INFO;WORKFLOW,INFO"
+
+	defaultUserID    = "005000000000000AAA"
+	defaultUsername  = "glade@local.run"
+	defaultTimeZone  = "Greenwich Mean Time (GMT)"
+	defaultGMTOffset = "GMT+00:00"
 )
 
 // Format renders the result of an anonymous Apex execution as a
@@ -47,11 +58,24 @@ func Format(result *vm.Result, runErr error, opts Options) string {
 	if opts.CodeUnit == "" {
 		opts.CodeUnit = defaultCodeUnit
 	}
+	if opts.UserID == "" {
+		opts.UserID = defaultUserID
+	}
+	if opts.Username == "" {
+		opts.Username = defaultUsername
+	}
+	if opts.TimeZone == "" {
+		opts.TimeZone = defaultTimeZone
+	}
+	if opts.GMTOffset == "" {
+		opts.GMTOffset = defaultGMTOffset
+	}
 
 	var b strings.Builder
 	c := &clock{}
 
 	b.WriteString(opts.APIVersion + " " + headerCategories + "\n")
+	writeLine(&b, c, fmt.Sprintf("USER_INFO|[EXTERNAL]|%s|%s|%s|%s", opts.UserID, opts.Username, opts.TimeZone, opts.GMTOffset))
 	writeLine(&b, c, "EXECUTION_STARTED")
 	writeLine(&b, c, "CODE_UNIT_STARTED|[EXTERNAL]|"+opts.CodeUnit)
 
@@ -134,13 +158,15 @@ func writeLimitBlock(b *strings.Builder, c *clock, result *vm.Result) {
 		{"Number of query rows", l.QueryRows, 50000},
 		{"Number of SOSL queries", 0, 20},
 		{"Number of DML statements", l.DMLStatements, 150},
+		{"Number of Publish Immediate DML", 0, 150},
 		{"Number of DML rows", l.DMLRows, 10000},
 		{"Maximum CPU time", l.CPUTimeMS, 10000},
-		{"Maximum heap size", l.HeapSize, 6 * 1024 * 1024},
+		{"Maximum heap size", l.HeapSize, 6000000},
 		{"Number of callouts", l.Callouts, 100},
 		{"Number of Email Invocations", l.EmailInvokes, 10},
 		{"Number of future calls", l.FutureCalls, 50},
 		{"Number of queueable jobs added to the queue", l.QueueableJobs, 50},
+		{"Number of Mobile Apex push calls", 0, 10},
 	}
 
 	writeLine(b, c, "CUMULATIVE_LIMIT_USAGE")
