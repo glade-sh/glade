@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/glade-sh/glade/internal/dml"
@@ -34,6 +35,8 @@ type VM struct {
 	methodResolveCache        map[string]methodResolution
 	Classes                   map[string]Class
 	classLookup               map[string]Class
+	sharedClassLookupKeys     map[string]string
+	sharedClassCopyPlan       *classCopyPlan
 	namespaceClassLookup      map[string]map[string]namespaceClassLookup
 	classNamespaceCache       map[string]string
 	classForAccessCache       map[string]classForAccessLookup
@@ -126,6 +129,7 @@ type VM struct {
 	staticValueRefFields      map[uint64][]staticFieldRef
 	collectionMutationSeq     uint64
 	frameworkRecorderRollback *frameworkMethodCountRecorderRollback
+	runtimeArtifactsShared    bool
 }
 
 type staticFieldRef struct {
@@ -427,12 +431,39 @@ func New(stdout io.Writer) *VM {
 // state, current user, and static field values remains request-local.
 func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	clone := New(stdout)
-	clone.Methods = copyMethodMap(vm.Methods)
-	clone.MethodOverloads = copyMethodSliceMap(vm.MethodOverloads)
-	clone.MethodFolded = copyMethodSliceMap(vm.MethodFolded)
-	clone.Classes = copyClassMap(vm.Classes)
-	clone.rebuildClassLookup()
-	clone.Triggers = copyTriggerSliceMap(vm.Triggers)
+	// Methods, MethodOverloads, MethodFolded, and Triggers are compiled
+	// artifacts that are only mutated by Register*/unregister* at setup, never
+	// during execution. Share the maps by pointer and mark them shared so
+	// CloneRuntime allocates nothing for them. The (rare) post-clone
+	// registration path copies-on-write via ensureRuntimeArtifactsOwned, so the
+	// source VM (and any cached runtime template) is never corrupted. Per-test
+	// clones never register, so they keep sharing read-only across parallel
+	// workers, which is safe for concurrent map reads.
+	clone.Methods = vm.Methods
+	clone.MethodOverloads = vm.MethodOverloads
+	clone.MethodFolded = vm.MethodFolded
+	clone.Triggers = vm.Triggers
+	clone.runtimeArtifactsShared = true
+	if vm.sharedClassCopyPlan != nil {
+		clone.Classes = copyClassMapWithPlan(vm.Classes, vm.sharedClassCopyPlan)
+		clone.sharedClassCopyPlan = vm.sharedClassCopyPlan
+	} else {
+		clone.Classes = copyClassMap(vm.Classes)
+	}
+	// classLookup is a case/alias-normalized index over Classes. The canonical
+	// key -> live Classes key mapping is pure compiled metadata, identical for
+	// every clone of the same base. When the base has been frozen
+	// (FreezeClassLookup), share the immutable string index by pointer and skip
+	// the per-clone rebuild (re-canonicalizing ~2x len(Classes) keys). Per-test
+	// clones resolve through their own Classes map, so clone-local static field
+	// state stays isolated. The (setup-only) registration path copies-on-write
+	// via unshareClassLookup, so the shared index is never mutated.
+	if vm.sharedClassLookupKeys != nil {
+		clone.sharedClassLookupKeys = vm.sharedClassLookupKeys
+		clone.classLookup = nil
+	} else {
+		clone.rebuildClassLookup()
+	}
 	// triggerMatchCache is computed from Triggers; share the pointer so we
 	// only populate it once across all clones in a run. Concurrent test
 	// methods are protected by the cache's RWMutex.
@@ -453,6 +484,22 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	clone.platformCache = copyCacheMap(vm.platformCache)
 	clone.isolationJournal = vm.isolationJournal
 	return clone
+}
+
+// ensureRuntimeArtifactsOwned performs the copy-on-write step for the compiled
+// method and trigger maps shared by CloneRuntime. The first mutation after a
+// clone (only the setup-time Register*/unregister* path reaches here) gives this
+// VM private copies so the shared source maps stay intact. Per-test clones never
+// register, so the flag remains set and no copy is made.
+func (vm *VM) ensureRuntimeArtifactsOwned() {
+	if vm == nil || !vm.runtimeArtifactsShared {
+		return
+	}
+	vm.runtimeArtifactsShared = false
+	vm.Methods = copyMethodMap(vm.Methods)
+	vm.MethodOverloads = copyMethodSliceMap(vm.MethodOverloads)
+	vm.MethodFolded = copyMethodSliceMap(vm.MethodFolded)
+	vm.Triggers = copyTriggerSliceMap(vm.Triggers)
 }
 
 func (vm *VM) SetIsolationJournal(journal *storage.IsolationJournal) {
@@ -496,9 +543,60 @@ func copyMethodSliceMap(in map[string][]Method) map[string][]Method {
 	return out
 }
 
+var classCopyDedupPool = sync.Pool{
+	New: func() any { return make(map[string]Class) },
+}
+
+// classCopyPlan precomputes the per-clone class-copy work that is identical for
+// every clone of a frozen base machine: which alias names own a fresh copyClass
+// (primaries) and which alias names share an already-copied class (aliases ->
+// primary). This avoids rebuilding the canonical-dedup map and re-running
+// classCopyKey (strings.ToLower) on every per-test clone. It is pure compiled
+// metadata; per-test static isolation is preserved because copyClass still
+// copies each primary's mutable StaticFields per clone, and aliases share the
+// same copied Class exactly as the unplanned path does.
+type classCopyPlan struct {
+	primaries []string
+	aliases   map[string]string
+}
+
+func buildClassCopyPlan(in map[string]Class) *classCopyPlan {
+	plan := &classCopyPlan{
+		primaries: make([]string, 0, len(in)),
+		aliases:   make(map[string]string),
+	}
+	primaryByCanonical := make(map[string]string, len(in))
+	for name, class := range in {
+		canonical := classCopyKey(name, class)
+		if primary, ok := primaryByCanonical[canonical]; ok {
+			plan.aliases[name] = primary
+			continue
+		}
+		primaryByCanonical[canonical] = name
+		plan.primaries = append(plan.primaries, name)
+	}
+	return plan
+}
+
+func copyClassMapWithPlan(in map[string]Class, plan *classCopyPlan) map[string]Class {
+	out := make(map[string]Class, len(in))
+	for _, name := range plan.primaries {
+		out[name] = copyClass(in[name])
+	}
+	for alias, primary := range plan.aliases {
+		out[alias] = out[primary]
+	}
+	return out
+}
+
 func copyClassMap(in map[string]Class) map[string]Class {
 	out := make(map[string]Class, len(in))
-	byCanonicalName := make(map[string]Class, len(in))
+	// byCanonicalName dedups aliases that resolve to the same class so every
+	// alias entry shares one copied Class (and thus one mutable StaticFields
+	// map, preserving per-test static isolation across aliases). It is transient
+	// per clone, so it is pooled to avoid re-growing a large backing array on
+	// every test clone.
+	byCanonicalName := classCopyDedupPool.Get().(map[string]Class)
 	for name, class := range in {
 		canonical := classCopyKey(name, class)
 		copied, ok := byCanonicalName[canonical]
@@ -508,16 +606,30 @@ func copyClassMap(in map[string]Class) map[string]Class {
 		}
 		out[name] = copied
 	}
+	clear(byCanonicalName)
+	classCopyDedupPool.Put(byCanonicalName)
 	return out
 }
 
 func copyClass(class Class) Class {
-	class.Fields = copyFieldMap(class.Fields)
+	// Instance Fields are immutable templates after registration (construction
+	// clones their values into each new instance), so the map is shared by
+	// reference across clones. StaticFields hold mutable per-test static state
+	// and may even gain entries at runtime, so they are always copied to keep
+	// each test isolated.
 	class.StaticFields = copyFieldMap(class.StaticFields)
 	return class
 }
 
 func copyFieldMap(in map[string]Field) map[string]Field {
+	if len(in) == 0 {
+		// Classes with no static fields (the common case across a large
+		// codebase) would otherwise allocate an empty map per class on every
+		// per-test clone. Return nil: reads (range/lookup) behave identically,
+		// and the runtime static-write paths already nil-check and allocate on
+		// demand, so this only removes wasted allocations.
+		return nil
+	}
 	out := make(map[string]Field, len(in))
 	for name, field := range in {
 		field.Value = cloneValue(field.Value)
@@ -637,13 +749,63 @@ func (vm *VM) PrimeMetadataSchema(org *storage.OrgState) {
 	}
 }
 
+const (
+	schemaStampFNVOffset uint64 = 1469598103934665603
+	schemaStampFNVPrime  uint64 = 1099511628211
+)
+
+func schemaStampHashByte(h uint64, b byte) uint64 {
+	return (h ^ uint64(b)) * schemaStampFNVPrime
+}
+
+func schemaStampHashRaw(h uint64, s string) uint64 {
+	for i := 0; i < len(s); i++ {
+		h = (h ^ uint64(s[i])) * schemaStampFNVPrime
+	}
+	return h
+}
+
+// schemaStampHash hashes strings.TrimSpace(s) verbatim into the running stamp.
+func schemaStampHash(h uint64, s string) uint64 {
+	return schemaStampHashRaw(h, strings.TrimSpace(s))
+}
+
+// schemaStampHashLower hashes the lowercased, trimmed form of s, matching the
+// previous strings.ToLower(strings.TrimSpace(s)) stamp content byte-for-byte.
+// ASCII (the universal case for schema identifiers) is lowered inline without
+// allocation; any non-ASCII input falls back to strings.ToLower so the hashed
+// byte stream stays identical to the original stamp.
+func schemaStampHashLower(h uint64, s string) uint64 {
+	s = strings.TrimSpace(s)
+	for i := 0; i < len(s); i++ {
+		if s[i] >= 0x80 {
+			return schemaStampHashRaw(h, strings.ToLower(s))
+		}
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c >= 'A' && c <= 'Z' {
+			c += 'a' - 'A'
+		}
+		h = (h ^ uint64(c)) * schemaStampFNVPrime
+	}
+	return h
+}
+
+// schemaCacheStampForOrg returns a compact content fingerprint of the org schema
+// used only for equality comparison (schema-unchanged detection for the
+// metadata describe caches). It streams the same canonical content the previous
+// implementation serialized, but accumulates it into a 64-bit FNV-1a hash
+// instead of materializing a multi-megabyte string on every SetOrg, eliminating
+// the dominant allocation on the per-test clone path. Distinct schemas yield
+// distinct stamps; the comparison semantics are unchanged.
 func schemaCacheStampForOrg(org *storage.OrgState) string {
 	if org == nil {
 		return ""
 	}
-	var builder strings.Builder
-	builder.WriteString(strings.ToLower(strings.TrimSpace(org.Namespace)))
-	builder.WriteByte('|')
+	h := schemaStampFNVOffset
+	h = schemaStampHashLower(h, org.Namespace)
+	h = schemaStampHashByte(h, '|')
 	objectNames := make([]string, 0, len(org.Objects))
 	for objectName, object := range org.Objects {
 		if strings.TrimSpace(object.Definition.APIName) == "" {
@@ -655,16 +817,16 @@ func schemaCacheStampForOrg(org *storage.OrgState) string {
 	for _, objectName := range objectNames {
 		object := org.Objects[objectName]
 		definition := object.Definition
-		builder.WriteString(strings.ToLower(strings.TrimSpace(objectName)))
-		builder.WriteByte('=')
-		builder.WriteString(strings.ToLower(strings.TrimSpace(definition.APIName)))
-		builder.WriteByte(',')
-		builder.WriteString(strings.TrimSpace(definition.KeyPrefix))
-		builder.WriteByte(',')
-		builder.WriteString(strings.TrimSpace(definition.Label))
-		builder.WriteByte(',')
-		builder.WriteString(strings.TrimSpace(definition.PluralLabel))
-		builder.WriteByte(';')
+		h = schemaStampHashLower(h, objectName)
+		h = schemaStampHashByte(h, '=')
+		h = schemaStampHashLower(h, definition.APIName)
+		h = schemaStampHashByte(h, ',')
+		h = schemaStampHash(h, definition.KeyPrefix)
+		h = schemaStampHashByte(h, ',')
+		h = schemaStampHash(h, definition.Label)
+		h = schemaStampHashByte(h, ',')
+		h = schemaStampHash(h, definition.PluralLabel)
+		h = schemaStampHashByte(h, ';')
 
 		fieldNames := make([]string, 0, len(definition.Fields))
 		for fieldName := range definition.Fields {
@@ -673,34 +835,48 @@ func schemaCacheStampForOrg(org *storage.OrgState) string {
 		sort.Strings(fieldNames)
 		for _, fieldName := range fieldNames {
 			field := definition.Fields[fieldName]
-			builder.WriteString(strings.ToLower(strings.TrimSpace(fieldName)))
-			builder.WriteByte(':')
-			builder.WriteString(strings.TrimSpace(field.APIName))
-			builder.WriteByte(':')
-			builder.WriteString(string(field.Type))
-			builder.WriteByte(':')
-			builder.WriteString(strings.TrimSpace(field.RelationshipName))
-			builder.WriteByte(':')
-			builder.WriteString(strings.TrimSpace(field.ChildRelationshipName))
-			builder.WriteByte(':')
-			builder.WriteString(strings.Join(sortedStrings(field.ReferenceTo), ","))
-			builder.WriteByte(';')
+			h = schemaStampHashLower(h, fieldName)
+			h = schemaStampHashByte(h, ':')
+			h = schemaStampHash(h, field.APIName)
+			h = schemaStampHashByte(h, ':')
+			h = schemaStampHashRaw(h, string(field.Type))
+			h = schemaStampHashByte(h, ':')
+			h = schemaStampHash(h, field.RelationshipName)
+			h = schemaStampHashByte(h, ':')
+			h = schemaStampHash(h, field.ChildRelationshipName)
+			h = schemaStampHashByte(h, ':')
+			h = schemaStampHashReferenceList(h, field.ReferenceTo)
+			h = schemaStampHashByte(h, ';')
 		}
 
 		for _, relation := range definition.Relations {
-			builder.WriteString(strings.TrimSpace(relation.Field))
-			builder.WriteByte(':')
-			builder.WriteString(strings.TrimSpace(relation.ParentRelationship))
-			builder.WriteByte(':')
-			builder.WriteString(strings.TrimSpace(relation.ChildRelationship))
-			builder.WriteByte(':')
-			builder.WriteString(strings.Join(sortedStrings(relation.ParentObjects), ","))
-			builder.WriteByte(';')
+			h = schemaStampHash(h, relation.Field)
+			h = schemaStampHashByte(h, ':')
+			h = schemaStampHash(h, relation.ParentRelationship)
+			h = schemaStampHashByte(h, ':')
+			h = schemaStampHash(h, relation.ChildRelationship)
+			h = schemaStampHashByte(h, ':')
+			h = schemaStampHashReferenceList(h, relation.ParentObjects)
+			h = schemaStampHashByte(h, ';')
 		}
-		builder.WriteString(strconv.Itoa(len(definition.RecordTypes)))
-		builder.WriteByte('|')
+		h = schemaStampHashRaw(h, strconv.Itoa(len(definition.RecordTypes)))
+		h = schemaStampHashByte(h, '|')
 	}
-	return builder.String()
+	return strconv.FormatUint(h, 16)
+}
+
+// schemaStampHashReferenceList hashes a sorted, comma-joined string list,
+// matching strings.Join(sortedStrings(values), ",") byte-for-byte without
+// allocating the joined string.
+func schemaStampHashReferenceList(h uint64, values []string) uint64 {
+	sorted := sortedStrings(values)
+	for i, value := range sorted {
+		if i > 0 {
+			h = schemaStampHashByte(h, ',')
+		}
+		h = schemaStampHashRaw(h, value)
+	}
+	return h
 }
 
 func sortedStrings(values []string) []string {
@@ -926,6 +1102,7 @@ func (vm *VM) RegisterTrigger(trigger Trigger) error {
 	if trigger.Timing == "" || trigger.Operation == "" {
 		return fmt.Errorf("trigger timing and operation are required")
 	}
+	vm.ensureRuntimeArtifactsOwned()
 	if vm.Triggers == nil {
 		vm.Triggers = make(map[string][]Trigger)
 	}

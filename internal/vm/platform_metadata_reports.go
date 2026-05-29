@@ -597,6 +597,9 @@ func (vm *VM) applyCustomMetadataDeployment(item Value) error {
 	}
 	record := storage.Record{ID: recordID, Object: definition.APIName, Fields: recordFields}
 	record.Fields["Id"] = storage.IDValue(recordID)
+	if mutable, _ := storage.EnsureMutableObjectRecords(vm.Org, objectName); mutable != nil {
+		state = *mutable
+	}
 	state.Records[recordID] = record
 	vm.Org.Objects[definition.APIName] = state
 	vm.clearMetadataCaches()

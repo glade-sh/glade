@@ -422,9 +422,8 @@ func (r Record) GetField(name string) (Value, bool) {
 	if v, ok := r.Fields[name]; ok {
 		return v, true
 	}
-	lower := strings.ToLower(name)
 	for k, v := range r.Fields {
-		if strings.ToLower(k) == lower {
+		if strings.EqualFold(k, name) {
 			return v, true
 		}
 	}
@@ -438,9 +437,8 @@ func (r Record) HasExplicitNull(name string) bool {
 	if r.ExplicitNulls[name] {
 		return true
 	}
-	lower := strings.ToLower(name)
 	for k, v := range r.ExplicitNulls {
-		if strings.ToLower(k) == lower && v {
+		if v && strings.EqualFold(k, name) {
 			return true
 		}
 	}
@@ -1278,6 +1276,115 @@ func (o OrgState) CloneRuntime() OrgState {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {
 			out.Objects[name] = object.CloneRuntime()
+		}
+	}
+	if o.IDSequences != nil {
+		out.IDSequences = make(map[string]uint64, len(o.IDSequences))
+		for object, sequence := range o.IDSequences {
+			out.IDSequences[object] = sequence
+		}
+	}
+	if o.Transactions != nil {
+		out.Transactions = make([]TransactionFrame, len(o.Transactions))
+		for i, transaction := range o.Transactions {
+			out.Transactions[i] = transaction.Clone()
+		}
+	}
+	return out
+}
+
+// CloneRuntimeFrozenDefinition returns an isolated org copy that SHARES object
+// Definitions (immutable schema metadata) by reference instead of deep-cloning
+// them. Records and Indexes (mutable data) are still cloned for isolation. All
+// runtime definition mutations go through EnsureMutableObjectDefinition or an
+// explicit Definition.Clone() before write, so sharing is safe and copy-on-write
+// preserves per-clone isolation. This mirrors RuntimeTemplate.CloneRuntimeOrg.
+func (o OrgState) CloneRuntimeFrozenDefinition() OrgState {
+	cloneStats.cloneRuntime.Add(1)
+	out := o
+	out.objectNameCache = &sync.Map{}
+	if o.Objects != nil {
+		out.Objects = make(map[string]ObjectState, len(o.Objects))
+		for name, object := range o.Objects {
+			out.Objects[name] = object.CloneRuntimeFrozenDefinition()
+		}
+	}
+	if o.IDSequences != nil {
+		out.IDSequences = make(map[string]uint64, len(o.IDSequences))
+		for object, sequence := range o.IDSequences {
+			out.IDSequences[object] = sequence
+		}
+	}
+	if o.Transactions != nil {
+		out.Transactions = make([]TransactionFrame, len(o.Transactions))
+		for i, transaction := range o.Transactions {
+			out.Transactions[i] = transaction.Clone()
+		}
+	}
+	return out
+}
+
+// IsImmutableMetadataObject reports whether an object's records are compiled or
+// setup metadata that no Apex test execution path mutates (mirroring how
+// Salesforce keeps compiled metadata and describe-style setup data static across
+// a test run). Records for these objects can be shared by reference across
+// per-test org clones instead of deep-cloned, which is where almost all of the
+// base-org record volume lives (FieldPermissions, ApexClass, custom metadata
+// types, etc.) under SeeAllData=false where business objects start empty.
+//
+// Mutable runtime/business objects (User, AsyncApexJob, PermissionSetAssignment,
+// standard and custom data objects) are intentionally excluded so they continue
+// to be deep-cloned for full per-test isolation, including read-path field
+// mutation. DML to a shared metadata object still copy-on-writes through
+// EnsureMutableObjectRecords, so insert/update of these types stays isolated.
+func IsImmutableMetadataObject(objectName string) bool {
+	name := strings.TrimSpace(objectName)
+	if name == "" {
+		return false
+	}
+	if len(name) >= 5 && strings.EqualFold(name[len(name)-5:], "__mdt") {
+		return true
+	}
+	switch strings.ToLower(name) {
+	case "apexclass", "apextrigger", "apexpage", "apexcomponent",
+		"fieldpermissions", "objectpermissions", "setupentityaccess",
+		"permissionset", "permissionsetgroup", "permissionsetgroupcomponent",
+		"profile", "userrole",
+		"recordtype", "layout", "staticresource",
+		"customapplication", "apptabmember", "tabdefinition",
+		"entitydefinition", "fielddefinition":
+		return true
+	default:
+		return false
+	}
+}
+
+// CloneRuntimeFrozenShared returns an isolated org copy that SHARES object
+// Definitions (immutable schema metadata) by reference, and additionally shares
+// Records/Indexes by reference for immutable metadata/setup objects (see
+// IsImmutableMetadataObject). Mutable business and runtime objects keep their
+// records deep-cloned for full per-test isolation. This mirrors how Salesforce
+// keeps compiled metadata and existing setup data static across a test run while
+// isolating mutable data per test.
+//
+// Sharing metadata records is safe because they are read-only on every test
+// execution path; the rare DML against a shared metadata object copy-on-writes
+// through EnsureMutableObjectRecords before mutating, leaving the shared base
+// maps untouched. IDSequences and Transactions are cloned so each test gets
+// private ID counters and DML scopes. The source org is never mutated, so
+// parallel clones are race-safe.
+func (o OrgState) CloneRuntimeFrozenShared() OrgState {
+	cloneStats.cloneRuntime.Add(1)
+	out := o
+	out.objectNameCache = &sync.Map{}
+	if o.Objects != nil {
+		out.Objects = make(map[string]ObjectState, len(o.Objects))
+		for name, object := range o.Objects {
+			if IsImmutableMetadataObject(object.Definition.APIName) || IsImmutableMetadataObject(name) {
+				out.Objects[name] = object.CloneRuntimeSnapshot()
+			} else {
+				out.Objects[name] = object.CloneRuntimeFrozenDefinition()
+			}
 		}
 	}
 	if o.IDSequences != nil {

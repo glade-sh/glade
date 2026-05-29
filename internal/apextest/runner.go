@@ -167,6 +167,10 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	if baseRuntimeErr == nil {
 		baseRuntimeErr = registerTestRuntime(baseMachine, append(flattenSetupMethods(setups), methodMapValues(testMethods)...))
 	}
+	// Freeze the alias/class lookup into a shared immutable index now that all
+	// classes and test methods are registered. Per-test clones then share it by
+	// pointer instead of rebuilding it on every CloneRuntime.
+	baseMachine.FreezeClassLookup()
 	suites := make(map[string][]testreport.Case)
 	order := make([]string, 0)
 	classSeen := make(map[string]bool)
@@ -1005,7 +1009,7 @@ func cloneRuntimeOrg(org storage.OrgState) storage.OrgState {
 
 func cloneRuntimeOrgForClass(org storage.OrgState, className, phase string) storage.OrgState {
 	recordCloneRuntimeOrg(className, phase)
-	return org.CloneRollbackSnapshot()
+	return org.CloneRuntimeFrozenShared()
 }
 
 func flattenSetupMethods(setups map[string][]vm.Method) []vm.Method {
@@ -1832,7 +1836,7 @@ func compileProjectTriggers(index typesys.Index, caches ...sourceCache) ([]vm.Tr
 func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 	org := storage.NewOrgState()
 	org.Namespace = index.Project.Namespace
-	org.OrgID = "00D000000000000"
+	org.OrgID = "00D000000000001"
 	registry := sobject.BuildDescribeRegistry(schemaFromIndex(index))
 	for name, describe := range registry.Objects {
 		org.Objects[name] = storage.ObjectState{
@@ -2465,7 +2469,7 @@ func inferredCustomLookupTargetFromFieldSuffix(org storage.OrgState, objectName,
 	var candidates []candidate
 	for candidateName := range org.Objects {
 		candidateBase := customRelationshipBaseName(candidateName)
-		if candidateBase == "" || strings.EqualFold(candidateBase, fieldBase) || !strings.HasSuffix(strings.ToLower(fieldBase), strings.ToLower(candidateBase)) {
+		if candidateBase == "" || strings.EqualFold(candidateBase, fieldBase) || !hasSuffixFold(fieldBase, candidateBase) {
 			continue
 		}
 		score := 0
@@ -2533,7 +2537,7 @@ func inferredLookupChildRelationshipName(objectName, fieldName, parentObject str
 		suffix = fieldBase[len(parentBase):]
 	}
 	childRelationshipBase := pluralizeCustomRelationshipBase(childBase) + suffix
-	if suffix == "" && len(fieldBase) > len(parentBase) && strings.HasSuffix(strings.ToLower(fieldBase), strings.ToLower(parentBase)) {
+	if suffix == "" && len(fieldBase) > len(parentBase) && hasSuffixFold(fieldBase, parentBase) {
 		childRelationshipBase = pluralizeCustomRelationshipBase(fieldBase)
 	}
 	childRelationship := childRelationshipBase + "__r"
@@ -2548,13 +2552,19 @@ func inferredLookupChildRelationshipName(objectName, fieldName, parentObject str
 
 func customRelationshipBaseName(name string) string {
 	base := storage.StripAnyNamespaceToken(strings.TrimSpace(name))
-	lower := strings.ToLower(base)
 	for _, suffix := range []string{"__c", "__r", "__e", "__mdt"} {
-		if strings.HasSuffix(lower, suffix) {
+		if hasSuffixFold(base, suffix) {
 			return base[:len(base)-len(suffix)]
 		}
 	}
 	return ""
+}
+
+func hasSuffixFold(value, suffix string) bool {
+	if len(value) < len(suffix) {
+		return false
+	}
+	return strings.EqualFold(value[len(value)-len(suffix):], suffix)
 }
 
 func pluralizeCustomRelationshipBase(name string) string {

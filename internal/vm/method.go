@@ -35,6 +35,7 @@ func (vm *VM) RegisterMethod(method Method) error {
 	if method.Name == "" {
 		return fmt.Errorf("method name is required")
 	}
+	vm.ensureRuntimeArtifactsOwned()
 	if vm.Methods == nil {
 		vm.Methods = make(map[string]Method)
 	}
@@ -57,6 +58,7 @@ func (vm *VM) unregisterMethod(method Method) {
 	if method.Name == "" {
 		return
 	}
+	vm.ensureRuntimeArtifactsOwned()
 	remove := func(methods []Method) []Method {
 		out := methods[:0]
 		for _, candidate := range methods {

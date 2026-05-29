@@ -391,10 +391,14 @@ func (vm *VM) testSetCreatedDate(args []Value) (Value, error) {
 		return Null, fmt.Errorf("Test.setCreatedDate requires org state")
 	}
 	id := storage.ID(idText)
-	for objectName, object := range vm.Org.Objects {
+	for objectName := range vm.Org.Objects {
+		object := vm.Org.Objects[objectName]
 		storedID, record, ok := storage.LookupRecordByID(object.Records, id)
 		if !ok {
 			continue
+		}
+		if mutable, _ := storage.EnsureMutableObjectRecords(vm.Org, objectName); mutable != nil {
+			object = *mutable
 		}
 		record.System.CreatedDate = createdDate
 		object.Records[storedID] = record

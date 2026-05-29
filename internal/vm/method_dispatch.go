@@ -2907,7 +2907,10 @@ func (vm *VM) propagateValueMutationToScope(scope map[string]Value, previous, up
 	if sameAliasValue(previous, updated) {
 		return
 	}
-	seen := make(map[uint64]bool)
+	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+	seen := *seenPtr
+	clear(seen)
+	defer aliasRefSetPool.Put(seenPtr)
 	for name, value := range scope {
 		clearRefSeen(seen)
 		replaced, changed := replaceValueAlias(value, previous, updated, seen)
@@ -3110,7 +3113,10 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 	if len(locations) == 0 {
 		return
 	}
-	seen := make(map[uint64]bool)
+	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+	seen := *seenPtr
+	clear(seen)
+	defer aliasRefSetPool.Put(seenPtr)
 	for _, location := range locations {
 		class, ok := vm.Classes[location.ClassName]
 		if !ok || class.StaticFields == nil {
@@ -3136,7 +3142,10 @@ func (vm *VM) propagateAliasSnapshotToScope(scope map[string]Value, previous ali
 	if !previous.valid() {
 		return
 	}
-	seen := make(map[uint64]bool)
+	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+	seen := *seenPtr
+	clear(seen)
+	defer aliasRefSetPool.Put(seenPtr)
 	for name, value := range scope {
 		clearRefSeen(seen)
 		replaced, changed := replaceAliasSnapshot(value, previous, updated, seen)
@@ -3160,7 +3169,10 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 	if len(locations) == 0 {
 		return
 	}
-	seen := make(map[uint64]bool)
+	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+	seen := *seenPtr
+	clear(seen)
+	defer aliasRefSetPool.Put(seenPtr)
 	for _, location := range locations {
 		class, ok := vm.Classes[location.ClassName]
 		if !ok || class.StaticFields == nil {
@@ -3237,7 +3249,10 @@ func (vm *VM) propagateCollectionValueAliasToScope(scope map[string]Value, origi
 	if sameAliasValue(original, updated) {
 		return false
 	}
-	seen := make(map[uint64]bool)
+	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+	seen := *seenPtr
+	clear(seen)
+	defer aliasRefSetPool.Put(seenPtr)
 	changed := false
 	for name, value := range scope {
 		clearRefSeen(seen)

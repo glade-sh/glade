@@ -837,6 +837,7 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) {
 	if !ok {
 		objectName = "User"
 	}
+	storage.EnsureMutableObjectRecords(vm.Org, objectName)
 	object := vm.Org.Objects[objectName]
 	if strings.TrimSpace(object.Definition.APIName) == "" {
 		if definition, ok := storage.StandardObjectDefinition("User"); ok {

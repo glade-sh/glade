@@ -922,6 +922,7 @@ func (vm *VM) convertLeadOne(convert Value, result *Result) (Value, error) {
 	if err != nil {
 		return Null, err
 	}
+	storage.EnsureMutableObjectRecords(vm.Org, "Lead")
 	updatedLeadState := vm.Org.Objects["Lead"]
 	updatedLead := updatedLeadState.Records[storedLeadID]
 	if _, ok := leadState.Definition.Fields["IsConverted"]; ok {
@@ -2421,6 +2422,7 @@ func (vm *VM) rollbackAfterTriggerFailures(op string, records []storage.Record, 
 		if canonical, ok := vm.resolveObjectName(objectName); ok {
 			objectName = canonical
 		}
+		storage.EnsureMutableObjectRecords(vm.Org, objectName)
 		current, ok := vm.Org.Objects[objectName]
 		if !ok {
 			continue
@@ -2826,6 +2828,7 @@ func (vm *VM) storeTriggerRecords(objectName string, records []storage.Record) e
 	if vm == nil || vm.Org == nil || len(records) == 0 {
 		return nil
 	}
+	storage.EnsureMutableObjectRecords(vm.Org, objectName)
 	object, ok := vm.Org.Objects[objectName]
 	if !ok {
 		return fmt.Errorf("unknown object %s", objectName)
@@ -3931,10 +3934,10 @@ func vmRelationshipNameMatchesBase(canonical, candidate string) bool {
 	if canonical == candidate || strings.EqualFold(canonical, candidate) {
 		return true
 	}
-	if strings.HasSuffix(strings.ToLower(candidate), "__r") && strings.EqualFold(canonical+"__r", candidate) {
+	if hasSuffixFold(candidate, "__r") && strings.EqualFold(canonical+"__r", candidate) {
 		return true
 	}
-	if strings.HasSuffix(strings.ToLower(canonical), "__r") && strings.EqualFold(canonical[:len(canonical)-3], candidate) {
+	if hasSuffixFold(canonical, "__r") && strings.EqualFold(canonical[:len(canonical)-3], candidate) {
 		return true
 	}
 	return false

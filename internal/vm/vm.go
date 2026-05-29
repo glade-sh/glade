@@ -1896,6 +1896,7 @@ func (vm *VM) deferPreStartAsyncJobRecords() {
 		return
 	}
 	vm.ensureAsyncObjects()
+	storage.EnsureMutableObjectRecords(vm.Org, "AsyncApexJob")
 	object := vm.Org.Objects["AsyncApexJob"]
 	for _, job := range vm.testContext.AsyncJobs {
 		storedID, record, ok := storage.LookupRecordByID(object.Records, storage.ID(job.ID))
@@ -6465,13 +6466,11 @@ func (vm *VM) lookupFieldInMap(fields map[string]Field, fieldName string) (Field
 
 func (vm *VM) lookupFieldInMapWithOptions(fields map[string]Field, fieldName string, preferDependency bool) (Field, bool) {
 	requested := strings.TrimSpace(fieldName)
-	normalized := strings.ToLower(requested)
 	var best Field
 	bestScore := -1
 	found := false
 	for candidate, field := range fields {
-		fieldNameKey := strings.ToLower(strings.TrimSpace(field.Name))
-		if strings.ToLower(candidate) != normalized && fieldNameKey != normalized {
+		if !strings.EqualFold(candidate, requested) && !strings.EqualFold(strings.TrimSpace(field.Name), requested) {
 			continue
 		}
 		if field.Name == "" {
@@ -6523,9 +6522,9 @@ func (vm *VM) staticFieldWritebackKey(owner, requested string, field Field) stri
 				return storageName
 			}
 		}
-		normalized := strings.ToLower(strings.TrimSpace(requested))
+		normalized := strings.TrimSpace(requested)
 		for key := range class.StaticFields {
-			if strings.ToLower(strings.TrimSpace(key)) == normalized {
+			if strings.EqualFold(strings.TrimSpace(key), normalized) {
 				return key
 			}
 		}
@@ -6708,8 +6707,9 @@ func sameLexicalTopLevel(a, b string) bool {
 }
 
 func (vm *VM) sameAccessScope(left, right string) bool {
+	rightNames := vm.accessScopeNames(right)
 	for _, leftName := range vm.accessScopeNames(left) {
-		for _, rightName := range vm.accessScopeNames(right) {
+		for _, rightName := range rightNames {
 			if sameOrNestedTypeFold(leftName, rightName) || sameLexicalTopLevel(leftName, rightName) {
 				return true
 			}
@@ -6742,6 +6742,13 @@ func hasTypePrefixFold(value, prefix string) bool {
 		return false
 	}
 	return strings.EqualFold(value[:len(prefix)], prefix)
+}
+
+func hasSuffixFold(value, suffix string) bool {
+	if len(value) < len(suffix) {
+		return false
+	}
+	return strings.EqualFold(value[len(value)-len(suffix):], suffix)
 }
 
 func lexicalTopLevel(className string) (string, bool) {
@@ -7463,6 +7470,14 @@ func (vm *VM) lookupClass(typeName string) (Class, bool) {
 	if class, ok := vm.Classes[typeName]; ok {
 		return class, true
 	}
+	if vm.sharedClassLookupKeys != nil {
+		if key, ok := vm.sharedClassLookupKeys[canonicalClassLookupKey(typeName)]; ok {
+			if class, ok := vm.Classes[key]; ok {
+				return class, true
+			}
+		}
+		return Class{}, false
+	}
 	if vm.classLookup == nil {
 		vm.rebuildClassLookup()
 	}
@@ -7472,7 +7487,43 @@ func (vm *VM) lookupClass(typeName string) (Class, bool) {
 	return Class{}, false
 }
 
+// FreezeClassLookup builds the shared, immutable canonical-key -> live Classes
+// key index so subsequent CloneRuntime calls can share it by pointer instead of
+// rebuilding a per-clone classLookup. Call it once on a base machine after all
+// class/method registration is complete and before cloning per-test runtimes.
+// Any later registration on a clone transparently falls back via
+// unshareClassLookup.
+func (vm *VM) FreezeClassLookup() {
+	if vm == nil {
+		return
+	}
+	keys := make(map[string]string, len(vm.Classes)*2)
+	for alias, class := range vm.Classes {
+		keys[canonicalClassLookupKey(alias)] = alias
+		keys[canonicalClassLookupKey(class.Name)] = alias
+		if class.Namespace != "" {
+			keys[canonicalClassLookupKey(class.Namespace+"."+class.Name)] = alias
+		}
+	}
+	vm.sharedClassLookupKeys = keys
+	vm.sharedClassCopyPlan = buildClassCopyPlan(vm.Classes)
+	vm.classLookup = nil
+}
+
+// unshareClassLookup reverts a VM from the shared frozen index back to a private
+// legacy classLookup. Registration mutators call this so the shared base index
+// is never modified; per-test clones never register, so they keep sharing.
+func (vm *VM) unshareClassLookup() {
+	if vm == nil || vm.sharedClassLookupKeys == nil {
+		return
+	}
+	vm.sharedClassLookupKeys = nil
+	vm.sharedClassCopyPlan = nil
+	vm.rebuildClassLookup()
+}
+
 func (vm *VM) storeClassAliases(class Class) {
+	vm.unshareClassLookup()
 	if vm.Classes == nil {
 		vm.Classes = make(map[string]Class)
 	}
@@ -7517,6 +7568,18 @@ func (vm *VM) storeClassLookupAlias(name string, class Class) {
 }
 
 func (vm *VM) storeClassValue(class Class) {
+	// Frozen fast path: static-field writeback updates the value of an
+	// already-registered class. When the shared lookup index is frozen,
+	// lookupClass resolves through vm.Classes by live key, so updating the
+	// clone's existing alias entries in place is immediately visible without
+	// rebuilding the entire (~2x len(Classes)) lookup index or thrashing the
+	// access caches. Class structure (name/namespace/access) is unchanged, so
+	// those caches remain valid. Only fall back to the rebuild path when a name
+	// would be newly introduced.
+	if vm.sharedClassLookupKeys != nil && vm.updateExistingClassValue(class) {
+		return
+	}
+	vm.unshareClassLookup()
 	if vm.Classes == nil {
 		vm.Classes = make(map[string]Class)
 	}
@@ -7529,19 +7592,55 @@ func (vm *VM) storeClassValue(class Class) {
 	}
 }
 
+// updateExistingClassValue updates a class value in place on the frozen lookup
+// fast path. It returns false (so the caller unshares and rebuilds) if any
+// target alias is not already present in the clone's Classes map, since adding
+// a new entry would require updating the shared frozen lookup index.
+func (vm *VM) updateExistingClassValue(class Class) bool {
+	if vm.Classes == nil {
+		return false
+	}
+	existing, exists := vm.Classes[class.Name]
+	if !exists {
+		return false
+	}
+	runtimeName := runtimeClassName(class)
+	if _, ok := vm.Classes[runtimeName]; !ok {
+		return false
+	}
+	hasNamespaceAlias := class.Namespace != "" && !strings.Contains(class.Name, ".")
+	namespaceAlias := ""
+	if hasNamespaceAlias {
+		namespaceAlias = class.Namespace + "." + class.Name
+		if _, ok := vm.Classes[namespaceAlias]; !ok {
+			return false
+		}
+	}
+	if shouldReplaceShortClassAlias(existing, class) {
+		vm.Classes[class.Name] = class
+	}
+	vm.Classes[runtimeName] = class
+	if hasNamespaceAlias {
+		vm.Classes[namespaceAlias] = class
+	}
+	return true
+}
+
 func runtimeClassName(class Class) string {
 	name := strings.TrimSpace(class.Name)
 	namespace := strings.TrimSpace(class.Namespace)
 	if name == "" || namespace == "" {
 		return name
 	}
-	if strings.HasPrefix(strings.ToLower(name), strings.ToLower(namespace)+".") {
+	if hasTypePrefixFold(name, namespace) {
 		return name
 	}
 	return namespace + "." + name
 }
 
 func (vm *VM) rebuildClassLookup() {
+	vm.sharedClassLookupKeys = nil
+	vm.sharedClassCopyPlan = nil
 	vm.resetClassAccessCaches()
 	vm.classLookup = make(map[string]Class, len(vm.Classes)*2)
 	for alias, class := range vm.Classes {

@@ -2,72 +2,72 @@
   "target": "local Apex test execution readiness",
   "ready": true,
   "project": "/Users/matt/Dev/glade/example-projects/src-nmb-nutpl-develop",
-  "durationMs": 19779,
+  "durationMs": 7606,
   "casesDiscovered": 761,
   "casesRun": 761,
   "phases": [
     {
       "name": "load_start",
       "durationMs": 0,
-      "heapAllocBytes": 83727872,
-      "totalAllocBytes": 161342264,
-      "mallocs": 791972,
-      "frees": 307237,
+      "heapAllocBytes": 83874376,
+      "totalAllocBytes": 161505320,
+      "mallocs": 792369,
+      "frees": 307010,
       "numGC": 6
     },
     {
       "name": "load_done",
-      "durationMs": 40,
-      "heapAllocBytes": 104531424,
-      "totalAllocBytes": 182145816,
-      "mallocs": 935660,
-      "frees": 315053,
+      "durationMs": 38,
+      "heapAllocBytes": 104675992,
+      "totalAllocBytes": 182306936,
+      "mallocs": 936050,
+      "frees": 314827,
       "numGC": 6
     },
     {
       "name": "discover_start",
-      "durationMs": 40,
-      "heapAllocBytes": 104532000,
-      "totalAllocBytes": 182146392,
-      "mallocs": 935669,
-      "frees": 315054,
+      "durationMs": 38,
+      "heapAllocBytes": 104676264,
+      "totalAllocBytes": 182307208,
+      "mallocs": 936052,
+      "frees": 314827,
       "numGC": 6
     },
     {
       "name": "discover_done total=761",
-      "durationMs": 41,
-      "heapAllocBytes": 104930944,
-      "totalAllocBytes": 182545336,
-      "mallocs": 937213,
-      "frees": 315427,
+      "durationMs": 39,
+      "heapAllocBytes": 105390472,
+      "totalAllocBytes": 183021416,
+      "mallocs": 939118,
+      "frees": 315200,
       "numGC": 6
     },
     {
       "name": "analyze_skip total=761",
-      "durationMs": 41,
-      "heapAllocBytes": 104931016,
-      "totalAllocBytes": 182545408,
-      "mallocs": 937218,
-      "frees": 315428,
+      "durationMs": 39,
+      "heapAllocBytes": 105390512,
+      "totalAllocBytes": 183021456,
+      "mallocs": 939120,
+      "frees": 315200,
       "numGC": 6
     },
     {
       "name": "run_start",
-      "durationMs": 41,
-      "heapAllocBytes": 104931576,
-      "totalAllocBytes": 182545968,
-      "mallocs": 937222,
-      "frees": 315428,
+      "durationMs": 39,
+      "heapAllocBytes": 105391024,
+      "totalAllocBytes": 183021968,
+      "mallocs": 939121,
+      "frees": 315200,
       "numGC": 6
     },
     {
       "name": "run_done",
-      "durationMs": 19779,
-      "heapAllocBytes": 359794960,
-      "totalAllocBytes": 53845873680,
-      "mallocs": 260256354,
-      "frees": 258619961,
-      "numGC": 191
+      "durationMs": 7606,
+      "heapAllocBytes": 400388424,
+      "totalAllocBytes": 16725611536,
+      "mallocs": 115172324,
+      "frees": 112968205,
+      "numGC": 75
     }
   ],
   "summary": {
@@ -85,5327 +85,5327 @@
       "class": "fflib_MatchTest",
       "method": "allOfWith2ArgsRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "allOfWith3ArgsRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "allOfWith4ArgsRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 51
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "allOfWithEmptyArgsThrowsException",
       "outcome": "pass",
-      "durationMs": 52
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "allOfWithListArgsRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 49
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "allOfWithNoArgsThrowsException",
       "outcome": "pass",
-      "durationMs": 43
+      "durationMs": 13
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "allOfWithoutRegisteringInnerMatchersThrowsException",
       "outcome": "pass",
-      "durationMs": 49
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyBooleanRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyDateRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyDatetimeRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 50
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyDecimalRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 47
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyDoubleRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyFieldSetRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyIdRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 52
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyIntegerRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 49
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyListRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 45
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyLongRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyObjectRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 43
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyOfWith2ArgsRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 62
+      "durationMs": 18
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyOfWith3ArgsRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyOfWith4ArgsRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 44
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyOfWithListArgsRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anySObjectFieldRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 43
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anySObjectRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anySObjectTypeRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 44
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "anyStringRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "dateAfterRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 58
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "dateBeforeRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "dateBetweenRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 62
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "datetimeAfterRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 52
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "datetimeBeforeRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 46
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "datetimeBetweenRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 66
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "decimalBetweenRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 42
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "decimalLessThanRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 58
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "decimalMoreThanRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "doubleBetweenRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "doubleLessThanRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 51
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "doubleMoreThanRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 44
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "eqBooleanRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 19
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "eqDateRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 42
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "eqDatetimeRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "eqDecimalRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 51
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "eqDoubleRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 44
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "eqIdRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "eqIntegerRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 43
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "eqListRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "eqLongRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "eqRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 45
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "eqSObjectFieldRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 124
+      "durationMs": 68
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "eqSObjectTypeRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 58
+      "durationMs": 18
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "eqStringRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 18
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "fieldSetEquivalentToRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 3662
+      "durationMs": 3026
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "fieldSetEquivalentWithNullFieldSetThrowsException",
       "outcome": "pass",
-      "durationMs": 39
+      "durationMs": 13
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "integerBetweenRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "integerLessThanRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "integerMoreThanRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 64
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "isNotNullRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "isNotRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "isNullRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 43
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "listContainsRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 58
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "listIsEmptyRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 39
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "longBetweenRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "longLessThanRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "longMoreThanRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "noneOfWith2ArgsRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "noneOfWith3ArgsRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 44
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "noneOfWith4ArgsRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 61
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "noneOfWithListArgsRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 50
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "refEqRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 48
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "sObjectOfTypeRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 50
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "sObjectWithIdRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 44
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "sObjectWithNameRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "sObjectWithRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 114
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "sObjectsWithMatchInOrderRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 139
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "sObjectsWithRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 129
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "stringContainsRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 39
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "stringEndsWithRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "stringIsBlankRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "stringIsNotBlankRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "stringMatchesRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 43
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "stringStartsWithRegistersCorrectMatcherType",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "whenMatchesAllArgsWithDifferentSizeArgValuesAndMatchersThrowsException",
       "outcome": "pass",
-      "durationMs": 39
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "whenMatchesAllArgsWithManyMatchesReturnsTrue",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "whenMatchesAllArgsWithManyMismatchesReturnsFalse",
       "outcome": "pass",
-      "durationMs": 37
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "whenMatchesAllArgsWithMatchesAndMismatchesReturnsFalse",
       "outcome": "pass",
-      "durationMs": 58
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "whenMatchesAllArgsWithNullMatchersThrowsException",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "whenMatchesAllArgsWithNullMethodArgsArgValuesThrowsException",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "whenMatchesAllArgsWithNullMethodArgsThrowsException",
       "outcome": "pass",
-      "durationMs": 47
+      "durationMs": 12
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "whenMatchesAllArgsWithOneMatchReturnsTrue",
       "outcome": "pass",
-      "durationMs": 45
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "whenMatchesAllArgsWithOneMismatchReturnsFalse",
       "outcome": "pass",
-      "durationMs": 48
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "whenMatchesWithOneMatcherRegistersMatcher",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "whenMatchesWithOneMatcherReturnsNull",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatchTest",
       "method": "whenMatchesWithOneMatcherSetsMatchingToTrue",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDatetimeAfter_WithNullFromDatetime_ThrowsException",
       "outcome": "pass",
-      "durationMs": 94
+      "durationMs": 46
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDatetimeAfter_WithNullInclusive_ThrowsException",
       "outcome": "pass",
-      "durationMs": 85
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDatetimeBefore_WithNullInclusive_ThrowsException",
       "outcome": "pass",
-      "durationMs": 71
+      "durationMs": 44
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDatetimeBefore_WithNullToDatetime_ThrowsException",
       "outcome": "pass",
-      "durationMs": 85
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDatetimeBetween_WithNullFromDatetime_ThrowsException",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDatetimeBetween_WithNullInclusiveFrom_ThrowsException",
       "outcome": "pass",
-      "durationMs": 97
+      "durationMs": 42
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDatetimeBetween_WithNullInclusiveTo_ThrowsException",
       "outcome": "pass",
-      "durationMs": 83
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDatetimeBetween_WithNullToDatetime_ThrowsException",
       "outcome": "pass",
-      "durationMs": 67
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDecimalBetween_WithNullInclusiveLower_ThrowsException",
       "outcome": "pass",
-      "durationMs": 77
+      "durationMs": 42
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDecimalBetween_WithNullInclusiveUpper_ThrowsException",
       "outcome": "pass",
-      "durationMs": 99
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDecimalBetween_WithNullLower_ThrowsException",
       "outcome": "pass",
-      "durationMs": 84
+      "durationMs": 41
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDecimalBetween_WithNullUpper_ThrowsException",
       "outcome": "pass",
-      "durationMs": 78
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDecimalLessThan_WithNullInclusive_ThrowsException",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDecimalLessThan_WithNullToMatch_ThrowsException",
       "outcome": "pass",
-      "durationMs": 84
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDecimalMoreThan_WithNullInclusive_ThrowsException",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructDecimalMoreThan_WithNullToMatch_ThrowsException",
       "outcome": "pass",
-      "durationMs": 73
+      "durationMs": 42
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructEq_WithNullArg_ThrowsException",
       "outcome": "pass",
-      "durationMs": 81
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructFieldSetEquivalentTo_WithNullFieldSet_ThrowsException",
       "outcome": "pass",
-      "durationMs": 78
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructRefEq_WithNullArg_ThrowsException",
       "outcome": "pass",
-      "durationMs": 82
+      "durationMs": 37
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructSObjectOfType_WithNullArg_ThrowsException",
       "outcome": "pass",
-      "durationMs": 86
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructSObjectWithId_WithNullArg_ThrowsException",
       "outcome": "pass",
-      "durationMs": 82
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructSObjectWithName_WithNullArg_ThrowsException",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 39
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructSObjectWith_WithEmptyArg_ThrowsException",
       "outcome": "pass",
-      "durationMs": 65
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructSObjectWith_WithNullArg_ThrowsException",
       "outcome": "pass",
-      "durationMs": 84
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructStringContains_WithNullArg_ThrowsException",
       "outcome": "pass",
-      "durationMs": 78
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructStringEndsWith_WithNullArg_ThrowsException",
       "outcome": "pass",
-      "durationMs": 82
+      "durationMs": 40
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructStringMatches_WithNullArg_ThrowsException",
       "outcome": "pass",
-      "durationMs": 82
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "constructStringStartsWith_WithNullArg_ThrowsException",
       "outcome": "pass",
-      "durationMs": 84
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnyBooleanMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 81
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnyDateMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 77
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnyDatetimeMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 79
+      "durationMs": 40
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnyDecimalMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 72
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnyDoubleMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnyFieldSetMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 3744
+      "durationMs": 2783
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnyIdMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 151
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnyIntegerMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 72
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnyListMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 73
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnyLongMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 66
+      "durationMs": 42
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnyObjectMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnySObjectFieldMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 77
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnySObjectMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 40
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnySObjectTypeMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 78
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenAnyStringMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 78
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenCombinedMatchesWithAllExpressionShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 82
+      "durationMs": 39
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenCombinedMatchesWithAtLeastOneExpressionShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenCombinedMatchesWithNoneExpressionShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 78
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenConstructingCombinedWithEmptyInternalMatchersShouldThrowException",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 40
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenConstructingCombinedWithNullConnectiveExpressionShouldThrowException",
       "outcome": "pass",
-      "durationMs": 63
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenConstructingCombinedWithNullInternalMatchersShouldThrowException",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenDatetimeAfterMatchesWithInclusiveShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 72
+      "durationMs": 44
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenDatetimeAfterMatchesWithoutInclusiveShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 64
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenDatetimeBeforeMatchesWithInclusiveShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 85
+      "durationMs": 44
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenDatetimeBeforeMatchesWithoutInclusiveShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 84
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenDatetimeBetweenMatchesWithInclusiveFromWithoutInclusiveToShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 42
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenDatetimeBetweenMatchesWithInclusiveToWithoutInclusiveFromShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 35
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenDecimalBetweenMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 66
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenDecimalLessThanMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 42
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenDecimalMoreThanMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenEqMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 83
+      "durationMs": 45
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenFieldSetEquivalentToMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 3745
+      "durationMs": 228
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenFieldSetEquivalentToWithoutFieldSetShouldNeverMatch",
       "outcome": "pass",
-      "durationMs": 65
+      "durationMs": 43
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenIsBlankWithMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 82
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenIsNotBlankWithMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenIsNotNullMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenIsNullMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenListContainsMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 89
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenListIsEmptyMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 79
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenRefEqMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 41
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenSObjectOfTypeMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 63
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenSObjectWithIdMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 91
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenSObjectWithMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 173
+      "durationMs": 44
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenSObjectWithNameMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 161
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenSObjectsInAnyOrderWithMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 173
+      "durationMs": 40
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenSObjectsWithInOrderMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 149
+      "durationMs": 49
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenStringContainsMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 71
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenStringEndsWithMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 65
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenStringMatchesMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 43
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MatcherDefinitionsTest",
       "method": "whenStringStartsWithMatchesShouldReturnCorrectResults",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "stubAndVerifyMethodCallsWithNoArguments",
       "outcome": "pass",
-      "durationMs": 81
+      "durationMs": 39
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatExceptionIsthrownWhenReturnMultiPassEmptyList",
       "outcome": "pass",
-      "durationMs": 64
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatExceptionIsthrownWhenReturnMultiPassNullList",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatExceptionIsthrownWhenStubbingIsNotDone",
       "outcome": "pass",
-      "durationMs": 68
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatExceptionIsthrownWhenThrowMultiPassEmptyList",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatExceptionIsthrownWhenThrowMultiPassNullList",
       "outcome": "pass",
-      "durationMs": 63
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatMultipleInstancesCanBeMockedDependently",
       "outcome": "pass",
-      "durationMs": 69
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatMultipleInstancesCanBeMockedIndependently",
       "outcome": "pass",
-      "durationMs": 83
+      "durationMs": 35
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatMultipleVoidMethodsThrowsMultipleExceptions",
       "outcome": "pass",
-      "durationMs": 88
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatNullCanBeUsedAsExceptionvalue",
       "outcome": "pass",
-      "durationMs": 73
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatNullCanBeUsedAsReturnValue",
       "outcome": "pass",
-      "durationMs": 68
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingCanBeChainedFirstValueThenException",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleMethodsCanBeChainedFirstExceptionThenValue",
       "outcome": "pass",
-      "durationMs": 81
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleMethodsCanBeChainedFirstValueThenException",
       "outcome": "pass",
-      "durationMs": 90
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenReturnMultiWithMultiExceptions",
       "outcome": "pass",
-      "durationMs": 79
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenReturnMultiWithMultiValue",
       "outcome": "pass",
-      "durationMs": 82
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenReturnMultiWithSingleException",
       "outcome": "pass",
-      "durationMs": 70
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenReturnMultiWithSingleValue",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenReturnWithMultiExceptions",
       "outcome": "pass",
-      "durationMs": 94
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenReturnWithMultiValues",
       "outcome": "pass",
-      "durationMs": 96
+      "durationMs": 35
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenReturnWithSingleException",
       "outcome": "pass",
-      "durationMs": 76
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenReturnWithSingleValue",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenThrowMultiWithMultiExceptions",
       "outcome": "pass",
-      "durationMs": 89
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenThrowMultiWithMultiValue",
       "outcome": "pass",
-      "durationMs": 84
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenThrowMultiWithSingleException",
       "outcome": "pass",
-      "durationMs": 78
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenThrowMultiWithSingleValue",
       "outcome": "pass",
-      "durationMs": 82
+      "durationMs": 35
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenThrowWithMultiExceptions",
       "outcome": "pass",
-      "durationMs": 81
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenThrowWithMultiValues",
       "outcome": "pass",
-      "durationMs": 88
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenThrowWithSingleException",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMultipleTimesOverridePreviousThenThrowWithSingleValue",
       "outcome": "pass",
-      "durationMs": 79
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMutipleTimesVoidMethodThrowsMultipleExceptionsOverride",
       "outcome": "pass",
-      "durationMs": 92
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingMutipleTimesVoidMethodThrowsMultipleExceptionsOverrideWithSingleException",
       "outcome": "pass",
-      "durationMs": 72
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingReturnsAndThrowsDifferentValuesAndExceptionsForDifferentCalls",
       "outcome": "pass",
-      "durationMs": 83
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingReturnsDifferentValuesForDifferentCalls",
       "outcome": "pass",
-      "durationMs": 76
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingReturnsDifferentValuesForDifferentCallsAndRepeatLastValuesForFurtherCalls",
       "outcome": "pass",
-      "durationMs": 89
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingThrowsAndReturnsDifferentExceptionsAndValuesForDifferentCalls",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingThrowsDifferentExceptionsForDifferentCalls",
       "outcome": "pass",
-      "durationMs": 85
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatStubbingThrowsDifferentExceptionsForDifferentCallsAndRepeatLastExceptionForFurtherCalls",
       "outcome": "pass",
-      "durationMs": 79
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "thatVoidMethodThrowsMultipleExceptions",
       "outcome": "pass",
-      "durationMs": 65
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "verifyMethodCallWhenNoCallsBeenMadeForType",
       "outcome": "pass",
-      "durationMs": 71
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "verifyMethodCallsWithSameNameButDifferentArgumentTypes",
       "outcome": "pass",
-      "durationMs": 82
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "verifyMethodNotCalled",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 37
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "verifyMultipleMethodCallsWithDifferentSingleArgument",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "verifyMultipleMethodCallsWithSameSingleArgument",
       "outcome": "pass",
-      "durationMs": 68
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "verifySingleMethodCallWithMultipleArguments",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "verifySingleMethodCallWithNoArguments",
       "outcome": "pass",
-      "durationMs": 70
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "verifySingleMethodCallWithSingleArgument",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenMockIsGeneratedCanStubVerify",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenMockIsGeneratedCanVerify",
       "outcome": "pass",
-      "durationMs": 70
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenSetDoThrowWhenExceptionsValuesAreSet",
       "outcome": "pass",
-      "durationMs": 48
+      "durationMs": 18
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubCallWithNoArgumentsShouldReturnStubbedValue",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubCustomMatchersCanBeUsed",
       "outcome": "pass",
-      "durationMs": 61
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubExceptionSameMethodWithMatchersAndNonMatchersShouldStubInOrder",
       "outcome": "pass",
-      "durationMs": 82
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubExceptionTheExceptionShouldBeThrown",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubExceptionWithMatchersShouldThrowException",
       "outcome": "pass",
-      "durationMs": 81
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubMultipleCallsWithMatchersShouldReturnExpectedValues",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubMultipleCallsWithMultipleArgumentShouldReturnStubbedValues",
       "outcome": "pass",
-      "durationMs": 91
+      "durationMs": 42
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubMultipleCallsWithSingleArgumentShouldReturnStubbedValues",
       "outcome": "pass",
-      "durationMs": 78
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubMultipleVoidMethodsWithExceptionsThenExceptionsShouldBeThrown",
       "outcome": "pass",
-      "durationMs": 58
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubNullConcreteArgValueCorrectValueIsReturned",
       "outcome": "pass",
-      "durationMs": 81
+      "durationMs": 37
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubSameCallWithDifferentArgumentValueShouldReturnLastStubbedValue",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubSameMethodWithMatchersAndNonMatchersShouldStubInOrder",
       "outcome": "pass",
-      "durationMs": 93
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubSingleCallWithNullReturnValueItShouldReturnNull",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubSingleCallWithSingleArgumentShouldReturnStubbedValue",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubVoidMethodWithExceptionAndCallMethodTwiceThenExceptionShouldBeThrownTwice",
       "outcome": "pass",
-      "durationMs": 61
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubVoidMethodWithExceptionThenExceptionShouldBeThrown",
       "outcome": "pass",
-      "durationMs": 63
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenStubWithMatcherAndNonMatcherArgumentsShouldThrowException",
       "outcome": "pass",
-      "durationMs": 69
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenVerifyCustomMatchersCanBeUsed",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenVerifyMethodNeverCalledMatchersAreReset",
       "outcome": "pass",
-      "durationMs": 81
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenVerifyMultipleCallsWithMatchersShouldReturnCorrectMethodCallCounts",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenVerifyWithCombinedMatchersShouldReturnCorrectMethodCallCounts",
       "outcome": "pass",
-      "durationMs": 89
+      "durationMs": 41
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksTest",
       "method": "whenVerifyWithMatcherAndNonMatcherArgumentsShouldThrowException",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatMixedVerificationDoNotInterfierWithOtherImplementationChecking",
       "outcome": "pass",
-      "durationMs": 109
+      "durationMs": 43
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatStrictVerificationCanBeEnforced",
       "outcome": "pass",
-      "durationMs": 112
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatStrictVerificationCanBeEnforcedWithOldNotation",
       "outcome": "pass",
-      "durationMs": 111
+      "durationMs": 44
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatStrictVerificationCanBeEnforcedWithOldNotationUsingDefaultTimesOne",
       "outcome": "pass",
-      "durationMs": 125
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatStrictVerificationCanBePerformed",
       "outcome": "pass",
-      "durationMs": 96
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatTimesOneIsTheDefaultVerification",
       "outcome": "pass",
-      "durationMs": 92
+      "durationMs": 43
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyAtLeastConsumeAllTheInstances",
       "outcome": "pass",
-      "durationMs": 90
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyAtLeastConsumeAllTheInstancesForOnlyTheMethodVerified",
       "outcome": "pass",
-      "durationMs": 104
+      "durationMs": 35
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyAtLeastConsumesAllTheInstances2",
       "outcome": "pass",
-      "durationMs": 90
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyAtLeastOnce",
       "outcome": "pass",
-      "durationMs": 86
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyAtLeastOnceConsumesAllTheInstances",
       "outcome": "pass",
-      "durationMs": 96
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyAtLeastOnceConsumesInstancesUntilLastMethodVerified",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyAtLeastOnceThrowsErrorIfCalledLessTimes",
       "outcome": "pass",
-      "durationMs": 77
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyAtLeastPassWithMoreCallsThenAsserted",
       "outcome": "pass",
-      "durationMs": 99
+      "durationMs": 39
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyAtLeastPassWithSameCallsOfAssertion",
       "outcome": "pass",
-      "durationMs": 99
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyAtLeastThrowsErrorIfCalledLessTimes",
       "outcome": "pass",
-      "durationMs": 83
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyAtMostThrowsExceptionBecauseNotImplemented",
       "outcome": "pass",
-      "durationMs": 90
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyBetweenThrowsExceptionBecauseNotImplemented",
       "outcome": "pass",
-      "durationMs": 97
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderAllTheMethodsCalled",
       "outcome": "pass",
-      "durationMs": 92
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderCallMethodWithMatches",
       "outcome": "pass",
-      "durationMs": 83
+      "durationMs": 35
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderCallMethodWithMatchesFailsIfVerifyACallAlreadyInTheMatcher",
       "outcome": "pass",
-      "durationMs": 93
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderCallMethodWithMultipleMatches",
       "outcome": "pass",
-      "durationMs": 87
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderCallMethodWithMultipleMatchesMixed",
       "outcome": "pass",
-      "durationMs": 91
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderCallMethodWithMultipleMatchesMixedFailWhenMatcherHaveAlreadyVerifiedMethod",
       "outcome": "pass",
-      "durationMs": 88
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderCanHandleMixedInOrderInstance",
       "outcome": "pass",
-      "durationMs": 133
+      "durationMs": 45
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderCanHandleMultipleMethodsCalls",
       "outcome": "pass",
-      "durationMs": 96
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderCanHandleMultipleMethodsCallsAndNotFailsIfVerifyCountIsGreaterThenExpected",
       "outcome": "pass",
-      "durationMs": 71
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderCanHandleMultipleMethodsCallsButFailsIfVerifyCountIsLessThenExpected",
       "outcome": "pass",
-      "durationMs": 100
+      "durationMs": 39
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderCanHandleMultipleMocks",
       "outcome": "pass",
-      "durationMs": 116
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderCanSkipMethodsCalledUntilFindTheOneThatNeedsVerify",
       "outcome": "pass",
-      "durationMs": 87
+      "durationMs": 41
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderDifferentMethodsCalledWithSameArguments",
       "outcome": "pass",
-      "durationMs": 99
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderDifferentMethodsCalledWithSameArgumentsDoubleCallFail",
       "outcome": "pass",
-      "durationMs": 73
+      "durationMs": 41
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderDifferentMethodsCalledWithSameArgumentsOrderFail",
       "outcome": "pass",
-      "durationMs": 86
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderThrownExceptionIfVerifyMockInstanceNotInTheSet",
       "outcome": "pass",
-      "durationMs": 70
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyInOrderThrownExceptionWithCustomMessage",
       "outcome": "pass",
-      "durationMs": 65
+      "durationMs": 37
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyNever",
       "outcome": "pass",
-      "durationMs": 95
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyNeverFailsWhenCalled",
       "outcome": "pass",
-      "durationMs": 96
+      "durationMs": 40
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyNeverFailsWhenCalledWithMatchers",
       "outcome": "pass",
-      "durationMs": 89
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyNeverWithMatchers",
       "outcome": "pass",
-      "durationMs": 90
+      "durationMs": 42
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyNoInteractionsFails",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyNoInteractionsPass",
       "outcome": "pass",
-      "durationMs": 79
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyNoMoreInteractionsFails",
       "outcome": "pass",
-      "durationMs": 83
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyNoMoreInteractionsFailsWhenNoInteracionOccurs",
       "outcome": "pass",
-      "durationMs": 63
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyNoMoreInteractionsFailsWhenOnLyOneMethodLeft",
       "outcome": "pass",
-      "durationMs": 87
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyNoMoreInteractionsPass",
       "outcome": "pass",
-      "durationMs": 101
+      "durationMs": 42
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyThrowsExceptionWhenCallsIsInvochedFromStandardMock",
       "outcome": "pass",
-      "durationMs": 64
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyTimes",
       "outcome": "pass",
-      "durationMs": 86
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyTimesPassWhenAnotherMethodIsCalledBetweenMethodsCalls",
       "outcome": "pass",
-      "durationMs": 97
+      "durationMs": 43
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyTimesPassWhenAnotherMethodIsCalledBetweenMethodsCalls2",
       "outcome": "pass",
-      "durationMs": 93
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyTimesPassWhenAnotherMethodIsCalledBetweenMethodsCalls3",
       "outcome": "pass",
-      "durationMs": 115
+      "durationMs": 44
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyTimesPassWhenAnotherMethodIsCalledBetweenMethodsCalls4",
       "outcome": "pass",
-      "durationMs": 116
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyTimesThrowsExceptionIfCalledLessTimesThanExpected",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyTimesThrowsExceptionIfCalledMoreTimesThanExpected",
       "outcome": "pass",
-      "durationMs": 100
+      "durationMs": 37
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatVerifyTimesThrowsExceptionWhenAnotherMethodIsCalledBetweenMethodsCalls",
       "outcome": "pass",
-      "durationMs": 98
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatWithOldNotation",
       "outcome": "pass",
-      "durationMs": 78
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatWithOldNotationPassWhenAnotherMethodIsCalledBetweenMethodsCalls",
       "outcome": "pass",
-      "durationMs": 100
+      "durationMs": 45
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatWithOldNotationThrowsExceptionIfCalledLessTimesThanExpected",
       "outcome": "pass",
-      "durationMs": 73
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatWithOldNotationThrowsExceptionIfCalledMoreTimesThanExpected",
       "outcome": "pass",
-      "durationMs": 99
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "thatWithOldNotationThrowsExceptionWhenAnotherMethodIsCalledBetweenMethodsCalls",
       "outcome": "pass",
-      "durationMs": 78
+      "durationMs": 39
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "verifyAtLeastAndCapture",
       "outcome": "pass",
-      "durationMs": 91
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "verifyCallsAndCapture",
       "outcome": "pass",
-      "durationMs": 76
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InOrderTest",
       "method": "verifyTimesAndCaptor",
       "outcome": "pass",
-      "durationMs": 109
+      "durationMs": 47
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatBetweenThrownExceptionIfCalledLessThanAtLeastNumberOfTimes",
       "outcome": "pass",
-      "durationMs": 87
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatBetweenThrownExceptionIfCalledLessThanAtLeastNumberOfTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatBetweenThrownExceptionIfCalledMoreThanAtMostNumberOfTimes",
       "outcome": "pass",
-      "durationMs": 58
+      "durationMs": 35
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatBetweenThrownExceptionIfCalledMoreThanAtMostNumberOfTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatCustomMessageIsAdded",
       "outcome": "pass",
-      "durationMs": 58
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatThrownExceptionIfCalledLessThanAtLeastNumberOfTimes",
       "outcome": "pass",
-      "durationMs": 77
+      "durationMs": 41
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatThrownExceptionIfCalledLessThanAtLeastNumberOfTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 58
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatThrownExceptionIfCalledLessThanAtLeastOnce",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatThrownExceptionIfCalledLessThanAtLeastOnceNumberOfTimes",
       "outcome": "pass",
-      "durationMs": 98
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatThrownExceptionIfCalledLessThanAtLeastOnceNumberOfTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 35
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatThrownExceptionIfCalledLessThanAtLeastOnceWithMatchers",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatThrownExceptionIfCalledMoreThanAtMostNumberOfTimes",
       "outcome": "pass",
-      "durationMs": 92
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatThrownExceptionIfCalledMoreThanAtMostNumberOfTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtLeastNumberOfTimes",
       "outcome": "pass",
-      "durationMs": 79
+      "durationMs": 39
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtLeastNumberOfTimesWhenIsCalledMoreTimes",
       "outcome": "pass",
-      "durationMs": 64
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtLeastNumberOfTimesWhenIsCalledMoreTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtLeastNumberOfTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtLeastOnce",
       "outcome": "pass",
-      "durationMs": 61
+      "durationMs": 43
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtLeastOnceNumberOfTimes",
       "outcome": "pass",
-      "durationMs": 69
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtLeastOnceNumberOfTimesWhenIsCalledMoreTimes",
       "outcome": "pass",
-      "durationMs": 71
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtLeastOnceNumberOfTimesWhenIsCalledMoreTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 64
+      "durationMs": 43
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtLeastOnceNumberOfTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 62
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtLeastOnceWhenIsCalledMoreTimes",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtLeastOnceWhenIsCalledMoreTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 71
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtLeastOnceWithMatchers",
       "outcome": "pass",
-      "durationMs": 72
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtMostNumberOfTimes",
       "outcome": "pass",
-      "durationMs": 78
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtMostNumberOfTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtMostSameNumberOfTimes",
       "outcome": "pass",
-      "durationMs": 65
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesAtMostSameNumberOfTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 69
+      "durationMs": 35
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesBetweenNumberOfTimes",
       "outcome": "pass",
-      "durationMs": 73
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifiesBetweenNumberOfTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 77
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifyNeverFailsWhenCalledMoreTimes",
       "outcome": "pass",
-      "durationMs": 69
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifyNeverFailsWhenCalledMoreTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifyTimesMethodFailsWhenCalledLessTimes",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifyTimesMethodFailsWhenCalledLessTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 65
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifyTimesMethodFailsWhenCalledMoreTimes",
       "outcome": "pass",
-      "durationMs": 66
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "thatVerifyTimesMethodFailsWhenCalledMoreTimesWithMatchers",
       "outcome": "pass",
-      "durationMs": 73
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "verifyMethodCallWhenNoCallsBeenMadeForType",
       "outcome": "pass",
-      "durationMs": 73
+      "durationMs": 42
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "verifyMethodNotCalled",
       "outcome": "pass",
-      "durationMs": 58
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "verifyMultipleMethodCallsWithSameSingleArgument",
       "outcome": "pass",
-      "durationMs": 71
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "verifyNeverMethodHasBeenNotCalledWithMatchers",
       "outcome": "pass",
-      "durationMs": 68
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "verifyNeverMethodHasNotBeenCalled",
       "outcome": "pass",
-      "durationMs": 78
+      "durationMs": 46
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "verifySingleMethodCallWithMultipleArguments",
       "outcome": "pass",
-      "durationMs": 77
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "verifyTimesMethodHasBeenCalled",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "verifyTimesMethodHasBeenCalledWithMatchers",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "whenVerifyCustomMatchersCanBeUsed",
       "outcome": "pass",
-      "durationMs": 71
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "whenVerifyMethodNeverCalledMatchersAreReset",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 44
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "whenVerifyMultipleCallsWithMatchersShouldReturnCorrectMethodCallCounts",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnyOrderTest",
       "method": "whenVerifyWithCombinedMatchersShouldReturnCorrectMethodCallCounts",
       "outcome": "pass",
-      "durationMs": 67
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "addChildQueriesWithChildRelationshipNoAccessibleCheck_fail",
       "outcome": "pass",
-      "durationMs": 162
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "addChildQueriesWithChildRelationshipNoAccessibleCheck_success",
       "outcome": "pass",
-      "durationMs": 352
+      "durationMs": 123
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "addChildQueriesWithChildRelationshipObjCheckIsAccessible_success",
       "outcome": "pass",
-      "durationMs": 318
+      "durationMs": 53
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "addChildQueriesWithChildRelationshipObj_success",
       "outcome": "pass",
-      "durationMs": 341
+      "durationMs": 64
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "addChildQueriesWithChildRelationship_success",
       "outcome": "pass",
-      "durationMs": 346
+      "durationMs": 51
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "addChildQueries_invalidChildRelationship",
       "outcome": "pass",
-      "durationMs": 173
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "addChildQueries_invalidChildRelationshipTooDeep",
       "outcome": "pass",
-      "durationMs": 162
+      "durationMs": 46
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "addChildQueries_success",
       "outcome": "pass",
-      "durationMs": 349
+      "durationMs": 51
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "addChildQuerySameRelationshipAgain_success",
       "outcome": "pass",
-      "durationMs": 212
+      "durationMs": 109
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "checkFieldObjectReadSort_success",
       "outcome": "pass",
-      "durationMs": 148
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "checkFieldRead_fail",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "checkObjectRead_fail",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "deepCloneBasic",
       "outcome": "pass",
-      "durationMs": 130
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "deepCloneBasicNoChanges",
       "outcome": "pass",
-      "durationMs": 149
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "deepCloneSubquery",
       "outcome": "pass",
-      "durationMs": 171
+      "durationMs": 46
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "deepCloneSubqueryNoChanges",
       "outcome": "pass",
-      "durationMs": 140
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "deterministic_toSOQL",
       "outcome": "pass",
-      "durationMs": 207
+      "durationMs": 47
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "duplicateFieldSelection",
       "outcome": "pass",
-      "durationMs": 130
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "equalityCheck",
       "outcome": "pass",
-      "durationMs": 145
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "fieldSelections",
       "outcome": "pass",
-      "durationMs": 141
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "invalidCrossObjectField",
       "outcome": "pass",
-      "durationMs": 161
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "invalidFieldTests",
       "outcome": "pass",
-      "durationMs": 127
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "invalidField_nullToken",
       "outcome": "pass",
-      "durationMs": 134
+      "durationMs": 19
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "invalidField_string",
       "outcome": "pass",
-      "durationMs": 151
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "invalidFields_noQueryField",
       "outcome": "pass",
-      "durationMs": 38
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "invalidFields_nullToken",
       "outcome": "pass",
-      "durationMs": 155
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "invalidFields_string",
       "outcome": "pass",
-      "durationMs": 137
+      "durationMs": 19
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "nonReferenceField",
       "outcome": "pass",
-      "durationMs": 131
+      "durationMs": 18
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "ordering",
       "outcome": "pass",
-      "durationMs": 128
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "queryFieldsNotEquals",
       "outcome": "pass",
-      "durationMs": 38
+      "durationMs": 13
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "queryWith_noFields",
       "outcome": "pass",
-      "durationMs": 132
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "setOrdering_ReplacesPreviousOrderingsWithExpectedOrdering",
       "outcome": "pass",
-      "durationMs": 167
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "simpleFieldCondition",
       "outcome": "pass",
-      "durationMs": 129
+      "durationMs": 19
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "simpleFieldSelection",
       "outcome": "pass",
-      "durationMs": 160
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QueryFactoryTest",
       "method": "testSoql_unsortedSelectFields",
       "outcome": "pass",
-      "durationMs": 168
+      "durationMs": 45
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "addCondition_expectedFalse",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "addCondition_expectedTrue",
       "outcome": "pass",
-      "durationMs": 79
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "addCondition_string_expectedFalse",
       "outcome": "pass",
-      "durationMs": 72
+      "durationMs": 43
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "addCondition_string_expectedTrue",
       "outcome": "pass",
-      "durationMs": 58
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "andCondition_expectedFalse",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "andCondition_expectedTrue",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "divideCondition_expectedFalse",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "divideCondition_expectedTrue",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 40
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "equalCondition_expectedFalse",
       "outcome": "pass",
-      "durationMs": 70
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "equalCondition_expectedTrue",
       "outcome": "pass",
-      "durationMs": 52
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "exponentCondition_expectedFalse",
       "outcome": "pass",
-      "durationMs": 66
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "exponentCondition_expectedTrue",
       "outcome": "pass",
-      "durationMs": 73
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "greaterThanCondition_expectedFalse",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "greaterThanCondition_expectedTrue",
       "outcome": "pass",
-      "durationMs": 72
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "greaterThanEqualCondition_expectedFalse",
       "outcome": "pass",
-      "durationMs": 69
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "greaterThanEqualCondition_expectedTrue",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "lessThanCondition_expectedFalse",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "lessThanCondition_expectedTrue",
       "outcome": "pass",
-      "durationMs": 65
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "lessThanEqualCondition_expectedFalse",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "lessThanEqualCondition_expectedTrue",
       "outcome": "pass",
-      "durationMs": 72
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "likeCondition_expectedFalse",
       "outcome": "pass",
-      "durationMs": 52
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "likeCondition_expectedTrue",
       "outcome": "pass",
-      "durationMs": 68
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "multiplyCondition_expectedFalse",
       "outcome": "pass",
-      "durationMs": 73
+      "durationMs": 35
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "multiplyCondition_expectedTrue",
       "outcome": "pass",
-      "durationMs": 61
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "notEqualCondition_expectedFalse",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "notEqualCondition_expectedTrue",
       "outcome": "pass",
-      "durationMs": 52
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "orCondition_expectedFalse",
       "outcome": "pass",
-      "durationMs": 77
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "orCondition_expectedTrue",
       "outcome": "pass",
-      "durationMs": 73
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "subtractCondition_expectedFalse",
       "outcome": "pass",
-      "durationMs": 61
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateExprEvaluationContextTest",
       "method": "subtractCondition_expectedTrue",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 35
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatArgumentValueIsCaptured",
       "outcome": "pass",
-      "durationMs": 76
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatArgumentValueIsCapturedWithInOrderVerification",
       "outcome": "pass",
-      "durationMs": 71
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCanHandleMultipleCapturesInOneMethodCall",
       "outcome": "pass",
-      "durationMs": 68
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCanHandleMultipleCapturesInOneMethodCallWithInOrderVerification",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCanPerformFurtherAssertionsOnCapturedArgumentValue",
       "outcome": "pass",
-      "durationMs": 79
+      "durationMs": 39
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCanPerformFurtherAssertionsOnCapturedArgumentValueWithInOrderVerification",
       "outcome": "pass",
-      "durationMs": 81
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureAllArguments",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureAllArgumentsForTheVerifiedMethods",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureAllArgumentsForTheVerifiedMethodsWithInOrderVerification",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureAllArgumentsFromMultipleMethods",
       "outcome": "pass",
-      "durationMs": 78
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureAllArgumentsFromMultipleMethodsWithInOrderVerification",
       "outcome": "pass",
-      "durationMs": 67
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureAllArgumentsWithInOrderVerification",
       "outcome": "pass",
-      "durationMs": 76
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureAllArgumentswhenMethodIsCalledWithTheSameArgument",
       "outcome": "pass",
-      "durationMs": 79
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureArgumentFromRequestedParameter",
       "outcome": "pass",
-      "durationMs": 68
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureArgumentFromRequestedParameterWithInOrderVerification",
       "outcome": "pass",
-      "durationMs": 62
+      "durationMs": 41
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureArgumentOnlyFromVerifiedMethod",
       "outcome": "pass",
-      "durationMs": 76
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureArgumentOnlyFromVerifiedMethodWithInOrderVerification",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureLastArgument",
       "outcome": "pass",
-      "durationMs": 76
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureLastArgumentWithInOrderVerification",
       "outcome": "pass",
-      "durationMs": 77
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureOnlyMethodsThatMatchesWithOtherMatcherAsWell",
       "outcome": "pass",
-      "durationMs": 58
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatCaptureOnlyMethodsThatMatchesWithOtherMatcherAsWellWithInOrderVerification",
       "outcome": "pass",
-      "durationMs": 79
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatDoesNotCaptureAnythingWhenCaptorIsWrappedInAMatcher",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatDoesNotCaptureAnythingWhenCaptorIsWrappedInAMatcherWithInOrderVerification",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatDoesNotCaptureIfNotVerified",
       "outcome": "pass",
-      "durationMs": 76
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ArgumentCaptorTest",
       "method": "thatDoesNotCaptureIfNotVerifiedWithInOrderVerification",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "constructor_nullMarkup_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 62
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "constructor_subtemplateWithIdAndBlankName_expectCorrectIdentifier",
       "outcome": "pass",
-      "durationMs": 154
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "constructor_subtemplateWithNameAndBlankId_expectCorrectIdentifier",
       "outcome": "pass",
-      "durationMs": 152
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "constructor_subtemplateWithOnlyId_expectCorrectIdentifier",
       "outcome": "pass",
-      "durationMs": 183
+      "durationMs": 35
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "constructor_subtemplateWithOnlyName_expectCorrectIdentifier",
       "outcome": "pass",
-      "durationMs": 158
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "constructor_validMarkup_expectConstructed",
       "outcome": "pass",
-      "durationMs": 39
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "constructor_validMarkup_expectPropertiesSet",
       "outcome": "pass",
-      "durationMs": 149
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "getTemplateById_noMatch_expectNull",
       "outcome": "pass",
-      "durationMs": 175
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "getTemplateById_oneMatch_expectResult",
       "outcome": "pass",
-      "durationMs": 148
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "getTemplateByName_noMatch_expectNull",
       "outcome": "pass",
-      "durationMs": 147
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "getTemplateByName_oneMatch_expectResult",
       "outcome": "pass",
-      "durationMs": 179
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "getTemplateId_noTemplateIdAttribute_expectNull",
       "outcome": "pass",
-      "durationMs": 46
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "getTemplateId_withTemplateIdAttribute_expectCorrectValue",
       "outcome": "pass",
-      "durationMs": 168
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "getTemplateName_noTemplateNameAttribute_expectNull",
       "outcome": "pass",
-      "durationMs": 44
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "getTemplateName_withTemplateNameAttribute_expectCorrectValue",
       "outcome": "pass",
-      "durationMs": 160
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "getTemplateParams_noTemplateParamsAttribute_expectNull",
       "outcome": "pass",
-      "durationMs": 52
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "getTemplateParams_withTemplateParamsAttribute_expectCorrectValue",
       "outcome": "pass",
-      "durationMs": 52
+      "durationMs": 18
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "setTemplateRecord_emptyTemplates_expectNullTemplateRecord",
       "outcome": "pass",
-      "durationMs": 43
+      "durationMs": 18
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "setTemplateRecord_nullTemplates_expectArgumentNullExcpetion",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "setTemplateRecord_withTemplateId_matchingTemplateById_expectTemplateRecordSet",
       "outcome": "pass",
-      "durationMs": 171
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "setTemplateRecord_withTemplateId_noMatchingTemplates_expectNullTemplateRecord",
       "outcome": "pass",
-      "durationMs": 151
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SubtemplateWrapperTest",
       "method": "setTemplateRecord_withTemplateName_matchingTemplateByName_expectTemplateRecordSet",
       "outcome": "pass",
-      "durationMs": 168
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getDynamicFieldValue_dateParam_expectPropertyValue",
       "outcome": "pass",
-      "durationMs": 128
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getDynamicFieldValue_idParam_expectPropertyValue",
       "outcome": "pass",
-      "durationMs": 136
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getFieldsFromQuery_twoFields_expectTwoFieldsReturned",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getFieldsFromQuery_withFromKeyword_expectFieldReturnedProperly",
       "outcome": "pass",
-      "durationMs": 68
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getFormattedBooleanString_trueValue_expectYesString",
       "outcome": "pass",
-      "durationMs": 44
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getFormattedBooleanString_wrongValue_expectNoString",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 19
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getFormattedString_blankValue_expectBlankString",
       "outcome": "pass",
-      "durationMs": 50
+      "durationMs": 13
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getFormattedString_dateValue_expectCorrectFormat",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getFormattedString_datetimeValue_expect12HourFormat",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getFormattedString_datetimeValue_expect24HourFormat",
       "outcome": "pass",
-      "durationMs": 50
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getFormattedString_incorrectFormat_expectBlankString",
       "outcome": "pass",
-      "durationMs": 37
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getFormattedString_numberValueOneDecimal_expectTwoDecimalPlaces",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getFormattedString_numberValue_expectNoDecimalPlaces",
       "outcome": "pass",
-      "durationMs": 42
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getFormattedString_numberValue_expectTwoDecimalPlaces",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getQueryWithParams_isDate_expectReplaced",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getQueryWithParams_isDatetime_expectReplaced",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getQueryWithParams_isNumberParam_expectReplaced",
       "outcome": "pass",
-      "durationMs": 66
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "getQueryWithParams_noParams_expectNothingReplaced",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 13
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "inlineCss_expectCssInlined",
       "outcome": "pass",
-      "durationMs": 190
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "replaceFormattedText_expectFormattedTextReplaced",
       "outcome": "pass",
-      "durationMs": 45
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "splitParamsString_blankString_expectNoParams",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 13
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateUtilityTest",
       "method": "splitParamsString_twoParams_expectTwoParams",
       "outcome": "pass",
-      "durationMs": 62
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "constructor_nullXmlNode_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 51
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "constructor_validXmlNode_oneChildNode_oneAttribute_expectPropertiesSet",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "getAttributes_noChildren_expectEmptyList",
       "outcome": "pass",
-      "durationMs": 43
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "getAttributes_oneChild_expectOneAttribute",
       "outcome": "pass",
-      "durationMs": 69
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "getChildren_noChildren_expectEmptyList",
       "outcome": "pass",
-      "durationMs": 42
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "getChildren_oneChild_expectOneChild",
       "outcome": "pass",
-      "durationMs": 67
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "getName_expectCorrectName",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "getNamespace_noNamespace_expectNull",
       "outcome": "pass",
-      "durationMs": 48
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "getNamespace_withNamespace_expectCorrectResult",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "getNodeType_elementNode_expectCorrectType",
       "outcome": "pass",
-      "durationMs": 39
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "getNodeType_textNode_expectCorrectType",
       "outcome": "pass",
-      "durationMs": 63
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "getText_hasText_expectCorrectResult",
       "outcome": "pass",
-      "durationMs": 45
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "getText_hasText_withChildNode_expectCorrectResult",
       "outcome": "pass",
-      "durationMs": 44
+      "durationMs": 18
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "getText_noText_expectEmpty",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "getXmlNode_validNode_expectCorrectResult",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "removeAttribute_expectRemoved",
       "outcome": "pass",
-      "durationMs": 46
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "remove_expectRemoved",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "replace_noChildren_expectRemoved",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "replace_twoChildren_expectTwoChildren",
       "outcome": "pass",
-      "durationMs": 43
+      "durationMs": 19
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "setAttributeValue_expectSet",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementTest",
       "method": "setNode_validNode_expectSet",
       "outcome": "pass",
-      "durationMs": 62
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_aWithValidUrl_expectSanitized",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_anchorTagJavascriptLinkLocationXss_expectSanitized",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_brJavascriptIncludeXss_expectSanitized",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_dissallowedTags_keepChildNodes_expectedSanitized",
       "outcome": "pass",
-      "durationMs": 89
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_divNoFilterEvasionXss_expectFailure",
       "outcome": "pass",
-      "durationMs": 67
+      "durationMs": 19
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_hrefDataXss_expectSanitized",
       "outcome": "pass",
-      "durationMs": 65
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_iframeXss_expectSanitized",
       "outcome": "pass",
-      "durationMs": 72
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_imageDynsrcXss_expectSanitized",
       "outcome": "pass",
-      "durationMs": 52
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_imageEmbeddedCarriageReturnXss_expectedSanitized",
       "outcome": "pass",
-      "durationMs": 65
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_imageEmbeddedEncodedTabXss_expectedSanitized",
       "outcome": "pass",
-      "durationMs": 62
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_imageEmbeddedNewLineXss_expectedSanitized",
       "outcome": "pass",
-      "durationMs": 69
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_imageEmbeddedTabXss_expectedSanitized",
       "outcome": "pass",
-      "durationMs": 62
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_imageInputXss_expectSanitized",
       "outcome": "pass",
-      "durationMs": 49
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_imageSpaceAndMetaCharXss_expectSanitized",
       "outcome": "pass",
-      "durationMs": 67
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_imageXss1_expectedSanitized",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_invalidHtml_expectInvalidMarkupFailure",
       "outcome": "pass",
-      "durationMs": 46
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_noEndTag_expectInvalidMarkupFailure",
       "outcome": "pass",
-      "durationMs": 65
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerTest",
       "method": "sanitize_xmlWithCommentObfuscationXss_expectSanitized",
       "outcome": "pass",
-      "durationMs": 64
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "generate_aggregateResult_expectAllRecordsIncluded",
       "outcome": "pass",
-      "durationMs": 166
+      "durationMs": 93
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "generate_oneMergeField_expectDataMerged",
       "outcome": "pass",
-      "durationMs": 173
+      "durationMs": 44
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "generate_withRenderPanelAdd_expectRenderPanelShown",
       "outcome": "pass",
-      "durationMs": 178
+      "durationMs": 53
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "generate_withRenderPanel_expectRenderPanelHidden",
       "outcome": "pass",
-      "durationMs": 190
+      "durationMs": 55
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "generate_withRenderPanel_expectRenderPanelShown",
       "outcome": "pass",
-      "durationMs": 189
+      "durationMs": 44
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "getTemplateOutput_oneHundredAccounts_expectMergeFeldsReplaced",
       "outcome": "pass",
-      "durationMs": 447
+      "durationMs": 199
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "getTemplateOutput_withSubtemplate_expectMergeFeldsReplaced",
       "outcome": "pass",
-      "durationMs": 235
+      "durationMs": 72
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "getTemplateOutput_withTable_expectMergeFeldsReplaced",
       "outcome": "pass",
-      "durationMs": 384
+      "durationMs": 72
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "setBulkify_expectBulkifyTrue",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "setData_listOfSObjects_dataIsNotNull",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "setData_listOfStrings_expectError",
       "outcome": "pass",
-      "durationMs": 61
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "setMarkup_expectMarkupNotNull",
       "outcome": "pass",
-      "durationMs": 47
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "setParentMarkup_expectParentMarkupNotNull",
       "outcome": "pass",
-      "durationMs": 42
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "setSubtemplateData_listOfSObjects_expectSubtemplateDataNotNull",
       "outcome": "pass",
-      "durationMs": 162
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "setSubtemplateData_listOfStrings_expectError",
       "outcome": "pass",
-      "durationMs": 155
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateFactoryTest",
       "method": "setSubtemplates_expectSubtemplatesNotNull",
       "outcome": "pass",
-      "durationMs": 142
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnswerTest",
       "method": "thatAnswerOnlyForTheMethodStubbedWithAnswer",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnswerTest",
       "method": "thatAnswerOnlyForTheStubbedParameter",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnswerTest",
       "method": "thatAnswerToDifferentVoidMethods",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnswerTest",
       "method": "thatAnswerToVoidAndNotVoidMethods",
       "outcome": "pass",
-      "durationMs": 73
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnswerTest",
       "method": "thatAnswerToVoidMethod",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnswerTest",
       "method": "thatAnswersWithException",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnswerTest",
       "method": "thatArgumentListEmptyForMethodWithNoArgument",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnswerTest",
       "method": "thatExceptionIsThrownWhenAccessNegativeIndexArgument",
       "outcome": "pass",
-      "durationMs": 74
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnswerTest",
       "method": "thatExceptionIsThrownWhenAccessOutOfIndexArgument",
       "outcome": "pass",
-      "durationMs": 64
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnswerTest",
       "method": "thatMethodsParametersAreAccessible",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 37
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnswerTest",
       "method": "thatMethodsParametersAreAccessibleWhenCalledWithMatchers",
       "outcome": "pass",
-      "durationMs": 68
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnswerTest",
       "method": "thatMultipleAnswersAreHandled",
       "outcome": "pass",
-      "durationMs": 71
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnswerTest",
       "method": "thatStoresMethodIntoInvocationOnMock",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 25
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_AnswerTest",
       "method": "thatStoresMockInstanceIntoInvocationOnMock",
       "outcome": "pass",
-      "durationMs": 69
+      "durationMs": 31
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApplicationTest",
       "method": "callingDomainFactoryShouldGiveRegisteredImplsAndMocks",
       "outcome": "pass",
-      "durationMs": 151
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApplicationTest",
       "method": "callingDomainFactoryWithContructorClassThatDoesNotSupportIConstructableShouldGiveException",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApplicationTest",
       "method": "callingDomainFactoryWithGenericListShouldGiveException",
       "outcome": "pass",
-      "durationMs": 42
+      "durationMs": 13
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApplicationTest",
       "method": "callingDomainFactoryWithIdsShouldGiveRegisteredImpls",
       "outcome": "pass",
-      "durationMs": 144
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApplicationTest",
       "method": "callingDomainFactoryWithInAccessableConstructorShouldGiveException",
       "outcome": "pass",
-      "durationMs": 62
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApplicationTest",
       "method": "callingDomainFactoryWithNoSObjectTypeShouldGiveException",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApplicationTest",
       "method": "callingSelectorFactorySelectByIdWithEmptyListShouldGiveException",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApplicationTest",
       "method": "callingSelectorFactorySelectByIdWithMixedIdTypeListShouldGiveException",
       "outcome": "pass",
-      "durationMs": 127
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApplicationTest",
       "method": "callingSelectorFactoryShouldGiveRegisteredImpls",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApplicationTest",
       "method": "callingSelectoryFactorySelectByIdShouldReturnResults",
       "outcome": "pass",
-      "durationMs": 144
+      "durationMs": 38
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApplicationTest",
       "method": "callingSelectoryFactorySselectByRelationshipPassRelatedIds",
       "outcome": "pass",
-      "durationMs": 182
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApplicationTest",
       "method": "callingServiceFactoryShouldGiveRegisteredImplsAndMockImpls",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 13
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApplicationTest",
       "method": "callingUnitOfWorkFactoryShouldGivenStandardImplsAndMockImpls",
       "outcome": "pass",
-      "durationMs": 45
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerRequestTest",
       "method": "allowsAttribute_invalidAttribute_expectFalse",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerRequestTest",
       "method": "allowsAttribute_validAttribute_expectTrue",
       "outcome": "pass",
-      "durationMs": 61
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerRequestTest",
       "method": "allowsTag_invalidTag_expectFalse",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerRequestTest",
       "method": "allowsTag_validTag_expectTrue",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerRequestTest",
       "method": "allowsUrlScheme_invalidUrlScheme_expectFalse",
       "outcome": "pass",
-      "durationMs": 44
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerRequestTest",
       "method": "allowsUrlScheme_validUrlScheme_expectTrue",
       "outcome": "pass",
-      "durationMs": 47
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerRequestTest",
       "method": "constructor_nullHtml_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 61
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerRequestTest",
       "method": "constructor_validHtml_expectDefaultPropertiesSet",
       "outcome": "pass",
-      "durationMs": 44
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerRequestTest",
       "method": "withAllowDataAttributes_validArgument_expectSet",
       "outcome": "pass",
-      "durationMs": 48
+      "durationMs": 18
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerRequestTest",
       "method": "withAllowedAttributes_validArgument_expectSet",
       "outcome": "pass",
-      "durationMs": 47
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerRequestTest",
       "method": "withAllowedTags_validArgument_expectSet",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerRequestTest",
       "method": "withKeepChildNodes_validArgument_expectSet",
       "outcome": "pass",
-      "durationMs": 42
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ParametersTest",
       "method": "constructor_mapOverload_nullArgument_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ParametersTest",
       "method": "constructor_mapOverload_withMap_expectConstructed",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ParametersTest",
       "method": "constructor_stringOverload_nullArgument_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ParametersTest",
       "method": "constructor_stringOverload_withString_expectConstructed",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ParametersTest",
       "method": "getAll_expectParamsReturned",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ParametersTest",
       "method": "getFirst_expectFirstParamReturned",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 19
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ParametersTest",
       "method": "getKeyValuePairString_expectCorrectFormat",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ParametersTest",
       "method": "get_nullArgument_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 43
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ParametersTest",
       "method": "get_withParamName_expectReturned",
       "outcome": "pass",
-      "durationMs": 51
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ParametersTest",
       "method": "put_nullParamName_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 42
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ParametersTest",
       "method": "put_nullParamValue_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 62
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ParametersTest",
       "method": "put_withValues_expectPut",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDomainTest",
       "method": "testDisableTriggerEventsBehaviour",
       "outcome": "pass",
-      "durationMs": 156
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDomainTest",
       "method": "testErrorLogging",
       "outcome": "pass",
-      "durationMs": 47
+      "durationMs": 18
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDomainTest",
       "method": "testInsertValidationFailedWithoutDML",
       "outcome": "pass",
-      "durationMs": 150
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDomainTest",
       "method": "testObjectSecurity",
       "outcome": "pass",
-      "durationMs": 166
+      "durationMs": 44
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDomainTest",
       "method": "testOnAfterUndeleteWithoutDML",
       "outcome": "pass",
-      "durationMs": 119
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDomainTest",
       "method": "testOnBeforeDeleteWithoutDML",
       "outcome": "pass",
-      "durationMs": 147
+      "durationMs": 19
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDomainTest",
       "method": "testOnValidateBehaviorDefault",
       "outcome": "pass",
-      "durationMs": 130
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDomainTest",
       "method": "testOnValidateBehaviorOld",
       "outcome": "pass",
-      "durationMs": 147
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDomainTest",
       "method": "testRecursiveTriggerState",
       "outcome": "pass",
-      "durationMs": 144
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDomainTest",
       "method": "testTriggerState",
       "outcome": "pass",
-      "durationMs": 145
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDomainTest",
       "method": "testUpdateValidationFailedWithoutDML",
       "outcome": "pass",
-      "durationMs": 167
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDomainTest",
       "method": "testValidationWithoutDML",
       "outcome": "pass",
-      "durationMs": 135
+      "durationMs": 19
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "DataRequestTest",
       "method": "addBulkQueryParams_invalidParamKey_expectArgumentException",
       "outcome": "pass",
-      "durationMs": 62
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "DataRequestTest",
       "method": "addBulkQueryParams_nullBulkParams_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 42
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "DataRequestTest",
       "method": "addBulkQueryParams_nullParamKey_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 63
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "DataRequestTest",
       "method": "addBulkQueryParams_nullParams_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "DataRequestTest",
       "method": "addBulkQueryParams_validBulkParams_expectSet",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "DataRequestTest",
       "method": "addBulkQueryParams_validParams_expectSet",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "DataRequestTest",
       "method": "setParam1_nullParams_expectNotSet",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "DataRequestTest",
       "method": "setParam1_validParams_expectSet",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "DataRequestTest",
       "method": "setQuery_nullArgument_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 43
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "DataRequestTest",
       "method": "withSharingMode_nullArgument_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "DataRequestTest",
       "method": "withSharingMode_sharingModeSpecified_expectSet",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementAttributeTest",
       "method": "constructor_nullAttributeIndex_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementAttributeTest",
       "method": "constructor_nullXmlNode_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 46
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementAttributeTest",
       "method": "constructor_validArguments_noNamespace_expectPropertiesSet",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementAttributeTest",
       "method": "constructor_validArguments_withNamespace_expectPropertiesSet",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementAttributeTest",
       "method": "getKeyNamespace_noNamespace_expectCorrectResult",
       "outcome": "pass",
-      "durationMs": 43
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementAttributeTest",
       "method": "getKeyNamespace_withNamespace_expectCorrectResult",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementAttributeTest",
       "method": "getKey_expectCorrectResult",
       "outcome": "pass",
-      "durationMs": 46
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementAttributeTest",
       "method": "getValueNamespace_noNamespace_expectCorrectResult",
       "outcome": "pass",
-      "durationMs": 51
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementAttributeTest",
       "method": "getValue_expectCorrectResult",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementAttributeTest",
       "method": "isUrlAttribute_isNot_expectFalse",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementAttributeTest",
       "method": "isUrlAttribute_is_expectTrue",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDescribeTest",
       "method": "FieldsMap",
       "outcome": "pass",
-      "durationMs": 136
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDescribeTest",
       "method": "GlobalDescribeMap",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDescribeTest",
       "method": "NamespacedAttributeMap_implementations",
       "outcome": "pass",
-      "durationMs": 145
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDescribeTest",
       "method": "flushCache",
       "outcome": "pass",
-      "durationMs": 73
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDescribeTest",
       "method": "getAccountDescribes",
       "outcome": "pass",
-      "durationMs": 157
+      "durationMs": 33
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDescribeTest",
       "method": "getDescribe_badInput",
       "outcome": "pass",
-      "durationMs": 37
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDescribeTest",
       "method": "rawGlobalDescribeCheck",
       "outcome": "pass",
-      "durationMs": 70
+      "durationMs": 18
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDescribeTest",
       "method": "simpleAccountFieldDescribe",
       "outcome": "pass",
-      "durationMs": 153
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDescribeTest",
       "method": "simpleAccountFieldSetDescribe",
       "outcome": "pass",
-      "durationMs": 120
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectDescribeTest",
       "method": "simpleAccountGetNameField",
       "outcome": "pass",
-      "durationMs": 125
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SystemTest",
       "method": "assertEquals_WithCombinedMatcher_ShouldPass",
       "outcome": "pass",
-      "durationMs": 42
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SystemTest",
       "method": "assertEquals_WithCustomMessage_WithCombinedMatcher_ShouldPass",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SystemTest",
       "method": "assertEquals_WithCustomMessage_WithMatch_ShouldPass",
       "outcome": "pass",
-      "durationMs": 44
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SystemTest",
       "method": "assertEquals_WithCustomMessage_WithMismatch_ShouldThrowException",
       "outcome": "pass",
-      "durationMs": 58
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SystemTest",
       "method": "assertEquals_WithCustomMessage_WithNoMatchers_ShouldThrowException",
       "outcome": "pass",
-      "durationMs": 44
+      "durationMs": 13
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SystemTest",
       "method": "assertEquals_WithCustomMessage_WithTooManyMatchers_ShouldThrowException",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SystemTest",
       "method": "assertEquals_WithMatch_ShouldPass",
       "outcome": "pass",
-      "durationMs": 52
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SystemTest",
       "method": "assertEquals_WithMismatch_ShouldThrowException",
       "outcome": "pass",
-      "durationMs": 45
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SystemTest",
       "method": "assertEquals_WithNoMatchers_ShouldThrowException",
       "outcome": "pass",
-      "durationMs": 52
+      "durationMs": 13
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SystemTest",
       "method": "assertEquals_WithTooManyMatchers_ShouldThrowException",
       "outcome": "pass",
-      "durationMs": 49
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementUtilTest",
       "method": "copyChildren_expectCopied",
       "outcome": "pass",
-      "durationMs": 63
+      "durationMs": 19
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementUtilTest",
       "method": "copyChildren_nullChildElements_expectNothingCopied",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 12
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementUtilTest",
       "method": "copyChildren_nullNewParent_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementUtilTest",
       "method": "queryAll_noChildren_expectEmptyList",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementUtilTest",
       "method": "queryAll_nullElement_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementUtilTest",
       "method": "queryAll_nullSelector_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementUtilTest",
       "method": "queryAll_oneImmediateAndOneNestedChild_expectTwoResults",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementUtilTest",
       "method": "queryAll_oneImmediateChild_expectOneResult",
       "outcome": "pass",
-      "durationMs": 45
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlElementUtilTest",
       "method": "queryAll_unsupportedSelector_expectArgumentException",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateTest",
       "method": "build_tenAccountsWithSubtemplate_expectMergeFeldsReplaced",
       "outcome": "pass",
-      "durationMs": 357
+      "durationMs": 133
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateTest",
       "method": "build_tenAccountsWithSubtemplate_notBulk_expectMergeFeldsReplaced",
       "outcome": "pass",
-      "durationMs": 333
+      "durationMs": 151
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateTest",
       "method": "getData_withOverriddenFunctionality_expectOverriddenResponse",
       "outcome": "pass",
-      "durationMs": 80
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateTest",
       "method": "getTemplateDataImplementation_noClassSpecified_expectDefaultImplementation",
       "outcome": "pass",
-      "durationMs": 63
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateTest",
       "method": "getTemplateDataImplementation_withBadClassName_expectConfigurationException",
       "outcome": "pass",
-      "durationMs": 51
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateTest",
       "method": "getTemplateDataImplementation_withCorrectType_expectImplementation",
       "outcome": "pass",
-      "durationMs": 70
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateTest",
       "method": "getTemplateDataImplementation_withIncorrectType_expectConfigurationException",
       "outcome": "pass",
-      "durationMs": 50
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateTest",
       "method": "inlineCss_cssFileOnTemplate_expectCssInlined",
       "outcome": "pass",
-      "durationMs": 205
+      "durationMs": 44
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateTest",
       "method": "inlineCss_expectCssInlined",
       "outcome": "pass",
-      "durationMs": 188
+      "durationMs": 57
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_StringBuilderTest",
       "method": "testCommaDelimitedBuilder1",
       "outcome": "pass",
-      "durationMs": 72
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_StringBuilderTest",
       "method": "testCommaDelimitedBuilder2",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_StringBuilderTest",
       "method": "testCommanDelimitedBuilderWithAlternativeDelimiter",
       "outcome": "pass",
-      "durationMs": 64
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_StringBuilderTest",
       "method": "testCommanDelimitedBuilderWithAlternativeDelimiterAndPrefix",
       "outcome": "pass",
-      "durationMs": 39
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_StringBuilderTest",
       "method": "testCommanDelimitedBuilderWithItemPrefix",
       "outcome": "pass",
-      "durationMs": 38
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_StringBuilderTest",
       "method": "testFieldListBuilder",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_StringBuilderTest",
       "method": "testMultiCurrencyFieldListBuilder",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_StringBuilderTest",
       "method": "testfflib_StringBuilder1",
       "outcome": "pass",
-      "durationMs": 54
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_StringBuilderTest",
       "method": "testfflib_StringBuilder2",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectSelectorTest",
       "method": "testAssertIsAccessible",
       "outcome": "pass",
-      "durationMs": 157
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectSelectorTest",
       "method": "testCRUDOff",
       "outcome": "pass",
-      "durationMs": 145
+      "durationMs": 37
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectSelectorTest",
       "method": "testDefaultConfig",
       "outcome": "pass",
-      "durationMs": 144
+      "durationMs": 19
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectSelectorTest",
       "method": "testGetSObjectName",
       "outcome": "pass",
-      "durationMs": 120
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectSelectorTest",
       "method": "testQueryLocatorById",
       "outcome": "pass",
-      "durationMs": 151
+      "durationMs": 30
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectSelectorTest",
       "method": "testSOQL",
       "outcome": "pass",
-      "durationMs": 138
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectSelectorTest",
       "method": "testSelectSObjectsById",
       "outcome": "pass",
-      "durationMs": 157
+      "durationMs": 39
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectSelectorTest",
       "method": "testWithoutSorting",
       "outcome": "pass",
-      "durationMs": 147
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectUnitOfWorkTest",
       "method": "testDerivedUnitOfWork_CommitDMLFail",
       "outcome": "pass",
-      "durationMs": 154
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectUnitOfWorkTest",
       "method": "testDerivedUnitOfWork_CommitDoWorkFail",
       "outcome": "pass",
-      "durationMs": 132
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectUnitOfWorkTest",
       "method": "testDerivedUnitOfWork_CommitSuccess",
       "outcome": "pass",
-      "durationMs": 385
+      "durationMs": 126
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectUnitOfWorkTest",
       "method": "testRegisterDirty_ExpectReplacement",
       "outcome": "pass",
-      "durationMs": 63
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectUnitOfWorkTest",
       "method": "testRegisterDirty_field",
       "outcome": "pass",
-      "durationMs": 75
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectUnitOfWorkTest",
       "method": "testUnitOfWorkEmail",
       "outcome": "pass",
-      "durationMs": 202
+      "durationMs": 49
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SObjectUnitOfWorkTest",
       "method": "testUnitOfWorkNewDirtyDelete",
       "outcome": "pass",
-      "durationMs": 910
+      "durationMs": 209
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SObjectDataTest",
       "method": "getData_expectListOfRecords",
       "outcome": "pass",
-      "durationMs": 73
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SObjectDataTest",
       "method": "newInstance_nullRequest_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SObjectDataTest",
       "method": "newInstance_withSharing_expectWithSharing",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 19
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SObjectDataTest",
       "method": "newInstance_withoutSharing_expectWithoutSharing",
       "outcome": "pass",
-      "durationMs": 50
+      "durationMs": 21
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SObjectDataTest",
       "method": "setRequest_nullArgument_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "SObjectDataTest",
       "method": "setRequest_withRequest_expectSet",
       "outcome": "pass",
-      "durationMs": 60
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateBuilderControllerTest",
       "method": "doesSanitizedSourceDiffer_doesDiffer_expectTrue",
       "outcome": "pass",
-      "durationMs": 244
+      "durationMs": 95
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateBuilderControllerTest",
       "method": "saveTemplate_expectSuccess",
       "outcome": "pass",
-      "durationMs": 222
+      "durationMs": 54
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateBuilderControllerTest",
       "method": "templateBuilderController_expectPropertiesSet",
       "outcome": "pass",
-      "durationMs": 219
+      "durationMs": 59
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateBuilderControllerTest",
       "method": "templateBuilderController_noTemplateId_expectPageMessage",
       "outcome": "pass",
-      "durationMs": 150
+      "durationMs": 22
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateBuilderControllerTest",
       "method": "templateBuilderController_noTemplate_expectPageMessage",
       "outcome": "pass",
-      "durationMs": 158
+      "durationMs": 46
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateBuilderControllerTest",
       "method": "templateBuilderController_withSubquery_expectPropertiesSet",
       "outcome": "pass",
-      "durationMs": 216
+      "durationMs": 48
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ArgumentNullExceptionTest",
       "method": "throwIfBlank_emptyArgument_expectThrownArgumentNullMessage",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ArgumentNullExceptionTest",
       "method": "throwIfBlank_nullArgument_expectThrownArgumentNullMessage",
       "outcome": "pass",
-      "durationMs": 43
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ArgumentNullExceptionTest",
       "method": "throwIfBlank_validArgument_expectNoException",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 24
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ArgumentNullExceptionTest",
       "method": "throwIfNull_nullArgument_expectThrownArgumentNullMessage",
       "outcome": "pass",
-      "durationMs": 58
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "ArgumentNullExceptionTest",
       "method": "throwIfNull_validArgument_expectNoException",
       "outcome": "pass",
-      "durationMs": 35
+      "durationMs": 12
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlDocumentTest",
       "method": "constructor_invalidHtml_expectNotSet",
       "outcome": "pass",
-      "durationMs": 46
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlDocumentTest",
       "method": "constructor_invalidHtml_missingEndingTag_expectPropertiesSet",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 18
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlDocumentTest",
       "method": "constructor_nullHtml_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlDocumentTest",
       "method": "constructor_validHtml_expectPropertiesSet",
       "outcome": "pass",
-      "durationMs": 49
+      "durationMs": 20
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlDocumentTest",
       "method": "getHtml_validHtml_expectCorrectHtml",
       "outcome": "pass",
-      "durationMs": 51
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerResponseTest",
       "method": "constructor_nullFail_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 63
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerResponseTest",
       "method": "constructor_nullFailureMessage_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 56
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerResponseTest",
       "method": "constructor_nullHtml_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 48
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerResponseTest",
       "method": "constructor_validFailure_expectSetAndNotSuccess",
       "outcome": "pass",
-      "durationMs": 38
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "HtmlSanitizerResponseTest",
       "method": "constructor_validHtml_expectSetAndSuccess",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateViewerComponentControllerTest",
       "method": "getAccountId_asUserWithNoAccountId_expectNull",
       "outcome": "pass",
-      "durationMs": 68
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateViewerComponentControllerTest",
       "method": "getAccountId_withNoUserFound_expectNull",
       "outcome": "pass",
-      "durationMs": 37
+      "durationMs": 12
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateViewerComponentControllerTest",
       "method": "getAccountId_withUserHavingAccountId_expectAccountId",
       "outcome": "pass",
-      "durationMs": 122
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateViewerComponentControllerTest",
       "method": "getPreview_nullTemplateId_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 61
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateViewerComponentControllerTest",
       "method": "getPreview_withTemplate_expectRendered",
       "outcome": "pass",
-      "durationMs": 214
+      "durationMs": 70
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateViewerControllerTest",
       "method": "getTemplateBody_controlledProperties_expectNumber",
       "outcome": "pass",
-      "durationMs": 229
+      "durationMs": 60
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateViewerControllerTest",
       "method": "getTemplateBody_controllerProperties_expectMergedString",
       "outcome": "pass",
-      "durationMs": 223
+      "durationMs": 65
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateViewerControllerTest",
       "method": "getTemplateBody_noTemplate_expectPageMessage",
       "outcome": "pass",
-      "durationMs": 181
+      "durationMs": 41
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateViewerControllerTest",
       "method": "getTemplateBody_urlParameters_expectMergedString",
       "outcome": "pass",
-      "durationMs": 222
+      "durationMs": 61
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateViewerControllerTest",
       "method": "getTemplatePage_invalidTemplateId_getPageError",
       "outcome": "pass",
-      "durationMs": 143
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QualifiedMethodTest",
       "method": "equalsReturnsExpectedResults",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QualifiedMethodTest",
       "method": "equalsReturnsExpectedResultsForHasDependentMocks",
       "outcome": "pass",
-      "durationMs": 59
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QualifiedMethodTest",
       "method": "hashCodeReturnsExpectedResults",
       "outcome": "pass",
-      "durationMs": 42
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QualifiedMethodTest",
       "method": "hashCodeReturnsExpectedResultsForHasDependentMocks",
       "outcome": "pass",
-      "durationMs": 38
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_QualifiedMethodTest",
       "method": "toStringReturnsExpectedResult",
       "outcome": "pass",
-      "durationMs": 53
+      "durationMs": 27
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateEvaluatorTest",
       "method": "evaluate_withBasicTemplate_expectEvaluated",
       "outcome": "pass",
-      "durationMs": 66
+      "durationMs": 18
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateEvaluatorTest",
       "method": "evaluate_withFields_expectFieldsRegistered",
       "outcome": "pass",
-      "durationMs": 150
+      "durationMs": 29
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateEvaluatorTest",
       "method": "evaluate_withFormulaLineBreaks_expectHtmlLineBreaksAdded",
       "outcome": "pass",
-      "durationMs": 63
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateEvaluatorTest",
       "method": "evaluate_withTemplate_expectEvaluated",
       "outcome": "pass",
-      "durationMs": 147
+      "durationMs": 32
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SecurityUtilsTest",
       "method": "readonly_field_access",
       "outcome": "pass",
-      "durationMs": 187
+      "durationMs": 39
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SecurityUtilsTest",
       "method": "readonly_objectAndField_access",
       "outcome": "pass",
-      "durationMs": 172
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SecurityUtilsTest",
       "method": "readonly_object_access",
       "outcome": "pass",
-      "durationMs": 180
+      "durationMs": 36
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_SecurityUtilsTest",
       "method": "sysadmin_objectAndField_access",
       "outcome": "pass",
-      "durationMs": 140
+      "durationMs": 23
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "MergeValuesTest",
       "method": "constructor_withValues_expectConstructed",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 15
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "MergeValuesTest",
       "method": "get_withNonExistentKey_expectException",
       "outcome": "pass",
-      "durationMs": 155
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "MergeValuesTest",
       "method": "putSObject_withSObjectRecord_expectedFieldsQueried",
       "outcome": "pass",
-      "durationMs": 140
+      "durationMs": 35
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TypeServiceTest",
       "method": "getType_nonExistantTypeInput_returnsNull",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TypeServiceTest",
       "method": "getType_nullInput_throwsArgumentNullException",
       "outcome": "pass",
-      "durationMs": 61
+      "durationMs": 17
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TypeServiceTest",
       "method": "getType_returnsCorrectType",
       "outcome": "pass",
-      "durationMs": 43
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "AllTemplatesPickListTest",
       "method": "getDefaultValue_defaultValue_expectEmptyStrings",
       "outcome": "pass",
-      "durationMs": 39
+      "durationMs": 13
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "AllTemplatesPickListTest",
       "method": "getValues_withTemplates_expectTemplateRecords",
       "outcome": "pass",
-      "durationMs": 173
+      "durationMs": 45
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplatePreviewControllerTest",
       "method": "getPreview_nullTemplateId_expectArgumentNullException",
       "outcome": "pass",
-      "durationMs": 39
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplatePreviewControllerTest",
       "method": "getPreview_withTemplate_expectRendered",
       "outcome": "pass",
-      "durationMs": 250
+      "durationMs": 63
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateViewerTest",
       "method": "renderOption_withRenderAs_expectSet",
       "outcome": "pass",
-      "durationMs": 40
+      "durationMs": 14
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplateViewerTest",
       "method": "renderOption_withoutRenderAs_expectBlank",
       "outcome": "pass",
-      "durationMs": 57
+      "durationMs": 13
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InheritorTest",
       "method": "canInstantiateMultipleInterfaceInheritor",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 18
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_InheritorTest",
       "method": "canStubMultipleInterfaceInheritor",
       "outcome": "pass",
-      "durationMs": 65
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MethodArgValuesTest",
       "method": "equalsReturnsExpectedResults",
       "outcome": "pass",
-      "durationMs": 47
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_MethodArgValuesTest",
       "method": "hashCodeReturnsExpectedResults",
       "outcome": "pass",
-      "durationMs": 41
+      "durationMs": 16
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "InstallScriptTest",
       "method": "testInstallScript",
       "outcome": "pass",
-      "durationMs": 81
+      "durationMs": 34
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "NamespaceServiceTest",
       "method": "getClassPrefix_expectNotNull",
       "outcome": "pass",
-      "durationMs": 55
+      "durationMs": 13
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "TemplatesSelectorTest",
       "method": "getAllTemplates_withTemplates_expectTemplatesReturned",
       "outcome": "pass",
-      "durationMs": 160
+      "durationMs": 26
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_ApexMocksUtilsTest",
       "method": "makeRelationship_returnsObjectsWithRelationFieldSet",
       "outcome": "pass",
-      "durationMs": 143
+      "durationMs": 28
     },
     {
       "projectLabel": "src-nmb-nutpl-develop",
       "class": "fflib_IDGeneratorTest",
       "method": "itShouldGenerateValidIDs",
       "outcome": "pass",
-      "durationMs": 119
+      "durationMs": 13
     }
   ]
 }
