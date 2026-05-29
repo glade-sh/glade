@@ -17,6 +17,7 @@ type Daemon struct {
 	root  string
 	mu    sync.RWMutex
 	index typesys.Index
+	graph *watch.RefGraph
 }
 
 func New(root string) (*Daemon, error) {
@@ -24,7 +25,7 @@ func New(root string) (*Daemon, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Daemon{root: root, index: index}, nil
+	return &Daemon{root: root, index: index, graph: watch.BuildReferenceGraph(index)}, nil
 }
 
 func (d *Daemon) RunFilter(filter string) testreport.Run {
@@ -62,8 +63,9 @@ func (d *Daemon) RunChangedSinceOptions(ref string, opts apextest.Options) (test
 	}
 	d.mu.RLock()
 	index := d.index
+	graph := d.graph
 	d.mu.RUnlock()
-	selection := watch.SelectAffectedTests(index, changes)
+	selection := watch.SelectAffectedTestsWithRefGraph(index, changes, graph)
 	if selection.Mode == watch.SelectionDirect && len(selection.TestClasses) == 1 {
 		opts.Filter = selection.TestClasses[0]
 	}
@@ -76,8 +78,9 @@ func (d *Daemon) RunChangedSinceOptions(ref string, opts apextest.Options) (test
 func (d *Daemon) SelectAffected(changes []watch.Change) watch.TestSelection {
 	d.mu.RLock()
 	index := d.index
+	graph := d.graph
 	d.mu.RUnlock()
-	return watch.SelectAffectedTests(index, changes)
+	return watch.SelectAffectedTestsWithRefGraph(index, changes, graph)
 }
 
 func (d *Daemon) UpdateChanges(changes []watch.Change) error {
@@ -96,6 +99,7 @@ func (d *Daemon) UpdateChanges(changes []watch.Change) error {
 	}
 	d.mu.Lock()
 	d.index = typesys.UpdateApexFiles(d.index, changed, deleted)
+	d.graph = d.graph.Refresh(d.index, changes)
 	d.mu.Unlock()
 	return nil
 }
@@ -107,6 +111,7 @@ func (d *Daemon) Reload() error {
 	}
 	d.mu.Lock()
 	d.index = index
+	d.graph = watch.BuildReferenceGraph(index)
 	d.mu.Unlock()
 	return nil
 }

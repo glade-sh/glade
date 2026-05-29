@@ -583,6 +583,7 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 	}
 	runID := 1
 	result := testreport.Run{Name: "glade test"}
+	var graph *watch.RefGraph
 	initialSelection := watch.TestSelection{Mode: watch.SelectionAll, TestClasses: nil, Reason: "initial watch run"}
 	activeRunID := runID
 	cancelRun, runDone := startWatchRun(ctx, index, opts, initialSelection, runID)
@@ -636,7 +637,8 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 				_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), err.Error(), root))
 				continue
 			}
-			selection := watch.SelectAffectedTests(index, changes)
+			graph = graph.Refresh(index, changes)
+			selection := watch.SelectAffectedTestsWithRefGraph(index, changes, graph)
 			if err := writeJSONLine(w, watch.NewTestsSelectedEvent(time.Now().UTC(), selection)); err != nil {
 				return result, err
 			}
