@@ -806,7 +806,7 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	}
 
 	stdout := w
-	if jsonOut {
+	if jsonOut || debugLogPath != "" {
 		stdout = nil
 	}
 	machine := vm.New(stdout)
