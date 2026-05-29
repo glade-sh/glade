@@ -52,6 +52,25 @@ func TestDescribeFieldNameUsesCallerNamespaceWithoutOrgNamespace(t *testing.T) {
 	}
 }
 
+func TestDescribeTabSObjectNameUsesCallerNamespaceWithoutOrgNamespace(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.currentNamespace = "NU"
+
+	tab := machine.describeTabValue(storage.TabMetadata{
+		Name:        "Order__c",
+		Label:       "Orders",
+		SObjectName: "Order__c",
+		Custom:      true,
+	})
+
+	got := tab.Fields["sObjectName"]
+	if got.Kind != ValueString || got.Text != "NU__Order__c" {
+		t.Fatalf("DescribeTabResult.getSObjectName backing value = %#v, want NU__Order__c", got)
+	}
+}
+
 func TestCoerceEmptyNonSObjectListToSObjectListFails(t *testing.T) {
 	machine := New(nil)
 	value := typedList("List<TriggerStep>")

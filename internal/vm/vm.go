@@ -6193,7 +6193,7 @@ func (vm *VM) schemaDescribeTabValues() []Value {
 		if describeTabSObjectName(tab) == "" {
 			continue
 		}
-		values = append(values, describeTabValue(tab))
+		values = append(values, vm.describeTabValue(tab))
 	}
 	return values
 }
@@ -6228,7 +6228,7 @@ var standardDescribeTabObjects = map[string]struct{}{
 	"user":        {},
 }
 
-func describeTabValue(tab storage.TabMetadata) Value {
+func (vm *VM) describeTabValue(tab storage.TabMetadata) Value {
 	value := Object("Schema.DescribeTabResult")
 	label := tab.Label
 	if label == "" {
@@ -6240,6 +6240,7 @@ func describeTabValue(tab storage.TabMetadata) Value {
 	if sObjectName == "" {
 		value.Fields["sObjectName"] = Null
 	} else {
+		sObjectName = vm.describeObjectName(sObjectName)
 		value.Fields["sObjectName"] = String(sObjectName)
 	}
 	value.Fields["custom"] = Bool(tab.Custom)
