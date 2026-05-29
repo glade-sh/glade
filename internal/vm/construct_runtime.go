@@ -2727,7 +2727,10 @@ func (vm *VM) resolveTypeNameInClass(className, typeName string) string {
 
 func (vm *VM) resolveExactNestedTypeInClassHierarchy(className, typeName string) (string, bool) {
 	for owner := className; owner != ""; {
-		for _, ownerCandidate := range lexicalOwnerCandidates(owner) {
+		var ownerBuf [2]string
+		ownerN := fillLexicalOwnerCandidates(owner, &ownerBuf)
+		for oi := 0; oi < ownerN; oi++ {
+			ownerCandidate := ownerBuf[oi]
 			candidate := ownerCandidate + "." + typeName
 			if class, ok := vm.Classes[candidate]; ok && strings.Contains(class.Name, ".") {
 				return runtimeClassName(class), true
@@ -2740,7 +2743,10 @@ func (vm *VM) resolveExactNestedTypeInClassHierarchy(className, typeName string)
 				break
 			}
 			seenSupers[key] = true
-			for _, ownerCandidate := range lexicalOwnerCandidates(super) {
+			var ownerBuf [2]string
+			ownerN := fillLexicalOwnerCandidates(super, &ownerBuf)
+			for oi := 0; oi < ownerN; oi++ {
+				ownerCandidate := ownerBuf[oi]
 				candidate := ownerCandidate + "." + typeName
 				if class, ok := vm.Classes[candidate]; ok && strings.Contains(class.Name, ".") {
 					return runtimeClassName(class), true
@@ -2771,7 +2777,10 @@ func (vm *VM) resolveNestedTypeInClassHierarchy(className, typeName string) (str
 
 func (vm *VM) resolveNestedTypeInClassHierarchyUncached(className, typeName string) (string, bool) {
 	for owner := className; owner != ""; {
-		for _, ownerCandidate := range lexicalOwnerCandidates(owner) {
+		var ownerBuf [2]string
+		ownerN := fillLexicalOwnerCandidates(owner, &ownerBuf)
+		for oi := 0; oi < ownerN; oi++ {
+			ownerCandidate := ownerBuf[oi]
 			candidate := ownerCandidate + "." + typeName
 			if class, ok := vm.lookupClass(candidate); ok {
 				if namespacedRuntimeClassMatch(candidate, class) {
@@ -2796,7 +2805,10 @@ func (vm *VM) resolveNestedTypeInClassHierarchyUncached(className, typeName stri
 				break
 			}
 			seenSupers[key] = true
-			for _, ownerCandidate := range lexicalOwnerCandidates(super) {
+			var ownerBuf [2]string
+			ownerN := fillLexicalOwnerCandidates(super, &ownerBuf)
+			for oi := 0; oi < ownerN; oi++ {
+				ownerCandidate := ownerBuf[oi]
 				candidate := ownerCandidate + "." + typeName
 				if class, ok := vm.lookupClass(candidate); ok {
 					if namespacedRuntimeClassMatch(candidate, class) {
@@ -2834,21 +2846,27 @@ func namespacedRuntimeClassMatch(candidate string, class Class) bool {
 	return class.Namespace != "" && strings.EqualFold(candidate, runtimeClassName(class))
 }
 
-func lexicalOwnerCandidates(owner string) []string {
+func fillLexicalOwnerCandidates(owner string, buf *[2]string) int {
 	owner = strings.TrimSpace(owner)
 	if owner == "" {
-		return nil
+		return 0
 	}
-	candidates := []string{owner}
+	n := 0
+	buf[n] = owner
+	n++
 	if short := shortTypeName(owner); short != "" && !strings.EqualFold(short, owner) {
-		candidates = append(candidates, short)
+		buf[n] = short
+		n++
 	}
-	return candidates
+	return n
 }
 
 func (vm *VM) resolveLexicalNestedTypeName(owner, typeName string) (string, bool) {
 	for owner = strings.TrimSpace(owner); owner != ""; {
-		for _, ownerCandidate := range lexicalOwnerCandidates(owner) {
+		var ownerBuf [2]string
+		ownerN := fillLexicalOwnerCandidates(owner, &ownerBuf)
+		for oi := 0; oi < ownerN; oi++ {
+			ownerCandidate := ownerBuf[oi]
 			candidate := ownerCandidate + "." + typeName
 			if class, ok := vm.lookupClass(candidate); ok {
 				if namespacedRuntimeClassMatch(candidate, class) {

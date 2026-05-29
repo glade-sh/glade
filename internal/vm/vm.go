@@ -6707,10 +6707,12 @@ func sameLexicalTopLevel(a, b string) bool {
 }
 
 func (vm *VM) sameAccessScope(left, right string) bool {
-	rightNames := vm.accessScopeNames(right)
-	for _, leftName := range vm.accessScopeNames(left) {
-		for _, rightName := range rightNames {
-			if sameOrNestedTypeFold(leftName, rightName) || sameLexicalTopLevel(leftName, rightName) {
+	var lbuf, rbuf [3]string
+	ln := vm.fillAccessScopeNames(left, &lbuf)
+	rn := vm.fillAccessScopeNames(right, &rbuf)
+	for i := 0; i < ln; i++ {
+		for j := 0; j < rn; j++ {
+			if sameOrNestedTypeFold(lbuf[i], rbuf[j]) || sameLexicalTopLevel(lbuf[i], rbuf[j]) {
 				return true
 			}
 		}
@@ -6718,19 +6720,23 @@ func (vm *VM) sameAccessScope(left, right string) bool {
 	return false
 }
 
-func (vm *VM) accessScopeNames(name string) []string {
+func (vm *VM) fillAccessScopeNames(name string, buf *[3]string) int {
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return nil
+		return 0
 	}
-	out := []string{name}
+	n := 0
+	buf[n] = name
+	n++
 	if class, ok := vm.classForAccess(name); ok {
-		out = append(out, class.Name)
+		buf[n] = class.Name
+		n++
 		if class.Namespace != "" {
-			out = append(out, runtimeClassName(class))
+			buf[n] = runtimeClassName(class)
+			n++
 		}
 	}
-	return out
+	return n
 }
 
 func sameOrNestedTypeFold(left, right string) bool {
