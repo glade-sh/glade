@@ -1157,104 +1157,6 @@ func (cache sourceCache) read(file string) (string, error) {
 	return source, nil
 }
 
-func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, caches ...sourceCache) []vm.Class {
-	var out []vm.Class
-	sources := sourceCacheFor(caches)
-	knownTypes := knownTypeNames(index.Types)
-	methodsByClass := projectMethodsByClass(methods)
-	for _, typ := range index.Types {
-		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface && typ.Kind != apexast.DeclarationEnum {
-			continue
-		}
-		source, err := sources.read(typ.File)
-		if err != nil {
-			continue
-		}
-		class := vm.Class{
-			Name:         typ.Name,
-			Namespace:    typ.Namespace,
-			Access:       accessModifier(typ.Modifiers),
-			Modifiers:    append([]string(nil), typ.Modifiers...),
-			IsAbstract:   hasModifier(typ.Modifiers, "abstract"),
-			IsInterface:  typ.Kind == apexast.DeclarationInterface,
-			IsTest:       typ.IsTest,
-			Dependency:   typ.Dependency,
-			Fields:       make(map[string]vm.Field),
-			StaticFields: make(map[string]vm.Field),
-			Methods:      make(map[string]vm.Method),
-		}
-		superClass := typ.SuperClass
-		interfaces := append([]string(nil), typ.Interfaces...)
-		typeSource, _ := typeDeclarationSource(source, typ.Range)
-		if superClass == "" {
-			superClass = parseExtends(typeSource)
-		}
-		if len(interfaces) == 0 {
-			interfaces = parseImplements(typeSource)
-		}
-		class.SuperClass = qualifyNestedTypeName(typ.Name, superClass, knownTypes)
-		class.Interfaces = qualifyNestedTypeNames(typ.Name, interfaces, knownTypes)
-		if typ.Kind == apexast.DeclarationEnum {
-			class.EnumValues = parseEnumValues(typeSource)
-		}
-		for _, method := range methodsByClass[projectMethodOwnerKey(typ.Name, typ.File)] {
-			class.Methods[methodShortName(method.Name)+methodParamKey(method.Params)] = method
-		}
-		for _, member := range typ.Members {
-			switch member.Kind {
-			case apexast.DeclarationField, apexast.DeclarationProperty:
-				field := vm.Field{
-					Name:       member.Name,
-					Type:       qualifyNestedTypeNameInType(typ.Name, member.Type, knownTypes),
-					Static:     hasModifier(member.Modifiers, "static"),
-					Access:     accessModifier(member.Modifiers),
-					Modifiers:  append([]string(nil), member.Modifiers...),
-					Property:   member.Kind == apexast.DeclarationProperty,
-					File:       typ.File,
-					Dependency: typ.Dependency,
-				}
-				if member.Kind == apexast.DeclarationProperty {
-					attachPropertyAccessors(&field, typ.Name, typ.File, member, source)
-				}
-				if value, ok := compileFieldInitializer(member.Type, member.Name, member.Range, source); ok {
-					field.Value = value
-					field.InitialValue = value
-				} else if initializer, ok := compileFieldInitializerMethod(typ.Name, field.Name, field.Static, typ.File, member.Range, source); ok {
-					if field.Static {
-						class.StaticInitializers = append(class.StaticInitializers, initializer)
-					} else {
-						class.InstanceInitializers = append(class.InstanceInitializers, initializer)
-					}
-				}
-				if field.Static {
-					class.StaticFields[field.Name] = field
-					class.StaticFieldOrder = append(class.StaticFieldOrder, field.Name)
-				} else {
-					class.Fields[field.Name] = field
-					class.FieldOrder = append(class.FieldOrder, field.Name)
-				}
-			case apexast.DeclarationConstructor:
-				ctor, err := compileProjectConstructor(typ.Name, typ.File, member.Range, source)
-				if err == nil {
-					class.Constructors = append(class.Constructors, ctor)
-				}
-			case apexast.DeclarationInitializer:
-				init, err := compileProjectInitializer(typ.Name, typ.File, member.Range, source, hasModifier(member.Modifiers, "static"))
-				if err == nil {
-					if init.IsStatic {
-						class.StaticInitializers = append(class.StaticInitializers, init)
-					} else {
-						class.InstanceInitializers = append(class.InstanceInitializers, init)
-					}
-				}
-			}
-		}
-		out = append(out, class)
-	}
-	out = append(out, passiveStandardRuntimeClasses(index.Types, out)...)
-	return out
-}
-
 func passiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existing []vm.Class) []vm.Class {
 	seen := make(map[string]bool, len(indexTypes)+len(existing))
 	for _, typ := range indexTypes {
@@ -1538,105 +1440,6 @@ func attachPropertyAccessors(field *vm.Field, className, file string, member typ
 	}
 }
 
-func compileProjectMethods(index typesys.Index, caches ...sourceCache) map[string]vm.Method {
-	type methodCompileJob struct {
-		ClassName  string
-		Kind       apexast.DeclarationKind
-		Member     typesys.MemberSymbol
-		File       string
-		Source     string
-		Dependency bool
-	}
-	type methodCompileResult struct {
-		Key    string
-		Method vm.Method
-	}
-	sources := sourceCacheFor(caches)
-	var jobs []methodCompileJob
-	for _, typ := range index.Types {
-		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface {
-			continue
-		}
-		source := ""
-		sourceLoaded := false
-		for _, member := range typ.Members {
-			if member.Kind != apexast.DeclarationMethod || member.IsTest || isTestSetup(member.Modifiers) {
-				continue
-			}
-			if !sourceLoaded {
-				loaded, err := sources.read(typ.File)
-				if err != nil {
-					continue
-				}
-				source = loaded
-				sourceLoaded = true
-			}
-			jobs = append(jobs, methodCompileJob{
-				ClassName:  typ.Name,
-				Kind:       typ.Kind,
-				Member:     member,
-				File:       typ.File,
-				Source:     source,
-				Dependency: typ.Dependency,
-			})
-		}
-	}
-	results := make([]methodCompileResult, len(jobs))
-	compile := func(i int) {
-		job := jobs[i]
-		member := job.Member
-		if job.Kind == apexast.DeclarationInterface {
-			method, err := compileProjectMethodSignature(job.ClassName, member.Name, member.Type, append(member.Modifiers, "abstract"), job.File, member.Range, job.Source)
-			if err == nil {
-				method.Dependency = job.Dependency
-				results[i] = methodCompileResult{Key: projectMethodMapKey(method), Method: method}
-			}
-			return
-		}
-		method, err := compileProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, job.Source)
-		if err != nil {
-			if unsupported, ok := unsupportedProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, job.Source, err); ok {
-				unsupported.Dependency = job.Dependency
-				results[i] = methodCompileResult{Key: projectMethodMapKey(unsupported), Method: unsupported}
-			}
-			return
-		}
-		method.Dependency = job.Dependency
-		results[i] = methodCompileResult{Key: projectMethodMapKey(method), Method: method}
-	}
-	workers := compileWorkers(len(jobs))
-	if workers <= 1 {
-		for i := range jobs {
-			compile(i)
-		}
-	} else {
-		work := make(chan int)
-		var wg sync.WaitGroup
-		for i := 0; i < workers; i++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				for index := range work {
-					compile(index)
-				}
-			}()
-		}
-		for i := range jobs {
-			work <- i
-		}
-		close(work)
-		wg.Wait()
-	}
-
-	out := make(map[string]vm.Method, len(results))
-	for _, result := range results {
-		if result.Key != "" {
-			out[result.Key] = result.Method
-		}
-	}
-	return out
-}
-
 func projectMethodMapKey(method vm.Method) string {
 	return method.Name + methodParamKey(method.Params) + "\x00" + filepath.Clean(method.File)
 }
@@ -1656,29 +1459,6 @@ func compileWorkers(total int) int {
 		workers = 8
 	}
 	return workers
-}
-
-func compileProjectMethodSignature(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, source string) (vm.Method, error) {
-	methodSource, err := extractMethodSource(source, r)
-	if err != nil {
-		return vm.Method{}, err
-	}
-	params, err := parseParams(methodSource)
-	if err != nil {
-		return vm.Method{}, err
-	}
-	return vm.Method{
-		Name:       className + "." + methodName,
-		ReturnType: returnType,
-		Params:     params,
-		ClassName:  className,
-		IsStatic:   hasModifier(modifiers, "static"),
-		Access:     accessModifier(modifiers),
-		Modifiers:  modifiers,
-		File:       file,
-		Line:       r.Start.Line,
-		Column:     r.Start.Column,
-	}, nil
 }
 
 func unsupportedProjectMethod(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, source string, cause error) (vm.Method, bool) {
@@ -1790,47 +1570,6 @@ func compileTestInvokePrograms(cases []TestCase) (map[string]ir.Program, map[str
 
 func testCaseKey(testCase TestCase) string {
 	return testCase.ClassName + "." + testCase.MethodName
-}
-
-func compileProjectTriggers(index typesys.Index, caches ...sourceCache) ([]vm.Trigger, []error) {
-	var out []vm.Trigger
-	var errs []error
-	sources := sourceCacheFor(caches)
-	for _, trigger := range index.Triggers {
-		source, err := sources.read(trigger.File)
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-		body, err := extractMethodBody(source, trigger.Range)
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-		program, err := vm.CompileAnonymous(body)
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-		for _, event := range trigger.Events {
-			timing, op := triggerEventParts(event)
-			if timing == "" || op == "" {
-				continue
-			}
-			out = append(out, vm.Trigger{
-				Name:      trigger.Name,
-				Namespace: trigger.Namespace,
-				Object:    trigger.ObjectName,
-				Timing:    timing,
-				Operation: op,
-				Program:   program,
-				File:      trigger.File,
-				Line:      trigger.Range.Start.Line,
-				Column:    trigger.Range.Start.Column,
-			})
-		}
-	}
-	return out, errs
 }
 
 func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
@@ -1957,105 +1696,6 @@ var apexVariableFieldBooleanRightLiteralPattern = regexp.MustCompile(`\b([A-Za-z
 var apexVariableFieldBooleanLeftLiteralPattern = regexp.MustCompile(`(?i:\btrue\b|\bfalse\b)\s*(?:==|!=)\s*([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)\b`)
 
 var projectReferencedStandardFieldCache sync.Map
-
-func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.Index, caches ...sourceCache) {
-	if org == nil {
-		return
-	}
-	cacheKey := ""
-	if index.Project.Root != "" {
-		cacheKey = index.Project.Root + "|" + fmt.Sprint(len(index.Types))
-		if cached, ok := projectReferencedStandardFieldCache.Load(cacheKey); ok {
-			applyReferencedStandardFieldSet(org, cached.(map[string]map[string]storage.Field))
-			return
-		}
-	}
-	inferred := make(map[string]map[string]storage.Field)
-	hints := make(map[string]map[string]storage.FieldType)
-	cache := sourceCacheFor(caches)
-	seenFiles := make(map[string]bool)
-	for _, typ := range index.Types {
-		if typ.File == "" || typ.Dependency || seenFiles[typ.File] {
-			continue
-		}
-		seenFiles[typ.File] = true
-		source, err := cache.read(typ.File)
-		if err != nil {
-			continue
-		}
-		scanSource := apexReferenceScanSource(source)
-		varTypes := make(map[string]string)
-		for _, match := range apexTypedVariablePattern.FindAllStringSubmatch(scanSource, -1) {
-			if len(match) != 3 {
-				continue
-			}
-			if _, ok := org.Objects[match[1]]; ok {
-				varTypes[match[2]] = match[1]
-			}
-		}
-		for _, match := range apexVariableFieldBooleanRightLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
-			if len(match) != 6 {
-				continue
-			}
-			objectName, ok := varTypes[scanSource[match[2]:match[3]]]
-			if !ok {
-				continue
-			}
-			recordProjectReferencedStandardFieldHint(hints, objectName, scanSource[match[4]:match[5]], storage.FieldBoolean)
-		}
-		for _, match := range apexVariableFieldBooleanLeftLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
-			if len(match) != 6 {
-				continue
-			}
-			objectName, ok := varTypes[scanSource[match[2]:match[3]]]
-			if !ok {
-				continue
-			}
-			recordProjectReferencedStandardFieldHint(hints, objectName, scanSource[match[4]:match[5]], storage.FieldBoolean)
-		}
-		for _, match := range apexSchemaSObjectTypeFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
-			if len(match) != 6 {
-				continue
-			}
-			objectName := scanSource[match[2]:match[3]]
-			fieldName := scanSource[match[4]:match[5]]
-			recordProjectReferencedStandardField(org, inferred, objectName, fieldName, projectReferencedStandardFieldHint(hints, objectName, fieldName))
-		}
-		for _, match := range apexSObjectTypeFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
-			if len(match) != 6 {
-				continue
-			}
-			objectName := scanSource[match[2]:match[3]]
-			fieldName := scanSource[match[4]:match[5]]
-			recordProjectReferencedStandardField(org, inferred, objectName, fieldName, projectReferencedStandardFieldHint(hints, objectName, fieldName))
-		}
-		recordProjectReferencedSObjectLiteralFields(org, inferred, hints, scanSource, apexNewSObjectLiteralPattern)
-		recordProjectReferencedSObjectLiteralFields(org, inferred, hints, scanSource, apexSObjectLiteralPattern)
-		for _, match := range apexStaticFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
-			if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
-				continue
-			}
-			objectName := scanSource[match[2]:match[3]]
-			fieldName := scanSource[match[4]:match[5]]
-			recordProjectReferencedStandardField(org, inferred, objectName, fieldName, projectReferencedStandardFieldHint(hints, objectName, fieldName))
-		}
-		for _, match := range apexVariableFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
-			if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
-				continue
-			}
-			objectName, ok := varTypes[scanSource[match[2]:match[3]]]
-			if !ok {
-				continue
-			}
-			fieldName := scanSource[match[4]:match[5]]
-			recordProjectReferencedStandardField(org, inferred, objectName, fieldName, projectReferencedStandardFieldHint(hints, objectName, fieldName))
-		}
-	}
-	if cacheKey != "" {
-		projectReferencedStandardFieldCache.Store(cacheKey, inferred)
-	}
-	applyReferencedStandardFieldSet(org, inferred)
-}
 
 func apexReferenceScanSource(source string) string {
 	out := []byte(source)
@@ -2623,29 +2263,6 @@ var apexStaticFinalStringRE = regexp.MustCompile(`(?is)\bstatic\s+final\s+String
 var apexGetRecordTypeIdCallRE = regexp.MustCompile(`(?is)\bgetRecordTypeId\s*\(\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z_][A-Za-z0-9_]*))\s*\)`)
 var apexRecordTypeStringMethodRE = regexp.MustCompile(`(?is)\b([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*String\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*\{([^{}]*)\}`)
 
-func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project) {
-	if org == nil {
-		return
-	}
-	for _, ref := range projectReferencedRecordTypes(p) {
-		canonicalObject, ok := storage.ResolveObjectName(*org, ref.ObjectName)
-		if !ok {
-			continue
-		}
-		state := org.Objects[canonicalObject]
-		if profileRecordTypeExists(state.Definition.RecordTypes, ref.DeveloperName) || profileRecordTypeExists(state.Definition.RecordTypes, ref.Name) {
-			continue
-		}
-		state.Definition.RecordTypes = append(state.Definition.RecordTypes, storage.RecordTypeInfo{
-			DeveloperName: ref.DeveloperName,
-			Name:          ref.Name,
-			Active:        true,
-			Available:     true,
-		})
-		org.Objects[canonicalObject] = state
-	}
-}
-
 func projectReferencedRecordTypes(p project.Project) []projectRecordTypeReference {
 	seen := make(map[string]bool)
 	var refs []projectRecordTypeReference
@@ -2778,26 +2395,6 @@ func projectRecordTypeNameFromCallArg(match []string, constants map[string]strin
 		name = constants[match[3]]
 	}
 	return strings.TrimSpace(name)
-}
-
-func applyProjectDataRelationshipReferences(org *storage.OrgState, p project.Project) {
-	if org == nil {
-		return
-	}
-	for _, ref := range projectDataFieldReferences(p.Root) {
-		ensureProjectDataReferencedObjectField(org, ref.ObjectName, ref.FieldName, projectDataFieldHint(ref.Value))
-	}
-	for _, ref := range projectDataRelationshipReferences(p.Root) {
-		fieldName := dataRelationshipLookupFieldName(ref.ParentRelationship)
-		if fieldName == "" {
-			continue
-		}
-		parentObject := dataRelationshipParentObjectName(*org, ref.ChildObject, ref.ParentRelationship)
-		if parentObject != "" {
-			ensurePermissionReferencedObject(org, parentObject)
-		}
-		ensurePermissionReferencedObjectField(org, ref.ChildObject, fieldName)
-	}
 }
 
 func projectDataFieldReferences(root string) []projectDataFieldReference {
@@ -3107,35 +2704,6 @@ func recordTypeLabelFromDeveloperName(developerName string) string {
 	return out.String()
 }
 
-func applyProjectProfileRecordTypes(org *storage.OrgState, p project.Project) bool {
-	if org == nil || len(p.ProfileFiles) == 0 {
-		return false
-	}
-	changed := false
-	for _, file := range sortedProfileFilesForDefaults(p.ProfileFiles) {
-		for _, visibility := range loadProfileRecordTypeVisibilities(file) {
-			canonicalObject, ok := profileRecordTypeObjectName(*org, visibility.ObjectName)
-			if !ok {
-				continue
-			}
-			state := org.Objects[canonicalObject]
-			if profileRecordTypeExists(state.Definition.RecordTypes, visibility.DeveloperName) {
-				continue
-			}
-			state.Definition.RecordTypes = append(state.Definition.RecordTypes, storage.RecordTypeInfo{
-				DeveloperName: visibility.DeveloperName,
-				Name:          visibility.Name,
-				Active:        true,
-				Available:     true,
-				Default:       visibility.Default && !visibility.PersonAccount,
-			})
-			org.Objects[canonicalObject] = state
-			changed = true
-		}
-	}
-	return changed
-}
-
 type projectProfileRecordTypeVisibility struct {
 	ObjectName    string
 	DeveloperName string
@@ -3206,32 +2774,6 @@ func profileRecordTypeExists(recordTypes []storage.RecordTypeInfo, developerName
 	return false
 }
 
-func applyProjectProfileRecordTypeDefaults(org *storage.OrgState, p project.Project) {
-	if org == nil || len(p.ProfileFiles) == 0 {
-		return
-	}
-	defaults := projectProfileRecordTypeDefaults(p.ProfileFiles)
-	for objectName, developerName := range defaults {
-		canonicalObject, ok := profileRecordTypeObjectName(*org, objectName)
-		if !ok {
-			continue
-		}
-		state := org.Objects[canonicalObject]
-		changed := false
-		for i := range state.Definition.RecordTypes {
-			recordType := &state.Definition.RecordTypes[i]
-			isDefault := strings.EqualFold(recordType.DeveloperName, developerName)
-			if recordType.Default != isDefault {
-				recordType.Default = isDefault
-				changed = true
-			}
-		}
-		if changed {
-			org.Objects[canonicalObject] = state
-		}
-	}
-}
-
 func projectProfileRecordTypeDefaults(files []string) map[string]string {
 	defaults := make(map[string]string)
 	for _, file := range sortedProfileFilesForDefaults(files) {
@@ -3286,41 +2828,6 @@ func loadProfileRecordTypeDefaults(file string) map[string]string {
 	return out
 }
 
-func applyProjectProfileRecords(org *storage.OrgState, p project.Project) {
-	if org == nil || len(p.ProfileFiles) == 0 {
-		return
-	}
-	state, ok := org.Objects["Profile"]
-	if !ok {
-		return
-	}
-	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
-	}
-	if org.IDSequences == nil {
-		org.IDSequences = make(map[string]uint64)
-	}
-	generator := storage.NewIDGenerator(storage.StandardKeyPrefixes())
-	generator.Sequences = org.IDSequences
-	for _, file := range p.ProfileFiles {
-		name := profileNameFromPath(file)
-		if name == "" || profileRecordExists(state, name) {
-			continue
-		}
-		id, err := generator.Next("Profile")
-		if err != nil {
-			continue
-		}
-		state.Records[id] = storage.Record{
-			ID:     id,
-			Object: "Profile",
-			Fields: map[string]storage.Value{"Name": storage.StringValue(name)},
-		}
-	}
-	org.IDSequences = generator.Sequences
-	org.Objects["Profile"] = state
-}
-
 func profileNameFromPath(path string) string {
 	name := filepath.Base(path)
 	for _, suffix := range []string{".profile-meta.xml", ".profile"} {
@@ -3338,64 +2845,6 @@ func profileRecordExists(state storage.ObjectState, name string) bool {
 		}
 	}
 	return false
-}
-
-func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project) {
-	if org == nil || len(p.PermissionSetFiles) == 0 {
-		return
-	}
-	storage.EnsureStandardObject(org, "PermissionSet")
-	state := org.Objects["PermissionSet"]
-	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
-	}
-	if org.IDSequences == nil {
-		org.IDSequences = make(map[string]uint64)
-	}
-	generator := storage.NewIDGenerator(storage.StandardKeyPrefixes())
-	generator.Sequences = org.IDSequences
-	for _, file := range p.PermissionSetFiles {
-		name := metadataNameFromPath(file, ".permissionset-meta.xml", ".permissionset")
-		if name == "" {
-			continue
-		}
-		id, exists := recordFieldID(state, "Name", name)
-		if !exists {
-			nextID, err := generator.Next("PermissionSet")
-			if err != nil {
-				continue
-			}
-			id = nextID
-			label := strings.ReplaceAll(name, "_", " ")
-			if metadata, ok := readPermissionSetMetadata(file); ok && strings.TrimSpace(metadata.Label) != "" {
-				label = strings.TrimSpace(metadata.Label)
-			}
-			state.Records[id] = storage.Record{
-				ID:     id,
-				Object: "PermissionSet",
-				Fields: map[string]storage.Value{
-					"Name":             storage.StringValue(name),
-					"Label":            storage.StringValue(label),
-					"Type":             storage.StringValue("Regular"),
-					"IsOwnedByProfile": storage.BooleanValue(false),
-				},
-			}
-		}
-		if metadata, ok := readPermissionSetMetadata(file); ok {
-			customPermissions := permissionSetCustomPermissionValues(metadata)
-			if len(customPermissions) > 0 {
-				record := state.Records[id]
-				if record.Fields == nil {
-					record.Fields = make(map[string]storage.Value)
-				}
-				record.Fields["CustomPermissions"] = storage.ListValue(customPermissions...)
-				state.Records[id] = record
-			}
-		}
-		applyProjectPermissionSetMetadataPermissions(org, file, string(id), &generator)
-	}
-	org.IDSequences = generator.Sequences
-	org.Objects["PermissionSet"] = state
 }
 
 func permissionSetCustomPermissionValues(metadata permissionSetMetadata) []storage.Value {
@@ -3420,109 +2869,6 @@ func readPermissionSetMetadata(file string) (permissionSetMetadata, bool) {
 		return permissionSetMetadata{}, false
 	}
 	return metadata, true
-}
-
-func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, parentID string, generator *storage.IDGenerator) {
-	if org == nil || strings.TrimSpace(parentID) == "" || generator == nil {
-		return
-	}
-	metadata, ok := readPermissionSetMetadata(file)
-	if !ok {
-		return
-	}
-	storage.EnsureStandardObject(org, "ObjectPermissions")
-	storage.EnsureStandardObject(org, "FieldPermissions")
-	objectState := org.Objects["ObjectPermissions"]
-	if objectState.Records == nil {
-		objectState.Records = make(map[storage.ID]storage.Record)
-	}
-	fieldState := org.Objects["FieldPermissions"]
-	if fieldState.Records == nil {
-		fieldState.Records = make(map[storage.ID]storage.Record)
-	}
-	fieldPermissionKeys := fieldPermissionRecordKeys(fieldState)
-	for _, permission := range metadata.ObjectPermission {
-		objectName := strings.TrimSpace(permission.Object)
-		if objectName == "" || objectPermissionRecordExists(objectState, parentID, objectName) {
-			continue
-		}
-		ensurePermissionReferencedObject(org, objectName)
-		id, err := generator.Next("ObjectPermissions")
-		if err != nil {
-			continue
-		}
-		objectState.Records[id] = storage.Record{
-			ID:     id,
-			Object: "ObjectPermissions",
-			Fields: map[string]storage.Value{
-				"ParentId":                    storage.IDValue(storage.ID(parentID)),
-				"SObjectType":                 storage.StringValue(objectName),
-				"PermissionsRead":             storage.BooleanValue(permission.AllowRead),
-				"PermissionsCreate":           storage.BooleanValue(permission.AllowCreate),
-				"PermissionsEdit":             storage.BooleanValue(permission.AllowEdit),
-				"PermissionsDelete":           storage.BooleanValue(permission.AllowDelete),
-				"PermissionsViewAllRecords":   storage.BooleanValue(permission.ViewAllRecords),
-				"PermissionsModifyAllRecords": storage.BooleanValue(permission.ModifyAllRecords),
-			},
-		}
-	}
-	for _, permission := range metadata.FieldPermissions {
-		fieldName := strings.TrimSpace(permission.Field)
-		if fieldName == "" {
-			continue
-		}
-		objectName := fieldPermissionObjectName(fieldName)
-		key := fieldPermissionRecordKey(parentID, objectName, fieldName)
-		if objectName == "" || fieldPermissionKeys[key] {
-			continue
-		}
-		ensurePermissionReferencedObjectField(org, objectName, fieldName)
-		id, err := generator.Next("FieldPermissions")
-		if err != nil {
-			continue
-		}
-		fieldState.Records[id] = storage.Record{
-			ID:     id,
-			Object: "FieldPermissions",
-			Fields: map[string]storage.Value{
-				"ParentId":        storage.IDValue(storage.ID(parentID)),
-				"SObjectType":     storage.StringValue(objectName),
-				"Field":           storage.StringValue(fieldName),
-				"PermissionsRead": storage.BooleanValue(permission.Readable),
-				"PermissionsEdit": storage.BooleanValue(permission.Editable),
-			},
-		}
-		fieldPermissionKeys[key] = true
-	}
-	for _, visibility := range metadata.RecordTypeVisibilities {
-		if !visibility.Visible {
-			continue
-		}
-		objectName, developerName, ok := strings.Cut(strings.TrimSpace(visibility.RecordType), ".")
-		if !ok || objectName == "" || developerName == "" {
-			continue
-		}
-		ensurePermissionReferencedObject(org, objectName)
-		canonicalObject, ok := profileRecordTypeObjectName(*org, objectName)
-		if !ok {
-			continue
-		}
-		developerName = stripRecordTypeNamespaceToken(developerName)
-		state := org.Objects[canonicalObject]
-		if profileRecordTypeExists(state.Definition.RecordTypes, developerName) {
-			continue
-		}
-		state.Definition.RecordTypes = append(state.Definition.RecordTypes, storage.RecordTypeInfo{
-			DeveloperName: developerName,
-			Name:          recordTypeLabelFromDeveloperName(developerName),
-			Active:        true,
-			Available:     true,
-			Default:       visibility.Default,
-		})
-		org.Objects[canonicalObject] = state
-	}
-	org.Objects["ObjectPermissions"] = objectState
-	org.Objects["FieldPermissions"] = fieldState
 }
 
 func ensurePermissionReferencedObject(org *storage.OrgState, objectName string) {
@@ -3691,43 +3037,6 @@ func permissionFieldLocalName(fieldName string) string {
 		return strings.TrimSpace(fieldName[idx+1:])
 	}
 	return strings.TrimSpace(fieldName)
-}
-
-func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Project) {
-	if org == nil || len(p.PermissionSetGroupFiles) == 0 {
-		return
-	}
-	storage.EnsureStandardObject(org, "PermissionSetGroup")
-	state := org.Objects["PermissionSetGroup"]
-	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
-	}
-	if org.IDSequences == nil {
-		org.IDSequences = make(map[string]uint64)
-	}
-	generator := storage.NewIDGenerator(storage.StandardKeyPrefixes())
-	generator.Sequences = org.IDSequences
-	for _, file := range p.PermissionSetGroupFiles {
-		name := metadataNameFromPath(file, ".permissionsetgroup-meta.xml", ".permissionsetgroup")
-		if name == "" || recordFieldExists(state, "DeveloperName", name) {
-			continue
-		}
-		id, err := generator.Next("PermissionSetGroup")
-		if err != nil {
-			continue
-		}
-		state.Records[id] = storage.Record{
-			ID:     id,
-			Object: "PermissionSetGroup",
-			Fields: map[string]storage.Value{
-				"DeveloperName": storage.StringValue(name),
-				"MasterLabel":   storage.StringValue(strings.ReplaceAll(name, "_", " ")),
-				"Status":        storage.StringValue("Updated"),
-			},
-		}
-	}
-	org.IDSequences = generator.Sequences
-	org.Objects["PermissionSetGroup"] = state
 }
 
 func metadataNameFromPath(path string, suffixes ...string) string {
@@ -4074,30 +3383,6 @@ func customNotificationTypeExists(state storage.ObjectState, developerName strin
 	return false
 }
 
-func applyProjectSetupSingletonRecords(org *storage.OrgState) {
-	if org == nil {
-		return
-	}
-	for objectName, state := range org.Objects {
-		if !strings.EqualFold(objectName, "Setup_Data__c") || len(state.Records) > 0 {
-			continue
-		}
-		if state.Records == nil {
-			state.Records = make(map[storage.ID]storage.Record)
-		}
-		id := storage.ID("aZZZZZZZZZZZZZZ")
-		fields := map[string]storage.Value{
-			"Name": storage.StringValue("Default"),
-		}
-		state.Records[id] = storage.Record{
-			ID:     id,
-			Object: state.Definition.APIName,
-			Fields: fields,
-		}
-		org.Objects[objectName] = state
-	}
-}
-
 func schemaFromIndex(index typesys.Index) schema.Schema {
 	return schema.Schema{Objects: append([]schema.Object(nil), index.Objects...)}
 }
@@ -4110,93 +3395,6 @@ func triggerEventParts(event string) (string, string) {
 		}
 	}
 	return "", ""
-}
-
-func compileProjectMethod(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, source string) (vm.Method, error) {
-	methodSource, err := extractMethodSource(source, r)
-	if err != nil {
-		return vm.Method{}, err
-	}
-	params, err := parseParams(methodSource)
-	if err != nil {
-		return vm.Method{}, err
-	}
-	body, err := extractMethodBody(source, r)
-	if err != nil {
-		return vm.Method{}, err
-	}
-	program, err := vm.CompileAnonymous(body)
-	if err != nil {
-		return vm.Method{}, err
-	}
-	return vm.Method{
-		Name:       className + "." + methodName,
-		ReturnType: returnType,
-		Params:     params,
-		Program:    program,
-		ClassName:  className,
-		IsStatic:   hasModifier(modifiers, "static"),
-		Access:     accessModifier(modifiers),
-		Modifiers:  modifiers,
-		File:       file,
-		Line:       r.Start.Line,
-		Column:     r.Start.Column,
-	}, nil
-}
-
-func compileProjectConstructor(className, file string, r diagnostic.Range, source string) (vm.Method, error) {
-	methodSource, err := extractMethodSource(source, r)
-	if err != nil {
-		return vm.Method{}, err
-	}
-	params, err := parseParams(methodSource)
-	if err != nil {
-		return vm.Method{}, err
-	}
-	body, err := extractMethodBody(source, r)
-	if err != nil {
-		return vm.Method{}, err
-	}
-	program, err := vm.CompileAnonymous(body)
-	if err != nil {
-		return vm.Method{}, err
-	}
-	return vm.Method{
-		Name:          className + ".<init>",
-		ReturnType:    "void",
-		Params:        params,
-		Program:       program,
-		ClassName:     className,
-		IsConstructor: true,
-		File:          file,
-		Line:          r.Start.Line,
-		Column:        r.Start.Column,
-	}, nil
-}
-
-func compileProjectInitializer(className, file string, r diagnostic.Range, source string, static bool) (vm.Method, error) {
-	body, err := extractMethodBody(source, r)
-	if err != nil {
-		return vm.Method{}, err
-	}
-	program, err := vm.CompileAnonymous(body)
-	if err != nil {
-		return vm.Method{}, err
-	}
-	name := className + ".<init_block>"
-	if static {
-		name = className + ".<static_init>"
-	}
-	return vm.Method{
-		Name:       name,
-		ReturnType: "void",
-		Program:    program,
-		ClassName:  className,
-		IsStatic:   static,
-		File:       file,
-		Line:       r.Start.Line,
-		Column:     r.Start.Column,
-	}, nil
 }
 
 func compilePropertyAccessor(className, file string, member typesys.MemberSymbol, accessor apexast.Accessor, source string) (vm.Method, error) {
