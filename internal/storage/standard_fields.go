@@ -471,7 +471,8 @@ func isKnownStandardObjectExact(objectName string) bool {
 	if _, ok := standardSObjectStubFieldData[objectName]; ok {
 		return true
 	}
-	if stringsHasSuffixFold(objectName, "__c") || stringsHasSuffixFold(objectName, "__mdt") {
+	if stringsHasSuffixFold(objectName, "__c") || stringsHasSuffixFold(objectName, "__mdt") ||
+		stringsHasSuffixFold(objectName, "__e") || stringsHasSuffixFold(objectName, "__r") {
 		return false
 	}
 	return len(standardFieldsForObject(objectName)) > 0

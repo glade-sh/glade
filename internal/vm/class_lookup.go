@@ -536,16 +536,54 @@ func (vm *VM) FreezeClassLookup() {
 		return
 	}
 	keys := make(map[string]string, len(vm.Classes)*2)
+	ranks := make(map[string]int, len(vm.Classes)*2)
+	nss := make(map[string]string, len(vm.Classes)*2)
+	put := func(key, alias string, class Class, exact bool) {
+		rank := classLookupKeyRank(class, exact)
+		if cur, ok := ranks[key]; ok && !classLookupKeyWins(rank, class.Namespace, cur, nss[key]) {
+			return
+		}
+		keys[key] = alias
+		ranks[key] = rank
+		nss[key] = class.Namespace
+	}
 	for alias, class := range vm.Classes {
-		keys[canonicalClassLookupKey(alias)] = alias
-		keys[canonicalClassLookupKey(class.Name)] = alias
+		put(canonicalClassLookupKey(alias), alias, class, true)
+		put(canonicalClassLookupKey(class.Name), alias, class, false)
 		if class.Namespace != "" {
-			keys[canonicalClassLookupKey(class.Namespace+"."+class.Name)] = alias
+			put(canonicalClassLookupKey(class.Namespace+"."+class.Name), alias, class, true)
 		}
 	}
 	vm.sharedClassLookupKeys = keys
 	vm.sharedClassCopyPlan = buildClassCopyPlan(vm.Classes)
 	vm.classLookup = nil
+}
+
+// classLookupKeyRank scores a write into a canonical class-lookup index so that
+// short-name collisions between a local (project) class and a managed-dependency
+// class resolve to the local class, matching Salesforce, where an unqualified
+// name in local code never binds to a packaged class. Local provenance dominates;
+// an exact alias match outranks a bare class-name fallback within the same
+// provenance. Higher wins.
+func classLookupKeyRank(class Class, exact bool) int {
+	rank := 0
+	if !class.Dependency {
+		rank += 2
+	}
+	if exact {
+		rank++
+	}
+	return rank
+}
+
+// classLookupKeyWins reports whether a candidate write should replace the current
+// owner of a canonical key. Equal ranks break deterministically on namespace so
+// the frozen and rebuilt indexes are stable regardless of map iteration order.
+func classLookupKeyWins(candidateRank int, candidateNS string, currentRank int, currentNS string) bool {
+	if candidateRank != currentRank {
+		return candidateRank > currentRank
+	}
+	return strings.ToLower(strings.TrimSpace(candidateNS)) < strings.ToLower(strings.TrimSpace(currentNS))
 }
 
 // unshareClassLookup reverts a VM from the shared frozen index back to a private
@@ -675,11 +713,26 @@ func (vm *VM) rebuildClassLookup() {
 	vm.sharedClassCopyPlan = nil
 	vm.resetClassAccessCaches()
 	vm.classLookup = make(map[string]Class, len(vm.Classes)*2)
+	ranks := make(map[string]int, len(vm.Classes)*2)
+	nss := make(map[string]string, len(vm.Classes)*2)
+	put := func(name string, class Class, exact bool) {
+		if strings.TrimSpace(name) == "" {
+			return
+		}
+		key := canonicalClassLookupKey(name)
+		rank := classLookupKeyRank(class, exact)
+		if cur, ok := ranks[key]; ok && !classLookupKeyWins(rank, class.Namespace, cur, nss[key]) {
+			return
+		}
+		vm.classLookup[key] = class
+		ranks[key] = rank
+		nss[key] = class.Namespace
+	}
 	for alias, class := range vm.Classes {
-		vm.storeClassLookupAlias(alias, class)
-		vm.storeClassLookupAlias(class.Name, class)
+		put(alias, class, true)
+		put(class.Name, class, false)
 		if class.Namespace != "" {
-			vm.storeClassLookupAlias(class.Namespace+"."+class.Name, class)
+			put(class.Namespace+"."+class.Name, class, true)
 		}
 	}
 }
