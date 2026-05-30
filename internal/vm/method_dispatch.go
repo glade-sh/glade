@@ -956,737 +956,18 @@ func (vm *VM) callNonObjectValueMember(receiverName string, receiver Value, meth
 	switch receiver.Kind {
 	case ValueList:
 		method = canonicalCollectionMemberName("List", method)
-		switch method {
-		case "getSObjectType":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("List.getSObjectType expects 0 arguments")
-			}
-			if declaredType := vm.VarTypes[receiverName]; declaredType != "" {
-				if elementType, ok := collectionElementType(declaredType); ok && !strings.EqualFold(elementType, "sObject") {
-					if token, ok := vm.sObjectTypeTokenForName(elementType); ok {
-						return token, true, nil
-					}
-				}
-			}
-			if elementType, ok := collectionElementType(receiver.Static); ok && !strings.EqualFold(elementType, "sObject") {
-				if token, ok := vm.sObjectTypeTokenForName(elementType); ok {
-					return token, true, nil
-				}
-			}
-			if elementType, ok := collectionElementType(receiver.Runtime); ok && !strings.EqualFold(elementType, "sObject") {
-				if token, ok := vm.sObjectTypeTokenForName(elementType); ok {
-					return token, true, nil
-				}
-			}
-			if elementType, ok := collectionElementType(receiver.Type); ok && !strings.EqualFold(elementType, "sObject") {
-				if token, ok := vm.sObjectTypeTokenForName(elementType); ok {
-					return token, true, nil
-				}
-			}
-			for _, item := range receiver.List {
-				if item.Kind == ValueObject && vm.isSObjectLikeType(item.Type) {
-					if token, ok := vm.sObjectTypeTokenForName(item.Type); ok {
-						return token, true, nil
-					}
-				}
-			}
-			if elementType, ok := collectionElementType(receiver.Type); ok && strings.EqualFold(elementType, "sObject") {
-				return Null, true, nil
-			}
-			if len(receiver.List) == 0 {
-				return Null, true, nil
-			}
-			if token, ok := vm.sObjectTypeTokenForName("SObject"); ok {
-				return token, true, nil
-			}
-			return Null, true, fmt.Errorf("List.getSObjectType requires SObject list")
-		case "add":
-			if len(args) != 1 && len(args) != 2 {
-				return Null, true, fmt.Errorf("List.add expects 1 or 2 arguments")
-			}
-			previous := receiver
-			valueArg := args[0]
-			insertAt := -1
-			if len(args) == 2 {
-				if args[0].Kind != ValueInt {
-					return Null, true, fmt.Errorf("List.add index expects Integer")
-				}
-				insertAt = int(args[0].Int)
-				if insertAt < 0 || insertAt > len(receiver.List) {
-					return Null, true, listIndexException(insertAt)
-				}
-				valueArg = args[1]
-			}
-			mutationType := vm.collectionMutationType(receiver)
-			item, err := vm.coerceCollectionElement(mutationType, valueArg)
-			if err != nil {
-				return Null, true, collectionStoreException(mutationType, valueArg)
-			}
-			if insertAt >= 0 {
-				receiver.List = append(receiver.List, Null)
-				copy(receiver.List[insertAt+1:], receiver.List[insertAt:])
-				receiver.List[insertAt] = item
-			} else {
-				receiver.List = append(receiver.List, item)
-			}
-			if err := vm.storeReceiver(receiverName, receiver); err != nil {
-				return Null, true, err
-			}
-			vm.propagateCollectionMutation(previous, receiver)
-			if insertAt >= 0 {
-				return Null, true, nil
-			}
-			return Bool(true), true, nil
-		case "addAll":
-			if len(args) != 1 {
-				return Null, true, fmt.Errorf("List.addAll expects List, Set, or Iterable")
-			}
-			values, err := vm.iterableCollectionMembers(args[0], result, "List.addAll")
-			if err != nil {
-				return Null, true, err
-			}
-			previous := receiver
-			mutationType := vm.collectionMutationType(receiver)
-			for _, value := range values {
-				item, err := vm.coerceCollectionElement(mutationType, value)
-				if err != nil {
-					return Null, true, collectionStoreException(mutationType, value)
-				}
-				receiver.List = append(receiver.List, item)
-			}
-			if err := vm.storeReceiver(receiverName, receiver); err != nil {
-				return Null, true, err
-			}
-			vm.propagateCollectionMutation(previous, receiver)
-			return Null, true, nil
-		case "addToRelationship":
-			updated, err := listAppendSObjects(receiver, "__glade_added_to_relationship", args, "List.addToRelationship")
-			if err != nil {
-				return Null, true, err
-			}
-			if err := vm.storeReceiver(receiverName, updated); err != nil {
-				return Null, true, err
-			}
-			return Null, true, nil
-		case "markForDelete":
-			updated, err := listAppendSObjects(receiver, "__glade_marked_for_delete", args, "List.markForDelete")
-			if err != nil {
-				return Null, true, err
-			}
-			if err := vm.storeReceiver(receiverName, updated); err != nil {
-				return Null, true, err
-			}
-			return Null, true, nil
-		case "getAddedToRelationship":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("List.getAddedToRelationship expects 0 arguments")
-			}
-			return listRelationshipValues(receiver, "__glade_added_to_relationship"), true, nil
-		case "getMarkedForDeletion":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("List.getMarkedForDeletion expects 0 arguments")
-			}
-			return listRelationshipValues(receiver, "__glade_marked_for_delete"), true, nil
-		case "size":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("List.size expects 0 arguments")
-			}
-			return Int(int64(len(receiver.List))), true, nil
-		case "isEmpty":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("List.isEmpty expects 0 arguments")
-			}
-			return Bool(len(receiver.List) == 0), true, nil
-		case "get":
-			if len(args) != 1 || args[0].Kind != ValueInt {
-				return Null, true, fmt.Errorf("List.get expects integer index")
-			}
-			i := int(args[0].Int)
-			if i < 0 || i >= len(receiver.List) {
-				return Null, true, listIndexException(i)
-			}
-			return receiver.List[i], true, nil
-		case "contains":
-			if len(args) != 1 {
-				return Null, true, fmt.Errorf("List.contains expects 1 argument")
-			}
-			contains, err := vm.collectionContainsValue(receiver.List, args[0], result)
-			if err != nil {
-				return Null, true, err
-			}
-			return Bool(contains), true, nil
-		case "indexOf":
-			if len(args) != 1 {
-				return Null, true, fmt.Errorf("List.indexOf expects 1 argument")
-			}
-			i, err := vm.collectionIndexOfValue(receiver.List, args[0], result)
-			if err != nil {
-				return Null, true, err
-			}
-			return Int(int64(i)), true, nil
-		case "clone":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("List.clone expects 0 arguments")
-			}
-			cloned := receiver
-			cloned.Ref = newValueRef()
-			cloned.List = append([]Value(nil), receiver.List...)
-			return cloned, true, nil
-		case "deepClone":
-			if len(args) > 3 {
-				return Null, true, fmt.Errorf("List.deepClone expects at most 3 Boolean arguments")
-			}
-			for _, arg := range args {
-				if arg.Kind != ValueBool {
-					return Null, true, fmt.Errorf("List.deepClone preserve options expect Boolean arguments")
-				}
-			}
-			return cloneValue(receiver), true, nil
-		case "iterator":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("List.iterator expects 0 arguments")
-			}
-			return collectionIterator(receiver), true, nil
-		case "sort":
-			if len(args) > 1 {
-				return Null, true, fmt.Errorf("List.sort expects 0 or 1 arguments")
-			}
-			previous := receiver
-			sorted := append([]Value(nil), receiver.List...)
-			if len(args) == 0 {
-				if err := vm.sortComparableValues(sorted, result); err != nil {
-					return Null, true, err
-				}
-			} else {
-				if err := vm.sortValuesWithComparator(sorted, args[0], result); err != nil {
-					return Null, true, err
-				}
-			}
-			receiver.List = sorted
-			if err := vm.storeReceiver(receiverName, receiver); err != nil {
-				return Null, true, err
-			}
-			vm.propagateCollectionMutation(previous, receiver)
-			return Null, true, nil
-		case "remove":
-			if len(args) != 1 || args[0].Kind != ValueInt {
-				return Null, true, fmt.Errorf("List.remove expects integer index")
-			}
-			previous := receiver
-			i := int(args[0].Int)
-			if i < 0 || i >= len(receiver.List) {
-				return Null, true, listIndexException(i)
-			}
-			removed := receiver.List[i]
-			receiver.List = append(receiver.List[:i], receiver.List[i+1:]...)
-			if err := vm.storeReceiver(receiverName, receiver); err != nil {
-				return Null, true, err
-			}
-			vm.propagateCollectionMutation(previous, receiver)
-			return removed, true, nil
-		case "clear":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("List.clear expects 0 arguments")
-			}
-			previous := receiver
-			receiver.List = nil
-			if err := vm.storeReceiver(receiverName, receiver); err != nil {
-				return Null, true, err
-			}
-			vm.propagateCollectionMutation(previous, receiver)
-			return Null, true, nil
-		case "set":
-			if len(args) != 2 || args[0].Kind != ValueInt {
-				return Null, true, fmt.Errorf("List.set expects integer index and value")
-			}
-			previous := receiver
-			i := int(args[0].Int)
-			if i < 0 || i >= len(receiver.List) {
-				return Null, true, listIndexException(i)
-			}
-			item, err := vm.coerceCollectionElement(receiver.Type, args[1])
-			if err != nil {
-				return Null, true, fmt.Errorf("List.set: %w", err)
-			}
-			receiver.List[i] = item
-			if err := vm.storeReceiver(receiverName, receiver); err != nil {
-				return Null, true, err
-			}
-			vm.propagateCollectionMutation(previous, receiver)
-			return Null, true, nil
+		if value, handled, err := vm.callListValueMember(receiverName, receiver, method, args, result); handled || err != nil {
+			return value, handled, err
 		}
 	case ValueSet:
 		method = canonicalCollectionMemberName("Set", method)
-		switch method {
-		case "get":
-			if receiverName == "disabledTriggers" {
-				if len(args) != 1 {
-					return Null, true, fmt.Errorf("Set-backed disabledTriggers.get expects 1 argument")
-				}
-				contains, err := vm.collectionContainsValue(receiver.Set, args[0], result)
-				if err != nil {
-					return Null, true, err
-				}
-				if contains {
-					return Int(1), true, nil
-				}
-				return Int(0), true, nil
-			}
-		case "add":
-			if len(args) != 1 {
-				return Null, true, fmt.Errorf("Set.add expects 1 argument")
-			}
-			previous := receiver
-			item, err := vm.coerceCollectionElement(receiver.Type, args[0])
-			if err != nil {
-				return Null, true, fmt.Errorf("Set.add: %w", err)
-			}
-			contains, err := vm.collectionContainsValue(receiver.Set, item, result)
-			if err != nil {
-				return Null, true, err
-			}
-			if !contains {
-				receiver.Set = append(receiver.Set, item)
-				if err := vm.storeReceiver(receiverName, receiver); err != nil {
-					return Null, true, err
-				}
-				vm.propagateCollectionMutation(previous, receiver)
-				return Bool(true), true, nil
-			}
-			return Bool(false), true, nil
-		case "addAll":
-			if len(args) != 1 {
-				return Null, true, fmt.Errorf("Set.addAll expects List, Set, or Iterable")
-			}
-			values, err := vm.iterableCollectionMembers(args[0], result, "Set.addAll")
-			if err != nil {
-				return Null, true, err
-			}
-			previous := receiver
-			changed := false
-			for _, value := range values {
-				item, err := vm.coerceCollectionElement(receiver.Type, value)
-				if err != nil {
-					return Null, true, fmt.Errorf("Set.addAll: %w", err)
-				}
-				contains, err := vm.collectionContainsValue(receiver.Set, item, result)
-				if err != nil {
-					return Null, true, err
-				}
-				if !contains {
-					receiver.Set = append(receiver.Set, item)
-					changed = true
-				}
-			}
-			if changed {
-				if err := vm.storeReceiver(receiverName, receiver); err != nil {
-					return Null, true, err
-				}
-				vm.propagateCollectionMutation(previous, receiver)
-			}
-			return Bool(changed), true, nil
-		case "size":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("Set.size expects 0 arguments")
-			}
-			return Int(int64(len(receiver.Set))), true, nil
-		case "isEmpty":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("Set.isEmpty expects 0 arguments")
-			}
-			return Bool(len(receiver.Set) == 0), true, nil
-		case "contains":
-			if len(args) != 1 {
-				return Null, true, fmt.Errorf("Set.contains expects 1 argument")
-			}
-			if contains, ok := vm.populatedFieldsKeySetContains(receiver, args[0]); ok {
-				return Bool(contains), true, nil
-			}
-			contains, err := vm.collectionContainsValue(receiver.Set, args[0], result)
-			if err != nil {
-				return Null, true, err
-			}
-			return Bool(contains), true, nil
-		case "containsAll":
-			if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
-				return Null, true, fmt.Errorf("Set.containsAll expects List or Set")
-			}
-			for _, value := range collectionMembers(args[0]) {
-				contains, err := vm.collectionContainsValue(receiver.Set, value, result)
-				if err != nil {
-					return Null, true, err
-				}
-				if !contains {
-					return Bool(false), true, nil
-				}
-			}
-			return Bool(true), true, nil
-		case "remove":
-			if len(args) != 1 {
-				return Null, true, fmt.Errorf("Set.remove expects 1 argument")
-			}
-			i, err := vm.collectionIndexOfValue(receiver.Set, args[0], result)
-			if err != nil {
-				return Null, true, err
-			}
-			if i >= 0 {
-				receiver.Set = append(receiver.Set[:i], receiver.Set[i+1:]...)
-				if err := vm.storeReceiver(receiverName, receiver); err != nil {
-					return Null, true, err
-				}
-				return Bool(true), true, nil
-			}
-			return Bool(false), true, nil
-		case "clear":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("Set.clear expects 0 arguments")
-			}
-			receiver.Set = nil
-			if err := vm.storeReceiver(receiverName, receiver); err != nil {
-				return Null, true, err
-			}
-			return Null, true, nil
-		case "removeAll":
-			if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
-				return Null, true, fmt.Errorf("Set.removeAll expects List or Set")
-			}
-			changed := false
-			out := receiver.Set[:0]
-			remove := collectionMembers(args[0])
-			for _, value := range receiver.Set {
-				contains, err := vm.collectionContainsValue(remove, value, result)
-				if err != nil {
-					return Null, true, err
-				}
-				if contains {
-					changed = true
-					continue
-				}
-				out = append(out, value)
-			}
-			receiver.Set = out
-			if changed {
-				if err := vm.storeReceiver(receiverName, receiver); err != nil {
-					return Null, true, err
-				}
-			}
-			return Bool(changed), true, nil
-		case "retainAll":
-			if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
-				return Null, true, fmt.Errorf("Set.retainAll expects List or Set")
-			}
-			changed := false
-			keep := collectionMembers(args[0])
-			out := receiver.Set[:0]
-			for _, value := range receiver.Set {
-				contains, err := vm.collectionContainsValue(keep, value, result)
-				if err != nil {
-					return Null, true, err
-				}
-				if contains {
-					out = append(out, value)
-					continue
-				}
-				changed = true
-			}
-			receiver.Set = out
-			if changed {
-				if err := vm.storeReceiver(receiverName, receiver); err != nil {
-					return Null, true, err
-				}
-			}
-			return Bool(changed), true, nil
-		case "clone":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("Set.clone expects 0 arguments")
-			}
-			cloned := receiver
-			cloned.Ref = newValueRef()
-			cloned.Set = append([]Value(nil), receiver.Set...)
-			return cloned, true, nil
-		case "deepClone":
-			if len(args) != 0 {
-				return Null, true, unsupportedCallError("Set.deepClone with preserve options")
-			}
-			return cloneValue(receiver), true, nil
-		case "iterator":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("Set.iterator expects 0 arguments")
-			}
-			return collectionIterator(receiver), true, nil
-		case "put":
-			if receiverName == "disabledTriggers" {
-				if len(args) != 2 {
-					return Null, true, fmt.Errorf("Set-backed disabledTriggers.put expects 2 arguments")
-				}
-				if args[1].Kind != ValueInt {
-					return Null, true, fmt.Errorf("Set-backed disabledTriggers.put expects Integer counter")
-				}
-				contains, err := vm.collectionContainsValue(receiver.Set, args[0], result)
-				if err != nil {
-					return Null, true, err
-				}
-				old := Int(0)
-				if contains {
-					old = Int(1)
-				}
-				if args[1].Int > 0 {
-					if !contains {
-						receiver.Set = append(receiver.Set, args[0])
-						if err := vm.storeReceiver(receiverName, receiver); err != nil {
-							return Null, true, err
-						}
-					}
-				} else if contains {
-					i, err := vm.collectionIndexOfValue(receiver.Set, args[0], result)
-					if err != nil {
-						return Null, true, err
-					}
-					if i >= 0 {
-						receiver.Set = append(receiver.Set[:i], receiver.Set[i+1:]...)
-						if err := vm.storeReceiver(receiverName, receiver); err != nil {
-							return Null, true, err
-						}
-					}
-				}
-				return old, true, nil
-			}
+		if value, handled, err := vm.callSetValueMember(receiverName, receiver, method, args, result); handled || err != nil {
+			return value, handled, err
 		}
 	case ValueMap:
 		method = canonicalCollectionMemberName("Map", method)
-		switch method {
-		case "put":
-			if len(args) != 2 {
-				return Null, true, fmt.Errorf("Map.put expects 2 arguments")
-			}
-			key, item, err := vm.coerceMapEntry(receiver.Type, args[0], args[1])
-			if err != nil {
-				return Null, true, fmt.Errorf("Map.put: %w", err)
-			}
-			previous := Null
-			encodedKey := vm.mapKey(key)
-			if existing, ok := receiver.Map[encodedKey]; ok {
-				previous = existing
-			} else {
-				receiver.MapOrder = append(receiver.MapOrder, encodedKey)
-			}
-			receiver.Map[encodedKey] = item
-			if receiver.MapKeys == nil {
-				receiver.MapKeys = make(map[string]Value)
-			}
-			receiver.MapKeys[encodedKey] = key
-			if err := vm.storeReceiver(receiverName, receiver); err != nil {
-				return Null, true, err
-			}
-			return previous, true, nil
-		case "putAll":
-			if len(args) != 1 || (args[0].Kind != ValueMap && args[0].Kind != ValueList) {
-				return Null, true, fmt.Errorf("Map.putAll expects Map or List")
-			}
-			if args[0].Kind == ValueList {
-				updated, err := vm.putAllSObjectList(receiver, args[0])
-				if err != nil {
-					return Null, true, err
-				}
-				if err := vm.storeReceiver(receiverName, updated); err != nil {
-					return Null, true, err
-				}
-				return Null, true, nil
-			}
-			for rawKey, value := range args[0].Map {
-				keyValue := mapStoredKey(args[0], rawKey)
-				key, item, err := vm.coerceMapEntry(receiver.Type, keyValue, value)
-				if err != nil {
-					return Null, true, fmt.Errorf("Map.putAll: %w", err)
-				}
-				encodedKey := vm.mapKey(key)
-				receiver.Map[encodedKey] = item
-				if receiver.MapKeys == nil {
-					receiver.MapKeys = make(map[string]Value)
-				}
-				receiver.MapKeys[encodedKey] = key
-			}
-			if err := vm.storeReceiver(receiverName, receiver); err != nil {
-				return Null, true, err
-			}
-			return Null, true, nil
-		case "get":
-			if len(args) != 1 {
-				return Null, true, fmt.Errorf("Map.get expects 1 argument")
-			}
-			key := vm.mapLookupKey(receiver, args[0])
-			if objectName, ok := sObjectFieldMapObjectName(receiver); ok && args[0].Kind == ValueString && vm.sObjectFieldMapKeyIsChildRelationship(objectName, args[0].Text) && !vm.sObjectFieldMapDirectValueMatchesKey(receiver, key, args[0].Text) {
-				return missingMapValue(receiver), true, nil
-			}
-			value, ok := receiver.Map[key]
-			if !ok {
-				value, ok = vm.namespaceStringMapLookup(receiver, args[0])
-			}
-			if !ok {
-				value, ok = vm.populatedFieldsMapAliasLookup(receiver, args[0])
-			}
-			if !ok {
-				value, ok = vm.specialMapLookup(receiver, args[0])
-			}
-			if !ok {
-				var err error
-				value, ok, err = vm.objectKeyMapLookup(receiver, args[0])
-				if err != nil {
-					return Null, true, err
-				}
-			}
-			if !ok {
-				return missingMapValue(receiver), true, nil
-			}
-			if value.Kind == ValueNull && value.Type == "" {
-				value = missingMapValue(receiver)
-			}
-			return value, true, nil
-		case "contains", "containsKey":
-			if len(args) != 1 {
-				if method == "contains" {
-					return Null, true, fmt.Errorf("Map.contains expects 1 argument")
-				}
-				return Null, true, fmt.Errorf("Map.containsKey expects 1 argument")
-			}
-			key := vm.mapLookupKey(receiver, args[0])
-			if objectName, ok := sObjectFieldMapObjectName(receiver); ok && args[0].Kind == ValueString && vm.sObjectFieldMapKeyIsChildRelationship(objectName, args[0].Text) && !vm.sObjectFieldMapDirectValueMatchesKey(receiver, key, args[0].Text) {
-				return Bool(false), true, nil
-			}
-			_, ok := receiver.Map[key]
-			if !ok {
-				_, ok = vm.namespaceStringMapLookup(receiver, args[0])
-			}
-			if !ok {
-				ok = vm.specialMapContainsKey(receiver, args[0])
-			}
-			if !ok {
-				var err error
-				_, ok, err = vm.objectKeyMapLookup(receiver, args[0])
-				if err != nil {
-					return Null, true, err
-				}
-			}
-			return Bool(ok), true, nil
-		case "containsValue":
-			if len(args) != 1 {
-				return Null, true, fmt.Errorf("Map.containsValue expects 1 argument")
-			}
-			for _, value := range receiver.Map {
-				if value.Equal(args[0]) {
-					return Bool(true), true, nil
-				}
-			}
-			return Bool(false), true, nil
-		case "remove":
-			if len(args) != 1 {
-				return Null, true, fmt.Errorf("Map.remove expects 1 argument")
-			}
-			key := vm.mapLookupKey(receiver, args[0])
-			removed := Null
-			if value, ok := receiver.Map[key]; ok {
-				removed = value
-				delete(receiver.Map, key)
-				delete(receiver.MapKeys, key)
-				if len(receiver.MapOrder) > 0 {
-					filtered := receiver.MapOrder[:0]
-					for _, orderedKey := range receiver.MapOrder {
-						if orderedKey != key {
-							filtered = append(filtered, orderedKey)
-						}
-					}
-					receiver.MapOrder = filtered
-				}
-				if err := vm.storeReceiver(receiverName, receiver); err != nil {
-					return Null, true, err
-				}
-			}
-			return removed, true, nil
-		case "keySet":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("Map.keySet expects 0 arguments")
-			}
-			if out, ok := vm.sObjectFieldMapCanonicalKeySet(receiver); ok {
-				return out, true, nil
-			}
-			out := Set()
-			for _, rawKey := range orderedValueMapKeys(receiver) {
-				out.Set = append(out.Set, mapStoredKey(receiver, rawKey))
-			}
-			if strings.HasPrefix(receiver.Runtime, "sobject-populated-fields:") {
-				out.Runtime = receiver.Runtime + ":keyset"
-			}
-			if keyType, _, ok := mapTypeArgs(receiver.Type); ok {
-				out.Type = "Set<" + keyType + ">"
-			}
-			return out, true, nil
-		case "values":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("Map.values expects 0 arguments")
-			}
-			if out, ok := sObjectFieldMapCanonicalValues(receiver); ok {
-				return out, true, nil
-			}
-			out := List()
-			for _, key := range orderedValueMapKeys(receiver) {
-				out.List = append(out.List, receiver.Map[key])
-			}
-			if _, valueType, ok := mapTypeArgs(receiver.Type); ok {
-				out.Type = "List<" + valueType + ">"
-			}
-			return out, true, nil
-		case "size":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("Map.size expects 0 arguments")
-			}
-			if size, ok := sObjectFieldMapCanonicalSize(receiver); ok {
-				return Int(int64(size)), true, nil
-			}
-			return Int(int64(len(receiver.Map))), true, nil
-		case "isEmpty":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("Map.isEmpty expects 0 arguments")
-			}
-			if size, ok := sObjectFieldMapCanonicalSize(receiver); ok {
-				return Bool(size == 0), true, nil
-			}
-			return Bool(len(receiver.Map) == 0), true, nil
-		case "clear":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("Map.clear expects 0 arguments")
-			}
-			receiver.Map = map[string]Value{}
-			receiver.MapKeys = map[string]Value{}
-			receiver.MapOrder = nil
-			if err := vm.storeReceiver(receiverName, receiver); err != nil {
-				return Null, true, err
-			}
-			return Null, true, nil
-		case "clone":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("Map.clone expects 0 arguments")
-			}
-			cloned := receiver
-			cloned.Ref = newValueRef()
-			cloned.Map = make(map[string]Value, len(receiver.Map))
-			for key, value := range receiver.Map {
-				cloned.Map[key] = value
-			}
-			if receiver.MapKeys != nil {
-				cloned.MapKeys = make(map[string]Value, len(receiver.MapKeys))
-				for key, value := range receiver.MapKeys {
-					cloned.MapKeys[key] = value
-				}
-			}
-			if receiver.MapOrder != nil {
-				cloned.MapOrder = append([]string(nil), receiver.MapOrder...)
-			}
-			return cloned, true, nil
-		case "deepClone":
-			if len(args) != 0 {
-				return Null, true, unsupportedCallError("Map.deepClone with preserve options")
-			}
-			return cloneValue(receiver), true, nil
+		if value, handled, err := vm.callMapValueMember(receiverName, receiver, method, args, result); handled || err != nil {
+			return value, handled, err
 		}
 	}
 	if value, handled := vm.generatedPlatformInstanceDefault(receiverName, receiver, method, args); handled {
@@ -3160,4 +2441,753 @@ func namespaceTokenInSchemaName(name string) string {
 		return ""
 	}
 	return name[:first]
+}
+
+// callListValueMember dispatches a method call on a List receiver. It returns
+// handled=false when the method is not a List member so callNonObjectValueMember
+// continues with the shared fall-through handling.
+func (vm *VM) callListValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	switch method {
+	case "getSObjectType":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("List.getSObjectType expects 0 arguments")
+		}
+		if declaredType := vm.VarTypes[receiverName]; declaredType != "" {
+			if elementType, ok := collectionElementType(declaredType); ok && !strings.EqualFold(elementType, "sObject") {
+				if token, ok := vm.sObjectTypeTokenForName(elementType); ok {
+					return token, true, nil
+				}
+			}
+		}
+		if elementType, ok := collectionElementType(receiver.Static); ok && !strings.EqualFold(elementType, "sObject") {
+			if token, ok := vm.sObjectTypeTokenForName(elementType); ok {
+				return token, true, nil
+			}
+		}
+		if elementType, ok := collectionElementType(receiver.Runtime); ok && !strings.EqualFold(elementType, "sObject") {
+			if token, ok := vm.sObjectTypeTokenForName(elementType); ok {
+				return token, true, nil
+			}
+		}
+		if elementType, ok := collectionElementType(receiver.Type); ok && !strings.EqualFold(elementType, "sObject") {
+			if token, ok := vm.sObjectTypeTokenForName(elementType); ok {
+				return token, true, nil
+			}
+		}
+		for _, item := range receiver.List {
+			if item.Kind == ValueObject && vm.isSObjectLikeType(item.Type) {
+				if token, ok := vm.sObjectTypeTokenForName(item.Type); ok {
+					return token, true, nil
+				}
+			}
+		}
+		if elementType, ok := collectionElementType(receiver.Type); ok && strings.EqualFold(elementType, "sObject") {
+			return Null, true, nil
+		}
+		if len(receiver.List) == 0 {
+			return Null, true, nil
+		}
+		if token, ok := vm.sObjectTypeTokenForName("SObject"); ok {
+			return token, true, nil
+		}
+		return Null, true, fmt.Errorf("List.getSObjectType requires SObject list")
+	case "add":
+		if len(args) != 1 && len(args) != 2 {
+			return Null, true, fmt.Errorf("List.add expects 1 or 2 arguments")
+		}
+		previous := receiver
+		valueArg := args[0]
+		insertAt := -1
+		if len(args) == 2 {
+			if args[0].Kind != ValueInt {
+				return Null, true, fmt.Errorf("List.add index expects Integer")
+			}
+			insertAt = int(args[0].Int)
+			if insertAt < 0 || insertAt > len(receiver.List) {
+				return Null, true, listIndexException(insertAt)
+			}
+			valueArg = args[1]
+		}
+		mutationType := vm.collectionMutationType(receiver)
+		item, err := vm.coerceCollectionElement(mutationType, valueArg)
+		if err != nil {
+			return Null, true, collectionStoreException(mutationType, valueArg)
+		}
+		if insertAt >= 0 {
+			receiver.List = append(receiver.List, Null)
+			copy(receiver.List[insertAt+1:], receiver.List[insertAt:])
+			receiver.List[insertAt] = item
+		} else {
+			receiver.List = append(receiver.List, item)
+		}
+		if err := vm.storeReceiver(receiverName, receiver); err != nil {
+			return Null, true, err
+		}
+		vm.propagateCollectionMutation(previous, receiver)
+		if insertAt >= 0 {
+			return Null, true, nil
+		}
+		return Bool(true), true, nil
+	case "addAll":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("List.addAll expects List, Set, or Iterable")
+		}
+		values, err := vm.iterableCollectionMembers(args[0], result, "List.addAll")
+		if err != nil {
+			return Null, true, err
+		}
+		previous := receiver
+		mutationType := vm.collectionMutationType(receiver)
+		for _, value := range values {
+			item, err := vm.coerceCollectionElement(mutationType, value)
+			if err != nil {
+				return Null, true, collectionStoreException(mutationType, value)
+			}
+			receiver.List = append(receiver.List, item)
+		}
+		if err := vm.storeReceiver(receiverName, receiver); err != nil {
+			return Null, true, err
+		}
+		vm.propagateCollectionMutation(previous, receiver)
+		return Null, true, nil
+	case "addToRelationship":
+		updated, err := listAppendSObjects(receiver, "__glade_added_to_relationship", args, "List.addToRelationship")
+		if err != nil {
+			return Null, true, err
+		}
+		if err := vm.storeReceiver(receiverName, updated); err != nil {
+			return Null, true, err
+		}
+		return Null, true, nil
+	case "markForDelete":
+		updated, err := listAppendSObjects(receiver, "__glade_marked_for_delete", args, "List.markForDelete")
+		if err != nil {
+			return Null, true, err
+		}
+		if err := vm.storeReceiver(receiverName, updated); err != nil {
+			return Null, true, err
+		}
+		return Null, true, nil
+	case "getAddedToRelationship":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("List.getAddedToRelationship expects 0 arguments")
+		}
+		return listRelationshipValues(receiver, "__glade_added_to_relationship"), true, nil
+	case "getMarkedForDeletion":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("List.getMarkedForDeletion expects 0 arguments")
+		}
+		return listRelationshipValues(receiver, "__glade_marked_for_delete"), true, nil
+	case "size":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("List.size expects 0 arguments")
+		}
+		return Int(int64(len(receiver.List))), true, nil
+	case "isEmpty":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("List.isEmpty expects 0 arguments")
+		}
+		return Bool(len(receiver.List) == 0), true, nil
+	case "get":
+		if len(args) != 1 || args[0].Kind != ValueInt {
+			return Null, true, fmt.Errorf("List.get expects integer index")
+		}
+		i := int(args[0].Int)
+		if i < 0 || i >= len(receiver.List) {
+			return Null, true, listIndexException(i)
+		}
+		return receiver.List[i], true, nil
+	case "contains":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("List.contains expects 1 argument")
+		}
+		contains, err := vm.collectionContainsValue(receiver.List, args[0], result)
+		if err != nil {
+			return Null, true, err
+		}
+		return Bool(contains), true, nil
+	case "indexOf":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("List.indexOf expects 1 argument")
+		}
+		i, err := vm.collectionIndexOfValue(receiver.List, args[0], result)
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(i)), true, nil
+	case "clone":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("List.clone expects 0 arguments")
+		}
+		cloned := receiver
+		cloned.Ref = newValueRef()
+		cloned.List = append([]Value(nil), receiver.List...)
+		return cloned, true, nil
+	case "deepClone":
+		if len(args) > 3 {
+			return Null, true, fmt.Errorf("List.deepClone expects at most 3 Boolean arguments")
+		}
+		for _, arg := range args {
+			if arg.Kind != ValueBool {
+				return Null, true, fmt.Errorf("List.deepClone preserve options expect Boolean arguments")
+			}
+		}
+		return cloneValue(receiver), true, nil
+	case "iterator":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("List.iterator expects 0 arguments")
+		}
+		return collectionIterator(receiver), true, nil
+	case "sort":
+		if len(args) > 1 {
+			return Null, true, fmt.Errorf("List.sort expects 0 or 1 arguments")
+		}
+		previous := receiver
+		sorted := append([]Value(nil), receiver.List...)
+		if len(args) == 0 {
+			if err := vm.sortComparableValues(sorted, result); err != nil {
+				return Null, true, err
+			}
+		} else {
+			if err := vm.sortValuesWithComparator(sorted, args[0], result); err != nil {
+				return Null, true, err
+			}
+		}
+		receiver.List = sorted
+		if err := vm.storeReceiver(receiverName, receiver); err != nil {
+			return Null, true, err
+		}
+		vm.propagateCollectionMutation(previous, receiver)
+		return Null, true, nil
+	case "remove":
+		if len(args) != 1 || args[0].Kind != ValueInt {
+			return Null, true, fmt.Errorf("List.remove expects integer index")
+		}
+		previous := receiver
+		i := int(args[0].Int)
+		if i < 0 || i >= len(receiver.List) {
+			return Null, true, listIndexException(i)
+		}
+		removed := receiver.List[i]
+		receiver.List = append(receiver.List[:i], receiver.List[i+1:]...)
+		if err := vm.storeReceiver(receiverName, receiver); err != nil {
+			return Null, true, err
+		}
+		vm.propagateCollectionMutation(previous, receiver)
+		return removed, true, nil
+	case "clear":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("List.clear expects 0 arguments")
+		}
+		previous := receiver
+		receiver.List = nil
+		if err := vm.storeReceiver(receiverName, receiver); err != nil {
+			return Null, true, err
+		}
+		vm.propagateCollectionMutation(previous, receiver)
+		return Null, true, nil
+	case "set":
+		if len(args) != 2 || args[0].Kind != ValueInt {
+			return Null, true, fmt.Errorf("List.set expects integer index and value")
+		}
+		previous := receiver
+		i := int(args[0].Int)
+		if i < 0 || i >= len(receiver.List) {
+			return Null, true, listIndexException(i)
+		}
+		item, err := vm.coerceCollectionElement(receiver.Type, args[1])
+		if err != nil {
+			return Null, true, fmt.Errorf("List.set: %w", err)
+		}
+		receiver.List[i] = item
+		if err := vm.storeReceiver(receiverName, receiver); err != nil {
+			return Null, true, err
+		}
+		vm.propagateCollectionMutation(previous, receiver)
+		return Null, true, nil
+	}
+	return Null, false, nil
+}
+
+// callSetValueMember dispatches a method call on a Set receiver. It returns
+// handled=false when the method is not a Set member so callNonObjectValueMember
+// continues with the shared fall-through handling.
+func (vm *VM) callSetValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	switch method {
+	case "get":
+		if receiverName == "disabledTriggers" {
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("Set-backed disabledTriggers.get expects 1 argument")
+			}
+			contains, err := vm.collectionContainsValue(receiver.Set, args[0], result)
+			if err != nil {
+				return Null, true, err
+			}
+			if contains {
+				return Int(1), true, nil
+			}
+			return Int(0), true, nil
+		}
+	case "add":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("Set.add expects 1 argument")
+		}
+		previous := receiver
+		item, err := vm.coerceCollectionElement(receiver.Type, args[0])
+		if err != nil {
+			return Null, true, fmt.Errorf("Set.add: %w", err)
+		}
+		contains, err := vm.collectionContainsValue(receiver.Set, item, result)
+		if err != nil {
+			return Null, true, err
+		}
+		if !contains {
+			receiver.Set = append(receiver.Set, item)
+			if err := vm.storeReceiver(receiverName, receiver); err != nil {
+				return Null, true, err
+			}
+			vm.propagateCollectionMutation(previous, receiver)
+			return Bool(true), true, nil
+		}
+		return Bool(false), true, nil
+	case "addAll":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("Set.addAll expects List, Set, or Iterable")
+		}
+		values, err := vm.iterableCollectionMembers(args[0], result, "Set.addAll")
+		if err != nil {
+			return Null, true, err
+		}
+		previous := receiver
+		changed := false
+		for _, value := range values {
+			item, err := vm.coerceCollectionElement(receiver.Type, value)
+			if err != nil {
+				return Null, true, fmt.Errorf("Set.addAll: %w", err)
+			}
+			contains, err := vm.collectionContainsValue(receiver.Set, item, result)
+			if err != nil {
+				return Null, true, err
+			}
+			if !contains {
+				receiver.Set = append(receiver.Set, item)
+				changed = true
+			}
+		}
+		if changed {
+			if err := vm.storeReceiver(receiverName, receiver); err != nil {
+				return Null, true, err
+			}
+			vm.propagateCollectionMutation(previous, receiver)
+		}
+		return Bool(changed), true, nil
+	case "size":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Set.size expects 0 arguments")
+		}
+		return Int(int64(len(receiver.Set))), true, nil
+	case "isEmpty":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Set.isEmpty expects 0 arguments")
+		}
+		return Bool(len(receiver.Set) == 0), true, nil
+	case "contains":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("Set.contains expects 1 argument")
+		}
+		if contains, ok := vm.populatedFieldsKeySetContains(receiver, args[0]); ok {
+			return Bool(contains), true, nil
+		}
+		contains, err := vm.collectionContainsValue(receiver.Set, args[0], result)
+		if err != nil {
+			return Null, true, err
+		}
+		return Bool(contains), true, nil
+	case "containsAll":
+		if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
+			return Null, true, fmt.Errorf("Set.containsAll expects List or Set")
+		}
+		for _, value := range collectionMembers(args[0]) {
+			contains, err := vm.collectionContainsValue(receiver.Set, value, result)
+			if err != nil {
+				return Null, true, err
+			}
+			if !contains {
+				return Bool(false), true, nil
+			}
+		}
+		return Bool(true), true, nil
+	case "remove":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("Set.remove expects 1 argument")
+		}
+		i, err := vm.collectionIndexOfValue(receiver.Set, args[0], result)
+		if err != nil {
+			return Null, true, err
+		}
+		if i >= 0 {
+			receiver.Set = append(receiver.Set[:i], receiver.Set[i+1:]...)
+			if err := vm.storeReceiver(receiverName, receiver); err != nil {
+				return Null, true, err
+			}
+			return Bool(true), true, nil
+		}
+		return Bool(false), true, nil
+	case "clear":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Set.clear expects 0 arguments")
+		}
+		receiver.Set = nil
+		if err := vm.storeReceiver(receiverName, receiver); err != nil {
+			return Null, true, err
+		}
+		return Null, true, nil
+	case "removeAll":
+		if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
+			return Null, true, fmt.Errorf("Set.removeAll expects List or Set")
+		}
+		changed := false
+		out := receiver.Set[:0]
+		remove := collectionMembers(args[0])
+		for _, value := range receiver.Set {
+			contains, err := vm.collectionContainsValue(remove, value, result)
+			if err != nil {
+				return Null, true, err
+			}
+			if contains {
+				changed = true
+				continue
+			}
+			out = append(out, value)
+		}
+		receiver.Set = out
+		if changed {
+			if err := vm.storeReceiver(receiverName, receiver); err != nil {
+				return Null, true, err
+			}
+		}
+		return Bool(changed), true, nil
+	case "retainAll":
+		if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
+			return Null, true, fmt.Errorf("Set.retainAll expects List or Set")
+		}
+		changed := false
+		keep := collectionMembers(args[0])
+		out := receiver.Set[:0]
+		for _, value := range receiver.Set {
+			contains, err := vm.collectionContainsValue(keep, value, result)
+			if err != nil {
+				return Null, true, err
+			}
+			if contains {
+				out = append(out, value)
+				continue
+			}
+			changed = true
+		}
+		receiver.Set = out
+		if changed {
+			if err := vm.storeReceiver(receiverName, receiver); err != nil {
+				return Null, true, err
+			}
+		}
+		return Bool(changed), true, nil
+	case "clone":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Set.clone expects 0 arguments")
+		}
+		cloned := receiver
+		cloned.Ref = newValueRef()
+		cloned.Set = append([]Value(nil), receiver.Set...)
+		return cloned, true, nil
+	case "deepClone":
+		if len(args) != 0 {
+			return Null, true, unsupportedCallError("Set.deepClone with preserve options")
+		}
+		return cloneValue(receiver), true, nil
+	case "iterator":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Set.iterator expects 0 arguments")
+		}
+		return collectionIterator(receiver), true, nil
+	case "put":
+		if receiverName == "disabledTriggers" {
+			if len(args) != 2 {
+				return Null, true, fmt.Errorf("Set-backed disabledTriggers.put expects 2 arguments")
+			}
+			if args[1].Kind != ValueInt {
+				return Null, true, fmt.Errorf("Set-backed disabledTriggers.put expects Integer counter")
+			}
+			contains, err := vm.collectionContainsValue(receiver.Set, args[0], result)
+			if err != nil {
+				return Null, true, err
+			}
+			old := Int(0)
+			if contains {
+				old = Int(1)
+			}
+			if args[1].Int > 0 {
+				if !contains {
+					receiver.Set = append(receiver.Set, args[0])
+					if err := vm.storeReceiver(receiverName, receiver); err != nil {
+						return Null, true, err
+					}
+				}
+			} else if contains {
+				i, err := vm.collectionIndexOfValue(receiver.Set, args[0], result)
+				if err != nil {
+					return Null, true, err
+				}
+				if i >= 0 {
+					receiver.Set = append(receiver.Set[:i], receiver.Set[i+1:]...)
+					if err := vm.storeReceiver(receiverName, receiver); err != nil {
+						return Null, true, err
+					}
+				}
+			}
+			return old, true, nil
+		}
+	}
+	return Null, false, nil
+}
+
+// callMapValueMember dispatches a method call on a Map receiver. It returns
+// handled=false when the method is not a Map member so callNonObjectValueMember
+// continues with the shared fall-through handling.
+func (vm *VM) callMapValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	switch method {
+	case "put":
+		if len(args) != 2 {
+			return Null, true, fmt.Errorf("Map.put expects 2 arguments")
+		}
+		key, item, err := vm.coerceMapEntry(receiver.Type, args[0], args[1])
+		if err != nil {
+			return Null, true, fmt.Errorf("Map.put: %w", err)
+		}
+		previous := Null
+		encodedKey := vm.mapKey(key)
+		if existing, ok := receiver.Map[encodedKey]; ok {
+			previous = existing
+		} else {
+			receiver.MapOrder = append(receiver.MapOrder, encodedKey)
+		}
+		receiver.Map[encodedKey] = item
+		if receiver.MapKeys == nil {
+			receiver.MapKeys = make(map[string]Value)
+		}
+		receiver.MapKeys[encodedKey] = key
+		if err := vm.storeReceiver(receiverName, receiver); err != nil {
+			return Null, true, err
+		}
+		return previous, true, nil
+	case "putAll":
+		if len(args) != 1 || (args[0].Kind != ValueMap && args[0].Kind != ValueList) {
+			return Null, true, fmt.Errorf("Map.putAll expects Map or List")
+		}
+		if args[0].Kind == ValueList {
+			updated, err := vm.putAllSObjectList(receiver, args[0])
+			if err != nil {
+				return Null, true, err
+			}
+			if err := vm.storeReceiver(receiverName, updated); err != nil {
+				return Null, true, err
+			}
+			return Null, true, nil
+		}
+		for rawKey, value := range args[0].Map {
+			keyValue := mapStoredKey(args[0], rawKey)
+			key, item, err := vm.coerceMapEntry(receiver.Type, keyValue, value)
+			if err != nil {
+				return Null, true, fmt.Errorf("Map.putAll: %w", err)
+			}
+			encodedKey := vm.mapKey(key)
+			receiver.Map[encodedKey] = item
+			if receiver.MapKeys == nil {
+				receiver.MapKeys = make(map[string]Value)
+			}
+			receiver.MapKeys[encodedKey] = key
+		}
+		if err := vm.storeReceiver(receiverName, receiver); err != nil {
+			return Null, true, err
+		}
+		return Null, true, nil
+	case "get":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("Map.get expects 1 argument")
+		}
+		key := vm.mapLookupKey(receiver, args[0])
+		if objectName, ok := sObjectFieldMapObjectName(receiver); ok && args[0].Kind == ValueString && vm.sObjectFieldMapKeyIsChildRelationship(objectName, args[0].Text) && !vm.sObjectFieldMapDirectValueMatchesKey(receiver, key, args[0].Text) {
+			return missingMapValue(receiver), true, nil
+		}
+		value, ok := receiver.Map[key]
+		if !ok {
+			value, ok = vm.namespaceStringMapLookup(receiver, args[0])
+		}
+		if !ok {
+			value, ok = vm.populatedFieldsMapAliasLookup(receiver, args[0])
+		}
+		if !ok {
+			value, ok = vm.specialMapLookup(receiver, args[0])
+		}
+		if !ok {
+			var err error
+			value, ok, err = vm.objectKeyMapLookup(receiver, args[0])
+			if err != nil {
+				return Null, true, err
+			}
+		}
+		if !ok {
+			return missingMapValue(receiver), true, nil
+		}
+		if value.Kind == ValueNull && value.Type == "" {
+			value = missingMapValue(receiver)
+		}
+		return value, true, nil
+	case "contains", "containsKey":
+		if len(args) != 1 {
+			if method == "contains" {
+				return Null, true, fmt.Errorf("Map.contains expects 1 argument")
+			}
+			return Null, true, fmt.Errorf("Map.containsKey expects 1 argument")
+		}
+		key := vm.mapLookupKey(receiver, args[0])
+		if objectName, ok := sObjectFieldMapObjectName(receiver); ok && args[0].Kind == ValueString && vm.sObjectFieldMapKeyIsChildRelationship(objectName, args[0].Text) && !vm.sObjectFieldMapDirectValueMatchesKey(receiver, key, args[0].Text) {
+			return Bool(false), true, nil
+		}
+		_, ok := receiver.Map[key]
+		if !ok {
+			_, ok = vm.namespaceStringMapLookup(receiver, args[0])
+		}
+		if !ok {
+			ok = vm.specialMapContainsKey(receiver, args[0])
+		}
+		if !ok {
+			var err error
+			_, ok, err = vm.objectKeyMapLookup(receiver, args[0])
+			if err != nil {
+				return Null, true, err
+			}
+		}
+		return Bool(ok), true, nil
+	case "containsValue":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("Map.containsValue expects 1 argument")
+		}
+		for _, value := range receiver.Map {
+			if value.Equal(args[0]) {
+				return Bool(true), true, nil
+			}
+		}
+		return Bool(false), true, nil
+	case "remove":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("Map.remove expects 1 argument")
+		}
+		key := vm.mapLookupKey(receiver, args[0])
+		removed := Null
+		if value, ok := receiver.Map[key]; ok {
+			removed = value
+			delete(receiver.Map, key)
+			delete(receiver.MapKeys, key)
+			if len(receiver.MapOrder) > 0 {
+				filtered := receiver.MapOrder[:0]
+				for _, orderedKey := range receiver.MapOrder {
+					if orderedKey != key {
+						filtered = append(filtered, orderedKey)
+					}
+				}
+				receiver.MapOrder = filtered
+			}
+			if err := vm.storeReceiver(receiverName, receiver); err != nil {
+				return Null, true, err
+			}
+		}
+		return removed, true, nil
+	case "keySet":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Map.keySet expects 0 arguments")
+		}
+		if out, ok := vm.sObjectFieldMapCanonicalKeySet(receiver); ok {
+			return out, true, nil
+		}
+		out := Set()
+		for _, rawKey := range orderedValueMapKeys(receiver) {
+			out.Set = append(out.Set, mapStoredKey(receiver, rawKey))
+		}
+		if strings.HasPrefix(receiver.Runtime, "sobject-populated-fields:") {
+			out.Runtime = receiver.Runtime + ":keyset"
+		}
+		if keyType, _, ok := mapTypeArgs(receiver.Type); ok {
+			out.Type = "Set<" + keyType + ">"
+		}
+		return out, true, nil
+	case "values":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Map.values expects 0 arguments")
+		}
+		if out, ok := sObjectFieldMapCanonicalValues(receiver); ok {
+			return out, true, nil
+		}
+		out := List()
+		for _, key := range orderedValueMapKeys(receiver) {
+			out.List = append(out.List, receiver.Map[key])
+		}
+		if _, valueType, ok := mapTypeArgs(receiver.Type); ok {
+			out.Type = "List<" + valueType + ">"
+		}
+		return out, true, nil
+	case "size":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Map.size expects 0 arguments")
+		}
+		if size, ok := sObjectFieldMapCanonicalSize(receiver); ok {
+			return Int(int64(size)), true, nil
+		}
+		return Int(int64(len(receiver.Map))), true, nil
+	case "isEmpty":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Map.isEmpty expects 0 arguments")
+		}
+		if size, ok := sObjectFieldMapCanonicalSize(receiver); ok {
+			return Bool(size == 0), true, nil
+		}
+		return Bool(len(receiver.Map) == 0), true, nil
+	case "clear":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Map.clear expects 0 arguments")
+		}
+		receiver.Map = map[string]Value{}
+		receiver.MapKeys = map[string]Value{}
+		receiver.MapOrder = nil
+		if err := vm.storeReceiver(receiverName, receiver); err != nil {
+			return Null, true, err
+		}
+		return Null, true, nil
+	case "clone":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Map.clone expects 0 arguments")
+		}
+		cloned := receiver
+		cloned.Ref = newValueRef()
+		cloned.Map = make(map[string]Value, len(receiver.Map))
+		for key, value := range receiver.Map {
+			cloned.Map[key] = value
+		}
+		if receiver.MapKeys != nil {
+			cloned.MapKeys = make(map[string]Value, len(receiver.MapKeys))
+			for key, value := range receiver.MapKeys {
+				cloned.MapKeys[key] = value
+			}
+		}
+		if receiver.MapOrder != nil {
+			cloned.MapOrder = append([]string(nil), receiver.MapOrder...)
+		}
+		return cloned, true, nil
+	case "deepClone":
+		if len(args) != 0 {
+			return Null, true, unsupportedCallError("Map.deepClone with preserve options")
+		}
+		return cloneValue(receiver), true, nil
+	}
+	return Null, false, nil
 }
