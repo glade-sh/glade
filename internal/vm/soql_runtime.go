@@ -1603,3 +1603,246 @@ func (vm *VM) expandSOQLBindsWith(raw string, lookup func(string) (Value, error)
 	}
 	return out.String(), nil
 }
+
+func (vm *VM) queryLocatorFromSOQL(query string, result *Result) (Value, error) {
+	value, err := vm.executeSOQL(query, result)
+	if err != nil {
+		return Null, err
+	}
+	locator := Object("Database.QueryLocator")
+	locator.Fields["Records"] = value
+	locator.Fields["Query"] = String(query)
+	return locator, nil
+}
+func (vm *VM) executeSOQL(raw string, execResult *Result) (Value, error) {
+	if soql.IsSOSLFind(raw) {
+		return vm.executeSOSL(raw, execResult)
+	}
+	values, err := vm.executeSOQLRows(raw, execResult)
+	if err != nil {
+		return Null, err
+	}
+	out := List(values...)
+	if len(values) > 0 && values[0].Type != "" {
+		out.Type = "List<" + values[0].Type + ">"
+	} else if objectName := vm.soqlResultObjectNameWithExpander(raw, vm.expandSOQLBinds); objectName != "" {
+		out.Type = "List<" + objectName + ">"
+	}
+	return out, nil
+}
+func (vm *VM) executeSOQLWithAccessLevel(raw string, accessLevel Value, execResult *Result) (Value, error) {
+	values, err := vm.executeSOQLRowsWithAccessLevel(raw, execResult, accessLevel)
+	if err != nil {
+		return Null, err
+	}
+	out := List(values...)
+	if len(values) > 0 && values[0].Type != "" {
+		out.Type = "List<" + values[0].Type + ">"
+	} else if objectName := vm.soqlResultObjectNameWithExpander(raw, vm.expandSOQLBinds); objectName != "" {
+		out.Type = "List<" + objectName + ">"
+	}
+	return out, nil
+}
+func (vm *VM) executeInlineSOQL(raw string, execResult *Result) (Value, error) {
+	value, err := vm.executeSOQL(raw, execResult)
+	if err != nil {
+		return Null, err
+	}
+	if value.Kind == ValueList {
+		if value.Fields == nil {
+			value.Fields = make(map[string]Value)
+		}
+		value.Fields["__soqlQuery"] = String(raw)
+	}
+	if vm.inlineSOQLMayReturnScalarCount(raw) {
+		if count, ok := aggregateCount(value); ok {
+			return count, nil
+		}
+	}
+	return value, nil
+}
+func (vm *VM) inlineSOQLMayReturnScalarCount(raw string) bool {
+	query, err := soql.ParseAt(raw, vm.fakeNow)
+	if err != nil {
+		return !strings.Contains(strings.ToLower(raw), " group by ")
+	}
+	if len(query.GroupBy) > 0 || query.Having != nil {
+		return false
+	}
+	return query.Count || len(query.Aggregates) == 1
+}
+func inlineSOQLQueryText(value Value) string {
+	if value.Kind != ValueList || value.Fields == nil {
+		return ""
+	}
+	query, ok := value.Fields["__soqlQuery"]
+	if !ok || query.Kind != ValueString {
+		return ""
+	}
+	return query.Text
+}
+func (vm *VM) executeSOQLWithBindMap(raw string, binds Value, execResult *Result) (Value, error) {
+	values, err := vm.executeSOQLRowsWithExpander(raw, execResult, func(query string) (string, error) {
+		return vm.expandSOQLBindsFromMap(query, binds)
+	}, binds, "")
+	if err != nil {
+		return Null, err
+	}
+	out := List(values...)
+	if len(values) > 0 && values[0].Type != "" {
+		out.Type = "List<" + values[0].Type + ">"
+	} else if objectName := vm.soqlResultObjectNameWithExpander(raw, func(query string) (string, error) {
+		return vm.expandSOQLBindsFromMap(query, binds)
+	}); objectName != "" {
+		out.Type = "List<" + objectName + ">"
+	}
+	return out, nil
+}
+func (vm *VM) executeSOQLWithBindMapAccessLevel(raw string, binds Value, accessLevel Value, execResult *Result) (Value, error) {
+	values, err := vm.executeSOQLRowsWithExpander(raw, execResult, func(query string) (string, error) {
+		return vm.expandSOQLBindsFromMap(query, binds)
+	}, binds, databaseAccessLevelSecurityMode(accessLevel))
+	if err != nil {
+		return Null, err
+	}
+	out := List(values...)
+	if len(values) > 0 && values[0].Type != "" {
+		out.Type = "List<" + values[0].Type + ">"
+	} else if objectName := vm.soqlResultObjectNameWithExpander(raw, func(query string) (string, error) {
+		return vm.expandSOQLBindsFromMap(query, binds)
+	}); objectName != "" {
+		out.Type = "List<" + objectName + ">"
+	}
+	return out, nil
+}
+func (vm *VM) soqlResultObjectNameWithExpander(raw string, expand func(string) (string, error)) string {
+	queryText := raw
+	if expand != nil {
+		if expanded, err := expand(raw); err == nil {
+			queryText = expanded
+		}
+	}
+	return vm.soqlResultObjectName(queryText)
+}
+func (vm *VM) soqlResultObjectName(raw string) string {
+	query, err := soql.ParseAt(raw, vm.fakeNow)
+	if err != nil || strings.TrimSpace(query.Object) == "" {
+		return ""
+	}
+	if query.Count || len(query.Aggregates) > 0 || len(query.HavingAggregates) > 0 || len(query.GroupBy) > 0 || query.Having != nil {
+		return "AggregateResult"
+	}
+	objectName := query.Object
+	if vm.Org != nil {
+		if resolved, ok := vm.resolveObjectName(query.Object); ok {
+			objectName = resolved
+		}
+	}
+	return objectName
+}
+func (vm *VM) executeSOQLForType(raw, typeName string, result *Result) (Value, error) {
+	value, err := vm.executeSOQL(raw, result)
+	if err != nil {
+		return Null, err
+	}
+	if collectionBase(typeName) == "List" || typeName == "Object" {
+		if collectionBase(typeName) == "List" {
+			if value.Runtime == "" && value.Type != "" && !strings.EqualFold(value.Type, typeName) {
+				value.Runtime = value.Type
+			}
+			value.Type = typeName
+		}
+		return value, nil
+	}
+	if typeName == "Integer" || typeName == "Long" {
+		if count, ok := aggregateCount(value); ok {
+			return count, nil
+		}
+	}
+	if len(value.List) == 0 {
+		return Null, newExceptionError("QueryException", "List has no rows for assignment to SObject")
+	}
+	if len(value.List) > 1 {
+		return Null, newExceptionError("QueryException", "List has more than 1 row for assignment to SObject")
+	}
+	return value.List[0], nil
+}
+func (vm *VM) executeSOQLRows(raw string, execResult *Result) ([]Value, error) {
+	return vm.executeSOQLRowsWithExpander(raw, execResult, vm.expandSOQLBinds, typedMap("Map<String,Object>"), "")
+}
+func (vm *VM) executeSOQLRowsWithAccessLevel(raw string, execResult *Result, accessLevel Value) ([]Value, error) {
+	return vm.executeSOQLRowsWithExpander(raw, execResult, vm.expandSOQLBinds, typedMap("Map<String,Object>"), databaseAccessLevelSecurityMode(accessLevel))
+}
+func writeSOQLBindExpansion(out *strings.Builder, value Value, consumed string) {
+	out.WriteString(soqlLiteral(value))
+	if strings.TrimRight(consumed, " \t\n\r") != consumed {
+		out.WriteByte(' ')
+	}
+}
+func shouldEvaluateSOQLBindExpression(raw string, pos, callEnd int, isCall bool) bool {
+	if isCall {
+		pos = callEnd
+	}
+	for pos < len(raw) && (raw[pos] == ' ' || raw[pos] == '\t' || raw[pos] == '\n' || raw[pos] == '\r') {
+		pos++
+	}
+	return pos < len(raw) && (raw[pos] == '[' || raw[pos] == '(' || raw[pos] == '.' || raw[pos] == '+')
+}
+func (vm *VM) evalSOQLBindExpression(source string, result *Result) (Value, int, error) {
+	expr, end, err := compileExpressionPrefix(source)
+	if err != nil {
+		return Null, 0, err
+	}
+	value, err := vm.eval(expr, result)
+	if err != nil {
+		return Null, 0, err
+	}
+	return value, end, nil
+}
+func isSOQLLiteralBind(name string) bool {
+	return strings.EqualFold(name, "true") || strings.EqualFold(name, "false") || strings.EqualFold(name, "null")
+}
+func rewriteTrailingSOQLEqualsToIn(out *strings.Builder) {
+	text := out.String()
+	trimmed := strings.TrimRight(text, " \t\n\r")
+	if !strings.HasSuffix(trimmed, "=") {
+		return
+	}
+	out.Reset()
+	out.WriteString(strings.TrimRight(trimmed[:len(trimmed)-1], " \t\n\r"))
+	out.WriteString(" IN ")
+}
+func consumeEmptyCallSuffix(raw string, index int) (int, bool) {
+	j := index
+	for j < len(raw) && (raw[j] == ' ' || raw[j] == '\t' || raw[j] == '\n' || raw[j] == '\r') {
+		j++
+	}
+	if j >= len(raw) || raw[j] != '(' {
+		return index, false
+	}
+	j++
+	for j < len(raw) && (raw[j] == ' ' || raw[j] == '\t' || raw[j] == '\n' || raw[j] == '\r') {
+		j++
+	}
+	if j >= len(raw) || raw[j] != ')' {
+		return index, false
+	}
+	return j + 1, true
+}
+func isSOQLDateLiteralBind(raw string, colon int) bool {
+	start := colon - 1
+	for start >= 0 && (raw[start] == ' ' || raw[start] == '\t' || raw[start] == '\n' || raw[start] == '\r') {
+		start--
+	}
+	end := start + 1
+	for start >= 0 && (raw[start] == '_' || raw[start] >= 'A' && raw[start] <= 'Z' || raw[start] >= 'a' && raw[start] <= 'z') {
+		start--
+	}
+	prefix := strings.ToUpper(raw[start+1 : end])
+	switch prefix {
+	case "LAST_N_DAYS", "NEXT_N_DAYS", "N_DAYS_AGO", "LAST_N_WEEKS", "NEXT_N_WEEKS", "LAST_N_MONTHS", "NEXT_N_MONTHS", "LAST_N_YEARS", "NEXT_N_YEARS":
+		return true
+	default:
+		return false
+	}
+}
