@@ -884,3 +884,182 @@ func emailMergeRootMatches(root, objectName, namespace string, aliases ...string
 	}
 	return strings.EqualFold(root, storage.StripNamespaceToken(namespace, objectName))
 }
+
+func callEmailFileAttachmentMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	switch method {
+	case "setBody":
+		if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Blob" {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.EmailFileAttachment.setBody expects Blob")
+		}
+		receiver.Fields["body"] = args[0]
+		return Null, receiver, true, true, nil
+	case "setContentType", "setFileName":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.EmailFileAttachment.%s expects String", method)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = args[0]
+		return Null, receiver, true, true, nil
+	case "setInline":
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.EmailFileAttachment.setInline expects Boolean")
+		}
+		receiver.Fields["inline"] = args[0]
+		return Null, receiver, true, true, nil
+	case "getBody", "getContentType", "getFileName", "getId", "getInline":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.EmailFileAttachment.%s expects 0 arguments", method)
+		}
+		return receiver.Fields[emailMessageFieldName(method)], receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+func callSingleEmailMessageMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	switch method {
+	case "setToAddresses", "setCcAddresses", "setBccAddresses", "setFileAttachments", "setEntityAttachments", "setDocumentAttachments", "setTargetObjectIds":
+		if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueNull) {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects List", method)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = args[0]
+		return Null, receiver, true, true, nil
+	case "setSubject", "setPlainTextBody", "setHtmlBody", "setReplyTo", "setSenderDisplayName",
+		"setCharset", "setInReplyTo", "setReferences", "setOrgWideEmailAddressId",
+		"setTargetObjectId", "setTemplateId", "setWhatId", "setOptOutPolicy", "setEmailPriority",
+		"setUnsubscribeComment":
+		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueNull && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects String", method)
+		}
+		value := args[0]
+		if idText, ok := typedIDValueText(value); ok {
+			value = String(idText)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = value
+		return Null, receiver, true, true, nil
+	case "setSaveAsActivity", "setTreatBodiesAsTemplate", "setTreatTargetObjectAsRecipient", "setUseSignature", "setBccSender", "setOneClickPost":
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects Boolean", method)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = args[0]
+		return Null, receiver, true, true, nil
+	case "setUnsubscribeUrls":
+		if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueNull) {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.setUnsubscribeUrls expects List")
+		}
+		receiver.Fields["unsubscribeUrls"] = args[0]
+		return Null, receiver, true, true, nil
+	case "getToAddresses", "getCcAddresses", "getBccAddresses", "getFileAttachments", "getEntityAttachments", "getDocumentAttachments", "getTargetObjectIds",
+		"getSubject", "getPlainTextBody", "getHtmlBody", "getReplyTo", "getSenderDisplayName",
+		"getCharset", "getInReplyTo", "getReferences", "getOrgWideEmailAddressId",
+		"getTargetObjectId", "getTemplateId", "getTemplateName", "getWhatId", "getOptOutPolicy", "getEmailPriority",
+		"getUnsubscribeComment", "getUnsubscribeUrls",
+		"getSaveAsActivity", "getTreatBodiesAsTemplate", "getTreatTargetObjectAsRecipient", "getUseSignature", "getBccSender", "getOneClickPost":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects 0 arguments", method)
+		}
+		return receiver.Fields[emailMessageFieldName(method)], receiver, false, true, nil
+	case "isTreatBodiesAsTemplate", "isTreatTargetObjectAsRecipient", "isUserMail":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects 0 arguments", method)
+		}
+		return receiver.Fields[emailMessageFieldName(method)], receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+func callMassEmailMessageMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	switch method {
+	case "setTargetObjectIds", "setWhatIds":
+		if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueNull) {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects List", method)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = args[0]
+		return Null, receiver, true, true, nil
+	case "setTemplateId", "setDescription", "setOptOutPolicy", "setEmailPriority", "setReplyTo", "setSenderDisplayName", "setSubject":
+		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueNull && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects String", method)
+		}
+		value := args[0]
+		if idText, ok := typedIDValueText(value); ok {
+			value = String(idText)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = value
+		return Null, receiver, true, true, nil
+	case "setSaveAsActivity", "setBccSender", "setUseSignature":
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects Boolean", method)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = args[0]
+		return Null, receiver, true, true, nil
+	case "getTargetObjectIds", "getWhatIds", "getTemplateId", "getDescription", "getOptOutPolicy",
+		"getEmailPriority", "getReplyTo", "getSenderDisplayName", "getSubject",
+		"getSaveAsActivity", "getBccSender", "getUseSignature":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects 0 arguments", method)
+		}
+		return receiver.Fields[emailMessageFieldName(method)], receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+func callMessagingDTOGetter(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	field := ""
+	if suffix, ok := passiveAccessorSuffix(method, "get"); ok {
+		field = strings.ToLower(suffix[:1]) + suffix[1:]
+	} else if suffix, ok := passiveAccessorSuffix(method, "is"); ok {
+		field = strings.ToLower(suffix[:1]) + suffix[1:]
+	}
+	if field == "" {
+		return Null, receiver, false, false, nil
+	}
+	if len(args) != 0 {
+		return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+	}
+	if value, ok := receiver.Fields[field]; ok {
+		return value, receiver, false, true, nil
+	}
+	if value, ok := receiver.Fields[strings.ToLower(field)]; ok {
+		return value, receiver, false, true, nil
+	}
+	return Null, receiver, false, true, nil
+}
+func callMessagingActionResultMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	switch method {
+	case "isSuccess", "getMessage", "getErrorCode":
+		return callMessagingDTOGetter(receiver, method, args)
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+func callMessagingBuilderMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	if strings.EqualFold(method, "build") {
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.build expects 0 arguments", receiver.Type)
+		}
+		var built Value
+		if strings.EqualFold(receiver.Type, "Messaging.ActionableNotification.Builder") {
+			built = newActionableNotification()
+		} else {
+			built = newActionResult()
+		}
+		for field, value := range receiver.Fields {
+			built.Fields[field] = value
+		}
+		return built, receiver, false, true, nil
+	}
+	if !strings.HasPrefix(method, "with") || len(method) <= len("with") {
+		return Null, receiver, false, false, nil
+	}
+	if len(args) != 1 {
+		return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 argument", receiver.Type, method)
+	}
+	field := strings.TrimPrefix(method, "with")
+	field = strings.ToLower(field[:1]) + field[1:]
+	receiver.Fields[field] = args[0]
+	return receiver, receiver, true, true, nil
+}
