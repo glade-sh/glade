@@ -309,6 +309,22 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if orgRecord.Fields["IsSandbox"].Kind != ValueBoolean || !orgRecord.Fields["IsSandbox"].Boolean {
 		t.Fatalf("organization fields = %#v", orgRecord.Fields)
 	}
+	stageState, ok := org.Objects["OpportunityStage"]
+	if !ok || len(stageState.Records) != 10 {
+		t.Fatalf("OpportunityStage records = %#v", stageState.Records)
+	}
+	won, ok := findRecordByStringField(stageState.Records, "MasterLabel", "Closed Won")
+	if !ok || !won.Fields["IsWon"].Boolean || !won.Fields["IsClosed"].Boolean || !won.Fields["IsActive"].Boolean {
+		t.Fatalf("Closed Won stage = %#v, %v", won, ok)
+	}
+	lost, ok := findRecordByStringField(stageState.Records, "MasterLabel", "Closed Lost")
+	if !ok || lost.Fields["IsWon"].Boolean || !lost.Fields["IsClosed"].Boolean {
+		t.Fatalf("Closed Lost stage = %#v, %v", lost, ok)
+	}
+	open, ok := findRecordByStringField(stageState.Records, "MasterLabel", "Prospecting")
+	if !ok || open.Fields["IsWon"].Boolean || open.Fields["IsClosed"].Boolean {
+		t.Fatalf("Prospecting stage = %#v, %v", open, ok)
+	}
 }
 
 func TestEnsureDeterministicPlatformDataHonorsConfiguredOrgID(t *testing.T) {

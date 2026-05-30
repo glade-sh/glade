@@ -2087,6 +2087,9 @@ func inferredLookupTarget(org storage.OrgState, objectName, fieldName string) st
 				return resolved
 			}
 		}
+		if target := inferredStandardLookupTargetBySuffix(org, fieldName); target != "" {
+			return target
+		}
 		if target := inferredCustomLookupTargetFromFieldSuffix(org, objectName, fieldName); target != "" {
 			return target
 		}
@@ -2156,6 +2159,36 @@ func inferredStandardLookupTarget(org storage.OrgState, fieldName string) string
 		return resolved
 	}
 	return target
+}
+
+// inferredStandardLookupTargetBySuffix resolves a custom lookup field whose name
+// ends with a standard object name (e.g. npe01__One2OneContact__c -> Contact) to
+// that standard object. Custom objects can never be named Account, Contact, etc.,
+// so a trailing standard-object word at a CamelCase boundary always denotes the
+// standard object and must win over any fuzzy custom-object suffix match.
+func inferredStandardLookupTargetBySuffix(org storage.OrgState, fieldName string) string {
+	base := storage.StripAnyNamespaceToken(strings.TrimSpace(fieldName))
+	if !hasSuffixFold(base, "__c") {
+		return ""
+	}
+	base = base[:len(base)-len("__c")]
+	standardNames := []string{
+		"Opportunity", "Account", "Contact", "Campaign", "Contract",
+		"Product2", "Pricebook2", "Solution", "Asset", "Lead", "Case", "User",
+	}
+	for _, name := range standardNames {
+		if len(base) <= len(name) || !hasSuffixFold(base, name) {
+			continue
+		}
+		boundary := base[len(base)-len(name)]
+		if boundary < 'A' || boundary > 'Z' {
+			continue
+		}
+		if resolved, ok := storage.ResolveObjectName(org, name); ok {
+			return resolved
+		}
+	}
+	return ""
 }
 
 func inferredLookupRelationshipName(fieldName string) string {
@@ -2444,7 +2477,7 @@ func collectDataFieldReferences(value any, currentObject string, add func(object
 			if currentObject != "" && !strings.Contains(key, ".") {
 				add(currentObject, key, child)
 			}
-			if isCustomDataObjectKey(key) {
+			if isCustomDataObjectKey(key) && !isFieldDescribeDescriptor(child) {
 				collectDataFieldReferences(child, key, add)
 				continue
 			}
@@ -2625,6 +2658,31 @@ func isCustomDataObjectKey(name string) bool {
 	return strings.HasSuffix(lower, "__c") || strings.HasSuffix(lower, "__e") || strings.HasSuffix(lower, "__mdt")
 }
 
+// isFieldDescribeDescriptor reports whether a JSON value is a UI-API field
+// wrapper (a getObjectInfo field descriptor or a getRecord field value) rather
+// than a nested record. UI-API keys its `fields` map by field API name (which
+// ends in __c), so the field name would otherwise be mistaken for a nested
+// custom object and synthesized into a phantom object. Describe descriptors
+// always carry both `apiName` and `dataType`; record field values carry `value`
+// and `displayValue`.
+func isFieldDescribeDescriptor(value any) bool {
+	descriptor, ok := value.(map[string]any)
+	if !ok {
+		return false
+	}
+	if _, hasAPIName := descriptor["apiName"]; hasAPIName {
+		if _, hasDataType := descriptor["dataType"]; hasDataType {
+			return true
+		}
+	}
+	if _, hasValue := descriptor["value"]; hasValue {
+		if _, hasDisplay := descriptor["displayValue"]; hasDisplay {
+			return true
+		}
+	}
+	return false
+}
+
 func projectDataJSONFiles(root string) []string {
 	if root == "" {
 		return nil
@@ -2654,7 +2712,7 @@ func projectDataJSONFiles(root string) []string {
 
 func shouldSkipProjectDataDir(name string) bool {
 	switch strings.ToLower(name) {
-	case "node_modules", "vendor", "dist", "bin", "coverage":
+	case "node_modules", "vendor", "dist", "bin", "coverage", "__tests__", "__mocks__":
 		return true
 	default:
 		return false

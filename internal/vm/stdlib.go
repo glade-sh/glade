@@ -3610,8 +3610,8 @@ func (vm *VM) callIdMember(receiver Value, method string, args []Value) (Value, 
 		if !ok {
 			return Bool(false), true, nil
 		}
-		if err := validateApexID(other); err != nil {
-			return Null, true, err
+		if validateApexID(other) != nil {
+			return Bool(false), true, nil
 		}
 		return Bool(apexIDTextEqual(idText, other)), true, nil
 	case "tostring":

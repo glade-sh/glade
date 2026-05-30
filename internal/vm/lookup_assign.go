@@ -534,6 +534,13 @@ func safeNavigationNullOfType(typeName string) Value {
 }
 
 func storageFieldNullValue(field storage.Field) Value {
+	if field.Type == storage.FieldReference {
+		// A foreign-key reference field (e.g. AccountId) holds an Id value, not
+		// the referenced object. The relationship field (e.g. Account) is typed
+		// as the parent object through a separate path. Typing the null as Id
+		// keeps overloaded calls passing a null FK from becoming ambiguous.
+		return typedNull("Id")
+	}
 	if typeName := storageFieldTypeName(field); typeName != "" {
 		return typedNull(typeName)
 	}
@@ -1330,6 +1337,33 @@ func sObjectTypeToken(objectName string) Value {
 	return token
 }
 
+// sObjectTypeDescribePropertyValue resolves the legacy describe-shorthand
+// property access `Schema.SObjectType.<Object>.<Property>` (e.g.
+// `SObjectType.Account.Name`, `.Label`, `.KeyPrefix`). In Apex this shorthand
+// yields a DescribeSObjectResult, so its scalar properties are readable as
+// fields. The describe value stores these under camelCase keys, which is the
+// PascalCase Apex property name with a lowercased first letter.
+func (vm *VM) sObjectTypeDescribePropertyValue(objectName, property string) (Value, bool) {
+	property = strings.TrimSpace(property)
+	if property == "" {
+		return Null, false
+	}
+	resolvedName, definition, ok := vm.describeObjectDefinition(objectName)
+	if !ok {
+		return Null, false
+	}
+	describe := vm.describeSObjectValue(resolvedName, definition)
+	key := strings.ToLower(property[:1]) + property[1:]
+	switch key {
+	case "name", "label", "labelPlural", "keyPrefix", "custom", "customSetting",
+		"feedEnabled", "mergeable", "mruEnabled", "undeletable", "deprecatedAndHidden":
+		if value, exists := describe.Fields[key]; exists {
+			return value, true
+		}
+	}
+	return Null, false
+}
+
 func sObjectFieldToken(objectName, fieldName string) Value {
 	token := Object("Schema.SObjectField")
 	token.Fields["object"] = String(objectName)
@@ -1454,6 +1488,10 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				}
 				describe := vm.describeSObjectValue(objectName, definition)
 				current = describe.Fields["fieldSets"]
+				continue
+			}
+			if value, ok := vm.sObjectTypeDescribePropertyValue(objectValue.Text, part); ok {
+				current = value
 				continue
 			}
 		case "Schema.SObjectFieldMap":

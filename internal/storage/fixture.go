@@ -755,6 +755,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"IsStandard": BooleanValue(true),
 		},
 	})
+	ensureOpportunityStageData(org)
 	putSeedRecord(org, "Organization", Record{
 		ID:     orgID,
 		Object: "Organization",
@@ -965,11 +966,65 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"FieldPermissions":        1,
 		"ObjectPermissions":       2,
 		"SetupEntityAccess":       1,
+		"OpportunityStage":        10,
 		"RecordType":              maxRecordTypeSequence(*org),
 	} {
 		if org.IDSequences[object] < sequence {
 			org.IDSequences[object] = sequence
 		}
+	}
+}
+
+// ensureOpportunityStageData seeds the standard OpportunityStage rows that a real
+// Salesforce org ships with. Tests commonly resolve a valid StageName by querying
+// OpportunityStage (e.g. SELECT MasterLabel FROM OpportunityStage WHERE IsWon = TRUE)
+// rather than hardcoding a label, so an empty table leaves StageName blank and
+// Opportunity inserts fail REQUIRED_FIELD_MISSING [StageName].
+func ensureOpportunityStageData(org *OrgState) {
+	ensureObject(org, "OpportunityStage", "08i", map[string]Field{
+		"MasterLabel":          {APIName: "MasterLabel", Type: FieldString},
+		"ApiName":              {APIName: "ApiName", Type: FieldString},
+		"IsActive":             {APIName: "IsActive", Type: FieldBoolean},
+		"IsWon":                {APIName: "IsWon", Type: FieldBoolean},
+		"IsClosed":             {APIName: "IsClosed", Type: FieldBoolean},
+		"ForecastCategoryName": {APIName: "ForecastCategoryName", Type: FieldString},
+		"DefaultProbability":   {APIName: "DefaultProbability", Type: FieldDecimal},
+		"SortOrder":            {APIName: "SortOrder", Type: FieldInteger},
+	})
+	stages := []struct {
+		label       string
+		won         bool
+		closed      bool
+		probability string
+		forecast    string
+	}{
+		{"Prospecting", false, false, "10", "Pipeline"},
+		{"Qualification", false, false, "10", "Pipeline"},
+		{"Needs Analysis", false, false, "20", "Pipeline"},
+		{"Value Proposition", false, false, "50", "Pipeline"},
+		{"Id. Decision Makers", false, false, "60", "Pipeline"},
+		{"Perception Analysis", false, false, "70", "Pipeline"},
+		{"Proposal/Price Quote", false, false, "75", "Best Case"},
+		{"Negotiation/Review", false, false, "90", "Best Case"},
+		{"Closed Won", true, true, "100", "Closed"},
+		{"Closed Lost", false, true, "0", "Omitted"},
+	}
+	for i, stage := range stages {
+		id := ID("08i" + leftPadBase36(uint64(i+1), 12))
+		putSeedRecord(org, "OpportunityStage", Record{
+			ID:     id,
+			Object: "OpportunityStage",
+			Fields: map[string]Value{
+				"MasterLabel":          StringValue(stage.label),
+				"ApiName":              StringValue(stage.label),
+				"IsActive":             BooleanValue(true),
+				"IsWon":                BooleanValue(stage.won),
+				"IsClosed":             BooleanValue(stage.closed),
+				"ForecastCategoryName": StringValue(stage.forecast),
+				"DefaultProbability":   DecimalValue(stage.probability),
+				"SortOrder":            IntegerValue(int64(i + 1)),
+			},
+		})
 	}
 }
 
@@ -1242,7 +1297,7 @@ func ResetPlatformData(org *OrgState) {
 
 func IsPlatformObject(name string) bool {
 	switch name {
-	case "Organization", "Profile", "UserRole", "User", "PermissionSet", "PermissionSetAssignment", "FieldPermissions", "ObjectPermissions", "SetupEntityAccess", "RecordType", "Site", "Network", "NetworkMember", "PlatformCachePartition":
+	case "Organization", "Profile", "UserRole", "User", "PermissionSet", "PermissionSetAssignment", "FieldPermissions", "ObjectPermissions", "SetupEntityAccess", "RecordType", "Site", "Network", "NetworkMember", "PlatformCachePartition", "OpportunityStage":
 		return true
 	default:
 		return false

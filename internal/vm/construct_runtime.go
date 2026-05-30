@@ -1717,6 +1717,26 @@ func (vm *VM) resolveInstanceMethodForArgs(typeName, method string, args []Value
 	if cached, ok := vm.methodResolveCache[cacheKey]; ok {
 		return cached.Method, cached.OK, false
 	}
+	// A project caller invoking an unqualified instance method on a local class
+	// resolves against the local (non-dependency) class chain first, so a managed
+	// dependency class of the same bare name cannot shadow a locally redefined
+	// class (the nc fork pattern, where ~325 classes share names with the znu
+	// package). This mirrors shouldReplaceShortClassAlias at the method level.
+	// It falls back to the full walk (including dependency candidates) when the
+	// local chain has no match, so genuinely dependency-only methods still
+	// resolve. Dependency callers keep binding their own package's classes via
+	// the existing preferMethodCandidate ranking.
+	if !vm.currentMethod.Dependency && vm.typeNameIsLocalClass(typeName) {
+		if target, ok, ambiguous := vm.resolveLocalInstanceMethodForArgs(typeName, method, args); ok || ambiguous {
+			if !ambiguous {
+				if vm.methodResolveCache == nil {
+					vm.methodResolveCache = make(map[string]methodResolution)
+				}
+				vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: ok}
+			}
+			return target, ok, ambiguous
+		}
+	}
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgsSeen(typeName, method, args, make(map[string]bool))
 	if !ambiguous {
 		if vm.methodResolveCache == nil {
@@ -1725,6 +1745,52 @@ func (vm *VM) resolveInstanceMethodForArgs(typeName, method string, args []Value
 		vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: ok}
 	}
 	return target, ok, ambiguous
+}
+
+// resolveLocalInstanceMethodForArgs walks only the local (non-dependency) class
+// chain rooted at typeName, considering only local method candidates. It lets a
+// project caller bind a locally redefined class's method (its own or one
+// inherited from a local superclass) instead of a managed-dependency class
+// registered under the same bare name. It returns not-found when the local chain
+// provides no match, so the caller falls back to the full resolution that may
+// reach dependency-only methods.
+func (vm *VM) resolveLocalInstanceMethodForArgs(typeName, method string, args []Value) (Method, bool, bool) {
+	seen := make(map[string]bool)
+	for typeName != "" {
+		if seen[typeName] {
+			break
+		}
+		seen[typeName] = true
+		class, ok := vm.lookupClass(typeName)
+		if !ok || class.Dependency {
+			break
+		}
+		if target, found, ambiguous := vm.matchLocalInstanceMethodAtType(typeName, method, args); found || ambiguous {
+			return target, found, ambiguous
+		}
+		typeName = vm.resolvedSuperClassName(class)
+	}
+	return Method{}, false, false
+}
+
+// matchLocalInstanceMethodAtType matches typeName.method against only the local
+// (non-dependency, non-static) registered candidates at this single level.
+func (vm *VM) matchLocalInstanceMethodAtType(typeName, method string, args []Value) (Method, bool, bool) {
+	candidates := vm.registeredMethodCandidates(typeName + "." + method)
+	if len(candidates) == 0 {
+		return Method{}, false, false
+	}
+	local := make([]Method, 0, len(candidates))
+	for _, candidate := range candidates {
+		if candidate.Dependency || candidate.IsStatic {
+			continue
+		}
+		local = append(local, candidate)
+	}
+	if len(local) == 0 {
+		return Method{}, false, false
+	}
+	return vm.matchMethodByArgs(local, args)
 }
 
 func (vm *VM) resolveInstanceMethodByArity(typeName, method string, arity int) (Method, bool, bool) {
@@ -2051,6 +2117,24 @@ func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) 
 	if cached, ok := vm.methodResolveCache[cacheKey]; ok {
 		return cached.Method, cached.OK, false
 	}
+	// A project caller resolves an unqualified static call against the local
+	// (non-dependency) class chain first, so a managed dependency class of the
+	// same bare name cannot shadow a locally redefined class (the nc fork
+	// pattern, e.g. a local SObjectDomain.triggerHandler shadowed by the znu
+	// package). Mirrors the instance-method local-preference. Falls back to the
+	// full walk when the local chain has no match; dependency callers keep
+	// binding their own package via preferMethodCandidate.
+	if !vm.currentMethod.Dependency {
+		if target, ok, ambiguous := vm.resolveLocalStaticMethodForArgs(candidates, method, args); ok || ambiguous {
+			if !ambiguous {
+				if vm.methodResolveCache == nil {
+					vm.methodResolveCache = make(map[string]methodResolution)
+				}
+				vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: ok}
+			}
+			return target, ok, ambiguous
+		}
+	}
 	for _, candidateType := range candidates {
 		for searchType := candidateType; searchType != ""; {
 			target, ok, ambiguous := vm.matchRegisteredStaticMethod(searchType+"."+method, args)
@@ -2076,6 +2160,54 @@ func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) 
 	}
 	vm.methodResolveCache[cacheKey] = methodResolution{}
 	return Method{}, false, false
+}
+
+// resolveLocalStaticMethodForArgs walks only the local (non-dependency) class
+// chain for each static type-name candidate, considering only local static
+// method candidates. It lets a project caller bind a locally redefined class's
+// static method instead of a managed-dependency class registered under the same
+// bare name. It returns not-found when no local chain provides a match, so the
+// caller falls back to the full resolution that may reach dependency-only
+// methods.
+func (vm *VM) resolveLocalStaticMethodForArgs(candidates []string, method string, args []Value) (Method, bool, bool) {
+	for _, candidateType := range candidates {
+		seen := make(map[string]bool)
+		for searchType := candidateType; searchType != ""; {
+			if seen[searchType] {
+				break
+			}
+			seen[searchType] = true
+			class, ok := vm.lookupClass(searchType)
+			if !ok || class.Dependency {
+				break
+			}
+			if target, found, ambiguous := vm.matchLocalStaticMethodAtType(searchType, method, args); found || ambiguous {
+				return target, found, ambiguous
+			}
+			searchType = vm.resolvedSuperClassName(class)
+		}
+	}
+	return Method{}, false, false
+}
+
+// matchLocalStaticMethodAtType matches searchType.method against only the local
+// (non-dependency, static) registered candidates at this single level.
+func (vm *VM) matchLocalStaticMethodAtType(searchType, method string, args []Value) (Method, bool, bool) {
+	candidates := vm.registeredMethodCandidates(searchType + "." + method)
+	if len(candidates) == 0 {
+		return Method{}, false, false
+	}
+	local := make([]Method, 0, len(candidates))
+	for _, candidate := range candidates {
+		if candidate.Dependency || !candidate.IsStatic {
+			continue
+		}
+		local = append(local, candidate)
+	}
+	if len(local) == 0 {
+		return Method{}, false, false
+	}
+	return vm.matchMethodByArgs(local, args)
 }
 
 func (vm *VM) currentExecutionNamespace() string {
@@ -2186,8 +2318,15 @@ func (vm *VM) matchRegisteredMethodInNamespace(namespace, name string, args []Va
 	return method, true, false
 }
 
-func (vm *VM) matchRegisteredInstanceMethod(name string, args []Value) (Method, bool, bool) {
-	if candidates := vm.registeredMethodCandidates(name); len(candidates) > 0 {
+// typeNameIsLocalClass reports whether typeName resolves to a registered local
+// (non-dependency) class. Used to decide when managed-dependency method
+// candidates must not shadow a local class of the same bare name.
+func (vm *VM) typeNameIsLocalClass(typeName string) bool {
+	class, ok := vm.lookupClass(typeName)
+	return ok && !class.Dependency
+}
+
+func (vm *VM) matchRegisteredInstanceMethod(name string, args []Value) (Method, bool, bool) {	if candidates := vm.registeredMethodCandidates(name); len(candidates) > 0 {
 		instance := make([]Method, 0, len(candidates))
 		for _, candidate := range candidates {
 			if !candidate.IsStatic {

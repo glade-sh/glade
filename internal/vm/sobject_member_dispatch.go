@@ -422,7 +422,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 	method = canonicalStdlibMemberName(method,
 		"addError", "hasErrors", "getErrors", "get", "put", "putSObject", "isSet", "clear",
 		"getPopulatedFieldsAsMap", "getSObjectType", "getSObjects", "getQuickActionName",
-		"getAll", "getInstance", "getOrgDefaults", "getValues", "recalculateFormulas",
+		"getAll", "getInstance", "getOrgDefaults", "getValues", "recalculateFormulas", "clone",
 	)
 	switch method {
 	case "addError":
