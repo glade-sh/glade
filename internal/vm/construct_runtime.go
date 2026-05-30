@@ -31,7 +31,12 @@ func reflectionConstructableAccess(access string) bool {
 	}
 }
 
-func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs map[string]Value, result *Result, literalArgs bool) (Value, error) {
+// resolveConstructorTypeName canonicalizes a constructor's type name and, for
+// non-collection / non-SObject names, resolves it against the current execution
+// context (nested types, namespace top-level classes, unique nested types). It
+// is the name-resolution prologue of constructValueWithLiteral, separated so the
+// construction switch reads as pure dispatch.
+func (vm *VM) resolveConstructorTypeName(typeName string, args []Value, namedArgs map[string]Value) string {
 	if isCanonicalRuntimeTypeName(typeName) {
 		typeName = canonicalRuntimeTypeName(typeName)
 	}
@@ -70,35 +75,47 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			}
 		}
 	}
+	return typeName
+}
+
+// constructCollectionValue handles the List, Set, and Map constructors. It
+// returns handled=false when typeName is not a collection type so the caller
+// continues with platform and user-class construction.
+func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs map[string]Value, literalArgs bool) (Value, bool, error) {
 	switch {
 	case collectionBase(typeName) == "List":
 		if len(namedArgs) > 0 {
-			return Null, fmt.Errorf("List constructor does not accept named fields")
+			return Null, true, fmt.Errorf("List constructor does not accept named fields")
 		}
 		if !literalArgs && len(args) == 1 && args[0].Kind == ValueList {
 			if elementType, ok := collectionElementType(typeName); ok && collectionBase(elementType) != "" {
 				if element, err := vm.coerceAssignable(elementType, args[0]); err == nil {
-					return vm.coerceAssignable(typeName, List(element))
+					v, err := vm.coerceAssignable(typeName, List(element))
+					return v, true, err
 				}
 			}
 		}
 		if !literalArgs && len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueSet) {
 			value := List(append([]Value(nil), collectionMembers(args[0])...)...)
-			return vm.coerceAssignable(typeName, value)
+			v, err := vm.coerceAssignable(typeName, value)
+			return v, true, err
 		}
-		return vm.coerceAssignable(typeName, List(args...))
+		v, err := vm.coerceAssignable(typeName, List(args...))
+		return v, true, err
 	case collectionBase(typeName) == "Set":
 		if len(namedArgs) > 0 {
-			return Null, fmt.Errorf("Set constructor does not accept named fields")
+			return Null, true, fmt.Errorf("Set constructor does not accept named fields")
 		}
 		if !literalArgs && len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueSet) {
 			value := Set(collectionMembers(args[0])...)
-			return vm.coerceAssignable(typeName, value)
+			v, err := vm.coerceAssignable(typeName, value)
+			return v, true, err
 		}
-		return vm.coerceAssignable(typeName, Set(args...))
+		v, err := vm.coerceAssignable(typeName, Set(args...))
+		return v, true, err
 	case isMapType(typeName):
 		if len(namedArgs) != 0 {
-			return Null, fmt.Errorf("Map constructor does not accept named fields")
+			return Null, true, fmt.Errorf("Map constructor does not accept named fields")
 		}
 		if len(args) > 0 && allMapEntryValues(args) {
 			value := Map()
@@ -108,7 +125,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 				item := entry.Fields["__value"]
 				key, coerced, err := vm.coerceMapEntry(typeName, keyValue, item)
 				if err != nil {
-					return Null, fmt.Errorf("Map constructor: %w", err)
+					return Null, true, fmt.Errorf("Map constructor: %w", err)
 				}
 				encodedKey := vm.mapKey(key)
 				if _, exists := value.Map[encodedKey]; !exists {
@@ -117,7 +134,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 				value.Map[encodedKey] = coerced
 				value.MapKeys[encodedKey] = key
 			}
-			return value, nil
+			return value, true, nil
 		}
 		if len(args) == 1 && args[0].Kind == ValueMap {
 			value := Map()
@@ -127,7 +144,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 				keyValue := mapStoredKey(args[0], rawKey)
 				key, coerced, err := vm.coerceMapEntry(typeName, keyValue, item)
 				if err != nil {
-					return Null, fmt.Errorf("Map constructor: %w", err)
+					return Null, true, fmt.Errorf("Map constructor: %w", err)
 				}
 				encodedKey := vm.mapKey(key)
 				if _, exists := value.Map[encodedKey]; !exists {
@@ -136,7 +153,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 				value.Map[encodedKey] = coerced
 				value.MapKeys[encodedKey] = key
 			}
-			return value, nil
+			return value, true, nil
 		}
 		if len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueMap || typedNullCollectionBase(args[0]) == "List") {
 			source := args[0]
@@ -146,22 +163,30 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			if source.Kind == ValueMap {
 				records, ok := queryResultRecordsList(source)
 				if !ok {
-					return Null, fmt.Errorf("Map constructor does not accept positional values")
+					return Null, true, fmt.Errorf("Map constructor does not accept positional values")
 				}
 				source = records
 			}
 			value, err := vm.mapFromSObjectList(typeName, source)
 			if err != nil {
-				return Null, err
+				return Null, true, err
 			}
-			return value, nil
+			return value, true, nil
 		}
 		if len(args) != 0 {
-			return Null, fmt.Errorf("Map constructor does not accept positional values (%s)", valueShape(args[0]))
+			return Null, true, fmt.Errorf("Map constructor does not accept positional values (%s)", valueShape(args[0]))
 		}
 		value := Map()
 		value.Type = typeName
-		return value, nil
+		return value, true, nil
+	}
+	return Null, false, nil
+}
+
+func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs map[string]Value, result *Result, literalArgs bool) (Value, error) {
+	typeName = vm.resolveConstructorTypeName(typeName, args, namedArgs)
+	if value, handled, err := vm.constructCollectionValue(typeName, args, namedArgs, literalArgs); handled || err != nil {
+		return value, err
 	}
 	if strings.EqualFold(typeName, "XmlStreamReader") {
 		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueString {
