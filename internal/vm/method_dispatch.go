@@ -4586,8 +4586,8 @@ func (vm *VM) unstubbedSchemaServiceFallback(receiverType, method string, args [
 		objectName := ""
 		switch {
 		case args[0].Kind == ValueObject && isSObjectTypeToken(args[0]):
-			if value, ok := args[0].Fields["object"]; ok && value.Kind == ValueString {
-				objectName = value.Text
+			if name, ok := sObjectTypeTokenObjectName(args[0]); ok {
+				objectName = name
 			}
 		case args[0].Kind == ValueString:
 			objectName = args[0].Text

@@ -6495,3 +6495,22 @@ System.assert(total > 3);
 		t.Fatal(err)
 	}
 }
+
+func TestCronNextFireTimeOneShotFixedDate(t *testing.T) {
+	now := time.Date(2026, 5, 29, 12, 0, 0, 0, time.UTC)
+
+	// Fully pinned future date with a weekday wildcard ("?") beyond the
+	// day-scan window must resolve directly to that datetime.
+	got, ok := cronNextFireTime("0 30 9 15 6 ? 2040", now)
+	if !ok {
+		t.Fatal("expected one-shot future cron to fire")
+	}
+	if want := "2040-06-15T09:30:00Z"; got != want {
+		t.Fatalf("next fire = %q, want %q", got, want)
+	}
+
+	// A fully pinned date in the past must not fire.
+	if _, ok := cronNextFireTime("0 0 0 1 1 ? 2000", now); ok {
+		t.Fatal("expected past one-shot cron to not fire")
+	}
+}
