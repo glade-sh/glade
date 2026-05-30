@@ -771,37 +771,127 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		}
 	}
 	if receiver.Kind == ValueObject {
-		if isStubProxy(receiver) {
-			value, handled, err := vm.callStubProxyMember(receiver, method, args, result)
-			if handled || err != nil {
-				return value, true, err
+		return vm.callObjectValueMember(receiverName, receiver, method, args, result)
+	}
+	return vm.callNonObjectValueMember(receiverName, receiver, method, args, result)
+}
+
+// callObjectValueMember dispatches a member call whose receiver is a class
+// instance or platform object: stub proxies, the fflib framework members,
+// enums, managed passive members, platform objects, user-class methods, and
+// SObject members. It is the ValueObject arm of callValueMember.
+func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	if isStubProxy(receiver) {
+		value, handled, err := vm.callStubProxyMember(receiver, method, args, result)
+		if handled || err != nil {
+			return value, true, err
+		}
+	}
+	if value, handled, err := vm.callFrameworkSObjectDescribeMember(receiver, method, args, result); handled || err != nil {
+		return value, true, err
+	}
+	if value, handled, err := vm.callFrameworkSObjectUnitOfWorkMember(receiver, method, args, result); handled || err != nil {
+		return value, true, err
+	}
+	if value, handled, err := vm.callFrameworkQueryFactoryMember(receiver, method, args); handled || err != nil {
+		return value, true, err
+	}
+	if value, handled, err := vm.callFrameworkSimpleDMLMember(receiver, method, args, result); handled || err != nil {
+		return value, true, err
+	}
+	if value, handled, err := vm.callFrameworkMockRecorderMember(receiver, method, args); handled || err != nil {
+		return value, true, err
+	}
+	if value, handled, err := vm.callFrameworkMatcherMember(receiver, method, args); handled || err != nil {
+		return value, true, err
+	}
+	if strings.EqualFold(method, "values") || strings.EqualFold(method, "valueOf") {
+		if value, handled, err := vm.callEnumStaticMember(runtimeObjectType(receiver), method, args); handled || err != nil {
+			return value, true, err
+		}
+	}
+	if value, handled, err := vm.callEnumMember(receiver, method, args); handled || err != nil {
+		return value, true, err
+	}
+	if value, updated, mutated, handled, err := vm.callManagedPassiveMember(receiver, method, args); handled || err != nil {
+		if mutated {
+			if err := vm.storeReceiver(receiverName, updated); err != nil {
+				return Null, true, err
 			}
 		}
-		if value, handled, err := vm.callFrameworkSObjectDescribeMember(receiver, method, args, result); handled || err != nil {
-			return value, true, err
-		}
-		if value, handled, err := vm.callFrameworkSObjectUnitOfWorkMember(receiver, method, args, result); handled || err != nil {
-			return value, true, err
-		}
-		if value, handled, err := vm.callFrameworkQueryFactoryMember(receiver, method, args); handled || err != nil {
-			return value, true, err
-		}
-		if value, handled, err := vm.callFrameworkSimpleDMLMember(receiver, method, args, result); handled || err != nil {
-			return value, true, err
-		}
-		if value, handled, err := vm.callFrameworkMockRecorderMember(receiver, method, args); handled || err != nil {
-			return value, true, err
-		}
-		if value, handled, err := vm.callFrameworkMatcherMember(receiver, method, args); handled || err != nil {
-			return value, true, err
-		}
-		if strings.EqualFold(method, "values") || strings.EqualFold(method, "valueOf") {
-			if value, handled, err := vm.callEnumStaticMember(runtimeObjectType(receiver), method, args); handled || err != nil {
-				return value, true, err
+		return value, true, err
+	}
+	if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+		if mutated {
+			if err := vm.storeReceiver(receiverName, updated); err != nil {
+				return Null, true, err
 			}
 		}
-		if value, handled, err := vm.callEnumMember(receiver, method, args); handled || err != nil {
+		return value, true, err
+	}
+	if _, classExists := vm.lookupClass(receiver.Type); classExists {
+		dispatchType := runtimeObjectType(receiver)
+		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, method, args)
+		if ambiguous {
+			return Null, true, vm.ambiguousOverloadError(memberCallName(receiverName, dispatchType, method), args)
+		}
+		if ok {
+			if methodHasModifier(target.Modifiers, "abstract") {
+				if override, found := vm.uniqueConcreteOverride(receiver, dispatchType, method, args); found {
+					target = override
+				} else if override, found := vm.concreteOverrideByReceiverFields(receiver, dispatchType, method, args); found {
+					target = override
+				}
+			}
+			accessMethod := target
+			if receiverType := vm.VarTypes[receiverName]; receiverType != "" {
+				accessMethod = vm.dispatchAccessMethod(receiverType, target, method, args)
+			} else if receiver.Static != "" {
+				accessMethod = vm.dispatchAccessMethod(receiver.Static, target, method, args)
+			}
+			if err := vm.checkMemberAccess(accessMethod.ClassName, accessMethod.Access, accessMethod.Name, accessMethod.Modifiers); err != nil {
+				return Null, true, err
+			}
+			value, err := vm.callMethodWithReceiver(target, receiver, args, result)
+			if err == nil && passiveGeneratedSelfReturn(target, receiver, value) {
+				if err := vm.storeReceiver(receiverName, value); err != nil {
+					return Null, true, err
+				}
+			}
 			return value, true, err
+		}
+	}
+	if vm.isSObjectLikeType(receiver.Type) {
+		if value, handled, err := vm.callSObjectMember(receiver, method, args); handled || err != nil {
+			if method == "put" || method == "addError" || method == "clear" || method == "recalculateFormulas" {
+				if err := vm.storeReceiver(receiverName, receiver); err != nil {
+					return Null, true, err
+				}
+			}
+			return value, true, err
+		}
+	}
+	dispatchType := runtimeObjectType(receiver)
+	if value, handled := vm.commerceLocalHarnessInstanceDefault(receiverName, receiver, dispatchType, method, args); handled {
+		return value, true, nil
+	}
+	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, method, args)
+	if ambiguous {
+		return Null, true, vm.ambiguousOverloadError(memberCallName(receiverName, dispatchType, method), args)
+	}
+	if !ok {
+		if declaredType := vm.declaredReceiverType(receiverName); declaredType != "" && !strings.EqualFold(declaredType, dispatchType) {
+			target, ok, ambiguous = vm.resolveInstanceMethodForArgs(declaredType, method, args)
+			if ambiguous {
+				return Null, true, vm.ambiguousOverloadError(memberCallName(receiverName, declaredType, method), args)
+			}
+			if ok {
+				if err := vm.checkMemberAccess(target.ClassName, target.Access, target.Name, target.Modifiers); err != nil {
+					return Null, true, err
+				}
+				value, err := vm.callMethodWithReceiver(target, receiver, args, result)
+				return value, true, err
+			}
 		}
 		if value, updated, mutated, handled, err := vm.callManagedPassiveMember(receiver, method, args); handled || err != nil {
 			if mutated {
@@ -811,134 +901,58 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			return value, true, err
 		}
-		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
-			if mutated {
-				if err := vm.storeReceiver(receiverName, updated); err != nil {
-					return Null, true, err
-				}
-			}
+		if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
-		if _, classExists := vm.lookupClass(receiver.Type); classExists {
-			dispatchType := runtimeObjectType(receiver)
-			target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, method, args)
-			if ambiguous {
-				return Null, true, vm.ambiguousOverloadError(memberCallName(receiverName, dispatchType, method), args)
-			}
-			if ok {
-				if methodHasModifier(target.Modifiers, "abstract") {
-					if override, found := vm.uniqueConcreteOverride(receiver, dispatchType, method, args); found {
-						target = override
-					} else if override, found := vm.concreteOverrideByReceiverFields(receiver, dispatchType, method, args); found {
-						target = override
-					}
-				}
-				accessMethod := target
-				if receiverType := vm.VarTypes[receiverName]; receiverType != "" {
-					accessMethod = vm.dispatchAccessMethod(receiverType, target, method, args)
-				} else if receiver.Static != "" {
-					accessMethod = vm.dispatchAccessMethod(receiver.Static, target, method, args)
-				}
-				if err := vm.checkMemberAccess(accessMethod.ClassName, accessMethod.Access, accessMethod.Name, accessMethod.Modifiers); err != nil {
-					return Null, true, err
-				}
-				value, err := vm.callMethodWithReceiver(target, receiver, args, result)
-				if err == nil && passiveGeneratedSelfReturn(target, receiver, value) {
-					if err := vm.storeReceiver(receiverName, value); err != nil {
-						return Null, true, err
-					}
-				}
-				return value, true, err
-			}
-		}
-		if vm.isSObjectLikeType(receiver.Type) {
-			if value, handled, err := vm.callSObjectMember(receiver, method, args); handled || err != nil {
-				if method == "put" || method == "addError" || method == "clear" || method == "recalculateFormulas" {
-					if err := vm.storeReceiver(receiverName, receiver); err != nil {
-						return Null, true, err
-					}
-				}
-				return value, true, err
-			}
-		}
-		dispatchType := runtimeObjectType(receiver)
-		if value, handled := vm.commerceLocalHarnessInstanceDefault(receiverName, receiver, dispatchType, method, args); handled {
+		if value, handled := vm.generatedPlatformInstanceDefault(receiverName, receiver, method, args); handled {
 			return value, true, nil
 		}
-		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, method, args)
-		if ambiguous {
-			return Null, true, vm.ambiguousOverloadError(memberCallName(receiverName, dispatchType, method), args)
+		if value, handled, err := vm.callManagedPassiveMissingMember(receiver, method, args); handled || err != nil {
+			return value, true, err
 		}
-		if !ok {
-			if declaredType := vm.declaredReceiverType(receiverName); declaredType != "" && !strings.EqualFold(declaredType, dispatchType) {
-				target, ok, ambiguous = vm.resolveInstanceMethodForArgs(declaredType, method, args)
-				if ambiguous {
-					return Null, true, vm.ambiguousOverloadError(memberCallName(receiverName, declaredType, method), args)
+		if receiver.Fields != nil {
+			if mapField, ok := receiver.Fields["map"]; ok && mapField.Kind == ValueMap {
+				proxyName := receiverName
+				if proxyName != "" {
+					proxyName += ".map"
 				}
-				if ok {
-					if err := vm.checkMemberAccess(target.ClassName, target.Access, target.Name, target.Modifiers); err != nil {
-						return Null, true, err
-					}
-					value, err := vm.callMethodWithReceiver(target, receiver, args, result)
-					return value, true, err
-				}
-			}
-			if value, updated, mutated, handled, err := vm.callManagedPassiveMember(receiver, method, args); handled || err != nil {
-				if mutated {
-					if err := vm.storeReceiver(receiverName, updated); err != nil {
-						return Null, true, err
-					}
-				}
-				return value, true, err
-			}
-			if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
-				return value, true, err
-			}
-			if value, handled := vm.generatedPlatformInstanceDefault(receiverName, receiver, method, args); handled {
-				return value, true, nil
-			}
-			if value, handled, err := vm.callManagedPassiveMissingMember(receiver, method, args); handled || err != nil {
-				return value, true, err
-			}
-			if receiver.Fields != nil {
-				if mapField, ok := receiver.Fields["map"]; ok && mapField.Kind == ValueMap {
-					proxyName := receiverName
-					if proxyName != "" {
-						proxyName += ".map"
-					}
-					return vm.callValueMember(proxyName, mapField, method, args, result)
-				}
-			}
-			if value, handled, err := vm.retrySimpleNameStaticFieldMember(receiverName, receiver, method, args, result); handled || err != nil {
-				return value, true, err
-			}
-			return Null, true, unsupportedCallError(memberCallName(receiverName, dispatchType, method))
-		}
-		if methodHasModifier(target.Modifiers, "abstract") {
-			if override, found := vm.uniqueConcreteOverride(receiver, dispatchType, method, args); found {
-				target = override
-			} else if override, found := vm.concreteOverrideByReceiverFields(receiver, dispatchType, method, args); found {
-				target = override
+				return vm.callValueMember(proxyName, mapField, method, args, result)
 			}
 		}
-		accessMethod := target
-		if receiverType := vm.VarTypes[receiverName]; receiverType != "" {
-			accessMethod = vm.dispatchAccessMethod(receiverType, target, method, args)
-		} else if receiver.Static != "" {
-			accessMethod = vm.dispatchAccessMethod(receiver.Static, target, method, args)
+		if value, handled, err := vm.retrySimpleNameStaticFieldMember(receiverName, receiver, method, args, result); handled || err != nil {
+			return value, true, err
 		}
-		if err := vm.checkMemberAccess(accessMethod.ClassName, accessMethod.Access, accessMethod.Name, accessMethod.Modifiers); err != nil {
+		return Null, true, unsupportedCallError(memberCallName(receiverName, dispatchType, method))
+	}
+	if methodHasModifier(target.Modifiers, "abstract") {
+		if override, found := vm.uniqueConcreteOverride(receiver, dispatchType, method, args); found {
+			target = override
+		} else if override, found := vm.concreteOverrideByReceiverFields(receiver, dispatchType, method, args); found {
+			target = override
+		}
+	}
+	accessMethod := target
+	if receiverType := vm.VarTypes[receiverName]; receiverType != "" {
+		accessMethod = vm.dispatchAccessMethod(receiverType, target, method, args)
+	} else if receiver.Static != "" {
+		accessMethod = vm.dispatchAccessMethod(receiver.Static, target, method, args)
+	}
+	if err := vm.checkMemberAccess(accessMethod.ClassName, accessMethod.Access, accessMethod.Name, accessMethod.Modifiers); err != nil {
+		return Null, true, err
+	}
+	value, err := vm.callMethodWithReceiver(target, receiver, args, result)
+	if err == nil && passiveGeneratedSelfReturn(target, receiver, value) {
+		if err := vm.storeReceiver(receiverName, value); err != nil {
 			return Null, true, err
 		}
-		value, err := vm.callMethodWithReceiver(target, receiver, args, result)
-		if err == nil && passiveGeneratedSelfReturn(target, receiver, value) {
-			if err := vm.storeReceiver(receiverName, value); err != nil {
-				return Null, true, err
-			}
-		}
-		return value, true, err
 	}
+	return value, true, err
+}
 
+// callNonObjectValueMember dispatches a member call whose receiver is a
+// collection or other non-object value (List, Set, Map, and the shared
+// fall-through handling). It is the non-ValueObject arm of callValueMember.
+func (vm *VM) callNonObjectValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
 	switch receiver.Kind {
 	case ValueList:
 		method = canonicalCollectionMemberName("List", method)
