@@ -1863,3 +1863,185 @@ func (c *jsonChildRelTypeLookupCache) store(key string, value jsonRelationshipTy
 	c.entries[key] = value
 	c.mu.Unlock()
 }
+
+func canonicalJSONScalarType(typeName string) string {
+	switch {
+	case strings.EqualFold(typeName, "String"):
+		return "String"
+	case strings.EqualFold(typeName, "Boolean"):
+		return "Boolean"
+	case strings.EqualFold(typeName, "Integer"):
+		return "Integer"
+	case strings.EqualFold(typeName, "Long"):
+		return "Long"
+	case strings.EqualFold(typeName, "Decimal"):
+		return "Decimal"
+	case strings.EqualFold(typeName, "Double"):
+		return "Double"
+	case strings.EqualFold(typeName, "Date"):
+		return "Date"
+	case strings.EqualFold(typeName, "Datetime") || strings.EqualFold(typeName, "DateTime"):
+		return "Datetime"
+	case strings.EqualFold(typeName, "Time"):
+		return "Time"
+	case strings.EqualFold(typeName, "Id"):
+		return "Id"
+	case strings.EqualFold(typeName, "Blob"):
+		return "Blob"
+	case strings.EqualFold(typeName, "UUID"):
+		return "UUID"
+	default:
+		return typeName
+	}
+}
+func jsonIntegralNumber(raw any) (int64, bool) {
+	switch value := raw.(type) {
+	case int:
+		return int64(value), true
+	case int64:
+		return value, true
+	case json.Number:
+		text := value.String()
+		if strings.ContainsAny(text, ".eE") {
+			decimal, err := strconv.ParseFloat(text, 64)
+			if err != nil || math.Trunc(decimal) != decimal {
+				return 0, false
+			}
+			converted, err := int64FromFloat("JSON number", decimal)
+			return converted, err == nil
+		}
+		converted, err := strconv.ParseInt(text, 10, 64)
+		return converted, err == nil
+	case float64:
+		if math.Trunc(value) != value {
+			return 0, false
+		}
+		converted, err := int64FromFloat("JSON number", value)
+		return converted, err == nil
+	default:
+		return 0, false
+	}
+}
+func jsonDecimalNumber(raw any) (float64, bool) {
+	switch value := raw.(type) {
+	case int:
+		return float64(value), true
+	case int64:
+		return float64(value), true
+	case json.Number:
+		converted, err := strconv.ParseFloat(value.String(), 64)
+		return converted, err == nil
+	case float64:
+		return value, true
+	default:
+		return 0, false
+	}
+}
+func jsonTypeMappingError(typeName string, raw any) error {
+	return jsonDeserializeException("JSON.deserialize cannot map JSON %s to %s", jsonRawKind(raw), typeName)
+}
+func jsonDeserializeException(format string, args ...any) error {
+	return newExceptionError("JSONException", fmt.Sprintf(format, args...))
+}
+func jsonRawKind(raw any) string {
+	switch raw.(type) {
+	case nil:
+		return "null"
+	case bool:
+		return "Boolean"
+	case json.Number, float64:
+		return "number"
+	case string:
+		return "String"
+	case []any:
+		return "array"
+	case map[string]any:
+		return "object"
+	default:
+		return fmt.Sprintf("%T", raw)
+	}
+}
+func (vm *VM) jsonAllowedFields(typeName string) map[string]struct{} {
+	allowed := map[string]struct{}{
+		"Id":               {},
+		"CreatedDate":      {},
+		"CreatedById":      {},
+		"LastModifiedDate": {},
+		"LastModifiedById": {},
+		"SystemModstamp":   {},
+		"OwnerId":          {},
+		"IsDeleted":        {},
+	}
+	if vm.Org != nil {
+		if objectName, ok := vm.resolveObjectName(typeName); ok {
+			object := vm.Org.Objects[objectName]
+			for name := range object.Definition.Fields {
+				allowed[name] = struct{}{}
+				if vm.Org.Namespace != "" {
+					allowed[storage.StripNamespaceToken(vm.Org.Namespace, name)] = struct{}{}
+					allowed[storage.NamespaceTokenName(vm.Org.Namespace, name)] = struct{}{}
+				}
+			}
+			for _, relation := range object.Definition.Relations {
+				for _, name := range []string{relation.ParentRelationship, relation.ChildRelationship} {
+					name = strings.TrimSpace(name)
+					if name == "" {
+						continue
+					}
+					allowed[name] = struct{}{}
+					if vm.Org.Namespace != "" {
+						allowed[storage.StripNamespaceToken(vm.Org.Namespace, name)] = struct{}{}
+						allowed[storage.NamespaceTokenName(vm.Org.Namespace, name)] = struct{}{}
+					}
+				}
+			}
+		}
+	}
+	for className := typeName; className != ""; {
+		class, ok := vm.Classes[className]
+		if !ok {
+			break
+		}
+		for name := range class.Fields {
+			allowed[name] = struct{}{}
+		}
+		className = class.SuperClass
+	}
+	return allowed
+}
+func jsonAllowedFieldContains(allowed map[string]struct{}, key string) bool {
+	if _, ok := allowed[key]; ok {
+		return true
+	}
+	for candidate := range allowed {
+		if strings.EqualFold(candidate, key) {
+			return true
+		}
+	}
+	return false
+}
+func (vm *VM) jsonStrictAllowsRelationshipPayload(typeName, key string, item any) bool {
+	if !vm.isSObjectLikeType(typeName) {
+		return false
+	}
+	if hasSuffixFold(key, "__r") {
+		return true
+	}
+	if _, ok := jsonQueryResultRecords(item); ok {
+		return hasSuffixFold(key, "s")
+	}
+	return false
+}
+func (vm *VM) allowOpenSObjectJSONFields(typeName string) bool {
+	if !vm.isSObjectLikeType(typeName) {
+		return false
+	}
+	if _, ok := vm.Classes[typeName]; ok {
+		return false
+	}
+	if vm.Org == nil {
+		return true
+	}
+	_, ok := vm.resolveObjectName(typeName)
+	return !ok
+}
