@@ -25,107 +25,139 @@ const (
 	triggerTimingAfter  = "after"
 )
 
+// VM holds all interpreter state for one execution context. The fields are
+// grouped by concern; the groups (in declaration order) are:
+//
+//   - Class/method/type registries and their lookup caches
+//   - Org storage, triggers, and the active execution frame (stacks, current
+//     class/namespace/method)
+//   - Async/queueable scheduling state
+//   - Governor limits (limits, caps, mode, violations)
+//   - Exception, statement, and trigger-depth tracking
+//   - Transaction state (savepoints, savepoint order/journal)
+//   - Visualforce/page and REST/server request context
+//   - SOQL/search results and the platform cache
+//   - Captured side effects (emails, metadata deploys, reports)
+//   - Describe caches (object/field/global/tabs/child-relationship)
+//   - Static-field reference tracking for alias invalidation
+//
+// Fields are not reordered for cache-layout stability; the inline section
+// markers below flag the start of a contiguous group. When adding state,
+// place it in the matching group and update New.
 type VM struct {
-	Globals                   map[string]Value
-	VarTypes                  map[string]string
-	Methods                   map[string]Method
-	MethodOverloads           map[string][]Method
-	MethodFolded              map[string][]Method
-	methodCandidates          map[string][]Method
-	methodResolveCache        map[string]methodResolution
-	Classes                   map[string]Class
-	classLookup               map[string]Class
-	sharedClassLookupKeys     map[string]string
-	sharedClassCopyPlan       *classCopyPlan
-	namespaceClassLookup      map[string]map[string]namespaceClassLookup
-	classNamespaceCache       map[string]string
-	classForAccessCache       map[classForAccessKey]classForAccessLookup
-	nestedTypeHierarchyCache  map[nestedTypeKey]nestedTypeResult
-	enumLookup                map[string]enumClassLookup
-	enumSuffixLookup          map[string]enumClassLookup
-	uniqueNestedTypeCache     map[string]uniqueNestedTypeLookup
-	onlyNestedTypeCache       map[string]uniqueNestedTypeLookup
-	topLevelTypeCache         map[string]uniqueNestedTypeLookup
-	classNameSearchCache      []classNameSearchEntry
-	Org                       *storage.OrgState
-	Triggers                  map[string][]Trigger
-	triggerMatchCache         *triggerMatchCache
-	triggerNamespaceCache     map[triggerNamespaceLookupKey]string
-	Stdout                    io.Writer
-	callStack                 []callFrame
-	scopeStack                []map[string]Value
-	currentClass              string
-	currentNamespace          string
-	currentMethod             Method
-	reflectionConstructType   string
-	testContext               *TestContext
-	localAsyncJobs            []AsyncJob
-	localAsyncSeq             int
-	localAsyncDrain           bool
-	localAsyncChain           bool
-	executionUser             Value
-	limits                    Limits
-	limitCaps                 LimitCaps
-	limitMode                 LimitMode
-	limitViolations           []LimitViolation
-	fakeNow                   time.Time
-	currentAsyncKind          string
-	currentQueueableDepth     int
-	currentQueueableMaxDepth  int
-	currentFinalizer          Value
-	activeExceptions          []activeException
-	currentStatement          callFrame
-	hasStatement              bool
-	triggerDepth              int
-	activeTriggerNamespaces   []string
-	installContextDepth       int
-	savepoints                map[string]storage.OrgState
-	emailSavepoints           map[string][]CapturedEmail
-	savepointOrder            map[string]int
-	nextSavepoint             int
-	pageMessages              []Value
-	currentPage               Value
-	pageReferences            map[string]string
-	fixedSearchResults        []Value
-	sfsqlqueryRows            []Value
-	sfsqlqueryMetadata        []Value
-	platformCache             map[string]map[string]cacheEntry
-	cacheScanLocators         map[string][]cacheScanItem
-	cacheScanSeq              int
-	capturedEmails            []CapturedEmail
-	restRequest               Value
-	restResponse              Value
-	serverBaseURL             string
-	metadataDeploys           map[string]Value
-	reportInstances           map[string]Value
-	pushUpgradeCustoms        map[string]pushUpgradeCustomization
-	debugHooks                DebugHooks
-	hasDebugHooks             bool
-	traceEnabled              bool
-	ctx                       context.Context
-	activeGetters             map[string]int
-	activeSetters             map[string]int
-	triggerGlobals            map[string]Value
-	cryptoRandomSeq           uint64
-	staticInitState           map[string]staticInitState
-	lastAmbiguous             *overloadDiagnostic
-	activeConstructors        map[string]int
-	describeCache             map[string]Value
-	fieldDescribeCache        map[string]Value
-	globalDescribeCache       *Value
-	describeTabsCache         *Value
-	describeDefCache          map[string]storage.ObjectDefinition
-	customDataCache           map[string]Value
-	soqlExecutionCache        *soql.ExecutionCache
-	managedFeatureFlags       map[string]bool
-	childRelCache             *childRelationshipCache
-	jsonChildRelTypeCache     *jsonChildRelTypeLookupCache
-	loadedChildRelCache       map[string]loadedChildRelationshipLookup
-	lazyChildRelCache         map[string]lazyChildRelationshipLookup
-	objectNameCache           map[string]objectNameLookup
-	recentlyViewed            map[string]map[storage.ID]recentlyViewedEntry
-	metadataCacheStamp        string
-	isolationJournal          *storage.IsolationJournal
+	// --- Class/method/type registries and lookup caches ---
+	Globals                  map[string]Value
+	VarTypes                 map[string]string
+	Methods                  map[string]Method
+	MethodOverloads          map[string][]Method
+	MethodFolded             map[string][]Method
+	methodCandidates         map[string][]Method
+	methodResolveCache       map[string]methodResolution
+	Classes                  map[string]Class
+	classLookup              map[string]Class
+	sharedClassLookupKeys    map[string]string
+	sharedClassCopyPlan      *classCopyPlan
+	namespaceClassLookup     map[string]map[string]namespaceClassLookup
+	classNamespaceCache      map[string]string
+	classForAccessCache      map[classForAccessKey]classForAccessLookup
+	nestedTypeHierarchyCache map[nestedTypeKey]nestedTypeResult
+	enumLookup               map[string]enumClassLookup
+	enumSuffixLookup         map[string]enumClassLookup
+	uniqueNestedTypeCache    map[string]uniqueNestedTypeLookup
+	onlyNestedTypeCache      map[string]uniqueNestedTypeLookup
+	topLevelTypeCache        map[string]uniqueNestedTypeLookup
+	classNameSearchCache     []classNameSearchEntry
+	// --- Org storage, triggers, and active execution frame ---
+	Org                     *storage.OrgState
+	Triggers                map[string][]Trigger
+	triggerMatchCache       *triggerMatchCache
+	triggerNamespaceCache   map[triggerNamespaceLookupKey]string
+	Stdout                  io.Writer
+	callStack               []callFrame
+	scopeStack              []map[string]Value
+	currentClass            string
+	currentNamespace        string
+	currentMethod           Method
+	reflectionConstructType string
+	testContext             *TestContext
+	localAsyncJobs          []AsyncJob
+	localAsyncSeq           int
+	localAsyncDrain         bool
+	localAsyncChain         bool
+	executionUser           Value
+	// --- Governor limits ---
+	limits          Limits
+	limitCaps       LimitCaps
+	limitMode       LimitMode
+	limitViolations []LimitViolation
+	fakeNow         time.Time
+	// --- Async/queueable scheduling ---
+	currentAsyncKind         string
+	currentQueueableDepth    int
+	currentQueueableMaxDepth int
+	currentFinalizer         Value
+	activeExceptions         []activeException
+	// --- Exception / statement / trigger-depth tracking ---
+	currentStatement        callFrame
+	hasStatement            bool
+	triggerDepth            int
+	activeTriggerNamespaces []string
+	installContextDepth     int
+	// --- Transaction state (savepoints) ---
+	savepoints      map[string]storage.OrgState
+	emailSavepoints map[string][]CapturedEmail
+	savepointOrder  map[string]int
+	nextSavepoint   int
+	// --- Visualforce / page context ---
+	pageMessages   []Value
+	currentPage    Value
+	pageReferences map[string]string
+	// --- SOQL / search results and platform cache ---
+	fixedSearchResults []Value
+	sfsqlqueryRows     []Value
+	sfsqlqueryMetadata []Value
+	platformCache      map[string]map[string]cacheEntry
+	cacheScanLocators  map[string][]cacheScanItem
+	cacheScanSeq       int
+	// --- Captured side effects ---
+	capturedEmails []CapturedEmail
+	// --- REST / server request context ---
+	restRequest        Value
+	restResponse       Value
+	serverBaseURL      string
+	metadataDeploys    map[string]Value
+	reportInstances    map[string]Value
+	pushUpgradeCustoms map[string]pushUpgradeCustomization
+	// --- Debug / trace hooks ---
+	debugHooks         DebugHooks
+	hasDebugHooks      bool
+	traceEnabled       bool
+	ctx                context.Context
+	activeGetters      map[string]int
+	activeSetters      map[string]int
+	triggerGlobals     map[string]Value
+	cryptoRandomSeq    uint64
+	staticInitState    map[string]staticInitState
+	lastAmbiguous      *overloadDiagnostic
+	activeConstructors map[string]int
+	// --- Describe caches ---
+	describeCache         map[string]Value
+	fieldDescribeCache    map[string]Value
+	globalDescribeCache   *Value
+	describeTabsCache     *Value
+	describeDefCache      map[string]storage.ObjectDefinition
+	customDataCache       map[string]Value
+	soqlExecutionCache    *soql.ExecutionCache
+	managedFeatureFlags   map[string]bool
+	childRelCache         *childRelationshipCache
+	jsonChildRelTypeCache *jsonChildRelTypeLookupCache
+	loadedChildRelCache   map[string]loadedChildRelationshipLookup
+	lazyChildRelCache     map[string]lazyChildRelationshipLookup
+	objectNameCache       map[string]objectNameLookup
+	recentlyViewed        map[string]map[storage.ID]recentlyViewedEntry
+	metadataCacheStamp    string
+	isolationJournal      *storage.IsolationJournal
+	// --- Static-field reference tracking (alias invalidation) ---
 	staticValueRefs           map[uint64]bool
 	staticValueRefFields      map[uint64][]staticFieldRef
 	collectionMutationSeq     uint64
