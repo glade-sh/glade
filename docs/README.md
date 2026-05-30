@@ -22,9 +22,11 @@ of the way.
 ## If You Want To Contribute
 
 1. Runtime architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
-2. Storage model and DB behavior: [storage-schema.md](storage-schema.md)
-3. Example-project harness: [EXAMPLE_PROJECTS.md](EXAMPLE_PROJECTS.md)
-4. Apex declaration parser: [APEX_PARSER.md](APEX_PARSER.md)
+2. Where to add Salesforce functionality: [ADDING_A_PLATFORM_API.md](ADDING_A_PLATFORM_API.md)
+3. Package boundaries and conventions: [ARCHITECTURE_STANDARDS.md](ARCHITECTURE_STANDARDS.md)
+4. Storage model and DB behavior: [storage-schema.md](storage-schema.md)
+5. Example-project harness: [EXAMPLE_PROJECTS.md](EXAMPLE_PROJECTS.md)
+6. Apex declaration parser: [APEX_PARSER.md](APEX_PARSER.md)
 
 ## Planning And Backlog Docs
 

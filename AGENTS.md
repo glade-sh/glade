@@ -281,6 +281,7 @@ composed by the CLI in `internal/gladecli`.
 | `internal/server` | Salesforce-shaped HTTP handler. |
 | `internal/compat` | Compatibility fixture schema and parse/check/exec/test/DB execution. |
 | `internal/capability` | Machine-readable feature matrix and MVP readiness gate. |
+| `internal/surface` | Enforced registry mapping each Salesforce surface to its owning runtime/server/capability/compat packages and test commands. |
 
 ### Runtime Pipeline
 
@@ -469,6 +470,10 @@ generated docs are in sync.
 ### Docs To Keep In Sync
 
 - `docs/ARCHITECTURE.md` — current package map and runtime pipeline.
+- `docs/ADDING_A_PLATFORM_API.md` — runbook for where new Salesforce
+  functionality lives and the order to wire it up.
+- `docs/ARCHITECTURE_STANDARDS.md` — package boundaries, the `internal/surface`
+  registry, and split/ownership conventions.
 - `docs/COMPATIBILITY.md` — human-readable feature status.
 - `docs/COMPATIBILITY_DASHBOARD.md`, `docs/KNOWN_GAPS.md`, and
   `docs/STDLIB_COVERAGE.md` — generated from `internal/capability`.

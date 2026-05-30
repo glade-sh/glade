@@ -66,6 +66,10 @@ and composed by the CLI.
 - `internal/capability`: machine-readable feature matrix and MVP readiness
   gate, plus the docs-driven Apex support catalog and product namespace typed
   stub reports.
+- `internal/surface`: enforced registry mapping each Salesforce surface to its
+  owning runtime/server/capability/compat packages and test commands. It is the
+  index for "where does this live", backed by `TestBuiltinRegistry...` so the
+  map cannot drift from reality. See `ADDING_A_PLATFORM_API.md`.
 
 ## Runtime Pipeline
 
@@ -91,3 +95,12 @@ and composed by the CLI.
   traces.
 - Return explicit unsupported-feature diagnostics instead of panicking.
 - Keep Salesforce behavior claims tied to compatibility fixtures.
+
+## Adding Salesforce Functionality
+
+When Salesforce ships something new (a class, namespace, method, or surface) or
+a gap is found, start with [ADDING_A_PLATFORM_API.md](ADDING_A_PLATFORM_API.md).
+It maps each concern to its owning package and the order to wire things up. The
+conventions it enforces live in
+[ARCHITECTURE_STANDARDS.md](ARCHITECTURE_STANDARDS.md), and the surface-to-owner
+index is the `internal/surface` registry.
