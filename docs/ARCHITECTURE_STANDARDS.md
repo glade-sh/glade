@@ -67,10 +67,23 @@ Effective Go, Go code review comments, and the Go package-name guidance.
 
 ## Current Refactor Targets
 
-- `internal/vm/vm.go`: split dispatch, platform object member handling, DML
-  runtime glue, SOQL runtime glue, describe caches, constructor handling, and
-  runtime state into responsibility files under package `vm`.
-- `internal/sema/sema.go`: split platform signatures, type-member model
-  building, body-call checks, and schema resolution under package `sema`.
+The Tier 2 god-file splits below are largely complete. `vm.go` dropped from
+13,079 to ~4,000 lines, `method_dispatch.go` from 7,944 to ~3,150, and
+`sema.go`, `soql.go`, `stdlib.go`, `construct_runtime.go`, `dml_runtime.go`,
+`apextest/runner.go`, `capability/stub_behavior.go`, and `projectscan/scan.go`
+were each carved into responsibility files within their packages.
+
+Remaining handwritten mega-functions to extract (Tier 1), each a self-contained
+dispatch switch whose arms can move to named helpers in the same package:
+
+- `internal/vm` `VM.call` (static/global dispatch) and
+  `VM.callPlatformObjectMember` (platform receiver switch) — convert switch arms
+  into registered handlers via the `platformObjectMemberSurface` registry; see
+  `docs/ADDING_A_PLATFORM_API.md`.
+- `internal/vm` `VM.callValueMember` and `VM.constructValueWithLiteral`.
 - `internal/gladecli/cli.go`: split command families into same-package files
   while keeping `Run` as the command router.
+
+To add a new Salesforce surface, follow `docs/ADDING_A_PLATFORM_API.md` and
+register the surface in `internal/surface` first.
+
