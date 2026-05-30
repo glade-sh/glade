@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -4985,4 +4986,409 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		}
 	}
 	return nil, nil
+}
+
+func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result *Result) error {
+	if op == "merge" {
+		if expr.Kind != ir.ExprCall || len(expr.Args) < 2 {
+			return fmt.Errorf("merge statement requires master and duplicate record(s)")
+		}
+		args := make([]Value, 0, len(expr.Args))
+		for _, arg := range expr.Args {
+			value, err := vm.eval(arg, result)
+			if err != nil {
+				return err
+			}
+			args = append(args, value)
+		}
+		value, err := vm.executeDatabaseMerge(args, result)
+		if err != nil {
+			return err
+		}
+		results := []Value{value}
+		if value.Kind == ValueList {
+			results = value.List
+		}
+		for _, mergeResult := range results {
+			if mergeResult.Kind != ValueObject {
+				continue
+			}
+			success, ok := mergeResult.Fields["success"]
+			if ok && success.Kind == ValueBool && success.Bool {
+				continue
+			}
+			if errValue, ok := mergeResult.Fields["error"]; ok && errValue.Kind == ValueString && errValue.Text != "" {
+				return errors.New(errValue.Text)
+			}
+			return errors.New("merge failed")
+		}
+		return nil
+	}
+	value, err := vm.eval(expr, result)
+	if err != nil {
+		return err
+	}
+	results, err := vm.applyDML(op, value, true, externalIDField, dml.Options{}, result)
+	if err != nil {
+		return err
+	}
+	for _, dmlResult := range results {
+		if !dmlResult.Success {
+			return databaseDMLException(op, results)
+		}
+	}
+	if expr.Kind == ir.ExprVariable {
+		vm.populateDMLResultFields(&value, results)
+		if err := vm.assign(expr.Name, value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func copyOrgIDSequences(in map[string]uint64) map[string]uint64 {
+	if in == nil {
+		return nil
+	}
+	out := make(map[string]uint64, len(in))
+	for objectName, sequence := range in {
+		out[objectName] = sequence
+	}
+	return out
+}
+func maxOrgIDSequences(left, right map[string]uint64) map[string]uint64 {
+	if len(left) == 0 && len(right) == 0 {
+		return nil
+	}
+	out := copyOrgIDSequences(left)
+	if out == nil {
+		out = map[string]uint64{}
+	}
+	for objectName, sequence := range right {
+		if sequence > out[objectName] {
+			out[objectName] = sequence
+		}
+	}
+	return out
+}
+func isSetupObject(objectName string) bool {
+	switch strings.ToLower(objectName) {
+	case "user", "profile", "userrole", "permissionset", "permissionsetassignment", "permissionsetgroup", "permissionsetgroupcomponent", "fieldpermissions", "objectpermissions", "setupentityaccess":
+		return true
+	default:
+		return false
+	}
+}
+func isSetupDMLRecord(record storage.Record) bool {
+	return mixedDMLRecordKind(record) == "setup"
+}
+func mixedDMLRecordKind(record storage.Record) string {
+	if !isSetupObject(record.Object) {
+		return "nonsetup"
+	}
+	if !strings.EqualFold(record.Object, "User") {
+		return "setup"
+	}
+	roleID, ok := record.GetField("UserRoleId")
+	if !ok || roleID.Kind == storage.ValueNull || storageIDFromValue(roleID) == "" {
+		return "neutral"
+	}
+	return "setup"
+}
+func (vm *VM) recordsFromValue(value Value) ([]storage.Record, []*Value, error) {
+	if value.Kind == ValueList {
+		records := make([]storage.Record, 0, len(value.List))
+		targets := make([]*Value, 0, len(value.List))
+		var aliases map[uint64]Value
+		if len(value.List) > 1 {
+			aliases = vm.sObjectAliasMergeIndex()
+		}
+		for i := range value.List {
+			merged := value.List[i]
+			if aliases != nil && merged.Kind == ValueObject && merged.Ref != 0 && vm.isSObjectLikeType(merged.Type) {
+				if alias, ok := aliases[merged.Ref]; ok {
+					mergeSObjectFieldsInto(&merged, alias)
+				}
+			} else {
+				merged = vm.mergeSObjectAliasFields(merged)
+			}
+			value.List[i] = merged
+			record, err := vm.recordFromValue(&value.List[i])
+			if err != nil {
+				return nil, nil, err
+			}
+			records = append(records, record)
+			targets = append(targets, &value.List[i])
+		}
+		return records, targets, nil
+	}
+	value = vm.mergeSObjectAliasFields(value)
+	record, err := vm.recordFromValue(&value)
+	if err != nil {
+		return nil, nil, err
+	}
+	return []storage.Record{record}, []*Value{&value}, nil
+}
+func (vm *VM) mergeSObjectAliasFields(value Value) Value {
+	if value.Kind != ValueObject || value.Ref == 0 || !vm.isSObjectLikeType(value.Type) {
+		return value
+	}
+	merged := value
+	for _, root := range vm.Globals {
+		mergeSObjectAliasFieldsFromValue(root, value.Ref, &merged, make(map[uint64]bool))
+	}
+	for _, scope := range vm.scopeStack {
+		for _, root := range scope {
+			mergeSObjectAliasFieldsFromValue(root, value.Ref, &merged, make(map[uint64]bool))
+		}
+	}
+	return merged
+}
+func (vm *VM) sObjectAliasMergeIndex() map[uint64]Value {
+	if vm == nil || (len(vm.Globals) == 0 && len(vm.scopeStack) == 0) {
+		return nil
+	}
+	index := make(map[uint64]Value)
+	seen := make(map[uint64]bool)
+	for _, root := range vm.Globals {
+		vm.collectSObjectAliasMergeIndex(root, index, seen)
+	}
+	for _, scope := range vm.scopeStack {
+		for _, root := range scope {
+			vm.collectSObjectAliasMergeIndex(root, index, seen)
+		}
+	}
+	if len(index) == 0 {
+		return nil
+	}
+	return index
+}
+func (vm *VM) collectSObjectAliasMergeIndex(value Value, index map[uint64]Value, seen map[uint64]bool) {
+	if value.Ref != 0 {
+		if seen[value.Ref] {
+			return
+		}
+		seen[value.Ref] = true
+		defer delete(seen, value.Ref)
+	}
+	if value.Kind == ValueObject && value.Ref != 0 && vm.isSObjectLikeType(value.Type) {
+		merged := index[value.Ref]
+		if merged.Kind == "" {
+			merged = value
+		} else {
+			mergeSObjectFieldsInto(&merged, value)
+		}
+		index[value.Ref] = merged
+	}
+	switch value.Kind {
+	case ValueObject:
+		for _, child := range value.Fields {
+			vm.collectSObjectAliasMergeIndex(child, index, seen)
+		}
+	case ValueMap:
+		for _, child := range value.Map {
+			vm.collectSObjectAliasMergeIndex(child, index, seen)
+		}
+		for _, child := range value.MapKeys {
+			vm.collectSObjectAliasMergeIndex(child, index, seen)
+		}
+	case ValueList:
+		for _, child := range value.List {
+			vm.collectSObjectAliasMergeIndex(child, index, seen)
+		}
+	case ValueSet:
+		for _, child := range value.Set {
+			vm.collectSObjectAliasMergeIndex(child, index, seen)
+		}
+	}
+}
+func mergeSObjectFieldsInto(merged *Value, source Value) {
+	if merged == nil || source.Kind != ValueObject {
+		return
+	}
+	if merged.Fields == nil {
+		merged.Fields = make(map[string]Value)
+	}
+	for field, fieldValue := range source.Fields {
+		if isInternalSObjectField(field) {
+			continue
+		}
+		sourceExplicit := isExplicitSObjectField(source, field)
+		if _, exists := merged.Fields[field]; !exists {
+			if sourceExplicit {
+				setExplicitSObjectField(merged, field, fieldValue)
+			} else {
+				merged.Fields[field] = fieldValue
+			}
+			continue
+		}
+		if current := merged.Fields[field]; current.Kind == ValueNull && fieldValue.Kind != ValueNull {
+			if sourceExplicit {
+				setExplicitSObjectField(merged, field, fieldValue)
+			} else {
+				merged.Fields[field] = fieldValue
+			}
+		}
+	}
+}
+func mergeSObjectAliasFieldsFromValue(value Value, ref uint64, merged *Value, seen map[uint64]bool) {
+	if value.Ref == ref && value.Kind == ValueObject {
+		mergeSObjectFieldsInto(merged, value)
+		return
+	}
+	if value.Ref != 0 {
+		if seen[value.Ref] {
+			return
+		}
+		seen[value.Ref] = true
+		defer delete(seen, value.Ref)
+	}
+	switch value.Kind {
+	case ValueObject:
+		for _, child := range value.Fields {
+			mergeSObjectAliasFieldsFromValue(child, ref, merged, seen)
+		}
+	case ValueList:
+		for _, child := range value.List {
+			mergeSObjectAliasFieldsFromValue(child, ref, merged, seen)
+		}
+	case ValueSet:
+		for _, child := range value.Set {
+			mergeSObjectAliasFieldsFromValue(child, ref, merged, seen)
+		}
+	case ValueMap:
+		for _, child := range value.Map {
+			mergeSObjectAliasFieldsFromValue(child, ref, merged, seen)
+		}
+		for _, child := range value.MapKeys {
+			mergeSObjectAliasFieldsFromValue(child, ref, merged, seen)
+		}
+	}
+}
+func preserveMissingExplicitNulls(record *storage.Record, previous storage.Record) {
+	if record == nil || len(previous.ExplicitNulls) == 0 {
+		return
+	}
+	for field, isNull := range previous.ExplicitNulls {
+		if !isNull {
+			continue
+		}
+		if _, ok := record.GetField(field); ok || record.HasExplicitNull(field) {
+			continue
+		}
+		if record.ExplicitNulls == nil {
+			record.ExplicitNulls = make(map[string]bool)
+		}
+		record.ExplicitNulls[field] = true
+	}
+}
+func (vm *VM) triggerObjectMatches(triggerObject, recordObject string) bool {
+	if strings.EqualFold(triggerObject, recordObject) {
+		return true
+	}
+	if vm != nil && vm.Org != nil {
+		if resolvedTrigger, ok := vm.resolveObjectName(triggerObject); ok {
+			if strings.EqualFold(resolvedTrigger, recordObject) {
+				return true
+			}
+		}
+		if resolvedRecord, ok := vm.resolveObjectName(recordObject); ok {
+			if strings.EqualFold(resolvedRecord, triggerObject) {
+				return true
+			}
+			if resolvedTrigger, ok := vm.resolveObjectName(triggerObject); ok && strings.EqualFold(resolvedTrigger, resolvedRecord) {
+				return true
+			}
+		}
+	}
+	return strings.EqualFold(storage.StripAnyNamespaceToken(triggerObject), storage.StripAnyNamespaceToken(recordObject))
+}
+func preserveMissingSystemFields(record *storage.Record, original storage.SystemFields) {
+	if record == nil {
+		return
+	}
+	if record.System.OwnerID == "" {
+		record.System.OwnerID = original.OwnerID
+	}
+	if record.System.CreatedDate == "" {
+		record.System.CreatedDate = original.CreatedDate
+	}
+	if record.System.CreatedByID == "" {
+		record.System.CreatedByID = original.CreatedByID
+	}
+	if record.System.LastModifiedDate == "" {
+		record.System.LastModifiedDate = original.LastModifiedDate
+	}
+	if record.System.LastModifiedByID == "" {
+		record.System.LastModifiedByID = original.LastModifiedByID
+	}
+	if record.System.SystemModstamp == "" {
+		record.System.SystemModstamp = original.SystemModstamp
+	}
+}
+func triggerContext(trigger Trigger, records, oldRecords []storage.Record) map[string]Value {
+	newValues := make([]Value, 0, len(records))
+	newMap := Map()
+	for _, record := range records {
+		value := vmValueFromRecord(record)
+		markTriggerSObject(&value)
+		newValues = append(newValues, value)
+		if record.ID != "" {
+			key := platformScalar("Id", string(record.ID))
+			encodedKey := mapKey(key)
+			newMap.Map[encodedKey] = value
+			newMap.MapKeys[encodedKey] = key
+		}
+	}
+	oldValues := make([]Value, 0, len(oldRecords))
+	oldMap := Map()
+	for _, record := range oldRecords {
+		value := vmValueFromRecord(record)
+		markTriggerSObject(&value)
+		oldValues = append(oldValues, value)
+		if record.ID != "" {
+			key := platformScalar("Id", string(record.ID))
+			encodedKey := mapKey(key)
+			oldMap.Map[encodedKey] = value
+			oldMap.MapKeys[encodedKey] = key
+		}
+	}
+	newListValue := Null
+	newMapValue := Null
+	if trigger.Operation == "insert" || trigger.Operation == "update" || trigger.Operation == "undelete" {
+		newListValue = List(newValues...)
+		newListValue.Type = "List<" + trigger.Object + ">"
+		newListValue.Runtime = "List<SObject>"
+		if trigger.Operation != "insert" || trigger.Timing == triggerTimingAfter {
+			newMap.Type = "Map<Id," + trigger.Object + ">"
+			newMap.Runtime = "Map<Id,SObject>"
+			newMapValue = newMap
+		}
+	}
+	oldListValue := Null
+	oldMapValue := Null
+	if trigger.Operation == "update" || trigger.Operation == "delete" {
+		oldListValue = List(oldValues...)
+		oldListValue.Type = "List<" + trigger.Object + ">"
+		oldListValue.Runtime = "List<SObject>"
+		oldMap.Type = "Map<Id," + trigger.Object + ">"
+		oldMap.Runtime = "Map<Id,SObject>"
+		oldMapValue = oldMap
+	}
+	ctx := map[string]Value{
+		"Trigger.new":           newListValue,
+		"Trigger.old":           oldListValue,
+		"Trigger.newMap":        newMapValue,
+		"Trigger.oldMap":        oldMapValue,
+		"Trigger.isExecuting":   Bool(true),
+		"Trigger.isBefore":      Bool(trigger.Timing == triggerTimingBefore),
+		"Trigger.isAfter":       Bool(trigger.Timing == triggerTimingAfter),
+		"Trigger.isInsert":      Bool(trigger.Operation == "insert"),
+		"Trigger.isUpdate":      Bool(trigger.Operation == "update"),
+		"Trigger.isDelete":      Bool(trigger.Operation == "delete"),
+		"Trigger.isUndelete":    Bool(trigger.Operation == "undelete"),
+		"Trigger.isUnDelete":    Bool(trigger.Operation == "undelete"),
+		"Trigger.operationType": Value{Kind: ValueObject, Type: "TriggerOperation", Text: strings.ToUpper(trigger.Timing + "_" + trigger.Operation)},
+		"Trigger.size":          Int(int64(len(records))),
+	}
+	return ctx
 }
