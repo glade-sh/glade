@@ -8065,6 +8065,21 @@ System.runAs(new User(Id = '005-user-b', FirstName = 'Ada', LastName = 'Trail', 
 	}
 }
 
+func TestExecNetworkCommunitiesLandingIsEmptyInTestContext(t *testing.T) {
+	program, err := CompileAnonymous(`
+PageReference page = Network.communitiesLanding();
+System.assertEquals('', page.getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStaticUserInfoCallsAreCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(false, Userinfo.isMultiCurrencyOrganization());

@@ -118,6 +118,26 @@ System.assertEquals('pkg', rt.NamespacePrefix);
 	}
 }
 
+func TestExecSchemaPrefixedSObjectUsesOrgDefinition(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.EmailTemplate template = new Schema.EmailTemplate();
+template.NamespacePrefix = 'pkg';
+template.DeveloperName = 'Welcome';
+System.assertEquals('pkg', template.NamespacePrefix);
+System.assertEquals('Welcome', template.DeveloperName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "EmailTemplate")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRecordTypeRowsAssignToSchemaRecordTypeList(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = accountWithBusinessRecordType()
@@ -2073,6 +2093,34 @@ func TestExecMissingFieldUsesStoredValueWhenNoQueryMarker(t *testing.T) {
 	value, ok = machine.missingSObjectFieldValue(child, "Parent__c")
 	if !ok || value.Kind != ValueNull {
 		t.Fatalf("queried field marker should preserve unqueried null default: %#v ok=%v", value, ok)
+	}
+}
+
+func TestExecInsertedSObjectDoesNotExposeUnqueriedDefaultField(t *testing.T) {
+	program, err := CompileAnonymous(`
+Thing__c thing = new Thing__c(Name = 'A');
+insert thing;
+System.assertEquals(null, thing.get(Thing__c.Due__c));
+Thing__c queried = [SELECT Due__c FROM Thing__c WHERE Id = :thing.Id LIMIT 1];
+System.assertNotEquals(null, queried.Due__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Thing__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName:   "Thing__c",
+		KeyPrefix: "a00",
+		Fields: map[string]storage.Field{
+			"Id":     {APIName: "Id", Type: storage.FieldID},
+			"Name":   {APIName: "Name", Type: storage.FieldString},
+			"Due__c": {APIName: "Due__c", Type: storage.FieldDate, DefaultValue: "TODAY()"},
+		},
+	}, Records: map[storage.ID]storage.Record{}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -6232,6 +6280,9 @@ System.assertEquals('Account', byName.get(0).getName());
 List<Object> tokens = new List<Object>{accountType};
 List<Object> byToken = Schema.describeSObjects(tokens);
 System.assertEquals('Account', byToken.get(0).getName());
+Schema.SObjectType packageLicenseType = Schema.getGlobalDescribe().get('PackageLicense');
+System.assertNotEquals(null, packageLicenseType);
+System.assertEquals('PackageLicense', packageLicenseType.getDescribe().getName());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -6980,6 +7031,34 @@ System.assertEquals(3, [SELECT Id FROM Account].size());
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecWithSharingTreatsCampaignAsPublicReadByDefault(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.runAs(new User(Id = '005000000000999')) {
+	System.assertEquals(2, [SELECT Id FROM Campaign].size());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Campaign")
+	campaign := org.Objects["Campaign"]
+	campaign.Records = map[storage.ID]storage.Record{
+		"701000000000001": {ID: "701000000000001", Object: "Campaign", System: storage.SystemFields{OwnerID: "005000000000001"}},
+		"701000000000002": {ID: "701000000000002", Object: "Campaign", System: storage.SystemFields{OwnerID: "005000000000002"}},
+	}
+	org.Objects["Campaign"] = campaign
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "SharingProbe", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "SharingProbe"); err != nil {
 		t.Fatal(err)
 	}
 }

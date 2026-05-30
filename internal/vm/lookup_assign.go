@@ -443,7 +443,6 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 	if object.Kind != ValueObject || object.Fields == nil {
 		return "", Null, false
 	}
-	normalized := strings.ToLower(name)
 	if value, ok := object.Fields[name]; ok {
 		if !isExplicitSObjectField(object, name) {
 			if aliasName, aliasValue, aliasOK := explicitAliasObjectFieldValue(object, name); aliasOK {
@@ -458,7 +457,7 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 				return name, value, true
 			}
 			for candidate, alternate := range object.Fields {
-				if candidate != name && strings.EqualFold(candidate, normalized) && alternate.Kind != ValueNull {
+				if candidate != name && strings.EqualFold(candidate, name) && alternate.Kind != ValueNull {
 					return candidate, alternate, true
 				}
 			}
@@ -466,16 +465,16 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 		return name, value, true
 	}
 	for candidate, value := range object.Fields {
-		if strings.EqualFold(candidate, normalized) {
+		if strings.EqualFold(candidate, name) {
 			return candidate, value, true
 		}
 	}
-	stripped := strings.ToLower(storage.StripAnyNamespaceToken(name))
+	stripped := storage.StripAnyNamespaceToken(name)
 	var matchedName string
 	var matchedValue Value
 	matched := false
 	for candidate, value := range object.Fields {
-		if strings.ToLower(storage.StripAnyNamespaceToken(candidate)) != stripped {
+		if !strings.EqualFold(storage.StripAnyNamespaceToken(candidate), stripped) {
 			continue
 		}
 		if matched {
@@ -492,14 +491,12 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 }
 
 func explicitAliasObjectFieldValue(object Value, name string) (string, Value, bool) {
-	loweredName := strings.ToLower(name)
-	stripped := strings.ToLower(storage.StripAnyNamespaceToken(name))
+	stripped := storage.StripAnyNamespaceToken(name)
 	for candidate, value := range object.Fields {
 		if candidate == name || !isExplicitSObjectField(object, candidate) {
 			continue
 		}
-		candidateLower := strings.ToLower(candidate)
-		if candidateLower == loweredName || strings.ToLower(storage.StripAnyNamespaceToken(candidate)) == stripped {
+		if strings.EqualFold(candidate, name) || strings.EqualFold(storage.StripAnyNamespaceToken(candidate), stripped) {
 			return candidate, value, true
 		}
 	}
@@ -1673,6 +1670,10 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				current = value
 				continue
 			}
+			if componentApexRuntimeType(current.Type) {
+				current = Null
+				continue
+			}
 			return Null, fmt.Errorf("unknown field %q on %s", part, currentType)
 		}
 		current = value
@@ -2313,10 +2314,14 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		if def.Setter != nil {
 			key := activeInstanceSetterKey(owner, actualName, current)
 			if vm.activeSetters[key] > 0 {
-				setExplicitSObjectField(&current, actualName, value)
-				markSetSObjectField(&current, actualName)
-				markUserSetSObjectField(&current, actualName)
-				markQueriedSObjectField(&current, actualName)
+				if vm.isSObjectLikeType(current.Type) {
+					setExplicitSObjectField(&current, actualName, value)
+					markSetSObjectField(&current, actualName)
+					markUserSetSObjectField(&current, actualName)
+					markQueriedSObjectField(&current, actualName)
+				} else {
+					current.Fields[actualName] = value
+				}
 				propagate(current)
 				return nil
 			}
@@ -2333,10 +2338,14 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			}
 			return err
 		}
-		setExplicitSObjectField(&current, actualName, value)
-		markSetSObjectField(&current, actualName)
-		markUserSetSObjectField(&current, actualName)
-		markQueriedSObjectField(&current, actualName)
+		if vm.isSObjectLikeType(current.Type) {
+			setExplicitSObjectField(&current, actualName, value)
+			markSetSObjectField(&current, actualName)
+			markUserSetSObjectField(&current, actualName)
+			markQueriedSObjectField(&current, actualName)
+		} else {
+			current.Fields[actualName] = value
+		}
 		propagate(current)
 		return nil
 	}

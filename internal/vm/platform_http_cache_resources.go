@@ -918,13 +918,19 @@ func (vm *VM) cacheGetOrLoad(partition, cacheKey string, builderType Value, load
 	if value, ok := vm.cacheGet(partition, cacheKey); ok {
 		return value, nil
 	}
-	if builderType.Kind != ValueObject || builderType.Type != "Type" || strings.TrimSpace(builderType.Text) == "" {
+	typeName := strings.TrimSpace(builderType.Text)
+	if typeName == "" {
+		if text, err := platformScalarText(builderType, "Type"); err == nil {
+			typeName = strings.TrimSpace(text)
+		}
+	}
+	if builderType.Kind != ValueObject || builderType.Type != "Type" || typeName == "" {
 		return Null, nil
 	}
-	if !vm.typeMatches(builderType.Text, "Cache.CacheBuilder", make(map[string]bool)) {
+	if !vm.typeMatches(typeName, "Cache.CacheBuilder", make(map[string]bool)) {
 		return Null, nil
 	}
-	builder, err := vm.constructValue(builderType.Text, nil, nil, &Result{})
+	builder, err := vm.constructValue(typeName, nil, nil, &Result{})
 	if err != nil {
 		return Null, err
 	}

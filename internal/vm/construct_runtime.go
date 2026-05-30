@@ -186,7 +186,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if (len(args) != 2 && len(args) != 3) || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("VisualEditor.DataRow constructor expects label, value, and optional selected")
 		}
-		if args[0].Kind != ValueString {
+		if args[0].Kind != ValueString && args[0].Kind != ValueNull {
 			return Null, fmt.Errorf("VisualEditor.DataRow constructor expects label String")
 		}
 		if len(args) == 3 && args[2].Kind != ValueBool {
@@ -200,6 +200,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			row.Fields["selected"] = args[2]
 		}
 		return row, nil
+	}
+	if strings.EqualFold(typeName, "VisualEditor.DynamicPickListRows") {
+		return newVisualEditorDynamicPickListRows(args, namedArgs)
 	}
 	if class, ok := vm.lookupClass(typeName); ok && !vm.isSObjectType(typeName) && !platformVersionTypeName(typeName) {
 		typeName = runtimeClassName(class)
@@ -466,7 +469,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if (len(args) != 2 && len(args) != 3) || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("VisualEditor.DataRow constructor expects label, value, and optional selected")
 		}
-		if args[0].Kind != ValueString {
+		if args[0].Kind != ValueString && args[0].Kind != ValueNull {
 			return Null, fmt.Errorf("VisualEditor.DataRow constructor expects label String")
 		}
 		if len(args) == 3 && args[2].Kind != ValueBool {
@@ -481,26 +484,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		return row, nil
 	case "VisualEditor.DynamicPickListRows":
-		if len(args) > 2 || len(namedArgs) != 0 {
-			return Null, fmt.Errorf("VisualEditor.DynamicPickListRows constructor expects rows and optional containsAllRows")
-		}
-		rows := Object("VisualEditor.DynamicPickListRows")
-		list := typedList("List<VisualEditor.DataRow>")
-		if len(args) > 0 {
-			if args[0].Kind != ValueList {
-				return Null, fmt.Errorf("VisualEditor.DynamicPickListRows constructor expects List<VisualEditor.DataRow>")
-			}
-			list = args[0]
-		}
-		rows.Fields["rows"] = list
-		rows.Fields["containsAllRows"] = Bool(false)
-		if len(args) == 2 {
-			if args[1].Kind != ValueBool {
-				return Null, fmt.Errorf("VisualEditor.DynamicPickListRows constructor expects Boolean containsAllRows")
-			}
-			rows.Fields["containsAllRows"] = args[1]
-		}
-		return rows, nil
+		return newVisualEditorDynamicPickListRows(args, namedArgs)
 	case "compression.ZipWriter":
 		if len(args) != 0 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("compression.ZipWriter constructor expects 0 arguments")
@@ -1069,6 +1053,29 @@ func constructAuthConfigurationValue(args []Value, namedArgs map[string]Value) (
 	authConfig.Fields["Url"] = args[0]
 	config.Fields["authConfig"] = authConfig
 	return config, nil
+}
+
+func newVisualEditorDynamicPickListRows(args []Value, namedArgs map[string]Value) (Value, error) {
+	if len(args) > 2 || len(namedArgs) != 0 {
+		return Null, fmt.Errorf("VisualEditor.DynamicPickListRows constructor expects rows and optional containsAllRows")
+	}
+	rows := Object("VisualEditor.DynamicPickListRows")
+	list := typedList("List<VisualEditor.DataRow>")
+	if len(args) > 0 {
+		if args[0].Kind != ValueList {
+			return Null, fmt.Errorf("VisualEditor.DynamicPickListRows constructor expects List<VisualEditor.DataRow>")
+		}
+		list = args[0]
+	}
+	rows.Fields["rows"] = list
+	rows.Fields["containsAllRows"] = Bool(false)
+	if len(args) == 2 {
+		if args[1].Kind != ValueBool {
+			return Null, fmt.Errorf("VisualEditor.DynamicPickListRows constructor expects Boolean containsAllRows")
+		}
+		rows.Fields["containsAllRows"] = args[1]
+	}
+	return rows, nil
 }
 
 func applyExceptionConstructorArgs(object *Value, args []Value) (bool, error) {
@@ -2712,15 +2719,23 @@ func (vm *VM) resolveTypeNameInClass(className, typeName string) string {
 	if resolved, ok := vm.resolveNestedTypeInClassHierarchy(className, typeName); ok {
 		return resolved
 	}
-	if isCommonSObjectTypeName(typeName) {
-		return typeName
-	}
 	if class, ok := vm.lookupClass(className); ok {
 		if namespace := strings.TrimSpace(class.Namespace); namespace != "" {
 			if sameNamespaceClass, ok := vm.lookupClassInNamespace(namespace, typeName); ok {
+				if !strings.Contains(sameNamespaceClass.Name, ".") {
+					return runtimeClassName(sameNamespaceClass)
+				}
+			}
+		}
+	} else if namespace := strings.TrimSpace(vm.currentCallerNamespace()); namespace != "" {
+		if sameNamespaceClass, ok := vm.lookupClassInNamespace(namespace, typeName); ok {
+			if !strings.Contains(sameNamespaceClass.Name, ".") {
 				return runtimeClassName(sameNamespaceClass)
 			}
 		}
+	}
+	if isCommonSObjectTypeName(typeName) {
+		return typeName
 	}
 	return typeName
 }
@@ -4058,6 +4073,7 @@ func isLoggingLevelValue(value Value) bool {
 }
 
 func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
+	typeName = vm.resolveAssignableTargetType(typeName)
 	canonicalTypeName := typeName
 	if rest, ok := stripLeadingSystemNamespace(canonicalTypeName); ok {
 		canonicalTypeName = rest
@@ -4474,4 +4490,19 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		return value, nil
 	}
 	return coerceAssignable(typeName, value)
+}
+
+func (vm *VM) resolveAssignableTargetType(typeName string) string {
+	base := collectionBase(typeName)
+	element, ok := collectionElementType(typeName)
+	if base == "" || !ok || strings.Contains(element, ".") {
+		return typeName
+	}
+	if resolved := vm.resolveTypeNameInCurrentExecutionContext(element); resolved != "" && !strings.EqualFold(resolved, element) {
+		return base + "<" + resolved + ">"
+	}
+	if resolved, ok := vm.resolveCurrentNamespaceTopLevelClassName(element); ok {
+		return base + "<" + resolved + ">"
+	}
+	return typeName
 }

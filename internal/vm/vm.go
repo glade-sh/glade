@@ -2748,11 +2748,26 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 			args = nil
 			target, ok, ambiguous = vm.resolveInstanceMethodForArgs(job.Object.Type, "execute", nil)
 		}
+		staticTarget := Method{}
+		staticExecute := false
+		if !ok && !ambiguous {
+			args = []Value{asyncContext("QueueableContext", job.ID)}
+			staticTarget, ok, ambiguous = vm.resolveStaticMethodForArgs(job.Object.Type, "execute", args)
+			staticExecute = ok
+		}
+		if !ok && !ambiguous {
+			args = nil
+			staticTarget, ok, ambiguous = vm.resolveStaticMethodForArgs(job.Object.Type, "execute", nil)
+			staticExecute = ok
+		}
 		if ambiguous {
 			return fmt.Errorf("async job %s execute method is ambiguous", job.Object.Type)
 		}
 		if !ok {
 			return fmt.Errorf("async job %s has no execute method", job.Object.Type)
+		}
+		if staticExecute {
+			target = staticTarget
 		}
 		if len(target.Params) == 0 {
 			args = nil
@@ -2760,6 +2775,9 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 		previousFinalizer := vm.currentFinalizer
 		vm.currentFinalizer = Value{}
 		_, err := vm.withQueueableJob(job, func() (Value, error) {
+			if staticExecute {
+				return vm.callMethod(target, args, result)
+			}
 			return vm.callMethodWithReceiver(target, job.Object, args, result)
 		})
 		finalizer := vm.currentFinalizer
@@ -3415,6 +3433,13 @@ func cronNextFireTime(expr string, now time.Time) (string, bool) {
 		if !ok {
 			return "", false
 		}
+	}
+	if !anyYear && !anyMonth && !anyDay && anyWeekday {
+		candidate := time.Date(year, time.Month(month), day, hour, min, sec, 0, time.UTC)
+		if candidate.After(now.UTC()) {
+			return formatPlatformDatetime(candidate), true
+		}
+		return "", false
 	}
 	start := now.UTC().Truncate(24 * time.Hour)
 	for offset := 0; offset < 3660; offset++ {

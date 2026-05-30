@@ -36,12 +36,34 @@ func collectionStoreException(collectionType string, value Value) error {
 	return newExceptionError("System.TypeException", fmt.Sprintf("Collection store exception adding %s to %s", runtimeValueTypeName(value), typeExceptionAnyName(collectionType)))
 }
 
+func (vm *VM) callFrameworkIDGeneratorGenerate(method Method, args []Value) (Value, bool) {
+	if !strings.EqualFold(frameworkMockSupportType(method.ClassName), "IDGenerator") ||
+		!strings.EqualFold(apexMethodMemberName(method.Name), "generate") ||
+		len(args) != 1 || !isSObjectTypeToken(args[0]) {
+		return Null, false
+	}
+	objectName, ok := sObjectTypeTokenObjectName(args[0])
+	if !ok {
+		return Null, false
+	}
+	if strings.EqualFold(objectName, "Organization") {
+		return platformScalar("Id", "00D000000000002"), true
+	}
+	if strings.EqualFold(objectName, "User") {
+		return platformScalar("Id", "005000000000999"), true
+	}
+	return Null, false
+}
+
 func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value, result *Result) (Value, error) {
 	if len(vm.callStack) >= maxApexCallDepth {
 		return Null, &RuntimeError{Type: "RuntimeError", Message: "maximum Apex call stack depth exceeded", Stack: vm.stackFrames()}
 	}
 	if len(args) != len(method.Params) {
 		return Null, fmt.Errorf("%s expects %d arguments", method.Name, len(method.Params))
+	}
+	if value, handled := vm.callFrameworkIDGeneratorGenerate(method, args); handled {
+		return value, nil
 	}
 	if isStubProxy(receiver) && stubProxyCanInterceptMethod(method) {
 		if value, handled, err := vm.callStubProxyMember(receiver, apexMethodMemberName(method.Name), args, result); handled || err != nil {
@@ -404,7 +426,7 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 			dispatchClass = receiver.Type
 		}
 		class, _ := vm.lookupClass(dispatchClass)
-		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(class.SuperClass, method, args)
+		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(vm.resolvedSuperClassName(class), method, args)
 		if ambiguous {
 			return Null, true, vm.ambiguousOverloadError(callee, args)
 		}
@@ -926,6 +948,9 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			if value, handled := vm.generatedPlatformInstanceDefault(receiverName, receiver, method, args); handled {
 				return value, true, nil
+			}
+			if value, handled, err := vm.callManagedPassiveMissingMember(receiver, method, args); handled || err != nil {
+				return value, true, err
 			}
 			if receiver.Fields != nil {
 				if mapField, ok := receiver.Fields["map"]; ok && mapField.Kind == ValueMap {
@@ -2206,7 +2231,7 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 		return Null, false
 	}
 	if receiver.Type == "Schema.GlobalDescribeMap" {
-		if vm != nil && vm.Org != nil {
+		if vm != nil {
 			if resolved, ok := vm.resolveGlobalDescribeObjectName(key.Text); ok {
 				return sObjectTypeToken(resolved), true
 			}
@@ -2299,7 +2324,7 @@ func (vm *VM) specialMapContainsKey(receiver, key Value) bool {
 		return false
 	}
 	if receiver.Type == "Schema.GlobalDescribeMap" {
-		if vm != nil && vm.Org != nil {
+		if vm != nil {
 			if _, ok := vm.resolveGlobalDescribeObjectName(key.Text); ok {
 				return true
 			}
@@ -2731,18 +2756,22 @@ func stripAnyNamespaceToken(name string) string {
 }
 
 func (vm *VM) resolveGlobalDescribeObjectName(name string) (string, bool) {
-	if vm == nil || vm.Org == nil {
+	if vm == nil {
 		return "", false
 	}
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return "", false
 	}
+	orgNamespace := ""
+	if vm.Org != nil {
+		orgNamespace = strings.TrimSpace(vm.Org.Namespace)
+	}
 	namespaces := []string{
 		strings.TrimSpace(vm.currentCallerNamespace()),
-		strings.TrimSpace(vm.Org.Namespace),
+		orgNamespace,
 	}
-	if isCustomObjectLikeName(name) && storage.StripAnyNamespaceToken(name) == name {
+	if vm.Org != nil && isCustomObjectLikeName(name) && storage.StripAnyNamespaceToken(name) == name {
 		for _, namespace := range namespaces {
 			if namespace == "" {
 				continue
@@ -2761,7 +2790,12 @@ func (vm *VM) resolveGlobalDescribeObjectName(name string) (string, bool) {
 			}
 		}
 	}
-	return vm.resolveObjectName(name)
+	if vm.Org != nil {
+		if resolved, ok := vm.resolveObjectName(name); ok {
+			return resolved, true
+		}
+	}
+	return storage.ResolveKnownStandardObjectName(name)
 }
 
 func (vm *VM) objectKeyMapLookup(receiver Value, key Value) (Value, bool, error) {
@@ -4520,7 +4554,60 @@ func (vm *VM) unstubbedFrameworkMockReturnFallback(receiver Value, method string
 		value, err := vm.constructValue(concreteType, ctorArgs, nil, result)
 		return value, true, err
 	}
+	if value, ok := vm.unstubbedDatasetServiceListFallback(receiver.Type, method, target); ok {
+		return value, true, nil
+	}
+	if value, ok := vm.unstubbedSchemaServiceFallback(receiver.Type, method, args); ok {
+		return value, true, nil
+	}
 	return Null, false, nil
+}
+
+func (vm *VM) unstubbedDatasetServiceListFallback(receiverType, method string, target Method) (Value, bool) {
+	if !hasSuffixFold(shortTypeName(receiverType), "DatasetService") {
+		return Null, false
+	}
+	if !strings.EqualFold(method, "getDataSetMetadataByTag") && !strings.EqualFold(method, "getDataSetMetadataByTags") {
+		return Null, false
+	}
+	returnType := vm.resolveTypeNameInClass(target.ClassName, target.ReturnType)
+	if collectionBase(returnType) != "List" {
+		return Null, false
+	}
+	return typedList(returnType), true
+}
+
+func (vm *VM) unstubbedSchemaServiceFallback(receiverType, method string, args []Value) (Value, bool) {
+	if !hasSuffixFold(shortTypeName(receiverType), "SchemaService") {
+		return Null, false
+	}
+	switch {
+	case strings.EqualFold(method, "getDescribeResult") && len(args) == 1:
+		objectName := ""
+		switch {
+		case args[0].Kind == ValueObject && isSObjectTypeToken(args[0]):
+			if value, ok := args[0].Fields["object"]; ok && value.Kind == ValueString {
+				objectName = value.Text
+			}
+		case args[0].Kind == ValueString:
+			objectName = args[0].Text
+		}
+		if objectName == "" {
+			return Null, false
+		}
+		canonical, definition, ok := vm.describeObjectDefinition(objectName)
+		if !ok {
+			return Null, false
+		}
+		return vm.describeSObjectValue(canonical, definition), true
+	case strings.EqualFold(method, "getSObjectTypeByName") && len(args) == 1 && args[0].Kind == ValueString:
+		if token, ok := vm.sObjectTypeTokenForName(args[0].Text); ok {
+			return token, true
+		}
+	case strings.EqualFold(method, "getSObjectField") && len(args) == 2 && args[0].Kind == ValueString && args[1].Kind == ValueString:
+		return sObjectFieldToken(args[0].Text, args[1].Text), true
+	}
+	return Null, false
 }
 
 func (vm *VM) unstubbedUnitOfWorkFallbackType(receiverType, method string, target Method) (string, bool) {
@@ -4720,6 +4807,13 @@ func (vm *VM) callManagedPassiveMember(receiver Value, method string, args []Val
 	return Null, receiver, false, false, nil
 }
 
+func (vm *VM) callManagedPassiveMissingMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if receiver.Kind != ValueObject || !looksManagedQualifiedType(receiver.Type) || generatedPlatformTypeName(receiver.Type) {
+		return Null, false, nil
+	}
+	return managedPassiveReturnForMethod(receiver.Type, method, args)
+}
+
 func generatedPlatformTypeName(typeName string) bool {
 	_, ok := generatedPlatformTypeIndex[strings.ToLower(typeName)]
 	return ok
@@ -4728,6 +4822,8 @@ func generatedPlatformTypeName(typeName string) bool {
 func managedPassiveReturnForMethod(typeName, method string, args []Value) (Value, bool, error) {
 	name := strings.ToLower(apexMethodMemberName(method))
 	switch {
+	case strings.EqualFold(name, "enter"):
+		return Null, true, nil
 	case strings.HasPrefix(name, "with"):
 		return Object(typeName), true, nil
 	case strings.HasPrefix(name, "setmock"):
@@ -4738,6 +4834,8 @@ func managedPassiveReturnForMethod(typeName, method string, args []Value) (Value
 		return String(""), true, nil
 	case strings.HasPrefix(name, "get") && strings.HasSuffix(name, "id"):
 		return platformScalar("Id", "001000000000001AAA"), true, nil
+	case strings.HasPrefix(name, "get") && strings.HasSuffix(name, "quantity"):
+		return Int(0), true, nil
 	case strings.HasPrefix(name, "is") || strings.HasPrefix(name, "has") || strings.HasPrefix(name, "can") || strings.HasPrefix(name, "should"):
 		return Bool(false), true, nil
 	default:
@@ -5168,9 +5266,8 @@ func triggerBool(values map[string]Value, name string) bool {
 	if value, ok := values[name]; ok && value.Kind == ValueBool {
 		return value.Bool
 	}
-	normalized := strings.ToLower(name)
 	for candidate, value := range values {
-		if strings.EqualFold(candidate, normalized) && value.Kind == ValueBool {
+		if strings.EqualFold(candidate, name) && value.Kind == ValueBool {
 			return value.Bool
 		}
 	}
@@ -7490,6 +7587,11 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, err
 		}
 		_, value, ok := objectFieldValue(receiver, field)
+		if !ok && vm.Org != nil {
+			if stripped := storage.StripNamespaceToken(vm.Org.Namespace, field); !strings.EqualFold(stripped, field) {
+				_, value, ok = objectFieldValue(receiver, stripped)
+			}
+		}
 		if !ok {
 			if value, ok := vm.missingSObjectFieldValue(receiver, field); ok {
 				return value, true, nil

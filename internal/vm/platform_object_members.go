@@ -460,6 +460,9 @@ func (vm *VM) callConnectAPIReadOnlyStaticDefault(callee string, args []Value) (
 	if !ok || !connectAPIReadOnlyHarnessReturn(method.ReturnType) {
 		return Null, false
 	}
+	if strings.EqualFold(className, "ConnectApi.ChatterUsers") && strings.EqualFold(methodName, "getFollowings") {
+		return Null, false
+	}
 	if !connectAPIReadOnlyHarnessMethodAllowed(className, methodName) {
 		return Null, false
 	}

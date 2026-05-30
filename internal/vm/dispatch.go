@@ -1872,8 +1872,8 @@ platformStaticCall:
 		return vm.currentUIRequestValue(), nil
 	case "ConnectApi.Organization.getSettings":
 		return vm.connectAPIOrganizationSettings(args)
-	case "ConnectApi.ChatterUsers.getFollowings":
-		if vm.testContext != nil && !vm.testContext.SeeAllData {
+	case "ConnectApi.ChatterUsers.getFollowings", "System.ConnectApi.ChatterUsers.getFollowings":
+		if vm.testContext != nil && vm.testContext.SeeAllDataSet && !vm.testContext.SeeAllData {
 			return Null, newExceptionError("UnsupportedOperationException", "ConnectApi.ChatterUsers.getFollowings requires SeeAllData=true in local tests")
 		}
 		return Object("ConnectApi.FollowingPage"), nil
@@ -2948,6 +2948,9 @@ platformStaticCall:
 	case "Network.communitiesLanding":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Network.communitiesLanding expects 0 arguments")
+		}
+		if vm.testContext != nil {
+			return newPageReference(""), nil
 		}
 		return newPageReference("/" + strings.Trim(vm.firstOrgRecordString("Network", "UrlPathPrefix", "local"), "/")), nil
 	case "Network.forwardToAuthPage":

@@ -279,6 +279,12 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 }
 
 func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) (Result, error) {
+	if strings.EqualFold(query.Object, "PlatformCachePartition") {
+		if object, ok := org.Objects["PlatformCachePartition"]; !ok || len(object.Records) == 0 {
+			org = org.Clone()
+			storage.ApplyOrgShape(&org, []string{"PlatformCache"})
+		}
+	}
 	objectName, ok := storage.ResolveObjectName(org, query.Object)
 	if !ok && shouldHydrateVirtualSchemaForQuery(query.Object) {
 		org = org.Clone()
@@ -1293,7 +1299,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	matched = applyWindow(matched, query.Offset, query.Limit, query.HasLimit)
 	out := make([]storage.Record, 0, len(matched))
 	for _, child := range matched {
-		projected, err := projectRecord(org, childObject.Definition, child, query.Fields, nil, query.Typeofs, childCache)
+		projected, err := projectRecord(org, childObject.Definition, child, query.Fields, query.ChildQueries, query.Typeofs, childCache)
 		if err != nil {
 			return nil, err
 		}
@@ -1316,9 +1322,6 @@ func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	childObject := org.Objects[childObjectName]
 	query := childQuery.Query
 	query.Object = childObjectName
-	if len(query.ChildQueries) > 0 {
-		return preparedChildRelationshipQuery{}, fmt.Errorf("soql: nested child relationship subqueries are not supported")
-	}
 	if query.Count || len(query.Aggregates) > 0 || len(query.GroupBy) > 0 || query.Having != nil {
 		return preparedChildRelationshipQuery{}, fmt.Errorf("soql: aggregate child relationship subqueries are not supported")
 	}
@@ -1492,7 +1495,7 @@ func syntheticPrefixedCustomChildRelationship(org storage.OrgState, parentDefini
 	}
 	parentBase := strings.TrimSuffix(parentName, "__c")
 	childBase := strings.TrimSuffix(childName, "__c")
-	if parentBase == "" || childBase == "" || !strings.HasPrefix(strings.ToLower(childBase), strings.ToLower(parentBase)) || strings.EqualFold(parentBase, childBase) {
+	if parentBase == "" || childBase == "" || !hasPrefixFold(childBase, parentBase) || strings.EqualFold(parentBase, childBase) {
 		return storage.Relationship{}, false
 	}
 	childRelationship := childBase + "s__r"
@@ -1566,7 +1569,7 @@ func childRelationshipObjectPreferred(org storage.OrgState, left, right string) 
 }
 
 func childRelationshipObjectPriority(org storage.OrgState, objectName string) int {
-	if org.Namespace != "" && strings.HasPrefix(strings.ToLower(objectName), strings.ToLower(org.Namespace)+"__") && customObjectLikeSOQLName(objectName) {
+	if org.Namespace != "" && hasPrefixFold(objectName, org.Namespace+"__") && customObjectLikeSOQLName(objectName) {
 		return 0
 	}
 	if customObjectLikeSOQLName(objectName) {
@@ -1699,12 +1702,12 @@ func childRelationshipNameMatchRank(namespace, metadataName, queryName string) (
 		return rank, true
 	}
 	strippedQuery := storage.StripNamespaceToken(namespace, queryName)
-	if strings.HasSuffix(strings.ToLower(strippedQuery), "__r") {
+	if hasSuffixFold(strippedQuery, "__r") {
 		if rank, ok := relationshipNameMatchRank(namespace, metadataName+"__r", strippedQuery); ok {
 			return rank + 1, true
 		}
 	}
-	if strings.HasSuffix(strings.ToLower(metadataName), "__r") {
+	if hasSuffixFold(metadataName, "__r") {
 		base := strings.TrimSuffix(metadataName, metadataName[len(metadataName)-3:])
 		if rank, ok := relationshipNameMatchRank(namespace, base, strippedQuery); ok {
 			return rank + 1, true
@@ -2359,7 +2362,7 @@ func canonicalSystemFieldName(field string) (string, bool) {
 }
 
 func isCustomFieldName(name string) bool {
-	return strings.HasSuffix(strings.ToLower(name), "__c")
+	return hasSuffixFold(name, "__c")
 }
 
 func polymorphicParentObject(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, relationship string) (string, bool) {
@@ -2540,7 +2543,7 @@ func entityDefinitionRelationshipValue(value storage.Value, field string) (stora
 		return storage.IntegerValue(255), true
 	case strings.EqualFold(field, "NamespacePrefix"), strings.EqualFold(field, "KeyPrefix"):
 		return storage.NullValue(), true
-	case strings.HasPrefix(strings.ToLower(field), "is"):
+	case hasPrefixFold(field, "is"):
 		switch strings.ToLower(field) {
 		case "isdeprecatedandhidden", "iscustomsetting":
 			return storage.BooleanValue(false), true
@@ -2888,7 +2891,7 @@ func customRelationshipLikeSOQLName(name string) bool {
 
 func relationshipObjectName(relationship string) string {
 	relationship = strings.TrimSpace(relationship)
-	if strings.HasSuffix(strings.ToLower(relationship), "__r") {
+	if hasSuffixFold(relationship, "__r") {
 		return relationship[:len(relationship)-len("__r")] + "__c"
 	}
 	return relationship
@@ -4262,6 +4265,20 @@ func groupingComparableField(field string) string {
 		return raw
 	}
 	return field
+}
+
+func hasPrefixFold(value, prefix string) bool {
+	if len(prefix) > len(value) {
+		return false
+	}
+	return strings.EqualFold(value[:len(prefix)], prefix)
+}
+
+func hasSuffixFold(value, suffix string) bool {
+	if len(suffix) > len(value) {
+		return false
+	}
+	return strings.EqualFold(value[len(value)-len(suffix):], suffix)
 }
 
 func splitSelectFieldAlias(field string) (string, string, bool) {

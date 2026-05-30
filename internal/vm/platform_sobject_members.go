@@ -562,6 +562,9 @@ func (vm *VM) unqueriedStoredDefaultFieldValue(receiver Value, field string) (Va
 	if vm == nil || vm.Org == nil || receiver.Kind != ValueObject || receiver.Fields == nil {
 		return Null, false
 	}
+	if marker, ok := receiver.Fields[sobjectDMLAccessibleField]; ok && marker.Kind == ValueBool && marker.Bool {
+		return Null, false
+	}
 	objectName := receiver.Type
 	if resolved, ok := vm.resolveObjectName(objectName); ok {
 		objectName = resolved
@@ -1120,6 +1123,10 @@ func (vm *VM) resolveObjectName(name string) (string, bool) {
 	key := strings.ToLower(strings.TrimSpace(name))
 	if key == "" {
 		return "", false
+	}
+	if prefix, rest, ok := strings.Cut(strings.TrimSpace(name), "."); ok && strings.EqualFold(prefix, "Schema") {
+		name = rest
+		key = strings.ToLower(strings.TrimSpace(name))
 	}
 	namespace := strings.ToLower(strings.TrimSpace(vm.currentCallerNamespace()))
 	cacheKey := namespace + "|" + key
@@ -1852,6 +1859,9 @@ func (vm *VM) parentRelationshipShellFromLookupID(relation storage.Relationship,
 		}
 		parent := Object(parentObject)
 		parent.Fields["Id"] = platformScalar("Id", string(lookupID))
+		if strings.EqualFold(parentObject, "User") && storage.ID(vm.currentUserInfoField("Id", "")) == lookupID {
+			parent.Fields["Name"] = String(vm.currentUserInfoField("Name", "Test User"))
+		}
 		return parent, true
 	}
 	return Null, false

@@ -210,6 +210,11 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 				if receiver.Kind == ValueNull {
 					return safeNavigationNull(), nil
 				}
+				if receiver.Kind == ValueObject && platformScalarObject(receiver.Type) {
+					if raw, ok := receiver.Fields["value"]; ok && raw.Kind == ValueNull {
+						return safeNavigationNullOfType(receiver.Type), nil
+					}
+				}
 				callee = strings.TrimPrefix(callee, "__safe_call:")
 			} else if isSafeNavigationNull(receiver) {
 				return receiver, nil

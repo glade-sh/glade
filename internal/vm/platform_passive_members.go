@@ -1993,6 +1993,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
 			}
 			if raw, ok := receiver.Fields["value"]; ok && raw.Kind == ValueNull {
+				if receiver.Type == "Blob" && method == "toString" {
+					return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+				}
 				return Value{Kind: ValueNull, Type: "String"}, receiver, false, true, nil
 			}
 			text := receiver.Fields["value"].String()

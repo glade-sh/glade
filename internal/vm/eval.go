@@ -617,6 +617,12 @@ func coerceCollectionValue(typeName string, value Value) (Value, error) {
 
 func collectionElementCarriesSObjectType(typeName string) bool {
 	typeName = canonicalRuntimePlatformType(typeName)
+	if prefix, rest, ok := strings.Cut(strings.TrimSpace(typeName), "."); ok && strings.EqualFold(prefix, "Schema") {
+		typeName = rest
+	}
+	if strings.Contains(typeName, ".") {
+		typeName = shortTypeName(typeName)
+	}
 	if strings.EqualFold(typeName, "SObject") {
 		return true
 	}

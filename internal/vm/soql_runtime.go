@@ -1253,8 +1253,21 @@ func (vm *VM) soqlObjectHasPublicReadSharing(objectName string) bool {
 		return false
 	}
 	model := strings.TrimSpace(vm.Org.Objects[canonical].Definition.SharingModel)
+	if model == "" && standardObjectDefaultsToPublicRead(canonical) {
+		return true
+	}
 	switch strings.ToLower(model) {
 	case "readwrite", "publicreadwrite", "read", "readonly", "publicreadonly", "publicread":
+		return true
+	default:
+		return false
+	}
+}
+
+func standardObjectDefaultsToPublicRead(objectName string) bool {
+	name := strings.TrimSpace(objectName)
+	switch {
+	case strings.EqualFold(name, "Campaign"):
 		return true
 	default:
 		return false

@@ -2717,6 +2717,68 @@ func TestExecuteProjectsChildRelationshipSubquery(t *testing.T) {
 	}
 }
 
+func TestExecuteProjectsNestedChildRelationshipSubquery(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}},
+		},
+	}
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Contact",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+				ChildRelationship:  "Contacts",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"003000000000001": {ID: "003000000000001", Object: "Contact", Fields: map[string]storage.Value{"LastName": storage.StringValue("Smith"), "AccountId": storage.IDValue("001000000000001")}},
+		},
+	}
+	org.Objects["Case"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Case",
+			Fields: map[string]storage.Field{
+				"Subject":   {APIName: "Subject", Type: storage.FieldString},
+				"ContactId": {APIName: "ContactId", Type: storage.FieldReference, ReferenceTo: []string{"Contact"}},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "ContactId",
+				ParentObjects:      []string{"Contact"},
+				ParentRelationship: "Contact",
+				ChildRelationship:  "Cases",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"500000000000001": {ID: "500000000000001", Object: "Case", Fields: map[string]storage.Value{"Subject": storage.StringValue("Open"), "ContactId": storage.IDValue("003000000000001")}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id, (SELECT Id, Subject FROM Cases) FROM Contacts) FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	contacts := result.Records[0].Children["Contacts"]
+	if len(contacts) != 1 {
+		t.Fatalf("contacts = %#v", contacts)
+	}
+	cases := contacts[0].Children["Cases"]
+	if len(cases) != 1 || cases[0].Fields["Subject"].String != "Open" {
+		t.Fatalf("cases = %#v", cases)
+	}
+}
+
 func TestExecuteChildRelationshipSubqueryPrefersCurrentPackageObject(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Namespace = "NU"

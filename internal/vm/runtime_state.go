@@ -349,6 +349,7 @@ type TestContext struct {
 	Stopped                 bool
 	CurrentUser             Value
 	SeeAllData              bool
+	SeeAllDataSet           bool
 	AsyncJobs               []AsyncJob
 	AsyncStartIndex         int
 	EventPublishes          []eventPublishCallback
@@ -1174,6 +1175,7 @@ func (vm *VM) SetTestSeeAllData(enabled bool) {
 		vm.EnableTestContext()
 	}
 	vm.testContext.SeeAllData = enabled
+	vm.testContext.SeeAllDataSet = true
 }
 
 func (vm *VM) defaultTestCurrentUser() Value {

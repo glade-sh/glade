@@ -3056,6 +3056,39 @@ func TestManagedSuperclassConstructorCallIsPassiveWhenSuperclassIsExternal(t *te
 	}
 }
 
+func TestExecManagedGlobalEntryPointEnterIsPassive(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object value = znu.GlobalEntryPoint.Instance.Enter('NimbleAMSSettingsService.getEmailService', new List<Object>());
+System.assertEquals(null, value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFrameworkIDGeneratorOrganizationAvoidsLocalOrgID(t *testing.T) {
+	program, err := CompileAnonymous(`
+String generated = String.valueOf(fflib_IDGenerator.generate(Organization.SObjectType));
+System.assertNotEquals(UserInfo.getOrganizationId(), generated);
+System.assertNotEquals(UserInfo.getUserId(), fflib_IDGenerator.generate(User.SObjectType));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "fflib_IDGenerator", Methods: map[string]Method{
+		"generate#Schema.SObjectType": {Name: "fflib_IDGenerator.generate", ClassName: "fflib_IDGenerator", IsStatic: true, ReturnType: "Id", Params: []Param{{Name: "sobjectType", Type: "Schema.SObjectType"}}},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestFrameworkMatcherFastPathMatchesCommonMatchers(t *testing.T) {
 	machine := New(nil)
 	methodArg := Object("framework_MethodArgValues")
@@ -10479,6 +10512,93 @@ System.assertEquals(2, value.score());
 	}
 }
 
+func TestExecSuperDispatchResolvesNamespacedSuperclass(t *testing.T) {
+	parentProgram, err := CompileAnonymous("return 2;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childProgram, err := CompileAnonymous("return super.score() + 1;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	testProgram, err := CompileAnonymous(`
+Child value = new Child();
+System.assertEquals(3, value.score());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Base", Namespace: "namz", Methods: map[string]Method{
+		"score": {Name: "Base.score", ClassName: "namz.Base", ReturnType: "Integer", Program: parentProgram},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Child", Namespace: "namz", SuperClass: "Base", Methods: map[string]Method{
+		"score": {Name: "Child.score", ClassName: "namz.Child", ReturnType: "Integer", Program: childProgram},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Harness", Namespace: "namz", IsTest: true, Methods: map[string]Method{
+		"run": {Name: "Harness.run", ClassName: "namz.Harness", IsStatic: true, Program: testProgram},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.callMethod(machine.Methods["namz.Harness.run"], nil, &Result{}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecVisualEditorRowsFromNamespacedSuperCall(t *testing.T) {
+	parentProgram, err := CompileAnonymous(`
+VisualEditor.DynamicPickListRows rows = new VisualEditor.DynamicPickListRows();
+rows.addRow(new VisualEditor.DataRow('A', 'a'));
+return rows;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	childProgram, err := CompileAnonymous(`
+List<VisualEditor.DataRow> rows = new List<VisualEditor.DataRow>();
+rows.add(new VisualEditor.DataRow(null, null));
+rows.addAll(super.getValues().getDataRows());
+return new VisualEditor.DynamicPickListRows(rows);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testProgram, err := CompileAnonymous(`
+VisualEditor.DynamicPickListRows result = new ChildPickList().getValues();
+System.assertEquals(2, result.getDataRows().size());
+List<VisualEditor.DataRow> dataRows = result.getDataRows();
+System.assertEquals(2, dataRows.size());
+System.assertEquals(null, result.getDataRows().get(0).getLabel());
+System.assertEquals('A', dataRows.get(1).getLabel());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "ParentPickList", Namespace: "namz", SuperClass: "VisualEditor.DynamicPickList", Methods: map[string]Method{
+			"getValues": {Name: "ParentPickList.getValues", ClassName: "namz.ParentPickList", ReturnType: "VisualEditor.DynamicPickListRows", Program: parentProgram},
+		}},
+		{Name: "ChildPickList", Namespace: "namz", SuperClass: "ParentPickList", Methods: map[string]Method{
+			"getValues": {Name: "ChildPickList.getValues", ClassName: "namz.ChildPickList", ReturnType: "VisualEditor.DynamicPickListRows", Program: childProgram},
+		}},
+		{Name: "PickListHarness", Namespace: "namz", IsTest: true, Methods: map[string]Method{
+			"run": {Name: "PickListHarness.run", ClassName: "namz.PickListHarness", IsStatic: true, Program: testProgram},
+		}},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.callMethod(machine.Methods["namz.PickListHarness.run"], nil, &Result{}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecInheritedConcreteMethodBeatsInterfaceFallback(t *testing.T) {
 	parentProgram, err := CompileAnonymous("return 'parent';")
 	if err != nil {
@@ -11465,6 +11585,29 @@ System.assertEquals('001000000000001AAA', text);
 		t.Fatal(err)
 	}
 	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCaseVariantDuplicateFieldLookupPrefersNonNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+Model model = new Model();
+Datetime stamp = Datetime.newInstance(2025, 6, 1, 12, 0, 0);
+model.lastUpdatedAt = stamp;
+System.assertEquals(stamp, model.lastUpdatedAt);
+System.assertEquals(stamp, model.LastUpdatedAt);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Model", Fields: map[string]Field{
+		"LastUpdatedAt": {Name: "LastUpdatedAt", Type: "Datetime"},
+		"lastUpdatedAt": {Name: "lastUpdatedAt", Type: "Datetime"},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

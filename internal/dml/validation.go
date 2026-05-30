@@ -175,7 +175,7 @@ func isDMLRelationshipPseudoField(definition storage.ObjectDefinition, namespace
 	if dmlRelationshipPseudoFieldHasMetadata(definition, namespace, field) {
 		return true
 	}
-	return isSyntheticCustomDMLObject(definition.APIName) && strings.HasSuffix(strings.ToLower(field), "__r")
+	return isSyntheticCustomDMLObject(definition.APIName) && hasSuffixFold(field, "__r")
 }
 
 func dmlRelationshipPseudoFieldHasMetadata(definition storage.ObjectDefinition, namespace, field string) bool {
@@ -492,7 +492,7 @@ func allowLocalCreateRelationshipField(definition storage.ObjectDefinition, obje
 	if isStandardCreateIdentityRelationship(objectName, field) {
 		return true
 	}
-	if isLocalSetupConfigurationObject(definition) && strings.HasSuffix(strings.ToLower(field), "id") {
+	if isLocalSetupConfigurationObject(definition) && hasSuffixFold(field, "id") {
 		return true
 	}
 	return false
@@ -532,7 +532,7 @@ func allowLocalCreateConfigurationField(definition storage.ObjectDefinition, fie
 	if strings.EqualFold(field, "Type") && isLocalDeveloperNamedSetupObject(definition) {
 		return true
 	}
-	return isLocalSetupConfigurationObject(definition) && strings.HasSuffix(strings.ToLower(field), "type")
+	return isLocalSetupConfigurationObject(definition) && hasSuffixFold(field, "type")
 }
 
 func isLocalDeveloperNamedSetupObject(definition storage.ObjectDefinition) bool {
@@ -708,7 +708,7 @@ func allowRequiredUpdateExplicitNull(definition storage.ObjectDefinition, field 
 	if !strings.EqualFold(fieldName, "Name") && !strings.EqualFold(field.APIName, "Name") {
 		return false
 	}
-	return strings.HasSuffix(strings.ToLower(definition.APIName), "__c")
+	return hasSuffixFold(definition.APIName, "__c")
 }
 
 func stripReadOnlyUpdateFields(definition storage.ObjectDefinition, namespace string, record *storage.Record) {
@@ -759,6 +759,9 @@ func stripUnchangedNonUpdateableFields(definition storage.ObjectDefinition, name
 			continue
 		}
 		existingValue, ok := existing.GetField(canonical)
+		if !ok {
+			existingValue, ok = existingSystemFieldValue(existing, canonical)
+		}
 		if !ok && value.Kind == storage.ValueNull && !existing.HasExplicitNull(canonical) {
 			delete(record.Fields, field)
 			continue
@@ -791,6 +794,32 @@ func stripUnchangedNonUpdateableFields(definition storage.ObjectDefinition, name
 			delete(record.ExplicitNulls, field)
 		}
 	}
+}
+
+func existingSystemFieldValue(record storage.Record, field string) (storage.Value, bool) {
+	switch field {
+	case "CreatedDate":
+		if record.System.CreatedDate != "" {
+			return storage.DateTimeValue(record.System.CreatedDate), true
+		}
+	case "CreatedById":
+		if record.System.CreatedByID != "" {
+			return storage.IDValue(record.System.CreatedByID), true
+		}
+	case "LastModifiedDate":
+		if record.System.LastModifiedDate != "" {
+			return storage.DateTimeValue(record.System.LastModifiedDate), true
+		}
+	case "LastModifiedById":
+		if record.System.LastModifiedByID != "" {
+			return storage.IDValue(record.System.LastModifiedByID), true
+		}
+	case "SystemModstamp":
+		if record.System.SystemModstamp != "" {
+			return storage.DateTimeValue(record.System.SystemModstamp), true
+		}
+	}
+	return storage.Value{}, false
 }
 
 func (e *Engine) validateObjectID(definition storage.ObjectDefinition, record storage.Record) error {
@@ -902,7 +931,7 @@ func allowMissingLocalReference(definition storage.ObjectDefinition, fieldName s
 	if !ok || field.Type != storage.FieldReference {
 		return false
 	}
-	if strings.HasSuffix(strings.ToLower(definition.APIName), "__c") {
+	if hasSuffixFold(definition.APIName, "__c") {
 		return true
 	}
 	for _, target := range field.ReferenceTo {
@@ -1120,6 +1149,13 @@ func (e *Engine) clearUniqueIndexes() {
 
 func uniqueIndexKey(objectName, fieldName string) string {
 	return strings.ToLower(strings.TrimSpace(objectName)) + "\x00" + strings.ToLower(strings.TrimSpace(fieldName))
+}
+
+func hasSuffixFold(value, suffix string) bool {
+	if len(suffix) > len(value) {
+		return false
+	}
+	return strings.EqualFold(value[len(value)-len(suffix):], suffix)
 }
 
 func addUniqueIndexValue(index map[string]map[storage.ID]bool, field storage.Field, value storage.Value, id storage.ID) {
