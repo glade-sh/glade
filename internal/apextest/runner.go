@@ -1623,6 +1623,8 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 		storage.EnsureDeterministicPlatformData(&org)
 		applyProjectPermissionSetGroupRecords(&org, *loadedProject)
 	}
+	applyReferencedSyntheticFieldSets(&org, index, caches...)
+	applyInferredProductDownloadURLFormulas(&org)
 	normalizeOrgKeyPrefixes(&org)
 	return org
 }
@@ -1935,6 +1937,328 @@ func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]ma
 	}
 }
 
+var apexFieldSetConstantPattern = regexp.MustCompile(`(?im)\b(?:public|private|protected|global|static|final|\s)*String\s+([A-Za-z_][A-Za-z0-9_]*field_?set[A-Za-z0-9_]*)\s*=\s*(?:[^\r\n;]*\+\s*)?'([^'\r\n;]+)'`)
+var apexGetSObjectTypeReturnPattern = regexp.MustCompile(`(?is)\bgetSObjectType\s*\(\s*\)\s*\{[^}]*?\breturn\s+([A-Za-z_][A-Za-z0-9_]*(?:__[A-Za-z0-9_]+)?)\.SObjectType\b`)
+var apexSObjectReturnTypePattern = regexp.MustCompile(`(?i)\b(?:public|private|protected|global|webservice|testmethod|static|final|virtual|override|abstract|with|without|inherited|sharing|\s)+([A-Za-z_][A-Za-z0-9_]*(?:__[A-Za-z0-9_]+)?)\s+[A-Za-z_][A-Za-z0-9_]*\s*\(`)
+var apexNewSObjectPattern = regexp.MustCompile(`(?i)\bnew\s+([A-Za-z_][A-Za-z0-9_]*(?:__[A-Za-z0-9_]+)?)\s*\(`)
+var apexTypedNamePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*(?:__[A-Za-z0-9_]+)?)\s+[A-Za-z_][A-Za-z0-9_]*\b`)
+
+func applyReferencedSyntheticFieldSets(org *storage.OrgState, index typesys.Index, caches ...sourceCache) {
+	if org == nil || len(index.Types) == 0 {
+		return
+	}
+	refs := referencedSyntheticFieldSetReferences(org, index, caches...)
+	if len(refs) == 0 {
+		return
+	}
+	for _, ref := range refs {
+		if fieldSetMetadataExists(org.Metadata.FieldSets, org.Namespace, ref.ObjectName, ref.FieldSetName) {
+			continue
+		}
+		state := org.Objects[ref.ObjectName]
+		org.Metadata.FieldSets = append(org.Metadata.FieldSets, storage.FieldSetMetadata{
+			ObjectName: ref.ObjectName,
+			Name:       ref.FieldSetName,
+			Label:      storage.StripNamespaceToken(org.Namespace, ref.FieldSetName),
+			Fields:     syntheticFieldSetMembers(state.Definition, ref.FieldSetName),
+		})
+	}
+}
+
+type syntheticFieldSetReference struct {
+	ObjectName    string
+	FieldSetName  string
+	sortableLower string
+}
+
+func referencedSyntheticFieldSetReferences(org *storage.OrgState, index typesys.Index, caches ...sourceCache) []syntheticFieldSetReference {
+	cache := sourceCacheFor(caches)
+	seenFiles := make(map[string]bool)
+	seenRefs := make(map[string]bool)
+	var refs []syntheticFieldSetReference
+	for _, typ := range index.Types {
+		if typ.File == "" || seenFiles[typ.File] {
+			continue
+		}
+		seenFiles[typ.File] = true
+		source, err := cache.read(typ.File)
+		if err != nil {
+			continue
+		}
+		seenNames := make(map[string]bool)
+		seenObjects := make(map[string]bool)
+		var names []string
+		var objectNames []string
+		addObject := func(objectName string) {
+			canonical, ok := storage.ResolveObjectName(*org, objectName)
+			if !ok || seenObjects[canonical] {
+				return
+			}
+			if len(syntheticFieldSetMembers(org.Objects[canonical].Definition, "")) == 0 {
+				return
+			}
+			seenObjects[canonical] = true
+			objectNames = append(objectNames, canonical)
+		}
+		fieldSetMatches := apexFieldSetConstantPattern.FindAllStringSubmatch(source, -1)
+		for _, match := range fieldSetMatches {
+			if len(match) != 3 || strings.HasPrefix(strings.ToLower(match[1]), "error") {
+				continue
+			}
+			name := strings.TrimSpace(match[2])
+			if name == "" || seenNames[strings.ToLower(name)] {
+				continue
+			}
+			seenNames[strings.ToLower(name)] = true
+			names = append(names, name)
+		}
+		for _, match := range apexGetSObjectTypeReturnPattern.FindAllStringSubmatch(source, -1) {
+			if len(match) == 2 {
+				addObject(match[1])
+			}
+		}
+		for _, match := range apexSObjectReturnTypePattern.FindAllStringSubmatch(source, -1) {
+			if len(match) == 2 {
+				addObject(match[1])
+			}
+		}
+		for _, match := range apexNewSObjectPattern.FindAllStringSubmatch(source, -1) {
+			if len(match) == 2 {
+				addObject(match[1])
+			}
+		}
+		if len(fieldSetMatches) == 0 {
+			continue
+		}
+		for _, match := range apexTypedNamePattern.FindAllStringSubmatch(source, -1) {
+			if len(match) == 2 {
+				addObject(match[1])
+			}
+		}
+		sort.Strings(names)
+		sort.Strings(objectNames)
+		for _, objectName := range objectNames {
+			for _, name := range names {
+				key := strings.ToLower(objectName) + "\x00" + strings.ToLower(name)
+				if seenRefs[key] {
+					continue
+				}
+				seenRefs[key] = true
+				refs = append(refs, syntheticFieldSetReference{
+					ObjectName:    objectName,
+					FieldSetName:  name,
+					sortableLower: key,
+				})
+			}
+		}
+	}
+	sort.Slice(refs, func(i, j int) bool {
+		return refs[i].sortableLower < refs[j].sortableLower
+	})
+	return refs
+}
+
+func fieldSetMetadataExists(fieldSets []storage.FieldSetMetadata, namespace, objectName, name string) bool {
+	for _, fieldSet := range fieldSets {
+		if metadataNameMatches(namespace, objectName, fieldSet.ObjectName) && fieldSetNameMatches(namespace, fieldSet.Name, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func fieldSetNameMatches(namespace, left, right string) bool {
+	for _, leftAlias := range metadataNameAliases(namespace, left) {
+		for _, rightAlias := range metadataNameAliases(namespace, right) {
+			if strings.EqualFold(leftAlias, rightAlias) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func metadataNameMatches(namespace, left, right string) bool {
+	for _, leftAlias := range metadataNameAliases(namespace, left) {
+		for _, rightAlias := range metadataNameAliases(namespace, right) {
+			if strings.EqualFold(leftAlias, rightAlias) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func metadataNameAliases(namespace, name string) []string {
+	seen := make(map[string]bool)
+	var aliases []string
+	add := func(alias string) {
+		alias = strings.TrimSpace(alias)
+		if alias == "" || seen[strings.ToLower(alias)] {
+			return
+		}
+		seen[strings.ToLower(alias)] = true
+		aliases = append(aliases, alias)
+	}
+	add(name)
+	if namespace != "" && !hasPrefixFold(name, namespace+"__") {
+		add(namespace + "__" + name)
+	}
+	if namespace != "" {
+		add(storage.StripNamespaceToken(namespace, name))
+	}
+	add(stripAnyNamespaceToken(name))
+	return aliases
+}
+
+func hasPrefixFold(value, prefix string) bool {
+	return len(value) >= len(prefix) && strings.EqualFold(value[:len(prefix)], prefix)
+}
+
+func stripAnyNamespaceToken(name string) string {
+	parts := strings.Split(name, "__")
+	if len(parts) >= 3 {
+		return strings.Join(parts[1:], "__")
+	}
+	return name
+}
+
+func syntheticFieldSetMembers(definition storage.ObjectDefinition, fieldSetName string) []storage.FieldSetMemberMetadata {
+	var fieldNames []string
+	for fieldName, field := range definition.Fields {
+		if !syntheticFieldSetCanEditField(fieldName, field) {
+			continue
+		}
+		if syntheticFieldSetIsAddressLike(fieldSetName) && !syntheticFieldSetFieldIsAddressLike(fieldName, field) {
+			continue
+		}
+		fieldNames = append(fieldNames, fieldName)
+	}
+	sort.Strings(fieldNames)
+	members := make([]storage.FieldSetMemberMetadata, 0, len(fieldNames))
+	for _, fieldName := range fieldNames {
+		members = append(members, storage.FieldSetMemberMetadata{Field: fieldName})
+	}
+	return members
+}
+
+func syntheticFieldSetIsAddressLike(name string) bool {
+	return strings.Contains(strings.ToLower(stripAnyNamespaceToken(name)), "address")
+}
+
+func syntheticFieldSetFieldIsAddressLike(fieldName string, field storage.Field) bool {
+	haystack := strings.ToLower(fieldName + " " + field.APIName + " " + field.Label)
+	for _, token := range []string{"address", "street", "city", "state", "province", "country", "postal", "zip", "billing", "mailing", "shipping"} {
+		if strings.Contains(haystack, token) {
+			return true
+		}
+	}
+	return false
+}
+
+func syntheticFieldSetCanEditField(fieldName string, field storage.Field) bool {
+	if strings.EqualFold(fieldName, "Id") || strings.EqualFold(field.APIName, "Id") || field.Formula != "" || field.AutoNumber {
+		return false
+	}
+	if field.Type == storage.FieldBoolean {
+		return false
+	}
+	if !storage.FieldFlagValue(field.Createable, true) && !storage.FieldFlagValue(field.Updateable, true) {
+		return false
+	}
+	return true
+}
+
+func applyInferredProductDownloadURLFormulas(org *storage.OrgState) {
+	if org == nil {
+		return
+	}
+	for objectName, state := range org.Objects {
+		downloadFieldName, downloadField, ok := inferredProductDownloadURLLineField(*org, state.Definition)
+		if !ok {
+			continue
+		}
+		productFieldName, productField, ok := inferredProductDownloadURLProductLookup(*org, state.Definition)
+		if !ok || len(productField.ReferenceTo) == 0 {
+			continue
+		}
+		productObject, ok := storage.ResolveObjectName(*org, productField.ReferenceTo[0])
+		if !ok {
+			productObject = productField.ReferenceTo[0]
+		}
+		productState, ok := org.Objects[productObject]
+		if !ok || !productDownloadURLFormulaInputsKnown(*org, productState.Definition) {
+			continue
+		}
+		relationshipName := productField.RelationshipName
+		if relationshipName == "" {
+			relationshipName = inferredLookupRelationshipName(productFieldName)
+		}
+		relationshipName = storage.StripAnyNamespaceToken(relationshipName)
+		if relationshipName == "" {
+			continue
+		}
+		downloadField.Type = storage.FieldCalculated
+		downloadField.DisplayType = "STRING"
+		downloadField.Formula = fmt.Sprintf("IF(%s.IsDownloadable__c, %s.DownloadUrl__c, NULL)", relationshipName, relationshipName)
+		state.Definition.Fields[downloadFieldName] = downloadField
+		org.Objects[objectName] = state
+	}
+}
+
+func inferredProductDownloadURLLineField(org storage.OrgState, definition storage.ObjectDefinition) (string, storage.Field, bool) {
+	fieldName, ok := storage.ResolveFieldName(definition, org.Namespace, "DownloadUrl__c")
+	if !ok {
+		return "", storage.Field{}, false
+	}
+	field := definition.Fields[fieldName]
+	if strings.TrimSpace(field.Formula) != "" || field.Type != storage.FieldString {
+		return "", storage.Field{}, false
+	}
+	if !inferredStandardFieldShapeEqual(field, inferredReferencedStandardField(field.APIName, "")) {
+		return "", storage.Field{}, false
+	}
+	return fieldName, field, true
+}
+
+func inferredProductDownloadURLProductLookup(org storage.OrgState, definition storage.ObjectDefinition) (string, storage.Field, bool) {
+	fieldName, ok := storage.ResolveFieldName(definition, org.Namespace, "Product2__c")
+	if !ok {
+		fieldName, ok = storage.ResolveFieldName(definition, org.Namespace, "Product__c")
+	}
+	if !ok {
+		return "", storage.Field{}, false
+	}
+	field := definition.Fields[fieldName]
+	if field.Type == storage.FieldReference && len(field.ReferenceTo) > 0 {
+		if target := inferredLookupTarget(org, definition.APIName, fieldName); target != "" && !strings.EqualFold(target, field.ReferenceTo[0]) {
+			field.ReferenceTo = []string{target}
+			if field.RelationshipName == "" {
+				field.RelationshipName = inferredLookupRelationshipName(fieldName)
+			}
+		}
+		return fieldName, field, true
+	}
+	if target := inferredLookupTarget(org, definition.APIName, fieldName); target != "" {
+		field.Type = storage.FieldReference
+		field.DisplayType = "REFERENCE"
+		field.ReferenceTo = []string{target}
+		field.RelationshipName = inferredLookupRelationshipName(fieldName)
+		return fieldName, field, true
+	}
+	return "", storage.Field{}, false
+}
+
+func productDownloadURLFormulaInputsKnown(org storage.OrgState, definition storage.ObjectDefinition) bool {
+	if _, ok := storage.ResolveFieldName(definition, org.Namespace, "IsDownloadable__c"); !ok {
+		return false
+	}
+	if _, ok := storage.ResolveFieldName(definition, org.Namespace, "DownloadUrl__c"); !ok {
+		return false
+	}
+	return true
+}
+
 func projectReferencedNameIsChildRelationship(org storage.OrgState, objectName, name string) bool {
 	parentName, ok := storage.ResolveObjectName(org, objectName)
 	if !ok {
@@ -2043,12 +2367,38 @@ func inferredNumericFieldName(fieldName string) bool {
 		}
 	}
 	compact := strings.ReplaceAll(lower, "_", "")
-	return strings.HasPrefix(compact, "numberof")
+	return strings.HasPrefix(compact, "numberof") ||
+		strings.Contains(compact, "amount") ||
+		strings.Contains(compact, "balance") ||
+		strings.Contains(compact, "mrr") ||
+		strings.Contains(compact, "price") ||
+		strings.Contains(compact, "quantity") ||
+		strings.Contains(compact, "shipping") ||
+		strings.Contains(compact, "subtotal") ||
+		strings.Contains(compact, "tax") ||
+		strings.Contains(compact, "total")
 }
 
 func inferredLookupTarget(org storage.OrgState, objectName, fieldName string) string {
 	if !strings.HasSuffix(strings.ToLower(fieldName), "__c") {
 		return ""
+	}
+	base := storage.StripAnyNamespaceToken(fieldName)
+	if strings.HasSuffix(strings.ToLower(base), "__c") {
+		candidate := base[:len(base)-len("__c")]
+		numberedCandidate := strings.TrimRight(candidate, "0123456789")
+		if numberedCandidate != candidate && numberedCandidate != "" {
+			if namespace := namespaceFromSchemaName(objectName); namespace != "" {
+				if resolved, ok := storage.ResolveObjectName(org, storage.NamespaceTokenName(namespace, numberedCandidate+"__c")); ok {
+					return resolved
+				}
+			}
+			if org.Namespace != "" {
+				if resolved, ok := storage.ResolveObjectName(org, storage.NamespaceTokenName(org.Namespace, numberedCandidate+"__c")); ok {
+					return resolved
+				}
+			}
+		}
 	}
 	candidates := []string{fieldName}
 	if namespace := namespaceFromSchemaName(objectName); namespace != "" {
@@ -2062,7 +2412,6 @@ func inferredLookupTarget(org storage.OrgState, objectName, fieldName string) st
 			return resolved
 		}
 	}
-	base := storage.StripAnyNamespaceToken(fieldName)
 	if target := inferredStandardLookupTarget(org, base); target != "" {
 		return target
 	}
@@ -2821,15 +3170,23 @@ func stripRecordTypeNamespaceToken(name string) string {
 }
 
 func profileRecordTypeExists(recordTypes []storage.RecordTypeInfo, developerName string) bool {
+	developerName = strings.TrimSpace(developerName)
+	strippedDeveloperName := stripRecordTypeNamespaceToken(developerName)
 	for _, recordType := range recordTypes {
-		if strings.EqualFold(recordType.DeveloperName, developerName) {
-			return true
-		}
-		if strings.EqualFold(recordType.Name, developerName) {
+		if profileRecordTypeNameMatches(recordType.DeveloperName, developerName, strippedDeveloperName) ||
+			profileRecordTypeNameMatches(recordType.Name, developerName, strippedDeveloperName) {
 			return true
 		}
 	}
 	return false
+}
+
+func profileRecordTypeNameMatches(candidate, name, strippedName string) bool {
+	candidate = strings.TrimSpace(candidate)
+	if strings.EqualFold(candidate, name) {
+		return true
+	}
+	return strippedName != "" && strings.EqualFold(stripRecordTypeNamespaceToken(candidate), strippedName)
 }
 
 func projectProfileRecordTypeDefaults(files []string) map[string]string {

@@ -221,7 +221,8 @@ func frameworkMismatchedStubReturnFallback(returnType string, value Value, provi
 }
 func (vm *VM) callFrameworkStaticMember(className, method string, args []Value) (Value, bool, error) {
 	switch {
-	case strings.EqualFold(className, "framework_SObjectDomain") && strings.EqualFold(method, "triggerHandler"):
+	case strings.EqualFold(method, "triggerHandler") &&
+		(strings.EqualFold(className, "framework_SObjectDomain") || strings.EqualFold(shortTypeName(className), "SObjectDomain")):
 		return vm.callFrameworkSObjectDomainTriggerHandler(args)
 	case strings.EqualFold(frameworkMockSupportType(className), "ApexMocks") && strings.EqualFold(method, "extractTypeName"):
 		if len(args) != 1 {
@@ -303,6 +304,9 @@ func (vm *VM) frameworkMockDatabaseContext(after bool) (map[string]Value, bool) 
 		return nil, false
 	}
 	testField, _, ok := vm.lookupStaticField("framework_SObjectDomain", "Test")
+	if !ok {
+		testField, _, ok = vm.lookupStaticField("SObjectDomain", "Test")
+	}
 	if !ok || testField.Value.Kind != ValueObject {
 		return nil, false
 	}
@@ -677,6 +681,9 @@ func frameworkMatcherEquivalentSeen(left, right Value, seen map[[2]uint64]bool) 
 	if valueAliasMatch(left, right) || left.Equal(right) {
 		return true
 	}
+	if left.Kind == ValueString && right.Kind == ValueString && frameworkMatcherPagePathEqual(left.Text, right.Text) {
+		return true
+	}
 	if left.Kind != right.Kind || !strings.EqualFold(left.Type, right.Type) {
 		return false
 	}
@@ -747,6 +754,19 @@ func frameworkMatcherEquivalentSeen(left, right Value, seen map[[2]uint64]bool) 
 		return false
 	}
 }
+
+func frameworkMatcherPagePathEqual(left, right string) bool {
+	left = strings.TrimSpace(left)
+	right = strings.TrimSpace(right)
+	if left == "" || right == "" {
+		return false
+	}
+	if !strings.HasPrefix(left, "/") || !strings.HasPrefix(right, "/") {
+		return false
+	}
+	return strings.EqualFold(left, right)
+}
+
 func frameworkMatcherCanNativeEqual(value Value) bool {
 	if value.Kind != ValueObject {
 		return true

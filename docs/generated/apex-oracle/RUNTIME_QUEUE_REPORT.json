@@ -1,0 +1,161 @@
+{
+  "runtimeInventory": ".glade/runtime-path-inventory-with-stubs.json",
+  "inputWorkQueue": "docs/generated/apex-oracle/WORK_QUEUE.json",
+  "outputWorkQueue": "docs/generated/apex-oracle/WORK_QUEUE.runtime-ranked.json",
+  "totalItems": 207,
+  "matchedItems": 206,
+  "unmatchedItems": 1,
+  "distinctTargets": 128864,
+  "topMatches": [
+    {
+      "id": "work.0006",
+      "surfaceId": "Object.toString()",
+      "score": 5408,
+      "matchedBy": "tostring"
+    },
+    {
+      "id": "work.0018",
+      "surfaceId": "Blob.toString()",
+      "score": 5408,
+      "matchedBy": "tostring"
+    },
+    {
+      "id": "work.0004",
+      "surfaceId": "Object.equals(obj)",
+      "score": 5192,
+      "matchedBy": "equals"
+    },
+    {
+      "id": "work.0005",
+      "surfaceId": "Object.hashCode()",
+      "score": 5134,
+      "matchedBy": "hashcode"
+    },
+    {
+      "id": "work.0022",
+      "surfaceId": "BusinessHours.add(businessHoursId,startDate,intervalMilliseconds)",
+      "score": 2761,
+      "matchedBy": "add"
+    },
+    {
+      "id": "work.0001",
+      "surfaceId": "Label.get(namespace,label)",
+      "score": 2724,
+      "matchedBy": "get"
+    },
+    {
+      "id": "work.0002",
+      "surfaceId": "Label.get(namespace,label)",
+      "score": 2724,
+      "matchedBy": "get"
+    },
+    {
+      "id": "work.0037",
+      "surfaceId": "Cookie.getName()",
+      "score": 1732,
+      "matchedBy": "getname"
+    },
+    {
+      "id": "work.0016",
+      "surfaceId": "Blob.size()",
+      "score": 1481,
+      "matchedBy": "size"
+    },
+    {
+      "id": "work.0162",
+      "surfaceId": "Id.getSObjectType()",
+      "score": 1208,
+      "matchedBy": "getsobjecttype"
+    },
+    {
+      "id": "work.0019",
+      "surfaceId": "Blob.valueOf(stringToBlob)",
+      "score": 904,
+      "matchedBy": "valueof"
+    },
+    {
+      "id": "work.0020",
+      "surfaceId": "Boolean.valueOf(stringToBoolean)",
+      "score": 904,
+      "matchedBy": "valueof"
+    },
+    {
+      "id": "work.0021",
+      "surfaceId": "Boolean.valueOf(stringToBoolean)",
+      "score": 904,
+      "matchedBy": "valueof"
+    },
+    {
+      "id": "work.0111",
+      "surfaceId": "Decimal.valueOf(stringToDecimal)",
+      "score": 904,
+      "matchedBy": "valueof"
+    },
+    {
+      "id": "work.0112",
+      "surfaceId": "Decimal.valueOf(stringToDecimal)",
+      "score": 904,
+      "matchedBy": "valueof"
+    },
+    {
+      "id": "work.0113",
+      "surfaceId": "Decimal.valueOf(stringToDecimal)",
+      "score": 904,
+      "matchedBy": "valueof"
+    },
+    {
+      "id": "work.0139",
+      "surfaceId": "Double.valueOf(stringToDouble)",
+      "score": 904,
+      "matchedBy": "valueof"
+    },
+    {
+      "id": "work.0140",
+      "surfaceId": "Double.valueOf(stringToDouble)",
+      "score": 904,
+      "matchedBy": "valueof"
+    },
+    {
+      "id": "work.0164",
+      "surfaceId": "Id.valueOf(toID)",
+      "score": 904,
+      "matchedBy": "valueof"
+    },
+    {
+      "id": "work.0165",
+      "surfaceId": "Id.valueOf(toID)",
+      "score": 904,
+      "matchedBy": "valueof"
+    },
+    {
+      "id": "work.0173",
+      "surfaceId": "Integer.valueOf(stringToInteger)",
+      "score": 904,
+      "matchedBy": "valueof"
+    },
+    {
+      "id": "work.0174",
+      "surfaceId": "Integer.valueOf(stringToInteger)",
+      "score": 904,
+      "matchedBy": "valueof"
+    },
+    {
+      "id": "work.0040",
+      "surfaceId": "Cookie.getValue()",
+      "score": 355,
+      "matchedBy": "getvalue"
+    },
+    {
+      "id": "work.0115",
+      "surfaceId": "DeleteResult.getId()",
+      "score": 334,
+      "matchedBy": "getid"
+    },
+    {
+      "id": "work.0027",
+      "surfaceId": "Callable.call(action,args)",
+      "score": 310,
+      "matchedBy": "call"
+    }
+  ]
+}

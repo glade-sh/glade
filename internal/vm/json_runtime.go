@@ -72,26 +72,7 @@ func jsonFromValue(value Value, suppressObjectNulls bool) any {
 		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
 			return scalar
 		}
-		out := make(map[string]any, len(value.Fields)+1)
-		if value.Type != "" {
-			attributes := map[string]any{"type": value.Type}
-			if id, ok := value.Fields["Id"]; ok && !strings.Contains(value.Type, ".") {
-				if idText, ok := idValueText(id); ok && idText != "" {
-					attributes["url"] = "/services/data/v60.0/sobjects/" + value.Type + "/" + displayIDText(idText)
-				}
-			}
-			out["attributes"] = attributes
-		}
-		for field, item := range value.Fields {
-			if isInternalSObjectField(field) {
-				continue
-			}
-			if suppressObjectNulls && item.Kind == ValueNull {
-				continue
-			}
-			out[field] = jsonFromValue(item, suppressObjectNulls)
-		}
-		return out
+		return jsonSObjectFromValue(value, suppressObjectNulls, jsonFromValue, storage.DefaultRESTAPIVersion)
 	default:
 		return nil
 	}
@@ -150,7 +131,11 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 			return scalar
 		}
 		if value.Type == "" || sObjectValueType(value.Type) {
-			return jsonFromValue(value, suppressObjectNulls)
+			version := storage.DefaultRESTAPIVersion
+			if vm != nil && vm.Org != nil {
+				version = storage.EffectiveRESTAPIVersion(vm.Org.APIVersion)
+			}
+			return jsonSObjectFromValue(value, suppressObjectNulls, vm.jsonFromValueForSerialize, version)
 		}
 		base := orderedJSONObject{}
 		seen := map[string]bool{}
@@ -395,6 +380,84 @@ func jsonMarshalNoEscapeIndent(value any, prefix, indent string) ([]byte, error)
 		data = data[:len(data)-1]
 	}
 	return data, nil
+}
+
+func jsonSObjectFromValue(value Value, suppressObjectNulls bool, convert func(Value, bool) any, apiVersion string) any {
+	out := orderedJSONObject{}
+	if value.Type != "" {
+		attributes := map[string]any{"type": value.Type}
+		if id, ok := value.Fields["Id"]; ok && !strings.Contains(value.Type, ".") {
+			if idText, ok := idValueText(id); ok && idText != "" {
+				attributes["url"] = "/services/data/v" + storage.EffectiveRESTAPIVersion(apiVersion) + "/sobjects/" + value.Type + "/" + displayIDText(idText)
+			}
+		}
+		out = append(out, orderedJSONField{name: "attributes", value: attributes})
+	}
+	for _, field := range jsonSObjectFieldNames(value) {
+		item := value.Fields[field]
+		if suppressObjectNulls && item.Kind == ValueNull {
+			continue
+		}
+		out = append(out, orderedJSONField{name: field, value: convert(item, suppressObjectNulls)})
+	}
+	return out
+}
+
+func jsonSObjectFieldNames(value Value) []string {
+	regular := make([]string, 0, len(value.Fields))
+	system := make([]string, 0, 8)
+	for field, item := range value.Fields {
+		if isInternalSObjectField(field) {
+			continue
+		}
+		if isImplicitFalseIsDeleted(value, field, item) {
+			continue
+		}
+		if isImplicitGeneratedSystemField(value, field) {
+			continue
+		}
+		if jsonGeneratedSystemField(field) {
+			system = append(system, field)
+			continue
+		}
+		regular = append(regular, field)
+	}
+	sort.Strings(regular)
+	sort.Strings(system)
+	return append(regular, system...)
+}
+
+func jsonGeneratedSystemField(field string) bool {
+	switch field {
+	case "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SetupOwnerId", "SystemModstamp":
+		return true
+	default:
+		return false
+	}
+}
+
+func isImplicitGeneratedSystemField(value Value, field string) bool {
+	if !jsonGeneratedSystemField(field) {
+		return false
+	}
+	for _, explicit := range explicitSObjectFieldNames(value) {
+		if explicit == field {
+			return false
+		}
+	}
+	return true
+}
+
+func isImplicitFalseIsDeleted(value Value, field string, item Value) bool {
+	if field != "IsDeleted" || item.Kind != ValueBool || item.Bool {
+		return false
+	}
+	for _, explicit := range explicitSObjectFieldNames(value) {
+		if explicit == "IsDeleted" {
+			return false
+		}
+	}
+	return true
 }
 
 func orderedJSONMapKeys(value Value) []string {
@@ -1640,6 +1703,12 @@ func (vm *VM) resolveJSONTypeName(typeName string) string {
 	if resolved, ok := vm.resolveClassName(typeName); ok {
 		return resolved
 	}
+	if alias, ok := platformShortTypeAlias(typeName); ok {
+		return alias
+	}
+	if canonical := canonicalRuntimeTypeName(typeName); !strings.EqualFold(canonical, typeName) {
+		return canonical
+	}
 	return typeName
 }
 
@@ -1763,7 +1832,11 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		value, ok := jsonDecimalNumber(raw)
 		if !ok {
 			if text, textOK := raw.(string); textOK {
-				parsed, err := strconv.ParseFloat(strings.TrimSpace(text), 64)
+				trimmed := strings.TrimSpace(text)
+				if trimmed == "" {
+					return Null, true, nil
+				}
+				parsed, err := strconv.ParseFloat(trimmed, 64)
 				if err == nil {
 					return Decimal(parsed), true, nil
 				}

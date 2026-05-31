@@ -382,6 +382,21 @@ func TestEnsureStandardObjectFieldsForFeaturesAddsPersonAccountShape(t *testing.
 	}
 }
 
+func TestEnsureStandardObjectFieldsCorrectsPersonDoNotCallType(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "Account",
+		Fields: map[string]Field{
+			"PersonDoNotCall": {APIName: "PersonDoNotCall", Type: FieldString},
+		},
+	}
+
+	EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
+
+	if field := definition.Fields["PersonDoNotCall"]; field.Type != FieldBoolean {
+		t.Fatalf("PersonDoNotCall field = %#v, want Boolean", field)
+	}
+}
+
 func TestEnsureStandardObjectFieldsForFeaturesAddsStateAndCountryPicklists(t *testing.T) {
 	definition := ObjectDefinition{APIName: "Account"}
 
@@ -530,10 +545,14 @@ func TestEnsureStandardObjectFieldsAddsUserProfileBreadthFields(t *testing.T) {
 	if field, ok := definition.Fields["Salutation"]; !ok || field.Type != FieldPicklist {
 		t.Fatalf("User.Salutation = %#v, %v", field, ok)
 	}
-	for _, fieldName := range []string{"Alias", "Email", "EmailEncodingKey", "LanguageLocaleKey", "LocaleSidKey", "ProfileId", "TimeZoneSidKey", "Username"} {
+	for _, fieldName := range []string{"Alias", "Email", "EmailEncodingKey", "IsActive", "LanguageLocaleKey", "LocaleSidKey", "ProfileId", "TimeZoneSidKey", "Username"} {
 		if field := definition.Fields[fieldName]; field.DefaultValue == "" {
 			t.Fatalf("User.%s default missing: %#v", fieldName, field)
 		}
+	}
+	activeDefault, ok := DefaultValueForField(definition.Fields["IsActive"])
+	if !ok || activeDefault.Kind != ValueBoolean || !activeDefault.Boolean {
+		t.Fatalf("User.IsActive default = %#v, %v", activeDefault, ok)
 	}
 	profileDefault, ok := DefaultValueForField(definition.Fields["ProfileId"])
 	if !ok || profileDefault.Kind != ValueID || profileDefault.ID != "00e000000000001" {

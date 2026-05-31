@@ -47,6 +47,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 				if err := vm.ensureClassInitialized(method.ClassName); err != nil {
 					return Null, err
 				}
+				if vm.shouldEnqueueFuture(method) {
+					return vm.enqueueFuture(method, args, result)
+				}
 				return vm.callMethod(method, args, result)
 			} else if ambiguous {
 				return Null, vm.ambiguousOverloadError(callee, args)
@@ -162,6 +165,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			}
 			if err := vm.ensureClassInitialized(method.ClassName); err != nil {
 				return Null, err
+			}
+			if vm.shouldEnqueueFuture(method) {
+				return vm.enqueueFuture(method, args, result)
 			}
 			return vm.callMethodWithReceiver(method, receiver, args, result)
 		}
@@ -929,12 +935,14 @@ platformStaticCall:
 		if err != nil {
 			return Null, err
 		}
+		text = vm.resolveLabelMergeExpressions(text)
 		return String(text), nil
 	case "String.format":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueList {
 			return Null, fmt.Errorf("String.format expects format String and List arguments")
 		}
-		formatted, err := formatString(args[0].Text, args[1].List, func(value Value) (string, error) {
+		pattern := vm.resolveLabelMergeExpressions(args[0].Text)
+		formatted, err := formatString(pattern, args[1].List, func(value Value) (string, error) {
 			return vm.displayString(value, result)
 		})
 		if err != nil {
@@ -1082,7 +1090,9 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
-		return platformScalar("Datetime", vm.fakeNow.Format(time.RFC3339)), nil
+		now := vm.fakeNow
+		vm.fakeNow = vm.fakeNow.Add(time.Second)
+		return platformScalar("Datetime", now.Format(time.RFC3339)), nil
 	case "System.currentTimeMillis":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("System.currentTimeMillis expects 0 arguments")
@@ -1392,7 +1402,7 @@ platformStaticCall:
 		}
 		decoded, err := base64.StdEncoding.DecodeString(args[0].Text)
 		if err != nil {
-			return Null, fmt.Errorf("EncodingUtil.base64Decode invalid base64 string: %w", err)
+			return Null, newExceptionError("System.StringException", "EncodingUtil.base64Decode invalid base64 string: "+err.Error())
 		}
 		return platformScalar("Blob", string(decoded)), nil
 	case "EncodingUtil.convertFromHex":
@@ -2147,7 +2157,7 @@ platformStaticCall:
 		if len(args) != 1 {
 			return Null, fmt.Errorf("ApexPages.addMessage expects 1 argument")
 		}
-		vm.pageMessages = append(vm.pageMessages, args[0])
+		vm.addApexPageMessage(args[0])
 		return Null, nil
 	case "ApexPages.addMessages":
 		if len(args) != 1 {
@@ -2157,7 +2167,7 @@ platformStaticCall:
 		if err != nil {
 			return Null, err
 		}
-		vm.pageMessages = append(vm.pageMessages, messages...)
+		vm.addApexPageMessages(messages)
 		return Null, nil
 	case "ApexPages.getMessages":
 		if len(args) != 0 {
@@ -2894,6 +2904,9 @@ platformStaticCall:
 		if len(args) != 3 && len(args) != 4 {
 			return Null, fmt.Errorf("Site.createExternalUser expects 3 or 4 arguments")
 		}
+		if vm.testContext != nil {
+			return Null, nil
+		}
 		userID := String("005000000000E01")
 		if len(args) > 0 && args[0].Kind == ValueObject {
 			args[0].Fields["Id"] = userID
@@ -2903,6 +2916,9 @@ platformStaticCall:
 		if len(args) != 3 {
 			return Null, fmt.Errorf("Site.createPortalUser expects 3 arguments")
 		}
+		if vm.testContext != nil {
+			return Null, nil
+		}
 		userID := String("005000000000E01")
 		if len(args) > 0 && args[0].Kind == ValueObject {
 			args[0].Fields["Id"] = userID
@@ -2911,6 +2927,9 @@ platformStaticCall:
 	case "Site.createPersonAccountPortalUser":
 		if len(args) != 3 && len(args) != 4 {
 			return Null, fmt.Errorf("Site.createPersonAccountPortalUser expects 3 or 4 arguments")
+		}
+		if vm.testContext != nil {
+			return Null, nil
 		}
 		userID := String("005000000000E01")
 		if len(args) > 0 && args[0].Kind == ValueObject {

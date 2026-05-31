@@ -116,11 +116,20 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	frameTypes := make(map[string]string, len(method.Params))
 	paramSnapshots := make(map[string]aliasSnapshot, len(method.Params))
 	paramOriginals := make(map[string]Value, len(method.Params))
+	materializedCurrentPageParams := make(map[string]bool)
 	resolutionClass := vm.methodTypeResolutionClass(method)
 	for i, param := range method.Params {
 		paramType := vm.resolveTypeNameInClass(resolutionClass, param.Type)
 		paramOriginals[param.Name] = args[i]
-		coerced, err := vm.coerceAssignable(paramType, vm.valueWithTypesResolvedInClass(resolutionClass, args[i]))
+		arg := args[i]
+		if isImplicitCurrentPageNull(arg) && strings.EqualFold(paramType, "PageReference") {
+			if vm.currentPage.Kind == "" {
+				vm.currentPage = newPageReference("/apex/current")
+			}
+			arg = vm.currentPage
+			materializedCurrentPageParams[param.Name] = true
+		}
+		coerced, err := vm.coerceAssignable(paramType, vm.valueWithTypesResolvedInClass(resolutionClass, arg))
 		if err != nil {
 			if alternate, ok, ambiguous := vm.resolveInstanceMethodForArgs(method.ClassName, apexMethodMemberName(method.Name), args); ok && !ambiguous && methodSignature(alternate) != methodSignature(method) {
 				return vm.callAccessibleAlternateMethodWithReceiver(alternate, receiver, args, result)
@@ -198,6 +207,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			updated, ok := frame[param.Name]
 			if !ok {
 				continue
+			}
+			if materializedCurrentPageParams[param.Name] {
+				vm.currentPage = updated
 			}
 			previous := paramSnapshots[param.Name]
 			if valueAliasSnapshotMatch(previous, updated) {
@@ -315,6 +327,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		updated, ok := frame[param.Name]
 		if !ok {
 			continue
+		}
+		if materializedCurrentPageParams[param.Name] {
+			vm.currentPage = updated
 		}
 		previous := paramSnapshots[param.Name]
 		if valueAliasSnapshotMatch(previous, updated) {
@@ -450,6 +465,9 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 		}
 	}
 	if !ok {
+		if vm.staticReceiverName(receiverName, method) && !vm.hasRuntimeReceiver(receiverName) {
+			return Null, false, nil
+		}
 		if thisValue, hasThis := vm.Globals["this"]; hasThis && thisValue.Kind == ValueObject {
 			if _, _, hasField := objectFieldValue(thisValue, receiverName); hasField {
 				receiver, err := vm.lookup(receiverName)
@@ -460,6 +478,15 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 					return Null, false, nil
 				}
 				return vm.callValueMember(receiverName, receiver, method, args, result)
+			}
+		}
+		if declared := vm.declaredReceiverType(receiverName); isMapType(declared) || collectionBase(declared) != "" {
+			receiver, err := vm.lookup(receiverName)
+			if err == nil {
+				return vm.callValueMember(receiverName, receiver, method, args, result)
+			}
+			if !strings.Contains(err.Error(), "unknown variable") {
+				return Null, true, err
 			}
 		}
 		staticContext := vm.currentClass
@@ -597,6 +624,13 @@ func (vm *VM) lookupStaticFieldStrict(typeName, fieldName string) (Field, string
 func (vm *VM) declaredReceiverType(receiverName string) string {
 	if typ := vm.VarTypes[receiverName]; typ != "" {
 		return typ
+	}
+	if !strings.Contains(receiverName, ".") {
+		for _, className := range vm.lookupContextClasses() {
+			if typ := vm.fieldPathTargetType(className, []string{receiverName}); typ != "" {
+				return typ
+			}
+		}
 	}
 	if hasPrefixFold(receiverName, "this.") && vm.currentClass != "" {
 		parts := strings.Split(receiverName, ".")
@@ -821,15 +855,17 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 		}
 		return value, true, err
 	}
-	if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
-		if mutated {
-			if err := vm.storeReceiver(receiverName, updated); err != nil {
-				return Null, true, err
+	if visualEditorPlatformObjectType(receiver.Type) {
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+			if mutated {
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
 			}
+			return value, true, err
 		}
-		return value, true, err
 	}
-	if _, classExists := vm.lookupClass(receiver.Type); classExists {
+	if _, classExists := vm.lookupClass(receiver.Type); classExists && !strings.EqualFold(receiver.Runtime, "System.Cookie") {
 		dispatchType := runtimeObjectType(receiver)
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, method, args)
 		if ambiguous {
@@ -860,6 +896,14 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 			}
 			return value, true, err
 		}
+	}
+	if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+		if mutated {
+			if err := vm.storeReceiver(receiverName, updated); err != nil {
+				return Null, true, err
+			}
+		}
+		return value, true, err
 	}
 	if vm.isSObjectLikeType(receiver.Type) {
 		if value, handled, err := vm.callSObjectMember(receiver, method, args); handled || err != nil {
@@ -921,6 +965,20 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 		}
 		if value, handled, err := vm.retrySimpleNameStaticFieldMember(receiverName, receiver, method, args, result); handled || err != nil {
 			return value, true, err
+		}
+		if !vm.currentMethod.Dependency && strings.Contains(dispatchType, ".") {
+			short := shortTypeName(dispatchType)
+			if vm.typeNameIsLocalClass(short) {
+				if target, ok, ambiguous := vm.resolveLocalInstanceMethodForArgs(short, method, args); ambiguous {
+					return Null, true, vm.ambiguousOverloadError(memberCallName(receiverName, short, method), args)
+				} else if ok {
+					if err := vm.checkMemberAccess(target.ClassName, target.Access, target.Name, target.Modifiers); err != nil {
+						return Null, true, err
+					}
+					value, err := vm.callMethodWithReceiver(target, receiver, args, result)
+					return value, true, err
+				}
+			}
 		}
 		return Null, true, unsupportedCallError(memberCallName(receiverName, dispatchType, method))
 	}
@@ -2475,9 +2533,16 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 			}
 		}
 		for _, item := range receiver.List {
-			if item.Kind == ValueObject && vm.isSObjectLikeType(item.Type) {
-				if token, ok := vm.sObjectTypeTokenForName(item.Type); ok {
-					return token, true, nil
+			if item.Kind == ValueObject {
+				for _, typeName := range []string{item.Type, item.Runtime, item.Static} {
+					if strings.EqualFold(typeName, "SObject") || strings.EqualFold(typeName, "Object") {
+						continue
+					}
+					if vm.isSObjectLikeType(typeName) {
+						if token, ok := vm.sObjectTypeTokenForName(typeName); ok {
+							return token, true, nil
+						}
+					}
 				}
 			}
 		}
@@ -2994,13 +3059,17 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			}
 			return Null, true, nil
 		}
-		for rawKey, value := range args[0].Map {
+		for _, rawKey := range orderedValueMapKeys(args[0]) {
+			value := args[0].Map[rawKey]
 			keyValue := mapStoredKey(args[0], rawKey)
 			key, item, err := vm.coerceMapEntry(receiver.Type, keyValue, value)
 			if err != nil {
 				return Null, true, fmt.Errorf("Map.putAll: %w", err)
 			}
 			encodedKey := vm.mapKey(key)
+			if _, exists := receiver.Map[encodedKey]; !exists {
+				receiver.MapOrder = append(receiver.MapOrder, encodedKey)
+			}
 			receiver.Map[encodedKey] = item
 			if receiver.MapKeys == nil {
 				receiver.MapKeys = make(map[string]Value)

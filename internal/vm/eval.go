@@ -384,6 +384,12 @@ func comparableIDText(value Value) (string, bool) {
 }
 
 func intBinary(op string, left, right Value, fn func(int64, int64) int64) (Value, error) {
+	if left.Kind == ValueNull && right.Kind == ValueInt {
+		left = Int(0)
+	}
+	if right.Kind == ValueNull && left.Kind == ValueInt {
+		right = Int(0)
+	}
 	if left.Kind != ValueInt || right.Kind != ValueInt {
 		return Null, fmt.Errorf("operator %s requires Integer operands", op)
 	}
@@ -394,6 +400,12 @@ func intBinary(op string, left, right Value, fn func(int64, int64) int64) (Value
 }
 
 func decimalBinary(op string, left, right Value, fn func(float64, float64) float64) (Value, error) {
+	if left.Kind == ValueNull && isNumeric(right) {
+		left = Decimal(0)
+	}
+	if right.Kind == ValueNull && isNumeric(left) {
+		right = Decimal(0)
+	}
 	if !isNumeric(left) || !isNumeric(right) {
 		return Null, fmt.Errorf("operator %s requires numeric operands", op)
 	}

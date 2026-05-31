@@ -9,6 +9,63 @@ The golden rule from `docs/ARCHITECTURE_STANDARDS.md` still applies: register th
 surface first, tie every behavior claim to a compatibility fixture, and never
 panic on user Apex.
 
+## Finding the next gap (instead of waiting for a failure)
+
+Don't hand-patch one method at a time off a test failure. Ask the runtime which
+documented surfaces it is missing:
+
+```bash
+# Build the inventory + catalog from the scraped Apex docs, then reconcile the
+# documented surface against what glade actually knows.
+glade compat docs-inventory --source "$APEX_DOCS" --output /tmp/inv.json
+glade compat reconcile --inventory /tmp/inv.json            # summary + coverage
+glade compat reconcile --inventory /tmp/inv.json --json     # full ranked worklist
+```
+
+The reconciler derives a status per documented surface:
+
+- `supported`/`partial` — hand-verified executable behavior (`StdlibMatrix`).
+- `unsupported` — intentional rejection with a stable diagnostic.
+- `typed` — owning type is type-known (compiles) but has no executable verdict.
+- `unknown` — owning type is not type-known; references will not even resolve.
+- `doc` — language or guide surface, not a runtime target.
+
+The `worklist` is sorted by impact (executable-parity `unknown` first). Pick the
+top item, wire it up using the map below, add a fixture, and the next run shows
+the count drop. `scripts/apex-docs-support-gate.sh` runs this and can ratchet the
+runtime-target `unknown` count via `GLADE_APEX_DOCS_MAX_UNKNOWN`.
+
+### Behavioral contracts (what a surface must *do*)
+
+The shape is not the whole story. `getContentAsPDF` is type-known and returns a
+`Blob`, but the docs say it is *treated as a callout in a test method and fails*.
+Mine those constraints straight from the doc prose so the runtime honors the
+documented contract instead of a hand-patched VM branch:
+
+```bash
+glade compat doc-contracts --inventory /tmp/inv.json            # summary by kind
+glade compat doc-contracts --inventory /tmp/inv.json --json     # full contracts
+glade compat doc-contracts --inventory /tmp/inv.json --behavior callout-in-test
+```
+
+Each contract pins a behavior (`callout-in-test`, `unavailable-in-test`,
+`not-in-triggers`, `throws`, `deprecated`, ...) to the exact symbol the docs
+govern. Use these as the spec when wiring or correcting a surface.
+
+### Driving the org probe at documented gaps
+
+The org-probe loop (`glade compat oracle ...`) can build its inventory straight
+from the reconcile worklist, so it probes documented surfaces that have no
+verdict yet, in priority order, instead of only the stub tree:
+
+```bash
+glade compat oracle inventory --inventory /tmp/inv.json --json   # from docs
+glade compat oracle inventory --catalog /tmp/cat.json --json     # from a catalog
+```
+
+From there the existing `domains -> plan -> generate -> run-salesforce -> diff`
+steps run unchanged.
+
 ## The map: where things live
 
 | Concern | Package | What it owns |

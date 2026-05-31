@@ -1,6 +1,10 @@
 package dml
 
-import "github.com/glade-sh/glade/internal/storage"
+import (
+	"strings"
+
+	"github.com/glade-sh/glade/internal/storage"
+)
 
 func (e *Engine) validateDeleteReferences(objectName string, id storage.ID, ctx *deleteContext) error {
 	relations := e.restrictedDeleteRelations(objectName, ctx)
@@ -162,7 +166,7 @@ func upsertExternalID(definition storage.ObjectDefinition, namespace string, rec
 		if !ok {
 			return "", storage.Value{}, false, dmlErrorf("INVALID_FIELD", []string{externalIDField}, "dml: unknown external id field %s.%s", record.Object, externalIDField)
 		}
-		if !field.ExternalID {
+		if !field.ExternalID && !(strings.EqualFold(fieldName, "Name") && storage.IsCustomSettingDefinition(definition)) {
 			return "", storage.Value{}, false, dmlErrorf("INVALID_FIELD", []string{fieldName}, "dml: field %s.%s is not an external id", record.Object, fieldName)
 		}
 		value, ok := record.Fields[fieldName]

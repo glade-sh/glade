@@ -1261,6 +1261,36 @@ func TestInsertPersonAccountRequiresLastName(t *testing.T) {
 	}
 }
 
+func TestUpdatePersonAccountClearingLastNameFails(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"RecordTypeId": storage.IDValue(personAccountRecordTypeID(t, org)),
+			"LastName":     storage.StringValue("Lovelace"),
+			"PersonEmail":  storage.StringValue("ada@example.invalid"),
+		},
+	}})
+	if len(insert) != 1 || !insert[0].Success {
+		t.Fatalf("insert result = %#v", insert)
+	}
+	update := engine.Update([]storage.Record{{
+		ID:            insert[0].ID,
+		Object:        "Account",
+		ExplicitNulls: map[string]bool{"LastName": true},
+	}})
+	if len(update) != 1 || update[0].Success || update[0].StatusCode != "REQUIRED_FIELD_MISSING" {
+		t.Fatalf("update result = %#v", update)
+	}
+	if update[0].Error != "Required fields are missing: [LastName]" {
+		t.Fatalf("update error = %q", update[0].Error)
+	}
+}
+
 func TestInsertPersonAccountWithoutRecordTypeUsesPersonRecordType(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
@@ -1438,6 +1468,33 @@ func TestInsertPersonAccountDoesNotPopulateCustomPersonContactAlias(t *testing.T
 	}
 	if got := accountRecord.Fields["znu__PersonContact__c"]; got.Kind != "" {
 		t.Fatalf("znu__PersonContact__c = %#v, want unset; fields=%#v", got, accountRecord.Fields)
+	}
+}
+
+func TestInsertPersonAccountMirrorsNamespacedPersonEmailAlias(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	account := org.Objects["Account"]
+	account.Definition.Fields["pkg__PersonEmail__c"] = storage.Field{APIName: "pkg__PersonEmail__c", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"FirstName":   storage.StringValue("Ada"),
+			"LastName":    storage.StringValue("Lovelace"),
+			"PersonEmail": storage.StringValue("ada@example.invalid"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	accountRecord := org.Objects["Account"].Records[insert[0].ID]
+	if got := accountRecord.Fields["pkg__PersonEmail__c"]; got.Kind != storage.ValueString || got.String != "ada@example.invalid" {
+		t.Fatalf("pkg__PersonEmail__c = %#v; fields=%#v", got, accountRecord.Fields)
 	}
 }
 
@@ -1936,13 +1993,69 @@ func TestDMLAppliesLocalUserRequiredDefaults(t *testing.T) {
 		t.Fatalf("insert = %#v", insert[0])
 	}
 	user := org.Objects["User"].Records[insert[0].ID]
-	for _, fieldName := range []string{"Alias", "Email", "EmailEncodingKey", "LanguageLocaleKey", "LocaleSidKey", "ProfileId", "TimeZoneSidKey", "Username"} {
+	for _, fieldName := range []string{"Alias", "Email", "EmailEncodingKey", "IsActive", "LanguageLocaleKey", "LocaleSidKey", "ProfileId", "TimeZoneSidKey", "Username"} {
 		if value, ok := user.Fields[fieldName]; !ok || value.Kind == "" {
 			t.Fatalf("User.%s default = %#v, %v", fieldName, value, ok)
 		}
 	}
+	if !user.Fields["IsActive"].Boolean {
+		t.Fatalf("IsActive = %#v", user.Fields["IsActive"])
+	}
 	if got := user.Fields["ProfileId"]; got.Kind != storage.ValueID || got.ID != "00e000000000001" {
 		t.Fatalf("ProfileId = %#v", got)
+	}
+	foundLogin := false
+	for _, login := range org.Objects["UserLogin"].Records {
+		if login.Fields["UserId"].ID == insert[0].ID && !login.Fields["IsFrozen"].Boolean {
+			foundLogin = true
+		}
+	}
+	if !foundLogin {
+		t.Fatalf("missing UserLogin for %s: %#v", insert[0].ID, org.Objects["UserLogin"].Records)
+	}
+}
+
+func TestDMLDefaultsUserAccountFromContact(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "User")
+	storage.EnsureStandardObject(&org, "Contact")
+	storage.EnsureStandardObject(&org, "Account")
+	accountState := org.Objects["Account"]
+	accountState.Records["001000000000777"] = storage.Record{
+		ID:     "001000000000777",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Local Account"),
+		},
+	}
+	org.Objects["Account"] = accountState
+	contactState := org.Objects["Contact"]
+	contactState.Records["003000000000777"] = storage.Record{
+		ID:     "003000000000777",
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"LastName":  storage.StringValue("Member"),
+			"AccountId": storage.IDValue("001000000000777"),
+		},
+	}
+	org.Objects["Contact"] = contactState
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"FirstName": storage.StringValue("Local"),
+			"LastName":  storage.StringValue("Member"),
+			"ContactId": storage.IDValue("003000000000777"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	user := org.Objects["User"].Records[insert[0].ID]
+	if got := user.Fields["AccountId"]; got.Kind != storage.ValueID || got.ID != "001000000000777" {
+		t.Fatalf("User.AccountId = %#v", got)
 	}
 }
 
@@ -2327,6 +2440,46 @@ func TestUpsertWithExplicitIDFieldUsesRecordID(t *testing.T) {
 	}
 	if got := org.Objects["Account"].Records[insert[0].ID].Fields["Name"].String; got != "Changed Again" {
 		t.Fatalf("updated name from field = %q", got)
+	}
+}
+
+func TestUpsertListCustomSettingWithNameExternalID(t *testing.T) {
+	org := testOrg()
+	org.Objects["Page__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Page__c",
+			Fields: map[string]storage.Field{
+				"Name":     {APIName: "Name", Type: storage.FieldString},
+				"Title__c": {APIName: "Title__c", Type: storage.FieldString},
+			},
+			Metadata: map[string]string{"kind": "customSetting", "customSettingsType": "List"},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.UpsertWithExternalID([]storage.Record{{
+		Object: "Page__c",
+		Fields: map[string]storage.Value{
+			"Name":     storage.StringValue("Checkout"),
+			"Title__c": storage.StringValue("Old"),
+		},
+	}}, "Name")
+	if !insert[0].Success || !insert[0].Created {
+		t.Fatalf("custom setting insert = %#v", insert)
+	}
+	update := engine.UpsertWithExternalID([]storage.Record{{
+		Object: "Page__c",
+		Fields: map[string]storage.Value{
+			"Name":     storage.StringValue("Checkout"),
+			"Title__c": storage.StringValue("New"),
+		},
+	}}, "Name")
+	if !update[0].Success || update[0].Created || update[0].ID != insert[0].ID {
+		t.Fatalf("custom setting update = %#v", update)
+	}
+	if got := org.Objects["Page__c"].Records[insert[0].ID].Fields["Title__c"].String; got != "New" {
+		t.Fatalf("updated title = %q", got)
 	}
 }
 
@@ -3943,6 +4096,142 @@ func TestInsertRefreshesStaleRecordTypeNameDefault(t *testing.T) {
 	}
 }
 
+func TestInsertRefreshesRawRecordTypeNameDefault(t *testing.T) {
+	definition := storage.ObjectDefinition{
+		APIName:   "Product__c",
+		KeyPrefix: "a01",
+		Fields: map[string]storage.Field{
+			"RecordTypeId":      {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}},
+			"RecordTypeName__c": {APIName: "RecordTypeName__c", Type: storage.FieldString, DefaultValue: "$RecordType.Name"},
+		},
+		RecordTypes: []storage.RecordTypeInfo{{
+			ID:            "012000000000001",
+			Name:          "Registration",
+			DeveloperName: "Registration",
+			Active:        true,
+			Available:     true,
+			Default:       true,
+		}},
+	}
+	org := storage.NewOrgState()
+	org.Objects["Product__c"] = storage.ObjectState{
+		Definition: definition,
+		Records:    map[storage.ID]storage.Record{},
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Product__c",
+		Fields: map[string]storage.Value{
+			"RecordTypeId":      storage.IDValue("012000000000001"),
+			"RecordTypeName__c": storage.StringValue("$RecordType.Name"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	record := org.Objects["Product__c"].Records[insert[0].ID]
+	value, ok := record.GetField("RecordTypeName__c")
+	if !ok || value.Kind != storage.ValueString || value.String != "Registration" {
+		t.Fatalf("record type name after insert = %#v, ok=%v; want Registration", value, ok)
+	}
+}
+
+func TestFormulaDownloadURLStringFunctionsAndBlankCalculatedText(t *testing.T) {
+	entityDefinition := storage.ObjectDefinition{
+		APIName: "Entity__c",
+		Fields: map[string]storage.Field{
+			"DownloadProxyUrl__c": {APIName: "DownloadProxyUrl__c", Type: storage.FieldString},
+			"CommunityHubUrl__c":  {APIName: "CommunityHubUrl__c", Type: storage.FieldString},
+		},
+	}
+	productDefinition := storage.ObjectDefinition{
+		APIName: "Product__c",
+		Fields: map[string]storage.Field{
+			"IsDownloadable__c": {APIName: "IsDownloadable__c", Type: storage.FieldBoolean},
+			"Entity__c":         {APIName: "Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"Entity__c"}, RelationshipName: "Entity__r"},
+		},
+	}
+	lineDefinition := storage.ObjectDefinition{
+		APIName: "OrderItemLine__c",
+		Fields: map[string]storage.Field{
+			"Product2__c": {APIName: "Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}, RelationshipName: "Product2__r"},
+			"DownloadUrl__c": {
+				APIName:     "DownloadUrl__c",
+				Type:        storage.FieldCalculated,
+				DisplayType: "STRING",
+				Formula: `IF(
+  Product2__r.IsDownloadable__c,
+  IF(
+    /** keep absolute proxy URLs as-is */
+    OR(BEGINS(Product2__r.Entity__r.DownloadProxyUrl__c, 'http:'), BEGINS(Product2__r.Entity__r.DownloadProxyUrl__c, 'https:')),
+    Product2__r.Entity__r.DownloadProxyUrl__c,
+    IF(CONTAINS(RIGHT(Product2__r.Entity__r.CommunityHubUrl__c, 1), '/'), MID(Product2__r.Entity__r.CommunityHubUrl__c, 0, LEN(Product2__r.Entity__r.CommunityHubUrl__c) - 1), Product2__r.Entity__r.CommunityHubUrl__c)
+      + IF(CONTAINS(LEFT(Product2__r.Entity__r.DownloadProxyUrl__c, 1), '/'), '', '/')
+      + Product2__r.Entity__r.DownloadProxyUrl__c
+  ) + '?id=' + CASESAFEID(Id),
+  ''
+)`,
+			},
+		},
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Entity__c": {
+			Definition: entityDefinition,
+			Records: map[storage.ID]storage.Record{
+				"a0E000000000001AAA": {
+					ID:     "a0E000000000001AAA",
+					Object: "Entity__c",
+					Fields: map[string]storage.Value{
+						"DownloadProxyUrl__c": storage.StringValue("/download"),
+						"CommunityHubUrl__c":  storage.StringValue("https://hub.example/"),
+					},
+				},
+			},
+		},
+		"Product__c": {
+			Definition: productDefinition,
+			Records: map[storage.ID]storage.Record{
+				"a0P000000000001AAA": {
+					ID:     "a0P000000000001AAA",
+					Object: "Product__c",
+					Fields: map[string]storage.Value{
+						"IsDownloadable__c": storage.BooleanValue(true),
+						"Entity__c":         storage.IDValue("a0E000000000001AAA"),
+					},
+				},
+				"a0P000000000002AAA": {
+					ID:     "a0P000000000002AAA",
+					Object: "Product__c",
+					Fields: map[string]storage.Value{
+						"IsDownloadable__c": storage.BooleanValue(false),
+						"Entity__c":         storage.IDValue("a0E000000000001AAA"),
+					},
+				},
+			},
+		},
+		"OrderItemLine__c": {Definition: lineDefinition},
+	}}
+	line := storage.Record{
+		ID:     "a0L000000000001AAA",
+		Object: "OrderItemLine__c",
+		Fields: map[string]storage.Value{
+			"Product2__c": storage.IDValue("a0P000000000001AAA"),
+		},
+	}
+
+	value, explicitNull, ok := EvaluateRecordFormulaValueInOrg(lineDefinition.Fields["DownloadUrl__c"].Formula, lineDefinition.Fields["DownloadUrl__c"], &org, lineDefinition, line)
+	if !ok || explicitNull || value.Kind != storage.ValueString || value.String != "https://hub.example/download?id=a0L000000000001AAA" {
+		t.Fatalf("download formula = %#v explicitNull=%v ok=%v", value, explicitNull, ok)
+	}
+
+	line.Fields["Product2__c"] = storage.IDValue("a0P000000000002AAA")
+	value, explicitNull, ok = EvaluateRecordFormulaValueInOrg(lineDefinition.Fields["DownloadUrl__c"].Formula, lineDefinition.Fields["DownloadUrl__c"], &org, lineDefinition, line)
+	if !ok || !explicitNull || value.Kind != storage.ValueNull {
+		t.Fatalf("blank download formula = %#v explicitNull=%v ok=%v; want null", value, explicitNull, ok)
+	}
+}
+
 func TestValidationRulesDateFunctionsAndDateArithmetic(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
@@ -4909,6 +5198,33 @@ func TestContentVersionCreatesDocumentAndLinks(t *testing.T) {
 	}})
 	if !explicitLink[0].Success || !strings.HasPrefix(string(explicitLink[0].ID), "06A") || explicitLink[0].ID == autoLink.ID {
 		t.Fatalf("explicit link insert = %#v", explicitLink)
+	}
+}
+
+func TestContentVersionWithoutPublishLocationCreatesOwnerLink(t *testing.T) {
+	org := fileTestOrg()
+	engine := NewEngine(&org)
+	engine.UserID = "005000000000777"
+	inserted := engine.Insert([]storage.Record{{
+		Object: "ContentVersion",
+		Fields: map[string]storage.Value{
+			"Title":        storage.StringValue("Spec"),
+			"PathOnClient": storage.StringValue("docs/spec.pdf"),
+			"VersionData":  storage.BlobValue("pdf bytes"),
+		},
+	}})
+	if !inserted[0].Success {
+		t.Fatalf("content version insert = %#v", inserted)
+	}
+	version := org.Objects["ContentVersion"].Records[inserted[0].ID]
+	documentID := version.Fields["ContentDocumentId"].ID
+	if got := len(org.Objects["ContentDocumentLink"].Records); got != 1 {
+		t.Fatalf("content document links = %d", got)
+	}
+	for _, link := range org.Objects["ContentDocumentLink"].Records {
+		if link.Fields["ContentDocumentId"].ID != documentID || link.Fields["LinkedEntityId"].ID != engine.UserID {
+			t.Fatalf("owner link = %#v", link)
+		}
 	}
 }
 

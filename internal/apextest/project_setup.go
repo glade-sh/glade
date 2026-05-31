@@ -2,6 +2,8 @@ package apextest
 
 import (
 	"fmt"
+	"os"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -117,6 +119,7 @@ func compileProjectMethods(index typesys.Index, caches ...sourceCache) map[strin
 		Member     typesys.MemberSymbol
 		File       string
 		Source     string
+		APIVersion string
 		Dependency bool
 	}
 	type methodCompileResult struct {
@@ -132,7 +135,7 @@ func compileProjectMethods(index typesys.Index, caches ...sourceCache) map[strin
 		source := ""
 		sourceLoaded := false
 		for _, member := range typ.Members {
-			if member.Kind != apexast.DeclarationMethod || member.IsTest || isTestSetup(member.Modifiers) {
+			if member.Kind != apexast.DeclarationMethod || isTestSetup(member.Modifiers) || (member.IsTest && strings.EqualFold(member.Type, "void")) {
 				continue
 			}
 			if !sourceLoaded {
@@ -149,6 +152,7 @@ func compileProjectMethods(index typesys.Index, caches ...sourceCache) map[strin
 				Member:     member,
 				File:       typ.File,
 				Source:     source,
+				APIVersion: apiVersionForApexFile(typ.File),
 				Dependency: typ.Dependency,
 			})
 		}
@@ -161,6 +165,7 @@ func compileProjectMethods(index typesys.Index, caches ...sourceCache) map[strin
 			method, err := compileProjectMethodSignature(job.ClassName, member.Name, member.Type, append(member.Modifiers, "abstract"), job.File, member.Range, job.Source)
 			if err == nil {
 				method.Dependency = job.Dependency
+				method.APIVersion = job.APIVersion
 				results[i] = methodCompileResult{Key: projectMethodMapKey(method), Method: method}
 			}
 			return
@@ -169,11 +174,13 @@ func compileProjectMethods(index typesys.Index, caches ...sourceCache) map[strin
 		if err != nil {
 			if unsupported, ok := unsupportedProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, job.Source, err); ok {
 				unsupported.Dependency = job.Dependency
+				unsupported.APIVersion = job.APIVersion
 				results[i] = methodCompileResult{Key: projectMethodMapKey(unsupported), Method: unsupported}
 			}
 			return
 		}
 		method.Dependency = job.Dependency
+		method.APIVersion = job.APIVersion
 		results[i] = methodCompileResult{Key: projectMethodMapKey(method), Method: method}
 	}
 	workers := compileWorkers(len(jobs))
@@ -208,6 +215,24 @@ func compileProjectMethods(index typesys.Index, caches ...sourceCache) map[strin
 	}
 	return out
 }
+
+var apexMetaAPIVersionPattern = regexp.MustCompile(`(?is)<apiVersion>\s*([0-9]+(?:\.[0-9]+)?)\s*</apiVersion>`)
+
+func apiVersionForApexFile(file string) string {
+	if strings.TrimSpace(file) == "" {
+		return ""
+	}
+	data, err := os.ReadFile(file + "-meta.xml")
+	if err != nil {
+		return ""
+	}
+	match := apexMetaAPIVersionPattern.FindSubmatch(data)
+	if len(match) != 2 {
+		return ""
+	}
+	return string(match[1])
+}
+
 func compileProjectMethodSignature(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, source string) (vm.Method, error) {
 	methodSource, err := extractMethodSource(source, r)
 	if err != nil {
@@ -483,19 +508,63 @@ func applyProjectProfileRecords(org *storage.OrgState, p project.Project) {
 		if name == "" || profileRecordExists(state, name) {
 			continue
 		}
-		id, err := generator.Next("Profile")
-		if err != nil {
-			continue
-		}
-		state.Records[id] = storage.Record{
-			ID:     id,
-			Object: "Profile",
-			Fields: map[string]storage.Value{"Name": storage.StringValue(name)},
-		}
+		addProjectProfileRecord(org, &state, &generator, name)
+	}
+	if !profileRecordExists(state, "Customer Community User") {
+		addProjectProfileRecord(org, &state, &generator, "Customer Community User")
 	}
 	org.IDSequences = generator.Sequences
 	org.Objects["Profile"] = state
+	for _, file := range p.ProfileFiles {
+		name := profileNameFromPath(file)
+		if name == "" {
+			continue
+		}
+		profileID, ok := recordFieldID(org.Objects["Profile"], "Name", name)
+		if !ok {
+			continue
+		}
+		applyProjectPermissionSetMetadataPermissions(org, file, string(profileID), &generator)
+	}
+	org.IDSequences = generator.Sequences
 }
+
+func addProjectProfileRecord(org *storage.OrgState, state *storage.ObjectState, generator *storage.IDGenerator, name string) {
+	id, err := generator.Next("Profile")
+	if err != nil {
+		return
+	}
+	fields := map[string]storage.Value{"Name": storage.StringValue(name)}
+	if licenseID, ok := projectProfileLicenseID(org, name); ok {
+		fields["UserLicenseId"] = storage.IDValue(licenseID)
+	}
+	state.Records[id] = storage.Record{
+		ID:     id,
+		Object: "Profile",
+		Fields: fields,
+	}
+}
+
+func projectProfileLicenseID(org *storage.OrgState, name string) (storage.ID, bool) {
+	if org == nil {
+		return "", false
+	}
+	lower := strings.ToLower(strings.TrimSpace(name))
+	if !strings.Contains(lower, "community") && !strings.Contains(lower, "chatter external") {
+		return "", false
+	}
+	state, ok := org.Objects["UserLicense"]
+	if !ok {
+		return "", false
+	}
+	for _, key := range []string{"PID_Customer_Community_Login", "PID_Customer_Community_Plus", "CSPLitePortal"} {
+		if id, ok := recordFieldID(state, "LicenseDefinitionKey", key); ok {
+			return id, true
+		}
+	}
+	return "", false
+}
+
 func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project) {
 	if org == nil || len(p.PermissionSetFiles) == 0 {
 		return
@@ -549,10 +618,107 @@ func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project) 
 			}
 		}
 		applyProjectPermissionSetMetadataPermissions(org, file, string(id), &generator)
+		applyProjectGuestPermissionSetAssignment(org, name, id, &generator)
 	}
 	org.IDSequences = generator.Sequences
 	org.Objects["PermissionSet"] = state
 }
+
+func applyProjectGuestPermissionSetAssignment(org *storage.OrgState, permissionSetName string, permissionSetID storage.ID, generator *storage.IDGenerator) {
+	if org == nil || generator == nil || !permissionSetLooksGuestScoped(permissionSetName) {
+		return
+	}
+	guestUserID, ok := ensureProjectGuestUser(org)
+	if !ok {
+		return
+	}
+	storage.EnsureStandardObject(org, "PermissionSetAssignment")
+	state := org.Objects["PermissionSetAssignment"]
+	if state.Records == nil {
+		state.Records = make(map[storage.ID]storage.Record)
+	}
+	for _, record := range state.Records {
+		assignee, hasAssignee := record.GetField("AssigneeId")
+		permissionSet, hasPermissionSet := record.GetField("PermissionSetId")
+		if hasAssignee && hasPermissionSet &&
+			storageIDValueEqualsText(assignee, string(guestUserID)) &&
+			storageIDValueEqualsText(permissionSet, string(permissionSetID)) {
+			return
+		}
+	}
+	id, err := generator.Next("PermissionSetAssignment")
+	if err != nil {
+		return
+	}
+	state.Records[id] = storage.Record{
+		ID:     id,
+		Object: "PermissionSetAssignment",
+		Fields: map[string]storage.Value{
+			"AssigneeId":      storage.IDValue(guestUserID),
+			"PermissionSetId": storage.IDValue(permissionSetID),
+		},
+	}
+	org.Objects["PermissionSetAssignment"] = state
+}
+
+func permissionSetLooksGuestScoped(name string) bool {
+	name = strings.ToLower(strings.TrimSpace(name))
+	if name == "" {
+		return false
+	}
+	return strings.Contains(name, "guest")
+}
+
+func projectGuestUserID(org *storage.OrgState) (storage.ID, bool) {
+	if org == nil {
+		return "", false
+	}
+	state, ok := org.Objects["User"]
+	if !ok {
+		return "", false
+	}
+	for _, record := range state.Records {
+		if value, ok := record.GetField("UserType"); ok && strings.EqualFold(value.String, "Guest") {
+			return record.ID, true
+		}
+	}
+	return "", false
+}
+
+func ensureProjectGuestUser(org *storage.OrgState) (storage.ID, bool) {
+	if id, ok := projectGuestUserID(org); ok {
+		return id, true
+	}
+	if org == nil {
+		return "", false
+	}
+	storage.EnsureStandardObject(org, "User")
+	state := org.Objects["User"]
+	if state.Records == nil {
+		state.Records = make(map[storage.ID]storage.Record)
+	}
+	id := storage.ID("005000000000G01")
+	if _, exists := state.Records[id]; !exists {
+		state.Records[id] = storage.Record{
+			ID:     id,
+			Object: "User",
+			Fields: map[string]storage.Value{
+				"Username":          storage.StringValue("guest@example.invalid"),
+				"Alias":             storage.StringValue("guest"),
+				"Email":             storage.StringValue("guest@example.invalid"),
+				"IsActive":          storage.BooleanValue(true),
+				"UserType":          storage.StringValue("Guest"),
+				"LocaleSidKey":      storage.StringValue("en_US"),
+				"LanguageLocaleKey": storage.StringValue("en_US"),
+				"TimeZoneSidKey":    storage.StringValue("UTC"),
+				"EmailEncodingKey":  storage.StringValue("UTF-8"),
+			},
+		}
+	}
+	org.Objects["User"] = state
+	return id, true
+}
+
 func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, parentID string, generator *storage.IDGenerator) {
 	if org == nil || strings.TrimSpace(parentID) == "" || generator == nil {
 		return

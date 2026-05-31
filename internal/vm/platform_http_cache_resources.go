@@ -1180,6 +1180,34 @@ func (vm *VM) lookupLabel(name string) (Value, bool) {
 	return Null, false
 }
 
+func (vm *VM) resolveLabelMergeExpressions(text string) string {
+	if !strings.Contains(text, "{!$Label.") {
+		return text
+	}
+	var out strings.Builder
+	for {
+		start := strings.Index(text, "{!$Label.")
+		if start < 0 {
+			out.WriteString(text)
+			return out.String()
+		}
+		out.WriteString(text[:start])
+		rest := text[start+len("{!$Label."):]
+		end := strings.IndexByte(rest, '}')
+		if end < 0 {
+			out.WriteString(text[start:])
+			return out.String()
+		}
+		labelName := strings.TrimSpace(rest[:end])
+		if value, ok := vm.lookupLabel("Label." + labelName); ok {
+			out.WriteString(value.String())
+		} else {
+			out.WriteString(text[start : start+len("{!$Label.")+end+1])
+		}
+		text = rest[end+1:]
+	}
+}
+
 func staticResourceNameMatches(record storage.Record, resourceName string) bool {
 	if strings.EqualFold(string(record.ID), resourceName) {
 		return true

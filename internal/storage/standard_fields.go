@@ -39,8 +39,14 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	EnsureRecordTypeIDField(definition)
 	ensureCommonRecordTypeField(definition)
 	fields := standardFieldsForObject(definition.APIName)
+	if IsCustomSettingDefinition(*definition) {
+		fields = withoutCustomSettingUnsupportedFields(fields)
+	}
 	for _, field := range fields {
-		if _, ok := ResolveFieldName(*definition, "", field.APIName); ok {
+		if existingName, ok := ResolveFieldName(*definition, "", field.APIName); ok {
+			existing := definition.Fields[existingName]
+			enrichStandardField(&existing, field)
+			definition.Fields[existingName] = existing
 			continue
 		}
 		definition.Fields[field.APIName] = field
@@ -54,7 +60,43 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	for _, field := range definition.Fields {
 		ensureStandardRelationship(definition, field)
 	}
+	RemoveCustomSettingUnsupportedFields(definition)
 	markStandardFieldsOverlay(definition, featureSignature)
+}
+
+func RemoveCustomSettingUnsupportedFields(definition *ObjectDefinition) {
+	if definition == nil || !IsCustomSettingDefinition(*definition) {
+		return
+	}
+	for _, fieldName := range []string{"LastActivityDate", "RecordTypeId"} {
+		if actual, ok := ResolveFieldName(*definition, "", fieldName); ok {
+			delete(definition.Fields, actual)
+		}
+	}
+	if len(definition.Relations) > 0 {
+		out := definition.Relations[:0]
+		for _, relation := range definition.Relations {
+			if stringsEqualFold(relation.Field, "RecordTypeId") {
+				continue
+			}
+			out = append(out, relation)
+		}
+		definition.Relations = out
+	}
+}
+
+func withoutCustomSettingUnsupportedFields(fields []Field) []Field {
+	out := fields[:0]
+	for _, field := range fields {
+		switch {
+		case stringsEqualFold(field.APIName, "LastActivityDate"),
+			stringsEqualFold(field.APIName, "RecordTypeId"):
+			continue
+		default:
+			out = append(out, field)
+		}
+	}
+	return out
 }
 
 func standardFieldsOverlayApplied(definition ObjectDefinition, featureSignature string) bool {
@@ -379,7 +421,7 @@ func standardFieldsForObject(objectName string) []Field {
 	case stringsHasSuffixFold(objectName, "__c"):
 		return []Field{
 			{APIName: "Name", Label: "Name", Type: FieldString},
-			{APIName: "LastActivityDate", Label: "Last Activity", Type: FieldDate, DisplayType: "DATE"},
+			{APIName: "LastActivityDate", Label: "Last Activity", Type: FieldDate, DisplayType: "DATE", Createable: BoolFlag(false), Updateable: BoolFlag(false), Permissionable: BoolFlag(false)},
 			{APIName: "RecordTypeId", Label: "Record Type ID", Type: FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},
 		}
 	default:
@@ -792,6 +834,7 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		ensureFieldDefault(definition, "Alias", "local")
 		ensureFieldDefault(definition, "Email", "local-user@example.invalid")
 		ensureFieldDefault(definition, "EmailEncodingKey", "UTF-8")
+		setFieldDefault(definition, "IsActive", "true")
 		ensureFieldDefault(definition, "LanguageLocaleKey", "en_US")
 		ensureFieldDefault(definition, "LocaleSidKey", "en_US")
 		ensureFieldDefault(definition, "ProfileId", "00e000000000001")
@@ -911,6 +954,16 @@ func ensureFieldDefault(definition *ObjectDefinition, fieldName string, defaultV
 	}
 }
 
+func setFieldDefault(definition *ObjectDefinition, fieldName string, defaultValue string) {
+	resolved, ok := ResolveFieldName(*definition, "", fieldName)
+	if !ok {
+		return
+	}
+	field := definition.Fields[resolved]
+	field.DefaultValue = defaultValue
+	definition.Fields[resolved] = field
+}
+
 func ensureReferenceTarget(definition *ObjectDefinition, fieldName string, targetName string) {
 	if field, ok := definition.Fields[fieldName]; ok {
 		field.ReferenceTo = appendUniqueStringsFold(field.ReferenceTo, targetName)
@@ -1010,6 +1063,9 @@ func enrichStandardField(existing *Field, field Field) {
 	if existing.Type == "" || existing.Type == FieldAny {
 		existing.Type = field.Type
 	}
+	if strings.EqualFold(field.APIName, "PersonDoNotCall") && field.Type == FieldBoolean {
+		existing.Type = field.Type
+	}
 	if existing.DisplayType == "" {
 		existing.DisplayType = field.DisplayType
 	}
@@ -1060,6 +1116,9 @@ func enrichStandardField(existing *Field, field Field) {
 	}
 	if field.CaseSensitive {
 		existing.CaseSensitive = true
+	}
+	if field.Required {
+		existing.Required = true
 	}
 	if existing.Nillable == nil {
 		existing.Nillable = cloneBoolFlag(field.Nillable)

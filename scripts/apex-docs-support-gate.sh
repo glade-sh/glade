@@ -42,6 +42,20 @@ EVIDENCE="${TMP}/apex-evidence.txt"
 "${GLADE}" compat product-namespaces --catalog "${CATALOG}" --output "${PRODUCT_NAMESPACES}"
 "${GLADE}" compat product-namespaces --catalog "${CATALOG}" --check "${PRODUCT_NAMESPACES}"
 
+RECONCILE="${TMP}/apex-reconciliation.json"
+"${GLADE}" compat reconcile --catalog "${CATALOG}" --json >"${RECONCILE}"
+"${GLADE}" compat reconcile --catalog "${CATALOG}"
+
+# Ratchet: documented executable-parity/data-platform surfaces must stay at
+# least type-known. Set GLADE_APEX_DOCS_MAX_UNKNOWN to the current floor (see
+# the `unknown=` count above) to fail the gate when the gap regresses.
+if [[ -n "${GLADE_APEX_DOCS_MAX_UNKNOWN:-}" ]]; then
+  "${GLADE}" compat reconcile --catalog "${CATALOG}" --max-unknown "${GLADE_APEX_DOCS_MAX_UNKNOWN}" >/dev/null || {
+    echo "apex-docs-support: runtime-target unknown surfaces regressed past ${GLADE_APEX_DOCS_MAX_UNKNOWN}" >&2
+    exit 1
+  }
+fi
+
 "${GLADE}" compat evidence --catalog "${CATALOG}" docs/fixtures/*.json >"${EVIDENCE}"
 grep -q 'unmatchedEvidence: 0' "${EVIDENCE}" || {
   echo "apex-docs-support: fixture evidence references symbols missing from the catalog" >&2

@@ -180,7 +180,16 @@ func (vm *VM) checkClassAccess(ownerClass, member string, modifierSets ...[]stri
 }
 func (vm *VM) currentClassIsTest() bool {
 	class, ok := vm.Classes[vm.currentClass]
-	return ok && class.IsTest
+	if ok && class.IsTest {
+		return true
+	}
+	top, nested := lexicalTopLevel(vm.currentClass)
+	if nested {
+		if class, ok := vm.Classes[top]; ok && class.IsTest {
+			return true
+		}
+	}
+	return false
 }
 func hasAnyMethodModifier(modifierSets [][]string, expected string) bool {
 	for _, modifiers := range modifierSets {

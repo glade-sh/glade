@@ -10,6 +10,9 @@ Usage:
 
 Options:
   --target-org <alias>                Salesforce org alias for generated shard scripts.
+  --docs-inventory <dir|file>         Seed the oracle inventory from documented gaps instead of the stub tree.
+                                      Accepts a scraped Apex docs directory or a prebuilt docs-inventory JSON file.
+  --docs-limit <n>                    With --docs-inventory, cap probed surfaces (0 = all 7k+ documented gaps). Default: 250.
   --run-id <id>                       Run ID. Default: full-all-apex-YYYYmmdd-HHMMSS
   --runs-dir <dir>                    Default: .glade/oracle/runs
   --example-input <dir>               Default: example-projects
@@ -27,6 +30,8 @@ USAGE
 }
 
 TARGET_ORG=""
+DOCS_INVENTORY=""
+DOCS_LIMIT="250"
 RUN_ID="full-all-apex-$(date +%Y%m%d-%H%M%S)"
 RUNS_DIR=".glade/oracle/runs"
 EXAMPLE_INPUT="example-projects"
@@ -44,6 +49,8 @@ SKIP_RUNTIME_INVENTORY=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --target-org) TARGET_ORG="$2"; shift 2 ;;
+    --docs-inventory) DOCS_INVENTORY="$2"; shift 2 ;;
+    --docs-limit) DOCS_LIMIT="$2"; shift 2 ;;
     --run-id) RUN_ID="$2"; shift 2 ;;
     --runs-dir) RUNS_DIR="$2"; shift 2 ;;
     --example-input) EXAMPLE_INPUT="$2"; shift 2 ;;
@@ -71,8 +78,20 @@ fi
 echo "[1/8] doctor"
 go run ./cmd/glade compat oracle doctor --json
 
-echo "[2/8] oracle inventory from stubs"
-go run ./cmd/glade compat oracle inventory --stubs example-projects/stubs --output "$INVENTORY_OUT"
+if [[ -n "$DOCS_INVENTORY" ]]; then
+  echo "[2/8] oracle inventory from documented gaps: $DOCS_INVENTORY (limit=$DOCS_LIMIT)"
+  if [[ -d "$DOCS_INVENTORY" ]]; then
+    DOCS_INV_JSON="$(mktemp)"
+    go run ./cmd/glade compat docs-inventory --source "$DOCS_INVENTORY" --output "$DOCS_INV_JSON"
+    go run ./cmd/glade compat oracle inventory --inventory "$DOCS_INV_JSON" --limit "$DOCS_LIMIT" --output "$INVENTORY_OUT"
+    rm -f "$DOCS_INV_JSON"
+  else
+    go run ./cmd/glade compat oracle inventory --inventory "$DOCS_INVENTORY" --limit "$DOCS_LIMIT" --output "$INVENTORY_OUT"
+  fi
+else
+  echo "[2/8] oracle inventory from stubs"
+  go run ./cmd/glade compat oracle inventory --stubs example-projects/stubs --output "$INVENTORY_OUT"
+fi
 
 echo "[3/8] oracle domains"
 go run ./cmd/glade compat oracle domains --output "$DOMAINS_OUT"
@@ -118,7 +137,8 @@ go run ./cmd/glade compat oracle scripts \
   --shard-count "$SHARD_COUNT"
 
 RUN_DIR="$RUNS_DIR/$RUN_ID"
-ALL_SCRIPT="$RUN_DIR/generated/scripts/07-run-all-shards.sh"
+SCRIPTS_DIR="$RUN_DIR/generated/scripts"
+ALL_SCRIPT="$SCRIPTS_DIR/07-run-all-shards.sh"
 
 echo "ready"
 echo "runId: $RUN_ID"
@@ -126,4 +146,5 @@ echo "runDir: $RUN_DIR"
 echo "runtimeInventory: $RUNTIME_INVENTORY"
 echo "rankedWorkQueue: $RANKED_QUEUE_OUT"
 echo "rankReport: $RANK_REPORT_OUT"
-echo "next: bash $ALL_SCRIPT"
+echo "build once: bash $SCRIPTS_DIR/00-build-glade.sh"
+echo "next: bash $ALL_SCRIPT   (synchronous anonymous-Apex probing; set GLADE_ORACLE_PARALLEL=N for fan-out, GLADE_ORACLE_MODE=salesforce for the old async path)"

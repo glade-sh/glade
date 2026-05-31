@@ -225,6 +225,11 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 		if object.CustomSettingsType != "" {
 			ensureDescribeField(describe.Fields, "Name", "Text", "Name")
 			ensureDescribeField(describe.Fields, "SetupOwnerId", "Text", "Setup Owner ID")
+			if strings.EqualFold(object.CustomSettingsType, "List") {
+				nameField := describe.Fields["Name"]
+				nameField.Required = true
+				describe.Fields["Name"] = nameField
+			}
 			describe.Metadata = map[string]string{"kind": "customSetting", "customSettingsType": object.CustomSettingsType}
 		}
 		if object.NameField.Type != "" {

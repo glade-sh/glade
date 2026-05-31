@@ -227,13 +227,19 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 		Records:    make(map[ID]Record),
 	}
 	EnsureDeterministicPlatformData(&org)
-	for _, objectName := range []string{"Organization", "UserRole", "User", "Profile", "UserLicense", "PermissionSet", "PermissionSetAssignment", "RecordType"} {
+	for _, objectName := range []string{"Organization", "UserRole", "User", "UserLogin", "Profile", "UserLicense", "Network", "PermissionSet", "PermissionSetAssignment", "RecordType"} {
 		want := 1
 		if objectName == "Profile" {
 			want = 7
 		}
 		if objectName == "User" {
 			want = 2
+		}
+		if objectName == "UserLogin" {
+			want = 2
+		}
+		if objectName == "Network" {
+			want = 1
 		}
 		if objectName == "PermissionSet" {
 			want = 9
@@ -275,7 +281,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if _, ok := org.Objects["RecordType"].Records[recordTypeID]; !ok {
 		t.Fatalf("missing RecordType record %s: %#v", recordTypeID, org.Objects["RecordType"].Records)
 	}
-	if len(org.Objects["User"].Records) != 2 || len(org.Objects["Profile"].Records) != 7 || len(org.Objects["UserLicense"].Records) != 2 {
+	if len(org.Objects["User"].Records) != 2 || len(org.Objects["UserLogin"].Records) != 2 || len(org.Objects["Profile"].Records) != 7 || len(org.Objects["UserLicense"].Records) != 2 {
 		t.Fatalf("platform records = %#v", InspectOrg("", org))
 	}
 	if _, ok := findRecordByStringField(org.Objects["Profile"].Records, "Name", "Customer Community Guest User"); !ok {
@@ -291,6 +297,18 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	automatedProcessUser, ok := org.Objects["User"].Records["005000000000002"]
 	if !ok || automatedProcessUser.Fields["Name"].String != "Automated Process" || automatedProcessUser.Fields["UserType"].String != "AutomatedProcess" {
 		t.Fatalf("automated process user = %#v, %v", automatedProcessUser, ok)
+	}
+	if !automatedProcessUser.Fields["IsActive"].Boolean || automatedProcessUser.Fields["ProfileId"].ID != "00e000000000005" {
+		t.Fatalf("automated process user active/profile fields = %#v", automatedProcessUser.Fields)
+	}
+	if license, ok := org.Objects["UserLicense"].Records["100000000000001"]; !ok || license.Fields["LicenseDefinitionKey"].String != "SFDC" {
+		t.Fatalf("salesforce license = %#v, %v", license, ok)
+	}
+	if license, ok := org.Objects["UserLicense"].Records["100000000000002"]; !ok || license.Fields["LicenseDefinitionKey"].String != "PID_Customer_Community_Login" {
+		t.Fatalf("community license = %#v, %v", license, ok)
+	}
+	if network, ok := org.Objects["Network"].Records["0DB000000000001"]; !ok || network.Fields["SelfRegProfileId"].ID == "" {
+		t.Fatalf("network = %#v, %v", network, ok)
 	}
 	minimumAccessPermissionSet, ok := org.Objects["PermissionSet"].Records["0PS000000000004"]
 	if !ok || !minimumAccessPermissionSet.Fields["IsOwnedByProfile"].Boolean || minimumAccessPermissionSet.Fields["ProfileId"].ID != "00e000000000002" {
@@ -451,6 +469,9 @@ func TestEnsureDeterministicPlatformDataSeedsAccountPersonTypeRecordTypes(t *tes
 		record := org.Objects["RecordType"].Records[info.ID]
 		if info.DeveloperName == "Individual" && !record.Fields["IsPersonType"].Boolean {
 			t.Fatalf("individual record type = %#v", record)
+		}
+		if info.DeveloperName == "Individual" && !info.Default {
+			t.Fatalf("individual record type should be the default person account type: %#v", info)
 		}
 		if info.DeveloperName == "Organization" && record.Fields["IsPersonType"].Boolean {
 			t.Fatalf("organization record type = %#v", record)

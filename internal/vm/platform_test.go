@@ -160,7 +160,9 @@ System.assertEquals(1, Limits.getDMLRows());
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	org := testDataOrg()
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureDeterministicPlatformData(&org)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -224,6 +226,8 @@ System.assertEquals('Hello', email.getSubject());
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -2338,6 +2342,8 @@ System.assertEquals(true, Auth.AuthToken.revokeAccess('provider', 'user', 'token
 System.assert(Auth.SessionManagement.getCurrentSession().get('SessionId').contains('session'));
 Auth.AuthConfiguration config = new Auth.AuthConfiguration('https://local.example', '/start');
 System.assertEquals(0, config.getAuthProviders().size());
+List<AuthProvider> providers = config.getAuthProviders();
+System.assertEquals(0, providers.size());
 System.assertEquals('https://local.example', config.getAuthConfig().Url);
 System.assertEquals('/start', config.getStartUrl());
 System.assertEquals('https://local.example/services/auth/sso/local?startURL=/start', Auth.AuthConfiguration.getAuthProviderSsoUrl('https://local.example', '/start', 'local'));
@@ -2695,7 +2701,7 @@ System.assertEquals('Detail', message.getDetail());
 	}
 }
 
-func TestExecTestStartTestInitializesDefaultCurrentPage(t *testing.T) {
+func TestExecImplicitCurrentPageMaterializesOnMemberAccess(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(null, ApexPages.currentPage());
 System.assertEquals(null, System.currentPageReference());
@@ -2711,6 +2717,193 @@ Test.stopTest();
 	}
 	machine := New(nil)
 	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestStartTestDoesNotInitializeDefaultCurrentPage(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(null, ApexPages.currentPage());
+Test.startTest();
+System.assertEquals(null, ApexPages.currentPage());
+Test.stopTest();
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFutureContextSurvivesTriggerDML(t *testing.T) {
+	futureProgram, err := CompileAnonymous(`
+System.assertEquals(true, System.isFuture());
+insert new Contact(LastName = 'Future');
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	triggerProgram, err := CompileAnonymous(`
+for (SObject record : Trigger.new) {
+	if (!System.isFuture()) {
+		record.addError('expected future context');
+	}
+}
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+FutureWorker.mark();
+Test.stopTest();
+System.assertEquals(1, [SELECT COUNT() FROM Contact WHERE LastName = 'Future']);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName": {APIName: "LastName", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "FutureWorker",
+		Methods: map[string]Method{
+			"mark": {Name: "FutureWorker.mark", ClassName: "FutureWorker", ReturnType: "void", IsStatic: true, Modifiers: []string{"future"}, Program: futureProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{Name: "ContactBeforeInsert", Object: "Contact", Timing: triggerTimingBefore, Operation: "insert", Program: triggerProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPrivateFutureCalledFromSameClassIsEnqueued(t *testing.T) {
+	callProgram, err := CompileAnonymous(`mark();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	futureProgram, err := CompileAnonymous(`
+System.assertEquals(true, System.isFuture());
+insert new Contact(LastName = 'Private Future');
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+FutureWorker.callMark();
+System.assertEquals(0, [SELECT COUNT() FROM Contact WHERE LastName = 'Private Future']);
+Test.stopTest();
+System.assertEquals(1, [SELECT COUNT() FROM Contact WHERE LastName = 'Private Future']);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName": {APIName: "LastName", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "FutureWorker",
+		Methods: map[string]Method{
+			"callMark": {Name: "FutureWorker.callMark", ClassName: "FutureWorker", ReturnType: "void", IsStatic: true, Program: callProgram},
+			"mark":     {Name: "FutureWorker.mark", ClassName: "FutureWorker", ReturnType: "void", IsStatic: true, Access: "private", Modifiers: []string{"future", "private"}, Program: futureProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestStartTestAdvancesNowPastSetupTime(t *testing.T) {
+	program, err := CompileAnonymous(`
+Datetime before = Datetime.now();
+Test.startTest();
+Datetime afterStart = Datetime.now();
+Test.stopTest();
+System.assert(afterStart > before);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatetimeNowAdvancesBetweenCalls(t *testing.T) {
+	program, err := CompileAnonymous(`
+Datetime before = Datetime.now();
+Datetime after = Datetime.now();
+System.assert(after > before);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecImplicitCurrentPageMaterializesForPageReferenceArgument(t *testing.T) {
+	program, err := CompileAnonymous(`
+PageReferenceProbe.accept(ApexPages.currentPage());
+System.assertEquals('/apex/current?seen=yes', ApexPages.currentPage().getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	acceptProgram, err := CompileAnonymous(`
+System.assertNotEquals(null, page);
+page.getParameters().put('seen', 'yes');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "PageReferenceProbe",
+		Methods: map[string]Method{
+			"accept": {Name: "PageReferenceProbe.accept", ClassName: "PageReferenceProbe", IsStatic: true, Params: []Param{{Name: "page", Type: "PageReference"}}, Program: acceptProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -3927,6 +4120,47 @@ System.assertEquals('invalid_email', Label.Site.invalid_email);
 	}
 }
 
+func TestExecStringFormatResolvesVisualforceLabelMergeExpression(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('Log In', String.format('{!$Label.LogIn}', new List<String>()));
+System.assertEquals('Upload limit 5 MB', String.format('{!$Label.UploadPhotoTooBig}', new List<String>{ '5 MB' }));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Metadata.Labels = []storage.LabelMetadata{
+		{Name: "LogIn", Language: "en_US", Value: "Log In"},
+		{Name: "UploadPhotoTooBig", Language: "en_US", Value: "Upload limit {0}"},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringValueOfRendersComponentLabelExpression(t *testing.T) {
+	program, err := CompileAnonymous(`
+Component.Apex.OutputText output = new Component.Apex.OutputText();
+output.Expressions.Value = '{!$Label.LogIn}';
+System.assertEquals('{!$Label.LogIn}', output.Value);
+System.assertEquals('Log In', String.valueOf(output.Value));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Metadata.Labels = []storage.LabelMetadata{
+		{Name: "LogIn", Language: "en_US", Value: "Log In"},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMessagingResultAndUnsupportedEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.EmailFileAttachment attachment = new Messaging.EmailFileAttachment();
@@ -4142,6 +4376,47 @@ System.assertEquals('external-one', (String)cart.getCustomField('ExternalKey__c'
 		t.Fatal(err)
 	}
 	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecVisualEditorDynamicPickListRowsPrecedesRegisteredStubClass(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<VisualEditor.DataRow> dataRows = new List<VisualEditor.DataRow>();
+dataRows.add(new VisualEditor.DataRow('A', 'a'));
+VisualEditor.DynamicPickListRows rows = new VisualEditor.DynamicPickListRows(dataRows);
+System.assertEquals(1, rows.getDataRows().size());
+System.assertEquals('A', rows.getDataRows().get(0).getLabel());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "VisualEditor.DynamicPickListRows",
+		Methods: map[string]Method{
+			"getDataRows": {
+				Name:       "VisualEditor.DynamicPickListRows.getDataRows",
+				ClassName:  "VisualEditor.DynamicPickListRows",
+				ReturnType: "List<VisualEditor.DataRow>",
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "VisualEditor.DataRow",
+		Methods: map[string]Method{
+			"getLabel": {
+				Name:       "VisualEditor.DataRow.getLabel",
+				ClassName:  "VisualEditor.DataRow",
+				ReturnType: "String",
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -4886,6 +5161,25 @@ System.assertEquals(0, ApexPages.getMessages().size());
 	}
 }
 
+func TestExecApexPagesAddMessageDeduplicatesEquivalentMessages(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.INFO, 'Same summary'));
+ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.INFO, 'Same summary'));
+ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.INFO, 'Same summary', 'Same detail'));
+ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.INFO, 'Same summary', 'Same detail'));
+ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, 'Same summary'));
+System.assertEquals(3, ApexPages.getMessages().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMessagingMassEmailLocalShape(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.MassEmailMessage mass = new Messaging.MassEmailMessage();
@@ -5313,7 +5607,7 @@ System.assertEquals('ResponseType', response.get('response_x'));
 	}
 }
 
-func TestExecWebServiceCalloutWithoutMockIsUnsupportedTransport(t *testing.T) {
+func TestExecWebServiceCalloutWithoutMockCreatesEmptyResponseShell(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Object> response = new Map<String, Object>();
 WebServiceCallout.invoke(
@@ -5322,6 +5616,7 @@ WebServiceCallout.invoke(
   response,
   new String[]{'https://example.test', 'soapAction', 'requestNS', 'requestName', 'responseNS', 'responseName', 'ResponseType'}
 );
+System.assertNotEquals(null, response.get('response_x'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5329,9 +5624,8 @@ WebServiceCallout.invoke(
 	machine := New(nil)
 	machine.EnableTestContext()
 	result, err := machine.Execute(program)
-	var runtimeErr *RuntimeError
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "WebServiceCallout.invoke without WebServiceMock"` {
-		t.Fatalf("err = %#v, want UnsupportedFeature missing WebServiceMock", err)
+	if err != nil {
+		t.Fatalf("err = %#v", err)
 	}
 	if result.Limits.Callouts != 1 {
 		t.Fatalf("callouts = %d, want 1", result.Limits.Callouts)
@@ -8351,6 +8645,23 @@ System.setPassword(UserInfo.getUserId(), 'local-secret');
 	}
 }
 
+func TestExecSiteCreateUserReturnsNullInTestContext(t *testing.T) {
+	program, err := CompileAnonymous(`
+User externalUser = new User(Username='external@example.invalid', LastName='External', Email='external@example.invalid', Alias='ext');
+System.assertEquals(null, Site.createExternalUser(externalUser, '001000000000001', 'secret', false));
+System.assertEquals(null, Site.createPortalUser(externalUser, '001000000000001', 'secret'));
+System.assertEquals(null, Site.createPersonAccountPortalUser(externalUser, '005000000000001', 'secret'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecNetworkGetNetworkIdFallbackIsApexIDShaped(t *testing.T) {
 	program, err := CompileAnonymous(`
 String networkId = Network.getNetworkId();
@@ -8388,9 +8699,38 @@ System.runAs(new User(Id = '005-guest-user', ProfileId = '00e000000000007', User
 	}
 }
 
+func TestExecRunAsHydratesStoredGuestUserType(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.runAs(new User(Id = '005-guest-user')) {
+	System.assertEquals('Guest', UserInfo.getUserType());
+	System.assertEquals(true, Auth.CommunitiesUtil.isGuestUser());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	userState := org.Objects["User"]
+	userState.Records["005-guest-user"] = storage.Record{
+		ID:     "005-guest-user",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"UserType": storage.StringValue("Guest"),
+		},
+	}
+	org.Objects["User"] = userState
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRunAsDefaultsProfileOnlyUserTypeToStandard(t *testing.T) {
 	program, err := CompileAnonymous(`
-	Profile p = [SELECT Id FROM Profile WHERE Name = 'Community Hub Login User' LIMIT 1];
+	Profile p = [SELECT Id FROM Profile WHERE Name = 'Internal Login User' LIMIT 1];
 	System.runAs(new User(Id = '005-community-user', ProfileId = p.Id, Username = 'community@example.test')) {
 		System.assertEquals('Standard', UserInfo.getUserType());
 	}
@@ -8405,11 +8745,74 @@ func TestExecRunAsDefaultsProfileOnlyUserTypeToStandard(t *testing.T) {
 		ID:     "00e000000000099",
 		Object: "Profile",
 		Fields: map[string]storage.Value{
-			"Name": storage.StringValue("Community Hub Login User"),
+			"Name": storage.StringValue("Internal Login User"),
 		},
 	}
 	org.Objects["Profile"] = profile
 	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRunAsInfersCustomerCommunityUserTypeFromProfile(t *testing.T) {
+	program, err := CompileAnonymous(`
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Customer Community User' LIMIT 1];
+System.runAs(new User(Id = '005-community-user', ProfileId = p.Id, Username = 'community@example.test')) {
+	System.assertEquals('CspLitePortal', UserInfo.getUserType());
+}
+Profile login = [SELECT Id FROM Profile WHERE Name = 'Customer Community Login User' LIMIT 1];
+System.runAs(new User(Id = '005-community-login-user', ProfileId = login.Id, Username = 'community-login@example.test')) {
+	System.assertEquals('CspLitePortal', UserInfo.getUserType());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	profile := org.Objects["Profile"]
+	profile.Records["00e000000000099"] = storage.Record{
+		ID:     "00e000000000099",
+		Object: "Profile",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Customer Community User"),
+		},
+	}
+	profile.Records["00e000000000098"] = storage.Record{
+		ID:     "00e000000000098",
+		Object: "Profile",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Customer Community Login User"),
+		},
+	}
+	org.Objects["Profile"] = profile
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCreatedByProfileUserLicenseUsesCommunityLicenseKey(t *testing.T) {
+	program, err := CompileAnonymous(`
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Chatter External User' LIMIT 1];
+System.runAs(new User(Id = '005-community-user', ProfileId = p.Id, Username = 'community@example.test')) {
+	insert new Account(Name = 'Acme');
+}
+Account row = [SELECT CreatedBy.Profile.UserLicense.LicenseDefinitionKey FROM Account WHERE Name = 'Acme' LIMIT 1];
+System.assertEquals('PID_Customer_Community_Login', row.CreatedBy.Profile.UserLicense.LicenseDefinitionKey);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureDeterministicPlatformData(&org)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
@@ -9649,6 +10052,12 @@ List<Database.SaveResult> results = Database.insert(records, opts);
 System.assertEquals(2, results.size());
 System.assert(results.get(0).isSuccess());
 System.assert(results.get(1).isSuccess());
+
+Account recordWithOptions = new Account(Name = 'WithOptions');
+recordWithOptions.setOptions(opts);
+System.assertEquals(true, recordWithOptions.getOptions().AllowFieldTruncation);
+insert recordWithOptions;
+System.assertNotEquals(null, recordWithOptions.Id);
 
 Database.DMLOptions lowerOpts = new Database.DMLOptions();
 lowerOpts.optAllOrNone = false;

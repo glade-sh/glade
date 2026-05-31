@@ -80,7 +80,7 @@ func NewSourceMetadataFromProject(p project.Project) (SourceMetadata, error) {
 	meta.ToolingOrg.APIVersion = p.SourceAPIVersion
 	meta.ToolingOrg.Namespace = p.Namespace
 	if meta.ToolingOrg.APIVersion == "" {
-		meta.ToolingOrg.APIVersion = "61.0"
+		meta.ToolingOrg.APIVersion = storage.DefaultRESTAPIVersion
 	}
 	if err := meta.loadToolingObjects(); err != nil {
 		return SourceMetadata{}, err
@@ -344,7 +344,7 @@ func toolingObjectDefinition(apiName, label, prefix string, fields []string) sto
 
 func sourceAPIVersion(version string) string {
 	if strings.TrimSpace(version) == "" {
-		return "61.0"
+		return storage.DefaultRESTAPIVersion
 	}
 	return strings.TrimSpace(version)
 }

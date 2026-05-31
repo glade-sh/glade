@@ -2098,8 +2098,15 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 	if storage.IsCustomMetadataDefinition(definition) && customMetadataSystemFieldKnown(field) {
 		return true
 	}
-	if customObjectLikeSOQLName(definition.APIName) && customFieldLikeSOQLName(field) {
+	if storage.IsCustomMetadataDefinition(definition) && customFieldLikeSOQLName(field) {
 		return true
+	}
+	if customObjectLikeSOQLName(definition.APIName) && customFieldLikeSOQLName(field) {
+		if len(definition.Fields) == 0 {
+			return true
+		}
+		_, ok := storage.ResolveFieldName(definition, org.Namespace, field)
+		return ok
 	}
 	if namespacedCustomFieldLikeSOQLName(field) {
 		return true
@@ -3099,7 +3106,9 @@ func compareValues(left, right storage.Value) int {
 		return strings.Compare(string(left.Kind), string(right.Kind))
 	}
 	switch left.Kind {
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
+	case storage.ValueString:
+		return compareSOQLText(left.String, right.String)
+	case storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
 		return strings.Compare(left.String, right.String)
 	case storage.ValueInteger:
 		if left.Integer < right.Integer {
@@ -3124,6 +3133,13 @@ func compareValues(left, right storage.Value) int {
 	default:
 		return 0
 	}
+}
+
+func compareSOQLText(left, right string) int {
+	if cmp := strings.Compare(strings.ToLower(left), strings.ToLower(right)); cmp != 0 {
+		return cmp
+	}
+	return strings.Compare(left, right)
 }
 
 func recordsOrderedBefore(org storage.OrgState, definition storage.ObjectDefinition, leftRecord, rightRecord storage.Record, order []OrderSpec) bool {

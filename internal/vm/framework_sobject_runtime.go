@@ -125,6 +125,8 @@ func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(domai
 		oldMap := vm.triggerGlobals["Trigger.oldMap"]
 		if oldMap.Kind == ValueNull || oldMap.Kind == "" {
 			oldMap = typedMap("Map<Id,SObject>")
+		} else if oldMap.Kind == ValueMap && strings.EqualFold(oldMap.Runtime, "Map<Id,SObject>") {
+			oldMap.Type = "Map<Id,SObject>"
 		}
 		handlerArgs = []Value{oldMap}
 	}
@@ -133,6 +135,9 @@ func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(domai
 		return Null, true, vm.ambiguousOverloadError(domain.Type+"."+handler, handlerArgs)
 	}
 	if !ok {
+		if handled, err := vm.callFrameworkSObjectDomainBaseHandler(domain, handler, handlerArgs, resultForLookup()); handled || err != nil {
+			return Null, true, err
+		}
 		return Null, true, fmt.Errorf("%s.%s not found", domain.Type, handler)
 	}
 	if _, err := vm.callMethodWithReceiver(target, domain, handlerArgs, resultForLookup()); err != nil {
@@ -144,6 +149,49 @@ func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(domai
 		}
 	}
 	return domain, true, nil
+}
+func (vm *VM) callFrameworkSObjectDomainBaseHandler(domain Value, handler string, handlerArgs []Value, result *Result) (bool, error) {
+	call := func(name string, args []Value) error {
+		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(domain.Type, name, args)
+		if ambiguous {
+			return vm.ambiguousOverloadError(domain.Type+"."+name, args)
+		}
+		if !ok {
+			return nil
+		}
+		_, err := vm.callMethodWithReceiver(target, domain, args, result)
+		return err
+	}
+	switch strings.ToLower(handler) {
+	case "handlebeforeinsert":
+		if err := call("onApplyDefaults", nil); err != nil {
+			return true, err
+		}
+		return true, call("onBeforeInsert", nil)
+	case "handlebeforeupdate":
+		return true, call("onBeforeUpdate", handlerArgs)
+	case "handlebeforedelete":
+		return true, call("onBeforeDelete", nil)
+	case "handleafterinsert":
+		if err := call("onValidate", nil); err != nil {
+			return true, err
+		}
+		return true, call("onAfterInsert", nil)
+	case "handleafterupdate":
+		if err := call("onValidate", nil); err != nil {
+			return true, err
+		}
+		if err := call("onValidate", handlerArgs); err != nil {
+			return true, err
+		}
+		return true, call("onAfterUpdate", handlerArgs)
+	case "handleafterdelete":
+		return true, call("onAfterDelete", nil)
+	case "handleafterundelete":
+		return true, call("onAfterUndelete", nil)
+	default:
+		return false, nil
+	}
 }
 func frameworkDomainTriggerStateEnabled(domain Value) bool {
 	if domain.Kind != ValueObject {

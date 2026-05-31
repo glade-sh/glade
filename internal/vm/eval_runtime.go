@@ -186,6 +186,9 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 				if canonical, ok := canonicalBuiltinStaticCall(receiverName + "." + member); ok {
 					hasReceiver = false
 					callee = canonical
+				} else if vm.staticReceiverName(receiverName, member) && !vm.hasRuntimeReceiver(receiverName) {
+					hasReceiver = false
+					callee = receiverName + "." + member
 				} else if typeName, fieldName, ok := splitDottedTypeMember(receiverName); ok {
 					if value, ok := builtinStaticField(typeName, fieldName); ok {
 						receiver = value
@@ -258,6 +261,52 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 	default:
 		return Null, fmt.Errorf("unsupported expression %q", expr.Kind)
 	}
+}
+
+func (vm *VM) staticReceiverName(receiverName, member string) bool {
+	if receiverName == "" || member == "" {
+		return false
+	}
+	if !apexIdentifierStartsUpper(receiverName) {
+		return false
+	}
+	if _, ok := vm.lookupClass(receiverName); ok {
+		return true
+	}
+	for _, candidate := range vm.registeredMethodCandidates(receiverName + "." + member) {
+		if candidate.IsStatic {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) hasRuntimeReceiver(name string) bool {
+	if name == "" {
+		return false
+	}
+	if _, ok := vm.Globals[name]; ok {
+		return true
+	}
+	if actual, found := vm.lookupGlobalName(name); found {
+		if _, ok := vm.Globals[actual]; ok {
+			return true
+		}
+	}
+	if _, ok := vm.VarTypes[name]; ok {
+		return true
+	}
+	if !strings.Contains(name, ".") {
+		if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
+			if _, _, ok := objectFieldValue(this, name); ok {
+				return true
+			}
+			if _, _, ok := vm.lookupReceiverField(this.Type, name); ok {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (vm *VM) evalForType(expr ir.Expr, typeName string, result *Result) (Value, error) {

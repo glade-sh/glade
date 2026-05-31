@@ -132,6 +132,22 @@ func (vm *VM) customDataGetInstance(objectName string, definition storage.Object
 		}
 		return storage.Record{}, false, nil
 	}
+	if len(args) == 1 && args[0].Kind == ValueNull {
+		if kind == "custom setting" && !strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
+			args = nil
+		} else {
+			return storage.Record{}, false, nil
+		}
+	}
+	if len(args) == 0 {
+		for _, record := range sortedCustomDataRecords(object.Records, definition, kind, vm.Org.Namespace) {
+			if record.System.IsDeleted {
+				continue
+			}
+			return record, true, nil
+		}
+		return storage.Record{}, false, nil
+	}
 	if len(args) != 1 || (args[0].Kind != ValueString && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {
 		return storage.Record{}, false, fmt.Errorf("%s.getInstance expects optional String name", objectName)
 	}
@@ -230,6 +246,15 @@ func customDataRecordNames(definition storage.ObjectDefinition, kind string, rec
 }
 func (vm *VM) readOnlyCustomDataValue(record storage.Record, kind string) Value {
 	value := vm.vmValueFromRecord(record)
+	if kind == "custom setting" && vm.Org != nil {
+		if object, ok := vm.Org.Objects[record.Object]; ok {
+			for name := range object.Definition.Fields {
+				if _, exists := value.Fields[name]; !exists {
+					value.Fields[name] = Value{Kind: ValueNull, Type: string(object.Definition.Fields[name].Type)}
+				}
+			}
+		}
+	}
 	if kind == "custom metadata" {
 		value.Fields[sobjectReadOnlyField] = String(kind + " records returned by getAll/getInstance are read-only")
 	}

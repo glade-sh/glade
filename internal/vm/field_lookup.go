@@ -35,25 +35,31 @@ func (vm *VM) lookupStaticField(typeName, fieldName string) (Field, string, bool
 	return vm.lookupStaticFieldForReceiver(typeName, fieldName, false)
 }
 func (vm *VM) lookupStaticFieldForReceiver(typeName, fieldName string, preferDependency bool) (Field, string, bool) {
-	for search := typeName; search != ""; {
-		for current := search; current != ""; {
-			class, ok := vm.lookupClass(current)
-			if !ok {
+	searches := []string{typeName}
+	if preferDependency {
+		searches = vm.staticTypeNameCandidates(typeName)
+	}
+	for _, search := range searches {
+		for search := search; search != ""; {
+			for current := search; current != ""; {
+				class, ok := vm.lookupClass(current)
+				if !ok {
+					break
+				}
+				if field, ok := vm.lookupFieldInMapWithOptions(class.StaticFields, fieldName, preferDependency); ok {
+					if field.Value.Kind == "" {
+						field.Value = defaultValue(field.Type, field.InitialValue)
+					}
+					return field, runtimeClassName(class), true
+				}
+				current = vm.resolvedSuperClassName(class)
+			}
+			dot := strings.LastIndex(search, ".")
+			if dot < 0 {
 				break
 			}
-			if field, ok := vm.lookupFieldInMapWithOptions(class.StaticFields, fieldName, preferDependency); ok {
-				if field.Value.Kind == "" {
-					field.Value = defaultValue(field.Type, field.InitialValue)
-				}
-				return field, runtimeClassName(class), true
-			}
-			current = vm.resolvedSuperClassName(class)
+			search = search[:dot]
 		}
-		dot := strings.LastIndex(search, ".")
-		if dot < 0 {
-			break
-		}
-		search = search[:dot]
 	}
 	return Field{}, "", false
 }

@@ -434,7 +434,7 @@ func stringStatic(callee string, args []Value) (Value, error) {
 		if len(args) != 1 {
 			return Null, fmt.Errorf("%s expects 1 argument", callee)
 		}
-		blank := args[0].Kind == ValueNull || (args[0].Kind == ValueString && strings.TrimSpace(args[0].Text) == "")
+		blank := args[0].Kind == ValueNull || (args[0].Kind == ValueString && stringIsBlankText(args[0].Text))
 		if callee == "String.isNotBlank" {
 			return Bool(!blank), nil
 		}
@@ -557,6 +557,11 @@ func stringStatic(callee string, args []Value) (Value, error) {
 	default:
 		return Null, unsupportedCallError(callee)
 	}
+}
+
+func stringIsBlankText(text string) bool {
+	text = strings.TrimSpace(text)
+	return text == "" || strings.EqualFold(text, "$RecordType.Name") || strings.EqualFold(text, "$RecordType.DeveloperName")
 }
 
 func numericStatic(callee string, args []Value) (Value, error) {
@@ -1467,8 +1472,19 @@ func listSObjectTypeName(receiver Value) string {
 		}
 	}
 	for _, item := range receiver.List {
-		if item.Kind == ValueObject && item.Type != "" && item.Type != "Object" {
-			return item.Type
+		if item.Kind != ValueObject {
+			continue
+		}
+		for _, typeName := range []string{item.Type, item.Runtime, item.Static} {
+			if typeName == "" || strings.EqualFold(typeName, "SObject") || strings.EqualFold(typeName, "Object") {
+				continue
+			}
+			if isCommonSObjectTypeName(typeName) || strings.HasSuffix(typeName, "__c") || strings.HasSuffix(typeName, "__e") || strings.HasSuffix(typeName, "__mdt") {
+				return typeName
+			}
+		}
+		if objectName, ok := item.Fields["object"]; ok && objectName.Kind == ValueString && objectName.Text != "" {
+			return objectName.Text
 		}
 	}
 	return ""
@@ -2099,9 +2115,17 @@ func stringRegexReplace(name, text string, args []Value, all bool) (string, erro
 	if replaced, ok, err := stringRegexReplaceNegativeLookbehindLiteral(name, text, pattern, args[1].Text, all); ok || err != nil {
 		return replaced, err
 	}
+	if replaced, ok, err := stringRegexReplaceQuotedPositiveLookaround(name, text, pattern, args[1].Text, all); ok || err != nil {
+		return replaced, err
+	}
 	if stripped, lookahead, ok := stripTerminalPositiveLookahead(pattern); ok {
 		return stringRegexReplaceTerminalPositiveLookahead(name, text, stripped, lookahead, args[1].Text, all)
 	}
+	converted, err := javaRegexQuoteEscapesToGo(pattern)
+	if err != nil {
+		return "", unsupportedCallError(name + " " + err.Error())
+	}
+	pattern = converted
 	if feature := unsupportedJavaRegexFeature(pattern); feature != "" {
 		return "", unsupportedCallError(name + " " + feature)
 	}
@@ -2123,6 +2147,34 @@ func stringRegexReplace(name, text string, args []Value, all bool) (string, erro
 	var expanded []byte
 	expanded = re.ExpandString(expanded, replacement, text, indices)
 	return text[:indices[0]] + string(expanded) + text[indices[1]:], nil
+}
+
+func stringRegexReplaceQuotedPositiveLookaround(callee, text, pattern, replacement string, all bool) (string, bool, error) {
+	if !strings.HasPrefix(pattern, `(?<=")`) || !strings.HasSuffix(pattern, `(?=")`) {
+		return "", false, nil
+	}
+	core := pattern[len(`(?<=")`) : len(pattern)-len(`(?=")`)]
+	if feature := unsupportedJavaRegexFeature(core); feature != "" {
+		return "", true, unsupportedCallError(callee + " " + feature)
+	}
+	re, err := regexp.Compile(`"` + core + `"`)
+	if err != nil {
+		return "", true, fmt.Errorf("%s invalid regex: %w", callee, err)
+	}
+	repl, err := javaReplacementToGoTemplate(callee, `"`+replacement+`"`, re.NumSubexp())
+	if err != nil {
+		return "", true, fmt.Errorf("%s %w", callee, err)
+	}
+	if all {
+		return re.ReplaceAllString(text, repl), true, nil
+	}
+	indices := re.FindStringSubmatchIndex(text)
+	if indices == nil {
+		return text, true, nil
+	}
+	var expanded []byte
+	expanded = re.ExpandString(expanded, repl, text, indices)
+	return text[:indices[0]] + string(expanded) + text[indices[1]:], true, nil
 }
 
 func stringRegexReplaceTerminalPositiveLookahead(callee, text, pattern, lookahead, replacement string, all bool) (string, error) {

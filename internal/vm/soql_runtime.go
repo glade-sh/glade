@@ -28,6 +28,9 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 	if err != nil {
 		var unsupported *soql.UnsupportedFeatureError
 		if errors.As(err, &unsupported) {
+			if strings.Contains(unsupported.Message, "unsupported SOQL token") {
+				return nil, newExceptionError("QueryException", fmt.Sprintf("%s in generated SOQL %q", unsupported.Message, queryText))
+			}
 			return nil, &RuntimeError{Type: "UnsupportedFeature", Message: unsupported.Message}
 		}
 		return nil, newExceptionError("QueryException", fmt.Sprintf("%s in generated SOQL %q", err.Error(), queryText))
@@ -57,6 +60,9 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 	executeQuery.SecurityMode = ""
 	if resolved, ok := vm.resolveObjectName(executeQuery.Object); ok {
 		executeQuery.Object = resolved
+	}
+	if err := vm.validateSOQLIDLiteralConditions(executeQuery); err != nil {
+		return nil, err
 	}
 	vm.normalizeSOQLRelationshipGroupBy(&executeQuery)
 	executeOrg := vm.Org
@@ -1034,6 +1040,69 @@ func soqlConditionFields(condition *soql.Condition) []string {
 		out = append(out, condition.Field)
 	}
 	return out
+}
+
+func (vm *VM) validateSOQLIDLiteralConditions(query soql.Query) error {
+	if vm == nil || vm.Org == nil || query.Where == nil {
+		return nil
+	}
+	object, ok := vm.Org.Objects[query.Object]
+	if !ok {
+		return nil
+	}
+	return vm.validateSOQLIDLiteralCondition(object.Definition, query.Where)
+}
+
+func (vm *VM) validateSOQLIDLiteralCondition(definition storage.ObjectDefinition, condition *soql.Condition) error {
+	if condition == nil {
+		return nil
+	}
+	if condition.Not {
+		nested := *condition
+		nested.Not = false
+		return vm.validateSOQLIDLiteralCondition(definition, &nested)
+	}
+	for i := range condition.And {
+		if err := vm.validateSOQLIDLiteralCondition(definition, &condition.And[i]); err != nil {
+			return err
+		}
+	}
+	for i := range condition.Or {
+		if err := vm.validateSOQLIDLiteralCondition(definition, &condition.Or[i]); err != nil {
+			return err
+		}
+	}
+	if strings.TrimSpace(condition.Field) == "" || strings.Contains(condition.Field, ".") {
+		return nil
+	}
+	canonicalField, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, condition.Field)
+	if !ok {
+		return nil
+	}
+	field := definition.Fields[canonicalField]
+	if field.Type != storage.FieldID && field.Type != storage.FieldReference {
+		return nil
+	}
+	validate := func(value storage.Value) error {
+		if value.Kind != storage.ValueString || strings.TrimSpace(value.String) == "" {
+			return nil
+		}
+		if err := validateApexIDShape(value.String); err != nil {
+			return newExceptionError("QueryException", strings.TrimPrefix(err.Error(), "System.StringException: "))
+		}
+		return nil
+	}
+	switch condition.Op {
+	case "=":
+		return validate(condition.Value)
+	case "IN":
+		for _, value := range condition.Values {
+			if err := validate(value); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (vm *VM) enforceSOQLRelationshipSecurity(objectName, expression, mode string) error {

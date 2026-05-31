@@ -3668,6 +3668,54 @@ func coerceStoredSObjectFieldRuntimeValue(value Value, field storage.Field) Valu
 	return out
 }
 
+func coerceReadSObjectFieldRuntimeValue(value Value, field storage.Field) Value {
+	if rawRecordTypeDefaultRuntimeValue(value, field) {
+		return storageFieldNullValue(field)
+	}
+	return coerceStoredSObjectFieldRuntimeValue(value, field)
+}
+
+func coerceRawRecordTypeNameFieldRuntimeValue(fieldName string, value Value) Value {
+	if value.Kind != ValueString {
+		return value
+	}
+	base := storage.StripAnyNamespaceToken(fieldName)
+	if !strings.EqualFold(base, "RecordTypeName__c") {
+		return value
+	}
+	text := strings.TrimSpace(value.Text)
+	if strings.EqualFold(text, "$RecordType.Name") || strings.EqualFold(text, "$RecordType.DeveloperName") {
+		return typedNull("String")
+	}
+	return value
+}
+
+func rawRecordTypeDefaultStorageValue(value storage.Value, field storage.Field) bool {
+	if value.Kind != storage.ValueString {
+		return false
+	}
+	raw := strings.TrimSpace(field.DefaultValue)
+	switch {
+	case strings.EqualFold(raw, "$RecordType.Name"), strings.EqualFold(raw, "$RecordType.DeveloperName"):
+		return strings.EqualFold(strings.TrimSpace(value.String), raw)
+	default:
+		return false
+	}
+}
+
+func rawRecordTypeDefaultRuntimeValue(value Value, field storage.Field) bool {
+	if value.Kind != ValueString {
+		return false
+	}
+	raw := strings.TrimSpace(field.DefaultValue)
+	switch {
+	case strings.EqualFold(raw, "$RecordType.Name"), strings.EqualFold(raw, "$RecordType.DeveloperName"):
+		return strings.EqualFold(strings.TrimSpace(value.Text), raw)
+	default:
+		return false
+	}
+}
+
 func sObjectFieldReadsAsNumeric(field storage.Field) bool {
 	switch field.Type {
 	case storage.FieldDecimal, storage.FieldSummary:

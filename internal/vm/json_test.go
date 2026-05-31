@@ -77,6 +77,28 @@ System.assertEquals('"<p>This email rocks</p>"', JSON.serializePretty('<p>This e
 	}
 }
 
+func TestExecJSONSerializeSObjectOrdersGeneratedFieldsLast(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+String text = JSON.serialize(a);
+System.assert(text.contains('"Name"'));
+System.assert(!text.contains('"CreatedDate"'));
+System.assert(!text.contains('"IsDeleted"'));
+Object decoded = JSON.deserializeUntyped(text);
+System.assertNotEquals(null, decoded);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONParserGeneratorMethodsAreCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = json.CREATEGENERATOR(false);
@@ -1360,6 +1382,13 @@ func TestTypedValueFromJSONResolvesNamespacedInnerSObjectWrapperFields(t *testin
 	}
 	if got := cartItem.Fields["Total__c"].Decimal; got != 5 {
 		t.Fatalf("Total__c = %v", got)
+	}
+	blank, err := machine.typedValueFromJSON("CartItem__c", map[string]any{"Total__c": ""}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := blank.Fields["Total__c"]; got.Kind != ValueNull {
+		t.Fatalf("blank Total__c = %#v, want null", got)
 	}
 }
 

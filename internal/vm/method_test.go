@@ -232,6 +232,29 @@ func TestCoerceAssignablePreservesUserObjectMapKeys(t *testing.T) {
 	}
 }
 
+func TestMapPutAllPreservesSourceOrder(t *testing.T) {
+	machine := New(nil)
+	source := Map()
+	source.Type = "Map<String,String>"
+	for _, text := range []string{"b", "a"} {
+		key := mapKey(String(text))
+		source.Map[key] = String(text)
+		source.MapKeys[key] = String(text)
+		source.MapOrder = append(source.MapOrder, key)
+	}
+	target := Map()
+	target.Type = "Map<String,String>"
+	machine.Globals["target"] = target
+	if _, _, err := machine.callMapValueMember("target", target, "putAll", []Value{source}, resultForLookup()); err != nil {
+		t.Fatal(err)
+	}
+	got := machine.Globals["target"]
+	keys := orderedValueMapKeys(got)
+	if len(keys) != 2 || got.Map[keys[0]].Text != "b" || got.Map[keys[1]].Text != "a" {
+		t.Fatalf("Map.putAll order = %#v from keys %#v", got, keys)
+	}
+}
+
 func TestExecAssignStringSplitToListIDDoesNotValidateElementsEagerly(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Id> ids = ''.split(',');
@@ -4207,6 +4230,360 @@ System.assertEquals(9, c.score());
 	}
 }
 
+func TestExecExplicitSuperThroughParentWithoutConstructorRunsAncestorDefaultConstructor(t *testing.T) {
+	grandparentCtor, err := CompileAnonymous("base = 7;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childCtor, err := CompileAnonymous("super(); bonus = 5;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	scoreProgram, err := CompileAnonymous("return base + bonus;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Child c = new Child();
+System.assertEquals(12, c.score());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Grandparent",
+		Fields: map[string]Field{
+			"base": {Name: "base", Type: "Integer"},
+		},
+		Constructors: []Method{{
+			Name:          "Grandparent.<init>",
+			ClassName:     "Grandparent",
+			Program:       grandparentCtor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Parent",
+		SuperClass: "Grandparent",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Parent",
+		Fields: map[string]Field{
+			"bonus": {Name: "bonus", Type: "Integer"},
+		},
+		Constructors: []Method{{
+			Name:          "Child.<init>",
+			ClassName:     "Child",
+			Program:       childCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"score": {Name: "Child.score", ClassName: "Child", ReturnType: "Integer", Program: scoreProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListSObjectTypeSurvivesAssignmentToListSObjectField(t *testing.T) {
+	setRecordsProgram, err := CompileAnonymous("this.records = records;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	describeProgram, err := CompileAnonymous("return this.records.getSObjectType().getDescribe().getName();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Bucket bucket = new Bucket();
+Opportunity opp = new Opportunity(Name = 'Trail');
+bucket.setRecords(new Opportunity[] { opp });
+System.assertEquals('Opportunity', bucket.describeName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Bucket",
+		Fields: map[string]Field{
+			"records": {Name: "records", Type: "List<SObject>"},
+		},
+		Methods: map[string]Method{
+			"setRecords":   {Name: "Bucket.setRecords", ClassName: "Bucket", Params: []Param{{Name: "records", Type: "List<SObject>"}}, Program: setRecordsProgram},
+			"describeName": {Name: "Bucket.describeName", ClassName: "Bucket", ReturnType: "String", Program: describeProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestListGetSObjectTypeUsesRuntimeElementType(t *testing.T) {
+	machine := New(nil)
+	record := Object("SObject")
+	record.Runtime = "Opportunity"
+	record.Static = "SObject"
+	receiver := List(record)
+	receiver.Type = "List<SObject>"
+	value, handled, err := machine.callListValueMember("records", receiver, "getSObjectType", nil, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled {
+		t.Fatal("List.getSObjectType was not handled")
+	}
+	objectName := value.Fields["object"]
+	if objectName.Kind != ValueString || objectName.Text != "Opportunity" {
+		t.Fatalf("object token = %#v", value)
+	}
+}
+
+func TestExecSObjectArrayLiteralKeepsVariableElements(t *testing.T) {
+	program, err := CompileAnonymous(`
+Opportunity opp = new Opportunity(Name = 'Trail');
+List<SObject> records = new Opportunity[] { opp };
+System.assertEquals(1, records.size());
+System.assertEquals('Trail', ((Opportunity)records[0]).Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConstructorDowncastsGenericSObjectListWithElements(t *testing.T) {
+	constructorProgram, err := CompileAnonymous("this.records = records;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	countProgram, err := CompileAnonymous("return records.size();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	constructProgram, err := CompileAnonymous("return new Domain(records).count();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Factory factory = new Factory();
+Opportunity opp = new Opportunity(Name = 'Trail');
+List<SObject> records = new Opportunity[] { opp };
+System.assertEquals(1, factory.construct(records));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Domain",
+		Fields: map[string]Field{
+			"records": {Name: "records", Type: "List<Opportunity>"},
+		},
+		Constructors: []Method{{
+			Name:          "Domain.<init>",
+			ClassName:     "Domain",
+			Params:        []Param{{Name: "records", Type: "List<Opportunity>"}},
+			Program:       constructorProgram,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"count": {Name: "Domain.count", ClassName: "Domain", ReturnType: "Integer", Program: countProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Factory",
+		Methods: map[string]Method{
+			"construct": {Name: "Factory.construct", ClassName: "Factory", ReturnType: "Integer", Params: []Param{{Name: "records", Type: "List<SObject>"}}, Program: constructProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSuperConstructorReceivesDowncastSObjectListElements(t *testing.T) {
+	baseCtor, err := CompileAnonymous("this.records = records;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childCtor, err := CompileAnonymous("super(records);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	countProgram, err := CompileAnonymous("return records.size();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	constructProgram, err := CompileAnonymous("return new Child(records).count();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Factory factory = new Factory();
+Opportunity opp = new Opportunity(Name = 'Trail');
+List<SObject> records = new Opportunity[] { opp };
+System.assertEquals(1, factory.construct(records));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Fields: map[string]Field{
+			"records": {Name: "records", Type: "List<SObject>"},
+		},
+		Constructors: []Method{{
+			Name:          "Base.<init>",
+			ClassName:     "Base",
+			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
+			Program:       baseCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"count": {Name: "Base.count", ClassName: "Base", ReturnType: "Integer", Program: countProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Base",
+		Constructors: []Method{{
+			Name:          "Child.<init>",
+			ClassName:     "Child",
+			Params:        []Param{{Name: "records", Type: "List<Opportunity>"}},
+			Program:       childCtor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Factory",
+		Methods: map[string]Method{
+			"construct": {Name: "Factory.construct", ClassName: "Factory", ReturnType: "Integer", Params: []Param{{Name: "records", Type: "List<SObject>"}}, Program: constructProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInterfaceConstructorBridgePreservesSObjectListElements(t *testing.T) {
+	baseCtor, err := CompileAnonymous("this.records = records;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childCtor, err := CompileAnonymous("super(records);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	countProgram, err := CompileAnonymous("return records.size();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	constructProgram, err := CompileAnonymous("return new Child(records);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runProgram, err := CompileAnonymous("return constructor.construct(records).count();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Runner runner = new Runner();
+Opportunity opp = new Opportunity(Name = 'Trail');
+List<SObject> records = new Opportunity[] { opp };
+System.assertEquals(1, runner.run(new ConstructorImpl(), records));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:        "IConstructable",
+		IsInterface: true,
+		Methods: map[string]Method{
+			"construct": {Name: "IConstructable.construct", ClassName: "IConstructable", ReturnType: "Base", Params: []Param{{Name: "records", Type: "List<SObject>"}}, Modifiers: []string{"abstract"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Fields: map[string]Field{
+			"records": {Name: "records", Type: "List<SObject>"},
+		},
+		Constructors: []Method{{
+			Name:          "Base.<init>",
+			ClassName:     "Base",
+			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
+			Program:       baseCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"count": {Name: "Base.count", ClassName: "Base", ReturnType: "Integer", Program: countProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Base",
+		Constructors: []Method{{
+			Name:          "Child.<init>",
+			ClassName:     "Child",
+			Params:        []Param{{Name: "records", Type: "List<Opportunity>"}},
+			Program:       childCtor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "ConstructorImpl",
+		Interfaces: []string{"IConstructable"},
+		Methods: map[string]Method{
+			"construct": {Name: "ConstructorImpl.construct", ClassName: "ConstructorImpl", ReturnType: "Base", Params: []Param{{Name: "records", Type: "List<SObject>"}}, Program: constructProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Runner",
+		Methods: map[string]Method{
+			"run": {Name: "Runner.run", ClassName: "Runner", ReturnType: "Integer", Params: []Param{{Name: "constructor", Type: "IConstructable"}, {Name: "records", Type: "List<SObject>"}}, Program: runProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCastControlsOverloadResolutionButPreservesRuntimeDispatch(t *testing.T) {
 	childProgram, err := CompileAnonymous("return choose((Base)arg);")
 	if err != nil {
@@ -6222,6 +6599,61 @@ System.assertEquals('Acme', b.Seen);
 	}
 }
 
+func TestExecPropertySetterMethodReadUsesBackingField(t *testing.T) {
+	getter, err := CompileAnonymous(`
+if (Items == null) {
+	Items = new List<String>();
+}
+return Items;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	setter, err := CompileAnonymous(`
+Items = value;
+mark();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mark, err := CompileAnonymous(`
+Seen = Items != null;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Box b = new Box();
+b.Items = null;
+System.assertEquals(false, b.Seen);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"Seen": {Name: "Seen", Type: "Boolean"},
+			"Items": {
+				Name:     "Items",
+				Type:     "List<String>",
+				Property: true,
+				Getter:   &Method{Name: "Box.Items.get", ClassName: "Box", ReturnType: "List<String>", Program: getter},
+				Setter:   &Method{Name: "Box.Items.set", ClassName: "Box", Params: []Param{{Name: "value", Type: "List<String>"}}, Program: setter},
+			},
+		},
+		Methods: map[string]Method{
+			"mark": {Name: "Box.mark", ClassName: "Box", Program: mark},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStringConcatWithTypedNullStringOperand(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id missing;
@@ -7013,6 +7445,76 @@ func TestLookupDuplicateStaticFieldKeepsSelectedStorageSlot(t *testing.T) {
 	}
 }
 
+func TestExecDependencyDottedStaticAssignmentPrefersDependencyField(t *testing.T) {
+	setMock, err := CompileAnonymous(`PaymentGatewayService.Instance.mockGateway = new MockGateway();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	localInstance := Object("PaymentGatewayService")
+	dependencyInstance := Object("pkg.PaymentGatewayService")
+	dependencyInstance.Fields["mockGateway"] = Null
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "PaymentGatewayService",
+		StaticFields: map[string]Field{
+			"Instance": {Name: "Instance", Type: "PaymentGatewayService", Static: true, Value: localInstance},
+		},
+		Fields: map[string]Field{
+			"mockGateway": {Name: "mockGateway", Type: "Object"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "PaymentGatewayService",
+		Namespace:  "pkg",
+		Dependency: true,
+		StaticFields: map[string]Field{
+			"Instance": {Name: "Instance", Type: "PaymentGatewayService", Static: true, Value: dependencyInstance},
+		},
+		Fields: map[string]Field{
+			"mockGateway": {Name: "mockGateway", Type: "Object"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "MockGateway", Namespace: "pkg", Dependency: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "MockPaymentGateway2",
+		Namespace:  "pkg",
+		Dependency: true,
+		Access:     "global",
+		Methods: map[string]Method{
+			"setMock": {
+				Name:       "MockPaymentGateway2.setMock",
+				ClassName:  "MockPaymentGateway2",
+				IsStatic:   true,
+				Access:     "global",
+				Dependency: true,
+				Program:    setMock,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`pkg.MockPaymentGateway2.setMock();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	field, _, ok := machine.lookupStaticFieldForReceiver("pkg.PaymentGatewayService", "Instance", true)
+	if !ok {
+		t.Fatal("dependency Instance field was not found")
+	}
+	if got := field.Value.Fields["mockGateway"]; got.Kind != ValueObject || got.Type != "pkg.MockGateway" {
+		t.Fatalf("dependency mockGateway = %#v, want pkg.MockGateway object", got)
+	}
+}
+
 func TestExecNamespacedStaticSingletonAliasesShareInstanceState(t *testing.T) {
 	instanceGetter, err := CompileAnonymous(`
 if (Instance == null) {
@@ -7274,6 +7776,122 @@ System.assertEquals(Date.newInstance(2026, 5, 2), wrapper.TransactionDate);
 				Params:     []Param{{Name: "row", Type: "OrderItem__c"}},
 				Program:    newInstance,
 			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecUserClassNamedCookieShadowsSystemCookieConstructor(t *testing.T) {
+	ctor, err := CompileAnonymous(`this.record = row;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	getName, err := CompileAnonymous(`return record.Name;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Cookie__c row = new Cookie__c(Name = 'CommunityHubUserLoggedIn', Domain__c = 'force.com');
+Cookie wrapper = new Cookie(row);
+System.assertEquals('CommunityHubUserLoggedIn', wrapper.getName());
+System.Cookie platformCookie = new System.Cookie('PlatformCookie', 'value', null, 10, true);
+System.assertEquals('PlatformCookie', platformCookie.getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Cookie__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Cookie__c",
+			KeyPrefix: "a01",
+			Metadata:  map[string]string{"kind": "customSetting", "customSettingsType": "List"},
+			Fields: map[string]storage.Field{
+				"Id":        {APIName: "Id", Type: storage.FieldID},
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Domain__c": {APIName: "Domain__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "Cookie",
+		Fields: map[string]Field{
+			"record": {Name: "record", Type: "Cookie__c", Access: "private"},
+		},
+		Constructors: []Method{{
+			Name:          "Cookie",
+			ClassName:     "Cookie",
+			IsConstructor: true,
+			Params:        []Param{{Name: "row", Type: "Cookie__c"}},
+			Program:       ctor,
+		}},
+		Methods: map[string]Method{
+			"getName": {
+				Name:       "Cookie.getName",
+				ClassName:  "Cookie",
+				ReturnType: "String",
+				Program:    getName,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInheritedMethodPrefersDeclaringClassFieldForThisLookup(t *testing.T) {
+	getRecord, err := CompileAnonymous(`
+if (this.record == null) {
+    this.record = Account.SObjectType.newSObject();
+}
+return this.record;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+ChildWrapper wrapper = new ChildWrapper();
+wrapper.Record = '001000000000001AAA';
+SObject record = wrapper.getRecord();
+System.assertEquals(Account.SObjectType, record.getSObjectType());
+System.assertEquals('001000000000001AAA', wrapper.Record);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "BaseWrapper",
+		Fields: map[string]Field{
+			"record": {Name: "record", Type: "SObject", Access: "protected"},
+		},
+		Methods: map[string]Method{
+			"getRecord": {
+				Name:       "BaseWrapper.getRecord",
+				ClassName:  "BaseWrapper",
+				ReturnType: "SObject",
+				Program:    getRecord,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "ChildWrapper",
+		SuperClass: "BaseWrapper",
+		Fields: map[string]Field{
+			"Record": {Name: "Record", Type: "Id", Property: true},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -8890,6 +9508,37 @@ String value = s.code;
 	}
 }
 
+func TestRuntimeAllowsBaseMethodPrivateFieldAccessOnSubclassReceiver(t *testing.T) {
+	read, err := CompileAnonymous("return this.component;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Child child = new Child();
+System.assertEquals('x', child.read());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Base",
+		Fields:     map[string]Field{"component": {Name: "component", Type: "String", Access: "private", InitialValue: String("x")}},
+		FieldOrder: []string{"component"},
+		Methods: map[string]Method{
+			"read": {Name: "Base.read", ClassName: "Base", ReturnType: "String", Access: "public", Program: read},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Child", SuperClass: "Base"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeAllowsProtectedAccessThroughInheritanceChain(t *testing.T) {
 	guarded, err := CompileAnonymous("return 'guarded';")
 	if err != nil {
@@ -9130,6 +9779,51 @@ func TestRuntimeAllowsTestVisiblePrivateMethodFromTestClass(t *testing.T) {
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestRuntimeAllowsTestVisiblePrivateMemberFromNestedTestClass(t *testing.T) {
+	program, err := CompileAnonymous("System.assertEquals(5, SecretTest.Inner.run());")
+	if err != nil {
+		t.Fatal(err)
+	}
+	run, err := CompileAnonymous("return Secret.count;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.Classes["Secret"] = Class{
+		Name: "Secret",
+		StaticFields: map[string]Field{
+			"count": {Name: "count", Type: "Integer", Static: true, Access: "private", Modifiers: []string{"@TestVisible", "private", "static"}, InitialValue: Int(5)},
+		},
+	}
+	machine.Classes["SecretTest"] = Class{Name: "SecretTest", IsTest: true}
+	machine.Classes["SecretTest.Inner"] = Class{Name: "SecretTest.Inner"}
+	machine.Methods["SecretTest.Inner.run"] = Method{Name: "SecretTest.Inner.run", ClassName: "SecretTest.Inner", ReturnType: "Integer", IsStatic: true, Program: run}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeUppercaseInstanceFieldReceiverWinsOverClass(t *testing.T) {
+	machine := New(nil)
+	machine.Classes["Card"] = Class{Name: "Card"}
+	machine.Classes["Controller"] = Class{
+		Name: "Controller",
+		Fields: map[string]Field{
+			"Card": {Name: "Card", Type: "Card", Access: "public"},
+		},
+	}
+	machine.Globals["this"] = Value{Kind: ValueObject, Type: "Controller", Fields: map[string]Value{
+		"Card": {Kind: ValueObject, Type: "Card", Fields: map[string]Value{
+			"configuration": String("field-value"),
+		}},
+	}}
+	machine.currentClass = "Controller"
+	machine.currentMethod = Method{Name: "Controller.read", ClassName: "Controller"}
+	if !machine.hasRuntimeReceiver("Card") {
+		t.Fatal("expected Card field receiver to win over Card class")
 	}
 }
 

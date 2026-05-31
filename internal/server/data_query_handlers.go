@@ -492,6 +492,7 @@ func (s *Server) identityPayload(r *http.Request, pathUserID storage.ID) map[str
 		active = value.Boolean
 	}
 	base := "http://" + r.Host
+	version := s.advertisedRESTAPIVersion()
 	orgID := nonEmpty(s.Org.OrgID, "00D000000000001")
 	userID := string(user.ID)
 	identityURL := base + "/id/" + orgID + "/" + userID
@@ -504,13 +505,13 @@ func (s *Server) identityPayload(r *http.Request, pathUserID storage.ID) map[str
 		"active":          active,
 		"user_type":       userType,
 		"urls": map[string]any{
-			"enterprise": base + "/services/Soap/c/61.0/" + orgID,
-			"metadata":   base + "/services/Soap/m/61.0/" + orgID,
-			"partner":    base + "/services/Soap/u/61.0/" + orgID,
-			"rest":       base + "/services/data/v61.0/",
-			"sobjects":   base + "/services/data/v61.0/sobjects/",
-			"search":     base + "/services/data/v61.0/search/",
-			"query":      base + "/services/data/v61.0/query/",
+			"enterprise": base + "/services/Soap/c/" + version + "/" + orgID,
+			"metadata":   base + "/services/Soap/m/" + version + "/" + orgID,
+			"partner":    base + "/services/Soap/u/" + version + "/" + orgID,
+			"rest":       base + "/services/data/v" + version + "/",
+			"sobjects":   base + "/services/data/v" + version + "/sobjects/",
+			"search":     base + "/services/data/v" + version + "/search/",
+			"query":      base + "/services/data/v" + version + "/query/",
 		},
 	}
 }

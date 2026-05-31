@@ -23,7 +23,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-const serverExampleAPIVersion = "61.0"
+const serverExampleAPIVersion = storage.DefaultRESTAPIVersion
 
 func serverExampleProjectPaths(root string) []string {
 	exampleDir := filepath.Join(root, "example-projects")
@@ -649,6 +649,10 @@ func serverExampleBaseOrg(fixture storage.Fixture) storage.OrgState {
 	return org
 }
 
+func serverExampleDataPath(suffix string) string {
+	return "/services/data/v" + serverExampleAPIVersion + suffix
+}
+
 func applyServerExampleProbeOverlay(org *storage.OrgState, probe serverExampleProbe) {
 	_ = org
 	_ = probe
@@ -751,20 +755,20 @@ func serverExampleFieldName(org *storage.OrgState, objectName, field string) str
 func serverExampleProbes(routes []ServerExampleRestRoute, seeded bool) []serverExampleProbe {
 	probes := []serverExampleProbe{
 		{Name: "versions", Family: "core-rest", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data"},
-		{Name: "resource-discovery", Family: "core-rest", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0"},
-		{Name: "limits", Family: "core-rest", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0/limits"},
-		{Name: "sobjects", Family: "sobjects", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0/sobjects"},
-		{Name: "glade-state", Family: "seed-data", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0/glade/state"},
-		{Name: "tooling-discovery", Family: "tooling", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: "/services/data/v61.0/tooling"},
-		{Name: "tooling-apexclass-describe", Family: "tooling", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: "/services/data/v61.0/tooling/sobjects/ApexClass/describe"},
-		{Name: "metadata-describe", Family: "metadata", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: "/services/data/v61.0/metadata/describe"},
-		{Name: "composite", Family: "composite", OwnerLane: "lane-5-composite-bulk", Method: http.MethodPost, Path: "/services/data/v61.0/composite", Body: `{"compositeRequest":[{"method":"GET","url":"/services/data/v61.0/limits","referenceId":"limits"}]}`},
-		{Name: "bulk-jobs-ingest", Family: "bulk", OwnerLane: "lane-5-composite-bulk", Method: http.MethodGet, Path: "/services/data/v61.0/jobs/ingest"},
+		{Name: "resource-discovery", Family: "core-rest", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: serverExampleDataPath("")},
+		{Name: "limits", Family: "core-rest", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: serverExampleDataPath("/limits")},
+		{Name: "sobjects", Family: "sobjects", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: serverExampleDataPath("/sobjects")},
+		{Name: "glade-state", Family: "seed-data", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: serverExampleDataPath("/glade/state")},
+		{Name: "tooling-discovery", Family: "tooling", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: serverExampleDataPath("/tooling")},
+		{Name: "tooling-apexclass-describe", Family: "tooling", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: serverExampleDataPath("/tooling/sobjects/ApexClass/describe")},
+		{Name: "metadata-describe", Family: "metadata", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: serverExampleDataPath("/metadata/describe")},
+		{Name: "composite", Family: "composite", OwnerLane: "lane-5-composite-bulk", Method: http.MethodPost, Path: serverExampleDataPath("/composite"), Body: fmt.Sprintf(`{"compositeRequest":[{"method":"GET","url":%q,"referenceId":"limits"}]}`, serverExampleDataPath("/limits"))},
+		{Name: "bulk-jobs-ingest", Family: "bulk", OwnerLane: "lane-5-composite-bulk", Method: http.MethodGet, Path: serverExampleDataPath("/jobs/ingest")},
 		{Name: "oauth-userinfo", Family: "auth-user", OwnerLane: "lane-3-http-auth", Method: http.MethodGet, Path: "/services/oauth2/userinfo"},
 		{Name: "oauth-token", Family: "auth-user", OwnerLane: "lane-3-http-auth", Method: http.MethodPost, Path: "/services/oauth2/token"},
 	}
 	if seeded {
-		probes = append(probes, serverExampleProbe{Name: "seed-query", Family: "seed-data", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account%20LIMIT%201"})
+		probes = append(probes, serverExampleProbe{Name: "seed-query", Family: "seed-data", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: serverExampleDataPath("/query?q=SELECT%20Id%20FROM%20Account%20LIMIT%201")})
 	}
 	for i, route := range routes {
 		method := route.Method

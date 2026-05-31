@@ -115,14 +115,15 @@ type FieldSetMemberMetadata struct {
 }
 
 type StaticResourceMetadata struct {
-	Name         string `json:"name"`
-	ContentPath  string `json:"contentPath,omitempty"`
-	MetadataPath string `json:"metadataPath,omitempty"`
-	Content      string `json:"content,omitempty"`
-	ContentType  string `json:"contentType,omitempty"`
-	CacheControl string `json:"cacheControl,omitempty"`
-	Description  string `json:"description,omitempty"`
-	URL          string `json:"url,omitempty"`
+	Name            string `json:"name"`
+	NamespacePrefix string `json:"namespacePrefix,omitempty"`
+	ContentPath     string `json:"contentPath,omitempty"`
+	MetadataPath    string `json:"metadataPath,omitempty"`
+	Content         string `json:"content,omitempty"`
+	ContentType     string `json:"contentType,omitempty"`
+	CacheControl    string `json:"cacheControl,omitempty"`
+	Description     string `json:"description,omitempty"`
+	URL             string `json:"url,omitempty"`
 }
 
 type ContentAssetMetadata struct {

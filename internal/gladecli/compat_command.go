@@ -20,6 +20,7 @@ import (
 	"github.com/glade-sh/glade/internal/examplescan"
 	"github.com/glade-sh/glade/internal/probe"
 	"github.com/glade-sh/glade/internal/projectscan"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func runCompat(ctx context.Context, args []string, w io.Writer) error {
@@ -62,6 +63,10 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return runCompatDocsInventory(args[1:], w)
 	case "catalog":
 		return runCompatCatalog(args[1:], w)
+	case "reconcile":
+		return runCompatReconcile(args[1:], w)
+	case "doc-contracts":
+		return runCompatDocContracts(args[1:], w)
 	case "salesforce-coverage":
 		return runCompatSalesforceCoverage(args[1:], w)
 	case "standard-objects":
@@ -110,7 +115,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 }
 
 func compatUsage() string {
-	return "usage: glade compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--start-class <name>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n|auto>] [--parallel-methods] [--shard-count <n|auto>] [--shard-index <i|auto>] [--write-class-shards <dir>] [--duration-history <path>] [--progress] [--analyze] [--profile-on-timeout] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--json] [--check <path>] | oracle <subcommand> [flags] | oracle-tests [--project <root>] [--target-org <alias>] [--filter <class[.method]>] [--salesforce-run <path>] [--local-run <path>] [--golden-only] [--anonymous <apex>] [--fetch-logs] [--log-limit <n>] [--runs-dir <path>] [--run-id <id>] [--json] [--check <path>] | replay [--json] [--continue-on-error] [--artifacts <dir>] <bundle-dir...> | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-contracts [--source <dir>] [--json|--output <path>|--check <path>] | stub-discovery [--source <dir>] [--project <probe-sfdx-dir>] [--tier smoke|core|full|local] [--limit <n>] [--no-exec] [--json|--output <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
+	return "usage: glade compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--start-class <name>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n|auto>] [--parallel-methods] [--shard-count <n|auto>] [--shard-index <i|auto>] [--write-class-shards <dir>] [--duration-history <path>] [--progress] [--analyze] [--profile-on-timeout] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--json] [--check <path>] | oracle <subcommand> [flags] | oracle-tests [--project <root>] [--target-org <alias>] [--filter <class[.method]>] [--salesforce-run <path>] [--local-run <path>] [--golden-only] [--anonymous <apex>] [--fetch-logs] [--log-limit <n>] [--runs-dir <path>] [--run-id <id>] [--json] [--check <path>] | replay [--json] [--continue-on-error] [--artifacts <dir>] <bundle-dir...> | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | reconcile (--inventory <path>|--catalog <path>) [--json|--output <path>|--check <path>] [--max-unknown <n>] | doc-contracts --inventory <path> [--behavior <kind>] [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-contracts [--source <dir>] [--json|--output <path>|--check <path>] | stub-discovery [--source <dir>] [--project <probe-sfdx-dir>] [--tier smoke|core|full|local] [--limit <n>] [--no-exec] [--json|--output <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
 }
 
 type postParityReadiness struct {
@@ -1256,6 +1261,220 @@ func runCompatCatalog(args []string, w io.Writer) error {
 		return nil
 	default:
 		writeCatalogSummary(w, catalog)
+		return nil
+	}
+}
+
+const reconcileUsage = "usage: glade compat reconcile (--inventory <path>|--catalog <path>) [--json|--output <path>|--check <path>] [--max-unknown <n>]"
+
+func runCompatReconcile(args []string, w io.Writer) error {
+	inventoryPath := ""
+	catalogPath := ""
+	outputPath := ""
+	checkPath := ""
+	jsonOut := false
+	maxUnknown := -1
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--inventory":
+			i++
+			if i >= len(args) {
+				return errors.New(reconcileUsage)
+			}
+			inventoryPath = args[i]
+		case "--catalog":
+			i++
+			if i >= len(args) {
+				return errors.New(reconcileUsage)
+			}
+			catalogPath = args[i]
+		case "--json":
+			jsonOut = true
+		case "--output":
+			i++
+			if i >= len(args) {
+				return errors.New(reconcileUsage)
+			}
+			outputPath = args[i]
+		case "--check":
+			i++
+			if i >= len(args) {
+				return errors.New(reconcileUsage)
+			}
+			checkPath = args[i]
+		case "--max-unknown":
+			i++
+			if i >= len(args) {
+				return errors.New(reconcileUsage)
+			}
+			n, err := strconv.Atoi(args[i])
+			if err != nil || n < 0 {
+				return fmt.Errorf("--max-unknown requires a non-negative integer")
+			}
+			maxUnknown = n
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if (inventoryPath == "") == (catalogPath == "") {
+		return errors.New(reconcileUsage)
+	}
+	requested := 0
+	for _, set := range []bool{jsonOut, outputPath != "", checkPath != ""} {
+		if set {
+			requested++
+		}
+	}
+	if requested > 1 {
+		return errors.New("use only one of --json, --output, or --check")
+	}
+
+	var catalog capability.Catalog
+	if catalogPath != "" {
+		read, err := capability.ReadCatalog(catalogPath)
+		if err != nil {
+			return err
+		}
+		catalog = read
+	} else {
+		inv, err := apexdocs.ReadInventory(inventoryPath)
+		if err != nil {
+			return err
+		}
+		catalog = capability.BuildCatalog(inv)
+	}
+
+	rec := capability.BuildReconciliation(catalog, typesys.StandardPlatformSymbols())
+
+	if maxUnknown >= 0 {
+		if got := rec.RuntimeTargetUnknownCount(); got > maxUnknown {
+			return fmt.Errorf("runtime-target unknown surfaces regressed: %d documented core/data surfaces are not type-known (limit %d)", got, maxUnknown)
+		}
+	}
+
+	switch {
+	case jsonOut:
+		return capability.WriteReconciliationJSON(w, rec)
+	case outputPath != "":
+		var buf strings.Builder
+		if err := capability.WriteReconciliationMarkdown(&buf, rec); err != nil {
+			return err
+		}
+		return os.WriteFile(outputPath, []byte(buf.String()), 0o644)
+	case checkPath != "":
+		var buf strings.Builder
+		if err := capability.WriteReconciliationMarkdown(&buf, rec); err != nil {
+			return err
+		}
+		existing, err := os.ReadFile(checkPath)
+		if err != nil {
+			return err
+		}
+		if string(existing) != buf.String() {
+			return fmt.Errorf("runtime reconciliation drift: regenerate %s", checkPath)
+		}
+		fmt.Fprintf(w, "%s: up to date\n", checkPath)
+		return nil
+	default:
+		rt := rec.RuntimeTargets
+		fmt.Fprintf(w, "runtime targets: total=%d supported=%d partial=%d unsupported=%d typed=%d unknown=%d coverage=%.2f%%\n",
+			rt.Total, rt.Supported, rt.Partial, rt.Unsupported, rt.Typed, rt.Unknown, rt.CoveragePct)
+		worklistTotal := 0
+		for _, t := range rec.WorklistTotals {
+			worklistTotal += t.Count
+		}
+		fmt.Fprintf(w, "worklist: %d surfaces need runtime work\n", worklistTotal)
+		return nil
+	}
+}
+
+const docContractsUsage = "usage: glade compat doc-contracts --inventory <path> [--behavior <kind>] [--json|--output <path>|--check <path>]"
+
+func runCompatDocContracts(args []string, w io.Writer) error {
+	inventoryPath := ""
+	outputPath := ""
+	checkPath := ""
+	behavior := ""
+	jsonOut := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--inventory":
+			i++
+			if i >= len(args) {
+				return errors.New(docContractsUsage)
+			}
+			inventoryPath = args[i]
+		case "--behavior":
+			i++
+			if i >= len(args) {
+				return errors.New(docContractsUsage)
+			}
+			behavior = args[i]
+		case "--json":
+			jsonOut = true
+		case "--output":
+			i++
+			if i >= len(args) {
+				return errors.New(docContractsUsage)
+			}
+			outputPath = args[i]
+		case "--check":
+			i++
+			if i >= len(args) {
+				return errors.New(docContractsUsage)
+			}
+			checkPath = args[i]
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if inventoryPath == "" {
+		return errors.New(docContractsUsage)
+	}
+	requested := 0
+	for _, set := range []bool{jsonOut, outputPath != "", checkPath != ""} {
+		if set {
+			requested++
+		}
+	}
+	if requested > 1 {
+		return errors.New("use only one of --json, --output, or --check")
+	}
+
+	inv, err := apexdocs.ReadInventory(inventoryPath)
+	if err != nil {
+		return err
+	}
+	report := capability.BuildDocContracts(inv).FilterByBehavior(behavior)
+
+	switch {
+	case jsonOut:
+		return capability.WriteDocContractsJSON(w, report)
+	case outputPath != "":
+		var buf strings.Builder
+		if err := capability.WriteDocContractsMarkdown(&buf, report); err != nil {
+			return err
+		}
+		return os.WriteFile(outputPath, []byte(buf.String()), 0o644)
+	case checkPath != "":
+		var buf strings.Builder
+		if err := capability.WriteDocContractsMarkdown(&buf, report); err != nil {
+			return err
+		}
+		existing, err := os.ReadFile(checkPath)
+		if err != nil {
+			return err
+		}
+		if string(existing) != buf.String() {
+			return fmt.Errorf("doc-contracts drift: regenerate %s", checkPath)
+		}
+		fmt.Fprintf(w, "%s: up to date\n", checkPath)
+		return nil
+	default:
+		fmt.Fprintf(w, "doc contracts: total=%d docs=%d\n", report.TotalContracts, report.DocsWithContracts)
+		for _, c := range report.ByBehavior {
+			fmt.Fprintf(w, "  %s: %d\n", c.Behavior, c.Count)
+		}
 		return nil
 	}
 }

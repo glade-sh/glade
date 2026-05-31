@@ -514,12 +514,14 @@ System.assertEquals('001000000000001', page.getParameters().get('id'));
 System.assertEquals('view', page.getParameters().get('mode'));
 page.getHeaders().put('X-Local', 'yes');
 page.setCookies(new List<Cookie>{new Cookie('sid', 'abc', '/', 60, true, 'Lax', true)});
+page.setCookies(new List<Cookie>{new Cookie('theme', 'dark', null, 100, false)});
 System.Cookie systemCookie = new System.Cookie('theme', 'dark', null, 100, false);
 System.assertEquals('theme', systemCookie.getName());
 System.assertEquals(null, systemCookie.getPath());
 System.assertEquals('001000000000001', page.getParameters().get('id'));
 System.assertEquals('001000000000001', page.getparameters().get('id'));
 System.assertEquals('yes', page.getHeaders().get('X-Local'));
+System.assertEquals(2, page.getCookies().size());
 Cookie sid = page.getCookies().get('sid');
 System.assertEquals('sid', sid.getName());
 System.assertEquals('abc', sid.getValue());
@@ -1636,6 +1638,8 @@ System.assertEquals('abc', replaceEmpty.replaceIgnoreCase('', 'x'));
 System.assertEquals('abc', replaceEmpty.remove(''));
 System.assert(String.isBlank(null));
 System.assert(!String.isNotBlank(null));
+System.assert(String.isBlank('$RecordType.Name'));
+System.assert(!String.isNotBlank('$RecordType.Name'));
 System.assertEquals('', String.escapeSingleQuotes(''));
 System.assertEquals('001000000000001AAA', String.escapeSingleQuotes((Id)'001000000000001AAA'));
 System.assertEquals(null, String.escapeSingleQuotes(null));
@@ -1850,6 +1854,14 @@ func TestStringRegexReplacementSplitAndUnsupportedEdges(t *testing.T) {
 	escapedWildcard, handled, err := callStringMember(String(`\Qname\_%\E`), "replaceAll", []Value{String(`(?<!\\)_`), String(`\\E.\\Q`)})
 	if err != nil || !handled || escapedWildcard.Text != `\Qname\_%\E` {
 		t.Fatalf("replaceAll escaped negative lookbehind = %#v handled=%v err=%v", escapedWildcard, handled, err)
+	}
+	quotedPattern, handled, err := callStringMember(String(`SELECT Id FROM Account WHERE Id = {!CurrentAccount.Id}`), "replaceAll", []Value{String(`(?i)\Q{!CurrentAccount.Id}\E`), String(`001000000000001`)})
+	if err != nil || !handled || quotedPattern.Text != `SELECT Id FROM Account WHERE Id = 001000000000001` {
+		t.Fatalf("replaceAll quoted pattern = %#v handled=%v err=%v", quotedPattern, handled, err)
+	}
+	quotedLookaround, handled, err := callStringMember(String(`{"type":"Account__c","field":"Name__c"}`), "replaceAll", []Value{String(`(?<=")([^"]*__c)(?=")`), String(`npsp__$1`)})
+	if err != nil || !handled || quotedLookaround.Text != `{"type":"npsp__Account__c","field":"npsp__Name__c"}` {
+		t.Fatalf("replaceAll quoted lookaround = %#v handled=%v err=%v", quotedLookaround, handled, err)
 	}
 	split, handled, err := callStringMember(String(":boo:"), "split", []Value{String(":"), Int(-1)})
 	if err != nil || !handled || split.Kind != ValueList || len(split.List) != 3 || split.List[0].Text != "" || split.List[1].Text != "boo" || split.List[2].Text != "" {
@@ -4487,6 +4499,63 @@ System.assertEquals(2, boxes.get(1).Rank);
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListSortPreservesOrderForInconsistentNegativeComparable(t *testing.T) {
+	compareProgram, err := CompileAnonymous("return -1;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Box first = new Box();
+first.Name = 'first';
+Box second = new Box();
+second.Name = 'second';
+List<Box> boxes = new List<Box>{first, second};
+boxes.sort();
+System.assertEquals('first', boxes.get(0).Name);
+System.assertEquals('second', boxes.get(1).Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Box",
+		Interfaces: []string{"Comparable"},
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+		Methods: map[string]Method{
+			"compareTo": {
+				Name:       "Box.compareTo",
+				ClassName:  "Box",
+				ReturnType: "Integer",
+				Params:     []Param{{Name: "other", Type: "Object"}},
+				Program:    compareProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecBoxedObjectStringInequalityUsesStringValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object left = 'old';
+Object right = 'new';
+System.assert(left != right);
+System.assertEquals(false, left == right);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

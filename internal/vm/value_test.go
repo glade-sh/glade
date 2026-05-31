@@ -82,6 +82,18 @@ func TestSObjectValueEqualityKeepsDistinctNamespaceQualifiedObjectsSeparate(t *t
 	}
 }
 
+func TestValueEqualPageReferenceUsesURL(t *testing.T) {
+	left := newPageReference("/Login?startUrl=/apex/MyLoginInformation")
+	right := newPageReference("/Login?startUrl=/apex/MyLoginInformation")
+	if !left.Equal(right) {
+		t.Fatal("matching PageReference URLs should compare equal")
+	}
+	other := newPageReference("/")
+	if left.Equal(other) {
+		t.Fatal("different PageReference URLs should not compare equal")
+	}
+}
+
 func TestSObjectFieldStringUsesFieldName(t *testing.T) {
 	value := sObjectFieldToken("Account", "CreatedById")
 

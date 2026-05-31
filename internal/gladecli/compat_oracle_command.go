@@ -13,7 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apexdocs"
+	"github.com/glade-sh/glade/internal/capability"
 	"github.com/glade-sh/glade/internal/oracle"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func runCompatOracle(ctx context.Context, args []string, w io.Writer) error {
@@ -36,6 +39,8 @@ func runCompatOracle(ctx context.Context, args []string, w io.Writer) error {
 		return runCompatOracleScripts(args[1:], w)
 	case "run-salesforce":
 		return runCompatOracleRunSalesforce(ctx, args[1:], w)
+	case "run-anon":
+		return runCompatOracleRunAnon(ctx, args[1:], w)
 	case "run-glade":
 		return runCompatOracleRunGLADE(ctx, args[1:], w)
 	case "diff":
@@ -64,12 +69,13 @@ Usage:
 
 Subcommands:
   doctor          Check local prerequisites.
-  inventory       Build inventory from stub contracts.
+  inventory       Build inventory from stub contracts, or from documented gaps with --catalog/--inventory.
   domains         Emit reusable parameter domains.
   plan            Build probe manifest and work queue.
   generate        Generate Apex probe classes from queue.
   scripts         Generate resumable shard scripts.
   run-salesforce  Run Salesforce oracle test shard.
+  run-anon        Run Salesforce oracle shard via synchronous anonymous Apex (no deploy).
   run-glade        Run GLADE oracle test shard.
   diff            Diff Salesforce and GLADE observations.
   promote         Promote run artifacts into docs/fixtures/oracle.
@@ -122,9 +128,12 @@ func runCompatOracleDoctor(args []string, w io.Writer) error {
 
 func runCompatOracleInventory(args []string, w io.Writer) error {
 	stubRoot := "example-projects/stubs"
+	catalogPath := ""
+	docsInventoryPath := ""
 	output := ""
 	check := ""
 	jsonOut := false
+	worklistLimit := -1
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--stubs", "--source":
@@ -133,6 +142,28 @@ func runCompatOracleInventory(args []string, w io.Writer) error {
 				return errors.New("--stubs requires a value")
 			}
 			stubRoot = args[i]
+		case "--catalog":
+			i++
+			if i >= len(args) {
+				return errors.New("--catalog requires a value")
+			}
+			catalogPath = args[i]
+		case "--inventory":
+			i++
+			if i >= len(args) {
+				return errors.New("--inventory requires a value")
+			}
+			docsInventoryPath = args[i]
+		case "--limit":
+			i++
+			if i >= len(args) {
+				return errors.New("--limit requires a value")
+			}
+			n, err := strconv.Atoi(args[i])
+			if err != nil || n < 0 {
+				return errors.New("--limit requires a non-negative integer (0 = unlimited)")
+			}
+			worklistLimit = n
 		case "--output":
 			i++
 			if i >= len(args) {
@@ -151,9 +182,43 @@ func runCompatOracleInventory(args []string, w io.Writer) error {
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
-	inv, err := oracle.BuildInventory(stubRoot)
-	if err != nil {
-		return err
+	if catalogPath != "" && docsInventoryPath != "" {
+		return errors.New("use only one of --catalog or --inventory")
+	}
+	if worklistLimit >= 0 && catalogPath == "" && docsInventoryPath == "" {
+		return errors.New("--limit only applies with --catalog or --inventory")
+	}
+
+	var inv oracle.Inventory
+	switch {
+	case catalogPath != "" || docsInventoryPath != "":
+		var catalog capability.Catalog
+		if catalogPath != "" {
+			read, err := capability.ReadCatalog(catalogPath)
+			if err != nil {
+				return err
+			}
+			catalog = read
+		} else {
+			docsInv, err := apexdocs.ReadInventory(docsInventoryPath)
+			if err != nil {
+				return err
+			}
+			catalog = capability.BuildCatalog(docsInv)
+		}
+		var rec capability.Reconciliation
+		if worklistLimit >= 0 {
+			rec = capability.BuildReconciliationLimited(catalog, typesys.StandardPlatformSymbols(), worklistLimit)
+		} else {
+			rec = capability.BuildReconciliation(catalog, typesys.StandardPlatformSymbols())
+		}
+		inv = oracle.BuildInventoryFromReconciliation(rec, catalog)
+	default:
+		built, err := oracle.BuildInventory(stubRoot)
+		if err != nil {
+			return err
+		}
+		inv = built
 	}
 	if check != "" {
 		return checkJSONDrift(check, inv, "oracle inventory")
@@ -446,6 +511,74 @@ func runCompatOracleScripts(args []string, w io.Writer) error {
 		return err
 	}
 	fmt.Fprintf(w, "scripts: %s\n", outDir)
+	return nil
+}
+
+// runCompatOracleRunAnon probes a shard synchronously via anonymous Apex. It
+// deploys nothing and runs no async tests: it inlines the shard's probes into
+// chunked anonymous Apex, runs each chunk with one `sf apex run`, and writes the
+// same shard observation file the async path produces, so diff is unchanged.
+func runCompatOracleRunAnon(ctx context.Context, args []string, w io.Writer) error {
+	chunkSize := oracle.DefaultAnonChunkSize
+	rest := make([]string, 0, len(args))
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--chunk-size" {
+			i++
+			if i >= len(args) {
+				return errors.New("--chunk-size requires a value")
+			}
+			n, convErr := strconv.Atoi(args[i])
+			if convErr != nil || n <= 0 {
+				return errors.New("--chunk-size requires a positive integer")
+			}
+			chunkSize = n
+			continue
+		}
+		rest = append(rest, args[i])
+	}
+
+	runID, runsDir, project, targetOrg, filter, queuePath, area, shard, _, _, _, err := parseRunFlags(rest)
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(targetOrg) == "" {
+		return errors.New("--target-org is required")
+	}
+
+	var items []oracle.WorkItem
+	if strings.TrimSpace(filter) == "" {
+		queue, qErr := loadQueueForRun(queuePath, runsDir, runID)
+		if qErr != nil {
+			return errors.New("--filter is required when queue is unavailable")
+		}
+		items = oracle.QueueForShard(queue, shard, area).Items
+		if len(items) == 0 {
+			return fmt.Errorf("no probes found for shard=%d area=%q", shard, area)
+		}
+	} else {
+		for _, name := range splitOracleFilterClasses(filter) {
+			items = append(items, oracle.WorkItem{ProbeID: name, GeneratedClass: name, SurfaceID: name})
+		}
+	}
+
+	runDir := filepath.Join(runsDir, runID)
+	runs, runErr := (oracle.SalesforceRunner{}).RunAnonymousProbes(ctx, project, targetOrg, items, chunkSize)
+	obsPath := filepath.Join(runDir, "salesforce", "observations", fmt.Sprintf("shard-%03d.json", shard))
+	err = runErr
+	if err == nil {
+		err = oracle.WriteJSON(obsPath, runs)
+	}
+	status := "ok"
+	msg := fmt.Sprintf("runs=%d", len(runs))
+	if err != nil {
+		status = "error"
+		msg = err.Error()
+	}
+	_ = oracle.AppendLedger(filepath.Join(runDir, "ledger.jsonl"), oracle.LedgerRow{RunID: runID, Step: "run-anon", Shard: shard, Status: status, Message: msg})
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(w, "salesforce: %s\n", obsPath)
 	return nil
 }
 

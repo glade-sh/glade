@@ -79,6 +79,13 @@ func TestStandardPlatformSymbolsIncludeSearchQuery(t *testing.T) {
 	requireStandardMethod(t, date, "daysInMonth", []string{"Integer", "Integer"}, true)
 }
 
+func TestStandardPlatformSymbolsTypeAuthProviders(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	authConfiguration := requireStandardSymbol(t, symbols, "Auth.AuthConfiguration")
+	requireStandardMethodType(t, authConfiguration, "getAuthProviders", "List<AuthProvider>")
+}
+
 func TestStandardPlatformSymbolsIncludeUserInfoStubMethodsAndFieldTokenProperties(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 

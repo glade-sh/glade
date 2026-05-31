@@ -59,27 +59,34 @@ func firstStringField(record storage.Record, names ...string) string {
 }
 
 func userInfoField(user Value, field, fallback string) string {
+	if value, ok := userInfoFieldValue(user, field); ok {
+		return value
+	}
+	return fallback
+}
+
+func userInfoFieldValue(user Value, field string) (string, bool) {
 	if user.Kind == ValueObject {
 		_, value, ok := objectFieldValue(user, field)
 		if ok {
 			if value.Kind == ValueString {
-				return value.Text
+				return value.Text, true
 			}
 			if value.Kind == ValueObject {
 				if raw, err := platformScalarText(value, value.Type); err == nil {
-					return raw
+					return raw, true
 				}
 			}
 		}
-		return fallback
+		return "", false
 	}
 	if user.Kind == ValueString {
 		if !strings.EqualFold(field, "Id") && !strings.EqualFold(field, "Username") {
-			return fallback
+			return "", false
 		}
-		return user.Text
+		return user.Text, true
 	}
-	return fallback
+	return "", false
 }
 
 func recordFieldString(record storage.Record, field string) string {
@@ -104,12 +111,108 @@ func recordFieldString(record storage.Record, field string) string {
 
 func (vm *VM) currentUserInfoField(field, fallback string) string {
 	if vm.testContext != nil {
-		return userInfoField(vm.testContext.CurrentUser, field, fallback)
+		if value, ok := userInfoFieldValue(vm.testContext.CurrentUser, field); ok {
+			return value
+		}
+		if value, ok := vm.currentUserStoredField(vm.testContext.CurrentUser, field); ok {
+			return value
+		}
+		if strings.EqualFold(field, "UserType") {
+			return vm.userTypeFromCurrentUserProfile(vm.testContext.CurrentUser, fallback)
+		}
+		return fallback
 	}
 	if vm.executionUser.Kind != "" && vm.executionUser.Kind != ValueNull {
-		return userInfoField(vm.executionUser, field, fallback)
+		if value, ok := userInfoFieldValue(vm.executionUser, field); ok {
+			return value
+		}
+		if value, ok := vm.currentUserStoredField(vm.executionUser, field); ok {
+			return value
+		}
+		if strings.EqualFold(field, "UserType") {
+			return vm.userTypeFromCurrentUserProfile(vm.executionUser, fallback)
+		}
+		return fallback
 	}
 	return fallback
+}
+
+func (vm *VM) currentUserStoredField(user Value, field string) (string, bool) {
+	if vm == nil || vm.Org == nil || strings.TrimSpace(field) == "" {
+		return "", false
+	}
+	userID := userInfoField(user, "Id", "")
+	if strings.TrimSpace(userID) == "" {
+		return "", false
+	}
+	users, ok := vm.Org.Objects["User"]
+	if !ok {
+		return "", false
+	}
+	_, record, ok := storage.LookupRecordByID(users.Records, storage.ID(userID))
+	if !ok {
+		return "", false
+	}
+	if strings.EqualFold(field, "Id") {
+		return string(record.ID), true
+	}
+	if value, ok := record.GetField(field); ok {
+		switch value.Kind {
+		case storage.ValueString, storage.ValueDate, storage.ValueDateTime:
+			return value.String, true
+		case storage.ValueID:
+			return string(value.ID), true
+		case storage.ValueDecimal:
+			return value.Decimal, true
+		case storage.ValueBoolean:
+			if value.Boolean {
+				return "true", true
+			}
+			return "false", true
+		}
+	}
+	return "", false
+}
+
+func (vm *VM) userTypeFromCurrentUserProfile(user Value, fallback string) string {
+	if vm == nil || vm.Org == nil {
+		return fallback
+	}
+	profileID := userInfoField(user, "ProfileId", "")
+	if strings.TrimSpace(profileID) == "" {
+		if value, ok := vm.currentUserStoredField(user, "ProfileId"); ok {
+			profileID = value
+		}
+	}
+	if strings.TrimSpace(profileID) == "" {
+		return fallback
+	}
+	profiles, ok := vm.Org.Objects["Profile"]
+	if !ok {
+		return fallback
+	}
+	profile, ok := profiles.Records[storage.ID(profileID)]
+	if !ok {
+		return fallback
+	}
+	if value, ok := profile.GetField("UserType"); ok && strings.TrimSpace(value.String) != "" {
+		return value.String
+	}
+	name := strings.ToLower(strings.TrimSpace(recordFieldString(profile, "Name")))
+	switch {
+	case strings.Contains(name, "guest"):
+		return "Guest"
+	case strings.Contains(name, "community hub login user plus"):
+		return "PowerCustomerSuccess"
+	case strings.Contains(name, "community hub login"):
+		return "CspLitePortal"
+	case strings.Contains(name, "customer community plus"):
+		return "PowerCustomerSuccess"
+	case strings.Contains(name, "customer community"):
+		return "CspLitePortal"
+	default:
+		return fallback
+	}
 }
 
 func (vm *VM) currentUserTimeZoneID() string {
@@ -255,6 +358,52 @@ func (vm *VM) apexPagesMessagesFromValue(value Value, result *Result) ([]Value, 
 	return nil, fmt.Errorf("ApexPages.addMessages expects Exception or ApexPages.Message list")
 }
 
+func (vm *VM) addApexPageMessages(messages []Value) {
+	for _, message := range messages {
+		vm.addApexPageMessage(message)
+	}
+}
+
+func (vm *VM) addApexPageMessage(message Value) {
+	for _, existing := range vm.pageMessages {
+		if apexPagesMessagesEquivalent(existing, message) {
+			return
+		}
+	}
+	vm.pageMessages = append(vm.pageMessages, message)
+}
+
+func apexPagesMessagesEquivalent(left, right Value) bool {
+	if left.Kind != ValueObject || right.Kind != ValueObject ||
+		!strings.EqualFold(left.Type, "ApexPages.Message") ||
+		!strings.EqualFold(right.Type, "ApexPages.Message") {
+		return left.Equal(right)
+	}
+	if !apexPagesMessageSeverityEqual(left, right) {
+		return false
+	}
+	return apexPagesMessageFieldEqual(left, right, "summary") &&
+		apexPagesMessageFieldEqual(left, right, "detail")
+}
+
+func apexPagesMessageSeverityEqual(left, right Value) bool {
+	leftSeverity, leftOK := apexPagesSeverityName(left.Fields["severity"])
+	rightSeverity, rightOK := apexPagesSeverityName(right.Fields["severity"])
+	if leftOK || rightOK {
+		return leftOK && rightOK && strings.EqualFold(leftSeverity, rightSeverity)
+	}
+	return apexPagesMessageFieldEqual(left, right, "severity")
+}
+
+func apexPagesMessageFieldEqual(left, right Value, field string) bool {
+	leftValue, leftOK := left.Fields[field]
+	rightValue, rightOK := right.Fields[field]
+	if !leftOK || !rightOK {
+		return leftOK == rightOK
+	}
+	return leftValue.Equal(rightValue)
+}
+
 func (vm *VM) requireTestContext(callee string) error {
 	if vm.testContext == nil {
 		return fmt.Errorf("%s is only available in test context", callee)
@@ -320,14 +469,26 @@ func (vm *VM) webServiceCalloutInvoke(args []Value, result *Result) (Value, erro
 		return Null, err
 	}
 	appendTrace(result, "apex.callout.webservice", "apex.callout", map[string]any{"operation": "WebServiceCallout.invoke"})
-	if vm.testContext == nil || vm.testContext.WebServiceMock.Kind != ValueObject {
-		return Null, unsupportedCallError("WebServiceCallout.invoke without WebServiceMock")
-	}
 	if args[2].Kind != ValueMap {
 		return Null, fmt.Errorf("WebServiceCallout.invoke expects response map")
 	}
 	if args[3].Kind != ValueList || len(args[3].List) < 7 {
 		return Null, fmt.Errorf("WebServiceCallout.invoke expects 7 option strings")
+	}
+	if vm.testContext == nil || vm.testContext.WebServiceMock.Kind != ValueObject {
+		operation := scalarText(args[3].List[3])
+		responseType := scalarText(args[3].List[6])
+		response := Object(responseType)
+		if strings.EqualFold(operation, "renameMetadata") {
+			saveResult := Object("MetadataService.SaveResult")
+			saveResult.Fields["success"] = Bool(true)
+			response.Fields["result"] = saveResult
+		} else {
+			response.Fields["result"] = List()
+		}
+		args[2].Map[mapKey(String("response_x"))] = response
+		args[2].MapKeys[mapKey(String("response_x"))] = String("response_x")
+		return Null, nil
 	}
 	mockArgs := []Value{
 		args[0],
@@ -2217,6 +2378,7 @@ func newCookie(args []Value) (Value, error) {
 		return Null, fmt.Errorf("Cookie constructor expects name, value, path, maxAge, and isSecure")
 	}
 	cookie := Object("Cookie")
+	cookie.Runtime = "System.Cookie"
 	cookie.Fields["name"] = args[0]
 	cookie.Fields["value"] = args[1]
 	cookie.Fields["path"] = args[2]

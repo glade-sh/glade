@@ -86,6 +86,9 @@ func evaluateRecordFormulaValue(formula string, field storage.Field, record stor
 	if value.kind == formulaNull {
 		return storage.NullValue(), true, true
 	}
+	if calculatedStringFormulaBlankValue(field, value) {
+		return storage.NullValue(), true, true
+	}
 	return workflowLiteralValue(field, value.asString())
 }
 
@@ -105,7 +108,17 @@ func EvaluateRecordFormulaValueInOrg(formula string, field storage.Field, org *s
 	if value.kind == formulaNull {
 		return storage.NullValue(), true, true
 	}
+	if calculatedStringFormulaBlankValue(field, value) {
+		return storage.NullValue(), true, true
+	}
 	return workflowLiteralValue(field, value.asString())
+}
+
+func calculatedStringFormulaBlankValue(field storage.Field, value formulaValue) bool {
+	return field.Type == storage.FieldCalculated &&
+		strings.EqualFold(field.DisplayType, "STRING") &&
+		value.kind == formulaString &&
+		value.text == ""
 }
 
 type formulaTokenType int
@@ -129,6 +142,23 @@ func tokenizeFormula(input string) []formulaToken {
 		ch := input[i]
 		if ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n' {
 			i++
+			continue
+		}
+		if ch == '/' && i+1 < len(input) && input[i+1] == '*' {
+			i += 2
+			for i+1 < len(input) && !(input[i] == '*' && input[i+1] == '/') {
+				i++
+			}
+			if i+1 < len(input) {
+				i += 2
+			}
+			continue
+		}
+		if ch == '/' && i+1 < len(input) && input[i+1] == '/' {
+			i += 2
+			for i < len(input) && input[i] != '\n' && input[i] != '\r' {
+				i++
+			}
 			continue
 		}
 		if ch == '\'' || ch == '"' {
@@ -763,6 +793,76 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaBool, bool: strings.Contains(args[0].asString(), args[1].asString())}, true
+	case "BEGINS":
+		if len(args) != 2 {
+			return formulaValue{}, false
+		}
+		return formulaValue{kind: formulaBool, bool: strings.HasPrefix(args[0].asString(), args[1].asString())}, true
+	case "LEFT":
+		if len(args) != 2 {
+			return formulaValue{}, false
+		}
+		count, ok := formulaIntArg(args[1])
+		if !ok {
+			return formulaValue{}, false
+		}
+		text := args[0].asString()
+		if count < 0 {
+			count = 0
+		}
+		if count > len(text) {
+			count = len(text)
+		}
+		return formulaValue{kind: formulaString, text: text[:count]}, true
+	case "RIGHT":
+		if len(args) != 2 {
+			return formulaValue{}, false
+		}
+		count, ok := formulaIntArg(args[1])
+		if !ok {
+			return formulaValue{}, false
+		}
+		text := args[0].asString()
+		if count < 0 {
+			count = 0
+		}
+		if count > len(text) {
+			count = len(text)
+		}
+		return formulaValue{kind: formulaString, text: text[len(text)-count:]}, true
+	case "MID":
+		if len(args) != 3 {
+			return formulaValue{}, false
+		}
+		start, ok := formulaIntArg(args[1])
+		if !ok {
+			return formulaValue{}, false
+		}
+		count, ok := formulaIntArg(args[2])
+		if !ok {
+			return formulaValue{}, false
+		}
+		text := args[0].asString()
+		start--
+		if start < 0 {
+			start = 0
+		}
+		if start > len(text) {
+			start = len(text)
+		}
+		if count < 0 {
+			count = 0
+		}
+		end := start + count
+		if end > len(text) {
+			end = len(text)
+		}
+		return formulaValue{kind: formulaString, text: text[start:end]}, true
+	case "CASESAFEID":
+		if len(args) != 1 {
+			return formulaValue{}, false
+		}
+		return formulaValue{kind: formulaString, text: formulaCaseSafeID(args[0].asString())}, true
 	case "SUBSTITUTE":
 		if len(args) != 3 {
 			return formulaValue{}, false
@@ -1428,6 +1528,25 @@ func formulaIntArg(value formulaValue) (int, bool) {
 		return 0, false
 	}
 	return int(number), true
+}
+
+func formulaCaseSafeID(text string) string {
+	if len(text) != 15 {
+		return text
+	}
+	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ012345"
+	var suffix strings.Builder
+	for chunk := 0; chunk < 3; chunk++ {
+		bits := 0
+		for offset := 0; offset < 5; offset++ {
+			ch := text[chunk*5+offset]
+			if ch >= 'A' && ch <= 'Z' {
+				bits |= 1 << offset
+			}
+		}
+		suffix.WriteByte(alphabet[bits])
+	}
+	return text + suffix.String()
 }
 
 func formulaRound(number float64, scale int) (float64, bool) {

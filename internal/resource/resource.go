@@ -127,7 +127,7 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 		}
 		registry.Labels = append(registry.Labels, labels...)
 	}
-	resources, err := loadStaticResources(p.StaticResourceFiles, p.StaticResourceMetas)
+	resources, err := loadStaticResources(p.StaticResourceFiles, p.StaticResourceMetas, p.Namespace)
 	if err != nil {
 		return storage.MetadataRegistry{}, err
 	}
@@ -650,15 +650,16 @@ func loadTranslations(path, namespace string) ([]storage.LabelMetadata, error) {
 	return labels, nil
 }
 
-func loadStaticResources(contentFiles, metaFiles []string) ([]storage.StaticResourceMetadata, error) {
+func loadStaticResources(contentFiles, metaFiles []string, namespace string) ([]storage.StaticResourceMetadata, error) {
 	byName := make(map[string]*storage.StaticResourceMetadata)
+	namespace = strings.TrimSpace(namespace)
 	for _, path := range contentFiles {
 		name := resourceNameFromContentPath(path)
 		content, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
-		byName[lookupKey(name)] = &storage.StaticResourceMetadata{Name: name, ContentPath: path, Content: string(content), URL: StaticResourceURL(name)}
+		byName[lookupKey(name)] = &storage.StaticResourceMetadata{Name: name, NamespacePrefix: namespace, ContentPath: path, Content: string(content), URL: StaticResourceURL(name)}
 	}
 	for _, path := range metaFiles {
 		meta, err := loadResourceMeta(path)
@@ -668,9 +669,10 @@ func loadStaticResources(contentFiles, metaFiles []string) ([]storage.StaticReso
 		name := resourceNameFromMetaPath(path)
 		resource := byName[lookupKey(name)]
 		if resource == nil {
-			resource = &storage.StaticResourceMetadata{Name: name, URL: StaticResourceURL(name)}
+			resource = &storage.StaticResourceMetadata{Name: name, NamespacePrefix: namespace, URL: StaticResourceURL(name)}
 			byName[lookupKey(name)] = resource
 		}
+		resource.NamespacePrefix = namespace
 		resource.MetadataPath = path
 		resource.ContentType = strings.TrimSpace(meta.ContentType)
 		resource.CacheControl = strings.TrimSpace(meta.CacheControl)
@@ -927,12 +929,20 @@ func ensureStaticResourceObject(org *storage.OrgState) {
 			"Body":            storage.BlobValue(resource.Content),
 			"ContentType":     storage.StringValue(resource.ContentType),
 			"CacheControl":    storage.StringValue(resource.CacheControl),
-			"NamespacePrefix": storage.NullValue(),
+			"NamespacePrefix": staticResourceNamespaceValue(resource.NamespacePrefix),
 			"SystemModStamp":  storage.DateTimeValue("2026-01-01T00:00:00Z"),
 			"URL":             storage.StringValue(resourceURL(resource)),
 		}}
 	}
 	org.Objects["StaticResource"] = object
+}
+
+func staticResourceNamespaceValue(namespace string) storage.Value {
+	namespace = strings.TrimSpace(namespace)
+	if namespace == "" {
+		return storage.NullValue()
+	}
+	return storage.StringValue(namespace)
 }
 
 func ensureEmailTemplateObject(org *storage.OrgState) {

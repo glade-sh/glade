@@ -82,6 +82,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err := validateRequiredUpdate(object.Definition, record); err != nil {
 		return err
 	}
+	if err := validatePersonAccountRequiredFields(objectName, finalRecord); err != nil {
+		return err
+	}
 	priorRecord := e.priorRecordForValidation(record.ID, existing)
 	if err := e.validateValidationRules(objectName, object.Definition, finalRecord, &priorRecord, false); err != nil {
 		return err

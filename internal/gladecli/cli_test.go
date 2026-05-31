@@ -1200,6 +1200,67 @@ The feed body.
 	}
 }
 
+func TestRunCompatReconcileJSONAndCheck(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "apex_class_System_Assert.md"), `# Assert Class
+
+## Methods
+### areEqual(expected, actual)
+Asserts equality.
+`)
+	writeTestFile(t, filepath.Join(root, "apex_class_System_Zzqqxx.md"), `# Zzqqxx Class
+
+## Methods
+### doThing()
+Does a thing.
+`)
+	dir := t.TempDir()
+	inventoryPath := filepath.Join(dir, "inventory.json")
+	docPath := filepath.Join(dir, "reconcile.md")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "docs-inventory", "--source", root, "--output", inventoryPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inventory exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "reconcile", "--inventory", inventoryPath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("reconcile json exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{`"schemaVersion": 1`, `"runtimeTargets"`, `"worklist"`} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("reconcile json missing %q: %q", want, stdout.String())
+		}
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "reconcile", "--inventory", inventoryPath, "--output", docPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("reconcile output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "reconcile", "--inventory", inventoryPath, "--check", docPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("reconcile check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("reconcile check stdout = %q", stdout.String())
+	}
+
+	// The imaginary type is not type-known, so the ratchet must trip at zero.
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "reconcile", "--inventory", inventoryPath, "--max-unknown", "0"}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("reconcile --max-unknown 0 should fail on an unknown surface; stdout=%q", stdout.String())
+	}
+}
+
 func TestRunCompatProductNamespacesOutputAndCheck(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "apex_connectapi_output_FeedElement.md"), `# FeedElement
@@ -2610,4 +2671,126 @@ private class MathUtilTest {
   }
 }
 `)
+}
+
+func TestRunCompatDocContractsJSONAndCheck(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "apex_System_PageReference_getContentAsPDF.md"), `# getContentAsPDF() Method
+
+## Signature
+`+"`public Blob getContentAsPDF()`"+`
+
+## Usage
+In a test method, getContentAsPDF is treated as a
+callout and fails.
+`)
+	dir := t.TempDir()
+	inventoryPath := filepath.Join(dir, "inventory.json")
+	docPath := filepath.Join(dir, "contracts.md")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "docs-inventory", "--source", root, "--output", inventoryPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inventory exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "doc-contracts", "--inventory", inventoryPath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("doc-contracts json exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{`"callout-in-test"`, `"PageReference.getContentAsPDF()"`} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("doc-contracts json missing %q: %q", want, stdout.String())
+		}
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "doc-contracts", "--inventory", inventoryPath, "--output", docPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("doc-contracts output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "doc-contracts", "--inventory", inventoryPath, "--check", docPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("doc-contracts check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("doc-contracts check stdout = %q", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "doc-contracts", "--inventory", inventoryPath, "--behavior", "deprecated", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("doc-contracts behavior filter exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if strings.Contains(stdout.String(), "callout-in-test") {
+		t.Fatalf("behavior filter should exclude callout-in-test: %q", stdout.String())
+	}
+}
+
+func TestRunCompatOracleInventoryFromCatalog(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "apex_class_System_Database.md"), `# Database Class
+
+## Namespace
+[System](./apex_namespace_System.md)
+
+## Database Methods
+### query(soql)
+Runs a dynamic SOQL query.
+`)
+	dir := t.TempDir()
+	inventoryPath := filepath.Join(dir, "inventory.json")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "docs-inventory", "--source", root, "--output", inventoryPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inventory exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "oracle", "inventory", "--inventory", inventoryPath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("oracle inventory exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{`docs reconciliation`, `"Database"`} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("oracle inventory json missing %q: %q", want, stdout.String())
+		}
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "oracle", "inventory", "--catalog", inventoryPath, "--inventory", inventoryPath}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("oracle inventory with both --catalog and --inventory should fail")
+	}
+}
+
+func TestRunCompatOracleRunAnonRequiresTargetOrg(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "oracle", "run-anon", "--filter", "GLADE_Probe_0"}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("run-anon without --target-org should fail; stdout=%q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "target-org") {
+		t.Fatalf("expected target-org error, got stderr=%q", stderr.String())
+	}
+}
+
+func TestRunCompatOracleRunAnonRejectsBadChunkSize(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "oracle", "run-anon", "--chunk-size", "0", "--target-org", "x", "--filter", "C"}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("run-anon with --chunk-size 0 should fail")
+	}
+	if !strings.Contains(stderr.String(), "chunk-size") {
+		t.Fatalf("expected chunk-size error, got stderr=%q", stderr.String())
+	}
 }

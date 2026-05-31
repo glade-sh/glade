@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"unicode"
@@ -35,14 +36,15 @@ type NamespaceSummary struct {
 }
 
 type Document struct {
-	SourcePath string    `json:"sourcePath"`
-	Kind       string    `json:"kind"`
-	Namespace  string    `json:"namespace,omitempty"`
-	Name       string    `json:"name"`
-	Title      string    `json:"title,omitempty"`
-	Headings   []string  `json:"headings,omitempty"`
-	Members    []Member  `json:"members,omitempty"`
-	Examples   []Example `json:"examples,omitempty"`
+	SourcePath string        `json:"sourcePath"`
+	Kind       string        `json:"kind"`
+	Namespace  string        `json:"namespace,omitempty"`
+	Name       string        `json:"name"`
+	Title      string        `json:"title,omitempty"`
+	Headings   []string      `json:"headings,omitempty"`
+	Members    []Member      `json:"members,omitempty"`
+	Examples   []Example     `json:"examples,omitempty"`
+	Behaviors  []DocBehavior `json:"behaviors,omitempty"`
 }
 
 type Member struct {
@@ -51,6 +53,15 @@ type Member struct {
 	Signature   string `json:"signature"`
 	Section     string `json:"section,omitempty"`
 	Description string `json:"description,omitempty"`
+}
+
+// DocBehavior is a behavioral constraint mined from a doc's Usage prose, such
+// as "this method can't be used in a test method" or "treated as a callout".
+// These are the contract sentences that hand-patched runtime stubs routinely
+// drop; capturing them lets the runtime honor real Salesforce semantics.
+type DocBehavior struct {
+	Kind     string `json:"kind"`
+	Evidence string `json:"evidence,omitempty"`
 }
 
 type Example struct {
@@ -219,6 +230,7 @@ func parseDocument(path, rel string) (Document, error) {
 	doc.Headings = collectHeadings(lines)
 	doc.Members = collectMembers(lines, doc.Name)
 	doc.Examples = collectExamples(lines)
+	doc.Behaviors = collectBehaviors(lines)
 	if doc.Namespace == "" {
 		doc.Namespace = namespaceFromSection(lines)
 	}
@@ -357,6 +369,163 @@ func collectHeadings(lines []string) []string {
 		}
 	}
 	return headings
+}
+
+// Behavior kinds mined from doc Usage prose.
+const (
+	BehaviorUnavailableInTest  = "unavailable-in-test"
+	BehaviorCalloutInTest      = "callout-in-test"
+	BehaviorNotInTriggers      = "not-in-triggers"
+	BehaviorNotInBatch         = "not-in-batch"
+	BehaviorNotInScheduled     = "not-in-scheduled"
+	BehaviorNotInEmailServices = "not-in-email-services"
+	BehaviorNotInContext       = "not-in-context"
+	BehaviorThrows             = "throws"
+	BehaviorDeprecated         = "deprecated"
+	BehaviorAvailableOnly      = "available-only"
+)
+
+var exceptionTypePattern = regexp.MustCompile(`[A-Z][A-Za-z0-9_.]*Exception`)
+
+// sectionLines returns the lines under the first "## <title>" heading, up to
+// the next "## " heading.
+func sectionLines(lines []string, title string) []string {
+	var out []string
+	inSection := false
+	for _, line := range lines {
+		if strings.HasPrefix(line, "## ") {
+			if inSection {
+				break
+			}
+			heading := strings.TrimSpace(strings.TrimPrefix(line, "## "))
+			if strings.EqualFold(heading, title) {
+				inSection = true
+			}
+			continue
+		}
+		if inSection {
+			out = append(out, line)
+		}
+	}
+	return out
+}
+
+// normalizeProse lowercases, normalizes curly apostrophes, and collapses
+// whitespace so multi-line phrases (e.g. "treated as\n a callout") match.
+func normalizeProse(text string) string {
+	text = strings.ReplaceAll(text, "\u2019", "'")
+	text = strings.ToLower(text)
+	return strings.Join(strings.Fields(text), " ")
+}
+
+// collectBehaviors mines behavioral constraints from a doc's Usage section. It
+// detects phrase markers (e.g. "treated as a callout") across the whole section
+// and classifies any "can't be used in:" bullet list into per-context markers.
+func collectBehaviors(lines []string) []DocBehavior {
+	usage := sectionLines(lines, "Usage")
+
+	seen := map[string]bool{}
+	var behaviors []DocBehavior
+	add := func(kind, evidence string) {
+		if kind == "" || seen[kind] {
+			return
+		}
+		seen[kind] = true
+		behaviors = append(behaviors, DocBehavior{Kind: kind, Evidence: strings.TrimSpace(evidence)})
+	}
+
+	// "deprecated" is a strong, unambiguous signal; scan the whole doc.
+	if strings.Contains(normalizeProse(strings.Join(lines, "\n")), "deprecated") {
+		add(BehaviorDeprecated, "deprecated")
+	}
+
+	if len(usage) == 0 {
+		sort.SliceStable(behaviors, func(i, j int) bool { return behaviors[i].Kind < behaviors[j].Kind })
+		return behaviors
+	}
+	rawUsage := strings.Join(usage, "\n")
+	blob := normalizeProse(rawUsage)
+
+	if strings.Contains(blob, "treated as a callout") {
+		add(BehaviorCalloutInTest, "treated as a callout")
+	}
+	if strings.Contains(blob, "test method") &&
+		(strings.Contains(blob, "fails") ||
+			strings.Contains(blob, "can't be used") ||
+			strings.Contains(blob, "cannot be used") ||
+			strings.Contains(blob, "not supported")) {
+		add(BehaviorUnavailableInTest, "not available in test methods")
+	}
+	if strings.Contains(blob, "available only") || strings.Contains(blob, "only available") {
+		add(BehaviorAvailableOnly, "available only in certain contexts")
+	}
+	if strings.Contains(blob, "throws") {
+		evidence := "throws an exception"
+		if match := exceptionTypePattern.FindString(rawUsage); match != "" {
+			evidence = "throws " + match
+		}
+		add(BehaviorThrows, evidence)
+	}
+
+	for _, item := range cantBeUsedInItems(usage) {
+		lower := normalizeProse(item)
+		switch {
+		case strings.Contains(lower, "trigger"):
+			add(BehaviorNotInTriggers, item)
+		case strings.Contains(lower, "test"):
+			add(BehaviorUnavailableInTest, item)
+		case strings.Contains(lower, "email"):
+			add(BehaviorNotInEmailServices, item)
+		case strings.Contains(lower, "batch"):
+			add(BehaviorNotInBatch, item)
+		case strings.Contains(lower, "schedul"):
+			add(BehaviorNotInScheduled, item)
+		default:
+			add(BehaviorNotInContext, item)
+		}
+	}
+
+	sort.SliceStable(behaviors, func(i, j int) bool {
+		return behaviors[i].Kind < behaviors[j].Kind
+	})
+	return behaviors
+}
+
+// cantBeUsedInItems returns the trimmed bullet items that follow a
+// "can't be used in:" sentence in the Usage section.
+func cantBeUsedInItems(usage []string) []string {
+	start := -1
+	for i, line := range usage {
+		l := normalizeProse(line)
+		if strings.Contains(l, "can't be used in") || strings.Contains(l, "cannot be used in") {
+			start = i
+			break
+		}
+	}
+	if start < 0 {
+		return nil
+	}
+	var items []string
+	for _, line := range usage[start+1:] {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			if len(items) > 0 {
+				break
+			}
+			continue
+		}
+		if strings.HasPrefix(trimmed, "- ") || strings.HasPrefix(trimmed, "* ") {
+			items = append(items, strings.TrimSpace(trimmed[2:]))
+			continue
+		}
+		if len(items) > 0 {
+			// Continuation of the previous bullet (wrapped line).
+			items[len(items)-1] = strings.TrimSpace(items[len(items)-1] + " " + trimmed)
+			continue
+		}
+		break
+	}
+	return items
 }
 
 func collectMembers(lines []string, typeName string) []Member {

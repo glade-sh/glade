@@ -96,6 +96,9 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	if vm.currentProfileIsSystemAdministrator(profileID) {
 		return true
 	}
+	if method == "isAccessible" && vm.apexMetadataObjectReadable(objectName) {
+		return true
+	}
 	for _, permissionSetID := range vm.assignedPermissionSetIDs(stringField(user, "Id")) {
 		if allowed, ok := vm.explicitObjectPermission(permissionSetID, objectName, method); ok && allowed {
 			return true
@@ -120,6 +123,21 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	}
 	return true
 }
+
+func (vm *VM) apexMetadataObjectReadable(objectName string) bool {
+	if strings.EqualFold(objectName, "RecordType") {
+		return true
+	}
+	if vm == nil || vm.Org == nil {
+		return false
+	}
+	resolved, ok := vm.resolveObjectName(objectName)
+	if !ok {
+		return false
+	}
+	return storage.IsCustomMetadataDefinition(vm.Org.Objects[resolved].Definition)
+}
+
 func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) bool {
 	if vm.Org == nil {
 		return true

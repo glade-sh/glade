@@ -218,6 +218,7 @@ const (
 	sobjectExplicitFieldsField               = "__glade_explicit_fields"
 	sobjectSetFieldsField                    = "__glade_set_fields"
 	sobjectUserSetFieldsField                = "__glade_user_set_fields"
+	sobjectDMLOptionsField                   = "__glade_dml_options"
 	sobjectDMLAccessibleField                = "__glade_dml_accessible"
 	sobjectTriggerField                      = "__glade_trigger_record"
 	sobjectParentProjectionField             = "__glade_parent_projection"
@@ -225,7 +226,7 @@ const (
 )
 
 func isInternalSObjectField(field string) bool {
-	return field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField
+	return field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField
 }
 
 func vmImplicitDMLField(field storage.Field) bool {
@@ -599,6 +600,9 @@ func (vm *VM) unqueriedStoredDefaultFieldValue(receiver Value, field string) (Va
 	record = stored
 	defaultValue, ok := vm.defaultValueForRecordField(object.Definition, record, fieldDef)
 	if !ok || defaultValue.Kind == storage.ValueNull {
+		return Null, false
+	}
+	if rawRecordTypeDefaultStorageValue(defaultValue, fieldDef) {
 		return Null, false
 	}
 	if record.HasExplicitNull(canonical) {
@@ -1244,6 +1248,9 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 	if isExplicitSObjectField(receiver, field) {
 		if _, fieldDef, ok := vm.sObjectFieldDefinition(receiver.Type, field); ok {
 			if defaultValue, ok := storage.DefaultValueForField(fieldDef); ok {
+				if rawRecordTypeDefaultStorageValue(defaultValue, fieldDef) {
+					return storageFieldNullValue(fieldDef), true
+				}
 				return vmValueFromStorage(defaultValue), true
 			}
 			return storageFieldNullValue(fieldDef), true
@@ -1306,6 +1313,12 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 		}
 	}
 	if fieldDef.Type == storage.FieldSummary {
+		if dmlAccessibleSObject(receiver) {
+			if value, ok := emptySummaryStorageValue(fieldDef); ok {
+				return vmValueFromStorage(value), true
+			}
+			return storageFieldNullValue(fieldDef), true
+		}
 		if value, ok := vm.evaluateSummaryField(receiver, fieldDef); ok {
 			return vmValueFromStorage(value), true
 		}
@@ -1343,6 +1356,29 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 		return Bool(false), true
 	}
 	return storageFieldNullValue(fieldDef), true
+}
+
+func (vm *VM) unknownSObjectFieldError(receiver Value, field string) error {
+	if vm == nil || vm.Org == nil || receiver.Kind != ValueObject {
+		return nil
+	}
+	objectName, ok := vm.resolveObjectName(receiver.Type)
+	if !ok {
+		return nil
+	}
+	definition := vm.describePreparedDefinition(objectName, vm.Org.Objects[objectName].Definition)
+	if _, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field); ok {
+		return nil
+	}
+	if _, ok := syntheticSObjectSystemField(field); ok {
+		return nil
+	}
+	if isCustomObjectLikeName(objectName) {
+		if synthetic := syntheticSchemaField(field); synthetic.APIName != "" {
+			return nil
+		}
+	}
+	return newExceptionError("SObjectException", fmt.Sprintf("Invalid field %s for %s", field, objectName))
 }
 
 func calculatedDateFormulaBlankValue(fieldDef storage.Field, value Value) bool {
@@ -1405,6 +1441,9 @@ func (vm *VM) storedSObjectFieldValue(receiver Value, field string) (Value, bool
 		return Null, true
 	}
 	if value, ok := record.GetField(field); ok {
+		if _, fieldDef, ok := vm.sObjectFieldDefinition(receiver.Type, field); ok && rawRecordTypeDefaultStorageValue(value, fieldDef) {
+			return storageFieldNullValue(fieldDef), true
+		}
 		return vmValueFromStorage(value), true
 	}
 	return Null, false
@@ -1637,7 +1676,13 @@ func (vm *VM) queriedSObjectFieldsIncludes(receiver Value, field string) bool {
 		return true
 	}
 	if object, ok := vm.Org.Objects[objectName]; ok {
+		if storage.IsCustomMetadataDefinition(object.Definition) && customMetadataSyntheticFieldCanDefaultNull(field) {
+			return true
+		}
 		if canonical, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, field); ok {
+			if storage.IsCustomMetadataDefinition(object.Definition) && customMetadataSyntheticFieldCanDefaultNull(canonical) {
+				return true
+			}
 			return queriedSObjectFieldsMapIncludes(selected, canonical) ||
 				queriedSObjectFieldsMapIncludes(selected, storage.NamespaceTokenName(vm.Org.Namespace, canonical)) ||
 				queriedSObjectFieldsMapIncludes(selected, storage.StripAnyNamespaceToken(canonical)) ||
@@ -1646,6 +1691,15 @@ func (vm *VM) queriedSObjectFieldsIncludes(receiver Value, field string) bool {
 		}
 	}
 	return false
+}
+
+func customMetadataSyntheticFieldCanDefaultNull(field string) bool {
+	switch strings.ToLower(strings.TrimSpace(field)) {
+	case "name", "ownerid", "isdeleted", "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid", "systemmodstamp":
+		return true
+	default:
+		return false
+	}
 }
 
 func queriedSObjectFieldsMapIncludes(selected Value, field string) bool {

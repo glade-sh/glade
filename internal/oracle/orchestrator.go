@@ -168,6 +168,121 @@ func BuildInventory(stubRoot string) (Inventory, error) {
 	}, nil
 }
 
+// BuildInventoryFromReconciliation turns the documented-gap worklist into a
+// probe inventory. Where BuildInventory starts from the stub tree (what glade
+// already shapes), this starts from the docs catalog reconciled against the
+// runtime, so the org-probe loop targets documented surfaces that have no
+// verdict yet, in the worklist's existing priority order (executable-parity
+// and data-platform gaps first). Catalog signatures supply parameter and
+// return types where the docs recorded them.
+func BuildInventoryFromReconciliation(rec capability.Reconciliation, cat capability.Catalog) Inventory {
+	bySymbol := make(map[string]capability.CatalogEntry, len(cat.Entries))
+	for _, e := range cat.Entries {
+		bySymbol[e.Symbol] = e
+	}
+
+	surfaces := make([]Surface, 0, len(rec.Worklist))
+	for _, item := range rec.Worklist {
+		entry, hasEntry := bySymbol[item.Symbol]
+
+		typeName := item.OwnerType
+		member := ""
+		if hasEntry {
+			if entry.TypeName != "" {
+				typeName = entry.TypeName
+			}
+			member = entry.MemberName
+		}
+		if typeName == "" {
+			typeName = item.Symbol
+		}
+
+		var parameters []string
+		returnType := ""
+		if hasEntry {
+			returnType, parameters = parseSignatureShape(entry.Signature)
+		}
+
+		surfaceID := typeName
+		if strings.TrimSpace(member) != "" {
+			surfaceID = fmt.Sprintf("%s.%s(%s)", typeName, member, strings.Join(parameters, ","))
+		}
+
+		surfaces = append(surfaces, Surface{
+			SurfaceID:  surfaceID,
+			Area:       item.Area,
+			Type:       typeName,
+			Member:     member,
+			Kind:       item.Kind,
+			ReturnType: returnType,
+			Parameters: parameters,
+			Status:     reconcileStatusToSurface(item.Status),
+			Sources:    reconcileSources(item),
+		})
+	}
+	return Inventory{
+		SchemaVersion: OrchestratorSchemaVersion,
+		Target:        "apex oracle inventory (docs reconciliation)",
+		GeneratedAt:   time.Now().UTC(),
+		Surfaces:      surfaces,
+	}
+}
+
+func reconcileStatusToSurface(status capability.DerivedStatus) SurfaceStatus {
+	switch status {
+	case capability.DerivedTyped:
+		return SurfaceCompileShapeKnown
+	default:
+		return SurfaceUnknown
+	}
+}
+
+func reconcileSources(item capability.ReconcileWorkItem) []string {
+	sources := []string{"reconcile"}
+	if item.DocsSource != "" {
+		sources = append(sources, item.DocsSource)
+	}
+	return sources
+}
+
+// parseSignatureShape pulls a return type and parameter type list out of a
+// documented signature such as "public static String escapeSingleQuotes(String s)".
+// It is deliberately forgiving: docs signatures are inconsistent, so a miss
+// yields empty fields rather than an error.
+func parseSignatureShape(signature string) (returnType string, parameters []string) {
+	signature = strings.TrimSpace(signature)
+	if signature == "" {
+		return "", nil
+	}
+	open := strings.Index(signature, "(")
+	closeIdx := strings.LastIndex(signature, ")")
+
+	head := signature
+	if open >= 0 {
+		head = signature[:open]
+	}
+	headTokens := strings.Fields(head)
+	if len(headTokens) >= 2 {
+		// The token before the method name is the return type; modifiers like
+		// public/static/global sit ahead of it.
+		returnType = headTokens[len(headTokens)-2]
+	}
+
+	if open >= 0 && closeIdx > open {
+		inner := strings.TrimSpace(signature[open+1 : closeIdx])
+		if inner != "" {
+			for _, raw := range strings.Split(inner, ",") {
+				fields := strings.Fields(strings.TrimSpace(raw))
+				if len(fields) == 0 {
+					continue
+				}
+				parameters = append(parameters, fields[0])
+			}
+		}
+	}
+	return returnType, parameters
+}
+
 func BuildDomains() Domains {
 	return Domains{
 		SchemaVersion: OrchestratorSchemaVersion,
@@ -314,29 +429,33 @@ func GenerateScripts(queue WorkQueue, runID, runsDir, targetOrg, outDir string, 
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return err
 	}
+	build := "#!/usr/bin/env bash\nset -euo pipefail\nGLADE=${GLADE:-.glade/oracle/bin/glade}\nmkdir -p \"$(dirname \"$GLADE\")\"\ngo build -o \"$GLADE\" ./cmd/glade\necho \"built $GLADE\"\n"
+	if err := os.WriteFile(filepath.Join(outDir, "00-build-glade.sh"), []byte(build), 0o755); err != nil {
+		return err
+	}
 	for shard := 0; shard < shardCount; shard++ {
-		script := fmt.Sprintf("#!/usr/bin/env bash\nset -euo pipefail\nRUN_ID=%q\nRUNS_DIR=%q\nTARGET_ORG=%q\nSHARD=%d\ngo run ./cmd/glade compat oracle run-salesforce --run-id \"$RUN_ID\" --runs-dir \"$RUNS_DIR\" --target-org \"$TARGET_ORG\" --shard \"$SHARD\" --fetch-logs --log-limit 200\nGO_RUN_GLADE=${GO_RUN_GLADE:-1}\nif [ \"$GO_RUN_GLADE\" = \"1\" ]; then\n  go run ./cmd/glade compat oracle run-glade --run-id \"$RUN_ID\" --runs-dir \"$RUNS_DIR\" --shard \"$SHARD\"\n  go run ./cmd/glade compat oracle diff --run-id \"$RUN_ID\" --runs-dir \"$RUNS_DIR\" --shard \"$SHARD\"\nfi\n", runID, runsDir, targetOrg, shard)
+		script := fmt.Sprintf("#!/usr/bin/env bash\nset -euo pipefail\nRUN_ID=%q\nRUNS_DIR=%q\nTARGET_ORG=%q\nSHARD=%d\nGLADE=${GLADE:-.glade/oracle/bin/glade}\nMODE=${GLADE_ORACLE_MODE:-anon}\nif [ \"$MODE\" = \"salesforce\" ]; then\n  \"$GLADE\" compat oracle run-salesforce --run-id \"$RUN_ID\" --runs-dir \"$RUNS_DIR\" --target-org \"$TARGET_ORG\" --shard \"$SHARD\" --fetch-logs --log-limit 200\nelse\n  \"$GLADE\" compat oracle run-anon --run-id \"$RUN_ID\" --runs-dir \"$RUNS_DIR\" --target-org \"$TARGET_ORG\" --shard \"$SHARD\"\nfi\nGO_RUN_GLADE=${GO_RUN_GLADE:-1}\nif [ \"$GO_RUN_GLADE\" = \"1\" ]; then\n  \"$GLADE\" compat oracle run-glade --run-id \"$RUN_ID\" --runs-dir \"$RUNS_DIR\" --shard \"$SHARD\"\n  \"$GLADE\" compat oracle diff --run-id \"$RUN_ID\" --runs-dir \"$RUNS_DIR\" --shard \"$SHARD\"\nfi\n", runID, runsDir, targetOrg, shard)
 		path := filepath.Join(outDir, fmt.Sprintf("06-run-shard-%03d.sh", shard))
 		if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
 			return err
 		}
 	}
-	resume := "#!/usr/bin/env bash\nset -euo pipefail\ngo run ./cmd/glade compat oracle resume \"$@\"\n"
+	resume := "#!/usr/bin/env bash\nset -euo pipefail\nGLADE=${GLADE:-.glade/oracle/bin/glade}\n\"$GLADE\" compat oracle resume \"$@\"\n"
 	if err := os.WriteFile(filepath.Join(outDir, "resume-failed.sh"), []byte(resume), 0o755); err != nil {
 		return err
 	}
-	promote := fmt.Sprintf("#!/usr/bin/env bash\nset -euo pipefail\ngo run ./cmd/glade compat oracle promote --run-id %q --runs-dir %q\n", runID, runsDir)
+	promote := fmt.Sprintf("#!/usr/bin/env bash\nset -euo pipefail\nGLADE=${GLADE:-.glade/oracle/bin/glade}\n\"$GLADE\" compat oracle promote --run-id %q --runs-dir %q\n", runID, runsDir)
 	if err := os.WriteFile(filepath.Join(outDir, "promote-passing.sh"), []byte(promote), 0o755); err != nil {
 		return err
 	}
-	runAll := fmt.Sprintf("#!/usr/bin/env bash\nset -uo pipefail\nFAILURES=0\nfor f in %q/06-run-shard-*.sh; do\n  echo \"running $f\"\n  if bash \"$f\"; then\n    echo \"ok $f\"\n  else\n    rc=$?\n    echo \"failed $f exit=$rc\"\n    FAILURES=$((FAILURES + 1))\n  fi\ndone\necho \"shardsFailed=$FAILURES\"\nif [ \"${GLADE_ORACLE_STRICT:-0}\" = \"1\" ] && [ \"$FAILURES\" -gt 0 ]; then\n  exit 1\nfi\n", outDir)
+	runAll := fmt.Sprintf("#!/usr/bin/env bash\nset -uo pipefail\nOUTDIR=%q\nGLADE=${GLADE:-.glade/oracle/bin/glade}\nPARALLEL=${GLADE_ORACLE_PARALLEL:-4}\nif [ ! -x \"$GLADE\" ]; then\n  bash \"$OUTDIR/00-build-glade.sh\"\nfi\nexport GLADE GLADE_ORACLE_MODE GO_RUN_GLADE\nls \"$OUTDIR\"/06-run-shard-*.sh | xargs -P \"$PARALLEL\" -I {} bash -c 'echo \"running {}\"; bash \"{}\"'\nrc=$?\necho \"shardsExit=$rc\"\nif [ \"${GLADE_ORACLE_STRICT:-0}\" = \"1\" ] && [ \"$rc\" -ne 0 ]; then\n  exit 1\nfi\n", outDir)
 	if err := os.WriteFile(filepath.Join(outDir, "nightly-full.sh"), []byte(runAll), 0o755); err != nil {
 		return err
 	}
 	if err := os.WriteFile(filepath.Join(outDir, "07-run-all-shards.sh"), []byte(runAll), 0o755); err != nil {
 		return err
 	}
-	nextAgent := fmt.Sprintf("#!/usr/bin/env bash\nset -euo pipefail\ngo run ./cmd/glade compat oracle next --run-id %q --runs-dir %q --limit 25 --json\n", runID, runsDir)
+	nextAgent := fmt.Sprintf("#!/usr/bin/env bash\nset -euo pipefail\nGLADE=${GLADE:-.glade/oracle/bin/glade}\n\"$GLADE\" compat oracle next --run-id %q --runs-dir %q --limit 25 --json\n", runID, runsDir)
 	if err := os.WriteFile(filepath.Join(outDir, "next-agent-batch.sh"), []byte(nextAgent), 0o755); err != nil {
 		return err
 	}

@@ -1647,6 +1647,50 @@ func TestExecuteFiltersProjectsAndOrders(t *testing.T) {
 		t.Fatalf("multi-order result = %#v", result)
 	}
 
+	org.Objects["Account"].Records["001000000000001"] = storage.Record{
+		ID:     "001000000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":   storage.StringValue("Edit scheduled payment"),
+			"Active": storage.BooleanValue(true),
+			"Rating": storage.StringValue("Warm"),
+		},
+	}
+	org.Objects["Account"].Records["001000000000002"] = storage.Record{
+		ID:     "001000000000002",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":   storage.StringValue("Edit or Cancel Another"),
+			"Active": storage.BooleanValue(true),
+			"Rating": storage.StringValue("Warm"),
+		},
+	}
+	result, err = ParseAndExecute(org, "SELECT Id, Name FROM Account WHERE Active = true ORDER BY Name LIMIT 1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].ID != "001000000000002" {
+		t.Fatalf("case-insensitive text order result = %#v", result)
+	}
+	org.Objects["Account"].Records["001000000000001"] = storage.Record{
+		ID:     "001000000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":   storage.StringValue("Acme"),
+			"Active": storage.BooleanValue(true),
+			"Rating": storage.StringValue("Warm"),
+		},
+	}
+	org.Objects["Account"].Records["001000000000002"] = storage.Record{
+		ID:     "001000000000002",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":   storage.StringValue("Beta"),
+			"Active": storage.BooleanValue(true),
+			"Rating": storage.StringValue("Hot"),
+		},
+	}
+
 	result, err = ParseAndExecute(org, "SELECT Id, Name FROM Account ORDER BY Name ASC NULLS LAST LIMIT 1")
 	if err != nil {
 		t.Fatal(err)
@@ -2207,6 +2251,33 @@ func TestExecuteValidatesReferencesAcrossClauses(t *testing.T) {
 	}
 	if result.Rows != 1 || result.Records[0].Fields["Name"].String != "High" || result.Records[0].Fields["Score__c"].Integer != 5 {
 		t.Fatalf("calculated field result = %#v", result)
+	}
+}
+
+func TestExecuteRejectsUnknownCustomFieldOnKnownCustomObject(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["pkg__Line__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "pkg__Line__c",
+			Fields: map[string]storage.Field{
+				"Name":           {APIName: "Name", Type: storage.FieldString},
+				"pkg__Status__c": {APIName: "pkg__Status__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {
+				ID:     "a00000000000001",
+				Object: "pkg__Line__c",
+				Fields: map[string]storage.Value{
+					"Name":           storage.StringValue("Line"),
+					"pkg__Status__c": storage.StringValue("Active"),
+				},
+			},
+		},
+	}
+
+	if _, err := ParseAndExecute(org, "SELECT pkg_invalid__c FROM pkg__Line__c"); err == nil || !strings.Contains(err.Error(), "pkg_invalid__c") {
+		t.Fatalf("expected unknown custom field error, got %v", err)
 	}
 }
 

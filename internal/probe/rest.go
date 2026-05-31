@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/capability"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 // RestExecutor captures golden responses using Tooling API executeAnonymous.
@@ -302,7 +303,7 @@ func (r *RestExecutor) runProbeCodeJSON(code string) (string, string, error) {
 	if err := r.ensureAuth(); err != nil {
 		return "", "", err
 	}
-	endpoint := fmt.Sprintf("%s/services/data/v60.0/tooling/executeAnonymous/?anonymousBody=%s", r.instanceURL, url.QueryEscape(code))
+	endpoint := fmt.Sprintf("%s/services/data/v%s/tooling/executeAnonymous/?anonymousBody=%s", r.instanceURL, storage.DefaultRESTAPIVersion, url.QueryEscape(code))
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		return "", "", fmt.Errorf("build executeAnonymous request: %w", err)

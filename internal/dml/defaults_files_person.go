@@ -72,6 +72,7 @@ func normalizePersonAccountFields(objectName string, definition storage.ObjectDe
 	}
 	record.Fields["IsPersonAccount"] = storage.BooleanValue(true)
 	normalizeFirstLastName(definition, record)
+	mirrorPersonAccountManagedAliases(definition, record)
 }
 
 func hasPersonAccountSignal(record storage.Record) bool {
@@ -121,6 +122,29 @@ func stringField(fields map[string]storage.Value, name string) string {
 		return ""
 	}
 	return strings.TrimSpace(value.String)
+}
+
+func mirrorPersonAccountManagedAliases(definition storage.ObjectDefinition, record *storage.Record) {
+	if record == nil || record.Fields == nil {
+		return
+	}
+	email, ok := record.Fields["PersonEmail"]
+	if !ok || email.Kind == "" || record.HasExplicitNull("PersonEmail") {
+		return
+	}
+	for fieldName := range definition.Fields {
+		if !managedPersonEmailAlias(fieldName) {
+			continue
+		}
+		if _, exists := record.Fields[fieldName]; exists || record.HasExplicitNull(fieldName) {
+			continue
+		}
+		record.Fields[fieldName] = email.Clone()
+	}
+}
+
+func managedPersonEmailAlias(fieldName string) bool {
+	return strings.EqualFold(fieldName, "PersonEmail__c") || hasSuffixFold(fieldName, "__PersonEmail__c")
 }
 
 func applyCustomSettingInsertDefaults(org *storage.OrgState, definition storage.ObjectDefinition, record *storage.Record) {
@@ -235,6 +259,70 @@ func defaultUserCommunityNickname(record *storage.Record) {
 	}
 }
 
+func (e *Engine) applyUserContactAccountDefault(objectName string, definition storage.ObjectDefinition, record *storage.Record) {
+	if e == nil || e.Org == nil || record == nil || !strings.EqualFold(objectName, "User") {
+		return
+	}
+	if _, ok := definition.Fields["AccountId"]; !ok {
+		return
+	}
+	if _, ok := record.GetField("AccountId"); ok || record.HasExplicitNull("AccountId") {
+		return
+	}
+	contactID := idFromStorageValue(record.Fields["ContactId"])
+	if contactID == "" {
+		return
+	}
+	contacts, ok := e.Org.Objects["Contact"]
+	if !ok {
+		return
+	}
+	contact, ok := contacts.Records[contactID]
+	if !ok || contact.System.IsDeleted {
+		return
+	}
+	accountID := idFromStorageValue(contact.Fields["AccountId"])
+	if accountID == "" {
+		return
+	}
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	record.Fields["AccountId"] = storage.IDValue(accountID)
+}
+
+func (e *Engine) afterInsertUser(record storage.Record) {
+	if e == nil || e.Org == nil || record.ID == "" {
+		return
+	}
+	storage.EnsureStandardObject(e.Org, "UserLogin")
+	state := e.Org.Objects["UserLogin"]
+	for _, existing := range state.Records {
+		if idFromStorageValue(existing.Fields["UserId"]) == record.ID {
+			return
+		}
+	}
+	id, err := e.IDs.Next("UserLogin")
+	if err != nil {
+		return
+	}
+	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, "UserLogin"); cloned {
+		state = e.Org.Objects["UserLogin"]
+	}
+	if state.Records == nil {
+		state.Records = make(map[storage.ID]storage.Record)
+	}
+	state.Records[id] = storage.Record{
+		ID:     id,
+		Object: "UserLogin",
+		Fields: map[string]storage.Value{
+			"UserId":   storage.IDValue(record.ID),
+			"IsFrozen": storage.BooleanValue(false),
+		},
+	}
+	e.Org.Objects["UserLogin"] = state
+}
+
 func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefinition, record *storage.Record) {
 	if record == nil {
 		return
@@ -273,6 +361,9 @@ func shouldRefreshRecordTypeDerivedDefault(definition storage.ObjectDefinition, 
 		return false
 	}
 	existingText := strings.TrimSpace(workflowValueString(existing))
+	if strings.EqualFold(existingText, rawDefault) {
+		return true
+	}
 	if existingText == "" || strings.EqualFold(existingText, currentDefault) {
 		return false
 	}
@@ -543,7 +634,17 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 		e.Org.Objects["ContentDocument"] = contentDocumentObject
 	}
 	e.markLatestContentVersion(contentDocumentID, version.ID)
-	if locationID := idFromStorageValue(version.Fields["FirstPublishLocationId"]); locationID != "" {
+	locationID := idFromStorageValue(version.Fields["FirstPublishLocationId"])
+	if locationID == "" {
+		if version.System.OwnerID != "" {
+			locationID = version.System.OwnerID
+		} else if version.System.CreatedByID != "" {
+			locationID = version.System.CreatedByID
+		} else {
+			locationID = e.systemUserID()
+		}
+	}
+	if locationID != "" {
 		link := storage.Record{
 			Object: "ContentDocumentLink",
 			Fields: map[string]storage.Value{

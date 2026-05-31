@@ -404,6 +404,9 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 	if !strings.Contains(to, ".") && vm.typeHasShortAncestor(from, to, make(map[string]bool)) {
 		return true
 	}
+	if strings.Contains(to, ".") && !hasPrefixFold(to, "System.") && vm.typeHasShortAncestor(from, shortTypeName(to), make(map[string]bool)) {
+		return true
+	}
 	if numericConversionScore(to, from) >= 0 {
 		return true
 	}

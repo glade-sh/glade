@@ -536,6 +536,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	applyAutoNumberName(object.Definition, e.IDs.Sequences[objectName]+1, &record)
 	applyCustomSettingInsertDefaults(e.Org, object.Definition, &record)
 	applySetupInsertDefaults(objectName, object.Definition, &record)
+	e.applyUserContactAccountDefault(objectName, object.Definition, &record)
 	e.applyFileInsertDefaults(objectName, object.Definition, &record)
 	stripMissingGeneratedRecordTypeID(e.Org, &record)
 	if err := e.applyStringLengthRules(object.Definition, &record); err != nil {
@@ -646,6 +647,9 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 			e.clearUniqueIndexes()
 			return "", err
 		}
+	}
+	if objectName == "User" {
+		e.afterInsertUser(record)
 	}
 	if createPersonContact {
 		if err := e.afterInsertPersonAccount(record); err != nil {

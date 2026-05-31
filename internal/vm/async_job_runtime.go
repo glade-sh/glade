@@ -21,9 +21,7 @@ func (vm *VM) testStart() (Value, error) {
 	}
 	vm.testContext.Started = true
 	vm.testContext.Stopped = false
-	if vm.currentPage.Kind == "" {
-		vm.currentPage = newPageReference("/apex/current")
-	}
+	vm.fakeNow = vm.fakeNow.Add(time.Second)
 	vm.testContext.AsyncStartIndex = len(vm.testContext.AsyncJobs)
 	vm.testContext.PlatformEventStartIndex = len(vm.testContext.PlatformEvents)
 	vm.deferPreStartAsyncJobRecords()

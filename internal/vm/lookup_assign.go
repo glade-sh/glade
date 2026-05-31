@@ -80,6 +80,11 @@ func (vm *VM) lookup(name string) (Value, error) {
 				return vm.lookupPath(this, parts[1:])
 			}
 		}
+		if strings.EqualFold(parts[0], "this") {
+			if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
+				return vm.lookupThisPath(this, parts[1:])
+			}
+		}
 		if root, ok := vm.Globals[parts[0]]; ok {
 			return vm.lookupPath(root, parts[1:])
 		}
@@ -198,14 +203,15 @@ func (vm *VM) lookup(name string) (Value, error) {
 			}
 		}
 		if len(parts) > 2 {
-			if field, owner, ok := vm.lookupStaticField(parts[0], parts[1]); ok {
+			preferDependency := vm.currentMethod.Dependency || vm.classMemberReferenceUsesExplicitNamespace(strings.Join(parts[:2], "."), parts[0])
+			if field, owner, ok := vm.lookupStaticFieldForReceiver(parts[0], parts[1], preferDependency); ok {
 				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+parts[1], field.Modifiers); err != nil {
 					return Null, err
 				}
 				if err := vm.ensureClassInitialized(owner); err != nil {
 					return Null, err
 				}
-				field, _, _ = vm.lookupStaticField(owner, parts[1])
+				field, _, _ = vm.lookupStaticFieldForReceiver(owner, parts[1], preferDependency)
 				root := field.Value
 				if field.Getter != nil {
 					var err error
@@ -268,6 +274,35 @@ func (vm *VM) lookup(name string) (Value, error) {
 				}
 			}
 		}
+	}
+	if len(parts) > 2 {
+		for split := len(parts) - 2; split >= 1; split-- {
+			className := strings.Join(parts[:split], ".")
+			fieldName := parts[split]
+			preferDependency := vm.currentMethod.Dependency || vm.classMemberReferenceUsesExplicitNamespace(strings.Join(parts[:split+1], "."), className)
+			field, owner, ok := vm.lookupStaticFieldForReceiver(className, fieldName, preferDependency)
+			if !ok {
+				continue
+			}
+			if err := vm.checkMemberAccess(owner, field.Access, owner+"."+fieldName, field.Modifiers); err != nil {
+				return Null, err
+			}
+			if err := vm.ensureClassInitialized(owner); err != nil {
+				return Null, err
+			}
+			field, _, _ = vm.lookupStaticFieldForReceiver(owner, fieldName, preferDependency)
+			root := field.Value
+			if field.Getter != nil {
+				var err error
+				root, err = vm.callGetter(owner, field, Null)
+				if err != nil {
+					return Null, err
+				}
+			}
+			return vm.lookupPath(root, parts[split+1:])
+		}
+	}
+	if len(parts) > 1 {
 		if value, ok := managedNestedEnumLiteralValue(parts); ok {
 			return value, nil
 		}
@@ -413,6 +448,12 @@ func selectorBindParamValue(this Value, name string) (Value, bool) {
 }
 
 func (vm *VM) lookupThisFieldRoot(this Value, name string) (Value, Field, string, bool) {
+	if actualName, root, field, owner, ok := vm.lookupDeclaredThisFieldValue(this, name); ok {
+		if field.Name == "" {
+			field.Name = actualName
+		}
+		return root, field, owner, true
+	}
 	actualName, root, ok := objectFieldValue(this, name)
 	if !ok {
 		return Null, Field{}, "", false
@@ -426,6 +467,64 @@ func (vm *VM) lookupThisFieldRoot(this Value, name string) (Value, Field, string
 		field.Name = actualName
 	}
 	return root, field, owner, true
+}
+
+func (vm *VM) lookupThisPath(this Value, parts []string) (Value, error) {
+	if len(parts) == 0 {
+		return this, nil
+	}
+	actualName, value, field, owner, ok := vm.lookupDeclaredThisFieldValue(this, parts[0])
+	if !ok {
+		return vm.lookupPath(this, parts)
+	}
+	if err := vm.checkMemberAccess(owner, field.Access, owner+"."+actualName, field.Modifiers); err != nil {
+		return Null, err
+	}
+	if field.Getter != nil {
+		if field.Getter.Name == vm.currentMethod.Name {
+			value = vm.currentGetterStoredValue(owner, field, value)
+		} else {
+			var err error
+			value, err = vm.callGetter(owner, field, this)
+			if err != nil {
+				return Null, err
+			}
+		}
+	}
+	if len(parts) == 1 {
+		return value, nil
+	}
+	return vm.lookupPath(value, parts[1:])
+}
+
+func (vm *VM) lookupDeclaredThisFieldValue(this Value, name string) (string, Value, Field, string, bool) {
+	if this.Kind != ValueObject {
+		return "", Null, Field{}, "", false
+	}
+	className := vm.currentMethod.ClassName
+	if className == "" {
+		className = vm.currentClass
+	}
+	if className == "" || (!strings.EqualFold(this.Type, className) && !vm.isSubclass(this.Type, className)) {
+		return "", Null, Field{}, "", false
+	}
+	field, owner, ok := vm.lookupField(className, name)
+	if !ok {
+		return "", Null, Field{}, "", false
+	}
+	actualName := field.Name
+	if actualName == "" {
+		actualName = name
+	}
+	if field.StorageName != "" {
+		actualName = field.StorageName
+	}
+	if this.Fields != nil {
+		if value, ok := this.Fields[actualName]; ok {
+			return actualName, value, field, owner, true
+		}
+	}
+	return actualName, defaultValue(field.Type, field.InitialValue), field, owner, true
 }
 
 func (vm *VM) lookupNestedInstanceFieldRoot(this Value, parts []string) (Value, Field, string, bool) {
@@ -444,6 +543,7 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 		return "", Null, false
 	}
 	if value, ok := object.Fields[name]; ok {
+		value = coerceRawRecordTypeNameFieldRuntimeValue(name, value)
 		if !isExplicitSObjectField(object, name) {
 			if aliasName, aliasValue, aliasOK := explicitAliasObjectFieldValue(object, name); aliasOK {
 				return aliasName, aliasValue, true
@@ -466,6 +566,7 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 	}
 	for candidate, value := range object.Fields {
 		if strings.EqualFold(candidate, name) {
+			value = coerceRawRecordTypeNameFieldRuntimeValue(candidate, value)
 			return candidate, value, true
 		}
 	}
@@ -481,7 +582,7 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 			return "", Null, false
 		}
 		matchedName = candidate
-		matchedValue = value
+		matchedValue = coerceRawRecordTypeNameFieldRuntimeValue(candidate, value)
 		matched = true
 	}
 	if matched {
@@ -575,6 +676,19 @@ func (vm *VM) lookupThisSimpleField(name string) (Value, bool, error) {
 	if !ok || this.Kind != ValueObject {
 		return Null, false, nil
 	}
+	if actualName, value, field, owner, ok := vm.lookupDeclaredThisFieldValue(this, name); ok {
+		if err := vm.checkMemberAccess(owner, field.Access, owner+"."+actualName, field.Modifiers); err != nil {
+			return Null, true, err
+		}
+		if field.Getter != nil {
+			if field.Getter.Name == vm.currentMethod.Name {
+				return value, true, nil
+			}
+			value, err := vm.callGetter(owner, field, this)
+			return value, true, err
+		}
+		return value, true, nil
+	}
 	if actualName, value, ok := objectFieldValue(this, name); ok {
 		if field, owner, ok := vm.lookupReceiverField(this.Type, actualName); ok {
 			if err := vm.checkMemberAccess(owner, field.Access, owner+"."+actualName, field.Modifiers); err != nil {
@@ -642,6 +756,9 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 			}
 		}
 	}
+	if value, ok := vm.activeSetterStoredValue(owner, fieldName, field, receiver); ok {
+		return value, nil
+	}
 	key := getterCallKey(owner, fieldName, receiver)
 	if vm.activeGetters[key] > 0 {
 		if _, value, ok := objectFieldValue(receiver, fieldName); ok {
@@ -666,6 +783,41 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 		value.Runtime = relationshipNullRuntime
 	}
 	return value, nil
+}
+
+func (vm *VM) activeSetterStoredValue(owner, fieldName string, field Field, receiver Value) (Value, bool) {
+	actualName := field.Name
+	if strings.TrimSpace(actualName) == "" {
+		actualName = fieldName
+	}
+	if strings.TrimSpace(field.StorageName) != "" {
+		actualName = field.StorageName
+	}
+	if receiver.Kind == ValueObject {
+		if vm.activeSetters[activeInstanceSetterKey(owner, actualName, receiver)] == 0 {
+			return Null, false
+		}
+		if _, value, ok := objectFieldValue(receiver, actualName); ok {
+			return vm.currentGetterStoredValue(owner, field, value), true
+		}
+		if !strings.EqualFold(actualName, fieldName) {
+			if _, value, ok := objectFieldValue(receiver, fieldName); ok {
+				return vm.currentGetterStoredValue(owner, field, value), true
+			}
+		}
+		return defaultValue(field.Type, field.InitialValue), true
+	}
+	if receiver.Kind == ValueNull {
+		storageName := staticFieldStorageName(fieldName, field)
+		if vm.activeSetters[owner+"."+storageName] == 0 {
+			return Null, false
+		}
+		if field.Value.Kind != "" {
+			return vm.currentGetterStoredValue(owner, field, field.Value), true
+		}
+		return defaultValue(field.Type, field.InitialValue), true
+	}
+	return Null, false
 }
 
 func propertyAccessorMethod(method Method) bool {
@@ -1063,7 +1215,26 @@ func (vm *VM) lookupSObjectRelationshipFieldToken(objectName, relationshipFieldN
 	}
 	canonicalRelationshipField, ok := storage.ResolveFieldName(definition, namespace, relationshipFieldName)
 	if !ok {
-		return Null, false
+		for name, candidate := range definition.Fields {
+			apiName := candidate.APIName
+			if apiName == "" {
+				apiName = name
+			}
+			if candidate.Type != storage.FieldReference || len(candidate.ReferenceTo) == 0 {
+				continue
+			}
+			parentRelationship := vm.parentRelationshipNameForReferenceField(definition, candidate)
+			if !vmParentRelationshipNameMatches(namespace, apiName, relationshipFieldName) &&
+				!vmRelationshipNameMatches(namespace, parentRelationship, relationshipFieldName) {
+				continue
+			}
+			canonicalRelationshipField = apiName
+			ok = true
+			break
+		}
+		if !ok {
+			return Null, false
+		}
 	}
 	relationshipField := definition.Fields[canonicalRelationshipField]
 	if relationshipField.APIName == "" {
@@ -1526,7 +1697,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			continue
 		}
 		currentType := runtimeObjectType(current)
-		if field, owner, ok := vm.lookupField(currentType, part); ok {
+		if field, owner, ok := vm.lookupReceiverField(currentType, part); ok {
 			if err := vm.checkMemberAccess(owner, field.Access, owner+"."+part, field.Modifiers); err != nil {
 				return Null, err
 			}
@@ -1551,15 +1722,27 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				continue
 			}
 			if _, value, ok := objectFieldValue(current, field.Name); ok {
+				value = coerceRawRecordTypeNameFieldRuntimeValue(field.Name, value)
+				if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, field.Name); exists {
+					value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
+				}
 				current = value
 				continue
 			}
 			if _, value, ok := objectFieldValue(current, part); ok {
+				value = coerceRawRecordTypeNameFieldRuntimeValue(part, value)
+				if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, part); exists {
+					value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
+				}
 				current = value
 				continue
 			}
 			if canonical := vm.resolveSObjectFieldName(current.Type, field.Name); canonical != field.Name {
 				if _, value, ok := objectFieldValue(current, canonical); ok {
+					value = coerceRawRecordTypeNameFieldRuntimeValue(canonical, value)
+					if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonical); exists {
+						value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
+					}
 					current = value
 					continue
 				}
@@ -1600,6 +1783,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			}
 		}
 		if ok {
+			value = coerceRawRecordTypeNameFieldRuntimeValue(canonicalPart, value)
 			if value.Kind == ValueNull {
 				if relationshipType, hasChildRelationship := vm.jsonSObjectChildRelationshipType(current.Type, canonicalPart); hasChildRelationship && !vm.sObjectParentRelationshipField(current.Type, canonicalPart) {
 					children := List()
@@ -1626,7 +1810,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				continue
 			}
 			if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists {
-				value = coerceStoredSObjectFieldRuntimeValue(value, fieldDef)
+				value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
 				if fieldDef.Type == storage.FieldSummary && !isExplicitSObjectField(current, canonicalPart) && !vm.queriedSObjectFieldsIncludes(current, canonicalPart) {
 					if summaryValue, hasSummary := vm.evaluateSummaryField(current, fieldDef); hasSummary {
 						value = vmValueFromStorage(summaryValue)
@@ -1997,14 +2181,15 @@ func (vm *VM) assign(name string, value Value) error {
 			}
 		}
 		if len(parts) > 2 {
-			if field, owner, ok := vm.lookupStaticField(parts[0], parts[1]); ok {
+			preferDependency := vm.currentMethod.Dependency || vm.classMemberReferenceUsesExplicitNamespace(strings.Join(parts[:2], "."), parts[0])
+			if field, owner, ok := vm.lookupStaticFieldForReceiver(parts[0], parts[1], preferDependency); ok {
 				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+parts[1], field.Modifiers); err != nil {
 					return err
 				}
 				if err := vm.ensureClassInitialized(owner); err != nil {
 					return err
 				}
-				field, _, _ = vm.lookupStaticField(owner, parts[1])
+				field, _, _ = vm.lookupStaticFieldForReceiver(owner, parts[1], preferDependency)
 				root := field.Value
 				if field.Getter != nil {
 					var err error

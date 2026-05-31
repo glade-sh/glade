@@ -475,6 +475,16 @@ func (vm *VM) sortApexComparableValues(values []Value, result *Result) error {
 			sortErr = err
 			return false
 		}
+		if compare < 0 {
+			reverse, err := vm.compareApexComparableValues(values[j], values[i], result)
+			if err != nil {
+				sortErr = err
+				return false
+			}
+			if reverse < 0 {
+				return false
+			}
+		}
 		return compare < 0
 	})
 	return sortErr
@@ -536,11 +546,17 @@ func compareSObjectSortValues(left, right Value) int {
 	if cmp := strings.Compare(strings.ToLower(runtimeObjectType(left)), strings.ToLower(runtimeObjectType(right))); cmp != 0 {
 		return cmp
 	}
-	if leftID, rightID, ok := sObjectSortFieldPair(left, right, "Id"); ok {
-		return strings.Compare(leftID, rightID)
-	}
 	if leftName, rightName, ok := sObjectSortFieldPair(left, right, "Name"); ok {
 		return strings.Compare(leftName, rightName)
+	}
+	if leftLabel, rightLabel, ok := sObjectSortFieldPair(left, right, "MasterLabel"); ok {
+		return strings.Compare(leftLabel, rightLabel)
+	}
+	if leftDeveloperName, rightDeveloperName, ok := sObjectSortFieldPair(left, right, "DeveloperName"); ok {
+		return strings.Compare(leftDeveloperName, rightDeveloperName)
+	}
+	if leftID, rightID, ok := sObjectSortFieldPair(left, right, "Id"); ok {
+		return strings.Compare(leftID, rightID)
 	}
 	return strings.Compare(sObjectStableSortKey(left), sObjectStableSortKey(right))
 }

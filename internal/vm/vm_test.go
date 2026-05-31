@@ -792,12 +792,12 @@ func TestGeneratedPlatformFallbackDoesNotMaskExplicitUnsupportedRuntimeMethods(t
 	machine := New(nil)
 	result := &Result{}
 
-	_, handled, err := machine.callValueMember("page", newPageReference("/apex/example"), "getContent", nil, result)
+	content, handled, err := machine.callValueMember("page", newPageReference("/apex/example"), "getContent", nil, result)
 	if !handled {
 		t.Fatalf("PageReference.getContent was not handled")
 	}
-	if err == nil || !strings.Contains(err.Error(), "unsupported call") {
-		t.Fatalf("PageReference.getContent error = %v, want explicit unsupported", err)
+	if err != nil || content.Kind != ValueObject || content.Type != "Blob" {
+		t.Fatalf("PageReference.getContent = %#v err=%v, want Blob", content, err)
 	}
 
 	for _, args := range [][]Value{
@@ -2563,6 +2563,8 @@ System.assertEquals('BillingStreet', member.getFieldPath());
 System.assertEquals('Billing Street', member.getLabel());
 System.assertEquals(false, member.getRequired());
 System.assertEquals(false, member.getDbRequired());
+FieldSetMember shortMember = (FieldSetMember)JSON.deserialize('{"fieldPath":"Name","label":"Name"}', FieldSetMember.class);
+System.assertEquals('Name', shortMember.getFieldPath());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2595,6 +2597,74 @@ System.assert(record.get(createdDateField) != System.now());
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectPutFieldTokenCoercesReferenceID(t *testing.T) {
+	program, err := CompileAnonymous(`
+SObject record = Account.SObjectType.newSObject();
+record.put(Account.OwnerId, UserInfo.getUserId());
+Account account = (Account)record;
+System.assertEquals(UserInfo.getUserId(), account.OwnerId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDecimalAdditionTreatsNullOperandAsZero(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal total = 0;
+Decimal amount;
+total += amount;
+System.assertEquals(0, total);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectListSortUsesNameBeforeId(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Button__c> buttons = new List<Button__c>{
+    new Button__c(Id = 'a00000000000003AAA', Name = 'Third'),
+    new Button__c(Id = 'a00000000000001AAA', Name = 'First'),
+    new Button__c(Id = 'a00000000000002AAA', Name = 'Second')
+};
+buttons.sort();
+System.assertEquals('First', buttons[0].Name);
+System.assertEquals('Second', buttons[1].Name);
+System.assertEquals('Third', buttons[2].Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Button__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Button__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Id":   {APIName: "Id", Type: storage.FieldID},
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -2952,6 +3022,9 @@ Schema.SObjectField fieldToken = Invoice__c.Account__c.Name;
 System.assertEquals('Name', String.valueOf(fieldToken));
 System.assertEquals('Name', fieldToken.getDescribe().getName());
 System.assertEquals('Account', fieldToken.getDescribe().getSObjectType().getDescribe().getName());
+Schema.SObjectField relationshipToken = Invoice__c.Account__r.Name;
+System.assertEquals('Name', String.valueOf(relationshipToken));
+System.assertEquals('Account', relationshipToken.getDescribe().getSObjectType().getDescribe().getName());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3720,6 +3793,15 @@ func TestFrameworkMatchesAllArgsTreatsAnySObjectAsSObjectListElementMatcher(t *t
 	}
 }
 
+func TestFrameworkMatcherEquivalentTreatsPagePathsCaseInsensitive(t *testing.T) {
+	if !frameworkMatcherEquivalent(String("/testPage"), String("/TESTPAGE")) {
+		t.Fatal("page path strings should match without case sensitivity")
+	}
+	if frameworkMatcherEquivalent(String("testPage"), String("TESTPAGE")) {
+		t.Fatal("non-path strings should remain case-sensitive")
+	}
+}
+
 func TestExecInstanceOfSObjectCollectionGenerics(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Account> accounts = new List<Account>{new Account(Name = 'Test')};
@@ -3766,6 +3848,18 @@ System.assert(!(values instanceof List<Object>));
 	}
 }
 
+func TestEvalInstanceOfNullHonorsLegacyAPIVersion(t *testing.T) {
+	machine := New(nil)
+	machine.currentMethod = Method{Name: "Legacy.run", APIVersion: "31.0"}
+	if got := machine.evalInstanceOf(Null, "List<SObject>"); got.Kind != ValueBool || !got.Bool {
+		t.Fatalf("legacy null instanceof = %v, want true", got)
+	}
+	machine.currentMethod = Method{Name: "Modern.run", APIVersion: "32.0"}
+	if got := machine.evalInstanceOf(Null, "List<SObject>"); got.Kind != ValueBool || got.Bool {
+		t.Fatalf("modern null instanceof = %v, want false", got)
+	}
+}
+
 func TestExecInstanceOfHonorsNumericWidening(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer count = 3;
@@ -3803,8 +3897,12 @@ System.assert(!('bob' instanceof Id));
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(nil).Execute(program); err != nil {
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+	if got := machine.evalInstanceOf(platformScalar("Id", "001000000000001AAA"), "String"); got.Kind != ValueBool || !got.Bool {
+		t.Fatalf("platform Id instanceof String = %v, want true", got)
 	}
 }
 

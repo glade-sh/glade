@@ -172,6 +172,7 @@ func (vm *VM) describePreparedDefinition(name string, definition storage.ObjectD
 		}
 	}
 	storage.EnsureStandardObjectFields(&definition)
+	storage.RemoveCustomSettingUnsupportedFields(&definition)
 	if strings.EqualFold(definition.APIName, "Account") && len(definition.RecordTypes) == 0 {
 		storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
 	}
@@ -470,13 +471,23 @@ func (vm *VM) defaultValueForNewSObjectField(definition storage.ObjectDefinition
 	rawDefault := strings.TrimSpace(field.DefaultValue)
 	if rawDefault != "" && (strings.Contains(rawDefault, "$RecordType") || strings.ContainsAny(rawDefault, "()+-*/&<>=")) {
 		if value, _, ok := dml.EvaluateRecordFormulaValueInOrg(rawDefault, field, vm.Org, definition, stored); ok {
+			if rawRecordTypeDefaultStorageValue(value, field) {
+				return storage.Value{}, false
+			}
 			return value, true
 		}
 	}
 	if value, ok := storage.DefaultValueForRecordField(definition, stored, field); ok {
+		if rawRecordTypeDefaultStorageValue(value, field) {
+			return storage.Value{}, false
+		}
 		return value, true
 	}
-	return storage.DefaultValueForField(field)
+	value, ok := storage.DefaultValueForField(field)
+	if ok && rawRecordTypeDefaultStorageValue(value, field) {
+		return storage.Value{}, false
+	}
+	return value, ok
 }
 
 func isNameFieldDescribe(field storage.Field) bool {
@@ -809,6 +820,9 @@ func (vm *VM) fieldSetMemberValue(objectName string, definition storage.ObjectDe
 		}
 		displayType = schemaDisplayTypeValue(display)
 		value.Fields["dbRequired"] = Bool(field.Required)
+		if fieldSetMemberDBRequired(objectName, field.APIName) {
+			value.Fields["dbRequired"] = Bool(true)
+		}
 		value.Fields["sObjectField"] = vm.sObjectFieldTokenFromField(objectName, field)
 	} else if relatedObjectName, field, ok := vm.resolveRelationshipFieldPath(definition, member.Field); ok {
 		if field.Label != "" {
@@ -822,6 +836,9 @@ func (vm *VM) fieldSetMemberValue(objectName string, definition storage.ObjectDe
 		}
 		displayType = schemaDisplayTypeValue(display)
 		value.Fields["dbRequired"] = Bool(field.Required)
+		if fieldSetMemberDBRequired(relatedObjectName, field.APIName) {
+			value.Fields["dbRequired"] = Bool(true)
+		}
 		value.Fields["sObjectField"] = vm.sObjectFieldTokenFromField(relatedObjectName, field)
 	} else {
 		value.Fields["sObjectField"] = Value{Kind: ValueNull, Type: "Schema.SObjectField"}
@@ -829,6 +846,10 @@ func (vm *VM) fieldSetMemberValue(objectName string, definition storage.ObjectDe
 	value.Fields["label"] = String(label)
 	value.Fields["type"] = displayType
 	return value
+}
+
+func fieldSetMemberDBRequired(objectName, fieldName string) bool {
+	return strings.EqualFold(objectName, "Account") && strings.EqualFold(fieldName, "LastName")
 }
 
 func (vm *VM) resolveRelationshipFieldPath(definition storage.ObjectDefinition, fieldPath string) (string, storage.Field, bool) {
@@ -1212,10 +1233,14 @@ func syntheticSObjectSystemField(fieldName string) (storage.Field, bool) {
 		return storage.Field{APIName: "LastModifiedDate", Label: "Last Modified Date", Type: storage.FieldDateTime, DisplayType: "DATETIME"}, true
 	case strings.EqualFold(fieldName, "LastModifiedById"):
 		return storage.Field{APIName: "LastModifiedById", Label: "Last Modified By ID", Type: storage.FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"User"}, RelationshipName: "LastModifiedBy"}, true
+	case strings.EqualFold(fieldName, "LastActivityDate"):
+		return storage.Field{APIName: "LastActivityDate", Label: "Last Activity", Type: storage.FieldDate, DisplayType: "DATE", Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false), Permissionable: storage.BoolFlag(false)}, true
 	case strings.EqualFold(fieldName, "SystemModstamp"):
 		return storage.Field{APIName: "SystemModstamp", Label: "System Modstamp", Type: storage.FieldDateTime, DisplayType: "DATETIME"}, true
 	case strings.EqualFold(fieldName, "OwnerId"):
 		return storage.Field{APIName: "OwnerId", Label: "Owner ID", Type: storage.FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"User"}, RelationshipName: "Owner"}, true
+	case strings.EqualFold(fieldName, "RecordTypeId"):
+		return storage.Field{APIName: "RecordTypeId", Label: "Record Type ID", Type: storage.FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"}, true
 	case strings.EqualFold(fieldName, "IsDeleted"):
 		return storage.Field{APIName: "IsDeleted", Label: "Deleted", Type: storage.FieldBoolean, DisplayType: "BOOLEAN"}, true
 	default:

@@ -25,6 +25,7 @@ type Method struct {
 	Access        string
 	Modifiers     []string
 	File          string
+	APIVersion    string
 	Line          int
 	Column        int
 	Unsupported   string

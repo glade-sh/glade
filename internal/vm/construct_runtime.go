@@ -37,6 +37,15 @@ func reflectionConstructableAccess(access string) bool {
 // is the name-resolution prologue of constructValueWithLiteral, separated so the
 // construction switch reads as pure dispatch.
 func (vm *VM) resolveConstructorTypeName(typeName string, args []Value, namedArgs map[string]Value) string {
+	if !strings.Contains(typeName, ".") {
+		if resolved := vm.resolveTypeNameInCurrentExecutionContext(typeName); resolved != "" && vm.classConstructorCanAccept(resolved, args, namedArgs) {
+			typeName = resolved
+		} else if resolved, ok := vm.resolveCurrentNamespaceTopLevelClassName(typeName); ok && vm.classConstructorCanAccept(resolved, args, namedArgs) {
+			typeName = resolved
+		} else if resolved, ok := vm.resolveTopLevelClassName(typeName); ok && vm.classConstructorCanAccept(resolved, args, namedArgs) {
+			typeName = resolved
+		}
+	}
 	if isCanonicalRuntimeTypeName(typeName) {
 		typeName = canonicalRuntimeTypeName(typeName)
 	}
@@ -227,7 +236,13 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	if strings.EqualFold(typeName, "VisualEditor.DynamicPickListRows") {
 		return newVisualEditorDynamicPickListRows(args, namedArgs)
 	}
-	if class, ok := vm.lookupClass(typeName); ok && !vm.isSObjectType(typeName) && !platformVersionTypeName(typeName) {
+	if strings.EqualFold(typeName, "Auth.UserData") {
+		return constructAuthUserData(args, namedArgs)
+	}
+	if strings.EqualFold(typeName, "Auth.VerificationResult") {
+		return constructAuthVerificationResult(args, namedArgs)
+	}
+	if class, ok := vm.lookupClass(typeName); ok && (!vm.isSObjectType(typeName) || vm.classConstructorCanAccept(typeName, args, namedArgs)) && !platformVersionTypeName(typeName) {
 		typeName = runtimeClassName(class)
 		if class.IsInterface {
 			return Null, fmt.Errorf("cannot instantiate interface %s", typeName)
@@ -547,19 +562,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		return newDomDocument(), nil
 	case "Auth.UserData":
-		if len(args) != 11 || len(namedArgs) != 0 {
-			return Null, fmt.Errorf("Auth.UserData constructor expects 11 arguments")
-		}
-		data := Object("Auth.UserData")
-		for index, field := range []string{"identifier", "firstName", "lastName", "fullName", "email", "link", "username", "locale", "provider", "siteLoginUrl", "attributeMap"} {
-			data.Fields[field] = args[index]
-		}
-		return data, nil
+		return constructAuthUserData(args, namedArgs)
 	case "Auth.VerificationResult":
-		if len(args) != 3 || len(namedArgs) != 0 {
-			return Null, fmt.Errorf("Auth.VerificationResult constructor expects redirect, success, message")
-		}
-		return newAuthVerificationResult(args[0], args[1], args[2]), nil
+		return constructAuthVerificationResult(args, namedArgs)
 	case "Auth.AuthConfiguration":
 		return constructAuthConfigurationValue(args, namedArgs)
 	case "Auth.JWT":
@@ -994,7 +999,10 @@ func (vm *VM) classConstructorCanAccept(typeName string, args []Value, namedArgs
 		return ok && !ambiguous
 	}
 	_, ok, ambiguous := vm.matchConstructor(class, args)
-	return ok && !ambiguous
+	if ok && !ambiguous {
+		return true
+	}
+	return !ambiguous && isExceptionType(runtimeClassName(class)) && exceptionConstructorArgsCanApply(args)
 }
 
 func (vm *VM) resolveCurrentNamespaceTopLevelClassName(typeName string) (string, bool) {
@@ -1047,6 +1055,7 @@ func constructAuthConfigurationValue(args []Value, namedArgs map[string]Value) (
 	config := Object("Auth.AuthConfiguration")
 	config.Fields["communityUrl"] = args[0]
 	config.Fields["startUrl"] = args[1]
+	config.Fields["authProviders"] = typedList("List<AuthProvider>")
 	authConfig := Object("Auth.AuthConfig")
 	authConfig.Fields["Url"] = args[0]
 	config.Fields["authConfig"] = authConfig
@@ -1101,12 +1110,51 @@ func applyExceptionConstructorArgs(object *Value, args []Value) (bool, error) {
 	}
 }
 
+func exceptionConstructorArgsCanApply(args []Value) bool {
+	switch len(args) {
+	case 0, 1:
+		return true
+	case 2:
+		return args[1].Kind == ValueNull || (args[1].Kind == ValueObject && isExceptionType(args[1].Type))
+	default:
+		return false
+	}
+}
+
 func setExceptionMessage(object *Value, value Value) {
 	if value.Kind == ValueString {
 		object.Fields["message"] = value
 	} else if value.Kind != ValueNull {
 		object.Fields["message"] = String(value.String())
 	}
+}
+
+func constructAuthUserData(args []Value, namedArgs map[string]Value) (Value, error) {
+	fields := []string{"identifier", "firstName", "lastName", "fullName", "email", "link", "username", "locale", "provider", "siteLoginUrl", "attributeMap"}
+	if len(namedArgs) != 0 || (len(args) != 0 && len(args) != len(fields)) {
+		return Null, fmt.Errorf("Auth.UserData constructor expects 0 or 11 arguments")
+	}
+	data := Object("Auth.UserData")
+	for _, field := range fields {
+		data.Fields[field] = Null
+	}
+	if len(args) == 0 {
+		return data, nil
+	}
+	for index, field := range fields {
+		data.Fields[field] = args[index]
+	}
+	return data, nil
+}
+
+func constructAuthVerificationResult(args []Value, namedArgs map[string]Value) (Value, error) {
+	if len(namedArgs) != 0 || (len(args) != 0 && len(args) != 3) {
+		return Null, fmt.Errorf("Auth.VerificationResult constructor expects 0 arguments or redirect, success, message")
+	}
+	if len(args) == 0 {
+		return newAuthVerificationResult(Null, Bool(false), Null), nil
+	}
+	return newAuthVerificationResult(args[0], args[1], args[2]), nil
 }
 
 func (vm *VM) constructArrayValue(typeName string, size Value) (Value, error) {
@@ -1531,6 +1579,11 @@ func (vm *VM) callChainedConstructor(callee string, args []Value, result *Result
 	}
 	if !found {
 		if len(args) == 0 {
+			if callee == "super" {
+				if err := vm.callImplicitSuperConstructor(targetClass, Method{}, receiver, result); err != nil {
+					return Null, err
+				}
+			}
 			return Null, nil
 		}
 		if callee == "super" {
@@ -2326,7 +2379,8 @@ func (vm *VM) typeNameIsLocalClass(typeName string) bool {
 	return ok && !class.Dependency
 }
 
-func (vm *VM) matchRegisteredInstanceMethod(name string, args []Value) (Method, bool, bool) {	if candidates := vm.registeredMethodCandidates(name); len(candidates) > 0 {
+func (vm *VM) matchRegisteredInstanceMethod(name string, args []Value) (Method, bool, bool) {
+	if candidates := vm.registeredMethodCandidates(name); len(candidates) > 0 {
 		instance := make([]Method, 0, len(candidates))
 		for _, candidate := range candidates {
 			if !candidate.IsStatic {
@@ -3184,12 +3238,18 @@ func (vm *VM) evalInstanceOf(value Value, target string) Value {
 		return Bool(false)
 	}
 	if value.Kind == ValueNull {
+		if vm.currentMethodUsesLegacyNullInstanceOf() {
+			return Bool(true)
+		}
 		return Bool(false)
 	}
 	if strings.EqualFold(target, "Id") && value.Kind == ValueString {
 		return Bool(validateApexIDShape(value.Text) == nil)
 	}
 	if strings.EqualFold(target, "String") && value.Kind == ValueString && strings.EqualFold(value.Type, "Id") {
+		return Bool(true)
+	}
+	if strings.EqualFold(target, "String") && value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
 		return Bool(true)
 	}
 	if strings.EqualFold(target, "Datetime") && value.Kind == ValueObject && strings.EqualFold(value.Type, "Date") {
@@ -3219,6 +3279,21 @@ func (vm *VM) evalInstanceOf(value Value, target string) Value {
 		return Bool(true)
 	}
 	return Bool(numericConversionScore(target, valueType) >= 0)
+}
+
+func (vm *VM) currentMethodUsesLegacyNullInstanceOf() bool {
+	if vm == nil {
+		return false
+	}
+	version := strings.TrimSpace(vm.currentMethod.APIVersion)
+	if version == "" {
+		return false
+	}
+	major, err := strconv.ParseFloat(version, 64)
+	if err != nil {
+		return false
+	}
+	return major < 32
 }
 
 func builtinExceptionParent(typeName string) string {

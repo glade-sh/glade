@@ -444,6 +444,9 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 			if err == nil && strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
 				return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataDefaultValue(objectName, kind)), true, nil
 			}
+			if err == nil {
+				return vm.storeCustomDataCachedValue(cacheKey, typedNull(objectName)), true, nil
+			}
 			return Null, true, err
 		}
 		return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataValue(record, kind)), true, nil

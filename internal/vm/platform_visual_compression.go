@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+func visualEditorPlatformObjectType(typeName string) bool {
+	return strings.EqualFold(typeName, "VisualEditor.DataRow") ||
+		strings.EqualFold(typeName, "VisualEditor.DynamicPickListRows")
+}
+
 func callRestResponseMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	switch method {

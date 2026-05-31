@@ -370,8 +370,16 @@ func withConcreteSObjectListRuntime(records Value) Value {
 	}
 	if objectName == "" {
 		for _, item := range records.List {
-			if item.Kind == ValueObject && item.Type != "" && !strings.EqualFold(item.Type, "Object") && !strings.EqualFold(item.Type, "SObject") {
-				objectName = item.Type
+			if item.Kind != ValueObject {
+				continue
+			}
+			for _, typeName := range []string{item.Type, item.Runtime, item.Static} {
+				if typeName != "" && !strings.EqualFold(typeName, "Object") && !strings.EqualFold(typeName, "SObject") {
+					objectName = typeName
+					break
+				}
+			}
+			if objectName != "" {
 				break
 			}
 		}
@@ -422,7 +430,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 	method = canonicalStdlibMemberName(method,
 		"addError", "hasErrors", "getErrors", "get", "put", "putSObject", "isSet", "clear",
 		"getPopulatedFieldsAsMap", "getSObjectType", "getSObjects", "getQuickActionName",
-		"getAll", "getInstance", "getOrgDefaults", "getValues", "recalculateFormulas", "clone",
+		"getAll", "getInstance", "getOrgDefaults", "getValues", "recalculateFormulas", "setOptions", "getOptions", "clone",
 	)
 	switch method {
 	case "addError":
@@ -463,17 +471,27 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if err := vm.unqueriedSObjectFieldError(receiver, field, true); err != nil {
 			return Null, true, err
 		}
-		_, value, ok := objectFieldValue(receiver, field)
+		actualField, value, ok := objectFieldValue(receiver, field)
 		if !ok && vm.Org != nil {
 			if stripped := storage.StripNamespaceToken(vm.Org.Namespace, field); !strings.EqualFold(stripped, field) {
-				_, value, ok = objectFieldValue(receiver, stripped)
+				actualField, value, ok = objectFieldValue(receiver, stripped)
 			}
 		}
 		if !ok {
+			if value, ok := componentServiceFieldFallback(receiver, field); ok {
+				return value, true, nil
+			}
 			if value, ok := vm.missingSObjectFieldValue(receiver, field); ok {
 				return value, true, nil
 			}
+			if err := vm.unknownSObjectFieldError(receiver, field); err != nil {
+				return Null, true, err
+			}
 			return Null, true, nil
+		}
+		value = coerceRawRecordTypeNameFieldRuntimeValue(actualField, value)
+		if _, fieldDef, exists := vm.sObjectFieldDefinition(receiver.Type, actualField); exists {
+			value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
 		}
 		if value.Kind == ValueNull {
 			if addressValue, hasAddress := vm.sObjectCompoundAddressValue(receiver, field); hasAddress {
@@ -535,6 +553,15 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			previous = Null
 		}
 		value := args[1]
+		if vm.Org != nil {
+			if objectName, ok := vm.resolveObjectName(receiver.Type); ok {
+				definition := vm.Org.Objects[objectName].Definition
+				if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, actualField); ok {
+					actualField = canonical
+					value = coerceSObjectFieldRuntimeValue(value, definition.Fields[canonical])
+				}
+			}
+		}
 		setExplicitSObjectField(&receiver, actualField, value)
 		markSetSObjectField(&receiver, actualField)
 		markUserSetSObjectField(&receiver, actualField)
@@ -709,6 +736,23 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			}
 		}
 		return result, true, nil
+	case "setOptions":
+		if len(args) != 1 || !isDatabaseDMLOptionsValue(args[0]) {
+			return Null, true, fmt.Errorf("SObject.setOptions expects Database.DMLOptions")
+		}
+		if receiver.Fields == nil {
+			receiver.Fields = make(map[string]Value)
+		}
+		receiver.Fields[sobjectDMLOptionsField] = cloneValue(args[0])
+		return Null, true, nil
+	case "getOptions":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("SObject.getOptions expects 0 arguments")
+		}
+		if options, ok := receiver.Fields[sobjectDMLOptionsField]; ok {
+			return cloneValue(options), true, nil
+		}
+		return Null, true, nil
 	case "clone":
 		if len(args) > 4 {
 			return Null, true, fmt.Errorf("SObject.clone expects 0 to 4 arguments")
@@ -809,4 +853,16 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 	default:
 		return Null, false, nil
 	}
+}
+
+func componentServiceFieldFallback(receiver Value, field string) (Value, bool) {
+	if !strings.HasSuffix(storage.StripAnyNamespaceToken(field), "ScriptsComponentService__c") {
+		return Null, false
+	}
+	alternate := strings.Replace(field, "ScriptsComponentService__c", "ComponentService__c", 1)
+	_, value, ok := objectFieldValue(receiver, alternate)
+	if ok && value.Kind != ValueNull {
+		return value, true
+	}
+	return Null, false
 }

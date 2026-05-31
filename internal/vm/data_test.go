@@ -3054,6 +3054,120 @@ System.runAs(u) {
 	}
 }
 
+func TestExecMinimumAccessCanReadRecordTypeAndCustomMetadataDescribe(t *testing.T) {
+	program, err := CompileAnonymous(`
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
+User u = new User(
+	Username = 'metadata-readable@example.invalid',
+	Alias = 'mread',
+	Email = 'metadata-readable@example.invalid',
+	LastName = 'Metadata',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+System.runAs(u) {
+	System.assert(RecordType.SObjectType.getDescribe().isAccessible(), 'RecordType should be readable metadata');
+	System.assert(Filter__mdt.SObjectType.getDescribe().isAccessible(), 'custom metadata should be readable');
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	org.Objects["Filter__mdt"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Filter__mdt",
+		Fields: map[string]storage.Field{
+			"DeveloperName": {APIName: "DeveloperName", Type: storage.FieldString},
+			"MasterLabel":   {APIName: "MasterLabel", Type: storage.FieldString},
+		},
+		Metadata: map[string]string{"kind": "customMetadata"},
+	}, Records: map[storage.ID]storage.Record{}}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListSObjectTypeSurvivesConcreteListAssignment(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Opportunity> opportunities = new List<Opportunity>{ new Opportunity(Name = 'Acme') };
+List<SObject> records = opportunities;
+System.assertEquals('Opportunity', records.getSObjectType().getDescribe().getName());
+records = new Opportunity[] { new Opportunity(Name = 'Array') };
+System.assertEquals('Opportunity', records.getSObjectType().getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Opportunity")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListSObjectTypeSurvivesMethodParameterWidening(t *testing.T) {
+	accept, err := CompileAnonymous(`
+System.assertEquals('Opportunity', records.getSObjectType().getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Probe.accept(new Opportunity[] { new Opportunity(Name = 'Acme') });
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Opportunity")
+	machine.SetOrg(&org)
+	if err := machine.RegisterMethod(Method{
+		Name:       "Probe.accept",
+		ClassName:  "Probe",
+		IsStatic:   true,
+		Params:     []Param{{Name: "records", Type: "List<SObject>"}},
+		ReturnType: "void",
+		Program:    accept,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestWithConcreteSObjectListRuntimeUsesItemRuntime(t *testing.T) {
+	item := Object("SObject")
+	item.Runtime = "Opportunity"
+	records := List(item)
+	records.Type = "List<SObject>"
+	records = withConcreteSObjectListRuntime(records)
+	if got, want := records.Runtime, "List<Opportunity>"; got != want {
+		t.Fatalf("runtime = %q, want %q", got, want)
+	}
+}
+
+func TestListSObjectTypeNameUsesItemObjectMarker(t *testing.T) {
+	item := Object("SObject")
+	item.Fields["object"] = String("Opportunity")
+	records := List(item)
+	records.Type = "List<SObject>"
+	if got, want := listSObjectTypeName(records), "Opportunity"; got != want {
+		t.Fatalf("object type = %q, want %q", got, want)
+	}
+}
+
 func TestExecPermissionSetGroupAssignmentGrantsComponentPermissions(t *testing.T) {
 	program, err := CompileAnonymous(`
 PermissionSet ps = new PermissionSet(Name = 'ReadAccountShipping', Label = 'Read Account Shipping');
@@ -4634,6 +4748,54 @@ System.assertEquals(0, populated.get('verifiable__Score__c'));
 	}
 }
 
+func TestExecCustomObjectLastActivityDateIsReadOnlyAndReadable(t *testing.T) {
+	program, err := CompileAnonymous(`
+Widget__c widget = new Widget__c(Name = 'Acme');
+Map<String, Schema.SObjectField> fields = Schema.SObjectType.Widget__c.fields.getMap();
+System.assertEquals(false, fields.get('lastactivitydate').getDescribe().isUpdateable());
+System.assertEquals(null, widget.get('lastactivitydate'));
+System.assertEquals(null, widget.get('recordtypeid'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "verifiable"
+	org.Objects["Widget__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__c", Fields: map[string]storage.Field{
+		"Name": {APIName: "Name", Type: storage.FieldString},
+	}}, Records: map[storage.ID]storage.Record{}}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCustomSettingDescribeOmitsCustomObjectOnlyStandardFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = Schema.SObjectType.Widget__c.fields.getMap();
+System.assert(fields.containsKey('Name'), String.valueOf(fields.keySet()));
+System.assertEquals(false, fields.containsKey('lastactivitydate'), String.valueOf(fields.keySet()));
+System.assertEquals(false, fields.containsKey('recordtypeid'), String.valueOf(fields.keySet()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Widget__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Widget__c",
+		Fields:  map[string]storage.Field{},
+		Metadata: map[string]string{
+			"kind": "customSetting",
+		},
+	}, Records: map[storage.ID]storage.Record{}}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecGetPopulatedFieldsAsMapMatchesNamespacedFieldToken(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'Acme');
@@ -5596,6 +5758,83 @@ System.assertEquals('Scheduled Batch', batch.TypeName__c);
 		Records: map[storage.ID]storage.Record{
 			"012000000000101": {Object: "RecordType", ID: "012000000000101"},
 		},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRawRecordTypeNameDefaultReadsAsNullBeforeDML(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id recordTypeId = Batch__c.SObjectType.getDescribe().getRecordTypeInfosByName().get('Scheduled Batch').getRecordTypeId();
+Batch__c batch = new Batch__c(TypeName__c = '$RecordType.Name');
+System.assertEquals(null, batch.TypeName__c);
+batch.RecordTypeId = recordTypeId;
+System.assertEquals(null, batch.TypeName__c);
+insert batch;
+Batch__c stored = [SELECT Id, TypeName__c FROM Batch__c LIMIT 1];
+System.assertEquals('Scheduled Batch', stored.TypeName__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Batch__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Batch__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name":         {APIName: "Name", Type: storage.FieldString},
+				"RecordTypeId": {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}},
+				"TypeName__c":  {APIName: "TypeName__c", Type: storage.FieldString, DefaultValue: "$RecordType.Name"},
+			},
+			RecordTypes: []storage.RecordTypeInfo{
+				{ID: "012000000000101", DeveloperName: "Scheduled", Name: "Scheduled Batch", Active: true, Available: true},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["RecordType"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "RecordType",
+			KeyPrefix: "012",
+			Fields: map[string]storage.Field{
+				"Id":   {APIName: "Id", Type: storage.FieldID},
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"012000000000101": {Object: "RecordType", ID: "012000000000101"},
+		},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecScriptsComponentServiceGetFallsBackToComponentService(t *testing.T) {
+	program, err := CompileAnonymous(`
+Settings__c settings = new Settings__c(FooterComponentService__c = 'MockComponentService');
+System.assertEquals('MockComponentService', (String)settings.get('FooterScriptsComponentService__c'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Settings__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Settings__c",
+			Fields: map[string]storage.Field{
+				"FooterComponentService__c":        {APIName: "FooterComponentService__c", Type: storage.FieldString},
+				"FooterScriptsComponentService__c": {APIName: "FooterScriptsComponentService__c", Type: storage.FieldString},
+			},
+			Metadata: map[string]string{"kind": "customSetting"},
+		},
+		Records: make(map[storage.ID]storage.Record),
 	}
 	machine := New(nil)
 	machine.SetOrg(&org)
@@ -7976,6 +8215,20 @@ System.assert(!ratingMember.getDbRequired());
 	}
 }
 
+func TestFieldSetMemberAccountLastNameIsDBRequired(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	storage.EnsureStandardObjectFieldsForFeatures(&account.Definition, []string{"PersonAccounts"})
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+
+	member := machine.fieldSetMemberValue("Account", org.Objects["Account"].Definition, storage.FieldSetMemberMetadata{Field: "LastName"})
+	if got := member.Fields["dbRequired"]; got.Kind != ValueBool || !got.Bool {
+		t.Fatalf("Account.LastName dbRequired = %#v", got)
+	}
+}
+
 func TestExecDescribeFieldSetMemberRelationshipPathReturnsLeafFieldToken(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object affiliationDescribe = AccountAffiliation__c.SObjectType.getDescribe();
@@ -8381,6 +8634,20 @@ try {
     System.assert(message != null);
 }
 System.assert(caught);
+caught = false;
+try {
+    Database.query('SELECT Id FROM Account WHERE Id = {!missing}');
+} catch (QueryException qe) {
+    caught = true;
+}
+System.assert(caught);
+caught = false;
+try {
+    Database.query('SELECT Id FROM Account WHERE Id = \'bad data dot com\'');
+} catch (QueryException qe) {
+    caught = true;
+}
+System.assert(caught);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -8549,6 +8816,47 @@ System.assertEquals(0, fresh.SubTotal__c, 'fresh subtotal after child delete');
 				"Account__c":  {APIName: "Account__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account__r"},
 				"Amount__c":   {APIName: "Amount__c", Type: storage.FieldDecimal},
 				"IsCoupon__c": {APIName: "IsCoupon__c", Type: storage.FieldBoolean},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDMLAccessibleSummaryFieldDoesNotReadLiveRollup(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account parent = new Account(Name = 'Acme');
+insert parent;
+insert new WidgetLine__c(Account__c = parent.Id, Amount__c = 7);
+System.assertEquals(0, parent.SubTotal__c, 'inserted parent should keep stale summary value');
+Account fresh = [SELECT SubTotal__c FROM Account WHERE Id = :parent.Id LIMIT 1];
+System.assertEquals(7, fresh.SubTotal__c, 'queried parent should read current summary value');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["SubTotal__c"] = storage.Field{
+		APIName:           "SubTotal__c",
+		Type:              storage.FieldSummary,
+		DisplayType:       "DECIMAL",
+		SummarizedField:   "WidgetLine__c.Amount__c",
+		SummaryForeignKey: "WidgetLine__c.Account__c",
+		SummaryOperation:  "sum",
+	}
+	org.Objects["Account"] = account
+	org.Objects["WidgetLine__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "WidgetLine__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Account__c": {APIName: "Account__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account__r"},
+				"Amount__c":  {APIName: "Amount__c", Type: storage.FieldDecimal},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -9264,7 +9572,7 @@ String text = JSON.serialize(row);
 Object decoded = JSON.deserializeUntyped(text);
 Object attrs = decoded.get('attributes');
 System.assertEquals('Account', attrs.get('type'));
-System.assertEquals('/services/data/v60.0/sobjects/Account/' + a.Id, attrs.get('url'));
+System.assertEquals('/services/data/v` + storage.DefaultRESTAPIVersion + `/sobjects/Account/' + a.Id, attrs.get('url'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -10968,6 +11276,48 @@ func TestExecSObjectPutWrongFieldTokenThrowsSObjectException(t *testing.T) {
 	var thrown *apexThrowError
 	if !errors.As(err, &thrown) || thrown.value.Type != "SObjectException" {
 		t.Fatalf("err = %#v, want SObjectException", err)
+	}
+}
+
+func TestExecSObjectGetUnknownFieldThrowsSObjectException(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	program, err := CompileAnonymous(`
+try {
+  new Account(Name = 'Acme').get('THIS_SHOULDNT_EXIST');
+  System.assert(false, 'expected SObjectException');
+} catch (SObjectException e) {
+  System.assert(e.getMessage().contains('THIS_SHOULDNT_EXIST'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSObjectGetCoercesNumericStringByFieldDefinition(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["AnnualRevenue"] = storage.Field{APIName: "AnnualRevenue", Type: storage.FieldDecimal}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	record := Object("Account")
+	setExplicitSObjectField(&record, "AnnualRevenue", String("12.5"))
+
+	value, handled, err := machine.callSObjectMember(record, "get", []Value{String("AnnualRevenue")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled {
+		t.Fatal("get was not handled")
+	}
+	if value.Kind != ValueDecimal || value.Decimal != 12.5 {
+		t.Fatalf("AnnualRevenue value = %#v", value)
 	}
 }
 
@@ -14049,6 +14399,39 @@ System.assert(!setting.pkg__Enabled__c);
 	}
 }
 
+func TestExecSOQLCustomMetadataSelectedAuditFieldIsQueryable(t *testing.T) {
+	program, err := CompileAnonymous(`
+Feature__mdt cfg = [SELECT Id, CreatedDate FROM Feature__mdt LIMIT 1];
+Schema.SObjectField createdDateField = Feature__mdt.SObjectType.getDescribe().fields.getMap().get('CreatedDate');
+cfg.get(createdDateField);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := customDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCustomSettingGetInstanceMissingReturnsTypedNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(null, Local_Setting__c.getInstance(null));
+System.assertEquals(null, Local_Setting__c.getInstance('Missing'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := customDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCustomDataAccessorsThroughSObjectSurface(t *testing.T) {
 	program, err := CompileAnonymous(`
 SObject setting = Local_Setting__c.getInstance('Default');
@@ -14250,9 +14633,16 @@ System.assert(defaults == new Hierarchy_Setting__c());
 func TestExecListCustomSettingGetAllRefreshesAfterUpsert(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(1, Local_Setting__c.getAll().size());
+System.assertEquals(false, Local_Setting__c.getAll().get('Default').Enabled__c);
+Local_Setting__c existing = Local_Setting__c.getInstance('Default');
+existing.Enabled__c = true;
+update existing;
+System.assertEquals(true, Local_Setting__c.getAll().get('Default').Enabled__c);
 Local_Setting__c setting = new Local_Setting__c(Name = 'Second', Enabled__c = true);
 upsert setting;
 System.assertEquals(2, Local_Setting__c.getAll().size());
+String serialized = JSON.serialize(Local_Setting__c.getAll().get('Default'));
+System.assert(serialized.contains('"Optional__c":null'), serialized);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -14355,8 +14745,9 @@ func customDataOrg() storage.OrgState {
 			KeyPrefix: "a01",
 			Metadata:  map[string]string{"kind": "customSetting", "customSettingsType": "List"},
 			Fields: map[string]storage.Field{
-				"Name":       {APIName: "Name", Type: storage.FieldString},
-				"Enabled__c": {APIName: "Enabled__c", Type: storage.FieldBoolean},
+				"Name":        {APIName: "Name", Type: storage.FieldString},
+				"Enabled__c":  {APIName: "Enabled__c", Type: storage.FieldBoolean},
+				"Optional__c": {APIName: "Optional__c", Type: storage.FieldString},
 			},
 		},
 		Records: map[storage.ID]storage.Record{

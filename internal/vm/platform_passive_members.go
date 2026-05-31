@@ -2779,7 +2779,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Auth.AuthConfiguration.getAuthProviders expects 0 arguments")
 			}
-			return List(), receiver, false, true, nil
+			return typedList("List<AuthProvider>"), receiver, false, true, nil
 		case "getAuthConfig":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Auth.AuthConfiguration.getAuthConfig expects 0 arguments")
@@ -3046,7 +3046,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("PageReference.%s expects 0 arguments", method)
 			}
-			return Null, receiver, false, true, unsupportedCallError("PageReference." + method + " local Visualforce page rendering surface")
+			if method == "getContentAsPDF" {
+				pdf := "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n"
+				return platformScalar("Blob", pdf), receiver, false, true, nil
+			}
+			return platformScalar("Blob", pageReferenceURL(receiver).Text), receiver, false, true, nil
 		case "getUrl":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("PageReference.getUrl expects 0 arguments")
@@ -3101,6 +3105,12 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("PageReference.setCookies expects List<Cookie>")
 			}
 			cookies := typedMap("Map<String,Cookie>")
+			if existing, ok := receiver.Fields["cookies"]; ok && existing.Kind == ValueMap {
+				cookies = existing
+				if cookies.Type == "" {
+					cookies.Type = "Map<String,Cookie>"
+				}
+			}
 			for _, cookie := range args[0].List {
 				if cookie.Kind != ValueObject || !strings.EqualFold(cookie.Type, "Cookie") {
 					return Null, receiver, false, true, fmt.Errorf("PageReference.setCookies expects List<Cookie>")
@@ -3110,6 +3120,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					continue
 				}
 				key := mapKey(name)
+				if _, exists := cookies.Map[key]; !exists {
+					cookies.MapOrder = append(cookies.MapOrder, key)
+				}
 				cookies.Map[key] = cookie
 				cookies.MapKeys[key] = name
 			}

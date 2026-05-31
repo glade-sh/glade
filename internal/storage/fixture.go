@@ -434,7 +434,13 @@ func applySitesAndCommunities(org *OrgState) {
 		"IsActive":      {APIName: "IsActive", Type: FieldBoolean},
 	})
 	ensureObject(org, "Network", "0DB", map[string]Field{
-		"Name":                       {APIName: "Name", Type: FieldString, Required: true},
+		"Name": {APIName: "Name", Type: FieldString, Required: true},
+		"SelfRegProfileId": {
+			APIName:          "SelfRegProfileId",
+			Type:             FieldReference,
+			ReferenceTo:      []string{"Profile"},
+			RelationshipName: "SelfRegProfile",
+		},
 		"Status":                     {APIName: "Status", Type: FieldString},
 		"UrlPathPrefix":              {APIName: "UrlPathPrefix", Type: FieldString},
 		"OptionsGuestChatterEnabled": {APIName: "OptionsGuestChatterEnabled", Type: FieldBoolean},
@@ -574,7 +580,30 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"PermissionsActivateContract":    {APIName: "PermissionsActivateContract", Type: FieldBoolean},
 	})
 	ensureObject(org, "UserLicense", "100", map[string]Field{
+		"Name":                 {APIName: "Name", Type: FieldString, Required: true},
+		"LicenseDefinitionKey": {APIName: "LicenseDefinitionKey", Type: FieldString},
+	})
+	ensureObject(org, "Network", "0DB", map[string]Field{
 		"Name": {APIName: "Name", Type: FieldString, Required: true},
+		"SelfRegProfileId": {
+			APIName:          "SelfRegProfileId",
+			Type:             FieldReference,
+			ReferenceTo:      []string{"Profile"},
+			RelationshipName: "SelfRegProfile",
+		},
+		"Status":                     {APIName: "Status", Type: FieldString},
+		"UrlPathPrefix":              {APIName: "UrlPathPrefix", Type: FieldString},
+		"OptionsGuestChatterEnabled": {APIName: "OptionsGuestChatterEnabled", Type: FieldBoolean},
+	})
+	ensureObject(org, "UserLogin", "0Yw", map[string]Field{
+		"UserId": {
+			APIName:          "UserId",
+			Type:             FieldReference,
+			ReferenceTo:      []string{"User"},
+			RelationshipName: "User",
+			Required:         true,
+		},
+		"IsFrozen": {APIName: "IsFrozen", Type: FieldBoolean},
 	})
 	ensureObject(org, "UserRole", "00E", map[string]Field{
 		"Name":          {APIName: "Name", Type: FieldString, Required: true},
@@ -773,12 +802,18 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	putSeedRecord(org, "UserLicense", Record{
 		ID:     salesforceLicenseID,
 		Object: "UserLicense",
-		Fields: map[string]Value{"Name": StringValue("Salesforce")},
+		Fields: map[string]Value{
+			"Name":                 StringValue("Salesforce"),
+			"LicenseDefinitionKey": StringValue("SFDC"),
+		},
 	})
 	putSeedRecord(org, "UserLicense", Record{
 		ID:     chatterExternalLicenseID,
 		Object: "UserLicense",
-		Fields: map[string]Value{"Name": StringValue("Chatter External")},
+		Fields: map[string]Value{
+			"Name":                 StringValue("Chatter External"),
+			"LicenseDefinitionKey": StringValue("PID_Customer_Community_Login"),
+		},
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     profileID,
@@ -814,6 +849,17 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		ID:     marketingUserProfileID,
 		Object: "Profile",
 		Fields: profileSeedFields("Marketing User", salesforceLicenseID),
+	})
+	putSeedRecord(org, "Network", Record{
+		ID:     "0DB000000000001",
+		Object: "Network",
+		Fields: map[string]Value{
+			"Name":                       StringValue("Local Community"),
+			"SelfRegProfileId":           IDValue(chatterExternalProfileID),
+			"Status":                     StringValue("Live"),
+			"UrlPathPrefix":              StringValue("local"),
+			"OptionsGuestChatterEnabled": BooleanValue(false),
+		},
 	})
 	putSeedRecord(org, "UserRole", Record{
 		ID:     roleID,
@@ -853,13 +899,29 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"Name":              StringValue("Automated Process"),
 			"Alias":             StringValue("autoproc"),
 			"Email":             StringValue("automated-process@example.invalid"),
-			"ProfileId":         IDValue(profileID),
+			"ProfileId":         IDValue(standardUserProfileID),
 			"IsActive":          BooleanValue(true),
 			"UserType":          StringValue("AutomatedProcess"),
 			"LocaleSidKey":      StringValue("en_US"),
 			"LanguageLocaleKey": StringValue("en_US"),
 			"TimeZoneSidKey":    StringValue("UTC"),
 			"EmailEncodingKey":  StringValue("UTF-8"),
+		},
+	})
+	putSeedRecord(org, "UserLogin", Record{
+		ID:     "0Yw000000000001",
+		Object: "UserLogin",
+		Fields: map[string]Value{
+			"UserId":   IDValue(userID),
+			"IsFrozen": BooleanValue(false),
+		},
+	})
+	putSeedRecord(org, "UserLogin", Record{
+		ID:     "0Yw000000000002",
+		Object: "UserLogin",
+		Fields: map[string]Value{
+			"UserId":   IDValue(automatedProcessUserID),
+			"IsFrozen": BooleanValue(false),
 		},
 	})
 	putSeedRecord(org, "PermissionSet", Record{
@@ -1078,6 +1140,7 @@ func ensureLocalSiteRecords(org *OrgState) {
 			Object: "Network",
 			Fields: map[string]Value{
 				"Name":                       StringValue("Local Community"),
+				"SelfRegProfileId":           IDValue("00e000000000003"),
 				"Status":                     StringValue("Live"),
 				"UrlPathPrefix":              StringValue("local"),
 				"OptionsGuestChatterEnabled": BooleanValue(false),
@@ -1161,8 +1224,21 @@ func ensureRecordTypeRecords(org *OrgState) {
 				Default:       true,
 			}}
 		}
+		defaultedPersonAccount := false
+		if objectName == "Account" {
+			for _, info := range object.Definition.RecordTypes {
+				if recordTypeIsPersonType(objectName, info) && info.Default {
+					defaultedPersonAccount = true
+					break
+				}
+			}
+		}
 		EnsureRecordTypeIDField(&object.Definition)
 		for i, info := range object.Definition.RecordTypes {
+			if objectName == "Account" && !defaultedPersonAccount && recordTypeIsPersonType(objectName, info) && (info.Active || info.Available) {
+				info.Default = true
+				defaultedPersonAccount = true
+			}
 			namespacePrefix := recordTypeNamespacePrefix(*org, info)
 			seedKey := recordTypeSeedKey(objectName, info.DeveloperName, namespacePrefix)
 			fallbackSeedKey := ""
@@ -1297,7 +1373,7 @@ func ResetPlatformData(org *OrgState) {
 
 func IsPlatformObject(name string) bool {
 	switch name {
-	case "Organization", "Profile", "UserRole", "User", "PermissionSet", "PermissionSetAssignment", "FieldPermissions", "ObjectPermissions", "SetupEntityAccess", "RecordType", "Site", "Network", "NetworkMember", "PlatformCachePartition", "OpportunityStage":
+	case "Organization", "Profile", "UserRole", "User", "UserLogin", "PermissionSet", "PermissionSetAssignment", "FieldPermissions", "ObjectPermissions", "SetupEntityAccess", "RecordType", "Site", "Network", "NetworkMember", "PlatformCachePartition", "OpportunityStage":
 		return true
 	default:
 		return false

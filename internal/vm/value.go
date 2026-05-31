@@ -339,6 +339,11 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 		if strings.EqualFold(v.Type, "Schema.SObjectField") && strings.EqualFold(other.Type, "Schema.SObjectField") {
 			return mapKey(v) == mapKey(other)
 		}
+		if strings.EqualFold(v.Type, "PageReference") && strings.EqualFold(other.Type, "PageReference") {
+			leftURL, leftOK := v.Fields["url"]
+			rightURL, rightOK := other.Fields["url"]
+			return leftOK && rightOK && leftURL.Equal(rightURL)
+		}
 		if platformScalarObject(v.Type) {
 			value, ok := v.Fields["value"]
 			otherValue, otherOK := other.Fields["value"]

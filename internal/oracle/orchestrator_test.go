@@ -20,7 +20,7 @@ func TestGenerateScriptsWritesNonStoppingFullRunLaunchers(t *testing.T) {
 			t.Fatal(err)
 		}
 		content := string(raw)
-		if !strings.Contains(content, "FAILURES=0") || !strings.Contains(content, "GLADE_ORACLE_STRICT") {
+		if !strings.Contains(content, "shardsExit=") || !strings.Contains(content, "GLADE_ORACLE_STRICT") {
 			t.Fatalf("%s content = %s", name, content)
 		}
 		if strings.Contains(content, "set -euo pipefail") {
