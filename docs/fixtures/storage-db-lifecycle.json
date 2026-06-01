@@ -15,20 +15,20 @@
   },
   "expected": {
     "result": {
-      "exportedObjects": 23,
-      "exportedSequences": 12,
+      "exportedObjects": 26,
+      "exportedSequences": 13,
       "importedAccountRows": 1,
       "importedProfiles": 7,
-      "importedRecords": 33,
+      "importedRecords": 46,
       "importedUsers": 2,
       "ok": true,
       "permissions": 10,
       "profiles": 7,
       "resetAccountRows": 0,
-      "resetRecords": 32,
+      "resetRecords": 45,
       "schemaVersion": 1,
       "seedAccountRows": 1,
-      "seedRecords": 33,
+      "seedRecords": 46,
       "users": 2
     }
   }

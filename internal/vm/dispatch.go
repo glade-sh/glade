@@ -65,6 +65,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if value, handled, err := vm.callEnumStaticMember(className, methodName, args); handled || err != nil {
 			return value, err
 		}
+		if dataWeaveStaticScriptReceiver(className) && strings.EqualFold(methodName, "createScript") {
+			return dataWeaveCreateScript(args)
+		}
 		if value, handled, err := vm.callFrameworkStaticMember(className, methodName, args); handled || err != nil {
 			return value, err
 		}
@@ -86,6 +89,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return vm.callMethod(method, args, result)
 		} else if ambiguous {
 			return Null, vm.ambiguousOverloadError(callee, args)
+		}
+		if value, handled, err := vm.callGenericCollectionStaticMember(methodName, args); handled || err != nil {
+			return value, err
 		}
 	}
 	if value, ok, err := vm.callMember(callee, args, result); ok || err != nil {
@@ -281,6 +287,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return vm.callMethod(method, args, result)
 		} else if ambiguous {
 			return Null, vm.ambiguousOverloadError(callee, args)
+		}
+		if value, handled, err := vm.callGenericCollectionStaticMember(methodName, args); handled || err != nil {
+			return value, err
 		}
 		if value, handled, err := vm.callSObjectTypeStaticMember(className, methodName, args); handled || err != nil {
 			return value, err
@@ -1090,12 +1099,21 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
+		if originalType, originalMember, ok := splitDottedTypeMember(originalCallee); ok &&
+			originalType == "DateTime" && originalMember == "Now" && vm.hasLastNow {
+			return platformScalar("Datetime", vm.lastNow.Format(time.RFC3339)), nil
+		}
 		now := vm.fakeNow
+		vm.lastNow = now
+		vm.hasLastNow = true
 		vm.fakeNow = vm.fakeNow.Add(time.Second)
 		return platformScalar("Datetime", now.Format(time.RFC3339)), nil
 	case "System.currentTimeMillis":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("System.currentTimeMillis expects 0 arguments")
+		}
+		if vm.hasLastNow {
+			return Int(vm.lastNow.UnixMilli()), nil
 		}
 		return Int(vm.fakeNow.UnixMilli()), nil
 	case "System.isBatch", "System.isFuture", "System.isQueueable", "System.isScheduled":
@@ -3070,6 +3088,11 @@ platformStaticCall:
 	default:
 		if strings.HasPrefix(callee, "Crypto.") {
 			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
+		}
+		if _, methodName, ok := vm.splitClassMember(callee); ok {
+			if value, handled, err := vm.callGenericCollectionStaticMember(methodName, args); handled || err != nil {
+				return value, err
+			}
 		}
 		if value, handled := vm.generatedUnsupportedFamilyExplicitStaticDefault(callee, args); handled {
 			return value, nil

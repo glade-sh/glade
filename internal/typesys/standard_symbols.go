@@ -119,7 +119,7 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 				sym.Members = append(sym.Members, MemberSymbol{
 					Kind:       apexast.DeclarationConstructor,
 					Name:       localStandardSymbolName(spec.Name),
-					Modifiers:  []string{"public"},
+					Modifiers:  []string{"public", "passive-generated"},
 					Parameters: standardSpecParameters(ctor.Parameters),
 				})
 			}

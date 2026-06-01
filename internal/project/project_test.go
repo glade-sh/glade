@@ -268,14 +268,14 @@ func TestLoadSkipsDotDirectoriesAndFiles(t *testing.T) {
 
 func TestLoadManagedPackageDependencies(t *testing.T) {
 	root := t.TempDir()
-	depRoot := filepath.Join(root, "deps", "znu")
+	depRoot := filepath.Join(root, "deps", "pkg")
 	consumerRoot := filepath.Join(root, "consumer")
-	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true},{"path":"unpackaged"}]}`)
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true},{"path":"unpackaged"}]}`)
 	writeFile(t, filepath.Join(depRoot, "force-app/main/default/classes/Visible.cls"), "global class Visible {}")
 	writeFile(t, filepath.Join(depRoot, "unpackaged/main/default/classes/HiddenSetup.cls"), "public class HiddenSetup {}")
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
-  managedPackageDependencies: ["znu:../deps/znu:1.0"]
+  managedPackageDependencies: ["pkg:../deps/pkg:1.0"]
 `)
 	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/classes/Consumer.cls"), "public class Consumer {}")
 
@@ -287,10 +287,10 @@ func TestLoadManagedPackageDependencies(t *testing.T) {
 		t.Fatalf("dependency count = %d", len(p.ManagedPackageDependencies))
 	}
 	dep := p.ManagedPackageDependencies[0]
-	if dep.Status != "loaded" || dep.Namespace != "znu" || dep.Version != "1.0" {
+	if dep.Status != "loaded" || dep.Namespace != "pkg" || dep.Version != "1.0" {
 		t.Fatalf("dependency = %#v", dep)
 	}
-	if dep.Project.Namespace != "znu" || len(dep.Project.ApexFiles) != 1 {
+	if dep.Project.Namespace != "pkg" || len(dep.Project.ApexFiles) != 1 {
 		t.Fatalf("loaded dependency project = %#v", dep.Project)
 	}
 	if filepath.Base(dep.Project.ApexFiles[0]) != "Visible.cls" {
@@ -302,7 +302,7 @@ func TestLoadReportsMissingManagedPackageDependency(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "glade.yml"), `project:
-  managedPackageDependencies: ["znu:../missing"]
+  managedPackageDependencies: ["pkg:../missing"]
 `)
 
 	p, err := Load(root)
@@ -319,11 +319,11 @@ func TestLoadReportsMissingManagedPackageDependency(t *testing.T) {
 
 func TestLoadManagedPackageArtifactDependency(t *testing.T) {
 	root := t.TempDir()
-	artifactPath := filepath.Join(root, "packages", "znu.glade-package.json")
-	writeFile(t, artifactPath, `{"namespace":"znu","version":"1.0","apexTypes":[{"kind":"class","name":"Address","namespace":"znu","dependency":true}]}`)
+	artifactPath := filepath.Join(root, "packages", "pkg.glade-package.json")
+	writeFile(t, artifactPath, `{"namespace":"pkg","version":"1.0","apexTypes":[{"kind":"class","name":"Address","namespace":"pkg","dependency":true}]}`)
 	writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "consumer", "glade.yml"), `project:
-  managedPackageDependencies: ["znu:artifact:../packages/znu.glade-package.json"]
+  managedPackageDependencies: ["pkg:artifact:../packages/pkg.glade-package.json"]
 `)
 
 	p, err := Load(filepath.Join(root, "consumer"))
@@ -341,10 +341,10 @@ func TestLoadManagedPackageArtifactDependency(t *testing.T) {
 
 func TestLoadReportsManagedPackageArtifactVersionMismatch(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "packages", "znu.glade-package.json"), `{"namespace":"znu","version":"1.0"}`)
+	writeFile(t, filepath.Join(root, "packages", "pkg.glade-package.json"), `{"namespace":"pkg","version":"1.0"}`)
 	writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "consumer", "glade.yml"), `project:
-  managedPackageDependencies: ["znu:artifact:../packages/znu.glade-package.json:2.0"]
+  managedPackageDependencies: ["pkg:artifact:../packages/pkg.glade-package.json:2.0"]
 `)
 
 	p, err := Load(filepath.Join(root, "consumer"))
@@ -361,10 +361,10 @@ func TestLoadReportsManagedPackageArtifactVersionMismatch(t *testing.T) {
 
 func TestLoadReportsManagedPackageArtifactMissingVersionAsLoadError(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "packages", "znu.glade-package.json"), `{"namespace":"znu"}`)
+	writeFile(t, filepath.Join(root, "packages", "pkg.glade-package.json"), `{"namespace":"pkg"}`)
 	writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "consumer", "glade.yml"), `project:
-  managedPackageDependencies: ["znu:artifact:../packages/znu.glade-package.json:2.0"]
+  managedPackageDependencies: ["pkg:artifact:../packages/pkg.glade-package.json:2.0"]
 `)
 
 	p, err := Load(filepath.Join(root, "consumer"))
@@ -381,10 +381,10 @@ func TestLoadReportsManagedPackageArtifactMissingVersionAsLoadError(t *testing.T
 
 func TestLoadReportsEmptyManagedPackageArtifactAsLoadError(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "packages", "znu.glade-package.json"), `{}`)
+	writeFile(t, filepath.Join(root, "packages", "pkg.glade-package.json"), `{}`)
 	writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "consumer", "glade.yml"), `project:
-  managedPackageDependencies: ["znu:artifact:../packages/znu.glade-package.json"]
+  managedPackageDependencies: ["pkg:artifact:../packages/pkg.glade-package.json"]
 `)
 
 	p, err := Load(filepath.Join(root, "consumer"))
@@ -401,10 +401,10 @@ func TestLoadReportsEmptyManagedPackageArtifactAsLoadError(t *testing.T) {
 
 func TestLoadReportsMalformedManagedPackageArtifactAsLoadError(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "packages", "znu.glade-package.json"), `{`)
+	writeFile(t, filepath.Join(root, "packages", "pkg.glade-package.json"), `{`)
 	writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "consumer", "glade.yml"), `project:
-  managedPackageDependencies: ["znu:artifact:../packages/znu.glade-package.json"]
+  managedPackageDependencies: ["pkg:artifact:../packages/pkg.glade-package.json"]
 `)
 
 	p, err := Load(filepath.Join(root, "consumer"))

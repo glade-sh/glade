@@ -751,6 +751,12 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 	}
 }
 
+func cachePartitionPlatformObjectType(typeName string) bool {
+	return strings.EqualFold(typeName, "Cache.Partition") ||
+		strings.EqualFold(typeName, "Cache.OrgPartition") ||
+		strings.EqualFold(typeName, "Cache.SessionPartition")
+}
+
 func (vm *VM) callCacheSecondaryKeyMember(receiver Value, method string, args []Value) (Value, Value, error) {
 	feature, ok := receiver.Fields["featureName"]
 	if !ok || feature.Kind != ValueString || strings.TrimSpace(feature.Text) == "" {

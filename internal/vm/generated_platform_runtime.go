@@ -164,6 +164,19 @@ func (vm *VM) generatedPassiveUnsupportedStaticCallee(callee string, args []Valu
 func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value, receiver Value) Value {
 	returnType := vm.resolveTypeNameInClass(method.ClassName, method.ReturnType)
 	methodName := apexMethodMemberName(method.Name)
+	if receiver.Kind == ValueObject && strings.EqualFold(methodName, "clone") {
+		cloned := cloneValue(receiver)
+		cloned.Ref = newValueRef()
+		return cloned
+	}
+	if receiver.Kind == ValueObject && strings.EqualFold(methodName, "getAsMap") {
+		return passiveDTOMapValue(receiver)
+	}
+	if receiver.Kind == ValueObject && strings.EqualFold(receiver.Type, "Flow.Interview") && strings.EqualFold(methodName, "start") {
+		receiver.Fields["started"] = Bool(true)
+		frame["this"] = receiver
+		return Null
+	}
 	if returnType == "" || strings.EqualFold(returnType, "void") {
 		if receiver.Kind == ValueObject && len(method.Params) == 1 {
 			if suffix, ok := passiveAccessorSuffix(methodName, "set"); ok {
@@ -215,6 +228,8 @@ func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value
 		return receiver
 	}
 	switch {
+	case strings.EqualFold(returnType, "Object") && strings.EqualFold(methodName, "createResponse"):
+		return Object("Object")
 	case collectionBase(returnType) == "List":
 		return typedList(returnType)
 	case collectionBase(returnType) == "Set":
@@ -382,13 +397,22 @@ func (vm *VM) generatedPlatformInstanceField(receiver Value, fieldName string) (
 	}
 	if vm.isSObjectLikeType(receiver.Type) {
 		if _, value, ok := objectFieldValue(receiver, fieldName); ok {
+			if relationship, isRelationship := vm.typedParentRelationshipFieldValue(receiver, fieldName, value); isRelationship {
+				return relationship, true
+			}
 			return value, true
 		}
 	}
 	if _, value, ok := objectFieldValue(receiver, field.Name); ok {
+		if relationship, isRelationship := vm.typedParentRelationshipFieldValue(receiver, field.Name, value); isRelationship {
+			return relationship, true
+		}
 		return value, true
 	}
 	if _, value, ok := objectFieldValue(receiver, fieldName); ok {
+		if relationship, isRelationship := vm.typedParentRelationshipFieldValue(receiver, fieldName, value); isRelationship {
+			return relationship, true
+		}
 		return value, true
 	}
 	if vm.isSObjectLikeType(receiver.Type) {

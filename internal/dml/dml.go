@@ -545,7 +545,6 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
 		return "", err
 	}
-	applyNameFallbackFromCustomName(object.Definition, &record)
 	if err := validatePersonAccountRequiredFields(objectName, record); err != nil {
 		return "", err
 	}

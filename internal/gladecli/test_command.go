@@ -613,11 +613,11 @@ func runTopSlowClasses(result testreport.Run, limit int) []runPerfClass {
 // GOMEMLIMIT environment variable: if the user set one, the runtime will
 // already have picked it up and we skip the override.
 func applyTestMemoryLimits(aggressive bool) {
-if os.Getenv("GOMEMLIMIT") == "" {
-// 4 GiB soft cap. Workloads that need more should set GOMEMLIMIT.
-debug.SetMemoryLimit(4 << 30)
-}
-if aggressive {
-debug.SetGCPercent(50)
-}
+	if os.Getenv("GOMEMLIMIT") == "" {
+		// 4 GiB soft cap. Workloads that need more should set GOMEMLIMIT.
+		debug.SetMemoryLimit(4 << 30)
+	}
+	if aggressive {
+		debug.SetGCPercent(50)
+	}
 }

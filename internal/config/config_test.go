@@ -12,7 +12,7 @@ project:
   root: .
   packageDirs: ["force-app", "packages/core"]
   defaultNamespace: verifiable
-  managedPackageDependencies: ["znu:../znu:1.2", "pkg:/tmp/pkg"]
+  managedPackageDependencies: ["pkg:../pkg:1.2", "pkg2:/tmp/pkg"]
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -29,7 +29,7 @@ project:
 	if got := len(cfg.Project.ManagedPackageDependencies); got != 2 {
 		t.Fatalf("managed dependency count = %d", got)
 	}
-	if dep := cfg.Project.ManagedPackageDependencies[0]; dep.Namespace != "znu" || dep.SourceRoot != "../znu" || dep.Version != "1.2" {
+	if dep := cfg.Project.ManagedPackageDependencies[0]; dep.Namespace != "pkg" || dep.SourceRoot != "../pkg" || dep.Version != "1.2" {
 		t.Fatalf("managed dependency[0] = %#v", dep)
 	}
 }
@@ -37,7 +37,7 @@ project:
 func TestParseYAMLSubsetRejectsInvalidManagedPackageDependency(t *testing.T) {
 	if _, err := parseYAMLSubset(`
 project:
-  managedPackageDependencies: ["znu"]
+  managedPackageDependencies: ["pkg"]
 `); err == nil {
 		t.Fatal("expected invalid managed package dependency error")
 	}
@@ -46,7 +46,7 @@ project:
 func TestParseYAMLSubsetAllowsArtifactNamedSourceDependency(t *testing.T) {
 	cfg, err := parseYAMLSubset(`
 project:
-  managedPackageDependencies: ["znu:artifact"]
+  managedPackageDependencies: ["pkg:artifact"]
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -60,7 +60,7 @@ project:
 func TestParseYAMLSubsetAllowsArtifactNamedSourceDependencyWithVersion(t *testing.T) {
 	cfg, err := parseYAMLSubset(`
 project:
-  managedPackageDependencies: ["znu:artifact:1.0"]
+  managedPackageDependencies: ["pkg:artifact:1.0"]
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -74,7 +74,7 @@ project:
 func TestParseYAMLSubsetRejectsDuplicateManagedPackageDependencyNamespace(t *testing.T) {
 	if _, err := parseYAMLSubset(`
 project:
-  managedPackageDependencies: ["znu:../one", "ZNU:../two"]
+  managedPackageDependencies: ["pkg:../one", "PKG:../two"]
 `); err == nil {
 		t.Fatal("expected duplicate namespace error")
 	}
@@ -88,7 +88,7 @@ func TestLoadFileResolvesManagedPackageDependencyPaths(t *testing.T) {
 	}
 	if err := os.WriteFile(cfgPath, []byte(`
 project:
-  managedPackageDependencies: ["znu:../deps/znu"]
+  managedPackageDependencies: ["pkg:../deps/pkg"]
 `), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +96,7 @@ project:
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := filepath.Clean(filepath.Join(root, "deps", "znu"))
+	want := filepath.Clean(filepath.Join(root, "deps", "pkg"))
 	if got := cfg.Project.ManagedPackageDependencies[0].SourceRoot; got != want {
 		t.Fatalf("source root = %q, want %q", got, want)
 	}
@@ -110,7 +110,7 @@ func TestLoadFileResolvesManagedPackageArtifactPaths(t *testing.T) {
 	}
 	if err := os.WriteFile(cfgPath, []byte(`
 project:
-  managedPackageDependencies: ["znu:artifact:../packages/znu.glade-package.json"]
+  managedPackageDependencies: ["pkg:artifact:../packages/pkg.glade-package.json"]
 `), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ project:
 		t.Fatal(err)
 	}
 	dep := cfg.Project.ManagedPackageDependencies[0]
-	want := filepath.Clean(filepath.Join(root, "packages", "znu.glade-package.json"))
+	want := filepath.Clean(filepath.Join(root, "packages", "pkg.glade-package.json"))
 	if dep.ArtifactPath != want {
 		t.Fatalf("artifact path = %q, want %q", dep.ArtifactPath, want)
 	}
@@ -136,7 +136,7 @@ func TestLoadFileParsesManagedPackageArtifactVersion(t *testing.T) {
 	}
 	if err := os.WriteFile(cfgPath, []byte(`
 project:
-  managedPackageDependencies: ["znu:artifact:../packages/znu.glade-package.json:2.0"]
+  managedPackageDependencies: ["pkg:artifact:../packages/pkg.glade-package.json:2.0"]
 `), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +145,7 @@ project:
 		t.Fatal(err)
 	}
 	dep := cfg.Project.ManagedPackageDependencies[0]
-	want := filepath.Clean(filepath.Join(root, "packages", "znu.glade-package.json"))
+	want := filepath.Clean(filepath.Join(root, "packages", "pkg.glade-package.json"))
 	if dep.ArtifactPath != want || dep.Version != "2.0" {
 		t.Fatalf("dependency = %#v", dep)
 	}

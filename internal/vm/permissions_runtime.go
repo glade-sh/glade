@@ -287,19 +287,30 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 				if objectPermission != "" && !vm.currentUserObjectPermission(childObjectName, objectPermission) {
 					delete(record.Fields, field)
 					unmarkQueriedSObjectField(record, field)
+					markStrippedChildRelationship(record, field)
 					addStripInaccessibleRemovedField(removedFields, objectName, field)
 					modified = true
 					continue
 				}
 			}
+			childModified := false
 			for i := range value.List {
-				childModified, err := vm.stripInaccessibleRecord(accessType, &value.List[i], enforceRootObjectCRUD, removedFields)
+				modifiedChild, err := vm.stripInaccessibleRecord(accessType, &value.List[i], enforceRootObjectCRUD, removedFields)
 				if err != nil {
 					return false, err
 				}
-				if childModified {
+				if modifiedChild {
+					childModified = true
 					modified = true
 				}
+			}
+			if childModified && !stripInaccessibleChildRelationshipHasPayload(value) {
+				delete(record.Fields, field)
+				unmarkQueriedSObjectField(record, field)
+				markStrippedChildRelationship(record, field)
+				addStripInaccessibleRemovedField(removedFields, objectName, field)
+				modified = true
+				continue
 			}
 			record.Fields[field] = value
 			continue
@@ -340,6 +351,26 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 		}
 	}
 	return modified, nil
+}
+
+func stripInaccessibleChildRelationshipHasPayload(value Value) bool {
+	if value.Kind != ValueList {
+		return false
+	}
+	for _, child := range value.List {
+		if child.Kind != ValueObject {
+			continue
+		}
+		for field, fieldValue := range child.Fields {
+			if isInternalSObjectField(field) || isSObjectSystemField(field) || strings.EqualFold(field, "Id") {
+				continue
+			}
+			if fieldValue.Kind != ValueNull {
+				return true
+			}
+		}
+	}
+	return false
 }
 func orderedSObjectFieldIteration(record Value) []string {
 	if len(record.Fields) == 0 {

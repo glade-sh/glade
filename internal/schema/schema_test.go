@@ -115,7 +115,7 @@ func TestLoadProjectInfersMissingReferencedCustomObjects(t *testing.T) {
 	objectPath := filepath.Join(root, "force-app/main/objects/Line__c/Line__c.object-meta.xml")
 	fieldPath := filepath.Join(root, "force-app/main/objects/Line__c/fields/ManagedCart__c.field-meta.xml")
 	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Line</label></CustomObject>`)
-	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>ManagedCart__c</fullName><label>Managed Cart</label><type>Lookup</type><referenceTo>znu__CartItemLine__c</referenceTo><referenceTo>Account</referenceTo><relationshipName>ManagedCart__r</relationshipName></CustomField>`)
+	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>ManagedCart__c</fullName><label>Managed Cart</label><type>Lookup</type><referenceTo>pkg__CartItemLine__c</referenceTo><referenceTo>Account</referenceTo><relationshipName>ManagedCart__r</relationshipName></CustomField>`)
 
 	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath}})
 	if err != nil {
@@ -126,7 +126,7 @@ func TestLoadProjectInfersMissingReferencedCustomObjects(t *testing.T) {
 	if _, ok := objects["Line__c"]; !ok {
 		t.Fatalf("missing local object: %#v", s.Objects)
 	}
-	if inferred, ok := objects["znu__CartItemLine__c"]; !ok || len(inferred.Fields) != 0 {
+	if inferred, ok := objects["pkg__CartItemLine__c"]; !ok || len(inferred.Fields) != 0 {
 		t.Fatalf("missing inferred managed package object: %#v", s.Objects)
 	}
 	if _, ok := objects["Account"]; ok {
@@ -153,8 +153,8 @@ func TestLoadProjectNormalizesLookupParentAndChildRelationshipNames(t *testing.T
 
 func TestLoadProjectNamespacesFieldsUnderNamespacedObject(t *testing.T) {
 	root := t.TempDir()
-	objectPath := filepath.Join(root, "force-app/main/objects/znu__Order__c/znu__Order__c.object-meta.xml")
-	fieldPath := filepath.Join(root, "force-app/main/objects/znu__Order__c/fields/Entity__c.field-meta.xml")
+	objectPath := filepath.Join(root, "force-app/main/objects/pkg__Order__c/pkg__Order__c.object-meta.xml")
+	fieldPath := filepath.Join(root, "force-app/main/objects/pkg__Order__c/fields/Entity__c.field-meta.xml")
 	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order</label></CustomObject>`)
 	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Entity__c</fullName><type>Lookup</type><referenceTo>Entity__c</referenceTo><relationshipName>Orders</relationshipName></CustomField>`)
 
@@ -162,17 +162,17 @@ func TestLoadProjectNamespacesFieldsUnderNamespacedObject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	field := objectsByName(s.Objects)["znu__Order__c"].Fields[0]
-	if field.Name != "znu__Entity__c" || field.ReferenceTo[0] != "znu__Entity__c" || field.RelationshipName != "znu__Entity__r" || field.ChildRelationshipName != "znu__Orders__r" {
+	field := objectsByName(s.Objects)["pkg__Order__c"].Fields[0]
+	if field.Name != "pkg__Entity__c" || field.ReferenceTo[0] != "pkg__Entity__c" || field.RelationshipName != "pkg__Entity__r" || field.ChildRelationshipName != "pkg__Orders__r" {
 		t.Fatalf("field = %#v", field)
 	}
 }
 
 func TestLoadProjectUsesProjectNamespaceForExtensionFieldOnForeignNamespacedObject(t *testing.T) {
 	root := t.TempDir()
-	objectPath := filepath.Join(root, "force-app/main/objects/znu__Order__c/znu__Order__c.object-meta.xml")
-	fieldPath := filepath.Join(root, "force-app/main/objects/znu__Order__c/fields/State__c.field-meta.xml")
-	validationRulePath := filepath.Join(root, "force-app/main/objects/znu__Order__c/validationRules/Block.validationRule-meta.xml")
+	objectPath := filepath.Join(root, "force-app/main/objects/pkg__Order__c/pkg__Order__c.object-meta.xml")
+	fieldPath := filepath.Join(root, "force-app/main/objects/pkg__Order__c/fields/State__c.field-meta.xml")
+	validationRulePath := filepath.Join(root, "force-app/main/objects/pkg__Order__c/validationRules/Block.validationRule-meta.xml")
 	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order</label></CustomObject>`)
 	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>State__c</fullName><type>Picklist</type></CustomField>`)
 	writeFile(t, validationRulePath, `<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Block</fullName><active>true</active><errorConditionFormula>State__c = "Blocked"</errorConditionFormula><errorMessage>blocked</errorMessage></ValidationRule>`)
@@ -181,7 +181,7 @@ func TestLoadProjectUsesProjectNamespaceForExtensionFieldOnForeignNamespacedObje
 	if err != nil {
 		t.Fatal(err)
 	}
-	object := objectsByName(s.Objects)["znu__Order__c"]
+	object := objectsByName(s.Objects)["pkg__Order__c"]
 	field := object.Fields[0]
 	if field.Name != "namz__State__c" {
 		t.Fatalf("field = %#v", field)
@@ -225,8 +225,8 @@ func TestLoadProjectUsesProjectNamespaceForOwnedUnqualifiedObjects(t *testing.T)
 
 func TestLoadProjectUsesObjectNamespaceForValidationRuleWhenProjectNamespaceEmpty(t *testing.T) {
 	root := t.TempDir()
-	objectPath := filepath.Join(root, "force-app/main/objects/znu__Order__c/znu__Order__c.object-meta.xml")
-	validationRulePath := filepath.Join(root, "force-app/main/objects/znu__Order__c/validationRules/Block.validationRule-meta.xml")
+	objectPath := filepath.Join(root, "force-app/main/objects/pkg__Order__c/pkg__Order__c.object-meta.xml")
+	validationRulePath := filepath.Join(root, "force-app/main/objects/pkg__Order__c/validationRules/Block.validationRule-meta.xml")
 	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order</label></CustomObject>`)
 	writeFile(t, validationRulePath, `<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Block</fullName><active>true</active><errorConditionFormula>Entity__c = "Blocked"</errorConditionFormula><errorMessage>blocked</errorMessage></ValidationRule>`)
 
@@ -234,8 +234,8 @@ func TestLoadProjectUsesObjectNamespaceForValidationRuleWhenProjectNamespaceEmpt
 	if err != nil {
 		t.Fatal(err)
 	}
-	rules := objectsByName(s.Objects)["znu__Order__c"].ValidationRules
-	if len(rules) != 1 || rules[0].Namespace != "znu" {
+	rules := objectsByName(s.Objects)["pkg__Order__c"].ValidationRules
+	if len(rules) != 1 || rules[0].Namespace != "pkg" {
 		t.Fatalf("validation rules = %#v", rules)
 	}
 }

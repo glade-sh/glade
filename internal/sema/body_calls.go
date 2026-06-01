@@ -1142,9 +1142,6 @@ func semaAssignableToType(paramType, argType string, model map[string]typeMember
 	if strings.EqualFold(paramType, "String") && strings.EqualFold(argType, "Id") {
 		return true
 	}
-	if semaKnownSObjectCompatible(paramType, argType) {
-		return true
-	}
 	if strings.EqualFold(paramType, "Datetime") && strings.EqualFold(argType, "Date") {
 		return true
 	}
@@ -1215,23 +1212,6 @@ func semaStandardExceptionType(typeName string) bool {
 func semaMessagingEmailAssignable(paramType, argType string) bool {
 	return strings.EqualFold(paramType, "Messaging.Email") &&
 		(strings.EqualFold(argType, "Messaging.SingleEmailMessage") || strings.EqualFold(argType, "Messaging.MassEmailMessage"))
-}
-
-func semaKnownSObjectCompatible(paramType, argType string) bool {
-	paramKey := normalizeName(paramType)
-	argKey := normalizeName(argType)
-	if paramKey == argKey {
-		return true
-	}
-	switch paramKey {
-	case "payment__c":
-		return argKey == "creditcardrefundpayment__c"
-	case "registration2__c":
-		return argKey == "registration__c"
-	case "paymentline__c":
-		return argKey == "payment_line__c"
-	}
-	return false
 }
 
 func semaGenericAssignableToType(paramType, argType string, model map[string]typeMembers) bool {

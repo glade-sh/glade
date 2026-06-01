@@ -96,6 +96,9 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	if !describe.Relationships[3].CascadeDelete {
 		t.Fatalf("master-detail relationship did not cascade delete: %#v", describe.Relationships[3])
 	}
+	if got := describe.Fields["Master__c"]; got.Type != storage.FieldReference || storage.FieldFlagValue(got.Updateable, true) {
+		t.Fatalf("master-detail describe = %#v", got)
+	}
 	if got := describe.Fields["Rating__c"].PicklistValues; len(got) != 1 || got[0].Value != "Hot" || !got[0].Default {
 		t.Fatalf("picklist values = %#v", got)
 	}
@@ -114,6 +117,9 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	}
 	if got := definition.Fields["Account__c"].ChildRelationshipName; got != "Widgets__r" {
 		t.Fatalf("definition child relationship name = %q", got)
+	}
+	if got := definition.Fields["Master__c"]; got.Type != storage.FieldReference || storage.FieldFlagValue(got.Updateable, true) {
+		t.Fatalf("master-detail definition = %#v", got)
 	}
 	if got := definition.Fields["RecordTypeId"]; got.Type != storage.FieldReference || len(got.ReferenceTo) != 1 || got.ReferenceTo[0] != "RecordType" {
 		t.Fatalf("RecordTypeId definition = %#v", got)
@@ -141,33 +147,33 @@ func TestBuildDescribeRegistry(t *testing.T) {
 func TestBuildDescribeRegistryMergesDuplicateObjects(t *testing.T) {
 	registry := BuildDescribeRegistry(schema.Schema{Objects: []schema.Object{
 		{
-			Name: "znu__Order__c",
+			Name: "pkg__Order__c",
 			Fields: []schema.Field{
-				{Name: "znu__Cart__c", Type: "Lookup", ReferenceTo: []string{"znu__Cart__c"}, RelationshipName: "znu__Cart__r"},
+				{Name: "pkg__Cart__c", Type: "Lookup", ReferenceTo: []string{"pkg__Cart__c"}, RelationshipName: "pkg__Cart__r"},
 			},
 		},
 		{
-			Name: "znu__Order__c",
+			Name: "pkg__Order__c",
 			Fields: []schema.Field{
-				{Name: "znu__Entity__c", Type: "Lookup", ReferenceTo: []string{"znu__Entity__c"}, RelationshipName: "znu__Entity__r"},
+				{Name: "pkg__Entity__c", Type: "Lookup", ReferenceTo: []string{"pkg__Entity__c"}, RelationshipName: "pkg__Entity__r"},
 			},
 		},
 	}})
 
-	describe, err := registry.Describe("znu__Order__c")
+	describe, err := registry.Describe("pkg__Order__c")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := describe.Fields["znu__Cart__c"]; !ok {
+	if _, ok := describe.Fields["pkg__Cart__c"]; !ok {
 		t.Fatalf("missing root field: %#v", describe.Fields)
 	}
-	entity := describe.Fields["znu__Entity__c"]
-	if entity.RelationshipName != "znu__Entity__r" || len(entity.ReferenceTo) != 1 || entity.ReferenceTo[0] != "znu__Entity__c" {
+	entity := describe.Fields["pkg__Entity__c"]
+	if entity.RelationshipName != "pkg__Entity__r" || len(entity.ReferenceTo) != 1 || entity.ReferenceTo[0] != "pkg__Entity__c" {
 		t.Fatalf("entity field = %#v", entity)
 	}
 	found := false
 	for _, relation := range describe.Relationships {
-		if relation.Field == "znu__Entity__c" && relation.ParentRelationship == "znu__Entity__r" {
+		if relation.Field == "pkg__Entity__c" && relation.ParentRelationship == "pkg__Entity__r" {
 			found = true
 		}
 	}

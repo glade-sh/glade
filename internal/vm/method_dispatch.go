@@ -124,7 +124,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		arg := args[i]
 		if isImplicitCurrentPageNull(arg) && strings.EqualFold(paramType, "PageReference") {
 			if vm.currentPage.Kind == "" {
-				vm.currentPage = newPageReference("/apex/current")
+				vm.currentPage = newPageReference("")
 			}
 			arg = vm.currentPage
 			materializedCurrentPageParams[param.Name] = true
@@ -202,6 +202,20 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	if passiveGeneratedMethod(method) {
+		if receiver.Kind == ValueObject &&
+			(strings.EqualFold(receiver.Type, "DataWeave.Script") || strings.HasPrefix(receiver.Type, "DataWeaveScriptResource.")) &&
+			strings.EqualFold(apexMethodMemberName(method.Name), "execute") {
+			dataWeaveArgs := make([]Value, 0, len(method.Params))
+			for _, param := range method.Params {
+				if value, ok := frame[param.Name]; ok {
+					dataWeaveArgs = append(dataWeaveArgs, value)
+				}
+			}
+			value, _, _, handled, err := callDataWeaveScriptMember(receiver, "execute", dataWeaveArgs)
+			if handled || err != nil {
+				return value, err
+			}
+		}
 		value := vm.passiveGeneratedMethodReturn(method, frame, receiver)
 		for _, param := range method.Params {
 			updated, ok := frame[param.Name]
@@ -231,9 +245,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 		if receiver.Kind != ValueNull {
 			if updated, ok := frame["this"]; ok && valueAliasSnapshotMatch(receiverSnapshot, updated) {
-				if vm.propagateAliasSnapshotMutationToScope(vm.Globals, receiverSnapshot, receiverOriginal, updated, vm.collectionMutationSeq != collectionMutationSeqBefore) {
-					vm.propagateAliasSnapshotToStatics(receiverSnapshot, updated)
-				}
+				vm.propagateAliasSnapshotMutationToScope(vm.Globals, receiverSnapshot, receiverOriginal, updated, vm.collectionMutationSeq != collectionMutationSeqBefore)
+				vm.propagateAliasSnapshotToStatics(receiverSnapshot, updated)
+				vm.propagateUpdatedValueAliases(vm.Globals, updated)
 			}
 		}
 		return value, nil
@@ -351,9 +365,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	}
 	if receiver.Kind != ValueNull {
 		if updated, ok := frame["this"]; ok && valueAliasSnapshotMatch(receiverSnapshot, updated) {
-			if vm.propagateAliasSnapshotMutationToScope(caller, receiverSnapshot, receiverOriginal, updated, vm.collectionMutationSeq != collectionMutationSeqBefore) {
-				vm.propagateAliasSnapshotToStatics(receiverSnapshot, updated)
-			}
+			vm.propagateAliasSnapshotMutationToScope(caller, receiverSnapshot, receiverOriginal, updated, vm.collectionMutationSeq != collectionMutationSeqBefore)
+			vm.propagateAliasSnapshotToStatics(receiverSnapshot, updated)
+			vm.propagateUpdatedValueAliases(caller, updated)
 		}
 	}
 	if method.IsConstructor {
@@ -718,13 +732,8 @@ func (vm *VM) callClassLiteralReceiverMember(callee string, args []Value, result
 
 func (vm *VM) callValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
 	if dataWeaveStaticScriptReceiver(receiverName) && strings.EqualFold(method, "createScript") {
-		if len(args) == 1 && args[0].Kind == ValueString {
-			return newDataWeaveScript(args[0].Text), true, nil
-		}
-		if len(args) == 2 && args[1].Kind == ValueString {
-			return newDataWeaveScript(args[1].Text), true, nil
-		}
-		return Null, true, fmt.Errorf("DataWeave.Script.createScript expects script name String")
+		value, err := dataWeaveCreateScript(args)
+		return value, true, err
 	}
 	if strings.EqualFold(method, "addError") && strings.Contains(receiverName, ".") {
 		value, handled, err := vm.callSObjectFieldAddError(strings.Split(receiverName, "."), args)
@@ -735,7 +744,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 	if receiver.Kind == ValueNull {
 		if isImplicitCurrentPageNull(receiver) {
 			if vm.currentPage.Kind == "" {
-				vm.currentPage = newPageReference("/apex/current")
+				vm.currentPage = newPageReference("")
 			}
 			receiver = vm.currentPage
 		} else if materialized, ok := materializeTypedNullCollection(receiver); ok {
@@ -856,6 +865,36 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 		return value, true, err
 	}
 	if visualEditorPlatformObjectType(receiver.Type) {
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+			if mutated {
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
+			}
+			return value, true, err
+		}
+	}
+	if cachePartitionPlatformObjectType(receiver.Type) {
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+			if mutated {
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
+			}
+			return value, true, err
+		}
+	}
+	if authConfigurationPlatformObjectType(receiver.Type) {
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+			if mutated {
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
+			}
+			return value, true, err
+		}
+	}
+	if metadataContainerPlatformObjectType(receiver.Type) {
 		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
 			if mutated {
 				if err := vm.storeReceiver(receiverName, updated); err != nil {
@@ -1414,8 +1453,7 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 		if value.Kind != ValueObject || value.Type != "Schema.RecordTypeInfo" {
 			continue
 		}
-		developerName, ok := value.Fields["developerName"]
-		if ok && developerName.Kind == ValueString && strings.EqualFold(developerName.Text, key.Text) {
+		if recordTypeInfoKeyMatches(value, key.Text) {
 			return value, true
 		}
 	}
@@ -1464,12 +1502,45 @@ func (vm *VM) specialMapContainsKey(receiver, key Value) bool {
 		if value.Kind != ValueObject || value.Type != "Schema.RecordTypeInfo" {
 			continue
 		}
-		developerName, ok := value.Fields["developerName"]
-		if ok && developerName.Kind == ValueString && strings.EqualFold(developerName.Text, key.Text) {
+		if recordTypeInfoKeyMatches(value, key.Text) {
 			return true
 		}
 	}
 	return false
+}
+
+func recordTypeInfoKeyMatches(value Value, key string) bool {
+	for _, field := range []string{"name", "developerName"} {
+		candidate, ok := value.Fields[field]
+		if !ok || candidate.Kind != ValueString {
+			continue
+		}
+		if strings.EqualFold(candidate.Text, key) {
+			return true
+		}
+		if compactRecordTypeKey(candidate.Text) != "" && compactRecordTypeKey(candidate.Text) == compactRecordTypeKey(key) {
+			return true
+		}
+	}
+	return false
+}
+
+func compactRecordTypeKey(value string) string {
+	var b strings.Builder
+	for _, r := range value {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+			b.WriteRune(unicode.ToLower(r))
+		}
+	}
+	return b.String()
+}
+
+func metadataContainerPlatformObjectType(typeName string) bool {
+	return strings.EqualFold(typeName, "Metadata.DeployContainer")
+}
+
+func authConfigurationPlatformObjectType(typeName string) bool {
+	return strings.EqualFold(typeName, "Auth.AuthConfiguration") || strings.EqualFold(typeName, "auth.AuthConfiguration")
 }
 
 func (vm *VM) namespaceStringMapLookup(receiver Value, key Value) (Value, bool) {
@@ -1765,6 +1836,7 @@ func (vm *VM) mapKeysEqual(storedKey, lookupKey Value) (bool, error) {
 var (
 	aliasRefSliceMapPool = sync.Pool{New: func() any { m := make(map[uint64][]string, 8); return &m }}
 	aliasRefSetPool      = sync.Pool{New: func() any { m := make(map[uint64]bool, 16); return &m }}
+	aliasPairSetPool     = sync.Pool{New: func() any { m := make(map[[2]uint64]bool, 16); return &m }}
 )
 
 type aliasSnapshot struct {
@@ -2560,7 +2632,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if len(args) != 1 && len(args) != 2 {
 			return Null, true, fmt.Errorf("List.add expects 1 or 2 arguments")
 		}
-		previous := receiver
+		previous := snapshotAlias(receiver)
 		valueArg := args[0]
 		insertAt := -1
 		if len(args) == 2 {
@@ -2588,7 +2660,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
 			return Null, true, err
 		}
-		vm.propagateCollectionMutation(previous, receiver)
+		vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 		if insertAt >= 0 {
 			return Null, true, nil
 		}
@@ -2601,7 +2673,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if err != nil {
 			return Null, true, err
 		}
-		previous := receiver
+		previous := snapshotAlias(receiver)
 		mutationType := vm.collectionMutationType(receiver)
 		for _, value := range values {
 			item, err := vm.coerceCollectionElement(mutationType, value)
@@ -2613,7 +2685,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
 			return Null, true, err
 		}
-		vm.propagateCollectionMutation(previous, receiver)
+		vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 		return Null, true, nil
 	case "addToRelationship":
 		updated, err := listAppendSObjects(receiver, "__glade_added_to_relationship", args, "List.addToRelationship")
@@ -2707,7 +2779,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if len(args) > 1 {
 			return Null, true, fmt.Errorf("List.sort expects 0 or 1 arguments")
 		}
-		previous := receiver
+		previous := snapshotAlias(receiver)
 		sorted := append([]Value(nil), receiver.List...)
 		if len(args) == 0 {
 			if err := vm.sortComparableValues(sorted, result); err != nil {
@@ -2722,13 +2794,13 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
 			return Null, true, err
 		}
-		vm.propagateCollectionMutation(previous, receiver)
+		vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 		return Null, true, nil
 	case "remove":
 		if len(args) != 1 || args[0].Kind != ValueInt {
 			return Null, true, fmt.Errorf("List.remove expects integer index")
 		}
-		previous := receiver
+		previous := snapshotAlias(receiver)
 		i := int(args[0].Int)
 		if i < 0 || i >= len(receiver.List) {
 			return Null, true, listIndexException(i)
@@ -2738,24 +2810,24 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
 			return Null, true, err
 		}
-		vm.propagateCollectionMutation(previous, receiver)
+		vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 		return removed, true, nil
 	case "clear":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("List.clear expects 0 arguments")
 		}
-		previous := receiver
+		previous := snapshotAlias(receiver)
 		receiver.List = nil
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
 			return Null, true, err
 		}
-		vm.propagateCollectionMutation(previous, receiver)
+		vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 		return Null, true, nil
 	case "set":
 		if len(args) != 2 || args[0].Kind != ValueInt {
 			return Null, true, fmt.Errorf("List.set expects integer index and value")
 		}
-		previous := receiver
+		previous := snapshotAlias(receiver)
 		i := int(args[0].Int)
 		if i < 0 || i >= len(receiver.List) {
 			return Null, true, listIndexException(i)
@@ -2768,7 +2840,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
 			return Null, true, err
 		}
-		vm.propagateCollectionMutation(previous, receiver)
+		vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 		return Null, true, nil
 	}
 	return Null, false, nil
@@ -2797,7 +2869,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("Set.add expects 1 argument")
 		}
-		previous := receiver
+		previous := snapshotAlias(receiver)
 		item, err := vm.coerceCollectionElement(receiver.Type, args[0])
 		if err != nil {
 			return Null, true, fmt.Errorf("Set.add: %w", err)
@@ -2811,7 +2883,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
 			}
-			vm.propagateCollectionMutation(previous, receiver)
+			vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 			return Bool(true), true, nil
 		}
 		return Bool(false), true, nil
@@ -2823,7 +2895,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		if err != nil {
 			return Null, true, err
 		}
-		previous := receiver
+		previous := snapshotAlias(receiver)
 		changed := false
 		for _, value := range values {
 			item, err := vm.coerceCollectionElement(receiver.Type, value)
@@ -2843,7 +2915,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
 			}
-			vm.propagateCollectionMutation(previous, receiver)
+			vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 		}
 		return Bool(changed), true, nil
 	case "size":
@@ -3025,6 +3097,7 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if len(args) != 2 {
 			return Null, true, fmt.Errorf("Map.put expects 2 arguments")
 		}
+		previousReceiver := snapshotAlias(receiver)
 		key, item, err := vm.coerceMapEntry(receiver.Type, args[0], args[1])
 		if err != nil {
 			return Null, true, fmt.Errorf("Map.put: %w", err)
@@ -3044,11 +3117,13 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
 			return Null, true, err
 		}
+		vm.propagateCollectionMutationFromSnapshot(previousReceiver, receiver)
 		return previous, true, nil
 	case "putAll":
 		if len(args) != 1 || (args[0].Kind != ValueMap && args[0].Kind != ValueList) {
 			return Null, true, fmt.Errorf("Map.putAll expects Map or List")
 		}
+		previousReceiver := snapshotAlias(receiver)
 		if args[0].Kind == ValueList {
 			updated, err := vm.putAllSObjectList(receiver, args[0])
 			if err != nil {
@@ -3057,6 +3132,7 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			if err := vm.storeReceiver(receiverName, updated); err != nil {
 				return Null, true, err
 			}
+			vm.propagateCollectionMutationFromSnapshot(previousReceiver, updated)
 			return Null, true, nil
 		}
 		for _, rawKey := range orderedValueMapKeys(args[0]) {
@@ -3079,6 +3155,7 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
 			return Null, true, err
 		}
+		vm.propagateCollectionMutationFromSnapshot(previousReceiver, receiver)
 		return Null, true, nil
 	case "get":
 		if len(args) != 1 {
@@ -3152,6 +3229,7 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("Map.remove expects 1 argument")
 		}
+		previousReceiver := snapshotAlias(receiver)
 		key := vm.mapLookupKey(receiver, args[0])
 		removed := Null
 		if value, ok := receiver.Map[key]; ok {
@@ -3170,6 +3248,7 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
 			}
+			vm.propagateCollectionMutationFromSnapshot(previousReceiver, receiver)
 		}
 		return removed, true, nil
 	case "keySet":

@@ -1603,6 +1603,14 @@ func (vm *VM) generatedPlatformMethodDefaultReturn(method Method, receiver Value
 	if value, handled, err := vm.callGeneratedOptionalWrapperMember(receiver, apexMethodMemberName(method.Name), args); handled && err == nil {
 		return value
 	}
+	if receiver.Kind == ValueObject && strings.EqualFold(methodName, "clone") {
+		cloned := cloneValue(receiver)
+		cloned.Ref = newValueRef()
+		return cloned
+	}
+	if receiver.Kind == ValueObject && strings.EqualFold(methodName, "getAsMap") {
+		return passiveDTOMapValue(receiver)
+	}
 	if receiver.Kind == ValueObject {
 		if suffix, ok := passiveAccessorSuffix(methodName, "get"); ok {
 			if _, value, found := objectFieldValue(receiver, passiveAccessorFieldName(receiver, suffix)); found {
@@ -1629,6 +1637,8 @@ func (vm *VM) generatedPlatformMethodDefaultReturn(method Method, receiver Value
 		return Decimal(0)
 	}
 	switch {
+	case strings.EqualFold(returnType, "Object") && strings.EqualFold(methodName, "createResponse"):
+		return Object("Object")
 	case collectionBase(returnType) == "List":
 		return typedList(returnType)
 	case collectionBase(returnType) == "Set":

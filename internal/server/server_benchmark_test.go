@@ -12,7 +12,7 @@ import (
 func BenchmarkServerQueryRoute(b *testing.B) {
 	org := benchmarkServerOrg(1000)
 	handler := New(&org)
-	request := httptest.NewRequest(http.MethodGet, "/services/data/v65.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Account%200500'", nil)
+	request := httptest.NewRequest(http.MethodGet, "/services/data/v"+storage.DefaultRESTAPIVersion+"/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Account%200500'", nil)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		recorder := httptest.NewRecorder()

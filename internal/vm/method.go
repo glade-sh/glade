@@ -107,6 +107,7 @@ type Field struct {
 	Property     bool
 	Getter       *Method
 	Setter       *Method
+	HasSetter    bool
 	File         string
 	Dependency   bool
 	StorageName  string
@@ -230,6 +231,7 @@ func stampFieldAccessorOwners(ownerName, className, fieldName string, field Fiel
 		field.Getter = &getter
 	}
 	if field.Setter != nil {
+		field.HasSetter = true
 		setter := *field.Setter
 		if setter.Name == "" {
 			setter.Name = className + "." + fieldName + ".set"

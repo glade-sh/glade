@@ -62,6 +62,36 @@ func TestInsertUpdateDelete(t *testing.T) {
 	}
 }
 
+func TestInsertProbeTestObjectDoesNotCopyCustomNameToStandardName(t *testing.T) {
+	org := testOrg()
+	org.Objects["ProbeTestObject__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "ProbeTestObject__c",
+			KeyPrefix: "a0p",
+			Fields: map[string]storage.Field{
+				"Name":    {APIName: "Name", Type: storage.FieldString, Required: true},
+				"Name__c": {APIName: "Name__c", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	result := engine.Insert([]storage.Record{{
+		Object: "ProbeTestObject__c",
+		Fields: map[string]storage.Value{
+			"Name__c": storage.StringValue("Probe"),
+		},
+	}})
+
+	if result[0].Success {
+		t.Fatalf("insert succeeded: %#v", result[0])
+	}
+	if !strings.Contains(result[0].Error, "Required fields are missing: [Name]") {
+		t.Fatalf("insert error = %q", result[0].Error)
+	}
+}
+
 func TestInsertAdvancesSystemTimestampsWhenClockIsFixed(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)
@@ -115,37 +145,37 @@ func TestDMLRejectsInvalidSystemOwnerIDPrefix(t *testing.T) {
 func TestValidationFormulaResolvesForeignNamespacedRelationshipFields(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Namespace = "namz"
-	org.Objects["znu__Entity__c"] = storage.ObjectState{
-		Definition: storage.ObjectDefinition{APIName: "znu__Entity__c", KeyPrefix: "a01", Fields: map[string]storage.Field{
+	org.Objects["pkg__Entity__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "pkg__Entity__c", KeyPrefix: "a01", Fields: map[string]storage.Field{
 			"Name": {APIName: "Name", Type: storage.FieldString},
 		}},
 		Records: map[storage.ID]storage.Record{
-			"a01000000000001EAA": {ID: "a01000000000001EAA", Object: "znu__Entity__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Primary")}},
+			"a01000000000001EAA": {ID: "a01000000000001EAA", Object: "pkg__Entity__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Primary")}},
 		},
 	}
-	org.Objects["znu__Product__c"] = storage.ObjectState{
-		Definition: storage.ObjectDefinition{APIName: "znu__Product__c", KeyPrefix: "a02", Fields: map[string]storage.Field{
-			"znu__Entity__c": {APIName: "znu__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__Entity__c"}, RelationshipName: "znu__Entity__r"},
+	org.Objects["pkg__Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "pkg__Product__c", KeyPrefix: "a02", Fields: map[string]storage.Field{
+			"pkg__Entity__c": {APIName: "pkg__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__Entity__c"}, RelationshipName: "pkg__Entity__r"},
 		}},
 		Records: map[storage.ID]storage.Record{
-			"a02000000000001EAA": {ID: "a02000000000001EAA", Object: "znu__Product__c", Fields: map[string]storage.Value{"znu__Entity__c": storage.IDValue("a01000000000001EAA")}},
+			"a02000000000001EAA": {ID: "a02000000000001EAA", Object: "pkg__Product__c", Fields: map[string]storage.Value{"pkg__Entity__c": storage.IDValue("a01000000000001EAA")}},
 		},
 	}
-	org.Objects["znu__CartItem__c"] = storage.ObjectState{
-		Definition: storage.ObjectDefinition{APIName: "znu__CartItem__c", KeyPrefix: "a03", Fields: map[string]storage.Field{
-			"znu__Entity__c": {APIName: "znu__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__Entity__c"}, RelationshipName: "znu__Entity__r"},
+	org.Objects["pkg__CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "pkg__CartItem__c", KeyPrefix: "a03", Fields: map[string]storage.Field{
+			"pkg__Entity__c": {APIName: "pkg__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__Entity__c"}, RelationshipName: "pkg__Entity__r"},
 		}},
 		Records: map[storage.ID]storage.Record{
-			"a03000000000001EAA": {ID: "a03000000000001EAA", Object: "znu__CartItem__c", Fields: map[string]storage.Value{"znu__Entity__c": storage.IDValue("a01000000000001EAA")}},
+			"a03000000000001EAA": {ID: "a03000000000001EAA", Object: "pkg__CartItem__c", Fields: map[string]storage.Value{"pkg__Entity__c": storage.IDValue("a01000000000001EAA")}},
 		},
 	}
-	org.Objects["znu__CartItemLine__c"] = storage.ObjectState{
+	org.Objects["pkg__CartItemLine__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "znu__CartItemLine__c",
+			APIName:   "pkg__CartItemLine__c",
 			KeyPrefix: "a04",
 			Fields: map[string]storage.Field{
-				"znu__Product2__c": {APIName: "znu__Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__Product__c"}, RelationshipName: "znu__Product2__r"},
-				"znu__CartItem__c": {APIName: "znu__CartItem__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__CartItem__c"}, RelationshipName: "znu__CartItem__r"},
+				"pkg__Product2__c": {APIName: "pkg__Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__Product__c"}, RelationshipName: "pkg__Product2__r"},
+				"pkg__CartItem__c": {APIName: "pkg__CartItem__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__CartItem__c"}, RelationshipName: "pkg__CartItem__r"},
 			},
 			ValidationRules: []storage.ValidationRule{{
 				Name:                  "EntityMustMatch",
@@ -159,10 +189,10 @@ func TestValidationFormulaResolvesForeignNamespacedRelationshipFields(t *testing
 
 	engine := NewEngine(&org)
 	result := engine.Insert([]storage.Record{{
-		Object: "znu__CartItemLine__c",
+		Object: "pkg__CartItemLine__c",
 		Fields: map[string]storage.Value{
-			"znu__Product2__c": storage.IDValue("a02000000000001EAA"),
-			"znu__CartItem__c": storage.IDValue("a03000000000001EAA"),
+			"pkg__Product2__c": storage.IDValue("a02000000000001EAA"),
+			"pkg__CartItem__c": storage.IDValue("a03000000000001EAA"),
 		},
 	}})
 	if !result[0].Success {
@@ -173,12 +203,12 @@ func TestValidationFormulaResolvesForeignNamespacedRelationshipFields(t *testing
 func TestValidationFormulaUsesObjectNamespaceBeforeOrgNamespace(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Namespace = "namz"
-	org.Objects["znu__Line__c"] = storage.ObjectState{
+	org.Objects["pkg__Line__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "znu__Line__c",
+			APIName:   "pkg__Line__c",
 			KeyPrefix: "a04",
 			Fields: map[string]storage.Field{
-				"znu__Entity__c":  {APIName: "znu__Entity__c", Type: storage.FieldString},
+				"pkg__Entity__c":  {APIName: "pkg__Entity__c", Type: storage.FieldString},
 				"namz__Entity__c": {APIName: "namz__Entity__c", Type: storage.FieldString},
 			},
 			ValidationRules: []storage.ValidationRule{{
@@ -193,9 +223,9 @@ func TestValidationFormulaUsesObjectNamespaceBeforeOrgNamespace(t *testing.T) {
 
 	engine := NewEngine(&org)
 	result := engine.Insert([]storage.Record{{
-		Object: "znu__Line__c",
+		Object: "pkg__Line__c",
 		Fields: map[string]storage.Value{
-			"znu__Entity__c":  storage.StringValue("right"),
+			"pkg__Entity__c":  storage.StringValue("right"),
 			"namz__Entity__c": storage.StringValue("wrong"),
 		},
 	}})
@@ -207,6 +237,16 @@ func TestValidationFormulaUsesObjectNamespaceBeforeOrgNamespace(t *testing.T) {
 func TestUpdateRequiredFieldToNullFails(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)
+	var organizationRecordTypeID storage.ID
+	for _, recordType := range org.Objects["Account"].Definition.RecordTypes {
+		if recordType.DeveloperName == "Organization" {
+			organizationRecordTypeID = recordType.ID
+			break
+		}
+	}
+	if organizationRecordTypeID == "" {
+		t.Fatalf("missing organization record type: %#v", org.Objects["Account"].Definition.RecordTypes)
+	}
 
 	insert := engine.Insert([]storage.Record{{
 		Object: "Account",
@@ -894,7 +934,7 @@ func TestInsertAppliesRecordTypeFormulaDefaults(t *testing.T) {
 			},
 			RecordTypes: []storage.RecordTypeInfo{
 				{ID: "012000000000001AAA", DeveloperName: "Merchandise", Name: "Merchandise"},
-				{ID: "012000000000002AAA", DeveloperName: "Membership", Name: "Membership"},
+				{ID: "012000000000002AAA", DeveloperName: "Subscription", Name: "Subscription"},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -919,7 +959,7 @@ func TestInsertAppliesRecordTypeFormulaDefaults(t *testing.T) {
 	insert := engine.Insert([]storage.Record{{
 		Object: "Product__c",
 		Fields: map[string]storage.Value{
-			"Name":         storage.StringValue("Membership"),
+			"Name":         storage.StringValue("Subscription"),
 			"RecordTypeId": storage.IDValue("012000000000002AAA"),
 		},
 	}})
@@ -931,8 +971,8 @@ func TestInsertAppliesRecordTypeFormulaDefaults(t *testing.T) {
 		t.Fatalf("QuantityMax__c = %#v; want decimal 1", got)
 	}
 	typeName := org.Objects["Product__c"].Records[insert[0].ID].Fields["TypeName__c"]
-	if typeName.Kind != storage.ValueString || typeName.String != "Membership" {
-		t.Fatalf("TypeName__c = %#v; want Membership", typeName)
+	if typeName.Kind != storage.ValueString || typeName.String != "Subscription" {
+		t.Fatalf("TypeName__c = %#v; want Subscription", typeName)
 	}
 }
 
@@ -1380,6 +1420,51 @@ func TestInsertOrganizationAccountIgnoresFalseStringPersonDefaults(t *testing.T)
 	}
 }
 
+func TestInsertBusinessAccountPrefersBusinessRecordTypeWithoutPersonFields(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	account := org.Objects["Account"]
+	account.Definition.RecordTypes = append(account.Definition.RecordTypes, storage.RecordTypeInfo{
+		ID:            "012000000000ORG",
+		DeveloperName: "Organization",
+		Name:          "Organization",
+		Active:        true,
+		Available:     true,
+	})
+	org.Objects["Account"] = account
+	storage.EnsureDeterministicPlatformData(&org)
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Test Org"),
+		},
+	}})
+
+	if len(insert) != 1 || !insert[0].Success {
+		t.Fatalf("insert result = %#v", insert)
+	}
+	stored := org.Objects["Account"].Records[insert[0].ID]
+	recordType := recordTypeByID(org.Objects["Account"].Definition.RecordTypes, idFromStorageValue(stored.Fields["RecordTypeId"]))
+	if recordTypeLooksPersonAccount(recordType) {
+		t.Fatalf("record type = %#v; fields=%#v", recordType, stored.Fields)
+	}
+	if stored.Fields["IsPersonAccount"].Boolean {
+		t.Fatalf("person account flag was set: %#v", stored.Fields)
+	}
+}
+
+func recordTypeByID(recordTypes []storage.RecordTypeInfo, id storage.ID) storage.RecordTypeInfo {
+	for _, recordType := range recordTypes {
+		if recordType.ID == id {
+			return recordType
+		}
+	}
+	return storage.RecordTypeInfo{ID: id}
+}
+
 func TestInsertOrganizationAccountRecordTypeWithPersonNameFieldsUsesPersonAccount(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
@@ -1438,15 +1523,15 @@ func personAccountRecordTypeID(t *testing.T, org storage.OrgState) storage.ID {
 
 func TestInsertPersonAccountDoesNotPopulateCustomPersonContactAlias(t *testing.T) {
 	org := storage.NewOrgState()
-	org.Namespace = "znu"
+	org.Namespace = "pkg"
 	storage.EnsureDeterministicPlatformData(&org)
 	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
 	account := org.Objects["Account"]
-	account.Definition.Fields["znu__PersonContact__c"] = storage.Field{
-		APIName:          "znu__PersonContact__c",
+	account.Definition.Fields["pkg__PersonContact__c"] = storage.Field{
+		APIName:          "pkg__PersonContact__c",
 		Type:             storage.FieldReference,
 		ReferenceTo:      []string{"Contact"},
-		RelationshipName: "znu__PersonContact__r",
+		RelationshipName: "pkg__PersonContact__r",
 	}
 	org.Objects["Account"] = account
 	engine := NewEngine(&org)
@@ -1466,12 +1551,12 @@ func TestInsertPersonAccountDoesNotPopulateCustomPersonContactAlias(t *testing.T
 	if contactID == "" {
 		t.Fatalf("PersonContactId was not populated: %#v", accountRecord.Fields)
 	}
-	if got := accountRecord.Fields["znu__PersonContact__c"]; got.Kind != "" {
-		t.Fatalf("znu__PersonContact__c = %#v, want unset; fields=%#v", got, accountRecord.Fields)
+	if got := accountRecord.Fields["pkg__PersonContact__c"]; got.Kind != "" {
+		t.Fatalf("pkg__PersonContact__c = %#v, want unset; fields=%#v", got, accountRecord.Fields)
 	}
 }
 
-func TestInsertPersonAccountMirrorsNamespacedPersonEmailAlias(t *testing.T) {
+func TestInsertPersonAccountDoesNotMirrorNamespacedPersonEmailAlias(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Namespace = "pkg"
 	storage.EnsureDeterministicPlatformData(&org)
@@ -1493,8 +1578,8 @@ func TestInsertPersonAccountMirrorsNamespacedPersonEmailAlias(t *testing.T) {
 		t.Fatalf("insert = %#v", insert[0])
 	}
 	accountRecord := org.Objects["Account"].Records[insert[0].ID]
-	if got := accountRecord.Fields["pkg__PersonEmail__c"]; got.Kind != storage.ValueString || got.String != "ada@example.invalid" {
-		t.Fatalf("pkg__PersonEmail__c = %#v; fields=%#v", got, accountRecord.Fields)
+	if got := accountRecord.Fields["pkg__PersonEmail__c"]; got.Kind != "" {
+		t.Fatalf("pkg__PersonEmail__c = %#v, want unset; fields=%#v", got, accountRecord.Fields)
 	}
 }
 
@@ -2984,9 +3069,9 @@ func TestValidationRulesSupportIsChangedWithParentRelationshipFields(t *testing.
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
-	org.Objects["Membership__c"] = storage.ObjectState{
+	org.Objects["Subscription__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Membership__c",
+			APIName:   "Subscription__c",
 			KeyPrefix: "a16",
 			Fields: map[string]storage.Field{
 				"Name":               {APIName: "Name", Type: storage.FieldString},
@@ -3028,9 +3113,9 @@ IsBlank(OrderItemLine__r.DeferredSchedule__c) = False
 		t.Fatalf("line insert = %#v", line)
 	}
 	membership := engine.Insert([]storage.Record{{
-		Object: "Membership__c",
+		Object: "Subscription__c",
 		Fields: map[string]storage.Value{
-			"Name":             storage.StringValue("Membership"),
+			"Name":             storage.StringValue("Subscription"),
 			"StartDate__c":     storage.DateValue("2026-01-01"),
 			"EndDate__c":       storage.DateValue("2026-12-31"),
 			"OrderItemLine__c": storage.IDValue(line[0].ID),
@@ -3042,7 +3127,7 @@ IsBlank(OrderItemLine__r.DeferredSchedule__c) = False
 
 	update := engine.Update([]storage.Record{{
 		ID:     membership[0].ID,
-		Object: "Membership__c",
+		Object: "Subscription__c",
 		Fields: map[string]storage.Value{
 			"EndDate__c": storage.DateValue("2026-02-28"),
 		},
@@ -3759,7 +3844,7 @@ func TestCalculatedFormulaEvaluatesNestedParentCalculatedField(t *testing.T) {
 func TestCalculatedFormulaBlankValueUsesParentFallback(t *testing.T) {
 	displayField := storage.Field{APIName: "ProductDisplayName__c", Type: storage.FieldCalculated, DisplayType: "STRING", Formula: `BLANKVALUE(ProductNameOverride__c, Product__r.Name)`}
 	linkDefinition := storage.ObjectDefinition{
-		APIName: "MembershipTypeProductLink__c",
+		APIName: "PlanTypeProductLink__c",
 		Fields: map[string]storage.Field{
 			"ProductNameOverride__c": {APIName: "ProductNameOverride__c", Type: storage.FieldString},
 			"Product__c":             {APIName: "Product__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}},
@@ -3778,7 +3863,7 @@ func TestCalculatedFormulaBlankValueUsesParentFallback(t *testing.T) {
 		},
 	}
 	org := storage.OrgState{Objects: map[string]storage.ObjectState{
-		"MembershipTypeProductLink__c": {Definition: linkDefinition},
+		"PlanTypeProductLink__c": {Definition: linkDefinition},
 		"Product__c": {
 			Definition: productDefinition,
 			Records: map[storage.ID]storage.Record{
@@ -3787,7 +3872,7 @@ func TestCalculatedFormulaBlankValueUsesParentFallback(t *testing.T) {
 		},
 	}}
 	record := storage.Record{
-		Object: "MembershipTypeProductLink__c",
+		Object: "PlanTypeProductLink__c",
 		Fields: map[string]storage.Value{
 			"Product__c": storage.IDValue("a01000000000001"),
 		},
@@ -3895,7 +3980,7 @@ TEXT(ParentBundleSubtype__c) != 'Assembled')`, &org, childDefinition, storage.Re
 		t.Fatalf("cart-style inventory validation = %v, ok=%v; want true", matches, ok)
 	}
 	matches, ok = evaluateValidationFormulaInOrg(`AND(Product2__r.TrackInventory__c,
-Product2__r.RecordTypeName__c != 'Merchandise' || !$Setup.NimbleAMSPublicSettings__c.CanBackorderStaffView__c,
+Product2__r.RecordTypeName__c != 'Merchandise' || !$Setup.ManagedAppPublicSettings__c.CanBackorderStaffView__c,
 Quantity__c - IF(ISNEW(), 0, PRIORVALUE(Quantity__c)) > Product2__r.InventoryOnHand__c,
 ISBLANK(OrderItemLine__c) || (!ISNEW() && Quantity__c > PRIORVALUE(Quantity__c)),
 TEXT(ParentBundleSubtype__c) != 'Assembled')`, &org, childDefinition, storage.Record{
@@ -3914,9 +3999,9 @@ TEXT(ParentBundleSubtype__c) != 'Assembled')`, &org, childDefinition, storage.Re
 	merchandiseRecord.Fields["RecordTypeName__c"] = storage.StringValue("Merchandise")
 	productWithMerchandise.Records["a01000000000001"] = merchandiseRecord
 	orgWithSetup.Objects["Product__c"] = productWithMerchandise
-	orgWithSetup.Objects["NimbleAMSPublicSettings__c"] = storage.ObjectState{
+	orgWithSetup.Objects["ManagedAppPublicSettings__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "NimbleAMSPublicSettings__c",
+			APIName: "ManagedAppPublicSettings__c",
 			Metadata: map[string]string{
 				"kind":               "customSetting",
 				"customSettingsType": "Hierarchy",
@@ -3932,7 +4017,7 @@ TEXT(ParentBundleSubtype__c) != 'Assembled')`, &org, childDefinition, storage.Re
 		Records: map[storage.ID]storage.Record{
 			"a0s000000000001": {
 				ID:     "a0s000000000001",
-				Object: "NimbleAMSPublicSettings__c",
+				Object: "ManagedAppPublicSettings__c",
 				Fields: map[string]storage.Value{
 					"Name":                     storage.StringValue("00D000000000001"),
 					"CanBackorderStaffView__c": storage.BooleanValue(true),
@@ -3941,7 +4026,7 @@ TEXT(ParentBundleSubtype__c) != 'Assembled')`, &org, childDefinition, storage.Re
 		},
 	}
 	matches, ok = evaluateValidationFormulaInOrg(`AND(Product2__r.TrackInventory__c,
-Product2__r.RecordTypeName__c != 'Merchandise' || !$Setup.NimbleAMSPublicSettings__c.CanBackorderStaffView__c,
+Product2__r.RecordTypeName__c != 'Merchandise' || !$Setup.ManagedAppPublicSettings__c.CanBackorderStaffView__c,
 Quantity__c - IF(ISNEW(), 0, PRIORVALUE(Quantity__c)) > Product2__r.InventoryOnHand__c,
 ISBLANK(OrderItemLine__c) || (!ISNEW() && Quantity__c > PRIORVALUE(Quantity__c)),
 TEXT(ParentBundleSubtype__c) != 'Assembled')`, &orgWithSetup, childDefinition, storage.Record{
@@ -4042,8 +4127,8 @@ func TestStandaloneRecordTypeNameDefaultEvaluatesFromRecordTypeID(t *testing.T) 
 		},
 		RecordTypes: []storage.RecordTypeInfo{{
 			ID:            "012000000000001",
-			Name:          "Membership",
-			DeveloperName: "Membership",
+			Name:          "Subscription",
+			DeveloperName: "Subscription",
 			Active:        true,
 			Available:     true,
 		}},
@@ -4054,8 +4139,8 @@ func TestStandaloneRecordTypeNameDefaultEvaluatesFromRecordTypeID(t *testing.T) 
 			"RecordTypeId": storage.IDValue("012000000000001"),
 		},
 	}, definition.Fields["RecordTypeName__c"])
-	if !ok || value.Kind != storage.ValueString || value.String != "Membership" {
-		t.Fatalf("record type name default = %#v, ok=%v; want Membership", value, ok)
+	if !ok || value.Kind != storage.ValueString || value.String != "Subscription" {
+		t.Fatalf("record type name default = %#v, ok=%v; want Subscription", value, ok)
 	}
 }
 
@@ -4069,7 +4154,7 @@ func TestInsertRefreshesStaleRecordTypeNameDefault(t *testing.T) {
 		},
 		RecordTypes: []storage.RecordTypeInfo{
 			{ID: "012000000000020", Name: "Coupon", DeveloperName: "Coupon", Active: true, Available: true, Default: true},
-			{ID: "012000000000021", Name: "Membership", DeveloperName: "Membership", Active: true, Available: true},
+			{ID: "012000000000021", Name: "Subscription", DeveloperName: "Subscription", Active: true, Available: true},
 		},
 	}
 	org := storage.NewOrgState()
@@ -4091,8 +4176,8 @@ func TestInsertRefreshesStaleRecordTypeNameDefault(t *testing.T) {
 	}
 	record := org.Objects["DeferredRevenueMethod__c"].Records[insert[0].ID]
 	value, ok := record.GetField("RecordTypeName__c")
-	if !ok || value.Kind != storage.ValueString || value.String != "Membership" {
-		t.Fatalf("record type name after insert = %#v, ok=%v; want Membership", value, ok)
+	if !ok || value.Kind != storage.ValueString || value.String != "Subscription" {
+		t.Fatalf("record type name after insert = %#v, ok=%v; want Subscription", value, ok)
 	}
 }
 
@@ -4106,8 +4191,8 @@ func TestInsertRefreshesRawRecordTypeNameDefault(t *testing.T) {
 		},
 		RecordTypes: []storage.RecordTypeInfo{{
 			ID:            "012000000000001",
-			Name:          "Registration",
-			DeveloperName: "Registration",
+			Name:          "Standard",
+			DeveloperName: "Standard",
 			Active:        true,
 			Available:     true,
 			Default:       true,
@@ -4132,8 +4217,8 @@ func TestInsertRefreshesRawRecordTypeNameDefault(t *testing.T) {
 	}
 	record := org.Objects["Product__c"].Records[insert[0].ID]
 	value, ok := record.GetField("RecordTypeName__c")
-	if !ok || value.Kind != storage.ValueString || value.String != "Registration" {
-		t.Fatalf("record type name after insert = %#v, ok=%v; want Registration", value, ok)
+	if !ok || value.Kind != storage.ValueString || value.String != "Standard" {
+		t.Fatalf("record type name after insert = %#v, ok=%v; want Standard", value, ok)
 	}
 }
 
@@ -5003,10 +5088,36 @@ func testOrg() storage.OrgState {
 			APIName:   "Account",
 			KeyPrefix: "001",
 			Fields: map[string]storage.Field{
-				"Name": {APIName: "Name", Type: storage.FieldString, Required: true},
+				"Name":         {APIName: "Name", Type: storage.FieldString, Required: true},
+				"RecordTypeId": {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}},
 			},
+			RecordTypes: []storage.RecordTypeInfo{{
+				ID:            "012000000000ORG",
+				DeveloperName: "Organization",
+				Name:          "Organization",
+				Active:        true,
+				Available:     true,
+			}},
 		},
 		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["RecordType"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "RecordType",
+			KeyPrefix: "012",
+			Fields: map[string]storage.Field{
+				"Name":          {APIName: "Name", Type: storage.FieldString},
+				"DeveloperName": {APIName: "DeveloperName", Type: storage.FieldString},
+				"SobjectType":   {APIName: "SobjectType", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"012000000000ORG": {Object: "RecordType", ID: "012000000000ORG", Fields: map[string]storage.Value{
+				"Name":          storage.StringValue("Organization"),
+				"DeveloperName": storage.StringValue("Organization"),
+				"SobjectType":   storage.StringValue("Account"),
+			}},
+		},
 	}
 	return org
 }

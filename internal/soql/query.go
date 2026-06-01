@@ -1,6 +1,10 @@
 package soql
 
-import "github.com/glade-sh/glade/internal/storage"
+import (
+	"sync"
+
+	"github.com/glade-sh/glade/internal/storage"
+)
 
 type Query struct {
 	Fields           []string
@@ -61,6 +65,7 @@ type Result struct {
 	Rows    int              `json:"rows"`
 }
 type ExecutionCache struct {
+	mu                 sync.Mutex
 	childRelationships map[string]childRelationshipResolution
 }
 type childRelationshipResolution struct {

@@ -251,6 +251,10 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			if strings.EqualFold(field.Type, "Summary") {
 				fieldType = storage.FieldSummary
 			}
+			var updateable *bool
+			if strings.EqualFold(field.Type, "MasterDetail") {
+				updateable = storage.BoolFlag(false)
+			}
 			childRelationshipName := field.ChildRelationshipName
 			references := referenceTargets(field.ReferenceTo)
 			if len(references) != 0 && childRelationshipName == "" {
@@ -284,6 +288,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				ExternalID:            field.ExternalID,
 				Unique:                field.Unique,
 				Encrypted:             field.Encrypted,
+				Updateable:            updateable,
 				PicklistValues:        storagePicklistValues(field.PicklistValues),
 			}
 			if len(references) != 0 {

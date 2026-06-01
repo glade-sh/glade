@@ -284,7 +284,8 @@ private class FailingTest {
 }
 
 func TestOrgForProjectAccountAddressFieldsExposeFirstComponent(t *testing.T) {
-	root := filepath.Join("..", "..", "example-projects", "src-nmb-nu-develop")
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	org, err := orgForProject(root)
 	if err != nil {
 		t.Fatal(err)
@@ -327,10 +328,10 @@ public class Hidden {
   global String shouldNotExport;
 }
 `)
-	output := filepath.Join(root, "out", "znu.glade-package.json")
+	output := filepath.Join(root, "out", "pkg.glade-package.json")
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"package", "build", "--project", root, "--namespace", "znu", "--version", "test-version", "--output", output, "--json"}, &stdout, &stderr)
+	code := Run(context.Background(), []string{"package", "build", "--project", root, "--namespace", "pkg", "--version", "test-version", "--output", output, "--json"}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
@@ -355,10 +356,10 @@ public class Hidden {
 	if err := json.Unmarshal(data, &artifact); err != nil {
 		t.Fatal(err)
 	}
-	if artifact.Namespace != "znu" || artifact.Version != "test-version" || artifact.SourceAPIVersion != "61.0" || artifact.SourceHash == "" {
+	if artifact.Namespace != "pkg" || artifact.Version != "test-version" || artifact.SourceAPIVersion != "61.0" || artifact.SourceHash == "" {
 		t.Fatalf("artifact metadata = %#v", artifact)
 	}
-	if len(artifact.ApexTypes) != 1 || artifact.ApexTypes[0].Name != "Address" || artifact.ApexTypes[0].Namespace != "znu" {
+	if len(artifact.ApexTypes) != 1 || artifact.ApexTypes[0].Name != "Address" || artifact.ApexTypes[0].Namespace != "pkg" {
 		t.Fatalf("apex types = %#v", artifact.ApexTypes)
 	}
 	memberNames := make([]string, 0, len(artifact.ApexTypes[0].Members))
@@ -371,7 +372,7 @@ public class Hidden {
 	if !strings.Contains(strings.Join(memberNames, ","), "street") || !strings.Contains(strings.Join(memberNames, ","), "format") {
 		t.Fatalf("missing global members: %#v", artifact.ApexTypes[0].Members)
 	}
-	if !strings.Contains(stdout.String(), `"namespace": "znu"`) {
+	if !strings.Contains(stdout.String(), `"namespace": "pkg"`) {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
 }
@@ -1154,6 +1155,58 @@ Removes leading and trailing white space.
 		if !strings.Contains(stdout.String(), want) {
 			t.Fatalf("catalog stdout missing %q: %q", want, stdout.String())
 		}
+	}
+}
+
+func TestRunCompatCatalogFromCompletions(t *testing.T) {
+	completionsPath := filepath.Join(t.TempDir(), "completions.json")
+	writeTestFile(t, completionsPath, `{
+  "publicDeclarations": {
+    "System": {
+      "Math": {
+        "constructors": [],
+        "methods": [
+          {"name": "abs", "returnType": "Decimal", "isStatic": true, "parameters": [{"name": "x", "type": "Decimal"}]}
+        ],
+        "properties": [{"name": "PI", "type": "Double"}]
+      }
+    },
+    "Approval": {
+      "ProcessSubmitRequest": {
+        "constructors": [{"name": "ProcessSubmitRequest", "parameters": []}],
+        "methods": [],
+        "properties": []
+      }
+    }
+  }
+}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "catalog", "--completions", completionsPath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("catalog exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"symbol": "Math.abs"`,
+		`"signature": "abs(Decimal x) returns Decimal"`,
+		`"area": "Core stdlib"`,
+		`"namespace": "Approval"`,
+		`"typeName": "ProcessSubmitRequest"`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("catalog stdout missing %q", want)
+		}
+	}
+}
+
+func TestRunCompatCatalogRejectsBothSources(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "catalog", "--inventory", "a.json", "--completions", "b.json"}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatal("expected non-zero exit for conflicting sources")
+	}
+	if !strings.Contains(stderr.String(), "use only one of --inventory or --completions") {
+		t.Fatalf("stderr = %q", stderr.String())
 	}
 }
 

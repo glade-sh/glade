@@ -3046,6 +3046,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("PageReference.%s expects 0 arguments", method)
 			}
+			if vm.hasStatement {
+				return Null, receiver, false, true, unsupportedCallError("PageReference." + method + " local Visualforce page rendering surface")
+			}
 			if method == "getContentAsPDF" {
 				pdf := "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n"
 				return platformScalar("Blob", pdf), receiver, false, true, nil
@@ -3283,17 +3286,7 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("%s.getAsMap expects 0 arguments", receiver.Type)
 		}
-		values := typedMap("Map<String,Object>")
-		for field, value := range receiver.Fields {
-			if strings.HasPrefix(field, "__") {
-				continue
-			}
-			key := String(field)
-			encodedKey := mapKey(key)
-			values.Map[encodedKey] = value
-			values.MapKeys[encodedKey] = key
-		}
-		return values, receiver, false, true, nil
+		return passiveDTOMapValue(receiver), receiver, false, true, nil
 	}
 	if strings.EqualFold(method, "setCustomField") {
 		if len(args) != 2 || args[0].Kind != ValueString {
@@ -4355,6 +4348,20 @@ func passiveRuntimeClass(class Class) bool {
 		passiveRuntimeConstructors(class.Constructors) &&
 		len(class.StaticInitializers) == 0 &&
 		len(class.InstanceInitializers) == 0
+}
+
+func passiveDTOMapValue(receiver Value) Value {
+	values := typedMap("Map<String,Object>")
+	for field, value := range receiver.Fields {
+		if strings.HasPrefix(field, "__") {
+			continue
+		}
+		key := String(field)
+		encodedKey := mapKey(key)
+		values.Map[encodedKey] = value
+		values.MapKeys[encodedKey] = key
+	}
+	return values
 }
 
 func genericObjectRuntimeMethod(method Method) bool {

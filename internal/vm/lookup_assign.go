@@ -124,7 +124,7 @@ func (vm *VM) lookup(name string) (Value, error) {
 				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+field.Name, field.Modifiers); err != nil {
 					return Null, err
 				}
-				if field.Getter != nil {
+				if field.Getter != nil && !(!field.HasSetter && root.Kind != ValueNull) {
 					value, err := vm.callGetter(owner, field, this)
 					if err != nil {
 						return Null, err
@@ -543,17 +543,23 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 		return "", Null, false
 	}
 	if value, ok := object.Fields[name]; ok {
-		value = coerceRawRecordTypeNameFieldRuntimeValue(name, value)
+		value = coerceRawRecordTypeDefaultTokenRuntimeValue(name, value)
 		if !isExplicitSObjectField(object, name) {
 			if aliasName, aliasValue, aliasOK := explicitAliasObjectFieldValue(object, name); aliasOK {
 				return aliasName, aliasValue, true
 			}
 		}
 		if value.Kind == ValueNull {
-			if isExplicitSObjectField(object, name) {
+			if isRelationshipNull(value) {
 				return name, value, true
 			}
-			if isRelationshipNull(value) {
+			stripped := storage.StripAnyNamespaceToken(name)
+			for candidate, alternate := range object.Fields {
+				if candidate != name && strings.EqualFold(storage.StripAnyNamespaceToken(candidate), stripped) && alternate.Kind != ValueNull {
+					return candidate, alternate, true
+				}
+			}
+			if isExplicitSObjectField(object, name) {
 				return name, value, true
 			}
 			for candidate, alternate := range object.Fields {
@@ -566,7 +572,7 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 	}
 	for candidate, value := range object.Fields {
 		if strings.EqualFold(candidate, name) {
-			value = coerceRawRecordTypeNameFieldRuntimeValue(candidate, value)
+			value = coerceRawRecordTypeDefaultTokenRuntimeValue(candidate, value)
 			return candidate, value, true
 		}
 	}
@@ -582,13 +588,75 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 			return "", Null, false
 		}
 		matchedName = candidate
-		matchedValue = coerceRawRecordTypeNameFieldRuntimeValue(candidate, value)
+		matchedValue = coerceRawRecordTypeDefaultTokenRuntimeValue(candidate, value)
 		matched = true
 	}
 	if matched {
 		return matchedName, matchedValue, true
 	}
 	return "", Null, false
+}
+
+func (vm *VM) setObjectFieldValue(object *Value, name string, value Value) {
+	if object == nil {
+		return
+	}
+	if object.Fields == nil {
+		object.Fields = make(map[string]Value)
+	}
+	object.Fields[name] = value
+	if object.Kind != ValueObject || vm.isSObjectLikeType(object.Type) {
+		return
+	}
+	for candidate := range object.Fields {
+		if candidate != name && strings.EqualFold(candidate, name) {
+			if vm.distinctExactReceiverFields(object.Type, name, candidate) {
+				continue
+			}
+			object.Fields[candidate] = value
+		}
+	}
+}
+
+func (vm *VM) distinctExactReceiverFields(typeName, left, right string) bool {
+	leftField, leftOwner, leftOK := vm.lookupExactReceiverField(typeName, left)
+	rightField, rightOwner, rightOK := vm.lookupExactReceiverField(typeName, right)
+	if !leftOK || !rightOK {
+		return false
+	}
+	leftName := leftField.Name
+	if leftName == "" {
+		leftName = left
+	}
+	rightName := rightField.Name
+	if rightName == "" {
+		rightName = right
+	}
+	if strings.EqualFold(leftName, rightName) && strings.EqualFold(leftField.Type, rightField.Type) {
+		return false
+	}
+	return leftOwner != rightOwner || leftName != rightName
+}
+
+func (vm *VM) lookupExactReceiverField(typeName, fieldName string) (Field, string, bool) {
+	for typeName != "" {
+		class, ok := vm.lookupClass(typeName)
+		if !ok {
+			return Field{}, "", false
+		}
+		for candidate, field := range class.Fields {
+			if candidate != fieldName && field.Name != fieldName {
+				continue
+			}
+			if field.Name == "" {
+				field.Name = candidate
+			}
+			field.StorageName = candidate
+			return field, runtimeClassName(class), true
+		}
+		typeName = vm.resolvedSuperClassName(class)
+	}
+	return Field{}, "", false
 }
 
 func explicitAliasObjectFieldValue(object Value, name string) (string, Value, bool) {
@@ -690,6 +758,9 @@ func (vm *VM) lookupThisSimpleField(name string) (Value, bool, error) {
 		return value, true, nil
 	}
 	if actualName, value, ok := objectFieldValue(this, name); ok {
+		if relationship, isRelationship := vm.typedParentRelationshipFieldValue(this, name, value); isRelationship {
+			return relationship, true, nil
+		}
 		if field, owner, ok := vm.lookupReceiverField(this.Type, actualName); ok {
 			if err := vm.checkMemberAccess(owner, field.Access, owner+"."+actualName, field.Modifiers); err != nil {
 				return Null, true, err
@@ -757,7 +828,9 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 		}
 	}
 	if value, ok := vm.activeSetterStoredValue(owner, fieldName, field, receiver); ok {
-		return value, nil
+		if vm.isCurrentGetter(field.Getter) {
+			return value, nil
+		}
 	}
 	key := getterCallKey(owner, fieldName, receiver)
 	if vm.activeGetters[key] > 0 {
@@ -1006,7 +1079,7 @@ func (vm *VM) fieldPathTargetType(typeName string, parts []string) string {
 			}
 			if objectName, ok := vm.resolveObjectName(typeName); ok {
 				definition := vm.Org.Objects[objectName].Definition
-				if fieldName, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, part); ok {
+				if fieldName, ok := vm.resolveFieldName(definition, part); ok {
 					field := definition.Fields[fieldName]
 					typeName = storageFieldTypeName(field)
 					continue
@@ -1175,7 +1248,7 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 	if vm.Org != nil {
 		namespace = vm.Org.Namespace
 	}
-	canonical, ok := storage.ResolveFieldName(definition, namespace, fieldName)
+	canonical, ok := vm.resolveFieldName(definition, fieldName)
 	if !ok {
 		standardDefinition := definition.Clone()
 		storage.EnsureStandardObjectFieldsForFeatures(&standardDefinition, []string{"PersonAccounts"})
@@ -1213,7 +1286,7 @@ func (vm *VM) lookupSObjectRelationshipFieldToken(objectName, relationshipFieldN
 	if vm.Org != nil {
 		namespace = vm.Org.Namespace
 	}
-	canonicalRelationshipField, ok := storage.ResolveFieldName(definition, namespace, relationshipFieldName)
+	canonicalRelationshipField, ok := vm.resolveFieldName(definition, relationshipFieldName)
 	if !ok {
 		for name, candidate := range definition.Fields {
 			apiName := candidate.APIName
@@ -1713,6 +1786,12 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				current = Null
 				continue
 			}
+			if field.Getter != nil && !field.HasSetter {
+				if _, value, ok := objectFieldValue(current, field.Name); ok && value.Kind != ValueNull {
+					current = value
+					continue
+				}
+			}
 			if field.Getter != nil {
 				value, err := vm.callGetter(owner, field, current)
 				if err != nil {
@@ -1722,7 +1801,11 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				continue
 			}
 			if _, value, ok := objectFieldValue(current, field.Name); ok {
-				value = coerceRawRecordTypeNameFieldRuntimeValue(field.Name, value)
+				if relationship, isRelationship := vm.typedParentRelationshipFieldValue(current, field.Name, value); isRelationship {
+					current = relationship
+					continue
+				}
+				value = coerceRawRecordTypeDefaultTokenRuntimeValue(field.Name, value)
 				if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, field.Name); exists {
 					value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
 				}
@@ -1730,7 +1813,11 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				continue
 			}
 			if _, value, ok := objectFieldValue(current, part); ok {
-				value = coerceRawRecordTypeNameFieldRuntimeValue(part, value)
+				if relationship, isRelationship := vm.typedParentRelationshipFieldValue(current, part, value); isRelationship {
+					current = relationship
+					continue
+				}
+				value = coerceRawRecordTypeDefaultTokenRuntimeValue(part, value)
 				if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, part); exists {
 					value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
 				}
@@ -1739,7 +1826,11 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			}
 			if canonical := vm.resolveSObjectFieldName(current.Type, field.Name); canonical != field.Name {
 				if _, value, ok := objectFieldValue(current, canonical); ok {
-					value = coerceRawRecordTypeNameFieldRuntimeValue(canonical, value)
+					if relationship, isRelationship := vm.typedParentRelationshipFieldValue(current, canonical, value); isRelationship {
+						current = relationship
+						continue
+					}
+					value = coerceRawRecordTypeDefaultTokenRuntimeValue(canonical, value)
 					if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonical); exists {
 						value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
 					}
@@ -1783,7 +1874,11 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			}
 		}
 		if ok {
-			value = coerceRawRecordTypeNameFieldRuntimeValue(canonicalPart, value)
+			if relationship, isRelationship := vm.typedParentRelationshipFieldValue(current, canonicalPart, value); isRelationship {
+				current = relationship
+				continue
+			}
+			value = coerceRawRecordTypeDefaultTokenRuntimeValue(canonicalPart, value)
 			if value.Kind == ValueNull {
 				if relationshipType, hasChildRelationship := vm.jsonSObjectChildRelationshipType(current.Type, canonicalPart); hasChildRelationship && !vm.sObjectParentRelationshipField(current.Type, canonicalPart) {
 					children := List()
@@ -2133,7 +2228,7 @@ func (vm *VM) assign(name string, value Value) error {
 							if err != nil {
 								return fmt.Errorf("%s.%s: %w", owner, actualName, err)
 							}
-							this.Fields[actualName] = coerced
+							vm.setObjectFieldValue(&this, actualName, coerced)
 							vm.Globals["this"] = this
 							return nil
 						}
@@ -2266,7 +2361,7 @@ func (vm *VM) assign(name string, value Value) error {
 				if def.Setter != nil {
 					key := activeInstanceSetterKey(owner, actualName, this)
 					if vm.activeSetters[key] > 0 {
-						this.Fields[actualName] = value
+						vm.setObjectFieldValue(&this, actualName, value)
 						vm.Globals["this"] = this
 						return nil
 					}
@@ -2285,14 +2380,14 @@ func (vm *VM) assign(name string, value Value) error {
 						if updated, ok := vm.Globals["this"]; ok && updated.Kind == ValueObject {
 							this = updated
 						}
-						this.Fields[actualName] = value
+						vm.setObjectFieldValue(&this, actualName, value)
 						vm.Globals["this"] = this
 					}
 					return nil
 				}
 			}
 			_ = field
-			this.Fields[actualName] = value
+			vm.setObjectFieldValue(&this, actualName, value)
 			vm.Globals["this"] = this
 			return nil
 		}
@@ -2313,7 +2408,7 @@ func (vm *VM) assign(name string, value Value) error {
 			if def.Setter != nil {
 				key := activeInstanceSetterKey(owner, actualName, this)
 				if vm.activeSetters[key] > 0 {
-					this.Fields[actualName] = value
+					vm.setObjectFieldValue(&this, actualName, value)
 					vm.Globals["this"] = this
 					return nil
 				}
@@ -2332,12 +2427,12 @@ func (vm *VM) assign(name string, value Value) error {
 					if updated, ok := vm.Globals["this"]; ok && updated.Kind == ValueObject {
 						this = updated
 					}
-					this.Fields[actualName] = value
+					vm.setObjectFieldValue(&this, actualName, value)
 					vm.Globals["this"] = this
 				}
 				return nil
 			}
-			this.Fields[actualName] = value
+			vm.setObjectFieldValue(&this, actualName, value)
 			vm.Globals["this"] = this
 			return nil
 		}
@@ -2412,12 +2507,17 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	value = plainNull(value)
 	previousRoot := snapshotAlias(root)
 	current := root
+	previousLeaf := aliasSnapshot{}
 	type pathParent struct {
 		object Value
 		field  string
 	}
 	parents := make([]pathParent, 0, len(parts)-1)
 	propagate := func(updated Value) {
+		if previousLeaf.valid() {
+			vm.propagateAliasSnapshotToScope(vm.Globals, previousLeaf, updated)
+			vm.propagateAliasSnapshotToStatics(previousLeaf, updated)
+		}
 		for i := len(parents) - 1; i >= 0; i-- {
 			parent := parents[i]
 			if parent.object.Kind == ValueObject && parent.object.Fields != nil {
@@ -2443,6 +2543,11 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 				next, err := vm.callGetter(owner, field, current)
 				if err != nil {
 					return err
+				}
+				if current.Ref != 0 {
+					if refreshed, ok := vm.findValueByRef(current.Ref); ok {
+						current = refreshed
+					}
 				}
 				if next.Kind != ValueObject {
 					return fmt.Errorf("unknown field %q on %s", part, current.Type)
@@ -2487,6 +2592,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	if current.Kind != ValueObject {
 		return fmt.Errorf("cannot assign field %s on %s", fieldName, current.Kind)
 	}
+	previousLeaf = snapshotAlias(current)
 	if reason, ok := sobjectReadOnlyReason(current); ok {
 		return fmt.Errorf("cannot modify read-only %s", reason)
 	}
@@ -2519,7 +2625,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		if vm.Org != nil {
 			if objectName, ok := vm.resolveObjectName(current.Type); ok {
 				definition := vm.Org.Objects[objectName].Definition
-				if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, actualName); ok {
+				if canonical, ok := vm.resolveFieldName(definition, actualName); ok {
 					actualName = canonical
 					value = coerceSObjectFieldRuntimeValue(value, definition.Fields[canonical])
 				}
@@ -2543,7 +2649,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 					markUserSetSObjectField(&current, actualName)
 					markQueriedSObjectField(&current, actualName)
 				} else {
-					current.Fields[actualName] = value
+					vm.setObjectFieldValue(&current, actualName, value)
 				}
 				propagate(current)
 				return nil
@@ -2557,6 +2663,11 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			}()
 			_, err := vm.callMethodWithReceiver(*def.Setter, current, []Value{value}, resultForLookup())
 			if err == nil {
+				if current.Ref != 0 {
+					if refreshed, ok := vm.findValueByRef(current.Ref); ok {
+						current = refreshed
+					}
+				}
 				propagate(current)
 			}
 			return err
@@ -2567,7 +2678,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			markUserSetSObjectField(&current, actualName)
 			markQueriedSObjectField(&current, actualName)
 		} else {
-			current.Fields[actualName] = value
+			vm.setObjectFieldValue(&current, actualName, value)
 		}
 		propagate(current)
 		return nil
@@ -2596,7 +2707,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	if vm.Org != nil {
 		if objectName, ok := vm.resolveObjectName(current.Type); ok {
 			definition := vm.Org.Objects[objectName].Definition
-			if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, resolvedField); ok {
+			if canonical, ok := vm.resolveFieldName(definition, resolvedField); ok {
 				resolvedField = canonical
 				value = coerceSObjectFieldRuntimeValue(value, definition.Fields[canonical])
 			}

@@ -3,9 +3,44 @@ package vm
 import (
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
+
+type sObjectFieldAliasLookupKey struct {
+	Namespace string
+	FieldName string
+}
+
+type sObjectFieldAliasLookupCache struct {
+	mu      sync.RWMutex
+	entries map[sObjectFieldAliasLookupKey][]string
+}
+
+func newSObjectFieldAliasLookupCache() *sObjectFieldAliasLookupCache {
+	return &sObjectFieldAliasLookupCache{entries: make(map[sObjectFieldAliasLookupKey][]string)}
+}
+
+func (c *sObjectFieldAliasLookupCache) load(key sObjectFieldAliasLookupKey) ([]string, bool) {
+	if c == nil {
+		return nil, false
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	aliases, ok := c.entries[key]
+	return aliases, ok
+}
+
+func (c *sObjectFieldAliasLookupCache) store(key sObjectFieldAliasLookupKey, aliases []string) []string {
+	if c == nil {
+		return aliases
+	}
+	c.mu.Lock()
+	c.entries[key] = aliases
+	c.mu.Unlock()
+	return aliases
+}
 
 func (vm *VM) populatedFieldsMapAliasLookup(receiver, key Value) (Value, bool) {
 	if receiver.Kind != ValueMap || key.Kind != ValueString || !strings.HasPrefix(receiver.Runtime, "sobject-populated-fields:") {
@@ -34,6 +69,19 @@ func populatedFieldsMapAllowsAliasContains(receiver Value) bool {
 	return ok && marker.Kind == ValueBool && marker.Bool
 }
 func (vm *VM) sObjectFieldMapLookupAliases(fieldName string) []string {
+	namespace := ""
+	if vm != nil && vm.Org != nil {
+		namespace = vm.Org.Namespace
+	}
+	cacheKey := sObjectFieldAliasLookupKey{Namespace: namespace, FieldName: fieldName}
+	if vm != nil {
+		if vm.sObjectFieldAliasCache == nil {
+			vm.sObjectFieldAliasCache = newSObjectFieldAliasLookupCache()
+		}
+		if aliases, ok := vm.sObjectFieldAliasCache.load(cacheKey); ok {
+			return aliases
+		}
+	}
 	seen := map[string]bool{}
 	var aliases []string
 	add := func(alias string) {
@@ -52,14 +100,17 @@ func (vm *VM) sObjectFieldMapLookupAliases(fieldName string) []string {
 	if dot := strings.LastIndex(fieldName, "."); dot >= 0 && dot+1 < len(fieldName) {
 		add(fieldName[dot+1:])
 	}
-	if vm.Org != nil && vm.Org.Namespace != "" {
+	if namespace != "" {
 		for _, alias := range append([]string(nil), aliases...) {
-			add(storage.NamespaceTokenName(vm.Org.Namespace, alias))
-			add(storage.StripNamespaceToken(vm.Org.Namespace, alias))
+			add(storage.NamespaceTokenName(namespace, alias))
+			add(storage.StripNamespaceToken(namespace, alias))
 		}
 	}
 	for _, alias := range append([]string(nil), aliases...) {
 		add(stripAnyNamespaceToken(alias))
+	}
+	if vm != nil {
+		return vm.sObjectFieldAliasCache.store(cacheKey, aliases)
 	}
 	return aliases
 }
@@ -70,6 +121,20 @@ func (vm *VM) propagateCollectionMutation(previous, updated Value) {
 	vm.collectionMutationSeq++
 	vm.propagateValueMutationToScope(vm.Globals, previous, updated)
 	vm.propagateValueMutationToStatics(previous, updated)
+}
+func (vm *VM) propagateCollectionMutationFromSnapshot(previous aliasSnapshot, updated Value) {
+	if !previous.valid() {
+		return
+	}
+	switch updated.Kind {
+	case ValueList, ValueSet, ValueMap:
+	default:
+		return
+	}
+	vm.collectionMutationSeq++
+	vm.propagateTopLevelCollectionAliases(vm.Globals, updated)
+	vm.propagateAliasSnapshotToScope(vm.Globals, previous, updated)
+	vm.propagateAliasSnapshotToStatics(previous, updated)
 }
 func (vm *VM) propagateCollectionMutationToScope(scope map[string]Value, previous, updated Value) {
 	vm.propagateValueMutationToScope(scope, previous, updated)
@@ -158,6 +223,20 @@ func (vm *VM) propagateUpdatedValueAliases(scope map[string]Value, updated Value
 		}
 	}
 	walk(updated, true)
+}
+func valueHasNestedAlias(value Value) bool {
+	if value.Ref == 0 {
+		seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+		seen := *seenPtr
+		clear(seen)
+		defer aliasRefSetPool.Put(seenPtr)
+		return valueHasRef(value, seen)
+	}
+	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+	seen := *seenPtr
+	clear(seen)
+	defer aliasRefSetPool.Put(seenPtr)
+	return valueHasNestedAliasRef(value, value.Ref, seen)
 }
 func mergeRicherApexMocksAlias(existing, replacement Value) (Value, bool) {
 	if existing.Kind != ValueObject || replacement.Kind != ValueObject || existing.Ref == 0 || existing.Ref != replacement.Ref {
@@ -343,15 +422,12 @@ func (vm *VM) propagateAliasSnapshotMutationToScope(scope map[string]Value, prev
 	if sameAliasListCollectionViewOnly(original, updated) {
 		return false
 	}
-	if refreshNestedCollections && sameBackingAliasRefreshKind(updated.Kind) && vm.propagateTopLevelCollectionAliases(scope, updated) {
-		return true
-	}
-	if refreshNestedCollections && sameBackingAliasRefreshKind(updated.Kind) && vm.propagateCollectionValueAliasToScope(scope, original, updated) {
-		return true
-	}
 	if sameAliasRuntimeBacking(original, updated) {
 		if refreshNestedCollections && scopeHasNestedCollectionAliasNeedingRefresh(scope, updated) {
 			vm.propagateUpdatedValueAliases(scope, updated)
+		}
+		if propagateStaleTopLevelAliasSnapshotToScope(scope, previous, updated) {
+			return true
 		}
 		return false
 	}
@@ -361,9 +437,59 @@ func (vm *VM) propagateAliasSnapshotMutationToScope(scope map[string]Value, prev
 		}
 		return false
 	}
+	if refreshNestedCollections && sameBackingAliasRefreshKind(updated.Kind) && vm.propagateTopLevelCollectionAliases(scope, updated) {
+		return true
+	}
+	if refreshNestedCollections && sameBackingAliasRefreshKind(updated.Kind) && vm.propagateCollectionValueAliasToScope(scope, original, updated) {
+		return true
+	}
+	if propagateTopLevelAliasSnapshotToScope(scope, previous, updated) {
+		return true
+	}
 	vm.propagateAliasSnapshotToScope(scope, previous, updated)
 	return true
 }
+func propagateTopLevelAliasSnapshotToScope(scope map[string]Value, previous aliasSnapshot, updated Value) bool {
+	if !previous.valid() || updated.Ref == 0 {
+		return false
+	}
+	changed := false
+	for name, value := range scope {
+		if value.Ref == 0 || value.Ref != previous.ref || value.Kind != previous.kind {
+			continue
+		}
+		replacement := updated
+		replacement.Type = value.Type
+		replacement.Static = value.Static
+		replacement.Runtime = value.Runtime
+		scope[name] = replacement
+		changed = true
+	}
+	return changed
+}
+
+func propagateStaleTopLevelAliasSnapshotToScope(scope map[string]Value, previous aliasSnapshot, updated Value) bool {
+	if !previous.valid() || updated.Ref == 0 {
+		return false
+	}
+	changed := false
+	for name, value := range scope {
+		if value.Ref == 0 || value.Ref != previous.ref || value.Kind != previous.kind {
+			continue
+		}
+		if sameAliasRuntimeBacking(value, updated) || sameAliasRuntimeData(value, updated) || sameAliasRuntimeDataWithCallerCollectionView(value, updated) {
+			continue
+		}
+		replacement := updated
+		replacement.Type = value.Type
+		replacement.Static = value.Static
+		replacement.Runtime = value.Runtime
+		scope[name] = replacement
+		changed = true
+	}
+	return changed
+}
+
 func (vm *VM) propagateTopLevelCollectionAliases(scope map[string]Value, updated Value) bool {
 	if updated.Ref == 0 {
 		return false
@@ -912,7 +1038,11 @@ func sameAliasValue(left, right Value) bool {
 	if left.Ref == 0 || left.Ref != right.Ref || left.Kind != right.Kind {
 		return false
 	}
-	return sameAliasContent(left, right, make(map[[2]uint64]bool))
+	seenPtr := aliasPairSetPool.Get().(*map[[2]uint64]bool)
+	seen := *seenPtr
+	clear(seen)
+	defer aliasPairSetPool.Put(seenPtr)
+	return sameAliasContent(left, right, seen)
 }
 func sameAliasContent(left, right Value, seen map[[2]uint64]bool) bool {
 	if left.Kind != right.Kind || left.Type != right.Type || left.Text != right.Text || left.Static != right.Static || left.Runtime != right.Runtime {
@@ -988,7 +1118,11 @@ func sameAliasContent(left, right Value, seen map[[2]uint64]bool) bool {
 	}
 }
 func sameAliasRuntimeData(left, right Value) bool {
-	return sameAliasRuntimeContent(left, right, make(map[[2]uint64]bool))
+	seenPtr := aliasPairSetPool.Get().(*map[[2]uint64]bool)
+	seen := *seenPtr
+	clear(seen)
+	defer aliasPairSetPool.Put(seenPtr)
+	return sameAliasRuntimeContent(left, right, seen)
 }
 func sameAliasRuntimeContent(left, right Value, seen map[[2]uint64]bool) bool {
 	if left.Kind != right.Kind || left.Type != right.Type || left.Text != right.Text ||

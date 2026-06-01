@@ -353,6 +353,19 @@ func exprReceiverName(expr ir.Expr) string {
 	if expr.Kind == ir.ExprVariable {
 		return expr.Name
 	}
+	if expr.Kind == ir.ExprCall && expr.Left != nil {
+		fieldName := ""
+		if strings.HasPrefix(expr.Callee, "__field:") {
+			fieldName = strings.TrimPrefix(expr.Callee, "__field:")
+		} else if strings.HasPrefix(expr.Callee, "__safe_field:") {
+			fieldName = strings.TrimPrefix(expr.Callee, "__safe_field:")
+		}
+		if fieldName != "" {
+			if root := exprReceiverName(*expr.Left); root != "" {
+				return root + "." + fieldName
+			}
+		}
+	}
 	return ""
 }
 

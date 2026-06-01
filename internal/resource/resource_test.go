@@ -144,7 +144,7 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 func TestApplyProjectLoadsDependencyFolders(t *testing.T) {
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
-	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"znu"}`)
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"pkg"}`)
 	writeFile(t, filepath.Join(depRoot, "force-app/main/default/documents/GLExport.documentFolder-meta.xml"), `<DocumentFolder>
   <name>GL Export</name>
 </DocumentFolder>`)
@@ -155,7 +155,7 @@ func TestApplyProjectLoadsDependencyFolders(t *testing.T) {
 	}
 	p := project.Project{
 		ManagedPackageDependencies: []project.ManagedPackageDependency{{
-			Namespace: "znu",
+			Namespace: "pkg",
 			Status:    "loaded",
 			Project:   &depProject,
 		}},
@@ -171,10 +171,10 @@ func TestApplyProjectLoadsDependencyFolders(t *testing.T) {
 }
 
 func TestLoadProjectDiscoversUnpackagedStaticResourceFiles(t *testing.T) {
-	root := filepath.Join("..", "..", "example-projects", "src-nmb-nutpl-develop")
-	if _, err := os.Stat(filepath.Join(root, "sfdx-project.json")); err != nil {
-		t.Skip("example project is not available")
-	}
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/staticresources/resetcss.resource"), "body")
+	writeFile(t, filepath.Join(root, "force-app/main/default/staticresources/resetcss.resource-meta.xml"), `<StaticResource><contentType>text/css</contentType><cacheControl>Public</cacheControl></StaticResource>`)
 	p, err := project.Load(root)
 	if err != nil {
 		t.Fatal(err)
@@ -203,15 +203,15 @@ func TestApplyProjectIncludesLoadedDependencyFieldSets(t *testing.T) {
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
 	consumerRoot := filepath.Join(root, "consumer")
-	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/Account/fieldSets/BillMeAddress.fieldSet-meta.xml"), `<FieldSet>
-  <fullName>BillMeAddress</fullName>
-  <label>Bill Me Address</label>
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/Account/fieldSets/BillingAddress.fieldSet-meta.xml"), `<FieldSet>
+  <fullName>BillingAddress</fullName>
+  <label>Billing Address</label>
   <displayedFields><field>BillingStreet</field></displayedFields>
 </FieldSet>`)
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
-  managedPackageDependencies: ["znu:../dep:1.0"]
+  managedPackageDependencies: ["pkg:../dep:1.0"]
 `)
 
 	p, err := project.Load(consumerRoot)
@@ -222,7 +222,7 @@ func TestApplyProjectIncludesLoadedDependencyFieldSets(t *testing.T) {
 	if err := ApplyProject(&org, p); err != nil {
 		t.Fatal(err)
 	}
-	if len(org.Metadata.FieldSets) != 1 || org.Metadata.FieldSets[0].ObjectName != "Account" || org.Metadata.FieldSets[0].Name != "BillMeAddress" {
+	if len(org.Metadata.FieldSets) != 1 || org.Metadata.FieldSets[0].ObjectName != "Account" || org.Metadata.FieldSets[0].Name != "BillingAddress" || org.Metadata.FieldSets[0].Namespace != "pkg" {
 		t.Fatalf("field sets = %#v", org.Metadata.FieldSets)
 	}
 }

@@ -103,6 +103,7 @@ type QuickActionMetadata struct {
 
 type FieldSetMetadata struct {
 	ObjectName string                   `json:"objectName,omitempty"`
+	Namespace  string                   `json:"namespace,omitempty"`
 	Name       string                   `json:"name"`
 	Label      string                   `json:"label,omitempty"`
 	Fields     []FieldSetMemberMetadata `json:"fields,omitempty"`

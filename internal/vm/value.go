@@ -246,6 +246,9 @@ func (v Value) Equal(other Value) bool {
 
 func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 	if v.Ref != 0 && other.Ref != 0 {
+		if v.Ref == other.Ref && v.Kind == ValueObject && other.Kind == ValueObject {
+			return true
+		}
 		key := [2]uint64{v.Ref, other.Ref}
 		if seen[key] {
 			return true
@@ -296,7 +299,7 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 			return false
 		}
 		for i := range v.List {
-			if !v.List[i].equal(other.List[i], seen) {
+			if !listElementValuesEqual(v.List[i], other.List[i], seen) {
 				return false
 			}
 		}
@@ -417,7 +420,7 @@ func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
 			}
 			return false
 		}
-		if !leftValue.equal(rightValue, seen) {
+		if !sObjectFieldValuesEqual(leftValue, rightValue, seen) {
 			return false
 		}
 	}
@@ -433,6 +436,25 @@ func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
 		}
 	}
 	return true
+}
+
+func listElementValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
+	return left.equal(right, seen)
+}
+
+func sObjectFieldValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
+	leftID, leftOK := sObjectIDFromValue(left)
+	rightID, rightOK := sObjectIDFromValue(right)
+	if leftOK && rightOK {
+		return apexIDTextEqual(string(leftID), string(rightID))
+	}
+	if isRelationshipNull(left) && parentRelationshipObjectIsMissingDeep(right) {
+		return true
+	}
+	if isRelationshipNull(right) && parentRelationshipObjectIsMissingDeep(left) {
+		return true
+	}
+	return left.equal(right, seen)
 }
 
 func sObjectValueTypesEqual(left, right string) bool {

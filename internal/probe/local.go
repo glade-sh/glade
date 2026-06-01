@@ -263,6 +263,7 @@ func seedProbeData(org *storage.OrgState) error {
 				ID:     id,
 				Object: "ProbeTestObject__c",
 				Fields: map[string]storage.Value{
+					"Name":            storage.StringValue(fmt.Sprintf("Record%d", i)),
 					"Name__c":         storage.StringValue(fmt.Sprintf("Record%d", i)),
 					"Value__c":        storage.IntegerValue(int64(i * 10)),
 					"Triggered__c":    storage.StringValue("false"),

@@ -66,16 +66,16 @@ func TestBuildIndexAllowsDuplicateTypesAcrossPackageDirectories(t *testing.T) {
 
 func TestBuildLoadsManagedPackageArtifactSymbols(t *testing.T) {
 	root := t.TempDir()
-	artifactPath := filepath.Join(root, "znu.glade-package.json")
+	artifactPath := filepath.Join(root, "pkg.glade-package.json")
 	if err := os.WriteFile(artifactPath, []byte(`{
-  "namespace": "znu",
+  "namespace": "pkg",
   "version": "1.0",
   "apexTypes": [
     {
       "kind": "class",
       "name": "Address",
-      "namespace": "znu",
-      "sourceRoot": "/tmp/znu",
+      "namespace": "pkg",
+      "sourceRoot": "/tmp/pkg",
       "version": "1.0",
       "dependency": true,
       "modifiers": ["global"]
@@ -83,9 +83,9 @@ func TestBuildLoadsManagedPackageArtifactSymbols(t *testing.T) {
   ],
   "objects": [
     {
-      "name": "znu__CartItemLine__c",
+      "name": "pkg__CartItemLine__c",
       "fields": [
-        {"name": "znu__Product__c", "type": "reference"}
+        {"name": "pkg__Product__c", "type": "reference"}
       ]
     }
   ]
@@ -96,7 +96,7 @@ func TestBuildLoadsManagedPackageArtifactSymbols(t *testing.T) {
 	idx := Build(project.Project{
 		Root: root,
 		ManagedPackageDependencies: []project.ManagedPackageDependency{{
-			Namespace:    "znu",
+			Namespace:    "pkg",
 			ArtifactPath: artifactPath,
 			Version:      "1.0",
 			Status:       "loaded",
@@ -106,10 +106,10 @@ func TestBuildLoadsManagedPackageArtifactSymbols(t *testing.T) {
 	if len(idx.Dependencies) != 1 || idx.Dependencies[0].Status != "loaded" || idx.Dependencies[0].ApexTypes != 1 || idx.Dependencies[0].Objects != 1 {
 		t.Fatalf("dependencies = %#v", idx.Dependencies)
 	}
-	if len(idx.Types) != 1 || idx.Types[0].Name != "Address" || idx.Types[0].Namespace != "znu" || !idx.Types[0].Dependency {
+	if len(idx.Types) != 1 || idx.Types[0].Name != "Address" || idx.Types[0].Namespace != "pkg" || !idx.Types[0].Dependency {
 		t.Fatalf("types = %#v", idx.Types)
 	}
-	if len(idx.Objects) != 1 || idx.Objects[0].Name != "znu__CartItemLine__c" {
+	if len(idx.Objects) != 1 || idx.Objects[0].Name != "pkg__CartItemLine__c" {
 		t.Fatalf("objects = %#v", idx.Objects)
 	}
 }
@@ -126,14 +126,14 @@ func TestBuildNamespacesSourceBackedDependencySchema(t *testing.T) {
 
 	depProject := project.Project{
 		Root:        depRoot,
-		Namespace:   "znu",
+		Namespace:   "pkg",
 		ObjectFiles: []string{objectPath},
 		FieldFiles:  []string{fieldPath, lookupPath},
 	}
 	idx := Build(project.Project{
 		Root: root,
 		ManagedPackageDependencies: []project.ManagedPackageDependency{{
-			Namespace:  "znu",
+			Namespace:  "pkg",
 			SourceRoot: depRoot,
 			Status:     "loaded",
 			Project:    &depProject,
@@ -144,7 +144,7 @@ func TestBuildNamespacesSourceBackedDependencySchema(t *testing.T) {
 	for _, object := range idx.Objects {
 		objects[object.Name] = object
 	}
-	order, ok := objects["znu__Order__c"]
+	order, ok := objects["pkg__Order__c"]
 	if !ok {
 		t.Fatalf("objects = %#v", idx.Objects)
 	}
@@ -152,11 +152,11 @@ func TestBuildNamespacesSourceBackedDependencySchema(t *testing.T) {
 	for _, field := range order.Fields {
 		fields[field.Name] = field
 	}
-	if _, ok := fields["znu__TransactionDate__c"]; !ok {
+	if _, ok := fields["pkg__TransactionDate__c"]; !ok {
 		t.Fatalf("fields = %#v", order.Fields)
 	}
-	entity := fields["znu__Entity__c"]
-	if entity.RelationshipName != "znu__Entity__r" || len(entity.ReferenceTo) != 1 || entity.ReferenceTo[0] != "znu__Entity__c" {
+	entity := fields["pkg__Entity__c"]
+	if entity.RelationshipName != "pkg__Entity__r" || len(entity.ReferenceTo) != 1 || entity.ReferenceTo[0] != "pkg__Entity__c" {
 		t.Fatalf("entity field = %#v", entity)
 	}
 }

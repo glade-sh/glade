@@ -74,7 +74,6 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 	if !changed {
 		return nil
 	}
-	applyNameFallbackFromCustomName(object.Definition, &record)
 	if err := validateRequired(object.Definition, record); err != nil {
 		return err
 	}
@@ -308,7 +307,6 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 	if !changed {
 		return nil
 	}
-	applyNameFallbackFromCustomName(object.Definition, &record)
 	if err := validateRequired(object.Definition, record); err != nil {
 		return err
 	}

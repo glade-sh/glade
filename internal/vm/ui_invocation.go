@@ -111,7 +111,7 @@ func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, par
 		return out, nil
 	}
 	out.Success = true
-	out.ReturnValue = jsonFromValue(value, false)
+	out.ReturnValue = plainUIJSON(jsonFromValue(value, false))
 	completeArgs := map[string]any{
 		"className":        className,
 		"methodName":       methodName,
@@ -152,7 +152,7 @@ func (vm *VM) invokeUIAction(framework, className, methodName string, params map
 		return out, nil
 	}
 	out.Success = true
-	out.ReturnValue = jsonFromValue(value, false)
+	out.ReturnValue = plainUIJSON(jsonFromValue(value, false))
 	return out, nil
 }
 
@@ -231,9 +231,40 @@ func jsonListFromValues(values []Value) []any {
 	}
 	out := make([]any, 0, len(values))
 	for _, value := range values {
-		out = append(out, jsonFromValue(value, false))
+		out = append(out, plainUIJSON(jsonFromValue(value, false)))
 	}
 	return out
+}
+
+func plainUIJSON(value any) any {
+	switch typed := value.(type) {
+	case orderedJSONObject:
+		out := make(map[string]any, len(typed))
+		for _, field := range typed {
+			if field.name == "attributes" {
+				continue
+			}
+			out[field.name] = plainUIJSON(field.value)
+		}
+		return out
+	case []any:
+		out := make([]any, len(typed))
+		for i, item := range typed {
+			out[i] = plainUIJSON(item)
+		}
+		return out
+	case map[string]any:
+		out := make(map[string]any, len(typed))
+		for key, item := range typed {
+			if key == "attributes" {
+				continue
+			}
+			out[key] = plainUIJSON(item)
+		}
+		return out
+	default:
+		return value
+	}
 }
 
 func uiMethodSignature(method Method) string {

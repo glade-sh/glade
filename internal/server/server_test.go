@@ -597,7 +597,7 @@ func TestQueryPaginationMaxExplicitBatchSizeBoundary(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("query status = %d body=%s", recorder.Code, recorder.Body.String())
 	}
-	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"totalSize":2001`)) || !bytes.Contains(recorder.Body.Bytes(), []byte(`"done":false`)) || !bytes.Contains(recorder.Body.Bytes(), []byte(`"nextRecordsUrl":serverTestDataPath + "/query/gladeql000001-2000"`)) {
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"totalSize":2001`)) || !bytes.Contains(recorder.Body.Bytes(), []byte(`"done":false`)) || !bytes.Contains(recorder.Body.Bytes(), []byte(`"nextRecordsUrl":"`+serverTestDataPath+`/query/gladeql000001-2000"`)) {
 		t.Fatalf("max explicit batch payload = %s", recorder.Body.String())
 	}
 }
@@ -1438,7 +1438,7 @@ func TestDescribeEndpoints(t *testing.T) {
 
 	list := httptest.NewRecorder()
 	handler.ServeHTTP(list, httptest.NewRequest(http.MethodGet, "/services/data", nil))
-	if list.Code != http.StatusOK || !bytes.Contains(list.Body.Bytes(), []byte(`"url":serverTestDataPath`)) {
+	if list.Code != http.StatusOK || !bytes.Contains(list.Body.Bytes(), []byte(`"url":"`+serverTestDataPath+`"`)) {
 		t.Fatalf("versions status = %d body=%s", list.Code, list.Body.String())
 	}
 
@@ -1792,7 +1792,7 @@ func TestUnsupportedDiscoveryNamespacesReturnStableErrors(t *testing.T) {
 	}{
 		{
 			path: serverTestDataPath + "/composite/batch",
-			body: `{"batchRequests":[{"method":"GET","url":serverTestDataPath + "/limits"}]}`,
+			body: `{"batchRequests":[{"method":"GET","url":"` + serverTestDataPath + `/limits"}]}`,
 		},
 		{
 			path: serverTestDataPath + "/composite/tree/Account",
@@ -1800,7 +1800,7 @@ func TestUnsupportedDiscoveryNamespacesReturnStableErrors(t *testing.T) {
 		},
 		{
 			path: serverTestDataPath + "/composite/graph",
-			body: `{"graphs":[{"graphId":"GraphOne","compositeRequest":[{"method":"GET","url":serverTestDataPath + "/limits","referenceId":"LimitsRef"}]}]}`,
+			body: `{"graphs":[{"graphId":"GraphOne","compositeRequest":[{"method":"GET","url":"` + serverTestDataPath + `/limits","referenceId":"LimitsRef"}]}]}`,
 		},
 	} {
 		rec := httptest.NewRecorder()
@@ -1833,7 +1833,7 @@ func TestCompositeGenericRouteFamiliesValidateEnvelopesBeforeUnsupported(t *test
 		{
 			name:    "generic missing reference id",
 			path:    serverTestDataPath + "/composite",
-			body:    `{"compositeRequest":[{"method":"GET","url":serverTestDataPath + "/limits"}]}`,
+			body:    `{"compositeRequest":[{"method":"GET","url":"` + serverTestDataPath + `/limits"}]}`,
 			message: "compositeRequest[0].referenceId is required",
 		},
 		{
@@ -1857,7 +1857,7 @@ func TestCompositeGenericRouteFamiliesValidateEnvelopesBeforeUnsupported(t *test
 		{
 			name:    "graph missing graph id",
 			path:    serverTestDataPath + "/composite/graph",
-			body:    `{"graphs":[{"compositeRequest":[{"method":"GET","url":serverTestDataPath + "/limits","referenceId":"LimitsRef"}]}]}`,
+			body:    `{"graphs":[{"compositeRequest":[{"method":"GET","url":"` + serverTestDataPath + `/limits","referenceId":"LimitsRef"}]}]}`,
 			message: "graphs[0].graphId is required",
 		},
 		{
@@ -1883,10 +1883,10 @@ func TestGenericCompositeOrchestratesSupportedRESTSubrequests(t *testing.T) {
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite", strings.NewReader(`{
   "allOrNone": true,
   "compositeRequest": [
-    {"method":"POST","url":serverTestDataPath + "/sobjects/Account","referenceId":"createAccount","body":{"Name":"Composite"}},
-    {"method":"GET","url":serverTestDataPath + "/sobjects/Account/@{createAccount.id}","referenceId":"getAccount"},
-    {"method":"GET","url":serverTestDataPath + "/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Id%20=%20'@{createAccount.id}'","referenceId":"queryAccount"},
-    {"method":"GET","url":serverTestDataPath + "/limits","referenceId":"limits"}
+    {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","referenceId":"createAccount","body":{"Name":"Composite"}},
+    {"method":"GET","url":"`+serverTestDataPath+`/sobjects/Account/@{createAccount.id}","referenceId":"getAccount"},
+    {"method":"GET","url":"`+serverTestDataPath+`/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Id%20=%20'@{createAccount.id}'","referenceId":"queryAccount"},
+    {"method":"GET","url":"`+serverTestDataPath+`/limits","referenceId":"limits"}
   ]
 }`)))
 	if rec.Code != http.StatusOK {
@@ -1930,8 +1930,8 @@ func TestGenericCompositeAllOrNoneRollsBackMutatingSubrequests(t *testing.T) {
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite", strings.NewReader(`{
   "allOrNone": true,
   "compositeRequest": [
-    {"method":"POST","url":serverTestDataPath + "/sobjects/Account","referenceId":"good","body":{"Name":"Good"}},
-    {"method":"POST","url":serverTestDataPath + "/sobjects/Account","referenceId":"bad","body":{"Description":"Missing name"}}
+    {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","referenceId":"good","body":{"Name":"Good"}},
+    {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","referenceId":"bad","body":{"Description":"Missing name"}}
   ]
 }`)))
 	if rec.Code != http.StatusBadRequest {
@@ -1952,8 +1952,8 @@ func TestGenericCompositePartialFailureCommitsWithoutAllOrNone(t *testing.T) {
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite", strings.NewReader(`{
   "compositeRequest": [
-    {"method":"POST","url":serverTestDataPath + "/sobjects/Account","referenceId":"good","body":{"Name":"Good"}},
-    {"method":"POST","url":serverTestDataPath + "/sobjects/Account","referenceId":"bad","body":{"Description":"Missing name"}}
+    {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","referenceId":"good","body":{"Name":"Good"}},
+    {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","referenceId":"bad","body":{"Description":"Missing name"}}
   ]
 }`)))
 	if rec.Code != http.StatusOK {
@@ -1971,7 +1971,7 @@ func TestGenericCompositeCanCallCompositeSObjectRoutes(t *testing.T) {
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite", strings.NewReader(`{
   "compositeRequest": [
-    {"method":"POST","url":serverTestDataPath + "/composite/sobjects","referenceId":"nestedComposite","body":{"records":[{"attributes":{"type":"Account","referenceId":"row"},"Name":"Nested"}]}}
+    {"method":"POST","url":"`+serverTestDataPath+`/composite/sobjects","referenceId":"nestedComposite","body":{"records":[{"attributes":{"type":"Account","referenceId":"row"},"Name":"Nested"}]}}
   ]
 }`)))
 	if rec.Code != http.StatusOK {
@@ -1992,8 +1992,8 @@ func TestGenericCompositeRejectsUnclosedReference(t *testing.T) {
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite", strings.NewReader(`{
   "compositeRequest": [
-    {"method":"GET","url":serverTestDataPath + "/limits","referenceId":"limits"},
-    {"method":"GET","url":serverTestDataPath + "/sobjects/Account/@{limits.DailyApiRequests","referenceId":"bad"}
+    {"method":"GET","url":"`+serverTestDataPath+`/limits","referenceId":"limits"},
+    {"method":"GET","url":"`+serverTestDataPath+`/sobjects/Account/@{limits.DailyApiRequests","referenceId":"bad"}
   ]
 }`)))
 	if rec.Code != http.StatusOK {

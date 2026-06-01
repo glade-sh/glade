@@ -403,6 +403,10 @@ func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project)
 			continue
 		}
 		state := org.Objects[canonicalObject]
+		if updateRecordTypeFromProjectReference(state.Definition.RecordTypes, ref.DeveloperName, ref.Name) {
+			org.Objects[canonicalObject] = state
+			continue
+		}
 		if profileRecordTypeExists(state.Definition.RecordTypes, ref.DeveloperName) || profileRecordTypeExists(state.Definition.RecordTypes, ref.Name) {
 			continue
 		}
@@ -414,6 +418,42 @@ func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project)
 		})
 		org.Objects[canonicalObject] = state
 	}
+}
+
+func applyManagedDependencyReferencedRecordTypes(org *storage.OrgState, p project.Project) {
+	if org == nil {
+		return
+	}
+	for _, dep := range p.ManagedPackageDependencies {
+		if dep.Project == nil || dep.Status != "loaded" {
+			continue
+		}
+		applyProjectReferencedRecordTypes(org, *dep.Project)
+	}
+}
+
+func updateRecordTypeFromProjectReference(recordTypes []storage.RecordTypeInfo, developerName, name string) bool {
+	for i := range recordTypes {
+		recordType := &recordTypes[i]
+		if !strings.EqualFold(recordType.DeveloperName, developerName) {
+			continue
+		}
+		changed := false
+		if strings.TrimSpace(name) != "" && (strings.TrimSpace(recordType.Name) == "" || !strings.EqualFold(name, developerName)) && !strings.EqualFold(recordType.Name, name) {
+			recordType.Name = name
+			changed = true
+		}
+		if !recordType.Active {
+			recordType.Active = true
+			changed = true
+		}
+		if !recordType.Available {
+			recordType.Available = true
+			changed = true
+		}
+		return changed
+	}
+	return false
 }
 func applyProjectDataRelationshipReferences(org *storage.OrgState, p project.Project) {
 	if org == nil {
@@ -857,29 +897,7 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 	org.IDSequences = generator.Sequences
 	org.Objects["PermissionSetGroup"] = state
 }
-func applyProjectSetupSingletonRecords(org *storage.OrgState) {
-	if org == nil {
-		return
-	}
-	for objectName, state := range org.Objects {
-		if !strings.EqualFold(objectName, "Setup_Data__c") || len(state.Records) > 0 {
-			continue
-		}
-		if state.Records == nil {
-			state.Records = make(map[storage.ID]storage.Record)
-		}
-		id := storage.ID("aZZZZZZZZZZZZZZ")
-		fields := map[string]storage.Value{
-			"Name": storage.StringValue("Default"),
-		}
-		state.Records[id] = storage.Record{
-			ID:     id,
-			Object: state.Definition.APIName,
-			Fields: fields,
-		}
-		org.Objects[objectName] = state
-	}
-}
+
 func compileProjectMethod(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, source string) (vm.Method, error) {
 	methodSource, err := extractMethodSource(source, r)
 	if err != nil {

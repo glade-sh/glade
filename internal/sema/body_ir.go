@@ -308,9 +308,6 @@ func semaRelationshipFieldType(fieldName string) string {
 func semaRelationshipFieldTypeForModel(model map[string]typeMembers, fieldName string) string {
 	raw := strings.TrimSuffix(fieldName, "__r")
 	key := normalizeName(raw)
-	if typ := semaKnownChildRelationshipType(key); typ != "" {
-		return typ
-	}
 	if semaLooksLikeChildRelationship(key) {
 		for _, candidate := range semaChildRelationshipTypeCandidates(raw) {
 			if _, ok := model[normalizeName(candidate)]; ok {
@@ -319,23 +316,6 @@ func semaRelationshipFieldTypeForModel(model map[string]typeMembers, fieldName s
 		}
 	}
 	return semaRelationshipFieldType(fieldName)
-}
-
-func semaKnownChildRelationshipType(key string) string {
-	switch key {
-	case "affiliates":
-		return "List<Affiliation__c>"
-	case "creditcardrefundpayments":
-		return "List<Payment__c>"
-	case "creditcardissuers":
-		return "List<EntityCreditCardIssuer__c>"
-	case "deferredrevenuetransactions":
-		return "List<Transaction__c>"
-	case "childproducts":
-		return "List<ProductLink__c>"
-	default:
-		return ""
-	}
 }
 
 func semaChildRelationshipTypeCandidates(name string) []string {

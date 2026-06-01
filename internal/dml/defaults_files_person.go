@@ -72,7 +72,6 @@ func normalizePersonAccountFields(objectName string, definition storage.ObjectDe
 	}
 	record.Fields["IsPersonAccount"] = storage.BooleanValue(true)
 	normalizeFirstLastName(definition, record)
-	mirrorPersonAccountManagedAliases(definition, record)
 }
 
 func hasPersonAccountSignal(record storage.Record) bool {
@@ -122,29 +121,6 @@ func stringField(fields map[string]storage.Value, name string) string {
 		return ""
 	}
 	return strings.TrimSpace(value.String)
-}
-
-func mirrorPersonAccountManagedAliases(definition storage.ObjectDefinition, record *storage.Record) {
-	if record == nil || record.Fields == nil {
-		return
-	}
-	email, ok := record.Fields["PersonEmail"]
-	if !ok || email.Kind == "" || record.HasExplicitNull("PersonEmail") {
-		return
-	}
-	for fieldName := range definition.Fields {
-		if !managedPersonEmailAlias(fieldName) {
-			continue
-		}
-		if _, exists := record.Fields[fieldName]; exists || record.HasExplicitNull(fieldName) {
-			continue
-		}
-		record.Fields[fieldName] = email.Clone()
-	}
-}
-
-func managedPersonEmailAlias(fieldName string) bool {
-	return strings.EqualFold(fieldName, "PersonEmail__c") || hasSuffixFold(fieldName, "__PersonEmail__c")
 }
 
 func applyCustomSettingInsertDefaults(org *storage.OrgState, definition storage.ObjectDefinition, record *storage.Record) {
@@ -431,8 +407,12 @@ func validateAccountNameRequiredFields(objectName string, definition storage.Obj
 }
 
 func defaultRecordTypeForRecord(objectName string, recordTypes []storage.RecordTypeInfo, record storage.Record) (storage.RecordTypeInfo, bool) {
-	if strings.EqualFold(objectName, "Account") && (isPersonAccountRecord(record) || hasPersonAccountFieldSignal(record)) {
-		if recordType, ok := personAccountRecordType(recordTypes); ok {
+	if strings.EqualFold(objectName, "Account") {
+		if isPersonAccountRecord(record) || hasPersonAccountFieldSignal(record) {
+			if recordType, ok := personAccountRecordType(recordTypes); ok {
+				return recordType, true
+			}
+		} else if recordType, ok := businessAccountRecordType(recordTypes); ok {
 			return recordType, true
 		}
 	}
@@ -440,20 +420,41 @@ func defaultRecordTypeForRecord(objectName string, recordTypes []storage.RecordT
 }
 
 func personAccountRecordType(recordTypes []storage.RecordTypeInfo) (storage.RecordTypeInfo, bool) {
-	for _, recordType := range recordTypes {
-		if recordType.Active && recordType.Available && recordTypeLooksPersonAccount(recordType) {
-			return recordType, true
-		}
+	if recordType, ok := preferredPersonAccountRecordType(recordTypes, false, func(rt storage.RecordTypeInfo) bool {
+		return rt.Active && rt.Available && rt.Default
+	}); ok {
+		return recordType, true
 	}
-	for _, recordType := range recordTypes {
-		if recordType.Active && recordTypeLooksPersonAccount(recordType) {
-			return recordType, true
-		}
+	if recordType, ok := preferredPersonAccountRecordType(recordTypes, false, func(rt storage.RecordTypeInfo) bool {
+		return rt.Active && rt.Available
+	}); ok {
+		return recordType, true
 	}
+	if recordType, ok := preferredPersonAccountRecordType(recordTypes, true, func(rt storage.RecordTypeInfo) bool {
+		return rt.Active && rt.Available && rt.Default
+	}); ok {
+		return recordType, true
+	}
+	if recordType, ok := preferredPersonAccountRecordType(recordTypes, false, func(rt storage.RecordTypeInfo) bool {
+		return rt.Active
+	}); ok {
+		return recordType, true
+	}
+	if recordType, ok := preferredPersonAccountRecordType(recordTypes, false, func(storage.RecordTypeInfo) bool { return true }); ok {
+		return recordType, true
+	}
+	return preferredPersonAccountRecordType(recordTypes, true, func(storage.RecordTypeInfo) bool { return true })
+}
+
+func preferredPersonAccountRecordType(recordTypes []storage.RecordTypeInfo, allowGeneric bool, accept func(storage.RecordTypeInfo) bool) (storage.RecordTypeInfo, bool) {
 	for _, recordType := range recordTypes {
-		if recordTypeLooksPersonAccount(recordType) {
-			return recordType, true
+		if !accept(recordType) || !recordTypeLooksPersonAccount(recordType) {
+			continue
 		}
+		if !allowGeneric && recordTypeLooksGenericPersonAccount(recordType) {
+			continue
+		}
+		return recordType, true
 	}
 	return storage.RecordTypeInfo{}, false
 }
@@ -461,6 +462,40 @@ func personAccountRecordType(recordTypes []storage.RecordTypeInfo) (storage.Reco
 func recordTypeLooksPersonAccount(recordType storage.RecordTypeInfo) bool {
 	name := strings.ToLower(strings.TrimSpace(recordType.Name + " " + recordType.DeveloperName))
 	return strings.Contains(name, "person") || strings.Contains(name, "individual")
+}
+
+func recordTypeLooksGenericPersonAccount(recordType storage.RecordTypeInfo) bool {
+	for _, value := range []string{recordType.DeveloperName, recordType.Name} {
+		switch strings.ToLower(strings.TrimSpace(value)) {
+		case "personaccount", "person_account", "person account":
+			return true
+		}
+	}
+	return false
+}
+
+func businessAccountRecordType(recordTypes []storage.RecordTypeInfo) (storage.RecordTypeInfo, bool) {
+	for _, recordType := range recordTypes {
+		if recordType.Default && recordType.Active && recordType.Available && !recordTypeLooksPersonAccount(recordType) {
+			return recordType, true
+		}
+	}
+	for _, recordType := range recordTypes {
+		if recordType.Active && recordType.Available && !recordTypeLooksPersonAccount(recordType) {
+			return recordType, true
+		}
+	}
+	for _, recordType := range recordTypes {
+		if recordType.Active && !recordTypeLooksPersonAccount(recordType) {
+			return recordType, true
+		}
+	}
+	for _, recordType := range recordTypes {
+		if !recordTypeLooksPersonAccount(recordType) {
+			return recordType, true
+		}
+	}
+	return storage.RecordTypeInfo{}, false
 }
 
 func defaultRecordType(recordTypes []storage.RecordTypeInfo) (storage.RecordTypeInfo, bool) {
@@ -572,6 +607,7 @@ func formatAutoNumber(format string, sequence uint64) string {
 
 func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 	contentDocumentID := idFromStorageValue(version.Fields["ContentDocumentId"])
+	contentDocumentWasCreated := contentDocumentID == ""
 	if contentDocumentID == "" {
 		document := storage.Record{
 			Object: "ContentDocument",
@@ -635,7 +671,7 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 	}
 	e.markLatestContentVersion(contentDocumentID, version.ID)
 	locationID := idFromStorageValue(version.Fields["FirstPublishLocationId"])
-	if locationID == "" {
+	if locationID == "" && contentDocumentWasCreated {
 		if version.System.OwnerID != "" {
 			locationID = version.System.OwnerID
 		} else if version.System.CreatedByID != "" {

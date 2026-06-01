@@ -1326,6 +1326,8 @@ func childRelationshipCached(org storage.OrgState, parentDefinition storage.Obje
 		return childRelationship(org, parentDefinition, relationship)
 	}
 	cache := childCache.execution
+	cache.mu.Lock()
+	defer cache.mu.Unlock()
 	if cache.childRelationships == nil {
 		cache.childRelationships = make(map[string]childRelationshipResolution)
 	}
@@ -2409,8 +2411,68 @@ func relationshipLookupMissing(org storage.OrgState, record storage.Record, fiel
 		if ok && value.Kind == storage.ValueNull {
 			return relationship, true
 		}
+		if ok && !relationshipRecordExists(org, record, relationship) {
+			return relationship, true
+		}
 	}
 	return "", false
+}
+
+func relationshipRecordExists(org storage.OrgState, record storage.Record, relationshipPath string) bool {
+	parts := strings.Split(relationshipPath, ".")
+	current := record
+	for _, relationship := range parts {
+		if strings.TrimSpace(relationship) == "" {
+			return false
+		}
+		if virtualParentRelationshipExists(org, current, relationship) {
+			continue
+		}
+		_, parent, ok := parentRelationshipRecord(org, current, relationship)
+		if !ok {
+			return false
+		}
+		current = parent
+	}
+	return true
+}
+
+func virtualParentRelationshipExists(org storage.OrgState, record storage.Record, relationship string) bool {
+	objectName := record.Object
+	if canonical, resolved := storage.ResolveObjectName(org, objectName); resolved {
+		objectName = canonical
+	}
+	object, ok := org.Objects[objectName]
+	if !ok {
+		return false
+	}
+	for _, relation := range matchingParentRelations(org.Namespace, object.Definition, relationship) {
+		virtualParent := false
+		for _, parentObjectName := range relation.ParentObjects {
+			if strings.EqualFold(parentObjectName, "EntityDefinition") || strings.EqualFold(parentObjectName, "FieldDefinition") {
+				virtualParent = true
+				break
+			}
+		}
+		if !virtualParent {
+			continue
+		}
+		parentID, ok := recordValue(org, object.Definition, record, relation.Field)
+		if !ok || parentID.Kind == storage.ValueNull {
+			continue
+		}
+		switch parentID.Kind {
+		case storage.ValueString:
+			if strings.TrimSpace(parentID.String) != "" {
+				return true
+			}
+		case storage.ValueID:
+			if strings.TrimSpace(string(parentID.ID)) != "" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func relationshipLookupPathKnown(org storage.OrgState, record storage.Record, relationship string) bool {
@@ -2423,7 +2485,16 @@ func relationshipLookupPathKnown(org storage.OrgState, record storage.Record, re
 	if !ok {
 		return false
 	}
-	return len(matchingParentRelations(org.Namespace, object.Definition, first)) > 0
+	if len(matchingParentRelations(org.Namespace, object.Definition, first)) > 0 {
+		return true
+	}
+	if customObjectLikeSOQLName(object.Definition.APIName) && customRelationshipLikeSOQLName(first) {
+		lookupField := relationshipObjectName(first)
+		if _, ok := resolveSOQLFieldName(object.Definition, org.Namespace, lookupField); ok {
+			return true
+		}
+	}
+	return false
 }
 
 func entityDefinitionRelationshipValue(value storage.Value, field string) (storage.Value, bool) {
@@ -2927,53 +2998,7 @@ func calculatedRecordValue(org storage.OrgState, definition storage.ObjectDefini
 	if value, _, ok := dml.EvaluateRecordFormulaValueInOrg(field.Formula, field, &org, definition, record); ok {
 		return value, true
 	}
-	formula := strings.ToLower(field.Formula)
-	if strings.EqualFold(field.APIName, "Status__c") && strings.Contains(formula, "startdate__c") && strings.Contains(formula, "enddate__c") {
-		if value, ok := membershipStatusFormulaValue(org, definition, record); ok {
-			return value, true
-		}
-	}
 	return storage.Value{}, false
-}
-
-func membershipStatusFormulaValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record) (storage.Value, bool) {
-	if status, ok := relationshipTextValue(org, definition, record, "OrderItemLine__r.Status__c"); ok && strings.TrimSpace(status) != "" && !strings.EqualFold(status, "Active") {
-		return storage.StringValue(status), true
-	}
-	if pending, ok := recordValue(org, definition, record, "Pending__c"); ok && pending.Kind == storage.ValueBoolean && pending.Boolean {
-		return storage.StringValue("Pending"), true
-	}
-	today := time.Now().UTC().Format("2006-01-02")
-	if start, ok := recordValue(org, definition, record, "StartDate__c"); ok && start.Kind == storage.ValueDate && start.String > today {
-		return storage.StringValue("Future"), true
-	}
-	end, hasEnd := recordValue(org, definition, record, "EndDate__c")
-	if !hasEnd || end.Kind == storage.ValueNull || end.String == "" {
-		return storage.NullValue(), true
-	}
-	if end.String >= today {
-		return storage.StringValue("Current"), true
-	}
-	return storage.StringValue("Expired"), true
-}
-
-func relationshipTextValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field string) (string, bool) {
-	value, ok := recordValue(org, definition, record, field)
-	if !ok || value.Kind == storage.ValueNull {
-		return "", false
-	}
-	switch value.Kind {
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal, storage.ValueBlob:
-		return value.String, true
-	case storage.ValueID:
-		return string(value.ID), true
-	case storage.ValueInteger:
-		return strconv.FormatInt(value.Integer, 10), true
-	case storage.ValueBoolean:
-		return strconv.FormatBool(value.Boolean), true
-	default:
-		return "", false
-	}
 }
 
 func contactNameValue(record storage.Record) (storage.Value, bool) {

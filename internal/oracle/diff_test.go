@@ -80,3 +80,31 @@ func TestDiffRunsIgnoresRawLogNoise(t *testing.T) {
 		t.Fatalf("outcome = %q, want pass; details=%#v", diff.Outcome, diff.Details)
 	}
 }
+
+func TestDiffMissingTypeBothSidesMatches(t *testing.T) {
+	// Salesforce anon: type missing on the org.
+	sf := anonRunFromPayload("p", "org", WorkItem{GeneratedClass: "C0", MethodName: "m0", SurfaceID: "Ghost.Nope"}, probePayload{Status: "missing"})
+	// Glade: probe assertion failed because glade could not resolve the type.
+	local := NormalizeProbeRun(OracleRun{
+		Source: "glade", TestClass: "C0", TestMethod: "m0",
+		Status:    OracleStatusFail,
+		Exception: &OracleException{Type: "System.AssertException", Message: "glade could not resolve Ghost.Nope"},
+		Stack:     []OracleStackFrame{{Symbol: "C0.m0", Line: 9}},
+	})
+	if d := DiffRuns(sf, local); d.Outcome != OracleOutcomePass {
+		t.Fatalf("both-missing should match, got %s: %v", d.Outcome, d.Details)
+	}
+}
+
+func TestDiffMissingTypeGladeGapMismatches(t *testing.T) {
+	// Org resolved the type (probe passed) but glade could not.
+	sf := anonRunFromPayload("p", "org", WorkItem{GeneratedClass: "C0", MethodName: "m0", SurfaceID: "Approval.X"}, probePayload{Status: "resolved"})
+	local := NormalizeProbeRun(OracleRun{
+		Source: "glade", TestClass: "C0", TestMethod: "m0",
+		Status:    OracleStatusFail,
+		Exception: &OracleException{Type: "System.AssertException", Message: "glade could not resolve Approval.X"},
+	})
+	if d := DiffRuns(sf, local); d.Outcome == OracleOutcomePass {
+		t.Fatalf("glade resolution gap must surface as a mismatch")
+	}
+}

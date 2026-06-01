@@ -1677,7 +1677,7 @@ public class UsesChildRelationships {
   public void run(List<Account> accounts) {
     List<Affiliation__c> affiliations = new List<Affiliation__c>();
     List<Merchandise__c> merchandise = new List<Merchandise__c>();
-    List<Registration2__c> registrations = new List<Registration2__c>();
+    List<Application2__c> registrations = new List<Application2__c>();
     for (Account account : accounts) {
       affiliations.addAll(account.Affiliates__r);
       merchandise.addAll(account.Merchandise2__r);
@@ -1689,7 +1689,7 @@ public class UsesChildRelationships {
 	index := typesys.Build(project.Project{
 		Root:      root,
 		ApexFiles: []string{filepath.Join(root, "UsesChildRelationships.cls")},
-	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}, {Name: "Affiliation__c"}, {Name: "Merchandise__c"}, {Name: "Registration2__c"}}})
+	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}, {Name: "Affiliation__c"}, {Name: "Merchandise__c"}, {Name: "Application2__c"}}})
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
@@ -1894,27 +1894,6 @@ public class UsesProcessParameterType {
 		Root:      root,
 		ApexFiles: []string{filepath.Join(root, "UsesProcessParameterType.cls")},
 	}, schema.Schema{})
-	result := Analyze(index)
-	if result.HasErrors() {
-		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
-	}
-}
-
-func TestAnalyzeKnownSObjectCompatibilityAliases(t *testing.T) {
-	root := t.TempDir()
-	writeSemaFile(t, filepath.Join(root, "UsesKnownSObjectAliases.cls"), `
-public class UsesKnownSObjectAliases {
-  public void run(Registration__c registration, Payment_Line__c line) {
-    Registration2__c reg2 = registration;
-    PaymentLine__c paymentLine = line;
-    List<Payment__c> payments = new List<CreditCardRefundPayment__c>();
-  }
-}
-`)
-	index := typesys.Build(project.Project{
-		Root:      root,
-		ApexFiles: []string{filepath.Join(root, "UsesKnownSObjectAliases.cls")},
-	}, schema.Schema{Objects: []schema.Object{{Name: "Registration__c"}, {Name: "Registration2__c"}, {Name: "Payment_Line__c"}, {Name: "PaymentLine__c"}, {Name: "Payment__c"}, {Name: "CreditCardRefundPayment__c"}}})
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
@@ -2343,8 +2322,8 @@ public class UsesNestedCollectionAdd {
       for (MembershipTermRequestInfo info : request.MembershipTermRequestInfos) {
         membershipLinkIds.add(info.MembershipLinkId);
       }
-      List<MembershipTypeProductLink__c> membershipLinks = new List<MembershipTypeProductLink__c>();
-      for (MembershipTypeProductLink__c link : membershipLinks) {
+      List<PlanTypeProductLink__c> membershipLinks = new List<PlanTypeProductLink__c>();
+      for (PlanTypeProductLink__c link : membershipLinks) {
         MembershipTermInfo info = new MembershipTermInfo();
         info.MembershipLinkId = link.Id;
         response.MembershipTermInfos.add(info);
@@ -2363,7 +2342,7 @@ public class UsesNestedCollectionAdd {
 			filepath.Join(root, "MembershipTermRequest.cls"),
 			filepath.Join(root, "UsesNestedCollectionAdd.cls"),
 		},
-	}, schema.Schema{Objects: []schema.Object{{Name: "MembershipTypeProductLink__c"}}})
+	}, schema.Schema{Objects: []schema.Object{{Name: "PlanTypeProductLink__c"}}})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
 		if diag.Code == "GLADESEMA023" && strings.Contains(diag.Message, "add") {
@@ -3574,8 +3553,8 @@ public class Uses {
 
 func TestAnalyzeNestedGenericReturnShortName(t *testing.T) {
 	root := t.TempDir()
-	writeSemaFile(t, filepath.Join(root, "BillMe.cls"), `
-public class BillMe {
+	writeSemaFile(t, filepath.Join(root, "BillingHelper.cls"), `
+public class BillingHelper {
   public class Status {}
   public List<Status> run() {
     List<Status> statuses = new List<Status>();
@@ -3583,7 +3562,7 @@ public class BillMe {
   }
 }
 `)
-	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "BillMe.cls")}}, schema.Schema{})
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "BillingHelper.cls")}}, schema.Schema{})
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
@@ -4770,7 +4749,7 @@ public class TestOrderItemLineManager {
         (cartMembershipOIL.OrderItem__c,
          //cartMembershipOIL.ShipTo__c,
          null,
-         cartMembershipOIL.Membership__c);
+         cartMembershipOIL.Subscription__c);
   }
 }
 `)
@@ -4778,10 +4757,10 @@ public class TestOrderItemLineManager {
 		Objects: []schema.Object{
 			{Name: "OrderItemLine__c", Fields: []schema.Field{
 				{Name: "OrderItem__c", Type: "Lookup", ReferenceTo: []string{"OrderItem__c"}},
-				{Name: "Membership__c", Type: "Lookup", ReferenceTo: []string{"Membership__c"}},
+				{Name: "Subscription__c", Type: "Lookup", ReferenceTo: []string{"Subscription__c"}},
 			}},
 			{Name: "OrderItem__c"},
-			{Name: "Membership__c"},
+			{Name: "Subscription__c"},
 		},
 	})
 	result := Analyze(index)
@@ -4842,7 +4821,7 @@ func TestAnalyzeMultipleUninitializedLocalDeclarators(t *testing.T) {
 	writeSemaFile(t, filepath.Join(root, "StandardRegistrationValidator.cls"), `
 public class StandardRegistrationValidator {
   public void validate() {
-    Registration2__c existing, cancelled;
+    Application2__c existing, cancelled;
     String link, linkText;
     if (existing != null) {
       link = '/' + existing.Id;
@@ -4856,7 +4835,7 @@ public class StandardRegistrationValidator {
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "StandardRegistrationValidator.cls")}}, schema.Schema{
-		Objects: []schema.Object{{Name: "Registration2__c", Fields: []schema.Field{
+		Objects: []schema.Object{{Name: "Application2__c", Fields: []schema.Field{
 			{Name: "Name", Type: "String"},
 		}}},
 	})
@@ -5346,7 +5325,7 @@ func TestAnalyzeSkipsInheritanceContractsForPackageArtifacts(t *testing.T) {
 	result := Analyze(typesys.Index{Types: []typesys.TypeSymbol{{
 		Kind:       apexast.DeclarationClass,
 		Name:       "ScheduleLinesProcessorJob",
-		Namespace:  "znu",
+		Namespace:  "pkg",
 		Dependency: true,
 		Artifact:   true,
 		Interfaces: []string{"Database.Batchable", "Schedulable"},
@@ -5434,7 +5413,7 @@ func TestAnalyzeDoesNotRequirePlatformStubsToSatisfyInterfaces(t *testing.T) {
 	result := Analyze(typesys.Index{Types: []typesys.TypeSymbol{{
 		Kind:       apexast.DeclarationClass,
 		Name:       "OrderItem",
-		Namespace:  "znu",
+		Namespace:  "pkg",
 		Dependency: true,
 		Artifact:   true,
 		Interfaces: []string{"Comparable"},

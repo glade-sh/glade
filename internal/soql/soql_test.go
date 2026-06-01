@@ -4,6 +4,7 @@ import (
 	"errors"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -1014,6 +1015,59 @@ func TestExecuteCustomObjectRelationshipProjectionWithMismatchedRelationshipName
 	value := result.Records[0].Fields["Parent__r.Name__c"]
 	if value.Kind != storage.ValueString || value.String != "ParentValue" {
 		t.Fatalf("relationship projection = %#v", value)
+	}
+}
+
+func TestExecuteParentRelationshipProjectionWithMissingParentReturnsRelationshipNull(t *testing.T) {
+	org := storage.NewOrgState()
+	parentDefinition := storage.ObjectDefinition{
+		APIName: "Parent__c",
+		Fields: map[string]storage.Field{
+			"Name__c": {APIName: "Name__c", Type: storage.FieldString},
+		},
+	}
+	storage.EnsureStandardObjectFields(&parentDefinition)
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: parentDefinition,
+		Records:    map[storage.ID]storage.Record{},
+	}
+	childDefinition := storage.ObjectDefinition{
+		APIName: "Child__c",
+		Fields: map[string]storage.Field{
+			"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
+		},
+		Relations: []storage.Relationship{{
+			Field:              "Parent__c",
+			ParentObjects:      []string{"Parent__c"},
+			ParentRelationship: "Parent__r",
+		}},
+	}
+	storage.EnsureStandardObjectFields(&childDefinition)
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: childDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {
+				ID:     "a01000000000001",
+				Object: "Child__c",
+				Fields: map[string]storage.Value{
+					"Parent__c": storage.IDValue("a00000000000001"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Parent__r.Name__c FROM Child__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d", result.Rows)
+	}
+	if value := result.Records[0].Fields["Parent__r"]; value.Kind != storage.ValueNull {
+		t.Fatalf("relationship = %#v, want null", value)
+	}
+	if _, ok := result.Records[0].Fields["Parent__r.Name__c"]; ok {
+		t.Fatalf("leaf projection should not be populated for a missing parent: %#v", result.Records[0].Fields)
 	}
 }
 
@@ -3008,6 +3062,67 @@ func TestExecuteWithCacheReusesChildRelationshipResolutionOnly(t *testing.T) {
 	}
 }
 
+func TestExecuteWithCacheConcurrentChildRelationshipResolution(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}},
+		},
+	}
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Contact",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+				ChildRelationship:  "Contacts",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"003000000000001": {ID: "003000000000001", Object: "Contact", Fields: map[string]storage.Value{"LastName": storage.StringValue("Alpha"), "AccountId": storage.IDValue("001000000000001")}},
+		},
+	}
+	query, err := Parse("SELECT Id, (SELECT Id, LastName FROM Contacts) FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cache := NewExecutionCache()
+	var wg sync.WaitGroup
+	errs := make(chan error, 64)
+	for i := 0; i < 64; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 16; j++ {
+				result, err := ExecuteWithCache(org, query, cache)
+				if err != nil {
+					errs <- err
+					return
+				}
+				children := result.Records[0].Children["Contacts"]
+				if len(children) != 1 || children[0].Fields["LastName"].String != "Alpha" {
+					errs <- errors.New("unexpected child relationship rows")
+					return
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		t.Fatal(err)
+	}
+}
+
 func TestExecuteChildRelationshipUsesStandardRelationshipWithoutMetadataRelation(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{
@@ -3146,33 +3261,33 @@ func TestExecuteCustomChildRelationshipSubqueryAcceptsRuntimeSuffix(t *testing.T
 
 func TestExecuteCustomChildRelationshipSubqueryInfersPrefixedLinkObject(t *testing.T) {
 	org := storage.NewOrgState()
-	org.Objects["znu__MembershipType__c"] = storage.ObjectState{
+	org.Objects["pkg__MembershipType__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "znu__MembershipType__c",
+			APIName: "pkg__MembershipType__c",
 			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
 		},
 		Records: map[storage.ID]storage.Record{
-			"a0r000000000001": {ID: "a0r000000000001", Object: "znu__MembershipType__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Regular")}},
+			"a0r000000000001": {ID: "a0r000000000001", Object: "pkg__MembershipType__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Regular")}},
 		},
 	}
-	org.Objects["znu__MembershipTypeProductLink__c"] = storage.ObjectState{
+	org.Objects["pkg__MembershipTypeProductLink__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "znu__MembershipTypeProductLink__c",
+			APIName: "pkg__MembershipTypeProductLink__c",
 			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
 		},
 		Records: map[storage.ID]storage.Record{
-			"a0q000000000001": {ID: "a0q000000000001", Object: "znu__MembershipTypeProductLink__c", Fields: map[string]storage.Value{
+			"a0q000000000001": {ID: "a0q000000000001", Object: "pkg__MembershipTypeProductLink__c", Fields: map[string]storage.Value{
 				"Name":                   storage.StringValue("Link"),
-				"znu__MembershipType__c": storage.IDValue("a0r000000000001"),
+				"pkg__MembershipType__c": storage.IDValue("a0r000000000001"),
 			}},
 		},
 	}
 
-	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id, Name FROM znu__MembershipTypeProductLinks__r) FROM znu__MembershipType__c")
+	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id, Name FROM pkg__MembershipTypeProductLinks__r) FROM pkg__MembershipType__c")
 	if err != nil {
 		t.Fatal(err)
 	}
-	children := result.Records[0].Children["znu__MembershipTypeProductLinks__r"]
+	children := result.Records[0].Children["pkg__MembershipTypeProductLinks__r"]
 	if len(children) != 1 || children[0].Fields["Name"].String != "Link" {
 		t.Fatalf("children = %#v", children)
 	}
@@ -3396,22 +3511,22 @@ func TestExecuteChildRelationshipSubqueryMatchesDependencyNamespacedParentAlias(
 			"a0P000000000001": {ID: "a0P000000000001", Object: "Product__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Membership")}},
 		},
 	}
-	org.Objects["znu__SpecialPrice__c"] = storage.ObjectState{
+	org.Objects["pkg__SpecialPrice__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "znu__SpecialPrice__c",
+			APIName: "pkg__SpecialPrice__c",
 			Fields: map[string]storage.Field{
 				"Name":            {APIName: "Name", Type: storage.FieldString},
-				"znu__Product__c": {APIName: "znu__Product__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__Product__c"}},
+				"pkg__Product__c": {APIName: "pkg__Product__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__Product__c"}},
 			},
 			Relations: []storage.Relationship{{
-				Field:              "znu__Product__c",
-				ParentObjects:      []string{"znu__Product__c"},
-				ParentRelationship: "znu__Product__r",
-				ChildRelationship:  "znu__SpecialPrices__r",
+				Field:              "pkg__Product__c",
+				ParentObjects:      []string{"pkg__Product__c"},
+				ParentRelationship: "pkg__Product__r",
+				ChildRelationship:  "pkg__SpecialPrices__r",
 			}},
 		},
 		Records: map[storage.ID]storage.Record{
-			"a0S000000000001": {ID: "a0S000000000001", Object: "znu__SpecialPrice__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Early"), "znu__Product__c": storage.IDValue("a0P000000000001")}},
+			"a0S000000000001": {ID: "a0S000000000001", Object: "pkg__SpecialPrice__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Early"), "pkg__Product__c": storage.IDValue("a0P000000000001")}},
 		},
 	}
 
@@ -3462,17 +3577,17 @@ func TestExecuteChildRelationshipSubqueryPrefersLocalRelationshipOverDependencyN
 		}},
 		Metadata: map[string]string{"kind": "customMetadata"},
 	}
-	org.Objects["znu__StateTransition__mdt"] = storage.ObjectState{
+	org.Objects["pkg__StateTransition__mdt"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "znu__StateTransition__mdt",
+			APIName: "pkg__StateTransition__mdt",
 			Fields: map[string]storage.Field{
-				"znu__StateConfiguration__c": {APIName: "znu__StateConfiguration__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__StateConfiguration__mdt"}, RelationshipName: "znu__StateConfiguration__r", ChildRelationshipName: "znu__StateTransitions__r"},
+				"pkg__StateConfiguration__c": {APIName: "pkg__StateConfiguration__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__StateConfiguration__mdt"}, RelationshipName: "pkg__StateConfiguration__r", ChildRelationshipName: "pkg__StateTransitions__r"},
 			},
 			Relations: []storage.Relationship{{
-				Field:              "znu__StateConfiguration__c",
-				ParentObjects:      []string{"znu__StateConfiguration__mdt"},
-				ParentRelationship: "znu__StateConfiguration__r",
-				ChildRelationship:  "znu__StateTransitions__r",
+				Field:              "pkg__StateConfiguration__c",
+				ParentObjects:      []string{"pkg__StateConfiguration__mdt"},
+				ParentRelationship: "pkg__StateConfiguration__r",
+				ChildRelationship:  "pkg__StateTransitions__r",
 			}},
 			Metadata: map[string]string{"kind": "customMetadata"},
 		},

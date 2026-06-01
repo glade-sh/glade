@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestLoadReplayBundleValidatesSchemaAndPaths(t *testing.T) {
@@ -72,7 +74,7 @@ func TestRunReplayBundleServerSequence(t *testing.T) {
   "steps": [{
     "name": "versions",
     "kind": "server",
-    "serverRequests": [{"method": "GET", "path": "/services/data/", "status": 200, "contains": ["v65.0"]}]
+    "serverRequests": [{"method": "GET", "path": "/services/data/", "status": 200, "contains": ["v`+storage.DefaultRESTAPIVersion+`"]}]
   }]
 }`)
 	report, err := RunReplayBundle(root, ReplayOptions{})

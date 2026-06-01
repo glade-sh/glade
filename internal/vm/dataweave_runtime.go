@@ -3,6 +3,7 @@ package vm
 import (
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -12,6 +13,15 @@ func newDataWeaveScript(name string) Value {
 	script := Object("DataWeave.Script")
 	script.Fields["name"] = String(name)
 	return script
+}
+func dataWeaveCreateScript(args []Value) (Value, error) {
+	if len(args) == 1 && args[0].Kind == ValueString {
+		return newDataWeaveScript(args[0].Text), nil
+	}
+	if len(args) == 2 && args[1].Kind == ValueString {
+		return newDataWeaveScript(args[1].Text), nil
+	}
+	return Null, fmt.Errorf("DataWeave.Script.createScript expects script name String")
 }
 func newDataWeaveResult(scriptName string, inputs Value) Value {
 	result := Object("DataWeave.Result")

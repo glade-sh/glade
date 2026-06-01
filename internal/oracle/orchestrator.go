@@ -33,6 +33,7 @@ const (
 type Surface struct {
 	SurfaceID  string        `json:"surfaceId"`
 	Area       string        `json:"area"`
+	Namespace  string        `json:"namespace,omitempty"`
 	Type       string        `json:"type"`
 	Member     string        `json:"member,omitempty"`
 	Kind       string        `json:"kind"`
@@ -67,6 +68,7 @@ type ProbeSpec struct {
 	ProbeID      string   `json:"probeId"`
 	SurfaceID    string   `json:"surfaceId"`
 	Area         string   `json:"area"`
+	Namespace    string   `json:"namespace,omitempty"`
 	Type         string   `json:"type"`
 	Member       string   `json:"member,omitempty"`
 	Kind         string   `json:"kind"`
@@ -90,6 +92,8 @@ type WorkItem struct {
 	ProbeID        string   `json:"probeId"`
 	SurfaceID      string   `json:"surfaceId"`
 	Area           string   `json:"area"`
+	Namespace      string   `json:"namespace,omitempty"`
+	TypeName       string   `json:"typeName,omitempty"`
 	Shard          int      `json:"shard"`
 	GeneratedClass string   `json:"generatedClass"`
 	MethodName     string   `json:"methodName"`
@@ -187,11 +191,13 @@ func BuildInventoryFromReconciliation(rec capability.Reconciliation, cat capabil
 
 		typeName := item.OwnerType
 		member := ""
+		namespace := ""
 		if hasEntry {
 			if entry.TypeName != "" {
 				typeName = entry.TypeName
 			}
 			member = entry.MemberName
+			namespace = entry.Namespace
 		}
 		if typeName == "" {
 			typeName = item.Symbol
@@ -211,6 +217,7 @@ func BuildInventoryFromReconciliation(rec capability.Reconciliation, cat capabil
 		surfaces = append(surfaces, Surface{
 			SurfaceID:  surfaceID,
 			Area:       item.Area,
+			Namespace:  namespace,
 			Type:       typeName,
 			Member:     member,
 			Kind:       item.Kind,
@@ -324,7 +331,7 @@ func BuildManifest(inv Inventory, area string, limit int) ProbeManifest {
 		}
 		token := strings.ReplaceAll(s.Area, ".", "_")
 		probeID := fmt.Sprintf("%s.%04d", token, i+1)
-		cls := fmt.Sprintf("GLADE_Oracle_%s_%04d", token, i+1)
+		cls := fmt.Sprintf("GLADE_Oracle_%s_%04d", sanitizeApexIdent(token), i+1)
 		mode := "compile-shape"
 		switch s.Status {
 		case SurfaceRuntimeShapeKnown:
@@ -338,6 +345,7 @@ func BuildManifest(inv Inventory, area string, limit int) ProbeManifest {
 			ProbeID:      probeID,
 			SurfaceID:    s.SurfaceID,
 			Area:         s.Area,
+			Namespace:    s.Namespace,
 			Type:         s.Type,
 			Member:       s.Member,
 			Kind:         s.Kind,
@@ -371,6 +379,8 @@ func BuildWorkQueue(manifest ProbeManifest, shardCount int) WorkQueue {
 			ProbeID:        s.ProbeID,
 			SurfaceID:      s.SurfaceID,
 			Area:           s.Area,
+			Namespace:      s.Namespace,
+			TypeName:       s.Type,
 			Shard:          i % shardCount,
 			GeneratedClass: s.GeneratedCls,
 			MethodName:     s.MethodName,
@@ -408,7 +418,7 @@ func GenerateApex(queue WorkQueue, runDir string) error {
 		return err
 	}
 	for _, item := range queue.Items {
-		content := fmt.Sprintf("@IsTest\npublic class %s {\n    @IsTest\n    public static void %s() {\n        Map<String, Object> payload = new Map<String, Object>();\n        payload.put('probeId', '%s');\n        payload.put('surfaceId', '%s');\n        payload.put('area', '%s');\n        try {\n            payload.put('status', 'generated');\n            payload.put('result', null);\n            payload.put('exceptionType', null);\n            payload.put('exceptionMessage', null);\n        } catch (Exception ex) {\n            payload.put('status', 'exception');\n            payload.put('result', null);\n            payload.put('exceptionType', ex.getTypeName());\n            payload.put('exceptionMessage', ex.getMessage());\n        }\n        System.debug(LoggingLevel.ERROR, 'GLADE_ORACLE ' + JSON.serialize(payload));\n    }\n}\n", item.GeneratedClass, item.MethodName, item.ProbeID, escapeApex(item.SurfaceID), escapeApex(item.Area))
+		content := generatedProbeClass(probeTargetFromWorkItem(item))
 		clsPath := filepath.Join(classesDir, item.GeneratedClass+".cls")
 		metaPath := clsPath + "-meta.xml"
 		if err := os.WriteFile(clsPath, []byte(content), 0o644); err != nil {
@@ -589,6 +599,32 @@ func escapeApex(in string) string {
 	in = strings.ReplaceAll(in, "\\", "\\\\")
 	in = strings.ReplaceAll(in, "'", "\\'")
 	return in
+}
+
+// sanitizeApexIdent collapses any character that is not a valid Apex identifier
+// character into a single underscore so the result is a legal class name.
+func sanitizeApexIdent(in string) string {
+	var b strings.Builder
+	lastUnderscore := false
+	for _, r := range in {
+		if r == '_' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' {
+			b.WriteRune(r)
+			lastUnderscore = r == '_'
+			continue
+		}
+		if !lastUnderscore {
+			b.WriteByte('_')
+			lastUnderscore = true
+		}
+	}
+	out := strings.Trim(b.String(), "_")
+	if out == "" {
+		return "X"
+	}
+	if c := out[0]; c >= '0' && c <= '9' {
+		out = "X" + out
+	}
+	return out
 }
 
 func surfaceArea(typeName string) string {

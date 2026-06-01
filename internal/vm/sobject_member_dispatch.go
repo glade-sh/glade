@@ -478,9 +478,6 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			}
 		}
 		if !ok {
-			if value, ok := componentServiceFieldFallback(receiver, field); ok {
-				return value, true, nil
-			}
 			if value, ok := vm.missingSObjectFieldValue(receiver, field); ok {
 				return value, true, nil
 			}
@@ -489,7 +486,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			}
 			return Null, true, nil
 		}
-		value = coerceRawRecordTypeNameFieldRuntimeValue(actualField, value)
+		value = coerceRawRecordTypeDefaultTokenRuntimeValue(actualField, value)
 		if _, fieldDef, exists := vm.sObjectFieldDefinition(receiver.Type, actualField); exists {
 			value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
 		}
@@ -827,8 +824,10 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.getSObjects expects relationship name String or Schema.SObjectField")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
-		if err := vm.unqueriedSObjectFieldError(receiver, field, true); err != nil {
-			return Null, true, err
+		if _, hasQueriedFields := receiver.Fields[sobjectQueriedFieldsField]; !hasQueriedFields || vm.queriedSObjectFieldsIncludes(receiver, field) || strippedChildRelationship(receiver, field) {
+			if err := vm.unqueriedSObjectFieldError(receiver, field, true); err != nil {
+				return Null, true, err
+			}
 		}
 		if _, value, ok := vm.loadedChildRelationshipValue(receiver, field); ok {
 			if value.Kind == ValueNull {
@@ -839,8 +838,10 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			}
 			return value, true, nil
 		}
-		if value, ok := vm.lazyChildRelationshipValue(receiver, field); ok {
-			return value, true, nil
+		if _, hasQueriedFields := receiver.Fields[sobjectQueriedFieldsField]; !hasQueriedFields {
+			if value, ok := vm.lazyChildRelationshipValue(receiver, field); ok {
+				return value, true, nil
+			}
 		}
 		_, value, ok := objectFieldValue(receiver, field)
 		if !ok || value.Kind == ValueNull {
@@ -853,16 +854,4 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 	default:
 		return Null, false, nil
 	}
-}
-
-func componentServiceFieldFallback(receiver Value, field string) (Value, bool) {
-	if !strings.HasSuffix(storage.StripAnyNamespaceToken(field), "ScriptsComponentService__c") {
-		return Null, false
-	}
-	alternate := strings.Replace(field, "ScriptsComponentService__c", "ComponentService__c", 1)
-	_, value, ok := objectFieldValue(receiver, alternate)
-	if ok && value.Kind != ValueNull {
-		return value, true
-	}
-	return Null, false
 }

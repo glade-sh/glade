@@ -215,7 +215,7 @@ func TestClassifyServerExampleNonApexRESTServerErrorAsFailure(t *testing.T) {
 		Name:   "query",
 		Family: "query",
 		Method: http.MethodGet,
-		Path:   "/services/data/v61.0/query",
+		Path:   "/services/data/v" + serverExampleAPIVersion + "/query",
 	}, rec)
 
 	if result.Outcome != "fail" {

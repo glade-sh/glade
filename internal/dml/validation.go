@@ -569,28 +569,6 @@ func fieldByName(definition storage.ObjectDefinition, name string) (storage.Fiel
 	return storage.Field{}, false
 }
 
-func applyNameFallbackFromCustomName(definition storage.ObjectDefinition, record *storage.Record) {
-	if record == nil {
-		return
-	}
-	if !strings.EqualFold(definition.APIName, "ProbeTestObject__c") {
-		return
-	}
-	nameField, hasName := fieldByName(definition, "Name")
-	if !hasName || !nameField.Required || nameField.Type != storage.FieldString {
-		return
-	}
-	if value, ok := record.GetField("Name"); ok && strings.TrimSpace(value.String) != "" {
-		return
-	}
-	if fallback, ok := record.GetField("Name__c"); ok && strings.TrimSpace(fallback.String) != "" {
-		if record.Fields == nil {
-			record.Fields = map[string]storage.Value{}
-		}
-		record.Fields["Name"] = fallback
-	}
-}
-
 func isSystemManagedReadonlyField(field string) bool {
 	switch strings.ToLower(field) {
 	case "id", "isdeleted", "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid", "systemmodstamp", "lastvieweddate", "lastreferenceddate":

@@ -759,6 +759,21 @@ func runCompatOracleRunGLADE(ctx context.Context, args []string, w io.Writer) er
 			err = runErr
 			break
 		}
+		if len(classRuns) == 0 {
+			cls, meth := splitOracleLocalFilter(localFilter)
+			classRuns = []oracle.OracleRun{{
+				SchemaVersion: oracle.SchemaVersion,
+				Source:        "glade",
+				Project:       project,
+				TestClass:     cls,
+				TestMethod:    meth,
+				Status:        oracle.OracleStatusCompileError,
+				Exception:     &oracle.OracleException{Message: "glade produced no run for probe (compile gap or no test method)"},
+			}}
+		}
+		for i := range classRuns {
+			classRuns[i] = oracle.NormalizeProbeRun(classRuns[i])
+		}
 		runs = append(runs, classRuns...)
 	}
 	runDir := filepath.Join(runsDir, runID)
@@ -793,6 +808,14 @@ func oracleLocalFiltersForQueue(queue oracle.WorkQueue) []string {
 		localFilters = append(localFilters, localFilter)
 	}
 	return localFilters
+}
+
+func splitOracleLocalFilter(localFilter string) (class, method string) {
+	localFilter = strings.TrimSpace(localFilter)
+	if i := strings.Index(localFilter, "."); i >= 0 {
+		return localFilter[:i], localFilter[i+1:]
+	}
+	return localFilter, ""
 }
 
 func splitOracleFilterClasses(filter string) []string {

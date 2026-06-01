@@ -1160,17 +1160,17 @@ func TestScanCountsReportAndDashboardMetadata(t *testing.T) {
 func TestScanUsesMetadataOutsideConfiguredPackageDirectories(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"core","default":true}]}`)
-	writeFile(t, filepath.Join(root, "core/customMetadata/znu__SOQLQuery.Default.md-meta.xml"), `<CustomMetadata>
+	writeFile(t, filepath.Join(root, "core/customMetadata/pkg__SOQLQuery.Default.md-meta.xml"), `<CustomMetadata>
   <label>Default Query</label>
 </CustomMetadata>`)
 	writeFile(t, filepath.Join(root, "core/classes/UsesSupplementalMetadata.cls"), `public class UsesSupplementalMetadata {
-  znu__SOQLQuery__mdt query;
+  pkg__SOQLQuery__mdt query;
   void run() {
     HttpRequest req = new HttpRequest();
     req.setEndpoint('callout:OPEX__OpenExchangeRates/latest.json');
   }
 }`)
-	writeFile(t, filepath.Join(root, "core/lwc/payment/payment.js"), `import paymentOptionsIcon from '@salesforce/resourceUrl/znu__PaymentOptions';`)
+	writeFile(t, filepath.Join(root, "core/lwc/payment/payment.js"), `import paymentOptionsIcon from '@salesforce/resourceUrl/pkg__PaymentOptions';`)
 	writeFile(t, filepath.Join(root, "extras/namedCredentials/OpenExchangeRates.namedCredential-meta.xml"), `<NamedCredential>
   <endpoint>https://openexchangerates.example.test</endpoint>
   <protocol>NoAuthentication</protocol>
@@ -1181,13 +1181,13 @@ func TestScanUsesMetadataOutsideConfiguredPackageDirectories(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if hasLineFinding(report, "custommetadata.legacy-records", "core/classes/UsesSupplementalMetadata.cls", "znu__SOQLQuery__mdt") {
+	if hasLineFinding(report, "custommetadata.legacy-records", "core/classes/UsesSupplementalMetadata.cls", "pkg__SOQLQuery__mdt") {
 		t.Fatalf("record-backed namespaced custom metadata type should not be reported")
 	}
 	if hasLineFinding(report, "endpoint.metadata", "core/classes/UsesSupplementalMetadata.cls", "OPEX__OpenExchangeRates") {
 		t.Fatalf("named credential outside configured package directories should be available")
 	}
-	if hasLineFinding(report, "staticresources.urlfor", "core/lwc/payment/payment.js", "znu__PaymentOptions") {
+	if hasLineFinding(report, "staticresources.urlfor", "core/lwc/payment/payment.js", "pkg__PaymentOptions") {
 		t.Fatalf("external managed-package static resource reference should not be reported")
 	}
 }

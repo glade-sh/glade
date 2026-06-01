@@ -8,7 +8,7 @@ import (
 )
 
 func TestBuildAppliesInstalledNamespaceToCustomSchema(t *testing.T) {
-	artifact, err := Build("znu", "1.0", project.Project{Root: t.TempDir()}, schema.Schema{Objects: []schema.Object{
+	artifact, err := Build("pkg", "1.0", project.Project{Root: t.TempDir()}, schema.Schema{Objects: []schema.Object{
 		{
 			Name: "CartItemLine__c",
 			Fields: []schema.Field{
@@ -24,13 +24,13 @@ func TestBuildAppliesInstalledNamespaceToCustomSchema(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if artifact.Objects[0].Name != "znu__CartItemLine__c" {
+	if artifact.Objects[0].Name != "pkg__CartItemLine__c" {
 		t.Fatalf("object name = %q", artifact.Objects[0].Name)
 	}
-	if artifact.Objects[0].Fields[0].Name != "znu__Product__c" {
+	if artifact.Objects[0].Fields[0].Name != "pkg__Product__c" {
 		t.Fatalf("field name = %q", artifact.Objects[0].Fields[0].Name)
 	}
-	if artifact.Objects[0].Fields[0].ReferenceTo[0] != "znu__Membership__c" {
+	if artifact.Objects[0].Fields[0].ReferenceTo[0] != "pkg__Membership__c" {
 		t.Fatalf("referenceTo = %#v", artifact.Objects[0].Fields[0].ReferenceTo)
 	}
 	if artifact.Objects[0].Fields[1].Name != "Name" {

@@ -79,6 +79,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 		return Null, err
 	}
 	if allOrNone && hasDMLFailures(results) {
+		vm.addVisualforceDMLPageMessages(results)
 		return Null, databaseDMLException(op, results)
 	}
 	values := make([]Value, 0, len(results))
@@ -1951,8 +1952,12 @@ func (vm *VM) applySObjectFieldDefaults(records []storage.Record) {
 }
 
 func defaultRecordTypeIDForRecord(objectName string, definition storage.ObjectDefinition, record storage.Record) storage.ID {
-	if strings.EqualFold(objectName, "Account") && recordHasPersonAccountSignal(record) {
-		if id := personAccountRecordTypeID(definition); id != "" {
+	if strings.EqualFold(objectName, "Account") {
+		if recordHasPersonAccountSignal(record) {
+			if id := personAccountRecordTypeID(definition); id != "" {
+				return id
+			}
+		} else if id := businessAccountRecordTypeID(definition); id != "" {
 			return id
 		}
 	}
@@ -1960,23 +1965,41 @@ func defaultRecordTypeIDForRecord(objectName string, definition storage.ObjectDe
 }
 
 func personAccountRecordTypeID(definition storage.ObjectDefinition) storage.ID {
-	for _, recordType := range definition.RecordTypes {
-		if recordType.ID == "" || !recordTypeLooksPersonAccount(recordType) {
+	if id := preferredPersonAccountRecordTypeID(definition.RecordTypes, false, func(rt storage.RecordTypeInfo) bool {
+		return rt.Active && rt.Available && rt.Default
+	}); id != "" {
+		return id
+	}
+	if id := preferredPersonAccountRecordTypeID(definition.RecordTypes, false, func(rt storage.RecordTypeInfo) bool {
+		return rt.Active && rt.Available
+	}); id != "" {
+		return id
+	}
+	if id := preferredPersonAccountRecordTypeID(definition.RecordTypes, true, func(rt storage.RecordTypeInfo) bool {
+		return rt.Active && rt.Available && rt.Default
+	}); id != "" {
+		return id
+	}
+	if id := preferredPersonAccountRecordTypeID(definition.RecordTypes, false, func(rt storage.RecordTypeInfo) bool {
+		return rt.Active
+	}); id != "" {
+		return id
+	}
+	if id := preferredPersonAccountRecordTypeID(definition.RecordTypes, false, func(storage.RecordTypeInfo) bool { return true }); id != "" {
+		return id
+	}
+	return preferredPersonAccountRecordTypeID(definition.RecordTypes, true, func(storage.RecordTypeInfo) bool { return true })
+}
+
+func preferredPersonAccountRecordTypeID(recordTypes []storage.RecordTypeInfo, allowGeneric bool, accept func(storage.RecordTypeInfo) bool) storage.ID {
+	for _, recordType := range recordTypes {
+		if recordType.ID == "" || !accept(recordType) || !recordTypeLooksPersonAccount(recordType) {
 			continue
 		}
-		if recordType.Active && recordType.Available {
-			return recordType.ID
+		if !allowGeneric && recordTypeLooksGenericPersonAccount(recordType) {
+			continue
 		}
-	}
-	for _, recordType := range definition.RecordTypes {
-		if recordType.ID != "" && recordType.Active && recordTypeLooksPersonAccount(recordType) {
-			return recordType.ID
-		}
-	}
-	for _, recordType := range definition.RecordTypes {
-		if recordType.ID != "" && recordTypeLooksPersonAccount(recordType) {
-			return recordType.ID
-		}
+		return recordType.ID
 	}
 	return ""
 }
@@ -1984,6 +2007,40 @@ func personAccountRecordTypeID(definition storage.ObjectDefinition) storage.ID {
 func recordTypeLooksPersonAccount(recordType storage.RecordTypeInfo) bool {
 	name := strings.ToLower(strings.TrimSpace(recordType.Name + " " + recordType.DeveloperName))
 	return strings.Contains(name, "person") || strings.Contains(name, "individual")
+}
+
+func recordTypeLooksGenericPersonAccount(recordType storage.RecordTypeInfo) bool {
+	for _, value := range []string{recordType.DeveloperName, recordType.Name} {
+		switch strings.ToLower(strings.TrimSpace(value)) {
+		case "personaccount", "person_account", "person account":
+			return true
+		}
+	}
+	return false
+}
+
+func businessAccountRecordTypeID(definition storage.ObjectDefinition) storage.ID {
+	for _, recordType := range definition.RecordTypes {
+		if recordType.ID != "" && recordType.Default && recordType.Active && recordType.Available && !recordTypeLooksPersonAccount(recordType) {
+			return recordType.ID
+		}
+	}
+	for _, recordType := range definition.RecordTypes {
+		if recordType.ID != "" && recordType.Active && recordType.Available && !recordTypeLooksPersonAccount(recordType) {
+			return recordType.ID
+		}
+	}
+	for _, recordType := range definition.RecordTypes {
+		if recordType.ID != "" && recordType.Active && !recordTypeLooksPersonAccount(recordType) {
+			return recordType.ID
+		}
+	}
+	for _, recordType := range definition.RecordTypes {
+		if recordType.ID != "" && !recordTypeLooksPersonAccount(recordType) {
+			return recordType.ID
+		}
+	}
+	return ""
 }
 
 func (vm *VM) applyBeforeInsertDerivedFields(records []storage.Record) {
@@ -2534,7 +2591,7 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		}
 		canonicalField := field
 		if definition.APIName != "" {
-			if resolved, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field); ok {
+			if resolved, ok := vm.resolveFieldName(definition, field); ok {
 				canonicalField = resolved
 			}
 		}
@@ -2558,7 +2615,7 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 				!isUserSetSObjectField(*value, field) && !isUserSetSObjectField(*value, canonicalField) {
 				continue
 			}
-			if fieldDef, ok := definition.Fields[canonicalField]; ok && vmImplicitDMLField(fieldDef) {
+			if fieldDef, ok := definition.Fields[canonicalField]; ok && vmImplicitDMLFieldForOperation(fieldDef, record.ID == "") {
 				if !explicitField || vmImplicitDMLFieldDefaultValue(fieldDef, fieldValue) {
 					continue
 				}
@@ -2578,7 +2635,7 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 				} else if ok {
 					vm.storeParentRelationshipRecord(&record, definition, lookupField, field, parentRecord)
 				}
-				if _, hasLookup := record.GetField(lookupField); !hasLookup && !record.HasExplicitNull(lookupField) {
+				if !recordHasFieldAlias(record, lookupField) && !recordHasExplicitNullAlias(record, lookupField) {
 					if parentID := sObjectIDFromFields(fieldValue.Fields); parentID != "" {
 						record.Fields[lookupField] = storage.IDValue(parentID)
 					} else if parentID, err := vm.resolveParentRelationshipReferenceID(nil, fieldValue); err != nil {
@@ -2627,6 +2684,12 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		if converted.Kind == storage.ValueNull {
 			aliasKey := sObjectRecordFieldAliasKey(canonicalField)
 			if previousField, exists := recordFieldsByAlias[aliasKey]; exists {
+				userSetField := isUserSetSObjectFieldAlias(*value, field) || isUserSetSObjectFieldAlias(*value, canonicalField)
+				if !explicitField || !userSetField {
+					if _, hasNonNull := record.Fields[previousField]; hasNonNull {
+						continue
+					}
+				}
 				if recordExplicitFields[aliasKey] && !explicitField {
 					continue
 				}
@@ -2638,6 +2701,9 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 					delete(record.ExplicitNulls, previousField)
 				}
 			}
+			if isUserSetSObjectFieldAlias(*value, field) || isUserSetSObjectFieldAlias(*value, canonicalField) {
+				deleteRecordFieldAliases(&record, canonicalField)
+			}
 			record.ExplicitNulls[canonicalField] = true
 			recordFieldsByAlias[aliasKey] = canonicalField
 			recordExplicitFields[aliasKey] = explicitField
@@ -2645,11 +2711,19 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		} else {
 			aliasKey := sObjectRecordFieldAliasKey(canonicalField)
 			if previousField, exists := recordFieldsByAlias[aliasKey]; exists {
-				if recordExplicitFields[aliasKey] && !explicitField {
-					continue
-				}
-				if recordExplicitFields[aliasKey] && explicitField && !sObjectRecordFieldSourcePreferred(field, recordFieldSourceByAlias[aliasKey], canonicalField, vm.OrgNamespace()) {
-					continue
+				previousSource := recordFieldSourceByAlias[aliasKey]
+				if record.ExplicitNulls[previousField] {
+					previousUserSet := isUserSetSObjectFieldAlias(*value, previousSource) || isUserSetSObjectFieldAlias(*value, previousField)
+					if previousUserSet {
+						continue
+					}
+				} else {
+					if recordExplicitFields[aliasKey] && !explicitField {
+						continue
+					}
+					if recordExplicitFields[aliasKey] && explicitField && !sObjectRecordFieldSourcePreferred(field, previousSource, canonicalField, vm.OrgNamespace()) {
+						continue
+					}
 				}
 				if previousField != canonicalField {
 					delete(record.Fields, previousField)
@@ -2694,7 +2768,7 @@ func (vm *VM) parentRelationshipRecordFromValue(value Value) (storage.Record, bo
 		}
 		canonicalField := field
 		if definition.APIName != "" {
-			if resolved, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field); ok {
+			if resolved, ok := vm.resolveFieldName(definition, field); ok {
 				canonicalField = resolved
 			}
 		}
@@ -2708,7 +2782,7 @@ func (vm *VM) parentRelationshipRecordFromValue(value Value) (storage.Record, bo
 				} else if ok {
 					vm.storeParentRelationshipRecord(&record, definition, lookupField, field, parentRecord)
 				}
-				if _, hasLookup := record.GetField(lookupField); !hasLookup && !record.HasExplicitNull(lookupField) {
+				if !recordHasFieldAlias(record, lookupField) && !recordHasExplicitNullAlias(record, lookupField) {
 					if parentID := sObjectIDFromFields(fieldValue.Fields); parentID != "" {
 						record.Fields[lookupField] = storage.IDValue(parentID)
 					} else if parentID, err := vm.resolveParentRelationshipReferenceID(nil, fieldValue); err != nil {
@@ -2795,6 +2869,70 @@ func sObjectRecordFieldAliasKey(field string) string {
 	return strings.ToLower(storage.StripAnyNamespaceToken(field))
 }
 
+func recordHasFieldAlias(record storage.Record, field string) bool {
+	if _, ok := record.GetField(field); ok {
+		return true
+	}
+	if record.Fields == nil || strings.TrimSpace(field) == "" {
+		return false
+	}
+	wanted := sObjectRecordFieldAliasKey(field)
+	for key := range record.Fields {
+		if sObjectRecordFieldAliasKey(key) == wanted {
+			return true
+		}
+	}
+	return false
+}
+
+func recordHasExplicitNullAlias(record storage.Record, field string) bool {
+	if record.HasExplicitNull(field) {
+		return true
+	}
+	if record.ExplicitNulls == nil || strings.TrimSpace(field) == "" {
+		return false
+	}
+	wanted := sObjectRecordFieldAliasKey(field)
+	for key, value := range record.ExplicitNulls {
+		if value && sObjectRecordFieldAliasKey(key) == wanted {
+			return true
+		}
+	}
+	return false
+}
+
+func deleteRecordFieldAliases(record *storage.Record, field string) {
+	if record == nil || record.Fields == nil || strings.TrimSpace(field) == "" {
+		return
+	}
+	wanted := sObjectRecordFieldAliasKey(field)
+	for key := range record.Fields {
+		if sObjectRecordFieldAliasKey(key) == wanted {
+			delete(record.Fields, key)
+		}
+	}
+}
+
+func isUserSetSObjectFieldAlias(value Value, field string) bool {
+	if isUserSetSObjectField(value, field) {
+		return true
+	}
+	if value.Fields == nil || strings.TrimSpace(field) == "" {
+		return false
+	}
+	selected, ok := value.Fields[sobjectUserSetFieldsField]
+	if !ok || selected.Kind != ValueMap {
+		return false
+	}
+	wanted := sObjectRecordFieldAliasKey(field)
+	for _, key := range selected.MapKeys {
+		if key.Kind == ValueString && sObjectRecordFieldAliasKey(key.Text) == wanted {
+			return true
+		}
+	}
+	return false
+}
+
 func sObjectCanonicalFieldExplicitOnValue(value Value, field, canonicalField string) bool {
 	if !isExplicitSObjectField(value, canonicalField) {
 		return false
@@ -2826,7 +2964,7 @@ func (vm *VM) resolveSameBatchParentRelationships(records []storage.Record, targ
 			if !ok {
 				continue
 			}
-			if _, hasLookup := records[i].GetField(lookupField); hasLookup || records[i].HasExplicitNull(lookupField) {
+			if recordHasFieldAlias(records[i], lookupField) || recordHasExplicitNullAlias(records[i], lookupField) {
 				continue
 			}
 			parentID, err := vm.resolveParentRelationshipReferenceID(records, parent)
@@ -2859,7 +2997,7 @@ func (vm *VM) resolveParentRelationshipReferenceID(records []storage.Record, par
 			continue
 		}
 		canonicalField := fieldName
-		if resolved, ok := storage.ResolveFieldName(parentObject.Definition, vm.Org.Namespace, fieldName); ok {
+		if resolved, ok := vm.resolveFieldName(parentObject.Definition, fieldName); ok {
 			canonicalField = resolved
 		}
 		fieldDef, ok := parentObject.Definition.Fields[canonicalField]
@@ -3213,9 +3351,130 @@ func (vm *VM) vmValueFromRecord(record storage.Record) Value {
 			value.Fields[field] = Null
 		}
 	}
+	vm.collapseNullParentRelationshipObjects(&value, record.Object)
 	vm.hydrateParentLookupFields(value)
 	putSystemFields(value, record.System)
 	return value
+}
+
+func (vm *VM) collapseNullParentRelationshipObjects(value *Value, objectName string) {
+	if vm == nil || vm.Org == nil || value == nil || value.Kind != ValueObject || value.Fields == nil {
+		return
+	}
+	canonicalObject, ok := vm.resolveObjectName(objectName)
+	if !ok {
+		canonicalObject = objectName
+	}
+	object, ok := vm.Org.Objects[canonicalObject]
+	if !ok {
+		return
+	}
+	for _, relation := range object.Definition.Relations {
+		relationshipName := relation.ParentRelationship
+		if strings.TrimSpace(relationshipName) == "" {
+			continue
+		}
+		actual, relationship, ok := objectFieldValue(*value, relationshipName)
+		if !ok || relationship.Kind != ValueObject {
+			continue
+		}
+		parentType := ""
+		for _, parent := range relation.ParentObjects {
+			if resolved, ok := vm.resolveObjectName(parent); ok {
+				parentType = resolved
+				break
+			}
+			if strings.TrimSpace(parent) != "" {
+				parentType = parent
+				break
+			}
+		}
+		if parentType != "" {
+			vm.collapseNullParentRelationshipObjects(&relationship, parentType)
+		}
+		if parentRelationshipObjectIsMissing(relationship) {
+			typedNull := Null
+			if parentType != "" {
+				typedNull.Type = parentType
+				typedNull.Runtime = relationshipNullRuntime
+			}
+			value.Fields[actual] = typedNull
+			continue
+		}
+		value.Fields[actual] = relationship
+	}
+	for field, fieldValue := range value.Fields {
+		if isInternalSObjectField(field) || !customRelationshipLikeSOQLNameForVM(field) || fieldValue.Kind != ValueObject {
+			continue
+		}
+		parentType := fieldValue.Type
+		if parentType == "" || !vm.isSObjectLikeType(parentType) {
+			if inferred, ok := vm.parentRelationshipObjectType(canonicalObject, field); ok {
+				parentType = inferred
+			}
+		}
+		if parentType != "" {
+			vm.collapseNullParentRelationshipObjects(&fieldValue, parentType)
+		}
+		if parentRelationshipObjectIsMissing(fieldValue) {
+			typedNull := Null
+			if parentType != "" {
+				typedNull.Type = parentType
+				typedNull.Runtime = relationshipNullRuntime
+			}
+			value.Fields[field] = typedNull
+			continue
+		}
+		value.Fields[field] = fieldValue
+	}
+}
+
+func customRelationshipLikeSOQLNameForVM(name string) bool {
+	lower := strings.ToLower(strings.TrimSpace(name))
+	return strings.HasSuffix(lower, "__r") && strings.Count(lower, "__") >= 1
+}
+
+func parentRelationshipObjectIsMissing(value Value) bool {
+	if value.Kind != ValueObject || value.Fields == nil {
+		return false
+	}
+	if _, id, ok := objectFieldValue(value, "Id"); ok && id.Kind != ValueNull {
+		return false
+	}
+	seenField := false
+	for field, fieldValue := range value.Fields {
+		if isInternalSObjectField(field) {
+			continue
+		}
+		seenField = true
+		if fieldValue.Kind != ValueNull {
+			return false
+		}
+	}
+	return seenField
+}
+
+func parentRelationshipObjectIsMissingDeep(value Value) bool {
+	if value.Kind != ValueObject || value.Fields == nil {
+		return false
+	}
+	if _, id, ok := objectFieldValue(value, "Id"); ok && id.Kind != ValueNull {
+		return false
+	}
+	seenField := false
+	for field, fieldValue := range value.Fields {
+		if isInternalSObjectField(field) {
+			continue
+		}
+		seenField = true
+		if fieldValue.Kind == ValueObject && parentRelationshipObjectIsMissingDeep(fieldValue) {
+			continue
+		}
+		if fieldValue.Kind != ValueNull {
+			return false
+		}
+	}
+	return seenField
 }
 
 func (vm *VM) canonicalChildRelationshipName(parentObject, relationship string) string {
@@ -3675,12 +3934,12 @@ func coerceReadSObjectFieldRuntimeValue(value Value, field storage.Field) Value 
 	return coerceStoredSObjectFieldRuntimeValue(value, field)
 }
 
-func coerceRawRecordTypeNameFieldRuntimeValue(fieldName string, value Value) Value {
+func coerceRawRecordTypeDefaultTokenRuntimeValue(fieldName string, value Value) Value {
 	if value.Kind != ValueString {
 		return value
 	}
-	base := storage.StripAnyNamespaceToken(fieldName)
-	if !strings.EqualFold(base, "RecordTypeName__c") {
+	base := strings.ToLower(storage.StripAnyNamespaceToken(fieldName))
+	if !strings.Contains(base, "recordtype") {
 		return value
 	}
 	text := strings.TrimSpace(value.Text)
@@ -3786,6 +4045,9 @@ func soqlLiteral(value Value) string {
 			}
 		}
 		if idValue, ok := value.Fields["Id"]; ok {
+			if idValue.Kind == ValueNull {
+				return "null"
+			}
 			if idValue.Kind == ValueString {
 				return "'" + strings.ReplaceAll(idValue.Text, "'", "''") + "'"
 			}
@@ -4321,6 +4583,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result
 	}
 	for _, dmlResult := range results {
 		if !dmlResult.Success {
+			vm.addVisualforceDMLPageMessages(results)
 			return databaseDMLException(op, results)
 		}
 	}

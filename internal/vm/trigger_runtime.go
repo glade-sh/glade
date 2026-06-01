@@ -216,9 +216,27 @@ func (vm *VM) storeTriggerRecords(objectName string, records []storage.Record) e
 		if !ok {
 			return fmt.Errorf("record %s does not exist", record.ID)
 		}
-		record.System = stored.System
-		preserveReadOnlyCalculatedFields(object.Definition, &record, stored)
-		object.Records[storedID] = record.Clone()
+		merged := stored.Clone()
+		if merged.Fields == nil {
+			merged.Fields = make(map[string]storage.Value)
+		}
+		if merged.ExplicitNulls == nil {
+			merged.ExplicitNulls = make(map[string]bool)
+		}
+		for field, value := range record.Fields {
+			merged.Fields[field] = value.Clone()
+			delete(merged.ExplicitNulls, field)
+		}
+		for field, isNull := range record.ExplicitNulls {
+			if !isNull {
+				continue
+			}
+			delete(merged.Fields, field)
+			merged.ExplicitNulls[field] = true
+		}
+		merged.System = stored.System
+		preserveReadOnlyCalculatedFields(object.Definition, &merged, stored)
+		object.Records[storedID] = merged
 	}
 	vm.Org.Objects[objectName] = object
 	return nil
@@ -486,6 +504,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 					return nil, err
 				}
 				preserveMissingSystemFields(&record, records[i].System)
+				preserveMissingRecordFields(&record, records[i])
 				preserveMissingExplicitNulls(&record, records[i])
 				if records[i].ID != "" && record.ID == "" {
 					record.ID = records[i].ID
@@ -498,6 +517,30 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		}
 	}
 	return nil, nil
+}
+
+func preserveMissingRecordFields(record *storage.Record, original storage.Record) {
+	if record == nil || len(original.Fields) == 0 {
+		return
+	}
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	for field, value := range original.Fields {
+		if _, ok := record.Fields[field]; ok {
+			continue
+		}
+		if record.ExplicitNulls[field] {
+			continue
+		}
+		if _, ok := record.GetField(field); ok {
+			continue
+		}
+		if record.HasExplicitNull(field) {
+			continue
+		}
+		record.Fields[field] = value.Clone()
+	}
 }
 func (vm *VM) triggerObjectMatches(triggerObject, recordObject string) bool {
 	if strings.EqualFold(triggerObject, recordObject) {

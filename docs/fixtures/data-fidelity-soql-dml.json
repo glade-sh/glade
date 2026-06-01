@@ -209,7 +209,7 @@
     },
     {
       "path": "force-app/main/classes/QueryRowShapeFidelityTest.cls",
-      "content": "@isTest private class QueryRowShapeFidelityTest { @isTest static void serializedRowsIncludeAttributesUrl() { Account a = new Account(Name = 'Acme'); insert a; Account row = [SELECT Id, Name FROM Account WHERE Id = :a.Id]; String text = JSON.serialize(row); Object decoded = JSON.deserializeUntyped(text); Object attrs = decoded.get('attributes'); System.assertEquals('Account', attrs.get('type')); System.assertEquals('/services/data/v60.0/sobjects/Account/' + a.Id, attrs.get('url')); } }"
+      "content": "@isTest private class QueryRowShapeFidelityTest { @isTest static void serializedRowsIncludeAttributesUrl() { Account a = new Account(Name = 'Acme'); insert a; Account row = [SELECT Id, Name FROM Account WHERE Id = :a.Id]; String text = JSON.serialize(row); Object decoded = JSON.deserializeUntyped(text); Object attrs = decoded.get('attributes'); System.assertEquals('Account', attrs.get('type')); System.assertEquals('/services/data/v65.0/sobjects/Account/' + a.Id, attrs.get('url')); } }"
     },
     {
       "path": "force-app/main/classes/ValidationRuleFidelityTest.cls",

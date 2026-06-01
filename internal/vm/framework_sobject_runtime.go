@@ -2,7 +2,10 @@ package vm
 
 import (
 	"fmt"
+	"sort"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func (vm *VM) callFrameworkIDGeneratorGenerate(method Method, args []Value) (Value, bool) {
@@ -901,6 +904,7 @@ func (vm *VM) replayFrameworkSObjectUnitOfWorkTypeRegistrations(receiver Value) 
 		for key := range typesField.Map {
 			keys = append(keys, key)
 		}
+		sort.Strings(keys)
 	}
 	result := &Result{}
 	for _, key := range keys {
@@ -995,10 +999,16 @@ func frameworkSObjectUnitOfWorkRecordBuckets(receiver Value, fieldName string) [
 			seen[key] = true
 		}
 	}
-	for key, value := range field.Map {
+	keys := make([]string, 0, len(field.Map))
+	for key := range field.Map {
 		if seen[key] {
 			continue
 		}
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		value := field.Map[key]
 		appendBucket(key, value)
 	}
 	return out
@@ -1135,7 +1145,14 @@ func (vm *VM) updateFrameworkSObjectUnitOfWorkOutOfOrderRelationships(receiver V
 	}
 	updates := typedList("List<SObject>")
 	seen := make(map[string]int)
-	for _, bucketKey := range bucket.MapOrder {
+	bucketKeys := append([]string(nil), bucket.MapOrder...)
+	if len(bucketKeys) == 0 {
+		for key := range bucket.Map {
+			bucketKeys = append(bucketKeys, key)
+		}
+		sort.Strings(bucketKeys)
+	}
+	for _, bucketKey := range bucketKeys {
 		relationshipsValue, ok := bucket.Map[bucketKey]
 		if !ok || relationshipsValue.Kind != ValueObject {
 			continue
@@ -1189,17 +1206,51 @@ func (vm *VM) frameworkSObjectUnitOfWorkOutOfOrderUpdate(relationship Value) (Va
 	if err != nil {
 		return Null, false, err
 	}
-	current, _, err := vm.callSObjectMember(record, "get", []Value{relatedToField})
-	if err != nil {
-		return Null, false, err
-	}
-	if current.Equal(relatedID) {
-		return Null, false, nil
+	if persisted, hasField, hasRecord := vm.persistedSObjectFieldValue(record, fieldName); hasRecord {
+		if hasField && persisted.Equal(relatedID) {
+			return Null, false, nil
+		}
+	} else {
+		current, _, err := vm.callSObjectMember(record, "get", []Value{relatedToField})
+		if err != nil {
+			return Null, false, err
+		}
+		if current.Equal(relatedID) {
+			return Null, false, nil
+		}
 	}
 	updateRecord := Object(record.Type)
 	updateRecord.Fields["Id"] = recordID
 	setExplicitSObjectField(&updateRecord, fieldName, relatedID)
 	return updateRecord, true, nil
+}
+func (vm *VM) persistedSObjectFieldValue(record Value, fieldName string) (Value, bool, bool) {
+	if vm == nil || vm.Org == nil || record.Kind != ValueObject || strings.TrimSpace(fieldName) == "" {
+		return Null, false, false
+	}
+	idText, ok := comparableIDText(sObjectIDValue(record))
+	if !ok || idText == "" {
+		return Null, false, false
+	}
+	objectName := record.Type
+	if canonical, ok := vm.resolveObjectName(objectName); ok {
+		objectName = canonical
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return Null, false, false
+	}
+	_, stored, ok := storage.LookupRecordByID(object.Records, storage.ID(idText))
+	if !ok {
+		return Null, false, false
+	}
+	if value, ok := stored.GetField(fieldName); ok {
+		return vmValueFromStorage(value), true, true
+	}
+	if stored.HasExplicitNull(fieldName) {
+		return Null, true, true
+	}
+	return Null, false, true
 }
 func frameworkSObjectUnitOfWorkRecordLists(receiver Value, fieldName string) []Value {
 	field, ok := receiver.Fields[fieldName]
@@ -1216,10 +1267,16 @@ func frameworkSObjectUnitOfWorkRecordLists(receiver Value, fieldName string) []V
 			seen[key] = true
 		}
 	}
-	for key, value := range field.Map {
+	keys := make([]string, 0, len(field.Map))
+	for key := range field.Map {
 		if seen[key] {
 			continue
 		}
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		value := field.Map[key]
 		if list := frameworkSObjectUnitOfWorkRecordList(value); list.Kind == ValueList {
 			out = append(out, list)
 		}

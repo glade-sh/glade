@@ -351,6 +351,31 @@ func TestAliasSnapshotMutationPropagationRefreshesNestedCollectionAlias(t *testi
 	}
 }
 
+func TestAliasSnapshotMutationPropagationRefreshesStaleTopLevelObjectAlias(t *testing.T) {
+	staleItems := List(Object("Account"))
+	staleItems.Ref = 43
+	stale := Object("Controller")
+	stale.Ref = 42
+	stale.Fields["Items"] = staleItems
+
+	original := Object("Controller")
+	original.Ref = stale.Ref
+	updatedItems := List(Object("Account"))
+	updatedItems.Ref = 44
+	updated := original
+	updated.Fields["Items"] = updatedItems
+
+	machine := New(nil)
+	scope := map[string]Value{"controller": stale}
+	changed := machine.propagateAliasSnapshotMutationToScope(scope, snapshotAlias(updated), original, updated, false)
+	if !changed {
+		t.Fatal("stale top-level object alias was not refreshed")
+	}
+	if got := scope["controller"].Fields["Items"].Ref; got != updatedItems.Ref {
+		t.Fatalf("controller Items ref = %d, want %d", got, updatedItems.Ref)
+	}
+}
+
 func TestAliasSnapshotMutationPropagationKeepsRealDataChange(t *testing.T) {
 	original := Object("Account")
 	original.Ref = 42
@@ -1797,6 +1822,324 @@ System.assertEquals('1112223333', account.GET('Phone'));
 	}
 }
 
+func TestExecPropertyGetterChainUsesComputedGetterValue(t *testing.T) {
+	developerGetter, err := CompileAnonymous(`
+if (DeveloperName == null && MasterLabel != null) {
+    DeveloperName = MasterLabel.deleteWhitespace();
+}
+return DeveloperName;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	qualifiedGetter, err := CompileAnonymous(`
+if (QualifiedApiName == null) {
+    QualifiedApiName = DeveloperName;
+}
+return QualifiedApiName;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+MetadataName name = new MetadataName();
+name.MasterLabel = 'Large Burger';
+System.assertEquals('LargeBurger', name.QualifiedApiName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "MetadataName",
+		Fields: map[string]Field{
+			"MasterLabel": {Name: "MasterLabel", Type: "String"},
+			"DeveloperName": {Name: "DeveloperName", Type: "String", Getter: &Method{
+				Name: "MetadataName.getDeveloperName", ClassName: "MetadataName", ReturnType: "String", Program: developerGetter,
+			}},
+			"QualifiedApiName": {Name: "QualifiedApiName", Type: "String", Getter: &Method{
+				Name: "MetadataName.getQualifiedApiName", ClassName: "MetadataName", ReturnType: "String", Program: qualifiedGetter,
+			}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNestedAssignmentThroughGetterPreservesReturnedObjectAlias(t *testing.T) {
+	developerGetter, err := CompileAnonymous(`
+if (DeveloperName == null && MasterLabel != null) {
+    DeveloperName = MasterLabel.deleteWhitespace();
+}
+return DeveloperName;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	qualifiedGetter, err := CompileAnonymous(`
+if (QualifiedApiName == null) {
+    QualifiedApiName = DeveloperName;
+}
+return QualifiedApiName;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	masterLabelSetter, err := CompileAnonymous(`
+if (String.isNotBlank(MasterLabel) && MasterLabel != value && String.isBlank(Id)) {
+    DeveloperName = null;
+}
+MasterLabel = value;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cardGetter, err := CompileAnonymous(`return (MDT_Card)Record;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recordGetter, err := CompileAnonymous(`
+if (Record != null) {
+    return Record;
+}
+Record = new MDT_Card();
+return Record;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Controller controller = new Controller();
+controller.Card.MasterLabel = 'Large Burger';
+System.assertEquals('LargeBurger', controller.Card.QualifiedApiName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{
+			Name: "MDT_Base",
+			Fields: map[string]Field{
+				"Id": {Name: "Id", Type: "String"},
+				"MasterLabel": {Name: "MasterLabel", Type: "String", Setter: &Method{
+					Name: "MDT_Base.setMasterLabel", ClassName: "MDT_Base", Params: []Param{{Name: "value", Type: "String"}}, Program: masterLabelSetter,
+				}},
+				"DeveloperName": {Name: "DeveloperName", Type: "String", Getter: &Method{
+					Name: "MDT_Base.getDeveloperName", ClassName: "MDT_Base", ReturnType: "String", Program: developerGetter,
+				}},
+				"QualifiedApiName": {Name: "QualifiedApiName", Type: "String", Getter: &Method{
+					Name: "MDT_Base.getQualifiedApiName", ClassName: "MDT_Base", ReturnType: "String", Program: qualifiedGetter,
+				}},
+			},
+		},
+		{Name: "MDT_Card", SuperClass: "MDT_Base"},
+		{
+			Name: "Controller",
+			Fields: map[string]Field{
+				"Record": {Name: "Record", Type: "MDT_Base", Getter: &Method{
+					Name: "Controller.getRecord", ClassName: "Controller", ReturnType: "MDT_Base", Program: recordGetter,
+				}},
+				"Card": {Name: "Card", Type: "MDT_Card", Getter: &Method{
+					Name: "Controller.getCard", ClassName: "Controller", ReturnType: "MDT_Card", Program: cardGetter,
+				}},
+			},
+		},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEnhancedForMutatesSObjectsFromGetterReturnedList(t *testing.T) {
+	rowsGetter, err := CompileAnonymous(`return Rows;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	updateRows, err := CompileAnonymous(`
+Rows = null;
+Rows = new List<Account>{ new Account(Name = 'Acme') };
+for (Account row : getRows()) {
+    row.Name = null;
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runHarness, err := CompileAnonymous(`
+controller = new Controller();
+controller.Rows = new List<Account>{ new Account(Name = 'Old') };
+System.runAs(new User(Id = '005000000000999')) {
+    Test.startTest();
+    controller.updateRows();
+    System.assertEquals(null, controller.Rows[0].Name);
+    Test.stopTest();
+    System.assertEquals(null, controller.Rows[0].Name);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`Harness.run();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Controller",
+		Fields: map[string]Field{
+			"Rows": {Name: "Rows", Type: "List<Account>", Getter: &Method{
+				Name: "Controller.getRows", ClassName: "Controller", ReturnType: "List<Account>", Program: rowsGetter,
+			}},
+		},
+		Methods: map[string]Method{
+			"getRows":    {Name: "Controller.getRows", ClassName: "Controller", ReturnType: "List<Account>", Program: rowsGetter},
+			"updateRows": {Name: "Controller.updateRows", ClassName: "Controller", Program: updateRows},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Harness",
+		StaticFields: map[string]Field{
+			"controller": {Name: "controller", Type: "Controller", Static: true},
+		},
+		Methods: map[string]Method{
+			"run": {Name: "Harness.run", ClassName: "Harness", IsStatic: true, Program: runHarness},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNestedAssignmentThroughMethodReturnedFieldAlias(t *testing.T) {
+	getAccount, err := CompileAnonymous(`return ActiveAccount;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Controller controller = new Controller();
+controller.ActiveAccount = new Account(ShippingCountry = 'United States', ShippingCountryCode = 'US');
+controller.getActiveAccount().ShippingCountry = null;
+System.assertEquals(null, controller.ActiveAccount.ShippingCountry);
+System.assertEquals(null, controller.ActiveAccount.ShippingCountryCode);
+System.assertEquals(null, controller.ActiveAccount.get('ShippingCountry'));
+System.assertEquals(null, controller.ActiveAccount.get('ShippingCountryCode'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Controller",
+		Fields: map[string]Field{
+			"ActiveAccount": {Name: "ActiveAccount", Type: "Account"},
+		},
+		Methods: map[string]Method{
+			"getActiveAccount": {Name: "Controller.getActiveAccount", ClassName: "Controller", ReturnType: "Account", Program: getAccount},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPropertyGetterRecomputesAfterReturnedSObjectMutation(t *testing.T) {
+	getAddress, err := CompileAnonymous(`
+Addr address = new Addr();
+address.Country = (String) ActiveAccount.get('ShippingCountry');
+ShippingAddress = address;
+return ShippingAddress;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	getAccount, err := CompileAnonymous(`return ActiveAccount;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	isAddressCountryNull, err := CompileAnonymous(`return ShippingAddress.Country == null;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Controller controller = new Controller();
+controller.ActiveAccount = new Account(ShippingCountry = 'United States');
+System.assertEquals('United States', controller.ShippingAddress.Country);
+controller.getActiveAccount().ShippingCountry = null;
+System.assertEquals(null, controller.ActiveAccount.get('ShippingCountry'));
+System.assertEquals(null, controller.ShippingAddress.Country);
+System.assertEquals(true, controller.isAddressCountryNull());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Addr",
+		Fields: map[string]Field{
+			"Country": {Name: "Country", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Controller",
+		Fields: map[string]Field{
+			"ActiveAccount": {Name: "ActiveAccount", Type: "Account"},
+			"ShippingAddress": {
+				Name:      "ShippingAddress",
+				Type:      "Addr",
+				Property:  true,
+				Getter:    &Method{Name: "Controller.ShippingAddress.get", ClassName: "Controller", ReturnType: "Addr", Program: getAddress},
+				HasSetter: true,
+			},
+		},
+		Methods: map[string]Method{
+			"getActiveAccount":     {Name: "Controller.getActiveAccount", ClassName: "Controller", ReturnType: "Account", Program: getAccount},
+			"isAddressCountryNull": {Name: "Controller.isAddressCountryNull", ClassName: "Controller", ReturnType: "Boolean", Program: isAddressCountryNull},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNullAddressCountryClearsCountryCodeAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(ShippingCountry = 'United States', ShippingCountryCode = 'US');
+account.ShippingCountry = null;
+System.assertEquals(null, account.ShippingCountry);
+System.assertEquals(null, account.ShippingCountryCode);
+
+Account putAccount = new Account();
+putAccount.put('ShippingCountryCode', 'US');
+putAccount.ShippingCountry = null;
+System.assertEquals(null, putAccount.get('ShippingCountryCode'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecOverloadResolutionUsesCollectionElementType(t *testing.T) {
 	listObjectProgram, err := CompileAnonymous(`return values.size();`)
 	if err != nil {
@@ -2714,25 +3057,25 @@ System.assertEquals('User', references[1].getDescribe().getName());
 func TestExecNamespacedSObjectFieldMapKeysStayDistinct(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<Schema.SObjectField, Object> values = new Map<Schema.SObjectField, Object>();
-values.put(znu__Product__c.znu__RevenueGLAccount__c, 'gl');
-values.put(znu__Product__c.znu__Entity__c, 'entity');
+values.put(pkg__Product__c.pkg__RevenueGLAccount__c, 'gl');
+values.put(pkg__Product__c.pkg__Entity__c, 'entity');
 System.assertEquals(2, values.size(), String.valueOf(values.keySet()));
-System.assertEquals('gl', values.get(znu__Product__c.znu__RevenueGLAccount__c));
-System.assertEquals('entity', values.get(znu__Product__c.znu__Entity__c));
+System.assertEquals('gl', values.get(pkg__Product__c.pkg__RevenueGLAccount__c));
+System.assertEquals('entity', values.get(pkg__Product__c.pkg__Entity__c));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := storage.NewOrgState()
-	org.Namespace = "znu"
-	org.Objects["znu__Product__c"] = storage.ObjectState{
+	org.Namespace = "pkg"
+	org.Objects["pkg__Product__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "znu__Product__c",
+			APIName:   "pkg__Product__c",
 			KeyPrefix: "a12",
 			Fields: map[string]storage.Field{
-				"znu__RevenueGLAccount__c": {APIName: "znu__RevenueGLAccount__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__GLAccount__c"}},
-				"znu__Entity__c":           {APIName: "znu__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__Entity__c"}},
+				"pkg__RevenueGLAccount__c": {APIName: "pkg__RevenueGLAccount__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__GLAccount__c"}},
+				"pkg__Entity__c":           {APIName: "pkg__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__Entity__c"}},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -2745,32 +3088,32 @@ System.assertEquals('entity', values.get(znu__Product__c.znu__Entity__c));
 
 func TestExecNamespacedSObjectFieldSetRemoveAllMatchesEquivalentTokens(t *testing.T) {
 	program, err := CompileAnonymous(`
-Map<String, Schema.SObjectField> described = znu__Product__c.SObjectType.getDescribe().fields.getMap();
+Map<String, Schema.SObjectField> described = pkg__Product__c.SObjectType.getDescribe().fields.getMap();
 Map<Schema.SObjectField, Object> defaults = new Map<Schema.SObjectField, Object>{
-  described.get('znu__RevenueGLAccount__c') => 'default gl',
-  described.get('znu__Entity__c') => 'default entity'
+  described.get('pkg__RevenueGLAccount__c') => 'default gl',
+  described.get('pkg__Entity__c') => 'default entity'
 };
 Map<Schema.SObjectField, Object> custom = new Map<Schema.SObjectField, Object>{
-  znu__Product__c.znu__RevenueGLAccount__c => 'custom gl'
+  pkg__Product__c.pkg__RevenueGLAccount__c => 'custom gl'
 };
 Set<Schema.SObjectField> fields = defaults.keySet().clone();
 fields.removeAll(custom.keySet());
-System.assertEquals(false, fields.contains(znu__Product__c.znu__RevenueGLAccount__c), String.valueOf(fields));
-System.assertEquals(true, fields.contains(znu__Product__c.znu__Entity__c), String.valueOf(fields));
+System.assertEquals(false, fields.contains(pkg__Product__c.pkg__RevenueGLAccount__c), String.valueOf(fields));
+System.assertEquals(true, fields.contains(pkg__Product__c.pkg__Entity__c), String.valueOf(fields));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := storage.NewOrgState()
-	org.Namespace = "znu"
-	org.Objects["znu__Product__c"] = storage.ObjectState{
+	org.Namespace = "pkg"
+	org.Objects["pkg__Product__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "znu__Product__c",
+			APIName:   "pkg__Product__c",
 			KeyPrefix: "a12",
 			Fields: map[string]storage.Field{
-				"znu__RevenueGLAccount__c": {APIName: "znu__RevenueGLAccount__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__GLAccount__c"}},
-				"znu__Entity__c":           {APIName: "znu__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__Entity__c"}},
+				"pkg__RevenueGLAccount__c": {APIName: "pkg__RevenueGLAccount__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__GLAccount__c"}},
+				"pkg__Entity__c":           {APIName: "pkg__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__Entity__c"}},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -2784,13 +3127,13 @@ System.assertEquals(true, fields.contains(znu__Product__c.znu__Entity__c), Strin
 func TestExecBuildNamespacedSObjectFromDefaultAndCustomFieldMaps(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<Schema.SObjectField, Object> defaults = new Map<Schema.SObjectField, Object>{
-  znu__Product__c.znu__RevenueGLAccount__c => 'default gl',
-  znu__Product__c.znu__Entity__c => 'default entity'
+  pkg__Product__c.pkg__RevenueGLAccount__c => 'default gl',
+  pkg__Product__c.pkg__Entity__c => 'default entity'
 };
 Map<Schema.SObjectField, Object> custom = new Map<Schema.SObjectField, Object>();
-custom.put(znu__Product__c.znu__RevenueGLAccount__c, 'custom gl');
-custom.put(znu__Product__c.znu__Entity__c, 'custom entity');
-SObject instance = znu__Product__c.SObjectType.newSObject(null, true);
+custom.put(pkg__Product__c.pkg__RevenueGLAccount__c, 'custom gl');
+custom.put(pkg__Product__c.pkg__Entity__c, 'custom entity');
+SObject instance = pkg__Product__c.SObjectType.newSObject(null, true);
 Set<Schema.SObjectField> defaultFields = defaults.keySet().clone();
 defaultFields.removeAll(custom.keySet());
 for (Schema.SObjectField field : defaultFields) {
@@ -2799,22 +3142,22 @@ for (Schema.SObjectField field : defaultFields) {
 for (Schema.SObjectField field : custom.keySet()) {
   instance.put(field, custom.get(field));
 }
-System.assertEquals('custom gl', instance.get(znu__Product__c.znu__RevenueGLAccount__c), String.valueOf(instance.getPopulatedFieldsAsMap()));
-System.assertEquals('custom entity', instance.get(znu__Product__c.znu__Entity__c), String.valueOf(instance.getPopulatedFieldsAsMap()));
+System.assertEquals('custom gl', instance.get(pkg__Product__c.pkg__RevenueGLAccount__c), String.valueOf(instance.getPopulatedFieldsAsMap()));
+System.assertEquals('custom entity', instance.get(pkg__Product__c.pkg__Entity__c), String.valueOf(instance.getPopulatedFieldsAsMap()));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := storage.NewOrgState()
-	org.Namespace = "znu"
-	org.Objects["znu__Product__c"] = storage.ObjectState{
+	org.Namespace = "pkg"
+	org.Objects["pkg__Product__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "znu__Product__c",
+			APIName:   "pkg__Product__c",
 			KeyPrefix: "a12",
 			Fields: map[string]storage.Field{
-				"znu__RevenueGLAccount__c": {APIName: "znu__RevenueGLAccount__c", Type: storage.FieldString},
-				"znu__Entity__c":           {APIName: "znu__Entity__c", Type: storage.FieldString},
+				"pkg__RevenueGLAccount__c": {APIName: "pkg__RevenueGLAccount__c", Type: storage.FieldString},
+				"pkg__Entity__c":           {APIName: "pkg__Entity__c", Type: storage.FieldString},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -3352,9 +3695,9 @@ System.assertEquals('Lookup__c', fieldDescribe.getLocalName());
 
 func TestExecForeignNamespacedSObjectDescribeNameKeepsNamespace(t *testing.T) {
 	program, err := CompileAnonymous(`
-znu__OrderItem__c record = new znu__OrderItem__c();
+pkg__OrderItem__c record = new pkg__OrderItem__c();
 Schema.DescribeSObjectResult describe = record.getSObjectType().getDescribe();
-System.assertEquals('znu__OrderItem__c', describe.getName());
+System.assertEquals('pkg__OrderItem__c', describe.getName());
 System.assertEquals('OrderItem__c', describe.getLocalName());
 `)
 	if err != nil {
@@ -3362,9 +3705,9 @@ System.assertEquals('OrderItem__c', describe.getLocalName());
 	}
 	org := storage.NewOrgState()
 	org.Namespace = "namz"
-	org.Objects["znu__OrderItem__c"] = storage.ObjectState{
+	org.Objects["pkg__OrderItem__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "znu__OrderItem__c",
+			APIName: "pkg__OrderItem__c",
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
@@ -4497,29 +4840,29 @@ System.assertEquals(null, fields.get('InexistentField__c'));
 
 func TestExecSObjectFieldMapSynthesizesMissingCustomRelationshipOnPartialCustomObject(t *testing.T) {
 	program, err := CompileAnonymous(`
-Map<String, Schema.SObjectField> fields = znu__Product__c.SObjectType.getDescribe().fields.getMap();
-Schema.DescribeFieldResult eventField = fields.get('znu__Event2__r').getDescribe();
-System.assertEquals('znu__Event2__c', eventField.getName());
-System.assertEquals('znu__Event2__r', eventField.getRelationshipName());
+Map<String, Schema.SObjectField> fields = pkg__Product__c.SObjectType.getDescribe().fields.getMap();
+Schema.DescribeFieldResult eventField = fields.get('pkg__Event2__r').getDescribe();
+System.assertEquals('pkg__Event2__c', eventField.getName());
+System.assertEquals('pkg__Event2__r', eventField.getRelationshipName());
 System.assertEquals(1, eventField.getReferenceTo().size());
-System.assertEquals('znu__Event__c', eventField.getReferenceTo()[0].getDescribe().getName());
+System.assertEquals('pkg__Event__c', eventField.getReferenceTo()[0].getDescribe().getName());
 	`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	org.Objects["znu__Product__c"] = storage.ObjectState{
+	org.Objects["pkg__Product__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "znu__Product__c",
+			APIName: "pkg__Product__c",
 			Fields: map[string]storage.Field{
 				"Name": {APIName: "Name", Type: storage.FieldString},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
-	org.Objects["znu__Event__c"] = storage.ObjectState{
+	org.Objects["pkg__Event__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "znu__Event__c",
+			APIName: "pkg__Event__c",
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
@@ -4690,6 +5033,55 @@ System.assertEquals(Account.Name, mapping.checklistNotes);
 			"checklistNotes": {Name: "checklistNotes", Type: "Schema.SObjectField", Property: true},
 		},
 	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInheritedFieldAssignmentIsCaseInsensitiveInInstanceMethod(t *testing.T) {
+	program, err := CompileAnonymous(`
+WidgetInfo model = new WidgetInfo();
+Datetime stamp = Datetime.newInstance(2025, 6, 1, 12, 0, 0);
+model.lastUpdatedAt = stamp;
+System.assertEquals(stamp, model.toRecord().LastUpdatedAt__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	toRecordProgram, err := CompileAnonymous(`
+return new Widget__c(LastUpdatedAt__c = this.LastUpdatedAt);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Widget__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Widget__c",
+				Fields: map[string]storage.Field{
+					"LastUpdatedAt__c": {APIName: "LastUpdatedAt__c", Type: storage.FieldDateTime},
+				},
+			},
+			Records: make(map[storage.ID]storage.Record),
+		},
+	}}
+	machine := New(nil)
+	machine.Org = &org
+	if err := machine.RegisterClass(Class{
+		Name: "BaseInfo",
+		Fields: map[string]Field{
+			"LastUpdatedAt": {Name: "LastUpdatedAt", Type: "DateTime"},
+			"lastUpdatedAt": {Name: "lastUpdatedAt", Type: "DateTime"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "WidgetInfo", SuperClass: "BaseInfo"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "WidgetInfo.toRecord", ClassName: "WidgetInfo", ReturnType: "Widget__c", Program: toRecordProgram}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {
@@ -4956,6 +5348,40 @@ c.account = [SELECT Id FROM Account];
 	registerAssignmentTargetClasses(t, machine)
 	if _, err := machine.Execute(multiRowsProgram); err == nil || !strings.Contains(err.Error(), "List has more than 1 row") {
 		t.Fatalf("multi-row dotted assignment err = %v, want List has more than 1 row", err)
+	}
+}
+
+func TestExecSOQLReferenceFieldInvalidStringReturnsNoRows(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Contact> contacts = Database.query('SELECT Id FROM Contact WHERE AccountId IN (\'not-an-id\')');
+System.assertEquals(0, contacts.size());
+Boolean caught = false;
+try {
+  Database.query('SELECT Id FROM Contact WHERE Id IN (\'not-an-id\')');
+} catch (QueryException e) {
+  caught = true;
+}
+System.assertEquals(true, caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Contact", Fields: map[string]storage.Field{
+			"Id":        {APIName: "Id", Type: storage.FieldID},
+			"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+		}},
+		Records: map[storage.ID]storage.Record{
+			"003000000000001": {ID: "003000000000001", Object: "Contact", Fields: map[string]storage.Value{
+				"AccountId": storage.IDValue("001000000000001"),
+			}},
+		},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

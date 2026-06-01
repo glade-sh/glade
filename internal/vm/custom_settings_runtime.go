@@ -133,19 +133,6 @@ func (vm *VM) customDataGetInstance(objectName string, definition storage.Object
 		return storage.Record{}, false, nil
 	}
 	if len(args) == 1 && args[0].Kind == ValueNull {
-		if kind == "custom setting" && !strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
-			args = nil
-		} else {
-			return storage.Record{}, false, nil
-		}
-	}
-	if len(args) == 0 {
-		for _, record := range sortedCustomDataRecords(object.Records, definition, kind, vm.Org.Namespace) {
-			if record.System.IsDeleted {
-				continue
-			}
-			return record, true, nil
-		}
 		return storage.Record{}, false, nil
 	}
 	if len(args) != 1 || (args[0].Kind != ValueString && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {

@@ -37,7 +37,7 @@ func (c *childRelationshipCache) load(key string) ([]Value, bool) {
 	if !ok {
 		return nil, false
 	}
-	return append([]Value(nil), value...), true
+	return cloneChildRelationshipValues(value), true
 }
 
 func (c *childRelationshipCache) store(key string, value []Value) {
@@ -45,8 +45,40 @@ func (c *childRelationshipCache) store(key string, value []Value) {
 		return
 	}
 	c.mu.Lock()
-	c.entries[key] = append([]Value(nil), value...)
+	c.entries[key] = cloneChildRelationshipValues(value)
 	c.mu.Unlock()
+}
+
+func cloneChildRelationshipValues(values []Value) []Value {
+	if len(values) == 0 {
+		return nil
+	}
+	out := make([]Value, len(values))
+	for i, value := range values {
+		out[i] = cloneChildRelationshipValue(value)
+	}
+	return out
+}
+
+func cloneChildRelationshipValue(value Value) Value {
+	out := value
+	if value.Fields == nil {
+		return out
+	}
+	out.Fields = make(map[string]Value, len(value.Fields))
+	for name, fieldValue := range value.Fields {
+		if fieldValue.Kind == ValueObject && fieldValue.Fields != nil {
+			copied := fieldValue
+			copied.Fields = make(map[string]Value, len(fieldValue.Fields))
+			for nestedName, nestedValue := range fieldValue.Fields {
+				copied.Fields[nestedName] = nestedValue
+			}
+			out.Fields[name] = copied
+			continue
+		}
+		out.Fields[name] = fieldValue
+	}
+	return out
 }
 
 func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinition) Value {
@@ -719,11 +751,12 @@ func (vm *VM) fieldSetMapValue(objectName string, definition storage.ObjectDefin
 		return fieldSets
 	}
 	for _, fieldSet := range vm.Org.Metadata.FieldSets {
-		if !metadataObjectNameMatches(vm.Org.Namespace, objectName, fieldSet.ObjectName) {
+		namespace := fieldSetNamespace(vm.Org.Namespace, fieldSet)
+		if !metadataObjectNameMatches(namespace, objectName, fieldSet.ObjectName) {
 			continue
 		}
 		value := vm.fieldSetValue(objectName, definition, fieldSet)
-		for _, alias := range fieldSetMapAliases(vm.Org.Namespace, fieldSet.Name) {
+		for _, alias := range fieldSetMapAliases(namespace, fieldSet.Name) {
 			m.Map[mapKey(String(alias))] = value
 		}
 	}
@@ -760,10 +793,10 @@ func fieldSetMapAliases(namespace, name string) []string {
 func (vm *VM) fieldSetValue(objectName string, definition storage.ObjectDefinition, fieldSet storage.FieldSetMetadata) Value {
 	value := Object("Schema.FieldSet")
 	defaultNamespace := ""
-	if vm.Org != nil {
-		defaultNamespace = strings.TrimSpace(vm.Org.Namespace)
+	if vm != nil && vm.Org != nil {
+		defaultNamespace = vm.Org.Namespace
 	}
-	namespace, localName := fieldSetNamespaceAndLocalName(defaultNamespace, fieldSet.Name)
+	namespace, localName := fieldSetNamespaceAndLocalName(fieldSetNamespace(defaultNamespace, fieldSet), fieldSet.Name)
 	value.Fields["name"] = String(localName)
 	if namespace == "" {
 		value.Fields["namespace"] = Null
@@ -782,6 +815,13 @@ func (vm *VM) fieldSetValue(objectName string, definition storage.ObjectDefiniti
 	}
 	value.Fields["fields"] = List(members...)
 	return value
+}
+
+func fieldSetNamespace(defaultNamespace string, fieldSet storage.FieldSetMetadata) string {
+	if namespace := strings.TrimSpace(fieldSet.Namespace); namespace != "" {
+		return namespace
+	}
+	return strings.TrimSpace(defaultNamespace)
 }
 
 func fieldSetNamespaceAndLocalName(defaultNamespace, name string) (string, string) {
@@ -1133,11 +1173,11 @@ func describeFieldReferenceTargets(definition storage.ObjectDefinition, field st
 }
 
 func describeProviderIDAllowsUserTarget(definition storage.ObjectDefinition, field storage.Field) bool {
-	apiName := strings.ToLower(strings.TrimSpace(field.APIName))
-	if strings.Contains(apiName, "provider_id") {
+	if describeProviderIDStem(field.APIName) != "" {
 		return true
 	}
-	if !strings.EqualFold(field.APIName, "Provider__c") {
+	fieldStem := normalizedCustomReferenceStem(field.APIName)
+	if fieldStem == "" {
 		return false
 	}
 	for name, candidate := range definition.Fields {
@@ -1145,11 +1185,29 @@ func describeProviderIDAllowsUserTarget(definition storage.ObjectDefinition, fie
 		if strings.TrimSpace(candidateName) == "" {
 			candidateName = name
 		}
-		if strings.Contains(strings.ToLower(strings.TrimSpace(candidateName)), "provider_id") {
+		candidateStem := describeProviderIDStem(candidateName)
+		if candidateStem != "" && candidateStem == fieldStem+"id" {
 			return true
 		}
 	}
 	return false
+}
+
+func describeProviderIDStem(name string) string {
+	stem := normalizedCustomReferenceStem(name)
+	if strings.Contains(stem, "providerid") {
+		return stem
+	}
+	return ""
+}
+
+func normalizedCustomReferenceStem(name string) string {
+	base := storage.StripAnyNamespaceToken(strings.TrimSpace(name))
+	base = strings.TrimSuffix(base, "__c")
+	base = strings.TrimSuffix(base, "__C")
+	base = strings.ToLower(base)
+	base = strings.ReplaceAll(base, "_", "")
+	return base
 }
 
 func appendUniqueStringFold(values []string, value string) []string {

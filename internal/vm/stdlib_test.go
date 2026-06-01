@@ -4064,10 +4064,10 @@ System.assertEquals(true, Test.Database.hasRecords());
 }
 
 func TestExecProjectStaticResourceSOQL(t *testing.T) {
-	root := filepath.Join("..", "..", "example-projects", "src-nmb-nutpl-develop")
-	if _, err := os.Stat(filepath.Join(root, "sfdx-project.json")); err != nil {
-		t.Skip("example project is not available")
-	}
+	root := t.TempDir()
+	writeVMTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeVMTestFile(t, filepath.Join(root, "force-app/main/default/staticresources/resetcss.resource"), "body")
+	writeVMTestFile(t, filepath.Join(root, "force-app/main/default/staticresources/resetcss.resource-meta.xml"), `<StaticResource><contentType>text/css</contentType><cacheControl>Public</cacheControl></StaticResource>`)
 	p, err := project.Load(root)
 	if err != nil {
 		t.Fatal(err)
@@ -4095,6 +4095,16 @@ System.assertEquals('resetcss', resources[0].Name);
 	machine := New(nil)
 	machine.Org = &org
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func writeVMTestFile(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
 }

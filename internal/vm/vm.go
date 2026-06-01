@@ -2743,7 +2743,13 @@ func pageReferenceParameters(rawURL string) Value {
 
 func pageReferenceURL(page Value) Value {
 	raw, ok := page.Fields["url"]
-	if !ok || raw.Kind != ValueString {
+	if !ok {
+		return String("")
+	}
+	if raw.Kind == ValueNull {
+		return raw
+	}
+	if raw.Kind != ValueString {
 		return String("")
 	}
 	params, ok := page.Fields["parameters"]

@@ -126,6 +126,9 @@ func (vm *VM) soqlCountsQueryLimit(query soql.Query) bool {
 	if vm == nil || vm.Org == nil {
 		return true
 	}
+	if vm.triggerDepth > 0 {
+		return false
+	}
 	return !storage.IsCustomMetadataObject(*vm.Org, query.Object)
 }
 
@@ -1077,10 +1080,13 @@ func (vm *VM) validateSOQLIDLiteralCondition(definition storage.ObjectDefinition
 	}
 	canonicalField, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, condition.Field)
 	if !ok {
-		return nil
+		if !strings.EqualFold(strings.TrimSpace(condition.Field), "Id") {
+			return nil
+		}
+		canonicalField = "Id"
 	}
-	field := definition.Fields[canonicalField]
-	if field.Type != storage.FieldID && field.Type != storage.FieldReference {
+	field, hasField := definition.Fields[canonicalField]
+	if !strings.EqualFold(canonicalField, "Id") && (!hasField || field.Type != storage.FieldID) {
 		return nil
 	}
 	validate := func(value storage.Value) error {

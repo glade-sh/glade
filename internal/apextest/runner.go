@@ -851,6 +851,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 	machine.SetOrg(&setupOrg)
 	machine.SetContext(ctx)
 	machine.EnableTestContext()
+	machine.SetCurrentPageURLNull()
 	for i, setup := range setups {
 		if err := ctx.Err(); err != nil {
 			return setupOrg, machine.DeterministicRandomState(), err, false
@@ -925,6 +926,7 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 	}
 	machine.SetIsolationJournal(journal)
 	machine.EnableTestContext()
+	machine.SetCurrentPageURLNull()
 	machine.SetTestSeeAllData(testCase.SeeAllData)
 	machine.ResetLimits()
 	result, err := machine.ExecuteInClass(invokeProgram, testCase.ClassName)
@@ -1424,6 +1426,9 @@ func qualifyNestedTypeName(owner, name string, known map[string]bool) string {
 
 func attachPropertyAccessors(field *vm.Field, className, file string, member typesys.MemberSymbol, source string) {
 	for _, accessor := range member.Accessors {
+		if accessor.Kind == "set" {
+			field.HasSetter = true
+		}
 		if !accessor.HasBody {
 			continue
 		}
@@ -1558,7 +1563,7 @@ func compileTestInvokePrograms(cases []TestCase) (map[string]ir.Program, map[str
 	errs := make(map[string]error)
 	for _, testCase := range cases {
 		key := testCaseKey(testCase)
-		program, err := vm.CompileAnonymous(testCase.ClassName + "." + testCase.MethodName + "();")
+		program, err := vm.CompileAnonymous(testCase.MethodName + "();")
 		if err != nil {
 			errs[key] = err
 			continue
@@ -1606,6 +1611,7 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 				automation.ApplyToOrg(&org, automationIndex)
 			}
 			applyProjectReferencedRecordTypes(&org, p)
+			applyManagedDependencyReferencedRecordTypes(&org, p)
 			applyProjectDataRelationshipReferences(&org, p)
 		}
 	}
@@ -1624,7 +1630,6 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 		applyProjectPermissionSetGroupRecords(&org, *loadedProject)
 	}
 	applyReferencedSyntheticFieldSets(&org, index, caches...)
-	applyInferredProductDownloadURLFormulas(&org)
 	normalizeOrgKeyPrefixes(&org)
 	return org
 }
@@ -1973,6 +1978,20 @@ type syntheticFieldSetReference struct {
 
 func referencedSyntheticFieldSetReferences(org *storage.OrgState, index typesys.Index, caches ...sourceCache) []syntheticFieldSetReference {
 	cache := sourceCacheFor(caches)
+	fileHasNonTestType := make(map[string]bool)
+	fileHasTestTopLevelType := make(map[string]bool)
+	for _, typ := range index.Types {
+		if typ.File == "" {
+			continue
+		}
+		if typ.IsTest && typeNameMatchesFileBase(typ.Name, typ.File) {
+			fileHasTestTopLevelType[typ.File] = true
+			continue
+		}
+		if !typ.IsTest {
+			fileHasNonTestType[typ.File] = true
+		}
+	}
 	seenFiles := make(map[string]bool)
 	seenRefs := make(map[string]bool)
 	var refs []syntheticFieldSetReference
@@ -1981,6 +2000,9 @@ func referencedSyntheticFieldSetReferences(org *storage.OrgState, index typesys.
 			continue
 		}
 		seenFiles[typ.File] = true
+		if fileHasTestTopLevelType[typ.File] || !fileHasNonTestType[typ.File] {
+			continue
+		}
 		source, err := cache.read(typ.File)
 		if err != nil {
 			continue
@@ -2111,6 +2133,16 @@ func metadataNameAliases(namespace, name string) []string {
 	return aliases
 }
 
+func typeNameMatchesFileBase(typeName, file string) bool {
+	base := strings.TrimSuffix(filepath.Base(file), filepath.Ext(file))
+	if base == "" {
+		return false
+	}
+	parts := strings.Split(typeName, ".")
+	shortName := parts[len(parts)-1]
+	return strings.EqualFold(shortName, base)
+}
+
 func hasPrefixFold(value, prefix string) bool {
 	return len(value) >= len(prefix) && strings.EqualFold(value[:len(prefix)], prefix)
 }
@@ -2137,9 +2169,22 @@ func syntheticFieldSetMembers(definition storage.ObjectDefinition, fieldSetName 
 	sort.Strings(fieldNames)
 	members := make([]storage.FieldSetMemberMetadata, 0, len(fieldNames))
 	for _, fieldName := range fieldNames {
-		members = append(members, storage.FieldSetMemberMetadata{Field: fieldName})
+		field := definition.Fields[fieldName]
+		members = append(members, storage.FieldSetMemberMetadata{
+			Field:    fieldName,
+			Required: syntheticFieldSetMemberRequired(definition.APIName, fieldName, field),
+		})
 	}
 	return members
+}
+
+func syntheticFieldSetMemberRequired(objectName, fieldName string, field storage.Field) bool {
+	if field.Required {
+		return true
+	}
+	return strings.EqualFold(objectName, "Account") &&
+		(strings.EqualFold(fieldName, "Name") || strings.EqualFold(fieldName, "LastName") ||
+			strings.EqualFold(field.APIName, "Name") || strings.EqualFold(field.APIName, "LastName"))
 }
 
 func syntheticFieldSetIsAddressLike(name string) bool {
@@ -2164,96 +2209,6 @@ func syntheticFieldSetCanEditField(fieldName string, field storage.Field) bool {
 		return false
 	}
 	if !storage.FieldFlagValue(field.Createable, true) && !storage.FieldFlagValue(field.Updateable, true) {
-		return false
-	}
-	return true
-}
-
-func applyInferredProductDownloadURLFormulas(org *storage.OrgState) {
-	if org == nil {
-		return
-	}
-	for objectName, state := range org.Objects {
-		downloadFieldName, downloadField, ok := inferredProductDownloadURLLineField(*org, state.Definition)
-		if !ok {
-			continue
-		}
-		productFieldName, productField, ok := inferredProductDownloadURLProductLookup(*org, state.Definition)
-		if !ok || len(productField.ReferenceTo) == 0 {
-			continue
-		}
-		productObject, ok := storage.ResolveObjectName(*org, productField.ReferenceTo[0])
-		if !ok {
-			productObject = productField.ReferenceTo[0]
-		}
-		productState, ok := org.Objects[productObject]
-		if !ok || !productDownloadURLFormulaInputsKnown(*org, productState.Definition) {
-			continue
-		}
-		relationshipName := productField.RelationshipName
-		if relationshipName == "" {
-			relationshipName = inferredLookupRelationshipName(productFieldName)
-		}
-		relationshipName = storage.StripAnyNamespaceToken(relationshipName)
-		if relationshipName == "" {
-			continue
-		}
-		downloadField.Type = storage.FieldCalculated
-		downloadField.DisplayType = "STRING"
-		downloadField.Formula = fmt.Sprintf("IF(%s.IsDownloadable__c, %s.DownloadUrl__c, NULL)", relationshipName, relationshipName)
-		state.Definition.Fields[downloadFieldName] = downloadField
-		org.Objects[objectName] = state
-	}
-}
-
-func inferredProductDownloadURLLineField(org storage.OrgState, definition storage.ObjectDefinition) (string, storage.Field, bool) {
-	fieldName, ok := storage.ResolveFieldName(definition, org.Namespace, "DownloadUrl__c")
-	if !ok {
-		return "", storage.Field{}, false
-	}
-	field := definition.Fields[fieldName]
-	if strings.TrimSpace(field.Formula) != "" || field.Type != storage.FieldString {
-		return "", storage.Field{}, false
-	}
-	if !inferredStandardFieldShapeEqual(field, inferredReferencedStandardField(field.APIName, "")) {
-		return "", storage.Field{}, false
-	}
-	return fieldName, field, true
-}
-
-func inferredProductDownloadURLProductLookup(org storage.OrgState, definition storage.ObjectDefinition) (string, storage.Field, bool) {
-	fieldName, ok := storage.ResolveFieldName(definition, org.Namespace, "Product2__c")
-	if !ok {
-		fieldName, ok = storage.ResolveFieldName(definition, org.Namespace, "Product__c")
-	}
-	if !ok {
-		return "", storage.Field{}, false
-	}
-	field := definition.Fields[fieldName]
-	if field.Type == storage.FieldReference && len(field.ReferenceTo) > 0 {
-		if target := inferredLookupTarget(org, definition.APIName, fieldName); target != "" && !strings.EqualFold(target, field.ReferenceTo[0]) {
-			field.ReferenceTo = []string{target}
-			if field.RelationshipName == "" {
-				field.RelationshipName = inferredLookupRelationshipName(fieldName)
-			}
-		}
-		return fieldName, field, true
-	}
-	if target := inferredLookupTarget(org, definition.APIName, fieldName); target != "" {
-		field.Type = storage.FieldReference
-		field.DisplayType = "REFERENCE"
-		field.ReferenceTo = []string{target}
-		field.RelationshipName = inferredLookupRelationshipName(fieldName)
-		return fieldName, field, true
-	}
-	return "", storage.Field{}, false
-}
-
-func productDownloadURLFormulaInputsKnown(org storage.OrgState, definition storage.ObjectDefinition) bool {
-	if _, ok := storage.ResolveFieldName(definition, org.Namespace, "IsDownloadable__c"); !ok {
-		return false
-	}
-	if _, ok := storage.ResolveFieldName(definition, org.Namespace, "DownloadUrl__c"); !ok {
 		return false
 	}
 	return true

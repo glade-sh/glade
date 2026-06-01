@@ -1001,21 +1001,21 @@ System.assertEquals('New', loaded.Name);
 
 func TestExecJSONRoundTripTypedIdSObjectMapCanClearRecordField(t *testing.T) {
 	program, err := CompileAnonymous(`
-Membership__c membership = new Membership__c();
+Subscription__c membership = new Subscription__c();
 insert membership;
-Account account = new Account(Name = 'Old', Membership__c = membership.Id);
+Account account = new Account(Name = 'Old', Subscription__c = membership.Id);
 insert account;
 Map<Id, Account> updates = new Map<Id, Account>();
 Account updateAccount = new Account();
-updateAccount.put('Membership__c', null);
+updateAccount.put('Subscription__c', null);
 updates.put(account.Id, updateAccount);
 String raw = JSON.serialize(updates);
 Map<Id, Account> decoded = (Map<Id, Account>)JSON.deserialize(raw, Map<Id, Account>.class);
 Account updateRecord = decoded.get(account.Id);
 updateRecord.Id = account.Id;
 update updateRecord;
-Account loaded = [SELECT Membership__c FROM Account WHERE Id = :account.Id];
-System.assertEquals(null, loaded.Membership__c);
+Account loaded = [SELECT Subscription__c FROM Account WHERE Id = :account.Id];
+System.assertEquals(null, loaded.Subscription__c);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1023,9 +1023,9 @@ System.assertEquals(null, loaded.Membership__c);
 	machine := New(nil)
 	org := storage.NewOrgState()
 	storage.EnsureStandardObject(&org, "Account")
-	org.Objects["Account"].Definition.Fields["Membership__c"] = storage.Field{APIName: "Membership__c", Type: storage.FieldReference, ReferenceTo: []string{"Membership__c"}}
-	org.Objects["Membership__c"] = storage.ObjectState{
-		Definition: storage.ObjectDefinition{APIName: "Membership__c", KeyPrefix: "a01", Fields: map[string]storage.Field{
+	org.Objects["Account"].Definition.Fields["Subscription__c"] = storage.Field{APIName: "Subscription__c", Type: storage.FieldReference, ReferenceTo: []string{"Subscription__c"}}
+	org.Objects["Subscription__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Subscription__c", KeyPrefix: "a01", Fields: map[string]storage.Field{
 			"Id": {APIName: "Id", Type: storage.FieldID},
 		}},
 		Records: map[storage.ID]storage.Record{},
@@ -1070,12 +1070,12 @@ func TestExecJSONRoundTripsExplicitNullSObjectFieldInTypedIdMap(t *testing.T) {
 Id accountId = '001B000001DVM9tIAH';
 SavedState state = new SavedState();
 state.NewValues = new Map<Id, Account>();
-state.NewValues.put(accountId, new Account(Membership__c = null));
+state.NewValues.put(accountId, new Account(Subscription__c = null));
 String raw = JSON.serialize(state);
 SavedState decoded = (SavedState)JSON.deserialize(raw, SavedState.class);
 Account updateRecord = decoded.NewValues.get(accountId);
-System.assert(updateRecord.getPopulatedFieldsAsMap().containsKey('Membership__c'));
-System.assertEquals(null, updateRecord.Membership__c);
+System.assert(updateRecord.getPopulatedFieldsAsMap().containsKey('Subscription__c'));
+System.assertEquals(null, updateRecord.Subscription__c);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1083,7 +1083,7 @@ System.assertEquals(null, updateRecord.Membership__c);
 	machine := New(nil)
 	org := storage.NewOrgState()
 	storage.EnsureStandardObject(&org, "Account")
-	org.Objects["Account"].Definition.Fields["Membership__c"] = storage.Field{APIName: "Membership__c", Type: storage.FieldReference, ReferenceTo: []string{"Membership__c"}}
+	org.Objects["Account"].Definition.Fields["Subscription__c"] = storage.Field{APIName: "Subscription__c", Type: storage.FieldReference, ReferenceTo: []string{"Subscription__c"}}
 	machine.SetOrg(&org)
 	if err := machine.RegisterClass(Class{
 		Name: "SavedState",
@@ -2226,6 +2226,13 @@ System.assert(caught.contains('JSONException:Unexpected end-of-input'), caught);
 caught = '';
 try {
 	Account decoded = JSON.deserialize('}]', Account.class);
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:malformed JSON:'), caught);
+caught = '';
+try {
+	List<Account> decoded = (List<Account>)JSON.deserialize('"}]', List<Account>.class);
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }

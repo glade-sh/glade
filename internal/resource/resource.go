@@ -158,14 +158,14 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 		registry.QuickActions = append(registry.QuickActions, action)
 	}
 	for _, path := range p.FieldSetFiles {
-		fieldSet, err := loadFieldSet(path)
+		fieldSet, err := loadFieldSet(path, p.Namespace)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
 		registry.FieldSets = append(registry.FieldSets, fieldSet)
 	}
 	for _, path := range p.ObjectFiles {
-		fieldSets, err := loadObjectFieldSets(path)
+		fieldSets, err := loadObjectFieldSets(path, p.Namespace)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
@@ -333,7 +333,7 @@ func loadQuickAction(path string) (storage.QuickActionMetadata, error) {
 	}, nil
 }
 
-func loadFieldSet(path string) (storage.FieldSetMetadata, error) {
+func loadFieldSet(path, namespace string) (storage.FieldSetMetadata, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return storage.FieldSetMetadata{}, err
@@ -344,10 +344,10 @@ func loadFieldSet(path string) (storage.FieldSetMetadata, error) {
 			return storage.FieldSetMetadata{}, err
 		}
 	}
-	return fieldSetFromXML(raw, objectNameFromFieldSetPath(path), metadataNameFromPath(path, ".fieldSet-meta.xml", ".fieldSet"), path), nil
+	return fieldSetFromXML(raw, objectNameFromFieldSetPath(path), metadataNameFromPath(path, ".fieldSet-meta.xml", ".fieldSet"), namespace, path), nil
 }
 
-func loadObjectFieldSets(path string) ([]storage.FieldSetMetadata, error) {
+func loadObjectFieldSets(path, namespace string) ([]storage.FieldSetMetadata, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -361,7 +361,7 @@ func loadObjectFieldSets(path string) ([]storage.FieldSetMetadata, error) {
 	out := make([]storage.FieldSetMetadata, 0, len(raw.FieldSets))
 	objectName := objectNameFromObjectPath(path)
 	for _, rawFieldSet := range raw.FieldSets {
-		fieldSet := fieldSetFromXML(rawFieldSet, objectName, "", path)
+		fieldSet := fieldSetFromXML(rawFieldSet, objectName, "", namespace, path)
 		if fieldSet.Name == "" {
 			continue
 		}
@@ -370,7 +370,7 @@ func loadObjectFieldSets(path string) ([]storage.FieldSetMetadata, error) {
 	return out, nil
 }
 
-func fieldSetFromXML(raw fieldSetXML, objectName, fallbackName, path string) storage.FieldSetMetadata {
+func fieldSetFromXML(raw fieldSetXML, objectName, fallbackName, namespace, path string) storage.FieldSetMetadata {
 	name := strings.TrimSpace(raw.FullName)
 	if name == "" {
 		name = fallbackName
@@ -385,6 +385,7 @@ func fieldSetFromXML(raw fieldSetXML, objectName, fallbackName, path string) sto
 	}
 	return storage.FieldSetMetadata{
 		ObjectName: objectName,
+		Namespace:  strings.TrimSpace(namespace),
 		Name:       name,
 		Label:      strings.TrimSpace(raw.Label),
 		Fields:     members,

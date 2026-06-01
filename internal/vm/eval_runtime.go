@@ -305,6 +305,11 @@ func (vm *VM) hasRuntimeReceiver(name string) bool {
 				return true
 			}
 		}
+		if vm.currentClass != "" {
+			if _, _, ok := vm.lookupStaticField(vm.currentClass, name); ok {
+				return true
+			}
+		}
 	}
 	return false
 }
@@ -414,6 +419,9 @@ func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 			return false, nil
 		}
 		for i := range left.List {
+			if listElementValuesEqual(left.List[i], right.List[i], make(map[[2]uint64]bool)) {
+				continue
+			}
 			equal, err := vm.apexEquals(left.List[i], right.List[i], result)
 			if err != nil || !equal {
 				return equal, err

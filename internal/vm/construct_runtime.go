@@ -31,6 +31,13 @@ func reflectionConstructableAccess(access string) bool {
 	}
 }
 
+func (vm *VM) reflectionConstructableClass(class Class) bool {
+	if strings.Contains(class.Name, ".") && vm.classIsTestScoped(class.Name) {
+		return true
+	}
+	return reflectionConstructableAccess(class.Access)
+}
+
 // resolveConstructorTypeName canonicalizes a constructor's type name and, for
 // non-collection / non-SObject names, resolves it against the current execution
 // context (nested types, namespace top-level classes, unique nested types). It
@@ -253,7 +260,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 				return Null, err
 			}
 		}
-		if reflectionConstruction && vm.currentCallerNamespace() != class.Namespace && !reflectionConstructableAccess(class.Access) {
+		if reflectionConstruction && vm.currentCallerNamespace() != class.Namespace && !vm.reflectionConstructableClass(class) {
 			return Null, fmt.Errorf("%s is not instantiable through Type.newInstance", typeName)
 		}
 		if class.IsAbstract {
@@ -1773,7 +1780,7 @@ func (vm *VM) resolveInstanceMethodForArgs(typeName, method string, args []Value
 	// A project caller invoking an unqualified instance method on a local class
 	// resolves against the local (non-dependency) class chain first, so a managed
 	// dependency class of the same bare name cannot shadow a locally redefined
-	// class (the nc fork pattern, where ~325 classes share names with the znu
+	// class (the nc fork pattern, where ~325 classes share names with the pkg
 	// package). This mirrors shouldReplaceShortClassAlias at the method level.
 	// It falls back to the full walk (including dependency candidates) when the
 	// local chain has no match, so genuinely dependency-only methods still
@@ -2173,7 +2180,7 @@ func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) 
 	// A project caller resolves an unqualified static call against the local
 	// (non-dependency) class chain first, so a managed dependency class of the
 	// same bare name cannot shadow a locally redefined class (the nc fork
-	// pattern, e.g. a local SObjectDomain.triggerHandler shadowed by the znu
+	// pattern, e.g. a local SObjectDomain.triggerHandler shadowed by the pkg
 	// package). Mirrors the instance-method local-preference. Falls back to the
 	// full walk when the local chain has no match; dependency callers keep
 	// binding their own package via preferMethodCandidate.

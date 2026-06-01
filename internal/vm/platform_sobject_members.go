@@ -222,11 +222,12 @@ const (
 	sobjectDMLAccessibleField                = "__glade_dml_accessible"
 	sobjectTriggerField                      = "__glade_trigger_record"
 	sobjectParentProjectionField             = "__glade_parent_projection"
+	sobjectStrippedChildRelationshipsField   = "__glade_stripped_child_relationships"
 	sobjectPopulatedFieldsAliasContainsField = "__glade_populated_fields_alias_contains"
 )
 
 func isInternalSObjectField(field string) bool {
-	return field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField
+	return field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField || field == sobjectStrippedChildRelationshipsField
 }
 
 func vmImplicitDMLField(field storage.Field) bool {
@@ -234,6 +235,16 @@ func vmImplicitDMLField(field storage.Field) bool {
 		return true
 	}
 	return !storage.FieldFlagValue(field.Createable, true) || !storage.FieldFlagValue(field.Updateable, true)
+}
+
+func vmImplicitDMLFieldForOperation(field storage.Field, create bool) bool {
+	if vmCalculatedOrSummaryField(field) {
+		return true
+	}
+	if create {
+		return !storage.FieldFlagValue(field.Createable, true)
+	}
+	return !storage.FieldFlagValue(field.Updateable, true)
 }
 
 func vmImplicitDMLFieldDefaultValue(field storage.Field, value Value) bool {
@@ -429,8 +440,101 @@ func setExplicitSObjectField(value *Value, field string, fieldValue Value) {
 	if value.Fields == nil {
 		value.Fields = make(map[string]Value)
 	}
+	clearSObjectFieldAliasValues(value, field)
 	value.Fields[field] = fieldValue
 	markExplicitSObjectField(value, field)
+	if fieldValue.Kind == ValueNull {
+		markNullAddressStateCountryCounterpart(value, field)
+	}
+}
+
+func clearSObjectFieldAliasValues(value *Value, field string) {
+	if value == nil || value.Fields == nil || strings.TrimSpace(field) == "" {
+		return
+	}
+	stripped := storage.StripAnyNamespaceToken(field)
+	if stripped == "" {
+		return
+	}
+	objectNamespace, _ := namespaceTokenPrefix(value.Type)
+	fieldNamespace, fieldNamespaced := namespaceTokenPrefix(field)
+	for candidate := range value.Fields {
+		if candidate == field || isInternalSObjectField(candidate) {
+			continue
+		}
+		if !strings.EqualFold(storage.StripAnyNamespaceToken(candidate), stripped) {
+			continue
+		}
+		candidateNamespace, candidateNamespaced := namespaceTokenPrefix(candidate)
+		switch {
+		case fieldNamespaced && candidateNamespaced && !strings.EqualFold(fieldNamespace, candidateNamespace):
+			continue
+		case !fieldNamespaced && candidateNamespaced && objectNamespace != "" && !strings.EqualFold(objectNamespace, candidateNamespace):
+			continue
+		}
+		delete(value.Fields, candidate)
+		unmarkSObjectFieldMarker(value, sobjectExplicitFieldsField, candidate)
+		unmarkSObjectFieldMarker(value, sobjectSetFieldsField, candidate)
+		unmarkSObjectFieldMarker(value, sobjectUserSetFieldsField, candidate)
+		unmarkSObjectFieldMarker(value, sobjectQueriedFieldsField, candidate)
+	}
+}
+
+func namespaceTokenPrefix(name string) (string, bool) {
+	first := strings.Index(name, "__")
+	if first <= 0 || first+2 >= len(name) {
+		return "", false
+	}
+	rest := name[first+2:]
+	if !strings.Contains(rest, "__") {
+		return "", false
+	}
+	return name[:first], true
+}
+
+func unmarkSObjectFieldMarker(value *Value, marker, field string) {
+	if value == nil || value.Fields == nil || strings.TrimSpace(field) == "" {
+		return
+	}
+	selected, ok := value.Fields[marker]
+	if !ok || selected.Kind != ValueMap {
+		return
+	}
+	key := mapKey(String(strings.ToLower(field)))
+	delete(selected.Map, key)
+	delete(selected.MapKeys, key)
+	if len(selected.Map) == 0 {
+		delete(value.Fields, marker)
+		return
+	}
+	value.Fields[marker] = selected
+}
+
+func markNullAddressStateCountryCounterpart(value *Value, field string) {
+	counterpart := addressStateCountryCounterpartField(field)
+	if counterpart == "" {
+		return
+	}
+	if _, _, ok := objectFieldValue(*value, counterpart); !ok {
+		return
+	}
+	value.Fields[counterpart] = Null
+	markExplicitSObjectField(value, counterpart)
+	markQueriedSObjectField(value, counterpart)
+}
+
+func addressStateCountryCounterpartField(field string) string {
+	for _, suffix := range []string{"StateCode", "CountryCode"} {
+		if strings.HasSuffix(field, suffix) {
+			return strings.TrimSuffix(field, "Code")
+		}
+	}
+	for _, suffix := range []string{"State", "Country"} {
+		if strings.HasSuffix(field, suffix) && !strings.HasSuffix(field, suffix+"Code") {
+			return field + "Code"
+		}
+	}
+	return ""
 }
 
 func markTriggerSObject(value *Value) {
@@ -495,6 +599,33 @@ func unmarkQueriedSObjectField(value *Value, field string) {
 	}
 	delete(selected.Map, mapKey(String(strings.ToLower(field))))
 	value.Fields[sobjectQueriedFieldsField] = selected
+}
+
+func markStrippedChildRelationship(value *Value, field string) {
+	if value == nil || value.Kind != ValueObject || strings.TrimSpace(field) == "" {
+		return
+	}
+	if value.Fields == nil {
+		value.Fields = make(map[string]Value)
+	}
+	selected, ok := value.Fields[sobjectStrippedChildRelationshipsField]
+	if !ok || selected.Kind != ValueMap {
+		selected = Map()
+		selected.Type = "Map<String,Boolean>"
+	}
+	key := strings.ToLower(field)
+	selected.Map[mapKey(String(key))] = Bool(true)
+	selected.MapKeys[mapKey(String(key))] = String(key)
+	value.Fields[sobjectStrippedChildRelationshipsField] = selected
+}
+
+func strippedChildRelationship(value Value, field string) bool {
+	selected, ok := value.Fields[sobjectStrippedChildRelationshipsField]
+	if !ok || selected.Kind != ValueMap {
+		return false
+	}
+	got, ok := selected.Map[mapKey(String(strings.ToLower(field)))]
+	return ok && got.Kind == ValueBool && got.Bool
 }
 
 func dmlVisibleSObjectFields(value *Value) map[string]bool {
@@ -1732,6 +1863,37 @@ func (vm *VM) parentRelationshipValue(receiver Value, relationshipName string) (
 	return Null, false
 }
 
+func (vm *VM) typedParentRelationshipFieldValue(receiver Value, relationshipName string, value Value) (Value, bool) {
+	if vm == nil || value.Kind != ValueObject || !vm.isSObjectLikeType(receiver.Type) {
+		return Null, false
+	}
+	relation, ok := vm.parentRelationshipForName(receiver, relationshipName)
+	if !ok {
+		return Null, false
+	}
+	return vm.parentRelationshipValueForRelationName(receiver, relation, relationshipName), true
+}
+
+func (vm *VM) parentRelationshipForName(receiver Value, relationshipName string) (storage.Relationship, bool) {
+	if vm == nil || vm.Org == nil || receiver.Kind != ValueObject {
+		return storage.Relationship{}, false
+	}
+	objectName, ok := vm.resolveObjectName(receiver.Type)
+	if !ok {
+		objectName = receiver.Type
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return storage.Relationship{}, false
+	}
+	for _, relation := range object.Definition.Relations {
+		if vmRelationshipNameMatches(vm.Org.Namespace, relation.ParentRelationship, relationshipName) {
+			return relation, true
+		}
+	}
+	return vm.syntheticParentRelationship(object.Definition, relationshipName)
+}
+
 func (vm *VM) hydrateQueriedRecordTypeRelationships(value Value) {
 	if vm == nil || vm.Org == nil || value.Kind != ValueObject {
 		return
@@ -1776,6 +1938,9 @@ func (vm *VM) parentRelationshipValueForRelation(receiver Value, relation storag
 func (vm *VM) parentRelationshipValueForRelationName(receiver Value, relation storage.Relationship, relationshipName string) Value {
 	for _, alias := range parentRelationshipFieldAliases(relation, relationshipName) {
 		if _, relationship, ok := objectFieldValue(receiver, alias); ok && relationship.Kind == ValueObject {
+			if parentRelationshipObjectIsMissing(relationship) {
+				return vm.parentRelationshipTypedNull(relation)
+			}
 			if !vm.isSObjectLikeType(relationship.Type) && len(relation.ParentObjects) > 0 {
 				relationship.Type = relation.ParentObjects[0]
 			}
@@ -1783,6 +1948,9 @@ func (vm *VM) parentRelationshipValueForRelationName(receiver Value, relation st
 		}
 	}
 	if _, relationship, ok := objectFieldValue(receiver, relation.ParentRelationship); ok && relationship.Kind == ValueObject {
+		if parentRelationshipObjectIsMissing(relationship) {
+			return vm.parentRelationshipTypedNull(relation)
+		}
 		if !vm.isSObjectLikeType(relationship.Type) && len(relation.ParentObjects) > 0 {
 			relationship.Type = relation.ParentObjects[0]
 		}
@@ -1909,6 +2077,9 @@ func (vm *VM) parentRelationshipShellFromLookupID(relation storage.Relationship,
 			parentObject = parentName
 		}
 		if strings.TrimSpace(parentObject) == "" {
+			continue
+		}
+		if _, ok := vm.findOrgRecord(parentObject, lookupID); !ok {
 			continue
 		}
 		parent := Object(parentObject)

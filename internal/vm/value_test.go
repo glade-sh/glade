@@ -82,6 +82,48 @@ func TestSObjectValueEqualityKeepsDistinctNamespaceQualifiedObjectsSeparate(t *t
 	}
 }
 
+func TestSObjectValueEqualityTreatsSameReferenceAsSameObject(t *testing.T) {
+	left := Object("Schedule__c")
+	left.Fields["Name"] = String("Before")
+
+	right := Object("Schedule__c")
+	right.Ref = left.Ref
+	right.Fields["Name"] = String("After")
+
+	if !left.Equal(right) {
+		t.Fatal("expected two snapshots of the same SObject reference to compare equal")
+	}
+}
+
+func TestSObjectValueEqualityTreatsStringAndPlatformIDFieldsAsEqual(t *testing.T) {
+	left := Object("Account")
+	left.Fields["Id"] = String("001000000000001")
+	right := Object("Account")
+	right.Fields["Id"] = platformScalar("Id", "001000000000001")
+
+	if !left.Equal(right) {
+		t.Fatal("expected string and platform Id fields to compare equal")
+	}
+}
+
+func TestSObjectValueEqualityTreatsTypedRelationshipNullAndMissingProjectionAsEqual(t *testing.T) {
+	left := Object("Product__c")
+	relationshipNull := Null
+	relationshipNull.Type = "DeferredRevenueMethod__c"
+	relationshipNull.Runtime = relationshipNullRuntime
+	left.Fields["DeferredRevenueMethod__r"] = relationshipNull
+
+	right := Object("Product__c")
+	relationship := Object("deferredrevenuemethod__r")
+	relationship.Fields["name"] = Null
+	relationship.Fields["recognition__c"] = Null
+	right.Fields["deferredrevenuemethod__r"] = relationship
+
+	if !left.Equal(right) {
+		t.Fatal("expected typed relationship null and all-null relationship projection to compare equal")
+	}
+}
+
 func TestValueEqualPageReferenceUsesURL(t *testing.T) {
 	left := newPageReference("/Login?startUrl=/apex/MyLoginInformation")
 	right := newPageReference("/Login?startUrl=/apex/MyLoginInformation")
@@ -91,6 +133,27 @@ func TestValueEqualPageReferenceUsesURL(t *testing.T) {
 	other := newPageReference("/")
 	if left.Equal(other) {
 		t.Fatal("different PageReference URLs should not compare equal")
+	}
+}
+
+func TestSOQLLiteralSObjectWithExplicitNullIDUsesNull(t *testing.T) {
+	value := Object("Order__c")
+	value.Fields["Id"] = Null
+	setExplicitSObjectField(&value, "Id", Null)
+
+	if got := soqlLiteral(value); got != "null" {
+		t.Fatalf("soqlLiteral() = %q, want null", got)
+	}
+}
+
+func TestSetExplicitSObjectFieldClearsNamespaceEquivalentAlias(t *testing.T) {
+	value := Object("pkg__Product__c")
+	setExplicitSObjectField(&value, "pkg__Weight__c", Decimal(501))
+
+	setExplicitSObjectField(&value, "Weight__c", Null)
+
+	if _, got, ok := objectFieldValue(value, "pkg__Weight__c"); !ok || got.Kind != ValueNull {
+		t.Fatalf("namespaced field = %#v ok=%v, want explicit null", got, ok)
 	}
 }
 

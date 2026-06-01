@@ -674,6 +674,9 @@ func decodeJSONValueForDeserialize(text string, strict bool) (any, error) {
 	}
 	decoded, err := decodeJSONValue(text)
 	if err != nil {
+		if strings.Contains(err.Error(), "unexpected EOF") && strings.HasPrefix(strings.TrimSpace(text), `"`) {
+			return nil, fmt.Errorf("malformed JSON: %s", err.Error())
+		}
 		if strings.Contains(err.Error(), "invalid character '\\\\'") && strings.Contains(text, `\"`) {
 			decoded, retryErr := decodeJSONValue(strings.ReplaceAll(text, `\"`, `"`))
 			if retryErr == nil {
