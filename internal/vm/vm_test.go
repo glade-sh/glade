@@ -4342,6 +4342,95 @@ System.assertEquals(true, flag || other);
 	}
 }
 
+func TestExecLogicalOrShortCircuitsTypedNullGetter(t *testing.T) {
+	childGetter, err := CompileAnonymous(`return Child;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkProgram, err := CompileAnonymous(`return this.Child == null || String.isBlank(this.Child.Name);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Controller controller = new Controller();
+System.assertEquals(true, controller.check());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{
+			Name: "Child",
+			Fields: map[string]Field{
+				"Name": {Name: "Name", Type: "String"},
+			},
+		},
+		{
+			Name: "Controller",
+			Fields: map[string]Field{
+				"Child": {Name: "Child", Type: "Child", Getter: &Method{
+					Name: "Controller.getChild", ClassName: "Controller", ReturnType: "Child", Program: childGetter,
+				}},
+			},
+			Methods: map[string]Method{
+				"check": {Name: "Controller.check", ClassName: "Controller", ReturnType: "Boolean", Program: checkProgram},
+			},
+		},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecGetterAssignmentWritesBackingFieldWithoutCallingSetter(t *testing.T) {
+	tokenGetter, err := CompileAnonymous(`
+if (Token == null) {
+    Token = 'loaded';
+}
+return Token;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tokenSetter, err := CompileAnonymous(`
+SetterCalled = true;
+Token = value;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Controller controller = new Controller();
+System.assertEquals('loaded', controller.Token);
+System.assertEquals(null, controller.SetterCalled);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Controller",
+		Fields: map[string]Field{
+			"SetterCalled": {Name: "SetterCalled", Type: "Boolean"},
+			"Token": {Name: "Token", Type: "String", Getter: &Method{
+				Name: "Controller.getToken", ClassName: "Controller", ReturnType: "String", Program: tokenGetter,
+			}, Setter: &Method{
+				Name: "Controller.setToken", ClassName: "Controller", Params: []Param{{Name: "value", Type: "String"}}, Program: tokenSetter,
+			}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecAssignmentExpressionInCallArgument(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, List<String>> values = new Map<String, List<String>>();
@@ -5153,6 +5242,17 @@ func TestSOQLQueriedFieldsTracksDottedSelections(t *testing.T) {
 	fields := machine.queriedSObjectFields("SELECT Id, Account.LastModifiedById FROM Account")
 	if !fields["account.lastmodifiedbyid"] {
 		t.Fatalf("queried fields = %#v, want dotted field", fields)
+	}
+}
+
+func TestSOQLQueriedFieldsTracksToLabelSelection(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.Org = &org
+	fields := machine.queriedSObjectFields("SELECT Id, toLabel(Salutation) FROM Contact")
+	if !fields["salutation"] {
+		t.Fatalf("queried fields = %#v, want Salutation from toLabel", fields)
 	}
 }
 

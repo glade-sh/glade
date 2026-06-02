@@ -16,7 +16,4 @@ node_modules/
 *.test
 
 # Ad-hoc compat run result dumps
-/nu.json
-/nutpl.json
-/nams.json
-/sf-cred.json
+/test-results/

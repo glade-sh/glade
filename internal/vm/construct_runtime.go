@@ -107,6 +107,8 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 			if elementType, ok := collectionElementType(typeName); ok && collectionBase(elementType) != "" {
 				if element, err := vm.coerceAssignable(elementType, args[0]); err == nil {
 					v, err := vm.coerceAssignable(typeName, List(element))
+					vm.markCollectionRefsEscaped(v)
+					vm.rememberLocalOnlyCollection(v)
 					return v, true, err
 				}
 			}
@@ -114,9 +116,13 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 		if !literalArgs && len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueSet) {
 			value := List(append([]Value(nil), collectionMembers(args[0])...)...)
 			v, err := vm.coerceAssignable(typeName, value)
+			vm.markCollectionRefsEscaped(v)
+			vm.rememberLocalOnlyCollection(v)
 			return v, true, err
 		}
 		v, err := vm.coerceAssignable(typeName, List(args...))
+		vm.markCollectionRefsEscaped(v)
+		vm.rememberLocalOnlyCollection(v)
 		return v, true, err
 	case collectionBase(typeName) == "Set":
 		if len(namedArgs) > 0 {
@@ -125,9 +131,13 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 		if !literalArgs && len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueSet) {
 			value := Set(collectionMembers(args[0])...)
 			v, err := vm.coerceAssignable(typeName, value)
+			vm.markCollectionRefsEscaped(v)
+			vm.rememberLocalOnlyCollection(v)
 			return v, true, err
 		}
 		v, err := vm.coerceAssignable(typeName, Set(args...))
+		vm.markCollectionRefsEscaped(v)
+		vm.rememberLocalOnlyCollection(v)
 		return v, true, err
 	case isMapType(typeName):
 		if len(namedArgs) != 0 {
@@ -150,6 +160,8 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 				value.Map[encodedKey] = coerced
 				value.MapKeys[encodedKey] = key
 			}
+			vm.markCollectionRefsEscaped(value)
+			vm.rememberLocalOnlyCollection(value)
 			return value, true, nil
 		}
 		if len(args) == 1 && args[0].Kind == ValueMap {
@@ -169,6 +181,8 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 				value.Map[encodedKey] = coerced
 				value.MapKeys[encodedKey] = key
 			}
+			vm.markCollectionRefsEscaped(value)
+			vm.rememberLocalOnlyCollection(value)
 			return value, true, nil
 		}
 		if len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueMap || typedNullCollectionBase(args[0]) == "List") {
@@ -187,6 +201,8 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 			if err != nil {
 				return Null, true, err
 			}
+			vm.markCollectionRefsEscaped(value)
+			vm.rememberLocalOnlyCollection(value)
 			return value, true, nil
 		}
 		if len(args) != 0 {
@@ -194,6 +210,7 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 		}
 		value := Map()
 		value.Type = typeName
+		vm.rememberLocalOnlyCollection(value)
 		return value, true, nil
 	}
 	return Null, false, nil

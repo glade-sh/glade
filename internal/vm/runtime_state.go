@@ -102,6 +102,7 @@ type VM struct {
 	// --- Exception / statement / trigger-depth tracking ---
 	currentStatement        callFrame
 	hasStatement            bool
+	toolingExecuteAnonymous bool
 	triggerDepth            int
 	activeTriggerNamespaces []string
 	installContextDepth     int
@@ -164,6 +165,7 @@ type VM struct {
 	// --- Static-field reference tracking (alias invalidation) ---
 	staticValueRefs           map[uint64]bool
 	staticValueRefFields      map[uint64][]staticFieldRef
+	localOnlyCollectionRefs   map[uint64]bool
 	collectionMutationSeq     uint64
 	frameworkRecorderRollback *frameworkMethodCountRecorderRollback
 	runtimeArtifactsShared    bool
@@ -564,6 +566,7 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 		clone.fieldResolveCache = newFieldResolveLookupCache()
 	}
 	clone.traceEnabled = vm.traceEnabled
+	clone.toolingExecuteAnonymous = vm.toolingExecuteAnonymous
 	clone.staticInitState = copyStaticInitStateMap(vm.staticInitState)
 	clone.pageReferences = copyStringMap(vm.pageReferences)
 	clone.platformCache = copyCacheMap(vm.platformCache)
@@ -596,6 +599,12 @@ func (vm *VM) SetIsolationJournal(journal *storage.IsolationJournal) {
 func (vm *VM) SetTraceEnabled(enabled bool) {
 	if vm != nil {
 		vm.traceEnabled = enabled
+	}
+}
+
+func (vm *VM) SetToolingExecuteAnonymous(enabled bool) {
+	if vm != nil {
+		vm.toolingExecuteAnonymous = enabled
 	}
 }
 

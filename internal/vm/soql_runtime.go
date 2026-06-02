@@ -752,7 +752,11 @@ func (vm *VM) queriedSObjectFields(queryText string) map[string]bool {
 	fields := make(map[string]bool)
 	for _, field := range query.Fields {
 		if strings.Contains(field, "(") {
-			continue
+			if projectedField, ok := selectedSOQLFunctionField(field); ok {
+				field = projectedField
+			} else {
+				continue
+			}
 		}
 		originalField := field
 		if dot := strings.IndexByte(field, '.'); dot >= 0 {
@@ -788,6 +792,24 @@ func (vm *VM) queriedSObjectFields(queryText string) map[string]bool {
 	}
 	fields["id"] = true
 	return fields
+}
+
+func selectedSOQLFunctionField(field string) (string, bool) {
+	text := strings.TrimSpace(field)
+	lower := strings.ToLower(text)
+	const prefix = "tolabel("
+	if !strings.HasPrefix(lower, prefix) {
+		return "", false
+	}
+	close := strings.IndexByte(text[len(prefix):], ')')
+	if close < 0 {
+		return "", false
+	}
+	inner := strings.TrimSpace(text[len(prefix) : len(prefix)+close])
+	if inner == "" || strings.ContainsAny(inner, " (),") {
+		return "", false
+	}
+	return inner, true
 }
 
 func (vm *VM) applyQueriedParentRelationshipFieldMarkers(value *Value, queryText string) {

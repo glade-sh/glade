@@ -1846,6 +1846,59 @@ System.assertEquals('Item', items[0].Name);
 	}
 }
 
+func TestExecJSONDeserializeManagedParentRelationshipWithNamespace(t *testing.T) {
+	program, err := CompileAnonymous(`
+znu__OrderItemLine__c line = (znu__OrderItemLine__c)JSON.deserialize('{"znu__OrderItem__r":{"znu__Entity__c":null}}', znu__OrderItemLine__c.class);
+System.assertNotEquals(null, line.znu__OrderItem__r);
+System.assertEquals(null, line.znu__OrderItem__r.znu__Entity__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.OrgState{Namespace: "namz", Objects: map[string]storage.ObjectState{
+		"znu__OrderItem__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "znu__OrderItem__c",
+				KeyPrefix: "a01",
+				Fields: map[string]storage.Field{
+					"Id":             {APIName: "Id", Type: storage.FieldID},
+					"znu__Entity__c": {APIName: "znu__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__Entity__c"}, RelationshipName: "znu__Entity__r"},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"znu__OrderItemLine__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "znu__OrderItemLine__c",
+				KeyPrefix: "a02",
+				Fields: map[string]storage.Field{
+					"Id":                {APIName: "Id", Type: storage.FieldID},
+					"znu__OrderItem__c": {APIName: "znu__OrderItem__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__OrderItem__c"}, RelationshipName: "znu__OrderItem__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "znu__OrderItem__c",
+					ParentObjects:      []string{"znu__OrderItem__c"},
+					ParentRelationship: "znu__OrderItem__r",
+				}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"znu__Entity__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "znu__Entity__c",
+				KeyPrefix: "a03",
+				Fields:    map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeNamespacedChildRecordParentShellUsesUnqualifiedLookup(t *testing.T) {
 	program, err := CompileAnonymous(`
 Parent__c decoded = JSON.deserialize('{"Children__r":{"totalSize":1,"done":true,"records":[{"Product2__c":"a02000000000001AAA"}]}}', Parent__c.class);

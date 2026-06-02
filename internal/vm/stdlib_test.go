@@ -471,35 +471,17 @@ System.debug(RestContext.request.requestURI);
 	}
 }
 
-func TestExecPageReferenceRenderingUnsupported(t *testing.T) {
-	cases := []struct {
-		name string
-		src  string
-		want string
-	}{
-		{
-			name: "content",
-			src:  `PageReference page = new PageReference('/apex/Trail'); page.getContent();`,
-			want: `unsupported call "PageReference.getContent local Visualforce page rendering surface"`,
-		},
-		{
-			name: "pdf",
-			src:  `PageReference page = new PageReference('/apex/Trail'); page.getContentAsPDF();`,
-			want: `unsupported call "PageReference.getContentAsPDF local Visualforce page rendering surface"`,
-		},
+func TestExecPageReferenceGetContentReturnsBlobInLocalTests(t *testing.T) {
+	program, err := CompileAnonymous(`
+PageReference page = new PageReference('/apex/Trail');
+Blob content = page.getContent();
+System.assertEquals('/apex/Trail', content.toString());
+`)
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			program, err := CompileAnonymous(tc.src)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = Execute(program, nil)
-			var runtimeErr *RuntimeError
-			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want {
-				t.Fatalf("err = %#v, want %s", err, tc.want)
-			}
-		})
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 

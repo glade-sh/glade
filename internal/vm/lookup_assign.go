@@ -601,6 +601,7 @@ func (vm *VM) setObjectFieldValue(object *Value, name string, value Value) {
 	if object == nil {
 		return
 	}
+	vm.markCollectionRefsEscaped(value)
 	if object.Fields == nil {
 		object.Fields = make(map[string]Value)
 	}
@@ -2359,6 +2360,11 @@ func (vm *VM) assign(name string, value Value) error {
 				}
 				value = coerced
 				if def.Setter != nil {
+					if vm.isCurrentGetter(def.Getter) {
+						vm.setObjectFieldValue(&this, actualName, value)
+						vm.Globals["this"] = this
+						return nil
+					}
 					key := activeInstanceSetterKey(owner, actualName, this)
 					if vm.activeSetters[key] > 0 {
 						vm.setObjectFieldValue(&this, actualName, value)
@@ -2406,6 +2412,11 @@ func (vm *VM) assign(name string, value Value) error {
 			}
 			value = coerced
 			if def.Setter != nil {
+				if vm.isCurrentGetter(def.Getter) {
+					vm.setObjectFieldValue(&this, actualName, value)
+					vm.Globals["this"] = this
+					return nil
+				}
 				key := activeInstanceSetterKey(owner, actualName, this)
 				if vm.activeSetters[key] > 0 {
 					vm.setObjectFieldValue(&this, actualName, value)
@@ -2486,6 +2497,7 @@ func (vm *VM) assign(name string, value Value) error {
 }
 
 func (vm *VM) writeStaticFieldValue(owner, memberName string, class Class, field Field, value Value) {
+	vm.markCollectionRefsEscaped(value)
 	field.Value = value
 	if class.StaticFields == nil {
 		class.StaticFields = make(map[string]Field)
@@ -2525,8 +2537,8 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			}
 			updated = parent.object
 		}
-		vm.propagateAliasSnapshotToScope(vm.Globals, previousRoot, root)
-		vm.propagateAliasSnapshotToStatics(previousRoot, root)
+		vm.propagateAliasSnapshotToScope(vm.Globals, previousRoot, updated)
+		vm.propagateAliasSnapshotToStatics(previousRoot, updated)
 	}
 	for i, part := range parts[:len(parts)-1] {
 		if current.Kind == ValueNull {
@@ -2597,6 +2609,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		return fmt.Errorf("cannot modify read-only %s", reason)
 	}
 	if vm.isSObjectLikeType(current.Type) && vm.sObjectParentRelationshipField(current.Type, fieldName) {
+		vm.markCollectionRefsEscaped(value)
 		setExplicitSObjectField(&current, fieldName, value)
 		markSetSObjectField(&current, fieldName)
 		markUserSetSObjectField(&current, fieldName)
@@ -2608,6 +2621,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		if definition, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, fieldName); exists && fieldDef.Type == storage.FieldReference {
 			relationshipName := vm.parentRelationshipNameForReferenceField(definition, fieldDef)
 			if relationshipName != "" {
+				vm.markCollectionRefsEscaped(value)
 				setExplicitSObjectField(&current, relationshipName, value)
 				markSetSObjectField(&current, relationshipName)
 				markUserSetSObjectField(&current, relationshipName)
@@ -2644,6 +2658,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			key := activeInstanceSetterKey(owner, actualName, current)
 			if vm.activeSetters[key] > 0 {
 				if vm.isSObjectLikeType(current.Type) {
+					vm.markCollectionRefsEscaped(value)
 					setExplicitSObjectField(&current, actualName, value)
 					markSetSObjectField(&current, actualName)
 					markUserSetSObjectField(&current, actualName)
@@ -2673,6 +2688,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			return err
 		}
 		if vm.isSObjectLikeType(current.Type) {
+			vm.markCollectionRefsEscaped(value)
 			setExplicitSObjectField(&current, actualName, value)
 			markSetSObjectField(&current, actualName)
 			markUserSetSObjectField(&current, actualName)
@@ -2695,6 +2711,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		if current.Fields == nil {
 			current.Fields = make(map[string]Value)
 		}
+		vm.markCollectionRefsEscaped(coerced)
 		current.Fields[actualName] = coerced
 		syncDatabaseOptionAliasField(&current, actualName, coerced)
 		propagate(current)
@@ -2716,6 +2733,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	if value.Kind == ValueInt {
 		value = coerceLikelyCustomNumberRuntimeValue(resolvedField, value)
 	}
+	vm.markCollectionRefsEscaped(value)
 	setExplicitSObjectField(&current, resolvedField, value)
 	markSetSObjectField(&current, resolvedField)
 	markUserSetSObjectField(&current, resolvedField)

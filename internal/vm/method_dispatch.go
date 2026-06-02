@@ -1840,8 +1840,9 @@ var (
 )
 
 type aliasSnapshot struct {
-	ref  uint64
-	kind ValueKind
+	ref      uint64
+	kind     ValueKind
+	typeName string
 }
 
 func (s aliasSnapshot) valid() bool {
@@ -2650,6 +2651,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if err != nil {
 			return Null, true, collectionStoreException(mutationType, valueArg)
 		}
+		vm.markCollectionRefsEscaped(item)
 		if insertAt >= 0 {
 			receiver.List = append(receiver.List, Null)
 			copy(receiver.List[insertAt+1:], receiver.List[insertAt:])
@@ -2680,6 +2682,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 			if err != nil {
 				return Null, true, collectionStoreException(mutationType, value)
 			}
+			vm.markCollectionRefsEscaped(item)
 			receiver.List = append(receiver.List, item)
 		}
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
@@ -2874,6 +2877,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		if err != nil {
 			return Null, true, fmt.Errorf("Set.add: %w", err)
 		}
+		vm.markCollectionRefsEscaped(item)
 		contains, err := vm.collectionContainsValue(receiver.Set, item, result)
 		if err != nil {
 			return Null, true, err
@@ -2902,6 +2906,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 			if err != nil {
 				return Null, true, fmt.Errorf("Set.addAll: %w", err)
 			}
+			vm.markCollectionRefsEscaped(item)
 			contains, err := vm.collectionContainsValue(receiver.Set, item, result)
 			if err != nil {
 				return Null, true, err
@@ -3102,6 +3107,7 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if err != nil {
 			return Null, true, fmt.Errorf("Map.put: %w", err)
 		}
+		vm.markCollectionRefsEscaped(key, item)
 		previous := Null
 		encodedKey := vm.mapKey(key)
 		if existing, ok := receiver.Map[encodedKey]; ok {
@@ -3142,6 +3148,7 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			if err != nil {
 				return Null, true, fmt.Errorf("Map.putAll: %w", err)
 			}
+			vm.markCollectionRefsEscaped(key, item)
 			encodedKey := vm.mapKey(key)
 			if _, exists := receiver.Map[encodedKey]; !exists {
 				receiver.MapOrder = append(receiver.MapOrder, encodedKey)

@@ -1433,9 +1433,6 @@ func markDMLAccessibleFields(value *Value) {
 	if value == nil || value.Kind != ValueObject {
 		return
 	}
-	if selected, ok := value.Fields[sobjectQueriedFieldsField]; ok && selected.Kind == ValueMap {
-		return
-	}
 	value.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(value.Type, dmlVisibleSObjectFields(value))
 	value.Fields[sobjectDMLAccessibleField] = Bool(true)
 }
@@ -3447,6 +3444,9 @@ func parentRelationshipObjectIsMissing(value Value) bool {
 			continue
 		}
 		seenField = true
+		if isExplicitSObjectField(value, field) {
+			return false
+		}
 		if fieldValue.Kind != ValueNull {
 			return false
 		}
@@ -3467,6 +3467,9 @@ func parentRelationshipObjectIsMissingDeep(value Value) bool {
 			continue
 		}
 		seenField = true
+		if isExplicitSObjectField(value, field) {
+			return false
+		}
 		if fieldValue.Kind == ValueObject && parentRelationshipObjectIsMissingDeep(fieldValue) {
 			continue
 		}

@@ -333,6 +333,48 @@ System.assertEquals(50, second.values.size());
 	}
 }
 
+func TestExecLocalCollectionMutationRefreshesTopLevelAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Integer> first = new Map<String, Integer>();
+Map<String, Integer> second = first;
+first.put('one', 1);
+System.assertEquals(1, second.size());
+System.assertEquals(1, second.get('one'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCollectionAssignedToObjectFieldPropagatesLocalMutation(t *testing.T) {
+	program, err := CompileAnonymous(`
+Box box = new Box();
+List<String> values = new List<String>();
+box.values = values;
+values.add('stored');
+System.assertEquals(1, box.values.size());
+System.assertEquals('stored', box.values.get(0));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"values": {Name: "values", Type: "List<String>"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectPropertyGetterNullSupportsFieldAccess(t *testing.T) {
 	getterProgram, err := CompileAnonymous(`return null;`)
 	if err != nil {
@@ -2151,6 +2193,103 @@ func TestFindValueByRefFallsBackWhenStaticRefIndexIsStale(t *testing.T) {
 	}
 	if got.Ref != target.Ref {
 		t.Fatalf("found ref = %d, want %d", got.Ref, target.Ref)
+	}
+}
+
+func TestExecStaticTypeKeyMapBaseListStoresSubclassStack(t *testing.T) {
+	pushProgram, err := CompileAnonymous(`
+List<BaseDomain> stack = stacks.get(key);
+if (stack == null) {
+    stacks.put(key, stack = new List<BaseDomain>());
+}
+stack.add(domain);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	popProgram, err := CompileAnonymous(`
+List<BaseDomain> stack = stacks.get(key);
+return stack.remove(stack.size() - 1);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	peekProgram, err := CompileAnonymous(`
+List<BaseDomain> stack = stacks.get(key);
+return stack[index];
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+SubDomain one = new SubDomain();
+SubDomain two = new SubDomain();
+Registry.push(SubDomain.class, one);
+one.state = 'one';
+System.assertEquals('one', Registry.peek(SubDomain.class, 0).state);
+Registry.push(SubDomain.class, two);
+System.assertEquals('one', Registry.peek(SubDomain.class, 0).state);
+System.assertEquals(null, Registry.peek(SubDomain.class, 1).state);
+two.state = 'two';
+System.assertEquals('one', Registry.peek(SubDomain.class, 0).state);
+System.assertEquals('two', Registry.peek(SubDomain.class, 1).state);
+System.assertEquals('two', Registry.pop(SubDomain.class).state);
+System.assertEquals('one', Registry.pop(SubDomain.class).state);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "BaseDomain",
+		Fields: map[string]Field{
+			"state": {Name: "state", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "SubDomain",
+		SuperClass: "BaseDomain",
+		Fields: map[string]Field{
+			"state": {Name: "state", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Registry",
+		StaticFields: map[string]Field{
+			"stacks": {Name: "stacks", Type: "Map<Type,List<BaseDomain>>", Static: true, Value: Map()},
+		},
+		Methods: map[string]Method{
+			"push": {
+				Name:       "Registry.push",
+				ClassName:  "Registry",
+				ReturnType: "void",
+				Params:     []Param{{Name: "key", Type: "Type"}, {Name: "domain", Type: "BaseDomain"}},
+				Program:    pushProgram,
+			},
+			"pop": {
+				Name:       "Registry.pop",
+				ClassName:  "Registry",
+				ReturnType: "BaseDomain",
+				Params:     []Param{{Name: "key", Type: "Type"}},
+				Program:    popProgram,
+			},
+			"peek": {
+				Name:       "Registry.peek",
+				ClassName:  "Registry",
+				ReturnType: "BaseDomain",
+				Params:     []Param{{Name: "key", Type: "Type"}, {Name: "index", Type: "Integer"}},
+				Program:    peekProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

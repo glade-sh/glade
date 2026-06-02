@@ -4029,6 +4029,61 @@ System.assertEquals(7, updated.Defaulted__c);
 	}
 }
 
+func TestExecUpdateTriggerCanReadUnqueriedFieldFromQueriedDMLRecord(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Contact c : Trigger.new) {
+	System.assertEquals(null, c.Salutation);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Contact contact = new Contact(LastName = 'Lovelace');
+insert contact;
+Contact queried = [SELECT Id FROM Contact WHERE Id = :contact.Id LIMIT 1];
+queried.LastName = 'Byron';
+update queried;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "ContactBeforeUpdateProjection",
+		Object:    "Contact",
+		Timing:    triggerTimingBefore,
+		Operation: "update",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDMLAccessibleMarkerOverridesExistingSOQLProjection(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	contact := Object("Contact")
+	contact.Fields["Id"] = platformScalar("Id", "003000000000001AAA")
+	contact.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue("Contact", map[string]bool{"id": true})
+	markDMLAccessibleFields(&contact)
+	_, handled, err := machine.callSObjectMember(contact, "get", []Value{String("Salutation")})
+	if !handled {
+		t.Fatal("SObject.get was not handled")
+	}
+	if err != nil {
+		t.Fatalf("DML-accessible projection read returned error: %v", err)
+	}
+}
+
 func TestExecUpdatePreservesExplicitNullThroughBeforeTrigger(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 for (Account a : Trigger.new) {
@@ -11919,6 +11974,30 @@ try {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectGetWrongFieldTokenCatchCanUseFallbackRecord(t *testing.T) {
+	program, err := CompileAnonymous(`
+Contact person = new Contact(Email = 'ada@example.invalid');
+Account account = new Account(Name = 'Acme');
+Object value;
+try {
+  value = account.get(Contact.Email);
+} catch (SObjectException e) {
+  value = person.get(Contact.Email);
+}
+System.assertEquals('ada@example.invalid', value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

@@ -3046,7 +3046,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("PageReference.%s expects 0 arguments", method)
 			}
-			if vm.hasStatement {
+			if vm.toolingExecuteAnonymous {
 				return Null, receiver, false, true, unsupportedCallError("PageReference." + method + " local Visualforce page rendering surface")
 			}
 			if method == "getContentAsPDF" {

@@ -156,6 +156,37 @@ func BenchmarkReplaceAliasSnapshotLargeOrderGraph(b *testing.B) {
 	}
 }
 
+func BenchmarkReplaceAliasSnapshotWideMixedGraph(b *testing.B) {
+	target := Map()
+	for i := 0; i < 50; i++ {
+		target.Map[mapKey(String(fmt.Sprintf("target-%d", i)))] = Decimal(float64(i))
+	}
+	updated := target
+	updated.Map[mapKey(String("new"))] = Decimal(99)
+
+	root := Object("Root")
+	for i := 0; i < 400; i++ {
+		child := Object("Line")
+		child.Fields["Name"] = String(fmt.Sprintf("line-%d", i))
+		child.Fields["Quantity"] = Decimal(float64(i))
+		child.Fields["Active"] = Bool(true)
+		child.Fields["Empty"] = List()
+		root.Fields[fmt.Sprintf("Line%d", i)] = child
+	}
+	root.Fields["Target"] = target
+	snapshot := snapshotAlias(target)
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		seen := make(map[uint64]bool)
+		replaced, changed := replaceAliasSnapshot(root, snapshot, updated, seen)
+		replacedTarget := replaced.Fields["Target"]
+		if !changed || len(replacedTarget.Map) != len(updated.Map) {
+			b.Fatalf("alias was not replaced")
+		}
+	}
+}
+
 func BenchmarkSameAliasRuntimeContentLargeOrderGraph(b *testing.B) {
 	left := Object("OrderGraph")
 	right := left

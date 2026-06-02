@@ -14,6 +14,10 @@ import (
 )
 
 func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, result *Result) (Value, error) {
+	vm.markRootCollectionRefsEscaped(args...)
+	for _, value := range namedArgs {
+		vm.markCollectionRefsEscaped(value)
+	}
 	if strings.HasPrefix(callee, "new:") {
 		return vm.constructValue(strings.TrimPrefix(callee, "new:"), args, namedArgs, result)
 	}
