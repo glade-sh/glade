@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/capability"
+	"github.com/glade-sh/glade/internal/surfaceledger"
 )
 
 const OrchestratorSchemaVersion = 1
@@ -232,6 +233,60 @@ func BuildInventoryFromReconciliation(rec capability.Reconciliation, cat capabil
 		Target:        "apex oracle inventory (docs reconciliation)",
 		GeneratedAt:   time.Now().UTC(),
 		Surfaces:      surfaces,
+	}
+}
+
+func BuildInventoryFromLedger(ledger surfaceledger.SurfaceLedger, gapClass string, limit int) Inventory {
+	rows := append([]surfaceledger.SurfaceLedgerRow(nil), ledger.Rows...)
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].Priority == rows[j].Priority {
+			return rows[i].SurfaceID < rows[j].SurfaceID
+		}
+		return rows[i].Priority < rows[j].Priority
+	})
+	var surfaces []Surface
+	for _, row := range rows {
+		if gapClass != "" && row.GapClass != gapClass {
+			continue
+		}
+		if row.Product != surfaceledger.ProductApex {
+			continue
+		}
+		if row.GapClass != surfaceledger.GapMissingShape && row.GapClass != surfaceledger.GapMissingBehavior {
+			continue
+		}
+		surfaces = append(surfaces, Surface{
+			SurfaceID:  row.SurfaceID,
+			Area:       row.Area,
+			Namespace:  row.Namespace,
+			Type:       firstNonEmpty(row.TypeName, row.SurfaceID),
+			Member:     row.MemberName,
+			Kind:       row.Kind,
+			ReturnType: row.ReturnType,
+			Parameters: append([]string(nil), row.Parameters...),
+			Status:     ledgerRowSurfaceStatus(row),
+			Sources:    append([]string{"surface-ledger"}, row.Sources...),
+		})
+		if limit > 0 && len(surfaces) >= limit {
+			break
+		}
+	}
+	return Inventory{
+		SchemaVersion: OrchestratorSchemaVersion,
+		Target:        "apex oracle inventory (surface ledger)",
+		GeneratedAt:   time.Now().UTC(),
+		Surfaces:      surfaces,
+	}
+}
+
+func ledgerRowSurfaceStatus(row surfaceledger.SurfaceLedgerRow) SurfaceStatus {
+	switch row.GapClass {
+	case surfaceledger.GapMissingBehavior:
+		return SurfaceCompileShapeKnown
+	case surfaceledger.GapMissingShape:
+		return SurfaceUnknown
+	default:
+		return SurfaceManualReview
 	}
 }
 

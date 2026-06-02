@@ -16,6 +16,7 @@ import (
 	"github.com/glade-sh/glade/internal/apexdocs"
 	"github.com/glade-sh/glade/internal/capability"
 	"github.com/glade-sh/glade/internal/oracle"
+	"github.com/glade-sh/glade/internal/surfaceledger"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -130,6 +131,8 @@ func runCompatOracleInventory(args []string, w io.Writer) error {
 	stubRoot := "example-projects/stubs"
 	catalogPath := ""
 	docsInventoryPath := ""
+	ledgerPath := ""
+	gapClass := ""
 	output := ""
 	check := ""
 	jsonOut := false
@@ -154,6 +157,18 @@ func runCompatOracleInventory(args []string, w io.Writer) error {
 				return errors.New("--inventory requires a value")
 			}
 			docsInventoryPath = args[i]
+		case "--ledger":
+			i++
+			if i >= len(args) {
+				return errors.New("--ledger requires a value")
+			}
+			ledgerPath = args[i]
+		case "--gap-class":
+			i++
+			if i >= len(args) {
+				return errors.New("--gap-class requires a value")
+			}
+			gapClass = args[i]
 		case "--limit":
 			i++
 			if i >= len(args) {
@@ -182,15 +197,27 @@ func runCompatOracleInventory(args []string, w io.Writer) error {
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
-	if catalogPath != "" && docsInventoryPath != "" {
-		return errors.New("use only one of --catalog or --inventory")
+	sourceCount := 0
+	for _, set := range []bool{catalogPath != "", docsInventoryPath != "", ledgerPath != ""} {
+		if set {
+			sourceCount++
+		}
 	}
-	if worklistLimit >= 0 && catalogPath == "" && docsInventoryPath == "" {
-		return errors.New("--limit only applies with --catalog or --inventory")
+	if sourceCount > 1 {
+		return errors.New("use only one of --catalog, --inventory, or --ledger")
+	}
+	if worklistLimit >= 0 && catalogPath == "" && docsInventoryPath == "" && ledgerPath == "" {
+		return errors.New("--limit only applies with --catalog, --inventory, or --ledger")
 	}
 
 	var inv oracle.Inventory
 	switch {
+	case ledgerPath != "":
+		ledger, err := surfaceledger.ReadLedgerJSON(ledgerPath)
+		if err != nil {
+			return err
+		}
+		inv = oracle.BuildInventoryFromLedger(ledger, gapClass, worklistLimit)
 	case catalogPath != "" || docsInventoryPath != "":
 		var catalog capability.Catalog
 		if catalogPath != "" {

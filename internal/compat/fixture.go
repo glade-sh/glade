@@ -32,9 +32,10 @@ type PackageDirectory struct {
 }
 
 type FixtureEvidence struct {
-	Symbol string `json:"symbol"`
-	Kind   string `json:"kind,omitempty"`
-	Notes  string `json:"notes,omitempty"`
+	Symbol    string `json:"symbol"`
+	SurfaceID string `json:"surfaceId,omitempty"`
+	Kind      string `json:"kind,omitempty"`
+	Notes     string `json:"notes,omitempty"`
 }
 
 type SourceFile struct {
