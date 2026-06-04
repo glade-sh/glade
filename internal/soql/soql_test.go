@@ -75,14 +75,14 @@ func TestParseNotEqualAngleOperatorBeforeNull(t *testing.T) {
 	}
 }
 
-func TestExecuteWhereIncludesMatchesSemicolonDelimitedValues(t *testing.T) {
+func TestExecuteWhereIncludesExcludesMatchesMultiSelectPicklistValues(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Product__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "Product__c",
 			Fields: map[string]storage.Field{
 				"Name":            {APIName: "Name", Type: storage.FieldString},
-				"PriceClasses__c": {APIName: "PriceClasses__c", Type: storage.FieldString},
+				"PriceClasses__c": {APIName: "PriceClasses__c", Type: storage.FieldMultiPicklist, DisplayType: "MULTIPICKLIST"},
 			},
 		},
 		Records: map[storage.ID]storage.Record{
@@ -112,19 +112,38 @@ func TestExecuteWhereIncludesMatchesSemicolonDelimitedValues(t *testing.T) {
 		},
 	}
 
-	query, err := Parse("SELECT Id FROM Product__c WHERE PriceClasses__c INCLUDES('Member')")
+	query, err := Parse("SELECT Id FROM Product__c WHERE PriceClasses__c INCLUDES('Member','Public')")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if query.Where.Op != "INCLUDES" || query.Where.Value.String != "Member" {
-		t.Fatalf("where = %#v, want INCLUDES Member", query.Where)
+	if query.Where.Op != "INCLUDES" || len(query.Where.Values) != 2 {
+		t.Fatalf("where = %#v, want INCLUDES two operands", query.Where)
 	}
 	result, err := Execute(org, query)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Rows != 1 || result.Records[0].ID != "a01000000000001" {
-		t.Fatalf("records = %#v, want member product only", result.Records)
+	if result.Rows != 2 || result.Records[0].ID != "a01000000000001" || result.Records[1].ID != "a01000000000002" {
+		t.Fatalf("records = %#v, want member and public products", result.Records)
+	}
+
+	query, err = Parse("SELECT Id FROM Product__c WHERE PriceClasses__c EXCLUDES('Member')")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if query.Where.Op != "EXCLUDES" || query.Where.Value.String != "Member" {
+		t.Fatalf("where = %#v, want EXCLUDES Member", query.Where)
+	}
+	result, err = Execute(org, query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 2 || result.Records[0].ID != "a01000000000002" || result.Records[1].ID != "a01000000000003" {
+		t.Fatalf("records = %#v, want public and blank products", result.Records)
+	}
+
+	if _, err := ParseAndExecute(org, "SELECT Id FROM Product__c WHERE Name INCLUDES('Member')"); err == nil || !strings.Contains(err.Error(), "requires multi-select picklist field") {
+		t.Fatalf("text field INCLUDES error = %v, want multi-select picklist error", err)
 	}
 }
 
@@ -1509,6 +1528,67 @@ func TestExecuteDateLiteralPredicates(t *testing.T) {
 	if result.Rows != 1 || result.Records[0].ID != "001000000000002" {
 		t.Fatalf("ISO datetime result = %#v", result)
 	}
+	result, err = ParseAndExecuteAt(org, "SELECT Id FROM Account WHERE CreatedDate = 2026-05-02T14:00:00+01:00", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].ID != "001000000000001" {
+		t.Fatalf("positive offset datetime result = %#v", result)
+	}
+	result, err = ParseAndExecuteAt(org, "SELECT Id FROM Account WHERE CreatedDate = 2026-04-30T05:00:00-08:00", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].ID != "001000000000002" {
+		t.Fatalf("negative offset datetime result = %#v", result)
+	}
+}
+
+func TestExecuteDateLiteralInListPredicates(t *testing.T) {
+	org := aggregateTestOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate}
+	account.Records["001000000000001"] = storage.Record{
+		ID:     "001000000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("Today"),
+			"RenewalDate__c": storage.DateValue("2026-05-02"),
+		},
+	}
+	account.Records["001000000000002"] = storage.Record{
+		ID:     "001000000000002",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("Yesterday"),
+			"RenewalDate__c": storage.DateValue("2026-05-01"),
+		},
+	}
+	account.Records["001000000000003"] = storage.Record{
+		ID:     "001000000000003",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("Older"),
+			"RenewalDate__c": storage.DateValue("2026-04-30"),
+		},
+	}
+	org.Objects["Account"] = account
+	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
+
+	result, err := ParseAndExecuteAt(org, "SELECT Id FROM Account WHERE RenewalDate__c IN (TODAY, YESTERDAY) ORDER BY Id", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 2 || result.Records[0].ID != "001000000000001" || result.Records[1].ID != "001000000000002" {
+		t.Fatalf("date literal IN result = %#v", result)
+	}
+	result, err = ParseAndExecuteAt(org, "SELECT Id FROM Account WHERE RenewalDate__c NOT IN (TODAY, YESTERDAY) ORDER BY Id", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].ID != "001000000000003" {
+		t.Fatalf("date literal NOT IN result = %#v", result)
+	}
 }
 
 func TestExecuteExtendedDateLiteralPredicates(t *testing.T) {
@@ -1539,6 +1619,22 @@ func TestExecuteExtendedDateLiteralPredicates(t *testing.T) {
 			"RenewalDate__c": storage.DateValue("2026-05-01"),
 		},
 	}
+	account.Records["001000000000004"] = storage.Record{
+		ID:     "001000000000004",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("LastWeek"),
+			"RenewalDate__c": storage.DateValue("2026-04-25"),
+		},
+	}
+	account.Records["001000000000005"] = storage.Record{
+		ID:     "001000000000005",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("NextWeek"),
+			"RenewalDate__c": storage.DateValue("2026-05-03"),
+		},
+	}
 	org.Objects["Account"] = account
 	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
 
@@ -1546,14 +1642,14 @@ func TestExecuteExtendedDateLiteralPredicates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Rows != 2 || result.Records[0].Fields["Name"].String != "March" || result.Records[1].Fields["Name"].String != "Quarter" {
+	if result.Rows != 3 || result.Records[0].Fields["Name"].String != "LastWeek" || result.Records[1].Fields["Name"].String != "March" || result.Records[2].Fields["Name"].String != "Quarter" {
 		t.Fatalf("LAST_N_MONTHS result = %#v", result)
 	}
 	result, err = ParseAndExecuteAt(org, "SELECT Id, Name FROM Account WHERE RenewalDate__c = THIS_QUARTER ORDER BY Name", now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Rows != 2 || result.Records[0].Fields["Name"].String != "Quarter" || result.Records[1].Fields["Name"].String != "Yesterday" {
+	if result.Rows != 4 || result.Records[0].Fields["Name"].String != "LastWeek" || result.Records[1].Fields["Name"].String != "NextWeek" || result.Records[2].Fields["Name"].String != "Quarter" || result.Records[3].Fields["Name"].String != "Yesterday" {
 		t.Fatalf("THIS_QUARTER result = %#v", result)
 	}
 	result, err = ParseAndExecuteAt(org, "SELECT Id, Name FROM Account WHERE RenewalDate__c = N_DAYS_AGO:1", now)
@@ -1563,10 +1659,147 @@ func TestExecuteExtendedDateLiteralPredicates(t *testing.T) {
 	if result.Rows != 1 || result.Records[0].Fields["Name"].String != "Yesterday" {
 		t.Fatalf("N_DAYS_AGO result = %#v", result)
 	}
-	_, err = ParseAndExecuteAt(org, "SELECT Id FROM Account WHERE RenewalDate__c = THIS_WEEK", now)
-	var unsupported *UnsupportedFeatureError
-	if !errors.As(err, &unsupported) || unsupported.Message != "soql: date literal THIS_WEEK is not supported" {
-		t.Fatalf("unsupported date literal err = %#v", err)
+	result, err = ParseAndExecuteAt(org, "SELECT Id, Name FROM Account WHERE RenewalDate__c = THIS_WEEK ORDER BY Name", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["Name"].String != "Yesterday" {
+		t.Fatalf("THIS_WEEK result = %#v", result)
+	}
+	result, err = ParseAndExecuteAt(org, "SELECT Id, Name FROM Account WHERE RenewalDate__c = LAST_WEEK ORDER BY Name", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["Name"].String != "LastWeek" {
+		t.Fatalf("LAST_WEEK result = %#v", result)
+	}
+	result, err = ParseAndExecuteAt(org, "SELECT Id, Name FROM Account WHERE RenewalDate__c = NEXT_WEEK ORDER BY Name", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["Name"].String != "NextWeek" {
+		t.Fatalf("NEXT_WEEK result = %#v", result)
+	}
+}
+
+func TestDateLiteralReferenceCoverage(t *testing.T) {
+	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
+	cases := []struct {
+		literal string
+		start   string
+		end     string
+	}{
+		{"YESTERDAY", "2026-05-01", "2026-05-02"},
+		{"TODAY", "2026-05-02", "2026-05-03"},
+		{"TOMORROW", "2026-05-03", "2026-05-04"},
+		{"LAST_WEEK", "2026-04-19", "2026-04-26"},
+		{"THIS_WEEK", "2026-04-26", "2026-05-03"},
+		{"NEXT_WEEK", "2026-05-03", "2026-05-10"},
+		{"LAST_MONTH", "2026-04-01", "2026-05-01"},
+		{"THIS_MONTH", "2026-05-01", "2026-06-01"},
+		{"NEXT_MONTH", "2026-06-01", "2026-07-01"},
+		{"LAST_90_DAYS", "2026-02-01", "2026-05-03"},
+		{"NEXT_90_DAYS", "2026-05-03", "2026-08-01"},
+		{"LAST_N_DAYS:5", "2026-04-27", "2026-05-03"},
+		{"NEXT_N_DAYS:5", "2026-05-03", "2026-05-08"},
+		{"N_DAYS_AGO:3", "2026-04-29", "2026-04-30"},
+		{"NEXT_N_WEEKS:2", "2026-05-03", "2026-05-17"},
+		{"LAST_N_WEEKS:2", "2026-04-12", "2026-04-26"},
+		{"N_WEEKS_AGO:2", "2026-04-12", "2026-04-19"},
+		{"NEXT_N_MONTHS:2", "2026-06-01", "2026-08-01"},
+		{"LAST_N_MONTHS:2", "2026-03-01", "2026-05-01"},
+		{"N_MONTHS_AGO:2", "2026-03-01", "2026-04-01"},
+		{"THIS_QUARTER", "2026-04-01", "2026-07-01"},
+		{"LAST_QUARTER", "2026-01-01", "2026-04-01"},
+		{"NEXT_QUARTER", "2026-07-01", "2026-10-01"},
+		{"NEXT_N_QUARTERS:2", "2026-07-01", "2027-01-01"},
+		{"LAST_N_QUARTERS:2", "2025-10-01", "2026-04-01"},
+		{"N_QUARTERS_AGO:2", "2025-10-01", "2026-01-01"},
+		{"THIS_YEAR", "2026-01-01", "2027-01-01"},
+		{"LAST_YEAR", "2025-01-01", "2026-01-01"},
+		{"NEXT_YEAR", "2027-01-01", "2028-01-01"},
+		{"NEXT_N_YEARS:2", "2027-01-01", "2029-01-01"},
+		{"LAST_N_YEARS:2", "2024-01-01", "2026-01-01"},
+		{"N_YEARS_AGO:2", "2024-01-01", "2025-01-01"},
+		{"THIS_FISCAL_QUARTER", "2026-04-01", "2026-07-01"},
+		{"LAST_FISCAL_QUARTER", "2026-01-01", "2026-04-01"},
+		{"NEXT_FISCAL_QUARTER", "2026-07-01", "2026-10-01"},
+		{"NEXT_N_FISCAL_QUARTERS:2", "2026-07-01", "2027-01-01"},
+		{"LAST_N_FISCAL_QUARTERS:2", "2025-10-01", "2026-04-01"},
+		{"N_FISCAL_QUARTERS_AGO:2", "2025-10-01", "2026-01-01"},
+		{"THIS_FISCAL_YEAR", "2026-01-01", "2027-01-01"},
+		{"LAST_FISCAL_YEAR", "2025-01-01", "2026-01-01"},
+		{"NEXT_FISCAL_YEAR", "2027-01-01", "2028-01-01"},
+		{"NEXT_N_FISCAL_YEARS:2", "2027-01-01", "2029-01-01"},
+		{"LAST_N_FISCAL_YEARS:2", "2024-01-01", "2026-01-01"},
+		{"N_FISCAL_YEARS_AGO:2", "2024-01-01", "2025-01-01"},
+	}
+	for _, tc := range cases {
+		start, end, ok := dateLiteral(tc.literal, now)
+		if !ok {
+			t.Fatalf("%s was not recognized", tc.literal)
+		}
+		if start.String != tc.start || end.String != tc.end {
+			t.Fatalf("%s range = %s..%s, want %s..%s", tc.literal, start.String, end.String, tc.start, tc.end)
+		}
+	}
+}
+
+func TestFiscalDateLiteralsUseOrganizationFiscalStartMonth(t *testing.T) {
+	now := time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC)
+	org := storage.NewOrgState()
+	org.OrgID = "00D000000000001"
+	org.Objects["Organization"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Organization", Fields: map[string]storage.Field{
+			"FiscalYearStartMonth": {APIName: "FiscalYearStartMonth", Type: storage.FieldInteger},
+		}},
+		Records: map[storage.ID]storage.Record{
+			"00D000000000001": {ID: "00D000000000001", Object: "Organization", Fields: map[string]storage.Value{
+				"FiscalYearStartMonth": storage.IntegerValue(2),
+			}},
+		},
+	}
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", Fields: map[string]storage.Field{
+			"Name":           {APIName: "Name", Type: storage.FieldString},
+			"RenewalDate__c": {APIName: "RenewalDate__c", Type: storage.FieldDate},
+		}},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("April"), "RenewalDate__c": storage.DateValue("2026-04-30")}},
+			"001000000000002": {ID: "001000000000002", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("May"), "RenewalDate__c": storage.DateValue("2026-05-01")}},
+			"001000000000003": {ID: "001000000000003", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("July"), "RenewalDate__c": storage.DateValue("2026-07-31")}},
+		},
+	}
+
+	result, err := ParseAndExecuteAt(org, "SELECT Name FROM Account WHERE RenewalDate__c = THIS_FISCAL_QUARTER ORDER BY Name", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 2 || result.Records[0].Fields["Name"].String != "July" || result.Records[1].Fields["Name"].String != "May" {
+		t.Fatalf("records = %#v, want May and July fiscal-quarter rows", result.Records)
+	}
+}
+
+func TestDateLiteralReferenceCoverageWithSpacedNumberSuffix(t *testing.T) {
+	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
+	org := aggregateTestOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate}
+	for id, record := range account.Records {
+		record.Fields["RenewalDate__c"] = storage.DateValue("2026-03-15")
+		if id == "001000000000001" {
+			record.Fields["RenewalDate__c"] = storage.DateValue("2026-04-15")
+		}
+		account.Records[id] = record
+	}
+	org.Objects["Account"] = account
+
+	result, err := ParseAndExecuteAt(org, "SELECT Id FROM Account WHERE RenewalDate__c = N_MONTHS_AGO : 1", now)
+	if err != nil {
+		t.Fatalf("spaced numeric date literal parse failed: %v", err)
+	}
+	if len(result.Records) != 1 {
+		t.Fatalf("N_MONTHS_AGO : 1 records = %d, want 1", len(result.Records))
 	}
 }
 

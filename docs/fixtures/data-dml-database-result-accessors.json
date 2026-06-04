@@ -7,9 +7,141 @@
       "notes": "Local SaveResult/DeleteResult/UpsertResult/MergeResult/UndeleteResult/EmptyRecycleBinResult/LockResult/UnlockResult expose id, success, errors, created, merged IDs, updated-related IDs, status-code, message, fields, and empty extended-error-detail accessors where applicable."
     },
     {
+      "surfaceId": "apex:Database.SaveResult.isSuccess()",
+      "symbol": "Database.SaveResult.isSuccess",
+      "kind": "test",
+      "notes": "Database SaveResult success accessor is asserted on insert and update results."
+    },
+    {
+      "surfaceId": "apex:Database.SaveResult.getId()",
+      "symbol": "Database.SaveResult.getId",
+      "kind": "test",
+      "notes": "Database SaveResult id accessor is asserted on successful and failed insert results."
+    },
+    {
+      "surfaceId": "apex:Database.SaveResult.getErrors()",
+      "symbol": "Database.SaveResult.getErrors",
+      "kind": "test",
+      "notes": "Database SaveResult errors accessor is asserted on successful and failed insert/update results."
+    },
+    {
+      "surfaceId": "apex:Database.UpsertResult.isSuccess()",
+      "symbol": "Database.UpsertResult.isSuccess",
+      "kind": "test",
+      "notes": "Database UpsertResult success accessor is asserted on create and update paths."
+    },
+    {
+      "surfaceId": "apex:Database.UpsertResult.getId()",
+      "symbol": "Database.UpsertResult.getId",
+      "kind": "test",
+      "notes": "Database UpsertResult id accessor is asserted across external-ID create and update paths."
+    },
+    {
+      "surfaceId": "apex:Database.UpsertResult.isCreated()",
+      "symbol": "Database.UpsertResult.isCreated",
+      "kind": "test",
+      "notes": "Database UpsertResult created accessor is asserted for external-ID create and update paths."
+    },
+    {
+      "surfaceId": "apex:Database.MergeResult.isSuccess()",
+      "symbol": "Database.MergeResult.isSuccess",
+      "kind": "test",
+      "notes": "Database MergeResult success accessor is asserted on a local Account merge."
+    },
+    {
+      "surfaceId": "apex:Database.MergeResult.getId()",
+      "symbol": "Database.MergeResult.getId",
+      "kind": "test",
+      "notes": "Database MergeResult id accessor is asserted on the merge master record."
+    },
+    {
+      "surfaceId": "apex:Database.MergeResult.getMergedRecordIds()",
+      "symbol": "Database.MergeResult.getMergedRecordIds",
+      "kind": "test",
+      "notes": "Database MergeResult merged-record IDs accessor is asserted on the duplicate record."
+    },
+    {
+      "surfaceId": "apex:Database.MergeResult.getUpdatedRelatedIds()",
+      "symbol": "Database.MergeResult.getUpdatedRelatedIds",
+      "kind": "test",
+      "notes": "Database MergeResult updated-related IDs accessor is asserted on reparented child records."
+    },
+    {
+      "surfaceId": "apex:Database.DeleteResult.isSuccess()",
+      "symbol": "Database.DeleteResult.isSuccess",
+      "kind": "test",
+      "notes": "Database DeleteResult success accessor is asserted on local delete results."
+    },
+    {
+      "surfaceId": "apex:Database.DeleteResult.getId()",
+      "symbol": "Database.DeleteResult.getId",
+      "kind": "test",
+      "notes": "Database DeleteResult id accessor is asserted on local delete results."
+    },
+    {
+      "surfaceId": "apex:Database.DeleteResult.getErrors()",
+      "symbol": "Database.DeleteResult.getErrors",
+      "kind": "test",
+      "notes": "Database DeleteResult errors accessor is asserted on local delete results."
+    },
+    {
+      "surfaceId": "apex:Database.UndeleteResult.isSuccess()",
+      "symbol": "Database.UndeleteResult.isSuccess",
+      "kind": "test",
+      "notes": "Database UndeleteResult success accessor is asserted on failed and successful undelete results."
+    },
+    {
+      "surfaceId": "apex:Database.UndeleteResult.getErrors()",
+      "symbol": "Database.UndeleteResult.getErrors",
+      "kind": "test",
+      "notes": "Database UndeleteResult errors accessor is asserted on active-record undelete failures."
+    },
+    {
+      "surfaceId": "apex:Database.EmptyRecycleBinResult.isSuccess()",
+      "symbol": "Database.EmptyRecycleBinResult.isSuccess",
+      "kind": "test",
+      "notes": "Database EmptyRecycleBinResult success accessor is asserted on permanent delete results."
+    },
+    {
+      "surfaceId": "apex:System.Database.emptyRecycleBin(Object)",
+      "symbol": "Database.emptyRecycleBin",
+      "kind": "test",
+      "notes": "Single-record emptyRecycleBin permanently removes a deleted local record."
+    },
+    {
+      "surfaceId": "apex:Database.Error.getStatusCode()",
+      "symbol": "Database.Error.getStatusCode",
+      "kind": "test",
+      "notes": "Database Error status-code accessor is asserted on required-field and unknown-field failures."
+    },
+    {
+      "surfaceId": "apex:Database.Error.getMessage()",
+      "symbol": "Database.Error.getMessage",
+      "kind": "test",
+      "notes": "Database Error message accessor is asserted on required-field failures."
+    },
+    {
+      "surfaceId": "apex:Database.Error.getFields()",
+      "symbol": "Database.Error.getFields",
+      "kind": "test",
+      "notes": "Database Error fields accessor is asserted on required-field and unknown-field failures."
+    },
+    {
+      "surfaceId": "apex:Database.Error.getExtendedErrorDetails()",
+      "symbol": "Database.Error.getExtendedErrorDetails",
+      "kind": "test",
+      "notes": "Database Error extended-error-details accessor is asserted as empty for local modeled DML errors."
+    },
+    {
       "symbol": "Database allOrNone record-action rollback",
       "kind": "test",
       "notes": "Local lock/unlock/emptyRecycleBin allOrNone failures throw DmlException and roll back earlier successful rows in the same call."
+    },
+    {
+      "surfaceId": "apex:System.Database.emptyRecycleBin(List<Object>)",
+      "symbol": "Database.emptyRecycleBin",
+      "kind": "test",
+      "notes": "List emptyRecycleBin with allOrNone=true rolls back earlier permanent deletes on local failures."
     }
   ],
   "source": [

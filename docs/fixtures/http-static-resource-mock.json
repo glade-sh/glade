@@ -1,0 +1,28 @@
+{
+  "name": "http-static-resource-mock",
+  "evidence": [
+    {
+      "symbol": "StaticResourceCalloutMock",
+      "kind": "exec",
+      "notes": "StaticResourceCalloutMock can be constructed and configured in local tests."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "StaticResourceCalloutMock mock = new StaticResourceCalloutMock();\nmock.setStaticResource('Single_Response');\nmock.setStatusCode(203);\nmock.setHeader('Content-Type', 'application/json');\nSystem.assertNotEquals(null, mock);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "StaticResourceCalloutMock mock = new StaticResourceCalloutMock();\nmock.setStaticResource('Single_Response');\nmock.setStatusCode(203);\nmock.setHeader('Content-Type', 'application/json');\nSystem.assertNotEquals(null, mock);"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

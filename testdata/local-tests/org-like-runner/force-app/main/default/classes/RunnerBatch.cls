@@ -1,4 +1,4 @@
-public class RunnerBatch {
+public class RunnerBatch implements Database.Batchable<Integer> {
   public List<Integer> start(Database.BatchableContext context) {
     return new List<Integer>{1, 2, 3};
   }

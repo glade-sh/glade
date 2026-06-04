@@ -7,9 +7,32 @@
       "notes": "Creates local org-state snapshots for supported DML mutations."
     },
     {
+      "surfaceId": "apex:System.Database.setSavepoint()",
+      "symbol": "Database.setSavepoint",
+      "kind": "test",
+      "notes": "Creates a local org-state snapshot before supported DML mutations."
+    },
+    {
       "symbol": "Database.rollback",
       "kind": "test",
       "notes": "Restores selected local snapshots for supported local DML mutations; focused VM unit tests cover later-savepoint invalidation."
+    },
+    {
+      "surfaceId": "apex:System.Database.rollback(Savepoint)",
+      "symbol": "Database.rollback",
+      "kind": "test",
+      "notes": "Rolls back to a selected local savepoint and restores supported DML state."
+    },
+    {
+      "symbol": "Database.releaseSavepoint",
+      "kind": "test",
+      "notes": "Releases local savepoints without rolling back current org state; focused VM tests cover released and nested savepoint invalidation."
+    },
+    {
+      "surfaceId": "apex:System.Database.releaseSavepoint(Savepoint)",
+      "symbol": "Database.releaseSavepoint",
+      "kind": "test",
+      "notes": "Releases a local savepoint without rolling back current org state."
     }
   ],
   "source": [
@@ -23,7 +46,7 @@
     },
     {
       "path": "force-app/main/classes/DatabaseSavepointRollbackParityTest.cls",
-      "content": "@isTest private class DatabaseSavepointRollbackParityTest { @isTest static void rollbackRestoresLocalOrgSnapshot() { insert new Account(Name = 'before'); System.Savepoint sp = Database.setSavepoint(); insert new Account(Name = 'after'); Integer beforeCount = [SELECT COUNT() FROM Account]; System.assertEquals(2, beforeCount); Database.rollback(sp); Integer afterCount = [SELECT COUNT() FROM Account]; System.assertEquals(1, afterCount); Account row = [SELECT Name FROM Account LIMIT 1]; System.assertEquals('before', row.Name); } @isTest static void multipleSavepointsRestoreSelectedSnapshots() { System.Savepoint first = Database.setSavepoint(); insert new Account(Name = 'one'); System.Savepoint second = Database.setSavepoint(); insert new Account(Name = 'two'); Integer bothCount = [SELECT COUNT() FROM Account]; System.assertEquals(2, bothCount); Database.rollback(second); Integer secondCount = [SELECT COUNT() FROM Account]; System.assertEquals(1, secondCount); Database.rollback(first); Integer firstCount = [SELECT COUNT() FROM Account]; System.assertEquals(0, firstCount); } }"
+      "content": "@isTest private class DatabaseSavepointRollbackParityTest { @isTest static void rollbackRestoresLocalOrgSnapshot() { insert new Account(Name = 'before'); System.Savepoint sp = Database.setSavepoint(); insert new Account(Name = 'after'); Integer beforeCount = [SELECT COUNT() FROM Account]; System.assertEquals(2, beforeCount); Database.rollback(sp); Integer afterCount = [SELECT COUNT() FROM Account]; System.assertEquals(1, afterCount); Account row = [SELECT Name FROM Account LIMIT 1]; System.assertEquals('before', row.Name); } @isTest static void multipleSavepointsRestoreSelectedSnapshots() { System.Savepoint first = Database.setSavepoint(); insert new Account(Name = 'one'); System.Savepoint second = Database.setSavepoint(); insert new Account(Name = 'two'); Integer bothCount = [SELECT COUNT() FROM Account]; System.assertEquals(2, bothCount); Database.rollback(second); Integer secondCount = [SELECT COUNT() FROM Account]; System.assertEquals(1, secondCount); Database.rollback(first); Integer firstCount = [SELECT COUNT() FROM Account]; System.assertEquals(0, firstCount); } @isTest static void releaseDoesNotRollbackCurrentState() { System.Savepoint sp = Database.setSavepoint(); insert new Account(Name = 'kept'); Database.releaseSavepoint(sp); System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'kept']); } }"
     }
   ],
   "command": {
@@ -32,8 +55,8 @@
   "expected": {
     "result": {
       "ok": true,
-      "total": 2,
-      "passed": 2,
+      "total": 3,
+      "passed": 3,
       "failed": 0,
       "errors": 0
     }

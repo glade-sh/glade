@@ -34,28 +34,38 @@ type SObject struct {
 }
 
 type Field struct {
-	Name              string          `json:"name"`
-	Label             string          `json:"label,omitempty"`
-	Type              string          `json:"type,omitempty"`
-	Length            int             `json:"length,omitempty"`
-	Precision         int             `json:"precision,omitempty"`
-	Scale             int             `json:"scale,omitempty"`
-	Nillable          bool            `json:"nillable"`
-	Createable        bool            `json:"createable,omitempty"`
-	Updateable        bool            `json:"updateable,omitempty"`
-	Custom            bool            `json:"custom,omitempty"`
-	ExternalID        bool            `json:"externalId,omitempty"`
-	Unique            bool            `json:"unique,omitempty"`
-	CaseSensitive     bool            `json:"caseSensitive,omitempty"`
-	ReferenceTo       []string        `json:"referenceTo,omitempty"`
-	RelationshipName  string          `json:"relationshipName,omitempty"`
-	InlineHelpText    string          `json:"inlineHelpText,omitempty"`
-	Description       string          `json:"description,omitempty"`
-	PicklistValues    []PicklistValue `json:"picklistValues,omitempty"`
-	DefaultValue      any             `json:"defaultValue,omitempty"`
-	Calculated        bool            `json:"calculated,omitempty"`
-	Formula           string          `json:"formula,omitempty"`
-	RelationshipOrder *int            `json:"relationshipOrder,omitempty"`
+	Name                string          `json:"name"`
+	Label               string          `json:"label,omitempty"`
+	Type                string          `json:"type,omitempty"`
+	Length              int             `json:"length,omitempty"`
+	Precision           int             `json:"precision,omitempty"`
+	Scale               int             `json:"scale,omitempty"`
+	Nillable            bool            `json:"nillable"`
+	Accessible          *bool           `json:"accessible,omitempty"`
+	Createable          bool            `json:"createable,omitempty"`
+	Updateable          bool            `json:"updateable,omitempty"`
+	Filterable          *bool           `json:"filterable,omitempty"`
+	Groupable           *bool           `json:"groupable,omitempty"`
+	Sortable            *bool           `json:"sortable,omitempty"`
+	Aggregatable        *bool           `json:"aggregatable,omitempty"`
+	Permissionable      *bool           `json:"permissionable,omitempty"`
+	DeprecatedAndHidden *bool           `json:"deprecatedAndHidden,omitempty"`
+	Custom              bool            `json:"custom,omitempty"`
+	ExternalID          bool            `json:"externalId,omitempty"`
+	Unique              bool            `json:"unique,omitempty"`
+	CaseSensitive       bool            `json:"caseSensitive,omitempty"`
+	RestrictedPicklist  bool            `json:"restrictedPicklist,omitempty"`
+	IDLookup            bool            `json:"idLookup,omitempty"`
+	NamePointing        bool            `json:"namePointing,omitempty"`
+	ReferenceTo         []string        `json:"referenceTo,omitempty"`
+	RelationshipName    string          `json:"relationshipName,omitempty"`
+	InlineHelpText      string          `json:"inlineHelpText,omitempty"`
+	Description         string          `json:"description,omitempty"`
+	PicklistValues      []PicklistValue `json:"picklistValues,omitempty"`
+	DefaultValue        any             `json:"defaultValue,omitempty"`
+	Calculated          bool            `json:"calculated,omitempty"`
+	Formula             string          `json:"formula,omitempty"`
+	RelationshipOrder   *int            `json:"relationshipOrder,omitempty"`
 }
 
 type PicklistValue struct {
@@ -66,12 +76,14 @@ type PicklistValue struct {
 }
 
 type ChildRelationship struct {
-	ChildSObject        string `json:"childSObject"`
-	Field               string `json:"field"`
-	RelationshipName    string `json:"relationshipName,omitempty"`
-	CascadeDelete       bool   `json:"cascadeDelete,omitempty"`
-	DeprecatedAndHidden bool   `json:"deprecatedAndHidden,omitempty"`
-	RestrictedDelete    bool   `json:"restrictedDelete,omitempty"`
+	ChildSObject        string   `json:"childSObject"`
+	Field               string   `json:"field"`
+	RelationshipName    string   `json:"relationshipName,omitempty"`
+	CascadeDelete       bool     `json:"cascadeDelete,omitempty"`
+	DeprecatedAndHidden bool     `json:"deprecatedAndHidden,omitempty"`
+	RestrictedDelete    bool     `json:"restrictedDelete,omitempty"`
+	JunctionIDListNames []string `json:"junctionIdListNames,omitempty"`
+	JunctionReferenceTo []string `json:"junctionReferenceTo,omitempty"`
 }
 
 type RecordTypeInfo struct {
@@ -193,17 +205,32 @@ func (o SObject) ToDescribeSObjectResult() sobject.DescribeSObjectResult {
 
 func (f Field) ToDescribeFieldResult() sobject.DescribeFieldResult {
 	return sobject.DescribeFieldResult{
-		Name:             f.Name,
-		Type:             storageFieldType(f),
-		DisplayType:      displayFieldType(f.Type),
-		Label:            labelOrName(f.Label, f.Name),
-		ReferenceTo:      cleanStrings(f.ReferenceTo),
-		RelationshipName: strings.TrimSpace(f.RelationshipName),
-		DefaultValue:     defaultString(f.DefaultValue),
-		Required:         requiredForCreate(f),
-		ExternalID:       f.ExternalID,
-		Unique:           f.Unique,
-		PicklistValues:   storagePicklistValues(f.PicklistValues),
+		Name:                f.Name,
+		Type:                storageFieldType(f),
+		DisplayType:         displayFieldType(f.Type),
+		Label:               labelOrName(f.Label, f.Name),
+		Nillable:            storage.BoolFlag(f.Nillable),
+		Accessible:          f.Accessible,
+		Createable:          storage.BoolFlag(f.Createable),
+		Updateable:          storage.BoolFlag(f.Updateable),
+		Filterable:          f.Filterable,
+		Groupable:           f.Groupable,
+		Sortable:            f.Sortable,
+		Aggregatable:        f.Aggregatable,
+		Permissionable:      f.Permissionable,
+		DeprecatedAndHidden: f.DeprecatedAndHidden,
+		ReferenceTo:         cleanStrings(f.ReferenceTo),
+		RelationshipName:    strings.TrimSpace(f.RelationshipName),
+		RelationshipOrder:   cloneIntPtr(f.RelationshipOrder),
+		DefaultValue:        defaultString(f.DefaultValue),
+		Required:            requiredForCreate(f),
+		ExternalID:          f.ExternalID,
+		Unique:              f.Unique,
+		CaseSensitive:       f.CaseSensitive,
+		RestrictedPicklist:  f.RestrictedPicklist,
+		IDLookup:            f.IDLookup,
+		NamePointing:        f.NamePointing,
+		PicklistValues:      storagePicklistValues(f.PicklistValues),
 	}
 }
 
@@ -245,7 +272,7 @@ func childRelationshipNames(objects []SObject) map[string]map[string]string {
 func applyChildRelationships(definitions map[string]storage.ObjectDefinition, objects []SObject) {
 	for _, parent := range objects {
 		for _, child := range parent.ChildRelationships {
-			if child.ChildSObject == "" || child.Field == "" || child.RelationshipName == "" || child.DeprecatedAndHidden {
+			if child.ChildSObject == "" || child.Field == "" || child.RelationshipName == "" {
 				continue
 			}
 			definition, ok := definitions[child.ChildSObject]
@@ -259,6 +286,9 @@ func applyChildRelationships(definitions map[string]storage.ObjectDefinition, ob
 				definition.Relations[i].ChildRelationship = child.RelationshipName
 				definition.Relations[i].CascadeDelete = child.CascadeDelete
 				definition.Relations[i].RestrictedDelete = child.RestrictedDelete
+				definition.Relations[i].DeprecatedAndHidden = child.DeprecatedAndHidden
+				definition.Relations[i].JunctionIDListNames = cleanStrings(child.JunctionIDListNames)
+				definition.Relations[i].JunctionReferenceTo = cleanStrings(child.JunctionReferenceTo)
 			}
 			definitions[child.ChildSObject] = definition
 		}
@@ -308,8 +338,10 @@ func storageFieldType(f Field) storage.FieldType {
 		return storage.FieldID
 	case "string", "textarea", "url", "phone", "email", "encryptedstring", "autonumber", "combobox":
 		return storage.FieldString
-	case "picklist", "multipicklist":
+	case "picklist":
 		return storage.FieldPicklist
+	case "multipicklist":
+		return storage.FieldMultiPicklist
 	case "boolean":
 		return storage.FieldBoolean
 	case "int", "integer":
@@ -430,6 +462,14 @@ func cleanStrings(values []string) []string {
 		}
 	}
 	return out
+}
+
+func cloneIntPtr(in *int) *int {
+	if in == nil {
+		return nil
+	}
+	out := *in
+	return &out
 }
 
 func labelOrName(label, name string) string {

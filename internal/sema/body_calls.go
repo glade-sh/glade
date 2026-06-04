@@ -57,6 +57,16 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 			diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, method, resolveMemberMethods(model, receiverType, method), args, haveArgs, "instance", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
 			continue
 		}
+		if haveArgs {
+			argTypes := make([]string, len(args))
+			for i, arg := range args {
+				argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
+			}
+			if diag, blocked := diagnoseDatabaseExecuteBatchArg(typ, member, callee, argTypes, bodyOffset+match[2], bodyOffset+match[3], source, model); blocked {
+				diagnostics = append(diagnostics, diag)
+				continue
+			}
+		}
 		if semaLooksLikeDottedCall(body, match[0]) {
 			continue
 		}
@@ -337,6 +347,16 @@ func constructorDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 }
 
 func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, candidates []resolvedMember, args []semaArg, haveArgs bool, receiverMode string, start, end int, source string, scope map[string]string, model map[string]typeMembers) []diagnostic.Diagnostic {
+	var argTypes []string
+	if haveArgs {
+		argTypes = make([]string, len(args))
+		for i, arg := range args {
+			argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
+		}
+		if diag, blocked := diagnoseDatabaseExecuteBatchArg(typ, member, callee, argTypes, start, end, source, model); blocked {
+			return []diagnostic.Diagnostic{diag}
+		}
+	}
 	if len(candidates) == 0 {
 		if receiverMode == "implicit" {
 			if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, typ.Name, callee, args, start, end, source, scope, model, "implicit"); handled {
@@ -386,10 +406,6 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 	}
 	if !haveArgs {
 		return nil
-	}
-	argTypes := make([]string, len(args))
-	for i, arg := range args {
-		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
 	}
 	if semaDatabaseDynamicQueryTextCall(callee) {
 		return nil
@@ -451,6 +467,43 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 		File:     typ.File,
 		Range:    semaRange(source, start, end),
 	}}
+}
+
+func diagnoseDatabaseExecuteBatchArg(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, argTypes []string, start, end int, source string, model map[string]typeMembers) (diagnostic.Diagnostic, bool) {
+	if len(argTypes) == 0 || !isBatchEnqueueCallee(callee) {
+		return diagnostic.Diagnostic{}, false
+	}
+	argType := strings.TrimSpace(argTypes[0])
+	if argType == "" || strings.EqualFold(argType, "null") {
+		return diagnostic.Diagnostic{}, false
+	}
+	if semaAssignableToType("Database.Batchable", argType, model) || semaAssignableToType("Batchable", argType, model) {
+		return diagnostic.Diagnostic{}, false
+	}
+	return diagnostic.Diagnostic{
+		Severity: diagnostic.Error,
+		Code:     "GLADESEMA009",
+		Message:  fmt.Sprintf("%s %q has no matching overload for call %q: first argument must implement Database.Batchable", member.Kind, member.Name, callee),
+		File:     typ.File,
+		Range:    semaRange(source, start, end),
+	}, true
+}
+
+func isBatchEnqueueCallee(callee string) bool {
+	parts := strings.Split(callee, ".")
+	if len(parts) < 2 {
+		return false
+	}
+	member := parts[len(parts)-1]
+	owner := parts[len(parts)-2]
+	switch {
+	case strings.EqualFold(member, "executeBatch"):
+		return strings.EqualFold(owner, "Database")
+	case strings.EqualFold(member, "scheduleBatch"):
+		return strings.EqualFold(owner, "System")
+	default:
+		return false
+	}
 }
 
 func semaKnownFluentHelperMethod(method string) bool {
@@ -1186,6 +1239,12 @@ func semaDynamicQueryResultAssignableTo(paramType string, model map[string]typeM
 func semaPlatformAssignableToType(paramType, argType string, model map[string]typeMembers) bool {
 	paramBase, paramArgs := semaGenericBaseAndArgs(semaCanonicalPlatformAlias(paramType))
 	argType = semaCanonicalPlatformAlias(argType)
+	if strings.EqualFold(paramBase, "Database.BatchableContext") && strings.EqualFold(argType, "Database.BatchableContextImpl") {
+		return true
+	}
+	if strings.EqualFold(paramBase, "System.FinalizerContext") && strings.EqualFold(argType, "System.FinalizerContextImpl") {
+		return true
+	}
 	if strings.EqualFold(paramBase, "Cache.Partition") &&
 		(strings.EqualFold(argType, "Cache.OrgPartition") || strings.EqualFold(argType, "Cache.SessionPartition")) {
 		return true

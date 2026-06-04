@@ -1637,8 +1637,9 @@ func TestRunCompatStandardObjectsOutputAndCheck(t *testing.T) {
 		t.Fatalf("standard objects json exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
 	for _, want := range []string{
-		`"schemaVersion": 1`,
+		`"schemaVersion": 2`,
 		`"object": "Account"`,
+		`"coverage": "behavior"`,
 		`"keyPrefix": "001"`,
 	} {
 		if !strings.Contains(stdout.String(), want) {

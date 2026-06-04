@@ -6,6 +6,12 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Database.insert(Object,Boolean)",
+      "symbol": "Database.insert",
+      "kind": "test",
+      "notes": "Single-record insert with allOrNone=false returns a local SaveResult for validation failures."
+    },
+    {
       "symbol": "Database.update",
       "kind": "test"
     },
@@ -18,20 +24,51 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Database.upsert(Object,Boolean)",
+      "symbol": "Database.upsert",
+      "kind": "test",
+      "notes": "Single-record upsert with allOrNone=false returns a local UpsertResult for create and update paths."
+    },
+    {
+      "surfaceId": "apex:System.Database.upsert(Object,Schema.SObjectField,Boolean)",
+      "symbol": "Database.upsert",
+      "kind": "test",
+      "notes": "External-id upsert with an explicit field token and allOrNone=false matches existing rows case-insensitively and returns UpsertResult values."
+    },
+    {
       "symbol": "Database.undelete",
       "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.Database.undelete(List<Object>,Boolean)",
+      "symbol": "Database.undelete",
+      "kind": "test",
+      "notes": "List undelete with allOrNone=false returns per-record local UndeleteResult values."
     },
     {
       "symbol": "Database.merge",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Database.merge(Object,Object,Boolean)",
+      "symbol": "Database.merge",
+      "kind": "test",
+      "notes": "Single duplicate merge with allOrNone=false returns a local MergeResult."
+    },
+    {
       "symbol": "SObject.addError",
       "kind": "test"
     },
     {
-      "symbol": "DescribeSObjectResult.getRecordTypeInfos",
+      "surfaceId": "apex:Schema.DescribeSObjectResult.getRecordTypeInfos()",
+      "symbol": "Schema.DescribeSObjectResult.getRecordTypeInfos",
       "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.Database.queryWithBinds(String,Map,Object)",
+      "symbol": "Database.queryWithBinds",
+      "kind": "test",
+      "notes": "Two-argument queryWithBinds resolves named binds from a local map and runs supported SOQL."
     }
   ],
   "source": [

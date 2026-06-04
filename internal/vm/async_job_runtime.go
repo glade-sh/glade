@@ -178,6 +178,9 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 			return Null, fmt.Errorf("Database.executeBatch scope size must be at most 2000")
 		}
 	}
+	if !vm.isBatchableObject(args[0]) {
+		return Null, fmt.Errorf("Database.executeBatch expects Batchable object")
+	}
 	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
@@ -195,6 +198,33 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 	})
 	return String(job.ID), nil
 }
+
+func (vm *VM) isBatchableObject(value Value) bool {
+	if value.Kind != ValueObject || strings.TrimSpace(value.Type) == "" {
+		return false
+	}
+	if userProvisioningBatchableType(value.Type) {
+		return true
+	}
+	class, ok := vm.lookupClass(value.Type)
+	if ok {
+		for _, iface := range vm.resolvedInterfaceNames(class) {
+			if batchableInterfaceName(iface) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func batchableInterfaceName(name string) bool {
+	name = strings.TrimSpace(name)
+	if base, ok := genericBaseName(name); ok {
+		name = base
+	}
+	return strings.EqualFold(name, "Database.Batchable") || strings.EqualFold(name, "Batchable")
+}
+
 func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
 	if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueObject {
 		return Null, fmt.Errorf("System.schedule expects name, cron, and Schedulable object")
@@ -222,6 +252,9 @@ func (vm *VM) scheduleBatch(args []Value, result *Result) (Value, error) {
 		return Null, fmt.Errorf("System.scheduleBatch expects batch instance, name, minutesFromNow[, scopeSize]")
 	}
 	if args[0].Kind != ValueObject {
+		return Null, fmt.Errorf("System.scheduleBatch expects Batchable object")
+	}
+	if !vm.isBatchableObject(args[0]) {
 		return Null, fmt.Errorf("System.scheduleBatch expects Batchable object")
 	}
 	if args[1].Kind != ValueString {
@@ -849,8 +882,20 @@ func (vm *VM) isAsyncKind(callee string) bool {
 }
 func (vm *VM) runBatchJob(job AsyncJob, result *Result) error {
 	var scope []Value
+	stateful := vm.isStatefulBatchObject(job.Object)
+	baseObject := cloneValueDetachedPreserveRefs(job.Object)
+	statefulObject := cloneValueDetachedPreserveRefs(job.Object)
+	if vm.requiresDatabaseBatchableContract(job.Object) {
+		itemType := vm.databaseBatchableItemType(job.Object)
+		if err := vm.validateDatabaseBatchableContract(job.Object.Type, itemType); err != nil {
+			return err
+		}
+	}
 	if start, ok := vm.resolveInstanceMethod(job.Object.Type, "start"); ok {
-		value, err := vm.callMethodWithReceiver(start, job.Object, batchArgs(start, "Database.BatchableContext", job.ID), result)
+		receiver := batchTransactionReceiver(baseObject, stateful, &statefulObject)
+		value, err := vm.withAsyncLimitWindow(func() (Value, error) {
+			return vm.callMethodWithReceiver(start, receiver, batchArgs(start, "Database.BatchableContext", job.ID), result)
+		})
 		if err != nil {
 			return err
 		}
@@ -881,24 +926,270 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result) error {
 	}
 	if ok {
 		vm.recordAsyncJobTotals(job, len(chunks), 0, 0)
+		processed := 0
+		processedItems := 0
 		for _, chunk := range chunks {
-			if _, err := vm.callMethodWithReceiver(execute, job.Object, batchExecuteArgs(execute, chunk, job.ID), result); err != nil {
+			rollbackMark, rollbackEnabled := vm.beginBatchChunkTransaction()
+			receiver := batchTransactionReceiver(baseObject, stateful, &statefulObject)
+			_, err := vm.withAsyncLimitWindow(func() (Value, error) {
+				return vm.callMethodWithReceiver(execute, receiver, batchExecuteArgs(execute, chunk, job.ID), result)
+			})
+			if err != nil {
+				if rollbackEnabled {
+					if rollbackErr := vm.rollbackBatchChunkTransaction(rollbackMark); rollbackErr != nil {
+						return rollbackErr
+					}
+				}
+				vm.recordBatchWorkerJob(job, processed+1, processedItems, chunk, "Failed", err.Error())
+				vm.recordAsyncJobTotals(job, len(chunks), processed, 1)
 				vm.recordAsyncJob(job, "Failed", err.Error())
 				if eventErr := vm.emitBatchApexErrorEvent(job, chunk, "EXECUTE", err, result); eventErr != nil {
 					return eventErr
 				}
 				return err
 			}
+			processed++
+			processedItems += len(chunk)
+			vm.recordBatchWorkerJob(job, processed, processedItems, chunk, "Completed", "")
 		}
 	}
 	if finish, ok := vm.resolveInstanceMethod(job.Object.Type, "finish"); ok {
 		vm.recordAsyncJob(job, "Completed", "")
-		if _, err := vm.callMethodWithReceiver(finish, job.Object, batchArgs(finish, "Database.BatchableContext", job.ID), result); err != nil {
+		receiver := batchTransactionReceiver(baseObject, stateful, &statefulObject)
+		rollbackMark, rollbackEnabled := vm.beginBatchChunkTransaction()
+		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
+			return vm.callMethodWithReceiver(finish, receiver, batchArgs(finish, "Database.BatchableContext", job.ID), result)
+		})
+		if err != nil {
+			if rollbackEnabled {
+				if rollbackErr := vm.rollbackBatchChunkTransaction(rollbackMark); rollbackErr != nil {
+					return rollbackErr
+				}
+			}
+			vm.recordAsyncJobTotals(job, len(chunks), len(chunks), 1)
+			vm.recordAsyncJob(job, "Failed", err.Error())
 			return err
 		}
 	}
 	return nil
 }
+
+func batchTransactionReceiver(base Value, stateful bool, statefulObject *Value) Value {
+	if stateful && statefulObject != nil {
+		return *statefulObject
+	}
+	return cloneValueDetachedPreserveRefs(base)
+}
+
+func (vm *VM) isStatefulBatchObject(value Value) bool {
+	if value.Kind != ValueObject || strings.TrimSpace(value.Type) == "" {
+		return false
+	}
+	class, ok := vm.lookupClass(value.Type)
+	if !ok {
+		return false
+	}
+	for _, iface := range vm.resolvedInterfaceNames(class) {
+		if statefulInterfaceName(iface) {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) requiresDatabaseBatchableContract(value Value) bool {
+	if value.Kind != ValueObject || strings.TrimSpace(value.Type) == "" || userProvisioningBatchableType(value.Type) {
+		return false
+	}
+	class, ok := vm.lookupClass(value.Type)
+	if !ok {
+		return false
+	}
+	for _, iface := range vm.resolvedInterfaceNames(class) {
+		if batchableInterfaceName(iface) {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) databaseBatchableItemType(value Value) string {
+	if value.Kind != ValueObject || strings.TrimSpace(value.Type) == "" {
+		return "Object"
+	}
+	class, ok := vm.lookupClass(value.Type)
+	if !ok {
+		return "Object"
+	}
+	for _, iface := range vm.resolvedInterfaceNames(class) {
+		if !batchableInterfaceName(iface) {
+			continue
+		}
+		args, ok := genericTypeArgs(iface)
+		if ok && len(args) == 1 && strings.TrimSpace(args[0]) != "" {
+			return strings.TrimSpace(args[0])
+		}
+	}
+	return "Object"
+}
+
+func (vm *VM) validateDatabaseBatchableContract(typeName, itemType string) error {
+	starts := vm.batchableConcreteMethodsByName(typeName, "start")
+	if len(starts) == 0 {
+		return fmt.Errorf("Database.Batchable %s missing start", typeName)
+	}
+	if !vm.runtimeBatchableMethodCompatible("start", itemType, starts) {
+		return fmt.Errorf("Database.Batchable %s invalid start signature", typeName)
+	}
+	executes := vm.batchableConcreteMethodsByName(typeName, "execute")
+	if len(executes) == 0 {
+		return fmt.Errorf("Database.Batchable %s missing execute", typeName)
+	}
+	if !vm.runtimeBatchableMethodCompatible("execute", itemType, executes) {
+		return fmt.Errorf("Database.Batchable %s invalid execute signature", typeName)
+	}
+	finishes := vm.batchableConcreteMethodsByName(typeName, "finish")
+	if len(finishes) == 0 {
+		return fmt.Errorf("Database.Batchable %s missing finish", typeName)
+	}
+	if !vm.runtimeBatchableMethodCompatible("finish", itemType, finishes) {
+		return fmt.Errorf("Database.Batchable %s invalid finish signature", typeName)
+	}
+	return nil
+}
+
+func (vm *VM) batchableConcreteMethodsByName(typeName, methodName string) []Method {
+	var out []Method
+	seen := make(map[string]bool)
+	for current := typeName; current != ""; {
+		if seen[current] {
+			break
+		}
+		seen[current] = true
+		class, ok := vm.lookupClass(current)
+		if !ok {
+			break
+		}
+		for _, method := range vm.registeredMethodCandidates(current + "." + methodName) {
+			if method.IsStatic || !strings.EqualFold(apexMethodMemberName(method.Name), methodName) {
+				continue
+			}
+			out = append(out, method)
+		}
+		current = vm.resolvedSuperClassName(class)
+	}
+	return out
+}
+
+func (vm *VM) runtimeBatchableMethodCompatible(methodName, itemType string, methods []Method) bool {
+	for _, method := range methods {
+		switch strings.ToLower(methodName) {
+		case "start":
+			if len(method.Params) != 1 || !runtimeBatchableSameType(method.Params[0].Type, "Database.BatchableContext") {
+				continue
+			}
+			if strings.EqualFold(method.ReturnType, "Database.QueryLocator") || vm.runtimeBatchableIterableReturn(itemType, method.ReturnType) {
+				return true
+			}
+		case "execute":
+			if len(method.Params) != 2 ||
+				!runtimeBatchableSameType(method.Params[0].Type, "Database.BatchableContext") ||
+				!runtimeBatchableSameType(method.Params[1].Type, "List<"+itemType+">") {
+				continue
+			}
+			if runtimeBatchableVoidReturn(method.ReturnType) {
+				return true
+			}
+		case "finish":
+			if len(method.Params) != 1 || !runtimeBatchableSameType(method.Params[0].Type, "Database.BatchableContext") {
+				continue
+			}
+			if runtimeBatchableVoidReturn(method.ReturnType) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (vm *VM) runtimeBatchableIterableReturn(itemType, returnType string) bool {
+	if !strings.EqualFold(collectionBase(returnType), "Iterable") {
+		return vm.typeAssignableTo(returnType, "Iterable<"+itemType+">") || vm.runtimeTypeImplementsIterableOf(returnType, itemType)
+	}
+	element, ok := collectionElementType(returnType)
+	return ok && runtimeBatchableSameType(element, itemType)
+}
+
+func (vm *VM) runtimeTypeImplementsIterableOf(typeName, itemType string) bool {
+	class, ok := vm.lookupClass(typeName)
+	if !ok {
+		if nested, nestedOK := vm.resolveOnlyNestedTypeName(typeName); nestedOK {
+			class, ok = vm.lookupClass(nested)
+		}
+	}
+	if !ok {
+		return false
+	}
+	for _, iface := range vm.resolvedInterfaceNames(class) {
+		if !strings.EqualFold(collectionBase(iface), "Iterable") {
+			continue
+		}
+		element, ok := collectionElementType(iface)
+		if ok && runtimeBatchableSameType(element, itemType) {
+			return true
+		}
+	}
+	return false
+}
+
+func runtimeBatchableVoidReturn(returnType string) bool {
+	return strings.TrimSpace(returnType) == "" || strings.EqualFold(returnType, "void")
+}
+
+func runtimeBatchableSameType(left, right string) bool {
+	return strings.EqualFold(canonicalRuntimePlatformType(left), canonicalRuntimePlatformType(right))
+}
+
+func statefulInterfaceName(name string) bool {
+	name = strings.TrimSpace(name)
+	if base, ok := genericBaseName(name); ok {
+		name = base
+	}
+	return strings.EqualFold(name, "Database.Stateful") || strings.EqualFold(name, "Stateful")
+}
+
+func (vm *VM) beginBatchChunkTransaction() (storage.IsolationMark, bool) {
+	if vm == nil || vm.Org == nil {
+		return storage.IsolationMark{}, false
+	}
+	if vm.isolationJournal == nil || vm.isolationJournal.Org() != vm.Org {
+		vm.isolationJournal = storage.NewIsolationJournal(vm.Org)
+	}
+	return vm.isolationJournal.Mark(), true
+}
+
+func (vm *VM) rollbackBatchChunkTransaction(mark storage.IsolationMark) error {
+	if vm == nil || vm.Org == nil || vm.isolationJournal == nil {
+		return nil
+	}
+	currentSequences := copyOrgIDSequences(vm.Org.IDSequences)
+	if err := vm.isolationJournal.Rollback(mark); err != nil {
+		return err
+	}
+	vm.applyMaxIDSequencesForJournalRollback(currentSequences)
+	return nil
+}
+
+func (vm *VM) withAsyncLimitWindow(run func() (Value, error)) (Value, error) {
+	parentLimits := vm.limits
+	parentViolations := append([]LimitViolation(nil), vm.limitViolations...)
+	vm.ResetLimits()
+	value, err := run()
+	vm.limits = parentLimits
+	vm.limitViolations = parentViolations
+	return value, err
+}
+
 func (vm *VM) batchScopeValues(value Value, result *Result) ([]Value, error) {
 	switch {
 	case value.Kind == ValueNull:
@@ -1175,6 +1466,21 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 	} else {
 		delete(record.Fields, "CronTriggerId")
 	}
+	if job.ParentJobID != "" {
+		record.Fields["ParentJobId"] = storage.IDValue(storage.ID(job.ParentJobID))
+	} else {
+		delete(record.Fields, "ParentJobId")
+	}
+	if job.LastProcessed != "" {
+		record.Fields["LastProcessed"] = storage.StringValue(job.LastProcessed)
+	} else {
+		delete(record.Fields, "LastProcessed")
+	}
+	if job.LastProcessedOffset > 0 {
+		record.Fields["LastProcessedOffset"] = storage.IntegerValue(int64(job.LastProcessedOffset))
+	} else {
+		delete(record.Fields, "LastProcessedOffset")
+	}
 	if existing, ok := record.Fields["TotalJobItems"]; ok && existing.Kind == storage.ValueInteger && existing.Integer > 0 && asyncJobType(job) == "BatchApex" {
 		record.Fields["TotalJobItems"] = existing
 	} else {
@@ -1196,6 +1502,56 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 	object.Records[record.ID] = record
 	vm.Org.Objects["AsyncApexJob"] = object
 }
+
+func (vm *VM) recordBatchWorkerJob(parent AsyncJob, chunkIndex, processedItems int, chunk []Value, status, detail string) {
+	if vm.Org == nil || asyncJobType(parent) != "BatchApex" || len(chunk) == 0 {
+		return
+	}
+	worker := parent
+	worker.ID = batchWorkerJobID(parent.ID, chunkIndex)
+	worker.Kind = "BatchApexWorker"
+	worker.ParentJobID = parent.ID
+	worker.LastProcessed = batchLastProcessedID(chunk)
+	worker.LastProcessedOffset = processedItems
+	vm.recordAsyncJob(worker, status, detail)
+	vm.recordAsyncJobTotals(worker, len(chunk), batchWorkerProcessedItems(status, len(chunk)), batchWorkerErrorCount(status))
+}
+
+func batchWorkerJobID(parentID string, index int) string {
+	sum := sha1.Sum([]byte(parentID + ":" + strconv.Itoa(index)))
+	return "707" + hex.EncodeToString(sum[:])[:12]
+}
+
+func batchLastProcessedID(chunk []Value) string {
+	if len(chunk) == 0 {
+		return ""
+	}
+	last := chunk[len(chunk)-1]
+	if last.Kind == ValueObject {
+		if id := sObjectIDFromFields(last.Fields); id != "" {
+			return string(id)
+		}
+	}
+	if text, ok := idValueText(last); ok {
+		return text
+	}
+	return ""
+}
+
+func batchWorkerProcessedItems(status string, chunkSize int) int {
+	if status == "Completed" {
+		return chunkSize
+	}
+	return 0
+}
+
+func batchWorkerErrorCount(status string) int {
+	if status == "Failed" {
+		return 1
+	}
+	return 0
+}
+
 func (vm *VM) markCompletedBatchJobVisiblePendingInTest(job AsyncJob) {
 	if vm.Org == nil {
 		return

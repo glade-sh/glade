@@ -1,0 +1,28 @@
+{
+  "name": "core-collection-stdlib-list-deepclone-options",
+  "evidence": [
+    {
+      "symbol": "List.deepClone",
+      "kind": "exec",
+      "notes": "List.deepClone accepts preserve-option booleans and clones SObject elements."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Account original = new Account(Id = '001B000001DVM9tIAH', Name = 'Acme');\nList<Account> accounts = new List<Account>{original};\nList<Account> cloned = accounts.deepClone(true);\nAccount clonedAccount = cloned.get(0);\nclonedAccount.Name = 'Clone';\nSystem.assertEquals('Acme', accounts.get(0).Name);\nSystem.assertEquals('Clone', cloned.get(0).Name);\nSystem.assertEquals(original.Id, cloned.get(0).Id);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Account original = new Account(Id = '001B000001DVM9tIAH', Name = 'Acme');\nList<Account> accounts = new List<Account>{original};\nList<Account> cloned = accounts.deepClone(true);\nAccount clonedAccount = cloned.get(0);\nclonedAccount.Name = 'Clone';\nSystem.assertEquals('Acme', accounts.get(0).Name);\nSystem.assertEquals('Clone', cloned.get(0).Name);\nSystem.assertEquals(original.Id, cloned.get(0).Id);"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

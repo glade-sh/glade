@@ -102,12 +102,13 @@ type QuickActionMetadata struct {
 }
 
 type FieldSetMetadata struct {
-	ObjectName string                   `json:"objectName,omitempty"`
-	Namespace  string                   `json:"namespace,omitempty"`
-	Name       string                   `json:"name"`
-	Label      string                   `json:"label,omitempty"`
-	Fields     []FieldSetMemberMetadata `json:"fields,omitempty"`
-	File       string                   `json:"file,omitempty"`
+	ObjectName  string                   `json:"objectName,omitempty"`
+	Namespace   string                   `json:"namespace,omitempty"`
+	Name        string                   `json:"name"`
+	Label       string                   `json:"label,omitempty"`
+	Description string                   `json:"description,omitempty"`
+	Fields      []FieldSetMemberMetadata `json:"fields,omitempty"`
+	File        string                   `json:"file,omitempty"`
 }
 
 type FieldSetMemberMetadata struct {
@@ -207,6 +208,7 @@ type Field struct {
 	SummaryForeignKey     string              `json:"summaryForeignKey,omitempty"`
 	SummaryOperation      string              `json:"summaryOperation,omitempty"`
 	SummaryFilterItems    []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
+	FilteredLookupInfo    FilteredLookupInfo  `json:"filteredLookupInfo,omitempty"`
 	Required              bool                `json:"required,omitempty"`
 	Nillable              *bool               `json:"nillable,omitempty"`
 	DefaultedOnCreate     *bool               `json:"defaultedOnCreate,omitempty"`
@@ -223,13 +225,29 @@ type Field struct {
 	Unique                bool                `json:"unique,omitempty"`
 	Encrypted             bool                `json:"encrypted,omitempty"`
 	CaseSensitive         bool                `json:"caseSensitive,omitempty"`
+	RestrictedPicklist    bool                `json:"restrictedPicklist,omitempty"`
+	IDLookup              bool                `json:"idLookup,omitempty"`
+	NamePointing          bool                `json:"namePointing,omitempty"`
 	ReferenceTo           []string            `json:"referenceTo,omitempty"`
 	RelationshipName      string              `json:"relationshipName,omitempty"`
+	RelationshipOrder     *int                `json:"relationshipOrder,omitempty"`
 	ChildRelationshipName string              `json:"childRelationshipName,omitempty"`
+	PicklistController    string              `json:"picklistController,omitempty"`
+	PicklistValueSettings []PicklistSetting   `json:"picklistValueSettings,omitempty"`
 	PicklistValues        []PicklistValue     `json:"picklistValues,omitempty"`
 }
 
+type FilteredLookupInfo struct {
+	ControllingFields []string `json:"controllingFields,omitempty"`
+	Dependent         bool     `json:"dependent,omitempty"`
+	OptionalFilter    bool     `json:"optionalFilter,omitempty"`
+}
+
 func BoolFlag(value bool) *bool {
+	return &value
+}
+
+func IntFlag(value int) *int {
 	return &value
 }
 
@@ -271,6 +289,11 @@ type PicklistValue struct {
 	Label   string `json:"label,omitempty"`
 	Default bool   `json:"default,omitempty"`
 	Active  bool   `json:"active,omitempty"`
+}
+
+type PicklistSetting struct {
+	ValueName              string   `json:"valueName,omitempty"`
+	ControllingFieldValues []string `json:"controllingFieldValues,omitempty"`
 }
 
 type RecordTypeInfo struct {
@@ -380,32 +403,36 @@ type FlowRecordCreate struct {
 type FieldType string
 
 const (
-	FieldAny        FieldType = "ANY"
-	FieldID         FieldType = "ID"
-	FieldString     FieldType = "STRING"
-	FieldBoolean    FieldType = "BOOLEAN"
-	FieldInteger    FieldType = "INTEGER"
-	FieldDecimal    FieldType = "DECIMAL"
-	FieldDate       FieldType = "DATE"
-	FieldDateTime   FieldType = "DATETIME"
-	FieldPicklist   FieldType = "PICKLIST"
-	FieldReference  FieldType = "REFERENCE"
-	FieldBlob       FieldType = "BLOB"
-	FieldAddress    FieldType = "ADDRESS"
-	FieldLocation   FieldType = "LOCATION"
-	FieldCalculated FieldType = "CALCULATED"
-	FieldSummary    FieldType = "SUMMARY"
+	FieldAny           FieldType = "ANY"
+	FieldID            FieldType = "ID"
+	FieldString        FieldType = "STRING"
+	FieldBoolean       FieldType = "BOOLEAN"
+	FieldInteger       FieldType = "INTEGER"
+	FieldDecimal       FieldType = "DECIMAL"
+	FieldDate          FieldType = "DATE"
+	FieldDateTime      FieldType = "DATETIME"
+	FieldPicklist      FieldType = "PICKLIST"
+	FieldMultiPicklist FieldType = "MULTIPICKLIST"
+	FieldReference     FieldType = "REFERENCE"
+	FieldBlob          FieldType = "BLOB"
+	FieldAddress       FieldType = "ADDRESS"
+	FieldLocation      FieldType = "LOCATION"
+	FieldCalculated    FieldType = "CALCULATED"
+	FieldSummary       FieldType = "SUMMARY"
 )
 
 type Relationship struct {
-	Field              string   `json:"field"`
-	ParentObjects      []string `json:"parentObjects"`
-	ParentRelationship string   `json:"parentRelationship,omitempty"`
-	ChildRelationship  string   `json:"childRelationship,omitempty"`
-	CascadeDelete      bool     `json:"cascadeDelete,omitempty"`
-	RestrictedDelete   bool     `json:"restrictedDelete,omitempty"`
-	Polymorphic        bool     `json:"polymorphic,omitempty"`
-	DeferredIntegrity  bool     `json:"deferredIntegrity,omitempty"`
+	Field               string   `json:"field"`
+	ParentObjects       []string `json:"parentObjects"`
+	ParentRelationship  string   `json:"parentRelationship,omitempty"`
+	ChildRelationship   string   `json:"childRelationship,omitempty"`
+	CascadeDelete       bool     `json:"cascadeDelete,omitempty"`
+	RestrictedDelete    bool     `json:"restrictedDelete,omitempty"`
+	DeprecatedAndHidden bool     `json:"deprecatedAndHidden,omitempty"`
+	JunctionIDListNames []string `json:"junctionIdListNames,omitempty"`
+	JunctionReferenceTo []string `json:"junctionReferenceTo,omitempty"`
+	Polymorphic         bool     `json:"polymorphic,omitempty"`
+	DeferredIntegrity   bool     `json:"deferredIntegrity,omitempty"`
 }
 
 type Record struct {
@@ -527,7 +554,7 @@ func ListValue(values ...Value) Value {
 func DefaultValueForField(field Field) (Value, bool) {
 	raw := strings.TrimSpace(field.DefaultValue)
 	if raw == "" {
-		if field.Type == FieldPicklist {
+		if field.Type == FieldPicklist || field.Type == FieldMultiPicklist {
 			for _, value := range field.PicklistValues {
 				if value.Default && strings.TrimSpace(value.Value) != "" {
 					return StringValue(value.Value), true
@@ -555,14 +582,14 @@ func DefaultValueForField(field Field) (Value, bool) {
 		}
 	case FieldReference:
 		return IDValue(ID(normalizeStringDefaultValue(raw))), true
-	case FieldString, FieldPicklist, FieldDate, FieldDateTime, FieldID, FieldAny:
+	case FieldString, FieldPicklist, FieldMultiPicklist, FieldDate, FieldDateTime, FieldID, FieldAny:
 		return StringValue(normalizeStringDefaultValue(raw)), true
 	}
 	return Value{}, false
 }
 
 func DefaultValueForRecordField(definition ObjectDefinition, record Record, field Field) (Value, bool) {
-	if field.Type == FieldPicklist {
+	if field.Type == FieldPicklist || field.Type == FieldMultiPicklist {
 		if value, ok := defaultPicklistValueForRecordType(definition, record, field); ok {
 			return value, true
 		}
@@ -749,7 +776,7 @@ func defaultValueFromRaw(field Field, raw string) (Value, bool) {
 		if _, err := strconv.ParseFloat(raw, 64); err == nil {
 			return DecimalValue(raw), true
 		}
-	case FieldString, FieldPicklist, FieldDate, FieldDateTime, FieldID, FieldAny:
+	case FieldString, FieldPicklist, FieldMultiPicklist, FieldDate, FieldDateTime, FieldID, FieldAny:
 		return StringValue(normalizeStringDefaultValue(raw)), true
 	}
 	return Value{}, false
@@ -1178,12 +1205,15 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		out.Fields = make(map[string]Field, len(d.Fields))
 		for name, field := range d.Fields {
 			field.ReferenceTo = append([]string(nil), field.ReferenceTo...)
+			field.PicklistValueSettings = clonePicklistSettings(field.PicklistValueSettings)
 			out.Fields[name] = field
 		}
 	}
 	out.Relations = append([]Relationship(nil), d.Relations...)
 	for i := range out.Relations {
 		out.Relations[i].ParentObjects = append([]string(nil), d.Relations[i].ParentObjects...)
+		out.Relations[i].JunctionIDListNames = append([]string(nil), d.Relations[i].JunctionIDListNames...)
+		out.Relations[i].JunctionReferenceTo = append([]string(nil), d.Relations[i].JunctionReferenceTo...)
 	}
 	out.RecordTypes = append([]RecordTypeInfo(nil), d.RecordTypes...)
 	for i := range out.RecordTypes {
@@ -1228,6 +1258,14 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		for key, value := range d.Metadata {
 			out.Metadata[key] = value
 		}
+	}
+	return out
+}
+
+func clonePicklistSettings(values []PicklistSetting) []PicklistSetting {
+	out := append([]PicklistSetting(nil), values...)
+	for i := range out {
+		out[i].ControllingFieldValues = append([]string(nil), values[i].ControllingFieldValues...)
 	}
 	return out
 }

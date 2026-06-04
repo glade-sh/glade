@@ -20,16 +20,42 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Assert | `Assert.isTrue` | `supported` | Routes through local assertion failures with optional message text. |
 | Crypto | `Crypto.generateDigest` | `partial` | MD5, SHA1, and SHA-256. |
 | Database | `Database.UnitOfWork` | `supported` | Queues local DML operations and applies them on commitWork; discardWork drops pending local work. |
-| Database | `Database.delete` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
+| Database | `Database.convertLead` | `partial` | Local no-opportunity lead conversion creates Account and Contact and updates Lead conversion fields; opportunity conversion remains unsupported. |
+| Database | `Database.countQuery` | `supported` | Dynamic SOQL count execution against the local org with local AccessLevel parsing. |
+| Database | `Database.countQueryWithBinds` | `supported` | Bind-map dynamic SOQL count execution with local AccessLevel parsing. |
+| Database | `Database.delete` | `supported` | DML pipeline with result/error shapes and local AccessLevel parsing for supported SObjects. |
+| Database | `Database.deleteAsync` | `supported` | Local async delete alias runs through the DML pipeline and returns DeleteResult shape. |
+| Database | `Database.deleteImmediate` | `supported` | Local immediate delete alias runs through the DML pipeline and returns DeleteResult shape. |
+| Database | `Database.emptyRecycleBin` | `supported` | Local hard-delete result shape with allOrNone rollback for supported SObjects. |
+| Database | `Database.executeBatch` | `supported` | Queues local Batchable jobs and drains start/execute chunks/finish during Test.stopTest. |
+| Database | `Database.getAsyncDeleteResult` | `supported` | Returns a materialized local DeleteResult or deterministic pending placeholder. |
 | Database | `Database.getAsyncLocator` | `supported` | Returns deterministic VM-local locator strings for local result and locator objects; no external async service lookup. |
-| Database | `Database.getQueryLocator` | `supported` | Supported SOQL executes eagerly for local batch scopes. |
-| Database | `Database.insert` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
-| Database | `Database.merge` | `supported` | Local merge behavior for supported schema-backed data. |
+| Database | `Database.getAsyncSaveResult` | `supported` | Returns a materialized local SaveResult or deterministic pending placeholder. |
+| Database | `Database.getCursor` | `supported` | Local cursor over supported SOQL results with deterministic fetch windows. |
+| Database | `Database.getCursorWithBinds` | `supported` | Bind-map local cursor over supported SOQL results with deterministic fetch windows. |
+| Database | `Database.getDeleted` | `supported` | Deterministic local empty deleted-record sync window placeholder. |
+| Database | `Database.getPaginationCursor` | `supported` | Local pagination cursor over supported SOQL results with deterministic fetch windows. |
+| Database | `Database.getPaginationCursorWithBinds` | `supported` | Bind-map local pagination cursor over supported SOQL results with deterministic fetch windows. |
+| Database | `Database.getQueryLocator` | `supported` | Supported SOQL executes eagerly for local batch scopes with local AccessLevel parsing. |
+| Database | `Database.getQueryLocatorWithBinds` | `supported` | Bind-map dynamic SOQL locator execution with iterable local query locators. |
+| Database | `Database.getUpdated` | `supported` | Deterministic local empty updated-record sync window placeholder. |
+| Database | `Database.insert` | `supported` | DML pipeline with result/error shapes and local AccessLevel parsing for supported SObjects. |
+| Database | `Database.insertAsync` | `supported` | Local async insert alias runs through the DML pipeline and returns SaveResult shape. |
+| Database | `Database.insertImmediate` | `supported` | Local immediate insert alias runs through the DML pipeline and returns SaveResult shape. |
+| Database | `Database.lock` | `supported` | Local row-lock result shape with allOrNone rollback for supported SObjects. |
+| Database | `Database.merge` | `supported` | Local merge behavior with result shape and AccessLevel parsing for supported schema-backed data. |
+| Database | `Database.query` | `supported` | Dynamic SOQL execution against the local org with catchable QueryException parse errors. |
+| Database | `Database.queryWithBinds` | `supported` | Bind-map dynamic SOQL execution with scalar and collection binds. |
+| Database | `Database.releaseSavepoint` | `supported` | Releases the selected local savepoint and later savepoints without rolling back org state. |
 | Database | `Database.rollback` | `supported` | Local org-state savepoint rollback with no external side effects. |
 | Database | `Database.setSavepoint` | `supported` | Local org-state snapshots with later-savepoint invalidation. |
-| Database | `Database.undelete` | `supported` | Soft-delete restoration for supported local records. |
-| Database | `Database.update` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
-| Database | `Database.upsert` | `supported` | Schema-backed external-ID matching for supported local records. |
+| Database | `Database.treeSave` | `partial` | Local insert-only parent plus first-level child relationship save with NestedSaveResult shape; updates and nested child relationships remain unsupported. |
+| Database | `Database.undelete` | `supported` | Soft-delete restoration with local AccessLevel parsing for supported local records. |
+| Database | `Database.unlock` | `supported` | Local row-unlock result shape with allOrNone rollback for supported SObjects. |
+| Database | `Database.update` | `supported` | DML pipeline with result/error shapes and local AccessLevel parsing for supported SObjects. |
+| Database | `Database.updateAsync` | `supported` | Local async update alias runs through the DML pipeline and returns SaveResult shape. |
+| Database | `Database.updateImmediate` | `supported` | Local immediate update alias runs through the DML pipeline and returns SaveResult shape. |
+| Database | `Database.upsert` | `supported` | Schema-backed external-ID matching with local AccessLevel parsing for supported local records. |
 | Date | `Date.addDays` | `supported` | Local Gregorian day arithmetic. |
 | Date | `Date.addMonths` | `supported` | Local Gregorian month arithmetic with end-of-month clamping. |
 | Date | `Date.addYears` | `supported` | Local Gregorian year arithmetic with leap-day clamping. |
@@ -86,8 +112,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Pattern | `Pattern.matches` | `partial` | Whole-string Go regexp match. |
 | Schema | `DescribeFieldResult` | `partial` | Common field metadata and access booleans. |
 | Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships. |
-| Schema | `Schema.describeDataCategoryGroupStructures` | `partial` | Deterministic local data category structures from org metadata; no external category service lookup. |
-| Schema | `Schema.describeDataCategoryGroups` | `partial` | Deterministic local data category group describes from org metadata; empty when no metadata is loaded. |
+| Schema | `Schema.describeDataCategoryGroupStructures(List<Schema.DataCategoryGroupSobjectTypePair>,Boolean)` | `partial` | Deterministic local data category structures from org metadata; no external category service lookup. |
+| Schema | `Schema.describeDataCategoryGroups(List<String>)` | `partial` | Deterministic local data category group describes from org metadata; empty when no metadata is loaded. |
 | Schema | `Schema.describeSObjects` | `partial` | Object names and SObjectType tokens for local schema. |
 | Schema | `Schema.getGlobalDescribe` | `partial` | Local schema-backed describe map. |
 | Search | `Search.find` | `partial` | Returns deterministic SearchResult DTOs from Test.setFixedSearchResults; no external search ranking/snippets. |

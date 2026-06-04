@@ -64,9 +64,10 @@ func lex(input string) ([]token, error) {
 }
 
 type parser struct {
-	tokens []token
-	pos    int
-	now    time.Time
+	tokens               []token
+	pos                  int
+	now                  time.Time
+	fiscalYearStartMonth int
 }
 
 func (p *parser) parseQuery() (Query, error) {
@@ -777,10 +778,25 @@ func storageValueDateText(value storage.Value) (string, bool) {
 	return "", false
 }
 func normalizeDateTime(text string) string {
-	if strings.HasSuffix(text, "Z") || strings.Contains(text, "+") {
+	if strings.HasSuffix(text, "Z") || hasDateTimeZoneOffset(text) {
 		return text
 	}
 	return text + "Z"
+}
+func hasDateTimeZoneOffset(text string) bool {
+	if len(text) < len("2006-01-02T15:04:05-07:00") {
+		return false
+	}
+	offset := text[len(text)-6:]
+	return (offset[0] == '+' || offset[0] == '-') &&
+		offset[3] == ':' &&
+		isASCIIDigit(offset[1]) &&
+		isASCIIDigit(offset[2]) &&
+		isASCIIDigit(offset[4]) &&
+		isASCIIDigit(offset[5])
+}
+func isASCIIDigit(value byte) bool {
+	return value >= '0' && value <= '9'
 }
 func aggregateSpecs(fields []string) ([]Aggregate, error) {
 	var aggregates []Aggregate
@@ -1063,9 +1079,30 @@ func (p *parser) parsePrimaryCondition() (Condition, error) {
 		return Condition{}, err
 	}
 	if op == "IN" || op == "NOT IN" {
-		values, subquery, err := p.parseInOperand()
+		values, value2s, ranges, subquery, err := p.parseInOperand()
 		if err != nil {
 			return Condition{}, err
+		}
+		if anyRange(ranges) {
+			conditions := make([]Condition, 0, len(values))
+			for i, value := range values {
+				if op == "NOT IN" && value.Kind == storage.ValueNull {
+					continue
+				}
+				itemOp := "="
+				if op == "NOT IN" {
+					itemOp = "!="
+				}
+				item := Condition{Field: field, Op: itemOp, Value: value, Range: ranges[i]}
+				if ranges[i] {
+					item.Value2 = value2s[i]
+				}
+				conditions = append(conditions, item)
+			}
+			if op == "NOT IN" {
+				return Condition{And: conditions}, nil
+			}
+			return Condition{Or: conditions}, nil
 		}
 		return Condition{Field: field, Op: op, Values: values, Subquery: subquery}, nil
 	}
@@ -1074,8 +1111,8 @@ func (p *parser) parsePrimaryCondition() (Condition, error) {
 	if valueToken == "" {
 		return Condition{}, p.errorf("expected WHERE value")
 	}
-	valueToken = p.signedLiteralToken(valueToken)
-	value, value2, isRange, err := literalAt(valueToken, p.now)
+	valueToken = p.literalToken(valueToken)
+	value, value2, isRange, err := literalAtWithFiscalYearStartMonth(valueToken, p.now, p.fiscalYearStartMonth)
 	if err != nil {
 		return Condition{}, err
 	}
@@ -1087,8 +1124,8 @@ func (p *parser) parsePrimaryCondition() (Condition, error) {
 			if tok == "" {
 				return Condition{}, p.errorf("expected WHERE value")
 			}
-			tok = p.signedLiteralToken(tok)
-			nextValue, _, nextRange, err := literalAt(tok, p.now)
+			tok = p.literalToken(tok)
+			nextValue, _, nextRange, err := literalAtWithFiscalYearStartMonth(tok, p.now, p.fiscalYearStartMonth)
 			if err != nil {
 				return Condition{}, err
 			}
@@ -1097,6 +1134,9 @@ func (p *parser) parsePrimaryCondition() (Condition, error) {
 		}
 		if !p.match(")") {
 			return Condition{}, p.errorf("expected ) after WHERE value")
+		}
+		if op == "INCLUDES" || op == "EXCLUDES" {
+			return Condition{Field: field, Op: op, Value: value, Values: values}, nil
 		}
 		if len(values) > 1 && (op == "LIKE" || op == "NOT LIKE") {
 			conditions := make([]Condition, 0, len(values))
@@ -1111,6 +1151,16 @@ func (p *parser) parsePrimaryCondition() (Condition, error) {
 	}
 	return Condition{Field: field, Op: op, Value: value, Value2: value2, Range: isRange}, nil
 }
+
+func anyRange(ranges []bool) bool {
+	for _, item := range ranges {
+		if item {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *parser) parseConditionField() (string, error) {
 	field, err := p.parseName()
 	if err != nil {
@@ -1138,6 +1188,19 @@ func (p *parser) parseConditionField() (string, error) {
 	}
 	return field, nil
 }
+func (p *parser) literalToken(tok string) string {
+	tok = p.signedLiteralToken(tok)
+	if !hasNumberedDateLiteralPrefix(tok) || p.peek().text != ":" {
+		return tok
+	}
+	colon := p.advance().text
+	next := p.peek().text
+	if next == "" || strings.ContainsRune(",)(", rune(next[0])) {
+		return tok + colon
+	}
+	p.advance()
+	return tok + colon + next
+}
 func (p *parser) signedLiteralToken(tok string) string {
 	if tok != "-" && tok != "+" {
 		return tok
@@ -1148,6 +1211,20 @@ func (p *parser) signedLiteralToken(tok string) string {
 	}
 	p.advance()
 	return tok + next
+}
+func hasNumberedDateLiteralPrefix(text string) bool {
+	switch strings.ToUpper(text) {
+	case "LAST_N_DAYS", "NEXT_N_DAYS", "N_DAYS_AGO",
+		"LAST_N_WEEKS", "NEXT_N_WEEKS", "N_WEEKS_AGO",
+		"LAST_N_MONTHS", "NEXT_N_MONTHS", "N_MONTHS_AGO",
+		"LAST_N_QUARTERS", "NEXT_N_QUARTERS", "N_QUARTERS_AGO",
+		"LAST_N_YEARS", "NEXT_N_YEARS", "N_YEARS_AGO",
+		"LAST_N_FISCAL_QUARTERS", "NEXT_N_FISCAL_QUARTERS", "N_FISCAL_QUARTERS_AGO",
+		"LAST_N_FISCAL_YEARS", "NEXT_N_FISCAL_YEARS", "N_FISCAL_YEARS_AGO":
+		return true
+	default:
+		return false
+	}
 }
 func (p *parser) parseOperator() (string, error) {
 	tok := p.advance().text
@@ -1166,6 +1243,9 @@ func (p *parser) parseOperator() (string, error) {
 	if strings.EqualFold(word, "INCLUDES") {
 		return "INCLUDES", nil
 	}
+	if strings.EqualFold(word, "EXCLUDES") {
+		return "EXCLUDES", nil
+	}
 	if strings.EqualFold(word, "IN") {
 		return "IN", nil
 	}
@@ -1180,61 +1260,59 @@ func (p *parser) parseOperator() (string, error) {
 	}
 	return "", p.errorf("unsupported WHERE operator %q", tok)
 }
-func (p *parser) parseInOperand() ([]storage.Value, *Query, error) {
+func (p *parser) parseInOperand() ([]storage.Value, []storage.Value, []bool, *Query, error) {
 	if !p.match("(") {
 		tok := p.advance().text
 		if tok == "" {
-			return nil, nil, p.errorf("expected value after IN")
+			return nil, nil, nil, nil, p.errorf("expected value after IN")
 		}
-		tok = p.signedLiteralToken(tok)
-		value, _, isRange, err := literalAt(tok, p.now)
+		tok = p.literalToken(tok)
+		value, value2, isRange, err := literalAtWithFiscalYearStartMonth(tok, p.now, p.fiscalYearStartMonth)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, nil, err
 		}
-		if isRange {
-			return nil, nil, unsupportedSOQLErrorf("date range literal %s is not supported in IN lists", tok)
-		}
-		return []storage.Value{value}, nil, nil
+		return []storage.Value{value}, []storage.Value{value2}, []bool{isRange}, nil, nil
 	}
 	if strings.EqualFold(p.peek().text, "SELECT") {
 		query, err := p.parseQuery()
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 		if len(query.Fields) != 1 {
-			return nil, nil, p.errorf("semi-join subquery must select one field")
+			return nil, nil, nil, nil, p.errorf("semi-join subquery must select one field")
 		}
 		if !p.match(")") {
-			return nil, nil, p.errorf("expected ) after semi-join subquery")
+			return nil, nil, nil, nil, p.errorf("expected ) after semi-join subquery")
 		}
-		return nil, &query, nil
+		return nil, nil, nil, &query, nil
 	}
 	var values []storage.Value
+	var value2s []storage.Value
+	var ranges []bool
 	if p.match(")") {
-		return values, nil, nil
+		return values, value2s, ranges, nil, nil
 	}
 	for {
 		tok := p.advance().text
 		if tok == "" {
-			return nil, nil, p.errorf("expected value in IN list")
+			return nil, nil, nil, nil, p.errorf("expected value in IN list")
 		}
-		tok = p.signedLiteralToken(tok)
-		value, _, isRange, err := literalAt(tok, p.now)
+		tok = p.literalToken(tok)
+		value, value2, isRange, err := literalAtWithFiscalYearStartMonth(tok, p.now, p.fiscalYearStartMonth)
 		if err != nil {
-			return nil, nil, err
-		}
-		if isRange {
-			return nil, nil, unsupportedSOQLErrorf("date range literal %s is not supported in IN lists", tok)
+			return nil, nil, nil, nil, err
 		}
 		values = append(values, value)
+		value2s = append(value2s, value2)
+		ranges = append(ranges, isRange)
 		if p.match(")") {
 			break
 		}
 		if !p.match(",") {
-			return nil, nil, p.errorf("expected , or ) in IN list")
+			return nil, nil, nil, nil, p.errorf("expected , or ) in IN list")
 		}
 	}
-	return values, nil, nil
+	return values, value2s, ranges, nil, nil
 }
 func (p *parser) parseName() (string, error) {
 	name := p.advance().text
@@ -1284,7 +1362,11 @@ func (p *parser) errorf(format string, args ...any) error {
 	return fmt.Errorf("soql: "+format, args...)
 }
 func literalAt(text string, now time.Time) (storage.Value, storage.Value, bool, error) {
-	if start, end, ok := dateLiteral(text, now); ok {
+	return literalAtWithFiscalYearStartMonth(text, now, 1)
+}
+
+func literalAtWithFiscalYearStartMonth(text string, now time.Time, fiscalYearStartMonth int) (storage.Value, storage.Value, bool, error) {
+	if start, end, ok := dateLiteralWithFiscalYearStartMonth(text, now, fiscalYearStartMonth); ok {
 		return start, end, true, nil
 	}
 	if isKnownUnsupportedDateLiteral(text) {
@@ -1307,7 +1389,7 @@ func literalAt(text string, now time.Time) (storage.Value, storage.Value, bool, 
 			}
 		}
 		if t, ok := parseISODateTime(text); ok {
-			return storage.DateTimeValue(t.Format(time.RFC3339)), storage.Value{}, false, nil
+			return storage.DateTimeValue(t.UTC().Format(time.RFC3339)), storage.Value{}, false, nil
 		}
 		if t, ok := parseISODate(text); ok {
 			return storage.DateValue(t.Format("2006-01-02")), storage.Value{}, false, nil
@@ -1333,6 +1415,11 @@ func looksDecimalLiteral(text string) bool {
 	return strings.ContainsAny(trimmed, ".eE")
 }
 func dateLiteral(text string, now time.Time) (storage.Value, storage.Value, bool) {
+	return dateLiteralWithFiscalYearStartMonth(text, now, 1)
+}
+
+func dateLiteralWithFiscalYearStartMonth(text string, now time.Time, fiscalYearStartMonth int) (storage.Value, storage.Value, bool) {
+	fiscalYearStartMonth = normalizeFiscalYearStartMonth(fiscalYearStartMonth)
 	today := dateOnly(now)
 	upper := strings.ToUpper(text)
 	switch upper {
@@ -1369,20 +1456,59 @@ func dateLiteral(text string, now time.Time) (storage.Value, storage.Value, bool
 	case "NEXT_QUARTER":
 		start := quarterStart(today).AddDate(0, 3, 0)
 		return dateRange(start, start.AddDate(0, 3, 0))
+	case "THIS_WEEK":
+		start := weekStart(today)
+		return dateRange(start, start.AddDate(0, 0, 7))
+	case "LAST_WEEK":
+		start := weekStart(today).AddDate(0, 0, -7)
+		return dateRange(start, start.AddDate(0, 0, 7))
+	case "NEXT_WEEK":
+		start := weekStart(today).AddDate(0, 0, 7)
+		return dateRange(start, start.AddDate(0, 0, 7))
 	case "LAST_90_DAYS":
 		return dateRange(today.AddDate(0, 0, -90), today.AddDate(0, 0, 1))
 	case "NEXT_90_DAYS":
-		return dateRange(today, today.AddDate(0, 0, 91))
+		return dateRange(today.AddDate(0, 0, 1), today.AddDate(0, 0, 91))
+	case "THIS_FISCAL_QUARTER":
+		start := fiscalQuarterStart(today, fiscalYearStartMonth)
+		return dateRange(start, start.AddDate(0, 3, 0))
+	case "LAST_FISCAL_QUARTER":
+		start := fiscalQuarterStart(today, fiscalYearStartMonth).AddDate(0, -3, 0)
+		return dateRange(start, start.AddDate(0, 3, 0))
+	case "NEXT_FISCAL_QUARTER":
+		start := fiscalQuarterStart(today, fiscalYearStartMonth).AddDate(0, 3, 0)
+		return dateRange(start, start.AddDate(0, 3, 0))
+	case "THIS_FISCAL_YEAR":
+		start := fiscalYearStart(today, fiscalYearStartMonth)
+		return dateRange(start, start.AddDate(1, 0, 0))
+	case "LAST_FISCAL_YEAR":
+		start := fiscalYearStart(today, fiscalYearStartMonth).AddDate(-1, 0, 0)
+		return dateRange(start, start.AddDate(1, 0, 0))
+	case "NEXT_FISCAL_YEAR":
+		start := fiscalYearStart(today, fiscalYearStartMonth).AddDate(1, 0, 0)
+		return dateRange(start, start.AddDate(1, 0, 0))
 	}
 	if n, ok := literalNumberSuffix(upper, "LAST_N_DAYS:"); ok {
 		return dateRange(today.AddDate(0, 0, -n), today.AddDate(0, 0, 1))
 	}
 	if n, ok := literalNumberSuffix(upper, "NEXT_N_DAYS:"); ok {
-		return dateRange(today, today.AddDate(0, 0, n+1))
+		return dateRange(today.AddDate(0, 0, 1), today.AddDate(0, 0, n+1))
 	}
 	if n, ok := literalNumberSuffix(upper, "N_DAYS_AGO:"); ok {
 		start := today.AddDate(0, 0, -n)
 		return dateRange(start, start.AddDate(0, 0, 1))
+	}
+	if n, ok := literalNumberSuffix(upper, "LAST_N_WEEKS:"); ok {
+		start := weekStart(today).AddDate(0, 0, -7*n)
+		return dateRange(start, weekStart(today))
+	}
+	if n, ok := literalNumberSuffix(upper, "NEXT_N_WEEKS:"); ok {
+		start := weekStart(today).AddDate(0, 0, 7)
+		return dateRange(start, start.AddDate(0, 0, 7*n))
+	}
+	if n, ok := literalNumberSuffix(upper, "N_WEEKS_AGO:"); ok {
+		start := weekStart(today).AddDate(0, 0, -7*n)
+		return dateRange(start, start.AddDate(0, 0, 7))
 	}
 	if n, ok := literalNumberSuffix(upper, "LAST_N_MONTHS:"); ok {
 		thisMonth := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, time.UTC)
@@ -1393,20 +1519,88 @@ func dateLiteral(text string, now time.Time) (storage.Value, storage.Value, bool
 		nextMonth := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, 1, 0)
 		return dateRange(nextMonth, nextMonth.AddDate(0, n, 0))
 	}
+	if n, ok := literalNumberSuffix(upper, "N_MONTHS_AGO:"); ok {
+		start := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -n, 0)
+		return dateRange(start, start.AddDate(0, 1, 0))
+	}
+	if n, ok := literalNumberSuffix(upper, "LAST_N_QUARTERS:"); ok {
+		start := quarterStart(today).AddDate(0, -3*n, 0)
+		return dateRange(start, quarterStart(today))
+	}
+	if n, ok := literalNumberSuffix(upper, "NEXT_N_QUARTERS:"); ok {
+		start := quarterStart(today).AddDate(0, 3, 0)
+		return dateRange(start, start.AddDate(0, 3*n, 0))
+	}
+	if n, ok := literalNumberSuffix(upper, "N_QUARTERS_AGO:"); ok {
+		start := quarterStart(today).AddDate(0, -3*n, 0)
+		return dateRange(start, start.AddDate(0, 3, 0))
+	}
+	if n, ok := literalNumberSuffix(upper, "LAST_N_YEARS:"); ok {
+		start := time.Date(today.Year()-n, 1, 1, 0, 0, 0, 0, time.UTC)
+		return dateRange(start, time.Date(today.Year(), 1, 1, 0, 0, 0, 0, time.UTC))
+	}
+	if n, ok := literalNumberSuffix(upper, "NEXT_N_YEARS:"); ok {
+		start := time.Date(today.Year()+1, 1, 1, 0, 0, 0, 0, time.UTC)
+		return dateRange(start, time.Date(today.Year()+n+1, 1, 1, 0, 0, 0, 0, time.UTC))
+	}
+	if n, ok := literalNumberSuffix(upper, "N_YEARS_AGO:"); ok {
+		start := time.Date(today.Year()-n, 1, 1, 0, 0, 0, 0, time.UTC)
+		return dateRange(start, start.AddDate(1, 0, 0))
+	}
+	if n, ok := literalNumberSuffix(upper, "LAST_N_FISCAL_QUARTERS:"); ok {
+		start := fiscalQuarterStart(today, fiscalYearStartMonth).AddDate(0, -3*n, 0)
+		return dateRange(start, fiscalQuarterStart(today, fiscalYearStartMonth))
+	}
+	if n, ok := literalNumberSuffix(upper, "NEXT_N_FISCAL_QUARTERS:"); ok {
+		start := fiscalQuarterStart(today, fiscalYearStartMonth).AddDate(0, 3, 0)
+		return dateRange(start, start.AddDate(0, 3*n, 0))
+	}
+	if n, ok := literalNumberSuffix(upper, "N_FISCAL_QUARTERS_AGO:"); ok {
+		start := fiscalQuarterStart(today, fiscalYearStartMonth).AddDate(0, -3*n, 0)
+		return dateRange(start, start.AddDate(0, 3, 0))
+	}
+	if n, ok := literalNumberSuffix(upper, "LAST_N_FISCAL_YEARS:"); ok {
+		start := fiscalYearStart(today, fiscalYearStartMonth).AddDate(-n, 0, 0)
+		return dateRange(start, fiscalYearStart(today, fiscalYearStartMonth))
+	}
+	if n, ok := literalNumberSuffix(upper, "NEXT_N_FISCAL_YEARS:"); ok {
+		start := fiscalYearStart(today, fiscalYearStartMonth).AddDate(1, 0, 0)
+		return dateRange(start, start.AddDate(n, 0, 0))
+	}
+	if n, ok := literalNumberSuffix(upper, "N_FISCAL_YEARS_AGO:"); ok {
+		start := fiscalYearStart(today, fiscalYearStartMonth).AddDate(-n, 0, 0)
+		return dateRange(start, start.AddDate(1, 0, 0))
+	}
 	return storage.Value{}, storage.Value{}, false
 }
 func isKnownUnsupportedDateLiteral(text string) bool {
-	upper := strings.ToUpper(text)
-	switch upper {
-	case "THIS_WEEK", "LAST_WEEK", "NEXT_WEEK":
-		return true
-	default:
-		return strings.HasPrefix(upper, "LAST_N_WEEKS:") || strings.HasPrefix(upper, "NEXT_N_WEEKS:")
-	}
+	return false
+}
+func weekStart(day time.Time) time.Time {
+	return day.AddDate(0, 0, -int(day.Weekday()))
 }
 func quarterStart(day time.Time) time.Time {
 	month := time.Month(((int(day.Month()) - 1) / 3 * 3) + 1)
 	return time.Date(day.Year(), month, 1, 0, 0, 0, 0, time.UTC)
+}
+func fiscalQuarterStart(day time.Time, fiscalYearStartMonth int) time.Time {
+	start := fiscalYearStart(day, fiscalYearStartMonth)
+	months := (day.Year()-start.Year())*12 + int(day.Month()) - int(start.Month())
+	return start.AddDate(0, (months/3)*3, 0)
+}
+func fiscalYearStart(day time.Time, fiscalYearStartMonth int) time.Time {
+	month := time.Month(normalizeFiscalYearStartMonth(fiscalYearStartMonth))
+	start := time.Date(day.Year(), month, 1, 0, 0, 0, 0, time.UTC)
+	if day.Before(start) {
+		return time.Date(day.Year()-1, month, 1, 0, 0, 0, 0, time.UTC)
+	}
+	return start
+}
+func normalizeFiscalYearStartMonth(month int) int {
+	if month < 1 || month > 12 {
+		return 1
+	}
+	return month
 }
 func literalNumberSuffix(text, prefix string) (int, bool) {
 	if !strings.HasPrefix(text, prefix) {

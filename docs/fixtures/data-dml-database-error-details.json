@@ -10,6 +10,12 @@
       "symbol": "Database.insert",
       "kind": "test",
       "notes": "allOrNone=true DmlException details align with partial SaveResult Database.Error details for locally modeled failures."
+    },
+    {
+      "surfaceId": "apex:System.Database.insert(List<Object>,Boolean)",
+      "symbol": "Database.insert",
+      "kind": "test",
+      "notes": "List insert with allOrNone=false returns per-record SaveResult failures for local DML errors."
     }
   ],
   "source": [

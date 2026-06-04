@@ -3,6 +3,8 @@ package capability
 import (
 	"bytes"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -461,6 +463,67 @@ func TestBuildStandardObjectCoverageReport(t *testing.T) {
 	if !strings.Contains(out.String(), "# Standard Object Coverage") || !strings.Contains(out.String(), "`Account`") {
 		t.Fatalf("markdown = %q", out.String())
 	}
+}
+
+func TestStdlibMatrixCoversDatabaseSavepointMethods(t *testing.T) {
+	entries := StdlibMatrix()
+	seen := make(map[string]bool, len(entries))
+	for _, entry := range entries {
+		if entry.Area == "Database" {
+			seen[entry.API] = true
+		}
+	}
+	for _, api := range []string{"Database.setSavepoint", "Database.rollback", "Database.releaseSavepoint"} {
+		if !seen[api] {
+			t.Fatalf("stdlib matrix missing %s", api)
+		}
+	}
+}
+
+func TestStdlibMatrixCoversDatabaseAsyncEntrypoints(t *testing.T) {
+	entries := StdlibMatrix()
+	seen := make(map[string]bool, len(entries))
+	for _, entry := range entries {
+		if entry.Area == "Database" {
+			seen[entry.API] = true
+		}
+	}
+	for _, api := range []string{
+		"Database.executeBatch",
+		"Database.insertAsync",
+		"Database.updateAsync",
+		"Database.deleteAsync",
+		"Database.insertImmediate",
+		"Database.updateImmediate",
+		"Database.deleteImmediate",
+		"Database.getAsyncSaveResult",
+		"Database.getAsyncDeleteResult",
+	} {
+		if !seen[api] {
+			t.Fatalf("stdlib matrix missing %s", api)
+		}
+	}
+}
+
+func TestDocumentedFixturesCoverDatabaseGetAsyncLocator(t *testing.T) {
+	fixtureDir := filepath.Join("..", "..", "docs", "fixtures")
+	entries, err := os.ReadDir(fixtureDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+			continue
+		}
+		content, err := os.ReadFile(filepath.Join(fixtureDir, entry.Name()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(string(content), "Database.getAsyncLocator") {
+			return
+		}
+	}
+	t.Fatal("documented fixtures missing Database.getAsyncLocator evidence")
 }
 
 func findCatalogEntry(t *testing.T, catalog Catalog, symbol string) CatalogEntry {

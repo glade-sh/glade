@@ -3,6 +3,7 @@
   "evidence": [
     {
       "symbol": "System.abortJob",
+      "surfaceId": "apex:System.System.abortJob(String)",
       "kind": "test",
       "notes": "Queued local Queueable and Schedulable jobs can be aborted before Test.stopTest; completed and unknown jobs remain explicit unsupported diagnostics."
     }
@@ -17,8 +18,12 @@
       "content": "public class AbortSchedule { public void execute(SchedulableContext sc) { System.assert(false, 'aborted scheduled job should not run'); } }"
     },
     {
+      "path": "force-app/main/classes/AbortBatch.cls",
+      "content": "public class AbortBatch implements Database.Batchable<Integer> { public Iterable<Integer> start(Database.BatchableContext bc) { return new List<Integer>{1}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { System.assert(false, 'aborted batch should not run'); } public void finish(Database.BatchableContext bc) { System.assert(false, 'aborted batch finish should not run'); } }"
+    },
+    {
       "path": "force-app/main/classes/AsyncAbortJobEdgesTest.cls",
-      "content": "@isTest private class AsyncAbortJobEdgesTest { @isTest static void abortsQueuedJobsBeforeStopTest() { Test.startTest(); String queueId = System.enqueueJob(new AbortQueue()); String scheduleId = System.schedule('nightly', '0 0 0 * * ?', new AbortSchedule()); System.abortJob(queueId); System.abortJob(scheduleId); Test.stopTest(); Integer abortedJobs = [SELECT COUNT() FROM AsyncApexJob WHERE Status = 'Aborted']; System.assertEquals(2, abortedJobs); Integer deletedCrons = [SELECT COUNT() FROM CronTrigger WHERE State = 'Deleted']; System.assertEquals(1, deletedCrons); } }"
+      "content": "@isTest private class AsyncAbortJobEdgesTest { @isTest static void abortsQueuedJobsBeforeStopTest() { Test.startTest(); String queueId = System.enqueueJob(new AbortQueue()); String scheduleId = System.schedule('nightly', '0 0 0 * * ?', new AbortSchedule()); String batchId = Database.executeBatch(new AbortBatch(), 1); System.abortJob(queueId); System.abortJob(scheduleId); System.abortJob(batchId); Test.stopTest(); Integer abortedJobs = [SELECT COUNT() FROM AsyncApexJob WHERE Status = 'Aborted']; System.assertEquals(3, abortedJobs); Integer deletedCrons = [SELECT COUNT() FROM CronTrigger WHERE State = 'Deleted']; System.assertEquals(1, deletedCrons); } }"
     }
   ],
   "command": {

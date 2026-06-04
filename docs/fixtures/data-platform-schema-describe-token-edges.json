@@ -1,0 +1,107 @@
+{
+  "name": "data-platform-schema-describe-token-edges",
+  "evidence": [
+    {
+      "symbol": "Schema.getGlobalDescribe",
+      "surfaceId": "apex:Schema.Schema.getGlobalDescribe()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.describeSObjects",
+      "surfaceId": "apex:Schema.Schema.describeSObjects(List<String>)",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.describeSObjects",
+      "surfaceId": "apex:Schema.Schema.describeSObjects(List<String>,Object)",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectType.equals",
+      "surfaceId": "apex:Schema.SObjectType.equals(Object)",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectType.hashCode",
+      "surfaceId": "apex:Schema.SObjectType.hashCode()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectType.toString",
+      "surfaceId": "apex:Schema.SObjectType.toString()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectType.getDescribe",
+      "surfaceId": "apex:Schema.SObjectType.getDescribe(SObjectDescribeOptions)",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectType.getDescribe",
+      "surfaceId": "apex:Schema.SObjectType.getDescribe(Object)",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectType.newSObject",
+      "surfaceId": "apex:Schema.SObjectType.newSObject()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectType.newSObject",
+      "surfaceId": "apex:Schema.SObjectType.newSObject(ID)",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectType.newSObject",
+      "surfaceId": "apex:Schema.SObjectType.newSObject(ID,Boolean)",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectField.getDescribe",
+      "surfaceId": "apex:Schema.SObjectField.getDescribe(Object)",
+      "kind": "test"
+    },
+    {
+      "symbol": "SObject.getSObjectType",
+      "surfaceId": "apex:System.SObject.getSObjectType()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectField.equals",
+      "surfaceId": "apex:Schema.SObjectField.equals(Object)",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectField.hashCode",
+      "surfaceId": "apex:Schema.SObjectField.hashCode()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectField.toString",
+      "surfaceId": "apex:Schema.SObjectField.toString()",
+      "kind": "test"
+    }
+  ],
+  "source": [
+    {
+      "path": "sfdx-project.json",
+      "content": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"namespace\":\"\",\"sourceApiVersion\":\"64.0\"}"
+    },
+    {
+      "path": "force-app/main/default/classes/SchemaDescribeTokenEdgesFixtureTest.cls",
+      "content": "@isTest private class SchemaDescribeTokenEdgesFixtureTest { @isTest static void describesTokensAndCreatesSObjects() { Map<String, Schema.SObjectType> globalDescribe = Schema.getGlobalDescribe(); System.assert(globalDescribe.containsKey('Account')); Schema.SObjectType accountType = globalDescribe.get('Account'); System.assertEquals(Account.SObjectType, accountType); System.assert(accountType.equals(Account.SObjectType)); System.assert(!accountType.equals(Contact.SObjectType)); System.assert(accountType.hashCode() != Contact.SObjectType.hashCode()); System.assert(accountType.toString().contains('Account')); List<Schema.DescribeSObjectResult> byName = Schema.describeSObjects(new List<String>{'Account'}); System.assertEquals('Account', byName.get(0).getName()); List<Schema.DescribeSObjectResult> byNameDeferred = Schema.describeSObjects(new List<String>{'Account'}, Schema.SObjectDescribeOptions.DEFERRED); System.assertEquals('Account', byNameDeferred.get(0).getName()); System.assertEquals('Account', accountType.getDescribe(Schema.SObjectDescribeOptions.FULL).getName()); System.assertEquals('Account', accountType.getDescribe(Schema.SObjectDescribeOptions.DEFERRED).getName()); System.assert(Account.Name.equals(Account.Name)); System.assert(!Account.Name.equals(Contact.LastName)); System.assert(Account.Name.hashCode() != Contact.LastName.hashCode()); System.assert(Account.Name.toString().contains('Name')); System.assertEquals('Account Name', Account.Name.getDescribe(Schema.FieldDescribeOptions.FULL_DESCRIBE).getLabel()); SObject blank = accountType.newSObject(); System.assertEquals(Account.SObjectType, blank.getSObjectType()); Id accountId = '001000000000001AAA'; SObject withId = accountType.newSObject(accountId); System.assertEquals(Account.SObjectType, withId.getSObjectType()); System.assertEquals(accountId, withId.get('Id')); SObject withDefaults = accountType.newSObject(accountId, true); System.assertEquals(Account.SObjectType, withDefaults.getSObjectType()); System.assertEquals(accountId, withDefaults.get('Id')); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

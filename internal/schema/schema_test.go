@@ -21,7 +21,7 @@ func TestLoadProject(t *testing.T) {
 	lowercaseRecordTypePath := filepath.Join(root, "force-app/main/objects/Thing__c/recordTypes/Consumer.recordtype-meta.xml")
 	validationRulePath := filepath.Join(root, "force-app/main/objects/Thing__c/validationRules/Block.validationRule-meta.xml")
 	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Thing</label><pluralLabel>Things</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>`)
-	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Parent__c</fullName><label>Parent</label><type>Picklist</type><referenceTo>Thing__c</referenceTo><referenceTo>Account</referenceTo><relationshipName>Parent__r</relationshipName><childRelationshipName>Children__r</childRelationshipName><deleteConstraint>Cascade</deleteConstraint><valueSet><valueSetDefinition><value><fullName>Hot</fullName><default>true</default><label>Hot Label</label></value><value><fullName>Cold</fullName><isActive>false</isActive></value></valueSetDefinition></valueSet></CustomField>`)
+	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Parent__c</fullName><label>Parent</label><type>Picklist</type><referenceTo>Thing__c</referenceTo><referenceTo>Account</referenceTo><relationshipName>Parent__r</relationshipName><childRelationshipName>Children__r</childRelationshipName><deleteConstraint>Cascade</deleteConstraint><lookupFilter><active>true</active><filterItems><field>Account.Name</field><operation>equals</operation><value>Acme</value></filterItems><isOptional>true</isOptional></lookupFilter><valueSet><valueSetDefinition><value><fullName>Hot</fullName><default>true</default><label>Hot Label</label></value><value><fullName>Cold</fullName><isActive>false</isActive></value></valueSetDefinition></valueSet></CustomField>`)
 	writeFile(t, globalPicklistFieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>State__c</fullName><label>State</label><type>Picklist</type><valueSet><restricted>true</restricted><valueSetName>States</valueSetName></valueSet></CustomField>`)
 	writeFile(t, valueSetPath, `<GlobalValueSet xmlns="http://soap.sforce.com/2006/04/metadata"><customValue><fullName>AL</fullName><default>false</default><label>Alabama</label></customValue><customValue><fullName>PA</fullName><isActive>false</isActive><label>Pennsylvania</label></customValue></GlobalValueSet>`)
 	writeFile(t, formulaFieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Score__c</fullName><label>Score</label><type>Number</type><formula>1 + 1</formula></CustomField>`)
@@ -61,6 +61,9 @@ func TestLoadProject(t *testing.T) {
 	if got := parent.ChildRelationshipName; got != "Children__r" {
 		t.Fatalf("child relationship name = %q", got)
 	}
+	if !parent.FilteredLookupInfo.OptionalFilter || !parent.FilteredLookupInfo.Dependent || len(parent.FilteredLookupInfo.ControllingFields) != 1 || parent.FilteredLookupInfo.ControllingFields[0] != "Account.Name" {
+		t.Fatalf("filtered lookup info = %#v", parent.FilteredLookupInfo)
+	}
 	values := parent.PicklistValues
 	if len(values) != 2 || values[0].FullName != "Hot" || !values[0].Default || !values[0].Active || values[0].Label != "Hot Label" {
 		t.Fatalf("picklist values = %#v", values)
@@ -71,6 +74,9 @@ func TestLoadProject(t *testing.T) {
 	state := fields["State__c"]
 	if state.ValueSetName != "States" {
 		t.Fatalf("value set name = %q", state.ValueSetName)
+	}
+	if !state.RestrictedPicklist {
+		t.Fatalf("restricted picklist = %#v", state)
 	}
 	if len(state.PicklistValues) != 2 || state.PicklistValues[0].FullName != "AL" || state.PicklistValues[1].Active {
 		t.Fatalf("global picklist values = %#v", state.PicklistValues)

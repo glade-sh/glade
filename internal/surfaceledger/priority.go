@@ -1,7 +1,5 @@
 package surfaceledger
 
-import "strings"
-
 func AssignPriorities(rows []SurfaceLedgerRow) {
 	for i := range rows {
 		rows[i].Priority = Priority(rows[i])
@@ -50,7 +48,7 @@ func OwnerFor(row SurfaceLedgerRow) string {
 	if row.Area == AreaUI {
 		return "ui"
 	}
-	if strings.Contains(strings.ToLower(row.SurfaceID), "schema") || strings.Contains(strings.ToLower(row.SurfaceID), "database") {
+	if containsASCIIFold(row.SurfaceID, "schema") || containsASCIIFold(row.SurfaceID, "database") {
 		return "data-runtime"
 	}
 	return "runtime"

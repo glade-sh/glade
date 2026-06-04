@@ -4249,17 +4249,17 @@ public class FutureWorker {
 }
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/CountingBatch.cls"), `
-public class CountingBatch {
-  public List<Integer> start(Object bc) {
+public class CountingBatch implements Database.Batchable<Integer> {
+  public List<Integer> start(Database.BatchableContext bc) {
     return new List<Integer>{1, 2, 3};
   }
-  public void execute(Object bc, List<Integer> scope) {
+  public void execute(Database.BatchableContext bc, List<Integer> scope) {
     for (Integer value : scope) {
       AsyncState.batchSum = AsyncState.batchSum + value;
       insert new Account(Name = 'batch-' + value);
     }
   }
-  public void finish(Object bc) {
+  public void finish(Database.BatchableContext bc) {
     AsyncState.batchFinish = 1;
   }
 }
@@ -4313,7 +4313,8 @@ private class AsyncSemanticsTest {
     Integer afterRows = [SELECT COUNT() FROM Account];
     System.assertEquals(9, afterRows);
     List<AsyncApexJob> jobs = [SELECT Id, Status, JobType FROM AsyncApexJob];
-    System.assertEquals(6, jobs.size());
+    System.assertEquals(10, jobs.size());
+    System.assertEquals(4, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApexWorker']);
     List<CronTrigger> crons = [SELECT Id, State FROM CronTrigger];
     System.assertEquals(2, crons.size());
     CronTrigger cron = crons.get(0);
@@ -4340,7 +4341,7 @@ func TestRunBatchKeepsCyclicInstanceReferences(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/CyclicBatch.cls"), `
-public class CyclicBatch {
+public class CyclicBatch implements Database.Batchable<Integer> {
   public Service service;
   public CyclicBatch() {
     service = new Service();
@@ -4410,14 +4411,16 @@ func TestRunBatchStartCanReturnQueryLocator(t *testing.T) {
 </CustomField>
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/LocatorBatch.cls"), `
-public class LocatorBatch {
-  public Database.QueryLocator start(Object bc) {
+public class LocatorBatch implements Database.Batchable<Account> {
+  public Database.QueryLocator start(Database.BatchableContext bc) {
     return Database.getQueryLocator('SELECT Id, Name FROM Account');
   }
-  public void execute(Object bc, List<Account> scope) {
+  public void execute(Database.BatchableContext bc, List<Account> scope) {
     for (Account row : scope) {
       insert new Account(Name = 'processed-' + row.Name);
     }
+  }
+  public void finish(Database.BatchableContext bc) {
   }
 }
 `)
@@ -4463,7 +4466,7 @@ func TestRunBatchRerunsStaticCollectionInitializerInAsyncTransaction(t *testing.
 </CustomField>
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/StaticSetBatch.cls"), `
-public class StaticSetBatch {
+public class StaticSetBatch implements Database.Batchable<Account> {
   public static Boolean Ready;
   public static Set<String> Fields = new Set<String>();
   public static Boolean isReady() {
@@ -4473,7 +4476,7 @@ public class StaticSetBatch {
     }
     return Ready;
   }
-  public Database.QueryLocator start(Object bc) {
+  public Database.QueryLocator start(Database.BatchableContext bc) {
     isReady();
     String query = 'SELECT Id';
     for (String fieldName : Fields) {
@@ -4482,10 +4485,12 @@ public class StaticSetBatch {
     query += ' FROM Account';
     return Database.getQueryLocator(query);
   }
-  public void execute(Object bc, List<Account> scope) {
+  public void execute(Database.BatchableContext bc, List<Account> scope) {
     for (Account row : scope) {
       System.assertEquals('seed', row.Name);
     }
+  }
+  public void finish(Database.BatchableContext bc) {
   }
 }
 `)
@@ -4521,14 +4526,16 @@ public class IterableBatchState {
 }
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/IterableBatch.cls"), `
-public class IterableBatch {
-  public CounterIterable start(Object bc) {
+public class IterableBatch implements Database.Batchable<Integer> {
+  public CounterIterable start(Database.BatchableContext bc) {
     return new CounterIterable(3);
   }
-  public void execute(Object bc, List<Integer> scope) {
+  public void execute(Database.BatchableContext bc, List<Integer> scope) {
     for (Integer value : scope) {
       IterableBatchState.sum = IterableBatchState.sum + value;
     }
+  }
+  public void finish(Database.BatchableContext bc) {
   }
   public class CounterIterable implements Iterable<Integer>, Iterator<Integer> {
     private List<Integer> values;
@@ -4616,12 +4623,14 @@ public class ContextQueue {
 }
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/ContextBatch.cls"), `
-public class ContextBatch {
+public class ContextBatch implements Database.Batchable<Integer> {
   public List<Integer> start(Database.BatchableContext bc) {
     return new List<Integer>{1, 2, 3};
   }
   public void execute(Database.BatchableContext bc, List<Integer> scope) {
     insert new Account(Name = bc.getJobId());
+  }
+  public void finish(Database.BatchableContext bc) {
   }
 }
 `)
@@ -4772,7 +4781,7 @@ public class FlagQueue {
 }
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/FlagBatch.cls"), `
-public class FlagBatch {
+public class FlagBatch implements Database.Batchable<Integer> {
   public List<Integer> start(Database.BatchableContext bc) {
     System.assertEquals(true, System.isBatch());
     System.assertEquals(false, System.isFuture());
@@ -8393,7 +8402,7 @@ public class FieldTokenRegistry {
 }
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/FieldTokenBatch.cls"), `
-public class FieldTokenBatch {
+public class FieldTokenBatch implements Database.Batchable<Integer> {
   public List<Integer> start(Database.BatchableContext bc) {
     return new List<Integer>{1};
   }

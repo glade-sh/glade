@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, result *Result) (Value, error) {
@@ -618,10 +619,22 @@ platformStaticCall:
 		}
 		return vm.executeSOQLWithBindMap(args[0].Text, args[1], result)
 	case "Database.countQuery":
-		if len(args) != 1 || args[0].Kind != ValueString {
+		if len(args) != 1 && len(args) != 2 {
+			return Null, fmt.Errorf("Database.countQuery expects query String and optional AccessLevel")
+		}
+		if args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Database.countQuery expects query String")
 		}
-		value, err := vm.executeSOQL(args[0].Text, result)
+		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
+			return Null, fmt.Errorf("Database.countQuery expects AccessLevel")
+		}
+		var value Value
+		var err error
+		if len(args) == 2 {
+			value, err = vm.executeSOQLWithAccessLevel(args[0].Text, args[1], result)
+		} else {
+			value, err = vm.executeSOQL(args[0].Text, result)
+		}
 		if err != nil {
 			return Null, err
 		}
@@ -648,15 +661,25 @@ platformStaticCall:
 		}
 		return Int(int64(len(value.List))), nil
 	case "Database.getQueryLocator":
-		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueList) {
+		if len(args) != 1 && len(args) != 2 {
+			return Null, fmt.Errorf("Database.getQueryLocator expects query String or inline SOQL and optional AccessLevel")
+		}
+		if args[0].Kind != ValueString && args[0].Kind != ValueList {
 			return Null, fmt.Errorf("Database.getQueryLocator expects query String or inline SOQL")
+		}
+		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
+			return Null, fmt.Errorf("Database.getQueryLocator expects AccessLevel")
 		}
 		query := ""
 		value := args[0]
 		if args[0].Kind == ValueString {
 			var err error
 			query = args[0].Text
-			value, err = vm.executeSOQL(args[0].Text, result)
+			if len(args) == 2 {
+				value, err = vm.executeSOQLWithAccessLevel(args[0].Text, args[1], result)
+			} else {
+				value, err = vm.executeSOQL(args[0].Text, result)
+			}
 			if err != nil {
 				return Null, err
 			}
@@ -1809,7 +1832,7 @@ platformStaticCall:
 		appendTrace(result, "apex.describe.global", "apex.describe", map[string]any{"operation": "getGlobalDescribe"})
 		return vm.schemaGlobalDescribe(), nil
 	case "Schema.describeSObjects":
-		if len(args) != 1 || args[0].Kind != ValueList {
+		if (len(args) != 1 && len(args) != 2) || args[0].Kind != ValueList {
 			return Null, fmt.Errorf("Schema.describeSObjects expects List")
 		}
 		if vm.Org == nil {
@@ -1821,11 +1844,18 @@ platformStaticCall:
 			if err != nil {
 				return Null, err
 			}
-			resolved, ok := vm.resolveObjectName(objectName)
+			resolved := ""
+			definition := storage.ObjectDefinition{}
+			ok := false
+			if canonical, found := vm.resolveObjectName(objectName); found {
+				resolved = canonical
+				definition = vm.Org.Objects[canonical].Definition
+				ok = true
+			}
 			if !ok {
 				return Null, newExceptionError("System.SObjectException", fmt.Sprintf("Schema.describeSObjects unknown object %s", objectName))
 			}
-			describes = append(describes, vm.describeSObjectValue(resolved, vm.Org.Objects[resolved].Definition))
+			describes = append(describes, vm.describeSObjectValue(resolved, definition))
 		}
 		appendTrace(result, "apex.describe.sobjects", "apex.describe", map[string]any{
 			"operation": "describeSObjects",

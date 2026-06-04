@@ -4,7 +4,7 @@
     {
       "symbol": "Limits unmodeled getters",
       "kind": "exec",
-      "notes": "Unmodeled Limits getters return a stable UnsupportedFeature diagnostic instead of fake counters."
+      "notes": "Sosl Limits getters return local counters for the supported smoke shape."
     }
   ],
   "source": [
@@ -20,9 +20,9 @@
     ]
   },
   "expected": {
-    "error": {
-      "type": "UnsupportedFeature",
-      "message": "unsupported call \"Limits.getSoslQueries\""
+    "result": {
+      "debug": null,
+      "ok": true
     }
   }
 }

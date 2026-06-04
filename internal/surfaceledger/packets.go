@@ -282,18 +282,82 @@ func PacketMarkdown(ledger SurfaceLedger, packet AreaPacket) string {
 }
 
 func packetOwnsRow(packet AreaPacket, row SurfaceLedgerRow) bool {
+	surfaceFamily := row.SalesforceSurfaceFamily
 	switch packet.Name {
 	case "Ledger.Identity":
 		return row.GapClass == GapDocsOrgMismatch || row.GapClass == GapStaleGladeShape || row.GapClass == GapSignatureChanged
 	case "Core.Runtime.System.FeatureManagement":
 		return row.Product == ProductApex && row.Namespace == "System" && row.TypeName == "FeatureManagement"
 	case "Core.Runtime.Database.Batchable":
-		return row.Product == ProductApex && row.Namespace == "System" && (row.TypeName == "Database" || strings.Contains(row.TypeName, "Batchable"))
+		return row.Product == ProductApex && row.Namespace == "System" && (strings.Contains(row.TypeName, "Batchable") || row.TypeName == "BatchableContext" || row.TypeName == "Stateful" || row.TypeName == "QueryLocator" || isBatchableDatabaseMember(row.MemberName))
 	case "Data.Runtime.SchemaDescribe":
-		return row.Product == ProductApex && (row.Namespace == "Schema" || strings.Contains(row.TypeName, "Describe"))
+		return row.Product == ProductApex && row.Namespace == "Schema"
+	case "Core.Runtime.SystemAndStdlib":
+		return row.Product == ProductApex && row.Namespace == "System" && row.TypeName != "FeatureManagement" && row.TypeName != "Database" && !strings.Contains(row.TypeName, "Batchable")
+	case "Query.Runtime.SOQLSOSL":
+		return containsAnyASCIIFold(row.SurfaceID, "soql", "sosl") || containsAnyASCIIFold(row.DocsSource, "soql", "sosl")
+	case "Data.Reference.ObjectsFields":
+		return row.Product == ProductDataRef || surfaceFamily == ProductDataRef || containsAnyASCIIFold(row.SurfaceID, "object-reference", "field-reference")
+	case "Data.Runtime.SOQL":
+		return row.Area == AreaData && containsAnyASCIIFold(row.SurfaceID, "query", "soql")
+	case "Data.Runtime.DML":
+		return row.Area == AreaData && containsAnyASCIIFold(row.SurfaceID, "dml", ".insert", ".update", ".upsert", ".delete", ".undelete", ".merge")
+	case "Tests.AsyncAndIsolation":
+		return containsAnyASCIIFold(row.SurfaceID, "test.", "starttest", "stoptest", "async", "queueable", "future", "schedulable", "batchable", "isrunningtest")
+	case "UI.ApexPagesControllers":
+		return row.Product == ProductApex && (row.Namespace == "ApexPages" || containsASCIIFold(row.SurfaceID, "apexpages"))
+	case "UI.VisualforceComponents":
+		return row.Product == ProductVisualforce || surfaceFamily == ProductVisualforce || containsASCIIFold(row.SurfaceID, "visualforce")
+	case "UI.LWCModules":
+		return row.Product == ProductLWC || surfaceFamily == ProductLWC || containsASCIIFold(row.SurfaceID, "lwc")
+	case "UI.AuraComponents":
+		return row.Product == ProductAura || surfaceFamily == ProductAura || containsAnyASCIIFold(row.SurfaceID, "aura", "lightning")
+	case "UI.UIAPI":
+		return row.Product == "ui-api" || surfaceFamily == "ui-api" || containsASCIIFold(row.SurfaceID, "ui-api")
+	case "Server.RESTResources":
+		return row.Product == ProductREST || surfaceFamily == "rest-api"
+	case "Server.ToolingObjects":
+		return row.Product == ProductTooling || surfaceFamily == "tooling-api"
+	case "Integration.GraphQL":
+		return surfaceFamily == "graphql-api" || containsASCIIFold(row.SurfaceID, "graphql")
+	case "Integration.PubSub":
+		return surfaceFamily == "pub-sub-api" || containsAnyASCIIFold(row.SurfaceID, "pubsub", "pub-sub")
+	case "Integration.BulkAPI":
+		return surfaceFamily == "bulk-api" || containsASCIIFold(row.SurfaceID, "bulk")
+	case "Integration.MetadataAPI":
+		return surfaceFamily == "metadata-api" || containsASCIIFold(row.SurfaceID, "metadata")
+	case "Integration.SOAPAPI":
+		return surfaceFamily == "soap-api" || containsASCIIFold(row.SurfaceID, "soap")
+	case "Integration.StreamingAPI":
+		return surfaceFamily == "streaming-api" || containsASCIIFold(row.SurfaceID, "streaming")
+	case "Integration.SalesforceConnect.AmazonRDS":
+		return surfaceFamily == "sf-connect-amazon-rds" || containsASCIIFold(row.SurfaceID, "amazon-rds")
+	case "Platform.Events":
+		return surfaceFamily == "platform-events" || containsASCIIFold(row.SurfaceID, "platformevent")
+	case "AI.Agentforce":
+		return surfaceFamily == "agentforce" || containsASCIIFold(row.SurfaceID, "agentforce")
+	case "External.MarketingCloud.AMPscript":
+		return surfaceFamily == "marketing-cloud-ampscript" || containsASCIIFold(row.SurfaceID, "ampscript")
+	case "External.MarketingCloud.Handlebars":
+		return surfaceFamily == "handlebars-for-marketing-cloud-next" || containsASCIIFold(row.SurfaceID, "handlebars")
+	case "ConnectApi.PassiveDTOs":
+		return row.Product == ProductConnectAPI || surfaceFamily == ProductConnectAPI || containsASCIIFold(row.SurfaceID, "connectapi")
 	default:
 		return false
 	}
+}
+
+func isBatchableDatabaseMember(memberName string) bool {
+	return strings.EqualFold(memberName, "executeBatch") || strings.EqualFold(memberName, "getQueryLocator")
+}
+
+func containsAnyASCIIFold(s string, needles ...string) bool {
+	for _, needle := range needles {
+		if containsASCIIFold(s, needle) {
+			return true
+		}
+	}
+	return false
 }
 
 func writePacketList(b *strings.Builder, title string, values []string) {

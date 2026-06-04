@@ -365,13 +365,36 @@ func hasConcreteMethodSignature(model map[string]typeMembers, typeName string, r
 			return false
 		}
 		for _, method := range members.methods[normalizeName(required.Name)] {
-			if (sameSemaSignature(method, required) || semaOverrideCompatibleSignature(method, required, model)) && !hasModifier(method.Modifiers, "abstract") {
+			if (sameSemaSignature(method, required) || semaOverrideCompatibleSignature(method, required, model)) &&
+				semaInterfaceReturnCompatible(method, required, model) &&
+				!hasModifier(method.Modifiers, "abstract") {
 				return true
 			}
 		}
 		current = members.superClass
 	}
 	return false
+}
+
+func semaInterfaceReturnCompatible(method, required typesys.MemberSymbol, model map[string]typeMembers) bool {
+	requiredType := strings.TrimSpace(required.Type)
+	methodType := strings.TrimSpace(method.Type)
+	if requiredType == "" {
+		return true
+	}
+	if methodType == "" {
+		methodType = "void"
+	}
+	if strings.EqualFold(requiredType, "void") || strings.EqualFold(methodType, "void") {
+		return strings.EqualFold(requiredType, methodType)
+	}
+	if strings.EqualFold(required.Name, "start") &&
+		len(required.Parameters) == 1 &&
+		strings.EqualFold(required.Parameters[0].Type, "Database.BatchableContext") &&
+		strings.EqualFold(methodType, "Database.QueryLocator") {
+		return true
+	}
+	return semaAssignableToType(requiredType, methodType, model)
 }
 
 func semaOverrideCompatibleSignature(method, required typesys.MemberSymbol, model map[string]typeMembers) bool {

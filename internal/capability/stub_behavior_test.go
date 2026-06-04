@@ -47,6 +47,314 @@ func TestBuildStubBehaviorReportUsesStdlibEvidence(t *testing.T) {
 	}
 }
 
+func TestSchemaRecordTypeInfoPropertiesAreImplementedBehavior(t *testing.T) {
+	report := BuildStubBehaviorReport()
+	entries := map[string]StubBehaviorEntry{}
+	for _, entry := range report.Entries {
+		entries[entry.ID] = entry
+	}
+
+	for _, id := range []string{
+		"Schema.RecordTypeInfo.name",
+		"Schema.RecordTypeInfo.developername",
+		"Schema.RecordTypeInfo.recordtypeid",
+		"Schema.RecordTypeInfo.active",
+		"Schema.RecordTypeInfo.available",
+		"Schema.RecordTypeInfo.defaultrecordtypemapping",
+		"Schema.RecordTypeInfo.master",
+	} {
+		entry := findStubBehaviorEntry(entries, id)
+		if entry == nil {
+			t.Fatalf("missing %s", id)
+		}
+		if entry.Status != StubBehaviorImplemented {
+			t.Fatalf("%s status = %q, want %q", id, entry.Status, StubBehaviorImplemented)
+		}
+	}
+}
+
+func TestSchemaDescribeFieldResultPropertiesAreImplementedBehavior(t *testing.T) {
+	report := BuildStubBehaviorReport()
+	entries := map[string]StubBehaviorEntry{}
+	for _, entry := range report.Entries {
+		entries[entry.ID] = entry
+	}
+
+	for _, id := range []string{
+		"Schema.DescribeFieldResult.name",
+		"Schema.DescribeFieldResult.label",
+		"Schema.DescribeFieldResult.type",
+		"Schema.DescribeFieldResult.soaptype",
+		"Schema.DescribeFieldResult.sobjecttype",
+		"Schema.DescribeFieldResult.sobjectfield",
+		"Schema.DescribeFieldResult.controllervalues",
+		"Schema.DescribeFieldResult.picklistvalues",
+		"Schema.DescribeFieldResult.accessible",
+		"Schema.DescribeFieldResult.createable",
+		"Schema.DescribeFieldResult.updateable",
+		"Schema.DescribeFieldResult.defaultvalue",
+		"Schema.DescribeFieldResult.defaultvalueformula",
+	} {
+		entry := findStubBehaviorEntry(entries, id)
+		if entry == nil {
+			t.Fatalf("missing %s", id)
+		}
+		if entry.Status != StubBehaviorImplemented {
+			t.Fatalf("%s status = %q, want %q", id, entry.Status, StubBehaviorImplemented)
+		}
+	}
+}
+
+func TestSchemaDescribeSObjectResultPropertiesAreImplementedBehavior(t *testing.T) {
+	report := BuildStubBehaviorReport()
+	entries := map[string]StubBehaviorEntry{}
+	for _, entry := range report.Entries {
+		entries[entry.ID] = entry
+	}
+
+	for _, id := range []string{
+		"Schema.DescribeSObjectResult.name",
+		"Schema.DescribeSObjectResult.label",
+		"Schema.DescribeSObjectResult.labelplural",
+		"Schema.DescribeSObjectResult.keyprefix",
+		"Schema.DescribeSObjectResult.localname",
+		"Schema.DescribeSObjectResult.fields",
+		"Schema.DescribeSObjectResult.fieldSets",
+		"Schema.DescribeSObjectResult.recordtypeinfos",
+		"Schema.DescribeSObjectResult.recordtypeinfosbyname",
+		"Schema.DescribeSObjectResult.recordtypeinfosbydevelopername",
+		"Schema.DescribeSObjectResult.recordtypeinfosbyid",
+		"Schema.DescribeSObjectResult.childrelationships",
+		"Schema.DescribeSObjectResult.sobjecttype",
+		"Schema.DescribeSObjectResult.accessible",
+		"Schema.DescribeSObjectResult.createable",
+		"Schema.DescribeSObjectResult.updateable",
+		"Schema.DescribeSObjectResult.deletable",
+		"Schema.DescribeSObjectResult.queryable",
+		"Schema.DescribeSObjectResult.searchable",
+		"Schema.DescribeSObjectResult.custom",
+		"Schema.DescribeSObjectResult.customsetting",
+		"Schema.DescribeSObjectResult.deprecatedandhidden",
+		"Schema.DescribeSObjectResult.feedenabled",
+		"Schema.DescribeSObjectResult.mruenabled",
+		"Schema.DescribeSObjectResult.undeletable",
+		"Schema.DescribeSObjectResult.mergeable",
+		"Schema.DescribeSObjectResult.sobjectdescribeoption",
+	} {
+		entry := findStubBehaviorEntry(entries, id)
+		if entry == nil {
+			t.Fatalf("missing %s", id)
+		}
+		if entry.Status != StubBehaviorImplemented {
+			t.Fatalf("%s status = %q, want %q", id, entry.Status, StubBehaviorImplemented)
+		}
+	}
+}
+
+func TestSchemaDescribeTabPropertiesAreImplementedBehavior(t *testing.T) {
+	report := BuildStubBehaviorReport()
+	entries := map[string]StubBehaviorEntry{}
+	for _, entry := range report.Entries {
+		entries[entry.ID] = entry
+	}
+
+	for _, id := range []string{
+		"Schema.DescribeTabSetResult.description",
+		"Schema.DescribeTabSetResult.label",
+		"Schema.DescribeTabSetResult.logourl",
+		"Schema.DescribeTabSetResult.name",
+		"Schema.DescribeTabSetResult.namespace",
+		"Schema.DescribeTabSetResult.selected",
+		"Schema.DescribeTabSetResult.tabs",
+		"Schema.DescribeTabSetResult.tabsetid",
+		"Schema.DescribeTabResult.colors",
+		"Schema.DescribeTabResult.custom",
+		"Schema.DescribeTabResult.icons",
+		"Schema.DescribeTabResult.iconurl",
+		"Schema.DescribeTabResult.label",
+		"Schema.DescribeTabResult.miniiconurl",
+		"Schema.DescribeTabResult.mobileurl",
+		"Schema.DescribeTabResult.name",
+		"Schema.DescribeTabResult.sobjectname",
+		"Schema.DescribeTabResult.tabenumorid",
+		"Schema.DescribeTabResult.url",
+		"Schema.DescribeColorResult.color",
+		"Schema.DescribeColorResult.context",
+		"Schema.DescribeColorResult.theme",
+		"Schema.DescribeIconResult.contenttype",
+		"Schema.DescribeIconResult.height",
+		"Schema.DescribeIconResult.theme",
+		"Schema.DescribeIconResult.url",
+		"Schema.DescribeIconResult.width",
+	} {
+		entry := findStubBehaviorEntry(entries, id)
+		if entry == nil {
+			t.Fatalf("missing %s", id)
+		}
+		if entry.Status != StubBehaviorImplemented {
+			t.Fatalf("%s status = %q, want %q", id, entry.Status, StubBehaviorImplemented)
+		}
+	}
+}
+
+func TestSchemaChildRelationshipPropertiesAreImplementedBehavior(t *testing.T) {
+	report := BuildStubBehaviorReport()
+	entries := map[string]StubBehaviorEntry{}
+	for _, entry := range report.Entries {
+		entries[entry.ID] = entry
+	}
+
+	for _, id := range []string{
+		"Schema.ChildRelationship.relationshipname",
+		"Schema.ChildRelationship.field",
+		"Schema.ChildRelationship.childsobject",
+		"Schema.ChildRelationship.cascadedelete",
+		"Schema.ChildRelationship.deprecatedandhidden",
+		"Schema.ChildRelationship.restricteddelete",
+		"Schema.ChildRelationship.junctionidlistnames",
+		"Schema.ChildRelationship.junctionreferenceto",
+	} {
+		entry := findStubBehaviorEntry(entries, id)
+		if entry == nil {
+			t.Fatalf("missing %s", id)
+		}
+		if entry.Status != StubBehaviorImplemented {
+			t.Fatalf("%s status = %q, want %q", id, entry.Status, StubBehaviorImplemented)
+		}
+	}
+}
+
+func TestSchemaPicklistEntryPropertiesAreImplementedBehavior(t *testing.T) {
+	report := BuildStubBehaviorReport()
+	entries := map[string]StubBehaviorEntry{}
+	for _, entry := range report.Entries {
+		entries[entry.ID] = entry
+	}
+
+	for _, id := range []string{
+		"Schema.PicklistEntry.active",
+		"Schema.PicklistEntry.defaultvalue",
+		"Schema.PicklistEntry.label",
+		"Schema.PicklistEntry.value",
+	} {
+		entry := findStubBehaviorEntry(entries, id)
+		if entry == nil {
+			t.Fatalf("missing %s", id)
+		}
+		if entry.Status != StubBehaviorImplemented {
+			t.Fatalf("%s status = %q, want %q", id, entry.Status, StubBehaviorImplemented)
+		}
+	}
+}
+
+func TestSchemaSObjectFieldPropertiesAreImplementedBehavior(t *testing.T) {
+	report := BuildStubBehaviorReport()
+	entries := map[string]StubBehaviorEntry{}
+	for _, entry := range report.Entries {
+		entries[entry.ID] = entry
+	}
+
+	for _, id := range []string{
+		"Schema.SObjectField.label",
+		"Schema.SObjectField.name",
+	} {
+		entry := findStubBehaviorEntry(entries, id)
+		if entry == nil {
+			t.Fatalf("missing %s", id)
+		}
+		if entry.Status != StubBehaviorImplemented {
+			t.Fatalf("%s status = %q, want %q", id, entry.Status, StubBehaviorImplemented)
+		}
+	}
+}
+
+func TestSchemaDataCategoryPropertiesAreImplementedBehavior(t *testing.T) {
+	report := BuildStubBehaviorReport()
+	entries := map[string]StubBehaviorEntry{}
+	for _, entry := range report.Entries {
+		entries[entry.ID] = entry
+	}
+
+	for _, id := range []string{
+		"Schema.DataCategory.childcategories",
+		"Schema.DataCategory.label",
+		"Schema.DataCategory.name",
+		"Schema.DataCategoryGroupSobjectTypePair.datacategorygroupname",
+		"Schema.DataCategoryGroupSobjectTypePair.sobject",
+		"Schema.DescribeDataCategoryGroupResult.categorycount",
+		"Schema.DescribeDataCategoryGroupResult.description",
+		"Schema.DescribeDataCategoryGroupResult.label",
+		"Schema.DescribeDataCategoryGroupResult.name",
+		"Schema.DescribeDataCategoryGroupResult.sobject",
+		"Schema.DescribeDataCategoryGroupStructureResult.description",
+		"Schema.DescribeDataCategoryGroupStructureResult.label",
+		"Schema.DescribeDataCategoryGroupStructureResult.name",
+		"Schema.DescribeDataCategoryGroupStructureResult.sobject",
+		"Schema.DescribeDataCategoryGroupStructureResult.topcategories",
+	} {
+		entry := findStubBehaviorEntry(entries, id)
+		if entry == nil {
+			t.Fatalf("missing %s", id)
+		}
+		if entry.Status != StubBehaviorImplemented {
+			t.Fatalf("%s status = %q, want %q", id, entry.Status, StubBehaviorImplemented)
+		}
+	}
+}
+
+func TestSchemaFieldSetPropertiesAreImplementedBehavior(t *testing.T) {
+	report := BuildStubBehaviorReport()
+	entries := map[string]StubBehaviorEntry{}
+	for _, entry := range report.Entries {
+		entries[entry.ID] = entry
+	}
+
+	for _, id := range []string{
+		"Schema.FieldSet.description",
+		"Schema.FieldSet.fields",
+		"Schema.FieldSet.label",
+		"Schema.FieldSet.name",
+		"Schema.FieldSet.namespace",
+		"Schema.FieldSet.sobjecttype",
+		"Schema.FieldSetMember.dbrequired",
+		"Schema.FieldSetMember.fieldpath",
+		"Schema.FieldSetMember.label",
+		"Schema.FieldSetMember.required",
+		"Schema.FieldSetMember.sobjectfield",
+		"Schema.FieldSetMember.type",
+	} {
+		entry := findStubBehaviorEntry(entries, id)
+		if entry == nil {
+			t.Fatalf("missing %s", id)
+		}
+		if entry.Status != StubBehaviorImplemented {
+			t.Fatalf("%s status = %q, want %q", id, entry.Status, StubBehaviorImplemented)
+		}
+	}
+}
+
+func TestSchemaFilteredLookupInfoPropertiesAreImplementedBehavior(t *testing.T) {
+	report := BuildStubBehaviorReport()
+	entries := map[string]StubBehaviorEntry{}
+	for _, entry := range report.Entries {
+		entries[entry.ID] = entry
+	}
+
+	for _, id := range []string{
+		"Schema.FilteredLookupInfo.controllingfields",
+		"Schema.FilteredLookupInfo.dependent",
+		"Schema.FilteredLookupInfo.optionalfilter",
+	} {
+		entry := findStubBehaviorEntry(entries, id)
+		if entry == nil {
+			t.Fatalf("missing %s", id)
+		}
+		if entry.Status != StubBehaviorImplemented {
+			t.Fatalf("%s status = %q, want %q", id, entry.Status, StubBehaviorImplemented)
+		}
+	}
+}
+
 func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	report := BuildStubBehaviorReport()
 	entries := map[string]StubBehaviorEntry{}
@@ -168,6 +476,9 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.FeedElement.body(", StubBehaviorPassiveDefault)
 	assertStubBehaviorPrefix(t, entries, "Schema.describeDataCategoryGroups(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Schema.describeDataCategoryGroupStructures(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Schema.getGlobalDescribe()", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Schema.describeSObjects(List<String>)", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Schema.describeSObjects(List<String>,Object)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Schema.DataCategoryGroupSobjectTypePair.setSobject(String)", StubBehaviorPassiveDefault)
 	assertStubBehaviorPrefix(t, entries, "Schema.DataCategoryGroupSobjectTypePair.getDataCategoryGroupName()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Schema.DataCategory.getChildCategories()", StubBehaviorImplemented)

@@ -9,7 +9,43 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-const StandardObjectCoverageSchemaVersion = 1
+const StandardObjectCoverageSchemaVersion = 2
+
+const (
+	StandardObjectCoverageShape    = "shape"
+	StandardObjectCoverageBehavior = "behavior"
+)
+
+var standardObjectBehaviorCoverage = map[string]bool{
+	"Account":                     true,
+	"Attachment":                  true,
+	"CampaignMember":              true,
+	"CampaignMemberStatus":        true,
+	"Contact":                     true,
+	"ContentDistribution":         true,
+	"ContentDocument":             true,
+	"ContentDocumentLink":         true,
+	"ContentVersion":              true,
+	"Document":                    true,
+	"EmailMessage":                true,
+	"EmailMessageRelation":        true,
+	"FieldPermissions":            true,
+	"Lead":                        true,
+	"ObjectPermissions":           true,
+	"Opportunity":                 true,
+	"OpportunityLineItem":         true,
+	"PermissionSet":               true,
+	"PermissionSetAssignment":     true,
+	"PermissionSetGroup":          true,
+	"PermissionSetGroupComponent": true,
+	"Pricebook2":                  true,
+	"PricebookEntry":              true,
+	"Product2":                    true,
+	"Profile":                     true,
+	"RecordType":                  true,
+	"SetupEntityAccess":           true,
+	"User":                        true,
+}
 
 type StandardObjectCoverageReport struct {
 	SchemaVersion int                           `json:"schemaVersion"`
@@ -18,13 +54,15 @@ type StandardObjectCoverageReport struct {
 }
 
 type StandardObjectCoverageTotals struct {
-	Objects       int `json:"objects"`
-	KeyPrefixes   int `json:"keyPrefixes"`
-	Fields        int `json:"fields"`
-	Relationships int `json:"relationships"`
-	RecordTypes   int `json:"recordTypes"`
-	Picklists     int `json:"picklists"`
-	References    int `json:"references"`
+	Objects         int `json:"objects"`
+	ShapeObjects    int `json:"shapeObjects"`
+	BehaviorObjects int `json:"behaviorObjects"`
+	KeyPrefixes     int `json:"keyPrefixes"`
+	Fields          int `json:"fields"`
+	Relationships   int `json:"relationships"`
+	RecordTypes     int `json:"recordTypes"`
+	Picklists       int `json:"picklists"`
+	References      int `json:"references"`
 }
 
 type StandardObjectCoverageEntry struct {
@@ -32,6 +70,7 @@ type StandardObjectCoverageEntry struct {
 	Label         string `json:"label,omitempty"`
 	PluralLabel   string `json:"pluralLabel,omitempty"`
 	KeyPrefix     string `json:"keyPrefix,omitempty"`
+	Coverage      string `json:"coverage"`
 	Fields        int    `json:"fields"`
 	Relationships int    `json:"relationships"`
 	RecordTypes   int    `json:"recordTypes"`
@@ -55,6 +94,7 @@ func BuildStandardObjectCoverageReport() StandardObjectCoverageReport {
 			Label:         definition.Label,
 			PluralLabel:   definition.PluralLabel,
 			KeyPrefix:     definition.KeyPrefix,
+			Coverage:      standardObjectCoverageLevel(definition.APIName),
 			Fields:        len(definition.Fields),
 			Relationships: len(definition.Relations),
 			RecordTypes:   len(definition.RecordTypes),
@@ -69,6 +109,10 @@ func BuildStandardObjectCoverageReport() StandardObjectCoverageReport {
 		}
 		report.Objects = append(report.Objects, entry)
 		report.Totals.Objects++
+		report.Totals.ShapeObjects++
+		if entry.Coverage == StandardObjectCoverageBehavior {
+			report.Totals.BehaviorObjects++
+		}
 		if entry.KeyPrefix != "" {
 			report.Totals.KeyPrefixes++
 		}
@@ -82,6 +126,13 @@ func BuildStandardObjectCoverageReport() StandardObjectCoverageReport {
 		return report.Objects[i].Object < report.Objects[j].Object
 	})
 	return report
+}
+
+func standardObjectCoverageLevel(objectName string) string {
+	if standardObjectBehaviorCoverage[objectName] {
+		return StandardObjectCoverageBehavior
+	}
+	return StandardObjectCoverageShape
 }
 
 func WriteStandardObjectCoverageJSON(w io.Writer, report StandardObjectCoverageReport) error {
@@ -98,6 +149,12 @@ func WriteStandardObjectCoverageMarkdown(w io.Writer, report StandardObjectCover
 		return err
 	}
 	if _, err := fmt.Fprintf(w, "\n- Objects: %d\n", report.Totals.Objects); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "- Shape objects: %d\n", report.Totals.ShapeObjects); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "- Behavior objects: %d\n", report.Totals.BehaviorObjects); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintf(w, "- Key prefixes: %d\n", report.Totals.KeyPrefixes); err != nil {
@@ -118,15 +175,15 @@ func WriteStandardObjectCoverageMarkdown(w io.Writer, report StandardObjectCover
 	if _, err := fmt.Fprintf(w, "- Reference fields: %d\n", report.Totals.References); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(w, "\n| Object | Key Prefix | Fields | Relationships | Record Types | Picklists | References |"); err != nil {
+	if _, err := fmt.Fprintln(w, "\n| Object | Coverage | Key Prefix | Fields | Relationships | Record Types | Picklists | References |"); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(w, "| --- | --- | ---: | ---: | ---: | ---: | ---: |"); err != nil {
+	if _, err := fmt.Fprintln(w, "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |"); err != nil {
 		return err
 	}
 	for _, entry := range report.Objects {
-		if _, err := fmt.Fprintf(w, "| `%s` | `%s` | %d | %d | %d | %d | %d |\n",
-			entry.Object, entry.KeyPrefix, entry.Fields, entry.Relationships, entry.RecordTypes, entry.Picklists, entry.References); err != nil {
+		if _, err := fmt.Fprintf(w, "| `%s` | `%s` | `%s` | %d | %d | %d | %d | %d |\n",
+			entry.Object, entry.Coverage, entry.KeyPrefix, entry.Fields, entry.Relationships, entry.RecordTypes, entry.Picklists, entry.References); err != nil {
 			return err
 		}
 	}

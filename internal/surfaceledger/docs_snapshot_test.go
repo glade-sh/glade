@@ -43,6 +43,23 @@ func TestBuildDocsSnapshotExtractsAPIVersionText(t *testing.T) {
 	}
 }
 
+func TestBuildDocsSnapshotClassifiesDataReferenceDocs(t *testing.T) {
+	root := t.TempDir()
+	writeDoc(t, root, "object-reference/sforce_api_objects_asyncapexjob.md", "# AsyncApexJob\n\n### Status\n")
+
+	rows, err := BuildDocsSnapshot(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := rowsByID(rows)
+	if row, ok := byID[DataObjectID("AsyncApexJob")]; !ok || row.Product != ProductDataRef || row.Area != AreaData {
+		t.Fatalf("AsyncApexJob object row = %#v, ok=%v", row, ok)
+	}
+	if row, ok := byID[DataFieldID("AsyncApexJob", "Status")]; !ok || row.Kind != KindField {
+		t.Fatalf("AsyncApexJob.Status field row = %#v, ok=%v", row, ok)
+	}
+}
+
 func TestBuildDocsSnapshotUsesApexSignatureParameterTypes(t *testing.T) {
 	root := t.TempDir()
 	writeDoc(t, root, "apex/apex_class_System_FeatureManagement.md", "# FeatureManagement Class\n\n### checkPackageBooleanValue(apiName)\n\n#### Signature\n\n`public static Boolean checkPackageBooleanValue(String\napiName)`\n")

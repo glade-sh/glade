@@ -32,6 +32,38 @@ Passive DTO breadth does not outrank active runtime use. A namespace with a larg
 passive forest needs shape work, but it should not consume the first runtime
 squads unless the corpus uses it.
 
+## Full-Depth Slice Gate
+
+A vertical slice is not done because one method, literal, overload, or edge case
+passes. A slice is done when the owning reference section has been inventoried,
+implemented, and ratcheted.
+
+Each slice must start with a local reference scope:
+
+```text
+reference file or section -> extracted rows -> implemented rows -> explicit unsupported rows -> tests -> ratchet report
+```
+
+For example, `sforce_api_calls_soql_select_dateformats.md` is one SOQL date
+literal slice. Closing that slice means every documented date and dateTime format
+and every documented date literal is either supported by focused tests or listed
+as explicit unsupported with the missing local Salesforce dependency.
+
+Required closeout for every slice:
+
+| Gate | Requirement |
+| --- | --- |
+| Reference inventory | Extract every method, overload, literal, enum, object, field, or REST resource from the local markdown reference section. |
+| Corpus weight | Note example-project files that use the surface, if any. This sets priority but does not shrink the reference scope. |
+| Red tests | Add failing tests for every unsupported row before implementation. Use table tests where the surface is row-shaped. |
+| Implementation | Implement all rows in the slice that can be modeled locally without proprietary behavior or unavailable org config. |
+| Explicit unsupported | Rows that cannot be modeled yet must return stable unsupported diagnostics and carry a reason. |
+| Fixture evidence | Add or update a `docs/fixtures` file that names the reference section and representative covered rows. |
+| Ratchet | Report before/after counts for implemented, gap, explicit unsupported, and failures in that slice. |
+
+One-off progress still matters, but it should be recorded as partial work inside
+an open slice. It should not be called a completed vertical.
+
 ## Corpus Signals
 
 Real-project runtime scan:
@@ -294,14 +326,17 @@ That is coverage debt. It is not the first runtime frontier.
 Each agent gets one vertical packet and one corpus sentinel:
 
 ```text
-Goal: move <project> through the next measured blocker in <vertical>.
+Goal: close <reference file or section> for <vertical>, then move <project>
+through the next measured blocker if this slice touches the blocker.
 Packet: <docs/agent-packets/salesforce/...md>
 Allowed files: packet-owned files only.
-Do first: add or update a focused fixture proving the Salesforce behavior.
-Then: implement the narrow runtime/server/type shape.
-Validate: focused Go tests plus the smallest local-test command that hits the
-blocker.
-Report: before/after blocker count, changed files, validation, remaining risk.
+Do first: extract the complete reference row list and mark implemented/gap/unsupported.
+Then: add red tests for all rows that are not already covered.
+Then: implement all locally modelable rows in the slice.
+Validate: focused Go tests, fixture validation, and the smallest local-test
+command that hits the blocker when applicable.
+Report: reference rows covered, explicit unsupported rows with reasons,
+before/after counts, changed files, validation, and remaining risk.
 ```
 
 Do not give an agent a namespace alone. Give it a corpus blocker, a packet, and
@@ -325,4 +360,3 @@ Generate packets in this order:
 
 Keep `Approval.Process` deferred until a real project uses it or a user asks for
 that vertical. The local real-project scan found no non-stub usage.
-

@@ -1,0 +1,28 @@
+{
+  "name": "integration-auth-session-current",
+  "evidence": [
+    {
+      "symbol": "Auth.SessionManagement.getCurrentSession",
+      "kind": "exec",
+      "notes": "Auth.SessionManagement.getCurrentSession returns a deterministic local session map."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Map<String,String> session = Auth.SessionManagement.getCurrentSession();\nSystem.assert(session.get('SessionId').contains('session'));"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Map<String,String> session = Auth.SessionManagement.getCurrentSession();\nSystem.assert(session.get('SessionId').contains('session'));"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

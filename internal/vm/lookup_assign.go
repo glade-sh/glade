@@ -1148,7 +1148,7 @@ func storageFieldTypeName(field storage.Field) string {
 			return field.ReferenceTo[0]
 		}
 		return "Id"
-	case storage.FieldString, storage.FieldPicklist:
+	case storage.FieldString, storage.FieldPicklist, storage.FieldMultiPicklist:
 		return "String"
 	case storage.FieldBoolean:
 		return "Boolean"

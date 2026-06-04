@@ -1,0 +1,49 @@
+{
+  "name": "async-batchable-stateful",
+  "evidence": [
+    {
+      "symbol": "Database.Stateful",
+      "surfaceId": "apex:Database.Stateful",
+      "kind": "test"
+    },
+    {
+      "symbol": "Database.Batchable.execute",
+      "surfaceId": "apex:Database.Batchable.execute(Database.BatchableContext,List<Object>)",
+      "kind": "test"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/StatefulFixtureBatch.cls",
+      "content": "public class StatefulFixtureBatch implements Database.Batchable<Integer>, Database.Stateful { public Integer Counter = 0; public Iterable<Integer> start(Database.BatchableContext bc) { return new List<Integer>{1, 2}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { Counter++; insert new Account(Name = 'stateful-count-' + Counter); } public void finish(Database.BatchableContext bc) { insert new Account(Name = 'stateful-finish-' + Counter); } }"
+    },
+    {
+      "path": "force-app/main/classes/NonStatefulFixtureBatch.cls",
+      "content": "public class NonStatefulFixtureBatch implements Database.Batchable<Integer> { public Integer Counter = 0; public Iterable<Integer> start(Database.BatchableContext bc) { return new List<Integer>{1, 2}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { Counter++; insert new Account(Name = 'non-stateful-count-' + Counter); } public void finish(Database.BatchableContext bc) { insert new Account(Name = 'non-stateful-finish-' + Counter); } }"
+    },
+    {
+      "path": "force-app/main/classes/AsyncBatchableStatefulFixtureTest.cls",
+      "content": "@isTest private class AsyncBatchableStatefulFixtureTest { @isTest static void statefulPreservesAndNonStatefulResetsInstanceFields() { Test.startTest(); Database.executeBatch(new StatefulFixtureBatch(), 1); Database.executeBatch(new NonStatefulFixtureBatch(), 1); Test.stopTest(); System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'stateful-count-1']); System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'stateful-count-2']); System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'stateful-finish-2']); System.assertEquals(2, [SELECT COUNT() FROM Account WHERE Name = 'non-stateful-count-1']); System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'non-stateful-count-2']); System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'non-stateful-finish-0']); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 1,
+      "total": 1
+    }
+  }
+}

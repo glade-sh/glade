@@ -55,7 +55,8 @@ func TestBuildDescribeRegistry(t *testing.T) {
 			{Name: "Who__c", Type: "Lookup", ReferenceTo: []string{"Account", "Contact"}, RelationshipName: "Who__r", ChildRelationshipName: "WhoWidgets__r"},
 			{Name: "ParentAccount__c", Type: "Lookup", ReferenceTo: []string{"Account"}, RelationshipName: "Affiliates"},
 			{Name: "Master__c", Type: "MasterDetail", ReferenceTo: []string{"Account"}, RelationshipName: "Master__r", ChildRelationshipName: "MasterWidgets__r"},
-			{Name: "Rating__c", Type: "Picklist", PicklistValues: []schema.PicklistValue{{FullName: "Hot", Label: "Hot", Default: true, Active: true}}},
+			{Name: "Rating__c", Type: "Picklist", RestrictedPicklist: true, PicklistValues: []schema.PicklistValue{{FullName: "Hot", Label: "Hot", Default: true, Active: true}}},
+			{Name: "External_Id__c", Type: "Text", ExternalID: true, Unique: true, IDLookup: true},
 			{Name: "PrimaryLocation__c", Type: "Location"},
 			{Name: "Notes__c", Type: "LongTextArea"},
 		},
@@ -102,6 +103,12 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	if got := describe.Fields["Rating__c"].PicklistValues; len(got) != 1 || got[0].Value != "Hot" || !got[0].Default {
 		t.Fatalf("picklist values = %#v", got)
 	}
+	if !describe.Fields["Rating__c"].RestrictedPicklist {
+		t.Fatalf("restricted picklist not carried: %#v", describe.Fields["Rating__c"])
+	}
+	if got := describe.Fields["External_Id__c"]; !got.ExternalID || !got.Unique || !got.IDLookup {
+		t.Fatalf("external id describe = %#v", got)
+	}
 	if got := describe.RecordTypes; len(got) != 1 || got[0].ID != "012000000000001" || got[0].DeveloperName != "Business" || got[0].Name != "Business Widget" || !got[0].Default {
 		t.Fatalf("record types = %#v", got)
 	}
@@ -132,6 +139,9 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	}
 	if got := definition.Fields["Rating__c"].PicklistValues; len(got) != 1 || got[0].Value != "Hot" {
 		t.Fatalf("definition picklist values = %#v", got)
+	}
+	if got := definition.Fields["External_Id__c"]; !got.ExternalID || !got.Unique || !got.IDLookup {
+		t.Fatalf("external id definition = %#v", got)
 	}
 	if got := definition.Fields["PrimaryLocation__c"]; got.Type != storage.FieldLocation {
 		t.Fatalf("location definition = %#v", got)

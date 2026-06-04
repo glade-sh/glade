@@ -28,11 +28,12 @@ func BuildEvidenceSnapshot(paths []string) ([]SurfaceLedgerRow, error) {
 			if id == "" {
 				continue
 			}
+			kind := evidenceKindFromSurfaceID(id)
 			row := RowFromEvidence(SurfaceLedgerRow{
 				SurfaceID: id,
 				Product:   productFromID(id),
 				Area:      AreaRuntime,
-				Kind:      KindMethod,
+				Kind:      kind,
 				Evidence:  EvidenceFixture,
 				Sources:   []string{"fixture:" + fixture.Name},
 				Notes:     evidence.Notes,
@@ -43,6 +44,20 @@ func BuildEvidenceSnapshot(paths []string) ([]SurfaceLedgerRow, error) {
 	}
 	sortRows(rows)
 	return rows, nil
+}
+
+func evidenceKindFromSurfaceID(id string) string {
+	if !strings.HasPrefix(id, "apex:") {
+		return KindMethod
+	}
+	rest := strings.TrimPrefix(id, "apex:")
+	if strings.Contains(rest, "(") {
+		return KindMethod
+	}
+	if len(strings.Split(rest, ".")) <= 2 {
+		return KindType
+	}
+	return KindProperty
 }
 
 func shouldSkipNonFixtureEvidenceFile(path string) (bool, error) {
@@ -61,11 +76,17 @@ func shouldSkipNonFixtureEvidenceFile(path string) (bool, error) {
 
 func inferSurfaceIDFromSymbol(symbol string) string {
 	symbol = cleanIdentityPart(symbol)
-	if symbol == "" || strings.HasPrefix(symbol, "apex:") || strings.HasPrefix(symbol, "rest:") || strings.HasPrefix(symbol, "tooling:") {
+	if symbol == "" || strings.HasPrefix(symbol, "apex:") || strings.HasPrefix(symbol, "rest:") || strings.HasPrefix(symbol, "tooling:") || strings.HasPrefix(symbol, "data-reference:") {
 		return symbol
+	}
+	if isHumanBehaviorLabel(symbol) {
+		return ""
 	}
 	parts := strings.Split(symbol, ".")
 	if len(parts) == 2 {
+		if canonicalApexNamespaceName(parts[0]) == "Database" && startsLowerASCII(parts[1]) {
+			return ""
+		}
 		if isKnownApexNamespace(parts[0]) {
 			return ApexTypeID(parts[0], parts[1])
 		}
@@ -87,6 +108,18 @@ func inferSurfaceIDFromSymbol(symbol string) string {
 	return ApexTypeID("System", symbol)
 }
 
+func isHumanBehaviorLabel(symbol string) bool {
+	return strings.ContainsAny(symbol, " \t\r\n/")
+}
+
+func startsLowerASCII(value string) bool {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return false
+	}
+	return value[0] >= 'a' && value[0] <= 'z'
+}
+
 func isKnownApexNamespace(namespace string) bool {
 	switch canonicalApexNamespaceName(namespace) {
 	case "ConnectApi", "Database", "Schema", "System":
@@ -104,7 +137,11 @@ func isKnownZeroArgApexMethod(namespace, typeName, memberName string) bool {
 		return false
 	}
 	memberName = canonicalApexMemberName(memberName)
-	return strings.HasPrefix(memberName, "get") || strings.HasPrefix(memberName, "is")
+	return hasPrefixFold(memberName, "get") || hasPrefixFold(memberName, "is")
+}
+
+func hasPrefixFold(value, prefix string) bool {
+	return len(value) >= len(prefix) && strings.EqualFold(value[:len(prefix)], prefix)
 }
 
 func productFromID(id string) string {
@@ -113,6 +150,8 @@ func productFromID(id string) string {
 		return ProductApex
 	case strings.HasPrefix(id, "tooling:"):
 		return ProductTooling
+	case strings.HasPrefix(id, "data-reference:"):
+		return ProductDataRef
 	case strings.HasPrefix(id, "rest:"):
 		return ProductREST
 	case strings.HasPrefix(id, "visualforce:"):

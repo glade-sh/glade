@@ -4,12 +4,12 @@
     {
       "symbol": "Limits.getPublishImmediateDML",
       "kind": "exec",
-      "notes": "Returns a stable UnsupportedFeature diagnostic until publish-immediate platform event DML accounting is modeled."
+      "notes": "Returns the local publish-immediate DML counter."
     },
     {
       "symbol": "Limits.getLimitPublishImmediateDML",
       "kind": "test",
-      "notes": "Covered by focused VM unsupported-getter tests."
+      "notes": "Covered by focused VM Limits getter tests."
     }
   ],
   "source": [
@@ -25,9 +25,9 @@
     ]
   },
   "expected": {
-    "error": {
-      "type": "UnsupportedFeature",
-      "message": "unsupported call \"Limits.getPublishImmediateDML\""
+    "result": {
+      "debug": null,
+      "ok": true
     }
   }
 }

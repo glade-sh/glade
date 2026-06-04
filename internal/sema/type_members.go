@@ -692,7 +692,7 @@ func semaApexTypeForStorageField(field storage.Field) string {
 		return "Blob"
 	case storage.FieldReference:
 		return "Id"
-	case storage.FieldString, storage.FieldPicklist:
+	case storage.FieldString, storage.FieldPicklist, storage.FieldMultiPicklist:
 		return "String"
 	default:
 		if strings.HasSuffix(normalizeName(field.APIName), "address") {

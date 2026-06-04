@@ -75,10 +75,12 @@
     },
     {
       "symbol": "Limits.getBatchJobs",
+      "surfaceId": "apex:System.Limits.getBatchJobs()",
       "kind": "test"
     },
     {
       "symbol": "Limits.getLimitBatchJobs",
+      "surfaceId": "apex:System.Limits.getLimitBatchJobs()",
       "kind": "test"
     },
     {

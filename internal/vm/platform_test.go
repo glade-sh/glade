@@ -5925,6 +5925,14 @@ Account inlineRow = inlineIterator.next();
 System.assertEquals('Acme', inlineRow.Name);
 System.assert(!inlineIterator.hasNext());
 
+Database.QueryLocator accessLocator = Database.getQueryLocator('SELECT Id, Name FROM Account', AccessLevel.USER_MODE);
+System.assertEquals('SELECT Id, Name FROM Account', accessLocator.getQuery());
+Object accessIterator = accessLocator.iterator();
+System.assert(accessIterator.hasNext());
+Account accessRow = accessIterator.next();
+System.assertEquals('Acme', accessRow.Name);
+System.assert(!accessIterator.hasNext());
+
 Database.QueryLocator emptyInlineLocator = Database.getQueryLocator([
   SELECT Id, Name
   FROM Account
@@ -7145,6 +7153,38 @@ System.assertEquals(finish, updated.getLatestDateCovered());
 	}
 }
 
+func TestExecDatabaseCursorWithBinds(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme', Rating = 'Hot');
+insert new Account(Name = 'Beta', Rating = 'Warm');
+Map<String,Object> binds = new Map<String,Object>();
+binds.put('rating', 'Warm');
+
+Database.Cursor cursor = Database.getCursorWithBinds('SELECT Id, Name FROM Account WHERE Rating = :rating ORDER BY Name', binds, null);
+System.assertEquals(1, cursor.getNumRecords());
+List<SObject> rows = cursor.fetch(0, 10);
+System.assertEquals(1, rows.size());
+System.assertEquals('Beta', rows.get(0).get('Name'));
+
+Database.PaginationCursor page = Database.getPaginationCursorWithBinds('SELECT Id, Name FROM Account WHERE Rating = :rating ORDER BY Name', binds, null);
+Database.CursorFetchResult pageResult = page.fetchPage(0, 10);
+System.assertEquals(1, pageResult.getRecords().size());
+System.assertEquals(true, pageResult.isDone());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseSavepointRollback(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'before');
@@ -7357,7 +7397,8 @@ System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'batch finish'].size
 		t.Fatal(err)
 	}
 	if err := machine.RegisterClass(Class{
-		Name: "BatchWorker",
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
 		Methods: map[string]Method{
 			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
 			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
@@ -7398,10 +7439,12 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'queueable from batc
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
-		Name: "BatchWorker",
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
 		Methods: map[string]Method{
 			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
 			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -7411,6 +7454,237 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'queueable from batc
 		Interfaces: []string{"Queueable"},
 		Methods: map[string]Method{
 			"execute": {Name: "QueueWorker.execute", ClassName: "QueueWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: queueProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecBatchExecuteChunksResetGovernorLimits(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<SObject>{ new Account(Name = 'one'), new Account(Name = 'two'), new Account(Name = 'three') };`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`insert new Account(Name = 'chunk');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+Database.executeBatch(new BatchWorker(), 1);
+Test.stopTest();
+System.assertEquals(3, [SELECT COUNT() FROM Account WHERE Name = 'chunk']);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetLimitMode(LimitModeStrict)
+	caps := defaultLimitCaps()
+	caps.DMLStatements = 1
+	machine.SetLimitCaps(caps)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecBatchRecordsWorkerJobsForChunks(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<SObject>{ new Account(Id = '001000000000001', Name = 'one'), new Account(Id = '001000000000002', Name = 'two'), new Account(Id = '001000000000003', Name = 'three') };`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`insert new Account(Name = 'chunk');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+String jobId = Database.executeBatch(new BatchWorker(), 2);
+Test.stopTest();
+System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE Id = :jobId AND JobType = 'BatchApex' AND Status = 'Completed']);
+System.assertEquals(2, [SELECT COUNT() FROM AsyncApexJob WHERE ParentJobId = :jobId AND JobType = 'BatchApexWorker' AND Status = 'Completed']);
+System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE ParentJobId = :jobId AND LastProcessed = '001000000000003' AND LastProcessedOffset = 3]);
+System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE ParentJobId = :jobId AND LastProcessed = '001000000000002' AND LastProcessedOffset = 2]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFailedBatchChunkRollsBackChunkDML(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<Integer>{1, 2};`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`
+Integer value = scope.get(0);
+insert new Account(Name = 'chunk-' + value);
+if (value == 2) {
+	throw new Exception('second chunk failed');
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+try {
+	Test.startTest();
+	Database.executeBatch(new BatchWorker(), 1);
+	Test.stopTest();
+} catch (Exception e) {
+}
+System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'chunk-1']);
+System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'chunk-2']);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<Integer>"},
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<Integer>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Integer>"}}, Program: executeProgram},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNonStatefulBatchResetsInstanceFieldsBetweenTransactions(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<Integer>{1, 2};`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`
+Counter = Counter + 1;
+insert new Account(Name = 'non-stateful-count-' + Counter);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishProgram, err := CompileAnonymous(`insert new Account(Name = 'non-stateful-finish-' + Counter);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+Database.executeBatch(new NonStatefulBatch(), 1);
+Test.stopTest();
+System.assertEquals(2, [SELECT COUNT() FROM Account WHERE Name = 'non-stateful-count-1']);
+System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'non-stateful-count-2']);
+System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'non-stateful-finish-0']);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "NonStatefulBatch",
+		Interfaces: []string{"Database.Batchable<Integer>"},
+		Fields: map[string]Field{
+			"Counter": {Name: "Counter", Type: "Integer", Value: Int(0), InitialValue: Int(0)},
+		},
+		Methods: map[string]Method{
+			"start":   {Name: "NonStatefulBatch.start", ClassName: "NonStatefulBatch", ReturnType: "Iterable<Integer>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "NonStatefulBatch.execute", ClassName: "NonStatefulBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Integer>"}}, Program: executeProgram},
+			"finish":  {Name: "NonStatefulBatch.finish", ClassName: "NonStatefulBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStatefulBatchPreservesInstanceFieldsBetweenTransactions(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<Integer>{1, 2};`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`
+Counter = Counter + 1;
+insert new Account(Name = 'stateful-count-' + Counter);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishProgram, err := CompileAnonymous(`insert new Account(Name = 'stateful-finish-' + Counter);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+Database.executeBatch(new StatefulBatch(), 1);
+Test.stopTest();
+System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'stateful-count-1']);
+System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'stateful-count-2']);
+System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'stateful-finish-2']);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "StatefulBatch",
+		Interfaces: []string{"Database.Batchable<Integer>", "Database.Stateful"},
+		Fields: map[string]Field{
+			"Counter": {Name: "Counter", Type: "Integer", Value: Int(0), InitialValue: Int(0)},
+		},
+		Methods: map[string]Method{
+			"start":   {Name: "StatefulBatch.start", ClassName: "StatefulBatch", ReturnType: "Iterable<Integer>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "StatefulBatch.execute", ClassName: "StatefulBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Integer>"}}, Program: executeProgram},
+			"finish":  {Name: "StatefulBatch.finish", ClassName: "StatefulBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -7476,10 +7750,12 @@ Test.stopTest();
 		t.Fatal(err)
 	}
 	if err := machine.RegisterClass(Class{
-		Name: "ParentBatch",
+		Name:       "ParentBatch",
+		Interfaces: []string{"Database.Batchable<SObject>"},
 		Methods: map[string]Method{
-			"start":  {Name: "ParentBatch.start", ClassName: "ParentBatch", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: parentStart},
-			"finish": {Name: "ParentBatch.finish", ClassName: "ParentBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: parentFinish},
+			"start":   {Name: "ParentBatch.start", ClassName: "ParentBatch", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: parentStart},
+			"execute": {Name: "ParentBatch.execute", ClassName: "ParentBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}},
+			"finish":  {Name: "ParentBatch.finish", ClassName: "ParentBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: parentFinish},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -7494,9 +7770,12 @@ Test.stopTest();
 		t.Fatal(err)
 	}
 	if err := machine.RegisterClass(Class{
-		Name: "FollowupBatch",
+		Name:       "FollowupBatch",
+		Interfaces: []string{"Database.Batchable<SObject>"},
 		Methods: map[string]Method{
-			"start": {Name: "FollowupBatch.start", ClassName: "FollowupBatch", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: followupStart},
+			"start":   {Name: "FollowupBatch.start", ClassName: "FollowupBatch", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: followupStart},
+			"execute": {Name: "FollowupBatch.execute", ClassName: "FollowupBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}},
+			"finish":  {Name: "FollowupBatch.finish", ClassName: "FollowupBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -7551,13 +7830,15 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'queue async'].size(
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
-		Name: "BatchWorker",
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
 		Fields: map[string]Field{
 			"Marker": {Name: "Marker", Type: "String"},
 		},
 		Methods: map[string]Method{
 			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: batchStart},
 			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: batchExecute},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -7802,7 +8083,7 @@ System.assertEquals(1, scheduledBatches.size());
 	org := storage.NewOrgState()
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
-	for _, class := range []Class{{Name: "FutureWorker"}, {Name: "QueueWorker"}, {Name: "BatchWorker"}, {Name: "ScheduledWorker"}} {
+	for _, class := range []Class{{Name: "FutureWorker"}, {Name: "QueueWorker"}, {Name: "BatchWorker", Interfaces: []string{"Database.Batchable<SObject>"}}, {Name: "ScheduledWorker"}} {
 		if err := machine.RegisterClass(class); err != nil {
 			t.Fatal(err)
 		}
@@ -7835,12 +8116,218 @@ func TestExecExecuteBatchRejectsScopeAbovePlatformMaximum(t *testing.T) {
 	}
 	machine := New(nil)
 	machine.EnableTestContext()
-	if err := machine.RegisterClass(Class{Name: "BatchWorker"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "BatchWorker", Interfaces: []string{"Database.Batchable<SObject>"}}); err != nil {
 		t.Fatal(err)
 	}
 	_, err = machine.Execute(program)
 	if err == nil || !strings.Contains(err.Error(), "scope size must be at most 2000") {
 		t.Fatalf("err = %v, want scope maximum", err)
+	}
+}
+
+func TestExecExecuteBatchRejectsNonBatchableObject(t *testing.T) {
+	program, err := CompileAnonymous(`Database.executeBatch(new NotBatch(), 1);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "NotBatch"}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "expects Batchable object") {
+		t.Fatalf("err = %v, want Batchable object rejection", err)
+	}
+}
+
+func TestExecExecuteBatchRejectsStructuralBatchShape(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<SObject>();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`return null;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`Database.executeBatch(new StructuralBatch(), 1);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "StructuralBatch",
+		Methods: map[string]Method{
+			"start":   {Name: "StructuralBatch.start", ClassName: "StructuralBatch", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "StructuralBatch.execute", ClassName: "StructuralBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "expects Batchable object") {
+		t.Fatalf("err = %v, want Batchable object rejection", err)
+	}
+}
+
+func TestExecScheduleBatchRejectsNonBatchableObject(t *testing.T) {
+	program, err := CompileAnonymous(`System.scheduleBatch(new NotBatch(), 'nightly', 1, 200);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "NotBatch"}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "expects Batchable object") {
+		t.Fatalf("err = %v, want Batchable object rejection", err)
+	}
+}
+
+func TestExecExecuteBatchRejectsIncompleteBatchableContract(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<Integer>{1};`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`return null;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name    string
+		methods map[string]Method
+		want    string
+	}{
+		{
+			name: "MissingStartBatch",
+			methods: map[string]Method{
+				"execute": {Name: "MissingStartBatch.execute", ClassName: "MissingStartBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Integer>"}}, Program: executeProgram},
+				"finish":  {Name: "MissingStartBatch.finish", ClassName: "MissingStartBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: executeProgram},
+			},
+			want: "missing start",
+		},
+		{
+			name: "MissingExecuteBatch",
+			methods: map[string]Method{
+				"start":  {Name: "MissingExecuteBatch.start", ClassName: "MissingExecuteBatch", ReturnType: "Iterable<Integer>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+				"finish": {Name: "MissingExecuteBatch.finish", ClassName: "MissingExecuteBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: executeProgram},
+			},
+			want: "missing execute",
+		},
+		{
+			name: "MissingFinishBatch",
+			methods: map[string]Method{
+				"start":   {Name: "MissingFinishBatch.start", ClassName: "MissingFinishBatch", ReturnType: "Iterable<Integer>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+				"execute": {Name: "MissingFinishBatch.execute", ClassName: "MissingFinishBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Integer>"}}, Program: executeProgram},
+			},
+			want: "missing finish",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			program, err := CompileAnonymous(`Database.executeBatch(new ` + tt.name + `(), 1);`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			machine.EnableTestContext()
+			if err := machine.RegisterClass(Class{Name: tt.name, Interfaces: []string{"Database.Batchable<Integer>"}, Methods: tt.methods}); err != nil {
+				t.Fatal(err)
+			}
+			result, err := machine.Execute(program)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = machine.DrainAsync(&result)
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("err = %v, want %q", err, tt.want)
+			}
+		})
+	}
+}
+
+func TestExecExecuteBatchRejectsInvalidBatchableSignatures(t *testing.T) {
+	listStartProgram, err := CompileAnonymous(`return new List<Integer>{1};`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stringStartProgram, err := CompileAnonymous(`return 'not iterable';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	voidProgram, err := CompileAnonymous(`return null;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stringFinishProgram, err := CompileAnonymous(`return 'done';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name    string
+		methods map[string]Method
+		want    string
+	}{
+		{
+			name: "WrongStartReturnBatch",
+			methods: map[string]Method{
+				"start":   {Name: "WrongStartReturnBatch.start", ClassName: "WrongStartReturnBatch", ReturnType: "String", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: stringStartProgram},
+				"execute": {Name: "WrongStartReturnBatch.execute", ClassName: "WrongStartReturnBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Integer>"}}, Program: voidProgram},
+				"finish":  {Name: "WrongStartReturnBatch.finish", ClassName: "WrongStartReturnBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: voidProgram},
+			},
+			want: "invalid start",
+		},
+		{
+			name: "ScopeOnlyExecuteBatch",
+			methods: map[string]Method{
+				"start":   {Name: "ScopeOnlyExecuteBatch.start", ClassName: "ScopeOnlyExecuteBatch", ReturnType: "Iterable<Integer>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: listStartProgram},
+				"execute": {Name: "ScopeOnlyExecuteBatch.execute", ClassName: "ScopeOnlyExecuteBatch", ReturnType: "void", Params: []Param{{Name: "scope", Type: "List<Integer>"}}, Program: voidProgram},
+				"finish":  {Name: "ScopeOnlyExecuteBatch.finish", ClassName: "ScopeOnlyExecuteBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: voidProgram},
+			},
+			want: "invalid execute",
+		},
+		{
+			name: "NoArgExecuteBatch",
+			methods: map[string]Method{
+				"start":   {Name: "NoArgExecuteBatch.start", ClassName: "NoArgExecuteBatch", ReturnType: "Iterable<Integer>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: listStartProgram},
+				"execute": {Name: "NoArgExecuteBatch.execute", ClassName: "NoArgExecuteBatch", ReturnType: "void", Program: voidProgram},
+				"finish":  {Name: "NoArgExecuteBatch.finish", ClassName: "NoArgExecuteBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: voidProgram},
+			},
+			want: "invalid execute",
+		},
+		{
+			name: "WrongFinishReturnBatch",
+			methods: map[string]Method{
+				"start":   {Name: "WrongFinishReturnBatch.start", ClassName: "WrongFinishReturnBatch", ReturnType: "Iterable<Integer>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: listStartProgram},
+				"execute": {Name: "WrongFinishReturnBatch.execute", ClassName: "WrongFinishReturnBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Integer>"}}, Program: voidProgram},
+				"finish":  {Name: "WrongFinishReturnBatch.finish", ClassName: "WrongFinishReturnBatch", ReturnType: "String", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: stringFinishProgram},
+			},
+			want: "invalid finish",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			program, err := CompileAnonymous(`Database.executeBatch(new ` + tt.name + `(), 1);`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			machine.EnableTestContext()
+			if err := machine.RegisterClass(Class{Name: tt.name, Interfaces: []string{"Database.Batchable<Integer>"}, Methods: tt.methods}); err != nil {
+				t.Fatal(err)
+			}
+			result, err := machine.Execute(program)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = machine.DrainAsync(&result)
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("err = %v, want %q", err, tt.want)
+			}
+		})
 	}
 }
 
@@ -8181,11 +8668,116 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'finished'].size());
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
-		Name: "BatchWorker",
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
 		Methods: map[string]Method{
 			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
 			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
 			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecBatchWithoutFinishRecordsCompletedJobCounts(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<SObject>{ new Account(Name = 'one'), new Account(Name = 'two'), new Account(Name = 'three') };`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`insert new Account(Name = 'chunk ran');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+String jobId = Database.executeBatch(new BatchWorker(), 1);
+Test.stopTest();
+AsyncApexJob job = [
+	SELECT Id, Status, TotalJobItems, JobItemsProcessed, NumberOfErrors, CompletedDate
+	FROM AsyncApexJob
+	WHERE Id = :jobId
+];
+System.assertEquals('Completed', job.Status);
+System.assertEquals(3, job.TotalJobItems);
+System.assertEquals(3, job.JobItemsProcessed);
+System.assertEquals(0, job.NumberOfErrors);
+System.assertNotEquals(null, job.CompletedDate);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFailedBatchRecordsProcessedChunksBeforeError(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<SObject>{ new Account(Name = 'one'), new Account(Name = 'two') };`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`
+if ([SELECT COUNT() FROM Account WHERE Name = 'chunk ran'] > 0) {
+	throw new Exception('second chunk failed');
+}
+insert new Account(Name = 'chunk ran');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+String jobId;
+try {
+	Test.startTest();
+	jobId = Database.executeBatch(new BatchWorker(), 1);
+	Test.stopTest();
+} catch (Exception e) {
+}
+AsyncApexJob job = [
+	SELECT Id, Status, TotalJobItems, JobItemsProcessed, NumberOfErrors, ExtendedStatus, CompletedDate
+	FROM AsyncApexJob
+	WHERE Id = :jobId
+];
+System.assertEquals('Failed', job.Status);
+System.assertEquals(2, job.TotalJobItems);
+System.assertEquals(1, job.JobItemsProcessed);
+System.assertEquals(1, job.NumberOfErrors);
+System.assert(job.ExtendedStatus.contains('second chunk failed'));
+System.assertNotEquals(null, job.CompletedDate);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -8240,10 +8832,12 @@ System.assertEquals('EXECUTE', logged.Description);
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
-		Name: "BatchWorker",
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
 		Methods: map[string]Method{
 			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
 			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -8254,6 +8848,67 @@ System.assertEquals('EXECUTE', logged.Description);
 		Timing:    triggerTimingAfter,
 		Operation: "insert",
 		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFailedBatchFinishRecordsFailedJobCounts(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<SObject>{ new Account(Name = 'one'), new Account(Name = 'two') };`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`insert new Account(Name = 'finish failure chunk');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishProgram, err := CompileAnonymous(`
+insert new Account(Name = 'finish before failure');
+throw new Exception('finish failed');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+String jobId;
+try {
+	Test.startTest();
+	jobId = Database.executeBatch(new BatchWorker(), 1);
+	Test.stopTest();
+} catch (Exception e) {
+}
+AsyncApexJob job = [
+	SELECT Id, Status, TotalJobItems, JobItemsProcessed, NumberOfErrors, ExtendedStatus, CompletedDate
+	FROM AsyncApexJob
+	WHERE Id = :jobId
+];
+System.assertEquals('Failed', job.Status);
+System.assertEquals(2, job.TotalJobItems);
+System.assertEquals(2, job.JobItemsProcessed);
+System.assertEquals(1, job.NumberOfErrors);
+System.assert(job.ExtendedStatus.contains('finish failed'));
+System.assertNotEquals(null, job.CompletedDate);
+System.assertEquals(2, [SELECT COUNT() FROM Account WHERE Name = 'finish failure chunk']);
+System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'finish before failure']);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
+		},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -8277,6 +8932,27 @@ System.assertEquals('BatchApexErrorEvent', records.getSObjectType().getDescribe(
 	machine.SetOrg(&org)
 	machine.ensureBatchApexErrorEventObject()
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecQueryLocatorChunkIteratorDefaultConstructorIsEmptyIterator(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.QueryLocatorChunkIterator iterator = new Database.QueryLocatorChunkIterator();
+System.assertEquals(false, iterator.hasNext());
+try {
+	iterator.next();
+	System.assert(false, 'empty chunk iterator should throw on next');
+} catch (System.NoSuchElementException e) {
+	System.assert(e.getMessage().contains('Iterator has no more elements'));
+}
+Database.QueryLocatorChunkIterator copied = (Database.QueryLocatorChunkIterator)iterator.clone();
+System.assertEquals(false, copied.hasNext());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -8422,10 +9098,12 @@ Test.stopTest();
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
-		Name: "BatchWorker",
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
 		Methods: map[string]Method{
-			"start":  {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
-			"finish": {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -8476,19 +9154,23 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'second batch ran'].
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
-		Name: "FirstBatch",
+		Name:       "FirstBatch",
+		Interfaces: []string{"Database.Batchable<SObject>"},
 		Methods: map[string]Method{
-			"start":  {Name: "FirstBatch.start", ClassName: "FirstBatch", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: firstStart},
-			"finish": {Name: "FirstBatch.finish", ClassName: "FirstBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: firstFinish},
+			"start":   {Name: "FirstBatch.start", ClassName: "FirstBatch", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: firstStart},
+			"execute": {Name: "FirstBatch.execute", ClassName: "FirstBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}},
+			"finish":  {Name: "FirstBatch.finish", ClassName: "FirstBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: firstFinish},
 		},
 	}); err != nil {
 		t.Fatal(err)
 	}
 	if err := machine.RegisterClass(Class{
-		Name: "SecondBatch",
+		Name:       "SecondBatch",
+		Interfaces: []string{"Database.Batchable<SObject>"},
 		Methods: map[string]Method{
 			"start":   {Name: "SecondBatch.start", ClassName: "SecondBatch", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: secondStart},
 			"execute": {Name: "SecondBatch.execute", ClassName: "SecondBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: secondExecute},
+			"finish":  {Name: "SecondBatch.finish", ClassName: "SecondBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -8533,7 +9215,8 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'cursor batch ran'].
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
-		Name: "CursorBatch",
+		Name:       "CursorBatch",
+		Interfaces: []string{"Database.Batchable<Integer>"},
 		Fields: map[string]Field{
 			"nextCursor": {Name: "nextCursor", Type: "String"},
 		},
@@ -11204,7 +11887,8 @@ System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'page-2']);
 		t.Fatal(err)
 	}
 	if err := machine.RegisterClass(Class{
-		Name: "PagedBatch",
+		Name:       "PagedBatch",
+		Interfaces: []string{"Database.Batchable<Integer>", "Database.Stateful"},
 		Fields: map[string]Field{
 			"cursor": {Name: "cursor", Type: "String"},
 		},

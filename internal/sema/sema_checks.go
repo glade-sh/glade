@@ -295,9 +295,102 @@ func (a *Analyzer) checkInheritanceContracts(index typesys.Index) []diagnostic.D
 				Range:    &typ.Range,
 			})
 		}
+		diagnostics = append(diagnostics, checkDatabaseBatchableGenericContract(model, typ)...)
 	}
 	return diagnostics
 }
+
+func checkDatabaseBatchableGenericContract(model map[string]typeMembers, typ typesys.TypeSymbol) []diagnostic.Diagnostic {
+	members, _, ok := semaLookupTypeMembers(model, typ.Name)
+	if !ok {
+		return nil
+	}
+	var diagnostics []diagnostic.Diagnostic
+	for _, iface := range members.interfaces {
+		base, args := semaGenericBaseAndArgs(iface)
+		if !strings.EqualFold(base, "Database.Batchable") && !strings.EqualFold(base, "Batchable") {
+			continue
+		}
+		itemType := "Object"
+		if len(args) == 1 && strings.TrimSpace(args[0]) != "" {
+			itemType = strings.TrimSpace(args[0])
+		}
+		for _, methodName := range []string{"start", "execute", "finish"} {
+			methods := concreteMethodsByName(model, typ.Name, methodName)
+			if len(methods) == 0 {
+				continue
+			}
+			if databaseBatchableMethodCompatible(methodName, itemType, methods, model) {
+				continue
+			}
+			diagnostics = append(diagnostics, diagnostic.Diagnostic{
+				Severity: diagnostic.Error,
+				Code:     "GLADESEMA017",
+				Message:  fmt.Sprintf("concrete class %q must implement Database.Batchable<%s> method %q with the matching signature", typ.Name, itemType, methodName),
+				File:     typ.File,
+				Range:    &typ.Range,
+			})
+		}
+	}
+	return diagnostics
+}
+
+func concreteMethodsByName(model map[string]typeMembers, typeName, methodName string) []typesys.MemberSymbol {
+	var out []typesys.MemberSymbol
+	for current := typeName; current != ""; {
+		members, ok := model[normalizeName(current)]
+		if !ok {
+			return out
+		}
+		for _, method := range members.methods[normalizeName(methodName)] {
+			if !hasModifier(method.Modifiers, "abstract") {
+				out = append(out, method)
+			}
+		}
+		current = members.superClass
+	}
+	return out
+}
+
+func databaseBatchableMethodCompatible(methodName, itemType string, methods []typesys.MemberSymbol, model map[string]typeMembers) bool {
+	for _, method := range methods {
+		switch strings.ToLower(methodName) {
+		case "start":
+			if len(method.Parameters) != 1 || !sameSemaSignatureType(method.Parameters[0].Type, "Database.BatchableContext") {
+				continue
+			}
+			if strings.EqualFold(method.Type, "Database.QueryLocator") || databaseBatchableStartReturnCompatible(itemType, method.Type) {
+				return true
+			}
+		case "execute":
+			if len(method.Parameters) != 2 ||
+				!sameSemaSignatureType(method.Parameters[0].Type, "Database.BatchableContext") ||
+				!sameSemaSignatureType(method.Parameters[1].Type, "List<"+itemType+">") {
+				continue
+			}
+			if strings.EqualFold(strings.TrimSpace(method.Type), "void") || strings.TrimSpace(method.Type) == "" {
+				return true
+			}
+		case "finish":
+			if len(method.Parameters) != 1 || !sameSemaSignatureType(method.Parameters[0].Type, "Database.BatchableContext") {
+				continue
+			}
+			if strings.EqualFold(strings.TrimSpace(method.Type), "void") || strings.TrimSpace(method.Type) == "" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func databaseBatchableStartReturnCompatible(itemType, returnType string) bool {
+	base, args := semaGenericBaseAndArgs(returnType)
+	if (!strings.EqualFold(base, "Iterable") && !strings.EqualFold(base, "List")) || len(args) != 1 {
+		return false
+	}
+	return sameSemaSignatureType(args[0], itemType)
+}
+
 func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, match := range assignmentPattern.FindAllStringSubmatchIndex(body, -1) {

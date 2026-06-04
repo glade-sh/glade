@@ -1,0 +1,28 @@
+{
+  "name": "core-collection-stdlib-sort-sobject",
+  "evidence": [
+    {
+      "symbol": "List.sort",
+      "kind": "exec",
+      "notes": "List.sort orders modeled SObject values by stable SObject fields."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "List<Account> accounts = new List<Account>{new Account(Name = 'Zulu'), new Account(Name = 'Acme')};\naccounts.sort();\nSystem.assertEquals('Acme', accounts.get(0).Name);\nSystem.assertEquals('Zulu', accounts.get(1).Name);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "List<Account> accounts = new List<Account>{new Account(Name = 'Zulu'), new Account(Name = 'Acme')};\naccounts.sort();\nSystem.assertEquals('Acme', accounts.get(0).Name);\nSystem.assertEquals('Zulu', accounts.get(1).Name);"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

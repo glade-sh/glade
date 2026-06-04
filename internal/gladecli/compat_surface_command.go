@@ -33,6 +33,8 @@ func runCompatSurface(args []string, w io.Writer) error {
 		return runCompatSurfaceLedger(args[1:], w)
 	case "packet":
 		return runCompatSurfacePacket(args[1:], w)
+	case "progress":
+		return runCompatSurfaceProgress(args[1:], w)
 	case "gaps":
 		return runCompatSurfaceGaps(args[1:], w)
 	case "explain":
@@ -45,7 +47,7 @@ func runCompatSurface(args []string, w io.Writer) error {
 }
 
 func surfaceUsage() string {
-	return "usage: glade compat surface refresh|sources|docs|org|glade|evidence|ledger|packet|gaps|explain|check [flags]"
+	return "usage: glade compat surface refresh|sources|docs|org|glade|evidence|ledger|packet|progress|gaps|explain|check [flags]"
 }
 
 func runCompatSurfaceSources(args []string, w io.Writer) error {
@@ -225,6 +227,7 @@ func runCompatSurfaceRefresh(args []string, w io.Writer) error {
 	fmt.Fprintf(w, "gaps: missingShape=%d missingBehavior=%d missingEvidence=%d\n", result.Summary.Gaps[surfaceledger.GapMissingShape], result.Summary.Gaps[surfaceledger.GapMissingBehavior], result.Summary.Gaps[surfaceledger.GapMissingEvidence])
 	fmt.Fprintf(w, "failures: parser=%d docsOrgMismatch=%d staleGlade=%d passiveServiceRisk=%d\n", result.Summary.Failures["parser"], result.Summary.Failures[surfaceledger.GapDocsOrgMismatch], result.Summary.Failures[surfaceledger.GapStaleGladeShape], result.Summary.Failures[surfaceledger.GapPassiveServiceRisk])
 	fmt.Fprintf(w, "reports: %s\n", filepath.Join(result.OutputDir, "SURFACE_DASHBOARD.md"))
+	fmt.Fprintf(w, "progress: %s\n", filepath.Join(result.OutputDir, "SURFACE_PROGRESS.html"))
 	return nil
 }
 
@@ -429,6 +432,51 @@ func runCompatSurfacePacket(args []string, w io.Writer) error {
 		return nil
 	}
 	fmt.Fprint(w, markdown)
+	return nil
+}
+
+func runCompatSurfaceProgress(args []string, w io.Writer) error {
+	ledgerPath := ""
+	output := ""
+	htmlOut := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--ledger":
+			i++
+			var err error
+			ledgerPath, err = argValue(args, i, "--ledger")
+			if err != nil {
+				return err
+			}
+		case "--output":
+			i++
+			var err error
+			output, err = argValue(args, i, "--output")
+			if err != nil {
+				return err
+			}
+		case "--html":
+			htmlOut = true
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	ledger, err := surfaceledger.ReadLedgerJSON(ledgerPath)
+	if err != nil {
+		return err
+	}
+	report := surfaceledger.ProgressMarkdown(ledger)
+	if htmlOut {
+		report = surfaceledger.ProgressHTML(ledger)
+	}
+	if output != "" {
+		if err := os.WriteFile(output, []byte(report), 0o644); err != nil {
+			return err
+		}
+		fmt.Fprintf(w, "surface progress: %s\n", output)
+		return nil
+	}
+	fmt.Fprint(w, report)
 	return nil
 }
 

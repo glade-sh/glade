@@ -1016,7 +1016,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return String(""), receiver, false, true, nil
 		}
-	case "System.FinalizerContext", "FinalizerContext":
+	case "System.FinalizerContext", "FinalizerContext", "System.FinalizerContextImpl", "FinalizerContextImpl":
 		switch method {
 		case "getAsyncApexJobId":
 			if len(args) != 0 {
@@ -1119,7 +1119,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) > 1 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe expects 0 or 1 arguments")
 			}
-			if len(args) == 1 && (args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "SObjectDescribeOptions")) {
+			if len(args) == 1 && !isSchemaDescribeOptionValue(args[0], "SObjectDescribeOptions") {
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe expects SObjectDescribeOptions")
 			}
 			objectValue, ok := receiver.Fields["object"]
@@ -1135,6 +1135,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				"object":    objectName,
 			})
 			describe := vm.describeSObjectValue(objectName, definition)
+			if len(args) == 1 && args[0].Text != "" {
+				describe = cloneValue(describe)
+				describe.Fields["sObjectDescribeOption"] = sObjectDescribeOptionsValue(strings.ToUpper(args[0].Text))
+			}
 			if vm.sObjectTypeDescribeShouldUseLocalName(objectName) {
 				describe = cloneValue(describe)
 				if name, ok := describe.Fields["name"]; ok && name.Kind == ValueString {
@@ -1190,6 +1194,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	case "Schema.FieldSet":
 		switch method {
+		case "getDescription":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSet.getDescription expects 0 arguments")
+			}
+			return receiver.Fields["description"], receiver, false, true, nil
 		case "getFields":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSet.getFields expects 0 arguments")
@@ -1200,6 +1209,21 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSet.getLabel expects 0 arguments")
 			}
 			return receiver.Fields["label"], receiver, false, true, nil
+		case "getName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSet.getName expects 0 arguments")
+			}
+			return receiver.Fields["name"], receiver, false, true, nil
+		case "getNamespace", "getNameSpace":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSet.getNamespace expects 0 arguments")
+			}
+			return receiver.Fields["namespace"], receiver, false, true, nil
+		case "getSObjectType":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSet.getSObjectType expects 0 arguments")
+			}
+			return receiver.Fields["sObjectType"], receiver, false, true, nil
 		}
 	case "Schema.FieldSetMember":
 		switch method {
@@ -1236,8 +1260,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	case "Schema.SObjectField":
 		if method == "getDescribe" {
-			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField.getDescribe expects 0 arguments")
+			if len(args) > 1 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField.getDescribe expects 0 or 1 arguments")
+			}
+			if len(args) == 1 && !isSchemaDescribeOptionValue(args[0], "FieldDescribeOptions") {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField.getDescribe expects FieldDescribeOptions")
 			}
 			objectValue, ok := receiver.Fields["object"]
 			if !ok || objectValue.Kind != ValueString {
@@ -1287,7 +1314,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return describe, receiver, false, true, nil
 		}
 		switch method {
-		case "getName", "getLabel", "getType", "getSoapType", "getSObjectType", "getLength", "getPrecision", "getScale", "isHtmlFormatted", "isNillable", "isExternalId", "isUnique", "isEncrypted", "isCalculated", "isAutoNumber", "isNameField", "isCustom", "getReferenceTo", "getRelationshipName", "getPicklistValues", "getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable", "isSortable":
+		case "getName", "getLabel", "getType", "getSoapType", "getSObjectType", "getLength", "getByteLength", "getPrecision", "getScale", "getDigits", "getCalculatedFormula", "isHtmlFormatted", "isNillable", "isExternalId", "isUnique", "isEncrypted", "isCalculated", "isAutoNumber", "isCaseSensitive", "isNameField", "isCustom", "getReferenceTo", "getRelationshipName", "getPicklistValues", "getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable", "isSortable":
 			describe, _, _, handled, err := vm.callPlatformObjectMember(receiver, "getDescribe", nil, result)
 			if err != nil || !handled {
 				return describe, receiver, false, true, err
@@ -1319,6 +1346,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			if objectName == "" || fieldName == "" {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult token missing object or field")
+			}
+			if _, field, ok := vm.sObjectFieldDefinition(objectName, fieldName); ok {
+				return vm.sObjectFieldTokenFromField(objectName, field), receiver, false, true, nil
 			}
 			return vm.sObjectFieldToken(objectName, fieldName), receiver, false, true, nil
 		case "getSObjectType":
@@ -1401,6 +1431,14 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isCalculated expects 0 arguments")
 			}
 			return receiver.Fields["calculated"], receiver, false, true, nil
+		case "getCalculatedFormula":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getCalculatedFormula expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["calculatedFormula"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
 		case "isAutoNumber":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isAutoNumber expects 0 arguments")
@@ -1421,6 +1459,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getLength expects 0 arguments")
 			}
 			return receiver.Fields["length"], receiver, false, true, nil
+		case "getByteLength":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getByteLength expects 0 arguments")
+			}
+			return receiver.Fields["byteLength"], receiver, false, true, nil
 		case "getPrecision":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getPrecision expects 0 arguments")
@@ -1431,11 +1474,24 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getScale expects 0 arguments")
 			}
 			return receiver.Fields["scale"], receiver, false, true, nil
+		case "getDigits":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getDigits expects 0 arguments")
+			}
+			return receiver.Fields["digits"], receiver, false, true, nil
 		case "isHtmlFormatted":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isHtmlFormatted expects 0 arguments")
 			}
 			return receiver.Fields["htmlFormatted"], receiver, false, true, nil
+		case "getDataTranslationEnabled":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getDataTranslationEnabled expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["dataTranslationEnabled"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Bool(false), receiver, false, true, nil
 		case "isSortable":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isSortable expects 0 arguments")
@@ -1509,16 +1565,43 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 			}
 			return Null, receiver, false, true, nil
+		case "getReferenceTargetField":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getReferenceTargetField expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["referenceTargetField"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		case "getRelationshipOrder":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getRelationshipOrder expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["relationshipOrder"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Int(0), receiver, false, true, nil
 		case "getPicklistValues":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getPicklistValues expects 0 arguments")
 			}
 			return receiver.Fields["picklistValues"], receiver, false, true, nil
-		case "getController", "getControllerValues":
+		case "getController":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
 			}
-			return Null, receiver, false, true, unsupportedCallError("Schema.DescribeFieldResult." + method + " dependent picklist controller metadata")
+			if value, ok := receiver.Fields["controller"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		case "getControllerValues":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
+			}
+			if value, ok := receiver.Fields["controllerValues"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return typedMap("Map<String,Integer>"), receiver, false, true, nil
 		case "isAccessible", "isCreateable", "isUpdateable":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
@@ -1583,8 +1666,40 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return receiver.Fields["active"], receiver, false, true, nil
 		}
+	case "Schema.FilteredLookupInfo", "FilteredLookupInfo":
+		switch method {
+		case "getControllingFields":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FilteredLookupInfo.getControllingFields expects 0 arguments")
+			}
+			if fields, ok := receiver.Fields["controllingFields"]; ok {
+				return fields, receiver, false, true, nil
+			}
+			return typedList("List<String>"), receiver, false, true, nil
+		case "isDependent":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FilteredLookupInfo.isDependent expects 0 arguments")
+			}
+			if dependent, ok := receiver.Fields["dependent"]; ok {
+				return dependent, receiver, false, true, nil
+			}
+			return Bool(false), receiver, false, true, nil
+		case "isOptionalFilter":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FilteredLookupInfo.isOptionalFilter expects 0 arguments")
+			}
+			if optional, ok := receiver.Fields["optionalFilter"]; ok {
+				return optional, receiver, false, true, nil
+			}
+			return Bool(false), receiver, false, true, nil
+		}
 	case "Schema.DescribeTabSetResult":
 		switch method {
+		case "getDescription":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabSetResult.getDescription expects 0 arguments")
+			}
+			return receiver.Fields["description"], receiver, false, true, nil
 		case "getTabs":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabSetResult.getTabs expects 0 arguments")
@@ -1595,11 +1710,26 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabSetResult.getLabel expects 0 arguments")
 			}
 			return receiver.Fields["label"], receiver, false, true, nil
+		case "getLogoUrl":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabSetResult.getLogoUrl expects 0 arguments")
+			}
+			return receiver.Fields["logoUrl"], receiver, false, true, nil
 		case "getName":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabSetResult.getName expects 0 arguments")
 			}
 			return receiver.Fields["name"], receiver, false, true, nil
+		case "getNamespace":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabSetResult.getNamespace expects 0 arguments")
+			}
+			return receiver.Fields["namespace"], receiver, false, true, nil
+		case "getTabSetId":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabSetResult.getTabSetId expects 0 arguments")
+			}
+			return receiver.Fields["tabSetId"], receiver, false, true, nil
 		case "isSelected":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabSetResult.isSelected expects 0 arguments")
@@ -1608,6 +1738,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	case "Schema.DescribeTabResult":
 		switch method {
+		case "getColors":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getColors expects 0 arguments")
+			}
+			return receiver.Fields["colors"], receiver, false, true, nil
 		case "getLabel":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getLabel expects 0 arguments")
@@ -1633,6 +1768,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getIconUrl expects 0 arguments")
 			}
 			return receiver.Fields["iconUrl"], receiver, false, true, nil
+		case "getMiniIconUrl":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getMiniIconUrl expects 0 arguments")
+			}
+			return receiver.Fields["miniIconUrl"], receiver, false, true, nil
+		case "getMobileUrl":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getMobileUrl expects 0 arguments")
+			}
+			return receiver.Fields["mobileUrl"], receiver, false, true, nil
 		case "getIcons":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getIcons expects 0 arguments")
@@ -1643,6 +1788,29 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getUrl expects 0 arguments")
 			}
 			return receiver.Fields["url"], receiver, false, true, nil
+		case "getTabEnumOrId":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getTabEnumOrId expects 0 arguments")
+			}
+			return receiver.Fields["tabEnumOrId"], receiver, false, true, nil
+		}
+	case "Schema.DescribeColorResult":
+		switch method {
+		case "getColor":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeColorResult.getColor expects 0 arguments")
+			}
+			return receiver.Fields["color"], receiver, false, true, nil
+		case "getContext":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeColorResult.getContext expects 0 arguments")
+			}
+			return receiver.Fields["context"], receiver, false, true, nil
+		case "getTheme":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeColorResult.getTheme expects 0 arguments")
+			}
+			return receiver.Fields["theme"], receiver, false, true, nil
 		}
 	case "Schema.DescribeIconResult":
 		switch method {
@@ -2374,15 +2542,38 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getChildRelationships expects 0 arguments")
 			}
 			return receiver.Fields["childRelationships"], receiver, false, true, nil
-		case "getSObjectType":
+		case "getSObjectType", "getSobjectType":
 			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getSObjectType expects 0 arguments")
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.%s expects 0 arguments", method)
 			}
 			name, ok := receiver.Fields["name"]
 			if !ok || name.Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult token missing object")
 			}
 			return sObjectTypeToken(name.Text), receiver, false, true, nil
+		case "getSObjectDescribeOption":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getSObjectDescribeOption expects 0 arguments")
+			}
+			return receiver.Fields["sObjectDescribeOption"], receiver, false, true, nil
+		case "getDataTranslationEnabled", "getHasSubtypes", "getIsInterface":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.%s expects 0 arguments", method)
+			}
+			field := methodDescribeBoolField(method)
+			if value, ok := receiver.Fields[field]; ok && value.Kind == ValueBool {
+				return value, receiver, false, true, nil
+			}
+			return Bool(false), receiver, false, true, nil
+		case "getAssociateEntityType", "getAssociateParentEntity", "getDefaultImplementation", "getImplementedBy", "getImplementsInterfaces":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.%s expects 0 arguments", method)
+			}
+			field := methodDescribeStringField(method)
+			if value, ok := receiver.Fields[field]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
 		case "isAccessible", "isCreateable", "isUpdateable", "isDeletable", "isQueryable", "isSearchable":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.%s expects 0 arguments", method)
@@ -2440,6 +2631,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.RecordTypeInfo.isDefaultRecordTypeMapping expects 0 arguments")
 			}
 			return receiver.Fields["default"], receiver, false, true, nil
+		case "isMaster":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.RecordTypeInfo.isMaster expects 0 arguments")
+			}
+			return receiver.Fields["master"], receiver, false, true, nil
 		case "isActive":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.RecordTypeInfo.isActive expects 0 arguments")
@@ -2494,16 +2690,37 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.ChildRelationship.isRestrictedDelete expects 0 arguments")
 			}
 			return receiver.Fields["restrictedDelete"], receiver, false, true, nil
+		case "isDeprecatedAndHidden":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.ChildRelationship.isDeprecatedAndHidden expects 0 arguments")
+			}
+			return receiver.Fields["deprecatedAndHidden"], receiver, false, true, nil
+		case "getJunctionIdListNames":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.ChildRelationship.getJunctionIdListNames expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["junctionIdListNames"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return typedList("List<String>"), receiver, false, true, nil
+		case "getJunctionReferenceTo":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.ChildRelationship.getJunctionReferenceTo expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["junctionReferenceTo"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return typedList("List<Schema.SObjectType>"), receiver, false, true, nil
 		}
-		case "HttpRequest":
-			method = canonicalStdlibMemberName(method, "setEndpoint", "getEndpoint", "setMethod", "getMethod", "setBody", "setBodyAsBlob", "setBodyDocument", "getBodyDocument", "setClientCertificateName", "setClientCertificate", "setHeader", "getHeaderKeys", "getHeader", "setCompressed", "getCompressed", "setTimeout", "getTimeout", "getBody", "getBodyAsBlob")
-			switch method {
-			case "setEndpoint":
-				if len(args) != 1 || args[0].Kind != ValueString {
-					return Null, receiver, false, true, fmt.Errorf("HttpRequest.setEndpoint expects String")
-				}
-				receiver.Fields["endpoint"] = args[0]
-				return Null, receiver, true, true, nil
+	case "HttpRequest":
+		method = canonicalStdlibMemberName(method, "setEndpoint", "getEndpoint", "setMethod", "getMethod", "setBody", "setBodyAsBlob", "setBodyDocument", "getBodyDocument", "setClientCertificateName", "setClientCertificate", "setHeader", "getHeaderKeys", "getHeader", "setCompressed", "getCompressed", "setTimeout", "getTimeout", "getBody", "getBodyAsBlob")
+		switch method {
+		case "setEndpoint":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setEndpoint expects String")
+			}
+			receiver.Fields["endpoint"] = args[0]
+			return Null, receiver, true, true, nil
 		case "getEndpoint":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getEndpoint expects 0 arguments")
@@ -4483,6 +4700,21 @@ func databaseErrorStatusCodeValue(value Value) Value {
 		code = canonical
 	}
 	return Value{Kind: ValueObject, Type: "StatusCode", Text: code}
+}
+
+func isSchemaDescribeOptionValue(value Value, optionType string) bool {
+	if value.Kind != ValueObject {
+		return false
+	}
+	valueType := strings.TrimSpace(value.Type)
+	if strings.EqualFold(valueType, optionType) {
+		return true
+	}
+	suffix := "." + optionType
+	if len(valueType) <= len(suffix) || !strings.EqualFold(valueType[len(valueType)-len(suffix):], suffix) {
+		return false
+	}
+	return strings.EqualFold(valueType[:len(valueType)-len(suffix)], "Schema")
 }
 
 func (vm *VM) sObjectTypeDescribeShouldUseLocalName(typeName string) bool {

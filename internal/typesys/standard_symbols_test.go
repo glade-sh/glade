@@ -93,8 +93,35 @@ func TestStandardPlatformSymbolsIncludeUserInfoStubMethodsAndFieldTokenPropertie
 	requireStandardMethod(t, userInfo, "getOrganizationName", nil, true)
 	requireStandardMethod(t, userInfo, "isCurrentUserLicensed", []string{"String"}, true)
 
+	limits := requireStandardSymbol(t, symbols, "Limits")
+	requireStandardMethodType(t, limits, "getBatchJobs", "Integer")
+	requireStandardMethodType(t, limits, "getLimitBatchJobs", "Integer")
+
 	field := requireStandardSymbol(t, symbols, "Schema.SObjectField")
 	requireStandardProperty(t, field, "label", "String")
+}
+
+func TestStandardPlatformSymbolsIncludeSchemaDescribeShape(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	schema := requireStandardSymbol(t, symbols, "Schema")
+	requireStandardMethodType(t, schema, "describeTabs", "List<Schema.DescribeTabSetResult>")
+
+	describe := requireStandardSymbol(t, symbols, "Schema.DescribeSObjectResult")
+	requireStandardProperty(t, describe, "fieldSets", "Schema.FieldSetMap")
+	requireStandardMethodType(t, describe, "getFieldSets", "Schema.FieldSetMap")
+
+	fieldSetMap := requireStandardSymbol(t, symbols, "Schema.FieldSetMap")
+	requireStandardMethodType(t, fieldSetMap, "getMap", "Map<String,Schema.FieldSet>")
+	requireStandardMethod(t, fieldSetMap, "get", []string{"String"}, false)
+
+	fieldSet := requireStandardSymbol(t, symbols, "Schema.FieldSet")
+	requireStandardMethodType(t, fieldSet, "getName", "String")
+	requireStandardMethodType(t, fieldSet, "getNameSpace", "String")
+	requireStandardMethodType(t, fieldSet, "getSObjectType", "Schema.SObjectType")
+
+	fieldSetMember := requireStandardSymbol(t, symbols, "Schema.FieldSetMember")
+	requireStandardMethodType(t, fieldSetMember, "getSObjectField", "Schema.SObjectField")
 }
 
 func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) {
@@ -121,9 +148,17 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	requireStandardProperty(t, saveResult, "id", "Id")
 	requireStandardProperty(t, saveResult, "success", "Boolean")
 
+	databaseError := requireStandardSymbol(t, symbols, "Database.Error")
+	requireStandardMethodType(t, databaseError, "getExtendedErrorDetails", "List<Object>")
+
 	database := requireStandardSymbol(t, symbols, "Database")
 	requireStandardMethod(t, database, "insert", []string{"SObject", "Object"}, true)
 	requireStandardMethod(t, database, "update", []string{"List<SObject>", "Object"}, true)
+	requireStandardMethod(t, database, "countQuery", []string{"String", "System.AccessLevel"}, true)
+	requireStandardMethod(t, database, "countQueryWithBinds", []string{"String", "Map<String,Object>", "System.AccessLevel"}, true)
+	requireStandardMethod(t, database, "getQueryLocator", []string{"String", "System.AccessLevel"}, true)
+	requireStandardMethod(t, database, "getQueryLocatorWithBinds", []string{"String", "Map<String,Object>", "System.AccessLevel"}, true)
+	requireStandardMethod(t, database, "queryWithBinds", []string{"String", "Map<String,Object>", "System.AccessLevel"}, true)
 	requireStandardMethodType(t, database, "countQueryWithBinds", "Integer")
 	requireStandardMethodType(t, database, "getQueryLocatorWithBinds", "Database.QueryLocator")
 
@@ -141,7 +176,7 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	}
 	requireStandardMethodType(t, batchable, "start", "Iterable")
 
-	for _, name := range []string{"HttpCalloutMock", "Iterable", "Iterator", "Queueable", "Schedulable"} {
+	for _, name := range []string{"Database.Stateful", "HttpCalloutMock", "Iterable", "Iterator", "Queueable", "Schedulable"} {
 		symbol := requireStandardSymbol(t, symbols, name)
 		if symbol.Kind != apexast.DeclarationInterface {
 			t.Fatalf("%s kind = %q, want interface", name, symbol.Kind)

@@ -165,6 +165,7 @@ type DescribeFieldResult struct {
 	SummaryForeignKey     string                      `json:"summaryForeignKey,omitempty"`
 	SummaryOperation      string                      `json:"summaryOperation,omitempty"`
 	SummaryFilterItems    []storage.SummaryFilterItem `json:"summaryFilterItems,omitempty"`
+	FilteredLookupInfo    storage.FilteredLookupInfo  `json:"filteredLookupInfo,omitempty"`
 	Nillable              *bool                       `json:"nillable,omitempty"`
 	DefaultedOnCreate     *bool                       `json:"defaultedOnCreate,omitempty"`
 	Accessible            *bool                       `json:"accessible,omitempty"`
@@ -178,6 +179,7 @@ type DescribeFieldResult struct {
 	DeprecatedAndHidden   *bool                       `json:"deprecatedAndHidden,omitempty"`
 	ReferenceTo           []string                    `json:"referenceTo,omitempty"`
 	RelationshipName      string                      `json:"relationshipName,omitempty"`
+	RelationshipOrder     *int                        `json:"relationshipOrder,omitempty"`
 	ChildRelationshipName string                      `json:"childRelationshipName,omitempty"`
 	DeleteConstraint      string                      `json:"deleteConstraint,omitempty"`
 	DefaultValue          string                      `json:"defaultValue,omitempty"`
@@ -186,6 +188,11 @@ type DescribeFieldResult struct {
 	Unique                bool                        `json:"unique,omitempty"`
 	Encrypted             bool                        `json:"encrypted,omitempty"`
 	CaseSensitive         bool                        `json:"caseSensitive,omitempty"`
+	RestrictedPicklist    bool                        `json:"restrictedPicklist,omitempty"`
+	IDLookup              bool                        `json:"idLookup,omitempty"`
+	NamePointing          bool                        `json:"namePointing,omitempty"`
+	PicklistController    string                      `json:"picklistController,omitempty"`
+	PicklistValueSettings []storage.PicklistSetting   `json:"picklistValueSettings,omitempty"`
 	PicklistValues        []storage.PicklistValue     `json:"picklistValues,omitempty"`
 }
 
@@ -282,6 +289,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				SummaryForeignKey:     field.SummaryForeignKey,
 				SummaryOperation:      field.SummaryOperation,
 				SummaryFilterItems:    storageSummaryFilters(field.SummaryFilterItems),
+				FilteredLookupInfo:    storageFilteredLookupInfo(field.FilteredLookupInfo),
 				RelationshipName:      field.RelationshipName,
 				ChildRelationshipName: childRelationshipName,
 				DeleteConstraint:      field.DeleteConstraint,
@@ -289,8 +297,13 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				Required:              field.Required,
 				ExternalID:            field.ExternalID,
 				Unique:                field.Unique,
+				IDLookup:              field.IDLookup,
 				Encrypted:             field.Encrypted,
+				RestrictedPicklist:    field.RestrictedPicklist,
+				NamePointing:          len(references) > 1,
 				Updateable:            updateable,
+				PicklistController:    field.PicklistController,
+				PicklistValueSettings: storagePicklistSettings(field.PicklistValueSettings),
 				PicklistValues:        storagePicklistValues(field.PicklistValues),
 			}
 			if len(references) != 0 {
@@ -494,6 +507,8 @@ func (d DescribeSObjectResult) Clone() DescribeSObjectResult {
 	out.Relationships = append([]storage.Relationship(nil), d.Relationships...)
 	for i := range out.Relationships {
 		out.Relationships[i].ParentObjects = append([]string(nil), d.Relationships[i].ParentObjects...)
+		out.Relationships[i].JunctionIDListNames = append([]string(nil), d.Relationships[i].JunctionIDListNames...)
+		out.Relationships[i].JunctionReferenceTo = append([]string(nil), d.Relationships[i].JunctionReferenceTo...)
 	}
 	out.RecordTypes = append([]DescribeRecordTypeInfo(nil), d.RecordTypes...)
 	out.ValidationRules = append([]storage.ValidationRule(nil), d.ValidationRules...)
@@ -543,6 +558,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			SummaryForeignKey:     field.SummaryForeignKey,
 			SummaryOperation:      field.SummaryOperation,
 			SummaryFilterItems:    append([]storage.SummaryFilterItem(nil), field.SummaryFilterItems...),
+			FilteredLookupInfo:    cloneStorageFilteredLookupInfo(field.FilteredLookupInfo),
 			Required:              field.Required,
 			Nillable:              field.Nillable,
 			DefaultedOnCreate:     field.DefaultedOnCreate,
@@ -559,9 +575,15 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			Unique:                field.Unique,
 			Encrypted:             field.Encrypted,
 			CaseSensitive:         field.CaseSensitive,
+			RestrictedPicklist:    field.RestrictedPicklist,
+			IDLookup:              field.IDLookup,
+			NamePointing:          field.NamePointing,
 			ReferenceTo:           append([]string(nil), field.ReferenceTo...),
 			RelationshipName:      field.RelationshipName,
+			RelationshipOrder:     cloneIntPtr(field.RelationshipOrder),
 			ChildRelationshipName: field.ChildRelationshipName,
+			PicklistController:    field.PicklistController,
+			PicklistValueSettings: cloneStoragePicklistSettings(field.PicklistValueSettings),
 			PicklistValues:        append([]storage.PicklistValue(nil), field.PicklistValues...),
 		}
 	}
@@ -617,6 +639,7 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 			SummaryForeignKey:     field.SummaryForeignKey,
 			SummaryOperation:      field.SummaryOperation,
 			SummaryFilterItems:    append([]storage.SummaryFilterItem(nil), field.SummaryFilterItems...),
+			FilteredLookupInfo:    cloneStorageFilteredLookupInfo(field.FilteredLookupInfo),
 			Nillable:              field.Nillable,
 			DefaultedOnCreate:     field.DefaultedOnCreate,
 			Accessible:            field.Accessible,
@@ -630,6 +653,7 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 			DeprecatedAndHidden:   field.DeprecatedAndHidden,
 			ReferenceTo:           append([]string(nil), field.ReferenceTo...),
 			RelationshipName:      field.RelationshipName,
+			RelationshipOrder:     cloneIntPtr(field.RelationshipOrder),
 			ChildRelationshipName: field.ChildRelationshipName,
 			DefaultValue:          field.DefaultValue,
 			Required:              field.Required,
@@ -637,6 +661,11 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 			Unique:                field.Unique,
 			Encrypted:             field.Encrypted,
 			CaseSensitive:         field.CaseSensitive,
+			RestrictedPicklist:    field.RestrictedPicklist,
+			IDLookup:              field.IDLookup,
+			NamePointing:          field.NamePointing,
+			PicklistController:    field.PicklistController,
+			PicklistValueSettings: cloneStoragePicklistSettings(field.PicklistValueSettings),
 			PicklistValues:        append([]storage.PicklistValue(nil), field.PicklistValues...),
 		}
 	}
@@ -700,6 +729,17 @@ func storagePicklistValues(values []schema.PicklistValue) []storage.PicklistValu
 	return out
 }
 
+func storagePicklistSettings(values []schema.PicklistSetting) []storage.PicklistSetting {
+	out := make([]storage.PicklistSetting, 0, len(values))
+	for _, value := range values {
+		out = append(out, storage.PicklistSetting{
+			ValueName:              value.ValueName,
+			ControllingFieldValues: append([]string(nil), value.ControllingFieldValues...),
+		})
+	}
+	return out
+}
+
 func storageSummaryFilters(values []schema.SummaryFilter) []storage.SummaryFilterItem {
 	out := make([]storage.SummaryFilterItem, 0, len(values))
 	for _, value := range values {
@@ -708,6 +748,27 @@ func storageSummaryFilters(values []schema.SummaryFilter) []storage.SummaryFilte
 			Operation: value.Operation,
 			Value:     value.Value,
 		})
+	}
+	return out
+}
+
+func storageFilteredLookupInfo(value schema.FilteredLookupInfo) storage.FilteredLookupInfo {
+	return storage.FilteredLookupInfo{
+		ControllingFields: append([]string(nil), value.ControllingFields...),
+		Dependent:         value.Dependent,
+		OptionalFilter:    value.OptionalFilter,
+	}
+}
+
+func cloneStorageFilteredLookupInfo(value storage.FilteredLookupInfo) storage.FilteredLookupInfo {
+	value.ControllingFields = append([]string(nil), value.ControllingFields...)
+	return value
+}
+
+func cloneStoragePicklistSettings(values []storage.PicklistSetting) []storage.PicklistSetting {
+	out := append([]storage.PicklistSetting(nil), values...)
+	for i := range out {
+		out[i].ControllingFieldValues = append([]string(nil), values[i].ControllingFieldValues...)
 	}
 	return out
 }
@@ -743,6 +804,14 @@ func cloneStringMap(in map[string]string) map[string]string {
 		out[name] = value
 	}
 	return out
+}
+
+func cloneIntPtr(in *int) *int {
+	if in == nil {
+		return nil
+	}
+	out := *in
+	return &out
 }
 
 func objectNames(objects []schema.Object) []string {
@@ -785,8 +854,10 @@ func storageFieldType(raw string) storage.FieldType {
 	switch raw {
 	case "Text", "TextArea", "LongTextArea", "Email", "Phone", "Url", "EncryptedText":
 		return storage.FieldString
-	case "Picklist", "MultiselectPicklist":
+	case "Picklist":
 		return storage.FieldPicklist
+	case "MultiselectPicklist":
+		return storage.FieldMultiPicklist
 	case "Checkbox":
 		return storage.FieldBoolean
 	case "Number", "Currency", "Percent":

@@ -49,6 +49,7 @@ const (
 	ProductAura        = "lightning-aura"
 	ProductLWC         = "lwc"
 	ProductConnectAPI  = "connect-api"
+	ProductDataRef     = "data-reference"
 	ProductUnknown     = "unknown"
 )
 
@@ -232,6 +233,8 @@ func surfaceFamilyForProduct(product string) string {
 		return "lwc"
 	case ProductAura:
 		return "aura"
+	case ProductDataRef:
+		return "data-reference"
 	default:
 		if product == "" {
 			return ProductUnknown

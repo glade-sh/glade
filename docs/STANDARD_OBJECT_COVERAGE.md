@@ -2,1386 +2,1389 @@
 
 Generated from `internal/storage` standard object metadata.
 
-- Objects: 1373
-- Key prefixes: 37
-- Fields: 24955
-- Relationships: 5006
+- Objects: 1374
+- Shape objects: 1374
+- Behavior objects: 28
+- Key prefixes: 41
+- Fields: 26637
+- Relationships: 5752
 - Record types: 16
-- Picklist fields: 151
-- Reference fields: 5006
+- Picklist fields: 152
+- Reference fields: 5752
 
-| Object | Key Prefix | Fields | Relationships | Record Types | Picklists | References |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| `AIApplication` | `` | 13 | 2 | 0 | 0 | 2 |
-| `AIApplicationConfig` | `` | 11 | 2 | 0 | 0 | 2 |
-| `AIInsightAction` | `` | 13 | 4 | 0 | 0 | 4 |
-| `AIInsightFeedback` | `` | 14 | 4 | 0 | 0 | 4 |
-| `AIInsightReason` | `` | 20 | 4 | 0 | 0 | 4 |
-| `AIInsightValue` | `` | 18 | 5 | 0 | 0 | 5 |
-| `AIRecordInsight` | `` | 21 | 6 | 0 | 0 | 6 |
-| `AITrustAttrSetup` | `` | 13 | 3 | 0 | 0 | 3 |
-| `AITrustAttribute` | `` | 14 | 2 | 0 | 0 | 2 |
-| `AcceptedEventRelation` | `` | 13 | 5 | 0 | 0 | 5 |
-| `Account` | `001` | 55 | 7 | 1 | 6 | 7 |
-| `AccountBrand` | `` | 28 | 5 | 0 | 0 | 5 |
-| `AccountBrandShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `AccountContactRelation` | `` | 15 | 4 | 0 | 0 | 4 |
-| `AccountContactRole` | `` | 12 | 4 | 0 | 0 | 4 |
-| `AccountFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `AccountHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `AccountPartner` | `` | 14 | 6 | 0 | 0 | 6 |
-| `AccountShare` | `` | 12 | 3 | 0 | 0 | 3 |
-| `ActionLinkGroupTemplate` | `` | 15 | 2 | 0 | 0 | 2 |
-| `ActionLinkTemplate` | `` | 20 | 3 | 0 | 0 | 3 |
-| `ActiveFeatureLicenseMetric` | `` | 7 | 0 | 0 | 0 | 0 |
-| `ActivePermSetLicenseMetric` | `` | 9 | 1 | 0 | 0 | 1 |
-| `ActiveProfileMetric` | `` | 7 | 2 | 0 | 0 | 2 |
-| `ActivityFieldHistory` | `` | 19 | 4 | 0 | 0 | 4 |
-| `AdditionalNumber` | `` | 11 | 3 | 0 | 0 | 3 |
-| `Address` | `` | 26 | 3 | 0 | 0 | 3 |
-| `AddressHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `AgentWork` | `` | 50 | 12 | 0 | 0 | 12 |
-| `AgentWorkShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `AiJobRun` | `` | 18 | 3 | 0 | 0 | 3 |
-| `AiJobRunShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `AiPluginUtteranceDef` | `` | 13 | 3 | 0 | 0 | 3 |
-| `AlternativePaymentMethod` | `` | 48 | 5 | 0 | 0 | 5 |
-| `AlternativePaymentMethodShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `AnalyticsLicensedAsset` | `` | 9 | 2 | 0 | 0 | 2 |
-| `AnalyticsUserAttrFuncTkn` | `` | 15 | 3 | 0 | 0 | 3 |
-| `AnalyticsUserAttrFuncTknShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `AnlytDataAssetEventStore` | `` | 12 | 2 | 0 | 0 | 2 |
-| `Announcement` | `` | 12 | 4 | 0 | 0 | 4 |
-| `ApexClass` | `` | 14 | 2 | 0 | 0 | 2 |
-| `ApexComponent` | `` | 14 | 2 | 0 | 0 | 2 |
-| `ApexEmailNotification` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ApexLog` | `` | 13 | 1 | 0 | 0 | 1 |
-| `ApexPage` | `` | 16 | 2 | 0 | 0 | 2 |
-| `ApexPageInfo` | `` | 10 | 0 | 0 | 0 | 0 |
-| `ApexTestQueueItem` | `` | 10 | 4 | 0 | 0 | 4 |
-| `ApexTestResult` | `` | 16 | 5 | 0 | 0 | 5 |
-| `ApexTestResultLimits` | `` | 20 | 3 | 0 | 0 | 3 |
-| `ApexTestRunResult` | `` | 22 | 4 | 0 | 0 | 4 |
-| `ApexTestSuite` | `` | 8 | 2 | 0 | 0 | 2 |
-| `ApexTrigger` | `` | 23 | 2 | 0 | 0 | 2 |
-| `ApexTypeImplementor` | `` | 9 | 2 | 0 | 0 | 2 |
-| `ApiAnomalyEventStore` | `` | 26 | 2 | 0 | 0 | 2 |
-| `ApiAnomalyEventStoreFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ApiEvent` | `` | 36 | 6 | 0 | 0 | 6 |
-| `AppAnalyticsQueryRequest` | `` | 24 | 2 | 0 | 0 | 2 |
-| `AppDefinition` | `` | 20 | 0 | 0 | 0 | 0 |
-| `AppMenuItem` | `` | 38 | 3 | 0 | 0 | 3 |
-| `AppTabMember` | `` | 6 | 2 | 0 | 0 | 2 |
-| `AppointmentAssignmentPolicy` | `` | 13 | 2 | 0 | 0 | 2 |
-| `AppointmentCategory` | `` | 14 | 2 | 0 | 0 | 2 |
-| `AppointmentCategoryFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `AppointmentCategoryHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `AppointmentInvitation` | `` | 23 | 6 | 0 | 0 | 6 |
-| `AppointmentInvitationFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `AppointmentInvitationHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `AppointmentInvitationShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `AppointmentInvitee` | `` | 14 | 4 | 0 | 0 | 4 |
-| `AppointmentScheduleAggr` | `` | 14 | 3 | 0 | 0 | 3 |
-| `AppointmentScheduleLog` | `` | 16 | 5 | 0 | 0 | 5 |
-| `AppointmentSchedulingPolicy` | `` | 23 | 3 | 0 | 0 | 3 |
-| `AppointmentTopicTimeSlot` | `` | 14 | 6 | 0 | 0 | 6 |
-| `AppointmentTopicTimeSlotFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `AppointmentTopicTimeSlotHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `Approval` | `` | 13 | 4 | 0 | 0 | 4 |
-| `ApprovalSubmission` | `` | 17 | 6 | 0 | 0 | 6 |
-| `ApprovalSubmissionDetail` | `` | 17 | 5 | 0 | 0 | 5 |
-| `ApprovalSubmissionDetailFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ApprovalSubmissionDetailHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ApprovalSubmissionFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ApprovalSubmissionHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ApprovalSubmissionShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ApprovalWorkItem` | `` | 19 | 7 | 0 | 0 | 7 |
-| `ApprovalWorkItemFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ApprovalWorkItemHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `Asset` | `02i` | 42 | 10 | 1 | 3 | 10 |
-| `AssetFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `AssetHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `AssetRelationship` | `` | 17 | 4 | 0 | 0 | 4 |
-| `AssetRelationshipFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `AssetRelationshipHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `AssetShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `AssignedResource` | `` | 13 | 5 | 0 | 0 | 5 |
-| `AssignedResourceFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `AssignedResourceHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `AssignmentRule` | `` | 9 | 2 | 0 | 0 | 2 |
-| `AssociatedLocation` | `` | 17 | 4 | 0 | 0 | 4 |
-| `AssociatedLocationHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `AsyncApexJob` | `` | 16 | 4 | 0 | 0 | 4 |
-| `AsyncOperationLog` | `` | 22 | 3 | 0 | 0 | 3 |
-| `Attachment` | `00P` | 16 | 4 | 0 | 1 | 4 |
-| `Audience` | `` | 14 | 3 | 0 | 0 | 3 |
-| `AuraDefinition` | `` | 11 | 3 | 0 | 0 | 3 |
-| `AuraDefinitionBundle` | `` | 13 | 2 | 0 | 0 | 2 |
-| `AuraDefinitionBundleInfo` | `` | 6 | 0 | 0 | 0 | 0 |
-| `AuraDefinitionInfo` | `` | 10 | 1 | 0 | 0 | 1 |
-| `AuthConfig` | `` | 18 | 2 | 0 | 0 | 2 |
-| `AuthConfigProviders` | `` | 9 | 4 | 0 | 0 | 4 |
-| `AuthProvParamFwdAllowlist` | `` | 10 | 3 | 0 | 0 | 3 |
-| `AuthProvider` | `` | 41 | 6 | 0 | 0 | 6 |
-| `AuthSession` | `` | 16 | 4 | 0 | 0 | 4 |
-| `AuthorizationForm` | `` | 16 | 4 | 0 | 0 | 4 |
-| `AuthorizationFormConsent` | `` | 19 | 7 | 0 | 0 | 7 |
-| `AuthorizationFormConsentHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `AuthorizationFormConsentShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `AuthorizationFormDataUse` | `` | 13 | 5 | 0 | 0 | 5 |
-| `AuthorizationFormDataUseHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `AuthorizationFormDataUseShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `AuthorizationFormHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `AuthorizationFormShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `AuthorizationFormText` | `` | 16 | 4 | 0 | 0 | 4 |
-| `AuthorizationFormTextFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `AuthorizationFormTextHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `BackgroundOperation` | `` | 28 | 3 | 0 | 0 | 3 |
-| `BatchCalcJobDefinition` | `` | 19 | 3 | 0 | 0 | 3 |
-| `BatchCalcJobDefinitionView` | `` | 17 | 0 | 0 | 0 | 0 |
-| `BatchDataSource` | `` | 14 | 3 | 0 | 0 | 3 |
-| `BatchDataSrcFilterCriteria` | `` | 16 | 3 | 0 | 0 | 3 |
-| `BatchJob` | `` | 31 | 4 | 0 | 0 | 4 |
-| `BatchJobDefinition` | `` | 14 | 2 | 0 | 0 | 2 |
-| `BatchJobFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `BatchJobHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `BatchJobPart` | `` | 32 | 4 | 0 | 0 | 4 |
-| `BatchJobPartFailedRecord` | `` | 15 | 5 | 0 | 0 | 5 |
-| `BatchJobPartFailedRecordFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `BatchJobPartFailedRecordHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `BatchJobPartFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `BatchJobPartHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `BatchJobShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `BatchProcessJobDefView` | `` | 11 | 0 | 0 | 0 | 0 |
-| `BatchProcessJobDefinition` | `` | 22 | 3 | 0 | 0 | 3 |
-| `BotDefinition` | `` | 15 | 3 | 0 | 0 | 3 |
-| `BotVersion` | `` | 14 | 3 | 0 | 0 | 3 |
-| `BrandTemplate` | `` | 12 | 2 | 0 | 0 | 2 |
-| `BrandingSet` | `` | 12 | 2 | 0 | 0 | 2 |
-| `BrandingSetProperty` | `` | 10 | 3 | 0 | 0 | 3 |
-| `BriefcaseAssignment` | `` | 10 | 4 | 0 | 0 | 4 |
-| `BriefcaseDefinition` | `` | 13 | 2 | 0 | 0 | 2 |
-| `BriefcaseRule` | `` | 18 | 4 | 0 | 0 | 4 |
-| `BriefcaseRuleFilter` | `` | 12 | 3 | 0 | 0 | 3 |
-| `BrowserPolicyViolation` | `` | 14 | 2 | 0 | 0 | 2 |
-| `BulkApiResultEventStore` | `` | 16 | 3 | 0 | 0 | 3 |
-| `BusProcessFeedbackConfig` | `` | 21 | 2 | 0 | 0 | 2 |
-| `BusinessBrand` | `` | 13 | 4 | 0 | 0 | 4 |
-| `BusinessBrandShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `BusinessHours` | `` | 25 | 2 | 0 | 0 | 2 |
-| `BusinessProcess` | `` | 11 | 2 | 0 | 0 | 2 |
-| `BuyerGroup` | `` | 12 | 3 | 0 | 0 | 3 |
-| `BuyerGroupFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `BuyerGroupHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `BuyerGroupShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Calendar` | `` | 10 | 3 | 0 | 0 | 3 |
-| `CalendarView` | `` | 20 | 5 | 0 | 0 | 5 |
-| `CalendarViewShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `CallCenter` | `` | 11 | 2 | 0 | 0 | 2 |
-| `CallCoachingMediaProvider` | `` | 10 | 2 | 0 | 0 | 2 |
-| `Campaign` | `701` | 34 | 5 | 1 | 2 | 5 |
-| `CampaignFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `CampaignHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `CampaignMember` | `00v` | 37 | 7 | 1 | 3 | 7 |
-| `CampaignMemberStatus` | `` | 12 | 3 | 0 | 0 | 3 |
-| `CampaignShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `CardPaymentMethod` | `` | 57 | 4 | 0 | 0 | 4 |
-| `CartCheckoutSession` | `` | 18 | 5 | 0 | 0 | 5 |
-| `CartDeliveryGroup` | `` | 42 | 5 | 0 | 0 | 5 |
-| `CartDeliveryGroupMethod` | `` | 27 | 7 | 0 | 0 | 7 |
-| `CartItem` | `` | 56 | 8 | 0 | 0 | 8 |
-| `CartItemPriceAdjustment` | `` | 25 | 7 | 0 | 0 | 7 |
-| `CartRelatedItem` | `` | 12 | 4 | 0 | 0 | 4 |
-| `CartTax` | `` | 18 | 5 | 0 | 0 | 5 |
-| `CartValidationOutput` | `` | 17 | 5 | 0 | 0 | 5 |
-| `Case` | `500` | 51 | 12 | 1 | 6 | 12 |
-| `CaseArticle` | `` | 12 | 4 | 0 | 0 | 4 |
-| `CaseComment` | `` | 12 | 3 | 0 | 0 | 3 |
-| `CaseContactRole` | `` | 11 | 4 | 0 | 0 | 4 |
-| `CaseExternalDocument` | `` | 15 | 3 | 0 | 0 | 3 |
-| `CaseFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `CaseHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `CaseHistory2` | `` | 10 | 3 | 0 | 0 | 3 |
-| `CaseMilestone` | `` | 27 | 5 | 0 | 0 | 5 |
-| `CaseRelatedIssue` | `` | 14 | 4 | 0 | 0 | 4 |
-| `CaseRelatedIssueFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `CaseRelatedIssueHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `CaseShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `CaseSolution` | `` | 8 | 3 | 0 | 0 | 3 |
-| `CaseStatus` | `` | 11 | 2 | 0 | 0 | 2 |
-| `CaseSubjectParticle` | `` | 13 | 2 | 0 | 0 | 2 |
-| `CaseTeamMember` | `` | 11 | 7 | 0 | 0 | 7 |
-| `CaseTeamRole` | `` | 9 | 2 | 0 | 0 | 2 |
-| `CaseTeamTemplate` | `` | 8 | 2 | 0 | 0 | 2 |
-| `CaseTeamTemplateMember` | `` | 9 | 5 | 0 | 0 | 5 |
-| `CaseTeamTemplateRecord` | `` | 6 | 3 | 0 | 0 | 3 |
-| `CategoryData` | `` | 9 | 4 | 0 | 0 | 4 |
-| `CategoryNode` | `` | 10 | 3 | 0 | 0 | 3 |
-| `ChangeRequest` | `` | 30 | 4 | 0 | 0 | 4 |
-| `ChangeRequestFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ChangeRequestHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ChangeRequestRelatedIssue` | `` | 13 | 4 | 0 | 0 | 4 |
-| `ChangeRequestRelatedIssueFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ChangeRequestRelatedIssueHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ChangeRequestRelatedItem` | `` | 14 | 4 | 0 | 0 | 4 |
-| `ChangeRequestRelatedItemFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ChangeRequestRelatedItemHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ChangeRequestShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ChannelObjectLinkingRule` | `` | 19 | 2 | 0 | 0 | 2 |
-| `ChatRetirementRdyMetrics` | `` | 30 | 0 | 0 | 0 | 0 |
-| `ChatterActivity` | `` | 9 | 2 | 0 | 0 | 2 |
-| `ChatterExtension` | `` | 20 | 3 | 0 | 0 | 3 |
-| `ChatterExtensionConfig` | `` | 12 | 4 | 0 | 0 | 4 |
-| `ClientBrowser` | `` | 6 | 1 | 0 | 0 | 1 |
-| `CollaborationGroup` | `` | 27 | 5 | 0 | 0 | 5 |
-| `CollaborationGroupFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `CollaborationGroupMember` | `` | 12 | 5 | 0 | 0 | 5 |
-| `CollaborationGroupMemberRequest` | `` | 10 | 4 | 0 | 0 | 4 |
-| `CollaborationGroupRecord` | `` | 10 | 5 | 0 | 0 | 5 |
-| `CollaborationInvitation` | `` | 13 | 5 | 0 | 0 | 5 |
-| `ColorDefinition` | `` | 6 | 1 | 0 | 0 | 1 |
-| `CommSubscription` | `` | 12 | 3 | 0 | 0 | 3 |
-| `CommSubscriptionChannelType` | `` | 17 | 8 | 0 | 0 | 8 |
-| `CommSubscriptionChannelTypeFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `CommSubscriptionChannelTypeHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `CommSubscriptionChannelTypeShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `CommSubscriptionConsent` | `` | 25 | 11 | 0 | 0 | 11 |
-| `CommSubscriptionConsentFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `CommSubscriptionConsentHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `CommSubscriptionConsentShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `CommSubscriptionFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `CommSubscriptionHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `CommSubscriptionShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `CommSubscriptionTiming` | `` | 13 | 3 | 0 | 0 | 3 |
-| `CommSubscriptionTimingFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `CommSubscriptionTimingHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `Community` | `` | 11 | 3 | 0 | 0 | 3 |
-| `ConferenceNumber` | `` | 13 | 3 | 0 | 0 | 3 |
-| `ConnectedApplication` | `` | 21 | 2 | 0 | 0 | 2 |
-| `Contact` | `003` | 72 | 7 | 1 | 9 | 7 |
-| `ContactFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ContactHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ContactPointAddress` | `` | 33 | 5 | 0 | 0 | 5 |
-| `ContactPointAddressHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ContactPointAddressShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ContactPointConsent` | `` | 23 | 8 | 0 | 0 | 8 |
-| `ContactPointConsentHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ContactPointConsentShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ContactPointEmail` | `` | 25 | 4 | 0 | 0 | 4 |
-| `ContactPointEmailHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ContactPointEmailShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ContactPointPhone` | `` | 30 | 4 | 0 | 0 | 4 |
-| `ContactPointPhoneHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ContactPointPhoneShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ContactPointTypeConsent` | `` | 23 | 7 | 0 | 0 | 7 |
-| `ContactPointTypeConsentHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ContactPointTypeConsentShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ContactRequest` | `` | 20 | 5 | 0 | 0 | 5 |
-| `ContactRequestShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ContactShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ContentAsset` | `` | 13 | 3 | 0 | 0 | 3 |
-| `ContentBody` | `` | 2 | 0 | 0 | 0 | 0 |
-| `ContentDistribution` | `` | 28 | 6 | 0 | 0 | 6 |
-| `ContentDistributionView` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ContentDocument` | `069` | 30 | 7 | 0 | 5 | 7 |
-| `ContentDocumentFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ContentDocumentHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ContentDocumentLink` | `06A` | 7 | 2 | 0 | 2 | 2 |
-| `ContentDocumentSubscription` | `` | 5 | 2 | 0 | 0 | 2 |
-| `ContentFolder` | `` | 11 | 4 | 0 | 0 | 4 |
-| `ContentFolderItem` | `` | 14 | 3 | 0 | 0 | 3 |
-| `ContentFolderLink` | `` | 5 | 2 | 0 | 0 | 2 |
-| `ContentFolderMember` | `` | 9 | 4 | 0 | 0 | 4 |
-| `ContentNotification` | `` | 8 | 2 | 0 | 0 | 2 |
-| `ContentTagSubscription` | `` | 2 | 1 | 0 | 0 | 1 |
-| `ContentTaxonomy` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ContentTaxonomyRelatedTerm` | `` | 9 | 4 | 0 | 0 | 4 |
-| `ContentTaxonomyTerm` | `` | 11 | 2 | 0 | 0 | 2 |
-| `ContentTaxonomyTermRelatedTerm` | `` | 11 | 6 | 0 | 0 | 6 |
-| `ContentTaxonomyTermRelationshipType` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ContentUserSubscription` | `` | 3 | 2 | 0 | 0 | 2 |
-| `ContentVersion` | `068` | 49 | 9 | 1 | 7 | 9 |
-| `ContentVersionComment` | `` | 5 | 2 | 0 | 0 | 2 |
-| `ContentVersionHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ContentVersionRating` | `` | 6 | 2 | 0 | 0 | 2 |
-| `ContentVersionRenditionContent` | `` | 6 | 1 | 0 | 0 | 1 |
-| `ContentWorkspace` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ContentWorkspaceDoc` | `` | 7 | 2 | 0 | 0 | 2 |
-| `ContentWorkspaceMember` | `` | 7 | 4 | 0 | 0 | 4 |
-| `ContentWorkspacePermission` | `` | 22 | 2 | 0 | 0 | 2 |
-| `ContentWorkspaceSubscription` | `` | 3 | 2 | 0 | 0 | 2 |
-| `ContextParamMap` | `` | 10 | 3 | 0 | 0 | 3 |
-| `Contract` | `800` | 49 | 7 | 1 | 6 | 7 |
-| `ContractContactRole` | `` | 12 | 4 | 0 | 0 | 4 |
-| `ContractFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ContractHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ContractLineItem` | `` | 28 | 9 | 0 | 0 | 9 |
-| `ContractLineItemFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ContractLineItemHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ContractStatus` | `` | 11 | 2 | 0 | 0 | 2 |
-| `ConvDefDialogDailyMetric` | `` | 29 | 4 | 0 | 0 | 4 |
-| `ConvDefDialogHourlyMetric` | `` | 31 | 5 | 0 | 0 | 5 |
-| `ConvDefSessionMetric` | `` | 21 | 3 | 0 | 0 | 3 |
-| `ConvEntryRelatedRecordCopy` | `` | 13 | 5 | 0 | 0 | 5 |
-| `ConvEntryRelatedRecordCopyShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ConvIntelligenceSignalRule` | `` | 16 | 3 | 0 | 0 | 3 |
-| `ConvIntelligenceSignalSubRule` | `` | 12 | 3 | 0 | 0 | 3 |
-| `ConvMessageSendRequest` | `` | 35 | 3 | 0 | 0 | 3 |
-| `Conversation` | `` | 13 | 3 | 0 | 0 | 3 |
-| `ConversationApiLog` | `` | 20 | 4 | 0 | 0 | 4 |
-| `ConversationApiLogObjSum` | `` | 15 | 3 | 0 | 0 | 3 |
-| `ConversationApiLogShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ConversationContextEntry` | `` | 12 | 3 | 0 | 0 | 3 |
-| `ConversationDefinitionDialog` | `` | 10 | 3 | 0 | 0 | 3 |
-| `ConversationDefinitionEventLog` | `` | 31 | 6 | 0 | 0 | 6 |
-| `ConversationDefinitionSession` | `` | 24 | 3 | 0 | 0 | 3 |
-| `ConversationDefinitionSessionEngagement` | `` | 8 | 4 | 0 | 0 | 4 |
-| `ConversationEntry` | `` | 28 | 5 | 0 | 0 | 5 |
-| `ConversationEntryCopy` | `` | 21 | 5 | 0 | 0 | 5 |
-| `ConversationEntryCopyShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ConversationParticipant` | `` | 20 | 4 | 0 | 0 | 4 |
-| `CorsWhitelistEntry` | `` | 12 | 2 | 0 | 0 | 2 |
-| `Coupon` | `` | 20 | 4 | 0 | 0 | 4 |
-| `CouponCodeRedemption` | `` | 12 | 4 | 0 | 0 | 4 |
-| `CouponCodeRedemptionShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `CouponFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `CouponHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `CouponShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `CredentialStuffingEventStore` | `` | 23 | 2 | 0 | 0 | 2 |
-| `CredentialStuffingEventStoreFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `CreditMemo` | `` | 47 | 6 | 0 | 0 | 6 |
-| `CreditMemoFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `CreditMemoHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `CreditMemoInvApplication` | `` | 21 | 5 | 0 | 0 | 5 |
-| `CreditMemoInvApplicationFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `CreditMemoLine` | `` | 43 | 6 | 0 | 0 | 6 |
-| `CreditMemoLineFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `CreditMemoLineHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `CreditMemoShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `CronJobDetail` | `` | 3 | 0 | 0 | 0 | 0 |
-| `CronTrigger` | `` | 14 | 4 | 0 | 0 | 4 |
-| `CspTrustedSite` | `` | 23 | 2 | 0 | 0 | 2 |
-| `CurrencyType` | `` | 11 | 2 | 0 | 0 | 2 |
-| `CustomBrand` | `` | 6 | 3 | 0 | 0 | 3 |
-| `CustomBrandAsset` | `` | 9 | 4 | 0 | 0 | 4 |
-| `CustomHelpMenuItem` | `` | 11 | 3 | 0 | 0 | 3 |
-| `CustomHelpMenuSection` | `` | 11 | 2 | 0 | 0 | 2 |
-| `CustomHttpHeader` | `` | 11 | 3 | 0 | 0 | 3 |
-| `CustomNotificationType` | `` | 16 | 2 | 0 | 0 | 2 |
-| `CustomPermission` | `` | 15 | 3 | 0 | 0 | 3 |
-| `CustomPermissionDependency` | `` | 9 | 4 | 0 | 0 | 4 |
-| `Customer` | `` | 14 | 4 | 0 | 0 | 4 |
-| `CustomerShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Dashboard` | `` | 31 | 5 | 0 | 0 | 5 |
-| `DashboardComponent` | `` | 4 | 2 | 0 | 0 | 2 |
-| `DashboardComponentFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `DashboardFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `DataAssessmentFieldMetric` | `` | 15 | 3 | 0 | 0 | 3 |
-| `DataAssessmentMetric` | `` | 15 | 2 | 0 | 0 | 2 |
-| `DataAssessmentValueMetric` | `` | 12 | 3 | 0 | 0 | 3 |
-| `DataEncryptionKey` | `` | 16 | 0 | 0 | 0 | 0 |
-| `DataIntegrationRecordPurchasePermission` | `` | 10 | 3 | 0 | 0 | 3 |
-| `DataStatistics` | `` | 6 | 1 | 0 | 0 | 1 |
-| `DataType` | `` | 6 | 0 | 0 | 0 | 0 |
-| `DataUseLegalBasis` | `` | 13 | 3 | 0 | 0 | 3 |
-| `DataUseLegalBasisHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `DataUseLegalBasisShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `DataUsePurpose` | `` | 14 | 4 | 0 | 0 | 4 |
-| `DataUsePurposeHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `DataUsePurposeShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `DataWeaveResource` | `` | 16 | 2 | 0 | 0 | 2 |
-| `DatacloudAddress` | `` | 13 | 0 | 0 | 0 | 0 |
-| `DatasetExport` | `` | 14 | 2 | 0 | 0 | 2 |
-| `DatasetExportPart` | `` | 13 | 3 | 0 | 0 | 3 |
-| `DatedConversionRate` | `` | 10 | 2 | 0 | 0 | 2 |
-| `DecisionTable` | `` | 35 | 2 | 0 | 0 | 2 |
-| `DecisionTableDatasetLink` | `` | 16 | 3 | 0 | 0 | 3 |
-| `DecisionTableParameter` | `` | 18 | 3 | 0 | 0 | 3 |
-| `DecisionTableSourceCriteria` | `` | 13 | 3 | 0 | 0 | 3 |
-| `DecisionTblDatasetParameter` | `` | 11 | 4 | 0 | 0 | 4 |
-| `DeclinedEventRelation` | `` | 13 | 5 | 0 | 0 | 5 |
-| `DelegatedAccount` | `` | 15 | 6 | 0 | 0 | 6 |
-| `DelegatedAccountFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `DelegatedAccountHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `DelegatedAccountShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `DeleteEvent` | `` | 7 | 1 | 0 | 0 | 1 |
-| `DeliveryEstimationSetup` | `` | 26 | 7 | 0 | 0 | 7 |
-| `DeliveryEstimationSetupFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `DeliveryEstimationSetupHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `DeliveryEstimationSetupShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `DevopsActivityLog` | `` | 21 | 6 | 0 | 0 | 6 |
-| `DevopsActivityLogFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `DevopsActivityLogHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `DevopsActivityLogShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `DevopsEnvironment` | `` | 26 | 5 | 0 | 0 | 5 |
-| `DevopsEnvironmentFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `DevopsEnvironmentHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `DevopsEnvironmentShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `DevopsRequestInfo` | `` | 18 | 3 | 0 | 0 | 3 |
-| `DevopsRequestInfoFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `DevopsRequestInfoHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `DevopsRequestInfoShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `DigitalWallet` | `` | 42 | 4 | 0 | 0 | 4 |
-| `Division` | `` | 10 | 2 | 0 | 0 | 2 |
-| `Document` | `015` | 24 | 4 | 0 | 0 | 4 |
-| `DocumentAttachmentMap` | `` | 6 | 3 | 0 | 0 | 3 |
-| `Domain` | `` | 11 | 2 | 0 | 0 | 2 |
-| `DomainSite` | `` | 9 | 4 | 0 | 0 | 4 |
-| `DuplicateRecordItem` | `` | 11 | 4 | 0 | 0 | 4 |
-| `DuplicateRecordSet` | `` | 13 | 3 | 0 | 0 | 3 |
-| `DuplicateRule` | `` | 15 | 2 | 0 | 0 | 2 |
-| `EmailCapture` | `` | 15 | 2 | 0 | 0 | 2 |
-| `EmailDomainFilter` | `` | 12 | 3 | 0 | 0 | 3 |
-| `EmailDomainKey` | `` | 24 | 2 | 0 | 0 | 2 |
-| `EmailMessage` | `` | 42 | 8 | 0 | 0 | 8 |
-| `EmailMessageRelation` | `` | 10 | 3 | 0 | 0 | 3 |
-| `EmailRelay` | `` | 14 | 2 | 0 | 0 | 2 |
-| `EmailRoutingAddress` | `` | 9 | 3 | 0 | 0 | 3 |
-| `EmailServicesAddress` | `` | 13 | 4 | 0 | 0 | 4 |
-| `EmailServicesFunction` | `` | 21 | 3 | 0 | 0 | 3 |
-| `EmailTemplate` | `00X` | 29 | 6 | 0 | 5 | 6 |
-| `EmbeddedServiceDetail` | `` | 32 | 0 | 0 | 0 | 0 |
-| `EmbeddedServiceLabel` | `` | 5 | 0 | 0 | 0 | 0 |
-| `EngagementChannelType` | `` | 15 | 3 | 0 | 0 | 3 |
-| `EngagementChannelTypeFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `EngagementChannelTypeHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `EngagementChannelTypeShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `EngagementChannelWorkType` | `` | 14 | 4 | 0 | 0 | 4 |
-| `EngagementChannelWorkTypeFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `EngagementChannelWorkTypeHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `EngmtChannelTypeSettings` | `` | 13 | 2 | 0 | 0 | 2 |
-| `EnhancedLetterhead` | `` | 13 | 2 | 0 | 0 | 2 |
-| `EnhancedLetterheadFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `Entitlement` | `` | 29 | 10 | 0 | 0 | 10 |
-| `EntitlementContact` | `` | 12 | 4 | 0 | 0 | 4 |
-| `EntitlementFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `EntitlementHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `EntitlementTemplate` | `` | 14 | 4 | 0 | 0 | 4 |
-| `EntityDefinition` | `` | 53 | 2 | 0 | 0 | 2 |
-| `EntityMilestone` | `` | 30 | 6 | 0 | 0 | 6 |
-| `EntityMilestoneFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `EntityMilestoneHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `EntityParticle` | `` | 56 | 1 | 0 | 0 | 1 |
-| `EntitySubscription` | `` | 7 | 4 | 0 | 0 | 4 |
-| `Event` | `00U` | 53 | 8 | 1 | 10 | 8 |
-| `EventBusSubscriber` | `` | 14 | 0 | 0 | 0 | 0 |
-| `EventFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `EventLogFile` | `` | 17 | 2 | 0 | 0 | 2 |
-| `EventRelation` | `` | 16 | 5 | 0 | 0 | 5 |
-| `EventRelayConfig` | `` | 16 | 2 | 0 | 0 | 2 |
-| `EventRelayFeedback` | `` | 18 | 3 | 0 | 0 | 3 |
-| `EventStagedInviteeEmail` | `` | 14 | 4 | 0 | 0 | 4 |
-| `EventWhoRelation` | `` | 11 | 5 | 0 | 0 | 5 |
-| `EvfPipelineSubTaskDetails` | `` | 12 | 2 | 0 | 0 | 2 |
-| `ExpressionFilter` | `` | 12 | 3 | 0 | 0 | 3 |
-| `ExpressionFilterCriteria` | `` | 14 | 3 | 0 | 0 | 3 |
-| `ExpressionSetView` | `` | 13 | 0 | 0 | 0 | 0 |
-| `ExternalAIModel` | `` | 15 | 2 | 0 | 0 | 2 |
-| `ExternalClientApplication` | `` | 23 | 2 | 0 | 0 | 2 |
-| `ExternalDataSource` | `` | 22 | 6 | 0 | 0 | 6 |
-| `ExternalDataSrcDescriptor` | `` | 16 | 3 | 0 | 0 | 3 |
-| `ExternalDataUserAuth` | `` | 13 | 5 | 0 | 0 | 5 |
-| `ExternalEvent` | `` | 14 | 2 | 0 | 0 | 2 |
-| `ExternalEventMapping` | `` | 14 | 4 | 0 | 0 | 4 |
-| `ExternalEventMappingShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ExternalSocialAccount` | `` | 27 | 3 | 0 | 0 | 3 |
-| `ExtlClntAppAndroidPushConfig` | `` | 11 | 3 | 0 | 0 | 3 |
-| `ExtlClntAppApplePushConfig` | `` | 16 | 3 | 0 | 0 | 3 |
-| `ExtlClntAppMobPlcyConfig` | `` | 13 | 4 | 0 | 0 | 4 |
-| `ExtlClntAppMobileSettings` | `` | 13 | 3 | 0 | 0 | 3 |
-| `ExtlClntAppNotifSettings` | `` | 13 | 4 | 0 | 0 | 4 |
-| `ExtlClntAppNotifType` | `` | 10 | 3 | 0 | 0 | 3 |
-| `ExtlClntAppOauthConsumer` | `` | 12 | 4 | 0 | 0 | 4 |
-| `ExtlClntAppOauthIpRange` | `` | 11 | 3 | 0 | 0 | 3 |
-| `ExtlClntAppOauthPlcyAttr` | `` | 10 | 3 | 0 | 0 | 3 |
-| `ExtlClntAppOauthPlcyCnfg` | `` | 33 | 6 | 0 | 0 | 6 |
-| `ExtlClntAppOauthPlcyCustmScp` | `` | 10 | 5 | 0 | 0 | 5 |
-| `ExtlClntAppOauthSecuritySettings` | `` | 11 | 3 | 0 | 0 | 3 |
-| `ExtlClntAppOauthSecurityTokenIpRange` | `` | 11 | 3 | 0 | 0 | 3 |
-| `ExtlClntAppOauthSetAttr` | `` | 10 | 3 | 0 | 0 | 3 |
-| `ExtlClntAppOauthSetCustmScp` | `` | 10 | 5 | 0 | 0 | 5 |
-| `ExtlClntAppOauthSettings` | `` | 53 | 3 | 0 | 0 | 3 |
-| `ExtlClntAppPlcyCnfg` | `` | 20 | 3 | 0 | 0 | 3 |
-| `ExtlClntAppPushPolicyConfig` | `` | 13 | 4 | 0 | 0 | 4 |
-| `ExtlClntAppPushSettings` | `` | 15 | 4 | 0 | 0 | 4 |
-| `ExtlClntAppSamplePlcyCnfg` | `` | 15 | 4 | 0 | 0 | 4 |
-| `ExtlClntAppSampleSettings` | `` | 20 | 3 | 0 | 0 | 3 |
-| `FeedAttachment` | `` | 7 | 2 | 0 | 0 | 2 |
-| `FeedComment` | `` | 22 | 7 | 0 | 0 | 7 |
-| `FeedItem` | `` | 28 | 6 | 0 | 0 | 6 |
-| `FeedPollChoice` | `` | 7 | 2 | 0 | 0 | 2 |
-| `FeedPollVote` | `` | 7 | 3 | 0 | 0 | 3 |
-| `FeedRevision` | `` | 12 | 3 | 0 | 0 | 3 |
-| `FieldDefinition` | `` | 47 | 4 | 0 | 0 | 4 |
-| `FieldPermissions` | `0FP` | 7 | 1 | 0 | 0 | 1 |
-| `FieldSecurityClassification` | `` | 11 | 2 | 0 | 0 | 2 |
-| `FileEventStore` | `` | 29 | 6 | 0 | 0 | 6 |
-| `FileSearchActivity` | `` | 17 | 2 | 0 | 0 | 2 |
-| `FiscalYearSettings` | `` | 15 | 1 | 0 | 0 | 1 |
-| `FlexQueueItem` | `` | 5 | 1 | 0 | 0 | 1 |
-| `FlowDefinitionView` | `` | 34 | 1 | 0 | 0 | 1 |
-| `FlowInterview` | `` | 21 | 3 | 0 | 0 | 3 |
-| `FlowInterviewLog` | `` | 19 | 3 | 0 | 0 | 3 |
-| `FlowInterviewLogEntry` | `` | 16 | 3 | 0 | 0 | 3 |
-| `FlowInterviewLogShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `FlowInterviewShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `FlowOrchestration` | `` | 33 | 6 | 0 | 0 | 6 |
-| `FlowOrchestrationInstance` | `` | 25 | 4 | 0 | 0 | 4 |
-| `FlowOrchestrationInstanceShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `FlowOrchestrationLog` | `` | 22 | 3 | 0 | 0 | 3 |
-| `FlowOrchestrationStageInstance` | `` | 15 | 4 | 0 | 0 | 4 |
-| `FlowOrchestrationStageInstanceShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `FlowOrchestrationStepInstance` | `` | 20 | 5 | 0 | 0 | 5 |
-| `FlowOrchestrationStepInstanceShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `FlowOrchestrationVersion` | `` | 26 | 7 | 0 | 0 | 7 |
-| `FlowOrchestrationWorkItem` | `` | 23 | 6 | 0 | 0 | 6 |
-| `FlowOrchestrationWorkItemShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `FlowRecord` | `` | 43 | 8 | 0 | 0 | 8 |
-| `FlowRecordElement` | `` | 13 | 3 | 0 | 0 | 3 |
-| `FlowRecordElementOccurrence` | `` | 13 | 6 | 0 | 0 | 6 |
-| `FlowRecordHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `FlowRecordRelation` | `` | 11 | 4 | 0 | 0 | 4 |
-| `FlowRecordShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `FlowRecordVersion` | `` | 37 | 9 | 0 | 0 | 9 |
-| `FlowRecordVersionOccurrence` | `` | 21 | 4 | 0 | 0 | 4 |
-| `FlowStageRelation` | `` | 14 | 3 | 0 | 0 | 3 |
-| `FlowTestResult` | `` | 17 | 6 | 0 | 0 | 6 |
-| `FlowTestResultShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `FlowTestView` | `` | 10 | 3 | 0 | 0 | 3 |
-| `FlowVariableView` | `` | 10 | 1 | 0 | 0 | 1 |
-| `FlowVersionView` | `` | 17 | 1 | 0 | 0 | 1 |
-| `Folder` | `` | 13 | 3 | 0 | 0 | 3 |
-| `ForecastingAdjustment` | `` | 21 | 7 | 0 | 0 | 7 |
-| `ForecastingCategoryMapping` | `` | 9 | 2 | 0 | 0 | 2 |
-| `ForecastingColumnDefinition` | `` | 14 | 3 | 0 | 0 | 3 |
-| `ForecastingCustomData` | `` | 14 | 6 | 0 | 0 | 6 |
-| `ForecastingDisplayedFamily` | `` | 9 | 2 | 0 | 0 | 2 |
-| `ForecastingFact` | `` | 11 | 7 | 0 | 0 | 7 |
-| `ForecastingFilter` | `` | 13 | 4 | 0 | 0 | 4 |
-| `ForecastingFilterCondition` | `` | 15 | 3 | 0 | 0 | 3 |
-| `ForecastingGroup` | `` | 14 | 3 | 0 | 0 | 3 |
-| `ForecastingGroupItem` | `` | 12 | 3 | 0 | 0 | 3 |
-| `ForecastingItem` | `` | 27 | 5 | 0 | 0 | 5 |
-| `ForecastingOwnerAdjustment` | `` | 22 | 7 | 0 | 0 | 7 |
-| `ForecastingQuota` | `` | 17 | 6 | 0 | 0 | 6 |
-| `ForecastingShare` | `` | 11 | 4 | 0 | 0 | 4 |
-| `ForecastingSourceDefinition` | `` | 17 | 2 | 0 | 0 | 2 |
-| `ForecastingType` | `` | 24 | 3 | 0 | 0 | 3 |
-| `ForecastingTypeSource` | `` | 15 | 5 | 0 | 0 | 5 |
-| `ForecastingTypeToCategory` | `` | 12 | 3 | 0 | 0 | 3 |
-| `ForecastingUserPreference` | `` | 14 | 1 | 0 | 0 | 1 |
-| `FormulaFunction` | `` | 7 | 1 | 0 | 0 | 1 |
-| `FormulaFunctionAllowedType` | `` | 4 | 1 | 0 | 0 | 1 |
-| `FormulaFunctionCategory` | `` | 4 | 0 | 0 | 0 | 0 |
-| `FulfillmentLineRel` | `` | 17 | 6 | 0 | 0 | 6 |
-| `FulfillmentOrder` | `` | 65 | 10 | 0 | 0 | 10 |
-| `FulfillmentOrderFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `FulfillmentOrderItemAdjustment` | `` | 19 | 5 | 0 | 0 | 5 |
-| `FulfillmentOrderItemAdjustmentFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `FulfillmentOrderItemTax` | `` | 18 | 6 | 0 | 0 | 6 |
-| `FulfillmentOrderItemTaxFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `FulfillmentOrderLineItem` | `` | 37 | 7 | 0 | 0 | 7 |
-| `FulfillmentOrderLineItemFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `FulfillmentOrderShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `GenAiFunctionDefinition` | `` | 23 | 5 | 0 | 0 | 5 |
-| `GenAiPlannerAttrDefinition` | `` | 14 | 3 | 0 | 0 | 3 |
-| `GenAiPlannerDefinition` | `` | 15 | 2 | 0 | 0 | 2 |
-| `GenAiPlannerFunctionDef` | `` | 9 | 3 | 0 | 0 | 3 |
-| `GenAiPluginDefinition` | `` | 20 | 4 | 0 | 0 | 4 |
-| `GenAiPluginFunctionDef` | `` | 9 | 3 | 0 | 0 | 3 |
-| `GenAiPluginInstructionDef` | `` | 14 | 3 | 0 | 0 | 3 |
-| `GrantedByLicense` | `` | 9 | 4 | 0 | 0 | 4 |
-| `Group` | `00G` | 17 | 5 | 0 | 0 | 5 |
-| `GroupMember` | `` | 4 | 2 | 0 | 0 | 2 |
-| `GtwyProvPaymentMethodType` | `` | 17 | 4 | 0 | 0 | 4 |
-| `GuestUserAnomalyEventStore` | `` | 25 | 2 | 0 | 0 | 2 |
-| `GuestUserAnomalyEventStoreFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `Holiday` | `` | 21 | 2 | 0 | 0 | 2 |
-| `IPAddressRange` | `` | 15 | 2 | 0 | 0 | 2 |
-| `IconDefinition` | `` | 8 | 1 | 0 | 0 | 1 |
-| `Idea` | `` | 27 | 6 | 0 | 0 | 6 |
-| `IdeaComment` | `` | 13 | 3 | 0 | 0 | 3 |
-| `IdentityProviderEventStore` | `` | 13 | 3 | 0 | 0 | 3 |
-| `IdentityVerificationEvent` | `` | 25 | 3 | 0 | 0 | 3 |
-| `IdpEventLog` | `` | 11 | 3 | 0 | 0 | 3 |
-| `IframeWhiteListUrl` | `` | 9 | 2 | 0 | 0 | 2 |
-| `Image` | `` | 21 | 4 | 0 | 0 | 4 |
-| `ImageFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ImageHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ImageShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Incident` | `` | 41 | 7 | 0 | 0 | 7 |
-| `IncidentFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `IncidentHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `IncidentRelatedItem` | `` | 15 | 5 | 0 | 0 | 5 |
-| `IncidentRelatedItemFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `IncidentRelatedItemHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `IncidentShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Individual` | `` | 36 | 4 | 0 | 0 | 4 |
-| `IndividualHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `IndividualShare` | `` | 8 | 3 | 0 | 0 | 3 |
-| `InsightsExternalData` | `` | 29 | 2 | 0 | 0 | 2 |
-| `InsightsExternalDataPart` | `` | 12 | 3 | 0 | 0 | 3 |
-| `InstalledMobileApp` | `` | 13 | 4 | 0 | 0 | 4 |
-| `InventoryItemReservation` | `` | 19 | 6 | 0 | 0 | 6 |
-| `InventoryReservation` | `` | 19 | 4 | 0 | 0 | 4 |
-| `InventoryReservationShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Invoice` | `` | 47 | 6 | 0 | 0 | 6 |
-| `InvoiceFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `InvoiceHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `InvoiceLine` | `` | 47 | 7 | 0 | 0 | 7 |
-| `InvoiceLineFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `InvoiceLineHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `InvoiceShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `KnowledgeArticle` | `` | 18 | 3 | 0 | 0 | 3 |
-| `KnowledgeArticleVersion` | `` | 45 | 11 | 0 | 0 | 11 |
-| `KnowledgeArticleVersionHistory` | `` | 14 | 3 | 0 | 0 | 3 |
-| `KnowledgeArticleViewStat` | `` | 6 | 1 | 0 | 0 | 1 |
-| `KnowledgeArticleVoteStat` | `` | 5 | 1 | 0 | 0 | 1 |
-| `Knowledge__DataCategorySelection` | `` | 8 | 2 | 0 | 0 | 2 |
-| `Knowledge__Feed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `Knowledge__ViewStat` | `` | 6 | 1 | 0 | 0 | 1 |
-| `Knowledge__VoteStat` | `` | 5 | 1 | 0 | 0 | 1 |
-| `Knowledge__ka` | `` | 18 | 3 | 0 | 0 | 3 |
-| `Knowledge__kav` | `` | 45 | 11 | 0 | 0 | 11 |
-| `KnowledgeableUser` | `` | 6 | 3 | 0 | 0 | 3 |
-| `Lead` | `00Q` | 54 | 8 | 1 | 7 | 8 |
-| `LeadFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `LeadHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `LeadShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `LeadStatus` | `` | 11 | 2 | 0 | 0 | 2 |
-| `LicenseDefinitionCustomPermission` | `` | 9 | 4 | 0 | 0 | 4 |
-| `LightningExperienceTheme` | `` | 16 | 3 | 0 | 0 | 3 |
-| `LightningOnboardingConfig` | `` | 16 | 3 | 0 | 0 | 3 |
-| `LightningUriEvent` | `` | 38 | 3 | 0 | 0 | 3 |
-| `LinkedArticle` | `` | 13 | 5 | 0 | 0 | 5 |
-| `LinkedArticleFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `LinkedArticleHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ListEmail` | `` | 24 | 5 | 0 | 0 | 5 |
-| `ListEmailIndividualRecipient` | `` | 11 | 4 | 0 | 0 | 4 |
-| `ListEmailRecipientSource` | `` | 12 | 4 | 0 | 0 | 4 |
-| `ListEmailSentResult` | `` | 18 | 5 | 0 | 0 | 5 |
-| `ListEmailShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ListView` | `` | 13 | 2 | 0 | 0 | 2 |
-| `ListViewChart` | `` | 16 | 3 | 0 | 0 | 3 |
-| `ListViewChartInstance` | `` | 16 | 2 | 0 | 0 | 2 |
-| `ListViewEvent` | `` | 31 | 5 | 0 | 0 | 5 |
-| `LiveAgentSession` | `` | 27 | 4 | 0 | 0 | 4 |
-| `LiveAgentSessionHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `LiveAgentSessionShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `LiveChatBlockingRule` | `` | 14 | 2 | 0 | 0 | 2 |
-| `LiveChatButton` | `` | 46 | 12 | 0 | 0 | 12 |
-| `LiveChatButtonDeployment` | `` | 9 | 4 | 0 | 0 | 4 |
-| `LiveChatButtonSkill` | `` | 9 | 4 | 0 | 0 | 4 |
-| `LiveChatDeployment` | `` | 19 | 5 | 0 | 0 | 5 |
-| `LiveChatObjectAccessConfig` | `` | 10 | 3 | 0 | 0 | 3 |
-| `LiveChatObjectAccessDefinition` | `` | 10 | 2 | 0 | 0 | 2 |
-| `LiveChatSensitiveDataRule` | `` | 20 | 2 | 0 | 0 | 2 |
-| `LiveChatTranscript` | `` | 47 | 11 | 0 | 0 | 11 |
-| `LiveChatTranscriptEvent` | `` | 16 | 4 | 0 | 0 | 4 |
-| `LiveChatTranscriptFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `LiveChatTranscriptHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `LiveChatTranscriptShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `LiveChatTranscriptSkill` | `` | 11 | 4 | 0 | 0 | 4 |
-| `LiveChatUserConfig` | `` | 35 | 4 | 0 | 0 | 4 |
-| `LiveChatUserConfigProfile` | `` | 9 | 4 | 0 | 0 | 4 |
-| `LiveChatUserConfigUser` | `` | 9 | 4 | 0 | 0 | 4 |
-| `LiveChatVisitor` | `` | 12 | 2 | 0 | 0 | 2 |
-| `Location` | `` | 24 | 5 | 0 | 0 | 5 |
-| `LocationFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `LocationGroup` | `` | 16 | 3 | 0 | 0 | 3 |
-| `LocationGroupAssignment` | `` | 17 | 4 | 0 | 0 | 4 |
-| `LocationGroupFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `LocationGroupHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `LocationGroupShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `LocationHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `LocationShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `LocationShippingCarrierMethod` | `` | 15 | 5 | 0 | 0 | 5 |
-| `LocationShippingCarrierMethodFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `LocationShippingCarrierMethodHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `LocationShippingCarrierMethodShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `LocationTrustMeasure` | `` | 19 | 4 | 0 | 0 | 4 |
-| `LocationTrustMeasureShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `LoginAnomalyEventStore` | `` | 23 | 2 | 0 | 0 | 2 |
-| `LoginAnomalyEventStoreFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `LoginAsEvent` | `` | 23 | 2 | 0 | 0 | 2 |
-| `LoginEvent` | `` | 42 | 6 | 0 | 0 | 6 |
-| `LoginGeo` | `` | 15 | 2 | 0 | 0 | 2 |
-| `LoginHistory` | `` | 24 | 4 | 0 | 0 | 4 |
-| `LoginIp` | `` | 7 | 1 | 0 | 0 | 1 |
-| `LogoutEvent` | `` | 10 | 1 | 0 | 0 | 1 |
-| `MLModel` | `` | 16 | 4 | 0 | 0 | 4 |
-| `MLModelFactor` | `` | 14 | 3 | 0 | 0 | 3 |
-| `MLModelFactorComponent` | `` | 18 | 4 | 0 | 0 | 4 |
-| `MLModelMetric` | `` | 18 | 3 | 0 | 0 | 3 |
-| `MLPredictionDefinition` | `` | 16 | 3 | 0 | 0 | 3 |
-| `MLRecommendationDefinition` | `` | 13 | 3 | 0 | 0 | 3 |
-| `Macro` | `` | 16 | 3 | 0 | 0 | 3 |
-| `MacroHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `MacroInstruction` | `` | 15 | 3 | 0 | 0 | 3 |
-| `MacroShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `MacroUsage` | `` | 22 | 5 | 0 | 0 | 5 |
-| `MacroUsageShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `MailmergeTemplate` | `` | 17 | 2 | 0 | 0 | 2 |
-| `ManagedContent` | `` | 15 | 3 | 0 | 0 | 3 |
-| `ManagedContentChannel` | `` | 16 | 2 | 0 | 0 | 2 |
-| `ManagedContentSpace` | `` | 13 | 2 | 0 | 0 | 2 |
-| `ManagedContentVariant` | `` | 20 | 3 | 0 | 0 | 3 |
-| `MatchingInformation` | `` | 14 | 4 | 0 | 0 | 4 |
-| `MatchingRule` | `` | 17 | 2 | 0 | 0 | 2 |
-| `MatchingRuleItem` | `` | 12 | 3 | 0 | 0 | 3 |
-| `MessagingChannel` | `` | 33 | 7 | 0 | 0 | 7 |
-| `MessagingChannelSkill` | `` | 9 | 4 | 0 | 0 | 4 |
-| `MessagingChannelUsage` | `` | 15 | 3 | 0 | 0 | 3 |
-| `MessagingConfiguration` | `` | 12 | 2 | 0 | 0 | 2 |
-| `MessagingDeliveryError` | `` | 18 | 5 | 0 | 0 | 5 |
-| `MessagingEndUser` | `` | 19 | 4 | 0 | 0 | 4 |
-| `MessagingEndUserHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `MessagingEndUserShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `MessagingLink` | `` | 12 | 4 | 0 | 0 | 4 |
-| `MessagingSession` | `` | 36 | 9 | 0 | 0 | 9 |
-| `MessagingSessionFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `MessagingSessionHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `MessagingSessionMetrics` | `` | 11 | 3 | 0 | 0 | 3 |
-| `MessagingSessionShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `MessagingTemplate` | `` | 12 | 2 | 0 | 0 | 2 |
-| `MilestoneType` | `` | 9 | 2 | 0 | 0 | 2 |
-| `MlFeatureValueMetric` | `` | 12 | 2 | 0 | 0 | 2 |
-| `MlIntentUtterance` | `` | 11 | 2 | 0 | 0 | 2 |
-| `MlIntentUtteranceSuggestion` | `` | 14 | 3 | 0 | 0 | 3 |
-| `MobSecurityCertPinConfig` | `` | 19 | 3 | 0 | 0 | 3 |
-| `MobileApplicationDetail` | `` | 23 | 2 | 0 | 0 | 2 |
-| `MobileSecurityAssignment` | `` | 13 | 4 | 0 | 0 | 4 |
-| `MobileSecurityPolicy` | `` | 19 | 3 | 0 | 0 | 3 |
-| `MobileSecurityUserMetric` | `` | 4 | 0 | 0 | 0 | 0 |
-| `MsgChannelAvailability` | `` | 9 | 3 | 0 | 0 | 3 |
-| `MsgChannelLanguageKeyword` | `` | 19 | 4 | 0 | 0 | 4 |
-| `MsgChannelUsageExternalOrg` | `` | 10 | 3 | 0 | 0 | 3 |
-| `MutingPermissionSet` | `` | 554 | 2 | 0 | 0 | 2 |
-| `MyDomainDiscoverableLogin` | `` | 13 | 4 | 0 | 0 | 4 |
-| `NamedCredential` | `` | 24 | 3 | 0 | 0 | 3 |
-| `NavigationLinkSet` | `` | 12 | 3 | 0 | 0 | 3 |
-| `NavigationMenuItem` | `` | 18 | 6 | 0 | 0 | 6 |
-| `Network` | `` | 78 | 17 | 0 | 0 | 17 |
-| `NetworkActivityAudit` | `` | 16 | 6 | 0 | 0 | 6 |
-| `NetworkAffinity` | `` | 9 | 4 | 0 | 0 | 4 |
-| `NetworkAuthApiSettings` | `` | 32 | 9 | 0 | 0 | 9 |
-| `NetworkDataCategory` | `` | 14 | 4 | 0 | 0 | 4 |
-| `NetworkDiscoverableLogin` | `` | 12 | 5 | 0 | 0 | 5 |
-| `NetworkEmailTmplAllowlist` | `` | 9 | 4 | 0 | 0 | 4 |
-| `NetworkFeedResponseMetric` | `` | 19 | 8 | 0 | 0 | 8 |
-| `NetworkMember` | `` | 28 | 3 | 0 | 0 | 3 |
-| `NetworkMemberGroup` | `` | 9 | 4 | 0 | 0 | 4 |
-| `NetworkModeration` | `` | 8 | 3 | 0 | 0 | 3 |
-| `NetworkPageOverride` | `` | 10 | 3 | 0 | 0 | 3 |
-| `NetworkSelfRegistration` | `` | 21 | 6 | 0 | 0 | 6 |
-| `NetworkUserHistoryRecent` | `` | 20 | 7 | 0 | 0 | 7 |
-| `Note` | `` | 13 | 4 | 0 | 0 | 4 |
-| `OauthCustomScope` | `` | 13 | 2 | 0 | 0 | 2 |
-| `OauthCustomScopeApp` | `` | 8 | 3 | 0 | 0 | 3 |
-| `OauthToken` | `` | 10 | 2 | 0 | 0 | 2 |
-| `OauthTokenExchHandlerApp` | `` | 12 | 6 | 0 | 0 | 6 |
-| `OauthTokenExchangeHandler` | `` | 21 | 3 | 0 | 0 | 3 |
-| `ObjectDataImport` | `` | 16 | 3 | 0 | 0 | 3 |
-| `ObjectDataImportReference` | `` | 10 | 3 | 0 | 0 | 3 |
-| `ObjectDataImportShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ObjectMetadataTag` | `` | 13 | 3 | 0 | 0 | 3 |
-| `ObjectMilestonePauseTime` | `` | 13 | 3 | 0 | 0 | 3 |
-| `ObjectPermissions` | `110` | 15 | 3 | 0 | 0 | 3 |
-| `ObjectRelatedUrl` | `` | 14 | 3 | 0 | 0 | 3 |
-| `OmniRoutingEventStore` | `` | 14 | 6 | 0 | 0 | 6 |
-| `OmniSpvsrConfigAIAgent` | `` | 9 | 4 | 0 | 0 | 4 |
-| `OmniSupervisorConfig` | `` | 12 | 2 | 0 | 0 | 2 |
-| `OmniSupervisorConfigAction` | `` | 10 | 3 | 0 | 0 | 3 |
-| `OmniSupervisorConfigGroup` | `` | 9 | 4 | 0 | 0 | 4 |
-| `OmniSupervisorConfigProfile` | `` | 9 | 4 | 0 | 0 | 4 |
-| `OmniSupervisorConfigQueue` | `` | 9 | 4 | 0 | 0 | 4 |
-| `OmniSupervisorConfigSkill` | `` | 9 | 4 | 0 | 0 | 4 |
-| `OmniSupervisorConfigTab` | `` | 10 | 3 | 0 | 0 | 3 |
-| `OmniSupervisorConfigUser` | `` | 9 | 4 | 0 | 0 | 4 |
-| `OnboardingMetrics` | `` | 10 | 3 | 0 | 0 | 3 |
-| `OperatingHours` | `` | 14 | 3 | 0 | 0 | 3 |
-| `OperatingHoursFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OperatingHoursHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `OperatingHoursHoliday` | `` | 14 | 4 | 0 | 0 | 4 |
-| `OperatingHoursHolidayFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OperatingHoursHolidayHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `OperatingHoursShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Opportunity` | `006` | 42 | 11 | 1 | 6 | 11 |
-| `OpportunityCompetitor` | `` | 12 | 3 | 0 | 0 | 3 |
-| `OpportunityContactRole` | `00K` | 13 | 4 | 0 | 2 | 4 |
-| `OpportunityFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OpportunityFieldHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `OpportunityHistory` | `` | 16 | 2 | 0 | 0 | 2 |
-| `OpportunityLineItem` | `00k` | 28 | 5 | 0 | 0 | 5 |
-| `OpportunityLineItemSchedule` | `` | 15 | 3 | 0 | 0 | 3 |
-| `OpportunityPartner` | `` | 13 | 5 | 0 | 0 | 5 |
-| `OpportunityRelatedDeleteLog` | `` | 16 | 3 | 0 | 0 | 3 |
-| `OpportunityShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `OpportunityStage` | `` | 16 | 2 | 0 | 0 | 2 |
-| `OpportunityTeamMember` | `` | 16 | 4 | 0 | 0 | 4 |
-| `OpportunityTeamMemberHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `Order` | `801` | 66 | 12 | 1 | 7 | 12 |
-| `OrderAdjustmentGroup` | `` | 23 | 6 | 0 | 0 | 6 |
-| `OrderAdjustmentGroupFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderAdjustmentGroupHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `OrderAdjustmentGroupSummary` | `` | 19 | 6 | 0 | 0 | 6 |
-| `OrderAdjustmentGroupSummaryFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderChangeLog` | `` | 19 | 6 | 0 | 0 | 6 |
-| `OrderChangeLogFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderChangeLogHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `OrderChgReasonCategMap` | `` | 17 | 3 | 0 | 0 | 3 |
-| `OrderChgReasonCategMapShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `OrderDeliveryGroup` | `` | 47 | 5 | 0 | 0 | 5 |
-| `OrderDeliveryGroupFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderDeliveryGroupHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `OrderDeliveryGroupSummary` | `` | 47 | 5 | 0 | 0 | 5 |
-| `OrderDeliveryGroupSummaryFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderDeliveryMethod` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderDeliveryMethodFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderDeliveryMethodHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `OrderDeliveryMethodShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `OrderFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `OrderItem` | `802` | 41 | 8 | 0 | 4 | 8 |
-| `OrderItemAdjustmentLineItem` | `` | 27 | 8 | 0 | 0 | 8 |
-| `OrderItemAdjustmentLineItemFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderItemAdjustmentLineItemHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `OrderItemAdjustmentLineSummary` | `` | 21 | 8 | 0 | 0 | 8 |
-| `OrderItemAdjustmentLineSummaryFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderItemFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderItemHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `OrderItemRelationship` | `` | 22 | 8 | 0 | 0 | 8 |
-| `OrderItemRelationshipFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderItemRelationshipHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `OrderItemSummary` | `` | 69 | 10 | 0 | 0 | 10 |
-| `OrderItemSummaryChange` | `` | 17 | 5 | 0 | 0 | 5 |
-| `OrderItemSummaryFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderItemSummaryRelationship` | `` | 21 | 8 | 0 | 0 | 8 |
-| `OrderItemTaxLineItem` | `` | 21 | 6 | 0 | 0 | 6 |
-| `OrderItemTaxLineItemFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderItemTaxLineItemHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `OrderItemTaxLineItemSummary` | `` | 22 | 6 | 0 | 0 | 6 |
-| `OrderItemTaxLineItemSummaryFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderItemType` | `` | 11 | 2 | 0 | 0 | 2 |
-| `OrderPaymentSummary` | `` | 32 | 6 | 0 | 0 | 6 |
-| `OrderPaymentSummaryFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderPaymentSummaryReference` | `` | 19 | 4 | 0 | 0 | 4 |
-| `OrderPaymentSummaryShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `OrderShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `OrderStatus` | `` | 11 | 2 | 0 | 0 | 2 |
-| `OrderSummary` | `` | 84 | 11 | 0 | 0 | 11 |
-| `OrderSummaryAdditionalInfo` | `` | 17 | 5 | 0 | 0 | 5 |
-| `OrderSummaryAdditionalInfoFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderSummaryAdditionalInfoShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `OrderSummaryFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `OrderSummaryRelationship` | `` | 16 | 6 | 0 | 0 | 6 |
-| `OrderSummaryRoutingSchedule` | `` | 17 | 4 | 0 | 0 | 4 |
-| `OrderSummaryRoutingScheduleShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `OrderSummaryShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `OrgEmailAddressSecurity` | `` | 4 | 2 | 0 | 0 | 2 |
-| `OrgMetric` | `` | 12 | 3 | 0 | 0 | 3 |
-| `OrgMetricScanSummary` | `` | 18 | 3 | 0 | 0 | 3 |
-| `OrgWideEmailAddress` | `` | 11 | 2 | 0 | 0 | 2 |
-| `Organization` | `00D` | 54 | 2 | 0 | 14 | 2 |
-| `OutgoingEmail` | `` | 15 | 3 | 0 | 0 | 3 |
-| `OutgoingEmailRelation` | `` | 5 | 2 | 0 | 0 | 2 |
-| `OwnerChangeOptionInfo` | `` | 8 | 2 | 0 | 0 | 2 |
-| `PackageLicense` | `` | 11 | 0 | 0 | 0 | 0 |
-| `Participant` | `` | 10 | 2 | 0 | 0 | 2 |
-| `Partner` | `` | 14 | 6 | 0 | 0 | 6 |
-| `PartnerRole` | `` | 10 | 2 | 0 | 0 | 2 |
-| `PartyConsent` | `` | 21 | 7 | 0 | 0 | 7 |
-| `PartyConsentFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `PartyConsentHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `PartyConsentShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Payment` | `` | 53 | 8 | 0 | 0 | 8 |
-| `PaymentAuthAdjustment` | `` | 30 | 4 | 0 | 0 | 4 |
-| `PaymentAuthorization` | `` | 38 | 7 | 0 | 0 | 7 |
-| `PaymentCredit` | `` | 27 | 7 | 0 | 0 | 7 |
-| `PaymentCreditLinePayment` | `` | 21 | 6 | 0 | 0 | 6 |
-| `PaymentCreditTransaction` | `` | 19 | 4 | 0 | 0 | 4 |
-| `PaymentFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `PaymentGateway` | `` | 16 | 4 | 0 | 0 | 4 |
-| `PaymentGatewayLog` | `` | 30 | 5 | 0 | 0 | 5 |
-| `PaymentGatewayProvider` | `` | 15 | 3 | 0 | 0 | 3 |
-| `PaymentGroup` | `` | 10 | 3 | 0 | 0 | 3 |
-| `PaymentLineInvoice` | `` | 26 | 6 | 0 | 0 | 6 |
-| `PaymentMethod` | `` | 27 | 3 | 0 | 0 | 3 |
-| `PendingOrderSummary` | `` | 23 | 6 | 0 | 0 | 6 |
-| `PendingServiceRouting` | `` | 38 | 10 | 0 | 0 | 10 |
-| `PendingServiceRoutingInteractionInfo` | `` | 14 | 5 | 0 | 0 | 5 |
-| `PendingServiceRoutingShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Period` | `` | 11 | 1 | 0 | 0 | 1 |
-| `PermissionSet` | `0PS` | 562 | 5 | 0 | 1 | 5 |
-| `PermissionSetAssignment` | `0Pa` | 8 | 3 | 0 | 0 | 3 |
-| `PermissionSetEventStore` | `` | 26 | 3 | 0 | 0 | 3 |
-| `PermissionSetGroup` | `` | 14 | 2 | 0 | 0 | 2 |
-| `PermissionSetGroupComponent` | `` | 9 | 4 | 0 | 0 | 4 |
-| `PermissionSetLicense` | `` | 563 | 2 | 0 | 0 | 2 |
-| `PermissionSetLicenseAssign` | `` | 9 | 4 | 0 | 0 | 4 |
-| `PermissionSetLicenseDefinition` | `` | 15 | 2 | 0 | 0 | 2 |
-| `PermissionSetTabSetting` | `` | 5 | 1 | 0 | 0 | 1 |
-| `PersonAccountOwnerPowerUser` | `` | 12 | 3 | 0 | 0 | 3 |
-| `PersonalizationTargetInfo` | `` | 13 | 4 | 0 | 0 | 4 |
-| `PickTicket` | `` | 16 | 5 | 0 | 0 | 5 |
-| `PickTicketAssignment` | `` | 11 | 4 | 0 | 0 | 4 |
-| `PickTicketFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `PickTicketProduct` | `` | 17 | 4 | 0 | 0 | 4 |
-| `PickTicketProductFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `PickTicketShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `PicklistValueInfo` | `` | 8 | 1 | 0 | 0 | 1 |
-| `PipelineInspectionListView` | `` | 18 | 4 | 0 | 0 | 4 |
-| `PlatformAction` | `` | 31 | 2 | 0 | 0 | 2 |
-| `PlatformCachePartition` | `` | 13 | 2 | 0 | 0 | 2 |
-| `PlatformCachePartitionType` | `` | 13 | 3 | 0 | 0 | 3 |
-| `PlatformEventUsageMetric` | `` | 6 | 0 | 0 | 0 | 0 |
-| `PortalDelegablePermissionSet` | `` | 12 | 4 | 0 | 0 | 4 |
-| `PplnInspListViewCalcClmn` | `` | 11 | 3 | 0 | 0 | 3 |
-| `PresenceConfigDeclineReason` | `` | 9 | 4 | 0 | 0 | 4 |
-| `PresenceDeclineReason` | `` | 10 | 2 | 0 | 0 | 2 |
-| `PresenceUserConfig` | `` | 29 | 5 | 0 | 0 | 5 |
-| `PresenceUserConfigProfile` | `` | 9 | 4 | 0 | 0 | 4 |
-| `PresenceUserConfigUser` | `` | 9 | 4 | 0 | 0 | 4 |
-| `Pricebook2` | `01s` | 15 | 2 | 1 | 0 | 2 |
-| `Pricebook2History` | `` | 10 | 2 | 0 | 0 | 2 |
-| `PricebookEntry` | `01u` | 16 | 4 | 0 | 0 | 4 |
-| `PricebookEntryHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ProbeTestMdt__mdt` | `` | 9 | 0 | 0 | 0 | 0 |
-| `ProbeTestObject__Share` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ProbeTestObject__c` | `` | 15 | 4 | 0 | 0 | 4 |
-| `ProbeTestSetting__c` | `` | 13 | 4 | 0 | 0 | 4 |
-| `Problem` | `` | 27 | 5 | 0 | 0 | 5 |
-| `ProblemFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ProblemHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ProblemIncident` | `` | 13 | 4 | 0 | 0 | 4 |
-| `ProblemIncidentFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ProblemIncidentHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ProblemRelatedItem` | `` | 14 | 4 | 0 | 0 | 4 |
-| `ProblemRelatedItemFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ProblemRelatedItemHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ProblemShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ProcessDefinition` | `` | 13 | 2 | 0 | 0 | 2 |
-| `ProcessException` | `` | 25 | 7 | 0 | 0 | 7 |
-| `ProcessExceptionShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ProcessFlowMigration` | `` | 13 | 2 | 0 | 0 | 2 |
-| `ProcessInstance` | `` | 16 | 6 | 0 | 0 | 6 |
-| `ProcessInstanceNode` | `` | 16 | 5 | 0 | 0 | 5 |
-| `ProcessInstanceStep` | `` | 13 | 5 | 0 | 0 | 5 |
-| `ProcessInstanceWorkitem` | `` | 11 | 4 | 0 | 0 | 4 |
-| `ProcessNode` | `` | 6 | 1 | 0 | 0 | 1 |
-| `Product2` | `01t` | 29 | 3 | 1 | 8 | 3 |
-| `Product2Feed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `Product2History` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ProductAttribute` | `` | 12 | 4 | 0 | 0 | 4 |
-| `ProductAttributeSet` | `` | 12 | 2 | 0 | 0 | 2 |
-| `ProductAttributeSetItem` | `` | 12 | 3 | 0 | 0 | 3 |
-| `ProductAttributeSetProduct` | `` | 11 | 4 | 0 | 0 | 4 |
-| `ProductCatalog` | `` | 13 | 3 | 0 | 0 | 3 |
-| `ProductCatalogFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ProductCatalogHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ProductCatalogShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ProductCategory` | `` | 17 | 4 | 0 | 0 | 4 |
-| `ProductCategoryFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ProductCategoryHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ProductCategoryProduct` | `` | 14 | 5 | 0 | 0 | 5 |
-| `ProductCategoryProductHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ProductEntitlementTemplate` | `` | 6 | 3 | 0 | 0 | 3 |
-| `ProductRelatedComponent` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ProductRelationshipType` | `` | 12 | 2 | 0 | 0 | 2 |
-| `Profile` | `00e` | 556 | 3 | 0 | 1 | 3 |
-| `Promotion` | `` | 18 | 4 | 0 | 0 | 4 |
-| `PromotionFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `PromotionHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `PromotionLineItemRule` | `` | 15 | 5 | 0 | 0 | 5 |
-| `PromotionLineItemRuleShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `PromotionMarketSegment` | `` | 13 | 4 | 0 | 0 | 4 |
-| `PromotionMarketSegmentFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `PromotionMarketSegmentHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `PromotionQualifier` | `` | 23 | 5 | 0 | 0 | 5 |
-| `PromotionQualifierFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `PromotionQualifierHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `PromotionSegment` | `` | 12 | 3 | 0 | 0 | 3 |
-| `PromotionSegmentBuyerGroup` | `` | 13 | 4 | 0 | 0 | 4 |
-| `PromotionSegmentBuyerGroupFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `PromotionSegmentBuyerGroupHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `PromotionSegmentFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `PromotionSegmentHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `PromotionSegmentSalesStore` | `` | 13 | 4 | 0 | 0 | 4 |
-| `PromotionSegmentSalesStoreFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `PromotionSegmentSalesStoreHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `PromotionSegmentShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `PromotionShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `PromotionTarget` | `` | 25 | 5 | 0 | 0 | 5 |
-| `PromotionTargetFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `PromotionTargetHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `PromotionTier` | `` | 13 | 3 | 0 | 0 | 3 |
-| `PromotionTierFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `PromotionTierHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `Prompt` | `` | 11 | 2 | 0 | 0 | 2 |
-| `PromptAction` | `` | 22 | 5 | 0 | 0 | 5 |
-| `PromptActionShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `PromptError` | `` | 14 | 4 | 0 | 0 | 4 |
-| `PromptErrorShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `PromptVersion` | `` | 53 | 7 | 0 | 0 | 7 |
-| `Publisher` | `` | 7 | 0 | 0 | 0 | 0 |
-| `PushTopic` | `` | 18 | 2 | 0 | 0 | 2 |
-| `QueueRoutingConfig` | `` | 18 | 3 | 0 | 0 | 3 |
-| `QueueSobject` | `` | 5 | 2 | 0 | 0 | 2 |
-| `QuickText` | `` | 17 | 3 | 0 | 0 | 3 |
-| `QuickTextHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `QuickTextShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `QuickTextUsage` | `` | 16 | 5 | 0 | 0 | 5 |
-| `QuickTextUsageShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Quote` | `0Q0` | 74 | 8 | 1 | 6 | 8 |
-| `QuoteDocument` | `` | 14 | 4 | 0 | 0 | 4 |
-| `QuoteFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `QuoteHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `QuoteLineItem` | `` | 28 | 6 | 0 | 0 | 6 |
-| `QuoteLineItemHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `QuoteShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `RecentlyViewed` | `` | 20 | 4 | 0 | 0 | 4 |
-| `Recommendation` | `` | 20 | 4 | 0 | 0 | 4 |
-| `RecommendationResponse` | `` | 21 | 3 | 0 | 0 | 3 |
-| `RecordAction` | `` | 18 | 4 | 0 | 0 | 4 |
-| `RecordActionHistory` | `` | 16 | 4 | 0 | 0 | 4 |
-| `RecordType` | `012` | 14 | 3 | 0 | 1 | 3 |
-| `RedirectWhitelistUrl` | `` | 12 | 2 | 0 | 0 | 2 |
-| `Refund` | `` | 44 | 7 | 0 | 0 | 7 |
-| `RefundLinePayment` | `` | 25 | 6 | 0 | 0 | 6 |
-| `RelatedListColumnDefinition` | `` | 11 | 1 | 0 | 0 | 1 |
-| `RelatedListDefinition` | `` | 11 | 1 | 0 | 0 | 1 |
-| `RelationshipDomain` | `` | 11 | 2 | 0 | 0 | 2 |
-| `RelationshipInfo` | `` | 8 | 1 | 0 | 0 | 1 |
-| `ReplyEmailSettings` | `` | 18 | 2 | 0 | 0 | 2 |
-| `Report` | `` | 17 | 3 | 0 | 0 | 3 |
-| `ReportAnomalyEventStore` | `` | 21 | 2 | 0 | 0 | 2 |
-| `ReportAnomalyEventStoreFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ReportEvent` | `` | 40 | 8 | 0 | 0 | 8 |
-| `ReportFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ReputationLevel` | `` | 11 | 3 | 0 | 0 | 3 |
-| `ReputationPointsRule` | `` | 10 | 3 | 0 | 0 | 3 |
-| `ResourceAbsence` | `` | 25 | 3 | 0 | 0 | 3 |
-| `ResourceAbsenceFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ResourceAbsenceHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ResourcePreference` | `` | 14 | 4 | 0 | 0 | 4 |
-| `ResourcePreferenceFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ResourcePreferenceHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ReturnOrder` | `` | 59 | 11 | 0 | 0 | 11 |
-| `ReturnOrderFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ReturnOrderHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ReturnOrderItemAdjustment` | `` | 16 | 5 | 0 | 0 | 5 |
-| `ReturnOrderItemTax` | `` | 18 | 6 | 0 | 0 | 6 |
-| `ReturnOrderLineItem` | `` | 43 | 10 | 0 | 0 | 10 |
-| `ReturnOrderLineItemFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ReturnOrderLineItemHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ReturnOrderShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `SPSamlAttributes` | `` | 10 | 3 | 0 | 0 | 3 |
-| `SalesChannel` | `` | 17 | 3 | 0 | 0 | 3 |
-| `SalesChannelFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `SalesChannelShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `SalesStore` | `` | 6 | 1 | 0 | 0 | 1 |
-| `SamlSsoConfig` | `` | 32 | 4 | 0 | 0 | 4 |
-| `Scontrol` | `` | 18 | 2 | 0 | 0 | 2 |
-| `Scorecard` | `` | 14 | 3 | 0 | 0 | 3 |
-| `ScorecardAssociation` | `` | 13 | 4 | 0 | 0 | 4 |
-| `ScorecardMetric` | `` | 13 | 4 | 0 | 0 | 4 |
-| `ScorecardShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `SearchActivity` | `` | 20 | 3 | 0 | 0 | 3 |
-| `SearchLayout` | `` | 12 | 2 | 0 | 0 | 2 |
-| `SearchPromotionRule` | `` | 9 | 3 | 0 | 0 | 3 |
-| `SecurityCustomBaseline` | `` | 13 | 2 | 0 | 0 | 2 |
-| `SecurityHealthCheckAlertRecipient` | `` | 12 | 2 | 0 | 0 | 2 |
-| `SecurityHealthCheckResult` | `` | 14 | 2 | 0 | 0 | 2 |
-| `Seller` | `` | 17 | 4 | 0 | 0 | 4 |
-| `SellerHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `SellerShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ServiceAppointment` | `` | 65 | 12 | 0 | 0 | 12 |
-| `ServiceAppointmentAttendee` | `` | 15 | 5 | 0 | 0 | 5 |
-| `ServiceAppointmentAttendeeFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ServiceAppointmentAttendeeHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ServiceAppointmentAttendeeShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ServiceAppointmentFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ServiceAppointmentHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ServiceAppointmentShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ServiceAppointmentStatus` | `` | 11 | 2 | 0 | 0 | 2 |
-| `ServiceChannel` | `` | 22 | 4 | 0 | 0 | 4 |
-| `ServiceChannelStatus` | `` | 9 | 4 | 0 | 0 | 4 |
-| `ServiceContract` | `` | 52 | 8 | 0 | 0 | 8 |
-| `ServiceContractFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ServiceContractHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ServiceContractShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ServicePresenceStatus` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ServiceResource` | `` | 18 | 6 | 0 | 0 | 6 |
-| `ServiceResourceFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ServiceResourceHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ServiceResourceShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ServiceResourceSkill` | `` | 16 | 4 | 0 | 0 | 4 |
-| `ServiceResourceSkillFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ServiceResourceSkillHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ServiceSetupProvisioning` | `` | 16 | 2 | 0 | 0 | 2 |
-| `ServiceTerritory` | `` | 30 | 7 | 0 | 0 | 7 |
-| `ServiceTerritoryFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ServiceTerritoryHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ServiceTerritoryMember` | `` | 27 | 5 | 0 | 0 | 5 |
-| `ServiceTerritoryMemberFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ServiceTerritoryMemberHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ServiceTerritoryShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ServiceTerritoryWorkType` | `` | 13 | 4 | 0 | 0 | 4 |
-| `ServiceTerritoryWorkTypeFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ServiceTerritoryWorkTypeHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `SessionHijackingEventStore` | `` | 30 | 2 | 0 | 0 | 2 |
-| `SessionHijackingEventStoreFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `SessionPermSetActivation` | `` | 12 | 6 | 0 | 0 | 6 |
-| `SetupAssistantStep` | `` | 11 | 2 | 0 | 0 | 2 |
-| `SetupAuditTrail` | `` | 11 | 1 | 0 | 0 | 1 |
-| `SetupEntityAccess` | `0J0` | 5 | 2 | 0 | 0 | 2 |
-| `SfdcPartnerSbscrOffer` | `` | 53 | 3 | 0 | 0 | 3 |
-| `SfdcPartnerSbscrOfferHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `SfdcPartnerSbscrOfferItem` | `` | 18 | 3 | 0 | 0 | 3 |
-| `SfdcPartnerSbscrOfferShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `SharingRecordCollection` | `` | 16 | 4 | 0 | 0 | 4 |
-| `SharingRecordCollectionItem` | `` | 12 | 4 | 0 | 0 | 4 |
-| `SharingRecordCollectionMember` | `` | 11 | 4 | 0 | 0 | 4 |
-| `SharingRecordCollectionShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Shift` | `` | 28 | 8 | 0 | 0 | 8 |
-| `ShiftEngagementChannel` | `` | 14 | 4 | 0 | 0 | 4 |
-| `ShiftEngagementChannelFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ShiftEngagementChannelHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ShiftFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ShiftHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ShiftShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ShiftStatus` | `` | 11 | 2 | 0 | 0 | 2 |
-| `ShiftWorkTopic` | `` | 18 | 5 | 0 | 0 | 5 |
-| `ShiftWorkTopicFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ShiftWorkTopicHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `Shipment` | `` | 19 | 8 | 0 | 0 | 8 |
-| `ShipmentFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ShipmentHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ShipmentItem` | `` | 16 | 4 | 0 | 0 | 4 |
-| `ShipmentItemFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ShipmentItemHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ShipmentShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ShippingCarrier` | `` | 15 | 3 | 0 | 0 | 3 |
-| `ShippingCarrierFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ShippingCarrierHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ShippingCarrierMethod` | `` | 19 | 4 | 0 | 0 | 4 |
-| `ShippingCarrierMethodFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `ShippingCarrierMethodHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ShippingCarrierMethodShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ShippingCarrierShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ShippingConfigurationSet` | `` | 13 | 4 | 0 | 0 | 4 |
-| `ShippingConfigurationSetShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ShippingRateArea` | `` | 11 | 3 | 0 | 0 | 3 |
-| `ShippingRateGroup` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Site` | `` | 53 | 6 | 0 | 0 | 6 |
-| `SiteDetail` | `` | 4 | 0 | 0 | 0 | 0 |
-| `SiteFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `SiteHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `SiteIframeWhiteListUrl` | `` | 9 | 3 | 0 | 0 | 3 |
-| `SiteMarketingDataExtensionMapping` | `` | 16 | 3 | 0 | 0 | 3 |
-| `SiteRedirectMapping` | `` | 12 | 3 | 0 | 0 | 3 |
-| `Skill` | `` | 13 | 3 | 0 | 0 | 3 |
-| `SkillProfile` | `` | 9 | 4 | 0 | 0 | 4 |
-| `SkillRequirement` | `` | 14 | 4 | 0 | 0 | 4 |
-| `SkillRequirementFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `SkillRequirementHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `SkillType` | `` | 10 | 2 | 0 | 0 | 2 |
-| `SkillUser` | `` | 9 | 4 | 0 | 0 | 4 |
-| `SlaProcess` | `` | 15 | 3 | 0 | 0 | 3 |
-| `SlackChannelRelatedRecord` | `` | 11 | 2 | 0 | 0 | 2 |
-| `SocialPersona` | `` | 37 | 3 | 0 | 0 | 3 |
-| `SocialPersonaHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `SocialPost` | `` | 67 | 10 | 0 | 0 | 10 |
-| `SocialPostFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `SocialPostHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `SocialPostShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Solution` | `` | 20 | 3 | 0 | 0 | 3 |
-| `SolutionFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `SolutionHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `SolutionStatus` | `` | 11 | 2 | 0 | 0 | 2 |
-| `StagedInviteeEmail` | `` | 10 | 3 | 0 | 0 | 3 |
-| `StagedInviteeEmailShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Stamp` | `` | 10 | 3 | 0 | 0 | 3 |
-| `StampAssignment` | `` | 9 | 4 | 0 | 0 | 4 |
-| `StandardShippingRate` | `` | 19 | 4 | 0 | 0 | 4 |
-| `StaticResource` | `` | 13 | 2 | 0 | 0 | 2 |
-| `StreamingChannel` | `` | 14 | 3 | 0 | 0 | 3 |
-| `StreamingChannelShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `SupervisorAgentConfigSkill` | `` | 9 | 4 | 0 | 0 | 4 |
-| `Survey` | `` | 20 | 5 | 0 | 0 | 5 |
-| `SurveyEmailBranding` | `` | 15 | 4 | 0 | 0 | 4 |
-| `SurveyEngagementContext` | `` | 14 | 5 | 0 | 0 | 5 |
-| `SurveyEngagementContextShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `SurveyFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `SurveyInvitation` | `` | 27 | 10 | 0 | 0 | 10 |
-| `SurveyInvitationShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `SurveyPage` | `` | 12 | 3 | 0 | 0 | 3 |
-| `SurveyQuestion` | `` | 23 | 5 | 0 | 0 | 5 |
-| `SurveyQuestionChoice` | `` | 14 | 4 | 0 | 0 | 4 |
-| `SurveyQuestionResponse` | `` | 22 | 7 | 0 | 0 | 7 |
-| `SurveyQuestionScore` | `` | 23 | 7 | 0 | 0 | 7 |
-| `SurveyResponse` | `` | 25 | 7 | 0 | 0 | 7 |
-| `SurveyShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `SurveyStyleSet` | `` | 13 | 2 | 0 | 0 | 2 |
-| `SurveyStyleSetStaticRsrc` | `` | 14 | 4 | 0 | 0 | 4 |
-| `SurveySubject` | `` | 17 | 7 | 0 | 0 | 7 |
-| `SurveyVersion` | `` | 18 | 5 | 0 | 0 | 5 |
-| `SurveyVersionAddlInfo` | `` | 16 | 5 | 0 | 0 | 5 |
-| `TabDefinition` | `` | 12 | 0 | 0 | 0 | 0 |
-| `TableauHostMapping` | `` | 13 | 3 | 0 | 0 | 3 |
-| `TableauHostMappingShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Task` | `00T` | 43 | 7 | 1 | 11 | 7 |
-| `TaskFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `TaskPriority` | `` | 11 | 2 | 0 | 0 | 2 |
-| `TaskRelation` | `` | 11 | 5 | 0 | 0 | 5 |
-| `TaskStatus` | `` | 11 | 2 | 0 | 0 | 2 |
-| `TaskWhoRelation` | `` | 11 | 5 | 0 | 0 | 5 |
-| `TenantUsageEntitlement` | `` | 19 | 2 | 0 | 0 | 2 |
-| `TestSuiteMembership` | `` | 9 | 4 | 0 | 0 | 4 |
-| `ThirdPartyAccountLink` | `` | 9 | 2 | 0 | 0 | 2 |
-| `ThreatDetectionFeedback` | `` | 13 | 4 | 0 | 0 | 4 |
-| `ThreatDetectionFeedbackFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `TimeSlot` | `` | 18 | 4 | 0 | 0 | 4 |
-| `TimeSlotHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `TodayGoal` | `` | 12 | 4 | 0 | 0 | 4 |
-| `TodayGoalShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Topic` | `` | 9 | 2 | 0 | 0 | 2 |
-| `TopicAssignment` | `` | 10 | 4 | 0 | 0 | 4 |
-| `TopicFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `TopicUserEvent` | `` | 6 | 3 | 0 | 0 | 3 |
-| `TransactionSecurityPolicy` | `` | 22 | 4 | 0 | 0 | 4 |
-| `Translation` | `` | 9 | 2 | 0 | 0 | 2 |
-| `UiFormulaCriterion` | `` | 12 | 3 | 0 | 0 | 3 |
-| `UiFormulaRule` | `` | 14 | 3 | 0 | 0 | 3 |
-| `UndecidedEventRelation` | `` | 13 | 5 | 0 | 0 | 5 |
-| `UniversalAnomalyEventStore` | `` | 21 | 2 | 0 | 0 | 2 |
-| `UniversalAnomalyEventStoreFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `UnstructuredStorageSpace` | `` | 22 | 4 | 0 | 0 | 4 |
-| `UnstructuredStorageSpaceShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `UriEvent` | `` | 18 | 2 | 0 | 0 | 2 |
-| `User` | `005` | 198 | 10 | 0 | 13 | 10 |
-| `UserAppInfo` | `` | 11 | 4 | 0 | 0 | 4 |
-| `UserAppMenuCustomization` | `` | 11 | 4 | 0 | 0 | 4 |
-| `UserAppMenuCustomizationShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `UserAppMenuItem` | `` | 16 | 1 | 0 | 0 | 1 |
-| `UserConfigTransferButton` | `` | 9 | 4 | 0 | 0 | 4 |
-| `UserConfigTransferSkill` | `` | 9 | 4 | 0 | 0 | 4 |
-| `UserCustomBadge` | `` | 10 | 3 | 0 | 0 | 3 |
-| `UserDefinedLabel` | `` | 14 | 3 | 0 | 0 | 3 |
-| `UserDefinedLabelAssignment` | `` | 13 | 5 | 0 | 0 | 5 |
-| `UserDefinedLabelAssignmentShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `UserDefinedLabelShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `UserEmailPreferredPerson` | `` | 12 | 4 | 0 | 0 | 4 |
-| `UserEmailPreferredPersonShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `UserEntityAccess` | `` | 13 | 1 | 0 | 0 | 1 |
-| `UserFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `UserFieldAccess` | `` | 8 | 1 | 0 | 0 | 1 |
-| `UserHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `UserLicense` | `100` | 13 | 0 | 0 | 0 | 0 |
-| `UserListView` | `` | 11 | 4 | 0 | 0 | 4 |
-| `UserListViewCriterion` | `` | 12 | 3 | 0 | 0 | 3 |
-| `UserLocalWebServerIdentity` | `` | 10 | 3 | 0 | 0 | 3 |
-| `UserLocalWebServerIdentityShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `UserLocationAssignment` | `` | 16 | 4 | 0 | 0 | 4 |
-| `UserLogin` | `` | 6 | 2 | 0 | 0 | 2 |
-| `UserPackageLicense` | `` | 8 | 4 | 0 | 0 | 4 |
-| `UserPermissionAccess` | `` | 546 | 0 | 0 | 0 | 0 |
-| `UserPreference` | `` | 5 | 1 | 0 | 0 | 1 |
-| `UserPrioritizedRecord` | `` | 10 | 4 | 0 | 0 | 4 |
-| `UserPrioritizedRecordShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `UserProvAccount` | `` | 19 | 4 | 0 | 0 | 4 |
-| `UserProvAccountStaging` | `` | 17 | 4 | 0 | 0 | 4 |
-| `UserProvMockTarget` | `` | 13 | 2 | 0 | 0 | 2 |
-| `UserProvisioningConfig` | `` | 21 | 4 | 0 | 0 | 4 |
-| `UserProvisioningLog` | `` | 14 | 4 | 0 | 0 | 4 |
-| `UserProvisioningRequest` | `` | 22 | 9 | 0 | 0 | 9 |
-| `UserProvisioningRequestShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `UserRecordAccess` | `` | 9 | 1 | 0 | 0 | 1 |
-| `UserRole` | `00E` | 17 | 5 | 0 | 5 | 5 |
-| `UserServicePresence` | `` | 22 | 5 | 0 | 0 | 5 |
-| `UserServicePresenceShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `UserSetupEntityAccess` | `` | 7 | 0 | 0 | 0 | 0 |
-| `UserShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `UserSharedFeature` | `` | 3 | 1 | 0 | 0 | 1 |
-| `UserTeamMember` | `` | 10 | 4 | 0 | 0 | 4 |
-| `VerificationHistory` | `` | 19 | 6 | 0 | 0 | 6 |
-| `VideoCall` | `` | 33 | 7 | 0 | 0 | 7 |
-| `VideoCallFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `VideoCallParticipant` | `` | 14 | 4 | 0 | 0 | 4 |
-| `VideoCallRecording` | `` | 20 | 3 | 0 | 0 | 3 |
-| `VideoCallShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `VideoVendorAdminConsent` | `` | 10 | 2 | 0 | 0 | 2 |
-| `VisualforceAccessMetrics` | `` | 7 | 2 | 0 | 0 | 2 |
-| `VoiceCall` | `` | 36 | 8 | 0 | 0 | 8 |
-| `VoiceCallFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `VoiceCallRecording` | `` | 13 | 5 | 0 | 0 | 5 |
-| `VoiceCallShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Vote` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Waitlist` | `` | 15 | 4 | 0 | 0 | 4 |
-| `WaitlistFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `WaitlistHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WaitlistParticipant` | `` | 19 | 7 | 0 | 0 | 7 |
-| `WaitlistParticipantFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `WaitlistParticipantHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WaitlistServiceResource` | `` | 15 | 4 | 0 | 0 | 4 |
-| `WaitlistServiceResourceFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `WaitlistServiceResourceHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WaitlistShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `WaitlistWorkType` | `` | 13 | 4 | 0 | 0 | 4 |
-| `WaitlistWorkTypeFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `WaitlistWorkTypeHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WaveAutoInstallRequest` | `` | 17 | 3 | 0 | 0 | 3 |
-| `WaveCompatibilityCheckItem` | `` | 15 | 3 | 0 | 0 | 3 |
-| `WebCart` | `` | 59 | 8 | 0 | 0 | 8 |
-| `WebCartAdjustmentBasis` | `` | 12 | 4 | 0 | 0 | 4 |
-| `WebCartAdjustmentGroup` | `` | 21 | 5 | 0 | 0 | 5 |
-| `WebCartCredit` | `` | 14 | 3 | 0 | 0 | 3 |
-| `WebCartHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WebCartShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `WebLink` | `` | 28 | 3 | 0 | 0 | 3 |
-| `WebStore` | `` | 23 | 3 | 0 | 0 | 3 |
-| `WebStoreBuyerGroup` | `` | 12 | 4 | 0 | 0 | 4 |
-| `WebStoreCatalog` | `` | 13 | 4 | 0 | 0 | 4 |
-| `WebStoreCatalogHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WebStoreInventorySource` | `` | 20 | 4 | 0 | 0 | 4 |
-| `WebStoreNetwork` | `` | 11 | 5 | 0 | 0 | 5 |
-| `WebStoreShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `WorkOrder` | `` | 57 | 16 | 0 | 0 | 16 |
-| `WorkOrderFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `WorkOrderHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WorkOrderLineItem` | `` | 48 | 12 | 0 | 0 | 12 |
-| `WorkOrderLineItemFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `WorkOrderLineItemHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WorkOrderLineItemStatus` | `` | 11 | 2 | 0 | 0 | 2 |
-| `WorkOrderShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `WorkOrderStatus` | `` | 11 | 2 | 0 | 0 | 2 |
-| `WorkPlan` | `` | 19 | 7 | 0 | 0 | 7 |
-| `WorkPlanFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `WorkPlanHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WorkPlanShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `WorkPlanTemplate` | `` | 15 | 3 | 0 | 0 | 3 |
-| `WorkPlanTemplateEntry` | `` | 14 | 4 | 0 | 0 | 4 |
-| `WorkPlanTemplateEntryFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `WorkPlanTemplateEntryHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WorkPlanTemplateFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `WorkPlanTemplateHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WorkPlanTemplateShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `WorkStep` | `` | 27 | 7 | 0 | 0 | 7 |
-| `WorkStepFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `WorkStepHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WorkStepStatus` | `` | 11 | 2 | 0 | 0 | 2 |
-| `WorkStepTemplate` | `` | 16 | 3 | 0 | 0 | 3 |
-| `WorkStepTemplateFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `WorkStepTemplateHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WorkStepTemplateShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `WorkType` | `` | 30 | 6 | 0 | 0 | 6 |
-| `WorkTypeFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `WorkTypeGroup` | `` | 16 | 3 | 0 | 0 | 3 |
-| `WorkTypeGroupFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `WorkTypeGroupHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WorkTypeGroupMember` | `` | 13 | 4 | 0 | 0 | 4 |
-| `WorkTypeGroupMemberFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `WorkTypeGroupMemberHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WorkTypeGroupShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `WorkTypeHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `WorkTypeShare` | `` | 9 | 3 | 0 | 0 | 3 |
+| Object | Coverage | Key Prefix | Fields | Relationships | Record Types | Picklists | References |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |
+| `AIApplication` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `AIApplicationConfig` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `AIInsightAction` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `AIInsightFeedback` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `AIInsightReason` | `shape` | `` | 20 | 4 | 0 | 0 | 4 |
+| `AIInsightValue` | `shape` | `` | 18 | 5 | 0 | 0 | 5 |
+| `AIRecordInsight` | `shape` | `` | 21 | 6 | 0 | 0 | 6 |
+| `AITrustAttrSetup` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `AITrustAttribute` | `shape` | `` | 14 | 2 | 0 | 0 | 2 |
+| `AcceptedEventRelation` | `shape` | `` | 13 | 5 | 0 | 0 | 5 |
+| `Account` | `behavior` | `001` | 56 | 7 | 1 | 7 | 7 |
+| `AccountBrand` | `shape` | `` | 28 | 5 | 0 | 0 | 5 |
+| `AccountBrandShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `AccountContactRelation` | `shape` | `` | 15 | 4 | 0 | 0 | 4 |
+| `AccountContactRole` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `AccountFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `AccountHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `AccountPartner` | `shape` | `` | 14 | 6 | 0 | 0 | 6 |
+| `AccountShare` | `shape` | `` | 15 | 4 | 0 | 0 | 4 |
+| `ActionLinkGroupTemplate` | `shape` | `` | 15 | 2 | 0 | 0 | 2 |
+| `ActionLinkTemplate` | `shape` | `` | 20 | 3 | 0 | 0 | 3 |
+| `ActiveFeatureLicenseMetric` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `ActivePermSetLicenseMetric` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ActiveProfileMetric` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `ActivityFieldHistory` | `shape` | `` | 19 | 4 | 0 | 0 | 4 |
+| `AdditionalNumber` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `Address` | `shape` | `` | 26 | 3 | 0 | 0 | 3 |
+| `AddressHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `AgentWork` | `shape` | `` | 50 | 12 | 0 | 0 | 12 |
+| `AgentWorkShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `AiJobRun` | `shape` | `` | 18 | 3 | 0 | 0 | 3 |
+| `AiJobRunShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `AiPluginUtteranceDef` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `AlternativePaymentMethod` | `shape` | `` | 48 | 5 | 0 | 0 | 5 |
+| `AlternativePaymentMethodShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `AnalyticsLicensedAsset` | `shape` | `` | 9 | 2 | 0 | 0 | 2 |
+| `AnalyticsUserAttrFuncTkn` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `AnalyticsUserAttrFuncTknShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `AnlytDataAssetEventStore` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `Announcement` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ApexClass` | `shape` | `` | 14 | 2 | 0 | 0 | 2 |
+| `ApexComponent` | `shape` | `` | 14 | 2 | 0 | 0 | 2 |
+| `ApexEmailNotification` | `shape` | `` | 9 | 3 | 0 | 0 | 3 |
+| `ApexLog` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `ApexPage` | `shape` | `` | 16 | 2 | 0 | 0 | 2 |
+| `ApexPageInfo` | `shape` | `` | 15 | 2 | 0 | 0 | 2 |
+| `ApexTestQueueItem` | `shape` | `` | 12 | 5 | 0 | 0 | 5 |
+| `ApexTestResult` | `shape` | `` | 20 | 7 | 0 | 0 | 7 |
+| `ApexTestResultLimits` | `shape` | `` | 20 | 3 | 0 | 0 | 3 |
+| `ApexTestRunResult` | `shape` | `` | 22 | 4 | 0 | 0 | 4 |
+| `ApexTestSuite` | `shape` | `` | 8 | 2 | 0 | 0 | 2 |
+| `ApexTrigger` | `shape` | `` | 23 | 2 | 0 | 0 | 2 |
+| `ApexTypeImplementor` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `ApiAnomalyEventStore` | `shape` | `` | 28 | 4 | 0 | 0 | 4 |
+| `ApiAnomalyEventStoreFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ApiEvent` | `shape` | `` | 40 | 8 | 0 | 0 | 8 |
+| `AppAnalyticsQueryRequest` | `shape` | `` | 24 | 2 | 0 | 0 | 2 |
+| `AppDefinition` | `shape` | `` | 25 | 2 | 0 | 0 | 2 |
+| `AppMenuItem` | `shape` | `` | 38 | 3 | 0 | 0 | 3 |
+| `AppTabMember` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `AppointmentAssignmentPolicy` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `AppointmentCategory` | `shape` | `` | 14 | 2 | 0 | 0 | 2 |
+| `AppointmentCategoryFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `AppointmentCategoryHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `AppointmentInvitation` | `shape` | `` | 23 | 6 | 0 | 0 | 6 |
+| `AppointmentInvitationFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `AppointmentInvitationHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `AppointmentInvitationShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `AppointmentInvitee` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `AppointmentScheduleAggr` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `AppointmentScheduleLog` | `shape` | `` | 16 | 5 | 0 | 0 | 5 |
+| `AppointmentSchedulingPolicy` | `shape` | `` | 23 | 3 | 0 | 0 | 3 |
+| `AppointmentTopicTimeSlot` | `shape` | `` | 14 | 6 | 0 | 0 | 6 |
+| `AppointmentTopicTimeSlotFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `AppointmentTopicTimeSlotHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `Approval` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `ApprovalSubmission` | `shape` | `` | 17 | 6 | 0 | 0 | 6 |
+| `ApprovalSubmissionDetail` | `shape` | `` | 17 | 5 | 0 | 0 | 5 |
+| `ApprovalSubmissionDetailFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ApprovalSubmissionDetailHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ApprovalSubmissionFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ApprovalSubmissionHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ApprovalSubmissionShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ApprovalWorkItem` | `shape` | `` | 19 | 7 | 0 | 0 | 7 |
+| `ApprovalWorkItemFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ApprovalWorkItemHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `Asset` | `shape` | `02i` | 47 | 11 | 1 | 3 | 11 |
+| `AssetFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `AssetHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `AssetRelationship` | `shape` | `` | 17 | 4 | 0 | 0 | 4 |
+| `AssetRelationshipFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `AssetRelationshipHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `AssetShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `AssignedResource` | `shape` | `` | 13 | 5 | 0 | 0 | 5 |
+| `AssignedResourceFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `AssignedResourceHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `AssignmentRule` | `shape` | `` | 9 | 2 | 0 | 0 | 2 |
+| `AssociatedLocation` | `shape` | `` | 17 | 4 | 0 | 0 | 4 |
+| `AssociatedLocationHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `AsyncApexJob` | `shape` | `` | 19 | 5 | 0 | 0 | 5 |
+| `AsyncOperationLog` | `shape` | `` | 22 | 3 | 0 | 0 | 3 |
+| `Attachment` | `behavior` | `00P` | 16 | 4 | 0 | 1 | 4 |
+| `Audience` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `AuraDefinition` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `AuraDefinitionBundle` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `AuraDefinitionBundleInfo` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `AuraDefinitionInfo` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `AuthConfig` | `shape` | `` | 18 | 2 | 0 | 0 | 2 |
+| `AuthConfigProviders` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `AuthProvParamFwdAllowlist` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `AuthProvider` | `shape` | `` | 45 | 8 | 0 | 0 | 8 |
+| `AuthSession` | `shape` | `` | 19 | 6 | 0 | 0 | 6 |
+| `AuthorizationForm` | `shape` | `` | 16 | 4 | 0 | 0 | 4 |
+| `AuthorizationFormConsent` | `shape` | `` | 19 | 7 | 0 | 0 | 7 |
+| `AuthorizationFormConsentHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `AuthorizationFormConsentShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `AuthorizationFormDataUse` | `shape` | `` | 13 | 5 | 0 | 0 | 5 |
+| `AuthorizationFormDataUseHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `AuthorizationFormDataUseShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `AuthorizationFormHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `AuthorizationFormShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `AuthorizationFormText` | `shape` | `` | 16 | 4 | 0 | 0 | 4 |
+| `AuthorizationFormTextFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `AuthorizationFormTextHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `BackgroundOperation` | `shape` | `` | 28 | 3 | 0 | 0 | 3 |
+| `BatchApexErrorEvent` | `shape` | `1Be` | 6 | 2 | 0 | 0 | 2 |
+| `BatchCalcJobDefinition` | `shape` | `` | 19 | 3 | 0 | 0 | 3 |
+| `BatchCalcJobDefinitionView` | `shape` | `` | 21 | 2 | 0 | 0 | 2 |
+| `BatchDataSource` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `BatchDataSrcFilterCriteria` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `BatchJob` | `shape` | `` | 31 | 4 | 0 | 0 | 4 |
+| `BatchJobDefinition` | `shape` | `` | 14 | 2 | 0 | 0 | 2 |
+| `BatchJobFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `BatchJobHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `BatchJobPart` | `shape` | `` | 32 | 4 | 0 | 0 | 4 |
+| `BatchJobPartFailedRecord` | `shape` | `` | 15 | 5 | 0 | 0 | 5 |
+| `BatchJobPartFailedRecordFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `BatchJobPartFailedRecordHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `BatchJobPartFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `BatchJobPartHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `BatchJobShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `BatchProcessJobDefView` | `shape` | `` | 16 | 2 | 0 | 0 | 2 |
+| `BatchProcessJobDefinition` | `shape` | `` | 22 | 3 | 0 | 0 | 3 |
+| `BotDefinition` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `BotVersion` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `BrandTemplate` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `BrandingSet` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `BrandingSetProperty` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `BriefcaseAssignment` | `shape` | `` | 10 | 4 | 0 | 0 | 4 |
+| `BriefcaseDefinition` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `BriefcaseRule` | `shape` | `` | 18 | 4 | 0 | 0 | 4 |
+| `BriefcaseRuleFilter` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `BrowserPolicyViolation` | `shape` | `` | 14 | 2 | 0 | 0 | 2 |
+| `BulkApiResultEventStore` | `shape` | `` | 20 | 5 | 0 | 0 | 5 |
+| `BusProcessFeedbackConfig` | `shape` | `` | 21 | 2 | 0 | 0 | 2 |
+| `BusinessBrand` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `BusinessBrandShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `BusinessHours` | `shape` | `` | 25 | 2 | 0 | 0 | 2 |
+| `BusinessProcess` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `BuyerGroup` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `BuyerGroupFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `BuyerGroupHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `BuyerGroupShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Calendar` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `CalendarView` | `shape` | `` | 20 | 5 | 0 | 0 | 5 |
+| `CalendarViewShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `CallCenter` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `CallCoachingMediaProvider` | `shape` | `` | 10 | 2 | 0 | 0 | 2 |
+| `Campaign` | `shape` | `701` | 35 | 6 | 1 | 2 | 6 |
+| `CampaignFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `CampaignHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `CampaignMember` | `behavior` | `00v` | 38 | 8 | 1 | 3 | 8 |
+| `CampaignMemberStatus` | `behavior` | `` | 12 | 3 | 0 | 0 | 3 |
+| `CampaignShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `CardPaymentMethod` | `shape` | `` | 57 | 4 | 0 | 0 | 4 |
+| `CartCheckoutSession` | `shape` | `` | 18 | 5 | 0 | 0 | 5 |
+| `CartDeliveryGroup` | `shape` | `` | 42 | 5 | 0 | 0 | 5 |
+| `CartDeliveryGroupMethod` | `shape` | `` | 27 | 7 | 0 | 0 | 7 |
+| `CartItem` | `shape` | `` | 56 | 8 | 0 | 0 | 8 |
+| `CartItemPriceAdjustment` | `shape` | `` | 25 | 7 | 0 | 0 | 7 |
+| `CartRelatedItem` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `CartTax` | `shape` | `` | 18 | 5 | 0 | 0 | 5 |
+| `CartValidationOutput` | `shape` | `` | 17 | 5 | 0 | 0 | 5 |
+| `Case` | `shape` | `500` | 52 | 13 | 1 | 6 | 13 |
+| `CaseArticle` | `shape` | `` | 14 | 5 | 0 | 0 | 5 |
+| `CaseComment` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `CaseContactRole` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `CaseExternalDocument` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `CaseFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `CaseHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `CaseHistory2` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `CaseMilestone` | `shape` | `` | 27 | 5 | 0 | 0 | 5 |
+| `CaseRelatedIssue` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `CaseRelatedIssueFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `CaseRelatedIssueHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `CaseShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `CaseSolution` | `shape` | `` | 10 | 4 | 0 | 0 | 4 |
+| `CaseStatus` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `CaseSubjectParticle` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `CaseTeamMember` | `shape` | `` | 11 | 7 | 0 | 0 | 7 |
+| `CaseTeamRole` | `shape` | `` | 9 | 2 | 0 | 0 | 2 |
+| `CaseTeamTemplate` | `shape` | `` | 8 | 2 | 0 | 0 | 2 |
+| `CaseTeamTemplateMember` | `shape` | `` | 9 | 5 | 0 | 0 | 5 |
+| `CaseTeamTemplateRecord` | `shape` | `` | 8 | 4 | 0 | 0 | 4 |
+| `CategoryData` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `CategoryNode` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `ChangeRequest` | `shape` | `` | 30 | 4 | 0 | 0 | 4 |
+| `ChangeRequestFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ChangeRequestHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ChangeRequestRelatedIssue` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `ChangeRequestRelatedIssueFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ChangeRequestRelatedIssueHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ChangeRequestRelatedItem` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `ChangeRequestRelatedItemFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ChangeRequestRelatedItemHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ChangeRequestShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ChannelObjectLinkingRule` | `shape` | `` | 19 | 2 | 0 | 0 | 2 |
+| `ChatRetirementRdyMetrics` | `shape` | `` | 34 | 2 | 0 | 0 | 2 |
+| `ChatterActivity` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `ChatterExtension` | `shape` | `` | 20 | 3 | 0 | 0 | 3 |
+| `ChatterExtensionConfig` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ClientBrowser` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `CollaborationGroup` | `shape` | `` | 27 | 5 | 0 | 0 | 5 |
+| `CollaborationGroupFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `CollaborationGroupMember` | `shape` | `` | 12 | 5 | 0 | 0 | 5 |
+| `CollaborationGroupMemberRequest` | `shape` | `` | 10 | 4 | 0 | 0 | 4 |
+| `CollaborationGroupRecord` | `shape` | `` | 10 | 5 | 0 | 0 | 5 |
+| `CollaborationInvitation` | `shape` | `` | 13 | 5 | 0 | 0 | 5 |
+| `ColorDefinition` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `CommSubscription` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `CommSubscriptionChannelType` | `shape` | `` | 17 | 8 | 0 | 0 | 8 |
+| `CommSubscriptionChannelTypeFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `CommSubscriptionChannelTypeHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `CommSubscriptionChannelTypeShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `CommSubscriptionConsent` | `shape` | `` | 25 | 11 | 0 | 0 | 11 |
+| `CommSubscriptionConsentFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `CommSubscriptionConsentHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `CommSubscriptionConsentShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `CommSubscriptionFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `CommSubscriptionHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `CommSubscriptionShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `CommSubscriptionTiming` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `CommSubscriptionTimingFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `CommSubscriptionTimingHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `Community` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `ConferenceNumber` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ConnectedApplication` | `shape` | `` | 21 | 2 | 0 | 0 | 2 |
+| `Contact` | `behavior` | `003` | 73 | 8 | 1 | 9 | 8 |
+| `ContactFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ContactHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ContactPointAddress` | `shape` | `` | 33 | 5 | 0 | 0 | 5 |
+| `ContactPointAddressHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ContactPointAddressShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ContactPointConsent` | `shape` | `` | 23 | 8 | 0 | 0 | 8 |
+| `ContactPointConsentHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ContactPointConsentShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ContactPointEmail` | `shape` | `` | 25 | 4 | 0 | 0 | 4 |
+| `ContactPointEmailHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ContactPointEmailShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ContactPointPhone` | `shape` | `` | 30 | 4 | 0 | 0 | 4 |
+| `ContactPointPhoneHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ContactPointPhoneShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ContactPointTypeConsent` | `shape` | `` | 23 | 7 | 0 | 0 | 7 |
+| `ContactPointTypeConsentHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ContactPointTypeConsentShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ContactRequest` | `shape` | `` | 20 | 5 | 0 | 0 | 5 |
+| `ContactRequestShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ContactShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ContentAsset` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ContentBody` | `shape` | `` | 7 | 2 | 0 | 0 | 2 |
+| `ContentDistribution` | `behavior` | `` | 28 | 6 | 0 | 0 | 6 |
+| `ContentDistributionView` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `ContentDocument` | `behavior` | `069` | 30 | 7 | 0 | 5 | 7 |
+| `ContentDocumentFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ContentDocumentHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ContentDocumentLink` | `behavior` | `06A` | 11 | 4 | 0 | 2 | 4 |
+| `ContentDocumentSubscription` | `shape` | `` | 10 | 4 | 0 | 0 | 4 |
+| `ContentFolder` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `ContentFolderItem` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `ContentFolderLink` | `shape` | `` | 10 | 4 | 0 | 0 | 4 |
+| `ContentFolderMember` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `ContentNotification` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ContentTagSubscription` | `shape` | `` | 7 | 3 | 0 | 0 | 3 |
+| `ContentTaxonomy` | `shape` | `` | 10 | 2 | 0 | 0 | 2 |
+| `ContentTaxonomyRelatedTerm` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `ContentTaxonomyTerm` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `ContentTaxonomyTermRelatedTerm` | `shape` | `` | 11 | 6 | 0 | 0 | 6 |
+| `ContentTaxonomyTermRelationshipType` | `shape` | `` | 10 | 2 | 0 | 0 | 2 |
+| `ContentUserSubscription` | `shape` | `` | 8 | 4 | 0 | 0 | 4 |
+| `ContentVersion` | `behavior` | `068` | 50 | 10 | 1 | 7 | 10 |
+| `ContentVersionComment` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `ContentVersionHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ContentVersionRating` | `shape` | `` | 10 | 4 | 0 | 0 | 4 |
+| `ContentVersionRenditionContent` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `ContentWorkspace` | `shape` | `` | 19 | 5 | 0 | 0 | 5 |
+| `ContentWorkspaceDoc` | `shape` | `` | 10 | 4 | 0 | 0 | 4 |
+| `ContentWorkspaceMember` | `shape` | `` | 10 | 5 | 0 | 0 | 5 |
+| `ContentWorkspacePermission` | `shape` | `` | 22 | 2 | 0 | 0 | 2 |
+| `ContentWorkspaceSubscription` | `shape` | `` | 8 | 4 | 0 | 0 | 4 |
+| `ContextParamMap` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `Contract` | `shape` | `800` | 50 | 8 | 1 | 6 | 8 |
+| `ContractContactRole` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ContractFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ContractHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ContractLineItem` | `shape` | `` | 28 | 9 | 0 | 0 | 9 |
+| `ContractLineItemFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ContractLineItemHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ContractStatus` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `ConvDefDialogDailyMetric` | `shape` | `` | 29 | 4 | 0 | 0 | 4 |
+| `ConvDefDialogHourlyMetric` | `shape` | `` | 31 | 5 | 0 | 0 | 5 |
+| `ConvDefSessionMetric` | `shape` | `` | 21 | 3 | 0 | 0 | 3 |
+| `ConvEntryRelatedRecordCopy` | `shape` | `` | 13 | 5 | 0 | 0 | 5 |
+| `ConvEntryRelatedRecordCopyShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ConvIntelligenceSignalRule` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `ConvIntelligenceSignalSubRule` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `ConvMessageSendRequest` | `shape` | `` | 35 | 3 | 0 | 0 | 3 |
+| `Conversation` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `ConversationApiLog` | `shape` | `` | 20 | 4 | 0 | 0 | 4 |
+| `ConversationApiLogObjSum` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `ConversationApiLogShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ConversationContextEntry` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `ConversationDefinitionDialog` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `ConversationDefinitionEventLog` | `shape` | `` | 31 | 6 | 0 | 0 | 6 |
+| `ConversationDefinitionSession` | `shape` | `` | 24 | 3 | 0 | 0 | 3 |
+| `ConversationDefinitionSessionEngagement` | `shape` | `` | 8 | 4 | 0 | 0 | 4 |
+| `ConversationEntry` | `shape` | `` | 28 | 5 | 0 | 0 | 5 |
+| `ConversationEntryCopy` | `shape` | `` | 21 | 5 | 0 | 0 | 5 |
+| `ConversationEntryCopyShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ConversationParticipant` | `shape` | `` | 21 | 4 | 0 | 0 | 4 |
+| `CorsWhitelistEntry` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `Coupon` | `shape` | `` | 20 | 4 | 0 | 0 | 4 |
+| `CouponCodeRedemption` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `CouponCodeRedemptionShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `CouponFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `CouponHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `CouponShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `CredentialStuffingEventStore` | `shape` | `` | 25 | 4 | 0 | 0 | 4 |
+| `CredentialStuffingEventStoreFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `CreditMemo` | `shape` | `` | 47 | 6 | 0 | 0 | 6 |
+| `CreditMemoFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `CreditMemoHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `CreditMemoInvApplication` | `shape` | `` | 21 | 5 | 0 | 0 | 5 |
+| `CreditMemoInvApplicationFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `CreditMemoLine` | `shape` | `` | 43 | 6 | 0 | 0 | 6 |
+| `CreditMemoLineFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `CreditMemoLineHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `CreditMemoShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `CronJobDetail` | `shape` | `` | 8 | 2 | 0 | 0 | 2 |
+| `CronTrigger` | `shape` | `` | 16 | 4 | 0 | 0 | 4 |
+| `CspTrustedSite` | `shape` | `` | 23 | 2 | 0 | 0 | 2 |
+| `CurrencyType` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `CustomBrand` | `shape` | `` | 7 | 3 | 0 | 0 | 3 |
+| `CustomBrandAsset` | `shape` | `` | 10 | 4 | 0 | 0 | 4 |
+| `CustomHelpMenuItem` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `CustomHelpMenuSection` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `CustomHttpHeader` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `CustomNotificationType` | `shape` | `` | 16 | 2 | 0 | 0 | 2 |
+| `CustomPermission` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `CustomPermissionDependency` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `Customer` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `CustomerShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Dashboard` | `shape` | `` | 31 | 5 | 0 | 0 | 5 |
+| `DashboardComponent` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `DashboardComponentFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `DashboardFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `DataAssessmentFieldMetric` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `DataAssessmentMetric` | `shape` | `` | 15 | 2 | 0 | 0 | 2 |
+| `DataAssessmentValueMetric` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `DataEncryptionKey` | `shape` | `` | 19 | 2 | 0 | 0 | 2 |
+| `DataIntegrationRecordPurchasePermission` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `DataStatistics` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `DataType` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `DataUseLegalBasis` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `DataUseLegalBasisHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `DataUseLegalBasisShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `DataUsePurpose` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `DataUsePurposeHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `DataUsePurposeShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `DataWeaveResource` | `shape` | `` | 16 | 2 | 0 | 0 | 2 |
+| `DatacloudAddress` | `shape` | `` | 18 | 2 | 0 | 0 | 2 |
+| `DatasetExport` | `shape` | `` | 14 | 2 | 0 | 0 | 2 |
+| `DatasetExportPart` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `DatedConversionRate` | `shape` | `` | 10 | 2 | 0 | 0 | 2 |
+| `DecisionTable` | `shape` | `` | 35 | 2 | 0 | 0 | 2 |
+| `DecisionTableDatasetLink` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `DecisionTableParameter` | `shape` | `` | 18 | 3 | 0 | 0 | 3 |
+| `DecisionTableSourceCriteria` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `DecisionTblDatasetParameter` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `DeclinedEventRelation` | `shape` | `` | 13 | 5 | 0 | 0 | 5 |
+| `DelegatedAccount` | `shape` | `` | 15 | 6 | 0 | 0 | 6 |
+| `DelegatedAccountFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `DelegatedAccountHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `DelegatedAccountShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `DeleteEvent` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `DeliveryEstimationSetup` | `shape` | `` | 26 | 7 | 0 | 0 | 7 |
+| `DeliveryEstimationSetupFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `DeliveryEstimationSetupHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `DeliveryEstimationSetupShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `DevopsActivityLog` | `shape` | `` | 21 | 6 | 0 | 0 | 6 |
+| `DevopsActivityLogFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `DevopsActivityLogHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `DevopsActivityLogShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `DevopsEnvironment` | `shape` | `` | 26 | 5 | 0 | 0 | 5 |
+| `DevopsEnvironmentFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `DevopsEnvironmentHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `DevopsEnvironmentShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `DevopsRequestInfo` | `shape` | `` | 18 | 3 | 0 | 0 | 3 |
+| `DevopsRequestInfoFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `DevopsRequestInfoHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `DevopsRequestInfoShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `DigitalWallet` | `shape` | `` | 42 | 4 | 0 | 0 | 4 |
+| `Division` | `shape` | `` | 10 | 2 | 0 | 0 | 2 |
+| `Document` | `behavior` | `015` | 24 | 4 | 0 | 0 | 4 |
+| `DocumentAttachmentMap` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `Domain` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `DomainSite` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `DuplicateRecordItem` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `DuplicateRecordSet` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `DuplicateRule` | `shape` | `` | 15 | 2 | 0 | 0 | 2 |
+| `EmailCapture` | `shape` | `` | 15 | 2 | 0 | 0 | 2 |
+| `EmailDomainFilter` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `EmailDomainKey` | `shape` | `` | 24 | 2 | 0 | 0 | 2 |
+| `EmailMessage` | `behavior` | `02s` | 44 | 8 | 0 | 0 | 8 |
+| `EmailMessageRelation` | `behavior` | `` | 12 | 4 | 0 | 0 | 4 |
+| `EmailRelay` | `shape` | `` | 14 | 2 | 0 | 0 | 2 |
+| `EmailRoutingAddress` | `shape` | `` | 9 | 3 | 0 | 0 | 3 |
+| `EmailServicesAddress` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `EmailServicesFunction` | `shape` | `` | 21 | 3 | 0 | 0 | 3 |
+| `EmailTemplate` | `shape` | `00X` | 29 | 6 | 0 | 5 | 6 |
+| `EmbeddedServiceDetail` | `shape` | `` | 37 | 2 | 0 | 0 | 2 |
+| `EmbeddedServiceLabel` | `shape` | `` | 10 | 2 | 0 | 0 | 2 |
+| `EngagementChannelType` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `EngagementChannelTypeFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `EngagementChannelTypeHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `EngagementChannelTypeShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `EngagementChannelWorkType` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `EngagementChannelWorkTypeFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `EngagementChannelWorkTypeHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `EngmtChannelTypeSettings` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `EnhancedLetterhead` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `EnhancedLetterheadFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `Entitlement` | `shape` | `` | 29 | 10 | 0 | 0 | 10 |
+| `EntitlementContact` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `EntitlementFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `EntitlementHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `EntitlementTemplate` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `EntityDefinition` | `shape` | `` | 56 | 4 | 0 | 0 | 4 |
+| `EntityMilestone` | `shape` | `` | 30 | 6 | 0 | 0 | 6 |
+| `EntityMilestoneFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `EntityMilestoneHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `EntityParticle` | `shape` | `` | 61 | 4 | 0 | 0 | 4 |
+| `EntitySubscription` | `shape` | `` | 10 | 5 | 0 | 0 | 5 |
+| `Event` | `shape` | `00U` | 55 | 9 | 1 | 10 | 9 |
+| `EventBusSubscriber` | `shape` | `` | 19 | 2 | 0 | 0 | 2 |
+| `EventFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `EventLogFile` | `shape` | `` | 17 | 2 | 0 | 0 | 2 |
+| `EventRelation` | `shape` | `` | 16 | 5 | 0 | 0 | 5 |
+| `EventRelayConfig` | `shape` | `` | 16 | 2 | 0 | 0 | 2 |
+| `EventRelayFeedback` | `shape` | `` | 18 | 3 | 0 | 0 | 3 |
+| `EventStagedInviteeEmail` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `EventWhoRelation` | `shape` | `` | 11 | 5 | 0 | 0 | 5 |
+| `EvfPipelineSubTaskDetails` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `ExpressionFilter` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `ExpressionFilterCriteria` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `ExpressionSetView` | `shape` | `` | 17 | 2 | 0 | 0 | 2 |
+| `ExternalAIModel` | `shape` | `` | 15 | 2 | 0 | 0 | 2 |
+| `ExternalClientApplication` | `shape` | `` | 23 | 2 | 0 | 0 | 2 |
+| `ExternalDataSource` | `shape` | `` | 22 | 6 | 0 | 0 | 6 |
+| `ExternalDataSrcDescriptor` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `ExternalDataUserAuth` | `shape` | `` | 13 | 5 | 0 | 0 | 5 |
+| `ExternalEvent` | `shape` | `` | 14 | 2 | 0 | 0 | 2 |
+| `ExternalEventMapping` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `ExternalEventMappingShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ExternalSocialAccount` | `shape` | `` | 27 | 3 | 0 | 0 | 3 |
+| `ExtlClntAppAndroidPushConfig` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `ExtlClntAppApplePushConfig` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `ExtlClntAppMobPlcyConfig` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `ExtlClntAppMobileSettings` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ExtlClntAppNotifSettings` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `ExtlClntAppNotifType` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `ExtlClntAppOauthConsumer` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ExtlClntAppOauthIpRange` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `ExtlClntAppOauthPlcyAttr` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `ExtlClntAppOauthPlcyCnfg` | `shape` | `` | 33 | 6 | 0 | 0 | 6 |
+| `ExtlClntAppOauthPlcyCustmScp` | `shape` | `` | 10 | 5 | 0 | 0 | 5 |
+| `ExtlClntAppOauthSecuritySettings` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `ExtlClntAppOauthSecurityTokenIpRange` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `ExtlClntAppOauthSetAttr` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `ExtlClntAppOauthSetCustmScp` | `shape` | `` | 10 | 5 | 0 | 0 | 5 |
+| `ExtlClntAppOauthSettings` | `shape` | `` | 53 | 3 | 0 | 0 | 3 |
+| `ExtlClntAppPlcyCnfg` | `shape` | `` | 20 | 3 | 0 | 0 | 3 |
+| `ExtlClntAppPushPolicyConfig` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `ExtlClntAppPushSettings` | `shape` | `` | 15 | 4 | 0 | 0 | 4 |
+| `ExtlClntAppSamplePlcyCnfg` | `shape` | `` | 15 | 4 | 0 | 0 | 4 |
+| `ExtlClntAppSampleSettings` | `shape` | `` | 20 | 3 | 0 | 0 | 3 |
+| `FeedAttachment` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `FeedComment` | `shape` | `` | 24 | 8 | 0 | 0 | 8 |
+| `FeedItem` | `shape` | `` | 29 | 7 | 0 | 0 | 7 |
+| `FeedPollChoice` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `FeedPollVote` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `FeedRevision` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `FieldDefinition` | `shape` | `` | 50 | 6 | 0 | 0 | 6 |
+| `FieldPermissions` | `behavior` | `0FP` | 11 | 3 | 0 | 0 | 3 |
+| `FieldSecurityClassification` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `FileEventStore` | `shape` | `` | 29 | 6 | 0 | 0 | 6 |
+| `FileSearchActivity` | `shape` | `` | 17 | 2 | 0 | 0 | 2 |
+| `FiscalYearSettings` | `shape` | `` | 19 | 3 | 0 | 0 | 3 |
+| `FlexQueueItem` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `FlowDefinitionView` | `shape` | `` | 38 | 3 | 0 | 0 | 3 |
+| `FlowInterview` | `shape` | `` | 21 | 3 | 0 | 0 | 3 |
+| `FlowInterviewLog` | `shape` | `` | 19 | 3 | 0 | 0 | 3 |
+| `FlowInterviewLogEntry` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `FlowInterviewLogShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `FlowInterviewShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `FlowOrchestration` | `shape` | `` | 33 | 6 | 0 | 0 | 6 |
+| `FlowOrchestrationInstance` | `shape` | `` | 25 | 4 | 0 | 0 | 4 |
+| `FlowOrchestrationInstanceShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `FlowOrchestrationLog` | `shape` | `` | 22 | 3 | 0 | 0 | 3 |
+| `FlowOrchestrationStageInstance` | `shape` | `` | 15 | 4 | 0 | 0 | 4 |
+| `FlowOrchestrationStageInstanceShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `FlowOrchestrationStepInstance` | `shape` | `` | 20 | 5 | 0 | 0 | 5 |
+| `FlowOrchestrationStepInstanceShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `FlowOrchestrationVersion` | `shape` | `` | 26 | 7 | 0 | 0 | 7 |
+| `FlowOrchestrationWorkItem` | `shape` | `` | 23 | 6 | 0 | 0 | 6 |
+| `FlowOrchestrationWorkItemShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `FlowRecord` | `shape` | `` | 43 | 8 | 0 | 0 | 8 |
+| `FlowRecordElement` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `FlowRecordElementOccurrence` | `shape` | `` | 13 | 6 | 0 | 0 | 6 |
+| `FlowRecordHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `FlowRecordRelation` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `FlowRecordShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `FlowRecordVersion` | `shape` | `` | 37 | 9 | 0 | 0 | 9 |
+| `FlowRecordVersionOccurrence` | `shape` | `` | 21 | 4 | 0 | 0 | 4 |
+| `FlowStageRelation` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `FlowTestResult` | `shape` | `` | 17 | 6 | 0 | 0 | 6 |
+| `FlowTestResultShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `FlowTestView` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `FlowVariableView` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `FlowVersionView` | `shape` | `` | 21 | 3 | 0 | 0 | 3 |
+| `Folder` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ForecastingAdjustment` | `shape` | `` | 21 | 7 | 0 | 0 | 7 |
+| `ForecastingCategoryMapping` | `shape` | `` | 9 | 2 | 0 | 0 | 2 |
+| `ForecastingColumnDefinition` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `ForecastingCustomData` | `shape` | `` | 14 | 6 | 0 | 0 | 6 |
+| `ForecastingDisplayedFamily` | `shape` | `` | 9 | 2 | 0 | 0 | 2 |
+| `ForecastingFact` | `shape` | `` | 15 | 9 | 0 | 0 | 9 |
+| `ForecastingFilter` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `ForecastingFilterCondition` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `ForecastingGroup` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `ForecastingGroupItem` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `ForecastingItem` | `shape` | `` | 31 | 7 | 0 | 0 | 7 |
+| `ForecastingOwnerAdjustment` | `shape` | `` | 22 | 7 | 0 | 0 | 7 |
+| `ForecastingQuota` | `shape` | `` | 17 | 6 | 0 | 0 | 6 |
+| `ForecastingShare` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `ForecastingSourceDefinition` | `shape` | `` | 17 | 2 | 0 | 0 | 2 |
+| `ForecastingType` | `shape` | `` | 24 | 3 | 0 | 0 | 3 |
+| `ForecastingTypeSource` | `shape` | `` | 15 | 5 | 0 | 0 | 5 |
+| `ForecastingTypeToCategory` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `ForecastingUserPreference` | `shape` | `` | 19 | 3 | 0 | 0 | 3 |
+| `FormulaFunction` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `FormulaFunctionAllowedType` | `shape` | `` | 9 | 3 | 0 | 0 | 3 |
+| `FormulaFunctionCategory` | `shape` | `` | 9 | 2 | 0 | 0 | 2 |
+| `FulfillmentLineRel` | `shape` | `` | 17 | 6 | 0 | 0 | 6 |
+| `FulfillmentOrder` | `shape` | `` | 65 | 10 | 0 | 0 | 10 |
+| `FulfillmentOrderFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `FulfillmentOrderItemAdjustment` | `shape` | `` | 19 | 5 | 0 | 0 | 5 |
+| `FulfillmentOrderItemAdjustmentFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `FulfillmentOrderItemTax` | `shape` | `` | 18 | 6 | 0 | 0 | 6 |
+| `FulfillmentOrderItemTaxFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `FulfillmentOrderLineItem` | `shape` | `` | 37 | 7 | 0 | 0 | 7 |
+| `FulfillmentOrderLineItemFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `FulfillmentOrderShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `GenAiFunctionDefinition` | `shape` | `` | 23 | 5 | 0 | 0 | 5 |
+| `GenAiPlannerAttrDefinition` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `GenAiPlannerDefinition` | `shape` | `` | 15 | 2 | 0 | 0 | 2 |
+| `GenAiPlannerFunctionDef` | `shape` | `` | 9 | 3 | 0 | 0 | 3 |
+| `GenAiPluginDefinition` | `shape` | `` | 20 | 4 | 0 | 0 | 4 |
+| `GenAiPluginFunctionDef` | `shape` | `` | 9 | 3 | 0 | 0 | 3 |
+| `GenAiPluginInstructionDef` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `GrantedByLicense` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `Group` | `shape` | `00G` | 17 | 5 | 0 | 0 | 5 |
+| `GroupMember` | `shape` | `` | 8 | 4 | 0 | 0 | 4 |
+| `GtwyProvPaymentMethodType` | `shape` | `` | 17 | 4 | 0 | 0 | 4 |
+| `GuestUserAnomalyEventStore` | `shape` | `` | 27 | 4 | 0 | 0 | 4 |
+| `GuestUserAnomalyEventStoreFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `Holiday` | `shape` | `` | 21 | 2 | 0 | 0 | 2 |
+| `IPAddressRange` | `shape` | `` | 15 | 2 | 0 | 0 | 2 |
+| `IconDefinition` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `Idea` | `shape` | `` | 27 | 6 | 0 | 0 | 6 |
+| `IdeaComment` | `shape` | `` | 15 | 4 | 0 | 0 | 4 |
+| `IdentityProviderEventStore` | `shape` | `` | 17 | 5 | 0 | 0 | 5 |
+| `IdentityVerificationEvent` | `shape` | `` | 29 | 5 | 0 | 0 | 5 |
+| `IdpEventLog` | `shape` | `` | 16 | 5 | 0 | 0 | 5 |
+| `IframeWhiteListUrl` | `shape` | `` | 9 | 2 | 0 | 0 | 2 |
+| `Image` | `shape` | `` | 21 | 4 | 0 | 0 | 4 |
+| `ImageFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ImageHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ImageShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Incident` | `shape` | `` | 41 | 7 | 0 | 0 | 7 |
+| `IncidentFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `IncidentHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `IncidentRelatedItem` | `shape` | `` | 15 | 5 | 0 | 0 | 5 |
+| `IncidentRelatedItemFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `IncidentRelatedItemHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `IncidentShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Individual` | `shape` | `` | 36 | 4 | 0 | 0 | 4 |
+| `IndividualHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `IndividualShare` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `InsightsExternalData` | `shape` | `` | 29 | 2 | 0 | 0 | 2 |
+| `InsightsExternalDataPart` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `InstalledMobileApp` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `InventoryItemReservation` | `shape` | `` | 19 | 6 | 0 | 0 | 6 |
+| `InventoryReservation` | `shape` | `` | 19 | 4 | 0 | 0 | 4 |
+| `InventoryReservationShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Invoice` | `shape` | `` | 47 | 6 | 0 | 0 | 6 |
+| `InvoiceFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `InvoiceHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `InvoiceLine` | `shape` | `` | 47 | 7 | 0 | 0 | 7 |
+| `InvoiceLineFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `InvoiceLineHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `InvoiceShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `KnowledgeArticle` | `shape` | `` | 18 | 3 | 0 | 0 | 3 |
+| `KnowledgeArticleVersion` | `shape` | `` | 45 | 11 | 0 | 0 | 11 |
+| `KnowledgeArticleVersionHistory` | `shape` | `` | 17 | 4 | 0 | 0 | 4 |
+| `KnowledgeArticleViewStat` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `KnowledgeArticleVoteStat` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `Knowledge__DataCategorySelection` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `Knowledge__Feed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `Knowledge__ViewStat` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `Knowledge__VoteStat` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `Knowledge__ka` | `shape` | `` | 18 | 3 | 0 | 0 | 3 |
+| `Knowledge__kav` | `shape` | `` | 45 | 11 | 0 | 0 | 11 |
+| `KnowledgeableUser` | `shape` | `` | 10 | 5 | 0 | 0 | 5 |
+| `Lead` | `behavior` | `00Q` | 58 | 9 | 1 | 7 | 9 |
+| `LeadFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `LeadHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `LeadShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `LeadStatus` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `LicenseDefinitionCustomPermission` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `LightningExperienceTheme` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `LightningOnboardingConfig` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `LightningUriEvent` | `shape` | `` | 42 | 5 | 0 | 0 | 5 |
+| `LinkedArticle` | `shape` | `` | 13 | 5 | 0 | 0 | 5 |
+| `LinkedArticleFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `LinkedArticleHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ListEmail` | `shape` | `` | 24 | 5 | 0 | 0 | 5 |
+| `ListEmailIndividualRecipient` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `ListEmailRecipientSource` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ListEmailSentResult` | `shape` | `` | 18 | 5 | 0 | 0 | 5 |
+| `ListEmailShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ListView` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `ListViewChart` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `ListViewChartInstance` | `shape` | `` | 21 | 4 | 0 | 0 | 4 |
+| `ListViewEvent` | `shape` | `` | 35 | 7 | 0 | 0 | 7 |
+| `LiveAgentSession` | `shape` | `` | 27 | 4 | 0 | 0 | 4 |
+| `LiveAgentSessionHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `LiveAgentSessionShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `LiveChatBlockingRule` | `shape` | `` | 14 | 2 | 0 | 0 | 2 |
+| `LiveChatButton` | `shape` | `` | 46 | 12 | 0 | 0 | 12 |
+| `LiveChatButtonDeployment` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `LiveChatButtonSkill` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `LiveChatDeployment` | `shape` | `` | 19 | 5 | 0 | 0 | 5 |
+| `LiveChatObjectAccessConfig` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `LiveChatObjectAccessDefinition` | `shape` | `` | 10 | 2 | 0 | 0 | 2 |
+| `LiveChatSensitiveDataRule` | `shape` | `` | 20 | 2 | 0 | 0 | 2 |
+| `LiveChatTranscript` | `shape` | `` | 47 | 11 | 0 | 0 | 11 |
+| `LiveChatTranscriptEvent` | `shape` | `` | 16 | 4 | 0 | 0 | 4 |
+| `LiveChatTranscriptFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `LiveChatTranscriptHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `LiveChatTranscriptShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `LiveChatTranscriptSkill` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `LiveChatUserConfig` | `shape` | `` | 35 | 4 | 0 | 0 | 4 |
+| `LiveChatUserConfigProfile` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `LiveChatUserConfigUser` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `LiveChatVisitor` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `Location` | `shape` | `` | 24 | 5 | 0 | 0 | 5 |
+| `LocationFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `LocationGroup` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `LocationGroupAssignment` | `shape` | `` | 17 | 4 | 0 | 0 | 4 |
+| `LocationGroupFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `LocationGroupHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `LocationGroupShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `LocationHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `LocationShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `LocationShippingCarrierMethod` | `shape` | `` | 15 | 5 | 0 | 0 | 5 |
+| `LocationShippingCarrierMethodFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `LocationShippingCarrierMethodHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `LocationShippingCarrierMethodShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `LocationTrustMeasure` | `shape` | `` | 19 | 4 | 0 | 0 | 4 |
+| `LocationTrustMeasureShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `LoginAnomalyEventStore` | `shape` | `` | 25 | 4 | 0 | 0 | 4 |
+| `LoginAnomalyEventStoreFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `LoginAsEvent` | `shape` | `` | 27 | 4 | 0 | 0 | 4 |
+| `LoginEvent` | `shape` | `` | 46 | 8 | 0 | 0 | 8 |
+| `LoginGeo` | `shape` | `` | 15 | 2 | 0 | 0 | 2 |
+| `LoginHistory` | `shape` | `` | 29 | 6 | 0 | 0 | 6 |
+| `LoginIp` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `LogoutEvent` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `MLModel` | `shape` | `` | 16 | 4 | 0 | 0 | 4 |
+| `MLModelFactor` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `MLModelFactorComponent` | `shape` | `` | 18 | 4 | 0 | 0 | 4 |
+| `MLModelMetric` | `shape` | `` | 18 | 3 | 0 | 0 | 3 |
+| `MLPredictionDefinition` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `MLRecommendationDefinition` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `Macro` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `MacroHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `MacroInstruction` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `MacroShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `MacroUsage` | `shape` | `` | 22 | 5 | 0 | 0 | 5 |
+| `MacroUsageShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `MailmergeTemplate` | `shape` | `` | 17 | 2 | 0 | 0 | 2 |
+| `ManagedContent` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `ManagedContentChannel` | `shape` | `` | 16 | 2 | 0 | 0 | 2 |
+| `ManagedContentSpace` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `ManagedContentVariant` | `shape` | `` | 20 | 3 | 0 | 0 | 3 |
+| `MatchingInformation` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `MatchingRule` | `shape` | `` | 17 | 2 | 0 | 0 | 2 |
+| `MatchingRuleItem` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `MessagingChannel` | `shape` | `` | 33 | 7 | 0 | 0 | 7 |
+| `MessagingChannelSkill` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `MessagingChannelUsage` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `MessagingConfiguration` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `MessagingDeliveryError` | `shape` | `` | 18 | 5 | 0 | 0 | 5 |
+| `MessagingEndUser` | `shape` | `` | 19 | 4 | 0 | 0 | 4 |
+| `MessagingEndUserHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `MessagingEndUserShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `MessagingLink` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `MessagingSession` | `shape` | `` | 36 | 9 | 0 | 0 | 9 |
+| `MessagingSessionFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `MessagingSessionHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `MessagingSessionMetrics` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `MessagingSessionShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `MessagingTemplate` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `MilestoneType` | `shape` | `` | 9 | 2 | 0 | 0 | 2 |
+| `MlFeatureValueMetric` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `MlIntentUtterance` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `MlIntentUtteranceSuggestion` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `MobSecurityCertPinConfig` | `shape` | `` | 19 | 3 | 0 | 0 | 3 |
+| `MobileApplicationDetail` | `shape` | `` | 23 | 2 | 0 | 0 | 2 |
+| `MobileSecurityAssignment` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `MobileSecurityPolicy` | `shape` | `` | 19 | 3 | 0 | 0 | 3 |
+| `MobileSecurityUserMetric` | `shape` | `` | 8 | 2 | 0 | 0 | 2 |
+| `MsgChannelAvailability` | `shape` | `` | 9 | 3 | 0 | 0 | 3 |
+| `MsgChannelLanguageKeyword` | `shape` | `` | 19 | 4 | 0 | 0 | 4 |
+| `MsgChannelUsageExternalOrg` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `MutingPermissionSet` | `shape` | `` | 554 | 2 | 0 | 0 | 2 |
+| `MyDomainDiscoverableLogin` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `NamedCredential` | `shape` | `` | 24 | 3 | 0 | 0 | 3 |
+| `NavigationLinkSet` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `NavigationMenuItem` | `shape` | `` | 18 | 6 | 0 | 0 | 6 |
+| `Network` | `shape` | `` | 78 | 17 | 0 | 0 | 17 |
+| `NetworkActivityAudit` | `shape` | `` | 16 | 6 | 0 | 0 | 6 |
+| `NetworkAffinity` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `NetworkAuthApiSettings` | `shape` | `` | 32 | 9 | 0 | 0 | 9 |
+| `NetworkDataCategory` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `NetworkDiscoverableLogin` | `shape` | `` | 12 | 5 | 0 | 0 | 5 |
+| `NetworkEmailTmplAllowlist` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `NetworkFeedResponseMetric` | `shape` | `` | 19 | 8 | 0 | 0 | 8 |
+| `NetworkMember` | `shape` | `` | 30 | 4 | 0 | 0 | 4 |
+| `NetworkMemberGroup` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `NetworkModeration` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `NetworkPageOverride` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `NetworkSelfRegistration` | `shape` | `` | 21 | 6 | 0 | 0 | 6 |
+| `NetworkUserHistoryRecent` | `shape` | `` | 20 | 7 | 0 | 0 | 7 |
+| `Note` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `OauthCustomScope` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `OauthCustomScopeApp` | `shape` | `` | 8 | 3 | 0 | 0 | 3 |
+| `OauthToken` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `OauthTokenExchHandlerApp` | `shape` | `` | 12 | 6 | 0 | 0 | 6 |
+| `OauthTokenExchangeHandler` | `shape` | `` | 21 | 3 | 0 | 0 | 3 |
+| `ObjectDataImport` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `ObjectDataImportReference` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `ObjectDataImportShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ObjectMetadataTag` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ObjectMilestonePauseTime` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ObjectPermissions` | `behavior` | `110` | 15 | 3 | 0 | 0 | 3 |
+| `ObjectRelatedUrl` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `OmniRoutingEventStore` | `shape` | `` | 14 | 6 | 0 | 0 | 6 |
+| `OmniSpvsrConfigAIAgent` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `OmniSupervisorConfig` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `OmniSupervisorConfigAction` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `OmniSupervisorConfigGroup` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `OmniSupervisorConfigProfile` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `OmniSupervisorConfigQueue` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `OmniSupervisorConfigSkill` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `OmniSupervisorConfigTab` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `OmniSupervisorConfigUser` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `OnboardingMetrics` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `OperatingHours` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `OperatingHoursFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OperatingHoursHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `OperatingHoursHoliday` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `OperatingHoursHolidayFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OperatingHoursHolidayHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `OperatingHoursShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Opportunity` | `behavior` | `006` | 46 | 11 | 1 | 6 | 11 |
+| `OpportunityCompetitor` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `OpportunityContactRole` | `shape` | `00K` | 13 | 4 | 0 | 2 | 4 |
+| `OpportunityFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OpportunityFieldHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `OpportunityHistory` | `shape` | `` | 18 | 3 | 0 | 0 | 3 |
+| `OpportunityLineItem` | `behavior` | `00k` | 28 | 5 | 0 | 0 | 5 |
+| `OpportunityLineItemSchedule` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `OpportunityPartner` | `shape` | `` | 13 | 5 | 0 | 0 | 5 |
+| `OpportunityRelatedDeleteLog` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `OpportunityShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `OpportunityStage` | `shape` | `` | 16 | 2 | 0 | 0 | 2 |
+| `OpportunityTeamMember` | `shape` | `` | 16 | 4 | 0 | 0 | 4 |
+| `OpportunityTeamMemberHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `Order` | `shape` | `801` | 67 | 13 | 1 | 7 | 13 |
+| `OrderAdjustmentGroup` | `shape` | `` | 23 | 6 | 0 | 0 | 6 |
+| `OrderAdjustmentGroupFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderAdjustmentGroupHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `OrderAdjustmentGroupSummary` | `shape` | `` | 19 | 6 | 0 | 0 | 6 |
+| `OrderAdjustmentGroupSummaryFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderChangeLog` | `shape` | `` | 19 | 6 | 0 | 0 | 6 |
+| `OrderChangeLogFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderChangeLogHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `OrderChgReasonCategMap` | `shape` | `` | 17 | 3 | 0 | 0 | 3 |
+| `OrderChgReasonCategMapShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `OrderDeliveryGroup` | `shape` | `` | 47 | 5 | 0 | 0 | 5 |
+| `OrderDeliveryGroupFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderDeliveryGroupHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `OrderDeliveryGroupSummary` | `shape` | `` | 47 | 5 | 0 | 0 | 5 |
+| `OrderDeliveryGroupSummaryFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderDeliveryMethod` | `shape` | `` | 19 | 5 | 0 | 0 | 5 |
+| `OrderDeliveryMethodFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderDeliveryMethodHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `OrderDeliveryMethodShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `OrderFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `OrderItem` | `shape` | `802` | 41 | 8 | 0 | 4 | 8 |
+| `OrderItemAdjustmentLineItem` | `shape` | `` | 27 | 8 | 0 | 0 | 8 |
+| `OrderItemAdjustmentLineItemFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderItemAdjustmentLineItemHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `OrderItemAdjustmentLineSummary` | `shape` | `` | 21 | 8 | 0 | 0 | 8 |
+| `OrderItemAdjustmentLineSummaryFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderItemFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderItemHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `OrderItemRelationship` | `shape` | `` | 22 | 8 | 0 | 0 | 8 |
+| `OrderItemRelationshipFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderItemRelationshipHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `OrderItemSummary` | `shape` | `` | 69 | 10 | 0 | 0 | 10 |
+| `OrderItemSummaryChange` | `shape` | `` | 17 | 5 | 0 | 0 | 5 |
+| `OrderItemSummaryFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderItemSummaryRelationship` | `shape` | `` | 21 | 8 | 0 | 0 | 8 |
+| `OrderItemTaxLineItem` | `shape` | `` | 21 | 6 | 0 | 0 | 6 |
+| `OrderItemTaxLineItemFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderItemTaxLineItemHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `OrderItemTaxLineItemSummary` | `shape` | `` | 22 | 6 | 0 | 0 | 6 |
+| `OrderItemTaxLineItemSummaryFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderItemType` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `OrderPaymentSummary` | `shape` | `` | 32 | 6 | 0 | 0 | 6 |
+| `OrderPaymentSummaryFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderPaymentSummaryReference` | `shape` | `` | 19 | 4 | 0 | 0 | 4 |
+| `OrderPaymentSummaryShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `OrderShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `OrderStatus` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `OrderSummary` | `shape` | `` | 84 | 11 | 0 | 0 | 11 |
+| `OrderSummaryAdditionalInfo` | `shape` | `` | 17 | 5 | 0 | 0 | 5 |
+| `OrderSummaryAdditionalInfoFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderSummaryAdditionalInfoShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `OrderSummaryFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `OrderSummaryRelationship` | `shape` | `` | 16 | 6 | 0 | 0 | 6 |
+| `OrderSummaryRoutingSchedule` | `shape` | `` | 17 | 4 | 0 | 0 | 4 |
+| `OrderSummaryRoutingScheduleShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `OrderSummaryShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `OrgEmailAddressSecurity` | `shape` | `` | 8 | 4 | 0 | 0 | 4 |
+| `OrgMetric` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `OrgMetricScanSummary` | `shape` | `` | 18 | 3 | 0 | 0 | 3 |
+| `OrgWideEmailAddress` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `Organization` | `shape` | `00D` | 54 | 2 | 0 | 14 | 2 |
+| `OutgoingEmail` | `shape` | `` | 20 | 5 | 0 | 0 | 5 |
+| `OutgoingEmailRelation` | `shape` | `` | 10 | 4 | 0 | 0 | 4 |
+| `OwnerChangeOptionInfo` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `PackageLicense` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `Participant` | `shape` | `` | 10 | 2 | 0 | 0 | 2 |
+| `Partner` | `shape` | `` | 14 | 6 | 0 | 0 | 6 |
+| `PartnerRole` | `shape` | `` | 10 | 2 | 0 | 0 | 2 |
+| `PartyConsent` | `shape` | `` | 21 | 7 | 0 | 0 | 7 |
+| `PartyConsentFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `PartyConsentHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `PartyConsentShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Payment` | `shape` | `` | 53 | 8 | 0 | 0 | 8 |
+| `PaymentAuthAdjustment` | `shape` | `` | 30 | 4 | 0 | 0 | 4 |
+| `PaymentAuthorization` | `shape` | `` | 38 | 7 | 0 | 0 | 7 |
+| `PaymentCredit` | `shape` | `` | 27 | 7 | 0 | 0 | 7 |
+| `PaymentCreditLinePayment` | `shape` | `` | 21 | 6 | 0 | 0 | 6 |
+| `PaymentCreditTransaction` | `shape` | `` | 19 | 4 | 0 | 0 | 4 |
+| `PaymentFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `PaymentGateway` | `shape` | `` | 16 | 4 | 0 | 0 | 4 |
+| `PaymentGatewayLog` | `shape` | `` | 30 | 5 | 0 | 0 | 5 |
+| `PaymentGatewayProvider` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `PaymentGroup` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `PaymentLineInvoice` | `shape` | `` | 26 | 6 | 0 | 0 | 6 |
+| `PaymentMethod` | `shape` | `` | 27 | 3 | 0 | 0 | 3 |
+| `PendingOrderSummary` | `shape` | `` | 23 | 6 | 0 | 0 | 6 |
+| `PendingServiceRouting` | `shape` | `` | 38 | 10 | 0 | 0 | 10 |
+| `PendingServiceRoutingInteractionInfo` | `shape` | `` | 14 | 5 | 0 | 0 | 5 |
+| `PendingServiceRoutingShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Period` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `PermissionSet` | `behavior` | `0PS` | 562 | 5 | 0 | 1 | 5 |
+| `PermissionSetAssignment` | `behavior` | `0Pa` | 12 | 5 | 0 | 0 | 5 |
+| `PermissionSetEventStore` | `shape` | `` | 30 | 5 | 0 | 0 | 5 |
+| `PermissionSetGroup` | `behavior` | `0PG` | 14 | 2 | 0 | 0 | 2 |
+| `PermissionSetGroupComponent` | `behavior` | `0Pc` | 9 | 4 | 0 | 0 | 4 |
+| `PermissionSetLicense` | `shape` | `` | 563 | 2 | 0 | 0 | 2 |
+| `PermissionSetLicenseAssign` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `PermissionSetLicenseDefinition` | `shape` | `` | 15 | 2 | 0 | 0 | 2 |
+| `PermissionSetTabSetting` | `shape` | `` | 9 | 3 | 0 | 0 | 3 |
+| `PersonAccountOwnerPowerUser` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `PersonalizationTargetInfo` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `PickTicket` | `shape` | `` | 16 | 5 | 0 | 0 | 5 |
+| `PickTicketAssignment` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `PickTicketFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `PickTicketProduct` | `shape` | `` | 17 | 4 | 0 | 0 | 4 |
+| `PickTicketProductFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `PickTicketShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `PicklistValueInfo` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `PipelineInspectionListView` | `shape` | `` | 18 | 4 | 0 | 0 | 4 |
+| `PlatformAction` | `shape` | `` | 35 | 4 | 0 | 0 | 4 |
+| `PlatformCachePartition` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `PlatformCachePartitionType` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `PlatformEventUsageMetric` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `PortalDelegablePermissionSet` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `PplnInspListViewCalcClmn` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `PresenceConfigDeclineReason` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `PresenceDeclineReason` | `shape` | `` | 10 | 2 | 0 | 0 | 2 |
+| `PresenceUserConfig` | `shape` | `` | 29 | 5 | 0 | 0 | 5 |
+| `PresenceUserConfigProfile` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `PresenceUserConfigUser` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `Pricebook2` | `behavior` | `01s` | 16 | 3 | 1 | 0 | 3 |
+| `Pricebook2History` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `PricebookEntry` | `behavior` | `01u` | 16 | 4 | 0 | 0 | 4 |
+| `PricebookEntryHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ProbeTestMdt__mdt` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `ProbeTestObject__Share` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ProbeTestObject__c` | `shape` | `` | 15 | 4 | 0 | 0 | 4 |
+| `ProbeTestSetting__c` | `shape` | `` | 14 | 5 | 0 | 0 | 5 |
+| `Problem` | `shape` | `` | 27 | 5 | 0 | 0 | 5 |
+| `ProblemFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ProblemHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ProblemIncident` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `ProblemIncidentFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ProblemIncidentHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ProblemRelatedItem` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `ProblemRelatedItemFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ProblemRelatedItemHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ProblemShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ProcessDefinition` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `ProcessException` | `shape` | `` | 25 | 7 | 0 | 0 | 7 |
+| `ProcessExceptionShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ProcessFlowMigration` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `ProcessInstance` | `shape` | `` | 16 | 6 | 0 | 0 | 6 |
+| `ProcessInstanceNode` | `shape` | `` | 16 | 5 | 0 | 0 | 5 |
+| `ProcessInstanceStep` | `shape` | `` | 15 | 6 | 0 | 0 | 6 |
+| `ProcessInstanceWorkitem` | `shape` | `` | 13 | 5 | 0 | 0 | 5 |
+| `ProcessNode` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `Product2` | `behavior` | `01t` | 30 | 4 | 1 | 8 | 4 |
+| `Product2Feed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `Product2History` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ProductAttribute` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ProductAttributeSet` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `ProductAttributeSetItem` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `ProductAttributeSetProduct` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `ProductCatalog` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ProductCatalogFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ProductCatalogHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ProductCatalogShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ProductCategory` | `shape` | `` | 17 | 4 | 0 | 0 | 4 |
+| `ProductCategoryFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ProductCategoryHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ProductCategoryProduct` | `shape` | `` | 14 | 5 | 0 | 0 | 5 |
+| `ProductCategoryProductHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ProductEntitlementTemplate` | `shape` | `` | 8 | 4 | 0 | 0 | 4 |
+| `ProductRelatedComponent` | `shape` | `` | 19 | 5 | 0 | 0 | 5 |
+| `ProductRelationshipType` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `Profile` | `behavior` | `00e` | 556 | 3 | 0 | 1 | 3 |
+| `Promotion` | `shape` | `` | 18 | 4 | 0 | 0 | 4 |
+| `PromotionFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `PromotionHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `PromotionLineItemRule` | `shape` | `` | 15 | 5 | 0 | 0 | 5 |
+| `PromotionLineItemRuleShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `PromotionMarketSegment` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `PromotionMarketSegmentFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `PromotionMarketSegmentHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `PromotionQualifier` | `shape` | `` | 23 | 5 | 0 | 0 | 5 |
+| `PromotionQualifierFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `PromotionQualifierHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `PromotionSegment` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `PromotionSegmentBuyerGroup` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `PromotionSegmentBuyerGroupFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `PromotionSegmentBuyerGroupHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `PromotionSegmentFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `PromotionSegmentHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `PromotionSegmentSalesStore` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `PromotionSegmentSalesStoreFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `PromotionSegmentSalesStoreHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `PromotionSegmentShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `PromotionShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `PromotionTarget` | `shape` | `` | 25 | 5 | 0 | 0 | 5 |
+| `PromotionTargetFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `PromotionTargetHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `PromotionTier` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `PromotionTierFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `PromotionTierHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `Prompt` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `PromptAction` | `shape` | `` | 22 | 5 | 0 | 0 | 5 |
+| `PromptActionShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `PromptError` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `PromptErrorShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `PromptVersion` | `shape` | `` | 53 | 7 | 0 | 0 | 7 |
+| `Publisher` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `PushTopic` | `shape` | `` | 18 | 2 | 0 | 0 | 2 |
+| `QueueRoutingConfig` | `shape` | `` | 18 | 3 | 0 | 0 | 3 |
+| `QueueSobject` | `shape` | `` | 8 | 3 | 0 | 0 | 3 |
+| `QuickText` | `shape` | `` | 17 | 3 | 0 | 0 | 3 |
+| `QuickTextHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `QuickTextShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `QuickTextUsage` | `shape` | `` | 16 | 5 | 0 | 0 | 5 |
+| `QuickTextUsageShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Quote` | `shape` | `0Q0` | 75 | 9 | 1 | 6 | 9 |
+| `QuoteDocument` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `QuoteFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `QuoteHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `QuoteLineItem` | `shape` | `` | 28 | 6 | 0 | 0 | 6 |
+| `QuoteLineItemHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `QuoteShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `RecentlyViewed` | `shape` | `` | 25 | 6 | 0 | 0 | 6 |
+| `Recommendation` | `shape` | `` | 20 | 4 | 0 | 0 | 4 |
+| `RecommendationResponse` | `shape` | `` | 21 | 3 | 0 | 0 | 3 |
+| `RecordAction` | `shape` | `` | 18 | 4 | 0 | 0 | 4 |
+| `RecordActionHistory` | `shape` | `` | 16 | 4 | 0 | 0 | 4 |
+| `RecordType` | `behavior` | `012` | 14 | 3 | 0 | 1 | 3 |
+| `RedirectWhitelistUrl` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `Refund` | `shape` | `` | 44 | 7 | 0 | 0 | 7 |
+| `RefundLinePayment` | `shape` | `` | 25 | 6 | 0 | 0 | 6 |
+| `RelatedListColumnDefinition` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `RelatedListDefinition` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `RelationshipDomain` | `shape` | `` | 16 | 4 | 0 | 0 | 4 |
+| `RelationshipInfo` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ReplyEmailSettings` | `shape` | `` | 18 | 2 | 0 | 0 | 2 |
+| `Report` | `shape` | `` | 17 | 3 | 0 | 0 | 3 |
+| `ReportAnomalyEventStore` | `shape` | `` | 23 | 4 | 0 | 0 | 4 |
+| `ReportAnomalyEventStoreFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ReportEvent` | `shape` | `` | 44 | 10 | 0 | 0 | 10 |
+| `ReportFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ReputationLevel` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `ReputationPointsRule` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `ResourceAbsence` | `shape` | `` | 25 | 3 | 0 | 0 | 3 |
+| `ResourceAbsenceFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ResourceAbsenceHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ResourcePreference` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `ResourcePreferenceFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ResourcePreferenceHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ReturnOrder` | `shape` | `` | 59 | 11 | 0 | 0 | 11 |
+| `ReturnOrderFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ReturnOrderHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ReturnOrderItemAdjustment` | `shape` | `` | 16 | 5 | 0 | 0 | 5 |
+| `ReturnOrderItemTax` | `shape` | `` | 18 | 6 | 0 | 0 | 6 |
+| `ReturnOrderLineItem` | `shape` | `` | 43 | 10 | 0 | 0 | 10 |
+| `ReturnOrderLineItemFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ReturnOrderLineItemHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ReturnOrderShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `SPSamlAttributes` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `SalesChannel` | `shape` | `` | 17 | 3 | 0 | 0 | 3 |
+| `SalesChannelFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `SalesChannelShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `SalesStore` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `SamlSsoConfig` | `shape` | `` | 32 | 4 | 0 | 0 | 4 |
+| `Scontrol` | `shape` | `` | 18 | 2 | 0 | 0 | 2 |
+| `Scorecard` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `ScorecardAssociation` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `ScorecardMetric` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `ScorecardShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `SearchActivity` | `shape` | `` | 20 | 3 | 0 | 0 | 3 |
+| `SearchLayout` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `SearchPromotionRule` | `shape` | `` | 9 | 3 | 0 | 0 | 3 |
+| `SecurityCustomBaseline` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `SecurityHealthCheckAlertRecipient` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `SecurityHealthCheckResult` | `shape` | `` | 14 | 2 | 0 | 0 | 2 |
+| `Seller` | `shape` | `` | 17 | 4 | 0 | 0 | 4 |
+| `SellerHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `SellerShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ServiceAppointment` | `shape` | `` | 65 | 12 | 0 | 0 | 12 |
+| `ServiceAppointmentAttendee` | `shape` | `` | 15 | 5 | 0 | 0 | 5 |
+| `ServiceAppointmentAttendeeFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ServiceAppointmentAttendeeHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ServiceAppointmentAttendeeShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ServiceAppointmentFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ServiceAppointmentHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ServiceAppointmentShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ServiceAppointmentStatus` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `ServiceChannel` | `shape` | `` | 22 | 4 | 0 | 0 | 4 |
+| `ServiceChannelStatus` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `ServiceContract` | `shape` | `` | 52 | 8 | 0 | 0 | 8 |
+| `ServiceContractFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ServiceContractHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ServiceContractShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ServicePresenceStatus` | `shape` | `` | 10 | 2 | 0 | 0 | 2 |
+| `ServiceResource` | `shape` | `` | 18 | 6 | 0 | 0 | 6 |
+| `ServiceResourceFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ServiceResourceHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ServiceResourceShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ServiceResourceSkill` | `shape` | `` | 16 | 4 | 0 | 0 | 4 |
+| `ServiceResourceSkillFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ServiceResourceSkillHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ServiceSetupProvisioning` | `shape` | `` | 16 | 2 | 0 | 0 | 2 |
+| `ServiceTerritory` | `shape` | `` | 30 | 7 | 0 | 0 | 7 |
+| `ServiceTerritoryFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ServiceTerritoryHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ServiceTerritoryMember` | `shape` | `` | 27 | 5 | 0 | 0 | 5 |
+| `ServiceTerritoryMemberFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ServiceTerritoryMemberHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ServiceTerritoryShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ServiceTerritoryWorkType` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `ServiceTerritoryWorkTypeFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ServiceTerritoryWorkTypeHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `SessionHijackingEventStore` | `shape` | `` | 32 | 4 | 0 | 0 | 4 |
+| `SessionHijackingEventStoreFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `SessionPermSetActivation` | `shape` | `` | 12 | 6 | 0 | 0 | 6 |
+| `SetupAssistantStep` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `SetupAuditTrail` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `SetupEntityAccess` | `behavior` | `0J0` | 9 | 4 | 0 | 0 | 4 |
+| `SfdcPartnerSbscrOffer` | `shape` | `` | 53 | 3 | 0 | 0 | 3 |
+| `SfdcPartnerSbscrOfferHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `SfdcPartnerSbscrOfferItem` | `shape` | `` | 18 | 3 | 0 | 0 | 3 |
+| `SfdcPartnerSbscrOfferShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `SharingRecordCollection` | `shape` | `` | 16 | 4 | 0 | 0 | 4 |
+| `SharingRecordCollectionItem` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `SharingRecordCollectionMember` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `SharingRecordCollectionShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Shift` | `shape` | `` | 28 | 8 | 0 | 0 | 8 |
+| `ShiftEngagementChannel` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `ShiftEngagementChannelFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ShiftEngagementChannelHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ShiftFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ShiftHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ShiftShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ShiftStatus` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `ShiftWorkTopic` | `shape` | `` | 18 | 5 | 0 | 0 | 5 |
+| `ShiftWorkTopicFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ShiftWorkTopicHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `Shipment` | `shape` | `` | 19 | 8 | 0 | 0 | 8 |
+| `ShipmentFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ShipmentHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ShipmentItem` | `shape` | `` | 16 | 4 | 0 | 0 | 4 |
+| `ShipmentItemFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ShipmentItemHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ShipmentShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ShippingCarrier` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `ShippingCarrierFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ShippingCarrierHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ShippingCarrierMethod` | `shape` | `` | 19 | 4 | 0 | 0 | 4 |
+| `ShippingCarrierMethodFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `ShippingCarrierMethodHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `ShippingCarrierMethodShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ShippingCarrierShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ShippingConfigurationSet` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `ShippingConfigurationSetShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `ShippingRateArea` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `ShippingRateGroup` | `shape` | `` | 9 | 3 | 0 | 0 | 3 |
+| `Site` | `shape` | `` | 53 | 6 | 0 | 0 | 6 |
+| `SiteDetail` | `shape` | `` | 9 | 2 | 0 | 0 | 2 |
+| `SiteFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `SiteHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `SiteIframeWhiteListUrl` | `shape` | `` | 9 | 3 | 0 | 0 | 3 |
+| `SiteMarketingDataExtensionMapping` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `SiteRedirectMapping` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `Skill` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `SkillProfile` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `SkillRequirement` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `SkillRequirementFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `SkillRequirementHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `SkillType` | `shape` | `` | 10 | 2 | 0 | 0 | 2 |
+| `SkillUser` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `SlaProcess` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `SlackChannelRelatedRecord` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `SocialPersona` | `shape` | `` | 37 | 3 | 0 | 0 | 3 |
+| `SocialPersonaHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `SocialPost` | `shape` | `` | 67 | 10 | 0 | 0 | 10 |
+| `SocialPostFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `SocialPostHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `SocialPostShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Solution` | `shape` | `` | 20 | 3 | 0 | 0 | 3 |
+| `SolutionFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `SolutionHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `SolutionStatus` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `StagedInviteeEmail` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `StagedInviteeEmailShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Stamp` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `StampAssignment` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `StandardShippingRate` | `shape` | `` | 19 | 4 | 0 | 0 | 4 |
+| `StaticResource` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `StreamingChannel` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `StreamingChannelShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `SupervisorAgentConfigSkill` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `Survey` | `shape` | `` | 20 | 5 | 0 | 0 | 5 |
+| `SurveyEmailBranding` | `shape` | `` | 15 | 4 | 0 | 0 | 4 |
+| `SurveyEngagementContext` | `shape` | `` | 14 | 5 | 0 | 0 | 5 |
+| `SurveyEngagementContextShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `SurveyFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `SurveyInvitation` | `shape` | `` | 27 | 10 | 0 | 0 | 10 |
+| `SurveyInvitationShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `SurveyPage` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `SurveyQuestion` | `shape` | `` | 23 | 5 | 0 | 0 | 5 |
+| `SurveyQuestionChoice` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `SurveyQuestionResponse` | `shape` | `` | 22 | 7 | 0 | 0 | 7 |
+| `SurveyQuestionScore` | `shape` | `` | 23 | 7 | 0 | 0 | 7 |
+| `SurveyResponse` | `shape` | `` | 25 | 7 | 0 | 0 | 7 |
+| `SurveyShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `SurveyStyleSet` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `SurveyStyleSetStaticRsrc` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `SurveySubject` | `shape` | `` | 17 | 7 | 0 | 0 | 7 |
+| `SurveyVersion` | `shape` | `` | 18 | 5 | 0 | 0 | 5 |
+| `SurveyVersionAddlInfo` | `shape` | `` | 16 | 5 | 0 | 0 | 5 |
+| `TabDefinition` | `shape` | `` | 17 | 2 | 0 | 0 | 2 |
+| `TableauHostMapping` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `TableauHostMappingShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Task` | `shape` | `00T` | 45 | 8 | 1 | 11 | 8 |
+| `TaskFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `TaskPriority` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `TaskRelation` | `shape` | `` | 11 | 5 | 0 | 0 | 5 |
+| `TaskStatus` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `TaskWhoRelation` | `shape` | `` | 11 | 5 | 0 | 0 | 5 |
+| `TenantUsageEntitlement` | `shape` | `` | 19 | 2 | 0 | 0 | 2 |
+| `TestSuiteMembership` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `ThirdPartyAccountLink` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `ThreatDetectionFeedback` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `ThreatDetectionFeedbackFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `TimeSlot` | `shape` | `` | 18 | 4 | 0 | 0 | 4 |
+| `TimeSlotHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `TodayGoal` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `TodayGoalShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Topic` | `shape` | `` | 11 | 3 | 0 | 0 | 3 |
+| `TopicAssignment` | `shape` | `` | 12 | 5 | 0 | 0 | 5 |
+| `TopicFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `TopicUserEvent` | `shape` | `` | 10 | 5 | 0 | 0 | 5 |
+| `TransactionSecurityPolicy` | `shape` | `` | 22 | 4 | 0 | 0 | 4 |
+| `Translation` | `shape` | `` | 9 | 2 | 0 | 0 | 2 |
+| `UiFormulaCriterion` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `UiFormulaRule` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `UndecidedEventRelation` | `shape` | `` | 13 | 5 | 0 | 0 | 5 |
+| `UniversalAnomalyEventStore` | `shape` | `` | 23 | 4 | 0 | 0 | 4 |
+| `UniversalAnomalyEventStoreFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `UnstructuredStorageSpace` | `shape` | `` | 22 | 4 | 0 | 0 | 4 |
+| `UnstructuredStorageSpaceShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `UriEvent` | `shape` | `` | 22 | 4 | 0 | 0 | 4 |
+| `User` | `behavior` | `005` | 201 | 10 | 0 | 13 | 10 |
+| `UserAppInfo` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `UserAppMenuCustomization` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `UserAppMenuCustomizationShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `UserAppMenuItem` | `shape` | `` | 21 | 3 | 0 | 0 | 3 |
+| `UserConfigTransferButton` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `UserConfigTransferSkill` | `shape` | `` | 9 | 4 | 0 | 0 | 4 |
+| `UserCustomBadge` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `UserDefinedLabel` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `UserDefinedLabelAssignment` | `shape` | `` | 13 | 5 | 0 | 0 | 5 |
+| `UserDefinedLabelAssignmentShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `UserDefinedLabelShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `UserEmailPreferredPerson` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `UserEmailPreferredPersonShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `UserEntityAccess` | `shape` | `` | 18 | 3 | 0 | 0 | 3 |
+| `UserFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `UserFieldAccess` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `UserHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `UserLicense` | `shape` | `100` | 15 | 2 | 0 | 0 | 2 |
+| `UserListView` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `UserListViewCriterion` | `shape` | `` | 12 | 3 | 0 | 0 | 3 |
+| `UserLocalWebServerIdentity` | `shape` | `` | 10 | 3 | 0 | 0 | 3 |
+| `UserLocalWebServerIdentityShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `UserLocationAssignment` | `shape` | `` | 16 | 4 | 0 | 0 | 4 |
+| `UserLogin` | `shape` | `` | 9 | 3 | 0 | 0 | 3 |
+| `UserPackageLicense` | `shape` | `` | 8 | 4 | 0 | 0 | 4 |
+| `UserPermissionAccess` | `shape` | `` | 551 | 2 | 0 | 0 | 2 |
+| `UserPreference` | `shape` | `` | 9 | 3 | 0 | 0 | 3 |
+| `UserPrioritizedRecord` | `shape` | `` | 10 | 4 | 0 | 0 | 4 |
+| `UserPrioritizedRecordShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `UserProvAccount` | `shape` | `` | 19 | 4 | 0 | 0 | 4 |
+| `UserProvAccountStaging` | `shape` | `` | 17 | 4 | 0 | 0 | 4 |
+| `UserProvMockTarget` | `shape` | `` | 13 | 2 | 0 | 0 | 2 |
+| `UserProvisioningConfig` | `shape` | `` | 21 | 4 | 0 | 0 | 4 |
+| `UserProvisioningLog` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `UserProvisioningRequest` | `shape` | `` | 22 | 9 | 0 | 0 | 9 |
+| `UserProvisioningRequestShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `UserRecordAccess` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `UserRole` | `shape` | `00E` | 19 | 6 | 0 | 5 | 6 |
+| `UserServicePresence` | `shape` | `` | 22 | 5 | 0 | 0 | 5 |
+| `UserServicePresenceShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `UserSetupEntityAccess` | `shape` | `` | 12 | 2 | 0 | 0 | 2 |
+| `UserShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `UserSharedFeature` | `shape` | `` | 8 | 3 | 0 | 0 | 3 |
+| `UserTeamMember` | `shape` | `` | 10 | 4 | 0 | 0 | 4 |
+| `VerificationHistory` | `shape` | `` | 19 | 6 | 0 | 0 | 6 |
+| `VideoCall` | `shape` | `` | 33 | 7 | 0 | 0 | 7 |
+| `VideoCallFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `VideoCallParticipant` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `VideoCallRecording` | `shape` | `` | 20 | 3 | 0 | 0 | 3 |
+| `VideoCallShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `VideoVendorAdminConsent` | `shape` | `` | 10 | 2 | 0 | 0 | 2 |
+| `VisualforceAccessMetrics` | `shape` | `` | 11 | 4 | 0 | 0 | 4 |
+| `VoiceCall` | `shape` | `` | 36 | 8 | 0 | 0 | 8 |
+| `VoiceCallFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `VoiceCallRecording` | `shape` | `` | 13 | 5 | 0 | 0 | 5 |
+| `VoiceCallShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `Vote` | `shape` | `` | 9 | 3 | 0 | 0 | 3 |
+| `Waitlist` | `shape` | `` | 15 | 4 | 0 | 0 | 4 |
+| `WaitlistFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `WaitlistHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WaitlistParticipant` | `shape` | `` | 19 | 7 | 0 | 0 | 7 |
+| `WaitlistParticipantFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `WaitlistParticipantHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WaitlistServiceResource` | `shape` | `` | 15 | 4 | 0 | 0 | 4 |
+| `WaitlistServiceResourceFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `WaitlistServiceResourceHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WaitlistShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `WaitlistWorkType` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `WaitlistWorkTypeFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `WaitlistWorkTypeHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WaveAutoInstallRequest` | `shape` | `` | 17 | 3 | 0 | 0 | 3 |
+| `WaveCompatibilityCheckItem` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `WebCart` | `shape` | `` | 59 | 8 | 0 | 0 | 8 |
+| `WebCartAdjustmentBasis` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `WebCartAdjustmentGroup` | `shape` | `` | 21 | 5 | 0 | 0 | 5 |
+| `WebCartCredit` | `shape` | `` | 14 | 3 | 0 | 0 | 3 |
+| `WebCartHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WebCartShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `WebLink` | `shape` | `` | 28 | 3 | 0 | 0 | 3 |
+| `WebStore` | `shape` | `` | 23 | 3 | 0 | 0 | 3 |
+| `WebStoreBuyerGroup` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `WebStoreCatalog` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `WebStoreCatalogHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WebStoreInventorySource` | `shape` | `` | 20 | 4 | 0 | 0 | 4 |
+| `WebStoreNetwork` | `shape` | `` | 11 | 5 | 0 | 0 | 5 |
+| `WebStoreShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `WorkOrder` | `shape` | `` | 57 | 16 | 0 | 0 | 16 |
+| `WorkOrderFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `WorkOrderHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WorkOrderLineItem` | `shape` | `` | 48 | 12 | 0 | 0 | 12 |
+| `WorkOrderLineItemFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `WorkOrderLineItemHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WorkOrderLineItemStatus` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `WorkOrderShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `WorkOrderStatus` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `WorkPlan` | `shape` | `` | 19 | 7 | 0 | 0 | 7 |
+| `WorkPlanFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `WorkPlanHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WorkPlanShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `WorkPlanTemplate` | `shape` | `` | 15 | 3 | 0 | 0 | 3 |
+| `WorkPlanTemplateEntry` | `shape` | `` | 14 | 4 | 0 | 0 | 4 |
+| `WorkPlanTemplateEntryFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `WorkPlanTemplateEntryHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WorkPlanTemplateFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `WorkPlanTemplateHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WorkPlanTemplateShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `WorkStep` | `shape` | `` | 27 | 7 | 0 | 0 | 7 |
+| `WorkStepFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `WorkStepHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WorkStepStatus` | `shape` | `` | 11 | 2 | 0 | 0 | 2 |
+| `WorkStepTemplate` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `WorkStepTemplateFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `WorkStepTemplateHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WorkStepTemplateShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `WorkType` | `shape` | `` | 30 | 6 | 0 | 0 | 6 |
+| `WorkTypeFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `WorkTypeGroup` | `shape` | `` | 16 | 3 | 0 | 0 | 3 |
+| `WorkTypeGroupFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `WorkTypeGroupHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WorkTypeGroupMember` | `shape` | `` | 13 | 4 | 0 | 0 | 4 |
+| `WorkTypeGroupMemberFeed` | `shape` | `` | 20 | 6 | 0 | 0 | 6 |
+| `WorkTypeGroupMemberHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WorkTypeGroupShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |
+| `WorkTypeHistory` | `shape` | `` | 13 | 3 | 0 | 0 | 3 |
+| `WorkTypeShare` | `shape` | `` | 12 | 4 | 0 | 0 | 4 |

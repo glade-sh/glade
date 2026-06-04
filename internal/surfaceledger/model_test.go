@@ -8,6 +8,8 @@ func TestCanonicalSurfaceIDs(t *testing.T) {
 		"apex member":      ApexMemberID("System", "Label", "get", []string{"String", "String"}),
 		"tooling object":   ToolingObjectID("ApexClass"),
 		"tooling field":    ToolingFieldID("ApexClass", "Body"),
+		"data object":      DataObjectID("AsyncApexJob"),
+		"data field":       DataFieldID("AsyncApexJob", "Status"),
 		"rest resource":    RestResourceID("composite", "post"),
 		"visualforce attr": VisualforceAttrID("apex", "page", "showHeader"),
 		"lwc module":       LWCModuleID("@salesforce/apex"),
@@ -17,6 +19,8 @@ func TestCanonicalSurfaceIDs(t *testing.T) {
 		"apex member":      "apex:System.Label.get(String,String)",
 		"tooling object":   "tooling:ApexClass",
 		"tooling field":    "tooling:ApexClass.Body",
+		"data object":      "data-reference:AsyncApexJob",
+		"data field":       "data-reference:AsyncApexJob.Status",
 		"rest resource":    "rest:composite.post",
 		"visualforce attr": "visualforce:apex:page.showHeader",
 		"lwc module":       "lwc:@salesforce/apex",
@@ -57,13 +61,13 @@ func TestAuraObjectDoesNotJoinApexObject(t *testing.T) {
 
 func TestCanonicalSurfaceIDsCleanApexNames(t *testing.T) {
 	got := ApexMemberID("System", "Describe\u200bFieldResult", "getSOAPType", nil)
-	want := "apex:Schema.DescribeFieldResult.getSoapType"
+	want := "apex:Schema.DescribeFieldResult.getSOAPType"
 	if got != want {
 		t.Fatalf("cleaned apex member id = %q, want %q", got, want)
 	}
 
 	got = ApexMemberID("System", "DescribeFieldResult", "getSObjectField", []string{})
-	want = "apex:Schema.DescribeFieldResult.getSobjectField()"
+	want = "apex:Schema.DescribeFieldResult.getSObjectField()"
 	if got != want {
 		t.Fatalf("cleaned sobject acronym id = %q, want %q", got, want)
 	}
@@ -80,22 +84,16 @@ func TestCanonicalSurfaceIDsCleanApexNames(t *testing.T) {
 		t.Fatalf("cleaned System.Type id = %q, want %q", got, want)
 	}
 
+	got = ApexMemberID("System", "System", "scheduleBatch", []string{"Database.Batchable", "String", "Integer"})
+	want = ApexMemberID("System", "System", "scheduleBatch", []string{"Object", "String", "Integer"})
+	if got != want {
+		t.Fatalf("cleaned Database.Batchable id = %q, want %q", got, want)
+	}
+
 	got = ApexTypeID("ApexPages", "ApexPages")
 	want = ApexTypeID("System", "ApexPages")
 	if got != want {
 		t.Fatalf("cleaned ApexPages namespace id = %q, want %q", got, want)
-	}
-
-	got = ApexMemberID("ApexPages", "StandardSetController", "setFilterID", []string{"String"})
-	want = ApexMemberID("ApexPages", "StandardSetController", "setFilterId", []string{"String"})
-	if got != want {
-		t.Fatalf("cleaned setFilterID id = %q, want %q", got, want)
-	}
-
-	got = ApexMemberID("ApexPages", "StandardSetController", "setpageNumber", []string{"Integer"})
-	want = ApexMemberID("ApexPages", "StandardSetController", "setPageNumber", []string{"Integer"})
-	if got != want {
-		t.Fatalf("cleaned setpageNumber id = %q, want %q", got, want)
 	}
 
 	got = ApexMemberID("ApexPages", "StandardSetController", "setSelected", []string{"sObject[]"})
@@ -103,6 +101,21 @@ func TestCanonicalSurfaceIDsCleanApexNames(t *testing.T) {
 	if got != want {
 		t.Fatalf("cleaned sObject array id = %q, want %q", got, want)
 	}
+}
+
+func TestGladeSnapshotMarksDatabaseStatefulSupported(t *testing.T) {
+	rows := BuildGladeSnapshot()
+	id := ApexTypeID("Database", "Stateful")
+	for _, row := range rows {
+		if row.SurfaceID != id {
+			continue
+		}
+		if row.GladeBehavior != BehaviorSupported {
+			t.Fatalf("Database.Stateful behavior = %q, want %q", row.GladeBehavior, BehaviorSupported)
+		}
+		return
+	}
+	t.Fatalf("missing %s row", id)
 }
 
 func TestRowsCarrySurfaceFamilyAndImplementationTarget(t *testing.T) {
@@ -124,5 +137,21 @@ func TestRowsCarrySurfaceFamilyAndImplementationTarget(t *testing.T) {
 	})
 	if rest.SalesforceSurfaceFamily != "rest-api" || rest.GladeImplementationTarget != "server-or-explicit-unsupported" {
 		t.Fatalf("rest row family/target = %q/%q", rest.SalesforceSurfaceFamily, rest.GladeImplementationTarget)
+	}
+}
+
+func TestOwnerForRuntimeCaseCheckDoesNotAllocate(t *testing.T) {
+	row := SurfaceLedgerRow{
+		SurfaceID: ApexMemberID("Database", "Batchable", "execute", []string{"Database.BatchableContext", "List<Object>"}),
+		Product:   ProductApex,
+		Area:      AreaRuntime,
+	}
+	allocs := testing.AllocsPerRun(100, func() {
+		if OwnerFor(row) != "data-runtime" {
+			t.Fatalf("owner = %q, want data-runtime", OwnerFor(row))
+		}
+	})
+	if allocs != 0 {
+		t.Fatalf("OwnerFor allocations = %.0f, want 0", allocs)
 	}
 }

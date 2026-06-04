@@ -1,0 +1,54 @@
+{
+  "name": "data-platform-schema-describe-dependent-picklists",
+  "evidence": [
+    {
+      "symbol": "Schema.DescribeFieldResult.getController",
+      "surfaceId": "apex:Schema.DescribeFieldResult.getController()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeFieldResult.getControllerValues",
+      "surfaceId": "apex:Schema.DescribeFieldResult.getControllerValues()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeFieldResult.controllervalues",
+      "surfaceId": "apex:Schema.DescribeFieldResult.controllervalues",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeFieldResult.isDependentPicklist",
+      "surfaceId": "apex:Schema.DescribeFieldResult.isDependentPicklist()",
+      "kind": "exec"
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Object stage = Merchandise__c.Stage__c.getDescribe(); System.assert(stage.isDependentPicklist()); System.assertEquals(Merchandise__c.Type__c, stage.getController()); System.assertEquals(Merchandise__c.Type__c, stage.controller); Map<String,Integer> controllerValues = stage.getControllerValues(); System.assertEquals(0, controllerValues.get('Retail')); System.assertEquals(1, controllerValues.get('Wholesale')); System.assertEquals(2, controllerValues.get('Partner')); System.assertEquals(3, controllerValues.size()); System.assertEquals(controllerValues.size(), stage.controllerValues.size());"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Object stage = Merchandise__c.Stage__c.getDescribe(); System.assert(stage.isDependentPicklist()); System.assertEquals(Merchandise__c.Type__c, stage.getController()); System.assertEquals(Merchandise__c.Type__c, stage.controller); Map<String,Integer> controllerValues = stage.getControllerValues(); System.assertEquals(0, controllerValues.get('Retail')); System.assertEquals(1, controllerValues.get('Wholesale')); System.assertEquals(2, controllerValues.get('Partner')); System.assertEquals(3, controllerValues.size()); System.assertEquals(controllerValues.size(), stage.controllerValues.size());"
+    ]
+  },
+  "expected": {
+    "stdoutContains": "Executed anonymous Apex"
+  },
+  "schema": [
+    {
+      "path": "force-app/main/default/objects/Merchandise__c/Merchandise__c.object-meta.xml",
+      "content": "<CustomObject><label>Merchandise</label><pluralLabel>Merchandise</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Merchandise__c/fields/Type__c.field-meta.xml",
+      "content": "<CustomField><fullName>Type__c</fullName><label>Type</label><type>Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition><value><fullName>Retail</fullName><label>Retail</label><default>true</default></value><value><fullName>Wholesale</fullName><label>Wholesale</label></value><value><fullName>Partner</fullName><label>Partner</label></value></valueSetDefinition></valueSet></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Merchandise__c/fields/Stage__c.field-meta.xml",
+      "content": "<CustomField><fullName>Stage__c</fullName><label>Stage</label><type>Picklist</type><valueSet><controllingField>Type__c</controllingField><restricted>true</restricted><valueSetDefinition><value><fullName>Open</fullName><label>Open</label><default>true</default></value><value><fullName>Closed</fullName><label>Closed</label></value></valueSetDefinition><valueSettings><controllingFieldValue>Retail</controllingFieldValue><controllingFieldValue>Wholesale</controllingFieldValue><valueName>Open</valueName></valueSettings><valueSettings><controllingFieldValue>Partner</controllingFieldValue><valueName>Closed</valueName></valueSettings></valueSet></CustomField>"
+    }
+  ]
+}

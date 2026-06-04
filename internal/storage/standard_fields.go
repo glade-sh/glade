@@ -1125,6 +1125,9 @@ func enrichStandardField(existing *Field, field Field) {
 	if len(existing.SummaryFilterItems) == 0 && len(field.SummaryFilterItems) != 0 {
 		existing.SummaryFilterItems = append([]SummaryFilterItem(nil), field.SummaryFilterItems...)
 	}
+	if len(existing.FilteredLookupInfo.ControllingFields) == 0 && len(field.FilteredLookupInfo.ControllingFields) != 0 {
+		existing.FilteredLookupInfo = cloneFilteredLookupInfo(field.FilteredLookupInfo)
+	}
 	if field.AutoNumber {
 		existing.AutoNumber = true
 	}
@@ -1139,6 +1142,15 @@ func enrichStandardField(existing *Field, field Field) {
 	}
 	if field.CaseSensitive {
 		existing.CaseSensitive = true
+	}
+	if field.RestrictedPicklist {
+		existing.RestrictedPicklist = true
+	}
+	if field.IDLookup {
+		existing.IDLookup = true
+	}
+	if field.NamePointing {
+		existing.NamePointing = true
 	}
 	if field.Required {
 		existing.Required = true
@@ -1273,9 +1285,16 @@ func mergeStandardRecordTypes(definition *ObjectDefinition, recordTypes []Record
 }
 
 func cloneField(field Field) Field {
+	field.SummaryFilterItems = append([]SummaryFilterItem(nil), field.SummaryFilterItems...)
+	field.FilteredLookupInfo = cloneFilteredLookupInfo(field.FilteredLookupInfo)
 	field.ReferenceTo = append([]string(nil), field.ReferenceTo...)
 	field.PicklistValues = append([]PicklistValue(nil), field.PicklistValues...)
 	return field
+}
+
+func cloneFilteredLookupInfo(value FilteredLookupInfo) FilteredLookupInfo {
+	value.ControllingFields = append([]string(nil), value.ControllingFields...)
+	return value
 }
 
 func cloneBoolFlag(flag *bool) *bool {

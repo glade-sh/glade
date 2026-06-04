@@ -57,6 +57,10 @@ func (vm *VM) schemaDescribeTabs() Value {
 	tabSet := Object("Schema.DescribeTabSetResult")
 	tabSet.Fields["name"] = String("AllTabs")
 	tabSet.Fields["label"] = String("All Tabs")
+	tabSet.Fields["description"] = String("All Tabs")
+	tabSet.Fields["logoUrl"] = Null
+	tabSet.Fields["namespace"] = Null
+	tabSet.Fields["tabSetId"] = String("AllTabs")
 	tabSet.Fields["tabs"] = List(tabs...)
 	tabSet.Fields["selected"] = Bool(false)
 	value := List(tabSet)
@@ -139,8 +143,24 @@ func (vm *VM) describeTabValue(tab storage.TabMetadata) Value {
 	value.Fields["custom"] = Bool(tab.Custom)
 	value.Fields["iconUrl"] = String(tab.Motif)
 	value.Fields["icons"] = List(describeTabIconValue(tab))
-	value.Fields["url"] = String("/lightning/o/" + tab.Name + "/list")
+	value.Fields["colors"] = List(describeTabColorValue(tab))
+	value.Fields["miniIconUrl"] = String(describeTabIconURL(tab))
+	value.Fields["url"] = String(describeTabURL(tab))
+	value.Fields["mobileUrl"] = value.Fields["url"]
+	value.Fields["tabEnumOrId"] = String(tab.Name)
 	return value
+}
+
+func describeTabURL(tab storage.TabMetadata) string {
+	return "/lightning/o/" + tab.Name + "/list"
+}
+
+func describeTabColorValue(tab storage.TabMetadata) Value {
+	color := Object("Schema.DescribeColorResult")
+	color.Fields["color"] = String("#747474")
+	color.Fields["context"] = String("primary")
+	color.Fields["theme"] = String(tab.Motif)
+	return color
 }
 func describeTabSObjectName(tab storage.TabMetadata) string {
 	sObjectName := strings.TrimSpace(tab.SObjectName)

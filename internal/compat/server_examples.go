@@ -325,20 +325,21 @@ func applyServerExampleSchema(org *storage.OrgState, loaded schema.Schema) {
 		}
 		for _, field := range object.Fields {
 			state.Definition.Fields[field.Name] = storage.Field{
-				APIName:          field.Name,
-				Label:            field.Label,
-				Type:             serverExampleStorageFieldType(field.Type, field.Formula),
-				Length:           field.Length,
-				Precision:        field.Precision,
-				Scale:            field.Scale,
-				DefaultValue:     field.DefaultValue,
-				Required:         field.Required,
-				ExternalID:       field.ExternalID,
-				Unique:           field.Unique,
-				Encrypted:        field.Encrypted,
-				ReferenceTo:      append([]string(nil), field.ReferenceTo...),
-				RelationshipName: field.RelationshipName,
-				PicklistValues:   serverExamplePicklistValues(field.PicklistValues),
+				APIName:            field.Name,
+				Label:              field.Label,
+				Type:               serverExampleStorageFieldType(field.Type, field.Formula),
+				Length:             field.Length,
+				Precision:          field.Precision,
+				Scale:              field.Scale,
+				DefaultValue:       field.DefaultValue,
+				Required:           field.Required,
+				ExternalID:         field.ExternalID,
+				Unique:             field.Unique,
+				Encrypted:          field.Encrypted,
+				RestrictedPicklist: field.RestrictedPicklist,
+				ReferenceTo:        append([]string(nil), field.ReferenceTo...),
+				RelationshipName:   field.RelationshipName,
+				PicklistValues:     serverExamplePicklistValues(field.PicklistValues),
 			}
 			childRelationship := serverExampleChildRelationshipName(field)
 			if childRelationship != "" && len(field.ReferenceTo) > 0 {

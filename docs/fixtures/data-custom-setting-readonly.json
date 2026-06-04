@@ -4,7 +4,7 @@
     {
       "symbol": "CustomSetting read-only records",
       "kind": "black-box",
-      "notes": "getInstance returns a read-only local custom setting record and mutation fails with a stable diagnostic."
+      "notes": "getInstance returns a local custom setting record that Apex code can mutate in memory."
     }
   ],
   "project": {
@@ -65,9 +65,9 @@
     ]
   },
   "expected": {
-    "error": {
-      "type": "Error",
-      "message": "cannot modify read-only custom setting"
+    "result": {
+      "debug": null,
+      "ok": true
     }
   }
 }

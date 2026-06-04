@@ -7,9 +7,27 @@
       "notes": "Single-record Database.delete returns a DeleteResult-shaped local object with id, success, and errors accessors."
     },
     {
+      "surfaceId": "apex:System.Database.delete(Object,Boolean)",
+      "symbol": "Database.delete",
+      "kind": "test",
+      "notes": "Single-record delete with allOrNone=false returns a DeleteResult-shaped local object."
+    },
+    {
       "symbol": "Database.undelete",
       "kind": "test",
       "notes": "Single-record Database.undelete returns an UndeleteResult-shaped local object with id, success, and errors accessors."
+    },
+    {
+      "surfaceId": "apex:System.Database.undelete(Object,Boolean)",
+      "symbol": "Database.undelete",
+      "kind": "test",
+      "notes": "Single-record undelete with allOrNone=false returns an UndeleteResult-shaped local object."
+    },
+    {
+      "surfaceId": "apex:Database.UndeleteResult.getId()",
+      "symbol": "Database.UndeleteResult.getId",
+      "kind": "test",
+      "notes": "Database UndeleteResult id accessor is asserted on restored records."
     },
     {
       "symbol": "Database.insert",

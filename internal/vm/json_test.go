@@ -514,7 +514,7 @@ gen.writeFieldName('bad');
 	}
 }
 
-func TestExecJSONGeneratorCloseFinishesOpenOutput(t *testing.T) {
+func TestExecJSONGeneratorCloseRejectsOpenOutput(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator emptyGen = JSON.createGenerator(false);
 emptyGen.close();
@@ -522,12 +522,33 @@ System.assertEquals('', emptyGen.getAsString());
 
 JSONGenerator objectGen = JSON.createGenerator(false);
 objectGen.writeStartObject();
+Boolean caught = false;
+try {
+	objectGen.close();
+} catch (JSONException e) {
+	caught = true;
+	System.assertEquals('System.JSONException', e.getTypeName());
+	System.assert(e.getMessage().contains('JSONGenerator cannot close with open JSON containers'));
+}
+System.assert(caught);
+objectGen.writeEndObject();
 System.assertEquals('{}', objectGen.getAsString());
 
 JSONGenerator pendingGen = JSON.createGenerator(false);
 pendingGen.writeStartObject();
 pendingGen.writeFieldName('x');
-System.assertEquals('{"x"}', pendingGen.getAsString());
+caught = false;
+try {
+	pendingGen.getAsString();
+} catch (JSONException e) {
+	caught = true;
+	System.assertEquals('System.JSONException', e.getTypeName());
+	System.assert(e.getMessage().contains('JSONGenerator cannot close with open JSON containers'));
+}
+System.assert(caught);
+pendingGen.writeString('ok');
+pendingGen.writeEndObject();
+System.assertEquals('{"x":"ok"}', pendingGen.getAsString());
 `)
 	if err != nil {
 		t.Fatal(err)

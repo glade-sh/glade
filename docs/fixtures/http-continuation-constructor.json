@@ -1,0 +1,28 @@
+{
+  "name": "http-continuation-constructor",
+  "evidence": [
+    {
+      "symbol": "Continuation",
+      "kind": "exec",
+      "notes": "Continuation construction and local request containers are modeled for tests."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Continuation cont = new Continuation(60);\nSystem.assertEquals(60, cont.Timeout);\nHttpRequest req = new HttpRequest();\nreq.setEndpoint('https://example.test');\nString label = cont.addHttpRequest(req);\nSystem.assertEquals('request-1', label);\nSystem.assertEquals(1, cont.getRequests().size());"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Continuation cont = new Continuation(60);\nSystem.assertEquals(60, cont.Timeout);\nHttpRequest req = new HttpRequest();\nreq.setEndpoint('https://example.test');\nString label = cont.addHttpRequest(req);\nSystem.assertEquals('request-1', label);\nSystem.assertEquals(1, cont.getRequests().size());"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

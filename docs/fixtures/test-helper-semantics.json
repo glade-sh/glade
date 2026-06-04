@@ -17,12 +17,21 @@
       "symbol": "Test.setMock",
       "kind": "test",
       "notes": "HttpCalloutMock lifecycle in local test context"
+    },
+    {
+      "symbol": "Test.createSoqlStub",
+      "kind": "test",
+      "notes": "SoqlStubProvider receives selector-shaped relationship queries."
     }
   ],
   "source": [
     {
+      "path": "force-app/main/classes/SoqlFixtureProvider.cls",
+      "content": "public class SoqlFixtureProvider implements SoqlStubProvider { public List<SObject> handleSoqlQuery(Schema.SObjectType targetType, String query, Map<String,Object> binds) { Map<String,Object> row = new Map<String,Object>{'Id' => '001000000000123', 'Name' => query}; return Test.createStubQueryRows(targetType, new List<Map<String,Object>>{row}); } }"
+    },
+    {
       "path": "force-app/main/classes/TestHelperFixtureTest.cls",
-      "content": "@isTest private class TestHelperFixtureTest { @isTest static void helpers() { System.assert(Test.isRunningTest()); System.assertEquals('01s000000000001', Test.getStandardPricebookId()); ApexPages.addMessage(new ApexPages.Message('ERROR', 'Summary', 'Detail')); System.assert(ApexPages.hasMessages()); System.assertEquals(1, ApexPages.getMessages().size()); Test.clearApexPageMessages(); System.assert(!ApexPages.hasMessages()); System.assertEquals(0, ApexPages.getMessages().size()); Test.setMock('HttpCalloutMock', new MockResponse(body = 'fixture', statusCode = 209)); HttpRequest req = new HttpRequest(); req.setEndpoint('https://example.test'); req.setMethod('GET'); Http h = new Http(); HttpResponse res = h.send(req); System.assertEquals(209, res.getStatusCode()); System.assertEquals('fixture', res.getBody()); } }"
+      "content": "@isTest private class TestHelperFixtureTest { @isTest static void helpers() { System.assert(Test.isRunningTest()); System.assertEquals('01s000000000001', Test.getStandardPricebookId()); ApexPages.addMessage(new ApexPages.Message('ERROR', 'Summary', 'Detail')); System.assert(ApexPages.hasMessages()); System.assertEquals(1, ApexPages.getMessages().size()); Test.clearApexPageMessages(); System.assert(!ApexPages.hasMessages()); System.assertEquals(0, ApexPages.getMessages().size()); Test.setMock('HttpCalloutMock', new MockResponse(body = 'fixture', statusCode = 209)); HttpRequest req = new HttpRequest(); req.setEndpoint('https://example.test'); req.setMethod('GET'); Http h = new Http(); HttpResponse res = h.send(req); System.assertEquals(209, res.getStatusCode()); System.assertEquals('fixture', res.getBody()); Test.createSoqlStub(Account.SObjectType, new SoqlFixtureProvider()); List<Account> childRows = [SELECT Id, Name, (SELECT Id FROM Contacts) FROM Account]; System.assertEquals(1, childRows.size()); System.assert(childRows[0].Name.contains('Contacts')); List<Account> semiJoinRows = [SELECT Id, Name FROM Account WHERE Id IN (SELECT AccountId FROM Contact)]; System.assertEquals(1, semiJoinRows.size()); System.assert(semiJoinRows[0].Name.contains('SELECT AccountId FROM Contact')); } }"
     }
   ],
   "command": {

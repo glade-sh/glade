@@ -30,6 +30,8 @@ func OutputFileNames() []string {
 		"EVIDENCE_SNAPSHOT.json",
 		"SURFACE_LEDGER.json",
 		"SURFACE_DASHBOARD.md",
+		"SURFACE_PROGRESS.md",
+		"SURFACE_PROGRESS.html",
 		"SURFACE_GAPS.md",
 		"SURFACE_FAILURES.md",
 		"SURFACE_RELEASE_DIFF.md",
@@ -113,6 +115,12 @@ func writeRefreshOutputs(out string, docsRows, orgRows, gladeRows, evidenceRows 
 		}
 	}
 	if err := os.WriteFile(filepath.Join(out, "SURFACE_DASHBOARD.md"), []byte(DashboardMarkdown(ledger)), 0o644); err != nil {
+		return err
+	}
+	if err := os.WriteFile(filepath.Join(out, "SURFACE_PROGRESS.md"), []byte(ProgressMarkdown(ledger)), 0o644); err != nil {
+		return err
+	}
+	if err := os.WriteFile(filepath.Join(out, "SURFACE_PROGRESS.html"), []byte(ProgressHTML(ledger)), 0o644); err != nil {
 		return err
 	}
 	if err := os.WriteFile(filepath.Join(out, "SURFACE_GAPS.md"), []byte(GapsMarkdown(ledger)), 0o644); err != nil {

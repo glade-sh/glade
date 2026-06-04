@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -25,6 +26,10 @@ type childRelationshipCache struct {
 
 func newChildRelationshipCache() *childRelationshipCache {
 	return &childRelationshipCache{entries: make(map[string][]Value)}
+}
+
+func sObjectDescribeOptionsValue(name string) Value {
+	return Value{Kind: ValueObject, Type: "Schema.SObjectDescribeOptions", Text: name}
 }
 
 func (c *childRelationshipCache) load(key string) ([]Value, bool) {
@@ -91,16 +96,34 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	definition = vm.describePreparedDefinition(name, definition)
 	desc := Object("Schema.DescribeSObjectResult")
 	desc.Fields["name"] = String(vm.describeObjectName(name))
+	desc.Fields["localName"] = String(vm.localSchemaName(vm.describeObjectName(name)))
 	desc.Fields["label"] = String(definition.Label)
 	desc.Fields["labelPlural"] = String(definition.PluralLabel)
 	desc.Fields["keyPrefix"] = String(definition.KeyPrefix)
+	desc.Fields["sObjectType"] = sObjectTypeToken(name)
+	desc.Fields["accessible"] = Bool(vm.currentUserObjectPermission(name, "isAccessible"))
+	desc.Fields["createable"] = Bool(vm.currentUserObjectPermission(name, "isCreateable"))
+	desc.Fields["updateable"] = Bool(vm.currentUserObjectPermission(name, "isUpdateable"))
+	desc.Fields["deletable"] = Bool(vm.currentUserObjectPermission(name, "isDeletable"))
+	desc.Fields["queryable"] = Bool(vm.currentUserObjectPermission(name, "isQueryable"))
+	desc.Fields["searchable"] = Bool(vm.currentUserObjectPermission(name, "isSearchable"))
 	desc.Fields["customSetting"] = Bool(storage.IsCustomSettingDefinition(definition))
 	desc.Fields["custom"] = Bool(isCustomObjectLikeName(definition.APIName))
 	desc.Fields["feedEnabled"] = Bool(false)
-	desc.Fields["mergeable"] = Bool(false)
+	desc.Fields["mergeable"] = describeMetadataBoolValue(definition.Metadata, "mergeable", false)
 	desc.Fields["mruEnabled"] = Bool(true)
 	desc.Fields["undeletable"] = Bool(true)
 	desc.Fields["deprecatedAndHidden"] = Bool(false)
+	desc.Fields["associateEntityType"] = describeMetadataStringValue(definition.Metadata, "associateEntityType")
+	desc.Fields["associateParentEntity"] = describeMetadataStringValue(definition.Metadata, "associateParentEntity")
+	desc.Fields["dataTranslationEnabled"] = Bool(false)
+	desc.Fields["defaultImplementation"] = Null
+	desc.Fields["hasSubtypes"] = Bool(false)
+	desc.Fields["implementedBy"] = Null
+	desc.Fields["implementsInterfaces"] = Null
+	desc.Fields["isInterface"] = Bool(false)
+	desc.Fields["isSubtype"] = Bool(false)
+	desc.Fields["sObjectDescribeOption"] = sObjectDescribeOptionsValue("FULL")
 	fieldsMap := Map()
 	fieldsMap.Type = "Schema.SObjectFieldMap"
 	fieldsMap.Runtime = "sobjectfieldmap:" + name
@@ -218,7 +241,10 @@ func cloneDescribeObjectDefinition(definition storage.ObjectDefinition) storage.
 		out.Fields = make(map[string]storage.Field, len(definition.Fields))
 		for name, field := range definition.Fields {
 			copied := field
+			copied.SummaryFilterItems = append([]storage.SummaryFilterItem(nil), field.SummaryFilterItems...)
+			copied.FilteredLookupInfo = cloneFilteredLookupInfo(field.FilteredLookupInfo)
 			copied.ReferenceTo = append([]string(nil), field.ReferenceTo...)
+			copied.PicklistValueSettings = clonePicklistSettings(field.PicklistValueSettings)
 			copied.PicklistValues = append([]storage.PicklistValue(nil), field.PicklistValues...)
 			out.Fields[name] = copied
 		}
@@ -227,6 +253,8 @@ func cloneDescribeObjectDefinition(definition storage.ObjectDefinition) storage.
 		out.Relations = append([]storage.Relationship(nil), definition.Relations...)
 		for i := range out.Relations {
 			out.Relations[i].ParentObjects = append([]string(nil), definition.Relations[i].ParentObjects...)
+			out.Relations[i].JunctionIDListNames = append([]string(nil), definition.Relations[i].JunctionIDListNames...)
+			out.Relations[i].JunctionReferenceTo = append([]string(nil), definition.Relations[i].JunctionReferenceTo...)
 		}
 	}
 	if definition.RecordTypes != nil {
@@ -246,6 +274,19 @@ func cloneDescribeObjectDefinition(definition storage.ObjectDefinition) storage.
 		for key, value := range definition.Metadata {
 			out.Metadata[key] = value
 		}
+	}
+	return out
+}
+
+func cloneFilteredLookupInfo(value storage.FilteredLookupInfo) storage.FilteredLookupInfo {
+	value.ControllingFields = append([]string(nil), value.ControllingFields...)
+	return value
+}
+
+func clonePicklistSettings(values []storage.PicklistSetting) []storage.PicklistSetting {
+	out := append([]storage.PicklistSetting(nil), values...)
+	for i := range out {
+		out[i].ControllingFieldValues = append([]string(nil), values[i].ControllingFieldValues...)
 	}
 	return out
 }
@@ -565,7 +606,33 @@ func methodDescribeBoolField(method string) string {
 		name := method[2:]
 		return strings.ToLower(name[:1]) + name[1:]
 	}
+	if strings.HasPrefix(method, "get") && len(method) > 3 {
+		name := method[3:]
+		return strings.ToLower(name[:1]) + name[1:]
+	}
 	return method
+}
+
+func methodDescribeStringField(method string) string {
+	return methodDescribeBoolField(method)
+}
+
+func describeMetadataStringValue(metadata map[string]string, key string) Value {
+	if value := strings.TrimSpace(metadata[key]); value != "" {
+		return String(value)
+	}
+	return Null
+}
+
+func describeMetadataBoolValue(metadata map[string]string, key string, fallback bool) Value {
+	value := strings.TrimSpace(metadata[key])
+	if value == "" {
+		return Bool(fallback)
+	}
+	if parsed, err := strconv.ParseBool(value); err == nil {
+		return Bool(parsed)
+	}
+	return Bool(fallback)
 }
 
 func describeFieldLength(field storage.Field) int {
@@ -577,7 +644,7 @@ func describeFieldLength(field storage.Field) int {
 		return 32768
 	}
 	switch field.Type {
-	case storage.FieldString, storage.FieldPicklist, storage.FieldReference, storage.FieldID:
+	case storage.FieldString, storage.FieldPicklist, storage.FieldMultiPicklist, storage.FieldReference, storage.FieldID:
 		return 255
 	default:
 		return 0
@@ -594,6 +661,19 @@ func describeFieldPrecision(field storage.Field) int {
 	default:
 		return 0
 	}
+}
+
+func describeFieldDigits(field storage.Field) int {
+	switch field.Type {
+	case storage.FieldDecimal, storage.FieldInteger:
+		return describeFieldPrecision(field)
+	default:
+		return 0
+	}
+}
+
+func describeFieldByteLength(field storage.Field) int {
+	return describeFieldLength(field)
 }
 
 func describeFieldScale(field storage.Field) int {
@@ -630,6 +710,24 @@ func describeFieldSortable(field storage.Field) bool {
 	default:
 		return true
 	}
+}
+
+func filteredLookupInfoValue(info storage.FilteredLookupInfo) Value {
+	if len(info.ControllingFields) == 0 && !info.Dependent && !info.OptionalFilter {
+		return Null
+	}
+	value := Object("Schema.FilteredLookupInfo")
+	fields := typedList("List<String>")
+	fields.List = make([]Value, 0, len(info.ControllingFields))
+	for _, field := range info.ControllingFields {
+		if strings.TrimSpace(field) != "" {
+			fields.List = append(fields.List, String(field))
+		}
+	}
+	value.Fields["controllingFields"] = fields
+	value.Fields["dependent"] = Bool(info.Dependent)
+	value.Fields["optionalFilter"] = Bool(info.OptionalFilter)
+	return value
 }
 
 func isCustomObjectLikeName(name string) bool {
@@ -712,6 +810,25 @@ func (vm *VM) childRelationshipValue(childObject string, relationship storage.Re
 	value.Fields["childSObject"] = sObjectTypeToken(childObject)
 	value.Fields["cascadeDelete"] = Bool(relationship.CascadeDelete)
 	value.Fields["restrictedDelete"] = Bool(relationship.RestrictedDelete)
+	value.Fields["deprecatedAndHidden"] = Bool(relationship.DeprecatedAndHidden)
+	junctionNames := make([]Value, 0, len(relationship.JunctionIDListNames))
+	for _, name := range relationship.JunctionIDListNames {
+		if strings.TrimSpace(name) != "" {
+			junctionNames = append(junctionNames, String(name))
+		}
+	}
+	junctionNameList := typedList("List<String>")
+	junctionNameList.List = junctionNames
+	value.Fields["junctionIdListNames"] = junctionNameList
+	junctionTargets := make([]Value, 0, len(relationship.JunctionReferenceTo))
+	for _, target := range relationship.JunctionReferenceTo {
+		if strings.TrimSpace(target) != "" {
+			junctionTargets = append(junctionTargets, sObjectTypeToken(target))
+		}
+	}
+	junctionTargetList := typedList("List<Schema.SObjectType>")
+	junctionTargetList.List = junctionTargets
+	value.Fields["junctionReferenceTo"] = junctionTargetList
 	return value
 }
 
@@ -829,6 +946,11 @@ func (vm *VM) fieldSetValue(objectName string, definition storage.ObjectDefiniti
 		value.Fields["namespace"] = Null
 	} else {
 		value.Fields["namespace"] = String(namespace)
+	}
+	if description := strings.TrimSpace(fieldSet.Description); description == "" {
+		value.Fields["description"] = Null
+	} else {
+		value.Fields["description"] = String(description)
 	}
 	value.Fields["sObjectType"] = sObjectTypeToken(objectName)
 	label := fieldSet.Label
@@ -988,6 +1110,8 @@ func recordTypeInfoValue(recordType storage.RecordTypeInfo) Value {
 	value.Fields["active"] = Bool(recordType.Active)
 	value.Fields["available"] = Bool(recordType.Available || recordType.Active)
 	value.Fields["default"] = Bool(recordType.Default)
+	value.Fields["defaultRecordTypeMapping"] = Bool(recordType.Default)
+	value.Fields["master"] = Bool(strings.EqualFold(recordType.DeveloperName, "Master"))
 	return value
 }
 
@@ -1066,13 +1190,23 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	desc.Fields["encrypted"] = Bool(field.Encrypted)
 	calculated := describeFieldCalculated(field)
 	desc.Fields["calculated"] = Bool(calculated)
+	if strings.TrimSpace(field.Formula) == "" {
+		desc.Fields["calculatedFormula"] = Null
+	} else {
+		desc.Fields["calculatedFormula"] = String(field.Formula)
+	}
 	desc.Fields["autoNumber"] = Bool(field.AutoNumber)
+	desc.Fields["caseSensitive"] = Bool(field.CaseSensitive)
 	desc.Fields["nameField"] = Bool(isNameFieldDescribe(field))
 	desc.Fields["custom"] = Bool(isCustomSchemaName(field.APIName))
 	desc.Fields["length"] = Int(int64(describeFieldLength(field)))
 	desc.Fields["precision"] = Int(int64(describeFieldPrecision(field)))
 	desc.Fields["scale"] = Int(int64(describeFieldScale(field)))
+	desc.Fields["digits"] = Int(int64(describeFieldDigits(field)))
+	desc.Fields["byteLength"] = Int(int64(describeFieldByteLength(field)))
 	desc.Fields["htmlFormatted"] = Bool(describeFieldIsHTMLFormatted(field))
+	desc.Fields["dataTranslationEnabled"] = Bool(false)
+	desc.Fields["filteredLookupInfo"] = filteredLookupInfoValue(field.FilteredLookupInfo)
 	if defaultValue, ok := storage.DefaultValueForField(field); ok {
 		desc.Fields["defaultValue"] = vmValueFromStorage(defaultValue)
 		desc.Fields["defaultedOnCreate"] = Bool(storage.FieldFlagValue(field.DefaultedOnCreate, true))
@@ -1094,6 +1228,12 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	} else {
 		desc.Fields["relationshipName"] = String(relationshipName)
 	}
+	desc.Fields["referenceTargetField"] = Null
+	relationshipOrder := int64(0)
+	if field.RelationshipOrder != nil {
+		relationshipOrder = int64(*field.RelationshipOrder)
+	}
+	desc.Fields["relationshipOrder"] = Int(relationshipOrder)
 	referenceTo := describeFieldReferenceTargets(definition, field)
 	references := make([]Value, 0, len(referenceTo))
 	for _, target := range referenceTo {
@@ -1109,6 +1249,19 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	desc.Fields["aggregatable"] = Bool(storage.FieldFlagValue(field.Aggregatable, true))
 	desc.Fields["permissionable"] = Bool(storage.FieldFlagValue(field.Permissionable, true))
 	desc.Fields["deprecatedAndHidden"] = Bool(storage.FieldFlagValue(field.DeprecatedAndHidden, false))
+	desc.Fields["restrictedPicklist"] = Bool(field.RestrictedPicklist)
+	desc.Fields["idLookup"] = Bool(field.IDLookup)
+	desc.Fields["namePointing"] = Bool(field.NamePointing || len(field.ReferenceTo) > 1)
+	controllerField, hasController := describeFieldController(definition, field)
+	if hasController {
+		desc.Fields["controller"] = vm.sObjectFieldTokenFromField(objectName, controllerField)
+		desc.Fields["dependentPicklist"] = Bool(true)
+	} else {
+		desc.Fields["controller"] = Null
+		desc.Fields["dependentPicklist"] = Bool(false)
+	}
+	desc.Fields["controllerValues"] = describeFieldControllerValues(definition, controllerField, hasController)
+	vm.completeDescribeFieldResult(&desc, objectName, field)
 	picklistValues := make([]Value, 0, len(field.PicklistValues))
 	for _, value := range field.PicklistValues {
 		entry := Object("Schema.PicklistEntry")
@@ -1119,6 +1272,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		}
 		entry.Fields["label"] = String(label)
 		entry.Fields["default"] = Bool(value.Default)
+		entry.Fields["defaultValue"] = Bool(value.Default)
 		entry.Fields["active"] = Bool(value.Active)
 		picklistValues = append(picklistValues, entry)
 	}
@@ -1126,6 +1280,47 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	vm.fieldDescribeCache[cacheKey] = desc
 	vm.storeFieldDescribeCacheAliases(objectName, requestedFieldName, fieldName, desc)
 	return desc, nil
+}
+
+func describeFieldController(definition storage.ObjectDefinition, field storage.Field) (storage.Field, bool) {
+	controllerName := strings.TrimSpace(field.PicklistController)
+	if controllerName == "" {
+		return storage.Field{}, false
+	}
+	resolved, ok := storage.ResolveFieldName(definition, "", controllerName)
+	if !ok {
+		return storage.Field{APIName: controllerName}, true
+	}
+	controller := definition.Fields[resolved]
+	if strings.TrimSpace(controller.APIName) == "" {
+		controller.APIName = resolved
+	}
+	return controller, true
+}
+
+func describeFieldControllerValues(definition storage.ObjectDefinition, controller storage.Field, hasController bool) Value {
+	out := typedMap("Map<String,Integer>")
+	out.Fields = map[string]Value{"__caseInsensitiveStringKeys": Bool(true)}
+	if !hasController {
+		return out
+	}
+	values := controller.PicklistValues
+	if len(values) == 0 {
+		if resolved, ok := storage.ResolveFieldName(definition, "", controller.APIName); ok {
+			values = definition.Fields[resolved].PicklistValues
+		}
+	}
+	for i, value := range values {
+		name := strings.TrimSpace(value.Value)
+		if name == "" {
+			continue
+		}
+		keyValue := String(name)
+		key := mapKey(keyValue)
+		out.Map[key] = Int(int64(i))
+		out.MapKeys[key] = keyValue
+	}
+	return out
 }
 
 func (vm *VM) lookupFieldDescribeCache(objectName, fieldName string) (Value, bool) {
@@ -1301,6 +1496,7 @@ func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field st
 	desc.Fields["deprecatedAndHidden"] = Bool(storage.FieldFlagValue(field.DeprecatedAndHidden, false))
 	token := vm.sObjectFieldTokenFromField(objectName, field)
 	desc.Fields["sObjectField"] = token
+	vm.completeDescribeFieldResult(&desc, objectName, field)
 	vm.fieldDescribeCache[cacheKey] = desc
 	return desc, nil
 }
@@ -1462,7 +1658,63 @@ func emptySObjectFieldDescribe(objectName string) Value {
 	desc.Fields["relationshipName"] = Null
 	desc.Fields["referenceTo"] = List()
 	desc.Fields["picklistValues"] = List()
+	completeDescribeFieldResultDefaults(&desc)
 	return desc
+}
+
+func (vm *VM) completeDescribeFieldResult(desc *Value, objectName string, field storage.Field) {
+	if desc == nil {
+		return
+	}
+	if desc.Fields == nil {
+		desc.Fields = map[string]Value{}
+	}
+	if _, ok := desc.Fields["sObjectType"]; !ok {
+		desc.Fields["sObjectType"] = sObjectTypeToken(objectName)
+	}
+	if _, ok := desc.Fields["sObjectField"]; !ok {
+		desc.Fields["sObjectField"] = vm.sObjectFieldTokenFromField(objectName, field)
+	}
+	completeDescribeFieldResultDefaults(desc)
+}
+
+func completeDescribeFieldResultDefaults(desc *Value) {
+	if desc == nil {
+		return
+	}
+	if desc.Fields == nil {
+		desc.Fields = map[string]Value{}
+	}
+	defaults := map[string]Value{
+		"aiPredictionField":            Bool(false),
+		"cascadeDelete":                Bool(false),
+		"controller":                   Null,
+		"controllerValues":             typedMap("Map<String,Integer>"),
+		"dataTranslationEnabled":       Bool(false),
+		"defaultedOnCreate":            Bool(false),
+		"defaultValue":                 Null,
+		"defaultValueFormula":          Null,
+		"dependentPicklist":            Bool(false),
+		"displayLocationInDecimal":     Bool(false),
+		"filteredLookupInfo":           Null,
+		"formulaTreatNullNumberAsZero": Bool(false),
+		"highScaleNumber":              Bool(false),
+		"inlineHelpText":               String(""),
+		"localName":                    Null,
+		"mask":                         Null,
+		"maskType":                     Null,
+		"queryByDistance":              Bool(false),
+		"referenceTargetField":         Null,
+		"relationshipOrder":            Int(0),
+		"restrictedDelete":             Bool(false),
+		"searchPrefilterable":          Bool(false),
+		"writeRequiresMasterRead":      Bool(false),
+	}
+	for field, value := range defaults {
+		if _, ok := desc.Fields[field]; !ok {
+			desc.Fields[field] = value
+		}
+	}
 }
 
 type approxVisitKey struct {

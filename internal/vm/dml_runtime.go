@@ -407,14 +407,15 @@ func (vm *VM) treeSaveOne(root Value, result *Result) (Value, error) {
 	if root.Kind != ValueObject {
 		return Null, fmt.Errorf("Database.treeSave expects sObject values")
 	}
-	if id := sObjectIDFromFields(root.Fields); id != "" {
-		return Null, unsupportedCallError("Database.treeSave update local tree surface")
-	}
 	children, err := vm.treeSaveChildGroups(root)
 	if err != nil {
 		return Null, err
 	}
-	parentResults, err := vm.applyDML("insert", root, true, "", dml.Options{}, result)
+	parentOperation := "insert"
+	if id := sObjectIDFromFields(root.Fields); id != "" {
+		parentOperation = "update"
+	}
+	parentResults, err := vm.applyDML(parentOperation, root, true, "", dml.Options{}, result)
 	if err != nil {
 		return Null, err
 	}
@@ -425,17 +426,23 @@ func (vm *VM) treeSaveOne(root Value, result *Result) (Value, error) {
 	parentID := parentResults[0].ID
 	relationshipResults := List()
 	for _, group := range children {
-		childList := typedList("List<" + group.childObject + ">")
+		childResults := make([]dml.Result, 0, len(group.children))
 		for _, child := range group.children {
 			if err := vm.ensureTreeSaveLeaf(child); err != nil {
 				return Null, err
 			}
-			setExplicitSObjectField(&child, group.lookupField, platformScalar("Id", string(parentID)))
-			childList.List = append(childList.List, child)
-		}
-		childResults, err := vm.applyDML("insert", childList, true, "", dml.Options{}, result)
-		if err != nil {
-			return Null, err
+			if _, _, ok := objectFieldValue(child, group.lookupField); !ok {
+				setExplicitSObjectField(&child, group.lookupField, platformScalar("Id", string(parentID)))
+			}
+			childOperation := "insert"
+			if id := sObjectIDFromFields(child.Fields); id != "" {
+				childOperation = "update"
+			}
+			results, err := vm.applyDML(childOperation, child, true, "", dml.Options{}, result)
+			if err != nil {
+				return Null, err
+			}
+			childResults = append(childResults, results...)
 		}
 		relationship := Object("Database.RelationshipSaveResult")
 		relationship.Fields["relationshipName"] = String(group.relationshipName)
@@ -527,9 +534,6 @@ func (vm *VM) treeSaveChildRelationship(parentObject, relationshipName string) (
 func (vm *VM) ensureTreeSaveLeaf(value Value) error {
 	if value.Kind != ValueObject {
 		return fmt.Errorf("Database.treeSave expects sObject children")
-	}
-	if id := sObjectIDFromFields(value.Fields); id != "" {
-		return unsupportedCallError("Database.treeSave update local tree surface")
 	}
 	if vm.Org == nil {
 		return fmt.Errorf("DML requires org state")
@@ -3574,7 +3578,7 @@ func storageValueFromVMForField(value Value, fieldType storage.FieldType) (stora
 				return storage.IDValue(storage.ID(raw)), nil
 			}
 		}
-	case storage.FieldString, storage.FieldPicklist:
+	case storage.FieldString, storage.FieldPicklist, storage.FieldMultiPicklist:
 		if value.Kind == ValueString && strings.EqualFold(value.Type, "Id") {
 			if len(value.Text) == 15 {
 				return storage.StringValue(apexIDTo18(value.Text)), nil
@@ -3582,7 +3586,7 @@ func storageValueFromVMForField(value Value, fieldType storage.FieldType) (stora
 			return storage.StringValue(value.Text), nil
 		}
 		if value.Kind == ValueString {
-			if fieldType == storage.FieldPicklist && value.Text == "" {
+			if (fieldType == storage.FieldPicklist || fieldType == storage.FieldMultiPicklist) && value.Text == "" {
 				return storage.NullValue(), nil
 			}
 			return storageValueFromVM(value)
@@ -3944,6 +3948,7 @@ func cloneObjectDefinition(definition storage.ObjectDefinition) storage.ObjectDe
 		for name, field := range definition.Fields {
 			copied := field
 			copied.SummaryFilterItems = append([]storage.SummaryFilterItem(nil), field.SummaryFilterItems...)
+			copied.FilteredLookupInfo = cloneFilteredLookupInfo(field.FilteredLookupInfo)
 			copied.ReferenceTo = append([]string(nil), field.ReferenceTo...)
 			copied.PicklistValues = append([]storage.PicklistValue(nil), field.PicklistValues...)
 			out.Fields[name] = copied

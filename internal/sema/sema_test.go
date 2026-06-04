@@ -4205,6 +4205,87 @@ public class Hello {
 	}
 }
 
+func TestAnalyzeDescribeFieldReferenceRows(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public Boolean run() {
+    Schema.DescribeFieldResult describe = Account.Name.getDescribe();
+    String formula = describe.getCalculatedFormula();
+    String target = describe.getReferenceTargetField();
+    Integer order = describe.getRelationshipOrder();
+    Schema.SObjectField token = describe.getSObjectField();
+    return describe.isCaseSensitive() || formula == target || order == 0 || token != null;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA008" && (strings.Contains(diag.Message, "getCalculatedFormula") ||
+			strings.Contains(diag.Message, "getReferenceTargetField") ||
+			strings.Contains(diag.Message, "getRelationshipOrder") ||
+			strings.Contains(diag.Message, "getSObjectField") ||
+			strings.Contains(diag.Message, "isCaseSensitive")) {
+			t.Fatalf("unexpected describe field row diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeDescribeBooleanRows(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public Boolean run() {
+    Schema.DescribeFieldResult fieldDescribe = Account.Name.getDescribe();
+    Schema.DescribeSObjectResult objectDescribe = Account.SObjectType.getDescribe();
+    return fieldDescribe.isFilterable() ||
+      fieldDescribe.isGroupable() ||
+      fieldDescribe.isIdLookup() ||
+      fieldDescribe.isNamePointing() ||
+      fieldDescribe.isPermissionable() ||
+      fieldDescribe.isRestrictedPicklist() ||
+      objectDescribe.isMergeable();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA008" && (strings.Contains(diag.Message, "isFilterable") ||
+			strings.Contains(diag.Message, "isGroupable") ||
+			strings.Contains(diag.Message, "isIdLookup") ||
+			strings.Contains(diag.Message, "isNamePointing") ||
+			strings.Contains(diag.Message, "isPermissionable") ||
+			strings.Contains(diag.Message, "isRestrictedPicklist") ||
+			strings.Contains(diag.Message, "isMergeable")) {
+			t.Fatalf("unexpected describe boolean row diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeDescribeSobjectTypeAlias(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public Schema.SObjectType run() {
+    Schema.DescribeSObjectResult describe = Account.SObjectType.getDescribe();
+    return describe.getSobjectType();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "getSobjectType") {
+			t.Fatalf("unexpected getSobjectType diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeObjectToStringCall(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "AddressUtil.cls"), `
@@ -4423,6 +4504,277 @@ public class Hello {
 			t.Fatalf("unexpected Database.Batchable diagnostic: %#v", result.Diagnostics)
 		}
 	}
+}
+
+func TestAnalyzeDatabaseStatefulBatchCompiles(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "StatefulBatch.cls"), `
+public class StatefulBatch implements Database.Batchable<Integer>, Database.Stateful {
+  public Integer counter = 0;
+  public Iterable<Integer> start(Database.BatchableContext context) {
+    return new List<Integer>{1};
+  }
+  public void execute(Database.BatchableContext context, List<Integer> scope) {
+    counter++;
+  }
+  public void finish(Database.BatchableContext context) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UseBatch.cls"), `
+public class UseBatch {
+  public void run() {
+    Database.executeBatch(new StatefulBatch(), 1);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "StatefulBatch.cls"),
+		filepath.Join(root, "UseBatch.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if strings.Contains(diag.Message, "Stateful") || strings.Contains(diag.Message, "executeBatch") {
+			t.Fatalf("unexpected Stateful batch diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeDatabaseBatchableStartAcceptsListReturn(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "ListReturnBatch.cls"), `
+public class ListReturnBatch implements Database.Batchable<Integer> {
+  public List<Integer> start(Database.BatchableContext context) {
+    return new List<Integer>{1};
+  }
+  public void execute(Database.BatchableContext context, List<Integer> scope) {}
+  public void finish(Database.BatchableContext context) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UseBatch.cls"), `
+public class UseBatch {
+  public void run() {
+    Database.executeBatch(new ListReturnBatch(), 1);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "ListReturnBatch.cls"),
+		filepath.Join(root, "UseBatch.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if strings.Contains(diag.Message, "ListReturnBatch") || strings.Contains(diag.Message, "executeBatch") {
+			t.Fatalf("unexpected List-return batch diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeDatabaseBatchableRequiresAllMethods(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "MissingExecuteBatch.cls"), `
+public class MissingExecuteBatch implements Database.Batchable<Integer> {
+  public Iterable<Integer> start(Database.BatchableContext context) {
+    return new List<Integer>{1};
+  }
+  public void finish(Database.BatchableContext context) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "MissingFinishBatch.cls"), `
+public class MissingFinishBatch implements Database.Batchable<Integer> {
+  public Iterable<Integer> start(Database.BatchableContext context) {
+    return new List<Integer>{1};
+  }
+  public void execute(Database.BatchableContext context, List<Integer> scope) {}
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "MissingExecuteBatch.cls"),
+		filepath.Join(root, "MissingFinishBatch.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	missingExecute := false
+	missingFinish := false
+	for _, diag := range result.Diagnostics {
+		if strings.Contains(diag.Message, "MissingExecuteBatch") && strings.Contains(diag.Message, "execute") {
+			missingExecute = true
+		}
+		if strings.Contains(diag.Message, "MissingFinishBatch") && strings.Contains(diag.Message, "finish") {
+			missingFinish = true
+		}
+	}
+	if !missingExecute || !missingFinish {
+		t.Fatalf("batch contract diagnostics execute=%v finish=%v all=%#v", missingExecute, missingFinish, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeDatabaseBatchableRejectsWrongReturnTypes(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "WrongStartBatch.cls"), `
+public class WrongStartBatch implements Database.Batchable<Integer> {
+  public String start(Database.BatchableContext context) {
+    return 'nope';
+  }
+  public void execute(Database.BatchableContext context, List<Integer> scope) {}
+  public void finish(Database.BatchableContext context) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "WrongFinishBatch.cls"), `
+public class WrongFinishBatch implements Database.Batchable<Integer> {
+  public Iterable<Integer> start(Database.BatchableContext context) {
+    return new List<Integer>{1};
+  }
+  public void execute(Database.BatchableContext context, List<Integer> scope) {}
+  public String finish(Database.BatchableContext context) {
+    return 'nope';
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "WrongStartBatch.cls"),
+		filepath.Join(root, "WrongFinishBatch.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	wrongStart := false
+	wrongFinish := false
+	for _, diag := range result.Diagnostics {
+		if strings.Contains(diag.Message, "WrongStartBatch") && strings.Contains(diag.Message, "start") {
+			wrongStart = true
+		}
+		if strings.Contains(diag.Message, "WrongFinishBatch") && strings.Contains(diag.Message, "finish") {
+			wrongFinish = true
+		}
+	}
+	if !wrongStart || !wrongFinish {
+		t.Fatalf("batch return diagnostics start=%v finish=%v all=%#v", wrongStart, wrongFinish, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeDatabaseBatchableGenericContractUsesItemType(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "WrongScopeBatch.cls"), `
+public class WrongScopeBatch implements Database.Batchable<Integer> {
+  public Iterable<Integer> start(Database.BatchableContext context) {
+    return new List<Integer>{1};
+  }
+  public void execute(Database.BatchableContext context, List<String> scope) {}
+  public void finish(Database.BatchableContext context) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "WrongStartItemBatch.cls"), `
+public class WrongStartItemBatch implements Database.Batchable<Integer> {
+  public Iterable<String> start(Database.BatchableContext context) {
+    return new List<String>{'nope'};
+  }
+  public void execute(Database.BatchableContext context, List<Integer> scope) {}
+  public void finish(Database.BatchableContext context) {}
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "WrongScopeBatch.cls"),
+		filepath.Join(root, "WrongStartItemBatch.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	wrongScope := false
+	wrongStart := false
+	for _, diag := range result.Diagnostics {
+		if strings.Contains(diag.Message, "WrongScopeBatch") && strings.Contains(diag.Message, "execute") {
+			wrongScope = true
+		}
+		if strings.Contains(diag.Message, "WrongStartItemBatch") && strings.Contains(diag.Message, "start") {
+			wrongStart = true
+		}
+	}
+	if !wrongScope || !wrongStart {
+		t.Fatalf("batch generic diagnostics scope=%v start=%v all=%#v", wrongScope, wrongStart, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeDatabaseExecuteBatchRequiresBatchable(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "NotBatch.cls"), `
+public class NotBatch {}
+`)
+	writeSemaFile(t, filepath.Join(root, "UseBatch.cls"), `
+public class UseBatch {
+  public void run() {
+    Database.executeBatch(new NotBatch(), 1);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "NotBatch.cls"),
+		filepath.Join(root, "UseBatch.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if strings.Contains(diag.Message, "executeBatch") {
+			return
+		}
+	}
+	t.Fatalf("expected executeBatch batchable diagnostic: %#v", result.Diagnostics)
+}
+
+func TestAnalyzeDatabaseExecuteBatchRejectsStructuralBatchShape(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "StructuralBatch.cls"), `
+public class StructuralBatch {
+  public Iterable<Object> start(Database.BatchableContext context) {
+    return new List<Object>();
+  }
+  public void execute(Database.BatchableContext context, List<Object> scope) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UseBatch.cls"), `
+public class UseBatch {
+  public void run() {
+    Database.executeBatch(new StructuralBatch(), 1);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "StructuralBatch.cls"),
+		filepath.Join(root, "UseBatch.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if strings.Contains(diag.Message, "executeBatch") {
+			return
+		}
+	}
+	t.Fatalf("expected structural executeBatch diagnostic: %#v", result.Diagnostics)
+}
+
+func TestAnalyzeSystemScheduleBatchRequiresBatchable(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "NotBatch.cls"), `
+public class NotBatch {}
+`)
+	writeSemaFile(t, filepath.Join(root, "UseBatch.cls"), `
+public class UseBatch {
+  public void run() {
+    System.scheduleBatch(new NotBatch(), 'nightly', 1, 200);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "NotBatch.cls"),
+		filepath.Join(root, "UseBatch.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if strings.Contains(diag.Message, "scheduleBatch") {
+			return
+		}
+	}
+	t.Fatalf("expected scheduleBatch batchable diagnostic: %#v", result.Diagnostics)
 }
 
 func TestAnalyzeQueryLocatorAndIterableMethods(t *testing.T) {

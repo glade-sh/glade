@@ -27,8 +27,16 @@ func ToolingFieldID(objectName, fieldName string) string {
 	return ToolingObjectID(objectName) + "." + strings.TrimSpace(fieldName)
 }
 
+func DataObjectID(objectName string) string {
+	return "data-reference:" + strings.TrimSpace(objectName)
+}
+
+func DataFieldID(objectName, fieldName string) string {
+	return DataObjectID(objectName) + "." + strings.TrimSpace(fieldName)
+}
+
 func RestResourceID(resource, method string) string {
-	return "rest:" + strings.Trim(strings.TrimSpace(resource), "/") + "." + strings.ToLower(strings.TrimSpace(method))
+	return "rest:" + strings.Trim(strings.TrimSpace(resource), "/") + "." + asciiLowerIdentityKey(strings.TrimSpace(method))
 }
 
 func VisualforceAttrID(namespace, component, attr string) string {
@@ -70,17 +78,19 @@ func cleanList(values []string) []string {
 
 func canonicalParameterType(value string) string {
 	value = cleanIdentityPart(value)
-	switch strings.ToUpper(value) {
-	case "APEX_OBJECT":
+	switch {
+	case strings.EqualFold(value, "APEX_OBJECT"):
 		return "Object"
-	case "ANY":
+	case strings.EqualFold(value, "ANY"):
 		return "Object"
-	case "SOBJECT":
+	case strings.EqualFold(value, "SOBJECT"):
 		return "Object"
-	case "SOBJECT[]":
+	case strings.EqualFold(value, "SOBJECT[]"):
 		return "List<Object>"
-	case "SYSTEM.TYPE":
+	case strings.EqualFold(value, "SYSTEM.TYPE"):
 		return "Type"
+	case strings.EqualFold(value, "BATCHABLE"), strings.EqualFold(value, "DATABASE.BATCHABLE"), strings.EqualFold(value, "SYSTEM.DATABASE.BATCHABLE"):
+		return "Object"
 	default:
 		value = strings.ReplaceAll(value, "<ANY>", "<Object>")
 		value = strings.ReplaceAll(value, "<sObject>", "<Object>")
@@ -102,9 +112,12 @@ func canonicalApexQualifiedParts(namespace, typeName string) (string, string) {
 	if namespace == "ApexPages" && typeName == "ApexPages" {
 		namespace = "System"
 	}
+	if (namespace == "System" || namespace == "Schema") && typeName == "Schema" {
+		namespace = "Schema"
+	}
 	if namespace == "System" {
 		switch typeName {
-		case "ChildRelationship", "DescribeFieldResult", "DescribeSObjectResult", "PicklistEntry", "RecordTypeInfo", "SObjectField", "SObjectType":
+		case "ChildRelationship", "DataCategory", "DataCategoryGroupSobjectTypePair", "DescribeColorResult", "DescribeDataCategoryGroupResult", "DescribeDataCategoryGroupStructureResult", "DescribeFieldResult", "DescribeIconResult", "DescribeSObjectResult", "DescribeTabResult", "DescribeTabSetResult", "FieldSet", "FieldSetMap", "FieldSetMember", "PicklistEntry", "RecordTypeInfo", "SObjectField", "SObjectType":
 			namespace = "Schema"
 		}
 	}
@@ -113,36 +126,99 @@ func canonicalApexQualifiedParts(namespace, typeName string) (string, string) {
 
 func canonicalApexNamespaceName(namespace string) string {
 	namespace = cleanIdentityPart(namespace)
-	switch strings.ToLower(namespace) {
-	case "cache":
-		return "Cache"
-	case "connectapi":
-		return "ConnectApi"
-	case "database":
-		return "Database"
-	case "schema":
-		return "Schema"
-	case "system":
-		return "System"
-	default:
-		return namespace
+	if known, ok := canonicalKnownApexName(namespace, canonicalApexNamespaces); ok {
+		return known
 	}
+	return namespace
 }
 
 func canonicalApexMemberName(memberName string) string {
-	memberName = cleanIdentityPart(memberName)
-	switch memberName {
-	case "setFilterID":
-		return "setFilterId"
-	case "setpageNumber":
-		return "setPageNumber"
-	case "getSOAPType":
-		return "getSoapType"
-	case "getSObjectField":
-		return "getSobjectField"
-	default:
-		return memberName
+	return cleanIdentityPart(memberName)
+}
+
+func surfaceIDKey(id string) string {
+	id = cleanIdentityPart(id)
+	if strings.HasPrefix(id, "apex:") {
+		rest := strings.TrimPrefix(id, "apex:")
+		folded := asciiLowerIdentityKey(rest)
+		if folded == rest {
+			return id
+		}
+		return "apex:" + folded
 	}
+	if strings.HasPrefix(id, "data-reference:") {
+		rest := strings.TrimPrefix(id, "data-reference:")
+		folded := asciiLowerIdentityKey(rest)
+		if folded == rest {
+			return id
+		}
+		return "data-reference:" + folded
+	}
+	return id
+}
+
+func asciiLowerIdentityKey(value string) string {
+	for i := 0; i < len(value); i++ {
+		if value[i] >= 'A' && value[i] <= 'Z' {
+			buf := []byte(value)
+			for j := i; j < len(buf); j++ {
+				if buf[j] >= 'A' && buf[j] <= 'Z' {
+					buf[j] += 'a' - 'A'
+				}
+			}
+			return string(buf)
+		}
+	}
+	return value
+}
+
+var canonicalApexNamespaces = []string{
+	"Cache",
+	"ConnectApi",
+	"Database",
+	"Schema",
+	"System",
+}
+
+func canonicalKnownApexName(name string, known []string) (string, bool) {
+	for _, candidate := range known {
+		if strings.EqualFold(name, candidate) {
+			return candidate, true
+		}
+	}
+	return "", false
+}
+
+func containsASCIIFold(value, substr string) bool {
+	if substr == "" {
+		return true
+	}
+	if len(substr) > len(value) {
+		return false
+	}
+	for i := 0; i <= len(value)-len(substr); i++ {
+		if asciiEqualFoldAt(value, substr, i) {
+			return true
+		}
+	}
+	return false
+}
+
+func asciiEqualFoldAt(value, substr string, offset int) bool {
+	for i := 0; i < len(substr); i++ {
+		left := value[offset+i]
+		right := substr[i]
+		if left >= 'A' && left <= 'Z' {
+			left += 'a' - 'A'
+		}
+		if right >= 'A' && right <= 'Z' {
+			right += 'a' - 'A'
+		}
+		if left != right {
+			return false
+		}
+	}
+	return true
 }
 
 func cleanIdentityPart(value string) string {

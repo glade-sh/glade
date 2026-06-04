@@ -1,0 +1,28 @@
+{
+  "name": "core-blob-crypto-aes-key",
+  "evidence": [
+    {
+      "symbol": "Crypto.generateAESKey",
+      "kind": "exec",
+      "notes": "Crypto.generateAESKey returns deterministic local Blob keys for supported AES sizes."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Blob key = Crypto.generateAESKey(128);\nSystem.assertEquals(16, key.size());\nSystem.assertEquals('0102030405060708090a0b0c0d0e0f10', EncodingUtil.convertToHex(key));"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Blob key = Crypto.generateAESKey(128);\nSystem.assertEquals(16, key.size());\nSystem.assertEquals('0102030405060708090a0b0c0d0e0f10', EncodingUtil.convertToHex(key));"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

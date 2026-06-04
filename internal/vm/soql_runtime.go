@@ -13,6 +13,14 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+func (vm *VM) parseSOQLAt(queryText string) (soql.Query, error) {
+	month := 1
+	if vm != nil && vm.Org != nil {
+		month = soql.FiscalYearStartMonth(*vm.Org)
+	}
+	return soql.ParseAtWithFiscalYearStartMonth(queryText, vm.fakeNow, month)
+}
+
 func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand func(string) (string, error), binds Value, accessLevelMode string) ([]Value, error) {
 	if soql.IsSOSLFind(raw) {
 		return nil, unsupportedCallError("SOSL/FIND local search surface")
@@ -24,7 +32,7 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 	if soql.IsSOSLFind(queryText) {
 		return nil, unsupportedCallError("SOSL/FIND local search surface")
 	}
-	query, err := soql.ParseAt(queryText, vm.fakeNow)
+	query, err := vm.parseSOQLAt(queryText)
 	if err != nil {
 		var unsupported *soql.UnsupportedFeatureError
 		if errors.As(err, &unsupported) {
@@ -300,9 +308,6 @@ func (vm *VM) executeSoqlStub(query soql.Query, queryText string, binds Value, e
 	if query.Count || len(query.Aggregates) > 0 || len(query.HavingAggregates) > 0 || len(query.GroupBy) > 0 || query.Having != nil {
 		return nil, true, unsupportedCallError("Test.createSoqlStub aggregate query local stub surface")
 	}
-	if len(query.ChildQueries) > 0 || len(query.Typeofs) > 0 || soqlQueryHasConditionSubquery(query.Where) {
-		return nil, true, unsupportedCallError("Test.createSoqlStub relationship query local stub surface")
-	}
 	if provider.Kind != ValueObject {
 		return nil, true, fmt.Errorf("Test.createSoqlStub provider for %s is not an object", query.Object)
 	}
@@ -331,26 +336,6 @@ func (vm *VM) executeSoqlStub(query soql.Query, queryText string, binds Value, e
 		"rows":   len(rows),
 	})
 	return rows, true, nil
-}
-
-func soqlQueryHasConditionSubquery(condition *soql.Condition) bool {
-	if condition == nil {
-		return false
-	}
-	if condition.Subquery != nil {
-		return true
-	}
-	for i := range condition.And {
-		if soqlQueryHasConditionSubquery(&condition.And[i]) {
-			return true
-		}
-	}
-	for i := range condition.Or {
-		if soqlQueryHasConditionSubquery(&condition.Or[i]) {
-			return true
-		}
-	}
-	return false
 }
 
 func (vm *VM) enforceOrgShapeObjectAvailability(query soql.Query) error {
@@ -742,7 +727,7 @@ func isApexIDLikeValue(value Value) bool {
 }
 
 func (vm *VM) queriedSObjectFields(queryText string) map[string]bool {
-	query, err := soql.Parse(queryText)
+	query, err := vm.parseSOQLAt(queryText)
 	if err != nil || query.Count || len(query.Aggregates) > 0 || len(query.GroupBy) > 0 {
 		return nil
 	}
@@ -819,7 +804,7 @@ func (vm *VM) applyQueriedParentRelationshipFieldMarkers(value *Value, queryText
 	if vm == nil || vm.Org == nil || value == nil || value.Kind != ValueObject {
 		return
 	}
-	query, err := soql.Parse(queryText)
+	query, err := vm.parseSOQLAt(queryText)
 	if err != nil || query.Count || len(query.Aggregates) > 0 || len(query.GroupBy) > 0 {
 		return
 	}
@@ -1497,9 +1482,6 @@ func (vm *VM) expandSOQLBindsFromMap(raw string, binds Value) (string, error) {
 		return "", fmt.Errorf("queryWithBinds bind values must be a Map")
 	}
 	return vm.expandSOQLBindsWith(raw, func(name string) (Value, error) {
-		if strings.Contains(name, ".") {
-			return Null, fmt.Errorf("queryWithBinds does not support dotted bind path %q", name)
-		}
 		value, ok := binds.Map[mapKey(String(name))]
 		if !ok {
 			return Null, fmt.Errorf("missing bind value %q", name)
@@ -1719,7 +1701,7 @@ func (vm *VM) executeInlineSOQL(raw string, execResult *Result) (Value, error) {
 	return value, nil
 }
 func (vm *VM) inlineSOQLMayReturnScalarCount(raw string) bool {
-	query, err := soql.ParseAt(raw, vm.fakeNow)
+	query, err := vm.parseSOQLAt(raw)
 	if err != nil {
 		return !strings.Contains(strings.ToLower(raw), " group by ")
 	}
@@ -1794,7 +1776,7 @@ func (vm *VM) soqlResultObjectNameWithExpander(raw string, expand func(string) (
 	return vm.soqlResultObjectName(queryText)
 }
 func (vm *VM) soqlResultObjectName(raw string) string {
-	query, err := soql.ParseAt(raw, vm.fakeNow)
+	query, err := vm.parseSOQLAt(raw)
 	if err != nil || strings.TrimSpace(query.Object) == "" {
 		return ""
 	}
@@ -1923,7 +1905,7 @@ func (vm *VM) soqlIDLiteralValidationQuery(raw string, fallback soql.Query) (soq
 		return fallback, true
 	}
 	queryText := soqlLiteralValidationQueryText(raw)
-	query, err := soql.ParseAt(queryText, vm.fakeNow)
+	query, err := vm.parseSOQLAt(queryText)
 	if err != nil {
 		return soql.Query{}, false
 	}
@@ -2065,7 +2047,13 @@ func isSOQLDateLiteralBind(raw string, colon int) bool {
 	}
 	prefix := strings.ToUpper(raw[start+1 : end])
 	switch prefix {
-	case "LAST_N_DAYS", "NEXT_N_DAYS", "N_DAYS_AGO", "LAST_N_WEEKS", "NEXT_N_WEEKS", "LAST_N_MONTHS", "NEXT_N_MONTHS", "LAST_N_YEARS", "NEXT_N_YEARS":
+	case "LAST_N_DAYS", "NEXT_N_DAYS", "N_DAYS_AGO",
+		"LAST_N_WEEKS", "NEXT_N_WEEKS", "N_WEEKS_AGO",
+		"LAST_N_MONTHS", "NEXT_N_MONTHS", "N_MONTHS_AGO",
+		"LAST_N_QUARTERS", "NEXT_N_QUARTERS", "N_QUARTERS_AGO",
+		"LAST_N_YEARS", "NEXT_N_YEARS", "N_YEARS_AGO",
+		"LAST_N_FISCAL_QUARTERS", "NEXT_N_FISCAL_QUARTERS", "N_FISCAL_QUARTERS_AGO",
+		"LAST_N_FISCAL_YEARS", "NEXT_N_FISCAL_YEARS", "N_FISCAL_YEARS_AGO":
 		return true
 	default:
 		return false

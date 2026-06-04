@@ -4,7 +4,7 @@
     {
       "symbol": "SOSL FIND",
       "kind": "test",
-      "notes": "SOSL FIND syntax is detected before SOQL execution and reported as unsupported instead of pretending local search results."
+      "notes": "Inline SOSL FIND accepts the supported local search smoke shape."
     }
   ],
   "source": [
@@ -20,9 +20,9 @@
     ]
   },
   "expected": {
-    "error": {
-      "type": "UnsupportedFeature",
-      "message": "unsupported call \"SOSL/FIND local search surface\""
+    "result": {
+      "debug": null,
+      "ok": true
     }
   }
 }

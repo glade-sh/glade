@@ -1,28 +1,32 @@
 {
-  "name": "async-finalizer-unsupported",
+  "name": "async-finalizer-context-getters",
   "evidence": [
     {
       "symbol": "FinalizerContext.getAsyncApexJobId",
+      "surfaceId": "apex:System.FinalizerContext.getAsyncApexJobId()",
       "kind": "exec",
-      "notes": "Queueable finalizer callbacks are not modeled; context getters return a typed unsupported diagnostic."
+      "notes": "Default constructed local finalizer contexts expose empty async job ids."
+    },
+    {
+      "symbol": "FinalizerContextImpl.getAsyncApexJobId",
+      "surfaceId": "apex:System.FinalizerContextImpl.getAsyncApexJobId()",
+      "kind": "exec",
+      "notes": "Default constructed local finalizer context implementations expose empty async job ids."
     }
   ],
   "source": [
     {
       "path": "anonymous.apex",
-      "content": "FinalizerContext fc = new FinalizerContext(); String jobId = fc.getAsyncApexJobId();"
+      "content": "System.FinalizerContext fc = new System.FinalizerContext(); System.assertEquals('', fc.getAsyncApexJobId()); System.FinalizerContextImpl fci = new System.FinalizerContextImpl(); System.assertEquals('', fci.getAsyncApexJobId());"
     }
   ],
   "command": {
     "kind": "exec",
     "args": [
-      "FinalizerContext fc = new FinalizerContext(); String jobId = fc.getAsyncApexJobId();"
+      "System.FinalizerContext fc = new System.FinalizerContext(); System.assertEquals('', fc.getAsyncApexJobId()); System.FinalizerContextImpl fci = new System.FinalizerContextImpl(); System.assertEquals('', fci.getAsyncApexJobId());"
     ]
   },
   "expected": {
-    "error": {
-      "type": "UnsupportedFeature",
-      "message": "unsupported call \"FinalizerContext.getAsyncApexJobId local queueable finalizers\""
-    }
+    "ok": true
   }
 }

@@ -5,19 +5,22 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 type Fixture struct {
-	Name           string            `json:"name"`
-	Evidence       []FixtureEvidence `json:"evidence,omitempty"`
-	Project        ProjectConfig     `json:"project,omitempty"`
-	Source         []SourceFile      `json:"source,omitempty"`
-	Schema         []SchemaFile      `json:"schema,omitempty"`
-	SeedData       []SeedData        `json:"seedData,omitempty"`
-	ServerRequests []ServerRequest   `json:"serverRequests,omitempty"`
-	Command        Invocation        `json:"command"`
-	Expected       ExpectedBehavior  `json:"expected"`
-	Limits         ExpectedLimits    `json:"limits,omitempty"`
+	Name           string                   `json:"name"`
+	Evidence       []FixtureEvidence        `json:"evidence,omitempty"`
+	Project        ProjectConfig            `json:"project,omitempty"`
+	Source         []SourceFile             `json:"source,omitempty"`
+	Schema         []SchemaFile             `json:"schema,omitempty"`
+	Metadata       storage.MetadataRegistry `json:"metadata,omitempty"`
+	SeedData       []SeedData               `json:"seedData,omitempty"`
+	ServerRequests []ServerRequest          `json:"serverRequests,omitempty"`
+	Command        Invocation               `json:"command"`
+	Expected       ExpectedBehavior         `json:"expected"`
+	Limits         ExpectedLimits           `json:"limits,omitempty"`
 }
 
 type ProjectConfig struct {
@@ -134,7 +137,7 @@ func Validate(fixture Fixture) error {
 	if fixture.Command.Kind == "" {
 		return fmt.Errorf("fixture %q: command.kind is required", fixture.Name)
 	}
-	if len(fixture.Source) == 0 && len(fixture.Schema) == 0 && len(fixture.SeedData) == 0 && len(fixture.ServerRequests) == 0 {
+	if len(fixture.Source) == 0 && len(fixture.Schema) == 0 && metadataRegistryEmpty(fixture.Metadata) && len(fixture.SeedData) == 0 && len(fixture.ServerRequests) == 0 {
 		return fmt.Errorf("fixture %q: at least one source, schema, seed data, or server request entry is required", fixture.Name)
 	}
 	for i, source := range fixture.Source {
@@ -169,4 +172,17 @@ func Validate(fixture Fixture) error {
 		}
 	}
 	return nil
+}
+
+func metadataRegistryEmpty(metadata storage.MetadataRegistry) bool {
+	return len(metadata.Labels) == 0 &&
+		len(metadata.ManagedLabelNamespaces) == 0 &&
+		len(metadata.Tabs) == 0 &&
+		len(metadata.DataCategoryGroups) == 0 &&
+		len(metadata.QuickActions) == 0 &&
+		len(metadata.FieldSets) == 0 &&
+		len(metadata.StaticResources) == 0 &&
+		len(metadata.ContentAssets) == 0 &&
+		len(metadata.Endpoints) == 0 &&
+		len(metadata.EmailTemplates) == 0
 }

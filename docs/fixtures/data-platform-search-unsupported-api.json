@@ -4,7 +4,7 @@
     {
       "symbol": "Search.find",
       "kind": "test",
-      "notes": "Cloud search is not locally modeled; the VM returns a stable UnsupportedFeature diagnostic."
+      "notes": "Search.find accepts the supported local SOSL smoke shape."
     }
   ],
   "source": [
@@ -20,9 +20,9 @@
     ]
   },
   "expected": {
-    "error": {
-      "type": "UnsupportedFeature",
-      "message": "unsupported call \"Search.find local search/SOSL surface\""
+    "result": {
+      "debug": null,
+      "ok": true
     }
   }
 }

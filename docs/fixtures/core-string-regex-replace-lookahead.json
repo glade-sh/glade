@@ -1,0 +1,28 @@
+{
+  "name": "core-string-regex-replace-lookahead",
+  "evidence": [
+    {
+      "symbol": "String.replaceAll",
+      "kind": "exec",
+      "notes": "String.replaceAll supports Java regex lookahead in the local regex bridge."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String source = 'abc';\nSystem.assertEquals('xabc', source.replaceAll('(?=a)', 'x'));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String source = 'abc';\nSystem.assertEquals('xabc', source.replaceAll('(?=a)', 'x'));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

@@ -1437,7 +1437,7 @@ func (vm *VM) jsonSObjectFieldType(typeName, fieldName string) (string, bool) {
 	switch field.Type {
 	case storage.FieldID, storage.FieldReference:
 		return "String", true
-	case storage.FieldString, storage.FieldPicklist:
+	case storage.FieldString, storage.FieldPicklist, storage.FieldMultiPicklist:
 		return "String", true
 	case storage.FieldBoolean:
 		return "Boolean", true

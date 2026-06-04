@@ -17,8 +17,8 @@ var parsedQueryCache sync.Map
 
 const virtualSchemaHydrationStampKey = "__glade_virtual_schema_hydration_stamp"
 
-func cachedParsedQuery(input string, now time.Time) (Query, bool) {
-	value, ok := parsedQueryCache.Load(parsedQueryCacheKey(input, now))
+func cachedParsedQuery(input string, now time.Time, fiscalYearStartMonth int) (Query, bool) {
+	value, ok := parsedQueryCache.Load(parsedQueryCacheKey(input, now, fiscalYearStartMonth))
 	if !ok {
 		return Query{}, false
 	}
@@ -29,12 +29,12 @@ func cachedParsedQuery(input string, now time.Time) (Query, bool) {
 	return cloneQueryForCacheHit(query), true
 }
 
-func storeParsedQuery(input string, now time.Time, query Query) {
-	parsedQueryCache.Store(parsedQueryCacheKey(input, now), cloneQuery(query))
+func storeParsedQuery(input string, now time.Time, fiscalYearStartMonth int, query Query) {
+	parsedQueryCache.Store(parsedQueryCacheKey(input, now, fiscalYearStartMonth), cloneQuery(query))
 }
 
-func parsedQueryCacheKey(input string, now time.Time) string {
-	return now.UTC().Truncate(time.Minute).Format("2006-01-02T15:04") + "\x00" + input
+func parsedQueryCacheKey(input string, now time.Time, fiscalYearStartMonth int) string {
+	return now.UTC().Truncate(time.Minute).Format("2006-01-02T15:04") + "\x00" + strconv.Itoa(normalizeFiscalYearStartMonth(fiscalYearStartMonth)) + "\x00" + input
 }
 
 func cloneQuery(query Query) Query {
@@ -178,20 +178,25 @@ func firstQueryWord(input string) string {
 }
 
 func ParseAt(input string, now time.Time) (Query, error) {
+	return ParseAtWithFiscalYearStartMonth(input, now, 1)
+}
+
+func ParseAtWithFiscalYearStartMonth(input string, now time.Time, fiscalYearStartMonth int) (Query, error) {
 	now = now.UTC()
-	if query, ok := cachedParsedQuery(input, now); ok {
+	fiscalYearStartMonth = normalizeFiscalYearStartMonth(fiscalYearStartMonth)
+	if query, ok := cachedParsedQuery(input, now, fiscalYearStartMonth); ok {
 		return query, nil
 	}
 	tokens, err := lex(input)
 	if err != nil {
 		return Query{}, err
 	}
-	p := parser{tokens: tokens, now: now}
+	p := parser{tokens: tokens, now: now, fiscalYearStartMonth: fiscalYearStartMonth}
 	query, err := p.parseQuery()
 	if err != nil {
 		return Query{}, err
 	}
-	storeParsedQuery(input, now, query)
+	storeParsedQuery(input, now, fiscalYearStartMonth, query)
 	return query, nil
 }
 
@@ -542,6 +547,8 @@ func storageFieldDisplayType(fieldType storage.FieldType) string {
 		return "REFERENCE"
 	case storage.FieldPicklist:
 		return "PICKLIST"
+	case storage.FieldMultiPicklist:
+		return "MULTIPICKLIST"
 	default:
 		return "STRING"
 	}
@@ -893,11 +900,48 @@ func ParseAndExecute(org storage.OrgState, input string) (Result, error) {
 }
 
 func ParseAndExecuteAt(org storage.OrgState, input string, now time.Time) (Result, error) {
-	query, err := ParseAt(input, now)
+	query, err := ParseAtWithFiscalYearStartMonth(input, now, FiscalYearStartMonth(org))
 	if err != nil {
 		return Result{}, err
 	}
 	return Execute(org, query)
+}
+
+func FiscalYearStartMonth(org storage.OrgState) int {
+	if org.OrgID != "" {
+		if month, ok := fiscalYearStartMonthFromRecord(org, storage.ID(org.OrgID)); ok {
+			return month
+		}
+	}
+	for _, record := range org.Objects["Organization"].Records {
+		if month, ok := fiscalYearStartMonthFromValue(record.Fields["FiscalYearStartMonth"]); ok {
+			return month
+		}
+	}
+	return 1
+}
+
+func fiscalYearStartMonthFromRecord(org storage.OrgState, id storage.ID) (int, bool) {
+	object, ok := org.Objects["Organization"]
+	if !ok {
+		return 0, false
+	}
+	record, ok := object.Records[id]
+	if !ok {
+		return 0, false
+	}
+	return fiscalYearStartMonthFromValue(record.Fields["FiscalYearStartMonth"])
+}
+
+func fiscalYearStartMonthFromValue(value storage.Value) (int, bool) {
+	if value.Kind != storage.ValueInteger {
+		return 0, false
+	}
+	month := int(value.Integer)
+	if month < 1 || month > 12 {
+		return 0, false
+	}
+	return month, true
 }
 
 func matches(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, condition *Condition) bool {
@@ -967,7 +1011,9 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 	case "NOT LIKE":
 		return !likeMatch(left, condition.Value)
 	case "INCLUDES":
-		return includesMatch(org, left, condition.Value)
+		return includesConditionMatch(org, left, condition)
+	case "EXCLUDES":
+		return excludesConditionMatch(org, left, condition)
 	case "IN":
 		if condition.Subquery != nil {
 			return false
@@ -2028,6 +2074,24 @@ func validateConditionReferences(org storage.OrgState, definition storage.Object
 			}
 		} else if err := validateFieldReference(org, definition, condition.Field, mode); err != nil {
 			return err
+		}
+		if condition.Op == "INCLUDES" || condition.Op == "EXCLUDES" {
+			if err := validateMultiSelectPicklistCondition(org, definition, *condition, mode); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func validateMultiSelectPicklistCondition(org storage.OrgState, definition storage.ObjectDefinition, condition Condition, mode string) error {
+	fields, ok := fieldDefinitionsForReference(org, definition, condition.Field)
+	if !ok || len(fields) == 0 {
+		return fieldUnavailableError(condition.Field, mode)
+	}
+	for _, field := range fields {
+		if field.Type != storage.FieldMultiPicklist {
+			return fmt.Errorf("soql: %s requires multi-select picklist field %s", condition.Op, condition.Field)
 		}
 	}
 	return nil
@@ -3259,6 +3323,61 @@ func includesMatch(org storage.OrgState, left, right storage.Value) bool {
 			}
 		}
 		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+func includesConditionMatch(org storage.OrgState, left storage.Value, condition *Condition) bool {
+	if condition == nil {
+		return false
+	}
+	if len(condition.Values) == 0 {
+		return includesMatch(org, left, condition.Value)
+	}
+	for _, value := range condition.Values {
+		if includesMatch(org, left, value) {
+			return true
+		}
+	}
+	return false
+}
+
+func excludesMatch(org storage.OrgState, left, right storage.Value) bool {
+	if right.Kind != storage.ValueString {
+		return false
+	}
+	wants := splitMultiPicklistValue(right.String)
+	if len(wants) == 0 {
+		return false
+	}
+	if left.Kind != storage.ValueString {
+		return left.Kind == storage.ValueNull
+	}
+	haves := splitMultiPicklistValue(left.String)
+	if len(haves) == 0 {
+		return true
+	}
+	for _, want := range wants {
+		for _, have := range haves {
+			if equalValuesInOrg(org, storage.StringValue(have), storage.StringValue(want)) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func excludesConditionMatch(org storage.OrgState, left storage.Value, condition *Condition) bool {
+	if condition == nil {
+		return false
+	}
+	if len(condition.Values) == 0 {
+		return excludesMatch(org, left, condition.Value)
+	}
+	for _, value := range condition.Values {
+		if !excludesMatch(org, left, value) {
 			return false
 		}
 	}

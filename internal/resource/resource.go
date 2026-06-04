@@ -49,6 +49,7 @@ type quickActionXML struct {
 type fieldSetXML struct {
 	FullName        string              `xml:"fullName"`
 	Label           string              `xml:"label"`
+	Description     string              `xml:"description"`
 	DisplayedFields []fieldSetMemberXML `xml:"displayedFields"`
 	AvailableFields []fieldSetMemberXML `xml:"availableFields"`
 }
@@ -384,12 +385,13 @@ func fieldSetFromXML(raw fieldSetXML, objectName, fallbackName, namespace, path 
 		members = append(members, storage.FieldSetMemberMetadata{Field: field, Required: member.Required})
 	}
 	return storage.FieldSetMetadata{
-		ObjectName: objectName,
-		Namespace:  strings.TrimSpace(namespace),
-		Name:       name,
-		Label:      strings.TrimSpace(raw.Label),
-		Fields:     members,
-		File:       path,
+		ObjectName:  objectName,
+		Namespace:   strings.TrimSpace(namespace),
+		Name:        name,
+		Label:       strings.TrimSpace(raw.Label),
+		Description: strings.TrimSpace(raw.Description),
+		Fields:      members,
+		File:        path,
 	}
 }
 

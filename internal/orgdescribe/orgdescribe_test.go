@@ -3,6 +3,7 @@ package orgdescribe
 import (
 	"testing"
 
+	"github.com/glade-sh/glade/internal/sobject"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -18,10 +19,14 @@ func TestCatalogToObjectDefinitionsStitchesChildRelationships(t *testing.T) {
 				{Name: "Name", Label: "Account Name", Type: "string", Nillable: false, Createable: true, Updateable: true},
 			},
 			ChildRelationships: []ChildRelationship{{
-				ChildSObject:     "Contact",
-				Field:            "AccountId",
-				RelationshipName: "Contacts",
-				CascadeDelete:    true,
+				ChildSObject:        "Contact",
+				Field:               "AccountId",
+				RelationshipName:    "Contacts",
+				CascadeDelete:       true,
+				RestrictedDelete:    true,
+				DeprecatedAndHidden: true,
+				JunctionIDListNames: []string{"AccountContactRelationIds"},
+				JunctionReferenceTo: []string{"AccountContactRelation"},
 			}},
 			RecordTypeInfos: []RecordTypeInfo{{
 				Name:                     "Master",
@@ -67,8 +72,11 @@ func TestCatalogToObjectDefinitionsStitchesChildRelationships(t *testing.T) {
 		t.Fatalf("Contact relationships = %#v", contact.Relations)
 	}
 	relation := contact.Relations[0]
-	if relation.Field != "AccountId" || relation.ParentRelationship != "Account" || relation.ChildRelationship != "Contacts" || !relation.CascadeDelete {
+	if relation.Field != "AccountId" || relation.ParentRelationship != "Account" || relation.ChildRelationship != "Contacts" || !relation.CascadeDelete || !relation.RestrictedDelete || !relation.DeprecatedAndHidden {
 		t.Fatalf("Contact.Account relationship = %#v", relation)
+	}
+	if len(relation.JunctionIDListNames) != 1 || relation.JunctionIDListNames[0] != "AccountContactRelationIds" || len(relation.JunctionReferenceTo) != 1 || relation.JunctionReferenceTo[0] != "AccountContactRelation" {
+		t.Fatalf("Contact.Account junction metadata = %#v", relation)
 	}
 }
 
@@ -164,6 +172,77 @@ func TestDescribeFieldMappingPreservesRuntimeShape(t *testing.T) {
 	if describe.RelationshipName != "What" || len(describe.ReferenceTo) != 2 {
 		t.Fatalf("describe relationship = %#v", describe)
 	}
+}
+
+func TestDescribeFieldMappingPreservesDescribeFlags(t *testing.T) {
+	relationshipOrder := 2
+	field := Field{
+		Name:                "External_Id__c",
+		Label:               "External Id",
+		Type:                "string",
+		Nillable:            true,
+		Createable:          false,
+		Updateable:          false,
+		Accessible:          storage.BoolFlag(false),
+		Filterable:          storage.BoolFlag(false),
+		Groupable:           storage.BoolFlag(false),
+		Sortable:            storage.BoolFlag(false),
+		Aggregatable:        storage.BoolFlag(false),
+		Permissionable:      storage.BoolFlag(false),
+		DeprecatedAndHidden: storage.BoolFlag(true),
+		ExternalID:          true,
+		Unique:              true,
+		CaseSensitive:       true,
+		RestrictedPicklist:  true,
+		IDLookup:            true,
+		NamePointing:        true,
+		RelationshipOrder:   &relationshipOrder,
+	}
+
+	describe := field.ToDescribeFieldResult()
+	if describe.Nillable == nil || !*describe.Nillable {
+		t.Fatalf("nillable = %#v", describe.Nillable)
+	}
+	for name, flag := range map[string]*bool{
+		"accessible":          describe.Accessible,
+		"createable":          describe.Createable,
+		"updateable":          describe.Updateable,
+		"filterable":          describe.Filterable,
+		"groupable":           describe.Groupable,
+		"sortable":            describe.Sortable,
+		"aggregatable":        describe.Aggregatable,
+		"permissionable":      describe.Permissionable,
+		"deprecatedAndHidden": describe.DeprecatedAndHidden,
+	} {
+		if flag == nil {
+			t.Fatalf("%s flag was nil", name)
+		}
+	}
+	if *describe.Accessible || *describe.Createable || *describe.Updateable || *describe.Filterable ||
+		*describe.Groupable || *describe.Sortable || *describe.Aggregatable || *describe.Permissionable {
+		t.Fatalf("false flags not preserved: %#v", describe)
+	}
+	if !*describe.DeprecatedAndHidden || !describe.ExternalID || !describe.Unique || !describe.CaseSensitive ||
+		!describe.RestrictedPicklist || !describe.IDLookup || !describe.NamePointing {
+		t.Fatalf("true flags not preserved: %#v", describe)
+	}
+	if describe.RelationshipOrder == nil || *describe.RelationshipOrder != 2 {
+		t.Fatalf("relationship order not preserved: %#v", describe.RelationshipOrder)
+	}
+
+	definition := sobjectDefinitionFromDescribeField(describe)
+	roundTrip := definition.Fields["External_Id__c"]
+	if roundTrip.Accessible == nil || *roundTrip.Accessible || roundTrip.Filterable == nil || *roundTrip.Filterable || !roundTrip.IDLookup ||
+		roundTrip.RelationshipOrder == nil || *roundTrip.RelationshipOrder != 2 {
+		t.Fatalf("definition flags did not round trip: %#v", roundTrip)
+	}
+}
+
+func sobjectDefinitionFromDescribeField(field sobject.DescribeFieldResult) storage.ObjectDefinition {
+	return sobject.ToObjectDefinition(sobject.DescribeSObjectResult{
+		Name:   "Account",
+		Fields: map[string]sobject.DescribeFieldResult{field.Name: field},
+	})
 }
 
 type FieldLike struct {

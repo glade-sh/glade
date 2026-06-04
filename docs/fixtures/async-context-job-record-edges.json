@@ -16,6 +16,7 @@
     },
     {
       "symbol": "AsyncApexJob.TotalJobItems",
+      "surfaceId": "data-reference:AsyncApexJob.TotalJobItems",
       "kind": "test"
     },
     {
@@ -34,15 +35,15 @@
     },
     {
       "path": "force-app/main/classes/ContextQueue.cls",
-      "content": "public class ContextQueue { public void execute(QueueableContext qc) { insert new Account(Name = qc.getJobId()); } }"
+      "content": "public class ContextQueue implements Queueable { public void execute(QueueableContext qc) { insert new Account(Name = qc.getJobId()); } }"
     },
     {
       "path": "force-app/main/classes/ContextBatch.cls",
-      "content": "public class ContextBatch { public List<Integer> start(Database.BatchableContext bc) { return new List<Integer>{1, 2, 3}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { insert new Account(Name = bc.getJobId()); } }"
+      "content": "public class ContextBatch implements Database.Batchable<Integer> { public List<Integer> start(Database.BatchableContext bc) { return new List<Integer>{1, 2, 3}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { insert new Account(Name = bc.getJobId()); } public void finish(Database.BatchableContext bc) {} }"
     },
     {
       "path": "force-app/main/classes/ContextSchedule.cls",
-      "content": "public class ContextSchedule { public void execute(SchedulableContext sc) { insert new Account(Name = sc.getTriggerId()); } }"
+      "content": "public class ContextSchedule implements Schedulable { public void execute(SchedulableContext sc) { insert new Account(Name = sc.getTriggerId()); } }"
     },
     {
       "path": "force-app/main/classes/AsyncContextEdgesTest.cls",

@@ -20,6 +20,11 @@
       "symbol": "System.isScheduled",
       "kind": "test",
       "notes": "True inside a drained Schedulable execute method and false outside other local async contexts."
+    },
+    {
+      "symbol": "System.isBatch",
+      "surfaceId": "apex:System.System.isBatch()",
+      "kind": "test"
     }
   ],
   "source": [
@@ -37,15 +42,15 @@
     },
     {
       "path": "force-app/main/classes/FlagQueue.cls",
-      "content": "public class FlagQueue { public void execute(QueueableContext qc) { System.assertEquals(false, System.isFuture()); System.assertEquals(false, System.isBatch()); System.assertEquals(true, System.isQueueable()); System.assertEquals(false, System.isScheduled()); insert new Account(Name = 'queueable'); } }"
+      "content": "public class FlagQueue implements Queueable { public void execute(QueueableContext qc) { System.assertEquals(false, System.isFuture()); System.assertEquals(false, System.isBatch()); System.assertEquals(true, System.isQueueable()); System.assertEquals(false, System.isScheduled()); insert new Account(Name = 'queueable'); } }"
     },
     {
       "path": "force-app/main/classes/FlagBatch.cls",
-      "content": "public class FlagBatch { public List<Integer> start(Database.BatchableContext bc) { System.assertEquals(true, System.isBatch()); System.assertEquals(false, System.isFuture()); System.assertEquals(false, System.isQueueable()); System.assertEquals(false, System.isScheduled()); return new List<Integer>{1}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { System.assertEquals(true, System.isBatch()); insert new Account(Name = 'batch'); } public void finish(Database.BatchableContext bc) { System.assertEquals(true, System.isBatch()); } }"
+      "content": "public class FlagBatch implements Database.Batchable<Integer> { public List<Integer> start(Database.BatchableContext bc) { System.assertEquals(true, System.isBatch()); System.assertEquals(false, System.isFuture()); System.assertEquals(false, System.isQueueable()); System.assertEquals(false, System.isScheduled()); return new List<Integer>{1}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { System.assertEquals(true, System.isBatch()); insert new Account(Name = 'batch'); } public void finish(Database.BatchableContext bc) { System.assertEquals(true, System.isBatch()); } }"
     },
     {
       "path": "force-app/main/classes/FlagSchedule.cls",
-      "content": "public class FlagSchedule { public void execute(SchedulableContext sc) { System.assertEquals(false, System.isFuture()); System.assertEquals(false, System.isBatch()); System.assertEquals(false, System.isQueueable()); System.assertEquals(true, System.isScheduled()); insert new Account(Name = 'scheduled'); } }"
+      "content": "public class FlagSchedule implements Schedulable { public void execute(SchedulableContext sc) { System.assertEquals(false, System.isFuture()); System.assertEquals(false, System.isBatch()); System.assertEquals(false, System.isQueueable()); System.assertEquals(true, System.isScheduled()); insert new Account(Name = 'scheduled'); } }"
     },
     {
       "path": "force-app/main/classes/AsyncFlagTest.cls",

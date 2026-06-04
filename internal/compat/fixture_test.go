@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -151,6 +152,56 @@ func TestRunExecFixture(t *testing.T) {
 		Expected: ExpectedBehavior{
 			Stdout: "hello\n",
 			Result: json.RawMessage(`{"debug":["hello"],"ok":true}`),
+		},
+	}
+	result, err := Run(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.OK {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
+func TestRunExecFixtureFailsWhenExpectedErrorButExecutionSucceeds(t *testing.T) {
+	fixture := Fixture{
+		Name:    "exec-expected-error",
+		Source:  []SourceFile{{Path: "anonymous.apex", Content: "Integer x = 1;"}},
+		Command: Invocation{Kind: "exec", Args: []string{"Integer x = 1;"}},
+		Expected: ExpectedBehavior{
+			Error: &ExpectedError{Type: "UnsupportedFeature", Message: "unsupported call \"old gap\""},
+		},
+	}
+	if _, err := Run(fixture); err == nil || !strings.Contains(err.Error(), "expected error") {
+		t.Fatalf("Run err = %v, want expected error mismatch", err)
+	}
+}
+
+func TestRunExecFixtureLoadsMetadataRegistry(t *testing.T) {
+	fixture := Fixture{
+		Name: "exec-metadata-registry",
+		Metadata: storage.MetadataRegistry{DataCategoryGroups: []storage.DataCategoryGroup{{
+			Name:        "Products",
+			Label:       "Products",
+			Description: "Product categories",
+			SObjectName: "Knowledge__kav",
+			Categories: []storage.DataCategory{{
+				Name:  "Hardware",
+				Label: "Hardware",
+				Children: []storage.DataCategory{{
+					Name:  "Laptops",
+					Label: "Laptops",
+				}},
+			}},
+		}}},
+		Command: Invocation{Kind: "exec", Args: []string{`
+List<Object> groups = Schema.describeDataCategoryGroups(new List<String>{'Knowledge__kav'});
+System.assertEquals(1, groups.size());
+System.assertEquals('Products', groups[0].getName());
+System.assertEquals(2, groups[0].getCategoryCount());
+`}},
+		Expected: ExpectedBehavior{
+			Result: json.RawMessage(`{"debug":null,"ok":true}`),
 		},
 	}
 	result, err := Run(fixture)

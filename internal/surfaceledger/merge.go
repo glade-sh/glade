@@ -13,10 +13,11 @@ func Merge(docs, org, glade, evidence []SurfaceLedgerRow) SurfaceLedger {
 			if row.SurfaceID == "" {
 				continue
 			}
-			merged := byID[row.SurfaceID]
+			key := surfaceIDKey(row.SurfaceID)
+			merged := byID[key]
 			merged = mergeRow(merged, row)
 			Classify(&merged)
-			byID[row.SurfaceID] = merged
+			byID[key] = merged
 		}
 	}
 	rows := make([]SurfaceLedgerRow, 0, len(byID))
@@ -129,6 +130,12 @@ func Classify(row *SurfaceLedgerRow) {
 		row.Bucket = BucketImplemented
 	case isGenericEnumHelper(*row):
 		row.Bucket = BucketImplemented
+	case isFixtureBackedDataReference(*row):
+		row.Bucket = BucketImplemented
+	case isFixtureBackedApexType(*row):
+		row.Bucket = BucketImplemented
+	case isFixtureBackedApexMember(*row):
+		row.Bucket = BucketImplemented
 	case (row.GladeBehavior == BehaviorSupported || row.GladeBehavior == BehaviorPartial) && row.Evidence == EvidenceNone:
 		row.GapClass = GapMissingEvidence
 		row.Bucket = BucketGap
@@ -165,7 +172,7 @@ func needsBehavior(row SurfaceLedgerRow) bool {
 }
 
 func isGenericObjectHelper(row SurfaceLedgerRow) bool {
-	if row.Docs != SourceAbsent || row.Org != SourceAbsent || row.GladeShape == ShapeAbsent || row.GladeBehavior != BehaviorSupported {
+	if row.GladeShape == ShapeAbsent || row.GladeBehavior != BehaviorSupported {
 		return false
 	}
 	switch row.MemberName {
@@ -179,7 +186,7 @@ func isGenericObjectHelper(row SurfaceLedgerRow) bool {
 }
 
 func isGenericEnumHelper(row SurfaceLedgerRow) bool {
-	if row.Docs != SourceAbsent || row.Org != SourceAbsent || row.GladeShape == ShapeAbsent || row.GladeBehavior != BehaviorSupported {
+	if row.GladeShape == ShapeAbsent || row.GladeBehavior != BehaviorSupported {
 		return false
 	}
 	if row.Kind == KindProperty && row.MemberName == strings.ToUpper(row.MemberName) && row.MemberName != "" {
@@ -193,6 +200,29 @@ func isGenericEnumHelper(row SurfaceLedgerRow) bool {
 	default:
 		return false
 	}
+}
+
+func isFixtureBackedDataReference(row SurfaceLedgerRow) bool {
+	return row.Product == ProductDataRef &&
+		row.GladeShape != ShapeAbsent &&
+		row.GladeBehavior == BehaviorSupported &&
+		row.Evidence != EvidenceNone
+}
+
+func isFixtureBackedApexType(row SurfaceLedgerRow) bool {
+	return row.Product == ProductApex &&
+		row.Kind == KindType &&
+		row.GladeShape != ShapeAbsent &&
+		row.GladeBehavior == BehaviorSupported &&
+		row.Evidence != EvidenceNone
+}
+
+func isFixtureBackedApexMember(row SurfaceLedgerRow) bool {
+	return row.Product == ProductApex &&
+		(row.Kind == KindMethod || row.Kind == KindProperty || row.Kind == KindField) &&
+		row.GladeShape != ShapeAbsent &&
+		row.GladeBehavior == BehaviorSupported &&
+		row.Evidence != EvidenceNone
 }
 
 func isPassiveServiceRisk(row SurfaceLedgerRow) bool {

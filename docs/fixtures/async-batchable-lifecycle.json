@@ -35,6 +35,101 @@
       "symbol": "Database.BatchableContext.getChildJobId",
       "surfaceId": "apex:Database.BatchableContext.getChildJobId()",
       "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob",
+      "surfaceId": "data-reference:AsyncApexJob",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.Id",
+      "surfaceId": "data-reference:AsyncApexJob.Id",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.Status",
+      "surfaceId": "data-reference:AsyncApexJob.Status",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.JobType",
+      "surfaceId": "data-reference:AsyncApexJob.JobType",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.ApexClassId",
+      "surfaceId": "data-reference:AsyncApexJob.ApexClassId",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.CreatedDate",
+      "surfaceId": "data-reference:AsyncApexJob.CreatedDate",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.CreatedById",
+      "surfaceId": "data-reference:AsyncApexJob.CreatedById",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.LastModifiedDate",
+      "surfaceId": "data-reference:AsyncApexJob.LastModifiedDate",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.LastModifiedById",
+      "surfaceId": "data-reference:AsyncApexJob.LastModifiedById",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.SystemModstamp",
+      "surfaceId": "data-reference:AsyncApexJob.SystemModstamp",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.MethodName",
+      "surfaceId": "data-reference:AsyncApexJob.MethodName",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.TotalJobItems",
+      "surfaceId": "data-reference:AsyncApexJob.TotalJobItems",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.JobItemsProcessed",
+      "surfaceId": "data-reference:AsyncApexJob.JobItemsProcessed",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.NumberOfErrors",
+      "surfaceId": "data-reference:AsyncApexJob.NumberOfErrors",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.ExtendedStatus",
+      "surfaceId": "data-reference:AsyncApexJob.ExtendedStatus",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.CompletedDate",
+      "surfaceId": "data-reference:AsyncApexJob.CompletedDate",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.ParentJobId",
+      "surfaceId": "data-reference:AsyncApexJob.ParentJobId",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.LastProcessed",
+      "surfaceId": "data-reference:AsyncApexJob.LastProcessed",
+      "kind": "test"
+    },
+    {
+      "symbol": "AsyncApexJob.LastProcessedOffset",
+      "surfaceId": "data-reference:AsyncApexJob.LastProcessedOffset",
+      "kind": "test"
     }
   ],
   "source": [
@@ -48,15 +143,27 @@
     },
     {
       "path": "force-app/main/classes/BatchLifecycleFixtureBatch.cls",
-      "content": "public class BatchLifecycleFixtureBatch implements Database.Batchable<Integer> { public Iterable<Integer> start(Database.BatchableContext bc) { System.assert(System.isBatch()); System.assertNotEquals('', bc.getJobId()); System.assertEquals('', bc.getChildJobId()); insert new Account(Name = 'start:' + bc.getJobId()); return new List<Integer>{1, 2, 3, 4, 5}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { System.assert(System.isBatch()); System.assertNotEquals('', bc.getJobId()); insert new Account(Name = 'execute:' + bc.getJobId() + ':' + scope.size()); } public void finish(Database.BatchableContext bc) { System.assert(System.isBatch()); System.assertNotEquals('', bc.getJobId()); insert new Account(Name = 'finish:' + bc.getJobId()); AsyncApexJob job = [SELECT Id, Status, JobType, TotalJobItems, JobItemsProcessed, NumberOfErrors, CompletedDate FROM AsyncApexJob WHERE Id = :bc.getJobId()]; System.assertEquals('Completed', job.Status); System.assertEquals('BatchApex', job.JobType); System.assertEquals(3, job.TotalJobItems); System.assertEquals(3, job.JobItemsProcessed); System.assertEquals(0, job.NumberOfErrors); System.assertNotEquals(null, job.CompletedDate); } }"
+      "content": "public class BatchLifecycleFixtureBatch implements Database.Batchable<SObject> { public Iterable<SObject> start(Database.BatchableContext bc) { System.assert(System.isBatch()); System.assertNotEquals('', bc.getJobId()); System.assertEquals('', bc.getChildJobId()); insert new Account(Name = 'start:' + bc.getJobId()); return new List<SObject>{new Account(Id = '001000000000001', Name = 'one'), new Account(Id = '001000000000002', Name = 'two'), new Account(Id = '001000000000003', Name = 'three'), new Account(Id = '001000000000004', Name = 'four'), new Account(Id = '001000000000005', Name = 'five')}; } public void execute(Database.BatchableContext bc, List<SObject> scope) { System.assert(System.isBatch()); System.assertNotEquals('', bc.getJobId()); insert new Account(Name = 'execute:' + bc.getJobId() + ':' + scope.size()); } public void finish(Database.BatchableContext bc) { System.assert(System.isBatch()); System.assertNotEquals('', bc.getJobId()); insert new Account(Name = 'finish:' + bc.getJobId()); AsyncApexJob job = [SELECT Id, Status, JobType, ApexClassId, ApexClassName, MethodName, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, TotalJobItems, JobItemsProcessed, NumberOfErrors, CompletedDate FROM AsyncApexJob WHERE Id = :bc.getJobId()]; System.assertEquals('Completed', job.Status); System.assertEquals('BatchApex', job.JobType); System.assertNotEquals(null, job.ApexClassId); System.assertNotEquals(null, job.CreatedDate); System.assertNotEquals(null, job.CreatedById); System.assertNotEquals(null, job.LastModifiedDate); System.assertNotEquals(null, job.LastModifiedById); System.assertNotEquals(null, job.SystemModstamp); System.assertEquals('execute', job.MethodName); System.assertEquals(3, job.TotalJobItems); System.assertEquals(3, job.JobItemsProcessed); System.assertEquals(0, job.NumberOfErrors); System.assertNotEquals(null, job.CompletedDate); } }"
     },
     {
       "path": "force-app/main/classes/BatchDefaultScopeFixtureBatch.cls",
       "content": "public class BatchDefaultScopeFixtureBatch implements Database.Batchable<Integer> { public Iterable<Integer> start(Database.BatchableContext bc) { return new List<Integer>{1, 2, 3}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { insert new Account(Name = 'default-execute:' + bc.getJobId() + ':' + scope.size()); } public void finish(Database.BatchableContext bc) { AsyncApexJob job = [SELECT Id, Status, TotalJobItems, JobItemsProcessed, NumberOfErrors FROM AsyncApexJob WHERE Id = :bc.getJobId()]; System.assertEquals('Completed', job.Status); System.assertEquals(1, job.TotalJobItems); System.assertEquals(1, job.JobItemsProcessed); System.assertEquals(0, job.NumberOfErrors); } }"
     },
     {
+      "path": "force-app/main/classes/BatchNoopFinishFixtureBatch.cls",
+      "content": "public class BatchNoopFinishFixtureBatch implements Database.Batchable<Integer> { public Iterable<Integer> start(Database.BatchableContext bc) { return new List<Integer>{1, 2, 3}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { insert new Account(Name = 'noop-finish-execute:' + bc.getJobId()); } public void finish(Database.BatchableContext bc) {} }"
+    },
+    {
+      "path": "force-app/main/classes/BatchFailureFixtureBatch.cls",
+      "content": "public class BatchFailureFixtureBatch implements Database.Batchable<Integer> { public Iterable<Integer> start(Database.BatchableContext bc) { return new List<Integer>{1, 2}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { if ([SELECT COUNT() FROM Account WHERE Name = 'failure-chunk-ran'] > 0) { insert new Account(Name = 'rolled-back-failure-chunk'); throw new Exception('second fixture chunk failed'); } insert new Account(Name = 'failure-chunk-ran'); } public void finish(Database.BatchableContext bc) {} }"
+    },
+    {
+      "path": "force-app/main/classes/BatchFinishFailureFixtureBatch.cls",
+      "content": "public class BatchFinishFailureFixtureBatch implements Database.Batchable<Integer> { public Iterable<Integer> start(Database.BatchableContext bc) { return new List<Integer>{1, 2}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { insert new Account(Name = 'finish-failure-chunk'); } public void finish(Database.BatchableContext bc) { insert new Account(Name = 'rolled-back-finish-failure'); throw new Exception('finish fixture failed'); } }"
+    },
+    {
       "path": "force-app/main/classes/AsyncBatchableLifecycleFixtureTest.cls",
-      "content": "@isTest private class AsyncBatchableLifecycleFixtureTest { @isTest static void executesBatchLifecycleAndContext() { Test.startTest(); String jobId = Database.executeBatch(new BatchLifecycleFixtureBatch(), 2); System.assertNotEquals('', jobId); Test.stopTest(); String startName = 'start:' + jobId; String executeTwoName = 'execute:' + jobId + ':2'; String executeOneName = 'execute:' + jobId + ':1'; String finishName = 'finish:' + jobId; System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = :startName]); System.assertEquals(2, [SELECT COUNT() FROM Account WHERE Name = :executeTwoName]); System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = :executeOneName]); System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = :finishName]); } @isTest static void executesDefaultScopeOverload() { Test.startTest(); String jobId = Database.executeBatch(new BatchDefaultScopeFixtureBatch()); Test.stopTest(); String executeName = 'default-execute:' + jobId + ':3'; System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = :executeName]); } }"
+      "content": "@isTest private class AsyncBatchableLifecycleFixtureTest { @isTest static void executesBatchLifecycleAndContext() { Test.startTest(); String jobId = Database.executeBatch(new BatchLifecycleFixtureBatch(), 2); System.assertNotEquals('', jobId); Test.stopTest(); String startName = 'start:' + jobId; String executeTwoName = 'execute:' + jobId + ':2'; String executeOneName = 'execute:' + jobId + ':1'; String finishName = 'finish:' + jobId; System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = :startName]); System.assertEquals(2, [SELECT COUNT() FROM Account WHERE Name = :executeTwoName]); System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = :executeOneName]); System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = :finishName]); System.assertEquals(3, [SELECT COUNT() FROM AsyncApexJob WHERE ParentJobId = :jobId AND JobType = 'BatchApexWorker' AND Status = 'Completed']); System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE ParentJobId = :jobId AND LastProcessed = '001000000000002' AND LastProcessedOffset = 2]); System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE ParentJobId = :jobId AND LastProcessed = '001000000000004' AND LastProcessedOffset = 4]); System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE ParentJobId = :jobId AND LastProcessed = '001000000000005' AND LastProcessedOffset = 5]); } @isTest static void executesDefaultScopeOverload() { Test.startTest(); String jobId = Database.executeBatch(new BatchDefaultScopeFixtureBatch()); Test.stopTest(); String executeName = 'default-execute:' + jobId + ':3'; System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = :executeName]); } @isTest static void recordsCompletedJobWithNoopFinish() { Test.startTest(); String jobId = Database.executeBatch(new BatchNoopFinishFixtureBatch(), 1); Test.stopTest(); AsyncApexJob job = [SELECT Id, Status, TotalJobItems, JobItemsProcessed, NumberOfErrors, CompletedDate FROM AsyncApexJob WHERE Id = :jobId]; System.assertEquals('Completed', job.Status); System.assertEquals(3, job.TotalJobItems); System.assertEquals(3, job.JobItemsProcessed); System.assertEquals(0, job.NumberOfErrors); System.assertNotEquals(null, job.CompletedDate); } @isTest static void recordsFailedJobCounts() { String jobId; try { Test.startTest(); jobId = Database.executeBatch(new BatchFailureFixtureBatch(), 1); Test.stopTest(); } catch (Exception e) {} AsyncApexJob job = [SELECT Id, Status, TotalJobItems, JobItemsProcessed, NumberOfErrors, ExtendedStatus, CompletedDate FROM AsyncApexJob WHERE Id = :jobId]; System.assertEquals('Failed', job.Status); System.assertEquals(2, job.TotalJobItems); System.assertEquals(1, job.JobItemsProcessed); System.assertEquals(1, job.NumberOfErrors); System.assert(job.ExtendedStatus.contains('second fixture chunk failed')); System.assertNotEquals(null, job.CompletedDate); System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'failure-chunk-ran']); System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'rolled-back-failure-chunk']); } @isTest static void recordsFinishFailureJobCounts() { String jobId; try { Test.startTest(); jobId = Database.executeBatch(new BatchFinishFailureFixtureBatch(), 1); Test.stopTest(); } catch (Exception e) {} AsyncApexJob job = [SELECT Id, Status, TotalJobItems, JobItemsProcessed, NumberOfErrors, ExtendedStatus, CompletedDate FROM AsyncApexJob WHERE Id = :jobId]; System.assertEquals('Failed', job.Status); System.assertEquals(2, job.TotalJobItems); System.assertEquals(2, job.JobItemsProcessed); System.assertEquals(1, job.NumberOfErrors); System.assert(job.ExtendedStatus.contains('finish fixture failed')); System.assertNotEquals(null, job.CompletedDate); System.assertEquals(2, [SELECT COUNT() FROM Account WHERE Name = 'finish-failure-chunk']); System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'rolled-back-finish-failure']); } }"
     }
   ],
   "command": {
@@ -67,8 +174,8 @@
       "errors": 0,
       "failed": 0,
       "ok": true,
-      "passed": 2,
-      "total": 2
+      "passed": 5,
+      "total": 5
     }
   }
 }

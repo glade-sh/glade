@@ -7,9 +7,95 @@
       "notes": "Dynamic SELECT-list construction executes with local bind variables."
     },
     {
+      "surfaceId": "apex:System.Database.query(String)",
+      "symbol": "Database.query",
+      "kind": "test",
+      "notes": "One-argument dynamic SOQL query executes selector-built SELECT lists with local bind variables."
+    },
+    {
       "symbol": "Database.queryWithBinds",
       "kind": "test",
-      "notes": "Bind maps execute with scalar values and AccessLevel overload parsing."
+      "notes": "Bind maps execute with scalar values, dotted map keys, and AccessLevel overload parsing."
+    },
+    {
+      "surfaceId": "apex:System.Database.queryWithBinds(String,Map,Object)",
+      "symbol": "Database.queryWithBinds",
+      "kind": "test",
+      "notes": "Bind-map dynamic SOQL executes scalar and dotted keys through the AccessLevel overload."
+    },
+    {
+      "surfaceId": "apex:System.Database.queryWithBinds(String,Map<String,Object>,System.AccessLevel)",
+      "symbol": "Database.queryWithBinds",
+      "kind": "test",
+      "notes": "Typed bind-map dynamic SOQL executes through the AccessLevel overload."
+    },
+    {
+      "symbol": "Database.countQuery",
+      "kind": "test",
+      "notes": "Dynamic SOQL count execution returns the local row count with AccessLevel overload parsing."
+    },
+    {
+      "surfaceId": "apex:System.Database.countQuery(String,Object)",
+      "symbol": "Database.countQuery",
+      "kind": "test",
+      "notes": "Two-argument dynamic count query returns the local row count through the AccessLevel overload."
+    },
+    {
+      "surfaceId": "apex:System.Database.countQuery(String,System.AccessLevel)",
+      "symbol": "Database.countQuery",
+      "kind": "test",
+      "notes": "Dynamic count query returns the local row count through the typed AccessLevel overload."
+    },
+    {
+      "symbol": "Database.getQueryLocator",
+      "kind": "test",
+      "notes": "Dynamic SOQL locator execution accepts AccessLevel and produces iterable local query locators."
+    },
+    {
+      "surfaceId": "apex:System.Database.getQueryLocator(String,Object)",
+      "symbol": "Database.getQueryLocator",
+      "kind": "test",
+      "notes": "Two-argument dynamic query locator accepts AccessLevel and produces an iterable local locator."
+    },
+    {
+      "surfaceId": "apex:System.Database.getQueryLocator(String,System.AccessLevel)",
+      "symbol": "Database.getQueryLocator",
+      "kind": "test",
+      "notes": "Dynamic query locator accepts the typed AccessLevel overload and produces an iterable local locator."
+    },
+    {
+      "symbol": "Database.countQueryWithBinds",
+      "kind": "test",
+      "notes": "Bind maps execute through countQueryWithBinds with AccessLevel overload parsing."
+    },
+    {
+      "surfaceId": "apex:System.Database.countQueryWithBinds(String,Map,Object)",
+      "symbol": "Database.countQueryWithBinds",
+      "kind": "test",
+      "notes": "Bind-map dynamic count query executes through the AccessLevel overload."
+    },
+    {
+      "surfaceId": "apex:System.Database.countQueryWithBinds(String,Map<String,Object>,System.AccessLevel)",
+      "symbol": "Database.countQueryWithBinds",
+      "kind": "test",
+      "notes": "Typed bind-map dynamic count query executes through the AccessLevel overload."
+    },
+    {
+      "symbol": "Database.getQueryLocatorWithBinds",
+      "kind": "test",
+      "notes": "Bind maps execute through getQueryLocatorWithBinds and produce iterable local query locators."
+    },
+    {
+      "surfaceId": "apex:System.Database.getQueryLocatorWithBinds(String,Map,Object)",
+      "symbol": "Database.getQueryLocatorWithBinds",
+      "kind": "test",
+      "notes": "Bind-map dynamic query locator executes through the AccessLevel overload."
+    },
+    {
+      "surfaceId": "apex:System.Database.getQueryLocatorWithBinds(String,Map<String,Object>,System.AccessLevel)",
+      "symbol": "Database.getQueryLocatorWithBinds",
+      "kind": "test",
+      "notes": "Typed bind-map dynamic query locator executes through the AccessLevel overload."
     },
     {
       "symbol": "QueryException",
@@ -32,7 +118,7 @@
     },
     {
       "path": "force-app/main/classes/DataSoqlDynamicSelectorTest.cls",
-      "content": "@isTest private class DataSoqlDynamicSelectorTest { @isTest static void exercisesDynamicSelectors() { insert new Account(Name = 'Acme', Rating = 'Hot'); insert new Account(Name = 'Beta', Rating = 'Warm'); String wanted = 'Acme'; String fields = 'Id, Name, Rating'; String queryText = 'SELECT ' + fields + ' FROM Account WHERE Name = :wanted ORDER BY Name'; List<Account> rows = Database.query(queryText); System.assertEquals(1, rows.size()); Map<String,Object> binds = new Map<String,Object>(); binds.put('rating', 'Warm'); rows = Database.queryWithBinds('SELECT Id, Name FROM Account WHERE Rating = :rating ORDER BY Name', binds, AccessLevel.USER_MODE); System.assertEquals(1, rows.size()); Boolean caught = false; try { Database.query('SELECT FROM Account'); } catch (QueryException qe) { caught = true; } System.assert(caught); } }"
+      "content": "@isTest private class DataSoqlDynamicSelectorTest { @isTest static void exercisesDynamicSelectors() { insert new Account(Name = 'Acme', Rating = 'Hot'); insert new Account(Name = 'Beta', Rating = 'Warm'); String wanted = 'Acme'; String fields = 'Id, Name, Rating'; String queryText = 'SELECT ' + fields + ' FROM Account WHERE Name = :wanted ORDER BY Name'; List<Account> rows = Database.query(queryText); System.assertEquals(1, rows.size()); Map<String,Object> binds = new Map<String,Object>(); binds.put('rating', 'Warm'); rows = Database.queryWithBinds('SELECT Id, Name FROM Account WHERE Rating = :rating ORDER BY Name', binds, AccessLevel.USER_MODE); System.assertEquals(1, rows.size()); binds.put('filter.name', 'Beta'); rows = Database.queryWithBinds('SELECT Id, Name FROM Account WHERE Name = :filter.name ORDER BY Name', binds, AccessLevel.USER_MODE); System.assertEquals(1, rows.size()); System.assertEquals('Beta', rows[0].Name); Integer betaCount = Database.countQuery('SELECT Id FROM Account WHERE Name = \\'Beta\\'', AccessLevel.USER_MODE); System.assertEquals(1, betaCount); Integer warmCount = Database.countQueryWithBinds('SELECT COUNT() FROM Account WHERE Rating = :rating', binds, AccessLevel.SYSTEM_MODE); System.assertEquals(1, warmCount); Database.QueryLocator plainLocator = Database.getQueryLocator('SELECT Id, Name FROM Account WHERE Name = \\'Beta\\'', AccessLevel.USER_MODE); Object plainIterator = plainLocator.iterator(); System.assert(plainIterator.hasNext()); Account plainLocated = plainIterator.next(); System.assertEquals('Beta', plainLocated.Name); System.assert(!plainIterator.hasNext()); Database.QueryLocator locator = Database.getQueryLocatorWithBinds('SELECT Id, Name FROM Account WHERE Rating = :rating ORDER BY Name', binds, AccessLevel.USER_MODE); Object iterator = locator.iterator(); System.assert(iterator.hasNext()); Account located = iterator.next(); System.assertEquals('Beta', located.Name); System.assert(!iterator.hasNext()); Boolean caught = false; try { Database.query('SELECT FROM Account'); } catch (QueryException qe) { caught = true; } System.assert(caught); } }"
     }
   ],
   "command": {

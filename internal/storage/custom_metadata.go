@@ -280,7 +280,7 @@ func customMetadataValue(field Field, raw string) (Value, bool, error) {
 		return Value{}, true, nil
 	case FieldID:
 		return IDValue(ID(raw)), false, nil
-	case FieldString, FieldPicklist, FieldAny:
+	case FieldString, FieldPicklist, FieldMultiPicklist, FieldAny:
 		return StringValue(raw), false, nil
 	default:
 		return Value{}, false, fmt.Errorf("uses unsupported field type %s", field.Type)

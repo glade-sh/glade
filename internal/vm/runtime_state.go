@@ -431,17 +431,20 @@ type eventPublishCallback struct {
 }
 
 type AsyncJob struct {
-	ID                string
-	Kind              string
-	Object            Value
-	Method            Method
-	Args              []Value
-	BatchSize         int
-	Name              string
-	Cron              string
-	Deferred          bool
-	QueueableDepth    int
-	QueueableMaxDepth int
+	ID                  string
+	Kind                string
+	Object              Value
+	Method              Method
+	Args                []Value
+	BatchSize           int
+	Name                string
+	Cron                string
+	ParentJobID         string
+	LastProcessed       string
+	LastProcessedOffset int
+	Deferred            bool
+	QueueableDepth      int
+	QueueableMaxDepth   int
 }
 
 type cacheEntry struct {

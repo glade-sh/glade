@@ -2275,10 +2275,16 @@ func builtinEnumStaticValue(typeName, memberName string) (Value, bool) {
 		return schemaDisplayTypeStaticValue("Schema.DisplayType." + memberName)
 	case strings.EqualFold(typeName, "SOAPType") || strings.EqualFold(typeName, "SoapType") || strings.EqualFold(typeName, "Schema.SOAPType") || strings.EqualFold(typeName, "Schema.SoapType"):
 		return schemaSOAPTypeStaticValue("Schema.SOAPType." + memberName)
-	case strings.EqualFold(typeName, "SObjectDescribeOptions"):
-		for _, known := range []string{"DEFERRED", "FULL"} {
+	case strings.EqualFold(typeName, "FieldDescribeOptions") || strings.EqualFold(typeName, "Schema.FieldDescribeOptions"):
+		for _, known := range schemaFieldDescribeOptionNames {
 			if strings.EqualFold(memberName, known) {
-				return Value{Kind: ValueObject, Type: "SObjectDescribeOptions", Text: known}, true
+				return Value{Kind: ValueObject, Type: "Schema.FieldDescribeOptions", Text: known}, true
+			}
+		}
+	case strings.EqualFold(typeName, "SObjectDescribeOptions") || strings.EqualFold(typeName, "Schema.SObjectDescribeOptions"):
+		for _, known := range schemaSObjectDescribeOptionNames {
+			if strings.EqualFold(memberName, known) {
+				return Value{Kind: ValueObject, Type: "Schema.SObjectDescribeOptions", Text: known}, true
 			}
 		}
 	}
@@ -2336,8 +2342,14 @@ func (vm *VM) schemaGlobalDescribe() Value {
 		return out
 	}
 	names := make([]string, 0, len(vm.Org.Objects))
+	seen := make(map[string]bool, cap(names))
 	for name := range vm.Org.Objects {
+		key := strings.ToLower(strings.TrimSpace(name))
+		if key == "" || seen[key] {
+			continue
+		}
 		names = append(names, name)
+		seen[key] = true
 	}
 	sort.Strings(names)
 	for _, name := range names {

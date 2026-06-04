@@ -2442,12 +2442,10 @@ func (vm *VM) sObjectFieldArg(receiverType string, value Value) (string, error) 
 	}
 	if value.Kind == ValueObject && isSObjectFieldTokenType(value.Type) {
 		if objectValue, ok := value.Fields["object"]; ok && objectValue.Kind == ValueString && receiverType != "" && !strings.EqualFold(receiverType, "SObject") {
-			if vm.Org != nil {
-				if receiverObject, ok := vm.resolveObjectName(receiverType); ok {
-					if tokenObject, ok := vm.resolveObjectName(objectValue.Text); ok && !strings.EqualFold(tokenObject, receiverObject) {
-						return "", fmt.Errorf("%w: field token belongs to %s, not %s", errSObjectFieldTokenWrongObject, objectValue.Text, receiverType)
-					}
-				}
+			receiverObject, receiverOK := vm.describeObjectTokenName(receiverType)
+			tokenObject, tokenOK := vm.describeObjectTokenName(objectValue.Text)
+			if receiverOK && tokenOK && !strings.EqualFold(tokenObject, receiverObject) {
+				return "", fmt.Errorf("%w: field token belongs to %s, not %s", errSObjectFieldTokenWrongObject, objectValue.Text, receiverType)
 			}
 		}
 		field, ok := value.Fields["field"]
@@ -2463,6 +2461,17 @@ func (vm *VM) sObjectFieldArg(receiverType string, value Value) (string, error) 
 }
 
 var errSObjectFieldTokenWrongObject = errors.New("field token belongs to another SObject type")
+
+func (vm *VM) describeObjectTokenName(objectName string) (string, bool) {
+	if vm == nil {
+		if definition, ok := storage.StandardObjectDefinition(objectName); ok {
+			return definition.APIName, true
+		}
+		return "", false
+	}
+	resolved, _, ok := vm.describeObjectDefinition(objectName)
+	return resolved, ok
+}
 
 var errSObjectFieldTokenNull = errors.New("field token is null")
 

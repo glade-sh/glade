@@ -1,0 +1,28 @@
+{
+  "name": "core-url-current-request",
+  "evidence": [
+    {
+      "symbol": "URL.getCurrentRequestUrl",
+      "kind": "exec",
+      "notes": "URL.getCurrentRequestUrl returns the local current request URL."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "URL current = URL.getCurrentRequestUrl();\nSystem.assertEquals('https://local.glade.example/apex/current', current.toExternalForm());"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "URL current = URL.getCurrentRequestUrl();\nSystem.assertEquals('https://local.glade.example/apex/current', current.toExternalForm());"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

@@ -202,6 +202,16 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	if passiveGeneratedMethod(method) {
+		if receiver.Kind == ValueObject && userProvisioningBatchableType(receiver.Type) {
+			callArgs := make([]Value, 0, len(method.Params))
+			for _, param := range method.Params {
+				callArgs = append(callArgs, frame[param.Name])
+			}
+			value, _, _, handled, err := callUserProvisioningBatchableMember(receiver, apexMethodMemberName(method.Name), callArgs)
+			if handled || err != nil {
+				return value, err
+			}
+		}
 		if receiver.Kind == ValueObject &&
 			(strings.EqualFold(receiver.Type, "DataWeave.Script") || strings.HasPrefix(receiver.Type, "DataWeaveScriptResource.")) &&
 			strings.EqualFold(apexMethodMemberName(method.Name), "execute") {
@@ -1685,7 +1695,7 @@ func (vm *VM) resolveGlobalDescribeObjectName(name string) (string, bool) {
 			return resolved, true
 		}
 	}
-	return storage.ResolveKnownStandardObjectName(name)
+	return "", false
 }
 
 func (vm *VM) objectKeyMapLookup(receiver Value, key Value) (Value, bool, error) {

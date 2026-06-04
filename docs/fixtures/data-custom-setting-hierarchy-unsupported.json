@@ -4,7 +4,7 @@
     {
       "symbol": "HierarchyCustomSetting.getOrgDefaults",
       "kind": "exec",
-      "notes": "Hierarchy custom setting merge behavior is not modeled locally and returns a stable UnsupportedFeature diagnostic."
+      "notes": "Hierarchy custom setting org defaults load from local seeded setup data."
     }
   ],
   "schema": [
@@ -35,9 +35,9 @@
     ]
   },
   "expected": {
-    "error": {
-      "type": "UnsupportedFeature",
-      "message": "unsupported call \"Hierarchy_Setting__c.getOrgDefaults hierarchy custom setting merge behavior\""
+    "result": {
+      "debug": null,
+      "ok": true
     }
   }
 }

@@ -27,9 +27,6 @@ func (vm *VM) convertLeadOne(convert Value, result *Result) (Value, error) {
 	if value, ok := databaseLeadConvertField(convert, "relatedPersonAccountRecord"); ok && value.Kind != ValueNull {
 		return Null, unsupportedCallError("Database.convertLead person account local lead conversion surface")
 	}
-	if !databaseLeadConvertBool(convert, "doNotCreateOpportunity") {
-		return Null, unsupportedCallError("Database.convertLead opportunity local lead conversion surface")
-	}
 	leadIDValue, ok := databaseLeadConvertField(convert, "leadId")
 	if !ok || !isApexIDLikeValue(leadIDValue) {
 		return databaseLeadConvertFailure("", "LeadConvert.leadId is required"), nil
@@ -52,6 +49,10 @@ func (vm *VM) convertLeadOne(convert Value, result *Result) (Value, error) {
 	if err != nil {
 		return Null, err
 	}
+	opportunityID, err := vm.convertLeadOpportunityID(convert, lead, accountID, result)
+	if err != nil {
+		return Null, err
+	}
 	storage.EnsureMutableObjectRecords(vm.Org, "Lead")
 	updatedLeadState := vm.Org.Objects["Lead"]
 	updatedLead := updatedLeadState.Records[storedLeadID]
@@ -64,6 +65,11 @@ func (vm *VM) convertLeadOne(convert Value, result *Result) (Value, error) {
 	}
 	if _, ok := leadState.Definition.Fields["ConvertedContactId"]; ok {
 		updatedLead.Fields["ConvertedContactId"] = storage.IDValue(contactID)
+	}
+	if opportunityID != "" {
+		if _, ok := leadState.Definition.Fields["ConvertedOpportunityId"]; ok {
+			updatedLead.Fields["ConvertedOpportunityId"] = storage.IDValue(opportunityID)
+		}
 	}
 	if _, ok := leadState.Definition.Fields["Status"]; ok {
 		status := "Converted"
@@ -79,7 +85,11 @@ func (vm *VM) convertLeadOne(convert Value, result *Result) (Value, error) {
 	row.Fields["leadId"] = platformScalar("Id", string(leadID))
 	row.Fields["accountId"] = platformScalar("Id", string(accountID))
 	row.Fields["contactId"] = platformScalar("Id", string(contactID))
-	row.Fields["opportunityId"] = Null
+	if opportunityID == "" {
+		row.Fields["opportunityId"] = Null
+	} else {
+		row.Fields["opportunityId"] = platformScalar("Id", string(opportunityID))
+	}
 	row.Fields["relatedPersonAccountId"] = Null
 	row.Fields["errors"] = List()
 	return row, nil
@@ -132,6 +142,47 @@ func (vm *VM) convertLeadContactID(convert Value, lead storage.Record, accountID
 		setExplicitSObjectField(&contact, "AccountId", platformScalar("Id", string(accountID)))
 	}
 	results, err := vm.applyDML("insert", contact, true, "", dml.Options{}, result)
+	if err != nil {
+		return "", err
+	}
+	if hasDMLFailures(results) {
+		return "", databaseDMLException("convertLead", results)
+	}
+	return results[0].ID, nil
+}
+
+func (vm *VM) convertLeadOpportunityID(convert Value, lead storage.Record, accountID storage.ID, result *Result) (storage.ID, error) {
+	if databaseLeadConvertBool(convert, "doNotCreateOpportunity") {
+		return "", nil
+	}
+	if value, ok := databaseLeadConvertField(convert, "opportunityId"); ok && isApexIDLikeValue(value) {
+		return storage.ID(scalarText(value)), nil
+	}
+	opportunity := Object("Opportunity")
+	if value, ok := databaseLeadConvertField(convert, "opportunityRecord"); ok && value.Kind == ValueObject && !strings.EqualFold(value.Type, "SObject") {
+		opportunity = value
+		opportunity.Type = "Opportunity"
+	}
+	if _, _, ok := objectFieldValue(opportunity, "Name"); !ok {
+		name := storageRecordStringField(lead, "Company")
+		if value, ok := databaseLeadConvertField(convert, "opportunityName"); ok && value.Kind == ValueString && strings.TrimSpace(value.Text) != "" {
+			name = value.Text
+		}
+		if name == "" {
+			name = storageRecordStringField(lead, "LastName")
+		}
+		setExplicitSObjectField(&opportunity, "Name", String(name))
+	}
+	if _, _, ok := objectFieldValue(opportunity, "AccountId"); !ok {
+		setExplicitSObjectField(&opportunity, "AccountId", platformScalar("Id", string(accountID)))
+	}
+	if _, _, ok := objectFieldValue(opportunity, "StageName"); !ok {
+		setExplicitSObjectField(&opportunity, "StageName", String("Prospecting"))
+	}
+	if _, _, ok := objectFieldValue(opportunity, "CloseDate"); !ok {
+		setExplicitSObjectField(&opportunity, "CloseDate", platformScalar("Date", vm.fakeNow.Format("2006-01-02")))
+	}
+	results, err := vm.applyDML("insert", opportunity, true, "", dml.Options{}, result)
 	if err != nil {
 		return "", err
 	}

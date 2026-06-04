@@ -1,22 +1,23 @@
 {
-  "name": "async-schedule-batch-unsupported",
+  "name": "async-schedule-batch-validation",
   "evidence": [
     {
-      "symbol": "Database.scheduleBatch",
+      "symbol": "System.scheduleBatch",
+      "surfaceId": "apex:System.System.scheduleBatch(Object,String,Integer,Integer)",
       "kind": "exec",
-      "notes": "scheduleBatch is pinned to a typed unsupported diagnostic instead of pretending to schedule deferred batch work."
+      "notes": "scheduleBatch rejects a null batch instance with a typed validation error."
     }
   ],
   "source": [
     {
       "path": "anonymous.apex",
-      "content": "Database.scheduleBatch(null, 'nightly', 1, 200);"
+      "content": "System.scheduleBatch(null, 'nightly', 1, 200);"
     }
   ],
   "command": {
     "kind": "exec",
     "args": [
-      "Database.scheduleBatch(null, 'nightly', 1, 200);"
+      "System.scheduleBatch(null, 'nightly', 1, 200);"
     ]
   },
   "expected": {

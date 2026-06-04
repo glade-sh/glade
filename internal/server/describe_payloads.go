@@ -114,7 +114,7 @@ func describeFieldPayload(field storage.Field) map[string]any {
 
 func describeFieldLength(field storage.Field) int {
 	switch field.Type {
-	case storage.FieldString, storage.FieldPicklist, storage.FieldID, storage.FieldReference:
+	case storage.FieldString, storage.FieldPicklist, storage.FieldMultiPicklist, storage.FieldID, storage.FieldReference:
 		return 255
 	case storage.FieldBlob:
 		return 0

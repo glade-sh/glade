@@ -234,6 +234,53 @@ System.assert(rows[0].Name.endsWith(':Acme'));
 	}
 }
 
+func TestExecTestCreateSoqlStubDispatchesRelationshipQueriesToProvider(t *testing.T) {
+	providerProgram, err := CompileAnonymous(`
+Map<String, Object> row = new Map<String, Object>{'Id' => '001000000000123', 'Name' => query};
+return Test.createStubQueryRows(targetType, new List<Map<String, Object>>{row});
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.createSoqlStub(Account.SObjectType, new Provider());
+List<Account> childRows = [SELECT Id, Name, (SELECT Id FROM Contacts) FROM Account];
+System.assertEquals(1, childRows.size());
+System.assert(childRows[0].Name.contains('Contacts'));
+
+List<Account> semiJoinRows = [SELECT Id, Name FROM Account WHERE Id IN (SELECT AccountId FROM Contact)];
+System.assertEquals(1, semiJoinRows.size());
+System.assert(semiJoinRows[0].Name.contains('SELECT AccountId FROM Contact'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"SoqlStubProvider"},
+		Methods: map[string]Method{
+			"handleSoqlQuery": {
+				Name:       "Provider.handleSoqlQuery",
+				ClassName:  "Provider",
+				ReturnType: "List<SObject>",
+				Params: []Param{
+					{Name: "targetType", Type: "Schema.SObjectType"},
+					{Name: "query", Type: "String"},
+					{Name: "binds", Type: "Map<String,Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTestCreateSoqlStubRejectsUnsupportedQueryShapes(t *testing.T) {
 	providerProgram, err := CompileAnonymous(`return new List<SObject>();`)
 	if err != nil {
@@ -248,16 +295,6 @@ func TestExecTestCreateSoqlStubRejectsUnsupportedQueryShapes(t *testing.T) {
 			name: "aggregate",
 			src:  `Integer total = [SELECT COUNT() FROM Account];`,
 			want: `unsupported call "Test.createSoqlStub aggregate query local stub surface"`,
-		},
-		{
-			name: "childRelationship",
-			src:  `List<Account> rows = [SELECT Id, (SELECT Id FROM Contacts) FROM Account];`,
-			want: `unsupported call "Test.createSoqlStub relationship query local stub surface"`,
-		},
-		{
-			name: "semiJoin",
-			src:  `List<Account> rows = [SELECT Id FROM Account WHERE Id IN (SELECT AccountId FROM Contact)];`,
-			want: `unsupported call "Test.createSoqlStub relationship query local stub surface"`,
 		},
 	}
 	for _, tc := range cases {

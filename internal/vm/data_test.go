@@ -4625,12 +4625,48 @@ System.assertEquals(false, describe.isMergeable());
 System.assertEquals(true, describe.isMruEnabled());
 System.assertEquals(true, describe.isUndeletable());
 System.assertEquals(false, describe.isDeprecatedAndHidden());
+System.assertEquals(false, describe.getDataTranslationEnabled());
+System.assertEquals(null, describe.getDefaultImplementation());
+System.assertEquals(false, describe.getHasSubtypes());
+System.assertEquals(null, describe.getImplementedBy());
+System.assertEquals(null, describe.getImplementsInterfaces());
+System.assertEquals(false, describe.getIsInterface());
+System.assertEquals(Account.SObjectType, describe.getSobjectType());
+System.assertEquals(SObjectDescribeOptions.FULL, describe.getSObjectDescribeOption());
+Schema.DescribeSObjectResult deferredDescribe = Account.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED);
+System.assertEquals(SObjectDescribeOptions.DEFERRED, deferredDescribe.getSObjectDescribeOption());
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeSObjectResultMergeableUsesObjectMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeSObjectResult describe = Mergeable__c.SObjectType.getDescribe();
+System.assertEquals(true, describe.isMergeable());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Mergeable__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Mergeable__c",
+			Fields:  map[string]storage.Field{},
+			Metadata: map[string]string{
+				"mergeable": "true",
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -4654,6 +4690,39 @@ System.assertEquals('Setup_Data__c', describe.getLocalName());
 			APIName:   "Setup_Data__c",
 			KeyPrefix: "a00",
 			Fields:    map[string]storage.Field{},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeSObjectResultAssociatedObjectMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeSObjectResult accountDescribe = Account.SObjectType.getDescribe();
+System.assertEquals(null, accountDescribe.getAssociateEntityType());
+System.assertEquals(null, accountDescribe.getAssociateParentEntity());
+Schema.DescribeSObjectResult historyDescribe = AccountHistory.SObjectType.getDescribe();
+System.assertEquals('History', historyDescribe.getAssociateEntityType());
+System.assertEquals('Account', historyDescribe.getAssociateParentEntity());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["AccountHistory"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:     "AccountHistory",
+			Label:       "Account History",
+			PluralLabel: "Account History",
+			Fields:      map[string]storage.Field{},
+			Metadata: map[string]string{
+				"associateEntityType":   "History",
+				"associateParentEntity": "Account",
+			},
 		},
 		Records: map[storage.ID]storage.Record{},
 	}
@@ -4880,6 +4949,7 @@ System.assertEquals(false, describe.isAggregatable());
 System.assertEquals(false, describe.isPermissionable());
 System.assertEquals(true, describe.isDeprecatedAndHidden());
 System.assertEquals(true, describe.isDefaultedOnCreate());
+System.assertEquals(2, describe.getRelationshipOrder());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4903,6 +4973,7 @@ System.assertEquals(true, describe.isDefaultedOnCreate());
 		Aggregatable:        storage.BoolFlag(false),
 		Permissionable:      storage.BoolFlag(false),
 		DeprecatedAndHidden: storage.BoolFlag(true),
+		RelationshipOrder:   storage.IntFlag(2),
 	}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
@@ -4949,11 +5020,13 @@ func TestExecDescribeFieldNumericAndTextMetadata(t *testing.T) {
 Schema.DescribeFieldResult amount = Account.Amount__c.getDescribe();
 System.assertEquals(12, amount.getPrecision());
 System.assertEquals(2, amount.getScale());
+System.assertEquals(12, amount.getDigits());
 System.assertEquals(0, amount.getLength());
 System.assert(!amount.isHtmlFormatted());
 System.assert(amount.isSortable());
 Schema.DescribeFieldResult notes = Account.Notes__c.getDescribe();
 System.assertEquals(1024, notes.getLength());
+System.assertEquals(1024, notes.getByteLength());
 System.assertEquals(1024, Schema.SObjectType.Account.fields.Notes__c.getLength());
 System.assertEquals(0, notes.getPrecision());
 System.assertEquals(0, notes.getScale());
@@ -4968,6 +5041,59 @@ System.assert(!notes.isSortable());
 	account := org.Objects["Account"]
 	account.Definition.Fields["Amount__c"] = storage.Field{APIName: "Amount__c", Type: storage.FieldDecimal, DisplayType: "CURRENCY", Precision: 12, Scale: 2}
 	account.Definition.Fields["Notes__c"] = storage.Field{APIName: "Notes__c", Type: storage.FieldString, DisplayType: "TEXTAREA", Length: 1024}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeFieldResultFormulaAndCaseMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeFieldResult formula = Account.Score__c.getDescribe();
+System.assert(formula.isCalculated());
+System.assertEquals('AnnualRevenue * 2', formula.getCalculatedFormula());
+Schema.DescribeFieldResult external = Account.External_Id__c.getDescribe();
+System.assert(external.isCaseSensitive());
+System.assertEquals('External Id Help', external.getInlineHelpText());
+System.assertEquals('External_Id__c', external.getLocalName());
+System.assertEquals(Account.External_Id__c, external.getSObjectField());
+System.assertEquals(null, external.getReferenceTargetField());
+System.assertEquals(0, external.getRelationshipOrder());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Label: "Score", Type: storage.FieldCalculated, DisplayType: "DOUBLE", Formula: "AnnualRevenue * 2"}
+	account.Definition.Fields["External_Id__c"] = storage.Field{APIName: "External_Id__c", Label: "External Id", Type: storage.FieldString, DisplayType: "STRING", InlineHelpText: "External Id Help", ExternalID: true, Unique: true, CaseSensitive: true}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeFieldResultMetadataBackedBooleanRows(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeFieldResult status = Account.Status__c.getDescribe();
+System.assert(status.isRestrictedPicklist());
+Schema.DescribeFieldResult external = Account.External_Id__c.getDescribe();
+System.assert(external.isIdLookup());
+Schema.DescribeFieldResult owner = Account.OwnerId.getDescribe();
+System.assert(owner.isNamePointing());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Status__c"] = storage.Field{APIName: "Status__c", Type: storage.FieldPicklist, DisplayType: "PICKLIST", RestrictedPicklist: true}
+	account.Definition.Fields["External_Id__c"] = storage.Field{APIName: "External_Id__c", Type: storage.FieldString, DisplayType: "STRING", ExternalID: true, IDLookup: true}
+	account.Definition.Fields["OwnerId"] = storage.Field{APIName: "OwnerId", Type: storage.FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"User", "Group"}, RelationshipName: "Owner"}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
@@ -6494,6 +6620,7 @@ System.assertEquals('012000000000001', business.getRecordTypeID());
 System.assert(business.isActive());
 System.assert(business.isAvailable());
 System.assert(business.isDefaultRecordTypeMapping());
+System.assert(!business.isMaster());
 Object consumer = byDeveloperName.get('Consumer');
 System.assertEquals('Consumer Account', consumer.getName());
 System.assertEquals('Consumer', consumer.getDeveloperName());
@@ -6503,6 +6630,7 @@ System.assertEquals('Consumer', byId.get('012000000000002').getDeveloperName());
 System.assert(!consumer.isActive());
 System.assert(!consumer.isAvailable());
 System.assert(!consumer.isDefaultRecordTypeMapping());
+System.assert(!consumer.isMaster());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -6513,6 +6641,28 @@ System.assert(!consumer.isDefaultRecordTypeMapping());
 	account.Definition.RecordTypes = []storage.RecordTypeInfo{
 		{ID: "012000000000001", DeveloperName: "Business", Name: "Business Account", Active: true, Available: true, Default: true},
 		{ID: "012000000000002", DeveloperName: "Consumer", Name: "Consumer Account", Active: false, Available: false},
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRecordTypeInfoIsMaster(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.RecordTypeInfo master = Account.SObjectType.getDescribe().getRecordTypeInfosByDeveloperName().get('Master');
+System.assert(master.isMaster());
+System.assertEquals('Master', master.getDeveloperName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.RecordTypes = []storage.RecordTypeInfo{
+		{ID: "012000000000000AAA", DeveloperName: "Master", Name: "Master", Active: true, Available: true, Default: true},
 	}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
@@ -7596,12 +7746,13 @@ System.assertEquals('Account', byToken.get(0).getName());
 Schema.SObjectType packageLicenseType = Schema.getGlobalDescribe().get('PackageLicense');
 System.assertNotEquals(null, packageLicenseType);
 System.assertEquals('PackageLicense', packageLicenseType.getDescribe().getName());
-`)
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "PackageLicense")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -7690,6 +7841,12 @@ Object childType = contacts.getChildSObject();
 Object childDescribe = childType.getDescribe();
 System.assertEquals('Contact', childDescribe.getName());
 System.assert(contacts.isCascadeDelete());
+System.assert(contacts.isRestrictedDelete());
+System.assert(contacts.isDeprecatedAndHidden());
+System.assertEquals(1, contacts.getJunctionIdListNames().size());
+System.assertEquals('AccountContactRelationIds', contacts.getJunctionIdListNames().get(0));
+System.assertEquals(1, contacts.getJunctionReferenceTo().size());
+System.assertEquals('AccountContactRelation', contacts.getJunctionReferenceTo().get(0).getDescribe().getName());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -7708,14 +7865,22 @@ System.assert(contacts.isCascadeDelete());
 				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
 			},
 			Relations: []storage.Relationship{{
-				Field:              "AccountId",
-				ParentObjects:      []string{"Account"},
-				ParentRelationship: "Account",
-				ChildRelationship:  "Contacts",
-				CascadeDelete:      true,
+				Field:               "AccountId",
+				ParentObjects:       []string{"Account"},
+				ParentRelationship:  "Account",
+				ChildRelationship:   "Contacts",
+				CascadeDelete:       true,
+				RestrictedDelete:    true,
+				DeprecatedAndHidden: true,
+				JunctionIDListNames: []string{"AccountContactRelationIds"},
+				JunctionReferenceTo: []string{"AccountContactRelation"},
 			}},
 		},
 		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["AccountContactRelation"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "AccountContactRelation", Fields: map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}}},
+		Records:    map[storage.ID]storage.Record{},
 	}
 	machine.SetOrg(&org)
 	result, err := machine.Execute(program)
@@ -9251,35 +9416,45 @@ System.assertEquals(0, Schema.describeDataCategoryGroups(new List<String>{'Missi
 	}
 }
 
-func TestExecDescribeUnsupportedMetadataEdges(t *testing.T) {
-	tests := []struct {
-		name   string
-		source string
-		want   string
-	}{
-		{
-			name:   "dependent picklist controller metadata",
-			source: `Account.Rating.getDescribe().getController();`,
-			want:   `unsupported call "Schema.DescribeFieldResult.getController dependent picklist controller metadata"`,
+func TestExecDescribeDependentPicklistControllerMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object stage = Account.Stage__c.getDescribe();
+System.assert(stage.isDependentPicklist());
+System.assertEquals(Account.Rating, stage.getController());
+System.assertEquals(Account.Rating, stage.controller);
+Map<String,Integer> values = stage.getControllerValues();
+System.assertEquals(0, values.get('Hot'));
+System.assertEquals(1, values.get('Cold'));
+System.assertEquals(2, values.size());
+System.assertEquals(values.size(), stage.controllerValues.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{
+		APIName: "Rating",
+		Type:    storage.FieldPicklist,
+		PicklistValues: []storage.PicklistValue{
+			{Value: "Hot", Label: "Hot"},
+			{Value: "Cold", Label: "Cold"},
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			program, err := CompileAnonymous(tc.source)
-			if err != nil {
-				t.Fatal(err)
-			}
-			machine := New(nil)
-			org := testDataOrg()
-			account := org.Objects["Account"]
-			account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldPicklist}
-			org.Objects["Account"] = account
-			machine.SetOrg(&org)
-			_, err = machine.Execute(program)
-			if err == nil || !strings.Contains(err.Error(), tc.want) {
-				t.Fatalf("err = %v, want %s", err, tc.want)
-			}
-		})
+	account.Definition.Fields["Stage__c"] = storage.Field{
+		APIName:            "Stage__c",
+		Type:               storage.FieldPicklist,
+		PicklistController: "Rating",
+		PicklistValues: []storage.PicklistValue{
+			{Value: "Open", Label: "Open"},
+			{Value: "Closed", Label: "Closed"},
+		},
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -9592,6 +9767,107 @@ System.assertEquals(accounts[0].Id, contacts[1].AccountId);
 	}
 }
 
+func TestExecDatabaseTreeSaveUpdatesParentAndInsertsChildren(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Tree Parent');
+insert account;
+account.Name = 'Tree Parent Updated';
+account.put('Contacts', new List<Contact>{new Contact(LastName = 'New Child')});
+
+Database.NestedSaveResult result = Database.treeSave(account);
+System.assert(result.isSuccess());
+System.assertEquals(account.Id, result.getId());
+System.assertEquals(1, result.getRelationshipSaveResults().size());
+Database.RelationshipSaveResult relationship = result.getRelationshipSaveResults()[0];
+System.assertEquals('Contacts', relationship.getRelationshipName());
+System.assertEquals(1, relationship.getSaveResults().size());
+System.assert(relationship.getSaveResults()[0].isSuccess());
+
+Account saved = [SELECT Id, Name FROM Account WHERE Id = :account.Id];
+System.assertEquals('Tree Parent Updated', saved.Name);
+Contact child = [SELECT Id, LastName, AccountId FROM Contact WHERE LastName = 'New Child'];
+System.assertEquals(account.Id, child.AccountId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+				ChildRelationship:  "Contacts",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseTreeSaveUpdatesFirstLevelChildren(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Tree Parent');
+insert account;
+Contact contact = new Contact(LastName = 'Old Child', AccountId = account.Id);
+insert contact;
+
+account.Name = 'Tree Parent Updated';
+contact.LastName = 'Updated Child';
+account.put('Contacts', new List<Contact>{contact});
+
+Database.NestedSaveResult result = Database.treeSave(account);
+System.assert(result.isSuccess());
+System.assertEquals(1, result.getRelationshipSaveResults().size());
+Database.RelationshipSaveResult relationship = result.getRelationshipSaveResults()[0];
+System.assertEquals(1, relationship.getSaveResults().size());
+System.assert(relationship.getSaveResults()[0].isSuccess());
+
+Account saved = [SELECT Id, Name FROM Account WHERE Id = :account.Id];
+System.assertEquals('Tree Parent Updated', saved.Name);
+Contact savedChild = [SELECT Id, LastName, AccountId FROM Contact WHERE Id = :contact.Id];
+System.assertEquals('Updated Child', savedChild.LastName);
+System.assertEquals(account.Id, savedChild.AccountId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+				ChildRelationship:  "Contacts",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseConvertLeadCreatesAccountAndContact(t *testing.T) {
 	program, err := CompileAnonymous(`
 Lead lead = new Lead(FirstName = 'Ada', LastName = 'Lovelace', Company = 'Analytical Engines', Status = 'Open');
@@ -9670,6 +9946,39 @@ System.assert(result.isSuccess(), 'convert success');
 	}
 }
 
+func TestExecDatabaseConvertLeadCreatesOpportunity(t *testing.T) {
+	program, err := CompileAnonymous(`
+Lead lead = new Lead(FirstName = 'Ada', LastName = 'Lovelace', Company = 'Analytical Engines', Status = 'Open');
+insert lead;
+Database.LeadConvert convert = new Database.LeadConvert();
+convert.setLeadId(lead.Id);
+convert.setConvertedStatus('Qualified');
+convert.setOpportunityName('Difference Engine');
+Database.LeadConvertResult result = Database.convertLead(convert);
+System.assert(result.isSuccess(), 'convert success');
+System.assert(result.getAccountId() != null, 'account id');
+System.assert(result.getContactId() != null, 'contact id');
+System.assert(result.getOpportunityId() != null, 'opportunity id');
+
+Opportunity opportunity = [SELECT Id, Name, AccountId, StageName, CloseDate FROM Opportunity WHERE Id = :result.getOpportunityId()];
+System.assertEquals('Difference Engine', opportunity.Name);
+System.assertEquals(result.getAccountId(), opportunity.AccountId);
+System.assertEquals('Prospecting', opportunity.StageName);
+System.assertEquals(Date.today(), opportunity.CloseDate);
+Lead converted = [SELECT Id, ConvertedOpportunityId FROM Lead WHERE Id = :lead.Id];
+System.assertEquals(opportunity.Id, converted.ConvertedOpportunityId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testLeadConvertOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testLeadConvertOrg() storage.OrgState {
 	org := testDataOrg()
 	org.Objects["Contact"] = storage.ObjectState{
@@ -9689,13 +9998,27 @@ func testLeadConvertOrg() storage.OrgState {
 			APIName:   "Lead",
 			KeyPrefix: "00Q",
 			Fields: map[string]storage.Field{
-				"FirstName":          {APIName: "FirstName", Type: storage.FieldString},
-				"LastName":           {APIName: "LastName", Type: storage.FieldString, Required: true},
-				"Company":            {APIName: "Company", Type: storage.FieldString},
-				"Status":             {APIName: "Status", Type: storage.FieldString},
-				"IsConverted":        {APIName: "IsConverted", Type: storage.FieldBoolean},
-				"ConvertedAccountId": {APIName: "ConvertedAccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
-				"ConvertedContactId": {APIName: "ConvertedContactId", Type: storage.FieldReference, ReferenceTo: []string{"Contact"}},
+				"FirstName":              {APIName: "FirstName", Type: storage.FieldString},
+				"LastName":               {APIName: "LastName", Type: storage.FieldString, Required: true},
+				"Company":                {APIName: "Company", Type: storage.FieldString},
+				"Status":                 {APIName: "Status", Type: storage.FieldString},
+				"IsConverted":            {APIName: "IsConverted", Type: storage.FieldBoolean},
+				"ConvertedAccountId":     {APIName: "ConvertedAccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+				"ConvertedContactId":     {APIName: "ConvertedContactId", Type: storage.FieldReference, ReferenceTo: []string{"Contact"}},
+				"ConvertedOpportunityId": {APIName: "ConvertedOpportunityId", Type: storage.FieldReference, ReferenceTo: []string{"Opportunity"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Opportunity"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Opportunity",
+			KeyPrefix: "006",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString, Required: true},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
+				"StageName": {APIName: "StageName", Type: storage.FieldPicklist, Required: true},
+				"CloseDate": {APIName: "CloseDate", Type: storage.FieldDate, Required: true},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -10317,6 +10640,10 @@ List<String> ratings = new List<String>{'Hot', 'Warm'};
 binds.put('ratings', ratings);
 rows = Database.queryWithBinds('SELECT Id FROM Account WHERE Rating IN :ratings ORDER BY Name', binds, AccessLevel.USER_MODE);
 System.assertEquals(2, rows.size());
+binds.put('filter.name', 'Beta');
+rows = Database.queryWithBinds('SELECT Id, Name FROM Account WHERE Name = :filter.name', binds, AccessLevel.USER_MODE);
+System.assertEquals(1, rows.size());
+System.assertEquals('Beta', rows.get(0).Name);
 Boolean caught = false;
 try {
     Database.queryWithBinds('SELECT Id FROM Account WHERE Name = :missing', binds);
@@ -10367,6 +10694,9 @@ System.assertEquals(1, hotCount);
 binds.put('ratings', new List<String>{'Hot', 'Warm'});
 Integer totalCount = Database.countQueryWithBinds('SELECT Id FROM Account WHERE Rating IN :ratings', binds, AccessLevel.SYSTEM_MODE);
 System.assertEquals(2, totalCount);
+binds.put('filter.rating', 'Warm');
+Integer warmCount = Database.countQueryWithBinds('SELECT COUNT() FROM Account WHERE Rating = :filter.rating', binds, AccessLevel.USER_MODE);
+System.assertEquals(1, warmCount);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -10385,6 +10715,42 @@ System.assertEquals(2, totalCount);
 Map<String,Object> binds = new Map<String,Object>();
 binds.put('wanted', 'Acme');
 Database.countQueryWithBinds('SELECT COUNT() FROM Account WHERE Name = :wanted', binds, 'USER_MODE');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine = New(nil)
+	org = testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(badProgram); err == nil || !strings.Contains(err.Error(), "AccessLevel") {
+		t.Fatalf("expected AccessLevel error, got %v", err)
+	}
+}
+
+func TestExecDatabaseCountQueryAccessLevel(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme', Rating = 'Hot');
+insert new Account(Name = 'Beta', Rating = 'Warm');
+Integer hotCount = Database.countQuery('SELECT Id FROM Account WHERE Rating = \'Hot\'', AccessLevel.USER_MODE);
+System.assertEquals(1, hotCount);
+Integer totalCount = Database.countQuery('SELECT COUNT() FROM Account', AccessLevel.SYSTEM_MODE);
+System.assertEquals(2, totalCount);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	badProgram, err := CompileAnonymous(`
+Database.countQuery('SELECT COUNT() FROM Account', 'USER_MODE');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -10934,11 +11300,6 @@ func TestExecUnsupportedDatabaseAndApprovalSurfacesReturnUnsupportedFeature(t *t
 		message string
 	}{
 		{
-			name:    "convertLeadOpportunity",
-			source:  "Database.convertLead(new Database.LeadConvert());",
-			message: `unsupported call "Database.convertLead opportunity local lead conversion surface"`,
-		},
-		{
 			name:    "approvalProcess",
 			source:  "Approval.process(null);",
 			message: `unsupported call "Approval.process local approval process and lock surface"`,
@@ -11419,6 +11780,8 @@ List<Account> monthRows = [SELECT Id FROM Account WHERE RenewalDate__c = LAST_N_
 System.assertEquals(2, monthRows.size(), 'LAST_N_MONTHS should cover the complete prior month');
 List<Account> quarterRows = [SELECT Id FROM Account WHERE RenewalDate__c = THIS_QUARTER];
 System.assertEquals(3, quarterRows.size(), 'THIS_QUARTER should cover the current quarter');
+List<Account> weekRows = [SELECT Id FROM Account WHERE RenewalDate__c = THIS_WEEK];
+System.assertEquals(2, weekRows.size(), 'THIS_WEEK should cover the current Sunday-start week');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -11467,23 +11830,6 @@ System.assertEquals('5/2/2026', DateWorker.echo(rows[0].RenewalDate__c));
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestExecSOQLUnsupportedDateLiteralDiagnostic(t *testing.T) {
-	program, err := CompileAnonymous(`
-List<Account> rows = [SELECT Id FROM Account WHERE CreatedDate = THIS_WEEK];
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	machine := New(nil)
-	org := testDataOrg()
-	machine.SetOrg(&org)
-	_, err = machine.Execute(program)
-	var runtimeErr *RuntimeError
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != "soql: date literal THIS_WEEK is not supported" {
-		t.Fatalf("err = %#v", err)
 	}
 }
 

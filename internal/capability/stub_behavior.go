@@ -158,6 +158,10 @@ func buildStubBehaviorMemberEntry(symbol typesys.TypeSymbol, typeName string, me
 			entry.Notes = match.notes
 		}
 	}
+	if status, notes, ok := localStubBehaviorEvidenceOverride(symbol, member); ok {
+		entry.Status = status
+		entry.Notes = notes
+	}
 	if entry.Status == StubBehaviorUnknown && member.Kind == apexast.DeclarationMethod {
 		entry.Status = StubBehaviorUnsupported
 		entry.Notes = "generated platform method has shape only; local runtime should reject it unless implemented or allowlisted as passive DTO behavior"
@@ -166,14 +170,91 @@ func buildStubBehaviorMemberEntry(symbol typesys.TypeSymbol, typeName string, me
 }
 
 func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys.MemberSymbol) (StubBehaviorStatus, string, bool) {
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	if member.Kind == apexast.DeclarationProperty {
+		switch typeName {
+		case "Schema.DescribeTabSetResult":
+			if schemaDescribeTabSetResultProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes DescribeTabSetResult properties from metadata-backed tab describe values", true
+			}
+		case "Schema.DescribeTabResult":
+			if schemaDescribeTabResultProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes DescribeTabResult properties from metadata-backed tab describe values", true
+			}
+		case "Schema.DescribeColorResult":
+			if schemaDescribeColorResultProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes DescribeColorResult properties from metadata-backed tab color values", true
+			}
+		case "Schema.DescribeIconResult":
+			if schemaDescribeIconResultProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes DescribeIconResult properties from metadata-backed tab icon values", true
+			}
+		case "Schema.DescribeSObjectResult":
+			if schemaDescribeSObjectResultProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes DescribeSObjectResult properties from metadata-backed object describe values", true
+			}
+		case "Schema.DescribeFieldResult":
+			if schemaDescribeFieldResultProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes DescribeFieldResult properties from metadata-backed field describe values", true
+			}
+		case "Schema.ChildRelationship":
+			if schemaChildRelationshipProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes ChildRelationship properties from metadata-backed child relationship values", true
+			}
+		case "Schema.PicklistEntry":
+			if schemaPicklistEntryProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes PicklistEntry properties from metadata-backed picklist values", true
+			}
+		case "Schema.SObjectField":
+			if schemaSObjectFieldProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes SObjectField token properties from metadata-backed field values", true
+			}
+		case "Schema.DataCategory":
+			if schemaDataCategoryProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes DataCategory properties from metadata-backed data category values", true
+			}
+		case "Schema.DataCategoryGroupSobjectTypePair":
+			if schemaDataCategoryGroupSobjectTypePairProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes DataCategoryGroupSobjectTypePair properties through Apex setters and getters", true
+			}
+		case "Schema.DescribeDataCategoryGroupResult":
+			if schemaDescribeDataCategoryGroupResultProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes DescribeDataCategoryGroupResult properties from metadata-backed data category group values", true
+			}
+		case "Schema.DescribeDataCategoryGroupStructureResult":
+			if schemaDescribeDataCategoryGroupStructureResultProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes DescribeDataCategoryGroupStructureResult properties from metadata-backed data category structures", true
+			}
+		case "Schema.FieldSet":
+			if schemaFieldSetProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes FieldSet properties from metadata-backed field set values", true
+			}
+		case "Schema.FieldSetMember":
+			if schemaFieldSetMemberProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes FieldSetMember properties from metadata-backed field set member values", true
+			}
+		case "Schema.FilteredLookupInfo":
+			if schemaFilteredLookupInfoProperty(name) {
+				return StubBehaviorImplemented, "local runtime materializes FilteredLookupInfo properties from metadata-backed lookup filter values", true
+			}
+		case "Schema.RecordTypeInfo":
+			switch name {
+			case "name", "developername", "recordtypeid", "active", "available", "defaultrecordtypemapping", "master":
+				return StubBehaviorImplemented, "local runtime materializes RecordTypeInfo describe properties from metadata-backed record type values", true
+			}
+		}
+		return "", "", false
+	}
 	if member.Kind != apexast.DeclarationMethod {
 		return "", "", false
 	}
-	typeName := stubBehaviorTypeName(symbol)
-	name := strings.ToLower(member.Name)
 	switch typeName {
 	case "Schema":
-		if name == "describedatacategorygroups" || name == "describedatacategorygroupstructures" {
+		switch name {
+		case "getglobaldescribe", "describesobjects":
+			return StubBehaviorImplemented, "local runtime returns deterministic metadata-backed schema describe values", true
+		case "describedatacategorygroups", "describedatacategorygroupstructures":
 			return StubBehaviorImplemented, "local runtime returns deterministic metadata-backed data category describe results", true
 		}
 	case "Search":
@@ -186,6 +267,167 @@ func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys
 		}
 	}
 	return "", "", false
+}
+
+func schemaDescribeTabSetResultProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "description", "label", "logourl", "name", "namespace", "selected", "tabs", "tabsetid":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaDescribeTabResultProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "colors", "custom", "icons", "iconurl", "label", "miniiconurl", "mobileurl", "name", "sobjectname", "tabenumorid", "url":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaDescribeColorResultProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "color", "context", "theme":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaDescribeIconResultProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "contenttype", "height", "theme", "url", "width":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaDescribeSObjectResultProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "accessible", "associateentitytype", "associateparententity", "childrelationships",
+		"createable", "custom", "customsetting", "datatranslationenabled", "defaultimplementation",
+		"deletable", "deprecatedandhidden", "feedenabled", "fields", "fieldsets", "hassubtypes",
+		"implementedby", "implementsinterfaces", "isinterface", "issubtype", "keyprefix", "label",
+		"labelplural", "localname", "mergeable", "mruenabled", "name", "queryable", "recordtypeinfos",
+		"recordtypeinfosbydevelopername", "recordtypeinfosbyid", "recordtypeinfosbyname", "searchable",
+		"sobjectdescribeoption", "sobjecttype", "undeletable", "updateable":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaDescribeFieldResultProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "accessible", "aggregatable", "aipredictionfield", "autonumber", "bytelength",
+		"calculated", "calculatedformula", "cascadedelete", "casesensitive", "compoundfieldname",
+		"controller", "controllervalues", "createable", "custom", "datatranslationenabled", "defaultedoncreate",
+		"defaultvalue", "defaultvalueformula", "dependentpicklist", "deprecatedandhidden", "digits",
+		"displaylocationindecimal", "encrypted", "externalid", "filterable", "filteredlookupinfo",
+		"formulatreatnullnumberaszero", "groupable", "highscalenumber", "htmlformatted", "idlookup",
+		"inlinehelptext", "label", "length", "localname", "mask", "masktype", "name", "namefield",
+		"namepointing", "nillable", "permissionable", "picklistvalues", "precision", "querybydistance",
+		"referencetargetfield", "referenceto", "relationshipname", "relationshiporder", "restricteddelete",
+		"restrictedpicklist", "scale", "searchprefilterable", "soaptype", "sobjectfield", "sobjecttype",
+		"sortable", "type", "unique", "updateable", "writerequiresmasterread":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaChildRelationshipProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "cascadedelete", "childsobject", "deprecatedandhidden", "field",
+		"junctionidlistnames", "junctionreferenceto", "relationshipname", "restricteddelete":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaPicklistEntryProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "active", "defaultvalue", "label", "value":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaSObjectFieldProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "label", "name":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaDataCategoryProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "childcategories", "label", "name":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaDataCategoryGroupSobjectTypePairProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "datacategorygroupname", "sobject":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaDescribeDataCategoryGroupResultProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "categorycount", "description", "label", "name", "sobject":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaDescribeDataCategoryGroupStructureResultProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "description", "label", "name", "sobject", "topcategories":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaFieldSetProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "description", "fields", "label", "name", "namespace", "sobjecttype":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaFieldSetMemberProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "dbrequired", "fieldpath", "label", "required", "sobjectfield", "type":
+		return true
+	default:
+		return false
+	}
+}
+
+func schemaFilteredLookupInfoProperty(name string) bool {
+	switch strings.ToLower(name) {
+	case "controllingfields", "dependent", "optionalfilter":
+		return true
+	default:
+		return false
+	}
 }
 
 func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.MemberSymbol) (StubBehaviorStatus, string, bool) {

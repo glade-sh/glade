@@ -65,6 +65,48 @@ func TestBuildEvidenceSnapshotInfersKnownNamespaceType(t *testing.T) {
 	}
 }
 
+func TestBuildEvidenceSnapshotSkipsDatabaseFamilyLabelsWithoutSurfaceID(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "fixture.json")
+	data := `{
+  "name": "database_family",
+  "evidence": [{"symbol": "Database.query"}],
+  "command": {"kind": "test"},
+  "expected": {"result": {"ok": true}}
+}`
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := BuildEvidenceSnapshot([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 0 {
+		t.Fatalf("Database.query family label inferred fake surface rows: %#v", rows)
+	}
+}
+
+func TestBuildEvidenceSnapshotSkipsHumanBehaviorLabelsWithoutSurfaceID(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "fixture.json")
+	data := `{
+  "name": "soql_behavior_packet",
+  "evidence": [{"symbol": "SOQL aggregate GROUP BY/HAVING"}],
+  "command": {"kind": "test"},
+  "expected": {"result": {"ok": true}}
+}`
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := BuildEvidenceSnapshot([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 0 {
+		t.Fatalf("human behavior label inferred fake surface rows: %#v", rows)
+	}
+}
+
 func TestBuildEvidenceSnapshotInfersKnownZeroArgMethods(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "fixture.json")
@@ -84,5 +126,28 @@ func TestBuildEvidenceSnapshotInfersKnownZeroArgMethods(t *testing.T) {
 	id := ApexMemberID("Schema", "DescribeFieldResult", "getLabel", []string{})
 	if rowsByID(rows)[id].Evidence != EvidenceFixture {
 		t.Fatalf("Schema.DescribeFieldResult.getLabel did not infer zero-arg method: %#v", rows)
+	}
+}
+
+func TestBuildEvidenceSnapshotTreatsNoParenDescribeMemberAsProperty(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "fixture.json")
+	data := `{
+  "name": "schema_describe_tab_properties",
+  "evidence": [{"symbol": "Schema.DescribeTabSetResult.name", "surfaceId": "apex:Schema.DescribeTabSetResult.name"}],
+  "command": {"kind": "test"},
+  "expected": {"result": {"ok": true}}
+}`
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := BuildEvidenceSnapshot([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := ApexMemberID("Schema", "DescribeTabSetResult", "name", nil)
+	row := rowsByID(rows)[id]
+	if row.Kind != KindProperty || row.Namespace != "Schema" || row.TypeName != "DescribeTabSetResult" || row.MemberName != "name" {
+		t.Fatalf("property row = kind:%s namespace:%s type:%s member:%s rows:%#v", row.Kind, row.Namespace, row.TypeName, row.MemberName, rows)
 	}
 }

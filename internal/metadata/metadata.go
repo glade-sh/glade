@@ -95,11 +95,12 @@ type CustomMetadataValue struct {
 }
 
 type FieldSet struct {
-	ObjectName string           `json:"objectName,omitempty"`
-	Name       string           `json:"name"`
-	Label      string           `json:"label,omitempty"`
-	Fields     []FieldSetMember `json:"fields,omitempty"`
-	File       string           `json:"file,omitempty"`
+	ObjectName  string           `json:"objectName,omitempty"`
+	Name        string           `json:"name"`
+	Label       string           `json:"label,omitempty"`
+	Description string           `json:"description,omitempty"`
+	Fields      []FieldSetMember `json:"fields,omitempty"`
+	File        string           `json:"file,omitempty"`
 }
 
 type FieldSetMember struct {
@@ -541,6 +542,7 @@ func loadCustomMetadataRecord(path string) (CustomMetadataRecord, error) {
 type fieldSetXML struct {
 	FullName        string              `xml:"fullName"`
 	Label           string              `xml:"label"`
+	Description     string              `xml:"description"`
 	DisplayedFields []fieldSetMemberXML `xml:"displayedFields"`
 	AvailableFields []fieldSetMemberXML `xml:"availableFields"`
 }
@@ -572,11 +574,12 @@ func loadFieldSet(path string) (FieldSet, error) {
 		members = append(members, FieldSetMember{Field: field, Required: member.Required})
 	}
 	return FieldSet{
-		ObjectName: objectNameFromFieldSetPath(path),
-		Name:       name,
-		Label:      strings.TrimSpace(raw.Label),
-		Fields:     members,
-		File:       path,
+		ObjectName:  objectNameFromFieldSetPath(path),
+		Name:        name,
+		Label:       strings.TrimSpace(raw.Label),
+		Description: strings.TrimSpace(raw.Description),
+		Fields:      members,
+		File:        path,
 	}, nil
 }
 

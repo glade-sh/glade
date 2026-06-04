@@ -458,29 +458,12 @@ func jsonGeneratorClose(receiver Value) (Value, error) {
 		return updated, nil
 	}
 	stack := jsonGeneratorStack(updated)
-	for len(stack.List) > 0 {
-		frame := stack.List[len(stack.List)-1]
-		kind := jsonGeneratorStringField(frame, "kind").Text
-		if kind == "object" {
-			if !jsonGeneratorBoolField(frame, "expectingField").Bool {
-				jsonGeneratorTrimPendingFieldSeparator(&updated)
-			}
-			jsonGeneratorAppend(&updated, "}")
-		} else {
-			jsonGeneratorAppend(&updated, "]")
-		}
-		stack.List = stack.List[:len(stack.List)-1]
+	if len(stack.List) > 0 {
+		return updated, jsonGeneratorException("JSONGenerator cannot close with open JSON containers")
 	}
 	updated.Fields["stack"] = stack
 	updated.Fields["closed"] = Bool(true)
 	return updated, nil
-}
-
-func jsonGeneratorTrimPendingFieldSeparator(receiver *Value) {
-	current := jsonGeneratorStringField(*receiver, "out").Text
-	current = strings.TrimSuffix(current, ": ")
-	current = strings.TrimSuffix(current, ":")
-	receiver.Fields["out"] = String(current)
 }
 
 func jsonGeneratorEnsureOpen(receiver Value) error {

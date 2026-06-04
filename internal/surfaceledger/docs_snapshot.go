@@ -188,6 +188,8 @@ func ProductFromSourcePath(sourcePath string) string {
 			return ProductAura
 		case "lwc", "lightning-web-components":
 			return ProductLWC
+		case "object-reference", "field-reference":
+			return ProductDataRef
 		}
 	}
 	return ProductUnknown
@@ -206,6 +208,11 @@ func docsSurfaceID(product string, doc apexdocs.Document, member apexdocs.Member
 			return ToolingObjectID(doc.Name)
 		}
 		return ToolingFieldID(doc.Name, member.Name)
+	case ProductDataRef:
+		if member.Name == "" {
+			return DataObjectID(doc.Name)
+		}
+		return DataFieldID(doc.Name, member.Name)
 	case ProductREST:
 		if member.Name == "" {
 			return RestResourceID(sourceStem(doc.SourcePath), "get")
@@ -262,6 +269,11 @@ func docsKind(product, kind string) string {
 	switch product {
 	case ProductREST:
 		return KindResource
+	case ProductDataRef:
+		if strings.TrimSpace(kind) == "" || strings.EqualFold(kind, "type") {
+			return KindType
+		}
+		return KindField
 	case ProductLWC:
 		return KindModule
 	case ProductAura:
@@ -283,6 +295,8 @@ func areaForProduct(product string) string {
 	switch product {
 	case ProductREST, ProductTooling:
 		return AreaServer
+	case ProductDataRef:
+		return AreaData
 	case ProductVisualforce, ProductAura, ProductLWC:
 		return AreaUI
 	default:

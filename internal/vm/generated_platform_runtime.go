@@ -267,7 +267,7 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 	if cartExtensionMockBackedRuntimeType(generated.Name) {
 		return vm.constructCartExtensionMockBackedValue(generated, args, namedArgs)
 	}
-	if !vm.isPassivePlatformDTOType(generated.Name) && len(generated.Fields) == 0 {
+	if !vm.isPassivePlatformDTOType(generated.Name) && len(generated.Fields) == 0 && !generatedPlatformIteratorType(generated.Name) {
 		return Null, false, nil
 	}
 	ctorArgs := args
@@ -283,6 +283,7 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 			return Null, true, fmt.Errorf("%s constructor expects %s", generated.Name, generatedPlatformConstructorSummary(generated.Constructors))
 		}
 		object := vm.newGeneratedPlatformObject(generated)
+		initializeGeneratedPlatformValue(&object)
 		bindPassiveConstructorArgs(&object, ctor, ctorArgs)
 		if err := vm.bindGeneratedPlatformNamedFields(&object, namedArgs); err != nil {
 			return Null, true, err
@@ -293,10 +294,26 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 		return Null, true, fmt.Errorf("%s constructor expects 0 arguments", generated.Name)
 	}
 	object := vm.newGeneratedPlatformObject(generated)
+	initializeGeneratedPlatformValue(&object)
 	if err := vm.bindGeneratedPlatformNamedFields(&object, namedArgs); err != nil {
 		return Null, true, err
 	}
 	return object, true, nil
+}
+
+func initializeGeneratedPlatformValue(object *Value) {
+	if object == nil || object.Kind != ValueObject {
+		return
+	}
+	if generatedPlatformIteratorType(object.Type) {
+		object.Fields["__values"] = List()
+		object.Fields["__index"] = Int(0)
+	}
+}
+
+func generatedPlatformIteratorType(typeName string) bool {
+	return strings.EqualFold(typeName, "Database.QueryLocatorIterator") ||
+		strings.EqualFold(typeName, "Database.QueryLocatorChunkIterator")
 }
 func componentApexRuntimeType(typeName string) bool {
 	return hasPrefixFold(strings.TrimSpace(typeName), "component.apex.")

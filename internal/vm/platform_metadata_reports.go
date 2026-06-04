@@ -84,7 +84,11 @@ func soapTypeForStorageField(field storage.Field) string {
 
 var schemaSOAPTypeNames = []string{"ID", "STRING", "BOOLEAN", "INTEGER", "DOUBLE", "DATE", "DATETIME", "TIME", "BASE64BINARY", "ANYTYPE"}
 
-var schemaDisplayTypeNames = []string{"BOOLEAN", "CURRENCY", "DATE", "DATETIME", "DOUBLE", "ID", "INTEGER", "PERCENT", "PICKLIST", "REFERENCE", "STRING", "TEXTAREA"}
+var schemaDisplayTypeNames = []string{"ADDRESS", "ANYTYPE", "BASE64", "BOOLEAN", "COMBOBOX", "COMPLEXVALUE", "CURRENCY", "DATACATEGORYGROUPREFERENCE", "DATE", "DATETIME", "DOUBLE", "EMAIL", "ENCRYPTEDSTRING", "FLOATARRAY", "ID", "INTEGER", "JSON", "LOCATION", "LONG", "MULTIPICKLIST", "PERCENT", "PHONE", "PICKLIST", "REFERENCE", "SOBJECT", "STRING", "TEXTAREA", "TEXTARRAY", "TIME", "URL"}
+
+var schemaFieldDescribeOptionNames = []string{"DEFAULT", "FULL_DESCRIBE"}
+
+var schemaSObjectDescribeOptionNames = []string{"DEFAULT", "DEFERRED", "FULL"}
 
 var accessTypeNames = []string{"CREATABLE", "READABLE", "UPDATABLE", "UPSERTABLE"}
 
@@ -887,8 +891,10 @@ func metadataCustomFieldType(item Value) (storage.FieldType, string) {
 		return storage.FieldDate, "DATE"
 	case "datetime":
 		return storage.FieldDateTime, "DATETIME"
-	case "picklist", "multipicklist":
+	case "picklist":
 		return storage.FieldPicklist, "PICKLIST"
+	case "multipicklist":
+		return storage.FieldMultiPicklist, "MULTIPICKLIST"
 	case "lookup", "masterdetail", "reference":
 		return storage.FieldReference, "REFERENCE"
 	case "textarea", "longtextarea", "html", "email", "phone", "url", "text":
@@ -1043,6 +1049,14 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 	}
 	if strings.EqualFold(typeName, "Schema.DisplayType") || strings.EqualFold(typeName, "DisplayType") {
 		value, err := callNamedEnumStaticMember("Schema.DisplayType", schemaDisplayTypeNames, method, args)
+		return value, true, err
+	}
+	if strings.EqualFold(typeName, "Schema.FieldDescribeOptions") || strings.EqualFold(typeName, "FieldDescribeOptions") {
+		value, err := callNamedEnumStaticMember("Schema.FieldDescribeOptions", schemaFieldDescribeOptionNames, method, args)
+		return value, true, err
+	}
+	if strings.EqualFold(typeName, "Schema.SObjectDescribeOptions") || strings.EqualFold(typeName, "SObjectDescribeOptions") {
+		value, err := callNamedEnumStaticMember("Schema.SObjectDescribeOptions", schemaSObjectDescribeOptionNames, method, args)
 		return value, true, err
 	}
 	if strings.EqualFold(typeName, "Schema.SOAPType") || strings.EqualFold(typeName, "SOAPType") {
@@ -1277,6 +1291,12 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	}
 	if receiver.Type == "Schema.DisplayType" {
 		return callNamedEnumMember("Schema.DisplayType", schemaDisplayTypeNames, receiver, method, args)
+	}
+	if receiver.Type == "Schema.FieldDescribeOptions" {
+		return callNamedEnumMember("Schema.FieldDescribeOptions", schemaFieldDescribeOptionNames, receiver, method, args)
+	}
+	if receiver.Type == "Schema.SObjectDescribeOptions" || receiver.Type == "SObjectDescribeOptions" {
+		return callNamedEnumMember("Schema.SObjectDescribeOptions", schemaSObjectDescribeOptionNames, receiver, method, args)
 	}
 	if receiver.Type == "Schema.SOAPType" {
 		return callNamedEnumMember("Schema.SOAPType", schemaSOAPTypeNames, receiver, method, args)
@@ -1548,6 +1568,8 @@ func callNamedEnumMember(typeName string, names []string, receiver Value, method
 			}
 		}
 		return Int(-1), true, nil
+	case "hashCode":
+		return Int(int64(javaStringHashCode(typeName + "." + receiver.Text))), true, nil
 	default:
 		return Null, false, nil
 	}

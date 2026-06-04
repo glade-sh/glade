@@ -1,0 +1,130 @@
+{
+  "name": "data-platform-database-async-immediate-dml",
+  "evidence": [
+    {
+      "symbol": "Database.insertAsync",
+      "kind": "test",
+      "notes": "Local async insert alias runs through DML and returns SaveResult shape."
+    },
+    {
+      "surfaceId": "apex:System.Database.insertAsync(Object)",
+      "symbol": "Database.insertAsync",
+      "kind": "test",
+      "notes": "Single-record async insert alias returns a local SaveResult-shaped value."
+    },
+    {
+      "symbol": "Database.insertImmediate",
+      "kind": "test",
+      "notes": "Local immediate insert alias runs through DML and returns SaveResult shape."
+    },
+    {
+      "surfaceId": "apex:System.Database.insertImmediate(Object,Object)",
+      "symbol": "Database.insertImmediate",
+      "kind": "test",
+      "notes": "Single-record immediate insert with allOrNone argument returns local SaveResult shape."
+    },
+    {
+      "symbol": "Database.updateAsync",
+      "kind": "test",
+      "notes": "Local async update alias runs through DML and returns SaveResult shape."
+    },
+    {
+      "surfaceId": "apex:System.Database.updateAsync(Object,Object)",
+      "symbol": "Database.updateAsync",
+      "kind": "test",
+      "notes": "Single-record async update with allOrNone argument returns local SaveResult shape."
+    },
+    {
+      "symbol": "Database.updateImmediate",
+      "kind": "test",
+      "notes": "Local immediate update alias runs through DML and returns SaveResult shape."
+    },
+    {
+      "surfaceId": "apex:System.Database.updateImmediate(Object,Object)",
+      "symbol": "Database.updateImmediate",
+      "kind": "test",
+      "notes": "Single-record immediate update with allOrNone argument returns local SaveResult shape."
+    },
+    {
+      "symbol": "Database.deleteAsync",
+      "kind": "test",
+      "notes": "Local async delete alias runs through DML and returns DeleteResult shape."
+    },
+    {
+      "surfaceId": "apex:System.Database.deleteAsync(Object,Object)",
+      "symbol": "Database.deleteAsync",
+      "kind": "test",
+      "notes": "Single-record async delete with allOrNone argument returns local DeleteResult shape."
+    },
+    {
+      "symbol": "Database.deleteImmediate",
+      "kind": "test",
+      "notes": "Local immediate delete alias runs through DML and returns DeleteResult shape."
+    },
+    {
+      "surfaceId": "apex:System.Database.deleteImmediate(Object,Object)",
+      "symbol": "Database.deleteImmediate",
+      "kind": "test",
+      "notes": "Single-record immediate delete with allOrNone argument returns local DeleteResult shape."
+    },
+    {
+      "symbol": "Database.getAsyncSaveResult",
+      "kind": "test",
+      "notes": "Local async save-result lookup returns an already materialized local SaveResult."
+    },
+    {
+      "surfaceId": "apex:System.Database.getAsyncSaveResult(Object)",
+      "symbol": "Database.getAsyncSaveResult",
+      "kind": "test",
+      "notes": "Async save-result lookup returns an already materialized local SaveResult."
+    },
+    {
+      "symbol": "Database.getAsyncDeleteResult",
+      "kind": "test",
+      "notes": "Local async delete-result lookup returns an already materialized local DeleteResult."
+    },
+    {
+      "surfaceId": "apex:System.Database.getAsyncDeleteResult(Object)",
+      "symbol": "Database.getAsyncDeleteResult",
+      "kind": "test",
+      "notes": "Async delete-result lookup returns an already materialized local DeleteResult."
+    },
+    {
+      "symbol": "Database.getAsyncLocator",
+      "kind": "test",
+      "notes": "Local async locator lookup returns deterministic locator strings for query locators, materialized results, and already-local locator ids."
+    },
+    {
+      "surfaceId": "apex:System.Database.getAsyncLocator(Object)",
+      "symbol": "Database.getAsyncLocator",
+      "kind": "test",
+      "notes": "Async locator lookup returns deterministic local locator strings for local result and locator values."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/DatabaseAsyncImmediateDmlTest.cls",
+      "content": "@isTest private class DatabaseAsyncImmediateDmlTest { @isTest static void asyncAndImmediateAliasesUseLocalDml() { Account asyncAccount = new Account(Name = 'Async'); Object asyncResult = Database.insertAsync(asyncAccount); Object saved = Database.getAsyncSaveResult(asyncResult); System.assert(saved.isSuccess()); System.assertNotEquals(null, saved.getId()); Account immediate = new Account(Name = 'Immediate Insert'); Object immediateInsert = Database.insertImmediate(immediate, false); System.assert(immediateInsert.isSuccess()); Account asyncUpdate = new Account(Id = immediateInsert.getId(), Name = 'Async Updated'); Object asyncUpdateResult = Database.updateAsync(asyncUpdate, false); System.assert(asyncUpdateResult.isSuccess()); Account immediateUpdate = new Account(Id = saved.getId(), Name = 'Immediate'); Object updateResult = Database.updateImmediate(immediateUpdate, false); System.assert(updateResult.isSuccess()); Object deleteResult = Database.deleteAsync(immediateUpdate, false); Object deleted = Database.getAsyncDeleteResult(deleteResult); System.assert(deleted.isSuccess()); Object immediateDelete = Database.deleteImmediate(asyncUpdate, false); System.assert(immediateDelete.isSuccess()); Database.QueryLocator locator = Database.getQueryLocator('SELECT Id, Name FROM Account'); String queryLocator = Database.getAsyncLocator(locator); System.assert(queryLocator.startsWith('local-query:SELECT Id, Name FROM Account')); String resultLocator = Database.getAsyncLocator(saved); System.assert(resultLocator.startsWith('local-result:')); System.assertEquals('already-local', Database.getAsyncLocator('already-local')); List<Account> rows = Database.query('SELECT Id, Name, IsDeleted FROM Account WHERE Name = \\'Immediate\\' ALL ROWS'); System.assertEquals(1, rows.size()); System.assertEquals(true, rows.get(0).get('IsDeleted')); List<Account> immediateRows = Database.query('SELECT Id, Name, IsDeleted FROM Account WHERE Name = \\'Async Updated\\' ALL ROWS'); System.assertEquals(1, immediateRows.size()); System.assertEquals(true, immediateRows.get(0).get('IsDeleted')); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

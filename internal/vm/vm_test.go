@@ -41,6 +41,44 @@ func TestCommonSObjectTypeNamesIncludesGeneratedStandardObjects(t *testing.T) {
 	}
 }
 
+func TestSchemaGlobalDescribeIncludesOnlyOrgAvailableObjectShape(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+
+	describe := machine.schemaGlobalDescribe()
+	if token, ok := describe.Map[mapKey(String("Account"))]; !ok || token.Type != "Schema.SObjectType" {
+		t.Fatalf("Account token = %#v ok=%v", token, ok)
+	}
+	if _, ok := describe.Map[mapKey(String("AIApplication"))]; ok {
+		t.Fatalf("global describe should not include unloaded standard object AIApplication")
+	}
+}
+
+func TestExecSchemaDescribeSObjectsRequiresOrgAvailableObjectShape(t *testing.T) {
+	program, err := CompileAnonymous(`
+String caught = '';
+System.assertEquals(null, Schema.getGlobalDescribe().get('AIApplication'));
+try {
+	Schema.describeSObjects(new String[]{'AIApplication'});
+	System.assert(false, 'expected describe failure');
+} catch (Exception e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assertEquals('System.SObjectException:Schema.describeSObjects unknown object AIApplication', caught);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestDescribeFieldNameUsesCallerNamespaceWithoutOrgNamespace(t *testing.T) {
 	machine := New(nil)
 	org := storage.NewOrgState()

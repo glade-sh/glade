@@ -1,0 +1,279 @@
+{
+  "name": "data-platform-schema-describe-data-categories",
+  "evidence": [
+    {
+      "symbol": "Schema.describeDataCategoryGroups",
+      "surfaceId": "apex:Schema.Schema.describeDataCategoryGroups(List<String>)",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.describeDataCategoryGroupStructures",
+      "surfaceId": "apex:Schema.Schema.describeDataCategoryGroupStructures(List<Schema.DataCategoryGroupSobjectTypePair>,Boolean)",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategoryGroupSobjectTypePair",
+      "surfaceId": "apex:Schema.DataCategoryGroupSobjectTypePair",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategoryGroupSobjectTypePair.DataCategoryGroupSobjectTypePair",
+      "surfaceId": "apex:Schema.DataCategoryGroupSobjectTypePair.DataCategoryGroupSobjectTypePair()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategoryGroupSobjectTypePair.setSobject",
+      "surfaceId": "apex:Schema.DataCategoryGroupSobjectTypePair.setSobject(String)",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategoryGroupSobjectTypePair.getSobject",
+      "surfaceId": "apex:Schema.DataCategoryGroupSobjectTypePair.getSobject()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategoryGroupSobjectTypePair.setDataCategoryGroupName",
+      "surfaceId": "apex:Schema.DataCategoryGroupSobjectTypePair.setDataCategoryGroupName(String)",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategoryGroupSobjectTypePair.getDataCategoryGroupName",
+      "surfaceId": "apex:Schema.DataCategoryGroupSobjectTypePair.getDataCategoryGroupName()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupResult.getCategoryCount",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupResult.getCategoryCount()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupResult.getDescription",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupResult.getDescription()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupResult.getLabel",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupResult.getLabel()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupResult.getName",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupResult.getName()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupResult.getSobject",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupResult.getSobject()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupStructureResult.getTopCategories",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupStructureResult.getTopCategories()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupStructureResult.getDescription",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupStructureResult.getDescription()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupStructureResult.getLabel",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupStructureResult.getLabel()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupStructureResult.getName",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupStructureResult.getName()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupStructureResult.getSobject",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupStructureResult.getSobject()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategory.getChildCategories",
+      "surfaceId": "apex:Schema.DataCategory.getChildCategories()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategory.getLabel",
+      "surfaceId": "apex:Schema.DataCategory.getLabel()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategory.getName",
+      "surfaceId": "apex:Schema.DataCategory.getName()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategory.equals",
+      "surfaceId": "apex:Schema.DataCategory.equals(Object)",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategory.hashCode",
+      "surfaceId": "apex:Schema.DataCategory.hashCode()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategory.toString",
+      "surfaceId": "apex:Schema.DataCategory.toString()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupResult.equals",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupResult.equals(Object)",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupResult.hashCode",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupResult.hashCode()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupResult.toString",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupResult.toString()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupStructureResult.equals",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupStructureResult.equals(Object)",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupStructureResult.hashCode",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupStructureResult.hashCode()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupStructureResult.toString",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupStructureResult.toString()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategory.childcategories",
+      "surfaceId": "apex:Schema.DataCategory.childcategories",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategory.label",
+      "surfaceId": "apex:Schema.DataCategory.label",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategory.name",
+      "surfaceId": "apex:Schema.DataCategory.name",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategoryGroupSobjectTypePair.datacategorygroupname",
+      "surfaceId": "apex:Schema.DataCategoryGroupSobjectTypePair.datacategorygroupname",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategoryGroupSobjectTypePair.sobject",
+      "surfaceId": "apex:Schema.DataCategoryGroupSobjectTypePair.sobject",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupResult.categorycount",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupResult.categorycount",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupResult.description",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupResult.description",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupResult.label",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupResult.label",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupResult.name",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupResult.name",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupResult.sobject",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupResult.sobject",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupStructureResult.description",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupStructureResult.description",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupStructureResult.label",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupStructureResult.label",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupStructureResult.name",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupStructureResult.name",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupStructureResult.sobject",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupStructureResult.sobject",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupStructureResult.topcategories",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupStructureResult.topcategories",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategoryGroupSobjectTypePair.equals",
+      "surfaceId": "apex:Schema.DataCategoryGroupSobjectTypePair.equals(Object)",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategoryGroupSobjectTypePair.hashCode",
+      "surfaceId": "apex:Schema.DataCategoryGroupSobjectTypePair.hashCode()",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Schema.DataCategoryGroupSobjectTypePair.toString",
+      "surfaceId": "apex:Schema.DataCategoryGroupSobjectTypePair.toString()",
+      "kind": "exec"
+    }
+  ],
+  "metadata": {
+    "dataCategoryGroups": [
+      {
+        "name": "Products",
+        "label": "Products",
+        "description": "Product categories",
+        "sObjectName": "Knowledge__kav",
+        "categories": [
+          {
+            "name": "Hardware",
+            "label": "Hardware",
+            "children": [
+              {
+                "name": "Laptops",
+                "label": "Laptops"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "command": {
+    "kind": "exec",
+    "args": [
+      "List<Object> groups = Schema.describeDataCategoryGroups(new List<String>{'Knowledge__kav'}); System.assertEquals(1, groups.size()); Object group = groups[0]; System.assertEquals('Products', group.getName()); System.assertEquals(group.getName(), group.name); System.assertEquals('Products', group.getLabel()); System.assertEquals(group.getLabel(), group.label); System.assertEquals('Product categories', group.getDescription()); System.assertEquals(group.getDescription(), group.description); System.assertEquals('Knowledge__kav', group.getSobject()); System.assertEquals(group.getSobject(), group.sobject); System.assertEquals(2, group.getCategoryCount()); System.assertEquals(group.getCategoryCount(), group.categorycount); System.assert(group.equals(group)); System.assert(!group.equals(null)); System.assert(group.hashCode() != 0); System.assert(group.toString().contains('Products')); Schema.DataCategoryGroupSobjectTypePair pair = new Schema.DataCategoryGroupSobjectTypePair(); pair.setSobject('Knowledge__kav'); pair.setDataCategoryGroupName('Products'); System.assert(pair.equals(pair)); System.assert(!pair.equals(null)); System.assert(pair.hashCode() != 0); System.assert(pair.toString().contains('Products')); System.assertEquals('Knowledge__kav', pair.getSobject()); System.assertEquals(pair.getSobject(), pair.sobject); System.assertEquals('Products', pair.getDataCategoryGroupName()); System.assertEquals(pair.getDataCategoryGroupName(), pair.datacategorygroupname); List<Object> structures = Schema.describeDataCategoryGroupStructures(new List<Schema.DataCategoryGroupSobjectTypePair>{pair}, false); System.assertEquals(1, structures.size()); Object structure = structures[0]; System.assertEquals('Products', structure.getName()); System.assertEquals(structure.getName(), structure.name); System.assertEquals('Products', structure.getLabel()); System.assertEquals(structure.getLabel(), structure.label); System.assertEquals('Product categories', structure.getDescription()); System.assertEquals(structure.getDescription(), structure.description); System.assertEquals('Knowledge__kav', structure.getSobject()); System.assertEquals(structure.getSobject(), structure.sobject); System.assert(structure.equals(structure)); System.assert(!structure.equals(null)); System.assert(structure.hashCode() != 0); System.assert(structure.toString().contains('Products')); List<Object> topCategories = structure.getTopCategories(); System.assertEquals(1, topCategories.size()); System.assertEquals(topCategories.size(), structure.topcategories.size()); Object hardware = topCategories[0]; System.assertEquals('Hardware', hardware.getName()); System.assertEquals(hardware.getName(), hardware.name); System.assertEquals('Hardware', hardware.getLabel()); System.assertEquals(hardware.getLabel(), hardware.label); System.assert(hardware.equals(hardware)); System.assert(!hardware.equals(null)); System.assert(hardware.hashCode() != 0); System.assert(hardware.toString().contains('Hardware')); System.assertEquals(1, hardware.getChildCategories().size()); System.assertEquals(hardware.getChildCategories().size(), hardware.childcategories.size()); List<Object> topOnly = Schema.describeDataCategoryGroupStructures(new List<Schema.DataCategoryGroupSobjectTypePair>{pair}, true)[0].getTopCategories(); System.assertEquals(0, topOnly[0].getChildCategories().size()); System.assertEquals(0, Schema.describeDataCategoryGroups(new List<String>{'Missing__kav'}).size());"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

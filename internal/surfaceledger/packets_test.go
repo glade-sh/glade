@@ -83,3 +83,30 @@ func TestPacketMarkdownIncludesAgentCloseoutRules(t *testing.T) {
 		}
 	}
 }
+
+func TestSchemaDescribePacketOwnsOnlySchemaNamespaceDescribeRows(t *testing.T) {
+	packet, ok := AreaPacketByName("Data.Runtime.SchemaDescribe")
+	if !ok {
+		t.Fatal("missing SchemaDescribe packet")
+	}
+	schemaRow := SurfaceLedgerRow{
+		SurfaceID: ApexMemberID("Schema", "DescribeFieldResult", "getName", []string{}),
+		Product:   ProductApex,
+		Namespace: "Schema",
+		TypeName:  "DescribeFieldResult",
+		Kind:      KindMethod,
+	}
+	if !packetOwnsRow(packet, schemaRow) {
+		t.Fatalf("SchemaDescribe packet should own %s", schemaRow.SurfaceID)
+	}
+	foreignDescribe := SurfaceLedgerRow{
+		SurfaceID: ApexTypeID("Invocable.Action", "DescribeResult"),
+		Product:   ProductApex,
+		Namespace: "Invocable.Action",
+		TypeName:  "DescribeResult",
+		Kind:      KindType,
+	}
+	if packetOwnsRow(packet, foreignDescribe) {
+		t.Fatalf("SchemaDescribe packet should not own %s", foreignDescribe.SurfaceID)
+	}
+}

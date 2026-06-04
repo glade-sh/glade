@@ -139,7 +139,7 @@ func runExecFixture(fixture Fixture) (RunResult, error) {
 	}
 	var stdout bytes.Buffer
 	machine := vm.New(&stdout)
-	if len(fixture.Schema) > 0 || len(fixture.SeedData) > 0 || fixture.Project.Namespace != "" {
+	if len(fixture.Schema) > 0 || !metadataRegistryEmpty(fixture.Metadata) || len(fixture.SeedData) > 0 || fixture.Project.Namespace != "" {
 		org, err := orgFromFixture(fixture)
 		if err != nil {
 			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
@@ -287,6 +287,9 @@ func orgFromFixture(fixture Fixture) (storage.OrgState, error) {
 	}
 	assignFixtureObjectPrefixes(&org)
 	storage.EnsureDeterministicPlatformData(&org)
+	if !metadataRegistryEmpty(fixture.Metadata) {
+		org.Metadata = fixture.Metadata
+	}
 	if len(fixture.SeedData) > 0 {
 		if err := storage.ApplyFixture(&org, storageFixture(fixture)); err != nil {
 			return storage.OrgState{}, err
@@ -752,6 +755,9 @@ func compareResult(fixture Fixture, payload map[string]any, stdout string) (RunR
 		Kind:   fixture.Command.Kind,
 		Result: encoded,
 		Stdout: stdout,
+	}
+	if fixture.Expected.Error != nil {
+		return out, fmt.Errorf("fixture %q expected error %s %q, got successful result %s", fixture.Name, fixture.Expected.Error.Type, fixture.Expected.Error.Message, encoded)
 	}
 	if len(fixture.Expected.Result) > 0 {
 		var expected any

@@ -7,9 +7,58 @@
       "notes": "Already-deleted local rows can be permanently removed and return an EmptyRecycleBinResult-shaped object."
     },
     {
-      "symbol": "Database.lock / Database.unlock",
+      "surfaceId": "apex:Database.EmptyRecycleBinResult.isSuccess()",
+      "symbol": "Database.EmptyRecycleBinResult.isSuccess",
       "kind": "test",
-      "notes": "Local row lock calls return LockResult/UnlockResult-shaped objects with id, success, and errors accessors."
+      "notes": "emptyRecycleBin returns a result object that reports success for a permanently removed local row."
+    },
+    {
+      "surfaceId": "apex:Database.EmptyRecycleBinResult.getId()",
+      "symbol": "Database.EmptyRecycleBinResult.getId",
+      "kind": "test",
+      "notes": "emptyRecycleBin result exposes the id of the row it permanently removed."
+    },
+    {
+      "surfaceId": "apex:Database.EmptyRecycleBinResult.getErrors()",
+      "symbol": "Database.EmptyRecycleBinResult.getErrors",
+      "kind": "test",
+      "notes": "emptyRecycleBin result exposes an empty local error list on success."
+    },
+    {
+      "surfaceId": "apex:Approval.LockResult.isSuccess()",
+      "symbol": "Approval.LockResult.isSuccess",
+      "kind": "test",
+      "notes": "Database.lock returns a LockResult-shaped object that reports success for a lockable local row."
+    },
+    {
+      "surfaceId": "apex:Approval.LockResult.getId()",
+      "symbol": "Approval.LockResult.getId",
+      "kind": "test",
+      "notes": "Database.lock result exposes the locked row id."
+    },
+    {
+      "surfaceId": "apex:Approval.LockResult.getErrors()",
+      "symbol": "Approval.LockResult.getErrors",
+      "kind": "test",
+      "notes": "Database.lock result exposes an empty local error list on success."
+    },
+    {
+      "surfaceId": "apex:Approval.UnlockResult.isSuccess()",
+      "symbol": "Approval.UnlockResult.isSuccess",
+      "kind": "test",
+      "notes": "Database.unlock returns an UnlockResult-shaped object that reports success for a locked local row."
+    },
+    {
+      "surfaceId": "apex:Approval.UnlockResult.getId()",
+      "symbol": "Approval.UnlockResult.getId",
+      "kind": "test",
+      "notes": "Database.unlock result exposes the unlocked row id."
+    },
+    {
+      "surfaceId": "apex:Approval.UnlockResult.getErrors()",
+      "symbol": "Approval.UnlockResult.getErrors",
+      "kind": "test",
+      "notes": "Database.unlock result exposes an empty local error list on success."
     }
   ],
   "source": [

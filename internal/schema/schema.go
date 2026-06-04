@@ -35,29 +35,40 @@ type NameField struct {
 }
 
 type Field struct {
-	Name                  string          `json:"name"`
-	Label                 string          `json:"label,omitempty"`
-	InlineHelpText        string          `json:"inlineHelpText,omitempty"`
-	Type                  string          `json:"type,omitempty"`
-	Length                int             `json:"length,omitempty"`
-	Precision             int             `json:"precision,omitempty"`
-	Scale                 int             `json:"scale,omitempty"`
-	ReferenceTo           []string        `json:"referenceTo,omitempty"`
-	RelationshipName      string          `json:"relationshipName,omitempty"`
-	ChildRelationshipName string          `json:"childRelationshipName,omitempty"`
-	DeleteConstraint      string          `json:"deleteConstraint,omitempty"`
-	DefaultValue          string          `json:"defaultValue,omitempty"`
-	Required              bool            `json:"required,omitempty"`
-	ExternalID            bool            `json:"externalId,omitempty"`
-	Unique                bool            `json:"unique,omitempty"`
-	Encrypted             bool            `json:"encrypted,omitempty"`
-	Formula               string          `json:"formula,omitempty"`
-	SummarizedField       string          `json:"summarizedField,omitempty"`
-	SummaryForeignKey     string          `json:"summaryForeignKey,omitempty"`
-	SummaryOperation      string          `json:"summaryOperation,omitempty"`
-	SummaryFilterItems    []SummaryFilter `json:"summaryFilterItems,omitempty"`
-	ValueSetName          string          `json:"valueSetName,omitempty"`
-	PicklistValues        []PicklistValue `json:"picklistValues,omitempty"`
+	Name                  string             `json:"name"`
+	Label                 string             `json:"label,omitempty"`
+	InlineHelpText        string             `json:"inlineHelpText,omitempty"`
+	Type                  string             `json:"type,omitempty"`
+	Length                int                `json:"length,omitempty"`
+	Precision             int                `json:"precision,omitempty"`
+	Scale                 int                `json:"scale,omitempty"`
+	ReferenceTo           []string           `json:"referenceTo,omitempty"`
+	RelationshipName      string             `json:"relationshipName,omitempty"`
+	ChildRelationshipName string             `json:"childRelationshipName,omitempty"`
+	DeleteConstraint      string             `json:"deleteConstraint,omitempty"`
+	DefaultValue          string             `json:"defaultValue,omitempty"`
+	Required              bool               `json:"required,omitempty"`
+	ExternalID            bool               `json:"externalId,omitempty"`
+	IDLookup              bool               `json:"idLookup,omitempty"`
+	Unique                bool               `json:"unique,omitempty"`
+	Encrypted             bool               `json:"encrypted,omitempty"`
+	Formula               string             `json:"formula,omitempty"`
+	SummarizedField       string             `json:"summarizedField,omitempty"`
+	SummaryForeignKey     string             `json:"summaryForeignKey,omitempty"`
+	SummaryOperation      string             `json:"summaryOperation,omitempty"`
+	SummaryFilterItems    []SummaryFilter    `json:"summaryFilterItems,omitempty"`
+	FilteredLookupInfo    FilteredLookupInfo `json:"filteredLookupInfo,omitempty"`
+	PicklistController    string             `json:"picklistController,omitempty"`
+	PicklistValueSettings []PicklistSetting  `json:"picklistValueSettings,omitempty"`
+	ValueSetName          string             `json:"valueSetName,omitempty"`
+	RestrictedPicklist    bool               `json:"restrictedPicklist,omitempty"`
+	PicklistValues        []PicklistValue    `json:"picklistValues,omitempty"`
+}
+
+type FilteredLookupInfo struct {
+	ControllingFields []string `json:"controllingFields,omitempty"`
+	Dependent         bool     `json:"dependent,omitempty"`
+	OptionalFilter    bool     `json:"optionalFilter,omitempty"`
 }
 
 type SummaryFilter struct {
@@ -71,6 +82,11 @@ type PicklistValue struct {
 	Label    string `json:"label,omitempty"`
 	Default  bool   `json:"default,omitempty"`
 	Active   bool   `json:"active,omitempty"`
+}
+
+type PicklistSetting struct {
+	ValueName              string   `json:"valueName,omitempty"`
+	ControllingFieldValues []string `json:"controllingFieldValues,omitempty"`
 }
 
 type RecordType struct {
@@ -140,13 +156,25 @@ type customFieldXML struct {
 	DefaultValue          string             `xml:"defaultValue"`
 	Required              bool               `xml:"required"`
 	ExternalID            bool               `xml:"externalId"`
+	IDLookup              bool               `xml:"idLookup"`
 	Unique                bool               `xml:"unique"`
 	Formula               string             `xml:"formula"`
 	SummarizedField       string             `xml:"summarizedField"`
 	SummaryForeignKey     string             `xml:"summaryForeignKey"`
 	SummaryOperation      string             `xml:"summaryOperation"`
 	SummaryFilterItems    []summaryFilterXML `xml:"summaryFilterItems"`
+	LookupFilter          lookupFilterXML    `xml:"lookupFilter"`
 	ValueSet              valueSetXML        `xml:"valueSet"`
+}
+
+type lookupFilterXML struct {
+	Active      *bool                 `xml:"active"`
+	FilterItems []lookupFilterItemXML `xml:"filterItems"`
+	IsOptional  *bool                 `xml:"isOptional"`
+}
+
+type lookupFilterItemXML struct {
+	Field string `xml:"field"`
 }
 
 type summaryFilterXML struct {
@@ -183,8 +211,16 @@ type validationRuleXML struct {
 }
 
 type valueSetXML struct {
-	Definition valueSetDefinitionXML `xml:"valueSetDefinition"`
-	Name       string                `xml:"valueSetName"`
+	ControllingField string                `xml:"controllingField"`
+	Definition       valueSetDefinitionXML `xml:"valueSetDefinition"`
+	Name             string                `xml:"valueSetName"`
+	Restricted       bool                  `xml:"restricted"`
+	ValueSettings    []valueSettingXML     `xml:"valueSettings"`
+}
+
+type valueSettingXML struct {
+	ControllingFieldValues []string `xml:"controllingFieldValue"`
+	ValueName              string   `xml:"valueName"`
 }
 
 type valueSetDefinitionXML struct {
@@ -559,6 +595,7 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		DefaultValue:          strings.TrimSpace(raw.DefaultValue),
 		Required:              raw.Required,
 		ExternalID:            raw.ExternalID,
+		IDLookup:              raw.IDLookup,
 		Unique:                raw.Unique,
 		Encrypted:             strings.EqualFold(raw.Type, "EncryptedText"),
 		Formula:               strings.TrimSpace(raw.Formula),
@@ -566,7 +603,11 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		SummaryForeignKey:     strings.TrimSpace(raw.SummaryForeignKey),
 		SummaryOperation:      strings.TrimSpace(raw.SummaryOperation),
 		SummaryFilterItems:    summaryFiltersFromXML(raw.SummaryFilterItems),
+		FilteredLookupInfo:    filteredLookupInfoFromXML(raw.LookupFilter),
+		PicklistController:    strings.TrimSpace(raw.ValueSet.ControllingField),
+		PicklistValueSettings: picklistSettings(raw.ValueSet.ValueSettings),
 		ValueSetName:          strings.TrimSpace(raw.ValueSet.Name),
+		RestrictedPicklist:    raw.ValueSet.Restricted,
 		PicklistValues:        picklistValues(raw.ValueSet.Definition.Values),
 	}
 }
@@ -591,6 +632,10 @@ func namespaceObjectField(projectNamespace, objectName string, field Field) Fiel
 		filter.Field = namespaceAPIName(namespace, filter.Field)
 		field.SummaryFilterItems[i] = filter
 	}
+	for i, fieldName := range field.FilteredLookupInfo.ControllingFields {
+		field.FilteredLookupInfo.ControllingFields[i] = namespaceAPIName(namespace, fieldName)
+	}
+	field.PicklistController = namespaceAPIName(namespace, field.PicklistController)
 	return field
 }
 
@@ -700,6 +745,37 @@ func summaryFiltersFromXML(raw []summaryFilterXML) []SummaryFilter {
 	return out
 }
 
+func filteredLookupInfoFromXML(raw lookupFilterXML) FilteredLookupInfo {
+	if raw.Active == nil && raw.IsOptional == nil && len(raw.FilterItems) == 0 {
+		return FilteredLookupInfo{}
+	}
+	fields := make([]string, 0, len(raw.FilterItems))
+	for _, item := range raw.FilterItems {
+		field := strings.TrimSpace(item.Field)
+		if field == "" || stringSliceContainsFold(fields, field) {
+			continue
+		}
+		fields = append(fields, field)
+	}
+	info := FilteredLookupInfo{
+		ControllingFields: fields,
+		Dependent:         len(fields) > 0,
+	}
+	if raw.IsOptional != nil {
+		info.OptionalFilter = *raw.IsOptional
+	}
+	return info
+}
+
+func stringSliceContainsFold(values []string, value string) bool {
+	for _, existing := range values {
+		if strings.EqualFold(existing, value) {
+			return true
+		}
+	}
+	return false
+}
+
 func loadCustomMetadataRecord(path string) (CustomMetadataRecord, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -747,6 +823,33 @@ func picklistValues(values []picklistValueXML) []PicklistValue {
 			label = value.FullName
 		}
 		out = append(out, PicklistValue{FullName: value.FullName, Label: label, Default: value.Default, Active: active})
+	}
+	return out
+}
+
+func picklistSettings(values []valueSettingXML) []PicklistSetting {
+	out := make([]PicklistSetting, 0, len(values))
+	for _, value := range values {
+		name := strings.TrimSpace(value.ValueName)
+		controllers := trimmedStrings(value.ControllingFieldValues)
+		if name == "" && len(controllers) == 0 {
+			continue
+		}
+		out = append(out, PicklistSetting{
+			ValueName:              name,
+			ControllingFieldValues: controllers,
+		})
+	}
+	return out
+}
+
+func trimmedStrings(values []string) []string {
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		text := strings.TrimSpace(value)
+		if text != "" {
+			out = append(out, text)
+		}
 	}
 	return out
 }

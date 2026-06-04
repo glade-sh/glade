@@ -75,8 +75,10 @@ Feature-gated standard fields are kept out of the base shape:
   object-specific currency field metadata captured from Salesforce.
 
 `internal/sobject.BuildDescribeRegistry` now routes project metadata through the
-same merge path, so schema describe, SOQL projection validation, DML validation,
-REST describe, and test execution all see the same standard baseline.
+same merge path, and `Schema.getGlobalDescribe` / `Schema.describeSObjects`
+also expose known standard object shape without first seeding org records. Schema
+describe, SOQL projection validation, DML validation, REST describe, and test
+execution all see the same standard baseline.
 
 ## Current Baseline
 
@@ -96,7 +98,21 @@ layout metadata, permissions, security enforcement, automation behavior, or
 feature provisioning side effects beyond the explicit feature-gated schema
 overlays above.
 
-The stub overlay currently adds field coverage for 1,373 platform SObjects and
-25,075 fields. Those entries improve SObject token lookup, SOQL projection,
-DML/default field handling, and schema describe access, but they do not assert
-full runtime behavior for those objects.
+The active standard-object coverage report currently tracks 1,374 known
+standard SObjects, all marked as `shape`, with 26,637 fields and 5,752
+relationships. Twenty-eight locally modeled standard objects are marked as
+`behavior`: Account, Attachment, CampaignMember, CampaignMemberStatus, Contact,
+ContentDistribution, ContentDocument, ContentDocumentLink, ContentVersion,
+Document, EmailMessage, EmailMessageRelation, FieldPermissions, Lead,
+ObjectPermissions, Opportunity, OpportunityLineItem, PermissionSet,
+PermissionSetAssignment, PermissionSetGroup, PermissionSetGroupComponent,
+Pricebook2, PricebookEntry, Product2, Profile, RecordType, SetupEntityAccess,
+and User.
+
+The checked SObject stub inventory is written to `docs/STUB_INVENTORY.md`.
+It currently contains 1,373 SObject stub classes, zero source objects missing
+active shape, and zero supported-feature fields missing active shape. The
+remaining field gaps are feature-gated fields such as Person Account and
+State/Country picklist fields. Shape entries improve SObject token lookup, SOQL
+projection, DML/default field handling, and schema describe access, but they do
+not assert full runtime behavior unless the row is marked `behavior`.
