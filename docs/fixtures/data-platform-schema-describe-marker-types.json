@@ -1,0 +1,99 @@
+{
+  "name": "data-platform-schema-describe-marker-types",
+  "evidence": [
+    {
+      "symbol": "Schema.DataCategory",
+      "surfaceId": "apex:Schema.DataCategory",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupResult",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupResult",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.DescribeDataCategoryGroupStructureResult",
+      "surfaceId": "apex:Schema.DescribeDataCategoryGroupStructureResult",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.DisplayType",
+      "surfaceId": "apex:Schema.DisplayType",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.FieldDescribeOptions",
+      "surfaceId": "apex:Schema.FieldDescribeOptions",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.FieldSetMap",
+      "surfaceId": "apex:Schema.FieldSetMap",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.FilteredLookupInfo",
+      "surfaceId": "apex:Schema.FilteredLookupInfo",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SOAPType",
+      "surfaceId": "apex:Schema.SOAPType",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectDescribeOptions",
+      "surfaceId": "apex:Schema.SObjectDescribeOptions",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectField",
+      "surfaceId": "apex:Schema.SObjectField",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectType",
+      "surfaceId": "apex:Schema.SObjectType",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectTypeFieldSets",
+      "surfaceId": "apex:Schema.SObjectTypeFieldSets",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.SObjectTypeFields",
+      "surfaceId": "apex:Schema.SObjectTypeFields",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.Schema",
+      "surfaceId": "apex:Schema.Schema",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.DataCategory constructor",
+      "surfaceId": "apex:Schema.DataCategory.DataCategory()",
+      "kind": "test",
+      "notes": "Schema.DataCategory can be constructed locally as a passive describe value and exposes writable metadata fields."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/classes/SchemaDescribeMarkerTypesFixtureTest.cls",
+      "content": "@isTest private class SchemaDescribeMarkerTypesFixtureTest { @isTest static void touchesMarkerTypes() { Schema.DisplayType displayType = Schema.DisplayType.STRING; Schema.FieldDescribeOptions fieldOption = Schema.FieldDescribeOptions.DEFAULT; Schema.SOAPType soapType = Account.Name.getDescribe().getSOAPType(); Schema.SObjectDescribeOptions describeOption = Schema.SObjectDescribeOptions.DEFAULT; Schema.SObjectField fieldToken = Account.Name; Schema.SObjectType typeToken = Account.SObjectType; Object fieldMap = Account.SObjectType.getDescribe().fields; Object fieldSetMap = Account.SObjectType.getDescribe().fieldSets; Schema.DataCategory category = new Schema.DataCategory(); category.name = 'Hardware'; category.label = 'Hardware'; System.assertEquals('Hardware', category.getName()); System.assertEquals('Hardware', category.getLabel()); System.assertEquals(0, category.getChildCategories().size()); Schema.DataCategoryGroupSobjectTypePair pair = new Schema.DataCategoryGroupSobjectTypePair(); pair.setSobject('Knowledge__kav'); pair.setDataCategoryGroupName('Products'); List<Object> groups = Schema.describeDataCategoryGroups(new List<String>{'Knowledge__kav'}); List<Object> structures = Schema.describeDataCategoryGroupStructures(new List<Schema.DataCategoryGroupSobjectTypePair>{pair}, false); System.assertEquals(Schema.DisplayType.STRING, displayType); System.assertEquals(Schema.FieldDescribeOptions.DEFAULT, fieldOption); System.assertEquals(Schema.SOAPType.STRING, soapType); System.assertEquals(Schema.SObjectDescribeOptions.DEFAULT, describeOption); System.assertEquals('Name', fieldToken.getDescribe().getName()); System.assertEquals('Account', typeToken.getDescribe().getName()); System.assert(fieldMap != null); System.assert(fieldSetMap != null); System.assert(groups != null); System.assert(structures != null); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

@@ -101,6 +101,12 @@ func TestCanonicalSurfaceIDsCleanApexNames(t *testing.T) {
 	if got != want {
 		t.Fatalf("cleaned sObject array id = %q, want %q", got, want)
 	}
+
+	got = ApexMemberID("System", "QueryLocator", "iterator", []string{})
+	want = ApexMemberID("Database", "QueryLocator", "iterator", []string{})
+	if got != want {
+		t.Fatalf("cleaned QueryLocator id = %q, want %q", got, want)
+	}
 }
 
 func TestGladeSnapshotMarksDatabaseStatefulSupported(t *testing.T) {
@@ -116,6 +122,15 @@ func TestGladeSnapshotMarksDatabaseStatefulSupported(t *testing.T) {
 		return
 	}
 	t.Fatalf("missing %s row", id)
+}
+
+func TestSurfaceIDKeyCanonicalizesBatchQueryLocatorAliases(t *testing.T) {
+	if got, want := surfaceIDKey("apex:System.QueryLocator.iterator()"), surfaceIDKey("apex:Database.QueryLocator.iterator()"); got != want {
+		t.Fatalf("QueryLocator key = %q, want %q", got, want)
+	}
+	if got, want := surfaceIDKey("apex:System.Database.getQueryLocator(List,System.AccessLevel)"), surfaceIDKey("apex:System.Database.getQueryLocator(List<Object>,System.AccessLevel)"); got != want {
+		t.Fatalf("getQueryLocator List key = %q, want %q", got, want)
+	}
 }
 
 func TestRowsCarrySurfaceFamilyAndImplementationTarget(t *testing.T) {

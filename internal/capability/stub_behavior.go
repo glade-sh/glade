@@ -68,6 +68,10 @@ func BuildStubBehaviorReport() StubBehaviorReport {
 			Status: StubBehaviorPassiveDefault,
 			Notes:  "standard platform type is available to parser and semantic analysis",
 		}
+		if generatedPlatformTypeImplemented(typeName) {
+			typeEntry.Status = StubBehaviorImplemented
+			typeEntry.Notes = "platform type is exercised by focused local runtime fixtures"
+		}
 		if match := evidence.lookup(typeName, ""); match != nil {
 			typeEntry.Status = match.status
 			typeEntry.Evidence = match.evidence
@@ -162,6 +166,10 @@ func buildStubBehaviorMemberEntry(symbol typesys.TypeSymbol, typeName string, me
 		entry.Status = status
 		entry.Notes = notes
 	}
+	if member.Kind == apexast.DeclarationConstructor && generatedPlatformConstructorUnsupported(typeName) {
+		entry.Status = StubBehaviorUnsupported
+		entry.Notes = "generated platform value is supplied by the runtime; direct construction is not a supported Apex contract"
+	}
 	if entry.Status == StubBehaviorUnknown && member.Kind == apexast.DeclarationMethod {
 		entry.Status = StubBehaviorUnsupported
 		entry.Notes = "generated platform method has shape only; local runtime should reject it unless implemented or allowlisted as passive DTO behavior"
@@ -246,10 +254,26 @@ func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys
 		}
 		return "", "", false
 	}
+	if member.Kind == apexast.DeclarationConstructor {
+		switch typeName {
+		case "Database.QueryLocator":
+			return StubBehaviorImplemented, "local runtime constructs an empty QueryLocator value for generated no-arg construction", true
+		case "Schema.DataCategory":
+			return StubBehaviorImplemented, "local runtime constructs DataCategory values for describe data category tests", true
+		case "Schema.DataCategoryGroupSobjectTypePair":
+			return StubBehaviorImplemented, "local runtime constructs DataCategoryGroupSobjectTypePair values for data category describe calls", true
+		}
+		return "", "", false
+	}
 	if member.Kind != apexast.DeclarationMethod {
 		return "", "", false
 	}
 	switch typeName {
+	case "Schema.DataCategoryGroupSobjectTypePair":
+		switch name {
+		case "setdatacategorygroupname", "setsobject":
+			return StubBehaviorImplemented, "local runtime stores DataCategoryGroupSobjectTypePair setter values for data category describe calls", true
+		}
 	case "Schema":
 		switch name {
 		case "getglobaldescribe", "describesobjects":
@@ -579,6 +603,74 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 		return StubBehaviorPassiveDefault, "passive generated platform method returns a typed default value unless runtime code special-cases it", true
 	}
 	return "", "", false
+}
+
+func generatedPlatformConstructorUnsupported(typeName string) bool {
+	return matchesAnyFold(strings.TrimSpace(typeName), generatedPlatformConstructorUnsupportedTypes)
+}
+
+func generatedPlatformTypeImplemented(typeName string) bool {
+	return matchesAnyFold(strings.TrimSpace(typeName), generatedPlatformImplementedTypes)
+}
+
+var generatedPlatformConstructorUnsupportedTypes = []string{
+	"FeatureManagement",
+	"System.FeatureManagement",
+	"Schema.ChildRelationship",
+	"Schema.DescribeColorResult",
+	"Schema.DescribeDataCategoryGroupResult",
+	"Schema.DescribeDataCategoryGroupStructureResult",
+	"Schema.DescribeFieldResult",
+	"Schema.DescribeIconResult",
+	"Schema.DescribeSObjectResult",
+	"Schema.DescribeTabResult",
+	"Schema.DescribeTabSetResult",
+	"Schema.FieldSet",
+	"Schema.FieldSetMember",
+	"Schema.FilteredLookupInfo",
+	"Schema.PicklistEntry",
+	"Schema.RecordTypeInfo",
+	"Schema.SObjectField",
+	"Schema.SObjectType",
+}
+
+var generatedPlatformImplementedTypes = []string{
+	"FeatureManagement",
+	"System.FeatureManagement",
+	"Database.QueryLocator",
+	"Schema.ChildRelationship",
+	"Schema.DataCategory",
+	"Schema.DataCategoryGroupSobjectTypePair",
+	"Schema.DescribeColorResult",
+	"Schema.DescribeDataCategoryGroupResult",
+	"Schema.DescribeDataCategoryGroupStructureResult",
+	"Schema.DescribeIconResult",
+	"Schema.DescribeTabResult",
+	"Schema.DescribeTabSetResult",
+	"Schema.DisplayType",
+	"Schema.FieldDescribeOptions",
+	"Schema.FieldSetMap",
+	"Schema.FieldSetMember",
+	"Schema.FilteredLookupInfo",
+	"Schema.PicklistEntry",
+	"Schema.RecordTypeInfo",
+	"Schema.SOAPType",
+	"Schema.SObjectDescribeOptions",
+	"Schema.SObjectField",
+	"Schema.SObjectType",
+	"Schema.SObjectTypeFieldSets",
+	"Schema.SObjectTypeFields",
+	"Schema",
+	"Schema.Schema",
+}
+
+func matchesAnyFold(value string, candidates []string) bool {
+	for _, candidate := range candidates {
+		if strings.EqualFold(value, candidate) {
+			return true
+		}
+	}
+	return false
 }
 
 func pushUpgradeCustomizationRepositoryBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {

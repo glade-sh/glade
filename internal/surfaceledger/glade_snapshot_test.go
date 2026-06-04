@@ -89,6 +89,29 @@ func TestBuildGladeSnapshotUsesCanonicalSchemaDescribeStdlibRows(t *testing.T) {
 	}
 }
 
+func TestBuildGladeSnapshotIncludesBatchQueryLocatorOverloads(t *testing.T) {
+	rows := BuildGladeSnapshot()
+	byID := rowsByID(rows)
+	for _, id := range []string{
+		ApexTypeID("Database", "QueryLocator"),
+		ApexMemberID("Database", "QueryLocator", "getQuery", []string{}),
+		ApexMemberID("Database", "QueryLocator", "iterator", []string{}),
+		ApexMemberID("System", "Database", "getQueryLocator", []string{"List<Object>"}),
+		ApexMemberID("System", "Database", "getQueryLocator", []string{"List<Object>", "System.AccessLevel"}),
+		ApexMemberID("System", "Database", "getQueryLocator", []string{"Object"}),
+		ApexMemberID("System", "Database", "getQueryLocator", []string{"Object", "System.AccessLevel"}),
+		ApexMemberID("System", "Database", "getQueryLocatorWithBinds", []string{"String", "Map", "System.AccessLevel"}),
+	} {
+		row, ok := byID[id]
+		if !ok {
+			t.Fatalf("missing batch query locator row %s", id)
+		}
+		if row.GladeShape == ShapeAbsent {
+			t.Fatalf("batch query locator row %s has absent shape", id)
+		}
+	}
+}
+
 func TestMergeGladeBehaviorKeepsSupportedOverGenericUnsupported(t *testing.T) {
 	got := mergeGladeBehavior(BehaviorSupported, BehaviorUnsupported)
 	if got != BehaviorSupported {

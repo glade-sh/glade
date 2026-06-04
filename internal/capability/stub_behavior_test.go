@@ -47,6 +47,35 @@ func TestBuildStubBehaviorReportUsesStdlibEvidence(t *testing.T) {
 	}
 }
 
+func TestStubBehaviorMarksGeneratedPlatformDescribeConstructorsUnsupported(t *testing.T) {
+	entries := map[string]StubBehaviorEntry{}
+	for _, entry := range BuildStubBehaviorReport().Entries {
+		entries[entry.ID] = entry
+	}
+	for _, id := range []string{
+		"FeatureManagement.<init>()",
+		"Schema.DescribeFieldResult.<init>()",
+		"Schema.SObjectType.<init>()",
+		"Schema.ChildRelationship.<init>()",
+	} {
+		entry, ok := entries[id]
+		if !ok {
+			t.Fatalf("missing stub behavior entry %s", id)
+		}
+		if entry.Status != StubBehaviorUnsupported {
+			t.Fatalf("%s status = %q, want %q", id, entry.Status, StubBehaviorUnsupported)
+		}
+	}
+	dataCategory := entries["Schema.DataCategory.<init>()"]
+	if dataCategory.Status != StubBehaviorImplemented {
+		t.Fatalf("Schema.DataCategory.<init>() status = %q, want %q", dataCategory.Status, StubBehaviorImplemented)
+	}
+	queryLocator := entries["Database.QueryLocator.<init>()"]
+	if queryLocator.Status != StubBehaviorImplemented {
+		t.Fatalf("Database.QueryLocator.<init>() status = %q, want %q", queryLocator.Status, StubBehaviorImplemented)
+	}
+}
+
 func TestSchemaRecordTypeInfoPropertiesAreImplementedBehavior(t *testing.T) {
 	report := BuildStubBehaviorReport()
 	entries := map[string]StubBehaviorEntry{}
@@ -479,7 +508,8 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "Schema.getGlobalDescribe()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Schema.describeSObjects(List<String>)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Schema.describeSObjects(List<String>,Object)", StubBehaviorImplemented)
-	assertStubBehaviorPrefix(t, entries, "Schema.DataCategoryGroupSobjectTypePair.setSobject(String)", StubBehaviorPassiveDefault)
+	assertStubBehaviorPrefix(t, entries, "Schema.DataCategoryGroupSobjectTypePair.setSobject(String)", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Schema.DataCategoryGroupSobjectTypePair.setDataCategoryGroupName(String)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Schema.DataCategoryGroupSobjectTypePair.getDataCategoryGroupName()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Schema.DataCategory.getChildCategories()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Flow.Interview.createInterview(", StubBehaviorImplemented)

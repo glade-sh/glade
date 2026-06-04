@@ -2971,6 +2971,30 @@ System.assertEquals(null, System.FeatureManagement.checkPackageDateValue('Missin
 	}
 }
 
+func TestExecGeneratedPlatformDescribeConstructorsAreUnsupported(t *testing.T) {
+	cases := []struct {
+		source string
+		want   string
+	}{
+		{source: `new FeatureManagement();`, want: `unsupported call "FeatureManagement constructor"`},
+		{source: `new Schema.DescribeFieldResult();`, want: `unsupported call "Schema.DescribeFieldResult constructor"`},
+		{source: `new Schema.SObjectType();`, want: `unsupported call "Schema.SObjectType constructor"`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.source, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = Execute(program, nil)
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want {
+				t.Fatalf("err = %#v, want UnsupportedFeature %q", err, tc.want)
+			}
+		})
+	}
+}
+
 func TestExecFeatureManagementUsesAssignedPermissionSetCustomPermissions(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.runAs(new User(Id = '005-user-a')) {

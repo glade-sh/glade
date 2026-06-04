@@ -289,6 +289,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if value, handled, err := vm.constructFrameworkFastDTO(typeName, args, namedArgs); handled || err != nil {
 			return value, err
 		}
+		if generatedPlatformConstructorUnsupported(typeName) {
+			return Null, unsupportedCallError(typeName + " constructor")
+		}
 		if err := vm.ensureClassInitialized(typeName); err != nil {
 			return Null, err
 		}
@@ -297,6 +300,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		frameworkUOWRuntime := vm.isSObjectUnitOfWorkRuntimeType(typeName)
 		isSObjectCtor := vm.isSObjectType(typeName)
 		object := Object(typeName)
+		initializeGeneratedPlatformValue(&object)
 		if !passiveDTO {
 			for field, value := range namedArgs {
 				object.Fields[field] = value
@@ -952,6 +956,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		return platformScalar("URL", raw), nil
 	}
+	if generatedPlatformConstructorUnsupported(typeName) {
+		return Null, unsupportedCallError(typeName + " constructor")
+	}
 	if value, handled, err := vm.constructGeneratedPlatformValue(typeName, args, namedArgs); handled || err != nil {
 		return value, err
 	}
@@ -991,6 +998,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	if !vm.isSObjectLikeType(objectType) {
 		vm.initializeFields(&object, objectType)
 	}
+	initializeGeneratedPlatformValue(&object)
 	if looksManagedQualifiedType(objectType) {
 		for i, arg := range args {
 			object.Fields[fmt.Sprintf("__arg%d", i)] = arg
@@ -3511,6 +3519,56 @@ func typeValueName(value Value) string {
 		return raw.Text
 	}
 	return value.Text
+}
+
+func generatedPlatformConstructorUnsupported(typeName string) bool {
+	if !generatedPlatformTypeName(typeName) {
+		return false
+	}
+	typeName = strings.TrimSpace(typeName)
+	for _, candidate := range generatedPlatformUnsupportedConstructors {
+		if strings.EqualFold(typeName, candidate) {
+			return true
+		}
+	}
+	return false
+}
+
+var generatedPlatformUnsupportedConstructors = []string{
+	"FeatureManagement",
+	"System.FeatureManagement",
+	"ChildRelationship",
+	"Schema.ChildRelationship",
+	"DescribeColorResult",
+	"Schema.DescribeColorResult",
+	"DescribeDataCategoryGroupResult",
+	"Schema.DescribeDataCategoryGroupResult",
+	"DescribeDataCategoryGroupStructureResult",
+	"Schema.DescribeDataCategoryGroupStructureResult",
+	"DescribeFieldResult",
+	"Schema.DescribeFieldResult",
+	"DescribeIconResult",
+	"Schema.DescribeIconResult",
+	"DescribeSObjectResult",
+	"Schema.DescribeSObjectResult",
+	"DescribeTabResult",
+	"Schema.DescribeTabResult",
+	"DescribeTabSetResult",
+	"Schema.DescribeTabSetResult",
+	"FieldSet",
+	"Schema.FieldSet",
+	"FieldSetMember",
+	"Schema.FieldSetMember",
+	"FilteredLookupInfo",
+	"Schema.FilteredLookupInfo",
+	"PicklistEntry",
+	"Schema.PicklistEntry",
+	"RecordTypeInfo",
+	"Schema.RecordTypeInfo",
+	"SObjectField",
+	"Schema.SObjectField",
+	"SObjectType",
+	"Schema.SObjectType",
 }
 
 var loggingLevelNames = []string{"NONE", "ERROR", "WARN", "INFO", "DEBUG", "FINE", "FINER", "FINEST"}

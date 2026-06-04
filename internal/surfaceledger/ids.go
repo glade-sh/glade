@@ -119,6 +119,8 @@ func canonicalApexQualifiedParts(namespace, typeName string) (string, string) {
 		switch typeName {
 		case "ChildRelationship", "DataCategory", "DataCategoryGroupSobjectTypePair", "DescribeColorResult", "DescribeDataCategoryGroupResult", "DescribeDataCategoryGroupStructureResult", "DescribeFieldResult", "DescribeIconResult", "DescribeSObjectResult", "DescribeTabResult", "DescribeTabSetResult", "FieldSet", "FieldSetMap", "FieldSetMember", "PicklistEntry", "RecordTypeInfo", "SObjectField", "SObjectType":
 			namespace = "Schema"
+		case "QueryLocator", "QueryLocatorChunkIterator", "QueryLocatorIterator":
+			namespace = "Database"
 		}
 	}
 	return namespace, typeName
@@ -140,9 +142,13 @@ func surfaceIDKey(id string) string {
 	id = cleanIdentityPart(id)
 	if strings.HasPrefix(id, "apex:") {
 		rest := strings.TrimPrefix(id, "apex:")
+		if strings.HasPrefix(rest, "System.QueryLocator") {
+			rest = "Database.QueryLocator" + strings.TrimPrefix(rest, "System.QueryLocator")
+		}
+		rest = strings.ReplaceAll(rest, "(List,System.AccessLevel)", "(List<Object>,System.AccessLevel)")
 		folded := asciiLowerIdentityKey(rest)
 		if folded == rest {
-			return id
+			return "apex:" + rest
 		}
 		return "apex:" + folded
 	}

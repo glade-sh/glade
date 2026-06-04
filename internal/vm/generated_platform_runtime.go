@@ -25,25 +25,35 @@ func generatedFamilyUnsupportedStaticCallee(callee string) bool {
 	return generatedFamilyUnsupportedTypePrefix(className)
 }
 func generatedFamilyUnsupportedTypePrefix(typeName string) bool {
-	trimmed := strings.ToLower(strings.TrimSpace(typeName))
+	trimmed := strings.TrimSpace(typeName)
 	if trimmed == "" {
 		return false
 	}
-	for _, family := range []string{
-		"cartextension",
-		"commercepayments",
-		"metadata",
-		"limits",
-		"cache",
-		"lxscheduler",
-		"messaging",
-	} {
-		if trimmed == family || strings.HasPrefix(trimmed, family+".") {
+	for _, family := range generatedUnsupportedFamilies {
+		if strings.EqualFold(trimmed, family) || hasQualifiedPrefixFold(trimmed, family) {
 			return true
 		}
 	}
 	return false
 }
+
+var generatedUnsupportedFamilies = []string{
+	"CartExtension",
+	"CommercePayments",
+	"Metadata",
+	"Limits",
+	"Cache",
+	"LxScheduler",
+	"Messaging",
+}
+
+func hasQualifiedPrefixFold(value, prefix string) bool {
+	if len(value) <= len(prefix) || value[len(prefix)] != '.' {
+		return false
+	}
+	return strings.EqualFold(value[:len(prefix)], prefix)
+}
+
 func generatedUnsupportedFamilyKey(className, methodName string) string {
 	return strings.ToLower(strings.TrimSpace(className) + "." + strings.TrimSpace(methodName))
 }
@@ -304,6 +314,10 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 func initializeGeneratedPlatformValue(object *Value) {
 	if object == nil || object.Kind != ValueObject {
 		return
+	}
+	if strings.EqualFold(object.Type, "Database.QueryLocator") || strings.EqualFold(object.Type, "QueryLocator") {
+		object.Fields["Records"] = List()
+		object.Fields["Query"] = String("")
 	}
 	if generatedPlatformIteratorType(object.Type) {
 		object.Fields["__values"] = List()
