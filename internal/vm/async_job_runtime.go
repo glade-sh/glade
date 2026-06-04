@@ -46,6 +46,7 @@ func (vm *VM) deferPreStartAsyncJobRecords() {
 		if record.Fields == nil {
 			record.Fields = make(map[string]storage.Value)
 		}
+		vm.recordIsolationJournalMutation("AsyncApexJob", storedID, record, true)
 		record.Fields["Status"] = storage.StringValue("Deferred")
 		object.Records[storedID] = record
 	}
@@ -183,7 +184,7 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 	if err := vm.incrementLimit("batchJobs", 1); err != nil {
 		return Null, err
 	}
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: cloneValue(args[0]), BatchSize: batchSize}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: cloneValueDetachedPreserveRefs(args[0]), BatchSize: batchSize}
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
@@ -303,6 +304,7 @@ func (vm *VM) abortRecordedAsyncJob(jobID string) {
 	}
 	if object, ok := vm.Org.Objects["AsyncApexJob"]; ok {
 		if record, found := object.Records[storage.ID(asyncID)]; found {
+			vm.recordIsolationJournalMutation("AsyncApexJob", storage.ID(asyncID), record, true)
 			if record.Fields == nil {
 				record.Fields = make(map[string]storage.Value)
 			}
@@ -317,6 +319,7 @@ func (vm *VM) abortRecordedAsyncJob(jobID string) {
 	}
 	if object, ok := vm.Org.Objects["CronTrigger"]; ok {
 		if record, found := object.Records[storage.ID(cronID)]; found {
+			vm.recordIsolationJournalMutation("CronTrigger", storage.ID(cronID), record, true)
 			if record.Fields == nil {
 				record.Fields = make(map[string]storage.Value)
 			}
@@ -515,14 +518,14 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 		job := (*jobs)[jobIndex]
 		*jobs = append((*jobs)[:jobIndex], (*jobs)[jobIndex+1:]...)
 		processed++
-		var collectionSnapshot map[string]map[string]Value
-		var collectionStaticInitSnapshot map[string]staticInitState
+		var asyncStaticSnapshot map[string]map[string]Value
+		var asyncStaticInitSnapshot map[string]staticInitState
 		if vm.testContext != nil {
-			collectionSnapshot = vm.staticCollectionFieldSnapshot()
-			collectionStaticInitSnapshot = copyStaticInitStateMap(vm.staticInitState)
+			asyncStaticSnapshot = vm.testAsyncStaticFieldSnapshot()
+			asyncStaticInitSnapshot = copyStaticInitStateMap(vm.staticInitState)
 			if err := vm.ResetTestAsyncStaticCollections(); err != nil {
-				vm.restoreStaticFieldSnapshot(collectionSnapshot)
-				vm.staticInitState = copyStaticInitStateMap(collectionStaticInitSnapshot)
+				vm.restoreStaticFieldSnapshot(asyncStaticSnapshot)
+				vm.staticInitState = copyStaticInitStateMap(asyncStaticInitSnapshot)
 				return err
 			}
 		} else {
@@ -537,9 +540,9 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 			"jobId": job.ID,
 		})
 		err := vm.runAsyncJob(job, result)
-		if collectionSnapshot != nil {
-			vm.restoreStaticFieldSnapshot(collectionSnapshot)
-			vm.staticInitState = copyStaticInitStateMap(collectionStaticInitSnapshot)
+		if asyncStaticSnapshot != nil {
+			vm.restoreStaticFieldSnapshot(asyncStaticSnapshot)
+			vm.staticInitState = copyStaticInitStateMap(asyncStaticInitSnapshot)
 		}
 		if err != nil {
 			vm.recordAsyncJob(job, "Failed", err.Error())
@@ -596,12 +599,15 @@ func (vm *VM) staticFieldSnapshot() map[string]map[string]Value {
 	}
 	return out
 }
-func (vm *VM) staticCollectionFieldSnapshot() map[string]map[string]Value {
+func (vm *VM) testAsyncStaticFieldSnapshot() map[string]map[string]Value {
 	out := make(map[string]map[string]Value, len(vm.Classes))
 	for className, class := range vm.Classes {
+		if !classHasStaticCollectionField(class) {
+			continue
+		}
 		fields := make(map[string]Value)
 		for fieldName, field := range class.StaticFields {
-			if isStaticCollectionField(field) {
+			if resetTestAsyncStaticField(field) || resetTestAsyncStaticFieldForReinitialization(class, field) {
 				fields[fieldName] = cloneValue(field.Value)
 			}
 		}
@@ -903,7 +909,11 @@ func (vm *VM) batchScopeValues(value Value, result *Result) ([]Value, error) {
 		return append([]Value(nil), value.Set...), nil
 	case value.Kind == ValueObject && value.Type == "Database.QueryLocator":
 		if records, ok := value.Fields["Records"]; ok && records.Kind == ValueList {
-			return append([]Value(nil), records.List...), nil
+			scope := append([]Value(nil), records.List...)
+			if query, ok := value.Fields["Query"]; ok && query.Kind == ValueString {
+				vm.refreshQueryLocatorScopeQueriedFields(scope, query.Text)
+			}
+			return scope, nil
 		}
 		return nil, nil
 	case value.Kind == ValueObject:
@@ -918,6 +928,30 @@ func (vm *VM) batchScopeValues(value Value, result *Result) ([]Value, error) {
 		return vm.collectIteratorValues(iterator, result)
 	default:
 		return nil, fmt.Errorf("Database.Batchable.start returned unsupported scope %s", value.Kind)
+	}
+}
+func (vm *VM) refreshQueryLocatorScopeQueriedFields(scope []Value, queryText string) {
+	if vm == nil || strings.TrimSpace(queryText) == "" {
+		return
+	}
+	queriedFields := vm.queriedSObjectFields(queryText)
+	if len(queriedFields) == 0 {
+		return
+	}
+	for i := range scope {
+		if scope[i].Kind != ValueObject {
+			continue
+		}
+		objectName := scope[i].Type
+		if objectName == "" {
+			objectName = "SObject"
+		}
+		if scope[i].Fields == nil {
+			scope[i].Fields = make(map[string]Value)
+		}
+		scope[i].Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(objectName, queriedFields)
+		vm.hydrateQueriedRecordTypeRelationships(scope[i])
+		vm.applyQueriedParentRelationshipFieldMarkers(&scope[i], queryText)
 	}
 }
 func (vm *VM) collectIteratorValues(iterator Value, result *Result) ([]Value, error) {
@@ -1114,10 +1148,12 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 	}
 	vm.ensureAsyncObjects()
 	object := vm.Org.Objects["AsyncApexJob"]
-	record := object.Records[storage.ID(job.ID)]
+	id := storage.ID(job.ID)
+	record, exists := object.Records[id]
 	if record.ID == "" {
 		record = storage.Record{ID: storage.ID(job.ID), Object: "AsyncApexJob", Fields: make(map[string]storage.Value)}
 	}
+	vm.recordIsolationJournalMutation("AsyncApexJob", id, record, exists)
 	if record.System.CreatedDate == "" {
 		record.System.CreatedDate = vm.fakeNow.Format(time.RFC3339)
 	}
@@ -1165,10 +1201,12 @@ func (vm *VM) markCompletedBatchJobVisiblePendingInTest(job AsyncJob) {
 		return
 	}
 	object := vm.Org.Objects["AsyncApexJob"]
-	record := object.Records[storage.ID(job.ID)]
+	id := storage.ID(job.ID)
+	record, exists := object.Records[id]
 	if record.ID == "" {
 		return
 	}
+	vm.recordIsolationJournalMutation("AsyncApexJob", id, record, exists)
 	record.Fields["__GLADETestPendingStatus"] = storage.StringValue("Queued")
 	object.Records[record.ID] = record
 	vm.Org.Objects["AsyncApexJob"] = object
@@ -1179,10 +1217,12 @@ func (vm *VM) recordAsyncJobTotals(job AsyncJob, total, processed, errors int) {
 	}
 	vm.ensureAsyncObjects()
 	object := vm.Org.Objects["AsyncApexJob"]
-	record := object.Records[storage.ID(job.ID)]
+	id := storage.ID(job.ID)
+	record, exists := object.Records[id]
 	if record.ID == "" {
 		record = storage.Record{ID: storage.ID(job.ID), Object: "AsyncApexJob", Fields: make(map[string]storage.Value)}
 	}
+	vm.recordIsolationJournalMutation("AsyncApexJob", id, record, exists)
 	record.Fields["TotalJobItems"] = storage.IntegerValue(int64(total))
 	record.Fields["JobItemsProcessed"] = storage.IntegerValue(int64(processed))
 	record.Fields["NumberOfErrors"] = storage.IntegerValue(int64(errors))
@@ -1196,10 +1236,11 @@ func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
 	vm.ensureAsyncObjects()
 	object := vm.Org.Objects["CronTrigger"]
 	id := storage.ID(cronTriggerID(job.ID))
-	record := object.Records[id]
+	record, exists := object.Records[id]
 	if record.ID == "" {
 		record = storage.Record{ID: id, Object: "CronTrigger", Fields: make(map[string]storage.Value)}
 	}
+	vm.recordIsolationJournalMutation("CronTrigger", id, record, exists)
 	record.Fields["State"] = storage.StringValue(state)
 	record.Fields["CronExpression"] = storage.StringValue(job.Cron)
 	record.Fields["CronJobDetail"] = storage.StringValue(job.Name)
@@ -1306,6 +1347,7 @@ func (vm *VM) recordCronJobDetail(job AsyncJob) {
 	if _, ok := object.Records[id]; ok {
 		return
 	}
+	vm.recordIsolationJournalMutation("CronJobDetail", id, storage.Record{}, false)
 	object.Records[id] = storage.Record{
 		ID:     id,
 		Object: "CronJobDetail",

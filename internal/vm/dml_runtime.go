@@ -653,172 +653,6 @@ func (vm *VM) executeDatabaseConvertLead(args []Value, result *Result) (Value, e
 	return values[0], nil
 }
 
-func (vm *VM) convertLeadOne(convert Value, result *Result) (Value, error) {
-	if vm.Org == nil {
-		return Null, fmt.Errorf("DML requires org state")
-	}
-	if convert.Kind != ValueObject || !strings.EqualFold(convert.Type, "Database.LeadConvert") {
-		return Null, fmt.Errorf("Database.convertLead expects Database.LeadConvert")
-	}
-	if databaseLeadConvertBool(convert, "bypassAccountDedupeCheck") ||
-		databaseLeadConvertBool(convert, "bypassContactDedupeCheck") ||
-		databaseLeadConvertBool(convert, "overwriteLeadSource") ||
-		databaseLeadConvertBool(convert, "sendNotificationEmail") {
-		return Null, unsupportedCallError("Database.convertLead dedupe/notification local lead conversion surface")
-	}
-	if value, ok := databaseLeadConvertField(convert, "relatedPersonAccountId"); ok && value.Kind != ValueNull {
-		return Null, unsupportedCallError("Database.convertLead person account local lead conversion surface")
-	}
-	if value, ok := databaseLeadConvertField(convert, "relatedPersonAccountRecord"); ok && value.Kind != ValueNull {
-		return Null, unsupportedCallError("Database.convertLead person account local lead conversion surface")
-	}
-	if !databaseLeadConvertBool(convert, "doNotCreateOpportunity") {
-		return Null, unsupportedCallError("Database.convertLead opportunity local lead conversion surface")
-	}
-	leadIDValue, ok := databaseLeadConvertField(convert, "leadId")
-	if !ok || !isApexIDLikeValue(leadIDValue) {
-		return databaseLeadConvertFailure("", "LeadConvert.leadId is required"), nil
-	}
-	leadID := storage.ID(scalarText(leadIDValue))
-	leadState, ok := vm.Org.Objects["Lead"]
-	if !ok {
-		return Null, fmt.Errorf("Database.convertLead requires Lead metadata")
-	}
-	storedLeadID, lead, ok := findRecordByLooseID(leadState, leadID)
-	if !ok {
-		return databaseLeadConvertFailure(string(leadID), "Lead not found"), nil
-	}
-	leadID = lead.ID
-	accountID, err := vm.convertLeadAccountID(convert, lead, result)
-	if err != nil {
-		return Null, err
-	}
-	contactID, err := vm.convertLeadContactID(convert, lead, accountID, result)
-	if err != nil {
-		return Null, err
-	}
-	storage.EnsureMutableObjectRecords(vm.Org, "Lead")
-	updatedLeadState := vm.Org.Objects["Lead"]
-	updatedLead := updatedLeadState.Records[storedLeadID]
-	if _, ok := leadState.Definition.Fields["IsConverted"]; ok {
-		updatedLead.Fields["IsConverted"] = storage.BooleanValue(true)
-	}
-	if _, ok := leadState.Definition.Fields["ConvertedAccountId"]; ok {
-		updatedLead.Fields["ConvertedAccountId"] = storage.IDValue(accountID)
-	}
-	if _, ok := leadState.Definition.Fields["ConvertedContactId"]; ok {
-		updatedLead.Fields["ConvertedContactId"] = storage.IDValue(contactID)
-	}
-	if _, ok := leadState.Definition.Fields["Status"]; ok {
-		status := "Converted"
-		if value, ok := databaseLeadConvertField(convert, "convertedStatus"); ok && value.Kind == ValueString && strings.TrimSpace(value.Text) != "" {
-			status = value.Text
-		}
-		updatedLead.Fields["Status"] = storage.StringValue(status)
-	}
-	updatedLeadState.Records[storedLeadID] = updatedLead
-	vm.Org.Objects["Lead"] = updatedLeadState
-	row := Object("Database.LeadConvertResult")
-	row.Fields["success"] = Bool(true)
-	row.Fields["leadId"] = platformScalar("Id", string(leadID))
-	row.Fields["accountId"] = platformScalar("Id", string(accountID))
-	row.Fields["contactId"] = platformScalar("Id", string(contactID))
-	row.Fields["opportunityId"] = Null
-	row.Fields["relatedPersonAccountId"] = Null
-	row.Fields["errors"] = List()
-	return row, nil
-}
-
-func (vm *VM) convertLeadAccountID(convert Value, lead storage.Record, result *Result) (storage.ID, error) {
-	if value, ok := databaseLeadConvertField(convert, "accountId"); ok && isApexIDLikeValue(value) {
-		return storage.ID(scalarText(value)), nil
-	}
-	account := Object("Account")
-	if value, ok := databaseLeadConvertField(convert, "accountRecord"); ok && value.Kind == ValueObject && !strings.EqualFold(value.Type, "SObject") {
-		account = value
-		account.Type = "Account"
-	}
-	if _, _, ok := objectFieldValue(account, "Name"); !ok {
-		name := storageRecordStringField(lead, "Company")
-		if name == "" {
-			name = storageRecordStringField(lead, "LastName")
-		}
-		setExplicitSObjectField(&account, "Name", String(name))
-	}
-	results, err := vm.applyDML("insert", account, true, "", dml.Options{}, result)
-	if err != nil {
-		return "", err
-	}
-	if hasDMLFailures(results) {
-		return "", databaseDMLException("convertLead", results)
-	}
-	return results[0].ID, nil
-}
-
-func (vm *VM) convertLeadContactID(convert Value, lead storage.Record, accountID storage.ID, result *Result) (storage.ID, error) {
-	if value, ok := databaseLeadConvertField(convert, "contactId"); ok && isApexIDLikeValue(value) {
-		return storage.ID(scalarText(value)), nil
-	}
-	contact := Object("Contact")
-	if value, ok := databaseLeadConvertField(convert, "contactRecord"); ok && value.Kind == ValueObject && !strings.EqualFold(value.Type, "SObject") {
-		contact = value
-		contact.Type = "Contact"
-	}
-	if _, _, ok := objectFieldValue(contact, "FirstName"); !ok {
-		if first := storageRecordStringField(lead, "FirstName"); first != "" {
-			setExplicitSObjectField(&contact, "FirstName", String(first))
-		}
-	}
-	if _, _, ok := objectFieldValue(contact, "LastName"); !ok {
-		setExplicitSObjectField(&contact, "LastName", String(storageRecordStringField(lead, "LastName")))
-	}
-	if _, _, ok := objectFieldValue(contact, "AccountId"); !ok {
-		setExplicitSObjectField(&contact, "AccountId", platformScalar("Id", string(accountID)))
-	}
-	results, err := vm.applyDML("insert", contact, true, "", dml.Options{}, result)
-	if err != nil {
-		return "", err
-	}
-	if hasDMLFailures(results) {
-		return "", databaseDMLException("convertLead", results)
-	}
-	return results[0].ID, nil
-}
-
-func databaseLeadConvertField(convert Value, name string) (Value, bool) {
-	_, value, ok := objectFieldValue(convert, name)
-	return value, ok
-}
-
-func databaseLeadConvertBool(convert Value, name string) bool {
-	value, ok := databaseLeadConvertField(convert, name)
-	return ok && value.Kind == ValueBool && value.Bool
-}
-
-func databaseLeadConvertFailure(leadID, message string) Value {
-	row := Object("Database.LeadConvertResult")
-	row.Fields["success"] = Bool(false)
-	if leadID == "" {
-		row.Fields["leadId"] = Null
-	} else {
-		row.Fields["leadId"] = platformScalar("Id", leadID)
-	}
-	row.Fields["accountId"] = Null
-	row.Fields["contactId"] = Null
-	row.Fields["opportunityId"] = Null
-	row.Fields["relatedPersonAccountId"] = Null
-	row.Fields["errors"] = List(databaseErrorValue(dml.Error{StatusCode: "INVALID_FIELD", Message: message}))
-	return row
-}
-
-func databaseLeadConvertSuccess(value Value) bool {
-	if value.Kind != ValueObject {
-		return false
-	}
-	success, ok := value.Fields["success"]
-	return ok && success.Kind == ValueBool && success.Bool
-}
-
 func storageRecordStringField(record storage.Record, field string) string {
 	value, ok := record.GetField(field)
 	if !ok {
@@ -832,20 +666,6 @@ func storageRecordStringField(record storage.Record, field string) string {
 	default:
 		return ""
 	}
-}
-
-func findRecordByLooseID(object storage.ObjectState, id storage.ID) (storage.ID, storage.Record, bool) {
-	if record, ok := object.Records[id]; ok {
-		return id, record, true
-	}
-	wanted := strings.ToLower(string(id))
-	for candidateID, record := range object.Records {
-		candidate := strings.ToLower(string(candidateID))
-		if candidate == wanted || strings.HasPrefix(wanted, candidate) || strings.HasPrefix(candidate, wanted) || apexIDTextEqual(candidate, wanted) {
-			return candidateID, record, true
-		}
-	}
-	return "", storage.Record{}, false
 }
 
 func (vm *VM) executeApprovalIsLocked(args []Value) (Value, error) {
@@ -1559,6 +1379,37 @@ func mergeDMLResults(failures, successes []dml.Result) []dml.Result {
 	return out
 }
 
+type vmDMLRollbackPoint struct {
+	enabled bool
+	journal bool
+	mark    storage.IsolationMark
+	org     storage.OrgState
+}
+
+func (vm *VM) beginDMLRollbackPoint(enabled bool, forceSnapshot bool) vmDMLRollbackPoint {
+	if !enabled {
+		return vmDMLRollbackPoint{}
+	}
+	if !forceSnapshot && vm != nil && vm.isolationJournal != nil {
+		return vmDMLRollbackPoint{enabled: true, journal: true, mark: vm.isolationJournal.Mark()}
+	}
+	if vm == nil || vm.Org == nil {
+		return vmDMLRollbackPoint{enabled: true}
+	}
+	return vmDMLRollbackPoint{enabled: true, org: snapshotRuntimeOrgState(vm.Org)}
+}
+
+func (vm *VM) restoreDMLRollbackPoint(point vmDMLRollbackPoint) {
+	if vm == nil || vm.Org == nil || !point.enabled {
+		return
+	}
+	if point.journal && vm.isolationJournal != nil {
+		_ = vm.isolationJournal.Rollback(point.mark)
+		return
+	}
+	*vm.Org = point.org
+}
+
 func mergeDMLFailuresInPlace(target, source []dml.Result) {
 	for i, failure := range source {
 		if i >= len(target) || failure.Success || failure.Error == "" {
@@ -1618,7 +1469,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	})
 	if op == "insert" {
 		vm.applySObjectFieldDefaults(records)
-		vm.applyBeforeInsertDerivedFields(records)
+		vm.applyBeforeDMLDerivedFields(records)
 	}
 	before, err := vm.oldRecords(op, records)
 	if err != nil {
@@ -1640,30 +1491,45 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 			beforeFailures = identityFailures
 		}
 	}
-	var backup storage.OrgState
-	backupReady := false
-	ensureBackup := func() {
-		if backupReady {
+	var rollback vmDMLRollbackPoint
+	rollbackReady := false
+	ensureRollback := func(forceSnapshot bool) {
+		if rollbackReady {
 			return
 		}
-		backup = snapshotRuntimeOrgState(vm.Org)
-		backupReady = true
+		rollback = vm.beginDMLRollbackPoint(true, forceSnapshot)
+		rollbackReady = true
+	}
+	restoreRollback := func() {
+		vm.restoreDMLRollbackPoint(rollback)
+	}
+	var partialAfterTriggerBackup storage.OrgState
+	partialAfterTriggerBackupReady := false
+	ensurePartialAfterTriggerBackup := func() {
+		if partialAfterTriggerBackupReady {
+			return
+		}
+		partialAfterTriggerBackup = snapshotRuntimeOrgState(vm.Org)
+		partialAfterTriggerBackupReady = true
 	}
 	if vm.needsEarlyDMLRollbackSnapshot(op, records, allOrNone) {
-		ensureBackup()
+		ensureRollback(false)
 	}
 	originalUpdateRecords := records
 	beforeTriggerRecords := records
 	if op == "update" {
 		beforeTriggerRecords = vm.hydrateUpdateTriggerRecords(records, before)
 	}
+	if op == "insert" || op == "update" {
+		vm.applyBeforeDMLDerivedFields(beforeTriggerRecords)
+	}
 	if op != "undelete" {
 		triggerFailures, triggerRecords, triggerErr := vm.runTriggersByObject(triggerTimingBefore, op, beforeTriggerRecords, before, result)
 		beforeTriggerRecords = triggerRecords
 		err = triggerErr
 		if err != nil {
-			ensureBackup()
-			*vm.Org = backup
+			ensureRollback(false)
+			restoreRollback()
 			return nil, dmlExceptionFromTriggerError(op, err)
 		}
 		currentFailures = triggerFailures
@@ -1673,6 +1539,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 			beforeFailures = triggerFailures
 		}
 		if op != "delete" {
+			if op == "insert" || op == "update" {
+				vm.applyBeforeDMLDerivedFields(beforeTriggerRecords)
+			}
 			if op == "update" {
 				preserveUpdateExplicitNulls(beforeTriggerRecords, originalUpdateRecords)
 			}
@@ -1698,8 +1567,8 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if hasDMLFailures(beforeFailures) {
 		appendDMLResultTrace(result, op, records, beforeFailures)
 		if allOrNone {
-			ensureBackup()
-			*vm.Org = backup
+			ensureRollback(false)
+			restoreRollback()
 			return beforeFailures, nil
 		}
 		filterFailures := beforeFailures
@@ -1714,12 +1583,13 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if op == "insert" {
 		if err := vm.resolveSameBatchParentRelationships(records, targets); err != nil {
 			if allOrNone {
-				ensureBackup()
-				*vm.Org = backup
+				ensureRollback(false)
+				restoreRollback()
 			}
 			return nil, err
 		}
 	}
+	vm.stripTransientDMLDerivedFields(records)
 	engine := vm.newDeferredAutomationDMLEngine(result)
 	engine.Options = options
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
@@ -1728,7 +1598,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		engine.Options.AllowUpdateDeleted = true
 	}
 	if !allOrNone && vm.hasAfterTriggerForDML(op, records) {
-		ensureBackup()
+		ensurePartialAfterTriggerBackup()
 	}
 	var results []dml.Result
 	switch op {
@@ -1757,12 +1627,13 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if allOrNone {
 		for _, dmlResult := range results {
 			if !dmlResult.Success {
-				ensureBackup()
-				*vm.Org = backup
+				ensureRollback(false)
+				restoreRollback()
 				return results, nil
 			}
 		}
 	}
+	vm.applyStoredDMLDerivedFields(records, engineResults)
 	for i, dmlResult := range engineResults {
 		if dmlResult.Success && i < len(targets) && targets[i] != nil {
 			previous := snapshotAlias(*targets[i])
@@ -1784,37 +1655,37 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		afterRecords, err = vm.afterRecords(op, afterInputRecords, afterInputResults)
 		if err != nil {
 			if allOrNone {
-				ensureBackup()
-				*vm.Org = backup
+				ensureRollback(false)
+				restoreRollback()
 			}
 			return results, err
 		}
 		afterFailures, _, err := vm.runTriggersByObject(triggerTimingAfter, op, afterRecords, afterInputBefore, result)
 		if err != nil {
 			if allOrNone {
-				ensureBackup()
-				*vm.Org = backup
+				ensureRollback(false)
+				restoreRollback()
 			}
 			return nil, dmlExceptionFromTriggerError(op, err)
 		}
 		if hasDMLFailures(afterFailures) {
 			results = mergeAfterTriggerDMLResults(results, afterFailures)
 			if allOrNone {
-				ensureBackup()
-				*vm.Org = backup
+				ensureRollback(false)
+				restoreRollback()
 				vm.clearDMLResultFieldsForFailures(targets, results, []string{op})
 				return results, nil
 			}
-			ensureBackup()
-			vm.rollbackAfterTriggerFailures(op, afterRecords, afterFailures, backup)
+			ensurePartialAfterTriggerBackup()
+			vm.rollbackAfterTriggerFailures(op, afterRecords, afterFailures, partialAfterTriggerBackup)
 			afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 		}
 	}
-	if err := vm.runSummaryUpdateTriggers(&engine, allOrNone, backup, result); err != nil {
+	if err := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result); err != nil {
 		return results, err
 	}
 	if op == "insert" || op == "update" || op == "upsert" {
-		if err := vm.applyDeferredAutomation(&engine, afterRecords, allOrNone, backup, result); err != nil {
+		if err := vm.applyDeferredAutomation(&engine, afterRecords, allOrNone, rollback, result); err != nil {
 			return results, err
 		}
 	}
@@ -1949,142 +1820,86 @@ func (vm *VM) applySObjectFieldDefaults(records []storage.Record) {
 }
 
 func defaultRecordTypeIDForRecord(objectName string, definition storage.ObjectDefinition, record storage.Record) storage.ID {
-	if strings.EqualFold(objectName, "Account") {
-		if recordHasPersonAccountSignal(record) {
-			if id := personAccountRecordTypeID(definition); id != "" {
-				return id
-			}
-		} else if id := businessAccountRecordTypeID(definition); id != "" {
+	if policy := dmlPolicyForObject(objectName); policy != nil && policy.defaultRecordTypeID != nil {
+		if id := policy.defaultRecordTypeID(definition, record); id != "" {
 			return id
 		}
 	}
 	return defaultRecordTypeID(definition)
 }
 
-func personAccountRecordTypeID(definition storage.ObjectDefinition) storage.ID {
-	if id := preferredPersonAccountRecordTypeID(definition.RecordTypes, false, func(rt storage.RecordTypeInfo) bool {
-		return rt.Active && rt.Available && rt.Default
-	}); id != "" {
-		return id
-	}
-	if id := preferredPersonAccountRecordTypeID(definition.RecordTypes, false, func(rt storage.RecordTypeInfo) bool {
-		return rt.Active && rt.Available
-	}); id != "" {
-		return id
-	}
-	if id := preferredPersonAccountRecordTypeID(definition.RecordTypes, true, func(rt storage.RecordTypeInfo) bool {
-		return rt.Active && rt.Available && rt.Default
-	}); id != "" {
-		return id
-	}
-	if id := preferredPersonAccountRecordTypeID(definition.RecordTypes, false, func(rt storage.RecordTypeInfo) bool {
-		return rt.Active
-	}); id != "" {
-		return id
-	}
-	if id := preferredPersonAccountRecordTypeID(definition.RecordTypes, false, func(storage.RecordTypeInfo) bool { return true }); id != "" {
-		return id
-	}
-	return preferredPersonAccountRecordTypeID(definition.RecordTypes, true, func(storage.RecordTypeInfo) bool { return true })
-}
-
-func preferredPersonAccountRecordTypeID(recordTypes []storage.RecordTypeInfo, allowGeneric bool, accept func(storage.RecordTypeInfo) bool) storage.ID {
-	for _, recordType := range recordTypes {
-		if recordType.ID == "" || !accept(recordType) || !recordTypeLooksPersonAccount(recordType) {
-			continue
-		}
-		if !allowGeneric && recordTypeLooksGenericPersonAccount(recordType) {
-			continue
-		}
-		return recordType.ID
-	}
-	return ""
-}
-
-func recordTypeLooksPersonAccount(recordType storage.RecordTypeInfo) bool {
-	name := strings.ToLower(strings.TrimSpace(recordType.Name + " " + recordType.DeveloperName))
-	return strings.Contains(name, "person") || strings.Contains(name, "individual")
-}
-
-func recordTypeLooksGenericPersonAccount(recordType storage.RecordTypeInfo) bool {
-	for _, value := range []string{recordType.DeveloperName, recordType.Name} {
-		switch strings.ToLower(strings.TrimSpace(value)) {
-		case "personaccount", "person_account", "person account":
-			return true
-		}
-	}
-	return false
-}
-
-func businessAccountRecordTypeID(definition storage.ObjectDefinition) storage.ID {
-	for _, recordType := range definition.RecordTypes {
-		if recordType.ID != "" && recordType.Default && recordType.Active && recordType.Available && !recordTypeLooksPersonAccount(recordType) {
-			return recordType.ID
-		}
-	}
-	for _, recordType := range definition.RecordTypes {
-		if recordType.ID != "" && recordType.Active && recordType.Available && !recordTypeLooksPersonAccount(recordType) {
-			return recordType.ID
-		}
-	}
-	for _, recordType := range definition.RecordTypes {
-		if recordType.ID != "" && recordType.Active && !recordTypeLooksPersonAccount(recordType) {
-			return recordType.ID
-		}
-	}
-	for _, recordType := range definition.RecordTypes {
-		if recordType.ID != "" && !recordTypeLooksPersonAccount(recordType) {
-			return recordType.ID
-		}
-	}
-	return ""
-}
-
-func (vm *VM) applyBeforeInsertDerivedFields(records []storage.Record) {
+func (vm *VM) applyBeforeDMLDerivedFields(records []storage.Record) {
 	if vm.Org == nil {
 		return
 	}
 	for i := range records {
 		objectName, ok := vm.resolveObjectName(records[i].Object)
-		if !ok || !strings.EqualFold(objectName, "Account") {
+		if !ok {
 			continue
 		}
-		if records[i].Fields == nil {
-			records[i].Fields = make(map[string]storage.Value)
-		}
-		if !recordHasPersonAccountSignal(records[i]) {
+		policy := dmlPolicyForObject(objectName)
+		if policy == nil || policy.beforeDMLDerivedFields == nil {
 			continue
 		}
-		records[i].Fields["IsPersonAccount"] = storage.BooleanValue(true)
+		policy.beforeDMLDerivedFields(vm, &records[i])
 	}
 }
 
-func recordHasPersonAccountSignal(record storage.Record) bool {
-	for field, value := range record.Fields {
-		if !strings.HasPrefix(field, "Person") && field != "FirstName" && field != "LastName" {
+func (vm *VM) stripTransientDMLDerivedFields(records []storage.Record) {
+	if vm == nil || vm.Org == nil {
+		return
+	}
+	for i := range records {
+		objectName, ok := vm.resolveObjectName(records[i].Object)
+		if !ok {
 			continue
 		}
-		if storageValueHasNonZeroContent(value) {
-			return true
+		policy := dmlPolicyForObject(objectName)
+		if policy == nil {
+			continue
+		}
+		for _, field := range policy.transientDMLDerivedFields {
+			delete(records[i].Fields, field)
+			delete(records[i].ExplicitNulls, field)
 		}
 	}
-	return false
 }
 
-func storageValueHasNonZeroContent(value storage.Value) bool {
-	switch value.Kind {
-	case storage.ValueNull, "":
-		return false
-	case storage.ValueBoolean:
-		return value.Boolean
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal:
-		return value.String != ""
-	case storage.ValueID:
-		return value.ID != ""
-	case storage.ValueInteger:
-		return value.Integer != 0
-	default:
-		return true
+func (vm *VM) applyStoredDMLDerivedFields(records []storage.Record, results []dml.Result) {
+	if vm == nil || vm.Org == nil {
+		return
+	}
+	for i, result := range results {
+		if !result.Success || i >= len(records) {
+			continue
+		}
+		objectName, ok := vm.resolveObjectName(records[i].Object)
+		if !ok {
+			continue
+		}
+		policy := dmlPolicyForObject(objectName)
+		if policy == nil || policy.storedDMLDerivedFields == nil {
+			continue
+		}
+		id := result.ID
+		if id == "" {
+			id = records[i].ID
+		}
+		if id == "" {
+			continue
+		}
+		object, ok := vm.Org.Objects[objectName]
+		if !ok {
+			continue
+		}
+		recordID, record, ok := storage.LookupRecordByID(object.Records, id)
+		if !ok {
+			continue
+		}
+		vm.recordIsolationJournalMutation(objectName, recordID, record, true)
+		policy.storedDMLDerivedFields(vm, &record)
+		object.Records[recordID] = record
+		vm.Org.Objects[objectName] = object
 	}
 }
 
@@ -2120,6 +1935,9 @@ func (vm *VM) defaultValueForRecordField(definition storage.ObjectDefinition, re
 
 func (vm *VM) applyTestSObjectNameDefault(definition storage.ObjectDefinition, record *storage.Record, defaultMissing bool) {
 	if vm.testContext == nil || record == nil || record.Fields == nil {
+		return
+	}
+	if storage.IsCustomSettingDefinition(definition) && strings.EqualFold(definition.Metadata["customSettingsType"], "List") {
 		return
 	}
 	if value, ok := record.GetField("Name"); ok {
@@ -2172,17 +1990,29 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		"rows":      len(records),
 		"objects":   dmlTraceObjectNames(records),
 	})
-	var backup storage.OrgState
-	backupReady := false
-	ensureBackup := func() {
-		if backupReady {
+	var rollback vmDMLRollbackPoint
+	rollbackReady := false
+	ensureRollback := func(forceSnapshot bool) {
+		if rollbackReady {
 			return
 		}
-		backup = snapshotRuntimeOrgState(vm.Org)
-		backupReady = true
+		rollback = vm.beginDMLRollbackPoint(true, forceSnapshot)
+		rollbackReady = true
+	}
+	restoreRollback := func() {
+		vm.restoreDMLRollbackPoint(rollback)
+	}
+	var partialAfterTriggerBackup storage.OrgState
+	partialAfterTriggerBackupReady := false
+	ensurePartialAfterTriggerBackup := func() {
+		if partialAfterTriggerBackupReady {
+			return
+		}
+		partialAfterTriggerBackup = snapshotRuntimeOrgState(vm.Org)
+		partialAfterTriggerBackupReady = true
 	}
 	if allOrNone {
-		ensureBackup()
+		ensureRollback(false)
 	}
 	kinds := make([]string, len(records))
 	before := make([]storage.Record, len(records))
@@ -2203,7 +2033,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		}
 		insertRecord := []storage.Record{records[i]}
 		vm.applySObjectFieldDefaults(insertRecord)
-		vm.applyBeforeInsertDerivedFields(insertRecord)
+		vm.applyBeforeDMLDerivedFields(insertRecord)
 		records[i] = insertRecord[0]
 	}
 	beforeFailures := make([]dml.Result, len(records))
@@ -2213,10 +2043,11 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		if kind == "update" {
 			triggerRecords = vm.hydrateUpdateTriggerRecords(groupRecords, groupBefore)
 		}
+		vm.applyBeforeDMLDerivedFields(triggerRecords)
 		failures, err := vm.runTriggers(triggerTimingBefore, kind, triggerRecords, groupBefore, result)
 		if err != nil {
-			ensureBackup()
-			*vm.Org = backup
+			ensureRollback(false)
+			restoreRollback()
 			return nil, dmlExceptionFromTriggerError("upsert", err)
 		}
 		for groupIndex, failure := range failures {
@@ -2227,6 +2058,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		if kind == "update" {
 			preserveUpdateExplicitNulls(triggerRecords, groupRecords)
 		}
+		vm.applyBeforeDMLDerivedFields(triggerRecords)
 		for groupIndex, index := range indices {
 			if groupIndex < len(triggerRecords) {
 				records[index] = triggerRecords[groupIndex]
@@ -2243,8 +2075,8 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 	}
 	if hasDMLFailures(beforeFailures) {
 		if allOrNone {
-			ensureBackup()
-			*vm.Org = backup
+			ensureRollback(false)
+			restoreRollback()
 			return beforeFailures, nil
 		}
 		records, before, targets, kinds = filterUpsertInputs(records, before, targets, kinds, beforeFailures)
@@ -2254,16 +2086,17 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 	}
 	if err := vm.resolveSameBatchParentRelationships(records, targets); err != nil {
 		if allOrNone {
-			ensureBackup()
-			*vm.Org = backup
+			ensureRollback(false)
+			restoreRollback()
 		}
 		return nil, err
 	}
+	vm.stripTransientDMLDerivedFields(records)
 	engine := vm.newDeferredAutomationDMLEngine(result)
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
 	engine.PriorRecords = dmlPriorRecordsByID(before)
 	if !allOrNone && vm.hasAfterTriggerForDML("upsert", records) {
-		ensureBackup()
+		ensurePartialAfterTriggerBackup()
 	}
 	var engineResults []dml.Result
 	if externalIDField != "" {
@@ -2279,12 +2112,13 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 	if allOrNone {
 		for _, dmlResult := range results {
 			if !dmlResult.Success {
-				ensureBackup()
-				*vm.Org = backup
+				ensureRollback(false)
+				restoreRollback()
 				return results, nil
 			}
 		}
 	}
+	vm.applyStoredDMLDerivedFields(records, engineResults)
 	for i, dmlResult := range engineResults {
 		if dmlResult.Success && i < len(targets) && targets[i] != nil {
 			previous := snapshotAlias(*targets[i])
@@ -2298,16 +2132,16 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		afterRecords, err := vm.afterRecords(kind, groupRecords, groupResults)
 		if err != nil {
 			if allOrNone {
-				ensureBackup()
-				*vm.Org = backup
+				ensureRollback(false)
+				restoreRollback()
 			}
 			return results, err
 		}
 		afterFailures, err := vm.runTriggers(triggerTimingAfter, kind, afterRecords, groupBefore, result)
 		if err != nil {
 			if allOrNone {
-				ensureBackup()
-				*vm.Org = backup
+				ensureRollback(false)
+				restoreRollback()
 			}
 			return nil, dmlExceptionFromTriggerError("upsert", err)
 		}
@@ -2318,19 +2152,19 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 				}
 			}
 			if allOrNone {
-				ensureBackup()
-				*vm.Org = backup
+				ensureRollback(false)
+				restoreRollback()
 				vm.clearDMLResultFieldsForFailures(targets, results, kinds)
 				return results, nil
 			}
-			ensureBackup()
-			vm.rollbackAfterTriggerFailures(kind, afterRecords, afterFailures, backup)
+			ensurePartialAfterTriggerBackup()
+			vm.rollbackAfterTriggerFailures(kind, afterRecords, afterFailures, partialAfterTriggerBackup)
 			afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 		}
-		if err := vm.runSummaryUpdateTriggers(&engine, allOrNone, backup, result); err != nil {
+		if err := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result); err != nil {
 			return results, err
 		}
-		if err := vm.applyDeferredAutomation(&engine, afterRecords, allOrNone, backup, result); err != nil {
+		if err := vm.applyDeferredAutomation(&engine, afterRecords, allOrNone, rollback, result); err != nil {
 			return results, err
 		}
 	}
@@ -2564,7 +2398,7 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		}
 	}
 	for field, fieldValue := range value.Fields {
-		if isInternalSObjectField(field) {
+		if isInternalSObjectField(field) || isDefaultedSObjectField(*value, field) {
 			continue
 		}
 		if strings.EqualFold(field, "Id") {
@@ -2625,7 +2459,7 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		if fieldValue.Kind == ValueList && vm.isChildRelationshipField(definition, field) {
 			continue
 		}
-		if fieldValue.Kind == ValueObject && !strings.EqualFold(fieldValue.Type, "Id") && (vm.isParentRelationshipField(definition, field) || isLikelyParentRelationshipFieldName(field)) {
+		if fieldValue.Kind == ValueObject && !strings.EqualFold(fieldValue.Type, "Id") && vm.isParentRelationshipField(definition, field) {
 			if lookupField, ok := vm.parentRelationshipField(objectType, field); ok {
 				if parentRecord, ok, err := vm.parentRelationshipRecordFromValue(fieldValue); err != nil {
 					return storage.Record{}, err
@@ -2644,24 +2478,7 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 			}
 			continue
 		}
-		if fieldValue.Kind == ValueObject && isLikelyParentRelationshipObjectField(field) {
-			if definition.APIName != "" {
-				if fieldDef, ok := definition.Fields[canonicalField]; ok && !vmFieldIsReference(fieldDef) {
-					converted, err := storageValueFromVMForField(fieldValue, fieldDef.Type)
-					if err != nil {
-						return storage.Record{}, fmt.Errorf("%s.%s: %w", value.Type, field, err)
-					}
-					if converted.Kind == storage.ValueNull {
-						record.ExplicitNulls[canonicalField] = true
-					} else {
-						record.Fields[canonicalField] = converted
-					}
-					continue
-				}
-			}
-			continue
-		}
-		if fieldValue.Kind == ValueNull && isLikelyParentRelationshipObjectField(field) {
+		if fieldValue.Kind == ValueNull && vm.isParentRelationshipField(definition, field) {
 			if definition.APIName == "" {
 				continue
 			}
@@ -2772,7 +2589,7 @@ func (vm *VM) parentRelationshipRecordFromValue(value Value) (storage.Record, bo
 		if fieldValue.Kind == ValueList && definition.APIName != "" && vm.isChildRelationshipField(definition, field) {
 			continue
 		}
-		if fieldValue.Kind == ValueObject && !strings.EqualFold(fieldValue.Type, "Id") && (vm.isParentRelationshipField(definition, field) || isLikelyParentRelationshipFieldName(field)) {
+		if fieldValue.Kind == ValueObject && !strings.EqualFold(fieldValue.Type, "Id") && vm.isParentRelationshipField(definition, field) {
 			if lookupField, ok := vm.parentRelationshipField(objectType, field); ok {
 				if parentRecord, ok, err := vm.parentRelationshipRecordFromValue(fieldValue); err != nil {
 					return storage.Record{}, false, err
@@ -3120,36 +2937,6 @@ func vmFieldIsReference(field storage.Field) bool {
 	}
 	switch strings.ToLower(strings.TrimSpace(string(field.Type))) {
 	case "lookup", "masterdetail", "metadatarelationship":
-		return true
-	default:
-		return false
-	}
-}
-
-func isLikelyParentRelationshipObjectField(field string) bool {
-	field = strings.TrimSpace(field)
-	if field == "" {
-		return false
-	}
-	if isLikelyParentRelationshipFieldName(field) {
-		return true
-	}
-	switch field {
-	default:
-		return !strings.HasSuffix(field, "__c") && !strings.HasSuffix(field, "Id")
-	}
-}
-
-func isLikelyParentRelationshipFieldName(field string) bool {
-	field = strings.TrimSpace(field)
-	if field == "" {
-		return false
-	}
-	if strings.HasSuffix(field, "__r") {
-		return true
-	}
-	switch field {
-	case "RecordType", "Owner", "CreatedBy", "LastModifiedBy":
 		return true
 	default:
 		return false
@@ -3553,7 +3340,7 @@ func (vm *VM) childRelationshipListType(parentObject, relationship string, recor
 
 func isSObjectSystemField(field string) bool {
 	switch strings.ToLower(field) {
-	case "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid", "systemmodstamp", "ownerid", "isdeleted":
+	case "id", "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid", "systemmodstamp", "ownerid", "isdeleted":
 		return true
 	default:
 		return false
@@ -3989,14 +3776,6 @@ func sObjectFieldReadsAsNumeric(field storage.Field) bool {
 		}
 	}
 	return false
-}
-
-func coerceLikelyCustomNumberRuntimeValue(fieldName string, value Value) Value {
-	if value.Kind != ValueInt || !hasSuffixFold(fieldName, "__c") {
-		return value
-	}
-	text := strconv.FormatInt(value.Int, 10) + ".0"
-	return Value{Kind: ValueDecimal, Decimal: float64(value.Int), Text: text}
 }
 
 func decimalStorageText(value Value) string {
@@ -4622,30 +4401,6 @@ func maxOrgIDSequences(left, right map[string]uint64) map[string]uint64 {
 		}
 	}
 	return out
-}
-func isSetupObject(objectName string) bool {
-	switch strings.ToLower(objectName) {
-	case "user", "profile", "userrole", "permissionset", "permissionsetassignment", "permissionsetgroup", "permissionsetgroupcomponent", "fieldpermissions", "objectpermissions", "setupentityaccess":
-		return true
-	default:
-		return false
-	}
-}
-func isSetupDMLRecord(record storage.Record) bool {
-	return mixedDMLRecordKind(record) == "setup"
-}
-func mixedDMLRecordKind(record storage.Record) string {
-	if !isSetupObject(record.Object) {
-		return "nonsetup"
-	}
-	if !strings.EqualFold(record.Object, "User") {
-		return "setup"
-	}
-	roleID, ok := record.GetField("UserRoleId")
-	if !ok || roleID.Kind == storage.ValueNull || storageIDFromValue(roleID) == "" {
-		return "neutral"
-	}
-	return "setup"
 }
 func (vm *VM) recordsFromValue(value Value) ([]storage.Record, []*Value, error) {
 	if value.Kind == ValueList {

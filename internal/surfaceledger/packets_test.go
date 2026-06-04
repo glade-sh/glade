@@ -1,0 +1,85 @@
+package surfaceledger
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestAreaRegistryNamesInitialParallelAreas(t *testing.T) {
+	want := []string{
+		"Ledger.Identity",
+		"Core.Runtime.System.FeatureManagement",
+		"Core.Runtime.Database.Batchable",
+		"Core.Runtime.SystemAndStdlib",
+		"Query.Runtime.SOQLSOSL",
+		"Data.Reference.ObjectsFields",
+		"Data.Runtime.SchemaDescribe",
+		"Data.Runtime.SOQL",
+		"Data.Runtime.DML",
+		"Tests.AsyncAndIsolation",
+		"UI.ApexPagesControllers",
+		"UI.VisualforceComponents",
+		"UI.LWCModules",
+		"UI.AuraComponents",
+		"UI.UIAPI",
+		"Server.RESTResources",
+		"Server.ToolingObjects",
+		"Integration.GraphQL",
+		"Integration.PubSub",
+		"Integration.BulkAPI",
+		"Integration.MetadataAPI",
+		"Integration.SOAPAPI",
+		"Integration.StreamingAPI",
+		"Integration.SalesforceConnect.AmazonRDS",
+		"Platform.Events",
+		"AI.Agentforce",
+		"External.MarketingCloud.AMPscript",
+		"External.MarketingCloud.Handlebars",
+		"ConnectApi.PassiveDTOs",
+	}
+	got := map[string]bool{}
+	for _, area := range AreaRegistry() {
+		got[area.Name] = true
+		if area.Owner == "" || area.RowFilter == "" || area.AreaRatchetCommand == "" {
+			t.Fatalf("area %q is missing owner, row filter, or ratchet command: %#v", area.Name, area)
+		}
+		if len(area.DependsOn) == 0 || len(area.MayRunInParallelWith) == 0 || len(area.SharedFiles) == 0 || len(area.ExclusiveFiles) == 0 {
+			t.Fatalf("area %q is missing parallel-work boundaries: %#v", area.Name, area)
+		}
+	}
+	for _, name := range want {
+		if !got[name] {
+			t.Fatalf("area registry missing %q", name)
+		}
+	}
+}
+
+func TestPacketMarkdownIncludesAgentCloseoutRules(t *testing.T) {
+	packet, ok := AreaPacketByName("Core.Runtime.System.FeatureManagement")
+	if !ok {
+		t.Fatal("missing FeatureManagement packet")
+	}
+	markdown := PacketMarkdown(SurfaceLedger{}, packet)
+	for _, want := range []string{
+		"## Standard Validation Block",
+		"focused tests run",
+		"fixture command run",
+		"surface refresh run",
+		"area ratchet command run",
+		"before counts",
+		"after counts",
+		"next top row",
+		"## Docs Defect Path",
+		"re-scrape docs",
+		"patch the docs parser to read existing docs correctly",
+		"## Reviewer Checklist",
+		"no corpus-specific runtime hacks",
+		"packet area did not expand during work",
+		"## Breadth Work Order",
+		"Schema.Describe",
+	} {
+		if !strings.Contains(markdown, want) {
+			t.Fatalf("packet markdown missing %q:\n%s", want, markdown)
+		}
+	}
+}

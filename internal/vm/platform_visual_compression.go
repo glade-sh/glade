@@ -370,7 +370,7 @@ func callCompressionZipEntryMember(receiver Value, method string, args []Value) 
 	case "getcontent":
 		return compressionZipEntryContent(receiver), receiver, false, true, nil
 	case "getcompressedsize", "getuncompressedsize":
-		return Int(int64(len([]byte(blobText(compressionZipEntryContent(receiver)))))), receiver, false, true, nil
+		return Int(int64(len(blobText(compressionZipEntryContent(receiver))))), receiver, false, true, nil
 	case "getcrc":
 		return Int(0), receiver, false, true, nil
 	case "getmethod":
@@ -486,7 +486,8 @@ func writeCompressionZipArchive(entries []Value) (string, error) {
 }
 
 func readCompressionZipEntries(data string) (Value, error) {
-	reader, err := zip.NewReader(bytes.NewReader([]byte(data)), int64(len([]byte(data))))
+	dataBytes := []byte(data)
+	reader, err := zip.NewReader(bytes.NewReader(dataBytes), int64(len(dataBytes)))
 	if err != nil {
 		return Null, fmt.Errorf("compression.ZipReader invalid archive: %w", err)
 	}

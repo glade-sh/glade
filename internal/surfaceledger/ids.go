@@ -2,14 +2,17 @@ package surfaceledger
 
 import (
 	"strings"
+	"unicode"
 )
 
 func ApexTypeID(namespace, typeName string) string {
+	namespace, typeName = canonicalApexQualifiedParts(namespace, typeName)
 	return "apex:" + qualifiedName(namespace, typeName)
 }
 
 func ApexMemberID(namespace, typeName, memberName string, parameters []string) string {
-	id := ApexTypeID(namespace, typeName) + "." + strings.TrimSpace(memberName)
+	namespace, typeName = canonicalApexQualifiedParts(namespace, typeName)
+	id := ApexTypeID(namespace, typeName) + "." + canonicalApexMemberName(memberName)
 	if parameters != nil {
 		id += "(" + strings.Join(cleanList(parameters), ",") + ")"
 	}
@@ -43,8 +46,8 @@ func AuraID(path string) string {
 }
 
 func qualifiedName(namespace, typeName string) string {
-	namespace = strings.TrimSpace(namespace)
-	typeName = strings.TrimSpace(typeName)
+	namespace = cleanIdentityPart(namespace)
+	typeName = cleanIdentityPart(typeName)
 	if namespace == "" {
 		return typeName
 	}
@@ -59,8 +62,95 @@ func cleanList(values []string) []string {
 	for _, value := range values {
 		value = strings.TrimSpace(value)
 		if value != "" {
-			out = append(out, value)
+			out = append(out, canonicalParameterType(value))
 		}
 	}
 	return out
+}
+
+func canonicalParameterType(value string) string {
+	value = cleanIdentityPart(value)
+	switch strings.ToUpper(value) {
+	case "APEX_OBJECT":
+		return "Object"
+	case "ANY":
+		return "Object"
+	case "SOBJECT":
+		return "Object"
+	case "SOBJECT[]":
+		return "List<Object>"
+	case "SYSTEM.TYPE":
+		return "Type"
+	default:
+		value = strings.ReplaceAll(value, "<ANY>", "<Object>")
+		value = strings.ReplaceAll(value, "<sObject>", "<Object>")
+		value = strings.ReplaceAll(value, "<SObject>", "<Object>")
+		value = strings.ReplaceAll(value, "cache.", "Cache.")
+		value = strings.ReplaceAll(value, ",ANY>", ",Object>")
+		value = strings.ReplaceAll(value, ", ANY>", ", Object>")
+		value = strings.ReplaceAll(value, ",sObject>", ",Object>")
+		value = strings.ReplaceAll(value, ", sObject>", ", Object>")
+		value = strings.ReplaceAll(value, ",SObject>", ",Object>")
+		value = strings.ReplaceAll(value, ", SObject>", ", Object>")
+		return value
+	}
+}
+
+func canonicalApexQualifiedParts(namespace, typeName string) (string, string) {
+	namespace = canonicalApexNamespaceName(namespace)
+	typeName = cleanIdentityPart(typeName)
+	if namespace == "ApexPages" && typeName == "ApexPages" {
+		namespace = "System"
+	}
+	if namespace == "System" {
+		switch typeName {
+		case "ChildRelationship", "DescribeFieldResult", "DescribeSObjectResult", "PicklistEntry", "RecordTypeInfo", "SObjectField", "SObjectType":
+			namespace = "Schema"
+		}
+	}
+	return namespace, typeName
+}
+
+func canonicalApexNamespaceName(namespace string) string {
+	namespace = cleanIdentityPart(namespace)
+	switch strings.ToLower(namespace) {
+	case "cache":
+		return "Cache"
+	case "connectapi":
+		return "ConnectApi"
+	case "database":
+		return "Database"
+	case "schema":
+		return "Schema"
+	case "system":
+		return "System"
+	default:
+		return namespace
+	}
+}
+
+func canonicalApexMemberName(memberName string) string {
+	memberName = cleanIdentityPart(memberName)
+	switch memberName {
+	case "setFilterID":
+		return "setFilterId"
+	case "setpageNumber":
+		return "setPageNumber"
+	case "getSOAPType":
+		return "getSoapType"
+	case "getSObjectField":
+		return "getSobjectField"
+	default:
+		return memberName
+	}
+}
+
+func cleanIdentityPart(value string) string {
+	value = strings.Map(func(r rune) rune {
+		if unicode.Is(unicode.Cf, r) {
+			return -1
+		}
+		return r
+	}, value)
+	return strings.TrimSpace(value)
 }

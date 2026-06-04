@@ -947,20 +947,27 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		},
 	})
 	seedProfileOwnedPermissionSet := func(id ID, name string, profileID ID) {
+		fields := map[string]Value{
+			"Name":                           StringValue(name),
+			"Label":                          StringValue(name),
+			"Type":                           StringValue("Profile"),
+			"IsCustom":                       BooleanValue(false),
+			"IsOwnedByProfile":               BooleanValue(true),
+			"ProfileId":                      IDValue(profileID),
+			"PermissionsEditPublicTemplates": BooleanValue(false),
+			"PermissionsManageSolutions":     BooleanValue(false),
+			"PermissionsActivateContract":    BooleanValue(false),
+		}
+		if name == "System Administrator" {
+			fields["PermissionsCustomizeApplication"] = BooleanValue(true)
+			fields["PermissionsModifyAllData"] = BooleanValue(true)
+			fields["PermissionsAuthorApex"] = BooleanValue(true)
+			fields["PermissionsViewAllData"] = BooleanValue(true)
+		}
 		putSeedRecord(org, "PermissionSet", Record{
 			ID:     id,
 			Object: "PermissionSet",
-			Fields: map[string]Value{
-				"Name":                           StringValue(name),
-				"Label":                          StringValue(name),
-				"Type":                           StringValue("Profile"),
-				"IsCustom":                       BooleanValue(false),
-				"IsOwnedByProfile":               BooleanValue(true),
-				"ProfileId":                      IDValue(profileID),
-				"PermissionsEditPublicTemplates": BooleanValue(false),
-				"PermissionsManageSolutions":     BooleanValue(false),
-				"PermissionsActivateContract":    BooleanValue(false),
-			},
+			Fields: fields,
 		})
 	}
 	seedProfileOwnedPermissionSet(ID("0PS000000000003"), "System Administrator", profileID)
@@ -975,7 +982,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Object: "PermissionSetAssignment",
 		Fields: map[string]Value{
 			"AssigneeId":      IDValue(userID),
-			"PermissionSetId": IDValue(permissionSetID),
+			"PermissionSetId": IDValue(ID("0PS000000000003")),
 		},
 	})
 	putSeedRecord(org, "ObjectPermissions", Record{
@@ -1421,9 +1428,8 @@ func ensureObject(org *OrgState, name, prefix string, fields map[string]Field) {
 		if _, ok := object.Definition.Fields[fieldName]; ok {
 			existingKey = fieldName
 		} else {
-			lower := strings.ToLower(fieldName)
 			for candidate := range object.Definition.Fields {
-				if strings.ToLower(candidate) == lower {
+				if strings.EqualFold(candidate, fieldName) {
 					existingKey = candidate
 					break
 				}

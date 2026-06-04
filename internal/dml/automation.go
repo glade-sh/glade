@@ -475,7 +475,7 @@ func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source
 			delete(record.ExplicitNulls, fieldName)
 		}
 	}
-	createdID, err := e.insertOne(record)
+	createdID, err := e.insertOne(record, nil)
 	if err != nil {
 		return "", dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record create %s failed: %v", create.Name, err)
 	}

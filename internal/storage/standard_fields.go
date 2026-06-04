@@ -450,7 +450,10 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 	if org.Objects == nil {
 		org.Objects = make(map[string]ObjectState)
 	}
-	state := org.Objects[objectName]
+	state, existed := org.Objects[objectName]
+	if existed && standardObjectDefinitionNeedsWrite(state.Definition, objectName) {
+		state.Definition = state.Definition.Clone()
+	}
 	if state.Definition.APIName == "" {
 		state.Definition.APIName = objectName
 	}
@@ -486,6 +489,24 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 		ensureRecordTypeObject(org)
 		ensureRecordTypeRecords(org)
 	}
+}
+
+func standardObjectDefinitionNeedsWrite(definition ObjectDefinition, objectName string) bool {
+	if definition.APIName == "" || definition.Label == "" || definition.PluralLabel == "" || definition.KeyPrefix == "" {
+		return true
+	}
+	if !standardFieldsOverlayApplied(definition, "") {
+		return true
+	}
+	if entry, ok := standardObjectCatalogEntryFor(objectName); ok {
+		if definition.Label == objectName && entry.Definition.Label != "" && entry.Definition.Label != definition.Label {
+			return true
+		}
+		if definition.PluralLabel == objectName+"s" && entry.Definition.PluralLabel != "" && entry.Definition.PluralLabel != definition.PluralLabel {
+			return true
+		}
+	}
+	return false
 }
 
 var knownStandardObjectCache struct {
@@ -848,6 +869,8 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		ensureReferenceShape(definition, "RunningUserFieldAccessId", []string{"UserFieldAccess"}, "RunningUserFieldAccess")
 	case stringsEqualFold(definition.APIName, "Event"):
 		removeField(definition, "Name")
+		ensureField(definition, Field{APIName: "Type", Label: "Type", Type: FieldPicklist, DisplayType: "PICKLIST", Length: 255, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
+	case stringsEqualFold(definition.APIName, "Task"):
 		ensureField(definition, Field{APIName: "Type", Label: "Type", Type: FieldPicklist, DisplayType: "PICKLIST", Length: 255, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
 	case stringsEqualFold(definition.APIName, "PermissionSetGroupComponent"):
 		markFieldCreateable(definition, "PermissionSetGroupId")

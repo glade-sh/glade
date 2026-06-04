@@ -296,7 +296,7 @@ func loadTab(path string) (storage.TabMetadata, error) {
 		Description: strings.TrimSpace(raw.Description),
 		File:        path,
 	}
-	if raw.CustomObject || strings.HasSuffix(strings.ToLower(name), "__c") {
+	if raw.CustomObject || hasSuffixFold(name, "__c") {
 		tab.SObjectName = name
 	}
 	return tab, nil
@@ -568,10 +568,10 @@ func namespaceToken(name string) string {
 }
 
 func ResolveEndpoint(registry storage.MetadataRegistry, endpoint string) (string, bool) {
-	if !strings.HasPrefix(strings.ToLower(endpoint), "callout:") {
+	if !hasPrefixFold(endpoint, "callout:") {
 		return endpoint, true
 	}
-	rest := strings.TrimPrefix(endpoint, "callout:")
+	rest := endpoint[len("callout:"):]
 	name, suffix, _ := strings.Cut(rest, "/")
 	for _, candidate := range registry.Endpoints {
 		if !metadataNameMatches(candidate.Name, name) {
@@ -1161,7 +1161,7 @@ func joinURLPath(base, path string) string {
 func resourceNameFromMetaPath(path string) string {
 	base := filepath.Base(path)
 	for _, suffix := range []string{".resource-meta.xml", ".staticresource-meta.xml"} {
-		if strings.HasSuffix(strings.ToLower(base), strings.ToLower(suffix)) {
+		if hasSuffixFold(base, suffix) {
 			return base[:len(base)-len(suffix)]
 		}
 	}
@@ -1179,7 +1179,7 @@ func resourceNameFromContentPath(path string) string {
 func baseNoMetaExt(path string) string {
 	base := filepath.Base(path)
 	for _, suffix := range []string{".namedCredential-meta.xml", ".namedCredential", ".remoteSite-meta.xml", ".remoteSite", ".email-meta.xml", ".email"} {
-		if strings.HasSuffix(strings.ToLower(base), strings.ToLower(suffix)) {
+		if hasSuffixFold(base, suffix) {
 			return base[:len(base)-len(suffix)]
 		}
 	}
@@ -1209,10 +1209,18 @@ func firstNonEmpty(values ...string) string {
 }
 
 func trimKnownSuffix(value, suffix string) string {
-	if strings.HasSuffix(strings.ToLower(value), strings.ToLower(suffix)) {
+	if hasSuffixFold(value, suffix) {
 		return value[:len(value)-len(suffix)]
 	}
 	return value
+}
+
+func hasPrefixFold(value, prefix string) bool {
+	return len(value) >= len(prefix) && strings.EqualFold(value[:len(prefix)], prefix)
+}
+
+func hasSuffixFold(value, suffix string) bool {
+	return len(value) >= len(suffix) && strings.EqualFold(value[len(value)-len(suffix):], suffix)
 }
 
 func lookupKey(value string) string {

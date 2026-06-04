@@ -2951,6 +2951,26 @@ System.assertEquals(null, Packaging.getCurrentPackageId());
 	}
 }
 
+func TestExecFeatureManagementPackageValuesRoundTrip(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(false, System.FeatureManagement.checkPackageBooleanValue('LocalBooleanFeature'));
+System.FeatureManagement.setPackageBooleanValue('LocalBooleanFeature', true);
+System.assertEquals(true, System.FeatureManagement.checkPackageBooleanValue('LocalBooleanFeature'));
+System.FeatureManagement.setPackageIntegerValue('LocalIntegerFeature', 7);
+System.assertEquals(7, System.FeatureManagement.checkPackageIntegerValue('LocalIntegerFeature'));
+System.FeatureManagement.setPackageDateValue('LocalDateFeature', Date.newInstance(2026, 6, 3));
+System.assertEquals(Date.newInstance(2026, 6, 3), System.FeatureManagement.checkPackageDateValue('LocalDateFeature'));
+System.assertEquals(null, System.FeatureManagement.checkPackageDateValue('MissingLocalDateFeature'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecFeatureManagementUsesAssignedPermissionSetCustomPermissions(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.runAs(new User(Id = '005-user-a')) {
@@ -3607,6 +3627,8 @@ ApexPages.Action action = new ApexPages.Action('{!save}');
 System.assertEquals('{!save}', action.getExpression());
 ApexPages.Action nullAction = new ApexPages.Action('{!null}');
 System.assertEquals(null, nullAction.invoke());
+ApexPages.Action listAction = new ApexPages.Action('{!List}');
+System.assertEquals('/list', listAction.invoke().getUrl());
 ApexPages.Component component = new ApexPages.Component();
 System.assertEquals(null, component.getComponentById('missing'));
 ApexPages.addMessage(withDetail);
@@ -5482,6 +5504,46 @@ if (context.previousVersion() == null) {
 	}
 }
 
+func TestExecTestUninstallInvokesUninstallHandler(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.testUninstall(new UninstallScript());
+System.assertEquals(1, UninstallScript.count);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	onUninstall, err := CompileAnonymous(`
+System.assertNotEquals(null, context);
+UninstallScript.count++;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "UninstallScript",
+		Interfaces: []string{"UninstallHandler"},
+		StaticFields: map[string]Field{
+			"count": {Name: "count", Type: "Integer", InitialValue: Int(0)},
+		},
+		Methods: map[string]Method{
+			"onUninstall": {
+				Name:       "UninstallScript.onUninstall",
+				ClassName:  "UninstallScript",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "UninstallContext"}},
+				Program:    onUninstall,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTestInstallComparesPreviousVersionWithStaticFinalVersion(t *testing.T) {
 	program, err := CompileAnonymous(`
 Test.testInstall(new InstallScript(), new Version(1, 24), true);
@@ -5881,6 +5943,32 @@ System.assertEquals(0, emptyInlineQueried.size());
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestBatchScopeValuesRefreshesQueryLocatorQueriedFields(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Contact", Fields: map[string]storage.Field{
+			"pkg__SelectedDate__c": {APIName: "pkg__SelectedDate__c", Type: storage.FieldDate},
+		}},
+	}
+	machine.Org = &org
+
+	row := Object("Contact")
+	row.Fields["Id"] = platformScalar("Id", "003000000000001AAA")
+	row.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue("Contact", map[string]bool{"currencyisocode": true})
+	locator := Object("Database.QueryLocator")
+	locator.Fields["Query"] = String("SELECT Id, pkg__SelectedDate__c FROM Contact")
+	locator.Fields["Records"] = List(row)
+
+	scope, err := machine.batchScopeValues(locator, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scope) != 1 || !machine.queriedSObjectFieldsIncludes(scope[0], "pkg__SelectedDate__c") {
+		t.Fatalf("scope = %#v, want refreshed queried field", scope)
 	}
 }
 
@@ -8174,6 +8262,25 @@ System.assertEquals('EXECUTE', logged.Description);
 	}
 }
 
+func TestExecBatchApexErrorEventListGetSObjectType(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SObject> records = new List<SObject>{
+	new BatchApexErrorEvent(Phase = 'EXECUTE', JobScope = '001000000000001')
+};
+System.assertEquals('BatchApexErrorEvent', records.getSObjectType().getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.ensureBatchApexErrorEventObject()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecAsyncApexJobRecordsIncludeSystemTimestamps(t *testing.T) {
 	program, err := CompileAnonymous(`
 Test.startTest();
@@ -8721,11 +8828,13 @@ System.assertEquals(7, winterLocal.hourGmt());
 System.assertEquals(5, winterLocal.minuteGmt());
 System.assertEquals(6, winterLocal.secondGmt());
 
-Datetime fromDateTime = Datetime.newInstance(Date.newInstance(2024, 7, 1), Time.newInstance(5, 30, 0, 250));
-System.assertEquals('2024-07-01 12:30:00.250', fromDateTime.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'));
-System.assertEquals('7/1/2024, 5:30 AM', fromDateTime.format());
-String nullTimeZone;
-System.assertEquals('2024-07-01', fromDateTime.format('yyyy-MM-dd', nullTimeZone));
+	Datetime fromDateTime = Datetime.newInstance(Date.newInstance(2024, 7, 1), Time.newInstance(5, 30, 0, 250));
+	System.assertEquals('2024-07-01 12:30:00.250', fromDateTime.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'));
+	System.assertEquals('7/1/2024, 5:30 AM', fromDateTime.format());
+	Datetime parsedDefaultFormat = Datetime.parse('7/1/2024, 5:30 AM');
+	System.assertEquals('2024-07-01 12:30:00', parsedDefaultFormat.formatGmt('yyyy-MM-dd HH:mm:ss'));
+	String nullTimeZone;
+	System.assertEquals('2024-07-01', fromDateTime.format('yyyy-MM-dd', nullTimeZone));
 System.assertEquals(Date.newInstance(2024, 7, 1), fromDateTime.dateGMT());
 Datetime fromDateTimeGmt = Datetime.newInstanceGmt(Date.newInstance(2024, 7, 1), Time.newInstance(5, 30, 0, 250));
 System.assertEquals('2024-07-01 05:30:00.250', fromDateTimeGmt.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'));
@@ -9609,11 +9718,13 @@ Datetime madePlusHour = made.addHours(1);
 System.assertEquals('2026-05-02 02:02:03', madePlusHour.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime madePlusMinutes = made.addMinutes(2);
 System.assertEquals('2026-05-02 01:04:03', madePlusMinutes.formatGmt('yyyy-MM-dd HH:mm:ss'));
-Datetime madePlusSeconds = made.addSeconds(3);
-System.assertEquals('2026-05-02 01:02:06', madePlusSeconds.formatGmt('yyyy-MM-dd HH:mm:ss'));
-Datetime madePlusDay = made.addDays(1);
-System.assertEquals('2026-05-03 01:02:03', madePlusDay.formatGmt('yyyy-MM-dd HH:mm:ss'));
-	Datetime parsedDt = Datetime.valueOf('2026-05-02 01:02:03');
+	Datetime madePlusSeconds = made.addSeconds(3);
+	System.assertEquals('2026-05-02 01:02:06', madePlusSeconds.formatGmt('yyyy-MM-dd HH:mm:ss'));
+	Datetime madePlusDay = made.addDays(1);
+	System.assertEquals('2026-05-03 01:02:03', madePlusDay.formatGmt('yyyy-MM-dd HH:mm:ss'));
+	Datetime madePlusFractionalDay = made + (100000.0 / 86400000.0);
+	System.assertEquals('2026-05-02 01:03:43', madePlusFractionalDay.formatGmt('yyyy-MM-dd HH:mm:ss'));
+		Datetime parsedDt = Datetime.valueOf('2026-05-02 01:02:03');
 	String madeText = made.formatGmt('yyyy-MM-dd HH:mm:ss');
 	String parsedDtText = parsedDt.formatGmt('yyyy-MM-dd HH:mm:ss');
 	System.assertEquals(madeText, parsedDtText);
@@ -9834,6 +9945,7 @@ System.assertEquals(Time.newInstance(12, 34, 56, 789), Time.valueOf('12:34:56.78
 
 TimeZone utc = TimeZone.getTimeZone('UTC');
 System.assertEquals('UTC', utc.getID());
+System.assertEquals('UTC', utc.toString());
 System.assertEquals('UTC', utc.getDisplayName());
 System.assertEquals(0, utc.getOffset(gmt));
 TimeZone offset = TimeZone.getTimeZone('GMT+05:30');
@@ -9847,6 +9959,7 @@ System.assertEquals('GMT+14:00', edge.getDisplayName());
 System.assertEquals(50400000, edge.getOffset(gmt));
 TimeZone pacific = TimeZone.getTimeZone('America/Los_Angeles');
 System.assertEquals('America/Los_Angeles', pacific.getID());
+System.assertEquals('America/Los_Angeles', pacific.toString());
 System.assertEquals('America/Los_Angeles', pacific.getDisplayName());
 System.assertEquals('PST', pacific.getDisplayName(false));
 System.assertEquals('PDT', pacific.getDisplayName(true));
@@ -10817,10 +10930,31 @@ System.assertEquals(1, Limits.getCallouts());
 	}
 }
 
+func TestExecHttpCalloutMockAllowsSchemalessEndpoint(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.setMock('HttpCalloutMock', new MockResponse(body = 'ok', statusCode = 201));
+HttpRequest req = new HttpRequest();
+req.setEndpoint('maps.googleapis.com/maps/api/geocode/json?address=ambiguous-address&key=there');
+req.setMethod('GET');
+HttpResponse res = new Http().send(req);
+System.assertEquals(201, res.getStatusCode());
+System.assertEquals('ok', res.getBody());
+System.assertEquals(1, Limits.getCallouts());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecHttpRequestValidationAndHeaderEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
-HttpRequest req = new HttpRequest();
-System.assertEquals('', req.getEndpoint());
+	HttpRequest req = new HttpRequest();
+	System.assertEquals('', req.getEndpoint());
 System.assertEquals('', req.getMethod());
 System.assertEquals('', req.getBody());
 System.assertEquals('', req.getBodyAsBlob().toString());
@@ -11144,7 +11278,7 @@ func TestExecHttpRequestRejectsInvalidEdges(t *testing.T) {
 	}{
 		{
 			name: "endpoint-relative",
-			src:  `HttpRequest req = new HttpRequest(); req.setEndpoint('/relative');`,
+			src:  `HttpRequest req = new HttpRequest(); req.setEndpoint('/relative'); req.setMethod('GET'); new Http().send(req);`,
 			want: "HttpRequest endpoint must be an absolute http, https, or callout URL",
 		},
 		{
@@ -11164,12 +11298,12 @@ func TestExecHttpRequestRejectsInvalidEdges(t *testing.T) {
 		},
 		{
 			name: "endpoint-empty",
-			src:  `HttpRequest req = new HttpRequest(); req.setEndpoint('');`,
+			src:  `HttpRequest req = new HttpRequest(); req.setEndpoint(''); req.setMethod('GET'); new Http().send(req);`,
 			want: "HttpRequest endpoint is required",
 		},
 		{
 			name: "callout-empty",
-			src:  `HttpRequest req = new HttpRequest(); req.setEndpoint('callout:');`,
+			src:  `HttpRequest req = new HttpRequest(); req.setEndpoint('callout:'); req.setMethod('GET'); new Http().send(req);`,
 			want: "HttpRequest endpoint named credential is required",
 		},
 		{

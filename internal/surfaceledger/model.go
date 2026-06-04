@@ -133,6 +133,12 @@ type SurfaceLedgerRow struct {
 	APIVersion string   `json:"apiVersion,omitempty"`
 	Sources    []string `json:"sources,omitempty"`
 
+	SalesforceSurfaceFamily   string `json:"salesforceSurfaceFamily,omitempty"`
+	GladeImplementationTarget string `json:"gladeImplementationTarget,omitempty"`
+	ShapeSource               string `json:"shapeSource,omitempty"`
+	BehaviorSource            string `json:"behaviorSource,omitempty"`
+	ImplementationDecision    string `json:"implementationDecision,omitempty"`
+
 	Owner    string `json:"owner,omitempty"`
 	GapClass string `json:"gapClass,omitempty"`
 	Bucket   string `json:"bucket,omitempty"`
@@ -194,5 +200,55 @@ func withDefaults(row SurfaceLedgerRow) SurfaceLedgerRow {
 	if row.Evidence == "" {
 		row.Evidence = EvidenceNone
 	}
+	if row.SalesforceSurfaceFamily == "" {
+		row.SalesforceSurfaceFamily = surfaceFamilyForProduct(row.Product)
+	}
+	if row.GladeImplementationTarget == "" {
+		row.GladeImplementationTarget = implementationTargetForRow(row)
+	}
+	if row.ShapeSource == "" && row.Docs == SourcePresent {
+		row.ShapeSource = "reference"
+	}
+	if row.BehaviorSource == "" && row.Evidence != EvidenceNone {
+		row.BehaviorSource = "fixture"
+	}
+	if row.ImplementationDecision == "" {
+		row.ImplementationDecision = row.GladeImplementationTarget
+	}
 	return row
+}
+
+func surfaceFamilyForProduct(product string) string {
+	switch product {
+	case ProductApex:
+		return "apex"
+	case ProductREST:
+		return "rest-api"
+	case ProductTooling:
+		return "tooling-api"
+	case ProductVisualforce:
+		return "visualforce"
+	case ProductLWC:
+		return "lwc"
+	case ProductAura:
+		return "aura"
+	default:
+		if product == "" {
+			return ProductUnknown
+		}
+		return product
+	}
+}
+
+func implementationTargetForRow(row SurfaceLedgerRow) string {
+	switch row.Area {
+	case AreaServer:
+		return "server-or-explicit-unsupported"
+	case AreaUI:
+		return "ui-or-explicit-unsupported"
+	case AreaRuntime:
+		return "runtime"
+	default:
+		return "explicit-unsupported"
+	}
 }

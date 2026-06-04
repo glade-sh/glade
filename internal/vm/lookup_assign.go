@@ -315,6 +315,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 	if len(parts) == 3 && apexIdentifierStartsUpper(parts[0]) && apexIdentifierStartsUpper(parts[1]) && apexIdentifierStartsUpper(parts[2]) {
 		return Value{Kind: ValueObject, Type: parts[0] + "." + parts[1], Text: parts[2]}, nil
 	}
+	if value, ok, err := vm.lookupCurrentClassStaticField(name); ok || err != nil {
+		return value, err
+	}
 	if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
 		if value, ok := selectorBindParamValue(this, name); ok {
 			return value, nil
@@ -359,6 +362,39 @@ func (vm *VM) lookup(name string) (Value, error) {
 		}
 	}
 	return Null, fmt.Errorf("unknown variable %q", name)
+}
+
+func (vm *VM) lookupCurrentClassStaticField(name string) (Value, bool, error) {
+	if vm.currentClass == "" {
+		return Null, false, nil
+	}
+	class, ok := vm.lookupClass(vm.currentClass)
+	if !ok {
+		return Null, false, nil
+	}
+	directField, ok := vm.lookupFieldInMapWithOptions(class.StaticFields, name, vm.currentMethod.Dependency)
+	if !ok {
+		return Null, false, nil
+	}
+	owner := runtimeClassName(class)
+	if err := vm.checkMemberAccess(owner, directField.Access, owner+"."+name, directField.Modifiers); err != nil {
+		return Null, true, err
+	}
+	if err := vm.ensureClassInitialized(owner); err != nil {
+		return Null, true, err
+	}
+	field, _, found := vm.lookupStaticFieldForReceiver(owner, name, vm.currentMethod.Dependency)
+	if !found {
+		field = directField
+		if field.Value.Kind == "" {
+			field.Value = defaultValue(field.Type, field.InitialValue)
+		}
+	}
+	if field.Getter != nil {
+		value, err := vm.callGetter(owner, field, Null)
+		return value, true, err
+	}
+	return field.Value, true, nil
 }
 
 func managedNestedEnumLiteralValue(parts []string) (Value, bool) {
@@ -1518,6 +1554,7 @@ func schemaSObjectTypeDescribeForwardMethod(method string) bool {
 		"getRecordTypeInfos", "getRecordTypeInfosByName", "getRecordTypeInfosByDeveloperName", "getRecordTypeInfosById",
 		"getChildRelationships", "getSObjectType",
 		"isAccessible", "isCreateable", "isUpdateable", "isDeletable", "isQueryable", "isSearchable", "isCustom",
+		"isCustomSetting", "isDeprecatedAndHidden", "isFeedEnabled", "isMergeable", "isMruEnabled", "isUndeletable",
 	} {
 		if strings.EqualFold(method, candidate) {
 			return true
@@ -2059,16 +2096,11 @@ func (vm *VM) defaultNullSObjectAccessValue(typeName string) (Value, bool) {
 }
 
 func (vm *VM) relationshipNullFieldAccessValue(typeName, field string) (Value, bool) {
-	if isCustomRelationshipFieldName(field) {
-		value := typedNull(relationshipNameObjectType(field))
-		value.Runtime = relationshipNullRuntime
-		return value, true
+	if relation, ok := vm.parentRelationshipForName(Object(typeName), field); ok {
+		return vm.parentRelationshipTypedNull(relation), true
 	}
 	_, fieldDef, ok := vm.sObjectFieldDefinition(typeName, field)
 	if !ok {
-		if value, ok := inferredRelationshipNullFieldAccessValue(field); ok {
-			return value, true
-		}
 		return Null, false
 	}
 	if defaultValue, ok := storage.DefaultValueForField(fieldDef); ok {
@@ -2080,36 +2112,8 @@ func (vm *VM) relationshipNullFieldAccessValue(typeName, field string) (Value, b
 	return storageFieldNullValue(fieldDef), true
 }
 
-func inferredRelationshipNullFieldAccessValue(field string) (Value, bool) {
-	field = strings.TrimSpace(field)
-	if field == "" {
-		return Null, false
-	}
-	if hasSuffixFold(field, "__r") {
-		value := typedNull(relationshipNameObjectType(field))
-		value.Runtime = relationshipNullRuntime
-		return value, true
-	}
-	if strings.EqualFold(field, "Id") || hasSuffixFold(field, "id") || hasSuffixFold(field, "__c") {
-		return typedNull("Id"), true
-	}
-	return Null, true
-}
-
-func relationshipNameObjectType(relationship string) string {
-	relationship = strings.TrimSpace(relationship)
-	if hasSuffixFold(relationship, "__r") {
-		return relationship[:len(relationship)-len("__r")] + "__c"
-	}
-	return relationship
-}
-
-func isCustomRelationshipFieldName(field string) bool {
-	return hasSuffixFold(strings.TrimSpace(field), "__r")
-}
-
 func (vm *VM) explicitParentRelationshipNullValue(receiver Value, relationshipName string) (Value, bool) {
-	if !isLikelyParentRelationshipObjectField(relationshipName) {
+	if _, ok := vm.parentRelationshipForName(receiver, relationshipName); !ok {
 		return Null, false
 	}
 	value, ok := vm.parentRelationshipValue(receiver, relationshipName)
@@ -2497,7 +2501,12 @@ func (vm *VM) assign(name string, value Value) error {
 }
 
 func (vm *VM) writeStaticFieldValue(owner, memberName string, class Class, field Field, value Value) {
-	vm.markCollectionRefsEscaped(value)
+	previous := field.Value
+	if sameStaticCollectionWriteback(previous, value) {
+		vm.markRootCollectionRefsEscaped(value)
+	} else {
+		vm.markCollectionRefsEscaped(value)
+	}
 	field.Value = value
 	if class.StaticFields == nil {
 		class.StaticFields = make(map[string]Field)
@@ -2509,7 +2518,7 @@ func (vm *VM) writeStaticFieldValue(owner, memberName string, class Class, field
 	if className == "" {
 		className = owner
 	}
-	vm.rememberStaticValueRefsInField(value, staticFieldRef{ClassName: className, FieldName: fieldKey})
+	vm.replaceStaticValueRefsInField(previous, value, staticFieldRef{ClassName: className, FieldName: fieldKey})
 }
 
 func (vm *VM) assignPath(root Value, parts []string, value Value) error {
@@ -2729,9 +2738,6 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 				value = coerceSObjectFieldRuntimeValue(value, definition.Fields[canonical])
 			}
 		}
-	}
-	if value.Kind == ValueInt {
-		value = coerceLikelyCustomNumberRuntimeValue(resolvedField, value)
 	}
 	vm.markCollectionRefsEscaped(value)
 	setExplicitSObjectField(&current, resolvedField, value)

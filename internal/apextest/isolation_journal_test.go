@@ -72,7 +72,7 @@ func TestIsolationJournalRestoresInsertUpdateDeleteAndSequences(t *testing.T) {
 	}
 }
 
-func TestRunSequentialMethodsIsolatesSetupOrgWithClones(t *testing.T) {
+func TestRunSequentialMethodsIsolatesSetupOrgWithClassJournal(t *testing.T) {
 	ResetPerfCounters()
 	storage.ResetCloneStats()
 	t.Cleanup(ResetPerfCounters)
@@ -104,8 +104,15 @@ private class JournalReuseTest {
 	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
 		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
 	}
-	if got := SnapshotPerfCounters().CloneRuntimeOrgCalls; got != 3 {
-		t.Fatalf("cloneRuntimeOrg calls = %d, want setup clone plus per-method clones", got)
+	stats := SnapshotPerfCounters()
+	if stats.CloneRuntimeOrgCalls != 1 {
+		t.Fatalf("cloneRuntimeOrg calls = %d, want setup clone only", stats.CloneRuntimeOrgCalls)
+	}
+	if stats.CloneFallbacks != 0 {
+		t.Fatalf("clone fallbacks = %d, want class journal path", stats.CloneFallbacks)
+	}
+	if stats.JournalRollbacks != 2 {
+		t.Fatalf("journal rollbacks = %d, want one per method", stats.JournalRollbacks)
 	}
 }
 
@@ -138,6 +145,91 @@ private class JournalSetCreatedDateTest {
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
 		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
+func TestJournalRollbackCoversSetCreatedDateOnSetupRecord(t *testing.T) {
+	ResetPerfCounters()
+	storage.ResetCloneStats()
+	t.Cleanup(ResetPerfCounters)
+	t.Cleanup(storage.ResetCloneStats)
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/JournalSetupCreatedDateTest.cls"), `
+@isTest
+private class JournalSetupCreatedDateTest {
+  @TestSetup static void setup() {
+    insert new Account(Name = 'Fixture');
+  }
+  @isTest static void firstMethodChangesSetupCreatedDate() {
+    Account row = [SELECT Id FROM Account WHERE Name = 'Fixture' LIMIT 1];
+    Test.setCreatedDate(row.Id, Datetime.newInstanceGmt(2026, 1, 2, 3, 4, 5));
+  }
+  @isTest static void secondMethodSeesOriginalSetupRecord() {
+    Account row = [SELECT Id, CreatedDate FROM Account WHERE Name = 'Fixture' LIMIT 1];
+    System.assertNotEquals(Datetime.newInstanceGmt(2026, 1, 2, 3, 4, 5), row.CreatedDate);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+	stats := SnapshotPerfCounters()
+	if stats.CloneFallbacks != 0 {
+		t.Fatalf("clone fallbacks = %d, want class journal path", stats.CloneFallbacks)
+	}
+	if stats.JournalRollbacks != 2 {
+		t.Fatalf("journal rollbacks = %d, want one per method", stats.JournalRollbacks)
+	}
+}
+
+func TestJournalRollbackCoversRunAsMaterializedUser(t *testing.T) {
+	ResetPerfCounters()
+	storage.ResetCloneStats()
+	t.Cleanup(ResetPerfCounters)
+	t.Cleanup(storage.ResetCloneStats)
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/JournalRunAsUserTest.cls"), `
+@isTest
+private class JournalRunAsUserTest {
+  static Id runAsId = '00500000000JRN1';
+  @isTest static void firstMethodMaterializesRunAsUser() {
+    Profile p = [SELECT Id FROM Profile WHERE Name = 'System Administrator' LIMIT 1];
+    System.runAs(new User(Id = runAsId, ProfileId = p.Id, Username = 'journal-runas@example.test')) {
+      System.assertEquals(runAsId, UserInfo.getUserId());
+      System.assertEquals(1, [
+        SELECT count()
+        FROM PermissionSetAssignment
+        WHERE AssigneeId = :runAsId
+      ]);
+    }
+  }
+  @isTest static void secondMethodDoesNotSeeRunAsUser() {
+    System.assertEquals(0, [SELECT count() FROM User WHERE Id = :runAsId]);
+    System.assertEquals(0, [
+      SELECT count()
+      FROM PermissionSetAssignment
+      WHERE AssigneeId = :runAsId
+    ]);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+	stats := SnapshotPerfCounters()
+	if stats.CloneFallbacks != 0 {
+		t.Fatalf("clone fallbacks = %d, want class journal path", stats.CloneFallbacks)
+	}
+	if stats.JournalRollbacks != 2 {
+		t.Fatalf("journal rollbacks = %d, want one per method", stats.JournalRollbacks)
 	}
 }
 

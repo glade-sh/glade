@@ -218,6 +218,7 @@ const (
 	sobjectExplicitFieldsField               = "__glade_explicit_fields"
 	sobjectSetFieldsField                    = "__glade_set_fields"
 	sobjectUserSetFieldsField                = "__glade_user_set_fields"
+	sobjectDefaultedFieldsField              = "__glade_defaulted_fields"
 	sobjectDMLOptionsField                   = "__glade_dml_options"
 	sobjectDMLAccessibleField                = "__glade_dml_accessible"
 	sobjectTriggerField                      = "__glade_trigger_record"
@@ -227,7 +228,7 @@ const (
 )
 
 func isInternalSObjectField(field string) bool {
-	return field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField || field == sobjectStrippedChildRelationshipsField
+	return field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDefaultedFieldsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField || field == sobjectStrippedChildRelationshipsField
 }
 
 func vmImplicitDMLField(field storage.Field) bool {
@@ -409,6 +410,40 @@ func markUserSetSObjectField(value *Value, field string) {
 	value.Fields[sobjectUserSetFieldsField] = selected
 }
 
+func markDefaultedSObjectField(value *Value, field string) {
+	if value == nil || value.Kind != ValueObject || strings.TrimSpace(field) == "" {
+		return
+	}
+	if value.Fields == nil {
+		value.Fields = make(map[string]Value)
+	}
+	selected, ok := value.Fields[sobjectDefaultedFieldsField]
+	if !ok || selected.Kind != ValueMap {
+		selected = Map()
+		selected.Type = "Map<String,Boolean>"
+	}
+	keyValue := String(strings.ToLower(field))
+	encoded := mapKey(keyValue)
+	selected.Map[encoded] = Bool(true)
+	if selected.MapKeys == nil {
+		selected.MapKeys = make(map[string]Value)
+	}
+	selected.MapKeys[encoded] = keyValue
+	value.Fields[sobjectDefaultedFieldsField] = selected
+}
+
+func isDefaultedSObjectField(value Value, field string) bool {
+	if value.Fields == nil || strings.TrimSpace(field) == "" {
+		return false
+	}
+	selected, ok := value.Fields[sobjectDefaultedFieldsField]
+	if !ok || selected.Kind != ValueMap {
+		return false
+	}
+	flag, ok := selected.Map[mapKey(String(strings.ToLower(field)))]
+	return ok && flag.Kind == ValueBool && flag.Bool
+}
+
 func isUserSetSObjectField(value Value, field string) bool {
 	if value.Fields == nil || strings.TrimSpace(field) == "" {
 		return false
@@ -441,6 +476,7 @@ func setExplicitSObjectField(value *Value, field string, fieldValue Value) {
 		value.Fields = make(map[string]Value)
 	}
 	clearSObjectFieldAliasValues(value, field)
+	unmarkSObjectFieldMarker(value, sobjectDefaultedFieldsField, field)
 	value.Fields[field] = fieldValue
 	markExplicitSObjectField(value, field)
 	if fieldValue.Kind == ValueNull {
@@ -476,6 +512,7 @@ func clearSObjectFieldAliasValues(value *Value, field string) {
 		unmarkSObjectFieldMarker(value, sobjectExplicitFieldsField, candidate)
 		unmarkSObjectFieldMarker(value, sobjectSetFieldsField, candidate)
 		unmarkSObjectFieldMarker(value, sobjectUserSetFieldsField, candidate)
+		unmarkSObjectFieldMarker(value, sobjectDefaultedFieldsField, candidate)
 		unmarkSObjectFieldMarker(value, sobjectQueriedFieldsField, candidate)
 	}
 }
@@ -634,7 +671,7 @@ func dmlVisibleSObjectFields(value *Value) map[string]bool {
 		return fields
 	}
 	for field := range value.Fields {
-		if isInternalSObjectField(field) || isSObjectSystemField(field) {
+		if isInternalSObjectField(field) || isSObjectSystemField(field) || isDefaultedSObjectField(*value, field) {
 			continue
 		}
 		fields[strings.ToLower(field)] = true
@@ -648,6 +685,9 @@ func (vm *VM) unqueriedSObjectFieldError(receiver Value, field string, enforceDM
 	}
 	if marker, ok := receiver.Fields[sobjectDMLAccessibleField]; ok && marker.Kind == ValueBool && marker.Bool {
 		if _, _, exists := objectFieldValue(receiver, field); !exists {
+			return nil
+		}
+		if isDefaultedSObjectField(receiver, field) {
 			return nil
 		}
 	}
@@ -869,7 +909,7 @@ func (vm *VM) lazyChildRelationshipLookup(parentObject, field string) lazyChildR
 			if fieldDef.Type != storage.FieldReference || len(fieldDef.ReferenceTo) == 0 {
 				continue
 			}
-			if !relationshipTargetsObject(storage.Relationship{ParentObjects: append([]string(nil), fieldDef.ReferenceTo...)}, parentObject) {
+			if !relationshipTargetsObject(storage.Relationship{ParentObjects: fieldDef.ReferenceTo}, parentObject) {
 				continue
 			}
 			if fieldDef.APIName == "" {
@@ -1475,7 +1515,7 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 			return value, true
 		}
 	}
-	if storage.IsCustomMetadataDefinition(definition) || storage.IsCustomSettingDefinition(definition) {
+	if storage.IsCustomMetadataDefinition(definition) {
 		if defaultValue, ok := storage.DefaultValueForField(fieldDef); ok {
 			return vmValueFromStorage(defaultValue), true
 		}
@@ -2084,9 +2124,7 @@ func (vm *VM) parentRelationshipShellFromLookupID(relation storage.Relationship,
 		}
 		parent := Object(parentObject)
 		parent.Fields["Id"] = platformScalar("Id", string(lookupID))
-		if strings.EqualFold(parentObject, "User") && storage.ID(vm.currentUserInfoField("Id", "")) == lookupID {
-			parent.Fields["Name"] = String(vm.currentUserInfoField("Name", "Test User"))
-		}
+		vm.applyCurrentUserRelationshipFields(&parent, parentObject, lookupID)
 		return parent, true
 	}
 	return Null, false

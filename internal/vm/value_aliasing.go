@@ -357,6 +357,100 @@ func mergeRicherApexMocksAlias(existing, replacement Value) (Value, bool) {
 func cloneValuePreserveRefs(value Value) Value {
 	return cloneValuePreserveRefsSeen(value, make(map[uint64]bool))
 }
+
+func cloneValueDetachedPreserveRefs(value Value) Value {
+	return cloneValueDetachedPreserveRefsSeen(value, make(map[uint64]Value))
+}
+
+func cloneValueDetachedPreserveRefsSeen(value Value, memo map[uint64]Value) Value {
+	out := value
+	if value.Ref != 0 && cloneDetachedRefKind(value.Kind) {
+		if existing, ok := memo[value.Ref]; ok {
+			return existing
+		}
+		out.Ref = newValueRef()
+		out.Fields = nil
+		out.Map = nil
+		out.MapKeys = nil
+		out.MapOrder = nil
+		out.List = nil
+		out.Set = nil
+		if value.Fields != nil {
+			out.Fields = make(map[string]Value, len(value.Fields))
+		}
+		if value.Map != nil {
+			out.Map = make(map[string]Value, len(value.Map))
+		}
+		if value.MapKeys != nil {
+			out.MapKeys = make(map[string]Value, len(value.MapKeys))
+		}
+		if value.MapOrder != nil {
+			out.MapOrder = append([]string(nil), value.MapOrder...)
+		}
+		if value.List != nil {
+			out.List = make([]Value, len(value.List))
+		}
+		if value.Set != nil {
+			out.Set = make([]Value, len(value.Set))
+		}
+		memo[value.Ref] = out
+	} else {
+		if value.Fields != nil {
+			out.Fields = make(map[string]Value, len(value.Fields))
+		}
+		if value.Map != nil {
+			out.Map = make(map[string]Value, len(value.Map))
+		}
+		if value.MapKeys != nil {
+			out.MapKeys = make(map[string]Value, len(value.MapKeys))
+		}
+		if value.MapOrder != nil {
+			out.MapOrder = append([]string(nil), value.MapOrder...)
+		}
+		if value.List != nil {
+			out.List = make([]Value, len(value.List))
+		}
+		if value.Set != nil {
+			out.Set = make([]Value, len(value.Set))
+		}
+	}
+	if value.Fields != nil {
+		for key, child := range value.Fields {
+			out.Fields[key] = cloneValueDetachedPreserveRefsSeen(child, memo)
+		}
+	}
+	if value.Map != nil {
+		for key, child := range value.Map {
+			out.Map[key] = cloneValueDetachedPreserveRefsSeen(child, memo)
+		}
+	}
+	if value.MapKeys != nil {
+		for key, child := range value.MapKeys {
+			out.MapKeys[key] = cloneValueDetachedPreserveRefsSeen(child, memo)
+		}
+	}
+	if value.List != nil {
+		for i, child := range value.List {
+			out.List[i] = cloneValueDetachedPreserveRefsSeen(child, memo)
+		}
+	}
+	if value.Set != nil {
+		for i, child := range value.Set {
+			out.Set[i] = cloneValueDetachedPreserveRefsSeen(child, memo)
+		}
+	}
+	return out
+}
+
+func cloneDetachedRefKind(kind ValueKind) bool {
+	switch kind {
+	case ValueObject, ValueList, ValueSet, ValueMap:
+		return true
+	default:
+		return false
+	}
+}
+
 func snapshotAlias(value Value) aliasSnapshot {
 	return aliasSnapshot{ref: value.Ref, kind: value.Kind, typeName: value.Type}
 }
@@ -421,33 +515,33 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 		return
 	}
 	locations := vm.staticValueRefFields[previous.Ref]
-	if len(locations) == 0 {
+	if locations.empty() {
 		return
 	}
 	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
 	seen := *seenPtr
 	clear(seen)
 	defer aliasRefSetPool.Put(seenPtr)
-	for _, location := range locations {
+	locations.forEach(func(location staticFieldRef) {
 		class, ok := vm.Classes[location.ClassName]
 		if !ok || class.StaticFields == nil {
-			continue
+			return
 		}
 		field, ok := class.StaticFields[location.FieldName]
 		if !ok {
-			continue
+			return
 		}
 		clearRefSeen(seen)
 		replaced, changed := replaceValueAlias(field.Value, previous, updated, seen)
 		if !changed {
 			vm.forgetStaticValueRefInField(previous.Ref, location)
-			continue
+			return
 		}
 		field.Value = replaced
 		class.StaticFields[location.FieldName] = field
 		vm.Classes[location.ClassName] = class
 		vm.rememberAdditionalStaticValueRefsInField(updated, location)
-	}
+	})
 }
 func (vm *VM) propagateAliasSnapshotToScope(scope map[string]Value, previous aliasSnapshot, updated Value) {
 	if !previous.valid() {
@@ -483,33 +577,33 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 		return
 	}
 	locations := vm.staticValueRefFields[previous.ref]
-	if len(locations) == 0 {
+	if locations.empty() {
 		return
 	}
 	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
 	seen := *seenPtr
 	clear(seen)
 	defer aliasRefSetPool.Put(seenPtr)
-	for _, location := range locations {
+	locations.forEach(func(location staticFieldRef) {
 		class, ok := vm.Classes[location.ClassName]
 		if !ok || class.StaticFields == nil {
-			continue
+			return
 		}
 		field, ok := class.StaticFields[location.FieldName]
 		if !ok {
-			continue
+			return
 		}
 		clearRefSeen(seen)
 		replaced, changed := replaceAliasSnapshot(field.Value, previous, updated, seen)
 		if !changed {
 			vm.forgetStaticValueRefInField(previous.ref, location)
-			continue
+			return
 		}
 		field.Value = replaced
 		class.StaticFields[location.FieldName] = field
 		vm.Classes[location.ClassName] = class
 		vm.rememberAdditionalStaticValueRefsInField(updated, location)
-	}
+	})
 }
 func (vm *VM) propagateAliasSnapshotMutationToScope(scope map[string]Value, previous aliasSnapshot, original, updated Value, refreshNestedCollections bool) bool {
 	if !scopeHasAnyRef(scope) {
@@ -790,6 +884,16 @@ func (vm *VM) rememberStaticValueRefsInField(value Value, location staticFieldRe
 	vm.forgetStaticValueRefsInField(location)
 	vm.collectStaticFieldValueRefsInField(value, location)
 }
+func (vm *VM) replaceStaticValueRefsInField(previous, value Value, location staticFieldRef) {
+	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
+		return
+	}
+	if sameStaticCollectionWriteback(previous, value) {
+		return
+	}
+	vm.forgetStaticValueRefsFromValue(previous, location)
+	vm.collectStaticFieldValueRefsInField(value, location)
+}
 func (vm *VM) rememberAdditionalStaticValueRefsInField(value Value, location staticFieldRef) {
 	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
 		return
@@ -811,24 +915,57 @@ func (vm *VM) forgetStaticValueRefsInField(location staticFieldRef) {
 		vm.forgetStaticValueRefInField(ref, location)
 	}
 }
+func (vm *VM) forgetStaticValueRefsFromValue(value Value, location staticFieldRef) {
+	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+	seen := *seenPtr
+	clear(seen)
+	defer aliasRefSetPool.Put(seenPtr)
+	vm.forgetStaticFieldValueRefs(value, location, seen)
+}
+func (vm *VM) forgetStaticFieldValueRefs(value Value, location staticFieldRef, seen map[uint64]bool) {
+	if value.Ref != 0 {
+		if seen[value.Ref] {
+			return
+		}
+		seen[value.Ref] = true
+		vm.forgetStaticValueRefInField(value.Ref, location)
+	}
+	switch value.Kind {
+	case ValueObject:
+		for _, child := range value.Fields {
+			vm.forgetStaticFieldValueRefs(child, location, seen)
+		}
+	case ValueMap:
+		for _, child := range value.Map {
+			vm.forgetStaticFieldValueRefs(child, location, seen)
+		}
+		for _, child := range value.MapKeys {
+			vm.forgetStaticFieldValueRefs(child, location, seen)
+		}
+	case ValueList:
+		for _, child := range value.List {
+			vm.forgetStaticFieldValueRefs(child, location, seen)
+		}
+	case ValueSet:
+		for _, child := range value.Set {
+			vm.forgetStaticFieldValueRefs(child, location, seen)
+		}
+	}
+}
 func (vm *VM) forgetStaticValueRefInField(ref uint64, location staticFieldRef) {
 	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil || ref == 0 {
 		return
 	}
 	locations := vm.staticValueRefFields[ref]
-	for i, existing := range locations {
-		if existing != location {
-			continue
-		}
-		locations = append(locations[:i], locations[i+1:]...)
-		if len(locations) == 0 {
-			delete(vm.staticValueRefFields, ref)
-			delete(vm.staticValueRefs, ref)
-		} else {
-			vm.staticValueRefFields[ref] = locations
-		}
+	if !locations.remove(location) {
 		return
 	}
+	if locations.empty() {
+		delete(vm.staticValueRefFields, ref)
+		delete(vm.staticValueRefs, ref)
+		return
+	}
+	vm.staticValueRefFields[ref] = locations
 }
 func (vm *VM) invalidateStaticValueRefs() {
 	vm.staticValueRefs = nil
@@ -880,9 +1017,9 @@ func valueHasRef(value Value, seen map[uint64]bool) bool {
 	}
 	return false
 }
-func (vm *VM) collectStaticValueRefs() (map[uint64]bool, map[uint64][]staticFieldRef) {
+func (vm *VM) collectStaticValueRefs() (map[uint64]bool, map[uint64]staticFieldRefSet) {
 	refs := make(map[uint64]bool)
-	fields := make(map[uint64][]staticFieldRef)
+	fields := make(map[uint64]staticFieldRefSet)
 	seen := make(map[uint64]bool)
 	for className, class := range vm.Classes {
 		for fieldName, field := range class.StaticFields {
@@ -922,14 +1059,16 @@ func collectValueRefs(value Value, refs, seen map[uint64]bool) {
 		}
 	}
 }
-func collectStaticFieldValueRefs(value Value, refs map[uint64]bool, fields map[uint64][]staticFieldRef, location staticFieldRef, seen map[uint64]bool) {
+func collectStaticFieldValueRefs(value Value, refs map[uint64]bool, fields map[uint64]staticFieldRefSet, location staticFieldRef, seen map[uint64]bool) {
 	if value.Ref != 0 {
 		if seen[value.Ref] {
 			return
 		}
 		seen[value.Ref] = true
 		refs[value.Ref] = true
-		fields[value.Ref] = appendStaticFieldRef(fields[value.Ref], location)
+		locations := fields[value.Ref]
+		locations.add(location)
+		fields[value.Ref] = locations
 	}
 	switch value.Kind {
 	case ValueObject:
@@ -953,13 +1092,87 @@ func collectStaticFieldValueRefs(value Value, refs map[uint64]bool, fields map[u
 		}
 	}
 }
-func appendStaticFieldRef(locations []staticFieldRef, location staticFieldRef) []staticFieldRef {
-	for _, existing := range locations {
-		if existing == location {
-			return locations
+
+type staticFieldRefSet struct {
+	single    staticFieldRef
+	hasSingle bool
+	many      map[staticFieldRef]struct{}
+}
+
+func (s *staticFieldRefSet) add(location staticFieldRef) {
+	if s.hasSingle {
+		if s.single == location {
+			return
 		}
+		if s.many == nil {
+			s.many = make(map[staticFieldRef]struct{}, 1)
+		}
+		s.many[location] = struct{}{}
+		return
 	}
-	return append(locations, location)
+	if len(s.many) == 0 {
+		s.single = location
+		s.hasSingle = true
+		return
+	}
+	s.many[location] = struct{}{}
+}
+
+func (s *staticFieldRefSet) remove(location staticFieldRef) bool {
+	if s.hasSingle && s.single == location {
+		s.single = staticFieldRef{}
+		s.hasSingle = false
+		return true
+	}
+	if len(s.many) == 0 {
+		return false
+	}
+	if _, ok := s.many[location]; !ok {
+		return false
+	}
+	delete(s.many, location)
+	if len(s.many) == 0 {
+		s.many = nil
+	}
+	return true
+}
+
+func (s staticFieldRefSet) empty() bool {
+	return !s.hasSingle && len(s.many) == 0
+}
+
+func (s staticFieldRefSet) len() int {
+	n := len(s.many)
+	if s.hasSingle {
+		n++
+	}
+	return n
+}
+
+func (s staticFieldRefSet) forEach(fn func(staticFieldRef)) {
+	if s.hasSingle {
+		fn(s.single)
+	}
+	for location := range s.many {
+		fn(location)
+	}
+}
+
+func (s staticFieldRefSet) locations() []staticFieldRef {
+	out := make([]staticFieldRef, 0, s.len())
+	s.forEach(func(location staticFieldRef) {
+		out = append(out, location)
+	})
+	return out
+}
+
+func sameStaticCollectionWriteback(previous, value Value) bool {
+	return previous.Ref != 0 &&
+		previous.Ref == value.Ref &&
+		previous.Kind == value.Kind &&
+		mutableCollectionKind(value.Kind) &&
+		len(previous.Fields) == 0 &&
+		len(value.Fields) == 0
 }
 func replaceCollectionAlias(value, previous, updated Value, seen map[uint64]bool) (Value, bool) {
 	return replaceValueAlias(value, previous, updated, seen)
@@ -1552,23 +1765,33 @@ func (vm *VM) staticFieldValueByRef(ref uint64) (Value, bool) {
 	if !vm.staticValueRefs[ref] {
 		return Null, false
 	}
-	for _, location := range vm.staticValueRefFields[ref] {
+	locations := vm.staticValueRefFields[ref]
+	found := Null
+	foundOK := false
+	locations.forEach(func(location staticFieldRef) {
+		if foundOK {
+			return
+		}
 		class, ok := vm.Classes[location.ClassName]
 		if !ok {
-			continue
+			return
 		}
 		field, ok := class.StaticFields[location.FieldName]
 		if !ok {
-			continue
+			return
 		}
 		if field.Value.Ref == ref {
-			return field.Value, true
+			found = field.Value
+			foundOK = true
+			return
 		}
 		if value, ok := findValueByRef(field.Value, ref, make(map[uint64]bool)); ok {
-			return value, true
+			found = value
+			foundOK = true
+			return
 		}
-	}
-	return Null, false
+	})
+	return found, foundOK
 }
 func (vm *VM) scanStaticFieldValueByRef(ref uint64) (Value, bool) {
 	for _, class := range vm.Classes {

@@ -26,6 +26,9 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 		if lookaheadSource := patternLookaheadSource(receiver); lookaheadSource != "" {
 			matcher.Fields["lookaheadSource"] = String(lookaheadSource)
 		}
+		if backreferences, ok := receiver.Fields["backreferencePairs"]; ok {
+			matcher.Fields["backreferencePairs"] = backreferences
+		}
 		if flags, ok := receiver.Fields["flags"]; ok {
 			matcher.Fields["flags"] = flags
 		}
@@ -209,7 +212,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		replaced, err := matcherReplace("Matcher.replaceAll", re, input, region, args, true)
+		replaced, err := matcherReplaceWithMetadata(receiver, "Matcher.replaceAll", re, input, region, args, true)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -221,7 +224,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		replaced, err := matcherReplace("Matcher.replaceFirst", re, input, region, args, false)
+		replaced, err := matcherReplaceWithMetadata(receiver, "Matcher.replaceFirst", re, input, region, args, false)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}

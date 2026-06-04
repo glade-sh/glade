@@ -1841,8 +1841,8 @@ func TestStringRegexReplacementSplitAndUnsupportedEdges(t *testing.T) {
 	if err != nil || !handled || quotedPattern.Text != `SELECT Id FROM Account WHERE Id = 001000000000001` {
 		t.Fatalf("replaceAll quoted pattern = %#v handled=%v err=%v", quotedPattern, handled, err)
 	}
-	quotedLookaround, handled, err := callStringMember(String(`{"type":"Account__c","field":"Name__c"}`), "replaceAll", []Value{String(`(?<=")([^"]*__c)(?=")`), String(`npsp__$1`)})
-	if err != nil || !handled || quotedLookaround.Text != `{"type":"npsp__Account__c","field":"npsp__Name__c"}` {
+	quotedLookaround, handled, err := callStringMember(String(`{"type":"Account__c","field":"Name__c"}`), "replaceAll", []Value{String(`(?<=")([^"]*__c)(?=")`), String(`pkg1__$1`)})
+	if err != nil || !handled || quotedLookaround.Text != `{"type":"pkg1__Account__c","field":"pkg1__Name__c"}` {
 		t.Fatalf("replaceAll quoted lookaround = %#v handled=%v err=%v", quotedLookaround, handled, err)
 	}
 	split, handled, err := callStringMember(String(":boo:"), "split", []Value{String(":"), Int(-1)})
@@ -1997,10 +1997,13 @@ func TestStringEscapeJavaLikeOctalAndUnicodeEdges(t *testing.T) {
 
 func TestExecBlobEncodingCryptoStdlib(t *testing.T) {
 	program, err := CompileAnonymous(`
-Blob hello = Blob.valueOf('hello');
-System.assertEquals('hello', hello.toString());
-System.assertEquals(5, hello.size());
+	Blob hello = Blob.valueOf('hello');
+	System.assertEquals('hello', hello.toString());
+	System.assertEquals('Blob[5]', String.valueOf(hello));
+	System.assertEquals(5, hello.size());
 System.assertEquals('68656c6c6f', EncodingUtil.convertToHex(hello));
+System.assertEquals('68656c6c6f', EncodingUtil.ConvertToHex(hello));
+System.assertEquals('68656c6c6f', EncodingUtil.ConvertTohex(hello));
 Blob decodedHex = EncodingUtil.convertFromHex('68656C6C6F');
 System.assertEquals('hello', decodedHex.toString());
 Blob empty = Blob.valueOf('');
@@ -2059,10 +2062,11 @@ System.assert(!Crypto.verifyHmac('hmacSHA256', Blob.valueOf('changed'), key, hma
 System.assert(Crypto.areEqualConstantTime(hello, Blob.valueOf('hello')));
 System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hullo')));
 System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hello!')));
-Blob aes128 = Crypto.generateAESKey(128);
-Blob aes192 = Crypto.generateAESKey(192);
-Blob aes256 = Crypto.generateAESKey(256);
-System.assertEquals(16, aes128.size());
+	Blob aes128 = Crypto.generateAESKey(128);
+	Blob aes192 = Crypto.generateAESKey(192);
+	Blob aes256 = Crypto.generateAESKey(256);
+	System.assertEquals('Blob[16]', String.valueOf(aes128));
+	System.assertEquals(16, aes128.size());
 System.assertEquals(24, aes192.size());
 System.assertEquals(32, aes256.size());
 System.assertEquals('0102030405060708090a0b0c0d0e0f10', EncodingUtil.convertToHex(aes128));
@@ -5050,15 +5054,15 @@ func TestExecCollectionStdlibRejectsSObjectMapEdgeErrors(t *testing.T) {
 	}
 }
 
-func TestExecCollectionStdlibSObjectStringMapUsesNameKey(t *testing.T) {
+func TestExecCollectionStdlibSObjectStringMapUsesIdKey(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account first = new Account(Id = '001B000001DVM9tIAH', Name = 'Acme');
 Account second = new Account(Id = '001B000001DVM9uIAH', Name = 'Beta');
-Map<String, Account> byName = new Map<String, Account>(new List<Account>{first, second});
-System.assertEquals(2, byName.size());
-System.assertEquals(first.Id, byName.get('Acme').Id);
-System.assertEquals(second.Id, byName.get('Beta').Id);
-	`)
+Map<String, Account> byIdText = new Map<String, Account>(new List<Account>{first, second});
+System.assertEquals(2, byIdText.size());
+System.assertEquals(first.Id, byIdText.get(String.valueOf(first.Id)).Id);
+System.assertEquals(second.Id, byIdText.get(String.valueOf(second.Id)).Id);
+		`)
 	if err != nil {
 		t.Fatal(err)
 	}

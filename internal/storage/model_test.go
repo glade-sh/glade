@@ -16,6 +16,38 @@ func TestResolveFieldNameResolvesIdCaseInsensitive(t *testing.T) {
 	}
 }
 
+func TestEnsureStandardObjectDoesNotMutateSharedRuntimeDefinition(t *testing.T) {
+	org := OrgState{Objects: map[string]ObjectState{
+		"Account": {
+			Definition: ObjectDefinition{
+				APIName: "Account",
+				Label:   "Account",
+				Fields: map[string]Field{
+					"Name": {APIName: "Name", Type: FieldString},
+				},
+			},
+			Records: map[ID]Record{},
+		},
+	}}
+
+	clone := org.CloneRuntimeFrozenShared()
+	if !sameFieldMap(org.Objects["Account"].Definition.Fields, clone.Objects["Account"].Definition.Fields) {
+		t.Fatalf("runtime clone did not share definition fields before overlay")
+	}
+
+	EnsureStandardObject(&clone, "Account")
+
+	if _, ok := clone.Objects["Account"].Definition.Fields["Id"]; !ok {
+		t.Fatalf("clone Account fields missing standard Id overlay")
+	}
+	if _, ok := org.Objects["Account"].Definition.Fields["Id"]; ok {
+		t.Fatalf("source Account fields were mutated by clone standard overlay")
+	}
+	if sameFieldMap(org.Objects["Account"].Definition.Fields, clone.Objects["Account"].Definition.Fields) {
+		t.Fatalf("standard overlay kept sharing definition fields")
+	}
+}
+
 func TestResolveFieldNameMapsUnqualifiedCustomFieldToOrgNamespace(t *testing.T) {
 	definition := ObjectDefinition{APIName: "Account", Fields: map[string]Field{
 		"pkg__UpdatePrimaryLocation__c": {APIName: "pkg__UpdatePrimaryLocation__c", Type: FieldBoolean},
@@ -439,6 +471,16 @@ func TestEnsureStandardObjectFieldsRemovesEventNameOverlay(t *testing.T) {
 	}
 	if field, ok := definition.Fields["Type"]; !ok || field.Type != FieldPicklist || !FieldFlagValue(field.Createable, false) {
 		t.Fatalf("Event.Type field = %#v, %v", field, ok)
+	}
+}
+
+func TestEnsureStandardObjectFieldsAddsTaskTypeOverlay(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Task", Fields: map[string]Field{}}
+
+	EnsureStandardObjectFields(&definition)
+
+	if field, ok := definition.Fields["Type"]; !ok || field.Type != FieldPicklist || !FieldFlagValue(field.Createable, false) || !FieldFlagValue(field.Updateable, false) {
+		t.Fatalf("Task.Type field = %#v, %v", field, ok)
 	}
 }
 

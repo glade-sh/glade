@@ -19,6 +19,8 @@ func runCompatSurface(args []string, w io.Writer) error {
 	switch args[0] {
 	case "refresh":
 		return runCompatSurfaceRefresh(args[1:], w)
+	case "sources":
+		return runCompatSurfaceSources(args[1:], w)
 	case "docs":
 		return runCompatSurfaceDocs(args[1:], w)
 	case "org":
@@ -29,6 +31,8 @@ func runCompatSurface(args []string, w io.Writer) error {
 		return runCompatSurfaceEvidence(args[1:], w)
 	case "ledger":
 		return runCompatSurfaceLedger(args[1:], w)
+	case "packet":
+		return runCompatSurfacePacket(args[1:], w)
 	case "gaps":
 		return runCompatSurfaceGaps(args[1:], w)
 	case "explain":
@@ -41,7 +45,98 @@ func runCompatSurface(args []string, w io.Writer) error {
 }
 
 func surfaceUsage() string {
-	return "usage: glade compat surface refresh|docs|org|glade|evidence|ledger|gaps|explain|check [flags]"
+	return "usage: glade compat surface refresh|sources|docs|org|glade|evidence|ledger|packet|gaps|explain|check [flags]"
+}
+
+func runCompatSurfaceSources(args []string, w io.Writer) error {
+	docs := ""
+	output := ""
+	check := ""
+	jsonOut := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--docs":
+			i++
+			var err error
+			docs, err = argValue(args, i, "--docs")
+			if err != nil {
+				return err
+			}
+		case "--output":
+			i++
+			var err error
+			output, err = argValue(args, i, "--output")
+			if err != nil {
+				return err
+			}
+		case "--check":
+			i++
+			var err error
+			check, err = argValue(args, i, "--check")
+			if err != nil {
+				return err
+			}
+		case "--json":
+			jsonOut = true
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	requested := 0
+	for _, set := range []bool{jsonOut, output != "", check != ""} {
+		if set {
+			requested++
+		}
+	}
+	if requested > 1 {
+		return errors.New("use only one of --json, --output, or --check")
+	}
+	if docs == "" {
+		docs = os.Getenv("GLADE_SALESFORCE_DOCS_SOURCE")
+	}
+	report, err := surfaceledger.AuditSourceUniverse(docs)
+	if err != nil {
+		return err
+	}
+	if jsonOut {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(report)
+	}
+	markdown := surfaceledger.SourceAuditMarkdown(report)
+	if output != "" {
+		if err := os.WriteFile(output, []byte(markdown), 0o644); err != nil {
+			return err
+		}
+	}
+	if check != "" {
+		existing, err := os.ReadFile(check)
+		if err != nil {
+			return err
+		}
+		if string(existing) != markdown {
+			return fmt.Errorf("surface sources drift: run `glade compat surface sources --docs %s --output %s`", docs, check)
+		}
+		if !surfaceledger.SourceAuditComplete(report) {
+			return fmt.Errorf("surface sources check failed: missing source families: %d, partial source families: %d, missingLocalMarkdown: %d, unmanifestedMarkdown: %d", report.MissingRequired, report.PartialRequired, report.MissingLocalMarkdown, report.UnmanifestedMarkdown)
+		}
+		fmt.Fprintf(w, "%s: up to date\n", check)
+	}
+	fmt.Fprintln(w, "surface sources: ok")
+	fmt.Fprintf(w, "atlas: pinned=%d missing=%d partial=%d\n", report.AtlasPinned, report.AtlasMissing, report.AtlasPartial)
+	fmt.Fprintf(w, "nonAtlas: lwc=%s siteReferences=%s\n", report.LWCStatus, report.SiteReferencesStatus)
+	fmt.Fprintf(w, "files: manifest=%s searchIndex=%s missingLocalMarkdown=%d\n", presentWord(report.ManifestPresent), presentWord(report.SearchIndexPresent), report.MissingLocalMarkdown)
+	if check != "" {
+		fmt.Fprintf(w, "check: %s\n", check)
+	}
+	return nil
+}
+
+func presentWord(ok bool) string {
+	if ok {
+		return "present"
+	}
+	return "missing"
 }
 
 func runCompatSurfaceRefresh(args []string, w io.Writer) error {
@@ -281,6 +376,60 @@ func runCompatSurfaceLedger(args []string, w io.Writer) error {
 		return os.WriteFile(output, []byte(buf.String()), 0o644)
 	}
 	return surfaceledger.WriteLedgerJSON(w, ledger)
+}
+
+func runCompatSurfacePacket(args []string, w io.Writer) error {
+	ledgerPath := ""
+	area := ""
+	output := ""
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--ledger":
+			i++
+			var err error
+			ledgerPath, err = argValue(args, i, "--ledger")
+			if err != nil {
+				return err
+			}
+		case "--area":
+			i++
+			var err error
+			area, err = argValue(args, i, "--area")
+			if err != nil {
+				return err
+			}
+		case "--out", "--output":
+			i++
+			var err error
+			output, err = argValue(args, i, args[i-1])
+			if err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	packet, ok := surfaceledger.AreaPacketByName(area)
+	if !ok {
+		return fmt.Errorf("unknown surface area %q", area)
+	}
+	ledger, err := surfaceledger.ReadLedgerJSON(ledgerPath)
+	if err != nil {
+		return err
+	}
+	markdown := surfaceledger.PacketMarkdown(ledger, packet)
+	if output != "" {
+		if err := os.MkdirAll(filepath.Dir(output), 0o755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(output, []byte(markdown), 0o644); err != nil {
+			return err
+		}
+		fmt.Fprintf(w, "surface packet: %s -> %s\n", packet.Name, output)
+		return nil
+	}
+	fmt.Fprint(w, markdown)
+	return nil
 }
 
 func runCompatSurfaceGaps(args []string, w io.Writer) error {

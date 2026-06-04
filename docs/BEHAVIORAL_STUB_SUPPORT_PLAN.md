@@ -16,12 +16,15 @@ The contract-corpus workflow is now implemented and generated.
   - implementation owner lane
   - oddity metadata (`normalization`, `failureShape`, `oddityRisk`, `edgeTags`)
 - `glade compat stub-contracts --probe-manifest docs/generated/STUB_CONTRACT_PROBE_MANIFEST.json --probe-tier <smoke|core|full|local>`
-  emits discoverable probe specs for generated stub contracts.
+  emits lab probe specs for generated stub contracts.
 - `glade probe local <stub.probe.id>` executes generated stub contract probes
   even when `ProbeRunner` has no handwritten probe registration.
 
 This establishes discovery coverage across generated stubs while preserving
 explicit unsupported surfaces and odd-behavior tracking for implementation work.
+`docs/generated/STUB_DISCOVERY*.json` and
+`docs/generated/STUB_CONTRACT_PROBE_MANIFEST.json` are packet evidence inputs.
+They are not the broad Salesforce implementation backlog.
 
 ## Current Baseline
 

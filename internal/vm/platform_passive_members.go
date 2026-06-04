@@ -465,6 +465,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if message, ok := receiver.Fields["message"]; ok {
 				return message, receiver, false, true, nil
 			}
+			if isCustomExceptionWithoutExplicitMessage(receiver) {
+				return String("Script-thrown exception"), receiver, false, true, nil
+			}
 			if exceptionTypeName(receiver.Type) == "JSONException" {
 				return String("Script-thrown exception"), receiver, false, true, nil
 			}
@@ -1331,6 +1334,14 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getLabel expects 0 arguments")
 			}
 			return receiver.Fields["label"], receiver, false, true, nil
+		case "getInlineHelpText":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getInlineHelpText expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["inlineHelpText"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return String(""), receiver, false, true, nil
 		case "getLocalName":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getLocalName expects 0 arguments")
@@ -1339,7 +1350,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return value, receiver, false, true, nil
 			}
 			if value, ok := receiver.Fields["name"]; ok && value.Kind == ValueString {
-				return String(localSchemaName(value.Text)), receiver, false, true, nil
+				return String(vm.localSchemaName(value.Text)), receiver, false, true, nil
 			}
 			return Null, receiver, false, true, nil
 		case "getCompoundFieldName":
@@ -1478,15 +1489,26 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getRelationshipName expects 0 arguments")
 			}
+			hasReferenceTarget := false
+			if references, ok := receiver.Fields["referenceTo"]; ok && references.Kind == ValueList && len(references.List) > 0 {
+				hasReferenceTarget = true
+			}
+			fieldName, hasFieldName := receiver.Fields["name"]
+			if !hasReferenceTarget && hasFieldName && fieldName.Kind == ValueString && isSObjectSystemUserReferenceField(fieldName.Text) {
+				hasReferenceTarget = true
+			}
+			if !hasReferenceTarget {
+				return Null, receiver, false, true, nil
+			}
 			if relationshipName, ok := receiver.Fields["relationshipName"]; ok && relationshipName.Kind != ValueNull {
 				return relationshipName, receiver, false, true, nil
 			}
-			if fieldName, ok := receiver.Fields["name"]; ok && fieldName.Kind == ValueString {
+			if hasFieldName && fieldName.Kind == ValueString {
 				if derived := lookupFieldRelationshipName(fieldName.Text); derived != "" {
 					return String(derived), receiver, false, true, nil
 				}
 			}
-			return receiver.Fields["relationshipName"], receiver, false, true, nil
+			return Null, receiver, false, true, nil
 		case "getPicklistValues":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getPicklistValues expects 0 arguments")
@@ -2022,7 +2044,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Blob.size expects 0 arguments")
 			}
-			return Int(int64(len([]byte(receiver.Fields["value"].String())))), receiver, false, true, nil
+			return Int(int64(len(receiver.Fields["value"].String()))), receiver, false, true, nil
 		case "toPdf":
 			if receiver.Type != "Blob" {
 				return Null, receiver, false, false, nil
@@ -2080,9 +2102,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	case "TimeZone":
 		switch method {
-		case "getID":
+		case "getID", "toString":
 			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("TimeZone.getID expects 0 arguments")
+				return Null, receiver, false, true, fmt.Errorf("TimeZone.%s expects 0 arguments", method)
 			}
 			return receiver.Fields["id"], receiver, false, true, nil
 		case "getDisplayName":
@@ -2255,7 +2277,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Database.Error.getStatusCode expects 0 arguments")
 			}
-			return receiver.Fields["statusCode"], receiver, false, true, nil
+			return databaseErrorStatusCodeValue(receiver.Fields["statusCode"]), receiver, false, true, nil
 		case "getFields":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Database.Error.getFields expects 0 arguments")
@@ -2301,7 +2323,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if name.Kind != ValueString {
 				return name, receiver, false, true, nil
 			}
-			return String(localSchemaName(name.Text)), receiver, false, true, nil
+			return String(vm.localSchemaName(name.Text)), receiver, false, true, nil
 		case "getLabel":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getLabel expects 0 arguments")
@@ -2473,18 +2495,15 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return receiver.Fields["restrictedDelete"], receiver, false, true, nil
 		}
-	case "HttpRequest":
-		method = canonicalStdlibMemberName(method, "setEndpoint", "getEndpoint", "setMethod", "getMethod", "setBody", "setBodyAsBlob", "setBodyDocument", "getBodyDocument", "setClientCertificateName", "setClientCertificate", "setHeader", "getHeaderKeys", "getHeader", "setCompressed", "getCompressed", "setTimeout", "getTimeout", "getBody", "getBodyAsBlob")
-		switch method {
-		case "setEndpoint":
-			if len(args) != 1 || args[0].Kind != ValueString {
-				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setEndpoint expects String")
-			}
-			if err := validateHttpEndpoint(args[0].Text); err != nil {
-				return Null, receiver, false, true, err
-			}
-			receiver.Fields["endpoint"] = args[0]
-			return Null, receiver, true, true, nil
+		case "HttpRequest":
+			method = canonicalStdlibMemberName(method, "setEndpoint", "getEndpoint", "setMethod", "getMethod", "setBody", "setBodyAsBlob", "setBodyDocument", "getBodyDocument", "setClientCertificateName", "setClientCertificate", "setHeader", "getHeaderKeys", "getHeader", "setCompressed", "getCompressed", "setTimeout", "getTimeout", "getBody", "getBodyAsBlob")
+			switch method {
+			case "setEndpoint":
+				if len(args) != 1 || args[0].Kind != ValueString {
+					return Null, receiver, false, true, fmt.Errorf("HttpRequest.setEndpoint expects String")
+				}
+				receiver.Fields["endpoint"] = args[0]
+				return Null, receiver, true, true, nil
 		case "getEndpoint":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getEndpoint expects 0 arguments")
@@ -4450,6 +4469,20 @@ func passiveAccessorFieldName(receiver Value, suffix string) string {
 		return actual
 	}
 	return field
+}
+
+func databaseErrorStatusCodeValue(value Value) Value {
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "StatusCode") {
+		return value
+	}
+	code := strings.TrimSpace(value.String())
+	if code == "" {
+		return value
+	}
+	if canonical, ok := canonicalStatusCodeName(code); ok {
+		code = canonical
+	}
+	return Value{Kind: ValueObject, Type: "StatusCode", Text: code}
 }
 
 func (vm *VM) sObjectTypeDescribeShouldUseLocalName(typeName string) bool {

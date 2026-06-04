@@ -864,6 +864,7 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) {
 		if user.Fields == nil {
 			user.Fields = make(map[string]Value)
 		}
+		vm.recordIsolationJournalSequence(objectName)
 		id = nextID
 		user.Fields["Id"] = platformScalar("Id", string(id))
 		vm.Org.IDSequences = copyOrgIDSequences(generator.Sequences)
@@ -875,6 +876,7 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) {
 	record.ID = id
 	record.Object = objectName
 	if storedID, stored, ok := storage.LookupRecordByID(object.Records, id); ok {
+		vm.recordIsolationJournalMutation(objectName, storedID, stored, true)
 		for field, value := range record.Fields {
 			if stored.Fields == nil {
 				stored.Fields = make(map[string]storage.Value)
@@ -883,7 +885,9 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) {
 		}
 		object.Records[storedID] = stored
 	} else {
+		vm.recordIsolationJournalMutation(objectName, id, storage.Record{}, false)
 		object.Records[id] = record
 	}
 	vm.Org.Objects[objectName] = object
+	vm.ensureUserProfilePermissionSetAssignment(record)
 }

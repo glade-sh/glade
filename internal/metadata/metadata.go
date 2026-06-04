@@ -722,10 +722,14 @@ func trimAnySuffix(name string, suffixes ...string) string {
 }
 
 func trimKnownSuffix(name, suffix string) string {
-	if strings.HasSuffix(strings.ToLower(name), strings.ToLower(suffix)) {
+	if hasSuffixFold(name, suffix) {
 		return name[:len(name)-len(suffix)]
 	}
 	return name
+}
+
+func hasSuffixFold(name, suffix string) bool {
+	return len(name) >= len(suffix) && strings.EqualFold(name[len(name)-len(suffix):], suffix)
 }
 
 func lookupKey(name string) string {

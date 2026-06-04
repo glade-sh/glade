@@ -92,6 +92,35 @@ func TestInsertProbeTestObjectDoesNotCopyCustomNameToStandardName(t *testing.T) 
 	}
 }
 
+func TestInsertCustomRelationshipFieldRequiresMetadata(t *testing.T) {
+	org := testOrg()
+	org.Objects["Line__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Line__c",
+			KeyPrefix: "a0l",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	result := engine.Insert([]storage.Record{{
+		Object: "Line__c",
+		Fields: map[string]storage.Value{
+			"Parent__r": storage.NullValue(),
+		},
+	}})
+
+	if result[0].Success {
+		t.Fatalf("insert succeeded: %#v", result[0])
+	}
+	if !strings.Contains(result[0].Error, "unknown field Line__c.Parent__r") {
+		t.Fatalf("insert error = %q", result[0].Error)
+	}
+}
+
 func TestInsertAdvancesSystemTimestampsWhenClockIsFixed(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)
@@ -116,6 +145,40 @@ func TestInsertAdvancesSystemTimestampsWhenClockIsFixed(t *testing.T) {
 	}
 	if secondStamp != "2026-05-02T12:00:01Z" {
 		t.Fatalf("second CreatedDate = %q", secondStamp)
+	}
+}
+
+func TestBulkInsertUsesOneSystemTimestampWhenClockIsFixed(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+	engine.Now = func() time.Time { return time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC) }
+
+	results := engine.Insert([]storage.Record{
+		{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("First")}},
+		{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Second")}},
+	})
+	if !results[0].Success || !results[1].Success {
+		t.Fatalf("insert results = %#v", results)
+	}
+
+	first := org.Objects["Account"].Records[results[0].ID]
+	second := org.Objects["Account"].Records[results[1].ID]
+	if first.System.CreatedDate != "2026-05-02T12:00:00Z" || second.System.CreatedDate != first.System.CreatedDate {
+		t.Fatalf("bulk insert created dates = %q, %q", first.System.CreatedDate, second.System.CreatedDate)
+	}
+	if first.System.LastModifiedDate != first.System.CreatedDate || second.System.LastModifiedDate != second.System.CreatedDate {
+		t.Fatalf("bulk insert modified dates = %#v, %#v", first.System, second.System)
+	}
+
+	next := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Third")},
+	}})
+	if !next[0].Success {
+		t.Fatalf("next insert = %#v", next)
+	}
+	if got := org.Objects["Account"].Records[next[0].ID].System.CreatedDate; got != "2026-05-02T12:00:01Z" {
+		t.Fatalf("next CreatedDate = %q", got)
 	}
 }
 
@@ -1869,6 +1932,36 @@ func TestDMLRejectsNonCreateableAndNonUpdateableFields(t *testing.T) {
 	assertDMLErrorDetail(t, update[0], "INVALID_FIELD_FOR_INSERT_UPDATE", "External_Code__c")
 }
 
+func TestDMLAllowsCampaignMemberStatusCampaignIDOnInsert(t *testing.T) {
+	org := testOrg()
+	storage.EnsureStandardObject(&org, "Campaign")
+	storage.EnsureStandardObject(&org, "CampaignMemberStatus")
+	engine := NewEngine(&org)
+	campaign := engine.Insert([]storage.Record{{
+		Object: "Campaign",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Spring Appeal"),
+		},
+	}})
+	if !campaign[0].Success {
+		t.Fatalf("campaign insert = %#v", campaign)
+	}
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "CampaignMemberStatus",
+		Fields: map[string]storage.Value{
+			"CampaignId":   storage.IDValue(campaign[0].ID),
+			"Label":        storage.StringValue("Sent"),
+			"SortOrder":    storage.IntegerValue(1),
+			"IsDefault":    storage.BooleanValue(false),
+			"HasResponded": storage.BooleanValue(false),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+}
+
 func TestDMLAllowsLocalCreateRelationshipIdentityFieldsForJunctionObjects(t *testing.T) {
 	org := testOrg()
 	org.Objects["Junction__c"] = storage.ObjectState{
@@ -2565,6 +2658,82 @@ func TestUpsertListCustomSettingWithNameExternalID(t *testing.T) {
 	}
 	if got := org.Objects["Page__c"].Records[insert[0].ID].Fields["Title__c"].String; got != "New" {
 		t.Fatalf("updated title = %q", got)
+	}
+}
+
+func TestInsertListCustomSettingRequiresName(t *testing.T) {
+	org := testOrg()
+	org.Objects["Page__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Page__c",
+			Fields: map[string]storage.Field{
+				"Name":     {APIName: "Name", Type: storage.FieldString},
+				"Title__c": {APIName: "Title__c", Type: storage.FieldString},
+			},
+			Metadata: map[string]string{"kind": "customSetting", "customSettingsType": "List"},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Page__c",
+		Fields: map[string]storage.Value{
+			"Title__c": storage.StringValue("Missing name"),
+		},
+	}})
+	if insert[0].Success || insert[0].StatusCode != "REQUIRED_FIELD_MISSING" || len(insert[0].Fields) != 1 || insert[0].Fields[0] != "Name" {
+		t.Fatalf("missing list custom setting name = %#v", insert[0])
+	}
+}
+
+func TestInsertListCustomSettingRequiresNameWithoutNameFieldOverlay(t *testing.T) {
+	org := testOrg()
+	org.Objects["Page__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Page__c",
+			Fields: map[string]storage.Field{
+				"Title__c": {APIName: "Title__c", Type: storage.FieldString},
+			},
+			Metadata: map[string]string{"kind": "customSetting", "customSettingsType": "List"},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Page__c",
+		Fields: map[string]storage.Value{
+			"Title__c": storage.StringValue("Missing name"),
+		},
+	}})
+	if insert[0].Success || insert[0].StatusCode != "REQUIRED_FIELD_MISSING" || len(insert[0].Fields) != 1 || insert[0].Fields[0] != "Name" {
+		t.Fatalf("missing list custom setting name without overlay = %#v", insert[0])
+	}
+}
+
+func TestInsertListCustomSettingRequiresNameWithTypeMetadataOnly(t *testing.T) {
+	org := testOrg()
+	org.Objects["Page__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Page__c",
+			Fields: map[string]storage.Field{
+				"Title__c": {APIName: "Title__c", Type: storage.FieldString},
+			},
+			Metadata: map[string]string{"customSettingsType": "List"},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Page__c",
+		Fields: map[string]storage.Value{
+			"Title__c": storage.StringValue("Missing name"),
+		},
+	}})
+	if insert[0].Success || insert[0].StatusCode != "REQUIRED_FIELD_MISSING" || len(insert[0].Fields) != 1 || insert[0].Fields[0] != "Name" {
+		t.Fatalf("missing list custom setting name with type metadata only = %#v", insert[0])
 	}
 }
 
@@ -3621,6 +3790,82 @@ func TestCalculatedFormulaSupportsCaseAndLower(t *testing.T) {
 	}
 }
 
+func TestCalculatedTextFormulaStringifiesDecimalAmount(t *testing.T) {
+	field := storage.Field{
+		APIName:     "Combined_Text__c",
+		Type:        storage.FieldCalculated,
+		DisplayType: "STRING",
+		Formula:     "TEXT(ServiceDate__c) + ';|;'+ TEXT(Amount__c) + ';|;'+ TEXT(Level__c) + ';|;'+ TEXT(Source__c) + ';|;' +  Id",
+	}
+	org := storage.NewOrgState()
+	org.Objects["Invoice__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Invoice__c",
+			Fields: map[string]storage.Field{
+				field.APIName:    field,
+				"ServiceDate__c": {APIName: "ServiceDate__c", Type: storage.FieldDate},
+				"Amount__c":      {APIName: "Amount__c", Type: storage.FieldDecimal, DisplayType: "CURRENCY"},
+				"Level__c":       {APIName: "Level__c", Type: storage.FieldString},
+				"Source__c":      {APIName: "Source__c", Type: storage.FieldString},
+			},
+		},
+	}
+	definition := org.Objects["Invoice__c"].Definition
+	definition.Fields[field.APIName] = field
+	record := storage.Record{
+		ID:     "a00000000000001",
+		Object: "Invoice__c",
+		Fields: map[string]storage.Value{
+			"ServiceDate__c": storage.DateValue("2026-06-03"),
+			"Amount__c":      storage.DecimalValue("160"),
+		},
+	}
+	value, _, ok := EvaluateRecordFormulaValueInOrg(field.Formula, field, &org, definition, record)
+	if !ok || value.Kind != storage.ValueString {
+		t.Fatalf("formula value = %#v, ok=%v; want string", value, ok)
+	}
+	if value.String != "2026-06-03;|;160;|;;|;;|;a00000000000001" {
+		t.Fatalf("formula value = %q", value.String)
+	}
+}
+
+func TestCalculatedDatetimeFormulaAddsFractionalDayFromMilliseconds(t *testing.T) {
+	field := storage.Field{
+		APIName:     "CompletedAt__c",
+		Type:        storage.FieldCalculated,
+		DisplayType: "DATETIME",
+		Formula:     "StartedAt__c + (DurationMs__c / 86400000)",
+	}
+	org := storage.NewOrgState()
+	org.Objects["Invoice__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Invoice__c",
+			Fields: map[string]storage.Field{
+				field.APIName:   field,
+				"StartedAt__c":  {APIName: "StartedAt__c", Type: storage.FieldDateTime},
+				"DurationMs__c": {APIName: "DurationMs__c", Type: storage.FieldDecimal},
+			},
+		},
+	}
+	definition := org.Objects["Invoice__c"].Definition
+	record := storage.Record{
+		ID:     "a00000000000001",
+		Object: "Invoice__c",
+		Fields: map[string]storage.Value{
+			"StartedAt__c":  storage.DateTimeValue("2026-05-02T12:00:00Z"),
+			"DurationMs__c": storage.DecimalValue("100000"),
+		},
+	}
+
+	value, _, ok := EvaluateRecordFormulaValueInOrg(field.Formula, field, &org, definition, record)
+	if !ok || value.Kind != storage.ValueDateTime {
+		t.Fatalf("formula value = %#v, ok=%v; want datetime", value, ok)
+	}
+	if value.String != "2026-05-02T12:01:40Z" {
+		t.Fatalf("formula value = %q", value.String)
+	}
+}
+
 func TestCalculatedFormulaSupportsRoundAndImage(t *testing.T) {
 	amountField := storage.Field{
 		APIName:     "RecognitionAmount__c",
@@ -4431,6 +4676,40 @@ func TestWorkflowFieldUpdateCriteriaTrueFalseAndVisibleAfterDML(t *testing.T) {
 	}
 	if got := org.Objects["Account"].Records[miss[0].ID].Fields["Status__c"].String; got != "Active" {
 		t.Fatalf("workflow status after update = %q", got)
+	}
+}
+
+func TestWorkflowFieldUpdateWithIsolationJournalAvoidsRollbackSnapshot(t *testing.T) {
+	storage.ResetCloneStats()
+	t.Cleanup(storage.ResetCloneStats)
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Status__c"] = storage.Field{APIName: "Status__c", Type: storage.FieldString}
+	account.Definition.WorkflowRules = []storage.WorkflowRule{{
+		Name:   "MarkActive",
+		Active: true,
+		FieldUpdates: []storage.WorkflowFieldUpdate{{
+			Name:         "SetStatus",
+			Field:        "Status__c",
+			LiteralValue: "Active",
+		}},
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+	engine.IsolationJournal = storage.NewIsolationJournal(&org)
+
+	result := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !result[0].Success {
+		t.Fatalf("insert = %#v", result)
+	}
+	if got := org.Objects["Account"].Records[result[0].ID].Fields["Status__c"].String; got != "Active" {
+		t.Fatalf("workflow status = %q", got)
+	}
+	if got := storage.SnapshotCloneStats().CloneRollbackSnapshotCalls; got != 0 {
+		t.Fatalf("rollback snapshots = %d, want journal rollback path", got)
 	}
 }
 

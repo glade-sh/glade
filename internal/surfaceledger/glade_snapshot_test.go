@@ -14,3 +14,16 @@ func TestBuildGladeSnapshotIncludesKnownStdlibBehavior(t *testing.T) {
 		t.Fatalf("String.contains states = shape:%s behavior:%s", row.GladeShape, row.GladeBehavior)
 	}
 }
+
+func TestBuildGladeSnapshotUsesPropertyIDWithoutCallParens(t *testing.T) {
+	rows := BuildGladeSnapshot()
+	byID := rowsByID(rows)
+	propertyID := ApexMemberID("ApexPages", "Component", "childComponents", nil)
+	callID := ApexMemberID("ApexPages", "Component", "childComponents", []string{})
+	if byID[propertyID].GladeShape == ShapeAbsent {
+		t.Fatalf("missing property row %s", propertyID)
+	}
+	if _, ok := byID[callID]; ok {
+		t.Fatalf("property should not also appear as zero-arg call %s", callID)
+	}
+}

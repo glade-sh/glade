@@ -1,0 +1,74 @@
+{
+  "name": "async-batchable-lifecycle",
+  "evidence": [
+    {
+      "symbol": "Database.executeBatch",
+      "surfaceId": "apex:System.Database.executeBatch(Object)",
+      "kind": "test"
+    },
+    {
+      "symbol": "Database.executeBatch",
+      "surfaceId": "apex:System.Database.executeBatch(Object,Integer)",
+      "kind": "test"
+    },
+    {
+      "symbol": "Database.Batchable.start",
+      "surfaceId": "apex:Database.Batchable.start(Database.BatchableContext)",
+      "kind": "test"
+    },
+    {
+      "symbol": "Database.Batchable.execute",
+      "surfaceId": "apex:Database.Batchable.execute(Database.BatchableContext,List<Object>)",
+      "kind": "test"
+    },
+    {
+      "symbol": "Database.Batchable.finish",
+      "surfaceId": "apex:Database.Batchable.finish(Database.BatchableContext)",
+      "kind": "test"
+    },
+    {
+      "symbol": "Database.BatchableContext.getJobId",
+      "surfaceId": "apex:Database.BatchableContext.getJobId()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Database.BatchableContext.getChildJobId",
+      "surfaceId": "apex:Database.BatchableContext.getChildJobId()",
+      "kind": "test"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/BatchLifecycleFixtureBatch.cls",
+      "content": "public class BatchLifecycleFixtureBatch implements Database.Batchable<Integer> { public Iterable<Integer> start(Database.BatchableContext bc) { System.assert(System.isBatch()); System.assertNotEquals('', bc.getJobId()); System.assertEquals('', bc.getChildJobId()); insert new Account(Name = 'start:' + bc.getJobId()); return new List<Integer>{1, 2, 3, 4, 5}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { System.assert(System.isBatch()); System.assertNotEquals('', bc.getJobId()); insert new Account(Name = 'execute:' + bc.getJobId() + ':' + scope.size()); } public void finish(Database.BatchableContext bc) { System.assert(System.isBatch()); System.assertNotEquals('', bc.getJobId()); insert new Account(Name = 'finish:' + bc.getJobId()); AsyncApexJob job = [SELECT Id, Status, JobType, TotalJobItems, JobItemsProcessed, NumberOfErrors, CompletedDate FROM AsyncApexJob WHERE Id = :bc.getJobId()]; System.assertEquals('Completed', job.Status); System.assertEquals('BatchApex', job.JobType); System.assertEquals(3, job.TotalJobItems); System.assertEquals(3, job.JobItemsProcessed); System.assertEquals(0, job.NumberOfErrors); System.assertNotEquals(null, job.CompletedDate); } }"
+    },
+    {
+      "path": "force-app/main/classes/BatchDefaultScopeFixtureBatch.cls",
+      "content": "public class BatchDefaultScopeFixtureBatch implements Database.Batchable<Integer> { public Iterable<Integer> start(Database.BatchableContext bc) { return new List<Integer>{1, 2, 3}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { insert new Account(Name = 'default-execute:' + bc.getJobId() + ':' + scope.size()); } public void finish(Database.BatchableContext bc) { AsyncApexJob job = [SELECT Id, Status, TotalJobItems, JobItemsProcessed, NumberOfErrors FROM AsyncApexJob WHERE Id = :bc.getJobId()]; System.assertEquals('Completed', job.Status); System.assertEquals(1, job.TotalJobItems); System.assertEquals(1, job.JobItemsProcessed); System.assertEquals(0, job.NumberOfErrors); } }"
+    },
+    {
+      "path": "force-app/main/classes/AsyncBatchableLifecycleFixtureTest.cls",
+      "content": "@isTest private class AsyncBatchableLifecycleFixtureTest { @isTest static void executesBatchLifecycleAndContext() { Test.startTest(); String jobId = Database.executeBatch(new BatchLifecycleFixtureBatch(), 2); System.assertNotEquals('', jobId); Test.stopTest(); String startName = 'start:' + jobId; String executeTwoName = 'execute:' + jobId + ':2'; String executeOneName = 'execute:' + jobId + ':1'; String finishName = 'finish:' + jobId; System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = :startName]); System.assertEquals(2, [SELECT COUNT() FROM Account WHERE Name = :executeTwoName]); System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = :executeOneName]); System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = :finishName]); } @isTest static void executesDefaultScopeOverload() { Test.startTest(); String jobId = Database.executeBatch(new BatchDefaultScopeFixtureBatch()); Test.stopTest(); String executeName = 'default-execute:' + jobId + ':3'; System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = :executeName]); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 2,
+      "total": 2
+    }
+  }
+}

@@ -192,6 +192,7 @@ type ObjectDefinition struct {
 type Field struct {
 	APIName               string              `json:"apiName"`
 	Label                 string              `json:"label,omitempty"`
+	InlineHelpText        string              `json:"inlineHelpText,omitempty"`
 	Type                  FieldType           `json:"type"`
 	DisplayType           string              `json:"displayType,omitempty"`
 	Length                int                 `json:"length,omitempty"`
@@ -1005,10 +1006,10 @@ func ResolveFieldName(definition ObjectDefinition, namespace, name string) (stri
 
 func resolveLocationComponentField(definition ObjectDefinition, namespace, name string) (string, bool) {
 	for _, suffix := range []string{"__Latitude__s", "__Longitude__s"} {
-		if !strings.HasSuffix(strings.ToLower(name), strings.ToLower(suffix)) {
+		if !hasAPISuffix(name, suffix) {
 			continue
 		}
-		base := strings.TrimSuffix(name, suffix) + "__c"
+		base := name[:len(name)-len(suffix)] + "__c"
 		for _, candidateBase := range []string{
 			NamespaceTokenName(namespace, base),
 			base,
@@ -1039,10 +1040,10 @@ func resolveLocationComponentField(definition ObjectDefinition, namespace, name 
 }
 
 func locationComponentLocalName(name, suffix string) string {
-	if !strings.HasSuffix(strings.ToLower(name), strings.ToLower(suffix)) {
+	if !hasAPISuffix(name, suffix) {
 		return name
 	}
-	base := strings.TrimSuffix(name, suffix)
+	base := name[:len(name)-len(suffix)]
 	if idx := strings.Index(base, "__"); idx > 0 && idx+2 < len(base) {
 		base = base[idx+2:]
 	}
@@ -1090,7 +1091,8 @@ func IsCustomMetadataDefinition(definition ObjectDefinition) bool {
 }
 
 func IsCustomSettingDefinition(definition ObjectDefinition) bool {
-	return definition.Metadata != nil && definition.Metadata["kind"] == "customSetting"
+	return definition.Metadata != nil &&
+		(definition.Metadata["kind"] == "customSetting" || strings.TrimSpace(definition.Metadata["customSettingsType"]) != "")
 }
 
 func IsCustomMetadataObject(org OrgState, name string) bool {

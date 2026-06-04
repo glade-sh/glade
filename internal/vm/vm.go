@@ -723,6 +723,7 @@ func (vm *VM) recordApexClassRecord(className string) storage.ID {
 	if _, ok := object.Records[fallbackID]; ok {
 		return fallbackID
 	}
+	vm.recordIsolationJournalMutation("ApexClass", fallbackID, storage.Record{}, false)
 	object.Records[fallbackID] = storage.Record{
 		ID:     fallbackID,
 		Object: "ApexClass",
@@ -1005,6 +1006,45 @@ func parseDatetimeTextAllowDateOnly(text string) (time.Time, error) {
 		return value, nil
 	}
 	return parseDateText(text)
+}
+
+func parseDatetimeParseText(text, zoneID string) (time.Time, error) {
+	text = strings.TrimSpace(text)
+	if value, err := parseDatetimeText(text); err == nil {
+		return value, nil
+	}
+	location := time.UTC
+	if strings.TrimSpace(zoneID) != "" {
+		if loaded, err := time.LoadLocation(zoneID); err == nil {
+			location = loaded
+		}
+	}
+	for _, layout := range []string{
+		"1/2/2006, 3:04:05 PM",
+		"1/2/2006, 3:04 PM",
+		"01/02/2006, 03:04:05 PM",
+		"01/02/2006, 03:04 PM",
+		"1/2/06, 3:04:05 PM",
+		"1/2/06, 3:04 PM",
+		"01/02/06, 03:04:05 PM",
+		"01/02/06, 03:04 PM",
+		"1/2/2006 3:04:05 PM",
+		"1/2/2006 3:04 PM",
+		"01/02/2006 03:04:05 PM",
+		"01/02/2006 03:04 PM",
+	} {
+		if value, err := time.ParseInLocation(layout, text, location); err == nil {
+			if err := validateDateParts(value.Year(), int(value.Month()), value.Day()); err != nil {
+				return time.Time{}, err
+			}
+			return value, nil
+		}
+	}
+	date, err := parseDateParseText(text)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, location), nil
 }
 
 func parseDateText(text string) (time.Time, error) {
@@ -3090,7 +3130,7 @@ var canonicalRuntimeTypeNames = []string{
 	"Messaging.PushNotification", "Messaging.ActionResult", "Messaging.ActionableNotification",
 	"Messaging.ActionResult.Builder", "Messaging.ActionableNotification.Builder", "Messaging.Builder",
 	"Messaging.InboundEmail", "Messaging.InboundEnvelope", "Messaging.InboundEmailResult",
-	"Messaging.RenderEmailTemplateBodyResult", "Messaging.RenderEmailTemplateError", "URL", "Version", "InstallContext",
+	"Messaging.RenderEmailTemplateBodyResult", "Messaging.RenderEmailTemplateError", "URL", "Version", "InstallContext", "UninstallContext",
 }
 
 func isCanonicalRuntimeTypeName(typeName string) bool {
@@ -3290,29 +3330,24 @@ func (vm *VM) resolveTopLevelClassName(typeName string) (string, bool) {
 	} else {
 		vm.topLevelTypeCache = make(map[string]uniqueNestedTypeLookup)
 	}
-	var unique string
-	for _, entry := range vm.classNameSearchEntries() {
-		class, ok := vm.lookupClass(entry.Name)
-		if !ok || strings.Contains(class.Name, ".") || !strings.EqualFold(class.Name, typeName) {
-			continue
-		}
-		candidate := runtimeClassName(class)
-		if currentNamespace != "" && strings.EqualFold(class.Namespace, currentNamespace) {
-			vm.topLevelTypeCache[cacheKey] = uniqueNestedTypeLookup{Name: candidate, OK: true}
-			return candidate, true
-		}
-		if unique != "" && !strings.EqualFold(unique, candidate) {
-			vm.topLevelTypeCache[cacheKey] = uniqueNestedTypeLookup{}
-			return "", false
-		}
-		unique = candidate
-	}
-	if unique == "" {
+
+	entry, ok := vm.topLevelClassLookupIndex()[canonicalClassLookupKey(typeName)]
+	if !ok {
 		vm.topLevelTypeCache[cacheKey] = uniqueNestedTypeLookup{}
 		return "", false
 	}
-	vm.topLevelTypeCache[cacheKey] = uniqueNestedTypeLookup{Name: unique, OK: true}
-	return unique, true
+	if currentNamespace != "" {
+		if candidate := entry.ByNamespace[canonicalClassLookupKey(currentNamespace)]; candidate != "" {
+			vm.topLevelTypeCache[cacheKey] = uniqueNestedTypeLookup{Name: candidate, OK: true}
+			return candidate, true
+		}
+	}
+	if entry.Ambiguous || entry.Unique == "" {
+		vm.topLevelTypeCache[cacheKey] = uniqueNestedTypeLookup{}
+		return "", false
+	}
+	vm.topLevelTypeCache[cacheKey] = uniqueNestedTypeLookup{Name: entry.Unique, OK: true}
+	return entry.Unique, true
 }
 
 func (vm *VM) classNameSearchEntries() []classNameSearchEntry {

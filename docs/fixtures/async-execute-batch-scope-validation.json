@@ -3,6 +3,7 @@
   "evidence": [
     {
       "symbol": "Database.executeBatch",
+      "surfaceId": "apex:System.Database.executeBatch(Object,Integer)",
       "kind": "exec",
       "notes": "Scope size above the public 2000 maximum is rejected before enqueue."
     }

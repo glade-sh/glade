@@ -153,6 +153,7 @@ type DescribeFieldResult struct {
 	Type                  storage.FieldType           `json:"type"`
 	DisplayType           string                      `json:"displayType,omitempty"`
 	Label                 string                      `json:"label,omitempty"`
+	InlineHelpText        string                      `json:"inlineHelpText,omitempty"`
 	Length                int                         `json:"length,omitempty"`
 	Precision             int                         `json:"precision,omitempty"`
 	Scale                 int                         `json:"scale,omitempty"`
@@ -271,6 +272,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				Type:                  fieldType,
 				DisplayType:           displayFieldType(field.Type),
 				Label:                 labelOrName(field.Label, field.Name),
+				InlineHelpText:        field.InlineHelpText,
 				Length:                field.Length,
 				Precision:             field.Precision,
 				Scale:                 field.Scale,
@@ -526,6 +528,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 		definition.Fields[name] = storage.Field{
 			APIName:               field.Name,
 			Label:                 labelOrName(field.Label, field.Name),
+			InlineHelpText:        field.InlineHelpText,
 			Type:                  field.Type,
 			DisplayType:           field.DisplayType,
 			Length:                field.Length,
@@ -602,6 +605,7 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 			Type:                  field.Type,
 			DisplayType:           field.DisplayType,
 			Label:                 labelOrName(field.Label, field.APIName),
+			InlineHelpText:        field.InlineHelpText,
 			Length:                field.Length,
 			Precision:             field.Precision,
 			Scale:                 field.Scale,

@@ -107,6 +107,41 @@ func syntheticListCustomSettingDefinition(typeName string) (storage.ObjectDefini
 		Metadata: map[string]string{"kind": "customSetting", "customSettingsType": "List"},
 	}, true
 }
+
+func customDataStaticAccessor(methodKey string) bool {
+	switch strings.ToLower(strings.TrimSpace(methodKey)) {
+	case "getall", "getinstance", "getorgdefaults", "getvalues":
+		return true
+	default:
+		return false
+	}
+}
+
+func (vm *VM) metadataLightCustomSettingObject(typeName, methodKey string) (string, storage.ObjectDefinition, string, bool) {
+	if vm == nil || vm.Org == nil || !customDataStaticAccessor(methodKey) {
+		return "", storage.ObjectDefinition{}, "", false
+	}
+	objectName, ok := vm.resolveObjectName(typeName)
+	if !ok || !hasSuffixFold(objectName, "__c") {
+		return "", storage.ObjectDefinition{}, "", false
+	}
+	object := vm.Org.Objects[objectName]
+	if storage.IsCustomMetadataDefinition(object.Definition) || storage.IsCustomSettingDefinition(object.Definition) {
+		return "", storage.ObjectDefinition{}, "", false
+	}
+	definition, ok := syntheticListCustomSettingDefinition(objectName)
+	if !ok {
+		return "", storage.ObjectDefinition{}, "", false
+	}
+	if methodKey != "getall" {
+		definition.Metadata["customSettingsType"] = "Hierarchy"
+	}
+	for fieldName, field := range object.Definition.Fields {
+		definition.Fields[fieldName] = field
+	}
+	return objectName, definition, "custom setting", true
+}
+
 func (vm *VM) customDataGetInstance(objectName string, definition storage.ObjectDefinition, kind string, args []Value) (storage.Record, bool, error) {
 	object := vm.Org.Objects[objectName]
 	if len(args) == 0 {
@@ -235,8 +270,14 @@ func (vm *VM) readOnlyCustomDataValue(record storage.Record, kind string) Value 
 	value := vm.vmValueFromRecord(record)
 	if kind == "custom setting" && vm.Org != nil {
 		if object, ok := vm.Org.Objects[record.Object]; ok {
-			for name := range object.Definition.Fields {
+			for name, field := range object.Definition.Fields {
 				if _, exists := value.Fields[name]; !exists {
+					if field.Type == storage.FieldBoolean {
+						if defaultValue, ok := storage.DefaultValueForField(field); ok {
+							value.Fields[name] = vmValueFromStorage(defaultValue)
+							continue
+						}
+					}
 					value.Fields[name] = Value{Kind: ValueNull, Type: string(object.Definition.Fields[name].Type)}
 				}
 			}

@@ -219,7 +219,7 @@ func BenchmarkCollectStaticFieldValueRefsLargeOrderGraph(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		refs := make(map[uint64]bool)
-		fields := make(map[uint64][]staticFieldRef)
+		fields := make(map[uint64]staticFieldRefSet)
 		collectStaticFieldValueRefs(root, refs, fields, location, make(map[uint64]bool))
 		if !refs[root.Ref] {
 			b.Fatal("root ref missing")

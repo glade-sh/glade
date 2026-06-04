@@ -359,6 +359,12 @@ func TestBuildSalesforceCoverageReport(t *testing.T) {
 	if len(report.Areas) != 2 {
 		t.Fatalf("areas = %#v", report.Areas)
 	}
+	if len(report.NextGates) != 3 ||
+		!strings.Contains(report.NextGates[0].Command, "compat surface refresh") ||
+		!strings.Contains(report.NextGates[1].Command, "compat surface packet") ||
+		!strings.Contains(report.NextGates[2].Command, "compat surface check") {
+		t.Fatalf("next gates should point at surface packets: %#v", report.NextGates)
+	}
 	var out bytes.Buffer
 	if err := WriteSalesforceCoverageMarkdown(&out, report); err != nil {
 		t.Fatal(err)

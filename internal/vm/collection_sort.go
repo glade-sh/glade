@@ -76,9 +76,14 @@ func sObjectListDeclaresMapValueType(list Value, valueType string) bool {
 	return false
 }
 func mapConstructorKeyValue(keyType string, record Value) (Value, bool) {
-	if strings.EqualFold(keyType, "Id") {
+	if strings.EqualFold(keyType, "Id") || strings.EqualFold(keyType, "String") {
 		value, ok := record.Fields["Id"]
-		return value, ok
+		if ok {
+			return value, true
+		}
+		if strings.EqualFold(keyType, "Id") {
+			return value, false
+		}
 	}
 	for _, preferred := range []string{"Name", "DeveloperName", "MasterLabel"} {
 		if value, ok := record.Fields[preferred]; ok {
@@ -169,6 +174,11 @@ func (vm *VM) putAllSObjectList(receiver Value, list Value) (Value, error) {
 		return receiver, err
 	}
 	for key, item := range value.Map {
+		if keyValue, ok := value.MapKeys[key]; ok {
+			vm.markCollectionRefsEscaped(keyValue, item)
+		} else {
+			vm.markCollectionRefsEscaped(item)
+		}
 		receiver.Map[key] = item
 	}
 	if receiver.MapKeys == nil {

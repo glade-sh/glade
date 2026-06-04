@@ -471,6 +471,36 @@ func (vm *VM) testInstall(args []Value, result *Result) (Value, error) {
 	}
 	return Null, nil
 }
+
+func (vm *VM) testUninstall(args []Value, result *Result) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("Test.testUninstall expects UninstallHandler")
+	}
+	if err := vm.requireTestContext("Test.testUninstall"); err != nil {
+		return Null, err
+	}
+	handler := args[0]
+	if handler.Kind != ValueObject || handler.Type == "" {
+		return Null, fmt.Errorf("Test.testUninstall expects UninstallHandler")
+	}
+	context := Object("UninstallContext")
+	method, ok, ambiguous := vm.resolveInstanceMethodForArgs(handler.Type, "onUninstall", []Value{context})
+	if ambiguous {
+		return Null, vm.ambiguousOverloadError(handler.Type+".onUninstall", []Value{context})
+	}
+	if !ok {
+		return Null, fmt.Errorf("Test.testUninstall expects UninstallHandler with onUninstall")
+	}
+	vm.installContextDepth++
+	defer func() {
+		vm.installContextDepth--
+	}()
+	if _, err := vm.callMethodWithReceiver(method, handler, []Value{context}, result); err != nil {
+		return Null, err
+	}
+	return Null, nil
+}
+
 func testMockTypeName(value Value) (string, bool) {
 	switch value.Kind {
 	case ValueString:

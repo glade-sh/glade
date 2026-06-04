@@ -27,6 +27,7 @@
     },
     {
       "symbol": "Database.executeBatch",
+      "surfaceId": "apex:System.Database.executeBatch(Object,Integer)",
       "kind": "test"
     }
   ],

@@ -1602,7 +1602,7 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 			if field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
 				continue
 			}
-			if !relationshipTargetsObject(storage.Relationship{ParentObjects: append([]string(nil), field.ReferenceTo...)}, parentObject) {
+			if !relationshipTargetsObject(storage.Relationship{ParentObjects: field.ReferenceTo}, parentObject) {
 				continue
 			}
 			for _, childRelationshipName := range vmFieldChildRelationshipNames(childState.Definition, field) {

@@ -196,7 +196,7 @@ func (vm *VM) lookupClassInNamespace(namespace, className string) (Class, bool) 
 		if !ok {
 			continue
 		}
-		if strings.ToLower(strings.TrimSpace(class.Namespace)) != nsKey {
+		if !strings.EqualFold(strings.TrimSpace(class.Namespace), nsKey) {
 			continue
 		}
 		if !strings.Contains(class.Name, ".") {
@@ -428,7 +428,7 @@ func isBuiltinTypeName(name string) bool {
 		return true
 	}
 	switch name {
-	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "JSONGenerator", "JSONParser", "JSONToken", "StatusCode", "ChildRelationship", "DescribeFieldResult", "DescribeSObjectResult", "DescribeTabResult", "DescribeTabSetResult", "PicklistEntry", "RecordTypeInfo", "XmlStreamReader", "XmlStreamWriter", "PageReference", "SelectOption", "LoggingLevel", "AccessType", "SObjectAccessDecision", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider", "InstallContext", "InstallHandler", "Auth.JWT", "ConnectApi.UserSettings", "ConnectApi.TimeZone", "Metadata.Metadata", "Metadata.MetadataType", "Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomField", "Metadata.CustomObject", "Metadata.DeployCallback", "Metadata.DeployCallBack", "Metadata.DeployResult", "Metadata.DeployStatus", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext", "Metadata.AsyncResult":
+	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "JSONGenerator", "JSONParser", "JSONToken", "StatusCode", "ChildRelationship", "DescribeFieldResult", "DescribeSObjectResult", "DescribeTabResult", "DescribeTabSetResult", "PicklistEntry", "RecordTypeInfo", "XmlStreamReader", "XmlStreamWriter", "PageReference", "SelectOption", "LoggingLevel", "AccessType", "SObjectAccessDecision", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider", "InstallContext", "InstallHandler", "UninstallContext", "UninstallHandler", "Auth.JWT", "ConnectApi.UserSettings", "ConnectApi.TimeZone", "Metadata.Metadata", "Metadata.MetadataType", "Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomField", "Metadata.CustomObject", "Metadata.DeployCallback", "Metadata.DeployCallBack", "Metadata.DeployResult", "Metadata.DeployStatus", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext", "Metadata.AsyncResult":
 		return true
 	default:
 		return false
@@ -505,15 +505,32 @@ func (vm *VM) resolveClassName(typeName string) (string, bool) {
 	return "", false
 }
 func (vm *VM) lookupClass(typeName string) (Class, bool) {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" {
+		return Class{}, false
+	}
+	if cached, ok := vm.classLookupNameCache[typeName]; ok {
+		if !cached.OK {
+			return Class{}, false
+		}
+		class, ok := vm.Classes[cached.Alias]
+		if ok {
+			return class, true
+		}
+		delete(vm.classLookupNameCache, typeName)
+	}
 	if class, ok := vm.Classes[typeName]; ok {
+		vm.storeClassLookupNameCache(typeName, typeName, true)
 		return class, true
 	}
 	if vm.sharedClassLookupKeys != nil {
 		if key, ok := foldLookupStringMap(vm.sharedClassLookupKeys, typeName); ok {
 			if class, ok := vm.Classes[key]; ok {
+				vm.storeClassLookupNameCache(typeName, key, true)
 				return class, true
 			}
 		}
+		vm.storeClassLookupNameCache(typeName, "", false)
 		return Class{}, false
 	}
 	if vm.classLookup == nil {
@@ -523,6 +540,13 @@ func (vm *VM) lookupClass(typeName string) (Class, bool) {
 		return class, true
 	}
 	return Class{}, false
+}
+
+func (vm *VM) storeClassLookupNameCache(typeName, alias string, ok bool) {
+	if vm.classLookupNameCache == nil {
+		vm.classLookupNameCache = make(map[string]classLookupNameResult)
+	}
+	vm.classLookupNameCache[typeName] = classLookupNameResult{Alias: alias, OK: ok}
 }
 
 // FreezeClassLookup builds the shared, immutable canonical-key -> live Classes
@@ -556,6 +580,9 @@ func (vm *VM) FreezeClassLookup() {
 	}
 	vm.sharedClassLookupKeys = keys
 	vm.sharedClassCopyPlan = buildClassCopyPlan(vm.Classes)
+	vm.classNameSearchEntries()
+	vm.rebuildTopLevelClassLookup()
+	vm.classLookupNameCache = nil
 	vm.classLookup = nil
 }
 
@@ -708,9 +735,46 @@ func runtimeClassName(class Class) string {
 	}
 	return namespace + "." + name
 }
+
+func (vm *VM) topLevelClassLookupIndex() map[string]topLevelClassLookup {
+	if vm.topLevelClassLookup != nil {
+		return vm.topLevelClassLookup
+	}
+	return vm.rebuildTopLevelClassLookup()
+}
+
+func (vm *VM) rebuildTopLevelClassLookup() map[string]topLevelClassLookup {
+	index := make(map[string]topLevelClassLookup)
+	for _, class := range vm.Classes {
+		name := strings.TrimSpace(class.Name)
+		if name == "" || strings.Contains(name, ".") {
+			continue
+		}
+		nameKey := canonicalClassLookupKey(name)
+		namespaceKey := canonicalClassLookupKey(class.Namespace)
+		candidate := runtimeClassName(class)
+		entry := index[nameKey]
+		if entry.ByNamespace == nil {
+			entry.ByNamespace = make(map[string]string)
+		}
+		if existing := entry.ByNamespace[namespaceKey]; existing == "" || strings.EqualFold(existing, candidate) {
+			entry.ByNamespace[namespaceKey] = candidate
+		}
+		if entry.Unique == "" {
+			entry.Unique = candidate
+		} else if !strings.EqualFold(entry.Unique, candidate) {
+			entry.Ambiguous = true
+		}
+		index[nameKey] = entry
+	}
+	vm.topLevelClassLookup = index
+	return index
+}
+
 func (vm *VM) rebuildClassLookup() {
 	vm.sharedClassLookupKeys = nil
 	vm.sharedClassCopyPlan = nil
+	vm.classLookupNameCache = nil
 	vm.resetClassAccessCaches()
 	vm.classLookup = make(map[string]Class, len(vm.Classes)*2)
 	ranks := make(map[string]int, len(vm.Classes)*2)
@@ -740,7 +804,11 @@ func (vm *VM) resetClassAccessCaches() {
 	vm.namespaceClassLookup = make(map[string]map[string]namespaceClassLookup)
 	vm.classNamespaceCache = make(map[string]string)
 	vm.classForAccessCache = make(map[classForAccessKey]classForAccessLookup)
+	vm.classLookupNameCache = nil
 	vm.nestedTypeHierarchyCache = nil
+	vm.topLevelTypeCache = nil
+	vm.topLevelClassLookup = nil
+	vm.classNameSearchCache = nil
 }
 func canonicalClassLookupKey(name string) string {
 	// Apex identifiers are ASCII. Avoid the strings.ToLower allocation

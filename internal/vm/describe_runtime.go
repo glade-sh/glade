@@ -205,15 +205,7 @@ func (vm *VM) describePreparedDefinition(name string, definition storage.ObjectD
 	}
 	storage.EnsureStandardObjectFields(&definition)
 	storage.RemoveCustomSettingUnsupportedFields(&definition)
-	if strings.EqualFold(definition.APIName, "Account") && len(definition.RecordTypes) == 0 {
-		storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
-	}
-	if strings.EqualFold(definition.APIName, "Account") && vm != nil && vm.Org != nil {
-		if personAccountName, ok := vm.resolveObjectName("PersonAccount"); ok {
-			personAccount := vm.Org.Objects[personAccountName]
-			definition.RecordTypes = appendMissingRecordTypes(definition.RecordTypes, personAccount.Definition.RecordTypes)
-		}
-	}
+	vm.applyAccountDescribeDefaults(&definition)
 	if vm != nil && cacheKey != "" {
 		vm.describeDefCache[cacheKey] = definition
 	}
@@ -557,6 +549,17 @@ func localSchemaName(name string) string {
 	return name
 }
 
+func (vm *VM) localSchemaName(name string) string {
+	namespace := ""
+	if vm != nil {
+		namespace = strings.TrimSpace(vm.currentExecutionNamespace())
+		if namespace == "" {
+			namespace = strings.TrimSpace(vm.OrgNamespace())
+		}
+	}
+	return storage.StripNamespaceToken(namespace, name)
+}
+
 func methodDescribeBoolField(method string) string {
 	if strings.HasPrefix(method, "is") && len(method) > 2 {
 		name := method[2:]
@@ -640,10 +643,34 @@ func isCustomFieldOrRelationshipType(name string) bool {
 }
 
 func relationshipTargetsObject(relationship storage.Relationship, objectName string) bool {
+	objectName = strings.TrimSpace(objectName)
+	if objectName == "" {
+		return false
+	}
+	objectHasNamespaceToken := strings.Contains(objectName, "__")
+	var objectAnyNamespace string
+	var objectStandardNamespace string
 	for _, parent := range relationship.ParentObjects {
-		if strings.EqualFold(parent, objectName) ||
-			strings.EqualFold(stripAnyNamespaceToken(parent), stripAnyNamespaceToken(objectName)) ||
-			strings.EqualFold(stripStandardObjectNamespaceToken(parent), stripStandardObjectNamespaceToken(objectName)) {
+		parent = strings.TrimSpace(parent)
+		if parent == "" {
+			continue
+		}
+		if strings.EqualFold(parent, objectName) {
+			return true
+		}
+		if !objectHasNamespaceToken && !strings.Contains(parent, "__") {
+			continue
+		}
+		if objectAnyNamespace == "" {
+			objectAnyNamespace = stripAnyNamespaceToken(objectName)
+		}
+		if strings.EqualFold(stripAnyNamespaceToken(parent), objectAnyNamespace) {
+			return true
+		}
+		if objectStandardNamespace == "" {
+			objectStandardNamespace = stripStandardObjectNamespaceToken(objectName)
+		}
+		if strings.EqualFold(stripStandardObjectNamespaceToken(parent), objectStandardNamespace) {
 			return true
 		}
 	}
@@ -888,10 +915,6 @@ func (vm *VM) fieldSetMemberValue(objectName string, definition storage.ObjectDe
 	return value
 }
 
-func fieldSetMemberDBRequired(objectName, fieldName string) bool {
-	return strings.EqualFold(objectName, "Account") && strings.EqualFold(fieldName, "LastName")
-}
-
 func (vm *VM) resolveRelationshipFieldPath(definition storage.ObjectDefinition, fieldPath string) (string, storage.Field, bool) {
 	parts := strings.Split(strings.TrimSpace(fieldPath), ".")
 	if len(parts) < 2 {
@@ -1028,8 +1051,9 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		label = field.APIName
 	}
 	desc.Fields["label"] = String(label)
+	desc.Fields["inlineHelpText"] = String(field.InlineHelpText)
 	desc.Fields["compoundFieldName"] = describeCompoundFieldNameValue(field)
-	desc.Fields["localName"] = String(localSchemaName(describeName))
+	desc.Fields["localName"] = String(vm.localSchemaName(describeName))
 	displayType := field.DisplayType
 	if displayType == "" {
 		displayType = string(field.Type)
@@ -1283,6 +1307,8 @@ func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field st
 
 func syntheticSObjectSystemField(fieldName string) (storage.Field, bool) {
 	switch {
+	case strings.EqualFold(fieldName, "Id"):
+		return storage.Field{APIName: "Id", Label: "ID", Type: storage.FieldID, DisplayType: "ID"}, true
 	case strings.EqualFold(fieldName, "CreatedDate"):
 		return storage.Field{APIName: "CreatedDate", Label: "Created Date", Type: storage.FieldDateTime, DisplayType: "DATETIME"}, true
 	case strings.EqualFold(fieldName, "CreatedById"):
@@ -1392,40 +1418,11 @@ func syntheticSchemaField(fieldName string) storage.Field {
 	if fieldName == "" || (!apexIdentifierStartsUpper(fieldName) && !isCustomFieldOrRelationshipType(fieldName)) {
 		return storage.Field{}
 	}
-	field := storage.Field{APIName: fieldName, Label: fieldName, Type: storage.FieldString, DisplayType: "STRING"}
-	switch {
-	case strings.EqualFold(fieldName, "Id") || strings.HasSuffix(fieldName, "Id"):
-		field.Type = storage.FieldReference
-		field.DisplayType = "REFERENCE"
-	case strings.HasSuffix(fieldName, "Date"):
-		field.Type = storage.FieldDate
-		field.DisplayType = "DATE"
-	case strings.HasSuffix(fieldName, "DateTime") || strings.HasSuffix(fieldName, "Timestamp"):
-		field.Type = storage.FieldDateTime
-		field.DisplayType = "DATETIME"
-	case strings.HasPrefix(fieldName, "Is") || strings.HasPrefix(fieldName, "Has"):
-		field.Type = storage.FieldBoolean
-		field.DisplayType = "BOOLEAN"
-	}
-	return field
+	return storage.Field{APIName: fieldName, Label: fieldName, Type: storage.FieldAny}
 }
 
 func (vm *VM) syntheticSchemaFieldForObject(objectName, fieldName string) storage.Field {
 	field := syntheticSchemaField(fieldName)
-	if field.APIName == "" || vm == nil || vm.Org == nil {
-		return field
-	}
-	if !hasSuffixFold(field.APIName, "__c") {
-		return field
-	}
-	target := vm.inferredCustomFieldReferenceTarget(objectName, field.APIName)
-	if target == "" {
-		return field
-	}
-	field.Type = storage.FieldReference
-	field.DisplayType = "REFERENCE"
-	field.ReferenceTo = []string{target}
-	field.RelationshipName = lookupFieldRelationshipName(field.APIName)
 	return field
 }
 

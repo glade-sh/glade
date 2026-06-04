@@ -386,7 +386,48 @@ startup, and compat commands.
 - Use the shared `internal/diagnostic` model rather than ad-hoc error strings.
 - Return explicit unsupported-feature diagnostics instead of panicking.
 - Keep Salesforce behavior claims tied to compatibility fixtures.
+- Keep standard-SObject-specific business logic in prefixed files in the owning
+  package, not buried in generic runtime files. For DML/runtime behavior use
+  `sobject_dml_<object-or-area>.go` files in that package and have generic DML,
+  VM, storage, and server paths call narrow hooks or helpers. Do not create a
+  separate package just to move the code; same-package hooks keep call overhead
+  flat while making Account, Contact, Opportunity, User, file/content, and other
+  object-specific rules easy to audit and extend.
 - Make MINIMAL changes to achieve the goal.
+
+### Non-Negotiable Implementation Standards
+
+- Ground every runtime, metadata, DML, SOQL, and test-runner fix in public
+  Salesforce behavior. If the behavior is not clear, add a focused compatibility
+  fixture or public-doc-backed note before changing broad runtime code.
+- Do not add example-project, saved-run, customer package, or corpus-specific
+  references in `cmd/` or `internal/`, including tests. The only narrow
+  exception is the `internal/compat/server_examples*` harness, whose purpose is
+  inventorying the sample corpus. Never add project-specific exception names,
+  class names, package names, or artifact names to runtime code or tests.
+- Do not infer field types, defaults, null behavior, or coercion from field
+  names. Use `storage.Field`, describe metadata, schema metadata, or explicit
+  platform contracts. A missing nullable numeric field is null unless metadata
+  supplies a default.
+- Keep generic handlers generic. SObject member access, dynamic `get`, SOQL
+  projection, DML validation, JSON, and lookup-path code must not contain
+  standard-object shortcuts. Put standard-object behavior in metadata overlays,
+  seeded setup data, DML system-field side effects, or a clearly named platform
+  surface.
+- Performance and optimization are paramount. Treat speed, allocation count, and
+  parallel test throughput as core design constraints, but never trade away
+  Salesforce-shaped behavior, isolation, limits, or metadata semantics to get
+  them. Prefer `strings.EqualFold` over `strings.ToLower` for case-insensitive
+  equality. Do not use `len([]byte(s))` to count bytes in a string. Avoid
+  per-record scans, repeated metadata merges, or allocations in hot paths unless
+  measured and justified.
+- Parallel Apex tests may share compiled code and immutable schema-derived
+  caches only. Org data, mutable metadata overlays, trigger side effects, static
+  state, request state, async state, limits, and rollback state must remain
+  per-test isolated.
+- Before commit, run the focused tests for the touched surface plus
+  `go test ./internal/repoguard`. The repo guard enforces the easy parts of
+  these standards; code review must still check Salesforce shape and isolation.
 
 ### Working Rules
 

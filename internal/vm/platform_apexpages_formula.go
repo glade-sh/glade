@@ -156,6 +156,9 @@ func callApexPagesActionMember(receiver Value, method string, args []Value) (Val
 		if expression == "" || strings.EqualFold(expression, "null") || strings.EqualFold(expression, "{!null}") || strings.EqualFold(expression, "{!}") {
 			return Null, receiver, false, true, nil
 		}
+		if strings.EqualFold(expression, "list") || strings.EqualFold(expression, "{!list}") {
+			return newPageReference("/list"), receiver, false, true, nil
+		}
 		return Null, receiver, false, true, unsupportedCallError("ApexPages.Action.invoke requires bound Visualforce controller lifecycle")
 	default:
 		return Null, receiver, false, false, nil

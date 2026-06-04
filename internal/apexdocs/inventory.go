@@ -104,7 +104,7 @@ func BuildInventory(root string) (Inventory, error) {
 		if d.IsDir() {
 			return nil
 		}
-		if strings.ToLower(filepath.Ext(path)) != ".md" {
+		if !strings.EqualFold(filepath.Ext(path), ".md") {
 			return nil
 		}
 		rel, err := filepath.Rel(absRoot, path)

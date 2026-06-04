@@ -462,6 +462,13 @@ func stringStatic(callee string, args []Value) (Value, error) {
 			}
 			return String(text), nil
 		}
+		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Blob") {
+			raw := ""
+			if value, ok := args[0].Fields["value"]; ok && value.Kind == ValueString {
+				raw = value.Text
+			}
+			return String(fmt.Sprintf("Blob[%d]", len(raw))), nil
+		}
 		if idText, ok := typedIDValueText(args[0]); ok {
 			return String(displayIDText(idText)), nil
 		}
@@ -771,7 +778,7 @@ func patternCompile(args []Value) (Value, error) {
 	if len(args) == 2 {
 		flags = args[1].Int
 	}
-	regexpSource, lookaheadSource, err := compilePatternSourceWithMetadata("Pattern.compile", args[0].Text, flags)
+	regexpSource, lookaheadSource, backreferencePairs, err := compilePatternSourceWithMetadata("Pattern.compile", args[0].Text, flags)
 	if err != nil {
 		return Null, err
 	}
@@ -788,6 +795,9 @@ func patternCompile(args []Value) (Value, error) {
 	pattern.Fields["regexpSource"] = String(regexpSource)
 	if lookaheadSource != "" {
 		pattern.Fields["lookaheadSource"] = String(lookaheadSource)
+	}
+	if backreferencePairs != "" {
+		pattern.Fields["backreferencePairs"] = String(backreferencePairs)
 	}
 	pattern.Fields["flags"] = Int(flags)
 	return pattern, nil
@@ -864,7 +874,7 @@ func matcherQuoteReplacement(args []Value) (Value, error) {
 }
 
 func compilePatternSource(callee, source string, flags int64) (string, error) {
-	regexpSource, _, err := compilePatternSourceWithMetadata(callee, source, flags)
+	regexpSource, _, _, err := compilePatternSourceWithMetadata(callee, source, flags)
 	return regexpSource, err
 }
 
@@ -914,34 +924,36 @@ func compilePatternMatchesSource(source string) (string, []string, []regexNegati
 	return regexpSource, positiveLookaheads, negativeLookaheads, nil
 }
 
-func compilePatternSourceWithMetadata(callee, source string, flags int64) (string, string, error) {
+func compilePatternSourceWithMetadata(callee, source string, flags int64) (string, string, string, error) {
 	if flags < 0 {
-		return "", "", unsupportedCallError(callee + " negative regex flags")
+		return "", "", "", unsupportedCallError(callee + " negative regex flags")
 	}
 	if unsupported := flags &^ patternSupportedFlags; unsupported != 0 {
-		return "", "", unsupportedCallError(callee + " " + unsupportedPatternFlagsFeature(unsupported))
+		return "", "", "", unsupportedCallError(callee + " " + unsupportedPatternFlagsFeature(unsupported))
 	}
 	regexpSource := source
 	lookaheadSource := ""
+	backreferencePairs := ""
 	if flags&patternFlagLiteral != 0 {
 		regexpSource = regexp.QuoteMeta(source)
 	} else {
 		converted, err := javaRegexQuoteEscapesToGo(source)
 		if err != nil {
-			return "", "", unsupportedCallError(callee + " " + err.Error())
+			return "", "", "", unsupportedCallError(callee + " " + err.Error())
 		}
 		regexpSource = converted
+		regexpSource, backreferencePairs = rewriteJavaNumericBackreferences(regexpSource)
 		regexpSource = stripFixedCountPossessiveQuantifiers(regexpSource)
 		if stripped, lookahead, ok := stripTerminalPositiveLookahead(regexpSource); ok {
 			regexpSource = stripped
 			lookaheadSource = stripFixedCountPossessiveQuantifiers(lookahead)
 		}
 		if feature := unsupportedJavaRegexFeature(regexpSource); feature != "" {
-			return "", "", unsupportedCallError(callee + " " + feature)
+			return "", "", "", unsupportedCallError(callee + " " + feature)
 		}
 		if lookaheadSource != "" {
 			if feature := unsupportedJavaRegexFeature(lookaheadSource); feature != "" {
-				return "", "", unsupportedCallError(callee + " " + feature)
+				return "", "", "", unsupportedCallError(callee + " " + feature)
 			}
 		}
 	}
@@ -952,7 +964,99 @@ func compilePatternSourceWithMetadata(callee, source string, flags int64) (strin
 			lookaheadSource = prefix + lookaheadSource
 		}
 	}
-	return regexpSource, lookaheadSource, nil
+	return regexpSource, lookaheadSource, backreferencePairs, nil
+}
+
+type regexBackreferencePair struct {
+	group      int
+	matchGroup int
+}
+
+func rewriteJavaNumericBackreferences(source string) (string, string) {
+	var out strings.Builder
+	inClass := false
+	groupCount := 0
+	var pairs []regexBackreferencePair
+	for i := 0; i < len(source); i++ {
+		ch := source[i]
+		if ch == '\\' {
+			if i+1 < len(source) {
+				next := source[i+1]
+				if !inClass && next >= '1' && next <= '9' {
+					groupCount++
+					pairs = append(pairs, regexBackreferencePair{group: int(next - '0'), matchGroup: groupCount})
+					out.WriteString("(.+?)")
+					i++
+					continue
+				}
+				out.WriteByte(ch)
+				out.WriteByte(next)
+				i++
+				continue
+			}
+			out.WriteByte(ch)
+			continue
+		}
+		switch ch {
+		case '[':
+			inClass = true
+		case ']':
+			inClass = false
+		case '(':
+			if !inClass && regexGroupIsCapturing(source, i) {
+				groupCount++
+			}
+		}
+		out.WriteByte(ch)
+	}
+	return out.String(), encodeRegexBackreferencePairs(pairs)
+}
+
+func regexGroupIsCapturing(source string, index int) bool {
+	if index+1 >= len(source) || source[index+1] != '?' {
+		return true
+	}
+	if index+2 >= len(source) {
+		return false
+	}
+	switch source[index+2] {
+	case ':', '=', '!', '>', '<', 'P':
+		return false
+	default:
+		return false
+	}
+}
+
+func encodeRegexBackreferencePairs(pairs []regexBackreferencePair) string {
+	if len(pairs) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(pairs))
+	for _, pair := range pairs {
+		parts = append(parts, strconv.Itoa(pair.group)+":"+strconv.Itoa(pair.matchGroup))
+	}
+	return strings.Join(parts, ",")
+}
+
+func decodeRegexBackreferencePairs(encoded string) []regexBackreferencePair {
+	if strings.TrimSpace(encoded) == "" {
+		return nil
+	}
+	rawPairs := strings.Split(encoded, ",")
+	pairs := make([]regexBackreferencePair, 0, len(rawPairs))
+	for _, rawPair := range rawPairs {
+		left, right, ok := strings.Cut(rawPair, ":")
+		if !ok {
+			continue
+		}
+		group, groupErr := strconv.Atoi(left)
+		matchGroup, matchErr := strconv.Atoi(right)
+		if groupErr != nil || matchErr != nil || group < 0 || matchGroup < 0 {
+			continue
+		}
+		pairs = append(pairs, regexBackreferencePair{group: group, matchGroup: matchGroup})
+	}
+	return pairs
 }
 
 func patternFlagPrefix(flags int64) string {
@@ -1100,6 +1204,7 @@ func matcherUsesFullInputBounds(matcher Value) bool {
 
 func matcherMatchIndices(matcher Value, source, input string, region matcherRegionBounds, op matcherOp) ([]int, error) {
 	lookaheadSource := matcherLookaheadSource(matcher)
+	backreferences := matcherBackreferencePairs(matcher)
 	if !matcherUsesFullInputBounds(matcher) {
 		prefix := "^(?:"
 		suffix := ")"
@@ -1116,6 +1221,9 @@ func matcherMatchIndices(matcher Value, source, input string, region matcherRegi
 		if indices != nil {
 			offsetRegexIndices(indices, region.startByte)
 			if !matcherLookaheadMatches(lookaheadSource, input, indices[1]) {
+				return nil, nil
+			}
+			if !regexBackreferencesMatch(input, indices, backreferences) {
 				return nil, nil
 			}
 		}
@@ -1141,6 +1249,9 @@ func matcherMatchIndices(matcher Value, source, input string, region matcherRegi
 		if !matcherLookaheadMatches(lookaheadSource, input, indices[1]) {
 			return nil, nil
 		}
+		if !regexBackreferencesMatch(input, indices, backreferences) {
+			continue
+		}
 		return indices, nil
 	}
 	return nil, nil
@@ -1148,13 +1259,33 @@ func matcherMatchIndices(matcher Value, source, input string, region matcherRegi
 
 func matcherFindIndices(matcher Value, re *regexp.Regexp, input string, region matcherRegionBounds, startByte int) ([]int, error) {
 	lookaheadSource := matcherLookaheadSource(matcher)
+	backreferences := matcherBackreferencePairs(matcher)
 	if lookaheadSource != "" {
 		return matcherFindIndicesWithTerminalLookahead(matcher, input, region, startByte)
 	}
 	if !matcherUsesFullInputBounds(matcher) {
+		if len(backreferences) > 0 {
+			searchStart := startByte
+			if searchStart < region.startByte {
+				searchStart = region.startByte
+			}
+			for _, indices := range re.FindAllStringSubmatchIndex(input[searchStart:region.endByte], -1) {
+				if indices == nil {
+					continue
+				}
+				offsetRegexIndices(indices, searchStart)
+				if regexBackreferencesMatch(input, indices, backreferences) {
+					return indices, nil
+				}
+			}
+			return nil, nil
+		}
 		indices := re.FindStringSubmatchIndex(input[startByte:region.endByte])
 		if indices != nil {
 			offsetRegexIndices(indices, startByte)
+			if !regexBackreferencesMatch(input, indices, backreferences) {
+				return nil, nil
+			}
 		}
 		return indices, nil
 	}
@@ -1177,6 +1308,9 @@ func matcherFindIndices(matcher Value, re *regexp.Regexp, input string, region m
 			return nil, nil
 		}
 		if indices[1] <= region.endByte {
+			if !regexBackreferencesMatch(input, indices, backreferences) {
+				continue
+			}
 			return indices, nil
 		}
 	}
@@ -1387,6 +1521,73 @@ func matcherReplace(name string, re *regexp.Regexp, input string, region matcher
 	var expanded []byte
 	expanded = re.ExpandString(expanded, replacement, regionText, indices)
 	return input[:region.startByte+indices[0]] + string(expanded) + input[region.startByte+indices[1]:], nil
+}
+
+func matcherReplaceWithMetadata(matcher Value, name string, re *regexp.Regexp, input string, region matcherRegionBounds, args []Value, all bool) (string, error) {
+	backreferences := matcherBackreferencePairs(matcher)
+	if len(backreferences) == 0 {
+		return matcherReplace(name, re, input, region, args, all)
+	}
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return "", fmt.Errorf("%s expects replacement String", name)
+	}
+	replacement, err := javaReplacementToGoTemplate(name, args[0].Text, re.NumSubexp())
+	if err != nil {
+		return "", fmt.Errorf("%s %w", name, err)
+	}
+	regionText := input[region.startByte:region.endByte]
+	var out strings.Builder
+	last := 0
+	replaced := false
+	for _, indices := range re.FindAllStringSubmatchIndex(regionText, -1) {
+		if len(indices) < 2 || indices[0] < last {
+			continue
+		}
+		if !regexBackreferencesMatch(regionText, indices, backreferences) {
+			continue
+		}
+		out.WriteString(regionText[last:indices[0]])
+		var expanded []byte
+		expanded = re.ExpandString(expanded, replacement, regionText, indices)
+		out.Write(expanded)
+		last = indices[1]
+		replaced = true
+		if !all {
+			break
+		}
+	}
+	if !replaced {
+		return input, nil
+	}
+	out.WriteString(regionText[last:])
+	return input[:region.startByte] + out.String() + input[region.endByte:], nil
+}
+
+func matcherBackreferencePairs(matcher Value) []regexBackreferencePair {
+	value, ok := matcher.Fields["backreferencePairs"]
+	if !ok || value.Kind != ValueString {
+		return nil
+	}
+	return decodeRegexBackreferencePairs(value.Text)
+}
+
+func regexBackreferencesMatch(input string, indices []int, pairs []regexBackreferencePair) bool {
+	for _, pair := range pairs {
+		groupStart := pair.group * 2
+		matchStart := pair.matchGroup * 2
+		if groupStart+1 >= len(indices) || matchStart+1 >= len(indices) {
+			return false
+		}
+		leftStart, leftEnd := indices[groupStart], indices[groupStart+1]
+		rightStart, rightEnd := indices[matchStart], indices[matchStart+1]
+		if leftStart < 0 || leftEnd < 0 || rightStart < 0 || rightEnd < 0 {
+			return false
+		}
+		if input[leftStart:leftEnd] != input[rightStart:rightEnd] {
+			return false
+		}
+	}
+	return true
 }
 
 func javaReplacementToGoTemplate(callee, replacement string, groupCount int) (string, error) {

@@ -637,10 +637,7 @@ func limitBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol)
 	if member.Kind != apexast.DeclarationMethod || len(member.Parameters) != 0 {
 		return false
 	}
-	switch strings.ToLower(member.Name) {
-	default:
-		return strings.HasPrefix(strings.ToLower(member.Name), "get")
-	}
+	return hasPrefixFold(member.Name, "get")
 }
 
 func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
@@ -1674,7 +1671,7 @@ func connectAPITestFixtureSetterBehaviorMethod(symbol typesys.TypeSymbol, member
 	return member.Kind == apexast.DeclarationMethod &&
 		stubBehaviorMemberStatic(member) &&
 		strings.HasPrefix(stubBehaviorTypeName(symbol), "ConnectApi.") &&
-		strings.HasPrefix(strings.ToLower(member.Name), "settest") &&
+		hasPrefixFold(member.Name, "settest") &&
 		strings.EqualFold(member.Type, "void")
 }
 
@@ -1682,14 +1679,14 @@ func connectAPITestFixtureTargetBehaviorMethod(symbol typesys.TypeSymbol, member
 	if member.Kind != apexast.DeclarationMethod ||
 		!stubBehaviorMemberStatic(member) ||
 		!strings.HasPrefix(stubBehaviorTypeName(symbol), "ConnectApi.") ||
-		strings.HasPrefix(strings.ToLower(member.Name), "settest") ||
+		hasPrefixFold(member.Name, "settest") ||
 		strings.EqualFold(member.Type, "void") {
 		return false
 	}
-	setterName := "settest" + strings.ToLower(member.Name)
+	setterName := "settest" + member.Name
 	for _, candidate := range symbol.Members {
 		if !connectAPITestFixtureSetterBehaviorMethod(symbol, candidate) ||
-			strings.ToLower(candidate.Name) != setterName ||
+			!strings.EqualFold(candidate.Name, setterName) ||
 			len(candidate.Parameters) != len(member.Parameters)+1 {
 			continue
 		}
@@ -1866,15 +1863,19 @@ func generatedDTOAccessorBehaviorMethod(symbol typesys.TypeSymbol, member typesy
 		return false
 	}
 	switch {
-	case strings.HasPrefix(strings.ToLower(name), "get"):
+	case hasPrefixFold(name, "get"):
 		return true
-	case strings.HasPrefix(strings.ToLower(name), "set") && strings.EqualFold(member.Type, "void"):
+	case hasPrefixFold(name, "set") && strings.EqualFold(member.Type, "void"):
 		return true
-	case strings.HasPrefix(strings.ToLower(name), "is") && strings.EqualFold(member.Type, "Boolean"):
+	case hasPrefixFold(name, "is") && strings.EqualFold(member.Type, "Boolean"):
 		return true
 	default:
 		return false
 	}
+}
+
+func hasPrefixFold(value, prefix string) bool {
+	return len(value) >= len(prefix) && strings.EqualFold(value[:len(prefix)], prefix)
 }
 
 func generatedDTOCollectionBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {

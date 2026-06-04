@@ -120,14 +120,14 @@ func BuildSalesforceCoverageReportWithTooling(catalog Catalog, tooling *ToolingC
 		SourceMembers:   catalog.SourceMembers,
 		Entries:         len(catalog.Entries),
 		NextGates: []SalesforceCoverageNextGate{{
-			Name:    "docs inventory",
-			Command: "go run ./cmd/glade compat docs-inventory --source <salesforce-docs> --json",
+			Name:    "surface refresh",
+			Command: "go run ./cmd/glade compat surface refresh --docs <salesforce-docs> --tooling-completions <tooling-system-symbols.json.gz> --out <surface-out>",
 		}, {
-			Name:    "capability catalog",
-			Command: "go run ./cmd/glade compat catalog --inventory <inventory.json> --json",
+			Name:    "surface packet",
+			Command: "go run ./cmd/glade compat surface packet --ledger <surface-out>/SURFACE_LEDGER.json --area <area> --out docs/agent-packets/salesforce/<area>.md",
 		}, {
-			Name:    "coverage manifest",
-			Command: "go run ./cmd/glade compat salesforce-coverage --source <salesforce-docs> --tooling-completions <completions.json> --tooling-symbols <apex-class-symbols.json> --json",
+			Name:    "surface check",
+			Command: "go run ./cmd/glade compat surface check --ledger <surface-out>/SURFACE_LEDGER.json --max-parser-failures 0",
 		}},
 	}
 	for _, area := range areas {

@@ -493,7 +493,8 @@ func sObjectMissingFieldEqualsImplicitDefault(owner Value, field string, value V
 
 func isStringComparableEnum(typeName string) bool {
 	switch {
-	case strings.EqualFold(typeName, "Schema.DisplayType"), strings.EqualFold(typeName, "Schema.SOAPType"):
+	case strings.EqualFold(typeName, "Schema.DisplayType"), strings.EqualFold(typeName, "Schema.SOAPType"),
+		strings.EqualFold(typeName, "StatusCode"):
 		return true
 	default:
 		return false

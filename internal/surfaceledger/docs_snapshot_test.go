@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/apexdocs"
 )
 
 func TestBuildDocsSnapshotKeepsProductPathInIdentity(t *testing.T) {
@@ -38,6 +40,51 @@ func TestBuildDocsSnapshotExtractsAPIVersionText(t *testing.T) {
 	row := rowsByID(rows)[ApexTypeID("System", "Label")]
 	if row.APIVersion != "60.0" {
 		t.Fatalf("api version = %q, want 60.0", row.APIVersion)
+	}
+}
+
+func TestBuildDocsSnapshotUsesApexSignatureParameterTypes(t *testing.T) {
+	root := t.TempDir()
+	writeDoc(t, root, "apex/apex_class_System_FeatureManagement.md", "# FeatureManagement Class\n\n### checkPackageBooleanValue(apiName)\n\n#### Signature\n\n`public static Boolean checkPackageBooleanValue(String\napiName)`\n")
+	writeDoc(t, root, "apex/apex_methods_system_database.md", "# Database Class\n\n### executeBatch(batchClassObject)\n\n#### Signature\n\n`public static ID executeBatch(Object\nbatchClassObject)`\n\n### executeBatch(batchClassObject, scope)\n\n#### Signature\n\n`public static ID executeBatch(Object\nbatchClassObject, Integer scope)`\n")
+
+	rows, err := BuildDocsSnapshot(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := rowsByID(rows)
+	if _, ok := byID[ApexMemberID("System", "FeatureManagement", "checkPackageBooleanValue", []string{"String"})]; !ok {
+		t.Fatalf("FeatureManagement docs row did not use typed parameter list: %#v", rows)
+	}
+	if _, ok := byID[ApexMemberID("System", "Database", "executeBatch", []string{"Object", "Integer"})]; !ok {
+		t.Fatalf("Database.executeBatch docs row did not use typed parameter list: %#v", rows)
+	}
+	if _, ok := byID[ApexMemberID("System", "Database", "executeBatch", []string{"Object"})]; !ok {
+		t.Fatalf("Database.executeBatch single-argument docs row did not use typed parameter list: %#v", rows)
+	}
+}
+
+func TestRowsFromDocsInventoryCanonicalizesApexNamespace(t *testing.T) {
+	rows := RowsFromDocsInventory(apexdocs.Inventory{
+		Documents: []apexdocs.Document{{
+			SourcePath: "apex/apex_interface_database_batchable.md",
+			Kind:       "interface",
+			Namespace:  "database",
+			Name:       "Batchable",
+			Members: []apexdocs.Member{{
+				Kind:      "method",
+				Name:      "execute",
+				Signature: "execute(Database.BatchableContext, List<Object>)",
+			}},
+		}},
+	})
+
+	byID := rowsByID(rows)
+	if _, ok := byID[ApexTypeID("Database", "Batchable")]; !ok {
+		t.Fatalf("docs type row did not canonicalize Database namespace: %#v", rows)
+	}
+	if _, ok := byID[ApexMemberID("Database", "Batchable", "execute", []string{"Database.BatchableContext", "List<Object>"})]; !ok {
+		t.Fatalf("docs member row did not canonicalize Database namespace: %#v", rows)
 	}
 }
 

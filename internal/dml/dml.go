@@ -32,8 +32,10 @@ type Engine struct {
 	activeValRules map[string]bool
 	uniqueFields   map[string][]string
 	uniqueIndexes  map[string]map[string]map[storage.ID]bool
-	summaryByChild map[string][]summaryRelation
+	SummaryByChild SummaryRelationCache
 }
+
+type SummaryRelationCache map[string][]summaryRelation
 
 type Options struct {
 	AllowFieldTruncation      bool
@@ -57,6 +59,14 @@ type Result struct {
 	Created           bool         `json:"created,omitempty"`
 	MergedRecordIDs   []storage.ID `json:"mergedRecordIds,omitempty"`
 	UpdatedRelatedIDs []storage.ID `json:"updatedRelatedIds,omitempty"`
+}
+
+type rollbackPoint struct {
+	enabled   bool
+	journal   bool
+	mark      storage.IsolationMark
+	org       storage.OrgState
+	sequences map[string]uint64
 }
 
 type Error struct {
@@ -107,7 +117,7 @@ func NewEngine(org *storage.OrgState) Engine {
 		activeValRules: make(map[string]bool),
 		uniqueFields:   make(map[string][]string),
 		uniqueIndexes:  make(map[string]map[string]map[storage.ID]bool),
-		summaryByChild: make(map[string][]summaryRelation),
+		SummaryByChild: make(SummaryRelationCache),
 	}
 }
 
@@ -136,6 +146,16 @@ func (e Engine) systemTimestamp() string {
 	return now.Format(time.RFC3339)
 }
 
+func (e Engine) statementTimestamp(stamp *string) string {
+	if stamp == nil {
+		return e.systemTimestamp()
+	}
+	if *stamp == "" {
+		*stamp = e.systemTimestamp()
+	}
+	return *stamp
+}
+
 func (e Engine) systemUserID() storage.ID {
 	if e.UserID != "" {
 		return e.UserID
@@ -146,8 +166,9 @@ func (e Engine) systemUserID() storage.ID {
 func (e *Engine) Insert(records []storage.Record) []Result {
 	e.syncOrgClock()
 	results := make([]Result, len(records))
+	statementStamp := ""
 	for i, record := range records {
-		id, err := e.insertOne(record)
+		id, err := e.insertOne(record, &statementStamp)
 		if err != nil {
 			results[i] = resultFromError(record.ID, err)
 			continue
@@ -309,6 +330,9 @@ func (e *Engine) EmptyRecycleBin(records []storage.Record) []Result {
 		if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
 			object = e.Org.Objects[objectName]
 		}
+		if e.IsolationJournal != nil {
+			e.IsolationJournal.RecordUpdate(objectName, storedID, stored)
+		}
 		delete(object.Records, storedID)
 		e.Org.Objects[objectName] = object
 		results[i] = Result{ID: record.ID, Success: true}
@@ -384,6 +408,9 @@ func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Res
 		duplicate.ID = storedDuplicateID
 		updatedRelatedIDs := e.reparentLookups(objectName, duplicate.ID, master.ID)
 		stamp := e.systemTimestamp()
+		if e.IsolationJournal != nil {
+			e.IsolationJournal.RecordUpdate(objectName, storedDuplicateID, storedDuplicate)
+		}
 		if storedDuplicate.Fields == nil {
 			storedDuplicate.Fields = make(map[string]storage.Value)
 		}
@@ -442,6 +469,9 @@ func (e *Engine) setLock(records []storage.Record, locked bool) []Result {
 			object = e.Org.Objects[objectName]
 			storedID, stored, _ = storage.LookupRecordByID(object.Records, record.ID)
 		}
+		if e.IsolationJournal != nil {
+			e.IsolationJournal.RecordUpdate(objectName, storedID, stored)
+		}
 		stored.System.Locked = locked
 		object.Records[storedID] = stored
 		e.Org.Objects[objectName] = object
@@ -466,6 +496,9 @@ func (e *Engine) reparentLookups(parentObject string, oldID, newID storage.ID) [
 				if _, cloned := storage.EnsureMutableObjectRecords(e.Org, childObjectName); cloned {
 					childObject = e.Org.Objects[childObjectName]
 					record = childObject.Records[id]
+				}
+				if e.IsolationJournal != nil {
+					e.IsolationJournal.RecordUpdate(childObjectName, id, record)
 				}
 				record.Fields[relation.Field] = storage.IDValue(newID)
 				childObject.Records[id] = record
@@ -496,6 +529,37 @@ func (e *Engine) WithTransaction(fn func(*Engine) error) error {
 	return nil
 }
 
+func (e *Engine) beginRollbackPoint(enabled bool) rollbackPoint {
+	if !enabled {
+		return rollbackPoint{}
+	}
+	if e != nil && e.IsolationJournal != nil {
+		return rollbackPoint{enabled: true, journal: true, mark: e.IsolationJournal.Mark()}
+	}
+	return rollbackPoint{
+		enabled:   true,
+		org:       storage.SnapshotRuntimeOrg(e.Org),
+		sequences: copySequences(e.IDs.Sequences),
+	}
+}
+
+func (e *Engine) restoreRollbackPoint(point rollbackPoint) {
+	if e == nil || !point.enabled {
+		return
+	}
+	if point.journal && e.IsolationJournal != nil {
+		_ = e.IsolationJournal.Rollback(point.mark)
+		if e.Org != nil {
+			e.IDs.Sequences = copySequences(e.Org.IDSequences)
+		}
+		e.clearUniqueIndexes()
+		return
+	}
+	*e.Org = point.org
+	e.IDs.Sequences = point.sequences
+	e.clearUniqueIndexes()
+}
+
 func (e *Engine) TakeSummaryUpdates() []SummaryUpdate {
 	if e == nil || len(e.summaryOrder) == 0 || len(e.summaryUpdates) == 0 {
 		return nil
@@ -513,7 +577,7 @@ func (e *Engine) TakeSummaryUpdates() []SummaryUpdate {
 	return updates
 }
 
-func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
+func (e *Engine) insertOne(record storage.Record, statementStamp *string) (storage.ID, error) {
 	object, objectName, err := e.object(record.Object)
 	if err != nil {
 		return "", err
@@ -530,7 +594,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err := validateFieldWriteability(object.Definition, e.Org.Namespace, record, true); err != nil {
 		return "", err
 	}
-	createPersonContact := objectName == "Account" && isPersonAccountRecord(record)
+	createPersonContact := createsPersonContactOnInsert(objectName, record)
 	applyDefaultRecordTypeID(objectName, object.Definition, &record)
 	applyFieldDefaults(e.Org, object.Definition, &record)
 	applyAutoNumberName(object.Definition, e.IDs.Sequences[objectName]+1, &record)
@@ -569,14 +633,11 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err := e.validateUnique(objectName, object.Definition, record, ""); err != nil {
 		return "", err
 	}
-	needsFullRollback := strings.EqualFold(objectName, "ContentVersion") || (!e.DeferAutomation && hasObjectAutomation(object.Definition))
+	needsFullRollback := sobjectInsertNeedsFullRollback(objectName) || (!e.DeferAutomation && hasObjectAutomation(object.Definition))
 	needsPersonRollback := createPersonContact && !needsFullRollback
-	var rollbackOrg storage.OrgState
+	rollback := e.beginRollbackPoint(needsFullRollback)
 	var rollbackSequences map[string]uint64
-	if needsFullRollback {
-		rollbackOrg = storage.SnapshotRuntimeOrg(e.Org)
-		rollbackSequences = copySequences(e.IDs.Sequences)
-	} else if needsPersonRollback {
+	if needsPersonRollback {
 		rollbackSequences = copySequences(e.IDs.Sequences)
 	}
 	if record.ID == "" {
@@ -596,7 +657,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
 		object = e.Org.Objects[objectName]
 	}
-	stamp := e.systemTimestamp()
+	stamp := e.statementTimestamp(statementStamp)
 	userID := e.systemUserID()
 	if record.System.CreatedDate == "" {
 		record.System.CreatedDate = stamp
@@ -628,34 +689,14 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	e.Org.Objects[objectName] = object
 	e.addUniqueIndexRecord(objectName, object.Definition, record)
 	e.recalculateSummaryFieldsForChildren(objectName, record)
-	if objectName == "ContentVersion" {
-		if err := e.afterInsertContentVersion(record); err != nil {
-			*e.Org = rollbackOrg
-			e.IDs.Sequences = rollbackSequences
-			e.clearUniqueIndexes()
-			return "", err
-		}
-	}
-	if objectName == "ContentDistribution" {
-		e.afterInsertContentDistribution(record.ID)
-	}
-	if objectName == "EmailMessage" {
-		if err := e.afterInsertEmailMessage(record); err != nil {
-			*e.Org = rollbackOrg
-			e.IDs.Sequences = rollbackSequences
-			e.clearUniqueIndexes()
-			return "", err
-		}
-	}
-	if objectName == "User" {
-		e.afterInsertUser(record)
+	if err := e.afterInsertSObject(objectName, record); err != nil {
+		e.restoreRollbackPoint(rollback)
+		return "", err
 	}
 	if createPersonContact {
 		if err := e.afterInsertPersonAccount(record); err != nil {
 			if needsFullRollback {
-				*e.Org = rollbackOrg
-				e.IDs.Sequences = rollbackSequences
-				e.clearUniqueIndexes()
+				e.restoreRollbackPoint(rollback)
 			} else {
 				e.rollbackInsertedRecord(objectName, object.Definition, record, rollbackSequences)
 			}
@@ -664,9 +705,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	}
 	if !e.DeferAutomation {
 		if err := e.ApplyAutomation(objectName, record.ID); err != nil {
-			*e.Org = rollbackOrg
-			e.IDs.Sequences = rollbackSequences
-			e.clearUniqueIndexes()
+			e.restoreRollbackPoint(rollback)
 			return "", err
 		}
 	}

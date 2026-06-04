@@ -114,10 +114,7 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	case "Minimum Access - Salesforce":
 		return method == "isAccessible" && isBaselineReadableObject(objectName)
 	case "Standard Platform User":
-		if strings.EqualFold(objectName, "Case") {
-			return false
-		}
-		return true
+		return standardPlatformUserObjectPermission(objectName, method)
 	case "Read Only":
 		return method == "isAccessible"
 	}
@@ -168,13 +165,7 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	case "Minimum Access - Salesforce":
 		return false
 	case "Standard Platform User":
-		if strings.EqualFold(objectName, "Case") {
-			if strings.EqualFold(fieldName, "CaseNumber") {
-				return false
-			}
-			return vm.isBaselineReadableField(objectName, fieldName)
-		}
-		return true
+		return vm.standardPlatformUserFieldPermission(objectName, fieldName, method)
 	case "Read Only":
 		return method == "isAccessible"
 	}
@@ -221,7 +212,7 @@ func (vm *VM) enforceUserModeDMLAccess(op string, value Value) error {
 			return newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
 		}
 		for field := range record.Fields {
-			if fieldPermission == "" || isInternalSObjectField(field) || isSObjectSystemField(field) {
+			if fieldPermission == "" || isInternalSObjectField(field) || isSObjectSystemField(field) || isDefaultedSObjectField(record, field) {
 				continue
 			}
 			canonicalField := vm.resolveSObjectFieldName(objectName, field)
@@ -465,15 +456,7 @@ func (vm *VM) stripInaccessibleKeepsBaselineWritableField(accessType, objectName
 	case "CREATABLE", "UPSERTABLE":
 		return vm.isBaselineWritableField(objectName, fieldName)
 	case "UPDATABLE":
-		return strings.EqualFold(objectName, "Lead") && localWritableLeadCommunicationField(fieldName)
-	default:
-		return false
-	}
-}
-func localWritableLeadCommunicationField(fieldName string) bool {
-	switch strings.ToLower(strings.TrimSpace(fieldName)) {
-	case "donotcall", "hasoptedoutofemail", "hasoptedoutoffax":
-		return true
+		return stripInaccessibleKeepsSObjectBaselineWritableUpdateField(objectName, fieldName)
 	default:
 		return false
 	}
@@ -722,14 +705,6 @@ func (vm *VM) isBaselineReadableField(objectName, fieldName string) bool {
 func isBaselineSystemReadableField(fieldName string) bool {
 	switch strings.ToLower(strings.TrimSpace(fieldName)) {
 	case "createdbyid", "createddate", "isdeleted", "lastmodifiedbyid", "lastmodifieddate", "ownerid", "recordtypeid", "systemmodstamp":
-		return true
-	default:
-		return false
-	}
-}
-func isBaselineReadableObject(objectName string) bool {
-	switch strings.ToLower(strings.TrimSpace(objectName)) {
-	case "task", "event":
 		return true
 	default:
 		return false

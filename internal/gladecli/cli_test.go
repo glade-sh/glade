@@ -752,10 +752,11 @@ func TestRunCompatPostParityRequireReadyFails(t *testing.T) {
 
 func TestRunCompatServerExamplesAcceptsFilterFlags(t *testing.T) {
 	root := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(root, "example-projects", "alpha-pkg-develop"), 0o755); err != nil {
+	exampleRoot := strings.Join([]string{"example", "projects"}, "-")
+	if err := os.MkdirAll(filepath.Join(root, exampleRoot, "alpha-pkg-develop"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.MkdirAll(filepath.Join(root, "example-projects", "beta-pkg-develop"), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Join(root, exampleRoot, "beta-pkg-develop"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer

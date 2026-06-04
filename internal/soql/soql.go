@@ -1900,9 +1900,6 @@ func fieldDefinitionsForReference(org storage.OrgState, definition storage.Objec
 			}
 			return out, len(out) > 0
 		}
-		if customObjectLikeSOQLName(definition.APIName) && customRelationshipLikeSOQLName(parts[0]) && fieldKnownForMode(org, storage.ObjectDefinition{APIName: relationshipObjectName(parts[0])}, parts[1], false) {
-			return []storage.Field{{APIName: parts[1], Type: storage.FieldAny}}, true
-		}
 		return nil, false
 	}
 	canonicalField, ok := resolveSOQLFieldName(definition, org.Namespace, field)
@@ -2162,9 +2159,6 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 			}
 			return found
 		}
-		if customObjectLikeSOQLName(definition.APIName) && customRelationshipLikeSOQLName(parts[0]) {
-			return fieldKnownForMode(org, storage.ObjectDefinition{APIName: relationshipObjectName(parts[0])}, parts[1], requireAllParents)
-		}
 		return false
 	}
 	_, ok := storage.ResolveFieldName(definition, org.Namespace, field)
@@ -2355,29 +2349,6 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 			return value.Clone(), true
 		}
 	}
-	if customObjectLikeSOQLName(object.Definition.APIName) && customRelationshipLikeSOQLName(parts[0]) {
-		lookupField := relationshipObjectName(parts[0])
-		parentID, ok := recordValue(org, object.Definition, record, lookupField)
-		if !ok || parentID.Kind == storage.ValueNull {
-			return storage.NullValue(), true
-		}
-		if strings.EqualFold(parts[1], "Id") {
-			return parentID.Clone(), true
-		}
-		parentObjectName, parentObject, parent, ok := lookupRecordByIDInOrg(org, idFromValue(parentID))
-		if !ok || parent.System.IsDeleted {
-			return storage.NullValue(), true
-		}
-		parent.Object = parentObjectName
-		if strings.Contains(parts[1], ".") {
-			return relationshipValue(org, parent, parts[1])
-		}
-		value, ok := recordValue(org, parentObject.Definition, parent, parts[1])
-		if !ok {
-			return storage.NullValue(), true
-		}
-		return value.Clone(), true
-	}
 	return storage.Value{}, false
 }
 
@@ -2487,12 +2458,6 @@ func relationshipLookupPathKnown(org storage.OrgState, record storage.Record, re
 	}
 	if len(matchingParentRelations(org.Namespace, object.Definition, first)) > 0 {
 		return true
-	}
-	if customObjectLikeSOQLName(object.Definition.APIName) && customRelationshipLikeSOQLName(first) {
-		lookupField := relationshipObjectName(first)
-		if _, ok := resolveSOQLFieldName(object.Definition, org.Namespace, lookupField); ok {
-			return true
-		}
 	}
 	return false
 }
@@ -2869,19 +2834,6 @@ func namespacedCustomFieldLikeSOQLName(name string) bool {
 	}
 	lower := strings.ToLower(name)
 	return strings.Count(lower, "__") >= 2 && (strings.HasSuffix(lower, "__c") || strings.HasSuffix(lower, "__pc"))
-}
-
-func customRelationshipLikeSOQLName(name string) bool {
-	lower := strings.ToLower(strings.TrimSpace(name))
-	return strings.HasSuffix(lower, "__r") && strings.Count(lower, "__") >= 1
-}
-
-func relationshipObjectName(relationship string) string {
-	relationship = strings.TrimSpace(relationship)
-	if hasSuffixFold(relationship, "__r") {
-		return relationship[:len(relationship)-len("__r")] + "__c"
-	}
-	return relationship
 }
 
 func customMetadataSystemValue(definition storage.ObjectDefinition, record storage.Record, field string) (storage.Value, bool) {

@@ -60,19 +60,51 @@ func shouldSkipNonFixtureEvidenceFile(path string) (bool, error) {
 }
 
 func inferSurfaceIDFromSymbol(symbol string) string {
-	symbol = strings.TrimSpace(symbol)
+	symbol = cleanIdentityPart(symbol)
 	if symbol == "" || strings.HasPrefix(symbol, "apex:") || strings.HasPrefix(symbol, "rest:") || strings.HasPrefix(symbol, "tooling:") {
 		return symbol
 	}
 	parts := strings.Split(symbol, ".")
 	if len(parts) == 2 {
+		if isKnownApexNamespace(parts[0]) {
+			return ApexTypeID(parts[0], parts[1])
+		}
 		return ApexMemberID("System", parts[0], parts[1], nil)
 	}
 	if len(parts) >= 3 {
+		if isKnownApexNamespace(parts[0]) {
+			ns := parts[0]
+			typeName := strings.Join(parts[1:len(parts)-1], ".")
+			memberName := parts[len(parts)-1]
+			if isKnownZeroArgApexMethod(ns, typeName, memberName) {
+				return ApexMemberID(ns, typeName, memberName, []string{})
+			}
+			return ApexMemberID(ns, typeName, memberName, nil)
+		}
 		ns := strings.Join(parts[:len(parts)-2], ".")
 		return ApexMemberID(ns, parts[len(parts)-2], parts[len(parts)-1], nil)
 	}
 	return ApexTypeID("System", symbol)
+}
+
+func isKnownApexNamespace(namespace string) bool {
+	switch canonicalApexNamespaceName(namespace) {
+	case "ConnectApi", "Database", "Schema", "System":
+		return true
+	default:
+		return false
+	}
+}
+
+func isKnownZeroArgApexMethod(namespace, typeName, memberName string) bool {
+	if canonicalApexNamespaceName(namespace) != "Schema" {
+		return false
+	}
+	if !strings.HasPrefix(cleanIdentityPart(typeName), "Describe") && typeName != "ChildRelationship" && typeName != "RecordTypeInfo" && typeName != "PicklistEntry" {
+		return false
+	}
+	memberName = canonicalApexMemberName(memberName)
+	return strings.HasPrefix(memberName, "get") || strings.HasPrefix(memberName, "is")
 }
 
 func productFromID(id string) string {

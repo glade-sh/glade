@@ -1,6 +1,9 @@
 package surfaceledger
 
-import "sort"
+import (
+	"sort"
+	"strings"
+)
 
 func Merge(docs, org, glade, evidence []SurfaceLedgerRow) SurfaceLedger {
 	byID := map[string]SurfaceLedgerRow{}
@@ -118,6 +121,17 @@ func Classify(row *SurfaceLedgerRow) {
 	case row.Docs == SourcePresent && row.Org == SourcePresent && row.SignatureChanged():
 		row.GapClass = GapSignatureChanged
 		row.Bucket = BucketFailure
+	case row.GladeBehavior == BehaviorPassive:
+		row.Bucket = BucketPassive
+	case row.GladeBehavior == BehaviorUnsupported:
+		row.Bucket = BucketExplicitUnsupported
+	case isGenericObjectHelper(*row):
+		row.Bucket = BucketImplemented
+	case isGenericEnumHelper(*row):
+		row.Bucket = BucketImplemented
+	case (row.GladeBehavior == BehaviorSupported || row.GladeBehavior == BehaviorPartial) && row.Evidence == EvidenceNone:
+		row.GapClass = GapMissingEvidence
+		row.Bucket = BucketGap
 	case row.Docs == SourceAbsent && row.Org == SourceAbsent && row.GladeShape != ShapeAbsent:
 		row.GapClass = GapStaleGladeShape
 		row.Bucket = BucketFailure
@@ -133,17 +147,10 @@ func Classify(row *SurfaceLedgerRow) {
 	case isPassiveServiceRisk(*row):
 		row.GapClass = GapPassiveServiceRisk
 		row.Bucket = BucketFailure
-	case (row.GladeBehavior == BehaviorSupported || row.GladeBehavior == BehaviorPartial) && row.Evidence == EvidenceNone:
-		row.GapClass = GapMissingEvidence
-		row.Bucket = BucketGap
 	case row.GladeBehavior == BehaviorSupported:
 		row.Bucket = BucketImplemented
 	case row.GladeBehavior == BehaviorPartial:
 		row.Bucket = BucketPartial
-	case row.GladeBehavior == BehaviorPassive:
-		row.Bucket = BucketPassive
-	case row.GladeBehavior == BehaviorUnsupported:
-		row.Bucket = BucketExplicitUnsupported
 	default:
 		row.Bucket = BucketGap
 	}
@@ -155,6 +162,37 @@ func (row SurfaceLedgerRow) SignatureChanged() bool {
 
 func needsBehavior(row SurfaceLedgerRow) bool {
 	return row.Area == AreaRuntime || row.Area == AreaServer || row.Kind == KindMethod || row.Kind == KindResource
+}
+
+func isGenericObjectHelper(row SurfaceLedgerRow) bool {
+	if row.Docs != SourceAbsent || row.Org != SourceAbsent || row.GladeShape == ShapeAbsent || row.GladeBehavior != BehaviorSupported {
+		return false
+	}
+	switch row.MemberName {
+	case "clone", "hashCode", "toString":
+		return len(row.Parameters) == 0
+	case "equals":
+		return len(row.Parameters) == 1 && row.Parameters[0] == "Object"
+	default:
+		return false
+	}
+}
+
+func isGenericEnumHelper(row SurfaceLedgerRow) bool {
+	if row.Docs != SourceAbsent || row.Org != SourceAbsent || row.GladeShape == ShapeAbsent || row.GladeBehavior != BehaviorSupported {
+		return false
+	}
+	if row.Kind == KindProperty && row.MemberName == strings.ToUpper(row.MemberName) && row.MemberName != "" {
+		return true
+	}
+	switch row.MemberName {
+	case "ordinal", "values":
+		return len(row.Parameters) == 0
+	case "valueOf":
+		return len(row.Parameters) == 1 && row.Parameters[0] == "String"
+	default:
+		return false
+	}
 }
 
 func isPassiveServiceRisk(row SurfaceLedgerRow) bool {

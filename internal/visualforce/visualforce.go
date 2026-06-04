@@ -374,7 +374,7 @@ func splitCSV(value string) []string {
 
 func nameFromPath(path, suffix string) string {
 	base := filepath.Base(path)
-	if strings.HasSuffix(strings.ToLower(base), strings.ToLower(suffix)) {
+	if hasSuffixFold(base, suffix) {
 		return base[:len(base)-len(suffix)]
 	}
 	return strings.TrimSuffix(base, filepath.Ext(base))
@@ -382,13 +382,21 @@ func nameFromPath(path, suffix string) string {
 
 func trimPageReference(name string) string {
 	name = strings.TrimSpace(name)
-	if strings.HasPrefix(strings.ToLower(name), "page.") {
+	if hasPrefixFold(name, "page.") {
 		name = name[len("Page."):]
 	}
 	if idx := strings.Index(name, "__"); idx > 0 {
 		return name[idx+len("__"):]
 	}
 	return name
+}
+
+func hasPrefixFold(value, prefix string) bool {
+	return len(value) >= len(prefix) && strings.EqualFold(value[:len(prefix)], prefix)
+}
+
+func hasSuffixFold(value, suffix string) bool {
+	return len(value) >= len(suffix) && strings.EqualFold(value[len(value)-len(suffix):], suffix)
 }
 
 func lookupKey(name string) string {

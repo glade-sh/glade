@@ -3,7 +3,7 @@ package capability
 import "testing"
 
 func TestBuildStubContractReport(t *testing.T) {
-	report, err := BuildStubContractReport("../../example-projects/stubs")
+	report, err := BuildStubContractReport("")
 	if err != nil {
 		t.Fatalf("build report: %v", err)
 	}

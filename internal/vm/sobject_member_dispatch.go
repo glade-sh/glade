@@ -198,23 +198,6 @@ func (vm *VM) canSynthesizeSObjectFieldMapField(objectName string) bool {
 	}
 	return len(state.Definition.Fields) == 0 || isCustomObjectLikeName(state.Definition.APIName)
 }
-func (vm *VM) canSynthesizeCustomSObjectFieldMapField(objectName, fieldName string) bool {
-	if lookupField, ok := customRelationshipLookupFieldName(fieldName); ok {
-		if vm != nil && vm.Org != nil {
-			return vm.inferredCustomFieldReferenceTarget(objectName, lookupField) != ""
-		}
-		return false
-	}
-	if !isCustomFieldOrRelationshipType(fieldName) {
-		return false
-	}
-	if vm != nil && vm.Org != nil {
-		if target := vm.inferredCustomFieldReferenceTarget(objectName, fieldName); target != "" {
-			return true
-		}
-	}
-	return isLikelyNumericCustomField(fieldName)
-}
 func sObjectFieldMapObjectName(value Value) (string, bool) {
 	const prefix = "sobjectfieldmap:"
 	if !strings.HasPrefix(value.Runtime, prefix) {
@@ -344,7 +327,7 @@ func (vm *VM) isSObjectLikeType(typeName string) bool {
 func sObjectMemberCallShapeSupported(method string, args []Value) bool {
 	method = canonicalStdlibMemberName(method,
 		"addError", "hasErrors", "getErrors", "get", "put", "putSObject", "isSet", "clear",
-		"getPopulatedFieldsAsMap", "getSObjectType", "getSObjects", "getQuickActionName",
+		"getPopulatedFieldsAsMap", "getSObjectType", "getSObject", "getSObjects", "getQuickActionName",
 		"getAll", "getInstance", "getOrgDefaults", "getValues", "recalculateFormulas",
 	)
 	switch method {
@@ -352,7 +335,7 @@ func sObjectMemberCallShapeSupported(method string, args []Value) bool {
 		return len(args) >= 1 && len(args) <= 3
 	case "hasErrors", "getErrors", "clear", "getPopulatedFieldsAsMap", "getSObjectType", "getAll", "getOrgDefaults", "getValues", "recalculateFormulas":
 		return len(args) == 0
-	case "get", "isSet", "getSObjects", "getQuickActionName", "getInstance":
+	case "get", "isSet", "getSObject", "getSObjects", "getQuickActionName", "getInstance":
 		return len(args) == 1
 	case "put", "putSObject":
 		return len(args) == 2
@@ -429,7 +412,7 @@ func sObjectTypeTokenObjectName(value Value) (string, bool) {
 func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	method = canonicalStdlibMemberName(method,
 		"addError", "hasErrors", "getErrors", "get", "put", "putSObject", "isSet", "clear",
-		"getPopulatedFieldsAsMap", "getSObjectType", "getSObjects", "getQuickActionName",
+		"getPopulatedFieldsAsMap", "getSObjectType", "getSObject", "getSObjects", "getQuickActionName",
 		"getAll", "getInstance", "getOrgDefaults", "getValues", "recalculateFormulas", "setOptions", "getOptions", "clone",
 	)
 	switch method {
@@ -654,6 +637,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		}
 		for field, value := range receiver.Fields {
 			if _, ok := added[strings.ToLower(field)]; ok {
+				continue
+			}
+			if isDefaultedSObjectField(receiver, field) {
 				continue
 			}
 			addField(field, value, false)

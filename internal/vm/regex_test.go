@@ -231,7 +231,6 @@ func TestExecPatternRejectsJavaOnlyRegex(t *testing.T) {
 	}{
 		{name: "lookbehind", source: `Pattern.compile('(?<=a)b');`, message: "Java regex lookbehind"},
 		{name: "lookahead", source: `Pattern.compile('(?=b)a');`, message: "Java regex lookahead"},
-		{name: "backreference", source: `Pattern.compile('(a)\1');`, message: "Java regex backreferences"},
 		{name: "namedGroup", source: `Pattern.compile('(?<word>a)');`, message: "Java regex named groups"},
 		{name: "atomicGroup", source: `Pattern.compile('(?>a)');`, message: "Java regex atomic groups"},
 		{name: "possessiveQuantifier", source: `Pattern.compile('a++');`, message: "Java regex possessive quantifiers"},
@@ -262,6 +261,25 @@ func TestExecPatternRejectsJavaOnlyRegex(t *testing.T) {
 				t.Fatalf("expected UnsupportedFeature runtime error, got %T %v", err, err)
 			}
 		})
+	}
+}
+
+func TestExecPatternNumericBackreferenceMatchesCapturedText(t *testing.T) {
+	program, err := CompileAnonymous(`
+Pattern sameDelimiter = Pattern.compile('([ab])x\\1');
+Matcher matcher = sameDelimiter.matcher('axa axb bxb');
+System.assert(matcher.find());
+System.assertEquals('axa', matcher.group());
+System.assert(matcher.find());
+System.assertEquals('bxb', matcher.group());
+System.assert(!matcher.find());
+System.assertEquals('Q axb Q', sameDelimiter.matcher('axa axb bxb').replaceAll('Q'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 

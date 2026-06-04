@@ -11,8 +11,188 @@ panic on user Apex.
 
 ## Finding the next gap (instead of waiting for a failure)
 
-Don't hand-patch one method at a time off a test failure. Ask the runtime which
-documented surfaces it is missing:
+For the broad Salesforce surface view, start with the Surface Ledger. It joins
+the scraped docs, an org/API snapshot, Glade's type and behavior surface, and
+fixture/oracle evidence into one set of rows.
+
+Set the docs source once. Prefer the workspace copy under `example-projects`:
+
+```bash
+export GLADE_SALESFORCE_DOCS_SOURCE="$PWD/example-projects/Salesforce Docs Scraper/salesforce-docs"
+```
+
+If that workspace copy is missing, fall back to the downloaded scrape:
+
+```bash
+export GLADE_SALESFORCE_DOCS_SOURCE="/Users/matt/Downloads/Kimi_Agent_Salesforce Docs Scraper (1)/salesforce-docs"
+```
+
+Check the declared docs universe before assigning broad work:
+
+```bash
+go run ./cmd/glade compat surface sources \
+  --docs "$GLADE_SALESFORCE_DOCS_SOURCE" \
+  --check docs/generated/salesforce/SURFACE_SOURCES.md
+```
+
+This must report zero missing Atlas docsets, zero partial Atlas docsets, LWC
+present, site references present, and zero missing local markdown.
+
+If the workspace copy only has the legacy six docsets, refresh the reference
+material before assigning broad surface work:
+
+```bash
+cd "example-projects/Salesforce Docs Scraper/salesforce-scraper"
+python3 scrape.py --reference-sources
+python3 scrape.py \
+  --docsets apex apex-guide object-reference field-reference soql-sosl visualforce lightning lwc rest-api tooling-api metadata-api soap-api bulk-api ui-api platform-events streaming-api connect-rest-api service-connector-api-reference limits-reference cli-reference analytics-cli-reference commerce-cli-reference \
+  --version latest \
+  --concurrency 2 \
+  --request-delay 0.5 \
+  --output ../salesforce-docs-expanded
+python3 scrape.py \
+  --docsets site-references \
+  --site-metadata ../sitemap.json \
+  --concurrency 2 \
+  --output ../salesforce-docs-expanded
+python3 scrape.py \
+  --reference-coverage \
+  --site-metadata ../sitemap.json \
+  --output ../salesforce-docs-expanded
+```
+
+That expanded source adds the Apex Developer Guide, Object Reference for the
+Salesforce Platform, Salesforce Field Reference Guide, SOQL/SOSL Reference, API
+guides, Visualforce, Aura, LWC, Service Cloud Connector API Reference, Analytics
+CLI, Commerce CLI, and modern `/docs/.../references` verticals such as
+AMPscript, Agentforce, Pub/Sub API, GraphQL, and Salesforce Connect Amazon RDS.
+The coverage report must show `Atlas docsets missing: 0`,
+`Atlas docsets partial: 0`, `lwc` as `present`, and `Missing local markdown: 0`
+before treating the expanded source as complete.
+
+Then run the offline ledger refresh. This uses the checked Tooling completions
+snapshot, so it does not need a live org:
+
+```bash
+tmp="$(mktemp -d)"
+go run ./cmd/glade compat surface refresh \
+  --docs "$GLADE_SALESFORCE_DOCS_SOURCE" \
+  --tooling-completions testdata/generated/tooling_system_symbols.json.gz \
+  --out "$tmp"
+
+open "$tmp/SURFACE_DASHBOARD.md"
+```
+
+The command writes:
+
+```text
+DOCS_SNAPSHOT.json
+ORG_SNAPSHOT.json
+GLADE_SNAPSHOT.json
+EVIDENCE_SNAPSHOT.json
+SURFACE_LEDGER.json
+SURFACE_DASHBOARD.md
+SURFACE_GAPS.md
+SURFACE_FAILURES.md
+SURFACE_RELEASE_DIFF.md
+```
+
+The terminal output is intentionally small: implemented, partial, passive,
+explicit unsupported, gap counts, failure counts, and the dashboard path. On a
+warm local checkout this is a short run; it does not run the example-project
+local-test corpus.
+
+Create an agent packet from the generated ledger before editing runtime code:
+
+```bash
+go run ./cmd/glade compat surface packet \
+  --ledger "$tmp/SURFACE_LEDGER.json" \
+  --area Core.Runtime.System.FeatureManagement \
+  --out docs/agent-packets/salesforce/FeatureManagement.md
+```
+
+Packets name the row filter, first rows to explain, ownership boundaries,
+parallel-work rules, focused tests, fixture expectations, ratchet target, and
+area ratchet command. A worker should claim one packet and stay inside it.
+
+Close every packet with the same validation block:
+
+```text
+focused tests run
+fixture command run
+surface refresh run
+area ratchet command run
+before counts
+after counts
+next top row
+```
+
+Run `go test ./internal/repoguard` after code changes. If a docs row is missing
+or malformed, choose one path before runtime work: re-scrape docs, copy improved
+docs into the external docs source, patch the docs parser to read existing docs
+correctly, or add a small checked fixture when public docs are ambiguous. Do not
+invent runtime behavior to cover a docs defect.
+
+Review packet output by checklist: no corpus-specific runtime hacks, public
+Salesforce behavior is cited by docs or fixture, shape and behavior are not
+claimed without evidence, packet area did not expand during work, and generated
+docs are updated when capability changes.
+
+Start breadth agents only after packets are ready, in this order:
+
+```text
+Ledger.Identity
+FeatureManagement
+Database.Batchable
+Schema.Describe
+ApexPages.Controllers
+REST.Resources
+Tooling.Objects
+```
+
+Use a live org when you want to refresh the org/API snapshot instead of the
+checked Tooling completions file:
+
+```bash
+go run ./cmd/glade compat surface refresh \
+  --docs "$GLADE_SALESFORCE_DOCS_SOURCE" \
+  --target-org glade-probe-lab \
+  --release v66.0 \
+  --out docs/generated/salesforce/releases/v66.0
+```
+
+To inspect or gate a generated ledger:
+
+```bash
+go run ./cmd/glade compat surface explain \
+  --ledger "$tmp/SURFACE_LEDGER.json" \
+  --id 'apex:System.Label.get(String,String)'
+
+go run ./cmd/glade compat surface check \
+  --ledger "$tmp/SURFACE_LEDGER.json" \
+  --max-missing-shape 33070 \
+  --max-missing-behavior 0 \
+  --max-parser-failures 0
+```
+
+Use the lower-level surface commands only after `refresh` when you need to
+inspect or debug one input:
+
+```text
+compat surface docs
+compat surface org
+compat surface glade
+compat surface evidence
+compat surface ledger
+compat surface gaps
+compat surface explain
+compat surface check
+```
+
+Don't hand-patch one method at a time off a test failure. The front door for
+broad Salesforce feature work is `compat surface refresh`. Use the older docs
+inventory and reconcile commands only to debug the docs/catalog join or inspect
+Apex-specific rows:
 
 ```bash
 # Build the inventory + catalog from the scraped Apex docs, then reconcile the
@@ -30,10 +210,10 @@ The reconciler derives a status per documented surface:
 - `unknown` — owning type is not type-known; references will not even resolve.
 - `doc` — language or guide surface, not a runtime target.
 
-The `worklist` is sorted by impact (executable-parity `unknown` first). Pick the
-top item, wire it up using the map below, add a fixture, and the next run shows
-the count drop. `scripts/apex-docs-support-gate.sh` runs this and can ratchet the
-runtime-target `unknown` count via `GLADE_APEX_DOCS_MAX_UNKNOWN`.
+The `worklist` is sorted by impact (executable-parity `unknown` first). Use it as
+inspection evidence, not as the broad packet selector. `scripts/apex-docs-support-gate.sh`
+runs this lower-level check and can ratchet the runtime-target `unknown` count
+via `GLADE_APEX_DOCS_MAX_UNKNOWN`.
 
 ### Behavioral contracts (what a surface must *do*)
 
@@ -135,8 +315,11 @@ steps run unchanged.
    ```
 
 7. **Validate.** Run the surface's focused test command, then the affected
-   packages, then `scripts/smoke.sh`. Confirm allocations/perf are unchanged on
-   hot dispatch paths (`go test -bench . -benchmem` + `benchstat`).
+   packages, then `scripts/smoke.sh`. Performance and optimization are
+   paramount, so confirm allocations/perf are unchanged on hot dispatch paths
+   (`go test -bench . -benchmem` + `benchstat`). Do not keep a faster path that
+   changes Salesforce-shaped behavior, test isolation, limits, or metadata
+   semantics.
 
 ## Anti-patterns to avoid
 

@@ -532,6 +532,9 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 		}
 	}
 	if value.Kind == ValueList && collectionBase(paramType) == "" && vm.isSObjectLikeType(paramType) {
+		if vm.inlineSOQLListAssignableTo(paramType, value) {
+			return 850
+		}
 		return -1
 	}
 	if err := vm.ensureAssignable(paramType, value); err != nil {
@@ -539,6 +542,36 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 	}
 	return 1
 }
+
+func (vm *VM) inlineSOQLListAssignableTo(paramType string, value Value) bool {
+	if value.Kind != ValueList || inlineSOQLQueryText(value) == "" || !vm.isSObjectLikeType(paramType) {
+		return false
+	}
+	if elementType := vm.inlineSOQLListElementType(value); elementType != "" {
+		return vm.typeAssignableTo(elementType, paramType) || vm.typeMatches(elementType, paramType, make(map[string]bool))
+	}
+	return false
+}
+
+func (vm *VM) inlineSOQLListElementType(value Value) string {
+	for _, typeName := range []string{value.Type, value.Runtime, value.Static} {
+		if elementType, ok := collectionElementType(typeName); ok && strings.TrimSpace(elementType) != "" {
+			return elementType
+		}
+	}
+	if len(value.List) == 1 {
+		for _, typeName := range []string{value.List[0].Static, value.List[0].Runtime, value.List[0].Type} {
+			if strings.TrimSpace(typeName) != "" {
+				return typeName
+			}
+		}
+	}
+	if queryText := inlineSOQLQueryText(value); queryText != "" {
+		return vm.soqlResultObjectNameWithExpander(queryText, vm.expandSOQLBinds)
+	}
+	return ""
+}
+
 func (vm *VM) sObjectCollectionDowncastAssignable(fromType, toType string) bool {
 	fromElement, fromOK := collectionElementType(fromType)
 	toElement, toOK := collectionElementType(toType)

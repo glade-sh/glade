@@ -1153,6 +1153,20 @@ System.assertEquals(null, missing?.replace('a', 'b').replace('b', 'c'));
 	}
 }
 
+func TestCompileApexNotEqualAngleOperator(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assert(1 <> 2);
+System.assert(!(2 <> 2));
+System.assert('left' <> 'right');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSafeNavigationAssignmentUsesPlainNull(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Object> values = null;
@@ -2460,6 +2474,11 @@ System.assertEquals(6, value);
 value %= 4;
 System.assertEquals(2, value);
 System.assertEquals(16, 1 << 4);
+Boolean ready = true;
+ready &= false;
+System.assertEquals(false, ready);
+ready |= true;
+System.assertEquals(true, ready);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3695,11 +3714,14 @@ System.assertEquals('Lookup__c', fieldDescribe.getLocalName());
 
 func TestExecForeignNamespacedSObjectDescribeNameKeepsNamespace(t *testing.T) {
 	program, err := CompileAnonymous(`
-pkg__OrderItem__c record = new pkg__OrderItem__c();
-Schema.DescribeSObjectResult describe = record.getSObjectType().getDescribe();
-System.assertEquals('pkg__OrderItem__c', describe.getName());
-System.assertEquals('OrderItem__c', describe.getLocalName());
-`)
+	pkg__OrderItem__c record = new pkg__OrderItem__c();
+	Schema.DescribeSObjectResult describe = record.getSObjectType().getDescribe();
+	System.assertEquals('pkg__OrderItem__c', describe.getName());
+	System.assertEquals('pkg__OrderItem__c', describe.getLocalName());
+	Schema.DescribeFieldResult fieldDescribe = pkg__OrderItem__c.pkg__Amount__c.getDescribe();
+	System.assertEquals('pkg__Amount__c', fieldDescribe.getName());
+	System.assertEquals('pkg__Amount__c', fieldDescribe.getLocalName());
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3708,6 +3730,9 @@ System.assertEquals('OrderItem__c', describe.getLocalName());
 	org.Objects["pkg__OrderItem__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "pkg__OrderItem__c",
+			Fields: map[string]storage.Field{
+				"pkg__Amount__c": {APIName: "pkg__Amount__c", Type: storage.FieldDecimal},
+			},
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
@@ -4157,16 +4182,26 @@ List<AggregateResult> aggregateRows = new List<AggregateResult>();
 Object aggregateObject = aggregateRows;
 System.assert(aggregateObject instanceof List<SObject>, 'List<AggregateResult> should be List<SObject>');
 
-List<String> names = new List<String>{'Test'};
-Object namesObject = names;
-System.assert(!(namesObject instanceof List<SObject>), 'List<String> should not be List<SObject>');
-System.assert(namesObject instanceof List<Object>, 'List<String> should be List<Object>');
+	List<String> names = new List<String>{'Test'};
+	Object namesObject = names;
+	System.assert(!(namesObject instanceof List<SObject>), 'List<String> should not be List<SObject>');
+	System.assert(namesObject instanceof List<Object>, 'List<String> should be List<Object>');
 
-Map<String, Account> byName = new Map<String, Account>{'Test' => new Account(Name = 'Test')};
-Object mapObject = byName;
-System.assert(mapObject instanceof Map<String, SObject>, 'Map<String,Account> should be Map<String,SObject>');
-System.assert(!(mapObject instanceof Map<Integer, SObject>), 'Map<String,Account> should not be Map<Integer,SObject>');
-`)
+	Set<String> stringSet = new Set<String>{'foo'};
+	Object stringSetObject = stringSet;
+	System.assert(!(stringSetObject instanceof Set<Id>), 'Set<String> should not be Set<Id>');
+	System.assert(stringSetObject instanceof Set<Object>, 'Set<String> should be Set<Object>');
+
+	Map<String, Account> byName = new Map<String, Account>{'Test' => new Account(Name = 'Test')};
+	Object mapObject = byName;
+	System.assert(mapObject instanceof Map<String, SObject>, 'Map<String,Account> should be Map<String,SObject>');
+	System.assert(!(mapObject instanceof Map<Integer, SObject>), 'Map<String,Account> should not be Map<Integer,SObject>');
+
+	List<LocalModel> models = new List<LocalModel>{new LocalModel()};
+	List<Object> modelObjects = models;
+	System.assert(modelObjects instanceof List<LocalModel>, 'List<Object> should keep the runtime custom element type');
+	System.assert(!(modelObjects instanceof List<String>), 'List<Object> runtime custom element type should not match String');
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -4667,6 +4702,32 @@ System.assertEquals('Acme', returned.Name);
 	}
 }
 
+func TestExecDynamicSOQLMarksQueriedNamespacedField(t *testing.T) {
+	program, err := CompileAnonymous(`
+Contact contact = (Contact)Database.query('SELECT Id, pkg__SelectedDate__c FROM Contact LIMIT 1');
+System.assertEquals(Date.newInstance(2026, 5, 2), contact.pkg__SelectedDate__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Contact", Fields: map[string]storage.Field{
+			"pkg__SelectedDate__c": {APIName: "pkg__SelectedDate__c", Type: storage.FieldDate},
+		}},
+		Records: map[storage.ID]storage.Record{
+			"003000000000001": {ID: "003000000000001", Object: "Contact", Fields: map[string]storage.Value{
+				"pkg__SelectedDate__c": storage.DateValue("2026-05-02"),
+			}},
+		},
+	}
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLQueriedUnsetSystemFieldIsAccessibleNull(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = [SELECT Id, LastModifiedById FROM Account WHERE Name = 'Acme' LIMIT 1];
@@ -4693,10 +4754,11 @@ func TestExecSObjectFieldMapSynthesizesStandardFieldToken(t *testing.T) {
 Map<String, Schema.SObjectType> globalDescribe = Schema.getGlobalDescribe();
 Schema.SObjectType boardCertification = globalDescribe.get('Credentialification');
 Map<String, Schema.SObjectField> fields = boardCertification.getDescribe().fields.getMap();
-Schema.SObjectField practitioner = fields.get('PractitionerId');
-System.assertNotEquals(null, practitioner);
-System.assertEquals('PractitionerId', practitioner.getDescribe().getName());
-System.assertEquals('PractitionerId', fields.get('Credentialification.PractitionerId').getDescribe().getName());
+Schema.SObjectField createdBy = fields.get('CreatedById');
+System.assertNotEquals(null, createdBy);
+System.assertEquals('CreatedById', createdBy.getDescribe().getName());
+System.assertEquals('CreatedById', fields.get('Credentialification.CreatedById').getDescribe().getName());
+System.assertEquals(null, fields.get('PractitionerId'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4899,12 +4961,12 @@ System.assertEquals(true, found);
 	}
 }
 
-func TestExecSObjectFieldMapSynthesizesMissingCustomFieldOnPartialCustomObject(t *testing.T) {
+func TestExecSObjectFieldMapDoesNotSynthesizeMissingScalarCustomFieldOnPartialCustomObject(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectField> fields = Invoice__c.SObjectType.getDescribe().fields.getMap();
-Schema.DescribeFieldResult amount = fields.get('TotalPayment__c').getDescribe();
-System.assertEquals('TotalPayment__c', amount.getName());
-System.assertEquals(0, amount.getReferenceTo().size());
+Schema.DescribeFieldResult known = fields.get('Known__c').getDescribe();
+System.assertEquals('Known__c', known.getName());
+System.assertEquals(null, fields.get('TotalPayment__c'));
 System.assertEquals(null, fields.get('InexistentField__c'));
 	`)
 	if err != nil {
@@ -4927,15 +4989,29 @@ System.assertEquals(null, fields.get('InexistentField__c'));
 	}
 }
 
-func TestExecSObjectFieldMapSynthesizesMissingCustomRelationshipOnPartialCustomObject(t *testing.T) {
+func TestDescribeStringFieldWithRelationshipLabelDoesNotExposeRelationship(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeFieldResult jigsaw = Contact.JigsawContactId.getDescribe();
+System.assertEquals(0, jigsaw.getReferenceTo().size());
+System.assertEquals(null, jigsaw.getRelationshipName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectFieldMapDoesNotSynthesizeMissingCustomRelationshipOnPartialCustomObject(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectField> fields = pkg__Product__c.SObjectType.getDescribe().fields.getMap();
-Schema.DescribeFieldResult eventField = fields.get('pkg__Event2__r').getDescribe();
-System.assertEquals('pkg__Event2__c', eventField.getName());
-System.assertEquals('pkg__Event2__r', eventField.getRelationshipName());
-System.assertEquals(1, eventField.getReferenceTo().size());
-System.assertEquals('pkg__Event__c', eventField.getReferenceTo()[0].getDescribe().getName());
-	`)
+System.assertEquals(null, fields.get('pkg__Event2__c'));
+System.assertEquals(null, fields.get('pkg__Event2__r'));
+`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -6217,7 +6293,7 @@ func TestExecRegisteredCustomExceptionUsesMessageConstructor(t *testing.T) {
 	program, err := CompileAnonymous(`
 String message = '';
 try {
-	throw new NUException('boom');
+	throw new LocalException('boom');
 } catch (Exception e) {
 	message = e.getMessage();
 }
@@ -6227,7 +6303,26 @@ System.assertEquals('boom', message);
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "NUException", SuperClass: "Exception"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "LocalException", SuperClass: "Exception"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRegisteredCustomExceptionWithoutMessageHasDefaultMessage(t *testing.T) {
+	program, err := CompileAnonymous(`
+Exception e = new localexception();
+String message = e.getMessage();
+System.assert(message != null);
+System.assert(message.length() > 0);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "localexception", SuperClass: "Exception"}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {
@@ -6549,7 +6644,7 @@ func TestExecCustomExceptionConstructorCanSetMessage(t *testing.T) {
 	program, err := CompileAnonymous(`
 String message = '';
 try {
-	throw new NUException('blocked');
+	throw new LocalException('blocked');
 } catch (Exception e) {
 	message = e.getMessage();
 }
@@ -6560,11 +6655,11 @@ System.assertEquals('blocked', message);
 	}
 	machine := New(nil)
 	if err := machine.RegisterClass(Class{
-		Name:       "NUException",
+		Name:       "LocalException",
 		SuperClass: "Exception",
 		Constructors: []Method{{
-			Name:          "NUException.<init>",
-			ClassName:     "NUException",
+			Name:          "LocalException.<init>",
+			ClassName:     "LocalException",
 			Params:        []Param{{Name: "message", Type: "String"}},
 			Program:       ctor,
 			IsConstructor: true,
@@ -6653,6 +6748,50 @@ System.assertEquals('ToCustomer', String.valueOf(direction));
 		t.Fatal(err)
 	}
 	if err := machine.RegisterClass(Class{Name: "TriggerConstants.Direction", EnumValues: []string{"ToPlatform", "ToCustomer", "Both"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStaticInitializerAssignsNestedEnumField(t *testing.T) {
+	staticInit, err := CompileAnonymous(`jobType = Options.Kind.AccountHardCredit;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	getProgram, err := CompileAnonymous(`return jobType;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals(Options.Kind.AccountHardCredit, AccountJob.getJobType());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Options"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Options.Kind", EnumValues: []string{"AccountHardCredit"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "AccountJob",
+		StaticFields: map[string]Field{
+			"jobType": {Name: "jobType", Type: "Options.Kind", Static: true},
+		},
+		StaticInitializers: []Method{{
+			Name:      "AccountJob.<static_field_init>.jobType",
+			ClassName: "AccountJob",
+			IsStatic:  true,
+			Program:   staticInit,
+		}},
+		Methods: map[string]Method{
+			"getJobType": {Name: "AccountJob.getJobType", ClassName: "AccountJob", IsStatic: true, ReturnType: "Options.Kind", Program: getProgram},
+		},
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {

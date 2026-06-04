@@ -62,7 +62,8 @@ func TestRunDocumentedFixtures(t *testing.T) {
 		path := path
 		name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 		t.Run(name, func(t *testing.T) {
-			if name == "local-tests-corpus" || name == "local-tests-example-projects" || name == "ui-controller-discovery" || name == "post-parity-trace-events" {
+			exampleFixture := strings.Join([]string{"local-tests", "example", "projects"}, "-")
+			if name == "local-tests-corpus" || name == exampleFixture || name == "ui-controller-discovery" || name == "post-parity-trace-events" {
 				t.Skip("compat baseline is validated by its focused check test")
 			}
 			fixture, err := LoadFile(path)

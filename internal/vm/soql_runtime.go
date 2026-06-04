@@ -61,8 +61,10 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 	if resolved, ok := vm.resolveObjectName(executeQuery.Object); ok {
 		executeQuery.Object = resolved
 	}
-	if err := vm.validateSOQLIDLiteralConditions(executeQuery); err != nil {
-		return nil, err
+	if validationQuery, ok := vm.soqlIDLiteralValidationQuery(raw, executeQuery); ok {
+		if err := vm.validateSOQLIDLiteralConditions(validationQuery); err != nil {
+			return nil, err
+		}
 	}
 	vm.normalizeSOQLRelationshipGroupBy(&executeQuery)
 	executeOrg := vm.Org
@@ -409,6 +411,7 @@ func (vm *VM) testSetCreatedDate(args []Value) (Value, error) {
 		if mutable, _ := storage.EnsureMutableObjectRecords(vm.Org, objectName); mutable != nil {
 			object = *mutable
 		}
+		vm.recordIsolationJournalMutation(objectName, storedID, record, true)
 		record.System.CreatedDate = createdDate
 		object.Records[storedID] = record
 		vm.Org.Objects[objectName] = object
@@ -940,6 +943,9 @@ func (vm *VM) parentRelationshipField(objectName, relationshipName string) (stri
 		if apiName == "" {
 			apiName = name
 		}
+		if !vmFieldIsReference(field) {
+			continue
+		}
 		if vmParentRelationshipNameMatches(vm.Org.Namespace, apiName, relationshipName) {
 			return apiName, true
 		}
@@ -1308,39 +1314,6 @@ func (vm *VM) recordHasAnyBooleanPermission(objectName, recordID string, fields 
 	return false
 }
 
-func (vm *VM) currentUserCanSeeSharedRecord(objectName string, record storage.Record, userID string) bool {
-	if strings.EqualFold(objectName, "User") || strings.EqualFold(record.Object, "User") {
-		return storage.IDsEqual(record.ID, storage.ID(userID))
-	}
-	if strings.EqualFold(objectName, "Account") || strings.EqualFold(record.Object, "Account") {
-		return storage.IDsEqual(record.ID, storage.ID(vm.currentUserContactAccountID()))
-	}
-	return false
-}
-
-func (vm *VM) currentUserContactAccountID() string {
-	if vm == nil || vm.Org == nil {
-		return ""
-	}
-	contactID := strings.TrimSpace(vm.currentUserInfoField("ContactId", ""))
-	if contactID == "" {
-		return ""
-	}
-	contacts, ok := vm.Org.Objects["Contact"]
-	if !ok {
-		return ""
-	}
-	contact, ok := contacts.Records[storage.ID(contactID)]
-	if !ok {
-		return ""
-	}
-	value, ok := contact.GetField("AccountId")
-	if !ok || value.Kind != storage.ValueID {
-		return ""
-	}
-	return string(value.ID)
-}
-
 func (vm *VM) soqlObjectHasPublicReadSharing(objectName string) bool {
 	if vm == nil || vm.Org == nil || strings.TrimSpace(objectName) == "" {
 		return false
@@ -1355,16 +1328,6 @@ func (vm *VM) soqlObjectHasPublicReadSharing(objectName string) bool {
 	}
 	switch strings.ToLower(model) {
 	case "readwrite", "publicreadwrite", "read", "readonly", "publicreadonly", "publicread":
-		return true
-	default:
-		return false
-	}
-}
-
-func standardObjectDefaultsToPublicRead(objectName string) bool {
-	name := strings.TrimSpace(objectName)
-	switch {
-	case strings.EqualFold(name, "Campaign"):
 		return true
 	default:
 		return false
@@ -1725,6 +1688,7 @@ func (vm *VM) executeSOQL(raw string, execResult *Result) (Value, error) {
 	} else if objectName := vm.soqlResultObjectNameWithExpander(raw, vm.expandSOQLBinds); objectName != "" {
 		out.Type = "List<" + objectName + ">"
 	}
+	tagSOQLQueryList(&out, raw)
 	return out, nil
 }
 func (vm *VM) executeSOQLWithAccessLevel(raw string, accessLevel Value, execResult *Result) (Value, error) {
@@ -1738,6 +1702,7 @@ func (vm *VM) executeSOQLWithAccessLevel(raw string, accessLevel Value, execResu
 	} else if objectName := vm.soqlResultObjectNameWithExpander(raw, vm.expandSOQLBinds); objectName != "" {
 		out.Type = "List<" + objectName + ">"
 	}
+	tagSOQLQueryList(&out, raw)
 	return out, nil
 }
 func (vm *VM) executeInlineSOQL(raw string, execResult *Result) (Value, error) {
@@ -1745,12 +1710,7 @@ func (vm *VM) executeInlineSOQL(raw string, execResult *Result) (Value, error) {
 	if err != nil {
 		return Null, err
 	}
-	if value.Kind == ValueList {
-		if value.Fields == nil {
-			value.Fields = make(map[string]Value)
-		}
-		value.Fields["__soqlQuery"] = String(raw)
-	}
+	tagSOQLQueryList(&value, raw)
 	if vm.inlineSOQLMayReturnScalarCount(raw) {
 		if count, ok := aggregateCount(value); ok {
 			return count, nil
@@ -1793,6 +1753,7 @@ func (vm *VM) executeSOQLWithBindMap(raw string, binds Value, execResult *Result
 	}); objectName != "" {
 		out.Type = "List<" + objectName + ">"
 	}
+	tagSOQLQueryList(&out, raw)
 	return out, nil
 }
 func (vm *VM) executeSOQLWithBindMapAccessLevel(raw string, binds Value, accessLevel Value, execResult *Result) (Value, error) {
@@ -1810,7 +1771,18 @@ func (vm *VM) executeSOQLWithBindMapAccessLevel(raw string, binds Value, accessL
 	}); objectName != "" {
 		out.Type = "List<" + objectName + ">"
 	}
+	tagSOQLQueryList(&out, raw)
 	return out, nil
+}
+
+func tagSOQLQueryList(value *Value, raw string) {
+	if value == nil || value.Kind != ValueList {
+		return
+	}
+	if value.Fields == nil {
+		value.Fields = make(map[string]Value)
+	}
+	value.Fields["__soqlQuery"] = String(raw)
 }
 func (vm *VM) soqlResultObjectNameWithExpander(raw string, expand func(string) (string, error)) string {
 	queryText := raw
@@ -1851,7 +1823,7 @@ func (vm *VM) executeSOQLForType(raw, typeName string, result *Result) (Value, e
 		}
 		return value, nil
 	}
-	if typeName == "Integer" || typeName == "Long" {
+	if strings.EqualFold(typeName, "Integer") || strings.EqualFold(typeName, "Long") {
 		if count, ok := aggregateCount(value); ok {
 			return count, nil
 		}
@@ -1899,6 +1871,162 @@ func (vm *VM) evalSOQLBindExpression(source string, result *Result) (Value, int,
 func isSOQLLiteralBind(name string) bool {
 	return strings.EqualFold(name, "true") || strings.EqualFold(name, "false") || strings.EqualFold(name, "null")
 }
+
+func soqlHasBindExpression(raw string) bool {
+	for i := 0; i < len(raw); {
+		if raw[i] == '\'' {
+			i++
+			for i < len(raw) {
+				if raw[i] == '\'' {
+					i++
+					if i < len(raw) && raw[i] == '\'' {
+						i++
+						continue
+					}
+					break
+				}
+				i++
+			}
+			continue
+		}
+		if raw[i] != ':' {
+			i++
+			continue
+		}
+		valueStart := i + 1
+		for valueStart < len(raw) && (raw[valueStart] == ' ' || raw[valueStart] == '\t' || raw[valueStart] == '\n' || raw[valueStart] == '\r') {
+			valueStart++
+		}
+		if isSOQLDateLiteralBind(raw, i) {
+			i++
+			continue
+		}
+		if valueStart >= len(raw) || !isIdentStart(raw[valueStart]) {
+			i++
+			continue
+		}
+		j := valueStart + 1
+		for j < len(raw) && isIdentPart(raw[j]) {
+			j++
+		}
+		if isSOQLLiteralBind(raw[valueStart:j]) {
+			i = j
+			continue
+		}
+		return true
+	}
+	return false
+}
+
+func (vm *VM) soqlIDLiteralValidationQuery(raw string, fallback soql.Query) (soql.Query, bool) {
+	if !soqlHasBindExpression(raw) {
+		return fallback, true
+	}
+	queryText := soqlLiteralValidationQueryText(raw)
+	query, err := soql.ParseAt(queryText, vm.fakeNow)
+	if err != nil {
+		return soql.Query{}, false
+	}
+	query.SecurityMode = ""
+	if resolved, ok := vm.resolveObjectName(query.Object); ok {
+		query.Object = resolved
+	}
+	return query, true
+}
+
+func soqlLiteralValidationQueryText(raw string) string {
+	var out strings.Builder
+	for i := 0; i < len(raw); {
+		if raw[i] == '\'' {
+			out.WriteByte(raw[i])
+			i++
+			for i < len(raw) {
+				out.WriteByte(raw[i])
+				if raw[i] == '\'' {
+					if i+1 < len(raw) && raw[i+1] == '\'' {
+						i++
+						out.WriteByte(raw[i])
+						i++
+						continue
+					}
+					i++
+					break
+				}
+				i++
+			}
+			continue
+		}
+		if raw[i] != ':' {
+			out.WriteByte(raw[i])
+			i++
+			continue
+		}
+		valueStart := i + 1
+		for valueStart < len(raw) && (raw[valueStart] == ' ' || raw[valueStart] == '\t' || raw[valueStart] == '\n' || raw[valueStart] == '\r') {
+			valueStart++
+		}
+		if isSOQLDateLiteralBind(raw, i) {
+			out.WriteByte(raw[i])
+			i++
+			continue
+		}
+		end, name, ok := consumeSOQLBindForLiteralValidation(raw, valueStart)
+		if !ok {
+			out.WriteByte(raw[i])
+			i++
+			continue
+		}
+		if isSOQLLiteralBind(name) {
+			out.WriteString(strings.ToLower(name))
+		} else {
+			out.WriteString("null")
+		}
+		i = end
+	}
+	return out.String()
+}
+
+func consumeSOQLBindForLiteralValidation(raw string, start int) (int, string, bool) {
+	if start >= len(raw) || !isIdentStart(raw[start]) {
+		return 0, "", false
+	}
+	j := start
+	var name strings.Builder
+	for j < len(raw) {
+		if isIdentPart(raw[j]) {
+			name.WriteByte(raw[j])
+			j++
+			continue
+		}
+		dot := j
+		for dot < len(raw) && (raw[dot] == ' ' || raw[dot] == '\t' || raw[dot] == '\n' || raw[dot] == '\r') {
+			dot++
+		}
+		if dot < len(raw) && raw[dot] == '.' {
+			next := dot + 1
+			for next < len(raw) && (raw[next] == ' ' || raw[next] == '\t' || raw[next] == '\n' || raw[next] == '\r') {
+				next++
+			}
+			if next < len(raw) && isIdentStart(raw[next]) {
+				name.WriteByte('.')
+				j = next
+				continue
+			}
+		}
+		break
+	}
+	callEnd, isCall := consumeEmptyCallSuffix(raw, j)
+	if shouldEvaluateSOQLBindExpression(raw, j, callEnd, isCall) {
+		if _, end, err := compileExpressionPrefix(raw[start:]); err == nil && end > 0 {
+			return start + end, name.String(), true
+		}
+	}
+	if isCall {
+		return callEnd, name.String(), true
+	}
+	return j, name.String(), true
+}
+
 func rewriteTrailingSOQLEqualsToIn(out *strings.Builder) {
 	text := out.String()
 	trimmed := strings.TrimRight(text, " \t\n\r")

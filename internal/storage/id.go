@@ -162,6 +162,7 @@ var standardKeyPrefixBaseData = map[string]string{
 	"UserRole":                "00E",
 	"Profile":                 "00e",
 	"UserLicense":             "100",
+	"BatchApexErrorEvent":     "1Be",
 	"ContentVersion":          "068",
 	"ContentDocument":         "069",
 	"ContentDocumentLink":     "06A",

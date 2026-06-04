@@ -3,13 +3,31 @@
   "evidence": [
     {
       "symbol": "Schema.getGlobalDescribe",
+      "surfaceId": "apex:System.Schema.getGlobalDescribe()",
       "kind": "test",
       "notes": "Global describe returns SObjectType tokens keyed by local object API name."
     },
     {
       "symbol": "Schema.describeSObjects",
+      "surfaceId": "apex:System.Schema.describeSObjects(List<String>)",
       "kind": "test",
       "notes": "describeSObjects accepts both object names and SObjectType tokens."
+    },
+    {
+      "symbol": "Schema.SObjectType.getDescribe",
+      "surfaceId": "apex:Schema.SObjectType.getDescribe()",
+      "kind": "test",
+      "notes": "SObjectType tokens expose local object describe metadata."
+    },
+    {
+      "symbol": "Schema.DescribeSObjectResult.getName",
+      "surfaceId": "apex:Schema.DescribeSObjectResult.getName()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.DescribeSObjectResult.getLabelPlural",
+      "surfaceId": "apex:Schema.DescribeSObjectResult.getLabelPlural()",
+      "kind": "test"
     }
   ],
   "source": [

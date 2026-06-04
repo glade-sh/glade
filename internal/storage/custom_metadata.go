@@ -201,6 +201,24 @@ func customMetadataFields(org OrgState, definition ObjectDefinition, source sche
 		"NamespacePrefix":  StringValue(customMetadataNamespace(org.Namespace, definition.APIName)),
 		"QualifiedApiName": StringValue(customMetadataQualifiedName(org.Namespace, definition.APIName, source.DeveloperName)),
 	}
+	for fieldName, field := range definition.Fields {
+		if field.Type != FieldBoolean {
+			continue
+		}
+		defaultValue := strings.TrimSpace(field.DefaultValue)
+		if defaultValue == "" {
+			fields[fieldName] = BooleanValue(false)
+			continue
+		}
+		converted, isRef, err := customMetadataValue(field, defaultValue)
+		if err != nil || isRef {
+			if err == nil {
+				err = fmt.Errorf("expects boolean value, got %q", defaultValue)
+			}
+			return nil, nil, UnsupportedMetadataError{File: source.File, Feature: "custom metadata field", Message: fmt.Sprintf("%s.%s %v", definition.APIName, fieldName, err)}
+		}
+		fields[fieldName] = converted
+	}
 	refs := make(map[string]customMetadataReference)
 	for _, value := range source.Values {
 		fieldName, ok := ResolveFieldName(definition, org.Namespace, value.Field)

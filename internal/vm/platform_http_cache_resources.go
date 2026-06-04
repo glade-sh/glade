@@ -644,10 +644,14 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 		if len(args) == 2 {
 			keyArg = args[1]
 		}
-		if keyArg.Kind != ValueString {
+		key, hasKey, ok := cacheStringKeyArg(keyArg)
+		if !ok {
 			return Null, receiver, fmt.Errorf("%s.get key expects String", receiver.Type)
 		}
-		value, err := vm.cacheGetOrLoad(partitionName, cacheKeyForArgs(args, keyArg.Text), cacheBuilderArg(args), keyArg.Text)
+		if !hasKey {
+			return Null, receiver, nil
+		}
+		value, err := vm.cacheGetOrLoad(partitionName, cacheKeyForArgs(args, key), cacheBuilderArg(args), key)
 		return value, receiver, err
 	case "put":
 		if len(args) < 2 || len(args) > 5 || args[0].Kind != ValueString {
@@ -667,11 +671,15 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 		if len(args) == 2 {
 			keyArg = args[1]
 		}
-		if keyArg.Kind != ValueString {
+		key, hasKey, ok := cacheStringKeyArg(keyArg)
+		if !ok {
 			return Null, receiver, fmt.Errorf("%s.remove key expects String", receiver.Type)
 		}
-		removed, ok := vm.cacheRemove(partitionName, cacheKeyForArgs(args, keyArg.Text))
-		if !ok {
+		if !hasKey {
+			return Null, receiver, nil
+		}
+		removed, removedOK := vm.cacheRemove(partitionName, cacheKeyForArgs(args, key))
+		if !removedOK {
 			return Null, receiver, nil
 		}
 		return removed, receiver, nil
@@ -825,10 +833,14 @@ func (vm *VM) cacheStaticDefaultGet(callee string, args []Value) (Value, error) 
 	if len(args) == 2 {
 		keyArg = args[1]
 	}
-	if keyArg.Kind != ValueString {
+	key, hasKey, ok := cacheStringKeyArg(keyArg)
+	if !ok {
 		return Null, fmt.Errorf("%s key expects String", callee)
 	}
-	return vm.cacheGetOrLoad(partition, cacheKeyForArgs(args, keyArg.Text), cacheBuilderArg(args), keyArg.Text)
+	if !hasKey {
+		return Null, nil
+	}
+	return vm.cacheGetOrLoad(partition, cacheKeyForArgs(args, key), cacheBuilderArg(args), key)
 }
 
 func (vm *VM) cacheStaticDefaultPut(callee string, args []Value) (Value, error) {
@@ -868,11 +880,15 @@ func (vm *VM) cacheStaticDefaultRemove(callee string, args []Value) (Value, erro
 	if len(args) == 2 {
 		keyArg = args[1]
 	}
-	if keyArg.Kind != ValueString {
+	key, hasKey, ok := cacheStringKeyArg(keyArg)
+	if !ok {
 		return Null, fmt.Errorf("%s key expects String", callee)
 	}
-	removed, ok := vm.cacheRemove(cacheDefaultPartitionKey(callee), cacheKeyForArgs(args, keyArg.Text))
-	if !ok {
+	if !hasKey {
+		return Null, nil
+	}
+	removed, removedOK := vm.cacheRemove(cacheDefaultPartitionKey(callee), cacheKeyForArgs(args, key))
+	if !removedOK {
 		return Null, nil
 	}
 	return removed, nil
@@ -910,6 +926,17 @@ func cacheBuilderArg(args []Value) Value {
 		return args[0]
 	}
 	return Null
+}
+
+func cacheStringKeyArg(value Value) (string, bool, bool) {
+	switch value.Kind {
+	case ValueString:
+		return value.Text, true, true
+	case ValueNull:
+		return "", false, true
+	default:
+		return "", false, false
+	}
 }
 
 func cacheKeyForArgs(args []Value, key string) string {

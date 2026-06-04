@@ -175,7 +175,7 @@ func isDMLRelationshipPseudoField(definition storage.ObjectDefinition, namespace
 	if dmlRelationshipPseudoFieldHasMetadata(definition, namespace, field) {
 		return true
 	}
-	return isSyntheticCustomDMLObject(definition.APIName) && hasSuffixFold(field, "__r")
+	return false
 }
 
 func dmlRelationshipPseudoFieldHasMetadata(definition storage.ObjectDefinition, namespace, field string) bool {
@@ -449,13 +449,7 @@ func validateFieldWriteabilityName(definition storage.ObjectDefinition, namespac
 }
 
 func allowLocalWriteabilityOverride(definition storage.ObjectDefinition, objectName, field string, fieldDef storage.Field, create bool) bool {
-	if strings.EqualFold(objectName, "Account") && strings.EqualFold(field, "IsPersonAccount") {
-		return true
-	}
-	if strings.EqualFold(objectName, "Lead") && isLocalWritableLeadField(field) {
-		return true
-	}
-	if strings.EqualFold(field, "Name") && (strings.EqualFold(objectName, "Contact") || strings.EqualFold(objectName, "Lead")) {
+	if allowSObjectWriteabilityOverride(objectName, field) {
 		return true
 	}
 	if !create {
@@ -470,15 +464,6 @@ func allowLocalWriteabilityOverride(definition storage.ObjectDefinition, objectN
 	return false
 }
 
-func isLocalWritableLeadField(field string) bool {
-	switch strings.ToLower(strings.TrimSpace(field)) {
-	case "donotcall", "hasoptedoutofemail", "hasoptedoutoffax":
-		return true
-	default:
-		return false
-	}
-}
-
 func allowLocalCreateRelationshipField(definition storage.ObjectDefinition, objectName, field string, fieldDef storage.Field) bool {
 	if fieldDef.Type != storage.FieldReference || isSystemManagedReadonlyField(field) {
 		return false
@@ -489,24 +474,13 @@ func allowLocalCreateRelationshipField(definition storage.ObjectDefinition, obje
 	if fieldDef.Required && isLocalCreateIdentityObject(definition) {
 		return true
 	}
-	if isStandardCreateIdentityRelationship(objectName, field) {
+	if isStandardSObjectCreateIdentityRelationship(objectName, field) {
 		return true
 	}
 	if isLocalSetupConfigurationObject(definition) && hasSuffixFold(field, "id") {
 		return true
 	}
 	return false
-}
-
-func isStandardCreateIdentityRelationship(objectName, field string) bool {
-	switch strings.ToLower(strings.TrimSpace(objectName)) {
-	case "pricebookentry":
-		return strings.EqualFold(field, "Pricebook2Id") || strings.EqualFold(field, "Product2Id")
-	case "opportunitylineitem":
-		return strings.EqualFold(field, "OpportunityId") || strings.EqualFold(field, "PricebookEntryId")
-	default:
-		return false
-	}
 }
 
 func isLocalCreateIdentityObject(definition storage.ObjectDefinition) bool {
@@ -581,7 +555,7 @@ func isSystemManagedReadonlyField(field string) bool {
 func validateRequired(definition storage.ObjectDefinition, record storage.Record) error {
 	var missing []string
 	for name, field := range definition.Fields {
-		if !isDMLRequiredField(field) {
+		if !isDMLRequiredField(definition, name, field) {
 			continue
 		}
 		if value, ok := record.GetField(name); ok {
@@ -596,6 +570,7 @@ func validateRequired(definition storage.ObjectDefinition, record storage.Record
 		}
 		missing = append(missing, name)
 	}
+	missing = appendMissingListCustomSettingName(definition, record, missing)
 	if len(missing) > 0 {
 		sortRequiredFields(missing)
 		return dmlErrorf("REQUIRED_FIELD_MISSING", missing, "%s", requiredFieldsMessage(definition, missing))
@@ -606,7 +581,7 @@ func validateRequired(definition storage.ObjectDefinition, record storage.Record
 func validateRequiredUpdate(definition storage.ObjectDefinition, record storage.Record) error {
 	var missing []string
 	for name, field := range definition.Fields {
-		if !isDMLRequiredField(field) {
+		if !isDMLRequiredField(definition, name, field) {
 			continue
 		}
 		if value, ok := record.GetField(name); ok {
@@ -622,11 +597,55 @@ func validateRequiredUpdate(definition storage.ObjectDefinition, record storage.
 			missing = append(missing, name)
 		}
 	}
+	missing = appendUpdatedMissingListCustomSettingName(definition, record, missing)
 	if len(missing) > 0 {
 		sortRequiredFields(missing)
 		return dmlErrorf("REQUIRED_FIELD_MISSING", missing, "%s", requiredFieldsMessage(definition, missing))
 	}
 	return nil
+}
+
+func appendMissingListCustomSettingName(definition storage.ObjectDefinition, record storage.Record, missing []string) []string {
+	if !isListCustomSettingDefinition(definition) || requiredFieldsContain(missing, "Name") {
+		return missing
+	}
+	if value, ok := record.GetField("Name"); ok {
+		if requiredFieldValueIsBlank(storage.Field{APIName: "Name", Type: storage.FieldString}, value) {
+			return append(missing, "Name")
+		}
+		return missing
+	}
+	if record.HasExplicitNull("Name") {
+		return append(missing, "Name")
+	}
+	return append(missing, "Name")
+}
+
+func appendUpdatedMissingListCustomSettingName(definition storage.ObjectDefinition, record storage.Record, missing []string) []string {
+	if !isListCustomSettingDefinition(definition) || requiredFieldsContain(missing, "Name") {
+		return missing
+	}
+	if value, ok := record.GetField("Name"); ok && requiredFieldValueIsBlank(storage.Field{APIName: "Name", Type: storage.FieldString}, value) {
+		return append(missing, "Name")
+	}
+	if record.HasExplicitNull("Name") {
+		return append(missing, "Name")
+	}
+	return missing
+}
+
+func isListCustomSettingDefinition(definition storage.ObjectDefinition) bool {
+	return storage.IsCustomSettingDefinition(definition) &&
+		strings.EqualFold(definition.Metadata["customSettingsType"], "List")
+}
+
+func requiredFieldsContain(fields []string, want string) bool {
+	for _, field := range fields {
+		if strings.EqualFold(field, want) {
+			return true
+		}
+	}
+	return false
 }
 
 func requiredFieldValueIsBlank(field storage.Field, value storage.Value) bool {
@@ -675,8 +694,13 @@ func requiredFieldOrder(field string) int {
 	}
 }
 
-func isDMLRequiredField(field storage.Field) bool {
-	return field.Required
+func isDMLRequiredField(definition storage.ObjectDefinition, name string, field storage.Field) bool {
+	if field.Required {
+		return true
+	}
+	return storage.IsCustomSettingDefinition(definition) &&
+		strings.EqualFold(definition.Metadata["customSettingsType"], "List") &&
+		(strings.EqualFold(name, "Name") || strings.EqualFold(field.APIName, "Name"))
 }
 
 func allowRequiredUpdateExplicitNull(definition storage.ObjectDefinition, field storage.Field, fieldName string) bool {
@@ -879,11 +903,7 @@ func (e *Engine) validSystemOwnerID(definition storage.ObjectDefinition, id stor
 	if len(idText) < 3 {
 		return false
 	}
-	targets := []string{"User", "Group"}
-	if field, ok := fieldByName(definition, "OwnerId"); ok && len(field.ReferenceTo) != 0 {
-		targets = field.ReferenceTo
-	}
-	for _, objectName := range targets {
+	for _, objectName := range ownerIDReferenceTargets(definition) {
 		canonical, ok := storage.ResolveObjectName(*e.Org, objectName)
 		if !ok {
 			continue
@@ -913,7 +933,7 @@ func allowMissingLocalReference(definition storage.ObjectDefinition, fieldName s
 		return true
 	}
 	for _, target := range field.ReferenceTo {
-		if strings.EqualFold(target, "User") {
+		if allowMissingSObjectReferenceTarget(target) {
 			return true
 		}
 	}

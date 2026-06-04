@@ -1410,14 +1410,8 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 		if objectName != "" {
 			if vm.canSynthesizeSObjectFieldMapField(objectName) {
 				for _, alias := range vm.sObjectFieldMapLookupAliases(key.Text) {
-					if lookupField, ok := customRelationshipLookupFieldName(alias); ok {
-						if vm.canSynthesizeCustomSObjectFieldMapField(objectName, alias) {
-							return vm.sObjectFieldToken(objectName, lookupField), true
-						}
-						continue
-					}
-					if isLikelyReferenceIDField(alias) || vm.canSynthesizeCustomSObjectFieldMapField(objectName, alias) {
-						return vm.sObjectFieldToken(objectName, alias), true
+					if systemField, ok := syntheticSObjectSystemField(alias); ok {
+						return vm.sObjectFieldToken(objectName, systemField.APIName), true
 					}
 				}
 			}
@@ -1607,93 +1601,6 @@ func managedStringNamespaceBase(value string) (string, bool) {
 	return base, true
 }
 
-func (vm *VM) inferredCustomFieldReferenceTarget(objectName, fieldName string) string {
-	if vm == nil || vm.Org == nil || !hasSuffixFold(fieldName, "__c") {
-		return ""
-	}
-	candidates := []string{fieldName, stripAnyNamespaceToken(fieldName)}
-	if strippedNumbered := stripTrailingDigitsFromCustomField(stripAnyNamespaceToken(fieldName)); strippedNumbered != "" {
-		candidates = append(candidates, strippedNumbered)
-		if namespace := namespaceFromSchemaToken(fieldName); namespace != "" {
-			candidates = append(candidates, storage.NamespaceTokenName(namespace, strippedNumbered))
-		}
-		if namespace := namespaceFromSchemaToken(objectName); namespace != "" {
-			candidates = append(candidates, storage.NamespaceTokenName(namespace, strippedNumbered))
-		}
-	}
-	if namespace := namespaceFromSchemaToken(objectName); namespace != "" {
-		candidates = append(candidates, storage.NamespaceTokenName(namespace, fieldName))
-	}
-	if vm.Org.Namespace != "" {
-		candidates = append(candidates, storage.NamespaceTokenName(vm.Org.Namespace, fieldName))
-	}
-	for _, candidate := range candidates {
-		if resolved, ok := vm.resolveObjectName(candidate); ok {
-			return resolved
-		}
-	}
-	return ""
-}
-
-func customRelationshipLookupFieldName(name string) (string, bool) {
-	name = strings.TrimSpace(name)
-	if dot := strings.LastIndex(name, "."); dot >= 0 && dot+1 < len(name) {
-		name = name[dot+1:]
-	}
-	if !hasSuffixFold(name, "__r") {
-		return "", false
-	}
-	return name[:len(name)-3] + "__c", true
-}
-
-func stripTrailingDigitsFromCustomField(fieldName string) string {
-	if !hasSuffixFold(fieldName, "__c") {
-		return ""
-	}
-	base := fieldName[:len(fieldName)-3]
-	for len(base) > 0 {
-		last := base[len(base)-1]
-		if last < '0' || last > '9' {
-			break
-		}
-		base = base[:len(base)-1]
-	}
-	if base == "" || base == fieldName[:len(fieldName)-3] {
-		return ""
-	}
-	return base + "__c"
-}
-
-func isLikelyNumericCustomField(fieldName string) bool {
-	if !hasSuffixFold(fieldName, "__c") {
-		return false
-	}
-	base := strings.TrimSuffix(stripAnyNamespaceToken(fieldName), "__c")
-	base = strings.ToLower(base)
-	if base == "" {
-		return false
-	}
-	numericTerms := []string{
-		"amount", "balance", "cost", "count", "fee", "mrr", "payment", "price",
-		"quantity", "shipping", "subtotal", "tax", "total",
-	}
-	for _, term := range numericTerms {
-		if strings.Contains(base, term) {
-			return true
-		}
-	}
-	return false
-}
-
-func namespaceFromSchemaToken(name string) string {
-	first := strings.Index(name, "__")
-	last := strings.LastIndex(name, "__")
-	if first <= 0 || first >= last {
-		return ""
-	}
-	return name[:first]
-}
-
 func (vm *VM) populatedFieldsKeySetContains(receiver, key Value) (bool, bool) {
 	if receiver.Kind != ValueSet || key.Kind != ValueString || !strings.HasPrefix(receiver.Runtime, "sobject-populated-fields:") {
 		return false, false
@@ -1711,11 +1618,6 @@ func (vm *VM) populatedFieldsKeySetContains(receiver, key Value) (bool, bool) {
 		}
 	}
 	return false, true
-}
-
-func isLikelyReferenceIDField(fieldName string) bool {
-	fieldName = strings.TrimSpace(fieldName)
-	return !strings.Contains(fieldName, ".") && len(fieldName) > len("Id") && strings.HasSuffix(fieldName, "Id")
 }
 
 func schemaDescribeMapKeyMatches(namespace, canonical, candidate string) bool {
@@ -2839,6 +2741,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if err != nil {
 			return Null, true, fmt.Errorf("List.set: %w", err)
 		}
+		vm.markCollectionRefsEscaped(item)
 		receiver.List[i] = item
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
 			return Null, true, err

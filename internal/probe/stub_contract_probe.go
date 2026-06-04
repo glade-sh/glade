@@ -28,7 +28,7 @@ func stubContractProbeSpecByID(id string) (capability.StubContractProbeSpec, boo
 			}
 		}
 		if len(specs) == 0 {
-			contracts, buildErr := capability.BuildStubContractReport("example-projects/stubs")
+			contracts, buildErr := capability.BuildStubContractReport("")
 			if buildErr == nil {
 				specs = capability.BuildStubContractProbeManifest(contracts, "full")
 			}

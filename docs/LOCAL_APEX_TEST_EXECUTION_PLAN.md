@@ -208,6 +208,10 @@ full runtime support for all example projects. Treat scratch-org pass results as
 the behavioral target: failures in these projects are Glade parity gaps unless
 proven otherwise.
 
+Use `docs/plans/2026-06-04-salesforce-vertical-priority-overlay.md` as the work
+order above generated surface packets. The corpus decides priority; the packet
+decides ownership, dependencies, fixtures, and validation.
+
 Current example-project set:
 
 | Project | Runtime role |

@@ -23,10 +23,11 @@ of the way.
 
 1. Runtime architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
 2. Where to add Salesforce functionality: [ADDING_A_PLATFORM_API.md](ADDING_A_PLATFORM_API.md)
-3. Package boundaries and conventions: [ARCHITECTURE_STANDARDS.md](ARCHITECTURE_STANDARDS.md)
-4. Storage model and DB behavior: [storage-schema.md](storage-schema.md)
-5. Example-project harness: [EXAMPLE_PROJECTS.md](EXAMPLE_PROJECTS.md)
-6. Apex declaration parser: [APEX_PARSER.md](APEX_PARSER.md)
+3. Surface Ledger local runbook: [ADDING_A_PLATFORM_API.md#finding-the-next-gap-instead-of-waiting-for-a-failure](ADDING_A_PLATFORM_API.md#finding-the-next-gap-instead-of-waiting-for-a-failure). Start with `compat surface sources`, then `compat surface refresh`, then `compat surface packet`.
+4. Package boundaries and conventions: [ARCHITECTURE_STANDARDS.md](ARCHITECTURE_STANDARDS.md)
+5. Storage model and DB behavior: [storage-schema.md](storage-schema.md)
+6. Example-project harness: [EXAMPLE_PROJECTS.md](EXAMPLE_PROJECTS.md)
+7. Apex declaration parser: [APEX_PARSER.md](APEX_PARSER.md)
 
 ## Planning And Backlog Docs
 

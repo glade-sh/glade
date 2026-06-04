@@ -101,12 +101,6 @@ func runCompatOracleDoctor(args []string, w io.Writer) error {
 	} else {
 		checks = append(checks, map[string]any{"name": "sf-cli", "ok": true})
 	}
-	if _, err := os.Stat("example-projects/stubs"); err != nil {
-		checks = append(checks, map[string]any{"name": "stub-root", "ok": false, "message": err.Error()})
-		doctor["ready"] = false
-	} else {
-		checks = append(checks, map[string]any{"name": "stub-root", "ok": true})
-	}
 	if _, err := os.Stat("probes/sfdx/sfdx-project.json"); err != nil {
 		checks = append(checks, map[string]any{"name": "probe-sfdx", "ok": false, "message": err.Error()})
 		doctor["ready"] = false
@@ -128,7 +122,7 @@ func runCompatOracleDoctor(args []string, w io.Writer) error {
 }
 
 func runCompatOracleInventory(args []string, w io.Writer) error {
-	stubRoot := "example-projects/stubs"
+	stubRoot := ""
 	catalogPath := ""
 	docsInventoryPath := ""
 	ledgerPath := ""

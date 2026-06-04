@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "sourceDocuments": 3224,
-  "sourceMembers": 5177,
-  "entries": 8401,
+  "sourceDocuments": 15635,
+  "sourceMembers": 6768,
+  "entries": 22403,
   "areas": [
     {
       "area": "Core stdlib",
       "target": "executable-parity",
-      "entries": 968,
-      "documents": 104,
-      "members": 864,
+      "entries": 1080,
+      "documents": 209,
+      "members": 871,
       "supported": 102,
       "partial": 32,
       "stub": 0,
       "unsupported": 0,
-      "unknown": 834,
+      "unknown": 946,
       "topUnknown": [
         {
           "symbol": "AccessLevel",
@@ -81,20 +81,56 @@
     {
       "area": "Data platform",
       "target": "local-model",
-      "entries": 835,
-      "documents": 135,
-      "members": 700,
+      "entries": 964,
+      "documents": 244,
+      "members": 720,
       "supported": 59,
-      "partial": 12,
+      "partial": 13,
       "stub": 0,
       "unsupported": 0,
-      "unknown": 764,
+      "unknown": 892,
       "topUnknown": [
+        {
+          "symbol": "AggregateResult",
+          "kind": "document",
+          "owner": "internal/dml",
+          "docsSource": "soap-api/sforce_api_calls_query_aggregateresult.md"
+        },
         {
           "symbol": "Approval",
           "kind": "class",
           "owner": "internal/storage",
           "docsSource": "apex/apex_methods_system_approval.md"
+        },
+        {
+          "symbol": "Approval",
+          "kind": "document",
+          "owner": "internal/storage",
+          "docsSource": "connect-rest-api/connect_responses_approval_post.md"
+        },
+        {
+          "symbol": "Approval",
+          "kind": "document",
+          "owner": "internal/storage",
+          "docsSource": "apex-guide/apex_process.md"
+        },
+        {
+          "symbol": "Approval",
+          "kind": "document",
+          "owner": "internal/storage",
+          "docsSource": "connect-rest-api/connect_responses_approval_social_post_intent_output.md"
+        },
+        {
+          "symbol": "Approval",
+          "kind": "document",
+          "owner": "internal/storage",
+          "docsSource": "object-reference/sforce_api_objects_approval.md"
+        },
+        {
+          "symbol": "Approval",
+          "kind": "document",
+          "owner": "internal/storage",
+          "docsSource": "connect-rest-api/connect_responses_approval_capability.md"
         },
         {
           "symbol": "Approval.Approval",
@@ -113,56 +149,20 @@
           "kind": "method",
           "owner": "internal/storage",
           "docsSource": "apex/apex_methods_system_approval.md"
-        },
-        {
-          "symbol": "Approval.isLocked",
-          "kind": "method",
-          "owner": "internal/storage",
-          "docsSource": "apex/apex_methods_system_approval.md"
-        },
-        {
-          "symbol": "Approval.isLocked",
-          "kind": "method",
-          "owner": "internal/storage",
-          "docsSource": "apex/apex_methods_system_approval.md"
-        },
-        {
-          "symbol": "Approval.lock",
-          "kind": "method",
-          "owner": "internal/storage",
-          "docsSource": "apex/apex_methods_system_approval.md"
-        },
-        {
-          "symbol": "Approval.lock",
-          "kind": "method",
-          "owner": "internal/storage",
-          "docsSource": "apex/apex_methods_system_approval.md"
-        },
-        {
-          "symbol": "Approval.lock",
-          "kind": "method",
-          "owner": "internal/storage",
-          "docsSource": "apex/apex_methods_system_approval.md"
-        },
-        {
-          "symbol": "Approval.lock",
-          "kind": "method",
-          "owner": "internal/storage",
-          "docsSource": "apex/apex_methods_system_approval.md"
         }
       ]
     },
     {
       "area": "Integration, security, and UI",
       "target": "local-model",
-      "entries": 761,
-      "documents": 129,
+      "entries": 766,
+      "documents": 134,
       "members": 632,
       "supported": 6,
       "partial": 20,
       "stub": 0,
       "unsupported": 0,
-      "unknown": 735,
+      "unknown": 740,
       "topUnknown": [
         {
           "symbol": "ApexPages",
@@ -229,26 +229,26 @@
     {
       "area": "Language and guide docs",
       "target": "unsupported",
-      "entries": 1092,
-      "documents": 1073,
-      "members": 19,
+      "entries": 14662,
+      "documents": 13201,
+      "members": 1461,
       "supported": 0,
       "partial": 0,
       "stub": 0,
-      "unsupported": 1092,
+      "unsupported": 14662,
       "unknown": 0
     },
     {
       "area": "Product namespaces",
       "target": "typed-stub",
-      "entries": 4616,
-      "documents": 1764,
-      "members": 2852,
+      "entries": 4782,
+      "documents": 1813,
+      "members": 2969,
       "supported": 0,
       "partial": 0,
       "stub": 0,
       "unsupported": 0,
-      "unknown": 4616,
+      "unknown": 4782,
       "topUnknown": [
         {
           "symbol": "applauncher.applauncher",
@@ -315,14 +315,14 @@
     {
       "area": "Tests, async, and limits",
       "target": "local-model",
-      "entries": 129,
-      "documents": 19,
-      "members": 110,
+      "entries": 149,
+      "documents": 34,
+      "members": 115,
       "supported": 1,
       "partial": 7,
       "stub": 0,
       "unsupported": 0,
-      "unknown": 121,
+      "unknown": 141,
       "topUnknown": [
         {
           "symbol": "AsyncInfo",
@@ -389,10 +389,10 @@
   ],
   "totals": {
     "supported": 168,
-    "partial": 71,
+    "partial": 72,
     "stub": 0,
-    "unsupported": 1092,
-    "unknown": 7070
+    "unsupported": 14662,
+    "unknown": 7501
   },
   "tooling": {
     "source": "tooling_system_symbols.json.gz",
@@ -407,9 +407,9 @@
     "concreteRuntimeApis": 134,
     "concreteRuntimeApisInTooling": 133,
     "concreteRuntimeApisMissing": 1,
-    "catalogSystemEntries": 2693,
-    "catalogSystemEntriesInTooling": 1985,
-    "catalogSystemEntriesMissing": 708,
+    "catalogSystemEntries": 2959,
+    "catalogSystemEntriesInTooling": 2136,
+    "catalogSystemEntriesMissing": 823,
     "missingRuntimeApis": [
       {
         "symbol": "Time.valueOf",
@@ -435,6 +435,12 @@
         "kind": "method",
         "owner": "internal/vm",
         "docsSource": "apex/apex_class_System_AccessLevel.md"
+      },
+      {
+        "symbol": "AggregateResult",
+        "kind": "document",
+        "owner": "internal/dml",
+        "docsSource": "soap-api/sforce_api_calls_query_aggregateresult.md"
       },
       {
         "symbol": "ApexPages.ApexPages",
@@ -561,27 +567,21 @@
         "kind": "method",
         "owner": "internal/vm",
         "docsSource": "apex/apex_class_Auth_AuthConfiguration.md"
-      },
-      {
-        "symbol": "Auth.AuthConfiguration.getFooterText",
-        "kind": "method",
-        "owner": "internal/vm",
-        "docsSource": "apex/apex_class_Auth_AuthConfiguration.md"
       }
     ]
   },
   "nextGates": [
     {
-      "name": "docs inventory",
-      "command": "go run ./cmd/glade compat docs-inventory --source \u003csalesforce-docs\u003e --json"
+      "name": "surface refresh",
+      "command": "go run ./cmd/glade compat surface refresh --docs \u003csalesforce-docs\u003e --tooling-completions \u003ctooling-system-symbols.json.gz\u003e --out \u003csurface-out\u003e"
     },
     {
-      "name": "capability catalog",
-      "command": "go run ./cmd/glade compat catalog --inventory \u003cinventory.json\u003e --json"
+      "name": "surface packet",
+      "command": "go run ./cmd/glade compat surface packet --ledger \u003csurface-out\u003e/SURFACE_LEDGER.json --area \u003carea\u003e --out docs/agent-packets/salesforce/\u003carea\u003e.md"
     },
     {
-      "name": "coverage manifest",
-      "command": "go run ./cmd/glade compat salesforce-coverage --source \u003csalesforce-docs\u003e --tooling-completions \u003ccompletions.json\u003e --tooling-symbols \u003capex-class-symbols.json\u003e --json"
+      "name": "surface check",
+      "command": "go run ./cmd/glade compat surface check --ledger \u003csurface-out\u003e/SURFACE_LEDGER.json --max-parser-failures 0"
     }
   ]
 }

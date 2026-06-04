@@ -257,16 +257,29 @@ func evalBinary(op string, left, right Value) (Value, error) {
 			return Bool(leftBool && rightBool), nil
 		}
 		return Bool(leftBool || rightBool), nil
+	case "&", "|":
+		leftBool, leftOK := booleanOperand(left)
+		rightBool, rightOK := booleanOperand(right)
+		if !leftOK || !rightOK {
+			return Null, fmt.Errorf("operator %s requires Boolean operands", op)
+		}
+		if op == "&" {
+			return Bool(leftBool && rightBool), nil
+		}
+		return Bool(leftBool || rightBool), nil
 	default:
 		return Null, fmt.Errorf("unsupported binary operator %q", op)
 	}
 }
 
 func platformDateArithmetic(op string, left, right Value) (Value, bool, error) {
-	if (op != "+" && op != "-") || right.Kind != ValueInt || left.Kind != ValueObject {
+	if (op != "+" && op != "-") || left.Kind != ValueObject {
 		return Null, false, nil
 	}
-	days := int(right.Int)
+	days, ok := numericDaysOperand(right)
+	if !ok {
+		return Null, false, nil
+	}
 	if op == "-" {
 		days = -days
 	}
@@ -276,16 +289,32 @@ func platformDateArithmetic(op string, left, right Value) (Value, bool, error) {
 		if err != nil {
 			return Null, true, err
 		}
-		return platformScalar("Date", date.AddDate(0, 0, days).Format("2006-01-02")), true, nil
+		return platformScalar("Date", date.Add(platformDayDuration(days)).Format("2006-01-02")), true, nil
 	case "Datetime":
 		datetime, err := parsePlatformDatetime(left)
 		if err != nil {
 			return Null, true, err
 		}
-		return platformScalar("Datetime", formatPlatformDatetime(datetime.AddDate(0, 0, days))), true, nil
+		return platformScalar("Datetime", formatPlatformDatetime(datetime.Add(platformDayDuration(days)))), true, nil
 	default:
 		return Null, false, nil
 	}
+}
+
+func numericDaysOperand(value Value) (float64, bool) {
+	switch value.Kind {
+	case ValueInt:
+		return float64(value.Int), true
+	case ValueDecimal:
+		return value.Decimal, true
+	default:
+		return 0, false
+	}
+}
+
+func platformDayDuration(days float64) time.Duration {
+	milliseconds := math.Round(days * 24 * 60 * 60 * 1000)
+	return time.Duration(milliseconds) * time.Millisecond
 }
 
 func booleanOperand(value Value) (bool, bool) {
@@ -570,7 +599,7 @@ func canonicalRuntimePlatformType(typeName string) string {
 	}
 	if rest, ok := stripLeadingSystemNamespace(typeName); ok {
 		switch strings.ToLower(rest) {
-		case "type", "object", "list", "set", "map", "iterable", "iterator", "stubprovider", "callable", "httpcalloutmock":
+		case "type", "object", "list", "set", "map", "iterable", "iterator", "stubprovider", "callable", "httpcalloutmock", "statuscode":
 			return rest
 		}
 	}

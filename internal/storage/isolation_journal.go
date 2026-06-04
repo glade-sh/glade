@@ -95,8 +95,10 @@ func (j *IsolationJournal) Rollback(mark IsolationMark) error {
 	if j == nil || j.org == nil {
 		return nil
 	}
+	touchedObjects := make(map[string]bool)
 	for i := len(j.inserted) - 1; i >= mark.inserted; i-- {
 		key := j.inserted[i]
+		touchedObjects[key.object] = true
 		object := j.org.Objects[key.object]
 		if object.Records != nil {
 			delete(object.Records, key.id)
@@ -105,6 +107,7 @@ func (j *IsolationJournal) Rollback(mark IsolationMark) error {
 	}
 	for i := len(j.updated) - 1; i >= mark.updated; i-- {
 		before := j.updated[i]
+		touchedObjects[before.object] = true
 		object, ok := j.org.Objects[before.object]
 		if !ok {
 			return fmt.Errorf("isolation journal rollback missing object %s", before.object)
@@ -133,6 +136,9 @@ func (j *IsolationJournal) Rollback(mark IsolationMark) error {
 	j.inserted = j.inserted[:mark.inserted]
 	j.updated = j.updated[:mark.updated]
 	j.sequences = j.sequences[:mark.sequences]
+	for objectName := range touchedObjects {
+		RebuildObjectIndexes(j.org, objectName)
+	}
 	return nil
 }
 

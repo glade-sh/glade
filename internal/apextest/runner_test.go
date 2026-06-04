@@ -173,7 +173,7 @@ func TestEnsureProjectDataReferencedObjectFieldPreservesExistingLookupTarget(t *
 		Records: make(map[storage.ID]storage.Record),
 	}
 
-	ensureProjectDataReferencedObjectField(&org, "FacilityLicense__c", "Facility__c", "")
+	ensureProjectDataReferencedObjectField(&org, "FacilityLicense__c", "Facility__c")
 
 	state := org.Objects["FacilityLicense__c"]
 	field := state.Definition.Fields["Facility__c"]
@@ -419,6 +419,128 @@ func TestCloneRuntimeOrgIsolatesRecordsAndDefinitions(t *testing.T) {
 	stats := SnapshotPerfCounters()
 	if stats.CloneRuntimeOrgCalls != 1 {
 		t.Fatalf("cloneRuntimeOrg calls = %d, want 1", stats.CloneRuntimeOrgCalls)
+	}
+}
+
+func TestRunUsesClassJournalForSequentialMethodsAfterTestSetup(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SetupJournalTest.cls"), `
+@isTest
+private class SetupJournalTest {
+  @testSetup static void setupData() {
+    insert new Account(Name = 'Seed');
+  }
+
+  @isTest static void firstMethodAddsRecord() {
+    insert new Account(Name = 'First');
+    System.assertEquals(2, [SELECT COUNT() FROM Account]);
+  }
+
+  @isTest static void secondMethodDoesNotSeeFirstMethodRecord() {
+    System.assertEquals(1, [SELECT COUNT() FROM Account]);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{Parallelism: 1})
+	if summary := run.Summary(); summary.Total != 2 || summary.Passed != 2 {
+		if len(run.Suites) > 0 {
+			t.Fatalf("summary = %#v cases = %#v", summary, run.Suites[0].Cases)
+		}
+		t.Fatalf("summary = %#v suites = %#v", summary, run.Suites)
+	}
+	stats := SnapshotPerfCounters()
+	if stats.CloneRuntimeOrgCalls != 1 {
+		t.Fatalf("cloneRuntimeOrg calls = %d, want setup clone only", stats.CloneRuntimeOrgCalls)
+	}
+	if stats.CloneFallbacks != 0 {
+		t.Fatalf("clone fallbacks = %d, want class journal path", stats.CloneFallbacks)
+	}
+	if stats.JournalRollbacks != 2 {
+		t.Fatalf("journal rollbacks = %d, want one per method", stats.JournalRollbacks)
+	}
+}
+
+func TestRunUsesClassJournalForSequentialMethodsWithoutTestSetup(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/NoSetupJournalTest.cls"), `
+@isTest
+private class NoSetupJournalTest {
+  @isTest static void aFirstMethodAddsRecord() {
+    insert new Account(Name = 'First');
+    System.assertEquals(1, [SELECT COUNT() FROM Account]);
+  }
+
+  @isTest static void bSecondMethodDoesNotSeeFirstMethodRecord() {
+    System.assertEquals(0, [SELECT COUNT() FROM Account]);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{Parallelism: 1})
+	if summary := run.Summary(); summary.Total != 2 || summary.Passed != 2 {
+		if len(run.Suites) > 0 {
+			t.Fatalf("summary = %#v cases = %#v", summary, run.Suites[0].Cases)
+		}
+		t.Fatalf("summary = %#v suites = %#v", summary, run.Suites)
+	}
+	stats := SnapshotPerfCounters()
+	if stats.CloneRuntimeOrgCalls != 1 {
+		t.Fatalf("cloneRuntimeOrg calls = %d, want class org clone only", stats.CloneRuntimeOrgCalls)
+	}
+	if stats.CloneFallbacks != 0 {
+		t.Fatalf("clone fallbacks = %d, want class journal path", stats.CloneFallbacks)
+	}
+	if stats.JournalRollbacks != 2 {
+		t.Fatalf("journal rollbacks = %d, want one per method", stats.JournalRollbacks)
+	}
+}
+
+func TestClassJournalDisabledForMergeDML(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "MergeJournalTest.cls")
+	writeFile(t, file, `
+@isTest
+private class MergeJournalTest {
+  @isTest static void first() {
+    merge new Account(Id = '001000000000001') new Account(Id = '001000000000002');
+  }
+  @isTest static void second() {}
+}
+`)
+	planned := []testCasePlan{
+		{TestCase: TestCase{ClassName: "MergeJournalTest", MethodName: "first", File: file}},
+		{TestCase: TestCase{ClassName: "MergeJournalTest", MethodName: "second", File: file}},
+	}
+	if classSupportsJournalIsolation([]int{0, 1}, planned) {
+		t.Fatalf("merge DML class should use per-method org clones")
+	}
+}
+
+func TestClassJournalDisabledForMetadataDeployment(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "MetadataJournalTest.cls")
+	writeFile(t, file, `
+@isTest
+private class MetadataJournalTest {
+  @isTest static void first() {
+    Metadata.DeployContainer container = new Metadata.DeployContainer();
+  }
+  @isTest static void second() {}
+}
+`)
+	planned := []testCasePlan{
+		{TestCase: TestCase{ClassName: "MetadataJournalTest", MethodName: "first", File: file}},
+		{TestCase: TestCase{ClassName: "MetadataJournalTest", MethodName: "second", File: file}},
+	}
+	if classSupportsJournalIsolation([]int{0, 1}, planned) {
+		t.Fatalf("metadata deployment class should use per-method org clones")
 	}
 }
 
@@ -2824,6 +2946,139 @@ private class ChainedCounterTest {
 	}
 }
 
+func TestRunExecutesConstructorChainingWithSafeNavigation(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AccountWrapper.cls"), `
+public class AccountWrapper {
+  private String accountName;
+
+  public AccountWrapper(Account account) {
+    this(account, account?.Name);
+  }
+
+  public AccountWrapper(Account account, String name) {
+    accountName = name;
+  }
+
+  public String name() {
+    return accountName;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AccountWrapperTest.cls"), `
+@isTest
+private class AccountWrapperTest {
+  @isTest static void safeNavigationConstructorChains() {
+    AccountWrapper wrapper = new AccountWrapper(new Account(Name = 'Acme'));
+    System.assertEquals('Acme', wrapper.name());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunMatchesNamespacedSObjectConstructorArgumentFromSOQL(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FiscalProbe.cls"), `
+public class FiscalProbe {
+  public Integer Month;
+
+  public FiscalProbe(Organization org) {
+    Month = org.FiscalYearStartMonth;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FiscalProbeTest.cls"), `
+@isTest
+private class FiscalProbeTest {
+  @isTest static void constructorAcceptsQueriedOrganization() {
+    FiscalProbe probe = new FiscalProbe([
+      SELECT FiscalYearStartMonth
+      FROM Organization
+      WHERE Id = :UserInfo.getOrganizationId()
+    ]);
+    System.assertEquals(1, probe.Month);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunMatchesSObjectConstructorArgumentFromDynamicSOQL(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AccountQueryWrapper.cls"), `
+public class AccountQueryWrapper {
+  private Account account;
+
+  public AccountQueryWrapper(Account account) {
+    this.account = account;
+  }
+
+  public String name() {
+    return account.Name;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AccountQueryWrapperTest.cls"), `
+@isTest
+private class AccountQueryWrapperTest {
+  @isTest static void constructorAcceptsDynamicQueryResult() {
+    Account account = new Account(Name = 'Acme');
+    insert account;
+    String soql = 'SELECT Id, Name FROM Account WHERE Id = \'' + account.Id + '\' LIMIT 1';
+    AccountQueryWrapper wrapper = new AccountQueryWrapper(Database.query(soql));
+    System.assertEquals('Acme', wrapper.name());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunMatchesSystemStatusCodeMethodParameter(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/StatusCodeAliasMapper.cls"), `
+public class StatusCodeAliasMapper {
+  public static String map(system.StatusCode status) {
+    if (status == system.StatusCode.REQUIRED_FIELD_MISSING) {
+      return 'required';
+    }
+    return 'other';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/StatusCodeAliasMapperTest.cls"), `
+@isTest
+private class StatusCodeAliasMapperTest {
+  @isTest static void mapsDmlStatusCodeThroughSystemQualifiedParameter() {
+    Database.SaveResult result = Database.insert(new Account(), false);
+    System.assertEquals(false, result.isSuccess());
+    System.assertEquals('required', StatusCodeAliasMapper.map(result.getErrors()[0].getStatusCode()));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestRunExecutesPropertyAccessorBodies(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -4081,6 +4336,61 @@ private class AsyncSemanticsTest {
 	}
 }
 
+func TestRunBatchKeepsCyclicInstanceReferences(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CyclicBatch.cls"), `
+public class CyclicBatch {
+  public Service service;
+  public CyclicBatch() {
+    service = new Service();
+  }
+  public List<Integer> start(Database.BatchableContext bc) {
+    return new List<Integer>{1};
+  }
+  public void execute(Database.BatchableContext bc, List<Integer> scope) {
+    service.values = scope;
+    service.worker.assertBackPointer();
+  }
+  public void finish(Database.BatchableContext bc) {}
+  public class Service {
+    public Worker worker;
+    public List<Integer> values;
+    public Service() {
+      worker = new Worker(this);
+    }
+  }
+  public class Worker {
+    public Service service;
+    public Worker(Service service) {
+      this.service = service;
+    }
+    public void assertBackPointer() {
+      System.assertNotEquals(null, service);
+      System.assertEquals(1, service.values.size());
+      insert new Account(Name = 'cycle ok');
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CyclicBatchTest.cls"), `
+@isTest
+private class CyclicBatchTest {
+  @isTest static void batchKeepsNestedBackPointer() {
+    Test.startTest();
+    Database.executeBatch(new CyclicBatch(), 1);
+    Test.stopTest();
+    System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'cycle ok']);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestRunBatchStartCanReturnQueryLocator(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -4117,10 +4427,78 @@ private class LocatorBatchTest {
   @isTest static void drainsQueryLocatorScope() {
     insert new Account(Name = 'seed');
     Test.startTest();
-    Database.executeBatch(new LocatorBatch(), 200);
+	    database.executeBatch(new LocatorBatch(), 200);
     Test.stopTest();
     Integer processed = [SELECT COUNT() FROM Account WHERE Name LIKE 'processed%'];
     System.assertEquals(1, processed);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		if run.Suites[0].Cases[0].Problem != nil {
+			t.Logf("problem=%#v", *run.Suites[0].Cases[0].Problem)
+		}
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
+func TestRunBatchRerunsStaticCollectionInitializerInAsyncTransaction(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `
+<CustomObject>
+  <fullName>Account</fullName>
+  <label>Account</label>
+  <pluralLabel>Accounts</pluralLabel>
+  <nameField><type>Text</type><label>Name</label></nameField>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Name.field-meta.xml"), `
+<CustomField>
+  <fullName>Name</fullName>
+  <label>Name</label>
+  <type>Text</type>
+</CustomField>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/StaticSetBatch.cls"), `
+public class StaticSetBatch {
+  public static Boolean Ready;
+  public static Set<String> Fields = new Set<String>();
+  public static Boolean isReady() {
+    if (Ready == null || Fields.isEmpty()) {
+      Fields.add('Name');
+      Ready = true;
+    }
+    return Ready;
+  }
+  public Database.QueryLocator start(Object bc) {
+    isReady();
+    String query = 'SELECT Id';
+    for (String fieldName : Fields) {
+      query += ', ' + fieldName;
+    }
+    query += ' FROM Account';
+    return Database.getQueryLocator(query);
+  }
+  public void execute(Object bc, List<Account> scope) {
+    for (Account row : scope) {
+      System.assertEquals('seed', row.Name);
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/StaticSetBatchTest.cls"), `
+@isTest
+private class StaticSetBatchTest {
+  @isTest static void staticSetInitializerRunsForBatch() {
+    System.assertEquals(true, StaticSetBatch.isReady());
+    System.assertEquals(true, StaticSetBatch.Fields.contains('Name'));
+    insert new Account(Name = 'seed');
+    Test.startTest();
+    Database.executeBatch(new StaticSetBatch(), 200);
+    Test.stopTest();
   }
 }
 `)
@@ -5756,6 +6134,80 @@ private class SetupSettingsDefaultsTest {
 	}
 }
 
+func TestRunSparseHierarchyCustomSettingDoesNotReadTextDefault(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SetupSettingsSparseTest.cls"), `
+@isTest
+private class SetupSettingsSparseTest {
+  private static Setup_Settings__c settings;
+  private static Setup_Settings__c forTests(Setup_Settings__c input) {
+    if (settings == null) {
+      settings = new Setup_Settings__c();
+    }
+    settings.Mode__c = input.Mode__c;
+    return settings;
+  }
+  @isTest static void sparseSettingsObjectKeepsUnsetTextFieldNull() {
+    Setup_Settings__c configured = forTests(new Setup_Settings__c());
+    System.assertEquals(null, configured.Mode__c);
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Setup_Settings__c/Setup_Settings__c.object-meta.xml"), `
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <customSettingsType>Hierarchy</customSettingsType>
+  <label>Setup Settings</label>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Setup_Settings__c/fields/Mode__c.field-meta.xml"), `
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>Mode__c</fullName>
+  <type>Text</type>
+  <defaultValue>&quot;Membership&quot;</defaultValue>
+  <length>255</length>
+</CustomField>
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunDescribeFieldResultReadsInlineHelpTextFromMetadata(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/InlineHelpTextTest.cls"), `
+@isTest
+private class InlineHelpTextTest {
+  @isTest static void describesInlineHelpText() {
+    System.assertEquals('Opportunity.Amount', Import_Row__c.Donation_Amount__c.getDescribe().getInlineHelpText());
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Import_Row__c/Import_Row__c.object-meta.xml"), `
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Import Row</label>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Import_Row__c/fields/Donation_Amount__c.field-meta.xml"), `
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>Donation_Amount__c</fullName>
+  <inlineHelpText>Opportunity.Amount</inlineHelpText>
+  <label>Donation Amount</label>
+  <type>Currency</type>
+  <precision>18</precision>
+  <scale>2</scale>
+</CustomField>
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestRunListCustomSettingRequiredFieldDescribeDrivesInsert(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -5885,22 +6337,30 @@ public class AssetProbe {
 	}
 	field, ok := state.Definition.Fields["ExternalIdentifier"]
 	if !ok {
-		t.Fatalf("Asset.ExternalIdentifier was not inferred; fields=%#v", state.Definition.Fields)
+		t.Fatalf("Asset.ExternalIdentifier was not loaded from standard metadata; fields=%#v", state.Definition.Fields)
 	}
 	if field.Type != storage.FieldString || field.DisplayType != "STRING" {
 		t.Fatalf("Asset.ExternalIdentifier field = %#v", field)
 	}
 }
 
-func TestOrgFromIndexInfersProjectReferencedBooleanFieldsFromAssignments(t *testing.T) {
+func assertUnknownProjectReferencedField(t *testing.T, field storage.Field) {
+	t.Helper()
+	if field.Type != storage.FieldAny || field.DisplayType != "" || field.DefaultValue != "" ||
+		len(field.ReferenceTo) != 0 || field.RelationshipName != "" || field.ChildRelationshipName != "" {
+		t.Fatalf("field = %#v, want unknown metadata placeholder", field)
+	}
+}
+
+func TestOrgFromIndexKeepsProjectReferencedBooleanLikeFieldsUnknownWithoutMetadata(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/classes/NPSPBooleanProbe.cls"), `
-public class NPSPBooleanProbe {
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ManagedBooleanProbe.cls"), `
+public class ManagedBooleanProbe {
 	public static void touch(Account account, Contact contact) {
-		account.npe01__SYSTEMIsIndividual__c = true;
-		Schema.SObjectField fieldToken = Account.npe01__SystemIsIndividual__c;
-		Boolean privateContact = contact.npe01__Private__c != false;
+		account.pkg__SYSTEMIsIndividual__c = true;
+		Schema.SObjectField fieldToken = Account.pkg__SystemIsIndividual__c;
+		Boolean privateContact = contact.pkg__Private__c != false;
 	}
 }
 `)
@@ -5908,29 +6368,102 @@ public class NPSPBooleanProbe {
 
 	org := orgFromIndex(index)
 	accountState := org.Objects["Account"]
-	accountFieldName, ok := storage.ResolveFieldName(accountState.Definition, org.Namespace, "npe01__SYSTEMIsIndividual__c")
+	accountFieldName, ok := storage.ResolveFieldName(accountState.Definition, org.Namespace, "pkg__SYSTEMIsIndividual__c")
 	if !ok {
-		t.Fatalf("Account.npe01__SYSTEMIsIndividual__c was not inferred; fields=%#v", accountState.Definition.Fields)
+		t.Fatalf("Account.pkg__SYSTEMIsIndividual__c was not inferred; fields=%#v", accountState.Definition.Fields)
 	}
 	accountField := accountState.Definition.Fields[accountFieldName]
-	if accountField.Type != storage.FieldBoolean || accountField.DisplayType != "BOOLEAN" {
-		t.Fatalf("Account.npe01__SYSTEMIsIndividual__c field = %#v", accountField)
-	}
+	assertUnknownProjectReferencedField(t, accountField)
 	matches := 0
 	for name, field := range accountState.Definition.Fields {
-		if strings.EqualFold(name, "npe01__SYSTEMIsIndividual__c") {
+		if strings.EqualFold(name, "pkg__SYSTEMIsIndividual__c") {
 			matches++
-			if field.Type != storage.FieldBoolean || field.DisplayType != "BOOLEAN" {
-				t.Fatalf("Account.%s field = %#v", name, field)
-			}
+			assertUnknownProjectReferencedField(t, field)
 		}
 	}
 	if matches != 1 {
-		t.Fatalf("Account.npe01__SYSTEMIsIndividual__c case variants = %d; fields=%#v", matches, accountState.Definition.Fields)
+		t.Fatalf("Account.pkg__SYSTEMIsIndividual__c case variants = %d; fields=%#v", matches, accountState.Definition.Fields)
 	}
-	contactField := org.Objects["Contact"].Definition.Fields["npe01__Private__c"]
-	if contactField.Type != storage.FieldBoolean || contactField.DisplayType != "BOOLEAN" {
-		t.Fatalf("Contact.npe01__Private__c field = %#v", contactField)
+	contactField := org.Objects["Contact"].Definition.Fields["pkg__Private__c"]
+	assertUnknownProjectReferencedField(t, contactField)
+}
+
+func TestOrgFromIndexKeepsManagedBooleanFieldsUnknownFromBooleanUsageWithoutMetadata(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ManagedBooleanProbe.cls"), `
+public class ManagedBooleanProbe {
+	private pkg__Settings__c settings;
+	public void touch(Account account, Contact contact) {
+		account.pkg__ManagedFlag__c = true;
+		Boolean privateContact = contact.pkg__Private__c != false;
+		Boolean defaultValue = !settings.pkg__DefaultEnabled__c;
+	}
+}
+`)
+	org := orgFromIndex(loadTestIndex(t, root))
+	accountField := org.Objects["Account"].Definition.Fields["pkg__ManagedFlag__c"]
+	assertUnknownProjectReferencedField(t, accountField)
+	contactField := org.Objects["Contact"].Definition.Fields["pkg__Private__c"]
+	assertUnknownProjectReferencedField(t, contactField)
+	settingsField := org.Objects["pkg__Settings__c"].Definition.Fields["pkg__DefaultEnabled__c"]
+	assertUnknownProjectReferencedField(t, settingsField)
+}
+
+func TestOrgFromIndexKeepsManagedNumericFieldsUnknownFromNumericUsageWithoutMetadata(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ManagedNumericProbe.cls"), `
+public class ManagedNumericProbe {
+	public void touch(Opportunity opp) {
+		Boolean noAmounts = opp.pkg__Amount_Total__c == 0 && 0 == opp.pkg__Installment_Count__c;
+		opp.pkg__Manual_Count__c = 2;
+	}
+}
+`)
+	org := orgFromIndex(loadTestIndex(t, root))
+	opportunity := org.Objects["Opportunity"].Definition.Fields
+	for _, fieldName := range []string{"pkg__Amount_Total__c", "pkg__Installment_Count__c", "pkg__Manual_Count__c"} {
+		field := opportunity[fieldName]
+		assertUnknownProjectReferencedField(t, field)
+	}
+}
+
+func TestRecordProjectReferencedBooleanFieldKeepsUnknownPlaceholder(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["pkg__Settings__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "pkg__Settings__c",
+			Fields: map[string]storage.Field{
+				"pkg__DefaultEnabled__c": {APIName: "pkg__DefaultEnabled__c", Type: storage.FieldAny},
+			},
+		},
+	}
+
+	recordProjectReferencedBooleanField(&org, map[string]map[string]storage.Field{}, "pkg__Settings__c", "pkg__DefaultEnabled__c")
+
+	field := org.Objects["pkg__Settings__c"].Definition.Fields["pkg__DefaultEnabled__c"]
+	assertUnknownProjectReferencedField(t, field)
+}
+
+func TestRunInfersListCustomSettingFromGetAllOnReferencedShell(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ListSettingProbeTest.cls"), `
+@IsTest
+private class ListSettingProbeTest {
+  @IsTest static void getAllUsesListCustomSettingShell() {
+    Schema.SObjectField token = Payment_Field_Mapping_Settings__c.Payment_Field__c;
+    Map<String, Payment_Field_Mapping_Settings__c> rows = Payment_Field_Mapping_Settings__c.getAll();
+    System.assertEquals(0, rows.size());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
 	}
 }
 
@@ -5940,20 +6473,18 @@ func TestOrgFromIndexIncludesProjectReferencedSchemaFieldTokens(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/classes/SchemaFieldProbe.cls"), `
 public class SchemaFieldProbe {
 	public static Schema.SObjectField contactProcessor() {
-		return Schema.SObjectType.Contact.fields.npo02__SystemHouseholdProcessor__c;
+		return Schema.SObjectType.Contact.fields.pkg__Processor__c;
 	}
 }
 `)
 	index := loadTestIndex(t, root)
 
 	org := orgFromIndex(index)
-	field, ok := org.Objects["Contact"].Definition.Fields["npo02__SystemHouseholdProcessor__c"]
+	field, ok := org.Objects["Contact"].Definition.Fields["pkg__Processor__c"]
 	if !ok {
-		t.Fatalf("Contact.npo02__SystemHouseholdProcessor__c was not inferred; fields=%#v", org.Objects["Contact"].Definition.Fields)
+		t.Fatalf("Contact.pkg__Processor__c was not inferred; fields=%#v", org.Objects["Contact"].Definition.Fields)
 	}
-	if field.Type != storage.FieldString || field.DisplayType != "STRING" {
-		t.Fatalf("Contact.npo02__SystemHouseholdProcessor__c field = %#v", field)
-	}
+	assertUnknownProjectReferencedField(t, field)
 }
 
 func TestOrgFromIndexDoesNotInferChildRelationshipNamesAsFields(t *testing.T) {
@@ -5992,32 +6523,28 @@ func TestOrgFromIndexIncludesProjectReferencedSObjectLiteralFields(t *testing.T)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/SObjectLiteralProbe.cls"), `
 public class SObjectLiteralProbe {
 	public static void touch() {
-		Contact contact = new Contact(LastName = 'Probe', npe01__PreferredPhone__c = 'Home');
-		Account account = new Account(Name = 'Probe', npe01__SystemIsIndividual__c = true);
+		Contact contact = new Contact(LastName = 'Probe', pkg__PreferredPhone__c = 'Home');
+		Account account = new Account(Name = 'Probe', pkg__SystemIsIndividual__c = true);
 	}
 }
 `)
 	index := loadTestIndex(t, root)
 
 	org := orgFromIndex(index)
-	contactField, ok := org.Objects["Contact"].Definition.Fields["npe01__PreferredPhone__c"]
+	contactField, ok := org.Objects["Contact"].Definition.Fields["pkg__PreferredPhone__c"]
 	if !ok {
-		t.Fatalf("Contact.npe01__PreferredPhone__c was not inferred; fields=%#v", org.Objects["Contact"].Definition.Fields)
+		t.Fatalf("Contact.pkg__PreferredPhone__c was not inferred; fields=%#v", org.Objects["Contact"].Definition.Fields)
 	}
-	if contactField.Type != storage.FieldString || contactField.DisplayType != "STRING" {
-		t.Fatalf("Contact.npe01__PreferredPhone__c field = %#v", contactField)
-	}
-	accountFieldName, ok := storage.ResolveFieldName(org.Objects["Account"].Definition, org.Namespace, "npe01__SYSTEMIsIndividual__c")
+	assertUnknownProjectReferencedField(t, contactField)
+	accountFieldName, ok := storage.ResolveFieldName(org.Objects["Account"].Definition, org.Namespace, "pkg__SYSTEMIsIndividual__c")
 	if !ok {
-		t.Fatalf("Account.npe01__SYSTEMIsIndividual__c was not inferred; fields=%#v", org.Objects["Account"].Definition.Fields)
+		t.Fatalf("Account.pkg__SYSTEMIsIndividual__c was not inferred; fields=%#v", org.Objects["Account"].Definition.Fields)
 	}
 	accountField := org.Objects["Account"].Definition.Fields[accountFieldName]
-	if accountField.Type != storage.FieldBoolean || accountField.DisplayType != "BOOLEAN" {
-		t.Fatalf("Account.%s field = %#v", accountFieldName, accountField)
-	}
+	assertUnknownProjectReferencedField(t, accountField)
 }
 
-func TestOrgFromIndexInfersNamespacedSObjectLiteralBooleanFields(t *testing.T) {
+func TestOrgFromIndexKeepsNamespacedSObjectLiteralFieldsUnknownWithoutMetadata(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__ProcessingFee__c/pkg__ProcessingFee__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Processing Fee</label></CustomObject>`)
@@ -6031,12 +6558,10 @@ public class ProcessingFeeProbe {
 `)
 	org := orgFromIndex(loadTestIndex(t, root))
 	field := org.Objects["pkg__ProcessingFee__c"].Definition.Fields["pkg__Mandatory__c"]
-	if field.Type != storage.FieldBoolean || field.DisplayType != "BOOLEAN" {
-		t.Fatalf("pkg__ProcessingFee__c.pkg__Mandatory__c field = %#v", field)
-	}
+	assertUnknownProjectReferencedField(t, field)
 }
 
-func TestOrgFromIndexUpgradesInferredFieldWhenLaterLiteralProvidesTypeHint(t *testing.T) {
+func TestOrgFromIndexKeepsInferredFieldUnknownWhenLaterLiteralProvidesValue(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__ProcessingFee__c/pkg__ProcessingFee__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Processing Fee</label></CustomObject>`)
@@ -6056,12 +6581,10 @@ public class ZProcessingFeeTest {
 `)
 	org := orgFromIndex(loadTestIndex(t, root))
 	field := org.Objects["pkg__ProcessingFee__c"].Definition.Fields["pkg__Mandatory__c"]
-	if field.Type != storage.FieldBoolean || field.DisplayType != "BOOLEAN" {
-		t.Fatalf("pkg__ProcessingFee__c.pkg__Mandatory__c field = %#v", field)
-	}
+	assertUnknownProjectReferencedField(t, field)
 }
 
-func TestRecordProjectReferencedStandardFieldUpgradesExistingInferredShape(t *testing.T) {
+func TestRecordProjectReferencedStandardFieldKeepsInferredShapeUnknown(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["pkg__ProcessingFee__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
@@ -6071,17 +6594,17 @@ func TestRecordProjectReferencedStandardFieldUpgradesExistingInferredShape(t *te
 		Records: map[storage.ID]storage.Record{},
 	}
 	inferred := map[string]map[string]storage.Field{}
-	recordProjectReferencedStandardField(&org, inferred, "pkg__ProcessingFee__c", "pkg__Mandatory__c", "")
+	recordProjectReferencedStandardField(&org, inferred, "pkg__ProcessingFee__c", "pkg__Mandatory__c")
 	applyReferencedStandardFieldSet(&org, inferred)
 	field := org.Objects["pkg__ProcessingFee__c"].Definition.Fields["pkg__Mandatory__c"]
-	if field.Type != storage.FieldString {
+	if field.Type != storage.FieldAny {
 		t.Fatalf("initial inferred field = %#v", field)
 	}
 
-	recordProjectReferencedStandardField(&org, map[string]map[string]storage.Field{}, "pkg__ProcessingFee__c", "pkg__Mandatory__c", storage.FieldBoolean)
+	recordProjectReferencedStandardField(&org, map[string]map[string]storage.Field{}, "pkg__ProcessingFee__c", "pkg__Mandatory__c")
 	field = org.Objects["pkg__ProcessingFee__c"].Definition.Fields["pkg__Mandatory__c"]
-	if field.Type != storage.FieldBoolean || field.DisplayType != "BOOLEAN" {
-		t.Fatalf("upgraded inferred field = %#v", field)
+	if field.Type != storage.FieldAny {
+		t.Fatalf("repeated inferred field = %#v", field)
 	}
 }
 
@@ -6105,12 +6628,92 @@ public class OrderProbe {
 	if !ok {
 		t.Fatalf("pkg__Order__c.pkg__Entity__c was not inferred; fields=%#v", state.Definition.Fields)
 	}
-	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "pkg__Entity__c" || field.RelationshipName != "pkg__Entity__r" {
-		t.Fatalf("pkg__Order__c.pkg__Entity__c field = %#v", field)
+	assertUnknownProjectReferencedField(t, field)
+	if parentRelationshipKnown(state.Definition, "pkg__Entity__r") {
+		t.Fatalf("pkg__Entity__r relationship inferred without lookup metadata: %#v", state.Definition.Relations)
 	}
-	if !parentRelationshipKnown(state.Definition, "pkg__Entity__r") {
-		t.Fatalf("pkg__Entity__r relationship missing: %#v", state.Definition.Relations)
+}
+
+func TestOrgFromIndexInfersLookupFromTypedSObjectIDLiteralAssignment(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/pkg__Fee__c/pkg__Fee__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Fee</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/pkg__GatewayLink__c/pkg__GatewayLink__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Gateway Link</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FeeProbe.cls"), `
+public class FeeProbe {
+	public static void touch() {
+		pkg__GatewayLink__c link = new pkg__GatewayLink__c();
+		pkg__Fee__c fee = new pkg__Fee__c(pkg__GatewayLink__c = link.Id);
 	}
+}
+`)
+	org := orgFromIndex(loadTestIndex(t, root))
+	state := org.Objects["pkg__Fee__c"]
+	field := state.Definition.Fields["pkg__GatewayLink__c"]
+	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "pkg__GatewayLink__c" || field.RelationshipName != "pkg__GatewayLink__r" {
+		t.Fatalf("pkg__Fee__c.pkg__GatewayLink__c = %#v, want lookup to pkg__GatewayLink__c", field)
+	}
+	if !parentRelationshipKnown(state.Definition, "pkg__GatewayLink__r") {
+		t.Fatalf("pkg__GatewayLink__r relation missing: %#v", state.Definition.Relations)
+	}
+}
+
+func TestOrgFromIndexKeepsManagedLookupLikeFieldUnknownWithoutMetadata(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/pkg__Payment__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Payment</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PaymentProbe.cls"), `
+public class PaymentProbe {
+	public static void touch(Id opportunityId) {
+		pkg__Payment__c payment = new pkg__Payment__c(pkg__Opportunity__c = opportunityId);
+		Opportunity opp = [SELECT Id, (SELECT Id FROM pkg__Payment__r) FROM Opportunity WHERE Id = :opportunityId];
+		System.assertEquals(opportunityId, payment.pkg__Opportunity__c);
+		System.assertEquals(0, opp.pkg__Payment__r.size());
+	}
+}
+`)
+	index := loadTestIndex(t, root)
+
+	org := orgFromIndex(index)
+	state := org.Objects["pkg__Payment__c"]
+	field, ok := state.Definition.Fields["pkg__Opportunity__c"]
+	if !ok {
+		t.Fatalf("pkg__Payment__c.pkg__Opportunity__c was not inferred; fields=%#v", state.Definition.Fields)
+	}
+	assertUnknownProjectReferencedField(t, field)
+	for _, relation := range state.Definition.Relations {
+		if relation.ChildRelationship == "pkg__Payment__r" && len(relation.ParentObjects) == 1 && relation.ParentObjects[0] == "Opportunity" {
+			t.Fatalf("pkg__Payment__r relationship inferred without lookup metadata: %#v", state.Definition.Relations)
+		}
+	}
+}
+
+func TestOrgFromIndexInfersLookupFromExplicitParentChildRelationshipSource(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/pkg__Payment__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Payment</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PaymentProbe.cls"), `
+public class PaymentProbe {
+	public static void touch() {
+		Opportunity opp = new Opportunity(Name = 'Donation');
+		pkg__Payment__c payment = new pkg__Payment__c(pkg__Opportunity__c = opp.Id);
+		String fieldName = String.valueOf(pkg__Payment__c.pkg__Opportunity__c);
+		String query = 'SELECT Id, (SELECT Id FROM Opportunity.pkg__Payment__r) FROM Opportunity';
+	}
+}
+`)
+	org := orgFromIndex(loadTestIndex(t, root))
+	state := org.Objects["pkg__Payment__c"]
+	field := state.Definition.Fields["pkg__Opportunity__c"]
+	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Opportunity" || field.RelationshipName != "pkg__Opportunity__r" || field.ChildRelationshipName != "pkg__Payment__r" {
+		t.Fatalf("pkg__Payment__c.pkg__Opportunity__c = %#v, want Opportunity lookup with child relationship", field)
+	}
+	for _, relation := range state.Definition.Relations {
+		if relation.Field == "pkg__Opportunity__c" && relation.ChildRelationship == "pkg__Payment__r" {
+			return
+		}
+	}
+	t.Fatalf("pkg__Payment__r relationship missing: %#v", state.Definition.Relations)
 }
 
 func TestOrgFromIndexIncludesProjectReferencedManagedFieldTokens(t *testing.T) {
@@ -6131,12 +6734,10 @@ public class PasscodeProbe {
 		t.Fatalf("pkg__Passcode__c object was not inferred")
 	}
 	field := state.Definition.Fields["pkg__Code__c"]
-	if field.Type != storage.FieldString || field.DisplayType != "STRING" {
-		t.Fatalf("pkg__Passcode__c.pkg__Code__c field = %#v", field)
-	}
+	assertUnknownProjectReferencedField(t, field)
 }
 
-func TestOrgFromIndexInfersProjectReferencedCustomCurrencyDefaults(t *testing.T) {
+func TestOrgFromIndexKeepsProjectReferencedCurrencyLikeFieldUnknownWithoutMetadata(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/objects/pkg__Order__c/pkg__Order__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order</label></CustomObject>`)
@@ -6151,12 +6752,10 @@ public class OrderProbe {
 
 	org := orgFromIndex(index)
 	field := org.Objects["pkg__Order__c"].Definition.Fields["pkg__TotalTax__c"]
-	if field.Type != storage.FieldDecimal || field.DefaultValue != "0" {
-		t.Fatalf("pkg__TotalTax__c field = %#v", field)
-	}
+	assertUnknownProjectReferencedField(t, field)
 }
 
-func TestOrgFromIndexInfersProjectReferencedSubtotalFields(t *testing.T) {
+func TestOrgFromIndexKeepsProjectReferencedSubtotalFieldUnknownWithoutMetadata(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/objects/pkg__Cart__c/pkg__Cart__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Cart</label></CustomObject>`)
@@ -6171,9 +6770,7 @@ public class CartProbe {
 
 	org := orgFromIndex(index)
 	field := org.Objects["pkg__Cart__c"].Definition.Fields["pkg__Subtotal__c"]
-	if field.Type != storage.FieldDecimal || field.DisplayType != "DOUBLE" || field.DefaultValue != "0" {
-		t.Fatalf("pkg__Subtotal__c field = %#v", field)
-	}
+	assertUnknownProjectReferencedField(t, field)
 }
 
 func TestOrgFromIndexSynthesizesReferencedManagedFieldSets(t *testing.T) {
@@ -6271,42 +6868,38 @@ private class FieldSetProbeTest {
 	}
 }
 
-func TestOrgFromIndexInfersProjectReferencedNumberOfFields(t *testing.T) {
+func TestOrgFromIndexKeepsProjectReferencedNumberLikeFieldUnknownWithoutMetadata(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/AccountNumberProbe.cls"), `
 public class AccountNumberProbe {
 	public static void touch(Account account) {
-		System.assertEquals(1, account.npo02__NumberOfClosedOpps__c);
+		System.assertEquals(1, account.pkg__ClosedCount__c);
 	}
 }
 `)
 	index := loadTestIndex(t, root)
 
 	org := orgFromIndex(index)
-	field := org.Objects["Account"].Definition.Fields["npo02__NumberOfClosedOpps__c"]
-	if field.Type != storage.FieldDecimal || field.DisplayType != "DOUBLE" || field.DefaultValue != "0" {
-		t.Fatalf("Account.npo02__NumberOfClosedOpps__c field = %#v", field)
-	}
+	field := org.Objects["Account"].Definition.Fields["pkg__ClosedCount__c"]
+	assertUnknownProjectReferencedField(t, field)
 }
 
-func TestOrgFromIndexInfersProjectReferencedNumericLiteralFields(t *testing.T) {
+func TestOrgFromIndexKeepsProjectReferencedNumericLiteralFieldUnknownWithoutMetadata(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/AccountRollupProbe.cls"), `
 public class AccountRollupProbe {
 	public static Account zero(Id accountId) {
-		return new Account(Id = accountId, npo02__OppsClosedLastYear__c = 0);
+		return new Account(Id = accountId, pkg__PriorYearCount__c = 0);
 	}
 }
 `)
 	index := loadTestIndex(t, root)
 
 	org := orgFromIndex(index)
-	field := org.Objects["Account"].Definition.Fields["npo02__OppsClosedLastYear__c"]
-	if field.Type != storage.FieldDecimal || field.DisplayType != "DOUBLE" || field.DefaultValue != "0" {
-		t.Fatalf("Account.npo02__OppsClosedLastYear__c field = %#v", field)
-	}
+	field := org.Objects["Account"].Definition.Fields["pkg__PriorYearCount__c"]
+	assertUnknownProjectReferencedField(t, field)
 }
 
 func TestOrgFromIndexDoesNotInferStandardParentRelationshipAsField(t *testing.T) {
@@ -6648,37 +7241,23 @@ func TestOrgFromIndexUsesPermissionSetsToSeedManagedObjectShape(t *testing.T) {
 	if !ok {
 		t.Fatalf("managed permission-set object was not seeded")
 	}
-	if affiliation.Definition.Fields["pkg__IsCompanyManager__c"].Type != storage.FieldBoolean {
-		t.Fatalf("boolean permission field = %#v", affiliation.Definition.Fields["pkg__IsCompanyManager__c"])
-	}
-	if affiliation.Definition.Fields["pkg__BillingHelperEnabled__c"].Type != storage.FieldBoolean {
-		t.Fatalf("enabled permission field = %#v", affiliation.Definition.Fields["pkg__BillingHelperEnabled__c"])
-	}
-	if affiliation.Definition.Fields["pkg__AllowRelatedUser__c"].Type != storage.FieldBoolean {
-		t.Fatalf("allow permission field = %#v", affiliation.Definition.Fields["pkg__AllowRelatedUser__c"])
-	}
-	if affiliation.Definition.Fields["pkg__Hidden__c"].Type != storage.FieldBoolean {
-		t.Fatalf("hidden permission field = %#v", affiliation.Definition.Fields["pkg__Hidden__c"])
-	}
+	assertUnknownProjectReferencedField(t, affiliation.Definition.Fields["pkg__IsCompanyManager__c"])
+	assertUnknownProjectReferencedField(t, affiliation.Definition.Fields["pkg__BillingHelperEnabled__c"])
+	assertUnknownProjectReferencedField(t, affiliation.Definition.Fields["pkg__AllowRelatedUser__c"])
+	assertUnknownProjectReferencedField(t, affiliation.Definition.Fields["pkg__Hidden__c"])
 	accountField := affiliation.Definition.Fields["pkg__Account__c"]
-	if accountField.Type != storage.FieldReference || len(accountField.ReferenceTo) != 1 || accountField.ReferenceTo[0] != "Account" {
-		t.Fatalf("lookup permission field = %#v", accountField)
-	}
-	if !parentRelationshipKnown(affiliation.Definition, "pkg__Account__r") {
-		t.Fatalf("lookup relationship missing: %#v", affiliation.Definition.Relations)
+	assertUnknownProjectReferencedField(t, accountField)
+	if parentRelationshipKnown(affiliation.Definition, "pkg__Account__r") {
+		t.Fatalf("lookup relationship inferred without metadata: %#v", affiliation.Definition.Relations)
 	}
 	orderItem, ok := org.Objects["pkg__OrderItem__c"]
 	if !ok {
 		t.Fatalf("managed permission-set order item object was not seeded")
 	}
 	priceClassField := orderItem.Definition.Fields["pkg__PriceClass__c"]
-	if priceClassField.Type != storage.FieldReference || len(priceClassField.ReferenceTo) != 1 || priceClassField.ReferenceTo[0] != "pkg__PriceClass__c" {
-		t.Fatalf("price class lookup field = %#v", priceClassField)
-	}
+	assertUnknownProjectReferencedField(t, priceClassField)
 	customerField := orderItem.Definition.Fields["pkg__Customer__c"]
-	if customerField.Type != storage.FieldReference || len(customerField.ReferenceTo) != 1 || customerField.ReferenceTo[0] != "Account" {
-		t.Fatalf("customer lookup field = %#v", customerField)
-	}
+	assertUnknownProjectReferencedField(t, customerField)
 	productLink, ok := org.Objects["pkg__ProductLink__c"]
 	if !ok {
 		t.Fatalf("managed permission-set product link object was not seeded")
@@ -6687,19 +7266,13 @@ func TestOrgFromIndexUsesPermissionSetsToSeedManagedObjectShape(t *testing.T) {
 		t.Fatalf("product link record types = %#v", productLink.Definition.RecordTypes)
 	}
 	externalProfile := org.Objects["pkg__ExternalPaymentProfile__c"]
-	if field := externalProfile.Definition.Fields["pkg__PaymentType__c"]; field.Type != storage.FieldString {
-		t.Fatalf("payment type field = %#v", field)
-	}
-	if field := externalProfile.Definition.Fields["pkg__PaymentTypeIssuerName__c"]; field.Type != storage.FieldString {
-		t.Fatalf("payment issuer name field = %#v", field)
-	}
+	assertUnknownProjectReferencedField(t, externalProfile.Definition.Fields["pkg__PaymentType__c"])
+	assertUnknownProjectReferencedField(t, externalProfile.Definition.Fields["pkg__PaymentTypeIssuerName__c"])
 	product := org.Objects["pkg__Product__c"]
-	if field := product.Definition.Fields["pkg__TrackInventory__c"]; field.Type != storage.FieldBoolean {
-		t.Fatalf("track inventory field = %#v", field)
-	}
+	assertUnknownProjectReferencedField(t, product.Definition.Fields["pkg__TrackInventory__c"])
 }
 
-func TestOrgFromIndexPermissionSetLookupUpgradesEarlyNumericInference(t *testing.T) {
+func TestOrgFromIndexPermissionSetDoesNotUpgradeUnknownFieldToLookup(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__OrderItem__c/pkg__OrderItem__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order Item</label></CustomObject>`)
@@ -6730,12 +7303,10 @@ public class PriceClassShapeHarness {
 	org := orgFromIndex(loadTestIndex(t, root))
 	orderItem := org.Objects["pkg__OrderItem__c"]
 	field := orderItem.Definition.Fields["pkg__PriceClass__c"]
-	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "pkg__PriceClass__c" {
-		t.Fatalf("price class field = %#v", field)
-	}
+	assertUnknownProjectReferencedField(t, field)
 }
 
-func TestOrgFromIndexPermissionSetBooleanUpgradesEarlyStringInference(t *testing.T) {
+func TestOrgFromIndexPermissionSetDoesNotUpgradeUnknownFieldToBoolean(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Product__c/pkg__Product__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Product</label></CustomObject>`)
@@ -6756,12 +7327,10 @@ public class ProductShapeHarness {
 
 	org := orgFromIndex(loadTestIndex(t, root))
 	product := org.Objects["pkg__Product__c"]
-	if field := product.Definition.Fields["pkg__TrackInventory__c"]; field.Type != storage.FieldBoolean {
-		t.Fatalf("track inventory field = %#v", field)
-	}
+	assertUnknownProjectReferencedField(t, product.Definition.Fields["pkg__TrackInventory__c"])
 }
 
-func TestOrgFromIndexPermissionSetInfersCustomLookupChildRelationship(t *testing.T) {
+func TestOrgFromIndexPermissionSetDoesNotInferCustomLookupChildRelationship(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/NUObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
@@ -6797,18 +7366,16 @@ func TestOrgFromIndexPermissionSetInfersCustomLookupChildRelationship(t *testing
 
 	org := orgFromIndex(loadTestIndex(t, root))
 	product := org.Objects["pkg__Product__c"]
+	assertUnknownProjectReferencedField(t, product.Definition.Fields["pkg__Event__c"])
+	assertUnknownProjectReferencedField(t, product.Definition.Fields["pkg__Event2__c"])
 	for _, relation := range product.Definition.Relations {
 		if relation.Field == "pkg__Event2__c" {
-			if len(relation.ParentObjects) != 1 || relation.ParentObjects[0] != "pkg__Event__c" || relation.ChildRelationship != "pkg__Products2__r" {
-				t.Fatalf("Event2 relation = %#v", relation)
-			}
-			return
+			t.Fatalf("Event2 relation inferred without metadata: %#v", relation)
 		}
 	}
-	t.Fatalf("Event2 relation missing: %#v", product.Definition.Relations)
 }
 
-func TestOrgFromIndexPermissionSetInfersPrefixedCustomLookupChildRelationship(t *testing.T) {
+func TestOrgFromIndexPermissionSetDoesNotInferPrefixedCustomLookupChildRelationship(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/NUObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
@@ -6840,21 +7407,15 @@ func TestOrgFromIndexPermissionSetInfersPrefixedCustomLookupChildRelationship(t 
 	org := orgFromIndex(loadTestIndex(t, root))
 	productLink := org.Objects["pkg__ProductLink__c"]
 	field := productLink.Definition.Fields["pkg__ParentProduct__c"]
-	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "pkg__Product__c" {
-		t.Fatalf("parent product field = %#v", field)
-	}
+	assertUnknownProjectReferencedField(t, field)
 	for _, relation := range productLink.Definition.Relations {
 		if relation.Field == "pkg__ParentProduct__c" {
-			if relation.ChildRelationship != "pkg__ParentProducts__r" {
-				t.Fatalf("parent product relation = %#v", relation)
-			}
-			return
+			t.Fatalf("parent product relation inferred without metadata: %#v", relation)
 		}
 	}
-	t.Fatalf("parent product relation missing: %#v", productLink.Definition.Relations)
 }
 
-func TestOrgFromIndexUsesDataRelationshipReferencesToSeedManagedChildRelationship(t *testing.T) {
+func TestOrgFromIndexKeepsDataRelationshipReferencesUnknownWithoutMetadata(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "data/Event_Questions.json"), `{
@@ -6873,24 +7434,14 @@ func TestOrgFromIndexUsesDataRelationshipReferencesToSeedManagedChildRelationshi
 	org := orgFromIndex(loadTestIndex(t, root))
 	eventQuestion := org.Objects["pkg__EventQuestion__c"]
 	field := eventQuestion.Definition.Fields["pkg__Event__c"]
-	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "pkg__Event__c" {
-		t.Fatalf("event question event field = %#v", field)
-	}
-	if field := eventQuestion.Definition.Fields["pkg__QuestionText__c"]; field.Type != storage.FieldString {
-		t.Fatalf("event question text field = %#v", field)
-	}
-	if field := eventQuestion.Definition.Fields["pkg__IsRequired__c"]; field.Type != storage.FieldBoolean {
-		t.Fatalf("event question required field = %#v", field)
-	}
+	assertUnknownProjectReferencedField(t, field)
+	assertUnknownProjectReferencedField(t, eventQuestion.Definition.Fields["pkg__QuestionText__c"])
+	assertUnknownProjectReferencedField(t, eventQuestion.Definition.Fields["pkg__IsRequired__c"])
 	for _, relation := range eventQuestion.Definition.Relations {
 		if relation.Field == "pkg__Event__c" {
-			if relation.ChildRelationship != "pkg__EventQuestions__r" {
-				t.Fatalf("event question relation = %#v", relation)
-			}
-			return
+			t.Fatalf("event question relation inferred without metadata: %#v", relation)
 		}
 	}
-	t.Fatalf("event question event relation missing: %#v", eventQuestion.Definition.Relations)
 }
 
 func TestOrgFromIndexLoadsCustomObjectLookupRelationshipAndCheckboxDefault(t *testing.T) {
@@ -7107,6 +7658,32 @@ private class ReferencedRecordTypesTest {
     Id bundleProduct = pkg__ProductLink__c.SObjectType.getDescribe().getRecordTypeInfosByDeveloperName().get('BundleProduct').getRecordTypeId();
     System.assertNotEquals(null, bundle);
     System.assertNotEquals(null, bundleProduct);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestOrgFromIndexAddsRecordTypesFromProjectConfig(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "cumulusci.yml"), `
+tasks:
+  ensure_record_types:
+    options:
+      record_types:
+        - record_type: Account.HH_Account
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/ReferencedRecordTypeConfigTest.cls"), `
+@IsTest
+private class ReferencedRecordTypeConfigTest {
+  @IsTest static void configuredRecordTypeCanBeQueried() {
+    Id household = [SELECT Id FROM RecordType WHERE DeveloperName = 'HH_Account'].Id;
+    System.assertNotEquals(null, household);
   }
 }
 `)
@@ -7552,6 +8129,52 @@ private class MappingOperationFactoryTest {
 	}
 }
 
+func TestProjectRuntimeStaticEnumFieldAvailableToSuperConstructorArg(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Options.cls"), `
+public class Options {
+  public enum Kind {
+    AccountHardCredit
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BaseJob.cls"), `
+public virtual class BaseJob {
+  public Options.Kind JobType;
+  public BaseJob(Options.Kind jobType) {
+    this.JobType = jobType;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AccountJob.cls"), `
+public class AccountJob extends BaseJob {
+  private static final Options.Kind jobType = Options.Kind.AccountHardCredit;
+  public static Options.Kind getJobType() {
+    return jobType;
+  }
+  public AccountJob() {
+    super(jobType);
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AccountJobTest.cls"), `
+@isTest
+private class AccountJobTest {
+  @isTest static void staticEnumFieldFeedsSuperConstructor() {
+    System.assertEquals(Options.Kind.AccountHardCredit, AccountJob.getJobType());
+    AccountJob job = new AccountJob();
+    System.assertEquals(Options.Kind.AccountHardCredit, job.JobType);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestRunNestedSubclassInheritsBaseProperties(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -7680,6 +8303,133 @@ private class ReflectiveHelperTest {
   @isTest static void publicTopLevelTestHelperResolves() {
     Object helper = Type.forName('ReflectiveHelper').newInstance();
     System.assertEquals('ok', ((ReflectiveHelper) helper).value());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunPlatformCacheNestedBuilderUsesStringKey(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "glade.yml"), `org:
+  features: [MultiCurrency]
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CacheHost.cls"), `
+public class CacheHost {
+  public String accountCode;
+
+  public static Object load(String code) {
+    if (code == null) {
+      return null;
+    }
+    return loadRaw(code);
+  }
+
+  public static Object loadRaw(String code) {
+    Cache.OrgPartition orgCache = Cache.Org.getPartition('local.default');
+    return orgCache.get(NestedLoader.class, code);
+  }
+
+  public static Object loadFromAccount(Account account) {
+    return load((String) account.get('CurrencyIsoCode'));
+  }
+
+  public Object loadField() {
+    return load(accountCode);
+  }
+
+  public class NestedLoader implements Cache.CacheBuilder {
+    public Object doLoad(String key) {
+      return 'loaded:' + key;
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CacheHostTest.cls"), `
+@isTest
+private class CacheHostTest {
+  @isTest static void nestedCacheBuilderLoadsValue() {
+    String code = 'USD';
+    System.assertEquals('loaded:USD', (String) CacheHost.load(code));
+    System.assertEquals('loaded:USD', (String) CacheHost.load(code));
+    System.assertEquals(null, CacheHost.loadFromAccount(new Account(Name = 'Local')));
+    System.assertEquals(null, new CacheHost().loadField());
+    System.assertEquals(null, CacheHost.loadRaw(null));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunNamespacedStaticFieldMapSharesStateWithStaticMethod(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "glade.yml"), `org:
+  features: [MultiCurrency]
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FieldTokenRegistry.cls"), `
+public class FieldTokenRegistry {
+  public static Set<String> loadedKeys = new Set<String>();
+  public static Map<String, SObjectField> tokens = new Map<String, SObjectField>();
+  private static Boolean loaded;
+
+  public static Boolean load() {
+    if (loaded == null) {
+      loadedKeys.add('Contact');
+      tokens.put('Contact', Schema.sObjectType.Contact.fields.getMap().get('CurrencyIsoCode'));
+      loaded = tokens.get('Contact') != null;
+    }
+    return loaded;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FieldTokenBatch.cls"), `
+public class FieldTokenBatch {
+  public List<Integer> start(Database.BatchableContext bc) {
+    return new List<Integer>{1};
+  }
+  public void execute(Database.BatchableContext bc, List<Integer> scope) {
+    FieldTokenConsumer.touch();
+  }
+  public void finish(Database.BatchableContext bc) {}
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FieldTokenConsumer.cls"), `
+public class FieldTokenConsumer {
+  public static void touch() {
+    if (FieldTokenRegistry.load()) {
+      Contact contactRecord = new Contact(LastName = 'Local');
+      contactRecord.put(FieldTokenRegistry.tokens.get('Contact'), 'USD');
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/triggers/OpportunityProbeTrigger.trigger"), `
+trigger OpportunityProbeTrigger on Opportunity (before insert) {
+  FieldTokenConsumer.touch();
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FieldTokenRegistryTest.cls"), `
+@isTest
+private class FieldTokenRegistryTest {
+  @isTest static void staticFieldMapUsesMethodState() {
+    System.assert(FieldTokenRegistry.load());
+    Contact contactRecord = new Contact(LastName = 'Local');
+    contactRecord.put(FieldTokenRegistry.tokens.get('Contact'), 'USD');
+    System.assertEquals('USD', contactRecord.get('CurrencyIsoCode'));
+    Test.startTest();
+    insert new Opportunity(Name = 'Local', StageName = 'Prospecting', CloseDate = Date.today());
+    Database.executeBatch(new FieldTokenBatch(), 200);
+    Test.stopTest();
   }
 }
 `)

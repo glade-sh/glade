@@ -350,13 +350,13 @@ func (p *formulaParser) parseAdditive() (formulaValue, bool) {
 		}
 		leftNumber, leftOK := left.asNumber()
 		rightNumber, rightOK := right.asNumber()
-		if op == "-" && (left.kind == formulaDate || looksLikeFormulaDate(left.asString())) && (right.kind == formulaDate || looksLikeFormulaDate(right.asString())) {
+		if op == "-" && left.kind == formulaDate && right.kind == formulaDate {
 			if days, ok := formulaDateDiffDays(left.asString(), right.asString()); ok {
 				left = formulaValue{kind: formulaNumber, number: days}
 				continue
 			}
 		}
-		if (left.kind == formulaDate || looksLikeFormulaDate(left.asString())) && rightOK {
+		if left.kind == formulaDate && rightOK {
 			if updated, ok := formulaDateAddDays(left.asString(), rightNumber, op); ok {
 				left = updated
 				continue
@@ -1338,9 +1338,9 @@ func formulaStorageValue(value storage.Value) formulaValue {
 		return formulaValue{kind: formulaNull}
 	}
 	switch value.Kind {
-	case storage.ValueString, storage.ValueDateTime:
+	case storage.ValueString:
 		return formulaValue{kind: formulaString, text: value.String}
-	case storage.ValueDate:
+	case storage.ValueDate, storage.ValueDateTime:
 		return formulaValue{kind: formulaDate, text: value.String}
 	case storage.ValueDecimal:
 		number, err := strconv.ParseFloat(value.Decimal, 64)
@@ -1571,14 +1571,22 @@ func absInt(value int) int {
 }
 
 func formulaDateAddDays(dateText string, days float64, op string) (formulaValue, bool) {
+	if op == "-" {
+		days = -days
+	}
+	if date, ok := parseFormulaDateTime(dateText); ok && formulaDateTextIncludesTime(dateText) {
+		return formulaValue{kind: formulaDate, text: date.Add(formulaDayDuration(days)).UTC().Format(time.RFC3339)}, true
+	}
 	date, ok := parseFormulaDate(dateText)
 	if !ok {
 		return formulaValue{}, false
 	}
-	if op == "-" {
-		days = -days
-	}
-	return formulaValue{kind: formulaDate, text: date.AddDate(0, 0, int(days)).Format("2006-01-02")}, true
+	return formulaValue{kind: formulaDate, text: date.Add(formulaDayDuration(days)).Format("2006-01-02")}, true
+}
+
+func formulaDayDuration(days float64) time.Duration {
+	milliseconds := math.Round(days * 24 * 60 * 60 * 1000)
+	return time.Duration(milliseconds) * time.Millisecond
 }
 
 func formulaDateDiffDays(leftText, rightText string) (float64, bool) {
@@ -1603,6 +1611,26 @@ func parseFormulaDate(text string) (time.Time, bool) {
 		return time.Time{}, false
 	}
 	return date, true
+}
+
+func parseFormulaDateTime(text string) (time.Time, bool) {
+	text = strings.TrimSpace(text)
+	for _, layout := range []string{
+		time.RFC3339Nano,
+		"2006-01-02 15:04:05.999999999",
+		"2006-01-02 15:04:05",
+		"2006-01-02T15:04:05.999999999",
+		"2006-01-02T15:04:05",
+	} {
+		if value, err := time.Parse(layout, text); err == nil {
+			return value, true
+		}
+	}
+	return time.Time{}, false
+}
+
+func formulaDateTextIncludesTime(text string) bool {
+	return strings.ContainsAny(strings.TrimSpace(text), "Tt ")
 }
 
 func looksLikeFormulaDate(text string) bool {

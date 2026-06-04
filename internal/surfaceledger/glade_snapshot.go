@@ -28,6 +28,10 @@ func BuildGladeSnapshot() []SurfaceLedgerRow {
 			if memberName == "" {
 				memberName = typeName
 			}
+			kind := gladeMemberKind(string(member.Kind))
+			if kind == KindProperty {
+				params = nil
+			}
 			memberID := ApexMemberID(namespace, typeName, memberName, params)
 			row := RowFromGladeShape(SurfaceLedgerRow{
 				SurfaceID:  memberID,
@@ -36,7 +40,7 @@ func BuildGladeSnapshot() []SurfaceLedgerRow {
 				Namespace:  namespace,
 				TypeName:   typeName,
 				MemberName: memberName,
-				Kind:       gladeMemberKind(string(member.Kind)),
+				Kind:       kind,
 				ReturnType: member.Type,
 				Parameters: params,
 				Sources:    []string{"standard-symbols"},
@@ -128,6 +132,9 @@ func idFromStubBehavior(entry capability.StubBehaviorEntry) string {
 	namespace, typeName := splitTypeName("", entry.Type)
 	if entry.Member == "" {
 		return ApexTypeID(namespace, typeName)
+	}
+	if gladeMemberKind(entry.Kind) == KindProperty {
+		return ApexMemberID(namespace, typeName, entry.Member, nil)
 	}
 	return ApexMemberID(namespace, typeName, entry.Member, entry.Parameters)
 }

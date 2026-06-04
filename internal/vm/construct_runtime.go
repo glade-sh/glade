@@ -295,14 +295,17 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		class, _ = vm.lookupClass(typeName)
 		passiveDTO := generatedPlatformTypeName(typeName) && passiveRuntimeClass(class) && vm.isPassivePlatformDTOType(typeName)
 		frameworkUOWRuntime := vm.isSObjectUnitOfWorkRuntimeType(typeName)
+		isSObjectCtor := vm.isSObjectType(typeName)
 		object := Object(typeName)
 		if !passiveDTO {
 			for field, value := range namedArgs {
-				value = coerceLikelyCustomNumberRuntimeValue(field, value)
 				object.Fields[field] = value
 			}
 		}
 		vm.initializeFields(&object, typeName)
+		if isSObjectCtor {
+			vm.initializeSObjectSchemaDefaults(&object, typeName)
+		}
 		if passiveDTO || frameworkUOWRuntime {
 			vm.initializePassiveCollectionFields(&object, typeName)
 		}
@@ -310,18 +313,15 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			vm.bindPassiveNamedConstructorFields(&object, namedArgs)
 		} else {
 			for field, value := range namedArgs {
-				value = coerceLikelyCustomNumberRuntimeValue(field, value)
 				object.Fields[field] = value
 			}
 		}
 		if err := vm.runInstanceInitializers(class, object, result); err != nil {
 			return Null, err
 		}
-		isSObjectCtor := vm.isSObjectType(typeName)
 		if !passiveDTO {
 			delete(object.Fields, sobjectExplicitFieldsField)
 			for field, value := range namedArgs {
-				value = coerceLikelyCustomNumberRuntimeValue(field, value)
 				if isSObjectCtor {
 					setExplicitSObjectField(&object, field, value)
 				} else {
@@ -970,6 +970,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 	}
 	object := Object(objectType)
+	if definition.APIName != "" {
+		vm.initializeSObjectSchemaDefaults(&object, objectType)
+	}
 	for field, value := range namedArgs {
 		explicitField := false
 		if definition.APIName != "" {
@@ -982,7 +985,6 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			value = coerceSObjectFieldRuntimeValue(value, definition.Fields[field])
 			setExplicitSObjectField(&object, field, value)
 		} else {
-			value = coerceLikelyCustomNumberRuntimeValue(field, value)
 			object.Fields[field] = value
 		}
 	}
@@ -1260,7 +1262,7 @@ func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result)
 
 func isExceptionType(typeName string) bool {
 	typeName = exceptionTypeName(typeName)
-	return isBuiltinExceptionType(typeName) || strings.HasSuffix(typeName, "Exception")
+	return isBuiltinExceptionType(typeName) || hasSuffixFold(typeName, "Exception")
 }
 
 func isThrownAuraHandledException(value Value) bool {
@@ -1273,6 +1275,14 @@ func isThrownAuraHandledException(value Value) bool {
 
 func isThrownAuraHandledExceptionWithoutExplicitMessage(value Value) bool {
 	if !isThrownAuraHandledException(value) {
+		return false
+	}
+	explicit, ok := value.Fields["__messageSet"]
+	return !ok || explicit.Kind != ValueBool || !explicit.Bool
+}
+
+func isCustomExceptionWithoutExplicitMessage(value Value) bool {
+	if value.Kind != ValueObject || !isExceptionType(value.Type) || isBuiltinExceptionType(value.Type) {
 		return false
 	}
 	explicit, ok := value.Fields["__messageSet"]
@@ -1322,6 +1332,34 @@ func (vm *VM) initializeFields(object *Value, typeName string) {
 			value.Static = field.Type
 		}
 		object.Fields[name] = value
+	}
+}
+
+func (vm *VM) initializeSObjectSchemaDefaults(object *Value, typeName string) {
+	if vm.Org == nil || object == nil {
+		return
+	}
+	objectName, ok := vm.resolveObjectName(typeName)
+	if !ok {
+		objectName = typeName
+	}
+	state, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return
+	}
+	for name, field := range state.Definition.Fields {
+		if field.Type != storage.FieldBoolean {
+			continue
+		}
+		defaultValue, ok := storage.DefaultValueForField(field)
+		if !ok {
+			continue
+		}
+		if current, exists := object.Fields[name]; exists && current.Kind != ValueNull {
+			continue
+		}
+		object.Fields[name] = vmValueFromStorage(defaultValue)
+		markDefaultedSObjectField(object, name)
 	}
 }
 
@@ -3283,9 +3321,16 @@ func (vm *VM) evalInstanceOf(value Value, target string) Value {
 		return Bool(vm.typeMatches(runtimeObjectType(value), target, make(map[string]bool)))
 	}
 	if collectionBase(target) != "" || isMapType(target) {
-		valueType := valueTypeName(value)
-		if vm.typeAssignableTo(valueType, target) {
-			return Bool(true)
+		for _, valueType := range instanceOfCollectionTypeCandidates(value) {
+			if matched, handled := vm.collectionDeclaredInstanceOf(valueType, target); handled {
+				return Bool(matched)
+			}
+			if isMapType(target) && isMapType(valueType) {
+				return Bool(vm.typeAssignableTo(valueType, target))
+			}
+			if vm.typeAssignableTo(valueType, target) {
+				return Bool(true)
+			}
 		}
 		if collectionBase(target) != "" && vm.collectionElementsAssignable(target, value) {
 			return Bool(true)
@@ -3303,6 +3348,57 @@ func (vm *VM) evalInstanceOf(value Value, target string) Value {
 		return Bool(true)
 	}
 	return Bool(numericConversionScore(target, valueType) >= 0)
+}
+
+func instanceOfCollectionTypeCandidates(value Value) []string {
+	out := make([]string, 0, 4)
+	seen := make(map[string]bool)
+	for _, candidate := range []string{value.Runtime, value.Static, value.Type, valueTypeName(value)} {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "" {
+			continue
+		}
+		key := strings.ToLower(candidate)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, candidate)
+	}
+	return out
+}
+
+func (vm *VM) collectionDeclaredInstanceOf(valueType, target string) (bool, bool) {
+	fromBase := collectionBase(valueType)
+	toBase := collectionBase(target)
+	if fromBase == "" || toBase == "" {
+		return false, false
+	}
+	if !strings.EqualFold(fromBase, toBase) &&
+		!(strings.EqualFold(toBase, "Iterable") && (strings.EqualFold(fromBase, "List") || strings.EqualFold(fromBase, "Set"))) {
+		return false, true
+	}
+	fromElement, fromOK := collectionElementType(valueType)
+	toElement, toOK := collectionElementType(target)
+	if !fromOK || !toOK {
+		return false, false
+	}
+	return vm.collectionElementInstanceOf(fromElement, toElement), true
+}
+
+func (vm *VM) collectionElementInstanceOf(from, to string) bool {
+	from = canonicalRuntimePlatformType(from)
+	to = canonicalRuntimePlatformType(to)
+	if strings.EqualFold(to, "Object") || strings.EqualFold(from, to) {
+		return true
+	}
+	if strings.EqualFold(to, "SObject") && vm.isSObjectLikeType(from) {
+		return true
+	}
+	if vm.isSObjectLikeType(from) && vm.isSObjectLikeType(to) && sObjectTypeNamespaceEquivalent(from, to) {
+		return true
+	}
+	return vm.typeMatches(from, to, make(map[string]bool))
 }
 
 func (vm *VM) currentMethodUsesLegacyNullInstanceOf() bool {

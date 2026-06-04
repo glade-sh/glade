@@ -17,6 +17,7 @@ func BuildDocsSnapshot(source string) ([]SurfaceLedgerRow, error) {
 		return nil, err
 	}
 	rows := RowsFromDocsInventory(inv)
+	applyApexDeclarationSignatures(rows, source)
 	for i := range rows {
 		if rows[i].DocsSource == "" {
 			continue
@@ -24,6 +25,114 @@ func BuildDocsSnapshot(source string) ([]SurfaceLedgerRow, error) {
 		rows[i].APIVersion = readAPIVersion(filepath.Join(source, filepath.FromSlash(rows[i].DocsSource)))
 	}
 	return rows, nil
+}
+
+func applyApexDeclarationSignatures(rows []SurfaceLedgerRow, source string) {
+	cache := map[string]map[string][]string{}
+	for i := range rows {
+		row := &rows[i]
+		if row.Product != ProductApex || row.Kind != KindMethod || row.MemberName == "" || row.DocsSource == "" {
+			continue
+		}
+		signatures, ok := cache[row.DocsSource]
+		if !ok {
+			signatures = apexDeclarationSignatures(filepath.Join(source, filepath.FromSlash(row.DocsSource)))
+			cache[row.DocsSource] = signatures
+		}
+		signature := matchingSignature(signatures[row.MemberName], len(row.Parameters))
+		if signature == "" {
+			continue
+		}
+		params := parametersFromSignature(signature)
+		if len(params) == 0 && strings.Contains(signature, "()") {
+			params = []string{}
+		}
+		if params == nil {
+			continue
+		}
+		row.Signature = signature
+		row.Parameters = params
+		row.SurfaceID = ApexMemberID(row.Namespace, row.TypeName, row.MemberName, params)
+	}
+	sortRows(rows)
+}
+
+func apexDeclarationSignatures(path string) map[string][]string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	lines := strings.Split(string(data), "\n")
+	signatures := map[string][]string{}
+	for i := 0; i < len(lines); i++ {
+		line := strings.TrimSpace(lines[i])
+		if !strings.HasPrefix(line, "### ") {
+			continue
+		}
+		member := memberNameFromHeading(strings.TrimSpace(strings.TrimPrefix(line, "### ")))
+		if member == "" {
+			continue
+		}
+		for j := i + 1; j < len(lines); j++ {
+			next := strings.TrimSpace(lines[j])
+			if strings.HasPrefix(next, "### ") {
+				break
+			}
+			if next != "#### Signature" {
+				continue
+			}
+			if signature := readInlineCodeBlock(lines[j+1:]); signature != "" {
+				signatures[member] = append(signatures[member], signature)
+			}
+			break
+		}
+	}
+	return signatures
+}
+
+func matchingSignature(signatures []string, parameterCount int) string {
+	for _, signature := range signatures {
+		if len(parametersFromSignature(signature)) == parameterCount {
+			return signature
+		}
+	}
+	if len(signatures) == 1 {
+		return signatures[0]
+	}
+	return ""
+}
+
+func memberNameFromHeading(heading string) string {
+	if idx := strings.Index(heading, "("); idx > 0 {
+		return strings.TrimSpace(heading[:idx])
+	}
+	return strings.TrimSpace(heading)
+}
+
+func readInlineCodeBlock(lines []string) string {
+	var b strings.Builder
+	inCode := false
+	for _, line := range lines {
+		if strings.HasPrefix(strings.TrimSpace(line), "#### ") || strings.HasPrefix(strings.TrimSpace(line), "### ") {
+			break
+		}
+		for _, r := range line {
+			if r == '`' {
+				if inCode {
+					return strings.Join(strings.Fields(b.String()), " ")
+				}
+				inCode = true
+				continue
+			}
+			if inCode {
+				b.WriteRune(r)
+			}
+		}
+		if inCode {
+			b.WriteByte(' ')
+		}
+	}
+	return ""
 }
 
 func RowsFromDocsInventory(inv apexdocs.Inventory) []SurfaceLedgerRow {
@@ -121,6 +230,9 @@ func docsSurfaceID(product string, doc apexdocs.Document, member apexdocs.Member
 
 func docsNamespace(product string, doc apexdocs.Document) string {
 	if doc.Namespace != "" {
+		if product == ProductApex {
+			return canonicalApexNamespaceName(doc.Namespace)
+		}
 		return doc.Namespace
 	}
 	if product == ProductApex {

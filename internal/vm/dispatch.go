@@ -33,6 +33,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	if callContextClass == "" {
 		callContextClass = vm.currentMethod.ClassName
 	}
+	if strings.HasPrefix(strings.ToLower(callee), "schema.sobjecttype.") {
+		if value, handled, err := vm.callSchemaSObjectTypePath(callee, args, result); handled || err != nil {
+			return value, err
+		}
+	}
 	if vm.shouldUseBuiltinStaticPrecedence(originalCallee, callee) {
 		goto platformStaticCall
 	}
@@ -755,7 +760,11 @@ platformStaticCall:
 		}
 		vm.nextSavepoint++
 		id := fmt.Sprintf("sp-%d", vm.nextSavepoint)
-		vm.savepoints[id] = snapshotRuntimeOrgState(vm.Org)
+		if vm.isolationJournal != nil {
+			vm.savepointMarks[id] = vm.isolationJournal.Mark()
+		} else {
+			vm.savepoints[id] = snapshotRuntimeOrgState(vm.Org)
+		}
 		vm.emailSavepoints[id] = append([]CapturedEmail(nil), vm.capturedEmails...)
 		vm.savepointOrder[id] = vm.nextSavepoint
 		savepoint := Object("System.Savepoint")
@@ -772,23 +781,37 @@ platformStaticCall:
 		if !ok || idValue.Kind != ValueString {
 			return Null, fmt.Errorf("Database.rollback received invalid Savepoint")
 		}
-		snapshot, ok := vm.savepoints[idValue.Text]
+		targetOrder, ok := vm.savepointOrder[idValue.Text]
 		if !ok {
 			return Null, fmt.Errorf("Database.rollback received invalid Savepoint")
 		}
-		targetOrder := vm.savepointOrder[idValue.Text]
 		if err := vm.incrementLimit("dmlStatements", 1); err != nil {
 			return Null, err
 		}
 		currentSequences := copyOrgIDSequences(vm.Org.IDSequences)
-		restored := cloneRuntimeOrgState(snapshot)
-		restored.IDSequences = maxOrgIDSequences(restored.IDSequences, currentSequences)
-		*vm.Org = restored
+		if mark, ok := vm.savepointMarks[idValue.Text]; ok {
+			if vm.isolationJournal == nil {
+				return Null, fmt.Errorf("Database.rollback received invalid Savepoint")
+			}
+			if err := vm.isolationJournal.Rollback(mark); err != nil {
+				return Null, err
+			}
+			vm.applyMaxIDSequencesForJournalRollback(currentSequences)
+		} else {
+			snapshot, ok := vm.savepoints[idValue.Text]
+			if !ok {
+				return Null, fmt.Errorf("Database.rollback received invalid Savepoint")
+			}
+			restored := cloneRuntimeOrgState(snapshot)
+			restored.IDSequences = maxOrgIDSequences(restored.IDSequences, currentSequences)
+			*vm.Org = restored
+		}
 		vm.capturedEmails = append([]CapturedEmail(nil), vm.emailSavepoints[idValue.Text]...)
 		vm.clearCustomDataCache()
 		for id, order := range vm.savepointOrder {
 			if order > targetOrder {
 				delete(vm.savepoints, id)
+				delete(vm.savepointMarks, id)
 				delete(vm.emailSavepoints, id)
 				delete(vm.savepointOrder, id)
 			}
@@ -802,13 +825,14 @@ platformStaticCall:
 		if !ok || idValue.Kind != ValueString {
 			return Null, fmt.Errorf("Database.releaseSavepoint received invalid Savepoint")
 		}
-		if _, ok := vm.savepoints[idValue.Text]; !ok {
+		targetOrder, ok := vm.savepointOrder[idValue.Text]
+		if !ok {
 			return Null, fmt.Errorf("Database.releaseSavepoint received invalid Savepoint")
 		}
-		targetOrder := vm.savepointOrder[idValue.Text]
 		for id, order := range vm.savepointOrder {
 			if order >= targetOrder {
 				delete(vm.savepoints, id)
+				delete(vm.savepointMarks, id)
 				delete(vm.emailSavepoints, id)
 				delete(vm.savepointOrder, id)
 			}
@@ -932,6 +956,13 @@ platformStaticCall:
 				return Null, err
 			}
 			return String(text), nil
+		}
+		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Blob") {
+			raw := ""
+			if value, ok := args[0].Fields["value"]; ok && value.Kind == ValueString {
+				raw = value.Text
+			}
+			return String(fmt.Sprintf("Blob[%d]", len(raw))), nil
 		}
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Datetime") {
 			datetimeValue, err := parsePlatformDatetime(args[0])
@@ -1300,6 +1331,21 @@ platformStaticCall:
 			out.Fields["legacyIsoFractionalTruncate"] = Bool(true)
 		}
 		return out, nil
+	case "Datetime.parse":
+		if len(args) != 1 {
+			return Null, newExceptionError("System.NullPointerException", "Datetime.parse expects String")
+		}
+		if args[0].Kind == ValueNull {
+			return Null, newExceptionError("System.NullPointerException", "Datetime.parse expects String")
+		}
+		if args[0].Kind != ValueString {
+			return Null, newExceptionError("System.TypeException", "Datetime.parse expects String")
+		}
+		value, err := parseDatetimeParseText(args[0].Text, vm.currentUserTimeZoneID())
+		if err != nil {
+			return Null, newExceptionError("System.TypeException", "Invalid date/time: "+args[0].Text)
+		}
+		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
 	case "String.valueOfGmt":
 		if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Datetime" {
 			return Null, fmt.Errorf("String.valueOfGmt expects Datetime")
@@ -1850,6 +1896,57 @@ platformStaticCall:
 			return Null, fmt.Errorf("FeatureManagement.changeProtection expects namespace, feature, and protection String values")
 		}
 		return Null, nil
+	case "FeatureManagement.checkPackageBooleanValue":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("FeatureManagement.checkPackageBooleanValue expects String")
+		}
+		if value, ok := vm.managedFeatureValues[managedFeatureValueKey("Boolean", args[0].Text)]; ok && value.Kind == ValueBool {
+			return value, nil
+		}
+		return Bool(false), nil
+	case "FeatureManagement.setPackageBooleanValue":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueBool {
+			return Null, fmt.Errorf("FeatureManagement.setPackageBooleanValue expects String and Boolean")
+		}
+		if vm.managedFeatureValues == nil {
+			vm.managedFeatureValues = make(map[string]Value)
+		}
+		vm.managedFeatureValues[managedFeatureValueKey("Boolean", args[0].Text)] = args[1]
+		return Null, nil
+	case "FeatureManagement.checkPackageIntegerValue":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("FeatureManagement.checkPackageIntegerValue expects String")
+		}
+		if value, ok := vm.managedFeatureValues[managedFeatureValueKey("Integer", args[0].Text)]; ok && value.Kind == ValueInt {
+			return value, nil
+		}
+		return Null, nil
+	case "FeatureManagement.setPackageIntegerValue":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueInt {
+			return Null, fmt.Errorf("FeatureManagement.setPackageIntegerValue expects String and Integer")
+		}
+		if vm.managedFeatureValues == nil {
+			vm.managedFeatureValues = make(map[string]Value)
+		}
+		vm.managedFeatureValues[managedFeatureValueKey("Integer", args[0].Text)] = args[1]
+		return Null, nil
+	case "FeatureManagement.checkPackageDateValue":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("FeatureManagement.checkPackageDateValue expects String")
+		}
+		if value, ok := vm.managedFeatureValues[managedFeatureValueKey("Date", args[0].Text)]; ok && value.Kind == ValueObject && strings.EqualFold(value.Type, "Date") {
+			return value, nil
+		}
+		return Null, nil
+	case "FeatureManagement.setPackageDateValue":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueObject || !strings.EqualFold(args[1].Type, "Date") {
+			return Null, fmt.Errorf("FeatureManagement.setPackageDateValue expects String and Date")
+		}
+		if vm.managedFeatureValues == nil {
+			vm.managedFeatureValues = make(map[string]Value)
+		}
+		vm.managedFeatureValues[managedFeatureValueKey("Date", args[0].Text)] = cloneValue(args[1])
+		return Null, nil
 	case "BusinessHours.add", "BusinessHours.addGmt":
 		if len(args) != 3 || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueInt {
 			return Null, fmt.Errorf("%s expects Id, Datetime, Long", callee)
@@ -2366,6 +2463,8 @@ platformStaticCall:
 		return vm.webServiceCalloutInvoke(args, result)
 	case "Test.testInstall":
 		return vm.testInstall(args, result)
+	case "Test.testUninstall":
+		return vm.testUninstall(args, result)
 	case "Test.createStub":
 		if vm.testContext == nil {
 			return Null, unsupportedCallError(callee + " local stub API")
@@ -3115,6 +3214,24 @@ platformStaticCall:
 		}
 		return Null, unsupportedCallError(callee)
 	}
+}
+
+func (vm *VM) applyMaxIDSequencesForJournalRollback(currentSequences map[string]uint64) {
+	if vm == nil || vm.Org == nil {
+		return
+	}
+	merged := maxOrgIDSequences(vm.Org.IDSequences, currentSequences)
+	for objectName, value := range merged {
+		if vm.Org.IDSequences != nil {
+			if existing, ok := vm.Org.IDSequences[objectName]; ok && existing == value {
+				continue
+			}
+		}
+		if vm.isolationJournal != nil {
+			vm.isolationJournal.RecordSequence(objectName)
+		}
+	}
+	vm.Org.IDSequences = merged
 }
 
 func (vm *VM) pageReferenceForResource(args []Value) (Value, error) {

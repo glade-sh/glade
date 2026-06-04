@@ -172,9 +172,9 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 					}
 					return safeNavigationNull(), nil
 				}
-				return vm.lookupPath(receiver, []string{strings.TrimPrefix(expr.Callee, "__safe_field:")})
+				return vm.lookupPath(receiver, splitFieldPath(strings.TrimPrefix(expr.Callee, "__safe_field:")))
 			}
-			return vm.lookupPath(receiver, []string{strings.TrimPrefix(expr.Callee, "__field:")})
+			return vm.lookupPath(receiver, splitFieldPath(strings.TrimPrefix(expr.Callee, "__field:")))
 		}
 		var receiver Value
 		hasReceiver := expr.Left != nil

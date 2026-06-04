@@ -325,14 +325,14 @@ import BATCH_OBJECT from '@salesforce/schema/Batch__c';
 import BATCH_PARENT_NAME from '@salesforce/schema/Batch__c.Parent__r.Name';
 import PAYMENT_AMOUNT from '@salesforce/schema/pkg__Payment__c.pkg__Amount__c';
 import PAYMENT_BATCH_NAME from '@salesforce/schema/pkg__Payment__c.pkg__Batch__r.Name';
-import NPSP_PAYMENT_AMOUNT from '@salesforce/schema/npe01__OppPayment__c.npe01__Payment_Amount__c';
-import NPSP_RECURRING_INSTALLMENT from '@salesforce/schema/npe03__Recurring_Donation__c.npe03__Installment_Period__c';
+import MANAGED_PAYMENT_AMOUNT from '@salesforce/schema/pkg1__ManagedPayment__c.pkg1__Payment_Amount__c';
+import MANAGED_RECURRING_INSTALLMENT from '@salesforce/schema/pkg2__Managed_Renewal__c.pkg2__Installment_Period__c';
 import FORM_TEMPLATE_MODIFIED from '@salesforce/schema/Form_Template__c.LastModifiedDate';
 import FORM_TEMPLATE_VIEWED from '@salesforce/schema/Form_Template__c.LastViewedDate';
 import FORM_TEMPLATE_REFERENCED from '@salesforce/schema/Form_Template__c.LastReferencedDate';
-import RECURRING_ORG_NAME from '@salesforce/schema/npe03__Recurring_Donation__c.npe03__Organization__r.Name';
-import RECURRING_ORG_CONTACT_LAST from '@salesforce/schema/npe03__Recurring_Donation__c.npe03__Organization__r.npe01__One2OneContact__r.LastName';
-import ACCOUNT_ONE_TO_ONE_LAST from '@salesforce/schema/Account.npe01__One2OneContact__r.LastName';
+import RECURRING_ORG_NAME from '@salesforce/schema/pkg2__Managed_Renewal__c.pkg2__Organization__r.Name';
+import RECURRING_ORG_CONTACT_LAST from '@salesforce/schema/pkg2__Managed_Renewal__c.pkg2__Organization__r.pkg1__PrimaryContact__r.LastName';
+import ACCOUNT_ONE_TO_ONE_LAST from '@salesforce/schema/Account.pkg1__PrimaryContact__r.LastName';
 import FORM_TEMPLATE_PRESENTATION_PATH from '@salesforce/schema/Form_Template__c.Requester__r.LastModifiedDate';
 import EXTERNAL_MANAGED_FIELD from '@salesforce/schema/ext__Managed__c.ext__Amount__c';
 import EXTERNAL_MANAGED_RELATIONSHIP from '@salesforce/schema/ext__Managed__c.ext__Account__r.Name';
@@ -355,22 +355,22 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/fields/pkg__Amount__c.field-meta.xml"), `<CustomField><fullName>pkg__Amount__c</fullName><label>Amount</label><type>Currency</type></CustomField>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/fields/pkg__Batch__c.field-meta.xml"), `<CustomField><fullName>pkg__Batch__c</fullName><label>Batch</label><type>Lookup</type><referenceTo>Batch__c</referenceTo><relationshipName>pkg__Batch__r</relationshipName></CustomField>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel></CustomObject>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/npe01__One2OneContact__c.field-meta.xml"), `<CustomField><fullName>npe01__One2OneContact__c</fullName><label>One-to-One Contact</label><type>Lookup</type><referenceTo>Contact</referenceTo></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/pkg1__PrimaryContact__c.field-meta.xml"), `<CustomField><fullName>pkg1__PrimaryContact__c</fullName><label>One-to-One Contact</label><type>Lookup</type><referenceTo>Contact</referenceTo></CustomField>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Form_Template__c/Form_Template__c.object-meta.xml"), `<CustomObject><label>Form Template</label><pluralLabel>Form Templates</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Form_Template__c/fieldSets/Template_Fields.fieldSet-meta.xml"), `<FieldSet>
   <fullName>Template_Fields</fullName>
   <displayedFields><field>Requester__r.LastModifiedDate</field></displayedFields>
 </FieldSet>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npe01__OppPayment__c/npe01__OppPayment__c.object-meta.xml"), `<CustomObject><label>Payment</label><pluralLabel>Payments</pluralLabel></CustomObject>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npe01__OppPayment__c/fieldSets/Payment_WizardFS.fieldSet-meta.xml"), `<FieldSet>
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg1__ManagedPayment__c/pkg1__ManagedPayment__c.object-meta.xml"), `<CustomObject><label>Payment</label><pluralLabel>Payments</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg1__ManagedPayment__c/fieldSets/Payment_WizardFS.fieldSet-meta.xml"), `<FieldSet>
   <fullName>Payment_WizardFS</fullName>
-  <displayedFields><field>npe01__Payment_Amount__c</field></displayedFields>
+  <displayedFields><field>pkg1__Payment_Amount__c</field></displayedFields>
 </FieldSet>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npe03__Recurring_Donation__c/npe03__Recurring_Donation__c.object-meta.xml"), `<CustomObject><label>Recurring Donation</label><pluralLabel>Recurring Donations</pluralLabel></CustomObject>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npe03__Recurring_Donation__c/fields/npe03__Organization__c.field-meta.xml"), `<CustomField><fullName>npe03__Organization__c</fullName><label>Organization</label><type>Lookup</type><referenceTo>Account</referenceTo></CustomField>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/quickActions/New_Recurring_Donation.quickAction-meta.xml"), `<QuickAction>
-  <quickActionLayout><layoutSection><layoutColumns><layoutItems><field>npe03__Installment_Period__c</field></layoutItems></layoutColumns></layoutSection></quickActionLayout>
-  <targetObject>npe03__Recurring_Donation__c</targetObject>
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg2__Managed_Renewal__c/pkg2__Managed_Renewal__c.object-meta.xml"), `<CustomObject><label>Managed Renewal</label><pluralLabel>Managed Renewals</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg2__Managed_Renewal__c/fields/pkg2__Organization__c.field-meta.xml"), `<CustomField><fullName>pkg2__Organization__c</fullName><label>Organization</label><type>Lookup</type><referenceTo>Account</referenceTo></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/quickActions/New_Managed_Renewal.quickAction-meta.xml"), `<QuickAction>
+  <quickActionLayout><layoutSection><layoutColumns><layoutItems><field>pkg2__Installment_Period__c</field></layoutItems></layoutColumns></layoutSection></quickActionLayout>
+  <targetObject>pkg2__Managed_Renewal__c</targetObject>
 </QuickAction>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Resolved.page"), `<apex:page>
 {!$ObjectType.Opportunity.Fields.StageName.Label}
@@ -420,10 +420,10 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "pkg__Payment__c.pkg__Batch__r.Name") {
 		t.Fatalf("resolved package relationship schema import should not be reported")
 	}
-	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "npe01__OppPayment__c.npe01__Payment_Amount__c") {
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "pkg1__ManagedPayment__c.pkg1__Payment_Amount__c") {
 		t.Fatalf("loaded field-set field reference should not be reported")
 	}
-	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "npe03__Recurring_Donation__c.npe03__Installment_Period__c") {
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "pkg2__Managed_Renewal__c.pkg2__Installment_Period__c") {
 		t.Fatalf("loaded quick-action field reference should not be reported")
 	}
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Form_Template__c.LastModifiedDate") {
@@ -435,13 +435,13 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Form_Template__c.LastReferencedDate") {
 		t.Fatalf("custom object standard LastReferencedDate field reference should not be reported")
 	}
-	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "npe03__Recurring_Donation__c.npe03__Organization__r.Name") {
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "pkg2__Managed_Renewal__c.pkg2__Organization__r.Name") {
 		t.Fatalf("namespaced custom relationship path should not be reported")
 	}
-	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "npe03__Recurring_Donation__c.npe03__Organization__r.npe01__One2OneContact__r.LastName") {
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "pkg2__Managed_Renewal__c.pkg2__Organization__r.pkg1__PrimaryContact__r.LastName") {
 		t.Fatalf("nested custom relationship path should not be reported")
 	}
-	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Account.npe01__One2OneContact__r.LastName") {
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Account.pkg1__PrimaryContact__r.LastName") {
 		t.Fatalf("standard object custom relationship path should not be reported")
 	}
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Form_Template__c.Requester__r.LastModifiedDate") {
@@ -851,7 +851,7 @@ func TestScanSuppressesResolvedCustomMetadataTypeReferences(t *testing.T) {
 
 func TestScanSuppressesResolvedLabelReferences(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"npsp","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"orgns","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/labels/CustomLabels.labels"), `<CustomLabels>
   <labels><fullName>Save</fullName><value>Save</value></labels>
   <labels><fullName>Greeting</fullName><value>Hello</value></labels>
@@ -860,7 +860,7 @@ func TestScanSuppressesResolvedLabelReferences(t *testing.T) {
   <labels><fullName>AddressCopyUnknownObject</fullName><value>Unknown address object</value></labels>
   <labels><fullName>Contact_Merge_Error_Too_Few_Contacts</fullName><value>Too few contacts</value></labels>
 </CustomLabels>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npe01__OppPayment__c/npe01__OppPayment__c.object-meta.xml"), `<CustomObject><label>Payment</label><pluralLabel>Payments</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg1__ManagedPayment__c/pkg1__ManagedPayment__c.object-meta.xml"), `<CustomObject><label>Payment</label><pluralLabel>Payments</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npo02__Address__c/npo02__Address__c.object-meta.xml"), `<CustomObject><label>Address</label><pluralLabel>Addresses</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Managed__c/pkg__Managed__c.object-meta.xml"), `<CustomObject><label>Managed</label><pluralLabel>Managed</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/ext__External__c/ext__External__c.object-meta.xml"), `<CustomObject><label>External</label><pluralLabel>Externals</pluralLabel></CustomObject>`)
@@ -876,13 +876,13 @@ func TestScanSuppressesResolvedLabelReferences(t *testing.T) {
     System.debug(option.Label.compareTo(other.Label));
     System.debug(wrapper.Label.get('Name'));
     System.debug(System.Label.npo02.AddressCopyUnknownObject);
-    System.debug(Label.npe01.Contact_Merge_Error_Too_Few_Contacts);
+    System.debug(Label.pkg1.Contact_Merge_Error_Too_Few_Contacts);
     System.debug(Label.ext.Managed_Dependency_Label);
-    System.debug(Label.npsp.Own_Namespace_Missing);
+    System.debug(Label.orgns.Own_Namespace_Missing);
     System.debug(System.Label.get('ext', 'Managed_Dynamic_Label', 'en_US'));
     String formula = '$Label.c.MyLabelName';
     System.debug(Label.Site.invalid_email);
-    System.debug(Label.npe01.Missing_Aliased_Label);
+    System.debug(Label.pkg1.Missing_Aliased_Label);
     System.debug(Label.Missing);
     System.debug(Label.Missing.replace('{0}', 'Done'));
   }
@@ -897,7 +897,7 @@ import REMOVE from '@salesforce/label/c.Remove';
 {!$Label.Missing}
 {!$Label.ext__External_Visualforce_Label}
 {!$Label.site.site_login}
-{!$Label.npsp__Own_Visualforce_Missing}
+{!$Label.orgns__Own_Visualforce_Missing}
 </apex:page>`)
 
 	report, err := Scan(root)
@@ -929,7 +929,7 @@ import REMOVE from '@salesforce/label/c.Remove';
 	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "npo02.AddressCopyUnknownObject") {
 		t.Fatalf("resolved aliased System.Label namespace should not be reported")
 	}
-	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "npe01.Contact_Merge_Error_Too_Few_Contacts") {
+	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "pkg1.Contact_Merge_Error_Too_Few_Contacts") {
 		t.Fatalf("resolved aliased Label namespace should not be reported")
 	}
 	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "ext.Managed_Dependency_Label") {
@@ -965,10 +965,10 @@ import REMOVE from '@salesforce/label/c.Remove';
 	if !hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Missing") {
 		t.Fatalf("missing unresolved Apex label finding")
 	}
-	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "npe01.Missing_Aliased_Label") {
+	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "pkg1.Missing_Aliased_Label") {
 		t.Fatalf("external managed-package missing label fallback should not be reported")
 	}
-	if !hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "npsp.Own_Namespace_Missing") {
+	if !hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "orgns.Own_Namespace_Missing") {
 		t.Fatalf("missing own-namespace label finding")
 	}
 	if !hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Missing.replace") {
@@ -980,7 +980,7 @@ import REMOVE from '@salesforce/label/c.Remove';
 	if !hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.Missing") {
 		t.Fatalf("missing unresolved Visualforce label finding")
 	}
-	if !hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.npsp__Own_Visualforce_Missing") {
+	if !hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.orgns__Own_Visualforce_Missing") {
 		t.Fatalf("missing own-namespace Visualforce label finding")
 	}
 	for _, finding := range report.Findings {

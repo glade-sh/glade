@@ -86,6 +86,31 @@ func TestApplyCustomMetadataRecordsUsesObjectNamespaceForDependencyQualifiedName
 	}
 }
 
+func TestApplyCustomMetadataRecordsDefaultsOmittedCheckboxFieldsToFalse(t *testing.T) {
+	org := NewOrgState()
+	definition := ObjectDefinition{
+		APIName:  "Feature__mdt",
+		Metadata: map[string]string{"kind": "customMetadata"},
+		Fields: map[string]Field{
+			"Is_Deleted__c": {APIName: "Is_Deleted__c", Type: FieldBoolean},
+		},
+	}
+	EnsureStandardObjectFields(&definition)
+	org.Objects["Feature__mdt"] = ObjectState{Definition: definition, Records: map[ID]Record{}}
+
+	err := ApplyCustomMetadataRecords(&org, []schema.CustomMetadataRecord{
+		{FullName: "Feature.Default", ObjectName: "Feature__mdt", DeveloperName: "Default"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	record := onlyRecord(t, org.Objects["Feature__mdt"].Records)
+	if got := record.Fields["Is_Deleted__c"]; got.Kind != ValueBoolean || got.Boolean {
+		t.Fatalf("Is_Deleted__c = %#v, want false checkbox value", got)
+	}
+}
+
 func TestApplyCustomMetadataRecordsRebuildsRelationshipIndexesAfterResolvingRefs(t *testing.T) {
 	org := NewOrgState()
 	parentDefinition := ObjectDefinition{

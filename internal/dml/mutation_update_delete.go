@@ -90,12 +90,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 		return err
 	}
 	needsRollback := !e.DeferAutomation && hasObjectAutomation(object.Definition)
-	var rollbackOrg storage.OrgState
-	var rollbackSequences map[string]uint64
-	if needsRollback {
-		rollbackOrg = storage.SnapshotRuntimeOrg(e.Org)
-		rollbackSequences = copySequences(e.IDs.Sequences)
-	}
+	rollback := e.beginRollbackPoint(needsRollback)
 	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
 		object = e.Org.Objects[objectName]
 		storedID, existing, _ = storage.LookupRecordByID(object.Records, record.ID)
@@ -134,11 +129,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 	e.removeUniqueIndexRecord(objectName, object.Definition, oldRecord)
 	e.addUniqueIndexRecord(objectName, object.Definition, existing)
 	e.recalculateSummaryFieldsForChildren(objectName, oldRecord, finalRecord)
-	if strings.EqualFold(objectName, "Account") {
+	if syncPersonContactAfterUpdate(objectName) {
 		if err := e.syncPersonContact(existing); err != nil {
-			*e.Org = rollbackOrg
-			e.IDs.Sequences = rollbackSequences
-			e.clearUniqueIndexes()
+			e.restoreRollbackPoint(rollback)
 			return err
 		}
 	}
@@ -146,9 +139,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 		if err := e.withPriorRecordForAutomation(storedID, oldRecord, func() error {
 			return e.ApplyAutomation(objectName, storedID)
 		}); err != nil {
-			*e.Org = rollbackOrg
-			e.IDs.Sequences = rollbackSequences
-			e.clearUniqueIndexes()
+			e.restoreRollbackPoint(rollback)
 			return err
 		}
 	}
@@ -285,7 +276,7 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 	if isExplicitIDUpsertField(object.Definition, e.Org.Namespace, externalIDField) {
 		record = recordWithExplicitIDField(object.Definition, e.Org.Namespace, record)
 		if record.ID == "" {
-			id, err := e.insertOne(record)
+			id, err := e.insertOne(record, nil)
 			return id, true, err
 		}
 		if err := e.validateUpsertIDReference(record); err != nil {
@@ -301,7 +292,7 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 		return "", false, err
 	}
 	if !ok {
-		id, err := e.insertOne(record)
+		id, err := e.insertOne(record, nil)
 		return id, true, err
 	}
 	matches := make([]storage.ID, 0, 1)
@@ -319,7 +310,7 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 		return "", false, dmlErrorf("DUPLICATE_VALUE", []string{field}, "dml: external id %s.%s matched multiple records", objectName, field)
 	}
 	if len(matches) == 0 {
-		id, err := e.insertOne(record)
+		id, err := e.insertOne(record, nil)
 		return id, true, err
 	}
 	record.ID = matches[0]

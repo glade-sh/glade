@@ -37,6 +37,7 @@ type NameField struct {
 type Field struct {
 	Name                  string          `json:"name"`
 	Label                 string          `json:"label,omitempty"`
+	InlineHelpText        string          `json:"inlineHelpText,omitempty"`
 	Type                  string          `json:"type,omitempty"`
 	Length                int             `json:"length,omitempty"`
 	Precision             int             `json:"precision,omitempty"`
@@ -127,6 +128,7 @@ type nameFieldXML struct {
 type customFieldXML struct {
 	FullName              string             `xml:"fullName"`
 	Label                 string             `xml:"label"`
+	InlineHelpText        string             `xml:"inlineHelpText"`
 	Type                  string             `xml:"type"`
 	Length                int                `xml:"length"`
 	Precision             int                `xml:"precision"`
@@ -545,6 +547,7 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 	return Field{
 		Name:                  name,
 		Label:                 raw.Label,
+		InlineHelpText:        strings.TrimSpace(raw.InlineHelpText),
 		Type:                  raw.Type,
 		Length:                raw.Length,
 		Precision:             raw.Precision,

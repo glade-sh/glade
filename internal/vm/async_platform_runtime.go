@@ -388,6 +388,9 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 	methodKey := strings.ToLower(method)
 	objectName, definition, kind, ok := vm.customDataObject(typeName)
 	if !ok {
+		if objectName, definition, kind, ok = vm.metadataLightCustomSettingObject(typeName, methodKey); ok {
+			goto dispatchCustomData
+		}
 		if (methodKey == "getorgdefaults" || methodKey == "getvalues") && hasSuffixFold(typeName, "__c") {
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("%s.%s expects 0 arguments", typeName, method)
@@ -396,6 +399,7 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 		}
 		return Null, false, nil
 	}
+dispatchCustomData:
 	switch methodKey {
 	case "getall":
 		if len(args) != 0 {

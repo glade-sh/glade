@@ -23,6 +23,16 @@ func TestParseSimpleQuery(t *testing.T) {
 	}
 }
 
+func TestParseRootObjectAlias(t *testing.T) {
+	query, err := Parse("SELECT a.Id FROM Account a WHERE a.Name = 'Acme' ORDER BY a.Name LIMIT 1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if query.Object != "Account" || len(query.Fields) != 1 || query.Fields[0] != "Id" || query.Where.Field != "Name" || query.OrderBy != "Name" {
+		t.Fatalf("query = %#v", query)
+	}
+}
+
 func TestCachedParsedQueryPlainWhereCanBeExecutedTwice(t *testing.T) {
 	now := time.Date(2026, 5, 26, 12, 0, 0, 0, time.UTC)
 	input := "SELECT Id FROM Account WHERE Name = 'Acme'"
@@ -545,7 +555,7 @@ func TestExecutePartialCustomMetadataAllowsCustomFields(t *testing.T) {
 	}
 }
 
-func TestExecutePartialCustomObjectAllowsSyntheticRelationshipFields(t *testing.T) {
+func TestExecutePartialCustomObjectRequiresLookupMetadataForRelationshipFields(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["pkg__Line__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{APIName: "pkg__Line__c", Fields: map[string]storage.Field{}},
@@ -554,23 +564,11 @@ func TestExecutePartialCustomObjectAllowsSyntheticRelationshipFields(t *testing.
 		},
 	}
 
-	result, err := ParseAndExecute(org, "SELECT pkg__Parent__r.pkg__ExternalId__c, pkg__Parent__r.RecordType.Name FROM pkg__Line__c")
-	if err != nil {
-		t.Fatal(err)
+	if _, err := ParseAndExecute(org, "SELECT pkg__Parent__r.pkg__ExternalId__c, pkg__Parent__r.RecordType.Name FROM pkg__Line__c"); err == nil || !strings.Contains(err.Error(), "pkg__Parent__r.pkg__ExternalId__c") {
+		t.Fatalf("err = %v, want missing relationship field metadata", err)
 	}
-	if result.Rows != 1 || result.Records[0].Fields["pkg__Parent__r.pkg__ExternalId__c"].Kind != storage.ValueNull {
-		t.Fatalf("result = %#v", result)
-	}
-	if result.Records[0].Fields["pkg__Parent__r.RecordType.Name"].Kind != storage.ValueNull {
-		t.Fatalf("result = %#v", result)
-	}
-
-	result, err = ParseAndExecute(org, "SELECT pkg__Line__c.pkg__Parent__r.Name FROM pkg__Line__c")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result.Rows != 1 {
-		t.Fatalf("result = %#v", result)
+	if _, err := ParseAndExecute(org, "SELECT pkg__Line__c.pkg__Parent__r.Name FROM pkg__Line__c"); err == nil || !strings.Contains(err.Error(), "pkg__Parent__r.Name") {
+		t.Fatalf("err = %v, want missing relationship field metadata", err)
 	}
 }
 
@@ -3359,7 +3357,7 @@ func TestExecutePackagedCustomParentRelationshipFilterWithoutOrgNamespace(t *tes
 	assertNamespacedCustomParentRelationshipFilterUsesUnqualifiedName(t, org)
 }
 
-func TestExecuteSyntheticCustomParentRelationshipFilterUsesLookupField(t *testing.T) {
+func TestExecuteMetadataCustomParentRelationshipFilterUsesLookupField(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Cart__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{

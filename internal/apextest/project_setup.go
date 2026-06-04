@@ -308,7 +308,7 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 		}
 	}
 	inferred := make(map[string]map[string]storage.Field)
-	hints := make(map[string]map[string]storage.FieldType)
+	childRelationshipRefs := make(map[string]projectChildRelationshipSourceReference)
 	cache := sourceCacheFor(caches)
 	seenFiles := make(map[string]bool)
 	for _, typ := range index.Types {
@@ -320,11 +320,18 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 		if err != nil {
 			continue
 		}
+		for _, ref := range projectChildRelationshipSourceReferences(source) {
+			key := strings.ToLower(ref.ParentObject + "\x00" + ref.ChildObject + "\x00" + ref.ChildRelationship)
+			childRelationshipRefs[key] = ref
+		}
 		scanSource := apexReferenceScanSource(source)
 		varTypes := make(map[string]string)
 		for _, match := range apexTypedVariablePattern.FindAllStringSubmatch(scanSource, -1) {
 			if len(match) != 3 {
 				continue
+			}
+			if _, ok := org.Objects[match[1]]; !ok && isCustomDataObjectKey(match[1]) {
+				ensurePermissionReferencedObject(org, match[1])
 			}
 			if _, ok := org.Objects[match[1]]; ok {
 				varTypes[match[2]] = match[1]
@@ -338,7 +345,7 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 			if !ok {
 				continue
 			}
-			recordProjectReferencedStandardFieldHint(hints, objectName, scanSource[match[4]:match[5]], storage.FieldBoolean)
+			recordProjectReferencedBooleanField(org, inferred, objectName, scanSource[match[4]:match[5]])
 		}
 		for _, match := range apexVariableFieldBooleanLeftLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
 			if len(match) != 6 {
@@ -348,7 +355,43 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 			if !ok {
 				continue
 			}
-			recordProjectReferencedStandardFieldHint(hints, objectName, scanSource[match[4]:match[5]], storage.FieldBoolean)
+			recordProjectReferencedBooleanField(org, inferred, objectName, scanSource[match[4]:match[5]])
+		}
+		for _, match := range apexVariableFieldBooleanNegationPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+			if len(match) != 6 {
+				continue
+			}
+			objectName, ok := varTypes[scanSource[match[2]:match[3]]]
+			if !ok {
+				continue
+			}
+			recordProjectReferencedBooleanField(org, inferred, objectName, scanSource[match[4]:match[5]])
+		}
+		for _, match := range apexVariableFieldNumericRightLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+			if len(match) != 6 {
+				continue
+			}
+			objectName, ok := varTypes[scanSource[match[2]:match[3]]]
+			if !ok {
+				continue
+			}
+			recordProjectReferencedNumericField(org, inferred, objectName, scanSource[match[4]:match[5]])
+		}
+		for _, match := range apexVariableFieldNumericLeftLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+			if len(match) != 6 {
+				continue
+			}
+			objectName, ok := varTypes[scanSource[match[2]:match[3]]]
+			if !ok {
+				continue
+			}
+			recordProjectReferencedNumericField(org, inferred, objectName, scanSource[match[4]:match[5]])
+		}
+		for _, match := range apexCustomSettingGetAllPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+			if len(match) != 4 {
+				continue
+			}
+			recordProjectReferencedListCustomSetting(org, scanSource[match[2]:match[3]])
 		}
 		for _, match := range apexSchemaSObjectTypeFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
 			if len(match) != 6 {
@@ -356,7 +399,7 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 			}
 			objectName := scanSource[match[2]:match[3]]
 			fieldName := scanSource[match[4]:match[5]]
-			recordProjectReferencedStandardField(org, inferred, objectName, fieldName, projectReferencedStandardFieldHint(hints, objectName, fieldName))
+			recordProjectReferencedStandardField(org, inferred, objectName, fieldName)
 		}
 		for _, match := range apexSObjectTypeFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
 			if len(match) != 6 {
@@ -364,17 +407,19 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 			}
 			objectName := scanSource[match[2]:match[3]]
 			fieldName := scanSource[match[4]:match[5]]
-			recordProjectReferencedStandardField(org, inferred, objectName, fieldName, projectReferencedStandardFieldHint(hints, objectName, fieldName))
+			recordProjectReferencedStandardField(org, inferred, objectName, fieldName)
 		}
-		recordProjectReferencedSObjectLiteralFields(org, inferred, hints, scanSource, apexNewSObjectLiteralPattern)
-		recordProjectReferencedSObjectLiteralFields(org, inferred, hints, scanSource, apexSObjectLiteralPattern)
+		recordProjectReferencedSObjectLiteralLookupFields(org, inferred, scanSource, apexNewSObjectLiteralPattern, varTypes)
+		recordProjectReferencedSObjectLiteralLookupFields(org, inferred, scanSource, apexSObjectLiteralPattern, varTypes)
+		recordProjectReferencedSObjectLiteralFields(org, inferred, scanSource, apexNewSObjectLiteralPattern)
+		recordProjectReferencedSObjectLiteralFields(org, inferred, scanSource, apexSObjectLiteralPattern)
 		for _, match := range apexStaticFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
 			if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
 				continue
 			}
 			objectName := scanSource[match[2]:match[3]]
 			fieldName := scanSource[match[4]:match[5]]
-			recordProjectReferencedStandardField(org, inferred, objectName, fieldName, projectReferencedStandardFieldHint(hints, objectName, fieldName))
+			recordProjectReferencedStandardField(org, inferred, objectName, fieldName)
 		}
 		for _, match := range apexVariableFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
 			if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
@@ -385,9 +430,10 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 				continue
 			}
 			fieldName := scanSource[match[4]:match[5]]
-			recordProjectReferencedStandardField(org, inferred, objectName, fieldName, projectReferencedStandardFieldHint(hints, objectName, fieldName))
+			recordProjectReferencedStandardField(org, inferred, objectName, fieldName)
 		}
 	}
+	applyProjectReferencedSourceChildRelationships(org, inferred, childRelationshipRefs)
 	if cacheKey != "" {
 		projectReferencedStandardFieldCache.Store(cacheKey, inferred)
 	}
@@ -460,16 +506,12 @@ func applyProjectDataRelationshipReferences(org *storage.OrgState, p project.Pro
 		return
 	}
 	for _, ref := range projectDataFieldReferences(p.Root) {
-		ensureProjectDataReferencedObjectField(org, ref.ObjectName, ref.FieldName, projectDataFieldHint(ref.Value))
+		ensureProjectDataReferencedObjectField(org, ref.ObjectName, ref.FieldName)
 	}
 	for _, ref := range projectDataRelationshipReferences(p.Root) {
 		fieldName := dataRelationshipLookupFieldName(ref.ParentRelationship)
 		if fieldName == "" {
 			continue
-		}
-		parentObject := dataRelationshipParentObjectName(*org, ref.ChildObject, ref.ParentRelationship)
-		if parentObject != "" {
-			ensurePermissionReferencedObject(org, parentObject)
 		}
 		ensurePermissionReferencedObjectField(org, ref.ChildObject, fieldName)
 	}

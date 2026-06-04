@@ -125,7 +125,7 @@ func (vm *VM) hasTriggerForDML(timing, op string, records []storage.Record) bool
 	}
 	return false
 }
-func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, backup storage.OrgState, result *Result) error {
+func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
 	if engine == nil {
 		return nil
 	}
@@ -171,29 +171,29 @@ func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, backu
 		failures, err := vm.runTriggers(triggerTimingBefore, "update", triggerRecords, before, result)
 		if err != nil {
 			if allOrNone {
-				*vm.Org = backup
+				vm.restoreDMLRollbackPoint(rollback)
 			}
 			return dmlExceptionFromTriggerError("update", err)
 		}
 		if hasDMLFailures(failures) {
 			if allOrNone {
-				*vm.Org = backup
+				vm.restoreDMLRollbackPoint(rollback)
 			}
 			return fmt.Errorf("summary update trigger failed for %s: %s", objectName, failures[0].Error)
 		}
 		if err := vm.storeTriggerRecords(objectName, triggerRecords); err != nil {
 			if allOrNone {
-				*vm.Org = backup
+				vm.restoreDMLRollbackPoint(rollback)
 			}
 			return err
 		}
 		if _, err := vm.runTriggers(triggerTimingAfter, "update", triggerRecords, before, result); err != nil {
 			if allOrNone {
-				*vm.Org = backup
+				vm.restoreDMLRollbackPoint(rollback)
 			}
 			return dmlExceptionFromTriggerError("update", err)
 		}
-		if err := vm.applyDeferredAutomation(engine, triggerRecords, allOrNone, backup, result); err != nil {
+		if err := vm.applyDeferredAutomation(engine, triggerRecords, allOrNone, rollback, result); err != nil {
 			return err
 		}
 	}

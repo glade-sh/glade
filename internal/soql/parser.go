@@ -84,9 +84,19 @@ func (p *parser) parseQuery() (Query, error) {
 	if err != nil {
 		return Query{}, err
 	}
-	relationshipAliases, err := p.parseRelationshipAliases(object)
+	relationshipAliases, err := p.parseRootObjectAlias()
 	if err != nil {
 		return Query{}, err
+	}
+	moreAliases, err := p.parseRelationshipAliases(object, relationshipAliases)
+	if err != nil {
+		return Query{}, err
+	}
+	for alias, path := range moreAliases {
+		if relationshipAliases == nil {
+			relationshipAliases = make(map[string]string)
+		}
+		relationshipAliases[alias] = path
 	}
 	if len(relationshipAliases) != 0 {
 		fields = rewriteRelationshipAliasNames(fields, relationshipAliases)
@@ -198,13 +208,24 @@ func (p *parser) parseQuery() (Query, error) {
 	}
 	return q, nil
 }
-func (p *parser) parseRelationshipAliases(rootObject string) (map[string]string, error) {
+func (p *parser) parseRootObjectAlias() (map[string]string, error) {
+	if isSOQLClauseStart(p.peek().text) || p.peek().text == "" || p.peek().text == ")" || p.peek().text == "," {
+		return nil, nil
+	}
+	alias, err := p.parseName()
+	if err != nil {
+		return nil, err
+	}
+	return map[string]string{alias: ""}, nil
+}
+func (p *parser) parseRelationshipAliases(rootObject string, rootAliases map[string]string) (map[string]string, error) {
 	aliases := map[string]string(nil)
 	for p.match(",") {
 		path, err := p.parseName()
 		if err != nil {
 			return nil, err
 		}
+		path = rewriteRelationshipAliasName(path, rootAliases)
 		path = trimRelationshipAliasRoot(path, rootObject)
 		if isSOQLClauseStart(p.peek().text) || p.peek().text == "" || p.peek().text == ")" || p.peek().text == "," {
 			continue
@@ -252,6 +273,9 @@ func rewriteRelationshipAliasName(name string, aliases map[string]string) string
 		}
 		prefix := alias + "."
 		if len(name) > len(prefix) && strings.EqualFold(name[:len(prefix)], prefix) {
+			if path == "" {
+				return name[len(prefix):]
+			}
 			return path + name[len(alias):]
 		}
 	}

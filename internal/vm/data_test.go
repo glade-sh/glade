@@ -1376,6 +1376,82 @@ System.assertEquals(0, touched);
 	}
 }
 
+func TestExecNestedRelationshipProjectionWithExplicitNullMiddleLookupUsesTypedNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<dep__Batch__c> rows = [SELECT dep__Entity__c, dep__Entity__r.dep__BatchExportConfiguration__r.pkg__GLSettingName__c FROM dep__Batch__c];
+System.assertEquals(1, rows.size());
+String metadataRecordName = rows[0].dep__Entity__r.dep__BatchExportConfiguration__r.pkg__GLSettingName__c;
+System.assertEquals(null, metadataRecordName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{
+		Namespace: "pkg",
+		Objects: map[string]storage.ObjectState{
+			"dep__BatchExportConfiguration__c": {
+				Definition: storage.ObjectDefinition{
+					APIName: "dep__BatchExportConfiguration__c",
+					Fields: map[string]storage.Field{
+						"pkg__GLSettingName__c": {APIName: "pkg__GLSettingName__c", Type: storage.FieldString},
+					},
+				},
+				Records: map[storage.ID]storage.Record{},
+			},
+			"dep__Entity__c": {
+				Definition: storage.ObjectDefinition{
+					APIName: "dep__Entity__c",
+					Fields: map[string]storage.Field{
+						"dep__BatchExportConfiguration__c": {APIName: "dep__BatchExportConfiguration__c", Type: storage.FieldReference, ReferenceTo: []string{"dep__BatchExportConfiguration__c"}, RelationshipName: "dep__BatchExportConfiguration__r"},
+					},
+					Relations: []storage.Relationship{{
+						Field:              "dep__BatchExportConfiguration__c",
+						ParentObjects:      []string{"dep__BatchExportConfiguration__c"},
+						ParentRelationship: "dep__BatchExportConfiguration__r",
+					}},
+				},
+				Records: map[storage.ID]storage.Record{
+					"aNq000000000001AAA": {
+						Object: "dep__Entity__c",
+						ID:     "aNq000000000001AAA",
+						Fields: map[string]storage.Value{},
+						ExplicitNulls: map[string]bool{
+							"dep__BatchExportConfiguration__c": true,
+						},
+					},
+				},
+			},
+			"dep__Batch__c": {
+				Definition: storage.ObjectDefinition{
+					APIName: "dep__Batch__c",
+					Fields: map[string]storage.Field{
+						"dep__Entity__c": {APIName: "dep__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"dep__Entity__c"}, RelationshipName: "dep__Entity__r"},
+					},
+					Relations: []storage.Relationship{{
+						Field:              "dep__Entity__c",
+						ParentObjects:      []string{"dep__Entity__c"},
+						ParentRelationship: "dep__Entity__r",
+					}},
+				},
+				Records: map[storage.ID]storage.Record{
+					"aN900000000001AAA": {
+						Object: "dep__Batch__c",
+						ID:     "aN900000000001AAA",
+						Fields: map[string]storage.Value{
+							"dep__Entity__c": storage.IDValue("aNq000000000001AAA"),
+						},
+					},
+				},
+			},
+		},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecParentRelationshipMutationThroughMethodPersistsWhenRelationshipReadAgain(t *testing.T) {
 	mutatorProgram, err := CompileAnonymous(`
 if (Mutator.hasValueChanged('Eddy', profile.FirstName__c)) {
@@ -2447,7 +2523,7 @@ func TestRecordFromValueSkipsDerivedParentRelationshipFieldWithoutRelation(t *te
 	}
 }
 
-func TestRecordFromValueSkipsUnknownCustomRelationshipObjectField(t *testing.T) {
+func TestRecordFromValueRejectsUnknownCustomRelationshipObjectField(t *testing.T) {
 	machine := New(nil)
 	org := storage.OrgState{Objects: map[string]storage.ObjectState{
 		"Child__c": {
@@ -2466,20 +2542,8 @@ func TestRecordFromValueSkipsUnknownCustomRelationshipObjectField(t *testing.T) 
 	machine.SetOrg(&org)
 	child := Object("Child__c")
 	child.Fields["UnmodeledParent__r"] = Object("Account")
-	record, err := machine.recordFromValue(&child)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := record.Fields["UnmodeledParent__r"]; ok {
-		t.Fatalf("unknown custom relationship object was persisted as field: %#v", record.Fields)
-	}
-	child.Fields["UnmodeledParent__r"] = Null
-	record, err = machine.recordFromValue(&child)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := record.ExplicitNulls["UnmodeledParent__r"]; ok {
-		t.Fatalf("unknown custom relationship null was persisted as explicit null: %#v", record.ExplicitNulls)
+	if _, err := machine.recordFromValue(&child); err == nil || !strings.Contains(err.Error(), "Child__c.UnmodeledParent__r") {
+		t.Fatalf("err = %v, want unknown relationship field error", err)
 	}
 }
 
@@ -2842,6 +2906,126 @@ System.assert(caught);
 	}
 }
 
+func TestExecParentRelationshipQueriedFieldIsReadable(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Merchandise__c> rows = [SELECT Id, Product2__r.Description__c FROM Merchandise__c WHERE Id = 'a01000000000001AAA'];
+Product__c product = rows[0].Product2__r;
+System.assertEquals('Hidden', product.Description__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Product__c",
+			KeyPrefix: "a02",
+			Fields: map[string]storage.Field{
+				"Id":             {APIName: "Id", Type: storage.FieldID},
+				"Description__c": {APIName: "Description__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a02000000000001AAA": {
+				Object: "Product__c",
+				ID:     "a02000000000001AAA",
+				Fields: map[string]storage.Value{
+					"Description__c": storage.StringValue("Hidden"),
+				},
+			},
+		},
+	}
+	org.Objects["Merchandise__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Merchandise__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Id":          {APIName: "Id", Type: storage.FieldID},
+				"Product2__c": {APIName: "Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}, RelationshipName: "Product2__r"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Product2__c",
+				ParentObjects:      []string{"Product__c"},
+				ParentRelationship: "Product2__r",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001AAA": {
+				Object: "Merchandise__c",
+				ID:     "a01000000000001AAA",
+				Fields: map[string]storage.Value{
+					"Product2__c": storage.IDValue("a02000000000001AAA"),
+				},
+			},
+		},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStandardParentRelationshipQueriedNamespacedFieldIsReadable(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<OpportunityContactRole> roles = [SELECT Id, ContactId, Contact.pkg__SelectedDate__c FROM OpportunityContactRole WHERE Id = '00K000000000001AAA'];
+Contact contact = roles[0].Contact;
+System.assertEquals(Date.newInstance(2026, 5, 2), contact.pkg__SelectedDate__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"Id":                   {APIName: "Id", Type: storage.FieldID},
+				"pkg__SelectedDate__c": {APIName: "pkg__SelectedDate__c", Type: storage.FieldDate},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"003000000000001AAA": {
+				Object: "Contact",
+				ID:     "003000000000001AAA",
+				Fields: map[string]storage.Value{
+					"pkg__SelectedDate__c": storage.DateValue("2026-05-02"),
+				},
+			},
+		},
+	}
+	org.Objects["OpportunityContactRole"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "OpportunityContactRole",
+			KeyPrefix: "00K",
+			Fields: map[string]storage.Field{
+				"Id":        {APIName: "Id", Type: storage.FieldID},
+				"ContactId": {APIName: "ContactId", Type: storage.FieldReference, ReferenceTo: []string{"Contact"}, RelationshipName: "Contact"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "ContactId",
+				ParentObjects:      []string{"Contact"},
+				ParentRelationship: "Contact",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"00K000000000001AAA": {
+				Object: "OpportunityContactRole",
+				ID:     "00K000000000001AAA",
+				Fields: map[string]storage.Value{
+					"ContactId": storage.IDValue("003000000000001AAA"),
+				},
+			},
+		},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLSingletonFieldAccessUnwrapsOneRow(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');
@@ -2998,15 +3182,11 @@ System.assertEquals(null, child.Parent__r.Name);
 	}
 }
 
-func TestRelationshipNullInfersCustomRelationshipHopsWithoutMetadata(t *testing.T) {
+func TestRelationshipNullRequiresMetadataForCustomRelationshipHops(t *testing.T) {
 	machine := New(nil)
 	orderItem, ok := machine.relationshipNullFieldAccessValue("pkg__OrderItemLine__c", "pkg__OrderItem__r")
-	if !ok || orderItem.Kind != ValueNull || orderItem.Type != "pkg__OrderItem__c" || !isRelationshipNull(orderItem) {
-		t.Fatalf("order item relationship = %#v, ok=%v", orderItem, ok)
-	}
-	orderID, ok := machine.relationshipNullFieldAccessValue(orderItem.Type, "pkg__Order__c")
-	if !ok || orderID.Kind != ValueNull || orderID.Type != "Id" {
-		t.Fatalf("order id = %#v, ok=%v", orderID, ok)
+	if ok {
+		t.Fatalf("order item relationship = %#v, ok=%v; want no inferred relationship without metadata", orderItem, ok)
 	}
 }
 
@@ -3419,6 +3599,7 @@ User u = new User(
 );
 insert u;
 insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id);
+System.assert([SELECT Id FROM PermissionSetAssignment].size() >= 1);
 System.runAs(u) {
 	Contact row = new Contact(LastName = 'Allowed', Email = 'allowed@example.invalid', Title = 'Hidden');
 	SObjectAccessDecision decision = Security.stripInaccessible(AccessType.CREATABLE, new List<Contact>{ row });
@@ -3438,6 +3619,165 @@ System.runAs(u) {
 	storage.EnsureStandardObject(&org, "Contact")
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecWithSharingRunAsCanSeeOwnPermissionSetAssignment(t *testing.T) {
+	program, err := CompileAnonymous(`
+PermissionSet ps = new PermissionSet(
+	Name = 'CustomizeApp',
+	Label = 'Customize App',
+	PermissionsCustomizeApplication = true
+);
+insert ps;
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard Platform User'];
+User u = new User(
+	Username = 'customize@example.invalid',
+	Alias = 'custom',
+	Email = 'customize@example.invalid',
+	LastName = 'Customize',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id);
+System.runAs(u) {
+	Id userId = UserInfo.getUserId();
+	System.assertEquals(u.Id, userId);
+	System.assert([
+		SELECT Id
+		FROM PermissionSetAssignment
+	].size() >= 1);
+	System.assert([
+		SELECT Id
+		FROM PermissionSetAssignment
+		WHERE AssigneeId = :userId
+	].size() >= 1);
+	List<PermissionSetAssignment> assignments = [
+		SELECT Id
+		FROM PermissionSetAssignment
+		WHERE AssigneeId = :userId
+		AND PermissionSetId IN (
+			SELECT Id
+			FROM PermissionSet
+			WHERE PermissionsCustomizeApplication = TRUE
+		)
+	];
+	System.assertEquals(1, assignments.size());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	machine.currentClass = "SharingProbe"
+	if err := machine.RegisterClass(Class{Name: "SharingProbe", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSystemAdministratorProfileExposesPermissionSetAssignment(t *testing.T) {
+	program, err := CompileAnonymous(`
+Profile p = [SELECT Id FROM Profile WHERE Name = 'System Administrator'];
+User u = new User(
+	Username = 'sysadmin@example.invalid',
+	Alias = 'sysadm',
+	Email = 'sysadmin@example.invalid',
+	LastName = 'Admin',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+System.runAs(u) {
+	Id userId = UserInfo.getUserId();
+	System.assertEquals(1, [
+		SELECT Id
+		FROM PermissionSetAssignment
+		WHERE AssigneeId = :userId
+		AND PermissionSetId IN (
+			SELECT Id
+			FROM PermissionSet
+			WHERE PermissionsCustomizeApplication = TRUE
+			AND PermissionsModifyAllData = TRUE
+			AND PermissionsAuthorApex = TRUE
+		)
+	].size());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	machine.currentClass = "SharingProbe"
+	if err := machine.RegisterClass(Class{Name: "SharingProbe", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRunAsMaterializedSystemAdministratorHasProfilePermissionSetAssignment(t *testing.T) {
+	program, err := CompileAnonymous(`
+Profile p = [SELECT Id FROM Profile WHERE Name = 'System Administrator'];
+User u = new User(
+	Username = 'runas-sysadmin@example.invalid',
+	Alias = 'rsysad',
+	Email = 'runas-sysadmin@example.invalid',
+	LastName = 'RunAsAdmin',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+System.runAs(u) {
+	Id userId = UserInfo.getUserId();
+	System.assertEquals(1, [
+		SELECT Id
+		FROM PermissionSetAssignment
+		WHERE AssigneeId = :userId
+		AND PermissionSetId IN (
+			SELECT Id
+			FROM PermissionSet
+			WHERE PermissionsCustomizeApplication = TRUE
+			AND PermissionsModifyAllData = TRUE
+			AND PermissionsAuthorApex = TRUE
+		)
+	].size());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	machine.currentClass = "SharingProbe"
+	if err := machine.RegisterClass(Class{Name: "SharingProbe", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -4084,6 +4424,28 @@ func TestDMLAccessibleMarkerOverridesExistingSOQLProjection(t *testing.T) {
 	}
 }
 
+func TestDMLAccessibleDefaultedFieldDoesNotTripSOQLProjection(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	contact := Object("Contact")
+	contact.Fields["Id"] = platformScalar("Id", "003000000000001AAA")
+	contact.Fields["HasOptedOutOfEmail"] = Bool(false)
+	markDefaultedSObjectField(&contact, "HasOptedOutOfEmail")
+	markDMLAccessibleFields(&contact)
+	value, handled, err := machine.callSObjectMember(contact, "get", []Value{String("HasOptedOutOfEmail")})
+	if !handled {
+		t.Fatal("SObject.get was not handled")
+	}
+	if err != nil {
+		t.Fatalf("DML-accessible defaulted field read returned error: %v", err)
+	}
+	if value.Kind != ValueBool || value.Bool {
+		t.Fatalf("defaulted field value = %#v, want false", value)
+	}
+}
+
 func TestExecUpdatePreservesExplicitNullThroughBeforeTrigger(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 for (Account a : Trigger.new) {
@@ -4258,6 +4620,7 @@ Schema.DescribeSObjectResult describe = Account.SObjectType.getDescribe();
 System.assertEquals('Account', describe.getLocalName());
 System.assertEquals(0, describe.getFieldSets().getMap().size());
 System.assertEquals(false, describe.isFeedEnabled());
+System.assertEquals(false, Schema.SObjectType.User.isFeedEnabled());
 System.assertEquals(false, describe.isMergeable());
 System.assertEquals(true, describe.isMruEnabled());
 System.assertEquals(true, describe.isUndeletable());
@@ -4789,6 +5152,40 @@ System.assertEquals('resetcss', settings.DefaultCSS__c);
 	}
 }
 
+func TestExecListCustomSettingInsertMissingNameDoesNotUseTestNameDefault(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+	insert new Relationship_Lookup__c();
+	System.assert(false, 'expected missing Name failure');
+} catch (DmlException e) {
+	System.assert(e.getMessage().contains('Name'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Relationship_Lookup__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Relationship_Lookup__c",
+			Label:     "Relationship Lookup",
+			KeyPrefix: "a00",
+			Metadata:  map[string]string{"kind": "customSetting", "customSettingsType": "List"},
+			Fields: map[string]storage.Field{
+				"Name":    {APIName: "Name", Label: "Name", Type: storage.FieldString, Required: true},
+				"Male__c": {APIName: "Male__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMapLiteralCoercesStringBackedEnumKey(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<OperationType,String> byOperation = new Map<OperationType,String> {
@@ -4949,6 +5346,49 @@ List<Account> rows = [SELECT Id, Name FROM Account WHERE Id = :accountId];
 System.assertEquals(1, rows.size());
 System.assertEquals('Acme', rows[0].Name);
 `)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSOQLBindInvalidStringIdReturnsNoRows(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+String missingId = 'a9302003536469';
+List<Account> rows = [SELECT Id FROM Account WHERE Id = :missingId];
+System.assertEquals(0, rows.size());
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSOQLBindDoesNotSkipBadIDLiteralValidation(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+String name = 'Acme';
+Boolean caught = false;
+try {
+	Database.query('SELECT Id FROM Account WHERE Id = \'bad data dot com\' AND Name = :name');
+} catch (QueryException qe) {
+	caught = true;
+}
+System.assert(caught, 'bad ID literal should throw even when another predicate has a bind');
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -5696,6 +6136,7 @@ child.putSObject(Child__c.Parent__c, new Account(Id = '001000000000001AAA', Name
 System.assertEquals('Token Parent', child.getSObject(Child__c.Parent__c).Name);
 child.putSObject('Parent__r', new Account(Id = '001000000000002AAA', Name = 'String Parent'));
 System.assertEquals('String Parent', child.getSObject('Parent__r').Name);
+System.assertEquals('String Parent', child.getSobject('Parent__r').Name);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -9191,6 +9632,44 @@ System.assertEquals('Qualified', converted.Status);
 	}
 }
 
+func TestExecDatabaseConvertLeadRecordsJournalMutation(t *testing.T) {
+	program, err := CompileAnonymous(`
+Lead lead = new Lead(FirstName = 'Ada', LastName = 'Lovelace', Company = 'Analytical Engines', Status = 'Open');
+insert lead;
+Database.LeadConvert convert = new Database.LeadConvert();
+convert.setLeadId(lead.Id);
+convert.setDoNotCreateOpportunity(true);
+Database.LeadConvertResult result = Database.convertLead(convert);
+System.assert(result.isSuccess(), 'convert success');
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testLeadConvertOrg()
+	journal := storage.NewIsolationJournal(&org)
+	mark := journal.Mark()
+	machine.SetOrg(&org)
+	machine.SetIsolationJournal(journal)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if err := journal.Rollback(mark); err != nil {
+		t.Fatal(err)
+	}
+	for _, record := range org.Objects["Lead"].Records {
+		if value := record.Fields["IsConverted"]; value.Kind == storage.ValueBoolean && value.Boolean {
+			t.Fatalf("lead conversion survived journal rollback: %#v", record)
+		}
+	}
+	if got := len(org.Objects["Account"].Records); got != 0 {
+		t.Fatalf("account records after rollback = %d, want 0", got)
+	}
+	if got := len(org.Objects["Contact"].Records); got != 0 {
+		t.Fatalf("contact records after rollback = %d, want 0", got)
+	}
+}
+
 func testLeadConvertOrg() storage.OrgState {
 	org := testDataOrg()
 	org.Objects["Contact"] = storage.ObjectState{
@@ -10534,6 +11013,8 @@ insert new Account(Name = 'Gamma', AnnualRevenue = 300, Rating = 'Hot');
 	System.assertEquals(3, row.get('expr0'));
 	System.assertEquals(3, [SELECT COUNT() FROM Account]);
 	System.assertEquals(3, [SELECT COUNT(Id) FROM Account]);
+	integer lowerCaseCount = [SELECT COUNT() FROM Account WHERE Rating = 'Hot'];
+	System.assertEquals(2, lowerCaseCount);
 	System.assertEquals(0, [SELECT COUNT() FROM Widget__c]);
 	System.assertEquals(3, [SELECT COUNT(Id) FROM Account][0].get('expr0'));
 	System.assertEquals(3, row.expr0);
@@ -11213,6 +11694,154 @@ for (Account a : Trigger.new) {
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecOpportunityStageFlagsAreDerivedForReadsAndTriggers(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Opportunity opp : Trigger.new) {
+  System.assertEquals(true, opp.IsClosed);
+  System.assertEquals(true, opp.IsWon);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+insert new Opportunity(Name = 'Closed Gift', Amount = 10, CloseDate = Date.today(), StageName = 'Closed Won');
+Opportunity opp = [SELECT Id, IsClosed, IsWon, StageName FROM Opportunity WHERE Name = 'Closed Gift' LIMIT 1];
+System.assertEquals(true, opp.IsClosed);
+System.assertEquals(true, opp.IsWon);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Opportunity")
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{Name: "OpportunityBeforeInsert", Object: "Opportunity", Timing: "before", Operation: "insert", Program: triggerProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{Name: "OpportunityAfterInsert", Object: "Opportunity", Timing: "after", Operation: "insert", Program: triggerProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMissingManagedNumericFieldOnStandardSObjectReadsNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+Opportunity opp = new Opportunity(Name = 'Open Gift', Amount = 10, CloseDate = Date.today(), StageName = 'Prospecting');
+System.assertEquals(null, opp.pkg__Number_of_Payments__c);
+System.assertEquals(null, opp.pkg__Payments_Made__c);
+insert opp;
+Opportunity queried = [SELECT Id, pkg__Payments_Made__c, pkg__Number_of_Payments__c FROM Opportunity WHERE Id = :opp.Id LIMIT 1];
+System.assertEquals(null, queried.pkg__payments_made__c);
+System.assertEquals(null, queried.pkg__number_of_payments__c);
+System.assert(queried.pkg__payments_made__c == null);
+System.assert(queried.pkg__number_of_payments__c == null);
+System.assertEquals(null, queried.get('pkg__Payments_Made__c'));
+System.assertEquals(null, queried.get('pkg__Number_of_Payments__c'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Opportunity")
+	storage.EnsureDeterministicPlatformData(&org)
+	opportunity := org.Objects["Opportunity"]
+	opportunity.Definition.Fields["pkg__Payments_Made__c"] = storage.Field{APIName: "pkg__Payments_Made__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE"}
+	opportunity.Definition.Fields["pkg__Number_of_Payments__c"] = storage.Field{APIName: "pkg__Number_of_Payments__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE"}
+	org.Objects["Opportunity"] = opportunity
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestLookupPathManagedNumericProjectedNullThroughRegisteredFieldReadsNull(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Opportunity")
+	opportunity := org.Objects["Opportunity"]
+	opportunity.Definition.Fields["pkg__Payments_Made__c"] = storage.Field{APIName: "pkg__Payments_Made__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE"}
+	org.Objects["Opportunity"] = opportunity
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "Opportunity",
+		Fields: map[string]Field{
+			"pkg__Payments_Made__c": {Name: "pkg__Payments_Made__c", Type: "Decimal"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	row := Object("Opportunity")
+	row.Fields["pkg__Payments_Made__c"] = typedNull("Decimal")
+	row.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue("Opportunity", map[string]bool{
+		"pkg__payments_made__c": true,
+	})
+
+	got, err := machine.lookupPath(row, []string{"pkg__payments_made__c"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Kind != ValueNull {
+		t.Fatalf("managed numeric null = %s (%s), want null", got.String(), got.Kind)
+	}
+}
+
+func TestSyntheticSchemaFieldKeepsCustomFieldShapeUnknown(t *testing.T) {
+	for _, fieldName := range []string{
+		"pkg__EcfmgNumber__c",
+		"pkg__NUCCTaxonomy__c",
+		"pkg__Number_of_Payments__c",
+		"pkg__Has_Result__c",
+		"pkg__StartedDate__c",
+		"pkg__OwnerId__c",
+	} {
+		field := syntheticSchemaField(fieldName)
+		if field.Type != storage.FieldAny || field.DisplayType != "" || len(field.ReferenceTo) != 0 || field.RelationshipName != "" {
+			t.Fatalf("%s inferred as %#v, want unknown metadata fallback", fieldName, field)
+		}
+	}
+}
+
+func TestExecUnknownCustomFieldIntegerIsNotCoercedToDecimalWithoutMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+Line__c unknown = new Line__c(Count__c = 1);
+Object unknownValue = unknown.get('Count__c');
+Line__c known = new Line__c(Amount__c = 1);
+Object knownValue = known.get('Amount__c');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Line__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Line__c",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Amount__c": {APIName: "Amount__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine := New(nil)
+	machine.Org = &org
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := result.Vars["unknownValue"]; got.Kind != ValueInt || got.Int != 1 {
+		t.Fatalf("unknownValue = %#v, want integer 1", got)
+	}
+	if got := result.Vars["knownValue"]; got.Kind != ValueDecimal || got.Decimal != 1 {
+		t.Fatalf("knownValue = %#v, want decimal 1", got)
 	}
 }
 
@@ -15273,6 +15902,47 @@ System.assertEquals(null, Local_Setting__c.getInstance('Missing'));
 	}
 }
 
+func TestExecSyntheticNamespacedCustomSettingGetInstanceMissingReturnsTypedNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+SObject setting = pkg__Local_Setting__c.getInstance();
+System.assertEquals(null, setting);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMetadataLightCustomSettingGetInstanceMissingReturnsDefaultRecord(t *testing.T) {
+	program, err := CompileAnonymous(`
+pkg__Managed_Setting__c setting = pkg__Managed_Setting__c.getInstance();
+System.assertEquals(null, setting.Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["pkg__Managed_Setting__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "pkg__Managed_Setting__c",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCustomDataAccessorsThroughSObjectSurface(t *testing.T) {
 	program, err := CompileAnonymous(`
 SObject setting = Local_Setting__c.getInstance('Default');
@@ -15444,6 +16114,44 @@ System.assertEquals(true, Hierarchy_Setting__c.getValues('005000000000001').Enab
 		}},
 	}
 	org.Objects["Hierarchy_Setting__c"] = hierarchy
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSparseHierarchyCustomSettingBooleanDefaultIsUsableInCondition(t *testing.T) {
+	program, err := CompileAnonymous(`
+Hierarchy_Setting__c defaults = Hierarchy_Setting__c.getOrgDefaults();
+if (defaults.Defaulted__c) {
+    System.assert(false);
+}
+System.assertEquals(false, defaults.Defaulted__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := customDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConstructedSObjectBooleanDefaultIsUsableInCondition(t *testing.T) {
+	program, err := CompileAnonymous(`
+Hierarchy_Setting__c settings = new Hierarchy_Setting__c();
+if (settings.Defaulted__c) {
+    System.assert(false);
+}
+System.assertEquals(false, settings.Defaulted__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := customDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)

@@ -76,7 +76,10 @@ func (e *Engine) summaryRelationsForChild(childObjectName string) []summaryRelat
 	if e == nil || e.Org == nil || strings.TrimSpace(childObjectName) == "" {
 		return nil
 	}
-	if relations, ok := e.summaryByChild[childObjectName]; ok {
+	if e.SummaryByChild == nil {
+		e.SummaryByChild = make(SummaryRelationCache)
+	}
+	if relations, ok := e.SummaryByChild[childObjectName]; ok {
 		return relations
 	}
 	relations := make([]summaryRelation, 0)
@@ -114,7 +117,7 @@ func (e *Engine) summaryRelationsForChild(childObjectName string) []summaryRelat
 			})
 		}
 	}
-	e.summaryByChild[childObjectName] = relations
+	e.SummaryByChild[childObjectName] = relations
 	return relations
 }
 
@@ -202,6 +205,9 @@ func (e *Engine) evaluateSummaryFieldBatch(relation summaryRelation, parentIDs m
 func (e *Engine) recordSummaryUpdate(objectName string, before, after storage.Record) {
 	if e == nil || before.ID == "" || after.ID == "" {
 		return
+	}
+	if e.IsolationJournal != nil {
+		e.IsolationJournal.RecordUpdate(objectName, after.ID, before)
 	}
 	key := strings.ToLower(objectName) + "\x00" + strings.ToLower(string(after.ID))
 	if e.summaryUpdates == nil {

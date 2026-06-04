@@ -42,6 +42,9 @@ Effective Go, Go code review comments, and the Go package-name guidance.
 
 - Keep Salesforce behavior claims tied to compatibility fixtures, owned tests,
   or public Salesforce documentation.
+- Make performance a first-order requirement for runtime and test-runner work,
+  but never by weakening Salesforce-shaped behavior, metadata semantics, limits,
+  or isolation. A faster wrong framework is still wrong.
 - Register future Salesforce surface work in `internal/surface` before widening
   runtime, server, capability, or compatibility behavior. Each descriptor should
   name its owner package and focused test command.
@@ -86,4 +89,3 @@ dispatch switch whose arms can move to named helpers in the same package:
 
 To add a new Salesforce surface, follow `docs/ADDING_A_PLATFORM_API.md` and
 register the surface in `internal/surface` first.
-

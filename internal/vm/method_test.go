@@ -522,6 +522,27 @@ func TestMapPutAllPreservesSourceOrder(t *testing.T) {
 	}
 }
 
+func TestMapPutAllSObjectListEscapesInsertedCollections(t *testing.T) {
+	machine := New(nil)
+	childRows := List(String("child"))
+	machine.rememberLocalOnlyCollection(childRows)
+	record := Object("Account")
+	record.Fields["Id"] = String("001000000000001")
+	record.Fields["Contacts"] = childRows
+	source := List(record)
+	source.Type = "List<Account>"
+	target := Map()
+	target.Type = "Map<Id,Account>"
+	machine.Globals["target"] = target
+
+	if _, _, err := machine.callMapValueMember("target", target, "putAll", []Value{source}, resultForLookup()); err != nil {
+		t.Fatal(err)
+	}
+	if machine.localOnlyCollectionRefs[childRows.Ref] {
+		t.Fatalf("Map.putAll(List<SObject>) left inserted collection ref %d marked local-only", childRows.Ref)
+	}
+}
+
 func TestExecAssignStringSplitToListIDDoesNotValidateElementsEagerly(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Id> ids = ''.split(',');
@@ -2129,8 +2150,8 @@ func TestStaticValueRefCacheExtendsOnStaticAssignment(t *testing.T) {
 	oldValue := List(String("old"))
 	newValue := List(String("new"))
 	machine.staticValueRefs = map[uint64]bool{oldValue.Ref: true}
-	machine.staticValueRefFields = map[uint64][]staticFieldRef{
-		oldValue.Ref: []staticFieldRef{{ClassName: "TrailRegistry", FieldName: "values"}},
+	machine.staticValueRefFields = map[uint64]staticFieldRefSet{
+		oldValue.Ref: staticFieldRefSet{single: staticFieldRef{ClassName: "TrailRegistry", FieldName: "values"}, hasSingle: true},
 	}
 
 	machine.rememberStaticValueRefsInField(newValue, staticFieldRef{ClassName: "TrailRegistry", FieldName: "values"})
@@ -2140,9 +2161,35 @@ func TestStaticValueRefCacheExtendsOnStaticAssignment(t *testing.T) {
 			t.Fatalf("new static ref %d was not remembered: %#v", newValue.Ref, machine.staticValueRefs)
 		}
 	}
-	locations := machine.staticValueRefFields[newValue.Ref]
+	locations := machine.staticValueRefFields[newValue.Ref].locations()
 	if len(locations) != 1 || locations[0].FieldName != "values" {
 		t.Fatalf("new static ref locations = %#v", locations)
+	}
+}
+
+func TestStaticValueRefCacheReplacesSingleStaticField(t *testing.T) {
+	machine := New(nil)
+	oldValue := List(String("old"))
+	otherValue := List(String("other"))
+	newValue := List(String("new"))
+	target := staticFieldRef{ClassName: "TrailRegistry", FieldName: "values"}
+	other := staticFieldRef{ClassName: "TrailRegistry", FieldName: "other"}
+	machine.staticValueRefs = map[uint64]bool{oldValue.Ref: true, otherValue.Ref: true}
+	machine.staticValueRefFields = map[uint64]staticFieldRefSet{
+		oldValue.Ref:   {single: target, hasSingle: true},
+		otherValue.Ref: {single: other, hasSingle: true},
+	}
+
+	machine.replaceStaticValueRefsInField(oldValue, newValue, target)
+
+	if machine.staticValueRefs[oldValue.Ref] {
+		t.Fatalf("old static ref %d was not forgotten", oldValue.Ref)
+	}
+	if !machine.staticValueRefs[otherValue.Ref] {
+		t.Fatalf("unrelated static ref %d was forgotten", otherValue.Ref)
+	}
+	if !machine.staticValueRefs[newValue.Ref] {
+		t.Fatalf("new static ref %d was not remembered", newValue.Ref)
 	}
 }
 
@@ -2160,14 +2207,14 @@ func TestStaticValueRefIndexTracksContainingFields(t *testing.T) {
 
 	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
 
-	locations := machine.staticValueRefFields[target.Ref]
+	locations := machine.staticValueRefFields[target.Ref].locations()
 	if len(locations) != 1 {
 		t.Fatalf("target ref locations = %#v, want one", locations)
 	}
 	if locations[0].ClassName != "TrailRegistry" || locations[0].FieldName != "target" {
 		t.Fatalf("target ref location = %#v", locations[0])
 	}
-	if got := machine.staticValueRefFields[other.Ref]; len(got) != 1 || got[0].FieldName != "other" {
+	if got := machine.staticValueRefFields[other.Ref].locations(); len(got) != 1 || got[0].FieldName != "other" {
 		t.Fatalf("other ref locations = %#v", got)
 	}
 }
@@ -2185,7 +2232,7 @@ func TestFindValueByRefFallsBackWhenStaticRefIndexIsStale(t *testing.T) {
 		},
 	}
 	machine.staticValueRefs = map[uint64]bool{}
-	machine.staticValueRefFields = map[uint64][]staticFieldRef{}
+	machine.staticValueRefFields = map[uint64]staticFieldRefSet{}
 
 	got, ok := machine.findValueByRef(target.Ref)
 	if !ok {
@@ -9785,6 +9832,95 @@ System.assertEquals(2, AsyncRegistry.size());
 	}
 }
 
+func TestExecStopTestPreservesStaticSingletonWhenAsyncClassHasStaticCollection(t *testing.T) {
+	initProgram, err := CompileAnonymous("Service.Ids = new Set<String>{'a'};")
+	if err != nil {
+		t.Fatal(err)
+	}
+	instanceGetter, err := CompileAnonymous(`
+if (Instance == null) {
+	Instance = new Service();
+}
+return Instance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queueProgram, err := CompileAnonymous("this.queuedJobId = System.enqueueJob(new Worker());")
+	if err != nil {
+		t.Fatal(err)
+	}
+	jobIDProgram, err := CompileAnonymous("return this.queuedJobId;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sizeProgram, err := CompileAnonymous("return Ids.size();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	jobProgram, err := CompileAnonymous("System.assertNotEquals(null, Service.Instance.jobId());")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals(1, Service.size());
+Test.startTest();
+Service.Instance.queue();
+Test.stopTest();
+System.assertNotEquals(null, Service.Instance.jobId());
+System.assertEquals(1, Service.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "Service",
+		Fields: map[string]Field{
+			"queuedJobId": {Name: "queuedJobId", Type: "Id"},
+		},
+		StaticFields: map[string]Field{
+			"Ids":      {Name: "Ids", Type: "Set<String>", Static: true},
+			"Instance": {Name: "Instance", Type: "Service", Static: true, Getter: &Method{Name: "Service.Instance", ClassName: "Service", ReturnType: "Service", IsStatic: true, Program: instanceGetter}},
+		},
+		StaticFieldOrder: []string{"Ids", "Instance"},
+		StaticInitializers: []Method{{
+			Name:      "Service.<static_init>",
+			ClassName: "Service",
+			IsStatic:  true,
+			Program:   initProgram,
+		}},
+		Methods: map[string]Method{
+			"queue": {Name: "Service.queue", ClassName: "Service", ReturnType: "void", Program: queueProgram},
+			"jobId": {Name: "Service.jobId", ClassName: "Service", ReturnType: "Id", Program: jobIDProgram},
+			"size":  {Name: "Service.size", ClassName: "Service", ReturnType: "Integer", IsStatic: true, Program: sizeProgram},
+		},
+		Constructors: []Method{{Name: "Service.<init>", ClassName: "Service", ReturnType: "void", IsConstructor: true}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Worker",
+		Interfaces: []string{"Queueable"},
+		Methods: map[string]Method{
+			"execute": {
+				Name:       "Worker.execute",
+				ClassName:  "Worker",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "QueueableContext"}},
+				Program:    jobProgram,
+			},
+		},
+		Constructors: []Method{{Name: "Worker.<init>", ClassName: "Worker", ReturnType: "void", IsConstructor: true}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecAsyncDrainRestoresUninitializedStaticCollectionState(t *testing.T) {
 	initProgram, err := CompileAnonymous("LazyAsyncRegistry.Ids = new Set<String>{'a', 'b'};")
 	if err != nil {
@@ -9845,6 +9981,178 @@ System.assertEquals(2, LazyAsyncRegistry.size());
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestResetTestAsyncStaticCollectionsLeavesUninitializedStaticMapNull(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "StaticCache",
+		StaticFields: map[string]Field{
+			"Ids":      {Name: "Ids", Type: "Set<String>", Static: true},
+			"MockRows": {Name: "MockRows", Type: "Map<Id,Account>", Static: true},
+			"Seeded":   {Name: "Seeded", Type: "Map<Id,Account>", Static: true, InitialValue: typedMap("Map<Id,Account>")},
+		},
+		StaticFieldOrder: []string{"Ids", "MockRows", "Seeded"},
+		StaticInitializers: []Method{{
+			Name:      "StaticCache.<static_init>",
+			ClassName: "StaticCache",
+			IsStatic:  true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.ResetTestAsyncStaticCollections(); err != nil {
+		t.Fatal(err)
+	}
+	class := machine.Classes["StaticCache"]
+	if got := class.StaticFields["MockRows"].Value; got.Kind != ValueNull {
+		t.Fatalf("uninitialized static map reset to %#v, want null", got)
+	}
+	if got := class.StaticFields["Seeded"].Value; got.Kind != ValueMap {
+		t.Fatalf("initialized static map reset to %#v, want map", got)
+	}
+}
+
+func TestResetTestAsyncStaticCollectionsResetsPlainStaticCacheFlags(t *testing.T) {
+	initProgram, err := CompileAnonymous("StaticMixed.Ids = new Set<String>{'x'}; StaticMixed.Fields = new Map<String,String>();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	readProgram, err := CompileAnonymous(`
+if (Enabled == null) {
+	Fields.put('Contact', 'CurrencyIsoCode');
+	Enabled = true;
+}
+return Fields.get('Contact');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "StaticMixed",
+		StaticFields: map[string]Field{
+			"Ids":     {Name: "Ids", Type: "Set<String>", Static: true},
+			"Fields":  {Name: "Fields", Type: "Map<String,String>", Static: true},
+			"Enabled": {Name: "Enabled", Type: "Boolean", Static: true},
+		},
+		StaticFieldOrder: []string{"Ids", "Fields", "Enabled"},
+		StaticInitializers: []Method{{
+			Name:      "StaticMixed.<static_init>",
+			ClassName: "StaticMixed",
+			IsStatic:  true,
+			Program:   initProgram,
+		}},
+		Methods: map[string]Method{
+			"read": {Name: "StaticMixed.read", ClassName: "StaticMixed", ReturnType: "String", IsStatic: true, Program: readProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	value, err := machine.CallStatic("StaticMixed.read", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueString || value.Text != "CurrencyIsoCode" {
+		t.Fatalf("initial read = %#v, want CurrencyIsoCode", value)
+	}
+	if err := machine.ResetTestAsyncStaticCollections(); err != nil {
+		t.Fatal(err)
+	}
+	value, err = machine.CallStatic("StaticMixed.read", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueString || value.Text != "CurrencyIsoCode" {
+		t.Fatalf("read after async static reset = %#v, want CurrencyIsoCode", value)
+	}
+}
+
+func TestResetTestAsyncStaticCollectionsPreservesDefaultNullObjectMocks(t *testing.T) {
+	machine := New(nil)
+	mock := Object("ServiceGateway")
+	if err := machine.RegisterClass(Class{
+		Name: "ServiceGateway",
+		StaticFields: map[string]Field{
+			"Disabled":     {Name: "Disabled", Type: "Set<String>", Static: true, InitialValue: Set()},
+			"mockInstance": {Name: "mockInstance", Type: "ServiceGateway", Static: true},
+			"Loaded":       {Name: "Loaded", Type: "Boolean", Static: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	class := machine.Classes["ServiceGateway"]
+	field := class.StaticFields["mockInstance"]
+	field.Value = mock
+	class.StaticFields["mockInstance"] = field
+	field = class.StaticFields["Loaded"]
+	field.Value = Bool(true)
+	class.StaticFields["Loaded"] = field
+	machine.Classes["ServiceGateway"] = class
+
+	if err := machine.ResetTestAsyncStaticCollections(); err != nil {
+		t.Fatal(err)
+	}
+
+	class = machine.Classes["ServiceGateway"]
+	if got := class.StaticFields["mockInstance"].Value; got.Ref != mock.Ref {
+		t.Fatalf("mockInstance after async static reset = %#v, want ref %d", got, mock.Ref)
+	}
+	if got := class.StaticFields["Loaded"].Value; got.Kind != ValueNull {
+		t.Fatalf("Loaded after async static reset = %#v, want null", got)
+	}
+}
+
+func TestTestAsyncStaticSnapshotRestoresInitializerBackedScalars(t *testing.T) {
+	initProgram, err := CompileAnonymous("Query = 'SELECT Id, CronJobDetail.Name FROM CronTrigger';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	readProgram, err := CompileAnonymous("return Query;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "AsyncStaticProbe",
+		StaticFields: map[string]Field{
+			"Flag":  {Name: "Flag", Type: "Boolean", Static: true, Value: Bool(true), InitialValue: Bool(true)},
+			"Query": {Name: "Query", Type: "String", Static: true},
+			"Rows":  {Name: "Rows", Type: "List<CronTrigger>", Static: true},
+		},
+		StaticFieldOrder: []string{"Flag", "Query", "Rows"},
+		StaticInitializers: []Method{{
+			Name:      "AsyncStaticProbe.<static_init>",
+			ClassName: "AsyncStaticProbe",
+			IsStatic:  true,
+			Program:   initProgram,
+		}},
+		Methods: map[string]Method{
+			"read": {Name: "AsyncStaticProbe.read", ClassName: "AsyncStaticProbe", ReturnType: "String", IsStatic: true, Program: readProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if value, err := machine.CallStatic("AsyncStaticProbe.read", nil); err != nil || value.Kind != ValueString {
+		t.Fatalf("initial read = %#v, err=%v, want string", value, err)
+	}
+	snapshot := machine.testAsyncStaticFieldSnapshot()
+	staticInitSnapshot := copyStaticInitStateMap(machine.staticInitState)
+	if err := machine.ResetTestAsyncStaticCollections(); err != nil {
+		t.Fatal(err)
+	}
+	if value := machine.Classes["AsyncStaticProbe"].StaticFields["Flag"].Value; value.Kind != ValueBool || !value.Bool {
+		t.Fatalf("async static reset changed scalar flag to %#v", value)
+	}
+	machine.restoreStaticFieldSnapshot(snapshot)
+	machine.staticInitState = copyStaticInitStateMap(staticInitSnapshot)
+	value, err := machine.CallStatic("AsyncStaticProbe.read", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueString || value.Text != "SELECT Id, CronJobDetail.Name FROM CronTrigger" {
+		t.Fatalf("restored read = %#v, want query string", value)
 	}
 }
 

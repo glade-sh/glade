@@ -78,21 +78,27 @@ type StubInventoryCount struct {
 }
 
 func BuildStubInventoryReport(sourceRoot string) (StubInventoryReport, error) {
-	if sourceRoot == "" {
-		sourceRoot = filepath.Join("example-projects", "stubs")
-	}
+	sourceRoot = strings.TrimSpace(sourceRoot)
 	report := StubInventoryReport{SchemaVersion: StubInventorySchemaVersion}
 	report.Source.Root = sourceRoot
 
-	systemRoot := filepath.Join(sourceRoot, "apex-system-stubs")
-	systemFiles, err := collectStubFiles(systemRoot)
-	if err != nil {
-		report.Warnings = append(report.Warnings, err.Error())
-	}
-	sobjectRoot := filepath.Join(sourceRoot, "apex-sobject-stubs")
-	sobjectFiles, err := collectStubFiles(sobjectRoot)
-	if err != nil {
-		report.Warnings = append(report.Warnings, err.Error())
+	var systemFiles, sobjectFiles []string
+	systemRoot := ""
+	sobjectRoot := ""
+	if sourceRoot == "" {
+		report.Warnings = append(report.Warnings, "stub source root not provided; source counts omitted")
+	} else {
+		systemRoot = filepath.Join(sourceRoot, "apex-system-stubs")
+		var err error
+		systemFiles, err = collectStubFiles(systemRoot)
+		if err != nil {
+			report.Warnings = append(report.Warnings, err.Error())
+		}
+		sobjectRoot = filepath.Join(sourceRoot, "apex-sobject-stubs")
+		sobjectFiles, err = collectStubFiles(sobjectRoot)
+		if err != nil {
+			report.Warnings = append(report.Warnings, err.Error())
+		}
 	}
 
 	systemSourceNames := map[string]string{}

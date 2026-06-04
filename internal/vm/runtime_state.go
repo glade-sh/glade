@@ -57,6 +57,7 @@ type VM struct {
 	classLookup              map[string]Class
 	sharedClassLookupKeys    map[string]string
 	sharedClassCopyPlan      *classCopyPlan
+	classLookupNameCache     map[string]classLookupNameResult
 	namespaceClassLookup     map[string]map[string]namespaceClassLookup
 	classNamespaceCache      map[string]string
 	classForAccessCache      map[classForAccessKey]classForAccessLookup
@@ -66,6 +67,7 @@ type VM struct {
 	uniqueNestedTypeCache    map[string]uniqueNestedTypeLookup
 	onlyNestedTypeCache      map[string]uniqueNestedTypeLookup
 	topLevelTypeCache        map[string]uniqueNestedTypeLookup
+	topLevelClassLookup      map[string]topLevelClassLookup
 	classNameSearchCache     []classNameSearchEntry
 	// --- Org storage, triggers, and active execution frame ---
 	Org                     *storage.OrgState
@@ -108,6 +110,7 @@ type VM struct {
 	installContextDepth     int
 	// --- Transaction state (savepoints) ---
 	savepoints      map[string]storage.OrgState
+	savepointMarks  map[string]storage.IsolationMark
 	emailSavepoints map[string][]CapturedEmail
 	savepointOrder  map[string]int
 	nextSavepoint   int
@@ -151,7 +154,8 @@ type VM struct {
 	describeDefCache       map[string]storage.ObjectDefinition
 	customDataCache        map[string]Value
 	soqlExecutionCache     *soql.ExecutionCache
-	managedFeatureFlags    map[string]bool
+	dmlSummaryByChild      dml.SummaryRelationCache
+	managedFeatureValues   map[string]Value
 	childRelCache          *childRelationshipCache
 	jsonChildRelTypeCache  *jsonChildRelTypeLookupCache
 	sObjectFieldAliasCache *sObjectFieldAliasLookupCache
@@ -164,7 +168,7 @@ type VM struct {
 	isolationJournal       *storage.IsolationJournal
 	// --- Static-field reference tracking (alias invalidation) ---
 	staticValueRefs           map[uint64]bool
-	staticValueRefFields      map[uint64][]staticFieldRef
+	staticValueRefFields      map[uint64]staticFieldRefSet
 	localOnlyCollectionRefs   map[uint64]bool
 	collectionMutationSeq     uint64
 	frameworkRecorderRollback *frameworkMethodCountRecorderRollback
@@ -225,6 +229,11 @@ type classForAccessLookup struct {
 	OK    bool
 }
 
+type classLookupNameResult struct {
+	Alias string
+	OK    bool
+}
+
 // classForAccessKey is the cache key for classForAccess. Using the raw
 // (whitespace-trimmed) name components as a struct key avoids the per-call
 // allocation of canonicalizing and concatenating three strings just to probe
@@ -265,6 +274,12 @@ type enumClassLookup struct {
 type uniqueNestedTypeLookup struct {
 	Name string
 	OK   bool
+}
+
+type topLevelClassLookup struct {
+	ByNamespace map[string]string
+	Unique      string
+	Ambiguous   bool
 }
 
 type classNameSearchEntry struct {
@@ -479,6 +494,7 @@ func New(stdout io.Writer) *VM {
 		limitMode:              LimitModePermissive,
 		fakeNow:                time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
 		savepoints:             make(map[string]storage.OrgState),
+		savepointMarks:         make(map[string]storage.IsolationMark),
 		emailSavepoints:        make(map[string][]CapturedEmail),
 		savepointOrder:         make(map[string]int),
 		platformCache:          make(map[string]map[string]cacheEntry),
@@ -495,7 +511,7 @@ func New(stdout io.Writer) *VM {
 		fieldDescribeCache:     make(map[string]Value),
 		describeDefCache:       make(map[string]storage.ObjectDefinition),
 		customDataCache:        make(map[string]Value),
-		managedFeatureFlags:    make(map[string]bool),
+		managedFeatureValues:   make(map[string]Value),
 		childRelCache:          newChildRelationshipCache(),
 		jsonChildRelTypeCache:  newJSONChildRelTypeLookupCache(),
 		sObjectFieldAliasCache: newSObjectFieldAliasLookupCache(),
@@ -542,6 +558,8 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	if vm.sharedClassLookupKeys != nil {
 		clone.sharedClassLookupKeys = vm.sharedClassLookupKeys
 		clone.classLookup = nil
+		clone.classNameSearchCache = vm.classNameSearchCache
+		clone.topLevelClassLookup = vm.topLevelClassLookup
 	} else {
 		clone.rebuildClassLookup()
 	}
@@ -570,6 +588,7 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	clone.staticInitState = copyStaticInitStateMap(vm.staticInitState)
 	clone.pageReferences = copyStringMap(vm.pageReferences)
 	clone.platformCache = copyCacheMap(vm.platformCache)
+	clone.managedFeatureValues = copyValueMap(vm.managedFeatureValues)
 	clone.isolationJournal = vm.isolationJournal
 	return clone
 }
@@ -594,6 +613,24 @@ func (vm *VM) SetIsolationJournal(journal *storage.IsolationJournal) {
 	if vm != nil {
 		vm.isolationJournal = journal
 	}
+}
+
+func (vm *VM) recordIsolationJournalMutation(objectName string, id storage.ID, before storage.Record, exists bool) {
+	if vm == nil || vm.isolationJournal == nil || objectName == "" || id == "" {
+		return
+	}
+	if exists {
+		vm.isolationJournal.RecordUpdate(objectName, id, before)
+		return
+	}
+	vm.isolationJournal.RecordInsert(objectName, id)
+}
+
+func (vm *VM) recordIsolationJournalSequence(objectName string) {
+	if vm == nil || vm.isolationJournal == nil || objectName == "" {
+		return
+	}
+	vm.isolationJournal.RecordSequence(objectName)
 }
 
 func (vm *VM) SetTraceEnabled(enabled bool) {
@@ -764,6 +801,17 @@ func copyStringMap(in map[string]string) map[string]string {
 	out := make(map[string]string, len(in))
 	for key, value := range in {
 		out[key] = value
+	}
+	return out
+}
+
+func copyValueMap(in map[string]Value) map[string]Value {
+	if in == nil {
+		return nil
+	}
+	out := make(map[string]Value, len(in))
+	for key, value := range in {
+		out[key] = cloneValue(value)
 	}
 	return out
 }
@@ -1039,6 +1087,10 @@ func (vm *VM) SetContext(ctx context.Context) {
 
 func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	engine := dml.NewEngine(vm.Org)
+	if vm.dmlSummaryByChild == nil {
+		vm.dmlSummaryByChild = make(dml.SummaryRelationCache)
+	}
+	engine.SummaryByChild = vm.dmlSummaryByChild
 	engine.IsolationJournal = vm.isolationJournal
 	engine.Now = func() time.Time { return vm.fakeNow }
 	if userID := vm.currentUserID(); userID != "" {
@@ -1164,7 +1216,7 @@ func flowActionTargetName(action storage.FlowAction) string {
 	return strings.TrimSpace(action.ActionName)
 }
 
-func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records []storage.Record, allOrNone bool, backup storage.OrgState, result *Result) error {
+func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records []storage.Record, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
 	if engine == nil {
 		return nil
 	}
@@ -1181,7 +1233,7 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records []storage.Reco
 		}
 		if err := engine.ApplyAutomation(record.Object, record.ID); err != nil {
 			if allOrNone {
-				*vm.Org = backup
+				vm.restoreDMLRollbackPoint(rollback)
 				vm.restoreSideEffects(sideEffects)
 				appendTrace(result, "apex.automation.rollback", "apex.automation", map[string]any{
 					"object": record.Object,
@@ -1310,38 +1362,85 @@ func (vm *VM) ResetStatics() error {
 }
 
 func (vm *VM) ResetTestAsyncStaticCollections() error {
+	resetClasses := make(map[string]Class)
 	for className, class := range vm.Classes {
 		if len(class.StaticFields) == 0 {
 			continue
 		}
-		for fieldName, field := range class.StaticFields {
-			if !isStaticCollectionField(field) {
-				continue
+		resetAny := classHasStaticCollectionField(class)
+		if resetAny {
+			for fieldName, field := range class.StaticFields {
+				if !resetTestAsyncStaticField(field) && !resetTestAsyncStaticFieldForReinitialization(class, field) {
+					continue
+				}
+				field.Value = defaultStaticCollectionFieldValue(className, fieldName, field)
+				class.StaticFields[fieldName] = field
 			}
-			field.Value = defaultStaticCollectionFieldValue(className, fieldName, field)
-			class.StaticFields[fieldName] = field
 		}
 		vm.Classes[className] = class
+		if resetAny {
+			resetClasses[runtimeClassName(class)] = class
+		}
+	}
+	for _, class := range resetClasses {
+		vm.markStaticInitializationUninitialized(class)
 	}
 	vm.invalidateStaticValueRefs()
 	return nil
 }
 
+func classHasStaticCollectionField(class Class) bool {
+	for _, field := range class.StaticFields {
+		if isStaticCollectionField(field) {
+			return true
+		}
+	}
+	return false
+}
+
+func resetTestAsyncStaticField(field Field) bool {
+	return isStaticCollectionField(field)
+}
+
+func resetTestAsyncStaticFieldForReinitialization(class Class, field Field) bool {
+	return classHasStaticCollectionField(class) &&
+		field.Getter == nil &&
+		staticFieldHasDefaultNullInitialValue(field) &&
+		staticFieldIsBoolean(field)
+}
+
+func staticFieldHasDefaultNullInitialValue(field Field) bool {
+	if field.InitialValue.Kind == "" {
+		return true
+	}
+	if field.InitialValue.Kind != ValueNull {
+		return false
+	}
+	if field.InitialValue.Type == "" {
+		return true
+	}
+	return strings.EqualFold(field.InitialValue.Type, field.Type)
+}
+
+func staticFieldIsBoolean(field Field) bool {
+	return strings.EqualFold(strings.TrimSpace(field.Type), "Boolean")
+}
+
+func (vm *VM) markStaticInitializationUninitialized(class Class) {
+	if vm.staticInitState == nil {
+		return
+	}
+	canonical := runtimeClassName(class)
+	if canonical != "" {
+		delete(vm.staticInitState, canonical)
+	}
+	if class.Name != "" {
+		delete(vm.staticInitState, class.Name)
+	}
+}
+
 func defaultStaticCollectionFieldValue(className, fieldName string, field Field) Value {
-	value := defaultStaticFieldValue(className, fieldName, field.Type, field.InitialValue)
-	if value.Kind != ValueNull && value.Kind != "" {
-		return value
-	}
-	switch staticCollectionBase(field.Type) {
-	case "List":
-		return typedList(field.Type)
-	case "Set":
-		return typedSet(field.Type)
-	case "Map":
-		return typedMap(field.Type)
-	default:
-		return value
-	}
+	return defaultStaticFieldValue(className, fieldName, field.Type, field.InitialValue)
 }
 
 func isStaticCollectionField(field Field) bool {

@@ -3,30 +3,107 @@
   "evidence": [
     {
       "symbol": "Schema.DescribeSObjectResult.getLabelPlural",
+      "surfaceId": "apex:Schema.DescribeSObjectResult.getLabelPlural()",
       "kind": "test"
     },
     {
       "symbol": "Schema.DescribeSObjectResult.getFields",
+      "surfaceId": "apex:Schema.DescribeSObjectResult.getFields()",
       "kind": "test"
     },
     {
       "symbol": "Schema.DescribeFieldResult.getLabel",
+      "surfaceId": "apex:Schema.DescribeFieldResult.getLabel()",
       "kind": "test"
     },
     {
       "symbol": "Schema.DescribeFieldResult.getReferenceTo",
+      "surfaceId": "apex:Schema.DescribeFieldResult.getReferenceTo()",
       "kind": "test"
     },
     {
       "symbol": "Schema.RecordTypeInfo",
+      "surfaceId": "apex:Schema.RecordTypeInfo",
       "kind": "test"
     },
     {
       "symbol": "Schema.ChildRelationship",
+      "surfaceId": "apex:Schema.ChildRelationship",
       "kind": "test"
     },
     {
       "symbol": "Schema.PicklistEntry",
+      "surfaceId": "apex:Schema.PicklistEntry",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.DescribeSObjectResult.getLabel",
+      "surfaceId": "apex:Schema.DescribeSObjectResult.getLabel()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.DescribeSObjectResult.getKeyPrefix",
+      "surfaceId": "apex:Schema.DescribeSObjectResult.getKeyPrefix()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.DescribeSObjectResult.getRecordTypeInfosByDeveloperName",
+      "surfaceId": "apex:Schema.DescribeSObjectResult.getRecordTypeInfosByDeveloperName()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.DescribeSObjectResult.getChildRelationships",
+      "surfaceId": "apex:Schema.DescribeSObjectResult.getChildRelationships()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.DescribeFieldResult.getType",
+      "surfaceId": "apex:Schema.DescribeFieldResult.getType()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.DescribeFieldResult.isNillable",
+      "surfaceId": "apex:Schema.DescribeFieldResult.isNillable()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.DescribeFieldResult.getRelationshipName",
+      "surfaceId": "apex:Schema.DescribeFieldResult.getRelationshipName()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.DescribeFieldResult.getPicklistValues",
+      "surfaceId": "apex:Schema.DescribeFieldResult.getPicklistValues()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.PicklistEntry.getLabel",
+      "surfaceId": "apex:Schema.PicklistEntry.getLabel()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.PicklistEntry.isDefaultValue",
+      "surfaceId": "apex:Schema.PicklistEntry.isDefaultValue()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.PicklistEntry.isActive",
+      "surfaceId": "apex:Schema.PicklistEntry.isActive()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.RecordTypeInfo.getName",
+      "surfaceId": "apex:Schema.RecordTypeInfo.getName()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.ChildRelationship.getRelationshipName",
+      "surfaceId": "apex:Schema.ChildRelationship.getRelationshipName()",
+      "kind": "test"
+    },
+    {
+      "symbol": "Schema.ChildRelationship.isCascadeDelete",
+      "surfaceId": "apex:Schema.ChildRelationship.isCascadeDelete()",
       "kind": "test"
     }
   ],

@@ -100,6 +100,9 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	if got, ok := ResolveEndpoint(registry, "callout:Billing/v1/accounts"); !ok || got != "https://billing.example.test/v1/accounts" {
 		t.Fatalf("endpoint = %q, %v", got, ok)
 	}
+	if got, ok := ResolveEndpoint(registry, "CALLOUT:Billing/v1/accounts"); !ok || got != "https://billing.example.test/v1/accounts" {
+		t.Fatalf("case-folded endpoint = %q, %v", got, ok)
+	}
 	if got, ok := ResolveEndpoint(registry, "callout:pkg__Billing/v1/accounts"); !ok || got != "https://billing.example.test/v1/accounts" {
 		t.Fatalf("namespaced endpoint = %q, %v", got, ok)
 	}
