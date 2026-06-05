@@ -9848,6 +9848,30 @@ System.assertEquals('local-site', siteId);
 	}
 }
 
+func TestExecSitePasswordAndExperienceContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('', Site.getExperienceId());
+Site.setExperienceId('LocalExperience001');
+System.assertEquals('LocalExperience001', Site.getExperienceId());
+System.assertEquals(true, Site.forgotPassword('user@example.invalid'));
+System.assertEquals(true, Site.forgotPassword('user@example.invalid', 'ResetTemplate'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if machine.siteExperienceID != "LocalExperience001" {
+		t.Fatalf("siteExperienceID = %q, want LocalExperience001", machine.siteExperienceID)
+	}
+	machine.ResetApexPageState()
+	if machine.siteExperienceID != "" {
+		t.Fatalf("ResetApexPageState kept siteExperienceID = %q", machine.siteExperienceID)
+	}
+}
+
 func TestExecOrgShapeBackedSiteNetworkAndCurrencyCalls(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assert(UserInfo.isMultiCurrencyOrganization());

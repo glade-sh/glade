@@ -1,0 +1,89 @@
+{
+  "name": "core-runtime-network-local-contracts",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.Network.communitiesLanding()",
+      "symbol": "Network.communitiesLanding",
+      "kind": "exec",
+      "notes": "Local Network community navigation returns the deterministic local community page."
+    },
+    {
+      "surfaceId": "apex:System.Network.createExternalUserAsync(Object,Object,Object)",
+      "symbol": "Network.createExternalUserAsync",
+      "kind": "exec",
+      "notes": "Local async external-user creation returns a deterministic async job Id."
+    },
+    {
+      "surfaceId": "apex:System.Network.createRecordAsync(String,Object)",
+      "symbol": "Network.createRecordAsync",
+      "kind": "exec",
+      "notes": "Local async self-registration record creation returns a deterministic async job Id."
+    },
+    {
+      "surfaceId": "apex:System.Network.forwardToAuthPage(String)",
+      "symbol": "Network.forwardToAuthPage",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Network.forwardToAuthPage(String,String)",
+      "symbol": "Network.forwardToAuthPage",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Network.getLoginUrl(String)",
+      "symbol": "Network.getLoginUrl",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Network.getLogoutUrl(String)",
+      "symbol": "Network.getLogoutUrl",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Network.getNetworkId()",
+      "symbol": "Network.getNetworkId",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Network.getSelfRegUrl(String)",
+      "symbol": "Network.getSelfRegUrl",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Network.loadAllPackageDefaultNetworkDashboardSettings()",
+      "symbol": "Network.loadAllPackageDefaultNetworkDashboardSettings",
+      "kind": "exec",
+      "notes": "Local package-default network settings load returns zero changed settings."
+    },
+    {
+      "surfaceId": "apex:System.Network.loadAllPackageDefaultNetworkPulseSettings()",
+      "symbol": "Network.loadAllPackageDefaultNetworkPulseSettings",
+      "kind": "exec",
+      "notes": "Local package-default network settings load returns zero changed settings."
+    },
+    {
+      "surfaceId": "apex:System.Network.loadAllPackageDefaultNetworkWorkspaceMetricSettings()",
+      "symbol": "Network.loadAllPackageDefaultNetworkWorkspaceMetricSettings",
+      "kind": "exec",
+      "notes": "Local package-default network settings load returns zero changed settings."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "System.assertEquals('0DB000000000001', Network.getNetworkId());\nSystem.assertEquals('/local', Network.communitiesLanding().getUrl());\nSystem.assertEquals('/start', Network.forwardToAuthPage('/start').getUrl());\nSystem.assertEquals('/start', Network.forwardToAuthPage('/start', 'Site').getUrl());\nSystem.assertEquals('https://local.glade.example/local/login', Network.getLoginUrl(Network.getNetworkId()));\nSystem.assertEquals('https://local.glade.example/local/secur/logout.jsp', Network.getLogoutUrl(Network.getNetworkId()));\nSystem.assertEquals('https://local.glade.example/local/SelfRegister', Network.getSelfRegUrl(Network.getNetworkId()));\nUser externalUser = new User();\nSystem.assertEquals('707000000000001', Network.createExternalUserAsync(externalUser, new Contact(), new Account()));\nSystem.assertEquals('707000000000001', Network.createRecordAsync('selfRegistration', externalUser));\nSystem.assertEquals(0, Network.loadAllPackageDefaultNetworkDashboardSettings());\nSystem.assertEquals(0, Network.loadAllPackageDefaultNetworkPulseSettings());\nSystem.assertEquals(0, Network.loadAllPackageDefaultNetworkWorkspaceMetricSettings());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "System.assertEquals('0DB000000000001', Network.getNetworkId());\nSystem.assertEquals('/local', Network.communitiesLanding().getUrl());\nSystem.assertEquals('/start', Network.forwardToAuthPage('/start').getUrl());\nSystem.assertEquals('/start', Network.forwardToAuthPage('/start', 'Site').getUrl());\nSystem.assertEquals('https://local.glade.example/local/login', Network.getLoginUrl(Network.getNetworkId()));\nSystem.assertEquals('https://local.glade.example/local/secur/logout.jsp', Network.getLogoutUrl(Network.getNetworkId()));\nSystem.assertEquals('https://local.glade.example/local/SelfRegister', Network.getSelfRegUrl(Network.getNetworkId()));\nUser externalUser = new User();\nSystem.assertEquals('707000000000001', Network.createExternalUserAsync(externalUser, new Contact(), new Account()));\nSystem.assertEquals('707000000000001', Network.createRecordAsync('selfRegistration', externalUser));\nSystem.assertEquals(0, Network.loadAllPackageDefaultNetworkDashboardSettings());\nSystem.assertEquals(0, Network.loadAllPackageDefaultNetworkPulseSettings());\nSystem.assertEquals(0, Network.loadAllPackageDefaultNetworkWorkspaceMetricSettings());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

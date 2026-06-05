@@ -2974,11 +2974,21 @@ platformStaticCall:
 			return Null, fmt.Errorf("Site.getBaseUrl expects 0 arguments")
 		}
 		return String(vm.siteBaseURL()), nil
-	case "Site.getBaseRequestUrl", "Site.getBaseSecureUrl", "Site.getBaseCustomUrl":
+	case "Site.getCurrentSiteUrl":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.getCurrentSiteUrl expects 0 arguments")
+		}
+		return String(vm.siteBaseURL()), nil
+	case "Site.getBaseRequestUrl", "Site.getBaseSecureUrl", "Site.getBaseCustomUrl", "Site.getBaseInsecureUrl", "Site.getCustomWebAddress", "Site.getAnalyticsTrackingCode", "Site.getOriginalUrl", "Site.getPasswordPolicyStatement":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return String(""), nil
+	case "Site.getExperienceId":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.getExperienceId expects 0 arguments")
+		}
+		return String(vm.siteExperienceID), nil
 	case "Site.getDomain", "Site.getName", "Site.getSiteType", "Site.getSiteTypeLabel":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -2992,6 +3002,11 @@ platformStaticCall:
 	case "Site.getPathPrefix":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getPathPrefix expects 0 arguments")
+		}
+		return String(vm.firstOrgRecordString("Site", "UrlPathPrefix", "")), nil
+	case "Site.getPrefix":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.getPrefix expects 0 arguments")
 		}
 		return String(vm.firstOrgRecordString("Site", "UrlPathPrefix", "")), nil
 	case "Site.getAdminEmail":
@@ -3019,6 +3034,11 @@ platformStaticCall:
 			return Null, fmt.Errorf("Site.isLoginEnabled expects 0 arguments")
 		}
 		return Bool(true), nil
+	case "Site.isPasswordExpired":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.isPasswordExpired expects 0 arguments")
+		}
+		return Bool(false), nil
 	case "Site.isValidUsername":
 		if len(args) != 1 {
 			return Null, fmt.Errorf("Site.isValidUsername expects 1 argument")
@@ -3027,6 +3047,11 @@ platformStaticCall:
 	case "Site.setExperienceId":
 		if len(args) != 1 {
 			return Null, fmt.Errorf("Site.setExperienceId expects 1 argument")
+		}
+		if args[0].Kind == ValueString {
+			vm.siteExperienceID = args[0].Text
+		} else if args[0].Kind == ValueNull {
+			vm.siteExperienceID = ""
 		}
 		return Null, nil
 	case "Site.getErrorMessage":
@@ -3040,10 +3065,10 @@ platformStaticCall:
 		}
 		return String(""), nil
 	case "Site.forgotPassword":
-		if len(args) != 1 {
-			return Null, fmt.Errorf("Site.forgotPassword expects 1 argument")
+		if len(args) != 1 && len(args) != 2 {
+			return Null, fmt.Errorf("Site.forgotPassword expects 1 or 2 arguments")
 		}
-		return Null, nil
+		return Bool(true), nil
 	case "Site.login":
 		if len(args) != 3 {
 			return Null, fmt.Errorf("Site.login expects 3 arguments")
@@ -3067,8 +3092,8 @@ platformStaticCall:
 		}
 		return Null, nil
 	case "Site.createExternalUser":
-		if len(args) != 3 && len(args) != 4 {
-			return Null, fmt.Errorf("Site.createExternalUser expects 3 or 4 arguments")
+		if len(args) != 2 && len(args) != 3 && len(args) != 4 {
+			return Null, fmt.Errorf("Site.createExternalUser expects 2, 3, or 4 arguments")
 		}
 		if vm.testContext != nil {
 			return Null, nil
@@ -3079,8 +3104,8 @@ platformStaticCall:
 		}
 		return userID, nil
 	case "Site.createPortalUser":
-		if len(args) != 3 {
-			return Null, fmt.Errorf("Site.createPortalUser expects 3 arguments")
+		if len(args) != 2 && len(args) != 3 && len(args) != 4 {
+			return Null, fmt.Errorf("Site.createPortalUser expects 2, 3, or 4 arguments")
 		}
 		if vm.testContext != nil {
 			return Null, nil

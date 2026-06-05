@@ -115,9 +115,10 @@ type VM struct {
 	savepointOrder  map[string]int
 	nextSavepoint   int
 	// --- Visualforce / page context ---
-	pageMessages   []Value
-	currentPage    Value
-	pageReferences map[string]string
+	pageMessages     []Value
+	currentPage      Value
+	pageReferences   map[string]string
+	siteExperienceID string
 	// --- SOQL / search results and platform cache ---
 	fixedSearchResults []Value
 	sfsqlqueryRows     []Value
@@ -855,6 +856,7 @@ func (vm *VM) RegisterPageReference(name string) {
 func (vm *VM) ResetApexPageState() {
 	vm.pageMessages = nil
 	vm.currentPage = Value{}
+	vm.siteExperienceID = ""
 }
 
 func (vm *VM) SetCurrentPageURL(rawURL string) {
