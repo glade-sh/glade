@@ -11,7 +11,7 @@ import (
 
 func BuildGladeSnapshot() []SurfaceLedgerRow {
 	byID := map[string]SurfaceLedgerRow{}
-	for _, symbol := range typesys.StandardPlatformSymbols() {
+	for _, symbol := range typesys.StandardPlatformSymbolView() {
 		namespace, typeName := splitTypeName(symbol.Namespace, symbol.Name)
 		id := ApexTypeID(namespace, typeName)
 		byID[surfaceIDKey(id)] = RowFromGladeShape(SurfaceLedgerRow{

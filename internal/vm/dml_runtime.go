@@ -104,6 +104,111 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 	return values[0], nil
 }
 
+func (vm *VM) executeDatabaseAsyncDML(op string, args []Value, result *Result) (Value, error) {
+	if len(args) == 0 || len(args) > 3 {
+		return Null, fmt.Errorf("Database.%sAsync expects records, optional callback or AccessLevel", op)
+	}
+	callback := Null
+	dmlArgs := []Value{args[0]}
+	if len(args) >= 2 {
+		if isDatabaseAllowCalloutsValue(args[1]) {
+			return Null, unsupportedCallError("Database." + op + "Async AllowCallouts overload local async callout surface")
+		}
+		if isAsyncDMLCallbackCandidate(args[1]) {
+			if err := vm.validateAsyncDMLCallbackValue(op, args[1]); err != nil {
+				return Null, err
+			}
+			callback = args[1]
+			if len(args) == 3 {
+				if !isDatabaseAccessLevelValue(args[2]) {
+					return Null, fmt.Errorf("Database.%sAsync callback overload expects AccessLevel", op)
+				}
+				dmlArgs = append(dmlArgs, args[2])
+			}
+		} else {
+			dmlArgs = append(dmlArgs, args[1:]...)
+		}
+	}
+	value, err := vm.executeDatabaseDML(op, dmlArgs, result)
+	if err != nil {
+		return Null, err
+	}
+	if callback.Kind != ValueNull {
+		if err := vm.invokeAsyncDMLCallback(op, callback, value, result); err != nil {
+			return Null, err
+		}
+	}
+	return value, nil
+}
+
+func isDatabaseAllowCalloutsValue(value Value) bool {
+	return value.Kind == ValueObject && (strings.EqualFold(value.Type, "Database.AllowCallouts") || strings.EqualFold(value.Type, "AllowCallouts"))
+}
+
+func isAsyncDMLCallbackCandidate(value Value) bool {
+	return value.Kind == ValueObject && !isDatabaseAccessLevelValue(value) && !isDatabaseDMLOptionsValue(value)
+}
+
+func (vm *VM) validateAsyncDMLCallbackValue(op string, value Value) error {
+	callbackType := asyncDMLCallbackType(op)
+	if strings.EqualFold(value.Type, callbackType) || vm.typeAssignableTo(value.Type, callbackType) {
+		_, err := vm.asyncDMLCallbackMethod(op, value)
+		return err
+	}
+	return fmt.Errorf("Database.%sAsync callback overload expects %s", op, callbackType)
+}
+
+func (vm *VM) asyncDMLCallbackMethod(op string, callback Value) (Method, error) {
+	methodName := asyncDMLCallbackMethodName(op)
+	arg := Object(asyncDMLCallbackResultType(op))
+	method, ok, ambiguous := vm.resolveInstanceMethodForArgs(callback.Type, methodName, []Value{arg})
+	if ambiguous {
+		return Method{}, vm.ambiguousOverloadError(callback.Type+"."+methodName, []Value{arg})
+	}
+	if !ok {
+		return Method{}, fmt.Errorf("async DML callback %s has no %s method", callback.Type, methodName)
+	}
+	return method, nil
+}
+
+func asyncDMLCallbackMethodName(op string) string {
+	if op == "delete" {
+		return "processDelete"
+	}
+	return "processSave"
+}
+
+func asyncDMLCallbackResultType(op string) string {
+	if op == "delete" {
+		return "Database.DeleteResult"
+	}
+	return "Database.SaveResult"
+}
+
+func asyncDMLCallbackType(op string) string {
+	if op == "delete" {
+		return "DataSource.AsyncDeleteCallback"
+	}
+	return "DataSource.AsyncSaveCallback"
+}
+
+func (vm *VM) invokeAsyncDMLCallback(op string, callback Value, value Value, result *Result) error {
+	method, err := vm.asyncDMLCallbackMethod(op, callback)
+	if err != nil {
+		return err
+	}
+	values := []Value{value}
+	if value.Kind == ValueList {
+		values = value.List
+	}
+	for _, item := range values {
+		if _, err := vm.callMethodWithReceiver(method, callback, []Value{item}, result); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func isDatabaseAccessLevelValue(value Value) bool {
 	return value.Kind == ValueObject && strings.EqualFold(value.Type, "AccessLevel")
 }

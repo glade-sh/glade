@@ -7,6 +7,12 @@
       "notes": "Creates local org-state snapshots for supported DML mutations."
     },
     {
+      "surfaceId": "apex:System.Database.setSavepoint",
+      "symbol": "Database.setSavepoint",
+      "kind": "test",
+      "notes": "Savepoint method family creates local org-state snapshots for supported DML mutations."
+    },
+    {
       "surfaceId": "apex:System.Database.setSavepoint()",
       "symbol": "Database.setSavepoint",
       "kind": "test",
@@ -18,6 +24,12 @@
       "notes": "Restores selected local snapshots for supported local DML mutations; focused VM unit tests cover later-savepoint invalidation."
     },
     {
+      "surfaceId": "apex:System.Database.rollback",
+      "symbol": "Database.rollback",
+      "kind": "test",
+      "notes": "Rollback method family restores selected local org-state snapshots."
+    },
+    {
       "surfaceId": "apex:System.Database.rollback(Savepoint)",
       "symbol": "Database.rollback",
       "kind": "test",
@@ -27,6 +39,12 @@
       "symbol": "Database.releaseSavepoint",
       "kind": "test",
       "notes": "Releases local savepoints without rolling back current org state; focused VM tests cover released and nested savepoint invalidation."
+    },
+    {
+      "surfaceId": "apex:System.Database.releaseSavepoint",
+      "symbol": "Database.releaseSavepoint",
+      "kind": "test",
+      "notes": "Release-savepoint method family releases local snapshots without rolling back current org state."
     },
     {
       "surfaceId": "apex:System.Database.releaseSavepoint(Savepoint)",

@@ -12,6 +12,12 @@
       "notes": "Single-record insert with allOrNone=false returns a local SaveResult for validation failures."
     },
     {
+      "surfaceId": "apex:System.Database.insert(List<Object>,Boolean)",
+      "symbol": "Database.insert",
+      "kind": "test",
+      "notes": "List insert with allOrNone=false returns one local SaveResult row per record."
+    },
+    {
       "symbol": "Database.update",
       "kind": "test"
     },

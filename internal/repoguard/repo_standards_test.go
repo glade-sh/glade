@@ -1,7 +1,9 @@
 package repoguard
 
 import (
+	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -41,6 +43,35 @@ func TestNoStringByteLengthAllocation(t *testing.T) {
 		if strings.Contains(readRepoFile(t, root, rel), needle) {
 			t.Errorf("%s converts a string to bytes just to count it; use len(string) or reuse a byte slice", rel)
 		}
+	}
+}
+
+func TestGeneratedSystemStubsReproduceFromGenerator(t *testing.T) {
+	root := repoRoot(t)
+	inputRoot := filepath.Join(root, hyphen("example", "projects"), "stubs", "apex-system-stubs")
+	if _, err := os.Stat(inputRoot); err != nil {
+		t.Skipf("system stub input unavailable: %v", err)
+	}
+	node, err := exec.LookPath("node")
+	if err != nil {
+		t.Skipf("node unavailable: %v", err)
+	}
+	output := filepath.Join(t.TempDir(), "system_stub_symbols_generated.go")
+	cmd := exec.Command(node, filepath.Join(root, "scripts", "generate-system-stub-symbols.mjs"), inputRoot, output)
+	cmd.Dir = root
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("generate-system-stub-symbols failed: %v\n%s", err, out)
+	}
+	generated, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkedIn, err := os.ReadFile(filepath.Join(root, "internal", "typesys", "system_stub_symbols_generated.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(generated, checkedIn) {
+		t.Fatal("internal/typesys/system_stub_symbols_generated.go does not match scripts/generate-system-stub-symbols.mjs output")
 	}
 }
 

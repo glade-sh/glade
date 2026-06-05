@@ -7304,6 +7304,29 @@ System.assertEquals(true, rows.get(0).get('IsDeleted'));
 	}
 }
 
+func TestExecDatabaseAsyncDMLRejectsNonCallbackBeforeMutation(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.insertAsync(new Account(Name = 'Bad Callback'), new Account(Name = 'Not Callback'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	before := len(org.Objects["Account"].Records)
+	machine.SetOrg(&org)
+	_, err = machine.Execute(program)
+	if err == nil {
+		t.Fatal("expected async DML callback validation error")
+	}
+	if !strings.Contains(err.Error(), "DataSource.AsyncSaveCallback") {
+		t.Fatalf("error = %v, want DataSource.AsyncSaveCallback", err)
+	}
+	if after := len(org.Objects["Account"].Records); after != before {
+		t.Fatalf("Account rows after invalid callback = %d, want %d", after, before)
+	}
+}
+
 func TestExecDatabaseCursorAndReplicationPlaceholders(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');

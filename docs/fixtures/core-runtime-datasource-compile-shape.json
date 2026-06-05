@@ -1,0 +1,94 @@
+{
+  "name": "core-runtime-datasource-compile-shape",
+  "evidence": [
+    {
+      "surfaceId": "apex:DataSource.Column",
+      "symbol": "DataSource.Column",
+      "kind": "shape",
+      "notes": "Public Apex reference shape for Salesforce Connect adapter column metadata."
+    },
+    {
+      "surfaceId": "apex:DataSource.Table",
+      "symbol": "DataSource.Table",
+      "kind": "shape",
+      "notes": "Public Apex reference shape for Salesforce Connect adapter table metadata."
+    },
+    {
+      "surfaceId": "apex:DataSource.TableResult",
+      "symbol": "DataSource.TableResult",
+      "kind": "shape",
+      "notes": "Public Apex reference shape for query and search results."
+    },
+    {
+      "surfaceId": "apex:DataSource.ConnectionParams",
+      "symbol": "DataSource.ConnectionParams",
+      "kind": "shape",
+      "notes": "Public Apex reference shape for external data source credentials."
+    },
+    {
+      "surfaceId": "apex:DataSource.Filter",
+      "symbol": "DataSource.Filter",
+      "kind": "shape",
+      "notes": "Public Apex reference shape for query filters."
+    },
+    {
+      "surfaceId": "apex:DataSource.Order",
+      "symbol": "DataSource.Order",
+      "kind": "shape",
+      "notes": "Public Apex reference shape for query ordering."
+    },
+    {
+      "surfaceId": "apex:DataSource.QueryContext",
+      "symbol": "DataSource.QueryContext",
+      "kind": "shape",
+      "notes": "Public Apex reference shape for SOQL query context."
+    },
+    {
+      "surfaceId": "apex:DataSource.SearchContext",
+      "symbol": "DataSource.SearchContext",
+      "kind": "shape",
+      "notes": "Public Apex reference shape for SOSL search context."
+    },
+    {
+      "surfaceId": "apex:DataSource.DeleteResult",
+      "symbol": "DataSource.DeleteResult",
+      "kind": "shape",
+      "notes": "Public Apex reference shape for external delete results."
+    },
+    {
+      "surfaceId": "apex:DataSource.UpsertResult",
+      "symbol": "DataSource.UpsertResult",
+      "kind": "shape",
+      "notes": "Public Apex reference shape for external upsert results."
+    },
+    {
+      "surfaceId": "apex:DataSource.Provider",
+      "symbol": "DataSource.Provider",
+      "kind": "shape",
+      "notes": "Public Apex reference shape for custom adapter provider contracts."
+    },
+    {
+      "surfaceId": "apex:DataSource.Connection",
+      "symbol": "DataSource.Connection",
+      "kind": "shape",
+      "notes": "Public Apex reference shape for custom adapter connection contracts."
+    }
+  ],
+  "source": [
+    {
+      "path": "classes/DataSourceCompileShapeProbe.cls",
+      "content": "public class DataSourceCompileShapeProbe { public void referencesOnly() { DataSource.Column column = DataSource.Column.text('Name', 'Name', 80); column.description = 'desc'; column.filterable = true; column.picklistValues = new List<Map<String,String>>(); DataSource.Table tableRef = new DataSource.Table(); tableRef.columns = new List<DataSource.Column>{ column }; tableRef.labelSingular = 'Account'; DataSource.Order order = new DataSource.Order(); order.tableName = 'Account'; order.columnName = 'Name'; order.direction = DataSource.OrderDirection.ASCENDING; DataSource.TableSelection selection = new DataSource.TableSelection(); selection.tableSelected = tableRef.name; selection.filter = new DataSource.Filter(); selection.order = new List<DataSource.Order>{ order }; DataSource.QueryContext queryContext = new DataSource.QueryContext(); queryContext.tableSelection = selection; DataSource.TableResult tableResult = new DataSource.TableResult(); tableResult.rows = new List<Map<String,Object>>(); DataSource.SearchContext searchContext = new DataSource.SearchContext(new List<DataSource.Table>{ tableRef }, 0, 10, new List<DataSource.TableSelection>{ selection }, 'acme'); DataSource.DeleteResult deleteResult = DataSource.DeleteResult.success('ext-1'); DataSource.UpsertResult upsertResult = DataSource.UpsertResult.failure('ext-2', 'missing'); DataSource.ConnectionParams params = new DataSource.ConnectionParams(); params.protocol = DataSource.AuthenticationProtocol.PASSWORD; params.principalType = DataSource.IdentityType.NAMED_USER; DataSource.Provider provider; List<DataSource.Capability> capabilities = provider.getCapabilities(); List<DataSource.AuthenticationCapability> auth = provider.getAuthenticationCapabilities(); DataSource.Connection connection = provider.getConnection(params); List<DataSource.Table> tables = connection.sync(); List<DataSource.TableResult> searched = connection.search(searchContext); tableResult.success = deleteResult.success && upsertResult.success; } }"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 0,
+      "files": 1,
+      "ok": true,
+      "types": 1
+    }
+  }
+}

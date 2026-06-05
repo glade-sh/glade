@@ -1212,7 +1212,7 @@ func passiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existing []v
 		seen[strings.ToLower(class.Name)] = true
 	}
 	var out []vm.Class
-	for _, typ := range typesys.StandardPlatformSymbols() {
+	for _, typ := range typesys.StandardPlatformSymbolView() {
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface && typ.Kind != apexast.DeclarationEnum {
 			continue
 		}

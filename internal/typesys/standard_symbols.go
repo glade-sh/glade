@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/apexast"
 )
@@ -50,10 +51,32 @@ func standardEnumProperties(typeName string, names ...string) []StandardProperty
 	return props
 }
 
+var (
+	standardPlatformSymbolsOnce  sync.Once
+	standardPlatformSymbolsCache []TypeSymbol
+)
+
 func StandardPlatformSymbols() []TypeSymbol {
+	standardPlatformSymbolsOnce.Do(func() {
+		standardPlatformSymbolsCache = buildStandardPlatformSymbols()
+	})
+	return cloneTypeSymbols(standardPlatformSymbolsCache)
+}
+
+// StandardPlatformSymbolView returns cached platform symbols for read-only walkers.
+// Callers that may mutate symbols or nested slices must use StandardPlatformSymbols.
+func StandardPlatformSymbolView() []TypeSymbol {
+	standardPlatformSymbolsOnce.Do(func() {
+		standardPlatformSymbolsCache = buildStandardPlatformSymbols()
+	})
+	return standardPlatformSymbolsCache
+}
+
+func buildStandardPlatformSymbols() []TypeSymbol {
 	specs := append([]StandardSymbolSpec(nil), standardPlatformSymbolSpecs...)
 	specs = append(specs, productNamespaceSymbolSpecs...)
 	specs = append(specs, systemStubSymbolSpecs...)
+	specs = append(specs, dataSourcePlatformSymbolOverlays...)
 	specs = append(specs, standardPlatformSymbolOverlays...)
 	for _, name := range standardPlatformTypeNames {
 		if standardSpecExists(specs, name) {
@@ -62,6 +85,46 @@ func StandardPlatformSymbols() []TypeSymbol {
 		specs = append(specs, StandardSymbolSpec{Name: name, Kind: apexast.DeclarationClass})
 	}
 	return StandardSymbolsFromSpecs(specs)
+}
+
+func cloneTypeSymbols(symbols []TypeSymbol) []TypeSymbol {
+	out := make([]TypeSymbol, len(symbols))
+	for i, symbol := range symbols {
+		out[i] = symbol
+		out[i].Modifiers = append([]string(nil), symbol.Modifiers...)
+		out[i].Interfaces = append([]string(nil), symbol.Interfaces...)
+		out[i].Members = cloneMemberSymbols(symbol.Members)
+	}
+	return out
+}
+
+func cloneMemberSymbols(members []MemberSymbol) []MemberSymbol {
+	out := make([]MemberSymbol, len(members))
+	for i, member := range members {
+		out[i] = member
+		out[i].Modifiers = append([]string(nil), member.Modifiers...)
+		out[i].Parameters = cloneParameters(member.Parameters)
+		out[i].Accessors = cloneAccessors(member.Accessors)
+	}
+	return out
+}
+
+func cloneParameters(parameters []apexast.Parameter) []apexast.Parameter {
+	out := make([]apexast.Parameter, len(parameters))
+	for i, parameter := range parameters {
+		out[i] = parameter
+		out[i].Modifiers = append([]string(nil), parameter.Modifiers...)
+	}
+	return out
+}
+
+func cloneAccessors(accessors []apexast.Accessor) []apexast.Accessor {
+	out := make([]apexast.Accessor, len(accessors))
+	for i, accessor := range accessors {
+		out[i] = accessor
+		out[i].Modifiers = append([]string(nil), accessor.Modifiers...)
+	}
+	return out
 }
 
 func StandardSObjectSymbols(names []string) []TypeSymbol {
@@ -935,17 +998,41 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "DataSource.AsyncDeleteCallback", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "processDelete", ReturnType: "void", Parameters: []string{"Database.DeleteResult"}}}},
 	{Name: "DataSource.AsyncSaveCallback", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "processSave", ReturnType: "void", Parameters: []string{"Database.SaveResult"}}}},
+	{Name: "ApexPages.KnowledgeArticleVersionStandardController", Methods: []StandardMethodSpec{
+		{Name: "setDataCategory", ReturnType: "void", Parameters: []string{"String", "String"}},
+	}},
 	{Name: "Database", Methods: []StandardMethodSpec{
+		{Name: "countQueryWithBinds", ReturnType: "Integer", Parameters: []string{"String", "Map", "AccessLevel"}, Static: true},
 		{Name: "deleteAsync", ReturnType: "List<Database.DeleteResult>", Parameters: []string{"List<Object>", "DataSource.AsyncDeleteCallback"}, Static: true},
 		{Name: "deleteAsync", ReturnType: "List<Database.DeleteResult>", Parameters: []string{"List<Object>", "DataSource.AsyncDeleteCallback", "AccessLevel"}, Static: true},
+		{Name: "deleteAsync", ReturnType: "List<Database.DeleteResult>", Parameters: []string{"List<Object>", "AccessLevel"}, Static: true},
+		{Name: "deleteAsync", ReturnType: "List<Database.DeleteResult>", Parameters: []string{"List<Object>", "Database.AllowCallouts", "AccessLevel"}, Static: true},
 		{Name: "deleteAsync", ReturnType: "Database.DeleteResult", Parameters: []string{"Object", "DataSource.AsyncDeleteCallback", "AccessLevel"}, Static: true},
+		{Name: "deleteAsync", ReturnType: "Database.DeleteResult", Parameters: []string{"Object", "AccessLevel"}, Static: true},
+		{Name: "deleteAsync", ReturnType: "Database.DeleteResult", Parameters: []string{"Object", "Database.AllowCallouts", "AccessLevel"}, Static: true},
+		{Name: "getCursor", ReturnType: "Database.Cursor", Parameters: []string{"String", "AccessLevel"}, Static: true},
+		{Name: "getCursorWithBinds", ReturnType: "Database.Cursor", Parameters: []string{"String", "Map", "AccessLevel"}, Static: true},
+		{Name: "getPaginationCursor", ReturnType: "Database.PaginationCursor", Parameters: []string{"String", "AccessLevel"}, Static: true},
+		{Name: "getPaginationCursorWithBinds", ReturnType: "Database.PaginationCursor", Parameters: []string{"String", "Map", "AccessLevel"}, Static: true},
 		{Name: "insertAsync", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "DataSource.AsyncSaveCallback"}, Static: true},
 		{Name: "insertAsync", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "DataSource.AsyncSaveCallback", "AccessLevel"}, Static: true},
+		{Name: "insertAsync", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "AccessLevel"}, Static: true},
+		{Name: "insertAsync", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "Database.AllowCallouts", "AccessLevel"}, Static: true},
 		{Name: "insertAsync", ReturnType: "Database.SaveResult", Parameters: []string{"Object", "DataSource.AsyncSaveCallback", "AccessLevel"}, Static: true},
+		{Name: "insertAsync", ReturnType: "Database.SaveResult", Parameters: []string{"Object", "AccessLevel"}, Static: true},
+		{Name: "insertAsync", ReturnType: "Database.SaveResult", Parameters: []string{"Object", "Database.AllowCallouts", "AccessLevel"}, Static: true},
+		{Name: "queryWithBinds", ReturnType: "List<SObject>", Parameters: []string{"String", "Map", "AccessLevel"}, Static: true},
 		{Name: "updateAsync", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "DataSource.AsyncSaveCallback"}, Static: true},
 		{Name: "updateAsync", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "DataSource.AsyncSaveCallback", "AccessLevel"}, Static: true},
+		{Name: "updateAsync", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "AccessLevel"}, Static: true},
+		{Name: "updateAsync", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "Database.AllowCallouts", "AccessLevel"}, Static: true},
 		{Name: "updateAsync", ReturnType: "Database.SaveResult", Parameters: []string{"Object", "DataSource.AsyncSaveCallback", "AccessLevel"}, Static: true},
+		{Name: "updateAsync", ReturnType: "Database.SaveResult", Parameters: []string{"Object", "AccessLevel"}, Static: true},
+		{Name: "updateAsync", ReturnType: "Database.SaveResult", Parameters: []string{"Object", "Database.AllowCallouts", "AccessLevel"}, Static: true},
 	}},
+	{Name: "Schema.DescribeFieldResult", Methods: []StandardMethodSpec{
+		{Name: "getControllerValues", ReturnType: "Map<String,Integer>"},
+	}, Properties: []StandardPropertySpec{{Name: "controllervalues", Type: "Map<String,Integer>"}}},
 	{Name: "industriesNlpSvc.NlpResponse", Properties: []StandardPropertySpec{{Name: "summarizationResult", Type: "industriesNlpSvc.NlpSummarizationResult"}, {Name: "errors", Type: "List<String>"}}},
 	{Name: "industriesNlpSvc.NlpSummarizationResult", Properties: []StandardPropertySpec{{Name: "summary", Type: "String"}}},
 }

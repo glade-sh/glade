@@ -59,7 +59,7 @@ func BuildStubBehaviorReport() StubBehaviorReport {
 		SchemaVersion: StubBehaviorSchemaVersion,
 		Target:        "standard platform stub behavior",
 	}
-	for _, symbol := range typesys.StandardPlatformSymbols() {
+	for _, symbol := range typesys.StandardPlatformSymbolView() {
 		typeName := stubBehaviorTypeName(symbol)
 		typeEntry := StubBehaviorEntry{
 			ID:     typeName,

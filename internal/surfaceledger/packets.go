@@ -69,19 +69,19 @@ func AreaRegistry() []AreaPacket {
 		},
 		{
 			Name:                 "Core.Runtime.Database.Batchable",
-			Title:                "Database Batchable",
-			Owner:                "internal/vm async runtime",
-			RowFilter:            "product=apex namespace=System typeName=Database|Database.Batchable|Database.BatchableContext",
+			Title:                "Database Batchable and QueryLocator",
+			Owner:                "internal/vm database async runtime",
+			RowFilter:            "product=apex namespace=Database batch types or System.Database executeBatch/query locator methods",
 			DependsOn:            []string{"Ledger.Identity", "Tests.AsyncAndIsolation"},
 			MayRunInParallelWith: []string{"Data.Reference.ObjectsFields", "External.MarketingCloud.AMPscript"},
 			SharedFiles:          []string{"internal/capability/**", "docs/generated/salesforce/**"},
 			ExclusiveFiles:       []string{"internal/vm/async*_runtime.go", "internal/vm/test_support_runtime.go"},
 			AllowedFiles:         []string{"internal/vm/**", "internal/apextest/**", "internal/capability/**", "internal/compat/**", "docs/**"},
 			BlockedFiles:         []string{"internal/server/**"},
-			RequiredFixtures:     []string{"Database.executeBatch lifecycle fixture"},
+			RequiredFixtures:     []string{"Database.executeBatch lifecycle fixture", "Database.QueryLocator overload fixture"},
 			FocusedTests:         []string{"go test ./internal/vm ./internal/apextest ./internal/repoguard"},
-			DoneCriteria:         []string{"batch lifecycle has fixture evidence", "AsyncApexJob state is explicit"},
-			RatchetTarget:        "Database.Batchable missing-shape and missing-evidence rows do not increase",
+			DoneCriteria:         []string{"batch lifecycle has fixture evidence", "query locator overloads have fixture evidence", "AsyncApexJob state is explicit"},
+			RatchetTarget:        "Database.Batchable/QueryLocator missing-shape and missing-evidence rows do not increase",
 			AreaRatchetCommand:   "go run ./cmd/glade compat surface check --ledger \"$tmp/SURFACE_LEDGER.json\" --max-parser-failures 0",
 		},
 		{
@@ -289,11 +289,17 @@ func packetOwnsRow(packet AreaPacket, row SurfaceLedgerRow) bool {
 	case "Core.Runtime.System.FeatureManagement":
 		return row.Product == ProductApex && row.Namespace == "System" && row.TypeName == "FeatureManagement"
 	case "Core.Runtime.Database.Batchable":
-		return row.Product == ProductApex && row.Namespace == "System" && (strings.Contains(row.TypeName, "Batchable") || row.TypeName == "BatchableContext" || row.TypeName == "Stateful" || row.TypeName == "QueryLocator" || isBatchableDatabaseMember(row.MemberName))
+		if row.Product != ProductApex {
+			return false
+		}
+		if row.Namespace == "Database" && (strings.Contains(row.TypeName, "Batchable") || row.TypeName == "BatchableContext" || row.TypeName == "Stateful" || row.TypeName == "QueryLocator") {
+			return true
+		}
+		return isBatchableSystemDatabaseMember(row)
 	case "Data.Runtime.SchemaDescribe":
 		return row.Product == ProductApex && row.Namespace == "Schema"
 	case "Core.Runtime.SystemAndStdlib":
-		return row.Product == ProductApex && row.Namespace == "System" && row.TypeName != "FeatureManagement" && row.TypeName != "Database" && !strings.Contains(row.TypeName, "Batchable")
+		return row.Product == ProductApex && row.Namespace == "System" && row.TypeName != "FeatureManagement" && row.TypeName != "Database" && !strings.HasPrefix(surfaceIDKey(row.SurfaceID), "apex:database.") && !strings.Contains(row.TypeName, "Batchable")
 	case "Query.Runtime.SOQLSOSL":
 		return containsAnyASCIIFold(row.SurfaceID, "soql", "sosl") || containsAnyASCIIFold(row.DocsSource, "soql", "sosl")
 	case "Data.Reference.ObjectsFields":
@@ -362,7 +368,22 @@ func ownsAsyncAndIsolationRow(row SurfaceLedgerRow) bool {
 }
 
 func isBatchableDatabaseMember(memberName string) bool {
-	return strings.EqualFold(memberName, "executeBatch") || strings.EqualFold(memberName, "getQueryLocator")
+	return strings.EqualFold(memberName, "executeBatch") || strings.EqualFold(memberName, "getQueryLocator") || strings.EqualFold(memberName, "getQueryLocatorWithBinds")
+}
+
+func isBatchableSystemDatabaseMember(row SurfaceLedgerRow) bool {
+	if row.Namespace == "System" && row.TypeName == "Database" && isBatchableDatabaseMember(row.MemberName) {
+		return true
+	}
+	if row.Namespace == "System.Database" && isBatchableDatabaseMember(row.TypeName) {
+		return true
+	}
+	switch surfaceIDKey(row.SurfaceID) {
+	case "apex:system.database.executebatch", "apex:system.database.getquerylocator", "apex:system.database.getquerylocatorwithbinds":
+		return true
+	default:
+		return false
+	}
 }
 
 func containsAnyASCIIFold(s string, needles ...string) bool {

@@ -869,10 +869,13 @@ platformStaticCall:
 		return vm.executeDatabaseDML(strings.TrimPrefix(callee, "Database."), args, result)
 	case "Database.insert", "Database.update", "Database.delete":
 		return vm.executeDatabaseDML(strings.TrimPrefix(callee, "Database."), args, result)
-	case "Database.insertAsync", "Database.updateAsync", "Database.deleteAsync",
-		"Database.insertImmediate", "Database.updateImmediate", "Database.deleteImmediate":
+	case "Database.insertAsync", "Database.updateAsync", "Database.deleteAsync":
 		op := strings.TrimPrefix(callee, "Database.")
-		op = strings.TrimSuffix(strings.TrimSuffix(op, "Async"), "Immediate")
+		op = strings.TrimSuffix(op, "Async")
+		return vm.executeDatabaseAsyncDML(op, args, result)
+	case "Database.insertImmediate", "Database.updateImmediate", "Database.deleteImmediate":
+		op := strings.TrimPrefix(callee, "Database.")
+		op = strings.TrimSuffix(op, "Immediate")
 		return vm.executeDatabaseDML(op, args, result)
 	case "Database.getAsyncSaveResult", "Database.getAsyncDeleteResult":
 		if len(args) != 1 {

@@ -111,6 +111,49 @@ func TestSchemaDescribePacketOwnsOnlySchemaNamespaceDescribeRows(t *testing.T) {
 	}
 }
 
+func TestDatabaseBatchablePacketUsesCanonicalDatabaseNamespace(t *testing.T) {
+	packet, ok := AreaPacketByName("Core.Runtime.Database.Batchable")
+	if !ok {
+		t.Fatal("missing Database.Batchable packet")
+	}
+	batchableRow := SurfaceLedgerRow{
+		SurfaceID:  ApexMemberID("Database", "Batchable", "start", []string{"Database.BatchableContext"}),
+		Product:    ProductApex,
+		Namespace:  "Database",
+		TypeName:   "Batchable",
+		MemberName: "start",
+		Kind:       KindMethod,
+	}
+	if !packetOwnsRow(packet, batchableRow) {
+		t.Fatalf("Database.Batchable packet should own %s", batchableRow.SurfaceID)
+	}
+	stdlibDatabaseRow := SurfaceLedgerRow{
+		SurfaceID: ApexMemberID("System", "Database", "getQueryLocatorWithBinds", nil),
+		Product:   ProductApex,
+		Namespace: "System.Database",
+		TypeName:  "getQueryLocatorWithBinds",
+		Kind:      KindMethod,
+	}
+	if !packetOwnsRow(packet, stdlibDatabaseRow) {
+		t.Fatalf("Database.Batchable packet should own stdlib matrix row %s", stdlibDatabaseRow.SurfaceID)
+	}
+	systemPacket, ok := AreaPacketByName("Core.Runtime.SystemAndStdlib")
+	if !ok {
+		t.Fatal("missing SystemAndStdlib packet")
+	}
+	stdlibDatabaseMethodRow := SurfaceLedgerRow{
+		SurfaceID:  ApexMemberID("System", "Database", "getQueryLocator", []string{"String"}),
+		Product:    ProductApex,
+		Namespace:  "System",
+		TypeName:   "Database",
+		MemberName: "getQueryLocator",
+		Kind:       KindMethod,
+	}
+	if packetOwnsRow(systemPacket, stdlibDatabaseMethodRow) {
+		t.Fatalf("SystemAndStdlib packet should not own Database batch row %s", stdlibDatabaseMethodRow.SurfaceID)
+	}
+}
+
 func TestAsyncAndIsolationPacketExcludesServiceAsyncDocs(t *testing.T) {
 	packet, ok := AreaPacketByName("Tests.AsyncAndIsolation")
 	if !ok {

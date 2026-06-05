@@ -42,6 +42,12 @@
       "symbol": "Database.insert",
       "kind": "test",
       "notes": "Database.insert with DMLOptions maps optAllOrNone=false to the existing partial-success SaveResult path."
+    },
+    {
+      "surfaceId": "apex:System.Database.insert(List<Object>,Database.DMLOptions)",
+      "symbol": "Database.insert",
+      "kind": "test",
+      "notes": "List Database.insert with DMLOptions maps optAllOrNone=false to local partial-success SaveResult rows."
     }
   ],
   "source": [

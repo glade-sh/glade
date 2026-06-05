@@ -34,6 +34,36 @@ func BenchmarkBuildIndex(b *testing.B) {
 	}
 }
 
+func BenchmarkStandardPlatformSymbols(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		symbols := StandardPlatformSymbols()
+		if len(symbols) == 0 {
+			b.Fatal("missing standard symbols")
+		}
+	}
+}
+
+func BenchmarkStandardPlatformSymbolView(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		symbols := StandardPlatformSymbolView()
+		if len(symbols) == 0 {
+			b.Fatal("missing standard symbols")
+		}
+	}
+}
+
+func BenchmarkBuildStandardPlatformSymbolsUncached(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		symbols := buildStandardPlatformSymbols()
+		if len(symbols) == 0 {
+			b.Fatal("missing standard symbols")
+		}
+	}
+}
+
 func writeBenchmarkFile(b *testing.B, path, content string) {
 	b.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

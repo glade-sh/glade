@@ -2705,6 +2705,36 @@ System.assert(selfCaught, 'self cause should throw');
 	}
 }
 
+func TestExecJSONExceptionKeepsSpecificUnsupportedExceptionMembers(t *testing.T) {
+	program, err := CompileAnonymous(`
+Exception e = new JSONException('bad json');
+
+Boolean fieldsCaught = false;
+try {
+	e.getInaccessibleFields();
+} catch (Exception ex) {
+	fieldsCaught = true;
+	System.assertEquals('System.TypeException', ex.getTypeName());
+}
+System.assert(fieldsCaught, 'JSONException.getInaccessibleFields should throw');
+
+Boolean causeCaught = false;
+try {
+	e.initCause(new Exception('root'));
+} catch (Exception ex) {
+	causeCaught = true;
+	System.assertEquals('System.NullPointerException', ex.getTypeName());
+}
+System.assert(causeCaught, 'JSONException.initCause should throw');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCustomExceptionInheritsCoreConstructors(t *testing.T) {
 	program, err := CompileAnonymous(`
 Exception cause = new QueryException('root');

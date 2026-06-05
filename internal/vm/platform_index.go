@@ -16,7 +16,7 @@ func CommonSObjectTypeNames() []string {
 }
 func buildGeneratedPlatformTypeIndex() map[string]generatedPlatformType {
 	out := make(map[string]generatedPlatformType)
-	for _, typ := range typesys.StandardPlatformSymbols() {
+	for _, typ := range typesys.StandardPlatformSymbolView() {
 		name := generatedPlatformRuntimeName(typ)
 		if name == "" {
 			continue
@@ -56,7 +56,7 @@ func buildGeneratedPlatformTypeIndex() map[string]generatedPlatformType {
 }
 func buildGeneratedPlatformMethodIndex() map[string]map[string][]Method {
 	out := make(map[string]map[string][]Method)
-	for _, typ := range typesys.StandardPlatformSymbols() {
+	for _, typ := range typesys.StandardPlatformSymbolView() {
 		className := generatedPlatformRuntimeName(typ)
 		if className == "" {
 			continue

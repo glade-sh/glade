@@ -28,6 +28,70 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 	requireStandardProperty(t, visibility, "ALL", "Cache.Visibility")
 }
 
+func TestStandardPlatformSymbolsReturnsIndependentSlices(t *testing.T) {
+	first := StandardPlatformSymbols()
+	if len(first) == 0 {
+		t.Fatal("missing standard symbols")
+	}
+	firstName := first[0].Name
+	first[0].Name = "__mutated__"
+	if again := StandardPlatformSymbols(); again[0].Name != firstName {
+		t.Fatalf("standard symbol slice shares element mutation: got %q want %q", again[0].Name, firstName)
+	}
+
+	memberType := -1
+	for i, symbol := range first {
+		if len(symbol.Members) > 0 {
+			memberType = i
+			break
+		}
+	}
+	if memberType < 0 {
+		t.Fatal("missing standard symbol members")
+	}
+	second := StandardPlatformSymbols()
+	memberName := second[memberType].Members[0].Name
+	second[memberType].Members[0].Name = "__mutated_member__"
+	if again := StandardPlatformSymbols(); again[memberType].Members[0].Name != memberName {
+		t.Fatalf("standard symbol members share mutation: got %q want %q", again[memberType].Members[0].Name, memberName)
+	}
+}
+
+func TestCloneTypeSymbolsCopiesNestedModifiers(t *testing.T) {
+	input := []TypeSymbol{{
+		Name:       "Trail",
+		Modifiers:  []string{"public"},
+		Interfaces: []string{"Runnable"},
+		Members: []MemberSymbol{{
+			Name:      "run",
+			Modifiers: []string{"public"},
+			Parameters: []apexast.Parameter{{
+				Name:      "scope",
+				Modifiers: []string{"final"},
+			}},
+			Accessors: []apexast.Accessor{{
+				Kind:      "get",
+				Modifiers: []string{"public"},
+			}},
+		}},
+	}}
+
+	copy := cloneTypeSymbols(input)
+	copy[0].Modifiers[0] = "private"
+	copy[0].Interfaces[0] = "Changed"
+	copy[0].Members[0].Modifiers[0] = "private"
+	copy[0].Members[0].Parameters[0].Modifiers[0] = "var"
+	copy[0].Members[0].Accessors[0].Modifiers[0] = "private"
+
+	if input[0].Modifiers[0] != "public" ||
+		input[0].Interfaces[0] != "Runnable" ||
+		input[0].Members[0].Modifiers[0] != "public" ||
+		input[0].Members[0].Parameters[0].Modifiers[0] != "final" ||
+		input[0].Members[0].Accessors[0].Modifiers[0] != "public" {
+		t.Fatalf("cloneTypeSymbols shared nested modifier slices: %#v", input)
+	}
+}
+
 func TestStandardSymbolsFromSpecsMergesDuplicateTypesCaseInsensitively(t *testing.T) {
 	symbols := StandardSymbolsFromSpecs([]StandardSymbolSpec{{
 		Name: "ConnectApi.Organization",
@@ -196,6 +260,120 @@ func TestStandardPlatformSymbolsIncludeSearchQuery(t *testing.T) {
 
 	date := requireStandardSymbol(t, symbols, "Date")
 	requireStandardMethod(t, date, "daysInMonth", []string{"Integer", "Integer"}, true)
+}
+
+func TestStandardPlatformSymbolsIncludeDataSourceCompileShapes(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	for _, name := range []string{
+		"DataSource.AuthenticationCapability",
+		"DataSource.AuthenticationProtocol",
+		"DataSource.Capability",
+		"DataSource.DataType",
+		"DataSource.FilterType",
+		"DataSource.IdentityType",
+		"DataSource.OrderDirection",
+		"DataSource.QueryAggregation",
+	} {
+		enum := requireStandardSymbol(t, symbols, name)
+		if enum.Kind != apexast.DeclarationEnum {
+			t.Fatalf("%s kind = %q, want enum", name, enum.Kind)
+		}
+	}
+
+	requireStandardProperty(t, requireStandardSymbol(t, symbols, "DataSource.DataType"), "STRING_SHORT_TYPE", "DataSource.DataType")
+	requireStandardProperty(t, requireStandardSymbol(t, symbols, "DataSource.OrderDirection"), "ASCENDING", "DataSource.OrderDirection")
+
+	column := requireStandardSymbol(t, symbols, "DataSource.Column")
+	if column.SuperClass != "DataSource.DataSourceUtil" {
+		t.Fatalf("DataSource.Column superclass = %q, want DataSource.DataSourceUtil", column.SuperClass)
+	}
+	requireStandardMethod(t, column, "text", []string{"String", "String", "Integer"}, true)
+	requireStandardMethod(t, column, "picklist", []string{"String", "List<Map<String,String>>", "Boolean", "Boolean"}, true)
+	requireStandardProperty(t, column, "type", "DataSource.DataType")
+	requireStandardProperty(t, column, "picklistValues", "List<Map<String,String>>")
+
+	table := requireStandardSymbol(t, symbols, "DataSource.Table")
+	requireStandardMethod(t, table, "get", []string{"String", "String", "List<DataSource.Column>"}, true)
+	requireStandardProperty(t, table, "columns", "List<DataSource.Column>")
+
+	tableResult := requireStandardSymbol(t, symbols, "DataSource.TableResult")
+	requireStandardMethod(t, tableResult, "get", []string{"DataSource.QueryContext", "List<Map<String,Object>>"}, true)
+	requireStandardProperty(t, tableResult, "rows", "List<Map<String,Object>>")
+
+	params := requireStandardSymbol(t, symbols, "DataSource.ConnectionParams")
+	requireStandardProperty(t, params, "protocol", "DataSource.AuthenticationProtocol")
+	requireStandardProperty(t, params, "principalType", "DataSource.IdentityType")
+
+	filter := requireStandardSymbol(t, symbols, "DataSource.Filter")
+	requireStandardProperty(t, filter, "type", "DataSource.FilterType")
+	requireStandardProperty(t, filter, "subfilters", "List<DataSource.Filter>")
+
+	order := requireStandardSymbol(t, symbols, "DataSource.Order")
+	requireStandardMethod(t, order, "get", []string{"String", "String", "DataSource.OrderDirection"}, true)
+	requireStandardProperty(t, order, "direction", "DataSource.OrderDirection")
+
+	queryContext := requireStandardSymbol(t, symbols, "DataSource.QueryContext")
+	requireStandardMethod(t, queryContext, "get", []string{"List<DataSource.Table>", "Integer", "Integer", "DataSource.TableSelection"}, true)
+	requireStandardProperty(t, queryContext, "tableSelection", "DataSource.TableSelection")
+
+	searchContext := requireStandardSymbol(t, symbols, "DataSource.SearchContext")
+	requireStandardConstructor(t, searchContext, []string{})
+	requireStandardConstructor(t, searchContext, []string{"List<DataSource.Table>", "Integer", "Integer", "List<DataSource.TableSelection>", "String"})
+	requireStandardProperty(t, searchContext, "tableSelections", "List<DataSource.TableSelection>")
+
+	deleteResult := requireStandardSymbol(t, symbols, "DataSource.DeleteResult")
+	requireStandardMethod(t, deleteResult, "success", []string{"String"}, true)
+	requireStandardMethod(t, deleteResult, "failure", []string{"String", "String"}, true)
+	requireStandardProperty(t, deleteResult, "success", "Boolean")
+
+	upsertResult := requireStandardSymbol(t, symbols, "DataSource.UpsertResult")
+	requireStandardMethod(t, upsertResult, "success", []string{"String"}, true)
+	requireStandardMethod(t, upsertResult, "failure", []string{"String", "String"}, true)
+	requireStandardProperty(t, upsertResult, "success", "Boolean")
+
+	provider := requireStandardSymbol(t, symbols, "DataSource.Provider")
+	if provider.SuperClass != "DataSource.DataSourceUtil" {
+		t.Fatalf("DataSource.Provider superclass = %q, want DataSource.DataSourceUtil", provider.SuperClass)
+	}
+	requireStandardMethodType(t, provider, "getCapabilities", "List<DataSource.Capability>")
+	requireStandardMethodType(t, provider, "getConnection", "DataSource.Connection")
+
+	connection := requireStandardSymbol(t, symbols, "DataSource.Connection")
+	if connection.SuperClass != "DataSource.DataSourceUtil" {
+		t.Fatalf("DataSource.Connection superclass = %q, want DataSource.DataSourceUtil", connection.SuperClass)
+	}
+	requireStandardMethodType(t, connection, "sync", "List<DataSource.Table>")
+	requireStandardMethodType(t, connection, "query", "DataSource.TableResult")
+	requireStandardMethodType(t, connection, "search", "List<DataSource.TableResult>")
+
+	dataSourceUtil := requireStandardSymbol(t, symbols, "DataSource.DataSourceUtil")
+	requireStandardMethod(t, dataSourceUtil, "logWarning", []string{"String"}, false)
+	requireStandardMethod(t, dataSourceUtil, "throwException", []string{"String"}, false)
+
+	database := requireStandardSymbol(t, symbols, "Database")
+	for _, method := range []string{"insertAsync", "updateAsync"} {
+		requireStandardMethod(t, database, method, []string{"Object", "AccessLevel"}, true)
+		requireStandardMethod(t, database, method, []string{"List<Object>", "AccessLevel"}, true)
+		requireStandardMethod(t, database, method, []string{"Object", "Database.AllowCallouts", "AccessLevel"}, true)
+		requireStandardMethod(t, database, method, []string{"List<Object>", "Database.AllowCallouts", "AccessLevel"}, true)
+	}
+	requireStandardMethod(t, database, "deleteAsync", []string{"Object", "AccessLevel"}, true)
+	requireStandardMethod(t, database, "deleteAsync", []string{"List<Object>", "AccessLevel"}, true)
+	requireStandardMethod(t, database, "deleteAsync", []string{"Object", "Database.AllowCallouts", "AccessLevel"}, true)
+	requireStandardMethod(t, database, "deleteAsync", []string{"List<Object>", "Database.AllowCallouts", "AccessLevel"}, true)
+}
+
+func TestStandardPlatformSymbolsIncludeDatabaseAccessLevelAliasShapes(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	database := requireStandardSymbol(t, symbols, "Database")
+
+	requireStandardMethod(t, database, "queryWithBinds", []string{"String", "Map", "AccessLevel"}, true)
+	requireStandardMethod(t, database, "countQueryWithBinds", []string{"String", "Map", "AccessLevel"}, true)
+	requireStandardMethod(t, database, "getCursor", []string{"String", "AccessLevel"}, true)
+	requireStandardMethod(t, database, "getCursorWithBinds", []string{"String", "Map", "AccessLevel"}, true)
+	requireStandardMethod(t, database, "getPaginationCursor", []string{"String", "AccessLevel"}, true)
+	requireStandardMethod(t, database, "getPaginationCursorWithBinds", []string{"String", "Map", "AccessLevel"}, true)
 }
 
 func TestStandardPlatformSymbolsIncludeMessagingPageReferenceAndSObjectOptionRows(t *testing.T) {

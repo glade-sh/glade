@@ -139,7 +139,7 @@ func BuildStubInventoryReport(sourceRoot string) (StubInventoryReport, error) {
 	report.Source.SObjectStubClasses = len(sobjectFiles)
 
 	generatedNames := map[string]string{}
-	for _, symbol := range typesys.StandardPlatformSymbols() {
+	for _, symbol := range typesys.StandardPlatformSymbolView() {
 		fullName := symbol.Name
 		if symbol.Namespace != "" {
 			fullName = symbol.Namespace + "." + symbol.Name
