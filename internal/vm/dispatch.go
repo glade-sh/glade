@@ -1034,6 +1034,11 @@ platformStaticCall:
 			return Null, newExceptionError("System.TypeException", "Boolean.valueOf expects String or Boolean")
 		}
 		return Bool(strings.EqualFold(strings.TrimSpace(args[0].Text), "true")), nil
+	case "AccessLevel.withPermissionSetId":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("AccessLevel.withPermissionSetId expects String")
+		}
+		return Null, unsupportedCallError("AccessLevel.withPermissionSetId permission-set-scoped user mode")
 	case "RoundingMode.valueOf":
 		return roundingModeStatic(args)
 	case "Id.valueOf":

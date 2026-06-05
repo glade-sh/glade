@@ -393,8 +393,9 @@ redirects/messages. Rendering markup is a later local-running concern.
     `ApexPages.StandardController` or `StandardSetController`.
   - [ ] Action method invocation during page load.
 - [ ] Implement `ApexPages` message behavior:
-  - [x] `ApexPages.Message`, `Severity`, `addMessage`, `getMessages`,
-    `hasMessages`, and per-request/test isolation.
+  - [x] `ApexPages.Message`, `Severity`, `addMessage`,
+    `addMessages(Exception|Object)`, `getMessages`, `hasMessages`, and
+    per-request/test isolation.
   - [ ] Message ordering and duplicate behavior close enough for controller
     tests.
 - [ ] Implement a non-rendering Visualforce test harness:

@@ -16,6 +16,29 @@ func TestResolveFieldNameResolvesIdCaseInsensitive(t *testing.T) {
 	}
 }
 
+func TestStandardObjectDefinitionIncludesHealthCloudDescribeShape(t *testing.T) {
+	definition, ok := StandardObjectDefinition("CareProgram")
+	if !ok {
+		t.Fatalf("missing CareProgram standard object definition")
+	}
+	if definition.Label != "Care Program" || definition.PluralLabel != "Care Programs" {
+		t.Fatalf("CareProgram labels = %q/%q", definition.Label, definition.PluralLabel)
+	}
+	field := definition.Fields["ParentProgramId"]
+	if field.APIName == "" {
+		t.Fatalf("missing CareProgram.ParentProgramId")
+	}
+	if field.Type != FieldReference || field.DisplayType != "REFERENCE" {
+		t.Fatalf("ParentProgramId type = %s display = %q", field.Type, field.DisplayType)
+	}
+	if len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "CareProgram" || field.RelationshipName != "ParentProgram" {
+		t.Fatalf("ParentProgramId relationship = %v/%q", field.ReferenceTo, field.RelationshipName)
+	}
+	if field.Nillable == nil || !*field.Nillable || field.Createable == nil || !*field.Createable || field.Updateable == nil || !*field.Updateable {
+		t.Fatalf("ParentProgramId flags nillable/createable/updateable = %v/%v/%v", field.Nillable, field.Createable, field.Updateable)
+	}
+}
+
 func TestEnsureStandardObjectDoesNotMutateSharedRuntimeDefinition(t *testing.T) {
 	org := OrgState{Objects: map[string]ObjectState{
 		"Account": {

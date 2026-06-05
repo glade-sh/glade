@@ -266,6 +266,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `DescribeSObjectResult.getRecordTypeInfos`,
     `getRecordTypeInfosByName`, `getRecordTypeInfosByDeveloperName`, and common
     `RecordTypeInfo` methods with deterministic local record type IDs.
+  - [x] Mark generated standard SObject and field shape rows implemented in the
+    surface ledger when they come from generated standard SObject metadata,
+    with sema/SOQL sentinel coverage for generated object and field references.
 - [x] Expand static SOQL parsing/execution with `AND`/`OR`, `IN`/`NOT IN`,
   `LIKE`, comparison operators, `NOT`, and parenthesized conditions.
   - **Limitation**: Apex compiler does not support chained method calls
@@ -449,6 +452,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   `Time`, `Math`, `Decimal`, `EncodingUtil`, and `Crypto` behavior.
   - [x] Add common `String` helpers for trim, search, replacement, split/join,
     blank checks, and case-insensitive equality.
+  - [x] Add exact fixture evidence for `Boolean.valueOf(String)` and
+    `Boolean.valueOf(Object)`.
   - [x] Add `Pattern.compile`, `Pattern.matches`, and basic `Matcher`
     `find`/`matches`/`group` behavior.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
@@ -470,6 +475,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `SendEmailResult` basics.
   - [x] Add `ApexPages` message storage, current page, `PageReference`, and
     deterministic org `URL` basics.
+  - [x] Add exact fixture evidence for
+    `ApexPages.addMessages(Exception|Object)`.
   - **Limitation**: Full Visualforce navigation/rendering and production session
     semantics remain outside the local VM subset.
 - [x] Add stable unsupported-feature errors for every unimplemented standard

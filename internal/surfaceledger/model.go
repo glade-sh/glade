@@ -92,6 +92,8 @@ const (
 	BucketFailure             = "failure"
 )
 
+const SourceStandardSObjectGeneratedShape = "standard-sobject-generated-shape"
+
 type SurfaceLedger struct {
 	SchemaVersion int                `json:"schemaVersion"`
 	Rows          []SurfaceLedgerRow `json:"rows"`
@@ -171,6 +173,15 @@ func RowFromGladeShape(row SurfaceLedgerRow) SurfaceLedgerRow {
 		} else {
 			row.GladeShape = ShapeTypeKnown
 		}
+	}
+	return withDefaults(row)
+}
+
+func RowFromGeneratedDataReferenceShape(row SurfaceLedgerRow) SurfaceLedgerRow {
+	row = RowFromGladeShape(row)
+	row.GladeShape = ShapeGenerated
+	if row.ShapeSource == "" {
+		row.ShapeSource = SourceStandardSObjectGeneratedShape
 	}
 	return withDefaults(row)
 }

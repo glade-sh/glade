@@ -70,6 +70,34 @@ func TestMergeCombinesSchemaRootClassAcrossSystemNamespace(t *testing.T) {
 	}
 }
 
+func TestMergeClassifiesGeneratedDataReferenceShapeWithDocsRow(t *testing.T) {
+	id := DataObjectID("AIInsightAction")
+	ledger := Merge(
+		[]SurfaceLedgerRow{RowFromDocs(SurfaceLedgerRow{SurfaceID: id, Product: ProductDataRef, Area: AreaData, Kind: KindType})},
+		nil,
+		[]SurfaceLedgerRow{RowFromGeneratedDataReferenceShape(SurfaceLedgerRow{
+			SurfaceID:     id,
+			Product:       ProductDataRef,
+			Area:          AreaData,
+			Kind:          KindType,
+			GladeBehavior: BehaviorSupported,
+			Sources:       []string{SourceStandardSObjectGeneratedShape},
+		})},
+		nil,
+	)
+
+	if len(ledger.Rows) != 1 {
+		t.Fatalf("rows = %d, want 1", len(ledger.Rows))
+	}
+	row := ledger.Rows[0]
+	if row.Bucket != BucketImplemented || row.GapClass != "" {
+		t.Fatalf("bucket/gap = %q/%q, want implemented", row.Bucket, row.GapClass)
+	}
+	if !hasSource(row.Sources, SourceStandardSObjectGeneratedShape) {
+		t.Fatalf("sources = %#v, want generated shape source", row.Sources)
+	}
+}
+
 func TestClassifyGapFromStates(t *testing.T) {
 	tests := []struct {
 		name string
@@ -104,6 +132,11 @@ func TestClassifyGapFromStates(t *testing.T) {
 		{
 			name: "fixture backed data-reference field",
 			row:  SurfaceLedgerRow{SurfaceID: DataFieldID("AsyncApexJob", "CompletedDate"), Product: ProductDataRef, Area: AreaData, Kind: KindField, Docs: SourceAbsent, Org: SourceAbsent, GladeShape: ShapeTypeKnown, GladeBehavior: BehaviorSupported, Evidence: EvidenceFixture},
+			gap:  "",
+		},
+		{
+			name: "generated data-reference field",
+			row:  SurfaceLedgerRow{SurfaceID: DataFieldID("AIInsightAction", "AiRecordInsightId"), Product: ProductDataRef, Area: AreaData, Kind: KindField, Docs: SourcePresent, Org: SourceAbsent, GladeShape: ShapeGenerated, GladeBehavior: BehaviorSupported, ShapeSource: SourceStandardSObjectGeneratedShape},
 			gap:  "",
 		},
 		{

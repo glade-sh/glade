@@ -84,6 +84,18 @@ func TestCanonicalSurfaceIDsCleanApexNames(t *testing.T) {
 		t.Fatalf("cleaned System.Type id = %q, want %q", got, want)
 	}
 
+	got = ApexMemberID("cache", "Partition", "get", []string{"List<System.Type>", "String"})
+	want = ApexMemberID("Cache", "Partition", "get", []string{"List<Type>", "String"})
+	if got != want {
+		t.Fatalf("cleaned generic System.Type id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "Example", "run", []string{"Foo.System.Type"})
+	want = "apex:System.Example.run(Foo.System.Type)"
+	if got != want {
+		t.Fatalf("nested System segment id = %q, want %q", got, want)
+	}
+
 	got = ApexMemberID("System", "System", "scheduleBatch", []string{"Database.Batchable", "String", "Integer"})
 	want = ApexMemberID("System", "System", "scheduleBatch", []string{"Object", "String", "Integer"})
 	if got != want {

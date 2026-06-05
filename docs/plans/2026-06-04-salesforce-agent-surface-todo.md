@@ -745,6 +745,48 @@
   evidence. The documented `Schema.describeSObjects(List<String>,Object)`
   overload remains a real runtime gap and stays outside this first packet.
 
+- [x] **23A. Packet: Core.Runtime.SystemAndStdlib family chunk**
+
+  Reviewed 2026-06-05. The completed chunk added exact shape/evidence for a
+  broad set of already-modeled local stdlib rows: `AccessLevel` explicit
+  unsupported behavior, `ApexPages` message/current-page/test-callback rows,
+  `Test.createStub*` and SOQL stub rows, `Assert` overload evidence, exact
+  `Limits` getter evidence, exact common `String` evidence, and exact
+  `Boolean.valueOf(String|Object)` evidence.
+
+  Review fixes: added exact `ApexPages.addMessages(Exception|Object)` and
+  `Boolean.valueOf(String|Object)` shape/evidence so supported VM behavior no
+  longer appears as top missing-shape or missing-evidence rows.
+
+  Fresh refresh:
+
+  ```text
+  implemented=55122 partial=31 passive=46986 explicitUnsupported=692
+  gaps: missingShape=12239 missingBehavior=0 missingEvidence=7635
+  failures: parser=0 docsOrgMismatch=0 staleGlade=0 passiveServiceRisk=0
+  ```
+
+  Remaining top rows are real missing-shape families such as `Answers`,
+  `Approval`, `BusinessHours`, `DMLOptions`, and broad System reference pages.
+
+- [x] **23B. Packet: Data.Reference.ObjectsFields generated shape chunk**
+
+  Reviewed 2026-06-05. Generated standard SObject and field rows now enter the
+  surface ledger as `gladeShape=generated` from
+  `standard-sobject-generated-shape`, with sema/SOQL sentinel coverage for
+  generated standard objects and fields.
+
+  Review fix: merged docs-backed object rows were still classified as
+  `missing-evidence` because docs kept `shapeSource=reference`. Classification
+  now also honors the merged generated-shape source list. That moved the
+  generated object rows into `implemented` without requiring fixture evidence
+  for every reference-backed field.
+
+  Fresh packet top rows are now true `missing-shape` gaps, starting with
+  entitlement- or org-feature-backed objects such as `AIFeatureExtractor`,
+  `AIPredictionEvent`, and `AccountForecast`. Use the max scratch-org probe
+  config before claiming those rows.
+
 ## Agent Closeout Todo
 
 - [x] **24. Require a standard validation block**

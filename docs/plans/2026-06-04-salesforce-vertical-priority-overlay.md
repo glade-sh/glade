@@ -321,6 +321,35 @@ ConnectApi has the largest ledger pressure:
 
 That is coverage debt. It is not the first runtime frontier.
 
+## Reviewed Surface Chunks
+
+Review date: 2026-06-05.
+
+Two completed packet chunks are accepted after review fixes:
+
+- `Core.Runtime.SystemAndStdlib`: exact stdlib shape/evidence moved for
+  `AccessLevel.withPermissionSetId`, `ApexPages` message/current-page rows,
+  `Test.createStub*` and SOQL stub helpers, `Assert` overloads, exact `Limits`
+  getters, exact common `String` rows, `Boolean.valueOf(String|Object)`, and
+  `ApexPages.addMessages(Exception|Object)`.
+- `Data.Reference.ObjectsFields`: generated standard SObject and field shape
+  rows now classify as implemented when backed by the generated standard
+  SObject shape source.
+
+Fresh reviewed refresh:
+
+```text
+implemented=55122 partial=31 passive=46986 explicitUnsupported=692
+gaps: missingShape=12239 missingBehavior=0 missingEvidence=7635
+failures: parser=0 docsOrgMismatch=0 staleGlade=0 passiveServiceRisk=0
+```
+
+The next `Data.Reference.ObjectsFields` rows are now missing-shape rows tied to
+org-feature or entitlement shape, not generated objects waiting for evidence.
+The next `Core.Runtime.SystemAndStdlib` rows remain active runtime choices such
+as `Approval`, `BusinessHours`, `DMLOptions`, and broad System reference
+families.
+
 ## Agent Handoff Template
 
 Each agent gets one vertical packet and one corpus sentinel:

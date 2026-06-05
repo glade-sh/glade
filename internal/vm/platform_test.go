@@ -11526,6 +11526,19 @@ System.assert(upsertListResults.get(1).isSuccess());
 	}
 }
 
+func TestExecAccessLevelWithPermissionSetIdIsExplicitUnsupported(t *testing.T) {
+	program, err := CompileAnonymous("AccessLevel.withPermissionSetId('0PS000000000001');")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	_, err = machine.Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "AccessLevel.withPermissionSetId permission-set-scoped user mode"` {
+		t.Fatalf("err = %#v, want UnsupportedFeature permission-set-scoped user mode", err)
+	}
+}
+
 func TestExecDMLKeywordsAcceptUserAndSystemMode(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account userAccount = new Account(Name = 'User Keyword');

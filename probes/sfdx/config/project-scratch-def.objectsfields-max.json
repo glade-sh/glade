@@ -1,0 +1,228 @@
+{
+  "orgName": "glade ObjectsFields Probe Lab",
+  "edition": "Enterprise",
+  "hasSampleData": true,
+  "features": [
+    "API",
+    "AuthorApex",
+    "DebugApex",
+    "EnableSetPasswordInApi",
+    "Communities",
+    "Sites",
+    "ServiceCloud",
+    "ServiceUser",
+    "SalesUser",
+    "SalesCloudEinstein",
+    "Knowledge",
+    "LiveAgent",
+    "LiveMessage",
+    "PersonAccounts",
+    "MultiCurrency",
+    "RecordTypes",
+    "PlatformCache",
+    "ProviderFreePlatformCache",
+    "StreamingAPI",
+    "GenericStreaming",
+    "ChangeDataCapture",
+    "Workflow",
+    "ProcessBuilder",
+    "FlowSites",
+    "Entitlements",
+    "OrderManagement",
+    "OrderSaveBehaviorBoth",
+    "ProductsAndSchedules",
+    "ContractApprovals",
+    "ContactsToMultipleAccounts",
+    "SharedActivities",
+    "FieldService:1",
+    "FieldServiceAppointmentAssistantUser:1",
+    "FieldServiceDispatcherUser:1",
+    "FieldServiceLastMileUser:1",
+    "FieldServiceMobileExtension",
+    "FieldServiceMobileUser:1",
+    "FieldServiceSchedulingUser:1",
+    "HighVelocitySales",
+    "Macros",
+    "CustomNotificationType",
+    "SurveyAdvancedFeatures",
+    "SalesforceFeedbackManagementStarter",
+    "IoT",
+    "MobileSecurity",
+    "EinsteinAnalyticsPlus",
+    "DevelopmentWave",
+    "WavePlatform",
+    "InsightsPlatform",
+    "AnalyticsAdminPerms",
+    "PlatformEncryption",
+    "DataProcessingEngine",
+    "DecisionTable",
+    "ExternalIdentityLogin",
+    "SCIMProtocol",
+    "SAML20SingleLogout",
+    "StateAndCountryPicklist",
+    "ForceComPlatform",
+    "Einstein1AIPlatform",
+    "EventLogFile",
+    "SecurityEventEnabled",
+    "ConsentEventStream",
+    "LightningSalesConsole",
+    "LightningServiceConsole",
+    "LightningScheduler",
+    "MarketingUser",
+    "SalesforceContentUser",
+    "SocialCustomerService",
+    "CascadeDelete",
+    "DeferSharingCalc",
+    "Division",
+    "ObjectLinking",
+    "RefreshOnInvalidSession",
+    "SessionIdInLogEnabled",
+    "FieldAuditTrail",
+    "AdditionalFieldHistory:40",
+    "NumPlatformEvents:20",
+    "PlatformEventsPerDay:50000",
+    "StreamingEventsPerDay:50000",
+    "SubPerStreamingChannel:4000",
+    "SubPerStreamingTopic:4000",
+    "ConcStreamingClients:4000",
+    "Chatbot",
+    "Assessments",
+    "AssetScheduling:10",
+    "BatchManagement",
+    "FinanceLogging",
+    "BigObjectsBulkAPI",
+    "PlatformConnect:5"
+  ],
+  "settings": {
+    "lightningExperienceSettings": {
+      "enableS1DesktopEnabled": true
+    },
+    "mobileSettings": {
+      "enableS1EncryptedStoragePref2": false
+    },
+    "chatterSettings": {
+      "enableChatter": true
+    },
+    "communitiesSettings": {
+      "enableNetworksEnabled": true
+    },
+    "experienceBundleSettings": {
+      "enableExperienceBundleMetadata": true
+    },
+    "einsteinGptSettings": {
+      "enableEinsteinGptPlatform": true
+    },
+    "agentPlatformSettings": {
+      "enableAgentPlatform": true
+    },
+    "omniChannelSettings": {
+      "enableOmniChannel": true
+    },
+    "caseSettings": {
+      "systemUserEmail": "support@glade-probe.lab"
+    },
+    "apexSettings": {
+      "enableDisableParallelApexTesting": false
+    },
+    "knowledgeSettings": {
+      "enableKnowledge": true
+    },
+    "currencySettings": {
+      "enableMultiCurrency": true
+    },
+    "nameSettings": {
+      "enableMiddleName": true,
+      "enableNameSuffix": true
+    },
+    "opportunitySettings": {
+      "enableOpportunityTeam": true
+    },
+    "orderManagementSettings": {
+      "enableOrderManagement": true
+    },
+    "orderSettings": {
+      "enableOrders": true,
+      "enableEnhancedCommerceOrders": true
+    },
+    "productSettings": {
+      "enableQuantitySchedule": true,
+      "enableRevenueSchedule": true
+    },
+    "quoteSettings": {
+      "enableQuote": true
+    },
+    "securitySettings": {
+      "enableAuditFieldsInactiveOwner": true
+    },
+    "sharingSettings": {
+      "enableAccountRoleOptimization": true,
+      "enableAssetSharing": true
+    },
+    "userManagementSettings": {
+      "enableEnhancedProfileMgmt": true,
+      "enableNewProfileUI": true
+    },
+    "emailAdministrationSettings": {
+      "enableEmailToSalesforce": true
+    },
+    "entitlementSettings": {
+      "enableEntitlements": true
+    },
+    "forecastingSettings": {
+      "enableForecasts": true
+    },
+    "liveAgentSettings": {
+      "enableLiveAgent": true
+    },
+    "fieldServiceSettings": {
+      "fieldServiceOrgPref": true,
+      "enableWorkOrders": true,
+      "o2EngineEnabled": true,
+      "optimizationServiceAccess": true
+    },
+    "surveySettings": {
+      "enableSurvey": true
+    },
+    "socialCustomerServiceSettings": {
+      "enableSocialCustomerService": true
+    },
+    "contentSettings": {
+      "enableContent": true
+    },
+    "campaignSettings": {
+      "enableCampaignInfluence2": true
+    },
+    "customAddressFieldSettings": {
+      "enableCustomAddressField": true
+    }
+  },
+  "objectSettings": {
+    "account": {
+      "sharingModel": "private"
+    },
+    "asset": {
+      "sharingModel": "private"
+    },
+    "campaign": {
+      "sharingModel": "private"
+    },
+    "case": {
+      "sharingModel": "private"
+    },
+    "contact": {
+      "sharingModel": "private"
+    },
+    "contract": {
+      "sharingModel": "private"
+    },
+    "lead": {
+      "sharingModel": "private"
+    },
+    "opportunity": {
+      "sharingModel": "private"
+    },
+    "order": {
+      "sharingModel": "private"
+    }
+  }
+}

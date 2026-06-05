@@ -560,7 +560,11 @@ func KnownStandardObjectNames() []string {
 
 func initKnownStandardObjectCache() {
 	knownStandardObjectCache.once.Do(func() {
+		describeCatalog := loadEmbeddedStandardDescribeCatalog()
 		names := buildKnownStandardObjectNameSet()
+		for name := range describeCatalog {
+			names[name] = true
+		}
 		out := make([]string, 0, len(names))
 		for name := range names {
 			out = append(out, name)
@@ -570,7 +574,13 @@ func initKnownStandardObjectCache() {
 		for _, name := range out {
 			canonicalByLC[standardObjectLookupKey(name)] = name
 		}
-		catalogByLC := make(map[string]standardObjectCatalogEntry, len(standardObjectCatalogData))
+		catalogByLC := make(map[string]standardObjectCatalogEntry, len(standardObjectCatalogData)+len(describeCatalog))
+		for name, entry := range describeCatalog {
+			if _, ok := standardSObjectStubFieldData[name]; ok {
+				continue
+			}
+			catalogByLC[standardObjectLookupKey(name)] = entry
+		}
 		for name, entry := range standardObjectCatalogData {
 			catalogByLC[standardObjectLookupKey(name)] = entry
 		}

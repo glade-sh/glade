@@ -92,6 +92,7 @@ func canonicalParameterType(value string) string {
 	case strings.EqualFold(value, "BATCHABLE"), strings.EqualFold(value, "DATABASE.BATCHABLE"), strings.EqualFold(value, "SYSTEM.DATABASE.BATCHABLE"):
 		return "Object"
 	default:
+		value = stripSystemTypeQualifier(value)
 		value = strings.ReplaceAll(value, "<ANY>", "<Object>")
 		value = strings.ReplaceAll(value, "<sObject>", "<Object>")
 		value = strings.ReplaceAll(value, "<SObject>", "<Object>")
@@ -145,7 +146,9 @@ func surfaceIDKey(id string) string {
 		if strings.HasPrefix(rest, "System.QueryLocator") {
 			rest = "Database.QueryLocator" + strings.TrimPrefix(rest, "System.QueryLocator")
 		}
+		rest = canonicalApexIDParameterList(rest)
 		rest = strings.ReplaceAll(rest, "(List,System.AccessLevel)", "(List<Object>,System.AccessLevel)")
+		rest = strings.ReplaceAll(rest, "(List,AccessLevel)", "(List<Object>,AccessLevel)")
 		folded := asciiLowerIdentityKey(rest)
 		if folded == rest {
 			return "apex:" + rest
@@ -161,6 +164,41 @@ func surfaceIDKey(id string) string {
 		return "data-reference:" + folded
 	}
 	return id
+}
+
+func canonicalApexIDParameterList(rest string) string {
+	open := strings.IndexByte(rest, '(')
+	if open < 0 || !strings.HasSuffix(rest, ")") {
+		return rest
+	}
+	params := rest[open+1 : len(rest)-1]
+	return rest[:open+1] + strings.Join(cleanList(splitSurfaceParameterList(params)), ",") + ")"
+}
+
+func stripSystemTypeQualifier(value string) string {
+	if !strings.Contains(value, "System.") {
+		return value
+	}
+	var out strings.Builder
+	out.Grow(len(value))
+	for i := 0; i < len(value); {
+		if strings.HasPrefix(value[i:], "System.") && (i == 0 || isTypeQualifierBoundary(value[i-1])) {
+			i += len("System.")
+			continue
+		}
+		out.WriteByte(value[i])
+		i++
+	}
+	return out.String()
+}
+
+func isTypeQualifierBoundary(ch byte) bool {
+	switch ch {
+	case '<', ',', ' ', '(':
+		return true
+	default:
+		return false
+	}
 }
 
 func asciiLowerIdentityKey(value string) string {

@@ -3634,6 +3634,32 @@ public class UsesSOQL {
 	}
 }
 
+func TestAnalyzeGeneratedStandardSObjectShapeAndSOQL(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesGeneratedSObjectShape.cls"), `
+public class UsesGeneratedSObjectShape {
+  public static void run(AIInsightAction action, AsyncApexJob job) {
+    Id insightId = action.AiRecordInsightId;
+    Decimal confidence = action.Confidence;
+    Id apexClassId = job.ApexClassId;
+    Schema.SObjectField token = AIInsightAction.SObjectType.fields.AiRecordInsightId;
+    List<AIInsightAction> actions = [
+      SELECT AiRecordInsightId, Confidence
+      FROM AIInsightAction
+    ];
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesGeneratedSObjectShape.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeChainedStaticFactoryCall(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Selector.cls"), `

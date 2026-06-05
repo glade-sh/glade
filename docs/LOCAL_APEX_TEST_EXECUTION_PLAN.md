@@ -498,6 +498,9 @@ Current blockers:
 
 Tasks:
 
+- Surface-ledger shape coverage is done for generated standard SObjects and
+  fields backed by the generated standard SObject metadata source. Runtime
+  token, constructor, and describe behavior remains in this phase.
 - Ensure every generated standard object exposes `<Object>.SObjectType` and
   `<Object>.<Field>` tokens through VM lookup paths.
 - Keep the stub field overlay generated from public Apex stubs so standard

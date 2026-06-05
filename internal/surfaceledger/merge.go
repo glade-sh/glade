@@ -132,6 +132,8 @@ func Classify(row *SurfaceLedgerRow) {
 		row.Bucket = BucketImplemented
 	case isFixtureBackedDataReference(*row):
 		row.Bucket = BucketImplemented
+	case isGeneratedDataReferenceShape(*row):
+		row.Bucket = BucketImplemented
 	case isFixtureBackedApexType(*row):
 		row.Bucket = BucketImplemented
 	case isFixtureBackedApexMember(*row):
@@ -207,6 +209,13 @@ func isFixtureBackedDataReference(row SurfaceLedgerRow) bool {
 		row.GladeShape != ShapeAbsent &&
 		row.GladeBehavior == BehaviorSupported &&
 		row.Evidence != EvidenceNone
+}
+
+func isGeneratedDataReferenceShape(row SurfaceLedgerRow) bool {
+	return row.Product == ProductDataRef &&
+		row.GladeShape == ShapeGenerated &&
+		row.GladeBehavior == BehaviorSupported &&
+		(row.ShapeSource == SourceStandardSObjectGeneratedShape || hasSource(row.Sources, SourceStandardSObjectGeneratedShape))
 }
 
 func isFixtureBackedApexType(row SurfaceLedgerRow) bool {
@@ -310,4 +319,13 @@ func mergeStrings(a, b []string) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func hasSource(values []string, source string) bool {
+	for _, value := range values {
+		if value == source {
+			return true
+		}
+	}
+	return false
 }

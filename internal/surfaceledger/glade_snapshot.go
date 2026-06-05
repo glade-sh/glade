@@ -116,18 +116,18 @@ func addDataReferenceGladeRows(byID map[string]SurfaceLedgerRow) {
 			continue
 		}
 		objectID := DataObjectID(definition.APIName)
-		byID[surfaceIDKey(objectID)] = RowFromGladeShape(SurfaceLedgerRow{
+		byID[surfaceIDKey(objectID)] = RowFromGeneratedDataReferenceShape(SurfaceLedgerRow{
 			SurfaceID:     objectID,
 			Product:       ProductDataRef,
 			Area:          AreaData,
 			TypeName:      definition.APIName,
 			Kind:          KindType,
 			GladeBehavior: BehaviorSupported,
-			Sources:       []string{"standard-object-metadata"},
+			Sources:       []string{SourceStandardSObjectGeneratedShape},
 		})
 		for _, field := range definition.Fields {
 			fieldID := DataFieldID(definition.APIName, field.APIName)
-			byID[surfaceIDKey(fieldID)] = RowFromGladeShape(SurfaceLedgerRow{
+			byID[surfaceIDKey(fieldID)] = RowFromGeneratedDataReferenceShape(SurfaceLedgerRow{
 				SurfaceID:     fieldID,
 				Product:       ProductDataRef,
 				Area:          AreaData,
@@ -136,7 +136,7 @@ func addDataReferenceGladeRows(byID map[string]SurfaceLedgerRow) {
 				Kind:          KindField,
 				ReturnType:    string(field.Type),
 				GladeBehavior: BehaviorSupported,
-				Sources:       []string{"standard-object-metadata"},
+				Sources:       []string{SourceStandardSObjectGeneratedShape},
 			})
 		}
 	}
@@ -180,10 +180,42 @@ func idFromStdlibAPI(api string) string {
 		return ApexTypeID("System", api)
 	}
 	params := []string(nil)
-	if parts[1] == "contains" {
+	member := parts[1]
+	if open := strings.IndexByte(member, '('); open >= 0 && strings.HasSuffix(member, ")") {
+		rawParams := strings.TrimSuffix(member[open+1:], ")")
+		member = member[:open]
+		params = splitSurfaceParameterList(rawParams)
+	} else if member == "contains" {
 		params = []string{"String"}
 	}
-	return ApexMemberID("System", parts[0], parts[1], params)
+	return ApexMemberID("System", parts[0], member, params)
+}
+
+func splitSurfaceParameterList(raw string) []string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return []string{}
+	}
+	var params []string
+	depth := 0
+	start := 0
+	for i, r := range raw {
+		switch r {
+		case '<':
+			depth++
+		case '>':
+			if depth > 0 {
+				depth--
+			}
+		case ',':
+			if depth == 0 {
+				params = append(params, strings.TrimSpace(raw[start:i]))
+				start = i + len(string(r))
+			}
+		}
+	}
+	params = append(params, strings.TrimSpace(raw[start:]))
+	return params
 }
 
 func idFromStubBehavior(entry capability.StubBehaviorEntry) string {

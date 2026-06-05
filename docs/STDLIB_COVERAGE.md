@@ -6,11 +6,19 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 
 | Area | API | Status | Notes |
 | --- | --- | --- | --- |
+| AccessLevel | `AccessLevel.withPermissionSetId(String)` | `unsupported` | Permission-set-scoped user mode requires permission-set semantics and returns a stable UnsupportedFeature diagnostic locally. |
 | ApexPages | `ApexPages.Message` | `partial` | Constructor and getters; no Visualforce rendering lifecycle. |
 | ApexPages | `ApexPages.addMessage` | `supported` | Stores page messages on the VM instance. |
+| ApexPages | `ApexPages.addMessage(ApexPages.Message)` | `supported` | Stores page messages on the VM instance. |
+| ApexPages | `ApexPages.addMessages(Exception)` | `supported` | Converts supported exception values into VM-local page messages. |
+| ApexPages | `ApexPages.addMessages(Object)` | `supported` | Converts supported exception and message values into VM-local page messages. |
 | ApexPages | `ApexPages.currentPage` | `supported` | Returns a deterministic local PageReference. |
+| ApexPages | `ApexPages.currentPage()` | `supported` | Returns the VM-local PageReference. |
 | ApexPages | `ApexPages.getMessages` | `supported` | Returns VM-local page messages. |
+| ApexPages | `ApexPages.getMessages()` | `supported` | Returns VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages` | `supported` | Checks VM-local page messages. |
+| ApexPages | `ApexPages.hasMessages()` | `supported` | Checks VM-local page messages. |
+| ApexPages | `ApexPages.hasMessages(ApexPages.Severity)` | `supported` | Checks VM-local page messages by severity. |
 | Assert | `Assert.areEqual` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.areNotEqual` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.fail` | `supported` | Raises local System.AssertException with optional message text. |
@@ -18,9 +26,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Assert | `Assert.isNotNull` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.isNull` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.isTrue` | `supported` | Routes through local assertion failures with optional message text. |
+| Boolean | `Boolean.valueOf(Object)` | `supported` | Converts supported local field/object values into Boolean values. |
+| Boolean | `Boolean.valueOf(String)` | `supported` | Converts strings to Boolean using Apex-shaped true/false parsing. |
 | Crypto | `Crypto.generateDigest` | `partial` | MD5, SHA1, and SHA-256. |
 | Database | `Database.UnitOfWork` | `supported` | Queues local DML operations and applies them on commitWork; discardWork drops pending local work. |
-| Database | `Database.convertLead` | `partial` | Local no-opportunity lead conversion creates Account and Contact and updates Lead conversion fields; opportunity conversion remains unsupported. |
+| Database | `Database.convertLead` | `supported` | Local lead conversion creates Account, Contact, and optional Opportunity records and updates Lead conversion fields. |
 | Database | `Database.countQuery` | `supported` | Dynamic SOQL count execution against the local org with local AccessLevel parsing. |
 | Database | `Database.countQueryWithBinds` | `supported` | Bind-map dynamic SOQL count execution with local AccessLevel parsing. |
 | Database | `Database.delete` | `supported` | DML pipeline with result/error shapes and local AccessLevel parsing for supported SObjects. |
@@ -49,7 +59,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Database | `Database.releaseSavepoint` | `supported` | Releases the selected local savepoint and later savepoints without rolling back org state. |
 | Database | `Database.rollback` | `supported` | Local org-state savepoint rollback with no external side effects. |
 | Database | `Database.setSavepoint` | `supported` | Local org-state snapshots with later-savepoint invalidation. |
-| Database | `Database.treeSave` | `partial` | Local insert-only parent plus first-level child relationship save with NestedSaveResult shape; updates and nested child relationships remain unsupported. |
+| Database | `Database.treeSave` | `supported` | Local parent insert/update plus first-level child insert/update with NestedSaveResult relationship result shape. |
 | Database | `Database.undelete` | `supported` | Soft-delete restoration with local AccessLevel parsing for supported local records. |
 | Database | `Database.unlock` | `supported` | Local row-unlock result shape with allOrNone rollback for supported SObjects. |
 | Database | `Database.update` | `supported` | DML pipeline with result/error shapes and local AccessLevel parsing for supported SObjects. |
@@ -114,8 +124,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships. |
 | Schema | `Schema.describeDataCategoryGroupStructures(List<Schema.DataCategoryGroupSobjectTypePair>,Boolean)` | `partial` | Deterministic local data category structures from org metadata; no external category service lookup. |
 | Schema | `Schema.describeDataCategoryGroups(List<String>)` | `partial` | Deterministic local data category group describes from org metadata; empty when no metadata is loaded. |
-| Schema | `Schema.describeSObjects` | `partial` | Object names and SObjectType tokens for local schema. |
-| Schema | `Schema.getGlobalDescribe` | `partial` | Local schema-backed describe map. |
+| Schema | `Schema.describeSObjects(List<String>)` | `partial` | Object names and SObjectType tokens for local schema. |
+| Schema | `Schema.getGlobalDescribe()` | `partial` | Local schema-backed describe map. |
 | Search | `Search.find` | `partial` | Returns deterministic SearchResult DTOs from Test.setFixedSearchResults; no external search ranking/snippets. |
 | Search | `Search.query / SOSL FIND` | `partial` | Parses RETURNING clauses and returns deterministic rows from Test.setFixedSearchResults, or empty result groups without external search. |
 | Search | `Search.suggest` | `partial` | Returns an empty deterministic SuggestionResults DTO; no external suggestion service. |
@@ -139,11 +149,17 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | System | `System.assert` | `supported` | Assertion failure returns runtime error. |
 | System | `System.assertEquals` | `supported` | Assertion failure returns runtime error. |
 | System | `System.debug` | `supported` | Collected in result debug output. |
+| Test | `Test.createSoqlStub(Schema.SObjectType,SoqlStubProvider)` | `supported` | Registers test-local SOQL stubs per SObject type. |
+| Test | `Test.createStub(Type,StubProvider)` | `supported` | Creates dynamic test stubs backed by StubProvider. |
 | Test | `Test.createStubQueryRow` | `partial` | Builds local SObject rows from field maps for SOQL stub providers. |
+| Test | `Test.createStubQueryRow(Schema.SObjectType,Map<String,Object>)` | `supported` | Builds one local SObject row from a field map for SOQL stub providers. |
 | Test | `Test.createStubQueryRows` | `partial` | Builds local SObject row lists from field maps for SOQL stub providers. |
+| Test | `Test.createStubQueryRows(Schema.SObjectType,List<Map<String,Object>>)` | `supported` | Builds local SObject row lists from field maps for SOQL stub providers. |
 | Test | `Test.getStandardPricebookId` | `partial` | Deterministic test-context-only ID. |
 | Test | `Test.isRunningTest` | `supported` | Reflects local test context. |
 | Test | `Test.loadData` | `partial` | Loads CSV static-resource content into local org storage through DML. |
+| Test | `Test.setCurrentPage(PageReference)` | `supported` | Sets the VM-local current PageReference in test context. |
+| Test | `Test.setCurrentPageReference(PageReference)` | `supported` | Sets the VM-local current PageReference in test context. |
 | Test | `Test.setMock` | `partial` | HttpCalloutMock support for local tests. |
 | Test | `Test.startTest` | `partial` | Governor-window reset/restore for supported counters. |
 | Test | `Test.stopTest` | `partial` | Drains supported async work. |
