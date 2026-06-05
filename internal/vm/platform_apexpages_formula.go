@@ -517,16 +517,16 @@ func callApexPagesIdeaStandardSetControllerMember(receiver Value, method string,
 }
 
 func callApexPagesKnowledgeArticleVersionStandardControllerMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
-	method = canonicalStdlibMemberName(method, "getSourceId", "selectDataCategory")
+	method = canonicalStdlibMemberName(method, "getSourceId", "selectDataCategory", "setDataCategory")
 	switch method {
 	case "getSourceId":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.KnowledgeArticleVersionStandardController.getSourceId expects 0 arguments")
 		}
 		return Null, receiver, false, true, nil
-	case "selectDataCategory":
+	case "selectDataCategory", "setDataCategory":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
-			return Null, receiver, false, true, fmt.Errorf("ApexPages.KnowledgeArticleVersionStandardController.selectDataCategory expects group and category Strings")
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.KnowledgeArticleVersionStandardController.%s expects group and category Strings", method)
 		}
 		return Null, receiver, false, true, nil
 	default:

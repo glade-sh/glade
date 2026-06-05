@@ -1,0 +1,59 @@
+{
+  "name": "core-runtime-accesslevel-user-system-mode",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.AccessLevel.SYSTEM_MODE",
+      "symbol": "System.AccessLevel.SYSTEM_MODE",
+      "kind": "test",
+      "notes": "SYSTEM_MODE is a typed access-mode value used by SOQL and DML to bypass current-user CRUD/FLS checks."
+    },
+    {
+      "surfaceId": "apex:System.AccessLevel.USER_MODE",
+      "symbol": "System.AccessLevel.USER_MODE",
+      "kind": "test",
+      "notes": "USER_MODE is a typed access-mode value used by SOQL and DML to enforce current-user CRUD/FLS checks."
+    },
+    {
+      "surfaceId": "apex:System.Database.query(String,AccessLevel)",
+      "symbol": "Database.query",
+      "kind": "test",
+      "notes": "Dynamic SOQL AccessLevel overload applies USER_MODE and SYSTEM_MODE security semantics."
+    },
+    {
+      "surfaceId": "apex:System.Database.insert(Object,AccessLevel)",
+      "symbol": "Database.insert",
+      "kind": "test",
+      "notes": "DML AccessLevel overload applies USER_MODE and SYSTEM_MODE security semantics."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Secret__c.field-meta.xml",
+      "content": "<CustomField><fullName>Secret__c</fullName><label>Secret</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/AccessLevelUserSystemModeTest.cls",
+      "content": "@isTest private class AccessLevelUserSystemModeTest { @isTest static void userModeEnforcesAndSystemModeBypassesCrudAndFls() { Account seeded = new Account(Name = 'Seeded', Secret__c = 'hidden'); insert seeded; Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce' LIMIT 1]; System.runAs(new User(Id = '00500000000MIN1', ProfileId = p.Id, Username = 'min@example.test')) { Boolean userDmlBlocked = false; try { Database.insert(new Account(Name = 'User DML', Secret__c = 'nope'), AccessLevel.USER_MODE); } catch (SecurityException se) { userDmlBlocked = true; } System.assertEquals(true, userDmlBlocked); Database.SaveResult systemResult = Database.insert(new Account(Name = 'System DML', Secret__c = 'ok'), AccessLevel.SYSTEM_MODE); System.assertEquals(true, systemResult.isSuccess()); Boolean userQueryBlocked = false; try { Database.query('SELECT Id, Secret__c FROM Account WHERE Name = \\'Seeded\\'', AccessLevel.USER_MODE); } catch (QueryException qe) { userQueryBlocked = true; } System.assertEquals(true, userQueryBlocked); List<Account> systemRows = Database.query('SELECT Id, Secret__c FROM Account WHERE Name = \\'Seeded\\'', AccessLevel.SYSTEM_MODE); System.assertEquals(1, systemRows.size()); System.assertEquals('hidden', systemRows[0].Secret__c); } } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

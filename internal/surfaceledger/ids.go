@@ -234,5 +234,6 @@ func cleanIdentityPart(value string) string {
 		}
 		return r
 	}, value)
+	value = strings.ReplaceAll(value, `\_`, "_")
 	return strings.TrimSpace(value)
 }

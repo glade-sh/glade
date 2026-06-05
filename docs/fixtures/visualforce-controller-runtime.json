@@ -17,6 +17,12 @@
       "notes": "Observed list pagination helpers work for local record lists."
     },
     {
+      "symbol": "ApexPages.KnowledgeArticleVersionStandardController.setDataCategory",
+      "surfaceId": "apex:ApexPages.KnowledgeArticleVersionStandardController.setDataCategory(String,String)",
+      "kind": "test",
+      "notes": "Observed no-render data category selection accepts group and category names."
+    },
+    {
       "symbol": "SelectOption",
       "kind": "test",
       "notes": "Observed constructors and getters/setters are supported."
@@ -41,7 +47,7 @@
     },
     {
       "path": "force-app/main/classes/VisualforceControllerRuntimeTest.cls",
-      "content": "@isTest private class VisualforceControllerRuntimeTest { @isTest static void controllerAndUiValueRuntime() { Account account = new Account(Name = 'VF'); ApexPages.StandardController std = new ApexPages.StandardController(account); PageReference saved = std.save(); System.assertEquals(account.Id, std.getId()); System.assertEquals('/' + account.Id, saved.getUrl()); System.assertEquals('/apex/MyPage', Page.MyPage.getUrl()); SelectOption option = new SelectOption('1', 'One', true, false); option.setLabel('Changed'); System.assertEquals('1', option.getValue()); System.assertEquals('Changed', option.getLabel()); System.assert(option.getDisabled()); System.assertEquals(false, option.getEscapeItem()); ApexPages.StandardSetController setController = new ApexPages.StandardSetController(new List<Account>{account, new Account(Name = 'Second')}); setController.setPageSize(1); System.assertEquals(1, setController.getRecords().size()); System.assert(setController.getHasNext()); setController.next(); System.assertEquals(2, setController.getPageNumber()); System.assert(setController.getHasPrevious()); } }"
+      "content": "@isTest private class VisualforceControllerRuntimeTest { @isTest static void controllerAndUiValueRuntime() { Account account = new Account(Name = 'VF'); ApexPages.StandardController std = new ApexPages.StandardController(account); PageReference saved = std.save(); System.assertEquals(account.Id, std.getId()); System.assertEquals('/' + account.Id, saved.getUrl()); System.assertEquals('/apex/MyPage', Page.MyPage.getUrl()); SelectOption option = new SelectOption('1', 'One', true, false); option.setLabel('Changed'); System.assertEquals('1', option.getValue()); System.assertEquals('Changed', option.getLabel()); System.assert(option.getDisabled()); System.assertEquals(false, option.getEscapeItem()); ApexPages.StandardSetController setController = new ApexPages.StandardSetController(new List<Account>{account, new Account(Name = 'Second')}); setController.setPageSize(1); System.assertEquals(1, setController.getRecords().size()); System.assert(setController.getHasNext()); setController.next(); System.assertEquals(2, setController.getPageNumber()); System.assert(setController.getHasPrevious()); } @isTest static void knowledgeArticleCategorySelectionIsNoRender() { Knowledge__kav article = new Knowledge__kav(Title = 'Local article'); ApexPages.KnowledgeArticleVersionStandardController controller = new ApexPages.KnowledgeArticleVersionStandardController(article); controller.setDataCategory('Products', 'Hardware'); System.assertEquals(null, controller.getSourceId()); } }"
     }
   ],
   "command": {
@@ -50,8 +56,8 @@
   "expected": {
     "result": {
       "ok": true,
-      "total": 1,
-      "passed": 1,
+      "total": 2,
+      "passed": 2,
       "failed": 0,
       "errors": 0
     }

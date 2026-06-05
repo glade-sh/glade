@@ -683,6 +683,7 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "ApexPages.Action.getExpression()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "ApexPages.Action.invoke()", StubBehaviorUnsupported)
 	assertStubBehaviorPrefix(t, entries, "ApexPages.Component.getComponentById(String)", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "ApexPages.KnowledgeArticleVersionStandardController.setDataCategory(String,String)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "ApexPages.StandardSetController.getListViewOptions()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "ApexPages.StandardSetController.setPageNumber(Integer)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "AsyncInfo.getCurrentQueueableStackDepth()", StubBehaviorImplemented)

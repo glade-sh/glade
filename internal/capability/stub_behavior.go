@@ -1477,7 +1477,7 @@ func apexPagesBehaviorMethod(typeName, methodName string) bool {
 	case "ApexPages.IdeaStandardController", "ApexPages.KnowledgeArticleVersionStandardController":
 		switch methodName {
 		case "getid", "getrecord", "save", "quicksave", "delete", "view", "edit", "cancel", "reset", "addfields",
-			"getcommentlist", "getsourceid", "selectdatacategory":
+			"getcommentlist", "getsourceid", "selectdatacategory", "setdatacategory":
 			return true
 		}
 	}

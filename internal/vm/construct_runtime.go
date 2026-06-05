@@ -801,6 +801,13 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		controller := Object("ApexPages.StandardController")
 		controller.Fields["record"] = args[0]
 		return controller, nil
+	case "ApexPages.KnowledgeArticleVersionStandardController":
+		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueObject {
+			return Null, fmt.Errorf("ApexPages.KnowledgeArticleVersionStandardController constructor expects SObject")
+		}
+		controller := Object("ApexPages.KnowledgeArticleVersionStandardController")
+		controller.Fields["record"] = args[0]
+		return controller, nil
 	case "ApexPages.StandardSetController":
 		if len(args) != 1 || len(namedArgs) != 0 || (args[0].Kind != ValueList && !(args[0].Kind == ValueObject && args[0].Type == "Database.QueryLocator")) {
 			return Null, fmt.Errorf("ApexPages.StandardSetController constructor expects List or QueryLocator")

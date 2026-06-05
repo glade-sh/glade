@@ -3953,6 +3953,21 @@ System.assert(setController.getHasPrevious());
 	}
 }
 
+func TestExecKnowledgeArticleVersionStandardControllerSetDataCategory(t *testing.T) {
+	program, err := CompileAnonymous(`
+Knowledge__kav article = new Knowledge__kav(Title = 'Local article');
+ApexPages.KnowledgeArticleVersionStandardController controller = new ApexPages.KnowledgeArticleVersionStandardController(article);
+controller.setDataCategory('Products', 'Hardware');
+System.assertEquals(null, controller.getSourceId());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStandardControllerViewUsesTypedIDField(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id accountId = Id.valueOf('001000000000001');

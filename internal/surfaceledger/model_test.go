@@ -109,6 +109,15 @@ func TestCanonicalSurfaceIDsCleanApexNames(t *testing.T) {
 	}
 }
 
+func TestSurfaceIDKeyUnescapesMarkdownUnderscores(t *testing.T) {
+	if got, want := surfaceIDKey(`apex:System.AccessLevel.SYSTEM\_MODE`), surfaceIDKey("apex:System.AccessLevel.SYSTEM_MODE"); got != want {
+		t.Fatalf("escaped SYSTEM_MODE key = %q, want %q", got, want)
+	}
+	if got, want := surfaceIDKey(`apex:System.AccessLevel.USER\_MODE`), surfaceIDKey("apex:System.AccessLevel.USER_MODE"); got != want {
+		t.Fatalf("escaped USER_MODE key = %q, want %q", got, want)
+	}
+}
+
 func TestGladeSnapshotMarksDatabaseStatefulSupported(t *testing.T) {
 	rows := BuildGladeSnapshot()
 	id := ApexTypeID("Database", "Stateful")

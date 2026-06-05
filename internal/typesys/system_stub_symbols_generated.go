@@ -629,6 +629,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "getSourceId", ReturnType: "String"},
 			{Name: "hashCode", ReturnType: "Integer"},
 			{Name: "selectDataCategory", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "categoryGroup", Type: "String"}, {Name: "category", Type: "String"}}},
+			{Name: "setDataCategory", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "categoryGroup", Type: "String"}, {Name: "category", Type: "String"}}},
 			{Name: "toString", ReturnType: "String"},
 			{Name: "view", ReturnType: "PageReference"},
 		},
