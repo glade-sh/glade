@@ -76,7 +76,7 @@
       "status": 200,
       "contains": [
         "success\":false",
-        "unsupported call \\\"Approval.ProcessWorkitemRequest.setAction local approval process and lock surface\\\""
+        "unsupported call \\\"Approval.ProcessWorkitemRequest.setAction local approval process metadata\\\""
       ]
     },
     {

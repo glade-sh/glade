@@ -12,9 +12,9 @@ func ApexTypeID(namespace, typeName string) string {
 
 func ApexMemberID(namespace, typeName, memberName string, parameters []string) string {
 	namespace, typeName = canonicalApexQualifiedParts(namespace, typeName)
-	id := ApexTypeID(namespace, typeName) + "." + canonicalApexMemberName(memberName)
+	id := ApexTypeID(namespace, typeName) + "." + canonicalApexMemberNameForType(typeName, memberName)
 	if parameters != nil {
-		id += "(" + strings.Join(cleanList(parameters), ",") + ")"
+		id += "(" + strings.Join(canonicalApexMemberParameters(namespace, typeName, memberName, parameters), ",") + ")"
 	}
 	return id
 }
@@ -78,7 +78,13 @@ func cleanList(values []string) []string {
 
 func canonicalParameterType(value string) string {
 	value = cleanIdentityPart(value)
+	value = strings.ReplaceAll(value, ", ", ",")
+	if strings.HasSuffix(value, "[]") {
+		return "List<" + canonicalParameterType(strings.TrimSuffix(value, "[]")) + ">"
+	}
 	switch {
+	case strings.EqualFold(value, "ID"):
+		return "Id"
 	case strings.EqualFold(value, "APEX_OBJECT"):
 		return "Object"
 	case strings.EqualFold(value, "ANY"):
@@ -87,6 +93,16 @@ func canonicalParameterType(value string) string {
 		return "Object"
 	case strings.EqualFold(value, "SOBJECT[]"):
 		return "List<Object>"
+	case strings.EqualFold(value, "MAPTOCOPY"):
+		return "Map"
+	case strings.EqualFold(value, "T"), strings.EqualFold(value, "T1"), strings.EqualFold(value, "T2"), strings.EqualFold(value, "KEY"):
+		return "Object"
+	case strings.EqualFold(value, "LIST<T>"):
+		return "List"
+	case strings.EqualFold(value, "MAP<T1,T2>"):
+		return "Map"
+	case strings.EqualFold(value, "SET<T>"):
+		return "Set"
 	case strings.EqualFold(value, "SYSTEM.TYPE"):
 		return "Type"
 	case strings.EqualFold(value, "BATCHABLE"), strings.EqualFold(value, "DATABASE.BATCHABLE"), strings.EqualFold(value, "SYSTEM.DATABASE.BATCHABLE"):
@@ -94,6 +110,7 @@ func canonicalParameterType(value string) string {
 	default:
 		value = stripSystemTypeQualifier(value)
 		value = strings.ReplaceAll(value, "<ANY>", "<Object>")
+		value = strings.ReplaceAll(value, "<APEX_OBJECT>", "<Object>")
 		value = strings.ReplaceAll(value, "<sObject>", "<Object>")
 		value = strings.ReplaceAll(value, "<SObject>", "<Object>")
 		value = strings.ReplaceAll(value, "cache.", "Cache.")
@@ -120,11 +137,43 @@ func canonicalApexQualifiedParts(namespace, typeName string) (string, string) {
 		switch typeName {
 		case "ChildRelationship", "DataCategory", "DataCategoryGroupSobjectTypePair", "DescribeColorResult", "DescribeDataCategoryGroupResult", "DescribeDataCategoryGroupStructureResult", "DescribeFieldResult", "DescribeIconResult", "DescribeSObjectResult", "DescribeTabResult", "DescribeTabSetResult", "FieldSet", "FieldSetMap", "FieldSetMember", "PicklistEntry", "RecordTypeInfo", "SObjectField", "SObjectType":
 			namespace = "Schema"
-		case "QueryLocator", "QueryLocatorChunkIterator", "QueryLocatorIterator":
+		case "QueryLocator", "QueryLocatorChunkIterator", "QueryLocatorIterator", "DeleteResult", "DMLOptions", "EmptyRecycleBinResult", "Error", "SaveResult", "UndeleteResult", "UpsertResult":
 			namespace = "Database"
+		case "Answers", "Approval", "BusinessHours", "Ideas", "QueueableDuplicateSignature", "QueueableDuplicateSignature.Builder":
+			namespace = ""
 		}
 	}
 	return namespace, typeName
+}
+
+func canonicalApexMemberParameters(namespace, typeName, memberName string, parameters []string) []string {
+	out := cleanList(parameters)
+	if namespace == "" && (typeName == "Answers" || typeName == "Ideas") && memberName == "findSimilar" {
+		if len(out) > 0 && (out[0] == "Question" || out[0] == "Idea") {
+			out[0] = "Object"
+		}
+	}
+	if namespace == "System" && typeName == "System" {
+		switch memberName {
+		case "getQuiddityShortCode":
+			if len(out) == 1 && out[0] == "Quiddity" {
+				out[0] = "Object"
+			}
+		case "process":
+			if len(out) == 4 && strings.EqualFold(out[0], "List<Id>") {
+				out[0] = "List"
+			}
+		case "submit":
+			if len(out) == 3 && strings.EqualFold(out[0], "List<Id>") {
+				out[0] = "List"
+			}
+		case "runAs":
+			if len(out) == 1 && out[0] == "Version" {
+				out[0] = "Package.Version"
+			}
+		}
+	}
+	return out
 }
 
 func canonicalApexNamespaceName(namespace string) string {
@@ -136,7 +185,11 @@ func canonicalApexNamespaceName(namespace string) string {
 }
 
 func canonicalApexMemberName(memberName string) string {
-	return cleanIdentityPart(memberName)
+	memberName = cleanIdentityPart(memberName)
+	if memberName == "publishWithAcessLevel" {
+		return "publishWithAccessLevel"
+	}
+	return memberName
 }
 
 func surfaceIDKey(id string) string {
@@ -146,7 +199,9 @@ func surfaceIDKey(id string) string {
 		if strings.HasPrefix(rest, "System.QueryLocator") {
 			rest = "Database.QueryLocator" + strings.TrimPrefix(rest, "System.QueryLocator")
 		}
+		rest = canonicalApexIDConstructorName(rest)
 		rest = canonicalApexIDParameterList(rest)
+		rest = strings.ReplaceAll(rest, "System.Comparator.compare(T,T)", "System.Comparator.compare(Object,Object)")
 		rest = strings.ReplaceAll(rest, "(List,System.AccessLevel)", "(List<Object>,System.AccessLevel)")
 		rest = strings.ReplaceAll(rest, "(List,AccessLevel)", "(List<Object>,AccessLevel)")
 		folded := asciiLowerIdentityKey(rest)
@@ -173,6 +228,39 @@ func canonicalApexIDParameterList(rest string) string {
 	}
 	params := rest[open+1 : len(rest)-1]
 	return rest[:open+1] + strings.Join(cleanList(splitSurfaceParameterList(params)), ",") + ")"
+}
+
+func canonicalApexIDConstructorName(rest string) string {
+	open := strings.IndexByte(rest, '(')
+	beforeParams := rest
+	afterParams := ""
+	if open >= 0 {
+		beforeParams = rest[:open]
+		afterParams = rest[open:]
+	}
+	memberDot := strings.LastIndexByte(beforeParams, '.')
+	if memberDot <= 0 || memberDot == len(beforeParams)-1 {
+		return rest
+	}
+	typePart := beforeParams[:memberDot]
+	typeDot := strings.LastIndexByte(typePart, '.')
+	typeName := typePart
+	if typeDot >= 0 {
+		typeName = typePart[typeDot+1:]
+	}
+	memberName := beforeParams[memberDot+1:]
+	if strings.HasPrefix(memberName, typeName+"<") {
+		return typePart + "." + typeName + afterParams
+	}
+	return rest
+}
+
+func canonicalApexMemberNameForType(typeName, memberName string) string {
+	memberName = canonicalApexMemberName(memberName)
+	if strings.HasPrefix(memberName, typeName+"<") {
+		return typeName
+	}
+	return memberName
 }
 
 func stripSystemTypeQualifier(value string) string {

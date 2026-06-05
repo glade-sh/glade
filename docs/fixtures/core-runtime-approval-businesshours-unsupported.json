@@ -1,0 +1,48 @@
+{
+  "name": "core-runtime-approval-businesshours-unsupported",
+  "evidence": [
+    {
+      "symbol": "Approval.process",
+      "kind": "exec",
+      "notes": "Approval process execution requires org approval-process metadata and returns a stable UnsupportedFeature diagnostic locally."
+    },
+    {
+      "symbol": "BusinessHours.add",
+      "kind": "exec",
+      "notes": "Business-hours datetime math requires BusinessHours and holiday metadata; the local runtime does not assume a 24x7 calendar."
+    },
+    {
+      "symbol": "BusinessHours.addGmt",
+      "kind": "exec",
+      "notes": "Business-hours GMT datetime math requires BusinessHours and holiday metadata; the local runtime does not assume a 24x7 calendar."
+    },
+    {
+      "symbol": "BusinessHours.nextStartDate",
+      "kind": "exec",
+      "notes": "Business-hours reopening calculation requires BusinessHours and holiday metadata; the local runtime returns a stable UnsupportedFeature diagnostic."
+    },
+    {
+      "symbol": "Answers.findSimilar",
+      "kind": "exec",
+      "notes": "Answers similar-question search is a zone search service and returns a stable UnsupportedFeature diagnostic locally."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "BusinessHours.add('01m000000000001AAA', Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0), 1250);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "BusinessHours.add('01m000000000001AAA', Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0), 1250);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"BusinessHours.add local business hours metadata\""
+    }
+  }
+}

@@ -5,18 +5,30 @@
       "symbol": "EventBus.publish",
       "kind": "exec",
       "notes": "Local platform event publish returns no-op success SaveResult records; delivery is not modeled."
+    },
+    {
+      "surfaceId": "apex:System.EventBus.publish(Object)",
+      "symbol": "EventBus.publish(Object)",
+      "kind": "exec",
+      "notes": "Local EventBus.publish returns no-delivery SaveResult values."
+    },
+    {
+      "surfaceId": "apex:System.EventBus.publish(List<Object>)",
+      "symbol": "EventBus.publish(List<Object>)",
+      "kind": "exec",
+      "notes": "Local EventBus.publish returns no-delivery SaveResult values."
     }
   ],
   "source": [
     {
       "path": "anonymous.apex",
-      "content": "Database.SaveResult result = EventBus.publish(new Account(Name = 'Acme')); System.assert(result.isSuccess());"
+      "content": "Database.SaveResult result = EventBus.publish(new Account(Name = 'Acme')); System.assert(result.isSuccess()); List<Database.SaveResult> many = EventBus.publish(new List<Account>{new Account(Name = 'One'), new Account(Name = 'Two')}); System.assertEquals(2, many.size()); System.assert(many[0].isSuccess()); System.assert(many[1].isSuccess());"
     }
   ],
   "command": {
     "kind": "exec",
     "args": [
-      "Database.SaveResult result = EventBus.publish(new Account(Name = 'Acme')); System.assert(result.isSuccess());"
+      "Database.SaveResult result = EventBus.publish(new Account(Name = 'Acme')); System.assert(result.isSuccess()); List<Database.SaveResult> many = EventBus.publish(new List<Account>{new Account(Name = 'One'), new Account(Name = 'Two')}); System.assertEquals(2, many.size()); System.assert(many[0].isSuccess()); System.assert(many[1].isSuccess());"
     ]
   },
   "expected": {

@@ -2,6 +2,7 @@
   "name": "core-pattern-quote-stdlib",
   "evidence": [
     {
+      "surfaceId": "apex:System.Pattern.quote(String)",
       "symbol": "Pattern.quote",
       "kind": "exec",
       "notes": "Local Pattern.quote returns Go regexp escaping so common regex metacharacters match literally with local Pattern/Matcher."

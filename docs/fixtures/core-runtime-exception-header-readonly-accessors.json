@@ -1,0 +1,41 @@
+{
+  "name": "core-runtime-exception-header-readonly-accessors",
+  "evidence": [
+    {"surfaceId": "apex:System.IllegalArgumentException.getTypeName()", "symbol": "IllegalArgumentException.getTypeName", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidHeaderException.getTypeName()", "symbol": "InvalidHeaderException.getTypeName", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidParameterValueException.getCause()", "symbol": "InvalidParameterValueException.getCause", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidParameterValueException.getInaccessibleFields()", "symbol": "InvalidParameterValueException.getInaccessibleFields", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidParameterValueException.getLineNumber()", "symbol": "InvalidParameterValueException.getLineNumber", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidParameterValueException.getMessage()", "symbol": "InvalidParameterValueException.getMessage", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidParameterValueException.getStackTraceString()", "symbol": "InvalidParameterValueException.getStackTraceString", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidParameterValueException.getTypeName()", "symbol": "InvalidParameterValueException.getTypeName", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidParameterValueException.initCause(Exception)", "symbol": "InvalidParameterValueException.initCause(Exception)", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidParameterValueException.setMessage(String)", "symbol": "InvalidParameterValueException.setMessage(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidReadOnlyUserDmlException.getCause()", "symbol": "InvalidReadOnlyUserDmlException.getCause", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidReadOnlyUserDmlException.getInaccessibleFields()", "symbol": "InvalidReadOnlyUserDmlException.getInaccessibleFields", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidReadOnlyUserDmlException.getLineNumber()", "symbol": "InvalidReadOnlyUserDmlException.getLineNumber", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidReadOnlyUserDmlException.getMessage()", "symbol": "InvalidReadOnlyUserDmlException.getMessage", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidReadOnlyUserDmlException.getStackTraceString()", "symbol": "InvalidReadOnlyUserDmlException.getStackTraceString", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidReadOnlyUserDmlException.getTypeName()", "symbol": "InvalidReadOnlyUserDmlException.getTypeName", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidReadOnlyUserDmlException.initCause(Exception)", "symbol": "InvalidReadOnlyUserDmlException.initCause(Exception)", "kind": "exec"},
+    {"surfaceId": "apex:System.InvalidReadOnlyUserDmlException.setMessage(String)", "symbol": "InvalidReadOnlyUserDmlException.setMessage(String)", "kind": "exec"}
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Exception illegal = new IllegalArgumentException('illegal');\nSystem.assertEquals('System.IllegalArgumentException', illegal.getTypeName());\nException header = new InvalidHeaderException('header');\nSystem.assertEquals('System.InvalidHeaderException', header.getTypeName());\nException invalid = new InvalidParameterValueException('invalid');\nSystem.assertEquals('System.InvalidParameterValueException', invalid.getTypeName());\ninvalid.setMessage('changed invalid');\nSystem.assertEquals('changed invalid', invalid.getMessage());\nSystem.assertEquals(0, invalid.getInaccessibleFields().size());\nSystem.assertEquals(0, invalid.getLineNumber());\nSystem.assertEquals('', invalid.getStackTraceString());\nSystem.assertEquals(invalid, invalid.initCause(new QueryException('invalid cause')));\nSystem.assertEquals('invalid cause', invalid.getCause().getMessage());\nException readOnly = new InvalidReadOnlyUserDmlException('read only');\nSystem.assertEquals('System.InvalidReadOnlyUserDmlException', readOnly.getTypeName());\nreadOnly.setMessage('changed read only');\nSystem.assertEquals('changed read only', readOnly.getMessage());\nSystem.assertEquals(0, readOnly.getInaccessibleFields().size());\nSystem.assertEquals(0, readOnly.getLineNumber());\nSystem.assertEquals('', readOnly.getStackTraceString());\nSystem.assertEquals(readOnly, readOnly.initCause(new QueryException('read only cause')));\nSystem.assertEquals('read only cause', readOnly.getCause().getMessage());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Exception illegal = new IllegalArgumentException('illegal');\nSystem.assertEquals('System.IllegalArgumentException', illegal.getTypeName());\nException header = new InvalidHeaderException('header');\nSystem.assertEquals('System.InvalidHeaderException', header.getTypeName());\nException invalid = new InvalidParameterValueException('invalid');\nSystem.assertEquals('System.InvalidParameterValueException', invalid.getTypeName());\ninvalid.setMessage('changed invalid');\nSystem.assertEquals('changed invalid', invalid.getMessage());\nSystem.assertEquals(0, invalid.getInaccessibleFields().size());\nSystem.assertEquals(0, invalid.getLineNumber());\nSystem.assertEquals('', invalid.getStackTraceString());\nSystem.assertEquals(invalid, invalid.initCause(new QueryException('invalid cause')));\nSystem.assertEquals('invalid cause', invalid.getCause().getMessage());\nException readOnly = new InvalidReadOnlyUserDmlException('read only');\nSystem.assertEquals('System.InvalidReadOnlyUserDmlException', readOnly.getTypeName());\nreadOnly.setMessage('changed read only');\nSystem.assertEquals('changed read only', readOnly.getMessage());\nSystem.assertEquals(0, readOnly.getInaccessibleFields().size());\nSystem.assertEquals(0, readOnly.getLineNumber());\nSystem.assertEquals('', readOnly.getStackTraceString());\nSystem.assertEquals(readOnly, readOnly.initCause(new QueryException('read only cause')));\nSystem.assertEquals('read only cause', readOnly.getCause().getMessage());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

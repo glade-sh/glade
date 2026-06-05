@@ -2,21 +2,25 @@
   "name": "core-json-parser-generator-state-machine",
   "evidence": [
     {
+      "surfaceId": "apex:System.JSONGenerator.writeNull()",
       "symbol": "JSONGenerator.writeNull",
       "kind": "exec",
       "notes": "Object-without-field state errors are catchable JSONException values and leave the generator usable."
     },
     {
+      "surfaceId": "apex:System.JSONGenerator.writeStringField(String,String)",
       "symbol": "JSONGenerator.writeStringField",
       "kind": "exec",
       "notes": "Pending-field errors are catchable JSONException values without corrupting output state."
     },
     {
+      "surfaceId": "apex:System.JSONGenerator.writeObject(Object)",
       "symbol": "JSONGenerator.writeObject",
       "kind": "exec",
       "notes": "Root null object writes close as a valid root and reject later root writes."
     },
     {
+      "surfaceId": "apex:System.JSONGenerator.writeRawValue(String)",
       "symbol": "JSONGenerator.writeRawValue",
       "kind": "exec",
       "notes": "Closed generator checks take precedence over raw JSON validation."

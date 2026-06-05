@@ -2,6 +2,7 @@
   "name": "core-json-generator-field-name-in-array",
   "evidence": [
     {
+      "surfaceId": "apex:System.JSONGenerator.writeFieldName(String)",
       "symbol": "JSONGenerator.writeFieldName",
       "kind": "exec",
       "notes": "Field names inside arrays raise a catchable JSONException and leave the generator usable for array values."

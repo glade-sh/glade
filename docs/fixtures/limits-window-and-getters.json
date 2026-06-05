@@ -2,10 +2,12 @@
   "name": "limits-window-and-getters",
   "evidence": [
     {
+      "surfaceId": "apex:System.Limits.getQueries()",
       "symbol": "Limits.getQueries",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getLimitQueries()",
       "symbol": "Limits.getLimitQueries",
       "kind": "test"
     },
@@ -26,26 +28,32 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getHeapSize()",
       "symbol": "Limits.getHeapSize",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getLimitHeapSize()",
       "symbol": "Limits.getLimitHeapSize",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getCpuTime()",
       "symbol": "Limits.getCpuTime",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getLimitCpuTime()",
       "symbol": "Limits.getLimitCpuTime",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getCallouts()",
       "symbol": "Limits.getCallouts",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getLimitCallouts()",
       "symbol": "Limits.getLimitCallouts",
       "kind": "test"
     },
@@ -62,6 +70,7 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getLimitFutureCalls()",
       "symbol": "Limits.getLimitFutureCalls",
       "kind": "test"
     },
@@ -70,6 +79,7 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getLimitQueueableJobs()",
       "symbol": "Limits.getLimitQueueableJobs",
       "kind": "test"
     },
@@ -96,6 +106,7 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getLimitEmailInvocations()",
       "symbol": "Limits.getLimitEmailInvocations",
       "kind": "test"
     },

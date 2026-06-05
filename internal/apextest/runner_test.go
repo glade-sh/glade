@@ -97,7 +97,7 @@ private class DataWeaveHarnessTest {
       DataWeaveHarness.dynamicError();
       System.assert(false, 'expected exception');
     } catch (Exception ex) {
-      System.assertEquals('DataWeaveScriptException', ex.getTypeName());
+      System.assertEquals('System.DataWeaveScriptException', ex.getTypeName());
       System.assert(ex.getMessage().startsWith('Division by zero'));
     }
   }
@@ -106,7 +106,18 @@ private class DataWeaveHarnessTest {
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
-		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
+		var details strings.Builder
+		for _, testCase := range run.Suites[0].Cases {
+			details.WriteString(testCase.ClassName + "." + testCase.MethodName + " " + string(testCase.Status))
+			if testCase.Problem != nil {
+				details.WriteString(" " + testCase.Problem.Type + ": " + testCase.Problem.Message)
+				if testCase.Problem.Detail != "" {
+					details.WriteString(" (" + testCase.Problem.Detail + ")")
+				}
+			}
+			details.WriteByte('\n')
+		}
+		t.Fatalf("summary = %#v\n%s", got, details.String())
 	}
 }
 

@@ -1,0 +1,29 @@
+{
+  "name": "integration-auth-communities-local",
+  "evidence": [
+    {
+      "surfaceId": "apex:Auth.CommunitiesUtil.isGuestUser()",
+      "symbol": "Auth.CommunitiesUtil.isGuestUser()",
+      "kind": "exec",
+      "notes": "Auth.CommunitiesUtil.isGuestUser reads the local test user context and does not call Experience Cloud services."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "System.assertEquals(false, Auth.CommunitiesUtil.isGuestUser());"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "System.assertEquals(false, Auth.CommunitiesUtil.isGuestUser());"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

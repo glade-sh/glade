@@ -2,21 +2,25 @@
   "name": "async-local-context-flags",
   "evidence": [
     {
+      "surfaceId": "apex:System.System.isFuture()",
       "symbol": "System.isFuture",
       "kind": "test",
       "notes": "True inside a drained @future job and false outside other local async contexts."
     },
     {
+      "surfaceId": "apex:System.System.isQueueable()",
       "symbol": "System.isQueueable",
       "kind": "test",
       "notes": "True inside a drained Queueable execute method and false outside other local async contexts."
     },
     {
+      "surfaceId": "apex:System.System.isBatch()",
       "symbol": "System.isBatch",
       "kind": "test",
       "notes": "True during local Batchable start, execute, and finish drain phases."
     },
     {
+      "surfaceId": "apex:System.System.isScheduled()",
       "symbol": "System.isScheduled",
       "kind": "test",
       "notes": "True inside a drained Schedulable execute method and false outside other local async contexts."

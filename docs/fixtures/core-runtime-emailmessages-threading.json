@@ -1,0 +1,33 @@
+{
+  "name": "core-runtime-emailmessages-threading",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.EmailMessages.getFormattedThreadingToken(Id)",
+      "symbol": "EmailMessages.getFormattedThreadingToken(Id)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailMessages.getRecordIdFromEmail(String,String,String)",
+      "symbol": "EmailMessages.getRecordIdFromEmail(String,String,String)",
+      "kind": "exec"
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Id accountId = '001000000000001AAA';\nString token = EmailMessages.getFormattedThreadingToken(accountId);\nSystem.assert(token.contains('001000000000001AAA'));\nSystem.assertEquals(accountId, EmailMessages.getRecordIdFromEmail('reply ' + token, null, null));\nSystem.assertEquals(accountId, EmailMessages.getRecordIdFromEmail('reply', 'body ' + token, null));\nSystem.assertEquals(accountId, EmailMessages.getRecordIdFromEmail('reply', null, '<span>' + token + '</span>'));\nSystem.assertEquals(null, EmailMessages.getRecordIdFromEmail('reply', 'missing token', null));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Id accountId = '001000000000001AAA';\nString token = EmailMessages.getFormattedThreadingToken(accountId);\nSystem.assert(token.contains('001000000000001AAA'));\nSystem.assertEquals(accountId, EmailMessages.getRecordIdFromEmail('reply ' + token, null, null));\nSystem.assertEquals(accountId, EmailMessages.getRecordIdFromEmail('reply', 'body ' + token, null));\nSystem.assertEquals(accountId, EmailMessages.getRecordIdFromEmail('reply', null, '<span>' + token + '</span>'));\nSystem.assertEquals(null, EmailMessages.getRecordIdFromEmail('reply', 'missing token', null));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

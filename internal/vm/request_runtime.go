@@ -448,7 +448,7 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 				if strings.EqualFold(callee, "Approval.lock") || strings.EqualFold(callee, "Approval.unlock") || strings.EqualFold(callee, "Approval.isLocked") {
 					return "", false
 				}
-				return "local approval process and lock surface", true
+				return "local approval process metadata", true
 			case "Auth.":
 				return "local authentication token/cloud API surface", true
 			case "QuickAction.":
@@ -788,6 +788,10 @@ func remoteObjectControllerResult(callee string, args []Value) (Value, error) {
 	case "RemoteObjectController.create", "RemoteObjectController.updat":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueMap {
 			return Null, fmt.Errorf("%s expects object name and values map", callee)
+		}
+	case "RemoteObjectController.update":
+		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueList || args[2].Kind != ValueMap {
+			return Null, fmt.Errorf("RemoteObjectController.update expects object name, Id list, and values map")
 		}
 	case "RemoteObjectController.del":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueList {

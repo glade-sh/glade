@@ -583,6 +583,9 @@ System.assert(sig.toString().contains('String:job'));
 System.assert(sig.toString().contains('Integer:42'));
 System.assert(sig.toString().contains('Id:001000000000001AAA'));
 Builder aliasBuilder = new Builder();
+System.assertEquals(0, aliasBuilder.getSize());
+System.assert(aliasBuilder.getMaxSize() > 0);
+System.assert(aliasBuilder.getRemainingSize() > 0);
 QueueableDuplicateSignature aliasSig = aliasBuilder.addString('alias').build();
 System.assert(aliasSig.toString().contains('String:alias'));
 `)
@@ -1497,6 +1500,19 @@ System.assertEquals('Use {0} then Ada', String.format('Use ''{0}'' then {0}', fo
 System.assertEquals('Lovelace/Ada/Lovelace/{2}', String.format('{1}/{0}/{1}/{2}', formatArgs));
 List<Object> objectFormatArgs = new List<Object>{ Account.Name };
 System.assertEquals('Name', String.format('{0}', objectFormatArgs));
+Map<String,Object> templateArgs = new Map<String,Object>{
+  'name' => 'Ada',
+  'count' => 2
+};
+System.assertEquals('Hello Ada: 2', 'Hello ${name}: ${count}'.template(templateArgs));
+System.assertEquals('Escaped ${name} and Ada', 'Escaped $${name} and ${name}'.template(templateArgs));
+Boolean missingTemplateValue = false;
+try {
+  'Hello ${missing}'.template(templateArgs);
+} catch (StringException e) {
+  missingTemplateValue = e.getMessage().contains('missing');
+}
+System.assert(missingTemplateValue);
 System.assertEquals('a' + '\r\n' + 'b', 'a\r\nb');
 String alphabet = 'abcdefghijklmnopqrstuvwxyz';
 System.assertEquals('abcdefg...', alphabet.abbreviate(10));
@@ -1832,6 +1848,9 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	}
 	if _, _, err := callStringMember(String(`\u00ZZ`), "unescapeUnicode", nil); err == nil {
 		t.Fatal("String.unescapeUnicode expected bad escape error")
+	}
+	if _, handled, err := callStringMember(String("${name}"), "template", []Value{String("bad")}); !handled || err == nil {
+		t.Fatalf("String.template expected bad argument error, handled=%v err=%v", handled, err)
 	}
 }
 
@@ -2762,13 +2781,27 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 	exceptionNames := []string{
 		"AssertException",
 		"AsyncException",
+		"BigObjectException",
+		"CanvasException",
 		"CalloutException",
+		"DataWeaveScriptException",
 		"DmlException",
+		"DuplicateMessageException",
 		"EmailException",
+		"EmailTemplateRenderException",
+		"EventObjectException",
 		"ExternalObjectException",
+		"FatalCursorException",
+		"FinalException",
+		"FlowException",
+		"FormulaEvaluationException",
+		"FormulaValidationException",
+		"HandledException",
 		"IllegalArgumentException",
 		"IllegalStateException",
+		"InvalidHeaderException",
 		"InvalidParameterValueException",
+		"InvalidReadOnlyUserDmlException",
 		"JSONException",
 		"LimitException",
 		"ListException",
@@ -2784,7 +2817,10 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		"SerializationException",
 		"SObjectException",
 		"StringException",
+		"TouchHandledException",
 		"TypeException",
+		"UnexpectedException",
+		"UnsupportedOperationException",
 		"VisualforceException",
 		"XmlException",
 	}

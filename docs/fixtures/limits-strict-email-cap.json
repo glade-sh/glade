@@ -6,6 +6,7 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Limits.getEmailInvocations()",
       "symbol": "Limits.getEmailInvocations",
       "kind": "exec"
     },

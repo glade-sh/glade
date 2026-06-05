@@ -2,6 +2,7 @@
   "name": "core-system-assert-message-edges",
   "evidence": [
     {
+      "surfaceId": "apex:System.System.assertEquals(Object,Object)",
       "symbol": "System.assertEquals",
       "kind": "exec",
       "notes": "Assertion failure uses deterministic local expected/actual text and null message conversion."

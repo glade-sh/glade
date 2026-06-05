@@ -2,9 +2,9 @@
   "name": "data-dml-approval-lock-unsupported",
   "evidence": [
     {
-      "symbol": "Approval.lock",
+      "symbol": "Approval.lock missing org guard",
       "kind": "exec",
-      "notes": "Approval lock helpers are not locally modeled; the VM returns a stable UnsupportedFeature diagnostic instead of faking row workflow state."
+      "notes": "Approval.lock requires local org state; supported lock behavior is covered by data-dml-approval-recycle-results."
     }
   ],
   "source": [

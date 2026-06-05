@@ -1,0 +1,71 @@
+{
+  "name": "core-runtime-exception-more-family-accessors",
+  "evidence": [
+    {"surfaceId": "apex:System.FatalCursorException.getCause()", "symbol": "FatalCursorException.getCause", "kind": "exec"},
+    {"surfaceId": "apex:System.FatalCursorException.getInaccessibleFields()", "symbol": "FatalCursorException.getInaccessibleFields", "kind": "exec"},
+    {"surfaceId": "apex:System.FatalCursorException.getLineNumber()", "symbol": "FatalCursorException.getLineNumber", "kind": "exec"},
+    {"surfaceId": "apex:System.FatalCursorException.getMessage()", "symbol": "FatalCursorException.getMessage", "kind": "exec"},
+    {"surfaceId": "apex:System.FatalCursorException.getStackTraceString()", "symbol": "FatalCursorException.getStackTraceString", "kind": "exec"},
+    {"surfaceId": "apex:System.FatalCursorException.getTypeName()", "symbol": "FatalCursorException.getTypeName", "kind": "exec"},
+    {"surfaceId": "apex:System.FatalCursorException.initCause(Exception)", "symbol": "FatalCursorException.initCause(Exception)", "kind": "exec"},
+    {"surfaceId": "apex:System.FatalCursorException.setMessage(String)", "symbol": "FatalCursorException.setMessage(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.FinalException.getCause()", "symbol": "FinalException.getCause", "kind": "exec"},
+    {"surfaceId": "apex:System.FinalException.getInaccessibleFields()", "symbol": "FinalException.getInaccessibleFields", "kind": "exec"},
+    {"surfaceId": "apex:System.FinalException.getLineNumber()", "symbol": "FinalException.getLineNumber", "kind": "exec"},
+    {"surfaceId": "apex:System.FinalException.getMessage()", "symbol": "FinalException.getMessage", "kind": "exec"},
+    {"surfaceId": "apex:System.FinalException.getStackTraceString()", "symbol": "FinalException.getStackTraceString", "kind": "exec"},
+    {"surfaceId": "apex:System.FinalException.getTypeName()", "symbol": "FinalException.getTypeName", "kind": "exec"},
+    {"surfaceId": "apex:System.FinalException.initCause(Exception)", "symbol": "FinalException.initCause(Exception)", "kind": "exec"},
+    {"surfaceId": "apex:System.FinalException.setMessage(String)", "symbol": "FinalException.setMessage(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.FlowException.getCause()", "symbol": "FlowException.getCause", "kind": "exec"},
+    {"surfaceId": "apex:System.FlowException.getInaccessibleFields()", "symbol": "FlowException.getInaccessibleFields", "kind": "exec"},
+    {"surfaceId": "apex:System.FlowException.getLineNumber()", "symbol": "FlowException.getLineNumber", "kind": "exec"},
+    {"surfaceId": "apex:System.FlowException.getMessage()", "symbol": "FlowException.getMessage", "kind": "exec"},
+    {"surfaceId": "apex:System.FlowException.getStackTraceString()", "symbol": "FlowException.getStackTraceString", "kind": "exec"},
+    {"surfaceId": "apex:System.FlowException.getTypeName()", "symbol": "FlowException.getTypeName", "kind": "exec"},
+    {"surfaceId": "apex:System.FlowException.initCause(Exception)", "symbol": "FlowException.initCause(Exception)", "kind": "exec"},
+    {"surfaceId": "apex:System.FlowException.setMessage(String)", "symbol": "FlowException.setMessage(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaEvaluationException.getCause()", "symbol": "FormulaEvaluationException.getCause", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaEvaluationException.getInaccessibleFields()", "symbol": "FormulaEvaluationException.getInaccessibleFields", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaEvaluationException.getLineNumber()", "symbol": "FormulaEvaluationException.getLineNumber", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaEvaluationException.getMessage()", "symbol": "FormulaEvaluationException.getMessage", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaEvaluationException.getStackTraceString()", "symbol": "FormulaEvaluationException.getStackTraceString", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaEvaluationException.getTypeName()", "symbol": "FormulaEvaluationException.getTypeName", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaEvaluationException.initCause(Exception)", "symbol": "FormulaEvaluationException.initCause(Exception)", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaEvaluationException.setMessage(String)", "symbol": "FormulaEvaluationException.setMessage(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaValidationException.getCause()", "symbol": "FormulaValidationException.getCause", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaValidationException.getInaccessibleFields()", "symbol": "FormulaValidationException.getInaccessibleFields", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaValidationException.getLineNumber()", "symbol": "FormulaValidationException.getLineNumber", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaValidationException.getMessage()", "symbol": "FormulaValidationException.getMessage", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaValidationException.getStackTraceString()", "symbol": "FormulaValidationException.getStackTraceString", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaValidationException.getTypeName()", "symbol": "FormulaValidationException.getTypeName", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaValidationException.initCause(Exception)", "symbol": "FormulaValidationException.initCause(Exception)", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaValidationException.setMessage(String)", "symbol": "FormulaValidationException.setMessage(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.HandledException.getCause()", "symbol": "HandledException.getCause", "kind": "exec"},
+    {"surfaceId": "apex:System.HandledException.getInaccessibleFields()", "symbol": "HandledException.getInaccessibleFields", "kind": "exec"},
+    {"surfaceId": "apex:System.HandledException.getLineNumber()", "symbol": "HandledException.getLineNumber", "kind": "exec"},
+    {"surfaceId": "apex:System.HandledException.getMessage()", "symbol": "HandledException.getMessage", "kind": "exec"},
+    {"surfaceId": "apex:System.HandledException.getStackTraceString()", "symbol": "HandledException.getStackTraceString", "kind": "exec"},
+    {"surfaceId": "apex:System.HandledException.getTypeName()", "symbol": "HandledException.getTypeName", "kind": "exec"},
+    {"surfaceId": "apex:System.HandledException.initCause(Exception)", "symbol": "HandledException.initCause(Exception)", "kind": "exec"},
+    {"surfaceId": "apex:System.HandledException.setMessage(String)", "symbol": "HandledException.setMessage(String)", "kind": "exec"}
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Exception fatalEx = new FatalCursorException('fatal message');\nSystem.assertEquals('System.FatalCursorException', fatalEx.getTypeName());\nfatalEx.setMessage('changed fatal');\nSystem.assertEquals('changed fatal', fatalEx.getMessage());\nSystem.assertEquals(0, fatalEx.getInaccessibleFields().size());\nSystem.assertEquals(0, fatalEx.getLineNumber());\nSystem.assertEquals('', fatalEx.getStackTraceString());\nSystem.assertEquals(fatalEx, fatalEx.initCause(new QueryException('fatal cause')));\nSystem.assertEquals('fatal cause', fatalEx.getCause().getMessage());\nException finalEx = new FinalException('final message');\nSystem.assertEquals('System.FinalException', finalEx.getTypeName());\nfinalEx.setMessage('changed final');\nSystem.assertEquals('changed final', finalEx.getMessage());\nSystem.assertEquals(0, finalEx.getInaccessibleFields().size());\nSystem.assertEquals(0, finalEx.getLineNumber());\nSystem.assertEquals('', finalEx.getStackTraceString());\nSystem.assertEquals(finalEx, finalEx.initCause(new QueryException('final cause')));\nSystem.assertEquals('final cause', finalEx.getCause().getMessage());\nException flowEx = new FlowException('flow message');\nSystem.assertEquals('System.FlowException', flowEx.getTypeName());\nflowEx.setMessage('changed flow');\nSystem.assertEquals('changed flow', flowEx.getMessage());\nSystem.assertEquals(0, flowEx.getInaccessibleFields().size());\nSystem.assertEquals(0, flowEx.getLineNumber());\nSystem.assertEquals('', flowEx.getStackTraceString());\nSystem.assertEquals(flowEx, flowEx.initCause(new QueryException('flow cause')));\nSystem.assertEquals('flow cause', flowEx.getCause().getMessage());\nException formulaEx = new FormulaEvaluationException('formula message');\nSystem.assertEquals('System.FormulaEvaluationException', formulaEx.getTypeName());\nformulaEx.setMessage('changed formula');\nSystem.assertEquals('changed formula', formulaEx.getMessage());\nSystem.assertEquals(0, formulaEx.getInaccessibleFields().size());\nSystem.assertEquals(0, formulaEx.getLineNumber());\nSystem.assertEquals('', formulaEx.getStackTraceString());\nSystem.assertEquals(formulaEx, formulaEx.initCause(new QueryException('formula cause')));\nSystem.assertEquals('formula cause', formulaEx.getCause().getMessage());\nException formulaValidationEx = new FormulaValidationException('formula validation message');\nSystem.assertEquals('System.FormulaValidationException', formulaValidationEx.getTypeName());\nformulaValidationEx.setMessage('changed formula validation');\nSystem.assertEquals('changed formula validation', formulaValidationEx.getMessage());\nSystem.assertEquals(0, formulaValidationEx.getInaccessibleFields().size());\nSystem.assertEquals(0, formulaValidationEx.getLineNumber());\nSystem.assertEquals('', formulaValidationEx.getStackTraceString());\nSystem.assertEquals(formulaValidationEx, formulaValidationEx.initCause(new QueryException('formula validation cause')));\nSystem.assertEquals('formula validation cause', formulaValidationEx.getCause().getMessage());\nException handledEx = new HandledException('handled message');\nSystem.assertEquals('System.HandledException', handledEx.getTypeName());\nhandledEx.setMessage('changed handled');\nSystem.assertEquals('changed handled', handledEx.getMessage());\nSystem.assertEquals(0, handledEx.getInaccessibleFields().size());\nSystem.assertEquals(0, handledEx.getLineNumber());\nSystem.assertEquals('', handledEx.getStackTraceString());\nSystem.assertEquals(handledEx, handledEx.initCause(new QueryException('handled cause')));\nSystem.assertEquals('handled cause', handledEx.getCause().getMessage());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Exception fatalEx = new FatalCursorException('fatal message');\nSystem.assertEquals('System.FatalCursorException', fatalEx.getTypeName());\nfatalEx.setMessage('changed fatal');\nSystem.assertEquals('changed fatal', fatalEx.getMessage());\nSystem.assertEquals(0, fatalEx.getInaccessibleFields().size());\nSystem.assertEquals(0, fatalEx.getLineNumber());\nSystem.assertEquals('', fatalEx.getStackTraceString());\nSystem.assertEquals(fatalEx, fatalEx.initCause(new QueryException('fatal cause')));\nSystem.assertEquals('fatal cause', fatalEx.getCause().getMessage());\nException finalEx = new FinalException('final message');\nSystem.assertEquals('System.FinalException', finalEx.getTypeName());\nfinalEx.setMessage('changed final');\nSystem.assertEquals('changed final', finalEx.getMessage());\nSystem.assertEquals(0, finalEx.getInaccessibleFields().size());\nSystem.assertEquals(0, finalEx.getLineNumber());\nSystem.assertEquals('', finalEx.getStackTraceString());\nSystem.assertEquals(finalEx, finalEx.initCause(new QueryException('final cause')));\nSystem.assertEquals('final cause', finalEx.getCause().getMessage());\nException flowEx = new FlowException('flow message');\nSystem.assertEquals('System.FlowException', flowEx.getTypeName());\nflowEx.setMessage('changed flow');\nSystem.assertEquals('changed flow', flowEx.getMessage());\nSystem.assertEquals(0, flowEx.getInaccessibleFields().size());\nSystem.assertEquals(0, flowEx.getLineNumber());\nSystem.assertEquals('', flowEx.getStackTraceString());\nSystem.assertEquals(flowEx, flowEx.initCause(new QueryException('flow cause')));\nSystem.assertEquals('flow cause', flowEx.getCause().getMessage());\nException formulaEx = new FormulaEvaluationException('formula message');\nSystem.assertEquals('System.FormulaEvaluationException', formulaEx.getTypeName());\nformulaEx.setMessage('changed formula');\nSystem.assertEquals('changed formula', formulaEx.getMessage());\nSystem.assertEquals(0, formulaEx.getInaccessibleFields().size());\nSystem.assertEquals(0, formulaEx.getLineNumber());\nSystem.assertEquals('', formulaEx.getStackTraceString());\nSystem.assertEquals(formulaEx, formulaEx.initCause(new QueryException('formula cause')));\nSystem.assertEquals('formula cause', formulaEx.getCause().getMessage());\nException formulaValidationEx = new FormulaValidationException('formula validation message');\nSystem.assertEquals('System.FormulaValidationException', formulaValidationEx.getTypeName());\nformulaValidationEx.setMessage('changed formula validation');\nSystem.assertEquals('changed formula validation', formulaValidationEx.getMessage());\nSystem.assertEquals(0, formulaValidationEx.getInaccessibleFields().size());\nSystem.assertEquals(0, formulaValidationEx.getLineNumber());\nSystem.assertEquals('', formulaValidationEx.getStackTraceString());\nSystem.assertEquals(formulaValidationEx, formulaValidationEx.initCause(new QueryException('formula validation cause')));\nSystem.assertEquals('formula validation cause', formulaValidationEx.getCause().getMessage());\nException handledEx = new HandledException('handled message');\nSystem.assertEquals('System.HandledException', handledEx.getTypeName());\nhandledEx.setMessage('changed handled');\nSystem.assertEquals('changed handled', handledEx.getMessage());\nSystem.assertEquals(0, handledEx.getInaccessibleFields().size());\nSystem.assertEquals(0, handledEx.getLineNumber());\nSystem.assertEquals('', handledEx.getStackTraceString());\nSystem.assertEquals(handledEx, handledEx.initCause(new QueryException('handled cause')));\nSystem.assertEquals('handled cause', handledEx.getCause().getMessage());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

@@ -543,6 +543,9 @@ func collectMembers(lines []string, typeName string) []Member {
 		if heading == "" || strings.HasPrefix(heading, "Example") {
 			continue
 		}
+		if isNarrativeSubsection(heading, section) {
+			continue
+		}
 		member := Member{
 			Kind:        memberKind(heading, section, typeName),
 			Name:        memberName(heading),
@@ -559,6 +562,17 @@ func collectMembers(lines []string, typeName string) []Member {
 		return members[i].Name < members[j].Name
 	})
 	return members
+}
+
+func isNarrativeSubsection(heading, section string) bool {
+	sectionLower := strings.ToLower(section)
+	if !strings.Contains(sectionLower, "example") {
+		return false
+	}
+	if strings.Contains(heading, "(") || strings.Contains(strings.ToLower(heading), " property") {
+		return false
+	}
+	return strings.ContainsAny(heading, " \t")
 }
 
 func memberKind(heading, section, typeName string) string {

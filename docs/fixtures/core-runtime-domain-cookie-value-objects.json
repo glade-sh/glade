@@ -1,0 +1,49 @@
+{
+  "name": "core-runtime-domain-cookie-value-objects",
+  "evidence": [
+    {"surfaceId": "apex:System.Cookie.getDomain()", "symbol": "Cookie.getDomain", "kind": "exec"},
+    {"surfaceId": "apex:System.Cookie.getMaxAge()", "symbol": "Cookie.getMaxAge", "kind": "exec"},
+    {"surfaceId": "apex:System.Cookie.getName()", "symbol": "Cookie.getName", "kind": "exec"},
+    {"surfaceId": "apex:System.Cookie.getPath()", "symbol": "Cookie.getPath", "kind": "exec"},
+    {"surfaceId": "apex:System.Cookie.getSameSite()", "symbol": "Cookie.getSameSite", "kind": "exec"},
+    {"surfaceId": "apex:System.Cookie.getValue()", "symbol": "Cookie.getValue", "kind": "exec"},
+    {"surfaceId": "apex:System.Cookie.isHttpOnly()", "symbol": "Cookie.isHttpOnly", "kind": "exec"},
+    {"surfaceId": "apex:System.Cookie.isSecure()", "symbol": "Cookie.isSecure", "kind": "exec"},
+    {"surfaceId": "apex:System.Domain.getDomainType()", "symbol": "Domain.getDomainType", "kind": "exec"},
+    {"surfaceId": "apex:System.Domain.getMyDomainName()", "symbol": "Domain.getMyDomainName", "kind": "exec"},
+    {"surfaceId": "apex:System.Domain.getPackageName()", "symbol": "Domain.getPackageName", "kind": "exec"},
+    {"surfaceId": "apex:System.Domain.getSandboxName()", "symbol": "Domain.getSandboxName", "kind": "exec"},
+    {"surfaceId": "apex:System.Domain.getSitesSubdomainName()", "symbol": "Domain.getSitesSubdomainName", "kind": "exec"},
+    {"surfaceId": "apex:System.DomainCreator.getContentHostname()", "symbol": "DomainCreator.getContentHostname", "kind": "exec"},
+    {"surfaceId": "apex:System.DomainCreator.getExperienceCloudSitesBuilderHostname()", "symbol": "DomainCreator.getExperienceCloudSitesBuilderHostname", "kind": "exec"},
+    {"surfaceId": "apex:System.DomainCreator.getExperienceCloudSitesHostname()", "symbol": "DomainCreator.getExperienceCloudSitesHostname", "kind": "exec"},
+    {"surfaceId": "apex:System.DomainCreator.getExperienceCloudSitesLivePreviewHostname()", "symbol": "DomainCreator.getExperienceCloudSitesLivePreviewHostname", "kind": "exec"},
+    {"surfaceId": "apex:System.DomainCreator.getExperienceCloudSitesPreviewHostname()", "symbol": "DomainCreator.getExperienceCloudSitesPreviewHostname", "kind": "exec"},
+    {"surfaceId": "apex:System.DomainCreator.getLightningContainerComponentHostname(String)", "symbol": "DomainCreator.getLightningContainerComponentHostname(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.DomainCreator.getLightningHostname()", "symbol": "DomainCreator.getLightningHostname", "kind": "exec"},
+    {"surfaceId": "apex:System.DomainCreator.getOrgMyDomainHostname()", "symbol": "DomainCreator.getOrgMyDomainHostname", "kind": "exec"},
+    {"surfaceId": "apex:System.DomainCreator.getSalesforceSitesHostname()", "symbol": "DomainCreator.getSalesforceSitesHostname", "kind": "exec"},
+    {"surfaceId": "apex:System.DomainCreator.getSetupHostname()", "symbol": "DomainCreator.getSetupHostname", "kind": "exec"},
+    {"surfaceId": "apex:System.DomainCreator.getVisualforceHostname(String)", "symbol": "DomainCreator.getVisualforceHostname(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.DomainParser.parse(String)", "symbol": "DomainParser.parse(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.DomainParser.parse(Url)", "symbol": "DomainParser.parse(Url)", "kind": "exec"}
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Cookie cookie = new Cookie('sid', 'abc', '/', 60, true, 'Lax', true);\nSystem.assertEquals('sid', cookie.getName());\nSystem.assertEquals('abc', cookie.getValue());\nSystem.assertEquals('/', cookie.getPath());\nSystem.assertEquals(null, cookie.getDomain());\nSystem.assertEquals(60, cookie.getMaxAge());\nSystem.assertEquals('Lax', cookie.getSameSite());\nSystem.assertEquals(true, cookie.isSecure());\nSystem.assertEquals(true, cookie.isHttpOnly());\nString orgHost = DomainCreator.getOrgMyDomainHostname();\nString contentHost = DomainCreator.getContentHostname();\nString builderHost = DomainCreator.getExperienceCloudSitesBuilderHostname();\nString sitesHost = DomainCreator.getExperienceCloudSitesHostname();\nString liveHost = DomainCreator.getExperienceCloudSitesLivePreviewHostname();\nString previewHost = DomainCreator.getExperienceCloudSitesPreviewHostname();\nString lightningComponentHost = DomainCreator.getLightningContainerComponentHostname('pkg');\nString lightningHost = DomainCreator.getLightningHostname();\nString salesforceSitesHost = DomainCreator.getSalesforceSitesHostname();\nString setupHost = DomainCreator.getSetupHostname();\nString vfHost = DomainCreator.getVisualforceHostname('pkg');\nSystem.assert(contentHost.contains('local'));\nSystem.assert(builderHost.contains('local'));\nSystem.assert(sitesHost.contains('local'));\nSystem.assert(liveHost.contains('local'));\nSystem.assert(previewHost.contains('local'));\nSystem.assert(lightningComponentHost.contains('pkg'));\nSystem.assert(lightningHost.contains('local'));\nSystem.assert(salesforceSitesHost.contains('local'));\nSystem.assert(setupHost.contains('local'));\nDomain orgDomain = DomainParser.parse(orgHost);\nDomain vfDomain = DomainParser.parse('https://' + vfHost + '/apex/Home');\nDomain urlDomain = DomainParser.parse(new URL('https://Example.TEST/apex/Home'));\nSystem.assertEquals('glade', orgDomain.getMyDomainName());\nSystem.assertEquals('', orgDomain.getPackageName());\nSystem.assertEquals(null, orgDomain.getSandboxName());\nSystem.assertEquals('glade', orgDomain.getSitesSubdomainName());\nSystem.assert(orgDomain.getDomainType() != null);\nSystem.assertEquals('pkg', vfDomain.getPackageName());\nSystem.assertEquals('example', urlDomain.getMyDomainName());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Cookie cookie = new Cookie('sid', 'abc', '/', 60, true, 'Lax', true);\nSystem.assertEquals('sid', cookie.getName());\nSystem.assertEquals('abc', cookie.getValue());\nSystem.assertEquals('/', cookie.getPath());\nSystem.assertEquals(null, cookie.getDomain());\nSystem.assertEquals(60, cookie.getMaxAge());\nSystem.assertEquals('Lax', cookie.getSameSite());\nSystem.assertEquals(true, cookie.isSecure());\nSystem.assertEquals(true, cookie.isHttpOnly());\nString orgHost = DomainCreator.getOrgMyDomainHostname();\nString contentHost = DomainCreator.getContentHostname();\nString builderHost = DomainCreator.getExperienceCloudSitesBuilderHostname();\nString sitesHost = DomainCreator.getExperienceCloudSitesHostname();\nString liveHost = DomainCreator.getExperienceCloudSitesLivePreviewHostname();\nString previewHost = DomainCreator.getExperienceCloudSitesPreviewHostname();\nString lightningComponentHost = DomainCreator.getLightningContainerComponentHostname('pkg');\nString lightningHost = DomainCreator.getLightningHostname();\nString salesforceSitesHost = DomainCreator.getSalesforceSitesHostname();\nString setupHost = DomainCreator.getSetupHostname();\nString vfHost = DomainCreator.getVisualforceHostname('pkg');\nSystem.assert(contentHost.contains('local'));\nSystem.assert(builderHost.contains('local'));\nSystem.assert(sitesHost.contains('local'));\nSystem.assert(liveHost.contains('local'));\nSystem.assert(previewHost.contains('local'));\nSystem.assert(lightningComponentHost.contains('pkg'));\nSystem.assert(lightningHost.contains('local'));\nSystem.assert(salesforceSitesHost.contains('local'));\nSystem.assert(setupHost.contains('local'));\nDomain orgDomain = DomainParser.parse(orgHost);\nDomain vfDomain = DomainParser.parse('https://' + vfHost + '/apex/Home');\nDomain urlDomain = DomainParser.parse(new URL('https://Example.TEST/apex/Home'));\nSystem.assertEquals('glade', orgDomain.getMyDomainName());\nSystem.assertEquals('', orgDomain.getPackageName());\nSystem.assertEquals(null, orgDomain.getSandboxName());\nSystem.assertEquals('glade', orgDomain.getSitesSubdomainName());\nSystem.assert(orgDomain.getDomainType() != null);\nSystem.assertEquals('pkg', vfDomain.getPackageName());\nSystem.assertEquals('example', urlDomain.getMyDomainName());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

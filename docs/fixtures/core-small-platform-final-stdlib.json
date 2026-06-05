@@ -2,9 +2,20 @@
   "name": "core-small-platform-final-stdlib",
   "evidence": [
     {
+      "surfaceId": "apex:System.Id.getSObjectType()",
       "symbol": "Id.getSObjectType local prefixes",
       "kind": "test",
       "notes": "Custom metadata-loaded object prefixes and modeled standard prefixes resolve to local SObjectType tokens."
+    },
+    {
+      "surfaceId": "apex:System.Id.to15()",
+      "symbol": "Id.to15",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.Id.valueOf(String,Boolean)",
+      "symbol": "Id.valueOf(String,Boolean)",
+      "kind": "test"
     },
     {
       "symbol": "Pattern.compile local regexp dialect",
@@ -38,7 +49,7 @@
     },
     {
       "path": "force-app/main/classes/SmallPlatformFinalFixtureTest.cls",
-      "content": "@isTest private class SmallPlatformFinalFixtureTest { @isTest static void localRowsAndFencesArePinned() { Id accountId = Id.valueOf('001B000001DVM9t'); System.assertNotEquals(null, accountId.getSObjectType()); Id trailId = Id.valueOf('a00B000001DVM9t'); System.assertEquals('AIApplication', trailId.getSObjectType().getDescribe().getName()); Pattern p = Pattern.compile('a.b', Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.UNICODE_CASE); System.assertEquals('a.b', p.pattern()); String input = String.fromCharArray(new List<Integer>{65,10,66}); System.assert(p.matcher(input).matches()); } }"
+      "content": "@isTest private class SmallPlatformFinalFixtureTest { @isTest static void localRowsAndFencesArePinned() { Id accountId = Id.valueOf('001B000001DVM9t', true); System.assertEquals('001B000001DVM9t', accountId.to15()); System.assertNotEquals(null, accountId.getSObjectType()); Id trailId = Id.valueOf('a00B000001DVM9t'); System.assertEquals('AIApplication', trailId.getSObjectType().getDescribe().getName()); Pattern p = Pattern.compile('a.b', Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.UNICODE_CASE); System.assertEquals('a.b', p.pattern()); String input = String.fromCharArray(new List<Integer>{65,10,66}); System.assert(p.matcher(input).matches()); } }"
     }
   ],
   "command": {

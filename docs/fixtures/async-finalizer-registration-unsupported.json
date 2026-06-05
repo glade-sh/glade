@@ -2,6 +2,7 @@
   "name": "async-finalizer-registration-unsupported",
   "evidence": [
     {
+      "surfaceId": "apex:System.System.attachFinalizer(Object)",
       "symbol": "System.attachFinalizer",
       "kind": "exec",
       "notes": "Queueable finalizer registration is fenced as UnsupportedFeature; no local finalizer lifecycle is faked."

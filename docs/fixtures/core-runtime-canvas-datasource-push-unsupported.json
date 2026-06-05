@@ -1,0 +1,43 @@
+{
+  "name": "core-runtime-canvas-datasource-push-unsupported",
+  "evidence": [
+    {
+      "symbol": "Canvas.EnvironmentContext.getParametersAsJSON",
+      "kind": "exec",
+      "notes": "Canvas app context APIs require a rendered canvas app request and return UnsupportedFeature diagnostics locally."
+    },
+    {
+      "symbol": "DataSource",
+      "kind": "shape",
+      "notes": "The Apex reference defines DataSource as its own namespace for Salesforce Connect custom adapters, not as System.DataSource."
+    },
+    {
+      "symbol": "Messaging.PushNotification",
+      "kind": "shape",
+      "notes": "The Apex reference defines PushNotification and PushNotificationPayload in the Messaging namespace; System.PushNotification rows are namespace noise."
+    },
+    {
+      "symbol": "industriesNlpSvc.NlpResponse",
+      "kind": "shape",
+      "notes": "The Apex reference defines NlpResponse and NlpSummarizationResult in the industriesNlpSvc namespace; System.Nlp rows are namespace noise."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Canvas.EnvironmentContext.getParametersAsJSON();"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Canvas.EnvironmentContext.getParametersAsJSON();"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Canvas.EnvironmentContext.getParametersAsJSON local canvas app integration surface\""
+    }
+  }
+}

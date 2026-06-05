@@ -7,6 +7,7 @@
       "notes": "Public Pattern docs; local implementation uses Go regexp syntax."
     },
     {
+      "surfaceId": "apex:System.Pattern.matches(String,String)",
       "symbol": "Pattern.matches",
       "kind": "exec",
       "notes": "Whole-input match backed by Go regexp."
@@ -16,6 +17,7 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Pattern.matcher(String)",
       "symbol": "Pattern.matcher",
       "kind": "exec"
     },
@@ -40,10 +42,12 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Matcher.start()",
       "symbol": "Matcher.start",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Matcher.end()",
       "symbol": "Matcher.end",
       "kind": "exec"
     },
@@ -56,11 +60,13 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Pattern.split(String)",
       "symbol": "Pattern.split",
       "kind": "exec",
       "notes": "Go regexp-backed split with default, positive, and negative limit behavior."
     },
     {
+      "surfaceId": "apex:System.Matcher.reset()",
       "symbol": "Matcher.reset",
       "kind": "exec",
       "notes": "Reset clears match state, resets search index and region, and optionally replaces input."
@@ -91,11 +97,13 @@
       "notes": "Bounds matching to a deterministic local rune-indexed region."
     },
     {
+      "surfaceId": "apex:System.Matcher.regionStart()",
       "symbol": "Matcher.regionStart",
       "kind": "exec",
       "notes": "Returns the local region start index."
     },
     {
+      "surfaceId": "apex:System.Matcher.regionEnd()",
       "symbol": "Matcher.regionEnd",
       "kind": "exec",
       "notes": "Returns the local region end index."

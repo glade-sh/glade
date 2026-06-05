@@ -1,0 +1,30 @@
+{
+  "name": "core-runtime-iterable-iterator-contracts",
+  "evidence": [
+    {"surfaceId": "apex:System.Iterable.iterator()", "symbol": "Iterable.iterator", "kind": "test"},
+    {"surfaceId": "apex:System.Iterator.hasNext()", "symbol": "Iterator.hasNext", "kind": "test"},
+    {"surfaceId": "apex:System.Iterator.next()", "symbol": "Iterator.next", "kind": "test"}
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/LocalIterable.cls",
+      "content": "public class LocalIterable implements Iterable<String> { public Iterator<String> iterator() { return new List<String>{'first', 'second'}.iterator(); } }"
+    },
+    {
+      "path": "force-app/main/classes/CoreRuntimeIterableIteratorContractsTest.cls",
+      "content": "@isTest private class CoreRuntimeIterableIteratorContractsTest { @isTest static void iteratorContractWorks() { Iterable<String> values = new LocalIterable(); Iterator<String> it = values.iterator(); System.assert(it.hasNext()); System.assertEquals('first', it.next()); System.assert(it.hasNext()); System.assertEquals('second', it.next()); System.assert(!it.hasNext()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 1,
+      "total": 1
+    }
+  }
+}

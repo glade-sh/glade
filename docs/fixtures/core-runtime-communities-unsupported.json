@@ -1,0 +1,59 @@
+{
+  "name": "core-runtime-communities-unsupported",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.Communities.communitiesLanding()",
+      "symbol": "Communities.communitiesLanding",
+      "kind": "unsupported",
+      "notes": "Communities routing requires Experience Cloud site context that the local runtime does not model."
+    },
+    {
+      "surfaceId": "apex:System.Communities.communitiesLanding(String)",
+      "symbol": "Communities.communitiesLanding",
+      "kind": "unsupported",
+      "notes": "Communities routing requires Experience Cloud site context that the local runtime does not model."
+    },
+    {
+      "surfaceId": "apex:System.Communities.forwardToAuthPage(String)",
+      "symbol": "Communities.forwardToAuthPage",
+      "kind": "unsupported",
+      "notes": "Communities auth routing requires Experience Cloud site context that the local runtime does not model."
+    },
+    {
+      "surfaceId": "apex:System.Communities.getCSS()",
+      "symbol": "Communities.getCSS",
+      "kind": "unsupported",
+      "notes": "Communities CSS discovery requires Experience Cloud site context that the local runtime does not model."
+    },
+    {
+      "surfaceId": "apex:System.Communities.internalLogin(String)",
+      "symbol": "Communities.internalLogin",
+      "kind": "unsupported",
+      "notes": "Communities login requires Experience Cloud site context that the local runtime does not model."
+    },
+    {
+      "surfaceId": "apex:System.Communities.login(String,String,String)",
+      "symbol": "Communities.login",
+      "kind": "unsupported",
+      "notes": "Communities login requires Experience Cloud site context that the local runtime does not model."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "System.Communities.getCSS();"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "System.Communities.getCSS();"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"System.Communities.getCSS\""
+    }
+  }
+}

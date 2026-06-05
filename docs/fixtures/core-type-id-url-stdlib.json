@@ -2,22 +2,27 @@
   "name": "core-type-id-url-stdlib",
   "evidence": [
     {
+      "surfaceId": "apex:System.Type.equals(Object)",
       "symbol": "Type.equals",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Type.getName()",
       "symbol": "Type.getName",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Type.hashCode()",
       "symbol": "Type.hashCode",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Type.toString()",
       "symbol": "Type.toString",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Type.newInstance()",
       "symbol": "Type.newInstance",
       "kind": "exec",
       "notes": "Fixture covers local no-argument object construction; registered-class constructor dispatch is covered by VM unit tests."
@@ -43,50 +48,62 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.hashCode()",
       "symbol": "String.hashCode",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.URL.getAuthority()",
       "symbol": "URL.getAuthority",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.URL.getDefaultPort()",
       "symbol": "URL.getDefaultPort",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.URL.getFile()",
       "symbol": "URL.getFile",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.URL.getHost()",
       "symbol": "URL.getHost",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.URL.getPath()",
       "symbol": "URL.getPath",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.URL.getPort()",
       "symbol": "URL.getPort",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.URL.getProtocol()",
       "symbol": "URL.getProtocol",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.URL.getQuery()",
       "symbol": "URL.getQuery",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.URL.getRef()",
       "symbol": "URL.getRef",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.URL.toExternalForm()",
       "symbol": "URL.toExternalForm",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Type.forName(namespace,name)",
       "symbol": "Type.forName(namespace,name)",
       "kind": "exec"
     },

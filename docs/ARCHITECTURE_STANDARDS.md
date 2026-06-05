@@ -59,6 +59,44 @@ Effective Go, Go code review comments, and the Go package-name guidance.
   DAP, profile, and test reporting.
 - Capability status changes require capability coverage and regenerated docs.
 
+## Performance Standards
+
+- Treat local Apex test throughput as part of runtime correctness. A change that
+  makes broad projects slow is not done.
+- Use `strings.EqualFold` for case-insensitive equality. Do not allocate with
+  `strings.ToLower` or `strings.ToUpper` just to compare names.
+- Use canonical lowercase map keys only when the map is built once or reused
+  enough to pay for the normalization.
+- Use `len(s)` for string byte counts. Do not use `len([]byte(s))`.
+- Avoid per-record metadata merges, describe rebuilds, reflection-style scans,
+  or repeated fixture parsing in DML, SOQL, SObject, JSON, and test-runner hot
+  paths.
+- Share only immutable compiled code and immutable schema-derived caches across
+  parallel Apex tests. Keep org data, mutable metadata overlays, trigger side
+  effects, static state, request state, async state, limits, and rollback state
+  per test.
+- Prefer one indexed lookup over repeated linear scans when the path runs per
+  record, per field, per query row, or per assertion in a large test corpus.
+- Measure broad changes with the smallest useful package test first, then with a
+  saved corpus sentinel or profile when the change touches runtime throughput.
+
+## Salesforce Surface Boundaries
+
+- Keep generic handlers generic. SObject member access, dynamic `get`, SOQL
+  projection, DML validation, lookup paths, JSON encoding, and storage must use
+  metadata and schema shape instead of standard-object name shortcuts.
+- Put standard-SObject-specific business rules in named same-package files such
+  as `sobject_dml_account.go`, `sobject_dml_opportunity.go`, or
+  `sobject_dml_content.go`. Keep the generic DML and VM files as narrow routers.
+- Keep docs-ledger identity rewrites inside `internal/surfaceledger`. Do not let
+  parser cleanup, namespace canonicalization, or docs row suppression become
+  runtime behavior.
+- Pure HTTP, REST, Tooling, SOAP, Bulk, GraphQL, and Pub/Sub surfaces are later
+  phases unless a local Apex test needs their Apex-visible shape or explicit
+  unsupported behavior.
+- For passive DTOs, add shape when it helps compile and test local Apex. Add
+  behavior only when Apex tests can observe it without live Salesforce services.
+
 ## Validation
 
 - Record the pre-refactor baseline before broad mechanical moves.

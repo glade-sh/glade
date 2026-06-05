@@ -2,6 +2,7 @@
   "name": "core-system-assertnot-message-edge",
   "evidence": [
     {
+      "surfaceId": "apex:System.System.assertNotEquals(Object,Object)",
       "symbol": "System.assertNotEquals",
       "kind": "exec",
       "notes": "Assertion failure uses deterministic local value text and exception object message conversion."

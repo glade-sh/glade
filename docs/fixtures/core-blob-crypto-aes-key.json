@@ -4,7 +4,8 @@
     {
       "symbol": "Crypto.generateAESKey",
       "kind": "exec",
-      "notes": "Crypto.generateAESKey returns deterministic local Blob keys for supported AES sizes."
+      "notes": "Crypto.generateAESKey returns deterministic local Blob keys for supported AES sizes.",
+      "surfaceId": "apex:System.Crypto.generateAesKey(Integer)"
     }
   ],
   "source": [

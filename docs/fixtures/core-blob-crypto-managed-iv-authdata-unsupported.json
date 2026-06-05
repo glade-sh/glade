@@ -1,0 +1,35 @@
+{
+  "name": "core-blob-crypto-managed-iv-authdata-unsupported",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.Crypto.encryptWithManagedIV(String,Blob,Blob,Blob)",
+      "symbol": "Crypto.encryptWithManagedIV(String,Blob,Blob,Blob)",
+      "kind": "unsupported",
+      "notes": "The local deterministic AES managed-IV subset does not model the authenticated-data overload."
+    },
+    {
+      "surfaceId": "apex:System.Crypto.decryptWithManagedIV(String,Blob,Blob,Blob)",
+      "symbol": "Crypto.decryptWithManagedIV(String,Blob,Blob,Blob)",
+      "kind": "unsupported",
+      "notes": "The local deterministic AES managed-IV subset does not model the authenticated-data overload."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Crypto.encryptWithManagedIV('AES256', Blob.valueOf('0123456789abcdef0123456789abcdef'), Blob.valueOf('hello'), Blob.valueOf('aad'));"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Crypto.encryptWithManagedIV('AES256', Blob.valueOf('0123456789abcdef0123456789abcdef'), Blob.valueOf('hello'), Blob.valueOf('aad'));"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Crypto.encryptWithManagedIV local authenticated-data managed-IV AES surface\""
+    }
+  }
+}

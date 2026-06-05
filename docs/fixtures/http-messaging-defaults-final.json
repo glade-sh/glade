@@ -12,6 +12,7 @@
       "notes": "Local SendEmailResult constructor defaults expose success true and an empty errors list."
     },
     {
+      "surfaceId": "apex:System.Messaging.sendEmail(List<Messaging.Email>,Boolean)",
       "symbol": "Messaging.sendEmail",
       "kind": "test",
       "notes": "Local sendEmail accepts single and mass message items and returns one deterministic result per message."

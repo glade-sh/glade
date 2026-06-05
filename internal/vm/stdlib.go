@@ -353,6 +353,7 @@ var stringMemberMethodNames = []string{
 	"replaceIgnoreCase",
 	"replaceAll",
 	"replaceFirst",
+	"template",
 	"remove",
 	"removeIgnoreCase",
 	"removeStart",

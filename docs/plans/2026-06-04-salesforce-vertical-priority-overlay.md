@@ -330,25 +330,59 @@ Two completed packet chunks are accepted after review fixes:
 - `Core.Runtime.SystemAndStdlib`: exact stdlib shape/evidence moved for
   `AccessLevel.withPermissionSetId`, `ApexPages` message/current-page rows,
   `Test.createStub*` and SOQL stub helpers, `Assert` overloads, exact `Limits`
-  getters, exact common `String` rows, `Boolean.valueOf(String|Object)`, and
-  `ApexPages.addMessages(Exception|Object)`.
+  getters, exact common `String` rows, `Boolean.valueOf(String|Object)`,
+  `ApexPages.addMessages(Exception|Object)`, false docs rows for `System.Apex`,
+  `System.Custom.*`, and `System.Documentation`, Database result DTO and
+  `Exception` constructor shape, `DMLOptions` shape/runtime basics, and stable
+  unsupported diagnostics for `Approval.process`, `BusinessHours.*`, and
+  `Answers.findSimilar`. The extended pass also closed additional docs
+  namespace/path identity rows, array/generic parameter rows, EventBus
+  access-level overloads, PageReference/HttpRequest/Test exact method shape,
+  handler interface shapes, `IntegrationTest.commitTestOnly` unsupported
+  behavior, and selected exception/String/System exact rows.
 - `Data.Reference.ObjectsFields`: generated standard SObject and field shape
   rows now classify as implemented when backed by the generated standard
   SObject shape source.
 
-Fresh reviewed refresh:
+Fresh reviewed refresh after the namespace-ledger correction:
 
 ```text
-implemented=55122 partial=31 passive=46986 explicitUnsupported=692
-gaps: missingShape=12239 missingBehavior=0 missingEvidence=7635
+before: implemented=55122 partial=31 passive=46986 explicitUnsupported=692
+before gaps: missingShape=12239 missingBehavior=0 missingEvidence=7635
+after: implemented=127438 partial=21 passive=47176 explicitUnsupported=822
+after gaps: missingShape=7587 missingBehavior=0 missingEvidence=6563
 failures: parser=0 docsOrgMismatch=0 staleGlade=0 passiveServiceRisk=0
 ```
 
 The next `Data.Reference.ObjectsFields` rows are now missing-shape rows tied to
 org-feature or entitlement shape, not generated objects waiting for evidence.
-The next `Core.Runtime.SystemAndStdlib` rows remain active runtime choices such
-as `Approval`, `BusinessHours`, `DMLOptions`, and broad System reference
-families.
+Rows closed:
+
+- `apex:System.Apex*`, `apex:System.Appendices`, `apex:System.Custom.*`, and
+  `apex:System.Documentation`
+- `apex:System.Answers.findSimilar(Question)`
+- `apex:System.Approval.process(Approval.ProcessRequest)` and
+  `apex:System.Approval.process(Approval.ProcessRequest,Boolean)`
+- `apex:System.BusinessHours.add(String,Datetime,Long)`,
+  `apex:System.BusinessHours.addGmt(String,Datetime,Long)`, and
+  `apex:System.BusinessHours.nextStartDate(String,Datetime)`
+- `apex:System.DMLOptions.*`
+- `apex:System.DeleteResult.*`, `apex:System.EmptyRecycleBinResult.*`, and
+  `apex:System.Error.*`
+- `apex:System.Exception.Exception(Exception|String|String,Exception)`
+
+Rows deferred inside the old System packet:
+
+- `apex:System.ApplicationContext`: Canvas application context requires a
+  separate Canvas service/UI metadata slice.
+
+Current fresh-ledger top rows:
+
+- overall: `apex:Canvas.Test_constants`
+- `Core.Runtime.SystemAndStdlib`: `apex:System.JSONException.getInaccessibleFields()`
+- `Data.Reference.ObjectsFields`: 119 remaining rows
+- `Tests.AsyncAndIsolation`: 79 remaining rows
+- `UI.ApexPagesControllers`: 63 remaining rows; `UI.LWCModules`: 0 remaining
 
 ## Agent Handoff Template
 

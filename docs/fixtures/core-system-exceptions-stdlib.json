@@ -2,33 +2,40 @@
   "name": "core-system-exceptions-stdlib",
   "evidence": [
     {
+      "surfaceId": "apex:System.System.today()",
       "symbol": "System.today",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.System.now()",
       "symbol": "System.now",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.System.currentTimeMillis()",
       "symbol": "System.currentTimeMillis",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.System.debug(Object)",
       "symbol": "System.debug",
       "kind": "exec",
       "notes": "Covers one-argument and LoggingLevel overload dispatch with deterministic local debug collection."
     },
     {
+      "surfaceId": "apex:System.System.assert(Boolean,Object)",
       "symbol": "System.assert",
       "kind": "exec",
       "notes": "Covers message overload on successful assertion evaluation."
     },
     {
+      "surfaceId": "apex:System.System.assertEquals(Object,Object,Object)",
       "symbol": "System.assertEquals",
       "kind": "exec",
       "notes": "Covers message overload on successful equality evaluation."
     },
     {
+      "surfaceId": "apex:System.System.assertNotEquals(Object,Object,Object)",
       "symbol": "System.assertNotEquals",
       "kind": "exec",
       "notes": "Covers message overload on successful inequality evaluation."
@@ -54,6 +61,7 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Type.isAssignableFrom(Type)",
       "symbol": "Type.isAssignableFrom",
       "kind": "exec",
       "notes": "Covers built-in System exception hierarchy assignability."
@@ -114,6 +122,7 @@
       "notes": "Covers the local public built-in exception matrix as Exception subclasses without claiming full platform stack text parity."
     },
     {
+      "surfaceId": "apex:System.Type.forName(String)",
       "symbol": "Type.forName",
       "kind": "exec",
       "notes": "Covers known built-in exception type resolution and an unknown Exception-suffixed name returning null."

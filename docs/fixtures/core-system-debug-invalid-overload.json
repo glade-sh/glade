@@ -2,6 +2,7 @@
   "name": "core-system-debug-invalid-overload",
   "evidence": [
     {
+      "surfaceId": "apex:System.System.debug(LoggingLevel,Object)",
       "symbol": "System.debug",
       "kind": "exec",
       "notes": "Invalid two-argument overloads require a LoggingLevel first argument."

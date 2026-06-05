@@ -4,62 +4,74 @@
     {
       "symbol": "Blob.valueOf",
       "kind": "exec",
-      "notes": "Includes empty string Blob."
+      "notes": "Includes empty string Blob.",
+      "surfaceId": "apex:System.Blob.valueOf(String)"
     },
     {
       "symbol": "Blob.toString",
       "kind": "exec",
-      "notes": "Includes empty Blob and UTF-8 string conversion."
+      "notes": "Includes empty Blob and UTF-8 string conversion.",
+      "surfaceId": "apex:System.Blob.toString()"
     },
     {
       "symbol": "Blob.size",
       "kind": "exec",
-      "notes": "Includes empty Blob."
+      "notes": "Includes empty Blob.",
+      "surfaceId": "apex:System.Blob.size()"
     },
     {
       "symbol": "EncodingUtil.base64Encode",
       "kind": "exec",
-      "notes": "Includes empty Blob."
+      "notes": "Includes empty Blob.",
+      "surfaceId": "apex:System.EncodingUtil.base64Encode(Blob)"
     },
     {
       "symbol": "EncodingUtil.base64Decode",
       "kind": "exec",
-      "notes": "Includes empty input."
+      "notes": "Includes empty input.",
+      "surfaceId": "apex:System.EncodingUtil.base64Decode(String)"
     },
     {
       "symbol": "EncodingUtil.convertToHex",
       "kind": "exec",
-      "notes": "Lowercase output and empty Blob."
+      "notes": "Lowercase output and empty Blob.",
+      "surfaceId": "apex:System.EncodingUtil.convertToHex(Blob)"
     },
     {
       "symbol": "EncodingUtil.convertFromHex",
       "kind": "exec",
-      "notes": "Mixed-case input, empty input, and non-UTF-8 bytes without string conversion."
+      "notes": "Mixed-case input, empty input, and non-UTF-8 bytes without string conversion.",
+      "surfaceId": "apex:System.EncodingUtil.convertFromHex(String)"
     },
     {
       "symbol": "EncodingUtil.urlEncode UTF-8/ASCII/Latin-1",
       "kind": "exec",
-      "notes": "UTF-8/utf8/UTF_8 charset validation slice."
+      "notes": "UTF-8/utf8/UTF_8 charset validation slice.",
+      "surfaceId": "apex:System.EncodingUtil.urlEncode(String,String)"
     },
     {
       "symbol": "EncodingUtil.urlDecode UTF-8/ASCII/Latin-1",
       "kind": "exec",
-      "notes": "UTF-8/utf8/UTF_8 charset validation slice."
+      "notes": "UTF-8/utf8/UTF_8 charset validation slice.",
+      "surfaceId": "apex:System.EncodingUtil.urlDecode(String,String)"
     },
     {
       "symbol": "Crypto.generateDigest",
       "kind": "exec",
-      "notes": "MD5, SHA1, SHA-256, SHA-512, SHA3-256, and normalized SHA_512 alias."
+      "notes": "MD5, SHA1, SHA-256, SHA-512, SHA3-256, and normalized SHA_512 alias.",
+      "surfaceId": "apex:System.Crypto.generateDigest(String,Blob)"
     },
     {
       "symbol": "Crypto.generateMac",
       "kind": "exec",
-      "notes": "hmacMD5, hmacSHA1, HmacSHA256, hmacSHA512, and normalized HMAC-SHA256 alias."
+      "notes": "hmacMD5, hmacSHA1, HmacSHA256, hmacSHA512, and normalized HMAC-SHA256 alias.",
+      "surfaceId": "apex:System.Crypto.generateMac(String,Blob,Blob)"
     },
     {
       "symbol": "Crypto.areEqualConstantTime",
       "kind": "exec",
-      "notes": "Equal, unequal same length, and unequal length Blobs."
+      "notes": "Equal, unequal same length, and unequal length Blobs.",
+      "surfaceId": "apex:System.Crypto.areEqualConstantTime(Blob,Blob)"
     }
   ],
   "source": [

@@ -2,6 +2,7 @@
   "name": "core-pattern-class-intersection-unsupported",
   "evidence": [
     {
+      "surfaceId": "apex:System.Pattern.compile(String)",
       "symbol": "Pattern.compile",
       "kind": "unsupported",
       "notes": "Java character-class intersections/subtractions are not claimed on the Go-regexp backend and return a typed unsupported diagnostic."

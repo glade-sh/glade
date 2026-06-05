@@ -2,6 +2,7 @@
   "name": "core-type-exception-url-followup",
   "evidence": [
     {
+      "surfaceId": "apex:System.Type.forName(String,String)",
       "symbol": "Type.forName",
       "kind": "exec",
       "notes": "Covers System namespace built-in lookup and unknown System name returning null."
@@ -22,11 +23,13 @@
       "notes": "System-prefixed constructed exceptions format as System.Type: message."
     },
     {
+      "surfaceId": "apex:System.URL.getSalesforceBaseUrl()",
       "symbol": "URL.getSalesforceBaseUrl",
       "kind": "exec",
       "notes": "Deterministic local base URL, distinct from current request context."
     },
     {
+      "surfaceId": "apex:System.URL.getOrgDomainUrl()",
       "symbol": "URL.getOrgDomainUrl",
       "kind": "exec",
       "notes": "Deterministic local org URL."

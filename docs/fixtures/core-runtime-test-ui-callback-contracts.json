@@ -84,6 +84,12 @@
       "symbol": "StubProvider.handleMethodCall",
       "kind": "test",
       "notes": "Local dynamic stubs dispatch to the provider callback."
+    },
+    {
+      "surfaceId": "apex:System.ExternalServiceTest.sendCallback(HttpRequest)",
+      "symbol": "ExternalServiceTest.sendCallback(HttpRequest)",
+      "kind": "test",
+      "notes": "Local external-service test harness returns a deterministic HTTP 200 callback response."
     }
   ],
   "source": [
@@ -101,7 +107,7 @@
     },
     {
       "path": "force-app/main/classes/TestUICallbackContractsTest.cls",
-      "content": "@isTest private class TestUICallbackContractsTest { @isTest static void contracts() { Test.setCurrentPage(new PageReference('/apex/one')); System.assertEquals('/apex/one', ApexPages.currentPage().getUrl()); Test.setCurrentPageReference(new PageReference('/apex/two')); System.assertEquals('/apex/two', ApexPages.currentPage().getUrl()); ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, 'Summary', 'Detail')); Object messageList = new List<ApexPages.Message>{new ApexPages.Message(ApexPages.Severity.WARNING, 'List', 'Detail')}; ApexPages.addMessages(messageList); try { Integer quotient = 1 / 0; System.assertEquals(0, quotient); } catch (Exception e) { ApexPages.addMessages(e); } System.assert(ApexPages.hasMessages()); System.assert(ApexPages.hasMessages(ApexPages.Severity.ERROR)); System.assert(ApexPages.hasMessages(ApexPages.Severity.WARNING)); System.assert(!ApexPages.hasMessages(ApexPages.Severity.INFO)); System.assertEquals(3, ApexPages.getMessages().size()); Test.createSoqlStub(Account.SObjectType, new SoqlFixtureProvider()); List<Account> rows = [SELECT Id, Name FROM Account]; System.assertEquals(1, rows.size()); System.assert(rows[0].Name.contains('Account')); SObject one = Test.createStubQueryRow(Account.SObjectType, new Map<String,Object>{'Name' => 'One'}); System.assertEquals('One', ((Account)one).Name); List<SObject> many = Test.createStubQueryRows(Account.SObjectType, new List<Map<String,Object>>{new Map<String,Object>{'Name' => 'Many'}}); System.assertEquals('Many', ((Account)many[0]).Name); Greeter greeter = (Greeter)Test.createStub(Greeter.class, new GreeterProvider()); System.assertEquals('hello Ada', greeter.say('Ada')); } }"
+      "content": "@isTest private class TestUICallbackContractsTest { @isTest static void contracts() { Test.setCurrentPage(new PageReference('/apex/one')); System.assertEquals('/apex/one', ApexPages.currentPage().getUrl()); Test.setCurrentPageReference(new PageReference('/apex/two')); System.assertEquals('/apex/two', ApexPages.currentPage().getUrl()); ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, 'Summary', 'Detail')); Object messageList = new List<ApexPages.Message>{new ApexPages.Message(ApexPages.Severity.WARNING, 'List', 'Detail')}; ApexPages.addMessages(messageList); try { Integer quotient = 1 / 0; System.assertEquals(0, quotient); } catch (Exception e) { ApexPages.addMessages(e); } System.assert(ApexPages.hasMessages()); System.assert(ApexPages.hasMessages(ApexPages.Severity.ERROR)); System.assert(ApexPages.hasMessages(ApexPages.Severity.WARNING)); System.assert(!ApexPages.hasMessages(ApexPages.Severity.INFO)); System.assertEquals(3, ApexPages.getMessages().size()); Test.createSoqlStub(Account.SObjectType, new SoqlFixtureProvider()); List<Account> rows = [SELECT Id, Name FROM Account]; System.assertEquals(1, rows.size()); System.assert(rows[0].Name.contains('Account')); SObject one = Test.createStubQueryRow(Account.SObjectType, new Map<String,Object>{'Name' => 'One'}); System.assertEquals('One', ((Account)one).Name); List<SObject> many = Test.createStubQueryRows(Account.SObjectType, new List<Map<String,Object>>{new Map<String,Object>{'Name' => 'Many'}}); System.assertEquals('Many', ((Account)many[0]).Name); Greeter greeter = (Greeter)Test.createStub(Greeter.class, new GreeterProvider()); System.assertEquals('hello Ada', greeter.say('Ada')); HttpResponse callback = Test.getExternalService().sendCallback(new HttpRequest()); System.assertEquals(200, callback.getStatusCode()); } }"
     }
   ],
   "command": {

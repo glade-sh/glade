@@ -1,0 +1,119 @@
+{
+  "name": "core-runtime-exception-accessors",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.AssertException.getCause()",
+      "symbol": "AssertException.getCause",
+      "kind": "exec",
+      "notes": "AssertException inherits local Exception cause accessors."
+    },
+    {
+      "surfaceId": "apex:System.AssertException.getInaccessibleFields()",
+      "symbol": "AssertException.getInaccessibleFields",
+      "kind": "exec",
+      "notes": "AssertException returns the default empty inaccessible-fields map."
+    },
+    {
+      "surfaceId": "apex:System.AssertException.getLineNumber()",
+      "symbol": "AssertException.getLineNumber",
+      "kind": "exec",
+      "notes": "Constructed local AssertException reports the default line number."
+    },
+    {
+      "surfaceId": "apex:System.AssertException.getMessage()",
+      "symbol": "AssertException.getMessage",
+      "kind": "exec",
+      "notes": "AssertException constructors and setMessage update message text."
+    },
+    {
+      "surfaceId": "apex:System.AssertException.getStackTraceString()",
+      "symbol": "AssertException.getStackTraceString",
+      "kind": "exec",
+      "notes": "Constructed local AssertException reports the default empty stack trace."
+    },
+    {
+      "surfaceId": "apex:System.AssertException.getTypeName()",
+      "symbol": "AssertException.getTypeName",
+      "kind": "exec",
+      "notes": "AssertException reports its System-qualified type name."
+    },
+    {
+      "surfaceId": "apex:System.AssertException.initCause(Exception)",
+      "symbol": "AssertException.initCause(Exception)",
+      "kind": "exec",
+      "notes": "AssertException inherits one-shot cause initialization."
+    },
+    {
+      "surfaceId": "apex:System.AssertException.setMessage(String)",
+      "symbol": "AssertException.setMessage(String)",
+      "kind": "exec",
+      "notes": "AssertException inherits message mutation."
+    },
+    {
+      "surfaceId": "apex:System.AsyncException.getCause()",
+      "symbol": "AsyncException.getCause",
+      "kind": "exec",
+      "notes": "AsyncException inherits local Exception cause accessors."
+    },
+    {
+      "surfaceId": "apex:System.AsyncException.getInaccessibleFields()",
+      "symbol": "AsyncException.getInaccessibleFields",
+      "kind": "exec",
+      "notes": "AsyncException returns the default empty inaccessible-fields map."
+    },
+    {
+      "surfaceId": "apex:System.AsyncException.getLineNumber()",
+      "symbol": "AsyncException.getLineNumber",
+      "kind": "exec",
+      "notes": "Constructed local AsyncException reports the default line number."
+    },
+    {
+      "surfaceId": "apex:System.AsyncException.getMessage()",
+      "symbol": "AsyncException.getMessage",
+      "kind": "exec",
+      "notes": "AsyncException constructors and setMessage update message text."
+    },
+    {
+      "surfaceId": "apex:System.AsyncException.getStackTraceString()",
+      "symbol": "AsyncException.getStackTraceString",
+      "kind": "exec",
+      "notes": "Constructed local AsyncException reports the default empty stack trace."
+    },
+    {
+      "surfaceId": "apex:System.AsyncException.getTypeName()",
+      "symbol": "AsyncException.getTypeName",
+      "kind": "exec",
+      "notes": "AsyncException reports its System-qualified type name."
+    },
+    {
+      "surfaceId": "apex:System.AsyncException.initCause(Exception)",
+      "symbol": "AsyncException.initCause(Exception)",
+      "kind": "exec",
+      "notes": "AsyncException inherits one-shot cause initialization."
+    },
+    {
+      "surfaceId": "apex:System.AsyncException.setMessage(String)",
+      "symbol": "AsyncException.setMessage(String)",
+      "kind": "exec",
+      "notes": "AsyncException inherits message mutation."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Exception assertEx = new AssertException('assert message');\nSystem.assertEquals('assert message', assertEx.getMessage());\nSystem.assertEquals('System.AssertException', assertEx.getTypeName());\nSystem.assertEquals(0, assertEx.getLineNumber());\nSystem.assertEquals('', assertEx.getStackTraceString());\nSystem.assertEquals(0, assertEx.getInaccessibleFields().size());\nassertEx.setMessage('changed assert');\nSystem.assertEquals('changed assert', assertEx.getMessage());\nException assertCause = new DmlException('assert cause');\nSystem.assertEquals(assertEx, assertEx.initCause(assertCause));\nSystem.assertEquals('assert cause', assertEx.getCause().getMessage());\nException asyncEx = new AsyncException('async message');\nSystem.assertEquals('async message', asyncEx.getMessage());\nSystem.assertEquals('System.AsyncException', asyncEx.getTypeName());\nSystem.assertEquals(0, asyncEx.getLineNumber());\nSystem.assertEquals('', asyncEx.getStackTraceString());\nSystem.assertEquals(0, asyncEx.getInaccessibleFields().size());\nasyncEx.setMessage('changed async');\nSystem.assertEquals('changed async', asyncEx.getMessage());\nException asyncCause = new DmlException('async cause');\nSystem.assertEquals(asyncEx, asyncEx.initCause(asyncCause));\nSystem.assertEquals('async cause', asyncEx.getCause().getMessage());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Exception assertEx = new AssertException('assert message');\nSystem.assertEquals('assert message', assertEx.getMessage());\nSystem.assertEquals('System.AssertException', assertEx.getTypeName());\nSystem.assertEquals(0, assertEx.getLineNumber());\nSystem.assertEquals('', assertEx.getStackTraceString());\nSystem.assertEquals(0, assertEx.getInaccessibleFields().size());\nassertEx.setMessage('changed assert');\nSystem.assertEquals('changed assert', assertEx.getMessage());\nException assertCause = new DmlException('assert cause');\nSystem.assertEquals(assertEx, assertEx.initCause(assertCause));\nSystem.assertEquals('assert cause', assertEx.getCause().getMessage());\nException asyncEx = new AsyncException('async message');\nSystem.assertEquals('async message', asyncEx.getMessage());\nSystem.assertEquals('System.AsyncException', asyncEx.getTypeName());\nSystem.assertEquals(0, asyncEx.getLineNumber());\nSystem.assertEquals('', asyncEx.getStackTraceString());\nSystem.assertEquals(0, asyncEx.getInaccessibleFields().size());\nasyncEx.setMessage('changed async');\nSystem.assertEquals('changed async', asyncEx.getMessage());\nException asyncCause = new DmlException('async cause');\nSystem.assertEquals(asyncEx, asyncEx.initCause(asyncCause));\nSystem.assertEquals('async cause', asyncEx.getCause().getMessage());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

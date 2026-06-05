@@ -1,0 +1,29 @@
+{
+  "name": "integration-auth-token-unsupported",
+  "evidence": [
+    {
+      "surfaceId": "apex:Auth.AuthToken.getAccessToken(String,String)",
+      "symbol": "Auth.AuthToken.getAccessToken(String,String)",
+      "kind": "exec",
+      "notes": "Live Auth token retrieval remains a cloud authentication service and returns a stable UnsupportedFeature diagnostic locally."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Auth.AuthToken.getAccessToken('provider', 'user');"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Auth.AuthToken.getAccessToken('provider', 'user');"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Auth.AuthToken.getAccessToken local authentication token/cloud API surface\""
+    }
+  }
+}

@@ -2,50 +2,62 @@
   "name": "core-collection-stdlib",
   "evidence": [
     {
+      "surfaceId": "apex:System.List.add(Integer,Object)",
       "symbol": "List.add",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.List.addAll(List)",
       "symbol": "List.addAll",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.List.remove(Integer)",
       "symbol": "List.remove",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.List.set(Integer,Object)",
       "symbol": "List.set",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.List.indexOf(Object)",
       "symbol": "List.indexOf",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Set.addAll(List)",
       "symbol": "Set.addAll",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Set.containsAll(List)",
       "symbol": "Set.containsAll",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Set.remove(Object)",
       "symbol": "Set.remove",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Set.removeAll(List)",
       "symbol": "Set.removeAll",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Set.retainAll(List)",
       "symbol": "Set.retainAll",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Map.put(Object,Object)",
       "symbol": "Map.put",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Map.putAll(List<Object>)",
       "symbol": "Map.putAll",
       "kind": "exec"
     },
@@ -54,26 +66,32 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Map.keySet()",
       "symbol": "Map.keySet",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Map.values()",
       "symbol": "Map.values",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.List.clear()",
       "symbol": "List.clear",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.List.isEmpty()",
       "symbol": "List.isEmpty",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.List.clone()",
       "symbol": "List.clone",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.List.deepClone(Boolean,Boolean)",
       "symbol": "List.deepClone",
       "kind": "exec"
     },
@@ -82,14 +100,17 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Set.clear()",
       "symbol": "Set.clear",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Set.isEmpty()",
       "symbol": "Set.isEmpty",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Set.clone()",
       "symbol": "Set.clone",
       "kind": "exec"
     },
@@ -98,22 +119,27 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Map.containsKey(Object)",
       "symbol": "Map.containsKey",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Map.remove(Object)",
       "symbol": "Map.remove",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Map.clear()",
       "symbol": "Map.clear",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Map.isEmpty()",
       "symbol": "Map.isEmpty",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Map.clone()",
       "symbol": "Map.clone",
       "kind": "exec"
     },
@@ -138,6 +164,7 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.List.contains(Object)",
       "symbol": "List.contains",
       "kind": "exec",
       "notes": "Null element membership covered."
@@ -148,6 +175,7 @@
       "notes": "Null element search covered."
     },
     {
+      "surfaceId": "apex:System.Set.contains(Object)",
       "symbol": "Set.contains",
       "kind": "exec",
       "notes": "Null element membership covered."
@@ -178,6 +206,7 @@
       "notes": "Map<Id,SObject> constructor from List<SObject> covered."
     },
     {
+      "surfaceId": "apex:System.Map.putAll(Map)",
       "symbol": "Map.putAll",
       "kind": "exec",
       "notes": "List<SObject> putAll into Map<Id,SObject> covered."
@@ -185,20 +214,24 @@
     {
       "symbol": "List.iterator",
       "kind": "exec",
-      "notes": "Snapshot Iterator traversal for local List values covered."
+      "notes": "Snapshot Iterator traversal for local List values covered.",
+      "surfaceId": "apex:System.List.iterator()"
     },
     {
       "symbol": "Set.iterator",
       "kind": "exec",
-      "notes": "Deterministic local Set traversal covered."
+      "notes": "Deterministic local Set traversal covered.",
+      "surfaceId": "apex:System.Set.iterator()"
     },
     {
       "symbol": "Iterator.hasNext",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Iterator.hasNext()"
     },
     {
       "symbol": "Iterator.next",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Iterator.next()"
     }
   ],
   "source": [

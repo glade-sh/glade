@@ -1,0 +1,68 @@
+{
+  "name": "ui-apexpages-controller-contract-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:ApexPages.StandardController.addFields(List<String>)",
+      "symbol": "ApexPages.StandardController.addFields",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardController.cancel()",
+      "symbol": "ApexPages.StandardController.cancel",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardController.edit()",
+      "symbol": "ApexPages.StandardController.edit",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardController.getId()",
+      "symbol": "ApexPages.StandardController.getId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardController.getRecord()",
+      "symbol": "ApexPages.StandardController.getRecord",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardController.save()",
+      "symbol": "ApexPages.StandardController.save",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardController.view()",
+      "symbol": "ApexPages.StandardController.view",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.KnowledgeArticleVersionStandardController.getSourceId()",
+      "symbol": "ApexPages.KnowledgeArticleVersionStandardController.getSourceId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.KnowledgeArticleVersionStandardController.selectDataCategory(String,String)",
+      "symbol": "ApexPages.KnowledgeArticleVersionStandardController.selectDataCategory",
+      "kind": "test"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/classes/UIApexPagesControllerContractEvidenceTest.cls",
+      "content": "@isTest private class UIApexPagesControllerContractEvidenceTest { @isTest static void standardControllerContracts() { Account account = new Account(Name = 'Controller evidence'); ApexPages.StandardController controller = new ApexPages.StandardController(account); controller.addFields(new List<String>{'Name'}); System.assertEquals(account, controller.getRecord()); System.assertEquals(null, controller.getId()); controller.cancel(); controller.edit(); controller.view(); controller.save(); System.assertEquals(account.Id, controller.getId()); } @isTest static void knowledgeControllerContracts() { Knowledge__kav article = new Knowledge__kav(Title = 'Local article'); ApexPages.KnowledgeArticleVersionStandardController controller = new ApexPages.KnowledgeArticleVersionStandardController(article); controller.selectDataCategory('Products', 'Hardware'); System.assertEquals(null, controller.getSourceId()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 2,
+      "total": 2
+    }
+  }
+}

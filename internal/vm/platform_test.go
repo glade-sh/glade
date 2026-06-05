@@ -415,12 +415,47 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 		{
 			name: "approval process api",
 			src:  `Approval.ProcessWorkitemRequest.setAction('Approve');`,
-			want: `unsupported call "Approval.ProcessWorkitemRequest.setAction local approval process and lock surface"`,
+			want: `unsupported call "Approval.ProcessWorkitemRequest.setAction local approval process metadata"`,
 		},
 		{
 			name: "approval process api",
-			src:  `Approval.process(null);`,
-			want: `unsupported call "Approval.process local approval process and lock surface"`,
+			src:  `Approval.process(new Approval.ProcessSubmitRequest());`,
+			want: `unsupported call "Approval.process local approval process metadata"`,
+		},
+		{
+			name: "approval process api all or none",
+			src:  `Approval.process(new Approval.ProcessSubmitRequest(), false);`,
+			want: `unsupported call "Approval.process local approval process metadata"`,
+		},
+		{
+			name: "business hours add api",
+			src:  `BusinessHours.add('01m000000000001AAA', Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0), 1250);`,
+			want: `unsupported call "BusinessHours.add local business hours metadata"`,
+		},
+		{
+			name: "business hours add gmt api",
+			src:  `BusinessHours.addGmt('01m000000000001AAA', Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0), 1250);`,
+			want: `unsupported call "BusinessHours.addGmt local business hours metadata"`,
+		},
+		{
+			name: "business hours diff api",
+			src:  `BusinessHours.diff('01m000000000001AAA', Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0), Datetime.newInstanceGmt(2026, 5, 15, 11, 0, 0));`,
+			want: `unsupported call "BusinessHours.diff local business hours metadata"`,
+		},
+		{
+			name: "business hours is within api",
+			src:  `BusinessHours.isWithin('01m000000000001AAA', Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0));`,
+			want: `unsupported call "BusinessHours.isWithin local business hours metadata"`,
+		},
+		{
+			name: "business hours next start date api",
+			src:  `BusinessHours.nextStartDate('01m000000000001AAA', Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0));`,
+			want: `unsupported call "BusinessHours.nextStartDate local business hours metadata"`,
+		},
+		{
+			name: "answers find similar api",
+			src:  `Answers.findSimilar(new Question(Title = 'Acme'));`,
+			want: `unsupported call "Answers.findSimilar local Answers zone search surface"`,
 		},
 		{
 			name: "auth oauth api",
@@ -441,6 +476,16 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			name: "canvas integration",
 			src:  `Canvas.EnvironmentContext.getParameters();`,
 			want: `unsupported call "Canvas.EnvironmentContext.getParameters local canvas app integration surface"`,
+		},
+		{
+			name: "canvas integration exact parameters api",
+			src:  `Canvas.EnvironmentContext.getParametersAsJSON();`,
+			want: `unsupported call "Canvas.EnvironmentContext.getParametersAsJSON local canvas app integration surface"`,
+		},
+		{
+			name: "canvas application context",
+			src:  `Canvas.ApplicationContext.getCanvasUrl();`,
+			want: `unsupported call "Canvas.ApplicationContext.getCanvasUrl local canvas app integration surface"`,
 		},
 		{
 			name: "canvas lifecycle",
@@ -466,6 +511,16 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			name: "crypto key wrapper api second path",
 			src:  `Crypto.generateSelfSignedCertificate('LocalKeys');`,
 			want: `unsupported call "Crypto.generateSelfSignedCertificate local key, certificate, encryption, and random surfaces"`,
+		},
+		{
+			name: "crypto managed iv authenticated data encrypt",
+			src:  `Crypto.encryptWithManagedIV('AES256', Blob.valueOf('0123456789abcdef0123456789abcdef'), Blob.valueOf('hello'), Blob.valueOf('aad'));`,
+			want: `unsupported call "Crypto.encryptWithManagedIV local authenticated-data managed-IV AES surface"`,
+		},
+		{
+			name: "crypto managed iv authenticated data decrypt",
+			src:  `Crypto.decryptWithManagedIV('AES256', Blob.valueOf('0123456789abcdef0123456789abcdef'), Blob.valueOf('cipher'), Blob.valueOf('aad'));`,
+			want: `unsupported call "Crypto.decryptWithManagedIV local authenticated-data managed-IV AES surface"`,
 		},
 		{
 			name: "system password reset",
@@ -727,6 +782,37 @@ try {
 		t.Fatal(err)
 	}
 	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSearchAccessLevelOverloadsUseLocalModel(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Nook Inc');
+insert account;
+Test.setFixedSearchResults(new List<Id>{account.Id});
+List<List<SObject>> rows = Search.query('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name)', AccessLevel.USER_MODE);
+System.assertEquals(1, rows[0].size());
+Search.SearchResults found = Search.find('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name)', AccessLevel.SYSTEM_MODE);
+System.assertEquals(1, found.get('Account').size());
+Search.SuggestionOption option = new Search.SuggestionOption();
+Search.SuggestionResults suggestions = Search.suggest('Nook', 'Account', option);
+System.assertEquals(0, suggestions.getSuggestionResults().size());
+Search.SuggestionResults userSuggestions = Search.suggest('Nook', 'Account', option, AccessLevel.USER_MODE);
+System.assertEquals(false, userSuggestions.hasMoreResults());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1242,7 +1328,7 @@ System.assert(!Schema.getGlobalDescribe().containsKey('Invoice__c'));
 
 func TestExecEventBusPublishReturnsLocalSuccessResults(t *testing.T) {
 	program, err := CompileAnonymous(`
-Database.SaveResult single = EventBus.publish(new Account(Name = 'Acme'));
+	Database.SaveResult single = EventBus.publish(new Account(Name = 'Acme'));
 System.assert(single.isSuccess());
 System.assertEquals(null, single.getId());
 System.assertEquals(0, single.getErrors().size());
@@ -1250,6 +1336,11 @@ List<Database.SaveResult> many = EventBus.publish(new List<Account>{new Account(
 System.assertEquals(2, many.size());
 System.assert(many.get(0).isSuccess());
 System.assert(many.get(1).isSuccess());
+Database.SaveResult userMode = EventBus.publishWithAccessLevel(new Account(Name = 'User'), AccessLevel.USER_MODE);
+System.assert(userMode.isSuccess());
+List<Database.SaveResult> callbackResults = EventBus.publishWithAccessLevel(new List<Account>{new Account(Name = 'Callback')}, null, AccessLevel.SYSTEM_MODE);
+System.assertEquals(1, callbackResults.size());
+System.assert(callbackResults.get(0).isSuccess());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1259,9 +1350,24 @@ System.assert(many.get(1).isSuccess());
 	}
 }
 
+func TestEventBusPublishWithAccessLevelRejectsNonAccessLevel(t *testing.T) {
+	machine := New(nil)
+	record := Object("Account")
+	record.Fields["Name"] = String("Acme")
+
+	_, err := machine.eventBusPublishWithAccessLevel([]Value{record, String("USER_MODE")}, &Result{})
+	if err == nil || !strings.Contains(err.Error(), "expects AccessLevel") {
+		t.Fatalf("expected AccessLevel error, got %v", err)
+	}
+	_, err = machine.eventBusPublishWithAccessLevel([]Value{record, Null, String("USER_MODE")}, &Result{})
+	if err == nil || !strings.Contains(err.Error(), "expects AccessLevel") {
+		t.Fatalf("expected AccessLevel error, got %v", err)
+	}
+}
+
 func TestExecEventBusTriggerContextCurrentContextReturnsLocalObject(t *testing.T) {
 	program, err := CompileAnonymous(`
-eventbus.TriggerContext ctx = eventbus.TriggerContext.currentContext();
+	eventbus.TriggerContext ctx = eventbus.TriggerContext.currentContext();
 System.assertNotEquals(null, ctx);
 `)
 	if err != nil {
@@ -3069,22 +3175,18 @@ handler.handlePredictionResponse(new NLPPredictions.PredictionResponseContextImp
 	}
 }
 
-func TestExecBusinessHoursLocalTwentyFourSevenModel(t *testing.T) {
+func TestExecBusinessHoursMetadataBackedMethodsAreUnsupported(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id businessHoursId = '01m000000000001AAA';
 Datetime start = Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0);
-System.assert(BusinessHours.isWithin(businessHoursId, start));
-System.assertEquals(start.addMilliseconds(1250), BusinessHours.add(businessHoursId, start, 1250));
-System.assertEquals(start.addMilliseconds(1250), BusinessHours.addGmt(businessHoursId, start, 1250));
-System.assertEquals(1250, BusinessHours.diff(businessHoursId, start, start.addMilliseconds(1250)));
-System.assertEquals(start, BusinessHours.nextStartDate(businessHoursId, start));
+BusinessHours.add(businessHoursId, start, 1250);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), `unsupported call "BusinessHours.add local business hours metadata"`) {
+		t.Fatalf("BusinessHours.add error = %v", err)
 	}
 }
 
@@ -3158,6 +3260,7 @@ Map<String,Object> retrieved = RemoteObjectController.retrieve('Account', new Li
 System.assertEquals(true, retrieved.get('success'));
 System.assertEquals(true, RemoteObjectController.create('Account', new Map<String,Object>{ 'Name' => 'Acme' }).get('success'));
 System.assertEquals(true, RemoteObjectController.updat('Account', new Map<String,Object>{ 'Id' => '001000000000001AAA' }).get('success'));
+System.assertEquals(true, RemoteObjectController.update('Account', new List<String>{ '001000000000001AAA' }, new Map<String,Object>{ 'Name' => 'Acme' }).get('success'));
 System.assertEquals(true, RemoteObjectController.del('Account', new List<String>{ '001000000000001AAA' }).get('success'));
 `)
 	if err != nil {
@@ -4223,6 +4326,49 @@ System.assertEquals('invalid_email', Label.Site.invalid_email);
 	}
 }
 
+func TestExecSystemLabelMethodsLimitsAsyncAndTargetExceptionConstructors(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(1.2, Decimal.valueOf('1.25').divide(Decimal.valueOf('1'), 1, RoundingMode.valueOf('HALF_DOWN')));
+System.assertEquals('Hello', System.Label.get('', 'Greeting'));
+System.assertEquals('Bonjour', System.Label.get('pkg', 'Greeting', 'fr'));
+System.assert(System.Label.translationExists('pkg', 'Greeting', 'fr'));
+System.assert(!System.Label.translationExists('pkg', 'Greeting', 'es'));
+System.assertEquals(0, Limits.getAsyncCalls());
+System.assert(Limits.getLimitAsyncCalls() > 0);
+
+Exception invalidNoMessage = new InvalidParameterValueException();
+Exception invalidCause = new InvalidParameterValueException(new Exception('cause'));
+Exception invalidMessage = new InvalidParameterValueException('bad value');
+System.assertEquals('System.InvalidParameterValueException', invalidNoMessage.getTypeName());
+System.assertEquals('cause', invalidCause.getCause().getMessage());
+System.assertEquals('bad value', invalidMessage.getMessage());
+
+Exception noAccess = new NoAccessException('blocked', new Exception('root'));
+Exception noData = new NoDataFoundException('missing', new Exception('root'));
+Exception npe = new NullPointerException('null value', new Exception('root'));
+System.assertEquals('blocked', noAccess.getMessage());
+System.assertEquals('missing', noData.getMessage());
+System.assertEquals('null value', npe.getMessage());
+System.assertEquals('root', noAccess.getCause().getMessage());
+System.assertEquals('root', noData.getCause().getMessage());
+System.assertEquals('root', npe.getCause().getMessage());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Namespace = "pkg"
+	org.Metadata.Labels = []storage.LabelMetadata{
+		{Name: "Greeting", Namespace: "pkg", Language: "en_US", Value: "Hello"},
+		{Name: "Greeting", Namespace: "pkg", Language: "fr", Value: "Bonjour"},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStringFormatResolvesVisualforceLabelMergeExpression(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals('Log In', String.format('{!$Label.LogIn}', new List<String>()));
@@ -4770,6 +4916,10 @@ Id whoId = '003000000000001AAA';
 Id whatId = '001000000000001AAA';
 Messaging.SingleEmailMessage mergedFromIds = Messaging.renderStoredEmailTemplate('00X000000000003AAA', whoId, whatId);
 System.assertEquals('<p>Ada Trail / Acme</p>', mergedFromIds.getHtmlBody());
+Messaging.SingleEmailMessage withAttachmentOption = Messaging.renderStoredEmailTemplate('00X000000000001AAA', '003000000000001AAA', '001000000000001AAA', Messaging.AttachmentRetrievalOption.METADATA_ONLY);
+System.assertEquals('Verify body', withAttachmentOption.getPlainTextBody());
+Messaging.SingleEmailMessage withUpdateUsage = Messaging.renderStoredEmailTemplate('00X000000000001AAA', '003000000000001AAA', '001000000000001AAA', Messaging.AttachmentRetrievalOption.METADATA_WITH_BODY, false);
+System.assertEquals('Verify subject', withUpdateUsage.getSubject());
 try {
 	Messaging.renderStoredEmailTemplate('00X000000000099AAA', null, null);
 	System.assert(false);
@@ -11077,6 +11227,7 @@ System.assert(!upsertUpdate.isCreated());
 func TestExecDatabaseDMLOptionsHeaderRuntimeBreadth(t *testing.T) {
 	program, err := CompileAnonymous(`
 Database.DMLOptions opts = new Database.DMLOptions();
+System.assertEquals(false, opts.optAllOrNone, 'default optAllOrNone');
 opts.OptAllOrNone = false;
 opts.AllowFieldTruncation = true;
 opts.LocalizeErrors = true;

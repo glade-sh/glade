@@ -7,6 +7,7 @@
       "notes": "Invalid local regexp syntax from Pattern.compile and Pattern.matches is catchable as PatternSyntaxException/IllegalArgumentException and exposes description, index, pattern, message, and type name."
     },
     {
+      "surfaceId": "apex:System.Matcher.groupCount()",
       "symbol": "Matcher.groupCount",
       "kind": "exec",
       "notes": "Returns capture count for the current compiled local Pattern."
@@ -17,21 +18,25 @@
       "notes": "Region bounds remain stable across usePattern and report local rune indexes."
     },
     {
+      "surfaceId": "apex:System.Matcher.hasAnchoringBounds()",
       "symbol": "Matcher.hasAnchoringBounds",
       "kind": "exec",
       "notes": "Default anchoring-bounds flag is true and reflects useAnchoringBounds changes."
     },
     {
+      "surfaceId": "apex:System.Matcher.hasTransparentBounds()",
       "symbol": "Matcher.hasTransparentBounds",
       "kind": "exec",
       "notes": "Default transparent-bounds flag is false and reflects useTransparentBounds changes."
     },
     {
+      "surfaceId": "apex:System.Matcher.useAnchoringBounds(Boolean)",
       "symbol": "Matcher.useAnchoringBounds",
       "kind": "exec",
       "notes": "Stores the local anchoring-bounds flag."
     },
     {
+      "surfaceId": "apex:System.Matcher.useTransparentBounds(Boolean)",
       "symbol": "Matcher.useTransparentBounds",
       "kind": "exec",
       "notes": "Stores the local transparent-bounds flag."

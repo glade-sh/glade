@@ -4,7 +4,8 @@
     {
       "symbol": "Continuation.addHttpRequest",
       "kind": "exec",
-      "notes": "Continuation request registration is cloud callout orchestration and remains a stable UnsupportedFeature diagnostic."
+      "notes": "Continuation request registration is cloud callout orchestration and remains a stable UnsupportedFeature diagnostic.",
+      "surfaceId": "apex:System.Continuation.addHttpRequest(HttpRequest)"
     }
   ],
   "source": [

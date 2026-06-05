@@ -2,6 +2,7 @@
   "name": "test-helper-clear-messages-requires-test-context",
   "evidence": [
     {
+      "surfaceId": "apex:System.Test.clearApexPageMessages()",
       "symbol": "Test.clearApexPageMessages",
       "kind": "exec",
       "notes": "Test-context-only guard"

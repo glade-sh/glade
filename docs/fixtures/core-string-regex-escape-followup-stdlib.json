@@ -12,6 +12,7 @@
       "notes": "Escaped dollar replacement text stays literal."
     },
     {
+      "surfaceId": "apex:System.String.split(String,Integer)",
       "symbol": "String.split",
       "kind": "exec",
       "notes": "Limit 0 trims trailing empties, negative keeps them, and limit 1 returns the original input."

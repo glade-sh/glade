@@ -2,10 +2,12 @@
   "name": "test-helper-semantics",
   "evidence": [
     {
+      "surfaceId": "apex:System.Test.isRunningTest()",
       "symbol": "Test.isRunningTest",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Test.getStandardPricebookId()",
       "symbol": "Test.getStandardPricebookId",
       "kind": "test"
     },
@@ -19,6 +21,7 @@
       "notes": "HttpCalloutMock lifecycle in local test context"
     },
     {
+      "surfaceId": "apex:System.Test.createSoqlStub(Schema.SObjectType,SoqlStubProvider)",
       "symbol": "Test.createSoqlStub",
       "kind": "test",
       "notes": "SoqlStubProvider receives selector-shaped relationship queries."

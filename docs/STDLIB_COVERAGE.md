@@ -7,6 +7,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Area | API | Status | Notes |
 | --- | --- | --- | --- |
 | AccessLevel | `AccessLevel.withPermissionSetId(String)` | `unsupported` | Permission-set-scoped user mode requires permission-set semantics and returns a stable UnsupportedFeature diagnostic locally. |
+| Answers | `Answers.findSimilar(Question)` | `unsupported` | Zone similar-question search requires Answers service data and returns a stable UnsupportedFeature diagnostic locally. |
 | ApexPages | `ApexPages.Message` | `partial` | Constructor and getters; no Visualforce rendering lifecycle. |
 | ApexPages | `ApexPages.addMessage` | `supported` | Stores page messages on the VM instance. |
 | ApexPages | `ApexPages.addMessage(ApexPages.Message)` | `supported` | Stores page messages on the VM instance. |
@@ -19,6 +20,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | ApexPages | `ApexPages.hasMessages` | `supported` | Checks VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages()` | `supported` | Checks VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages(ApexPages.Severity)` | `supported` | Checks VM-local page messages by severity. |
+| Approval | `Approval.process(Approval.ProcessRequest)` | `unsupported` | Approval execution requires org approval-process metadata and returns a stable UnsupportedFeature diagnostic locally. |
+| Approval | `Approval.process(Approval.ProcessRequest, Boolean)` | `unsupported` | Approval execution with allOrNone requires org approval-process metadata and returns a stable UnsupportedFeature diagnostic locally. |
 | Assert | `Assert.areEqual` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.areNotEqual` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.fail` | `supported` | Raises local System.AssertException with optional message text. |
@@ -28,6 +31,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Assert | `Assert.isTrue` | `supported` | Routes through local assertion failures with optional message text. |
 | Boolean | `Boolean.valueOf(Object)` | `supported` | Converts supported local field/object values into Boolean values. |
 | Boolean | `Boolean.valueOf(String)` | `supported` | Converts strings to Boolean using Apex-shaped true/false parsing. |
+| BusinessHours | `BusinessHours.add(String, Datetime, Long)` | `unsupported` | Business-hours math requires BusinessHours and holiday metadata; no 24x7 default calendar is assumed. |
+| BusinessHours | `BusinessHours.addGmt(String, Datetime, Long)` | `unsupported` | Business-hours GMT math requires BusinessHours and holiday metadata; no 24x7 default calendar is assumed. |
+| BusinessHours | `BusinessHours.diff(String, Datetime, Datetime)` | `unsupported` | Business-hours interval calculation requires BusinessHours and holiday metadata; no 24x7 default calendar is assumed. |
+| BusinessHours | `BusinessHours.isWithin(String, Datetime)` | `unsupported` | Business-hours membership calculation requires BusinessHours and holiday metadata; no 24x7 default calendar is assumed. |
+| BusinessHours | `BusinessHours.nextStartDate(String, Datetime)` | `unsupported` | Business-hours reopening calculation requires BusinessHours and holiday metadata; no 24x7 default calendar is assumed. |
 | Crypto | `Crypto.generateDigest` | `partial` | MD5, SHA1, and SHA-256. |
 | Database | `Database.UnitOfWork` | `supported` | Queues local DML operations and applies them on commitWork; discardWork drops pending local work. |
 | Database | `Database.convertLead` | `supported` | Local lead conversion creates Account, Contact, and optional Opportunity records and updates Lead conversion fields. |
@@ -83,6 +91,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Datetime | `Datetime.newInstance` | `supported` | Validates date and time parts. |
 | Datetime | `Datetime.now` | `supported` | Returns the deterministic local runtime datetime. |
 | Datetime | `Datetime.valueOf` | `supported` | Parses supported datetime strings. |
+| Decimal | `Decimal.divide(Decimal,Integer,RoundingMode)` | `supported` | Divides local Decimal values with explicit scale and RoundingMode. |
 | Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
 | Decimal | `Decimal.intValue` | `supported` | Truncates to integer. |
 | Decimal | `Decimal.round` | `partial` | Uses Go round-half-away behavior. |
@@ -93,6 +102,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape; charset validation is not modeled. |
 | EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape; charset validation is not modeled. |
+| Exception | `InvalidParameterValueException constructors` | `supported` | Supports zero-arg, message, cause, and existing platform-specific constructor shapes. |
+| Exception | `NoAccessException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
+| Exception | `NoDataFoundException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
+| Exception | `NullPointerException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
 | FeatureManagement | `FeatureManagement.checkPermission` | `partial` | Checks local runAs permission-list state. |
 | HTTP | `Http.send local mock callouts` | `supported` | Routes local callouts through registered HttpCalloutMock implementations. |
 | HTTP | `Http.send real network transport` | `unsupported` | Outbound network callouts are intentionally not executed by the local runtime. |
@@ -103,7 +116,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | JSON | `JSON.deserializeUntyped` | `partial` | Maps JSON into local primitive/list/map values. |
 | JSON | `JSON.serialize` | `partial` | Includes suppressApexObjectNulls overload for supported values. |
 | JSON | `JSON.serializePretty` | `partial` | Pretty output for supported values. |
+| Label | `Label.get(String,String)` | `supported` | Resolves local custom label metadata with existing platform and managed-namespace fallbacks. |
+| Label | `Label.get(String,String,String)` | `supported` | Resolves local custom label metadata for an explicit language, then falls back to the local label resolver. |
+| Label | `Label.translationExists(String,String,String)` | `supported` | Returns true when local label metadata has a matching explicit language translation. |
 | Limits | `Limits.get*` | `partial` | SOQL, DML, heap, CPU, async, callout, and email counters. |
+| Limits | `Limits.getAsyncCalls` | `supported` | Returns the local async-call counter. |
+| Limits | `Limits.getLimitAsyncCalls` | `supported` | Returns the local async-call limit. |
 | Math | `Math.abs` | `supported` | Integer and Decimal values. |
 | Math | `Math.ceil` | `supported` | Numeric values. |
 | Math | `Math.floor` | `supported` | Numeric values. |
@@ -113,13 +131,19 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Math | `Math.round` | `supported` | Numeric values. |
 | Math | `Math.sqrt` | `supported` | Numeric values. |
 | Messaging | `Messaging.SingleEmailMessage` | `partial` | Common setters only; no delivery transport. |
+| Messaging | `Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption)` | `partial` | Uses local stored-template rendering and accepts the attachment option shape; attachment retrieval is not modeled. |
+| Messaging | `Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption,Boolean)` | `partial` | Uses local stored-template rendering; updateEmailTemplateUsage is accepted for shape and ignored locally. |
 | Messaging | `Messaging.sendEmail` | `partial` | Returns local SendEmailResult and increments email limits. |
+| Messaging | `Messaging.sendEmail(Messaging.Email[],Boolean)` | `supported` | Returns ordered local SendEmailResult values for supported email message DTOs; no delivery transport. |
 | PageReference | `PageReference` | `partial` | Constructor, URL, redirect, parameters, headers, and string conversion basics. |
+| PageReference | `PageReference(partialURL)` | `supported` | Builds a VM-local PageReference from a partial URL with mutable parameters and headers. |
+| PageReference | `PageReference(record)` | `unknown` | Symbol shape is present, but the record constructor runtime path requires constructor handling outside this packet's write scope. |
 | Pattern | `Matcher.find` | `partial` | Go regexp-backed matching. |
 | Pattern | `Matcher.group` | `partial` | Latest matched group only. |
 | Pattern | `Matcher.matches` | `partial` | Go regexp-backed matching. |
 | Pattern | `Pattern.compile` | `partial` | Go regexp syntax. |
 | Pattern | `Pattern.matches` | `partial` | Whole-string Go regexp match. |
+| SObject | `SObject.setOptions(Database.DMLOptions)` | `supported` | Stores a cloned DMLOptions value on the local SObject for later DML option use. |
 | Schema | `DescribeFieldResult` | `partial` | Common field metadata and access booleans. |
 | Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships. |
 | Schema | `Schema.describeDataCategoryGroupStructures(List<Schema.DataCategoryGroupSobjectTypePair>,Boolean)` | `partial` | Deterministic local data category structures from org metadata; no external category service lookup. |
@@ -127,8 +151,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Schema | `Schema.describeSObjects(List<String>)` | `partial` | Object names and SObjectType tokens for local schema. |
 | Schema | `Schema.getGlobalDescribe()` | `partial` | Local schema-backed describe map. |
 | Search | `Search.find` | `partial` | Returns deterministic SearchResult DTOs from Test.setFixedSearchResults; no external search ranking/snippets. |
+| Search | `Search.find(String,AccessLevel)` | `partial` | Uses deterministic fixed search results and accepts AccessLevel for shape; external ranking/snippets are not modeled. |
 | Search | `Search.query / SOSL FIND` | `partial` | Parses RETURNING clauses and returns deterministic rows from Test.setFixedSearchResults, or empty result groups without external search. |
+| Search | `Search.query(String,AccessLevel)` | `partial` | Uses the deterministic local SOSL model and accepts AccessLevel for shape; external search security is not modeled. |
 | Search | `Search.suggest` | `partial` | Returns an empty deterministic SuggestionResults DTO; no external suggestion service. |
+| Search | `Search.suggest(String,String,Search.SuggestionOption)` | `partial` | Returns an empty deterministic SuggestionResults DTO without external suggestion service calls. |
+| Search | `Search.suggest(String,String,Search.SuggestionOption,AccessLevel)` | `partial` | Accepts AccessLevel for shape and returns the deterministic local SuggestionResults DTO. |
 | String | `String.contains` | `supported` | UTF-8 string contains. |
 | String | `String.endsWith` | `supported` | UTF-8 string suffix. |
 | String | `String.equalsIgnoreCase` | `supported` | Unicode simple fold. |

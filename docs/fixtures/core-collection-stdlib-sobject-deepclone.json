@@ -2,11 +2,13 @@
   "name": "core-collection-stdlib-sobject-deepclone",
   "evidence": [
     {
+      "surfaceId": "apex:System.List.deepClone(Boolean)",
       "symbol": "List.deepClone",
       "kind": "exec",
       "notes": "No-arg deepClone recursively copies SObject elements."
     },
     {
+      "surfaceId": "apex:System.Map.deepClone()",
       "symbol": "Map.deepClone",
       "kind": "exec",
       "notes": "No-arg deepClone recursively copies SObject map values."

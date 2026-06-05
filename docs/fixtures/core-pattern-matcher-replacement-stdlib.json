@@ -2,11 +2,13 @@
   "name": "core-pattern-matcher-replacement-stdlib",
   "evidence": [
     {
+      "surfaceId": "apex:System.Matcher.replaceAll(String)",
       "symbol": "Matcher.replaceAll",
       "kind": "exec",
       "notes": "Java-style numeric group parsing keeps the largest valid group and leaves following digits literal."
     },
     {
+      "surfaceId": "apex:System.Matcher.replaceFirst(String)",
       "symbol": "Matcher.replaceFirst",
       "kind": "exec",
       "notes": "Escaped dollar signs and backslashes are treated as literals in the local replacement subset."

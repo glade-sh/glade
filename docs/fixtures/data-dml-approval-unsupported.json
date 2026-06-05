@@ -22,7 +22,7 @@
   "expected": {
     "error": {
       "type": "UnsupportedFeature",
-      "message": "unsupported call \"Approval.process local approval process and lock surface\""
+      "message": "unsupported call \"Approval.process local approval process metadata\""
     }
   }
 }

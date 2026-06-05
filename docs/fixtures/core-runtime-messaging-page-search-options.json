@@ -1,0 +1,113 @@
+{
+  "name": "core-runtime-messaging-page-search-options",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption)",
+      "symbol": "Messaging.renderStoredEmailTemplate",
+      "kind": "test",
+      "notes": "AttachmentRetrievalOption overloads use the local stored-template renderer; attachment retrieval is not modeled."
+    },
+    {
+      "surfaceId": "apex:System.Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption,Boolean)",
+      "symbol": "Messaging.renderStoredEmailTemplate",
+      "kind": "test",
+      "notes": "updateEmailTemplateUsage is accepted for shape and ignored because local email usage tracking is not modeled."
+    },
+    {
+      "surfaceId": "apex:System.Messaging.sendEmail(Messaging.Email[],Boolean)",
+      "symbol": "Messaging.sendEmail",
+      "kind": "test",
+      "notes": "The Messaging.Email list overload returns ordered local SendEmailResult values and increments email limits."
+    },
+    {
+      "surfaceId": "apex:System.PageReference(partialURL)",
+      "symbol": "PageReference",
+      "kind": "test",
+      "notes": "The partial URL constructor builds a local PageReference with mutable parameters and headers."
+    },
+    {
+      "surfaceId": "apex:System.SObject.setOptions(database.DMLOptions)",
+      "symbol": "SObject.setOptions",
+      "kind": "test",
+      "notes": "SObject.setOptions stores a cloned Database.DMLOptions value on the local record."
+    },
+    {
+      "surfaceId": "apex:System.Search.find(String,AccessLevel)",
+      "symbol": "Search.find",
+      "kind": "test",
+      "notes": "AccessLevel overloads use the deterministic Test.setFixedSearchResults local search model."
+    },
+    {
+      "surfaceId": "apex:System.Search.query(String,AccessLevel)",
+      "symbol": "Search.query",
+      "kind": "test",
+      "notes": "AccessLevel overloads use the deterministic Test.setFixedSearchResults local SOSL model."
+    },
+    {
+      "surfaceId": "apex:System.Search.suggest(String,String,Search.SuggestionOption)",
+      "symbol": "Search.suggest",
+      "kind": "test",
+      "notes": "Search.suggest returns a deterministic empty SuggestionResults DTO without external suggestion service calls."
+    },
+    {
+      "surfaceId": "apex:System.Search.suggest(String,String,Search.SuggestionOption,AccessLevel)",
+      "symbol": "Search.suggest",
+      "kind": "test",
+      "notes": "The AccessLevel overload returns the same deterministic local SuggestionResults DTO."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/EmailTemplate/EmailTemplate.object-meta.xml",
+      "content": "<CustomObject><label>Email Template</label><pluralLabel>Email Templates</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/EmailTemplate/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/EmailTemplate/fields/DeveloperName.field-meta.xml",
+      "content": "<CustomField><fullName>DeveloperName</fullName><label>Developer Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/EmailTemplate/fields/FolderId.field-meta.xml",
+      "content": "<CustomField><fullName>FolderId</fullName><label>Folder ID</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/EmailTemplate/fields/Subject.field-meta.xml",
+      "content": "<CustomField><fullName>Subject</fullName><label>Subject</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/EmailTemplate/fields/Body.field-meta.xml",
+      "content": "<CustomField><fullName>Body</fullName><label>Body</label><type>LongTextArea</type><visibleLines>3</visibleLines></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/EmailTemplate/fields/HtmlValue.field-meta.xml",
+      "content": "<CustomField><fullName>HtmlValue</fullName><label>HTML Value</label><type>LongTextArea</type><visibleLines>3</visibleLines></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/CoreRuntimeMessagingPageSearchOptionsTest.cls",
+      "content": "@isTest private class CoreRuntimeMessagingPageSearchOptionsTest { @isTest static void rows() { EmailTemplate tmpl = new EmailTemplate(Name = 'Trail Template', DeveloperName = 'Trail_Template', FolderId = '00l000000000001AAA', Subject = 'Trail subject', Body = 'Trail body', HtmlValue = '<p>Trail body</p>'); insert tmpl; Messaging.SingleEmailMessage rendered = Messaging.renderStoredEmailTemplate(tmpl.Id, null, null, Messaging.AttachmentRetrievalOption.METADATA_ONLY); System.assertEquals('Trail subject', rendered.getSubject()); Messaging.SingleEmailMessage renderedWithUsage = Messaging.renderStoredEmailTemplate(tmpl.Id, null, null, Messaging.AttachmentRetrievalOption.METADATA_WITH_BODY, false); System.assertEquals('Trail body', renderedWithUsage.getPlainTextBody()); Messaging.SingleEmailMessage single = new Messaging.SingleEmailMessage(); single.setToAddresses(new List<String>{'trail@example.test'}); single.setPlainTextBody('hello'); List<Messaging.Email> emails = new List<Messaging.Email>{single}; List<Messaging.SendEmailResult> sent = Messaging.sendEmail(emails, false); System.assertEquals(1, sent.size()); System.assert(sent[0].isSuccess()); System.assertEquals(1, Limits.getEmailInvocations()); PageReference page = new PageReference('/apex/Trail'); page.getParameters().put('id', '001000000000001AAA'); System.assertEquals('/apex/Trail?id=001000000000001AAA', page.getUrl()); Database.DMLOptions opts = new Database.DMLOptions(); opts.optAllOrNone = false; Account optioned = new Account(Name = 'Options'); optioned.setOptions(opts); System.assertEquals(false, optioned.getOptions().optAllOrNone); Account account = new Account(Name = 'Nook Inc'); insert account; Test.setFixedSearchResults(new List<Id>{account.Id}); List<List<SObject>> rows = Search.query('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name)', AccessLevel.USER_MODE); System.assertEquals(1, rows[0].size()); Search.SearchResults found = Search.find('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name)', AccessLevel.SYSTEM_MODE); System.assertEquals(1, found.get('Account').size()); Search.SuggestionOption suggestionOption = new Search.SuggestionOption(); Search.SuggestionResults suggestions = Search.suggest('Nook', 'Account', suggestionOption); System.assertEquals(0, suggestions.getSuggestionResults().size()); Search.SuggestionResults accessSuggestions = Search.suggest('Nook', 'Account', suggestionOption, AccessLevel.USER_MODE); System.assertEquals(false, accessSuggestions.hasMoreResults()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

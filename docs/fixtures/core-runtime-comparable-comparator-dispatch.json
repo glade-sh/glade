@@ -1,0 +1,41 @@
+{
+  "name": "core-runtime-comparable-comparator-dispatch",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.Comparable.compareTo(Object)",
+      "symbol": "Comparable.compareTo(Object)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.Comparator.compare(Object,Object)",
+      "symbol": "Comparator.compare(Object,Object)",
+      "kind": "test"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/Box.cls",
+      "content": "public class Box implements Comparable { public Integer rank; public Integer compareTo(Object other) { Box otherBox = (Box)other; if (rank == otherBox.rank) { return 0; } if (rank > otherBox.rank) { return 1; } return -1; } }"
+    },
+    {
+      "path": "force-app/main/classes/DescComparator.cls",
+      "content": "public class DescComparator implements Comparator<Object> { public Integer compare(Object left, Object right) { Integer leftInt = (Integer)left; Integer rightInt = (Integer)right; if (leftInt == rightInt) { return 0; } if (leftInt < rightInt) { return 1; } return -1; } }"
+    },
+    {
+      "path": "force-app/main/classes/CoreRuntimeComparableComparatorDispatchTest.cls",
+      "content": "@isTest private class CoreRuntimeComparableComparatorDispatchTest { @isTest static void comparableAndComparatorDispatchThroughListSort() { Box high = new Box(); high.rank = 2; Box low = new Box(); low.rank = 1; List<Box> boxes = new List<Box>{ high, low }; boxes.sort(); System.assertEquals(1, boxes[0].rank); List<Object> nums = new List<Object>{ 2, 1, 3 }; nums.sort(new DescComparator()); System.assertEquals(3, nums[0]); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

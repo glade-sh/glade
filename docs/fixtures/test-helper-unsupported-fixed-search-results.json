@@ -2,6 +2,7 @@
   "name": "test-helper-unsupported-fixed-search-results",
   "evidence": [
     {
+      "surfaceId": "apex:System.Test.setFixedSearchResults(List<Id>)",
       "symbol": "Test.setFixedSearchResults",
       "kind": "exec",
       "notes": "Stable UnsupportedFeature diagnostic"

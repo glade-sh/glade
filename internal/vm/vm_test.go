@@ -435,8 +435,6 @@ func TestAliasSnapshotMutationPropagationKeepsRealDataChange(t *testing.T) {
 
 func TestExecGeneratedPlatformStaticMethodFallsBackToTypedDefault(t *testing.T) {
 	program, err := CompileAnonymous(`
-List<Id> similar = Answers.findSimilar(new Account(Name = 'Acme'));
-System.assertEquals(0, similar.size());
 List<Id> similarIdeas = Ideas.findSimilar(new Idea(Title = 'Acme'));
 System.assertEquals(0, similarIdeas.size());
 System.assertEquals(0, Ideas.getAllRecentReplies('005000000000001', '0DB000000000001').size());

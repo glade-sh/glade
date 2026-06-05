@@ -1,0 +1,27 @@
+{
+  "name": "core-runtime-double-accessors",
+  "evidence": [
+    {"surfaceId": "apex:System.Double.intValue()", "symbol": "Double.intValue", "kind": "exec"},
+    {"surfaceId": "apex:System.Double.longValue()", "symbol": "Double.longValue", "kind": "exec"},
+    {"surfaceId": "apex:System.Double.round()", "symbol": "Double.round", "kind": "exec"},
+    {"surfaceId": "apex:System.Double.valueOf(Object)", "symbol": "Double.valueOf(Object)", "kind": "exec"}
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Double d = Double.valueOf(12.5);\nSystem.assertEquals(12, d.intValue());\nSystem.assertEquals(12, d.longValue());\nSystem.assertEquals(13, d.round());\nObject value = '2.25';\nSystem.assertEquals(2.25, Double.valueOf(value));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Double d = Double.valueOf(12.5);\nSystem.assertEquals(12, d.intValue());\nSystem.assertEquals(12, d.longValue());\nSystem.assertEquals(13, d.round());\nObject value = '2.25';\nSystem.assertEquals(2.25, Double.valueOf(value));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

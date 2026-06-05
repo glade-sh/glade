@@ -1,0 +1,39 @@
+{
+  "name": "core-runtime-dml-exception-accessors",
+  "evidence": [
+    {"surfaceId": "apex:System.DmlException.getDmlFieldNames(Integer)", "symbol": "DmlException.getDmlFieldNames(Integer)", "kind": "test"},
+    {"surfaceId": "apex:System.DmlException.getDmlFields(Integer)", "symbol": "DmlException.getDmlFields(Integer)", "kind": "test"},
+    {"surfaceId": "apex:System.DmlException.getDmlId(Integer)", "symbol": "DmlException.getDmlId(Integer)", "kind": "test"},
+    {"surfaceId": "apex:System.DmlException.getDmlIndex(Integer)", "symbol": "DmlException.getDmlIndex(Integer)", "kind": "test"},
+    {"surfaceId": "apex:System.DmlException.getDmlMessage(Integer)", "symbol": "DmlException.getDmlMessage(Integer)", "kind": "test"},
+    {"surfaceId": "apex:System.DmlException.getDmlStatusCode(Integer)", "symbol": "DmlException.getDmlStatusCode(Integer)", "kind": "test"},
+    {"surfaceId": "apex:System.DmlException.getDmlType(Integer)", "symbol": "DmlException.getDmlType(Integer)", "kind": "test"},
+    {"surfaceId": "apex:System.DmlException.getNumDml()", "symbol": "DmlException.getNumDml", "kind": "test"}
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/CoreRuntimeDmlExceptionAccessorsTest.cls",
+      "content": "@isTest private class CoreRuntimeDmlExceptionAccessorsTest { @isTest static void requiredFieldDmlExceptionAccessors() { Boolean caught = false; try { insert new Account(); } catch (DmlException e) { caught = true; System.assertEquals(1, e.getNumDml()); System.assertEquals(0, e.getDmlIndex(0)); System.assertEquals('REQUIRED_FIELD_MISSING', e.getDmlStatusCode(0)); System.assertEquals(StatusCode.REQUIRED_FIELD_MISSING, e.getDmlType(0)); System.assert(e.getDmlMessage(0).contains('Name')); System.assertEquals('Name', e.getDmlFields(0).get(0)); System.assertEquals('Name', e.getDmlFieldNames(0).get(0)); System.assertEquals(null, e.getDmlId(0)); } System.assert(caught); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

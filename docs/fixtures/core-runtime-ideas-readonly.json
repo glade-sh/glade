@@ -1,0 +1,47 @@
+{
+  "name": "core-runtime-ideas-readonly",
+  "evidence": [
+    {
+      "surfaceId": "apex:Ideas.findSimilar(Object)",
+      "symbol": "Ideas.findSimilar(Object)",
+      "kind": "exec",
+      "notes": "Ideas.findSimilar returns a deterministic empty local List<Id> without invoking the Ideas service."
+    },
+    {
+      "surfaceId": "apex:Ideas.getAllRecentReplies(String,String)",
+      "symbol": "Ideas.getAllRecentReplies(String,String)",
+      "kind": "exec",
+      "notes": "Recent-reply read helper returns a deterministic empty local List<Id>."
+    },
+    {
+      "surfaceId": "apex:Ideas.getReadRecentReplies(String,String)",
+      "symbol": "Ideas.getReadRecentReplies(String,String)",
+      "kind": "exec",
+      "notes": "Read-reply helper returns a deterministic empty local List<Id>."
+    },
+    {
+      "surfaceId": "apex:Ideas.getUnreadRecentReplies(String,String)",
+      "symbol": "Ideas.getUnreadRecentReplies(String,String)",
+      "kind": "exec",
+      "notes": "Unread-reply helper returns a deterministic empty local List<Id>."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "List<Id> similarIdeas = Ideas.findSimilar(new Idea(Title = 'Acme'));\nSystem.assertEquals(0, similarIdeas.size());\nSystem.assertEquals(0, Ideas.getAllRecentReplies('005000000000001', '0DB000000000001').size());\nSystem.assertEquals(0, Ideas.getReadRecentReplies('005000000000001', '0DB000000000001').size());\nSystem.assertEquals(0, Ideas.getUnreadRecentReplies('005000000000001', '0DB000000000001').size());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "List<Id> similarIdeas = Ideas.findSimilar(new Idea(Title = 'Acme'));\nSystem.assertEquals(0, similarIdeas.size());\nSystem.assertEquals(0, Ideas.getAllRecentReplies('005000000000001', '0DB000000000001').size());\nSystem.assertEquals(0, Ideas.getReadRecentReplies('005000000000001', '0DB000000000001').size());\nSystem.assertEquals(0, Ideas.getUnreadRecentReplies('005000000000001', '0DB000000000001').size());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

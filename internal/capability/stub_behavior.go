@@ -269,6 +269,14 @@ func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys
 		return "", "", false
 	}
 	switch typeName {
+	case "DataSource.AsyncDeleteCallback":
+		if name == "processdelete" {
+			return StubBehaviorImplemented, "local async DML invokes DataSource.AsyncDeleteCallback with the materialized DeleteResult in tests", true
+		}
+	case "DataSource.AsyncSaveCallback":
+		if name == "processsave" {
+			return StubBehaviorImplemented, "local async DML invokes DataSource.AsyncSaveCallback with the materialized SaveResult in tests", true
+		}
 	case "Schema.DataCategoryGroupSobjectTypePair":
 		switch name {
 		case "setdatacategorygroupname", "setsobject":
@@ -1015,11 +1023,6 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return name == "createscript" || name == "execute"
 	case "Formula":
 		return name == "builder" || name == "recalculateformulas"
-	case "BusinessHours":
-		switch name {
-		case "add", "addgmt", "diff", "iswithin", "nextstartdate":
-			return true
-		}
 	case "Cases":
 		switch name {
 		case "generatethreadingmessageid", "getcaseidfromemailheaders", "getcaseidfromemailthreadid":
@@ -1106,6 +1109,10 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 			"ismulticurrencyorganization":
 			return true
 		}
+	case "Auth.CommunitiesUtil":
+		return name == "isguestuser"
+	case "Auth.SessionManagement":
+		return name == "getcurrentsession"
 	case "UserManagement":
 		switch name {
 		case "deregisterverificationmethod", "formatphonenumber", "initpasswordlesslogin",
@@ -1158,11 +1165,6 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return name == "describeplugin" || name == "describeplugins" || name == "invokepluginwithjson"
 	case "TrailblazerIdentity":
 		return name == "generateuseremailverificationtoken" || name == "getuserorginfo" || name == "splunklog"
-	case "Communities":
-		switch name {
-		case "communitieslanding", "forwardtoauthpage", "getcss", "internallogin", "login":
-			return true
-		}
 	case "AsyncInfo":
 		switch name {
 		case "hasmaxstackdepth", "getcurrentqueueablestackdepth", "getmaximumqueueablestackdepth", "getminimumqueueabledelayinminutes":
@@ -1180,7 +1182,7 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 			return true
 		}
 	case "EventBus":
-		return name == "publish" || name == "getoperationid"
+		return name == "publish"
 	case "Cache.Org", "Cache.Session", "Cache.Partition", "Cache.OrgPartition", "Cache.SessionPartition",
 		"Cache.SecondaryKeyApi",
 		"cache.Org", "cache.Session", "cache.Partition", "cache.OrgPartition", "cache.SessionPartition",
@@ -1206,7 +1208,9 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return strings.HasPrefix(name, "get")
 	case "Crypto":
 		switch name {
-		case "areequalconstanttime", "decrypt", "decryptwithmanagediv", "encrypt", "encryptwithmanagediv",
+		case "decryptwithmanagediv", "encryptwithmanagediv":
+			return stubBehaviorMemberParamsEqual(member, "String", "Blob", "Blob")
+		case "areequalconstanttime", "decrypt", "encrypt",
 			"generatedigest", "generateaeskey", "generatemac", "getrandominteger", "getrandomlong",
 			"sign", "signwithcertificate", "verify", "verifyhmac", "verifywithcertificate":
 			return true
@@ -1618,12 +1622,10 @@ func standardExceptionBehaviorMethod(typeName, methodName string) bool {
 	}
 	switch methodName {
 	case "getmessage", "setmessage", "getcause", "initcause", "getlineNumber", "getlinenumber",
-		"getstacktrace", "getstacktracestring", "gettypeName", "gettypename",
-		"getnumdml", "getdmltype", "getdmlmessage", "getdmlstatuscode", "getdmlfieldnames", "getdmlfields",
-		"getdmlid", "getdmlindex", "getinaccessiblefields":
+		"getstacktrace", "getstacktracestring", "gettypeName", "gettypename", "getinaccessiblefields":
 		return true
 	default:
-		return false
+		return strings.EqualFold(typeName, "DmlException") && exceptionDMLAccessorMethod(methodName)
 	}
 }
 
@@ -1633,6 +1635,9 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 	}
 	typeName := stubBehaviorTypeName(symbol)
 	name := strings.ToLower(member.Name)
+	if strings.HasSuffix(typeName, "Exception") && !strings.EqualFold(typeName, "DmlException") && exceptionDMLAccessorMethod(name) {
+		return true
+	}
 	switch typeName {
 	case "String", "Id", "Boolean", "Date", "Datetime", "Decimal", "Double", "Integer", "Long", "Time":
 		return name == "adderror"
@@ -1640,14 +1645,36 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 		return true
 	case "Approval":
 		return name != "lock" && name != "unlock" && name != "islocked"
+	case "Auth.AuthToken":
+		return true
+	case "Auth.CommunitiesUtil":
+		return name != "isguestuser"
+	case "Auth.SessionManagement":
+		return name != "getcurrentsession"
+	case "BusinessHours":
+		switch name {
+		case "add", "addgmt", "diff", "iswithin", "nextstartdate":
+			return true
+		}
 	case "Crypto":
 		switch name {
 		case "signxml":
 			return true
+		case "decryptwithmanagediv", "encryptwithmanagediv":
+			return stubBehaviorMemberParamsEqual(member, "String", "Blob", "Blob", "Blob")
+		default:
+			return false
 		}
+	case "EventBus":
+		return name == "getoperationid"
 	case "Ideas":
 		switch name {
 		case "markread":
+			return true
+		}
+	case "Communities":
+		switch name {
+		case "communitieslanding", "forwardtoauthpage", "getcss", "internallogin", "login":
 			return true
 		}
 	case "data_mask.DataMaskIntegrationUtil":
@@ -1709,6 +1736,28 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 		return false
 	}
 	return false
+}
+
+func exceptionDMLAccessorMethod(methodName string) bool {
+	switch strings.ToLower(methodName) {
+	case "getnumdml", "getdmltype", "getdmlmessage", "getdmlstatuscode",
+		"getdmlfieldnames", "getdmlfields", "getdmlid", "getdmlindex":
+		return true
+	default:
+		return false
+	}
+}
+
+func stubBehaviorMemberParamsEqual(member typesys.MemberSymbol, params ...string) bool {
+	if len(member.Parameters) != len(params) {
+		return false
+	}
+	for i, param := range params {
+		if !strings.EqualFold(member.Parameters[i].Type, param) {
+			return false
+		}
+	}
+	return true
 }
 
 func primitiveFieldAddErrorBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
@@ -2148,7 +2197,7 @@ func stringBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol
 		"offsetbycodepoints", "overlay", "remove", "removeend", "removeendignorecase",
 		"removestart", "removestartignorecase", "repeat", "replaceall", "replacefirst",
 		"reverse", "right", "rightpad", "splitbycharactertype", "splitbycharactertypecamelcase",
-		"startswithignorecase", "substringafter",
+		"startswithignorecase", "substringafter", "template",
 		"striphtmltags", "substringafterlast", "substringbefore", "substringbeforelast",
 		"substringbetween", "swapcase", "uncapitalize", "unescapecsv", "unescapeecmascript",
 		"unescapehtml3", "unescapehtml4", "unescapejava", "unescapeunicode", "unescapexml",

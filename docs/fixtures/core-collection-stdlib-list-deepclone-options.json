@@ -2,6 +2,7 @@
   "name": "core-collection-stdlib-list-deepclone-options",
   "evidence": [
     {
+      "surfaceId": "apex:System.List.deepClone()",
       "symbol": "List.deepClone",
       "kind": "exec",
       "notes": "List.deepClone accepts preserve-option booleans and clones SObject elements."

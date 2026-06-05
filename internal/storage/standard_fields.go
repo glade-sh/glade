@@ -487,7 +487,7 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 	org.Objects[objectName] = state
 	if len(state.Definition.RecordTypes) > 0 {
 		ensureRecordTypeObject(org)
-		ensureRecordTypeRecords(org)
+		ensureRecordTypeRecordsForObject(org, objectName)
 	}
 }
 
@@ -592,6 +592,39 @@ func initKnownStandardObjectCache() {
 
 func standardObjectLookupKey(name string) string {
 	return strings.ToLower(strings.TrimSpace(name))
+}
+
+var standardSObjectStubLookupCache struct {
+	once               sync.Once
+	objectInfoByLC     map[string]standardSObjectStubObjectInfo
+	fieldsByLC         map[string]map[string]Field
+	readOnlyFieldsByLC map[string][]string
+	relationshipsByLC  map[string][]Relationship
+}
+
+func initStandardSObjectStubLookupCache() {
+	standardSObjectStubLookupCache.once.Do(func() {
+		objectInfoByLC := make(map[string]standardSObjectStubObjectInfo, len(standardSObjectStubObjectData))
+		for name, info := range standardSObjectStubObjectData {
+			objectInfoByLC[standardObjectLookupKey(name)] = info
+		}
+		fieldsByLC := make(map[string]map[string]Field, len(standardSObjectStubFieldData))
+		for name, fields := range standardSObjectStubFieldData {
+			fieldsByLC[standardObjectLookupKey(name)] = fields
+		}
+		readOnlyFieldsByLC := make(map[string][]string, len(standardSObjectStubReadOnlyFieldData))
+		for name, fields := range standardSObjectStubReadOnlyFieldData {
+			readOnlyFieldsByLC[standardObjectLookupKey(name)] = fields
+		}
+		relationshipsByLC := make(map[string][]Relationship, len(standardSObjectStubRelationshipData))
+		for name, relationships := range standardSObjectStubRelationshipData {
+			relationshipsByLC[standardObjectLookupKey(name)] = relationships
+		}
+		standardSObjectStubLookupCache.objectInfoByLC = objectInfoByLC
+		standardSObjectStubLookupCache.fieldsByLC = fieldsByLC
+		standardSObjectStubLookupCache.readOnlyFieldsByLC = readOnlyFieldsByLC
+		standardSObjectStubLookupCache.relationshipsByLC = relationshipsByLC
+	})
 }
 
 func buildKnownStandardObjectNameSet() map[string]bool {

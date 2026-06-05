@@ -1388,12 +1388,9 @@ func standardSObjectStubObjectInfoFor(objectName string) (standardSObjectStubObj
 	if ok {
 		return info, true
 	}
-	for candidate, info := range standardSObjectStubObjectData {
-		if stringsEqualFold(candidate, objectName) {
-			return info, true
-		}
-	}
-	return standardSObjectStubObjectInfo{}, false
+	initStandardSObjectStubLookupCache()
+	info, ok = standardSObjectStubLookupCache.objectInfoByLC[standardObjectLookupKey(objectName)]
+	return info, ok
 }
 
 var standardSObjectStubFieldData = map[string]map[string]Field{
@@ -29224,12 +29221,9 @@ func standardSObjectStubFieldsFor(objectName string) (map[string]Field, bool) {
 	if ok {
 		return fields, true
 	}
-	for candidate, fields := range standardSObjectStubFieldData {
-		if stringsEqualFold(candidate, objectName) {
-			return fields, true
-		}
-	}
-	return nil, false
+	initStandardSObjectStubLookupCache()
+	fields, ok = standardSObjectStubLookupCache.fieldsByLC[standardObjectLookupKey(objectName)]
+	return fields, ok
 }
 
 func standardSObjectStubNames() []string {
@@ -30621,12 +30615,9 @@ func standardSObjectStubReadOnlyFieldsFor(objectName string) ([]string, bool) {
 	if ok {
 		return fields, true
 	}
-	for candidate, fields := range standardSObjectStubReadOnlyFieldData {
-		if stringsEqualFold(candidate, objectName) {
-			return fields, true
-		}
-	}
-	return nil, false
+	initStandardSObjectStubLookupCache()
+	fields, ok = standardSObjectStubLookupCache.readOnlyFieldsByLC[standardObjectLookupKey(objectName)]
+	return fields, ok
 }
 
 var standardSObjectStubRelationshipData = map[string][]Relationship{
@@ -37679,10 +37670,7 @@ func standardSObjectStubRelationshipsFor(objectName string) ([]Relationship, boo
 	if ok {
 		return relationships, true
 	}
-	for candidate, relationships := range standardSObjectStubRelationshipData {
-		if stringsEqualFold(candidate, objectName) {
-			return relationships, true
-		}
-	}
-	return nil, false
+	initStandardSObjectStubLookupCache()
+	relationships, ok = standardSObjectStubLookupCache.relationshipsByLC[standardObjectLookupKey(objectName)]
+	return relationships, ok
 }

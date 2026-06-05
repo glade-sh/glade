@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -358,6 +359,9 @@ platformStaticCall:
 		if value, ok := vm.limitValue(strings.TrimPrefix(callee, "Limits.")); ok {
 			return value, nil
 		}
+	}
+	if value, handled, err := vm.callSystemLabelStatic(callee, args); handled || err != nil {
+		return value, err
 	}
 	if strings.EqualFold(callee, "eventbus.TriggerContext.currentContext") {
 		if len(args) != 0 {
@@ -925,7 +929,9 @@ platformStaticCall:
 	case "Approval.isLocked":
 		return vm.executeApprovalIsLocked(args)
 	case "Approval.process":
-		return Null, unsupportedCallError(callee + " local approval process and lock surface")
+		return Null, unsupportedCallError(callee + " local approval process metadata")
+	case "Answers.findSimilar":
+		return Null, unsupportedCallError(callee + " local Answers zone search surface")
 	case "Database.merge":
 		return vm.executeDatabaseMerge(args, result)
 	case "Limits.getQueries", "Limits.getLimitQueries", "Limits.getQueryRows", "Limits.getLimitQueryRows",
@@ -1663,6 +1669,9 @@ platformStaticCall:
 		}
 		return platformScalar("Blob", string(clearText)), nil
 	case "Crypto.encryptWithManagedIV":
+		if len(args) == 4 {
+			return Null, unsupportedCallError("Crypto.encryptWithManagedIV local authenticated-data managed-IV AES surface")
+		}
 		if len(args) != 3 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Crypto.encryptWithManagedIV expects algorithm, privateKey Blob, and clearText Blob")
 		}
@@ -1681,6 +1690,9 @@ platformStaticCall:
 		}
 		return platformScalar("Blob", string(append(append([]byte{}, iv...), cipherText...))), nil
 	case "Crypto.decryptWithManagedIV":
+		if len(args) == 4 {
+			return Null, unsupportedCallError("Crypto.decryptWithManagedIV local authenticated-data managed-IV AES surface")
+		}
 		if len(args) != 3 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Crypto.decryptWithManagedIV expects algorithm, privateKey Blob, and cipherText Blob")
 		}
@@ -1983,47 +1995,33 @@ platformStaticCall:
 		vm.managedFeatureValues[managedFeatureValueKey("Date", args[0].Text)] = cloneValue(args[1])
 		return Null, nil
 	case "BusinessHours.add", "BusinessHours.addGmt":
-		if len(args) != 3 || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueInt {
-			return Null, fmt.Errorf("%s expects Id, Datetime, Long", callee)
+		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueInt {
+			return Null, fmt.Errorf("%s expects String, Datetime, Long", callee)
 		}
-		start, err := parsePlatformDatetime(args[1])
-		if err != nil {
-			return Null, err
-		}
-		return platformScalar("Datetime", formatPlatformDatetime(start.Add(time.Duration(args[2].Int)*time.Millisecond))), nil
+		return Null, unsupportedCallError(callee + " local business hours metadata")
 	case "BusinessHours.diff":
-		if len(args) != 3 || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueObject || args[2].Type != "Datetime" {
-			return Null, fmt.Errorf("BusinessHours.diff expects Id, Datetime, Datetime")
+		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueObject || args[2].Type != "Datetime" {
+			return Null, fmt.Errorf("BusinessHours.diff expects String, Datetime, Datetime")
 		}
-		start, err := parsePlatformDatetime(args[1])
-		if err != nil {
-			return Null, err
-		}
-		end, err := parsePlatformDatetime(args[2])
-		if err != nil {
-			return Null, err
-		}
-		return Int(end.Sub(start).Milliseconds()), nil
+		return Null, unsupportedCallError(callee + " local business hours metadata")
 	case "BusinessHours.isWithin":
-		if len(args) != 2 || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
-			return Null, fmt.Errorf("BusinessHours.isWithin expects Id, Datetime")
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
+			return Null, fmt.Errorf("BusinessHours.isWithin expects String, Datetime")
 		}
-		if _, err := parsePlatformDatetime(args[1]); err != nil {
-			return Null, err
-		}
-		return Bool(true), nil
+		return Null, unsupportedCallError(callee + " local business hours metadata")
 	case "BusinessHours.nextStartDate":
-		if len(args) != 2 || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
-			return Null, fmt.Errorf("BusinessHours.nextStartDate expects Id, Datetime")
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
+			return Null, fmt.Errorf("BusinessHours.nextStartDate expects String, Datetime")
 		}
-		if _, err := parsePlatformDatetime(args[1]); err != nil {
-			return Null, err
-		}
-		return args[1], nil
+		return Null, unsupportedCallError(callee + " local business hours metadata")
 	case "EventBus.publish":
 		return vm.eventBusPublish(args, result)
+	case "EventBus.publishWithAccessLevel":
+		return vm.eventBusPublishWithAccessLevel(args, result)
 	case "EventBus.publishAfterCommit":
 		return Null, unsupportedCallError(callee + " local platform event after-commit delivery surface")
+	case "IntegrationTest.commitTestOnly":
+		return Null, unsupportedCallError(callee + " local IntegrationTest developer preview service surface")
 	case "Request.getCurrent", "System.Request.getCurrent", "RequestImpl.getCurrent":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -2282,6 +2280,15 @@ platformStaticCall:
 	case "Messaging.extractInboundEmail":
 		return vm.extractInboundEmail(args)
 	case "Messaging.renderStoredEmailTemplate":
+		if len(args) == 4 || len(args) == 5 {
+			if args[3].Kind != ValueObject || !strings.EqualFold(args[3].Type, "Messaging.AttachmentRetrievalOption") {
+				return Null, fmt.Errorf("Messaging.renderStoredEmailTemplate expects AttachmentRetrievalOption")
+			}
+			if len(args) == 5 && args[4].Kind != ValueBool {
+				return Null, fmt.Errorf("Messaging.renderStoredEmailTemplate updateEmailTemplateUsage expects Boolean")
+			}
+			return vm.renderStoredEmailTemplate(args[:3])
+		}
 		return vm.renderStoredEmailTemplate(args)
 	case "Messaging.reserveSingleEmailCapacity", "Messaging.reserveMassEmailCapacity":
 		return vm.reserveEmailCapacity(callee, args, result)
@@ -2746,7 +2753,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("%s expects article Id String", callee)
 		}
 		return String(args[0].Text), nil
-	case "RemoteObjectController.retrieve", "RemoteObjectController.create", "RemoteObjectController.updat", "RemoteObjectController.del":
+	case "RemoteObjectController.retrieve", "RemoteObjectController.create", "RemoteObjectController.updat", "RemoteObjectController.update", "RemoteObjectController.del":
 		return remoteObjectControllerResult(callee, args)
 	case "SupportPredictiveService.findSimilarCases":
 		if len(args) != 1 || args[0].Kind != ValueString {
@@ -3249,6 +3256,124 @@ platformStaticCall:
 		}
 		return Null, unsupportedCallError(callee)
 	}
+}
+
+func (vm *VM) callSystemLabelStatic(callee string, args []Value) (Value, bool, error) {
+	switch {
+	case strings.EqualFold(callee, "Label.get") || strings.EqualFold(callee, "System.Label.get"):
+		if len(args) != 2 && len(args) != 3 {
+			return Null, true, fmt.Errorf("%s expects namespace, label name, and optional language", callee)
+		}
+		namespace, err := labelMethodStringArg(callee, "namespace", args[0], true)
+		if err != nil {
+			return Null, true, err
+		}
+		name, err := labelMethodStringArg(callee, "label name", args[1], false)
+		if err != nil {
+			return Null, true, err
+		}
+		language := ""
+		if len(args) == 3 {
+			language, err = labelMethodStringArg(callee, "language", args[2], true)
+			if err != nil {
+				return Null, true, err
+			}
+		}
+		if value, ok := vm.resolveLabelMethodValue(namespace, name, language); ok {
+			return String(value), true, nil
+		}
+		return Null, true, nil
+	case strings.EqualFold(callee, "Label.translationExists") || strings.EqualFold(callee, "System.Label.translationExists"):
+		if len(args) != 3 {
+			return Null, true, fmt.Errorf("%s expects namespace, label name, and language", callee)
+		}
+		namespace, err := labelMethodStringArg(callee, "namespace", args[0], true)
+		if err != nil {
+			return Null, true, err
+		}
+		name, err := labelMethodStringArg(callee, "label name", args[1], false)
+		if err != nil {
+			return Null, true, err
+		}
+		language, err := labelMethodStringArg(callee, "language", args[2], false)
+		if err != nil {
+			return Null, true, err
+		}
+		return Bool(vm.labelTranslationExists(namespace, name, language)), true, nil
+	default:
+		return Null, false, nil
+	}
+}
+
+func labelMethodStringArg(callee, name string, value Value, allowNull bool) (string, error) {
+	if value.Kind == ValueNull {
+		if allowNull {
+			return "", nil
+		}
+		return "", fmt.Errorf("%s expects non-null %s", callee, name)
+	}
+	if value.Kind == ValueString {
+		return value.Text, nil
+	}
+	if text, ok := platformScalarObjectText(value); ok && strings.EqualFold(value.Type, "String") {
+		return text, nil
+	}
+	return "", fmt.Errorf("%s expects String %s", callee, name)
+}
+
+func (vm *VM) resolveLabelMethodValue(namespace, name, language string) (string, bool) {
+	namespace = strings.TrimSpace(namespace)
+	name = strings.TrimSpace(name)
+	language = strings.TrimSpace(language)
+	if name == "" {
+		return "", false
+	}
+	if language != "" && vm != nil && vm.Org != nil {
+		filtered := vm.Org.Metadata
+		filtered.Labels = labelsForLanguage(filtered.Labels, language)
+		if value, status := resource.ResolveLabel(filtered, vm.Org.Namespace, namespace, name); status != resource.LabelLookupMissing {
+			return value, true
+		}
+	}
+	labelName := "Label." + name
+	if namespace != "" {
+		labelName = "Label." + namespace + "." + name
+	}
+	if value, ok := vm.lookupLabel(labelName); ok {
+		if value.Kind == ValueString {
+			return value.Text, true
+		}
+	}
+	return "", false
+}
+
+func (vm *VM) labelTranslationExists(namespace, name, language string) bool {
+	if vm == nil || vm.Org == nil {
+		return false
+	}
+	namespace = strings.TrimSpace(namespace)
+	name = strings.TrimSpace(name)
+	language = strings.TrimSpace(language)
+	if name == "" || language == "" {
+		return false
+	}
+	filtered := vm.Org.Metadata
+	filtered.Labels = labelsForLanguage(filtered.Labels, language)
+	_, status := resource.ResolveLabel(filtered, vm.Org.Namespace, namespace, name)
+	return status == resource.LabelLookupResolved
+}
+
+func labelsForLanguage(labels []storage.LabelMetadata, language string) []storage.LabelMetadata {
+	if len(labels) == 0 {
+		return nil
+	}
+	out := make([]storage.LabelMetadata, 0, len(labels))
+	for _, label := range labels {
+		if strings.EqualFold(strings.TrimSpace(label.Language), language) {
+			out = append(out, label)
+		}
+	}
+	return out
 }
 
 func (vm *VM) applyMaxIDSequencesForJournalRollback(currentSequences map[string]uint64) {

@@ -1,0 +1,263 @@
+{
+  "name": "core-runtime-exception-more-accessors",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.Exception.getCause()",
+      "symbol": "Exception.getCause",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Exception.getInaccessibleFields()",
+      "symbol": "Exception.getInaccessibleFields",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Exception.getLineNumber()",
+      "symbol": "Exception.getLineNumber",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Exception.getMessage()",
+      "symbol": "Exception.getMessage",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Exception.getStackTraceString()",
+      "symbol": "Exception.getStackTraceString",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Exception.getTypeName()",
+      "symbol": "Exception.getTypeName",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Exception.initCause(Exception)",
+      "symbol": "Exception.initCause(Exception)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Exception.setMessage(String)",
+      "symbol": "Exception.setMessage(String)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DuplicateMessageException.getCause()",
+      "symbol": "DuplicateMessageException.getCause",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DuplicateMessageException.getInaccessibleFields()",
+      "symbol": "DuplicateMessageException.getInaccessibleFields",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DuplicateMessageException.getLineNumber()",
+      "symbol": "DuplicateMessageException.getLineNumber",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DuplicateMessageException.getMessage()",
+      "symbol": "DuplicateMessageException.getMessage",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DuplicateMessageException.getStackTraceString()",
+      "symbol": "DuplicateMessageException.getStackTraceString",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DuplicateMessageException.getTypeName()",
+      "symbol": "DuplicateMessageException.getTypeName",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DuplicateMessageException.initCause(Exception)",
+      "symbol": "DuplicateMessageException.initCause(Exception)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DuplicateMessageException.setMessage(String)",
+      "symbol": "DuplicateMessageException.setMessage(String)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailTemplateRenderException.getCause()",
+      "symbol": "EmailTemplateRenderException.getCause",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailTemplateRenderException.getInaccessibleFields()",
+      "symbol": "EmailTemplateRenderException.getInaccessibleFields",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailTemplateRenderException.getLineNumber()",
+      "symbol": "EmailTemplateRenderException.getLineNumber",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailTemplateRenderException.getMessage()",
+      "symbol": "EmailTemplateRenderException.getMessage",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailTemplateRenderException.getStackTraceString()",
+      "symbol": "EmailTemplateRenderException.getStackTraceString",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailTemplateRenderException.getTypeName()",
+      "symbol": "EmailTemplateRenderException.getTypeName",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailTemplateRenderException.initCause(Exception)",
+      "symbol": "EmailTemplateRenderException.initCause(Exception)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailTemplateRenderException.setMessage(String)",
+      "symbol": "EmailTemplateRenderException.setMessage(String)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EventObjectException.getCause()",
+      "symbol": "EventObjectException.getCause",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EventObjectException.getInaccessibleFields()",
+      "symbol": "EventObjectException.getInaccessibleFields",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EventObjectException.getLineNumber()",
+      "symbol": "EventObjectException.getLineNumber",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EventObjectException.getMessage()",
+      "symbol": "EventObjectException.getMessage",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EventObjectException.getStackTraceString()",
+      "symbol": "EventObjectException.getStackTraceString",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EventObjectException.getTypeName()",
+      "symbol": "EventObjectException.getTypeName",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EventObjectException.initCause(Exception)",
+      "symbol": "EventObjectException.initCause(Exception)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EventObjectException.setMessage(String)",
+      "symbol": "EventObjectException.setMessage(String)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.ExternalObjectException.getCause()",
+      "symbol": "ExternalObjectException.getCause",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.ExternalObjectException.getInaccessibleFields()",
+      "symbol": "ExternalObjectException.getInaccessibleFields",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.ExternalObjectException.getLineNumber()",
+      "symbol": "ExternalObjectException.getLineNumber",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.ExternalObjectException.getMessage()",
+      "symbol": "ExternalObjectException.getMessage",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.ExternalObjectException.getStackTraceString()",
+      "symbol": "ExternalObjectException.getStackTraceString",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.ExternalObjectException.getTypeName()",
+      "symbol": "ExternalObjectException.getTypeName",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.ExternalObjectException.initCause(Exception)",
+      "symbol": "ExternalObjectException.initCause(Exception)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.ExternalObjectException.setMessage(String)",
+      "symbol": "ExternalObjectException.setMessage(String)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailException.getCause()",
+      "symbol": "EmailException.getCause",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailException.getInaccessibleFields()",
+      "symbol": "EmailException.getInaccessibleFields",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailException.getLineNumber()",
+      "symbol": "EmailException.getLineNumber",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailException.getMessage()",
+      "symbol": "EmailException.getMessage",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailException.getStackTraceString()",
+      "symbol": "EmailException.getStackTraceString",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailException.getTypeName()",
+      "symbol": "EmailException.getTypeName",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailException.initCause(Exception)",
+      "symbol": "EmailException.initCause(Exception)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.EmailException.setMessage(String)",
+      "symbol": "EmailException.setMessage(String)",
+      "kind": "exec"
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Exception baseEx = new Exception('base message');\nSystem.assertEquals('base message', baseEx.getMessage());\nSystem.assertEquals('System.Exception', baseEx.getTypeName());\nSystem.assertEquals(0, baseEx.getLineNumber());\nSystem.assertEquals('', baseEx.getStackTraceString());\nSystem.assertEquals(0, baseEx.getInaccessibleFields().size());\nbaseEx.setMessage('changed base');\nSystem.assertEquals('changed base', baseEx.getMessage());\nSystem.assertEquals(baseEx, baseEx.initCause(new QueryException('base cause')));\nSystem.assertEquals('base cause', baseEx.getCause().getMessage());\nException duplicateEx = new DuplicateMessageException('duplicate message');\nSystem.assertEquals('System.DuplicateMessageException', duplicateEx.getTypeName());\nduplicateEx.setMessage('changed duplicate');\nSystem.assertEquals('changed duplicate', duplicateEx.getMessage());\nSystem.assertEquals(0, duplicateEx.getInaccessibleFields().size());\nSystem.assertEquals(0, duplicateEx.getLineNumber());\nSystem.assertEquals('', duplicateEx.getStackTraceString());\nSystem.assertEquals(duplicateEx, duplicateEx.initCause(new QueryException('duplicate cause')));\nSystem.assertEquals('duplicate cause', duplicateEx.getCause().getMessage());\nException emailTemplateEx = new EmailTemplateRenderException('template message');\nSystem.assertEquals('System.EmailTemplateRenderException', emailTemplateEx.getTypeName());\nemailTemplateEx.setMessage('changed template');\nSystem.assertEquals('changed template', emailTemplateEx.getMessage());\nSystem.assertEquals(0, emailTemplateEx.getInaccessibleFields().size());\nSystem.assertEquals(0, emailTemplateEx.getLineNumber());\nSystem.assertEquals('', emailTemplateEx.getStackTraceString());\nSystem.assertEquals(emailTemplateEx, emailTemplateEx.initCause(new QueryException('template cause')));\nSystem.assertEquals('template cause', emailTemplateEx.getCause().getMessage());\nException eventObjectEx = new EventObjectException('event object message');\nSystem.assertEquals('System.EventObjectException', eventObjectEx.getTypeName());\neventObjectEx.setMessage('changed event object');\nSystem.assertEquals('changed event object', eventObjectEx.getMessage());\nSystem.assertEquals(0, eventObjectEx.getInaccessibleFields().size());\nSystem.assertEquals(0, eventObjectEx.getLineNumber());\nSystem.assertEquals('', eventObjectEx.getStackTraceString());\nSystem.assertEquals(eventObjectEx, eventObjectEx.initCause(new QueryException('event cause')));\nSystem.assertEquals('event cause', eventObjectEx.getCause().getMessage());\nException externalObjectEx = new ExternalObjectException('external object message');\nSystem.assertEquals('System.ExternalObjectException', externalObjectEx.getTypeName());\nexternalObjectEx.setMessage('changed external object');\nSystem.assertEquals('changed external object', externalObjectEx.getMessage());\nSystem.assertEquals(0, externalObjectEx.getInaccessibleFields().size());\nSystem.assertEquals(0, externalObjectEx.getLineNumber());\nSystem.assertEquals('', externalObjectEx.getStackTraceString());\nSystem.assertEquals(externalObjectEx, externalObjectEx.initCause(new QueryException('external cause')));\nSystem.assertEquals('external cause', externalObjectEx.getCause().getMessage());\nException emailEx = new EmailException('email message');\nSystem.assertEquals('System.EmailException', emailEx.getTypeName());\nemailEx.setMessage('changed email');\nSystem.assertEquals('changed email', emailEx.getMessage());\nSystem.assertEquals(0, emailEx.getInaccessibleFields().size());\nSystem.assertEquals(0, emailEx.getLineNumber());\nSystem.assertEquals('', emailEx.getStackTraceString());\nSystem.assertEquals(emailEx, emailEx.initCause(new QueryException('email cause')));\nSystem.assertEquals('email cause', emailEx.getCause().getMessage());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Exception baseEx = new Exception('base message');\nSystem.assertEquals('base message', baseEx.getMessage());\nSystem.assertEquals('System.Exception', baseEx.getTypeName());\nSystem.assertEquals(0, baseEx.getLineNumber());\nSystem.assertEquals('', baseEx.getStackTraceString());\nSystem.assertEquals(0, baseEx.getInaccessibleFields().size());\nbaseEx.setMessage('changed base');\nSystem.assertEquals('changed base', baseEx.getMessage());\nSystem.assertEquals(baseEx, baseEx.initCause(new QueryException('base cause')));\nSystem.assertEquals('base cause', baseEx.getCause().getMessage());\nException duplicateEx = new DuplicateMessageException('duplicate message');\nSystem.assertEquals('System.DuplicateMessageException', duplicateEx.getTypeName());\nduplicateEx.setMessage('changed duplicate');\nSystem.assertEquals('changed duplicate', duplicateEx.getMessage());\nSystem.assertEquals(0, duplicateEx.getInaccessibleFields().size());\nSystem.assertEquals(0, duplicateEx.getLineNumber());\nSystem.assertEquals('', duplicateEx.getStackTraceString());\nSystem.assertEquals(duplicateEx, duplicateEx.initCause(new QueryException('duplicate cause')));\nSystem.assertEquals('duplicate cause', duplicateEx.getCause().getMessage());\nException emailTemplateEx = new EmailTemplateRenderException('template message');\nSystem.assertEquals('System.EmailTemplateRenderException', emailTemplateEx.getTypeName());\nemailTemplateEx.setMessage('changed template');\nSystem.assertEquals('changed template', emailTemplateEx.getMessage());\nSystem.assertEquals(0, emailTemplateEx.getInaccessibleFields().size());\nSystem.assertEquals(0, emailTemplateEx.getLineNumber());\nSystem.assertEquals('', emailTemplateEx.getStackTraceString());\nSystem.assertEquals(emailTemplateEx, emailTemplateEx.initCause(new QueryException('template cause')));\nSystem.assertEquals('template cause', emailTemplateEx.getCause().getMessage());\nException eventObjectEx = new EventObjectException('event object message');\nSystem.assertEquals('System.EventObjectException', eventObjectEx.getTypeName());\neventObjectEx.setMessage('changed event object');\nSystem.assertEquals('changed event object', eventObjectEx.getMessage());\nSystem.assertEquals(0, eventObjectEx.getInaccessibleFields().size());\nSystem.assertEquals(0, eventObjectEx.getLineNumber());\nSystem.assertEquals('', eventObjectEx.getStackTraceString());\nSystem.assertEquals(eventObjectEx, eventObjectEx.initCause(new QueryException('event cause')));\nSystem.assertEquals('event cause', eventObjectEx.getCause().getMessage());\nException externalObjectEx = new ExternalObjectException('external object message');\nSystem.assertEquals('System.ExternalObjectException', externalObjectEx.getTypeName());\nexternalObjectEx.setMessage('changed external object');\nSystem.assertEquals('changed external object', externalObjectEx.getMessage());\nSystem.assertEquals(0, externalObjectEx.getInaccessibleFields().size());\nSystem.assertEquals(0, externalObjectEx.getLineNumber());\nSystem.assertEquals('', externalObjectEx.getStackTraceString());\nSystem.assertEquals(externalObjectEx, externalObjectEx.initCause(new QueryException('external cause')));\nSystem.assertEquals('external cause', externalObjectEx.getCause().getMessage());\nException emailEx = new EmailException('email message');\nSystem.assertEquals('System.EmailException', emailEx.getTypeName());\nemailEx.setMessage('changed email');\nSystem.assertEquals('changed email', emailEx.getMessage());\nSystem.assertEquals(0, emailEx.getInaccessibleFields().size());\nSystem.assertEquals(0, emailEx.getLineNumber());\nSystem.assertEquals('', emailEx.getStackTraceString());\nSystem.assertEquals(emailEx, emailEx.initCause(new QueryException('email cause')));\nSystem.assertEquals('email cause', emailEx.getCause().getMessage());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

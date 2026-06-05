@@ -68,15 +68,165 @@ func TestStandardPlatformSymbolsIncludeInstallVersion(t *testing.T) {
 	requireStandardMethod(t, installContext, "previousVersion", nil, false)
 }
 
+func TestStandardPlatformSymbolsIncludeBaseExceptionConstructors(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	exception := requireStandardSymbol(t, symbols, "Exception")
+	requireStandardConstructor(t, exception, []string{})
+	requireStandardConstructor(t, exception, []string{"Exception"})
+	requireStandardConstructor(t, exception, []string{"String"})
+	requireStandardConstructor(t, exception, []string{"String", "Exception"})
+}
+
+func TestStandardPlatformSymbolsIncludeLabelLimitsDecimalAndTargetExceptionShapes(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	decimal := requireStandardSymbol(t, symbols, "Decimal")
+	requireStandardMethod(t, decimal, "divide", []string{"Decimal", "Integer", "RoundingMode"}, false)
+
+	label := requireStandardSymbol(t, symbols, "Label")
+	requireStandardMethod(t, label, "get", []string{"String", "String"}, true)
+	requireStandardMethod(t, label, "get", []string{"String", "String", "String"}, true)
+	requireStandardMethod(t, label, "translationExists", []string{"String", "String", "String"}, true)
+
+	systemLabel := requireStandardSymbol(t, symbols, "System.Label")
+	requireStandardMethod(t, systemLabel, "get", []string{"String", "String"}, true)
+	requireStandardMethod(t, systemLabel, "get", []string{"String", "String", "String"}, true)
+	requireStandardMethod(t, systemLabel, "translationExists", []string{"String", "String", "String"}, true)
+
+	limits := requireStandardSymbol(t, symbols, "Limits")
+	requireStandardMethodType(t, limits, "getAsyncCalls", "Integer")
+	requireStandardMethodType(t, limits, "getLimitAsyncCalls", "Integer")
+
+	invalidParameter := requireStandardSymbol(t, symbols, "InvalidParameterValueException")
+	requireStandardConstructor(t, invalidParameter, []string{})
+	requireStandardConstructor(t, invalidParameter, []string{"Exception"})
+	requireStandardConstructor(t, invalidParameter, []string{"String"})
+
+	for _, name := range []string{"NoAccessException", "NoDataFoundException", "NullPointerException"} {
+		exceptionType := requireStandardSymbol(t, symbols, name)
+		requireStandardConstructor(t, exceptionType, []string{"Exception"})
+		requireStandardConstructor(t, exceptionType, []string{"String"})
+		requireStandardConstructor(t, exceptionType, []string{"String", "Exception"})
+	}
+
+	touchHandled := requireStandardSymbol(t, symbols, "TouchHandledException")
+	requireStandardConstructor(t, touchHandled, []string{})
+	requireStandardConstructor(t, touchHandled, []string{"String", "Exception"})
+}
+
+func TestStandardPlatformSymbolsIncludeServiceBackedSystemAndStdlibShapes(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	requireStandardSymbol(t, symbols, "Canvas")
+	requireStandardSymbol(t, symbols, "DataSource")
+
+	asyncSaveCallback := requireStandardSymbol(t, symbols, "DataSource.AsyncSaveCallback")
+	if asyncSaveCallback.Kind != apexast.DeclarationInterface {
+		t.Fatalf("DataSource.AsyncSaveCallback kind = %q, want interface", asyncSaveCallback.Kind)
+	}
+	requireStandardMethod(t, asyncSaveCallback, "processSave", []string{"Database.SaveResult"}, false)
+
+	asyncDeleteCallback := requireStandardSymbol(t, symbols, "DataSource.AsyncDeleteCallback")
+	if asyncDeleteCallback.Kind != apexast.DeclarationInterface {
+		t.Fatalf("DataSource.AsyncDeleteCallback kind = %q, want interface", asyncDeleteCallback.Kind)
+	}
+	requireStandardMethod(t, asyncDeleteCallback, "processDelete", []string{"Database.DeleteResult"}, false)
+
+	applicationContext := requireStandardSymbol(t, symbols, "Canvas.ApplicationContext")
+	requireStandardMethod(t, applicationContext, "getCanvasUrl", nil, false)
+	requireStandardMethod(t, applicationContext, "getDeveloperName", nil, false)
+	requireStandardMethod(t, applicationContext, "getName", nil, false)
+	requireStandardMethod(t, applicationContext, "getNamespace", nil, false)
+	requireStandardMethod(t, applicationContext, "getVersion", nil, false)
+	requireStandardMethod(t, applicationContext, "setCanvasUrlPath", []string{"String"}, false)
+
+	environmentContext := requireStandardSymbol(t, symbols, "Canvas.EnvironmentContext")
+	requireStandardMethod(t, environmentContext, "addEntityField", []string{"String"}, false)
+	requireStandardMethod(t, environmentContext, "addEntityFields", []string{"Set<String>"}, false)
+	requireStandardMethod(t, environmentContext, "getDisplayLocation", nil, false)
+	requireStandardMethod(t, environmentContext, "getEntityFields", nil, false)
+	requireStandardMethod(t, environmentContext, "getLocationUrl", nil, false)
+	requireStandardMethod(t, environmentContext, "getParametersAsJSON", nil, false)
+	requireStandardMethod(t, environmentContext, "getSublocation", nil, false)
+	requireStandardMethod(t, environmentContext, "setParametersAsJSON", []string{"String"}, false)
+
+	renderContext := requireStandardSymbol(t, symbols, "Canvas.RenderContext")
+	requireStandardMethod(t, renderContext, "getApplicationContext", nil, false)
+	requireStandardMethod(t, renderContext, "getEnvironmentContext", nil, false)
+
+	canvasLifecycleHandler := requireStandardSymbol(t, symbols, "Canvas.CanvasLifecycleHandler")
+	requireStandardMethod(t, canvasLifecycleHandler, "excludeContextTypes", nil, false)
+	requireStandardMethod(t, canvasLifecycleHandler, "onRender", []string{"Canvas.RenderContext"}, false)
+
+	nlpResponse := requireStandardSymbol(t, symbols, "industriesNlpSvc.NlpResponse")
+	requireStandardProperty(t, nlpResponse, "summarizationResult", "industriesNlpSvc.NlpSummarizationResult")
+	requireStandardProperty(t, nlpResponse, "errors", "List<String>")
+
+	nlpSummarizationResult := requireStandardSymbol(t, symbols, "industriesNlpSvc.NlpSummarizationResult")
+	requireStandardProperty(t, nlpSummarizationResult, "summary", "String")
+
+	eventBus := requireStandardSymbol(t, symbols, "EventBus")
+	requireStandardMethod(t, eventBus, "publishWithAccessLevel", []string{"SObject", "AccessLevel"}, true)
+	requireStandardMethod(t, eventBus, "publishWithAccessLevel", []string{"SObject", "Object", "AccessLevel"}, true)
+	requireStandardMethod(t, eventBus, "publishWithAccessLevel", []string{"List<SObject>", "Object", "AccessLevel"}, true)
+
+	pushPayload := requireStandardSymbol(t, symbols, "Messaging.PushNotificationPayload")
+	requireStandardMethod(t, pushPayload, "apple", []string{"String", "String", "Integer", "Map<String,Object>"}, true)
+	requireStandardMethod(t, pushPayload, "apple", []string{"String", "String", "String", "List<String>", "String", "String", "Integer", "Map<String,Object>"}, true)
+
+	push := requireStandardSymbol(t, symbols, "Messaging.PushNotification")
+	requireStandardConstructor(t, push, []string{})
+	requireStandardConstructor(t, push, []string{"Map<String,Object>"})
+	requireStandardMethod(t, push, "send", []string{"String", "Set<String>"}, false)
+	requireStandardMethod(t, push, "setPayload", []string{"Map<String,Object>"}, false)
+	requireStandardMethod(t, push, "setTtl", []string{"Integer"}, false)
+}
+
 func TestStandardPlatformSymbolsIncludeSearchQuery(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 
 	search := requireStandardSymbol(t, symbols, "Search")
 	requireStandardMethod(t, search, "query", []string{"String"}, true)
+	requireStandardMethod(t, search, "query", []string{"String", "AccessLevel"}, true)
+	requireStandardMethod(t, search, "find", []string{"String", "AccessLevel"}, true)
+	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Search.SuggestionOption"}, true)
+	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Search.SuggestionOption", "AccessLevel"}, true)
 	requireStandardMethodType(t, search, "query", "List<List<SObject>>")
 
 	date := requireStandardSymbol(t, symbols, "Date")
 	requireStandardMethod(t, date, "daysInMonth", []string{"Integer", "Integer"}, true)
+}
+
+func TestStandardPlatformSymbolsIncludeMessagingPageReferenceAndSObjectOptionRows(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	messaging := requireStandardSymbol(t, symbols, "Messaging")
+	requireStandardMethod(t, messaging, "sendEmail", []string{"List<Messaging.Email>", "Boolean"}, true)
+	requireStandardMethod(t, messaging, "renderStoredEmailTemplate", []string{"String", "String", "String", "Messaging.AttachmentRetrievalOption"}, true)
+	requireStandardMethod(t, messaging, "renderStoredEmailTemplate", []string{"String", "String", "String", "Messaging.AttachmentRetrievalOption", "Boolean"}, true)
+
+	attachmentOption := requireStandardSymbol(t, symbols, "Messaging.AttachmentRetrievalOption")
+	if attachmentOption.Kind != apexast.DeclarationEnum {
+		t.Fatalf("Messaging.AttachmentRetrievalOption kind = %q, want enum", attachmentOption.Kind)
+	}
+	requireStandardPropertyStatic(t, attachmentOption, "METADATA_ONLY", "Messaging.AttachmentRetrievalOption", true)
+	requireStandardPropertyStatic(t, attachmentOption, "METADATA_WITH_BODY", "Messaging.AttachmentRetrievalOption", true)
+	requireStandardPropertyStatic(t, attachmentOption, "NONE", "Messaging.AttachmentRetrievalOption", true)
+
+	page := requireStandardSymbol(t, symbols, "PageReference")
+	requireStandardConstructor(t, page, []string{"String"})
+	requireStandardConstructor(t, page, []string{"SObject"})
+	requireStandardMethod(t, page, "setCookies", []string{"List<Cookie>"}, false)
+
+	sobject := requireStandardSymbol(t, symbols, "SObject")
+	requireStandardMethod(t, sobject, "setOptions", []string{"Database.DMLOptions"}, false)
+
+	httpRequest := requireStandardSymbol(t, symbols, "HttpRequest")
+	requireStandardMethod(t, httpRequest, "setBodyDocument", []string{"Dom.Document"}, false)
+
+	testClass := requireStandardSymbol(t, symbols, "Test")
+	requireStandardMethod(t, testClass, "setFixedSearchResults", []string{"List<Id>"}, true)
 }
 
 func TestStandardPlatformSymbolsTypeAuthProviders(t *testing.T) {
@@ -84,6 +234,8 @@ func TestStandardPlatformSymbolsTypeAuthProviders(t *testing.T) {
 
 	authConfiguration := requireStandardSymbol(t, symbols, "Auth.AuthConfiguration")
 	requireStandardMethodType(t, authConfiguration, "getAuthProviders", "List<AuthProvider>")
+	requireNoStandardSymbol(t, symbols, "Auth.Auth")
+	requireNoStandardSymbol(t, symbols, "Approval.Approval")
 }
 
 func TestStandardPlatformSymbolsIncludeUserInfoStubMethodsAndFieldTokenProperties(t *testing.T) {
@@ -131,8 +283,33 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	requireStandardMethod(t, testClass, "createStubQueryRow", []string{"Schema.SObjectType", "Map<String,Object>"}, true)
 	requireStandardMethod(t, testClass, "setCurrentPageReference", []string{"Object"}, true)
 
+	trigger := requireStandardSymbol(t, symbols, "Trigger")
+	for _, property := range []string{"isExecuting", "isInsert", "isUpdate", "isDelete", "isBefore", "isAfter", "isUndelete"} {
+		requireStandardPropertyStatic(t, trigger, property, "Boolean", true)
+	}
+	requireStandardPropertyStatic(t, trigger, "new", "List<SObject>", true)
+	requireStandardPropertyStatic(t, trigger, "old", "List<SObject>", true)
+	requireStandardPropertyStatic(t, trigger, "newMap", "Map<Id,SObject>", true)
+	requireStandardPropertyStatic(t, trigger, "oldMap", "Map<Id,SObject>", true)
+	requireStandardPropertyStatic(t, trigger, "operationType", "TriggerOperation", true)
+	requireStandardPropertyStatic(t, trigger, "size", "Integer", true)
+
 	stringClass := requireStandardSymbol(t, symbols, "String")
+	requireStandardMethod(t, stringClass, "equals", []string{"String"}, false)
 	requireStandardMethod(t, stringClass, "format", []string{"String", "List<Object>"}, true)
+	requireStandardMethod(t, stringClass, "template", []string{"Map<String,Object>"}, false)
+
+	systemClass := requireStandardSymbol(t, symbols, "System")
+	requireStandardMethod(t, systemClass, "debug", []string{"LoggingLevel", "Object"}, true)
+
+	installHandler := requireStandardSymbol(t, symbols, "InstallHandler")
+	requireStandardMethod(t, installHandler, "onInstall", []string{"InstallContext"}, false)
+
+	uninstallHandler := requireStandardSymbol(t, symbols, "UninstallHandler")
+	requireStandardMethod(t, uninstallHandler, "onUninstall", []string{"UninstallContext"}, false)
+
+	integrationTest := requireStandardSymbol(t, symbols, "IntegrationTest")
+	requireStandardMethod(t, integrationTest, "commitTestOnly", nil, true)
 
 	displayType := requireStandardSymbol(t, symbols, "Schema.DisplayType")
 	if displayType.Kind != apexast.DeclarationEnum {
@@ -225,6 +402,50 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 		t.Fatalf("sfdatakit account engagement enum kind = %q, want enum", accountEngagementType.Kind)
 	}
 	requireStandardPropertyStatic(t, accountEngagementType, "EmailActivity", "sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum", true)
+}
+
+func TestStandardPlatformSymbolsIncludeCoreRuntimeCollectionObjectShapes(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	objectClass := requireStandardSymbol(t, symbols, "Object")
+	requireStandardMethod(t, objectClass, "equals", []string{"Object"}, false)
+	requireStandardMethodType(t, objectClass, "equals", "Boolean")
+	requireStandardMethod(t, objectClass, "hashCode", nil, false)
+	requireStandardMethodType(t, objectClass, "hashCode", "Integer")
+	requireStandardMethod(t, objectClass, "toString", nil, false)
+	requireStandardMethodType(t, objectClass, "toString", "String")
+
+	enumClass := requireStandardSymbol(t, symbols, "Enum")
+	if enumClass.Kind != apexast.DeclarationClass {
+		t.Fatalf("Enum kind = %q, want class", enumClass.Kind)
+	}
+
+	comparator := requireStandardSymbol(t, symbols, "Comparator")
+	if comparator.Kind != apexast.DeclarationInterface {
+		t.Fatalf("Comparator kind = %q, want interface", comparator.Kind)
+	}
+	requireStandardMethod(t, comparator, "compare", []string{"Object", "Object"}, false)
+
+	listClass := requireStandardSymbol(t, symbols, "List")
+	requireStandardConstructor(t, listClass, nil)
+	requireStandardConstructor(t, listClass, []string{"List"})
+	requireStandardMethod(t, listClass, "equals", []string{"List"}, false)
+
+	mapClass := requireStandardSymbol(t, symbols, "Map")
+	requireStandardConstructor(t, mapClass, nil)
+	requireStandardConstructor(t, mapClass, []string{"Map"})
+	requireStandardConstructor(t, mapClass, []string{"List<SObject>"})
+	requireStandardMethod(t, mapClass, "equals", []string{"Map"}, false)
+	requireStandardMethod(t, mapClass, "remove", []string{"Object"}, false)
+
+	setClass := requireStandardSymbol(t, symbols, "Set")
+	requireStandardConstructor(t, setClass, nil)
+	requireStandardConstructor(t, setClass, []string{"Set"})
+	requireStandardMethod(t, setClass, "addAll", []string{"List<Object>"}, false)
+	requireStandardMethod(t, setClass, "containsAll", []string{"List<Object>"}, false)
+	requireStandardMethod(t, setClass, "equals", []string{"Set<Object>"}, false)
+	requireStandardMethod(t, setClass, "removeAll", []string{"List<Object>"}, false)
+	requireStandardMethod(t, setClass, "retainAll", []string{"List<Object>"}, false)
 }
 
 func TestStandardSymbolsFromSpecsKeepsRicherGeneratedPropertyTypes(t *testing.T) {
@@ -397,6 +618,15 @@ func requireStandardSymbol(t *testing.T, symbols []TypeSymbol, name string) Type
 	}
 	t.Fatalf("missing standard symbol %s", name)
 	return TypeSymbol{}
+}
+
+func requireNoStandardSymbol(t *testing.T, symbols []TypeSymbol, name string) {
+	t.Helper()
+	for _, symbol := range symbols {
+		if strings.EqualFold(standardSymbolFullName(symbol), name) {
+			t.Fatalf("unexpected standard symbol %s", name)
+		}
+	}
 }
 
 func requireStandardConstructor(t *testing.T, symbol TypeSymbol, params []string) {

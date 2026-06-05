@@ -1,0 +1,69 @@
+{
+  "name": "core-runtime-small-helper-value-objects",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.Blob.toPdf(String)",
+      "symbol": "Blob.toPdf(String)",
+      "kind": "exec",
+      "notes": "Local Blob.toPdf returns deterministic PDF-shaped bytes for text input."
+    },
+    {
+      "surfaceId": "apex:System.CURRENCY.newInstance(Decimal,String)",
+      "symbol": "CURRENCY.newInstance(Decimal,String)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CURRENCY.format()",
+      "symbol": "CURRENCY.format",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CURRENCY.formatAmount()",
+      "symbol": "CURRENCY.formatAmount",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Collator.getInstance()",
+      "symbol": "Collator.getInstance",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Collator.compare(String,String)",
+      "symbol": "Collator.compare(String,String)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Cases.generateThreadingMessageId(Id)",
+      "symbol": "Cases.generateThreadingMessageId(Id)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Cases.getCaseIdFromEmailThreadId(String)",
+      "symbol": "Cases.getCaseIdFromEmailThreadId(String)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Cases.getCaseIdFromEmailHeaders(List<Messaging.InboundEmail.Header>)",
+      "symbol": "Cases.getCaseIdFromEmailHeaders(List<Messaging.InboundEmail.Header>)",
+      "kind": "exec"
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Blob pdf = Blob.valueOf('glade').toPdf('stub');\nSystem.assert(pdf.toString().startsWith('%PDF-1.4'));\nCURRENCY usd = CURRENCY.newInstance(12.5, 'usd');\nSystem.assertEquals('USD 12.5', usd.format());\nSystem.assertEquals('12.5', usd.formatAmount());\nSystem.assertEquals('USD 12.5', usd.toString());\nCollator collator = Collator.getInstance();\nSystem.assert(collator.compare('a', 'b') < 0);\nSystem.assertEquals(0, collator.compare('same', 'same'));\nString threadId = Cases.generateThreadingMessageId('500000000000001AAA');\nSystem.assert(threadId.contains('500000000000001AAA'));\nSystem.assertEquals('500000000000001AAA', String.valueOf(Cases.getCaseIdFromEmailThreadId(threadId)));\nMessaging.InboundEmail.Header header = new Messaging.InboundEmail.Header();\nheader.name = 'References';\nheader.value = 'previous ' + threadId;\nSystem.assertEquals('500000000000001AAA', String.valueOf(Cases.getCaseIdFromEmailHeaders(new List<Messaging.InboundEmail.Header>{header})));\nSystem.assertEquals(null, Cases.getCaseIdFromEmailThreadId('no case id here'));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Blob pdf = Blob.valueOf('glade').toPdf('stub');\nSystem.assert(pdf.toString().startsWith('%PDF-1.4'));\nCURRENCY usd = CURRENCY.newInstance(12.5, 'usd');\nSystem.assertEquals('USD 12.5', usd.format());\nSystem.assertEquals('12.5', usd.formatAmount());\nSystem.assertEquals('USD 12.5', usd.toString());\nCollator collator = Collator.getInstance();\nSystem.assert(collator.compare('a', 'b') < 0);\nSystem.assertEquals(0, collator.compare('same', 'same'));\nString threadId = Cases.generateThreadingMessageId('500000000000001AAA');\nSystem.assert(threadId.contains('500000000000001AAA'));\nSystem.assertEquals('500000000000001AAA', String.valueOf(Cases.getCaseIdFromEmailThreadId(threadId)));\nMessaging.InboundEmail.Header header = new Messaging.InboundEmail.Header();\nheader.name = 'References';\nheader.value = 'previous ' + threadId;\nSystem.assertEquals('500000000000001AAA', String.valueOf(Cases.getCaseIdFromEmailHeaders(new List<Messaging.InboundEmail.Header>{header})));\nSystem.assertEquals(null, Cases.getCaseIdFromEmailThreadId('no case id here'));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

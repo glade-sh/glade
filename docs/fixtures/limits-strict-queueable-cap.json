@@ -2,6 +2,7 @@
   "name": "limits-strict-queueable-cap",
   "evidence": [
     {
+      "surfaceId": "apex:System.System.enqueueJob(Object,Integer)",
       "symbol": "System.enqueueJob",
       "kind": "test"
     },

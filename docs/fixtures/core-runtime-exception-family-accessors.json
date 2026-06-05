@@ -1,0 +1,223 @@
+{
+  "name": "core-runtime-exception-family-accessors",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.BigObjectException.getCause()",
+      "symbol": "BigObjectException.getCause",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.BigObjectException.getInaccessibleFields()",
+      "symbol": "BigObjectException.getInaccessibleFields",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.BigObjectException.getLineNumber()",
+      "symbol": "BigObjectException.getLineNumber",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.BigObjectException.getMessage()",
+      "symbol": "BigObjectException.getMessage",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.BigObjectException.getStackTraceString()",
+      "symbol": "BigObjectException.getStackTraceString",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.BigObjectException.getTypeName()",
+      "symbol": "BigObjectException.getTypeName",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.BigObjectException.initCause(Exception)",
+      "symbol": "BigObjectException.initCause(Exception)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.BigObjectException.setMessage(String)",
+      "symbol": "BigObjectException.setMessage(String)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CalloutException.getCause()",
+      "symbol": "CalloutException.getCause",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CalloutException.getInaccessibleFields()",
+      "symbol": "CalloutException.getInaccessibleFields",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CalloutException.getLineNumber()",
+      "symbol": "CalloutException.getLineNumber",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CalloutException.getMessage()",
+      "symbol": "CalloutException.getMessage",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CalloutException.getStackTraceString()",
+      "symbol": "CalloutException.getStackTraceString",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CalloutException.getTypeName()",
+      "symbol": "CalloutException.getTypeName",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CalloutException.initCause(Exception)",
+      "symbol": "CalloutException.initCause(Exception)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CalloutException.setMessage(String)",
+      "symbol": "CalloutException.setMessage(String)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CanvasException.getCause()",
+      "symbol": "CanvasException.getCause",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CanvasException.getInaccessibleFields()",
+      "symbol": "CanvasException.getInaccessibleFields",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CanvasException.getLineNumber()",
+      "symbol": "CanvasException.getLineNumber",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CanvasException.getMessage()",
+      "symbol": "CanvasException.getMessage",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CanvasException.getStackTraceString()",
+      "symbol": "CanvasException.getStackTraceString",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CanvasException.getTypeName()",
+      "symbol": "CanvasException.getTypeName",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CanvasException.initCause(Exception)",
+      "symbol": "CanvasException.initCause(Exception)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.CanvasException.setMessage(String)",
+      "symbol": "CanvasException.setMessage(String)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DataWeaveScriptException.getCause()",
+      "symbol": "DataWeaveScriptException.getCause",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DataWeaveScriptException.getInaccessibleFields()",
+      "symbol": "DataWeaveScriptException.getInaccessibleFields",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DataWeaveScriptException.getLineNumber()",
+      "symbol": "DataWeaveScriptException.getLineNumber",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DataWeaveScriptException.getMessage()",
+      "symbol": "DataWeaveScriptException.getMessage",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DataWeaveScriptException.getStackTraceString()",
+      "symbol": "DataWeaveScriptException.getStackTraceString",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DataWeaveScriptException.getTypeName()",
+      "symbol": "DataWeaveScriptException.getTypeName",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DataWeaveScriptException.initCause(Exception)",
+      "symbol": "DataWeaveScriptException.initCause(Exception)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DataWeaveScriptException.setMessage(String)",
+      "symbol": "DataWeaveScriptException.setMessage(String)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DmlException.getCause()",
+      "symbol": "DmlException.getCause",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DmlException.getInaccessibleFields()",
+      "symbol": "DmlException.getInaccessibleFields",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DmlException.getLineNumber()",
+      "symbol": "DmlException.getLineNumber",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DmlException.getMessage()",
+      "symbol": "DmlException.getMessage",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DmlException.getStackTraceString()",
+      "symbol": "DmlException.getStackTraceString",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DmlException.getTypeName()",
+      "symbol": "DmlException.getTypeName",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DmlException.initCause(Exception)",
+      "symbol": "DmlException.initCause(Exception)",
+      "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.DmlException.setMessage(String)",
+      "symbol": "DmlException.setMessage(String)",
+      "kind": "exec"
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Exception bigObjectEx = new BigObjectException('big object message');\nSystem.assertEquals('big object message', bigObjectEx.getMessage());\nSystem.assertEquals('System.BigObjectException', bigObjectEx.getTypeName());\nSystem.assertEquals(0, bigObjectEx.getLineNumber());\nSystem.assertEquals('', bigObjectEx.getStackTraceString());\nSystem.assertEquals(0, bigObjectEx.getInaccessibleFields().size());\nbigObjectEx.setMessage('changed big object');\nSystem.assertEquals('changed big object', bigObjectEx.getMessage());\nSystem.assertEquals(bigObjectEx, bigObjectEx.initCause(new DmlException('big object cause')));\nSystem.assertEquals('big object cause', bigObjectEx.getCause().getMessage());\nException calloutEx = new CalloutException('callout message');\nSystem.assertEquals('callout message', calloutEx.getMessage());\nSystem.assertEquals('System.CalloutException', calloutEx.getTypeName());\nSystem.assertEquals(0, calloutEx.getLineNumber());\nSystem.assertEquals('', calloutEx.getStackTraceString());\nSystem.assertEquals(0, calloutEx.getInaccessibleFields().size());\ncalloutEx.setMessage('changed callout');\nSystem.assertEquals('changed callout', calloutEx.getMessage());\nSystem.assertEquals(calloutEx, calloutEx.initCause(new DmlException('callout cause')));\nSystem.assertEquals('callout cause', calloutEx.getCause().getMessage());\nException canvasEx = new CanvasException('canvas message');\nSystem.assertEquals('canvas message', canvasEx.getMessage());\nSystem.assertEquals('System.CanvasException', canvasEx.getTypeName());\nSystem.assertEquals(0, canvasEx.getLineNumber());\nSystem.assertEquals('', canvasEx.getStackTraceString());\nSystem.assertEquals(0, canvasEx.getInaccessibleFields().size());\ncanvasEx.setMessage('changed canvas');\nSystem.assertEquals('changed canvas', canvasEx.getMessage());\nSystem.assertEquals(canvasEx, canvasEx.initCause(new DmlException('canvas cause')));\nSystem.assertEquals('canvas cause', canvasEx.getCause().getMessage());\nException dataWeaveEx = new DataWeaveScriptException('data weave message');\nSystem.assertEquals('data weave message', dataWeaveEx.getMessage());\nSystem.assertEquals('System.DataWeaveScriptException', dataWeaveEx.getTypeName());\nSystem.assertEquals(0, dataWeaveEx.getLineNumber());\nSystem.assertEquals('', dataWeaveEx.getStackTraceString());\nSystem.assertEquals(0, dataWeaveEx.getInaccessibleFields().size());\ndataWeaveEx.setMessage('changed data weave');\nSystem.assertEquals('changed data weave', dataWeaveEx.getMessage());\nSystem.assertEquals(dataWeaveEx, dataWeaveEx.initCause(new DmlException('data weave cause')));\nSystem.assertEquals('data weave cause', dataWeaveEx.getCause().getMessage());\nException dmlEx = new DmlException('dml message');\nSystem.assertEquals('dml message', dmlEx.getMessage());\nSystem.assertEquals('System.DmlException', dmlEx.getTypeName());\nSystem.assertEquals(0, dmlEx.getLineNumber());\nSystem.assertEquals('', dmlEx.getStackTraceString());\nSystem.assertEquals(0, dmlEx.getInaccessibleFields().size());\ndmlEx.setMessage('changed dml');\nSystem.assertEquals('changed dml', dmlEx.getMessage());\nSystem.assertEquals(dmlEx, dmlEx.initCause(new QueryException('dml cause')));\nSystem.assertEquals('dml cause', dmlEx.getCause().getMessage());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Exception bigObjectEx = new BigObjectException('big object message');\nSystem.assertEquals('big object message', bigObjectEx.getMessage());\nSystem.assertEquals('System.BigObjectException', bigObjectEx.getTypeName());\nSystem.assertEquals(0, bigObjectEx.getLineNumber());\nSystem.assertEquals('', bigObjectEx.getStackTraceString());\nSystem.assertEquals(0, bigObjectEx.getInaccessibleFields().size());\nbigObjectEx.setMessage('changed big object');\nSystem.assertEquals('changed big object', bigObjectEx.getMessage());\nSystem.assertEquals(bigObjectEx, bigObjectEx.initCause(new DmlException('big object cause')));\nSystem.assertEquals('big object cause', bigObjectEx.getCause().getMessage());\nException calloutEx = new CalloutException('callout message');\nSystem.assertEquals('callout message', calloutEx.getMessage());\nSystem.assertEquals('System.CalloutException', calloutEx.getTypeName());\nSystem.assertEquals(0, calloutEx.getLineNumber());\nSystem.assertEquals('', calloutEx.getStackTraceString());\nSystem.assertEquals(0, calloutEx.getInaccessibleFields().size());\ncalloutEx.setMessage('changed callout');\nSystem.assertEquals('changed callout', calloutEx.getMessage());\nSystem.assertEquals(calloutEx, calloutEx.initCause(new DmlException('callout cause')));\nSystem.assertEquals('callout cause', calloutEx.getCause().getMessage());\nException canvasEx = new CanvasException('canvas message');\nSystem.assertEquals('canvas message', canvasEx.getMessage());\nSystem.assertEquals('System.CanvasException', canvasEx.getTypeName());\nSystem.assertEquals(0, canvasEx.getLineNumber());\nSystem.assertEquals('', canvasEx.getStackTraceString());\nSystem.assertEquals(0, canvasEx.getInaccessibleFields().size());\ncanvasEx.setMessage('changed canvas');\nSystem.assertEquals('changed canvas', canvasEx.getMessage());\nSystem.assertEquals(canvasEx, canvasEx.initCause(new DmlException('canvas cause')));\nSystem.assertEquals('canvas cause', canvasEx.getCause().getMessage());\nException dataWeaveEx = new DataWeaveScriptException('data weave message');\nSystem.assertEquals('data weave message', dataWeaveEx.getMessage());\nSystem.assertEquals('System.DataWeaveScriptException', dataWeaveEx.getTypeName());\nSystem.assertEquals(0, dataWeaveEx.getLineNumber());\nSystem.assertEquals('', dataWeaveEx.getStackTraceString());\nSystem.assertEquals(0, dataWeaveEx.getInaccessibleFields().size());\ndataWeaveEx.setMessage('changed data weave');\nSystem.assertEquals('changed data weave', dataWeaveEx.getMessage());\nSystem.assertEquals(dataWeaveEx, dataWeaveEx.initCause(new DmlException('data weave cause')));\nSystem.assertEquals('data weave cause', dataWeaveEx.getCause().getMessage());\nException dmlEx = new DmlException('dml message');\nSystem.assertEquals('dml message', dmlEx.getMessage());\nSystem.assertEquals('System.DmlException', dmlEx.getTypeName());\nSystem.assertEquals(0, dmlEx.getLineNumber());\nSystem.assertEquals('', dmlEx.getStackTraceString());\nSystem.assertEquals(0, dmlEx.getInaccessibleFields().size());\ndmlEx.setMessage('changed dml');\nSystem.assertEquals('changed dml', dmlEx.getMessage());\nSystem.assertEquals(dmlEx, dmlEx.initCause(new QueryException('dml cause')));\nSystem.assertEquals('dml cause', dmlEx.getCause().getMessage());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

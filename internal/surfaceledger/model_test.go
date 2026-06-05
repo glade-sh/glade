@@ -114,10 +114,106 @@ func TestCanonicalSurfaceIDsCleanApexNames(t *testing.T) {
 		t.Fatalf("cleaned sObject array id = %q, want %q", got, want)
 	}
 
+	got = ApexMemberID("System", "Messaging", "sendEmail", []string{"Messaging.Email[]", "Boolean"})
+	want = ApexMemberID("System", "Messaging", "sendEmail", []string{"List<Messaging.Email>", "Boolean"})
+	if got != want {
+		t.Fatalf("cleaned Messaging.Email array id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "String", "format", []string{"String", "List<APEX_OBJECT>"})
+	want = ApexMemberID("System", "String", "format", []string{"String", "List<Object>"})
+	if got != want {
+		t.Fatalf("cleaned generic APEX_OBJECT id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "PageReference", "setCookies", []string{"Cookie[]"})
+	want = ApexMemberID("System", "PageReference", "setCookies", []string{"List<Cookie>"})
+	if got != want {
+		t.Fatalf("cleaned Cookie array id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "Test", "setFixedSearchResults", []string{"ID[]"})
+	want = ApexMemberID("System", "Test", "setFixedSearchResults", []string{"List<Id>"})
+	if got != want {
+		t.Fatalf("cleaned ID array id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "EventBus", "publishWithAcessLevel", []string{"SObject", "Object", "AccessLevel"})
+	want = ApexMemberID("System", "EventBus", "publishWithAccessLevel", []string{"SObject", "Object", "AccessLevel"})
+	if got != want {
+		t.Fatalf("cleaned EventBus typo id = %q, want %q", got, want)
+	}
+
 	got = ApexMemberID("System", "QueryLocator", "iterator", []string{})
 	want = ApexMemberID("Database", "QueryLocator", "iterator", []string{})
 	if got != want {
 		t.Fatalf("cleaned QueryLocator id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "DeleteResult", "getErrors", []string{})
+	want = ApexMemberID("Database", "DeleteResult", "getErrors", []string{})
+	if got != want {
+		t.Fatalf("cleaned DeleteResult id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "DMLOptions", "optAllOrNone", nil)
+	want = ApexMemberID("Database", "DMLOptions", "optAllOrNone", nil)
+	if got != want {
+		t.Fatalf("cleaned DMLOptions id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "Approval", "process", []string{"Approval.ProcessRequest"})
+	want = ApexMemberID("", "Approval", "process", []string{"Approval.ProcessRequest"})
+	if got != want {
+		t.Fatalf("cleaned Approval id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "BusinessHours", "add", []string{"String", "Datetime", "Long"})
+	want = ApexMemberID("", "BusinessHours", "add", []string{"String", "Datetime", "Long"})
+	if got != want {
+		t.Fatalf("cleaned BusinessHours id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "Ideas", "findSimilar", []string{"Idea"})
+	want = ApexMemberID("", "Ideas", "findSimilar", []string{"Object"})
+	if got != want {
+		t.Fatalf("cleaned Ideas.findSimilar id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "Answers", "findSimilar", []string{"Question"})
+	want = ApexMemberID("", "Answers", "findSimilar", []string{"Object"})
+	if got != want {
+		t.Fatalf("cleaned Answers.findSimilar id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "QueueableDuplicateSignature.Builder", "addString", []string{"String"})
+	want = ApexMemberID("", "QueueableDuplicateSignature.Builder", "addString", []string{"String"})
+	if got != want {
+		t.Fatalf("cleaned QueueableDuplicateSignature.Builder id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "System", "getQuiddityShortCode", []string{"Quiddity"})
+	want = ApexMemberID("System", "System", "getQuiddityShortCode", []string{"Object"})
+	if got != want {
+		t.Fatalf("cleaned System.getQuiddityShortCode id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "System", "process", []string{"List<Id>", "String", "String", "String"})
+	want = ApexMemberID("System", "System", "process", []string{"List", "String", "String", "String"})
+	if got != want {
+		t.Fatalf("cleaned System.process id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "System", "submit", []string{"List<ID>", "String", "String"})
+	want = ApexMemberID("System", "System", "submit", []string{"List", "String", "String"})
+	if got != want {
+		t.Fatalf("cleaned System.submit id = %q, want %q", got, want)
+	}
+
+	got = ApexMemberID("System", "System", "runAs", []string{"Version"})
+	want = ApexMemberID("System", "System", "runAs", []string{"Package.Version"})
+	if got != want {
+		t.Fatalf("cleaned System.runAs Version id = %q, want %q", got, want)
 	}
 }
 
@@ -151,6 +247,9 @@ func TestSurfaceIDKeyCanonicalizesBatchQueryLocatorAliases(t *testing.T) {
 	}
 	if got, want := surfaceIDKey("apex:System.Database.getQueryLocator(List,System.AccessLevel)"), surfaceIDKey("apex:System.Database.getQueryLocator(List<Object>,System.AccessLevel)"); got != want {
 		t.Fatalf("getQueryLocator List key = %q, want %q", got, want)
+	}
+	if got, want := surfaceIDKey("apex:System.Comparator.compare(T,T)"), surfaceIDKey("apex:System.Comparator.compare(Object,Object)"); got != want {
+		t.Fatalf("Comparator generic key = %q, want %q", got, want)
 	}
 }
 

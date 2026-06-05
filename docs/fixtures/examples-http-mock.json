@@ -2,6 +2,7 @@
   "name": "examples-http-mock",
   "evidence": [
     {
+      "surfaceId": "apex:System.Test.setMock(Type,Object)",
       "symbol": "Test.setMock",
       "kind": "check",
       "notes": "Reduced HTTP mock with HttpCalloutMock implementation."

@@ -2,6 +2,7 @@
   "name": "core-collection-stdlib-sort-sobject",
   "evidence": [
     {
+      "surfaceId": "apex:System.List.sort()",
       "symbol": "List.sort",
       "kind": "exec",
       "notes": "List.sort orders modeled SObject values by stable SObject fields."

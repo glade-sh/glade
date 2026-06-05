@@ -2,6 +2,7 @@
   "name": "limits-unsupported-getters",
   "evidence": [
     {
+      "surfaceId": "apex:System.Limits.getSoslQueries()",
       "symbol": "Limits.getSoslQueries",
       "kind": "exec",
       "notes": "Returns the local SOSL query counter."

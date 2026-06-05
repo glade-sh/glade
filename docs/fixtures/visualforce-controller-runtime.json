@@ -17,6 +17,46 @@
       "notes": "Observed list pagination helpers work for local record lists."
     },
     {
+      "surfaceId": "apex:ApexPages.StandardController.getId()",
+      "symbol": "ApexPages.StandardController.getId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardController.save()",
+      "symbol": "ApexPages.StandardController.save",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardSetController.getHasNext()",
+      "symbol": "ApexPages.StandardSetController.getHasNext",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardSetController.getHasPrevious()",
+      "symbol": "ApexPages.StandardSetController.getHasPrevious",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardSetController.getPageNumber()",
+      "symbol": "ApexPages.StandardSetController.getPageNumber",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardSetController.getRecords()",
+      "symbol": "ApexPages.StandardSetController.getRecords",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardSetController.next()",
+      "symbol": "ApexPages.StandardSetController.next",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardSetController.setPageSize(Integer)",
+      "symbol": "ApexPages.StandardSetController.setPageSize",
+      "kind": "test"
+    },
+    {
       "symbol": "ApexPages.KnowledgeArticleVersionStandardController.setDataCategory",
       "surfaceId": "apex:ApexPages.KnowledgeArticleVersionStandardController.setDataCategory(String,String)",
       "kind": "test",

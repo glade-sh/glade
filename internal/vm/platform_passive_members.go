@@ -1993,7 +1993,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					}
 					return String(fmt.Sprintf("%d/%d/%d, %d:%02d %s", int(local.Month()), local.Day(), local.Year(), toTwelveHour(local.Hour()), local.Minute(), ampm(local.Hour()))), receiver, false, true, nil
 				}
-				return Null, receiver, false, true, newExceptionError("System.StringException", "No format strings passed in")
+				gmt := t.UTC()
+				return String(fmt.Sprintf("%d/%d/%d, %d:%02d %s", int(gmt.Month()), gmt.Day(), gmt.Year(), toTwelveHour(gmt.Hour()), gmt.Minute(), ampm(gmt.Hour()))), receiver, false, true, nil
 			}
 			if method == "toString" {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.toString expects 0 arguments")

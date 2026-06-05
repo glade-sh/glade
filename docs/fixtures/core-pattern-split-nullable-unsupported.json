@@ -2,6 +2,7 @@
   "name": "core-pattern-split-nullable-unsupported",
   "evidence": [
     {
+      "surfaceId": "apex:System.Pattern.split(String,Integer)",
       "symbol": "Pattern.split",
       "kind": "unsupported",
       "notes": "Nullable delimiter regexes are fenced because Java split preserves zero-width trailing pieces that Go regexp.Split cannot model safely."

@@ -2,6 +2,7 @@
   "name": "core-url-current-request",
   "evidence": [
     {
+      "surfaceId": "apex:System.URL.getCurrentRequestUrl()",
       "symbol": "URL.getCurrentRequestUrl",
       "kind": "exec",
       "notes": "URL.getCurrentRequestUrl returns the local current request URL."

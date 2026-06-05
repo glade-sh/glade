@@ -31,6 +31,13 @@ func TestBuildStubBehaviorReportUsesStdlibEvidence(t *testing.T) {
 	if len(stringTrim.Evidence) == 0 {
 		t.Fatalf("String.trim missing evidence")
 	}
+	stringTemplate := findStubBehaviorEntry(entries, "String.template(")
+	if stringTemplate == nil {
+		t.Fatalf("missing String.template entry")
+	}
+	if stringTemplate.Status != StubBehaviorImplemented {
+		t.Fatalf("String.template status = %q", stringTemplate.Status)
+	}
 	searchFind := findStubBehaviorEntry(entries, "Search.find(")
 	if searchFind == nil {
 		t.Fatalf("missing Search.find entry")
@@ -44,6 +51,25 @@ func TestBuildStubBehaviorReportUsesStdlibEvidence(t *testing.T) {
 	}
 	if pageCtor.Status != StubBehaviorImplemented {
 		t.Fatalf("PageReference constructor status = %q", pageCtor.Status)
+	}
+}
+
+func TestStubBehaviorMarksDataSourceAsyncCallbacksImplemented(t *testing.T) {
+	entries := map[string]StubBehaviorEntry{}
+	for _, entry := range BuildStubBehaviorReport().Entries {
+		entries[entry.ID] = entry
+	}
+	for _, prefix := range []string{
+		"DataSource.AsyncSaveCallback.processSave(",
+		"DataSource.AsyncDeleteCallback.processDelete(",
+	} {
+		entry := findStubBehaviorEntry(entries, prefix)
+		if entry == nil {
+			t.Fatalf("missing %s entry", prefix)
+		}
+		if entry.Status != StubBehaviorImplemented {
+			t.Fatalf("%s status = %q, want %q", prefix, entry.Status, StubBehaviorImplemented)
+		}
 	}
 }
 
@@ -727,6 +753,12 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "System.resetPassword(", StubBehaviorUnsupported)
 	assertStubBehaviorPrefix(t, entries, "System.resetPasswordWithEmailTemplate(", StubBehaviorUnsupported)
 	assertStubBehaviorPrefix(t, entries, "System.submit(", StubBehaviorUnsupported)
+	assertStubBehaviorPrefix(t, entries, "BusinessHours.add(", StubBehaviorUnsupported)
+	assertStubBehaviorPrefix(t, entries, "BusinessHours.addGmt(", StubBehaviorUnsupported)
+	assertStubBehaviorPrefix(t, entries, "BusinessHours.nextStartDate(", StubBehaviorUnsupported)
+	assertStubBehaviorPrefix(t, entries, "Communities.communitiesLanding(", StubBehaviorUnsupported)
+	assertStubBehaviorPrefix(t, entries, "Communities.getCSS()", StubBehaviorUnsupported)
+	assertStubBehaviorPrefix(t, entries, "Communities.login(", StubBehaviorUnsupported)
 	assertStubBehaviorPrefix(t, entries, "healthcloudext.AppointmentBookingSelfService.findProviders(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "healthcloudext.AppointmentBookingSelfService.bookSelfServiceAppointment(", StubBehaviorUnsupported)
 	assertStubBehaviorPrefix(t, entries, "healthcloudext.IntegratedCareManagementApexHelper.checkObjectCreationAccess(", StubBehaviorImplemented)
@@ -739,10 +771,10 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "ime_mrm.EventManagementBudgetApi.createMngEventBudget(", StubBehaviorUnsupported)
 	assertStubBehaviorPrefix(t, entries, "RevSalesTrxn.PlaceSalesTransactionExecutor.execute(", StubBehaviorUnsupported)
 	assertStubBehaviorPrefix(t, entries, "SObject.getValues(String)", StubBehaviorImplemented)
-	assertStubBehaviorPrefix(t, entries, "LIST.addToRelationship(", StubBehaviorImplemented)
-	assertStubBehaviorPrefix(t, entries, "LIST.getAddedToRelationship()", StubBehaviorImplemented)
-	assertStubBehaviorPrefix(t, entries, "LIST.getMarkedForDeletion()", StubBehaviorImplemented)
-	assertStubBehaviorPrefix(t, entries, "LIST.markForDelete(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "List.addToRelationship(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "List.getAddedToRelationship()", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "List.getMarkedForDeletion()", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "List.markForDelete(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Map.containsKey(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Map.keySet()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Map.values()", StubBehaviorImplemented)
@@ -931,6 +963,8 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "dom.XmlNode.getNamespaceFor(String)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "dom.XmlNode.removeAttribute(String,String)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Exception.getInaccessibleFields()", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "DmlException.getNumDml()", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "EmailException.getNumDml()", StubBehaviorUnsupported)
 }
 
 func assertStubBehaviorPrefix(t *testing.T, entries map[string]StubBehaviorEntry, prefix string, want StubBehaviorStatus) {

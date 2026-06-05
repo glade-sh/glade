@@ -1,0 +1,115 @@
+{
+  "name": "core-runtime-primitive-adderror-overloads",
+  "evidence": [
+    {"surfaceId": "apex:System.Boolean.addError(Exception)", "symbol": "Boolean.addError(Exception)", "kind": "test"},
+    {"surfaceId": "apex:System.Boolean.addError(Exception,Boolean)", "symbol": "Boolean.addError(Exception,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Boolean.addError(String)", "symbol": "Boolean.addError(String)", "kind": "test"},
+    {"surfaceId": "apex:System.Boolean.addError(String,Boolean)", "symbol": "Boolean.addError(String,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Date.addError(Exception)", "symbol": "Date.addError(Exception)", "kind": "test"},
+    {"surfaceId": "apex:System.Date.addError(Exception,Boolean)", "symbol": "Date.addError(Exception,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Date.addError(String)", "symbol": "Date.addError(String)", "kind": "test"},
+    {"surfaceId": "apex:System.Date.addError(String,Boolean)", "symbol": "Date.addError(String,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Datetime.addError(Exception)", "symbol": "Datetime.addError(Exception)", "kind": "test"},
+    {"surfaceId": "apex:System.Datetime.addError(Exception,Boolean)", "symbol": "Datetime.addError(Exception,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Datetime.addError(String)", "symbol": "Datetime.addError(String)", "kind": "test"},
+    {"surfaceId": "apex:System.Datetime.addError(String,Boolean)", "symbol": "Datetime.addError(String,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Decimal.addError(Exception)", "symbol": "Decimal.addError(Exception)", "kind": "test"},
+    {"surfaceId": "apex:System.Decimal.addError(Exception,Boolean)", "symbol": "Decimal.addError(Exception,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Decimal.addError(String)", "symbol": "Decimal.addError(String)", "kind": "test"},
+    {"surfaceId": "apex:System.Decimal.addError(String,Boolean)", "symbol": "Decimal.addError(String,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Double.addError(Exception)", "symbol": "Double.addError(Exception)", "kind": "test"},
+    {"surfaceId": "apex:System.Double.addError(Exception,Boolean)", "symbol": "Double.addError(Exception,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Double.addError(String)", "symbol": "Double.addError(String)", "kind": "test"},
+    {"surfaceId": "apex:System.Double.addError(String,Boolean)", "symbol": "Double.addError(String,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Id.addError(Exception)", "symbol": "Id.addError(Exception)", "kind": "test"},
+    {"surfaceId": "apex:System.Id.addError(Exception,Boolean)", "symbol": "Id.addError(Exception,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Id.addError(String)", "symbol": "Id.addError(String)", "kind": "test"},
+    {"surfaceId": "apex:System.Id.addError(String,Boolean)", "symbol": "Id.addError(String,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Integer.addError(Exception)", "symbol": "Integer.addError(Exception)", "kind": "test"},
+    {"surfaceId": "apex:System.Integer.addError(Exception,Boolean)", "symbol": "Integer.addError(Exception,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Integer.addError(String)", "symbol": "Integer.addError(String)", "kind": "test"},
+    {"surfaceId": "apex:System.Integer.addError(String,Boolean)", "symbol": "Integer.addError(String,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Long.addError(Exception)", "symbol": "Long.addError(Exception)", "kind": "test"},
+    {"surfaceId": "apex:System.Long.addError(Exception,Boolean)", "symbol": "Long.addError(Exception,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Long.addError(String)", "symbol": "Long.addError(String)", "kind": "test"},
+    {"surfaceId": "apex:System.Long.addError(String,Boolean)", "symbol": "Long.addError(String,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.String.addError(Exception)", "symbol": "String.addError(Exception)", "kind": "test"},
+    {"surfaceId": "apex:System.String.addError(Exception,Boolean)", "symbol": "String.addError(Exception,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.String.addError(String)", "symbol": "String.addError(String)", "kind": "test"},
+    {"surfaceId": "apex:System.String.addError(String,Boolean)", "symbol": "String.addError(String,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Time.addError(Exception)", "symbol": "Time.addError(Exception)", "kind": "test"},
+    {"surfaceId": "apex:System.Time.addError(Exception,Boolean)", "symbol": "Time.addError(Exception,Boolean)", "kind": "test"},
+    {"surfaceId": "apex:System.Time.addError(String)", "symbol": "Time.addError(String)", "kind": "test"},
+    {"surfaceId": "apex:System.Time.addError(String,Boolean)", "symbol": "Time.addError(String,Boolean)", "kind": "test"}
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Flag__c.field-meta.xml",
+      "content": "<CustomField><fullName>Flag__c</fullName><label>Flag</label><type>Checkbox</type><defaultValue>false</defaultValue></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Date__c.field-meta.xml",
+      "content": "<CustomField><fullName>Date__c</fullName><label>Date</label><type>Date</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Stamp__c.field-meta.xml",
+      "content": "<CustomField><fullName>Stamp__c</fullName><label>Stamp</label><type>DateTime</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Amount__c.field-meta.xml",
+      "content": "<CustomField><fullName>Amount__c</fullName><label>Amount</label><type>Number</type><precision>12</precision><scale>2</scale></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Double__c.field-meta.xml",
+      "content": "<CustomField><fullName>Double__c</fullName><label>Double</label><type>Number</type><precision>18</precision><scale>15</scale></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Parent__c.field-meta.xml",
+      "content": "<CustomField><fullName>Parent__c</fullName><label>Parent</label><type>Lookup</type><referenceTo>Account</referenceTo><relationshipName>ChildAccounts</relationshipName></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Count__c.field-meta.xml",
+      "content": "<CustomField><fullName>Count__c</fullName><label>Count</label><type>Number</type><precision>12</precision><scale>0</scale></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Long__c.field-meta.xml",
+      "content": "<CustomField><fullName>Long__c</fullName><label>Long</label><type>Number</type><precision>18</precision><scale>0</scale></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Text__c.field-meta.xml",
+      "content": "<CustomField><fullName>Text__c</fullName><label>Text</label><type>Text</type><length>80</length></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Clock__c.field-meta.xml",
+      "content": "<CustomField><fullName>Clock__c</fullName><label>Clock</label><type>Time</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/triggers/AddErrorPrimitiveTrigger.trigger",
+      "content": "trigger AddErrorPrimitiveTrigger on Account (before insert) { for (Account a : Trigger.new) { if (a.Name == 'Block') { a.Flag__c.addError('boolean field'); a.Flag__c.addError('boolean field escape', false); a.Flag__c.addError(new DmlException('boolean exception')); a.Flag__c.addError(new DmlException('boolean exception escape'), false); a.Date__c.addError('date field'); a.Date__c.addError('date field escape', false); a.Date__c.addError(new DmlException('date exception')); a.Date__c.addError(new DmlException('date exception escape'), false); a.Stamp__c.addError('datetime field'); a.Stamp__c.addError('datetime field escape', false); a.Stamp__c.addError(new DmlException('datetime exception')); a.Stamp__c.addError(new DmlException('datetime exception escape'), false); a.Amount__c.addError('decimal field'); a.Amount__c.addError('decimal field escape', false); a.Amount__c.addError(new DmlException('decimal exception')); a.Amount__c.addError(new DmlException('decimal exception escape'), false); a.Double__c.addError('double field'); a.Double__c.addError('double field escape', false); a.Double__c.addError(new DmlException('double exception')); a.Double__c.addError(new DmlException('double exception escape'), false); a.Parent__c.addError('id field'); a.Parent__c.addError('id field escape', false); a.Parent__c.addError(new DmlException('id exception')); a.Parent__c.addError(new DmlException('id exception escape'), false); a.Count__c.addError('integer field'); a.Count__c.addError('integer field escape', false); a.Count__c.addError(new DmlException('integer exception')); a.Count__c.addError(new DmlException('integer exception escape'), false); a.Long__c.addError('long field'); a.Long__c.addError('long field escape', false); a.Long__c.addError(new DmlException('long exception')); a.Long__c.addError(new DmlException('long exception escape'), false); a.Text__c.addError('string field'); a.Text__c.addError('string field escape', false); a.Text__c.addError(new DmlException('string exception')); a.Text__c.addError(new DmlException('string exception escape'), false); a.Clock__c.addError('time field'); a.Clock__c.addError('time field escape', false); a.Clock__c.addError(new DmlException('time exception')); a.Clock__c.addError(new DmlException('time exception escape'), false); } } }"
+    },
+    {
+      "path": "force-app/main/classes/AddErrorPrimitiveFixtureTest.cls",
+      "content": "@isTest private class AddErrorPrimitiveFixtureTest { @isTest static void primitiveFieldAddErrorOverloads() { Database.SaveResult result = Database.insert(new Account(Name='Block', Flag__c=true, Date__c=Date.today(), Stamp__c=Datetime.now(), Amount__c=12.5, Double__c=12.5, Parent__c='001000000000001AAA', Count__c=7, Long__c=7000000000, Text__c='field text', Clock__c=Time.newInstance(8, 30, 0, 0)), false); System.assert(!result.isSuccess()); System.assertEquals(40, result.getErrors().size()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

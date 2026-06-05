@@ -91,6 +91,26 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 	return results[0], nil
 }
 
+func (vm *VM) eventBusPublishWithAccessLevel(args []Value, result *Result) (Value, error) {
+	switch len(args) {
+	case 2:
+		if !isDatabaseAccessLevelValue(args[1]) {
+			return Null, fmt.Errorf("EventBus.publishWithAccessLevel AccessLevel overload expects AccessLevel")
+		}
+		return vm.eventBusPublish([]Value{args[0]}, result)
+	case 3:
+		if !isDatabaseAccessLevelValue(args[2]) {
+			return Null, fmt.Errorf("EventBus.publishWithAccessLevel AccessLevel overload expects AccessLevel")
+		}
+		if args[1].Kind == ValueNull {
+			return vm.eventBusPublish([]Value{args[0]}, result)
+		}
+		return vm.eventBusPublish([]Value{args[0], args[1]}, result)
+	default:
+		return Null, fmt.Errorf("EventBus.publishWithAccessLevel expects event record or list, optional callback, and AccessLevel")
+	}
+}
+
 func (vm *VM) missingRequiredPlatformEventField(record storage.Record) (string, bool) {
 	if vm == nil || vm.Org == nil {
 		return "", false

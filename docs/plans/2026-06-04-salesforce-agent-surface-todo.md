@@ -758,16 +758,68 @@
   `Boolean.valueOf(String|Object)` shape/evidence so supported VM behavior no
   longer appears as top missing-shape or missing-evidence rows.
 
-  Fresh refresh:
+  Overnight Core.Runtime.SystemAndStdlib burndown completed 2026-06-05 and
+  extended after review. The extended pass closed additional docs identity rows,
+  array/generic parameter identity rows, EventBus access-level overload shape
+  and local behavior, PageReference/HttpRequest/Test exact method shape rows,
+  handler interface method shapes, `IntegrationTest.commitTestOnly` explicit
+  unsupported behavior, and selected exception/String/System exact rows.
+
+  Latest reviewed refresh after the namespace-ledger correction:
 
   ```text
-  implemented=55122 partial=31 passive=46986 explicitUnsupported=692
-  gaps: missingShape=12239 missingBehavior=0 missingEvidence=7635
+  before: implemented=55122 partial=31 passive=46986 explicitUnsupported=692
+  before gaps: missingShape=12239 missingBehavior=0 missingEvidence=7635
+  after: implemented=127438 partial=21 passive=47176 explicitUnsupported=822
+  after gaps: missingShape=7587 missingBehavior=0 missingEvidence=6563
   failures: parser=0 docsOrgMismatch=0 staleGlade=0 passiveServiceRisk=0
   ```
 
-  Remaining top rows are real missing-shape families such as `Answers`,
-  `Approval`, `BusinessHours`, `DMLOptions`, and broad System reference pages.
+  Current next rows are remaining exact evidence rows for `Double.addError(...)`,
+  `InvalidParameterValueException constructors`,
+  `JSONException.getInaccessibleFields()` / `initCause(Exception)`, the
+  `LicenseException` and `LimitException` inherited accessor families, and
+  exact `Limits`, `List`, `Location`, `Long`, and `Map` stdlib evidence rows.
+
+  Rows closed:
+
+  - `apex:System.Apex`
+  - `apex:System.Apex.Delete`
+  - `apex:System.Apex.Insert`
+  - `apex:System.Apex.Merge`
+  - `apex:System.Apex.Undelete`
+  - `apex:System.Apex.Update`
+  - `apex:System.Apex.Upsert`
+  - `apex:System.Appendices`
+  - `apex:System.Custom.*`
+  - `apex:System.Documentation`
+  - `apex:System.Answers.findSimilar(Question)`
+  - `apex:System.Approval.process(Approval.ProcessRequest)`
+  - `apex:System.Approval.process(Approval.ProcessRequest,Boolean)`
+  - `apex:System.BusinessHours.add(String,Datetime,Long)`
+  - `apex:System.BusinessHours.addGmt(String,Datetime,Long)`
+  - `apex:System.BusinessHours.nextStartDate(String,Datetime)`
+  - `apex:System.DMLOptions.*`
+  - `apex:System.DeleteResult.*`
+  - `apex:System.EmptyRecycleBinResult.*`
+  - `apex:System.Error.*`
+  - `apex:System.Exception.Exception(Exception)`
+  - `apex:System.Exception.Exception(String)`
+  - `apex:System.Exception.Exception(String,Exception)`
+  - `apex:Ideas.findSimilar(Idea)`
+
+  Rows deferred inside the old System packet:
+
+  - `apex:System.ApplicationContext`: Canvas application context requires a
+    separate Canvas service/UI metadata slice.
+
+  Current fresh-ledger top rows:
+
+  - overall: `apex:Canvas.Test_constants`
+  - `Core.Runtime.SystemAndStdlib`: `apex:System.JSONException.getInaccessibleFields()`
+  - `Data.Reference.ObjectsFields`: 119 remaining rows
+  - `Tests.AsyncAndIsolation`: 79 remaining rows
+  - `UI.ApexPagesControllers`: 63 remaining rows; `UI.LWCModules`: 0 remaining
 
 - [x] **23B. Packet: Data.Reference.ObjectsFields generated shape chunk**
 

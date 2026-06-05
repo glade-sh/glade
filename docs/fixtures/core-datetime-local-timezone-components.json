@@ -22,6 +22,7 @@
       "notes": "Modeled gaps roll forward by the transition gap; overlaps choose the earlier instant."
     },
     {
+      "surfaceId": "apex:System.UserInfo.getTimeZone()",
       "symbol": "UserInfo.getTimeZone",
       "kind": "test",
       "notes": "System.runAs current-user timezone returns a TimeZone object inside the modeled named-zone slice."

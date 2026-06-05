@@ -1,0 +1,57 @@
+{
+  "name": "core-runtime-datetime-decimal-extra",
+  "evidence": [
+    {"surfaceId": "apex:System.Datetime.addYears(Integer)", "symbol": "Datetime.addYears(Integer)", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.dayGmt()", "symbol": "Datetime.dayGmt", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.dayOfYear()", "symbol": "Datetime.dayOfYear", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.dayOfYearGmt()", "symbol": "Datetime.dayOfYearGmt", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.format()", "symbol": "Datetime.format", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.format(String)", "symbol": "Datetime.format(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.format(String,String)", "symbol": "Datetime.format(String,String)", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.formatGmt()", "symbol": "Datetime.formatGmt", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.formatLong()", "symbol": "Datetime.formatLong", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.getTime()", "symbol": "Datetime.getTime", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.hourGmt()", "symbol": "Datetime.hourGmt", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.isSameDay(Datetime)", "symbol": "Datetime.isSameDay(Datetime)", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.millisecondGmt()", "symbol": "Datetime.millisecondGmt", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.minuteGmt()", "symbol": "Datetime.minuteGmt", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.monthGmt()", "symbol": "Datetime.monthGmt", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.newInstance(Date,Time)", "symbol": "Datetime.newInstance(Date,Time)", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.newInstance(Integer,Integer,Integer)", "symbol": "Datetime.newInstance(Integer,Integer,Integer)", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.newInstance(Long)", "symbol": "Datetime.newInstance(Long)", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.newInstanceGmt(Date,Time)", "symbol": "Datetime.newInstanceGmt(Date,Time)", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.newInstanceGmt(Integer,Integer,Integer)", "symbol": "Datetime.newInstanceGmt(Integer,Integer,Integer)", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.parse(String)", "symbol": "Datetime.parse(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.secondGmt()", "symbol": "Datetime.secondGmt", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.time()", "symbol": "Datetime.time", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.valueOf(Object)", "symbol": "Datetime.valueOf(Object)", "kind": "exec"},
+    {"surfaceId": "apex:System.Datetime.yearGmt()", "symbol": "Datetime.yearGmt", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.abs()", "symbol": "Decimal.abs", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.divide(Decimal,Integer)", "symbol": "Decimal.divide(Decimal,Integer)", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.divide(Decimal,Integer,Object)", "symbol": "Decimal.divide(Decimal,Integer,Object)", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.doubleValue()", "symbol": "Decimal.doubleValue", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.intValue()", "symbol": "Decimal.intValue", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.longValue()", "symbol": "Decimal.longValue", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.pow(Integer)", "symbol": "Decimal.pow(Integer)", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.precision()", "symbol": "Decimal.precision", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.round()", "symbol": "Decimal.round", "kind": "exec"}
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Datetime stamp = Datetime.newInstance(2024, 2, 29, 23, 5, 6);\nSystem.assertEquals(Datetime.newInstance(2025, 2, 28, 23, 5, 6), stamp.addYears(1));\nSystem.assertEquals(29, stamp.dayGmt());\nSystem.assertEquals(60, stamp.dayOfYear());\nSystem.assertEquals(60, stamp.dayOfYearGmt());\nSystem.assertEquals('2/29/2024, 11:05 PM', stamp.format());\nSystem.assertEquals('2024-02-29', stamp.format('yyyy-MM-dd'));\nSystem.assertEquals('2024-03-01 04:35:06', stamp.format('yyyy-MM-dd HH:mm:ss', 'GMT+05:30'));\nSystem.assertEquals('2/29/2024, 11:05 PM', stamp.formatGmt());\nSystem.assertEquals('2024-02-29', stamp.formatGmt('yyyy-MM-dd'));\nSystem.assert(stamp.formatLong().contains('2024'));\nSystem.assert(stamp.getTime() > 0);\nSystem.assertEquals(23, stamp.hourGmt());\nSystem.assert(stamp.isSameDay(Datetime.valueOfGmt('2024-02-29T00:00:01Z')));\nDatetime fractional = stamp.addMilliseconds(250);\nSystem.assertEquals(250, fractional.millisecondGmt());\nSystem.assertEquals(5, stamp.minuteGmt());\nSystem.assertEquals(2, stamp.monthGmt());\nSystem.assertEquals(stamp, Datetime.newInstance(stamp.date(), stamp.time()));\nSystem.assertEquals(Datetime.valueOfGmt('2024-02-29T00:00:00Z'), Datetime.newInstance(2024, 2, 29));\nSystem.assertEquals(Datetime.valueOfGmt('1970-01-01T00:00:01Z'), Datetime.newInstance(1000L));\nSystem.assertEquals(stamp, Datetime.newInstanceGmt(stamp.dateGmt(), stamp.timeGmt()));\nSystem.assertEquals(Datetime.valueOfGmt('2024-02-29T00:00:00Z'), Datetime.newInstanceGmt(2024, 2, 29));\nSystem.assertEquals(Datetime.valueOfGmt('2024-02-29T23:05:00Z'), Datetime.parse('2/29/2024, 11:05 PM'));\nSystem.assertEquals(6, stamp.secondGmt());\nSystem.assertEquals(Time.newInstance(23, 5, 6, 0), stamp.time());\nObject dtObject = '2024-02-29 23:05:06';\nSystem.assertEquals(stamp, Datetime.valueOf(dtObject));\nSystem.assertEquals(2024, stamp.yearGmt());\nDecimal d = Decimal.valueOf('-12.5');\nSystem.assertEquals(12.5, d.abs());\nSystem.assertEquals(6.25, Decimal.valueOf('12.5').divide(Decimal.valueOf('2'), 2));\nSystem.assertEquals(6.3, Decimal.valueOf('12.5').divide(Decimal.valueOf('2'), 1, RoundingMode.HALF_UP));\nSystem.assertEquals(12.5, Decimal.valueOf('12.5').doubleValue());\nSystem.assertEquals(12, Decimal.valueOf('12.5').intValue());\nSystem.assertEquals(12, Decimal.valueOf('12.5').longValue());\nSystem.assertEquals(156.25, Decimal.valueOf('12.5').pow(2));\nSystem.assertEquals(3, Decimal.valueOf('12.5').precision());\nSystem.assertEquals(13, Decimal.valueOf('12.5').round());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Datetime stamp = Datetime.newInstance(2024, 2, 29, 23, 5, 6);\nSystem.assertEquals(Datetime.newInstance(2025, 2, 28, 23, 5, 6), stamp.addYears(1));\nSystem.assertEquals(29, stamp.dayGmt());\nSystem.assertEquals(60, stamp.dayOfYear());\nSystem.assertEquals(60, stamp.dayOfYearGmt());\nSystem.assertEquals('2/29/2024, 11:05 PM', stamp.format());\nSystem.assertEquals('2024-02-29', stamp.format('yyyy-MM-dd'));\nSystem.assertEquals('2024-03-01 04:35:06', stamp.format('yyyy-MM-dd HH:mm:ss', 'GMT+05:30'));\nSystem.assertEquals('2/29/2024, 11:05 PM', stamp.formatGmt());\nSystem.assertEquals('2024-02-29', stamp.formatGmt('yyyy-MM-dd'));\nSystem.assert(stamp.formatLong().contains('2024'));\nSystem.assert(stamp.getTime() > 0);\nSystem.assertEquals(23, stamp.hourGmt());\nSystem.assert(stamp.isSameDay(Datetime.valueOfGmt('2024-02-29T00:00:01Z')));\nDatetime fractional = stamp.addMilliseconds(250);\nSystem.assertEquals(250, fractional.millisecondGmt());\nSystem.assertEquals(5, stamp.minuteGmt());\nSystem.assertEquals(2, stamp.monthGmt());\nSystem.assertEquals(stamp, Datetime.newInstance(stamp.date(), stamp.time()));\nSystem.assertEquals(Datetime.valueOfGmt('2024-02-29T00:00:00Z'), Datetime.newInstance(2024, 2, 29));\nSystem.assertEquals(Datetime.valueOfGmt('1970-01-01T00:00:01Z'), Datetime.newInstance(1000L));\nSystem.assertEquals(stamp, Datetime.newInstanceGmt(stamp.dateGmt(), stamp.timeGmt()));\nSystem.assertEquals(Datetime.valueOfGmt('2024-02-29T00:00:00Z'), Datetime.newInstanceGmt(2024, 2, 29));\nSystem.assertEquals(Datetime.valueOfGmt('2024-02-29T23:05:00Z'), Datetime.parse('2/29/2024, 11:05 PM'));\nSystem.assertEquals(6, stamp.secondGmt());\nSystem.assertEquals(Time.newInstance(23, 5, 6, 0), stamp.time());\nObject dtObject = '2024-02-29 23:05:06';\nSystem.assertEquals(stamp, Datetime.valueOf(dtObject));\nSystem.assertEquals(2024, stamp.yearGmt());\nDecimal d = Decimal.valueOf('-12.5');\nSystem.assertEquals(12.5, d.abs());\nSystem.assertEquals(6.25, Decimal.valueOf('12.5').divide(Decimal.valueOf('2'), 2));\nSystem.assertEquals(6.3, Decimal.valueOf('12.5').divide(Decimal.valueOf('2'), 1, RoundingMode.HALF_UP));\nSystem.assertEquals(12.5, Decimal.valueOf('12.5').doubleValue());\nSystem.assertEquals(12, Decimal.valueOf('12.5').intValue());\nSystem.assertEquals(12, Decimal.valueOf('12.5').longValue());\nSystem.assertEquals(156.25, Decimal.valueOf('12.5').pow(2));\nSystem.assertEquals(3, Decimal.valueOf('12.5').precision());\nSystem.assertEquals(13, Decimal.valueOf('12.5').round());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

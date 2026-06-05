@@ -26,6 +26,7 @@ func newJSONParser(text string) (Value, error) {
 	parser.Fields["tokens"] = List(tokens...)
 	parser.Fields["index"] = Int(-1)
 	parser.Fields["cleared"] = Bool(false)
+	parser.Fields["lastClearedToken"] = Null
 	parser.Fields["source"] = String(text)
 	return parser, nil
 }
@@ -52,6 +53,21 @@ func (vm *VM) callJSONParserMember(receiver Value, method string, args []Value) 
 		}
 		token, ok := jsonParserCurrent(receiver)
 		if !ok {
+			return Null, receiver, false, true, nil
+		}
+		return jsonTokenValue(jsonParserTokenKind(token)), receiver, false, true, nil
+	case "hasCurrentToken":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("JSONParser.hasCurrentToken expects 0 arguments")
+		}
+		_, ok := jsonParserCurrent(receiver)
+		return Bool(ok), receiver, false, true, nil
+	case "getLastClearedToken":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("JSONParser.getLastClearedToken expects 0 arguments")
+		}
+		token, ok := receiver.Fields["lastClearedToken"]
+		if !ok || token.Kind == ValueNull {
 			return Null, receiver, false, true, nil
 		}
 		return jsonTokenValue(jsonParserTokenKind(token)), receiver, false, true, nil
@@ -180,15 +196,16 @@ func (vm *VM) callJSONParserMember(receiver Value, method string, args []Value) 
 			return Null, receiver, false, true, fmt.Errorf("JSONParser.clearCurrentToken expects 0 arguments")
 		}
 		updated := receiver
-		if _, ok := jsonParserCurrentTokenEvenIfCleared(receiver); ok {
+		if token, ok := jsonParserCurrentTokenEvenIfCleared(receiver); ok {
 			updated.Fields["cleared"] = Bool(true)
+			updated.Fields["lastClearedToken"] = token
 		}
 		return Null, updated, true, true, nil
-	case "readValueAs":
+	case "readValueAs", "readValueAsStrict":
 		if len(args) != 1 {
-			return Null, receiver, false, true, fmt.Errorf("JSONParser.readValueAs expects Type")
+			return Null, receiver, false, true, fmt.Errorf("JSONParser.%s expects Type", method)
 		}
-		value, err := vm.jsonParserReadValueAs(receiver, args[0])
+		value, err := vm.jsonParserReadValueAs(receiver, args[0], method == "readValueAsStrict")
 		return value, receiver, false, true, err
 	default:
 		return Null, receiver, false, false, nil
@@ -197,14 +214,14 @@ func (vm *VM) callJSONParserMember(receiver Value, method string, args []Value) 
 
 func canonicalJSONParserMethod(method string) string {
 	return canonicalStdlibMemberName(method,
-		"nextToken", "nextValue", "getCurrentToken", "getText", "getCurrentName",
+		"nextToken", "nextValue", "getCurrentToken", "hasCurrentToken", "getLastClearedToken", "getText", "getCurrentName",
 		"getIntegerValue", "getLongValue", "getDecimalValue", "getDoubleValue", "getBooleanValue",
 		"getDateValue", "getDatetimeValue", "getDateTimeValue", "getTimeValue", "getIdValue", "getBlobValue",
-		"skipChildren", "clearCurrentToken", "readValueAs",
+		"skipChildren", "clearCurrentToken", "readValueAs", "readValueAsStrict",
 	)
 }
 
-func (vm *VM) jsonParserReadValueAs(receiver Value, typeArg Value) (Value, error) {
+func (vm *VM) jsonParserReadValueAs(receiver Value, typeArg Value, strict bool) (Value, error) {
 	typeName := typeValueName(typeArg)
 	if typeName == "" {
 		return Null, fmt.Errorf("JSONParser.readValueAs expects Type")
@@ -221,7 +238,7 @@ func (vm *VM) jsonParserReadValueAs(receiver Value, typeArg Value) (Value, error
 	if err != nil {
 		return Null, jsonDeserializeException("JSONParser.readValueAs invalid JSON input: %v", err)
 	}
-	return vm.typedValueFromJSON(typeName, raw, false)
+	return vm.typedValueFromJSON(typeName, raw, strict)
 }
 
 func jsonParserTokenize(text string) ([]Value, error) {

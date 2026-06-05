@@ -2,6 +2,7 @@
   "name": "core-pattern-matcher-state-closeout-stdlib",
   "evidence": [
     {
+      "surfaceId": "apex:System.Matcher.group(Integer)",
       "symbol": "Matcher.group",
       "kind": "exec",
       "notes": "Optional unmatched groups return null while start/end return -1 after a successful local match."
@@ -12,6 +13,7 @@
       "notes": "Failed full-region matches clear stale group state before later successful matches."
     },
     {
+      "surfaceId": "apex:System.Matcher.lookingAt()",
       "symbol": "Matcher.lookingAt",
       "kind": "exec",
       "notes": "Failed leading matches clear stale group state and later find() repopulates it."

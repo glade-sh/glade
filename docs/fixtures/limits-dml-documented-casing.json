@@ -2,18 +2,22 @@
   "name": "limits-dml-documented-casing",
   "evidence": [
     {
+      "surfaceId": "apex:System.Limits.getDMLStatements()",
       "symbol": "Limits.getDMLStatements",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getLimitDMLStatements()",
       "symbol": "Limits.getLimitDMLStatements",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getDMLRows()",
       "symbol": "Limits.getDMLRows",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getLimitDMLRows()",
       "symbol": "Limits.getLimitDMLRows",
       "kind": "test"
     }

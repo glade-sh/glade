@@ -7,11 +7,13 @@
       "notes": "No-argument deepClone recursively copies SObject elements."
     },
     {
+      "surfaceId": "apex:System.List.sort(Object)",
       "symbol": "List.sort",
       "kind": "exec",
       "notes": "Deterministic local primitive comparable ordering includes Boolean values."
     },
     {
+      "surfaceId": "apex:System.Map.toString()",
       "symbol": "Map.toString",
       "kind": "exec",
       "notes": "Deterministic local nested collection and null entry string shape."

@@ -2,11 +2,13 @@
   "name": "limits-savepoint-rollback-unsupported",
   "evidence": [
     {
+      "surfaceId": "apex:System.Limits.getSavepointRollbacks()",
       "symbol": "Limits.getSavepointRollbacks",
       "kind": "exec",
       "notes": "Returns the local savepoint rollback counter."
     },
     {
+      "surfaceId": "apex:System.Limits.getLimitSavepointRollbacks()",
       "symbol": "Limits.getLimitSavepointRollbacks",
       "kind": "test",
       "notes": "Covered by focused VM Limits getter tests."

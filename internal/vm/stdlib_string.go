@@ -302,6 +302,15 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, err
 		}
 		return String(replaced), true, nil
+	case "template":
+		if len(args) != 1 || args[0].Kind != ValueMap {
+			return Null, true, fmt.Errorf("String.template expects Map<String,Object> argument")
+		}
+		rendered, err := stringTemplate(receiver.Text, args[0])
+		if err != nil {
+			return Null, true, err
+		}
+		return String(rendered), true, nil
 	case "remove":
 		needle, err := stringArg("String.remove", args)
 		if err != nil {
@@ -727,4 +736,42 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 	default:
 		return Null, false, nil
 	}
+}
+
+func stringTemplate(text string, values Value) (string, error) {
+	var out strings.Builder
+	out.Grow(len(text))
+	for i := 0; i < len(text); {
+		switch {
+		case strings.HasPrefix(text[i:], "$${"):
+			close := strings.IndexByte(text[i+3:], '}')
+			if close < 0 {
+				out.WriteString(text[i:])
+				return out.String(), nil
+			}
+			end := i + 3 + close
+			out.WriteString("${")
+			out.WriteString(text[i+3 : end])
+			out.WriteByte('}')
+			i = end + 1
+		case strings.HasPrefix(text[i:], "${"):
+			close := strings.IndexByte(text[i+2:], '}')
+			if close < 0 {
+				out.WriteString(text[i:])
+				return out.String(), nil
+			}
+			end := i + 2 + close
+			name := text[i+2 : end]
+			value, ok := values.Map[mapKey(String(name))]
+			if !ok {
+				return "", newExceptionError("System.StringException", "String template missing value for variable: "+name)
+			}
+			out.WriteString(value.String())
+			i = end + 1
+		default:
+			out.WriteByte(text[i])
+			i++
+		}
+	}
+	return out.String(), nil
 }

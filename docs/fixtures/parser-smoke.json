@@ -2,6 +2,7 @@
   "name": "parser-smoke",
   "evidence": [
     {
+      "surfaceId": "apex:System.System.debug(Object,Object)",
       "symbol": "System.debug",
       "kind": "parse",
       "notes": "Parses a class method body containing a public System call."

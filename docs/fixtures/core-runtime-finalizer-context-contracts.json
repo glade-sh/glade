@@ -1,0 +1,34 @@
+{
+  "name": "core-runtime-finalizer-context-contracts",
+  "evidence": [
+    {"surfaceId": "apex:System.Finalizer.execute(FinalizerContext)", "symbol": "Finalizer.execute(FinalizerContext)", "kind": "test"},
+    {"surfaceId": "apex:System.FinalizerContext.getException()", "symbol": "FinalizerContext.getException", "kind": "test"},
+    {"surfaceId": "apex:System.FinalizerContext.getRequestId()", "symbol": "FinalizerContext.getRequestId", "kind": "test"},
+    {"surfaceId": "apex:System.FinalizerContext.getResult()", "symbol": "FinalizerContext.getResult", "kind": "test"},
+    {"surfaceId": "apex:System.FinalizerContextImpl.getException()", "symbol": "FinalizerContextImpl.getException", "kind": "test"},
+    {"surfaceId": "apex:System.FinalizerContextImpl.getRequestId()", "symbol": "FinalizerContextImpl.getRequestId", "kind": "test"},
+    {"surfaceId": "apex:System.FinalizerContextImpl.getResult()", "symbol": "FinalizerContextImpl.getResult", "kind": "test"}
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/LocalFinalizer.cls",
+      "content": "public class LocalFinalizer implements Finalizer { public static String observed = ''; public void execute(FinalizerContext ctx) { observed = ctx.getResult().name() + ':' + ctx.getRequestId() + ':' + String.valueOf(ctx.getException()); } }"
+    },
+    {
+      "path": "force-app/main/classes/CoreRuntimeFinalizerContextContractsTest.cls",
+      "content": "@isTest private class CoreRuntimeFinalizerContextContractsTest { @isTest static void contextGettersAndInterfaceDispatch() { FinalizerContext fc = new FinalizerContext(); System.assertEquals('', fc.getRequestId()); System.assertEquals('SUCCESS', fc.getResult().name()); System.assertEquals(null, fc.getException()); System.FinalizerContextImpl fci = new System.FinalizerContextImpl(); System.assertEquals('', fci.getRequestId()); System.assertEquals('SUCCESS', fci.getResult().name()); System.assertEquals(null, fci.getException()); new LocalFinalizer().execute(fc); System.assertEquals('SUCCESS::null', LocalFinalizer.observed); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

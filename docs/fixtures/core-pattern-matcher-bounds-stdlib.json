@@ -2,6 +2,7 @@
   "name": "core-pattern-matcher-bounds-stdlib",
   "evidence": [
     {
+      "surfaceId": "apex:System.Matcher.region(Integer,Integer)",
       "symbol": "Matcher.region",
       "kind": "exec",
       "notes": "Region bounds use rune indexes and constrain find, lookingAt, matches, and replacement operations."
@@ -17,6 +18,7 @@
       "notes": "Transparent bounds use full input context for local word-boundary matching."
     },
     {
+      "surfaceId": "apex:System.Matcher.find(Integer)",
       "symbol": "Matcher.find",
       "kind": "exec",
       "notes": "find(start) resets stale match state and searches within the active region."

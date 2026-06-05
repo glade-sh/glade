@@ -222,7 +222,7 @@ func callLocationMember(receiver Value, method string, args []Value) (Value, Val
 }
 
 func callQueueableDuplicateSignatureBuilderMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
-	method = canonicalStdlibMemberName(method, "addId", "addInteger", "addString", "build")
+	method = canonicalStdlibMemberName(method, "addId", "addInteger", "addString", "build", "getMaxSize", "getRemainingSize", "getSize")
 	switch method {
 	case "addId", "addInteger", "addString":
 		if len(args) != 1 {
@@ -250,6 +250,27 @@ func callQueueableDuplicateSignatureBuilderMember(receiver Value, method string,
 		signature := Object("QueueableDuplicateSignature")
 		signature.Fields["value"] = String(strings.Join(textParts, "|"))
 		return signature, receiver, false, true, nil
+	case "getMaxSize", "getRemainingSize", "getSize":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("QueueableDuplicateSignature.Builder.%s expects 0 arguments", method)
+		}
+		parts, _ := receiver.Fields["parts"]
+		size := int64(0)
+		if parts.Kind == ValueList {
+			size = int64(len(parts.List))
+		}
+		switch method {
+		case "getMaxSize":
+			return Int(10), receiver, false, true, nil
+		case "getRemainingSize":
+			remaining := int64(10) - size
+			if remaining < 0 {
+				remaining = 0
+			}
+			return Int(remaining), receiver, false, true, nil
+		default:
+			return Int(size), receiver, false, true, nil
+		}
 	default:
 		return Null, receiver, false, false, nil
 	}

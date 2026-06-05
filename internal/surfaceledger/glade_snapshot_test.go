@@ -41,6 +41,24 @@ func TestBuildGladeSnapshotMarksGeneratedStandardSObjectShape(t *testing.T) {
 	}
 }
 
+func TestBuildGladeSnapshotFencesLocalTestLWCServiceModules(t *testing.T) {
+	rows := BuildGladeSnapshot()
+	byID := rowsByID(rows)
+	for _, id := range []string{
+		LWCModuleID("Decorators"),
+		LWCModuleID("`lightning/graphql`"),
+		LWCModuleID("`lightning/uiGraphQLApi`"),
+	} {
+		row, ok := byID[id]
+		if !ok {
+			t.Fatalf("missing LWC row %s", id)
+		}
+		if row.Product != ProductLWC || row.GladeBehavior != BehaviorUnsupported {
+			t.Fatalf("LWC row %s product=%s behavior=%s", id, row.Product, row.GladeBehavior)
+		}
+	}
+}
+
 func TestBuildGladeSnapshotIncludesEmbeddedOrgDescribeStandardSObjectShape(t *testing.T) {
 	rows := BuildGladeSnapshot()
 	byID := rowsByID(rows)
@@ -95,6 +113,19 @@ func TestStdlibAPIIDParsesQualifiedSchemaMethods(t *testing.T) {
 	want = ApexMemberID("Schema", "Schema", "describeDataCategoryGroupStructures", []string{"List<Schema.DataCategoryGroupSobjectTypePair>", "Boolean"})
 	if got != want {
 		t.Fatalf("id = %q, want %q", got, want)
+	}
+}
+
+func TestBuildGladeSnapshotKeepsExplicitUnsupportedOverStubBehavior(t *testing.T) {
+	rows := BuildGladeSnapshot()
+	byID := rowsByID(rows)
+	id := ApexMemberID("", "BusinessHours", "add", []string{"String", "Datetime", "Long"})
+	row, ok := byID[id]
+	if !ok {
+		t.Fatalf("missing BusinessHours row %s", id)
+	}
+	if row.GladeBehavior != BehaviorUnsupported {
+		t.Fatalf("BusinessHours.add behavior = %s, want %s", row.GladeBehavior, BehaviorUnsupported)
 	}
 }
 
@@ -173,6 +204,52 @@ func TestBuildGladeSnapshotIncludesBatchQueryLocatorOverloads(t *testing.T) {
 			t.Fatalf("batch query locator row %s has absent shape", id)
 		}
 	}
+}
+
+func TestMergeClosesCoreRuntimeCollectionObjectGenericShapeRows(t *testing.T) {
+	docs := []SurfaceLedgerRow{
+		docShapeRow("apex:System.Comparator.compare(T,T)", KindMethod),
+		docShapeRow("apex:System.Enum", KindType),
+		docShapeRow("apex:System.List.List<T>()", KindMethod),
+		docShapeRow("apex:System.List.List<T>(List<T>)", KindMethod),
+		docShapeRow("apex:System.List.equals(List)", KindMethod),
+		docShapeRow("apex:System.Map.Map<ID,sObject>(List<sObject>)", KindMethod),
+		docShapeRow("apex:System.Map.Map<T1,T2>()", KindMethod),
+		docShapeRow("apex:System.Map.Map<T1,T2>(mapToCopy)", KindMethod),
+		docShapeRow("apex:System.Map.equals(Map)", KindMethod),
+		docShapeRow("apex:System.Map.remove(Key)", KindMethod),
+		docShapeRow("apex:System.Object", KindType),
+		docShapeRow("apex:System.Object.equals(Object)", KindMethod),
+		docShapeRow("apex:System.Object.hashCode()", KindMethod),
+		docShapeRow("apex:System.Object.toString()", KindMethod),
+		docShapeRow("apex:System.Set.Set<T>()", KindMethod),
+		docShapeRow("apex:System.Set.Set<T>(Set<T>)", KindMethod),
+		docShapeRow("apex:System.Set.addAll(List<Object>)", KindMethod),
+		docShapeRow("apex:System.Set.containsAll(List<Object>)", KindMethod),
+		docShapeRow("apex:System.Set.equals(Set<Object>)", KindMethod),
+		docShapeRow("apex:System.Set.removeAll(List<Object>)", KindMethod),
+		docShapeRow("apex:System.Set.retainAll(List<Object>)", KindMethod),
+	}
+	ledger := Merge(docs, nil, BuildGladeSnapshot(), nil)
+	byID := rowsByID(ledger.Rows)
+	for _, doc := range docs {
+		row, ok := byID[doc.SurfaceID]
+		if !ok {
+			t.Fatalf("missing merged row %s", doc.SurfaceID)
+		}
+		if row.GladeShape == ShapeAbsent || row.GapClass == GapMissingShape {
+			t.Fatalf("%s shape = %s gap = %s", doc.SurfaceID, row.GladeShape, row.GapClass)
+		}
+	}
+}
+
+func docShapeRow(id, kind string) SurfaceLedgerRow {
+	return RowFromDocs(SurfaceLedgerRow{
+		SurfaceID: id,
+		Product:   ProductApex,
+		Area:      AreaRuntime,
+		Kind:      kind,
+	})
 }
 
 func TestMergeGladeBehaviorKeepsSupportedOverGenericUnsupported(t *testing.T) {

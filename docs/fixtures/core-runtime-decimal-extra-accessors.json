@@ -1,0 +1,31 @@
+{
+  "name": "core-runtime-decimal-extra-accessors",
+  "evidence": [
+    {"surfaceId": "apex:System.Decimal.round(RoundingMode)", "symbol": "Decimal.round(RoundingMode)", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.scale()", "symbol": "Decimal.scale", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.setScale(Integer)", "symbol": "Decimal.setScale(Integer)", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.setScale(Integer,RoundingMode)", "symbol": "Decimal.setScale(Integer,RoundingMode)", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.stripTrailingZeros()", "symbol": "Decimal.stripTrailingZeros", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.toPlainString()", "symbol": "Decimal.toPlainString", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.valueOf(Double)", "symbol": "Decimal.valueOf(Double)", "kind": "exec"},
+    {"surfaceId": "apex:System.Decimal.valueOf(Long)", "symbol": "Decimal.valueOf(Long)", "kind": "exec"}
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Decimal d = Decimal.valueOf('12.50');\nSystem.assertEquals(12, d.round(RoundingMode.HALF_DOWN));\nSystem.assertEquals(2, d.scale());\nSystem.assertEquals(12.5, d.stripTrailingZeros());\nSystem.assertEquals(1, d.stripTrailingZeros().scale());\nSystem.assertEquals(12.50, d.setScale(2));\nSystem.assertEquals(12.5, d.setScale(1, RoundingMode.HALF_UP));\nSystem.assertEquals('12.50', d.toPlainString());\nSystem.assertEquals(12.5, Decimal.valueOf(12.5));\nSystem.assertEquals(9001, Decimal.valueOf(9001L));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Decimal d = Decimal.valueOf('12.50');\nSystem.assertEquals(12, d.round(RoundingMode.HALF_DOWN));\nSystem.assertEquals(2, d.scale());\nSystem.assertEquals(12.5, d.stripTrailingZeros());\nSystem.assertEquals(1, d.stripTrailingZeros().scale());\nSystem.assertEquals(12.50, d.setScale(2));\nSystem.assertEquals(12.5, d.setScale(1, RoundingMode.HALF_UP));\nSystem.assertEquals('12.50', d.toPlainString());\nSystem.assertEquals(12.5, Decimal.valueOf(12.5));\nSystem.assertEquals(9001, Decimal.valueOf(9001L));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

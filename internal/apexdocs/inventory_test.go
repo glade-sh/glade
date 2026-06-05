@@ -49,6 +49,54 @@ String s = ' hi ';
 	}
 }
 
+func TestBuildInventorySkipsNarrativeSubsectionsInMethodLists(t *testing.T) {
+	root := t.TempDir()
+	writeDoc(t, filepath.Join(root, "apex_class_System_Queueable.md"), `# Queueable Interface
+
+## Namespace
+[System](./apex_namespace_System.md)
+
+## Queueable Methods
+### execute(context)
+Executes the queueable job.
+
+## Queueable Example Implementation
+### Testing Queueable Jobs
+This section describes how to test queueable jobs.
+`)
+	writeDoc(t, filepath.Join(root, "apex_methods_system_bare.md"), `# Bare Class
+
+## Namespace
+[System](./apex_namespace_System.md)
+
+## Bare Methods
+### trim
+Trims the value.
+`)
+
+	inv, err := BuildInventory(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if inv.TotalMembers != 2 {
+		t.Fatalf("documents = %#v", inv.Documents)
+	}
+	signatures := map[string]bool{}
+	for _, doc := range inv.Documents {
+		for _, member := range doc.Members {
+			signatures[member.Signature] = true
+		}
+	}
+	for _, want := range []string{"execute(context)", "trim"} {
+		if !signatures[want] {
+			t.Fatalf("missing member %q in %#v", want, inv.Documents)
+		}
+	}
+	if signatures["Testing Queueable Jobs"] {
+		t.Fatalf("narrative heading was emitted as member: %#v", inv.Documents)
+	}
+}
+
 func TestBuildInventoryParsesProductNamespaceShapes(t *testing.T) {
 	root := t.TempDir()
 	writeDoc(t, filepath.Join(root, "apex_class_Metadata_ConsoleComponent.md"), `# ConsoleComponent Class

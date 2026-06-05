@@ -81,6 +81,7 @@ func BuildGladeSnapshot() []SurfaceLedgerRow {
 		byID[key] = withDefaults(row)
 	}
 	addDataReferenceGladeRows(byID)
+	addLocalTestLWCGladeRows(byID)
 	rows := make([]SurfaceLedgerRow, 0, len(byID))
 	for _, row := range byID {
 		rows = append(rows, withDefaults(row))
@@ -90,6 +91,9 @@ func BuildGladeSnapshot() []SurfaceLedgerRow {
 }
 
 func mergeGladeBehavior(existing, next BehaviorState) BehaviorState {
+	if existing == BehaviorUnsupported {
+		return existing
+	}
 	if existing == BehaviorSupported && (next == BehaviorPassive || next == BehaviorUnsupported) {
 		return existing
 	}
@@ -140,6 +144,45 @@ func addDataReferenceGladeRows(byID map[string]SurfaceLedgerRow) {
 			})
 		}
 	}
+}
+
+func addLocalTestLWCGladeRows(byID map[string]SurfaceLedgerRow) {
+	for _, module := range localTestUnsupportedLWCModules {
+		id := LWCModuleID(module)
+		byID[surfaceIDKey(id)] = RowFromGladeShape(SurfaceLedgerRow{
+			SurfaceID:     id,
+			Product:       ProductLWC,
+			Area:          AreaUI,
+			TypeName:      module,
+			Kind:          KindModule,
+			GladeBehavior: BehaviorUnsupported,
+			Sources:       []string{"uicontroller-import-shape"},
+			Notes:         "local Apex tests can index this LWC import shape; browser or service execution is not modeled locally",
+		})
+	}
+}
+
+var localTestUnsupportedLWCModules = []string{
+	"Decorators",
+	"HTML",
+	"LWC",
+	"PageReference",
+	"Salesforce",
+	"Standard",
+	"XML",
+	"`@salesforce`",
+	"`experience/blockBuilderApi`",
+	"`experience/cms*Api`",
+	"`experience/cmsEditorApi`",
+	"`lightning/analyticsWaveApi`",
+	"`lightning/graphql`",
+	"`lightning/industriesEducationPublicApi`",
+	"`lightning/mobileCapabilities`",
+	"`lightning/serviceKnowledgeApi`",
+	"`lightning/ui*Api`",
+	"`lightning/uiGraphQLApi`",
+	"`notifyRecordUpdateAvailable(recordIds)`",
+	"lightning/cmsDeliveryApi",
 }
 
 func splitTypeName(namespace, name string) (string, string) {

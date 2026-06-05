@@ -3,189 +3,235 @@
   "evidence": [
     {
       "symbol": "Date.addDays",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Date.addDays(Integer)"
     },
     {
       "symbol": "Date.addMonths",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Date.addMonths(Integer)"
     },
     {
       "symbol": "Date.addYears",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Date.addYears(Integer)"
     },
     {
       "symbol": "Date.daysBetween",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Date.daysBetween(Date)"
     },
     {
       "symbol": "Date.day",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Date.day()"
     },
     {
       "symbol": "Date.month",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Date.month()"
     },
     {
       "symbol": "Date.year",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Date.year()"
     },
     {
       "symbol": "Date.valueOf",
       "kind": "exec",
-      "notes": "Covers strict ISO dates and yyyy-MM-dd HH:mm:ss date extraction."
+      "notes": "Covers strict ISO dates and yyyy-MM-dd HH:mm:ss date extraction.",
+      "surfaceId": "apex:System.Date.valueOf(String)"
     },
     {
       "symbol": "Date.toStartOfMonth",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Date.toStartOfMonth()"
     },
     {
       "symbol": "Date.toEndOfMonth",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Date.toEndOfMonth()"
     },
     {
       "symbol": "Datetime.addDays",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.addDays(Integer)"
     },
     {
       "symbol": "Datetime.addMonths",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.addMonths(Integer)"
     },
     {
       "symbol": "Datetime.addHours",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.addHours(Integer)"
     },
     {
       "symbol": "Datetime.addMinutes",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.addMinutes(Integer)"
     },
     {
       "symbol": "Datetime.addSeconds",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.addSeconds(Integer)"
     },
     {
       "symbol": "Datetime.date",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.date()"
     },
     {
       "symbol": "Datetime.day",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.day()"
     },
     {
       "symbol": "Datetime.month",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.month()"
     },
     {
       "symbol": "Datetime.year",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.year()"
     },
     {
       "symbol": "Datetime.hour",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.hour()"
     },
     {
       "symbol": "Datetime.minute",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.minute()"
     },
     {
       "symbol": "Datetime.second",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.second()"
     },
     {
       "symbol": "Datetime.newInstance",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.newInstance(Integer,Integer,Integer,Integer,Integer,Integer)"
     },
     {
       "symbol": "Date.today",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Date.today()"
     },
     {
       "symbol": "Datetime.now",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.now()"
     },
     {
       "symbol": "Datetime.newInstanceGmt",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.newInstanceGmt(Integer,Integer,Integer,Integer,Integer,Integer)"
     },
     {
       "symbol": "Datetime.valueOfGmt",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.valueOfGmt(String)"
     },
     {
       "symbol": "Datetime.formatGmt",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.formatGmt(String)"
     },
     {
       "symbol": "Datetime.dateGmt",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.dateGmt()"
     },
     {
       "symbol": "Datetime.timeGmt",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.timeGmt()"
     },
     {
       "symbol": "Datetime.addMilliseconds",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.addMilliseconds(Integer)"
     },
     {
       "symbol": "Datetime.millisecond",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Datetime.millisecond()"
     },
     {
       "symbol": "Time.newInstance",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Time.newInstance(Integer,Integer,Integer,Integer)"
     },
     {
       "symbol": "Time.valueOf",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Time.valueOf(String)"
     },
     {
       "symbol": "Time.hour",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Time.hour()"
     },
     {
       "symbol": "Time.minute",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Time.minute()"
     },
     {
       "symbol": "Time.second",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Time.second()"
     },
     {
       "symbol": "Time.millisecond",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Time.millisecond()"
     },
     {
       "symbol": "Time.addHours",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Time.addHours(Integer)"
     },
     {
       "symbol": "Time.addMinutes",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Time.addMinutes(Integer)"
     },
     {
       "symbol": "Time.addSeconds",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Time.addSeconds(Integer)"
     },
     {
       "symbol": "Time.addMilliseconds",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.Time.addMilliseconds(Integer)"
     },
     {
       "symbol": "TimeZone.getTimeZone",
       "kind": "exec",
-      "notes": "Covers UTC, fixed GMT/UTC offsets through +14:00, and America/Los_Angeles DST offsets."
+      "notes": "Covers UTC, fixed GMT/UTC offsets through +14:00, and America/Los_Angeles DST offsets.",
+      "surfaceId": "apex:System.TimeZone.getTimeZone(String)"
     },
     {
       "symbol": "TimeZone.getID",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.TimeZone.getID()"
     },
     {
       "symbol": "TimeZone.getDisplayName",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.TimeZone.getDisplayName()"
     },
     {
       "symbol": "TimeZone.getOffset",
-      "kind": "exec"
+      "kind": "exec",
+      "surfaceId": "apex:System.TimeZone.getOffset(Datetime)"
     },
     {
       "symbol": "Datetime.format",

@@ -1196,96 +1196,123 @@ func ensureRecordTypeObject(org *OrgState) {
 	})
 }
 
-func ensureRecordTypeRecords(org *OrgState) {
-	usedIDs := make(map[ID]bool)
-	usedIDObjects := make(map[ID]string)
-	usedIDRecordTypes := make(map[ID]string)
-	existingRecordTypes := make(map[string]ID)
+type recordTypeSeedContext struct {
+	usedIDs             map[ID]bool
+	usedIDObjects       map[ID]string
+	usedIDRecordTypes   map[ID]string
+	existingRecordTypes map[string]ID
+	next                uint64
+}
+
+func newRecordTypeSeedContext(org *OrgState) recordTypeSeedContext {
+	ctx := recordTypeSeedContext{
+		usedIDs:             make(map[ID]bool),
+		usedIDObjects:       make(map[ID]string),
+		usedIDRecordTypes:   make(map[ID]string),
+		existingRecordTypes: make(map[string]ID),
+		next:                1,
+	}
 	if recordTypeObject := org.Objects["RecordType"]; len(recordTypeObject.Records) > 0 {
 		for id, record := range recordTypeObject.Records {
-			usedIDs[id] = true
+			ctx.usedIDs[id] = true
 			objectName := record.Fields["SobjectType"].String
-			usedIDObjects[id] = objectName
+			ctx.usedIDObjects[id] = objectName
 			developerName := record.Fields["DeveloperName"].String
 			if objectName != "" && developerName != "" {
 				key := recordTypeSeedKey(objectName, developerName, recordTypeSeedNamespace(record))
-				existingRecordTypes[key] = id
-				usedIDRecordTypes[id] = key
+				ctx.existingRecordTypes[key] = id
+				ctx.usedIDRecordTypes[id] = key
 			}
 		}
 	}
-	next := uint64(1)
+	return ctx
+}
+
+func ensureRecordTypeRecords(org *OrgState) {
+	ctx := newRecordTypeSeedContext(org)
 	objectNames := objectNamesFromOrg(*org)
 	sort.Strings(objectNames)
 	for _, objectName := range objectNames {
-		if objectName == "RecordType" {
-			continue
-		}
-		object := org.Objects[objectName]
-		if len(object.Definition.RecordTypes) == 0 && objectName == "Account" {
-			object.Definition.RecordTypes = []RecordTypeInfo{{
-				DeveloperName: "Business",
-				Name:          "Business Account",
-				Active:        true,
-				Available:     true,
-				Default:       true,
-			}}
-		}
-		defaultedPersonAccount := false
-		if objectName == "Account" {
-			for _, info := range object.Definition.RecordTypes {
-				if recordTypeIsPersonType(objectName, info) && info.Default {
-					defaultedPersonAccount = true
-					break
-				}
-			}
-		}
-		EnsureRecordTypeIDField(&object.Definition)
-		for i, info := range object.Definition.RecordTypes {
-			if objectName == "Account" && !defaultedPersonAccount && recordTypeIsPersonType(objectName, info) && (info.Active || info.Available) {
-				info.Default = true
-				defaultedPersonAccount = true
-			}
-			namespacePrefix := recordTypeNamespacePrefix(*org, info)
-			seedKey := recordTypeSeedKey(objectName, info.DeveloperName, namespacePrefix)
-			fallbackSeedKey := ""
-			if info.ID == "" {
-				if existingID, ok := existingRecordTypes[seedKey]; ok {
-					info.ID = existingID
-				} else if namespacePrefix != "" {
-					fallbackSeedKey = recordTypeSeedKey(objectName, info.DeveloperName, "")
-					if existingID, ok := existingRecordTypes[fallbackSeedKey]; ok {
-						info.ID = existingID
-					}
-				}
-			}
-			if info.ID == "" || !recordTypeIDReusable(info.ID, seedKey, fallbackSeedKey, usedIDs, usedIDObjects, usedIDRecordTypes, objectName) {
-				info.ID, next = nextUnusedRecordTypeID(usedIDs, next)
-			}
-			usedIDs[info.ID] = true
-			usedIDObjects[info.ID] = objectName
-			usedIDRecordTypes[info.ID] = seedKey
-			if info.Name == "" {
-				info.Name = info.DeveloperName
-			}
-			object.Definition.RecordTypes[i] = info
-			putSeedRecord(org, "RecordType", Record{
-				ID:     info.ID,
-				Object: "RecordType",
-				Fields: map[string]Value{
-					"Name":            StringValue(info.Name),
-					"DeveloperName":   StringValue(info.DeveloperName),
-					"NamespacePrefix": StringValue(namespacePrefix),
-					"SobjectType":     StringValue(objectName),
-					"IsActive":        BooleanValue(info.Active),
-					"IsPersonType":    BooleanValue(recordTypeIsPersonType(objectName, info)),
-					"Description":     StringValue(info.Description),
-				},
-			})
-			existingRecordTypes[seedKey] = info.ID
-		}
-		org.Objects[objectName] = object
+		ensureRecordTypeRecordsForObjectWithContext(org, objectName, &ctx)
 	}
+}
+
+func ensureRecordTypeRecordsForObject(org *OrgState, objectName string) {
+	ctx := newRecordTypeSeedContext(org)
+	ensureRecordTypeRecordsForObjectWithContext(org, objectName, &ctx)
+}
+
+func ensureRecordTypeRecordsForObjectWithContext(org *OrgState, objectName string, ctx *recordTypeSeedContext) {
+	if objectName == "RecordType" {
+		return
+	}
+	object, ok := org.Objects[objectName]
+	if !ok {
+		return
+	}
+	if len(object.Definition.RecordTypes) == 0 && objectName == "Account" {
+		object.Definition.RecordTypes = []RecordTypeInfo{{
+			DeveloperName: "Business",
+			Name:          "Business Account",
+			Active:        true,
+			Available:     true,
+			Default:       true,
+		}}
+	}
+	defaultedPersonAccount := false
+	if objectName == "Account" {
+		for _, info := range object.Definition.RecordTypes {
+			if recordTypeIsPersonType(objectName, info) && info.Default {
+				defaultedPersonAccount = true
+				break
+			}
+		}
+	}
+	EnsureRecordTypeIDField(&object.Definition)
+	for i, info := range object.Definition.RecordTypes {
+		if objectName == "Account" && !defaultedPersonAccount && recordTypeIsPersonType(objectName, info) && (info.Active || info.Available) {
+			info.Default = true
+			defaultedPersonAccount = true
+		}
+		namespacePrefix := recordTypeNamespacePrefix(*org, info)
+		seedKey := recordTypeSeedKey(objectName, info.DeveloperName, namespacePrefix)
+		fallbackSeedKey := ""
+		if info.ID == "" {
+			if existingID, ok := ctx.existingRecordTypes[seedKey]; ok {
+				info.ID = existingID
+			} else if namespacePrefix != "" {
+				fallbackSeedKey = recordTypeSeedKey(objectName, info.DeveloperName, "")
+				if existingID, ok := ctx.existingRecordTypes[fallbackSeedKey]; ok {
+					info.ID = existingID
+				}
+			}
+		}
+		if info.ID == "" || !recordTypeIDReusable(info.ID, seedKey, fallbackSeedKey, ctx.usedIDs, ctx.usedIDObjects, ctx.usedIDRecordTypes, objectName) {
+			info.ID, ctx.next = nextUnusedRecordTypeID(ctx.usedIDs, ctx.next)
+		}
+		ctx.usedIDs[info.ID] = true
+		ctx.usedIDObjects[info.ID] = objectName
+		ctx.usedIDRecordTypes[info.ID] = seedKey
+		if info.Name == "" {
+			info.Name = info.DeveloperName
+		}
+		object.Definition.RecordTypes[i] = info
+		putSeedRecord(org, "RecordType", Record{
+			ID:     info.ID,
+			Object: "RecordType",
+			Fields: map[string]Value{
+				"Name":            StringValue(info.Name),
+				"DeveloperName":   StringValue(info.DeveloperName),
+				"NamespacePrefix": StringValue(namespacePrefix),
+				"SobjectType":     StringValue(objectName),
+				"IsActive":        BooleanValue(info.Active),
+				"IsPersonType":    BooleanValue(recordTypeIsPersonType(objectName, info)),
+				"Description":     StringValue(info.Description),
+			},
+		})
+		ctx.existingRecordTypes[seedKey] = info.ID
+	}
+	org.Objects[objectName] = object
 }
 
 func recordTypeIDReusable(id ID, seedKey, fallbackSeedKey string, used map[ID]bool, usedObjects, usedRecordTypes map[ID]string, objectName string) bool {

@@ -11302,7 +11302,7 @@ func TestExecUnsupportedDatabaseAndApprovalSurfacesReturnUnsupportedFeature(t *t
 		{
 			name:    "approvalProcess",
 			source:  "Approval.process(null);",
-			message: `unsupported call "Approval.process local approval process and lock surface"`,
+			message: `unsupported call "Approval.process local approval process metadata"`,
 		},
 	}
 	for _, tc := range tests {

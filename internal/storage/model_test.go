@@ -39,6 +39,40 @@ func TestStandardObjectDefinitionIncludesHealthCloudDescribeShape(t *testing.T) 
 	}
 }
 
+func TestStandardObjectDefinitionIncludesReferenceBackedShape(t *testing.T) {
+	billingAccount, ok := StandardObjectDefinition("AccountBillingAccount")
+	if !ok {
+		t.Fatalf("missing AccountBillingAccount standard object definition")
+	}
+	if billingAccount.Label != "AccountBillingAccount" || billingAccount.PluralLabel != "AccountBillingAccounts" {
+		t.Fatalf("AccountBillingAccount labels = %q/%q", billingAccount.Label, billingAccount.PluralLabel)
+	}
+	accountID := billingAccount.Fields["AccountId"]
+	if accountID.Type != FieldReference || accountID.DisplayType != "REFERENCE" || accountID.Length != 18 {
+		t.Fatalf("AccountBillingAccount.AccountId = type %s display %q length %d", accountID.Type, accountID.DisplayType, accountID.Length)
+	}
+	defaultBilling := billingAccount.Fields["IsDefaultBillingAccount"]
+	if defaultBilling.Type != FieldBoolean || defaultBilling.DisplayType != "BOOLEAN" {
+		t.Fatalf("AccountBillingAccount.IsDefaultBillingAccount = type %s display %q", defaultBilling.Type, defaultBilling.DisplayType)
+	}
+
+	researchPrompt, ok := StandardObjectDefinition("AIResearchPromptResult")
+	if !ok {
+		t.Fatalf("missing AIResearchPromptResult standard object definition")
+	}
+	latestGenerationDate := researchPrompt.Fields["LatestGenerationDate"]
+	if latestGenerationDate.Type != FieldDateTime || latestGenerationDate.DisplayType != "DATETIME" {
+		t.Fatalf("AIResearchPromptResult.LatestGenerationDate = type %s display %q", latestGenerationDate.Type, latestGenerationDate.DisplayType)
+	}
+	referenceRecord := researchPrompt.Fields["ReferenceRecordId"]
+	if referenceRecord.Type != FieldReference || referenceRecord.DisplayType != "REFERENCE" {
+		t.Fatalf("AIResearchPromptResult.ReferenceRecordId = type %s display %q", referenceRecord.Type, referenceRecord.DisplayType)
+	}
+	if len(referenceRecord.ReferenceTo) != 4 || referenceRecord.ReferenceTo[0] != "Account" || referenceRecord.ReferenceTo[3] != "Opportunity" {
+		t.Fatalf("AIResearchPromptResult.ReferenceRecordId refs = %v", referenceRecord.ReferenceTo)
+	}
+}
+
 func TestEnsureStandardObjectDoesNotMutateSharedRuntimeDefinition(t *testing.T) {
 	org := OrgState{Objects: map[string]ObjectState{
 		"Account": {

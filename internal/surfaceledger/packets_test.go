@@ -110,3 +110,43 @@ func TestSchemaDescribePacketOwnsOnlySchemaNamespaceDescribeRows(t *testing.T) {
 		t.Fatalf("SchemaDescribe packet should not own %s", foreignDescribe.SurfaceID)
 	}
 }
+
+func TestAsyncAndIsolationPacketExcludesServiceAsyncDocs(t *testing.T) {
+	packet, ok := AreaPacketByName("Tests.AsyncAndIsolation")
+	if !ok {
+		t.Fatal("missing Tests.AsyncAndIsolation packet")
+	}
+	localTestRow := SurfaceLedgerRow{
+		SurfaceID: ApexMemberID("System", "Test", "startTest", []string{}),
+		Product:   ProductApex,
+		Namespace: "System",
+		TypeName:  "Test",
+		Kind:      KindMethod,
+	}
+	if !packetOwnsRow(packet, localTestRow) {
+		t.Fatalf("Tests.AsyncAndIsolation packet should own %s", localTestRow.SurfaceID)
+	}
+	for _, row := range []SurfaceLedgerRow{
+		{
+			SurfaceID: "unknown:asynch_api_batches_create",
+			Product:   ProductUnknown,
+			Kind:      KindGuide,
+		},
+		{
+			SurfaceID: ApexMemberID("ConnectApi", "CommerceBuyerExperience", "calculateAdjustmentAggregates", []string{"String", "ConnectApi.OrderSummaryAdjustmentAggregatesAsyncInput"}),
+			Product:   ProductApex,
+			Namespace: "ConnectApi",
+			TypeName:  "CommerceBuyerExperience",
+			Kind:      KindMethod,
+		},
+		{
+			SurfaceID: "tooling:ContainerAsyncRequest",
+			Product:   ProductTooling,
+			Kind:      KindType,
+		},
+	} {
+		if packetOwnsRow(packet, row) {
+			t.Fatalf("Tests.AsyncAndIsolation packet should not own %s", row.SurfaceID)
+		}
+	}
+}

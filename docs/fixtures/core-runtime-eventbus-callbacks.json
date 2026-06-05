@@ -1,0 +1,49 @@
+{
+  "name": "core-runtime-eventbus-callbacks",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.EventBus.publish(Object,Object)",
+      "symbol": "EventBus.publish(Object,Object)",
+      "kind": "test",
+      "notes": "Local EventBus callback publish queues success callbacks for platform events that carry EventUuid."
+    },
+    {
+      "surfaceId": "apex:System.EventBus.publish(List<Object>,Object)",
+      "symbol": "EventBus.publish(List<Object>,Object)",
+      "kind": "test",
+      "notes": "Local EventBus callback publish queues success callbacks for platform events that carry EventUuid."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/PublishCallback.cls",
+      "content": "public class PublishCallback implements eventbus.EventPublishSuccessCallback { public static Integer successCount = 0; public void onSuccess(eventbus.SuccessResult result) { successCount = result.getEventUuids().size(); } }"
+    },
+    {
+      "path": "force-app/main/classes/CoreRuntimeEventBusCallbacksTest.cls",
+      "content": "@isTest private class CoreRuntimeEventBusCallbacksTest { @isTest static void callbackPublishUsesEventUuid() { Event_Recipes_Demo__e event = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true); System.assertNotEquals(null, event.EventUuid); Test.startTest(); Database.SaveResult single = EventBus.publish(event, new PublishCallback()); System.assert(single.isSuccess()); List<Database.SaveResult> many = EventBus.publish(new List<SObject>{event}, new PublishCallback()); System.assertEquals(1, many.size()); System.assert(many[0].isSuccess()); Test.stopTest(); System.assertEquals(1, PublishCallback.successCount); } }"
+    }
+  ],
+  "schema": [
+    {
+      "path": "force-app/main/default/objects/Event_Recipes_Demo__e/Event_Recipes_Demo__e.object-meta.xml",
+      "content": "<CustomObject><label>Event Recipes Demo</label><pluralLabel>Event Recipes Demos</pluralLabel><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Event_Recipes_Demo__e/fields/EventUuid.field-meta.xml",
+      "content": "<CustomField><fullName>EventUuid</fullName><label>Event UUID</label><type>Text</type></CustomField>"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

@@ -211,9 +211,21 @@ func customPrefix(index int) string {
 	if index < 0 {
 		index = 0
 	}
-	first := (index / len(alphabet)) % len(alphabet)
-	second := index % len(alphabet)
-	return "a" + string(alphabet[first]) + string(alphabet[second])
+	base := len(alphabet)
+	leadingARange := base * base
+	if index < leadingARange {
+		first := index / base
+		second := index % base
+		return "a" + string(alphabet[first]) + string(alphabet[second])
+	}
+	index -= leadingARange
+	first := (index / (base * base)) % (base - 1)
+	if first >= 36 {
+		first++
+	}
+	second := (index / base) % base
+	third := index % base
+	return string(alphabet[first]) + string(alphabet[second]) + string(alphabet[third])
 }
 
 func prefixInUse(prefixes map[string]string, prefix string) bool {

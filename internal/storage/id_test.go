@@ -92,6 +92,21 @@ func TestEnsureUniqueKeyPrefixesReassignsDuplicateCustomPrefixes(t *testing.T) {
 	}
 }
 
+func TestCustomPrefixDoesNotCycleAfterLeadingARange(t *testing.T) {
+	const fullFirstCycle = 62*62 + 61*62*62
+	seen := make(map[string]struct{}, fullFirstCycle)
+	for i := 0; i < fullFirstCycle; i++ {
+		prefix := customPrefix(i)
+		if len(prefix) != 3 {
+			t.Fatalf("customPrefix(%d) length = %d", i, len(prefix))
+		}
+		if _, ok := seen[prefix]; ok {
+			t.Fatalf("customPrefix(%d) repeated %q", i, prefix)
+		}
+		seen[prefix] = struct{}{}
+	}
+}
+
 func TestValidateIDAccepts15And18CharacterBase62IDs(t *testing.T) {
 	for _, id := range []ID{"001000000000001", "001000000000001AAA"} {
 		if err := ValidateID(id); err != nil {

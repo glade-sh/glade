@@ -1,0 +1,39 @@
+{
+  "name": "core-runtime-formula-recalculate-field-error",
+  "evidence": [
+    {"surfaceId": "apex:System.FormulaRecalcFieldError.getFieldError()", "symbol": "FormulaRecalcFieldError.getFieldError", "kind": "exec"},
+    {"surfaceId": "apex:System.FormulaRecalcFieldError.getFieldName()", "symbol": "FormulaRecalcFieldError.getFieldName", "kind": "exec"}
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Account account = new Account(Name = 'Acme');\nList<FormulaRecalcResult> results = Formula.recalculateFormulas(new List<SObject>{account});\nSystem.assertEquals(1, results.size());\nSystem.assert(!results[0].isSuccess());\nSystem.assertEquals(1, results[0].getErrors().size());\nFormulaRecalcFieldError err = results[0].getErrors()[0];\nSystem.assertEquals('Unsupported__c', err.getFieldName());\nSystem.assertNotEquals(null, err.getFieldError());\n"
+    }
+  ],
+  "schema": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Unsupported__c.field-meta.xml",
+      "content": "<CustomField><fullName>Unsupported__c</fullName><label>Unsupported</label><type>Text</type><formula>HYPERLINK('/x', Name)</formula></CustomField>"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Account account = new Account(Name = 'Acme');\nList<FormulaRecalcResult> results = Formula.recalculateFormulas(new List<SObject>{account});\nSystem.assertEquals(1, results.size());\nSystem.assert(!results[0].isSuccess());\nSystem.assertEquals(1, results[0].getErrors().size());\nFormulaRecalcFieldError err = results[0].getErrors()[0];\nSystem.assertEquals('Unsupported__c', err.getFieldName());\nSystem.assertNotEquals(null, err.getFieldError());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

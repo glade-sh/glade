@@ -4,7 +4,8 @@
     {
       "symbol": "Continuation.getResponse",
       "kind": "exec",
-      "notes": "Continuation callout APIs return UnsupportedFeature diagnostics."
+      "notes": "Continuation callout APIs return UnsupportedFeature diagnostics.",
+      "surfaceId": "apex:System.Continuation.getResponse(String)"
     }
   ],
   "source": [

@@ -1,0 +1,50 @@
+{
+  "name": "core-runtime-matcher-exact-evidence",
+  "evidence": [
+    {"surfaceId": "apex:System.Matcher.end()", "symbol": "Matcher.end", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.end(Integer)", "symbol": "Matcher.end(Integer)", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.find()", "symbol": "Matcher.find", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.find(Integer)", "symbol": "Matcher.find(Integer)", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.group()", "symbol": "Matcher.group", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.group(Integer)", "symbol": "Matcher.group(Integer)", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.groupCount()", "symbol": "Matcher.groupCount", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.hasAnchoringBounds()", "symbol": "Matcher.hasAnchoringBounds", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.hasTransparentBounds()", "symbol": "Matcher.hasTransparentBounds", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.hitEnd()", "symbol": "Matcher.hitEnd", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.lookingAt()", "symbol": "Matcher.lookingAt", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.matches()", "symbol": "Matcher.matches", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.pattern()", "symbol": "Matcher.pattern", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.quoteReplacement(String)", "symbol": "Matcher.quoteReplacement(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.region(Integer,Integer)", "symbol": "Matcher.region(Integer,Integer)", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.regionEnd()", "symbol": "Matcher.regionEnd", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.regionStart()", "symbol": "Matcher.regionStart", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.replaceAll(String)", "symbol": "Matcher.replaceAll(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.replaceFirst(String)", "symbol": "Matcher.replaceFirst(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.requireEnd()", "symbol": "Matcher.requireEnd", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.reset()", "symbol": "Matcher.reset", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.reset(String)", "symbol": "Matcher.reset(String)", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.start()", "symbol": "Matcher.start", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.start(Integer)", "symbol": "Matcher.start(Integer)", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.useAnchoringBounds(Boolean)", "symbol": "Matcher.useAnchoringBounds(Boolean)", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.usePattern(Pattern)", "symbol": "Matcher.usePattern(Pattern)", "kind": "exec"},
+    {"surfaceId": "apex:System.Matcher.useTransparentBounds(Boolean)", "symbol": "Matcher.useTransparentBounds(Boolean)", "kind": "exec"}
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Pattern wordNumber = Pattern.compile('([A-Za-z]+)-(\\\\d+)');\nMatcher matcher = wordNumber.matcher('abc-123 xyz-456');\nSystem.assert(matcher.find());\nSystem.assertEquals('abc-123', matcher.group());\nSystem.assertEquals('abc', matcher.group(1));\nSystem.assertEquals(2, matcher.groupCount());\nSystem.assertEquals(0, matcher.start());\nSystem.assertEquals(0, matcher.start(1));\nSystem.assertEquals(7, matcher.end());\nSystem.assertEquals(3, matcher.end(1));\nSystem.assert(matcher.find(8));\nSystem.assertEquals('xyz-456', matcher.group());\nmatcher.reset();\nSystem.assert(matcher.find());\nmatcher.reset('none');\nSystem.assert(!matcher.find());\nMatcher region = Pattern.compile('[a-z]+').matcher('123 abc 456');\nSystem.assertEquals(region, region.region(4, 7));\nSystem.assertEquals(4, region.regionStart());\nSystem.assertEquals(7, region.regionEnd());\nSystem.assert(region.lookingAt());\nSystem.assert(region.matches());\nSystem.assert(region.hasAnchoringBounds());\nSystem.assert(!region.hasTransparentBounds());\nSystem.assertEquals(region, region.useAnchoringBounds(false));\nSystem.assert(!region.hasAnchoringBounds());\nSystem.assertEquals(region, region.useTransparentBounds(true));\nSystem.assert(region.hasTransparentBounds());\nSystem.assertEquals('[a-z]+', region.pattern().pattern());\nSystem.assertEquals(region, region.usePattern(Pattern.compile('\\\\d+')));\nregion.reset('99 bottles');\nSystem.assert(region.find());\nSystem.assertEquals('99', region.group());\nSystem.assertEquals('a# b#', Pattern.compile('\\\\d+').matcher('a1 b22').replaceAll('#'));\nSystem.assertEquals('a# b22', Pattern.compile('\\\\d+').matcher('a1 b22').replaceFirst('#'));\nSystem.assert(System.Matcher.quoteReplacement('$1').contains('$1'));\nMatcher tail = Pattern.compile('z').matcher('abc');\nSystem.assert(!tail.find());\nSystem.assert(!tail.hitEnd());\nSystem.assert(!tail.requireEnd());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Pattern wordNumber = Pattern.compile('([A-Za-z]+)-(\\\\d+)');\nMatcher matcher = wordNumber.matcher('abc-123 xyz-456');\nSystem.assert(matcher.find());\nSystem.assertEquals('abc-123', matcher.group());\nSystem.assertEquals('abc', matcher.group(1));\nSystem.assertEquals(2, matcher.groupCount());\nSystem.assertEquals(0, matcher.start());\nSystem.assertEquals(0, matcher.start(1));\nSystem.assertEquals(7, matcher.end());\nSystem.assertEquals(3, matcher.end(1));\nSystem.assert(matcher.find(8));\nSystem.assertEquals('xyz-456', matcher.group());\nmatcher.reset();\nSystem.assert(matcher.find());\nmatcher.reset('none');\nSystem.assert(!matcher.find());\nMatcher region = Pattern.compile('[a-z]+').matcher('123 abc 456');\nSystem.assertEquals(region, region.region(4, 7));\nSystem.assertEquals(4, region.regionStart());\nSystem.assertEquals(7, region.regionEnd());\nSystem.assert(region.lookingAt());\nSystem.assert(region.matches());\nSystem.assert(region.hasAnchoringBounds());\nSystem.assert(!region.hasTransparentBounds());\nSystem.assertEquals(region, region.useAnchoringBounds(false));\nSystem.assert(!region.hasAnchoringBounds());\nSystem.assertEquals(region, region.useTransparentBounds(true));\nSystem.assert(region.hasTransparentBounds());\nSystem.assertEquals('[a-z]+', region.pattern().pattern());\nSystem.assertEquals(region, region.usePattern(Pattern.compile('\\\\d+')));\nregion.reset('99 bottles');\nSystem.assert(region.find());\nSystem.assertEquals('99', region.group());\nSystem.assertEquals('a# b#', Pattern.compile('\\\\d+').matcher('a1 b22').replaceAll('#'));\nSystem.assertEquals('a# b22', Pattern.compile('\\\\d+').matcher('a1 b22').replaceFirst('#'));\nSystem.assert(System.Matcher.quoteReplacement('$1').contains('$1'));\nMatcher tail = Pattern.compile('z').matcher('abc');\nSystem.assert(!tail.find());\nSystem.assert(!tail.hitEnd());\nSystem.assert(!tail.requireEnd());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

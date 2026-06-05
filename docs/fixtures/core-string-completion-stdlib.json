@@ -2,66 +2,82 @@
   "name": "core-string-completion-stdlib",
   "evidence": [
     {
+      "surfaceId": "apex:System.String.escapeCsv()",
       "symbol": "String.escapeCsv",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.unescapeCsv()",
       "symbol": "String.unescapeCsv",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.escapeHtml4()",
       "symbol": "String.escapeHtml4",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.unescapeHtml4()",
       "symbol": "String.unescapeHtml4",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.escapeXml()",
       "symbol": "String.escapeXml",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.unescapeXml()",
       "symbol": "String.unescapeXml",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.escapeEcmaScript()",
       "symbol": "String.escapeEcmaScript",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.unescapeEcmaScript()",
       "symbol": "String.unescapeEcmaScript",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.escapeJava()",
       "symbol": "String.escapeJava",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.unescapeJava()",
       "symbol": "String.unescapeJava",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.escapeUnicode()",
       "symbol": "String.escapeUnicode",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.unescapeUnicode()",
       "symbol": "String.unescapeUnicode",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.escapeSingleQuotes(String)",
       "symbol": "String.escapeSingleQuotes",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.format(String,List<Object>)",
       "symbol": "String.format",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.abbreviate(Integer)",
       "symbol": "String.abbreviate",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.difference(String)",
       "symbol": "String.difference",
       "kind": "exec"
     },
@@ -70,54 +86,67 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.getCommonPrefix(List<String>)",
       "symbol": "String.getCommonPrefix",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.getLevenshteinDistance(String)",
       "symbol": "String.getLevenshteinDistance",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.charAt(Integer)",
       "symbol": "String.charAt",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.codePointAt(Integer)",
       "symbol": "String.codePointAt",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.codePointBefore(Integer)",
       "symbol": "String.codePointBefore",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.codePointCount(Integer,Integer)",
       "symbol": "String.codePointCount",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.getChars()",
       "symbol": "String.getChars",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.fromCharArray(List<Integer>)",
       "symbol": "String.fromCharArray",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.isAsciiPrintable()",
       "symbol": "String.isAsciiPrintable",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.splitByCharacterType()",
       "symbol": "String.splitByCharacterType",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.splitByCharacterTypeCamelCase()",
       "symbol": "String.splitByCharacterTypeCamelCase",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.indexOfAny(String)",
       "symbol": "String.indexOfAny",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.indexOfAnyBut(String)",
       "symbol": "String.indexOfAnyBut",
       "kind": "exec"
     },
@@ -134,6 +163,7 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.overlay(String,Integer,Integer)",
       "symbol": "String.overlay",
       "kind": "exec"
     },
@@ -142,6 +172,7 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.swapCase()",
       "symbol": "String.swapCase",
       "kind": "exec"
     },

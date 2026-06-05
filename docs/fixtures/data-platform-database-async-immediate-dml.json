@@ -7,6 +7,12 @@
       "notes": "Local async insert alias runs through DML and returns SaveResult shape."
     },
     {
+      "surfaceId": "apex:System.Database.insertAsync",
+      "symbol": "Database.insertAsync",
+      "kind": "test",
+      "notes": "Async insert method family is observed through local DML alias calls."
+    },
+    {
       "surfaceId": "apex:System.Database.insertAsync(Object)",
       "symbol": "Database.insertAsync",
       "kind": "test",
@@ -27,6 +33,12 @@
       "symbol": "Database.updateAsync",
       "kind": "test",
       "notes": "Local async update alias runs through DML and returns SaveResult shape."
+    },
+    {
+      "surfaceId": "apex:System.Database.updateAsync",
+      "symbol": "Database.updateAsync",
+      "kind": "test",
+      "notes": "Async update method family is observed through local DML alias calls."
     },
     {
       "surfaceId": "apex:System.Database.updateAsync(Object,Object)",
@@ -51,6 +63,12 @@
       "notes": "Local async delete alias runs through DML and returns DeleteResult shape."
     },
     {
+      "surfaceId": "apex:System.Database.deleteAsync",
+      "symbol": "Database.deleteAsync",
+      "kind": "test",
+      "notes": "Async delete method family is observed through local DML alias calls."
+    },
+    {
       "surfaceId": "apex:System.Database.deleteAsync(Object,Object)",
       "symbol": "Database.deleteAsync",
       "kind": "test",
@@ -73,6 +91,12 @@
       "notes": "Local async save-result lookup returns an already materialized local SaveResult."
     },
     {
+      "surfaceId": "apex:System.Database.getAsyncSaveResult",
+      "symbol": "Database.getAsyncSaveResult",
+      "kind": "test",
+      "notes": "Async save-result lookup method family is observed against local result objects."
+    },
+    {
       "surfaceId": "apex:System.Database.getAsyncSaveResult(Object)",
       "symbol": "Database.getAsyncSaveResult",
       "kind": "test",
@@ -84,6 +108,12 @@
       "notes": "Local async delete-result lookup returns an already materialized local DeleteResult."
     },
     {
+      "surfaceId": "apex:System.Database.getAsyncDeleteResult",
+      "symbol": "Database.getAsyncDeleteResult",
+      "kind": "test",
+      "notes": "Async delete-result lookup method family is observed against local result objects."
+    },
+    {
       "surfaceId": "apex:System.Database.getAsyncDeleteResult(Object)",
       "symbol": "Database.getAsyncDeleteResult",
       "kind": "test",
@@ -93,6 +123,12 @@
       "symbol": "Database.getAsyncLocator",
       "kind": "test",
       "notes": "Local async locator lookup returns deterministic locator strings for query locators, materialized results, and already-local locator ids."
+    },
+    {
+      "surfaceId": "apex:System.Database.getAsyncLocator",
+      "symbol": "Database.getAsyncLocator",
+      "kind": "test",
+      "notes": "Async locator method family is observed with local query locators, result objects, and locator strings."
     },
     {
       "surfaceId": "apex:System.Database.getAsyncLocator(Object)",

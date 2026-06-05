@@ -2,6 +2,7 @@
   "name": "core-string-entity-edge-stdlib",
   "evidence": [
     {
+      "surfaceId": "apex:System.String.escapeHtml3()",
       "symbol": "String.escapeHtml3",
       "kind": "exec"
     },
@@ -10,6 +11,7 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.unescapeHtml3()",
       "symbol": "String.unescapeHtml3",
       "kind": "exec"
     },
@@ -42,6 +44,7 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.replace(String,String)",
       "symbol": "String.replace",
       "kind": "exec"
     },
@@ -54,14 +57,17 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.remove(String)",
       "symbol": "String.remove",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.isBlank(String)",
       "symbol": "String.isBlank",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.String.isNotBlank(String)",
       "symbol": "String.isNotBlank",
       "kind": "exec"
     },

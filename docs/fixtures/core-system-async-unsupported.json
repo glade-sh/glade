@@ -2,6 +2,7 @@
   "name": "core-system-async-unsupported",
   "evidence": [
     {
+      "surfaceId": "apex:System.System.abortJob(String)",
       "symbol": "System.abortJob",
       "kind": "exec",
       "notes": "Async scheduling helpers return explicit unsupported diagnostics in the local VM."

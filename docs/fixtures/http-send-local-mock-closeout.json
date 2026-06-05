@@ -2,9 +2,16 @@
   "name": "http-send-local-mock-closeout",
   "evidence": [
     {
+      "surfaceId": "apex:System.Http.send(HttpRequest)",
       "symbol": "Http.send local mock callouts",
       "kind": "test",
       "notes": "Local mock callouts validate requests, increment callout limits, and require HttpResponse mock returns."
+    },
+    {
+      "surfaceId": "apex:System.HttpCalloutMock.respond(HttpRequest)",
+      "symbol": "HttpCalloutMock.respond(HttpRequest)",
+      "kind": "test",
+      "notes": "Registered local callout mocks receive the HttpRequest and return an HttpResponse."
     },
     {
       "symbol": "HttpResponse",

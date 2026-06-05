@@ -2,31 +2,37 @@
   "name": "core-pattern-dialect-flags-stdlib",
   "evidence": [
     {
+      "surfaceId": "apex:System.Pattern.compile(String,Integer)",
       "symbol": "Pattern.compile",
       "kind": "exec",
       "notes": "Covers the local supported flag subset: CASE_INSENSITIVE, MULTILINE, DOTALL, UNICODE_CASE as a no-op companion, LITERAL, and supported inline i/m/s flags."
     },
     {
+      "surfaceId": "apex:System.Pattern.pattern()",
       "symbol": "Pattern.pattern",
       "kind": "exec",
       "notes": "Pattern.pattern returns the original source even when Pattern.LITERAL compiles through a quoted local regex."
     },
     {
+      "surfaceId": "apex:System.Matcher.find()",
       "symbol": "Matcher.find",
       "kind": "exec",
       "notes": "Find honors compiled local flag state carried from Pattern.compile(regex, flags)."
     },
     {
+      "surfaceId": "apex:System.Matcher.matches()",
       "symbol": "Matcher.matches",
       "kind": "exec",
       "notes": "Matches honors inline case-insensitive flags in the supported local regex subset."
     },
     {
+      "surfaceId": "apex:System.Matcher.group()",
       "symbol": "Matcher.group",
       "kind": "exec",
       "notes": "Group returns matches from flagged and literal Pattern sources."
     },
     {
+      "surfaceId": "apex:System.Matcher.usePattern(Pattern)",
       "symbol": "Matcher.usePattern",
       "kind": "exec",
       "notes": "usePattern swaps to another compiled local Pattern after a flagged/literal source."

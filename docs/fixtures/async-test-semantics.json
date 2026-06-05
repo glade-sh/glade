@@ -2,26 +2,32 @@
   "name": "async-test-semantics",
   "evidence": [
     {
+      "surfaceId": "apex:System.Test.startTest()",
       "symbol": "Test.startTest",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Test.stopTest()",
       "symbol": "Test.stopTest",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getFutureCalls()",
       "symbol": "Limits.getFutureCalls",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getQueueableJobs()",
       "symbol": "Limits.getQueueableJobs",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.System.enqueueJob(Object)",
       "symbol": "System.enqueueJob",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Messaging.sendEmail(List<Messaging.Email>)",
       "symbol": "Messaging.sendEmail",
       "kind": "test"
     },

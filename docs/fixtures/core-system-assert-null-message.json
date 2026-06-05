@@ -2,6 +2,7 @@
   "name": "core-system-assert-null-message",
   "evidence": [
     {
+      "surfaceId": "apex:System.System.assert(Boolean)",
       "symbol": "System.assert",
       "kind": "exec",
       "notes": "Assertion failure uses deterministic local null message conversion."

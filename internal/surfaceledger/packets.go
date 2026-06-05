@@ -303,7 +303,7 @@ func packetOwnsRow(packet AreaPacket, row SurfaceLedgerRow) bool {
 	case "Data.Runtime.DML":
 		return row.Area == AreaData && containsAnyASCIIFold(row.SurfaceID, "dml", ".insert", ".update", ".upsert", ".delete", ".undelete", ".merge")
 	case "Tests.AsyncAndIsolation":
-		return containsAnyASCIIFold(row.SurfaceID, "test.", "starttest", "stoptest", "async", "queueable", "future", "schedulable", "batchable", "isrunningtest")
+		return ownsAsyncAndIsolationRow(row)
 	case "UI.ApexPagesControllers":
 		return row.Product == ProductApex && (row.Namespace == "ApexPages" || containsASCIIFold(row.SurfaceID, "apexpages"))
 	case "UI.VisualforceComponents":
@@ -345,6 +345,20 @@ func packetOwnsRow(packet AreaPacket, row SurfaceLedgerRow) bool {
 	default:
 		return false
 	}
+}
+
+func ownsAsyncAndIsolationRow(row SurfaceLedgerRow) bool {
+	if row.Product != ProductApex {
+		return false
+	}
+	if !containsAnyASCIIFold(row.SurfaceID, "test.", "starttest", "stoptest", "async", "queueable", "future", "schedulable", "batchable", "isrunningtest") {
+		return false
+	}
+	switch row.Namespace {
+	case "System", "DataSource", "TxnSecurity":
+		return true
+	}
+	return false
 }
 
 func isBatchableDatabaseMember(memberName string) bool {

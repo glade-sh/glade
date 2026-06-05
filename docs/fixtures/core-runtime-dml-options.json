@@ -1,0 +1,73 @@
+{
+  "name": "core-runtime-dml-options",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.DMLOptions",
+      "symbol": "Database.DMLOptions",
+      "kind": "test",
+      "notes": "Database.DMLOptions is constructible with documented local option properties."
+    },
+    {
+      "surfaceId": "apex:System.DMLOptions.allowFieldTruncation",
+      "symbol": "Database.DMLOptions.allowFieldTruncation",
+      "kind": "test",
+      "notes": "allowFieldTruncation is readable and writable on the local DMLOptions object."
+    },
+    {
+      "surfaceId": "apex:System.DMLOptions.assignmentRuleHeader",
+      "symbol": "Database.DMLOptions.assignmentRuleHeader",
+      "kind": "test",
+      "notes": "assignmentRuleHeader is stored for local DML option shape without assignment-rule side effects."
+    },
+    {
+      "surfaceId": "apex:System.DMLOptions.emailHeader",
+      "symbol": "Database.DMLOptions.emailHeader",
+      "kind": "test",
+      "notes": "emailHeader is stored for local DML option shape without email delivery side effects."
+    },
+    {
+      "surfaceId": "apex:System.DMLOptions.localeOptions",
+      "symbol": "Database.DMLOptions.localeOptions",
+      "kind": "test",
+      "notes": "localeOptions is stored for local DML option shape without locale validation side effects."
+    },
+    {
+      "surfaceId": "apex:System.DMLOptions.optAllOrNone",
+      "symbol": "Database.DMLOptions.optAllOrNone",
+      "kind": "test",
+      "notes": "optAllOrNone is readable and writable and drives partial success for supported Database.insert DMLOptions overloads."
+    },
+    {
+      "surfaceId": "apex:System.Database.insert(Object,DMLOptions)",
+      "symbol": "Database.insert",
+      "kind": "test",
+      "notes": "Database.insert with DMLOptions maps optAllOrNone=false to the existing partial-success SaveResult path."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/CoreRuntimeDMLOptionsTest.cls",
+      "content": "@isTest private class CoreRuntimeDMLOptionsTest { @isTest static void optionsShapeAndAllOrNone() { Database.DMLOptions opts = new Database.DMLOptions(); System.assertEquals(false, opts.optAllOrNone); opts.optAllOrNone = false; opts.allowFieldTruncation = false; opts.assignmentRuleHeader.useDefaultRule = true; opts.emailHeader.triggerUserEmail = true; System.assertEquals(false, opts.optAllOrNone); System.assertEquals(false, opts.allowFieldTruncation); System.assertEquals(true, opts.assignmentRuleHeader.useDefaultRule); System.assertEquals(true, opts.emailHeader.triggerUserEmail); System.assertNotEquals(null, opts.localeOptions); Account good = new Account(Name = 'Good'); Account bad = new Account(); List<Database.SaveResult> results = Database.insert(new List<Account>{good, bad}, opts); System.assertEquals(2, results.size()); System.assert(results[0].isSuccess()); System.assert(!results[1].isSuccess()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

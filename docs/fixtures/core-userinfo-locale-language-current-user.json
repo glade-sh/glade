@@ -2,11 +2,13 @@
   "name": "core-userinfo-locale-language-current-user",
   "evidence": [
     {
+      "surfaceId": "apex:System.UserInfo.getLocale()",
       "symbol": "UserInfo.getLocale",
       "kind": "test",
       "notes": "UserInfo.getLocale reads the current runAs user's LocaleSidKey, with the local default remaining en_US."
     },
     {
+      "surfaceId": "apex:System.UserInfo.getLanguage()",
       "symbol": "UserInfo.getLanguage",
       "kind": "test",
       "notes": "UserInfo.getLanguage reads the current runAs user's LanguageLocaleKey, without enabling locale-sensitive formatting."

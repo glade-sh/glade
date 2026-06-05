@@ -2,6 +2,7 @@
   "name": "core-json-generator-end-object-in-array",
   "evidence": [
     {
+      "surfaceId": "apex:System.JSONGenerator.writeEndObject()",
       "symbol": "JSONGenerator.writeEndObject",
       "kind": "exec",
       "notes": "Ending an object while an array is open raises a catchable JSONException and leaves the generator usable for array values."
