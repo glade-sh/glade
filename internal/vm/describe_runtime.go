@@ -24,8 +24,27 @@ type childRelationshipCache struct {
 	entries map[string][]Value
 }
 
+type childRelationshipLookupKey struct {
+	ParentObject string
+	Relationship string
+}
+
+type childRelationshipLookup struct {
+	ChildType             string
+	CanonicalRelationship string
+}
+
+type childRelationshipLookupCache struct {
+	mu      sync.RWMutex
+	entries map[childRelationshipLookupKey]childRelationshipLookup
+}
+
 func newChildRelationshipCache() *childRelationshipCache {
 	return &childRelationshipCache{entries: make(map[string][]Value)}
+}
+
+func newChildRelationshipLookupCache() *childRelationshipLookupCache {
+	return &childRelationshipLookupCache{entries: make(map[childRelationshipLookupKey]childRelationshipLookup)}
 }
 
 func sObjectDescribeOptionsValue(name string) Value {
@@ -52,6 +71,26 @@ func (c *childRelationshipCache) store(key string, value []Value) {
 	c.mu.Lock()
 	c.entries[key] = cloneChildRelationshipValues(value)
 	c.mu.Unlock()
+}
+
+func (c *childRelationshipLookupCache) load(key childRelationshipLookupKey) (childRelationshipLookup, bool) {
+	if c == nil {
+		return childRelationshipLookup{}, false
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	value, ok := c.entries[key]
+	return value, ok
+}
+
+func (c *childRelationshipLookupCache) store(key childRelationshipLookupKey, value childRelationshipLookup) childRelationshipLookup {
+	if c == nil {
+		return value
+	}
+	c.mu.Lock()
+	c.entries[key] = value
+	c.mu.Unlock()
+	return value
 }
 
 func cloneChildRelationshipValues(values []Value) []Value {
@@ -161,8 +200,6 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	fields.Fields["map"] = fieldsMap
 	desc.Fields["fields"] = fields
 	desc.Fields["fieldSets"] = vm.fieldSetMapValue(name, definition)
-	childRelationships := vm.describeChildRelationships(name)
-	desc.Fields["childRelationships"] = List(childRelationships...)
 	recordTypes := make([]Value, 0, len(definition.RecordTypes))
 	byName := Map()
 	byName.Type = "Map<String,Schema.RecordTypeInfo>"
@@ -200,6 +237,22 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 		vm.describeCache[cacheKey] = desc
 	}
 	return desc
+}
+
+func (vm *VM) describeChildRelationshipsForDescribe(receiver *Value) (Value, error) {
+	if receiver == nil || receiver.Fields == nil {
+		return Null, fmt.Errorf("Schema.DescribeSObjectResult token missing object")
+	}
+	if existing, ok := receiver.Fields["childRelationships"]; ok && existing.Kind == ValueList {
+		return existing, nil
+	}
+	name, ok := receiver.Fields["name"]
+	if !ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "" {
+		return Null, fmt.Errorf("Schema.DescribeSObjectResult token missing object")
+	}
+	childRelationships := List(vm.describeChildRelationships(name.Text)...)
+	receiver.Fields["childRelationships"] = childRelationships
+	return childRelationships, nil
 }
 
 func (vm *VM) describePreparedDefinition(name string, definition storage.ObjectDefinition) storage.ObjectDefinition {

@@ -394,6 +394,7 @@ func (vm *VM) clearMetadataCaches() {
 	vm.globalDescribeCache = nil
 	vm.describeTabsCache = nil
 	vm.childRelCache = newChildRelationshipCache()
+	vm.childRelationshipLookupCache = newChildRelationshipLookupCache()
 	vm.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
 	vm.sObjectFieldAliasCache = newSObjectFieldAliasLookupCache()
 	vm.fieldResolveCache = newFieldResolveLookupCache()

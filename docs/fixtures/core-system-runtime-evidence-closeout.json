@@ -1,0 +1,410 @@
+{
+  "name": "core-system-runtime-evidence-closeout",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.String.center(Integer,String)",
+      "symbol": "String.center(Integer,String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.indexOfDifference(String)",
+      "symbol": "String.indexOfDifference(String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.lastIndexOf(String,Integer)",
+      "symbol": "String.lastIndexOf(String,Integer)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.lastIndexOfChar(Integer)",
+      "symbol": "String.lastIndexOfChar(Integer)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.lastIndexOfChar(Integer,Integer)",
+      "symbol": "String.lastIndexOfChar(Integer,Integer)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.lastIndexOfIgnoreCase(String)",
+      "symbol": "String.lastIndexOfIgnoreCase(String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.lastIndexOfIgnoreCase(String,Integer)",
+      "symbol": "String.lastIndexOfIgnoreCase(String,Integer)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.leftPad(Integer,String)",
+      "symbol": "String.leftPad(Integer,String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.length()",
+      "symbol": "String.length()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.offsetByCodePoints(Integer,Integer)",
+      "symbol": "String.offsetByCodePoints(Integer,Integer)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.repeat(String,Integer)",
+      "symbol": "String.repeat(String,Integer)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.rightPad(Integer,String)",
+      "symbol": "String.rightPad(Integer,String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.startsWith(String)",
+      "symbol": "String.startsWith(String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.stripHtmlTags()",
+      "symbol": "String.stripHtmlTags()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.substring(Integer)",
+      "symbol": "String.substring(Integer)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.substring(Integer,Integer)",
+      "symbol": "String.substring(Integer,Integer)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.substringBetween(String,String)",
+      "symbol": "String.substringBetween(String,String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.toLowerCase()",
+      "symbol": "String.toLowerCase()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.toLowerCase(String)",
+      "symbol": "String.toLowerCase(String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.toUpperCase()",
+      "symbol": "String.toUpperCase()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.toUpperCase(String)",
+      "symbol": "String.toUpperCase(String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.trim()",
+      "symbol": "String.trim()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.valueOf(Date)",
+      "symbol": "String.valueOf(Date)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.valueOf(Datetime)",
+      "symbol": "String.valueOf(Datetime)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.valueOf(Decimal)",
+      "symbol": "String.valueOf(Decimal)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.valueOf(Double)",
+      "symbol": "String.valueOf(Double)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.valueOf(Integer)",
+      "symbol": "String.valueOf(Integer)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.valueOf(Long)",
+      "symbol": "String.valueOf(Long)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.valueOf(Object)",
+      "symbol": "String.valueOf(Object)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.String.valueOfGmt(Datetime)",
+      "symbol": "String.valueOfGmt(Datetime)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getCurrentUvid()",
+      "symbol": "UserInfo.getCurrentUvid()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getDefaultCurrency()",
+      "symbol": "UserInfo.getDefaultCurrency()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getFirstName()",
+      "symbol": "UserInfo.getFirstName()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getLastName()",
+      "symbol": "UserInfo.getLastName()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getName()",
+      "symbol": "UserInfo.getName()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getOrganizationId()",
+      "symbol": "UserInfo.getOrganizationId()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getOrganizationName()",
+      "symbol": "UserInfo.getOrganizationName()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getProfileId()",
+      "symbol": "UserInfo.getProfileId()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getSessionId()",
+      "symbol": "UserInfo.getSessionId()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getUiTheme()",
+      "symbol": "UserInfo.getUiTheme()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getUiThemeDisplayed()",
+      "symbol": "UserInfo.getUiThemeDisplayed()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getUserEmail()",
+      "symbol": "UserInfo.getUserEmail()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getUserId()",
+      "symbol": "UserInfo.getUserId()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getUserName()",
+      "symbol": "UserInfo.getUserName()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getUserRoleId()",
+      "symbol": "UserInfo.getUserRoleId()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.getUserType()",
+      "symbol": "UserInfo.getUserType()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.isCurrentUserLicensed(String)",
+      "symbol": "UserInfo.isCurrentUserLicensed(String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.UserInfo.isMultiCurrencyOrganization()",
+      "symbol": "UserInfo.isMultiCurrencyOrganization()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.addError(String)",
+      "symbol": "SObject.addError(String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.addError(String,Boolean)",
+      "symbol": "SObject.addError(String,Boolean)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.addError(String,String)",
+      "symbol": "SObject.addError(String,String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.addError(String,String,Boolean)",
+      "symbol": "SObject.addError(String,String,Boolean)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.clear()",
+      "symbol": "SObject.clear()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.clone(Boolean,Boolean)",
+      "symbol": "SObject.clone(Boolean,Boolean)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.clone(Boolean,Boolean,Boolean)",
+      "symbol": "SObject.clone(Boolean,Boolean,Boolean)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.clone(Boolean,Boolean,Boolean,Boolean)",
+      "symbol": "SObject.clone(Boolean,Boolean,Boolean,Boolean)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.get(String)",
+      "symbol": "SObject.get(String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.getErrors()",
+      "symbol": "SObject.getErrors()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.getOptions()",
+      "symbol": "SObject.getOptions()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.getPopulatedFieldsAsMap()",
+      "symbol": "SObject.getPopulatedFieldsAsMap()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.getQuickActionName()",
+      "symbol": "SObject.getQuickActionName()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.getSObject(String)",
+      "symbol": "SObject.getSObject(String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.getSObjects(String)",
+      "symbol": "SObject.getSObjects(String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.hasErrors()",
+      "symbol": "SObject.hasErrors()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.isSet(String)",
+      "symbol": "SObject.isSet(String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.put(String,Object)",
+      "symbol": "SObject.put(String,Object)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.putSObject(String,Object)",
+      "symbol": "SObject.putSObject(String,Object)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.recalculateFormulas()",
+      "symbol": "SObject.recalculateFormulas()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.SObject.setOptions(Object)",
+      "symbol": "SObject.setOptions(Object)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.Test.calculatePermissionSetGroup(List<String>)",
+      "symbol": "Test.calculatePermissionSetGroup(List<String>)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.Test.calculatePermissionSetGroup(String)",
+      "symbol": "Test.calculatePermissionSetGroup(String)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.Test.enqueueBatchJobs(Integer)",
+      "symbol": "Test.enqueueBatchJobs(Integer)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.Test.getFlexQueueOrder()",
+      "symbol": "Test.getFlexQueueOrder()",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.Test.setCreatedDate(Id,Datetime)",
+      "symbol": "Test.setCreatedDate(Id,Datetime)",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.Test.setReadOnlyApplicationMode(Boolean)",
+      "symbol": "Test.setReadOnlyApplicationMode(Boolean)",
+      "kind": "test"
+    }
+  ],
+  "source": [
+    {
+      "path": "sfdx-project.json",
+      "content": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"namespace\":\"\",\"sourceApiVersion\":\"64.0\"}"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Account Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/CoreSystemRuntimeEvidenceCloseoutTest.cls",
+      "content": "@isTest private class CoreSystemRuntimeEvidenceCloseoutTest { @isTest static void stringContracts() { String text = 'Trail Mix Trail'; System.assertEquals('--go--', 'go'.center(6, '-')); System.assertEquals(3, 'trail'.indexOfDifference('track')); System.assertEquals(10, text.lastIndexOf('Trail', 12)); System.assertEquals(10, text.lastIndexOfChar(84)); System.assertEquals(0, text.lastIndexOfChar(84, 4)); System.assertEquals(10, text.lastIndexOfIgnoreCase('trail')); System.assertEquals(0, text.lastIndexOfIgnoreCase('trail', 4)); System.assertEquals('---go', 'go'.leftPad(5, '-')); System.assertEquals(15, text.length()); System.assertEquals(2, 'a😀b'.offsetByCodePoints(1, 1)); System.assertEquals('goxgo', 'go'.repeat('x', 2)); System.assertEquals('go---', 'go'.rightPad(5, '-')); System.assert(text.startsWith('Trail')); System.assertEquals('TrailMix', '<p>Trail<br/>Mix</p>'.stripHtmlTags()); System.assertEquals('ail', 'trail'.substring(2)); System.assertEquals('ra', 'trail'.substring(1, 3)); System.assertEquals('middle', '[middle]'.substringBetween('[', ']')); System.assertEquals('trail', 'TRAIL'.toLowerCase()); System.assertEquals('trail', 'TRAIL'.toLowerCase('en_US')); System.assertEquals('TRAIL', 'trail'.toUpperCase()); System.assertEquals('TRAIL', 'trail'.toUpperCase('en_US')); System.assertEquals('nook', '  nook  '.trim()); System.assertEquals('2024-02-29', String.valueOf(Date.newInstance(2024, 2, 29))); Datetime stamp = Datetime.valueOfGmt('2024-02-29 23:05:06'); System.assertEquals('2024-02-29 23:05:06', String.valueOfGmt(stamp)); System.assert(String.valueOf(stamp).contains('2024-02-29')); System.assertEquals('12.340', String.valueOf(Decimal.valueOf('12.340'))); System.assertEquals('2.5', String.valueOf(Double.valueOf('2.5'))); System.assertEquals('7', String.valueOf(7)); System.assertEquals('7000000000', String.valueOf(Long.valueOf('7000000000'))); System.assertEquals('false', String.valueOf((Object)false)); } @isTest static void userInfoContracts() { System.assert(UserInfo.getUserId().startsWith('005')); System.assert(UserInfo.getCurrentUvid().contains(':local')); System.assertEquals('USD', UserInfo.getDefaultCurrency()); System.assertEquals('System', UserInfo.getFirstName()); System.assertEquals('User', UserInfo.getLastName()); System.assertEquals('System User', UserInfo.getName()); System.assert(UserInfo.getOrganizationId().startsWith('00D')); System.assertEquals('GLADE Local Org', UserInfo.getOrganizationName()); System.assert(UserInfo.getProfileId().startsWith('00')); System.assertEquals('', UserInfo.getSessionId()); System.assertEquals('Theme4d', UserInfo.getUiTheme()); System.assertEquals('Theme4d', UserInfo.getUiThemeDisplayed()); System.assertEquals('system@example.invalid', UserInfo.getUserEmail()); System.assertEquals('system@example.invalid', UserInfo.getUserName()); System.assert(UserInfo.getUserRoleId().startsWith('00')); System.assertEquals('Standard', UserInfo.getUserType()); System.assertEquals(false, UserInfo.isCurrentUserLicensed('pkg')); System.assertEquals(false, UserInfo.isMultiCurrencyOrganization()); } @isTest static void sobjectAndTestContracts() { Account account = new Account(Name = 'Trail'); System.assertEquals('Trail', account.get('Name')); System.assertEquals(false, account.isSet('AnnualRevenue')); System.assertEquals(null, account.put('AnnualRevenue', Decimal.valueOf('12.5'))); System.assertEquals(Decimal.valueOf('12.5'), account.get('AnnualRevenue')); System.assert(account.isSet('AnnualRevenue')); System.assertEquals('Trail', account.put('Name', 'Nook')); System.assertEquals('Nook', account.get('Name')); Map<String,Object> populated = account.getPopulatedFieldsAsMap(); System.assert(populated.containsKey('Name')); Database.DMLOptions opts = new Database.DMLOptions(); opts.AllowFieldTruncation = true; account.setOptions(opts); System.assertEquals(true, account.getOptions().AllowFieldTruncation); Account twoFlagClone = account.clone(false, true); Account threeFlagClone = account.clone(false, true, true); Account fourFlagClone = account.clone(false, true, true, true); System.assertEquals('Nook', twoFlagClone.Name); System.assertEquals('Nook', threeFlagClone.Name); System.assertEquals('Nook', fourFlagClone.Name); account.addError('row blocked'); account.addError('row blocked 2', false); account.addError('Name', 'name blocked'); account.addError('Name', 'name blocked 2', false); System.assert(account.hasErrors()); System.assert(account.getErrors().size() >= 4); User owner = new User(Id = UserInfo.getUserId(), LastName = 'Owner'); account.putSObject('Owner', owner); System.assertEquals('Owner', account.getSObject('Owner').get('LastName')); account.put('Contacts', new List<Contact>{new Contact(LastName = 'Child')}); System.assertEquals(1, account.getSObjects('Contacts').size()); account.put('QuickActionName', 'Account.SendEmail'); System.assertEquals('Account.SendEmail', account.getQuickActionName()); account.recalculateFormulas(); account.clear(); System.assertEquals(false, account.isSet('Name')); System.assertEquals(0, Test.getFlexQueueOrder().size()); List<Id> batchIds = Test.enqueueBatchJobs(2); System.assertEquals(2, batchIds.size()); Test.calculatePermissionSetGroup('0PG000000000001'); Test.calculatePermissionSetGroup(new List<String>{'0PG000000000001', '0PG000000000002'}); Test.setReadOnlyApplicationMode(true); Account inserted = new Account(Name = 'Created Date'); insert inserted; Datetime created = Datetime.newInstanceGmt(2024, 1, 2, 3, 4, 5); Test.setCreatedDate(inserted.Id, created); Account queried = [SELECT CreatedDate FROM Account WHERE Id = :inserted.Id]; System.assertEquals(created, queried.CreatedDate); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

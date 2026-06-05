@@ -147,25 +147,26 @@ type VM struct {
 	lastAmbiguous      *overloadDiagnostic
 	activeConstructors map[string]int
 	// --- Describe caches ---
-	describeCache          map[string]Value
-	fieldDescribeCache     map[string]Value
-	globalDescribeCache    *Value
-	describeTabsCache      *Value
-	describeDefCache       map[string]storage.ObjectDefinition
-	customDataCache        map[string]Value
-	soqlExecutionCache     *soql.ExecutionCache
-	dmlSummaryByChild      dml.SummaryRelationCache
-	managedFeatureValues   map[string]Value
-	childRelCache          *childRelationshipCache
-	jsonChildRelTypeCache  *jsonChildRelTypeLookupCache
-	sObjectFieldAliasCache *sObjectFieldAliasLookupCache
-	fieldResolveCache      *fieldResolveLookupCache
-	loadedChildRelCache    map[string]loadedChildRelationshipLookup
-	lazyChildRelCache      map[string]lazyChildRelationshipLookup
-	objectNameCache        map[string]objectNameLookup
-	recentlyViewed         map[string]map[storage.ID]recentlyViewedEntry
-	metadataCacheStamp     string
-	isolationJournal       *storage.IsolationJournal
+	describeCache                map[string]Value
+	fieldDescribeCache           map[string]Value
+	globalDescribeCache          *Value
+	describeTabsCache            *Value
+	describeDefCache             map[string]storage.ObjectDefinition
+	customDataCache              map[string]Value
+	soqlExecutionCache           *soql.ExecutionCache
+	dmlSummaryByChild            dml.SummaryRelationCache
+	managedFeatureValues         map[string]Value
+	childRelCache                *childRelationshipCache
+	childRelationshipLookupCache *childRelationshipLookupCache
+	jsonChildRelTypeCache        *jsonChildRelTypeLookupCache
+	sObjectFieldAliasCache       *sObjectFieldAliasLookupCache
+	fieldResolveCache            *fieldResolveLookupCache
+	loadedChildRelCache          map[string]loadedChildRelationshipLookup
+	lazyChildRelCache            map[string]lazyChildRelationshipLookup
+	objectNameCache              map[string]objectNameLookup
+	recentlyViewed               map[string]map[storage.ID]recentlyViewedEntry
+	metadataCacheStamp           string
+	isolationJournal             *storage.IsolationJournal
 	// --- Static-field reference tracking (alias invalidation) ---
 	staticValueRefs           map[uint64]bool
 	staticValueRefFields      map[uint64]staticFieldRefSet
@@ -472,57 +473,58 @@ type Trigger struct {
 
 func New(stdout io.Writer) *VM {
 	return &VM{
-		Globals:                make(map[string]Value),
-		VarTypes:               make(map[string]string),
-		Methods:                make(map[string]Method),
-		MethodOverloads:        make(map[string][]Method),
-		MethodFolded:           make(map[string][]Method),
-		methodCandidates:       make(map[string][]Method),
-		methodResolveCache:     make(map[string]methodResolution),
-		Classes:                make(map[string]Class),
-		classLookup:            make(map[string]Class),
-		namespaceClassLookup:   make(map[string]map[string]namespaceClassLookup),
-		classNamespaceCache:    make(map[string]string),
-		classForAccessCache:    make(map[classForAccessKey]classForAccessLookup),
-		enumLookup:             make(map[string]enumClassLookup),
-		enumSuffixLookup:       make(map[string]enumClassLookup),
-		uniqueNestedTypeCache:  make(map[string]uniqueNestedTypeLookup),
-		onlyNestedTypeCache:    make(map[string]uniqueNestedTypeLookup),
-		topLevelTypeCache:      make(map[string]uniqueNestedTypeLookup),
-		Triggers:               make(map[string][]Trigger),
-		triggerMatchCache:      newTriggerMatchCache(),
-		triggerNamespaceCache:  make(map[triggerNamespaceLookupKey]string),
-		Stdout:                 stdout,
-		limitCaps:              defaultLimitCaps(),
-		limitMode:              LimitModePermissive,
-		fakeNow:                time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
-		savepoints:             make(map[string]storage.OrgState),
-		savepointMarks:         make(map[string]storage.IsolationMark),
-		emailSavepoints:        make(map[string][]CapturedEmail),
-		savepointOrder:         make(map[string]int),
-		platformCache:          make(map[string]map[string]cacheEntry),
-		cacheScanLocators:      make(map[string][]cacheScanItem),
-		metadataDeploys:        make(map[string]Value),
-		reportInstances:        make(map[string]Value),
-		pushUpgradeCustoms:     make(map[string]pushUpgradeCustomization),
-		traceEnabled:           true,
-		ctx:                    context.Background(),
-		activeGetters:          make(map[string]int),
-		activeSetters:          make(map[string]int),
-		staticInitState:        make(map[string]staticInitState),
-		describeCache:          make(map[string]Value),
-		fieldDescribeCache:     make(map[string]Value),
-		describeDefCache:       make(map[string]storage.ObjectDefinition),
-		customDataCache:        make(map[string]Value),
-		managedFeatureValues:   make(map[string]Value),
-		childRelCache:          newChildRelationshipCache(),
-		jsonChildRelTypeCache:  newJSONChildRelTypeLookupCache(),
-		sObjectFieldAliasCache: newSObjectFieldAliasLookupCache(),
-		fieldResolveCache:      newFieldResolveLookupCache(),
-		loadedChildRelCache:    make(map[string]loadedChildRelationshipLookup),
-		lazyChildRelCache:      make(map[string]lazyChildRelationshipLookup),
-		objectNameCache:        make(map[string]objectNameLookup),
-		recentlyViewed:         make(map[string]map[storage.ID]recentlyViewedEntry),
+		Globals:                      make(map[string]Value),
+		VarTypes:                     make(map[string]string),
+		Methods:                      make(map[string]Method),
+		MethodOverloads:              make(map[string][]Method),
+		MethodFolded:                 make(map[string][]Method),
+		methodCandidates:             make(map[string][]Method),
+		methodResolveCache:           make(map[string]methodResolution),
+		Classes:                      make(map[string]Class),
+		classLookup:                  make(map[string]Class),
+		namespaceClassLookup:         make(map[string]map[string]namespaceClassLookup),
+		classNamespaceCache:          make(map[string]string),
+		classForAccessCache:          make(map[classForAccessKey]classForAccessLookup),
+		enumLookup:                   make(map[string]enumClassLookup),
+		enumSuffixLookup:             make(map[string]enumClassLookup),
+		uniqueNestedTypeCache:        make(map[string]uniqueNestedTypeLookup),
+		onlyNestedTypeCache:          make(map[string]uniqueNestedTypeLookup),
+		topLevelTypeCache:            make(map[string]uniqueNestedTypeLookup),
+		Triggers:                     make(map[string][]Trigger),
+		triggerMatchCache:            newTriggerMatchCache(),
+		triggerNamespaceCache:        make(map[triggerNamespaceLookupKey]string),
+		Stdout:                       stdout,
+		limitCaps:                    defaultLimitCaps(),
+		limitMode:                    LimitModePermissive,
+		fakeNow:                      time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
+		savepoints:                   make(map[string]storage.OrgState),
+		savepointMarks:               make(map[string]storage.IsolationMark),
+		emailSavepoints:              make(map[string][]CapturedEmail),
+		savepointOrder:               make(map[string]int),
+		platformCache:                make(map[string]map[string]cacheEntry),
+		cacheScanLocators:            make(map[string][]cacheScanItem),
+		metadataDeploys:              make(map[string]Value),
+		reportInstances:              make(map[string]Value),
+		pushUpgradeCustoms:           make(map[string]pushUpgradeCustomization),
+		traceEnabled:                 true,
+		ctx:                          context.Background(),
+		activeGetters:                make(map[string]int),
+		activeSetters:                make(map[string]int),
+		staticInitState:              make(map[string]staticInitState),
+		describeCache:                make(map[string]Value),
+		fieldDescribeCache:           make(map[string]Value),
+		describeDefCache:             make(map[string]storage.ObjectDefinition),
+		customDataCache:              make(map[string]Value),
+		managedFeatureValues:         make(map[string]Value),
+		childRelCache:                newChildRelationshipCache(),
+		childRelationshipLookupCache: newChildRelationshipLookupCache(),
+		jsonChildRelTypeCache:        newJSONChildRelTypeLookupCache(),
+		sObjectFieldAliasCache:       newSObjectFieldAliasLookupCache(),
+		fieldResolveCache:            newFieldResolveLookupCache(),
+		loadedChildRelCache:          make(map[string]loadedChildRelationshipLookup),
+		lazyChildRelCache:            make(map[string]lazyChildRelationshipLookup),
+		objectNameCache:              make(map[string]objectNameLookup),
+		recentlyViewed:               make(map[string]map[storage.ID]recentlyViewedEntry),
 	}
 }
 
@@ -578,11 +580,13 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	if strings.TrimSpace(vm.metadataCacheStamp) != "" {
 		clone.jsonChildRelTypeCache = vm.jsonChildRelTypeCache
 		clone.childRelCache = vm.childRelCache
+		clone.childRelationshipLookupCache = vm.childRelationshipLookupCache
 		clone.sObjectFieldAliasCache = vm.sObjectFieldAliasCache
 		clone.fieldResolveCache = vm.fieldResolveCache
 	} else {
 		clone.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
 		clone.childRelCache = newChildRelationshipCache()
+		clone.childRelationshipLookupCache = newChildRelationshipLookupCache()
 		clone.sObjectFieldAliasCache = newSObjectFieldAliasLookupCache()
 		clone.fieldResolveCache = newFieldResolveLookupCache()
 	}

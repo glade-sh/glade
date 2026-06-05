@@ -147,19 +147,9 @@ func (vm *VM) sObjectFieldMapKeyIsChildRelationship(objectName, fieldName string
 	if vm == nil || vm.Org == nil || strings.TrimSpace(objectName) == "" || strings.TrimSpace(fieldName) == "" {
 		return false
 	}
-	aliases := vm.sObjectFieldMapLookupAliases(fieldName)
-	for _, relationship := range vm.describeChildRelationships(objectName) {
-		if relationship.Kind != ValueObject {
-			continue
-		}
-		name, ok := relationship.Fields["relationshipName"]
-		if !ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "" {
-			continue
-		}
-		for _, alias := range aliases {
-			if vmRelationshipNameMatches(vm.Org.Namespace, name.Text, alias) {
-				return true
-			}
+	for _, alias := range vm.sObjectFieldMapLookupAliases(fieldName) {
+		if vm.childRelationshipLookup(objectName, alias).ChildType != "" {
+			return true
 		}
 	}
 	return false

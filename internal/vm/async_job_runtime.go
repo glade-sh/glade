@@ -1094,7 +1094,7 @@ func (vm *VM) runtimeBatchableMethodCompatible(methodName, itemType string, meth
 		case "execute":
 			if len(method.Params) != 2 ||
 				!runtimeBatchableSameType(method.Params[0].Type, "Database.BatchableContext") ||
-				!runtimeBatchableSameType(method.Params[1].Type, "List<"+itemType+">") {
+				!vm.runtimeBatchableScopeTypeCompatible(itemType, method.Params[1].Type) {
 				continue
 			}
 			if runtimeBatchableVoidReturn(method.ReturnType) {
@@ -1113,11 +1113,14 @@ func (vm *VM) runtimeBatchableMethodCompatible(methodName, itemType string, meth
 }
 
 func (vm *VM) runtimeBatchableIterableReturn(itemType, returnType string) bool {
+	if vm.typeAssignableTo(returnType, "Iterable<"+itemType+">") {
+		return true
+	}
 	if !strings.EqualFold(collectionBase(returnType), "Iterable") {
-		return vm.typeAssignableTo(returnType, "Iterable<"+itemType+">") || vm.runtimeTypeImplementsIterableOf(returnType, itemType)
+		return vm.runtimeTypeImplementsIterableOf(returnType, itemType)
 	}
 	element, ok := collectionElementType(returnType)
-	return ok && runtimeBatchableSameType(element, itemType)
+	return ok && vm.runtimeBatchableItemAssignable(element, itemType)
 }
 
 func (vm *VM) runtimeTypeImplementsIterableOf(typeName, itemType string) bool {
@@ -1135,11 +1138,23 @@ func (vm *VM) runtimeTypeImplementsIterableOf(typeName, itemType string) bool {
 			continue
 		}
 		element, ok := collectionElementType(iface)
-		if ok && runtimeBatchableSameType(element, itemType) {
+		if ok && vm.runtimeBatchableItemAssignable(element, itemType) {
 			return true
 		}
 	}
 	return false
+}
+
+func (vm *VM) runtimeBatchableScopeTypeCompatible(itemType, scopeType string) bool {
+	if !strings.EqualFold(collectionBase(scopeType), "List") {
+		return false
+	}
+	element, ok := collectionElementType(scopeType)
+	return ok && vm.runtimeBatchableItemAssignable(element, itemType)
+}
+
+func (vm *VM) runtimeBatchableItemAssignable(from, to string) bool {
+	return runtimeBatchableSameType(from, to) || vm.typeAssignableTo(from, to)
 }
 
 func runtimeBatchableVoidReturn(returnType string) bool {

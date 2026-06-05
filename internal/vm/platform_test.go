@@ -7624,6 +7624,50 @@ System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'batch finish'].size
 	}
 }
 
+func TestExecBatchAllowsConcreteSObjectScopeForSObjectInterface(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return Database.getQueryLocator('SELECT Id, Name FROM Account');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`
+for (Account account : scope) {
+	account.Name = account.Name + ' edited';
+}
+update scope;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'scope');
+Test.startTest();
+Database.executeBatch(new BatchWorker(), 200);
+Test.stopTest();
+System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'scope edited']);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Database.QueryLocator", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Account>"}}, Program: executeProgram},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStopTestDrainsQueueableEnqueuedByBatch(t *testing.T) {
 	startProgram, err := CompileAnonymous(`return new List<SObject>{ new Account(Name = 'scope') };`)
 	if err != nil {

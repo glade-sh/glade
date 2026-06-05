@@ -1,0 +1,419 @@
+{
+  "name": "core-runtime-dom-xmlreader-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:Dom.Document",
+      "symbol": "Dom.Document",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.Document.Document()",
+      "symbol": "Dom.Document.Document()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.Document.createRootElement(String,String,String)",
+      "symbol": "Dom.Document.createRootElement(String,String,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.Document.getRootElement()",
+      "symbol": "Dom.Document.getRootElement()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.Document.load(String)",
+      "symbol": "Dom.Document.load(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.Document.toXmlString()",
+      "symbol": "Dom.Document.toXmlString()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode",
+      "symbol": "Dom.XmlNode",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.addChildElement(String,String,String)",
+      "symbol": "Dom.XmlNode.addChildElement(String,String,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.addCommentNode(String)",
+      "symbol": "Dom.XmlNode.addCommentNode(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.addTextNode(String)",
+      "symbol": "Dom.XmlNode.addTextNode(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getAttribute(String,String)",
+      "symbol": "Dom.XmlNode.getAttribute(String,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getAttributeCount()",
+      "symbol": "Dom.XmlNode.getAttributeCount()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getAttributeKeyAt(Integer)",
+      "symbol": "Dom.XmlNode.getAttributeKeyAt(Integer)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getAttributeKeyNsAt(Integer)",
+      "symbol": "Dom.XmlNode.getAttributeKeyNsAt(Integer)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getAttributeValue(String,String)",
+      "symbol": "Dom.XmlNode.getAttributeValue(String,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getAttributeValueNs(String,String)",
+      "symbol": "Dom.XmlNode.getAttributeValueNs(String,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getChildElement(String,String)",
+      "symbol": "Dom.XmlNode.getChildElement(String,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getChildElements()",
+      "symbol": "Dom.XmlNode.getChildElements()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getChildren()",
+      "symbol": "Dom.XmlNode.getChildren()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getName()",
+      "symbol": "Dom.XmlNode.getName()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getNamespace()",
+      "symbol": "Dom.XmlNode.getNamespace()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getNamespaceFor(String)",
+      "symbol": "Dom.XmlNode.getNamespaceFor(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getNodeType()",
+      "symbol": "Dom.XmlNode.getNodeType()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getParent()",
+      "symbol": "Dom.XmlNode.getParent()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getPrefixFor(String)",
+      "symbol": "Dom.XmlNode.getPrefixFor(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.getText()",
+      "symbol": "Dom.XmlNode.getText()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.removeAttribute(String,String)",
+      "symbol": "Dom.XmlNode.removeAttribute(String,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.removeChild(Dom.XmlNode)",
+      "symbol": "Dom.XmlNode.removeChild(Dom.XmlNode)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.setAttribute(String,String)",
+      "symbol": "Dom.XmlNode.setAttribute(String,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.setAttributeNs(String,String,String,String)",
+      "symbol": "Dom.XmlNode.setAttributeNs(String,String,String,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNode.setNamespace(String,String)",
+      "symbol": "Dom.XmlNode.setNamespace(String,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Dom.XmlNodeType",
+      "symbol": "Dom.XmlNodeType",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader",
+      "symbol": "System.XmlStreamReader",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.XmlStreamReader(String)",
+      "symbol": "System.XmlStreamReader.XmlStreamReader(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getAttributeCount()",
+      "symbol": "System.XmlStreamReader.getAttributeCount()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getAttributeLocalName(Integer)",
+      "symbol": "System.XmlStreamReader.getAttributeLocalName(Integer)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getAttributeNamespace(Integer)",
+      "symbol": "System.XmlStreamReader.getAttributeNamespace(Integer)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getAttributePrefix(Integer)",
+      "symbol": "System.XmlStreamReader.getAttributePrefix(Integer)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getAttributeType(Integer)",
+      "symbol": "System.XmlStreamReader.getAttributeType(Integer)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getAttributeValue(String,String)",
+      "symbol": "System.XmlStreamReader.getAttributeValue(String,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getAttributeValueAt(Integer)",
+      "symbol": "System.XmlStreamReader.getAttributeValueAt(Integer)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getEventType()",
+      "symbol": "System.XmlStreamReader.getEventType()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getLocalName()",
+      "symbol": "System.XmlStreamReader.getLocalName()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getLocation()",
+      "symbol": "System.XmlStreamReader.getLocation()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getNamespace()",
+      "symbol": "System.XmlStreamReader.getNamespace()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getNamespaceCount()",
+      "symbol": "System.XmlStreamReader.getNamespaceCount()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getNamespacePrefix(Integer)",
+      "symbol": "System.XmlStreamReader.getNamespacePrefix(Integer)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getNamespaceURI(String)",
+      "symbol": "System.XmlStreamReader.getNamespaceURI(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getNamespaceURIAt(Integer)",
+      "symbol": "System.XmlStreamReader.getNamespaceURIAt(Integer)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getPIData()",
+      "symbol": "System.XmlStreamReader.getPIData()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getPITarget()",
+      "symbol": "System.XmlStreamReader.getPITarget()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getPrefix()",
+      "symbol": "System.XmlStreamReader.getPrefix()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getText()",
+      "symbol": "System.XmlStreamReader.getText()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.getVersion()",
+      "symbol": "System.XmlStreamReader.getVersion()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.hasName()",
+      "symbol": "System.XmlStreamReader.hasName()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.hasNext()",
+      "symbol": "System.XmlStreamReader.hasNext()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.hasText()",
+      "symbol": "System.XmlStreamReader.hasText()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.isCharacters()",
+      "symbol": "System.XmlStreamReader.isCharacters()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.isEndElement()",
+      "symbol": "System.XmlStreamReader.isEndElement()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.isStartElement()",
+      "symbol": "System.XmlStreamReader.isStartElement()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.isWhiteSpace()",
+      "symbol": "System.XmlStreamReader.isWhiteSpace()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.next()",
+      "symbol": "System.XmlStreamReader.next()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.nextTag()",
+      "symbol": "System.XmlStreamReader.nextTag()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.setCoalescing(Boolean)",
+      "symbol": "System.XmlStreamReader.setCoalescing(Boolean)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.setNamespaceAware(Boolean)",
+      "symbol": "System.XmlStreamReader.setNamespaceAware(Boolean)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:System.XmlStreamReader.toString()",
+      "symbol": "System.XmlStreamReader.toString()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/SquadBDomXmlEvidenceTest.cls",
+      "content": "@isTest private class SquadBDomXmlEvidenceTest { @isTest static void domAndXmlRows() {\nDom.Document doc = new Dom.Document();\ndoc.load('<myprefix:node xmlns:myprefix=\"http://my.name.space\" myprefix:type=\"test\">hello<!--note--><child id=\"c\">there</child></myprefix:node>');\nDom.XmlNode root = doc.getRootElement();\nSystem.assertEquals(Dom.XmlNodeType.ELEMENT, root.getNodeType());\nSystem.assertEquals('node', root.getName());\nSystem.assertEquals('http://my.name.space', root.getNamespace());\nSystem.assertEquals('myprefix', root.getPrefixFor('http://my.name.space'));\nSystem.assertEquals('http://my.name.space', root.getNamespaceFor('myprefix'));\nSystem.assertEquals(1, root.getAttributeCount());\nSystem.assertEquals('type', root.getAttributeKeyAt(0));\nSystem.assertEquals('http://my.name.space', root.getAttributeKeyNsAt(0));\nSystem.assertEquals('test', root.getAttribute('type', 'http://my.name.space'));\nSystem.assertEquals('test', root.getAttributeValue('type', 'http://my.name.space'));\nSystem.assertEquals(null, root.getAttributeValueNs('type', 'http://my.name.space'));\nSystem.assertEquals('hellonote', root.getText());\nList<Dom.XmlNode> children = root.getChildren();\nSystem.assertEquals(3, children.size());\nSystem.assertEquals(1, root.getChildElements().size());\nSystem.assertEquals('there', root.getChildElement('child', null).getText());\nSystem.assertEquals(root, children[2].getParent());\nDom.XmlNode added = root.addChildElement('second', null, null);\nadded.addTextNode('added');\nadded.addCommentNode('comment');\nadded.setAttribute('plain', 'yes');\nadded.setAttributeNs('id', 's', null, null);\nSystem.assertEquals('s', added.getAttributeValue('id', null));\nSystem.assertEquals(true, added.removeAttribute('id', null));\nadded.setNamespace('p', 'urn:p');\nSystem.assertEquals('urn:p', added.getNamespaceFor('p'));\nSystem.assertEquals('p', added.getPrefixFor('urn:p'));\nSystem.assert(doc.toXmlString().contains('<child id=\"c\">there</child>'));\nSystem.assertEquals(true, root.removeChild(added));\nDom.Document built = new Dom.Document();\nDom.XmlNode request = built.createRootElement('request', null, null);\nrequest.setAttribute('xmlns', 'urn:test');\nrequest.addChildElement('name', null, null).addTextNode('local');\nSystem.assertEquals('request', built.getRootElement().getName());\nSystem.assert(built.toXmlString().contains('<name>local</name>'));\nXmlStreamReader reader = new XmlStreamReader('<root xmlns:p=\"urn:p\" p:id=\"7\" name=\"Acme\"><child> text </child></root>');\nSystem.assertEquals(XmlTag.START_DOCUMENT, reader.getEventType());\nSystem.assert(reader.hasNext());\nreader.setCoalescing(true);\nreader.setNamespaceAware(true);\nSystem.assertEquals(1, reader.next());\nSystem.assert(reader.isStartElement());\nSystem.assert(reader.hasName());\nSystem.assertEquals('root', reader.getLocalName());\nSystem.assert(reader.toString().contains('XmlStreamReader')); \nSystem.assertEquals(2, reader.getAttributeCount());\nSystem.assertEquals('id', reader.getAttributeLocalName(0));\nSystem.assertNotEquals(null, reader.getAttributeNamespace(0));\nSystem.assertNotEquals(null, reader.getAttributePrefix(0));\nSystem.assertEquals('CDATA', reader.getAttributeType(0));\nSystem.assertEquals('7', reader.getAttributeValueAt(0));\nSystem.assertEquals('7', reader.getAttributeValue('urn:p', 'id'));\nSystem.assertEquals(1, reader.getNamespaceCount());\nSystem.assertEquals('p', reader.getNamespacePrefix(0));\nSystem.assertEquals('urn:p', reader.getNamespaceURI('p'));\nSystem.assertEquals('urn:p', reader.getNamespaceURIAt(0));\nSystem.assertEquals('', reader.getLocation());\nSystem.assertEquals('', reader.getNamespace());\nSystem.assertEquals('', reader.getPrefix());\nSystem.assertEquals('', reader.getPIData());\nSystem.assertEquals('', reader.getPITarget());\nSystem.assertEquals('1.0', reader.getVersion());\nSystem.assertEquals(1, reader.nextTag());\nSystem.assertEquals(4, reader.next());\nSystem.assert(reader.isCharacters());\nSystem.assert(reader.hasText());\nSystem.assertEquals(false, reader.isWhiteSpace());\nSystem.assertEquals(' text ', reader.getText());\nSystem.assertEquals(2, reader.nextTag());\nSystem.assert(reader.isEndElement());\n} }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

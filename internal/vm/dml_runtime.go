@@ -3377,38 +3377,13 @@ func parentRelationshipObjectIsMissingDeep(value Value) bool {
 }
 
 func (vm *VM) canonicalChildRelationshipName(parentObject, relationship string) string {
-	if vm == nil || vm.Org == nil || strings.TrimSpace(parentObject) == "" || strings.TrimSpace(relationship) == "" {
-		return ""
-	}
-	canonicalParent, ok := vm.resolveObjectName(parentObject)
-	if !ok {
-		canonicalParent = parentObject
-	}
-	for _, childState := range vm.Org.Objects {
-		for _, relation := range childState.Definition.Relations {
-			if !relationshipTargetsObject(relation, canonicalParent) {
-				continue
-			}
-			childRelationshipName := relation.ChildRelationship
-			if childRelationshipName == "" {
-				childRelationshipName = derivedVMChildRelationshipName(childState.Definition)
-			}
-			if childRelationshipName == "" || !vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, relationship) {
-				continue
-			}
-			if strings.HasSuffix(childRelationshipName, "__r") || strings.HasSuffix(relationship, "__r") {
-				return childRelationshipName
-			}
-			if strings.HasSuffix(relation.Field, "__c") {
-				return relationship + "__r"
-			}
-			return relationship
-		}
-	}
-	return ""
+	return vm.childRelationshipLookup(parentObject, relationship).CanonicalRelationship
 }
 
 func (vm *VM) childRelationshipListType(parentObject, relationship string, records []storage.Record) string {
+	if lookup := vm.childRelationshipLookup(parentObject, relationship); lookup.ChildType != "" {
+		return lookup.ChildType
+	}
 	if vm == nil || vm.Org == nil || strings.TrimSpace(parentObject) == "" || strings.TrimSpace(relationship) == "" {
 		for _, record := range records {
 			if strings.TrimSpace(record.Object) != "" {
@@ -3417,10 +3392,35 @@ func (vm *VM) childRelationshipListType(parentObject, relationship string, recor
 		}
 		return ""
 	}
+	for _, record := range records {
+		if strings.TrimSpace(record.Object) != "" {
+			return record.Object
+		}
+	}
+	return ""
+}
+
+func (vm *VM) childRelationshipLookup(parentObject, relationship string) childRelationshipLookup {
+	if vm == nil || vm.Org == nil {
+		return childRelationshipLookup{}
+	}
+	parentObject = strings.TrimSpace(parentObject)
+	relationship = strings.TrimSpace(relationship)
+	if parentObject == "" || relationship == "" {
+		return childRelationshipLookup{}
+	}
 	canonicalParent, ok := vm.resolveObjectName(parentObject)
 	if !ok {
 		canonicalParent = parentObject
 	}
+	if vm.childRelationshipLookupCache == nil {
+		vm.childRelationshipLookupCache = newChildRelationshipLookupCache()
+	}
+	key := childRelationshipLookupKey{ParentObject: canonicalParent, Relationship: relationship}
+	if cached, ok := vm.childRelationshipLookupCache.load(key); ok {
+		return cached
+	}
+	lookup := childRelationshipLookup{}
 	matches := make([]string, 0, 1)
 	for childName, childState := range vm.Org.Objects {
 		for _, relation := range childState.Definition.Relations {
@@ -3433,18 +3433,23 @@ func (vm *VM) childRelationshipListType(parentObject, relationship string, recor
 			}
 			if childRelationshipName != "" && vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, relationship) {
 				matches = appendUniqueStringFold(matches, childName)
+				if lookup.CanonicalRelationship == "" {
+					switch {
+					case strings.HasSuffix(childRelationshipName, "__r") || strings.HasSuffix(relationship, "__r"):
+						lookup.CanonicalRelationship = childRelationshipName
+					case strings.HasSuffix(relation.Field, "__c"):
+						lookup.CanonicalRelationship = relationship + "__r"
+					default:
+						lookup.CanonicalRelationship = relationship
+					}
+				}
 			}
 		}
 	}
 	if childName := vm.bestChildRelationshipObject(matches); childName != "" {
-		return childName
+		lookup.ChildType = childName
 	}
-	for _, record := range records {
-		if strings.TrimSpace(record.Object) != "" {
-			return record.Object
-		}
-	}
-	return ""
+	return vm.childRelationshipLookupCache.store(key, lookup)
 }
 
 func isSObjectSystemField(field string) bool {

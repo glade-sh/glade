@@ -535,7 +535,7 @@ func TestCloneRuntimeSharesChildRelationshipCachesForSameSchemaStamp(t *testing.
 	base.SetOrg(&org)
 	clone := base.CloneRuntime(nil)
 
-	if clone.childRelCache == nil || clone.jsonChildRelTypeCache == nil {
+	if clone.childRelCache == nil || clone.jsonChildRelTypeCache == nil || clone.childRelationshipLookupCache == nil {
 		t.Fatalf("clone relationship caches were not initialized")
 	}
 	if clone.childRelCache != base.childRelCache {
@@ -543,6 +543,9 @@ func TestCloneRuntimeSharesChildRelationshipCachesForSameSchemaStamp(t *testing.
 	}
 	if clone.jsonChildRelTypeCache != base.jsonChildRelTypeCache {
 		t.Fatalf("CloneRuntime did not share immutable JSON child relationship cache")
+	}
+	if clone.childRelationshipLookupCache != base.childRelationshipLookupCache {
+		t.Fatalf("CloneRuntime did not share immutable child relationship lookup cache")
 	}
 }
 
@@ -569,6 +572,7 @@ func TestCloneRuntimeForksChildRelationshipCachesWhenSchemaStampChanges(t *testi
 	clone := base.CloneRuntime(nil)
 	sharedChildRelCache := clone.childRelCache
 	sharedJSONChildRelTypeCache := clone.jsonChildRelTypeCache
+	sharedChildRelationshipLookupCache := clone.childRelationshipLookupCache
 	clone.SetOrg(&second)
 
 	if clone.childRelCache == sharedChildRelCache {
@@ -576,6 +580,9 @@ func TestCloneRuntimeForksChildRelationshipCachesWhenSchemaStampChanges(t *testi
 	}
 	if clone.jsonChildRelTypeCache == sharedJSONChildRelTypeCache {
 		t.Fatalf("SetOrg kept shared JSON child relationship cache after schema stamp changed")
+	}
+	if clone.childRelationshipLookupCache == sharedChildRelationshipLookupCache {
+		t.Fatalf("SetOrg kept shared child relationship lookup cache after schema stamp changed")
 	}
 }
 
@@ -626,6 +633,119 @@ func TestDescribeChildRelationshipCacheReturnsIsolatedValues(t *testing.T) {
 	childName := childType.Fields["object"]
 	if childName.Text != "Child__c" {
 		t.Fatalf("cached child relationship childSObject = %q, want Child__c", childName.Text)
+	}
+}
+
+func TestDescribeSObjectValueDefersChildRelationships(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	org.Objects["Invoice__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Invoice__c",
+			Fields: map[string]storage.Field{
+				"Account__c": {
+					APIName:               "Account__c",
+					Type:                  storage.FieldReference,
+					ReferenceTo:           []string{"Account"},
+					RelationshipName:      "Account__r",
+					ChildRelationshipName: "Invoices__r",
+				},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Account__c",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account__r",
+				ChildRelationship:  "Invoices__r",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	name, definition, ok := machine.describeObjectDefinition("Account")
+	if !ok {
+		t.Fatalf("Account definition not found")
+	}
+
+	describe := machine.describeSObjectValue(name, definition)
+	if _, ok := describe.Fields["childRelationships"]; ok {
+		t.Fatalf("describeSObjectValue materialized childRelationships before getChildRelationships")
+	}
+	if machine.childRelCache != nil {
+		machine.childRelCache.mu.RLock()
+		entries := len(machine.childRelCache.entries)
+		machine.childRelCache.mu.RUnlock()
+		if entries != 0 {
+			t.Fatalf("child relationship cache entries = %d, want 0 before getChildRelationships", entries)
+		}
+	}
+
+	value, updated, _, handled, err := machine.callPlatformObjectMember(describe, "getChildRelationships", nil, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled {
+		t.Fatalf("getChildRelationships was not handled")
+	}
+	if value.Kind != ValueList {
+		t.Fatalf("getChildRelationships returned %s, want list", value.Kind)
+	}
+	found := false
+	for _, relationship := range value.List {
+		if relationship.Kind != ValueObject {
+			continue
+		}
+		name := relationship.Fields["relationshipName"]
+		if name.Kind == ValueString && name.Text == "Invoices__r" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("getChildRelationships did not include Invoices__r")
+	}
+	if _, ok := updated.Fields["childRelationships"]; !ok {
+		t.Fatalf("getChildRelationships did not cache materialized list on the describe value")
+	}
+}
+
+func TestSObjectFieldMapChildRelationshipLookupDoesNotMaterializeDescribeValues(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	org.Objects["Invoice__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Invoice__c",
+			Fields: map[string]storage.Field{
+				"Account__c": {
+					APIName:               "Account__c",
+					Type:                  storage.FieldReference,
+					ReferenceTo:           []string{"Account"},
+					RelationshipName:      "Account__r",
+					ChildRelationshipName: "Invoices__r",
+				},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Account__c",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account__r",
+				ChildRelationship:  "Invoices__r",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+
+	if !machine.sObjectFieldMapKeyIsChildRelationship("Account", "Invoices__r") {
+		t.Fatalf("Invoices__r should be recognized as a child relationship")
+	}
+	if machine.childRelCache != nil {
+		machine.childRelCache.mu.RLock()
+		entries := len(machine.childRelCache.entries)
+		machine.childRelCache.mu.RUnlock()
+		if entries != 0 {
+			t.Fatalf("child relationship cache entries = %d, want 0 for field-map lookup", entries)
+		}
 	}
 }
 

@@ -1,0 +1,449 @@
+{
+  "name": "core-runtime-cache-partition-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:Cache.Org.contains(String)",
+      "symbol": "Cache.Org.contains(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.get(String)",
+      "symbol": "Cache.Org.get(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.get(Type,String)",
+      "symbol": "Cache.Org.get(Type,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.getAvgGetSize()",
+      "symbol": "Cache.Org.getAvgGetSize()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.getAvgGetTime()",
+      "symbol": "Cache.Org.getAvgGetTime()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.getAvgValueSize()",
+      "symbol": "Cache.Org.getAvgValueSize()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.getCapacity()",
+      "symbol": "Cache.Org.getCapacity()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.getKeys()",
+      "symbol": "Cache.Org.getKeys()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.getMaxGetSize()",
+      "symbol": "Cache.Org.getMaxGetSize()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.getMaxGetTime()",
+      "symbol": "Cache.Org.getMaxGetTime()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.getMaxValueSize()",
+      "symbol": "Cache.Org.getMaxValueSize()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.getMissRate()",
+      "symbol": "Cache.Org.getMissRate()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.getName()",
+      "symbol": "Cache.Org.getName()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.getNumKeys()",
+      "symbol": "Cache.Org.getNumKeys()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.getPartition(String)",
+      "symbol": "Cache.Org.getPartition(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.isAvailable()",
+      "symbol": "Cache.Org.isAvailable()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.put(String,Object)",
+      "symbol": "Cache.Org.put(String,Object)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.put(String,Object,Cache.Visibility)",
+      "symbol": "Cache.Org.put(String,Object,Cache.Visibility)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.remove(String)",
+      "symbol": "Cache.Org.remove(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org.remove(Type,String)",
+      "symbol": "Cache.Org.remove(Type,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.contains(String)",
+      "symbol": "Cache.Partition.contains(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.createFullyQualifiedKey(String,String,String)",
+      "symbol": "Cache.Partition.createFullyQualifiedKey(String,String,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.createFullyQualifiedPartition(String,String)",
+      "symbol": "Cache.Partition.createFullyQualifiedPartition(String,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.get(String)",
+      "symbol": "Cache.Partition.get(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.get(Type,String)",
+      "symbol": "Cache.Partition.get(Type,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.getAvgGetSize()",
+      "symbol": "Cache.Partition.getAvgGetSize()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.getAvgGetTime()",
+      "symbol": "Cache.Partition.getAvgGetTime()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.getAvgValueSize()",
+      "symbol": "Cache.Partition.getAvgValueSize()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.getCapacity()",
+      "symbol": "Cache.Partition.getCapacity()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.getKeys()",
+      "symbol": "Cache.Partition.getKeys()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.getMaxGetSize()",
+      "symbol": "Cache.Partition.getMaxGetSize()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.getMaxGetTime()",
+      "symbol": "Cache.Partition.getMaxGetTime()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.getMaxValueSize()",
+      "symbol": "Cache.Partition.getMaxValueSize()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.getMissRate()",
+      "symbol": "Cache.Partition.getMissRate()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.getName()",
+      "symbol": "Cache.Partition.getName()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.getNumKeys()",
+      "symbol": "Cache.Partition.getNumKeys()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.isAvailable()",
+      "symbol": "Cache.Partition.isAvailable()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.put(String,Object)",
+      "symbol": "Cache.Partition.put(String,Object)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.put(String,Object,Cache.Visibility)",
+      "symbol": "Cache.Partition.put(String,Object,Cache.Visibility)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.remove(String)",
+      "symbol": "Cache.Partition.remove(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.remove(Type,String)",
+      "symbol": "Cache.Partition.remove(Type,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.validateKey(Boolean,String)",
+      "symbol": "Cache.Partition.validateKey(Boolean,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.validateKeyValue(Boolean,String,Object)",
+      "symbol": "Cache.Partition.validateKeyValue(Boolean,String,Object)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.validateKeys(Boolean,Set<String>)",
+      "symbol": "Cache.Partition.validateKeys(Boolean,Set<String>)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.validatePartitionName(String)",
+      "symbol": "Cache.Partition.validatePartitionName(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.contains(String)",
+      "symbol": "Cache.Session.contains(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.get(String)",
+      "symbol": "Cache.Session.get(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.get(Type,String)",
+      "symbol": "Cache.Session.get(Type,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.getAvgGetSize()",
+      "symbol": "Cache.Session.getAvgGetSize()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.getAvgGetTime()",
+      "symbol": "Cache.Session.getAvgGetTime()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.getAvgValueSize()",
+      "symbol": "Cache.Session.getAvgValueSize()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.getCapacity()",
+      "symbol": "Cache.Session.getCapacity()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.getKeys()",
+      "symbol": "Cache.Session.getKeys()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.getMaxGetSize()",
+      "symbol": "Cache.Session.getMaxGetSize()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.getMaxGetTime()",
+      "symbol": "Cache.Session.getMaxGetTime()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.getMaxValueSize()",
+      "symbol": "Cache.Session.getMaxValueSize()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.getMissRate()",
+      "symbol": "Cache.Session.getMissRate()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.getName()",
+      "symbol": "Cache.Session.getName()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.getNumKeys()",
+      "symbol": "Cache.Session.getNumKeys()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.getPartition(String)",
+      "symbol": "Cache.Session.getPartition(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.isAvailable()",
+      "symbol": "Cache.Session.isAvailable()",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.put(String,Object)",
+      "symbol": "Cache.Session.put(String,Object)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.put(String,Object,Cache.Visibility)",
+      "symbol": "Cache.Session.put(String,Object,Cache.Visibility)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.remove(String)",
+      "symbol": "Cache.Session.remove(String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session.remove(Type,String)",
+      "symbol": "Cache.Session.remove(Type,String)",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Org",
+      "symbol": "Cache.Org",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition",
+      "symbol": "Cache.OrgPartition",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition",
+      "symbol": "Cache.Partition",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Session",
+      "symbol": "Cache.Session",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition",
+      "symbol": "Cache.SessionPartition",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.Visibility",
+      "symbol": "Cache.Visibility",
+      "kind": "test",
+      "notes": "Focused Squad B fixture evidence for existing local Apex runtime behavior."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/SquadBCacheEvidenceTest.cls",
+      "content": "@isTest private class SquadBCacheEvidenceTest { @isTest static void cacheRows() {\nCache.OrgPartition orgCache = Cache.Org.getPartition('local');\nSystem.assertEquals(null, orgCache.get('missing'));\norgCache.put('name', 'Acme');\norgCache.put('namespaceVisible', 'Scoped', Cache.Visibility.NAMESPACE);\norgCache.put('visible', 'Trail', 60, Cache.Visibility.ALL, false);\nSystem.assert(orgCache.contains('name'));\nSystem.assertEquals('Acme', (String) orgCache.get('name'));\nSystem.assertEquals('Scoped', (String) orgCache.get('namespaceVisible'));\nSystem.assertEquals('Trail', (String) orgCache.get('visible'));\nSet<String> orgKeys = orgCache.getKeys();\nSystem.assertEquals(3, orgKeys.size());\nSystem.assert(orgKeys.contains('name'));\nSystem.assert(orgKeys.contains('namespaceVisible'));\nSystem.assert(orgKeys.contains('visible'));\nSystem.assertEquals(3, orgCache.getNumKeys());\nSystem.assertEquals('Acme', (String) orgCache.remove('name'));\nSystem.assert(!orgCache.contains('name'));\nSystem.assertEquals(2, orgCache.getNumKeys());\nSystem.assert(Cache.Org.isAvailable());\nSystem.assert(Cache.Org.getCapacity() > 0);\nSystem.assertEquals('local.default', Cache.Org.getName());\nSystem.assertEquals(0, Cache.Org.getAvgGetSize());\nSystem.assertEquals(0, Cache.Org.getAvgGetTime());\nSystem.assertEquals(0, Cache.Org.getAvgValueSize());\nSystem.assertEquals(0, Cache.Org.getMaxGetSize());\nSystem.assertEquals(0, Cache.Org.getMaxGetTime());\nSystem.assertEquals(0, Cache.Org.getMaxValueSize());\nSystem.assertEquals(0, Cache.Org.getMissRate());\nSystem.assertEquals('local.default.account', orgCache.createFullyQualifiedKey('local', 'default', 'account'));\nSystem.assertEquals('local.default', orgCache.createFullyQualifiedPartition('local', 'default'));\norgCache.validatePartitionName('default');\norgCache.validateKey(false, 'account');\norgCache.validateKeyValue(false, 'account', 'value');\norgCache.validateKeys(false, new Set<String>{'account'});\nCache.Org.put('defaulted', 'org-default');\nCache.Org.put('visible-default', 'org-visible', Cache.Visibility.ALL);\nSystem.assert(Cache.Org.contains('defaulted'));\nSystem.assertEquals('org-default', (String) Cache.Org.get('defaulted'));\nSystem.assertEquals('org-visible', (String) Cache.Org.get('visible-default'));\nSystem.assert(Cache.Org.getKeys().contains('defaulted'));\nSystem.assertEquals('org-default', (String) Cache.Org.getPartition('default').get('defaulted'));\nSystem.assertEquals('org-default', (String) Cache.Org.remove('defaulted'));\nSystem.assertEquals('org-visible', (String) Cache.Org.remove('visible-default'));\nCache.SessionPartition sessionCache = Cache.Session.getPartition('local');\nCache.Partition generalSession = sessionCache;\nCache.Partition generalOrg = orgCache;\nsessionCache.put('count', 7, 60);\ngeneralSession.put('general', 'session');\ngeneralSession.put('generalVisible', 'session-visible', Cache.Visibility.ALL);\ngeneralOrg.put('general', 'org');\nSystem.assertEquals(7, (Integer) sessionCache.get('count'));\nSystem.assertEquals('session', (String) generalSession.get('general'));\nSystem.assertEquals('org', (String) generalOrg.get('general'));\nSystem.assert(generalSession.contains('general'));\nSystem.assert(generalSession.getKeys().contains('general'));\nSystem.assert(generalSession.getNumKeys() >= 3);\nSystem.assert(generalSession.isAvailable());\nSystem.assert(generalSession.getCapacity() > 0);\nSystem.assertEquals(0, generalSession.getAvgGetSize());\nSystem.assertEquals(0, generalSession.getAvgGetTime());\nSystem.assertEquals(0, generalSession.getAvgValueSize());\nSystem.assertEquals(0, generalSession.getMaxGetSize());\nSystem.assertEquals(0, generalSession.getMaxGetTime());\nSystem.assertEquals(0, generalSession.getMaxValueSize());\nSystem.assertEquals(0, generalSession.getMissRate());\nSystem.assertNotEquals(null, generalSession.getName());\nSystem.assertEquals(null, Cache.Session.get(String.class, 'missing'));\nCache.Session.put('session-defaulted', 'session-default');\nCache.Session.put('session-visible', 'session-visible', Cache.Visibility.ALL);\nSystem.assert(Cache.Session.contains('session-defaulted'));\nSystem.assertEquals('session-default', (String) Cache.Session.get('session-defaulted'));\nSystem.assertEquals('session-visible', (String) Cache.Session.get('session-visible'));\nSystem.assert(Cache.Session.getKeys().contains('session-defaulted'));\nSystem.assert(Cache.Session.getNumKeys() >= 2);\nSystem.assert(Cache.Session.isAvailable());\nSystem.assert(Cache.Session.getCapacity() > 0);\nSystem.assertNotEquals(null, Cache.Session.getName());\nSystem.assertEquals(0, Cache.Session.getAvgGetSize());\nSystem.assertEquals(0, Cache.Session.getAvgGetTime());\nSystem.assertEquals(0, Cache.Session.getAvgValueSize());\nSystem.assertEquals(0, Cache.Session.getMaxGetSize());\nSystem.assertEquals(0, Cache.Session.getMaxGetTime());\nSystem.assertEquals(0, Cache.Session.getMaxValueSize());\nSystem.assertEquals(0, Cache.Session.getMissRate());\nSystem.assertEquals('session-default', (String) Cache.Session.remove('session-defaulted'));\nSystem.assertEquals('session-visible', (String) Cache.Session.remove('session-visible'));\n} }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

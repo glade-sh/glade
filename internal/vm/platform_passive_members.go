@@ -2542,7 +2542,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getChildRelationships expects 0 arguments")
 			}
-			return receiver.Fields["childRelationships"], receiver, false, true, nil
+			value, err := vm.describeChildRelationshipsForDescribe(&receiver)
+			return value, receiver, false, true, err
 		case "getSObjectType", "getSobjectType":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.%s expects 0 arguments", method)
