@@ -277,6 +277,39 @@ func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys
 		if name == "processsave" {
 			return StubBehaviorImplemented, "local async DML invokes DataSource.AsyncSaveCallback with the materialized SaveResult in tests", true
 		}
+	case "JSONException":
+		if name == "getinaccessiblefields" {
+			return StubBehaviorUnsupported, "local runtime rejects JSONException.getInaccessibleFields with TypeException; public docs describe getInaccessibleFields on QueryException", true
+		}
+		if name == "initcause" {
+			return StubBehaviorUnsupported, "local runtime rejects JSONException.initCause with NullPointerException; existing VM coverage preserves that specific exception contract", true
+		}
+	case "Invocable.Action.Result":
+		switch name {
+		case "clone", "getaction", "geterrors", "getinvocationparameters", "getoutputparameters", "issuccess":
+			return StubBehaviorImplemented, "local Invocable.Action.invoke returns no-op Result DTOs with action, error, invocation, output, and success accessors", true
+		}
+	case "Invocable.Action":
+		if name == "getdescribe" {
+			return StubBehaviorImplemented, "local Invocable.Action.getDescribe returns a no-op DescribeResult DTO for local tests", true
+		}
+	case "Invocable.Action.DescribeResult":
+		switch name {
+		case "getaction", "getallowstransactioncontrol", "getcapabilitytypes", "getcategory",
+			"getconfigurationeditor", "getdescription", "getgenerictypes", "gethascallout",
+			"gethassystemgeneratedoutput", "geticonid", "geticonname", "getinputs", "getlabel",
+			"getmethoddescription", "getmethodlabel", "getmethodname", "getname", "getoutputs",
+			"gettargetentityname", "gettype":
+			return StubBehaviorImplemented, "local Invocable.Action.getDescribe materializes deterministic DescribeResult accessors", true
+		}
+	case "Invocable.Action.InputParameter":
+		switch name {
+		case "getadditionalattributes", "getapexclass", "getbytelength", "getconfiguration",
+			"getdefaultvalue", "getdescription", "getlabel", "getmaxoccurs", "getname",
+			"getpicklistvalues", "getplaceholdertext", "getrequired", "getsobjecttype",
+			"getsetupreferencetype", "gettoolingtype", "gettype":
+			return StubBehaviorImplemented, "local Invocable.Action.getDescribe derives InputParameter DTOs from invocation parameter maps for local tests", true
+		}
 	case "Schema.DataCategoryGroupSobjectTypePair":
 		switch name {
 		case "setdatacategorygroupname", "setsobject":

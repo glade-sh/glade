@@ -2514,6 +2514,80 @@ try {
 	}
 }
 
+func TestPageReferenceApexPageRecordConstructorUsesPageName(t *testing.T) {
+	program, err := CompileAnonymous(`
+SObject pageRecord = ApexPage.SObjectType.newSObject();
+pageRecord.put('Name', 'LocalPage');
+PageReference page = new PageReference(pageRecord);
+System.assertEquals('/apex/LocalPage', page.getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPageReferenceAnchorAccessorsUpdateURL(t *testing.T) {
+	program, err := CompileAnonymous(`
+PageReference page = new PageReference('/apex/Local?id=1#top');
+System.assertEquals('top', page.getAnchor());
+PageReference returned = page.setAnchor('bottom');
+System.assertEquals(page, returned);
+System.assertEquals('bottom', page.getAnchor());
+System.assertEquals('/apex/Local?id=1#bottom', page.getUrl());
+System.assertEquals(null, new PageReference('/apex/Local').getAnchor());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPageReferenceRedirectAccessorReturnsReceiver(t *testing.T) {
+	program, err := CompileAnonymous(`
+PageReference page = new PageReference('/apex/Local');
+System.assertEquals(false, page.getRedirect());
+PageReference returned = page.setRedirect(true);
+System.assertEquals(page, returned);
+System.assertEquals(true, page.getRedirect());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPageReferenceRedirectCodeAccessors(t *testing.T) {
+	program, err := CompileAnonymous(`
+PageReference page = new PageReference('/apex/Local');
+System.assertEquals(0, page.getRedirectCode());
+PageReference returned = page.setRedirectCode(301);
+System.assertEquals(page, returned);
+System.assertEquals(301, page.getRedirectCode());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestGeneratedAuthConfigurationConstructorAcceptsCommunityUrlAndStartUrl(t *testing.T) {
 	machine := New(nil)
 	value, handled, err := machine.constructGeneratedPlatformValue("Auth.AuthConfiguration", []Value{String("https://local.example"), String("")}, nil)
@@ -12012,6 +12086,7 @@ func TestExecStaticResourceCalloutMocks(t *testing.T) {
 StaticResourceCalloutMock singleMock = new StaticResourceCalloutMock();
 singleMock.setStaticResource('Single_Response');
 singleMock.setStatusCode(203);
+singleMock.setStatus('Single Status');
 singleMock.setHeader('Content-Type', 'application/json');
 Test.setMock('HttpCalloutMock', singleMock);
 HttpRequest firstReq = new HttpRequest();
@@ -12019,6 +12094,7 @@ firstReq.setEndpoint('https://example.test/single');
 firstReq.setMethod('GET');
 HttpResponse first = new Http().send(firstReq);
 System.assertEquals(203, first.getStatusCode());
+System.assertEquals('Single Status', first.getStatus());
 System.assertEquals('{"single":true}', first.getBody());
 System.assertEquals('application/json', first.getHeader('content-type'));
 
@@ -12026,6 +12102,7 @@ MultiStaticResourceCalloutMock multiMock = new MultiStaticResourceCalloutMock();
 multiMock.setStaticResource('https://example.test/a', 'Response_A');
 multiMock.setStaticResource('https://example.test/b', 'Response_B');
 multiMock.setStatusCode(204);
+multiMock.setStatus('Multi Status');
 Test.setMock('HttpCalloutMock', multiMock);
 HttpRequest reqA = new HttpRequest();
 reqA.setEndpoint('https://example.test/a');
@@ -12036,6 +12113,7 @@ reqB.setEndpoint('https://example.test/b');
 reqB.setMethod('GET');
 HttpResponse second = new Http().send(reqB);
 System.assertEquals(204, second.getStatusCode());
+System.assertEquals('Multi Status', second.getStatus());
 System.assertEquals('B-body', second.getBody());
 `)
 	if err != nil {

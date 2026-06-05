@@ -89,6 +89,35 @@ func TestBuildGladeSnapshotUsesPropertyIDWithoutCallParens(t *testing.T) {
 	}
 }
 
+func TestBuildGladeSnapshotIncludesMessagingLocalTestDTOShapes(t *testing.T) {
+	rows := BuildGladeSnapshot()
+	byID := rowsByID(rows)
+	for _, id := range []string{
+		ApexMemberID("Messaging", "Email", "setTemplateID", []string{"Id"}),
+		ApexTypeID("Messaging", "InboundEmail.AuthenticationResult"),
+		ApexMemberID("Messaging", "InboundEmail.AuthenticationResult", "InboundEmail.AuthenticationResult", []string{}),
+		ApexMemberID("Messaging", "InboundEmail.AuthenticationResult", "authenticationResultFields", nil),
+		ApexMemberID("Messaging", "InboundEmail.AuthenticationResult", "method", nil),
+		ApexMemberID("Messaging", "InboundEmail.AuthenticationResult", "result", nil),
+		ApexTypeID("Messaging", "InboundEmail.AuthenticationResultField"),
+		ApexMemberID("Messaging", "InboundEmail.AuthenticationResultField", "InboundEmail.AuthenticationResultField", []string{}),
+		ApexMemberID("Messaging", "InboundEmail.AuthenticationResultField", "name", nil),
+		ApexMemberID("Messaging", "InboundEmail.AuthenticationResultField", "value", nil),
+		ApexMemberID("Messaging", "InboundEmail.BinaryAttachment", "InboundEmail.BinaryAttachment", []string{}),
+		ApexMemberID("Messaging", "InboundEmail.TextAttachment", "InboundEmail.TextAttachment", []string{}),
+		ApexMemberID("Messaging", "SingleEmailMessage", "setDocumentAttachments", []string{"List<Id>"}),
+		ApexMemberID("Messaging", "SingleEmailMessage", "setFileAttachments", []string{"List<EmailFileAttachment>"}),
+	} {
+		row, ok := byID[id]
+		if !ok {
+			t.Fatalf("missing Messaging local-test row %s", id)
+		}
+		if row.GladeShape == ShapeAbsent {
+			t.Fatalf("Messaging local-test row %s has absent shape", id)
+		}
+	}
+}
+
 func TestBuildGladeSnapshotUsesSchemaDescribePropertyIDs(t *testing.T) {
 	rows := BuildGladeSnapshot()
 	byID := rowsByID(rows)

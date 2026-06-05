@@ -1,0 +1,29 @@
+{
+  "name": "core-runtime-page-reference-record-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.PageReference.PageReference(Object)",
+      "symbol": "PageReference.PageReference",
+      "kind": "exec",
+      "notes": "The record constructor accepts an ApexPage sObject record and creates a Visualforce page reference for that page."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "SObject pageRecord = ApexPage.SObjectType.newSObject();\npageRecord.put('Name', 'LocalPage');\nPageReference page = new PageReference(pageRecord);\nSystem.assertNotEquals(null, page);\nSystem.assertEquals('/apex/LocalPage', page.getUrl());"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "SObject pageRecord = ApexPage.SObjectType.newSObject();\npageRecord.put('Name', 'LocalPage');\nPageReference page = new PageReference(pageRecord);\nSystem.assertNotEquals(null, page);\nSystem.assertEquals('/apex/LocalPage', page.getUrl());"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

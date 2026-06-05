@@ -932,6 +932,21 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "SoqlStubProvider.handleSoqlQuery(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "ExternalServiceTest.sendCallback(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "TestAsyncHttp.executeHttpRequest(", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.getDescribe()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.DescribeResult.getAction()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.DescribeResult.getInputs()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.DescribeResult.getOutputs()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.DescribeResult.getType()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.InputParameter.getAdditionalAttributes()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.InputParameter.getName()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.InputParameter.getToolingType()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.InputParameter.getType()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.Result.clone()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.Result.getAction()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.Result.getErrors()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.Result.getInvocationParameters()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.Result.getOutputParameters()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "Invocable.Action.Result.isSuccess()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "functions.FunctionInvokeMock.respond(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "functions.MockFunctionInvocationFactory.createSuccessResponse(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "functions.Function.get(", StubBehaviorUnsupported)
@@ -963,8 +978,21 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "dom.XmlNode.getNamespaceFor(String)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "dom.XmlNode.removeAttribute(String,String)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Exception.getInaccessibleFields()", StubBehaviorImplemented)
+	assertStubBehaviorExact(t, entries, "JSONException.getInaccessibleFields()", StubBehaviorUnsupported)
+	assertStubBehaviorExact(t, entries, "JSONException.initCause(Exception)", StubBehaviorUnsupported)
 	assertStubBehaviorPrefix(t, entries, "DmlException.getNumDml()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "EmailException.getNumDml()", StubBehaviorUnsupported)
+}
+
+func assertStubBehaviorExact(t *testing.T, entries map[string]StubBehaviorEntry, id string, want StubBehaviorStatus) {
+	t.Helper()
+	entry, ok := entries[id]
+	if !ok {
+		t.Fatalf("missing stub behavior entry %q", id)
+	}
+	if entry.Status != want {
+		t.Fatalf("%s status = %q, want %q", entry.ID, entry.Status, want)
+	}
 }
 
 func assertStubBehaviorPrefix(t *testing.T, entries map[string]StubBehaviorEntry, prefix string, want StubBehaviorStatus) {

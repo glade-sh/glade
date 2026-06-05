@@ -1,0 +1,38 @@
+{
+  "name": "core-runtime-apexpages-standard-set-controller-evidence",
+  "evidence": [
+    {"surfaceId": "apex:ApexPages.StandardSetController.cancel()", "symbol": "ApexPages.StandardSetController.cancel()", "kind": "test"},
+    {"surfaceId": "apex:ApexPages.StandardSetController.first()", "symbol": "ApexPages.StandardSetController.first()", "kind": "test"},
+    {"surfaceId": "apex:ApexPages.StandardSetController.getCompleteResult()", "symbol": "ApexPages.StandardSetController.getCompleteResult()", "kind": "test"},
+    {"surfaceId": "apex:ApexPages.StandardSetController.getFilterId()", "symbol": "ApexPages.StandardSetController.getFilterId()", "kind": "test"},
+    {"surfaceId": "apex:ApexPages.StandardSetController.getListViewOptions()", "symbol": "ApexPages.StandardSetController.getListViewOptions()", "kind": "test"},
+    {"surfaceId": "apex:ApexPages.StandardSetController.getPageSize()", "symbol": "ApexPages.StandardSetController.getPageSize()", "kind": "test"},
+    {"surfaceId": "apex:ApexPages.StandardSetController.getRecord()", "symbol": "ApexPages.StandardSetController.getRecord()", "kind": "test"},
+    {"surfaceId": "apex:ApexPages.StandardSetController.getResultSize()", "symbol": "ApexPages.StandardSetController.getResultSize()", "kind": "test"},
+    {"surfaceId": "apex:ApexPages.StandardSetController.getSelected()", "symbol": "ApexPages.StandardSetController.getSelected()", "kind": "test"},
+    {"surfaceId": "apex:ApexPages.StandardSetController.last()", "symbol": "ApexPages.StandardSetController.last()", "kind": "test"},
+    {"surfaceId": "apex:ApexPages.StandardSetController.previous()", "symbol": "ApexPages.StandardSetController.previous()", "kind": "test"},
+    {"surfaceId": "apex:ApexPages.StandardSetController.save()", "symbol": "ApexPages.StandardSetController.save()", "kind": "test"},
+    {"surfaceId": "apex:ApexPages.StandardSetController.setFilterID(String)", "symbol": "ApexPages.StandardSetController.setFilterID(String)", "kind": "test"},
+    {"surfaceId": "apex:ApexPages.StandardSetController.setSelected(List<Object>)", "symbol": "ApexPages.StandardSetController.setSelected(List<Object>)", "kind": "test"},
+    {"surfaceId": "apex:ApexPages.StandardSetController.setpageNumber(Integer)", "symbol": "ApexPages.StandardSetController.setPageNumber(Integer)", "kind": "test"}
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/CoreRuntimeApexPagesStandardSetControllerEvidenceTest.cls",
+      "content": "@isTest private class CoreRuntimeApexPagesStandardSetControllerEvidenceTest { @isTest static void rows() { Account first = new Account(Name = 'First'); Account second = new Account(Name = 'Second'); insert new List<Account>{first, second}; ApexPages.StandardSetController controller = new ApexPages.StandardSetController(new List<Account>{first, second}); System.assertEquals(2, controller.getResultSize()); System.assertEquals(first, controller.getRecord()); System.assertEquals(0, controller.getListViewOptions().size()); System.assertEquals(true, controller.getCompleteResult()); controller.setFilterID('00B000000000001'); System.assertEquals('00B000000000001', controller.getFilterId()); controller.setPageSize(1); System.assertEquals(1, controller.getPageSize()); controller.setpageNumber(2); System.assertEquals(second, controller.getRecord()); controller.previous(); System.assertEquals(first, controller.getRecord()); controller.last(); System.assertEquals(second, controller.getRecord()); controller.first(); System.assertEquals(first, controller.getRecord()); List<SObject> selected = new List<SObject>{second}; controller.setSelected(selected); System.assertEquals(1, controller.getSelected().size()); PageReference cancelled = controller.cancel(); System.assertEquals('', cancelled.getUrl()); first.Name = 'First Saved'; PageReference saved = controller.save(); System.assertEquals('', saved.getUrl()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

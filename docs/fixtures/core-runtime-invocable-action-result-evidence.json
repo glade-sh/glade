@@ -1,0 +1,59 @@
+{
+  "name": "core-runtime-invocable-action-result-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:Invocable.Action.Result.clone()",
+      "symbol": "Invocable.Action.Result.clone",
+      "kind": "test",
+      "notes": "Public Invocable.Action.Result docs expose clone() as an Object copy; the local no-op result can be cloned through the object clone path."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.Result.getAction()",
+      "symbol": "Invocable.Action.Result.getAction",
+      "kind": "test",
+      "notes": "Public Invocable.Action.Result docs expose the action that produced the local no-op result."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.Result.getErrors()",
+      "symbol": "Invocable.Action.Result.getErrors",
+      "kind": "test",
+      "notes": "Public Invocable.Action.Result docs expose returned errors; the local no-op invocation returns an empty list."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.Result.getInvocationParameters()",
+      "symbol": "Invocable.Action.Result.getInvocationParameters",
+      "kind": "test",
+      "notes": "Public Invocable.Action.Result docs expose invocation parameters; the local no-op result keeps the input map."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.Result.getOutputParameters()",
+      "symbol": "Invocable.Action.Result.getOutputParameters",
+      "kind": "test",
+      "notes": "Public Invocable.Action.Result docs expose output parameters; the local no-op result returns an empty output map."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.Result.isSuccess()",
+      "symbol": "Invocable.Action.Result.isSuccess",
+      "kind": "test",
+      "notes": "Public Invocable.Action.Result docs expose success; the local no-op action result is successful."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/CoreRuntimeInvocableActionResultEvidenceTest.cls",
+      "content": "@isTest private class CoreRuntimeInvocableActionResultEvidenceTest { @isTest static void rows() { Invocable.Action action = Invocable.Action.createStandardAction('localNoop'); action.addInvocation(); action.setInvocationParameter('name', 'Trail'); List<Invocable.Action.Result> results = action.invoke(); System.assertEquals(1, results.size()); Invocable.Action.Result result = results[0]; Object copied = result.clone(); System.assertNotEquals(null, copied); System.assert(result.isSuccess()); System.assertEquals(action, result.getAction()); System.assertEquals(0, result.getErrors().size()); System.assertEquals('Trail', (String) result.getInvocationParameters().get('name')); System.assertEquals(0, result.getOutputParameters().size()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

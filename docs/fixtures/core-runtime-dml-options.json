@@ -48,6 +48,30 @@
       "symbol": "Database.insert",
       "kind": "test",
       "notes": "List Database.insert with DMLOptions maps optAllOrNone=false to local partial-success SaveResult rows."
+    },
+    {
+      "surfaceId": "apex:System.Database.insert(Object,Database.DMLOptions,AccessLevel)",
+      "symbol": "Database.insert",
+      "kind": "test",
+      "notes": "Public Database.insert single-record DMLOptions plus AccessLevel overload runs through local DML and returns SaveResult shape."
+    },
+    {
+      "surfaceId": "apex:System.Database.insert(List<Object>,Database.DMLOptions,AccessLevel)",
+      "symbol": "Database.insert",
+      "kind": "test",
+      "notes": "Public Database.insert list DMLOptions plus AccessLevel overload runs through local DML and returns ordered SaveResult rows."
+    },
+    {
+      "surfaceId": "apex:System.Database.update(Object,Database.DMLOptions,AccessLevel)",
+      "symbol": "Database.update",
+      "kind": "test",
+      "notes": "Public Database.update single-record DMLOptions plus AccessLevel overload runs through local DML and returns SaveResult shape."
+    },
+    {
+      "surfaceId": "apex:System.Database.update(List<Object>,Database.DMLOptions,AccessLevel)",
+      "symbol": "Database.update",
+      "kind": "test",
+      "notes": "Public Database.update list DMLOptions plus AccessLevel overload runs through local DML and returns ordered SaveResult rows."
     }
   ],
   "source": [
@@ -61,7 +85,7 @@
     },
     {
       "path": "force-app/main/classes/CoreRuntimeDMLOptionsTest.cls",
-      "content": "@isTest private class CoreRuntimeDMLOptionsTest { @isTest static void optionsShapeAndAllOrNone() { Database.DMLOptions opts = new Database.DMLOptions(); System.assertEquals(false, opts.optAllOrNone); opts.optAllOrNone = false; opts.allowFieldTruncation = false; opts.assignmentRuleHeader.useDefaultRule = true; opts.emailHeader.triggerUserEmail = true; System.assertEquals(false, opts.optAllOrNone); System.assertEquals(false, opts.allowFieldTruncation); System.assertEquals(true, opts.assignmentRuleHeader.useDefaultRule); System.assertEquals(true, opts.emailHeader.triggerUserEmail); System.assertNotEquals(null, opts.localeOptions); Account good = new Account(Name = 'Good'); Account bad = new Account(); List<Database.SaveResult> results = Database.insert(new List<Account>{good, bad}, opts); System.assertEquals(2, results.size()); System.assert(results[0].isSuccess()); System.assert(!results[1].isSuccess()); } }"
+      "content": "@isTest private class CoreRuntimeDMLOptionsTest { @isTest static void optionsShapeAndAllOrNone() { Database.DMLOptions opts = new Database.DMLOptions(); System.assertEquals(false, opts.optAllOrNone); opts.optAllOrNone = false; opts.allowFieldTruncation = false; opts.assignmentRuleHeader.useDefaultRule = true; opts.emailHeader.triggerUserEmail = true; System.assertEquals(false, opts.optAllOrNone); System.assertEquals(false, opts.allowFieldTruncation); System.assertEquals(true, opts.assignmentRuleHeader.useDefaultRule); System.assertEquals(true, opts.emailHeader.triggerUserEmail); System.assertNotEquals(null, opts.localeOptions); Account good = new Account(Name = 'Good'); Account bad = new Account(); List<Database.SaveResult> results = Database.insert(new List<Account>{good, bad}, opts); System.assertEquals(2, results.size()); System.assert(results[0].isSuccess()); System.assert(!results[1].isSuccess()); Database.SaveResult one = Database.insert(new Account(Name = 'One'), opts, AccessLevel.SYSTEM_MODE); System.assert(one.isSuccess()); List<Database.SaveResult> many = Database.insert(new List<Account>{new Account(Name = 'Two'), new Account(Name = 'Three')}, opts, AccessLevel.SYSTEM_MODE); System.assertEquals(2, many.size()); System.assert(many[1].isSuccess()); Database.SaveResult updated = Database.update(new Account(Id = one.getId(), Name = 'One Updated'), opts, AccessLevel.SYSTEM_MODE); System.assert(updated.isSuccess()); List<Account> rows = [SELECT Id, Name FROM Account WHERE Name IN ('Two', 'Three') ORDER BY Name]; List<Database.SaveResult> updatedMany = Database.update(new List<Account>{new Account(Id = rows[0].Id, Name = 'Two Updated'), new Account(Id = rows[1].Id, Name = 'Three Updated')}, opts, AccessLevel.SYSTEM_MODE); System.assertEquals(2, updatedMany.size()); System.assert(updatedMany[0].isSuccess()); } }"
     }
   ],
   "command": {

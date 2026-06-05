@@ -1,0 +1,119 @@
+{
+  "name": "core-runtime-invocable-action-input-parameter-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getAdditionalAttributes()",
+      "symbol": "Invocable.Action.InputParameter.getAdditionalAttributes",
+      "kind": "test",
+      "notes": "Local describe metadata derives input parameters from invocation parameters and returns an empty additional-attributes list."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getApexClass()",
+      "symbol": "Invocable.Action.InputParameter.getApexClass",
+      "kind": "test",
+      "notes": "Local describe metadata returns an empty Apex class for primitive invocation parameters."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getByteLength()",
+      "symbol": "Invocable.Action.InputParameter.getByteLength",
+      "kind": "test",
+      "notes": "Local describe metadata returns zero byte length for unbounded local invocation parameters."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getConfiguration()",
+      "symbol": "Invocable.Action.InputParameter.getConfiguration",
+      "kind": "test",
+      "notes": "Local describe metadata marks invocation parameters as non-configuration inputs."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getDefaultValue()",
+      "symbol": "Invocable.Action.InputParameter.getDefaultValue",
+      "kind": "test",
+      "notes": "Local describe metadata returns null default values."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getDescription()",
+      "symbol": "Invocable.Action.InputParameter.getDescription",
+      "kind": "test",
+      "notes": "Local describe metadata returns an empty input description."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getLabel()",
+      "symbol": "Invocable.Action.InputParameter.getLabel",
+      "kind": "test",
+      "notes": "Local describe metadata uses the invocation parameter name as the input label."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getMaxOccurs()",
+      "symbol": "Invocable.Action.InputParameter.getMaxOccurs",
+      "kind": "test",
+      "notes": "Local describe metadata reports one occurrence for scalar invocation parameters."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getName()",
+      "symbol": "Invocable.Action.InputParameter.getName",
+      "kind": "test",
+      "notes": "Local describe metadata exposes the invocation parameter name."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getPicklistValues()",
+      "symbol": "Invocable.Action.InputParameter.getPicklistValues",
+      "kind": "test",
+      "notes": "Local describe metadata returns an empty picklist value list."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getPlaceholderText()",
+      "symbol": "Invocable.Action.InputParameter.getPlaceholderText",
+      "kind": "test",
+      "notes": "Local describe metadata returns an empty placeholder."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getRequired()",
+      "symbol": "Invocable.Action.InputParameter.getRequired",
+      "kind": "test",
+      "notes": "Local describe metadata marks invocation parameters as optional."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getSObjectType()",
+      "symbol": "Invocable.Action.InputParameter.getSObjectType",
+      "kind": "test",
+      "notes": "Local describe metadata returns an empty sObject type for primitive invocation parameters."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getSetupReferenceType()",
+      "symbol": "Invocable.Action.InputParameter.getSetupReferenceType",
+      "kind": "test",
+      "notes": "Local describe metadata returns an empty setup reference type."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getToolingType()",
+      "symbol": "Invocable.Action.InputParameter.getToolingType",
+      "kind": "test",
+      "notes": "Local describe metadata reports the primitive local tooling type."
+    },
+    {
+      "surfaceId": "apex:Invocable.Action.InputParameter.getType()",
+      "symbol": "Invocable.Action.InputParameter.getType",
+      "kind": "test",
+      "notes": "Local describe metadata reports the primitive local data type."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/CoreRuntimeInvocableActionInputParameterEvidenceTest.cls",
+      "content": "@isTest private class CoreRuntimeInvocableActionInputParameterEvidenceTest { @isTest static void rows() { Invocable.Action action = Invocable.Action.createStandardAction('localNoop'); action.addInvocation(); action.setInvocationParameter('name', 'Trail'); Invocable.Action.DescribeResult describe = action.getDescribe()[0]; List<Invocable.Action.InputParameter> inputs = describe.getInputs(); System.assertEquals(1, inputs.size()); Invocable.Action.InputParameter input = inputs[0]; System.assertEquals(0, input.getAdditionalAttributes().size()); System.assertEquals('', input.getApexClass()); System.assertEquals(0, input.getByteLength()); System.assertEquals(false, input.getConfiguration()); System.assertEquals(null, input.getDefaultValue()); System.assertEquals('', input.getDescription()); System.assertEquals('name', input.getLabel()); System.assertEquals(1, input.getMaxOccurs()); System.assertEquals('name', input.getName()); System.assertEquals(0, input.getPicklistValues().size()); System.assertEquals('', input.getPlaceholderText()); System.assertEquals(false, input.getRequired()); System.assertEquals('', input.getSObjectType()); System.assertEquals(0, input.getSetupReferenceType().size()); System.assertEquals('String', input.getToolingType()); System.assertEquals('String', input.getType()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

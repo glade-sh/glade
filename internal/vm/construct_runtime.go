@@ -503,17 +503,24 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		return newContinuation(args, namedArgs)
 	case "PageReference", "ApexPages.PageReference":
 		if len(args) > 1 || len(namedArgs) != 0 {
-			return Null, fmt.Errorf("PageReference constructor expects optional URL String")
+			return Null, fmt.Errorf("PageReference constructor expects optional URL String or ApexPage record")
 		}
 		rawURL := ""
 		if len(args) == 1 {
 			if args[0].Kind == ValueNull {
 				return Null, newExceptionError("NullPointerException", "Argument 1 cannot be null")
 			}
-			if args[0].Kind != ValueString {
-				return Null, fmt.Errorf("PageReference constructor expects URL String")
+			if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "ApexPage") {
+				_, name, ok := objectFieldValue(args[0], "Name")
+				if !ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "" {
+					return Null, fmt.Errorf("PageReference ApexPage record expects Name")
+				}
+				rawURL = "/apex/" + strings.TrimSpace(name.Text)
+			} else if args[0].Kind == ValueString {
+				rawURL = args[0].Text
+			} else {
+				return Null, fmt.Errorf("PageReference constructor expects URL String or ApexPage record")
 			}
-			rawURL = args[0].Text
 		}
 		return vm.newPageReference(rawURL), nil
 	case "Cookie", "System.Cookie":
@@ -827,14 +834,18 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		controller.Fields["pageNumber"] = Int(1)
 		return controller, nil
 	case "ApexPages.Message":
-		if len(args) < 2 || len(args) > 3 {
-			return Null, fmt.Errorf("ApexPages.Message constructor expects severity, summary[, detail]")
+		if len(args) < 2 || len(args) > 4 {
+			return Null, fmt.Errorf("ApexPages.Message constructor expects severity, summary[, detail[, componentLabel]]")
 		}
 		message := Object("ApexPages.Message")
 		message.Fields["severity"] = args[0]
 		message.Fields["summary"] = args[1]
 		if len(args) == 3 {
 			message.Fields["detail"] = args[2]
+		}
+		if len(args) == 4 {
+			message.Fields["detail"] = args[2]
+			message.Fields["componentLabel"] = args[3]
 		}
 		return message, nil
 	case "Messaging.SendEmailResult":

@@ -5,24 +5,90 @@
       "symbol": "StaticResourceCalloutMock",
       "kind": "exec",
       "notes": "StaticResourceCalloutMock can be constructed and configured in local tests."
+    },
+    {
+      "surfaceId": "apex:System.StaticResourceCalloutMock.setStatus(String)",
+      "symbol": "StaticResourceCalloutMock.setStatus",
+      "kind": "test",
+      "notes": "StaticResourceCalloutMock status text is visible on the local HttpResponse."
+    },
+    {
+      "surfaceId": "apex:System.MultiStaticResourceCalloutMock",
+      "symbol": "MultiStaticResourceCalloutMock",
+      "kind": "exec",
+      "notes": "MultiStaticResourceCalloutMock can be constructed and registered as a local HttpCalloutMock."
+    },
+    {
+      "surfaceId": "apex:System.MultiStaticResourceCalloutMock.respond(HttpRequest)",
+      "symbol": "MultiStaticResourceCalloutMock.respond",
+      "kind": "exec",
+      "notes": "MultiStaticResourceCalloutMock responds to Http.send by choosing the static resource mapped to the request endpoint."
+    },
+    {
+      "surfaceId": "apex:System.MultiStaticResourceCalloutMock.setHeader(String,String)",
+      "symbol": "MultiStaticResourceCalloutMock.setHeader",
+      "kind": "exec",
+      "notes": "MultiStaticResourceCalloutMock response headers are visible on the local HttpResponse."
+    },
+    {
+      "surfaceId": "apex:System.MultiStaticResourceCalloutMock.setStaticResource(String,String)",
+      "symbol": "MultiStaticResourceCalloutMock.setStaticResource",
+      "kind": "exec",
+      "notes": "MultiStaticResourceCalloutMock maps request endpoints to static resource response bodies."
+    },
+    {
+      "surfaceId": "apex:System.MultiStaticResourceCalloutMock.setStatus(String)",
+      "symbol": "MultiStaticResourceCalloutMock.setStatus",
+      "kind": "exec",
+      "notes": "MultiStaticResourceCalloutMock status text is visible on the local HttpResponse."
+    },
+    {
+      "surfaceId": "apex:System.MultiStaticResourceCalloutMock.setStatusCode(Integer)",
+      "symbol": "MultiStaticResourceCalloutMock.setStatusCode",
+      "kind": "exec",
+      "notes": "MultiStaticResourceCalloutMock status code is visible on the local HttpResponse."
     }
   ],
   "source": [
     {
-      "path": "anonymous.apex",
-      "content": "StaticResourceCalloutMock mock = new StaticResourceCalloutMock();\nmock.setStaticResource('Single_Response');\nmock.setStatusCode(203);\nmock.setHeader('Content-Type', 'application/json');\nSystem.assertNotEquals(null, mock);"
+      "path": "force-app/main/default/staticresources/Single_Response.resource",
+      "content": "{\"single\":true}"
+    },
+    {
+      "path": "force-app/main/default/staticresources/Single_Response.resource-meta.xml",
+      "content": "<StaticResource><contentType>application/json</contentType><cacheControl>Public</cacheControl></StaticResource>"
+    },
+    {
+      "path": "force-app/main/default/staticresources/Response_A.resource",
+      "content": "A-body"
+    },
+    {
+      "path": "force-app/main/default/staticresources/Response_A.resource-meta.xml",
+      "content": "<StaticResource><contentType>text/plain</contentType><cacheControl>Public</cacheControl></StaticResource>"
+    },
+    {
+      "path": "force-app/main/default/staticresources/Response_B.resource",
+      "content": "B-body"
+    },
+    {
+      "path": "force-app/main/default/staticresources/Response_B.resource-meta.xml",
+      "content": "<StaticResource><contentType>text/plain</contentType><cacheControl>Public</cacheControl></StaticResource>"
+    },
+    {
+      "path": "force-app/main/classes/HttpStaticResourceMockFixtureTest.cls",
+      "content": "@isTest private class HttpStaticResourceMockFixtureTest { @isTest static void staticResourceMocksReturnLocalResponses() { StaticResourceCalloutMock mock = new StaticResourceCalloutMock(); mock.setStaticResource('Single_Response'); mock.setStatusCode(203); mock.setStatus('Single Status'); mock.setHeader('Content-Type', 'application/json'); Test.setMock('HttpCalloutMock', mock); HttpRequest firstReq = new HttpRequest(); firstReq.setEndpoint('https://example.test/single'); firstReq.setMethod('GET'); HttpResponse first = new Http().send(firstReq); System.assertEquals(203, first.getStatusCode()); System.assertEquals('Single Status', first.getStatus()); System.assertEquals('{\"single\":true}', first.getBody()); System.assertEquals('application/json', first.getHeader('content-type')); MultiStaticResourceCalloutMock multiMock = new MultiStaticResourceCalloutMock(); multiMock.setStaticResource('https://example.test/a', 'Response_A'); multiMock.setStaticResource('https://example.test/b', 'Response_B'); multiMock.setStatusCode(204); multiMock.setStatus('Multi Status'); multiMock.setHeader('Content-Type', 'text/plain'); Test.setMock('HttpCalloutMock', multiMock); HttpRequest reqA = new HttpRequest(); reqA.setEndpoint('https://example.test/a'); reqA.setMethod('GET'); System.assertEquals('A-body', new Http().send(reqA).getBody()); HttpRequest reqB = new HttpRequest(); reqB.setEndpoint('https://example.test/b'); reqB.setMethod('GET'); HttpResponse second = new Http().send(reqB); System.assertEquals(204, second.getStatusCode()); System.assertEquals('Multi Status', second.getStatus()); System.assertEquals('B-body', second.getBody()); System.assertEquals('text/plain', second.getHeader('content-type')); } }"
     }
   ],
   "command": {
-    "kind": "exec",
-    "args": [
-      "StaticResourceCalloutMock mock = new StaticResourceCalloutMock();\nmock.setStaticResource('Single_Response');\nmock.setStatusCode(203);\nmock.setHeader('Content-Type', 'application/json');\nSystem.assertNotEquals(null, mock);"
-    ]
+    "kind": "test"
   },
   "expected": {
     "result": {
-      "debug": null,
-      "ok": true
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 1,
+      "total": 1
     }
   }
 }

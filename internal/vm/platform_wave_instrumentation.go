@@ -234,6 +234,12 @@ func callOrgInstrumentationOperationMember(receiver Value, method string, args [
 			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationOperation.endWithStatus expects context and status code")
 		}
 		return Null, receiver, false, true, nil
+	case "setmetrictags":
+		if len(args) != 1 || args[0].Kind != ValueMap {
+			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationOperation.setMetricTags expects Map<String,String>")
+		}
+		receiver.Fields["metricTags"] = args[0]
+		return Null, receiver, true, true, nil
 	case "publishcustomhistogramvalues", "publishcustomincrementalvalue", "publishcustompercentileset",
 		"publishincrementalvalue", "publishpercentileset", "publishrequestcountandduration":
 		return Null, receiver, false, true, nil
@@ -260,6 +266,22 @@ func callOrgInstrumentationContextMember(receiver Value, method string, args []V
 		}
 		receiver.Fields["ended"] = Bool(true)
 		return Null, receiver, true, true, nil
+	case "getduration":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationContext.getDuration expects 0 arguments")
+		}
+		if value, ok := receiver.Fields["duration"]; ok {
+			return value, receiver, false, true, nil
+		}
+		return Int(0), receiver, false, true, nil
+	case "getpublishtype":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationContext.getPublishType expects 0 arguments")
+		}
+		if value, ok := receiver.Fields["publishType"]; ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -270,6 +292,28 @@ func callOrgInstrumentationServiceMember(receiver Value, method string, args []V
 		return Null, receiver, false, false, nil
 	}
 	switch strings.ToLower(method) {
+	case "getinstrumentationoperation":
+		if len(args) != 2 && len(args) != 3 {
+			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationService.getInstrumentationOperation expects name, tags[, buckets]")
+		}
+		if args[0].Kind != ValueString || args[1].Kind != ValueMap {
+			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationService.getInstrumentationOperation expects String and Map<String,String>")
+		}
+		if len(args) == 3 && args[2].Kind != ValueList {
+			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationService.getInstrumentationOperation buckets expects List")
+		}
+		operation := Object("OrgInstrumentationOperation")
+		operation.Fields["operationName"] = args[0]
+		operation.Fields["metricTags"] = args[1]
+		if len(args) == 3 {
+			operation.Fields["buckets"] = args[2]
+		}
+		return operation, receiver, false, true, nil
+	case "gettracercontext":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationService.getTracerContext expects 0 arguments")
+		}
+		return typedMap("Map<String,String>"), receiver, false, true, nil
 	case "propagatecontext":
 		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "HttpRequest") {
 			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationService.propagateContext expects HttpRequest")

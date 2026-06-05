@@ -1,0 +1,401 @@
+{
+  "name": "core-runtime-cache-partition-subclass-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:Cache.OrgPartition.contains(Set<String>)",
+      "symbol": "Cache.OrgPartition.contains(Set<String>)",
+      "kind": "test",
+      "notes": "Public Platform Cache docs show org partition bulk contains returning Map<String,Boolean>; the local runtime returns present and missing key entries."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.contains(String)",
+      "symbol": "Cache.OrgPartition.contains(String)",
+      "kind": "test",
+      "notes": "OrgPartition string contains reads the local org partition cache without scanning unrelated partitions."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.createFullyQualifiedKey(String,String,String)",
+      "symbol": "Cache.OrgPartition.createFullyQualifiedKey(String,String,String)",
+      "kind": "test",
+      "notes": "Public docs define namespace.partition.key formatting; the local runtime returns that deterministic shape."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.createFullyQualifiedPartition(String,String)",
+      "symbol": "Cache.OrgPartition.createFullyQualifiedPartition(String,String)",
+      "kind": "test",
+      "notes": "Public docs define namespace.partition formatting; the local runtime returns that deterministic shape."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.get(Set<String>)",
+      "symbol": "Cache.OrgPartition.get(Set<String>)",
+      "kind": "test",
+      "notes": "Public Platform Cache docs show org partition bulk get returning Map<String,Object>; the local runtime returns present key values."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.get(String)",
+      "symbol": "Cache.OrgPartition.get(String)",
+      "kind": "test",
+      "notes": "OrgPartition string get reads the local org partition cache."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.get(Type,String)",
+      "symbol": "Cache.OrgPartition.get(Type,String)",
+      "kind": "test",
+      "notes": "OrgPartition Type plus key overload accepts a CacheBuilder type and key; this fixture covers the null-miss path without inventing loader behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.getAvgGetSize()",
+      "symbol": "Cache.OrgPartition.getAvgGetSize()",
+      "kind": "test",
+      "notes": "Local partition metrics return deterministic zero values."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.getAvgGetTime()",
+      "symbol": "Cache.OrgPartition.getAvgGetTime()",
+      "kind": "test",
+      "notes": "Local partition metrics return deterministic zero values."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.getAvgValueSize()",
+      "symbol": "Cache.OrgPartition.getAvgValueSize()",
+      "kind": "test",
+      "notes": "Local partition metrics return deterministic zero values."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.getCapacity()",
+      "symbol": "Cache.OrgPartition.getCapacity()",
+      "kind": "test",
+      "notes": "Local partition capacity returns the deterministic local capacity placeholder."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.getKeys()",
+      "symbol": "Cache.OrgPartition.getKeys()",
+      "kind": "test",
+      "notes": "OrgPartition getKeys returns keys from the selected local partition."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.getMaxGetSize()",
+      "symbol": "Cache.OrgPartition.getMaxGetSize()",
+      "kind": "test",
+      "notes": "Local partition metrics return deterministic zero values."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.getMaxGetTime()",
+      "symbol": "Cache.OrgPartition.getMaxGetTime()",
+      "kind": "test",
+      "notes": "Local partition metrics return deterministic zero values."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.getMaxValueSize()",
+      "symbol": "Cache.OrgPartition.getMaxValueSize()",
+      "kind": "test",
+      "notes": "Local partition metrics return deterministic zero values."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.getMissRate()",
+      "symbol": "Cache.OrgPartition.getMissRate()",
+      "kind": "test",
+      "notes": "Local partition miss rate returns a deterministic zero value."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.getName()",
+      "symbol": "Cache.OrgPartition.getName()",
+      "kind": "test",
+      "notes": "OrgPartition getName returns the normalized local partition name."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.getNumKeys()",
+      "symbol": "Cache.OrgPartition.getNumKeys()",
+      "kind": "test",
+      "notes": "OrgPartition getNumKeys counts only the selected local partition."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.isAvailable()",
+      "symbol": "Cache.OrgPartition.isAvailable()",
+      "kind": "test",
+      "notes": "The local runtime treats org partition cache as available."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.put(String,Object)",
+      "symbol": "Cache.OrgPartition.put(String,Object)",
+      "kind": "test",
+      "notes": "OrgPartition stores key values in the selected local partition."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.put(String,Object,Cache.Visibility)",
+      "symbol": "Cache.OrgPartition.put(String,Object,Cache.Visibility)",
+      "kind": "test",
+      "notes": "OrgPartition accepts visibility while storing the local cache value."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.put(String,Object,Integer)",
+      "symbol": "Cache.OrgPartition.put(String,Object,Integer)",
+      "kind": "test",
+      "notes": "OrgPartition accepts TTL seconds while storing the local cache value."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.put(String,Object,Integer,Cache.Visibility,Boolean)",
+      "symbol": "Cache.OrgPartition.put(String,Object,Integer,Cache.Visibility,Boolean)",
+      "kind": "test",
+      "notes": "OrgPartition accepts TTL, visibility, and immutability arguments while storing the local cache value."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.remove(String)",
+      "symbol": "Cache.OrgPartition.remove(String)",
+      "kind": "test",
+      "notes": "OrgPartition remove returns the removed local cache value."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.remove(Type,String)",
+      "symbol": "Cache.OrgPartition.remove(Type,String)",
+      "kind": "test",
+      "notes": "OrgPartition Type plus key remove accepts the overload and returns null on a local miss."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.validateKey(Boolean,String)",
+      "symbol": "Cache.OrgPartition.validateKey(Boolean,String)",
+      "kind": "test",
+      "notes": "OrgPartition validation methods accept valid local key inputs without side effects."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.validateKeyValue(Boolean,String,Object)",
+      "symbol": "Cache.OrgPartition.validateKeyValue(Boolean,String,Object)",
+      "kind": "test",
+      "notes": "OrgPartition validation methods accept valid local key and value inputs without side effects."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.validateKeys(Boolean,List<String>)",
+      "symbol": "Cache.OrgPartition.validateKeys(Boolean,List<String>)",
+      "kind": "test",
+      "notes": "OrgPartition validation methods accept valid key lists without side effects."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.validateKeys(Boolean,Set<String>)",
+      "symbol": "Cache.OrgPartition.validateKeys(Boolean,Set<String>)",
+      "kind": "test",
+      "notes": "OrgPartition validation methods accept valid key sets without side effects."
+    },
+    {
+      "surfaceId": "apex:Cache.OrgPartition.validatePartitionName(String)",
+      "symbol": "Cache.OrgPartition.validatePartitionName(String)",
+      "kind": "test",
+      "notes": "OrgPartition validation accepts a valid local partition name."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.contains(Set<String>)",
+      "symbol": "Cache.Partition.contains(Set<String>)",
+      "kind": "test",
+      "notes": "The base Partition reference dispatches bulk contains to the concrete local partition."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.get(Set<String>)",
+      "symbol": "Cache.Partition.get(Set<String>)",
+      "kind": "test",
+      "notes": "The base Partition reference dispatches bulk get to the concrete local partition."
+    },
+    {
+      "surfaceId": "apex:Cache.Partition.validateKeys(Boolean,List<String>)",
+      "symbol": "Cache.Partition.validateKeys(Boolean,List<String>)",
+      "kind": "test",
+      "notes": "The base Partition reference accepts valid key lists without side effects."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.contains(Set<String>)",
+      "symbol": "Cache.SessionPartition.contains(Set<String>)",
+      "kind": "test",
+      "notes": "Public Platform Cache docs show session partition bulk contains returning Map<String,Boolean>; the local runtime returns present and missing key entries."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.contains(String)",
+      "symbol": "Cache.SessionPartition.contains(String)",
+      "kind": "test",
+      "notes": "SessionPartition string contains reads the local session partition cache."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.createFullyQualifiedKey(String,String,String)",
+      "symbol": "Cache.SessionPartition.createFullyQualifiedKey(String,String,String)",
+      "kind": "test",
+      "notes": "Public docs define namespace.partition.key formatting; the local runtime returns that deterministic shape."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.createFullyQualifiedPartition(String,String)",
+      "symbol": "Cache.SessionPartition.createFullyQualifiedPartition(String,String)",
+      "kind": "test",
+      "notes": "Public docs define namespace.partition formatting; the local runtime returns that deterministic shape."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.get(Set<String>)",
+      "symbol": "Cache.SessionPartition.get(Set<String>)",
+      "kind": "test",
+      "notes": "Public Platform Cache docs show session partition bulk get returning Map<String,Object>; the local runtime returns present key values."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.get(String)",
+      "symbol": "Cache.SessionPartition.get(String)",
+      "kind": "test",
+      "notes": "SessionPartition string get reads the local session partition cache."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.get(Type,String)",
+      "symbol": "Cache.SessionPartition.get(Type,String)",
+      "kind": "test",
+      "notes": "SessionPartition Type plus key overload accepts a CacheBuilder type and key; this fixture covers the null-miss path without inventing loader behavior."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.getAvgGetSize()",
+      "symbol": "Cache.SessionPartition.getAvgGetSize()",
+      "kind": "test",
+      "notes": "Local partition metrics return deterministic zero values."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.getAvgGetTime()",
+      "symbol": "Cache.SessionPartition.getAvgGetTime()",
+      "kind": "test",
+      "notes": "Local partition metrics return deterministic zero values."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.getAvgValueSize()",
+      "symbol": "Cache.SessionPartition.getAvgValueSize()",
+      "kind": "test",
+      "notes": "Local partition metrics return deterministic zero values."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.getCapacity()",
+      "symbol": "Cache.SessionPartition.getCapacity()",
+      "kind": "test",
+      "notes": "Local partition capacity returns the deterministic local capacity placeholder."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.getKeys()",
+      "symbol": "Cache.SessionPartition.getKeys()",
+      "kind": "test",
+      "notes": "SessionPartition getKeys returns keys from the selected local partition."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.getMaxGetSize()",
+      "symbol": "Cache.SessionPartition.getMaxGetSize()",
+      "kind": "test",
+      "notes": "Local partition metrics return deterministic zero values."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.getMaxGetTime()",
+      "symbol": "Cache.SessionPartition.getMaxGetTime()",
+      "kind": "test",
+      "notes": "Local partition metrics return deterministic zero values."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.getMaxValueSize()",
+      "symbol": "Cache.SessionPartition.getMaxValueSize()",
+      "kind": "test",
+      "notes": "Local partition metrics return deterministic zero values."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.getMissRate()",
+      "symbol": "Cache.SessionPartition.getMissRate()",
+      "kind": "test",
+      "notes": "Local partition miss rate returns a deterministic zero value."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.getName()",
+      "symbol": "Cache.SessionPartition.getName()",
+      "kind": "test",
+      "notes": "SessionPartition getName returns the normalized local partition name."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.getNumKeys()",
+      "symbol": "Cache.SessionPartition.getNumKeys()",
+      "kind": "test",
+      "notes": "SessionPartition getNumKeys counts only the selected local partition."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.isAvailable()",
+      "symbol": "Cache.SessionPartition.isAvailable()",
+      "kind": "test",
+      "notes": "The local runtime treats session partition cache as available in this test context."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.put(String,Object)",
+      "symbol": "Cache.SessionPartition.put(String,Object)",
+      "kind": "test",
+      "notes": "SessionPartition stores key values in the selected local partition."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.put(String,Object,Cache.Visibility)",
+      "symbol": "Cache.SessionPartition.put(String,Object,Cache.Visibility)",
+      "kind": "test",
+      "notes": "SessionPartition accepts visibility while storing the local cache value."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.put(String,Object,Integer)",
+      "symbol": "Cache.SessionPartition.put(String,Object,Integer)",
+      "kind": "test",
+      "notes": "SessionPartition accepts TTL seconds while storing the local cache value."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.put(String,Object,Integer,Cache.Visibility,Boolean)",
+      "symbol": "Cache.SessionPartition.put(String,Object,Integer,Cache.Visibility,Boolean)",
+      "kind": "test",
+      "notes": "SessionPartition accepts TTL, visibility, and immutability arguments while storing the local cache value."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.remove(String)",
+      "symbol": "Cache.SessionPartition.remove(String)",
+      "kind": "test",
+      "notes": "SessionPartition remove returns the removed local cache value."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.remove(Type,String)",
+      "symbol": "Cache.SessionPartition.remove(Type,String)",
+      "kind": "test",
+      "notes": "SessionPartition Type plus key remove accepts the overload and returns null on a local miss."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.validateKey(Boolean,String)",
+      "symbol": "Cache.SessionPartition.validateKey(Boolean,String)",
+      "kind": "test",
+      "notes": "SessionPartition validation methods accept valid local key inputs without side effects."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.validateKeyValue(Boolean,String,Object)",
+      "symbol": "Cache.SessionPartition.validateKeyValue(Boolean,String,Object)",
+      "kind": "test",
+      "notes": "SessionPartition validation methods accept valid local key and value inputs without side effects."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.validateKeys(Boolean,List<String>)",
+      "symbol": "Cache.SessionPartition.validateKeys(Boolean,List<String>)",
+      "kind": "test",
+      "notes": "SessionPartition validation methods accept valid key lists without side effects."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.validateKeys(Boolean,Set<String>)",
+      "symbol": "Cache.SessionPartition.validateKeys(Boolean,Set<String>)",
+      "kind": "test",
+      "notes": "SessionPartition validation methods accept valid key sets without side effects."
+    },
+    {
+      "surfaceId": "apex:Cache.SessionPartition.validatePartitionName(String)",
+      "symbol": "Cache.SessionPartition.validatePartitionName(String)",
+      "kind": "test",
+      "notes": "SessionPartition validation accepts a valid local partition name."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/CoreRuntimeCachePartitionSubclassEvidenceTest.cls",
+      "content": "@isTest private class CoreRuntimeCachePartitionSubclassEvidenceTest { @isTest static void rows() { Cache.OrgPartition orgPart = Cache.Org.getPartition('local.subclass'); orgPart.put('one', 'A'); orgPart.put('two', 'B', Cache.Visibility.ALL); orgPart.put('ttl', 'C', 60); orgPart.put('full', 'D', 60, Cache.Visibility.NAMESPACE, false); System.assert(orgPart.contains('one')); Map<String, Boolean> orgContains = orgPart.contains(new Set<String>{'one', 'missing'}); System.assertEquals(true, orgContains.get('one')); System.assertEquals(false, orgContains.get('missing')); Map<String, Object> orgValues = orgPart.get(new Set<String>{'one', 'two'}); System.assertEquals('A', (String) orgValues.get('one')); System.assertEquals('B', (String) orgValues.get('two')); System.assertEquals('A', (String) orgPart.get('one')); System.assertEquals(null, orgPart.get(Type.forName('String'), 'missing')); System.assert(orgPart.getKeys().contains('ttl')); System.assertEquals(4, orgPart.getNumKeys()); System.assert(orgPart.getCapacity() > 0); System.assert(orgPart.isAvailable()); System.assertEquals('local.subclass', orgPart.getName()); System.assertEquals(0, orgPart.getAvgGetSize()); System.assertEquals(0, orgPart.getAvgGetTime()); System.assertEquals(0, orgPart.getAvgValueSize()); System.assertEquals(0, orgPart.getMaxGetSize()); System.assertEquals(0, orgPart.getMaxGetTime()); System.assertEquals(0, orgPart.getMaxValueSize()); System.assertEquals(0, orgPart.getMissRate()); System.assertEquals('local.subclass.one', orgPart.createFullyQualifiedKey('local', 'subclass', 'one')); System.assertEquals('local.subclass', orgPart.createFullyQualifiedPartition('local', 'subclass')); orgPart.validatePartitionName('subclass'); orgPart.validateKey(false, 'one'); orgPart.validateKeyValue(false, 'one', 'A'); orgPart.validateKeys(false, new Set<String>{'one', 'two'}); orgPart.validateKeys(false, new List<String>{'one', 'two'}); System.assertEquals(null, orgPart.remove(Type.forName('String'), 'missing')); System.assertEquals('A', (String) orgPart.remove('one')); Cache.Partition baseOrg = orgPart; Map<String, Boolean> baseContains = baseOrg.contains(new Set<String>{'two'}); System.assertEquals(true, baseContains.get('two')); Map<String, Object> baseValues = baseOrg.get(new Set<String>{'two'}); System.assertEquals('B', (String) baseValues.get('two')); baseOrg.validateKeys(false, new List<String>{'two'}); Cache.SessionPartition sessionPart = Cache.Session.getPartition('local.subclass'); sessionPart.put('one', 'SA'); sessionPart.put('two', 'SB', Cache.Visibility.ALL); sessionPart.put('ttl', 'SC', 60); sessionPart.put('full', 'SD', 60, Cache.Visibility.NAMESPACE, false); System.assert(sessionPart.contains('one')); Map<String, Boolean> sessionContains = sessionPart.contains(new Set<String>{'one', 'missing'}); System.assertEquals(true, sessionContains.get('one')); System.assertEquals(false, sessionContains.get('missing')); Map<String, Object> sessionValues = sessionPart.get(new Set<String>{'one', 'two'}); System.assertEquals('SA', (String) sessionValues.get('one')); System.assertEquals('SB', (String) sessionValues.get('two')); System.assertEquals('SA', (String) sessionPart.get('one')); System.assertEquals(null, sessionPart.get(Type.forName('String'), 'missing')); System.assert(sessionPart.getKeys().contains('ttl')); System.assertEquals(4, sessionPart.getNumKeys()); System.assert(sessionPart.getCapacity() > 0); System.assert(sessionPart.isAvailable()); System.assertEquals('local.subclass', sessionPart.getName()); System.assertEquals(0, sessionPart.getAvgGetSize()); System.assertEquals(0, sessionPart.getAvgGetTime()); System.assertEquals(0, sessionPart.getAvgValueSize()); System.assertEquals(0, sessionPart.getMaxGetSize()); System.assertEquals(0, sessionPart.getMaxGetTime()); System.assertEquals(0, sessionPart.getMaxValueSize()); System.assertEquals(0, sessionPart.getMissRate()); System.assertEquals('local.subclass.one', sessionPart.createFullyQualifiedKey('local', 'subclass', 'one')); System.assertEquals('local.subclass', sessionPart.createFullyQualifiedPartition('local', 'subclass')); sessionPart.validatePartitionName('subclass'); sessionPart.validateKey(false, 'one'); sessionPart.validateKeyValue(false, 'one', 'SA'); sessionPart.validateKeys(false, new Set<String>{'one', 'two'}); sessionPart.validateKeys(false, new List<String>{'one', 'two'}); System.assertEquals(null, sessionPart.remove(Type.forName('String'), 'missing')); System.assertEquals('SA', (String) sessionPart.remove('one')); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

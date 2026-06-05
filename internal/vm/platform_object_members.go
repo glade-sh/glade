@@ -1268,9 +1268,203 @@ func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Val
 			strings.EqualFold(apexMethodMemberName(method.Name), "processClientRequest") {
 			continue
 		}
+		if strings.EqualFold(receiverType, "Invocable.Action") {
+			if value, handled := vm.callInvocableActionMember(receiver, methodName, args); handled {
+				return value, true
+			}
+		}
 		return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), true
 	}
 	return Null, false
+}
+
+func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args []Value) (Value, bool) {
+	switch {
+	case strings.EqualFold(methodName, "addInvocation"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		invocations := invocableActionInvocations(receiver)
+		invocations.List = append(invocations.List, typedMap("Map<String,Object>"))
+		receiver.Fields["invocations"] = invocations
+		return receiver, true
+	case strings.EqualFold(methodName, "clearInvocations"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		receiver.Fields["invocations"] = typedList("List<Map<String,Object>>")
+		return receiver, true
+	case strings.EqualFold(methodName, "setInvocationParameter"):
+		if len(args) != 2 || args[0].Kind != ValueString {
+			return Null, false
+		}
+		invocations := invocableActionInvocations(receiver)
+		if len(invocations.List) == 0 {
+			invocations.List = append(invocations.List, typedMap("Map<String,Object>"))
+		}
+		current := invocations.List[len(invocations.List)-1]
+		if current.Kind != ValueMap {
+			current = typedMap("Map<String,Object>")
+		}
+		key := String(args[0].Text)
+		encoded := mapKey(key)
+		_, hadKey := current.Map[encoded]
+		current.Map[encoded] = args[1]
+		current.MapKeys[encoded] = key
+		if !hadKey {
+			current.MapOrder = append(current.MapOrder, encoded)
+		}
+		invocations.List[len(invocations.List)-1] = current
+		receiver.Fields["invocations"] = invocations
+		return receiver, true
+	case strings.EqualFold(methodName, "setInvocations"):
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, false
+		}
+		receiver.Fields["invocations"] = args[0]
+		return receiver, true
+	case strings.EqualFold(methodName, "getDescribe"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		return invocableActionDescribeResults(receiver), true
+	case strings.EqualFold(methodName, "invoke"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		invocations := invocableActionInvocations(receiver)
+		results := typedList("List<Invocable.Action.Result>")
+		for _, invocation := range invocations.List {
+			if invocation.Kind != ValueMap {
+				invocation = typedMap("Map<String,Object>")
+			}
+			result := Object("Invocable.Action.Result")
+			result.Fields["action"] = receiver
+			result.Fields["errors"] = typedList("List<Invocable.Action.Error>")
+			result.Fields["invocationParameters"] = invocation
+			result.Fields["outputParameters"] = typedMap("Map<String,Object>")
+			result.Fields["success"] = Bool(true)
+			results.List = append(results.List, result)
+		}
+		return results, true
+	default:
+		return Null, false
+	}
+}
+
+func invocableActionInvocations(action Value) Value {
+	if invocations, ok := action.Fields["invocations"]; ok && invocations.Kind == ValueList {
+		return invocations
+	}
+	return typedList("List<Map<String,Object>>")
+}
+
+func invocableActionDescribeResults(action Value) Value {
+	name := invocableActionDisplayName(action)
+	describe := Object("Invocable.Action.DescribeResult")
+	describe.Fields["action"] = action
+	describe.Fields["allowsTransactionControl"] = Bool(false)
+	describe.Fields["capabilityTypes"] = typedList("List<String>")
+	describe.Fields["category"] = String("")
+	describe.Fields["configurationEditor"] = String("")
+	describe.Fields["description"] = String("")
+	describe.Fields["genericTypes"] = typedList("List<Invocable.Action.GenericType>")
+	describe.Fields["hasCallout"] = Bool(false)
+	describe.Fields["hasSystemGeneratedOutput"] = Bool(false)
+	describe.Fields["iconId"] = String("")
+	describe.Fields["iconName"] = String("")
+	describe.Fields["inputs"] = invocableActionInputParameters(action)
+	describe.Fields["label"] = String(name)
+	describe.Fields["methodDescription"] = String("")
+	describe.Fields["methodLabel"] = String(name)
+	describe.Fields["methodName"] = String(name)
+	describe.Fields["name"] = String(name)
+	describe.Fields["outputs"] = typedList("List<Invocable.Action.OutputParameter>")
+	describe.Fields["targetEntityName"] = String("")
+	describe.Fields["type"] = String(invocableActionType(action))
+	results := typedList("List<Invocable.Action.DescribeResult>")
+	results.List = append(results.List, describe)
+	return results
+}
+
+func invocableActionInputParameters(action Value) Value {
+	inputs := typedList("List<Invocable.Action.InputParameter>")
+	invocations := invocableActionInvocations(action)
+	if len(invocations.List) == 0 {
+		return inputs
+	}
+	invocation := invocations.List[0]
+	if invocation.Kind != ValueMap {
+		return inputs
+	}
+	for _, encoded := range invocation.MapOrder {
+		key, ok := invocation.MapKeys[encoded]
+		if !ok || key.Kind != ValueString {
+			continue
+		}
+		value := invocation.Map[encoded]
+		valueType := invocableActionParameterType(value)
+		input := Object("Invocable.Action.InputParameter")
+		input.Fields["additionalAttributes"] = typedList("List<Invocable.Action.AdditionalAttribute>")
+		input.Fields["apexClass"] = String("")
+		input.Fields["byteLength"] = Int(0)
+		input.Fields["configuration"] = Bool(false)
+		input.Fields["defaultValue"] = Null
+		input.Fields["description"] = String("")
+		input.Fields["label"] = key
+		input.Fields["maxOccurs"] = Int(1)
+		input.Fields["name"] = key
+		input.Fields["picklistValues"] = typedList("List<Invocable.Action.PicklistValue>")
+		input.Fields["placeholderText"] = String("")
+		input.Fields["required"] = Bool(false)
+		input.Fields["sObjectType"] = String("")
+		input.Fields["setupReferenceType"] = typedList("List<String>")
+		input.Fields["toolingType"] = String(valueType)
+		input.Fields["type"] = String(valueType)
+		inputs.List = append(inputs.List, input)
+	}
+	return inputs
+}
+
+func invocableActionParameterType(value Value) string {
+	if value.Type != "" {
+		return value.Type
+	}
+	switch value.Kind {
+	case ValueString:
+		return "String"
+	case ValueBool:
+		return "Boolean"
+	case ValueInt:
+		return "Integer"
+	case ValueDecimal:
+		return "Double"
+	case ValueList:
+		return "List<Object>"
+	case ValueMap:
+		return "Map<String,Object>"
+	case ValueObject:
+		if value.Type != "" {
+			return value.Type
+		}
+		return "Object"
+	default:
+		return "Object"
+	}
+}
+
+func invocableActionDisplayName(action Value) string {
+	if value, ok := action.Fields["name"]; ok && value.Kind == ValueString && value.Text != "" {
+		return value.Text
+	}
+	return invocableActionType(action)
+}
+
+func invocableActionType(action Value) string {
+	if value, ok := action.Fields["type"]; ok && value.Kind == ValueString {
+		return value.Text
+	}
+	return ""
 }
 
 func (vm *VM) generatedPlatformMethodFallbackType(typeName string) bool {

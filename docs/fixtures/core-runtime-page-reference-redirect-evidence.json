@@ -1,0 +1,35 @@
+{
+  "name": "core-runtime-page-reference-redirect-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.PageReference.getRedirect()",
+      "symbol": "PageReference.getRedirect",
+      "kind": "exec",
+      "notes": "getRedirect returns the current PageReference redirect attribute."
+    },
+    {
+      "surfaceId": "apex:System.PageReference.setRedirect(Boolean)",
+      "symbol": "PageReference.setRedirect",
+      "kind": "exec",
+      "notes": "setRedirect updates the redirect attribute and returns the same PageReference."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "PageReference page = new PageReference('/apex/Local');\nSystem.assertEquals(false, page.getRedirect());\nPageReference returned = page.setRedirect(true);\nSystem.assertEquals(page, returned);\nSystem.assertEquals(true, page.getRedirect());"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "PageReference page = new PageReference('/apex/Local');\nSystem.assertEquals(false, page.getRedirect());\nPageReference returned = page.setRedirect(true);\nSystem.assertEquals(page, returned);\nSystem.assertEquals(true, page.getRedirect());"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

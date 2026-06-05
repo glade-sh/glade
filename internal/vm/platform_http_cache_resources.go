@@ -551,6 +551,12 @@ func callStaticResourceCalloutMockMember(receiver Value, method string, args []V
 		}
 		receiver.Fields["statusCode"] = args[0]
 		return Null, receiver, true, true, nil
+	case "setStatus":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("StaticResourceCalloutMock.setStatus expects String")
+		}
+		receiver.Fields["status"] = args[0]
+		return Null, receiver, true, true, nil
 	case "setHeader":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("StaticResourceCalloutMock.setHeader expects name and value Strings")
@@ -581,6 +587,12 @@ func callMultiStaticResourceCalloutMockMember(receiver Value, method string, arg
 			return Null, receiver, false, true, fmt.Errorf("MultiStaticResourceCalloutMock.setStatusCode expects Integer")
 		}
 		receiver.Fields["statusCode"] = args[0]
+		return Null, receiver, true, true, nil
+	case "setStatus":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("MultiStaticResourceCalloutMock.setStatus expects String")
+		}
+		receiver.Fields["status"] = args[0]
 		return Null, receiver, true, true, nil
 	case "setHeader":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
@@ -786,6 +798,12 @@ func cachePartitionPlatformObjectType(typeName string) bool {
 		strings.EqualFold(typeName, "Cache.SessionPartition")
 }
 
+func generatedPlatformObjectMemberReceiver(typeName string) bool {
+	return isExceptionType(typeName) ||
+		cachePartitionPlatformObjectType(typeName) ||
+		strings.EqualFold(typeName, "Cache.SecondaryKeyApi")
+}
+
 func (vm *VM) callCacheSecondaryKeyMember(receiver Value, method string, args []Value) (Value, Value, error) {
 	feature, ok := receiver.Fields["featureName"]
 	if !ok || feature.Kind != ValueString || strings.TrimSpace(feature.Text) == "" {
@@ -850,6 +868,38 @@ func (vm *VM) cacheStaticDefaultGet(callee string, args []Value) (Value, error) 
 	if len(args) != 1 && len(args) != 2 {
 		return Null, fmt.Errorf("%s expects key or CacheBuilder type and key", callee)
 	}
+	if len(args) == 1 {
+		switch args[0].Kind {
+		case ValueList:
+			out := List()
+			out.Type = "List<Object>"
+			for _, key := range args[0].List {
+				if key.Kind != ValueString {
+					return Null, fmt.Errorf("%s keys expects List<String>", callee)
+				}
+				if value, ok := vm.cacheGet(partition, key.Text); ok {
+					out.List = append(out.List, value)
+				} else {
+					out.List = append(out.List, Null)
+				}
+			}
+			return out, nil
+		case ValueSet:
+			out := typedMap("Map<String,Object>")
+			for _, key := range args[0].Set {
+				if key.Kind != ValueString {
+					return Null, fmt.Errorf("%s keys expects Set<String>", callee)
+				}
+				if value, ok := vm.cacheGet(partition, key.Text); ok {
+					encoded := mapKey(key)
+					out.Map[encoded] = value
+					out.MapKeys[encoded] = key
+					out.MapOrder = append(out.MapOrder, encoded)
+				}
+			}
+			return out, nil
+		}
+	}
 	keyArg := args[0]
 	if len(args) == 2 {
 		keyArg = args[1]
@@ -897,6 +947,18 @@ func (vm *VM) cacheStaticDefaultRemove(callee string, args []Value) (Value, erro
 	if len(args) != 1 && len(args) != 2 {
 		return Null, fmt.Errorf("%s expects key or CacheBuilder type and key", callee)
 	}
+	if len(args) == 1 && args[0].Kind == ValueList {
+		out := List()
+		out.Type = "List<Boolean>"
+		for _, key := range args[0].List {
+			if key.Kind != ValueString {
+				return Null, fmt.Errorf("%s keys expects List<String>", callee)
+			}
+			_, removed := vm.cacheRemove(cacheDefaultPartitionKey(callee), key.Text)
+			out.List = append(out.List, Bool(removed))
+		}
+		return out, nil
+	}
 	keyArg := args[0]
 	if len(args) == 2 {
 		keyArg = args[1]
@@ -916,11 +978,40 @@ func (vm *VM) cacheStaticDefaultRemove(callee string, args []Value) (Value, erro
 }
 
 func (vm *VM) cacheStaticDefaultContains(callee string, args []Value) (Value, error) {
-	if len(args) != 1 || args[0].Kind != ValueString {
+	if len(args) != 1 {
 		return Null, fmt.Errorf("%s expects String key", callee)
 	}
-	_, ok := vm.cacheGet(cacheDefaultPartitionKey(callee), args[0].Text)
-	return Bool(ok), nil
+	switch args[0].Kind {
+	case ValueString:
+		_, ok := vm.cacheGet(cacheDefaultPartitionKey(callee), args[0].Text)
+		return Bool(ok), nil
+	case ValueList:
+		out := List()
+		out.Type = "List<Boolean>"
+		for _, key := range args[0].List {
+			if key.Kind != ValueString {
+				return Null, fmt.Errorf("%s keys expects List<String>", callee)
+			}
+			_, ok := vm.cacheGet(cacheDefaultPartitionKey(callee), key.Text)
+			out.List = append(out.List, Bool(ok))
+		}
+		return out, nil
+	case ValueSet:
+		out := typedMap("Map<String,Boolean>")
+		for _, key := range args[0].Set {
+			if key.Kind != ValueString {
+				return Null, fmt.Errorf("%s keys expects Set<String>", callee)
+			}
+			_, ok := vm.cacheGet(cacheDefaultPartitionKey(callee), key.Text)
+			encoded := mapKey(key)
+			out.Map[encoded] = Bool(ok)
+			out.MapKeys[encoded] = key
+			out.MapOrder = append(out.MapOrder, encoded)
+		}
+		return out, nil
+	default:
+		return Null, fmt.Errorf("%s expects String key", callee)
+	}
 }
 
 func (vm *VM) cacheStaticDefaultKeys(callee string, args []Value) (Value, error) {
@@ -1167,6 +1258,9 @@ func (vm *VM) staticResourceMockResponse(mock Value, resourceName string) Value 
 	response.Fields["body"] = String(vm.staticResourceBody(resourceName))
 	if status, ok := mock.Fields["statusCode"]; ok {
 		response.Fields["statusCode"] = status
+	}
+	if status, ok := mock.Fields["status"]; ok {
+		response.Fields["status"] = status
 	}
 	if headers, ok := mock.Fields["headers"]; ok {
 		response.Fields["headers"] = headers

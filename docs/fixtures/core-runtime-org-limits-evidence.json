@@ -1,0 +1,53 @@
+{
+  "name": "core-runtime-org-limits-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.OrgLimit.getLimit()",
+      "symbol": "OrgLimit.getLimit",
+      "kind": "exec",
+      "notes": "Local OrgLimit exposes a deterministic maximum value."
+    },
+    {
+      "surfaceId": "apex:System.OrgLimit.getName()",
+      "symbol": "OrgLimit.getName",
+      "kind": "exec",
+      "notes": "Local OrgLimit exposes the org limit name."
+    },
+    {
+      "surfaceId": "apex:System.OrgLimit.getValue()",
+      "symbol": "OrgLimit.getValue",
+      "kind": "exec",
+      "notes": "Local OrgLimit exposes the current usage value."
+    },
+    {
+      "surfaceId": "apex:System.OrgLimits.getAll()",
+      "symbol": "OrgLimits.getAll",
+      "kind": "exec",
+      "notes": "Local OrgLimits returns a deterministic list of org limit values."
+    },
+    {
+      "surfaceId": "apex:System.OrgLimits.getMap()",
+      "symbol": "OrgLimits.getMap",
+      "kind": "exec",
+      "notes": "Local OrgLimits returns a deterministic map keyed by limit name."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "List<OrgLimit> limits = OrgLimits.getAll();\nSystem.assert(limits.size() > 0);\nMap<String, OrgLimit> byName = OrgLimits.getMap();\nSystem.assert(byName.containsKey('DailyApiRequests'));\nOrgLimit api = byName.get('DailyApiRequests');\nSystem.assertEquals('DailyApiRequests', api.getName());\nSystem.assertEquals(100, api.getLimit());\nSystem.assertEquals(0, api.getValue());"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "List<OrgLimit> limits = OrgLimits.getAll();\nSystem.assert(limits.size() > 0);\nMap<String, OrgLimit> byName = OrgLimits.getMap();\nSystem.assert(byName.containsKey('DailyApiRequests'));\nOrgLimit api = byName.get('DailyApiRequests');\nSystem.assertEquals('DailyApiRequests', api.getName());\nSystem.assertEquals(100, api.getLimit());\nSystem.assertEquals(0, api.getValue());"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

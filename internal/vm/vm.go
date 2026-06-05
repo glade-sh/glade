@@ -2838,6 +2838,46 @@ func pageReferenceURL(page Value) Value {
 	return String(parsed.String())
 }
 
+func pageReferenceAnchor(page Value) Value {
+	urlValue := pageReferenceURL(page)
+	if urlValue.Kind == ValueNull {
+		return urlValue
+	}
+	if urlValue.Kind != ValueString || !strings.Contains(urlValue.Text, "#") {
+		return Null
+	}
+	parsed, err := url.Parse(urlValue.Text)
+	if err != nil {
+		return Null
+	}
+	return String(parsed.Fragment)
+}
+
+func setPageReferenceAnchor(page *Value, anchor Value) error {
+	if anchor.Kind != ValueString && anchor.Kind != ValueNull {
+		return fmt.Errorf("PageReference.setAnchor expects String")
+	}
+	urlValue := pageReferenceURL(*page)
+	if urlValue.Kind == ValueNull {
+		return nil
+	}
+	rawURL := ""
+	if urlValue.Kind == ValueString {
+		rawURL = urlValue.Text
+	}
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return err
+	}
+	if anchor.Kind == ValueNull {
+		parsed.Fragment = ""
+	} else {
+		parsed.Fragment = strings.TrimPrefix(anchor.Text, "#")
+	}
+	page.Fields["url"] = String(parsed.String())
+	return nil
+}
+
 var htmlVoidElementPattern = regexp.MustCompile(`(?i)<(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)([^<>]*?)>`)
 
 func (vm *VM) newPageReference(rawURL string) Value {

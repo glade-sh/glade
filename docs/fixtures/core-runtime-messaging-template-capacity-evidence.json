@@ -1,0 +1,85 @@
+{
+  "name": "core-runtime-messaging-template-capacity-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.Messaging.renderEmailTemplate(String,String,List<String>)",
+      "symbol": "Messaging.renderEmailTemplate(String,String,List<String>)",
+      "kind": "test",
+      "notes": "Docs and tooling expose the template merge overload; the local runtime returns one RenderEmailTemplateBodyResult per body."
+    },
+    {
+      "surfaceId": "apex:System.Messaging.renderStoredEmailTemplate(String,String,String)",
+      "symbol": "Messaging.renderStoredEmailTemplate(String,String,String)",
+      "kind": "test",
+      "notes": "Docs and tooling expose the three-argument stored template overload; the local runtime returns a populated SingleEmailMessage."
+    },
+    {
+      "surfaceId": "apex:System.Messaging.reserveMassEmailCapacity(Integer)",
+      "symbol": "Messaging.reserveMassEmailCapacity(Integer)",
+      "kind": "test",
+      "notes": "Docs and tooling expose this local test-visible reservation contract; the runtime records the call without sending email."
+    },
+    {
+      "surfaceId": "apex:System.Messaging.reserveSingleEmailCapacity(Integer)",
+      "symbol": "Messaging.reserveSingleEmailCapacity(Integer)",
+      "kind": "test",
+      "notes": "Docs and tooling expose this local test-visible reservation contract; the runtime records the call without sending email."
+    },
+    {
+      "surfaceId": "apex:System.Messaging.sendEmailMessage(List<Id>,Boolean)",
+      "symbol": "Messaging.sendEmailMessage(List<Id>,Boolean)",
+      "kind": "test",
+      "notes": "Docs and tooling expose the EmailMessage Id overload; the local runtime returns ordered SendEmailResult values."
+    },
+    {
+      "surfaceId": "apex:System.Messaging.sendEmailMessage(List<Id>)",
+      "symbol": "Messaging.sendEmailMessage(List<Id>)",
+      "kind": "test",
+      "notes": "The one-argument EmailMessage Id overload defaults allOrNothing and returns ordered local SendEmailResult values."
+    },
+    {
+      "surfaceId": "apex:System.Messaging.extractInboundEmail(Object,Boolean)",
+      "symbol": "Messaging.extractInboundEmail(Object,Boolean)",
+      "kind": "test",
+      "notes": "Docs and tooling expose the parser contract; the local runtime returns a no-render InboundEmail DTO."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/EmailTemplate/fields/DeveloperName.field-meta.xml",
+      "content": "<CustomField><fullName>DeveloperName</fullName><label>Developer Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/EmailTemplate/fields/FolderId.field-meta.xml",
+      "content": "<CustomField><fullName>FolderId</fullName><label>Folder ID</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/EmailTemplate/fields/Subject.field-meta.xml",
+      "content": "<CustomField><fullName>Subject</fullName><label>Subject</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/EmailTemplate/fields/Body.field-meta.xml",
+      "content": "<CustomField><fullName>Body</fullName><label>Body</label><type>LongTextArea</type><visibleLines>3</visibleLines></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/EmailTemplate/fields/HtmlValue.field-meta.xml",
+      "content": "<CustomField><fullName>HtmlValue</fullName><label>HTML Value</label><type>LongTextArea</type><visibleLines>3</visibleLines></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/CoreRuntimeMessagingTemplateCapacityEvidenceTest.cls",
+      "content": "@isTest private class CoreRuntimeMessagingTemplateCapacityEvidenceTest { @isTest static void rows() { EmailTemplate tmpl = new EmailTemplate(Name = 'Trail Template', DeveloperName = 'Trail_Template', FolderId = '00l000000000001AAA', Subject = 'Trail subject', Body = 'Trail body', HtmlValue = '<p>Trail body</p>'); insert tmpl; List<Messaging.RenderEmailTemplateBodyResult> rendered = Messaging.renderEmailTemplate('003000000000001AAA', '001000000000001AAA', new List<String>{'Hello trail', 'Account trail'}); System.assertEquals(2, rendered.size()); System.assert(rendered.get(0).getSuccess()); System.assertEquals('Hello trail', rendered.get(0).getMergedBody()); System.assertEquals(0, rendered.get(0).getErrors().size()); System.assertEquals('Account trail', rendered.get(1).getMergedBody()); Messaging.SingleEmailMessage stored = Messaging.renderStoredEmailTemplate(tmpl.Id, '003000000000001AAA', '001000000000001AAA'); System.assertEquals('Trail subject', stored.getSubject()); System.assertEquals('Trail body', stored.getPlainTextBody()); Messaging.reserveSingleEmailCapacity(1); Messaging.reserveMassEmailCapacity(1); List<Messaging.SendEmailResult> results = Messaging.sendEmailMessage(new List<Id>{'02s000000000001AAA'}, false); System.assertEquals(1, results.size()); System.assert(results.get(0).isSuccess()); List<Messaging.SendEmailResult> defaulted = Messaging.sendEmailMessage(new List<Id>{'02s000000000002AAA'}); System.assertEquals(1, defaulted.size()); System.assert(defaulted.get(0).isSuccess()); System.assertEquals(2, Limits.getEmailInvocations()); Messaging.InboundEmail inbound = Messaging.extractInboundEmail('raw message not parsed locally', true); System.assertEquals(0, inbound.headers.size()); System.assertEquals(false, inbound.plainTextBodyIsTruncated); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "name": "core-runtime-cache-secondary-key-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:Cache.SecondaryKeyApi.get(String)",
+      "symbol": "Cache.SecondaryKeyApi.get(String)",
+      "kind": "test",
+      "notes": "The local runtime creates a feature-scoped SecondaryKeyApi value without external cache services."
+    },
+    {
+      "surfaceId": "apex:Cache.SecondaryKeyApi.putImmediate(String,Object,String)",
+      "symbol": "Cache.SecondaryKeyApi.putImmediate(String,Object,String)",
+      "kind": "test",
+      "notes": "The local runtime stores secondary-key entries in the feature-scoped cache partition."
+    },
+    {
+      "surfaceId": "apex:Cache.SecondaryKeyApi.remove(String)",
+      "symbol": "Cache.SecondaryKeyApi.remove(String)",
+      "kind": "test",
+      "notes": "The local runtime removes secondary-key entries and reports whether a key existed."
+    },
+    {
+      "surfaceId": "apex:Cache.SecondaryKeyApi.scanForCount(String,String)",
+      "symbol": "Cache.SecondaryKeyApi.scanForCount(String,String)",
+      "kind": "test",
+      "notes": "The local runtime counts entries with secondary keys in the requested range."
+    },
+    {
+      "surfaceId": "apex:Cache.SecondaryKeyApi.scanForKeyValues(String,String,Integer)",
+      "symbol": "Cache.SecondaryKeyApi.scanForKeyValues(String,String,Integer)",
+      "kind": "test",
+      "notes": "The local runtime returns deterministic batches and a scan locator for secondary-key values."
+    },
+    {
+      "surfaceId": "apex:Cache.SecondaryKeyApi.scanForMoreKeyValues(String,Integer)",
+      "symbol": "Cache.SecondaryKeyApi.scanForMoreKeyValues(String,Integer)",
+      "kind": "test",
+      "notes": "The local runtime consumes the scan locator and returns the remaining secondary-key values."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/CoreRuntimeCacheSecondaryKeyEvidenceTest.cls",
+      "content": "@isTest private class CoreRuntimeCacheSecondaryKeyEvidenceTest { @isTest static void rows() { Cache.SecondaryKeyApi secondary = Cache.SecondaryKeyApi.get('localFeature'); secondary.putImmediate('alpha', 'A', 'group-1'); secondary.putImmediate('beta', 'B', 'group-1'); secondary.putImmediate('gamma', 'C', 'group-2'); System.assertEquals(2, secondary.scanForCount('group-1', 'group-1')); Cache.ScanResult firstScan = secondary.scanForKeyValues('group-1', 'group-2', 2); System.assertEquals(false, firstScan.isDone); System.assertEquals(2, firstScan.result.size()); System.assertEquals('A', (String) firstScan.result.get('alpha')); Cache.ScanResult secondScan = secondary.scanForMoreKeyValues(firstScan.scanLocator, 10); System.assertEquals(true, secondScan.isDone); System.assertEquals(1, secondScan.result.size()); System.assertEquals('C', (String) secondScan.result.get('gamma')); System.assertEquals(true, secondary.remove('beta')); System.assertEquals(false, secondary.remove('missing')); System.assertEquals(2, secondary.scanForCount('', '')); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

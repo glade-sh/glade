@@ -31,6 +31,9 @@ func BuildGladeSnapshot() []SurfaceLedgerRow {
 				memberName = typeName
 			}
 			kind := gladeMemberKind(string(member.Kind))
+			if string(member.Kind) == "constructor" {
+				memberName = gladeConstructorMemberName(namespace, typeName, memberName)
+			}
 			if kind == KindProperty {
 				params = nil
 			}
@@ -47,6 +50,9 @@ func BuildGladeSnapshot() []SurfaceLedgerRow {
 				Parameters: params,
 				Sources:    []string{"standard-symbols"},
 			})
+			if string(member.Kind) == "constructor" && messagingInboundEmailDTOType(namespace, typeName) {
+				row.GladeBehavior = BehaviorPassive
+			}
 			byID[surfaceIDKey(memberID)] = row
 		}
 	}
@@ -193,6 +199,35 @@ func splitTypeName(namespace, name string) (string, string) {
 		return name[:idx], name[idx+1:]
 	}
 	return "System", name
+}
+
+func gladeConstructorMemberName(namespace, typeName, memberName string) string {
+	if !strings.EqualFold(memberName, lastTypeSegment(typeName)) {
+		return memberName
+	}
+	if strings.EqualFold(namespace, "Messaging.InboundEmail") {
+		return "InboundEmail." + typeName
+	}
+	return typeName
+}
+
+func messagingInboundEmailDTOType(namespace, typeName string) bool {
+	if !strings.EqualFold(namespace, "Messaging.InboundEmail") {
+		return false
+	}
+	switch typeName {
+	case "AuthenticationResult", "AuthenticationResultField", "BinaryAttachment", "TextAttachment":
+		return true
+	default:
+		return false
+	}
+}
+
+func lastTypeSegment(typeName string) string {
+	if idx := strings.LastIndexByte(typeName, '.'); idx >= 0 && idx < len(typeName)-1 {
+		return typeName[idx+1:]
+	}
+	return typeName
 }
 
 func memberParameterTypes(params []apexast.Parameter) []string {

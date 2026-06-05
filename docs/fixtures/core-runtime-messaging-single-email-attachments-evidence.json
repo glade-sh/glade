@@ -1,0 +1,25 @@
+{
+  "name": "core-runtime-messaging-single-email-attachments-evidence",
+  "evidence": [
+    {"surfaceId": "apex:Messaging.SingleEmailMessage.setDocumentAttachments(List<Id>)", "symbol": "Messaging.SingleEmailMessage.setDocumentAttachments", "kind": "test"},
+    {"surfaceId": "apex:Messaging.SingleEmailMessage.setFileAttachments(List<EmailFileAttachment>)", "symbol": "Messaging.SingleEmailMessage.setFileAttachments", "kind": "test"}
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/CoreRuntimeMessagingSingleEmailAttachmentsEvidenceTest.cls",
+      "content": "@isTest private class CoreRuntimeMessagingSingleEmailAttachmentsEvidenceTest { @isTest static void rows() { Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage(); msg.setDocumentAttachments(new List<Id>{(Id)'015000000000001AAA'}); Messaging.EmailFileAttachment attachment = new Messaging.EmailFileAttachment(); attachment.setFileName('trail.txt'); attachment.setBody(Blob.valueOf('trail')); msg.setFileAttachments(new List<Messaging.EmailFileAttachment>{attachment}); System.assertEquals((Id)'015000000000001AAA', msg.getDocumentAttachments()[0]); System.assertEquals('trail.txt', msg.getFileAttachments()[0].getFileName()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

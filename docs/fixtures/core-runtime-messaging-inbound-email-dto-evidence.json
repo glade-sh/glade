@@ -1,0 +1,45 @@
+{
+  "name": "core-runtime-messaging-inbound-email-dto-evidence",
+  "evidence": [
+    {"surfaceId": "apex:Messaging.InboundEmail.AuthenticationResult", "symbol": "Messaging.InboundEmail.AuthenticationResult", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.AuthenticationResult.InboundEmail.AuthenticationResult()", "symbol": "Messaging.InboundEmail.AuthenticationResult()", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.AuthenticationResult.authenticationResultFields", "symbol": "Messaging.InboundEmail.AuthenticationResult.authenticationResultFields", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.AuthenticationResult.method", "symbol": "Messaging.InboundEmail.AuthenticationResult.method", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.AuthenticationResult.result", "symbol": "Messaging.InboundEmail.AuthenticationResult.result", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.AuthenticationResultField", "symbol": "Messaging.InboundEmail.AuthenticationResultField", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.AuthenticationResultField.InboundEmail.AuthenticationResultField()", "symbol": "Messaging.InboundEmail.AuthenticationResultField()", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.AuthenticationResultField.name", "symbol": "Messaging.InboundEmail.AuthenticationResultField.name", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.AuthenticationResultField.value", "symbol": "Messaging.InboundEmail.AuthenticationResultField.value", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.authenticationResults", "symbol": "Messaging.InboundEmail.authenticationResults", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.BinaryAttachment.InboundEmail.BinaryAttachment()", "symbol": "Messaging.InboundEmail.BinaryAttachment()", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.BinaryAttachment.body", "symbol": "Messaging.InboundEmail.BinaryAttachment.body", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.BinaryAttachment.fileName", "symbol": "Messaging.InboundEmail.BinaryAttachment.fileName", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.BinaryAttachment.headers", "symbol": "Messaging.InboundEmail.BinaryAttachment.headers", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.BinaryAttachment.mimeTypeSubType", "symbol": "Messaging.InboundEmail.BinaryAttachment.mimeTypeSubType", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.TextAttachment.InboundEmail.TextAttachment()", "symbol": "Messaging.InboundEmail.TextAttachment()", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.TextAttachment.body", "symbol": "Messaging.InboundEmail.TextAttachment.body", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.TextAttachment.bodyIsTruncated", "symbol": "Messaging.InboundEmail.TextAttachment.bodyIsTruncated", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.TextAttachment.charset", "symbol": "Messaging.InboundEmail.TextAttachment.charset", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.TextAttachment.fileName", "symbol": "Messaging.InboundEmail.TextAttachment.fileName", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.TextAttachment.headers", "symbol": "Messaging.InboundEmail.TextAttachment.headers", "kind": "test"},
+    {"surfaceId": "apex:Messaging.InboundEmail.TextAttachment.mimeTypeSubType", "symbol": "Messaging.InboundEmail.TextAttachment.mimeTypeSubType", "kind": "test"}
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/CoreRuntimeMessagingInboundEmailDTOEvidenceTest.cls",
+      "content": "@isTest private class CoreRuntimeMessagingInboundEmailDTOEvidenceTest { @isTest static void rows() { Messaging.InboundEmail.AuthenticationResultField authField = new Messaging.InboundEmail.AuthenticationResultField(); authField.name = 'smtp.mailfrom'; authField.value = 'example.com'; Messaging.InboundEmail.AuthenticationResult auth = new Messaging.InboundEmail.AuthenticationResult(); auth.method = 'spf'; auth.result = 'pass'; auth.authenticationResultFields = new List<Messaging.InboundEmail.AuthenticationResultField>{authField}; Messaging.InboundEmail email = new Messaging.InboundEmail(); email.authenticationResults = new List<Messaging.InboundEmail.AuthenticationResult>{auth}; System.assertEquals('spf', email.authenticationResults[0].method); System.assertEquals('spf', auth.method); System.assertEquals('pass', auth.result); System.assertEquals('smtp.mailfrom', auth.authenticationResultFields[0].name); Messaging.InboundEmail.Header header = new Messaging.InboundEmail.Header(); header.name = 'Content-Type'; header.value = 'text/plain'; Messaging.InboundEmail.BinaryAttachment binary = new Messaging.InboundEmail.BinaryAttachment(); binary.body = Blob.valueOf('trail'); binary.fileName = 'trail.bin'; binary.headers = new List<Messaging.InboundEmail.Header>{header}; binary.mimeTypeSubType = 'application/octet-stream'; System.assertEquals('trail.bin', binary.fileName); System.assertEquals(1, binary.headers.size()); Messaging.InboundEmail.TextAttachment text = new Messaging.InboundEmail.TextAttachment(); text.body = 'trail text'; text.bodyIsTruncated = false; text.charset = 'UTF-8'; text.fileName = 'trail.txt'; text.headers = new List<Messaging.InboundEmail.Header>{header}; text.mimeTypeSubType = 'text/plain'; System.assertEquals('trail text', text.body); System.assertEquals(false, text.bodyIsTruncated); System.assertEquals('UTF-8', text.charset); System.assertEquals('trail.txt', text.fileName); System.assertEquals('text/plain', text.mimeTypeSubType); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

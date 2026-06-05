@@ -178,10 +178,29 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	if err, handled := vm.generatedUnsupportedFamilyExplicitMethodError(method, receiver, args); handled {
 		return Null, err
 	}
+	if receiver.Kind == ValueObject && passiveGeneratedMethod(method) && generatedPlatformObjectMemberReceiver(receiver.Type) {
+		callArgs := make([]Value, 0, len(method.Params))
+		for _, param := range method.Params {
+			callArgs = append(callArgs, frame[param.Name])
+		}
+		value, _, _, handled, err := vm.callPlatformObjectMember(receiver, apexMethodMemberName(method.Name), callArgs, result)
+		if handled || err != nil {
+			return value, err
+		}
+	}
 	if methodHasModifier(method.Modifiers, "passive-generated") {
 		className := method.ClassName
 		if className == "" {
 			className = receiver.Type
+		}
+		if receiver.Kind == ValueObject && strings.EqualFold(className, "Invocable.Action") {
+			callArgs := make([]Value, 0, len(method.Params))
+			for _, param := range method.Params {
+				callArgs = append(callArgs, frame[param.Name])
+			}
+			if value, handled := vm.callInvocableActionMember(receiver, apexMethodMemberName(method.Name), callArgs); handled {
+				return value, nil
+			}
 		}
 		if connectAPIPrimaryUsageClass(className) && !connectAPIPrimaryUsageAllowedMethod(className, apexMethodMemberName(method.Name)) {
 			return Null, newExceptionError("ConnectApi.ConnectApiException", method.Name+" is not supported in local tests")

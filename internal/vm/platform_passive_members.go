@@ -3266,6 +3266,14 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return value, receiver, false, true, nil
 			}
 			return receiver.Fields["summary"], receiver, false, true, nil
+		case "getComponentLabel":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("ApexPages.Message.getComponentLabel expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["componentLabel"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
 		}
 	case "Dom.Document":
 		return callDomDocumentMember(receiver, method, args)
@@ -3278,7 +3286,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "MultiStaticResourceCalloutMock":
 		return callMultiStaticResourceCalloutMockMember(receiver, method, args)
 	case "PageReference":
-		method = canonicalStdlibMemberName(method, "getContent", "getContentAsPDF", "getUrl", "setRedirect", "getRedirect", "getParameters", "getHeaders", "getCookies", "setCookies")
+		method = canonicalStdlibMemberName(method, "getContent", "getContentAsPDF", "getUrl", "getAnchor", "setAnchor", "setRedirect", "getRedirect", "getRedirectCode", "setRedirectCode", "getParameters", "getHeaders", "getCookies", "setCookies")
 		switch method {
 		case "getContent", "getContentAsPDF":
 			if len(args) != 0 {
@@ -3297,12 +3305,25 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("PageReference.getUrl expects 0 arguments")
 			}
 			return pageReferenceURL(receiver), receiver, false, true, nil
+		case "getAnchor":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("PageReference.getAnchor expects 0 arguments")
+			}
+			return pageReferenceAnchor(receiver), receiver, false, true, nil
+		case "setAnchor":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("PageReference.setAnchor expects String")
+			}
+			if err := setPageReferenceAnchor(&receiver, args[0]); err != nil {
+				return Null, receiver, false, true, err
+			}
+			return receiver, receiver, true, true, nil
 		case "setRedirect":
 			if len(args) != 1 || args[0].Kind != ValueBool {
 				return Null, receiver, false, true, fmt.Errorf("PageReference.setRedirect expects Boolean")
 			}
 			receiver.Fields["redirect"] = args[0]
-			return Null, receiver, true, true, nil
+			return receiver, receiver, true, true, nil
 		case "getRedirect":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("PageReference.getRedirect expects 0 arguments")
@@ -3311,6 +3332,20 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return value, receiver, false, true, nil
 			}
 			return Bool(false), receiver, false, true, nil
+		case "getRedirectCode":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("PageReference.getRedirectCode expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["redirectCode"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Int(0), receiver, false, true, nil
+		case "setRedirectCode":
+			if len(args) != 1 || args[0].Kind != ValueInt {
+				return Null, receiver, false, true, fmt.Errorf("PageReference.setRedirectCode expects Integer")
+			}
+			receiver.Fields["redirectCode"] = args[0]
+			return receiver, receiver, true, true, nil
 		case "getParameters":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("PageReference.getParameters expects 0 arguments")
