@@ -1,0 +1,55 @@
+{
+  "name": "ui-visualforce-component-reference-shape",
+  "evidence": [
+    {
+      "surfaceId": "visualforce:pages_compref",
+      "symbol": "Visualforce Component Reference",
+      "kind": "test",
+      "notes": "Local tests index the Visualforce component-reference metadata shelf; browser rendering is not modeled."
+    },
+    {
+      "surfaceId": "visualforce:pages_compref_commandButton",
+      "symbol": "apex:commandButton",
+      "kind": "test",
+      "notes": "Visualforce markup containing apex:commandButton is accepted as local metadata shape."
+    },
+    {
+      "surfaceId": "visualforce:pages_compref_includeLightning",
+      "symbol": "apex:includeLightning",
+      "kind": "test",
+      "notes": "Visualforce markup containing apex:includeLightning is accepted as local metadata shape without Lightning runtime execution."
+    },
+    {
+      "surfaceId": "visualforce:pages_compref_pageBlockTable",
+      "symbol": "apex:pageBlockTable",
+      "kind": "test",
+      "notes": "Visualforce markup containing apex:pageBlockTable is accepted as local metadata shape."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/pages/ComponentInventory.page",
+      "content": "<apex:page><apex:includeLightning /><apex:form><apex:pageBlockTable value=\"{!rows}\" var=\"row\"><apex:column value=\"{!row}\" /></apex:pageBlockTable><apex:commandButton action=\"{!save}\" value=\"Save\" /></apex:form></apex:page>"
+    },
+    {
+      "path": "force-app/main/default/components/ComponentInventory.component",
+      "content": "<apex:component><apex:attribute name=\"value\" type=\"String\" /><apex:componentBody /></apex:component>"
+    },
+    {
+      "path": "force-app/main/default/classes/UIVisualforceComponentReferenceShapeTest.cls",
+      "content": "@isTest private class UIVisualforceComponentReferenceShapeTest { @isTest static void pageReferenceCompilesForLocalTests() { System.assertEquals('/apex/ComponentInventory', Page.ComponentInventory.getUrl()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 1,
+      "total": 1
+    }
+  }
+}

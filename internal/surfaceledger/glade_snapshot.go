@@ -7,6 +7,7 @@ import (
 	"github.com/glade-sh/glade/internal/capability"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/visualforce"
 )
 
 func BuildGladeSnapshot() []SurfaceLedgerRow {
@@ -88,6 +89,8 @@ func BuildGladeSnapshot() []SurfaceLedgerRow {
 	}
 	addDataReferenceGladeRows(byID)
 	addLocalTestLWCGladeRows(byID)
+	addLocalTestVisualforceComponentRows(byID)
+	addLocalTestAuraMetadataRows(byID)
 	addUnsupportedQueryRuntimeGladeRows(byID)
 	addFixtureBackedStdlibAliasRows(byID)
 	addFixtureBackedSystemAliasRows(byID)
@@ -369,6 +372,46 @@ func addLocalTestLWCGladeRows(byID map[string]SurfaceLedgerRow) {
 	}
 }
 
+func addLocalTestVisualforceComponentRows(byID map[string]SurfaceLedgerRow) {
+	for _, name := range visualforce.StandardComponentReferenceNames() {
+		id := visualforceComponentReferenceID(name)
+		byID[surfaceIDKey(id)] = RowFromGladeShape(SurfaceLedgerRow{
+			SurfaceID:     id,
+			Product:       ProductVisualforce,
+			Area:          AreaUI,
+			TypeName:      strings.TrimPrefix(id, "visualforce:"),
+			Kind:          KindGuide,
+			GladeShape:    ShapeGenerated,
+			GladeBehavior: BehaviorPassive,
+			Sources:       []string{"visualforce-component-doc-shape"},
+			Notes:         "local Visualforce indexing accepts this component reference as metadata shape; browser rendering is not modeled locally",
+		})
+	}
+}
+
+func visualforceComponentReferenceID(name string) string {
+	if name == "" {
+		return "visualforce:pages_compref"
+	}
+	return "visualforce:pages_compref_" + name
+}
+
+func addLocalTestAuraMetadataRows(byID map[string]SurfaceLedgerRow) {
+	for _, id := range localTestAuraMetadataSurfaceIDs {
+		byID[surfaceIDKey(id)] = RowFromGladeShape(SurfaceLedgerRow{
+			SurfaceID:     id,
+			Product:       ProductAura,
+			Area:          AreaUI,
+			TypeName:      strings.TrimPrefix(id, "unknown:"),
+			Kind:          KindGuide,
+			GladeShape:    ShapeGenerated,
+			GladeBehavior: BehaviorPassive,
+			Sources:       []string{"aura-metadata-doc-shape"},
+			Notes:         "local UI controller discovery can index this Aura metadata shape; browser rendering and Lightning services are not modeled locally",
+		})
+	}
+}
+
 type unsupportedQueryRuntimeRow struct {
 	ID   string
 	Note string
@@ -441,6 +484,25 @@ var localTestUnsupportedLWCModules = []string{
 	"`notifyRecordUpdateAvailable(recordIds)`",
 	"lightning/cmsDeliveryApi",
 }
+
+var localTestAuraMetadataSurfaceIDs = strings.Fields(`
+unknown:apex_classes_annotation_AuraEnabled
+unknown:code_sample_lightning_cmp
+unknown:meta_auradefinitionbundle
+unknown:meta_lightningbolt
+unknown:meta_lightningcomponentbundle
+unknown:meta_lightningexperiencesettings
+unknown:meta_lightningexperiencetheme
+unknown:meta_lightningmessagechannel
+unknown:meta_lightningonboardingconfig
+unknown:meta_lightningtypebundle
+unknown:ref_attr_types_aura
+unknown:ref_attr_types_aura_action
+unknown:ref_aura_application
+unknown:ref_aura_attribute
+unknown:ref_aura_event
+unknown:ref_aura_interface
+`)
 
 func splitTypeName(namespace, name string) (string, string) {
 	if namespace != "" {

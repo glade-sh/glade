@@ -59,6 +59,42 @@ func TestBuildGladeSnapshotFencesLocalTestLWCServiceModules(t *testing.T) {
 	}
 }
 
+func TestBuildGladeSnapshotIncludesLocalTestVisualforceComponentShape(t *testing.T) {
+	rows := BuildGladeSnapshot()
+	byID := rowsByID(rows)
+	for _, id := range []string{
+		"visualforce:pages_compref_pageBlockTable",
+		"visualforce:pages_compref_commandButton",
+		"visualforce:pages_compref_includeLightning",
+	} {
+		row, ok := byID[id]
+		if !ok {
+			t.Fatalf("missing Visualforce component row %s", id)
+		}
+		if row.Product != ProductVisualforce || row.Area != AreaUI || row.GladeShape == ShapeAbsent || row.GladeBehavior != BehaviorPassive {
+			t.Fatalf("%s product/area/shape/behavior = %s/%s/%s/%s", id, row.Product, row.Area, row.GladeShape, row.GladeBehavior)
+		}
+	}
+}
+
+func TestBuildGladeSnapshotIncludesLocalTestAuraMetadataShape(t *testing.T) {
+	rows := BuildGladeSnapshot()
+	byID := rowsByID(rows)
+	for _, id := range []string{
+		"unknown:apex_classes_annotation_AuraEnabled",
+		"unknown:meta_auradefinitionbundle",
+		"unknown:ref_aura_application",
+	} {
+		row, ok := byID[id]
+		if !ok {
+			t.Fatalf("missing Aura metadata row %s", id)
+		}
+		if row.Area != AreaUI || row.GladeShape == ShapeAbsent || row.GladeBehavior != BehaviorPassive {
+			t.Fatalf("%s area/shape/behavior = %s/%s/%s", id, row.Area, row.GladeShape, row.GladeBehavior)
+		}
+	}
+}
+
 func TestBuildGladeSnapshotIncludesEmbeddedOrgDescribeStandardSObjectShape(t *testing.T) {
 	rows := BuildGladeSnapshot()
 	byID := rowsByID(rows)

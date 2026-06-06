@@ -220,3 +220,92 @@ func TestQuerySOQLSOSLPacketExcludesToolingRows(t *testing.T) {
 		t.Fatalf("Query.Runtime.SOQLSOSL packet should not own tooling row %s", toolingRow.SurfaceID)
 	}
 }
+
+func TestAuraComponentsPacketExcludesNonLocalLightningRows(t *testing.T) {
+	packet, ok := AreaPacketByName("UI.AuraComponents")
+	if !ok {
+		t.Fatal("missing AuraComponents packet")
+	}
+	auraDoc := SurfaceLedgerRow{
+		SurfaceID: "unknown:ref_aura_application",
+		Product:   ProductUnknown,
+		Area:      AreaUI,
+		Kind:      KindGuide,
+	}
+	if !packetOwnsRow(packet, auraDoc) {
+		t.Fatalf("AuraComponents packet should own %s", auraDoc.SurfaceID)
+	}
+	for _, row := range []SurfaceLedgerRow{
+		{
+			SurfaceID: "rest:resources_lightning_usagebypagemetrics.get",
+			Product:   ProductREST,
+			Area:      AreaServer,
+			Kind:      KindResource,
+		},
+		{
+			SurfaceID: ToolingObjectID("LightningComponentBundle"),
+			Product:   ProductTooling,
+			Area:      AreaServer,
+			Kind:      KindType,
+		},
+		{
+			SurfaceID: ApexTypeID("ConnectApi", "LightningExtensionInformation"),
+			Product:   ProductApex,
+			Namespace: "ConnectApi",
+			TypeName:  "LightningExtensionInformation",
+			Kind:      KindType,
+		},
+		{
+			SurfaceID: LWCModuleID("`lightning/graphql`"),
+			Product:   ProductLWC,
+			Area:      AreaUI,
+			Kind:      KindModule,
+		},
+	} {
+		if packetOwnsRow(packet, row) {
+			t.Fatalf("AuraComponents packet should not own %s", row.SurfaceID)
+		}
+	}
+}
+
+func TestVisualforceComponentsPacketExcludesAPIAndMetadataRows(t *testing.T) {
+	packet, ok := AreaPacketByName("UI.VisualforceComponents")
+	if !ok {
+		t.Fatal("missing VisualforceComponents packet")
+	}
+	componentDoc := SurfaceLedgerRow{
+		SurfaceID: "visualforce:pages_compref_page",
+		Product:   ProductVisualforce,
+		Area:      AreaUI,
+		Kind:      KindGuide,
+	}
+	if !packetOwnsRow(packet, componentDoc) {
+		t.Fatalf("VisualforceComponents packet should own %s", componentDoc.SurfaceID)
+	}
+	for _, row := range []SurfaceLedgerRow{
+		{
+			SurfaceID: "unknown:ui_api_responses_visualforce_layout_component",
+			Product:   ProductUnknown,
+			Area:      AreaServer,
+			Kind:      KindGuide,
+		},
+		{
+			SurfaceID: ApexMemberID("ConnectApi", "UserProfileTabType", "CustomVisualForce", nil),
+			Product:   ProductApex,
+			Namespace: "ConnectApi",
+			TypeName:  "UserProfileTabType",
+			Kind:      KindProperty,
+		},
+		{
+			SurfaceID: ApexMemberID("Metadata", "FeedLayoutComponentType", "Visualforce", nil),
+			Product:   ProductApex,
+			Namespace: "Metadata",
+			TypeName:  "FeedLayoutComponentType",
+			Kind:      KindProperty,
+		},
+	} {
+		if packetOwnsRow(packet, row) {
+			t.Fatalf("VisualforceComponents packet should not own %s", row.SurfaceID)
+		}
+	}
+}

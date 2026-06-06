@@ -160,6 +160,15 @@ func TestParseComponentToleratesVisualforceMarkupThatIsNotStrictXML(t *testing.T
 	}
 }
 
+func TestStandardComponentReferenceNamesIncludesLocalTestMetadataShapes(t *testing.T) {
+	refs := StandardComponentReferenceNames()
+	for _, want := range []string{"pageBlockTable", "commandButton", "includeLightning"} {
+		if !hasString(refs, want) {
+			t.Fatalf("standard component reference %q missing from %#v", want, refs)
+		}
+	}
+}
+
 func TestResolveResourceURL(t *testing.T) {
 	registry := storage.MetadataRegistry{
 		StaticResources: []storage.StaticResourceMetadata{{Name: "Bundle", URL: "/resource/Bundle"}},
@@ -176,6 +185,15 @@ func TestResolveResourceURL(t *testing.T) {
 func hasMerge(refs []MergeReference, kind, root, name string) bool {
 	for _, ref := range refs {
 		if ref.Kind == kind && ref.Root == root && ref.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func hasString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
 			return true
 		}
 	}

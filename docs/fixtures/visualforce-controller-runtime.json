@@ -2,12 +2,6 @@
   "name": "visualforce-controller-runtime",
   "evidence": [
     {
-      "surfaceId": "visualforce:Page.MyPage",
-      "symbol": "Page.MyPage",
-      "kind": "test",
-      "notes": "Visualforce page tokens resolve to local PageReference values."
-    },
-    {
       "surfaceId": "apex:ApexPages.StandardController",
       "symbol": "ApexPages.StandardController",
       "kind": "test",
