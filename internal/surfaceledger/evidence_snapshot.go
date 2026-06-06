@@ -28,23 +28,34 @@ func BuildEvidenceSnapshot(paths []string) ([]SurfaceLedgerRow, error) {
 			if id == "" {
 				continue
 			}
+			product := productFromID(id)
 			kind := evidenceKindFromSurfaceID(id)
+			area := AreaRuntime
+			if product == ProductDataRef {
+				area = AreaData
+			}
+			shape := ShapeAbsent
 			behavior := BehaviorNone
 			if strings.EqualFold(evidence.Kind, "unsupported") {
 				behavior = BehaviorUnsupported
+			} else if product == ProductDataRef && fixture.Expected.Error == nil {
+				shape = ShapeTypeKnown
+				behavior = BehaviorSupported
 			} else if fixtureEvidenceRunsRuntimeGuide(fixture, evidence, id) {
 				behavior = BehaviorSupported
 			}
 			row := RowFromEvidence(SurfaceLedgerRow{
 				SurfaceID:     id,
-				Product:       productFromID(id),
-				Area:          AreaRuntime,
+				Product:       product,
+				Area:          area,
 				Kind:          kind,
+				GladeShape:    shape,
 				GladeBehavior: behavior,
 				Evidence:      EvidenceFixture,
 				Sources:       []string{"fixture:" + fixture.Name},
 				Notes:         evidence.Notes,
 			})
+			fillFromDataReferenceID(&row)
 			fillFromApexID(&row)
 			rows = append(rows, row)
 		}
@@ -79,6 +90,13 @@ func isQueryRuntimeSOQLSOSLSurfaceID(id string) bool {
 }
 
 func evidenceKindFromSurfaceID(id string) string {
+	if strings.HasPrefix(id, "data-reference:") {
+		rest := strings.TrimPrefix(id, "data-reference:")
+		if strings.Contains(rest, ".") {
+			return KindField
+		}
+		return KindType
+	}
 	if !strings.HasPrefix(id, "apex:") {
 		return KindMethod
 	}
@@ -93,6 +111,25 @@ func evidenceKindFromSurfaceID(id string) string {
 		return KindType
 	}
 	return KindProperty
+}
+
+func fillFromDataReferenceID(row *SurfaceLedgerRow) {
+	if row == nil || !strings.HasPrefix(row.SurfaceID, "data-reference:") {
+		return
+	}
+	rest := strings.TrimPrefix(row.SurfaceID, "data-reference:")
+	if dot := strings.LastIndexByte(rest, '.'); dot > 0 && dot < len(rest)-1 {
+		if row.TypeName == "" {
+			row.TypeName = rest[:dot]
+		}
+		if row.FieldName == "" {
+			row.FieldName = rest[dot+1:]
+		}
+		return
+	}
+	if row.TypeName == "" {
+		row.TypeName = rest
+	}
 }
 
 var bareApexMethodEvidenceIDs = map[string]bool{

@@ -200,18 +200,20 @@ func RowsFromDocsInventory(inv apexdocs.Inventory) []SurfaceLedgerRow {
 		if product == ProductApex {
 			surfaceID = ApexTypeID(namespace, typeName)
 		}
-		row := RowFromDocs(SurfaceLedgerRow{
-			SurfaceID:  surfaceID,
-			Product:    product,
-			Area:       areaForProduct(product),
-			Namespace:  namespace,
-			TypeName:   typeName,
-			Kind:       docsKind(product, doc.Kind),
-			DocsSource: doc.SourcePath,
-			DocsTitle:  doc.Title,
-			Sources:    []string{"docs"},
-		})
-		rows = append(rows, row)
+		if shouldEmitDocsDocumentRow(product, doc) {
+			row := RowFromDocs(SurfaceLedgerRow{
+				SurfaceID:  surfaceID,
+				Product:    product,
+				Area:       areaForProduct(product),
+				Namespace:  namespace,
+				TypeName:   typeName,
+				Kind:       docsDocumentKind(product, doc.Kind),
+				DocsSource: doc.SourcePath,
+				DocsTitle:  doc.Title,
+				Sources:    []string{"docs"},
+			})
+			rows = append(rows, row)
+		}
 		apexRealSignatures := apexMembersWithRealSignatures(doc.Members)
 		for _, member := range doc.Members {
 			if product == ProductApex && isApexHeadingOnlySignature(member.Signature) && apexRealSignatures[member.Name] {
@@ -317,6 +319,35 @@ func shouldIncludeDocsSurface(product string, doc apexdocs.Document) bool {
 	return true
 }
 
+func shouldEmitDocsDocumentRow(product string, doc apexdocs.Document) bool {
+	if product != ProductDataRef {
+		return true
+	}
+	return isDataReferenceObjectDoc(doc.SourcePath)
+}
+
+func isDataReferenceObjectDoc(sourcePath string) bool {
+	path := filepath.ToSlash(sourcePath)
+	parts := strings.Split(path, "/")
+	if len(parts) < 2 || parts[len(parts)-2] != "object-reference" {
+		return false
+	}
+	stem := strings.ToLower(sourceStemBase(sourcePath))
+	if strings.HasPrefix(stem, "sforce_api_objects_eventlogfile_") {
+		return true
+	}
+	if !strings.HasPrefix(stem, "sforce_api_objects_") {
+		return false
+	}
+	rest := strings.TrimPrefix(stem, "sforce_api_objects_")
+	switch rest {
+	case "concepts", "custom_object__c", "custom_objects", "custommetadatatype__mdt", "customobject__feed", "external_objects", "fequently_occurring_fields", "frequently_occurring_fields", "list", "salesforce_surveys_object_model":
+		return false
+	default:
+		return rest != ""
+	}
+}
+
 func isApexGuideDoc(sourcePath string) bool {
 	base := strings.ToLower(sourceStemBase(sourcePath))
 	if strings.HasSuffix(base, "_exceptions") || strings.HasPrefix(base, "apex_exceptions_") || strings.HasPrefix(base, "apex_shopping_cart_example") {
@@ -415,7 +446,34 @@ func dataReferenceDocsName(doc apexdocs.Document) string {
 	if strings.HasPrefix(stem, "sforce_api_objects_eventlogfile_") {
 		return "EventLogFile"
 	}
-	return doc.Name
+	if isDataReferenceObjectDoc(doc.SourcePath) {
+		if name := dataReferenceNameFromTitle(doc.Title); name != "" {
+			return name
+		}
+	}
+	return cleanIdentityPart(doc.Name)
+}
+
+func dataReferenceNameFromTitle(title string) string {
+	title = cleanIdentityPart(title)
+	if idx := strings.IndexByte(title, '('); idx >= 0 {
+		title = strings.TrimSpace(title[:idx])
+	}
+	title = strings.TrimSuffix(title, " Object")
+	title = strings.TrimSuffix(title, " object")
+	parts := strings.Fields(title)
+	if len(parts) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	for _, part := range parts {
+		part = strings.Trim(part, ",.;:")
+		if part == "" {
+			continue
+		}
+		b.WriteString(part)
+	}
+	return b.String()
 }
 
 func docsNamespace(product string, doc apexdocs.Document) string {
@@ -524,6 +582,13 @@ func docsKind(product, kind string) string {
 	default:
 		return KindType
 	}
+}
+
+func docsDocumentKind(product, kind string) string {
+	if product == ProductDataRef {
+		return KindType
+	}
+	return docsKind(product, kind)
 }
 
 func areaForProduct(product string) string {
