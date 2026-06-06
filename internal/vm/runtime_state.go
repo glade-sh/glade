@@ -134,7 +134,6 @@ type VM struct {
 	serverBaseURL      string
 	metadataDeploys    map[string]Value
 	reportInstances    map[string]Value
-	pushUpgradeCustoms map[string]pushUpgradeCustomization
 	subMgmtTestRecords map[string]Value
 	subMgmtTestSeq     int
 	// --- Debug / trace hooks ---
@@ -262,13 +261,6 @@ type nestedTypeKey struct {
 type nestedTypeResult struct {
 	Name string
 	OK   bool
-}
-
-type pushUpgradeCustomization struct {
-	ID                   string
-	PackageID            string
-	SubscriberOrgID      string
-	CustomUpgradeAllowed bool
 }
 
 type enumClassLookup struct {
@@ -509,7 +501,6 @@ func New(stdout io.Writer) *VM {
 		cacheScanLocators:            make(map[string][]cacheScanItem),
 		metadataDeploys:              make(map[string]Value),
 		reportInstances:              make(map[string]Value),
-		pushUpgradeCustoms:           make(map[string]pushUpgradeCustomization),
 		subMgmtTestRecords:           make(map[string]Value),
 		traceEnabled:                 true,
 		ctx:                          context.Background(),

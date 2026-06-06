@@ -1,0 +1,27 @@
+{
+  "name": "core-runtime-push-upgrade-customization-repository-unsupported",
+  "evidence": [
+    {"surfaceId": "apex:System.PushUpgradeCustomizationRepository.create(String,String,Boolean)", "symbol": "PushUpgradeCustomizationRepository.create", "kind": "unsupported", "notes": "PushUpgradeCustomizationRepository mutates subscriber package upgrade customization state through a Salesforce service that the local runtime does not model."},
+    {"surfaceId": "apex:System.PushUpgradeCustomizationRepository.deleteById(String)", "symbol": "PushUpgradeCustomizationRepository.deleteById", "kind": "unsupported", "notes": "PushUpgradeCustomizationRepository mutates subscriber package upgrade customization state through a Salesforce service that the local runtime does not model."},
+    {"surfaceId": "apex:System.PushUpgradeCustomizationRepository.deleteByIndex(String,String)", "symbol": "PushUpgradeCustomizationRepository.deleteByIndex", "kind": "unsupported", "notes": "PushUpgradeCustomizationRepository mutates subscriber package upgrade customization state through a Salesforce service that the local runtime does not model."},
+    {"surfaceId": "apex:System.PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForId(String)", "symbol": "PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForId", "kind": "unsupported", "notes": "PushUpgradeCustomizationRepository reads subscriber package upgrade customization state through a Salesforce service that the local runtime does not model."},
+    {"surfaceId": "apex:System.PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForIndex(String,String)", "symbol": "PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForIndex", "kind": "unsupported", "notes": "PushUpgradeCustomizationRepository reads subscriber package upgrade customization state through a Salesforce service that the local runtime does not model."},
+    {"surfaceId": "apex:System.PushUpgradeCustomizationRepository.getCustomUpgradeTypeForId(String)", "symbol": "PushUpgradeCustomizationRepository.getCustomUpgradeTypeForId", "kind": "unsupported", "notes": "PushUpgradeCustomizationRepository reads subscriber package upgrade customization state through a Salesforce service that the local runtime does not model."},
+    {"surfaceId": "apex:System.PushUpgradeCustomizationRepository.getCustomUpgradeTypeForIndex(String,String)", "symbol": "PushUpgradeCustomizationRepository.getCustomUpgradeTypeForIndex", "kind": "unsupported", "notes": "PushUpgradeCustomizationRepository reads subscriber package upgrade customization state through a Salesforce service that the local runtime does not model."},
+    {"surfaceId": "apex:System.PushUpgradeCustomizationRepository.setCustomUpgradeAllowedForId(String,Boolean)", "symbol": "PushUpgradeCustomizationRepository.setCustomUpgradeAllowedForId", "kind": "unsupported", "notes": "PushUpgradeCustomizationRepository mutates subscriber package upgrade customization state through a Salesforce service that the local runtime does not model."},
+    {"surfaceId": "apex:System.PushUpgradeCustomizationRepository.setCustomUpgradeAllowedForIndex(String,String,Boolean)", "symbol": "PushUpgradeCustomizationRepository.setCustomUpgradeAllowedForIndex", "kind": "unsupported", "notes": "PushUpgradeCustomizationRepository mutates subscriber package upgrade customization state through a Salesforce service that the local runtime does not model."}
+  ],
+  "source": [
+    {"path": "anonymous.apex", "content": "PushUpgradeCustomizationRepository.create('pkg', '00Dsubscriber', true);"}
+  ],
+  "command": {
+    "kind": "exec",
+    "args": ["PushUpgradeCustomizationRepository.create('pkg', '00Dsubscriber', true);"]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"PushUpgradeCustomizationRepository.create local push-upgrade customization repository service\""
+    }
+  }
+}

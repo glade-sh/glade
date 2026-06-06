@@ -1,5 +1,13 @@
 {
   "name": "unsupported-exec-call",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.unimplemented platform/stdlib calls",
+      "symbol": "System.unimplemented platform/stdlib calls",
+      "kind": "exec",
+      "notes": "Unknown platform or stdlib calls return a typed UnsupportedFeature diagnostic with stable message text."
+    }
+  ],
   "source": [
     {
       "path": "anonymous.apex",

@@ -2,6 +2,7 @@
   "name": "frontend-generic-collections",
   "evidence": [
     {
+      "surfaceId": "apex:System.Map",
       "symbol": "Map<String,List<Account>>",
       "kind": "check",
       "notes": "Reduced generic collection signatures and selector chaining."

@@ -403,7 +403,8 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 	method = canonicalStdlibMemberName(method,
 		"addError", "hasErrors", "getErrors", "get", "put", "putSObject", "isSet", "clear",
 		"getPopulatedFieldsAsMap", "getSObjectType", "getSObject", "getSObjects", "getQuickActionName",
-		"getAll", "getInstance", "getOrgDefaults", "getValues", "recalculateFormulas", "setOptions", "getOptions", "clone",
+		"getAll", "getInstance", "getOrgDefaults", "getValues", "recalculateFormulas", "setOptions", "getOptions",
+		"clone", "isClone", "getCloneSourceId",
 	)
 	switch method {
 	case "addError":
@@ -726,6 +727,20 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return cloneValue(options), true, nil
 		}
 		return Null, true, nil
+	case "isClone":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("SObject.isClone expects 0 arguments")
+		}
+		marker, ok := receiver.Fields[sobjectCloneMarkerField]
+		return Bool(ok && marker.Kind == ValueBool && marker.Bool), true, nil
+	case "getCloneSourceId":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("SObject.getCloneSourceId expects 0 arguments")
+		}
+		if sourceID, ok := receiver.Fields[sobjectCloneSourceIDField]; ok {
+			return cloneValue(sourceID), true, nil
+		}
+		return Null, true, nil
 	case "clone":
 		if len(args) > 4 {
 			return Null, true, fmt.Errorf("SObject.clone expects 0 to 4 arguments")
@@ -740,6 +755,12 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			cloned.Fields = make(map[string]Value)
 		}
 		vm.hydrateCloneRecordTypeID(receiver, &cloned)
+		sourceID := Null
+		if _, value, ok := objectFieldValue(receiver, "Id"); ok {
+			sourceID = cloneValue(value)
+		}
+		cloned.Fields[sobjectCloneMarkerField] = Bool(true)
+		cloned.Fields[sobjectCloneSourceIDField] = sourceID
 		preserveID := len(args) > 0 && args[0].Bool
 		if !preserveID {
 			deleteObjectField(cloned.Fields, "Id")

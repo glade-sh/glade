@@ -45,6 +45,16 @@ func TestGeneratedPassiveUnsupportedStaticFamilyMethodThrowsUnsupportedOperation
 	}
 }
 
+func TestExecWebStoreContextGetCommerceContextUnsupported(t *testing.T) {
+	program, err := CompileAnonymous(`WebStoreContext.getCommerceContext();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), `unsupported call "WebStoreContext.getCommerceContext local commerce context service"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func findPassiveGeneratedStaticFamilyCalleeForTest(vm *VM) (string, bool) {
 	for className, methodsByName := range generatedPlatformMethodIndex {
 		if !generatedFamilyUnsupportedTypePrefix(className) {
@@ -3559,8 +3569,7 @@ System.assertNotEquals(null, inventory.createResponse(data));
 System.assertEquals(0, new CommerceDxSampleapp.CommerceDx_Inventory().calculateInventoryLevel('webstore', 'event'));
 new CommerceDxSampleapp.CommerceDx_Inventory().executeNonExistentMethod('webstore');
 System.assertEquals(false, new CommerceDxSampleapp.CommerceDx_Inventory_Tutorial_115().isAvailable('webstore', 'product'));
-System.assertEquals(0, WebStoreContext.getCommerceContext().size());
-System.assertEquals('[]', data_mask.DataMaskIntegrationUtil.getJobs());
+	System.assertEquals('[]', data_mask.DataMaskIntegrationUtil.getJobs());
 System.assertEquals('{}', data_mask.DataMaskIntegrationUtil.getRunLogResponse('job-local'));
 commerce_inventory.CommerceInventoryService inventoryService = new commerce_inventory.CommerceInventoryService();
 commerce_inventory.InventoryLevelsResponse levels = inventoryService.getInventoryLevel(

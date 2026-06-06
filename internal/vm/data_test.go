@@ -3712,6 +3712,19 @@ System.assertEquals('CREATABLE', AccessType.CREATABLE.name());
 	}
 }
 
+func TestExecSecurityStripInaccessiblePermissionSetScopedUnsupported(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id permissionSetId = '0PS000000000001';
+Security.stripInaccessible(AccessType.READABLE, new List<Account>{ new Account(Name = 'Acme') }, true, permissionSetId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), `unsupported call "Security.stripInaccessible permission-set-scoped access checks"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestExecSecurityStripInaccessibleTracksRemovedFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Account> rows = [SELECT Id, Name, Secret__c FROM Account];
@@ -6516,11 +6529,15 @@ Account parentRow = row.getSObject('Parent');
 System.assertEquals('Parent', parentRow.Name);
 List<Contact> contacts = row.getSObjects('Contacts');
 System.assertEquals(1, contacts.size());
-Account cloneNoId = row.clone();
-System.assertEquals(null, cloneNoId.get('Id'));
-System.assertEquals('Child', cloneNoId.Name);
-Account cloneWithId = row.clone(true, true, false, false);
-System.assertEquals(row.get('Id'), cloneWithId.get('Id'));
+	Account cloneNoId = row.clone();
+	System.assertEquals(true, cloneNoId.isClone());
+	System.assertEquals(row.get('Id'), cloneNoId.getCloneSourceId());
+	System.assertEquals(null, cloneNoId.get('Id'));
+	System.assertEquals('Child', cloneNoId.Name);
+	Account cloneWithId = row.clone(true, true, false, false);
+	System.assertEquals(true, cloneWithId.isClone());
+	System.assertEquals(row.get('Id'), cloneWithId.getCloneSourceId());
+	System.assertEquals(row.get('Id'), cloneWithId.get('Id'));
 cloneWithId.Name = 'Clone';
 System.assertEquals('Child', row.Name);
 Account cloneTwoArgs = row.clone(false, true);

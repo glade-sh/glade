@@ -2,24 +2,142 @@
   "name": "integration-rest-context-stdlib",
   "evidence": [
     {
+      "surfaceId": "apex:System.RestContext.request",
       "symbol": "RestContext.request",
       "kind": "exec",
       "notes": "VM-local static request slot accepts RestRequest or null."
     },
     {
+      "surfaceId": "apex:System.RestContext.response",
       "symbol": "RestContext.response",
       "kind": "exec",
       "notes": "VM-local static response slot lazily creates a RestResponse."
     },
     {
+      "surfaceId": "apex:System.RestRequest",
       "symbol": "RestRequest",
       "kind": "exec",
       "notes": "Local object shape covers requestURI, resourcePath, httpMethod, remoteAddress, headers, params, and requestBody."
     },
     {
+      "surfaceId": "apex:System.RestRequest.RestRequest()",
+      "symbol": "RestRequest",
+      "kind": "exec",
+      "notes": "RestRequest constructs the local request shape."
+    },
+    {
+      "surfaceId": "apex:System.RestRequest.addHeader(String,String)",
+      "symbol": "RestRequest.addHeader",
+      "kind": "exec",
+      "notes": "RestRequest stores case-insensitive local request headers."
+    },
+    {
+      "surfaceId": "apex:System.RestRequest.addParameter(String,String)",
+      "symbol": "RestRequest.addParameter",
+      "kind": "exec",
+      "notes": "RestRequest stores local request query parameters."
+    },
+    {
+      "surfaceId": "apex:System.RestRequest.getHeader(String)",
+      "symbol": "RestRequest.getHeader",
+      "kind": "exec",
+      "notes": "RestRequest reads local request headers case-insensitively."
+    },
+    {
+      "surfaceId": "apex:System.RestRequest.getHeader",
+      "symbol": "RestRequest.getHeader",
+      "kind": "exec",
+      "notes": "Exact docs-side method identity for the same local header getter behavior."
+    },
+    {
+      "surfaceId": "apex:System.RestRequest.getParameter(String)",
+      "symbol": "RestRequest.getParameter",
+      "kind": "exec",
+      "notes": "RestRequest reads local request query parameters."
+    },
+    {
+      "surfaceId": "apex:System.RestRequest.getParameter",
+      "symbol": "RestRequest.getParameter",
+      "kind": "exec",
+      "notes": "Exact docs-side method identity for the same local parameter getter behavior."
+    },
+    {
+      "surfaceId": "apex:System.RestRequest.headers",
+      "symbol": "RestRequest.headers",
+      "kind": "exec",
+      "notes": "RestRequest exposes its local request header map."
+    },
+    {
+      "surfaceId": "apex:System.RestRequest.params",
+      "symbol": "RestRequest.params",
+      "kind": "exec",
+      "notes": "RestRequest exposes its local request parameter map."
+    },
+    {
+      "surfaceId": "apex:System.RestRequest.requestBody",
+      "symbol": "RestRequest.requestBody",
+      "kind": "exec",
+      "notes": "RestRequest stores a local Blob request body."
+    },
+    {
+      "surfaceId": "apex:System.RestRequest.requestURI",
+      "symbol": "RestRequest.requestURI",
+      "kind": "exec",
+      "notes": "RestRequest stores the local request URI."
+    },
+    {
+      "surfaceId": "apex:System.RestRequest.resourcePath",
+      "symbol": "RestRequest.resourcePath",
+      "kind": "exec",
+      "notes": "RestRequest stores the local resource path."
+    },
+    {
+      "surfaceId": "apex:System.RestRequest.httpMethod",
+      "symbol": "RestRequest.httpMethod",
+      "kind": "exec",
+      "notes": "RestRequest stores the local HTTP method."
+    },
+    {
+      "surfaceId": "apex:System.RestRequest.remoteAddress",
+      "symbol": "RestRequest.remoteAddress",
+      "kind": "exec",
+      "notes": "RestRequest stores the local remote address."
+    },
+    {
+      "surfaceId": "apex:System.RestResponse",
       "symbol": "RestResponse",
       "kind": "exec",
       "notes": "Local object shape covers statusCode, headers, and responseBody."
+    },
+    {
+      "surfaceId": "apex:System.RestResponse.RestResponse()",
+      "symbol": "RestResponse",
+      "kind": "exec",
+      "notes": "RestResponse constructs the local response shape."
+    },
+    {
+      "surfaceId": "apex:System.RestResponse.addHeader(String,String)",
+      "symbol": "RestResponse.addHeader",
+      "kind": "exec",
+      "notes": "RestResponse stores local response headers."
+    },
+    {
+      "surfaceId": "apex:System.RestResponse.headers",
+      "symbol": "RestResponse.headers",
+      "kind": "exec",
+      "notes": "RestResponse exposes its local response header map."
+    },
+    {
+      "surfaceId": "apex:System.RestResponse.responseBody",
+      "symbol": "RestResponse.responseBody",
+      "kind": "exec",
+      "notes": "RestResponse stores a local Blob response body."
+    },
+    {
+      "surfaceId": "apex:System.RestResponse.statusCode",
+      "symbol": "RestResponse.statusCode",
+      "kind": "exec",
+      "notes": "RestResponse stores the local status code."
     }
   ],
   "source": [

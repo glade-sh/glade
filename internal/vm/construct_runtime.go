@@ -499,6 +499,14 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			response.Fields[field] = value
 		}
 		return response, nil
+	case "XmlStreamWriter":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("XmlStreamWriter constructor expects 0 arguments")
+		}
+		if len(namedArgs) != 0 {
+			return Null, fmt.Errorf("XmlStreamWriter constructor does not accept named arguments")
+		}
+		return newXmlStreamWriter(), nil
 	case "Continuation":
 		return newContinuation(args, namedArgs)
 	case "PageReference", "ApexPages.PageReference":

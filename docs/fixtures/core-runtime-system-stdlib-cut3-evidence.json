@@ -1,0 +1,122 @@
+{
+  "name": "core-runtime-system-stdlib-cut3-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.Set.addAll(Set)",
+      "symbol": "Set.addAll",
+      "kind": "exec",
+      "notes": "Set overload accepts another Set and reports whether new values were added."
+    },
+    {
+      "surfaceId": "apex:System.Set.containsAll(Set)",
+      "symbol": "Set.containsAll",
+      "kind": "exec",
+      "notes": "Set overload checks all members of another Set."
+    },
+    {
+      "surfaceId": "apex:System.Set.equals(Set<Object>)",
+      "symbol": "Set.equals",
+      "kind": "exec",
+      "notes": "Set equality compares members without depending on insertion order."
+    },
+    {
+      "surfaceId": "apex:System.Set.removeAll(List<Object>)",
+      "symbol": "Set.removeAll",
+      "kind": "exec",
+      "notes": "Set removes all values provided by a List."
+    },
+    {
+      "surfaceId": "apex:System.Set.removeAll(Set)",
+      "symbol": "Set.removeAll",
+      "kind": "exec",
+      "notes": "Set removes all values provided by another Set."
+    },
+    {
+      "surfaceId": "apex:System.Set.retainAll(Set)",
+      "symbol": "Set.retainAll",
+      "kind": "exec",
+      "notes": "Set retains values present in another Set and reports whether the receiver changed."
+    },
+    {
+      "surfaceId": "apex:System.UUID.randomUUID()",
+      "symbol": "UUID.randomUUID",
+      "kind": "exec",
+      "notes": "Local UUID generation returns a parseable UUID value."
+    },
+    {
+      "surfaceId": "apex:System.UUID.fromString(String)",
+      "symbol": "UUID.fromString",
+      "kind": "exec",
+      "notes": "Local UUID parser round-trips the generated UUID string."
+    },
+    {
+      "surfaceId": "apex:System.Version.compareTo(Version)",
+      "symbol": "Version.compareTo",
+      "kind": "exec",
+      "notes": "Version ordering compares major, minor, then patch."
+    },
+    {
+      "surfaceId": "apex:System.Version.major()",
+      "symbol": "Version.major",
+      "kind": "exec",
+      "notes": "Version exposes the constructor major component."
+    },
+    {
+      "surfaceId": "apex:System.Version.minor()",
+      "symbol": "Version.minor",
+      "kind": "exec",
+      "notes": "Version exposes the constructor minor component."
+    },
+    {
+      "surfaceId": "apex:System.Version.patch()",
+      "symbol": "Version.patch",
+      "kind": "exec",
+      "notes": "Version exposes the constructor patch component."
+    },
+    {
+      "surfaceId": "apex:System.URL.getFileFieldURL(String,String)",
+      "symbol": "URL.getFileFieldURL",
+      "kind": "exec",
+      "notes": "Local file-field URL encodes object Id and field name in the deterministic request URL."
+    },
+    {
+      "surfaceId": "apex:System.URL.getUserInfo()",
+      "symbol": "URL.getUserInfo",
+      "kind": "exec",
+      "notes": "URL exposes user-info from the parsed authority."
+    },
+    {
+      "surfaceId": "apex:System.URL.sameFile(URL)",
+      "symbol": "URL.sameFile",
+      "kind": "exec",
+      "notes": "URL compares protocol, host, effective port, path, and query while ignoring fragment."
+    },
+    {
+      "surfaceId": "apex:System.Type.forName",
+      "symbol": "Type.forName",
+      "kind": "exec",
+      "notes": "Exact docs-side method identity for one-argument local type lookup."
+    },
+    {
+      "surfaceId": "apex:System.Type.getName",
+      "symbol": "Type.getName",
+      "kind": "exec",
+      "notes": "Exact docs-side method identity for Type name access."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Set<String> names = new Set<String>{'a'};\nSystem.assert(names.addAll(new Set<String>{'b', 'c'}));\nSystem.assert(names.containsAll(new Set<String>{'a', 'b'}));\nSystem.assert(names.equals(new Set<String>{'c', 'b', 'a'}));\nSystem.assert(names.removeAll(new List<String>{'c'}));\nSystem.assert(names.removeAll(new Set<String>{'b'}));\nSystem.assert(!names.retainAll(new Set<String>{'a'}));\nString uuidText = UUID.randomUUID();\nUUID parsedUUID = UUID.fromString(uuidText);\nSystem.assertEquals(uuidText, parsedUUID.toString());\nVersion version = new Version(1, 2, 3);\nSystem.assertEquals(1, version.major());\nSystem.assertEquals(2, version.minor());\nSystem.assertEquals(3, version.patch());\nSystem.assert(new Version(1, 2).compareTo(new Version(2, 0)) < 0);\nString fileURL = URL.getFileFieldURL('001B000001DVM9tIAH', 'Body');\nSystem.assert(fileURL.contains('id=001B000001DVM9tIAH'));\nSystem.assert(fileURL.contains('field=Body'));\nURL detailed = new URL('https://user:pass@example.test:8443/apex/Page?id=001#top');\nSystem.assertEquals('user:pass', detailed.getUserInfo());\nURL sameFile = new URL('https://example.test:8443/apex/Page?id=001#other');\nSystem.assert(detailed.sameFile(sameFile));\nURL differentQuery = new URL('https://example.test:8443/apex/Page?id=002#top');\nSystem.assert(!detailed.sameFile(differentQuery));\nType accountType = Type.forName('Account');\nSystem.assertEquals('Account', accountType.getName());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Set<String> names = new Set<String>{'a'};\nSystem.assert(names.addAll(new Set<String>{'b', 'c'}));\nSystem.assert(names.containsAll(new Set<String>{'a', 'b'}));\nSystem.assert(names.equals(new Set<String>{'c', 'b', 'a'}));\nSystem.assert(names.removeAll(new List<String>{'c'}));\nSystem.assert(names.removeAll(new Set<String>{'b'}));\nSystem.assert(!names.retainAll(new Set<String>{'a'}));\nString uuidText = UUID.randomUUID();\nUUID parsedUUID = UUID.fromString(uuidText);\nSystem.assertEquals(uuidText, parsedUUID.toString());\nVersion version = new Version(1, 2, 3);\nSystem.assertEquals(1, version.major());\nSystem.assertEquals(2, version.minor());\nSystem.assertEquals(3, version.patch());\nSystem.assert(new Version(1, 2).compareTo(new Version(2, 0)) < 0);\nString fileURL = URL.getFileFieldURL('001B000001DVM9tIAH', 'Body');\nSystem.assert(fileURL.contains('id=001B000001DVM9tIAH'));\nSystem.assert(fileURL.contains('field=Body'));\nURL detailed = new URL('https://user:pass@example.test:8443/apex/Page?id=001#top');\nSystem.assertEquals('user:pass', detailed.getUserInfo());\nURL sameFile = new URL('https://example.test:8443/apex/Page?id=001#other');\nSystem.assert(detailed.sameFile(sameFile));\nURL differentQuery = new URL('https://example.test:8443/apex/Page?id=002#top');\nSystem.assert(!detailed.sameFile(differentQuery));\nType accountType = Type.forName('Account');\nSystem.assertEquals('Account', accountType.getName());\n"
+    ]
+  },
+  "expected": {
+    "stdout": ""
+  }
+}

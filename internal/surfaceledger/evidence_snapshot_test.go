@@ -102,6 +102,60 @@ func TestBuildEvidenceSnapshotDoesNotMarkUnsupportedRuntimeGuideSupported(t *tes
 	}
 }
 
+func TestBuildEvidenceSnapshotMarksUnsupportedEvidenceUnsupported(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "fixture.json")
+	data := `{
+  "name": "service_bound_unsupported",
+  "evidence": [{"symbol": "WebStoreContext.getCommerceContext", "surfaceId": "apex:System.WebStoreContext.getCommerceContext()", "kind": "unsupported"}],
+  "command": {"kind": "exec"},
+  "expected": {"error": {"type": "UnsupportedFeature"}}
+}`
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := BuildEvidenceSnapshot([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := ApexMemberID("System", "WebStoreContext", "getCommerceContext", []string{})
+	row := rowsByID(rows)[id]
+	if row.Evidence != EvidenceFixture || row.GladeBehavior != BehaviorUnsupported {
+		t.Fatalf("unsupported evidence/behavior = %s/%s, want fixture/unsupported: %#v", row.Evidence, row.GladeBehavior, rows)
+	}
+}
+
+func TestBuildEvidenceSnapshotClassifiesBareMethodEvidenceIDs(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "fixture.json")
+	data := `{
+  "name": "bare_method_ids",
+  "evidence": [
+    {"symbol": "RestRequest.getHeader", "surfaceId": "apex:System.RestRequest.getHeader", "kind": "exec"},
+    {"symbol": "Type.getName", "surfaceId": "apex:System.Type.getName", "kind": "exec"},
+    {"symbol": "RestResponse.statusCode", "surfaceId": "apex:System.RestResponse.statusCode", "kind": "exec"}
+  ],
+  "command": {"kind": "exec"},
+  "expected": {"stdout": ""}
+}`
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := BuildEvidenceSnapshot([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := rowsByID(rows)
+	for _, id := range []string{"apex:System.RestRequest.getHeader", "apex:System.Type.getName"} {
+		if row := byID[id]; row.Kind != KindMethod {
+			t.Fatalf("%s kind = %s, want method: %#v", id, row.Kind, rows)
+		}
+	}
+	if row := byID["apex:System.RestResponse.statusCode"]; row.Kind != KindProperty {
+		t.Fatalf("RestResponse.statusCode kind = %s, want property: %#v", row.Kind, rows)
+	}
+}
+
 func TestBuildEvidenceSnapshotSkipsCorpusManifest(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "local-tests-corpus.json")

@@ -32,10 +32,22 @@
       "notes": "Deterministic local base URL, distinct from current request context."
     },
     {
+      "surfaceId": "apex:System.URL.getSalesforceBaseUrl",
+      "symbol": "URL.getSalesforceBaseUrl",
+      "kind": "exec",
+      "notes": "Exact docs-side method identity for the same deterministic local base URL."
+    },
+    {
       "surfaceId": "apex:System.URL.getOrgDomainUrl()",
       "symbol": "URL.getOrgDomainUrl",
       "kind": "exec",
       "notes": "Deterministic local org URL."
+    },
+    {
+      "surfaceId": "apex:System.URL.getOrgDomainUrl",
+      "symbol": "URL.getOrgDomainUrl",
+      "kind": "exec",
+      "notes": "Exact docs-side method identity for the same deterministic local org URL."
     },
     {
       "symbol": "URL",

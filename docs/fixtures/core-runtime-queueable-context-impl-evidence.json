@@ -1,0 +1,26 @@
+{
+  "name": "core-runtime-queueable-context-impl-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.QueueableContextImpl.getJobId()",
+      "symbol": "QueueableContextImpl.getJobId",
+      "kind": "exec",
+      "notes": "The local concrete QueueableContextImpl exposes the same empty default JobId as QueueableContext outside async execution."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "QueueableContextImpl context = new QueueableContextImpl();\nSystem.assertEquals('', context.getJobId());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "QueueableContextImpl context = new QueueableContextImpl();\nSystem.assertEquals('', context.getJobId());\n"
+    ]
+  },
+  "expected": {
+    "stdout": ""
+  }
+}

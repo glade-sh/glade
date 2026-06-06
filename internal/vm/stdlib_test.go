@@ -828,37 +828,15 @@ System.assertEquals(CommerceExtension.ResolutionStates.OFF, CommerceExtension.Re
 	}
 }
 
-func TestExecPushUpgradeCustomizationRepositoryUsesLocalState(t *testing.T) {
+func TestExecPushUpgradeCustomizationRepositoryUnsupported(t *testing.T) {
 	program, err := CompileAnonymous(`
-String id = PushUpgradeCustomizationRepository.create('pkg', '00Dsubscriber', true);
-System.assertEquals(true, PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForId(id));
-System.assertEquals(true, PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForIndex('pkg', '00Dsubscriber'));
-System.assertEquals(CustomizationType.None, PushUpgradeCustomizationRepository.getCustomUpgradeTypeForId(id));
-
-PushUpgradeCustomizationRepository.setCustomUpgradeAllowedForIndex('pkg', '00Dsubscriber', false);
-System.assertEquals(false, PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForId(id));
-System.assertEquals(CustomizationType.BlockedBySubscriber, PushUpgradeCustomizationRepository.getCustomUpgradeTypeForIndex('pkg', '00Dsubscriber'));
-
-PushUpgradeCustomizationRepository.setCustomUpgradeAllowedForId(id, true);
-System.assertEquals(true, PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForIndex('pkg', '00Dsubscriber'));
-
-String sameId = PushUpgradeCustomizationRepository.create('pkg', '00Dsubscriber', false);
-System.assertEquals(id, sameId);
-System.assertEquals(false, PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForId(id));
-
-PushUpgradeCustomizationRepository.deleteByIndex('pkg', '00Dsubscriber');
-System.assertEquals(false, PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForId(id));
-System.assertEquals(CustomizationType.None, PushUpgradeCustomizationRepository.getCustomUpgradeTypeForId(id));
-
-String secondId = PushUpgradeCustomizationRepository.create('pkg', '00Dsubscriber', false);
-PushUpgradeCustomizationRepository.deleteById(secondId);
-System.assertEquals(false, PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForIndex('pkg', '00Dsubscriber'));
+PushUpgradeCustomizationRepository.create('pkg', '00Dsubscriber', true);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
-		t.Fatal(err)
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), `unsupported call "PushUpgradeCustomizationRepository.create local push-upgrade customization repository service"`) {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 

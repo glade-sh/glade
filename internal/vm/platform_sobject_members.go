@@ -225,10 +225,12 @@ const (
 	sobjectParentProjectionField             = "__glade_parent_projection"
 	sobjectStrippedChildRelationshipsField   = "__glade_stripped_child_relationships"
 	sobjectPopulatedFieldsAliasContainsField = "__glade_populated_fields_alias_contains"
+	sobjectCloneMarkerField                  = "__glade_clone"
+	sobjectCloneSourceIDField                = "__glade_clone_source_id"
 )
 
 func isInternalSObjectField(field string) bool {
-	return field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDefaultedFieldsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField || field == sobjectStrippedChildRelationshipsField
+	return field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDefaultedFieldsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField || field == sobjectStrippedChildRelationshipsField || field == sobjectCloneMarkerField || field == sobjectCloneSourceIDField
 }
 
 func vmImplicitDMLField(field storage.Field) bool {

@@ -652,6 +652,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if value, updated, mutated, handled, err := callXmlStreamReaderMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
+	if value, updated, mutated, handled, err := callXmlStreamWriterMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, true, err
+	}
 	if value, handled, err := callDatabaseResultObjectMember(receiver, method, args); handled || err != nil {
 		return value, receiver, false, true, err
 	}
@@ -987,7 +990,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		case "isDone":
 			return databaseObjectGetter(receiver, method, args, "done", Bool(false))
 		}
-	case "QueueableContext", "BatchableContext", "Database.BatchableContext", "Database.BatchableContextImpl":
+	case "QueueableContext", "QueueableContextImpl", "System.QueueableContextImpl", "BatchableContext", "Database.BatchableContext", "Database.BatchableContextImpl":
 		switch method {
 		case "getJobId":
 			if len(args) != 0 {
@@ -3482,7 +3485,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return receiver.Fields["value"], receiver, false, true, nil
 		}
-		if method == "getProtocol" || method == "getHost" || method == "getAuthority" ||
+		if method == "getProtocol" || method == "getHost" || method == "getAuthority" || method == "getUserInfo" ||
 			method == "getPath" || method == "getQuery" || method == "getRef" ||
 			method == "getFile" || method == "getPort" || method == "getDefaultPort" {
 			if len(args) != 0 {
@@ -3507,6 +3510,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					authority = parsed.User.String() + "@" + authority
 				}
 				return String(authority), receiver, false, true, nil
+			case "getUserInfo":
+				if parsed.User == nil {
+					return Null, receiver, false, true, nil
+				}
+				return String(parsed.User.String()), receiver, false, true, nil
 			case "getPath":
 				return String(parsed.Path), receiver, false, true, nil
 			case "getQuery":
@@ -3532,6 +3540,28 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Int(defaultURLPort(parsed.Scheme)), receiver, false, true, nil
 			}
 		}
+		if method == "sameFile" {
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("URL.sameFile expects URL")
+			}
+			raw, err := platformScalarText(receiver, "URL")
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			otherRaw, err := platformScalarText(args[0], "URL")
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			parsed, err := url.Parse(raw)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			other, err := url.Parse(otherRaw)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			return Bool(urlSameFile(parsed, other)), receiver, false, true, nil
+		}
 	}
 	if strings.HasPrefix(receiver.Type, "DataWeaveScriptResource.") {
 		return callDataWeaveScriptMember(receiver, method, args)
@@ -3540,6 +3570,24 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return value, updated, mutated, handled, err
 	}
 	return Null, receiver, false, false, nil
+}
+
+func urlSameFile(left, right *url.URL) bool {
+	return strings.EqualFold(left.Scheme, right.Scheme) &&
+		strings.EqualFold(left.Hostname(), right.Hostname()) &&
+		urlEffectivePort(left) == urlEffectivePort(right) &&
+		left.Path == right.Path &&
+		left.RawQuery == right.RawQuery
+}
+
+func urlEffectivePort(parsed *url.URL) int64 {
+	if raw := parsed.Port(); raw != "" {
+		port, err := strconv.ParseInt(raw, 10, 64)
+		if err == nil {
+			return port
+		}
+	}
+	return defaultURLPort(parsed.Scheme)
 }
 
 func (vm *VM) newRichMessagingAuthRequestResult() Value {

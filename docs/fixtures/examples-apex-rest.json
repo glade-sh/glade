@@ -2,6 +2,7 @@
   "name": "examples-apex-rest",
   "evidence": [
     {
+      "surfaceId": "apex:RestResource",
       "symbol": "RestResource",
       "kind": "check",
       "notes": "Reduced Apex REST resource with HttpGet and RestContext references."

@@ -46,10 +46,7 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 		}
 	}
 	if strings.EqualFold(className, "WebStoreContext") && strings.EqualFold(methodName, "getCommerceContext") {
-		if len(args) != 0 {
-			return Null, false
-		}
-		return typedMap("Map<String,String>"), true
+		return Null, false
 	}
 	if strings.EqualFold(className, "Ideas") && strings.EqualFold(methodName, "findSimilar") {
 		method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, true)
@@ -123,137 +120,19 @@ func (vm *VM) callPushUpgradeCustomizationRepository(callee string, args []Value
 		"setCustomUpgradeAllowedForIndex",
 	)
 	switch methodName {
-	case "create":
-		if len(args) != 3 || !stringLikeOrNull(args[0]) || !stringLikeOrNull(args[1]) || args[2].Kind != ValueBool {
-			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.create expects String, String, Boolean")
-		}
-		packageID := stringValueOrEmpty(args[0])
-		subscriberOrgID := stringValueOrEmpty(args[1])
-		if existing, ok := vm.pushUpgradeCustomizationByIndex(packageID, subscriberOrgID); ok {
-			existing.CustomUpgradeAllowed = args[2].Bool
-			vm.pushUpgradeCustoms[existing.ID] = existing
-			return String(existing.ID), true, nil
-		}
-		id := vm.nextPushUpgradeCustomizationID()
-		vm.pushUpgradeCustoms[id] = pushUpgradeCustomization{
-			ID:                   id,
-			PackageID:            packageID,
-			SubscriberOrgID:      subscriberOrgID,
-			CustomUpgradeAllowed: args[2].Bool,
-		}
-		return String(id), true, nil
-	case "deleteById":
-		if len(args) != 1 || !stringLikeOrNull(args[0]) {
-			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.deleteById expects String")
-		}
-		delete(vm.pushUpgradeCustoms, stringValueOrEmpty(args[0]))
-		return Null, true, nil
-	case "deleteByIndex":
-		if len(args) != 2 || !stringLikeOrNull(args[0]) || !stringLikeOrNull(args[1]) {
-			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.deleteByIndex expects String, String")
-		}
-		if existing, ok := vm.pushUpgradeCustomizationByIndex(stringValueOrEmpty(args[0]), stringValueOrEmpty(args[1])); ok {
-			delete(vm.pushUpgradeCustoms, existing.ID)
-		}
-		return Null, true, nil
-	case "getCustomUpgradeAllowedForId":
-		if len(args) != 1 || !stringLikeOrNull(args[0]) {
-			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForId expects String")
-		}
-		if existing, ok := vm.pushUpgradeCustoms[stringValueOrEmpty(args[0])]; ok {
-			return Bool(existing.CustomUpgradeAllowed), true, nil
-		}
-		return Bool(false), true, nil
-	case "getCustomUpgradeAllowedForIndex":
-		if len(args) != 2 || !stringLikeOrNull(args[0]) || !stringLikeOrNull(args[1]) {
-			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.getCustomUpgradeAllowedForIndex expects String, String")
-		}
-		if existing, ok := vm.pushUpgradeCustomizationByIndex(stringValueOrEmpty(args[0]), stringValueOrEmpty(args[1])); ok {
-			return Bool(existing.CustomUpgradeAllowed), true, nil
-		}
-		return Bool(false), true, nil
-	case "getCustomUpgradeTypeForId":
-		if len(args) != 1 || !stringLikeOrNull(args[0]) {
-			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.getCustomUpgradeTypeForId expects String")
-		}
-		if existing, ok := vm.pushUpgradeCustoms[stringValueOrEmpty(args[0])]; ok {
-			return pushUpgradeCustomizationType(existing.CustomUpgradeAllowed), true, nil
-		}
-		return pushUpgradeCustomizationType(true), true, nil
-	case "getCustomUpgradeTypeForIndex":
-		if len(args) != 2 || !stringLikeOrNull(args[0]) || !stringLikeOrNull(args[1]) {
-			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.getCustomUpgradeTypeForIndex expects String, String")
-		}
-		if existing, ok := vm.pushUpgradeCustomizationByIndex(stringValueOrEmpty(args[0]), stringValueOrEmpty(args[1])); ok {
-			return pushUpgradeCustomizationType(existing.CustomUpgradeAllowed), true, nil
-		}
-		return pushUpgradeCustomizationType(true), true, nil
-	case "setCustomUpgradeAllowedForId":
-		if len(args) != 2 || !stringLikeOrNull(args[0]) || args[1].Kind != ValueBool {
-			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.setCustomUpgradeAllowedForId expects String, Boolean")
-		}
-		id := stringValueOrEmpty(args[0])
-		if existing, ok := vm.pushUpgradeCustoms[id]; ok {
-			existing.CustomUpgradeAllowed = args[1].Bool
-			vm.pushUpgradeCustoms[id] = existing
-		}
-		return Null, true, nil
-	case "setCustomUpgradeAllowedForIndex":
-		if len(args) != 3 || !stringLikeOrNull(args[0]) || !stringLikeOrNull(args[1]) || args[2].Kind != ValueBool {
-			return Null, true, fmt.Errorf("PushUpgradeCustomizationRepository.setCustomUpgradeAllowedForIndex expects String, String, Boolean")
-		}
-		packageID := stringValueOrEmpty(args[0])
-		subscriberOrgID := stringValueOrEmpty(args[1])
-		if existing, ok := vm.pushUpgradeCustomizationByIndex(packageID, subscriberOrgID); ok {
-			existing.CustomUpgradeAllowed = args[2].Bool
-			vm.pushUpgradeCustoms[existing.ID] = existing
-		}
-		return Null, true, nil
+	case "create",
+		"deleteById",
+		"deleteByIndex",
+		"getCustomUpgradeAllowedForId",
+		"getCustomUpgradeAllowedForIndex",
+		"getCustomUpgradeTypeForId",
+		"getCustomUpgradeTypeForIndex",
+		"setCustomUpgradeAllowedForId",
+		"setCustomUpgradeAllowedForIndex":
+		return Null, true, unsupportedCallError("PushUpgradeCustomizationRepository." + methodName + " local push-upgrade customization repository service")
 	default:
 		return Null, true, unsupportedCallError(callee + " local push-upgrade customization repository surface")
 	}
-}
-
-func (vm *VM) pushUpgradeCustomizationByIndex(packageID, subscriberOrgID string) (pushUpgradeCustomization, bool) {
-	for _, customization := range vm.pushUpgradeCustoms {
-		if customization.PackageID == packageID && customization.SubscriberOrgID == subscriberOrgID {
-			return customization, true
-		}
-	}
-	return pushUpgradeCustomization{}, false
-}
-
-func (vm *VM) nextPushUpgradeCustomizationID() string {
-	for i := 1; ; i++ {
-		id := fmt.Sprintf("puc-%012d", i)
-		if _, ok := vm.pushUpgradeCustoms[id]; !ok {
-			return id
-		}
-	}
-}
-
-func pushUpgradeCustomizationType(customUpgradeAllowed bool) Value {
-	name := "BlockedBySubscriber"
-	if customUpgradeAllowed {
-		name = "None"
-	}
-	value := Value{Kind: ValueObject, Type: "CustomizationType", Text: name}
-	value.Fields = map[string]Value{"ordinal": Int(0)}
-	if name == "None" {
-		value.Fields["ordinal"] = Int(1)
-	}
-	return value
-}
-
-func stringLikeOrNull(value Value) bool {
-	if value.Kind == ValueNull || value.Kind == ValueString {
-		return true
-	}
-	if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
-		_, ok := platformScalarObjectText(value)
-		return ok
-	}
-	return false
 }
 
 func stringValueOrEmpty(value Value) string {

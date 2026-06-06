@@ -6,6 +6,12 @@
       "symbol": "PageReference.PageReference",
       "kind": "exec",
       "notes": "The record constructor accepts an ApexPage sObject record and creates a Visualforce page reference for that page."
+    },
+    {
+      "surfaceId": "apex:System.PageReference(record)",
+      "symbol": "PageReference(record)",
+      "kind": "exec",
+      "notes": "Exact docs-side shorthand for the same ApexPage record constructor behavior."
     }
   ],
   "source": [
