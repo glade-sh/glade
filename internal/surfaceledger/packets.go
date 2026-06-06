@@ -317,11 +317,11 @@ func packetOwnsRow(packet AreaPacket, row SurfaceLedgerRow) bool {
 	case "UI.ApexPagesControllers":
 		return row.Product == ProductApex && (row.Namespace == "ApexPages" || containsASCIIFold(row.SurfaceID, "apexpages"))
 	case "UI.VisualforceComponents":
-		return row.Product == ProductVisualforce || surfaceFamily == ProductVisualforce || containsASCIIFold(row.SurfaceID, "visualforce")
+		return row.Product == ProductVisualforce || surfaceFamily == ProductVisualforce
 	case "UI.LWCModules":
 		return row.Product == ProductLWC || surfaceFamily == ProductLWC || containsASCIIFold(row.SurfaceID, "lwc")
 	case "UI.AuraComponents":
-		return row.Product == ProductAura || surfaceFamily == ProductAura || containsAnyASCIIFold(row.SurfaceID, "aura", "lightning")
+		return ownsAuraComponentRow(row, surfaceFamily)
 	case "UI.UIAPI":
 		return row.Product == "ui-api" || surfaceFamily == "ui-api" || containsASCIIFold(row.SurfaceID, "ui-api")
 	case "Server.RESTResources":
@@ -355,6 +355,21 @@ func packetOwnsRow(packet AreaPacket, row SurfaceLedgerRow) bool {
 	default:
 		return false
 	}
+}
+
+func ownsAuraComponentRow(row SurfaceLedgerRow, surfaceFamily string) bool {
+	if row.Product == ProductAura || surfaceFamily == ProductAura {
+		return true
+	}
+	if row.Product != ProductUnknown {
+		return false
+	}
+	for _, id := range localTestAuraMetadataSurfaceIDs {
+		if row.SurfaceID == id {
+			return true
+		}
+	}
+	return false
 }
 
 func ownsAsyncAndIsolationRow(row SurfaceLedgerRow) bool {
