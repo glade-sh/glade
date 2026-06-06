@@ -1,0 +1,37 @@
+{
+  "name": "query-runtime-soqlsosl-sosl-returning-offset",
+  "evidence": [
+    {
+      "surfaceId": "unknown:sforce_api_calls_sosl_offset",
+      "symbol": "SOSL RETURNING OFFSET",
+      "kind": "test",
+      "notes": "Object-level SOSL RETURNING applies OFFSET after ORDER BY against fixed local test search results."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/QueryRuntimeSOQLSOSLSOSLReturningOffsetTest.cls",
+      "content": "@isTest private class QueryRuntimeSOQLSOSLSOSLReturningOffsetTest { @isTest static void appliesReturningOffsetAfterOrder() { Account beta = new Account(Name = 'Beta Account'); Account alpha = new Account(Name = 'Alpha Account'); Account gamma = new Account(Name = 'Gamma Account'); insert new List<Account>{ beta, alpha, gamma }; Test.setFixedSearchResults(new List<Id>{ beta.Id, alpha.Id, gamma.Id }); List<Account> rows = (List<Account>)Search.query('FIND {Account*} IN ALL FIELDS RETURNING Account(Id, Name ORDER BY Name OFFSET 1 LIMIT 1)')[0]; System.assertEquals(1, rows.size()); System.assertEquals(beta.Id, rows[0].Id); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

@@ -396,6 +396,9 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 		}
 	}
 	if fromKey, fromValue, fromOK := mapTypeArgs(from); fromOK {
+		if isRawMapType(to) {
+			return true
+		}
 		toKey, toValue, toOK := mapTypeArgs(to)
 		if toOK {
 			return vm.typeAssignableTo(fromKey, toKey) && vm.typeAssignableTo(fromValue, toValue)

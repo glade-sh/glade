@@ -13,6 +13,7 @@
     },
     {
       "symbol": "SOQL multi-select picklist operators",
+      "surfaceId": "unknown:sforce_api_calls_soql_querying_multiselect_picklists",
       "kind": "test",
       "notes": "Semicolon-delimited stored values support INCLUDES and EXCLUDES predicates."
     },

@@ -3091,8 +3091,19 @@ func collectionBase(typeName string) string {
 }
 
 func isMapType(typeName string) bool {
+	if isRawMapType(typeName) {
+		return true
+	}
 	base, ok := genericBaseName(typeName)
 	return ok && strings.EqualFold(base, "Map")
+}
+
+func isRawMapType(typeName string) bool {
+	typeName = strings.TrimSpace(typeName)
+	if rest, ok := stripLeadingSystemNamespace(typeName); ok {
+		typeName = rest
+	}
+	return strings.EqualFold(typeName, "Map")
 }
 
 func genericBaseName(typeName string) (string, bool) {

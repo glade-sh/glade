@@ -27,6 +27,7 @@ const (
 const (
 	BehaviorNone        BehaviorState = "none"
 	BehaviorPassive     BehaviorState = "passive"
+	BehaviorStubNoOp    BehaviorState = "stub-noop"
 	BehaviorUnsupported BehaviorState = "unsupported"
 	BehaviorPartial     BehaviorState = "partial"
 	BehaviorSupported   BehaviorState = "supported"
@@ -87,6 +88,7 @@ const (
 	BucketImplemented         = "implemented"
 	BucketPartial             = "partial"
 	BucketPassive             = "passive"
+	BucketStubNoOp            = "stubNoOp"
 	BucketExplicitUnsupported = "explicitUnsupported"
 	BucketGap                 = "gap"
 	BucketFailure             = "failure"
@@ -104,6 +106,7 @@ type LedgerSummary struct {
 	Implemented         int            `json:"implemented"`
 	Partial             int            `json:"partial"`
 	Passive             int            `json:"passive"`
+	StubNoOp            int            `json:"stubNoOp"`
 	ExplicitUnsupported int            `json:"explicitUnsupported"`
 	Gaps                map[string]int `json:"gaps"`
 	Failures            map[string]int `json:"failures"`

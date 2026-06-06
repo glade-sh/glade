@@ -42,13 +42,16 @@ func TestProgressMarkdownCountsOnlyImplementedRowsAsDone(t *testing.T) {
 		{SurfaceID: ApexTypeID("Schema", "DescribeFieldResult"), Product: ProductApex, Namespace: "Schema", TypeName: "DescribeFieldResult", Bucket: BucketImplemented, Owner: "data-runtime"},
 		{SurfaceID: ApexTypeID("Schema", "SObjectType"), Product: ProductApex, Namespace: "Schema", TypeName: "SObjectType", Bucket: BucketPassive, Owner: "data-runtime"},
 		{SurfaceID: ApexTypeID("Schema", "UnsupportedThing"), Product: ProductApex, Namespace: "Schema", TypeName: "UnsupportedThing", Bucket: BucketExplicitUnsupported, Owner: "data-runtime"},
+		{SurfaceID: ApexMemberID("Context", "IndustriesContext", "addRecordsToContext", []string{"Map<String,Object>"}), Product: ProductApex, Namespace: "Context", TypeName: "IndustriesContext", MemberName: "addRecordsToContext", Bucket: "stubNoOp", Owner: "runtime"},
 	}}
 	ledger.Summary = Summarize(ledger.Rows)
 	md := ProgressMarkdown(ledger)
 	for _, want := range []string{
 		"Progress is `implemented / total`",
-		"| all surfaces | 3 | 1 | 0 | 1 | 1 | 0 | [###.......] 33.3% |",
-		"| `Data.Runtime.SchemaDescribe` | internal/vm describe runtime | [###.......] 33.3% | 1/3 | 0 | 1 | 1 | 0 | - |",
+		"| scope | total | implemented | partial | passive | unsupported | stub/no-op | remaining | progress |",
+		"| all surfaces | 4 | 1 | 0 | 1 | 1 | 1 | 0 | [##........] 25.0% |",
+		"| `Data.Runtime.SchemaDescribe` | internal/vm describe runtime | [###.......] 33.3% | 1/3 | 0 | 1 | 1 | 0 | 0 | - |",
+		"| `Core.Runtime.Context.IndustriesContext` | internal/vm context runtime | [..........] 0.0% | 0/1 | 0 | 0 | 0 | 1 | 0 | - |",
 	} {
 		if !strings.Contains(md, want) {
 			t.Fatalf("progress markdown missing %q:\n%s", want, md)

@@ -2,6 +2,7 @@
   "name": "test-helper-unsupported-create-soql-stub",
   "evidence": [
     {
+      "surfaceId": "apex:System.Test.createSoqlStub(Schema.SObjectType,SoqlStubProvider)",
       "symbol": "Test.createSoqlStub",
       "kind": "exec",
       "notes": "Stable UnsupportedFeature diagnostic"

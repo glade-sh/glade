@@ -1,0 +1,41 @@
+{
+  "name": "query-runtime-soqlsosl-comparisonoperators",
+  "evidence": [
+    {
+      "symbol": "SOQL comparison operators",
+      "surfaceId": "unknown:sforce_api_calls_soql_select_comparisonoperators",
+      "kind": "test",
+      "notes": "Local Apex dynamic SOQL executes =, !=, <, <=, >, >=, IN, NOT IN, LIKE, and NOT LIKE predicates against local test data."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/AnnualRevenue.field-meta.xml",
+      "content": "<CustomField><fullName>AnnualRevenue</fullName><label>Annual Revenue</label><type>Number</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/SoqlComparisonOpsTest.cls",
+      "content": "@isTest private class SoqlComparisonOpsTest { @isTest static void comparisonOperatorsRunLocally() { insert new List<Account>{ new Account(Name = 'Acme', AnnualRevenue = 100), new Account(Name = 'Alpine', AnnualRevenue = 175), new Account(Name = 'Beta', AnnualRevenue = 250), new Account(Name = 'Gamma', AnnualRevenue = 400) }; List<SObject> exactRows = Database.query('SELECT Id FROM Account WHERE Name = \\'Acme\\''); System.assertEquals(1, exactRows.size()); List<SObject> notEqualRows = Database.query('SELECT Id FROM Account WHERE Name != \\'Acme\\''); System.assertEquals(3, notEqualRows.size()); List<SObject> lowerRows = Database.query('SELECT Id FROM Account WHERE AnnualRevenue < 200'); System.assertEquals(2, lowerRows.size()); List<SObject> lowerOrEqualRows = Database.query('SELECT Id FROM Account WHERE AnnualRevenue <= 175'); System.assertEquals(2, lowerOrEqualRows.size()); List<SObject> greaterRows = Database.query('SELECT Id FROM Account WHERE AnnualRevenue > 200'); System.assertEquals(2, greaterRows.size()); List<SObject> greaterOrEqualRows = Database.query('SELECT Id FROM Account WHERE AnnualRevenue >= 250'); System.assertEquals(2, greaterOrEqualRows.size()); List<SObject> inRows = Database.query('SELECT Id FROM Account WHERE Name IN (\\'Acme\\', \\'Gamma\\')'); System.assertEquals(2, inRows.size()); List<SObject> notInRows = Database.query('SELECT Id FROM Account WHERE Name NOT IN (\\'Acme\\', \\'Gamma\\')'); System.assertEquals(2, notInRows.size()); List<SObject> likeRows = Database.query('SELECT Id FROM Account WHERE Name LIKE \\'A%\\''); System.assertEquals(2, likeRows.size()); List<SObject> notLikeRows = Database.query('SELECT Id FROM Account WHERE Name NOT LIKE \\'A%\\''); System.assertEquals(2, notLikeRows.size()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

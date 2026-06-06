@@ -1,0 +1,29 @@
+{
+  "name": "core-runtime-database-insert-list-accesslevel-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.Database.insert(List<Object>,AccessLevel)",
+      "symbol": "Database.insert(List<Object>,AccessLevel)",
+      "kind": "test",
+      "notes": "Database.insert accepts a List<Object> containing SObject values with AccessLevel.SYSTEM_MODE and returns ordered SaveResult rows."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/CoreRuntimeDatabaseInsertListAccessLevelEvidenceTest.cls",
+      "content": "@isTest private class CoreRuntimeDatabaseInsertListAccessLevelEvidenceTest { @isTest static void insertsObjectListWithAccessLevel() { List<Object> records = new List<Object>{new Account(Name = 'Access List One'), new Account(Name = 'Access List Two')}; List<Database.SaveResult> results = Database.insert(records, AccessLevel.SYSTEM_MODE); System.assertEquals(2, results.size()); System.assert(results[0].isSuccess()); System.assert(results[1].isSuccess()); System.assertNotEquals(null, results[0].getId()); System.assertNotEquals(null, results[1].getId()); System.assertEquals(2, [SELECT COUNT() FROM Account WHERE Name IN ('Access List One', 'Access List Two')]); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

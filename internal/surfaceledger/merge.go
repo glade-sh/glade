@@ -124,6 +124,8 @@ func Classify(row *SurfaceLedgerRow) {
 		row.Bucket = BucketFailure
 	case row.GladeBehavior == BehaviorPassive:
 		row.Bucket = BucketPassive
+	case row.GladeBehavior == BehaviorStubNoOp:
+		row.Bucket = BucketStubNoOp
 	case row.GladeBehavior == BehaviorUnsupported:
 		row.Bucket = BucketExplicitUnsupported
 	case isGenericObjectHelper(*row):
@@ -137,6 +139,8 @@ func Classify(row *SurfaceLedgerRow) {
 	case isFixtureBackedApexType(*row):
 		row.Bucket = BucketImplemented
 	case isFixtureBackedApexMember(*row):
+		row.Bucket = BucketImplemented
+	case isFixtureBackedRuntimeGuide(*row):
 		row.Bucket = BucketImplemented
 	case (row.GladeBehavior == BehaviorSupported || row.GladeBehavior == BehaviorPartial) && row.Evidence == EvidenceNone:
 		row.GapClass = GapMissingEvidence
@@ -156,6 +160,8 @@ func Classify(row *SurfaceLedgerRow) {
 	case isPassiveServiceRisk(*row):
 		row.GapClass = GapPassiveServiceRisk
 		row.Bucket = BucketFailure
+	case isEvidenceOnlyRuntimeGuide(*row):
+		row.Bucket = BucketGap
 	case row.GladeBehavior == BehaviorSupported:
 		row.Bucket = BucketImplemented
 	case row.GladeBehavior == BehaviorPartial:
@@ -234,6 +240,23 @@ func isFixtureBackedApexMember(row SurfaceLedgerRow) bool {
 		row.Evidence != EvidenceNone
 }
 
+func isFixtureBackedRuntimeGuide(row SurfaceLedgerRow) bool {
+	return row.Product == ProductUnknown &&
+		row.Area == AreaRuntime &&
+		strings.HasPrefix(row.SurfaceID, "unknown:") &&
+		row.Docs != SourceAbsent &&
+		row.GladeBehavior == BehaviorSupported &&
+		row.Evidence != EvidenceNone
+}
+
+func isEvidenceOnlyRuntimeGuide(row SurfaceLedgerRow) bool {
+	return row.Product == ProductUnknown &&
+		row.Area == AreaRuntime &&
+		strings.HasPrefix(row.SurfaceID, "unknown:") &&
+		row.Docs == SourceAbsent &&
+		row.Evidence != EvidenceNone
+}
+
 func isPassiveServiceRisk(row SurfaceLedgerRow) bool {
 	return row.GladeBehavior == BehaviorPassive && (row.Area == AreaServer || row.Kind == KindResource)
 }
@@ -252,6 +275,8 @@ func Summarize(rows []SurfaceLedgerRow) LedgerSummary {
 			summary.Partial++
 		case BucketPassive:
 			summary.Passive++
+		case BucketStubNoOp:
+			summary.StubNoOp++
 		case BucketExplicitUnsupported:
 			summary.ExplicitUnsupported++
 		case BucketFailure:
@@ -284,6 +309,8 @@ func behaviorRank(state BehaviorState) int {
 		return 3
 	case BehaviorUnsupported:
 		return 2
+	case BehaviorStubNoOp:
+		return 1
 	case BehaviorPassive:
 		return 1
 	default:

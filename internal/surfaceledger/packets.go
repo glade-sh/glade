@@ -103,6 +103,7 @@ func AreaRegistry() []AreaPacket {
 		},
 	}
 	packets = append(packets,
+		genericArea("Core.Runtime.Context.IndustriesContext", "Context IndustriesContext", "internal/vm context runtime", "product=apex namespace=Context typeName=IndustriesContext", []string{"internal/vm/**", "internal/capability/**"}),
 		genericArea("Core.Runtime.SystemAndStdlib", "System and Stdlib", "internal/vm", "product=apex namespace=System typeName!=FeatureManagement|Database", []string{"internal/vm/**", "internal/capability/**"}),
 		genericArea("Query.Runtime.SOQLSOSL", "SOQL SOSL", "internal/soql", "product=apex source=soql-sosl", []string{"internal/soql/**", "internal/sema/**", "internal/vm/soql_runtime.go"}),
 		genericArea("Data.Reference.ObjectsFields", "Objects and Fields", "internal/schema", "product=object-reference|field-reference", []string{"internal/schema/**", "internal/storage/standard_fields.go"}),
@@ -300,8 +301,11 @@ func packetOwnsRow(packet AreaPacket, row SurfaceLedgerRow) bool {
 		return row.Product == ProductApex && row.Namespace == "Schema"
 	case "Core.Runtime.SystemAndStdlib":
 		return row.Product == ProductApex && row.Namespace == "System" && row.TypeName != "FeatureManagement" && row.TypeName != "Database" && !strings.HasPrefix(surfaceIDKey(row.SurfaceID), "apex:database.") && !strings.Contains(row.TypeName, "Batchable")
+	case "Core.Runtime.Context.IndustriesContext":
+		return row.Product == ProductApex && row.Namespace == "Context" && row.TypeName == "IndustriesContext"
 	case "Query.Runtime.SOQLSOSL":
-		return containsAnyASCIIFold(row.SurfaceID, "soql", "sosl") || containsAnyASCIIFold(row.DocsSource, "soql", "sosl")
+		return (row.Product == ProductApex || row.Product == ProductUnknown) &&
+			(containsAnyASCIIFold(row.SurfaceID, "soql", "sosl") || containsAnyASCIIFold(row.DocsSource, "soql", "sosl"))
 	case "Data.Reference.ObjectsFields":
 		return row.Product == ProductDataRef || surfaceFamily == ProductDataRef || containsAnyASCIIFold(row.SurfaceID, "object-reference", "field-reference")
 	case "Data.Runtime.SOQL":

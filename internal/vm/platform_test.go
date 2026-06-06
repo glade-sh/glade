@@ -662,6 +662,162 @@ System.assertEquals(testAccount.Id, rows[1].Id);
 	}
 }
 
+func TestExecSearchQueryAppliesReturningLimitAfterOrder(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account beta = new Account(Name = 'Beta Account');
+Account alpha = new Account(Name = 'Alpha Account');
+Account gamma = new Account(Name = 'Gamma Account');
+insert new List<Account>{beta, alpha, gamma};
+Test.setFixedSearchResults(new List<Id>{beta.Id, alpha.Id, gamma.Id});
+List<Account> rows = (List<Account>)Search.query('FIND {Account*} IN ALL FIELDS RETURNING Account(Id, Name ORDER BY Name LIMIT 1)')[0];
+System.assertEquals(1, rows.size());
+System.assertEquals(alpha.Id, rows[0].Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSearchQueryAppliesReturningWhere(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account beta = new Account(Name = 'Beta Account');
+Account alpha = new Account(Name = 'Alpha Account');
+insert new List<Account>{beta, alpha};
+Test.setFixedSearchResults(new List<Id>{beta.Id, alpha.Id});
+List<Account> rows = (List<Account>)Search.query('FIND {Account*} IN ALL FIELDS RETURNING Account(Id, Name WHERE Name = ''Alpha Account'')')[0];
+System.assertEquals(1, rows.size());
+System.assertEquals(alpha.Id, rows[0].Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSearchQueryReturningWhereMatchesTextCaseInsensitively(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account alpha = new Account(Name = 'Alpha Account');
+insert alpha;
+Test.setFixedSearchResults(new List<Id>{alpha.Id});
+List<Account> rows = (List<Account>)Search.query('FIND {Account*} IN ALL FIELDS RETURNING Account(Id, Name WHERE Name = ''alpha account'')')[0];
+System.assertEquals(1, rows.size());
+System.assertEquals(alpha.Id, rows[0].Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSearchQueryProjectsReturningFormatAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme', AnnualRevenue = 100);
+insert account;
+Test.setFixedSearchResults(new List<Id>{account.Id});
+List<Account> rows = (List<Account>)Search.query('FIND {Acme} IN ALL FIELDS RETURNING Account(Id, AnnualRevenue, FORMAT(AnnualRevenue) formattedRevenue)')[0];
+System.assertEquals(1, rows.size());
+System.assertEquals('100.0', rows[0].get('formattedRevenue'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}, "AnnualRevenue": {APIName: "AnnualRevenue", Type: storage.FieldDecimal}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSearchQueryProjectsReturningConvertCurrencyAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme', AnnualRevenue = 100);
+insert account;
+Test.setFixedSearchResults(new List<Id>{account.Id});
+List<Account> rows = (List<Account>)Search.query('FIND {Acme} IN ALL FIELDS RETURNING Account(Id, AnnualRevenue, convertCurrency(AnnualRevenue) convertedRevenue)')[0];
+System.assertEquals(1, rows.size());
+System.assertEquals(100.0, rows[0].get('convertedRevenue'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}, "AnnualRevenue": {APIName: "AnnualRevenue", Type: storage.FieldDecimal}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSearchQueryProjectsReturningToLabelAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme', Rating = 'Hot');
+insert account;
+Test.setFixedSearchResults(new List<Id>{account.Id});
+List<Account> rows = (List<Account>)Search.query('FIND {Acme} IN ALL FIELDS RETURNING Account(Id, Rating, toLabel(Rating) ratingLabel)')[0];
+System.assertEquals(1, rows.size());
+System.assertEquals('Hot Label', rows[0].get('ratingLabel'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{
+			"Name":   {APIName: "Name", Type: storage.FieldString},
+			"Rating": {APIName: "Rating", Type: storage.FieldPicklist, PicklistValues: []storage.PicklistValue{{Value: "Hot", Label: "Hot Label"}}},
+		}},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSearchQueryReturnsDeterministicEmptyRows(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<List<SObject>> rows = Search.query('FIND {Missing*} IN ALL FIELDS RETURNING Account(Id), Contact(Id)', null);

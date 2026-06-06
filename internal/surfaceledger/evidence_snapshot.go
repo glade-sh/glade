@@ -29,14 +29,19 @@ func BuildEvidenceSnapshot(paths []string) ([]SurfaceLedgerRow, error) {
 				continue
 			}
 			kind := evidenceKindFromSurfaceID(id)
+			behavior := BehaviorNone
+			if fixtureEvidenceRunsRuntimeGuide(fixture, evidence, id) {
+				behavior = BehaviorSupported
+			}
 			row := RowFromEvidence(SurfaceLedgerRow{
-				SurfaceID: id,
-				Product:   productFromID(id),
-				Area:      AreaRuntime,
-				Kind:      kind,
-				Evidence:  EvidenceFixture,
-				Sources:   []string{"fixture:" + fixture.Name},
-				Notes:     evidence.Notes,
+				SurfaceID:     id,
+				Product:       productFromID(id),
+				Area:          AreaRuntime,
+				Kind:          kind,
+				GladeBehavior: behavior,
+				Evidence:      EvidenceFixture,
+				Sources:       []string{"fixture:" + fixture.Name},
+				Notes:         evidence.Notes,
 			})
 			fillFromApexID(&row)
 			rows = append(rows, row)
@@ -44,6 +49,31 @@ func BuildEvidenceSnapshot(paths []string) ([]SurfaceLedgerRow, error) {
 	}
 	sortRows(rows)
 	return rows, nil
+}
+
+func fixtureEvidenceRunsRuntimeGuide(fixture compat.Fixture, evidence compat.FixtureEvidence, id string) bool {
+	if !strings.HasPrefix(id, "unknown:") {
+		return false
+	}
+	if fixture.Expected.Error != nil {
+		return false
+	}
+	if !isQueryRuntimeSOQLSOSLFixture(fixture.Name) || !isQueryRuntimeSOQLSOSLSurfaceID(id) {
+		return false
+	}
+	return strings.EqualFold(evidence.Kind, "test") || strings.EqualFold(evidence.Kind, "exec")
+}
+
+func isQueryRuntimeSOQLSOSLFixture(name string) bool {
+	return strings.HasPrefix(cleanIdentityPart(name), "query-runtime-soqlsosl-")
+}
+
+func isQueryRuntimeSOQLSOSLSurfaceID(id string) bool {
+	id = cleanIdentityPart(id)
+	if !strings.HasPrefix(id, "unknown:") {
+		return false
+	}
+	return containsASCIIFold(id, "soql") || containsASCIIFold(id, "sosl")
 }
 
 func evidenceKindFromSurfaceID(id string) string {

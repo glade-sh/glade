@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
@@ -241,6 +243,9 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 	}
 	if query.ForUpdate && queryHasAggregates(query) {
 		return Result{}, unsupportedSOQLErrorf("FOR UPDATE is not supported with aggregate queries")
+	}
+	if query.UsingScope != "" && !strings.EqualFold(query.UsingScope, "everything") {
+		return Result{}, unsupportedSOQLErrorf("USING SCOPE %s is not supported by the local SOQL runtime", query.UsingScope)
 	}
 	if query.Where != nil && conditionContainsSubquery(*query.Where) {
 		condition, err := resolveSubqueries(org, *query.Where)
@@ -908,29 +913,58 @@ func ParseAndExecuteAt(org storage.OrgState, input string, now time.Time) (Resul
 }
 
 func FiscalYearStartMonth(org storage.OrgState) int {
+	month, _ := fiscalYearSettings(org)
+	return month
+}
+
+func usesStartDateAsFiscalYearName(org storage.OrgState) bool {
+	_, useStart := fiscalYearSettings(org)
+	return useStart
+}
+
+func fiscalYearSettings(org storage.OrgState) (int, bool) {
 	if org.OrgID != "" {
-		if month, ok := fiscalYearStartMonthFromRecord(org, storage.ID(org.OrgID)); ok {
-			return month
+		if month, useStart, ok := fiscalYearSettingsFromRecord(org, storage.ID(org.OrgID)); ok {
+			return month, useStart
 		}
 	}
 	for _, record := range org.Objects["Organization"].Records {
-		if month, ok := fiscalYearStartMonthFromValue(record.Fields["FiscalYearStartMonth"]); ok {
-			return month
+		if month, useStart, ok := fiscalYearSettingsFromFields(record.Fields); ok {
+			return month, useStart
 		}
 	}
-	return 1
+	return 1, false
 }
 
 func fiscalYearStartMonthFromRecord(org storage.OrgState, id storage.ID) (int, bool) {
+	month, _, ok := fiscalYearSettingsFromRecord(org, id)
+	return month, ok
+}
+
+func usesStartDateAsFiscalYearNameFromRecord(org storage.OrgState, id storage.ID) (bool, bool) {
+	_, useStart, ok := fiscalYearSettingsFromRecord(org, id)
+	return useStart, ok
+}
+
+func fiscalYearSettingsFromRecord(org storage.OrgState, id storage.ID) (int, bool, bool) {
 	object, ok := org.Objects["Organization"]
 	if !ok {
-		return 0, false
+		return 0, false, false
 	}
 	record, ok := object.Records[id]
 	if !ok {
-		return 0, false
+		return 0, false, false
 	}
-	return fiscalYearStartMonthFromValue(record.Fields["FiscalYearStartMonth"])
+	return fiscalYearSettingsFromFields(record.Fields)
+}
+
+func fiscalYearSettingsFromFields(fields map[string]storage.Value) (int, bool, bool) {
+	month, ok := fiscalYearStartMonthFromValue(fields["FiscalYearStartMonth"])
+	if !ok {
+		return 0, false, false
+	}
+	useStart, _ := usesStartDateAsFiscalYearNameFromValue(fields["UsesStartDateAsFiscalYearName"])
+	return month, useStart, true
 }
 
 func fiscalYearStartMonthFromValue(value storage.Value) (int, bool) {
@@ -942,6 +976,13 @@ func fiscalYearStartMonthFromValue(value storage.Value) (int, bool) {
 		return 0, false
 	}
 	return month, true
+}
+
+func usesStartDateAsFiscalYearNameFromValue(value storage.Value) (bool, bool) {
+	if value.Kind != storage.ValueBoolean {
+		return false, false
+	}
+	return value.Boolean, true
 }
 
 func matches(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, condition *Condition) bool {
@@ -1842,6 +1883,12 @@ func validateQueryReferences(org storage.OrgState, definition storage.ObjectDefi
 				return fieldUnavailableError(spec.Field, mode)
 			}
 			return fmt.Errorf("soql: aggregate ORDER BY field %s must be grouped or aggregated", spec.Field)
+		}
+		if expr, ok := parseSelectFieldExpression(spec.Field); ok {
+			if err := validateSelectFieldExpression(org, definition, expr, mode); err != nil {
+				return err
+			}
+			continue
 		}
 		if err := validateFieldReference(org, definition, spec.Field, mode); err != nil {
 			return err
@@ -3001,13 +3048,20 @@ func calculatedFieldValue(org storage.OrgState, definition storage.ObjectDefinit
 		field = canonical
 	}
 	fieldDef, ok := definition.Fields[field]
-	if !ok || strings.TrimSpace(fieldDef.Formula) == "" {
-		if ok && fieldDef.Type == storage.FieldSummary {
-			return dml.EvaluateRecordSummaryValueInOrg(fieldDef, &org, definition, record)
+	if !ok {
+		return storage.Value{}, false
+	}
+	if strings.TrimSpace(fieldDef.Formula) == "" {
+		if fieldDef.Type == storage.FieldSummary {
+			return calculatedSummaryFieldValue(org, definition, record, fieldDef)
 		}
 		return storage.Value{}, false
 	}
 	return calculatedRecordValue(org, definition, record, fieldDef)
+}
+
+func calculatedSummaryFieldValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field) (storage.Value, bool) {
+	return dml.EvaluateRecordSummaryValueInOrg(field, &org, definition, record)
 }
 
 func calculatedRecordValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field) (storage.Value, bool) {
@@ -3177,10 +3231,34 @@ func compareValues(left, right storage.Value) int {
 }
 
 func compareSOQLText(left, right string) int {
-	if cmp := strings.Compare(strings.ToLower(left), strings.ToLower(right)); cmp != 0 {
+	if cmp := compareSOQLTextFolded(left, right); cmp != 0 {
 		return cmp
 	}
 	return strings.Compare(left, right)
+}
+
+func compareSOQLTextFolded(left, right string) int {
+	for len(left) > 0 && len(right) > 0 {
+		leftRune, leftSize := utf8.DecodeRuneInString(left)
+		rightRune, rightSize := utf8.DecodeRuneInString(right)
+		leftFolded := unicode.ToLower(leftRune)
+		rightFolded := unicode.ToLower(rightRune)
+		if leftFolded < rightFolded {
+			return -1
+		}
+		if leftFolded > rightFolded {
+			return 1
+		}
+		left = left[leftSize:]
+		right = right[rightSize:]
+	}
+	if len(left) == len(right) {
+		return 0
+	}
+	if len(left) == 0 {
+		return -1
+	}
+	return 1
 }
 
 func recordsOrderedBefore(org storage.OrgState, definition storage.ObjectDefinition, leftRecord, rightRecord storage.Record, order []OrderSpec) bool {

@@ -1,30 +1,131 @@
 {
   "name": "core-runtime-database-dml-object-list-evidence",
   "evidence": [
-    {"surfaceId": "apex:System.Database.insert(Object)", "symbol": "Database.insert(Object)", "kind": "test", "notes": "Generated tooling exposes the Object overload; local DML accepts an SObject value through Object."},
-    {"surfaceId": "apex:System.Database.insert(List<Object>)", "symbol": "Database.insert(List<Object>)", "kind": "test", "notes": "Generated tooling exposes ordered SaveResult rows for Object lists containing SObject values."},
-    {"surfaceId": "apex:System.Database.update(Object)", "symbol": "Database.update(Object)", "kind": "test", "notes": "Generated tooling exposes the Object overload; local DML updates an SObject value through Object."},
-    {"surfaceId": "apex:System.Database.update(Object,Boolean)", "symbol": "Database.update(Object,Boolean)", "kind": "test", "notes": "Public docs and generated tooling expose the allOrNone overload; local DML returns a SaveResult."},
-    {"surfaceId": "apex:System.Database.update(Object,Boolean,AccessLevel)", "symbol": "Database.update(Object,Boolean,AccessLevel)", "kind": "test", "notes": "Public docs and generated tooling expose the allOrNone plus AccessLevel overload; this fixture only proves SYSTEM_MODE local DML routing."},
-    {"surfaceId": "apex:System.Database.update(List<Object>)", "symbol": "Database.update(List<Object>)", "kind": "test", "notes": "Generated tooling exposes ordered SaveResult rows for Object lists containing SObject values."},
-    {"surfaceId": "apex:System.Database.update(List<Object>,Boolean)", "symbol": "Database.update(List<Object>,Boolean)", "kind": "test", "notes": "Generated tooling exposes ordered SaveResult rows for Object lists with allOrNone."},
-    {"surfaceId": "apex:System.Database.update(List<Object>,AccessLevel)", "symbol": "Database.update(List<Object>,AccessLevel)", "kind": "test", "notes": "Generated tooling exposes ordered SaveResult rows for Object lists with AccessLevel; this fixture only proves SYSTEM_MODE local DML routing."},
-    {"surfaceId": "apex:System.Database.update(List<Object>,Boolean,AccessLevel)", "symbol": "Database.update(List<Object>,Boolean,AccessLevel)", "kind": "test", "notes": "Generated tooling exposes ordered SaveResult rows for Object lists with allOrNone and AccessLevel; this fixture only proves SYSTEM_MODE local DML routing."},
-    {"surfaceId": "apex:System.Database.delete(Object)", "symbol": "Database.delete(Object)", "kind": "test", "notes": "Generated tooling exposes the Object overload; local DML deletes an SObject value through Object."},
-    {"surfaceId": "apex:System.Database.delete(Object,AccessLevel)", "symbol": "Database.delete(Object,AccessLevel)", "kind": "test", "notes": "Generated tooling exposes the AccessLevel overload; this fixture only proves SYSTEM_MODE local DML routing."},
-    {"surfaceId": "apex:System.Database.delete(List<Object>)", "symbol": "Database.delete(List<Object>)", "kind": "test", "notes": "Generated tooling exposes ordered DeleteResult rows for Object lists containing SObject values."},
-    {"surfaceId": "apex:System.Database.delete(List<Object>,Boolean)", "symbol": "Database.delete(List<Object>,Boolean)", "kind": "test", "notes": "Generated tooling exposes ordered DeleteResult rows for Object lists with allOrNone."},
-    {"surfaceId": "apex:System.Database.delete(List<Object>,AccessLevel)", "symbol": "Database.delete(List<Object>,AccessLevel)", "kind": "test", "notes": "Generated tooling exposes ordered DeleteResult rows for Object lists with AccessLevel; this fixture only proves SYSTEM_MODE local DML routing."},
-    {"surfaceId": "apex:System.Database.delete(List<Object>,Boolean,AccessLevel)", "symbol": "Database.delete(List<Object>,Boolean,AccessLevel)", "kind": "test", "notes": "Generated tooling exposes ordered DeleteResult rows for Object lists with allOrNone and AccessLevel; this fixture only proves SYSTEM_MODE local DML routing."},
-    {"surfaceId": "apex:System.Database.undelete(Object)", "symbol": "Database.undelete(Object)", "kind": "test", "notes": "Generated tooling exposes the Object overload; local DML restores an SObject value through Object."},
-    {"surfaceId": "apex:System.Database.undelete(Object,AccessLevel)", "symbol": "Database.undelete(Object,AccessLevel)", "kind": "test", "notes": "Generated tooling exposes the AccessLevel overload; this fixture only proves SYSTEM_MODE local DML routing."},
-    {"surfaceId": "apex:System.Database.undelete(List<Object>)", "symbol": "Database.undelete(List<Object>)", "kind": "test", "notes": "Generated tooling exposes ordered UndeleteResult rows for Object lists containing SObject values."},
-    {"surfaceId": "apex:System.Database.undelete(List<Object>,AccessLevel)", "symbol": "Database.undelete(List<Object>,AccessLevel)", "kind": "test", "notes": "Generated tooling exposes ordered UndeleteResult rows for Object lists with AccessLevel; this fixture only proves SYSTEM_MODE local DML routing."}
+    {
+      "surfaceId": "apex:System.Database.insert(Object)",
+      "symbol": "Database.insert(Object)",
+      "kind": "test",
+      "notes": "Generated tooling exposes the Object overload; local DML accepts an SObject value through Object."
+    },
+    {
+      "surfaceId": "apex:System.Database.insert(List<Object>)",
+      "symbol": "Database.insert(List<Object>)",
+      "kind": "test",
+      "notes": "Generated tooling exposes ordered SaveResult rows for Object lists containing SObject values."
+    },
+    {
+      "surfaceId": "apex:System.Database.update(Object)",
+      "symbol": "Database.update(Object)",
+      "kind": "test",
+      "notes": "Generated tooling exposes the Object overload; local DML updates an SObject value through Object."
+    },
+    {
+      "surfaceId": "apex:System.Database.update(Object,Boolean)",
+      "symbol": "Database.update(Object,Boolean)",
+      "kind": "test",
+      "notes": "Public docs and generated tooling expose the allOrNone overload; local DML returns a SaveResult."
+    },
+    {
+      "surfaceId": "apex:System.Database.update(Object,Boolean,AccessLevel)",
+      "symbol": "Database.update(Object,Boolean,AccessLevel)",
+      "kind": "test",
+      "notes": "Public docs and generated tooling expose the allOrNone plus AccessLevel overload; this fixture only proves SYSTEM_MODE local DML routing."
+    },
+    {
+      "surfaceId": "apex:System.Database.update(List<Object>)",
+      "symbol": "Database.update(List<Object>)",
+      "kind": "test",
+      "notes": "Generated tooling exposes ordered SaveResult rows for Object lists containing SObject values."
+    },
+    {
+      "surfaceId": "apex:System.Database.update(List<Object>,Boolean)",
+      "symbol": "Database.update(List<Object>,Boolean)",
+      "kind": "test",
+      "notes": "Generated tooling exposes ordered SaveResult rows for Object lists with allOrNone."
+    },
+    {
+      "surfaceId": "apex:System.Database.update(List<Object>,AccessLevel)",
+      "symbol": "Database.update(List<Object>,AccessLevel)",
+      "kind": "test",
+      "notes": "Generated tooling exposes ordered SaveResult rows for Object lists with AccessLevel; this fixture only proves SYSTEM_MODE local DML routing."
+    },
+    {
+      "surfaceId": "apex:System.Database.update(List<Object>,Boolean,AccessLevel)",
+      "symbol": "Database.update(List<Object>,Boolean,AccessLevel)",
+      "kind": "test",
+      "notes": "Generated tooling exposes ordered SaveResult rows for Object lists with allOrNone and AccessLevel; this fixture only proves SYSTEM_MODE local DML routing."
+    },
+    {
+      "surfaceId": "apex:System.Database.delete(Object)",
+      "symbol": "Database.delete(Object)",
+      "kind": "test",
+      "notes": "Generated tooling exposes the Object overload; local DML deletes an SObject value through Object."
+    },
+    {
+      "surfaceId": "apex:System.Database.delete(Object,AccessLevel)",
+      "symbol": "Database.delete(Object,AccessLevel)",
+      "kind": "test",
+      "notes": "Generated tooling exposes the AccessLevel overload; this fixture only proves SYSTEM_MODE local DML routing."
+    },
+    {
+      "surfaceId": "apex:System.Database.delete(List<Object>)",
+      "symbol": "Database.delete(List<Object>)",
+      "kind": "test",
+      "notes": "Generated tooling exposes ordered DeleteResult rows for Object lists containing SObject values."
+    },
+    {
+      "surfaceId": "apex:System.Database.delete(List<Object>,Boolean)",
+      "symbol": "Database.delete(List<Object>,Boolean)",
+      "kind": "test",
+      "notes": "Generated tooling exposes ordered DeleteResult rows for Object lists with allOrNone."
+    },
+    {
+      "surfaceId": "apex:System.Database.delete(List<Object>,AccessLevel)",
+      "symbol": "Database.delete(List<Object>,AccessLevel)",
+      "kind": "test",
+      "notes": "Generated tooling exposes ordered DeleteResult rows for Object lists with AccessLevel; this fixture only proves SYSTEM_MODE local DML routing."
+    },
+    {
+      "surfaceId": "apex:System.Database.delete(List<Object>,Boolean,AccessLevel)",
+      "symbol": "Database.delete(List<Object>,Boolean,AccessLevel)",
+      "kind": "test",
+      "notes": "Generated tooling exposes ordered DeleteResult rows for Object lists with allOrNone and AccessLevel; this fixture only proves SYSTEM_MODE local DML routing."
+    },
+    {
+      "surfaceId": "apex:System.Database.undelete(Object)",
+      "symbol": "Database.undelete(Object)",
+      "kind": "test",
+      "notes": "Generated tooling exposes the Object overload; local DML restores an SObject value through Object."
+    },
+    {
+      "surfaceId": "apex:System.Database.undelete(Object,AccessLevel)",
+      "symbol": "Database.undelete(Object,AccessLevel)",
+      "kind": "test",
+      "notes": "Generated tooling exposes the AccessLevel overload; this fixture only proves SYSTEM_MODE local DML routing."
+    },
+    {
+      "surfaceId": "apex:System.Database.undelete(List<Object>)",
+      "symbol": "Database.undelete(List<Object>)",
+      "kind": "test",
+      "notes": "Generated tooling exposes ordered UndeleteResult rows for Object lists containing SObject values."
+    },
+    {
+      "surfaceId": "apex:System.Database.undelete(List<Object>,AccessLevel)",
+      "symbol": "Database.undelete(List<Object>,AccessLevel)",
+      "kind": "test",
+      "notes": "Generated tooling exposes ordered UndeleteResult rows for Object lists with AccessLevel; this fixture only proves SYSTEM_MODE local DML routing."
+    },
+    {
+      "surfaceId": "apex:System.Database.undelete(List<Object>,Boolean,AccessLevel)",
+      "symbol": "Database.undelete(List<Object>,Boolean,AccessLevel)",
+      "kind": "test",
+      "notes": "Generated tooling exposes ordered UndeleteResult rows for Object lists with allOrNone and AccessLevel; this fixture only proves SYSTEM_MODE local DML routing."
+    }
   ],
   "source": [
     {
       "path": "force-app/main/classes/CoreRuntimeDatabaseDmlObjectListEvidenceTest.cls",
-      "content": "@isTest private class CoreRuntimeDatabaseDmlObjectListEvidenceTest { @isTest static void objectRows() { Account one = new Account(Name = 'One'); Object oneObject = one; Database.SaveResult inserted = Database.insert(oneObject); System.assert(inserted.isSuccess()); one.Name = 'One Updated'; System.assert(Database.update((Object) one).isSuccess()); one.Name = 'One Updated Again'; System.assert(Database.update((Object) one, false).isSuccess()); one.Name = 'One Updated System'; System.assert(Database.update((Object) one, false, AccessLevel.SYSTEM_MODE).isSuccess()); System.assert(Database.delete((Object) one).isSuccess()); System.assert(Database.undelete((Object) one).isSuccess()); System.assert(Database.delete((Object) one, AccessLevel.SYSTEM_MODE).isSuccess()); System.assert(Database.undelete((Object) one, AccessLevel.SYSTEM_MODE).isSuccess()); Account two = new Account(Name = 'Two'); Account three = new Account(Name = 'Three'); List<Object> records = new List<Object>{two, three}; List<Database.SaveResult> insertedList = Database.insert(records); System.assertEquals(2, insertedList.size()); two.Name = 'Two Updated'; three.Name = 'Three Updated'; System.assertEquals(2, Database.update(records).size()); two.Name = 'Two Updated Again'; three.Name = 'Three Updated Again'; System.assertEquals(2, Database.update(records, false).size()); two.Name = 'Two Updated System'; three.Name = 'Three Updated System'; System.assertEquals(2, Database.update(records, AccessLevel.SYSTEM_MODE).size()); two.Name = 'Two Updated Both'; three.Name = 'Three Updated Both'; System.assertEquals(2, Database.update(records, false, AccessLevel.SYSTEM_MODE).size()); System.assertEquals(2, Database.delete(records).size()); System.assertEquals(2, Database.undelete(records).size()); System.assertEquals(2, Database.delete(records, false).size()); System.assertEquals(2, Database.undelete(records, AccessLevel.SYSTEM_MODE).size()); System.assertEquals(2, Database.delete(records, AccessLevel.SYSTEM_MODE).size()); System.assertEquals(2, Database.undelete(records, AccessLevel.SYSTEM_MODE).size()); System.assertEquals(2, Database.delete(records, false, AccessLevel.SYSTEM_MODE).size()); } }"
+      "content": "@isTest private class CoreRuntimeDatabaseDmlObjectListEvidenceTest { @isTest static void objectRows() { Account one = new Account(Name = 'One'); Object oneObject = one; Database.SaveResult inserted = Database.insert(oneObject); System.assert(inserted.isSuccess()); one.Name = 'One Updated'; System.assert(Database.update((Object) one).isSuccess()); one.Name = 'One Updated Again'; System.assert(Database.update((Object) one, false).isSuccess()); one.Name = 'One Updated System'; System.assert(Database.update((Object) one, false, AccessLevel.SYSTEM_MODE).isSuccess()); System.assertEquals('One Updated System', [SELECT Name FROM Account WHERE Id = :one.Id].Name); System.assert(Database.delete((Object) one).isSuccess()); System.assert([SELECT IsDeleted FROM Account WHERE Id = :one.Id ALL ROWS].IsDeleted); System.assert(Database.undelete((Object) one).isSuccess()); System.assert(![SELECT IsDeleted FROM Account WHERE Id = :one.Id ALL ROWS].IsDeleted); System.assert(Database.delete((Object) one, AccessLevel.SYSTEM_MODE).isSuccess()); System.assert([SELECT IsDeleted FROM Account WHERE Id = :one.Id ALL ROWS].IsDeleted); System.assert(Database.undelete((Object) one, AccessLevel.SYSTEM_MODE).isSuccess()); System.assert(![SELECT IsDeleted FROM Account WHERE Id = :one.Id ALL ROWS].IsDeleted); Account two = new Account(Name = 'Two'); Account three = new Account(Name = 'Three'); List<Object> records = new List<Object>{two, three}; List<Database.SaveResult> insertedList = Database.insert(records); System.assertEquals(2, insertedList.size()); Set<Id> recordIds = new Set<Id>{insertedList[0].getId(), insertedList[1].getId()}; two.Name = 'Two Updated'; three.Name = 'Three Updated'; System.assertEquals(2, Database.update(records).size()); two.Name = 'Two Updated Again'; three.Name = 'Three Updated Again'; System.assertEquals(2, Database.update(records, false).size()); two.Name = 'Two Updated System'; three.Name = 'Three Updated System'; System.assertEquals(2, Database.update(records, AccessLevel.SYSTEM_MODE).size()); two.Name = 'Two Updated Both'; three.Name = 'Three Updated Both'; System.assertEquals(2, Database.update(records, false, AccessLevel.SYSTEM_MODE).size()); System.assertEquals(2, [SELECT COUNT() FROM Account WHERE Name IN ('Two Updated Both', 'Three Updated Both')]); System.assertEquals(2, Database.delete(records).size()); Integer deletedCount = 0; for (Account row : [SELECT Id, IsDeleted FROM Account WHERE Id IN :recordIds ALL ROWS]) { if (row.IsDeleted) deletedCount++; } System.assertEquals(2, deletedCount); System.assertEquals(2, Database.undelete(records).size()); System.assertEquals(2, [SELECT COUNT() FROM Account WHERE Id IN :recordIds]); System.assertEquals(2, Database.delete(records, false).size()); System.assertEquals(2, Database.undelete(records, AccessLevel.SYSTEM_MODE).size()); System.assertEquals(2, Database.delete(records, AccessLevel.SYSTEM_MODE).size()); System.assertEquals(2, Database.undelete(records, AccessLevel.SYSTEM_MODE).size()); System.assertEquals(2, Database.delete(records, false, AccessLevel.SYSTEM_MODE).size()); deletedCount = 0; for (Account row : [SELECT Id, IsDeleted FROM Account WHERE Id IN :recordIds ALL ROWS]) { if (row.IsDeleted) deletedCount++; } System.assertEquals(2, deletedCount); System.assertEquals(2, Database.undelete(records, false, AccessLevel.SYSTEM_MODE).size()); System.assertEquals(2, [SELECT COUNT() FROM Account WHERE Id IN :recordIds]); } }"
     }
   ],
   "command": {

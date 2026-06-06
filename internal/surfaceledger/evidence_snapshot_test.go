@@ -29,6 +29,79 @@ func TestBuildEvidenceSnapshotReadsSurfaceID(t *testing.T) {
 	}
 }
 
+func TestBuildEvidenceSnapshotMarksRuntimeGuideEvidenceSupported(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "fixture.json")
+	data := `{
+  "name": "query-runtime-soqlsosl-orderby",
+  "evidence": [
+    {"symbol": "SOQL ORDER BY", "surfaceId": "unknown:sforce_api_calls_soql_select_orderby", "kind": "test"},
+    {"symbol": "Dynamic SOQL", "surfaceId": "unknown:apex_dynamic_soql", "kind": "test"}
+  ],
+  "command": {"kind": "test"},
+  "expected": {"result": {"ok": true}}
+}`
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := BuildEvidenceSnapshot([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	row := rowsByID(rows)["unknown:sforce_api_calls_soql_select_orderby"]
+	if row.Evidence != EvidenceFixture || row.GladeBehavior != BehaviorSupported {
+		t.Fatalf("guide row evidence/behavior = %s/%s, want fixture/supported: %#v", row.Evidence, row.GladeBehavior, rows)
+	}
+	row = rowsByID(rows)["unknown:apex_dynamic_soql"]
+	if row.Evidence != EvidenceFixture || row.GladeBehavior != BehaviorSupported {
+		t.Fatalf("dynamic row evidence/behavior = %s/%s, want fixture/supported: %#v", row.Evidence, row.GladeBehavior, rows)
+	}
+}
+
+func TestBuildEvidenceSnapshotDoesNotPromoteNonQueryUnknownEvidence(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "fixture.json")
+	data := `{
+  "name": "other_runtime_unknown",
+  "evidence": [{"symbol": "Other runtime guide", "surfaceId": "unknown:some_other_runtime_guide", "kind": "test"}],
+  "command": {"kind": "test"},
+  "expected": {"result": {"ok": true}}
+}`
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := BuildEvidenceSnapshot([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	row := rowsByID(rows)["unknown:some_other_runtime_guide"]
+	if row.Evidence != EvidenceFixture || row.GladeBehavior != BehaviorNone {
+		t.Fatalf("non-query unknown evidence/behavior = %s/%s, want fixture/none: %#v", row.Evidence, row.GladeBehavior, rows)
+	}
+}
+
+func TestBuildEvidenceSnapshotDoesNotMarkUnsupportedRuntimeGuideSupported(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "fixture.json")
+	data := `{
+  "name": "unsupported_soql_guide",
+  "evidence": [{"symbol": "SOQL guide", "surfaceId": "unknown:unsupported_soql_statements", "kind": "test"}],
+  "command": {"kind": "test"},
+  "expected": {"error": {"type": "UnsupportedFeature"}}
+}`
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := BuildEvidenceSnapshot([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	row := rowsByID(rows)["unknown:unsupported_soql_statements"]
+	if row.Evidence != EvidenceFixture || row.GladeBehavior != BehaviorNone {
+		t.Fatalf("unsupported guide row evidence/behavior = %s/%s, want fixture/none: %#v", row.Evidence, row.GladeBehavior, rows)
+	}
+}
+
 func TestBuildEvidenceSnapshotSkipsCorpusManifest(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "local-tests-corpus.json")

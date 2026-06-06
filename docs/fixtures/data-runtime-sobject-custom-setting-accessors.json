@@ -1,0 +1,79 @@
+{
+  "name": "data-runtime-sobject-custom-setting-accessors",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.SObject.getAll()",
+      "symbol": "SObject.getAll",
+      "kind": "exec",
+      "notes": "List custom setting records expose local getAll behavior through the SObject surface."
+    },
+    {
+      "surfaceId": "apex:System.SObject.getValues(String)",
+      "symbol": "SObject.getValues(String)",
+      "kind": "exec",
+      "notes": "List and hierarchy custom setting records expose local getValues behavior through the SObject surface."
+    },
+    {
+      "surfaceId": "apex:System.SObject.getOrgDefaults()",
+      "symbol": "SObject.getOrgDefaults",
+      "kind": "exec",
+      "notes": "Hierarchy custom setting records expose local org-default behavior through the SObject surface."
+    }
+  ],
+  "schema": [
+    {
+      "path": "force-app/main/default/objects/Local_Setting__c/Local_Setting__c.object-meta.xml",
+      "content": "<CustomObject><label>Local Setting</label><pluralLabel>Local Settings</pluralLabel><customSettingsType>List</customSettingsType></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Local_Setting__c/fields/Enabled__c.field-meta.xml",
+      "content": "<CustomField><fullName>Enabled__c</fullName><label>Enabled</label><type>Checkbox</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Hierarchy_Setting__c/Hierarchy_Setting__c.object-meta.xml",
+      "content": "<CustomObject><label>Hierarchy Setting</label><pluralLabel>Hierarchy Settings</pluralLabel><customSettingsType>Hierarchy</customSettingsType></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Hierarchy_Setting__c/fields/Enabled__c.field-meta.xml",
+      "content": "<CustomField><fullName>Enabled__c</fullName><label>Enabled</label><type>Checkbox</type></CustomField>"
+    }
+  ],
+  "seedData": [
+    {
+      "object": "Local_Setting__c",
+      "records": [
+        {
+          "Name": "Default",
+          "Enabled__c": true
+        }
+      ]
+    },
+    {
+      "object": "Hierarchy_Setting__c",
+      "records": [
+        {
+          "SetupOwnerId": "00D000000000001",
+          "Enabled__c": true
+        }
+      ]
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "SObject setting = Local_Setting__c.getInstance('Default'); System.debug('all=' + setting.getAll().size()); System.debug('value=' + setting.getValues('Default').get('Name')); SObject hierarchy = Hierarchy_Setting__c.getInstance(); System.debug('org=' + hierarchy.getOrgDefaults().get('Enabled__c')); System.debug('owner=' + hierarchy.getValues('00D000000000001').get('Enabled__c'));"
+    ]
+  },
+  "expected": {
+    "stdout": "all=1\nvalue=Default\norg=true\nowner=true\n",
+    "result": {
+      "debug": [
+        "all=1",
+        "value=Default",
+        "org=true",
+        "owner=true"
+      ],
+      "ok": true
+    }
+  }
+}

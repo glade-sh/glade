@@ -721,6 +721,20 @@ func TestDMLCollapsesNewlinesForSingleLineTextFields(t *testing.T) {
 	}
 }
 
+func TestNormalizeStoredFieldValuePlainTextDoesNotAllocate(t *testing.T) {
+	field := storage.Field{APIName: "Name", Type: storage.FieldString}
+	value := storage.StringValue("Acme")
+	if got := normalizeStoredFieldValue(field, value); got.String != "Acme" {
+		t.Fatalf("normalized = %#v", got)
+	}
+	allocs := testing.AllocsPerRun(1000, func() {
+		normalizeStoredFieldValue(field, value)
+	})
+	if allocs != 0 {
+		t.Fatalf("allocs = %.2f, want 0", allocs)
+	}
+}
+
 func TestDMLRecalculatesSummaryFields(t *testing.T) {
 	org := testOrg()
 	org.Objects["Parent__c"] = storage.ObjectState{
@@ -1154,6 +1168,45 @@ func TestInsertUpdateCanonicalizesPicklistValueCasing(t *testing.T) {
 	}
 	if got := org.Objects["FacilitySE__c"].Records[insert[0].ID].Fields["Type__c"]; got.Kind != storage.ValueString || got.String != "Sam" {
 		t.Fatalf("update Type__c = %#v; want Sam", got)
+	}
+}
+
+func TestInsertRejectsInvalidRestrictedPicklistValue(t *testing.T) {
+	org := testOrg()
+	org.Objects["FacilitySE__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "FacilitySE__c",
+			KeyPrefix: "a03",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString, Required: true},
+				"Type__c": {
+					APIName:            "Type__c",
+					Type:               storage.FieldPicklist,
+					RestrictedPicklist: true,
+					PicklistValues: []storage.PicklistValue{
+						{Value: "OigExclusions", Active: true},
+						{Value: "Sam", Active: true},
+					},
+				},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "FacilitySE__c",
+		Fields: map[string]storage.Value{
+			"Name":    storage.StringValue("Facility SE"),
+			"Type__c": storage.StringValue("Bogus"),
+		},
+	}})
+
+	if insert[0].Success || insert[0].StatusCode != "INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST" || len(insert[0].Fields) != 1 || insert[0].Fields[0] != "Type__c" {
+		t.Fatalf("restricted picklist insert = %#v", insert[0])
+	}
+	if len(org.Objects["FacilitySE__c"].Records) != 0 {
+		t.Fatalf("record persisted after restricted picklist failure: %#v", org.Objects["FacilitySE__c"].Records)
 	}
 }
 
@@ -1788,6 +1841,28 @@ func TestInsertEvaluatesDateFormulaDefaultsWithOrgClock(t *testing.T) {
 	record := org.Objects["Account"].Records[insert[0].ID]
 	if got := record.Fields["RenewalDate__c"]; got.Kind != storage.ValueDate || got.String != "2026-05-15" {
 		t.Fatalf("RenewalDate__c = %#v", got)
+	}
+}
+
+func TestInsertEvaluatesTextFormulaDefaultsWithOrgClock(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	org.Now = func() time.Time { return time.Date(2026, 5, 15, 10, 0, 0, 0, time.UTC) }
+	account := org.Objects["Account"]
+	account.Definition.Fields["DefaultedLabel__c"] = storage.Field{APIName: "DefaultedLabel__c", Type: storage.FieldString, DefaultValue: "TEXT(TODAY())"}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	record := org.Objects["Account"].Records[insert[0].ID]
+	if got := record.Fields["DefaultedLabel__c"]; got.Kind != storage.ValueString || got.String != "2026-05-15" {
+		t.Fatalf("DefaultedLabel__c = %#v", got)
 	}
 }
 

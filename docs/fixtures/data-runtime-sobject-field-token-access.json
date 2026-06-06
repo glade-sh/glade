@@ -1,0 +1,47 @@
+{
+  "name": "data-runtime-sobject-field-token-access",
+  "evidence": [
+    {
+      "symbol": "SObject.get",
+      "surfaceId": "apex:System.SObject.get(Schema.SObjectField)",
+      "kind": "test",
+      "notes": "SObject.get accepts a Schema.SObjectField token and reads the stored field value."
+    },
+    {
+      "symbol": "SObject.put",
+      "surfaceId": "apex:System.SObject.put(Schema.SObjectField,Object)",
+      "kind": "test",
+      "notes": "SObject.put accepts a Schema.SObjectField token, writes the field value, and returns the previous value."
+    },
+    {
+      "symbol": "SObject.isSet",
+      "surfaceId": "apex:System.SObject.isSet(Schema.SObjectField)",
+      "kind": "test",
+      "notes": "SObject.isSet accepts a Schema.SObjectField token and reports field presence."
+    },
+    {
+      "symbol": "SObject.putSObject",
+      "surfaceId": "apex:System.SObject.putSObject(Schema.SObjectField,Object)",
+      "kind": "test",
+      "notes": "SObject.putSObject accepts a reference field token and stores the parent relationship SObject."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/classes/DataRuntimeSObjectFieldTokenAccessTest.cls",
+      "content": "@isTest private class DataRuntimeSObjectFieldTokenAccessTest { @isTest static void fieldTokenGetPutAndIsSet() { Schema.SObjectField nameField = Account.SObjectType.getDescribe().fields.getMap().get('Name'); Account account = new Account(); System.assertEquals(false, account.isSet(nameField)); System.assertEquals(null, account.get(nameField)); Object previous = account.put(nameField, 'Acme'); System.assertEquals(null, previous); System.assertEquals(true, account.isSet(nameField)); System.assertEquals('Acme', account.get(nameField)); previous = account.put(nameField, 'Changed'); System.assertEquals('Acme', previous); System.assertEquals('Changed', account.Name); } @isTest static void fieldTokenPutSObjectStoresParentRelationship() { Schema.SObjectField accountField = Contact.SObjectType.getDescribe().fields.getMap().get('AccountId'); Contact contact = new Contact(LastName = 'Child'); contact.putSObject(accountField, new Account(Id = '001000000000001AAA', Name = 'Parent')); System.assertEquals('Parent', contact.getSObject(accountField).get('Name')); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

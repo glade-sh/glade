@@ -1,0 +1,53 @@
+{
+  "name": "data-runtime-sobject-access-decision",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.SObjectAccessDecision.getRecords()",
+      "symbol": "SObjectAccessDecision.getRecords",
+      "kind": "test",
+      "notes": "Security.stripInaccessible returns the local SObject records through SObjectAccessDecision.getRecords()."
+    },
+    {
+      "surfaceId": "apex:System.SObjectAccessDecision.getRemovedFields()",
+      "symbol": "SObjectAccessDecision.getRemovedFields",
+      "kind": "test",
+      "notes": "Security.stripInaccessible reports the local removed-field map through SObjectAccessDecision.getRemovedFields()."
+    },
+    {
+      "surfaceId": "apex:System.SObjectAccessDecision.getModifiedIndexes()",
+      "symbol": "SObjectAccessDecision.getModifiedIndexes",
+      "kind": "test",
+      "notes": "Security.stripInaccessible reports the local modified-index set through SObjectAccessDecision.getModifiedIndexes()."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Secret__c.field-meta.xml",
+      "content": "<CustomField><fullName>Secret__c</fullName><label>Secret</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/DataRuntimeSObjectAccessDecisionTest.cls",
+      "content": "@isTest private class DataRuntimeSObjectAccessDecisionTest { @isTest static void stripInaccessibleReturnsDecisionDetails() { PermissionSet ps = new PermissionSet(Name = 'ReadAccountNameOnly', Label = 'Read Account Name Only'); insert ps; insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true); insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Account', Field = 'Account.Name', PermissionsRead = true); Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce' LIMIT 1]; User u = new User(Username = 'strip-user@example.invalid', Alias = 'stripu', Email = 'strip-user@example.invalid', LastName = 'Strip', ProfileId = p.Id, TimeZoneSidKey = 'UTC', LocaleSidKey = 'en_US', LanguageLocaleKey = 'en_US', EmailEncodingKey = 'UTF-8'); insert u; insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id); System.runAs(u) { Account account = new Account(Name = 'Acme', Secret__c = 'Hidden'); insert account; List<Account> rows = [SELECT Id, Name, Secret__c FROM Account WHERE Id = :account.Id]; SObjectAccessDecision decision = Security.stripInaccessible(AccessType.READABLE, rows); List<Account> stripped = (List<Account>) decision.getRecords(); System.assertEquals(1, stripped.size()); System.assertEquals('Acme', stripped[0].Name); Map<String, Set<String>> removed = decision.getRemovedFields(); System.assertEquals(1, removed.size()); System.assert(removed.get('Account').contains('Secret__c')); System.assertEquals(1, decision.getModifiedIndexes().size()); System.assert(decision.getModifiedIndexes().contains(0)); Boolean caught = false; try { System.debug(stripped[0].Secret__c); } catch (SObjectException e) { caught = e.getMessage().contains('without querying the requested field'); } System.assert(caught); } } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

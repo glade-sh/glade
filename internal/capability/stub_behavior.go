@@ -18,6 +18,7 @@ type StubBehaviorStatus string
 const (
 	StubBehaviorImplemented    StubBehaviorStatus = "implemented"
 	StubBehaviorPassiveDefault StubBehaviorStatus = "passive-default"
+	StubBehaviorStubNoOp       StubBehaviorStatus = "stub-noop"
 	StubBehaviorUnsupported    StubBehaviorStatus = "unsupported"
 	StubBehaviorUnknown        StubBehaviorStatus = "unknown"
 )
@@ -35,6 +36,7 @@ type StubBehaviorTotals struct {
 	Members        int            `json:"members"`
 	Implemented    int            `json:"implemented"`
 	PassiveDefault int            `json:"passiveDefault"`
+	StubNoOp       int            `json:"stubNoOp"`
 	Unsupported    int            `json:"unsupported"`
 	Unknown        int            `json:"unknown"`
 	ByStatus       map[string]int `json:"byStatus"`
@@ -105,7 +107,7 @@ func WriteStubBehaviorMarkdown(w io.Writer, report StubBehaviorReport) error {
 	if _, err := fmt.Fprintf(w, "\n- Entries: %d\n", report.Totals.Entries); err != nil {
 		return err
 	}
-	for _, status := range []StubBehaviorStatus{StubBehaviorImplemented, StubBehaviorPassiveDefault, StubBehaviorUnsupported, StubBehaviorUnknown} {
+	for _, status := range []StubBehaviorStatus{StubBehaviorImplemented, StubBehaviorPassiveDefault, StubBehaviorStubNoOp, StubBehaviorUnsupported, StubBehaviorUnknown} {
 		if _, err := fmt.Fprintf(w, "- %s: %d\n", status, report.Totals.ByStatus[string(status)]); err != nil {
 			return err
 		}
@@ -287,11 +289,11 @@ func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys
 	case "Invocable.Action.Result":
 		switch name {
 		case "clone", "getaction", "geterrors", "getinvocationparameters", "getoutputparameters", "issuccess":
-			return StubBehaviorImplemented, "local Invocable.Action.invoke returns no-op Result DTOs with action, error, invocation, output, and success accessors", true
+			return StubBehaviorStubNoOp, "local Invocable.Action.invoke returns no-op Result DTOs with action, error, invocation, output, and success accessors", true
 		}
 	case "Invocable.Action":
 		if name == "getdescribe" {
-			return StubBehaviorImplemented, "local Invocable.Action.getDescribe returns a no-op DescribeResult DTO for local tests", true
+			return StubBehaviorStubNoOp, "local Invocable.Action.getDescribe returns a no-op DescribeResult DTO for local tests", true
 		}
 	case "Invocable.Action.DescribeResult":
 		switch name {
@@ -545,13 +547,13 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 		return StubBehaviorImplemented, "wave enum-like ordinal/valueOf method returns a deterministic local default without invoking Analytics services", true
 	}
 	if contextIndustriesBehaviorMethod(symbol, member) {
-		return StubBehaviorImplemented, "Context.IndustriesContext map passthrough/no-op method is handled by the VM local context surface", true
+		return StubBehaviorStubNoOp, "Context.IndustriesContext map passthrough/no-op method has shape and deterministic local no-op behavior only", true
 	}
 	if orgInstrumentationBehaviorMethod(symbol, member) {
-		return StubBehaviorImplemented, "OrgInstrumentation metric/span/context method is handled by the VM local no-op instrumentation surface", true
+		return StubBehaviorStubNoOp, "OrgInstrumentation metric/span/context method has shape and deterministic local no-op instrumentation behavior only", true
 	}
 	if userProvisioningBatchableBehaviorMethod(symbol, member) {
-		return StubBehaviorImplemented, "UserProvisioning batchable helper method is handled by the VM local no-op/default surface", true
+		return StubBehaviorStubNoOp, "UserProvisioning batchable helper method has shape and deterministic local no-op/default behavior only", true
 	}
 	if callbackInterfaceBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "callback/interface method is supplied by user Apex and dispatched through the VM when the local lifecycle invokes or user code calls it", true
@@ -560,7 +562,7 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 		return StubBehaviorImplemented, "callout or notification method is handled only through local test/mock harness dispatch; real transport remains explicitly unsupported", true
 	}
 	if localMockHarnessBehaviorMethod(symbol, member) {
-		return StubBehaviorImplemented, "test/mock harness method is handled by the VM local deterministic/no-op surface", true
+		return StubBehaviorStubNoOp, "test/mock harness method has shape and deterministic local no-op behavior only", true
 	}
 	if socialInboundDefaultHandlerBehaviorMethod(symbol, member) {
 		return StubBehaviorUnsupported, "Social inbound default-handler method depends on the Social Customer Service case/persona lifecycle and remains explicit unsupported until modeled", true
@@ -587,19 +589,19 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 		return StubBehaviorImplemented, "QuickAction describe/template/default methods return local read-only metadata/default DTOs without performing action side effects", true
 	}
 	if localServiceHarnessBehaviorMethod(symbol, member) {
-		return StubBehaviorImplemented, "safe platform service method is handled by a deterministic local no-op/default-result harness; live cloud side effects remain fenced", true
+		return StubBehaviorStubNoOp, "safe platform service method has shape and deterministic local no-op/default-result behavior only; live cloud side effects remain fenced", true
 	}
 	if appLauncherControllerBehaviorMethod(symbol, member) {
-		return StubBehaviorImplemented, "applauncher controller helper returns deterministic local URLs, booleans, empty provider/field DTO lists, or no-op form redirects without performing authentication or registration services", true
+		return StubBehaviorStubNoOp, "applauncher controller helper has deterministic local default/no-op behavior without authentication or registration services", true
 	}
 	if industryControllerHarnessBehaviorMethod(symbol, member) {
-		return StubBehaviorImplemented, "industry package controller method returns deterministic local empty/default DTOs or conservative access booleans without invoking managed services", true
+		return StubBehaviorStubNoOp, "industry package controller method has deterministic local empty/default behavior without managed-service execution", true
 	}
 	if industryControllerUnsupportedBehaviorMethod(symbol, member) {
 		return StubBehaviorUnsupported, "industry package mutation, booking, or transaction service remains explicitly unsupported", true
 	}
 	if packagedControllerDefaultBehaviorMethod(symbol, member) {
-		return StubBehaviorImplemented, "packaged controller/helper method returns deterministic local empty/default DTOs, maps, booleans, strings, or no-op callback results without invoking managed services", true
+		return StubBehaviorStubNoOp, "packaged controller/helper method has deterministic local empty/default/no-op behavior without managed-service execution", true
 	}
 	if packagedControllerUnsupportedBehaviorMethod(symbol, member) {
 		return StubBehaviorUnsupported, "packaged mutation, external service, authentication, geocoding, archive, quote, or transaction execution surface remains explicitly unsupported", true
@@ -611,7 +613,7 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 		return StubBehaviorImplemented, "Slack test-harness state/session method is handled locally without Slack transport", true
 	}
 	if slackLocalHarnessComponentBehaviorMethod(symbol, member) {
-		return StubBehaviorImplemented, "Slack local test-harness component method mutates local DTO/session state or returns deterministic no-op/default values", true
+		return StubBehaviorStubNoOp, "Slack local test-harness component method has deterministic local DTO/session or no-op/default behavior only", true
 	}
 	if slackLocalClientHarnessBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Slack client auth/read/info method returns a deterministic local DTO without external transport", true
@@ -2611,6 +2613,8 @@ func stubBehaviorStatusFromCapability(status Status) (StubBehaviorStatus, bool) 
 	switch status {
 	case StatusSupported, StatusPartial:
 		return StubBehaviorImplemented, true
+	case StatusStub:
+		return StubBehaviorStubNoOp, true
 	case StatusUnsupported:
 		return StubBehaviorUnsupported, true
 	default:
@@ -2624,16 +2628,18 @@ func stubBehaviorStatusRank(status StubBehaviorStatus) int {
 		return 0
 	case StubBehaviorUnsupported:
 		return 1
-	case StubBehaviorPassiveDefault:
+	case StubBehaviorStubNoOp:
 		return 2
-	default:
+	case StubBehaviorPassiveDefault:
 		return 3
+	default:
+		return 4
 	}
 }
 
 func countStubBehaviorTotals(entries []StubBehaviorEntry) StubBehaviorTotals {
 	totals := StubBehaviorTotals{Entries: len(entries), ByStatus: map[string]int{}}
-	for _, status := range []StubBehaviorStatus{StubBehaviorImplemented, StubBehaviorPassiveDefault, StubBehaviorUnsupported, StubBehaviorUnknown} {
+	for _, status := range []StubBehaviorStatus{StubBehaviorImplemented, StubBehaviorPassiveDefault, StubBehaviorStubNoOp, StubBehaviorUnsupported, StubBehaviorUnknown} {
 		totals.ByStatus[string(status)] = 0
 	}
 	for _, entry := range entries {
@@ -2648,6 +2654,8 @@ func countStubBehaviorTotals(entries []StubBehaviorEntry) StubBehaviorTotals {
 			totals.Implemented++
 		case StubBehaviorPassiveDefault:
 			totals.PassiveDefault++
+		case StubBehaviorStubNoOp:
+			totals.StubNoOp++
 		case StubBehaviorUnsupported:
 			totals.Unsupported++
 		default:

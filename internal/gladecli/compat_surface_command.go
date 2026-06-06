@@ -223,7 +223,7 @@ func runCompatSurfaceRefresh(args []string, w io.Writer) error {
 		fmt.Fprintf(w, "dryRunOut=%s\n", result.OutputDir)
 	}
 	fmt.Fprintf(w, "inputs: docs=%s org=%s glade=standard-symbols evidence=fixtures\n", options.DocsSource, orgInputName(options))
-	fmt.Fprintf(w, "implemented=%d partial=%d passive=%d explicitUnsupported=%d\n", result.Summary.Implemented, result.Summary.Partial, result.Summary.Passive, result.Summary.ExplicitUnsupported)
+	fmt.Fprintf(w, "implemented=%d partial=%d passive=%d stubNoOp=%d explicitUnsupported=%d\n", result.Summary.Implemented, result.Summary.Partial, result.Summary.Passive, result.Summary.StubNoOp, result.Summary.ExplicitUnsupported)
 	fmt.Fprintf(w, "gaps: missingShape=%d missingBehavior=%d missingEvidence=%d\n", result.Summary.Gaps[surfaceledger.GapMissingShape], result.Summary.Gaps[surfaceledger.GapMissingBehavior], result.Summary.Gaps[surfaceledger.GapMissingEvidence])
 	fmt.Fprintf(w, "failures: parser=%d docsOrgMismatch=%d staleGlade=%d passiveServiceRisk=%d\n", result.Summary.Failures["parser"], result.Summary.Failures[surfaceledger.GapDocsOrgMismatch], result.Summary.Failures[surfaceledger.GapStaleGladeShape], result.Summary.Failures[surfaceledger.GapPassiveServiceRisk])
 	fmt.Fprintf(w, "reports: %s\n", filepath.Join(result.OutputDir, "SURFACE_DASHBOARD.md"))

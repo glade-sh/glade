@@ -2,6 +2,7 @@ package soql
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -186,14 +187,25 @@ func (p *parser) parseQuery() (Query, error) {
 				q.ForUpdate = true
 			case p.matchWord("VIEW"):
 				q.ForView = true
+			case p.matchWord("REFERENCE"):
+				q.ForReference = true
 			default:
-				return Query{}, p.errorf("expected UPDATE or VIEW after FOR")
+				return Query{}, p.errorf("expected UPDATE, VIEW, or REFERENCE after FOR")
 			}
 		case p.matchWord("ALL"):
 			if !p.matchWord("ROWS") {
 				return Query{}, p.errorf("expected ROWS after ALL")
 			}
 			q.AllRows = true
+		case p.matchWord("USING"):
+			if !p.matchWord("SCOPE") {
+				return Query{}, p.errorf("expected SCOPE after USING")
+			}
+			scope, err := p.parseName()
+			if err != nil {
+				return Query{}, err
+			}
+			q.UsingScope = scope
 		case p.matchWord("WITH"):
 			mode, err := p.parseSecurityMode()
 			if err != nil {
@@ -251,7 +263,7 @@ func trimRelationshipAliasRoot(path, rootObject string) string {
 }
 func isSOQLClauseStart(text string) bool {
 	switch strings.ToUpper(text) {
-	case "WHERE", "GROUP", "HAVING", "ORDER", "LIMIT", "OFFSET", "FOR", "ALL", "WITH":
+	case "WHERE", "GROUP", "HAVING", "ORDER", "LIMIT", "OFFSET", "FOR", "ALL", "USING", "WITH":
 		return true
 	default:
 		return false
@@ -325,7 +337,7 @@ func (p *parser) parseFields() ([]string, []ChildQuery, []TypeofSpec, error) {
 			}
 			continue
 		}
-		field, err := p.parseName()
+		field, err := p.parseSelectableName()
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -529,7 +541,7 @@ func (p *parser) parseTypeofFieldList() ([]string, error) {
 func (p *parser) parseOrderList() ([]OrderSpec, error) {
 	var order []OrderSpec
 	for {
-		field, err := p.parseName()
+		field, err := p.parseSelectableName()
 		if err != nil {
 			return nil, err
 		}
@@ -581,6 +593,7 @@ func isAggregateFunc(name string) bool {
 func isSelectFieldFunction(name string) bool {
 	switch strings.ToUpper(name) {
 	case "TOLABEL", "FORMAT", "CONVERTCURRENCY",
+		"DISTANCE",
 		"CALENDAR_MONTH", "CALENDAR_QUARTER", "CALENDAR_YEAR",
 		"DAY_IN_MONTH", "DAY_IN_WEEK", "DAY_IN_YEAR", "DAY_ONLY",
 		"FISCAL_MONTH", "FISCAL_QUARTER", "FISCAL_YEAR",
@@ -622,12 +635,9 @@ func parseSelectFieldExpression(field string) (selectFieldExpression, bool) {
 	if strings.TrimSpace(argsText) == "" {
 		return selectFieldExpression{}, false
 	}
-	args := strings.Split(argsText, ",")
-	for i := range args {
-		args[i] = strings.TrimSpace(args[i])
-		if args[i] == "" {
-			return selectFieldExpression{}, false
-		}
+	args, ok := splitSelectFunctionArgs(argsText)
+	if !ok {
+		return selectFieldExpression{}, false
 	}
 	alias := ""
 	if len(parts) == 2 {
@@ -636,12 +646,112 @@ func parseSelectFieldExpression(field string) (selectFieldExpression, bool) {
 	return selectFieldExpression{Func: fn, Args: args, Alias: alias, Raw: raw}, true
 }
 func validateSelectFieldExpression(org storage.OrgState, definition storage.ObjectDefinition, expr selectFieldExpression, mode string) error {
+	if expr.Func == "DISTANCE" {
+		return validateDistanceExpression(org, definition, expr, mode)
+	}
 	if len(expr.Args) != 1 {
 		return unsupportedSOQLErrorf("%s currently supports one field argument", expr.Func)
 	}
 	return validateFieldReference(org, definition, selectFunctionFieldArg(expr.Args[0]), mode)
 }
+
+func splitSelectFunctionArgs(argsText string) ([]string, bool) {
+	var args []string
+	depth := 0
+	start := 0
+	for i := 0; i < len(argsText); i++ {
+		switch argsText[i] {
+		case '\'':
+			i++
+			for i < len(argsText) {
+				if argsText[i] == '\'' {
+					if i+1 < len(argsText) && argsText[i+1] == '\'' {
+						i += 2
+						continue
+					}
+					break
+				}
+				i++
+			}
+		case '(':
+			depth++
+		case ')':
+			depth--
+			if depth < 0 {
+				return nil, false
+			}
+		case ',':
+			if depth == 0 {
+				arg := strings.TrimSpace(argsText[start:i])
+				if arg == "" {
+					return nil, false
+				}
+				args = append(args, arg)
+				start = i + 1
+			}
+		}
+	}
+	if depth != 0 {
+		return nil, false
+	}
+	arg := strings.TrimSpace(argsText[start:])
+	if arg == "" {
+		return nil, false
+	}
+	return append(args, arg), true
+}
+
+func validateDistanceExpression(org storage.OrgState, definition storage.ObjectDefinition, expr selectFieldExpression, mode string) error {
+	if len(expr.Args) != 3 {
+		return unsupportedSOQLErrorf("DISTANCE requires two locations and a unit")
+	}
+	if !distanceUnitSupported(expr.Args[2]) {
+		return unsupportedSOQLErrorf("DISTANCE supports 'mi' and 'km' units")
+	}
+	for _, arg := range expr.Args[:2] {
+		if err := validateGeolocationExpressionArg(org, definition, arg, mode); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateGeolocationExpressionArg(org storage.OrgState, definition storage.ObjectDefinition, arg string, mode string) error {
+	args, ok := geolocationArgs(arg)
+	if ok {
+		for _, item := range args {
+			if numericLiteral(item) {
+				continue
+			}
+			if err := validateFieldReference(org, definition, item, mode); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if err := validateFieldReference(org, definition, arg, mode); err != nil {
+		return err
+	}
+	return nil
+}
+
+func distanceUnitSupported(arg string) bool {
+	unit, ok := stringLiteralText(arg)
+	if !ok {
+		return false
+	}
+	return strings.EqualFold(unit, "mi") || strings.EqualFold(unit, "km")
+}
+
+type geolocationPoint struct {
+	lat float64
+	lon float64
+}
+
 func selectFieldExpressionValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, expr selectFieldExpression) (storage.Value, bool) {
+	if expr.Func == "DISTANCE" {
+		return distanceExpressionValue(org, definition, record, expr)
+	}
 	if len(expr.Args) != 1 {
 		return storage.Value{}, false
 	}
@@ -660,22 +770,41 @@ func selectFieldExpressionValue(org storage.OrgState, definition storage.ObjectD
 		if text, ok := storageValueDateText(value); ok {
 			return storage.DateValue(text[:10]), true
 		}
-	case "CALENDAR_MONTH", "FISCAL_MONTH":
+	case "CALENDAR_MONTH":
 		if text, ok := storageValueDateText(value); ok {
 			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
 				return storage.IntegerValue(int64(parsed.Month())), true
 			}
 		}
-	case "CALENDAR_QUARTER", "FISCAL_QUARTER":
+	case "FISCAL_MONTH":
+		if text, ok := storageValueDateText(value); ok {
+			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
+				return storage.IntegerValue(int64(fiscalMonthNumber(int(parsed.Month()), FiscalYearStartMonth(org)))), true
+			}
+		}
+	case "CALENDAR_QUARTER":
 		if text, ok := storageValueDateText(value); ok {
 			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
 				return storage.IntegerValue(int64((int(parsed.Month())-1)/3 + 1)), true
 			}
 		}
-	case "CALENDAR_YEAR", "FISCAL_YEAR":
+	case "FISCAL_QUARTER":
+		if text, ok := storageValueDateText(value); ok {
+			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
+				return storage.IntegerValue(int64(fiscalQuarterNumber(int(parsed.Month()), FiscalYearStartMonth(org)))), true
+			}
+		}
+	case "CALENDAR_YEAR":
 		if text, ok := storageValueDateText(value); ok {
 			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
 				return storage.IntegerValue(int64(parsed.Year())), true
+			}
+		}
+	case "FISCAL_YEAR":
+		if text, ok := storageValueDateText(value); ok {
+			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
+				startMonth, useStartYear := fiscalYearSettings(org)
+				return storage.IntegerValue(int64(fiscalYearNumber(parsed, startMonth, useStartYear))), true
 			}
 		}
 	case "DAY_IN_MONTH":
@@ -719,6 +848,172 @@ func selectFieldExpressionValue(org storage.OrgState, definition storage.ObjectD
 	}
 	return storage.NullValue(), true
 }
+
+func distanceExpressionValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, expr selectFieldExpression) (storage.Value, bool) {
+	if len(expr.Args) != 3 {
+		return storage.Value{}, false
+	}
+	left, ok := geolocationPointValue(org, definition, record, expr.Args[0])
+	if !ok {
+		return storage.NullValue(), true
+	}
+	right, ok := geolocationPointValue(org, definition, record, expr.Args[1])
+	if !ok {
+		return storage.NullValue(), true
+	}
+	unit, ok := stringLiteralText(expr.Args[2])
+	if !ok {
+		return storage.Value{}, false
+	}
+	distance := haversineDistance(left, right)
+	switch {
+	case strings.EqualFold(unit, "km"):
+		return storage.DecimalValue(floatDecimalString(distance)), true
+	case strings.EqualFold(unit, "mi"):
+		return storage.DecimalValue(floatDecimalString(distance * 0.621371192237334)), true
+	default:
+		return storage.Value{}, false
+	}
+}
+
+func geolocationPointValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, arg string) (geolocationPoint, bool) {
+	args, ok := geolocationArgs(arg)
+	if ok {
+		lat, ok := geolocationNumberValue(org, definition, record, args[0])
+		if !ok {
+			return geolocationPoint{}, false
+		}
+		lon, ok := geolocationNumberValue(org, definition, record, args[1])
+		if !ok {
+			return geolocationPoint{}, false
+		}
+		return geolocationPoint{lat: lat, lon: lon}, true
+	}
+	lat, lon, ok := locationComponentFieldNames(definition, org.Namespace, arg)
+	if !ok {
+		return geolocationPoint{}, false
+	}
+	latValue, ok := geolocationNumberValue(org, definition, record, lat)
+	if !ok {
+		return geolocationPoint{}, false
+	}
+	lonValue, ok := geolocationNumberValue(org, definition, record, lon)
+	if !ok {
+		return geolocationPoint{}, false
+	}
+	return geolocationPoint{lat: latValue, lon: lonValue}, true
+}
+
+func geolocationArgs(arg string) ([]string, bool) {
+	arg = strings.TrimSpace(arg)
+	open := strings.Index(arg, "(")
+	if open <= 0 || !strings.HasSuffix(arg, ")") || !strings.EqualFold(strings.TrimSpace(arg[:open]), "GEOLOCATION") {
+		return nil, false
+	}
+	args, ok := splitSelectFunctionArgs(arg[open+1 : len(arg)-1])
+	if !ok || len(args) != 2 {
+		return nil, false
+	}
+	return args, true
+}
+
+func geolocationNumberValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, arg string) (float64, bool) {
+	if number, ok := parseFloatLiteral(arg); ok {
+		return number, true
+	}
+	value, ok := recordValue(org, definition, record, arg)
+	if !ok || value.Kind == storage.ValueNull {
+		return 0, false
+	}
+	switch value.Kind {
+	case storage.ValueInteger:
+		return float64(value.Integer), true
+	case storage.ValueDecimal:
+		number, err := strconv.ParseFloat(value.Decimal, 64)
+		return number, err == nil
+	case storage.ValueString:
+		number, err := strconv.ParseFloat(strings.TrimSpace(value.String), 64)
+		return number, err == nil
+	default:
+		return 0, false
+	}
+}
+
+func locationComponentFieldNames(definition storage.ObjectDefinition, namespace string, field string) (string, string, bool) {
+	canonical, ok := storage.ResolveFieldName(definition, namespace, field)
+	if !ok {
+		return "", "", false
+	}
+	fieldDef, ok := definition.Fields[canonical]
+	if !ok || fieldDef.Type != storage.FieldLocation {
+		return "", "", false
+	}
+	base := strings.TrimSuffix(canonical, "__c")
+	latCandidates := []string{base + "__Latitude__s", base + "__latitude__s"}
+	lonCandidates := []string{base + "__Longitude__s", base + "__longitude__s"}
+	lat, ok := firstResolvedFieldName(definition, namespace, latCandidates)
+	if !ok {
+		return "", "", false
+	}
+	lon, ok := firstResolvedFieldName(definition, namespace, lonCandidates)
+	if !ok {
+		return "", "", false
+	}
+	return lat, lon, true
+}
+
+func firstResolvedFieldName(definition storage.ObjectDefinition, namespace string, candidates []string) (string, bool) {
+	for _, candidate := range candidates {
+		if field, ok := storage.ResolveFieldName(definition, namespace, candidate); ok {
+			return field, true
+		}
+	}
+	return "", false
+}
+
+func haversineDistance(left, right geolocationPoint) float64 {
+	const earthRadiusKM = 6371.0088
+	lat1 := left.lat * math.Pi / 180
+	lat2 := right.lat * math.Pi / 180
+	dlat := (right.lat - left.lat) * math.Pi / 180
+	dlon := (right.lon - left.lon) * math.Pi / 180
+	sinDlat := math.Sin(dlat / 2)
+	sinDlon := math.Sin(dlon / 2)
+	a := sinDlat*sinDlat + math.Cos(lat1)*math.Cos(lat2)*sinDlon*sinDlon
+	return earthRadiusKM * 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+}
+
+func numericLiteral(arg string) bool {
+	_, ok := parseFloatLiteral(arg)
+	return ok
+}
+
+func parseFloatLiteral(arg string) (float64, bool) {
+	arg = strings.TrimSpace(arg)
+	if arg == "" {
+		return 0, false
+	}
+	number, err := strconv.ParseFloat(arg, 64)
+	return number, err == nil
+}
+
+func stringLiteralText(arg string) (string, bool) {
+	arg = strings.TrimSpace(arg)
+	if !strings.HasPrefix(arg, "'") || !strings.HasSuffix(arg, "'") {
+		return "", false
+	}
+	return strings.ReplaceAll(strings.TrimSuffix(strings.TrimPrefix(arg, "'"), "'"), "''", "'"), true
+}
+
+func floatDecimalString(value float64) string {
+	text := strconv.FormatFloat(value, 'f', 6, 64)
+	text = strings.TrimRight(strings.TrimRight(text, "0"), ".")
+	if text == "" || text == "-0" {
+		return "0"
+	}
+	return text
+}
+
 func selectFunctionFieldArg(arg string) string {
 	arg = strings.TrimSpace(arg)
 	open := strings.Index(arg, "(")
@@ -1595,6 +1890,24 @@ func fiscalYearStart(day time.Time, fiscalYearStartMonth int) time.Time {
 		return time.Date(day.Year()-1, month, 1, 0, 0, 0, 0, time.UTC)
 	}
 	return start
+}
+func fiscalMonthNumber(month, fiscalYearStartMonth int) int {
+	start := normalizeFiscalYearStartMonth(fiscalYearStartMonth)
+	return ((month - start + 12) % 12) + 1
+}
+func fiscalQuarterNumber(month, fiscalYearStartMonth int) int {
+	return ((fiscalMonthNumber(month, fiscalYearStartMonth) - 1) / 3) + 1
+}
+func fiscalYearNumber(day time.Time, fiscalYearStartMonth int, useStartYear bool) int {
+	startMonth := normalizeFiscalYearStartMonth(fiscalYearStartMonth)
+	startYear := day.Year()
+	if int(day.Month()) < startMonth {
+		startYear--
+	}
+	if useStartYear || startMonth == 1 {
+		return startYear
+	}
+	return startYear + 1
 }
 func normalizeFiscalYearStartMonth(month int) int {
 	if month < 1 || month > 12 {

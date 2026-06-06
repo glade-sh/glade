@@ -92,8 +92,8 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 		return nil, newExceptionError("QueryException", fmt.Sprintf("%s in generated SOQL %q", err.Error(), queryText))
 	}
 	result = vm.applySOQLSharing(query, result)
-	if query.ForView {
-		vm.recordRecentlyViewedRows(query.Object, result.Records)
+	if query.ForView || query.ForReference {
+		vm.recordRecentlyViewedRows(query.Object, result.Records, query.ForView, query.ForReference)
 	}
 	limitRows := soqlLimitRows(result)
 	if countsQueryLimit {
@@ -142,7 +142,7 @@ func (vm *VM) soqlCountsQueryLimit(query soql.Query) bool {
 	return !storage.IsCustomMetadataObject(*vm.Org, query.Object)
 }
 
-func (vm *VM) recordRecentlyViewedRows(queryObject string, records []storage.Record) {
+func (vm *VM) recordRecentlyViewedRows(queryObject string, records []storage.Record, markViewed bool, markReferenced bool) {
 	if vm == nil || len(records) == 0 {
 		return
 	}
@@ -171,12 +171,17 @@ func (vm *VM) recordRecentlyViewedRows(queryObject string, records []storage.Rec
 		if resolved, ok := vm.resolveObjectName(objectName); ok {
 			objectName = resolved
 		}
-		views[id] = recentlyViewedEntry{
-			ID:         id,
-			ObjectName: objectName,
-			Name:       recentlyViewedName(record, id),
-			ViewedAt:   viewedAt,
+		entry := views[id]
+		entry.ID = id
+		entry.ObjectName = objectName
+		entry.Name = recentlyViewedName(record, id)
+		if markViewed {
+			entry.ViewedAt = viewedAt
 		}
+		if markReferenced {
+			entry.ReferencedAt = viewedAt
+		}
+		views[id] = entry
 	}
 }
 
@@ -191,8 +196,10 @@ func recentlyViewedName(record storage.Record, id storage.ID) string {
 
 func storageValueText(value storage.Value) string {
 	switch value.Kind {
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal, storage.ValueBlob:
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
 		return value.String
+	case storage.ValueDecimal:
+		return value.Decimal
 	case storage.ValueID:
 		return string(value.ID)
 	case storage.ValueInteger:
@@ -222,14 +229,22 @@ func (vm *VM) orgWithSyntheticRecentlyViewed() storage.OrgState {
 	for _, idText := range ids {
 		id := storage.ID(idText)
 		view := views[id]
+		lastViewedDate := storage.NullValue()
+		if strings.TrimSpace(view.ViewedAt) != "" {
+			lastViewedDate = storage.DateTimeValue(view.ViewedAt)
+		}
+		lastReferencedDate := storage.NullValue()
+		if strings.TrimSpace(view.ReferencedAt) != "" {
+			lastReferencedDate = storage.DateTimeValue(view.ReferencedAt)
+		}
 		object.Records[id] = storage.Record{
 			ID:     id,
 			Object: "RecentlyViewed",
 			Fields: map[string]storage.Value{
 				"Name":               storage.StringValue(view.Name),
 				"Type":               storage.StringValue(localSchemaName(view.ObjectName)),
-				"LastViewedDate":     storage.DateTimeValue(view.ViewedAt),
-				"LastReferencedDate": storage.DateTimeValue(view.ViewedAt),
+				"LastViewedDate":     lastViewedDate,
+				"LastReferencedDate": lastReferencedDate,
 			},
 		}
 	}
@@ -508,7 +523,11 @@ func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 				if !ok {
 					continue
 				}
+				if !soslRecordMatchesWhere(record, spec.Where) {
+					continue
+				}
 				value := vm.vmValueFromRecord(record)
+				vm.applySOSLReturningFunctionAliases(&value, record, spec)
 				if len(spec.Fields) > 0 {
 					value.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(record.Object, spec.Fields)
 					vm.hydrateQueriedRecordTypeRelationships(value)
@@ -517,6 +536,8 @@ func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 			}
 		}
 		sortSOSLRows(rows, spec.OrderBy)
+		applySOSLReturningOffset(&rows, spec)
+		applySOSLReturningLimit(&rows, spec)
 		groups = append(groups, rows)
 	}
 	appendTrace(execResult, "apex.sosl", "apex.sosl", map[string]any{
@@ -527,14 +548,31 @@ func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 }
 
 type soslReturningObject struct {
-	ObjectName string
-	Fields     map[string]bool
-	OrderBy    []soslOrderBy
+	ObjectName      string
+	Fields          map[string]bool
+	FunctionAliases []soslReturningFunctionAlias
+	Where           soslWhere
+	OrderBy         []soslOrderBy
+	Offset          int
+	HasOffset       bool
+	Limit           int
+	HasLimit        bool
+}
+
+type soslReturningFunctionAlias struct {
+	Func   string
+	Source string
+	Alias  string
 }
 
 type soslOrderBy struct {
 	Field string
 	Desc  bool
+}
+
+type soslWhere struct {
+	Field string
+	Value string
 }
 
 func parseSOSLReturningObjects(query string) ([]soslReturningObject, error) {
@@ -556,17 +594,110 @@ func parseSOSLReturningObjects(query string) ([]soslReturningObject, error) {
 		}
 		spec := soslReturningObject{ObjectName: strings.TrimSpace(part[:open]), Fields: make(map[string]bool)}
 		fields := strings.TrimSpace(part[open+1 : close])
+		spec.Where = parseSOSLReturningWhere(fields)
 		spec.OrderBy = parseSOSLReturningOrderBy(fields)
+		spec.Offset, spec.HasOffset = parseSOSLReturningOffset(fields)
+		spec.Limit, spec.HasLimit = parseSOSLReturningLimit(fields)
 		fields = trimSOSLReturningFieldList(fields)
 		for _, field := range splitTopLevelComma(fields) {
 			field = strings.TrimSpace(field)
 			if field != "" {
 				spec.Fields[strings.ToLower(field)] = true
+				if projection, ok := parseSOSLReturningFunctionAlias(field); ok {
+					spec.FunctionAliases = append(spec.FunctionAliases, projection)
+					spec.Fields[strings.ToLower(projection.Alias)] = true
+				}
 			}
 		}
 		out = append(out, spec)
 	}
 	return out, nil
+}
+
+func parseSOSLReturningWhere(fields string) soslWhere {
+	index := lastIndexFold(fields, " where ")
+	if index < 0 {
+		return soslWhere{}
+	}
+	whereText := fields[index+len(" where "):]
+	end := len(whereText)
+	for _, marker := range []string{" order by ", " offset ", " limit "} {
+		if markerIndex := indexFold(whereText, marker); markerIndex >= 0 && markerIndex < end {
+			end = markerIndex
+		}
+	}
+	whereText = strings.TrimSpace(whereText[:end])
+	eq := strings.IndexByte(whereText, '=')
+	if eq <= 0 {
+		return soslWhere{}
+	}
+	field := strings.TrimSpace(whereText[:eq])
+	value := strings.TrimSpace(whereText[eq+1:])
+	if len(value) >= 2 && value[0] == '\'' && value[len(value)-1] == '\'' {
+		value = strings.ReplaceAll(value[1:len(value)-1], "''", "'")
+	}
+	return soslWhere{Field: field, Value: value}
+}
+
+func soslRecordMatchesWhere(record storage.Record, where soslWhere) bool {
+	if strings.TrimSpace(where.Field) == "" {
+		return true
+	}
+	value, ok := record.GetField(where.Field)
+	if !ok {
+		return false
+	}
+	return strings.EqualFold(storageValueText(value), where.Value)
+}
+
+func (vm *VM) applySOSLReturningFunctionAliases(value *Value, record storage.Record, spec soslReturningObject) {
+	if value == nil || value.Kind != ValueObject || len(spec.FunctionAliases) == 0 {
+		return
+	}
+	for _, alias := range spec.FunctionAliases {
+		stored, found := record.GetField(alias.Source)
+		if !found {
+			continue
+		}
+		switch alias.Func {
+		case "FORMAT":
+			value.Fields[alias.Alias] = String(storageValueText(stored))
+		case "CONVERTCURRENCY":
+			value.Fields[alias.Alias] = vmValueFromStorage(stored)
+		case "TOLABEL":
+			value.Fields[alias.Alias] = String(vm.soslToLabel(record.Object, alias.Source, stored))
+		default:
+			continue
+		}
+	}
+}
+
+func (vm *VM) soslToLabel(objectName, fieldName string, value storage.Value) string {
+	text := storageValueText(value)
+	if vm == nil || vm.Org == nil {
+		return text
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return text
+	}
+	field, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, fieldName)
+	if !ok {
+		field = fieldName
+	}
+	fieldDef, ok := object.Definition.Fields[field]
+	if !ok {
+		return text
+	}
+	for _, option := range fieldDef.PicklistValues {
+		if option.Value == text {
+			if option.Label != "" {
+				return option.Label
+			}
+			return option.Value
+		}
+	}
+	return text
 }
 
 func parseSOSLReturningOrderBy(fields string) []soslOrderBy {
@@ -578,7 +709,7 @@ func parseSOSLReturningOrderBy(fields string) []soslOrderBy {
 	orderText := fields[index+len(" order by "):]
 	orderLowered := strings.ToLower(orderText)
 	end := len(orderText)
-	for _, marker := range []string{" limit "} {
+	for _, marker := range []string{" offset ", " limit "} {
 		if markerIndex := strings.Index(orderLowered, marker); markerIndex >= 0 && markerIndex < end {
 			end = markerIndex
 		}
@@ -602,10 +733,65 @@ func parseSOSLReturningOrderBy(fields string) []soslOrderBy {
 	return out
 }
 
+func parseSOSLReturningLimit(fields string) (int, bool) {
+	return parseSOSLReturningIntegerClause(fields, " limit ")
+}
+
+func parseSOSLReturningOffset(fields string) (int, bool) {
+	return parseSOSLReturningIntegerClause(fields, " offset ")
+}
+
+func parseSOSLReturningIntegerClause(fields, marker string) (int, bool) {
+	index := lastIndexFold(fields, marker)
+	if index < 0 {
+		return 0, false
+	}
+	start := index + len(marker)
+	for start < len(fields) && fields[start] == ' ' {
+		start++
+	}
+	end := start
+	for end < len(fields) && fields[end] >= '0' && fields[end] <= '9' {
+		end++
+	}
+	if end == start {
+		return 0, false
+	}
+	limit, err := strconv.Atoi(fields[start:end])
+	if err != nil {
+		return 0, false
+	}
+	return limit, true
+}
+
+func lastIndexFold(s, substr string) int {
+	if substr == "" {
+		return len(s)
+	}
+	for i := len(s) - len(substr); i >= 0; i-- {
+		if strings.EqualFold(s[i:i+len(substr)], substr) {
+			return i
+		}
+	}
+	return -1
+}
+
+func indexFold(s, substr string) int {
+	if substr == "" {
+		return 0
+	}
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if strings.EqualFold(s[i:i+len(substr)], substr) {
+			return i
+		}
+	}
+	return -1
+}
+
 func trimSOSLReturningFieldList(fields string) string {
 	lowered := strings.ToLower(fields)
 	end := len(fields)
-	for _, marker := range []string{" where ", " order by ", " limit "} {
+	for _, marker := range []string{" where ", " order by ", " offset ", " limit "} {
 		if index := strings.Index(lowered, marker); index >= 0 && index < end {
 			end = index
 		}
@@ -620,6 +806,24 @@ func sortSOSLRows(rows Value, orderBy []soslOrderBy) {
 	sort.SliceStable(rows.List, func(i, j int) bool {
 		return compareSOSLRows(rows.List[i], rows.List[j], orderBy) < 0
 	})
+}
+
+func applySOSLReturningOffset(rows *Value, spec soslReturningObject) {
+	if rows == nil || rows.Kind != ValueList || !spec.HasOffset || spec.Offset <= 0 {
+		return
+	}
+	if spec.Offset >= len(rows.List) {
+		rows.List = nil
+		return
+	}
+	rows.List = rows.List[spec.Offset:]
+}
+
+func applySOSLReturningLimit(rows *Value, spec soslReturningObject) {
+	if rows == nil || rows.Kind != ValueList || !spec.HasLimit || spec.Limit >= len(rows.List) {
+		return
+	}
+	rows.List = rows.List[:spec.Limit]
 }
 
 func compareSOSLRows(left, right Value, orderBy []soslOrderBy) int {
@@ -740,35 +944,16 @@ func (vm *VM) queriedSObjectFields(queryText string) map[string]bool {
 	fields := make(map[string]bool)
 	for _, field := range query.Fields {
 		if strings.Contains(field, "(") {
-			if projectedField, ok := selectedSOQLFunctionField(field); ok {
-				field = projectedField
-			} else {
+			projectedFields := selectedSOQLFunctionFields(field)
+			if len(projectedFields) == 0 {
 				continue
 			}
-		}
-		originalField := field
-		if dot := strings.IndexByte(field, '.'); dot >= 0 {
-			relationship := field[:dot]
-			qualifiedField := strings.TrimSpace(field[dot+1:])
-			if vm.soqlFieldQualifierMatchesObject(objectName, relationship) {
-				fields[strings.ToLower(originalField)] = true
-				field = qualifiedField
-			} else {
-				fields[strings.ToLower(originalField)] = true
-				if lookupField, ok := vm.parentRelationshipField(objectName, relationship); ok {
-					fields[strings.ToLower(lookupField)] = true
-				}
-				field = relationship
+			for _, projectedField := range projectedFields {
+				vm.addQueriedSObjectField(fields, objectName, projectedField)
 			}
+			continue
 		}
-		if vm.Org != nil {
-			if object, ok := vm.Org.Objects[objectName]; ok {
-				if canonical, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, field); ok {
-					field = canonical
-				}
-			}
-		}
-		fields[strings.ToLower(field)] = true
+		vm.addQueriedSObjectField(fields, objectName, field)
 	}
 	for _, childQuery := range query.ChildQueries {
 		if relationship := strings.TrimSpace(childQuery.Relationship); relationship != "" {
@@ -782,22 +967,124 @@ func (vm *VM) queriedSObjectFields(queryText string) map[string]bool {
 	return fields
 }
 
-func selectedSOQLFunctionField(field string) (string, bool) {
+func (vm *VM) addQueriedSObjectField(fields map[string]bool, objectName, field string) {
+	originalField := field
+	if dot := strings.IndexByte(field, '.'); dot >= 0 {
+		relationship := field[:dot]
+		qualifiedField := strings.TrimSpace(field[dot+1:])
+		if vm.soqlFieldQualifierMatchesObject(objectName, relationship) {
+			fields[strings.ToLower(originalField)] = true
+			field = qualifiedField
+		} else {
+			fields[strings.ToLower(originalField)] = true
+			if lookupField, ok := vm.parentRelationshipField(objectName, relationship); ok {
+				fields[strings.ToLower(lookupField)] = true
+			}
+			field = relationship
+		}
+	}
+	if vm.Org != nil {
+		if object, ok := vm.Org.Objects[objectName]; ok {
+			if canonical, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, field); ok {
+				field = canonical
+			}
+		}
+	}
+	fields[strings.ToLower(field)] = true
+}
+
+func selectedSOQLFunctionFields(field string) []string {
+	projection, ok := parseSOSLReturningFunctionAlias(field)
+	if ok {
+		return []string{projection.Source, projection.Alias}
+	}
 	text := strings.TrimSpace(field)
-	lower := strings.ToLower(text)
-	const prefix = "tolabel("
-	if !strings.HasPrefix(lower, prefix) {
-		return "", false
+	parts := strings.Fields(text)
+	if len(parts) == 0 || len(parts) > 2 {
+		return nil
 	}
-	close := strings.IndexByte(text[len(prefix):], ')')
-	if close < 0 {
-		return "", false
+	raw := parts[0]
+	open := strings.IndexByte(raw, '(')
+	if open <= 0 || !strings.HasSuffix(raw, ")") {
+		return nil
 	}
-	inner := strings.TrimSpace(text[len(prefix) : len(prefix)+close])
-	if inner == "" || strings.ContainsAny(inner, " (),") {
-		return "", false
+	if !isSelectedSOQLFieldFunction(raw[:open]) {
+		return nil
 	}
-	return inner, true
+	if strings.EqualFold(strings.TrimSpace(raw[:open]), "DISTANCE") {
+		if len(parts) == 2 {
+			return []string{parts[1]}
+		}
+		return nil
+	}
+	argsText := raw[open+1 : len(raw)-1]
+	if strings.TrimSpace(argsText) == "" || strings.Contains(argsText, ",") {
+		return nil
+	}
+	fieldArg := selectedSOQLFunctionFieldArg(argsText)
+	if fieldArg == "" || strings.ContainsAny(fieldArg, " (),") {
+		return nil
+	}
+	fields := []string{fieldArg}
+	if len(parts) == 2 {
+		fields = append(fields, parts[1])
+	}
+	return fields
+}
+
+func parseSOSLReturningFunctionAlias(field string) (soslReturningFunctionAlias, bool) {
+	text := strings.TrimSpace(field)
+	parts := strings.Fields(text)
+	if len(parts) != 2 {
+		return soslReturningFunctionAlias{}, false
+	}
+	raw := parts[0]
+	open := strings.IndexByte(raw, '(')
+	if open <= 0 || !strings.HasSuffix(raw, ")") {
+		return soslReturningFunctionAlias{}, false
+	}
+	if !isSelectedSOQLFieldFunction(raw[:open]) {
+		return soslReturningFunctionAlias{}, false
+	}
+	argsText := raw[open+1 : len(raw)-1]
+	if strings.TrimSpace(argsText) == "" || strings.Contains(argsText, ",") {
+		return soslReturningFunctionAlias{}, false
+	}
+	fieldArg := selectedSOQLFunctionFieldArg(argsText)
+	if fieldArg == "" || strings.ContainsAny(fieldArg, " (),") {
+		return soslReturningFunctionAlias{}, false
+	}
+	return soslReturningFunctionAlias{Func: strings.ToUpper(strings.TrimSpace(raw[:open])), Source: fieldArg, Alias: parts[1]}, true
+}
+
+func isSelectedSOQLFieldFunction(name string) bool {
+	switch strings.ToUpper(strings.TrimSpace(name)) {
+	case "TOLABEL", "FORMAT", "CONVERTCURRENCY",
+		"DISTANCE",
+		"CALENDAR_MONTH", "CALENDAR_QUARTER", "CALENDAR_YEAR",
+		"DAY_IN_MONTH", "DAY_IN_WEEK", "DAY_IN_YEAR", "DAY_ONLY",
+		"FISCAL_MONTH", "FISCAL_QUARTER", "FISCAL_YEAR",
+		"HOUR_IN_DAY", "WEEK_IN_MONTH", "WEEK_IN_YEAR":
+		return true
+	default:
+		return false
+	}
+}
+
+func selectedSOQLFunctionFieldArg(arg string) string {
+	arg = strings.TrimSpace(arg)
+	open := strings.IndexByte(arg, '(')
+	if open <= 0 || !strings.HasSuffix(arg, ")") {
+		return arg
+	}
+	if !strings.EqualFold(strings.TrimSpace(arg[:open]), "convertTimezone") {
+		return arg
+	}
+	inner := strings.TrimSpace(arg[open+1 : len(arg)-1])
+	if inner == "" || strings.ContainsAny(inner, ",()") {
+		return arg
+	}
+	return inner
 }
 
 func (vm *VM) applyQueriedParentRelationshipFieldMarkers(value *Value, queryText string) {

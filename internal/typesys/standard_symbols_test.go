@@ -132,6 +132,23 @@ func TestStandardPlatformSymbolsIncludeInstallVersion(t *testing.T) {
 	requireStandardMethod(t, installContext, "previousVersion", nil, false)
 }
 
+func TestStandardPlatformSymbolsQualifyDatabaseDMLOptionsParameters(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	database := requireStandardSymbol(t, symbols, "Database")
+
+	for _, member := range database.Members {
+		if member.Kind != apexast.DeclarationMethod {
+			continue
+		}
+		for _, param := range member.Parameters {
+			if param.Type == "DMLOptions" {
+				t.Fatalf("Database.%s has bare DMLOptions parameter; use Database.DMLOptions", member.Name)
+			}
+		}
+	}
+	requireStandardMethod(t, database, "insert", []string{"Object", "Database.DMLOptions"}, true)
+}
+
 func TestStandardPlatformSymbolsIncludeBaseExceptionConstructors(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 
@@ -679,6 +696,42 @@ func TestStandardPlatformSymbolsIncludeGeneratedProductNamespaceStubBreadth(t *t
 	slackBuilder := requireStandardSymbol(t, symbols, "Slack.ApiTestRequest.Builder")
 	requireStandardMethodType(t, slackBuilder, "build", "Slack.ApiTestRequest")
 	requireStandardMethodParams(t, slackBuilder, "foo", []string{"String"}, []string{"foo"}, false)
+}
+
+func TestStandardPlatformSymbolsResolveInvocableActionDTOReferences(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	for _, name := range []string{
+		"Invocable.Action.AdditionalAttribute",
+		"Invocable.Action.GenericType",
+		"Invocable.Action.OutputParameter",
+		"Invocable.Action.PicklistValue",
+	} {
+		requireStandardSymbol(t, symbols, name)
+	}
+
+	describe := requireStandardSymbol(t, symbols, "Invocable.Action.DescribeResult")
+	requireStandardMethodType(t, describe, "getGenericTypes", "List<Invocable.Action.GenericType>")
+	requireStandardMethodType(t, describe, "getOutputs", "List<Invocable.Action.OutputParameter>")
+
+	input := requireStandardSymbol(t, symbols, "Invocable.Action.InputParameter")
+	requireStandardMethodType(t, input, "getAdditionalAttributes", "List<Invocable.Action.AdditionalAttribute>")
+	requireStandardMethodType(t, input, "getPicklistValues", "List<Invocable.Action.PicklistValue>")
+}
+
+func TestStandardPlatformSymbolsUseQualifiedEmailAttachmentType(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	message := requireStandardSymbol(t, symbols, "Messaging.SingleEmailMessage")
+	requireStandardMethod(t, message, "setFileAttachments", []string{"List<Messaging.EmailFileAttachment>"}, false)
+	for _, member := range message.Members {
+		if !strings.EqualFold(member.Name, "setFileAttachments") {
+			continue
+		}
+		for _, param := range member.Parameters {
+			if strings.EqualFold(param.Type, "List<EmailFileAttachment>") {
+				t.Fatalf("setFileAttachments has unqualified attachment parameter: %#v", member.Parameters)
+			}
+		}
+	}
 }
 
 func TestGeneratedStubSpecsCaseInsensitiveBreadthAudit(t *testing.T) {

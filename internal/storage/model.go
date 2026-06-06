@@ -554,7 +554,32 @@ func ListValue(values ...Value) Value {
 func DefaultValueForField(field Field) (Value, bool) {
 	raw := strings.TrimSpace(field.DefaultValue)
 	if raw == "" {
-		if field.Type == FieldPicklist || field.Type == FieldMultiPicklist {
+		if field.Type == FieldMultiPicklist {
+			first := ""
+			var joined strings.Builder
+			for _, value := range field.PicklistValues {
+				if !value.Default || strings.TrimSpace(value.Value) == "" {
+					continue
+				}
+				if first == "" {
+					first = value.Value
+					continue
+				}
+				if joined.Len() == 0 {
+					joined.Grow(len(first) + 1 + len(value.Value))
+					joined.WriteString(first)
+				}
+				joined.WriteByte(';')
+				joined.WriteString(value.Value)
+			}
+			if joined.Len() != 0 {
+				return StringValue(joined.String()), true
+			}
+			if first != "" {
+				return StringValue(first), true
+			}
+		}
+		if field.Type == FieldPicklist {
 			for _, value := range field.PicklistValues {
 				if value.Default && strings.TrimSpace(value.Value) != "" {
 					return StringValue(value.Value), true
@@ -589,15 +614,18 @@ func DefaultValueForField(field Field) (Value, bool) {
 }
 
 func DefaultValueForRecordField(definition ObjectDefinition, record Record, field Field) (Value, bool) {
+	raw := strings.TrimSpace(field.DefaultValue)
+	formulaCallDefault := defaultValueLooksLikeFormulaCall(raw)
 	if field.Type == FieldPicklist || field.Type == FieldMultiPicklist {
 		if value, ok := defaultPicklistValueForRecordType(definition, record, field); ok {
 			return value, true
 		}
-		if value, ok := DefaultValueForField(field); ok {
-			return value, true
+		if !formulaCallDefault {
+			if value, ok := DefaultValueForField(field); ok {
+				return value, true
+			}
 		}
 	}
-	raw := strings.TrimSpace(field.DefaultValue)
 	if raw == "" {
 		return Value{}, false
 	}
@@ -607,8 +635,10 @@ func DefaultValueForRecordField(definition ObjectDefinition, record Record, fiel
 			return defaultValueFromRaw(field, value)
 		}
 	}
-	if value, ok := DefaultValueForField(field); ok {
-		return value, true
+	if !formulaCallDefault {
+		if value, ok := DefaultValueForField(field); ok {
+			return value, true
+		}
 	}
 	condition, trueValue, falseValue, ok := splitDefaultIF(raw)
 	if !ok {
@@ -619,6 +649,22 @@ func DefaultValueForRecordField(definition ObjectDefinition, record Record, fiel
 		branch = trueValue
 	}
 	return defaultValueFromRaw(field, branch)
+}
+
+func defaultValueLooksLikeFormulaCall(raw string) bool {
+	raw = strings.TrimSpace(raw)
+	open := strings.IndexByte(raw, '(')
+	if open <= 0 {
+		return false
+	}
+	for i := 0; i < open; i++ {
+		c := raw[i]
+		if (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 func defaultPicklistValueForRecordType(definition ObjectDefinition, record Record, field Field) (Value, bool) {

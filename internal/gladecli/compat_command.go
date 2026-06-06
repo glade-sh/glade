@@ -1810,6 +1810,7 @@ func runCompatStubBehavior(args []string, w io.Writer) error {
 		fmt.Fprintf(w, "members: %d\n", report.Totals.Members)
 		fmt.Fprintf(w, "implemented: %d\n", report.Totals.Implemented)
 		fmt.Fprintf(w, "passive-default: %d\n", report.Totals.PassiveDefault)
+		fmt.Fprintf(w, "stub-noop: %d\n", report.Totals.StubNoOp)
 		fmt.Fprintf(w, "unsupported: %d\n", report.Totals.Unsupported)
 		fmt.Fprintf(w, "unknown: %d\n", report.Totals.Unknown)
 		return nil
@@ -1880,6 +1881,14 @@ func runCompatStubContracts(args []string, w io.Writer) error {
 	if err != nil {
 		return err
 	}
+	if sourceRoot == "" {
+		switch {
+		case outputPath != "":
+			report = preserveStubContractSourceFromExisting(report, outputPath)
+		case checkPath != "":
+			report = preserveStubContractSourceFromExisting(report, checkPath)
+		}
+	}
 	if probeManifestPath != "" {
 		specs := capability.BuildStubContractProbeManifest(report, probeTier)
 		var manifestBuf strings.Builder
@@ -1910,7 +1919,11 @@ func runCompatStubContracts(args []string, w io.Writer) error {
 			return err
 		}
 		if string(existing) != buf.String() {
-			return fmt.Errorf("stub contracts drift: run `glade compat stub-contracts --output %s`", checkPath)
+			hint := fmt.Sprintf("glade compat stub-contracts --output %s", checkPath)
+			if sourceRoot != "" {
+				hint = fmt.Sprintf("glade compat stub-contracts --source %s --output %s", sourceRoot, checkPath)
+			}
+			return fmt.Errorf("stub contracts drift: run `%s`", hint)
 		}
 		fmt.Fprintf(w, "%s: up to date\n", checkPath)
 		return nil
@@ -1925,6 +1938,20 @@ func runCompatStubContracts(args []string, w io.Writer) error {
 		fmt.Fprintf(w, "compile-shape: %d\n", report.Totals.ByMode[string(capability.StubContractCompileShape)])
 		return nil
 	}
+}
+
+func preserveStubContractSourceFromExisting(report capability.StubContractReport, path string) capability.StubContractReport {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return report
+	}
+	var existing capability.StubContractReport
+	if err := json.Unmarshal(content, &existing); err != nil {
+		return report
+	}
+	report.Source.SystemStubTypes = existing.Source.SystemStubTypes
+	report.Source.SObjectStubTypes = existing.Source.SObjectStubTypes
+	return report
 }
 
 func writeStubContractsOutput(w io.Writer, report capability.StubContractReport, path string) error {

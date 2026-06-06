@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/ir"
@@ -76,6 +77,103 @@ System.assertEquals(0, empty.size());
 	if relationshipType, ok := machine.jsonSObjectChildRelationshipType("Product__c", "ProductFrequencyLinks__r"); !ok || relationshipType != "List<ProductFrequencyLink__c>" {
 		t.Fatalf("derived child relationship type = %q, ok=%v", relationshipType, ok)
 	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInlineSOQLPreservesEscapedStringLiteral(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Bob\'s Shop');
+Account pathAccount = new Account(Name = 'C:\\Trail');
+insert new List<Account>{a, pathAccount};
+List<Account> rows = [SELECT Id, Name FROM Account WHERE Name = 'Bob\'s Shop'];
+System.assertEquals(1, rows.size());
+System.assertEquals('Bob\'s Shop', rows[0].Name);
+List<Account> pathRows = [SELECT Id, Name FROM Account WHERE Name = 'C:\\Trail'];
+System.assertEquals(1, pathRows.size());
+System.assertEquals('C:\\Trail', pathRows[0].Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInlineSOQLPreservesDateLiteral(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account target = new Account(Name = 'Target', RenewalDate__c = Date.newInstance(2026, 2, 15));
+Account other = new Account(Name = 'Other', RenewalDate__c = Date.newInstance(2026, 2, 16));
+insert new List<Account>{target, other};
+List<Account> rows = [SELECT Id, Name FROM Account WHERE RenewalDate__c = 2026-02-15];
+System.assertEquals(1, rows.size());
+System.assertEquals('Target', rows[0].Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseQueryLocatorWithRawMapBinds(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme');
+insert new Account(Name = 'Beta');
+Map erasedBinds = new Map<String,Object>();
+erasedBinds.put('name', 'Beta');
+Database.QueryLocator locator = Database.getQueryLocatorWithBinds('SELECT Id, Name FROM Account WHERE Name = :name ORDER BY Name', erasedBinds, AccessLevel.USER_MODE);
+Object iterator = locator.iterator();
+System.assert(iterator.hasNext());
+Account located = iterator.next();
+System.assertEquals('Beta', located.Name);
+System.assert(!iterator.hasNext());
+Map rawBinds = new Map();
+rawBinds.put('name', 'Acme');
+List<SObject> rows = Database.queryWithBinds('SELECT Id, Name FROM Account WHERE Name = :name', rawBinds, AccessLevel.SYSTEM_MODE);
+System.assertEquals(1, rows.size());
+System.assertEquals('Acme', ((Account)rows[0]).Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInsertEvaluatesPicklistFormulaDefaultBeforeStorageDefault(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme');
+List<Account> rows = [SELECT DefaultedStatus__c FROM Account WHERE Name = 'Acme'];
+System.assertEquals(1, rows.size());
+System.assertEquals('2026-05-15', rows[0].DefaultedStatus__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.fakeNow = time.Date(2026, 5, 15, 10, 0, 0, 0, time.UTC)
+	account := org.Objects["Account"]
+	account.Definition.Fields["DefaultedStatus__c"] = storage.Field{APIName: "DefaultedStatus__c", Type: storage.FieldPicklist, DefaultValue: "TEXT(TODAY())"}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -10951,6 +11049,37 @@ System.assertEquals(7, row.Score__c);
 	}
 }
 
+func TestExecSOQLFunctionAliasesAreQueriedFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account row = new Account(Name = 'Acme', Rating = 'Hot', AnnualRevenue = 100);
+insert row;
+List<Account> rows = [SELECT toLabel(Rating) ratingLabel, FORMAT(AnnualRevenue) formattedRevenue FROM Account WHERE toLabel(Rating) = 'Hot Label'];
+System.assertEquals(1, rows.size());
+System.assertEquals('Hot Label', rows[0].get('ratingLabel'));
+System.assertEquals('100.0', rows[0].get('formattedRevenue'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{
+		APIName: "Rating",
+		Type:    storage.FieldPicklist,
+		PicklistValues: []storage.PicklistValue{
+			{Value: "Hot", Label: "Hot Label"},
+			{Value: "Warm", Label: "Warm Label"},
+		},
+	}
+	account.Definition.Fields["AnnualRevenue"] = storage.Field{APIName: "AnnualRevenue", Type: storage.FieldDecimal}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLTypeofProjection(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
@@ -12115,14 +12244,21 @@ func TestExecSOQLForViewCreatesRecentlyViewedRow(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'Viewed');
 insert account;
-List<Account> viewed = [SELECT Id, Name FROM Account WHERE Id = :account.Id FOR VIEW];
-System.assertEquals(1, viewed.size());
-List<RecentlyViewed> recent = [SELECT Id, Name, Type, LastViewedDate FROM RecentlyViewed WHERE Type = 'Account'];
+List<Account> referenced = [SELECT Id, Name FROM Account WHERE Id = :account.Id FOR REFERENCE];
+System.assertEquals(1, referenced.size());
+List<RecentlyViewed> recent = [SELECT Id, Name, Type, LastViewedDate, LastReferencedDate FROM RecentlyViewed WHERE Type = 'Account'];
 System.assertEquals(1, recent.size());
 System.assertEquals(account.Id, recent[0].Id);
 System.assertEquals('Viewed', recent[0].Name);
 System.assertEquals('Account', recent[0].Type);
+System.assertEquals(null, recent[0].LastViewedDate);
+System.assertEquals('2026-05-02 12:00:00', recent[0].LastReferencedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
+List<Account> viewed = [SELECT Id, Name FROM Account WHERE Id = :account.Id FOR VIEW];
+System.assertEquals(1, viewed.size());
+recent = [SELECT Id, Name, Type, LastViewedDate, LastReferencedDate FROM RecentlyViewed WHERE Type = 'Account'];
+System.assertEquals(1, recent.size());
 System.assertEquals('2026-05-02 12:00:00', recent[0].LastViewedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals('2026-05-02 12:00:00', recent[0].LastReferencedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
 `)
 	if err != nil {
 		t.Fatal(err)

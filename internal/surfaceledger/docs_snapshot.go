@@ -171,6 +171,9 @@ func RowsFromDocsInventory(inv apexdocs.Inventory) []SurfaceLedgerRow {
 		}
 		namespace := docsNamespace(product, doc)
 		typeName := doc.Name
+		if product == ProductDataRef {
+			typeName = dataReferenceDocsName(doc)
+		}
 		if product == ProductApex {
 			identity := apexDocsIdentity(doc)
 			namespace = identity.namespace
@@ -382,9 +385,9 @@ func docsSurfaceID(product string, doc apexdocs.Document, member apexdocs.Member
 		return ToolingFieldID(doc.Name, member.Name)
 	case ProductDataRef:
 		if member.Name == "" {
-			return DataObjectID(doc.Name)
+			return DataObjectID(dataReferenceDocsName(doc))
 		}
-		return DataFieldID(doc.Name, member.Name)
+		return DataFieldID(dataReferenceDocsName(doc), member.Name)
 	case ProductREST:
 		if member.Name == "" {
 			return RestResourceID(sourceStem(doc.SourcePath), "get")
@@ -405,6 +408,14 @@ func docsSurfaceID(product string, doc apexdocs.Document, member apexdocs.Member
 		}
 		return product + ":" + sourceStem(doc.SourcePath) + "." + member.Name
 	}
+}
+
+func dataReferenceDocsName(doc apexdocs.Document) string {
+	stem := sourceStemBase(doc.SourcePath)
+	if strings.HasPrefix(stem, "sforce_api_objects_eventlogfile_") {
+		return "EventLogFile"
+	}
+	return doc.Name
 }
 
 func docsNamespace(product string, doc apexdocs.Document) string {

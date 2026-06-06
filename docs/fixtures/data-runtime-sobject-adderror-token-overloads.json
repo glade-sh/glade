@@ -1,0 +1,53 @@
+{
+  "name": "data-runtime-sobject-adderror-token-overloads",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.SObject.addError(Object,Boolean)",
+      "symbol": "SObject.addError(Object,Boolean)",
+      "kind": "test",
+      "notes": "Trigger-time SObject.addError accepts an exception object and escapeHtml flag, and surfaces a local DML error."
+    },
+    {
+      "surfaceId": "apex:System.SObject.addError(Schema.SObjectField,String)",
+      "symbol": "SObject.addError(Schema.SObjectField,String)",
+      "kind": "test",
+      "notes": "Trigger-time SObject.addError accepts a Schema.SObjectField token and records the named field on a local DML error."
+    },
+    {
+      "surfaceId": "apex:System.SObject.addError(Schema.SObjectField,String,Boolean)",
+      "symbol": "SObject.addError(Schema.SObjectField,String,Boolean)",
+      "kind": "test",
+      "notes": "Trigger-time SObject.addError accepts a Schema.SObjectField token plus escapeHtml flag and records the named field on a local DML error."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/triggers/AccountAddErrorTokenOverloads.trigger",
+      "content": "trigger AccountAddErrorTokenOverloads on Account (before insert) { Schema.SObjectField nameField = Account.SObjectType.getDescribe().fields.getMap().get('Name'); for (Account a : Trigger.new) { if (a.Name == 'Block') { a.addError(new DmlException('object bool'), false); a.addError(nameField, 'token message'); a.addError(nameField, 'token message escape', false); } } }"
+    },
+    {
+      "path": "force-app/main/classes/DataRuntimeSObjectAddErrorTokenOverloadsTest.cls",
+      "content": "@isTest private class DataRuntimeSObjectAddErrorTokenOverloadsTest { @isTest static void tokenAndObjectAddErrorOverloadsRun() { Database.SaveResult result = Database.insert(new Account(Name = 'Block'), false); System.assert(!result.isSuccess()); List<Database.Error> errors = result.getErrors(); System.assertEquals(3, errors.size()); System.assertEquals('object bool', errors[0].getMessage()); System.assertEquals('token message', errors[1].getMessage()); System.assertEquals('Name', errors[1].getFields()[0]); System.assertEquals('token message escape', errors[2].getMessage()); System.assertEquals('Name', errors[2].getFields()[0]); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

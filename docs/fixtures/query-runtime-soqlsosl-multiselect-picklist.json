@@ -1,0 +1,41 @@
+{
+  "name": "query-runtime-soqlsosl-multiselect-picklist",
+  "evidence": [
+    {
+      "surfaceId": "unknown:sforce_api_calls_soql_querying_multiselect_picklists",
+      "symbol": "SOQL multi-select picklist INCLUDES and EXCLUDES",
+      "kind": "test",
+      "notes": "SOQL INCLUDES and EXCLUDES filter local multi-select picklist field values."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Product__c/Product__c.object-meta.xml",
+      "content": "<CustomObject><label>Product</label><pluralLabel>Products</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Product__c/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Product__c/fields/PriceClasses__c.field-meta.xml",
+      "content": "<CustomField><fullName>PriceClasses__c</fullName><label>Price Classes</label><type>MultiselectPicklist</type><valueSet><valueSetDefinition><value><fullName>Member</fullName><default>false</default><label>Member</label></value><value><fullName>Public</fullName><default>false</default><label>Public</label></value><value><fullName>Private</fullName><default>false</default><label>Private</label></value></valueSetDefinition></valueSet></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/QueryRuntimeSOQLSOSLMultiSelectPicklistTest.cls",
+      "content": "@isTest private class QueryRuntimeSOQLSOSLMultiSelectPicklistTest { @isTest static void filtersMultiSelectPicklists() { Product__c product = new Product__c(Name = 'Trail', PriceClasses__c = 'Member;Public'); insert product; List<Product__c> includesRows = [SELECT Id FROM Product__c WHERE PriceClasses__c INCLUDES('Member','Public')]; System.assertEquals(1, includesRows.size()); List<Product__c> excludesRows = [SELECT Id FROM Product__c WHERE PriceClasses__c EXCLUDES('Private')]; System.assertEquals(1, excludesRows.size()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

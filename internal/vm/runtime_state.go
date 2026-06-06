@@ -188,10 +188,11 @@ type frameworkMethodCountRecorderRollback struct {
 }
 
 type recentlyViewedEntry struct {
-	ID         storage.ID
-	ObjectName string
-	Name       string
-	ViewedAt   string
+	ID           storage.ID
+	ObjectName   string
+	Name         string
+	ViewedAt     string
+	ReferencedAt string
 }
 
 type lazyChildRelationshipLookup struct {

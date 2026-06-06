@@ -1718,6 +1718,17 @@ func TestRunCompatStubBehaviorJSONAndCheck(t *testing.T) {
 	}
 }
 
+func TestRunCompatStubBehaviorDefaultSummaryIncludesStubNoOp(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "stub-behavior"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub behavior exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "stub-noop:") {
+		t.Fatalf("stdout missing stub-noop total: %q", stdout.String())
+	}
+}
+
 func TestRunCompatStubContractsJSONAndCheck(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"compat", "stub-contracts", "--json"}, &stdout, &stderr)
@@ -1753,6 +1764,46 @@ func TestRunCompatStubContractsJSONAndCheck(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "up to date") {
 		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatStubContractsCheckPreservesExistingSourceCountsWithoutSource(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	dir := t.TempDir()
+	path := filepath.Join(dir, "stub-contracts.json")
+	code := Run(context.Background(), []string{"compat", "stub-contracts", "--output", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub contracts output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	content = bytes.Replace(content, []byte(`"systemStubTypes": 0`), []byte(`"systemStubTypes": 123`), 1)
+	content = bytes.Replace(content, []byte(`"sobjectStubTypes": 0`), []byte(`"sobjectStubTypes": 456`), 1)
+	if err := os.WriteFile(path, content, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "stub-contracts", "--check", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub contracts check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "stub-contracts", "--output", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stub contracts output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err = os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{`"systemStubTypes": 123`, `"sobjectStubTypes": 456`} {
+		if !strings.Contains(string(content), want) {
+			t.Fatalf("output did not preserve %s: %s", want, string(content[:min(len(content), 500)]))
+		}
 	}
 }
 

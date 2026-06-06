@@ -10,6 +10,8 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+var singleLineTextReplacer = strings.NewReplacer("\r\n", " ", "\n", " ", "\r", " ")
+
 func (e *Engine) object(name string) (storage.ObjectState, string, error) {
 	objectName, ok := storage.ResolveObjectName(*e.Org, name)
 	if !ok {
@@ -81,7 +83,9 @@ func normalizeStoredFieldValue(field storage.Field, value storage.Value) storage
 	if value.Kind != storage.ValueString || !isSingleLineTextField(field) {
 		return value
 	}
-	value.String = strings.NewReplacer("\r\n", " ", "\n", " ", "\r", " ").Replace(value.String)
+	if strings.ContainsAny(value.String, "\r\n") {
+		value.String = singleLineTextReplacer.Replace(value.String)
+	}
 	if value.String == "" {
 		return storage.NullValue()
 	}
@@ -135,6 +139,9 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		if err := validateEmailField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 			return err
 		}
+		if err := validateRestrictedPicklistField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
+			return err
+		}
 	}
 	for field := range record.ExplicitNulls {
 		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
@@ -152,6 +159,48 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		}
 	}
 	return nil
+}
+
+func validateRestrictedPicklistField(objectName, fieldName string, field storage.Field, value storage.Value) error {
+	if !field.RestrictedPicklist || (field.Type != storage.FieldPicklist && field.Type != storage.FieldMultiPicklist) {
+		return nil
+	}
+	if value.Kind == storage.ValueNull {
+		return nil
+	}
+	if value.Kind != storage.ValueString {
+		return nil
+	}
+	if field.Type == storage.FieldMultiPicklist {
+		for remaining := value.String; ; {
+			part, rest, found := strings.Cut(remaining, ";")
+			part = strings.TrimSpace(part)
+			if part != "" && !restrictedPicklistValueAllowed(field, part) {
+				return restrictedPicklistValueError(objectName, fieldName, part)
+			}
+			if !found {
+				return nil
+			}
+			remaining = rest
+		}
+	}
+	if strings.TrimSpace(value.String) == "" || restrictedPicklistValueAllowed(field, value.String) {
+		return nil
+	}
+	return restrictedPicklistValueError(objectName, fieldName, value.String)
+}
+
+func restrictedPicklistValueAllowed(field storage.Field, value string) bool {
+	for _, picklistValue := range field.PicklistValues {
+		if picklistValue.Active && picklistValue.Value != "" && strings.EqualFold(picklistValue.Value, value) {
+			return true
+		}
+	}
+	return false
+}
+
+func restrictedPicklistValueError(objectName, fieldName, value string) error {
+	return dmlErrorf("INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST", []string{fieldName}, "dml: bad value %q for restricted picklist field %s.%s", value, objectName, fieldName)
 }
 
 func shouldStripDMLRelationshipField(definition storage.ObjectDefinition, namespace, field string, value storage.Value) bool {

@@ -2,7 +2,9 @@ package soql
 
 import (
 	"errors"
+	"math"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -33,6 +35,30 @@ func TestParseRootObjectAlias(t *testing.T) {
 	}
 }
 
+func TestExecuteUsingScopeEverythingReturnsVisibleRows(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}},
+			"001000000000002": {ID: "001000000000002", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Beta")}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, Name FROM Account USING SCOPE everything ORDER BY Name")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 2 || result.Records[0].ID != "001000000000001" || result.Records[1].ID != "001000000000002" {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
 func TestCachedParsedQueryPlainWhereCanBeExecutedTwice(t *testing.T) {
 	now := time.Date(2026, 5, 26, 12, 0, 0, 0, time.UTC)
 	input := "SELECT Id FROM Account WHERE Name = 'Acme'"
@@ -55,13 +81,41 @@ func TestCachedParsedQueryPlainWhereCanBeExecutedTwice(t *testing.T) {
 	}
 }
 
+func TestCalculatedFieldValuePlainFieldDoesNotAllocate(t *testing.T) {
+	org := storage.NewOrgState()
+	definition := storage.ObjectDefinition{
+		APIName: "Account",
+		Fields: map[string]storage.Field{
+			"Name": {APIName: "Name", Type: storage.FieldString},
+		},
+	}
+	record := storage.Record{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}}
+	if _, ok := calculatedFieldValue(org, definition, record, "Name"); ok {
+		t.Fatal("plain field should not resolve as calculated")
+	}
+	allocs := testing.AllocsPerRun(1000, func() {
+		calculatedFieldValue(org, definition, record, "Name")
+	})
+	if allocs != 0 {
+		t.Fatalf("allocs = %.2f, want 0", allocs)
+	}
+}
+
 func TestParseForView(t *testing.T) {
 	query, err := Parse("SELECT Id, Name FROM Account LIMIT 1 FOR VIEW")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if query.Object != "Account" || query.Limit != 1 || query.ForUpdate || !query.ForView {
+	if query.Object != "Account" || query.Limit != 1 || query.ForUpdate || query.ForReference || !query.ForView {
 		t.Fatalf("query = %#v", query)
+	}
+
+	query, err = Parse("SELECT Id, Name FROM Account LIMIT 1 FOR REFERENCE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if query.Object != "Account" || query.Limit != 1 || query.ForUpdate || query.ForView || !query.ForReference {
+		t.Fatalf("reference query = %#v", query)
 	}
 }
 
@@ -1260,6 +1314,46 @@ func TestExecuteSelectFieldFunctions(t *testing.T) {
 	assertStorageDecimal(t, fields["convertedRevenue"], "100")
 }
 
+func TestExecuteDistanceGeolocationFunction(t *testing.T) {
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{}}
+	org.Objects["Warehouse__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Warehouse__c",
+			Fields: map[string]storage.Field{
+				"Name":                   {APIName: "Name", Type: storage.FieldString},
+				"Location__latitude__s":  {APIName: "Location__latitude__s", Type: storage.FieldDecimal},
+				"Location__longitude__s": {APIName: "Location__longitude__s", Type: storage.FieldDecimal},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {ID: "a01000000000001", Object: "Warehouse__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Near"), "Location__latitude__s": storage.DecimalValue("37.775"), "Location__longitude__s": storage.DecimalValue("-122.418")}},
+			"a01000000000002": {ID: "a01000000000002", Object: "Warehouse__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Across Town"), "Location__latitude__s": storage.DecimalValue("37.8044"), "Location__longitude__s": storage.DecimalValue("-122.2712")}},
+			"a01000000000003": {ID: "a01000000000003", Object: "Warehouse__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Far"), "Location__latitude__s": storage.DecimalValue("34.0522"), "Location__longitude__s": storage.DecimalValue("-118.2437")}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Name, DISTANCE(GEOLOCATION(Location__latitude__s, Location__longitude__s), GEOLOCATION(37.775,-122.418), 'mi') miles FROM Warehouse__c WHERE DISTANCE(GEOLOCATION(Location__latitude__s, Location__longitude__s), GEOLOCATION(37.775,-122.418), 'mi') < 20 ORDER BY DISTANCE(GEOLOCATION(Location__latitude__s, Location__longitude__s), GEOLOCATION(37.775,-122.418), 'mi')")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 2 {
+		t.Fatalf("result = %#v", result)
+	}
+	if got := result.Records[0].Fields["Name"].String; got != "Near" {
+		t.Fatalf("first Name = %q", got)
+	}
+	if got := result.Records[1].Fields["Name"].String; got != "Across Town" {
+		t.Fatalf("second Name = %q", got)
+	}
+	got, err := strconv.ParseFloat(result.Records[0].Fields["miles"].Decimal, 64)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if math.Abs(got) > 0.01 {
+		t.Fatalf("miles = %v", got)
+	}
+}
+
 func TestExecuteDatePartSelectFunctionGrouping(t *testing.T) {
 	org := aggregateTestOrg()
 	account := org.Objects["Account"]
@@ -1300,6 +1394,45 @@ func TestExecuteDatePartFunctionWithConvertTimezone(t *testing.T) {
 	if result.Rows != 3 {
 		t.Fatalf("rows = %d", result.Rows)
 	}
+}
+
+func TestFiscalDateFunctionsUseOrganizationFiscalStartMonth(t *testing.T) {
+	org := aggregateTestOrg()
+	org.OrgID = "00D000000000001"
+	org.Objects["Organization"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Organization", Fields: map[string]storage.Field{
+			"FiscalYearStartMonth":          {APIName: "FiscalYearStartMonth", Type: storage.FieldInteger},
+			"UsesStartDateAsFiscalYearName": {APIName: "UsesStartDateAsFiscalYearName", Type: storage.FieldBoolean},
+		}},
+		Records: map[storage.ID]storage.Record{
+			"00D000000000001": {ID: "00D000000000001", Object: "Organization", Fields: map[string]storage.Value{
+				"FiscalYearStartMonth":          storage.IntegerValue(2),
+				"UsesStartDateAsFiscalYearName": storage.BooleanValue(false),
+			}},
+		},
+	}
+	account := org.Objects["Account"]
+	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate}
+	account.Records["001000000000001"] = storage.Record{ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{
+		"Name":           storage.StringValue("February"),
+		"RenewalDate__c": storage.DateValue("2026-02-15"),
+	}}
+	account.Records["001000000000002"] = storage.Record{ID: "001000000000002", Object: "Account", Fields: map[string]storage.Value{
+		"Name":           storage.StringValue("January"),
+		"RenewalDate__c": storage.DateValue("2026-01-15"),
+	}}
+	org.Objects["Account"] = account
+
+	result, err := ParseAndExecute(org, "SELECT Name, FISCAL_MONTH(RenewalDate__c) fiscalMonth, FISCAL_QUARTER(RenewalDate__c) fiscalQuarter, FISCAL_YEAR(RenewalDate__c) fiscalYear FROM Account WHERE FISCAL_MONTH(RenewalDate__c) = 1 ORDER BY Name")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["Name"].String != "February" {
+		t.Fatalf("records = %#v, want February fiscal-month row", result.Records)
+	}
+	assertStorageInt(t, result.Records[0].Fields["fiscalMonth"], 1)
+	assertStorageInt(t, result.Records[0].Fields["fiscalQuarter"], 1)
+	assertStorageInt(t, result.Records[0].Fields["fiscalYear"], 2027)
 }
 
 func aggregateTestOrg() storage.OrgState {
@@ -2033,6 +2166,16 @@ func TestExecuteFiltersProjectsAndOrders(t *testing.T) {
 	}
 	if _, err := ParseAndExecute(org, "SELECT Missing__c FROM Account WITH SECURITY_ENFORCED"); err == nil || !strings.Contains(err.Error(), "Missing__c") {
 		t.Fatalf("expected security projection error, got %v", err)
+	}
+}
+
+func TestCompareSOQLTextDoesNotAllocateForMixedCase(t *testing.T) {
+	allocs := testing.AllocsPerRun(1000, func() {
+		_ = compareSOQLText("Beta Account", "alpha account")
+		_ = compareSOQLText("Acme", "acme")
+	})
+	if allocs != 0 {
+		t.Fatalf("compareSOQLText allocations = %v, want 0", allocs)
 	}
 }
 

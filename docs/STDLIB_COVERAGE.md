@@ -46,17 +46,17 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Database | `Database.deleteImmediate` | `supported` | Local immediate delete alias runs through the DML pipeline and returns DeleteResult shape. |
 | Database | `Database.emptyRecycleBin` | `supported` | Local hard-delete result shape with allOrNone rollback for supported SObjects. |
 | Database | `Database.executeBatch` | `supported` | Queues local Batchable jobs and drains start/execute chunks/finish during Test.stopTest. |
-| Database | `Database.getAsyncDeleteResult` | `supported` | Returns a materialized local DeleteResult or deterministic pending placeholder. |
+| Database | `Database.getAsyncDeleteResult` | `stub` | Returns materialized local DeleteResult values when the locator is local; unknown locators return a deterministic pending stub result. |
 | Database | `Database.getAsyncLocator` | `supported` | Returns deterministic VM-local locator strings for local result and locator objects; no external async service lookup. |
-| Database | `Database.getAsyncSaveResult` | `supported` | Returns a materialized local SaveResult or deterministic pending placeholder. |
+| Database | `Database.getAsyncSaveResult` | `stub` | Returns materialized local SaveResult values when the locator is local; unknown locators return a deterministic pending stub result. |
 | Database | `Database.getCursor` | `supported` | Local cursor over supported SOQL results with deterministic fetch windows. |
 | Database | `Database.getCursorWithBinds` | `supported` | Bind-map local cursor over supported SOQL results with deterministic fetch windows. |
-| Database | `Database.getDeleted` | `supported` | Deterministic local empty deleted-record sync window placeholder. |
+| Database | `Database.getDeleted` | `stub` | Returns a deterministic empty deleted-record sync window stub; full org sync tracking is not modeled. |
 | Database | `Database.getPaginationCursor` | `supported` | Local pagination cursor over supported SOQL results with deterministic fetch windows. |
 | Database | `Database.getPaginationCursorWithBinds` | `supported` | Bind-map local pagination cursor over supported SOQL results with deterministic fetch windows. |
 | Database | `Database.getQueryLocator` | `supported` | Supported SOQL executes eagerly for local batch scopes with local AccessLevel parsing. |
 | Database | `Database.getQueryLocatorWithBinds` | `supported` | Bind-map dynamic SOQL locator execution with iterable local query locators. |
-| Database | `Database.getUpdated` | `supported` | Deterministic local empty updated-record sync window placeholder. |
+| Database | `Database.getUpdated` | `stub` | Returns a deterministic empty updated-record sync window stub; full org sync tracking is not modeled. |
 | Database | `Database.insert` | `supported` | DML pipeline with result/error shapes and local AccessLevel parsing for supported SObjects. |
 | Database | `Database.insertAsync` | `supported` | Local async insert alias runs through the DML pipeline and returns SaveResult shape. |
 | Database | `Database.insertImmediate` | `supported` | Local immediate insert alias runs through the DML pipeline and returns SaveResult shape. |

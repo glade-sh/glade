@@ -23,6 +23,20 @@ func TestMVPReportIsNotReadyUntilRequiredFeaturesAreSupported(t *testing.T) {
 	t.Fatal("expected at least one incomplete required feature")
 }
 
+func TestMVPReportIncludesStatusCounts(t *testing.T) {
+	report := MVPReport()
+	total := 0
+	for _, status := range []Status{StatusSupported, StatusPartial, StatusStub, StatusUnsupported, StatusUnknown} {
+		total += report.StatusCounts[status]
+	}
+	if total != report.Total {
+		t.Fatalf("status count total = %d, want %d", total, report.Total)
+	}
+	if report.StatusCounts[StatusSupported] != report.Complete {
+		t.Fatalf("supported count = %d, want complete count %d", report.StatusCounts[StatusSupported], report.Complete)
+	}
+}
+
 func TestWriteJSON(t *testing.T) {
 	var out bytes.Buffer
 	if err := WriteJSON(&out, MVPReport()); err != nil {
@@ -34,6 +48,9 @@ func TestWriteJSON(t *testing.T) {
 	}
 	if decoded.Target != "full-featured glade-parity MVP" {
 		t.Fatalf("target = %q", decoded.Target)
+	}
+	if decoded.StatusCounts[StatusSupported] != decoded.Complete {
+		t.Fatalf("supported count = %d, want complete count %d", decoded.StatusCounts[StatusSupported], decoded.Complete)
 	}
 }
 
@@ -96,6 +113,18 @@ func TestDatabaseStdlibRowsAreLocallyPromotedOrFenced(t *testing.T) {
 		}
 		if entry.Status == StatusSupported && entry.Notes == "" {
 			t.Fatalf("Database stdlib row %s needs local-model notes", entry.API)
+		}
+	}
+}
+
+func TestStdlibSupportedRowsDoNotClaimPlaceholderOrNoOpBehavior(t *testing.T) {
+	for _, entry := range StdlibMatrix() {
+		if entry.Status != StatusSupported {
+			continue
+		}
+		notes := strings.ToLower(entry.Notes)
+		if strings.Contains(notes, "placeholder") || strings.Contains(notes, "no-op") {
+			t.Fatalf("stdlib row %s is supported with placeholder/no-op notes: %s", entry.API, entry.Notes)
 		}
 	}
 }

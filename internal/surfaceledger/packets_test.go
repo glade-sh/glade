@@ -193,3 +193,30 @@ func TestAsyncAndIsolationPacketExcludesServiceAsyncDocs(t *testing.T) {
 		}
 	}
 }
+
+func TestQuerySOQLSOSLPacketExcludesToolingRows(t *testing.T) {
+	packet, ok := AreaPacketByName("Query.Runtime.SOQLSOSL")
+	if !ok {
+		t.Fatal("missing Query.Runtime.SOQLSOSL packet")
+	}
+	queryGuide := SurfaceLedgerRow{
+		SurfaceID:  "unknown:sforce_api_calls_soql_select_limit",
+		Product:    ProductUnknown,
+		Area:       AreaRuntime,
+		Kind:       KindGuide,
+		DocsSource: "soql-sosl",
+	}
+	if !packetOwnsRow(packet, queryGuide) {
+		t.Fatalf("Query.Runtime.SOQLSOSL packet should own %s", queryGuide.SurfaceID)
+	}
+	toolingRow := SurfaceLedgerRow{
+		SurfaceID:  ToolingObjectID("SOQL"),
+		Product:    ProductTooling,
+		Area:       AreaServer,
+		Kind:       KindType,
+		DocsSource: "soql-sosl",
+	}
+	if packetOwnsRow(packet, toolingRow) {
+		t.Fatalf("Query.Runtime.SOQLSOSL packet should not own tooling row %s", toolingRow.SurfaceID)
+	}
+}

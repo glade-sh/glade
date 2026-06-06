@@ -225,6 +225,19 @@ func TestDefaultValueForFieldUnquotesStringExpressions(t *testing.T) {
 	}
 }
 
+func TestDefaultValueForRecordFieldLeavesFormulaCallForOrgEvaluator(t *testing.T) {
+	for _, fieldType := range []FieldType{FieldString, FieldPicklist, FieldMultiPicklist} {
+		got, ok := DefaultValueForRecordField(ObjectDefinition{}, Record{}, Field{
+			APIName:      "DefaultedLabel__c",
+			Type:         fieldType,
+			DefaultValue: "TEXT(TODAY())",
+		})
+		if ok {
+			t.Fatalf("%s formula call default = %#v, %v; want caller evaluation", fieldType, got, ok)
+		}
+	}
+}
+
 func TestDefaultValueForFieldUsesPicklistDefaultEntry(t *testing.T) {
 	got, ok := DefaultValueForField(Field{
 		APIName: "Status__c",
@@ -236,6 +249,21 @@ func TestDefaultValueForFieldUsesPicklistDefaultEntry(t *testing.T) {
 	})
 	if !ok || got.Kind != ValueString || got.String != "Active" {
 		t.Fatalf("picklist default = %#v, %v; want Active", got, ok)
+	}
+}
+
+func TestDefaultValueForFieldJoinsMultiPicklistDefaults(t *testing.T) {
+	got, ok := DefaultValueForField(Field{
+		APIName: "Topics__c",
+		Type:    FieldMultiPicklist,
+		PicklistValues: []PicklistValue{
+			{Value: "Clinical", Default: true, Active: true},
+			{Value: "Billing", Default: true, Active: true},
+			{Value: "Inactive", Active: true},
+		},
+	})
+	if !ok || got.Kind != ValueString || got.String != "Clinical;Billing" {
+		t.Fatalf("multi-picklist default = %#v, %v; want Clinical;Billing", got, ok)
 	}
 }
 

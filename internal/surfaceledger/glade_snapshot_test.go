@@ -106,7 +106,7 @@ func TestBuildGladeSnapshotIncludesMessagingLocalTestDTOShapes(t *testing.T) {
 		ApexMemberID("Messaging", "InboundEmail.BinaryAttachment", "InboundEmail.BinaryAttachment", []string{}),
 		ApexMemberID("Messaging", "InboundEmail.TextAttachment", "InboundEmail.TextAttachment", []string{}),
 		ApexMemberID("Messaging", "SingleEmailMessage", "setDocumentAttachments", []string{"List<Id>"}),
-		ApexMemberID("Messaging", "SingleEmailMessage", "setFileAttachments", []string{"List<EmailFileAttachment>"}),
+		ApexMemberID("Messaging", "SingleEmailMessage", "setFileAttachments", []string{"List<Messaging.EmailFileAttachment>"}),
 	} {
 		row, ok := byID[id]
 		if !ok {

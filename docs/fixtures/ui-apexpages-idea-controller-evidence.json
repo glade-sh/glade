@@ -1,0 +1,73 @@
+{
+  "name": "ui-apexpages-idea-controller-evidence",
+  "evidence": [
+    {"surfaceId": "apex:ApexPages.IdeaStandardController.addFields(List<String>)", "symbol": "ApexPages.IdeaStandardController.addFields", "kind": "check", "notes": "Visualforce supplies IdeaStandardController to controller extensions; direct construction is not used."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardController.cancel()", "symbol": "ApexPages.IdeaStandardController.cancel", "kind": "check", "notes": "Visualforce extension constructor can call the inherited standard-controller action."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardController.delete()", "symbol": "ApexPages.IdeaStandardController.delete", "kind": "check", "notes": "Visualforce extension constructor can call the inherited standard-controller action."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardController.edit()", "symbol": "ApexPages.IdeaStandardController.edit", "kind": "check", "notes": "Visualforce extension constructor can call the inherited standard-controller action."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardController.getCommentList()", "symbol": "ApexPages.IdeaStandardController.getCommentList", "kind": "check", "notes": "Visualforce extension constructor can access the Idea-specific comment list contract."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardController.getId()", "symbol": "ApexPages.IdeaStandardController.getId", "kind": "check", "notes": "Visualforce extension constructor can call the inherited standard-controller accessor."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardController.getRecord()", "symbol": "ApexPages.IdeaStandardController.getRecord", "kind": "check", "notes": "Visualforce extension constructor can call the inherited standard-controller accessor."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardController.save()", "symbol": "ApexPages.IdeaStandardController.save", "kind": "check", "notes": "Visualforce extension constructor can call the inherited standard-controller action."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardController.view()", "symbol": "ApexPages.IdeaStandardController.view", "kind": "check", "notes": "Visualforce extension constructor can call the inherited standard-controller action."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.addFields(List<String>)", "symbol": "ApexPages.IdeaStandardSetController.addFields", "kind": "check", "notes": "Visualforce supplies IdeaStandardSetController to controller extensions; direct construction is not used."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.cancel()", "symbol": "ApexPages.IdeaStandardSetController.cancel", "kind": "check", "notes": "Visualforce extension constructor can call the inherited standard-set-controller action."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.first()", "symbol": "ApexPages.IdeaStandardSetController.first", "kind": "check", "notes": "Visualforce extension constructor can call the inherited paging method."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.getCompleteResult()", "symbol": "ApexPages.IdeaStandardSetController.getCompleteResult", "kind": "check", "notes": "Visualforce extension constructor can call the inherited list-state accessor."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.getFilterId()", "symbol": "ApexPages.IdeaStandardSetController.getFilterId", "kind": "check", "notes": "Visualforce extension constructor can call the inherited filter accessor."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.getHasNext()", "symbol": "ApexPages.IdeaStandardSetController.getHasNext", "kind": "check", "notes": "Visualforce extension constructor can call the inherited paging accessor."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.getHasPrevious()", "symbol": "ApexPages.IdeaStandardSetController.getHasPrevious", "kind": "check", "notes": "Visualforce extension constructor can call the inherited paging accessor."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.getIdeaList()", "symbol": "ApexPages.IdeaStandardSetController.getIdeaList", "kind": "check", "notes": "Visualforce extension constructor can access the Idea-specific list contract."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.getListViewOptions()", "symbol": "ApexPages.IdeaStandardSetController.getListViewOptions", "kind": "check", "notes": "Visualforce extension constructor can call the inherited list-view option accessor."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.getPageNumber()", "symbol": "ApexPages.IdeaStandardSetController.getPageNumber", "kind": "check", "notes": "Visualforce extension constructor can call the inherited paging accessor."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.getPageSize()", "symbol": "ApexPages.IdeaStandardSetController.getPageSize", "kind": "check", "notes": "Visualforce extension constructor can call the inherited paging accessor."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.getRecord()", "symbol": "ApexPages.IdeaStandardSetController.getRecord", "kind": "check", "notes": "Visualforce extension constructor can call the inherited current-record accessor."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.getRecords()", "symbol": "ApexPages.IdeaStandardSetController.getRecords", "kind": "check", "notes": "Visualforce extension constructor can call the inherited page-records accessor."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.getResultSize()", "symbol": "ApexPages.IdeaStandardSetController.getResultSize", "kind": "check", "notes": "Visualforce extension constructor can call the inherited result-size accessor."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.getSelected()", "symbol": "ApexPages.IdeaStandardSetController.getSelected", "kind": "check", "notes": "Visualforce extension constructor can call the inherited selected-records accessor."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.last()", "symbol": "ApexPages.IdeaStandardSetController.last", "kind": "check", "notes": "Visualforce extension constructor can call the inherited paging method."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.next()", "symbol": "ApexPages.IdeaStandardSetController.next", "kind": "check", "notes": "Visualforce extension constructor can call the inherited paging method."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.previous()", "symbol": "ApexPages.IdeaStandardSetController.previous", "kind": "check", "notes": "Visualforce extension constructor can call the inherited paging method."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.save()", "symbol": "ApexPages.IdeaStandardSetController.save", "kind": "check", "notes": "Visualforce extension constructor can call the inherited standard-set-controller action."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.setFilterId(String)", "symbol": "ApexPages.IdeaStandardSetController.setFilterId", "kind": "check", "notes": "Visualforce extension constructor can call the inherited filter mutator."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.setPageNumber(Integer)", "symbol": "ApexPages.IdeaStandardSetController.setPageNumber", "kind": "check", "notes": "Visualforce extension constructor can call the inherited paging mutator."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.setPageSize(Integer)", "symbol": "ApexPages.IdeaStandardSetController.setPageSize", "kind": "check", "notes": "Visualforce extension constructor can call the inherited paging mutator."},
+    {"surfaceId": "apex:ApexPages.IdeaStandardSetController.setSelected(List<Object>)", "symbol": "ApexPages.IdeaStandardSetController.setSelected", "kind": "check", "notes": "Visualforce extension constructor can call the inherited selected-records mutator."}
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/pages/IdeaView.page",
+      "content": "<apex:page standardController=\"Idea\" extensions=\"IdeaViewExtension\"></apex:page>"
+    },
+    {
+      "path": "force-app/main/default/pages/IdeaList.page",
+      "content": "<apex:page standardController=\"Idea\" recordSetVar=\"ideas\" extensions=\"IdeaListExtension\"></apex:page>"
+    },
+    {
+      "path": "force-app/main/default/classes/IdeaViewExtension.cls",
+      "content": "public class IdeaViewExtension { public IdeaViewExtension(ApexPages.IdeaStandardController controller) { controller.addFields(new List<String>{'Title'}); List<IdeaComment> comments = controller.getCommentList(); SObject record = controller.getRecord(); String recordId = controller.getId(); PageReference cancelled = controller.cancel(); PageReference edited = controller.edit(); PageReference viewed = controller.view(); PageReference saved = controller.save(); PageReference deleted = controller.delete(); } }"
+    },
+    {
+      "path": "force-app/main/default/classes/IdeaListExtension.cls",
+      "content": "public class IdeaListExtension { public IdeaListExtension(ApexPages.IdeaStandardSetController controller) { controller.addFields(new List<String>{'Title'}); List<Idea> ideas = controller.getIdeaList(); List<SelectOption> options = controller.getListViewOptions(); List<SObject> records = controller.getRecords(); SObject record = controller.getRecord(); Integer resultSize = controller.getResultSize(); List<SObject> selected = controller.getSelected(); Boolean complete = controller.getCompleteResult(); Integer pageSize = controller.getPageSize(); Integer pageNumber = controller.getPageNumber(); Boolean hasNext = controller.getHasNext(); Boolean hasPrevious = controller.getHasPrevious(); controller.setFilterId('00B000000000001'); String filterId = controller.getFilterId(); controller.setPageSize(5); controller.setPageNumber(2); controller.first(); controller.next(); controller.previous(); controller.last(); controller.setSelected(new List<SObject>()); PageReference saved = controller.save(); PageReference cancelled = controller.cancel(); } }"
+    }
+  ],
+  "schema": [
+    {
+      "path": "force-app/main/default/objects/Idea/Idea.object-meta.xml",
+      "content": "<CustomObject><label>Idea</label><pluralLabel>Ideas</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "files": 2,
+      "types": 2,
+      "diagnostics": 0,
+      "schemaObjects": 1
+    }
+  }
+}

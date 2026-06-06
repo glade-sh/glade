@@ -3237,9 +3237,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "ApexPages.Component", "ApexPages.ComponentIteration":
 		return callApexPagesComponentMember(receiver, method, args)
 	case "ApexPages.IdeaStandardController":
-		return callApexPagesIdeaStandardControllerMember(receiver, method, args)
+		return vm.callApexPagesIdeaStandardControllerMember(receiver, method, args, result)
 	case "ApexPages.IdeaStandardSetController":
-		return callApexPagesIdeaStandardSetControllerMember(receiver, method, args)
+		return vm.callApexPagesIdeaStandardSetControllerMember(receiver, method, args, result)
 	case "ApexPages.KnowledgeArticleVersionStandardController":
 		return callApexPagesKnowledgeArticleVersionStandardControllerMember(receiver, method, args)
 	case "ApexPages.StandardController":

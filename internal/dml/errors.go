@@ -145,9 +145,25 @@ func formulaDefaultShouldEvaluate(field storage.Field, rawDefault string) bool {
 		return false
 	}
 	switch field.Type {
-	case storage.FieldDate, storage.FieldDateTime:
-		return strings.ContainsAny(rawDefault, "()")
+	case storage.FieldString, storage.FieldPicklist, storage.FieldMultiPicklist, storage.FieldDate, storage.FieldDateTime, storage.FieldAny:
+		return defaultLooksLikeFormulaCall(rawDefault)
 	default:
 		return false
 	}
+}
+
+func defaultLooksLikeFormulaCall(rawDefault string) bool {
+	rawDefault = strings.TrimSpace(rawDefault)
+	open := strings.IndexByte(rawDefault, '(')
+	if open <= 0 {
+		return false
+	}
+	for i := 0; i < open; i++ {
+		c := rawDefault[i]
+		if (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' {
+			continue
+		}
+		return false
+	}
+	return true
 }

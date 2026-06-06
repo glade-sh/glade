@@ -1559,17 +1559,80 @@ func (p *parser) parseSOQLLiteral(pos int) (ir.Expr, error) {
 			case "]":
 				depth--
 				if depth == 0 {
-					return ir.Expr{Kind: ir.ExprSOQL, Value: strings.Join(parts, " ")}, nil
+					return ir.Expr{Kind: ir.ExprSOQL, Value: strings.Join(compactSOQLDateLiteralParts(parts), " ")}, nil
 				}
 			}
 		}
 		if tok.kind == tokenString {
-			parts = append(parts, "'"+tok.text+"'")
+			parts = append(parts, soqlStringLiteralFromTokenText(tok.text))
 		} else {
 			parts = append(parts, tok.text)
 		}
 	}
 	return ir.Expr{}, fmt.Errorf("unterminated SOQL literal at byte %d", pos)
+}
+
+func compactSOQLDateLiteralParts(parts []string) []string {
+	if len(parts) < 5 {
+		return parts
+	}
+	var out []string
+	for i := 0; i < len(parts); {
+		if i+4 < len(parts) &&
+			isSOQLDateYearPart(parts[i]) &&
+			parts[i+1] == "-" &&
+			isSOQLDateMonthDayPart(parts[i+2]) &&
+			parts[i+3] == "-" &&
+			isSOQLDateMonthDayPart(parts[i+4]) {
+			if out == nil {
+				out = make([]string, 0, len(parts))
+				out = append(out, parts[:i]...)
+			}
+			out = append(out, parts[i]+"-"+parts[i+2]+"-"+parts[i+4])
+			i += 5
+			continue
+		}
+		if out != nil {
+			out = append(out, parts[i])
+		}
+		i++
+	}
+	if out == nil {
+		return parts
+	}
+	return out
+}
+
+func isSOQLDateYearPart(part string) bool {
+	return len(part) == 4 && isAllDigits(part)
+}
+
+func isSOQLDateMonthDayPart(part string) bool {
+	return len(part) == 2 && isAllDigits(part)
+}
+
+func isAllDigits(part string) bool {
+	for i := 0; i < len(part); i++ {
+		if part[i] < '0' || part[i] > '9' {
+			return false
+		}
+	}
+	return part != ""
+}
+
+func soqlStringLiteralFromTokenText(text string) string {
+	var out strings.Builder
+	out.Grow(len(text) + 2)
+	out.WriteByte('\'')
+	for i := 0; i < len(text); i++ {
+		if text[i] == '\'' {
+			out.WriteString("''")
+			continue
+		}
+		out.WriteByte(text[i])
+	}
+	out.WriteByte('\'')
+	return out.String()
 }
 
 func (p *parser) parseArguments() ([]ir.Expr, error) {

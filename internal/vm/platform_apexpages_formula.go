@@ -487,19 +487,21 @@ func callApexPagesComponentMember(receiver Value, method string, args []Value) (
 	return Null, receiver, false, true, nil
 }
 
-func callApexPagesIdeaStandardControllerMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
-	method = canonicalStdlibMemberName(method, "getCommentList")
-	if method != "getCommentList" {
-		return Null, receiver, false, false, nil
+func (vm *VM) callApexPagesIdeaStandardControllerMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	receiver = ensureIdeaStandardControllerState(receiver)
+	if method == "getCommentList" {
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.IdeaStandardController.getCommentList expects 0 arguments")
+		}
+		return typedList("List<IdeaComment>"), receiver, false, true, nil
 	}
-	if len(args) != 0 {
-		return Null, receiver, false, true, fmt.Errorf("ApexPages.IdeaStandardController.getCommentList expects 0 arguments")
-	}
-	return typedList("List<IdeaComment>"), receiver, false, true, nil
+	return vm.callStandardControllerMember(receiver, method, args, result)
 }
 
-func callApexPagesIdeaStandardSetControllerMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
-	method = canonicalStdlibMemberName(method, "getIdeaList", "getListViewOptions")
+func (vm *VM) callApexPagesIdeaStandardSetControllerMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	receiver = ensureIdeaStandardSetControllerState(receiver)
 	switch method {
 	case "getIdeaList":
 		if len(args) != 0 {
@@ -512,8 +514,33 @@ func callApexPagesIdeaStandardSetControllerMember(receiver Value, method string,
 		}
 		return typedList("List<SelectOption>"), receiver, false, true, nil
 	default:
-		return Null, receiver, false, false, nil
+		return vm.callStandardSetControllerMember(receiver, method, args, result)
 	}
+}
+
+func ensureIdeaStandardControllerState(receiver Value) Value {
+	if _, ok := receiver.Fields["record"]; !ok {
+		receiver.Fields["record"] = Object("Idea")
+	}
+	return receiver
+}
+
+func ensureIdeaStandardSetControllerState(receiver Value) Value {
+	if _, ok := receiver.Fields["records"]; !ok {
+		records := List()
+		records.Type = "List<Idea>"
+		receiver.Fields["records"] = records
+	}
+	if _, ok := receiver.Fields["selected"]; !ok {
+		receiver.Fields["selected"] = List()
+	}
+	if _, ok := receiver.Fields["pageSize"]; !ok {
+		receiver.Fields["pageSize"] = Int(20)
+	}
+	if _, ok := receiver.Fields["pageNumber"]; !ok {
+		receiver.Fields["pageNumber"] = Int(1)
+	}
+	return receiver
 }
 
 func callApexPagesKnowledgeArticleVersionStandardControllerMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {

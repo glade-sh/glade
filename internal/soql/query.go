@@ -22,7 +22,9 @@ type Query struct {
 	Count            bool
 	ForUpdate        bool
 	ForView          bool
+	ForReference     bool
 	AllRows          bool
+	UsingScope       string
 	SecurityMode     string
 	Aggregates       []Aggregate
 	HavingAggregates []Aggregate

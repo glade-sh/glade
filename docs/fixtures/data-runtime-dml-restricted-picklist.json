@@ -1,0 +1,40 @@
+{
+  "name": "data-runtime-dml-restricted-picklist",
+  "evidence": [
+    {
+      "symbol": "Database.insert",
+      "kind": "test",
+      "notes": "Database.insert(allOrNone=false) rejects a value outside a restricted picklist's active metadata values."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Status__c.field-meta.xml",
+      "content": "<CustomField><fullName>Status__c</fullName><label>Status</label><type>Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition><value><fullName>Open</fullName><default>true</default><label>Open</label></value><value><fullName>Closed</fullName><label>Closed</label></value></valueSetDefinition></valueSet></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/RestrictedPicklistDmlTest.cls",
+      "content": "@isTest private class RestrictedPicklistDmlTest { @isTest static void invalidRestrictedPicklistReturnsFieldError() { Database.SaveResult result = Database.insert(new Account(Name = 'Acme', Status__c = 'Bogus'), false); System.assertEquals(false, result.isSuccess()); System.assertEquals('INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST', result.getErrors()[0].getStatusCode()); System.assertEquals('Status__c', result.getErrors()[0].getFields()[0]); System.assertEquals(0, [SELECT Id FROM Account].size()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

@@ -70,6 +70,7 @@ func DashboardMarkdown(ledger SurfaceLedger) string {
 	fmt.Fprintf(&b, "| implemented | %d |\n", ledger.Summary.Implemented)
 	fmt.Fprintf(&b, "| partial | %d |\n", ledger.Summary.Partial)
 	fmt.Fprintf(&b, "| passive | %d |\n", ledger.Summary.Passive)
+	fmt.Fprintf(&b, "| stubNoOp | %d |\n", ledger.Summary.StubNoOp)
 	fmt.Fprintf(&b, "| explicitUnsupported | %d |\n", ledger.Summary.ExplicitUnsupported)
 	fmt.Fprintf(&b, "| gap | %d |\n", sumMap(ledger.Summary.Gaps))
 	fmt.Fprintf(&b, "| failure | %d |\n", sumMap(ledger.Summary.Failures))
@@ -101,6 +102,7 @@ type progressRow struct {
 	Implemented         int
 	Partial             int
 	Passive             int
+	StubNoOp            int
 	ExplicitUnsupported int
 	Remaining           int
 	Failures            int
@@ -124,10 +126,10 @@ func ProgressMarkdown(ledger SurfaceLedger) string {
 	fmt.Fprintln(&b)
 	fmt.Fprintln(&b, "## Verticals")
 	fmt.Fprintln(&b)
-	fmt.Fprintln(&b, "| vertical | owner | progress | implemented | partial | passive | unsupported | remaining | top remaining |")
-	fmt.Fprintln(&b, "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+	fmt.Fprintln(&b, "| vertical | owner | progress | implemented | partial | passive | unsupported | stub/no-op | remaining | top remaining |")
+	fmt.Fprintln(&b, "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
 	for _, row := range rows {
-		fmt.Fprintf(&b, "| `%s` | %s | %s %s | %d/%d | %d | %d | %d | %d | %s |\n",
+		fmt.Fprintf(&b, "| `%s` | %s | %s %s | %d/%d | %d | %d | %d | %d | %d | %s |\n",
 			row.Name,
 			row.Owner,
 			textBar(row.ProgressTenths),
@@ -137,6 +139,7 @@ func ProgressMarkdown(ledger SurfaceLedger) string {
 			row.Partial,
 			row.Passive,
 			row.ExplicitUnsupported,
+			row.StubNoOp,
 			row.Remaining+row.Failures,
 			markdownCodeOrDash(row.TopGap),
 		)
@@ -144,16 +147,17 @@ func ProgressMarkdown(ledger SurfaceLedger) string {
 	fmt.Fprintln(&b)
 	fmt.Fprintln(&b, "## Product Families")
 	fmt.Fprintln(&b)
-	fmt.Fprintln(&b, "| family | progress | implemented | passive | remaining | top remaining |")
-	fmt.Fprintln(&b, "| --- | ---: | ---: | ---: | ---: | --- |")
+	fmt.Fprintln(&b, "| family | progress | implemented | passive | stub/no-op | remaining | top remaining |")
+	fmt.Fprintln(&b, "| --- | ---: | ---: | ---: | ---: | ---: | --- |")
 	for _, row := range productRows {
-		fmt.Fprintf(&b, "| `%s` | %s %s | %d/%d | %d | %d | %s |\n",
+		fmt.Fprintf(&b, "| `%s` | %s %s | %d/%d | %d | %d | %d | %s |\n",
 			row.Name,
 			textBar(row.ProgressTenths),
 			percentLabel(row.ProgressTenths),
 			row.Implemented,
 			row.Total,
 			row.Passive,
+			row.StubNoOp,
 			row.Remaining+row.Failures,
 			markdownCodeOrDash(row.TopGap),
 		)
@@ -187,13 +191,13 @@ func ProgressHTML(ledger SurfaceLedger) string {
 	fmt.Fprintln(&b, "<title>Salesforce Surface Progress</title>")
 	fmt.Fprintln(&b, "<style>")
 	fmt.Fprintln(&b, `:root{color-scheme:dark;--bg:#0d1117;--panel:#161b22;--line:#30363d;--text:#e6edf3;--muted:#8b949e;--green:#3fb950;--blue:#58a6ff;--orange:#d29922;--red:#f85149;--purple:#bc8cff}`)
-	fmt.Fprintln(&b, `*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{padding:24px 28px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(13,17,23,.96);z-index:2}h1{margin:0 0 6px;font-size:28px;letter-spacing:0}p{margin:0;color:var(--muted)}main{padding:22px 28px 36px;display:grid;gap:22px}.summary{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:10px}.tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px}.label{color:var(--muted);font-size:12px;text-transform:uppercase}.value{font-size:24px;margin-top:4px}section{display:grid;gap:10px}h2{font-size:18px;margin:0}.table{display:grid;border:1px solid var(--line);border-radius:8px;overflow:hidden}.row{display:grid;grid-template-columns:minmax(220px,1.3fr) minmax(130px,.8fr) minmax(170px,1fr) repeat(5,minmax(82px,.45fr)) minmax(260px,1.4fr);gap:0;border-top:1px solid var(--line);background:var(--panel)}.row:first-child{border-top:0}.head{background:#10161d;color:var(--muted);font-size:12px;text-transform:uppercase}.cell{padding:9px 10px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.name{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.bar{height:9px;background:#262d36;border-radius:999px;overflow:hidden;margin:5px 0 2px}.fill{height:100%;background:linear-gradient(90deg,var(--green),var(--blue))}.pct{color:var(--muted);font-size:12px}.topgap{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#c9d1d9}.warn{color:var(--orange)}.bad{color:var(--red)}.product .row{grid-template-columns:minmax(220px,1.3fr) minmax(170px,1fr) repeat(3,minmax(90px,.5fr)) minmax(300px,1.5fr)}@media(max-width:980px){header{position:static}.summary{grid-template-columns:repeat(2,1fr)}.table{overflow:auto}.row{min-width:1050px}}`)
+	fmt.Fprintln(&b, `*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{padding:24px 28px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(13,17,23,.96);z-index:2}h1{margin:0 0 6px;font-size:28px;letter-spacing:0}p{margin:0;color:var(--muted)}main{padding:22px 28px 36px;display:grid;gap:22px}.summary{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:10px}.tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px}.label{color:var(--muted);font-size:12px;text-transform:uppercase}.value{font-size:24px;margin-top:4px}section{display:grid;gap:10px}h2{font-size:18px;margin:0}.table{display:grid;border:1px solid var(--line);border-radius:8px;overflow:hidden}.row{display:grid;grid-template-columns:minmax(220px,1.3fr) minmax(130px,.8fr) minmax(170px,1fr) repeat(6,minmax(82px,.45fr)) minmax(260px,1.4fr);gap:0;border-top:1px solid var(--line);background:var(--panel)}.row:first-child{border-top:0}.head{background:#10161d;color:var(--muted);font-size:12px;text-transform:uppercase}.cell{padding:9px 10px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.name{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.bar{height:9px;background:#262d36;border-radius:999px;overflow:hidden;margin:5px 0 2px}.fill{height:100%;background:linear-gradient(90deg,var(--green),var(--blue))}.pct{color:var(--muted);font-size:12px}.topgap{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#c9d1d9}.warn{color:var(--orange)}.bad{color:var(--red)}.product .row{grid-template-columns:minmax(220px,1.3fr) minmax(170px,1fr) repeat(4,minmax(90px,.5fr)) minmax(300px,1.5fr)}@media(max-width:980px){header{position:static}.summary{grid-template-columns:repeat(2,1fr)}.table{overflow:auto}.row{min-width:1120px}}`)
 	fmt.Fprintln(&b, "</style>")
 	fmt.Fprintln(&b, "</head>")
 	fmt.Fprintln(&b, "<body>")
 	fmt.Fprintln(&b, "<header>")
 	fmt.Fprintln(&b, "<h1>Salesforce Surface Progress</h1>")
-	fmt.Fprintln(&b, "<p>Generated from SURFACE_LEDGER.json. Progress is done rows divided by total rows. Done is implemented, passive, and explicit unsupported.</p>")
+	fmt.Fprintln(&b, "<p>Generated from SURFACE_LEDGER.json. Progress is implemented rows divided by total rows. Passive shape, explicit unsupported, and stub/no-op rows are tracked separately.</p>")
 	fmt.Fprintln(&b, "</header>")
 	fmt.Fprintln(&b, "<main>")
 	fmt.Fprintln(&b, `<div class="summary">`)
@@ -201,13 +205,14 @@ func ProgressHTML(ledger SurfaceLedger) string {
 	writeHTMLTile(&b, "implemented", total.Implemented)
 	writeHTMLTile(&b, "partial", total.Partial)
 	writeHTMLTile(&b, "passive", total.Passive)
+	writeHTMLTile(&b, "stub/no-op", total.StubNoOp)
 	writeHTMLTile(&b, "unsupported", total.ExplicitUnsupported)
 	writeHTMLTile(&b, "remaining", total.Remaining+total.Failures)
 	fmt.Fprintln(&b, "</div>")
 	fmt.Fprintln(&b, "<section>")
 	fmt.Fprintln(&b, "<h2>Verticals</h2>")
 	fmt.Fprintln(&b, `<div class="table">`)
-	fmt.Fprintln(&b, `<div class="row head"><div class="cell">vertical</div><div class="cell">owner</div><div class="cell">progress</div><div class="cell">impl</div><div class="cell">partial</div><div class="cell">passive</div><div class="cell">unsupported</div><div class="cell">remain</div><div class="cell">top remaining</div></div>`)
+	fmt.Fprintln(&b, `<div class="row head"><div class="cell">vertical</div><div class="cell">owner</div><div class="cell">progress</div><div class="cell">impl</div><div class="cell">partial</div><div class="cell">passive</div><div class="cell">unsupported</div><div class="cell">stub/no-op</div><div class="cell">remain</div><div class="cell">top remaining</div></div>`)
 	for _, row := range rows {
 		writeHTMLProgressRow(&b, row)
 	}
@@ -216,7 +221,7 @@ func ProgressHTML(ledger SurfaceLedger) string {
 	fmt.Fprintln(&b, `<section class="product">`)
 	fmt.Fprintln(&b, "<h2>Product Families</h2>")
 	fmt.Fprintln(&b, `<div class="table">`)
-	fmt.Fprintln(&b, `<div class="row head"><div class="cell">family</div><div class="cell">progress</div><div class="cell">impl</div><div class="cell">passive</div><div class="cell">remain</div><div class="cell">top remaining</div></div>`)
+	fmt.Fprintln(&b, `<div class="row head"><div class="cell">family</div><div class="cell">progress</div><div class="cell">impl</div><div class="cell">passive</div><div class="cell">stub/no-op</div><div class="cell">remain</div><div class="cell">top remaining</div></div>`)
 	for _, row := range productRows {
 		writeHTMLProductRow(&b, row)
 	}
@@ -298,6 +303,8 @@ func progressFromRows(name, title, owner string, rows []SurfaceLedgerRow) progre
 			out.Partial++
 		case BucketPassive:
 			out.Passive++
+		case BucketStubNoOp:
+			out.StubNoOp++
 		case BucketExplicitUnsupported:
 			out.ExplicitUnsupported++
 		case BucketGap:
@@ -354,15 +361,16 @@ func unmatchedPacketRows(ledger SurfaceLedger) []SurfaceLedgerRow {
 }
 
 func writeProgressTotals(b *strings.Builder, label string, row progressRow) {
-	fmt.Fprintln(b, "| scope | total | implemented | partial | passive | unsupported | remaining | progress |")
-	fmt.Fprintln(b, "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
-	fmt.Fprintf(b, "| %s | %d | %d | %d | %d | %d | %d | %s %s |\n",
+	fmt.Fprintln(b, "| scope | total | implemented | partial | passive | unsupported | stub/no-op | remaining | progress |")
+	fmt.Fprintln(b, "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+	fmt.Fprintf(b, "| %s | %d | %d | %d | %d | %d | %d | %d | %s %s |\n",
 		label,
 		row.Total,
 		row.Implemented,
 		row.Partial,
 		row.Passive,
 		row.ExplicitUnsupported,
+		row.StubNoOp,
 		row.Remaining+row.Failures,
 		textBar(row.ProgressTenths),
 		percentLabel(row.ProgressTenths),
@@ -392,7 +400,7 @@ func writeHTMLTile(b *strings.Builder, label string, value int) {
 }
 
 func writeHTMLProgressRow(b *strings.Builder, row progressRow) {
-	fmt.Fprintf(b, `<div class="row"><div class="cell name" title="%s">%s</div><div class="cell" title="%s">%s</div><div class="cell">%s</div><div class="cell">%d/%d</div><div class="cell">%d</div><div class="cell">%d</div><div class="cell">%d</div><div class="cell %s">%d</div><div class="cell topgap" title="%s">%s</div></div>`+"\n",
+	fmt.Fprintf(b, `<div class="row"><div class="cell name" title="%s">%s</div><div class="cell" title="%s">%s</div><div class="cell">%s</div><div class="cell">%d/%d</div><div class="cell">%d</div><div class="cell">%d</div><div class="cell">%d</div><div class="cell">%d</div><div class="cell %s">%d</div><div class="cell topgap" title="%s">%s</div></div>`+"\n",
 		html.EscapeString(row.Name),
 		html.EscapeString(row.Name),
 		html.EscapeString(row.Owner),
@@ -403,6 +411,7 @@ func writeHTMLProgressRow(b *strings.Builder, row progressRow) {
 		row.Partial,
 		row.Passive,
 		row.ExplicitUnsupported,
+		row.StubNoOp,
 		remainingClass(row.Remaining+row.Failures),
 		row.Remaining+row.Failures,
 		html.EscapeString(row.TopGap),
@@ -411,13 +420,14 @@ func writeHTMLProgressRow(b *strings.Builder, row progressRow) {
 }
 
 func writeHTMLProductRow(b *strings.Builder, row progressRow) {
-	fmt.Fprintf(b, `<div class="row"><div class="cell name" title="%s">%s</div><div class="cell">%s</div><div class="cell">%d/%d</div><div class="cell">%d</div><div class="cell %s">%d</div><div class="cell topgap" title="%s">%s</div></div>`+"\n",
+	fmt.Fprintf(b, `<div class="row"><div class="cell name" title="%s">%s</div><div class="cell">%s</div><div class="cell">%d/%d</div><div class="cell">%d</div><div class="cell">%d</div><div class="cell %s">%d</div><div class="cell topgap" title="%s">%s</div></div>`+"\n",
 		html.EscapeString(row.Name),
 		html.EscapeString(row.Name),
 		htmlBar(row.ProgressTenths),
 		row.Implemented,
 		row.Total,
 		row.Passive,
+		row.StubNoOp,
 		remainingClass(row.Remaining+row.Failures),
 		row.Remaining+row.Failures,
 		html.EscapeString(row.TopGap),

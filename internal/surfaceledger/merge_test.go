@@ -150,6 +150,16 @@ func TestClassifyGapFromStates(t *testing.T) {
 			gap:  "",
 		},
 		{
+			name: "fixture backed runtime guide row",
+			row:  SurfaceLedgerRow{SurfaceID: "unknown:sforce_api_calls_soql_select_orderby", Product: ProductUnknown, Area: AreaRuntime, Kind: KindType, Docs: SourcePresent, Org: SourceAbsent, GladeShape: ShapeAbsent, GladeBehavior: BehaviorSupported, Evidence: EvidenceFixture},
+			gap:  "",
+		},
+		{
+			name: "evidence only runtime guide row",
+			row:  SurfaceLedgerRow{SurfaceID: "unknown:sforce_api_calls_soql_select_orderby", Product: ProductUnknown, Area: AreaRuntime, Kind: KindType, Docs: SourceAbsent, Org: SourceAbsent, GladeShape: ShapeAbsent, GladeBehavior: BehaviorSupported, Evidence: EvidenceFixture},
+			gap:  "",
+		},
+		{
 			name: "passive glade-only shape",
 			row:  SurfaceLedgerRow{SurfaceID: ApexMemberID("ApexPages", "Component", "Component", []string{}), Product: ProductApex, Area: AreaRuntime, Kind: KindMethod, Docs: SourceAbsent, Org: SourceAbsent, GladeShape: ShapeSignatureKnown, GladeBehavior: BehaviorPassive},
 			gap:  "",
@@ -221,6 +231,12 @@ func TestClassifyGapFromStates(t *testing.T) {
 			}
 			if tt.name == "fixture backed apex method" && tt.row.Bucket != BucketImplemented {
 				t.Fatalf("bucket = %q, want %q", tt.row.Bucket, BucketImplemented)
+			}
+			if tt.name == "fixture backed runtime guide row" && tt.row.Bucket != BucketImplemented {
+				t.Fatalf("bucket = %q, want %q", tt.row.Bucket, BucketImplemented)
+			}
+			if tt.name == "evidence only runtime guide row" && tt.row.Bucket == BucketImplemented {
+				t.Fatalf("bucket = %q, want non-implemented", tt.row.Bucket)
 			}
 		})
 	}

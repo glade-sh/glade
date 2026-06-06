@@ -60,6 +60,26 @@ func TestBuildDocsSnapshotClassifiesDataReferenceDocs(t *testing.T) {
 	}
 }
 
+func TestBuildDocsSnapshotKeepsEventLogFileEventTypeRowsUnderEventLogFile(t *testing.T) {
+	root := t.TempDir()
+	writeDoc(t, root, "object-reference/sforce_api_objects_eventlogfile_apitotalusage.md", "# API Total Usage\n\n### API_VERSION\n")
+
+	rows, err := BuildDocsSnapshot(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := rowsByID(rows)
+	if _, ok := byID[DataObjectID("API")]; ok {
+		t.Fatalf("unexpected fake API object row: %#v", byID[DataObjectID("API")])
+	}
+	if row, ok := byID[DataObjectID("EventLogFile")]; !ok || row.Product != ProductDataRef {
+		t.Fatalf("EventLogFile row = %#v, ok=%v", row, ok)
+	}
+	if row, ok := byID[DataFieldID("EventLogFile", "API_VERSION")]; !ok || row.Kind != KindField {
+		t.Fatalf("EventLogFile.API_VERSION field row = %#v, ok=%v", row, ok)
+	}
+}
+
 func TestBuildDocsSnapshotSkipsApexReleaseNotes(t *testing.T) {
 	root := t.TempDir()
 	writeDoc(t, root, "apex/apex_releasenotes.md", "# Apex Release Notes\n\n## Insert\n")

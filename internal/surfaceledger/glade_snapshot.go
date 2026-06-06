@@ -88,6 +88,7 @@ func BuildGladeSnapshot() []SurfaceLedgerRow {
 	}
 	addDataReferenceGladeRows(byID)
 	addLocalTestLWCGladeRows(byID)
+	addUnsupportedQueryRuntimeGladeRows(byID)
 	rows := make([]SurfaceLedgerRow, 0, len(byID))
 	for _, row := range byID {
 		rows = append(rows, withDefaults(row))
@@ -100,10 +101,10 @@ func mergeGladeBehavior(existing, next BehaviorState) BehaviorState {
 	if existing == BehaviorUnsupported {
 		return existing
 	}
-	if existing == BehaviorSupported && (next == BehaviorPassive || next == BehaviorUnsupported) {
+	if existing == BehaviorSupported && (next == BehaviorPassive || next == BehaviorStubNoOp || next == BehaviorUnsupported) {
 		return existing
 	}
-	if existing == BehaviorPartial && next == BehaviorUnsupported {
+	if existing == BehaviorPartial && (next == BehaviorStubNoOp || next == BehaviorUnsupported) {
 		return existing
 	}
 	if next == "" || next == BehaviorNone {
@@ -164,6 +165,36 @@ func addLocalTestLWCGladeRows(byID map[string]SurfaceLedgerRow) {
 			GladeBehavior: BehaviorUnsupported,
 			Sources:       []string{"uicontroller-import-shape"},
 			Notes:         "local Apex tests can index this LWC import shape; browser or service execution is not modeled locally",
+		})
+	}
+}
+
+type unsupportedQueryRuntimeRow struct {
+	ID   string
+	Note string
+}
+
+var unsupportedQueryRuntimeRows = []unsupportedQueryRuntimeRow{
+	{ID: "unknown:MockSOQLTestsForDMOs", Note: "Data Cloud DMO mock SOQL tests require Data Cloud services and are not executed by the local Apex runtime."},
+	{ID: "unknown:apex_connector_external_objects_mock_soql_tests", Note: "Salesforce Connect external-object mock SOQL tests require connector services outside the local Apex runtime."},
+	{ID: "unknown:sforce_api_calls_describesoqllistview", Note: "SOAP describeSObject list-view metadata calls are API metadata surfaces, not local Apex SOQL execution."},
+	{ID: "unknown:sforce_api_calls_describesoqllistview_soqlwherecondition", Note: "List-view SOQL where-condition metadata is returned by describe API calls, not executed as local Apex SOQL."},
+	{ID: "unknown:sforce_api_calls_describesoqllistviewparams", Note: "DescribeSObject list-view request parameters are SOAP API metadata, not local Apex runtime behavior."},
+	{ID: "unknown:sforce_api_calls_describesoqllistviewresult", Note: "DescribeSObject list-view result DTOs are SOAP API metadata, not local Apex runtime behavior."},
+	{ID: "unknown:sforce_api_calls_describesoqllistviews", Note: "DescribeSObject list-view collection metadata is a SOAP API surface outside local Apex execution."},
+	{ID: "unknown:sforce_api_calls_soql_changing_batch_size", Note: "API query batch-size negotiation is a remote API cursor setting and has no local Apex test-runner equivalent."},
+}
+
+func addUnsupportedQueryRuntimeGladeRows(byID map[string]SurfaceLedgerRow) {
+	for _, item := range unsupportedQueryRuntimeRows {
+		byID[surfaceIDKey(item.ID)] = RowFromGladeShape(SurfaceLedgerRow{
+			SurfaceID:     item.ID,
+			Product:       ProductApex,
+			Area:          AreaRuntime,
+			Kind:          KindMethod,
+			GladeBehavior: BehaviorUnsupported,
+			Sources:       []string{"query-runtime-explicit-unsupported"},
+			Notes:         item.Note,
 		})
 	}
 }
@@ -316,7 +347,7 @@ func behaviorFromCapabilityStatus(status capability.Status) BehaviorState {
 	case capability.StatusUnsupported:
 		return BehaviorUnsupported
 	case capability.StatusStub:
-		return BehaviorPassive
+		return BehaviorStubNoOp
 	default:
 		return BehaviorNone
 	}
@@ -328,6 +359,8 @@ func behaviorFromStubStatus(status capability.StubBehaviorStatus) BehaviorState 
 		return BehaviorSupported
 	case capability.StubBehaviorPassiveDefault:
 		return BehaviorPassive
+	case capability.StubBehaviorStubNoOp:
+		return BehaviorStubNoOp
 	case capability.StubBehaviorUnsupported:
 		return BehaviorUnsupported
 	default:

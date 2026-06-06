@@ -29,13 +29,14 @@ type Feature struct {
 }
 
 type Report struct {
-	Target     string    `json:"target"`
-	Ready      bool      `json:"ready"`
-	Total      int       `json:"total"`
-	Required   int       `json:"required"`
-	Complete   int       `json:"complete"`
-	Incomplete int       `json:"incomplete"`
-	Features   []Feature `json:"features"`
+	Target       string         `json:"target"`
+	Ready        bool           `json:"ready"`
+	Total        int            `json:"total"`
+	Required     int            `json:"required"`
+	Complete     int            `json:"complete"`
+	Incomplete   int            `json:"incomplete"`
+	StatusCounts map[Status]int `json:"statusCounts"`
+	Features     []Feature      `json:"features"`
 }
 
 func MVPFeatures() []Feature {
@@ -45,12 +46,20 @@ func MVPFeatures() []Feature {
 func MVPReport() Report {
 	features := MVPFeatures()
 	report := Report{
-		Target:   "full-featured glade-parity MVP",
-		Ready:    true,
-		Total:    len(features),
+		Target: "full-featured glade-parity MVP",
+		Ready:  true,
+		Total:  len(features),
+		StatusCounts: map[Status]int{
+			StatusSupported:   0,
+			StatusPartial:     0,
+			StatusStub:        0,
+			StatusUnsupported: 0,
+			StatusUnknown:     0,
+		},
 		Features: features,
 	}
 	for _, feature := range features {
+		report.StatusCounts[feature.Status]++
 		if !feature.Required {
 			continue
 		}
@@ -80,6 +89,14 @@ func WriteText(w io.Writer, report Report) error {
 	_, _ = io.WriteString(w, "Target: "+report.Target+"\n")
 	_, _ = io.WriteString(w, "Required complete: ")
 	_, _ = io.WriteString(w, itoa(report.Complete)+"/"+itoa(report.Required)+"\n")
+	_, _ = io.WriteString(w, "Status counts: ")
+	for i, status := range []Status{StatusSupported, StatusPartial, StatusStub, StatusUnsupported, StatusUnknown} {
+		if i > 0 {
+			_, _ = io.WriteString(w, " ")
+		}
+		_, _ = io.WriteString(w, string(status)+"="+itoa(report.StatusCounts[status]))
+	}
+	_, _ = io.WriteString(w, "\n")
 	for _, feature := range report.Features {
 		if !feature.Required || feature.Status == StatusSupported {
 			continue
@@ -93,11 +110,6 @@ func WriteText(w io.Writer, report Report) error {
 }
 
 func WriteMarkdown(w io.Writer, report Report) error {
-	counts := map[Status]int{}
-	for _, feature := range report.Features {
-		counts[feature.Status]++
-	}
-
 	ready := "not ready"
 	if report.Ready {
 		ready = "ready"
@@ -132,7 +144,7 @@ func WriteMarkdown(w io.Writer, report Report) error {
 		return err
 	}
 	for _, status := range []Status{StatusSupported, StatusPartial, StatusStub, StatusUnsupported, StatusUnknown} {
-		if _, err := fmt.Fprintf(w, "| `%s` | %d |\n", status, counts[status]); err != nil {
+		if _, err := fmt.Fprintf(w, "| `%s` | %d |\n", status, report.StatusCounts[status]); err != nil {
 			return err
 		}
 	}

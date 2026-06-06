@@ -1007,6 +1007,7 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "Invocable.Action", Methods: []StandardMethodSpec{
 		{Name: "getDescribe", ReturnType: "List<Invocable.Action.DescribeResult>"},
 	}},
+	{Name: "Invocable.Action.AdditionalAttribute"},
 	{Name: "Invocable.Action.DescribeResult", Methods: []StandardMethodSpec{
 		{Name: "getAction", ReturnType: "Invocable.Action"},
 		{Name: "getAllowsTransactionControl", ReturnType: "Boolean"},
@@ -1029,6 +1030,7 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "getTargetEntityName", ReturnType: "String"},
 		{Name: "getType", ReturnType: "String"},
 	}},
+	{Name: "Invocable.Action.GenericType"},
 	{Name: "Invocable.Action.InputParameter", Methods: []StandardMethodSpec{
 		{Name: "getAdditionalAttributes", ReturnType: "List<Invocable.Action.AdditionalAttribute>"},
 		{Name: "getApexClass", ReturnType: "String"},
@@ -1047,6 +1049,8 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "getToolingType", ReturnType: "String"},
 		{Name: "getType", ReturnType: "String"},
 	}},
+	{Name: "Invocable.Action.OutputParameter"},
+	{Name: "Invocable.Action.PicklistValue"},
 	{Name: "Invocable.Action.Result", Methods: []StandardMethodSpec{
 		{Name: "clone", ReturnType: "Object"},
 		{Name: "getAction", ReturnType: "Invocable.Action"},
@@ -1060,7 +1064,7 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	}},
 	{Name: "Messaging.SingleEmailMessage", Methods: []StandardMethodSpec{
 		{Name: "setDocumentAttachments", ReturnType: "void", Parameters: []string{"List<Id>"}},
-		{Name: "setFileAttachments", ReturnType: "void", Parameters: []string{"List<EmailFileAttachment>"}},
+		{Name: "setFileAttachments", ReturnType: "void", Parameters: []string{"List<Messaging.EmailFileAttachment>"}},
 	}},
 	{Name: "Database", Methods: []StandardMethodSpec{
 		{Name: "countQueryWithBinds", ReturnType: "Integer", Parameters: []string{"String", "Map", "AccessLevel"}, Static: true},
@@ -1086,6 +1090,8 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "insertAsync", ReturnType: "Database.SaveResult", Parameters: []string{"Object", "Database.AllowCallouts", "AccessLevel"}, Static: true},
 		{Name: "insertImmediate", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "AccessLevel"}, Static: true},
 		{Name: "insertImmediate", ReturnType: "Database.SaveResult", Parameters: []string{"Object", "AccessLevel"}, Static: true},
+		{Name: "insert", ReturnType: "Database.SaveResult", Parameters: []string{"Object", "Database.DMLOptions"}, Static: true},
+		{Name: "insert", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "Database.DMLOptions"}, Static: true},
 		{Name: "insert", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "Database.DMLOptions", "AccessLevel"}, Static: true},
 		{Name: "insert", ReturnType: "Database.SaveResult", Parameters: []string{"Object", "Database.DMLOptions", "AccessLevel"}, Static: true},
 		{Name: "queryWithBinds", ReturnType: "List<SObject>", Parameters: []string{"String", "Map", "AccessLevel"}, Static: true},
@@ -1098,6 +1104,8 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "updateAsync", ReturnType: "Database.SaveResult", Parameters: []string{"Object", "Database.AllowCallouts", "AccessLevel"}, Static: true},
 		{Name: "updateImmediate", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "AccessLevel"}, Static: true},
 		{Name: "updateImmediate", ReturnType: "Database.SaveResult", Parameters: []string{"Object", "AccessLevel"}, Static: true},
+		{Name: "update", ReturnType: "Database.SaveResult", Parameters: []string{"Object", "Database.DMLOptions"}, Static: true},
+		{Name: "update", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "Database.DMLOptions"}, Static: true},
 		{Name: "update", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "Database.DMLOptions", "AccessLevel"}, Static: true},
 		{Name: "update", ReturnType: "Database.SaveResult", Parameters: []string{"Object", "Database.DMLOptions", "AccessLevel"}, Static: true},
 		{Name: "deleteImmediate", ReturnType: "List<Database.DeleteResult>", Parameters: []string{"List<Object>", "AccessLevel"}, Static: true},
