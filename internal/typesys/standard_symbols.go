@@ -1028,6 +1028,7 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "Limits", Methods: []StandardMethodSpec{{Name: "getAsyncJobs", ReturnType: "Integer", Static: true}, {Name: "getFutureCalls", ReturnType: "Integer", Static: true}, {Name: "getLimitAsyncJobs", ReturnType: "Integer", Static: true}, {Name: "getQueueableJobs", ReturnType: "Integer", Static: true}}},
 	{Name: "QueueableContext", Methods: []StandardMethodSpec{{Name: "getJobId", ReturnType: "Id"}}},
 	{Name: "SchedulableContext", Methods: []StandardMethodSpec{{Name: "getTriggerId", ReturnType: "Id"}}},
+	{Name: "TxnSecurity.AsyncCondition", Kind: apexast.DeclarationInterface},
 	{Name: "Test", Methods: []StandardMethodSpec{{Name: "clearApexPageMessages", ReturnType: "void", Static: true}}},
 	{Name: "ApexPages.KnowledgeArticleVersionStandardController", Methods: []StandardMethodSpec{
 		{Name: "setDataCategory", ReturnType: "void", Parameters: []string{"String", "String"}},

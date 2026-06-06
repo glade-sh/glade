@@ -32,40 +32,16 @@
       "notes": "Single-record async insert callback overload runs through local DML and invokes the callback."
     },
     {
-      "surfaceId": "apex:System.Database.insertAsync(Object,Object)",
-      "symbol": "Database.insertAsync",
-      "kind": "test",
-      "notes": "Signature-known single-record async insert callback overload runs through local DML."
-    },
-    {
-      "surfaceId": "apex:System.Database.insertAsync(Object,Object,Object)",
-      "symbol": "Database.insertAsync",
-      "kind": "test",
-      "notes": "Signature-known single-record async insert callback plus access-level overload runs through local DML."
-    },
-    {
       "surfaceId": "apex:System.Database.updateAsync(Object,DataSource.AsyncSaveCallback,AccessLevel)",
       "symbol": "Database.updateAsync",
       "kind": "test",
       "notes": "Single-record async update callback overload runs through local DML and invokes the callback."
     },
     {
-      "surfaceId": "apex:System.Database.updateAsync(Object,Object,Object)",
-      "symbol": "Database.updateAsync",
-      "kind": "test",
-      "notes": "Signature-known single-record async update callback plus access-level overload runs through local DML."
-    },
-    {
       "surfaceId": "apex:System.Database.deleteAsync(Object,DataSource.AsyncDeleteCallback,AccessLevel)",
       "symbol": "Database.deleteAsync",
       "kind": "test",
       "notes": "Single-record async delete callback overload runs through local DML and invokes the callback."
-    },
-    {
-      "surfaceId": "apex:System.Database.deleteAsync(Object,Object,Object)",
-      "symbol": "Database.deleteAsync",
-      "kind": "test",
-      "notes": "Signature-known single-record async delete callback plus access-level overload runs through local DML."
     }
   ],
   "source": [

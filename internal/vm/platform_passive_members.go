@@ -987,7 +987,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		case "isDone":
 			return databaseObjectGetter(receiver, method, args, "done", Bool(false))
 		}
-	case "QueueableContext", "BatchableContext", "Database.BatchableContext", "Database.BatchableContextImpl":
+	case "QueueableContext", "QueueableContextImpl", "BatchableContext", "Database.BatchableContext", "Database.BatchableContextImpl":
 		switch method {
 		case "getJobId":
 			if len(args) != 0 {

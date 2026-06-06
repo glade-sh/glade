@@ -20,22 +20,10 @@
       "notes": "List async insert callback overload invokes local callback rows."
     },
     {
-      "surfaceId": "apex:System.Database.insertAsync(List<Object>,Object)",
-      "symbol": "Database.insertAsync(List<Object>,Object)",
-      "kind": "test",
-      "notes": "Signature-known list async insert callback overload is exercised with a DataSource.AsyncSaveCallback object."
-    },
-    {
       "surfaceId": "apex:System.Database.insertAsync(List<Object>,DataSource.AsyncSaveCallback,AccessLevel)",
       "symbol": "Database.insertAsync(List<Object>,DataSource.AsyncSaveCallback,AccessLevel)",
       "kind": "test",
       "notes": "List async insert callback overload invokes local callback rows."
-    },
-    {
-      "surfaceId": "apex:System.Database.insertAsync(List<Object>,Object,Object)",
-      "symbol": "Database.insertAsync(List<Object>,Object,Object)",
-      "kind": "test",
-      "notes": "Signature-known list async insert callback plus access-level overload runs through local DML."
     },
     {
       "surfaceId": "apex:System.Database.updateAsync(List<Object>)",
@@ -56,22 +44,10 @@
       "notes": "List async update callback overload invokes local callback rows."
     },
     {
-      "surfaceId": "apex:System.Database.updateAsync(List<Object>,Object)",
-      "symbol": "Database.updateAsync(List<Object>,Object)",
-      "kind": "test",
-      "notes": "Signature-known list async update callback overload is exercised with a DataSource.AsyncSaveCallback object."
-    },
-    {
       "surfaceId": "apex:System.Database.updateAsync(List<Object>,DataSource.AsyncSaveCallback,AccessLevel)",
       "symbol": "Database.updateAsync(List<Object>,DataSource.AsyncSaveCallback,AccessLevel)",
       "kind": "test",
       "notes": "List async update callback overload invokes local callback rows."
-    },
-    {
-      "surfaceId": "apex:System.Database.updateAsync(List<Object>,Object,Object)",
-      "symbol": "Database.updateAsync(List<Object>,Object,Object)",
-      "kind": "test",
-      "notes": "Signature-known list async update callback plus access-level overload runs through local DML."
     },
     {
       "surfaceId": "apex:System.Database.deleteAsync(List<Object>)",
@@ -92,22 +68,10 @@
       "notes": "List async delete callback overload invokes local callback rows."
     },
     {
-      "surfaceId": "apex:System.Database.deleteAsync(List<Object>,Object)",
-      "symbol": "Database.deleteAsync(List<Object>,Object)",
-      "kind": "test",
-      "notes": "Signature-known list async delete callback overload is exercised with a DataSource.AsyncDeleteCallback object."
-    },
-    {
       "surfaceId": "apex:System.Database.deleteAsync(List<Object>,DataSource.AsyncDeleteCallback,AccessLevel)",
       "symbol": "Database.deleteAsync(List<Object>,DataSource.AsyncDeleteCallback,AccessLevel)",
       "kind": "test",
       "notes": "List async delete callback overload invokes local callback rows."
-    },
-    {
-      "surfaceId": "apex:System.Database.deleteAsync(List<Object>,Object,Object)",
-      "symbol": "Database.deleteAsync(List<Object>,Object,Object)",
-      "kind": "test",
-      "notes": "Signature-known list async delete callback plus access-level overload runs through local DML."
     }
   ],
   "source": [
@@ -129,7 +93,7 @@
     },
     {
       "path": "force-app/main/classes/AsyncDatabaseListDmlContractsTest.cls",
-      "content": "@isTest private class AsyncDatabaseListDmlContractsTest { @isTest static void listAsyncAliasesUseLocalDml() { List<SObject> firstInsert = new List<SObject>{new Account(Name = 'list one'), new Account(Name = 'list two')}; List<Database.SaveResult> inserted = Database.insertAsync(firstInsert); System.assertEquals(2, inserted.size()); System.assert(inserted.get(0).isSuccess()); List<SObject> accessInsert = new List<SObject>{new Account(Name = 'access one')}; List<Database.SaveResult> accessInserted = Database.insertAsync(accessInsert, AccessLevel.SYSTEM_MODE); System.assertEquals(1, accessInserted.size()); AsyncListSaveProbe saveCallback = new AsyncListSaveProbe(); List<SObject> callbackInsert = new List<SObject>{new Account(Name = 'callback one'), new Account(Name = 'callback two')}; List<Database.SaveResult> callbackInserted = Database.insertAsync(callbackInsert, saveCallback, AccessLevel.SYSTEM_MODE); System.assertEquals(2, callbackInserted.size()); System.assertEquals(2, AsyncListSaveProbe.calls); List<SObject> updates = new List<SObject>{new Account(Id = inserted.get(0).getId(), Name = 'list one updated'), new Account(Id = inserted.get(1).getId(), Name = 'list two updated')}; List<Database.SaveResult> updated = Database.updateAsync(updates); System.assertEquals(2, updated.size()); List<SObject> accessUpdates = new List<SObject>{new Account(Id = accessInserted.get(0).getId(), Name = 'access updated')}; System.assertEquals(1, Database.updateAsync(accessUpdates, AccessLevel.SYSTEM_MODE).size()); List<SObject> callbackUpdates = new List<SObject>{new Account(Id = callbackInserted.get(0).getId(), Name = 'callback one updated'), new Account(Id = callbackInserted.get(1).getId(), Name = 'callback two updated')}; System.assertEquals(2, Database.updateAsync(callbackUpdates, saveCallback, AccessLevel.SYSTEM_MODE).size()); System.assertEquals(4, AsyncListSaveProbe.calls); AsyncListDeleteProbe deleteCallback = new AsyncListDeleteProbe(); List<Database.DeleteResult> deleted = Database.deleteAsync(updates); System.assertEquals(2, deleted.size()); System.assertEquals(1, Database.deleteAsync(accessUpdates, AccessLevel.SYSTEM_MODE).size()); System.assertEquals(2, Database.deleteAsync(callbackUpdates, deleteCallback, AccessLevel.SYSTEM_MODE).size()); System.assertEquals(2, AsyncListDeleteProbe.calls); } }"
+      "content": "@isTest private class AsyncDatabaseListDmlContractsTest { @isTest static void listAsyncAliasesUseLocalDml() { List<SObject> firstInsert = new List<SObject>{new Account(Name = 'list one'), new Account(Name = 'list two')}; List<Database.SaveResult> inserted = Database.insertAsync(firstInsert); System.assertEquals(2, inserted.size()); System.assert(inserted.get(0).isSuccess()); List<SObject> accessInsert = new List<SObject>{new Account(Name = 'access one')}; List<Database.SaveResult> accessInserted = Database.insertAsync(accessInsert, AccessLevel.SYSTEM_MODE); System.assertEquals(1, accessInserted.size()); AsyncListSaveProbe saveCallback = new AsyncListSaveProbe(); List<SObject> callbackInsert = new List<SObject>{new Account(Name = 'callback one'), new Account(Name = 'callback two')}; List<Database.SaveResult> callbackInserted = Database.insertAsync(callbackInsert, saveCallback, AccessLevel.SYSTEM_MODE); System.assertEquals(2, callbackInserted.size()); List<SObject> bareCallbackInsert = new List<SObject>{new Account(Name = 'bare callback one')}; List<Database.SaveResult> bareCallbackInserted = Database.insertAsync(bareCallbackInsert, saveCallback); System.assertEquals(1, bareCallbackInserted.size()); System.assertEquals(3, AsyncListSaveProbe.calls); List<SObject> updates = new List<SObject>{new Account(Id = inserted.get(0).getId(), Name = 'list one updated'), new Account(Id = inserted.get(1).getId(), Name = 'list two updated')}; List<Database.SaveResult> updated = Database.updateAsync(updates); System.assertEquals(2, updated.size()); List<SObject> accessUpdates = new List<SObject>{new Account(Id = accessInserted.get(0).getId(), Name = 'access updated')}; System.assertEquals(1, Database.updateAsync(accessUpdates, AccessLevel.SYSTEM_MODE).size()); List<SObject> callbackUpdates = new List<SObject>{new Account(Id = callbackInserted.get(0).getId(), Name = 'callback one updated'), new Account(Id = callbackInserted.get(1).getId(), Name = 'callback two updated')}; System.assertEquals(2, Database.updateAsync(callbackUpdates, saveCallback, AccessLevel.SYSTEM_MODE).size()); List<SObject> bareCallbackUpdates = new List<SObject>{new Account(Id = bareCallbackInserted.get(0).getId(), Name = 'bare callback updated')}; System.assertEquals(1, Database.updateAsync(bareCallbackUpdates, saveCallback).size()); System.assertEquals(6, AsyncListSaveProbe.calls); AsyncListDeleteProbe deleteCallback = new AsyncListDeleteProbe(); List<Database.DeleteResult> deleted = Database.deleteAsync(updates); System.assertEquals(2, deleted.size()); System.assertEquals(1, Database.deleteAsync(accessUpdates, AccessLevel.SYSTEM_MODE).size()); System.assertEquals(2, Database.deleteAsync(callbackUpdates, deleteCallback, AccessLevel.SYSTEM_MODE).size()); System.assertEquals(1, Database.deleteAsync(bareCallbackUpdates, deleteCallback).size()); System.assertEquals(3, AsyncListDeleteProbe.calls); } }"
     }
   ],
   "command": {

@@ -1,0 +1,26 @@
+{
+  "name": "async-queueable-context-impl-shape",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.QueueableContextImpl.getJobId()",
+      "symbol": "QueueableContextImpl.getJobId",
+      "kind": "exec",
+      "notes": "The concrete QueueableContext implementation exposes an empty job id when constructed outside an async drain."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "QueueableContextImpl ctx = new QueueableContextImpl(); System.assertEquals('', ctx.getJobId());"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "QueueableContextImpl ctx = new QueueableContextImpl(); System.assertEquals('', ctx.getJobId());"
+    ]
+  },
+  "expected": {
+    "ok": true
+  }
+}

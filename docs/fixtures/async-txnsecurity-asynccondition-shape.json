@@ -1,0 +1,33 @@
+{
+  "name": "async-txnsecurity-asynccondition-shape",
+  "evidence": [
+    {
+      "surfaceId": "apex:TxnSecurity.AsyncCondition",
+      "symbol": "TxnSecurity.AsyncCondition",
+      "kind": "test",
+      "notes": "TxnSecurity.AsyncCondition is a public marker interface and can be implemented by local Apex test classes."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/AsyncConditionProbe.cls",
+      "content": "public class AsyncConditionProbe implements TxnSecurity.AsyncCondition {}"
+    },
+    {
+      "path": "force-app/main/classes/AsyncConditionProbeTest.cls",
+      "content": "@isTest private class AsyncConditionProbeTest { @isTest static void markerInterfaceCompiles() { System.assert(new AsyncConditionProbe() != null); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}
