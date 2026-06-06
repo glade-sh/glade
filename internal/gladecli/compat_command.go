@@ -96,7 +96,22 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 	}
 
 	for _, path := range args[1:] {
-		fixture, err := compat.LoadFile(path)
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		target, err := compatFixtureTarget(data)
+		if err != nil {
+			return err
+		}
+		handled, err := runCompatSpecialFixture(args[0], path, target, w)
+		if err != nil {
+			return err
+		}
+		if handled {
+			continue
+		}
+		fixture, err := compat.LoadData(data)
 		if err != nil {
 			return err
 		}
@@ -114,6 +129,32 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		fmt.Fprintf(w, "%s: ok\n", path)
 	}
 	return nil
+}
+
+func compatFixtureTarget(data []byte) (string, error) {
+	var header struct {
+		Target string `json:"target"`
+	}
+	if err := json.Unmarshal(data, &header); err != nil {
+		return "", err
+	}
+	return header.Target, nil
+}
+
+func runCompatSpecialFixture(mode, path, target string, w io.Writer) (bool, error) {
+	if target != "UI controller discovery" {
+		return false, nil
+	}
+	report, err := compat.CheckUIControllerDiscovery(path)
+	if err != nil {
+		return true, err
+	}
+	if mode == "run" {
+		fmt.Fprintf(w, "%s: ui-controllers ok=%t\n", path, report.Ready)
+		return true, nil
+	}
+	fmt.Fprintf(w, "%s: ok\n", path)
+	return true, nil
 }
 
 func compatUsage() string {

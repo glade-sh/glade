@@ -11,6 +11,8 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
+var documentedFixtureExampleProjectsName = strings.Join([]string{"local-tests", "example", "projects"}, "-")
+
 func TestFixtureJSONRoundTrip(t *testing.T) {
 	in := Fixture{
 		Name: "parser-smoke",
@@ -63,13 +65,15 @@ func TestRunDocumentedFixtures(t *testing.T) {
 		path := path
 		name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 		t.Run(name, func(t *testing.T) {
-			exampleFixture := strings.Join([]string{"local-tests", "example", "projects"}, "-")
-			if name == "local-tests-corpus" || name == exampleFixture || name == "ui-controller-discovery" || name == "post-parity-trace-events" {
+			if skipDocumentedFixture(name) {
 				t.Skip("compat baseline is validated by its focused check test")
 			}
 			fixture, err := LoadFile(path)
 			if err != nil {
 				t.Fatal(err)
+			}
+			if documentedFixtureRunsInParallel(fixture) {
+				t.Parallel()
 			}
 			result, err := Run(fixture)
 			if err != nil {
@@ -79,6 +83,24 @@ func TestRunDocumentedFixtures(t *testing.T) {
 				t.Fatalf("%s result = %#v", path, result)
 			}
 		})
+	}
+}
+
+func skipDocumentedFixture(name string) bool {
+	switch name {
+	case "local-tests-corpus", documentedFixtureExampleProjectsName, "ui-controller-discovery", "post-parity-trace-events":
+		return true
+	default:
+		return false
+	}
+}
+
+func documentedFixtureRunsInParallel(fixture Fixture) bool {
+	switch fixture.Command.Kind {
+	case "db", "server":
+		return false
+	default:
+		return true
 	}
 }
 

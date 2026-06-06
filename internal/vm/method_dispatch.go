@@ -193,6 +193,16 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		if className == "" {
 			className = receiver.Type
 		}
+		if strings.EqualFold(className, "Invocable.Action") &&
+			(strings.EqualFold(apexMethodMemberName(method.Name), "createCustomAction") || strings.EqualFold(apexMethodMemberName(method.Name), "createStandardAction")) {
+			callArgs := make([]Value, 0, len(method.Params))
+			for _, param := range method.Params {
+				callArgs = append(callArgs, frame[param.Name])
+			}
+			if value, handled := newInvocableAction(apexMethodMemberName(method.Name), callArgs); handled {
+				return value, nil
+			}
+		}
 		if receiver.Kind == ValueObject && strings.EqualFold(className, "Invocable.Action") {
 			callArgs := make([]Value, 0, len(method.Params))
 			for _, param := range method.Params {
@@ -1323,7 +1333,7 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"getInReplyToId", "getLayout", "getParameters", "getQuickActionName", "getRecord", "getSuccessMessage",
 		"getTargetParentField", "getTargetRecordTypeId", "getTargetSObject", "getTargetSobjectType",
 		"getContextSobjectType", "getIds", "isCreated", "isEditableForNew", "isEditableForUpdate",
-		"isPlaceholder", "isRequired", "isSuccess", "setContextId", "setIgnoreTemplateSubject",
+		"isPlaceholder", "isRequired", "isStandard", "isSuccess", "setContextId", "setIgnoreTemplateSubject",
 		"setInsertTemplateBody", "setQuickActionName", "setRecord", "setTemplateId",
 	}
 	if isExceptionType(typeName) {
@@ -1577,11 +1587,13 @@ func authConfigurationPlatformObjectType(typeName string) bool {
 }
 
 func localRuntimeHarnessPlatformObjectType(typeName string) bool {
-	switch strings.ToLower(typeName) {
-	case "eventbus.testbroker",
-		"externalservicetest",
-		"testasynchttp",
-		"functions.functioninvokemock":
+	switch {
+	case strings.EqualFold(typeName, "eventbus.testbroker"),
+		strings.EqualFold(typeName, "externalservicetest"),
+		strings.EqualFold(typeName, "invocable.action"),
+		strings.EqualFold(typeName, "invocable.action.result"),
+		strings.EqualFold(typeName, "testasynchttp"),
+		strings.EqualFold(typeName, "functions.functioninvokemock"):
 		return true
 	default:
 		return false

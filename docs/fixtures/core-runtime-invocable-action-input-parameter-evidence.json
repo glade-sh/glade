@@ -2,6 +2,12 @@
   "name": "core-runtime-invocable-action-input-parameter-evidence",
   "evidence": [
     {
+      "surfaceId": "apex:Invocable.Action.AdditionalAttribute",
+      "symbol": "Invocable.Action.AdditionalAttribute",
+      "kind": "test",
+      "notes": "Local compile shape accepts the documented AdditionalAttribute DTO type through InputParameter.getAdditionalAttributes()."
+    },
+    {
       "surfaceId": "apex:Invocable.Action.InputParameter.getAdditionalAttributes()",
       "symbol": "Invocable.Action.InputParameter.getAdditionalAttributes",
       "kind": "test",
@@ -101,7 +107,7 @@
   "source": [
     {
       "path": "force-app/main/classes/CoreRuntimeInvocableActionInputParameterEvidenceTest.cls",
-      "content": "@isTest private class CoreRuntimeInvocableActionInputParameterEvidenceTest { @isTest static void rows() { Invocable.Action action = Invocable.Action.createStandardAction('localNoop'); action.addInvocation(); action.setInvocationParameter('name', 'Trail'); Invocable.Action.DescribeResult describe = action.getDescribe()[0]; List<Invocable.Action.InputParameter> inputs = describe.getInputs(); System.assertEquals(1, inputs.size()); Invocable.Action.InputParameter input = inputs[0]; System.assertEquals(0, input.getAdditionalAttributes().size()); System.assertEquals('', input.getApexClass()); System.assertEquals(0, input.getByteLength()); System.assertEquals(false, input.getConfiguration()); System.assertEquals(null, input.getDefaultValue()); System.assertEquals('', input.getDescription()); System.assertEquals('name', input.getLabel()); System.assertEquals(1, input.getMaxOccurs()); System.assertEquals('name', input.getName()); System.assertEquals(0, input.getPicklistValues().size()); System.assertEquals('', input.getPlaceholderText()); System.assertEquals(false, input.getRequired()); System.assertEquals('', input.getSObjectType()); System.assertEquals(0, input.getSetupReferenceType().size()); System.assertEquals('String', input.getToolingType()); System.assertEquals('String', input.getType()); } }"
+      "content": "@isTest private class CoreRuntimeInvocableActionInputParameterEvidenceTest { @isTest static void rows() { Invocable.Action action = Invocable.Action.createStandardAction('localNoop'); action.addInvocation(); action.setInvocationParameter('name', 'Trail'); Invocable.Action.DescribeResult describe = action.getDescribe()[0]; List<Invocable.Action.InputParameter> inputs = describe.getInputs(); System.assertEquals(1, inputs.size()); Invocable.Action.InputParameter input = inputs[0]; List<Invocable.Action.AdditionalAttribute> attrs = input.getAdditionalAttributes(); System.assertEquals(0, attrs.size()); System.assertEquals('', input.getApexClass()); System.assertEquals(0, input.getByteLength()); System.assertEquals(false, input.getConfiguration()); System.assertEquals(null, input.getDefaultValue()); System.assertEquals('', input.getDescription()); System.assertEquals('name', input.getLabel()); System.assertEquals(1, input.getMaxOccurs()); System.assertEquals('name', input.getName()); System.assertEquals(0, input.getPicklistValues().size()); System.assertEquals('', input.getPlaceholderText()); System.assertEquals(false, input.getRequired()); System.assertEquals('', input.getSObjectType()); System.assertEquals(0, input.getSetupReferenceType().size()); System.assertEquals('String', input.getToolingType()); System.assertEquals('String', input.getType()); } }"
     }
   ],
   "command": {

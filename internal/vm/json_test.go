@@ -259,6 +259,27 @@ try {
 	}
 }
 
+func TestExecJSONDeserializeUntypedMapIsInstanceOfMapStringObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object root = JSON.deserializeUntyped('{"payload":{"id":"V-1"},"items":[{"id":"I-1"}]}');
+System.assert(root instanceof Map<String,Object>, 'root map should be Map<String,Object>');
+Map<String,Object> rootMap = (Map<String,Object>)root;
+Object payload = rootMap.get('payload');
+System.assert(payload instanceof Map<String,Object>, 'payload should be Map<String,Object>');
+Object items = rootMap.get('items');
+System.assert(items instanceof List<Object>, 'items should be List<Object>');
+Object firstItem = ((List<Object>)items)[0];
+System.assert(firstItem instanceof Map<String,Object>, 'list item should be Map<String,Object>');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONUntypedListCastsMapsToTypedSObjects(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object raw = JSON.deserializeUntyped('[{"attributes":{"type":"Account"},"Name":"Acme"}]');

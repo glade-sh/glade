@@ -2,6 +2,7 @@ package dml
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -59,6 +60,22 @@ func TestInsertUpdateDelete(t *testing.T) {
 	}
 	if got := org.Objects["Account"].Records[insert[0].ID].System.SystemModstamp; got != "2026-05-02T12:10:00Z" {
 		t.Fatalf("system modstamp after delete = %q", got)
+	}
+}
+
+func TestNewEngineAvoidsSecondPrefixMapCopy(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001"}}
+	for i := 0; i < 128; i++ {
+		name := fmt.Sprintf("EngineReady_%03d__c", i)
+		org.Objects[name] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: name, KeyPrefix: fmt.Sprintf("b%02x", i)}}
+	}
+
+	allocs := testing.AllocsPerRun(20, func() {
+		_ = NewEngine(&org)
+	})
+	if allocs > 12 {
+		t.Fatalf("NewEngine allocs = %.0f, want <= 12", allocs)
 	}
 }
 

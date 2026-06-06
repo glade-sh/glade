@@ -961,6 +961,13 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 	if value.Kind == ValueMap && (vm.isSObjectLikeType(typeName) || vm.isJSONTypedObjectTarget(typeName)) {
 		return vm.typedValueFromJSON(typeName, jsonFromValue(value, false), false)
 	}
+	if strings.EqualFold(typeName, "Object") && (value.Kind == ValueMap || value.Kind == ValueList || value.Kind == ValueSet) {
+		if value.Runtime == "" && value.Type != "" && !strings.EqualFold(value.Type, "Object") {
+			value.Runtime = value.Type
+		}
+		value.Static = typeName
+		return value, nil
+	}
 	if strings.EqualFold(typeName, "String") {
 		if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
 			idText, ok := platformScalarObjectText(value)

@@ -399,6 +399,35 @@ func TestRunCompatRun(t *testing.T) {
 	}
 }
 
+func TestRunCompatValidateAndRunUIControllerDiscovery(t *testing.T) {
+	for _, subcommand := range []string{"validate", "run"} {
+		t.Run(subcommand, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			path := "../../docs/fixtures/ui-controller-discovery.json"
+			code := Run(context.Background(), []string{"compat", subcommand, path}, &stdout, &stderr)
+			if code != 0 {
+				t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+			}
+			if !strings.Contains(stdout.String(), "ui-controller-discovery.json:") {
+				t.Fatalf("stdout did not include discovery status: %q", stdout.String())
+			}
+			if subcommand == "validate" {
+				stdout.Reset()
+				stderr.Reset()
+				code = Run(context.Background(), []string{"compat", subcommand, path, "../../docs/fixtures/parser-smoke.json"}, &stdout, &stderr)
+				if code != 0 {
+					t.Fatalf("mixed fixture exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+				}
+				for _, want := range []string{"ui-controller-discovery.json: ok", "parser-smoke.json: ok"} {
+					if !strings.Contains(stdout.String(), want) {
+						t.Fatalf("mixed fixture stdout missing %q: %q", want, stdout.String())
+					}
+				}
+			}
+		})
+	}
+}
+
 func TestRunCompatReplay(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"compat", "replay", "../../testdata/replay/selector-service-domain"}, &stdout, &stderr)

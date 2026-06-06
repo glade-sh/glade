@@ -20,7 +20,19 @@
       "notes": "DeletedRecord exposes the deleted local record Id."
     },
     {
+      "surfaceId": "apex:Database.DeletedRecord.getId()",
+      "symbol": "Database.DeletedRecord.getId()",
+      "kind": "test",
+      "notes": "DeletedRecord exposes the deleted local record Id."
+    },
+    {
       "surfaceId": "apex:System.Database.DeletedRecord.getDeletedDate()",
+      "symbol": "Database.DeletedRecord.getDeletedDate()",
+      "kind": "test",
+      "notes": "DeletedRecord exposes the local deletion DateTime."
+    },
+    {
+      "surfaceId": "apex:Database.DeletedRecord.getDeletedDate()",
       "symbol": "Database.DeletedRecord.getDeletedDate()",
       "kind": "test",
       "notes": "DeletedRecord exposes the local deletion DateTime."

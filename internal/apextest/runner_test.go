@@ -5606,6 +5606,34 @@ private class JSONPropertySetterTest {
 	}
 }
 
+func TestRunJSONDeserializeUntypedMapsMatchMapStringObjectInstanceOf(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSONUntypedMapInstanceOfTest.cls"), `
+@isTest
+private class JSONUntypedMapInstanceOfTest {
+  @isTest static void untypedNestedMapsAreMapStringObject() {
+    List<Object> rows = (List<Object>)JSON.deserializeUntyped(
+      '[{"payload":{"id":"V-1","settings":{"organizationId":"ORG"}}}]'
+    );
+    Map<String,Object> row = (Map<String,Object>)rows[0];
+    Object payload = row.get('payload');
+    System.assert(payload instanceof Map<String,Object>, 'payload should be Map<String,Object>');
+    Map<String,Object> payloadMap = (Map<String,Object>)payload;
+    System.assertEquals('V-1', (String)payloadMap.get('id'));
+    Object settings = payloadMap.get('settings');
+    System.assert(settings instanceof Map<String,Object>, 'settings should be Map<String,Object>');
+    System.assertEquals('ORG', (String)((Map<String,Object>)settings).get('organizationId'));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestRunJSONDeserializePopulatesCustomGetterAutoSetterListProperty(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

@@ -301,8 +301,13 @@ func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys
 			return StubBehaviorImplemented, "local Invocable.Action.invoke returns deterministic Result DTOs with action, error, invocation, output, and success accessors", true
 		}
 	case "Invocable.Action":
-		if name == "getdescribe" {
+		switch name {
+		case "addinvocation", "clearinvocations", "getdescribe", "invoke", "setinvocationparameter", "setinvocations":
 			return StubBehaviorImplemented, "local Invocable.Action.getDescribe returns deterministic DescribeResult DTOs for local tests", true
+		case "getname", "getnamespace", "gettype", "getversion", "isstandard":
+			return StubBehaviorImplemented, "local Invocable.Action accessors return the deterministic action DTO fields created by local factory methods", true
+		case "createcustomaction", "createstandardaction":
+			return StubBehaviorImplemented, "local Invocable.Action factory methods create deterministic action DTOs for local tests", true
 		}
 	case "Invocable.Action.DescribeResult":
 		switch name {

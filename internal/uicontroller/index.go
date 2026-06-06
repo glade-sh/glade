@@ -361,12 +361,39 @@ func resolveApex(idx typesys.Index, className, methodName string) (bool, string,
 			continue
 		}
 		for _, member := range typ.Members {
-			if member.Kind == apexast.DeclarationMethod && strings.EqualFold(member.Name, methodName) {
+			if member.Kind == apexast.DeclarationMethod && strings.EqualFold(member.Name, methodName) && uiCallableMethod(member.Modifiers) {
 				return true, member.Type, member.Parameters
 			}
 		}
 	}
 	return false, "", nil
+}
+
+func uiCallableMethod(modifiers []string) bool {
+	hasStatic := false
+	hasAuraEnabled := false
+	for _, modifier := range modifiers {
+		normalized := strings.TrimPrefix(strings.TrimSpace(modifier), "@")
+		if strings.EqualFold(normalized, "static") {
+			hasStatic = true
+			continue
+		}
+		if uiAuraEnabledModifier(normalized) {
+			hasAuraEnabled = true
+		}
+	}
+	return hasStatic && hasAuraEnabled
+}
+
+func uiAuraEnabledModifier(modifier string) bool {
+	const auraEnabled = "AuraEnabled"
+	if strings.EqualFold(modifier, auraEnabled) {
+		return true
+	}
+	if len(modifier) <= len(auraEnabled) || modifier[len(auraEnabled)] != '(' {
+		return false
+	}
+	return strings.EqualFold(modifier[:len(auraEnabled)], auraEnabled)
 }
 
 func apexClassCandidates(idx typesys.Index, className string) []string {

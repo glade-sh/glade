@@ -1703,7 +1703,16 @@ func (vm *VM) enforceSOQLRelationshipSecurity(objectName, expression, mode strin
 	if !ok || len(targets) == 0 {
 		return nil
 	}
-	fieldName := parts[1]
+	if !vm.soqlRelationshipSecurityTargetsAllowed(targets, parts[1:]) {
+		return newExceptionError("QueryException", fmt.Sprintf("No such column '%s' on entity '%s' for %s", expression, objectName, mode))
+	}
+	return nil
+}
+
+func (vm *VM) soqlRelationshipSecurityTargetsAllowed(targets []string, parts []string) bool {
+	if len(targets) == 0 || len(parts) == 0 {
+		return false
+	}
 	for _, target := range targets {
 		targetName := target
 		if canonical, ok := vm.resolveObjectName(target); ok {
@@ -1711,14 +1720,24 @@ func (vm *VM) enforceSOQLRelationshipSecurity(objectName, expression, mode strin
 		}
 		object, ok := vm.Org.Objects[targetName]
 		if !ok {
-			return newExceptionError("QueryException", fmt.Sprintf("No such column '%s' on entity '%s' for %s", expression, objectName, mode))
+			return false
 		}
-		canonicalField, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, fieldName)
-		if !ok || !vm.currentUserFieldPermission(targetName, canonicalField, "isAccessible") {
-			return newExceptionError("QueryException", fmt.Sprintf("No such column '%s' on entity '%s' for %s", expression, objectName, mode))
+		if len(parts) == 1 {
+			canonicalField, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, parts[0])
+			if !ok || !vm.currentUserFieldPermission(targetName, canonicalField, "isAccessible") {
+				return false
+			}
+			continue
+		}
+		nestedTargets, ok := vm.parentRelationshipTargets(targetName, parts[0])
+		if !ok || len(nestedTargets) == 0 {
+			return false
+		}
+		if !vm.soqlRelationshipSecurityTargetsAllowed(nestedTargets, parts[1:]) {
+			return false
 		}
 	}
-	return nil
+	return true
 }
 
 func soqlSecurityExpressionBeforeAlias(expression string) (string, bool) {

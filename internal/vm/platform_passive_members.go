@@ -233,6 +233,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if value, handled, err := vm.callTypeObjectMember(receiver, method, args, result); handled || err != nil {
 		return value, receiver, false, true, err
 	}
+	if strings.EqualFold(receiver.Type, "Invocable.Action") {
+		if value, handled := vm.callInvocableActionMember(receiver, method, args); handled {
+			return value, receiver, true, true, nil
+		}
+	}
+	if strings.EqualFold(receiver.Type, "Invocable.Action.Result") {
+		if value, handled := callInvocableActionResultMember(receiver, method, args); handled {
+			return value, receiver, false, true, nil
+		}
+	}
 	if value, updated, mutated, handled, err := vm.callRegisteredPlatformObjectMemberPhase("early", receiver, method, args, result); handled || err != nil {
 		return value, updated, mutated, true, err
 	}

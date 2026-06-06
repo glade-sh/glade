@@ -1,6 +1,9 @@
 package storage
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestIDGeneratorUsesDeterministicObjectSequences(t *testing.T) {
 	g := NewIDGenerator(map[string]string{
@@ -89,6 +92,23 @@ func TestEnsureUniqueKeyPrefixesReassignsDuplicateCustomPrefixes(t *testing.T) {
 	}
 	if got := org.Objects["Account"].Definition.KeyPrefix; got != "001" {
 		t.Fatalf("Account prefix = %q", got)
+	}
+}
+
+func TestEnsureUniqueKeyPrefixesFastPathAvoidsFullPrefixRebuild(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["Account"] = ObjectState{Definition: ObjectDefinition{APIName: "Account", KeyPrefix: "001"}}
+	org.Objects["Contact"] = ObjectState{Definition: ObjectDefinition{APIName: "Contact", KeyPrefix: "003"}}
+	for i := 0; i < 128; i++ {
+		name := fmt.Sprintf("Ready_%03d__c", i)
+		org.Objects[name] = ObjectState{Definition: ObjectDefinition{APIName: name, KeyPrefix: customPrefix(i + 1000)}}
+	}
+
+	allocs := testing.AllocsPerRun(20, func() {
+		EnsureUniqueKeyPrefixes(&org)
+	})
+	if allocs != 0 {
+		t.Fatalf("allocs per ready-org EnsureUniqueKeyPrefixes = %.0f, want 0", allocs)
 	}
 }
 

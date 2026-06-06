@@ -9455,6 +9455,20 @@ System.runAs(u) {
 	}
 }
 
+func TestSOQLUserModeRelationshipSecurityAllowsMetadataRelationshipChain(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "RelationshipDomain")
+	storage.EnsureStandardObject(&org, "EntityDefinition")
+	storage.EnsureStandardObject(&org, "UserEntityAccess")
+	machine := New(nil)
+	machine.SetOrg(&org)
+
+	err := machine.enforceSOQLRelationshipSecurity("RelationshipDomain", "ChildSobject.RunningUserEntityAccess.IsCreatable", "USER_MODE")
+	if err != nil {
+		t.Fatalf("relationship security: %v", err)
+	}
+}
+
 func TestExecDatabaseUserModeChecksLocalObjectAndFieldPermissions(t *testing.T) {
 	program, err := CompileAnonymous(`
 Database.SaveResult result = Database.update(new Account(Id = '001000000000901AAA', ShippingStreet = 'Baker'), AccessLevel.USER_MODE);

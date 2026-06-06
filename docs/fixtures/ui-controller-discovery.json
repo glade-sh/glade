@@ -1,41 +1,47 @@
 {
   "target": "UI controller discovery",
-  "ready": true,
+  "ready": false,
   "project": "../../testdata/local-tests/ui-controller-discovery",
   "summary": {
     "auraBundles": 1,
     "lwcBundles": 1,
-    "apexMethods": 4,
+    "apexMethods": 5,
     "resolvedApex": 4,
-    "unresolvedApex": 0,
-    "lwcImports": 9,
+    "unresolvedApex": 1,
+    "lwcImports": 10,
     "wires": 2
   },
   "apexMethods": [
     {
       "framework": "aura",
-      "className": "WidgetController",
+      "className": "pkg.WidgetController",
       "methodName": "getWidget",
       "resolved": true,
       "returnType": "String"
     },
     {
       "framework": "aura",
-      "className": "WidgetController",
+      "className": "pkg.WidgetController",
       "methodName": "saveWidget",
       "resolved": true,
       "returnType": "void"
     },
     {
       "framework": "lwc",
-      "className": "WidgetController",
+      "className": "pkg.WidgetController",
       "methodName": "getWidget",
       "resolved": true,
       "returnType": "String"
     },
     {
       "framework": "lwc",
-      "className": "WidgetController",
+      "className": "pkg.WidgetController",
+      "methodName": "internalOnly",
+      "resolved": false
+    },
+    {
+      "framework": "lwc",
+      "className": "pkg.WidgetController",
       "methodName": "saveWidget",
       "resolved": true,
       "returnType": "void"
@@ -45,14 +51,14 @@
     {
       "bundle": "Widget",
       "name": "getWidget",
-      "className": "WidgetController",
+      "className": "pkg.WidgetController",
       "resolved": true,
       "returnType": "String"
     },
     {
       "bundle": "Widget",
       "name": "saveWidget",
-      "className": "WidgetController",
+      "className": "pkg.WidgetController",
       "resolved": true,
       "returnType": "void"
     }
@@ -62,14 +68,21 @@
       "bundle": "widget",
       "localName": "getWidget",
       "kind": "apex",
-      "className": "WidgetController",
+      "className": "pkg.WidgetController",
       "methodName": "getWidget"
+    },
+    {
+      "bundle": "widget",
+      "localName": "internalOnly",
+      "kind": "apex",
+      "className": "pkg.WidgetController",
+      "methodName": "internalOnly"
     },
     {
       "bundle": "widget",
       "localName": "saveWidget",
       "kind": "apex",
-      "className": "WidgetController",
+      "className": "pkg.WidgetController",
       "methodName": "saveWidget"
     },
     {
@@ -127,7 +140,7 @@
       "bundle": "widget",
       "adapter": "getWidget",
       "adapterKind": "apex",
-      "apexClassName": "WidgetController",
+      "apexClassName": "pkg.WidgetController",
       "apexMethodName": "getWidget",
       "reactiveParameters": [
         "accountId"

@@ -1,6 +1,7 @@
 import { LightningElement, wire } from 'lwc';
-import getWidget from '@salesforce/apex/WidgetController.getWidget';
-import saveWidget from '@salesforce/apex/WidgetController.saveWidget';
+import getWidget from '@salesforce/apex/pkg.WidgetController.getWidget';
+import saveWidget from '@salesforce/apex/pkg.WidgetController.saveWidget';
+import internalOnly from '@salesforce/apex/pkg.WidgetController.internalOnly';
 import Save from '@salesforce/label/c.Save';
 import RES from '@salesforce/resourceUrl/WidgetAssets';
 import ACCOUNT_NAME from '@salesforce/schema/Account.Name';

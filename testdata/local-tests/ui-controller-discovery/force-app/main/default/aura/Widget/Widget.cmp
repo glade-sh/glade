@@ -1,4 +1,4 @@
-<aura:component controller="WidgetController">
+<aura:component controller="pkg.WidgetController">
   <c:child value="{!v.recordId}" />
   <lightning:button label="Save" press="{!c.saveWidget}" />
 </aura:component>

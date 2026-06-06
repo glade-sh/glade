@@ -7,4 +7,8 @@ public class WidgetController {
   @AuraEnabled
   public static void saveWidget(String accountId) {
   }
+
+  public static String internalOnly() {
+    return 'hidden';
+  }
 }

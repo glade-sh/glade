@@ -100,7 +100,7 @@ func BuildStubContractReport(sourceRoot string) (StubContractReport, error) {
 		report.Entries = append(report.Entries, contract)
 	}
 	sort.Slice(report.Entries, func(i, j int) bool {
-		return report.Entries[i].ID < report.Entries[j].ID
+		return lessStubContractEntry(report.Entries[i], report.Entries[j])
 	})
 	report.Totals = countStubContractTotals(report.Entries)
 	return report, nil
@@ -183,9 +183,65 @@ func BuildStubContractProbeManifest(report StubContractReport, tier string) []St
 		specs = append(specs, spec)
 	}
 	sort.Slice(specs, func(i, j int) bool {
-		return specs[i].ID < specs[j].ID
+		return lessStubContractProbeSpec(specs[i], specs[j])
 	})
 	return specs
+}
+
+func lessStubContractEntry(a, b StubContractEntry) bool {
+	if a.ID != b.ID {
+		return a.ID < b.ID
+	}
+	if a.Type != b.Type {
+		return a.Type < b.Type
+	}
+	if a.Member != b.Member {
+		return a.Member < b.Member
+	}
+	if a.Kind != b.Kind {
+		return a.Kind < b.Kind
+	}
+	if a.Static != b.Static {
+		return !a.Static && b.Static
+	}
+	if a.ReturnType != b.ReturnType {
+		return a.ReturnType < b.ReturnType
+	}
+	return lessStringSlice(a.Parameters, b.Parameters)
+}
+
+func lessStubContractProbeSpec(a, b StubContractProbeSpec) bool {
+	if a.ID != b.ID {
+		return a.ID < b.ID
+	}
+	if a.ContractID != b.ContractID {
+		return a.ContractID < b.ContractID
+	}
+	if a.Type != b.Type {
+		return a.Type < b.Type
+	}
+	if a.Member != b.Member {
+		return a.Member < b.Member
+	}
+	if a.Kind != b.Kind {
+		return a.Kind < b.Kind
+	}
+	if a.Static != b.Static {
+		return !a.Static && b.Static
+	}
+	if a.ReturnType != b.ReturnType {
+		return a.ReturnType < b.ReturnType
+	}
+	return lessStringSlice(a.Parameters, b.Parameters)
+}
+
+func lessStringSlice(a, b []string) bool {
+	for i := 0; i < len(a) && i < len(b); i++ {
+		if a[i] != b[i] {
+			return a[i] < b[i]
+		}
+	}
+	return len(a) < len(b)
 }
 
 func buildStubContractEntry(entry StubBehaviorEntry) StubContractEntry {

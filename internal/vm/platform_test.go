@@ -11720,6 +11720,42 @@ System.assertEquals(false, upperResults.get(0).isSuccess(), 'upper OptAllOrNone 
 	}
 }
 
+func TestExecInvocableActionInvocationDTOAccessors(t *testing.T) {
+	program, err := CompileAnonymous(`
+Invocable.Action action = Invocable.Action.createStandardAction('localNoop');
+System.assertEquals('localNoop', action.getName());
+System.assertEquals('localNoop', action.getType());
+System.assertEquals('', action.getNamespace());
+System.assertEquals('', action.getVersion());
+System.assertEquals(true, action.isStandard());
+System.assertEquals(action, action.addInvocation());
+System.assertEquals(action, action.setInvocationParameter('name', 'trail'));
+List<Invocable.Action.Result> results = action.invoke();
+System.assertEquals(1, results.size());
+Invocable.Action.Result result = results[0];
+System.assertEquals(action, result.getAction());
+System.assertEquals(true, result.isSuccess());
+System.assertEquals(0, result.getErrors().size());
+System.assertEquals('trail', (String)result.getInvocationParameters().get('name'));
+System.assertEquals(0, result.getOutputParameters().size());
+Invocable.Action.Result copied = (Invocable.Action.Result)result.clone();
+System.assertEquals(true, copied.isSuccess());
+System.assertEquals('trail', (String)copied.getInvocationParameters().get('name'));
+Invocable.Action custom = Invocable.Action.createCustomAction('flow', 'ns', 'TrailAction', '58.0');
+System.assertEquals('TrailAction', custom.getName());
+System.assertEquals('flow', custom.getType());
+System.assertEquals('ns', custom.getNamespace());
+System.assertEquals('58.0', custom.getVersion());
+System.assertEquals(false, custom.isStandard());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseResultAccessorsAcrossLocalDML(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account base = new Account(Name = 'Base');

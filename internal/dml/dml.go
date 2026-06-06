@@ -101,7 +101,7 @@ func NewEngine(org *storage.OrgState) Engine {
 			prefixes[name] = object.Definition.KeyPrefix
 		}
 	}
-	ids := storage.NewRuntimeIDGenerator(prefixes)
+	ids := storage.NewRuntimeIDGeneratorWithOwnedPrefixes(prefixes)
 	ids.Sequences = copySequences(org.IDSequences)
 	now := func() time.Time { return time.Now().UTC() }
 	if org.Now != nil {

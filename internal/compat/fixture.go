@@ -114,6 +114,10 @@ func LoadFile(path string) (Fixture, error) {
 	if err != nil {
 		return Fixture{}, err
 	}
+	return LoadData(data)
+}
+
+func LoadData(data []byte) (Fixture, error) {
 	var fixture Fixture
 	if err := json.Unmarshal(data, &fixture); err != nil {
 		return Fixture{}, err

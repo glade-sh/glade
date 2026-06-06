@@ -75,30 +75,10 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 	if !vm.generatedPlatformMethodAllowsDefault(method) {
 		return Null, false
 	}
-	if strings.EqualFold(className, "Invocable.Action") && (strings.EqualFold(methodName, "createCustomAction") || strings.EqualFold(methodName, "createStandardAction")) {
-		action := Object("Invocable.Action")
-		if len(args) > 0 {
-			action.Fields["type"] = args[0]
+	if strings.EqualFold(className, "Invocable.Action") {
+		if action, handled := newInvocableAction(methodName, args); handled {
+			return action, true
 		}
-		if strings.EqualFold(methodName, "createCustomAction") {
-			switch len(args) {
-			case 2:
-				action.Fields["name"] = args[1]
-			case 3, 4:
-				action.Fields["namespace"] = args[1]
-				action.Fields["name"] = args[2]
-				if len(args) == 4 {
-					action.Fields["version"] = args[3]
-				}
-			}
-			action.Fields["standard"] = Bool(false)
-		} else {
-			if len(args) > 1 {
-				action.Fields["version"] = args[1]
-			}
-			action.Fields["standard"] = Bool(true)
-		}
-		return action, true
 	}
 	return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
 }
@@ -1207,6 +1187,34 @@ func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args 
 			return Null, false
 		}
 		return invocableActionDescribeResults(receiver), true
+	case strings.EqualFold(methodName, "getName"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		return String(invocableActionDisplayName(receiver)), true
+	case strings.EqualFold(methodName, "getNamespace"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		return String(invocableActionStringField(receiver, "namespace")), true
+	case strings.EqualFold(methodName, "getType"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		return String(invocableActionType(receiver)), true
+	case strings.EqualFold(methodName, "getVersion"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		return String(invocableActionStringField(receiver, "version")), true
+	case strings.EqualFold(methodName, "isStandard"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		if value, ok := receiver.Fields["standard"]; ok && value.Kind == ValueBool {
+			return value, true
+		}
+		return Bool(false), true
 	case strings.EqualFold(methodName, "invoke"):
 		if len(args) != 0 {
 			return Null, false
@@ -1231,11 +1239,97 @@ func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args 
 	}
 }
 
+func newInvocableAction(methodName string, args []Value) (Value, bool) {
+	if !strings.EqualFold(methodName, "createCustomAction") && !strings.EqualFold(methodName, "createStandardAction") {
+		return Null, false
+	}
+	action := Object("Invocable.Action")
+	if len(args) > 0 {
+		action.Fields["type"] = args[0]
+	}
+	if strings.EqualFold(methodName, "createCustomAction") {
+		switch len(args) {
+		case 2:
+			action.Fields["name"] = args[1]
+		case 3, 4:
+			action.Fields["namespace"] = args[1]
+			action.Fields["name"] = args[2]
+			if len(args) == 4 {
+				action.Fields["version"] = args[3]
+			}
+		}
+		action.Fields["standard"] = Bool(false)
+		return action, true
+	}
+	if len(args) > 0 {
+		action.Fields["name"] = args[0]
+	}
+	if len(args) > 1 {
+		action.Fields["version"] = args[1]
+	}
+	action.Fields["standard"] = Bool(true)
+	return action, true
+}
+
 func invocableActionInvocations(action Value) Value {
 	if invocations, ok := action.Fields["invocations"]; ok && invocations.Kind == ValueList {
 		return invocations
 	}
 	return typedList("List<Map<String,Object>>")
+}
+
+func callInvocableActionResultMember(receiver Value, methodName string, args []Value) (Value, bool) {
+	switch {
+	case strings.EqualFold(methodName, "clone"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		cloned := cloneValue(receiver)
+		cloned.Ref = newValueRef()
+		return cloned, true
+	case strings.EqualFold(methodName, "getAction"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		if _, value, ok := objectFieldValue(receiver, "action"); ok {
+			return value, true
+		}
+		return Null, true
+	case strings.EqualFold(methodName, "getErrors"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		if _, value, ok := objectFieldValue(receiver, "errors"); ok {
+			return value, true
+		}
+		return typedList("List<Invocable.Action.Error>"), true
+	case strings.EqualFold(methodName, "getInvocationParameters"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		if _, value, ok := objectFieldValue(receiver, "invocationParameters"); ok {
+			return value, true
+		}
+		return typedMap("Map<String,Object>"), true
+	case strings.EqualFold(methodName, "getOutputParameters"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		if _, value, ok := objectFieldValue(receiver, "outputParameters"); ok {
+			return value, true
+		}
+		return typedMap("Map<String,Object>"), true
+	case strings.EqualFold(methodName, "isSuccess"):
+		if len(args) != 0 {
+			return Null, false
+		}
+		if _, value, ok := objectFieldValue(receiver, "success"); ok {
+			return value, true
+		}
+		return Bool(false), true
+	default:
+		return Null, false
+	}
 }
 
 func invocableActionDescribeResults(action Value) Value {
@@ -1341,6 +1435,13 @@ func invocableActionDisplayName(action Value) string {
 
 func invocableActionType(action Value) string {
 	if value, ok := action.Fields["type"]; ok && value.Kind == ValueString {
+		return value.Text
+	}
+	return ""
+}
+
+func invocableActionStringField(action Value, field string) string {
+	if value, ok := action.Fields[field]; ok && value.Kind == ValueString {
 		return value.Text
 	}
 	return ""

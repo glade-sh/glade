@@ -3368,10 +3368,16 @@ func (vm *VM) evalInstanceOf(value Value, target string) Value {
 	if collectionBase(target) != "" || isMapType(target) {
 		for _, valueType := range instanceOfCollectionTypeCandidates(value) {
 			if matched, handled := vm.collectionDeclaredInstanceOf(valueType, target); handled {
-				return Bool(matched)
+				if matched {
+					return Bool(true)
+				}
+				continue
 			}
 			if isMapType(target) && isMapType(valueType) {
-				return Bool(vm.typeAssignableTo(valueType, target))
+				if vm.typeAssignableTo(valueType, target) {
+					return Bool(true)
+				}
+				continue
 			}
 			if vm.typeAssignableTo(valueType, target) {
 				return Bool(true)
@@ -3414,6 +3420,9 @@ func instanceOfCollectionTypeCandidates(value Value) []string {
 }
 
 func (vm *VM) collectionDeclaredInstanceOf(valueType, target string) (bool, bool) {
+	if isMapType(valueType) || isMapType(target) {
+		return vm.mapDeclaredInstanceOf(valueType, target)
+	}
 	fromBase := collectionBase(valueType)
 	toBase := collectionBase(target)
 	if fromBase == "" || toBase == "" {
@@ -3429,6 +3438,18 @@ func (vm *VM) collectionDeclaredInstanceOf(valueType, target string) (bool, bool
 		return false, false
 	}
 	return vm.collectionElementInstanceOf(fromElement, toElement), true
+}
+
+func (vm *VM) mapDeclaredInstanceOf(valueType, target string) (bool, bool) {
+	if !isMapType(valueType) || !isMapType(target) {
+		return false, isMapType(valueType) || isMapType(target)
+	}
+	fromKey, fromValue, fromOK := mapTypeArgs(valueType)
+	toKey, toValue, toOK := mapTypeArgs(target)
+	if !fromOK || !toOK {
+		return false, false
+	}
+	return vm.collectionElementInstanceOf(fromKey, toKey) && vm.collectionElementInstanceOf(fromValue, toValue), true
 }
 
 func (vm *VM) collectionElementInstanceOf(from, to string) bool {

@@ -192,6 +192,32 @@ func TestStandardPlatformSymbolsQualifySearchSuggestionOptions(t *testing.T) {
 func TestStandardPlatformSymbolsIncludeApexPagesControllerShapeRows(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 
+	controller := requireStandardSymbol(t, symbols, "ApexPages.StandardController")
+	requireStandardMethod(t, controller, "getRecord", nil, false)
+	requireStandardMethod(t, controller, "quickSave", nil, false)
+
+	setController := requireStandardSymbol(t, symbols, "ApexPages.StandardSetController")
+	for _, method := range []string{
+		"cancel",
+		"first",
+		"getCompleteResult",
+		"getFilterId",
+		"getListViewOptions",
+		"getPageNumber",
+		"getPageSize",
+		"getRecord",
+		"getSelected",
+		"last",
+		"save",
+	} {
+		requireStandardMethod(t, setController, method, nil, false)
+	}
+	requireStandardMethod(t, setController, "addFields", []string{"List<String>"}, false)
+	requireStandardMethod(t, setController, "setFilterID", []string{"String"}, false)
+	requireStandardMethod(t, setController, "setPageNumber", []string{"Integer"}, false)
+	requireStandardMethod(t, setController, "setPageSize", []string{"Integer"}, false)
+	requireStandardMethod(t, setController, "setSelected", []string{"List<Object>"}, false)
+
 	message := requireStandardSymbol(t, symbols, "ApexPages.Message")
 	requireStandardMethod(t, message, "getDetail", nil, false)
 	requireStandardMethod(t, message, "getSeverity", nil, false)
@@ -856,6 +882,16 @@ func TestStandardPlatformSymbolsResolveInvocableActionDTOReferences(t *testing.T
 	input := requireStandardSymbol(t, symbols, "Invocable.Action.InputParameter")
 	requireStandardMethodType(t, input, "getAdditionalAttributes", "List<Invocable.Action.AdditionalAttribute>")
 	requireStandardMethodType(t, input, "getPicklistValues", "List<Invocable.Action.PicklistValue>")
+
+}
+
+func TestStandardPlatformSymbolsIncludeDomXmlNodeInsertBefore(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	xmlNode := requireStandardSymbol(t, symbols, "Dom.XmlNode")
+	requireStandardMethod(t, xmlNode, "insertBefore", []string{"Dom.XmlNode", "Dom.XmlNode"}, false)
+	requireStandardMethodType(t, xmlNode, "insertBefore", "Dom.XmlNode")
+	requireStandardMethod(t, xmlNode, "removeChild", []string{"Dom.XmlNode"}, false)
+	requireStandardMethodType(t, xmlNode, "removeChild", "Boolean")
 }
 
 func TestStandardPlatformSymbolsUseQualifiedEmailAttachmentType(t *testing.T) {

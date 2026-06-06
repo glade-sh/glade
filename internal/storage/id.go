@@ -56,6 +56,16 @@ func NewRuntimeIDGenerator(prefixes map[string]string) IDGenerator {
 	return g
 }
 
+// NewRuntimeIDGeneratorWithOwnedPrefixes builds a runtime generator from a map
+// the caller will not mutate or share.
+func NewRuntimeIDGeneratorWithOwnedPrefixes(prefixes map[string]string) IDGenerator {
+	return IDGenerator{
+		Prefixes:  prefixes,
+		Sequences: make(map[string]uint64),
+		Offset:    1000000,
+	}
+}
+
 func (g *IDGenerator) Next(objectName string) (ID, error) {
 	prefix := g.Prefixes[objectName]
 	if prefix == "" {
@@ -99,31 +109,27 @@ func EnsureUniqueKeyPrefixes(org *OrgState) {
 	if org == nil {
 		return
 	}
+	if uniqueKeyPrefixesAlreadyValid(org) {
+		return
+	}
 	names := make([]string, 0, len(org.Objects))
 	for name := range org.Objects {
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	standard := StandardKeyPrefixes()
-	reserved := make(map[string]string, len(standard))
-	for object, prefix := range standard {
-		if prefix != "" {
-			reserved[prefix] = object
-		}
-	}
 	used := make(map[string]string, len(names))
 	nextCustom := 0
 	for _, name := range names {
 		state := org.Objects[name]
 		prefix := strings.TrimSpace(state.Definition.KeyPrefix)
-		if standardPrefix := standard[name]; standardPrefix != "" {
+		if standardPrefix := standardKeyPrefixForObject(name); standardPrefix != "" {
 			prefix = standardPrefix
 		}
-		if !keyPrefixAvailableForObject(prefix, name, used, reserved) {
+		if !keyPrefixAvailableForObject(prefix, name, used) {
 			for {
 				candidate := customPrefix(nextCustom)
 				nextCustom++
-				if keyPrefixAvailableForObject(candidate, name, used, reserved) {
+				if keyPrefixAvailableForObject(candidate, name, used) {
 					prefix = candidate
 					break
 				}
@@ -135,17 +141,111 @@ func EnsureUniqueKeyPrefixes(org *OrgState) {
 	}
 }
 
-func keyPrefixAvailableForObject(prefix, objectName string, used, reserved map[string]string) bool {
+func uniqueKeyPrefixesAlreadyValid(org *OrgState) bool {
+	if len(org.Objects) == 0 {
+		return true
+	}
+	var seen [keyPrefixBitsetWords]uint64
+	for name, state := range org.Objects {
+		rawPrefix := state.Definition.KeyPrefix
+		prefix := strings.TrimSpace(rawPrefix)
+		if rawPrefix != prefix || len(prefix) != 3 {
+			return false
+		}
+		if standardPrefix := standardKeyPrefixForObject(name); standardPrefix != "" && prefix != standardPrefix {
+			return false
+		}
+		if reservedObject := standardKeyPrefixOwner(prefix); reservedObject != "" && !strings.EqualFold(reservedObject, name) {
+			return false
+		}
+		index, ok := keyPrefixBitsetIndex(prefix)
+		if !ok {
+			return false
+		}
+		word := index / 64
+		mask := uint64(1) << (index % 64)
+		if seen[word]&mask != 0 {
+			return false
+		}
+		seen[word] |= mask
+	}
+	return true
+}
+
+func keyPrefixAvailableForObject(prefix, objectName string, used map[string]string) bool {
 	if len(prefix) != 3 {
 		return false
 	}
 	if owner := used[prefix]; owner != "" && !strings.EqualFold(owner, objectName) {
 		return false
 	}
-	if reservedObject := reserved[prefix]; reservedObject != "" && !strings.EqualFold(reservedObject, objectName) {
+	if reservedObject := standardKeyPrefixOwner(prefix); reservedObject != "" && !strings.EqualFold(reservedObject, objectName) {
 		return false
 	}
 	return true
+}
+
+func standardKeyPrefixForObject(objectName string) string {
+	if prefix := standardKeyPrefixBaseData[objectName]; prefix != "" {
+		return prefix
+	}
+	return standardObjectKeyPrefixData[objectName]
+}
+
+func standardKeyPrefixOwner(prefix string) string {
+	return standardKeyPrefixOwnerData[prefix]
+}
+
+const keyPrefixAlphabetSize = 62
+const keyPrefixBitsetWords = (keyPrefixAlphabetSize*keyPrefixAlphabetSize*keyPrefixAlphabetSize + 63) / 64
+
+func keyPrefixBitsetIndex(prefix string) (int, bool) {
+	if len(prefix) != 3 {
+		return 0, false
+	}
+	first, ok := keyPrefixCharIndex(prefix[0])
+	if !ok {
+		return 0, false
+	}
+	second, ok := keyPrefixCharIndex(prefix[1])
+	if !ok {
+		return 0, false
+	}
+	third, ok := keyPrefixCharIndex(prefix[2])
+	if !ok {
+		return 0, false
+	}
+	return (first*keyPrefixAlphabetSize+second)*keyPrefixAlphabetSize + third, true
+}
+
+func keyPrefixCharIndex(ch byte) (int, bool) {
+	switch {
+	case ch >= '0' && ch <= '9':
+		return int(ch - '0'), true
+	case ch >= 'A' && ch <= 'Z':
+		return int(ch-'A') + 10, true
+	case ch >= 'a' && ch <= 'z':
+		return int(ch-'a') + 36, true
+	default:
+		return 0, false
+	}
+}
+
+var standardKeyPrefixOwnerData = buildStandardKeyPrefixOwnerData()
+
+func buildStandardKeyPrefixOwnerData() map[string]string {
+	owners := make(map[string]string, len(standardKeyPrefixBaseData)+len(standardObjectKeyPrefixData))
+	for object, prefix := range standardKeyPrefixBaseData {
+		if prefix != "" {
+			owners[prefix] = object
+		}
+	}
+	for object, prefix := range standardObjectKeyPrefixData {
+		if prefix != "" {
+			owners[prefix] = object
+		}
+	}
+	return owners
 }
 
 var standardKeyPrefixBaseData = map[string]string{
