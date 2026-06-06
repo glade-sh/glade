@@ -220,6 +220,11 @@ func TestStandardPlatformSymbolsIncludeAsyncMethodShapeRows(t *testing.T) {
 	schedulableContext := requireStandardSymbol(t, symbols, "SchedulableContext")
 	requireStandardMethod(t, schedulableContext, "getTriggerId", nil, false)
 
+	asyncCondition := requireStandardSymbol(t, symbols, "TxnSecurity.AsyncCondition")
+	if asyncCondition.Kind != apexast.DeclarationInterface {
+		t.Fatalf("TxnSecurity.AsyncCondition kind = %q, want interface", asyncCondition.Kind)
+	}
+
 	testClass := requireStandardSymbol(t, symbols, "Test")
 	requireStandardMethod(t, testClass, "clearApexPageMessages", nil, true)
 
