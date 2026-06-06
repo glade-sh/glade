@@ -248,6 +248,12 @@ func TestSurfaceIDKeyCanonicalizesBatchQueryLocatorAliases(t *testing.T) {
 	if got, want := surfaceIDKey("apex:System.Database.getQueryLocator(List,System.AccessLevel)"), surfaceIDKey("apex:System.Database.getQueryLocator(List<Object>,System.AccessLevel)"); got != want {
 		t.Fatalf("getQueryLocator List key = %q, want %q", got, want)
 	}
+	if got, want := surfaceIDKey("apex:System.Database.getQueryLocator(String,Object)"), surfaceIDKey("apex:System.Database.getQueryLocator(String,System.AccessLevel)"); got != want {
+		t.Fatalf("getQueryLocator access-level key = %q, want %q", got, want)
+	}
+	if got, want := surfaceIDKey("apex:System.Database.getQueryLocatorWithBinds(String,Map,Object)"), surfaceIDKey("apex:System.Database.getQueryLocatorWithBinds(String,Map,System.AccessLevel)"); got != want {
+		t.Fatalf("getQueryLocatorWithBinds access-level key = %q, want %q", got, want)
+	}
 	if got, want := surfaceIDKey("apex:System.Comparator.compare(T,T)"), surfaceIDKey("apex:System.Comparator.compare(Object,Object)"); got != want {
 		t.Fatalf("Comparator generic key = %q, want %q", got, want)
 	}

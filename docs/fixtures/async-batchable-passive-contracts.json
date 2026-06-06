@@ -1,0 +1,107 @@
+{
+  "name": "async-batchable-passive-contracts",
+  "evidence": [
+    {
+      "symbol": "Database.executeBatch",
+      "surfaceId": "apex:System.Database.executeBatch",
+      "kind": "test",
+      "notes": "A local test enqueues and drains a Database.Batchable implementation through executeBatch."
+    },
+    {
+      "symbol": "Database.Batchable",
+      "surfaceId": "apex:Database.Batchable",
+      "kind": "test",
+      "notes": "A class implements the Database.Batchable marker contract and runs through the local async test drain."
+    },
+    {
+      "symbol": "Database.BatchableContext",
+      "surfaceId": "apex:Database.BatchableContext",
+      "kind": "test",
+      "notes": "BatchableContext constructs as a passive local context value for tests."
+    },
+    {
+      "symbol": "Database.BatchableContext constructor",
+      "surfaceId": "apex:Database.BatchableContext.BatchableContext()",
+      "kind": "test",
+      "notes": "The no-arg context constructor returns an empty passive context."
+    },
+    {
+      "symbol": "Database.BatchableContextImpl",
+      "surfaceId": "apex:Database.BatchableContextImpl",
+      "kind": "test",
+      "notes": "BatchableContextImpl constructs as a passive local context implementation value."
+    },
+    {
+      "symbol": "Database.BatchableContextImpl constructor",
+      "surfaceId": "apex:Database.BatchableContextImpl.BatchableContextImpl()",
+      "kind": "test",
+      "notes": "The no-arg implementation constructor returns an empty passive context."
+    },
+    {
+      "symbol": "Database.QueryLocatorIterator",
+      "surfaceId": "apex:Database.QueryLocatorIterator",
+      "kind": "test",
+      "notes": "The local iterator type can be named and constructed as an empty passive iterator."
+    },
+    {
+      "symbol": "Database.QueryLocatorIterator constructor",
+      "surfaceId": "apex:Database.QueryLocatorIterator.QueryLocatorIterator()",
+      "kind": "test",
+      "notes": "The no-arg iterator constructor returns an empty passive iterator."
+    },
+    {
+      "symbol": "Database.QueryLocatorChunkIterator",
+      "surfaceId": "apex:Database.QueryLocatorChunkIterator",
+      "kind": "test",
+      "notes": "The local chunk iterator type can be named and constructed as an empty passive iterator."
+    },
+    {
+      "symbol": "Database.QueryLocatorChunkIterator constructor",
+      "surfaceId": "apex:Database.QueryLocatorChunkIterator.QueryLocatorChunkIterator()",
+      "kind": "test",
+      "notes": "The no-arg chunk iterator constructor returns an empty passive iterator."
+    },
+    {
+      "symbol": "Database.getQueryLocator",
+      "surfaceId": "apex:System.Database.getQueryLocator(String,Object)",
+      "kind": "test",
+      "notes": "Docs expose the access-level overload as Object; local execution receives an AccessLevel value held in Object."
+    },
+    {
+      "symbol": "Database.getQueryLocatorWithBinds",
+      "surfaceId": "apex:System.Database.getQueryLocatorWithBinds(String,Map,Object)",
+      "kind": "test",
+      "notes": "Docs expose the bind-map access-level overload as Object; local execution receives an AccessLevel value held in Object."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/BatchPassiveContractsFixtureBatch.cls",
+      "content": "public class BatchPassiveContractsFixtureBatch implements Database.Batchable<Account> { public Database.QueryLocator start(Database.BatchableContext bc) { System.assertNotEquals('', bc.getJobId()); Object access = AccessLevel.USER_MODE; return Database.getQueryLocator('SELECT Id, Name FROM Account WHERE Name LIKE \\'Passive-%\\' ORDER BY Name', access); } public void execute(Database.BatchableContext bc, List<Account> scope) { for (Account row : scope) { insert new Account(Name = 'Handled-' + row.Name); } } public void finish(Database.BatchableContext bc) { insert new Account(Name = 'Done-' + bc.getJobId()); } }"
+    },
+    {
+      "path": "force-app/main/classes/AsyncBatchablePassiveContractsFixtureTest.cls",
+      "content": "@isTest private class AsyncBatchablePassiveContractsFixtureTest { @isTest static void provesPassiveBatchableContractsAndObjectAccessLevel() { Database.BatchableContext context = new Database.BatchableContext(); System.assertEquals('', context.getJobId()); System.assertEquals('', context.getChildJobId()); Database.BatchableContextImpl contextImpl = new Database.BatchableContextImpl(); System.assertEquals('', contextImpl.getJobId()); System.assertEquals('', contextImpl.getChildJobId()); Database.QueryLocatorIterator emptyIterator = new Database.QueryLocatorIterator(); System.assertEquals(false, emptyIterator.hasNext()); Database.QueryLocatorChunkIterator emptyChunkIterator = new Database.QueryLocatorChunkIterator(); System.assertEquals(false, emptyChunkIterator.hasNext()); insert new Account(Name = 'Passive-One'); insert new Account(Name = 'Passive-Two'); Object access = AccessLevel.USER_MODE; Database.QueryLocator locator = Database.getQueryLocator('SELECT Id, Name FROM Account WHERE Name = \\'Passive-One\\'', access); Object locatorIterator = locator.iterator(); System.assert(locatorIterator.hasNext()); Account locatorRow = locatorIterator.next(); System.assertEquals('Passive-One', locatorRow.Name); Map<String,Object> binds = new Map<String,Object>(); binds.put('wanted', 'Passive-Two'); Database.QueryLocator bindLocator = Database.getQueryLocatorWithBinds('SELECT Id, Name FROM Account WHERE Name = :wanted', binds, access); Object bindIterator = bindLocator.iterator(); System.assert(bindIterator.hasNext()); Account bindRow = bindIterator.next(); System.assertEquals('Passive-Two', bindRow.Name); Test.startTest(); String jobId = Database.executeBatch(new BatchPassiveContractsFixtureBatch(), 1); Test.stopTest(); System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'Handled-Passive-One']); System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'Handled-Passive-Two']); String doneName = 'Done-' + jobId; System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = :doneName]); } }"
+    }
+  ],
+  "command": {
+    "kind": "test",
+    "testFilter": "AsyncBatchablePassiveContractsFixtureTest"
+  },
+  "expected": {
+    "tests": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

@@ -200,8 +200,7 @@ func TestCoreServiceContextStdlibRowsAreExplicitUnsupported(t *testing.T) {
 
 func TestHTTPStdlibRowsAreLocallyPromotedOrFenced(t *testing.T) {
 	watched := map[string]Status{
-		"Http.send local mock callouts":    StatusSupported,
-		"Http.send real network transport": StatusUnsupported,
+		"Http.send(HttpRequest)": StatusSupported,
 	}
 	for _, entry := range StdlibMatrix() {
 		want, ok := watched[entry.API]
