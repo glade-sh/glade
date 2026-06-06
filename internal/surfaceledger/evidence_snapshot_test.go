@@ -125,6 +125,48 @@ func TestBuildEvidenceSnapshotMarksUnsupportedEvidenceUnsupported(t *testing.T) 
 	}
 }
 
+func TestBuildEvidenceSnapshotClassifiesDataReferenceEvidenceAsShape(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "fixture.json")
+	data := `{
+  "name": "data-reference-fixture",
+  "evidence": [{
+    "surfaceId": "data-reference:NU__Thing__c",
+    "symbol": "NU__Thing__c",
+    "kind": "check"
+  }],
+  "schema": [{
+    "path": "force-app/main/default/objects/NU__Thing__c/NU__Thing__c.object-meta.xml",
+    "content": "<CustomObject><label>Thing</label></CustomObject>"
+  }],
+  "source": [{
+    "path": "force-app/main/default/classes/ManagedRef.cls",
+    "content": "public class ManagedRef { public NU__Thing__c makeThing() { return new NU__Thing__c(); } }"
+  }],
+  "command": {"kind": "check"},
+  "expected": {"result": {"ok": true}}
+}`
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	rows, err := BuildEvidenceSnapshot([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := rowsByID(rows)
+	row, ok := byID[DataObjectID("NU__Thing__c")]
+	if !ok {
+		t.Fatalf("missing data-reference evidence row: %#v", rows)
+	}
+	if row.Product != ProductDataRef || row.Area != AreaData || row.Kind != KindType {
+		t.Fatalf("row identity = product:%s area:%s kind:%s", row.Product, row.Area, row.Kind)
+	}
+	if row.GladeShape == ShapeAbsent || row.GladeBehavior != BehaviorSupported || row.Evidence != EvidenceFixture {
+		t.Fatalf("row states = shape:%s behavior:%s evidence:%s", row.GladeShape, row.GladeBehavior, row.Evidence)
+	}
+}
+
 func TestBuildEvidenceSnapshotClassifiesBareMethodEvidenceIDs(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "fixture.json")

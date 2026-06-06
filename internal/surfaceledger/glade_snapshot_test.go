@@ -92,6 +92,21 @@ func TestBuildGladeSnapshotIncludesEmbeddedOrgDescribeStandardSObjectShape(t *te
 	}
 }
 
+func TestBuildGladeSnapshotIncludesReferenceBackedStandardObjectNames(t *testing.T) {
+	rows := BuildGladeSnapshot()
+	byID := rowsByID(rows)
+	for _, objectName := range []string{"ApexInlineEventLog", "ConsumptionSchedule", "DataDetectPolicySnapshot", "ForecastingColumnDefinitionFormulaFieldDetails", "RpaRobot", "feedSignal"} {
+		id := DataObjectID(objectName)
+		row, ok := byID[id]
+		if !ok {
+			t.Fatalf("missing reference-backed standard object row %s", id)
+		}
+		if row.GladeShape != ShapeGenerated || row.ShapeSource != SourceStandardSObjectGeneratedShape || row.GladeBehavior != BehaviorSupported {
+			t.Fatalf("%s row states = shape:%s source:%q behavior:%s", id, row.GladeShape, row.ShapeSource, row.GladeBehavior)
+		}
+	}
+}
+
 func TestBuildGladeSnapshotUsesPropertyIDWithoutCallParens(t *testing.T) {
 	rows := BuildGladeSnapshot()
 	byID := rowsByID(rows)

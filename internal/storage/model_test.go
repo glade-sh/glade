@@ -73,6 +73,21 @@ func TestStandardObjectDefinitionIncludesReferenceBackedShape(t *testing.T) {
 	}
 }
 
+func TestStandardObjectDefinitionIncludesReferenceBackedObjectNames(t *testing.T) {
+	for _, name := range []string{"ApexInlineEventLog", "ConsumptionSchedule", "DataDetectPolicySnapshot", "ForecastingColumnDefinitionFormulaFieldDetails", "RpaRobot", "feedSignal"} {
+		definition, ok := StandardObjectDefinition(name)
+		if !ok {
+			t.Fatalf("missing reference-backed standard object definition %s", name)
+		}
+		if definition.APIName != name {
+			t.Fatalf("definition APIName = %q, want %q", definition.APIName, name)
+		}
+		if field := definition.Fields["Id"]; field.APIName != "Id" || field.Type != FieldID {
+			t.Fatalf("%s.Id field = %#v", name, field)
+		}
+	}
+}
+
 func TestEnsureStandardObjectDoesNotMutateSharedRuntimeDefinition(t *testing.T) {
 	org := OrgState{Objects: map[string]ObjectState{
 		"Account": {

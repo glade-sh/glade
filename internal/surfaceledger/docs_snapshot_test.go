@@ -80,6 +80,39 @@ func TestBuildDocsSnapshotKeepsEventLogFileEventTypeRowsUnderEventLogFile(t *tes
 	}
 }
 
+func TestBuildDocsSnapshotUsesDataReferenceObjectStemAndSkipsGuideRows(t *testing.T) {
+	root := t.TempDir()
+	writeDoc(t, root, "object-reference/access_for_fields.md", "# API Field Properties\n\nReference text.\n")
+	writeDoc(t, root, "object-reference/sforce_api_objects_businessprocess.md", "# Business Process\n\n### Id\n")
+	writeDoc(t, root, "object-reference/sforce_api_objects_custom_object__c.md", "# Custom Object \\_\\_c \\_\\_c\n")
+	writeDoc(t, root, "object-reference/sforce_api_objects_customobject__feed.md", "# Custom Object\\_\\_Feed\n")
+	writeDoc(t, root, "field-reference/salesforce_field_reference_Airport__Share.md", "# Airport\\_\\_Share\n\n### RowCause\n")
+
+	rows, err := BuildDocsSnapshot(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := rowsByID(rows)
+	if _, ok := byID[DataObjectID("API")]; ok {
+		t.Fatalf("unexpected guide title row: %#v", byID[DataObjectID("API")])
+	}
+	if _, ok := byID[DataObjectID("Airport__Share")]; ok {
+		t.Fatalf("unexpected field-reference top-level object row: %#v", byID[DataObjectID("Airport__Share")])
+	}
+	if _, ok := byID[DataObjectID("CustomObject__Feed")]; ok {
+		t.Fatalf("unexpected custom object template row: %#v", byID[DataObjectID("CustomObject__Feed")])
+	}
+	if _, ok := byID[DataObjectID("CustomObject__c__c")]; ok {
+		t.Fatalf("unexpected custom object suffix template row: %#v", byID[DataObjectID("CustomObject__c__c")])
+	}
+	if row, ok := byID[DataObjectID("BusinessProcess")]; !ok || row.Kind != KindType || row.GladeShape != ShapeAbsent || row.GladeBehavior != BehaviorNone {
+		t.Fatalf("BusinessProcess object row = %#v, ok=%v", row, ok)
+	}
+	if row, ok := byID[DataFieldID("BusinessProcess", "Id")]; !ok || row.Kind != KindField {
+		t.Fatalf("BusinessProcess.Id field row = %#v, ok=%v", row, ok)
+	}
+}
+
 func TestBuildDocsSnapshotSkipsApexReleaseNotes(t *testing.T) {
 	root := t.TempDir()
 	writeDoc(t, root, "apex/apex_releasenotes.md", "# Apex Release Notes\n\n## Insert\n")

@@ -641,6 +641,9 @@ func buildKnownStandardObjectNameSet() map[string]bool {
 	for _, name := range standardSObjectStubNames() {
 		names[name] = true
 	}
+	for _, name := range referenceBackedStandardObjectNames {
+		names[name] = true
+	}
 	for _, name := range []string{
 		"Account",
 		"Contact",
@@ -655,6 +658,42 @@ func buildKnownStandardObjectNameSet() map[string]bool {
 		names[name] = true
 	}
 	return names
+}
+
+var referenceBackedStandardObjectNames = []string{
+	"ApexInlineEventLog",
+	"ArticleType__DataCategorySelection",
+	"ConsumptionRate",
+	"ConsumptionSchedule",
+	"DataDetectJobObjectSession",
+	"DataDetectJobSessSummary",
+	"DataDetectPolicySnapshot",
+	"EmailMessageMigration",
+	"ForecastingColumnDefinitionFormulaFieldDetails",
+	"FSL__Time_Dependency__c",
+	"MigratedEmail",
+	"ProspectingAgentDataSource",
+	"ProspectingAgentSpec",
+	"ProspectingAgentSpecParm",
+	"ProspectingAgentUserSpec",
+	"RecordVisibility",
+	"RpaFlowResultEvent",
+	"RpaRobot",
+	"RpaRobotAsgnMaintWindow",
+	"RpaRobotAsgnSessionInf",
+	"RpaRobotDefinition",
+	"RpaRobotMaintWindow",
+	"RpaRobotMaintWindowDef",
+	"RpaRobotPool",
+	"RpaRobotPoolAsgnRobot",
+	"RpaRobotPoolDefinition",
+	"RpaRobotPoolFlowAsgn",
+	"RpaRobotSessionInfo",
+	"RpaRobotSessionInfoDef",
+	"ScoreIntelligence",
+	"StagedEmail",
+	"TopInsight",
+	"feedSignal",
 }
 
 func StandardObjectDefinition(objectName string) (ObjectDefinition, bool) {
