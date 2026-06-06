@@ -23,6 +23,8 @@ type Limits struct {
 	BatchJobs     int `json:"batchJobs"`
 	ScheduledJobs int `json:"scheduledJobs"`
 	EmailInvokes  int `json:"emailInvocations"`
+	RunAs         int `json:"runAs"`
+	Savepoints    int `json:"savepoints"`
 }
 
 type LimitCaps struct {
@@ -39,6 +41,8 @@ type LimitCaps struct {
 	BatchJobs     int `json:"batchJobs"`
 	ScheduledJobs int `json:"scheduledJobs"`
 	EmailInvokes  int `json:"emailInvocations"`
+	RunAs         int `json:"runAs"`
+	Savepoints    int `json:"savepoints"`
 }
 
 type LimitViolation struct {
@@ -62,6 +66,8 @@ func defaultLimitCaps() LimitCaps {
 		BatchJobs:     5,
 		ScheduledJobs: 100,
 		EmailInvokes:  10,
+		RunAs:         100,
+		Savepoints:    5,
 	}
 }
 
@@ -119,6 +125,12 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 	case "emailInvocations":
 		vm.limits.EmailInvokes += delta
 		return vm.checkLimit(name, vm.limits.EmailInvokes, vm.limitCaps.EmailInvokes)
+	case "runAs":
+		vm.limits.RunAs += delta
+		return vm.checkLimit(name, vm.limits.RunAs, vm.limitCaps.RunAs)
+	case "savepoints":
+		vm.limits.Savepoints += delta
+		return vm.checkLimit(name, vm.limits.Savepoints, vm.limitCaps.Savepoints)
 	default:
 		return fmt.Errorf("unknown limit %q", name)
 	}
@@ -226,8 +238,8 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		"getApexPaginationCursors", "getChildRelationshipsDescribes", "getDatabaseTime",
 		"getFetchCallsOnApexCursor", "getFieldSetsDescribes", "getFieldsDescribes",
 		"getFindSimilarCalls", "getMobilePushApexCalls", "getPicklistDescribes",
-		"getQueryLocatorRows", "getRecordTypesDescribes", "getRunAs", "getSavepointRollbacks",
-		"getSavepoints", "getScriptStatements", "getSoslQueries":
+		"getQueryLocatorRows", "getRecordTypesDescribes", "getSavepointRollbacks",
+		"getScriptStatements", "getSoslQueries":
 		return Int(0), true
 	case "getLimitAggregateQueries":
 		return Int(300), true
@@ -249,11 +261,15 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getLimitQueryLocatorRows":
 		return Int(10000), true
 	case "getLimitRunAs":
-		return Int(100), true
+		return Int(int64(vm.limitCaps.RunAs)), true
+	case "getRunAs":
+		return Int(int64(vm.limits.RunAs)), true
 	case "getLimitSavepointRollbacks":
 		return Int(100), true
 	case "getLimitSavepoints":
-		return Int(5), true
+		return Int(int64(vm.limitCaps.Savepoints)), true
+	case "getSavepoints":
+		return Int(int64(vm.limits.Savepoints)), true
 	case "getLimitScriptStatements":
 		return Int(200000), true
 	case "getLimitSoslQueries":

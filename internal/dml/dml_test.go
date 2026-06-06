@@ -5262,6 +5262,60 @@ func TestFlowRecordCreateRunsAndLookupSuppressesDuplicate(t *testing.T) {
 	}
 }
 
+func TestFlowRecordCreateFailureRollsBackPriorCreatesAndSourceInsert(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.FlowRules = []storage.FlowRule{{
+		Name:   "CreateThenFail",
+		Active: true,
+		RecordCreates: []storage.FlowRecordCreate{
+			{
+				Name:       "CreateRequest",
+				ObjectName: "ActionRequest__c",
+				InputAssignments: []storage.WorkflowFieldUpdate{
+					{Name: "ActionName__c", Field: "ActionName__c", LiteralValue: "Notify"},
+					{Name: "SourceRecordId__c", Field: "SourceRecordId__c", SourceField: "Id"},
+				},
+			},
+			{
+				Name:       "CreateMissing",
+				ObjectName: "Missing__c",
+			},
+		},
+	}}
+	org.Objects["Account"] = account
+	org.Objects["ActionRequest__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "ActionRequest__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"ActionName__c":     {APIName: "ActionName__c", Type: storage.FieldString, Required: true},
+				"SourceRecordId__c": {APIName: "SourceRecordId__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, Required: true},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	var events []string
+	engine.AutomationTracer = func(name string, args map[string]any) {
+		events = append(events, name)
+	}
+
+	result := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if result[0].Success {
+		t.Fatalf("insert succeeded despite failing flow create: %#v events=%#v", result, events)
+	}
+	if got := len(org.Objects["Account"].Records); got != 0 {
+		t.Fatalf("source insert was not rolled back, got %d accounts", got)
+	}
+	if got := len(org.Objects["ActionRequest__c"].Records); got != 0 {
+		t.Fatalf("prior flow create was not rolled back, got %d requests", got)
+	}
+}
+
 func stringSliceContains(values []string, needle string) bool {
 	for _, value := range values {
 		if value == needle {

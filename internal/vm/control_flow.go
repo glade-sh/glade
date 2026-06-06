@@ -275,6 +275,7 @@ func limitTraceArgs(limits Limits) map[string]any {
 		"batchJobs":        limits.BatchJobs,
 		"scheduledJobs":    limits.ScheduledJobs,
 		"emailInvocations": limits.EmailInvokes,
+		"runAs":            limits.RunAs,
 	}
 }
 
@@ -819,6 +820,9 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 		return execOutcome{}, fmt.Errorf("System.runAs is only available in test context")
 	}
 	vm.ensureRunAsUserRecord(&user)
+	if err := vm.incrementLimit("runAs", 1); err != nil {
+		return execOutcome{}, err
+	}
 	previous := vm.testContext.CurrentUser
 	vm.testContext.CurrentUser = user
 	vm.testContext.RunAsDepth++

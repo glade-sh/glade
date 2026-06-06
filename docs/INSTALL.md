@@ -1,13 +1,8 @@
 # Install glade
 
-`glade` is distributed as a single binary. Release artifacts are built by the
-`Release` GitHub Actions workflow for:
-
-- macOS amd64 and arm64
-- Linux amd64 and arm64
-- Windows amd64
-
-Each release build also publishes `SHA256SUMS.txt`.
+`glade` is distributed as a single binary. Release artifacts are parser-capable
+CGO builds for macOS and Linux on amd64 and arm64. Each release build also
+publishes `SHA256SUMS.txt`.
 
 Project home: <https://glade.sh>
 
@@ -31,7 +26,7 @@ Then check the binary:
 
 ```bash
 glade version
-glade doctor
+glade doctor   # confirm: "parser: ok (tree-sitter)"
 ```
 
 ## Build And Run From Source
@@ -189,8 +184,8 @@ install -m 0755 glade ~/.local/bin/glade
 glade version
 ```
 
-For macOS, use the `darwin` archive matching your CPU. For Windows, extract the
-`.zip` archive and place `glade.exe` in a directory on `%PATH%`.
+For macOS, use the `darwin` archive matching your CPU. Windows release archives
+are not published by the CGO-enabled release workflow.
 
 ## CI Usage
 

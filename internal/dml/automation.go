@@ -445,9 +445,13 @@ func (e *Engine) applyFlowEffects(flowName, objectName string, record *storage.R
 }
 
 func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source storage.Record, sourceDefinition storage.ObjectDefinition) (storage.ID, error) {
-	target, targetName, err := e.object(create.ObjectName)
-	if err != nil {
+	targetName, ok := storage.ResolveObjectName(*e.Org, create.ObjectName)
+	if !ok {
 		return "", dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record create %s targets unknown object %s", create.Name, create.ObjectName)
+	}
+	target := e.Org.Objects[targetName]
+	if target.Records == nil {
+		target.Records = make(map[storage.ID]storage.Record)
 	}
 	record := storage.Record{
 		Object:        targetName,

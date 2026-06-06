@@ -588,21 +588,21 @@ func TestRunCompatMVP(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "MVP readiness: not ready") || !strings.Contains(stdout.String(), "full-featured glade-parity MVP") {
+	if !strings.Contains(stdout.String(), "MVP readiness: ready") || !strings.Contains(stdout.String(), "full-featured glade-parity MVP") {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
 }
 
-func TestRunCompatMVPRequireReadyFailsWhilePreview(t *testing.T) {
+func TestRunCompatMVPRequireReadyPassesWhenSupported(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"compat", "mvp", "--require-ready"}, &stdout, &stderr)
-	if code != 1 {
-		t.Fatalf("exit code = %d, want 1", code)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "MVP readiness: not ready") {
+	if !strings.Contains(stdout.String(), "MVP readiness: ready") {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
-	if !strings.Contains(stderr.String(), "MVP readiness gate failed") {
+	if stderr.String() != "" {
 		t.Fatalf("stderr = %q", stderr.String())
 	}
 }
@@ -613,7 +613,7 @@ func TestRunCompatMatrixJSON(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), `"ready": false`) || !strings.Contains(stdout.String(), `"requiredForMVP": true`) {
+	if !strings.Contains(stdout.String(), `"ready": true`) || !strings.Contains(stdout.String(), `"requiredForMVP": true`) {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
 }
@@ -966,7 +966,7 @@ func TestRunCompatGaps(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "# Known Gaps") || !strings.Contains(stdout.String(), "`apex.sema.body`") {
+	if !strings.Contains(stdout.String(), "# Known Gaps") || !strings.Contains(stdout.String(), "No required MVP capability gaps are currently tracked.") {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
 }

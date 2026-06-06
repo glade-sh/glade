@@ -21,6 +21,10 @@ GLADE="${TMP}/glade"
 
 "${GLADE}" version >/dev/null
 
+DIST_DIR="${TMP}/release-dist" VERSION=smoke scripts/release-build.sh >"${TMP}/release-build.out"
+grep -q 'release artifact written' "${TMP}/release-build.out"
+grep -q 'glade_smoke_' "${TMP}/release-build.out"
+
 PROJECT="${TMP}/project"
 mkdir -p "${PROJECT}/force-app/main/classes"
 cat >"${PROJECT}/sfdx-project.json" <<'JSON'
@@ -105,18 +109,24 @@ PY
 )"
 "${GLADE}" server --addr "${ADDR}" --db "${DB}" --project "${PROJECT}" >"${TMP}/server.log" 2>&1 &
 SERVER_PID="$!"
-for _ in $(seq 1 50); do
+server_ready=0
+for _ in $(seq 1 300); do
   if curl -fsS "http://${ADDR}/services/data" >"${TMP}/server-data.json" 2>/dev/null; then
+    server_ready=1
     break
   fi
   sleep 0.1
 done
+if [[ "${server_ready}" != "1" ]]; then
+  tail -c 4000 "${TMP}/server.log" >&2
+  exit 1
+fi
 grep -q 'v65.0' "${TMP}/server-data.json"
 
 "${GLADE}" compat mvp >"${TMP}/compat-mvp.out"
-grep -q 'MVP readiness: not ready' "${TMP}/compat-mvp.out"
+grep -q 'MVP readiness: ready' "${TMP}/compat-mvp.out"
 "${GLADE}" compat matrix --json >"${TMP}/compat-matrix.json"
-grep -q '"ready": false' "${TMP}/compat-matrix.json"
+grep -q '"ready": true' "${TMP}/compat-matrix.json"
 RUN_FIXTURES=()
 for fixture in docs/fixtures/*.json; do
   if python3 - "${fixture}" <<'PY'

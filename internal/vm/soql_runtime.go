@@ -1567,11 +1567,27 @@ func (vm *VM) enforceSOQLSecurity(query soql.Query) error {
 		}
 	}
 	for _, child := range query.ChildQueries {
-		if err := vm.enforceSOQLSecurity(child.Query); err != nil {
+		childQuery := child.Query
+		if strings.TrimSpace(childQuery.SecurityMode) == "" {
+			childQuery.SecurityMode = mode
+		}
+		if childObject, ok := vm.soqlChildRelationshipObject(objectName, child.Relationship); ok {
+			childQuery.Object = childObject
+		}
+		if err := vm.enforceSOQLSecurity(childQuery); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (vm *VM) soqlChildRelationshipObject(parentObject, relationshipName string) (string, bool) {
+	listType, ok := vm.jsonSObjectChildRelationshipType(parentObject, relationshipName)
+	if !ok || !strings.HasPrefix(listType, "List<") || !strings.HasSuffix(listType, ">") {
+		return "", false
+	}
+	childObject := strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(listType, "List<"), ">"))
+	return childObject, childObject != ""
 }
 
 func soqlConditionFields(condition *soql.Condition) []string {

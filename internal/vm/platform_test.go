@@ -7660,6 +7660,28 @@ System.assertEquals(4, Limits.getDmlStatements());
 	}
 }
 
+func TestExecDatabaseSetSavepointIncrementsLimitsCounter(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(0, Limits.getSavepoints());
+System.Savepoint first = Database.setSavepoint();
+System.assertEquals(1, Limits.getSavepoints());
+System.Savepoint second = Database.setSavepoint();
+System.assertEquals(2, Limits.getSavepoints());
+System.assertEquals(5, Limits.getLimitSavepoints());
+System.assertNotEquals(null, first);
+System.assertNotEquals(null, second);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseRollbackPreservesAutoNumberSequence(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Ticket__c();
@@ -8461,16 +8483,44 @@ System.assertEquals(150, Limits.getLimitPublishImmediateDML());
 
 func TestExecPassiveLimitsGettersHaveStableValues(t *testing.T) {
 	for _, getter := range []string{
+		"getApexCursorRows",
+		"getLimitApexCursorRows",
+		"getApexCursors",
+		"getLimitApexCursors",
+		"getApexPaginationCursorRows",
+		"getLimitApexPaginationCursorRows",
+		"getApexPaginationCursors",
+		"getLimitApexPaginationCursors",
 		"getAggregateQueries",
 		"getLimitAggregateQueries",
+		"getChildRelationshipsDescribes",
+		"getLimitChildRelationshipsDescribes",
+		"getDatabaseTime",
+		"getLimitDatabaseTime",
+		"getFetchCallsOnApexCursor",
+		"getLimitFetchCallsOnApexCursor",
+		"getFieldSetsDescribes",
+		"getLimitFieldSetsDescribes",
+		"getFieldsDescribes",
+		"getLimitFieldsDescribes",
 		"getFindSimilarCalls",
 		"getLimitFindSimilarCalls",
 		"getMobilePushApexCalls",
 		"getLimitMobilePushApexCalls",
+		"getPicklistDescribes",
+		"getLimitPicklistDescribes",
 		"getQueryLocatorRows",
 		"getLimitQueryLocatorRows",
+		"getRecordTypesDescribes",
+		"getLimitRecordTypesDescribes",
+		"getRunAs",
+		"getLimitRunAs",
 		"getSavepointRollbacks",
 		"getLimitSavepointRollbacks",
+		"getSavepoints",
+		"getLimitSavepoints",
+		"getScriptStatements",
+		"getLimitScriptStatements",
 		"getSoslQueries",
 		"getLimitSoslQueries",
 	} {
@@ -10047,6 +10097,45 @@ System.assertEquals(8, overlap.hourGmt());
 	})
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecRunAsIncrementsLimitsCounter(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(0, Limits.getRunAs());
+System.assertEquals(100, Limits.getLimitRunAs());
+System.runAs(new User(Id = '005-user-a')) {
+	System.assertEquals(1, Limits.getRunAs());
+}
+System.assertEquals(1, Limits.getRunAs());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStrictRunAsLimitFails(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.runAs(new User(Id = '005-user-a')) {
+	System.assertEquals(1, Limits.getRunAs());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	machine.SetLimitMode(LimitModeStrict)
+	caps := defaultLimitCaps()
+	caps.RunAs = 0
+	machine.SetLimitCaps(caps)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "System.LimitException") || !strings.Contains(err.Error(), "runAs") {
+		t.Fatalf("err = %v", err)
 	}
 }
 

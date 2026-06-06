@@ -1531,7 +1531,7 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return name == "builder"
 	case "QueueableDuplicateSignature.Builder", "Builder":
 		switch name {
-		case "addid", "addinteger", "addstring", "build":
+		case "addid", "addinteger", "addstring", "build", "getmaxsize", "getremainingsize", "getsize":
 			return true
 		}
 	case "URL", "Url":

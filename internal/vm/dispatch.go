@@ -790,6 +790,9 @@ platformStaticCall:
 		if err := vm.incrementLimit("dmlStatements", 1); err != nil {
 			return Null, err
 		}
+		if err := vm.incrementLimit("savepoints", 1); err != nil {
+			return Null, err
+		}
 		vm.nextSavepoint++
 		id := fmt.Sprintf("sp-%d", vm.nextSavepoint)
 		if vm.isolationJournal != nil {

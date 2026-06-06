@@ -46,6 +46,20 @@ func TestNoStringByteLengthAllocation(t *testing.T) {
 	}
 }
 
+func TestReleaseBuildProducesParserCapableArtifacts(t *testing.T) {
+	root := repoRoot(t)
+	text := readRepoFile(t, root, "scripts/release-build.sh")
+	if strings.Contains(text, "CGO_ENABLED=0") {
+		t.Fatal("scripts/release-build.sh disables CGO; release artifacts must keep the Apex parser available")
+	}
+	if !strings.Contains(text, "parser: ok") {
+		t.Fatal("scripts/release-build.sh must verify doctor reports parser: ok")
+	}
+	if strings.Contains(text, "doctor 2>/dev/null | grep -q") {
+		t.Fatal("scripts/release-build.sh must not pipe doctor into grep -q under pipefail")
+	}
+}
+
 func TestGeneratedSystemStubsReproduceFromGenerator(t *testing.T) {
 	root := repoRoot(t)
 	inputRoot := filepath.Join(root, hyphen("example", "projects"), "stubs", "apex-system-stubs")

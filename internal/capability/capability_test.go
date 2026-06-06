@@ -7,20 +7,19 @@ import (
 	"testing"
 )
 
-func TestMVPReportIsNotReadyUntilRequiredFeaturesAreSupported(t *testing.T) {
+func TestMVPReportIsReadyWhenRequiredFeaturesAreSupported(t *testing.T) {
 	report := MVPReport()
-	if report.Ready {
-		t.Fatal("MVP report should not be ready while required features are partial or unsupported")
+	if !report.Ready {
+		t.Fatalf("MVP report should be ready once required features are supported: %#v", report)
 	}
-	if report.Required == 0 || report.Incomplete == 0 {
+	if report.Required == 0 || report.Incomplete != 0 || report.Complete != report.Required {
 		t.Fatalf("report = %#v", report)
 	}
 	for _, feature := range report.Features {
 		if feature.Required && feature.Status != StatusSupported {
-			return
+			t.Fatalf("%s status = %s, want %s", feature.ID, feature.Status, StatusSupported)
 		}
 	}
-	t.Fatal("expected at least one incomplete required feature")
 }
 
 func TestMVPReportIncludesStatusCounts(t *testing.T) {
@@ -34,6 +33,84 @@ func TestMVPReportIncludesStatusCounts(t *testing.T) {
 	}
 	if report.StatusCounts[StatusSupported] != report.Complete {
 		t.Fatalf("supported count = %d, want complete count %d", report.StatusCounts[StatusSupported], report.Complete)
+	}
+}
+
+func TestLocalMVPDXRowsAreSupportedWithPostMVPTails(t *testing.T) {
+	report := MVPReport()
+	features := map[string]Feature{}
+	for _, feature := range report.Features {
+		features[feature.ID] = feature
+	}
+
+	postMVP := map[string]string{
+		"dap.command":      "dap.live-ide-orchestration",
+		"lsp.command":      "lsp.context-completion",
+		"profile.native":   "profile.pprof-and-timing",
+		"watch.command":    "watch.profile-trace-reports",
+		"server.local-api": "server.rest-breadth",
+	}
+	for id, postID := range postMVP {
+		feature, ok := features[id]
+		if !ok {
+			t.Fatalf("missing local MVP feature %s", id)
+		}
+		if !feature.Required || feature.Status != StatusSupported {
+			t.Fatalf("%s = required %v status %s, want required supported", id, feature.Required, feature.Status)
+		}
+		if !strings.Contains(feature.Notes, "Local MVP") {
+			t.Fatalf("%s notes do not describe the local MVP contract: %s", id, feature.Notes)
+		}
+
+		tail, ok := features[postID]
+		if !ok {
+			t.Fatalf("missing post-MVP feature %s for %s", postID, id)
+		}
+		if tail.Required || tail.Status != StatusPartial {
+			t.Fatalf("%s = required %v status %s, want optional partial", postID, tail.Required, tail.Status)
+		}
+		if !strings.Contains(tail.Notes, "Post-MVP") {
+			t.Fatalf("%s notes do not identify the post-MVP contract: %s", postID, tail.Notes)
+		}
+	}
+}
+
+func TestCoreRuntimeMVPFeaturesAreSupportedWithPostMVPTails(t *testing.T) {
+	report := MVPReport()
+	features := map[string]Feature{}
+	for _, feature := range report.Features {
+		features[feature.ID] = feature
+	}
+
+	postMVP := map[string]string{
+		"limits.core": "limits.exact-accounting",
+		"stdlib.core": "stdlib.platform-breadth",
+	}
+	for id, postID := range postMVP {
+		feature, ok := features[id]
+		if !ok {
+			t.Fatalf("missing core runtime MVP feature %s", id)
+		}
+		if !feature.Required || feature.Status != StatusSupported {
+			t.Fatalf("%s = required %v status %s, want required supported", id, feature.Required, feature.Status)
+		}
+		notes := strings.ToLower(feature.Notes)
+		for _, blocked := range []string{"incomplete", "broader", "exact salesforce accounting", "unimplemented platform"} {
+			if strings.Contains(notes, blocked) {
+				t.Fatalf("%s supported notes still carry open gap language %q: %s", id, blocked, feature.Notes)
+			}
+		}
+
+		tail, ok := features[postID]
+		if !ok {
+			t.Fatalf("missing post-MVP feature %s for %s", postID, id)
+		}
+		if tail.Required || tail.Status != StatusPartial {
+			t.Fatalf("%s = required %v status %s, want optional partial", postID, tail.Required, tail.Status)
+		}
+		if !strings.Contains(tail.Notes, "Post-MVP") {
+			t.Fatalf("%s notes do not identify the post-MVP contract: %s", postID, tail.Notes)
+		}
 	}
 }
 
@@ -60,7 +137,7 @@ func TestWriteText(t *testing.T) {
 		t.Fatal(err)
 	}
 	text := out.String()
-	if !strings.Contains(text, "MVP readiness: not ready") || !strings.Contains(text, "Trigger invocation") {
+	if !strings.Contains(text, "MVP readiness: ready") || !strings.Contains(text, "Required complete: 21/21") {
 		t.Fatalf("text output = %q", text)
 	}
 }
@@ -77,6 +154,8 @@ func TestWriteMarkdown(t *testing.T) {
 		"Required complete:",
 		"| Area | ID | Status | Capability | Notes |",
 		"`triggers.runtime`",
+		"## Tracked Post-MVP Capabilities",
+		"`server.rest-breadth`",
 	} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("markdown output missing %q: %q", want, text)
@@ -93,14 +172,61 @@ func TestWriteKnownGapsMarkdown(t *testing.T) {
 	for _, want := range []string{
 		"# Known Gaps",
 		"Generated from `internal/capability`.",
-		"Required incomplete:",
-		"### `apex.sema.body`: Method-body semantic analysis",
-		"### `release.packaging`: Installable release binaries, checksums, docs",
+		"No required MVP capability gaps are currently tracked.",
 	} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("known gaps output missing %q: %q", want, text)
 		}
 	}
+}
+
+func TestLocalApexExecutionMVPFeaturesAreSupported(t *testing.T) {
+	targets := map[string]bool{
+		"apex.parser.project-scale": true,
+		"apex.sema.body":            true,
+		"dml.apex":                  true,
+		"fixtures.persistence":      true,
+		"sobject.apex":              true,
+		"soql.apex":                 true,
+		"triggers.runtime":          true,
+	}
+	for _, feature := range MVPFeatures() {
+		if !targets[feature.ID] {
+			continue
+		}
+		delete(targets, feature.ID)
+		if feature.Status != StatusSupported {
+			t.Fatalf("%s status = %s, want %s", feature.ID, feature.Status, StatusSupported)
+		}
+		notes := strings.ToLower(feature.Notes)
+		for _, blocked := range []string{"remain incomplete", "remains incomplete", "full ", "broader "} {
+			if strings.Contains(notes, blocked) {
+				t.Fatalf("%s supported notes still carry open gap language %q: %s", feature.ID, blocked, feature.Notes)
+			}
+		}
+	}
+	for id := range targets {
+		t.Fatalf("missing local Apex execution MVP feature %s", id)
+	}
+}
+
+func TestCoreRuntimeControlFlowCapabilityIsSupported(t *testing.T) {
+	for _, feature := range MVPFeatures() {
+		if feature.ID != "vm.control-flow" {
+			continue
+		}
+		if feature.Status != StatusSupported {
+			t.Fatalf("%s status = %s, want %s", feature.ID, feature.Status, StatusSupported)
+		}
+		notes := strings.ToLower(feature.Notes)
+		for _, blocked := range []string{"remaining gap", "remain incomplete", "remains incomplete", "outside control-flow"} {
+			if strings.Contains(notes, blocked) {
+				t.Fatalf("%s supported notes still carry open gap language %q: %s", feature.ID, blocked, feature.Notes)
+			}
+		}
+		return
+	}
+	t.Fatal("missing vm.control-flow MVP feature")
 }
 
 func TestDatabaseStdlibRowsAreLocallyPromotedOrFenced(t *testing.T) {
@@ -114,6 +240,85 @@ func TestDatabaseStdlibRowsAreLocallyPromotedOrFenced(t *testing.T) {
 		if entry.Status == StatusSupported && entry.Notes == "" {
 			t.Fatalf("Database stdlib row %s needs local-model notes", entry.API)
 		}
+	}
+}
+
+func TestDatetimeArithmeticStdlibRowsAreSupported(t *testing.T) {
+	watched := map[string]bool{
+		"Datetime.addHours":   true,
+		"Datetime.addMinutes": true,
+		"Datetime.addSeconds": true,
+	}
+	for _, entry := range StdlibMatrix() {
+		if !watched[entry.API] {
+			continue
+		}
+		delete(watched, entry.API)
+		if entry.Status != StatusSupported {
+			t.Fatalf("%s status = %s, want %s", entry.API, entry.Status, StatusSupported)
+		}
+		if !strings.Contains(entry.Notes, "UTC-local") {
+			t.Fatalf("%s notes do not describe local datetime arithmetic: %s", entry.API, entry.Notes)
+		}
+	}
+	for api := range watched {
+		t.Fatalf("missing stdlib row %s", api)
+	}
+}
+
+func TestDeterministicURLStdlibRowsAreSupported(t *testing.T) {
+	watched := map[string]bool{
+		"URL.getOrgDomainUrl":      true,
+		"URL.getSalesforceBaseUrl": true,
+	}
+	for _, entry := range StdlibMatrix() {
+		if !watched[entry.API] {
+			continue
+		}
+		delete(watched, entry.API)
+		if entry.Status != StatusSupported {
+			t.Fatalf("%s status = %s, want %s", entry.API, entry.Status, StatusSupported)
+		}
+		if !strings.Contains(entry.Notes, "Deterministic local") {
+			t.Fatalf("%s notes do not describe deterministic local URL behavior: %s", entry.API, entry.Notes)
+		}
+	}
+	for api := range watched {
+		t.Fatalf("missing stdlib row %s", api)
+	}
+}
+
+func TestUserInfoLocalIdentityStdlibRowsAreSupported(t *testing.T) {
+	watched := map[string]bool{
+		"UserInfo.getFirstName":                true,
+		"UserInfo.getLanguage":                 true,
+		"UserInfo.getLastName":                 true,
+		"UserInfo.getLocale":                   true,
+		"UserInfo.getName":                     true,
+		"UserInfo.getOrganizationId":           true,
+		"UserInfo.getProfileId":                true,
+		"UserInfo.getSessionId":                true,
+		"UserInfo.getUserEmail":                true,
+		"UserInfo.getUserId":                   true,
+		"UserInfo.getUserName":                 true,
+		"UserInfo.getUserType":                 true,
+		"UserInfo.isMultiCurrencyOrganization": true,
+	}
+	for _, entry := range StdlibMatrix() {
+		if !watched[entry.API] {
+			continue
+		}
+		delete(watched, entry.API)
+		if entry.Status != StatusSupported {
+			t.Fatalf("%s status = %s, want %s", entry.API, entry.Status, StatusSupported)
+		}
+		notes := strings.ToLower(entry.Notes)
+		if !strings.Contains(notes, "local") && !strings.Contains(notes, "runas") {
+			t.Fatalf("%s notes do not describe the local user identity model: %s", entry.API, entry.Notes)
+		}
+	}
+	for api := range watched {
+		t.Fatalf("missing stdlib row %s", api)
 	}
 }
 

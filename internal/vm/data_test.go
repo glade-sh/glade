@@ -9375,6 +9375,86 @@ System.runAs(u) {
 	}
 }
 
+func TestExecSOQLUserModeChecksChildRelationshipPermissions(t *testing.T) {
+	program, err := CompileAnonymous(`
+PermissionSet ps = new PermissionSet(Name = 'ReadAccountOnly', Label = 'Read Account Only');
+insert ps;
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
+User u = new User(
+	Username = 'child-query-user@example.invalid',
+	Alias = 'cquser',
+	Email = 'child-query-user@example.invalid',
+	LastName = 'ChildQuery',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id);
+System.runAs(u) {
+	Boolean caught = false;
+	try {
+		Database.query('SELECT Id, (SELECT Id, Email FROM Contacts) FROM Account WITH USER_MODE');
+	} catch (QueryException qe) {
+		caught = qe.getMessage().contains('Contact') || qe.getMessage().contains('Email');
+	}
+	System.assert(caught);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	account := org.Objects["Account"]
+	account.Records["001000000000901AAA"] = storage.Record{
+		ID:     "001000000000901AAA",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Acme"),
+		},
+	}
+	org.Objects["Account"] = account
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"Email":     {APIName: "Email", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account", ChildRelationshipName: "Contacts"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+				ChildRelationship:  "Contacts",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"003000000000901AAA": {
+				ID:     "003000000000901AAA",
+				Object: "Contact",
+				Fields: map[string]storage.Value{
+					"LastName":  storage.StringValue("Trail"),
+					"Email":     storage.StringValue("trail@example.invalid"),
+					"AccountId": storage.IDValue("001000000000901AAA"),
+				},
+			},
+		},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseUserModeChecksLocalObjectAndFieldPermissions(t *testing.T) {
 	program, err := CompileAnonymous(`
 Database.SaveResult result = Database.update(new Account(Id = '001000000000901AAA', ShippingStreet = 'Baker'), AccessLevel.USER_MODE);

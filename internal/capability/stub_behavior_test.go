@@ -846,7 +846,13 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 		assertStubBehaviorPrefix(t, entries, typeName+".addError(Exception)", StubBehaviorImplemented)
 	}
 	assertStubBehaviorPrefix(t, entries, "QueueableDuplicateSignature.Builder.addString(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "QueueableDuplicateSignature.Builder.getMaxSize()", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "QueueableDuplicateSignature.Builder.getRemainingSize()", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "QueueableDuplicateSignature.Builder.getSize()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Builder.addString(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Builder.getMaxSize()", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Builder.getRemainingSize()", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Builder.getSize()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Process.InputParameter.<init>(", StubBehaviorPassiveDefault)
 	assertStubBehaviorPrefix(t, entries, "CartExtension.Builder.withDeliverToCity(", StubBehaviorPassiveDefault)
 	assertStubBehaviorPrefix(t, entries, "CartExtension.CartAdjustmentBasisList.add(", StubBehaviorPassiveDefault)

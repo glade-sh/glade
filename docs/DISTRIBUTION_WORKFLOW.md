@@ -23,12 +23,9 @@ git tag vX.Y.Z
 git push <remote> vX.Y.Z
 ```
 
-The `Release` GitHub Actions workflow builds and publishes:
-
-- macOS (`amd64`, `arm64`)
-- Linux (`amd64`, `arm64`)
-- Windows (`amd64`)
-- `SHA256SUMS.txt`
+The `Release` GitHub Actions workflow builds parser-capable macOS and Linux
+archives on matching CGO-enabled runners, verifies `glade doctor` reports
+`parser: ok`, and publishes `SHA256SUMS.txt`.
 
 ## 3. Verify Artifacts
 
@@ -38,6 +35,7 @@ Download one archive and checksums from the GitHub Release, then verify:
 grep "  \./glade_VERSION_linux_amd64.tar.gz$" SHA256SUMS.txt | shasum -a 256 -c -
 tar -xzf glade_VERSION_linux_amd64.tar.gz
 ./glade version
+./glade doctor
 ```
 
 Verify the public install script after Pages deploys:
@@ -45,6 +43,7 @@ Verify the public install script after Pages deploys:
 ```bash
 curl -fsSL https://glade.sh/install.sh | sh
 glade version
+glade doctor
 ```
 
 ## 4. Update Homebrew Tap
@@ -61,6 +60,7 @@ Validate install:
 brew update
 brew install <tap>/glade
 glade version
+glade doctor
 ```
 
 ## 5. Publish Notes

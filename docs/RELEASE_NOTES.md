@@ -4,8 +4,8 @@
 
 Compatibility status:
 
-- MVP readiness: not ready.
-- Required MVP capabilities are still partial or unsupported.
+- MVP readiness: ready.
+- Required MVP capabilities are supported for the local MVP contract.
 - Checked example-project server support is green:
   `pass=101 fail=0 unsupported=0 missing=0`.
 - Checked example-project post-parity readiness inventory is green:
@@ -25,7 +25,9 @@ Release engineering:
   browser shell.
 - Added richer playground examples and `--project-ref name=path` so local SFDX
   folders can appear in the playground selector and load into scratch.
-- Added tag-driven release artifact builds for macOS, Linux, and Windows.
+- Added tag-driven parser-capable release artifact builds for macOS and Linux
+  host architectures, with Windows held until a CGO-capable Windows release
+  runner is wired.
 - Added release-readiness labels for server examples, MVP, Apex parity, legacy
   local tests, declarative automation, and Visualforce/Aura/LWC controller-test
   support.

@@ -81,10 +81,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Date | `Date.today` | `supported` | Returns the deterministic local runtime date. |
 | Date | `Date.valueOf` | `supported` | Parses supported date strings. |
 | Datetime | `Datetime.addDays` | `supported` | UTC-local day arithmetic. |
-| Datetime | `Datetime.addHours` | `partial` | UTC-local arithmetic. |
-| Datetime | `Datetime.addMinutes` | `partial` | UTC-local arithmetic. |
+| Datetime | `Datetime.addHours` | `supported` | UTC-local arithmetic. |
+| Datetime | `Datetime.addMinutes` | `supported` | UTC-local arithmetic. |
 | Datetime | `Datetime.addMonths` | `supported` | UTC-local month arithmetic with end-of-month clamping. |
-| Datetime | `Datetime.addSeconds` | `partial` | UTC-local arithmetic. |
+| Datetime | `Datetime.addSeconds` | `supported` | UTC-local arithmetic. |
 | Datetime | `Datetime.addYears` | `supported` | UTC-local year arithmetic with leap-day clamping. |
 | Datetime | `Datetime.format` | `supported` | Formats using the deterministic local timezone model. |
 | Datetime | `Datetime.formatGmt` | `supported` | Formats using GMT. |
@@ -250,24 +250,24 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Type | `Type.newInstance` | `partial` | Constructs local object values without constructor dispatch parity. |
 | UIRequest | `UIRequest.getCurrent()` | `unsupported` | UI request context is not available in local Apex execution. |
 | UIRequest | `UIRequest.getRequestHeader(String)` | `unsupported` | UI request context is not available in local Apex execution. |
-| URL | `URL.getOrgDomainUrl` | `partial` | Deterministic local org URL. |
-| URL | `URL.getSalesforceBaseUrl` | `partial` | Deterministic local base URL. |
+| URL | `URL.getOrgDomainUrl` | `supported` | Deterministic local org URL. |
+| URL | `URL.getSalesforceBaseUrl` | `supported` | Deterministic local base URL. |
 | Unsupported | `unimplemented platform/stdlib calls` | `supported` | Typed UnsupportedFeature errors with stable message text. |
-| UserInfo | `UserInfo.getFirstName` | `partial` | Current runAs/default user. |
-| UserInfo | `UserInfo.getLanguage` | `partial` | Deterministic local value. |
-| UserInfo | `UserInfo.getLastName` | `partial` | Current runAs/default user. |
-| UserInfo | `UserInfo.getLocale` | `partial` | Deterministic local value. |
-| UserInfo | `UserInfo.getName` | `partial` | Current runAs/default user. |
-| UserInfo | `UserInfo.getOrganizationId` | `partial` | Local org identity. |
-| UserInfo | `UserInfo.getProfileId` | `partial` | Current runAs/default user. |
-| UserInfo | `UserInfo.getSessionId` | `partial` | Empty local session value. |
+| UserInfo | `UserInfo.getFirstName` | `supported` | Returns the current runAs/default user's local first name. |
+| UserInfo | `UserInfo.getLanguage` | `supported` | Returns the current runAs/default user's local language value. |
+| UserInfo | `UserInfo.getLastName` | `supported` | Returns the current runAs/default user's local last name. |
+| UserInfo | `UserInfo.getLocale` | `supported` | Returns the current runAs/default user's local locale value. |
+| UserInfo | `UserInfo.getName` | `supported` | Returns the current runAs/default user's local display name. |
+| UserInfo | `UserInfo.getOrganizationId` | `supported` | Returns the deterministic local org identity. |
+| UserInfo | `UserInfo.getProfileId` | `supported` | Returns the current runAs/default user's local profile id. |
+| UserInfo | `UserInfo.getSessionId` | `supported` | Returns the deterministic empty local session value. |
 | UserInfo | `UserInfo.getTimeZone` | `supported` | Returns the deterministic local user timezone. |
-| UserInfo | `UserInfo.getUserEmail` | `partial` | Current runAs/default user. |
-| UserInfo | `UserInfo.getUserId` | `partial` | Current runAs/default user. |
-| UserInfo | `UserInfo.getUserName` | `partial` | Current runAs/default user. |
-| UserInfo | `UserInfo.getUserType` | `partial` | Current runAs/default user. |
+| UserInfo | `UserInfo.getUserEmail` | `supported` | Returns the current runAs/default user's local email value. |
+| UserInfo | `UserInfo.getUserId` | `supported` | Returns the current runAs/default user's local user id. |
+| UserInfo | `UserInfo.getUserName` | `supported` | Returns the current runAs/default user's local username. |
+| UserInfo | `UserInfo.getUserType` | `supported` | Returns the current runAs/default user's local user type. |
 | UserInfo | `UserInfo.hasPackageLicense(Id)` | `unsupported` | Package license checks require installed package license state and are not fabricated locally. |
 | UserInfo | `UserInfo.isCurrentUserLicensedForPackage(Id)` | `unsupported` | Package license checks require installed package license state and are not fabricated locally. |
-| UserInfo | `UserInfo.isMultiCurrencyOrganization` | `partial` | Local org metadata flag. |
+| UserInfo | `UserInfo.isMultiCurrencyOrganization` | `supported` | Returns the local org multi-currency metadata flag. |
 | WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map,List)` | `unsupported` | Generated SOAP callout invocation requires external transport and WSDL binding state. |
 | WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)` | `unsupported` | Generated SOAP callout invocation requires external transport and WSDL binding state. |

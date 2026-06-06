@@ -242,6 +242,56 @@ func TestStandardPlatformSymbolsIncludeBaseExceptionConstructors(t *testing.T) {
 	requireStandardConstructor(t, exception, []string{"String", "Exception"})
 }
 
+func TestStandardPlatformSymbolsIncludePassiveLimitsGetterShapeRows(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	limits := requireStandardSymbol(t, symbols, "Limits")
+
+	for _, name := range []string{
+		"getAggregateQueries",
+		"getLimitAggregateQueries",
+		"getApexCursorRows",
+		"getLimitApexCursorRows",
+		"getApexCursors",
+		"getLimitApexCursors",
+		"getApexPaginationCursorRows",
+		"getLimitApexPaginationCursorRows",
+		"getApexPaginationCursors",
+		"getLimitApexPaginationCursors",
+		"getChildRelationshipsDescribes",
+		"getLimitChildRelationshipsDescribes",
+		"getDatabaseTime",
+		"getLimitDatabaseTime",
+		"getFetchCallsOnApexCursor",
+		"getLimitFetchCallsOnApexCursor",
+		"getFieldSetsDescribes",
+		"getLimitFieldSetsDescribes",
+		"getFieldsDescribes",
+		"getLimitFieldsDescribes",
+		"getFindSimilarCalls",
+		"getLimitFindSimilarCalls",
+		"getMobilePushApexCalls",
+		"getLimitMobilePushApexCalls",
+		"getPicklistDescribes",
+		"getLimitPicklistDescribes",
+		"getQueryLocatorRows",
+		"getLimitQueryLocatorRows",
+		"getRecordTypesDescribes",
+		"getLimitRecordTypesDescribes",
+		"getRunAs",
+		"getLimitRunAs",
+		"getSavepointRollbacks",
+		"getLimitSavepointRollbacks",
+		"getSavepoints",
+		"getLimitSavepoints",
+		"getScriptStatements",
+		"getLimitScriptStatements",
+		"getSoslQueries",
+		"getLimitSoslQueries",
+	} {
+		requireStandardMethod(t, limits, name, nil, true)
+	}
+}
+
 func TestStandardPlatformSymbolsIncludeLabelLimitsDecimalAndTargetExceptionShapes(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 

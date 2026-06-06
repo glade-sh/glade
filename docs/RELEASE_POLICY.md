@@ -91,7 +91,8 @@ git push <remote> vX.Y.Z
 ```
 
 3. Let the `Release` workflow publish artifacts.
-   - Artifacts are built to `dist/` for macOS, Linux, and Windows.
+   - Artifacts are built to `dist/` with CGO enabled on macOS and Linux runners.
+   - `glade doctor` must report `parser: ok` before an archive is written.
    - `SHA256SUMS.txt` is published with the release assets.
 
 4. Verify install from release artifacts.
@@ -102,6 +103,7 @@ curl -L -o SHA256SUMS.txt "<checksums-url>"
 grep "  \./glade_vX.Y.Z_linux_amd64.tar.gz$" SHA256SUMS.txt | shasum -a 256 -c -
 tar -xzf glade_vX.Y.Z_linux_amd64.tar.gz
 ./glade version
+./glade doctor
 ```
 
 5. Update distribution channels.
