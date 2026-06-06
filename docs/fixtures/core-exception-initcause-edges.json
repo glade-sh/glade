@@ -2,11 +2,13 @@
   "name": "core-exception-initcause-edges",
   "evidence": [
     {
+      "surfaceId": "apex:System.Exception.initCause(Exception)",
       "symbol": "Exception.initCause",
       "kind": "exec",
       "notes": "Covers one-shot cause initialization, null cause initialization, returned receiver, and self-cause rejection."
     },
     {
+      "surfaceId": "apex:System.Exception.getCause()",
       "symbol": "Exception.getCause",
       "kind": "exec",
       "notes": "Covers stable cause retrieval after repeat initCause failures."

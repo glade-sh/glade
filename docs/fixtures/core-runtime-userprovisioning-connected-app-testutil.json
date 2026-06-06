@@ -1,0 +1,29 @@
+{
+  "name": "core-runtime-userprovisioning-connected-app-testutil",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.UserProvisioning.ConnectorTestUtil.createConnectedApp(String)",
+      "symbol": "UserProvisioning.ConnectorTestUtil.createConnectedApp(String)",
+      "kind": "exec",
+      "notes": "Local connector test utility returns a ConnectedApplication DTO with deterministic Id and caller-supplied Name."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "ConnectedApplication app = UserProvisioning.ConnectorTestUtil.createConnectedApp('Local App');\nSystem.assertEquals('Local App', app.Name);\nSystem.assertEquals('0SO000000000001', app.Id);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "ConnectedApplication app = UserProvisioning.ConnectorTestUtil.createConnectedApp('Local App');\nSystem.assertEquals('Local App', app.Name);\nSystem.assertEquals('0SO000000000001', app.Id);"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

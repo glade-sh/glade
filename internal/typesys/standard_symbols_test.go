@@ -149,6 +149,84 @@ func TestStandardPlatformSymbolsQualifyDatabaseDMLOptionsParameters(t *testing.T
 	requireStandardMethod(t, database, "insert", []string{"Object", "Database.DMLOptions"}, true)
 }
 
+func TestStandardPlatformSymbolsQualifyDatabaseAccessLevelParameters(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	database := requireStandardSymbol(t, symbols, "Database")
+
+	for _, member := range database.Members {
+		if member.Kind != apexast.DeclarationMethod {
+			continue
+		}
+		for _, param := range member.Parameters {
+			if strings.EqualFold(param.Name, "accessLevel") && param.Type == "Object" {
+				t.Fatalf("Database.%s has Object accessLevel parameter; use AccessLevel: %#v", member.Name, member.Parameters)
+			}
+			if strings.EqualFold(param.Name, "dmlOptions") && param.Type == "Object" {
+				t.Fatalf("Database.%s has Object dmlOptions parameter; use Database.DMLOptions: %#v", member.Name, member.Parameters)
+			}
+		}
+	}
+	requireStandardMethod(t, database, "delete", []string{"Id", "Boolean", "AccessLevel"}, true)
+	requireStandardMethod(t, database, "insert", []string{"SObject", "Database.DMLOptions", "AccessLevel"}, true)
+	requireStandardMethod(t, database, "merge", []string{"SObject", "Id", "Boolean", "AccessLevel"}, true)
+}
+
+func TestStandardPlatformSymbolsQualifySearchSuggestionOptions(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	search := requireStandardSymbol(t, symbols, "Search")
+
+	for _, member := range search.Members {
+		if member.Kind != apexast.DeclarationMethod || !strings.EqualFold(member.Name, "suggest") {
+			continue
+		}
+		for _, param := range member.Parameters {
+			if strings.EqualFold(param.Name, "options") && param.Type == "Object" {
+				t.Fatalf("Search.suggest has Object options parameter; use Search.SuggestionOption: %#v", member.Parameters)
+			}
+		}
+	}
+	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Search.SuggestionOption"}, true)
+	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Search.SuggestionOption", "AccessLevel"}, true)
+}
+
+func TestStandardPlatformSymbolsIncludeApexPagesControllerShapeRows(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	message := requireStandardSymbol(t, symbols, "ApexPages.Message")
+	requireStandardMethod(t, message, "getDetail", nil, false)
+	requireStandardMethod(t, message, "getSeverity", nil, false)
+	requireStandardMethod(t, message, "getSummary", nil, false)
+}
+
+func TestStandardPlatformSymbolsIncludeAsyncMethodShapeRows(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	asyncInfo := requireStandardSymbol(t, symbols, "AsyncInfo")
+	requireStandardMethod(t, asyncInfo, "getCurrentQueueableStackDepth", nil, true)
+
+	asyncOptions := requireStandardSymbol(t, symbols, "AsyncOptions")
+	requireStandardMethod(t, asyncOptions, "getMaximumQueueableStackDepth", nil, false)
+	requireStandardMethod(t, asyncOptions, "setMinimumQueueableDelayInMinutes", []string{"Integer"}, false)
+
+	limits := requireStandardSymbol(t, symbols, "Limits")
+	requireStandardMethod(t, limits, "getAsyncJobs", nil, true)
+	requireStandardMethod(t, limits, "getFutureCalls", nil, true)
+	requireStandardMethod(t, limits, "getLimitAsyncJobs", nil, true)
+	requireStandardMethod(t, limits, "getQueueableJobs", nil, true)
+
+	queueableContext := requireStandardSymbol(t, symbols, "QueueableContext")
+	requireStandardMethod(t, queueableContext, "getJobId", nil, false)
+
+	schedulableContext := requireStandardSymbol(t, symbols, "SchedulableContext")
+	requireStandardMethod(t, schedulableContext, "getTriggerId", nil, false)
+
+	testClass := requireStandardSymbol(t, symbols, "Test")
+	requireStandardMethod(t, testClass, "clearApexPageMessages", nil, true)
+
+	requireNoStandardSymbol(t, symbols, "System.isFuture")
+	requireNoStandardSymbol(t, symbols, "System.isQueueable")
+}
+
 func TestStandardPlatformSymbolsIncludeBaseExceptionConstructors(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 
@@ -497,6 +575,13 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	systemClass := requireStandardSymbol(t, symbols, "System")
 	requireStandardMethod(t, systemClass, "debug", []string{"LoggingLevel", "Object"}, true)
 
+	loggingLevel := requireStandardSymbol(t, symbols, "LoggingLevel")
+	requireStandardMethod(t, loggingLevel, "name", nil, false)
+	requireStandardMethod(t, loggingLevel, "ordinal", nil, false)
+	requireStandardMethod(t, loggingLevel, "toString", nil, false)
+	requireStandardMethod(t, loggingLevel, "values", nil, true)
+	requireStandardMethod(t, loggingLevel, "valueOf", []string{"String"}, true)
+
 	installHandler := requireStandardSymbol(t, symbols, "InstallHandler")
 	requireStandardMethod(t, installHandler, "onInstall", []string{"InstallContext"}, false)
 
@@ -524,8 +609,8 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	requireStandardMethodType(t, databaseError, "getExtendedErrorDetails", "List<Object>")
 
 	database := requireStandardSymbol(t, symbols, "Database")
-	requireStandardMethod(t, database, "insert", []string{"SObject", "Object"}, true)
-	requireStandardMethod(t, database, "update", []string{"List<SObject>", "Object"}, true)
+	requireStandardMethod(t, database, "insert", []string{"Object", "Database.DMLOptions"}, true)
+	requireStandardMethod(t, database, "update", []string{"List<Object>", "Database.DMLOptions"}, true)
 	requireStandardMethod(t, database, "countQuery", []string{"String", "System.AccessLevel"}, true)
 	requireStandardMethod(t, database, "countQueryWithBinds", []string{"String", "Map<String,Object>", "System.AccessLevel"}, true)
 	requireStandardMethod(t, database, "getQueryLocator", []string{"String", "System.AccessLevel"}, true)

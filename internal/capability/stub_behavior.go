@@ -271,6 +271,13 @@ func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys
 		return "", "", false
 	}
 	switch typeName {
+	case "Canvas.Test":
+		switch name {
+		case "mockrendercontext":
+			return StubBehaviorImplemented, "local test harness materializes Canvas.RenderContext from application and environment maps", true
+		case "testcanvaslifecycle":
+			return StubBehaviorImplemented, "local test harness dispatches Canvas.CanvasLifecycleHandler.onRender with the supplied RenderContext", true
+		}
 	case "DataSource.AsyncDeleteCallback":
 		if name == "processdelete" {
 			return StubBehaviorImplemented, "local async DML invokes DataSource.AsyncDeleteCallback with the materialized DeleteResult in tests", true
@@ -288,12 +295,14 @@ func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys
 		}
 	case "Invocable.Action.Result":
 		switch name {
-		case "clone", "getaction", "geterrors", "getinvocationparameters", "getoutputparameters", "issuccess":
-			return StubBehaviorStubNoOp, "local Invocable.Action.invoke returns no-op Result DTOs with action, error, invocation, output, and success accessors", true
+		case "clone":
+			return StubBehaviorImplemented, "local Invocable.Action.Result clone preserves result fields and isolates cloned parameter/output maps", true
+		case "getaction", "geterrors", "getinvocationparameters", "getoutputparameters", "issuccess":
+			return StubBehaviorImplemented, "local Invocable.Action.invoke returns deterministic Result DTOs with action, error, invocation, output, and success accessors", true
 		}
 	case "Invocable.Action":
 		if name == "getdescribe" {
-			return StubBehaviorStubNoOp, "local Invocable.Action.getDescribe returns a no-op DescribeResult DTO for local tests", true
+			return StubBehaviorImplemented, "local Invocable.Action.getDescribe returns deterministic DescribeResult DTOs for local tests", true
 		}
 	case "Invocable.Action.DescribeResult":
 		switch name {
@@ -537,6 +546,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if visualEditorDynamicPickListRowsBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "VisualEditor.DynamicPickListRows method is handled by the VM local rows surface", true
 	}
+	if siteUrlRewriterBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "Site.UrlRewriter maps PageReference values through the VM-local URL routing surface without Visualforce rendering", true
+	}
 	if compressionZipBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "compression ZIP archive type is handled by the VM local ZIP surface", true
 	}
@@ -550,7 +562,7 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 		return StubBehaviorStubNoOp, "Context.IndustriesContext map passthrough/no-op method has shape and deterministic local no-op behavior only", true
 	}
 	if orgInstrumentationBehaviorMethod(symbol, member) {
-		return StubBehaviorStubNoOp, "OrgInstrumentation metric/span/context method has shape and deterministic local no-op instrumentation behavior only", true
+		return StubBehaviorImplemented, "OrgInstrumentation metric/span/context method is handled by VM-local context fields, metric tags, spans, and HTTP propagation headers", true
 	}
 	if userProvisioningBatchableBehaviorMethod(symbol, member) {
 		return StubBehaviorStubNoOp, "UserProvisioning batchable helper method has shape and deterministic local no-op/default behavior only", true
@@ -560,6 +572,15 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	}
 	if localTransportMockBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "callout or notification method is handled only through local test/mock harness dispatch; real transport remains explicitly unsupported", true
+	}
+	if localRuntimeHarnessBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "test/mock harness method is handled by VM-local test state without live service transport", true
+	}
+	if subMgmtTestHarnessBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "SubMgmt.Test helper mutates deterministic VM-local test records without subscription service transport", true
+	}
+	if soqlStubProviderHarnessBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "SoqlStubProvider.handleSoqlQuery is dispatched by Test.createSoqlStub with target type, query text, and bind values", true
 	}
 	if localMockHarnessBehaviorMethod(symbol, member) {
 		return StubBehaviorStubNoOp, "test/mock harness method has shape and deterministic local no-op behavior only", true
@@ -588,6 +609,12 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if quickActionDescribeBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "QuickAction describe/template/default methods return local read-only metadata/default DTOs without performing action side effects", true
 	}
+	if richMessagingHandlerResultBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "RichMessaging local handler returns typed deterministic result objects with success status fields and no external messaging transport", true
+	}
+	if localCallbackDefaultBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "local callback default method returns deterministic workflow or transaction-security values without executing org automation or policies", true
+	}
 	if localServiceHarnessBehaviorMethod(symbol, member) {
 		return StubBehaviorStubNoOp, "safe platform service method has shape and deterministic local no-op/default-result behavior only; live cloud side effects remain fenced", true
 	}
@@ -599,6 +626,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	}
 	if industryControllerUnsupportedBehaviorMethod(symbol, member) {
 		return StubBehaviorUnsupported, "industry package mutation, booking, or transaction service remains explicitly unsupported", true
+	}
+	if formulaInstanceBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "formulaeval.FormulaInstance evaluates supported local formulas and reports referenced fields through the VM formula surface", true
 	}
 	if packagedControllerDefaultBehaviorMethod(symbol, member) {
 		return StubBehaviorStubNoOp, "packaged controller/helper method has deterministic local empty/default/no-op behavior without managed-service execution", true
@@ -629,6 +659,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	}
 	if cartExtensionTestUtilBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "CartExtension test utility creates local Cart DTOs without running Commerce services", true
+	}
+	if commerceExternalServiceUnsupportedMethod(symbol, member) {
+		return StubBehaviorUnsupported, "Commerce calculator, checkout, split-shipment, and sample service execution depends on the hosted Commerce runtime and remains explicit unsupported locally", true
 	}
 	if commerceLocalHarnessBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "commerce sample or callback extension point returns deterministic local defaults without invoking live Commerce services", true
@@ -797,6 +830,38 @@ func quickActionDescribeBehaviorMethod(symbol typesys.TypeSymbol, member typesys
 	}
 }
 
+func richMessagingHandlerResultBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	name := strings.ToLower(member.Name)
+	switch stubBehaviorTypeName(symbol) {
+	case "RichMessaging.AuthRequestHandler":
+		return name == "handleauthrequest"
+	case "RichMessaging.ProcessCatalogOrderHandler":
+		return name == "processcatalogorderrequest"
+	case "RichMessaging.ProcessPaymentHandler":
+		return name == "processpaymentrequest"
+	default:
+		return false
+	}
+}
+
+func localCallbackDefaultBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	name := strings.ToLower(member.Name)
+	switch stubBehaviorTypeName(symbol) {
+	case "workflow.Action", "workflow.ActionDml":
+		return name == "invoke"
+	case "TxnSecurity.EventCondition", "TxnSecurity.PolicyCondition":
+		return name == "evaluate"
+	default:
+		return false
+	}
+}
+
 func industryControllerUnsupportedBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
 	if member.Kind != apexast.DeclarationMethod {
 		return false
@@ -866,6 +931,17 @@ func packagedControllerDefaultBehaviorMethod(symbol typesys.TypeSymbol, member t
 	return packagedControllerDefaultMethod(stubBehaviorTypeName(symbol), member.Name)
 }
 
+func formulaInstanceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	if !strings.EqualFold(stubBehaviorTypeName(symbol), "formulaeval.FormulaInstance") {
+		return false
+	}
+	name := strings.ToLower(member.Name)
+	return name == "evaluate" || name == "getreferencedfields"
+}
+
 func packagedControllerUnsupportedBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
 	if member.Kind != apexast.DeclarationMethod {
 		return false
@@ -921,8 +997,6 @@ func packagedControllerDefaultMethod(typeName, methodName string) bool {
 		return name == "invokemethod"
 	case "pref_center.PreferenceCenterApexHandler":
 		return name == "load" || name == "submit"
-	case "formulaeval.FormulaInstance":
-		return name == "evaluate" || name == "getreferencedfields"
 	case "aiaccelerator.CustomFeatureExtractor", "aiaccelerator.SampleCustomFeatureExtractor":
 		return name == "extractfeatures"
 	case "sfdc_enablement.LearningItemEvaluationHandler":
@@ -1889,6 +1963,21 @@ func visualEditorDynamicPickListRowsBehaviorMethod(symbol typesys.TypeSymbol, me
 	}
 }
 
+func siteUrlRewriterBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	if !strings.EqualFold(stubBehaviorTypeName(symbol), "Site.UrlRewriter") {
+		return false
+	}
+	switch strings.ToLower(member.Name) {
+	case "generateurlfor", "maprequesturl":
+		return true
+	default:
+		return false
+	}
+}
+
 func compressionZipBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
 	typeName := stubBehaviorTypeName(symbol)
 	if member.Kind == apexast.DeclarationConstructor {
@@ -2030,6 +2119,14 @@ func callbackInterfaceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.M
 		return name == "handleinboundemail"
 	case "metadata.deploycallback":
 		return name == "handleresult"
+	case "httpcalloutmock":
+		return name == "respond"
+	case "webservicemock":
+		return name == "doinvoke"
+	case "eventbus.eventpublishfailurecallback":
+		return name == "onfailure"
+	case "eventbus.eventpublishsuccesscallback":
+		return name == "onsuccess"
 	case "process.plugin":
 		return name == "describe" || name == "invoke"
 	case "quickaction.quickactiondefaultshandler":
@@ -2063,6 +2160,25 @@ func localTransportMockBehaviorMethod(symbol typesys.TypeSymbol, member typesys.
 	default:
 		return false
 	}
+}
+
+func subMgmtTestHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod || !stubBehaviorMemberStatic(member) {
+		return false
+	}
+	if !strings.EqualFold(stubBehaviorTypeName(symbol), "SubMgmt.Test") {
+		return false
+	}
+	name := strings.ToLower(member.Name)
+	return name == "create" || name == "modify" || name == "remove"
+}
+
+func soqlStubProviderHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	return strings.EqualFold(stubBehaviorTypeName(symbol), "SoqlStubProvider") &&
+		strings.EqualFold(member.Name, "handleSoqlQuery")
 }
 
 func socialInboundDefaultHandlerBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {

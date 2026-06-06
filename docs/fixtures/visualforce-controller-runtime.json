@@ -7,11 +7,13 @@
       "notes": "Visualforce page tokens resolve to local PageReference values."
     },
     {
+      "surfaceId": "apex:ApexPages.StandardController",
       "symbol": "ApexPages.StandardController",
       "kind": "test",
       "notes": "Observed controller save/getId behavior works against local SObject DML."
     },
     {
+      "surfaceId": "apex:ApexPages.StandardSetController",
       "symbol": "ApexPages.StandardSetController",
       "kind": "test",
       "notes": "Observed list pagination helpers work for local record lists."
@@ -24,6 +26,16 @@
     {
       "surfaceId": "apex:ApexPages.StandardController.save()",
       "symbol": "ApexPages.StandardController.save",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardController.delete()",
+      "symbol": "ApexPages.StandardController.delete",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardController.reset()",
+      "symbol": "ApexPages.StandardController.reset",
       "kind": "test"
     },
     {
@@ -57,10 +69,45 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:ApexPages.StandardSetController.addFields(List<String>)",
+      "symbol": "ApexPages.StandardSetController.addFields",
+      "kind": "test"
+    },
+    {
       "symbol": "ApexPages.KnowledgeArticleVersionStandardController.setDataCategory",
       "surfaceId": "apex:ApexPages.KnowledgeArticleVersionStandardController.setDataCategory(String,String)",
       "kind": "test",
       "notes": "Observed no-render data category selection accepts group and category names."
+    },
+    {
+      "symbol": "ApexPages.KnowledgeArticleVersionStandardController.addFields",
+      "surfaceId": "apex:ApexPages.KnowledgeArticleVersionStandardController.addFields(List<String>)",
+      "kind": "test",
+      "notes": "Observed no-render field registration accepts the field list on the wrapped article record."
+    },
+    {
+      "symbol": "ApexPages.KnowledgeArticleVersionStandardController.cancel",
+      "surfaceId": "apex:ApexPages.KnowledgeArticleVersionStandardController.cancel()",
+      "kind": "test",
+      "notes": "Observed no-render navigation returns a PageReference without rendering."
+    },
+    {
+      "symbol": "ApexPages.KnowledgeArticleVersionStandardController.getId",
+      "surfaceId": "apex:ApexPages.KnowledgeArticleVersionStandardController.getId()",
+      "kind": "test",
+      "notes": "Observed controller id access returns the wrapped article Id."
+    },
+    {
+      "symbol": "ApexPages.KnowledgeArticleVersionStandardController.getRecord",
+      "surfaceId": "apex:ApexPages.KnowledgeArticleVersionStandardController.getRecord()",
+      "kind": "test",
+      "notes": "Observed controller record access returns the wrapped article record."
+    },
+    {
+      "symbol": "ApexPages.KnowledgeArticleVersionStandardController.view",
+      "surfaceId": "apex:ApexPages.KnowledgeArticleVersionStandardController.view()",
+      "kind": "test",
+      "notes": "Observed no-render navigation returns a PageReference without rendering."
     },
     {
       "symbol": "SelectOption",
@@ -87,7 +134,7 @@
     },
     {
       "path": "force-app/main/classes/VisualforceControllerRuntimeTest.cls",
-      "content": "@isTest private class VisualforceControllerRuntimeTest { @isTest static void controllerAndUiValueRuntime() { Account account = new Account(Name = 'VF'); ApexPages.StandardController std = new ApexPages.StandardController(account); PageReference saved = std.save(); System.assertEquals(account.Id, std.getId()); System.assertEquals('/' + account.Id, saved.getUrl()); System.assertEquals('/apex/MyPage', Page.MyPage.getUrl()); SelectOption option = new SelectOption('1', 'One', true, false); option.setLabel('Changed'); System.assertEquals('1', option.getValue()); System.assertEquals('Changed', option.getLabel()); System.assert(option.getDisabled()); System.assertEquals(false, option.getEscapeItem()); ApexPages.StandardSetController setController = new ApexPages.StandardSetController(new List<Account>{account, new Account(Name = 'Second')}); setController.setPageSize(1); System.assertEquals(1, setController.getRecords().size()); System.assert(setController.getHasNext()); setController.next(); System.assertEquals(2, setController.getPageNumber()); System.assert(setController.getHasPrevious()); } @isTest static void knowledgeArticleCategorySelectionIsNoRender() { Knowledge__kav article = new Knowledge__kav(Title = 'Local article'); ApexPages.KnowledgeArticleVersionStandardController controller = new ApexPages.KnowledgeArticleVersionStandardController(article); controller.setDataCategory('Products', 'Hardware'); System.assertEquals(null, controller.getSourceId()); } }"
+      "content": "@isTest private class VisualforceControllerRuntimeTest { @isTest static void controllerAndUiValueRuntime() { Account account = new Account(Name = 'VF'); ApexPages.StandardController std = new ApexPages.StandardController(account); PageReference saved = std.save(); System.assertEquals(account.Id, std.getId()); System.assertEquals('/' + account.Id, saved.getUrl()); System.assertEquals('/apex/MyPage', Page.MyPage.getUrl()); SObject original = std.getRecord(); original.put('Name', 'Changed'); PageReference reset = std.reset(); System.assertEquals('/' + account.Id, reset.getUrl()); System.assertEquals('VF', (String)std.getRecord().get('Name')); Account doomed = new Account(Name = 'Delete Me'); insert doomed; Id doomedId = doomed.Id; ApexPages.StandardController deleteController = new ApexPages.StandardController(doomed); PageReference deleted = deleteController.delete(); System.assert(deleted.getUrl().startsWith('/')); List<Account> gone = [SELECT Id FROM Account WHERE Id = :doomedId]; System.assertEquals(0, gone.size()); SelectOption option = new SelectOption('1', 'One', true, false); option.setLabel('Changed'); System.assertEquals('1', option.getValue()); System.assertEquals('Changed', option.getLabel()); System.assert(option.getDisabled()); System.assertEquals(false, option.getEscapeItem()); ApexPages.StandardSetController setController = new ApexPages.StandardSetController(new List<Account>{new Account(Name = 'Set First'), new Account(Name = 'Second')}); setController.addFields(new List<String>{'Name'}); setController.setPageSize(1); System.assertEquals(1, setController.getRecords().size()); System.assertEquals('Set First', (String)setController.getRecord().get('Name')); System.assert(setController.getHasNext()); setController.next(); System.assertEquals(2, setController.getPageNumber()); System.assert(setController.getHasPrevious()); } @isTest static void knowledgeArticleCategorySelectionIsNoRender() { Knowledge__kav article = new Knowledge__kav(Title = 'Local article'); ApexPages.KnowledgeArticleVersionStandardController controller = new ApexPages.KnowledgeArticleVersionStandardController(article); controller.setDataCategory('Products', 'Hardware'); System.assertEquals(null, controller.getSourceId()); } @isTest static void knowledgeArticleRecordAndNavigationAreNoRender() { Knowledge__kav article = new Knowledge__kav(Title = 'Local article'); ApexPages.KnowledgeArticleVersionStandardController controller = new ApexPages.KnowledgeArticleVersionStandardController(article); controller.addFields(new List<String>{'Title'}); SObject record = controller.getRecord(); System.assertEquals(article, record); System.assertEquals(null, controller.getId()); System.assertEquals('', controller.view().getUrl()); System.assertEquals('', controller.cancel().getUrl()); } }"
     }
   ],
   "command": {
@@ -96,8 +143,8 @@
   "expected": {
     "result": {
       "ok": true,
-      "total": 2,
-      "passed": 2,
+      "total": 3,
+      "passed": 3,
       "failed": 0,
       "errors": 0
     }

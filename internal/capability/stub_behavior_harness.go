@@ -87,6 +87,39 @@ func commerceLocalHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesy
 		return false
 	}
 }
+
+func commerceExternalServiceUnsupportedMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	if strings.HasPrefix(typeName, "CommerceDxSampleapp.") {
+		return true
+	}
+	switch typeName {
+	case "CartExtension.AbstractCartCalculator":
+		return name == "calculate"
+	case "CartExtension.CartCalculate":
+		switch name {
+		case "calculate", "inventory", "postshipping", "prices", "promotions", "shipping", "taxes":
+			return true
+		default:
+			return false
+		}
+	case "CartExtension.InventoryCartCalculator", "CartExtension.PricingCartCalculator",
+		"CartExtension.PromotionsCartCalculator", "CartExtension.ShippingCartCalculator",
+		"CartExtension.TaxCartCalculator":
+		return name == "calculate"
+	case "CartExtension.CheckoutPlaceOrder":
+		return name == "validate"
+	case "CartExtension.SplitShipmentService":
+		return name == "arrangeitems"
+	default:
+		return false
+	}
+}
+
 func localServiceHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
 	if member.Kind != apexast.DeclarationMethod {
 		return false
@@ -115,8 +148,6 @@ func localServiceHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys
 		}
 	case "Social.InboundSocialPostHandler":
 		return name == "handleinboundsocialpost"
-	case "Site.UrlRewriter":
-		return name == "generateurlfor" || name == "maprequesturl"
 	case "LiveAgent.LiveChatRouter":
 		return name == "dorouting"
 	case "Support.WorkCapacityCalculation":
@@ -303,6 +334,37 @@ func localMockHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Me
 		return false
 	}
 }
+
+func localRuntimeHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	switch typeName {
+	case "eventbus.TestBroker":
+		return name == "deliver" || name == "fail"
+	case "eventbus.TestEventService":
+		return stubBehaviorMemberStatic(member) && name == "publishevent"
+	case "ExternalServiceTest":
+		return name == "sendcallback"
+	case "TestAsyncHttp":
+		return name == "executehttprequest"
+	case "functions.FunctionInvokeMock":
+		return name == "respond"
+	case "functions.MockFunctionInvocationFactory":
+		return stubBehaviorMemberStatic(member) && (name == "createerrorresponse" || name == "createsuccessresponse")
+	case "CartExtension.CartCalculateExecutorMock":
+		return strings.EqualFold(member.Type, "void")
+	case "CartExtension.SplitShipmentServiceMock":
+		return strings.EqualFold(member.Type, "void")
+	case "UserProvisioning.ConnectorTestUtil":
+		return stubBehaviorMemberStatic(member) && name == "createconnectedapp"
+	default:
+		return false
+	}
+}
+
 func connectAPIReadOnlyHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
 	if member.Kind != apexast.DeclarationMethod ||
 		!stubBehaviorMemberStatic(member) ||
@@ -539,6 +601,9 @@ func slackTestHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Me
 	if member.Kind != apexast.DeclarationMethod {
 		return false
 	}
+	if slackLocalHarnessComponentRuntimeBehaviorMethod(symbol, member) {
+		return true
+	}
 	typeName := stubBehaviorTypeName(symbol)
 	name := strings.ToLower(member.Name)
 	switch typeName {
@@ -561,6 +626,9 @@ func slackTestHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Me
 }
 func slackLocalHarnessComponentBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
 	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	if slackLocalHarnessComponentRuntimeBehaviorMethod(symbol, member) {
 		return false
 	}
 	typeName := slackRuntimeBehaviorType(stubBehaviorTypeName(symbol))
@@ -613,6 +681,62 @@ func slackLocalHarnessComponentBehaviorMethod(symbol typesys.TypeSymbol, member 
 		}
 	case "Slack.Overflow":
 		return name == "clickoption" && strings.EqualFold(member.Type, "void")
+	default:
+		return false
+	}
+}
+
+func slackLocalHarnessComponentRuntimeBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	typeName := slackRuntimeBehaviorType(stubBehaviorTypeName(symbol))
+	name := strings.ToLower(member.Name)
+	switch typeName {
+	case "Slack.ActionDispatcher", "Slack.EventDispatcher", "Slack.ShortcutDispatcher", "Slack.SlashCommandDispatcher":
+		return name == "allowunauthenticatedusers" && strings.EqualFold(member.Type, "Boolean") ||
+			name == "invoke" && strings.EqualFold(member.Type, "Slack.ActionHandler")
+	case "Slack.Button":
+		return name == "click" && strings.EqualFold(member.Type, "void")
+	case "Slack.Channel":
+		switch name {
+		case "adduser", "removeuser":
+			return strings.EqualFold(member.Type, "void")
+		case "canbeopenedbyuser":
+			return strings.EqualFold(member.Type, "Boolean")
+		case "sendmessage":
+			return strings.HasPrefix(member.Type, "Slack.")
+		default:
+			return false
+		}
+	case "Slack.Checkbox":
+		return name == "togglevalue" && strings.EqualFold(member.Type, "void")
+	case "Slack.CheckboxGroup":
+		return name == "togglevalue" && strings.EqualFold(member.Type, "void")
+	case "Slack.ExternalSelect":
+		return name == "query" && strings.EqualFold(member.Type, "void")
+	case "Slack.Message":
+		return name == "canbeseenbyuser" && strings.EqualFold(member.Type, "Boolean")
+	case "Slack.Modal":
+		switch name {
+		case "close":
+			return strings.EqualFold(member.Type, "void")
+		case "hasinputerrors", "submit":
+			return strings.EqualFold(member.Type, "Boolean")
+		default:
+			return false
+		}
+	case "Slack.Overflow":
+		return name == "clickoption" && strings.EqualFold(member.Type, "void")
+	case "Slack.RunnableHandler":
+		return name == "run" && strings.EqualFold(member.Type, "void")
+	case "Slack.UserMappingUrlServiceProvider":
+		return (name == "generatepartnerauthorizationurl" || name == "generateslackauthorizationurl") &&
+			strings.EqualFold(member.Type, "String")
+	case "Slack.UserProvisioningProvider":
+		switch name {
+		case "importusers", "revokeusersbysalesforceid", "revokeusersbyslackid":
+			return strings.EqualFold(member.Type, "Slack.UserProvisioningResult")
+		default:
+			return false
+		}
 	default:
 		return false
 	}

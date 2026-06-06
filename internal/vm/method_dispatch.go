@@ -933,6 +933,16 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 			return value, true, err
 		}
 	}
+	if localRuntimeHarnessPlatformObjectType(receiver.Type) {
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+			if mutated {
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
+			}
+			return value, true, err
+		}
+	}
 	if _, classExists := vm.lookupClass(receiver.Type); classExists && !strings.EqualFold(receiver.Runtime, "System.Cookie") {
 		dispatchType := runtimeObjectType(receiver)
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, method, args)
@@ -1564,6 +1574,18 @@ func metadataContainerPlatformObjectType(typeName string) bool {
 
 func authConfigurationPlatformObjectType(typeName string) bool {
 	return strings.EqualFold(typeName, "Auth.AuthConfiguration") || strings.EqualFold(typeName, "auth.AuthConfiguration")
+}
+
+func localRuntimeHarnessPlatformObjectType(typeName string) bool {
+	switch strings.ToLower(typeName) {
+	case "eventbus.testbroker",
+		"externalservicetest",
+		"testasynchttp",
+		"functions.functioninvokemock":
+		return true
+	default:
+		return false
+	}
 }
 
 func (vm *VM) namespaceStringMapLookup(receiver Value, key Value) (Value, bool) {

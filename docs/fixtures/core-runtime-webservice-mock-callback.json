@@ -1,0 +1,33 @@
+{
+  "name": "core-runtime-webservice-mock-callback",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.WebServiceMock.doInvoke(Object,Object,Map<String,Object>,String,String,String,String,String,String)",
+      "symbol": "WebServiceMock.doInvoke(Object,Object,Map<String,Object>,String,String,String,String,String,String)",
+      "kind": "test",
+      "notes": "Local WebServiceCallout invokes the registered WebServiceMock.doInvoke implementation and observes response-map mutation."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/MockSoapResponse.cls",
+      "content": "public class MockSoapResponse implements WebServiceMock { public void doInvoke(Object stub, Object request, Map<String,Object> response, String endpoint, String soapAction, String requestName, String responseNS, String responseName, String responseType) { response.put('response_x', responseType + ':' + soapAction); } }"
+    },
+    {
+      "path": "force-app/main/classes/WebServiceMockCallbackFixtureTest.cls",
+      "content": "@isTest private class WebServiceMockCallbackFixtureTest { @isTest static void invokesRegisteredMock() { Test.setMock('WebServiceMock', new MockSoapResponse()); Map<String,Object> response = new Map<String,Object>(); WebServiceCallout.invoke(new Object(), 'request', response, new String[]{'https://example.test', 'soapAction', 'requestNS', 'requestName', 'responseNS', 'responseName', 'ResponseType'}); System.assertEquals('ResponseType:soapAction', response.get('response_x')); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 1,
+      "total": 1
+    }
+  }
+}

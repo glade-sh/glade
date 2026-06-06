@@ -299,17 +299,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		switch receiver.Type {
 		case "RichMessaging.AuthRequestHandler":
 			if strings.EqualFold(method, "handleAuthRequest") {
-				if len(args) != 1 {
+				if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "RichMessaging.AuthRequestResponse") {
 					return Null, receiver, false, true, fmt.Errorf("RichMessaging.AuthRequestHandler.handleAuthRequest expects AuthRequestResponse")
 				}
-				return Object("RichMessaging.AuthRequestResult"), receiver, false, true, nil
+				return vm.newRichMessagingAuthRequestResult(), receiver, false, true, nil
 			}
 		case "RichMessaging.ProcessCatalogOrderHandler":
 			if strings.EqualFold(method, "processCatalogOrderRequest") {
-				if len(args) != 1 {
+				if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "RichMessaging.ProcessCatalogOrderRequest") {
 					return Null, receiver, false, true, fmt.Errorf("RichMessaging.ProcessCatalogOrderHandler.processCatalogOrderRequest expects ProcessCatalogOrderRequest")
 				}
-				return Object("RichMessaging.ProcessCatalogOrderResult"), receiver, false, true, nil
+				return newRichMessagingProcessCatalogOrderResult(), receiver, false, true, nil
 			}
 		case "RichMessaging.ProcessFormHandler":
 			if strings.EqualFold(method, "processFormRequest") {
@@ -320,10 +320,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 		case "RichMessaging.ProcessPaymentHandler":
 			if strings.EqualFold(method, "processPaymentRequest") {
-				if len(args) != 1 {
+				if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "RichMessaging.ProcessPaymentRequest") {
 					return Null, receiver, false, true, fmt.Errorf("RichMessaging.ProcessPaymentHandler.processPaymentRequest expects ProcessPaymentRequest")
 				}
-				return Object("RichMessaging.ProcessPaymentResult"), receiver, false, true, nil
+				return newRichMessagingProcessPaymentResult(), receiver, false, true, nil
 			}
 		}
 	}
@@ -3542,6 +3542,29 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	return Null, receiver, false, false, nil
 }
 
+func (vm *VM) newRichMessagingAuthRequestResult() Value {
+	out := Object("RichMessaging.AuthRequestResult")
+	out.Fields["redirectPageReference"] = vm.newPageReference("/richmessaging/authenticated")
+	out.Fields["resultStatus"] = Value{Kind: ValueObject, Type: "RichMessaging.AuthRequestResultStatus", Text: "AUTHENTICATED"}
+	out.Fields["expirationDateTime"] = platformScalar("Datetime", formatPlatformDatetime(vm.fakeNow.Add(time.Hour)))
+	return out
+}
+
+func newRichMessagingProcessCatalogOrderResult() Value {
+	out := Object("RichMessaging.ProcessCatalogOrderResult")
+	out.Fields["resultStatus"] = Value{Kind: ValueObject, Type: "RichMessaging.ProcessCatalogOrderResultStatus", Text: "SUCCESS"}
+	out.Fields["errorMessage"] = String("")
+	out.Fields["catalogOrderReferenceId"] = String("local-catalog-order")
+	return out
+}
+
+func newRichMessagingProcessPaymentResult() Value {
+	out := Object("RichMessaging.ProcessPaymentResult")
+	out.Fields["resultStatus"] = Value{Kind: ValueObject, Type: "RichMessaging.ProcessPaymentResultStatus", Text: "SUCCESS"}
+	out.Fields["errorMessage"] = String("")
+	return out
+}
+
 func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	if !vm.isPassivePlatformDTOObject(receiver) {
 		return Null, receiver, false, false, nil
@@ -4288,7 +4311,12 @@ func (vm *VM) callSlackLocalHarnessMember(receiver Value, method string, args []
 			if len(args) != 2 {
 				return Null, receiver, false, true, fmt.Errorf("%s.invoke expects 2 arguments", receiverType)
 			}
-			return Object("Slack.ActionHandler"), receiver, false, true, nil
+			slackRecordInvocation(&receiver, method, args)
+			handler := Object("Slack.ActionHandler")
+			handler.Fields["dispatcherType"] = String(receiverType)
+			handler.Fields["parameters"] = args[0]
+			handler.Fields["requestContext"] = args[1]
+			return handler, receiver, true, true, nil
 		}
 	case "Slack.UserMappingUrlServiceProvider":
 		switch name {
@@ -4296,12 +4324,12 @@ func (vm *VM) callSlackLocalHarnessMember(receiver Value, method string, args []
 			if len(args) != 2 {
 				return Null, receiver, false, true, fmt.Errorf("Slack.UserMappingUrlServiceProvider.generatePartnerAuthorizationUrl expects 2 arguments")
 			}
-			return String(""), receiver, false, true, nil
+			return String(slackAuthorizationURL("partner", args)), receiver, false, true, nil
 		case "generateslackauthorizationurl":
 			if len(args) != 1 {
 				return Null, receiver, false, true, fmt.Errorf("Slack.UserMappingUrlServiceProvider.generateSlackAuthorizationUrl expects 1 argument")
 			}
-			return String(""), receiver, false, true, nil
+			return String(slackAuthorizationURL("slack", args)), receiver, false, true, nil
 		}
 	case "Slack.UserProvisioningProvider":
 		switch name {
@@ -4309,26 +4337,28 @@ func (vm *VM) callSlackLocalHarnessMember(receiver Value, method string, args []
 			if len(args) != 2 {
 				return Null, receiver, false, true, fmt.Errorf("Slack.UserProvisioningProvider.%s expects 2 arguments", method)
 			}
-			return Object("Slack.UserProvisioningResult"), receiver, false, true, nil
+			return slackUserProvisioningResult(method, args), receiver, false, true, nil
 		case "revokeusersbyslackid":
 			if len(args) != 1 {
 				return Null, receiver, false, true, fmt.Errorf("Slack.UserProvisioningProvider.revokeUsersBySlackId expects 1 argument")
 			}
-			return Object("Slack.UserProvisioningResult"), receiver, false, true, nil
+			return slackUserProvisioningResult(method, args), receiver, false, true, nil
 		}
 	case "Slack.RunnableHandler":
 		if name == "run" {
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Slack.RunnableHandler.run expects 0 arguments")
 			}
-			return Null, receiver, false, true, nil
+			receiver.Fields["ran"] = Bool(true)
+			return Null, receiver, true, true, nil
 		}
 	case "Slack.Button":
 		if name == "click" {
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Slack.Button.click expects 0 arguments")
 			}
-			return Null, receiver, false, true, nil
+			receiver.Fields["clicked"] = Bool(true)
+			return Null, receiver, true, true, nil
 		}
 	case "Slack.Channel":
 		switch name {
@@ -4438,7 +4468,19 @@ func (vm *VM) callSlackLocalHarnessMember(receiver Value, method string, args []
 			if len(args) != 1 {
 				return Null, receiver, false, true, fmt.Errorf("Slack.Message.canBeSeenByUser expects 1 argument")
 			}
-			return Bool(true), receiver, false, true, nil
+			channel, ok := receiver.Fields["channel"]
+			if !ok || channel.Kind != ValueObject {
+				return Bool(true), receiver, false, true, nil
+			}
+			userID := slackUserID(args[0])
+			if userID == "" {
+				return Bool(false), receiver, false, true, nil
+			}
+			members := slackStringListField(channel, "members")
+			if len(members.List) == 0 {
+				return Bool(true), receiver, false, true, nil
+			}
+			return Bool(stringListContains(members, userID)), receiver, false, true, nil
 		}
 	case "Slack.Modal":
 		switch name {
@@ -4460,7 +4502,8 @@ func (vm *VM) callSlackLocalHarnessMember(receiver Value, method string, args []
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Slack.Modal.submit expects 0 arguments")
 			}
-			return Bool(true), receiver, false, true, nil
+			receiver.Fields["submitted"] = Bool(true)
+			return Bool(true), receiver, true, true, nil
 		}
 	case "Slack.Overflow":
 		if name == "clickoption" {
@@ -4479,6 +4522,59 @@ func slackStringListField(receiver Value, field string) Value {
 		return value
 	}
 	return typedList("List<String>")
+}
+
+func slackRecordInvocation(receiver *Value, method string, args []Value) {
+	count := int64(0)
+	if value, ok := receiver.Fields["invocationCount"]; ok && value.Kind == ValueInt {
+		count = value.Int
+	}
+	receiver.Fields["invocationCount"] = Int(count + 1)
+	receiver.Fields["lastMethod"] = String(method)
+	receiver.Fields["lastArgs"] = List(args...)
+	if len(args) > 0 {
+		receiver.Fields["lastParameters"] = args[0]
+	}
+	if len(args) > 1 {
+		receiver.Fields["lastRequestContext"] = args[1]
+	}
+}
+
+func slackAuthorizationURL(kind string, args []Value) string {
+	switch kind {
+	case "partner":
+		partner := ""
+		state := ""
+		if len(args) > 0 {
+			partner = scalarText(args[0])
+		}
+		if len(args) > 1 {
+			state = scalarText(args[1])
+		}
+		return "https://slack.local/authorize/partner?partner=" + url.QueryEscape(partner) + "&state=" + url.QueryEscape(state)
+	default:
+		state := ""
+		if len(args) > 0 {
+			state = scalarText(args[0])
+		}
+		return "https://slack.local/authorize/slack?state=" + url.QueryEscape(state)
+	}
+}
+
+func slackUserProvisioningResult(method string, args []Value) Value {
+	result := Object("Slack.UserProvisioningResult")
+	result.Fields["success"] = Bool(true)
+	result.Fields["action"] = String(method)
+	if len(args) > 0 {
+		result.Fields["users"] = args[0]
+		if args[0].Kind == ValueList {
+			result.Fields["userCount"] = Int(int64(len(args[0].List)))
+		}
+	}
+	if len(args) > 1 {
+		result.Fields["teamId"] = args[1]
+	}
+	return result
 }
 
 func slackUserID(value Value) string {

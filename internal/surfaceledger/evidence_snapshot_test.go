@@ -159,6 +159,27 @@ func TestBuildEvidenceSnapshotSkipsDatabaseFamilyLabelsWithoutSurfaceID(t *testi
 	}
 }
 
+func TestBuildEvidenceSnapshotSkipsKnownNamespaceLowercaseMemberLabelsWithoutSurfaceID(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "fixture.json")
+	data := `{
+  "name": "system_runtime_label",
+  "evidence": [{"symbol": "System.isFuture"}],
+  "command": {"kind": "exec"},
+  "expected": {"stdout": ""}
+}`
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := BuildEvidenceSnapshot([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 0 {
+		t.Fatalf("System.isFuture label inferred fake type rows: %#v", rows)
+	}
+}
+
 func TestBuildEvidenceSnapshotSkipsHumanBehaviorLabelsWithoutSurfaceID(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "fixture.json")

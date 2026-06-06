@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -887,35 +886,17 @@ platformStaticCall:
 		if args[0].Kind != ValueString {
 			return Null, fmt.Errorf("%s expects async operation id or local result", callee)
 		}
-		resultType := "Database.SaveResult"
-		if callee == "Database.getAsyncDeleteResult" {
-			resultType = "Database.DeleteResult"
-		}
-		row := Object(resultType)
-		row.Fields["success"] = Bool(false)
-		row.Fields["id"] = Null
-		row.Fields["errors"] = List(databaseErrorValue(dml.Error{
-			StatusCode: "UNSUPPORTED_OPERATION",
-			Message:    "async DML result lookup requires a local result object",
-		}))
-		return row, nil
+		return Null, newExceptionError("AsyncException", fmt.Sprintf("%s unknown async DML result locator %q", callee, args[0].Text))
 	case "Database.getDeleted":
 		if len(args) != 3 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Database.getDeleted expects object name String, start Datetime, and end Datetime")
 		}
-		deleted := Object("Database.GetDeletedResult")
-		deleted.Fields["deletedRecords"] = List()
-		deleted.Fields["earliestDateAvailable"] = args[1]
-		deleted.Fields["latestDateCovered"] = args[2]
-		return deleted, nil
+		return vm.databaseGetDeleted(args)
 	case "Database.getUpdated":
 		if len(args) != 3 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Database.getUpdated expects object name String, start Datetime, and end Datetime")
 		}
-		updated := Object("Database.GetUpdatedResult")
-		updated.Fields["ids"] = List()
-		updated.Fields["latestDateCovered"] = args[2]
-		return updated, nil
+		return vm.databaseGetUpdated(args)
 	case "Database.emptyRecycleBin":
 		return vm.executeDatabaseRecordAction("emptyRecycleBin", args, result, "Database.EmptyRecycleBinResult")
 	case "Database.lock", "Database.unlock":
@@ -2380,6 +2361,33 @@ platformStaticCall:
 		if err := vm.requireTestContext("eventbus.TestEventService.publishEvent"); err != nil {
 			return Null, err
 		}
+		eventName := strings.TrimSpace(args[0].Text)
+		if eventName == "" {
+			return Null, fmt.Errorf("eventbus.TestEventService.publishEvent expects event name")
+		}
+		record := storage.Record{Object: eventName, Fields: make(map[string]storage.Value)}
+		for _, rawKey := range orderedValueMapKeys(args[1]) {
+			keyValue := args[1].MapKeys[rawKey]
+			if keyValue.Kind != ValueString {
+				return Null, fmt.Errorf("eventbus.TestEventService.publishEvent expects string payload keys")
+			}
+			value, err := storageValueFromVM(args[1].Map[rawKey])
+			if err != nil {
+				return Null, fmt.Errorf("%s.%s: %w", eventName, keyValue.Text, err)
+			}
+			record.Fields[keyValue.Text] = value
+		}
+		if vm.testContext != nil && !vm.testContext.Stopped {
+			vm.testContext.PlatformEvents = append(vm.testContext.PlatformEvents, record)
+		} else {
+			if _, err := vm.runTriggers(triggerTimingAfter, "insert", []storage.Record{record}, nil, result); err != nil {
+				return Null, err
+			}
+		}
+		appendTrace(result, "apex.eventbus.test.publish", "apex.eventbus", map[string]any{
+			"object": eventName,
+			"fields": len(record.Fields),
+		})
 		return Null, nil
 	case "functions.MockFunctionInvocationFactory.createSuccessResponse":
 		return functionInvocationSuccess(args)
@@ -2389,17 +2397,17 @@ platformStaticCall:
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueMap {
 			return Null, fmt.Errorf("SubMgmt.Test.create expects sObject type and attributes map")
 		}
-		return String("local-subscription-" + strings.ToLower(args[0].Text)), nil
+		return vm.subMgmtTestCreate(args[0].Text, args[1]), nil
 	case "SubMgmt.Test.modify":
 		if len(args) != 2 || args[1].Kind != ValueMap {
 			return Null, fmt.Errorf("SubMgmt.Test.modify expects record Id and attributes map")
 		}
-		return Null, nil
+		return Null, vm.subMgmtTestModify(scalarText(args[0]), args[1])
 	case "SubMgmt.Test.remove":
 		if len(args) != 1 {
 			return Null, fmt.Errorf("SubMgmt.Test.remove expects record Id")
 		}
-		return Null, nil
+		return Null, vm.subMgmtTestRemove(scalarText(args[0]))
 	case "UserProvisioning.ConnectorTestUtil.createConnectedApp":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("UserProvisioning.ConnectorTestUtil.createConnectedApp expects connected app name")
@@ -3284,6 +3292,59 @@ platformStaticCall:
 		}
 		return Null, unsupportedCallError(callee)
 	}
+}
+
+func (vm *VM) subMgmtTestCreate(objectType string, attributes Value) Value {
+	if vm.subMgmtTestRecords == nil {
+		vm.subMgmtTestRecords = make(map[string]Value)
+	}
+	vm.subMgmtTestSeq++
+	id := fmt.Sprintf("a6S%012d", vm.subMgmtTestSeq)
+	record := Object("SubMgmt.TestRecord")
+	record.Fields["Id"] = String(id)
+	record.Fields["objectType"] = String(objectType)
+	record.Fields["attributes"] = cloneValue(attributes)
+	vm.subMgmtTestRecords[id] = record
+	return String(id)
+}
+
+func (vm *VM) subMgmtTestModify(id string, attributes Value) error {
+	if id == "" {
+		return fmt.Errorf("SubMgmt.Test.modify expects record Id")
+	}
+	record, ok := vm.subMgmtTestRecords[id]
+	if !ok {
+		return newExceptionError("System.StringException", fmt.Sprintf("SubMgmt.Test.modify record %s not found", id))
+	}
+	current := record.Fields["attributes"]
+	if current.Kind != ValueMap {
+		current = typedMap("Map<String,Object>")
+	}
+	for key, value := range attributes.Map {
+		current.Map[key] = cloneValue(value)
+	}
+	for key, value := range attributes.MapKeys {
+		current.MapKeys[key] = cloneValue(value)
+	}
+	for _, key := range attributes.MapOrder {
+		if !containsString(current.MapOrder, key) {
+			current.MapOrder = append(current.MapOrder, key)
+		}
+	}
+	record.Fields["attributes"] = current
+	vm.subMgmtTestRecords[id] = record
+	return nil
+}
+
+func (vm *VM) subMgmtTestRemove(id string) error {
+	if id == "" {
+		return fmt.Errorf("SubMgmt.Test.remove expects record Id")
+	}
+	if _, ok := vm.subMgmtTestRecords[id]; !ok {
+		return newExceptionError("System.StringException", fmt.Sprintf("SubMgmt.Test.remove record %s not found", id))
+	}
+	delete(vm.subMgmtTestRecords, id)
+	return nil
 }
 
 func (vm *VM) callSystemLabelStatic(callee string, args []Value) (Value, bool, error) {

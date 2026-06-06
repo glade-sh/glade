@@ -20,10 +20,22 @@
       "notes": "List async insert callback overload invokes local callback rows."
     },
     {
+      "surfaceId": "apex:System.Database.insertAsync(List<Object>,Object)",
+      "symbol": "Database.insertAsync(List<Object>,Object)",
+      "kind": "test",
+      "notes": "Signature-known list async insert callback overload is exercised with a DataSource.AsyncSaveCallback object."
+    },
+    {
       "surfaceId": "apex:System.Database.insertAsync(List<Object>,DataSource.AsyncSaveCallback,AccessLevel)",
       "symbol": "Database.insertAsync(List<Object>,DataSource.AsyncSaveCallback,AccessLevel)",
       "kind": "test",
       "notes": "List async insert callback overload invokes local callback rows."
+    },
+    {
+      "surfaceId": "apex:System.Database.insertAsync(List<Object>,Object,Object)",
+      "symbol": "Database.insertAsync(List<Object>,Object,Object)",
+      "kind": "test",
+      "notes": "Signature-known list async insert callback plus access-level overload runs through local DML."
     },
     {
       "surfaceId": "apex:System.Database.updateAsync(List<Object>)",
@@ -44,10 +56,22 @@
       "notes": "List async update callback overload invokes local callback rows."
     },
     {
+      "surfaceId": "apex:System.Database.updateAsync(List<Object>,Object)",
+      "symbol": "Database.updateAsync(List<Object>,Object)",
+      "kind": "test",
+      "notes": "Signature-known list async update callback overload is exercised with a DataSource.AsyncSaveCallback object."
+    },
+    {
       "surfaceId": "apex:System.Database.updateAsync(List<Object>,DataSource.AsyncSaveCallback,AccessLevel)",
       "symbol": "Database.updateAsync(List<Object>,DataSource.AsyncSaveCallback,AccessLevel)",
       "kind": "test",
       "notes": "List async update callback overload invokes local callback rows."
+    },
+    {
+      "surfaceId": "apex:System.Database.updateAsync(List<Object>,Object,Object)",
+      "symbol": "Database.updateAsync(List<Object>,Object,Object)",
+      "kind": "test",
+      "notes": "Signature-known list async update callback plus access-level overload runs through local DML."
     },
     {
       "surfaceId": "apex:System.Database.deleteAsync(List<Object>)",
@@ -68,10 +92,22 @@
       "notes": "List async delete callback overload invokes local callback rows."
     },
     {
+      "surfaceId": "apex:System.Database.deleteAsync(List<Object>,Object)",
+      "symbol": "Database.deleteAsync(List<Object>,Object)",
+      "kind": "test",
+      "notes": "Signature-known list async delete callback overload is exercised with a DataSource.AsyncDeleteCallback object."
+    },
+    {
       "surfaceId": "apex:System.Database.deleteAsync(List<Object>,DataSource.AsyncDeleteCallback,AccessLevel)",
       "symbol": "Database.deleteAsync(List<Object>,DataSource.AsyncDeleteCallback,AccessLevel)",
       "kind": "test",
       "notes": "List async delete callback overload invokes local callback rows."
+    },
+    {
+      "surfaceId": "apex:System.Database.deleteAsync(List<Object>,Object,Object)",
+      "symbol": "Database.deleteAsync(List<Object>,Object,Object)",
+      "kind": "test",
+      "notes": "Signature-known list async delete callback plus access-level overload runs through local DML."
     }
   ],
   "source": [

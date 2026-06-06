@@ -2,6 +2,7 @@
   "name": "async-unsupported-context-edges",
   "evidence": [
     {
+      "surfaceId": "apex:System.AsyncInfo.getCurrentQueueableStackDepth()",
       "symbol": "AsyncInfo.getCurrentQueueableStackDepth",
       "kind": "exec"
     },

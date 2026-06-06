@@ -2,6 +2,7 @@
   "name": "async-options-unsupported-methods",
   "evidence": [
     {
+      "surfaceId": "apex:System.AsyncOptions.getMaximumQueueableStackDepth()",
       "symbol": "AsyncOptions.getMaximumQueueableStackDepth",
       "kind": "exec",
       "notes": "Local queueable stack option metadata is not modeled."

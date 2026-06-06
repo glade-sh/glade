@@ -437,6 +437,15 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 	if args[0].Kind != ValueString {
 		return Null, fmt.Errorf("Search.find expects query String")
 	}
+	queryText, err := vm.expandSOQLBinds(args[0].Text)
+	if err != nil {
+		return Null, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), args[0].Text))
+	}
+	if err := validateSOSLSpellCorrectionOption(queryText); err != nil {
+		return Null, err
+	}
+	withSnippet := soslHasSearchOption(queryText, "snippet")
+	searchTerms := parseSOSLFindTerms(queryText)
 	results := Object("Search.SearchResults")
 	byObject := typedMap("Map<String,List<Search.SearchResult>>")
 	if vm.Org != nil {
@@ -463,8 +472,9 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 			}
 			row := Object("Search.SearchResult")
 			row.Fields["sObject"] = vm.vmValueFromRecord(record)
-			row.Fields["snippet"] = String("")
-			row.Fields["snippets"] = typedMap("Map<String,String>")
+			snippet, snippets := soslSnippetsForRecord(record, withSnippet, searchTerms)
+			row.Fields["snippet"] = String(snippet)
+			row.Fields["snippets"] = snippets
 			list.List = append(list.List, row)
 			byObject.Map[key] = list
 			byObject.MapKeys[key] = String(objectName)
@@ -492,6 +502,10 @@ func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 	if err != nil {
 		return Null, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), raw))
 	}
+	if err := validateSOSLSpellCorrectionOption(queryText); err != nil {
+		return Null, err
+	}
+	pricebookID := soslPricebookID(queryText)
 	objects, err := parseSOSLReturningObjects(queryText)
 	if err != nil {
 		return Null, err
@@ -524,6 +538,9 @@ func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 					continue
 				}
 				if !soslRecordMatchesWhere(record, spec.Where) {
+					continue
+				}
+				if !vm.soslRecordMatchesPricebook(specObjectName, record, pricebookID) {
 					continue
 				}
 				value := vm.vmValueFromRecord(record)
@@ -575,12 +592,199 @@ type soslWhere struct {
 	Value string
 }
 
+func soslHasSearchOption(query, option string) bool {
+	for _, clause := range findSOSLWithClauses(query) {
+		if strings.EqualFold(firstSOSLWord(clause), option) {
+			return true
+		}
+	}
+	return false
+}
+
+func validateSOSLSpellCorrectionOption(query string) error {
+	for _, clause := range findSOSLWithClauses(query) {
+		word := firstSOSLWord(clause)
+		if !strings.EqualFold(word, "SPELL_CORRECTION") {
+			continue
+		}
+		value := strings.TrimSpace(clause[len(word):])
+		if strings.HasPrefix(value, "=") {
+			value = strings.TrimSpace(value[1:])
+		}
+		if value == "" || strings.EqualFold(value, "true") || strings.EqualFold(value, "false") {
+			continue
+		}
+		return newExceptionError("QueryException", "SOSL WITH SPELL_CORRECTION expects true or false")
+	}
+	return nil
+}
+
+func findSOSLWithClauses(query string) []string {
+	var clauses []string
+	for i := 0; i < len(query); i++ {
+		if !hasWordAtFold(query, i, "WITH") {
+			continue
+		}
+		start := i + len("WITH")
+		for start < len(query) && query[start] == ' ' {
+			start++
+		}
+		end := len(query)
+		for j := start; j < len(query); j++ {
+			if hasWordAtFold(query, j, "WITH") || hasWordAtFold(query, j, "LIMIT") || hasWordAtFold(query, j, "OFFSET") {
+				end = j
+				break
+			}
+		}
+		clauses = append(clauses, strings.TrimSpace(query[start:end]))
+		i = end
+	}
+	return clauses
+}
+
+func hasWordAtFold(text string, index int, word string) bool {
+	if index < 0 || index+len(word) > len(text) || !strings.EqualFold(text[index:index+len(word)], word) {
+		return false
+	}
+	if index > 0 && isSOSLWordByte(text[index-1]) {
+		return false
+	}
+	end := index + len(word)
+	return end >= len(text) || !isSOSLWordByte(text[end])
+}
+
+func isSOSLWordByte(ch byte) bool {
+	return ch == '_' || ch >= '0' && ch <= '9' || ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z'
+}
+
+func firstSOSLWord(text string) string {
+	text = strings.TrimSpace(text)
+	for i := 0; i < len(text); i++ {
+		if !isSOSLWordByte(text[i]) {
+			return text[:i]
+		}
+	}
+	return text
+}
+
+func soslPricebookID(query string) string {
+	for _, clause := range findSOSLWithClauses(query) {
+		word := firstSOSLWord(clause)
+		if !strings.EqualFold(word, "PricebookId") {
+			continue
+		}
+		value := strings.TrimSpace(clause[len(word):])
+		if strings.HasPrefix(value, "=") {
+			value = strings.TrimSpace(value[1:])
+		}
+		if len(value) >= 2 && value[0] == '\'' && value[len(value)-1] == '\'' {
+			value = strings.ReplaceAll(value[1:len(value)-1], "''", "'")
+		}
+		return value
+	}
+	return ""
+}
+
+func parseSOSLFindTerms(query string) []string {
+	index := indexFold(query, "find")
+	if index < 0 {
+		return nil
+	}
+	rest := strings.TrimSpace(query[index+len("find"):])
+	if rest == "" {
+		return nil
+	}
+	var raw string
+	switch rest[0] {
+	case '{':
+		if end := strings.IndexByte(rest[1:], '}'); end >= 0 {
+			raw = rest[1 : end+1]
+		}
+	case '\'':
+		if end := strings.IndexByte(rest[1:], '\''); end >= 0 {
+			raw = rest[1 : end+1]
+		}
+	default:
+		fields := strings.Fields(rest)
+		if len(fields) > 0 {
+			raw = fields[0]
+		}
+	}
+	if raw == "" {
+		return nil
+	}
+	var terms []string
+	for _, part := range strings.FieldsFunc(raw, func(r rune) bool {
+		return r == '*' || r == '?' || r == '"' || r == '\'' || r == '(' || r == ')' || r == '{' || r == '}' || r == ' ' || r == '\t' || r == '\n' || r == '\r'
+	}) {
+		part = strings.TrimSpace(part)
+		if part != "" && !strings.EqualFold(part, "AND") && !strings.EqualFold(part, "OR") {
+			terms = append(terms, part)
+		}
+	}
+	return terms
+}
+
+func soslSnippetsForRecord(record storage.Record, enabled bool, terms []string) (string, Value) {
+	snippets := typedMap("Map<String,String>")
+	if !enabled {
+		return "", snippets
+	}
+	fields := make([]string, 0, len(record.Fields))
+	for field := range record.Fields {
+		fields = append(fields, field)
+	}
+	sort.Strings(fields)
+	for _, field := range fields {
+		value := record.Fields[field]
+		text := storageValueText(value)
+		if text == "" || !soslSnippetMatches(text, terms) {
+			continue
+		}
+		snippet := String(text)
+		key := mapKey(String(field))
+		snippets.Map[key] = snippet
+		snippets.MapKeys[key] = String(field)
+	}
+	for _, field := range fields {
+		key := mapKey(String(field))
+		if value, ok := snippets.Map[key]; ok && value.Kind == ValueString {
+			return value.Text, snippets
+		}
+	}
+	return "", snippets
+}
+
+func soslSnippetMatches(text string, terms []string) bool {
+	if len(terms) == 0 {
+		return true
+	}
+	for _, term := range terms {
+		if containsFold(text, term) {
+			return true
+		}
+	}
+	return false
+}
+
+func containsFold(text, needle string) bool {
+	if needle == "" {
+		return true
+	}
+	for i := 0; i <= len(text)-len(needle); i++ {
+		if strings.EqualFold(text[i:i+len(needle)], needle) {
+			return true
+		}
+	}
+	return false
+}
+
 func parseSOSLReturningObjects(query string) ([]soslReturningObject, error) {
 	match := regexp.MustCompile(`(?is)\bRETURNING\s+(.+?)(?:\s+LIMIT\s+\d+\s*)?$`).FindStringSubmatch(query)
 	if len(match) != 2 {
 		return nil, unsupportedCallError("Search.query SOSL RETURNING clause")
 	}
-	parts := splitTopLevelComma(match[1])
+	parts := splitTopLevelComma(trimSOSLReturningObjectsText(match[1]))
 	out := make([]soslReturningObject, 0, len(parts))
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
@@ -612,6 +816,25 @@ func parseSOSLReturningObjects(query string) ([]soslReturningObject, error) {
 		out = append(out, spec)
 	}
 	return out, nil
+}
+
+func trimSOSLReturningObjectsText(text string) string {
+	depth := 0
+	for i := 0; i < len(text); i++ {
+		switch text[i] {
+		case '(':
+			depth++
+		case ')':
+			if depth > 0 {
+				depth--
+			}
+		default:
+			if depth == 0 && hasWordAtFold(text, i, "WITH") {
+				return strings.TrimSpace(text[:i])
+			}
+		}
+	}
+	return strings.TrimSpace(text)
 }
 
 func parseSOSLReturningWhere(fields string) soslWhere {
@@ -648,6 +871,34 @@ func soslRecordMatchesWhere(record storage.Record, where soslWhere) bool {
 		return false
 	}
 	return strings.EqualFold(storageValueText(value), where.Value)
+}
+
+func (vm *VM) soslRecordMatchesPricebook(objectName string, record storage.Record, pricebookID string) bool {
+	if strings.TrimSpace(pricebookID) == "" || vm == nil || vm.Org == nil {
+		return true
+	}
+	if strings.EqualFold(objectName, "PricebookEntry") {
+		value, ok := record.GetField("Pricebook2Id")
+		return ok && apexIDTextEqual(storageValueText(value), pricebookID)
+	}
+	if !strings.EqualFold(objectName, "Product2") {
+		return true
+	}
+	entries, ok := vm.Org.Objects["PricebookEntry"]
+	if !ok {
+		return false
+	}
+	for _, entry := range entries.Records {
+		entryPricebook, ok := entry.GetField("Pricebook2Id")
+		if !ok || !apexIDTextEqual(storageValueText(entryPricebook), pricebookID) {
+			continue
+		}
+		entryProduct, ok := entry.GetField("Product2Id")
+		if ok && apexIDTextEqual(storageValueText(entryProduct), string(record.ID)) {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) applySOSLReturningFunctionAliases(value *Value, record storage.Record, spec soslReturningObject) {

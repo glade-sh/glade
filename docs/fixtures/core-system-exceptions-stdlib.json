@@ -41,22 +41,27 @@
       "notes": "Covers message overload on successful inequality evaluation."
     },
     {
+      "surfaceId": "apex:System.Exception.getMessage()",
       "symbol": "Exception.getMessage",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Exception.getTypeName()",
       "symbol": "Exception.getTypeName",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Exception.getLineNumber()",
       "symbol": "Exception.getLineNumber",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Exception.getStackTraceString()",
       "symbol": "Exception.getStackTraceString",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Exception.toString()",
       "symbol": "Exception.toString",
       "kind": "exec"
     },
@@ -67,51 +72,61 @@
       "notes": "Covers built-in System exception hierarchy assignability."
     },
     {
+      "surfaceId": "apex:System.System.isBatch()",
       "symbol": "System.isBatch",
       "kind": "exec",
       "notes": "Returns false in the local non-async VM context."
     },
     {
+      "surfaceId": "apex:System.System.isFuture()",
       "symbol": "System.isFuture",
       "kind": "exec",
       "notes": "Returns false in the local non-async VM context."
     },
     {
+      "surfaceId": "apex:System.System.isQueueable()",
       "symbol": "System.isQueueable",
       "kind": "exec",
       "notes": "Returns false in the local non-async VM context."
     },
     {
+      "surfaceId": "apex:System.System.isScheduled()",
       "symbol": "System.isScheduled",
       "kind": "exec",
       "notes": "Returns false in the local non-async VM context."
     },
     {
+      "surfaceId": "apex:System.LoggingLevel.values()",
       "symbol": "LoggingLevel.values",
       "kind": "exec",
       "notes": "Covers deterministic built-in enum ordering and name/ordinal/toString members."
     },
     {
+      "surfaceId": "apex:System.LoggingLevel.name()",
       "symbol": "LoggingLevel.name",
       "kind": "exec",
       "notes": "Covers deterministic built-in enum member text."
     },
     {
+      "surfaceId": "apex:System.LoggingLevel.ordinal()",
       "symbol": "LoggingLevel.ordinal",
       "kind": "exec",
       "notes": "Covers deterministic built-in enum ordinal values."
     },
     {
+      "surfaceId": "apex:System.LoggingLevel.toString()",
       "symbol": "LoggingLevel.toString",
       "kind": "exec",
       "notes": "Covers deterministic built-in enum member text."
     },
     {
+      "surfaceId": "apex:System.Exception.getCause()",
       "symbol": "Exception.getCause",
       "kind": "exec",
       "notes": "Covers local cause storage set by initCause, including null reset."
     },
     {
+      "surfaceId": "apex:System.Exception.initCause(Exception)",
       "symbol": "Exception.initCause",
       "kind": "exec",
       "notes": "Covers deterministic local cause storage; exact platform repeat/self-cause edge behavior is not claimed."

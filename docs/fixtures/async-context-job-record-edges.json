@@ -2,8 +2,16 @@
   "name": "async-context-job-record-edges",
   "evidence": [
     {
+      "surfaceId": "apex:System.Queueable.execute(QueueableContext)",
+      "symbol": "Queueable.execute(QueueableContext)",
+      "kind": "test",
+      "notes": "Queued class execute runs during Test.stopTest and writes a row from the QueueableContext."
+    },
+    {
+      "surfaceId": "apex:System.QueueableContext.getJobId()",
       "symbol": "QueueableContext.getJobId",
-      "kind": "test"
+      "kind": "test",
+      "notes": "QueueableContext exposes the deterministic local async job id during drain."
     },
     {
       "symbol": "Database.BatchableContext.getJobId",
@@ -11,8 +19,16 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Schedulable.execute(SchedulableContext)",
+      "symbol": "Schedulable.execute(SchedulableContext)",
+      "kind": "test",
+      "notes": "Scheduled class execute runs during Test.stopTest and writes a row from the SchedulableContext."
+    },
+    {
+      "surfaceId": "apex:System.SchedulableContext.getTriggerId()",
       "symbol": "SchedulableContext.getTriggerId",
-      "kind": "test"
+      "kind": "test",
+      "notes": "SchedulableContext exposes the deterministic local CronTrigger id during drain."
     },
     {
       "symbol": "AsyncApexJob.TotalJobItems",

@@ -58,14 +58,17 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getAsyncJobs()",
       "symbol": "Limits.getAsyncJobs",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getLimitAsyncJobs()",
       "symbol": "Limits.getLimitAsyncJobs",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getFutureCalls()",
       "symbol": "Limits.getFutureCalls",
       "kind": "test"
     },
@@ -75,6 +78,7 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Limits.getQueueableJobs()",
       "symbol": "Limits.getQueueableJobs",
       "kind": "test"
     },

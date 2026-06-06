@@ -22,6 +22,12 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.ApexPages.Message",
+      "symbol": "ApexPages.Message",
+      "kind": "test",
+      "notes": "Identity alias row for the same no-render ApexPages.Message class exercised below."
+    },
+    {
       "surfaceId": "apex:ApexPages.Message.Message(ApexPages.Severity,String)",
       "symbol": "ApexPages.Message.Message(ApexPages.Severity,String)",
       "kind": "test"

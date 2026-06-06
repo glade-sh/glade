@@ -1,0 +1,37 @@
+{
+  "name": "query-runtime-soqlsosl-sosl-with-spell-correction",
+  "evidence": [
+    {
+      "surfaceId": "unknown:sforce_api_calls_sosl_with_spell_correction",
+      "symbol": "SOSL WITH SPELL_CORRECTION",
+      "kind": "test",
+      "notes": "SOSL Search.query accepts boolean WITH SPELL_CORRECTION and keeps deterministic Test.setFixedSearchResults rows without local spell-correction ranking."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/QueryRuntimeSOQLSOSLSOSLWithSpellCorrectionTest.cls",
+      "content": "@isTest private class QueryRuntimeSOQLSOSLSOSLWithSpellCorrectionTest { @isTest static void acceptsSpellCorrectionSearchOption() { Account account = new Account(Name = 'San Francisco Supply'); insert account; Test.setFixedSearchResults(new List<Id>{ account.Id }); List<Account> rows = (List<Account>)Search.query('FIND {San Francisco} IN ALL FIELDS RETURNING Account(Id, Name) WITH SPELL_CORRECTION = false')[0]; System.assertEquals(1, rows.size()); System.assertEquals(account.Id, rows[0].Id); System.assertEquals('San Francisco Supply', rows[0].Name); Boolean invalidRejected = false; try { Search.query('FIND {San Francisco} IN ALL FIELDS RETURNING Account(Id, Name) WITH SPELL_CORRECTION = maybe'); } catch (Exception e) { invalidRejected = true; } System.assert(invalidRejected); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

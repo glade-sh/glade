@@ -1,0 +1,47 @@
+{
+  "name": "data-platform-database-deleted-sync-window",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.Database.getDeleted(String,Datetime,Datetime)",
+      "symbol": "Database.getDeleted(String,Datetime,Datetime)",
+      "kind": "test",
+      "notes": "Local Database.getDeleted returns tombstoned records whose deleted timestamp falls inside the requested sync window."
+    },
+    {
+      "surfaceId": "apex:System.Database.GetDeletedResult.getDeletedRecords()",
+      "symbol": "Database.GetDeletedResult.getDeletedRecords()",
+      "kind": "test",
+      "notes": "GetDeletedResult exposes matching local DeletedRecord DTOs."
+    },
+    {
+      "surfaceId": "apex:System.Database.DeletedRecord.getId()",
+      "symbol": "Database.DeletedRecord.getId()",
+      "kind": "test",
+      "notes": "DeletedRecord exposes the deleted local record Id."
+    },
+    {
+      "surfaceId": "apex:System.Database.DeletedRecord.getDeletedDate()",
+      "symbol": "Database.DeletedRecord.getDeletedDate()",
+      "kind": "test",
+      "notes": "DeletedRecord exposes the local deletion DateTime."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/DatabaseDeletedSyncWindowFixtureTest.cls",
+      "content": "@isTest private class DatabaseDeletedSyncWindowFixtureTest { @isTest static void deletedWindowReturnsMatchingRecords() { Account account = new Account(Name = 'Delete Me'); insert account; Id accountId = account.Id; delete account; Datetime startWindow = Datetime.newInstanceGmt(2026, 5, 2, 11, 59, 0); Datetime endWindow = Datetime.newInstanceGmt(2026, 5, 2, 12, 5, 0); Database.GetDeletedResult inside = Database.getDeleted('Account', startWindow, endWindow); System.assertEquals(1, inside.getDeletedRecords().size()); Database.DeletedRecord deleted = inside.getDeletedRecords()[0]; System.assertEquals(accountId, deleted.getId()); System.assertNotEquals(null, deleted.getDeletedDate()); System.assertEquals(startWindow, inside.getEarliestDateAvailable()); System.assertEquals(endWindow, inside.getLatestDateCovered()); Database.GetDeletedResult outside = Database.getDeleted('Account', Datetime.newInstanceGmt(2026, 5, 1, 0, 0, 0), Datetime.newInstanceGmt(2026, 5, 1, 1, 0, 0)); System.assertEquals(0, outside.getDeletedRecords().size()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 1,
+      "total": 1
+    }
+  }
+}

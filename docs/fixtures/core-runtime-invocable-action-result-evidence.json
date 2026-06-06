@@ -5,7 +5,7 @@
       "surfaceId": "apex:Invocable.Action.Result.clone()",
       "symbol": "Invocable.Action.Result.clone",
       "kind": "test",
-      "notes": "Public Invocable.Action.Result docs expose clone() as an Object copy; the local no-op result can be cloned through the object clone path."
+      "notes": "Public Invocable.Action.Result docs expose clone() as an Object copy; the local result copy preserves result fields while allowing map fields to diverge."
     },
     {
       "surfaceId": "apex:Invocable.Action.Result.getAction()",
@@ -41,7 +41,7 @@
   "source": [
     {
       "path": "force-app/main/classes/CoreRuntimeInvocableActionResultEvidenceTest.cls",
-      "content": "@isTest private class CoreRuntimeInvocableActionResultEvidenceTest { @isTest static void rows() { Invocable.Action action = Invocable.Action.createStandardAction('localNoop'); action.addInvocation(); action.setInvocationParameter('name', 'Trail'); List<Invocable.Action.Result> results = action.invoke(); System.assertEquals(1, results.size()); Invocable.Action.Result result = results[0]; Object copied = result.clone(); System.assertNotEquals(null, copied); System.assert(result.isSuccess()); System.assertEquals(action, result.getAction()); System.assertEquals(0, result.getErrors().size()); System.assertEquals('Trail', (String) result.getInvocationParameters().get('name')); System.assertEquals(0, result.getOutputParameters().size()); } }"
+      "content": "@isTest private class CoreRuntimeInvocableActionResultEvidenceTest { @isTest static void rows() { Invocable.Action action = Invocable.Action.createStandardAction('localNoop'); action.addInvocation(); action.setInvocationParameter('name', 'Trail'); List<Invocable.Action.Result> results = action.invoke(); System.assertEquals(1, results.size()); Invocable.Action.Result result = results[0]; Invocable.Action.Result copied = (Invocable.Action.Result) result.clone(); System.assertNotEquals(null, copied); System.assert(copied.isSuccess()); System.assertNotEquals(null, copied.getAction()); System.assertEquals('Trail', (String) copied.getInvocationParameters().get('name')); copied.getInvocationParameters().put('name', 'Copy'); copied.getOutputParameters().put('status', 'copied'); System.assertEquals('Trail', (String) result.getInvocationParameters().get('name')); System.assertEquals('Copy', (String) copied.getInvocationParameters().get('name')); System.assertEquals(0, result.getOutputParameters().size()); System.assertEquals('copied', (String) copied.getOutputParameters().get('status')); System.assert(result.isSuccess()); System.assertEquals(action, result.getAction()); System.assertEquals(0, result.getErrors().size()); System.assertEquals('Trail', (String) result.getInvocationParameters().get('name')); } }"
     }
   ],
   "command": {

@@ -1,0 +1,37 @@
+{
+  "name": "query-runtime-soqlsosl-sosl-with-snippet",
+  "evidence": [
+    {
+      "surfaceId": "unknown:sforce_api_calls_sosl_with_snippet",
+      "symbol": "SOSL WITH SNIPPET",
+      "kind": "test",
+      "notes": "Search.find with WITH SNIPPET exposes deterministic local snippets for fixed search result rows."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/QueryRuntimeSOQLSOSLSOSLWithSnippetTest.cls",
+      "content": "@isTest private class QueryRuntimeSOQLSOSLSOSLWithSnippetTest { @isTest static void searchFindReturnsFieldSnippet() { Account account = new Account(Name = 'Snippet Account'); insert account; Test.setFixedSearchResults(new List<Id>{ account.Id }); Search.SearchResults found = Search.find('FIND {Snippet} IN ALL FIELDS RETURNING Account(Id, Name) WITH SNIPPET'); List<Search.SearchResult> accounts = found.get('Account'); System.assertEquals(1, accounts.size()); System.assertEquals(account.Id, accounts[0].getSObject().Id); System.assertEquals('Snippet Account', accounts[0].getSnippet('Name')); System.assertEquals('Snippet Account', accounts[0].getSnippet()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

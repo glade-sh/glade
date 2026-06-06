@@ -328,7 +328,14 @@ func (vm *VM) callVoidMockMember(receiver Value, method string, args []Value) (V
 	if !ok || !strings.EqualFold(m.ReturnType, "void") {
 		return Null, receiver, false, false, nil
 	}
-	return Null, receiver, false, true, nil
+	var callCount int64
+	if existing, ok := receiver.Fields["callCount"]; ok && existing.Kind == ValueInt {
+		callCount = existing.Int
+	}
+	receiver.Fields["callCount"] = Int(callCount + 1)
+	receiver.Fields["lastMethod"] = String(method)
+	receiver.Fields["lastArgs"] = List(args...)
+	return Null, receiver, true, true, nil
 }
 
 func (vm *VM) callCartExtensionMockBackedCalculator(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {

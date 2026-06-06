@@ -2,6 +2,7 @@
   "name": "examples-visualforce-controller",
   "evidence": [
     {
+      "surfaceId": "apex:ApexPages.StandardController",
       "symbol": "ApexPages.StandardController",
       "kind": "check",
       "notes": "Reduced Visualforce controller with SelectOption and PageReference references."

@@ -218,7 +218,7 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 				Name:       method.Name,
 				Type:       method.ReturnType,
 				Modifiers:  modifiers,
-				Parameters: standardMethodParameters(method),
+				Parameters: standardMethodParameters(spec.Name, method),
 			})
 		}
 		out = append(out, sym)
@@ -429,11 +429,32 @@ func standardParameters(types []string) []apexast.Parameter {
 	return standardSpecParameters(standardParameterSpecs(types))
 }
 
-func standardMethodParameters(method StandardMethodSpec) []apexast.Parameter {
+func standardMethodParameters(typeName string, method StandardMethodSpec) []apexast.Parameter {
 	if len(method.ParameterSpecs) != 0 {
-		return standardSpecParameters(method.ParameterSpecs)
+		return standardSpecParameters(normalizeStandardMethodParameterSpecs(typeName, method))
 	}
 	return standardParameters(method.Parameters)
+}
+
+func normalizeStandardMethodParameterSpecs(typeName string, method StandardMethodSpec) []StandardParameterSpec {
+	specs := append([]StandardParameterSpec(nil), method.ParameterSpecs...)
+	for i := range specs {
+		if strings.EqualFold(specs[i].Name, "accessLevel") && specs[i].Type == "Object" {
+			specs[i].Name = "accessLevel"
+			specs[i].Type = "AccessLevel"
+			continue
+		}
+		if strings.EqualFold(specs[i].Name, "dmlOptions") && specs[i].Type == "Object" {
+			specs[i].Name = "dmlOptions"
+			specs[i].Type = "Database.DMLOptions"
+			continue
+		}
+		if strings.EqualFold(typeName, "Search") && strings.EqualFold(method.Name, "suggest") &&
+			strings.EqualFold(specs[i].Name, "options") && specs[i].Type == "Object" {
+			specs[i].Type = "Search.SuggestionOption"
+		}
+	}
+	return specs
 }
 
 func standardParameterSpecs(types []string) []StandardParameterSpec {
@@ -769,7 +790,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	}},
 	{Name: "TriggerOperation", Kind: apexast.DeclarationEnum, Properties: []StandardPropertySpec{{Name: "BEFORE_INSERT", Type: "TriggerOperation", Static: true}, {Name: "BEFORE_UPDATE", Type: "TriggerOperation", Static: true}, {Name: "BEFORE_DELETE", Type: "TriggerOperation", Static: true}, {Name: "AFTER_INSERT", Type: "TriggerOperation", Static: true}, {Name: "AFTER_UPDATE", Type: "TriggerOperation", Static: true}, {Name: "AFTER_DELETE", Type: "TriggerOperation", Static: true}, {Name: "AFTER_UNDELETE", Type: "TriggerOperation", Static: true}}},
 	{Name: "Trigger", Properties: []StandardPropertySpec{{Name: "isExecuting", Type: "Boolean", Static: true}, {Name: "isInsert", Type: "Boolean", Static: true}, {Name: "isUpdate", Type: "Boolean", Static: true}, {Name: "isDelete", Type: "Boolean", Static: true}, {Name: "isBefore", Type: "Boolean", Static: true}, {Name: "isAfter", Type: "Boolean", Static: true}, {Name: "isUndelete", Type: "Boolean", Static: true}, {Name: "new", Type: "List<SObject>", Static: true}, {Name: "old", Type: "List<SObject>", Static: true}, {Name: "newMap", Type: "Map<Id,SObject>", Static: true}, {Name: "oldMap", Type: "Map<Id,SObject>", Static: true}, {Name: "operationType", Type: "TriggerOperation", Static: true}, {Name: "size", Type: "Integer", Static: true}}},
-	{Name: "LoggingLevel", Kind: apexast.DeclarationEnum, Properties: []StandardPropertySpec{{Name: "NONE", Type: "LoggingLevel", Static: true}, {Name: "ERROR", Type: "LoggingLevel", Static: true}, {Name: "WARN", Type: "LoggingLevel", Static: true}, {Name: "INFO", Type: "LoggingLevel", Static: true}, {Name: "DEBUG", Type: "LoggingLevel", Static: true}, {Name: "FINE", Type: "LoggingLevel", Static: true}, {Name: "FINER", Type: "LoggingLevel", Static: true}, {Name: "FINEST", Type: "LoggingLevel", Static: true}}},
+	{Name: "LoggingLevel", Kind: apexast.DeclarationEnum, Methods: []StandardMethodSpec{{Name: "name", ReturnType: "String"}, {Name: "ordinal", ReturnType: "Integer"}, {Name: "toString", ReturnType: "String"}, {Name: "values", ReturnType: "List<LoggingLevel>", Static: true}, {Name: "valueOf", ReturnType: "LoggingLevel", Parameters: []string{"String"}, Static: true}}, Properties: []StandardPropertySpec{{Name: "NONE", Type: "LoggingLevel", Static: true}, {Name: "ERROR", Type: "LoggingLevel", Static: true}, {Name: "WARN", Type: "LoggingLevel", Static: true}, {Name: "INFO", Type: "LoggingLevel", Static: true}, {Name: "DEBUG", Type: "LoggingLevel", Static: true}, {Name: "FINE", Type: "LoggingLevel", Static: true}, {Name: "FINER", Type: "LoggingLevel", Static: true}, {Name: "FINEST", Type: "LoggingLevel", Static: true}}},
 	{Name: "Limits", Methods: []StandardMethodSpec{{Name: "getQueries", ReturnType: "Integer", Static: true}, {Name: "getLimitQueries", ReturnType: "Integer", Static: true}, {Name: "getQueryRows", ReturnType: "Integer", Static: true}, {Name: "getLimitQueryRows", ReturnType: "Integer", Static: true}, {Name: "getDmlStatements", ReturnType: "Integer", Static: true}, {Name: "getLimitDmlStatements", ReturnType: "Integer", Static: true}, {Name: "getDMLStatements", ReturnType: "Integer", Static: true}, {Name: "getLimitDMLStatements", ReturnType: "Integer", Static: true}, {Name: "getDmlRows", ReturnType: "Integer", Static: true}, {Name: "getLimitDmlRows", ReturnType: "Integer", Static: true}, {Name: "getDMLRows", ReturnType: "Integer", Static: true}, {Name: "getLimitDMLRows", ReturnType: "Integer", Static: true}, {Name: "getHeapSize", ReturnType: "Integer", Static: true}, {Name: "getLimitHeapSize", ReturnType: "Integer", Static: true}, {Name: "getCpuTime", ReturnType: "Integer", Static: true}, {Name: "getLimitCpuTime", ReturnType: "Integer", Static: true}, {Name: "getCallouts", ReturnType: "Integer", Static: true}, {Name: "getLimitCallouts", ReturnType: "Integer", Static: true}, {Name: "getAsyncCalls", ReturnType: "Integer", Static: true}, {Name: "getLimitAsyncCalls", ReturnType: "Integer", Static: true}, {Name: "getBatchJobs", ReturnType: "Integer", Static: true}, {Name: "getLimitBatchJobs", ReturnType: "Integer", Static: true}, {Name: "getEmailInvocations", ReturnType: "Integer", Static: true}, {Name: "getLimitEmailInvocations", ReturnType: "Integer", Static: true}}},
 	{Name: "Assert", Methods: standardAssertMethods()},
 	{Name: "System.Assert", Methods: standardAssertMethods()},
@@ -1001,6 +1022,13 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "DataSource.AsyncDeleteCallback", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "processDelete", ReturnType: "void", Parameters: []string{"Database.DeleteResult"}}}},
 	{Name: "DataSource.AsyncSaveCallback", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "processSave", ReturnType: "void", Parameters: []string{"Database.SaveResult"}}}},
+	{Name: "ApexPages.Message", Methods: []StandardMethodSpec{{Name: "getSeverity", ReturnType: "ApexPages.Severity"}}},
+	{Name: "AsyncInfo", Methods: []StandardMethodSpec{{Name: "getCurrentQueueableStackDepth", ReturnType: "Integer", Static: true}}},
+	{Name: "AsyncOptions", Methods: []StandardMethodSpec{{Name: "getMaximumQueueableStackDepth", ReturnType: "Integer"}, {Name: "setMinimumQueueableDelayInMinutes", ReturnType: "void", Parameters: []string{"Integer"}}}},
+	{Name: "Limits", Methods: []StandardMethodSpec{{Name: "getAsyncJobs", ReturnType: "Integer", Static: true}, {Name: "getFutureCalls", ReturnType: "Integer", Static: true}, {Name: "getLimitAsyncJobs", ReturnType: "Integer", Static: true}, {Name: "getQueueableJobs", ReturnType: "Integer", Static: true}}},
+	{Name: "QueueableContext", Methods: []StandardMethodSpec{{Name: "getJobId", ReturnType: "Id"}}},
+	{Name: "SchedulableContext", Methods: []StandardMethodSpec{{Name: "getTriggerId", ReturnType: "Id"}}},
+	{Name: "Test", Methods: []StandardMethodSpec{{Name: "clearApexPageMessages", ReturnType: "void", Static: true}}},
 	{Name: "ApexPages.KnowledgeArticleVersionStandardController", Methods: []StandardMethodSpec{
 		{Name: "setDataCategory", ReturnType: "void", Parameters: []string{"String", "String"}},
 	}},

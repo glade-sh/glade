@@ -32,16 +32,40 @@
       "notes": "Single-record async insert callback overload runs through local DML and invokes the callback."
     },
     {
+      "surfaceId": "apex:System.Database.insertAsync(Object,Object)",
+      "symbol": "Database.insertAsync",
+      "kind": "test",
+      "notes": "Signature-known single-record async insert callback overload runs through local DML."
+    },
+    {
+      "surfaceId": "apex:System.Database.insertAsync(Object,Object,Object)",
+      "symbol": "Database.insertAsync",
+      "kind": "test",
+      "notes": "Signature-known single-record async insert callback plus access-level overload runs through local DML."
+    },
+    {
       "surfaceId": "apex:System.Database.updateAsync(Object,DataSource.AsyncSaveCallback,AccessLevel)",
       "symbol": "Database.updateAsync",
       "kind": "test",
       "notes": "Single-record async update callback overload runs through local DML and invokes the callback."
     },
     {
+      "surfaceId": "apex:System.Database.updateAsync(Object,Object,Object)",
+      "symbol": "Database.updateAsync",
+      "kind": "test",
+      "notes": "Signature-known single-record async update callback plus access-level overload runs through local DML."
+    },
+    {
       "surfaceId": "apex:System.Database.deleteAsync(Object,DataSource.AsyncDeleteCallback,AccessLevel)",
       "symbol": "Database.deleteAsync",
       "kind": "test",
       "notes": "Single-record async delete callback overload runs through local DML and invokes the callback."
+    },
+    {
+      "surfaceId": "apex:System.Database.deleteAsync(Object,Object,Object)",
+      "symbol": "Database.deleteAsync",
+      "kind": "test",
+      "notes": "Signature-known single-record async delete callback plus access-level overload runs through local DML."
     }
   ],
   "source": [
@@ -63,7 +87,7 @@
     },
     {
       "path": "force-app/main/classes/AsyncDataSourceCallbackContractsTest.cls",
-      "content": "@isTest private class AsyncDataSourceCallbackContractsTest { @isTest static void callbacksReceiveLocalResults() { AsyncSaveProbe saveCallback = new AsyncSaveProbe(); Account inserted = new Account(Name = 'callback insert'); Database.SaveResult insertResult = Database.insertAsync(inserted, saveCallback, AccessLevel.SYSTEM_MODE); System.assert(insertResult.isSuccess()); System.assertEquals(1, AsyncSaveProbe.calls); System.assertEquals(insertResult.getId(), AsyncSaveProbe.lastId); Account updateRecord = new Account(Id = insertResult.getId(), Name = 'callback update'); Database.SaveResult updateResult = Database.updateAsync(updateRecord, saveCallback, AccessLevel.SYSTEM_MODE); System.assert(updateResult.isSuccess()); System.assertEquals(2, AsyncSaveProbe.calls); AsyncDeleteProbe deleteCallback = new AsyncDeleteProbe(); Database.DeleteResult deleteResult = Database.deleteAsync(updateRecord, deleteCallback, AccessLevel.SYSTEM_MODE); System.assert(deleteResult.isSuccess()); System.assertEquals(1, AsyncDeleteProbe.calls); System.assertEquals(deleteResult.getId(), AsyncDeleteProbe.lastId); } }"
+      "content": "@isTest private class AsyncDataSourceCallbackContractsTest { @isTest static void callbacksReceiveLocalResults() { AsyncSaveProbe saveCallback = new AsyncSaveProbe(); Account inserted = new Account(Name = 'callback insert'); Database.SaveResult insertResult = Database.insertAsync(inserted, saveCallback, AccessLevel.SYSTEM_MODE); System.assert(insertResult.isSuccess()); System.assertEquals(1, AsyncSaveProbe.calls); System.assertEquals(insertResult.getId(), AsyncSaveProbe.lastId); Database.SaveResult bareInsertResult = Database.insertAsync(new Account(Name = 'callback bare insert'), saveCallback); System.assert(bareInsertResult.isSuccess()); System.assertEquals(2, AsyncSaveProbe.calls); System.assertEquals(bareInsertResult.getId(), AsyncSaveProbe.lastId); Account updateRecord = new Account(Id = insertResult.getId(), Name = 'callback update'); Database.SaveResult updateResult = Database.updateAsync(updateRecord, saveCallback, AccessLevel.SYSTEM_MODE); System.assert(updateResult.isSuccess()); System.assertEquals(3, AsyncSaveProbe.calls); AsyncDeleteProbe deleteCallback = new AsyncDeleteProbe(); Database.DeleteResult deleteResult = Database.deleteAsync(updateRecord, deleteCallback, AccessLevel.SYSTEM_MODE); System.assert(deleteResult.isSuccess()); System.assertEquals(1, AsyncDeleteProbe.calls); System.assertEquals(deleteResult.getId(), AsyncDeleteProbe.lastId); } }"
     }
   ],
   "command": {

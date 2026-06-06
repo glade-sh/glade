@@ -114,7 +114,7 @@ func inferSurfaceIDFromSymbol(symbol string) string {
 	}
 	parts := strings.Split(symbol, ".")
 	if len(parts) == 2 {
-		if canonicalApexNamespaceName(parts[0]) == "Database" && startsLowerASCII(parts[1]) {
+		if isKnownApexNamespace(parts[0]) && startsLowerASCII(parts[1]) {
 			return ""
 		}
 		if isKnownApexNamespace(parts[0]) {

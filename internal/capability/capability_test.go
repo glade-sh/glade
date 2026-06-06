@@ -129,6 +129,75 @@ func TestStdlibSupportedRowsDoNotClaimPlaceholderOrNoOpBehavior(t *testing.T) {
 	}
 }
 
+func TestCoreServiceContextStdlibRowsAreExplicitUnsupported(t *testing.T) {
+	watched := map[string]bool{
+		"QuickAction.describeAvailableActions":                                          true,
+		"QuickAction.describeAvailableQuickActions(String)":                             true,
+		"QuickAction.describeQuickActions(List<String>)":                                true,
+		"QuickAction.performQuickAction":                                                true,
+		"QuickAction.performQuickAction(QuickAction.QuickActionRequest)":                true,
+		"QuickAction.performQuickAction(QuickAction.QuickActionRequest,Boolean)":        true,
+		"QuickAction.performQuickActions(List<QuickAction.QuickActionRequest>)":         true,
+		"QuickAction.performQuickActions(List<QuickAction.QuickActionRequest>,Boolean)": true,
+		"QuickAction.retrieveQuickActionTemplate(String,Id)":                            true,
+		"QuickAction.retrieveQuickActionTemplates(List<String>,Id)":                     true,
+		"Request.getCurrent()":                                                          true,
+		"Request.getQuiddity()":                                                         true,
+		"Request.getRequestId()":                                                        true,
+		"RequestImpl.getCurrent()":                                                      true,
+		"ResetPasswordResult.getPassword()":                                             true,
+		"SandboxContext.organizationId()":                                               true,
+		"SandboxContext.sandboxId()":                                                    true,
+		"SandboxContext.sandboxName()":                                                  true,
+		"SandboxPostCopy.runApexClass(SandboxContext)":                                  true,
+		"Schedulable.execute(SchedulableContext)":                                       true,
+		"SchedulableContext.getTriggerId()":                                             true,
+		"Search.find(String,Object)":                                                    true,
+		"Search.query(String,Object)":                                                   true,
+		"Search.suggest(String,String,Object)":                                          true,
+		"Search.suggest(String,String,Object,Object)":                                   true,
+		"System.enqueueJob(Object,Object)":                                              true,
+		"System.runAs(Object,Object)":                                                   true,
+		"System.runAs(Package.Version)":                                                 true,
+		"System.schedule(String,String,Object)":                                         true,
+		"Test.enableChangeDataCapture()":                                                true,
+		"Test.getEventBus()":                                                            true,
+		"Test.getExternalService()":                                                     true,
+		"Test.invokeContinuationMethod(Object,Continuation)":                            true,
+		"Test.invokePage(PageReference)":                                                true,
+		"Test.newSendEmailQuickActionDefaults(Id,Id)":                                   true,
+		"Test.setContinuationResponse(String,HttpResponse)":                             true,
+		"Test.setCurrentPageReference(Object)":                                          true,
+		"Test.testInstall(InstallHandler,Version)":                                      true,
+		"Test.testInstall(InstallHandler,Version,Boolean)":                              true,
+		"Test.testNotificationActionHandler(Messaging.NotificationActionHandler,Messaging.ActionableNotification)": true,
+		"Test.testSandboxPostCopyScript(SandboxPostCopy,Id,Id,String)":                                             true,
+		"Test.testSandboxPostCopyScript(SandboxPostCopy,Id,Id,String,Boolean)":                                     true,
+		"Test.testUninstall(UninstallHandler)":                                                                     true,
+		"TrailblazerIdentity.generateUserEmailVerificationToken(String,String,String)":                             true,
+		"TrailblazerIdentity.getUserOrgInfo(List<String>)":                                                         true,
+		"TrailblazerIdentity.splunkLog(String,String)":                                                             true,
+		"UIRequest.getCurrent()":                                                  true,
+		"UIRequest.getRequestHeader(String)":                                      true,
+		"UserInfo.hasPackageLicense(Id)":                                          true,
+		"UserInfo.isCurrentUserLicensedForPackage(Id)":                            true,
+		"WebServiceCallout.invoke(Object,Object,Map,List)":                        true,
+		"WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)": true,
+	}
+	for _, entry := range StdlibMatrix() {
+		if !watched[entry.API] {
+			continue
+		}
+		if entry.Status != StatusUnsupported {
+			t.Fatalf("%s = %s, want unsupported", entry.API, entry.Status)
+		}
+		delete(watched, entry.API)
+	}
+	if len(watched) > 0 {
+		t.Fatalf("missing explicit unsupported core service/context rows: %#v", watched)
+	}
+}
+
 func TestHTTPStdlibRowsAreLocallyPromotedOrFenced(t *testing.T) {
 	watched := map[string]Status{
 		"Http.send local mock callouts":    StatusSupported,

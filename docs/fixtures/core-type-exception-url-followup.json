@@ -8,16 +8,19 @@
       "notes": "Covers System namespace built-in lookup and unknown System name returning null."
     },
     {
+      "surfaceId": "apex:System.Type.isAssignableFrom(Type)",
       "symbol": "Type.isAssignableFrom",
       "kind": "exec",
       "notes": "Covers System-prefixed exception Type tokens against local built-in hierarchy."
     },
     {
+      "surfaceId": "apex:System.Exception.getTypeName()",
       "symbol": "Exception.getTypeName",
       "kind": "exec",
       "notes": "System-prefixed constructed exceptions return unqualified public type names."
     },
     {
+      "surfaceId": "apex:System.Exception.toString()",
       "symbol": "Exception.toString",
       "kind": "exec",
       "notes": "System-prefixed constructed exceptions format as System.Type: message."

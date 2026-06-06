@@ -12,16 +12,38 @@
       "symbol": "EventBus.publish(List<Object>,Object)",
       "kind": "test",
       "notes": "Local EventBus callback publish queues success callbacks for platform events that carry EventUuid."
+    },
+    {
+      "surfaceId": "apex:eventbus.TestBroker.deliver()",
+      "symbol": "eventbus.TestBroker.deliver()",
+      "kind": "test",
+      "notes": "Test.getEventBus().deliver drains queued local platform events and runs after-insert platform event triggers."
+    },
+    {
+      "surfaceId": "apex:eventbus.TestBroker.fail()",
+      "symbol": "eventbus.TestBroker.fail()",
+      "kind": "test",
+      "notes": "Test.getEventBus().fail marks queued callback publishes so Test.stopTest routes them to EventPublishFailureCallback."
+    },
+    {
+      "surfaceId": "apex:eventbus.TestEventService.publishEvent(String,Map<String,Object>)",
+      "symbol": "eventbus.TestEventService.publishEvent(String,Map<String,Object>)",
+      "kind": "test",
+      "notes": "Local test event service converts the payload map into a queued platform event for TestBroker delivery."
     }
   ],
   "source": [
     {
       "path": "force-app/main/classes/PublishCallback.cls",
-      "content": "public class PublishCallback implements eventbus.EventPublishSuccessCallback { public static Integer successCount = 0; public void onSuccess(eventbus.SuccessResult result) { successCount = result.getEventUuids().size(); } }"
+      "content": "public class PublishCallback implements eventbus.EventPublishSuccessCallback, eventbus.EventPublishFailureCallback { public static Integer successCount = 0; public static Integer failureCount = 0; public static String lastFailureUuid; public void onSuccess(eventbus.SuccessResult result) { successCount = result.getEventUuids().size(); } public void onFailure(eventbus.FailureResult result) { failureCount = result.getEventUuids().size(); if (failureCount > 0) { lastFailureUuid = result.getEventUuids()[0]; } } }"
+    },
+    {
+      "path": "force-app/main/triggers/EventRecipesDemoTrigger.trigger",
+      "content": "trigger EventRecipesDemoTrigger on Event_Recipes_Demo__e (after insert) { for (Event_Recipes_Demo__e evt : Trigger.new) { if (evt.AccountId__c != null) { Account account = [SELECT Id, Website FROM Account WHERE Id = :evt.AccountId__c LIMIT 1]; account.Website = evt.Url__c; update account; } } }"
     },
     {
       "path": "force-app/main/classes/CoreRuntimeEventBusCallbacksTest.cls",
-      "content": "@isTest private class CoreRuntimeEventBusCallbacksTest { @isTest static void callbackPublishUsesEventUuid() { Event_Recipes_Demo__e event = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true); System.assertNotEquals(null, event.EventUuid); Test.startTest(); Database.SaveResult single = EventBus.publish(event, new PublishCallback()); System.assert(single.isSuccess()); List<Database.SaveResult> many = EventBus.publish(new List<SObject>{event}, new PublishCallback()); System.assertEquals(1, many.size()); System.assert(many[0].isSuccess()); Test.stopTest(); System.assertEquals(1, PublishCallback.successCount); } }"
+      "content": "@isTest private class CoreRuntimeEventBusCallbacksTest { @isTest static void callbackPublishUsesEventUuid() { PublishCallback.successCount = 0; PublishCallback.failureCount = 0; Event_Recipes_Demo__e event = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true); System.assertNotEquals(null, event.EventUuid); Test.startTest(); Database.SaveResult single = EventBus.publish(event, new PublishCallback()); System.assert(single.isSuccess()); List<Database.SaveResult> many = EventBus.publish(new List<SObject>{event}, new PublishCallback()); System.assertEquals(1, many.size()); System.assert(many[0].isSuccess()); Test.stopTest(); System.assertEquals(1, PublishCallback.successCount); System.assertEquals(0, PublishCallback.failureCount); } @isTest static void testBrokerDeliverRunsPlatformEventTrigger() { Account account = new Account(Name = 'Event Account'); insert account; Test.startTest(); EventBus.publish(new Event_Recipes_Demo__e(AccountId__c = account.Id, Url__c = 'https://example.test')); Account beforeDeliver = [SELECT Website FROM Account WHERE Id = :account.Id LIMIT 1]; System.assertEquals(null, beforeDeliver.Website); Test.getEventBus().deliver(); Account afterDeliver = [SELECT Website FROM Account WHERE Id = :account.Id LIMIT 1]; System.assertEquals('https://example.test', afterDeliver.Website); Test.stopTest(); } @isTest static void testEventServicePublishEventQueuesTriggerDelivery() { Account account = new Account(Name = 'Event Service Account'); insert account; Test.startTest(); eventbus.TestEventService.publishEvent('Event_Recipes_Demo__e', new Map<String,Object>{'AccountId__c' => account.Id, 'Url__c' => 'https://event-service.test'}); Account beforeDeliver = [SELECT Website FROM Account WHERE Id = :account.Id LIMIT 1]; System.assertEquals(null, beforeDeliver.Website); Test.getEventBus().deliver(); Account afterDeliver = [SELECT Website FROM Account WHERE Id = :account.Id LIMIT 1]; System.assertEquals('https://event-service.test', afterDeliver.Website); Test.stopTest(); } @isTest static void testBrokerFailRoutesFailureCallback() { PublishCallback.successCount = 0; PublishCallback.failureCount = 0; Event_Recipes_Demo__e event = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true); String uuid = event.EventUuid; Test.startTest(); EventBus.publish(event, new PublishCallback()); Test.getEventBus().fail(); Test.stopTest(); System.assertEquals(0, PublishCallback.successCount); System.assertEquals(1, PublishCallback.failureCount); System.assertEquals(uuid, PublishCallback.lastFailureUuid); } }"
     }
   ],
   "schema": [
@@ -32,6 +54,14 @@
     {
       "path": "force-app/main/default/objects/Event_Recipes_Demo__e/fields/EventUuid.field-meta.xml",
       "content": "<CustomField><fullName>EventUuid</fullName><label>Event UUID</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Event_Recipes_Demo__e/fields/AccountId__c.field-meta.xml",
+      "content": "<CustomField><fullName>AccountId__c</fullName><label>Account Id</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Event_Recipes_Demo__e/fields/Url__c.field-meta.xml",
+      "content": "<CustomField><fullName>Url__c</fullName><label>URL</label><type>Text</type></CustomField>"
     }
   ],
   "command": {
@@ -40,8 +70,8 @@
   "expected": {
     "result": {
       "ok": true,
-      "total": 1,
-      "passed": 1,
+      "total": 4,
+      "passed": 4,
       "failed": 0,
       "errors": 0
     }

@@ -25,14 +25,17 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:ApexPages.Message.getSeverity()",
       "symbol": "ApexPages.Message.getSeverity",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:ApexPages.Message.getSummary()",
       "symbol": "ApexPages.Message.getSummary",
       "kind": "test"
     },
     {
+      "surfaceId": "apex:ApexPages.Message.getDetail()",
       "symbol": "ApexPages.Message.getDetail",
       "kind": "test"
     },

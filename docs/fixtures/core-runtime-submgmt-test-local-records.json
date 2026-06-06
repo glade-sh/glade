@@ -1,0 +1,41 @@
+{
+  "name": "core-runtime-submgmt-test-local-records",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.SubMgmt.Test.create(String,Map<String,Object>)",
+      "symbol": "SubMgmt.Test.create",
+      "kind": "exec",
+      "notes": "Local SubMgmt test helper creates a deterministic per-VM test record id and stores attributes."
+    },
+    {
+      "surfaceId": "apex:System.SubMgmt.Test.modify(Id,Map<String,Object>)",
+      "symbol": "SubMgmt.Test.modify",
+      "kind": "exec",
+      "notes": "Local SubMgmt test helper modifies an existing local test record and rejects missing ids."
+    },
+    {
+      "surfaceId": "apex:System.SubMgmt.Test.remove(Id)",
+      "symbol": "SubMgmt.Test.remove",
+      "kind": "exec",
+      "notes": "Local SubMgmt test helper removes an existing local test record and rejects later mutation of that id."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String created = SubMgmt.Test.create('Subscription', new Map<String,Object>{'Name' => 'local'});\nSystem.assert(created.startsWith('a6S'));\nSubMgmt.Test.modify(created, new Map<String,Object>{'Name' => 'changed'});\nSubMgmt.Test.remove(created);\nBoolean blocked = false;\ntry {\n  SubMgmt.Test.modify(created, new Map<String,Object>{'Name' => 'after remove'});\n} catch (Exception e) {\n  blocked = e.getMessage().contains('not found');\n}\nSystem.assert(blocked);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String created = SubMgmt.Test.create('Subscription', new Map<String,Object>{'Name' => 'local'});\nSystem.assert(created.startsWith('a6S'));\nSubMgmt.Test.modify(created, new Map<String,Object>{'Name' => 'changed'});\nSubMgmt.Test.remove(created);\nBoolean blocked = false;\ntry {\n  SubMgmt.Test.modify(created, new Map<String,Object>{'Name' => 'after remove'});\n} catch (Exception e) {\n  blocked = e.getMessage().contains('not found');\n}\nSystem.assert(blocked);"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

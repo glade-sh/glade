@@ -16,6 +16,7 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 	if !ok || record.Kind != ValueObject {
 		return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController has no SObject record")
 	}
+	receiver = ensureStandardControllerOriginalRecord(receiver, record)
 	switch method {
 	case "getId":
 		if len(args) != 0 {
@@ -50,6 +51,7 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 			record.Fields["Id"] = String(string(results[0].ID))
 			receiver.Fields["record"] = record
 		}
+		receiver.Fields["originalRecord"] = cloneValue(record)
 		page := standardControllerPage(record)
 		appendStandardControllerActionTrace(result, "complete", method, record, map[string]any{
 			"dmlOperation":  op,
@@ -71,7 +73,7 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 			"pageReference": tracePageReference(page),
 		})
 		return page, receiver, false, true, nil
-	case "view", "edit", "cancel", "reset":
+	case "view", "edit", "cancel":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.%s expects 0 arguments", method)
 		}
@@ -81,14 +83,52 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 			"pageReference": tracePageReference(page),
 		})
 		return page, receiver, false, true, nil
+	case "reset":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.reset expects 0 arguments")
+		}
+		page := standardControllerPage(record)
+		if original, ok := receiver.Fields["originalRecord"]; ok {
+			record = cloneValue(original)
+			receiver.Fields["record"] = record
+		}
+		appendStandardControllerActionTrace(result, "start", method, record, nil)
+		appendStandardControllerActionTrace(result, "complete", method, record, map[string]any{
+			"pageReference": tracePageReference(page),
+		})
+		return page, receiver, true, true, nil
 	case "addFields":
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.addFields expects List")
 		}
-		return Null, receiver, false, true, nil
+		fields, err := apexPagesControllerFieldList(args[0], "ApexPages.StandardController.addFields")
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		receiver.Fields["fields"] = fields
+		return Null, receiver, true, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func ensureStandardControllerOriginalRecord(receiver Value, record Value) Value {
+	if _, ok := receiver.Fields["originalRecord"]; !ok {
+		receiver.Fields["originalRecord"] = cloneValue(record)
+	}
+	return receiver
+}
+
+func apexPagesControllerFieldList(value Value, surface string) (Value, error) {
+	fields := List()
+	fields.Type = value.Type
+	for _, field := range value.List {
+		if field.Kind != ValueString {
+			return Null, fmt.Errorf("%s expects field name Strings", surface)
+		}
+		fields.List = append(fields.List, field)
+	}
+	return fields, nil
 }
 
 func callApexStackMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -544,8 +584,56 @@ func ensureIdeaStandardSetControllerState(receiver Value) Value {
 }
 
 func callApexPagesKnowledgeArticleVersionStandardControllerMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
-	method = canonicalStdlibMemberName(method, "getSourceId", "selectDataCategory", "setDataCategory")
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	record, hasRecord := receiver.Fields["record"]
 	switch method {
+	case "addFields":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.KnowledgeArticleVersionStandardController.addFields expects List")
+		}
+		fields := typedList("List<String>")
+		for _, field := range args[0].List {
+			if field.Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("ApexPages.KnowledgeArticleVersionStandardController.addFields expects field name Strings")
+			}
+			fields.List = append(fields.List, field)
+			if hasRecord && record.Kind == ValueObject {
+				if _, _, ok := objectFieldValue(record, field.Text); !ok {
+					record.Fields[field.Text] = Null
+				}
+			}
+		}
+		receiver.Fields["requestedFields"] = fields
+		if hasRecord && record.Kind == ValueObject {
+			receiver.Fields["record"] = record
+		}
+		return Null, receiver, true, true, nil
+	case "cancel", "view":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.KnowledgeArticleVersionStandardController.%s expects 0 arguments", method)
+		}
+		if hasRecord && record.Kind == ValueObject {
+			return standardControllerPage(record), receiver, false, true, nil
+		}
+		return newPageReference(""), receiver, false, true, nil
+	case "getId":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.KnowledgeArticleVersionStandardController.getId expects 0 arguments")
+		}
+		if hasRecord && record.Kind == ValueObject {
+			if _, id, ok := objectFieldValue(record, "Id"); ok {
+				return id, receiver, false, true, nil
+			}
+		}
+		return Null, receiver, false, true, nil
+	case "getRecord":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.KnowledgeArticleVersionStandardController.getRecord expects 0 arguments")
+		}
+		if hasRecord && record.Kind == ValueObject {
+			return record, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
 	case "getSourceId":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.KnowledgeArticleVersionStandardController.getSourceId expects 0 arguments")
@@ -659,6 +747,16 @@ func (vm *VM) callStandardSetControllerMember(receiver Value, method string, arg
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.getListViewOptions expects 0 arguments")
 		}
 		return typedList("List<SelectOption>"), receiver, false, true, nil
+	case "addFields":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.addFields expects List")
+		}
+		fields, err := apexPagesControllerFieldList(args[0], "ApexPages.StandardSetController.addFields")
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		receiver.Fields["fields"] = fields
+		return Null, receiver, true, true, nil
 	case "setFilterId":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.setFilterId expects String")

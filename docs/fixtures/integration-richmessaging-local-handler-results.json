@@ -1,0 +1,41 @@
+{
+  "name": "integration-richmessaging-local-handler-results",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.RichMessaging.AuthRequestHandler.handleAuthRequest(RichMessaging.AuthRequestResponse)",
+      "symbol": "RichMessaging.AuthRequestHandler.handleAuthRequest",
+      "kind": "exec",
+      "notes": "Local rich messaging auth handler returns a typed success result with redirect, status, and expiration fields."
+    },
+    {
+      "surfaceId": "apex:System.RichMessaging.ProcessCatalogOrderHandler.processCatalogOrderRequest(RichMessaging.ProcessCatalogOrderRequest)",
+      "symbol": "RichMessaging.ProcessCatalogOrderHandler.processCatalogOrderRequest",
+      "kind": "exec",
+      "notes": "Local rich messaging catalog handler returns a typed success result."
+    },
+    {
+      "surfaceId": "apex:System.RichMessaging.ProcessPaymentHandler.processPaymentRequest(RichMessaging.ProcessPaymentRequest)",
+      "symbol": "RichMessaging.ProcessPaymentHandler.processPaymentRequest",
+      "kind": "exec",
+      "notes": "Local rich messaging payment handler returns a typed success result."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "RichMessaging.AuthRequestResult auth = new RichMessaging.AuthRequestHandler().handleAuthRequest(new RichMessaging.AuthRequestResponse('token', '001000000000001', 'provider'));\nSystem.assertEquals(RichMessaging.AuthRequestResultStatus.AUTHENTICATED, auth.resultStatus);\nSystem.assertEquals('/richmessaging/authenticated', auth.redirectPageReference.getUrl());\nSystem.assertNotEquals(null, auth.expirationDateTime);\nRichMessaging.ProcessCatalogOrderResult catalog = new RichMessaging.ProcessCatalogOrderHandler().processCatalogOrderRequest(new RichMessaging.ProcessCatalogOrderRequest());\nSystem.assertEquals(RichMessaging.ProcessCatalogOrderResultStatus.SUCCESS, catalog.resultStatus);\nSystem.assertEquals('', catalog.errorMessage);\nSystem.assertNotEquals('', catalog.catalogOrderReferenceId);\nRichMessaging.ProcessPaymentResult payment = new RichMessaging.ProcessPaymentHandler().processPaymentRequest(new RichMessaging.ProcessPaymentRequest('txn-1', null, null, null, null, null, '001000000000001'));\nSystem.assertEquals(RichMessaging.ProcessPaymentResultStatus.SUCCESS, payment.resultStatus);\nSystem.assertEquals('', payment.errorMessage);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "RichMessaging.AuthRequestResult auth = new RichMessaging.AuthRequestHandler().handleAuthRequest(new RichMessaging.AuthRequestResponse('token', '001000000000001', 'provider'));\nSystem.assertEquals(RichMessaging.AuthRequestResultStatus.AUTHENTICATED, auth.resultStatus);\nSystem.assertEquals('/richmessaging/authenticated', auth.redirectPageReference.getUrl());\nSystem.assertNotEquals(null, auth.expirationDateTime);\nRichMessaging.ProcessCatalogOrderResult catalog = new RichMessaging.ProcessCatalogOrderHandler().processCatalogOrderRequest(new RichMessaging.ProcessCatalogOrderRequest());\nSystem.assertEquals(RichMessaging.ProcessCatalogOrderResultStatus.SUCCESS, catalog.resultStatus);\nSystem.assertEquals('', catalog.errorMessage);\nSystem.assertNotEquals('', catalog.catalogOrderReferenceId);\nRichMessaging.ProcessPaymentResult payment = new RichMessaging.ProcessPaymentHandler().processPaymentRequest(new RichMessaging.ProcessPaymentRequest('txn-1', null, null, null, null, null, '001000000000001'));\nSystem.assertEquals(RichMessaging.ProcessPaymentResultStatus.SUCCESS, payment.resultStatus);\nSystem.assertEquals('', payment.errorMessage);"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

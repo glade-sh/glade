@@ -135,6 +135,8 @@ type VM struct {
 	metadataDeploys    map[string]Value
 	reportInstances    map[string]Value
 	pushUpgradeCustoms map[string]pushUpgradeCustomization
+	subMgmtTestRecords map[string]Value
+	subMgmtTestSeq     int
 	// --- Debug / trace hooks ---
 	debugHooks         DebugHooks
 	hasDebugHooks      bool
@@ -508,6 +510,7 @@ func New(stdout io.Writer) *VM {
 		metadataDeploys:              make(map[string]Value),
 		reportInstances:              make(map[string]Value),
 		pushUpgradeCustoms:           make(map[string]pushUpgradeCustomization),
+		subMgmtTestRecords:           make(map[string]Value),
 		traceEnabled:                 true,
 		ctx:                          context.Background(),
 		activeGetters:                make(map[string]int),

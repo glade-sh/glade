@@ -7,11 +7,125 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/storage"
 )
+
+func (vm *VM) databaseGetUpdated(args []Value) (Value, error) {
+	start, end, err := databaseSyncWindow(args[1], args[2], "Database.getUpdated")
+	if err != nil {
+		return Null, err
+	}
+	ids := make([]string, 0)
+	if object, ok := vm.databaseSyncObject(args[0].Text); ok {
+		for id, record := range object.Records {
+			if record.System.IsDeleted {
+				continue
+			}
+			stamp, ok := databaseSyncRecordStamp(record)
+			if !ok || !databaseSyncStampInWindow(stamp, start, end) {
+				continue
+			}
+			ids = append(ids, string(id))
+		}
+	}
+	sort.Strings(ids)
+	values := make([]Value, 0, len(ids))
+	for _, id := range ids {
+		values = append(values, platformScalar("Id", id))
+	}
+	updated := Object("Database.GetUpdatedResult")
+	updated.Fields["ids"] = List(values...)
+	updated.Fields["latestDateCovered"] = args[2]
+	return updated, nil
+}
+
+func (vm *VM) databaseGetDeleted(args []Value) (Value, error) {
+	start, end, err := databaseSyncWindow(args[1], args[2], "Database.getDeleted")
+	if err != nil {
+		return Null, err
+	}
+	records := make([]Value, 0)
+	if object, ok := vm.databaseSyncObject(args[0].Text); ok {
+		ids := make([]string, 0)
+		byID := make(map[string]storage.Record)
+		for id, record := range object.Records {
+			if !record.System.IsDeleted {
+				continue
+			}
+			stamp, ok := databaseSyncRecordStamp(record)
+			if !ok || !databaseSyncStampInWindow(stamp, start, end) {
+				continue
+			}
+			rawID := string(id)
+			ids = append(ids, rawID)
+			byID[rawID] = record
+		}
+		sort.Strings(ids)
+		for _, id := range ids {
+			record := byID[id]
+			stamp, _ := databaseSyncRecordStamp(record)
+			deleted := Object("Database.DeletedRecord")
+			deleted.Fields["id"] = platformScalar("Id", id)
+			deleted.Fields["deletedDate"] = platformScalar("Datetime", formatPlatformDatetime(stamp))
+			records = append(records, deleted)
+		}
+	}
+	deleted := Object("Database.GetDeletedResult")
+	deleted.Fields["deletedRecords"] = List(records...)
+	deleted.Fields["earliestDateAvailable"] = args[1]
+	deleted.Fields["latestDateCovered"] = args[2]
+	return deleted, nil
+}
+
+func (vm *VM) databaseSyncObject(name string) (storage.ObjectState, bool) {
+	if vm.Org == nil {
+		return storage.ObjectState{}, false
+	}
+	objectName := strings.TrimSpace(name)
+	if canonical, ok := vm.resolveObjectName(objectName); ok {
+		objectName = canonical
+	}
+	object, ok := vm.Org.Objects[objectName]
+	return object, ok
+}
+
+func databaseSyncWindow(startValue, endValue Value, label string) (time.Time, time.Time, error) {
+	start, err := parsePlatformDatetime(startValue)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("%s expects start Datetime: %w", label, err)
+	}
+	end, err := parsePlatformDatetime(endValue)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("%s expects end Datetime: %w", label, err)
+	}
+	if end.Before(start) {
+		return time.Time{}, time.Time{}, fmt.Errorf("%s end Datetime must not be before start Datetime", label)
+	}
+	return start, end, nil
+}
+
+func databaseSyncRecordStamp(record storage.Record) (time.Time, bool) {
+	stamp := strings.TrimSpace(record.System.SystemModstamp)
+	if stamp == "" {
+		stamp = strings.TrimSpace(record.System.LastModifiedDate)
+	}
+	if stamp == "" {
+		return time.Time{}, false
+	}
+	parsed, err := parsePlatformDatetimeText(stamp)
+	if err != nil {
+		return time.Time{}, false
+	}
+	return parsed.UTC(), true
+}
+
+func databaseSyncStampInWindow(stamp, start, end time.Time) bool {
+	return !stamp.Before(start) && !stamp.After(end)
+}
 
 func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value, error) {
 	if len(args) == 0 || len(args) > 4 {

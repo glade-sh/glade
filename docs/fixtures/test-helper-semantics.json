@@ -12,6 +12,7 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Test.clearApexPageMessages()",
       "symbol": "Test.clearApexPageMessages",
       "kind": "test"
     },

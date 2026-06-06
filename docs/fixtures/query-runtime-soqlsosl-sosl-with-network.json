@@ -1,0 +1,37 @@
+{
+  "name": "query-runtime-soqlsosl-sosl-with-network",
+  "evidence": [
+    {
+      "surfaceId": "unknown:sforce_api_calls_sosl_with_network_id",
+      "symbol": "SOSL WITH NETWORK_ID",
+      "kind": "test",
+      "notes": "SOSL Search.query accepts WITH NETWORK IN for fixed local search rows on non-user/feed objects without narrowing Account results."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/QueryRuntimeSOQLSOSLSOSLWithNetworkTest.cls",
+      "content": "@isTest private class QueryRuntimeSOQLSOSLSOSLWithNetworkTest { @isTest static void acceptsNetworkSearchOptionForAccounts() { Account account = new Account(Name = 'Network Account'); insert account; Test.setFixedSearchResults(new List<Id>{ account.Id }); List<Account> rows = (List<Account>)Search.query('FIND {Network} IN ALL FIELDS RETURNING Account(Id, Name) WITH NETWORK IN (\\'0DB000000000001\\', \\'0DB000000000002\\')')[0]; System.assertEquals(1, rows.size()); System.assertEquals(account.Id, rows[0].Id); System.assertEquals('Network Account', rows[0].Name); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

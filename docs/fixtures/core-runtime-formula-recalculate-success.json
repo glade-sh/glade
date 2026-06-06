@@ -3,6 +3,8 @@
   "evidence": [
     {"surfaceId": "apex:System.Formula.builder()", "symbol": "Formula.builder", "kind": "exec"},
     {"surfaceId": "apex:System.Formula.recalculateFormulas(List<Object>)", "symbol": "Formula.recalculateFormulas(List<Object>)", "kind": "exec"},
+    {"surfaceId": "apex:System.formulaeval.FormulaInstance.evaluate(Object)", "symbol": "formulaeval.FormulaInstance.evaluate", "kind": "exec"},
+    {"surfaceId": "apex:System.formulaeval.FormulaInstance.getReferencedFields()", "symbol": "formulaeval.FormulaInstance.getReferencedFields", "kind": "exec"},
     {"surfaceId": "apex:System.FormulaRecalcResult.getErrors()", "symbol": "FormulaRecalcResult.getErrors", "kind": "exec"},
     {"surfaceId": "apex:System.FormulaRecalcResult.getSObject()", "symbol": "FormulaRecalcResult.getSObject", "kind": "exec"},
     {"surfaceId": "apex:System.FormulaRecalcResult.isSuccess()", "symbol": "FormulaRecalcResult.isSuccess", "kind": "exec"}
@@ -10,7 +12,7 @@
   "source": [
     {
       "path": "anonymous.apex",
-      "content": "Account account = new Account(Name = 'Acme', Amount__c = 40, Paid__c = 12);\nformulaeval.FormulaInstance formulaInstance = Formula.builder().withFormula('Amount__c - Paid__c').withReturnType(formulaeval.FormulaReturnType.DECIMAL).build();\nSystem.assertEquals(28, formulaInstance.evaluate(account));\nList<FormulaRecalcResult> results = Formula.recalculateFormulas(new List<SObject>{account});\nSystem.assertEquals(1, results.size());\nSystem.assert(results[0].isSuccess());\nSystem.assertEquals(0, results[0].getErrors().size());\nSystem.assertEquals(account, results[0].getSObject());\nSystem.assertEquals(28, account.get('Balance__c'));\n"
+      "content": "Account account = new Account(Name = 'Acme', Amount__c = 40, Paid__c = 12);\nformulaeval.FormulaInstance formulaInstance = Formula.builder().withFormula('Amount__c - Paid__c').withReturnType(formulaeval.FormulaReturnType.DECIMAL).build();\nSystem.assertEquals(28, formulaInstance.evaluate(account));\nSet<String> fields = formulaInstance.getReferencedFields();\nSystem.assert(fields.contains('Amount__c'));\nSystem.assert(fields.contains('Paid__c'));\nSystem.assertEquals(2, fields.size());\nList<FormulaRecalcResult> results = Formula.recalculateFormulas(new List<SObject>{account});\nSystem.assertEquals(1, results.size());\nSystem.assert(results[0].isSuccess());\nSystem.assertEquals(0, results[0].getErrors().size());\nSystem.assertEquals(account, results[0].getSObject());\nSystem.assertEquals(28, account.get('Balance__c'));\n"
     }
   ],
   "schema": [
@@ -38,7 +40,7 @@
   "command": {
     "kind": "exec",
     "args": [
-      "Account account = new Account(Name = 'Acme', Amount__c = 40, Paid__c = 12);\nformulaeval.FormulaInstance formulaInstance = Formula.builder().withFormula('Amount__c - Paid__c').withReturnType(formulaeval.FormulaReturnType.DECIMAL).build();\nSystem.assertEquals(28, formulaInstance.evaluate(account));\nList<FormulaRecalcResult> results = Formula.recalculateFormulas(new List<SObject>{account});\nSystem.assertEquals(1, results.size());\nSystem.assert(results[0].isSuccess());\nSystem.assertEquals(0, results[0].getErrors().size());\nSystem.assertEquals(account, results[0].getSObject());\nSystem.assertEquals(28, account.get('Balance__c'));\n"
+      "Account account = new Account(Name = 'Acme', Amount__c = 40, Paid__c = 12);\nformulaeval.FormulaInstance formulaInstance = Formula.builder().withFormula('Amount__c - Paid__c').withReturnType(formulaeval.FormulaReturnType.DECIMAL).build();\nSystem.assertEquals(28, formulaInstance.evaluate(account));\nSet<String> fields = formulaInstance.getReferencedFields();\nSystem.assert(fields.contains('Amount__c'));\nSystem.assert(fields.contains('Paid__c'));\nSystem.assertEquals(2, fields.size());\nList<FormulaRecalcResult> results = Formula.recalculateFormulas(new List<SObject>{account});\nSystem.assertEquals(1, results.size());\nSystem.assert(results[0].isSuccess());\nSystem.assertEquals(0, results[0].getErrors().size());\nSystem.assertEquals(account, results[0].getSObject());\nSystem.assertEquals(28, account.get('Balance__c'));\n"
     ]
   },
   "expected": {
