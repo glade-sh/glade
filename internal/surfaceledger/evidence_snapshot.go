@@ -30,7 +30,9 @@ func BuildEvidenceSnapshot(paths []string) ([]SurfaceLedgerRow, error) {
 			}
 			kind := evidenceKindFromSurfaceID(id)
 			behavior := BehaviorNone
-			if fixtureEvidenceRunsRuntimeGuide(fixture, evidence, id) {
+			if strings.EqualFold(evidence.Kind, "unsupported") {
+				behavior = BehaviorUnsupported
+			} else if fixtureEvidenceRunsRuntimeGuide(fixture, evidence, id) {
 				behavior = BehaviorSupported
 			}
 			row := RowFromEvidence(SurfaceLedgerRow{
@@ -84,10 +86,32 @@ func evidenceKindFromSurfaceID(id string) string {
 	if strings.Contains(rest, "(") {
 		return KindMethod
 	}
+	if bareApexMethodEvidenceIDs[surfaceIDKey(id)] {
+		return KindMethod
+	}
 	if len(strings.Split(rest, ".")) <= 2 {
 		return KindType
 	}
 	return KindProperty
+}
+
+var bareApexMethodEvidenceIDs = map[string]bool{
+	surfaceIDKey("apex:System.CustomMetadataType.getAll"):             true,
+	surfaceIDKey("apex:System.CustomSetting.getInstance"):             true,
+	surfaceIDKey("apex:System.HierarchyCustomSetting.getOrgDefaults"): true,
+	surfaceIDKey("apex:System.Limits.get*"):                           true,
+	surfaceIDKey("apex:System.Limits.getAsyncCalls"):                  true,
+	surfaceIDKey("apex:System.Limits.getLimitAsyncCalls"):             true,
+	surfaceIDKey("apex:System.RestRequest.getHeader"):                 true,
+	surfaceIDKey("apex:System.RestRequest.getParameter"):              true,
+	surfaceIDKey("apex:System.Test.getStandardPricebookId"):           true,
+	surfaceIDKey("apex:System.Test.createStubQueryRow"):               true,
+	surfaceIDKey("apex:System.Test.createStubQueryRows"):              true,
+	surfaceIDKey("apex:System.Test.isRunningTest"):                    true,
+	surfaceIDKey("apex:System.Type.forName"):                          true,
+	surfaceIDKey("apex:System.Type.getName"):                          true,
+	surfaceIDKey("apex:System.URL.getOrgDomainUrl"):                   true,
+	surfaceIDKey("apex:System.URL.getSalesforceBaseUrl"):              true,
 }
 
 func shouldSkipNonFixtureEvidenceFile(path string) (bool, error) {

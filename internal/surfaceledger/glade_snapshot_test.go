@@ -193,6 +193,82 @@ func TestBuildGladeSnapshotMarksNonLocalQueryDocsUnsupported(t *testing.T) {
 	}
 }
 
+func TestBuildGladeSnapshotAddsFixtureBackedStringAliasRows(t *testing.T) {
+	rows := BuildGladeSnapshot()
+	byID := rowsByID(rows)
+	for _, id := range []string{
+		ApexMemberID("System", "String", "escapeCsv", nil),
+		ApexMemberID("System", "URL", "getAuthority", nil),
+		ApexMemberID("System", "Map", "containsKey", nil),
+		ApexMemberID("System", "JSONParser", "getBooleanValue", nil),
+	} {
+		row, ok := byID[id]
+		if !ok {
+			t.Fatalf("missing stdlib alias row %s", id)
+		}
+		if row.GladeShape != ShapeSignatureKnown || row.GladeBehavior != BehaviorSupported || row.Kind != KindMethod {
+			t.Fatalf("%s shape/behavior/kind = %s/%s/%s, want signature-known/supported/method", id, row.GladeShape, row.GladeBehavior, row.Kind)
+		}
+		if !hasSource(row.Sources, "stdlib-fixture-alias") {
+			t.Fatalf("%s sources = %#v, want stdlib-fixture-alias", id, row.Sources)
+		}
+	}
+}
+
+func TestBuildGladeSnapshotAddsFixtureBackedSystemAliasRows(t *testing.T) {
+	rows := BuildGladeSnapshot()
+	byID := rowsByID(rows)
+	for _, tc := range []struct {
+		id       string
+		kind     string
+		behavior BehaviorState
+	}{
+		{id: "apex:System.Crypto.areEqualConstantTime(Blob,Blob)", kind: KindMethod, behavior: BehaviorSupported},
+		{id: "apex:System.Iterator.remove", kind: KindMethod, behavior: BehaviorUnsupported},
+		{id: "apex:System.CustomMetadataType.getAll", kind: KindMethod, behavior: BehaviorSupported},
+		{id: "apex:System.Messaging.MassEmailMessage", kind: KindType, behavior: BehaviorPassive},
+		{id: "apex:System.Matcher.hasTransparentBounds", kind: KindMethod, behavior: BehaviorSupported},
+		{id: "apex:System.Matcher.useTransparentBounds", kind: KindMethod, behavior: BehaviorSupported},
+		{id: "apex:System.PageReference(record)", kind: KindMethod, behavior: BehaviorSupported},
+		{id: "apex:System.Integer.MAX_VALUE", kind: KindProperty, behavior: BehaviorSupported},
+		{id: "apex:System.TxnSecurity.EventCondition.evaluate(SObject)", kind: KindMethod, behavior: BehaviorSupported},
+		{id: "apex:System.TxnSecurity.PolicyCondition.evaluate(TxnSecurity.Event)", kind: KindMethod, behavior: BehaviorSupported},
+	} {
+		row, ok := byID[tc.id]
+		if !ok {
+			t.Fatalf("missing system alias row %s", tc.id)
+		}
+		if row.GladeShape == ShapeAbsent || row.GladeBehavior != tc.behavior || row.Kind != tc.kind {
+			t.Fatalf("%s shape/behavior/kind = %s/%s/%s, want non-absent/%s/%s", tc.id, row.GladeShape, row.GladeBehavior, row.Kind, tc.behavior, tc.kind)
+		}
+		if !hasSource(row.Sources, "system-fixture-alias") {
+			t.Fatalf("%s sources = %#v, want system-fixture-alias", tc.id, row.Sources)
+		}
+		if tc.id == "apex:System.CustomMetadataType.getAll" && (row.Namespace != "System" || row.TypeName != "CustomMetadataType" || row.MemberName != "getAll") {
+			t.Fatalf("%s namespace/type/member = %s/%s/%s, want System/CustomMetadataType/getAll", tc.id, row.Namespace, row.TypeName, row.MemberName)
+		}
+	}
+}
+
+func TestBuildGladeSnapshotAddsFixtureBackedApexAliasRows(t *testing.T) {
+	rows := BuildGladeSnapshot()
+	byID := rowsByID(rows)
+	id := "apex:TxnSecurity.Event.Event()"
+	row, ok := byID[id]
+	if !ok {
+		t.Fatalf("missing apex alias row %s", id)
+	}
+	if row.GladeShape == ShapeAbsent || row.GladeBehavior != BehaviorSupported || row.Kind != KindMethod {
+		t.Fatalf("%s shape/behavior/kind = %s/%s/%s, want non-absent/supported/method", id, row.GladeShape, row.GladeBehavior, row.Kind)
+	}
+	if !hasSource(row.Sources, "apex-fixture-alias") {
+		t.Fatalf("%s sources = %#v, want apex-fixture-alias", id, row.Sources)
+	}
+	if row.Namespace != "TxnSecurity" || row.TypeName != "Event" || row.MemberName != "Event" {
+		t.Fatalf("%s namespace/type/member = %s/%s/%s, want TxnSecurity/Event/Event", id, row.Namespace, row.TypeName, row.MemberName)
+	}
+}
+
 func TestSurfaceIDKeyNormalizesSystemQualifiedRuntimeParameters(t *testing.T) {
 	left := surfaceIDKey(ApexMemberID("System", "Test", "createSoqlStub", []string{"Schema.SObjectType", "System.SoqlStubProvider"}))
 	right := surfaceIDKey(ApexMemberID("System", "Test", "createSoqlStub", []string{"Schema.SObjectType", "SoqlStubProvider"}))

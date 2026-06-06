@@ -20,10 +20,28 @@
       "notes": "Local transaction security event condition evaluates to false by default without enforcing org policies."
     },
     {
+      "surfaceId": "apex:TxnSecurity.EventCondition.evaluate(Object)",
+      "symbol": "TxnSecurity.EventCondition.evaluate",
+      "kind": "exec",
+      "notes": "Exact docs-side method identity for the same local default event-condition evaluation."
+    },
+    {
+      "surfaceId": "apex:TxnSecurity.Event.Event()",
+      "symbol": "TxnSecurity.Event.Event",
+      "kind": "exec",
+      "notes": "TxnSecurity.Event constructs a local passive event record for transaction-security policy tests."
+    },
+    {
       "surfaceId": "apex:System.TxnSecurity.PolicyCondition.evaluate(TxnSecurity.Event)",
       "symbol": "TxnSecurity.PolicyCondition.evaluate",
       "kind": "exec",
       "notes": "Local transaction security policy condition evaluates to false by default without enforcing org policies."
+    },
+    {
+      "surfaceId": "apex:TxnSecurity.PolicyCondition.evaluate(TxnSecurity.Event)",
+      "symbol": "TxnSecurity.PolicyCondition.evaluate",
+      "kind": "exec",
+      "notes": "Exact docs-side method identity for the same local default policy-condition evaluation."
     }
   ],
   "source": [

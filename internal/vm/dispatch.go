@@ -330,6 +330,9 @@ platformStaticCall:
 	if value, handled, err := vm.callPushUpgradeCustomizationRepository(callee, args); handled || err != nil {
 		return value, err
 	}
+	if strings.EqualFold(callee, "WebStoreContext.getCommerceContext") {
+		return Null, unsupportedCallError("WebStoreContext.getCommerceContext local commerce context service")
+	}
 	if value, handled, err := vm.callAppLauncherControllerStatic(callee, args); handled || err != nil {
 		return value, err
 	}
@@ -749,6 +752,9 @@ platformStaticCall:
 		cursor.Fields["Query"] = args[0]
 		return cursor, nil
 	case "Security.stripInaccessible":
+		if len(args) == 4 {
+			return Null, unsupportedCallError("Security.stripInaccessible permission-set-scoped access checks")
+		}
 		if len(args) != 2 && len(args) != 3 {
 			return Null, fmt.Errorf("Security.stripInaccessible expects AccessType, records, and optional enforceRootObjectCRUD")
 		}

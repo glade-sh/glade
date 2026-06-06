@@ -47,7 +47,9 @@ func mergeRow(base, next SurfaceLedgerRow) SurfaceLedgerRow {
 		if shapeRank(next.GladeShape) > shapeRank(base.GladeShape) {
 			base.GladeShape = next.GladeShape
 		}
-		if behaviorRank(next.GladeBehavior) > behaviorRank(base.GladeBehavior) {
+		if next.GladeBehavior == BehaviorUnsupported && next.Evidence == EvidenceFixture {
+			base.GladeBehavior = next.GladeBehavior
+		} else if behaviorRank(next.GladeBehavior) > behaviorRank(base.GladeBehavior) {
 			base.GladeBehavior = next.GladeBehavior
 		}
 		base.Evidence = mergeEvidence(base.Evidence, next.Evidence)

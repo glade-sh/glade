@@ -2,6 +2,7 @@
   "name": "integration-messaging-send-options-unsupported",
   "evidence": [
     {
+      "surfaceId": "apex:Messaging.SendEmailOptions",
       "symbol": "Messaging.SendEmailOptions",
       "kind": "exec",
       "notes": "Local send-options object behavior is not modeled."

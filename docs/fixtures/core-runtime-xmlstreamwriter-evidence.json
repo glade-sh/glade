@@ -1,0 +1,41 @@
+{
+  "name": "core-runtime-xmlstreamwriter-evidence",
+  "evidence": [
+    {"surfaceId": "apex:System.XmlStreamWriter", "symbol": "XmlStreamWriter", "kind": "exec", "notes": "XmlStreamWriter keeps a local XML buffer and element stack."},
+    {"surfaceId": "apex:System.XmlStreamWriter.XmlStreamWriter()", "symbol": "XmlStreamWriter", "kind": "exec", "notes": "XmlStreamWriter constructs a local writer object."},
+    {"surfaceId": "apex:System.XmlStreamWriter.close()", "symbol": "XmlStreamWriter.close", "kind": "exec", "notes": "XmlStreamWriter.close closes any open start tag and marks the local writer closed."},
+    {"surfaceId": "apex:System.XmlStreamWriter.getXmlString()", "symbol": "XmlStreamWriter.getXmlString", "kind": "exec", "notes": "XmlStreamWriter returns the accumulated local XML string."},
+    {"surfaceId": "apex:System.XmlStreamWriter.setDefaultNamespace(String)", "symbol": "XmlStreamWriter.setDefaultNamespace", "kind": "exec", "notes": "XmlStreamWriter records the default namespace for local writer state."},
+    {"surfaceId": "apex:System.XmlStreamWriter.toString()", "symbol": "XmlStreamWriter.toString", "kind": "exec", "notes": "XmlStreamWriter.toString returns the accumulated local XML string."},
+    {"surfaceId": "apex:System.XmlStreamWriter.writeAttribute(String,String,String,String)", "symbol": "XmlStreamWriter.writeAttribute", "kind": "exec", "notes": "XmlStreamWriter writes escaped attributes on the open start element."},
+    {"surfaceId": "apex:System.XmlStreamWriter.writeCData(String)", "symbol": "XmlStreamWriter.writeCData", "kind": "exec", "notes": "XmlStreamWriter writes CDATA sections to the local XML buffer."},
+    {"surfaceId": "apex:System.XmlStreamWriter.writeCharacters(String)", "symbol": "XmlStreamWriter.writeCharacters", "kind": "exec", "notes": "XmlStreamWriter writes escaped character data to the local XML buffer."},
+    {"surfaceId": "apex:System.XmlStreamWriter.writeComment(String)", "symbol": "XmlStreamWriter.writeComment", "kind": "exec", "notes": "XmlStreamWriter writes XML comments to the local XML buffer."},
+    {"surfaceId": "apex:System.XmlStreamWriter.writeDefaultNamespace(String)", "symbol": "XmlStreamWriter.writeDefaultNamespace", "kind": "exec", "notes": "XmlStreamWriter writes a default namespace declaration on the open start element."},
+    {"surfaceId": "apex:System.XmlStreamWriter.writeEmptyElement(String,String,String)", "symbol": "XmlStreamWriter.writeEmptyElement", "kind": "exec", "notes": "XmlStreamWriter writes a local empty element."},
+    {"surfaceId": "apex:System.XmlStreamWriter.writeEndDocument()", "symbol": "XmlStreamWriter.writeEndDocument", "kind": "exec", "notes": "XmlStreamWriter closes all open local XML elements."},
+    {"surfaceId": "apex:System.XmlStreamWriter.writeEndElement()", "symbol": "XmlStreamWriter.writeEndElement", "kind": "exec", "notes": "XmlStreamWriter closes the current local XML element."},
+    {"surfaceId": "apex:System.XmlStreamWriter.writeNamespace(String,String)", "symbol": "XmlStreamWriter.writeNamespace", "kind": "exec", "notes": "XmlStreamWriter writes a namespace declaration on the open start element."},
+    {"surfaceId": "apex:System.XmlStreamWriter.writeProcessingInstruction(String,String)", "symbol": "XmlStreamWriter.writeProcessingInstruction", "kind": "exec", "notes": "XmlStreamWriter writes processing instructions to the local XML buffer."},
+    {"surfaceId": "apex:System.XmlStreamWriter.writeStartDocument(String,String)", "symbol": "XmlStreamWriter.writeStartDocument", "kind": "exec", "notes": "XmlStreamWriter writes an XML declaration to the local XML buffer."},
+    {"surfaceId": "apex:System.XmlStreamWriter.writeStartElement(String,String,String)", "symbol": "XmlStreamWriter.writeStartElement", "kind": "exec", "notes": "XmlStreamWriter opens a local XML element and pushes it on the element stack."}
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "XmlStreamWriter writer = new XmlStreamWriter();\nwriter.writeStartDocument('UTF-8', '1.0');\nwriter.setDefaultNamespace('urn:base');\nwriter.writeStartElement('', 'root', 'urn:base');\nwriter.writeDefaultNamespace('urn:base');\nwriter.writeNamespace('x', 'urn:x');\nwriter.writeAttribute('x', 'urn:x', 'id', 'A&B');\nwriter.writeComment('note');\nwriter.writeProcessingInstruction('pi', 'go');\nwriter.writeCData('<raw>');\nwriter.writeStartElement('x', 'child', 'urn:x');\nwriter.writeCharacters('Tom & Sue');\nwriter.writeEndElement();\nwriter.writeEmptyElement('', 'leaf', 'urn:base');\nwriter.writeEndElement();\nwriter.writeEndDocument();\nString xml = writer.getXmlString();\nSystem.assert(xml.contains('<?xml version=\"1.0\" encoding=\"UTF-8\"?>'));\nSystem.assert(xml.contains('<root xmlns=\"urn:base\" xmlns=\"urn:base\" xmlns:x=\"urn:x\" x:id=\"A&amp;B\">'));\nSystem.assert(xml.contains('<!--note-->'));\nSystem.assert(xml.contains('<?pi go?>'));\nSystem.assert(xml.contains('<![CDATA[<raw>]]>'));\nSystem.assert(xml.contains('<x:child xmlns:x=\"urn:x\">Tom &amp; Sue</x:child>'));\nSystem.assert(xml.contains('<leaf xmlns=\"urn:base\"/>'));\nSystem.assert(xml.endsWith('</root>'));\nSystem.assertEquals(xml, writer.toString());\nwriter.close();"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "XmlStreamWriter writer = new XmlStreamWriter();\nwriter.writeStartDocument('UTF-8', '1.0');\nwriter.setDefaultNamespace('urn:base');\nwriter.writeStartElement('', 'root', 'urn:base');\nwriter.writeDefaultNamespace('urn:base');\nwriter.writeNamespace('x', 'urn:x');\nwriter.writeAttribute('x', 'urn:x', 'id', 'A&B');\nwriter.writeComment('note');\nwriter.writeProcessingInstruction('pi', 'go');\nwriter.writeCData('<raw>');\nwriter.writeStartElement('x', 'child', 'urn:x');\nwriter.writeCharacters('Tom & Sue');\nwriter.writeEndElement();\nwriter.writeEmptyElement('', 'leaf', 'urn:base');\nwriter.writeEndElement();\nwriter.writeEndDocument();\nString xml = writer.getXmlString();\nSystem.assert(xml.contains('<?xml version=\"1.0\" encoding=\"UTF-8\"?>'));\nSystem.assert(xml.contains('<root xmlns=\"urn:base\" xmlns=\"urn:base\" xmlns:x=\"urn:x\" x:id=\"A&amp;B\">'));\nSystem.assert(xml.contains('<!--note-->'));\nSystem.assert(xml.contains('<?pi go?>'));\nSystem.assert(xml.contains('<![CDATA[<raw>]]>'));\nSystem.assert(xml.contains('<x:child xmlns:x=\"urn:x\">Tom &amp; Sue</x:child>'));\nSystem.assert(xml.contains('<leaf xmlns=\"urn:base\"/>'));\nSystem.assert(xml.endsWith('</root>'));\nSystem.assertEquals(xml, writer.toString());\nwriter.close();"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

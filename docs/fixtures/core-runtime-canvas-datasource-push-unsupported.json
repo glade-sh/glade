@@ -12,11 +12,13 @@
       "notes": "The Apex reference defines DataSource as its own namespace for Salesforce Connect custom adapters, not as System.DataSource."
     },
     {
+      "surfaceId": "apex:Messaging.PushNotification",
       "symbol": "Messaging.PushNotification",
       "kind": "shape",
       "notes": "The Apex reference defines PushNotification and PushNotificationPayload in the Messaging namespace; System.PushNotification rows are namespace noise."
     },
     {
+      "surfaceId": "apex:industriesNlpSvc.NlpResponse",
       "symbol": "industriesNlpSvc.NlpResponse",
       "kind": "shape",
       "notes": "The Apex reference defines NlpResponse and NlpSummarizationResult in the industriesNlpSvc namespace; System.Nlp rows are namespace noise."

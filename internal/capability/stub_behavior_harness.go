@@ -48,8 +48,6 @@ func commerceLocalHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesy
 		return true
 	}
 	switch typeName {
-	case "WebStoreContext":
-		return stubBehaviorMemberStatic(member) && name == "getcommercecontext"
 	case "commercepayments.ClientSidePaymentAdapter":
 		switch name {
 		case "getclientcomponentname", "getclientconfiguration", "processclientrequest":
@@ -98,6 +96,8 @@ func commerceExternalServiceUnsupportedMethod(symbol typesys.TypeSymbol, member 
 		return true
 	}
 	switch typeName {
+	case "WebStoreContext":
+		return stubBehaviorMemberStatic(member) && name == "getcommercecontext"
 	case "CartExtension.AbstractCartCalculator":
 		return name == "calculate"
 	case "CartExtension.CartCalculate":

@@ -26,6 +26,24 @@ func TestMergeCombinesSourcesBySurfaceID(t *testing.T) {
 	}
 }
 
+func TestMergeLetsUnsupportedFixtureEvidenceOverrideGeneratedSupport(t *testing.T) {
+	id := ApexMemberID("System", "WebStoreContext", "getCommerceContext", []string{})
+	ledger := Merge(
+		[]SurfaceLedgerRow{RowFromDocs(SurfaceLedgerRow{SurfaceID: id, Product: ProductApex, Area: AreaRuntime, Kind: KindMethod})},
+		nil,
+		[]SurfaceLedgerRow{RowFromGladeShape(SurfaceLedgerRow{SurfaceID: id, Product: ProductApex, Area: AreaRuntime, Kind: KindMethod, GladeBehavior: BehaviorSupported})},
+		[]SurfaceLedgerRow{RowFromEvidence(SurfaceLedgerRow{SurfaceID: id, Product: ProductApex, Area: AreaRuntime, Kind: KindMethod, GladeBehavior: BehaviorUnsupported, Evidence: EvidenceFixture})},
+	)
+
+	if len(ledger.Rows) != 1 {
+		t.Fatalf("rows = %d, want 1", len(ledger.Rows))
+	}
+	row := ledger.Rows[0]
+	if row.GladeBehavior != BehaviorUnsupported || row.Evidence != EvidenceFixture || row.Bucket != BucketExplicitUnsupported {
+		t.Fatalf("merged row behavior/evidence/bucket = %s/%s/%s, want unsupported/fixture/explicitUnsupported", row.GladeBehavior, row.Evidence, row.Bucket)
+	}
+}
+
 func TestMergeCombinesApexSurfaceIDsCaseInsensitively(t *testing.T) {
 	docsID := ApexMemberID("Schema", "DescribeSObjectResult", "getSobjectType", []string{})
 	gladeID := ApexMemberID("Schema", "DescribeSObjectResult", "getSObjectType", []string{})

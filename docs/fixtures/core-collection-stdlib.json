@@ -27,14 +27,32 @@
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Set.add(Object)",
+      "symbol": "Set.add",
+      "kind": "exec",
+      "notes": "Set.add returns true for a new local value and false for a duplicate."
+    },
+    {
       "surfaceId": "apex:System.Set.addAll(List)",
       "symbol": "Set.addAll",
       "kind": "exec"
     },
     {
+      "surfaceId": "apex:System.Set.addAll(List<Object>)",
+      "symbol": "Set.addAll",
+      "kind": "exec",
+      "notes": "Set.addAll accepts a local List and reports whether the set changed."
+    },
+    {
       "surfaceId": "apex:System.Set.containsAll(List)",
       "symbol": "Set.containsAll",
       "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Set.containsAll(List<Object>)",
+      "symbol": "Set.containsAll",
+      "kind": "exec",
+      "notes": "Set.containsAll accepts a local List."
     },
     {
       "surfaceId": "apex:System.Set.remove(Object)",
@@ -50,6 +68,12 @@
       "surfaceId": "apex:System.Set.retainAll(List)",
       "symbol": "Set.retainAll",
       "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Set.retainAll(List<Object>)",
+      "symbol": "Set.retainAll",
+      "kind": "exec",
+      "notes": "Set.retainAll accepts a local List and reports whether the set changed."
     },
     {
       "surfaceId": "apex:System.Map.put(Object,Object)",
@@ -108,6 +132,12 @@
       "surfaceId": "apex:System.Set.isEmpty()",
       "symbol": "Set.isEmpty",
       "kind": "exec"
+    },
+    {
+      "surfaceId": "apex:System.Set.size()",
+      "symbol": "Set.size",
+      "kind": "exec",
+      "notes": "Set.size reports local element count after mutation."
     },
     {
       "surfaceId": "apex:System.Set.clone()",

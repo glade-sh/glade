@@ -18,6 +18,18 @@
       "symbol": "SObject.getOrgDefaults",
       "kind": "exec",
       "notes": "Hierarchy custom setting records expose local org-default behavior through the SObject surface."
+    },
+    {
+      "surfaceId": "apex:System.SObject.getInstance()",
+      "symbol": "SObject.getInstance",
+      "kind": "exec",
+      "notes": "Hierarchy custom setting records expose local org-default lookup through the SObject surface."
+    },
+    {
+      "surfaceId": "apex:System.SObject.getInstance(String)",
+      "symbol": "SObject.getInstance(String)",
+      "kind": "exec",
+      "notes": "Hierarchy custom setting records expose local owner lookup through the SObject surface."
     }
   ],
   "schema": [
@@ -61,17 +73,19 @@
   "command": {
     "kind": "exec",
     "args": [
-      "SObject setting = Local_Setting__c.getInstance('Default'); System.debug('all=' + setting.getAll().size()); System.debug('value=' + setting.getValues('Default').get('Name')); SObject hierarchy = Hierarchy_Setting__c.getInstance(); System.debug('org=' + hierarchy.getOrgDefaults().get('Enabled__c')); System.debug('owner=' + hierarchy.getValues('00D000000000001').get('Enabled__c'));"
+      "SObject setting = Local_Setting__c.getInstance('Default'); System.debug('all=' + setting.getAll().size()); System.debug('value=' + setting.getValues('Default').get('Name')); SObject hierarchy = Hierarchy_Setting__c.getInstance(); System.debug('org=' + hierarchy.getOrgDefaults().get('Enabled__c')); System.debug('owner=' + hierarchy.getValues('00D000000000001').get('Enabled__c')); System.debug('orgAgain=' + hierarchy.getInstance().get('Enabled__c')); System.debug('ownerAgain=' + hierarchy.getInstance('00D000000000001').get('Enabled__c'));"
     ]
   },
   "expected": {
-    "stdout": "all=1\nvalue=Default\norg=true\nowner=true\n",
+    "stdout": "all=1\nvalue=Default\norg=true\nowner=true\norgAgain=true\nownerAgain=true\n",
     "result": {
       "debug": [
         "all=1",
         "value=Default",
         "org=true",
-        "owner=true"
+        "owner=true",
+        "orgAgain=true",
+        "ownerAgain=true"
       ],
       "ok": true
     }

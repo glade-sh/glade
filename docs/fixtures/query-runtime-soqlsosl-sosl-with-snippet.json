@@ -6,6 +6,12 @@
       "symbol": "SOSL WITH SNIPPET",
       "kind": "test",
       "notes": "Search.find with WITH SNIPPET exposes deterministic local snippets for fixed search result rows."
+    },
+    {
+      "surfaceId": "apex:System.Search.find(String)",
+      "symbol": "Search.find",
+      "kind": "test",
+      "notes": "Search.find(String) returns deterministic local SearchResults from fixed test search results."
     }
   ],
   "source": [

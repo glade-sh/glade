@@ -74,10 +74,22 @@
       "notes": "Builds one local SObject row for SOQL stub providers."
     },
     {
+      "surfaceId": "apex:System.Test.createStubQueryRow",
+      "symbol": "Test.createStubQueryRow",
+      "kind": "test",
+      "notes": "Exact docs-side method identity for the same local SOQL stub row builder."
+    },
+    {
       "surfaceId": "apex:System.Test.createStubQueryRows(Schema.SObjectType,List<Map<String,Object>>)",
       "symbol": "Test.createStubQueryRows",
       "kind": "test",
       "notes": "Builds local SObject rows for SOQL stub providers."
+    },
+    {
+      "surfaceId": "apex:System.Test.createStubQueryRows",
+      "symbol": "Test.createStubQueryRows",
+      "kind": "test",
+      "notes": "Exact docs-side method identity for the same local SOQL stub rows builder."
     },
     {
       "surfaceId": "apex:System.StubProvider.handleMethodCall(Object,String,Type,List<System.Type>,List<String>,List<Object>)",

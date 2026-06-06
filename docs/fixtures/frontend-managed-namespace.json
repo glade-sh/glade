@@ -2,6 +2,7 @@
   "name": "frontend-managed-namespace",
   "evidence": [
     {
+      "surfaceId": "data-reference:NU__Thing__c",
       "symbol": "NU__Thing__c",
       "kind": "check",
       "notes": "Reduced managed-package namespace reference backed by object metadata."

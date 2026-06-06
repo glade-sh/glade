@@ -36,6 +36,7 @@
       "kind": "test"
     },
     {
+      "surfaceId": "data-reference:CronTrigger.CronExpression",
       "symbol": "CronTrigger.CronExpression",
       "kind": "test"
     }

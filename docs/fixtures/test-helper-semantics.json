@@ -7,9 +7,21 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:System.Test.isRunningTest",
+      "symbol": "Test.isRunningTest",
+      "kind": "test",
+      "notes": "Exact docs-side method identity for the same local test-context check."
+    },
+    {
       "surfaceId": "apex:System.Test.getStandardPricebookId()",
       "symbol": "Test.getStandardPricebookId",
       "kind": "test"
+    },
+    {
+      "surfaceId": "apex:System.Test.getStandardPricebookId",
+      "symbol": "Test.getStandardPricebookId",
+      "kind": "test",
+      "notes": "Exact docs-side method identity for the same deterministic local standard pricebook Id."
     },
     {
       "surfaceId": "apex:System.Test.clearApexPageMessages()",

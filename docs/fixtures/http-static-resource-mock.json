@@ -2,15 +2,46 @@
   "name": "http-static-resource-mock",
   "evidence": [
     {
+      "surfaceId": "apex:System.StaticResourceCalloutMock",
       "symbol": "StaticResourceCalloutMock",
       "kind": "exec",
       "notes": "StaticResourceCalloutMock can be constructed and configured in local tests."
+    },
+    {
+      "surfaceId": "apex:System.StaticResourceCalloutMock.StaticResourceCalloutMock()",
+      "symbol": "StaticResourceCalloutMock",
+      "kind": "exec",
+      "notes": "StaticResourceCalloutMock constructs a local HttpCalloutMock."
+    },
+    {
+      "surfaceId": "apex:System.StaticResourceCalloutMock.respond(HttpRequest)",
+      "symbol": "StaticResourceCalloutMock.respond",
+      "kind": "test",
+      "notes": "StaticResourceCalloutMock responds to Http.send with the configured static resource body."
+    },
+    {
+      "surfaceId": "apex:System.StaticResourceCalloutMock.setHeader(String,String)",
+      "symbol": "StaticResourceCalloutMock.setHeader",
+      "kind": "test",
+      "notes": "StaticResourceCalloutMock response headers are visible on the local HttpResponse."
+    },
+    {
+      "surfaceId": "apex:System.StaticResourceCalloutMock.setStaticResource(String)",
+      "symbol": "StaticResourceCalloutMock.setStaticResource",
+      "kind": "test",
+      "notes": "StaticResourceCalloutMock maps one static resource response body."
     },
     {
       "surfaceId": "apex:System.StaticResourceCalloutMock.setStatus(String)",
       "symbol": "StaticResourceCalloutMock.setStatus",
       "kind": "test",
       "notes": "StaticResourceCalloutMock status text is visible on the local HttpResponse."
+    },
+    {
+      "surfaceId": "apex:System.StaticResourceCalloutMock.setStatusCode(Integer)",
+      "symbol": "StaticResourceCalloutMock.setStatusCode",
+      "kind": "test",
+      "notes": "StaticResourceCalloutMock status code is visible on the local HttpResponse."
     },
     {
       "surfaceId": "apex:System.MultiStaticResourceCalloutMock",

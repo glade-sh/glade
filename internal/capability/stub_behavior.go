@@ -604,7 +604,7 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 		return StubBehaviorImplemented, "Ideas safe read helper returns a typed empty List<Id> without mutating Ideas reply/read-state service surfaces", true
 	}
 	if pushUpgradeCustomizationRepositoryBehaviorMethod(symbol, member) {
-		return StubBehaviorImplemented, "PushUpgradeCustomizationRepository uses VM-local deterministic in-memory repository state", true
+		return StubBehaviorUnsupported, "PushUpgradeCustomizationRepository depends on Salesforce subscriber package upgrade customization services and remains explicit unsupported locally", true
 	}
 	if quickActionDescribeBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "QuickAction describe/template/default methods return local read-only metadata/default DTOs without performing action side effects", true

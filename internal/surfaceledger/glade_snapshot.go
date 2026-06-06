@@ -89,12 +89,212 @@ func BuildGladeSnapshot() []SurfaceLedgerRow {
 	addDataReferenceGladeRows(byID)
 	addLocalTestLWCGladeRows(byID)
 	addUnsupportedQueryRuntimeGladeRows(byID)
+	addFixtureBackedStdlibAliasRows(byID)
+	addFixtureBackedSystemAliasRows(byID)
+	addFixtureBackedApexAliasRows(byID)
 	rows := make([]SurfaceLedgerRow, 0, len(byID))
 	for _, row := range byID {
 		rows = append(rows, withDefaults(row))
 	}
 	sortRows(rows)
 	return rows
+}
+
+type fixtureBackedStdlibAlias struct {
+	TypeName string
+	Methods  []string
+}
+
+var fixtureBackedStdlibAliases = []fixtureBackedStdlibAlias{
+	{TypeName: "Blob", Methods: []string{"toString"}},
+	{TypeName: "Datetime", Methods: []string{"newInstanceGmt", "valueOfGmt"}},
+	{TypeName: "Decimal", Methods: []string{"abs", "longValue", "pow", "valueOf"}},
+	{TypeName: "Double", Methods: []string{"valueOf"}},
+	{TypeName: "Id", Methods: []string{"getSObjectType", "to15", "to18", "valueOf"}},
+	{TypeName: "Integer", Methods: []string{"doubleValue", "valueOf"}},
+	{TypeName: "JSON", Methods: []string{"createParser"}},
+	{TypeName: "JSONParser", Methods: []string{"getBooleanValue", "getDateValue", "getText"}},
+	{TypeName: "List", Methods: []string{"copyConstructor", "indexOf", "sort"}},
+	{TypeName: "Long", Methods: []string{"valueOf"}},
+	{TypeName: "Map", Methods: []string{"containsKey", "containsValue", "copyConstructor", "deepClone", "keySet", "toString"}},
+	{TypeName: "Object", Methods: []string{"equals", "hashCode", "toString"}},
+	{TypeName: "Pattern", Methods: []string{"pattern", "split"}},
+	{TypeName: "RestRequest", Methods: []string{"getHeader", "getParameter"}},
+	{TypeName: "RoundingMode", Methods: []string{"name", "ordinal", "toString", "valueOf", "values"}},
+	{TypeName: "Set", Methods: []string{"copyConstructor", "deepClone", "remove"}},
+	{TypeName: "String", Methods: []string{
+		"codePointAt",
+		"commonPrefix",
+		"escapeCsv",
+		"escapeEcmaScript",
+		"escapeHtml3",
+		"escapeHtml4",
+		"escapeJava",
+		"escapeSingleQuotes",
+		"escapeUnicode",
+		"escapeXml",
+		"escapeXml10",
+		"escapeXml11",
+		"format",
+		"getChars",
+		"lastIndexOfAny",
+		"lastOrdinalIndexOf",
+		"ordinalIndexOf",
+		"overlay",
+		"remove",
+		"removeIgnoreCase",
+		"replaceAll",
+		"replaceFirst",
+		"replaceIgnoreCase",
+		"replaceOnce",
+		"rotate",
+		"strip",
+		"stripAll",
+		"stripEnd",
+		"stripStart",
+		"stripToEmpty",
+		"stripToNull",
+		"swapCase",
+		"unescapeCsv",
+		"unescapeEcmaScript",
+		"unescapeHtml3",
+		"unescapeHtml4",
+		"unescapeJava",
+		"unescapeUnicode",
+		"unescapeXml",
+		"unescapeXml10",
+		"unescapeXml11",
+	}},
+	{TypeName: "Time", Methods: []string{"valueOf"}},
+	{TypeName: "Type", Methods: []string{"forName"}},
+	{TypeName: "URL", Methods: []string{"getAuthority", "getCurrentRequestUrl", "getDefaultPort", "getHost"}},
+}
+
+func addFixtureBackedStdlibAliasRows(byID map[string]SurfaceLedgerRow) {
+	for _, alias := range fixtureBackedStdlibAliases {
+		for _, method := range alias.Methods {
+			id := ApexMemberID("System", alias.TypeName, method, nil)
+			byID[surfaceIDKey(id)] = RowFromGladeShape(SurfaceLedgerRow{
+				SurfaceID:     id,
+				Product:       ProductApex,
+				Area:          AreaRuntime,
+				Namespace:     "System",
+				TypeName:      alias.TypeName,
+				MemberName:    method,
+				Kind:          KindMethod,
+				GladeBehavior: BehaviorSupported,
+				Sources:       []string{"stdlib-fixture-alias"},
+				Notes:         "fixture-backed docs shorthand for a System stdlib method whose typed overloads are implemented locally",
+			})
+		}
+	}
+}
+
+type fixtureBackedSystemAliasRow struct {
+	SurfaceID string
+	Kind      string
+	Behavior  BehaviorState
+	Notes     string
+}
+
+var fixtureBackedSystemAliasRows = []fixtureBackedSystemAliasRow{
+	{SurfaceID: "apex:System.Auth.*", Kind: KindMethod, Behavior: BehaviorUnsupported, Notes: "fixture-backed explicit unsupported diagnostics for local Auth token, JWT, OAuth, and cloud surfaces"},
+	{SurfaceID: "apex:System.Canvas.*", Kind: KindMethod, Behavior: BehaviorUnsupported, Notes: "fixture-backed explicit unsupported diagnostics for local Canvas app integration surfaces"},
+	{SurfaceID: "apex:System.Continuation.*", Kind: KindMethod, Behavior: BehaviorUnsupported, Notes: "fixture-backed explicit unsupported diagnostics for local Continuation callback and callout surfaces"},
+	{SurfaceID: "apex:System.Crypto.areEqualConstantTime(Blob,Blob)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local Crypto constant-time Blob comparison"},
+	{SurfaceID: "apex:System.CustomMetadataType.getAll", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local custom metadata static getAll access"},
+	{SurfaceID: "apex:System.CustomSetting.getInstance", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local custom setting static getInstance access"},
+	{SurfaceID: "apex:System.DMLOptions", Kind: KindType, Behavior: BehaviorPassive, Notes: "fixture-backed System-qualified alias for Database.DMLOptions local option shape"},
+	{SurfaceID: "apex:System.DMLOptions.allowFieldTruncation", Kind: KindProperty, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Database.DMLOptions.allowFieldTruncation"},
+	{SurfaceID: "apex:System.DMLOptions.assignmentRuleHeader", Kind: KindProperty, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Database.DMLOptions.assignmentRuleHeader"},
+	{SurfaceID: "apex:System.DMLOptions.emailHeader", Kind: KindProperty, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Database.DMLOptions.emailHeader"},
+	{SurfaceID: "apex:System.DMLOptions.localeOptions", Kind: KindProperty, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Database.DMLOptions.localeOptions"},
+	{SurfaceID: "apex:System.DMLOptions.optAllOrNone", Kind: KindProperty, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Database.DMLOptions.optAllOrNone"},
+	{SurfaceID: "apex:System.EventBus.*", Kind: KindMethod, Behavior: BehaviorUnsupported, Notes: "fixture-backed explicit unsupported diagnostics for local platform event delivery surfaces"},
+	{SurfaceID: "apex:System.EventBus.publish", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local no-op platform event publish SaveResult behavior"},
+	{SurfaceID: "apex:System.EventBus.publishAfterCommit", Kind: KindMethod, Behavior: BehaviorUnsupported, Notes: "fixture-backed explicit unsupported diagnostic for after-commit platform event delivery"},
+	{SurfaceID: "apex:System.HierarchyCustomSetting.getOrgDefaults", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local hierarchy custom setting org-default lookup"},
+	{SurfaceID: "apex:System.HttpRequest.setClientCertificate", Kind: KindMethod, Behavior: BehaviorUnsupported, Notes: "fixture-backed explicit unsupported diagnostic for inline client-certificate material"},
+	{SurfaceID: "apex:System.HttpRequest.setClientCertificateName", Kind: KindMethod, Behavior: BehaviorUnsupported, Notes: "fixture-backed explicit unsupported diagnostic for named client-certificate configuration"},
+	{SurfaceID: "apex:System.HttpRequest.setTimeout", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local HttpRequest timeout validation"},
+	{SurfaceID: "apex:System.IllegalStateException", Kind: KindType, Behavior: BehaviorPassive, Notes: "fixture-backed System-qualified alias for the local built-in IllegalStateException type"},
+	{SurfaceID: "apex:System.Integer.MAX_VALUE", Kind: KindProperty, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Integer.MAX_VALUE"},
+	{SurfaceID: "apex:System.Integer.MIN_VALUE", Kind: KindProperty, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Integer.MIN_VALUE"},
+	{SurfaceID: "apex:System.Iterator.remove", Kind: KindMethod, Behavior: BehaviorUnsupported, Notes: "fixture-backed explicit unsupported diagnostic for mutating collection iterators"},
+	{SurfaceID: "apex:System.JSONGenerator.writeRaw(String)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for JSONGenerator.writeRaw"},
+	{SurfaceID: "apex:System.JSONGenerator.writeRawField(String,String)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for JSONGenerator.writeRawField"},
+	{SurfaceID: "apex:System.JSONGenerator.writeRawValue(String)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for JSONGenerator.writeRawValue"},
+	{SurfaceID: "apex:System.Limits.getDmlRows", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local Limits.getDmlRows"},
+	{SurfaceID: "apex:System.Limits.getDmlStatements", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local Limits.getDmlStatements"},
+	{SurfaceID: "apex:System.Limits.getEmailInvocations", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local Limits.getEmailInvocations"},
+	{SurfaceID: "apex:System.Limits.getLimitDmlRows", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local Limits.getLimitDmlRows"},
+	{SurfaceID: "apex:System.Limits.getLimitDmlStatements", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local Limits.getLimitDmlStatements"},
+	{SurfaceID: "apex:System.Limits.getLimitScheduledJobs", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local Limits.getLimitScheduledJobs"},
+	{SurfaceID: "apex:System.Limits.getScheduledJobs", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local Limits.getScheduledJobs"},
+	{SurfaceID: "apex:System.Long.MAX_VALUE", Kind: KindProperty, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Long.MAX_VALUE"},
+	{SurfaceID: "apex:System.Long.MIN_VALUE", Kind: KindProperty, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Long.MIN_VALUE"},
+	{SurfaceID: "apex:System.Matcher.appendReplacement", Kind: KindMethod, Behavior: BehaviorUnsupported, Notes: "fixture-backed explicit unsupported diagnostic for Java StringBuffer append replacement semantics"},
+	{SurfaceID: "apex:System.Matcher.appendTail", Kind: KindMethod, Behavior: BehaviorUnsupported, Notes: "fixture-backed explicit unsupported diagnostic for Java StringBuffer append tail semantics"},
+	{SurfaceID: "apex:System.Matcher.groupCount", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local Matcher.groupCount"},
+	{SurfaceID: "apex:System.Matcher.hasAnchoringBounds", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed docs shorthand for Matcher.hasAnchoringBounds()"},
+	{SurfaceID: "apex:System.Matcher.hasTransparentBounds", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed docs shorthand for Matcher.hasTransparentBounds()"},
+	{SurfaceID: "apex:System.Matcher.lookingAt", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local Matcher.lookingAt"},
+	{SurfaceID: "apex:System.Matcher.region", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local Matcher.region"},
+	{SurfaceID: "apex:System.Matcher.replaceAll", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local Matcher.replaceAll"},
+	{SurfaceID: "apex:System.Matcher.replaceFirst", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local Matcher.replaceFirst"},
+	{SurfaceID: "apex:System.Matcher.useAnchoringBounds", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed docs shorthand for Matcher.useAnchoringBounds(Boolean)"},
+	{SurfaceID: "apex:System.Matcher.usePattern", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local Matcher.usePattern"},
+	{SurfaceID: "apex:System.Matcher.useTransparentBounds", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed docs shorthand for Matcher.useTransparentBounds(Boolean)"},
+	{SurfaceID: "apex:System.Messaging.MassEmailMessage", Kind: KindType, Behavior: BehaviorPassive, Notes: "fixture-backed System-qualified alias for the local MassEmailMessage DTO shape"},
+	{SurfaceID: "apex:System.Messaging.SendEmailResult", Kind: KindType, Behavior: BehaviorPassive, Notes: "fixture-backed System-qualified alias for the local SendEmailResult DTO shape"},
+	{SurfaceID: "apex:System.Messaging.sendPushNotification", Kind: KindMethod, Behavior: BehaviorUnsupported, Notes: "fixture-backed explicit unsupported diagnostic for messaging transport APIs"},
+	{SurfaceID: "apex:System.PatternSyntaxException", Kind: KindType, Behavior: BehaviorPassive, Notes: "fixture-backed System-qualified alias for local PatternSyntaxException values"},
+	{SurfaceID: "apex:System.PageReference(record)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed docs shorthand for the PageReference ApexPage record constructor"},
+	{SurfaceID: "apex:System.QuickAction.*", Kind: KindMethod, Behavior: BehaviorUnsupported, Notes: "fixture-backed explicit unsupported diagnostics for local quick action UI surfaces"},
+	{SurfaceID: "apex:System.RestRequest.getHeader(String)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for RestRequest.getHeader(String)"},
+	{SurfaceID: "apex:System.RestRequest.getParameter(String)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for RestRequest.getParameter(String)"},
+	{SurfaceID: "apex:System.Schema.describeSObjects(List<String>)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Schema.describeSObjects(List<String>)"},
+	{SurfaceID: "apex:System.Schema.getGlobalDescribe()", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Schema.getGlobalDescribe()"},
+	{SurfaceID: "apex:System.Time.valueOf(String)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Time.valueOf(String)"},
+	{SurfaceID: "apex:System.TxnSecurity.EventCondition.evaluate(SObject)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local transaction-security event-condition default evaluation"},
+	{SurfaceID: "apex:System.TxnSecurity.PolicyCondition.evaluate(TxnSecurity.Event)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for local transaction-security policy-condition default evaluation"},
+	{SurfaceID: "apex:System.Type.forName(namespace,name)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed docs shorthand for Type.forName namespace/name lookup"},
+}
+
+func addFixtureBackedSystemAliasRows(byID map[string]SurfaceLedgerRow) {
+	for _, alias := range fixtureBackedSystemAliasRows {
+		row := SurfaceLedgerRow{
+			SurfaceID:     alias.SurfaceID,
+			Product:       ProductApex,
+			Area:          AreaRuntime,
+			Kind:          alias.Kind,
+			GladeBehavior: alias.Behavior,
+			Sources:       []string{"system-fixture-alias"},
+			Notes:         alias.Notes,
+		}
+		fillFromApexID(&row)
+		byID[surfaceIDKey(row.SurfaceID)] = RowFromGladeShape(row)
+	}
+}
+
+var fixtureBackedApexAliasRows = []fixtureBackedSystemAliasRow{
+	{SurfaceID: "apex:TxnSecurity.Event.Event()", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed exact TxnSecurity docs constructor for the local passive transaction-security event record"},
+}
+
+func addFixtureBackedApexAliasRows(byID map[string]SurfaceLedgerRow) {
+	for _, alias := range fixtureBackedApexAliasRows {
+		row := SurfaceLedgerRow{
+			SurfaceID:     alias.SurfaceID,
+			Product:       ProductApex,
+			Area:          AreaRuntime,
+			Kind:          alias.Kind,
+			GladeBehavior: alias.Behavior,
+			Sources:       []string{"apex-fixture-alias"},
+			Notes:         alias.Notes,
+		}
+		fillFromApexID(&row)
+		byID[surfaceIDKey(row.SurfaceID)] = RowFromGladeShape(row)
+	}
 }
 
 func mergeGladeBehavior(existing, next BehaviorState) BehaviorState {
@@ -405,7 +605,7 @@ func fillFromApexID(row *SurfaceLedgerRow) {
 			}
 			return
 		}
-		if row.Kind == KindProperty || row.Kind == KindField {
+		if row.Kind == KindMethod || row.Kind == KindProperty || row.Kind == KindField {
 			row.MemberName = member
 			typePart := rest[:dot]
 			if typeDot := strings.LastIndex(typePart, "."); typeDot > 0 {
