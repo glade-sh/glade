@@ -15,6 +15,22 @@ func TestBuildGladeSnapshotIncludesKnownStdlibBehavior(t *testing.T) {
 	}
 }
 
+func TestBuildGladeSnapshotUsesHTTPStdlibSignature(t *testing.T) {
+	rows := BuildGladeSnapshot()
+	byID := rowsByID(rows)
+	id := ApexMemberID("System", "Http", "send", []string{"HttpRequest"})
+	row, ok := byID[id]
+	if !ok {
+		t.Fatalf("missing %s", id)
+	}
+	if row.GladeBehavior != BehaviorSupported {
+		t.Fatalf("Http.send(HttpRequest) behavior = %s", row.GladeBehavior)
+	}
+	if _, ok := byID["apex:System.Http.send local mock callouts"]; ok {
+		t.Fatalf("behavior label should not create an Apex surface row")
+	}
+}
+
 func TestBuildGladeSnapshotMarksGeneratedStandardSObjectShape(t *testing.T) {
 	rows := BuildGladeSnapshot()
 	byID := rowsByID(rows)

@@ -204,6 +204,8 @@ func surfaceIDKey(id string) string {
 		rest = strings.ReplaceAll(rest, "System.Comparator.compare(T,T)", "System.Comparator.compare(Object,Object)")
 		rest = strings.ReplaceAll(rest, "(List,System.AccessLevel)", "(List<Object>,System.AccessLevel)")
 		rest = strings.ReplaceAll(rest, "(List,AccessLevel)", "(List<Object>,AccessLevel)")
+		rest = strings.ReplaceAll(rest, "System.Database.getQueryLocator(String,Object)", "System.Database.getQueryLocator(String,AccessLevel)")
+		rest = strings.ReplaceAll(rest, "System.Database.getQueryLocatorWithBinds(String,Map,Object)", "System.Database.getQueryLocatorWithBinds(String,Map,AccessLevel)")
 		folded := asciiLowerIdentityKey(rest)
 		if folded == rest {
 			return "apex:" + rest

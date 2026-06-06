@@ -46,17 +46,17 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Database | `Database.deleteImmediate` | `supported` | Local immediate delete alias runs through the DML pipeline and returns DeleteResult shape. |
 | Database | `Database.emptyRecycleBin` | `supported` | Local hard-delete result shape with allOrNone rollback for supported SObjects. |
 | Database | `Database.executeBatch` | `supported` | Queues local Batchable jobs and drains start/execute chunks/finish during Test.stopTest. |
-| Database | `Database.getAsyncDeleteResult` | `stub` | Returns materialized local DeleteResult values when the locator is local; unknown locators return a deterministic pending stub result. |
+| Database | `Database.getAsyncDeleteResult` | `supported` | Returns materialized local DeleteResult values and rejects unknown async locator strings instead of fabricating pending results. |
 | Database | `Database.getAsyncLocator` | `supported` | Returns deterministic VM-local locator strings for local result and locator objects; no external async service lookup. |
-| Database | `Database.getAsyncSaveResult` | `stub` | Returns materialized local SaveResult values when the locator is local; unknown locators return a deterministic pending stub result. |
+| Database | `Database.getAsyncSaveResult` | `supported` | Returns materialized local SaveResult values and rejects unknown async locator strings instead of fabricating pending results. |
 | Database | `Database.getCursor` | `supported` | Local cursor over supported SOQL results with deterministic fetch windows. |
 | Database | `Database.getCursorWithBinds` | `supported` | Bind-map local cursor over supported SOQL results with deterministic fetch windows. |
-| Database | `Database.getDeleted` | `stub` | Returns a deterministic empty deleted-record sync window stub; full org sync tracking is not modeled. |
+| Database | `Database.getDeleted` | `supported` | Returns local soft-deleted record tombstones whose deletion timestamp falls within the requested sync window. |
 | Database | `Database.getPaginationCursor` | `supported` | Local pagination cursor over supported SOQL results with deterministic fetch windows. |
 | Database | `Database.getPaginationCursorWithBinds` | `supported` | Bind-map local pagination cursor over supported SOQL results with deterministic fetch windows. |
 | Database | `Database.getQueryLocator` | `supported` | Supported SOQL executes eagerly for local batch scopes with local AccessLevel parsing. |
 | Database | `Database.getQueryLocatorWithBinds` | `supported` | Bind-map dynamic SOQL locator execution with iterable local query locators. |
-| Database | `Database.getUpdated` | `stub` | Returns a deterministic empty updated-record sync window stub; full org sync tracking is not modeled. |
+| Database | `Database.getUpdated` | `supported` | Returns local record IDs whose system-modified timestamp falls within the requested sync window. |
 | Database | `Database.insert` | `supported` | DML pipeline with result/error shapes and local AccessLevel parsing for supported SObjects. |
 | Database | `Database.insertAsync` | `supported` | Local async insert alias runs through the DML pipeline and returns SaveResult shape. |
 | Database | `Database.insertImmediate` | `supported` | Local immediate insert alias runs through the DML pipeline and returns SaveResult shape. |
@@ -107,8 +107,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Exception | `NoDataFoundException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
 | Exception | `NullPointerException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
 | FeatureManagement | `FeatureManagement.checkPermission` | `partial` | Checks local runAs permission-list state. |
-| HTTP | `Http.send local mock callouts` | `supported` | Routes local callouts through registered HttpCalloutMock implementations. |
-| HTTP | `Http.send real network transport` | `unsupported` | Outbound network callouts are intentionally not executed by the local runtime. |
+| HTTP | `Http.send(HttpRequest)` | `supported` | Routes local callouts through registered HttpCalloutMock implementations; real outbound network transport is intentionally not executed by the local runtime. |
 | HTTP | `HttpRequest` | `partial` | Endpoint, method, headers, timeout, body, and blob body accessors. |
 | HTTP | `HttpResponse` | `partial` | Status, status code, headers, body, and blob body accessors. |
 | JSON | `JSON.deserialize` | `partial` | SObject, class, collection, and primitive shapes for supported subset. |
@@ -143,7 +142,28 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Pattern | `Matcher.matches` | `partial` | Go regexp-backed matching. |
 | Pattern | `Pattern.compile` | `partial` | Go regexp syntax. |
 | Pattern | `Pattern.matches` | `partial` | Whole-string Go regexp match. |
+| QuickAction | `QuickAction.describeAvailableActions` | `unsupported` | QuickAction metadata/action service execution is not modeled by the local Apex runtime. |
+| QuickAction | `QuickAction.describeAvailableQuickActions(String)` | `unsupported` | QuickAction metadata/action service execution is not modeled by the local Apex runtime. |
+| QuickAction | `QuickAction.describeQuickActions(List<String>)` | `unsupported` | QuickAction metadata/action service execution is not modeled by the local Apex runtime. |
+| QuickAction | `QuickAction.performQuickAction` | `unsupported` | QuickAction metadata/action service execution is not modeled by the local Apex runtime. |
+| QuickAction | `QuickAction.performQuickAction(QuickAction.QuickActionRequest)` | `unsupported` | QuickAction metadata/action service execution is not modeled by the local Apex runtime. |
+| QuickAction | `QuickAction.performQuickAction(QuickAction.QuickActionRequest,Boolean)` | `unsupported` | QuickAction metadata/action service execution is not modeled by the local Apex runtime. |
+| QuickAction | `QuickAction.performQuickActions(List<QuickAction.QuickActionRequest>)` | `unsupported` | QuickAction metadata/action service execution is not modeled by the local Apex runtime. |
+| QuickAction | `QuickAction.performQuickActions(List<QuickAction.QuickActionRequest>,Boolean)` | `unsupported` | QuickAction metadata/action service execution is not modeled by the local Apex runtime. |
+| QuickAction | `QuickAction.retrieveQuickActionTemplate(String,Id)` | `unsupported` | QuickAction metadata/action service execution is not modeled by the local Apex runtime. |
+| QuickAction | `QuickAction.retrieveQuickActionTemplates(List<String>,Id)` | `unsupported` | QuickAction metadata/action service execution is not modeled by the local Apex runtime. |
+| Request | `Request.getCurrent()` | `unsupported` | Request context depends on a live platform request and is not fabricated for local Apex tests. |
+| Request | `Request.getQuiddity()` | `unsupported` | Request context depends on a live platform request and is not fabricated for local Apex tests. |
+| Request | `Request.getRequestId()` | `unsupported` | Request context depends on a live platform request and is not fabricated for local Apex tests. |
+| Request | `RequestImpl.getCurrent()` | `unsupported` | Request context depends on a live platform request and is not fabricated for local Apex tests. |
+| ResetPasswordResult | `ResetPasswordResult.getPassword()` | `unsupported` | Password reset output is produced by Salesforce identity services and is not generated locally. |
 | SObject | `SObject.setOptions(Database.DMLOptions)` | `supported` | Stores a cloned DMLOptions value on the local SObject for later DML option use. |
+| Sandbox | `SandboxContext.organizationId()` | `unsupported` | Sandbox copy context is supplied by Salesforce sandbox lifecycle services and is not available locally. |
+| Sandbox | `SandboxContext.sandboxId()` | `unsupported` | Sandbox copy context is supplied by Salesforce sandbox lifecycle services and is not available locally. |
+| Sandbox | `SandboxContext.sandboxName()` | `unsupported` | Sandbox copy context is supplied by Salesforce sandbox lifecycle services and is not available locally. |
+| Sandbox | `SandboxPostCopy.runApexClass(SandboxContext)` | `unsupported` | Sandbox post-copy execution is a Salesforce sandbox lifecycle hook and is not run locally. |
+| Schedulable | `Schedulable.execute(SchedulableContext)` | `unsupported` | Scheduled job execution context is not synthesized outside the local scheduler test surfaces. |
+| Schedulable | `SchedulableContext.getTriggerId()` | `unsupported` | Scheduled trigger IDs come from Salesforce scheduled job records and are not fabricated locally. |
 | Schema | `DescribeFieldResult` | `partial` | Common field metadata and access booleans. |
 | Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships. |
 | Schema | `Schema.describeDataCategoryGroupStructures(List<Schema.DataCategoryGroupSobjectTypePair>,Boolean)` | `partial` | Deterministic local data category structures from org metadata; no external category service lookup. |
@@ -152,9 +172,13 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Schema | `Schema.getGlobalDescribe()` | `partial` | Local schema-backed describe map. |
 | Search | `Search.find` | `partial` | Returns deterministic SearchResult DTOs from Test.setFixedSearchResults; no external search ranking/snippets. |
 | Search | `Search.find(String,AccessLevel)` | `partial` | Uses deterministic fixed search results and accepts AccessLevel for shape; external ranking/snippets are not modeled. |
+| Search | `Search.find(String,Object)` | `unsupported` | Tooling Object overload is not an executable local search signature; use the AccessLevel overload. |
 | Search | `Search.query / SOSL FIND` | `partial` | Parses RETURNING clauses and returns deterministic rows from Test.setFixedSearchResults, or empty result groups without external search. |
 | Search | `Search.query(String,AccessLevel)` | `partial` | Uses the deterministic local SOSL model and accepts AccessLevel for shape; external search security is not modeled. |
+| Search | `Search.query(String,Object)` | `unsupported` | Tooling Object overload is not an executable local search signature; use the AccessLevel overload. |
 | Search | `Search.suggest` | `partial` | Returns an empty deterministic SuggestionResults DTO; no external suggestion service. |
+| Search | `Search.suggest(String,String,Object)` | `unsupported` | Tooling Object overload is not an executable local suggestion signature; use Search.SuggestionOption. |
+| Search | `Search.suggest(String,String,Object,Object)` | `unsupported` | Tooling Object overload is not an executable local suggestion signature; use Search.SuggestionOption and AccessLevel. |
 | Search | `Search.suggest(String,String,Search.SuggestionOption)` | `partial` | Returns an empty deterministic SuggestionResults DTO without external suggestion service calls. |
 | Search | `Search.suggest(String,String,Search.SuggestionOption,AccessLevel)` | `partial` | Accepts AccessLevel for shape and returns the deterministic local SuggestionResults DTO. |
 | String | `String.contains` | `supported` | UTF-8 string contains. |
@@ -177,20 +201,38 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | System | `System.assert` | `supported` | Assertion failure returns runtime error. |
 | System | `System.assertEquals` | `supported` | Assertion failure returns runtime error. |
 | System | `System.debug` | `supported` | Collected in result debug output. |
+| System | `System.enqueueJob(Object,Object)` | `unsupported` | Tooling Object overload is not an executable local queueable signature; use supported queueable overloads. |
+| System | `System.runAs(Object,Object)` | `unsupported` | Package-version runAs context requires installed package identity and is not fabricated locally. |
+| System | `System.runAs(Package.Version)` | `unsupported` | Package-version runAs context requires installed package identity and is not fabricated locally. |
+| System | `System.schedule(String,String,Object)` | `unsupported` | Scheduled job registration is not executed outside the local scheduler test surfaces. |
 | Test | `Test.createSoqlStub(Schema.SObjectType,SoqlStubProvider)` | `supported` | Registers test-local SOQL stubs per SObject type. |
 | Test | `Test.createStub(Type,StubProvider)` | `supported` | Creates dynamic test stubs backed by StubProvider. |
 | Test | `Test.createStubQueryRow` | `partial` | Builds local SObject rows from field maps for SOQL stub providers. |
 | Test | `Test.createStubQueryRow(Schema.SObjectType,Map<String,Object>)` | `supported` | Builds one local SObject row from a field map for SOQL stub providers. |
 | Test | `Test.createStubQueryRows` | `partial` | Builds local SObject row lists from field maps for SOQL stub providers. |
 | Test | `Test.createStubQueryRows(Schema.SObjectType,List<Map<String,Object>>)` | `supported` | Builds local SObject row lists from field maps for SOQL stub providers. |
+| Test | `Test.enableChangeDataCapture()` | `unsupported` | Change Data Capture test bus is not modeled by the local Apex runtime. |
+| Test | `Test.getEventBus()` | `unsupported` | Platform event test bus service is not modeled by the local Apex runtime. |
+| Test | `Test.getExternalService()` | `unsupported` | External service test harness is not modeled by the local Apex runtime. |
 | Test | `Test.getStandardPricebookId` | `partial` | Deterministic test-context-only ID. |
+| Test | `Test.invokeContinuationMethod(Object,Continuation)` | `unsupported` | Continuation callback invocation depends on asynchronous callout state not fabricated locally. |
+| Test | `Test.invokePage(PageReference)` | `unsupported` | Visualforce page invocation is outside the local Apex runtime surface. |
 | Test | `Test.isRunningTest` | `supported` | Reflects local test context. |
 | Test | `Test.loadData` | `partial` | Loads CSV static-resource content into local org storage through DML. |
+| Test | `Test.newSendEmailQuickActionDefaults(Id,Id)` | `unsupported` | Send-email QuickAction defaults require QuickAction metadata services. |
+| Test | `Test.setContinuationResponse(String,HttpResponse)` | `unsupported` | Continuation response injection depends on asynchronous callout state not fabricated locally. |
 | Test | `Test.setCurrentPage(PageReference)` | `supported` | Sets the VM-local current PageReference in test context. |
+| Test | `Test.setCurrentPageReference(Object)` | `unsupported` | Tooling Object overload is not an executable local page-reference signature; use PageReference. |
 | Test | `Test.setCurrentPageReference(PageReference)` | `supported` | Sets the VM-local current PageReference in test context. |
 | Test | `Test.setMock` | `partial` | HttpCalloutMock support for local tests. |
 | Test | `Test.startTest` | `partial` | Governor-window reset/restore for supported counters. |
 | Test | `Test.stopTest` | `partial` | Drains supported async work. |
+| Test | `Test.testInstall(InstallHandler,Version)` | `unsupported` | Install handler lifecycle execution requires package install context and is not run locally. |
+| Test | `Test.testInstall(InstallHandler,Version,Boolean)` | `unsupported` | Install handler lifecycle execution requires package install context and is not run locally. |
+| Test | `Test.testNotificationActionHandler(Messaging.NotificationActionHandler,Messaging.ActionableNotification)` | `unsupported` | Actionable notification service callbacks are not modeled by the local Apex runtime. |
+| Test | `Test.testSandboxPostCopyScript(SandboxPostCopy,Id,Id,String)` | `unsupported` | Sandbox post-copy test execution requires sandbox lifecycle context and is not run locally. |
+| Test | `Test.testSandboxPostCopyScript(SandboxPostCopy,Id,Id,String,Boolean)` | `unsupported` | Sandbox post-copy test execution requires sandbox lifecycle context and is not run locally. |
+| Test | `Test.testUninstall(UninstallHandler)` | `unsupported` | Uninstall handler lifecycle execution requires package uninstall context and is not run locally. |
 | Time | `Time.hour` | `supported` | Local time component. |
 | Time | `Time.minute` | `supported` | Local time component. |
 | Time | `Time.newInstance` | `supported` | Validates time parts. |
@@ -200,9 +242,14 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | TimeZone | `TimeZone.getID` | `supported` | Returns local timezone IDs. |
 | TimeZone | `TimeZone.getOffset` | `supported` | Returns offsets from the deterministic local timezone model. |
 | TimeZone | `TimeZone.getTimeZone` | `supported` | Resolves timezone IDs into local timezone values. |
+| TrailblazerIdentity | `TrailblazerIdentity.generateUserEmailVerificationToken(String,String,String)` | `unsupported` | Trailblazer identity service calls are not executed by the local Apex runtime. |
+| TrailblazerIdentity | `TrailblazerIdentity.getUserOrgInfo(List<String>)` | `unsupported` | Trailblazer identity service calls are not executed by the local Apex runtime. |
+| TrailblazerIdentity | `TrailblazerIdentity.splunkLog(String,String)` | `unsupported` | Trailblazer identity service calls are not executed by the local Apex runtime. |
 | Type | `Type.forName` | `partial` | Local class/type token lookup. |
 | Type | `Type.getName` | `supported` | Returns local type token name. |
 | Type | `Type.newInstance` | `partial` | Constructs local object values without constructor dispatch parity. |
+| UIRequest | `UIRequest.getCurrent()` | `unsupported` | UI request context is not available in local Apex execution. |
+| UIRequest | `UIRequest.getRequestHeader(String)` | `unsupported` | UI request context is not available in local Apex execution. |
 | URL | `URL.getOrgDomainUrl` | `partial` | Deterministic local org URL. |
 | URL | `URL.getSalesforceBaseUrl` | `partial` | Deterministic local base URL. |
 | Unsupported | `unimplemented platform/stdlib calls` | `supported` | Typed UnsupportedFeature errors with stable message text. |
@@ -219,4 +266,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | UserInfo | `UserInfo.getUserId` | `partial` | Current runAs/default user. |
 | UserInfo | `UserInfo.getUserName` | `partial` | Current runAs/default user. |
 | UserInfo | `UserInfo.getUserType` | `partial` | Current runAs/default user. |
+| UserInfo | `UserInfo.hasPackageLicense(Id)` | `unsupported` | Package license checks require installed package license state and are not fabricated locally. |
+| UserInfo | `UserInfo.isCurrentUserLicensedForPackage(Id)` | `unsupported` | Package license checks require installed package license state and are not fabricated locally. |
 | UserInfo | `UserInfo.isMultiCurrencyOrganization` | `partial` | Local org metadata flag. |
+| WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map,List)` | `unsupported` | Generated SOAP callout invocation requires external transport and WSDL binding state. |
+| WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)` | `unsupported` | Generated SOAP callout invocation requires external transport and WSDL binding state. |

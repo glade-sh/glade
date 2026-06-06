@@ -1,0 +1,251 @@
+{
+  "name": "core-runtime-system-stdlib-scalar-closeout",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.String.endsWith",
+      "symbol": "String.endsWith",
+      "kind": "exec",
+      "notes": "Instance suffix check on local String values."
+    },
+    {
+      "surfaceId": "apex:System.String.equalsIgnoreCase",
+      "symbol": "String.equalsIgnoreCase",
+      "kind": "exec",
+      "notes": "Instance case-insensitive equality on local String values."
+    },
+    {
+      "surfaceId": "apex:System.String.indexOf",
+      "symbol": "String.indexOf",
+      "kind": "exec",
+      "notes": "Instance substring search on local String values."
+    },
+    {
+      "surfaceId": "apex:System.String.isBlank",
+      "symbol": "String.isBlank",
+      "kind": "exec",
+      "notes": "Static blank check treats whitespace as blank."
+    },
+    {
+      "surfaceId": "apex:System.String.isNotBlank",
+      "symbol": "String.isNotBlank",
+      "kind": "exec",
+      "notes": "Static nonblank check rejects whitespace-only values."
+    },
+    {
+      "surfaceId": "apex:System.String.join",
+      "symbol": "String.join",
+      "kind": "exec",
+      "notes": "Static join renders list elements with a separator."
+    },
+    {
+      "surfaceId": "apex:System.String.lastIndexOf",
+      "symbol": "String.lastIndexOf",
+      "kind": "exec",
+      "notes": "Instance reverse substring search on local String values."
+    },
+    {
+      "surfaceId": "apex:System.String.length",
+      "symbol": "String.length",
+      "kind": "exec",
+      "notes": "Instance length exposes the local String character count."
+    },
+    {
+      "surfaceId": "apex:System.String.replace",
+      "symbol": "String.replace",
+      "kind": "exec",
+      "notes": "Instance literal replacement on local String values."
+    },
+    {
+      "surfaceId": "apex:System.String.startsWith",
+      "symbol": "String.startsWith",
+      "kind": "exec",
+      "notes": "Instance prefix check on local String values."
+    },
+    {
+      "surfaceId": "apex:System.String.substring",
+      "symbol": "String.substring",
+      "kind": "exec",
+      "notes": "Instance substring slicing on local String values."
+    },
+    {
+      "surfaceId": "apex:System.String.toLowerCase",
+      "symbol": "String.toLowerCase",
+      "kind": "exec",
+      "notes": "Instance lowercase conversion on local String values."
+    },
+    {
+      "surfaceId": "apex:System.String.toUpperCase",
+      "symbol": "String.toUpperCase",
+      "kind": "exec",
+      "notes": "Instance uppercase conversion on local String values."
+    },
+    {
+      "surfaceId": "apex:System.String.trim",
+      "symbol": "String.trim",
+      "kind": "exec",
+      "notes": "Instance trim removes leading and trailing whitespace."
+    },
+    {
+      "surfaceId": "apex:System.String.valueOf",
+      "symbol": "String.valueOf",
+      "kind": "exec",
+      "notes": "Static valueOf renders scalar values as String."
+    },
+    {
+      "surfaceId": "apex:System.Math.abs",
+      "symbol": "Math.abs",
+      "kind": "exec",
+      "notes": "Static absolute value on local numeric values."
+    },
+    {
+      "surfaceId": "apex:System.Math.ceil",
+      "symbol": "Math.ceil",
+      "kind": "exec",
+      "notes": "Static ceiling on local Decimal values."
+    },
+    {
+      "surfaceId": "apex:System.Math.floor",
+      "symbol": "Math.floor",
+      "kind": "exec",
+      "notes": "Static floor on local Decimal values."
+    },
+    {
+      "surfaceId": "apex:System.Math.max",
+      "symbol": "Math.max",
+      "kind": "exec",
+      "notes": "Static maximum on local numeric values."
+    },
+    {
+      "surfaceId": "apex:System.Math.min",
+      "symbol": "Math.min",
+      "kind": "exec",
+      "notes": "Static minimum on local numeric values."
+    },
+    {
+      "surfaceId": "apex:System.Math.pow",
+      "symbol": "Math.pow",
+      "kind": "exec",
+      "notes": "Static power on local numeric values."
+    },
+    {
+      "surfaceId": "apex:System.Math.round",
+      "symbol": "Math.round",
+      "kind": "exec",
+      "notes": "Static rounding on local Decimal values."
+    },
+    {
+      "surfaceId": "apex:System.Math.sqrt",
+      "symbol": "Math.sqrt",
+      "kind": "exec",
+      "notes": "Static square root on local numeric values."
+    },
+    {
+      "surfaceId": "apex:System.Date.addDays",
+      "symbol": "Date.addDays",
+      "kind": "exec",
+      "notes": "Date arithmetic advances by whole days."
+    },
+    {
+      "surfaceId": "apex:System.Date.newInstance",
+      "symbol": "Date.newInstance",
+      "kind": "exec",
+      "notes": "Date construction accepts year, month, and day."
+    },
+    {
+      "surfaceId": "apex:System.Datetime.addHours",
+      "symbol": "Datetime.addHours",
+      "kind": "exec",
+      "notes": "Datetime arithmetic advances by whole hours."
+    },
+    {
+      "surfaceId": "apex:System.Datetime.addMinutes",
+      "symbol": "Datetime.addMinutes",
+      "kind": "exec",
+      "notes": "Datetime arithmetic advances by whole minutes."
+    },
+    {
+      "surfaceId": "apex:System.Datetime.addSeconds",
+      "symbol": "Datetime.addSeconds",
+      "kind": "exec",
+      "notes": "Datetime arithmetic advances by whole seconds."
+    },
+    {
+      "surfaceId": "apex:System.Datetime.valueOf",
+      "symbol": "Datetime.valueOf",
+      "kind": "exec",
+      "notes": "Datetime parses Salesforce-style local date-time text."
+    },
+    {
+      "surfaceId": "apex:System.Time.hour",
+      "symbol": "Time.hour",
+      "kind": "exec",
+      "notes": "Time exposes the constructed hour component."
+    },
+    {
+      "surfaceId": "apex:System.Time.minute",
+      "symbol": "Time.minute",
+      "kind": "exec",
+      "notes": "Time exposes the constructed minute component."
+    },
+    {
+      "surfaceId": "apex:System.Time.newInstance",
+      "symbol": "Time.newInstance",
+      "kind": "exec",
+      "notes": "Time construction accepts hour, minute, second, and millisecond."
+    },
+    {
+      "surfaceId": "apex:System.Time.second",
+      "symbol": "Time.second",
+      "kind": "exec",
+      "notes": "Time exposes the constructed second component."
+    },
+    {
+      "surfaceId": "apex:System.EncodingUtil.base64Encode",
+      "symbol": "EncodingUtil.base64Encode",
+      "kind": "exec",
+      "notes": "EncodingUtil encodes Blob values to base64 text."
+    },
+    {
+      "surfaceId": "apex:System.EncodingUtil.convertToHex",
+      "symbol": "EncodingUtil.convertToHex",
+      "kind": "exec",
+      "notes": "EncodingUtil renders Blob bytes as lowercase hex."
+    },
+    {
+      "surfaceId": "apex:System.EncodingUtil.urlDecode",
+      "symbol": "EncodingUtil.urlDecode",
+      "kind": "exec",
+      "notes": "EncodingUtil decodes UTF-8 URL-encoded text."
+    },
+    {
+      "surfaceId": "apex:System.EncodingUtil.urlEncode",
+      "symbol": "EncodingUtil.urlEncode",
+      "kind": "exec",
+      "notes": "EncodingUtil encodes UTF-8 text for URLs."
+    },
+    {
+      "surfaceId": "apex:System.Crypto.generateDigest",
+      "symbol": "Crypto.generateDigest",
+      "kind": "exec",
+      "notes": "Crypto generates deterministic digests for supported algorithms."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String text = '  Trail cabin trail  ';\nString trimmed = text.trim();\nSystem.assertEquals('Trail cabin trail', trimmed);\nSystem.assert(trimmed.startsWith('Trail'));\nSystem.assert(trimmed.endsWith('trail'));\nSystem.assert('Cabin'.equalsIgnoreCase('cabin'));\nSystem.assertEquals(6, trimmed.indexOf('cabin'));\nSystem.assertEquals(12, trimmed.lastIndexOf('trail'));\nSystem.assertEquals(17, trimmed.length());\nSystem.assertEquals('Trail cabin path', trimmed.replace('trail', 'path'));\nSystem.assertEquals('cabin', trimmed.substring(6, 11));\nSystem.assertEquals('trail cabin trail', trimmed.toLowerCase());\nSystem.assertEquals('TRAIL CABIN TRAIL', trimmed.toUpperCase());\nSystem.assert(String.isBlank('   '));\nSystem.assert(!String.isNotBlank('   '));\nSystem.assert(String.isNotBlank('spruce'));\nSystem.assertEquals('one/two/three', String.join(new List<String>{'one', 'two', 'three'}, '/'));\nSystem.assertEquals('42', String.valueOf(42));\nSystem.assertEquals(5, Math.abs(-5));\nSystem.assertEquals(3.0, Math.ceil(2.1));\nSystem.assertEquals(2.0, Math.floor(2.9));\nSystem.assertEquals(7, Math.max(3, 7));\nSystem.assertEquals(3, Math.min(3, 7));\nSystem.assertEquals(8.0, Math.pow(2, 3));\nSystem.assertEquals(2, Math.round(2.5));\nSystem.assertEquals(3.0, Math.sqrt(9));\nDate day = Date.newInstance(2024, 2, 28);\nSystem.assertEquals('2024-02-29', String.valueOf(day.addDays(1)));\nDatetime stamp = Datetime.valueOf('2024-02-29 01:02:03');\nSystem.assertEquals(3, stamp.addHours(2).hour());\nSystem.assertEquals(7, stamp.addMinutes(5).minute());\nSystem.assertEquals(13, stamp.addSeconds(10).second());\nSystem.assert(String.valueOf(stamp).startsWith('2024-02-29 01:02:03'));\nTime clock = Time.newInstance(3, 4, 5, 6);\nSystem.assertEquals(3, clock.hour());\nSystem.assertEquals(4, clock.minute());\nSystem.assertEquals(5, clock.second());\nBlob hello = Blob.valueOf('hello');\nSystem.assertEquals('aGVsbG8=', EncodingUtil.base64Encode(hello));\nSystem.assertEquals('68656c6c6f', EncodingUtil.convertToHex(hello));\nString encoded = EncodingUtil.urlEncode('A B+', 'UTF-8');\nSystem.assertEquals('A+B%2B', encoded);\nSystem.assertEquals('A B+', EncodingUtil.urlDecode(encoded, 'UTF-8'));\nBlob digest = Crypto.generateDigest('SHA-256', hello);\nSystem.assertEquals('2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', EncodingUtil.convertToHex(digest));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String text = '  Trail cabin trail  ';\nString trimmed = text.trim();\nSystem.assertEquals('Trail cabin trail', trimmed);\nSystem.assert(trimmed.startsWith('Trail'));\nSystem.assert(trimmed.endsWith('trail'));\nSystem.assert('Cabin'.equalsIgnoreCase('cabin'));\nSystem.assertEquals(6, trimmed.indexOf('cabin'));\nSystem.assertEquals(12, trimmed.lastIndexOf('trail'));\nSystem.assertEquals(17, trimmed.length());\nSystem.assertEquals('Trail cabin path', trimmed.replace('trail', 'path'));\nSystem.assertEquals('cabin', trimmed.substring(6, 11));\nSystem.assertEquals('trail cabin trail', trimmed.toLowerCase());\nSystem.assertEquals('TRAIL CABIN TRAIL', trimmed.toUpperCase());\nSystem.assert(String.isBlank('   '));\nSystem.assert(!String.isNotBlank('   '));\nSystem.assert(String.isNotBlank('spruce'));\nSystem.assertEquals('one/two/three', String.join(new List<String>{'one', 'two', 'three'}, '/'));\nSystem.assertEquals('42', String.valueOf(42));\nSystem.assertEquals(5, Math.abs(-5));\nSystem.assertEquals(3.0, Math.ceil(2.1));\nSystem.assertEquals(2.0, Math.floor(2.9));\nSystem.assertEquals(7, Math.max(3, 7));\nSystem.assertEquals(3, Math.min(3, 7));\nSystem.assertEquals(8.0, Math.pow(2, 3));\nSystem.assertEquals(2, Math.round(2.5));\nSystem.assertEquals(3.0, Math.sqrt(9));\nDate day = Date.newInstance(2024, 2, 28);\nSystem.assertEquals('2024-02-29', String.valueOf(day.addDays(1)));\nDatetime stamp = Datetime.valueOf('2024-02-29 01:02:03');\nSystem.assertEquals(3, stamp.addHours(2).hour());\nSystem.assertEquals(7, stamp.addMinutes(5).minute());\nSystem.assertEquals(13, stamp.addSeconds(10).second());\nSystem.assert(String.valueOf(stamp).startsWith('2024-02-29 01:02:03'));\nTime clock = Time.newInstance(3, 4, 5, 6);\nSystem.assertEquals(3, clock.hour());\nSystem.assertEquals(4, clock.minute());\nSystem.assertEquals(5, clock.second());\nBlob hello = Blob.valueOf('hello');\nSystem.assertEquals('aGVsbG8=', EncodingUtil.base64Encode(hello));\nSystem.assertEquals('68656c6c6f', EncodingUtil.convertToHex(hello));\nString encoded = EncodingUtil.urlEncode('A B+', 'UTF-8');\nSystem.assertEquals('A+B%2B', encoded);\nSystem.assertEquals('A B+', EncodingUtil.urlDecode(encoded, 'UTF-8'));\nBlob digest = Crypto.generateDigest('SHA-256', hello);\nSystem.assertEquals('2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', EncodingUtil.convertToHex(digest));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}
