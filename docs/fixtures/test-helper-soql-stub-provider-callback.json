@@ -2,9 +2,15 @@
   "name": "test-helper-soql-stub-provider-callback",
   "evidence": [
     {
-      "surfaceId": "apex:SoqlStubProvider.handleSoqlQuery(Schema.SObjectType,String,Map<String,Object>)",
+      "surfaceId": "apex:System.Test.createSoqlStub(Schema.SObjectType,SoqlStubProvider)",
+      "symbol": "Test.createSoqlStub",
+      "kind": "test",
+      "notes": "Registers a test-local SoqlStubProvider for Account queries."
+    },
+    {
+      "surfaceId": "apex:System.SoqlStubProvider.handleSoqlQuery(Schema.SObjectType,String,Map<String,Object>)",
       "symbol": "SoqlStubProvider.handleSoqlQuery",
-      "kind": "exec",
+      "kind": "test",
       "notes": "SOQL test stubs dispatch real query text, target SObjectType, and bind values to the provider callback."
     }
   ],

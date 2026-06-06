@@ -158,6 +158,41 @@ func TestBuildGladeSnapshotKeepsExplicitUnsupportedOverStubBehavior(t *testing.T
 	}
 }
 
+func TestBuildGladeSnapshotMarksNonLocalQueryDocsUnsupported(t *testing.T) {
+	rows := BuildGladeSnapshot()
+	byID := rowsByID(rows)
+	for _, id := range []string{
+		"unknown:salesforce_app_limits_platform_soslsoql",
+		"unknown:sforce_api_calls_describesoqllistviewsrequest",
+		"unknown:sforce_api_calls_soql_feeds_url_syntax",
+		"unknown:sforce_api_calls_soql_relationships_query_datacat",
+		"unknown:sforce_api_calls_soql_relationships_query_hist",
+		"unknown:sforce_api_calls_soql_select_set_options",
+		"unknown:sforce_api_calls_soql_select_with_datacategory",
+		"unknown:sforce_api_calls_soql_select_with_datacategory_catselection",
+		"unknown:sforce_api_calls_soql_select_with_recordvisibilitycontext",
+		"unknown:sforce_api_calls_soql_typos",
+		"unknown:sforce_api_calls_sosl_limits_external_objects",
+		"unknown:sforce_api_calls_sosl_typos",
+		"unknown:sforce_api_calls_sosl_update_tracking",
+		"unknown:sforce_api_calls_sosl_update_viewstat",
+		"unknown:sforce_api_calls_sosl_using_listview",
+		"unknown:sforce_api_calls_sosl_with",
+		"unknown:sforce_api_calls_sosl_with_data_category",
+		"unknown:sforce_api_calls_sosl_with_metadata",
+		"unknown:supported_soql",
+		"unknown:unsupported_soql_statements",
+	} {
+		row, ok := byID[id]
+		if !ok {
+			t.Fatalf("missing unsupported query docs row %s", id)
+		}
+		if row.GladeBehavior != BehaviorUnsupported {
+			t.Fatalf("%s behavior = %s, want %s", id, row.GladeBehavior, BehaviorUnsupported)
+		}
+	}
+}
+
 func TestSurfaceIDKeyNormalizesSystemQualifiedRuntimeParameters(t *testing.T) {
 	left := surfaceIDKey(ApexMemberID("System", "Test", "createSoqlStub", []string{"Schema.SObjectType", "System.SoqlStubProvider"}))
 	right := surfaceIDKey(ApexMemberID("System", "Test", "createSoqlStub", []string{"Schema.SObjectType", "SoqlStubProvider"}))
