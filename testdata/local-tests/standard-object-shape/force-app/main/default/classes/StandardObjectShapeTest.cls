@@ -15,4 +15,12 @@ private class StandardObjectShapeTest {
     System.assertEquals(true, status.IsDefault);
     System.assertEquals(true, status.HasResponded);
   }
+
+  @isTest static void personAccountShapeFromReferencedFieldsRuns() {
+    Account person = new Account(LastName = 'Trail');
+
+    insert person;
+
+    System.assertNotEquals(null, person.Id);
+  }
 }

@@ -493,15 +493,24 @@ dispatchCustomData:
 				if len(args) > 1 {
 					return Null, true, fmt.Errorf("%s.getValues expects optional setup owner Id", typeName)
 				}
-				if len(args) == 1 && args[0].Kind != ValueString && args[0].Kind != ValueNull {
-					return Null, true, fmt.Errorf("%s.getValues expects optional setup owner Id", typeName)
+				var ownerID string
+				if len(args) == 1 {
+					var ok bool
+					var err error
+					ownerID, ok, err = customSettingOwnerIDArg(args[0])
+					if err != nil {
+						return Null, true, err
+					}
+					if !ok {
+						return Null, true, fmt.Errorf("%s.getValues expects optional setup owner Id", typeName)
+					}
 				}
 				cacheKey := "getValues:" + strings.ToLower(objectName) + ":" + customDataArgsCacheKey(args)
 				if cached, ok := vm.customDataCachedValue(cacheKey); ok {
 					return cached, true, nil
 				}
-				if len(args) == 1 && args[0].Kind == ValueString {
-					if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, args[0].Text); found {
+				if len(args) == 1 && ownerID != "" {
+					if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, ownerID); found {
 						return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataValue(record, kind)), true, nil
 					}
 					return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataDefaultValue(objectName, kind)), true, nil

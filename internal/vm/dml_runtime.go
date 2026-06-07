@@ -449,6 +449,67 @@ func databaseDMLOptions(value Value) dml.Options {
 	return options
 }
 
+func (vm *VM) applyPerRecordDMLTargetOptions(records []storage.Record, targets []*Value) {
+	if vm == nil || vm.Org == nil || len(records) == 0 || len(targets) == 0 {
+		return
+	}
+	for i := range records {
+		if i >= len(targets) || targets[i] == nil || targets[i].Kind != ValueObject {
+			continue
+		}
+		value, ok := targets[i].Fields[sobjectDMLOptionsField]
+		if !ok || !isDatabaseDMLOptionsValue(value) {
+			continue
+		}
+		if !databaseDMLOptions(value).AllowFieldTruncation {
+			continue
+		}
+		vm.applyRecordFieldTruncation(&records[i])
+	}
+}
+
+func (vm *VM) applyRecordFieldTruncation(record *storage.Record) {
+	if vm == nil || vm.Org == nil || record == nil {
+		return
+	}
+	state, ok := vm.objectState(record.Object)
+	if !ok {
+		return
+	}
+	definition := state.Definition
+	for fieldName, value := range record.Fields {
+		if value.Kind != storage.ValueString {
+			continue
+		}
+		canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
+		if !ok {
+			continue
+		}
+		field := definition.Fields[canonical]
+		if field.Length <= 0 || !vmSingleLineTextField(field) {
+			continue
+		}
+		runes := []rune(value.String)
+		if len(runes) <= field.Length {
+			continue
+		}
+		value.String = string(runes[:field.Length])
+		record.Fields[fieldName] = value
+	}
+}
+
+func vmSingleLineTextField(field storage.Field) bool {
+	if field.Type != storage.FieldString && field.Type != storage.FieldPicklist {
+		return false
+	}
+	switch strings.ToUpper(strings.TrimSpace(field.DisplayType)) {
+	case "TEXTAREA", "LONGTEXTAREA", "RICHTEXTAREA":
+		return false
+	default:
+		return true
+	}
+}
+
 func syncDatabaseOptionAliasField(value *Value, field string, fieldValue Value) {
 	if value == nil || value.Kind != ValueObject || value.Fields == nil {
 		return
@@ -1683,7 +1744,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		return nil, err
 	}
 	if op == "upsert" {
-		return vm.applyUpsertDML(records, targets, allOrNone, externalIDField, result)
+		return vm.applyUpsertDML(records, targets, allOrNone, externalIDField, options, result)
 	}
 	appendTrace(result, "apex.dml."+op, "apex.dml", map[string]any{
 		"operation": op,
@@ -1813,6 +1874,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		}
 	}
 	vm.stripTransientDMLDerivedFields(records)
+	vm.applyPerRecordDMLTargetOptions(records, targets)
 	engine := vm.newDeferredAutomationDMLEngine(result)
 	engine.Options = options
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
@@ -2207,7 +2269,7 @@ func successfulDMLInputs(records, before []storage.Record, results []dml.Result)
 	return filteredRecords, filteredBefore, filteredResults
 }
 
-func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNone bool, externalIDField string, result *Result) ([]dml.Result, error) {
+func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNone bool, externalIDField string, options dml.Options, result *Result) ([]dml.Result, error) {
 	appendTrace(result, "apex.dml.upsert", "apex.dml", map[string]any{
 		"operation": "upsert",
 		"rows":      len(records),
@@ -2315,7 +2377,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		return nil, err
 	}
 	vm.stripTransientDMLDerivedFields(records)
+	vm.applyPerRecordDMLTargetOptions(records, targets)
 	engine := vm.newDeferredAutomationDMLEngine(result)
+	engine.Options = options
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
 	engine.PriorRecords = dmlPriorRecordsByID(before)
 	if !allOrNone && vm.hasAfterTriggerForDML("upsert", records) {
@@ -2712,7 +2776,7 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		converted, err := storageValueFromVM(fieldValue)
 		if definition.APIName != "" {
 			if fieldDef, ok := definition.Fields[canonicalField]; ok {
-				converted, err = storageValueFromVMForField(fieldValue, fieldDef.Type)
+				converted, err = storageValueFromVMForField(fieldValue, fieldDef)
 			}
 		}
 		if err != nil {
@@ -2837,7 +2901,7 @@ func (vm *VM) parentRelationshipRecordFromValue(value Value) (storage.Record, bo
 		converted, err := storageValueFromVM(fieldValue)
 		if definition.APIName != "" {
 			if fieldDef, ok := definition.Fields[canonicalField]; ok {
-				converted, err = storageValueFromVMForField(fieldValue, fieldDef.Type)
+				converted, err = storageValueFromVMForField(fieldValue, fieldDef)
 			}
 		}
 		if err != nil {
@@ -3041,7 +3105,7 @@ func (vm *VM) resolveParentRelationshipReferenceID(records []storage.Record, par
 		if !ok || !parentRelationshipReferenceFieldCanMatch(fieldDef) {
 			continue
 		}
-		lookupValue, err := storageValueFromVMForField(fieldValue, fieldDef.Type)
+		lookupValue, err := storageValueFromVMForField(fieldValue, fieldDef)
 		if err != nil {
 			return "", fmt.Errorf("%s.%s: %w", parent.Type, fieldName, err)
 		}
@@ -3786,7 +3850,8 @@ func storageValueFromVM(value Value) (storage.Value, error) {
 	}
 }
 
-func storageValueFromVMForField(value Value, fieldType storage.FieldType) (storage.Value, error) {
+func storageValueFromVMForField(value Value, field storage.Field) (storage.Value, error) {
+	fieldType := field.Type
 	if value.Kind == ValueNull || fieldType == storage.FieldAny {
 		return storageValueFromVM(value)
 	}
@@ -3794,6 +3859,14 @@ func storageValueFromVMForField(value Value, fieldType storage.FieldType) (stora
 	case storage.FieldCalculated, storage.FieldSummary:
 		return storageValueFromVM(value)
 	case storage.FieldID, storage.FieldReference:
+		if fieldReferencesNamedMetadata(field) {
+			if value.Kind == ValueString {
+				return storage.StringValue(value.Text), nil
+			}
+			if text, ok := platformScalarObjectText(value); ok {
+				return storage.StringValue(text), nil
+			}
+		}
 		if value.Kind == ValueString {
 			return storage.IDValue(storage.ID(value.Text)), nil
 		}
@@ -3805,7 +3878,7 @@ func storageValueFromVMForField(value Value, fieldType storage.FieldType) (stora
 	case storage.FieldString, storage.FieldPicklist, storage.FieldMultiPicklist:
 		if value.Kind == ValueString && strings.EqualFold(value.Type, "Id") {
 			if len(value.Text) == 15 {
-				return storage.StringValue(apexIDTo18(value.Text)), nil
+				return storage.StringValue(textFieldIDStorageText(value.Text, field)), nil
 			}
 			return storage.StringValue(value.Text), nil
 		}
@@ -3818,7 +3891,7 @@ func storageValueFromVMForField(value Value, fieldType storage.FieldType) (stora
 		if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
 			if raw, err := platformScalarText(value, "Id"); err == nil {
 				if len(raw) == 15 {
-					raw = apexIDTo18(raw)
+					raw = textFieldIDStorageText(raw, field)
 				}
 				return storage.StringValue(raw), nil
 			}
@@ -3877,6 +3950,22 @@ func storageValueFromVMForField(value Value, fieldType storage.FieldType) (stora
 	return storage.Value{}, fmt.Errorf("cannot assign %s to %s field", value.Kind, fieldType)
 }
 
+func fieldReferencesNamedMetadata(field storage.Field) bool {
+	for _, target := range field.ReferenceTo {
+		if strings.EqualFold(target, "EntityDefinition") || strings.EqualFold(target, "FieldDefinition") {
+			return true
+		}
+	}
+	return false
+}
+
+func textFieldIDStorageText(raw string, field storage.Field) string {
+	if len(raw) == 15 && (field.Length <= 0 || field.Length >= 18) {
+		return apexIDTo18(raw)
+	}
+	return raw
+}
+
 func vmValueFromStorage(value storage.Value) Value {
 	switch value.Kind {
 	case storage.ValueNull:
@@ -3918,7 +4007,7 @@ func coerceSObjectFieldRuntimeValue(value Value, field storage.Field) Value {
 	if value.Kind == ValueNull {
 		return value
 	}
-	stored, err := storageValueFromVMForField(value, field.Type)
+	stored, err := storageValueFromVMForField(value, field)
 	if err != nil {
 		return value
 	}

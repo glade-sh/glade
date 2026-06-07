@@ -1101,6 +1101,17 @@ func TestEnsureStandardObjectPreservesStubChildRelationshipsForSharedFields(t *t
 	}
 }
 
+func TestEnsureStandardObjectIncludesOpportunityContractChildRelationship(t *testing.T) {
+	org := NewOrgState()
+
+	EnsureStandardObject(&org, "Opportunity")
+
+	opportunity := org.Objects["Opportunity"].Definition
+	if !hasChildRelationship(opportunity.Relations, "ContractId", "Contract", "Contract", "Opportunities") {
+		t.Fatalf("Opportunity.ContractId relation missing Contract.Opportunities: %#v", opportunity.Relations)
+	}
+}
+
 func TestEnsureStandardObjectMergesStubPolymorphicReferenceBreadth(t *testing.T) {
 	definition := ObjectDefinition{
 		APIName: "Task",

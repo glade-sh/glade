@@ -3233,6 +3233,12 @@ func TestExecLoggingLevelEnumEdges(t *testing.T) {
 System.assertEquals('INFO', LoggingLevel.INFO.name());
 System.assertEquals('INFO', LoggingLevel.INFO.toString());
 System.assertEquals(3, LoggingLevel.INFO.ordinal());
+System.assertEquals('INFO', System.LoggingLevel.INFO.name());
+System.debug(System.LoggingLevel.INFO, 'system qualified level');
+System.LoggingLevel qualifiedLevel = System.LoggingLevel.WARN;
+System.assertEquals('WARN', qualifiedLevel.name());
+System.assertEquals(2, qualifiedLevel.ordinal());
+System.debug(qualifiedLevel, 'qualified variable level');
 List<LoggingLevel> levels = LoggingLevel.values();
 System.assertEquals(8, levels.size());
 LoggingLevel firstLevel = levels.get(0);
@@ -3248,8 +3254,8 @@ System.debug(LoggingLevel.ERROR, LoggingLevel.WARN);
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := result.Debug; len(got) != 1 || got[0] != "WARN" {
-		t.Fatalf("debug lines = %#v, want %#v", got, []string{"WARN"})
+	if got := result.Debug; len(got) != 3 || got[0] != "system qualified level" || got[1] != "qualified variable level" || got[2] != "WARN" {
+		t.Fatalf("debug lines = %#v, want %#v", got, []string{"system qualified level", "qualified variable level", "WARN"})
 	}
 }
 
@@ -3351,6 +3357,28 @@ System.assertEquals('System.DmlException', systemDmlType.getName());
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestTypeForNameAcceptsPlatformStringObjects(t *testing.T) {
+	machine := New(nil)
+	result := &Result{}
+	value, err := machine.call("Type.forName", []Value{platformScalar("String", "Account")}, nil, result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueObject || value.Type != "Type" || typeValueName(value) != "Account" {
+		t.Fatalf("Type.forName platform string = %#v", value)
+	}
+	value, err = machine.call("Type.forName", []Value{platformScalar("String", "System"), platformScalar("String", "String")}, nil, result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueObject || value.Type != "Type" || typeValueName(value) != "System.String" {
+		t.Fatalf("Type.forName platform namespace string = %#v", value)
+	}
+	if _, err := machine.call("Type.forName", []Value{Int(1)}, nil, result); err == nil || !strings.Contains(err.Error(), "Type.forName expects String") {
+		t.Fatalf("Type.forName integer error = %v", err)
 	}
 }
 

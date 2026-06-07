@@ -604,7 +604,7 @@ func TestRunLocalTestsStandardObjectShapeFixtureReady(t *testing.T) {
 	if !report.Ready {
 		t.Fatalf("ready = false, summary = %#v outcomes = %#v", report.Summary, report.Outcomes)
 	}
-	if report.Summary.Total != 1 || report.Summary.Pass != 1 || report.Summary.CompileErrors != 0 || report.Summary.Unsupported != 0 {
+	if report.Summary.Total != 2 || report.Summary.Pass != 2 || report.Summary.CompileErrors != 0 || report.Summary.Unsupported != 0 {
 		t.Fatalf("summary = %#v", report.Summary)
 	}
 }

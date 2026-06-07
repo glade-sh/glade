@@ -6675,6 +6675,203 @@ func TestUnitOfWorkCommitPersistsChildBucketWithDeferredRelationship(t *testing.
 	}
 }
 
+func TestUnitOfWorkUpsertResolvesDeferredRelationship(t *testing.T) {
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Parent__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Parent__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a01",
+				Fields: map[string]storage.Field{
+					"Id":              {APIName: "Id", Type: storage.FieldID},
+					"Name":            {APIName: "Name", Type: storage.FieldString},
+					"External_Key__c": {APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true},
+					"Parent__c":       {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Parent__c",
+					ParentObjects:      []string{"Parent__c"},
+					ParentRelationship: "Parent__r",
+				}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{
+		List(sObjectTypeToken("Parent__c"), sObjectTypeToken("Child__c")),
+	}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent := Object("Parent__c")
+	parent.Fields["Name"] = String("Parent")
+	child := Object("Child__c")
+	child.Fields["Name"] = String("Child")
+	child.Fields["External_Key__c"] = String("child-1")
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registerupsert", []Value{child, sObjectFieldToken("Child__c", "External_Key__c"), sObjectFieldToken("Child__c", "Parent__c"), parent}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "commitwork", nil, &Result{}); err != nil {
+		t.Fatal(err)
+	}
+	for _, row := range machine.Org.Objects["Child__c"].Records {
+		if row.Fields["Parent__c"].Kind != storage.ValueID {
+			t.Fatalf("child parent lookup = %#v", row.Fields["Parent__c"])
+		}
+	}
+}
+
+func TestUnitOfWorkUpsertRejectsCustomDMLWithoutUpsertInterface(t *testing.T) {
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Thing__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Thing__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":              {APIName: "Id", Type: storage.FieldID},
+					"External_Key__c": {APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, IDLookup: true},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{Name: "MockDML", Interfaces: []string{"framework_SObjectUnitOfWork.IDML"}}); err != nil {
+		t.Fatal(err)
+	}
+	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{
+		List(sObjectTypeToken("Thing__c")),
+		Object("MockDML"),
+	}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	record := Object("Thing__c")
+	record.Fields["External_Key__c"] = String("thing-1")
+
+	_, _, err = machine.callFrameworkSObjectUnitOfWorkMember(uow, "registerupsert", []Value{record, sObjectFieldToken("Thing__c", "External_Key__c")}, nil)
+	assertApexThrow(t, err, "framework_SObjectUnitOfWork.UnitOfWorkException", "requires IDMLUpsertable")
+}
+
+func TestUnitOfWorkUpsertRejectsInvalidExternalIDField(t *testing.T) {
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Thing__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Thing__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":              {APIName: "Id", Type: storage.FieldID},
+					"Name":            {APIName: "Name", Type: storage.FieldString},
+					"External_Key__c": {APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, IDLookup: true},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Other__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Other__c",
+				KeyPrefix: "a01",
+				Fields: map[string]storage.Field{
+					"External_Key__c": {APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, IDLookup: true},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{List(sObjectTypeToken("Thing__c"))}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	record := Object("Thing__c")
+	record.Fields["External_Key__c"] = String("thing-1")
+
+	_, _, err = machine.callFrameworkSObjectUnitOfWorkMember(uow, "registerupsert", []Value{record, Null}, nil)
+	assertApexThrow(t, err, "framework_SObjectUnitOfWork.UnitOfWorkException", "externalIdField")
+
+	_, _, err = machine.callFrameworkSObjectUnitOfWorkMember(uow, "registerupsert", []Value{record, sObjectFieldToken("Other__c", "External_Key__c")}, nil)
+	assertApexThrow(t, err, "framework_SObjectUnitOfWork.UnitOfWorkException", "target sObject")
+
+	_, _, err = machine.callFrameworkSObjectUnitOfWorkMember(uow, "registerupsert", []Value{record, sObjectFieldToken("Thing__c", "Name")}, nil)
+	assertApexThrow(t, err, "framework_SObjectUnitOfWork.UnitOfWorkException", "cannot be used with upsert")
+}
+
+func TestUnitOfWorkUpsertRejectsDifferentExternalIDForSameType(t *testing.T) {
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Thing__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Thing__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":              {APIName: "Id", Type: storage.FieldID},
+					"External_Key__c": {APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, IDLookup: true},
+					"Other_Key__c":    {APIName: "Other_Key__c", Type: storage.FieldString, ExternalID: true, IDLookup: true},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{List(sObjectTypeToken("Thing__c"))}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first := Object("Thing__c")
+	first.Fields["External_Key__c"] = String("thing-1")
+	second := Object("Thing__c")
+	second.Fields["Other_Key__c"] = String("thing-2")
+	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registerupsert", []Value{first, sObjectFieldToken("Thing__c", "External_Key__c")}, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	_, _, err = machine.callFrameworkSObjectUnitOfWorkMember(uow, "registerupsert", []Value{second, sObjectFieldToken("Thing__c", "Other_Key__c")}, nil)
+	assertApexThrow(t, err, "framework_SObjectUnitOfWork.UnitOfWorkException", "you cannot use another")
+}
+
+func TestUnitOfWorkRejectsUnsupportedSObjectType(t *testing.T) {
+	machine := New(nil)
+	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{List(sObjectTypeToken("Opportunity"))}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, _, err = machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{Object("Account")}, nil)
+	assertApexThrow(t, err, "framework_SObjectUnitOfWork.UnitOfWorkException", "not supported by this unit of work")
+}
+
+func assertApexThrow(t *testing.T, err error, typeName, messageContains string) {
+	t.Helper()
+	var thrown *apexThrowError
+	if !errors.As(err, &thrown) {
+		t.Fatalf("err = %#v, want Apex throw", err)
+	}
+	if thrown.value.Type != typeName {
+		t.Fatalf("throw type = %q, want %q", thrown.value.Type, typeName)
+	}
+	message := thrown.value.Fields["message"]
+	if message.Kind != ValueString || !strings.Contains(message.Text, messageContains) {
+		t.Fatalf("throw message = %#v, want containing %q", message, messageContains)
+	}
+}
+
 func TestUnitOfWorkCommitPersistsOutOfOrderRelationship(t *testing.T) {
 	org := storage.OrgState{Objects: map[string]storage.ObjectState{
 		"Parent__c": {

@@ -1413,25 +1413,28 @@ platformStaticCall:
 			if args[0].Kind == ValueNull {
 				return Null, nil
 			}
-			if args[0].Kind != ValueString {
+			typeName, ok := stringLikeValueText(args[0])
+			if !ok {
 				return Null, fmt.Errorf("Type.forName expects String")
 			}
-			return vm.typeForName("", args[0].Text, false), nil
+			return vm.typeForName("", typeName, false), nil
 		}
-		if args[0].Kind != ValueString && args[0].Kind != ValueNull {
-			return Null, fmt.Errorf("Type.forName expects namespace String or null")
+		namespace := ""
+		if args[0].Kind != ValueNull {
+			var ok bool
+			namespace, ok = stringLikeValueText(args[0])
+			if !ok {
+				return Null, fmt.Errorf("Type.forName expects namespace String or null")
+			}
 		}
 		if args[1].Kind == ValueNull {
 			return Null, nil
 		}
-		if args[1].Kind != ValueString {
+		typeName, ok := stringLikeValueText(args[1])
+		if !ok {
 			return Null, fmt.Errorf("Type.forName expects type name String")
 		}
-		namespace := ""
-		if args[0].Kind == ValueString {
-			namespace = args[0].Text
-		}
-		return vm.typeForName(namespace, args[1].Text, true), nil
+		return vm.typeForName(namespace, typeName, true), nil
 	case "Test.getStandardPricebookId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Test.getStandardPricebookId expects 0 arguments")

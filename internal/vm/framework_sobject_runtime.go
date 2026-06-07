@@ -494,6 +494,7 @@ func (vm *VM) callFrameworkSObjectUnitOfWorkHandleRegisterType(receiver Value, a
 	}
 	receiver.Fields["m_newListByType"] = frameworkMapPut(receiver.Fields["m_newListByType"], String(objectName), typedList("List<SObject>"))
 	receiver.Fields["m_dirtyMapByType"] = frameworkMapPut(receiver.Fields["m_dirtyMapByType"], String(objectName), typedMap("Map<Id,SObject>"))
+	receiver.Fields["m_upsertRecordsPerType"] = frameworkMapPut(receiver.Fields["m_upsertRecordsPerType"], String(objectName), typedList("List<SObject>"))
 	receiver.Fields["m_deletedMapByType"] = frameworkMapPut(receiver.Fields["m_deletedMapByType"], String(objectName), typedMap("Map<Id,SObject>"))
 	receiver.Fields["m_emptyRecycleBinMapByType"] = frameworkMapPut(receiver.Fields["m_emptyRecycleBinMapByType"], String(objectName), typedMap("Map<Id,SObject>"))
 	receiver.Fields["m_relationships"] = frameworkMapPut(receiver.Fields["m_relationships"], String(objectName), frameworkUnitOfWorkRelationships())
@@ -511,6 +512,69 @@ func (vm *VM) registerFrameworkSObjectUnitOfWorkUpsert(receiver Value, args []Va
 	if err != nil {
 		return err
 	}
+	if len(args) >= 2 {
+		if args[1].Kind == ValueNull {
+			return frameworkSObjectUnitOfWorkException("Invalid argument: externalIdField. If you want to upsert by id, use the registerUpsert method that has only one argument")
+		}
+		if args[1].Kind != ValueObject || !isSObjectFieldTokenType(args[1].Type) {
+			return frameworkSObjectUnitOfWorkException("Invalid argument: externalIdField. Field supplied is not a known field on the target sObject.")
+		}
+		var relationshipField Value
+		var relatedTo Value
+		hasRelationship := false
+		if len(args) >= 4 && args[2].Kind == ValueObject && isSObjectFieldTokenType(args[2].Type) && args[3].Kind == ValueObject && sObjectValueType(args[3].Type) {
+			relationshipField = args[2]
+			relatedTo = args[3]
+			hasRelationship = true
+		}
+		for _, record := range records {
+			objectName := vm.canonicalSObjectValueType(record)
+			fieldName, field, err := vm.frameworkSObjectUnitOfWorkUpsertField(objectName, args[1])
+			if err != nil {
+				return err
+			}
+			registeredExternalID := vm.frameworkSObjectUnitOfWorkExternalIDField(receiver, objectName)
+			if registeredExternalID.Kind != ValueNull {
+				registeredField, err := vm.sObjectFieldArg(objectName, registeredExternalID)
+				if err != nil {
+					return err
+				}
+				if strings.EqualFold(registeredField, fieldName) {
+					if err := vm.addFrameworkSObjectUnitOfWorkRecord(receiver, "m_upsertRecordsPerType", record, false); err != nil {
+						return err
+					}
+					if hasRelationship {
+						if err := vm.addFrameworkSObjectUnitOfWorkRelationship(receiver, objectName, record, relationshipField, relatedTo); err != nil {
+							return err
+						}
+					}
+					continue
+				}
+				return frameworkSObjectUnitOfWorkException(fmt.Sprintf("SObject type %s has already registered an upsert by external id %s, you cannot use another in this unit of work.", objectName, registeredField))
+			}
+			if !vm.frameworkSObjectUnitOfWorkDMLSupportsUpsert(receiver) {
+				return frameworkSObjectUnitOfWorkException("Upsert by external ID requires IDMLUpsertable implementation. Current IDML implementation does not support this feature.")
+			}
+			if id := sObjectIDValue(record); id.Kind != ValueNull && !strings.EqualFold(fieldName, "Id") {
+				return frameworkSObjectUnitOfWorkException("When upserting by external id, the record cannot already have the standard Id populated")
+			}
+			if !frameworkSObjectUnitOfWorkFieldCanUpsert(field) {
+				return frameworkSObjectUnitOfWorkException("Invalid argument: externalIdField. Field supplied cannot be used with upsert.")
+			}
+			if err := vm.setFrameworkSObjectUnitOfWorkExternalIDField(receiver, objectName, args[1]); err != nil {
+				return err
+			}
+			if err := vm.addFrameworkSObjectUnitOfWorkRecord(receiver, "m_upsertRecordsPerType", record, false); err != nil {
+				return err
+			}
+			if hasRelationship {
+				if err := vm.addFrameworkSObjectUnitOfWorkRelationship(receiver, objectName, record, relationshipField, relatedTo); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
 	for _, record := range records {
 		if sObjectIDValue(record).Kind == ValueNull {
 			if err := vm.addFrameworkSObjectUnitOfWorkRecord(receiver, "m_newListByType", record, false); err != nil {
@@ -520,6 +584,53 @@ func (vm *VM) registerFrameworkSObjectUnitOfWorkUpsert(receiver Value, args []Va
 			return err
 		}
 	}
+	return nil
+}
+
+func frameworkSObjectUnitOfWorkException(message string) error {
+	return newExceptionError("framework_SObjectUnitOfWork.UnitOfWorkException", message)
+}
+
+func (vm *VM) frameworkSObjectUnitOfWorkUpsertField(objectName string, token Value) (string, storage.Field, error) {
+	fieldName, err := vm.sObjectFieldArg(objectName, token)
+	if err != nil {
+		return "", storage.Field{}, frameworkSObjectUnitOfWorkException("Invalid argument: externalIdField. Field supplied is not a known field on the target sObject.")
+	}
+	_, definition, ok := vm.describeObjectDefinition(objectName)
+	if !ok {
+		return "", storage.Field{}, frameworkSObjectUnitOfWorkException("Invalid argument: externalIdField. Field supplied is not a known field on the target sObject.")
+	}
+	canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
+	if !ok {
+		return "", storage.Field{}, frameworkSObjectUnitOfWorkException("Invalid argument: externalIdField. Field supplied is not a known field on the target sObject.")
+	}
+	return canonical, definition.Fields[canonical], nil
+}
+
+func (vm *VM) frameworkSObjectUnitOfWorkDMLSupportsUpsert(receiver Value) bool {
+	dmlValue, ok := receiver.Fields["m_dml"]
+	if !ok || dmlValue.Kind != ValueObject {
+		return false
+	}
+	if strings.EqualFold(dmlValue.Type, "framework_SObjectUnitOfWork.SimpleDML") {
+		return true
+	}
+	return vm.typeAssignableTo(dmlValue.Type, "framework_SObjectUnitOfWork.IDMLUpsertable")
+}
+
+func frameworkSObjectUnitOfWorkFieldCanUpsert(field storage.Field) bool {
+	return field.Type == storage.FieldID || field.IDLookup || field.ExternalID
+}
+
+func (vm *VM) setFrameworkSObjectUnitOfWorkExternalIDField(receiver Value, objectName string, field Value) error {
+	if _, err := vm.sObjectFieldArg(objectName, field); err != nil {
+		return err
+	}
+	bucket, ok := receiver.Fields["m_externalIdToUpsertPerType"]
+	if !ok || bucket.Kind != ValueMap {
+		bucket = typedMap("Map<String,Schema.SObjectField>")
+	}
+	receiver.Fields["m_externalIdToUpsertPerType"] = frameworkMapPut(bucket, String(objectName), field)
 	return nil
 }
 func (vm *VM) registerFrameworkSObjectUnitOfWorkNew(receiver Value, args []Value) error {
@@ -659,6 +770,9 @@ func (vm *VM) addFrameworkSObjectUnitOfWorkRecord(receiver Value, fieldName stri
 	key := vm.resolveObjectBucketKey(bucket, objectName)
 	value, ok := bucket.Map[key]
 	if !ok {
+		return frameworkSObjectUnitOfWorkException(fmt.Sprintf("SObject type %s is not supported by this unit of work", objectName))
+	}
+	if value.Kind == ValueNull {
 		if strings.Contains(strings.ToLower(bucket.Type), "list") || strings.Contains(strings.ToLower(fieldName), "publish") || strings.Contains(strings.ToLower(fieldName), "newlist") {
 			value = typedList("List<SObject>")
 		} else {
@@ -740,6 +854,8 @@ func (vm *VM) constructFrameworkSObjectUnitOfWork(args []Value, namedArgs map[st
 	uow.Fields["m_sObjectTypes"] = sObjectTypes
 	uow.Fields["m_newListByType"] = typedMap("Map<String,List<SObject>>")
 	uow.Fields["m_dirtyMapByType"] = typedMap("Map<String,Map<Id,SObject>>")
+	uow.Fields["m_upsertRecordsPerType"] = typedMap("Map<String,List<SObject>>")
+	uow.Fields["m_externalIdToUpsertPerType"] = typedMap("Map<String,Schema.SObjectField>")
 	uow.Fields["m_deletedMapByType"] = typedMap("Map<String,Map<Id,SObject>>")
 	uow.Fields["m_emptyRecycleBinMapByType"] = typedMap("Map<String,Map<Id,SObject>>")
 	uow.Fields["m_relationships"] = typedMap("Map<String,framework_SObjectUnitOfWork.Relationships>")
@@ -837,6 +953,9 @@ func (vm *VM) commitFrameworkSObjectUnitOfWork(receiver Value, result *Result) e
 	if err := vm.applyFrameworkSObjectUnitOfWorkDML(receiver, "m_newListByType", "insert", result); err != nil {
 		return fail(err)
 	}
+	if err := vm.applyFrameworkSObjectUnitOfWorkDML(receiver, "m_upsertRecordsPerType", "upsert", result); err != nil {
+		return fail(err)
+	}
 	if frameworkSObjectUnitOfWorkAttemptsOutOfOrder(receiver) {
 		if err := vm.updateFrameworkSObjectUnitOfWorkOutOfOrderRelationships(receiver, result); err != nil {
 			return fail(err)
@@ -928,10 +1047,25 @@ func (vm *VM) applyFrameworkSObjectUnitOfWorkDML(receiver Value, fieldName, op s
 		if len(records.List) == 0 {
 			continue
 		}
-		if op == "insert" || op == "update" {
+		if op == "insert" || op == "update" || op == "upsert" {
 			if err := vm.resolveFrameworkSObjectUnitOfWorkRelationships(receiver, bucket.objectName, result); err != nil {
 				return err
 			}
+		}
+		if op == "upsert" {
+			externalIDField := vm.frameworkSObjectUnitOfWorkExternalIDField(receiver, bucket.objectName)
+			if externalIDField.Kind == ValueNull {
+				return fmt.Errorf("framework_SObjectUnitOfWork upsert missing external id field for %s", bucket.objectName)
+			}
+			if handled, err := vm.callFrameworkSObjectUnitOfWorkCustomUpsert(receiver, records, externalIDField, result); err != nil {
+				return err
+			} else if handled {
+				continue
+			}
+			if _, err := vm.executeDatabaseDML("upsert", []Value{records, externalIDField}, result); err != nil {
+				return err
+			}
+			continue
 		}
 		if handled, err := vm.callFrameworkSObjectUnitOfWorkCustomDML(receiver, op, records, result); err != nil {
 			return err
@@ -944,6 +1078,17 @@ func (vm *VM) applyFrameworkSObjectUnitOfWorkDML(receiver Value, fieldName, op s
 		}
 	}
 	return nil
+}
+func (vm *VM) frameworkSObjectUnitOfWorkExternalIDField(receiver Value, objectName string) Value {
+	bucket, ok := receiver.Fields["m_externalIdToUpsertPerType"]
+	if !ok || bucket.Kind != ValueMap {
+		return Null
+	}
+	value, ok := bucket.Map[vm.resolveObjectBucketKey(bucket, objectName)]
+	if !ok {
+		return Null
+	}
+	return value
 }
 func reverseFrameworkSObjectUnitOfWorkRecordBuckets(buckets []frameworkSObjectUnitOfWorkRecordBucket) {
 	for i, j := 0, len(buckets)-1; i < j; i, j = i+1, j-1 {
@@ -1069,6 +1214,28 @@ func (vm *VM) callFrameworkSObjectUnitOfWorkCustomDML(receiver Value, op string,
 	}
 	if ambiguous {
 		return true, vm.ambiguousOverloadError(dmlValue.Type+"."+methodName, methodArgs)
+	}
+	if !ok {
+		return false, nil
+	}
+	_, err := vm.callMethodWithReceiver(method, dmlValue, methodArgs, result)
+	return true, err
+}
+func (vm *VM) callFrameworkSObjectUnitOfWorkCustomUpsert(receiver Value, records Value, externalIDField Value, result *Result) (bool, error) {
+	dmlValue, ok := receiver.Fields["m_dml"]
+	if !ok || dmlValue.Kind != ValueObject || strings.EqualFold(dmlValue.Type, "framework_SObjectUnitOfWork.SimpleDML") {
+		return false, nil
+	}
+	methodArgs := []Value{records, externalIDField}
+	method, ok, ambiguous := vm.resolveInstanceMethodForArgs(dmlValue.Type, "dmlUpsert", methodArgs)
+	if !ok && !ambiguous {
+		if widened, err := coerceCollectionValue("List<SObject>", records); err == nil {
+			methodArgs = []Value{widened, externalIDField}
+			method, ok, ambiguous = vm.resolveInstanceMethodForArgs(dmlValue.Type, "dmlUpsert", methodArgs)
+		}
+	}
+	if ambiguous {
+		return true, vm.ambiguousOverloadError(dmlValue.Type+".dmlUpsert", methodArgs)
 	}
 	if !ok {
 		return false, nil

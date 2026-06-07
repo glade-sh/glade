@@ -2480,6 +2480,44 @@ System.assertEquals('matched', values.get(right));
 	}
 }
 
+func TestExecMapAssertEqualsUsesValueCustomEquals(t *testing.T) {
+	equalsProgram, err := CompileAnonymous(`
+Box otherBox = other instanceof Box ? (Box)other : null;
+return otherBox != null && Code == otherBox.Code;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Map<String, Box> expected = new Map<String, Box>{'one' => new Box('same')};
+Map<String, Box> actual = new Map<String, Box>{'one' => new Box('same')};
+System.assertEquals(expected, actual);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctorProgram, err := CompileAnonymous("Code = code;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"Code": {Name: "Code", Type: "String"},
+		},
+		Constructors: []Method{{Name: "Box.<init>", ClassName: "Box", Params: []Param{{Name: "code", Type: "String"}}, Program: ctorProgram}},
+		Methods: map[string]Method{
+			"equals": {Name: "Box.equals", ClassName: "Box", ReturnType: "Boolean", Params: []Param{{Name: "other", Type: "Object"}}, Program: equalsProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMapKeyUsesObjectIdentityWithoutCustomHashCode(t *testing.T) {
 	program, err := CompileAnonymous(`
 Key left = new Key('same');

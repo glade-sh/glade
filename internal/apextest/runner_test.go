@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -61,6 +62,44 @@ private class TestCustomizationSettings {
 	summary := run.Summary()
 	if summary.Total != 1 || summary.Passed != 1 {
 		t.Fatalf("summary = %#v, run = %#v", summary, run)
+	}
+}
+
+func TestRunSkipsSetupPhaseWhenNoTestSetupsExist(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FirstTest.cls"), `
+@isTest
+private class FirstTest {
+  @isTest static void runs() {
+    System.assertEquals(1, 1);
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SecondTest.cls"), `
+@isTest
+private class SecondTest {
+  @isTest static void runs() {
+    System.assertEquals(2, 2);
+  }
+}
+`)
+
+	var setupStarts int
+	run := Run(loadTestIndex(t, root), Options{
+		Parallelism: 1,
+		Progress: func(progress TestProgress) {
+			if progress.Event == "setup_start" {
+				setupStarts++
+			}
+		},
+	})
+	summary := run.Summary()
+	if summary.Total != 2 || summary.Passed != 2 {
+		t.Fatalf("summary = %#v, run = %#v", summary, run)
+	}
+	if setupStarts != 0 {
+		t.Fatalf("setup_start events = %d, want 0", setupStarts)
 	}
 }
 
@@ -4009,6 +4048,73 @@ private class SetupRandomTest {
 	}
 }
 
+func TestRunSeedsCurrentUserProfilePackagingPermission(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SetupPermissionTest.cls"), `
+@isTest
+private class SetupPermissionTest {
+  @isTest static void currentUserHasInstallPackagingPermission() {
+    Integer assigned = [
+      SELECT COUNT()
+      FROM PermissionSetAssignment
+      WHERE AssigneeId = :UserInfo.getUserId()
+      AND PermissionSet.PermissionsInstallPackaging = true
+    ];
+    System.assertEquals(1, assigned);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
+func TestRunStoresIdScalarInFifteenCharacterTextField(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Install_Request__c/Install_Request__c.object-meta.xml"), `
+<CustomObject>
+  <label>Install Request</label>
+  <pluralLabel>Install Requests</pluralLabel>
+  <nameField>
+    <label>Name</label>
+    <type>Text</type>
+  </nameField>
+  <sharingModel>ReadWrite</sharingModel>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Install_Request__c/fields/RequestId__c.field-meta.xml"), `
+<CustomField>
+  <fullName>RequestId__c</fullName>
+  <label>Request Id</label>
+  <length>15</length>
+  <type>Text</type>
+</CustomField>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/TextIdFieldTest.cls"), `
+@isTest
+private class TextIdFieldTest {
+  @isTest static void textFieldLengthFifteenKeepsFifteenCharacterId() {
+    Id requestId = '00B000000000001';
+    Install_Request__c row = new Install_Request__c(Name = 'One');
+    row.RequestId__c = requestId;
+    insert row;
+
+    Install_Request__c stored = [SELECT RequestId__c FROM Install_Request__c LIMIT 1];
+    System.assertEquals('00B000000000001', stored.RequestId__c);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
 func TestProjectRuntimeResolvesCustomObjectFieldTokensFromMetadata(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"verifiable"}`)
@@ -6785,6 +6891,38 @@ public class PasscodeProbe {
 	assertUnknownProjectReferencedField(t, field)
 }
 
+func TestOrgFromIndexProjectReferencedFieldCacheTracksSourceBody(t *testing.T) {
+	projectReferencedStandardFieldCache = sync.Map{}
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	probePath := filepath.Join(root, "force-app/main/classes/AccountProbe.cls")
+	writeFile(t, probePath, `
+public class AccountProbe {
+	public static void touch() {
+		Account account = new Account(Name = 'Plain');
+		System.debug(account.Name);
+	}
+}
+`)
+	org := orgFromIndex(loadTestIndex(t, root))
+	if _, ok := org.Objects["Account"].Definition.Fields["PersonEmail"]; ok {
+		t.Fatal("PersonEmail should stay gated without a person-account reference")
+	}
+
+	writeFile(t, probePath, `
+public class AccountProbe {
+	public static void touch() {
+		Account account = new Account(PersonEmail = 'trail@example.com');
+		System.debug(account.PersonEmail);
+	}
+}
+`)
+	org = orgFromIndex(loadTestIndex(t, root))
+	if _, ok := org.Objects["Account"].Definition.Fields["PersonEmail"]; !ok {
+		t.Fatal("PersonEmail was not inferred after source changed with the same type count")
+	}
+}
+
 func TestOrgFromIndexKeepsProjectReferencedCurrencyLikeFieldUnknownWithoutMetadata(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -7608,6 +7746,39 @@ private class MetadataChildCloneTest {
 	}
 }
 
+func TestRunCustomMetadataEntityDefinitionRelationshipFieldIsTypeName(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Handler__mdt/Handler__mdt.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Handler</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Handler__mdt/fields/SObjectType__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>SObjectType__c</fullName><label>SObject Type</label><type>MetadataRelationship</type><referenceTo>EntityDefinition</referenceTo><relationshipName>Handlers</relationshipName></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Handler__mdt/fields/TargetField__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>TargetField__c</fullName><label>Target Field</label><type>MetadataRelationship</type><referenceTo>FieldDefinition</referenceTo><relationshipName>TargetField</relationshipName></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/customMetadata/Handler.Log.md-meta.xml"), `<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata"><label>Log</label><values><field>SObjectType__c</field><value>Log__c</value></values><values><field>TargetField__c</field><value>Log__c.Status__c</value></values></CustomMetadata>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Log__c/Log__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Log</label></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Log__c/fields/Status__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Status__c</fullName><label>Status</label><type>Text</type><length>40</length></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/HandlerTest.cls"), `
+@isTest
+private class HandlerTest {
+  @isTest static void metadataRelationshipFieldIsATypeName() {
+	    Handler__mdt handler = [
+	      SELECT SObjectType__c, TargetField__c
+	      FROM Handler__mdt
+	      LIMIT 1
+	    ];
+	    System.assertEquals('Log__c', handler.SObjectType__c);
+	    handler.SObjectType__c = handler.SObjectType__r.QualifiedApiName;
+	    System.assertEquals('Log__c', Type.forName(handler.SObjectType__c).getName());
+	    System.assertEquals('Status__c', handler.TargetField__r.QualifiedApiName);
+	    System.assertEquals('Log__c', handler.TargetField__r.EntityDefinition.QualifiedApiName);
+	  }
+	}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v problem=%#v case=%#v", got, run.Suites[0].Cases[0].Problem, run.Suites[0].Cases[0])
+	}
+}
+
 func TestOrgFromIndexAddsProfileVisiblePersonAccountRecordTypes(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -7713,6 +7884,28 @@ private class ReferencedRecordTypesTest {
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestProjectReferencedRecordTypesUsesSourceCache(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "ReferencedRecordTypesTest.cls")
+	cache := sourceCache{
+		file: `
+@IsTest
+private class ReferencedRecordTypesTest {
+  @IsTest static void referencedRecordTypesHaveIds() {
+    Id bundle = SObjectType.pkg__Product__c.getRecordTypeInfosByName().get('Bundle').getRecordTypeId();
+  }
+}
+`,
+	}
+
+	refs := projectReferencedRecordTypes(project.Project{ApexFiles: []string{file}}, cache)
+	if len(refs) != 1 {
+		t.Fatalf("refs = %#v", refs)
+	}
+	if refs[0].ObjectName != "pkg__Product__c" || refs[0].Name != "Bundle" || refs[0].DeveloperName != "Bundle" {
+		t.Fatalf("ref = %#v", refs[0])
 	}
 }
 

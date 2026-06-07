@@ -1808,6 +1808,20 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			continue
 		}
 		currentType := runtimeObjectType(current)
+		if current.Text != "" {
+			switch {
+			case strings.EqualFold(part, "name"):
+				if value, handled, err := vm.callEnumMember(current, "name", nil); handled || err != nil {
+					current = value
+					continue
+				}
+			case strings.EqualFold(part, "ordinal"):
+				if value, handled, err := vm.callEnumMember(current, "ordinal", nil); handled || err != nil {
+					current = value
+					continue
+				}
+			}
+		}
 		if field, owner, ok := vm.lookupReceiverField(currentType, part); ok {
 			if err := vm.checkMemberAccess(owner, field.Access, owner+"."+part, field.Modifiers); err != nil {
 				return Null, err

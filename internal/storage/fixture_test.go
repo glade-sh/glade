@@ -55,6 +55,17 @@ func TestEnsureStandardObjectFieldsUsesCustomRelationshipNameAsChildRelationship
 	}
 }
 
+func TestApplyMultiCurrencyDoesNotAddCurrencyFieldToGroup(t *testing.T) {
+	org := NewOrgState()
+	EnsureStandardObject(&org, "Group")
+
+	applyMultiCurrency(&org)
+
+	if _, ok := org.Objects["Group"].Definition.Fields["CurrencyIsoCode"]; ok {
+		t.Fatalf("Group should not have CurrencyIsoCode: %#v", org.Objects["Group"].Definition.Fields["CurrencyIsoCode"])
+	}
+}
+
 func TestReadFixtureReportsUnsupportedVersionAsTypedError(t *testing.T) {
 	_, err := ReadFixture(strings.NewReader(`{"version":"glade.storage.v0"}`))
 	var versionErr UnsupportedFixtureVersionError

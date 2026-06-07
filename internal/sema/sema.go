@@ -1019,6 +1019,9 @@ func semaStaticClassFieldPathMember(model map[string]typeMembers, root, fieldPat
 		parts := strings.Split(fieldPath, ".")
 		for i := len(parts) - 1; i > 0; i-- {
 			candidateRoot := root + "." + strings.Join(parts[:i], ".")
+			if !semaModelHasType(model, candidateRoot) {
+				continue
+			}
 			candidateFieldPath := strings.Join(parts[i:], ".")
 			if target, ok := semaStaticClassFieldPathMember(model, candidateRoot, candidateFieldPath); ok {
 				return target, true
@@ -1041,6 +1044,18 @@ func semaStaticClassFieldPathMember(model map[string]typeMembers, root, fieldPat
 		return resolvedMember{}, false
 	}
 	return target, true
+}
+
+func semaModelHasType(model map[string]typeMembers, typeName string) bool {
+	if _, ok := model[normalizeName(typeName)]; ok {
+		return true
+	}
+	canonical := semaCanonicalPlatformAlias(typeName)
+	if strings.EqualFold(canonical, typeName) {
+		return false
+	}
+	_, ok := model[normalizeName(canonical)]
+	return ok
 }
 
 func semaStaticClassFieldPathMemberInContext(model map[string]typeMembers, currentType, root, fieldPath string) (resolvedMember, bool) {
@@ -1096,6 +1111,9 @@ func semaLooksLikeSObjectFieldToken(expr string) bool {
 func semaLooksLikeSObjectFieldTokenInModel(expr string, model map[string]typeMembers) bool {
 	parts := strings.Split(strings.TrimSpace(expr), ".")
 	if len(parts) == 2 && semaFieldTokenPart(parts[0]) && semaFieldTokenPart(parts[1]) && isSemaSObjectLike(parts[0], model) && !strings.EqualFold(parts[1], "SObjectType") && !semaLooksLikeStaticConstantName(parts[1]) {
+		return true
+	}
+	if len(parts) == 3 && strings.EqualFold(parts[0], "Schema") && semaFieldTokenPart(parts[1]) && semaFieldTokenPart(parts[2]) && isSemaSObjectLike(parts[1], model) && !strings.EqualFold(parts[2], "SObjectType") && !semaLooksLikeStaticConstantName(parts[2]) {
 		return true
 	}
 	for i := 0; i+2 < len(parts); i++ {

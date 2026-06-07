@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"fmt"
+	"hash/fnv"
 	"os"
 	"regexp"
 	"strings"
@@ -299,17 +300,20 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 	if org == nil {
 		return
 	}
-	cacheKey := ""
-	if index.Project.Root != "" {
-		cacheKey = index.Project.Root + "|" + fmt.Sprint(len(index.Types))
+	cache := sourceCacheFor(caches)
+	cacheKey := projectReferencedStandardFieldCacheKey(index, cache)
+	if cacheKey != "" {
 		if cached, ok := projectReferencedStandardFieldCache.Load(cacheKey); ok {
-			applyReferencedStandardFieldSet(org, cached.(map[string]map[string]storage.Field))
+			fieldSet := cached.(projectReferencedStandardFieldSet)
+			if len(fieldSet.Features) > 0 {
+				storage.ApplyOrgShape(org, fieldSet.Features)
+			}
+			applyReferencedStandardFieldSet(org, fieldSet.Fields)
 			return
 		}
 	}
 	inferred := make(map[string]map[string]storage.Field)
 	childRelationshipRefs := make(map[string]projectChildRelationshipSourceReference)
-	cache := sourceCacheFor(caches)
 	seenFiles := make(map[string]bool)
 	for _, typ := range index.Types {
 		if typ.File == "" || typ.Dependency || seenFiles[typ.File] {
@@ -434,16 +438,74 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 		}
 	}
 	applyProjectReferencedSourceChildRelationships(org, inferred, childRelationshipRefs)
+	features := projectReferencedOrgShapeFeatures(inferred)
+	if len(features) > 0 {
+		storage.ApplyOrgShape(org, features)
+	}
 	if cacheKey != "" {
-		projectReferencedStandardFieldCache.Store(cacheKey, inferred)
+		projectReferencedStandardFieldCache.Store(cacheKey, projectReferencedStandardFieldSet{Fields: inferred, Features: features})
 	}
 	applyReferencedStandardFieldSet(org, inferred)
 }
-func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project) {
+
+func projectReferencedStandardFieldCacheKey(index typesys.Index, cache sourceCache) string {
+	if index.Project.Root == "" {
+		return ""
+	}
+	h := fnv.New64a()
+	write := func(text string) {
+		_, _ = h.Write([]byte(text))
+		_, _ = h.Write([]byte{0})
+	}
+	write(index.Project.Root)
+	write(index.Project.Namespace)
+	write(fmt.Sprint(len(index.Types)))
+	seenFiles := make(map[string]bool)
+	for _, typ := range index.Types {
+		if typ.File == "" || typ.Dependency || seenFiles[typ.File] {
+			continue
+		}
+		seenFiles[typ.File] = true
+		write(typ.File)
+		source, err := cache.read(typ.File)
+		if err != nil {
+			write("read-error:" + err.Error())
+			continue
+		}
+		write(source)
+	}
+	return fmt.Sprintf("%s|%016x", index.Project.Root, h.Sum64())
+}
+
+func projectReferencedOrgShapeFeatures(fields map[string]map[string]storage.Field) []string {
+	accountFields := fields["Account"]
+	if len(accountFields) == 0 {
+		return nil
+	}
+	for fieldName := range accountFields {
+		if projectReferencedAccountPersonField(fieldName) {
+			return []string{"PersonAccounts"}
+		}
+	}
+	return nil
+}
+
+func projectReferencedAccountPersonField(fieldName string) bool {
+	fieldName = strings.TrimSpace(fieldName)
+	return hasPrefixFold(fieldName, "Person") ||
+		strings.EqualFold(fieldName, "FirstName") ||
+		strings.EqualFold(fieldName, "LastName") ||
+		strings.EqualFold(fieldName, "MiddleName") ||
+		strings.EqualFold(fieldName, "Suffix") ||
+		strings.EqualFold(fieldName, "Salutation") ||
+		strings.EqualFold(fieldName, "IsPersonAccount")
+}
+
+func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project, caches ...sourceCache) {
 	if org == nil {
 		return
 	}
-	for _, ref := range projectReferencedRecordTypes(p) {
+	for _, ref := range projectReferencedRecordTypes(p, caches...) {
 		canonicalObject, ok := storage.ResolveObjectName(*org, ref.ObjectName)
 		if !ok {
 			continue
@@ -466,7 +528,7 @@ func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project)
 	}
 }
 
-func applyManagedDependencyReferencedRecordTypes(org *storage.OrgState, p project.Project) {
+func applyManagedDependencyReferencedRecordTypes(org *storage.OrgState, p project.Project, caches ...sourceCache) {
 	if org == nil {
 		return
 	}
@@ -474,7 +536,7 @@ func applyManagedDependencyReferencedRecordTypes(org *storage.OrgState, p projec
 		if dep.Project == nil || dep.Status != "loaded" {
 			continue
 		}
-		applyProjectReferencedRecordTypes(org, *dep.Project)
+		applyProjectReferencedRecordTypes(org, *dep.Project, caches...)
 	}
 }
 

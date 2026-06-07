@@ -6900,6 +6900,24 @@ System.assertEquals('calls', mode.Name());
 	}
 }
 
+func TestExecUserEnumNameAndOrdinalFieldAccess(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object mode = VerificationMode.ModeName.calls;
+System.assertEquals('calls', mode.name);
+System.assertEquals(1, mode.ordinal);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "VerificationMode.ModeName", EnumValues: []string{"times", "calls"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecEnumNameOnThisFieldWithStringRuntimeValue(t *testing.T) {
 	program, err := CompileAnonymous(`
 Harness h = new Harness();

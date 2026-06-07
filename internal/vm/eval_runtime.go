@@ -429,6 +429,25 @@ func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 		}
 		return true, nil
 	}
+	if left.Kind == ValueMap && right.Kind == ValueMap {
+		if len(left.Map) != len(right.Map) {
+			return false, nil
+		}
+		for key, leftValue := range left.Map {
+			rightValue, ok := right.Map[key]
+			if !ok {
+				return false, nil
+			}
+			if leftValue.equal(rightValue, make(map[[2]uint64]bool)) {
+				continue
+			}
+			equal, err := vm.apexEquals(leftValue, rightValue, result)
+			if err != nil || !equal {
+				return equal, err
+			}
+		}
+		return true, nil
+	}
 	if left.Kind != ValueObject || platformScalarObject(left.Type) || left.Type == "Type" {
 		return left.Equal(right), nil
 	}

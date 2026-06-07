@@ -141,17 +141,23 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 		seen := map[string]bool{}
 		getterNames := vm.jsonSerializableGetterNameSet(value.Type)
 		for _, fieldName := range vm.jsonSerializableFieldNames(value.Type) {
+			fieldKey := strings.ToLower(fieldName)
 			field, owner, fieldOK := vm.lookupField(value.Type, fieldName)
 			if fieldOK {
+				fieldKey = strings.ToLower(field.Name)
+				if jsonFieldIsTransient(field) {
+					seen[fieldKey] = true
+					continue
+				}
 				if field.Getter != nil && !field.Static {
 					getterValue, err := vm.callGetter(vm.getterOwner(owner, field), field, value)
 					if err == nil && !(suppressObjectNulls && getterValue.Kind == ValueNull) {
 						base = append(base, orderedJSONField{name: field.Name, value: vm.jsonFromValueForSerialize(getterValue, suppressObjectNulls)})
-						seen[strings.ToLower(field.Name)] = true
+						seen[fieldKey] = true
 					}
 					continue
 				}
-				if _, shadowed := getterNames[strings.ToLower(fieldName)]; shadowed {
+				if _, shadowed := getterNames[fieldKey]; shadowed {
 					continue
 				}
 			}
@@ -167,7 +173,11 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 		}
 		var extras []string
 		for field := range value.Fields {
-			if isInternalSObjectField(field) || seen[strings.ToLower(field)] {
+			fieldKey := strings.ToLower(field)
+			if isInternalSObjectField(field) || seen[fieldKey] {
+				continue
+			}
+			if classField, _, ok := vm.lookupField(value.Type, field); ok && jsonFieldIsTransient(classField) {
 				continue
 			}
 			extras = append(extras, field)
@@ -200,6 +210,15 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 	default:
 		return jsonFromValue(value, suppressObjectNulls)
 	}
+}
+
+func jsonFieldIsTransient(field Field) bool {
+	for _, modifier := range field.Modifiers {
+		if strings.EqualFold(modifier, "transient") {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) isEnumObjectValue(value Value) bool {

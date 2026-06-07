@@ -785,7 +785,7 @@ func (vm *VM) unqueriedStoredDefaultFieldValue(receiver Value, field string) (Va
 		return Null, false
 	}
 	if _, fieldValue, exists := objectFieldValue(receiver, field); exists {
-		current, err := storageValueFromVMForField(fieldValue, fieldDef.Type)
+		current, err := storageValueFromVMForField(fieldValue, fieldDef)
 		if err != nil || !storageValuesEqualForVM(fieldDef, current, defaultValue) {
 			return Null, false
 		}
@@ -2008,10 +2008,60 @@ func (vm *VM) parentRelationshipValueForRelationName(receiver Value, relation st
 	if !ok || lookupValue.Kind == ValueNull {
 		return vm.parentRelationshipTypedNull(relation)
 	}
+	if value, ok := vm.namedMetadataParentRelationshipValue(relation, lookupValue); ok {
+		return value
+	}
 	if relationReferencesObject(relation, "RecordType") && !vm.queriedSObjectFieldsIncludes(receiver, relation.ParentRelationship) {
 		return vm.parentRelationshipTypedNull(relation)
 	}
 	return vm.parentRelationshipTypedNull(relation)
+}
+
+func (vm *VM) namedMetadataParentRelationshipValue(relation storage.Relationship, lookupValue Value) (Value, bool) {
+	name := strings.TrimSpace(stringValue(lookupValue))
+	if name == "" {
+		return Null, false
+	}
+	switch {
+	case relationReferencesObject(relation, "EntityDefinition"):
+		value := Object("EntityDefinition")
+		value.Fields["DurableId"] = String(name)
+		value.Fields["QualifiedApiName"] = String(name)
+		value.Fields["DeveloperName"] = String(name)
+		value.Fields["Label"] = String(name)
+		return value, true
+	case relationReferencesObject(relation, "FieldDefinition"):
+		value := Object("FieldDefinition")
+		value.Fields["DurableId"] = String(name)
+		value.Fields["QualifiedApiName"] = String(fieldDefinitionQualifiedName(name))
+		value.Fields["DeveloperName"] = String(fieldDefinitionQualifiedName(name))
+		if objectName, ok := fieldDefinitionEntityName(name); ok {
+			value.Fields["EntityDefinitionId"] = String(objectName)
+			entity := Object("EntityDefinition")
+			entity.Fields["DurableId"] = String(objectName)
+			entity.Fields["QualifiedApiName"] = String(objectName)
+			value.Fields["EntityDefinition"] = entity
+		}
+		return value, true
+	default:
+		return Null, false
+	}
+}
+
+func fieldDefinitionEntityName(name string) (string, bool) {
+	objectName, _, ok := strings.Cut(strings.TrimSpace(name), ".")
+	if !ok || strings.TrimSpace(objectName) == "" {
+		return "", false
+	}
+	return strings.TrimSpace(objectName), true
+}
+
+func fieldDefinitionQualifiedName(name string) string {
+	_, fieldName, ok := strings.Cut(strings.TrimSpace(name), ".")
+	if !ok || strings.TrimSpace(fieldName) == "" {
+		return strings.TrimSpace(name)
+	}
+	return strings.TrimSpace(fieldName)
 }
 
 func parentRelationshipFieldAliases(relation storage.Relationship, relationshipName string) []string {

@@ -99,6 +99,42 @@ System.assertNotEquals(null, decoded);
 	}
 }
 
+func TestExecJSONSerializeSkipsTransientApexClassFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+ToolingChild child = new ToolingChild();
+child.Type = 'PackageInstallRequest';
+child.Name = 'Install';
+String body = JSON.serialize(child, true);
+System.assertEquals('{"Name":"Install"}', body);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "ToolingBase",
+		Fields: map[string]Field{
+			"Type": {Name: "Type", Type: "String", Modifiers: []string{"public", "transient"}},
+		},
+		FieldOrder: []string{"Type"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "ToolingChild",
+		SuperClass: "ToolingBase",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String", Modifiers: []string{"public"}},
+		},
+		FieldOrder: []string{"Name"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONParserGeneratorMethodsAreCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = json.CREATEGENERATOR(false);
@@ -1234,6 +1270,23 @@ JsonPerson parsed = (JsonPerson)parser.readValueAs(JsonPerson.class);
 System.assertEquals('E-9', parsed.ExternalId);
 System.assertEquals('Parser', parsed.Name);
 System.assertEquals('Root', parsed.Primary.City);
+
+JSONParser nestedParser = JSON.createParser('{"records":[{"ExternalId":"E-10","Name":"Nested","Primary":{"City":"Branch","Zip":2}}],"done":true}');
+while (nestedParser.nextToken() != null) {
+	if (nestedParser.getText() == 'records') {
+		nestedParser.nextToken();
+		List<JsonPerson> records = (List<JsonPerson>)nestedParser.readValueAs(List<JsonPerson>.class);
+		System.assertEquals(1, records.size());
+		System.assertEquals('E-10', records[0].ExternalId);
+		System.assertEquals('Branch', records[0].Primary.City);
+		System.assertEquals(JSONToken.FIELD_NAME, nestedParser.nextToken());
+		System.assertEquals('done', nestedParser.getText());
+		System.assertEquals(JSONToken.VALUE_TRUE, nestedParser.nextValue());
+		System.assertEquals(true, nestedParser.getBooleanValue());
+	}
+}
+System.assertEquals(null, nestedParser.nextToken());
+System.assertEquals(null, parser.nextToken());
 
 Boolean strictCaught = false;
 try {

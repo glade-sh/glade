@@ -82,6 +82,45 @@ System.assertEquals(0, empty.size());
 	}
 }
 
+func TestExecNativeUpsertHonorsPerRecordAllowFieldTruncation(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.DMLOptions opts = new Database.DMLOptions();
+opts.AllowFieldTruncation = true;
+Account account = new Account(Name = 'Acme', ExternalKey__c = 'acct-1', ShortText__c = '123456789012345678');
+account.setOptions(opts);
+upsert account ExternalKey__c;
+Account stored = [SELECT ShortText__c FROM Account WHERE ExternalKey__c = 'acct-1' LIMIT 1];
+System.assertEquals('123456789012345', stored.ShortText__c);
+
+Account allowed = new Account(Name = 'Allowed', ExternalKey__c = 'acct-2', ShortText__c = 'abcdefghijklmnopqr');
+allowed.setOptions(opts);
+Account blocked = new Account(Name = 'Blocked', ExternalKey__c = 'acct-3', ShortText__c = 'ABCDEFGHIJKLMNOPQR');
+List<Account> rows = new List<Account>();
+rows.add(allowed);
+rows.add(blocked);
+Boolean blockedFailed = false;
+try {
+  upsert rows ExternalKey__c;
+} catch (DmlException e) {
+  blockedFailed = true;
+}
+System.assertEquals(true, blockedFailed, 'record options must not make truncation statement-wide');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["ExternalKey__c"] = storage.Field{APIName: "ExternalKey__c", Type: storage.FieldString, ExternalID: true, Unique: true, Length: 80}
+	account.Definition.Fields["ShortText__c"] = storage.Field{APIName: "ShortText__c", Type: storage.FieldString, Length: 15}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecInlineSOQLPreservesEscapedStringLiteral(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Bob\'s Shop');
@@ -5458,7 +5497,7 @@ System.assert(targets.contains(User.SObjectType));
 }
 
 func TestStorageValueFromVMForFieldPreservesEmptyStringText(t *testing.T) {
-	value, err := storageValueFromVMForField(String(""), storage.FieldString)
+	value, err := storageValueFromVMForField(String(""), storage.Field{Type: storage.FieldString})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -5466,7 +5505,7 @@ func TestStorageValueFromVMForFieldPreservesEmptyStringText(t *testing.T) {
 		t.Fatalf("empty text storage value = %#v", value)
 	}
 
-	picklist, err := storageValueFromVMForField(String(""), storage.FieldPicklist)
+	picklist, err := storageValueFromVMForField(String(""), storage.Field{Type: storage.FieldPicklist})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -16776,6 +16815,8 @@ func TestExecHierarchyCustomSettingStaticsUseOrgDefaults(t *testing.T) {
 System.assertEquals(true, Hierarchy_Setting__c.getInstance().Enabled__c);
 System.assertEquals(true, Hierarchy_Setting__c.getOrgDefaults().Enabled__c);
 System.assertEquals(true, Hierarchy_Setting__c.getValues('00D000000000001').Enabled__c);
+Id ownerId = '00D000000000001';
+System.assertEquals(true, Hierarchy_Setting__c.getValues(ownerId).Enabled__c);
 System.assertEquals(null, Hierarchy_Setting__c.getValues('005000000000001').Enabled__c);
 System.assertEquals(false, Hierarchy_Setting__c.getValues('005000000000001').Defaulted__c);
 System.assertEquals(true, Hierarchy_Setting__c.getInstance('005000000000001').Enabled__c);

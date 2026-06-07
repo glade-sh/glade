@@ -3717,7 +3717,14 @@ func canonicalLoggingLevelName(level string) (string, bool) {
 }
 
 func isLoggingLevelValue(value Value) bool {
-	if value.Kind != ValueObject || value.Type != "LoggingLevel" {
+	if value.Kind != ValueObject {
+		return false
+	}
+	typeName := value.Type
+	if rest, ok := stripLeadingSystemNamespace(typeName); ok {
+		typeName = rest
+	}
+	if !strings.EqualFold(typeName, "LoggingLevel") {
 		return false
 	}
 	return isLoggingLevelName(value.Text)

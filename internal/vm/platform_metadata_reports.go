@@ -748,7 +748,7 @@ func (vm *VM) metadataCustomMetadataValue(definition storage.ObjectDefinition, i
 		}
 		definition.Fields = map[string]storage.Field{resolved: field}
 	}
-	converted, err := storageValueFromVMForField(item.Fields["value"], definition.Fields[resolved].Type)
+	converted, err := storageValueFromVMForField(item.Fields["value"], definition.Fields[resolved])
 	if err != nil {
 		return "", storage.Value{}, fmt.Errorf("Metadata.CustomMetadataValue.%s %v", fieldName, err)
 	}
@@ -1247,7 +1247,11 @@ func roundingModeValues(args []Value) (Value, error) {
 
 func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	method = canonicalStdlibMemberName(method, "equals", "name", "ordinal", "toString")
-	if receiver.Type == "JSONToken" {
+	receiverType := receiver.Type
+	if rest, ok := stripLeadingSystemNamespace(receiverType); ok {
+		receiverType = rest
+	}
+	if receiverType == "JSONToken" {
 		if method == "equals" {
 			if len(args) != 1 {
 				return Null, true, fmt.Errorf("JSONToken.equals expects 1 argument")
@@ -1274,19 +1278,19 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	if receiver.Type == "ApexPages.Severity" {
 		return callNamedEnumMember("ApexPages.Severity", apexPagesSeverityNames, receiver, method, args)
 	}
-	if receiver.Type == "LoggingLevel" {
+	if receiverType == "LoggingLevel" {
 		return callNamedEnumMember("LoggingLevel", loggingLevelNames, receiver, method, args)
 	}
-	if receiver.Type == "RoundingMode" {
+	if receiverType == "RoundingMode" {
 		return callNamedEnumMember("RoundingMode", roundingModeNames, receiver, method, args)
 	}
-	if receiver.Type == "AccessType" {
+	if receiverType == "AccessType" {
 		return callNamedEnumMember("AccessType", accessTypeNames, receiver, method, args)
 	}
-	if receiver.Type == "TriggerOperation" {
+	if receiverType == "TriggerOperation" {
 		return callNamedEnumMember("TriggerOperation", triggerOperationNames, receiver, method, args)
 	}
-	if receiver.Type == "StatusCode" {
+	if receiverType == "StatusCode" {
 		return callStatusCodeMember(receiver, method, args)
 	}
 	if receiver.Type == "Schema.DisplayType" {

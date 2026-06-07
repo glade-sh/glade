@@ -195,7 +195,7 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 			InvokeProgErr: testInvokeErrors[testCaseKey(testCase)],
 		}
 	}
-	if false && noSetupFastPath(setups, setupErrors, setupInvokeErrors) {
+	if noSetupFastPath(setups, setupErrors, setupInvokeErrors) && allClassesHaveSingleMethod(suiteIndexes) {
 		for i := range planned {
 			if results[i].Status != "" {
 				continue
@@ -407,6 +407,15 @@ func noSetupFastPath(setups map[string][]vm.Method, setupErrors map[string]error
 	}
 	for _, err := range setupInvokeErrors {
 		if err != nil {
+			return false
+		}
+	}
+	return true
+}
+
+func allClassesHaveSingleMethod(classIndexes map[string][]int) bool {
+	for _, indexes := range classIndexes {
+		if len(indexes) > 1 {
 			return false
 		}
 	}
@@ -1654,8 +1663,8 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 			if automationIndex, err := automation.LoadProject(p); err == nil {
 				automation.ApplyToOrg(&org, automationIndex)
 			}
-			applyProjectReferencedRecordTypes(&org, p)
-			applyManagedDependencyReferencedRecordTypes(&org, p)
+			applyProjectReferencedRecordTypes(&org, p, caches...)
+			applyManagedDependencyReferencedRecordTypes(&org, p, caches...)
 			applyProjectDataRelationshipReferences(&org, p)
 		}
 	}
@@ -1759,6 +1768,11 @@ type projectChildRelationshipSourceReference struct {
 }
 
 var projectReferencedStandardFieldCache sync.Map
+
+type projectReferencedStandardFieldSet struct {
+	Fields   map[string]map[string]storage.Field
+	Features []string
+}
 
 func apexReferenceScanSource(source string) string {
 	out := []byte(source)
@@ -2480,9 +2494,10 @@ var apexStaticFinalStringRE = regexp.MustCompile(`(?is)\bstatic\s+final\s+String
 var apexGetRecordTypeIdCallRE = regexp.MustCompile(`(?is)\bgetRecordTypeId\s*\(\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z_][A-Za-z0-9_]*))\s*\)`)
 var apexRecordTypeStringMethodRE = regexp.MustCompile(`(?is)\b([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*String\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*\{([^{}]*)\}`)
 
-func projectReferencedRecordTypes(p project.Project) []projectRecordTypeReference {
+func projectReferencedRecordTypes(p project.Project, caches ...sourceCache) []projectRecordTypeReference {
 	seen := make(map[string]bool)
 	var refs []projectRecordTypeReference
+	cache := sourceCacheFor(caches)
 	add := func(ref projectRecordTypeReference) {
 		ref.ObjectName = strings.TrimSpace(ref.ObjectName)
 		ref.DeveloperName = strings.TrimSpace(ref.DeveloperName)
@@ -2498,11 +2513,10 @@ func projectReferencedRecordTypes(p project.Project) []projectRecordTypeReferenc
 		refs = append(refs, ref)
 	}
 	for _, file := range p.ApexFiles {
-		data, err := os.ReadFile(file)
+		source, err := cache.read(file)
 		if err != nil {
 			continue
 		}
-		source := string(data)
 		for _, match := range apexRecordTypeInfoCallRE.FindAllStringSubmatch(source, -1) {
 			objectName := match[1]
 			if objectName == "" {
@@ -2582,8 +2596,14 @@ func projectReferencedTestDataHelperRecordTypes(source string) []projectRecordTy
 			})
 		}
 	}
-	for _, forwardingMethod := range apexRecordTypeForwardingMethods(source) {
-		callRE := regexp.MustCompile(`(?is)\b` + regexp.QuoteMeta(forwardingMethod) + `\s*\(\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z_][A-Za-z0-9_]*))\s*\)`)
+	methods := apexRecordTypeForwardingMethods(source)
+	callPatterns := make(map[string]*regexp.Regexp, len(methods))
+	for _, forwardingMethod := range methods {
+		callRE := callPatterns[forwardingMethod]
+		if callRE == nil {
+			callRE = regexp.MustCompile(`(?is)\b` + regexp.QuoteMeta(forwardingMethod) + `\s*\(\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z_][A-Za-z0-9_]*))\s*\)`)
+			callPatterns[forwardingMethod] = callRE
+		}
 		for _, match := range callRE.FindAllStringSubmatch(source, -1) {
 			if name := projectRecordTypeNameFromCallArg(match, constants); name != "" {
 				refs = append(refs, projectRecordTypeReference{

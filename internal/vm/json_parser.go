@@ -205,8 +205,8 @@ func (vm *VM) callJSONParserMember(receiver Value, method string, args []Value) 
 		if len(args) != 1 {
 			return Null, receiver, false, true, fmt.Errorf("JSONParser.%s expects Type", method)
 		}
-		value, err := vm.jsonParserReadValueAs(receiver, args[0], method == "readValueAsStrict")
-		return value, receiver, false, true, err
+		value, updated, err := vm.jsonParserReadValueAs(receiver, args[0], method == "readValueAsStrict")
+		return value, updated, true, true, err
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -221,24 +221,95 @@ func canonicalJSONParserMethod(method string) string {
 	)
 }
 
-func (vm *VM) jsonParserReadValueAs(receiver Value, typeArg Value, strict bool) (Value, error) {
+func (vm *VM) jsonParserReadValueAs(receiver Value, typeArg Value, strict bool) (Value, Value, error) {
 	typeName := typeValueName(typeArg)
 	if typeName == "" {
-		return Null, fmt.Errorf("JSONParser.readValueAs expects Type")
+		return Null, receiver, fmt.Errorf("JSONParser.readValueAs expects Type")
 	}
 	source, ok := receiver.Fields["source"]
 	if !ok || source.Kind != ValueString {
-		return Null, jsonParserException("JSONParser.readValueAs missing parser source")
+		return Null, receiver, jsonParserException("JSONParser.readValueAs missing parser source")
 	}
 	index := jsonParserIndex(receiver)
-	if index > 0 {
-		return Null, unsupportedCallError("JSONParser.readValueAs from non-root token")
+	var raw any
+	var err error
+	if index >= 0 {
+		tokens := jsonParserTokens(receiver)
+		var next int64
+		raw, next, err = jsonParserRawValueAt(tokens.List, index)
+		if err != nil {
+			return Null, receiver, jsonDeserializeException("JSONParser.readValueAs invalid JSON input: %v", err)
+		}
+		receiver.Fields["index"] = Int(next - 1)
+	} else {
+		raw, err = decodeJSONValueForDeserialize(source.Text, false)
+		if err != nil {
+			return Null, receiver, jsonDeserializeException("JSONParser.readValueAs invalid JSON input: %v", err)
+		}
+		tokens := jsonParserTokens(receiver)
+		if len(tokens.List) > 0 {
+			receiver.Fields["index"] = Int(int64(len(tokens.List) - 1))
+		}
 	}
-	raw, err := decodeJSONValueForDeserialize(source.Text, false)
-	if err != nil {
-		return Null, jsonDeserializeException("JSONParser.readValueAs invalid JSON input: %v", err)
+	value, err := vm.typedValueFromJSON(typeName, raw, strict)
+	return value, receiver, err
+}
+
+func jsonParserRawValueAt(tokens []Value, index int64) (any, int64, error) {
+	if index < 0 || index >= int64(len(tokens)) {
+		return nil, index, fmt.Errorf("JSONParser.readValueAs requires a current token")
 	}
-	return vm.typedValueFromJSON(typeName, raw, strict)
+	token := tokens[index]
+	switch kind := jsonParserTokenKind(token); kind {
+	case "START_OBJECT":
+		out := orderedJSONObject{}
+		i := index + 1
+		for i < int64(len(tokens)) {
+			current := tokens[i]
+			switch jsonParserTokenKind(current) {
+			case "END_OBJECT":
+				return out, i + 1, nil
+			case "FIELD_NAME":
+				name := jsonParserTokenText(current)
+				value, next, err := jsonParserRawValueAt(tokens, i+1)
+				if err != nil {
+					return nil, index, err
+				}
+				out = append(out, orderedJSONField{name: name, value: value})
+				i = next
+			default:
+				return nil, index, fmt.Errorf("JSONParser.readValueAs expected object field name, got %s", jsonParserTokenKind(current))
+			}
+		}
+		return nil, index, fmt.Errorf("JSONParser.readValueAs object has no end token")
+	case "START_ARRAY":
+		out := []any{}
+		i := index + 1
+		for i < int64(len(tokens)) {
+			if jsonParserTokenKind(tokens[i]) == "END_ARRAY" {
+				return out, i + 1, nil
+			}
+			value, next, err := jsonParserRawValueAt(tokens, i)
+			if err != nil {
+				return nil, index, err
+			}
+			out = append(out, value)
+			i = next
+		}
+		return nil, index, fmt.Errorf("JSONParser.readValueAs array has no end token")
+	case "VALUE_STRING":
+		return jsonParserTokenText(token), index + 1, nil
+	case "VALUE_NUMBER_INT", "VALUE_NUMBER_FLOAT":
+		return json.Number(jsonParserTokenText(token)), index + 1, nil
+	case "VALUE_TRUE":
+		return true, index + 1, nil
+	case "VALUE_FALSE":
+		return false, index + 1, nil
+	case "VALUE_NULL":
+		return nil, index + 1, nil
+	default:
+		return nil, index, fmt.Errorf("JSONParser.readValueAs cannot read %s", kind)
+	}
 }
 
 func jsonParserTokenize(text string) ([]Value, error) {

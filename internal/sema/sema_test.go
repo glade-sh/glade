@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -381,6 +382,29 @@ public class UsesInner {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestStaticClassFieldPathUnknownLongPathReturnsPromptly(t *testing.T) {
+	fieldPath := strings.Join([]string{
+		"one", "two", "three", "four", "five", "six", "seven", "eight",
+		"nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+		"sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twentyone",
+		"twentytwo", "twentythree", "twentyfour",
+	}, ".")
+	done := make(chan bool, 1)
+	go func() {
+		_, ok := semaStaticClassFieldPathMember(map[string]typeMembers{}, "Missing", fieldPath)
+		done <- ok
+	}()
+
+	select {
+	case ok := <-done:
+		if ok {
+			t.Fatal("unexpected static field path match")
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("unknown static field path lookup did not return promptly")
 	}
 }
 
@@ -2610,6 +2634,61 @@ public class ShadowedField {
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
 		filepath.Join(root, "ShadowedField.cls"),
 	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeProtectedInheritedMethodAcceptsSchemaSObjectFieldToken(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "DomainBase.cls"), `
+public virtual class DomainBase {
+  protected Set<Id> getIdFieldValues(Schema.SObjectField field) {
+    return new Set<Id>();
+  }
+  protected virtual void addError(Schema.SObjectField field, String message) {
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "AccountDomain.cls"), `
+public class AccountDomain extends DomainBase {
+  public Set<Id> ids() {
+    return getIdFieldValues(Schema.Account.Id);
+  }
+  public void addNameError(String message) {
+    addError(Schema.Account.Name, message);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "DomainBase.cls"),
+		filepath.Join(root, "AccountDomain.cls"),
+	}}, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Id", Type: "Id"}, {Name: "Name", Type: "String"}}}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeDatabaseBatchableSObjectAllowsConcreteExecuteScope(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "AccountBatch.cls"), `
+public class AccountBatch implements Database.Batchable<SObject> {
+  public Database.QueryLocator start(Database.BatchableContext context) {
+    return Database.getQueryLocator('SELECT Id FROM Account');
+  }
+  public void execute(Database.BatchableContext context, List<Account> scope) {
+  }
+  public void finish(Database.BatchableContext context) {
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "AccountBatch.cls"),
+	}}, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Id", Type: "Id"}}}}})
 
 	result := Analyze(index)
 	if result.HasErrors() {

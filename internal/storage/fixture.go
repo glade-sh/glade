@@ -406,8 +406,10 @@ func applyMultiCurrency(org *OrgState) {
 			"CreatedDate":      DateTimeValue("2000-01-01T00:00:00Z"),
 		},
 	})
-	// Add CurrencyIsoCode to all objects that don't already have it
 	for name, obj := range org.Objects {
+		if !multiCurrencyObjectSupportsCurrencyISOCode(obj.Definition) {
+			continue
+		}
 		if obj.Definition.Fields == nil {
 			obj.Definition.Fields = make(map[string]Field)
 		}
@@ -420,6 +422,29 @@ func applyMultiCurrency(org *OrgState) {
 		}
 		org.Objects[name] = obj
 	}
+}
+
+func multiCurrencyObjectSupportsCurrencyISOCode(definition ObjectDefinition) bool {
+	if _, hasCurrency := definition.Fields["CurrencyIsoCode"]; hasCurrency {
+		return true
+	}
+	objectName := strings.TrimSpace(definition.APIName)
+	if objectName == "" || hasSuffixFold(objectName, "__mdt") {
+		return false
+	}
+	if strings.HasSuffix(objectName, "__c") {
+		return true
+	}
+	for _, field := range definition.Fields {
+		if strings.EqualFold(field.DisplayType, "CURRENCY") {
+			return true
+		}
+	}
+	return false
+}
+
+func hasSuffixFold(value, suffix string) bool {
+	return len(value) >= len(suffix) && strings.EqualFold(value[len(value)-len(suffix):], suffix)
 }
 
 func applySitesAndCommunities(org *OrgState) {
@@ -659,6 +684,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"PermissionsViewSetup":              {APIName: "PermissionsViewSetup", Type: FieldBoolean},
 		"PermissionsAssignPermissionSets":   {APIName: "PermissionsAssignPermissionSets", Type: FieldBoolean},
 		"PermissionsManageProfilesAndPerms": {APIName: "PermissionsManageProfilesAndPerms", Type: FieldBoolean},
+		"PermissionsInstallPackaging":       {APIName: "PermissionsInstallPackaging", Type: FieldBoolean},
 	})
 	ensureObject(org, "PermissionSetAssignment", "0Pa", map[string]Field{
 		"AssigneeId":           {APIName: "AssigneeId", Type: FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Assignee"},
@@ -963,6 +989,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			fields["PermissionsModifyAllData"] = BooleanValue(true)
 			fields["PermissionsAuthorApex"] = BooleanValue(true)
 			fields["PermissionsViewAllData"] = BooleanValue(true)
+			fields["PermissionsInstallPackaging"] = BooleanValue(true)
 		}
 		putSeedRecord(org, "PermissionSet", Record{
 			ID:     id,

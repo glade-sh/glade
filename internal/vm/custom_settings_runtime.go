@@ -18,6 +18,24 @@ func customDataArgsCacheKey(args []Value) string {
 	}
 	return strings.Join(parts, "|")
 }
+
+func customSettingOwnerIDArg(value Value) (string, bool, error) {
+	switch {
+	case value.Kind == ValueNull:
+		return "", true, nil
+	case value.Kind == ValueString:
+		return value.Text, true, nil
+	case value.Kind == ValueObject && strings.EqualFold(value.Type, "Id"):
+		text, err := platformScalarText(value, "Id")
+		if err != nil {
+			return "", true, err
+		}
+		return text, true, nil
+	default:
+		return "", false, nil
+	}
+}
+
 func (vm *VM) customDataOrgDefaultRecord(objectName string) (storage.Record, bool) {
 	if vm.Org == nil {
 		return storage.Record{}, false

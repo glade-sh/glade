@@ -365,7 +365,7 @@ func databaseBatchableMethodCompatible(methodName, itemType string, methods []ty
 		case "execute":
 			if len(method.Parameters) != 2 ||
 				!sameSemaSignatureType(method.Parameters[0].Type, "Database.BatchableContext") ||
-				!sameSemaSignatureType(method.Parameters[1].Type, "List<"+itemType+">") {
+				!databaseBatchableExecuteScopeCompatible(itemType, method.Parameters[1].Type, model) {
 				continue
 			}
 			if strings.EqualFold(strings.TrimSpace(method.Type), "void") || strings.TrimSpace(method.Type) == "" {
@@ -381,6 +381,18 @@ func databaseBatchableMethodCompatible(methodName, itemType string, methods []ty
 		}
 	}
 	return false
+}
+
+func databaseBatchableExecuteScopeCompatible(itemType, scopeType string, model map[string]typeMembers) bool {
+	required := "List<" + itemType + ">"
+	if sameSemaSignatureType(scopeType, required) {
+		return true
+	}
+	scopeBase, scopeArgs := semaGenericBaseAndArgs(scopeType)
+	if !strings.EqualFold(scopeBase, "List") || len(scopeArgs) != 1 {
+		return false
+	}
+	return semaAssignableToType(itemType, scopeArgs[0], model)
 }
 
 func databaseBatchableStartReturnCompatible(itemType, returnType string) bool {
