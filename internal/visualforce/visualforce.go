@@ -381,6 +381,9 @@ func splitCSV(value string) []string {
 
 func nameFromPath(path, suffix string) string {
 	base := filepath.Base(path)
+	if suffix == ".page" && hasSuffixFold(base, ".page-meta.xml") {
+		return base[:len(base)-len(".page-meta.xml")]
+	}
 	if hasSuffixFold(base, suffix) {
 		return base[:len(base)-len(suffix)]
 	}

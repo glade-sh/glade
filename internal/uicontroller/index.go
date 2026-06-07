@@ -644,12 +644,27 @@ func auraFileKind(path string) string {
 		return "event"
 	case ".design":
 		return "design"
+	case ".css":
+		return "style"
+	case ".svg":
+		return "svg"
+	case ".auradoc":
+		return "documentation"
 	case ".js":
 		base := strings.ToLower(filepath.Base(path))
 		if strings.Contains(base, "helper") {
 			return "helper"
 		}
+		if strings.Contains(base, "renderer") {
+			return "renderer"
+		}
 		return "controller"
+	case ".xml":
+		base := strings.ToLower(filepath.Base(path))
+		if strings.Contains(base, "-meta.xml") {
+			return "metadata"
+		}
+		return "unknown"
 	default:
 		return "unknown"
 	}

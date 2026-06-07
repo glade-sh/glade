@@ -84,7 +84,7 @@ func addScanMetadataFile(path string, proj *project.Project, seen map[string]boo
 		add(&proj.FlexiPageFiles)
 	case strings.HasSuffix(lower, ".app-meta.xml"), strings.HasSuffix(lower, ".app") && strings.Contains(lower, "/applications/"):
 		add(&proj.ApplicationFiles)
-	case strings.HasSuffix(lower, ".page"):
+	case strings.HasSuffix(lower, ".page"), strings.HasSuffix(lower, ".page-meta.xml"):
 		add(&proj.VisualforcePageFiles)
 	case strings.HasSuffix(lower, ".component"):
 		add(&proj.VisualforceComponentFiles)
@@ -96,7 +96,14 @@ func addScanMetadataFile(path string, proj *project.Project, seen map[string]boo
 }
 
 func isAuraSourceFile(path string) bool {
-	return hasAnySuffix(path, ".cmp", ".app", ".evt", ".intf", ".design", ".js", ".css", ".svg")
+	return hasAnySuffix(path,
+		".cmp", ".cmp-meta.xml",
+		".app", ".app-meta.xml",
+		".evt", ".evt-meta.xml",
+		".intf", ".intf-meta.xml",
+		".design", ".design-meta.xml",
+		".js", ".css", ".svg", ".auradoc",
+	)
 }
 
 func (ctx *scanContext) addPresentationAssetFiles(assets []metadatapkg.NamedAsset) {

@@ -175,7 +175,7 @@ func (e *Engine) Insert(records []storage.Record) []Result {
 		}
 		results[i] = Result{ID: id, Success: true}
 	}
-	e.Org.IDSequences = copySequences(e.IDs.Sequences)
+	e.Org.IDSequences = maxSequences(e.Org.IDSequences, e.IDs.Sequences)
 	return results
 }
 
@@ -201,6 +201,7 @@ func (e *Engine) Update(records []storage.Record) []Result {
 		}
 		results[i] = Result{ID: record.ID, Success: true}
 	}
+	e.Org.IDSequences = maxSequences(e.Org.IDSequences, e.IDs.Sequences)
 	return results
 }
 
@@ -251,7 +252,7 @@ func (e *Engine) upsert(records []storage.Record, externalIDField string) []Resu
 		}
 		results[i] = Result{ID: record.ID, Success: true, Created: false}
 	}
-	e.Org.IDSequences = copySequences(e.IDs.Sequences)
+	e.Org.IDSequences = maxSequences(e.Org.IDSequences, e.IDs.Sequences)
 	return results
 }
 

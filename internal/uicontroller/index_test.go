@@ -42,6 +42,10 @@ func TestBuildExtractsAuraControllerReferences(t *testing.T) {
     cmp.get('c.save');
   }
 })`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.cmp-meta.xml"), `<AuraDefinitionBundle/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.css"), `.THIS {}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/WidgetRenderer.js"), `({})`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.auradoc"), `<aura:documentation/>`)
 
 	p, err := project.Load(root)
 	if err != nil {
@@ -57,7 +61,7 @@ func TestBuildExtractsAuraControllerReferences(t *testing.T) {
 		t.Fatalf("aura bundles = %#v", idx.AuraBundles)
 	}
 	bundle := idx.AuraBundles[0]
-	if bundle.Name != "Widget" || len(bundle.Files) != 6 {
+	if bundle.Name != "Widget" || len(bundle.Files) != 10 {
 		t.Fatalf("bundle summary = %#v", bundle)
 	}
 	if len(bundle.ControllerReferences) != 1 || bundle.ControllerReferences[0].Name != "WidgetController" {

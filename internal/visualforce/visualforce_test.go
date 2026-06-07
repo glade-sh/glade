@@ -97,6 +97,27 @@ func TestLoadProjectIndexesPagesAndComponents(t *testing.T) {
 	}
 }
 
+func TestLoadProjectIndexesMetadataOnlyPages(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/MetadataOnly.page-meta.xml"), `<ApexPage>
+  <label>Metadata Only</label>
+</ApexPage>`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	idx, err := LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	page, ok := idx.PageReference("Page.MetadataOnly")
+	if !ok || page.Name != "MetadataOnly" || page.File == "" {
+		t.Fatalf("metadata-only page lookup = %#v, %v", page, ok)
+	}
+}
+
 func TestExtractMergeReferences(t *testing.T) {
 	refs := ExtractMergeReferences(`{!URLFOR($Resource.Bundle, 'x.css')} {!$Site.BaseUrl}`)
 	if len(refs) != 2 {

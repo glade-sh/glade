@@ -867,6 +867,7 @@ func TestScanSuppressesSupportedVisualforceRuntimeReferences(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/AccountView.page"), `<apex:page standardController="Account" />`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/MetadataOnly.page-meta.xml"), `<ApexPage><label>Metadata Only</label></ApexPage>`)
 	writeFile(t, filepath.Join(root, "outside/pages/Loose.page"), `<apex:page />`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Thing__c/pkg__Thing__c.object-meta.xml"), `<CustomObject><label>Thing</label><pluralLabel>Things</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "refs/znu/pages/znu__Order.page"), `<apex:page standardController="znu__Order__c" />`)
@@ -875,6 +876,7 @@ func TestScanSuppressesSupportedVisualforceRuntimeReferences(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/UsesVisualforce.cls"), `public class UsesVisualforce {
   void run() {
     PageReference page = Page.AccountView;
+    PageReference metadataOnly = Page.MetadataOnly;
     PageReference loose = Page.Loose;
     PageReference managedPage = Page.znu__Order;
     PageReference externalManagedPage = Page.pkg__ManagedPage;
@@ -904,6 +906,10 @@ func TestScanSuppressesSupportedVisualforceRuntimeReferences(t *testing.T) {
 	}
 	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/classes/UsesVisualforce.cls", "Page.AccountView") {
 		t.Fatalf("registered Page.AccountView reference should not be reported")
+	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/classes/UsesVisualforce.cls", "Page.MetadataOnly") ||
+		hasLineFinding(report, "visualforce.page-metadata", "force-app/main/default/classes/UsesVisualforce.cls", "Page.MetadataOnly") {
+		t.Fatalf("metadata-only Visualforce page should resolve Page.MetadataOnly")
 	}
 	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/classes/UsesVisualforce.cls", "Page.Loose") {
 		t.Fatalf("Visualforce pages discovered outside package roots should be registered")
@@ -1034,6 +1040,8 @@ func TestScanSuppressesResolvedAuraControllerBundles(t *testing.T) {
   handleClick: function(component, event, helper) {}
 })`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/aura/MissingServerAction/MissingServerAction.cmp"), `<aura:component controller="WidgetController" />`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/MissingServerAction/MissingServerAction.cmp-meta.xml"), `<AuraDefinitionBundle/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/MissingServerAction/MissingServerAction.css"), `.THIS {}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/aura/MissingServerAction/MissingServerActionHelper.js"), `({
   load: function(localCmp) {
     localCmp.get("c.missingServer");
@@ -1061,6 +1069,15 @@ import missing from '@salesforce/apex/pkg.WidgetController.missing';
 	}
 	if hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/MissingServerAction/MissingServerActionHelper.js", "MissingServerAction") {
 		t.Fatalf("missing Aura server action should not be reported as controller-test debt")
+	}
+	for _, file := range []string{
+		"force-app/main/default/aura/MissingServerAction/MissingServerAction.cmp",
+		"force-app/main/default/aura/MissingServerAction/MissingServerAction.cmp-meta.xml",
+		"force-app/main/default/aura/MissingServerAction/MissingServerAction.css",
+	} {
+		if hasFindingContaining(report, "aura.action-metadata", file, "MissingServerAction") {
+			t.Fatalf("missing Aura server action should be reported at action source, not %s: %#v", file, report.Findings)
+		}
 	}
 	if !hasFindingContaining(report, "aura.action-metadata", "force-app/main/default/aura/MissingServerAction/MissingServerActionHelper.js", "MissingServerAction") {
 		t.Fatalf("missing unresolved Aura server action metadata finding")
@@ -1267,6 +1284,25 @@ System.debug(System.Label.BlockCommentLabel);
 	}
 }
 
+func TestScanSuppressesSupplementalNestedCustomMetadataRecords(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/UsesMetadata.cls"), `public class UsesMetadata {
+  Supplemental__mdt configured;
+}`)
+	writeFile(t, filepath.Join(root, "supplemental/objects/Supplemental__mdt/records/Default.md"), `<CustomMetadata>
+  <label>Default</label>
+</CustomMetadata>`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hasLineFinding(report, "custommetadata.legacy-records", "force-app/main/default/classes/UsesMetadata.cls", "Supplemental__mdt") {
+		t.Fatalf("supplemental nested custom metadata record should resolve Supplemental__mdt")
+	}
+}
+
 func TestScanSuppressesResolvedLabelReferences(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"orgns","packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -1447,6 +1483,18 @@ func TestScanSuppressesModeledDeclarativeAutomation(t *testing.T) {
   <screens><name>Wizard</name></screens>
   <recordLookups><name>Pick_Default</name></recordLookups>
 </Flow>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/flows/Orchestration_Case.flow-meta.xml"), `<Flow>
+  <processType>Orchestrator</processType>
+  <status>Active</status>
+  <start><object>Case</object><triggerType>RecordAfterSave</triggerType></start>
+  <screens><name>Approval</name></screens>
+</Flow>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/flows/Content_Publication.flow-meta.xml"), `<Flow>
+  <processType>AppProcess</processType>
+  <status>Active</status>
+  <start><object>Lead</object><triggerType>RecordAfterSave</triggerType></start>
+  <screens><name>WorkItem</name></screens>
+</Flow>`)
 
 	report, err := Scan(root)
 	if err != nil {
@@ -1620,6 +1668,20 @@ func TestScanRejectsFileRoot(t *testing.T) {
 	writeFile(t, path, "public class Only {}")
 	if _, err := Scan(path); err == nil {
 		t.Fatal("expected file root error")
+	}
+}
+
+func TestScanTextFileHandlesLongLines(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "src/lwc/bundle/bundle.js"), strings.Repeat("x", 1024*1024+1)+"\nimport NAME from '@salesforce/schema/Missing__c.Name';")
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !hasLineFinding(report, "ui.presentation-metadata", "src/lwc/bundle/bundle.js", "Missing__c.Name") {
+		t.Fatalf("missing finding after long line: %#v", report.Findings)
 	}
 }
 

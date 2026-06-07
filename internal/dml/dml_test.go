@@ -5187,7 +5187,67 @@ func TestFlowDecisionBranchesRouteFirstMatchOrDefaultAndTraceValue(t *testing.T)
 	}
 }
 
-func TestFlowRecordCreateRunsAndLookupSuppressesDuplicate(t *testing.T) {
+func TestFlowDecisionExpandedOrBranchesUpdateEitherGroup(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Impact__c"] = storage.Field{APIName: "Impact__c", Type: storage.FieldString}
+	account.Definition.Fields["Urgency__c"] = storage.Field{APIName: "Urgency__c", Type: storage.FieldString}
+	account.Definition.Fields["Priority__c"] = storage.Field{APIName: "Priority__c", Type: storage.FieldString}
+	account.Definition.FlowRules = []storage.FlowRule{{
+		Name:   "RoutePriority",
+		Active: true,
+		Branches: []storage.FlowBranch{
+			{
+				Name: "Moderate#1",
+				Criteria: []storage.WorkflowCriteriaItem{
+					{Field: "Impact__c", Operation: "equals", Value: "Medium"},
+					{Field: "Urgency__c", Operation: "equals", Value: "High"},
+				},
+				FieldUpdates: []storage.WorkflowFieldUpdate{{
+					Name:         "SetModeratePriority",
+					Field:        "Priority__c",
+					LiteralValue: "Moderate",
+				}},
+			},
+			{
+				Name: "Moderate#2",
+				Criteria: []storage.WorkflowCriteriaItem{
+					{Field: "Impact__c", Operation: "equals", Value: "High"},
+					{Field: "Urgency__c", Operation: "equals", Value: "Medium"},
+				},
+				FieldUpdates: []storage.WorkflowFieldUpdate{{
+					Name:         "SetModeratePriority",
+					Field:        "Priority__c",
+					LiteralValue: "Moderate",
+				}},
+			},
+		},
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{
+		{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("First"), "Impact__c": storage.StringValue("Medium"), "Urgency__c": storage.StringValue("High")}},
+		{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Second"), "Impact__c": storage.StringValue("High"), "Urgency__c": storage.StringValue("Medium")}},
+		{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Miss"), "Impact__c": storage.StringValue("Low"), "Urgency__c": storage.StringValue("Low")}},
+	})
+	for _, result := range insert {
+		if !result.Success {
+			t.Fatalf("insert = %#v", insert)
+		}
+	}
+	if got := org.Objects["Account"].Records[insert[0].ID].Fields["Priority__c"].String; got != "Moderate" {
+		t.Fatalf("first OR branch priority = %q", got)
+	}
+	if got := org.Objects["Account"].Records[insert[1].ID].Fields["Priority__c"].String; got != "Moderate" {
+		t.Fatalf("second OR branch priority = %q", got)
+	}
+	if value, ok := org.Objects["Account"].Records[insert[2].ID].Fields["Priority__c"]; ok && value.Kind != storage.ValueNull {
+		t.Fatalf("miss should not get priority update: %#v", value)
+	}
+}
+
+func TestFlowRecordCreateRunsAfterSameObjectLookup(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
 	account.Definition.FlowRules = []storage.FlowRule{{
@@ -5264,18 +5324,413 @@ func TestFlowRecordCreateRunsAndLookupSuppressesDuplicate(t *testing.T) {
 	if !update[0].Success {
 		t.Fatalf("update = %#v", update)
 	}
-	if got := len(org.Objects["ActionRequest__c"].Records); got != 1 {
-		t.Fatalf("lookup should suppress duplicate record create, got %d records", got)
+	if got := len(org.Objects["ActionRequest__c"].Records); got != 2 {
+		t.Fatalf("lookup alone should not suppress record create, got %d records", got)
 	}
 	for _, name := range []string{
 		"apex.flow.rule",
 		"apex.flow.record_lookup",
 		"apex.flow.record_create",
-		"apex.flow.record_create_suppressed",
 	} {
 		if !stringSliceContains(events, name) {
 			t.Fatalf("trace missing %s in %#v", name, events)
 		}
+	}
+	if stringSliceContains(events, "apex.flow.record_create_suppressed") {
+		t.Fatalf("lookup should not suppress record create: %#v", events)
+	}
+}
+
+func TestFlowRecordCreateUsesLookupOutputField(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["ExternalKey__c"] = storage.Field{APIName: "ExternalKey__c", Type: storage.FieldString}
+	account.Definition.FlowRules = []storage.FlowRule{{
+		Name:   "CreateActionFromLookup",
+		Active: true,
+		RecordLookups: []storage.FlowRecordLookup{{
+			Name:                     "MatchedAccount",
+			ObjectName:               "Account",
+			GetFirstRecordOnly:       true,
+			StoreOutputAutomatically: true,
+			Criteria: []storage.WorkflowCriteriaItem{
+				{Field: "ExternalKey__c", Operation: "equals", Value: "parent"},
+			},
+		}},
+		RecordCreates: []storage.FlowRecordCreate{{
+			Name:       "CreateRequest",
+			ObjectName: "ActionRequest__c",
+			InputAssignments: []storage.WorkflowFieldUpdate{
+				{Name: "SourceRecordId__c", Field: "SourceRecordId__c", SourceField: "MatchedAccount.Id"},
+				{Name: "Payload__c", Field: "Payload__c", SourceField: "MatchedAccount.Name"},
+			},
+		}},
+	}}
+	org.Objects["Account"] = account
+	org.Objects["ActionRequest__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "ActionRequest__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"SourceRecordId__c": {APIName: "SourceRecordId__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, Required: true},
+				"Payload__c":        {APIName: "Payload__c", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Account"] = account
+	org.Objects["Account"].Records["001000000000777"] = storage.Record{
+		Object: "Account",
+		ID:     "001000000000777",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Parent"), "ExternalKey__c": storage.StringValue("parent")},
+	}
+	engine := NewEngine(&org)
+	child := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Child"), "ExternalKey__c": storage.StringValue("child")},
+	}})
+	if !child[0].Success {
+		t.Fatalf("child insert = %#v", child)
+	}
+	var request storage.Record
+	for _, candidate := range org.Objects["ActionRequest__c"].Records {
+		if candidate.Fields["SourceRecordId__c"].ID == "001000000000777" {
+			request = candidate
+			break
+		}
+	}
+	if request.ID == "" {
+		t.Fatalf("request records = %#v", org.Objects["ActionRequest__c"].Records)
+	}
+	if got := request.Fields["Payload__c"].String; got != "Parent" {
+		t.Fatalf("payload = %q", got)
+	}
+}
+
+func TestFlowChatterPostCreatesFeedItem(t *testing.T) {
+	org := testOrg()
+	org.Objects["User"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "User",
+			KeyPrefix: "005",
+			Fields: map[string]storage.Field{
+				"Name":  {APIName: "Name", Type: storage.FieldString},
+				"Email": {APIName: "Email", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"005000000000123": {Object: "User", ID: "005000000000123", Fields: map[string]storage.Value{"Name": storage.StringValue("Owner"), "Email": storage.StringValue("owner@example.test")}},
+		},
+	}
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a0w",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent__r"},
+			},
+			FlowRules: []storage.FlowRule{{
+				Name:   "PostToParent",
+				Active: true,
+				RecordLookups: []storage.FlowRecordLookup{{
+					Name:                     "MatchedUser",
+					ObjectName:               "User",
+					GetFirstRecordOnly:       true,
+					StoreOutputAutomatically: true,
+					Criteria:                 []storage.WorkflowCriteriaItem{{Field: "Email", Operation: "equals", Value: "owner@example.test"}},
+				}},
+				Actions: []storage.FlowAction{{
+					Name:       "Post_To_Chatter",
+					ActionType: "chatterPost",
+					ActionName: "chatterPost",
+					Inputs: []storage.WorkflowFieldUpdate{
+						{Name: "text", LiteralValue: "Hello {!MatchedUser.Id}"},
+						{Name: "subjectNameOrId", SourceField: "Parent__r.Id"},
+						{Name: "visibility", LiteralValue: "allUsers"},
+					},
+				}},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	parent := engine.Insert([]storage.Record{{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Parent")}}})
+	if !parent[0].Success {
+		t.Fatalf("parent insert = %#v", parent)
+	}
+	insert := engine.Insert([]storage.Record{{
+		Object: "Widget__c",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Child"), "Parent__c": storage.IDValue(parent[0].ID)},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	feed := org.Objects["FeedItem"].Records
+	if len(feed) != 1 {
+		t.Fatalf("feed records = %#v", feed)
+	}
+	for _, item := range feed {
+		if got := item.Fields["ParentId"].ID; got != parent[0].ID {
+			t.Fatalf("feed parent = %q", got)
+		}
+		if got := item.Fields["Body"].String; got != "Hello 005000000000123" {
+			t.Fatalf("feed body = %q", got)
+		}
+		if got := item.Fields["Visibility"].String; got != "AllUsers" {
+			t.Fatalf("feed visibility = %q", got)
+		}
+		if got := item.Fields["Type"].String; got != "TextPost" {
+			t.Fatalf("feed type = %q", got)
+		}
+	}
+}
+
+func TestFlowStepsRunInXmlOrder(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a0w",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent__r"},
+			},
+			FlowRules: []storage.FlowRule{{
+				Name:   "OrderedSteps",
+				Active: true,
+				Steps: []storage.FlowStep{
+					{Kind: "recordLookup", RecordLookup: storage.FlowRecordLookup{Name: "ExistingRequest", ObjectName: "ActionRequest__c", GetFirstRecordOnly: true, StoreOutputAutomatically: true, Criteria: []storage.WorkflowCriteriaItem{{Field: "ActionName__c", Operation: "equals", Value: "Notify"}}}},
+					{Kind: "recordCreate", RecordCreate: storage.FlowRecordCreate{Name: "CreateRequest", ObjectName: "ActionRequest__c", InputAssignments: []storage.WorkflowFieldUpdate{{Name: "ActionName__c", Field: "ActionName__c", LiteralValue: "Notify"}, {Name: "SourceRecordId__c", Field: "SourceRecordId__c", SourceField: "Id"}}}},
+					{Kind: "action", Action: storage.FlowAction{Name: "Post_To_Chatter", ActionType: "chatterPost", ActionName: "chatterPost", Inputs: []storage.WorkflowFieldUpdate{{Name: "text", LiteralValue: "Created"}, {Name: "subjectNameOrId", SourceField: "Parent__r.Id"}}}},
+				},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["ActionRequest__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "ActionRequest__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"ActionName__c":     {APIName: "ActionName__c", Type: storage.FieldString},
+				"SourceRecordId__c": {APIName: "SourceRecordId__c", Type: storage.FieldReference, ReferenceTo: []string{"Widget__c"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	var events []string
+	engine.AutomationTracer = func(name string, args map[string]any) {
+		events = append(events, name)
+	}
+	parent := engine.Insert([]storage.Record{{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Parent")}}})
+	if !parent[0].Success {
+		t.Fatalf("parent insert = %#v", parent)
+	}
+
+	insert := engine.Insert([]storage.Record{{Object: "Widget__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Child"), "Parent__c": storage.IDValue(parent[0].ID)}}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	want := []string{"apex.flow.record_lookup", "apex.flow.record_create", "apex.flow.action", "apex.flow.chatter_post"}
+	if !stringSlicesContainInOrder(events, want) {
+		t.Fatalf("events = %#v, want order %#v", events, want)
+	}
+}
+
+func TestFlowLoopCollectionRecordCreate(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a0w",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Status__c": {APIName: "Status__c", Type: storage.FieldString},
+			},
+			FlowRules: []storage.FlowRule{{
+				Name:   "CreateLinks",
+				Active: true,
+				Steps: []storage.FlowStep{
+					{Kind: "recordLookup", RecordLookup: storage.FlowRecordLookup{Name: "Get_Widgets", ObjectName: "Widget__c", StoreOutputAutomatically: true, Criteria: []storage.WorkflowCriteriaItem{{Field: "Status__c", Operation: "equals", Value: "Open"}}}},
+					{Kind: "assignment", Assignment: storage.FlowAssignment{Name: "Count_Widgets", Target: "widgetCount", Operator: "AssignCount", SourceField: "Get_Widgets"}},
+					{Kind: "decision", Branches: []storage.FlowBranch{{
+						Name:     "At_Least_Two",
+						Criteria: []storage.WorkflowCriteriaItem{{Field: "widgetCount", Operation: "greaterThanOrEqualTo", Value: "2.0"}},
+						Steps: []storage.FlowStep{
+							{Kind: "recordCreate", RecordCreate: storage.FlowRecordCreate{Name: "Create_Request", ObjectName: "ActionRequest__c", StoreOutputAutomatically: true}},
+							{Kind: "loop", Loop: storage.FlowLoop{Name: "Loop_Widgets", CollectionReference: "Get_Widgets", Steps: []storage.FlowStep{
+								{Kind: "assignment", Assignment: storage.FlowAssignment{Name: "Set_Widget", Target: "newLink.Widget__c", Operator: "Assign", SourceField: "Loop_Widgets.Id"}},
+								{Kind: "assignment", Assignment: storage.FlowAssignment{Name: "Set_Request", Target: "newLink.Request__c", Operator: "Assign", SourceField: "Create_Request"}},
+								{Kind: "assignment", Assignment: storage.FlowAssignment{Name: "Add_Link", Target: "links", Operator: "Add", SourceField: "newLink"}},
+							}}},
+							{Kind: "recordCreate", RecordCreate: storage.FlowRecordCreate{Name: "Create_Links", ObjectName: "WidgetLink__c", InputReference: "links"}},
+						},
+					}}},
+				},
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0w000000000999": {Object: "Widget__c", ID: "a0w000000000999", Fields: map[string]storage.Value{"Name": storage.StringValue("First"), "Status__c": storage.StringValue("Open")}},
+			"a0w000000000998": {Object: "Widget__c", ID: "a0w000000000998", Fields: map[string]storage.Value{"Name": storage.StringValue("Second"), "Status__c": storage.StringValue("Open")}},
+		},
+	}
+	org.Objects["ActionRequest__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "ActionRequest__c", KeyPrefix: "a01", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    make(map[storage.ID]storage.Record),
+	}
+	org.Objects["WidgetLink__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "WidgetLink__c",
+			KeyPrefix: "a02",
+			Fields: map[string]storage.Field{
+				"Widget__c":  {APIName: "Widget__c", Type: storage.FieldReference, ReferenceTo: []string{"Widget__c"}},
+				"Request__c": {APIName: "Request__c", Type: storage.FieldReference, ReferenceTo: []string{"ActionRequest__c"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	insert := engine.Insert([]storage.Record{{Object: "Widget__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Trigger"), "Status__c": storage.StringValue("Open")}}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	if got := len(org.Objects["ActionRequest__c"].Records); got != 1 {
+		t.Fatalf("action requests = %d", got)
+	}
+	requestID := storage.ID("")
+	for id := range org.Objects["ActionRequest__c"].Records {
+		requestID = id
+	}
+	links := org.Objects["WidgetLink__c"].Records
+	if len(links) != 3 {
+		t.Fatalf("links = %#v", links)
+	}
+	seen := map[string]bool{}
+	for _, link := range links {
+		if got := link.Fields["Request__c"].ID; got != requestID {
+			t.Fatalf("request link = %q, want %q", got, requestID)
+		}
+		seen[string(link.Fields["Widget__c"].ID)] = true
+	}
+	if !seen["a0w000000000999"] || !seen["a0w000000000998"] || !seen[string(insert[0].ID)] {
+		t.Fatalf("linked widgets = %#v", seen)
+	}
+}
+
+func TestFlowRecordUpdateObjectAndCollection(t *testing.T) {
+	org := testOrg()
+	sourceID := storage.ID("a03000000000001")
+	org.Objects["Change__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Change__c",
+			KeyPrefix: "a03",
+			Fields:    map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+			FlowRules: []storage.FlowRule{{
+				Name:   "CloseRelatedWidgets",
+				Active: true,
+				Steps: []storage.FlowStep{
+					{Kind: "recordLookup", RecordLookup: storage.FlowRecordLookup{Name: "Primary_Link", ObjectName: "WidgetLink__c", GetFirstRecordOnly: true, StoreOutputAutomatically: true, Criteria: []storage.WorkflowCriteriaItem{{Field: "Change__c", Operation: "equals", SourceField: "Id"}}}},
+					{Kind: "recordUpdate", RecordUpdate: storage.FlowRecordUpdate{Name: "Close_Primary_Widget", ObjectName: "Widget__c", Criteria: []storage.WorkflowCriteriaItem{{Field: "Id", Operation: "equals", SourceField: "Primary_Link.Widget__c"}}, InputAssignments: []storage.WorkflowFieldUpdate{{Name: "Status__c", Field: "Status__c", LiteralValue: "Closed"}}}},
+					{Kind: "recordLookup", RecordLookup: storage.FlowRecordLookup{Name: "Related_Links", ObjectName: "WidgetLink__c", StoreOutputAutomatically: true, Criteria: []storage.WorkflowCriteriaItem{{Field: "Group__c", Operation: "equals", SourceField: "Primary_Link.Group__c"}}}},
+					{Kind: "loop", Loop: storage.FlowLoop{Name: "Loop_Links", CollectionReference: "Related_Links", Steps: []storage.FlowStep{
+						{Kind: "assignment", Assignment: storage.FlowAssignment{Name: "Set_Id", Target: "widgetUpdate.Id", Operator: "Assign", SourceField: "Loop_Links.Widget__c"}},
+						{Kind: "assignment", Assignment: storage.FlowAssignment{Name: "Set_Status", Target: "widgetUpdate.Status__c", Operator: "Assign", LiteralValue: "Closed"}},
+						{Kind: "assignment", Assignment: storage.FlowAssignment{Name: "Add_Update", Target: "widgetUpdates", Operator: "Add", SourceField: "widgetUpdate"}},
+						{Kind: "recordUpdate", RecordUpdate: storage.FlowRecordUpdate{Name: "Update_Widgets", ObjectName: "Widget__c", InputReference: "widgetUpdates"}},
+					}}},
+				},
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			sourceID: {Object: "Change__c", ID: sourceID, Fields: map[string]storage.Value{"Name": storage.StringValue("Change")}},
+		},
+	}
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a0w",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Status__c": {APIName: "Status__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0w000000000001": {Object: "Widget__c", ID: "a0w000000000001", Fields: map[string]storage.Value{"Name": storage.StringValue("A"), "Status__c": storage.StringValue("Open")}},
+			"a0w000000000002": {Object: "Widget__c", ID: "a0w000000000002", Fields: map[string]storage.Value{"Name": storage.StringValue("B"), "Status__c": storage.StringValue("Open")}},
+			"a0w000000000003": {Object: "Widget__c", ID: "a0w000000000003", Fields: map[string]storage.Value{"Name": storage.StringValue("C"), "Status__c": storage.StringValue("Open")}},
+		},
+	}
+	org.Objects["WidgetLink__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "WidgetLink__c",
+			KeyPrefix: "a04",
+			Fields: map[string]storage.Field{
+				"Change__c": {APIName: "Change__c", Type: storage.FieldReference, ReferenceTo: []string{"Change__c"}},
+				"Widget__c": {APIName: "Widget__c", Type: storage.FieldReference, ReferenceTo: []string{"Widget__c"}},
+				"Group__c":  {APIName: "Group__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a04000000000001": {Object: "WidgetLink__c", ID: "a04000000000001", Fields: map[string]storage.Value{"Change__c": storage.IDValue(sourceID), "Widget__c": storage.IDValue("a0w000000000001"), "Group__c": storage.StringValue("same")}},
+			"a04000000000002": {Object: "WidgetLink__c", ID: "a04000000000002", Fields: map[string]storage.Value{"Widget__c": storage.IDValue("a0w000000000002"), "Group__c": storage.StringValue("same")}},
+			"a04000000000003": {Object: "WidgetLink__c", ID: "a04000000000003", Fields: map[string]storage.Value{"Widget__c": storage.IDValue("a0w000000000003"), "Group__c": storage.StringValue("other")}},
+		},
+	}
+	engine := NewEngine(&org)
+	update := engine.Update([]storage.Record{{Object: "Change__c", ID: sourceID, Fields: map[string]storage.Value{"Name": storage.StringValue("Closed")}}})
+	if !update[0].Success {
+		t.Fatalf("update = %#v", update)
+	}
+	widgets := org.Objects["Widget__c"].Records
+	if got := widgets["a0w000000000001"].Fields["Status__c"].String; got != "Closed" {
+		t.Fatalf("widget A status = %q", got)
+	}
+	if got := widgets["a0w000000000002"].Fields["Status__c"].String; got != "Closed" {
+		t.Fatalf("widget B status = %q", got)
+	}
+	if got := widgets["a0w000000000003"].Fields["Status__c"].String; got != "Open" {
+		t.Fatalf("widget C status = %q", got)
+	}
+}
+
+func TestBeforeSaveFlowRejectsSideEffectSteps(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.FlowRules = []storage.FlowRule{{
+		Name:        "BeforeCreateSideEffect",
+		Active:      true,
+		TriggerType: "RecordBeforeSave",
+		Steps: []storage.FlowStep{{
+			Kind:         "recordCreate",
+			RecordCreate: storage.FlowRecordCreate{Name: "CreateRequest", ObjectName: "ActionRequest__c"},
+		}},
+	}}
+	org.Objects["Account"] = account
+	org.Objects["ActionRequest__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "ActionRequest__c", KeyPrefix: "a00", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	err := engine.ApplyBeforeSaveFlows([]storage.Record{{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}}})
+	if err == nil || !strings.Contains(err.Error(), "before-save flow") {
+		t.Fatalf("ApplyBeforeSaveFlows error = %v", err)
+	}
+	if got := len(org.Objects["ActionRequest__c"].Records); got != 0 {
+		t.Fatalf("side effect records = %d", got)
+	}
+}
+
+func TestFlowUnknownStepFailsExplicitly(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.FlowRules = []storage.FlowRule{{Name: "UnknownStep", Active: true, Steps: []storage.FlowStep{{Kind: "splitLog"}}}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+	insert := engine.Insert([]storage.Record{{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}}})
+	if insert[0].Success || !strings.Contains(insert[0].Error, `flow step kind "splitLog" is not supported`) {
+		t.Fatalf("insert = %#v", insert)
 	}
 }
 
@@ -5340,6 +5795,16 @@ func stringSliceContains(values []string, needle string) bool {
 		}
 	}
 	return false
+}
+
+func stringSlicesContainInOrder(values, needles []string) bool {
+	pos := 0
+	for _, value := range values {
+		if pos < len(needles) && value == needles[pos] {
+			pos++
+		}
+	}
+	return pos == len(needles)
 }
 
 func TestWorkflowFieldUpdateRejectsInvalidSourceFieldAndRollsBack(t *testing.T) {

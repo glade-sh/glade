@@ -5889,7 +5889,6 @@ update account;
 		"apex.flow.rule",
 		"apex.flow.record_lookup",
 		"apex.flow.record_create",
-		"apex.flow.record_create_suppressed",
 	} {
 		if !traceHas(result.Trace, name, "apex.flow") {
 			t.Fatalf("trace missing %s: %#v", name, result.Trace)

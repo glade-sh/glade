@@ -194,6 +194,41 @@ func TestLoadDiscoversCustomMetadataRecordsOutsideCustomMetadataFolder(t *testin
 	}
 }
 
+func TestLoadDiscoversLegacyCustomMetadataRecordsUnderTypeFolder(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	legacyPath := filepath.Join(root, "src/objects/Feature__mdt/records/Default.md")
+	modernPath := filepath.Join(root, "src/objects/Feature__mdt/records/Modern.md-meta.xml")
+	writeFile(t, legacyPath, `<CustomMetadata><label>Default</label></CustomMetadata>`)
+	writeFile(t, modernPath, `<CustomMetadata><label>Modern</label></CustomMetadata>`)
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.CustomMetadataFiles) != 2 || p.CustomMetadataFiles[0] != legacyPath || p.CustomMetadataFiles[1] != modernPath {
+		t.Fatalf("custom metadata files = %#v", p.CustomMetadataFiles)
+	}
+}
+
+func TestLoadPrefersVisualforcePageMarkupOverMetadataCompanion(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	pagePath := filepath.Join(root, "src/pages/Setup.page")
+	writeFile(t, pagePath, `<apex:page/>`)
+	writeFile(t, filepath.Join(root, "src/pages/Setup.page-meta.xml"), `<ApexPage><label>Setup</label></ApexPage>`)
+	metadataOnlyPath := filepath.Join(root, "src/pages/MetadataOnly.page-meta.xml")
+	writeFile(t, metadataOnlyPath, `<ApexPage><label>Metadata Only</label></ApexPage>`)
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.VisualforcePageFiles) != 2 || p.VisualforcePageFiles[0] != metadataOnlyPath || p.VisualforcePageFiles[1] != pagePath {
+		t.Fatalf("visualforce page files = %#v", p.VisualforcePageFiles)
+	}
+}
+
 func TestLoadDoesNotDuplicateCoveredNestedRoots(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"sfdx-source/app","default":true}]}`)

@@ -526,7 +526,7 @@ func loadCustomMetadataRecord(path string) (CustomMetadataRecord, error) {
 	if err := xml.Unmarshal(data, &raw); err != nil {
 		return CustomMetadataRecord{}, err
 	}
-	fullName := trimKnownSuffix(filepath.Base(path), ".md")
+	fullName := customMetadataFullName(path)
 	objectName, developerName := customMetadataNames(fullName)
 	values := make([]CustomMetadataValue, 0, len(raw.Values))
 	for _, value := range raw.Values {
@@ -729,6 +729,33 @@ func customMetadataNames(fullName string) (string, string) {
 		objectName += "__mdt"
 	}
 	return objectName, parts[1]
+}
+
+func customMetadataFullName(path string) string {
+	name := filepath.Base(path)
+	name = trimKnownSuffix(name, ".md-meta.xml")
+	name = trimKnownSuffix(name, ".md")
+	if strings.Contains(name, ".") {
+		return name
+	}
+	typeName := nestedCustomMetadataTypeName(path)
+	if typeName == "" {
+		return name
+	}
+	return typeName + "." + name
+}
+
+func nestedCustomMetadataTypeName(path string) string {
+	recordsDir := filepath.Dir(path)
+	if !strings.EqualFold(filepath.Base(recordsDir), "records") {
+		return ""
+	}
+	typeName := filepath.Base(filepath.Dir(recordsDir))
+	stripped := trimKnownSuffix(typeName, "__mdt")
+	if stripped == typeName {
+		return ""
+	}
+	return stripped
 }
 
 func resourceNameFromMetaPath(path string) string {

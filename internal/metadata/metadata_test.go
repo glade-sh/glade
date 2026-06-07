@@ -204,6 +204,32 @@ func TestLoadProjectKeepsStaticResourceMetadataWithoutBody(t *testing.T) {
 	}
 }
 
+func TestLoadProjectIndexesNestedCustomMetadataRecordsFromTypeFolder(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	writeFile(t, filepath.Join(root, "src/objects/Feature__mdt/Feature__mdt.object-meta.xml"), `<CustomObject/>`)
+	writeFile(t, filepath.Join(root, "src/objects/Feature__mdt/records/Default.md"), `<CustomMetadata>
+  <label>Default Label</label>
+  <values><field>Enabled__c</field><value>true</value></values>
+</CustomMetadata>`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	idx, err := LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	record, ok := idx.CustomMetadataRecord("Feature.Default")
+	if !ok || record.ObjectName != "Feature__mdt" || record.DeveloperName != "Default" || record.Label != "Default Label" {
+		t.Fatalf("custom metadata lookup = %#v, %v", record, ok)
+	}
+	if len(record.Values) != 1 || record.Values[0].Field != "Enabled__c" || record.Values[0].Value != "true" {
+		t.Fatalf("custom metadata values = %#v", record.Values)
+	}
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

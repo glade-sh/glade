@@ -140,6 +140,19 @@ func copySequences(in map[string]uint64) map[string]uint64 {
 	}
 	return out
 }
+
+func maxSequences(left, right map[string]uint64) map[string]uint64 {
+	out := copySequences(left)
+	if out == nil {
+		out = make(map[string]uint64, len(right))
+	}
+	for key, value := range right {
+		if out[key] < value {
+			out[key] = value
+		}
+	}
+	return out
+}
 func formulaDefaultShouldEvaluate(field storage.Field, rawDefault string) bool {
 	if rawDefault == "" {
 		return false

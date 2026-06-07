@@ -177,7 +177,8 @@ func loadWorkflowWithUpdates(path string, externalUpdates map[string]storage.Wor
 			Active:  rawRule.Active,
 			Formula: strings.TrimSpace(rawRule.Formula),
 		}
-		if rawRule.Active && !workflowBooleanFilterSupported(rawRule.BooleanFilter, len(rawRule.CriteriaItems)) {
+		ruleCanRunActions := rawRule.Active && len(rawRule.Actions) > 0
+		if ruleCanRunActions && !workflowBooleanFilterSupported(rawRule.BooleanFilter, len(rawRule.CriteriaItems)) {
 			diagnostics = append(diagnostics, unsupported(path, rule.Name, "workflow booleanFilter is not supported; criteriaItems use implicit AND"))
 			continue
 		}
@@ -193,7 +194,9 @@ func loadWorkflowWithUpdates(path string, externalUpdates map[string]storage.Wor
 			if strings.EqualFold(actionType, "FieldUpdate") {
 				update, ok := updates[strings.ToLower(strings.TrimSpace(action.Name))]
 				if !ok {
-					diagnostics = append(diagnostics, unsupported(path, rule.Name, fmt.Sprintf("workflow field update %q was not found", action.Name)))
+					if ruleCanRunActions {
+						diagnostics = append(diagnostics, unsupported(path, rule.Name, fmt.Sprintf("workflow field update %q was not found", action.Name)))
+					}
 					continue
 				}
 				rule.FieldUpdates = append(rule.FieldUpdates, update)
@@ -202,14 +205,18 @@ func loadWorkflowWithUpdates(path string, externalUpdates map[string]storage.Wor
 			if strings.EqualFold(actionType, "Alert") || strings.EqualFold(actionType, "EmailAlert") {
 				alert, ok := alerts[strings.ToLower(strings.TrimSpace(action.Name))]
 				if !ok {
-					diagnostics = append(diagnostics, unsupported(path, rule.Name, fmt.Sprintf("workflow email alert %q was not found", action.Name)))
+					if ruleCanRunActions {
+						diagnostics = append(diagnostics, unsupported(path, rule.Name, fmt.Sprintf("workflow email alert %q was not found", action.Name)))
+					}
 					continue
 				}
 				rule.EmailAlerts = append(rule.EmailAlerts, alert)
 				continue
 			}
 			{
-				diagnostics = append(diagnostics, unsupported(path, rule.Name, fmt.Sprintf("workflow action type %q is not supported", action.Type)))
+				if ruleCanRunActions {
+					diagnostics = append(diagnostics, unsupported(path, rule.Name, fmt.Sprintf("workflow action type %q is not supported", action.Type)))
+				}
 				continue
 			}
 		}

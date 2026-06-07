@@ -887,10 +887,13 @@ func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace s
 		if name == "" {
 			continue
 		}
-		meta := loadVisualforcePageMeta(path + "-meta.xml")
+		meta := loadVisualforcePageMeta(visualforcePageMetaPath(path))
 		markup := ""
-		if data, err := os.ReadFile(path); err == nil {
-			markup = string(data)
+		if !hasSuffixFold(path, ".page-meta.xml") {
+			data, err := os.ReadFile(path)
+			if err == nil {
+				markup = string(data)
+			}
 		}
 		id := storage.ID("066" + leftPad(i+1, 12))
 		object.Records[id] = storage.Record{ID: id, Object: "ApexPage", Fields: map[string]storage.Value{
@@ -1092,7 +1095,17 @@ func folderTypeFromPath(path string) string {
 
 func visualforcePageName(path string) string {
 	base := filepath.Base(path)
+	if hasSuffixFold(base, ".page-meta.xml") {
+		return base[:len(base)-len(".page-meta.xml")]
+	}
 	return trimKnownSuffix(base, ".page")
+}
+
+func visualforcePageMetaPath(path string) string {
+	if hasSuffixFold(path, ".page-meta.xml") {
+		return path
+	}
+	return path + "-meta.xml"
 }
 
 func loadVisualforcePageMeta(path string) visualforcePageXML {

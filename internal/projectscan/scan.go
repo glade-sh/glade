@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/xml"
 	"errors"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -603,6 +604,8 @@ func scanProjectSeenFiles(proj project.Project) map[string]bool {
 	addAll(proj.ApplicationFiles)
 	addAll(proj.VisualforcePageFiles)
 	addAll(proj.VisualforceComponentFiles)
+	addAll(proj.AuraFiles)
+	addAll(proj.LWCFiles)
 	return seen
 }
 
@@ -618,7 +621,7 @@ func sortScanProjectFiles(proj *project.Project) {
 		&proj.CompactLayoutFiles, &proj.TabFiles, &proj.WebLinkFiles,
 		&proj.QuickActionFiles, &proj.GlobalValueSetFiles, &proj.StandardValueSetFiles,
 		&proj.FlexiPageFiles, &proj.ApplicationFiles, &proj.VisualforcePageFiles,
-		&proj.VisualforceComponentFiles,
+		&proj.VisualforceComponentFiles, &proj.AuraFiles, &proj.LWCFiles,
 	}
 	for _, list := range lists {
 		sort.Strings(*list)
@@ -704,12 +707,28 @@ func isPassiveAuraArtifact(path string) bool {
 }
 
 func isCustomMetadataPath(path string) bool {
-	return strings.Contains(path, "/custommetadata/")
+	if strings.Contains(path, "/custommetadata/") {
+		return true
+	}
+	const marker = "/objects/"
+	for idx := strings.Index(path, marker); idx >= 0; {
+		rest := path[idx+len(marker):]
+		next := strings.IndexByte(rest, '/')
+		if next > 0 && strings.HasSuffix(rest[:next], "__mdt") && strings.HasPrefix(rest[next+1:], "records/") {
+			return true
+		}
+		nextIdx := strings.Index(rest, marker)
+		if nextIdx < 0 {
+			break
+		}
+		idx += len(marker) + nextIdx
+	}
+	return false
 }
 
 func baseNoExt(path string) string {
 	base := filepath.Base(path)
-	for _, suffix := range []string{".object-meta.xml", ".field-meta.xml", ".recordType-meta.xml", ".validationRule-meta.xml", ".workflow-meta.xml", ".flow-meta.xml", ".labels-meta.xml", ".email-meta.xml", ".namedCredential-meta.xml", ".remoteSite-meta.xml", ".staticResource-meta.xml", ".asset-meta.xml", ".layout-meta.xml", ".profile-meta.xml", ".permissionset-meta.xml", ".tab-meta.xml", ".webLink-meta.xml", ".quickAction-meta.xml", ".globalValueSet-meta.xml", ".standardValueSet-meta.xml", ".flexipage-meta.xml", ".app-meta.xml"} {
+	for _, suffix := range []string{".object-meta.xml", ".field-meta.xml", ".recordType-meta.xml", ".validationRule-meta.xml", ".workflow-meta.xml", ".flow-meta.xml", ".labels-meta.xml", ".email-meta.xml", ".namedCredential-meta.xml", ".remoteSite-meta.xml", ".staticResource-meta.xml", ".asset-meta.xml", ".layout-meta.xml", ".profile-meta.xml", ".permissionset-meta.xml", ".tab-meta.xml", ".webLink-meta.xml", ".quickAction-meta.xml", ".globalValueSet-meta.xml", ".standardValueSet-meta.xml", ".flexipage-meta.xml", ".app-meta.xml", ".page-meta.xml"} {
 		if strings.HasSuffix(base, suffix) {
 			return strings.TrimSuffix(base, suffix)
 		}
@@ -821,22 +840,34 @@ func scanTextFile(path, rel string, ctx *scanContext) ([]Finding, error) {
 
 	metadataType := metadataTypeForText(rel)
 	var findings []Finding
-	scanner := bufio.NewScanner(file)
-	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	reader := bufio.NewReader(file)
 	lineNo := 0
 	inHTMLComment := false
 	inApexBlockComment := false
 	guardContext := ""
-	for scanner.Scan() {
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil && !errors.Is(err, io.EOF) {
+			return nil, err
+		}
+		if line == "" && errors.Is(err, io.EOF) {
+			break
+		}
 		lineNo++
-		line := scanner.Text()
+		line = strings.TrimRight(line, "\r\n")
 		trimmedLine := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmedLine, "//") || strings.HasPrefix(trimmedLine, "*") {
+			if errors.Is(err, io.EOF) {
+				break
+			}
 			continue
 		}
 		if metadataType == "ApexClass" {
 			line = stripApexBlockComments(line, &inApexBlockComment)
 			if strings.TrimSpace(line) == "" {
+				if errors.Is(err, io.EOF) {
+					break
+				}
 				continue
 			}
 		}
@@ -846,6 +877,9 @@ func scanTextFile(path, rel string, ctx *scanContext) ([]Finding, error) {
 		if metadataType == "Visualforce" {
 			line = stripHTMLComments(line, &inHTMLComment)
 			if strings.TrimSpace(line) == "" {
+				if errors.Is(err, io.EOF) {
+					break
+				}
 				continue
 			}
 		}
@@ -881,9 +915,9 @@ func scanTextFile(path, rel string, ctx *scanContext) ([]Finding, error) {
 			}
 		}
 		guardContext = nextTestGuardContext(line)
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
+		if errors.Is(err, io.EOF) {
+			break
+		}
 	}
 	return findings, nil
 }
@@ -1139,11 +1173,7 @@ func (ctx *scanContext) hasAuraActionMetadata(path string) bool {
 	if ctx == nil || ctx.auraActionMetadata == nil {
 		return false
 	}
-	cleanPath := filepath.Clean(path)
-	if ctx.auraActionMetadata[cleanPath] {
-		return true
-	}
-	return ctx.auraActionMetadata[filepath.Dir(cleanPath)]
+	return ctx.auraActionMetadata[filepath.Clean(path)]
 }
 
 func (ctx *scanContext) resolvesAuraControllerReference(symbol string) bool {
@@ -2422,23 +2452,19 @@ func resolvedAuraFiles(ui uicontroller.Index, ctx *scanContext) (map[string]bool
 					bundleResolved = false
 					if action.ClassName != "" {
 						missingActions = true
+						if action.File != "" {
+							actionMetadata[filepath.Clean(action.File)] = true
+						}
 					}
-					break
 				}
 			}
 		}
 		for _, file := range bundle.Files {
 			cleanPath := filepath.Clean(file.Path)
 			resolved[cleanPath] = bundleResolved || (controllersResolved && missingActions)
-			if controllersResolved && missingActions {
-				actionMetadata[cleanPath] = true
-			}
 		}
 		cleanDir := filepath.Clean(bundle.Dir)
 		resolved[cleanDir] = bundleResolved || (controllersResolved && missingActions)
-		if controllersResolved && missingActions {
-			actionMetadata[cleanDir] = true
-		}
 	}
 	return resolved, actionMetadata
 }

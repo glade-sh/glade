@@ -201,6 +201,48 @@ func dedupeStrings(values []string) []string {
 	return out
 }
 
+func normalizeVisualforcePageFiles(paths []string) []string {
+	if len(paths) == 0 {
+		return nil
+	}
+	markup := make(map[string]string, len(paths))
+	metadata := make(map[string]string)
+	for _, path := range paths {
+		key := visualforcePageKey(path)
+		if key == "" {
+			continue
+		}
+		if strings.HasSuffix(strings.ToLower(path), ".page-meta.xml") {
+			metadata[key] = path
+			continue
+		}
+		markup[key] = path
+	}
+	out := make([]string, 0, len(markup)+len(metadata))
+	for _, path := range markup {
+		out = append(out, path)
+	}
+	for key, path := range metadata {
+		if _, ok := markup[key]; !ok {
+			out = append(out, path)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+func visualforcePageKey(path string) string {
+	base := strings.ToLower(filepath.Base(path))
+	switch {
+	case strings.HasSuffix(base, ".page-meta.xml"):
+		return strings.TrimSuffix(base, ".page-meta.xml")
+	case strings.HasSuffix(base, ".page"):
+		return strings.TrimSuffix(base, ".page")
+	default:
+		return ""
+	}
+}
+
 func (p Project) PackagePathForFile(file string) string {
 	absFile, err := filepath.Abs(file)
 	if err != nil {
@@ -343,6 +385,7 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	sort.Strings(p.FlexiPageFiles)
 	sort.Strings(p.ApplicationFiles)
 	sort.Strings(p.VisualforcePageFiles)
+	p.VisualforcePageFiles = normalizeVisualforcePageFiles(p.VisualforcePageFiles)
 	sort.Strings(p.VisualforceComponentFiles)
 	sort.Strings(p.AuraFiles)
 	sort.Strings(p.LWCFiles)
@@ -672,7 +715,7 @@ func collectFiles(root string, p *Project) error {
 			p.FlexiPageFiles = append(p.FlexiPageFiles, path)
 		case strings.HasSuffix(lower, ".app-meta.xml"), strings.HasSuffix(lower, ".app") && strings.Contains(filepath.ToSlash(lower), "/applications/"):
 			p.ApplicationFiles = append(p.ApplicationFiles, path)
-		case strings.HasSuffix(lower, ".page"):
+		case strings.HasSuffix(lower, ".page"), strings.HasSuffix(lower, ".page-meta.xml"):
 			p.VisualforcePageFiles = append(p.VisualforcePageFiles, path)
 		case strings.HasSuffix(lower, ".component"):
 			p.VisualforceComponentFiles = append(p.VisualforceComponentFiles, path)
@@ -734,7 +777,24 @@ func isFolderMetadataPath(path string) bool {
 }
 
 func isCustomMetadataPath(path string) bool {
-	return strings.Contains(filepath.ToSlash(path), "/custommetadata/")
+	slash := filepath.ToSlash(path)
+	if strings.Contains(slash, "/custommetadata/") {
+		return true
+	}
+	const marker = "/objects/"
+	for idx := strings.Index(slash, marker); idx >= 0; {
+		rest := slash[idx+len(marker):]
+		next := strings.IndexByte(rest, '/')
+		if next > 0 && strings.HasSuffix(rest[:next], "__mdt") && strings.HasPrefix(rest[next+1:], "records/") {
+			return true
+		}
+		nextIdx := strings.Index(rest, marker)
+		if nextIdx < 0 {
+			break
+		}
+		idx += len(marker) + nextIdx
+	}
+	return false
 }
 
 func isLegacyObjectPath(path string) bool {
@@ -750,11 +810,18 @@ func isLWCPath(path string) bool {
 }
 
 func isAuraSourceFile(path string) bool {
-	for _, suffix := range []string{".cmp", ".app", ".evt", ".design"} {
+	for _, suffix := range []string{
+		".cmp", ".cmp-meta.xml",
+		".app", ".app-meta.xml",
+		".evt", ".evt-meta.xml",
+		".intf", ".intf-meta.xml",
+		".design", ".design-meta.xml",
+		".css", ".svg", ".auradoc",
+	} {
 		if strings.HasSuffix(path, suffix) {
 			return true
 		}
 	}
 	base := filepath.Base(path)
-	return strings.HasSuffix(base, "controller.js") || strings.HasSuffix(base, "helper.js")
+	return strings.HasSuffix(base, ".js")
 }

@@ -285,6 +285,41 @@ func TestLoadProjectNormalizesLegacyObjectAndCustomMetadata(t *testing.T) {
 	}
 }
 
+func TestLoadProjectNamesNestedCustomMetadataRecordsFromTypeFolder(t *testing.T) {
+	root := t.TempDir()
+	objectPath := filepath.Join(root, "src/objects/Feature__mdt/Feature__mdt.object-meta.xml")
+	legacyPath := filepath.Join(root, "src/objects/Feature__mdt/records/Default.md")
+	modernPath := filepath.Join(root, "src/objects/Feature__mdt/records/Modern.md-meta.xml")
+	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+<label>Feature</label>
+<fields><fullName>Enabled__c</fullName><label>Enabled</label><type>Checkbox</type></fields>
+</CustomObject>`)
+	writeFile(t, legacyPath, `<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata">
+<label>Default Label</label>
+<values><field>Enabled__c</field><value>true</value></values>
+</CustomMetadata>`)
+	writeFile(t, modernPath, `<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata">
+<label>Modern Label</label>
+<values><field>Enabled__c</field><value>false</value></values>
+</CustomMetadata>`)
+
+	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath}, CustomMetadataFiles: []string{modernPath, legacyPath}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(s.CustomMetadataRecords) != 2 {
+		t.Fatalf("custom metadata records = %#v", s.CustomMetadataRecords)
+	}
+	first := s.CustomMetadataRecords[0]
+	if first.FullName != "Feature.Default" || first.ObjectName != "Feature__mdt" || first.DeveloperName != "Default" || first.Label != "Default Label" {
+		t.Fatalf("legacy nested custom metadata record = %#v", first)
+	}
+	second := s.CustomMetadataRecords[1]
+	if second.FullName != "Feature.Modern" || second.ObjectName != "Feature__mdt" || second.DeveloperName != "Modern" || second.Label != "Modern Label" {
+		t.Fatalf("modern nested custom metadata record = %#v", second)
+	}
+}
+
 func fieldsByName(fields []Field) map[string]Field {
 	out := make(map[string]Field, len(fields))
 	for _, field := range fields {

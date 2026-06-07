@@ -872,7 +872,15 @@ func objectNameFromObjectPath(path string) string {
 func customMetadataFullName(path string) string {
 	name := filepath.Base(path)
 	name = trimMetadataSuffix(name, ".md-meta.xml")
-	return trimMetadataSuffix(name, ".md")
+	name = trimMetadataSuffix(name, ".md")
+	if strings.Contains(name, ".") {
+		return name
+	}
+	typeName := nestedCustomMetadataTypeName(path)
+	if typeName == "" {
+		return name
+	}
+	return typeName + "." + name
 }
 
 func valueSetNameFromPath(path string) string {
@@ -886,7 +894,24 @@ func customMetadataNames(fullName string) (string, string) {
 	if len(parts) != 2 {
 		return "", fullName
 	}
-	return parts[0] + "__mdt", parts[1]
+	objectName := parts[0]
+	if trimMetadataSuffix(objectName, "__mdt") == objectName {
+		objectName += "__mdt"
+	}
+	return objectName, parts[1]
+}
+
+func nestedCustomMetadataTypeName(path string) string {
+	recordsDir := filepath.Dir(path)
+	if !strings.EqualFold(filepath.Base(recordsDir), "records") {
+		return ""
+	}
+	typeName := filepath.Base(filepath.Dir(recordsDir))
+	stripped := trimMetadataSuffix(typeName, "__mdt")
+	if stripped == typeName {
+		return ""
+	}
+	return stripped
 }
 
 func objectNameFromFieldPath(path string) string {

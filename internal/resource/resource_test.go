@@ -147,6 +147,33 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	}
 }
 
+func TestApplyProjectIndexesMetadataOnlyVisualforcePage(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/MetadataOnly.page-meta.xml"), `<ApexPage>
+  <label>Metadata Only</label>
+  <apiVersion>61.0</apiVersion>
+</ApexPage>`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	if err := ApplyProject(&org, p); err != nil {
+		t.Fatal(err)
+	}
+	pages := org.Objects["ApexPage"].Records
+	if len(pages) != 1 {
+		t.Fatalf("ApexPage records = %#v", pages)
+	}
+	for _, page := range pages {
+		if page.Fields["Name"].String != "MetadataOnly" || page.Fields["MasterLabel"].String != "Metadata Only" {
+			t.Fatalf("ApexPage record = %#v", page)
+		}
+	}
+}
+
 func TestApplyProjectLoadsDependencyFolders(t *testing.T) {
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")

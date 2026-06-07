@@ -914,6 +914,11 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		markFieldCreateable(definition, "RelationId")
 		markFieldCreateable(definition, "RelationType")
 		markFieldCreateable(definition, "RelationAddress")
+	case stringsEqualFold(definition.APIName, "FeedItem"):
+		markFieldCreateable(definition, "ParentId")
+		markFieldCreateable(definition, "Body")
+		markFieldCreateable(definition, "Type")
+		markFieldCreateable(definition, "Visibility")
 	case stringsEqualFold(definition.APIName, "Note"):
 		markFieldWriteable(definition, "ParentId")
 	case stringsEqualFold(definition.APIName, "EmailTemplate"):
