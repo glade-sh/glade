@@ -1,30 +1,30 @@
 :root {
-  --vp-font-family-base: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --vp-font-family-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --vp-c-bg: #080b12;
-  --vp-c-bg-alt: #0b1018;
-  --vp-c-bg-elv: #0e131b;
-  --vp-c-bg-soft: #0e131b;
-  --vp-c-border: #222a36;
-  --vp-c-divider: #222a36;
-  --vp-c-gutter: #222a36;
-  --vp-c-text-1: #eef8f0;
-  --vp-c-text-2: #c2d0c8;
-  --vp-c-text-3: #8fa39a;
-  --vp-c-brand-1: #9ff3c3;
-  --vp-c-brand-2: #d8f3dc;
-  --vp-c-brand-3: #70d79f;
-  --vp-c-brand-soft: rgba(159, 243, 195, 0.14);
-  --vp-button-brand-border: #9ff3c3;
-  --vp-button-brand-text: #080b12;
-  --vp-button-brand-bg: #9ff3c3;
-  --vp-button-brand-hover-border: #d8f3dc;
-  --vp-button-brand-hover-text: #080b12;
-  --vp-button-brand-hover-bg: #d8f3dc;
+  --vp-font-family-base: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --vp-font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --vp-c-bg: #05070a;
+  --vp-c-bg-alt: #080d12;
+  --vp-c-bg-elv: #0b1218;
+  --vp-c-bg-soft: #0b1218;
+  --vp-c-border: #244552;
+  --vp-c-divider: #244552;
+  --vp-c-gutter: #244552;
+  --vp-c-text-1: #eafcff;
+  --vp-c-text-2: #bcd7dc;
+  --vp-c-text-3: #8aa5ad;
+  --vp-c-brand-1: #37d9ff;
+  --vp-c-brand-2: #a7f2ff;
+  --vp-c-brand-3: #1aa8c8;
+  --vp-c-brand-soft: rgba(55, 217, 255, 0.14);
+  --vp-button-brand-border: #37d9ff;
+  --vp-button-brand-text: #021016;
+  --vp-button-brand-bg: #37d9ff;
+  --vp-button-brand-hover-border: #a7f2ff;
+  --vp-button-brand-hover-text: #021016;
+  --vp-button-brand-hover-bg: #a7f2ff;
   --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(135deg, #d8f3dc 0%, #9ff3c3 48%, #57d68c 100%);
-  --vp-home-hero-image-background-image: radial-gradient(circle, rgba(159, 243, 195, 0.32), transparent 62%);
-  --vp-home-hero-image-filter: blur(42px);
+  --vp-home-hero-name-background: linear-gradient(135deg, #eafcff 0%, #37d9ff 100%);
+  --vp-home-hero-image-background-image: linear-gradient(135deg, rgba(55, 217, 255, 0.26), transparent 58%);
+  --vp-home-hero-image-filter: blur(28px);
 }
 
 .dark {
@@ -32,12 +32,16 @@
 }
 
 body {
-  background: radial-gradient(circle at top left, rgba(159, 243, 195, 0.08), transparent 30%), #080b12;
+  letter-spacing: 0;
+  background:
+    linear-gradient(rgba(55, 217, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(55, 217, 255, 0.028) 1px, transparent 1px),
+    #05070a;
+  background-size: 32px 32px;
 }
 
 .VPNav, .VPSidebar, .VPNavBar.has-sidebar .content, .VPNavBar:not(.home) {
-  background-color: rgba(8, 11, 18, 0.9) !important;
-  backdrop-filter: blur(18px);
+  background-color: rgba(5, 7, 10, 0.94) !important;
 }
 
 .VPDoc .container, .VPDoc.has-aside .content-container {
@@ -45,7 +49,7 @@ body {
 }
 
 .vp-doc h1, .vp-doc h2, .vp-doc h3 {
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
 }
 
 .vp-doc a {
@@ -53,20 +57,22 @@ body {
 }
 
 .vp-doc div[class*='language-'], .vp-doc table, .custom-block {
-  border: 1px solid #222a36;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+  border: 1px solid #244552;
+  border-radius: 4px;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.28);
 }
 
 .custom-block.tip {
-  border-color: rgba(159, 243, 195, 0.45);
-  background-color: rgba(159, 243, 195, 0.08);
+  border-color: rgba(55, 217, 255, 0.45);
+  background-color: rgba(55, 217, 255, 0.08);
 }
 
 .vp-doc code {
-  color: #d8f3dc;
+  color: #37d9ff;
 }
 
 .VPFeature {
-  border-color: #222a36;
-  background: linear-gradient(180deg, rgba(14, 19, 27, 0.94), rgba(8, 11, 18, 0.94));
+  border-color: #244552;
+  border-radius: 4px;
+  background: rgba(8, 13, 18, 0.94);
 }

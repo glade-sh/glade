@@ -991,12 +991,12 @@ export default function App() {
             <Play />
             Run
           </Button>
-          <label className="advanced-toggle flex items-center gap-2 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground">
+          <label className="advanced-toggle flex items-center gap-2 rounded-sm border border-border px-2 py-1 text-xs text-muted-foreground">
             <Switch id="advanced-toggle" checked={advanced} onCheckedChange={setAdvanced} aria-label="Show advanced tools" />
             Advanced
           </label>
           <Button variant="ghost" asChild>
-            <a href="https://glade.sh" target="_blank" rel="noreferrer">
+            <a href="https://glade.sh/docs/" target="_blank" rel="noreferrer">
               Docs
             </a>
           </Button>
@@ -1072,7 +1072,7 @@ export default function App() {
                       <FileCode2 className="size-3.5" />
                       {group.label}
                     </div>
-                    <label className="workspace-tree-search mb-2 flex h-8 min-w-0 items-center gap-2 rounded-md border border-border bg-background/70 px-2 text-muted-foreground">
+                    <label className="workspace-tree-search mb-2 flex h-8 min-w-0 items-center gap-2 rounded-sm border border-border bg-background/70 px-2 text-muted-foreground">
                       <Search className="size-3.5 shrink-0" />
                       <input
                         className="min-w-0 flex-1 border-0 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
@@ -1084,7 +1084,7 @@ export default function App() {
                     <div className="workspace-tree-scroll min-h-0 flex-1">
                       <div className="workspace-tree-content space-y-0.5 pr-3">
                         {group.files.length === 0 ? (
-                          <div className="rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
+                          <div className="rounded-sm border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
                             No matching classes
                           </div>
                         ) : null}
@@ -1327,7 +1327,7 @@ export default function App() {
                 return (
                   <button
                     key={item.label}
-                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                    className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-sm hover:bg-muted"
                     onClick={() => {
                       item.action()
                       setCommandOpen(false)

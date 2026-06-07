@@ -1,80 +1,66 @@
----
-layout: home
+# Glade Docs
 
-hero:
-  name: Glade
-  text: Orgless Apex runtime
-  tagline: Check, run, test, and serve Salesforce-shaped Apex projects on your own machine.
-  actions:
-    - theme: brand
-      text: Install Glade
-      link: /guide/installation
-    - theme: alt
-      text: Support Map
-      link: /guide/support-map
-    - theme: alt
-      text: Try the Playground
-      link: https://play.glade.sh/playground/
+This is the reference area for Glade. The public home page is [glade.sh](https://glade.sh/).
 
-features:
-  - title: No org in the inner loop
-    details: Glade reads SFDX source from disk and runs supported Apex tests in a local VM.
-  - title: One runtime, many surfaces
-    details: The same parser, type checker, VM, SOQL, DML, storage, and limits stack backs CLI, LSP, DAP, server, playground, and compatibility checks.
-  - title: Salesforce-shaped where it counts
-    details: Tests, REST responses, storage fixtures, diagnostics, and compatibility reports use stable machine-readable shapes.
----
+Use this page to install Glade, run the first local checks, and find the right section when you need a command, workflow, or support detail.
 
-## What is Glade?
+## Install
 
-Glade is a clean-room, open source local Apex runtime. It parses Apex classes and triggers, builds a project index, checks supported semantics, lowers code into an executable representation, and runs it against an in-memory org or an optional SQLite-backed local org.
-
-It is made for the local development loop: check a project, run focused tests, execute anonymous Apex, inspect traces, and exercise a Salesforce-shaped API without pushing source to a scratch org.
-
-::: tip Try it
-Open the hosted playground with built-in examples: [play.glade.sh/playground/?example=account-service](https://play.glade.sh/playground/?example=account-service)
-:::
-
-## First run
-
-Install Glade, then run it from an SFDX project:
+For macOS and Linux:
 
 ```bash
 curl -fsSL https://glade.sh/install.sh | sh
-glade doctor
+```
 
-cd path/to/sfdx-project
+Check the binary:
+
+```bash
+glade version
+glade doctor
+```
+
+For more install paths, source builds, and CI setup, read [Installation](/guide/installation).
+
+## First Project Run
+
+From an SFDX project root:
+
+```bash
 glade check --project .
 glade test --project . --json
 ```
 
-For one test class or one test method:
+Run one class, one method, or tests touched by a git ref:
 
 ```bash
 glade test --project . --filter AccountServiceTest --json
 glade test --project . --filter AccountServiceTest.testCreatesAccount --json
+glade test --project . --changed-since origin/main --json
 ```
 
-## Support at a glance
+For the wider testing workflow, read [Local Testing](/guide/local-testing).
 
-| Area | First-layer status |
+## What Glade Runs
+
+Glade is a clean-room local Apex runtime. It parses Apex source, builds a symbol graph, type-checks supported semantics, lowers code into a VM representation, and executes against in-memory or SQLite-backed local org data.
+
+The same runtime sits behind the CLI, local tests, editor support, the local API server, and the playground.
+
+## Find The Right Shelf
+
+| Need | Page |
 | --- | --- |
-| Apex parsing, indexing, semantic checks, local tests, SOQL, DML, triggers, SObjects, storage, local API, editor tools, and profiling | Supported for the local MVP contract. |
-| `Database`, dates, time, math, assertions, labels, URLs, and core user info | Supported, with tracked gaps in the standard-library ledger. |
-| `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller helpers, search, and many `Test.*` helpers | Partial, with method-level rows. |
-| Platform services that need live Salesforce engines or request context | Unsupported unless a row says otherwise. |
+| Install the binary or build from source | [Installation](/guide/installation) |
+| Find command flags and examples | [CLI Reference](/guide/cli-reference) |
+| Run local Apex tests | [Local Testing](/guide/local-testing) |
+| Run only tests affected by a change | [Affected-Test Selection](/guide/affected-tests) |
+| Wire editor diagnostics and debug snapshots | [Editor, LSP, and DAP](/guide/editor) |
+| Exercise REST flows against local data | [Local API Server](/guide/local-api-server) |
+| Try examples in the browser | [Playground](/guide/playground) |
+| Check supported surfaces and gaps | [Support Map](/guide/support-map) |
+| Read project status and generated ledgers | [Compatibility](/guide/compatibility) |
 
-Use the [Support Map](/guide/support-map) first. Use the generated ledgers when
-you need the exact method row.
-
-## Runtime pipeline
-
-1. Load project configuration and Salesforce metadata.
-2. Parse Apex source through the parser adapter.
-3. Build symbols and resolve references.
-4. Type-check supported semantics.
-5. Lower checked code into the VM representation.
-6. Execute with SObject, SOQL, DML, triggers, limits, storage, and platform APIs.
-7. Surface the same runtime through CLI commands, tests, watch mode, LSP/DAP, profile reports, the local API server, and the playground.
-
-That is the grain of it. One stack. Several handles.
+::: tip Playground
+Use the hosted playground when you want to see the runtime before installing:
+[play.glade.sh/playground/](https://play.glade.sh/playground/)
+:::

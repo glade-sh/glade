@@ -58,7 +58,7 @@ export function CodeEditor({
               {contextLabel}
             </span>
           ) : null}
-          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+          <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
             {lineCount} ln
           </span>
         </div>

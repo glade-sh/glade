@@ -3,8 +3,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "SFMono-Regular", ui-monospace, monospace;
+  --font-sans: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-pane: var(--pane);
@@ -21,24 +21,31 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.25rem;
 }
 
 :root {
   color-scheme: light;
-  --background: #f4f7f1;
-  --foreground: #10151c;
+  --glade-cyan: #37d9ff;
+  --background: #f2fbff;
+  --foreground: #071015;
   --pane: #ffffff;
-  --muted: #e8eee6;
-  --muted-foreground: #5c675f;
-  --border: rgba(8, 11, 18, 0.14);
-  --input: rgba(8, 11, 18, 0.16);
-  --ring: #6fb98c;
-  --primary: #2f7d54;
-  --primary-foreground: #f4fff7;
-  --secondary: #dfe8dc;
-  --secondary-foreground: #152019;
+  --pane-raised: #f7fcff;
+  --well: #e8f7fc;
+  --muted: #dfeff5;
+  --muted-foreground: #49616a;
+  --scanline: rgba(7, 16, 21, 0.045);
+  --selection-background: rgba(7, 136, 165, 0.16);
+  --selection-background-soft: rgba(7, 136, 165, 0.08);
+  --selection-border: rgba(7, 136, 165, 0.36);
+  --border: rgba(7, 16, 21, 0.16);
+  --input: rgba(7, 16, 21, 0.18);
+  --ring: #37d9ff;
+  --primary: #0788a5;
+  --primary-foreground: #f4fdff;
+  --secondary: rgba(7, 16, 21, 0.08);
+  --secondary-foreground: #071015;
   --destructive: oklch(0.57 0.18 25);
   --destructive-foreground: oklch(0.98 0.01 25);
   --popover: #ffffff;
@@ -47,20 +54,24 @@
 
 .dark {
   color-scheme: dark;
-  --background: #080b12;
-  --foreground: #f8faf8;
-  --pane: #0b1017;
-  --pane-raised: #0f151e;
-  --well: #06090f;
-  --muted: #121923;
-  --muted-foreground: rgba(248, 250, 248, 0.58);
-  --border: rgba(255, 255, 255, 0.12);
-  --input: rgba(255, 255, 255, 0.16);
-  --ring: #d8f3dc;
-  --primary: #d8f3dc;
-  --primary-foreground: #080b12;
-  --secondary: rgba(255, 255, 255, 0.08);
-  --secondary-foreground: #f8faf8;
+  --background: #05070a;
+  --foreground: #eafcff;
+  --pane: #080d12;
+  --pane-raised: #0b1218;
+  --well: #020609;
+  --muted: #101922;
+  --muted-foreground: rgba(188, 215, 220, 0.64);
+  --scanline: rgba(255, 255, 255, 0.016);
+  --selection-background: rgba(55, 217, 255, 0.1);
+  --selection-background-soft: rgba(55, 217, 255, 0.07);
+  --selection-border: rgba(55, 217, 255, 0.4);
+  --border: rgba(55, 217, 255, 0.16);
+  --input: rgba(55, 217, 255, 0.22);
+  --ring: #37d9ff;
+  --primary: #37d9ff;
+  --primary-foreground: #021016;
+  --secondary: rgba(55, 217, 255, 0.08);
+  --secondary-foreground: #eafcff;
   --destructive: oklch(0.62 0.18 25);
   --destructive-foreground: oklch(0.98 0.01 25);
   --popover: #0d1118;
@@ -79,12 +90,14 @@ body,
 
 body {
   margin: 0;
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
   font-size: 13px;
   letter-spacing: 0;
   background:
-    radial-gradient(circle at 50% -10%, rgba(216, 243, 220, 0.11), transparent 32rem),
+    linear-gradient(rgba(55, 217, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(55, 217, 255, 0.028) 1px, transparent 1px),
     var(--background);
+  background-size: 32px 32px;
   color: var(--foreground);
   text-rendering: geometricPrecision;
 }
@@ -96,13 +109,9 @@ textarea {
 
 .pane {
   border: 1px solid var(--border);
-  border-radius: 10px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 34%),
-    var(--pane);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 18px 50px rgba(0, 0, 0, 0.22);
+  border-radius: 4px;
+  background: var(--pane);
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.24);
   overflow: hidden;
 }
 
@@ -128,8 +137,8 @@ textarea {
   content: "";
   background-image: repeating-linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.016) 0,
-    rgba(255, 255, 255, 0.016) 1px,
+    var(--scanline) 0,
+    var(--scanline) 1px,
     transparent 1px,
     transparent 9px
   );
@@ -138,15 +147,12 @@ textarea {
 
 .playground-shell::after {
   position: fixed;
-  inset: -18rem -8rem auto;
+  inset: 0 0 auto;
   z-index: -1;
-  height: 36rem;
+  height: 1px;
   content: "";
-  background:
-    radial-gradient(circle at 50% 26%, rgba(216, 243, 220, 0.11), transparent 38%),
-    radial-gradient(circle at 18% 46%, rgba(125, 211, 252, 0.055), transparent 32%);
-  filter: blur(28px);
-  opacity: 0.75;
+  background: linear-gradient(90deg, transparent, rgba(55, 217, 255, 0.55), transparent);
+  opacity: 0.8;
   pointer-events: none;
 }
 
@@ -155,22 +161,22 @@ textarea {
   width: 36px;
   height: 36px;
   place-items: center;
-  border-radius: 6px;
+  border: 1px solid var(--primary);
+  border-radius: 3px;
   background: var(--primary);
   color: var(--primary-foreground);
   font-weight: 800;
-  box-shadow: 0 0 28px rgba(216, 243, 220, 0.16);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.34);
 }
 
 .topbar {
   border-bottom: 1px solid var(--border);
-  background: rgba(8, 11, 18, 0.94);
-  backdrop-filter: blur(16px);
+  background: var(--pane);
 }
 
 .topbar-command {
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(55, 217, 255, 0.055);
 }
 
 .playground-main {
@@ -188,7 +194,7 @@ textarea {
   align-items: center;
   gap: 6px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 3px;
   padding: 5px 8px;
   color: var(--foreground);
   text-align: left;
@@ -196,12 +202,12 @@ textarea {
 }
 
 .file-row:hover {
-  background: rgba(216, 243, 220, 0.07);
+  background: var(--selection-background-soft);
 }
 
 .file-row.selected {
-  border-color: rgba(216, 243, 220, 0.34);
-  background: rgba(216, 243, 220, 0.09);
+  border-color: var(--selection-border);
+  background: var(--selection-background);
 }
 
 .tree-row {
@@ -212,7 +218,7 @@ textarea {
   align-items: center;
   gap: 5px;
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: 3px;
   background: transparent;
   color: var(--foreground);
   text-align: left;
@@ -226,7 +232,7 @@ textarea {
 }
 
 .tree-row:hover {
-  background: rgba(216, 243, 220, 0.07);
+  background: var(--selection-background-soft);
 }
 
 .tree-chevron {
@@ -339,16 +345,16 @@ textarea {
 }
 
 .editor-input::selection {
-  background: color-mix(in oklch, var(--primary) 32%, transparent);
+  background: var(--selection-background);
   color: transparent;
 }
 
 .token.keyword {
-  color: #cba6f7;
+  color: #b9a7ff;
 }
 
 .token.soql-keyword {
-  color: #cba6f7;
+  color: #b9a7ff;
 }
 
 .token.class-name,
@@ -363,7 +369,7 @@ textarea {
 
 .token.method-call,
 .token.method-declaration {
-  color: #89b4fa;
+  color: #7cc7ff;
 }
 
 .token.annotation-name,
@@ -376,12 +382,12 @@ textarea {
 }
 
 .token.bind-variable {
-  color: #89dceb;
+  color: #37d9ff;
 }
 
 .token.string,
 .token.char {
-  color: #a6e3a1;
+  color: #f0c674;
 }
 
 .token.number,
@@ -395,7 +401,7 @@ textarea {
 }
 
 .token.operator {
-  color: #89dceb;
+  color: #37d9ff;
 }
 
 .token.punctuation,
@@ -412,7 +418,7 @@ textarea {
 .metric {
   min-width: 0;
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: 4px;
   padding: 8px;
   background: var(--pane-raised);
 }
@@ -439,7 +445,7 @@ textarea {
   height: calc(100vh - 244px);
   min-height: 260px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 4px;
   background: var(--well);
 }
 
@@ -503,7 +509,7 @@ textarea {
   justify-content: space-between;
   gap: 6px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 3px;
   background: var(--pane-raised);
   padding: 5px 6px;
   color: var(--muted-foreground);
@@ -528,8 +534,8 @@ textarea {
 
 .database-filter:hover,
 .database-filter.selected {
-  border-color: rgba(216, 243, 220, 0.34);
-  background: rgba(216, 243, 220, 0.09);
+  border-color: var(--selection-border);
+  background: var(--selection-background);
   color: var(--foreground);
 }
 
@@ -560,7 +566,7 @@ textarea {
   align-items: center;
   gap: 6px;
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: 3px;
   background: transparent;
   padding: 6px 7px;
   color: var(--foreground);
@@ -568,12 +574,12 @@ textarea {
 }
 
 .database-object:hover {
-  background: rgba(216, 243, 220, 0.07);
+  background: var(--selection-background-soft);
 }
 
 .database-object.selected {
-  border-color: rgba(216, 243, 220, 0.34);
-  background: rgba(216, 243, 220, 0.09);
+  border-color: var(--selection-border);
+  background: var(--selection-background);
 }
 
 .database-table-wrap {
@@ -624,7 +630,7 @@ textarea {
   align-items: flex-start;
   gap: 8px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 8px;
   background: var(--pane-raised);
 }
@@ -636,12 +642,12 @@ textarea {
 
 .run-button {
   min-width: 92px;
-  border-color: rgba(159, 243, 195, 0.38);
-  box-shadow: 0 0 24px rgba(159, 243, 195, 0.1);
+  border-color: var(--selection-border);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.28);
 }
 
 .advanced-toggle:hover {
-  border-color: rgba(216, 243, 220, 0.34);
+  border-color: var(--selection-border);
   color: var(--foreground);
 }
 
@@ -652,7 +658,7 @@ textarea {
 .example-card {
   display: block;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: 4px;
   background: var(--pane-raised);
   padding: 10px;
   text-align: left;
@@ -664,12 +670,8 @@ textarea {
 
 .example-card:hover,
 .example-card.selected {
-  border-color: rgba(159, 243, 195, 0.44);
-  background: rgba(216, 243, 220, 0.08);
-}
-
-.example-card:hover {
-  transform: translateY(-1px);
+  border-color: var(--selection-border);
+  background: var(--selection-background);
 }
 
 .command-backdrop {
@@ -680,19 +682,16 @@ textarea {
   place-items: start center;
   padding-top: 12vh;
   background: rgba(0, 0, 0, 0.58);
-  backdrop-filter: blur(14px);
 }
 
 .command-panel {
   width: min(520px, calc(100vw - 32px));
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 34%),
-    var(--popover);
+  border-radius: 4px;
+  background: var(--popover);
   color: var(--popover-foreground);
-  box-shadow: 0 28px 90px color-mix(in oklch, black 35%, transparent);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.34);
 }
 
 @media (max-width: 1024px) {

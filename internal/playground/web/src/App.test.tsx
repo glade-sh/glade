@@ -43,3 +43,14 @@ test("does not render database filters before the Database tab opens", () => {
   expect(html).not.toContain("Custom metadata")
   expect(html).not.toContain("Custom settings")
 })
+
+test("links the playground docs action to the docs reference area", () => {
+  vi.stubGlobal("localStorage", {
+    getItem: () => "dark",
+    setItem: () => undefined,
+  })
+
+  const html = renderToString(<App />)
+
+  expect(html).toContain('href="https://glade.sh/docs/"')
+})
