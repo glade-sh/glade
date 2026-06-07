@@ -3258,6 +3258,11 @@ platformStaticCall:
 			return Null, fmt.Errorf("Support.EmailTemplateSelector.getDefaultEmailTemplateId expects context Id")
 		}
 		return Null, nil
+	case "Support.EmailTemplateSelector.getDefaultTemplateId":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("Support.EmailTemplateSelector.getDefaultTemplateId expects context Id")
+		}
+		return Null, nil
 	case "Support.LifeScienceAttendees.parse":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Support.LifeScienceAttendees.parse expects JSON String")

@@ -327,6 +327,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"LiveAgent.LiveAgentRealTimeSystem.cancelChatRequests", "LiveAgent.LiveAgentRealTimeSystem.routeChatRequests",
 		"LiveAgent.LiveAgentRealTimeSystem.setButtonStatus",
 		"Support.EinsteinBots.sendMessageToBot", "Support.EmailTemplateSelector.getDefaultEmailTemplateId",
+		"Support.EmailTemplateSelector.getDefaultTemplateId",
 		"Support.LifeScienceAttendees.parse", "Support.LifeScienceUpdateEmailTransactions.updateRecords",
 		"LoggingLevel.values", "ApexPages.Severity.values", "RoundingMode.values",
 		"UserManagement.deregisterVerificationMethod", "UserManagement.initPasswordlessLogin",

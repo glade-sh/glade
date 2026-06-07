@@ -2,6 +2,18 @@
   "name": "core-runtime-webservice-mock-callback",
   "evidence": [
     {
+      "surfaceId": "apex:System.WebServiceCallout.invoke(Object,Object,Map,List)",
+      "symbol": "WebServiceCallout.invoke(Object,Object,Map,List)",
+      "kind": "test",
+      "notes": "Local WebServiceCallout.invoke routes generated SOAP callouts through the registered WebServiceMock and increments callout limits."
+    },
+    {
+      "surfaceId": "apex:System.WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)",
+      "symbol": "WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)",
+      "kind": "test",
+      "notes": "Local WebServiceCallout.invoke typed overload uses the same mock-backed response-map mutation path."
+    },
+    {
       "surfaceId": "apex:System.WebServiceMock.doInvoke(Object,Object,Map<String,Object>,String,String,String,String,String,String)",
       "symbol": "WebServiceMock.doInvoke(Object,Object,Map<String,Object>,String,String,String,String,String,String)",
       "kind": "test",

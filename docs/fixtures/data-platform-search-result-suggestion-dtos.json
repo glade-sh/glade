@@ -1,0 +1,130 @@
+{
+  "name": "data-platform-search-result-suggestion-dtos",
+  "evidence": [
+    {
+      "surfaceId": "apex:Search.SearchResults.get(String)",
+      "symbol": "Search.SearchResults.get",
+      "kind": "test",
+      "notes": "Search.find groups deterministic fixed local search rows by sObject type."
+    },
+    {
+      "surfaceId": "apex:Search.SearchResult.getSObject()",
+      "symbol": "Search.SearchResult.getSObject",
+      "kind": "test",
+      "notes": "SearchResult exposes the local SObject row found through Test.setFixedSearchResults."
+    },
+    {
+      "surfaceId": "apex:Search.SearchResult.getSnippet()",
+      "symbol": "Search.SearchResult.getSnippet",
+      "kind": "test",
+      "notes": "SearchResult exposes the deterministic local snippet string."
+    },
+    {
+      "surfaceId": "apex:Search.SearchResult.getSnippet(String)",
+      "symbol": "Search.SearchResult.getSnippet",
+      "kind": "test",
+      "notes": "Field-specific snippets are accepted for shape and return local snippet text when present."
+    },
+    {
+      "surfaceId": "apex:Search.KnowledgeSuggestionFilter.addArticleType(String)",
+      "symbol": "Search.KnowledgeSuggestionFilter.addArticleType",
+      "kind": "test",
+      "notes": "KnowledgeSuggestionFilter records local DTO filter inputs without calling an external suggestion service."
+    },
+    {
+      "surfaceId": "apex:Search.KnowledgeSuggestionFilter.addDataCategory(String,String)",
+      "symbol": "Search.KnowledgeSuggestionFilter.addDataCategory",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Search.KnowledgeSuggestionFilter.addTopic(String)",
+      "symbol": "Search.KnowledgeSuggestionFilter.addTopic",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Search.KnowledgeSuggestionFilter.setChannel(String)",
+      "symbol": "Search.KnowledgeSuggestionFilter.setChannel",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Search.KnowledgeSuggestionFilter.setLanguage(String)",
+      "symbol": "Search.KnowledgeSuggestionFilter.setLanguage",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Search.KnowledgeSuggestionFilter.setDataCategories(Map)",
+      "symbol": "Search.KnowledgeSuggestionFilter.setDataCategories",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Search.KnowledgeSuggestionFilter.setPublishStatus(String)",
+      "symbol": "Search.KnowledgeSuggestionFilter.setPublishStatus",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Search.KnowledgeSuggestionFilter.setValidationStatus(String)",
+      "symbol": "Search.KnowledgeSuggestionFilter.setValidationStatus",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Search.SuggestionOption.setFilter(Object)",
+      "symbol": "Search.SuggestionOption.setFilter",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Search.SuggestionOption.setFilter(Search.KnowledegeSuggestionFilter)",
+      "symbol": "Search.SuggestionOption.setFilter",
+      "kind": "unsupported",
+      "notes": "Public docs spell this parameter as KnowledegeSuggestionFilter; the local Apex surface supports the real KnowledgeSuggestionFilter/Object shape and does not add a misspelled type alias."
+    },
+    {
+      "surfaceId": "apex:Search.SuggestionOption.setLimit(Integer)",
+      "symbol": "Search.SuggestionOption.setLimit",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Search.SuggestionResults.getSuggestionResults()",
+      "symbol": "Search.SuggestionResults.getSuggestionResults",
+      "kind": "test",
+      "notes": "Search.suggest returns an empty deterministic SuggestionResults DTO."
+    },
+    {
+      "surfaceId": "apex:Search.SuggestionResults.hasMoreResults()",
+      "symbol": "Search.SuggestionResults.hasMoreResults",
+      "kind": "test",
+      "notes": "Local suggestion DTO reports no additional external results."
+    },
+    {
+      "surfaceId": "apex:Search.SuggestionResult.getSObject()",
+      "symbol": "Search.SuggestionResult.getSObject",
+      "kind": "test",
+      "notes": "Empty local suggestion result DTO returns null SObject."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/SearchResultSuggestionDtosTest.cls",
+      "content": "@isTest private class SearchResultSuggestionDtosTest { @isTest static void resultAndSuggestionDtosUseLocalRows() { Account account = new Account(Name = 'Nook Trail'); insert account; Test.setFixedSearchResults(new List<Id>{ account.Id }); Search.SearchResults found = Search.find('FIND {Nook} IN ALL FIELDS RETURNING Account(Id, Name) WITH SNIPPET'); List<Search.SearchResult> accountResults = found.get('Account'); System.assertEquals(1, accountResults.size()); Search.SearchResult row = accountResults.get(0); Account foundAccount = (Account)row.getSObject(); System.assertEquals(account.Id, foundAccount.Id); System.assert(row.getSnippet() != null); System.assert(row.getSnippet('Name') != null); Search.KnowledgeSuggestionFilter filter = new Search.KnowledgeSuggestionFilter(); filter.addArticleType('FAQ'); filter.addDataCategory('Products', 'Trail'); filter.addTopic('Cabin'); filter.setChannel('AllChannels'); filter.setLanguage('en_US'); filter.setDataCategories(new Map<String,String>{ 'Products' => 'Trail' }); filter.setPublishStatus('Online'); filter.setValidationStatus('Validated'); Search.SuggestionOption option = new Search.SuggestionOption(); option.setFilter(filter); option.setLimit(3); Search.SuggestionResults suggestions = Search.suggest('Nook', 'Knowledge__kav', option); System.assertEquals(0, suggestions.getSuggestionResults().size()); System.assertEquals(false, suggestions.hasMoreResults()); Search.SuggestionResult emptySuggestion = new Search.SuggestionResult(); System.assertEquals(null, emptySuggestion.getSObject()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

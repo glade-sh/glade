@@ -1,0 +1,29 @@
+{
+  "name": "core-runtime-messaging-notification-handler-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:Messaging.NotificationActionHandler.executeAction(Messaging.ActionableNotification)",
+      "symbol": "Messaging.NotificationActionHandler.executeAction",
+      "kind": "test",
+      "notes": "NotificationActionHandler is a user Apex callback interface; Test.testNotificationActionHandler dispatches executeAction locally and returns the handler result."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/CoreRuntimeMessagingNotificationHandlerEvidenceTest.cls",
+      "content": "@isTest private class CoreRuntimeMessagingNotificationHandlerEvidenceTest { private class Handler implements Messaging.NotificationActionHandler { public Messaging.ActionResult executeAction(Messaging.ActionableNotification notification) { return new Messaging.ActionResult.Builder().withSuccess(true).withMessage(notification.getActionIdentifier()).build(); } } @isTest static void rows() { Messaging.ActionableNotification note = new Messaging.ActionableNotification.Builder().withActionIdentifier('open').build(); Messaging.ActionResult result = Test.testNotificationActionHandler(new Handler(), note); System.assertEquals(true, result.isSuccess()); System.assertEquals('open', result.getMessage()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

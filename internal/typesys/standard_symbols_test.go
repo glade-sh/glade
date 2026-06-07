@@ -766,6 +766,36 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	requireStandardPropertyStatic(t, accountEngagementType, "EmailActivity", "sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum", true)
 }
 
+func TestStandardPlatformSymbolsIncludeWaveTemplatePassiveShapes(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	templateInterrupt := requireStandardSymbol(t, symbols, "wavetemplate.TemplateInterruptException")
+	requireStandardConstructor(t, templateInterrupt, []string{"String"})
+	requireStandardMethod(t, templateInterrupt, "getTypeName", nil, false)
+	requireStandardMethodType(t, templateInterrupt, "getTypeName", "String")
+
+	variableType := requireStandardSymbol(t, symbols, "wavetemplate.VariableTypeEnum")
+	if variableType.Kind != apexast.DeclarationEnum {
+		t.Fatalf("wavetemplate.VariableTypeEnum kind = %q, want enum", variableType.Kind)
+	}
+	for _, constant := range []string{
+		"ArrayType",
+		"BooleanType",
+		"DatasetDateType",
+		"DatasetDimensionType",
+		"DatasetMeasureType",
+		"DatasetType",
+		"DateTimeType",
+		"NumberType",
+		"ObjectType",
+		"SobjectFieldType",
+		"SobjectType",
+		"StringType",
+	} {
+		requireStandardPropertyStatic(t, variableType, constant, "wavetemplate.VariableTypeEnum", true)
+	}
+}
+
 func TestStandardPlatformSymbolsIncludeCoreRuntimeCollectionObjectShapes(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 
@@ -892,6 +922,13 @@ func TestStandardPlatformSymbolsIncludeDomXmlNodeInsertBefore(t *testing.T) {
 	requireStandardMethodType(t, xmlNode, "insertBefore", "Dom.XmlNode")
 	requireStandardMethod(t, xmlNode, "removeChild", []string{"Dom.XmlNode"}, false)
 	requireStandardMethodType(t, xmlNode, "removeChild", "Boolean")
+}
+
+func TestStandardPlatformSymbolsIncludeEmailTemplateSelectorAlias(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	selector := requireStandardSymbol(t, symbols, "Support.EmailTemplateSelector")
+	requireStandardMethod(t, selector, "getDefaultEmailTemplateId", []string{"Id"}, false)
+	requireStandardMethod(t, selector, "getDefaultTemplateId", []string{"Id"}, false)
 }
 
 func TestStandardPlatformSymbolsUseQualifiedEmailAttachmentType(t *testing.T) {

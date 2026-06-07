@@ -508,17 +508,18 @@ System.debug(RestContext.request.requestURI);
 	}
 }
 
-func TestExecPageReferenceGetContentReturnsBlobInLocalTests(t *testing.T) {
+func TestExecPageReferenceGetContentReturnsUnsupportedFeature(t *testing.T) {
 	program, err := CompileAnonymous(`
 PageReference page = new PageReference('/apex/Trail');
-Blob content = page.getContent();
-System.assertEquals('/apex/Trail', content.toString());
+page.getContent();
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
-		t.Fatal(err)
+	_, err = Execute(program, nil)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "PageReference.getContent local Visualforce page rendering surface"` {
+		t.Fatalf("err = %#v, want UnsupportedFeature PageReference.getContent", err)
 	}
 }
 

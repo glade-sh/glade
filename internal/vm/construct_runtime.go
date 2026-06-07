@@ -402,7 +402,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if len(args) != 0 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("%s constructor expects 0 arguments", typeName)
 		}
-		return Object(typeName), nil
+		return newApexPagesComponentValue(typeName), nil
 	case "HttpRequest":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("HttpRequest constructor expects 0 arguments")

@@ -1,0 +1,29 @@
+{
+  "name": "ui-pagereference-getcontent-unsupported",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.PageReference.getContent()",
+      "symbol": "PageReference.getContent",
+      "kind": "unsupported",
+      "notes": "Visualforce page body rendering is outside the no-render local Apex controller surface."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "PageReference page = new PageReference('/apex/Trail');\npage.getContent();"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "PageReference page = new PageReference('/apex/Trail');\npage.getContent();"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"PageReference.getContent local Visualforce page rendering surface\""
+    }
+  }
+}

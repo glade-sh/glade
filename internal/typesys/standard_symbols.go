@@ -583,6 +583,7 @@ var standardPlatformTypeNames = []string{
 	"Database.SaveResult",
 	"Database.Savepoint",
 	"Database.UndeleteResult",
+	"Database.UnitOfWork",
 	"Database.UpsertResult",
 	"DataSource",
 	"DataWeave.Result",
@@ -1119,12 +1120,37 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "getOutputParameters", ReturnType: "Map<String,Object>"},
 		{Name: "isSuccess", ReturnType: "Boolean"},
 	}},
+	{Name: "Metadata.Metadata", Methods: []StandardMethodSpec{{Name: "clone", ReturnType: "Object"}}},
+	{Name: "Process.PluginDescribeResult", Properties: []StandardPropertySpec{
+		{Name: "inputParameters", Type: "List<Process.PluginDescribeResult.InputParameter>"},
+		{Name: "outputParameters", Type: "List<Process.PluginDescribeResult.OutputParameter>"},
+	}},
+	{Name: "Process.PluginDescribeResult.InputParameter", Constructors: [][]string{
+		{"String", "Process.PluginDescribeResult.ParameterType", "Boolean"},
+		{"String", "String", "Process.PluginDescribeResult.ParameterType", "Boolean"},
+	}, Properties: []StandardPropertySpec{
+		{Name: "description", Type: "String"},
+		{Name: "name", Type: "String"},
+		{Name: "parameterType", Type: "Process.PluginDescribeResult.ParameterType"},
+		{Name: "required", Type: "Boolean"},
+	}},
+	{Name: "Process.PluginDescribeResult.OutputParameter", Constructors: [][]string{
+		{"String", "Process.PluginDescribeResult.ParameterType"},
+		{"String", "String", "Process.PluginDescribeResult.ParameterType"},
+	}, Properties: []StandardPropertySpec{
+		{Name: "description", Type: "String"},
+		{Name: "name", Type: "String"},
+		{Name: "parameterType", Type: "Process.PluginDescribeResult.ParameterType"},
+	}},
 	{Name: "Messaging.Email", Methods: []StandardMethodSpec{
 		{Name: "setTemplateID", ReturnType: "void", Parameters: []string{"Id"}},
 	}},
 	{Name: "Messaging.SingleEmailMessage", Methods: []StandardMethodSpec{
 		{Name: "setDocumentAttachments", ReturnType: "void", Parameters: []string{"List<Id>"}},
 		{Name: "setFileAttachments", ReturnType: "void", Parameters: []string{"List<Messaging.EmailFileAttachment>"}},
+	}},
+	{Name: "Support.EmailTemplateSelector", Methods: []StandardMethodSpec{
+		{Name: "getDefaultTemplateId", ReturnType: "Id", Parameters: []string{"Id"}},
 	}},
 	{Name: "Database", Methods: []StandardMethodSpec{
 		{Name: "countQueryWithBinds", ReturnType: "Integer", Parameters: []string{"String", "Map", "AccessLevel"}, Static: true},
@@ -1137,9 +1163,13 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "deleteAsync", ReturnType: "Database.DeleteResult", Parameters: []string{"Object", "Database.AllowCallouts", "AccessLevel"}, Static: true},
 		{Name: "getAsyncDeleteResult", ReturnType: "Database.DeleteResult", Parameters: []string{"Database.DeleteResult"}, Static: true},
 		{Name: "getAsyncSaveResult", ReturnType: "Database.SaveResult", Parameters: []string{"Database.SaveResult"}, Static: true},
+		{Name: "getCursor", ReturnType: "Database.Cursor", Parameters: []string{"String", "Object"}, Static: true},
 		{Name: "getCursor", ReturnType: "Database.Cursor", Parameters: []string{"String", "AccessLevel"}, Static: true},
+		{Name: "getCursorWithBinds", ReturnType: "Database.Cursor", Parameters: []string{"String", "Map", "Object"}, Static: true},
 		{Name: "getCursorWithBinds", ReturnType: "Database.Cursor", Parameters: []string{"String", "Map", "AccessLevel"}, Static: true},
+		{Name: "getPaginationCursor", ReturnType: "Database.PaginationCursor", Parameters: []string{"String", "Object"}, Static: true},
 		{Name: "getPaginationCursor", ReturnType: "Database.PaginationCursor", Parameters: []string{"String", "AccessLevel"}, Static: true},
+		{Name: "getPaginationCursorWithBinds", ReturnType: "Database.PaginationCursor", Parameters: []string{"String", "Map", "Object"}, Static: true},
 		{Name: "getPaginationCursorWithBinds", ReturnType: "Database.PaginationCursor", Parameters: []string{"String", "Map", "AccessLevel"}, Static: true},
 		{Name: "insertAsync", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "DataSource.AsyncSaveCallback"}, Static: true},
 		{Name: "insertAsync", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<Object>", "DataSource.AsyncSaveCallback", "AccessLevel"}, Static: true},

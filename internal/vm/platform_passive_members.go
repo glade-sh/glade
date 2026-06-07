@@ -296,9 +296,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 		return String(""), receiver, false, true, nil
 	}
-	if strings.EqualFold(receiver.Type, "Support.EmailTemplateSelector") && strings.EqualFold(method, "getDefaultEmailTemplateId") {
+	if strings.EqualFold(receiver.Type, "Support.EmailTemplateSelector") && (strings.EqualFold(method, "getDefaultEmailTemplateId") || strings.EqualFold(method, "getDefaultTemplateId")) {
 		if len(args) != 1 {
-			return Null, receiver, false, true, fmt.Errorf("Support.EmailTemplateSelector.getDefaultEmailTemplateId expects context Id")
+			return Null, receiver, false, true, fmt.Errorf("Support.EmailTemplateSelector.%s expects context Id", method)
 		}
 		return Null, receiver, false, true, nil
 	}
@@ -3234,6 +3234,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				if value, ok := variables.Map[mapKey(args[0])]; ok {
 					return value, receiver, false, true, nil
 				}
+				for key, stored := range variables.MapKeys {
+					if stored.Kind == ValueString && strings.EqualFold(stored.Text, args[0].Text) {
+						return variables.Map[key], receiver, false, true, nil
+					}
+				}
 			}
 			return Null, receiver, false, true, nil
 		}
@@ -3305,14 +3310,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("PageReference.%s expects 0 arguments", method)
 			}
-			if vm.toolingExecuteAnonymous {
-				return Null, receiver, false, true, unsupportedCallError("PageReference." + method + " local Visualforce page rendering surface")
-			}
-			if method == "getContentAsPDF" {
-				pdf := "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n"
-				return platformScalar("Blob", pdf), receiver, false, true, nil
-			}
-			return platformScalar("Blob", pageReferenceURL(receiver).Text), receiver, false, true, nil
+			return Null, receiver, false, true, unsupportedCallError("PageReference." + method + " local Visualforce page rendering surface")
 		case "getUrl":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("PageReference.getUrl expects 0 arguments")

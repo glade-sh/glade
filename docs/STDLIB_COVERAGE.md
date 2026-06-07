@@ -216,7 +216,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Test | `Test.getExternalService()` | `unsupported` | External service test harness is not modeled by the local Apex runtime. |
 | Test | `Test.getStandardPricebookId` | `partial` | Deterministic test-context-only ID. |
 | Test | `Test.invokeContinuationMethod(Object,Continuation)` | `unsupported` | Continuation callback invocation depends on asynchronous callout state not fabricated locally. |
-| Test | `Test.invokePage(PageReference)` | `unsupported` | Visualforce page invocation is outside the local Apex runtime surface. |
+| Test | `Test.invokePage(PageReference)` | `supported` | Returns a typed Component.apex.page handle in test context without rendering Visualforce. |
 | Test | `Test.isRunningTest` | `supported` | Reflects local test context. |
 | Test | `Test.loadData` | `partial` | Loads CSV static-resource content into local org storage through DML. |
 | Test | `Test.newSendEmailQuickActionDefaults(Id,Id)` | `unsupported` | Send-email QuickAction defaults require QuickAction metadata services. |
@@ -269,5 +269,5 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | UserInfo | `UserInfo.hasPackageLicense(Id)` | `unsupported` | Package license checks require installed package license state and are not fabricated locally. |
 | UserInfo | `UserInfo.isCurrentUserLicensedForPackage(Id)` | `unsupported` | Package license checks require installed package license state and are not fabricated locally. |
 | UserInfo | `UserInfo.isMultiCurrencyOrganization` | `supported` | Returns the local org multi-currency metadata flag. |
-| WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map,List)` | `unsupported` | Generated SOAP callout invocation requires external transport and WSDL binding state. |
-| WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)` | `unsupported` | Generated SOAP callout invocation requires external transport and WSDL binding state. |
+| WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map,List)` | `partial` | Routes generated SOAP callouts through registered WebServiceMock implementations and materializes a deterministic local response shell when no mock is registered; real outbound SOAP transport is not executed. |
+| WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)` | `partial` | Routes generated SOAP callouts through registered WebServiceMock implementations and materializes a deterministic local response shell when no mock is registered; real outbound SOAP transport is not executed. |

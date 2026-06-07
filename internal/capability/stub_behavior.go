@@ -1270,7 +1270,7 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 	case "Support.EinsteinBots":
 		return name == "sendmessagetobot"
 	case "Support.EmailTemplateSelector":
-		return name == "getdefaultemailtemplateid"
+		return name == "getdefaultemailtemplateid" || name == "getdefaulttemplateid"
 	case "Support.LifeScienceAttendees":
 		return name == "parse"
 	case "Support.LifeScienceUpdateEmailTransactions":
@@ -1694,6 +1694,8 @@ func searchDTOBehaviorMethod(typeName, methodName string) bool {
 		return methodName == "setfilter" || methodName == "setlimit"
 	case "Search.SearchResult", "Search.SuggestionResult":
 		return strings.HasPrefix(methodName, "get")
+	case "Process.PluginDescribeResult.InputParameter", "Process.PluginDescribeResult.OutputParameter":
+		return true
 	case "Search.SearchResults":
 		return methodName == "get"
 	case "Search.SuggestionResults":

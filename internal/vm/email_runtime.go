@@ -16,7 +16,10 @@ func newSendEmailResult() Value {
 }
 func newSendEmailError(message string) Value {
 	err := Object("Messaging.SendEmailError")
+	err.Fields["fields"] = List()
 	err.Fields["message"] = String(message)
+	err.Fields["statusCode"] = Null
+	err.Fields["targetObjectId"] = Null
 	return err
 }
 func newEmailFileAttachment() Value {

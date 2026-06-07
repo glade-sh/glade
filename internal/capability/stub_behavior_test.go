@@ -675,6 +675,7 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "Network.createExternalUserAsync(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Support.EinsteinBots.sendMessageToBot(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Support.EmailTemplateSelector.getDefaultEmailTemplateId(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Support.EmailTemplateSelector.getDefaultTemplateId(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Support.LifeScienceAttendees.parse(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Support.MilestoneTriggerTimeCalculator.calculateMilestoneTriggerTime(", StubBehaviorStubNoOp)
 	assertStubBehaviorPrefix(t, entries, "data_mask.DataMaskIntegrationUtil.runMask(", StubBehaviorUnsupported)

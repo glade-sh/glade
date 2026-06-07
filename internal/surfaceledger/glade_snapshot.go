@@ -216,7 +216,11 @@ var fixtureBackedSystemAliasRows = []fixtureBackedSystemAliasRow{
 	{SurfaceID: "apex:System.Database.countQueryWithBinds(String,Map,Object)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Database.countQueryWithBinds local SOQL bind execution"},
 	{SurfaceID: "apex:System.Database.deleteImmediate(List<Object>,Object)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Database.deleteImmediate list AccessLevel overload local DML"},
 	{SurfaceID: "apex:System.Database.deleteImmediate(Object,Object)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Database.deleteImmediate object AccessLevel overload local DML"},
+	{SurfaceID: "apex:System.Database.getCursor(String,Object)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified Object overload for Database.getCursor local cursor construction"},
+	{SurfaceID: "apex:System.Database.getCursorWithBinds(String,Map,Object)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Database.getCursorWithBinds local bind cursor construction"},
 	{SurfaceID: "apex:System.Database.getDeleted(String,Datetime,Datetime)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Database.getDeleted local sync window"},
+	{SurfaceID: "apex:System.Database.getPaginationCursor(String,Object)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified Object overload for Database.getPaginationCursor local pagination cursor construction"},
+	{SurfaceID: "apex:System.Database.getPaginationCursorWithBinds(String,Map,Object)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Database.getPaginationCursorWithBinds local bind pagination cursor construction"},
 	{SurfaceID: "apex:System.Database.getUpdated(String,Datetime,Datetime)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Database.getUpdated local sync window"},
 	{SurfaceID: "apex:System.Database.insertImmediate(List<Object>,Object)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Database.insertImmediate list AccessLevel overload local DML"},
 	{SurfaceID: "apex:System.Database.insertImmediate(Object,Object)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for Database.insertImmediate object AccessLevel overload local DML"},
@@ -314,6 +318,8 @@ var fixtureBackedApexAliasRows = []fixtureBackedSystemAliasRow{
 	{SurfaceID: "apex:Database.DmlOptions.EmailHeader.triggerAutoResponseEmail", Kind: KindProperty, Behavior: BehaviorSupported, Notes: "fixture-backed exact docs property id for Database.DmlOptions.EmailHeader.triggerAutoResponseEmail local storage"},
 	{SurfaceID: "apex:Database.DmlOptions.EmailHeader.triggerOtherEmail", Kind: KindProperty, Behavior: BehaviorSupported, Notes: "fixture-backed exact docs property id for Database.DmlOptions.EmailHeader.triggerOtherEmail local storage"},
 	{SurfaceID: "apex:Database.DmlOptions.EmailHeader.triggerUserEmail", Kind: KindProperty, Behavior: BehaviorSupported, Notes: "fixture-backed exact docs property id for Database.DmlOptions.EmailHeader.triggerUserEmail local storage"},
+	{SurfaceID: "apex:Messaging.SingleEmailMessage.setFileAttachments(List<EmailFileAttachment>)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed docs shorthand for SingleEmailMessage.setFileAttachments(List<Messaging.EmailFileAttachment>)"},
+	{SurfaceID: "apex:Support.EmailTemplateSelector.getDefaultTemplateId(Id)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed selector alias returning the nullable local default email template Id result"},
 	{SurfaceID: "apex:TxnSecurity.Event.Event()", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed exact TxnSecurity docs constructor for the local passive transaction-security event record"},
 }
 

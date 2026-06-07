@@ -1,0 +1,139 @@
+{
+  "name": "data-platform-database-convertlead-overloads",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.Database.convertLead",
+      "symbol": "Database.convertLead",
+      "kind": "test",
+      "notes": "Database.convertLead method family converts single and list LeadConvert values through local lead conversion."
+    },
+    {
+      "surfaceId": "apex:System.Database.convertLead(Database.LeadConvert,AccessLevel)",
+      "symbol": "Database.convertLead(Database.LeadConvert,AccessLevel)",
+      "kind": "test",
+      "notes": "Single LeadConvert with AccessLevel runs through local lead conversion."
+    },
+    {
+      "surfaceId": "apex:System.Database.convertLead(Database.LeadConvert,Boolean)",
+      "symbol": "Database.convertLead(Database.LeadConvert,Boolean)",
+      "kind": "test",
+      "notes": "Single LeadConvert with allOrNothing=false runs through local lead conversion."
+    },
+    {
+      "surfaceId": "apex:System.Database.convertLead(Database.LeadConvert,Boolean,AccessLevel)",
+      "symbol": "Database.convertLead(Database.LeadConvert,Boolean,AccessLevel)",
+      "kind": "test",
+      "notes": "Single LeadConvert with allOrNothing and AccessLevel runs through local lead conversion."
+    },
+    {
+      "surfaceId": "apex:System.Database.convertLead(Database.LeadConvert,Database.DMLOptions,AccessLevel)",
+      "symbol": "Database.convertLead(Database.LeadConvert,Database.DMLOptions,AccessLevel)",
+      "kind": "test",
+      "notes": "Single LeadConvert with DMLOptions and AccessLevel accepts the option object and runs local conversion."
+    },
+    {
+      "surfaceId": "apex:System.Database.convertLead(List<Database.LeadConvert>)",
+      "symbol": "Database.convertLead(List<Database.LeadConvert>)",
+      "kind": "test",
+      "notes": "List LeadConvert overload returns ordered LeadConvertResult rows."
+    },
+    {
+      "surfaceId": "apex:System.Database.convertLead(List<Database.LeadConvert>,AccessLevel)",
+      "symbol": "Database.convertLead(List<Database.LeadConvert>,AccessLevel)",
+      "kind": "test",
+      "notes": "List LeadConvert overload with AccessLevel returns ordered LeadConvertResult rows."
+    },
+    {
+      "surfaceId": "apex:System.Database.convertLead(List<Database.LeadConvert>,Boolean)",
+      "symbol": "Database.convertLead(List<Database.LeadConvert>,Boolean)",
+      "kind": "test",
+      "notes": "List LeadConvert overload with allOrNothing=false returns ordered LeadConvertResult rows."
+    },
+    {
+      "surfaceId": "apex:System.Database.convertLead(List<Database.LeadConvert>,Boolean,AccessLevel)",
+      "symbol": "Database.convertLead(List<Database.LeadConvert>,Boolean,AccessLevel)",
+      "kind": "test",
+      "notes": "List LeadConvert overload with allOrNothing and AccessLevel returns ordered LeadConvertResult rows."
+    },
+    {
+      "surfaceId": "apex:System.Database.convertLead(List<Database.LeadConvert>,Database.DMLOptions,AccessLevel)",
+      "symbol": "Database.convertLead(List<Database.LeadConvert>,Database.DMLOptions,AccessLevel)",
+      "kind": "test",
+      "notes": "List LeadConvert overload with DMLOptions and AccessLevel accepts the option object and returns ordered rows."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Lead/Lead.object-meta.xml",
+      "content": "<CustomObject><label>Lead</label><pluralLabel>Leads</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Lead/fields/FirstName.field-meta.xml",
+      "content": "<CustomField><fullName>FirstName</fullName><label>First Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Lead/fields/LastName.field-meta.xml",
+      "content": "<CustomField><fullName>LastName</fullName><label>Last Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Lead/fields/Company.field-meta.xml",
+      "content": "<CustomField><fullName>Company</fullName><label>Company</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Lead/fields/Status.field-meta.xml",
+      "content": "<CustomField><fullName>Status</fullName><label>Status</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Lead/fields/IsConverted.field-meta.xml",
+      "content": "<CustomField><fullName>IsConverted</fullName><label>Converted</label><type>Checkbox</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Lead/fields/ConvertedAccountId.field-meta.xml",
+      "content": "<CustomField><fullName>ConvertedAccountId</fullName><label>Converted Account</label><type>Lookup</type><referenceTo>Account</referenceTo><relationshipName>ConvertedAccount</relationshipName></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Lead/fields/ConvertedContactId.field-meta.xml",
+      "content": "<CustomField><fullName>ConvertedContactId</fullName><label>Converted Contact</label><type>Lookup</type><referenceTo>Contact</referenceTo><relationshipName>ConvertedContact</relationshipName></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Contact/Contact.object-meta.xml",
+      "content": "<CustomObject><label>Contact</label><pluralLabel>Contacts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Contact/fields/FirstName.field-meta.xml",
+      "content": "<CustomField><fullName>FirstName</fullName><label>First Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Contact/fields/LastName.field-meta.xml",
+      "content": "<CustomField><fullName>LastName</fullName><label>Last Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Contact/fields/AccountId.field-meta.xml",
+      "content": "<CustomField><fullName>AccountId</fullName><label>Account</label><type>Lookup</type><referenceTo>Account</referenceTo><relationshipName>Account</relationshipName></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/DatabaseConvertLeadOverloadsTest.cls",
+      "content": "@isTest private class DatabaseConvertLeadOverloadsTest { private static Integer seq = 0; private static Database.LeadConvert nextConvert() { seq++; Lead lead = new Lead(FirstName = 'Lead', LastName = 'Convert ' + seq, Company = 'Company ' + seq, Status = 'Open'); insert lead; Database.LeadConvert convert = new Database.LeadConvert(); convert.setLeadId(lead.Id); convert.setConvertedStatus('Qualified'); convert.setDoNotCreateOpportunity(true); return convert; } private static void assertConverted(Database.LeadConvertResult result) { System.assert(result.isSuccess()); System.assertNotEquals(null, result.getLeadId()); System.assertNotEquals(null, result.getAccountId()); System.assertNotEquals(null, result.getContactId()); } @isTest static void singleOverloadsConvertLocally() { Database.DMLOptions opts = new Database.DMLOptions(); opts.optAllOrNone = false; assertConverted(Database.convertLead(nextConvert(), AccessLevel.SYSTEM_MODE)); assertConverted(Database.convertLead(nextConvert(), false)); assertConverted(Database.convertLead(nextConvert(), false, AccessLevel.USER_MODE)); assertConverted(Database.convertLead(nextConvert(), opts, AccessLevel.SYSTEM_MODE)); } @isTest static void listOverloadsConvertLocally() { Database.DMLOptions opts = new Database.DMLOptions(); opts.optAllOrNone = false; List<Database.LeadConvertResult> bare = Database.convertLead(new List<Database.LeadConvert>{nextConvert(), nextConvert()}); System.assertEquals(2, bare.size()); assertConverted(bare[0]); List<Database.LeadConvertResult> access = Database.convertLead(new List<Database.LeadConvert>{nextConvert()}, AccessLevel.SYSTEM_MODE); System.assertEquals(1, access.size()); List<Database.LeadConvertResult> allOrNothing = Database.convertLead(new List<Database.LeadConvert>{nextConvert()}, false); System.assertEquals(1, allOrNothing.size()); List<Database.LeadConvertResult> both = Database.convertLead(new List<Database.LeadConvert>{nextConvert()}, false, AccessLevel.USER_MODE); System.assertEquals(1, both.size()); List<Database.LeadConvertResult> options = Database.convertLead(new List<Database.LeadConvert>{nextConvert()}, opts, AccessLevel.SYSTEM_MODE); System.assertEquals(1, options.size()); assertConverted(options[0]); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

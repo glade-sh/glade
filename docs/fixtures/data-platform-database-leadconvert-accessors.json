@@ -1,0 +1,235 @@
+{
+  "name": "data-platform-database-leadconvert-accessors",
+  "evidence": [
+    {
+      "surfaceId": "apex:Database.LeadConvert.getAccountId()",
+      "symbol": "Database.LeadConvert.getAccountId",
+      "kind": "test",
+      "notes": "LeadConvert account id accessor returns the value set by setAccountId."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.getAccountRecord()",
+      "symbol": "Database.LeadConvert.getAccountRecord",
+      "kind": "test",
+      "notes": "LeadConvert account record accessor returns a non-null record set by setAccountRecord."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.getBypassAccountDedupeCheck()",
+      "symbol": "Database.LeadConvert.getBypassAccountDedupeCheck",
+      "kind": "test",
+      "notes": "LeadConvert bypass-account-dedupe accessor returns the Boolean set by setBypassAccountDedupeCheck."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.getBypassContactDedupeCheck()",
+      "symbol": "Database.LeadConvert.getBypassContactDedupeCheck",
+      "kind": "test",
+      "notes": "LeadConvert bypass-contact-dedupe accessor returns the Boolean set by setBypassContactDedupeCheck."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.getContactId()",
+      "symbol": "Database.LeadConvert.getContactId",
+      "kind": "test",
+      "notes": "LeadConvert contact id accessor returns the value set by setContactId."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.getContactRecord()",
+      "symbol": "Database.LeadConvert.getContactRecord",
+      "kind": "test",
+      "notes": "LeadConvert contact record accessor returns a non-null record set by setContactRecord."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.getConvertedStatus()",
+      "symbol": "Database.LeadConvert.getConvertedStatus",
+      "kind": "test",
+      "notes": "LeadConvert converted status accessor returns the String set by setConvertedStatus."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.getLeadID()",
+      "symbol": "Database.LeadConvert.getLeadID",
+      "kind": "test",
+      "notes": "LeadConvert lead id accessor returns the value set by setLeadId."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.getOpportunityId()",
+      "symbol": "Database.LeadConvert.getOpportunityId",
+      "kind": "test",
+      "notes": "LeadConvert opportunity id accessor returns the value set by setOpportunityId."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.getOpportunityName()",
+      "symbol": "Database.LeadConvert.getOpportunityName",
+      "kind": "test",
+      "notes": "LeadConvert opportunity name accessor returns the String set by setOpportunityName."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.getOpportunityRecord()",
+      "symbol": "Database.LeadConvert.getOpportunityRecord",
+      "kind": "test",
+      "notes": "LeadConvert opportunity record accessor returns a non-null record set by setOpportunityRecord."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.getOwnerID()",
+      "symbol": "Database.LeadConvert.getOwnerID",
+      "kind": "test",
+      "notes": "LeadConvert owner id accessor returns the value set by setOwnerId."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.getRelatedPersonAccountId()",
+      "symbol": "Database.LeadConvert.getRelatedPersonAccountId",
+      "kind": "test",
+      "notes": "LeadConvert related person account id accessor returns the value set by setRelatedPersonAccountId."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.getRelatedPersonAccountRecord()",
+      "symbol": "Database.LeadConvert.getRelatedPersonAccountRecord",
+      "kind": "test",
+      "notes": "LeadConvert related person account record accessor returns a non-null record set by setRelatedPersonAccountRecord."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.isDoNotCreateOpportunity()",
+      "symbol": "Database.LeadConvert.isDoNotCreateOpportunity",
+      "kind": "test",
+      "notes": "LeadConvert do-not-create-opportunity accessor returns the Boolean set by setDoNotCreateOpportunity."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.isOverWriteLeadSource()",
+      "symbol": "Database.LeadConvert.isOverWriteLeadSource",
+      "kind": "test",
+      "notes": "LeadConvert overwrite-lead-source accessor returns the Boolean set by setOverwriteLeadSource."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.isSendNotificationEmail()",
+      "symbol": "Database.LeadConvert.isSendNotificationEmail",
+      "kind": "test",
+      "notes": "LeadConvert send-notification-email accessor returns the Boolean set by setSendNotificationEmail."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.setAccountId(Id)",
+      "symbol": "Database.LeadConvert.setAccountId",
+      "kind": "test",
+      "notes": "LeadConvert setAccountId stores an Id value read back by getAccountId."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.setAccountRecord(Object)",
+      "symbol": "Database.LeadConvert.setAccountRecord",
+      "kind": "test",
+      "notes": "LeadConvert setAccountRecord stores an object value read back by getAccountRecord."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.setBypassAccountDedupeCheck(Boolean)",
+      "symbol": "Database.LeadConvert.setBypassAccountDedupeCheck",
+      "kind": "test",
+      "notes": "LeadConvert setBypassAccountDedupeCheck stores a Boolean value read back by getBypassAccountDedupeCheck."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.setBypassContactDedupeCheck(Boolean)",
+      "symbol": "Database.LeadConvert.setBypassContactDedupeCheck",
+      "kind": "test",
+      "notes": "LeadConvert setBypassContactDedupeCheck stores a Boolean value read back by getBypassContactDedupeCheck."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.setContactId(Id)",
+      "symbol": "Database.LeadConvert.setContactId",
+      "kind": "test",
+      "notes": "LeadConvert setContactId stores an Id value read back by getContactId."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.setContactRecord(Object)",
+      "symbol": "Database.LeadConvert.setContactRecord",
+      "kind": "test",
+      "notes": "LeadConvert setContactRecord stores an object value read back by getContactRecord."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.setOpportunityId(Id)",
+      "symbol": "Database.LeadConvert.setOpportunityId",
+      "kind": "test",
+      "notes": "LeadConvert setOpportunityId stores an Id value read back by getOpportunityId."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.setOpportunityRecord(Object)",
+      "symbol": "Database.LeadConvert.setOpportunityRecord",
+      "kind": "test",
+      "notes": "LeadConvert setOpportunityRecord stores an object value read back by getOpportunityRecord."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.setOverwriteLeadSource(Boolean)",
+      "symbol": "Database.LeadConvert.setOverwriteLeadSource",
+      "kind": "test",
+      "notes": "LeadConvert setOverwriteLeadSource stores a Boolean value read back by isOverWriteLeadSource."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.setOwnerId(Id)",
+      "symbol": "Database.LeadConvert.setOwnerId",
+      "kind": "test",
+      "notes": "LeadConvert setOwnerId stores an Id value read back by getOwnerID."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.setRelatedPersonAccountId(Id)",
+      "symbol": "Database.LeadConvert.setRelatedPersonAccountId",
+      "kind": "test",
+      "notes": "LeadConvert setRelatedPersonAccountId stores an Id value read back by getRelatedPersonAccountId."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.setRelatedPersonAccountRecord(Object)",
+      "symbol": "Database.LeadConvert.setRelatedPersonAccountRecord",
+      "kind": "test",
+      "notes": "LeadConvert setRelatedPersonAccountRecord stores an object value read back by getRelatedPersonAccountRecord."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvert.setSendNotificationEmail(Boolean)",
+      "symbol": "Database.LeadConvert.setSendNotificationEmail",
+      "kind": "test",
+      "notes": "LeadConvert setSendNotificationEmail stores a Boolean value read back by isSendNotificationEmail."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Contact/Contact.object-meta.xml",
+      "content": "<CustomObject><label>Contact</label><pluralLabel>Contacts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Contact/fields/LastName.field-meta.xml",
+      "content": "<CustomField><fullName>LastName</fullName><label>Last Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Opportunity/Opportunity.object-meta.xml",
+      "content": "<CustomObject><label>Opportunity</label><pluralLabel>Opportunities</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Opportunity/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Opportunity/fields/StageName.field-meta.xml",
+      "content": "<CustomField><fullName>StageName</fullName><label>Stage</label><type>Picklist</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Opportunity/fields/CloseDate.field-meta.xml",
+      "content": "<CustomField><fullName>CloseDate</fullName><label>Close Date</label><type>Date</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/DatabaseLeadConvertAccessorsTest.cls",
+      "content": "@isTest private class DatabaseLeadConvertAccessorsTest { @isTest static void accessorsRoundTripValues() { Database.LeadConvert convert = new Database.LeadConvert(); Id accountId = '001000000000001AAA'; Id contactId = '003000000000001AAA'; Id leadId = '00Q000000000001AAA'; Id opportunityId = '006000000000001AAA'; Id ownerId = '005000000000001AAA'; Id personAccountId = '001000000000002AAA'; Account account = new Account(Name = 'Existing Account'); Contact contact = new Contact(LastName = 'Existing Contact'); Opportunity opportunity = new Opportunity(Name = 'Existing Opportunity', StageName = 'Prospecting', CloseDate = Date.today()); Account personAccount = new Account(Name = 'Existing Person'); convert.setAccountId(accountId); convert.setAccountRecord(account); convert.setBypassAccountDedupeCheck(true); convert.setBypassContactDedupeCheck(true); convert.setContactId(contactId); convert.setContactRecord(contact); convert.setConvertedStatus('Qualified'); convert.setLeadId(leadId); convert.setOpportunityId(opportunityId); convert.setOpportunityName('Existing Opportunity'); convert.setOpportunityRecord(opportunity); convert.setOwnerId(ownerId); convert.setRelatedPersonAccountId(personAccountId); convert.setRelatedPersonAccountRecord(personAccount); convert.setDoNotCreateOpportunity(true); convert.setOverwriteLeadSource(true); convert.setSendNotificationEmail(true); System.assertEquals(accountId, convert.getAccountId()); System.assert(convert.getAccountRecord() != null); System.assertEquals(true, convert.getBypassAccountDedupeCheck()); System.assertEquals(true, convert.getBypassContactDedupeCheck()); System.assertEquals(contactId, convert.getContactId()); System.assert(convert.getContactRecord() != null); System.assertEquals('Qualified', convert.getConvertedStatus()); System.assertEquals(leadId, convert.getLeadID()); System.assertEquals(opportunityId, convert.getOpportunityId()); System.assertEquals('Existing Opportunity', convert.getOpportunityName()); System.assert(convert.getOpportunityRecord() != null); System.assertEquals(ownerId, convert.getOwnerID()); System.assertEquals(personAccountId, convert.getRelatedPersonAccountId()); System.assert(convert.getRelatedPersonAccountRecord() != null); System.assertEquals(true, convert.isDoNotCreateOpportunity()); System.assertEquals(true, convert.isOverWriteLeadSource()); System.assertEquals(true, convert.isSendNotificationEmail()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

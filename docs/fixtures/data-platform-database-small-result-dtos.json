@@ -1,0 +1,70 @@
+{
+  "name": "data-platform-database-small-result-dtos",
+  "evidence": [
+    {
+      "surfaceId": "apex:Database.LeadConvertResult.getErrors()",
+      "symbol": "Database.LeadConvertResult.getErrors",
+      "kind": "test",
+      "notes": "LeadConvertResult exposes the shared Database result error list."
+    },
+    {
+      "surfaceId": "apex:Database.LeadConvertResult.getRelatedPersonAccountId()",
+      "symbol": "Database.LeadConvertResult.getRelatedPersonAccountId",
+      "kind": "test",
+      "notes": "Person Account conversion is not modeled; the DTO accessor returns null."
+    },
+    {
+      "surfaceId": "apex:Database.MergeResult.getErrors()",
+      "symbol": "Database.MergeResult.getErrors",
+      "kind": "test",
+      "notes": "MergeResult exposes the local Database result error list."
+    },
+    {
+      "surfaceId": "apex:Database.DuplicateError.getDuplicateResult()",
+      "symbol": "Database.DuplicateError.getDuplicateResult",
+      "kind": "test",
+      "notes": "DuplicateError exposes DTO accessors without adding duplicate-rule execution."
+    },
+    {
+      "surfaceId": "apex:Database.DuplicateError.getFields()",
+      "symbol": "Database.DuplicateError.getFields",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Database.DuplicateError.getMessage()",
+      "symbol": "Database.DuplicateError.getMessage",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Database.DuplicateError.getStatusCode()",
+      "symbol": "Database.DuplicateError.getStatusCode",
+      "kind": "test"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/DatabaseSmallResultDtosTest.cls",
+      "content": "@isTest private class DatabaseSmallResultDtosTest { @isTest static void smallResultDtoAccessorsStayExplicit() { Database.LeadConvertResult lead = new Database.LeadConvertResult(); System.assertEquals(0, lead.getErrors().size()); System.assertEquals(null, lead.getRelatedPersonAccountId()); Account master = new Account(Name = 'Master'); insert master; Account duplicate = new Account(Name = 'Duplicate'); insert duplicate; Database.MergeResult merged = Database.merge(master, duplicate, false); System.assert(merged.isSuccess()); System.assertEquals(0, merged.getErrors().size()); Database.DuplicateError duplicateError = new Database.DuplicateError(); System.assertNotEquals(null, duplicateError.getDuplicateResult()); System.assertEquals(0, duplicateError.getFields().size()); System.assertEquals(null, duplicateError.getMessage()); System.assertEquals(null, duplicateError.getStatusCode()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

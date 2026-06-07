@@ -351,6 +351,33 @@ System.assertEquals('', omnichannel.RouteWorkApexController.search('work', 'Acco
 	}
 }
 
+func TestExecWaveTemplatePassiveShapes(t *testing.T) {
+	program, err := CompileAnonymous(`
+wavetemplate.TemplateInterruptException ex = new wavetemplate.TemplateInterruptException('stop');
+System.assertNotEquals(null, ex.getTypeName());
+System.assertEquals('ArrayType', wavetemplate.VariableTypeEnum.ArrayType.name());
+System.assertEquals('BooleanType', wavetemplate.VariableTypeEnum.BooleanType.name());
+System.assertEquals('DatasetDateType', wavetemplate.VariableTypeEnum.DatasetDateType.name());
+System.assertEquals('DatasetDimensionType', wavetemplate.VariableTypeEnum.DatasetDimensionType.name());
+System.assertEquals('DatasetMeasureType', wavetemplate.VariableTypeEnum.DatasetMeasureType.name());
+System.assertEquals('DatasetType', wavetemplate.VariableTypeEnum.DatasetType.name());
+System.assertEquals('DateTimeType', wavetemplate.VariableTypeEnum.DateTimeType.name());
+System.assertEquals('NumberType', wavetemplate.VariableTypeEnum.NumberType.name());
+System.assertEquals('ObjectType', wavetemplate.VariableTypeEnum.ObjectType.name());
+System.assertEquals('SobjectFieldType', wavetemplate.VariableTypeEnum.SobjectFieldType.name());
+System.assertEquals('SobjectType', wavetemplate.VariableTypeEnum.SobjectType.name());
+System.assertEquals('StringType', wavetemplate.VariableTypeEnum.StringType.name());
+System.assertEquals(wavetemplate.VariableTypeEnum.StringType, wavetemplate.VariableTypeEnum.valueOf('StringType'));
+System.assertEquals(12, wavetemplate.VariableTypeEnum.values().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPackagedControllerServiceFlowsStayUnsupported(t *testing.T) {
 	cases := []struct {
 		name string
@@ -10517,6 +10544,7 @@ System.assertEquals(0, LiveAgent.LiveAgentRealTimeSystem.routeChatRequests(new L
 new LiveAgent.LiveChatRouter().doRouting(new List<LiveAgent.LiveChatRoutingRequest>());
 System.assertEquals('', new Support.EinsteinBots().sendMessageToBot('bot', 'version', 'hello'));
 System.assertEquals(null, new Support.EmailTemplateSelector().getDefaultEmailTemplateId('001000000000001'));
+System.assertEquals(null, new Support.EmailTemplateSelector().getDefaultTemplateId('001000000000001'));
 System.assertEquals(0, new Support.MilestoneTriggerTimeCalculator().calculateMilestoneTriggerTime('001000000000001', 'First_Response'));
 System.assertEquals(0, Support.LifeScienceAttendees.parse('{}').attendees.size());
 Support.LifeScienceUpdateEmailTransactions.updateRecords('[]');

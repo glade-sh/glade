@@ -2,13 +2,13 @@
   "name": "ui-site-url-rewriter-local-routing-evidence",
   "evidence": [
     {
-      "surfaceId": "apex:System.Site.UrlRewriter.generateUrlFor(List<PageReference>)",
+      "surfaceId": "apex:Site.UrlRewriter.generateUrlFor(List<PageReference>)",
       "symbol": "Site.UrlRewriter.generateUrlFor",
       "kind": "exec",
       "notes": "Local URL rewriter returns PageReference rows for URL generation without invoking a rendering engine."
     },
     {
-      "surfaceId": "apex:System.Site.UrlRewriter.mapRequestUrl(PageReference)",
+      "surfaceId": "apex:Site.UrlRewriter.mapRequestUrl(PageReference)",
       "symbol": "Site.UrlRewriter.mapRequestUrl",
       "kind": "exec",
       "notes": "Local URL rewriter maps a request PageReference to the corresponding local PageReference."

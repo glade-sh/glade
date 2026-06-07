@@ -1,0 +1,89 @@
+{
+  "name": "core-runtime-metadata-dto-service-contracts",
+  "evidence": [
+    {
+      "surfaceId": "apex:Metadata.DeployCallback.handleResult(Metadata.DeployResult,Metadata.DeployCallbackContext)",
+      "symbol": "Metadata.DeployCallback.handleResult",
+      "kind": "test",
+      "notes": "DeployCallback is a user-implemented callback contract; local deployment callback invocation remains unsupported separately."
+    },
+    {
+      "surfaceId": "apex:Metadata.Metadata.clone()",
+      "symbol": "Metadata.Metadata.clone",
+      "kind": "test",
+      "notes": "Metadata subclasses use the generic Object clone path while preserving base Metadata fields."
+    },
+    {
+      "surfaceId": "apex:Metadata.DeployStatus.Canceled",
+      "symbol": "Metadata.DeployStatus.Canceled",
+      "kind": "test",
+      "notes": "DeployStatus mixed-case enum rows materialize as deterministic local enum values."
+    },
+    {
+      "surfaceId": "apex:Metadata.DeployStatus.Canceling",
+      "symbol": "Metadata.DeployStatus.Canceling",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.DeployStatus.Failed",
+      "symbol": "Metadata.DeployStatus.Failed",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.DeployStatus.InProgress",
+      "symbol": "Metadata.DeployStatus.InProgress",
+      "kind": "test",
+      "notes": "DeployStatus InProgress is available alongside the older IN_PROGRESS spelling."
+    },
+    {
+      "surfaceId": "apex:Metadata.DeployStatus.Pending",
+      "symbol": "Metadata.DeployStatus.Pending",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.DeployStatus.Succeeded",
+      "symbol": "Metadata.DeployStatus.Succeeded",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.DeployStatus.SucceededPartial",
+      "symbol": "Metadata.DeployStatus.SucceededPartial",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.MetadataType.CustomMetadata",
+      "symbol": "Metadata.MetadataType.CustomMetadata",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.MetadataType.Layout",
+      "symbol": "Metadata.MetadataType.Layout",
+      "kind": "test",
+      "notes": "MetadataType Layout is available as a shape enum for retrieve/service contracts."
+    },
+    {
+      "surfaceId": "apex:Metadata.MetadataType.OmniInteractionAccessConfig",
+      "symbol": "Metadata.MetadataType.OmniInteractionAccessConfig",
+      "kind": "test",
+      "notes": "MetadataType OmniInteractionAccessConfig is available as a shape enum for observed project contracts."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/MetadataDtoServiceContractsTest.cls",
+      "content": "private class MetadataCallbackProbe implements Metadata.DeployCallback { public void handleResult(Metadata.DeployResult result, Metadata.DeployCallbackContext context) { String jobId = context == null ? null : context.getCallbackJobId(); System.assert(result == null || jobId == null || result.id != null); } }\n@isTest private class MetadataDtoServiceContractsTest { @isTest static void metadataDtoShapeCompilesAndRuns() { Metadata.DeployCallback callback = new MetadataCallbackProbe(); callback.handleResult(new Metadata.DeployResult(), new Metadata.DeployCallbackContext()); Metadata.CustomMetadata custom = new Metadata.CustomMetadata(); custom.fullName = 'Feature.Default'; Metadata.Metadata base = custom; Metadata.Metadata cloned = (Metadata.Metadata)base.clone(); System.assertEquals('Feature.Default', cloned.fullName); Metadata.DeployResult result = new Metadata.DeployResult(); result.status = Metadata.DeployStatus.Canceled; System.assertEquals(Metadata.DeployStatus.Canceled, result.status); System.assert(Metadata.DeployStatus.Canceling != null); System.assert(Metadata.DeployStatus.Failed != null); System.assert(Metadata.DeployStatus.InProgress != null); System.assert(Metadata.DeployStatus.Pending != null); System.assert(Metadata.DeployStatus.Succeeded != null); System.assert(Metadata.DeployStatus.SucceededPartial != null); System.assert(Metadata.DeployStatus.values().size() >= 6); Metadata.MetadataType customType = Metadata.MetadataType.CustomMetadata; Metadata.MetadataType layoutType = Metadata.MetadataType.Layout; Metadata.MetadataType omniType = Metadata.MetadataType.OmniInteractionAccessConfig; System.assert(customType != null); System.assert(layoutType != null); System.assert(omniType != null); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

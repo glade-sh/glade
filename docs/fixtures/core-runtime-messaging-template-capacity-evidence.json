@@ -8,6 +8,24 @@
       "notes": "Docs and tooling expose the template merge overload; the local runtime returns one RenderEmailTemplateBodyResult per body."
     },
     {
+      "surfaceId": "apex:Messaging.RenderEmailTemplateBodyResult.getSuccess()",
+      "symbol": "Messaging.RenderEmailTemplateBodyResult.getSuccess",
+      "kind": "test",
+      "notes": "Local renderEmailTemplate results expose merge success through the result DTO getter."
+    },
+    {
+      "surfaceId": "apex:Messaging.RenderEmailTemplateBodyResult.getMergedBody()",
+      "symbol": "Messaging.RenderEmailTemplateBodyResult.getMergedBody",
+      "kind": "test",
+      "notes": "Local renderEmailTemplate results expose the merged body through the result DTO getter."
+    },
+    {
+      "surfaceId": "apex:Messaging.RenderEmailTemplateBodyResult.getErrors()",
+      "symbol": "Messaging.RenderEmailTemplateBodyResult.getErrors",
+      "kind": "test",
+      "notes": "Local renderEmailTemplate results expose an empty errors list for successful merges."
+    },
+    {
       "surfaceId": "apex:System.Messaging.renderStoredEmailTemplate(String,String,String)",
       "symbol": "Messaging.renderStoredEmailTemplate(String,String,String)",
       "kind": "test",

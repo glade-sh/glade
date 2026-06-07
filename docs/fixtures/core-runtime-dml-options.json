@@ -80,7 +80,7 @@
       "notes": "optAllOrNone is readable and writable and drives partial success for supported Database.insert DMLOptions overloads."
     },
     {
-      "surfaceId": "apex:System.Database.insert(Object,DMLOptions)",
+      "surfaceId": "apex:System.Database.insert(Object,Database.DMLOptions)",
       "symbol": "Database.insert",
       "kind": "test",
       "notes": "Database.insert with DMLOptions maps optAllOrNone=false to the existing partial-success SaveResult path."

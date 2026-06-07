@@ -2,7 +2,9 @@
   "name": "core-runtime-messaging-single-email-attachments-evidence",
   "evidence": [
     {"surfaceId": "apex:Messaging.SingleEmailMessage.setDocumentAttachments(List<Id>)", "symbol": "Messaging.SingleEmailMessage.setDocumentAttachments", "kind": "test"},
-    {"surfaceId": "apex:Messaging.SingleEmailMessage.setFileAttachments(List<Messaging.EmailFileAttachment>)", "symbol": "Messaging.SingleEmailMessage.setFileAttachments", "kind": "test"}
+    {"surfaceId": "apex:Messaging.SingleEmailMessage.setFileAttachments(List<Messaging.EmailFileAttachment>)", "symbol": "Messaging.SingleEmailMessage.setFileAttachments", "kind": "test"},
+    {"surfaceId": "apex:Messaging.SingleEmailMessage.setFileAttachments(List<EmailFileAttachment>)", "symbol": "Messaging.SingleEmailMessage.setFileAttachments", "kind": "test", "notes": "Tooling docs also publish the unqualified EmailFileAttachment signature for the same Apex-local setter."},
+    {"surfaceId": "apex:Messaging.SingleEmailMessage.getFileAttachments()", "symbol": "Messaging.SingleEmailMessage.getFileAttachments", "kind": "test"}
   ],
   "source": [
     {

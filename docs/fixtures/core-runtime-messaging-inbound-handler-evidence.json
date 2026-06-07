@@ -1,0 +1,29 @@
+{
+  "name": "core-runtime-messaging-inbound-handler-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:Messaging.InboundEmailHandler.handleInboundEmail(Messaging.InboundEmail,Messaging.InboundEnvelope)",
+      "symbol": "Messaging.InboundEmailHandler.handleInboundEmail",
+      "kind": "test",
+      "notes": "InboundEmailHandler is a user Apex callback interface; local tests dispatch handleInboundEmail on the user implementation and return an InboundEmailResult DTO."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/CoreRuntimeMessagingInboundHandlerEvidenceTest.cls",
+      "content": "@isTest private class CoreRuntimeMessagingInboundHandlerEvidenceTest { private class Handler implements Messaging.InboundEmailHandler { public Messaging.InboundEmailResult handleInboundEmail(Messaging.InboundEmail email, Messaging.InboundEnvelope envelope) { Messaging.InboundEmailResult result = new Messaging.InboundEmailResult(); result.success = true; result.message = email.subject + ' from ' + envelope.fromAddress; return result; } } @isTest static void rows() { Messaging.InboundEmail email = new Messaging.InboundEmail(); email.subject = 'Trail'; Messaging.InboundEnvelope envelope = new Messaging.InboundEnvelope(); envelope.fromAddress = 'sender@example.test'; Messaging.InboundEmailResult result = new Handler().handleInboundEmail(email, envelope); System.assertEquals(true, result.success); System.assertEquals('Trail from sender@example.test', result.message); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

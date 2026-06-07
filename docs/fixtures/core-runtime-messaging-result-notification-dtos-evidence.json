@@ -1,0 +1,203 @@
+{
+  "name": "core-runtime-messaging-result-notification-dtos-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:Messaging.SendEmailResult.isSuccess()",
+      "symbol": "Messaging.SendEmailResult.isSuccess",
+      "kind": "test",
+      "notes": "Local sendEmail returns ordered SendEmailResult DTOs with success status."
+    },
+    {
+      "surfaceId": "apex:Messaging.SendEmailResult.getErrors()",
+      "symbol": "Messaging.SendEmailResult.getErrors",
+      "kind": "test",
+      "notes": "Local failed sendEmail returns SendEmailError DTOs through getErrors()."
+    },
+    {
+      "surfaceId": "apex:Messaging.SendEmailError.getFields()",
+      "symbol": "Messaging.SendEmailError.getFields",
+      "kind": "test",
+      "notes": "Local SendEmailError exposes an empty field list when the local validation error is not field-scoped."
+    },
+    {
+      "surfaceId": "apex:Messaging.SendEmailError.getMessage()",
+      "symbol": "Messaging.SendEmailError.getMessage",
+      "kind": "test",
+      "notes": "Local SendEmailError exposes the validation message."
+    },
+    {
+      "surfaceId": "apex:Messaging.SendEmailError.getStatusCode()",
+      "symbol": "Messaging.SendEmailError.getStatusCode",
+      "kind": "test",
+      "notes": "Local SendEmailError exposes a null status code when no platform status code is modeled."
+    },
+    {
+      "surfaceId": "apex:Messaging.SendEmailError.getTargetObjectId()",
+      "symbol": "Messaging.SendEmailError.getTargetObjectId",
+      "kind": "test",
+      "notes": "Local SendEmailError exposes a null target object id when the local validation error is message-scoped."
+    },
+    {
+      "surfaceId": "apex:Messaging.CustomNotification.setNotificationTypeId(String)",
+      "symbol": "Messaging.CustomNotification.setNotificationTypeId",
+      "kind": "test",
+      "notes": "CustomNotification stores Apex-local setter values and send records a local trace without live delivery."
+    },
+    {
+      "surfaceId": "apex:Messaging.CustomNotification.setSenderId(String)",
+      "symbol": "Messaging.CustomNotification.setSenderId",
+      "kind": "test",
+      "notes": "CustomNotification stores Apex-local sender id values."
+    },
+    {
+      "surfaceId": "apex:Messaging.CustomNotification.setTitle(String)",
+      "symbol": "Messaging.CustomNotification.setTitle",
+      "kind": "test",
+      "notes": "CustomNotification stores Apex-local title values."
+    },
+    {
+      "surfaceId": "apex:Messaging.CustomNotification.setBody(String)",
+      "symbol": "Messaging.CustomNotification.setBody",
+      "kind": "test",
+      "notes": "CustomNotification stores Apex-local body values."
+    },
+    {
+      "surfaceId": "apex:Messaging.CustomNotification.setTargetId(String)",
+      "symbol": "Messaging.CustomNotification.setTargetId",
+      "kind": "test",
+      "notes": "CustomNotification stores Apex-local target id values."
+    },
+    {
+      "surfaceId": "apex:Messaging.CustomNotification.setTargetPageRef(String)",
+      "symbol": "Messaging.CustomNotification.setTargetPageRef",
+      "kind": "test",
+      "notes": "CustomNotification stores Apex-local target page reference values."
+    },
+    {
+      "surfaceId": "apex:Messaging.CustomNotification.send(Set<String>)",
+      "symbol": "Messaging.CustomNotification.send",
+      "kind": "test",
+      "notes": "CustomNotification send is modeled as a local test-visible trace without live delivery."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionResult.Builder.withSuccess(Boolean)",
+      "symbol": "Messaging.ActionResult.Builder.withSuccess",
+      "kind": "test",
+      "notes": "ActionResult builder stores success values for local notification handler tests."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionResult.Builder.withMessage(String)",
+      "symbol": "Messaging.ActionResult.Builder.withMessage",
+      "kind": "test",
+      "notes": "ActionResult builder stores message values for local notification handler tests."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionResult.Builder.withErrorCode(Messaging.ActionError)",
+      "symbol": "Messaging.ActionResult.Builder.withErrorCode",
+      "kind": "test",
+      "notes": "ActionResult builder stores local ActionError enum values for notification handler tests."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionResult.Builder.build()",
+      "symbol": "Messaging.ActionResult.Builder.build",
+      "kind": "test",
+      "notes": "ActionResult builder materializes a local ActionResult DTO."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionResult.isSuccess()",
+      "symbol": "Messaging.ActionResult.isSuccess",
+      "kind": "test",
+      "notes": "ActionResult exposes local success values."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionResult.getMessage()",
+      "symbol": "Messaging.ActionResult.getMessage",
+      "kind": "test",
+      "notes": "ActionResult exposes local message values."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionResult.getErrorCode()",
+      "symbol": "Messaging.ActionResult.getErrorCode",
+      "kind": "test",
+      "notes": "ActionResult exposes local error code values."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionableNotification.Builder.withNotificationTypeId(String)",
+      "symbol": "Messaging.ActionableNotification.Builder.withNotificationTypeId",
+      "kind": "test",
+      "notes": "ActionableNotification builder stores notification type id values."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionableNotification.Builder.withRecipientId(String)",
+      "symbol": "Messaging.ActionableNotification.Builder.withRecipientId",
+      "kind": "test",
+      "notes": "ActionableNotification builder stores recipient id values."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionableNotification.Builder.withSenderId(String)",
+      "symbol": "Messaging.ActionableNotification.Builder.withSenderId",
+      "kind": "test",
+      "notes": "ActionableNotification builder stores sender id values."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionableNotification.Builder.build()",
+      "symbol": "Messaging.ActionableNotification.Builder.build",
+      "kind": "test",
+      "notes": "ActionableNotification builder materializes a local ActionableNotification DTO."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionableNotification.getActionIdentifier()",
+      "symbol": "Messaging.ActionableNotification.getActionIdentifier",
+      "kind": "test",
+      "notes": "ActionableNotification exposes local action identifier values."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionableNotification.getNotificationTypeId()",
+      "symbol": "Messaging.ActionableNotification.getNotificationTypeId",
+      "kind": "test",
+      "notes": "ActionableNotification exposes local notification type id values."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionableNotification.getRecipientId()",
+      "symbol": "Messaging.ActionableNotification.getRecipientId",
+      "kind": "test",
+      "notes": "ActionableNotification exposes local recipient id values."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionableNotification.getSenderId()",
+      "symbol": "Messaging.ActionableNotification.getSenderId",
+      "kind": "test",
+      "notes": "ActionableNotification exposes local sender id values."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionableNotification.getTargetId()",
+      "symbol": "Messaging.ActionableNotification.getTargetId",
+      "kind": "test",
+      "notes": "ActionableNotification exposes local target id values."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionableNotification.getTargetPageRef()",
+      "symbol": "Messaging.ActionableNotification.getTargetPageRef",
+      "kind": "test",
+      "notes": "ActionableNotification exposes local target page reference values."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/CoreRuntimeMessagingResultNotificationDTOsEvidenceTest.cls",
+      "content": "@isTest private class CoreRuntimeMessagingResultNotificationDTOsEvidenceTest { @isTest static void rows() { Messaging.SingleEmailMessage invalid = new Messaging.SingleEmailMessage(); invalid.setToAddresses(new List<String>{'missing-body@example.test'}); List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{invalid}, false); System.assertEquals(1, results.size()); System.assertEquals(false, results[0].isSuccess()); System.assertEquals(1, results[0].getErrors().size()); Messaging.SendEmailError err = results[0].getErrors()[0]; System.assertEquals('Email body or template ID is required', err.getMessage()); System.assertEquals(0, err.getFields().size()); System.assertEquals(null, err.getStatusCode()); System.assertEquals(null, err.getTargetObjectId()); Messaging.CustomNotification custom = new Messaging.CustomNotification(); custom.setNotificationTypeId('0ML000000000001AAA'); custom.setSenderId('005000000000001AAA'); custom.setTitle('Trail'); custom.setBody('Body'); custom.setTargetId('001000000000001AAA'); custom.setTargetPageRef('/lightning/r/Account/001000000000001AAA/view'); custom.send(new Set<String>{'005000000000001AAA'}); Messaging.ActionResult action = new Messaging.ActionResult.Builder().withSuccess(true).withMessage('ok').withErrorCode(Messaging.ActionError.INVALID_STATE).build(); System.assertEquals(true, action.isSuccess()); System.assertEquals('ok', action.getMessage()); System.assertEquals(Messaging.ActionError.INVALID_STATE, action.getErrorCode()); Messaging.ActionableNotification note = new Messaging.ActionableNotification.Builder().withActionIdentifier('open').withNotificationTypeId('0ML000000000001AAA').withRecipientId('005000000000001AAA').withSenderId('005000000000002AAA').withTargetId('001000000000001AAA').withTargetPageRef('/lightning/r/Account/001000000000001AAA/view').build(); System.assertEquals('open', note.getActionIdentifier()); System.assertEquals('0ML000000000001AAA', note.getNotificationTypeId()); System.assertEquals('005000000000001AAA', note.getRecipientId()); System.assertEquals('005000000000002AAA', note.getSenderId()); System.assertEquals('001000000000001AAA', note.getTargetId()); System.assertEquals('/lightning/r/Account/001000000000001AAA/view', note.getTargetPageRef()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

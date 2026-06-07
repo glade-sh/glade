@@ -1,0 +1,46 @@
+{
+  "name": "core-runtime-flow-interview-service-contracts",
+  "evidence": [
+    {
+      "surfaceId": "apex:Flow.Interview.createInterview(String,Map<String,Object>)",
+      "symbol": "Flow.Interview.createInterview",
+      "kind": "check",
+      "notes": "Local Flow.Interview exposes the Apex service-contract shape; Flow metadata execution is not claimed by this fixture."
+    },
+    {
+      "surfaceId": "apex:Flow.Interview.createInterview(String,String,Map<String,Object>)",
+      "symbol": "Flow.Interview.createInterview",
+      "kind": "check",
+      "notes": "Namespace overload preserves the local service-contract shape."
+    },
+    {
+      "surfaceId": "apex:Flow.Interview.start()",
+      "symbol": "Flow.Interview.start",
+      "kind": "check",
+      "notes": "start is a no-render/no-service contract call; declarative Flow execution remains outside this fixture."
+    },
+    {
+      "surfaceId": "apex:Flow.Interview.getVariableValue(String)",
+      "symbol": "Flow.Interview.getVariableValue",
+      "kind": "check",
+      "notes": "getVariableValue is compile-visible through the local service-contract shape."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/FlowInterviewServiceContractsProbe.cls",
+      "content": "public class FlowInterviewServiceContractsProbe { public static Object localInterviewDtoKeepsInputs() { Map<String,Object> inputs = new Map<String,Object>{ 'answer' => 42, 'name' => 'Trail' }; Flow.Interview interview = Flow.Interview.createInterview('LocalFlow', inputs); interview.start(); Object answer = interview.getVariableValue('answer'); Flow.Interview namespaced = Flow.Interview.createInterview('pkg', 'LocalFlow', inputs); return namespaced.getVariableValue('name'); } }"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 0,
+      "files": 1,
+      "ok": true,
+      "types": 1
+    }
+  }
+}

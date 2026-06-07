@@ -2,8 +2,9 @@
   "name": "data-dml-approval-unsupported",
   "evidence": [
     {
+      "surfaceId": "apex:Approval.process",
       "symbol": "Approval.process",
-      "kind": "exec",
+      "kind": "unsupported",
       "notes": "Approval process APIs return a stable UnsupportedFeature diagnostic instead of silently succeeding in the local runtime."
     }
   ],

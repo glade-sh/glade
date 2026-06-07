@@ -187,6 +187,23 @@ func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value
 		frame["this"] = receiver
 		return Null
 	}
+	if receiver.Kind == ValueObject && strings.EqualFold(receiver.Type, "Flow.Interview") && strings.EqualFold(methodName, "getVariableValue") {
+		if len(method.Params) == 1 {
+			if name, found := frame[method.Params[0].Name]; found && name.Kind == ValueString {
+				if variables, ok := receiver.Fields["variables"]; ok && variables.Kind == ValueMap {
+					if value, ok := variables.Map[mapKey(name)]; ok {
+						return value
+					}
+					for key, stored := range variables.MapKeys {
+						if stored.Kind == ValueString && strings.EqualFold(stored.Text, name.Text) {
+							return variables.Map[key]
+						}
+					}
+				}
+			}
+		}
+		return Null
+	}
 	if returnType == "" || strings.EqualFold(returnType, "void") {
 		if receiver.Kind == ValueObject && len(method.Params) == 1 {
 			if suffix, ok := passiveAccessorSuffix(methodName, "set"); ok {
@@ -323,6 +340,24 @@ func initializeGeneratedPlatformValue(object *Value) {
 		object.Fields["__values"] = List()
 		object.Fields["__index"] = Int(0)
 	}
+}
+
+func newApexPagesComponentValue(typeName string) Value {
+	object := Object(typeName)
+	object.Fields["childComponents"] = List()
+	object.Fields["parent"] = Null
+	if strings.EqualFold(typeName, "ApexPages.ComponentIteration") {
+		object.Fields["iterationValue"] = Null
+		return object
+	}
+	object.Fields["componentIterations"] = List()
+	expressions := Object("ApexPages.ComponentExpressions")
+	object.Fields["expressions"] = expressions
+	object.Fields["Expressions"] = expressions
+	object.Fields["facets"] = Map()
+	object.Fields["id"] = Null
+	object.Fields["rendered"] = Bool(true)
+	return object
 }
 
 func generatedPlatformIteratorType(typeName string) bool {

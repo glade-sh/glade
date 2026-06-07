@@ -857,8 +857,9 @@ func TestGeneratedPlatformFallbackDoesNotMaskExplicitUnsupportedRuntimeMethods(t
 	if !handled {
 		t.Fatalf("PageReference.getContent was not handled")
 	}
-	if err != nil || content.Kind != ValueObject || content.Type != "Blob" {
-		t.Fatalf("PageReference.getContent = %#v err=%v, want Blob", content, err)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "PageReference.getContent local Visualforce page rendering surface"` || content.Kind != ValueNull {
+		t.Fatalf("PageReference.getContent = %#v err=%v, want UnsupportedFeature", content, err)
 	}
 
 	for _, args := range [][]Value{

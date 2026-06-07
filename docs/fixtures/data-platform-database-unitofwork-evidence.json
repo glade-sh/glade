@@ -1,0 +1,37 @@
+{
+  "name": "data-platform-database-unitofwork-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.Database.UnitOfWork",
+      "symbol": "Database.UnitOfWork",
+      "kind": "test",
+      "notes": "Database.UnitOfWork queues local DML, supports discardWork, and applies queued records on commitWork."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/DatabaseUnitOfWorkEvidenceTest.cls",
+      "content": "@isTest private class DatabaseUnitOfWorkEvidenceTest { @isTest static void unitOfWorkQueuesAndCommitsRows() { Database.UnitOfWork discarded = new Database.UnitOfWork(); discarded.insertRecord(new Account(Name = 'Discarded')); discarded.discardWork(); discarded.commitWork(); System.assertEquals(0, ((List<Account>)Database.query('SELECT Id FROM Account')).size()); Database.UnitOfWork work = new Database.UnitOfWork(); Database.SaveResult insertResult = work.insertRecord(new Account(Name = 'Queued')); System.assertEquals(false, insertResult.isSuccess()); System.assertEquals(0, ((List<Account>)Database.query('SELECT Id FROM Account')).size()); work.commitWork(); System.assertEquals(true, insertResult.isSuccess()); System.assertNotEquals(null, insertResult.getId()); System.assertEquals(1, ((List<Account>)Database.query('SELECT Id FROM Account')).size()); Database.UnitOfWork bulk = new Database.UnitOfWork(); List<Account> accounts = new List<Account>{new Account(Name = 'Bulk One'), new Account(Name = 'Bulk Two')}; List<Database.SaveResult> results = bulk.insertRecords(accounts); bulk.commitWork(); System.assertEquals(2, results.size()); System.assertEquals(true, results[0].isSuccess()); System.assertEquals(true, results[1].isSuccess()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

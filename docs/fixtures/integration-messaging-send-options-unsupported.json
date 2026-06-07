@@ -4,7 +4,7 @@
     {
       "surfaceId": "apex:Messaging.SendEmailOptions",
       "symbol": "Messaging.SendEmailOptions",
-      "kind": "exec",
+      "kind": "unsupported",
       "notes": "Local send-options object behavior is not modeled."
     },
     {

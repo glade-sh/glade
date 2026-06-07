@@ -1,0 +1,179 @@
+{
+  "name": "core-runtime-approval-dto-contracts",
+  "evidence": [
+    {
+      "surfaceId": "apex:Approval.ProcessRequest.getComments()",
+      "symbol": "Approval.ProcessRequest.getComments",
+      "kind": "test",
+      "notes": "Approval request DTO getters and setters preserve local fields; Approval.process remains explicit unsupported."
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessRequest.setComments(String)",
+      "symbol": "Approval.ProcessRequest.setComments",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessRequest.getNextApproverIds()",
+      "symbol": "Approval.ProcessRequest.getNextApproverIds",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessRequest.setNextApproverIds(List<Id>)",
+      "symbol": "Approval.ProcessRequest.setNextApproverIds",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessSubmitRequest.getComments()",
+      "symbol": "Approval.ProcessSubmitRequest.getComments",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessSubmitRequest.setComments(String)",
+      "symbol": "Approval.ProcessSubmitRequest.setComments",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessSubmitRequest.getNextApproverIds()",
+      "symbol": "Approval.ProcessSubmitRequest.getNextApproverIds",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessSubmitRequest.setNextApproverIds(List<Id>)",
+      "symbol": "Approval.ProcessSubmitRequest.setNextApproverIds",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessSubmitRequest.setObjectId(String)",
+      "symbol": "Approval.ProcessSubmitRequest.setObjectId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessSubmitRequest.getObjectId()",
+      "symbol": "Approval.ProcessSubmitRequest.getObjectId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessSubmitRequest.getProcessDefinitionNameOrId()",
+      "symbol": "Approval.ProcessSubmitRequest.getProcessDefinitionNameOrId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessSubmitRequest.setProcessDefinitionNameOrId(String)",
+      "symbol": "Approval.ProcessSubmitRequest.setProcessDefinitionNameOrId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessSubmitRequest.getSkipEntryCriteria()",
+      "symbol": "Approval.ProcessSubmitRequest.getSkipEntryCriteria",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessSubmitRequest.setSkipEntryCriteria(Boolean)",
+      "symbol": "Approval.ProcessSubmitRequest.setSkipEntryCriteria",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessSubmitRequest.getSubmitterId()",
+      "symbol": "Approval.ProcessSubmitRequest.getSubmitterId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessSubmitRequest.setSubmitterId(String)",
+      "symbol": "Approval.ProcessSubmitRequest.setSubmitterId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessWorkitemRequest.setAction(String)",
+      "symbol": "Approval.ProcessWorkitemRequest.setAction",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessWorkitemRequest.getAction()",
+      "symbol": "Approval.ProcessWorkitemRequest.getAction",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessWorkitemRequest.getComments()",
+      "symbol": "Approval.ProcessWorkitemRequest.getComments",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessWorkitemRequest.setComments(String)",
+      "symbol": "Approval.ProcessWorkitemRequest.setComments",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessWorkitemRequest.getNextApproverIds()",
+      "symbol": "Approval.ProcessWorkitemRequest.getNextApproverIds",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessWorkitemRequest.setNextApproverIds(List<Id>)",
+      "symbol": "Approval.ProcessWorkitemRequest.setNextApproverIds",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessWorkitemRequest.getWorkitemId()",
+      "symbol": "Approval.ProcessWorkitemRequest.getWorkitemId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessWorkitemRequest.setWorkitemId(String)",
+      "symbol": "Approval.ProcessWorkitemRequest.setWorkitemId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessResult.isSuccess()",
+      "symbol": "Approval.ProcessResult.isSuccess",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessResult.getErrors()",
+      "symbol": "Approval.ProcessResult.getErrors",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessResult.getActorIds()",
+      "symbol": "Approval.ProcessResult.getActorIds",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessResult.getEntityId()",
+      "symbol": "Approval.ProcessResult.getEntityId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessResult.getInstanceId()",
+      "symbol": "Approval.ProcessResult.getInstanceId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessResult.getInstanceStatus()",
+      "symbol": "Approval.ProcessResult.getInstanceStatus",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Approval.ProcessResult.getNewWorkitemIds()",
+      "symbol": "Approval.ProcessResult.getNewWorkitemIds",
+      "kind": "test"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/ApprovalDtoContractsTest.cls",
+      "content": "@isTest private class ApprovalDtoContractsTest { @isTest static void requestAndResultDtosKeepFields() { Approval.ProcessRequest base = new Approval.ProcessRequest(); base.setComments('base comment'); base.setNextApproverIds(new List<Id>{ '005000000000001' }); System.assertEquals('base comment', base.getComments()); System.assertEquals('005000000000001', base.getNextApproverIds().get(0)); Approval.ProcessSubmitRequest submit = new Approval.ProcessSubmitRequest(); submit.setComments('submit comment'); submit.setNextApproverIds(new List<Id>{ '005000000000002' }); submit.setObjectId('001000000000001'); submit.setProcessDefinitionNameOrId('Account_Approval'); submit.setSkipEntryCriteria(true); submit.setSubmitterId('005000000000001'); System.assertEquals('submit comment', submit.getComments()); System.assertEquals('005000000000002', submit.getNextApproverIds().get(0)); System.assertEquals('001000000000001', submit.getObjectId()); System.assertEquals('Account_Approval', submit.getProcessDefinitionNameOrId()); System.assertEquals(true, submit.getSkipEntryCriteria()); System.assertEquals('005000000000001', submit.getSubmitterId()); Approval.ProcessWorkitemRequest work = new Approval.ProcessWorkitemRequest(); work.setAction('Approve'); work.setComments('work comment'); work.setNextApproverIds(new List<Id>{ '005000000000003' }); work.setWorkitemId('04i000000000001'); System.assertEquals('Approve', work.getAction()); System.assertEquals('work comment', work.getComments()); System.assertEquals('005000000000003', work.getNextApproverIds().get(0)); System.assertEquals('04i000000000001', work.getWorkitemId()); Approval.ProcessResult result = new Approval.ProcessResult(); result.success = true; result.errors = new List<Database.Error>(); result.actorIds = new List<Id>{ '005000000000001' }; result.entityId = '001000000000001'; result.instanceId = '04g000000000001'; result.instanceStatus = 'Approved'; result.newWorkitemIds = new List<Id>{ '04i000000000001' }; System.assertEquals(true, result.isSuccess()); System.assertEquals(0, result.getErrors().size()); System.assertEquals('005000000000001', result.getActorIds().get(0)); System.assertEquals('001000000000001', result.getEntityId()); System.assertEquals('04g000000000001', result.getInstanceId()); System.assertEquals('Approved', result.getInstanceStatus()); System.assertEquals('04i000000000001', result.getNewWorkitemIds().get(0)); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

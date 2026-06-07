@@ -1,0 +1,45 @@
+{
+  "name": "core-runtime-process-plugin-contracts",
+  "evidence": [
+    {
+      "surfaceId": "apex:Process.Plugin.describe()",
+      "symbol": "Process.Plugin.describe",
+      "kind": "check",
+      "notes": "Process.Plugin is a user-implemented service contract; local invocation is user Apex, not a platform service."
+    },
+    {
+      "surfaceId": "apex:Process.Plugin.invoke(Process.PluginRequest)",
+      "symbol": "Process.Plugin.invoke",
+      "kind": "check"
+    },
+    {
+      "surfaceId": "apex:Process.PluginDescribeResult.InputParameter",
+      "symbol": "Process.PluginDescribeResult.InputParameter",
+      "kind": "check",
+      "notes": "Nested docs shape aliases the project-visible plugin input parameter DTO."
+    },
+    {
+      "surfaceId": "apex:Process.PluginDescribeResult.OutputParameter",
+      "symbol": "Process.PluginDescribeResult.OutputParameter",
+      "kind": "check",
+      "notes": "Nested docs shape aliases the project-visible plugin output parameter DTO."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/ProcessPluginContractsProbe.cls",
+      "content": "public class ProcessPluginContractsProbe implements Process.Plugin { public Process.PluginDescribeResult describe() { Process.PluginDescribeResult result = new Process.PluginDescribeResult(); result.name = 'Trail Plugin'; result.description = 'Local contract'; Process.PluginDescribeResult.InputParameter input = new Process.PluginDescribeResult.InputParameter('recordId', 'Record Id', Process.PluginDescribeResult.ParameterType.STRING, true); Process.PluginDescribeResult.OutputParameter output = new Process.PluginDescribeResult.OutputParameter('message', 'Message', Process.PluginDescribeResult.ParameterType.STRING); result.inputParameters = new List<Process.PluginDescribeResult.InputParameter>{ input }; result.outputParameters = new List<Process.PluginDescribeResult.OutputParameter>{ output }; return result; } public Process.PluginResult invoke(Process.PluginRequest request) { return new Process.PluginResult('message', request.inputParameters.get('recordId')); } }"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 0,
+      "files": 1,
+      "ok": true,
+      "types": 1
+    }
+  }
+}

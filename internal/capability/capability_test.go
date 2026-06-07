@@ -369,7 +369,6 @@ func TestCoreServiceContextStdlibRowsAreExplicitUnsupported(t *testing.T) {
 		"Test.getEventBus()":                                                            true,
 		"Test.getExternalService()":                                                     true,
 		"Test.invokeContinuationMethod(Object,Continuation)":                            true,
-		"Test.invokePage(PageReference)":                                                true,
 		"Test.newSendEmailQuickActionDefaults(Id,Id)":                                   true,
 		"Test.setContinuationResponse(String,HttpResponse)":                             true,
 		"Test.setCurrentPageReference(Object)":                                          true,
@@ -382,12 +381,10 @@ func TestCoreServiceContextStdlibRowsAreExplicitUnsupported(t *testing.T) {
 		"TrailblazerIdentity.generateUserEmailVerificationToken(String,String,String)":                             true,
 		"TrailblazerIdentity.getUserOrgInfo(List<String>)":                                                         true,
 		"TrailblazerIdentity.splunkLog(String,String)":                                                             true,
-		"UIRequest.getCurrent()":                                                  true,
-		"UIRequest.getRequestHeader(String)":                                      true,
-		"UserInfo.hasPackageLicense(Id)":                                          true,
-		"UserInfo.isCurrentUserLicensedForPackage(Id)":                            true,
-		"WebServiceCallout.invoke(Object,Object,Map,List)":                        true,
-		"WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)": true,
+		"UIRequest.getCurrent()":                       true,
+		"UIRequest.getRequestHeader(String)":           true,
+		"UserInfo.hasPackageLicense(Id)":               true,
+		"UserInfo.isCurrentUserLicensedForPackage(Id)": true,
 	}
 	for _, entry := range StdlibMatrix() {
 		if !watched[entry.API] {
@@ -400,6 +397,26 @@ func TestCoreServiceContextStdlibRowsAreExplicitUnsupported(t *testing.T) {
 	}
 	if len(watched) > 0 {
 		t.Fatalf("missing explicit unsupported core service/context rows: %#v", watched)
+	}
+}
+
+func TestWebServiceCalloutStdlibRowsAreLocallyPromotedOrFenced(t *testing.T) {
+	watched := map[string]Status{
+		"WebServiceCallout.invoke(Object,Object,Map,List)":                        StatusPartial,
+		"WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)": StatusPartial,
+	}
+	for _, entry := range StdlibMatrix() {
+		want, ok := watched[entry.API]
+		if !ok {
+			continue
+		}
+		delete(watched, entry.API)
+		if entry.Status != want {
+			t.Fatalf("%s = %s, want %s: %s", entry.API, entry.Status, want, entry.Notes)
+		}
+	}
+	if len(watched) > 0 {
+		t.Fatalf("missing WebServiceCallout stdlib rows: %#v", watched)
 	}
 }
 

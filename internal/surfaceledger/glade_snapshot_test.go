@@ -320,19 +320,29 @@ func TestBuildGladeSnapshotAddsFixtureBackedSystemAliasRows(t *testing.T) {
 func TestBuildGladeSnapshotAddsFixtureBackedApexAliasRows(t *testing.T) {
 	rows := BuildGladeSnapshot()
 	byID := rowsByID(rows)
-	id := "apex:TxnSecurity.Event.Event()"
-	row, ok := byID[id]
-	if !ok {
-		t.Fatalf("missing apex alias row %s", id)
-	}
-	if row.GladeShape == ShapeAbsent || row.GladeBehavior != BehaviorSupported || row.Kind != KindMethod {
-		t.Fatalf("%s shape/behavior/kind = %s/%s/%s, want non-absent/supported/method", id, row.GladeShape, row.GladeBehavior, row.Kind)
-	}
-	if !hasSource(row.Sources, "apex-fixture-alias") {
-		t.Fatalf("%s sources = %#v, want apex-fixture-alias", id, row.Sources)
-	}
-	if row.Namespace != "TxnSecurity" || row.TypeName != "Event" || row.MemberName != "Event" {
-		t.Fatalf("%s namespace/type/member = %s/%s/%s, want TxnSecurity/Event/Event", id, row.Namespace, row.TypeName, row.MemberName)
+	for _, tc := range []struct {
+		id       string
+		member   string
+		typ      string
+		behavior BehaviorState
+	}{
+		{id: "apex:TxnSecurity.Event.Event()", typ: "Event", member: "Event", behavior: BehaviorSupported},
+		{id: "apex:Messaging.SingleEmailMessage.setFileAttachments(List<EmailFileAttachment>)", typ: "SingleEmailMessage", member: "setFileAttachments", behavior: BehaviorSupported},
+		{id: "apex:Support.EmailTemplateSelector.getDefaultTemplateId(Id)", typ: "EmailTemplateSelector", member: "getDefaultTemplateId", behavior: BehaviorSupported},
+	} {
+		row, ok := byID[tc.id]
+		if !ok {
+			t.Fatalf("missing apex alias row %s", tc.id)
+		}
+		if row.GladeShape == ShapeAbsent || row.GladeBehavior != tc.behavior || row.Kind != KindMethod {
+			t.Fatalf("%s shape/behavior/kind = %s/%s/%s, want non-absent/%s/method", tc.id, row.GladeShape, row.GladeBehavior, row.Kind, tc.behavior)
+		}
+		if !hasSource(row.Sources, "apex-fixture-alias") {
+			t.Fatalf("%s sources = %#v, want apex-fixture-alias", tc.id, row.Sources)
+		}
+		if row.TypeName != tc.typ || row.MemberName != tc.member {
+			t.Fatalf("%s type/member = %s/%s, want %s/%s", tc.id, row.TypeName, row.MemberName, tc.typ, tc.member)
+		}
 	}
 }
 
