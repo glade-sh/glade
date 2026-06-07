@@ -1325,6 +1325,13 @@ func (vm *VM) lookupLabel(name string) (Value, bool) {
 		label = after
 	}
 	if vm.Org != nil {
+		if language := strings.TrimSpace(vm.currentUserInfoField("LanguageLocaleKey", "")); language != "" {
+			filtered := vm.Org.Metadata
+			filtered.Labels = labelsForLanguage(filtered.Labels, language)
+			if value, status := resource.ResolveLabel(filtered, vm.Org.Namespace, namespace, label); status != resource.LabelLookupMissing {
+				return String(value), true
+			}
+		}
 		if value, status := resource.ResolveLabel(vm.Org.Metadata, vm.Org.Namespace, namespace, label); status != resource.LabelLookupMissing {
 			return String(value), true
 		}

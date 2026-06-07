@@ -235,6 +235,22 @@ func connectAPITimeZone(name string) Value {
 	return tz
 }
 
+func (vm *VM) callConnectAPICommunitiesStatic(className, methodName string, args []Value) (Value, bool, error) {
+	if !strings.EqualFold(className, "ConnectApi.Communities") && !strings.EqualFold(className, "System.ConnectApi.Communities") {
+		return Null, false, nil
+	}
+	switch strings.ToLower(methodName) {
+	case "getcommunity":
+		value, err := vm.connectAPICommunity(args)
+		return value, true, err
+	case "getcommunities":
+		value, err := vm.connectAPICommunities(args)
+		return value, true, err
+	default:
+		return Null, false, nil
+	}
+}
+
 func (vm *VM) connectAPICommunity(args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Null, fmt.Errorf("ConnectApi.Communities.getCommunity expects 1 argument")
@@ -243,13 +259,53 @@ func (vm *VM) connectAPICommunity(args []Value) (Value, error) {
 	if networkID == "" {
 		networkID = vm.firstOrgRecordID("Network", "0DB000000000001")
 	}
+	return vm.connectAPICommunityValue(networkID), nil
+}
+
+func (vm *VM) connectAPICommunities(args []Value) (Value, error) {
+	if len(args) != 0 {
+		return Null, fmt.Errorf("ConnectApi.Communities.getCommunities expects 0 arguments")
+	}
+	page := Object("ConnectApi.CommunityPage")
+	communities := typedList("List<ConnectApi.Community>")
+	ids := vm.networkRecordIDs()
+	if len(ids) == 0 {
+		ids = []string{"0DB000000000001"}
+	}
+	for _, id := range ids {
+		communities.List = append(communities.List, vm.connectAPICommunityValue(id))
+	}
+	page.Fields["communities"] = communities
+	return page, nil
+}
+
+func (vm *VM) connectAPICommunityValue(networkID string) Value {
+	if strings.TrimSpace(networkID) == "" {
+		networkID = "0DB000000000001"
+	}
 	prefix := strings.Trim(vm.firstOrgRecordString("Network", "UrlPathPrefix", "local"), "/")
 	community := Object("ConnectApi.Community")
 	community.Fields["id"] = String(networkID)
 	community.Fields["name"] = String(vm.firstOrgRecordString("Network", "Name", "Local Community"))
 	community.Fields["urlPathPrefix"] = String(prefix)
 	community.Fields["siteUrl"] = String(strings.TrimRight(vm.salesforceBaseURL(), "/") + "/" + prefix)
-	return community, nil
+	return community
+}
+
+func (vm *VM) networkRecordIDs() []string {
+	if vm == nil || vm.Org == nil {
+		return nil
+	}
+	object, ok := vm.Org.Objects["Network"]
+	if !ok {
+		return nil
+	}
+	ids := make([]string, 0, len(object.Records))
+	for id := range object.Records {
+		ids = append(ids, string(id))
+	}
+	sort.Strings(ids)
+	return ids
 }
 
 func (vm *VM) connectAPINamedCredentialsGetNamedCredentials(args []Value) (Value, error) {

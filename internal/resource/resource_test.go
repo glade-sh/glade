@@ -106,6 +106,9 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	if got, ok := ResolveEndpoint(registry, "callout:pkg__Billing/v1/accounts"); !ok || got != "https://billing.example.test/v1/accounts" {
 		t.Fatalf("namespaced endpoint = %q, %v", got, ok)
 	}
+	if got, ok := ResolveEndpoint(registry, "callout:Maps/geocode"); ok || got != "callout:Maps/geocode" {
+		t.Fatalf("remote site endpoint = %q, %v", got, ok)
+	}
 	if len(registry.Tabs) != 1 || registry.Tabs[0].Name != "ext__Widget__c" || registry.Tabs[0].Label != "Widgets" || registry.Tabs[0].SObjectName != "ext__Widget__c" {
 		t.Fatalf("tabs = %#v", registry.Tabs)
 	}

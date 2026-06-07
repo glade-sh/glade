@@ -137,7 +137,8 @@ func (e *Engine) updateOne(record storage.Record) error {
 	}
 	if !e.DeferAutomation {
 		if err := e.withPriorRecordForAutomation(storedID, oldRecord, func() error {
-			return e.ApplyAutomation(objectName, storedID)
+			_, err := e.ApplyAutomation(objectName, storedID)
+			return err
 		}); err != nil {
 			e.restoreRollbackPoint(rollback)
 			return err

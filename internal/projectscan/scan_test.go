@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/uicontroller"
 )
 
 func TestScanFindsProjectGaps(t *testing.T) {
@@ -60,6 +62,7 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
     System.debug(namedCredentialType);
     System.debug(ConnectApi.NamedCredentials.getExternalCredential('googleBooksAPIApex'));
     System.debug(ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId()));
+    System.debug(ConnectApi.Communities.getCommunities().communities);
     Auth.JWT jwt = new Auth.JWT();
     jwt.setIss('issuer');
     Auth.SessionManagement.getCurrentSession();
@@ -169,6 +172,9 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/UsesPlatform.cls", "ConnectApi.ChatterUsers.getFollowings") {
 		t.Fatalf("supported ConnectApi.ChatterUsers.getFollowings was reported as a blocker")
 	}
+	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/UsesPlatform.cls", "ConnectApi.Communities.getCommunities") {
+		t.Fatalf("supported ConnectApi.Communities.getCommunities was reported as a blocker")
+	}
 	if hasLineFindingContaining(report, "platform.auth-context", "src/classes/UsesPlatform.cls", "Auth.JWT jwt") {
 		t.Fatalf("supported Auth.JWT model was reported as a blocker")
 	}
@@ -213,6 +219,37 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 	}
 }
 
+func TestScanMetadataProjectCollectsAnalyticsInSamePass(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	layoutPath := filepath.Join(root, "src/layouts/Account.layout")
+	reportPath := filepath.Join(root, "src/reports/Sales.pipeline.report-meta.xml")
+	dashboardPath := filepath.Join(root, "src/dashboards/Exec.pipeline.dashboard-meta.xml")
+	pagePath := filepath.Join(root, "outside/pages/Loose.page")
+	writeFile(t, layoutPath, `<Layout/>`)
+	writeFile(t, reportPath, `<Report/>`)
+	writeFile(t, dashboardPath, `<Dashboard/>`)
+	writeFile(t, pagePath, `<apex:page />`)
+
+	proj, err := loadScanProjectWithAnalytics(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(proj.project.LayoutFiles) != 1 || filepath.Clean(proj.project.LayoutFiles[0]) != filepath.Clean(layoutPath) {
+		t.Fatalf("layout metadata was not collected from scan pass: %#v", proj.project.LayoutFiles)
+	}
+	if !proj.reports[filepath.Clean(reportPath)] {
+		t.Fatalf("report metadata was not collected from scan pass: %#v", proj.reports)
+	}
+	if !proj.dashboards[filepath.Clean(dashboardPath)] {
+		t.Fatalf("dashboard metadata was not collected from scan pass: %#v", proj.dashboards)
+	}
+	if len(proj.project.VisualforcePageFiles) != 1 || filepath.Clean(proj.project.VisualforcePageFiles[0]) != filepath.Clean(pagePath) {
+		t.Fatalf("Visualforce page metadata was not collected from scan pass: %#v", proj.project.VisualforcePageFiles)
+	}
+}
+
 func TestScanSuppressesSupportedCallableStubSurface(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
@@ -245,6 +282,165 @@ private class PlatformApisTest {
 	}
 	if surface := findSurface(report, "apex.callable-stub"); surface != nil {
 		t.Fatalf("callable/stub surface = %#v, want suppressed supported surface", surface)
+	}
+}
+
+func TestScanSuppressesSupportedReportsEnumReferences(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	writeFile(t, filepath.Join(root, "src/classes/ReportFormatUser.cls"), `public class ReportFormatUser {
+  public String run() {
+    return Reports.ReportFormat.SUMMARY.name();
+  }
+}`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hasLineFindingContaining(report, "analytics.report-execution", "src/classes/ReportFormatUser.cls", "Reports.ReportFormat.SUMMARY") {
+		t.Fatalf("supported Reports.ReportFormat enum reference should not be reported")
+	}
+}
+
+func TestScanSuppressesConnectApiCallsGuardedOutOfTests(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	writeFile(t, filepath.Join(root, "src/classes/ChatterPoster.cls"), `public class ChatterPoster {
+  public void guarded(ConnectApi.FeedItemInput input) {
+    if (!Test.isRunningTest()) { ConnectApi.ChatterFeeds.postFeedElement(Network.getNetworkId(), input); }
+  }
+  public void unguarded(ConnectApi.FeedItemInput input) {
+    ConnectApi.ChatterFeeds.postFeedElement(Network.getNetworkId(), input);
+  }
+  public void guardedBlock(ConnectApi.FeedItemInput input) {
+    if (!Test.isRunningTest()) {
+      ConnectApi.ChatterFeeds.postFeedElement(Network.getNetworkId(), input);
+    }
+  }
+  public void guardedAnd(ConnectApi.FeedItemInput input, Boolean enabled) {
+    if (enabled && !Test.isRunningTest()) {
+      ConnectApi.ChatterFeeds.postFeedElement(Network.getNetworkId(), input);
+    }
+  }
+  public void guardedOr(ConnectApi.FeedItemInput input, Boolean force) {
+    if (!Test.isRunningTest() || force) {
+      ConnectApi.ChatterFeeds.postFeedElement(Network.getNetworkId(), guardedOrInput);
+    }
+  }
+}`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hasLineFindingEvidenceContaining(report, "platform.cache-connectapi", "src/classes/ChatterPoster.cls", "if (!Test.isRunningTest())") {
+		t.Fatalf("test-guarded ConnectApi call should not be reported")
+	}
+	if hasLineFindingEvidenceContaining(report, "platform.cache-connectapi", "src/classes/ChatterPoster.cls", "guardedBlock") ||
+		hasLineFindingEvidenceContaining(report, "platform.cache-connectapi", "src/classes/ChatterPoster.cls", "guardedAnd") {
+		t.Fatalf("multiline test-guarded ConnectApi call should not be reported")
+	}
+	if !hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/ChatterPoster.cls", "ConnectApi.ChatterFeeds") {
+		t.Fatalf("unguarded ChatterFeeds call should remain a blocker")
+	}
+	if !hasLineFindingEvidenceContaining(report, "platform.cache-connectapi", "src/classes/ChatterPoster.cls", "guardedOr") {
+		t.Fatalf("or-guarded ChatterFeeds call can still run in tests and should remain a blocker")
+	}
+}
+
+func TestScanSuppressesCalloutMockKeysWithoutEndpointMetadata(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	writeFile(t, filepath.Join(root, "src/classes/EndpointMocks.cls"), `@IsTest
+private class EndpointMocks {
+  static void setup() {
+    MultiStaticResourceCalloutMock multimock = new MultiStaticResourceCalloutMock();
+    multimock.setStaticResource('callout:MissingCredential', 'Fixture');
+  }
+  static void assertEndpoint(HttpRequest req) {
+    System.assertEquals('callout:AssertOnlyCredential', req.getEndpoint());
+  }
+  static void send(HttpRequest req) {
+    req.setEndpoint('callout:MissingCredential');
+  }
+  static void guarded(HttpRequest req) {
+    if (!Test.isRunningTest()) {
+      req.setEndpoint('callout:GuardedCredential');
+    }
+  }
+  static void guardedOr(HttpRequest req, Boolean force) {
+    if (!Test.isRunningTest() || force) {
+      req.setEndpoint('callout:GuardedOrCredential');
+    }
+  }
+}`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hasLineFindingEvidenceContaining(report, "endpoint.metadata", "src/classes/EndpointMocks.cls", "setStaticResource") {
+		t.Fatalf("static-resource callout mock key should not require endpoint metadata")
+	}
+	if hasLineFinding(report, "endpoint.metadata", "src/classes/EndpointMocks.cls", "AssertOnlyCredential") {
+		t.Fatalf("assert-only endpoint literal should not require named credential metadata")
+	}
+	if !hasLineFindingEvidenceContaining(report, "endpoint.metadata", "src/classes/EndpointMocks.cls", "req.setEndpoint") {
+		t.Fatalf("real callout endpoint should still require named credential metadata")
+	}
+	if hasLineFinding(report, "endpoint.metadata", "src/classes/EndpointMocks.cls", "GuardedCredential") {
+		t.Fatalf("test-guarded endpoint should not require named credential metadata")
+	}
+	if !hasLineFinding(report, "endpoint.metadata", "src/classes/EndpointMocks.cls", "GuardedOrCredential") {
+		t.Fatalf("or-guarded endpoint can still run in tests and should remain a blocker")
+	}
+}
+
+func TestScanSuppressesSupportedAuthAndNetworkLocalContracts(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	writeFile(t, filepath.Join(root, "src/classes/AuthNetworkContracts.cls"), `global class SamlHandler implements Auth.SamlJitHandler {
+  global User createUser(Id samlSsoProviderId, Id communityId, Id portalId, String federationIdentifier, Map<String,String> attributes, String assertion) { return new User(); }
+  global void updateUser(Id userId, Id samlSsoProviderId, Id communityId, Id portalId, String federationIdentifier, Map<String,String> attributes, String assertion) {}
+}
+global class OAuthProvider extends Auth.AuthProviderPluginClass {
+  global override PageReference initiate(Map<String,String> config, String stateToPropagate) { return null; }
+  global override Auth.AuthProviderTokenResponse handleCallback(Map<String,String> config, Auth.AuthProviderCallbackState state) { return null; }
+  global override Auth.UserData getUserInfo(Map<String,String> config, Auth.AuthProviderTokenResponse response) { return null; }
+  global override String getCustomMetadataType() { return 'OAuth__mdt'; }
+}
+public class AuthNetworkContracts {
+  public void run(Network n, User u, Contact c, Account a) {
+    String logout = System.Network.getLogoutUrl(n.Id);
+    String selfReg = System.Network.getSelfRegUrl(n.Id);
+    PageReference auth = Network.forwardToAuthPage('/start', 'page');
+    String domain = Site.getDomain();
+    String siteName = Site.getName();
+    String prefix = Site.getPrefix();
+    Id networkID = Network.getNetworkID();
+    List<Network> networks = [SELECT Id FROM Network WHERE Status = 'Live'];
+    String jobId = System.Network.createExternalUserAsync(u, c, a);
+    Auth.JWTUtil.validateJWTWithKeysEndpoint('token', 'https://example.invalid/keys');
+  }
+}`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, symbol := range []string{"Auth.SamlJitHandler", "Auth.AuthProviderPluginClass", "Auth.AuthProviderCallbackState", "Auth.AuthProviderTokenResponse"} {
+		if hasLineFindingContaining(report, "platform.auth-context", "src/classes/AuthNetworkContracts.cls", symbol) {
+			t.Fatalf("supported Auth local contract %s should not be reported", symbol)
+		}
+	}
+	for _, evidence := range []string{"System.Network.getLogoutUrl", "System.Network.getSelfRegUrl", "Network.forwardToAuthPage", "Site.getDomain", "Site.getName", "Site.getPrefix", "Network.getNetworkID", "FROM Network", "System.Network.createExternalUserAsync"} {
+		if hasLineFindingEvidenceContaining(report, "site.community-context", "src/classes/AuthNetworkContracts.cls", evidence) {
+			t.Fatalf("supported Network local contract %s should not be reported", evidence)
+		}
+	}
+	if !hasLineFindingContaining(report, "platform.auth-context", "src/classes/AuthNetworkContracts.cls", "Auth.JWTUtil") {
+		t.Fatalf("JWT key endpoint validation should remain a blocker")
 	}
 }
 
@@ -351,6 +547,12 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
   <fullName>ContactMergeDRS</fullName>
   <displayedFields><field>Name</field></displayedFields>
 </FieldSet>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/ServiceResource/ServiceResource.object-meta.xml"), `<CustomObject>
+  <fieldSets>
+    <fullName>FSL__CrewManagment_Lightbox</fullName>
+    <displayedFields><field>Name</field></displayedFields>
+  </fieldSets>
+</CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/pkg__Payment__c.object-meta.xml"), `<CustomObject><label>Payment</label><pluralLabel>Payments</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/fields/pkg__Amount__c.field-meta.xml"), `<CustomField><fullName>pkg__Amount__c</fullName><label>Amount</label><type>Currency</type></CustomField>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/fields/pkg__Batch__c.field-meta.xml"), `<CustomField><fullName>pkg__Batch__c</fullName><label>Batch</label><type>Lookup</type><referenceTo>Batch__c</referenceTo><relationshipName>pkg__Batch__r</relationshipName></CustomField>`)
@@ -372,6 +574,12 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
   <quickActionLayout><layoutSection><layoutColumns><layoutItems><field>pkg2__Installment_Period__c</field></layoutItems></layoutColumns></layoutSection></quickActionLayout>
   <targetObject>pkg2__Managed_Renewal__c</targetObject>
 </QuickAction>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/ServiceResource.object"), `<CustomObject>
+  <fieldSets>
+    <fullName>FSL__CrewManagment_Lightbox</fullName>
+    <displayedFields><field>Name</field></displayedFields>
+  </fieldSets>
+</CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Resolved.page"), `<apex:page>
 {!$ObjectType.Opportunity.Fields.StageName.Label}
 {!$ObjectType.Batch__c.Fields.Name.InlineHelpText}
@@ -379,6 +587,7 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 {!$ObjectType.Batch__c.Parent__r.Name}
 {!$ObjectType.Batch__c.FieldSets.BatchDetailView}
 {!$ObjectType.DuplicateRecordSet.FieldSets.ContactMergeDRS}
+{!$ObjectType.ServiceResource.FieldSets.FSL__CrewManagment_Lightbox}
 {!$ObjectType.Opportunity.Createable}
 {!$ObjectType.Contact.fields.FirstName.Createable}
 {!$ObjectType.OpportunityContactRole.Fields.ContactId.Label}
@@ -477,6 +686,9 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "DuplicateRecordSet.FieldSets.ContactMergeDRS") {
 		t.Fatalf("resolved standard-object Visualforce field set reference should not be reported")
 	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "ServiceResource.FieldSets.FSL__CrewManagment_Lightbox") {
+		t.Fatalf("inline object field set reference should not be reported")
+	}
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "Opportunity.Createable") {
 		t.Fatalf("resolved Visualforce object permission property should not be reported")
 	}
@@ -524,6 +736,12 @@ func TestScanDoesNotClassifyPassiveUIFilesAsControllerBlockers(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/AuditExtension.cls"), `public class AuditExtension {
   public AuditExtension(ApexPages.StandardController controller) {}
 }`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/pkg__NamespacedController.cls"), `public class pkg__NamespacedController {
+  public PageReference save() { return null; }
+}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/pkg__QuoteExtController.cls"), `public class pkg__QuoteExtController {
+  public PageReference onSubmit() { return null; }
+}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/passive/passive.js"), `import { LightningElement } from 'lwc';
 export default class Passive extends LightningElement {}
 `)
@@ -532,6 +750,15 @@ export default class Passive extends LightningElement {}
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Existing.page"), `<apex:page controller="ExistingController" action="{!save}"><apex:form /></apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/ExistingStandard.page"), `<apex:page standardController="Account" extensions="ExistingExtension" action="{!cancel}"><apex:form /></apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/ExistingStandardMulti.page"), `<apex:page standardController="Account" extensions="ExistingExtension, AuditExtension"><apex:form /></apex:page>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/FSL__Known__c/FSL__Known__c.object-meta.xml"), `<CustomObject><fullName>FSL__Known__c</fullName><label>Known</label><pluralLabel>Known</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Quote__c/pkg__Quote__c.object-meta.xml"), `<CustomObject><label>Quote</label><pluralLabel>Quotes</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/ManagedPackage.page"), `<apex:page controller="FSL.ManagedController">
+{!$ObjectType.ManagedSettings__c.fields.MissingFromLocalMetadata__c.Name}
+{!$ObjectType.Account.fields.MissingFromLocalMetadata__c.Name}
+<apex:commandButton action="{!refresh}" />
+</apex:page>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/NamespacedController.page"), `<apex:page controller="pkg.NamespacedController" action="{!save}" />`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/NamespacedExtension.page"), `<apex:page standardController="pkg__Quote__c" extensions="QuoteExtController" action="{!onSubmit}" />`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Inherited.page"), `<apex:page controller="InheritedPanel">
   <apex:commandButton action="{!editSettings}" />
 </apex:page>`)
@@ -580,6 +807,26 @@ export default class Passive extends LightningElement {}
 	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/ExistingStandardMulti.page", "ExistingExtension, AuditExtension") {
 		t.Fatalf("resolved Visualforce extension list should not be reported")
 	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/ManagedPackage.page", "FSL.ManagedController") {
+		t.Fatalf("external managed-package Visualforce controller should not be reported when the namespace is known")
+	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/ManagedPackage.page", "{!refresh}") {
+		t.Fatalf("external managed-package Visualforce page actions should not require local controller methods")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/ManagedPackage.page", "ManagedSettings__c.fields.MissingFromLocalMetadata__c") {
+		t.Fatalf("external managed custom object references should resolve as managed metadata dependencies")
+	}
+	if !hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/ManagedPackage.page", "Account.fields.MissingFromLocalMetadata__c") {
+		t.Fatalf("external managed Visualforce controller should not suppress standard-object presentation metadata")
+	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/NamespacedController.page", "pkg.NamespacedController") ||
+		hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/NamespacedController.page", "{!save}") {
+		t.Fatalf("dot-namespace Visualforce controller should resolve to local namespaced Apex class")
+	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/NamespacedExtension.page", "QuoteExtController") ||
+		hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/NamespacedExtension.page", "{!onSubmit}") {
+		t.Fatalf("bare Visualforce extension on namespaced standard controller should resolve to namespaced Apex class")
+	}
 	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/Inherited.page", "{!editSettings}") {
 		t.Fatalf("inherited Visualforce controller action should not be reported")
 	}
@@ -620,9 +867,18 @@ func TestScanSuppressesSupportedVisualforceRuntimeReferences(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/AccountView.page"), `<apex:page standardController="Account" />`)
+	writeFile(t, filepath.Join(root, "outside/pages/Loose.page"), `<apex:page />`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Thing__c/pkg__Thing__c.object-meta.xml"), `<CustomObject><label>Thing</label><pluralLabel>Things</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "refs/znu/pages/znu__Order.page"), `<apex:page standardController="znu__Order__c" />`)
+	writeFile(t, filepath.Join(root, "refs/pkg/pages/pkg__ManagedPage.page"), `<apex:page />`)
+	writeFile(t, filepath.Join(root, "refs/ext/pages/ext__ManagedExtension.page"), `<apex:page standardController="Account" extensions="ext.ExternalController" />`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/UsesVisualforce.cls"), `public class UsesVisualforce {
   void run() {
     PageReference page = Page.AccountView;
+    PageReference loose = Page.Loose;
+    PageReference managedPage = Page.znu__Order;
+    PageReference externalManagedPage = Page.pkg__ManagedPage;
+    PageReference missingManagedPage = Page.pkg__MissingManagedPage;
     ApexPages.currentPage().getParameters().put('id', '001000000000001AAA');
     ApexPages.StandardController controller = new ApexPages.StandardController(new Account(Name = 'Acme'));
     PageReference stringPage = new PageReference('Page.StringOnly');
@@ -649,14 +905,79 @@ func TestScanSuppressesSupportedVisualforceRuntimeReferences(t *testing.T) {
 	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/classes/UsesVisualforce.cls", "Page.AccountView") {
 		t.Fatalf("registered Page.AccountView reference should not be reported")
 	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/classes/UsesVisualforce.cls", "Page.Loose") {
+		t.Fatalf("Visualforce pages discovered outside package roots should be registered")
+	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/classes/UsesVisualforce.cls", "Page.znu__Order") {
+		t.Fatalf("registered managed Page.znu__Order reference should not be reported")
+	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/classes/UsesVisualforce.cls", "Page.pkg__ManagedPage") {
+		t.Fatalf("managed-package Page.* references should not be reported when page metadata is known")
+	}
 	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/classes/UsesVisualforce.cls", "Page.StringOnly") {
 		t.Fatalf("Page.* inside Apex strings should not be reported as page namespace references")
 	}
-	if !hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/classes/UsesVisualforce.cls", "Page.MissingPage") {
-		t.Fatalf("missing unresolved Page.MissingPage finding")
+	if hasLineFinding(report, "visualforce.controller-test", "refs/ext/pages/ext__ManagedExtension.page", "ext.ExternalController") {
+		t.Fatalf("managed extension controller should resolve from Visualforce namespace metadata")
+	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/classes/UsesVisualforce.cls", "Page.MissingPage") {
+		t.Fatalf("missing Page.MissingPage metadata should not be reported as controller-test debt")
+	}
+	if !hasLineFinding(report, "visualforce.page-metadata", "force-app/main/default/classes/UsesVisualforce.cls", "Page.MissingPage") {
+		t.Fatalf("missing unresolved Page.MissingPage metadata finding")
+	}
+	if !hasLineFinding(report, "visualforce.page-metadata", "force-app/main/default/classes/UsesVisualforce.cls", "Page.pkg__MissingManagedPage") {
+		t.Fatalf("missing managed Page.* reference should remain a metadata blocker")
 	}
 	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/AccountView.page", "Account") {
 		t.Fatalf("resolved Visualforce standard controller object should not be reported")
+	}
+}
+
+func TestScanIgnoresClientControllerAttributesAndVisualforceComments(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/staticresources/Active.resource-meta.xml"), `<StaticResource><contentType>text/plain</contentType><cacheControl>Public</cacheControl></StaticResource>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/ClientOnly.page"), `<apex:page>
+  <div ng-controller="ClientCtrl"></div>
+  <!-- <apex:includeScript value="{!$Resource.MissingCommented}" /> -->
+  <!--
+  <apex:includeScript value="{!$Resource.AlsoMissing}" />
+  -->
+  <apex:includeScript value="{!$Resource.Active}" />
+</apex:page>`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/ClientOnly.page", "ClientCtrl") {
+		t.Fatalf("client-side controller attributes should not be reported as Visualforce controller contracts")
+	}
+	if hasLineFinding(report, "staticresources.urlfor", "force-app/main/default/pages/ClientOnly.page", "MissingCommented") ||
+		hasLineFinding(report, "staticresources.urlfor", "force-app/main/default/pages/ClientOnly.page", "AlsoMissing") {
+		t.Fatalf("Visualforce references inside HTML comments should not be reported")
+	}
+	if hasLineFinding(report, "staticresources.urlfor", "force-app/main/default/pages/ClientOnly.page", "Active") {
+		t.Fatalf("resolved active static resource should not be reported")
+	}
+}
+
+func TestScanSuppressesPassiveAuraOutsidePackageRoots(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "loose/aura/passive/passive.cmp"), `<aura:component implements="force:hasRecordId">Passive</aura:component>`)
+	writeFile(t, filepath.Join(root, "loose/aura/passive/passive.cmp-meta.xml"), `<AuraDefinitionBundle/>`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if hasLineFinding(report, "aura.controller-test", "loose/aura/passive/passive.cmp", "passive") ||
+		hasLineFinding(report, "aura.controller-test", "loose/aura/passive/passive.cmp-meta.xml", "passive") {
+		t.Fatalf("passive Aura bundles discovered outside package roots should not be reported")
 	}
 }
 
@@ -738,14 +1059,101 @@ import missing from '@salesforce/apex/pkg.WidgetController.missing';
 		hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/ClientOnly/ClientOnlyController.js", "ClientOnly") {
 		t.Fatalf("client-only Aura actions should not be reported as Apex blockers: %#v", report.Findings)
 	}
-	if !hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/MissingServerAction/MissingServerActionHelper.js", "MissingServerAction") {
-		t.Fatalf("missing unresolved Aura server action bundle finding")
+	if hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/MissingServerAction/MissingServerActionHelper.js", "MissingServerAction") {
+		t.Fatalf("missing Aura server action should not be reported as controller-test debt")
+	}
+	if !hasFindingContaining(report, "aura.action-metadata", "force-app/main/default/aura/MissingServerAction/MissingServerActionHelper.js", "MissingServerAction") {
+		t.Fatalf("missing unresolved Aura server action metadata finding")
 	}
 	if hasLineFinding(report, "lwc.controller-test", "force-app/main/default/lwc/widget/widget.js", "pkg.WidgetController.saveWidget") {
 		t.Fatalf("resolved namespaced LWC Apex import should not be reported")
 	}
 	if !hasLineFinding(report, "lwc.controller-test", "force-app/main/default/lwc/widget/widget.js", "pkg.WidgetController.missing") {
 		t.Fatalf("missing unresolved namespaced LWC Apex import finding")
+	}
+}
+
+func TestScanSuppressesResolvedAuraControllerBundlesWithoutSFDXProject(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "refs/pkg/classes/LegacyAuraController.cls"), `public class LegacyAuraController {
+  @AuraEnabled
+  public static String load() { return 'ok'; }
+}`)
+	writeFile(t, filepath.Join(root, "refs/pkg/aura/Legacy/Legacy.cmp"), `<aura:component controller="LegacyAuraController">
+  <aura:handler name="init" value="{!this}" action="{!c.load}" />
+</aura:component>`)
+	writeFile(t, filepath.Join(root, "refs/pkg/aura/Legacy/LegacyController.js"), `({
+  load: function(component) {
+    component.get("c.load");
+  }
+})`)
+	writeFile(t, filepath.Join(root, "refs/pkg/aura/Legacy/Legacy.cmp-meta.xml"), `<AuraDefinitionBundle/>`)
+	writeFile(t, filepath.Join(root, "refs/pkg/aura/Legacy/Legacy.css"), `.THIS {}`)
+	writeFile(t, filepath.Join(root, "refs/pkg/aura/Legacy/Legacy.svg"), `<svg/>`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if findSurface(report, "aura.controller-test") != nil {
+		t.Fatalf("resolved Aura bundle under non-SFDX root should not be controller-test debt: %#v", report.Findings)
+	}
+}
+
+func TestResolvedAuraFilesUsesApexMetadataMethodFallback(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "classes/LegacyController.cls")
+	cmpPath := filepath.Join(root, "aura/Legacy/Legacy.cmp")
+	writeFile(t, classPath, `global class LegacyController {
+  @AuraEnabled
+  global static String load() { return 'ok'; }
+}`)
+	ctx := scanContext{
+		apexMetadataFiles: map[string][]string{
+			"legacycontroller": {classPath},
+		},
+	}
+	ui := uicontroller.Index{AuraBundles: []uicontroller.AuraBundle{{
+		Name: "Legacy",
+		Dir:  filepath.Dir(cmpPath),
+		Files: []uicontroller.UIFile{{
+			Path: cmpPath,
+			Kind: "component",
+		}},
+		ActionReferences: []uicontroller.AuraActionReference{{
+			Name:      "load",
+			ClassName: "LegacyController",
+			Resolved:  false,
+		}},
+	}}}
+
+	resolved, actionMetadata := resolvedAuraFiles(ui, &ctx)
+	if !resolved[filepath.Clean(cmpPath)] || !resolved[filepath.Clean(filepath.Dir(cmpPath))] {
+		t.Fatalf("Aura files should resolve from Apex metadata method fallback: %#v", resolved)
+	}
+	if actionMetadata[filepath.Clean(cmpPath)] || actionMetadata[filepath.Clean(filepath.Dir(cmpPath))] {
+		t.Fatalf("resolved metadata fallback should not report missing action metadata: %#v", actionMetadata)
+	}
+}
+
+func TestApexMetadataAuraMethodFallbackRequiresAuraEnabledStatic(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "classes/LegacyController.cls")
+	writeFile(t, classPath, `global class LegacyController {
+  public static String staticOnly() { return 'no'; }
+  @AuraEnabled public String instanceOnly() { return 'no'; }
+  @AuraEnabled private static String privateOnly() { return 'no'; }
+  @AuraEnabled
+  global static String callable() { return 'ok'; }
+}`)
+
+	if !apexFileDeclaresAuraMethod(classPath, "callable") {
+		t.Fatalf("expected @AuraEnabled global static method to resolve")
+	}
+	for _, method := range []string{"staticOnly", "instanceOnly", "privateOnly"} {
+		if apexFileDeclaresAuraMethod(classPath, method) {
+			t.Fatalf("%s should not resolve as an Aura server action", method)
+		}
 	}
 }
 
@@ -808,6 +1216,10 @@ func TestScanSuppressesResolvedCustomMetadataTypeReferences(t *testing.T) {
   /*
    * BlockCommentOnly__mdt should not count.
    */
+  /*
+MissingInCodeFence__mdt should not count.
+System.debug(System.Label.BlockCommentLabel);
+   */
   // CommentOnly__mdt should not count.
   String dynamicName = 'StringOnly__mdt';
 }`)
@@ -840,6 +1252,12 @@ func TestScanSuppressesResolvedCustomMetadataTypeReferences(t *testing.T) {
 	}
 	if hasLineFinding(report, "custommetadata.legacy-records", "force-app/main/default/classes/UsesMetadata.cls", "BlockCommentOnly__mdt") {
 		t.Fatalf("block-comment-only custom metadata mention should not be reported")
+	}
+	if hasLineFinding(report, "custommetadata.legacy-records", "force-app/main/default/classes/UsesMetadata.cls", "MissingInCodeFence__mdt") {
+		t.Fatalf("unstarred block-comment custom metadata mention should not be reported")
+	}
+	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesMetadata.cls", "BlockCommentLabel") {
+		t.Fatalf("unstarred block-comment label mention should not be reported")
 	}
 	if hasLineFinding(report, "custommetadata.legacy-records", "force-app/main/default/classes/UsesMetadata.cls", "StringOnly__mdt") {
 		t.Fatalf("string-only custom metadata mention should not be reported")
@@ -1059,6 +1477,7 @@ import MISSING from '@salesforce/resourceUrl/MissingResource';
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Resources.page"), `<apex:page>
 {!URLFOR($Resource.Site, 'css/app.css')}
 {!$Resource.Logo}
+<!-- {!URLFOR($Resource.MissingCommentResource, 'css/app.css')} -->
 {!URLFOR($Resource.MissingResource, 'css/app.css')}
 </apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/UsesEndpoint.cls"), `public class UsesEndpoint {
@@ -1088,6 +1507,9 @@ import MISSING from '@salesforce/resourceUrl/MissingResource';
 	}
 	if !hasLineFinding(report, "staticresources.urlfor", "force-app/main/default/pages/Resources.page", "MissingResource") {
 		t.Fatalf("missing unresolved Visualforce resource finding")
+	}
+	if hasLineFinding(report, "staticresources.urlfor", "force-app/main/default/pages/Resources.page", "MissingCommentResource") {
+		t.Fatalf("Visualforce HTML comments should not produce resource findings")
 	}
 	if hasLineFinding(report, "endpoint.metadata", "force-app/main/default/classes/UsesEndpoint.cls", "Billing") {
 		t.Fatalf("resolved named credential callout should not be reported")

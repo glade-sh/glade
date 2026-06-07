@@ -4708,6 +4708,21 @@ System.assertEquals('invalid_email', Label.Site.invalid_email);
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
+
+	localizedProgram, err := CompileAnonymous(`
+System.assertEquals('Bonjour', Label.Greeting);
+System.assertEquals('Bonjour', System.Label.Greeting);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	localized := New(nil)
+	localized.SetOrg(&org)
+	localized.executionUser = Object("User")
+	localized.executionUser.Fields["LanguageLocaleKey"] = String("fr")
+	if _, err := localized.Execute(localizedProgram); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestExecSystemLabelMethodsLimitsAsyncAndTargetExceptionConstructors(t *testing.T) {
@@ -5609,6 +5624,213 @@ insert rows;
 	}
 	if !traceHas(result.Trace, "apex.automation.rollback", "apex.automation") {
 		t.Fatalf("trace missing automation rollback: %#v", result.Trace)
+	}
+}
+
+func TestExecWorkflowFieldUpdateRefiresUpdateTriggersOnce(t *testing.T) {
+	beforeTrigger, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+    if (SaveOrderProbe.calls == 0) {
+        System.assertEquals('start', a.Description);
+    } else if (SaveOrderProbe.calls == 2) {
+        System.assertEquals('WF', a.Description);
+    } else {
+        System.assert(false, 'unexpected before count ' + SaveOrderProbe.calls);
+    }
+    SaveOrderProbe.calls++;
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterTrigger, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+    if (SaveOrderProbe.calls == 1) {
+        System.assertEquals('start', a.Description);
+    } else if (SaveOrderProbe.calls == 3) {
+        System.assertEquals('WF', a.Description);
+    } else {
+        System.assert(false, 'unexpected after count ' + SaveOrderProbe.calls);
+    }
+    SaveOrderProbe.calls++;
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme', Description = 'start');
+insert account;
+SaveOrderProbe.calls = 0;
+account.Name = 'Run WF';
+update account;
+System.assertEquals(4, SaveOrderProbe.calls);
+Account saved = [SELECT Description FROM Account WHERE Id = :account.Id];
+System.assertEquals('WF', saved.Description);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.WorkflowRules = []storage.WorkflowRule{{
+		Name:   "SetDescription",
+		Active: true,
+		Criteria: []storage.WorkflowCriteriaItem{{
+			Field:     "Name",
+			Operation: "equals",
+			Value:     "Run WF",
+		}},
+		FieldUpdates: []storage.WorkflowFieldUpdate{{
+			Name:         "SetDescription",
+			Field:        "Description",
+			LiteralValue: "WF",
+		}},
+	}}
+	org.Objects["Account"] = account
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{Name: "SaveOrderProbe", StaticFields: map[string]Field{
+		"calls": {Name: "calls", Type: "Integer", Static: true, Value: Int(0)},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{Name: "AccountBeforeUpdateProbe", Object: "Account", Timing: triggerTimingBefore, Operation: "update", Program: beforeTrigger}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{Name: "AccountAfterUpdateProbe", Object: "Account", Timing: triggerTimingAfter, Operation: "update", Program: afterTrigger}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecBeforeSaveFlowRunsBeforeBeforeUpdateTrigger(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+    System.assertEquals('Flow', a.Description);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme', Description = 'start');
+insert account;
+account.Name = 'Run Flow';
+update account;
+Account saved = [SELECT Description FROM Account WHERE Id = :account.Id];
+System.assertEquals('Flow', saved.Description);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.FlowRules = []storage.FlowRule{{
+		Name:        "BeforeSaveDescription",
+		Active:      true,
+		TriggerType: "RecordBeforeSave",
+		Criteria: []storage.WorkflowCriteriaItem{{
+			Field:     "Name",
+			Operation: "equals",
+			Value:     "Run Flow",
+		}},
+		FieldUpdates: []storage.WorkflowFieldUpdate{{
+			Name:         "SetDescription",
+			Field:        "Description",
+			LiteralValue: "Flow",
+		}},
+	}}
+	org.Objects["Account"] = account
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{Name: "AccountBeforeUpdateFlowProbe", Object: "Account", Timing: triggerTimingBefore, Operation: "update", Program: triggerProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFlowFieldUpdateRefiresUpdateTriggersOnce(t *testing.T) {
+	beforeTrigger, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+    if (SaveOrderProbe.calls == 0) {
+        System.assertEquals('start', a.Description);
+    } else if (SaveOrderProbe.calls == 2) {
+        System.assertEquals('Flow', a.Description);
+    } else {
+        System.assert(false, 'unexpected before count ' + SaveOrderProbe.calls);
+    }
+    SaveOrderProbe.calls++;
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterTrigger, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+    if (SaveOrderProbe.calls == 1) {
+        System.assertEquals('start', a.Description);
+    } else if (SaveOrderProbe.calls == 3) {
+        System.assertEquals('Flow', a.Description);
+    } else {
+        System.assert(false, 'unexpected after count ' + SaveOrderProbe.calls);
+    }
+    SaveOrderProbe.calls++;
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme', Description = 'start');
+insert account;
+SaveOrderProbe.calls = 0;
+account.Name = 'Run Flow';
+update account;
+System.assertEquals(4, SaveOrderProbe.calls);
+Account saved = [SELECT Description FROM Account WHERE Id = :account.Id];
+System.assertEquals('Flow', saved.Description);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.FlowRules = []storage.FlowRule{{
+		Name:        "AfterSaveDescription",
+		Active:      true,
+		TriggerType: "RecordAfterSave",
+		Criteria: []storage.WorkflowCriteriaItem{{
+			Field:     "Name",
+			Operation: "equals",
+			Value:     "Run Flow",
+		}},
+		FieldUpdates: []storage.WorkflowFieldUpdate{{
+			Name:         "SetDescription",
+			Field:        "Description",
+			LiteralValue: "Flow",
+		}},
+	}}
+	org.Objects["Account"] = account
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{Name: "SaveOrderProbe", StaticFields: map[string]Field{
+		"calls": {Name: "calls", Type: "Integer", Static: true, Value: Int(0)},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{Name: "AccountBeforeUpdateFlowRefireProbe", Object: "Account", Timing: triggerTimingBefore, Operation: "update", Program: beforeTrigger}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{Name: "AccountAfterUpdateFlowRefireProbe", Object: "Account", Timing: triggerTimingAfter, Operation: "update", Program: afterTrigger}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -10852,6 +11074,9 @@ System.assertEquals(0, Network.loadAllPackageDefaultNetworkDashboardSettings());
 System.assertEquals(0, Network.loadAllPackageDefaultNetworkPulseSettings());
 System.assertEquals(0, Network.loadAllPackageDefaultNetworkWorkspaceMetricSettings());
 	System.assertEquals('https://local.glade.example/local', ConnectApi.Communities.getCommunity(Network.getNetworkId()).siteUrl);
+	ConnectApi.CommunityPage communities = ConnectApi.Communities.getCommunities();
+	System.assertEquals(1, communities.communities.size());
+	System.assertEquals('Local Community', communities.communities[0].name);
 	System.assertNotEquals(null, ConnectApi.UserProfiles.getUserProfile(Network.getNetworkId(), UserInfo.getUserId()));
 	System.assertNotEquals(null, ConnectApi.UserProfiles.getPhoto(Network.getNetworkId(), UserInfo.getUserId()));
 	ConnectApi.UserProfiles.setPhoto(Network.getNetworkId(), UserInfo.getUserId(), '069000000000001', null);
@@ -13219,6 +13444,36 @@ System.assertEquals('account-body', new Http().send(req).getBody());
 	}
 }
 
+func TestExecHttpCalloutPrefixRequiresNamedCredentialNotRemoteSite(t *testing.T) {
+	program, err := CompileAnonymous(`
+MultiStaticResourceCalloutMock multiMock = new MultiStaticResourceCalloutMock();
+multiMock.setStaticResource('https://maps.example.test/geocode', 'Maps_Response');
+Test.setMock('HttpCalloutMock', multiMock);
+HttpRequest req = new HttpRequest();
+req.setEndpoint('callout:Maps/geocode');
+req.setMethod('GET');
+try {
+    new Http().send(req);
+    System.assert(false, 'expected missing named credential');
+} catch (CalloutException e) {
+    System.assert(e.getMessage().contains('Named Credential'));
+    System.assert(e.getMessage().contains('Maps'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Metadata.StaticResources = []storage.StaticResourceMetadata{{Name: "Maps_Response", Content: "maps-body"}}
+	org.Metadata.Endpoints = []storage.EndpointMetadata{{Kind: "RemoteSiteSetting", Name: "Maps", URL: "https://maps.example.test", Active: true}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecHttpRequestRejectsInvalidEdges(t *testing.T) {
 	cases := []struct {
 		name string
@@ -13296,15 +13551,13 @@ h.send(req);
 	}
 }
 
-func TestExecHttpSendWithoutMockInTestContextReturnsDeterministicResponse(t *testing.T) {
+func TestExecHttpSendWithoutMockInTestContextRequiresMock(t *testing.T) {
 	program, err := CompileAnonymous(`
 HttpRequest req = new HttpRequest();
 req.setEndpoint('https://example.test');
 req.setMethod('GET');
 Http h = new Http();
-HttpResponse res = h.send(req);
-System.assertEquals(200, res.getStatusCode());
-System.assertEquals('{}', res.getBody());
+h.send(req);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -13312,8 +13565,9 @@ System.assertEquals('{}', res.getBody());
 	machine := New(nil)
 	machine.EnableTestContext()
 	result, err := machine.Execute(program)
-	if err != nil {
-		t.Fatalf("Execute: %v", err)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "Http.send test callout without Test.setMock"` {
+		t.Fatalf("err = %#v, want UnsupportedFeature missing test mock", err)
 	}
 	if result.Limits.Callouts != 1 {
 		t.Fatalf("callouts = %d, want 1", result.Limits.Callouts)

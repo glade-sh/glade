@@ -149,7 +149,14 @@ func ParseComponentFile(path string) (Component, error) {
 }
 
 func (i Index) Page(name string) (Page, bool) {
-	idx, ok := i.pagesByName[lookupKey(trimPageReference(name))]
+	name = strings.TrimSpace(name)
+	if hasPrefixFold(name, "page.") {
+		name = name[len("Page."):]
+	}
+	idx, ok := i.pagesByName[lookupKey(name)]
+	if !ok {
+		idx, ok = i.pagesByName[lookupKey(stripPageNamespace(name))]
+	}
 	if !ok {
 		return Page{}, false
 	}
@@ -380,11 +387,8 @@ func nameFromPath(path, suffix string) string {
 	return strings.TrimSuffix(base, filepath.Ext(base))
 }
 
-func trimPageReference(name string) string {
+func stripPageNamespace(name string) string {
 	name = strings.TrimSpace(name)
-	if hasPrefixFold(name, "page.") {
-		name = name[len("Page."):]
-	}
 	if idx := strings.Index(name, "__"); idx > 0 {
 		return name[idx+len("__"):]
 	}

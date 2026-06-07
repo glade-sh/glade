@@ -7,9 +7,14 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) error {
+type AutomationResult struct {
+	WorkflowUpdated bool
+	FlowUpdated     bool
+}
+
+func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) (bool, error) {
 	if e.workflowDepth > 8 {
-		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: workflow field update recursion limit exceeded")
+		return false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: workflow field update recursion limit exceeded")
 	}
 	e.workflowDepth++
 	defer func() {
@@ -18,11 +23,11 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 
 	object := e.Org.Objects[objectName]
 	if len(object.Definition.WorkflowRules) == 0 {
-		return nil
+		return false, nil
 	}
 	record, ok := object.Records[id]
 	if !ok || record.System.IsDeleted {
-		return nil
+		return false, nil
 	}
 	changed := false
 	previous := record
@@ -44,14 +49,14 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 		for _, update := range rule.FieldUpdates {
 			fieldName, ok := storage.ResolveFieldName(object.Definition, e.Org.Namespace, update.Field)
 			if !ok || fieldName == "Id" {
-				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{update.Field}, "dml: workflow field update %s targets unknown or read-only field %s.%s", update.Name, objectName, update.Field)
+				return false, dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{update.Field}, "dml: workflow field update %s targets unknown or read-only field %s.%s", update.Name, objectName, update.Field)
 			}
 			if isCalculatedOrSummaryField(object.Definition.Fields[fieldName]) {
-				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: workflow field update %s targets calculated field %s.%s", update.Name, objectName, fieldName)
+				return false, dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: workflow field update %s targets calculated field %s.%s", update.Name, objectName, fieldName)
 			}
 			value, explicitNull, ok := workflowUpdateValue(object.Definition.Fields[fieldName], record, update, object.Definition, e.Org)
 			if !ok {
-				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: workflow field update %s has unsupported value expression", update.Name)
+				return false, dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: workflow field update %s has unsupported value expression", update.Name)
 			}
 			if explicitNull {
 				delete(record.Fields, fieldName)
@@ -67,25 +72,25 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 				continue
 			}
 			if err := e.WorkflowEmailer(alert, record); err != nil {
-				return err
+				return false, err
 			}
 		}
 	}
 	if !changed {
-		return nil
+		return false, nil
 	}
 	if err := validateRequired(object.Definition, record); err != nil {
-		return err
+		return false, err
 	}
 	if err := e.validateReferences(object.Definition, record); err != nil {
-		return err
+		return false, err
 	}
 	priorRecord := e.priorRecordForValidation(id, previous)
 	if err := e.validateValidationRules(objectName, object.Definition, record, &priorRecord, false); err != nil {
-		return err
+		return false, err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
-		return err
+		return false, err
 	}
 	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
 		object = e.Org.Objects[objectName]
@@ -98,15 +103,91 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 	e.Org.Objects[objectName] = object
 	e.removeUniqueIndexRecord(objectName, object.Definition, previous)
 	e.addUniqueIndexRecord(objectName, object.Definition, record)
+	return true, nil
+}
+
+func (e *Engine) ApplyAutomation(objectName string, id storage.ID) (AutomationResult, error) {
+	var result AutomationResult
+	workflowUpdated, err := e.applyWorkflowFieldUpdates(objectName, id)
+	if err != nil {
+		return result, err
+	}
+	result.WorkflowUpdated = workflowUpdated
+	flowUpdated, err := e.applyFlowFieldUpdates(objectName, id)
+	if err != nil {
+		return result, err
+	}
+	result.FlowUpdated = flowUpdated
+	return result, nil
+}
+
+func (e *Engine) ApplyBeforeSaveFlows(records []storage.Record) error {
+	if e == nil || e.Org == nil {
+		return nil
+	}
+	for i := range records {
+		if err := e.applyBeforeSaveFlowFieldUpdates(&records[i]); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func (e *Engine) ApplyAutomation(objectName string, id storage.ID) error {
-	if err := e.applyWorkflowFieldUpdates(objectName, id); err != nil {
-		return err
+func (e *Engine) applyBeforeSaveFlowFieldUpdates(record *storage.Record) error {
+	if record == nil || record.Object == "" {
+		return nil
 	}
-	if err := e.applyFlowFieldUpdates(objectName, id); err != nil {
-		return err
+	objectName, ok := storage.ResolveObjectName(*e.Org, record.Object)
+	if !ok {
+		return nil
+	}
+	object := e.Org.Objects[objectName]
+	if len(object.Definition.FlowRules) == 0 {
+		return nil
+	}
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	if record.ExplicitNulls == nil {
+		record.ExplicitNulls = make(map[string]bool)
+	}
+	record.Object = objectName
+	for _, rule := range object.Definition.FlowRules {
+		if !rule.Active || !flowRuleRunsBeforeSave(rule) {
+			continue
+		}
+		matches, ok := evaluateFlowRule(rule, *record, object.Definition, e.Org)
+		e.traceAutomation("apex.flow.rule", map[string]any{
+			"flow":    rule.Name,
+			"object":  objectName,
+			"record":  string(record.ID),
+			"matched": ok && matches,
+			"modeled": ok,
+		})
+		if !ok || !matches {
+			continue
+		}
+		if len(rule.Branches) > 0 {
+			branch, matched := e.selectFlowBranch(rule, *record, object.Definition)
+			e.traceAutomation("apex.flow.decision", map[string]any{
+				"flow":    rule.Name,
+				"object":  objectName,
+				"record":  string(record.ID),
+				"branch":  branch.Name,
+				"default": branch.Default,
+				"matched": matched,
+			})
+			if !matched {
+				continue
+			}
+			if _, err := e.applyFlowEffects(rule.Name, objectName, record, object.Definition, branch.FieldUpdates, nil, nil, nil); err != nil {
+				return err
+			}
+			continue
+		}
+		if _, err := e.applyFlowEffects(rule.Name, objectName, record, object.Definition, rule.FieldUpdates, nil, nil, nil); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -235,9 +316,9 @@ func (e *Engine) hasActiveObjectAutomationFor(objectName string, definition stor
 	return active
 }
 
-func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
+func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) (bool, error) {
 	if e.flowDepth > 8 {
-		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow field update recursion limit exceeded")
+		return false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow field update recursion limit exceeded")
 	}
 	e.flowDepth++
 	defer func() {
@@ -246,11 +327,11 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 
 	object := e.Org.Objects[objectName]
 	if len(object.Definition.FlowRules) == 0 {
-		return nil
+		return false, nil
 	}
 	record, ok := object.Records[id]
 	if !ok || record.System.IsDeleted {
-		return nil
+		return false, nil
 	}
 	changed := false
 	previous := record
@@ -262,7 +343,7 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 		record.ExplicitNulls = make(map[string]bool)
 	}
 	for _, rule := range object.Definition.FlowRules {
-		if !rule.Active {
+		if !rule.Active || flowRuleRunsBeforeSave(rule) {
 			continue
 		}
 		matches, ok := evaluateFlowRule(rule, record, object.Definition, e.Org)
@@ -293,32 +374,32 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 			branchLookups = append(branchLookups, branch.RecordLookups...)
 			branchChanged, err := e.applyFlowEffects(rule.Name, objectName, &record, object.Definition, branch.FieldUpdates, branch.Actions, branchLookups, branch.RecordCreates)
 			if err != nil {
-				return err
+				return false, err
 			}
 			changed = changed || branchChanged
 			continue
 		}
 		ruleChanged, err := e.applyFlowEffects(rule.Name, objectName, &record, object.Definition, rule.FieldUpdates, rule.Actions, rule.RecordLookups, rule.RecordCreates)
 		if err != nil {
-			return err
+			return false, err
 		}
 		changed = changed || ruleChanged
 	}
 	if !changed {
-		return nil
+		return false, nil
 	}
 	if err := validateRequired(object.Definition, record); err != nil {
-		return err
+		return false, err
 	}
 	if err := e.validateReferences(object.Definition, record); err != nil {
-		return err
+		return false, err
 	}
 	priorRecord := e.priorRecordForValidation(id, previous)
 	if err := e.validateValidationRules(objectName, object.Definition, record, &priorRecord, false); err != nil {
-		return err
+		return false, err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
-		return err
+		return false, err
 	}
 	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
 		object = e.Org.Objects[objectName]
@@ -331,7 +412,11 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 	e.Org.Objects[objectName] = object
 	e.removeUniqueIndexRecord(objectName, object.Definition, previous)
 	e.addUniqueIndexRecord(objectName, object.Definition, record)
-	return nil
+	return true, nil
+}
+
+func flowRuleRunsBeforeSave(rule storage.FlowRule) bool {
+	return strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordBeforeSave")
 }
 
 func (e *Engine) selectFlowBranch(rule storage.FlowRule, record storage.Record, definition storage.ObjectDefinition) (storage.FlowBranch, bool) {

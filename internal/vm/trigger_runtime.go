@@ -193,7 +193,7 @@ func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, rollb
 			}
 			return dmlExceptionFromTriggerError("update", err)
 		}
-		if err := vm.applyDeferredAutomation(engine, triggerRecords, allOrNone, rollback, result); err != nil {
+		if err := vm.applyDeferredAutomation(engine, triggerRecords, before, allOrNone, rollback, result); err != nil {
 			return err
 		}
 	}

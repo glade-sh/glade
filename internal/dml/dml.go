@@ -704,7 +704,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 		}
 	}
 	if !e.DeferAutomation {
-		if err := e.ApplyAutomation(objectName, record.ID); err != nil {
+		if _, err := e.ApplyAutomation(objectName, record.ID); err != nil {
 			e.restoreRollbackPoint(rollback)
 			return "", err
 		}

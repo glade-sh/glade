@@ -1,6 +1,7 @@
 package metadata
 
 import (
+	"bytes"
 	"encoding/xml"
 	"os"
 	"path/filepath"
@@ -187,6 +188,13 @@ func LoadProject(p project.Project) (Index, error) {
 			return Index{}, err
 		}
 		idx.FieldSets = append(idx.FieldSets, fieldSet)
+	}
+	for _, path := range p.ObjectFiles {
+		fieldSets, err := loadObjectFieldSets(path)
+		if err != nil {
+			return Index{}, err
+		}
+		idx.FieldSets = append(idx.FieldSets, fieldSets...)
 	}
 	idx.VisualforcePages = namedAssets(p.VisualforcePageFiles, ".page")
 	idx.VisualforceComponents = namedAssets(p.VisualforceComponentFiles, ".component")
@@ -547,6 +555,10 @@ type fieldSetXML struct {
 	AvailableFields []fieldSetMemberXML `xml:"availableFields"`
 }
 
+type objectFieldSetsXML struct {
+	FieldSets []fieldSetXML `xml:"fieldSets"`
+}
+
 type fieldSetMemberXML struct {
 	Field    string `xml:"field"`
 	Required bool   `xml:"isRequired"`
@@ -565,22 +577,54 @@ func loadFieldSet(path string) (FieldSet, error) {
 	if name == "" {
 		name = trimKnownSuffix(filepath.Base(path), ".fieldSet-meta.xml")
 	}
-	members := make([]FieldSetMember, 0, len(raw.DisplayedFields)+len(raw.AvailableFields))
-	for _, member := range append(raw.DisplayedFields, raw.AvailableFields...) {
-		field := strings.TrimSpace(member.Field)
-		if field == "" {
+	return fieldSetFromXML(raw, objectNameFromFieldSetPath(path), name, path), nil
+}
+
+func loadObjectFieldSets(path string) ([]FieldSet, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var raw objectFieldSetsXML
+	if len(bytes.TrimSpace(data)) == 0 {
+		return nil, nil
+	}
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+	out := make([]FieldSet, 0, len(raw.FieldSets))
+	objectName := objectNameFromObjectPath(path)
+	for _, rawFieldSet := range raw.FieldSets {
+		name := strings.TrimSpace(rawFieldSet.FullName)
+		if name == "" {
 			continue
 		}
-		members = append(members, FieldSetMember{Field: field, Required: member.Required})
+		out = append(out, fieldSetFromXML(rawFieldSet, objectName, name, path))
 	}
+	return out, nil
+}
+
+func fieldSetFromXML(raw fieldSetXML, objectName, name, path string) FieldSet {
+	members := make([]FieldSetMember, 0, len(raw.DisplayedFields)+len(raw.AvailableFields))
+	addMembers := func(rawMembers []fieldSetMemberXML) {
+		for _, member := range rawMembers {
+			field := strings.TrimSpace(member.Field)
+			if field == "" {
+				continue
+			}
+			members = append(members, FieldSetMember{Field: field, Required: member.Required})
+		}
+	}
+	addMembers(raw.DisplayedFields)
+	addMembers(raw.AvailableFields)
 	return FieldSet{
-		ObjectName:  objectNameFromFieldSetPath(path),
+		ObjectName:  objectName,
 		Name:        name,
 		Label:       strings.TrimSpace(raw.Label),
 		Description: strings.TrimSpace(raw.Description),
 		Fields:      members,
 		File:        path,
-	}, nil
+	}
 }
 
 type permissionContainerXML struct {
@@ -715,6 +759,16 @@ func objectNameFromFieldSetPath(path string) string {
 		return ""
 	}
 	return filepath.Base(dir)
+}
+
+func objectNameFromObjectPath(path string) string {
+	base := filepath.Base(path)
+	for _, suffix := range []string{".object-meta.xml", ".object"} {
+		if hasSuffixFold(base, suffix) {
+			return base[:len(base)-len(suffix)]
+		}
+	}
+	return ""
 }
 
 func trimAnySuffix(name string, suffixes ...string) string {

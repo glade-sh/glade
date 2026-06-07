@@ -2986,6 +2986,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if endpoint, ok := request.Fields["endpoint"]; ok && endpoint.Kind == ValueString && vm.Org != nil {
 				if resolved, ok := resource.ResolveEndpoint(vm.Org.Metadata, endpoint.Text); ok {
 					request.Fields["resolvedEndpoint"] = String(resolved)
+				} else if name, ok := httpCalloutEndpointName(endpoint.Text); ok {
+					return Null, receiver, false, true, newExceptionError("CalloutException", fmt.Sprintf("Named Credential %s was not found or is inactive", name))
 				}
 			}
 			if err := vm.incrementLimit("callouts", 1); err != nil {
@@ -3010,11 +3012,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return value, receiver, false, true, nil
 			}
 			if vm.testContext != nil {
-				response := newHttpResponse()
-				response.Fields["body"] = String("{}")
-				response.Fields["status"] = String("OK")
-				response.Fields["statusCode"] = Int(200)
-				return response, receiver, false, true, nil
+				return Null, receiver, false, true, unsupportedCallError("Http.send test callout without Test.setMock")
 			}
 			return Null, receiver, false, true, unsupportedCallError("Http.send real network transport")
 		}
@@ -3578,6 +3576,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return value, updated, mutated, handled, err
 	}
 	return Null, receiver, false, false, nil
+}
+
+func httpCalloutEndpointName(endpoint string) (string, bool) {
+	trimmed := strings.TrimSpace(endpoint)
+	if !hasPrefixFold(trimmed, "callout:") {
+		return "", false
+	}
+	rest := strings.TrimSpace(trimmed[len("callout:"):])
+	name, _, _ := strings.Cut(rest, "/")
+	name = strings.TrimSpace(name)
+	return name, name != ""
 }
 
 func urlSameFile(left, right *url.URL) bool {

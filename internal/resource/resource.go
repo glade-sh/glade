@@ -576,6 +576,9 @@ func ResolveEndpoint(registry storage.MetadataRegistry, endpoint string) (string
 	rest := endpoint[len("callout:"):]
 	name, suffix, _ := strings.Cut(rest, "/")
 	for _, candidate := range registry.Endpoints {
+		if !strings.EqualFold(strings.TrimSpace(candidate.Kind), "NamedCredential") || !candidate.Active {
+			continue
+		}
 		if !metadataNameMatches(candidate.Name, name) {
 			continue
 		}

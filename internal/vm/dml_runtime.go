@@ -1806,6 +1806,12 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	}
 	if op == "insert" || op == "update" {
 		vm.applyBeforeDMLDerivedFields(beforeTriggerRecords)
+		if err := vm.applyBeforeSaveFlows(beforeTriggerRecords, result); err != nil {
+			ensureRollback(false)
+			restoreRollback()
+			return nil, err
+		}
+		vm.applyBeforeDMLDerivedFields(beforeTriggerRecords)
 	}
 	if op != "undelete" {
 		triggerFailures, triggerRecords, triggerErr := vm.runTriggersByObject(triggerTimingBefore, op, beforeTriggerRecords, before, result)
@@ -1943,7 +1949,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 				ensureRollback(false)
 				restoreRollback()
 			}
-			return results, err
+			return nil, err
 		}
 		afterFailures, _, err := vm.runTriggersByObject(triggerTimingAfter, op, afterRecords, afterInputBefore, result)
 		if err != nil {
@@ -1970,8 +1976,8 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		return results, err
 	}
 	if op == "insert" || op == "update" || op == "upsert" {
-		if err := vm.applyDeferredAutomation(&engine, afterRecords, allOrNone, rollback, result); err != nil {
-			return results, err
+		if err := vm.applyDeferredAutomation(&engine, afterRecords, afterInputBefore, allOrNone, rollback, result); err != nil {
+			return nil, err
 		}
 	}
 	if hasDMLSuccess(results) {
@@ -2329,6 +2335,14 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			triggerRecords = vm.hydrateUpdateTriggerRecords(groupRecords, groupBefore)
 		}
 		vm.applyBeforeDMLDerivedFields(triggerRecords)
+		if err := vm.applyBeforeSaveFlows(triggerRecords, result); err != nil {
+			if allOrNone {
+				ensureRollback(false)
+				restoreRollback()
+			}
+			return nil, err
+		}
+		vm.applyBeforeDMLDerivedFields(triggerRecords)
 		failures, err := vm.runTriggers(triggerTimingBefore, kind, triggerRecords, groupBefore, result)
 		if err != nil {
 			ensureRollback(false)
@@ -2451,7 +2465,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		if err := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result); err != nil {
 			return results, err
 		}
-		if err := vm.applyDeferredAutomation(&engine, afterRecords, allOrNone, rollback, result); err != nil {
+		if err := vm.applyDeferredAutomation(&engine, afterRecords, groupBefore, allOrNone, rollback, result); err != nil {
 			return results, err
 		}
 	}

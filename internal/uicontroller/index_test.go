@@ -16,6 +16,7 @@ func TestBuildExtractsAuraControllerReferences(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/WidgetController.cls"), `public class WidgetController {
   @AuraEnabled public static String save(Id recordId) { return 'ok'; }
   @AuraEnabled public static String load() { return 'loaded'; }
+  @AuraEnabled public static String indirect() { return 'indirect'; }
 }`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.cmp"), `<aura:component controller="WidgetController">
   <c:lineItem value="{!v.item}" />
@@ -25,8 +26,15 @@ func TestBuildExtractsAuraControllerReferences(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.evt"), `<aura:event type="APPLICATION" />`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.design"), `<design:component label="Widget" />`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/WidgetController.js"), `({
-  load: function(component) {
+	load: function(component) {
+    // var ghost = component.get("c.missingCommented");
+    var controller = "c.notAController";
+    var serverAction = "c.indirect";
     component.get("c.load");
+    component.get(serverAction);
+    component.get("c.localRefresh");
+  },
+  localRefresh: function(component) {
   }
 })`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/WidgetHelper.js"), `({
@@ -61,8 +69,14 @@ func TestBuildExtractsAuraControllerReferences(t *testing.T) {
 	if !hasClientAction(bundle, "save") {
 		t.Fatalf("client actions = %#v", bundle.ClientActions)
 	}
-	if !hasAuraAction(bundle, "save", true) || !hasAuraAction(bundle, "load", true) {
+	if !hasAuraAction(bundle, "save", true) || !hasAuraAction(bundle, "load", true) || !hasAuraAction(bundle, "indirect", true) {
 		t.Fatalf("action refs = %#v", bundle.ActionReferences)
+	}
+	if hasAuraAction(bundle, "missingCommented", false) {
+		t.Fatalf("comment-only Aura action should not be extracted: %#v", bundle.ActionReferences)
+	}
+	if hasAuraAction(bundle, "localRefresh", false) {
+		t.Fatalf("client-side Aura action should not be extracted as server action: %#v", bundle.ActionReferences)
 	}
 	if len(idx.ApexMethods) < 2 {
 		t.Fatalf("apex methods = %#v", idx.ApexMethods)

@@ -61,6 +61,13 @@ func TestLoadProjectIndexesLegacyReadOnlyMetadata(t *testing.T) {
     <isRequired>true</isRequired>
   </displayedFields>
 </FieldSet>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/ServiceResource/ServiceResource.object-meta.xml"), `<CustomObject>
+  <fieldSets>
+    <fullName>FSL__CrewManagment_Lightbox</fullName>
+    <label>Crew Lightbox</label>
+    <displayedFields><field>Name</field></displayedFields>
+  </fieldSets>
+</CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Edit.page"), `<apex:page/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/components/Picker.component"), `<apex:component/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.cmp"), `<aura:component/>`)
@@ -141,6 +148,10 @@ func TestLoadProjectIndexesLegacyReadOnlyMetadata(t *testing.T) {
 	fieldSet, ok := idx.FieldSet("Account", "Summary")
 	if !ok || fieldSet.Label != "Summary Fields" || len(fieldSet.Fields) != 1 || fieldSet.Fields[0].Field != "Name" || !fieldSet.Fields[0].Required {
 		t.Fatalf("field set lookup = %#v, %v", fieldSet, ok)
+	}
+	inlineFieldSet, ok := idx.FieldSet("ServiceResource", "FSL__CrewManagment_Lightbox")
+	if !ok || inlineFieldSet.Label != "Crew Lightbox" || len(inlineFieldSet.Fields) != 1 || inlineFieldSet.Fields[0].Field != "Name" {
+		t.Fatalf("inline field set lookup = %#v, %v", inlineFieldSet, ok)
 	}
 	if len(idx.VisualforcePages) != 1 || idx.VisualforcePages[0].Name != "Edit" || len(idx.VisualforceComponents) != 1 || idx.VisualforceComponents[0].Name != "Picker" {
 		t.Fatalf("visualforce assets = %#v %#v", idx.VisualforcePages, idx.VisualforceComponents)

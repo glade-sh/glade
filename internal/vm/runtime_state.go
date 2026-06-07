@@ -1119,6 +1119,14 @@ func (vm *VM) newDeferredAutomationDMLEngine(result *Result) dml.Engine {
 	return engine
 }
 
+func (vm *VM) applyBeforeSaveFlows(records []storage.Record, result *Result) error {
+	if len(records) == 0 {
+		return nil
+	}
+	engine := vm.newDeferredAutomationDMLEngine(result)
+	return engine.ApplyBeforeSaveFlows(records)
+}
+
 func (vm *VM) invokeFlowAction(action storage.FlowAction, record storage.Record, result *Result) error {
 	method, ok, err := vm.resolveFlowInvocableMethod(action)
 	if err != nil {
@@ -1221,12 +1229,12 @@ func flowActionTargetName(action storage.FlowAction) string {
 	return strings.TrimSpace(action.ActionName)
 }
 
-func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records []storage.Record, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
+func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []storage.Record, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
 	if engine == nil {
 		return nil
 	}
 	sideEffects := vm.snapshotSideEffects()
-	for _, record := range records {
+	for i, record := range records {
 		if record.Object == "" || record.ID == "" {
 			continue
 		}
@@ -1236,7 +1244,8 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records []storage.Reco
 				"id":     string(record.ID),
 			})
 		}
-		if err := engine.ApplyAutomation(record.Object, record.ID); err != nil {
+		outcome, err := engine.ApplyAutomation(record.Object, record.ID)
+		if err != nil {
 			if allOrNone {
 				vm.restoreDMLRollbackPoint(rollback)
 				vm.restoreSideEffects(sideEffects)
@@ -1248,6 +1257,63 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records []storage.Reco
 			}
 			return err
 		}
+		if outcome.WorkflowUpdated || outcome.FlowUpdated {
+			oldRecord := record
+			if i < len(oldRecords) {
+				oldRecord = oldRecords[i]
+			}
+			if err := vm.refireAutomationUpdateTriggers(record.Object, record.ID, oldRecord, allOrNone, rollback, result); err != nil {
+				if allOrNone {
+					vm.restoreDMLRollbackPoint(rollback)
+					vm.restoreSideEffects(sideEffects)
+				}
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (vm *VM) refireAutomationUpdateTriggers(objectName string, id storage.ID, oldRecord storage.Record, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
+	if vm == nil || vm.Org == nil || objectName == "" || id == "" {
+		return nil
+	}
+	if canonical, ok := vm.resolveObjectName(objectName); ok {
+		objectName = canonical
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return nil
+	}
+	_, stored, ok := storage.LookupRecordByID(object.Records, id)
+	if !ok {
+		return nil
+	}
+	stored.Object = objectName
+	if oldRecord.Object == "" {
+		oldRecord.Object = objectName
+	}
+	if oldRecord.ID == "" {
+		oldRecord.ID = id
+	}
+	before := []storage.Record{oldRecord}
+	triggerRecords := vm.hydrateUpdateTriggerRecords([]storage.Record{stored.Clone()}, before)
+	vm.applyBeforeDMLDerivedFields(triggerRecords)
+	failures, err := vm.runTriggers(triggerTimingBefore, "update", triggerRecords, before, result)
+	if err != nil {
+		return dmlExceptionFromTriggerError("update", err)
+	}
+	if hasDMLFailures(failures) {
+		if allOrNone {
+			vm.restoreDMLRollbackPoint(rollback)
+		}
+		return fmt.Errorf("workflow update trigger failed for %s: %s", objectName, failures[0].Error)
+	}
+	if err := vm.storeTriggerRecords(objectName, triggerRecords); err != nil {
+		return err
+	}
+	if _, err := vm.runTriggers(triggerTimingAfter, "update", triggerRecords, before, result); err != nil {
+		return dmlExceptionFromTriggerError("update", err)
 	}
 	return nil
 }

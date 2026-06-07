@@ -48,6 +48,10 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 	if strings.EqualFold(className, "WebStoreContext") && strings.EqualFold(methodName, "getCommerceContext") {
 		return Null, false
 	}
+	if (strings.EqualFold(className, "ConnectApi.Communities") || strings.EqualFold(className, "System.ConnectApi.Communities")) &&
+		(strings.EqualFold(methodName, "getCommunity") || strings.EqualFold(methodName, "getCommunities")) {
+		return Null, false
+	}
 	if strings.EqualFold(className, "Ideas") && strings.EqualFold(methodName, "findSimilar") {
 		method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, true)
 		if !ok {
@@ -1130,6 +1134,16 @@ func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Val
 		if strings.EqualFold(receiverType, "Invocable.Action") {
 			if value, handled := vm.callInvocableActionMember(receiver, methodName, args); handled {
 				return value, true
+			}
+		}
+		if strings.EqualFold(receiverType, "ConnectApi.Communities") || strings.EqualFold(receiverType, "System.ConnectApi.Communities") {
+			switch strings.ToLower(methodName) {
+			case "getcommunity":
+				value, err := vm.connectAPICommunity(args)
+				return value, err == nil
+			case "getcommunities":
+				value, err := vm.connectAPICommunities(args)
+				return value, err == nil
 			}
 		}
 		return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), true

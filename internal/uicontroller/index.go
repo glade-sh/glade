@@ -106,7 +106,10 @@ var (
 	auraControllerAttrRe = regexp.MustCompile(`(?i)\bcontroller\s*=\s*["']([A-Za-z_][A-Za-z0-9_.]*)["']`)
 	auraComponentTagRe   = regexp.MustCompile(`<\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_-]*)`)
 	auraMarkupActionRe   = regexp.MustCompile(`\{!\s*c\.([A-Za-z_][A-Za-z0-9_]*)`)
+	auraJSClientActionRe = regexp.MustCompile(`(?m)^\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*:\s*function\s*\(`)
 	auraJSActionRe       = regexp.MustCompile(`\b[A-Za-z_$][A-Za-z0-9_$]*\s*\.\s*get\s*\(\s*["']c\.([A-Za-z_][A-Za-z0-9_]*)["']\s*\)`)
+	auraJSActionConstRe  = regexp.MustCompile(`\b(?:var|let|const)?\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*=\s*["']c\.([A-Za-z_][A-Za-z0-9_]*)["']`)
+	auraJSActionVarRe    = regexp.MustCompile(`\b[A-Za-z_$][A-Za-z0-9_$]*\s*\.\s*get\s*\(\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*\)`)
 	lwcImportRe          = regexp.MustCompile(`(?m)^\s*import\s+(.+?)\s+from\s+["']([^"']+)["']`)
 	lwcWireRe            = regexp.MustCompile(`(?s)@wire\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:,\s*(\{.*?\}))?\s*\)\s*([A-Za-z_][A-Za-z0-9_]*)?`)
 	reactiveParamRe      = regexp.MustCompile(`["']\$([A-Za-z_][A-Za-z0-9_.]*)["']`)
@@ -173,7 +176,10 @@ func parseAuraBundle(paths []string, apex typesys.Index) (AuraBundle, error) {
 	controllers := make(map[string]ControllerReference)
 	components := make(map[string]AuraComponentRef)
 	clientActions := make(map[string]AuraActionReference)
+	clientActionNames := make(map[string]bool)
 	actions := make(map[string]AuraActionReference)
+	serverActionVars := make(map[string][]AuraActionReference)
+	serverActionVarGets := make(map[string]bool)
 	for _, path := range paths {
 		data, err := os.ReadFile(path)
 		if err != nil {
@@ -181,28 +187,50 @@ func parseAuraBundle(paths []string, apex typesys.Index) (AuraBundle, error) {
 		}
 		source := string(data)
 		bundle.Files = append(bundle.Files, UIFile{Path: path, Kind: auraFileKind(path)})
-		for _, match := range auraControllerAttrRe.FindAllStringSubmatchIndex(source, -1) {
-			name := source[match[2]:match[3]]
-			controllers[lookupKey(name)] = ControllerReference{Name: name, SourceRef: SourceRef{File: path, Line: lineAt(source, match[0])}}
-		}
-		for _, match := range auraComponentTagRe.FindAllStringSubmatchIndex(source, -1) {
-			ns := source[match[2]:match[3]]
-			name := source[match[4]:match[5]]
-			if strings.EqualFold(ns, "aura") {
-				continue
-			}
-			key := lookupKey(ns + ":" + name)
-			components[key] = AuraComponentRef{Namespace: ns, Name: name, SourceRef: SourceRef{File: path, Line: lineAt(source, match[0])}}
-		}
-		for _, match := range auraMarkupActionRe.FindAllStringSubmatchIndex(source, -1) {
-			name := source[match[2]:match[3]]
-			clientActions[actionKey(path, name, match[0])] = AuraActionReference{Name: name, SourceRef: SourceRef{File: path, Line: lineAt(source, match[0])}}
-		}
-		if strings.HasSuffix(strings.ToLower(path), ".js") {
-			for _, match := range auraJSActionRe.FindAllStringSubmatchIndex(source, -1) {
+		if isAuraMarkupFile(path) {
+			for _, match := range auraControllerAttrRe.FindAllStringSubmatchIndex(source, -1) {
 				name := source[match[2]:match[3]]
+				controllers[lookupKey(name)] = ControllerReference{Name: name, SourceRef: SourceRef{File: path, Line: lineAt(source, match[0])}}
+			}
+			for _, match := range auraComponentTagRe.FindAllStringSubmatchIndex(source, -1) {
+				ns := source[match[2]:match[3]]
+				name := source[match[4]:match[5]]
+				if strings.EqualFold(ns, "aura") {
+					continue
+				}
+				key := lookupKey(ns + ":" + name)
+				components[key] = AuraComponentRef{Namespace: ns, Name: name, SourceRef: SourceRef{File: path, Line: lineAt(source, match[0])}}
+			}
+			for _, match := range auraMarkupActionRe.FindAllStringSubmatchIndex(source, -1) {
+				name := source[match[2]:match[3]]
+				clientActions[actionKey(path, name, match[0])] = AuraActionReference{Name: name, SourceRef: SourceRef{File: path, Line: lineAt(source, match[0])}}
+			}
+		}
+		if hasSuffixFold(path, ".js") {
+			actionSource := stripJavaScriptComments(source)
+			for _, match := range auraJSClientActionRe.FindAllStringSubmatchIndex(actionSource, -1) {
+				name := actionSource[match[2]:match[3]]
+				clientActionNames[lookupKey(name)] = true
+				clientActions[actionKey(path, name, match[0])] = AuraActionReference{Name: name, SourceRef: SourceRef{File: path, Line: lineAt(source, match[0])}}
+			}
+			for _, match := range auraJSActionRe.FindAllStringSubmatchIndex(actionSource, -1) {
+				name := actionSource[match[2]:match[3]]
 				actions[actionKey(path, name, match[0])] = AuraActionReference{Name: name, SourceRef: SourceRef{File: path, Line: lineAt(source, match[0])}}
 			}
+			for _, match := range auraJSActionConstRe.FindAllStringSubmatchIndex(actionSource, -1) {
+				varName := actionSource[match[2]:match[3]]
+				actionName := actionSource[match[4]:match[5]]
+				serverActionVars[lookupKey(varName)] = append(serverActionVars[lookupKey(varName)], AuraActionReference{Name: actionName, SourceRef: SourceRef{File: path, Line: lineAt(source, match[0])}})
+			}
+			for _, match := range auraJSActionVarRe.FindAllStringSubmatchIndex(actionSource, -1) {
+				varName := actionSource[match[2]:match[3]]
+				serverActionVarGets[lookupKey(varName)] = true
+			}
+		}
+	}
+	for varName := range serverActionVarGets {
+		for _, action := range serverActionVars[varName] {
+			actions[actionKey(action.File, action.Name, action.Line)] = action
 		}
 	}
 	controllerName := firstControllerName(controllers)
@@ -210,13 +238,105 @@ func parseAuraBundle(paths []string, apex typesys.Index) (AuraBundle, error) {
 	bundle.ComponentReferences = sortedComponents(components)
 	bundle.ClientActions = sortedActions(clientActions)
 	for _, action := range actions {
+		if controllerName == "" {
+			continue
+		}
 		action.ClassName = controllerName
 		action.Resolved, action.ReturnType, action.Parameters = resolveApex(apex, action.ClassName, action.Name)
+		if !action.Resolved && clientActionNames[lookupKey(action.Name)] {
+			continue
+		}
 		bundle.ActionReferences = append(bundle.ActionReferences, action)
 	}
 	bundle.ActionReferences = sortedActionsFromSlice(bundle.ActionReferences)
 	sort.Slice(bundle.Files, func(i, j int) bool { return bundle.Files[i].Path < bundle.Files[j].Path })
 	return bundle, nil
+}
+
+func stripJavaScriptComments(source string) string {
+	if !strings.Contains(source, "//") && !strings.Contains(source, "/*") {
+		return source
+	}
+	var b strings.Builder
+	b.Grow(len(source))
+	inLineComment := false
+	inBlockComment := false
+	var quote byte
+	escaped := false
+	for i := 0; i < len(source); i++ {
+		ch := source[i]
+		if inLineComment {
+			if ch == '\n' {
+				inLineComment = false
+				b.WriteByte(ch)
+			} else {
+				b.WriteByte(' ')
+			}
+			continue
+		}
+		if inBlockComment {
+			if ch == '\n' {
+				b.WriteByte(ch)
+				continue
+			}
+			if ch == '*' && i+1 < len(source) && source[i+1] == '/' {
+				b.WriteString("  ")
+				i++
+				inBlockComment = false
+				continue
+			}
+			b.WriteByte(' ')
+			continue
+		}
+		if quote != 0 {
+			b.WriteByte(ch)
+			if escaped {
+				escaped = false
+				continue
+			}
+			if ch == '\\' {
+				escaped = true
+				continue
+			}
+			if ch == quote {
+				quote = 0
+			}
+			continue
+		}
+		if ch == '"' || ch == '\'' || ch == '`' {
+			quote = ch
+			b.WriteByte(ch)
+			continue
+		}
+		if ch == '/' && i+1 < len(source) {
+			switch source[i+1] {
+			case '/':
+				b.WriteString("  ")
+				i++
+				inLineComment = true
+				continue
+			case '*':
+				b.WriteString("  ")
+				i++
+				inBlockComment = true
+				continue
+			}
+		}
+		b.WriteByte(ch)
+	}
+	return b.String()
+}
+
+func hasSuffixFold(value, suffix string) bool {
+	return len(value) >= len(suffix) && strings.EqualFold(value[len(value)-len(suffix):], suffix)
+}
+
+func isAuraMarkupFile(path string) bool {
+	return hasSuffixFold(path, ".cmp") ||
+		hasSuffixFold(path, ".app") ||
+		hasSuffixFold(path, ".evt") ||
+		hasSuffixFold(path, ".intf") ||
+		hasSuffixFold(path, ".design")
 }
 
 func parseLWCBundle(paths []string) (LWCBundle, error) {

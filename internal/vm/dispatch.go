@@ -275,6 +275,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 	}
 	if className, methodName, ok := vm.splitClassMember(callee); ok {
+		if value, handled, err := vm.callConnectAPICommunitiesStatic(className, methodName, args); handled || err != nil {
+			return value, err
+		}
 		if value, handled, err := vm.callCustomDataStaticMember(className, methodName, args); handled || err != nil {
 			return value, err
 		}
@@ -318,6 +321,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 platformStaticCall:
 	callee = normalizeStaticCallCasing(callee)
+	if className, methodName, ok := vm.splitClassMember(callee); ok {
+		if value, handled, err := vm.callConnectAPICommunitiesStatic(className, methodName, args); handled || err != nil {
+			return value, err
+		}
+	}
 	if value, handled, err := vm.callConnectAPIPrimaryUsageStaticOutcome(callee, args); handled || err != nil {
 		return value, err
 	}
@@ -2035,8 +2043,10 @@ platformStaticCall:
 			return Null, newExceptionError("UnsupportedOperationException", "ConnectApi.ChatterUsers.getFollowings requires SeeAllData=true in local tests")
 		}
 		return Object("ConnectApi.FollowingPage"), nil
-	case "ConnectApi.Communities.getCommunity":
+	case "ConnectApi.Communities.getCommunity", "System.ConnectApi.Communities.getCommunity":
 		return vm.connectAPICommunity(args)
+	case "ConnectApi.Communities.getCommunities", "System.ConnectApi.Communities.getCommunities":
+		return vm.connectAPICommunities(args)
 	case "ConnectApi.NamedCredentials.getNamedCredentials":
 		return vm.connectAPINamedCredentialsGetNamedCredentials(args)
 	case "ConnectApi.NamedCredentials.createExternalCredential":

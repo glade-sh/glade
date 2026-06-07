@@ -22,6 +22,8 @@ func addScanMetadataFile(path string, proj *project.Project, seen map[string]boo
 		seen[clean] = true
 	}
 	switch {
+	case strings.HasSuffix(lower, ".cls"), strings.HasSuffix(lower, ".trigger"):
+		add(&proj.ApexFiles)
 	case strings.HasSuffix(lower, ".object-meta.xml"), strings.HasSuffix(lower, ".object") && strings.Contains(lower, "/objects/"):
 		add(&proj.ObjectFiles)
 	case strings.HasSuffix(lower, ".field-meta.xml"):
@@ -82,8 +84,21 @@ func addScanMetadataFile(path string, proj *project.Project, seen map[string]boo
 		add(&proj.FlexiPageFiles)
 	case strings.HasSuffix(lower, ".app-meta.xml"), strings.HasSuffix(lower, ".app") && strings.Contains(lower, "/applications/"):
 		add(&proj.ApplicationFiles)
+	case strings.HasSuffix(lower, ".page"):
+		add(&proj.VisualforcePageFiles)
+	case strings.HasSuffix(lower, ".component"):
+		add(&proj.VisualforceComponentFiles)
+	case strings.Contains(lower, "/aura/") && isAuraSourceFile(lower):
+		add(&proj.AuraFiles)
+	case strings.Contains(lower, "/lwc/") && strings.HasSuffix(lower, ".js"):
+		add(&proj.LWCFiles)
 	}
 }
+
+func isAuraSourceFile(path string) bool {
+	return hasAnySuffix(path, ".cmp", ".app", ".evt", ".intf", ".design", ".js", ".css", ".svg")
+}
+
 func (ctx *scanContext) addPresentationAssetFiles(assets []metadatapkg.NamedAsset) {
 	for _, asset := range assets {
 		ctx.present[filepath.Clean(asset.File)] = true
@@ -177,6 +192,10 @@ func classifyByPath(rel, path string, ctx *scanContext) []Finding {
 		if isPassiveAuraArtifact(lower) {
 			return findings
 		}
+		if ctx != nil && ctx.hasAuraActionMetadata(path) {
+			add("aura.action-metadata", "AuraBundle", auraOrLWCBundle(rel, "aura"))
+			return findings
+		}
 		if ctx != nil && ctx.resolvesAuraFile(path) {
 			return findings
 		}
@@ -220,8 +239,27 @@ func namespaceAliases(proj project.Project, sch schema.Schema, idx *metadatapkg.
 		if token != "" {
 			aliases[strings.ToLower(token)] = true
 		}
+		prefix := metadataNamespacePrefix(name)
+		if prefix != "" {
+			aliases[strings.ToLower(prefix)] = true
+		}
 	}
 	add(proj.Namespace)
+	for _, path := range proj.ApexFiles {
+		add(baseNoExt(path))
+	}
+	for _, path := range proj.StaticResourceFiles {
+		add(baseNoExt(path))
+	}
+	for _, path := range proj.StaticResourceMetas {
+		add(baseNoExt(path))
+	}
+	for _, path := range proj.VisualforcePageFiles {
+		add(baseNoExt(path))
+	}
+	for _, path := range proj.VisualforceComponentFiles {
+		add(baseNoExt(path))
+	}
 	for _, object := range sch.Objects {
 		add(object.Name)
 		for _, field := range object.Fields {

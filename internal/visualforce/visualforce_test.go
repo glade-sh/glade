@@ -21,6 +21,7 @@ func TestLoadProjectIndexesPagesAndComponents(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/AccountView.page"), `<apex:page standardController="Account" extensions="AccountExt, AuditExt">
   {!$Resource.Logo}
 </apex:page>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/znu__Order.page"), `<apex:page standardController="znu__Order__c" />`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/components/Picker.component"), `<apex:component controller="PickerController">
   <apex:attribute name="value" type="String" assignTo="{!selectedValue}" required="true" description="Selected value"/>
   {!$Label.PickerHelp}
@@ -35,7 +36,7 @@ func TestLoadProjectIndexesPagesAndComponents(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(idx.Pages) != 2 || len(idx.Components) != 1 {
+	if len(idx.Pages) != 3 || len(idx.Components) != 1 {
 		t.Fatalf("unexpected visualforce inventory: %#v", idx)
 	}
 	edit, ok := idx.Page("Page.Edit")
@@ -73,6 +74,11 @@ func TestLoadProjectIndexesPagesAndComponents(t *testing.T) {
 	}
 	if !hasMerge(account.MergeReferences, "StaticResource", "$Resource", "Logo") {
 		t.Fatalf("missing direct resource ref: %#v", account.MergeReferences)
+	}
+
+	namespaced, ok := idx.PageReference("Page.znu__Order")
+	if !ok || namespaced.Name != "znu__Order" {
+		t.Fatalf("managed page lookup = %#v, %v", namespaced, ok)
 	}
 
 	component, ok := idx.Component("picker")
