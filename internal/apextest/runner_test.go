@@ -235,7 +235,7 @@ func TestEnsureProjectDataReferencedObjectFieldPreservesExistingLookupTarget(t *
 	}
 }
 
-func TestRunRequiresHttpMockForSendInTestContext(t *testing.T) {
+func TestRunHttpSendWithoutMockReturnsStubInTestContext(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/HttpHarnessTest.cls"), `
@@ -252,12 +252,8 @@ private class HttpHarnessTest {
 
 	index := loadTestIndex(t, root)
 	run := Run(index, Options{})
-	if got := run.Summary(); got.Total != 1 || got.Failed != 1 {
-		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
-	}
-	problem := run.Suites[0].Cases[0].Problem
-	if problem == nil || problem.Type != "UnsupportedFeature" || problem.Message != `unsupported call "Http.send test callout without Test.setMock"` {
-		t.Fatalf("problem = %#v", problem)
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
 	}
 }
 

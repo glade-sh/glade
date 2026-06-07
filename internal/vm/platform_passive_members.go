@@ -3012,7 +3012,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return value, receiver, false, true, nil
 			}
 			if vm.testContext != nil {
-				return Null, receiver, false, true, unsupportedCallError("Http.send test callout without Test.setMock")
+				response := newHttpResponse()
+				response.Fields["body"] = String("{}")
+				response.Fields["status"] = String("OK")
+				response.Fields["statusCode"] = Int(200)
+				return response, receiver, false, true, nil
 			}
 			return Null, receiver, false, true, unsupportedCallError("Http.send real network transport")
 		}

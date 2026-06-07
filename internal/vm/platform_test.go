@@ -13550,7 +13550,7 @@ h.send(req);
 	}
 }
 
-func TestExecHttpSendWithoutMockInTestContextRequiresMock(t *testing.T) {
+func TestExecHttpSendWithoutMockReturnsStubInTestContext(t *testing.T) {
 	program, err := CompileAnonymous(`
 HttpRequest req = new HttpRequest();
 req.setEndpoint('https://example.test');
@@ -13564,9 +13564,8 @@ h.send(req);
 	machine := New(nil)
 	machine.EnableTestContext()
 	result, err := machine.Execute(program)
-	var runtimeErr *RuntimeError
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "Http.send test callout without Test.setMock"` {
-		t.Fatalf("err = %#v, want UnsupportedFeature missing test mock", err)
+	if err != nil {
+		t.Fatalf("err = %v, want nil", err)
 	}
 	if result.Limits.Callouts != 1 {
 		t.Fatalf("callouts = %d, want 1", result.Limits.Callouts)
