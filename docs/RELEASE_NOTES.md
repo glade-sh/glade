@@ -11,13 +11,13 @@ Compatibility status:
 - Checked example-project post-parity readiness inventory is green:
   `filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0`.
 - Checked example-project runtime support is no longer represented by one
-  green sentinel. The 2026-06-07 release-hardening proof gates are green for
-  `sf-cred-pkg-develop` (`total=4565 pass=4565`), `src-nmb-nu-develop`
-  (`total=11526 pass=11526`), and `nams-workspace`
-  (`total=5723 pass=5723`). `src-nmb-nutpl-develop` remains the fast runtime
-  sentinel at `total=761 pass=761`. NPSP and `src-nmb-nc-develop` remain
-  separate frontier gates unless freshly rerun. Historical six-project
-  frontier detail lives in `docs/fixtures/local-tests-example-projects.json`.
+  green sentinel. `src-nmb-nutpl-develop` remains the fast runtime sentinel at
+  `total=761 pass=761`. Release dogfood should also prove
+  `sf-cred-pkg-develop`, `src-nmb-nu-develop`, and `nams-workspace` from fresh
+  per-project JSON before calling those large gates green. NPSP and
+  `src-nmb-nc-develop` remain separate frontier gates unless freshly rerun.
+  Historical six-project frontier detail lives in
+  `docs/fixtures/local-tests-example-projects.json`.
 - See [`COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md) and
   [`KNOWN_GAPS.md`](KNOWN_GAPS.md) for generated status.
 

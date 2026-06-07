@@ -4,6 +4,7 @@
 /glade
 /coverage.out
 /.glade/
+/.superpowers/
 node_modules/
 /example-projects
 /probes/sfdx/.sf/

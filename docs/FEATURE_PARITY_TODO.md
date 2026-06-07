@@ -12,11 +12,11 @@ Current checked status:
   supported for the local MVP contract.
 - `glade compat server-examples --json`: `pass=101 fail=0 unsupported=0
   missing=0`.
-- `glade compat local-tests` dogfood proof gates are green for
-  `sf-cred-pkg-develop` (`total=4565 pass=4565`), `src-nmb-nu-develop`
-  (`total=11526 pass=11526`), and `nams-workspace`
-  (`total=5723 pass=5723`), with `src-nmb-nutpl-develop`
-  (`total=761 pass=761`) as the fast runtime sentinel.
+- `glade compat local-tests` dogfood proof should prioritize
+  `sf-cred-pkg-develop`, `src-nmb-nu-develop`, and `nams-workspace`, with
+  `src-nmb-nutpl-develop` (`total=761 pass=761`) as the fast runtime sentinel.
+  Large-project green claims require fresh per-project JSON from the current
+  checkout.
 - Full example-project runtime support is still incomplete; NPSP and
   `src-nmb-nc-develop` remain separate frontier gates unless freshly rerun.
   Historical six-project baseline detail is tracked in

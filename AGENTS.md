@@ -445,13 +445,13 @@ startup, and compat commands.
   server behavior.
 - The checked post-parity readiness inventory is green for the
   `example-projects` corpus; treat that as a scanner/readiness gate, not a
-  blanket full-runtime claim. The checked local-test corpus is also green. As
-  of the 2026-06-07 release-hardening run, the fresh dogfood runtime proof gates
-  are `sf-cred-pkg-develop` at `total=4565 pass=4565`,
-  `src-nmb-nu-develop` at `total=11526 pass=11526`, and `nams-workspace` at
-  `total=5723 pass=5723`. `src-nmb-nutpl-develop` remains the fast runtime
-  sentinel at `total=761 pass=761`. NPSP and `src-nmb-nc-develop` remain
-  separate example-project frontier gates unless freshly rerun.
+  blanket full-runtime claim. The checked local-test corpus is also green.
+  `src-nmb-nutpl-develop` remains the fast runtime sentinel at
+  `total=761 pass=761`. Daily-use dogfood proof should prioritize
+  `sf-cred-pkg-develop`, `src-nmb-nu-develop`, and `nams-workspace`, but those
+  large-project claims require fresh per-project JSON from the current checkout.
+  NPSP and `src-nmb-nc-develop` remain separate example-project frontier gates
+  unless freshly rerun.
 - Keep the parser behind `internal/apexast`. The parser module is
   `github.com/glade-sh/apex-parser`, vendored in-repo at
   `third_party/glade-apex-parser`; parser details live in `docs/APEX_PARSER.md`.

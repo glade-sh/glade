@@ -46,10 +46,12 @@ Use `docs/APEX_PARITY_FOLLOWUP_PLAN.md` for the broader Apex language,
 runtime, platform API, tooling, and release-hardening roadmap after the
 enterprise example-project local-test path is under control.
 
-Current execution status as of June 7, 2026: daily-use dogfood gates are green
-for `sf-cred-pkg-develop`, `src-nmb-nu-develop`, and `nams-workspace`.
-`src-nmb-nutpl-develop` remains the fast runtime sentinel. NPSP and
-`src-nmb-nc-develop` remain separate frontier gates unless freshly rerun.
+Current execution status as of June 7, 2026: `src-nmb-nutpl-develop` remains
+the fast runtime sentinel. Daily-use dogfood proof should prioritize
+`sf-cred-pkg-develop`, `src-nmb-nu-develop`, and `nams-workspace`; treat those
+large-project gates as green only from fresh per-project JSON produced by the
+current checkout. NPSP and `src-nmb-nc-develop` remain separate frontier gates
+unless freshly rerun.
 
 Primary validated command shape:
 
@@ -62,12 +64,12 @@ go run ./cmd/glade compat local-tests \
   --json
 ```
 
-Measured release-hardening results:
+Required dogfood proof targets:
 
 ```text
-sf-cred-pkg-develop total=4565 pass=4565 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0
-src-nmb-nu-develop total=11526 pass=11526 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0
-nams-workspace total=5723 pass=5723 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0
+sf-cred-pkg-develop: fresh JSON with fail=0 unsupported=0 loadError=0 compileError=0 internalError=0
+src-nmb-nu-develop: fresh JSON with fail=0 unsupported=0 loadError=0 compileError=0 internalError=0
+nams-workspace: fresh JSON with fail=0 unsupported=0 loadError=0 compileError=0 internalError=0
 ```
 
 For future blocker triage on other large projects, cap the run by distinct
@@ -207,11 +209,12 @@ owned fixtures, then tightened as caching lands.
 ## Enterprise Example-Project Runtime Gap Plan
 
 The six checked `example-projects` directories are the runtime parity target for
-the next phase. The current static/readiness inventory is green, and the
-dogfood runtime gates are green for NUTPL, sf-cred, NU, and NAMS. NPSP and
-`src-nmb-nc-develop` remain separate frontier gates unless freshly rerun. Treat
-scratch-org pass results as the behavioral target: failures in these projects
-are Glade parity gaps unless proven otherwise.
+the next phase. The current static/readiness inventory is green, and NUTPL
+remains the fast runtime sentinel. Daily dogfood runtime proof should cover
+sf-cred, NU, and NAMS from fresh JSON before claiming those large gates green.
+NPSP and `src-nmb-nc-develop` remain separate frontier gates unless freshly
+rerun. Treat scratch-org pass results as the behavioral target: failures in
+these projects are Glade parity gaps unless proven otherwise.
 
 Use `docs/plans/2026-06-04-salesforce-vertical-priority-overlay.md` as the work
 order above generated surface packets. The corpus decides priority; the packet
@@ -234,7 +237,7 @@ Current measured runtime frontier:
 | --- | --- |
 | Static/readiness inventory | `go run ./cmd/glade compat post-parity --project ./example-projects --json` reports `filesScanned=59482 findings=0 testBlockingFindings=0 surfaces=0 reports=114 dashboards=7`. |
 | Fast runtime green sentinel | `go run ./cmd/glade compat local-tests --project example-projects/src-nmb-nutpl-develop --timeout 30000 --top-failures 8 --json` reports `total=761 pass=761 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0 topFailures=null durationMs=51589`; `--parallel 4` also reports `total=761 pass=761` in `durationMs=22350`. |
-| Large-package dogfood sentinels | `sf-cred-pkg-develop` reports `total=4565 pass=4565`, `src-nmb-nu-develop` reports `total=11526 pass=11526`, and `nams-workspace` reports `total=5723 pass=5723`, all with zero fail, unsupported, load, compile, or internal errors in the June 7 release-hardening run. |
+| Large-package dogfood sentinels | `sf-cred-pkg-develop`, `src-nmb-nu-develop`, and `nams-workspace` are the daily-use proof gates. Keep their latest fresh JSON paths with the release handoff before calling them green. |
 | Six-project runtime baseline | `docs/fixtures/local-tests-example-projects.json` keeps historical measured example-project frontiers. Use fresh per-project JSON proof before calling NPSP or `src-nmb-nc-develop` green. |
 | Scale runtime frontier | `src-nmb-nc-develop` remains a separate gate unless freshly rerun; do not infer it from NU, NAMS, or sf-cred proof. |
 | Unit/regression suite | `go test ./...` must stay green after every merge. |

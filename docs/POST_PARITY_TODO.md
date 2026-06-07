@@ -64,12 +64,11 @@ Current checked status:
   actions, email templates, and Files objects. Runtime depth for UI rendering,
   advanced Flow interviews, and local UI/API serving remains tracked below.
 - The green post-parity inventory is also not a full runtime claim for every
-  checked example project. The 2026-06-07 release-hardening dogfood gates are
-  green for `sf-cred-pkg-develop` (`total=4565 pass=4565`),
-  `src-nmb-nu-develop` (`total=11526 pass=11526`), and `nams-workspace`
-  (`total=5723 pass=5723`). `src-nmb-nutpl-develop` remains the fast runtime
-  sentinel at `total=761 pass=761`. NPSP and `src-nmb-nc-develop` remain
-  separate frontier gates unless freshly rerun.
+  checked example project. `src-nmb-nutpl-develop` remains the fast runtime
+  sentinel at `total=761 pass=761`. Release dogfood should prove
+  `sf-cred-pkg-develop`, `src-nmb-nu-develop`, and `nams-workspace` from fresh
+  current JSON before calling those large gates green. NPSP and
+  `src-nmb-nc-develop` remain separate frontier gates unless freshly rerun.
 - Treat this document as the source for broad local-test support beyond the
   green server-example harness.
 
@@ -226,8 +225,7 @@ Recently cleared blocker families:
 
 Historical `sf-cred-pkg-develop` blocker frontier from the May 14, 2026
 `compat local-tests --parallel 4 --top-failures 60 --json` run. This table is
-kept for regression archaeology; the June 7, 2026 dogfood gate is green at
-`total=4565 pass=4565`:
+kept for regression archaeology; do not use it as a current green proof:
 
 | Blocker family | Current count | Notes |
 | --- | ---: | --- |

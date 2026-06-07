@@ -183,11 +183,11 @@ Current status as of 2026-06-07:
 - A full `example-projects` post-parity inventory is green as a scanner and
   readiness gate. It is not the same as proving every example-project Apex test
   runs end to end.
-- Current release-hardening dogfood runtime gates are green for
-  `sf-cred-pkg-develop` (`total=4565 pass=4565`), `src-nmb-nu-develop`
-  (`total=11526 pass=11526`), and `nams-workspace`
-  (`total=5723 pass=5723`). `src-nmb-nutpl-develop` remains the fast runtime
-  sentinel at `total=761 pass=761`.
+- Current release-hardening dogfood runtime proof should prioritize
+  `sf-cred-pkg-develop`, `src-nmb-nu-develop`, and `nams-workspace`.
+  `src-nmb-nutpl-develop` remains the fast runtime sentinel at
+  `total=761 pass=761`. Treat those large-project gates as green only from
+  fresh per-project JSON produced by the current checkout.
 - Full runtime support for all six example projects is not complete yet. NPSP
   and `src-nmb-nc-develop` remain separate frontier gates unless freshly rerun.
   Historical six-project baseline detail is tracked in
