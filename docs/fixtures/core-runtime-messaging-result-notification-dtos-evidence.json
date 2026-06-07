@@ -140,6 +140,24 @@
       "notes": "ActionableNotification builder stores sender id values."
     },
     {
+      "surfaceId": "apex:Messaging.ActionableNotification.Builder.withActionIdentifier(String)",
+      "symbol": "Messaging.ActionableNotification.Builder.withActionIdentifier",
+      "kind": "test",
+      "notes": "ActionableNotification builder stores action identifier values."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionableNotification.Builder.withTargetId(String)",
+      "symbol": "Messaging.ActionableNotification.Builder.withTargetId",
+      "kind": "test",
+      "notes": "ActionableNotification builder stores target id values."
+    },
+    {
+      "surfaceId": "apex:Messaging.ActionableNotification.Builder.withTargetPageRef(String)",
+      "symbol": "Messaging.ActionableNotification.Builder.withTargetPageRef",
+      "kind": "test",
+      "notes": "ActionableNotification builder stores target page reference values."
+    },
+    {
       "surfaceId": "apex:Messaging.ActionableNotification.Builder.build()",
       "symbol": "Messaging.ActionableNotification.Builder.build",
       "kind": "test",
@@ -180,12 +198,42 @@
       "symbol": "Messaging.ActionableNotification.getTargetPageRef",
       "kind": "test",
       "notes": "ActionableNotification exposes local target page reference values."
+    },
+    {
+      "surfaceId": "apex:Messaging.PushNotification.setPayload(Map<String,Object>)",
+      "symbol": "Messaging.PushNotification.setPayload",
+      "kind": "test",
+      "notes": "PushNotification stores payload values before local send tracing."
+    },
+    {
+      "surfaceId": "apex:Messaging.PushNotification.setTtl(Integer)",
+      "symbol": "Messaging.PushNotification.setTtl",
+      "kind": "test",
+      "notes": "PushNotification stores ttl values before local send tracing."
+    },
+    {
+      "surfaceId": "apex:Messaging.PushNotification.send(String,Set<String>)",
+      "symbol": "Messaging.PushNotification.send",
+      "kind": "test",
+      "notes": "PushNotification send records a local notification trace without live delivery."
+    },
+    {
+      "surfaceId": "apex:Messaging.PushNotificationPayload.apple(String,String,Integer,Map<String,Object>)",
+      "symbol": "Messaging.PushNotificationPayload.apple",
+      "kind": "test",
+      "notes": "The short Apple payload helper builds aps alert, sound, badge, and user data values."
+    },
+    {
+      "surfaceId": "apex:Messaging.PushNotificationPayload.apple(String,String,String,List<String>,String,String,Integer,Map<String,Object>)",
+      "symbol": "Messaging.PushNotificationPayload.apple",
+      "kind": "test",
+      "notes": "The long Apple payload helper builds nested aps alert fields and user data values."
     }
   ],
   "source": [
     {
       "path": "force-app/main/classes/CoreRuntimeMessagingResultNotificationDTOsEvidenceTest.cls",
-      "content": "@isTest private class CoreRuntimeMessagingResultNotificationDTOsEvidenceTest { @isTest static void rows() { Messaging.SingleEmailMessage invalid = new Messaging.SingleEmailMessage(); invalid.setToAddresses(new List<String>{'missing-body@example.test'}); List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{invalid}, false); System.assertEquals(1, results.size()); System.assertEquals(false, results[0].isSuccess()); System.assertEquals(1, results[0].getErrors().size()); Messaging.SendEmailError err = results[0].getErrors()[0]; System.assertEquals('Email body or template ID is required', err.getMessage()); System.assertEquals(0, err.getFields().size()); System.assertEquals(null, err.getStatusCode()); System.assertEquals(null, err.getTargetObjectId()); Messaging.CustomNotification custom = new Messaging.CustomNotification(); custom.setNotificationTypeId('0ML000000000001AAA'); custom.setSenderId('005000000000001AAA'); custom.setTitle('Trail'); custom.setBody('Body'); custom.setTargetId('001000000000001AAA'); custom.setTargetPageRef('/lightning/r/Account/001000000000001AAA/view'); custom.send(new Set<String>{'005000000000001AAA'}); Messaging.ActionResult action = new Messaging.ActionResult.Builder().withSuccess(true).withMessage('ok').withErrorCode(Messaging.ActionError.INVALID_STATE).build(); System.assertEquals(true, action.isSuccess()); System.assertEquals('ok', action.getMessage()); System.assertEquals(Messaging.ActionError.INVALID_STATE, action.getErrorCode()); Messaging.ActionableNotification note = new Messaging.ActionableNotification.Builder().withActionIdentifier('open').withNotificationTypeId('0ML000000000001AAA').withRecipientId('005000000000001AAA').withSenderId('005000000000002AAA').withTargetId('001000000000001AAA').withTargetPageRef('/lightning/r/Account/001000000000001AAA/view').build(); System.assertEquals('open', note.getActionIdentifier()); System.assertEquals('0ML000000000001AAA', note.getNotificationTypeId()); System.assertEquals('005000000000001AAA', note.getRecipientId()); System.assertEquals('005000000000002AAA', note.getSenderId()); System.assertEquals('001000000000001AAA', note.getTargetId()); System.assertEquals('/lightning/r/Account/001000000000001AAA/view', note.getTargetPageRef()); } }"
+      "content": "@isTest private class CoreRuntimeMessagingResultNotificationDTOsEvidenceTest { @isTest static void rows() { Messaging.SingleEmailMessage invalid = new Messaging.SingleEmailMessage(); invalid.setToAddresses(new List<String>{'missing-body@example.test'}); List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{invalid}, false); System.assertEquals(1, results.size()); System.assertEquals(false, results[0].isSuccess()); System.assertEquals(1, results[0].getErrors().size()); Messaging.SendEmailError err = results[0].getErrors()[0]; System.assertEquals('Email body or template ID is required', err.getMessage()); System.assertEquals(0, err.getFields().size()); System.assertEquals(null, err.getStatusCode()); System.assertEquals(null, err.getTargetObjectId()); Messaging.CustomNotification custom = new Messaging.CustomNotification(); custom.setNotificationTypeId('0ML000000000001AAA'); custom.setSenderId('005000000000001AAA'); custom.setTitle('Trail'); custom.setBody('Body'); custom.setTargetId('001000000000001AAA'); custom.setTargetPageRef('/lightning/r/Account/001000000000001AAA/view'); custom.send(new Set<String>{'005000000000001AAA'}); Messaging.ActionResult action = new Messaging.ActionResult.Builder().withSuccess(true).withMessage('ok').withErrorCode(Messaging.ActionError.INVALID_STATE).build(); System.assertEquals(true, action.isSuccess()); System.assertEquals('ok', action.getMessage()); System.assertEquals(Messaging.ActionError.INVALID_STATE, action.getErrorCode()); Messaging.ActionableNotification note = new Messaging.ActionableNotification.Builder().withActionIdentifier('open').withNotificationTypeId('0ML000000000001AAA').withRecipientId('005000000000001AAA').withSenderId('005000000000002AAA').withTargetId('001000000000001AAA').withTargetPageRef('/lightning/r/Account/001000000000001AAA/view').build(); System.assertEquals('open', note.getActionIdentifier()); System.assertEquals('0ML000000000001AAA', note.getNotificationTypeId()); System.assertEquals('005000000000001AAA', note.getRecipientId()); System.assertEquals('005000000000002AAA', note.getSenderId()); System.assertEquals('001000000000001AAA', note.getTargetId()); System.assertEquals('/lightning/r/Account/001000000000001AAA/view', note.getTargetPageRef()); Map<String,Object> shortPayload = Messaging.PushNotificationPayload.apple('Alert', 'default', 1, new Map<String,Object>{'recordId' => '001000000000001AAA'}); System.assertEquals('001000000000001AAA', shortPayload.get('recordId')); Map<String,Object> shortAps = (Map<String,Object>)shortPayload.get('aps'); System.assertEquals('Alert', shortAps.get('alert')); System.assertEquals('default', shortAps.get('sound')); System.assertEquals(1, shortAps.get('badge')); Map<String,Object> longPayload = Messaging.PushNotificationPayload.apple('Body', 'OPEN', 'LOCAL_KEY', new List<String>{'one', 'two'}, 'launch.png', 'chime', 2, new Map<String,Object>{'caseId' => '500000000000001AAA'}); System.assertEquals('500000000000001AAA', longPayload.get('caseId')); Map<String,Object> longAps = (Map<String,Object>)longPayload.get('aps'); Map<String,Object> alert = (Map<String,Object>)longAps.get('alert'); System.assertEquals('Body', alert.get('body')); System.assertEquals('OPEN', alert.get('action-loc-key')); System.assertEquals('LOCAL_KEY', alert.get('loc-key')); System.assertEquals('launch.png', alert.get('launch-image')); System.assertEquals('chime', longAps.get('sound')); System.assertEquals(2, longAps.get('badge')); Messaging.PushNotification push = new Messaging.PushNotification(shortPayload); push.setPayload(longPayload); push.setTtl(60); push.send('ConnectedApp', new Set<String>{'005000000000001AAA'}); } }"
     }
   ],
   "command": {

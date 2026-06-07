@@ -3668,6 +3668,9 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 	if value, updated, mutated, handled, err := vm.callPassivePlatformDTOCollectionMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, handled, err
 	}
+	if value, handled, err := callInvocableActionPassiveDTOMember(receiver, method, args); handled || err != nil {
+		return value, receiver, false, true, err
+	}
 	if vm.receiverHasRegisteredInstanceMethod(receiver, method, args) {
 		return Null, receiver, false, false, nil
 	}
@@ -3769,6 +3772,58 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 		return Bool(false), receiver, false, true, nil
 	}
 	return Null, receiver, false, false, nil
+}
+
+func callInvocableActionPassiveDTOMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if receiver.Kind != ValueObject || !hasQualifiedPrefixFold(receiver.Type, "Invocable.Action") {
+		return Null, false, nil
+	}
+	if len(args) != 0 {
+		return Null, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+	}
+	member := apexMethodMemberName(method)
+	if suffix, ok := passiveAccessorSuffix(member, "get"); ok {
+		if _, value, found := objectFieldValue(receiver, passiveAccessorFieldName(receiver, suffix)); found {
+			return value, true, nil
+		}
+	}
+	if strings.EqualFold(receiver.Type, "Invocable.Action.AdditionalAttribute") {
+		switch {
+		case strings.EqualFold(member, "getIsCollection"):
+			return Bool(false), true, nil
+		case strings.EqualFold(member, "getValueAsBooleanList"):
+			return typedList("List<Boolean>"), true, nil
+		case strings.EqualFold(member, "getValueAsDateList"):
+			return typedList("List<Date>"), true, nil
+		case strings.EqualFold(member, "getValueAsDoubleList"):
+			return typedList("List<Double>"), true, nil
+		case strings.EqualFold(member, "getValueAsIntegerList"):
+			return typedList("List<Integer>"), true, nil
+		case strings.EqualFold(member, "getValueAsList"):
+			return typedList("List<Object>"), true, nil
+		case strings.EqualFold(member, "getValueAsLongList"):
+			return typedList("List<Long>"), true, nil
+		case strings.EqualFold(member, "getValueAsStringList"):
+			return typedList("List<String>"), true, nil
+		}
+	}
+	if strings.EqualFold(receiver.Type, "Invocable.Action.OutputParameter") {
+		switch {
+		case strings.EqualFold(member, "getMaxOccurs"):
+			return Int(0), true, nil
+		case strings.EqualFold(member, "getAdditionalAttributes"):
+			return typedList("List<Invocable.Action.AdditionalAttribute>"), true, nil
+		case strings.EqualFold(member, "getPicklistValues"):
+			return typedList("List<Invocable.Action.PicklistValue>"), true, nil
+		}
+	}
+	if strings.EqualFold(receiver.Type, "Invocable.Action.PicklistValue") {
+		switch {
+		case strings.EqualFold(member, "getActive"), strings.EqualFold(member, "getDefaultValue"):
+			return Bool(false), true, nil
+		}
+	}
+	return Null, false, nil
 }
 
 func (vm *VM) receiverHasRegisteredInstanceMethod(receiver Value, method string, args []Value) bool {

@@ -95,6 +95,7 @@ func BuildGladeSnapshot() []SurfaceLedgerRow {
 	addFixtureBackedStdlibAliasRows(byID)
 	addFixtureBackedSystemAliasRows(byID)
 	addFixtureBackedApexAliasRows(byID)
+	addFixtureBackedInvocableActionDTORows(byID)
 	rows := make([]SurfaceLedgerRow, 0, len(byID))
 	for _, row := range byID {
 		rows = append(rows, withDefaults(row))
@@ -274,6 +275,10 @@ var fixtureBackedSystemAliasRows = []fixtureBackedSystemAliasRow{
 	{SurfaceID: "apex:System.Messaging.sendPushNotification", Kind: KindMethod, Behavior: BehaviorUnsupported, Notes: "fixture-backed explicit unsupported diagnostic for messaging transport APIs"},
 	{SurfaceID: "apex:System.PatternSyntaxException", Kind: KindType, Behavior: BehaviorPassive, Notes: "fixture-backed System-qualified alias for local PatternSyntaxException values"},
 	{SurfaceID: "apex:System.PageReference(record)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed docs shorthand for the PageReference ApexPage record constructor"},
+	{SurfaceID: "apex:Process.PluginDescribeResult.InputParameter.PluginDescribeResult.InputParameter(String,Process.PluginDescribeResult.ParameterType,Boolean)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed docs constructor spelling for Process.PluginDescribeResult.InputParameter local DTO shape"},
+	{SurfaceID: "apex:Process.PluginDescribeResult.InputParameter.PluginDescribeResult.InputParameter(String,String,Process.PluginDescribeResult.ParameterType,Boolean)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed docs constructor spelling for Process.PluginDescribeResult.InputParameter local DTO shape"},
+	{SurfaceID: "apex:Process.PluginDescribeResult.OutputParameter.PluginDescribeResult.OutputParameter(String,Process.PluginDescribeResult.ParameterType)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed docs constructor spelling for Process.PluginDescribeResult.OutputParameter local DTO shape"},
+	{SurfaceID: "apex:Process.PluginDescribeResult.OutputParameter.PluginDescribeResult.OutputParameter(String,String,Process.PluginDescribeResult.ParameterType)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed docs constructor spelling for Process.PluginDescribeResult.OutputParameter local DTO shape"},
 	{SurfaceID: "apex:System.QuickAction.*", Kind: KindMethod, Behavior: BehaviorUnsupported, Notes: "fixture-backed explicit unsupported diagnostics for local quick action UI surfaces"},
 	{SurfaceID: "apex:System.RestRequest.getHeader(String)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for RestRequest.getHeader(String)"},
 	{SurfaceID: "apex:System.RestRequest.getParameter(String)", Kind: KindMethod, Behavior: BehaviorSupported, Notes: "fixture-backed System-qualified alias for RestRequest.getParameter(String)"},
@@ -336,6 +341,72 @@ func addFixtureBackedApexAliasRows(byID map[string]SurfaceLedgerRow) {
 		}
 		fillFromApexID(&row)
 		byID[surfaceIDKey(row.SurfaceID)] = RowFromGladeShape(row)
+	}
+}
+
+func addFixtureBackedInvocableActionDTORows(byID map[string]SurfaceLedgerRow) {
+	rows := []struct {
+		typeName string
+		methods  []string
+	}{
+		{typeName: "AdditionalAttribute", methods: []string{
+			"getApexClass()",
+			"getDataType()",
+			"getIsCollection()",
+			"getName()",
+			"getValue()",
+			"getValueAsBooleanList()",
+			"getValueAsDateList()",
+			"getValueAsDoubleList()",
+			"getValueAsIntegerList()",
+			"getValueAsList()",
+			"getValueAsLongList()",
+			"getValueAsStringList()",
+		}},
+		{typeName: "Error", methods: []string{
+			"clone()",
+			"getCode()",
+			"getMessage()",
+		}},
+		{typeName: "GenericType", methods: []string{
+			"getDescription()",
+			"getLabel()",
+			"getName()",
+			"getSuperType()",
+		}},
+		{typeName: "OutputParameter", methods: []string{
+			"getAdditionalAttributes()",
+			"getApexClass()",
+			"getDescription()",
+			"getLabel()",
+			"getMaxOccurs()",
+			"getName()",
+			"getPicklistValues()",
+			"getSObjectType()",
+			"getType()",
+		}},
+		{typeName: "PicklistValue", methods: []string{
+			"getActive()",
+			"getDefaultValue()",
+			"getLabel()",
+			"getValidFor()",
+			"getValue()",
+		}},
+	}
+	for _, group := range rows {
+		for _, method := range group.methods {
+			row := SurfaceLedgerRow{
+				SurfaceID:     "apex:Invocable.Action." + group.typeName + "." + method,
+				Product:       ProductApex,
+				Area:          AreaRuntime,
+				Kind:          KindMethod,
+				GladeBehavior: BehaviorPassive,
+				Sources:       []string{"apex-fixture-alias"},
+				Notes:         "fixture-backed Invocable.Action passive DTO local default accessor",
+			}
+			fillFromApexID(&row)
+			byID[surfaceIDKey(row.SurfaceID)] = RowFromGladeShape(row)
+		}
 	}
 }
 

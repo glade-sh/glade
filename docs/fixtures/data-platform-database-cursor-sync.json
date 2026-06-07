@@ -119,6 +119,24 @@
       "notes": "Pagination cursor fetch results expose zero deleted rows for local active-row fetches."
     },
     {
+      "surfaceId": "apex:Database.PaginationCursor.fetchDeleted(Integer,Integer)",
+      "symbol": "Database.PaginationCursor.fetchDeleted",
+      "kind": "test",
+      "notes": "Pagination cursor deleted fetch returns the local deleted-record count."
+    },
+    {
+      "surfaceId": "apex:Database.PaginationCursor.fetchPage(Integer,Integer)",
+      "symbol": "Database.PaginationCursor.fetchPage",
+      "kind": "test",
+      "notes": "Pagination cursor fetchPage returns bounded local SOQL rows."
+    },
+    {
+      "surfaceId": "apex:Database.PaginationCursor.getNumRecords()",
+      "symbol": "Database.PaginationCursor.getNumRecords",
+      "kind": "test",
+      "notes": "Pagination cursor getNumRecords returns the local SOQL row count."
+    },
+    {
       "symbol": "Database.getPaginationCursorWithBinds",
       "kind": "test",
       "notes": "Bind-map pagination cursor execution expands local bind values before fetching rows."
@@ -221,7 +239,7 @@
     },
     {
       "path": "force-app/main/classes/DatabaseCursorSyncTest.cls",
-      "content": "@isTest private class DatabaseCursorSyncTest { @isTest static void cursorAndSyncSurfacesRunLocally() { insert new Account(Name = 'Acme', Rating = 'Hot'); insert new Account(Name = 'Beta', Rating = 'Warm'); Database.Cursor cursor = Database.getCursor('SELECT Id, Name FROM Account ORDER BY Name'); System.assertEquals(2, cursor.getNumRecords()); System.assertEquals(1, cursor.fetch(0, 1).size()); Database.Cursor modeCursor = Database.getCursor('SELECT Id, Name FROM Account ORDER BY Name', AccessLevel.SYSTEM_MODE); System.assertEquals(2, modeCursor.getNumRecords()); Map<String,Object> binds = new Map<String,Object>(); binds.put('rating', 'Warm'); Database.Cursor boundCursor = Database.getCursorWithBinds('SELECT Id, Name FROM Account WHERE Rating = :rating ORDER BY Name', binds, AccessLevel.SYSTEM_MODE); System.assertEquals(1, boundCursor.getNumRecords()); List<SObject> boundRows = boundCursor.fetch(0, 10); System.assertEquals(1, boundRows.size()); System.assertEquals('Beta', boundRows.get(0).get('Name')); Database.PaginationCursor page = Database.getPaginationCursor('SELECT Id, Name FROM Account ORDER BY Name'); Database.CursorFetchResult pageResult = page.fetchPage(0, 10); System.assertEquals(2, pageResult.getRecords().size()); System.assertEquals(2, pageResult.getNextIndex()); System.assertEquals(0, pageResult.getNumDeletedRecords()); System.assert(pageResult.isDone()); Database.PaginationCursor modePage = Database.getPaginationCursor('SELECT Id, Name FROM Account ORDER BY Name', AccessLevel.SYSTEM_MODE); System.assertEquals(2, modePage.fetchPage(0, 10).getRecords().size()); Database.PaginationCursor boundPage = Database.getPaginationCursorWithBinds('SELECT Id, Name FROM Account WHERE Rating = :rating ORDER BY Name', binds, AccessLevel.SYSTEM_MODE); Database.CursorFetchResult boundPageResult = boundPage.fetchPage(0, 10); System.assertEquals(1, boundPageResult.getRecords().size()); Datetime start = Datetime.newInstanceGmt(2026, 5, 15, 0, 0, 0); Datetime finish = Datetime.newInstanceGmt(2026, 5, 15, 1, 0, 0); Database.GetDeletedResult deleted = Database.getDeleted('Account', start, finish); System.assertEquals(0, deleted.getDeletedRecords().size()); System.assertEquals(start, deleted.getEarliestDateAvailable()); System.assertEquals(finish, deleted.getLatestDateCovered()); Database.GetUpdatedResult updated = Database.getUpdated('Account', start, finish); System.assertEquals(0, updated.getIds().size()); System.assertEquals(finish, updated.getLatestDateCovered()); } }"
+      "content": "@isTest private class DatabaseCursorSyncTest { @isTest static void cursorAndSyncSurfacesRunLocally() { insert new Account(Name = 'Acme', Rating = 'Hot'); insert new Account(Name = 'Beta', Rating = 'Warm'); Database.Cursor cursor = Database.getCursor('SELECT Id, Name FROM Account ORDER BY Name'); System.assertEquals(2, cursor.getNumRecords()); System.assertEquals(1, cursor.fetch(0, 1).size()); Database.Cursor modeCursor = Database.getCursor('SELECT Id, Name FROM Account ORDER BY Name', AccessLevel.SYSTEM_MODE); System.assertEquals(2, modeCursor.getNumRecords()); Map<String,Object> binds = new Map<String,Object>(); binds.put('rating', 'Warm'); Database.Cursor boundCursor = Database.getCursorWithBinds('SELECT Id, Name FROM Account WHERE Rating = :rating ORDER BY Name', binds, AccessLevel.SYSTEM_MODE); System.assertEquals(1, boundCursor.getNumRecords()); List<SObject> boundRows = boundCursor.fetch(0, 10); System.assertEquals(1, boundRows.size()); System.assertEquals('Beta', boundRows.get(0).get('Name')); Database.PaginationCursor page = Database.getPaginationCursor('SELECT Id, Name FROM Account ORDER BY Name'); System.assertEquals(2, page.getNumRecords()); Database.CursorFetchResult pageResult = page.fetchPage(0, 10); System.assertEquals(2, pageResult.getRecords().size()); System.assertEquals(2, pageResult.getNextIndex()); System.assertEquals(0, pageResult.getNumDeletedRecords()); System.assert(pageResult.isDone()); System.assertEquals(0, page.fetchDeleted(0, 10)); Database.PaginationCursor modePage = Database.getPaginationCursor('SELECT Id, Name FROM Account ORDER BY Name', AccessLevel.SYSTEM_MODE); System.assertEquals(2, modePage.fetchPage(0, 10).getRecords().size()); Database.PaginationCursor boundPage = Database.getPaginationCursorWithBinds('SELECT Id, Name FROM Account WHERE Rating = :rating ORDER BY Name', binds, AccessLevel.SYSTEM_MODE); Database.CursorFetchResult boundPageResult = boundPage.fetchPage(0, 10); System.assertEquals(1, boundPageResult.getRecords().size()); Datetime start = Datetime.newInstanceGmt(2026, 5, 15, 0, 0, 0); Datetime finish = Datetime.newInstanceGmt(2026, 5, 15, 1, 0, 0); Database.GetDeletedResult deleted = Database.getDeleted('Account', start, finish); System.assertEquals(0, deleted.getDeletedRecords().size()); System.assertEquals(start, deleted.getEarliestDateAvailable()); System.assertEquals(finish, deleted.getLatestDateCovered()); Database.GetUpdatedResult updated = Database.getUpdated('Account', start, finish); System.assertEquals(0, updated.getIds().size()); System.assertEquals(finish, updated.getLatestDateCovered()); } }"
     }
   ],
   "command": {
