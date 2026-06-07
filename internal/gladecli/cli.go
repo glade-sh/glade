@@ -168,12 +168,6 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
-	case "probe":
-		if err := runProbe(ctx, args[1:], stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
-			return 1
-		}
-		return 0
 	default:
 		report := diagnostic.Report{
 			Diagnostics: []diagnostic.Diagnostic{{
@@ -213,7 +207,6 @@ Commands:
   playground     Start the local Apex playground web UI.
   db             Seed, reset, export, and inspect a persistent local database.
   compat         Validate fixtures and report capability readiness.
-  probe          Run org probes to discover gaps against a real Salesforce org.
   help           Print this help text.
 
 Compat subcommands:
@@ -222,16 +215,14 @@ Compat subcommands:
   matrix             Print the full capability matrix.
   mvp                Print MVP readiness report.
   local-tests        Report local Apex test execution readiness.
-  oracle             Run deep Salesforce oracle workflows.
   examples           Scan example projects and report support status.
   post-parity        Scan a project for unsupported surfaces.
   dashboard          Generate compatibility dashboard.
   gaps               Generate known gaps document.
   stdlib             Generate standard library coverage document.
   stub-contracts     Report generated stub behavioral contract policy.
-  stub-discovery     Execute generated stub probes and report implementation candidates.
   stub-behavior      Report generated platform stub behavior status.
-  tooling-fixtures   Validate captured Tooling snippet oracle reports.
+  tooling-fixtures   Validate captured Tooling snippet fixture reports.
 `)
 }
 

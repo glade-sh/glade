@@ -238,11 +238,9 @@ type-system or semantic-analysis checks:
 node scripts/generate-system-stub-symbols.mjs /path/to/fulgor/stubs/apex-system-stubs internal/typesys/system_stub_symbols_generated.go
 ```
 
-Tooling snippet oracle reports can be captured from a scratch org and validated
-as stable JSON artifacts:
+Tooling snippet fixture reports can be validated as stable JSON artifacts:
 
 ```bash
-glade probe tooling-snippet --target-org glade-probe-lab --manifest docs/generated/TOOLING_SNIPPET_MANIFEST.json --output tmp/tooling-snippet-results.json
 glade compat tooling-fixtures tmp/tooling-snippet-results.json
 ```
 

@@ -232,19 +232,23 @@ Each contract pins a behavior (`callout-in-test`, `unavailable-in-test`,
 `not-in-triggers`, `throws`, `deprecated`, ...) to the exact symbol the docs
 govern. Use these as the spec when wiring or correcting a surface.
 
-### Driving the org probe at documented gaps
+### Driving implementation from documented gaps
 
-The org-probe loop (`glade compat oracle ...`) can build its inventory straight
-from the reconcile worklist, so it probes documented surfaces that have no
-verdict yet, in priority order, instead of only the stub tree:
+Use the surface ledger as the front door. Refresh it from docs and Tooling
+completions, explain one row, then add the smallest fixture or runtime change
+that proves the surface:
 
 ```bash
-glade compat oracle inventory --inventory /tmp/inv.json --json   # from docs
-glade compat oracle inventory --catalog /tmp/cat.json --json     # from a catalog
+tmp="$(mktemp -d)"
+go run ./cmd/glade compat surface refresh \
+  --docs "$GLADE_SALESFORCE_DOCS_SOURCE" \
+  --tooling-completions testdata/generated/tooling_system_symbols.json.gz \
+  --out "$tmp"
+go run ./cmd/glade compat surface explain --ledger "$tmp/SURFACE_LEDGER.json" --surface-id "<surface-id>"
 ```
 
-From there the existing `domains -> plan -> generate -> run-salesforce -> diff`
-steps run unchanged.
+If public behavior is ambiguous, capture org evidence outside the runtime and
+record it in a focused compatibility fixture before promoting the behavior.
 
 ## The map: where things live
 

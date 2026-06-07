@@ -34,49 +34,34 @@ type StubContractSource struct {
 }
 
 type StubContractTotals struct {
-	Entries   int            `json:"entries"`
-	Types     int            `json:"types"`
-	Members   int            `json:"members"`
-	ByMode    map[string]int `json:"byMode"`
-	ByStatus  map[string]int `json:"byStatus"`
-	WithProbe int            `json:"withProbe"`
+	Entries         int            `json:"entries"`
+	Types           int            `json:"types"`
+	Members         int            `json:"members"`
+	ByMode          map[string]int `json:"byMode"`
+	ByStatus        map[string]int `json:"byStatus"`
+	WithOrgEvidence int            `json:"withOrgEvidence"`
 }
 
 type StubContractEntry struct {
-	ID                string             `json:"id"`
-	Type              string             `json:"type"`
-	Member            string             `json:"member,omitempty"`
-	Kind              string             `json:"kind"`
-	Static            bool               `json:"static,omitempty"`
-	ReturnType        string             `json:"returnType,omitempty"`
-	Parameters        []string           `json:"parameters,omitempty"`
-	Status            StubBehaviorStatus `json:"status"`
-	Mode              StubContractMode   `json:"mode"`
-	ProbeID           string             `json:"probeId,omitempty"`
-	Owner             string             `json:"owner"`
-	RequiresOrgProbe  bool               `json:"requiresOrgProbe,omitempty"`
-	UnsupportedReason string             `json:"unsupportedReason,omitempty"`
-	Normalization     string             `json:"normalization,omitempty"`
-	FailureShape      string             `json:"failureShape,omitempty"`
-	OddityRisk        string             `json:"oddityRisk,omitempty"`
-	EdgeTags          []string           `json:"edgeTags,omitempty"`
-	Evidence          []string           `json:"evidence,omitempty"`
-	Notes             string             `json:"notes,omitempty"`
-}
-
-type StubContractProbeSpec struct {
-	ID               string           `json:"id"`
-	ContractID       string           `json:"contractId"`
-	Type             string           `json:"type"`
-	Member           string           `json:"member,omitempty"`
-	Kind             string           `json:"kind"`
-	Static           bool             `json:"static,omitempty"`
-	ReturnType       string           `json:"returnType,omitempty"`
-	Parameters       []string         `json:"parameters,omitempty"`
-	Mode             StubContractMode `json:"mode"`
-	Tier             string           `json:"tier"`
-	CanBatch         bool             `json:"canBatch"`
-	RequiresOrgProbe bool             `json:"requiresOrgProbe"`
+	ID                  string             `json:"id"`
+	Type                string             `json:"type"`
+	Member              string             `json:"member,omitempty"`
+	Kind                string             `json:"kind"`
+	Static              bool               `json:"static,omitempty"`
+	ReturnType          string             `json:"returnType,omitempty"`
+	Parameters          []string           `json:"parameters,omitempty"`
+	Status              StubBehaviorStatus `json:"status"`
+	Mode                StubContractMode   `json:"mode"`
+	EvidenceID          string             `json:"evidenceId,omitempty"`
+	Owner               string             `json:"owner"`
+	RequiresOrgEvidence bool               `json:"requiresOrgEvidence,omitempty"`
+	UnsupportedReason   string             `json:"unsupportedReason,omitempty"`
+	Normalization       string             `json:"normalization,omitempty"`
+	FailureShape        string             `json:"failureShape,omitempty"`
+	OddityRisk          string             `json:"oddityRisk,omitempty"`
+	EdgeTags            []string           `json:"edgeTags,omitempty"`
+	Evidence            []string           `json:"evidence,omitempty"`
+	Notes               string             `json:"notes,omitempty"`
 }
 
 func BuildStubContractReport(sourceRoot string) (StubContractReport, error) {
@@ -128,7 +113,7 @@ func WriteStubContractsMarkdown(w io.Writer, report StubContractReport) error {
 	if _, err := fmt.Fprintf(w, "- Members: %d\n", report.Totals.Members); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(w, "- With probes: %d\n", report.Totals.WithProbe); err != nil {
+	if _, err := fmt.Fprintf(w, "- With org evidence: %d\n", report.Totals.WithOrgEvidence); err != nil {
 		return err
 	}
 	for _, mode := range []StubContractMode{StubContractOrgDiff, StubContractLocalOnly, StubContractPassiveDTO, StubContractCompileShape} {
@@ -136,86 +121,23 @@ func WriteStubContractsMarkdown(w io.Writer, report StubContractReport) error {
 			return err
 		}
 	}
-	if _, err := fmt.Fprintln(w, "\n| ID | Mode | Status | Probe | Owner |"); err != nil {
+	if _, err := fmt.Fprintln(w, "\n| ID | Mode | Status | Evidence | Owner |"); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintln(w, "| --- | --- | --- | --- | --- |"); err != nil {
 		return err
 	}
 	for _, entry := range report.Entries {
-		if _, err := fmt.Fprintf(w, "| `%s` | `%s` | `%s` | `%s` | %s |\n", entry.ID, entry.Mode, entry.Status, entry.ProbeID, entry.Owner); err != nil {
+		if _, err := fmt.Fprintf(w, "| `%s` | `%s` | `%s` | `%s` | %s |\n", entry.ID, entry.Mode, entry.Status, entry.EvidenceID, entry.Owner); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func WriteStubContractProbeManifestJSON(w io.Writer, specs []StubContractProbeSpec) error {
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	return enc.Encode(specs)
-}
-
-func BuildStubContractProbeManifest(report StubContractReport, tier string) []StubContractProbeSpec {
-	specs := make([]StubContractProbeSpec, 0, len(report.Entries))
-	for _, entry := range report.Entries {
-		probeID := entry.ProbeID
-		if probeID == "" {
-			probeID = stubContractProbeID(StubBehaviorEntry{Type: entry.Type, Member: entry.Member})
-		}
-		spec := StubContractProbeSpec{
-			ID:               probeID,
-			ContractID:       entry.ID,
-			Type:             entry.Type,
-			Member:           entry.Member,
-			Kind:             entry.Kind,
-			Static:           entry.Static,
-			ReturnType:       entry.ReturnType,
-			Parameters:       append([]string(nil), entry.Parameters...),
-			Mode:             entry.Mode,
-			Tier:             stubContractTier(entry),
-			CanBatch:         entry.Mode != StubContractLocalOnly,
-			RequiresOrgProbe: entry.Mode == StubContractOrgDiff,
-		}
-		if tier != "" && tier != "full" && !stubContractTierMatch(tier, spec.Tier) {
-			continue
-		}
-		specs = append(specs, spec)
-	}
-	sort.Slice(specs, func(i, j int) bool {
-		return lessStubContractProbeSpec(specs[i], specs[j])
-	})
-	return specs
-}
-
 func lessStubContractEntry(a, b StubContractEntry) bool {
 	if a.ID != b.ID {
 		return a.ID < b.ID
-	}
-	if a.Type != b.Type {
-		return a.Type < b.Type
-	}
-	if a.Member != b.Member {
-		return a.Member < b.Member
-	}
-	if a.Kind != b.Kind {
-		return a.Kind < b.Kind
-	}
-	if a.Static != b.Static {
-		return !a.Static && b.Static
-	}
-	if a.ReturnType != b.ReturnType {
-		return a.ReturnType < b.ReturnType
-	}
-	return lessStringSlice(a.Parameters, b.Parameters)
-}
-
-func lessStubContractProbeSpec(a, b StubContractProbeSpec) bool {
-	if a.ID != b.ID {
-		return a.ID < b.ID
-	}
-	if a.ContractID != b.ContractID {
-		return a.ContractID < b.ContractID
 	}
 	if a.Type != b.Type {
 		return a.Type < b.Type
@@ -267,8 +189,8 @@ func buildStubContractEntry(entry StubBehaviorEntry) StubContractEntry {
 		contract.UnsupportedReason = firstNonEmpty(entry.Notes, "explicit unsupported platform surface")
 	}
 	if mode == StubContractOrgDiff {
-		contract.ProbeID = stubContractProbeID(entry)
-		contract.RequiresOrgProbe = true
+		contract.EvidenceID = stubContractEvidenceID(entry)
+		contract.RequiresOrgEvidence = true
 	}
 	return contract
 }
@@ -365,13 +287,13 @@ func orgDiffCandidate(entry StubBehaviorEntry) bool {
 	return false
 }
 
-func stubContractProbeID(entry StubBehaviorEntry) string {
+func stubContractEvidenceID(entry StubBehaviorEntry) string {
 	var b strings.Builder
 	b.WriteString("stub.")
-	b.WriteString(normalizeProbeToken(entry.Type))
+	b.WriteString(normalizeEvidenceToken(entry.Type))
 	if entry.Member != "" {
 		b.WriteString(".")
-		b.WriteString(normalizeProbeToken(entry.Member))
+		b.WriteString(normalizeEvidenceToken(entry.Member))
 	}
 	if len(entry.Parameters) > 0 {
 		b.WriteString(".")
@@ -380,33 +302,10 @@ func stubContractProbeID(entry StubBehaviorEntry) string {
 			if i > 0 {
 				b.WriteString("-")
 			}
-			b.WriteString(normalizeProbeToken(param))
+			b.WriteString(normalizeEvidenceToken(param))
 		}
 	}
 	return b.String()
-}
-
-func stubContractTier(entry StubContractEntry) string {
-	if entry.Mode == StubContractLocalOnly {
-		return "local"
-	}
-	lowerType := strings.ToLower(entry.Type)
-	if lowerType == "system" || lowerType == "string" || lowerType == "math" || lowerType == "date" || lowerType == "datetime" || strings.HasPrefix(lowerType, "schema") {
-		return "smoke"
-	}
-	if entry.Mode == StubContractOrgDiff {
-		return "core"
-	}
-	return "full"
-}
-
-func stubContractTierMatch(requested, actual string) bool {
-	switch requested {
-	case "core":
-		return actual == "core" || actual == "smoke"
-	default:
-		return requested == actual
-	}
 }
 
 func stubContractNormalization(entry StubBehaviorEntry) string {
@@ -494,7 +393,7 @@ func dedupeStrings(values []string) []string {
 	return out
 }
 
-func normalizeProbeToken(in string) string {
+func normalizeEvidenceToken(in string) string {
 	in = strings.TrimSpace(strings.ToLower(in))
 	replacer := strings.NewReplacer(
 		"(", "-", ")", "", "<", "-", ">", "", ",", "-", ".", "-", " ", "-", "[", "-", "]", "",
@@ -520,8 +419,8 @@ func countStubContractTotals(entries []StubContractEntry) StubContractTotals {
 		}
 		totals.ByMode[string(entry.Mode)]++
 		totals.ByStatus[string(entry.Status)]++
-		if entry.ProbeID != "" {
-			totals.WithProbe++
+		if entry.EvidenceID != "" {
+			totals.WithOrgEvidence++
 		}
 	}
 	totals.Types = len(types)

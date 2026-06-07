@@ -3,28 +3,25 @@
 This plan tracks the move from stub shape parity to Salesforce-like behavior for
 generated Apex platform types and standard SObject metadata. The source contract
 is `example-projects/stubs`; behavior must be implemented from public Salesforce
-docs, owned compatibility fixtures, or black-box scratch-org probes.
+docs, owned compatibility fixtures, or captured org evidence.
 
 ## Implemented Contract Corpus
 
 The contract-corpus workflow is now implemented and generated.
 
-- `glade compat stub-contracts --output docs/generated/STUB_CONTRACTS.json`
+- `glade compat stub-contracts --output docs/generated/stubs/STUB_CONTRACTS.json`
   emits one row per generated stub type/member with:
   - behavior status
   - contract mode (`org-diff`, `local-contract`, `passive-dto`, `compile-shape`)
   - implementation owner lane
   - oddity metadata (`normalization`, `failureShape`, `oddityRisk`, `edgeTags`)
-- `glade compat stub-contracts --probe-manifest docs/generated/STUB_CONTRACT_PROBE_MANIFEST.json --probe-tier <smoke|core|full|local>`
-  emits lab probe specs for generated stub contracts.
-- `glade probe local <stub.probe.id>` executes generated stub contract probes
-  even when `ProbeRunner` has no handwritten probe registration.
+- `glade compat stub-inventory --source example-projects/stubs --output docs/generated/stubs/STUB_INVENTORY.md`
+  reports generated system and SObject stub shape coverage.
 
 This establishes discovery coverage across generated stubs while preserving
 explicit unsupported surfaces and odd-behavior tracking for implementation work.
-`docs/generated/STUB_DISCOVERY*.json` and
-`docs/generated/STUB_CONTRACT_PROBE_MANIFEST.json` are packet evidence inputs.
-They are not the broad Salesforce implementation backlog.
+The broad implementation backlog now comes from `compat surface refresh`,
+`compat stub-behavior`, and owned compatibility fixtures.
 
 ## Current Baseline
 
@@ -59,7 +56,7 @@ Required output:
 - A check mode suitable for CI drift detection.
 
 Promotion rule: no API moves to `implemented` without a unit test or compat
-fixture. Ambiguous Salesforce behavior needs a scratch-org probe.
+fixture. Ambiguous Salesforce behavior needs captured org evidence.
 
 ## Phase 2: Passive DTO and Value Objects
 
@@ -94,7 +91,7 @@ Exit gate:
 - Existing handwritten stdlib behavior is represented in `stub-behavior`.
 - Unknown generated overloads are either implemented, passive, or explicit
   unsupported.
-- Scratch-org probes exist for ambiguous date/time, regex, crypto, and JSON
+- Captured org evidence exists for ambiguous date/time, regex, crypto, and JSON
   edge behavior.
 
 ## Phase 4: Schema and Describe Behavior
@@ -166,9 +163,10 @@ Exit gate:
 
 - No `unknown` behavior remains in prioritized namespaces.
 
-## Phase 8: Scratch-Org Probe Harness
+## Phase 8: Captured Org Evidence
 
-Use `glade-probe-lab` / `glade-probe-org` for ambiguous behavior:
+Use a scratch org only for ambiguous behavior, then capture the result in an
+owned fixture or doc-backed note:
 
 ```bash
 echo "System.debug('probe');" | sf apex run --target-org glade-probe-org
@@ -176,7 +174,6 @@ echo "System.debug('probe');" | sf apex run --target-org glade-probe-org
 
 Deliverables:
 
-- Probe scripts or generated Apex classes grouped by API family.
 - Captured expected outputs in repo-owned fixtures.
 - Local equivalents that assert the same observable behavior or an explicit
   unsupported diagnostic.

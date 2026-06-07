@@ -72,11 +72,6 @@ func TestRunCommandHelp(t *testing.T) {
 			args: []string{"compat", "local-tests", "--help"},
 			want: []string{"Usage:", "glade compat local-tests", "--class <name>", "--json"},
 		},
-		{
-			name: "compat oracle flag help",
-			args: []string{"compat", "oracle", "--help"},
-			want: []string{"Usage:", "glade compat oracle", "inventory", "run-salesforce"},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -111,9 +106,8 @@ func TestRunTopLevelHelpAlignment(t *testing.T) {
 		"  playground     Start the local Apex playground web UI.",
 		"  db             Seed, reset, export, and inspect a persistent local database.",
 		"  stub-contracts     Report generated stub behavioral contract policy.",
-		"  stub-discovery     Execute generated stub probes and report implementation candidates.",
 		"  stub-behavior      Report generated platform stub behavior status.",
-		"  tooling-fixtures   Validate captured Tooling snippet oracle reports.",
+		"  tooling-fixtures   Validate captured Tooling snippet fixture reports.",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("stdout missing aligned line %q:\n%s", want, got)
@@ -436,178 +430,6 @@ func TestRunCompatReplay(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "Replay selector-service-domain: passed") {
 		t.Fatalf("stdout did not include replay status: %q", stdout.String())
-	}
-}
-
-func TestRunCompatOracleTestsDiffsFixtureRuns(t *testing.T) {
-	root := t.TempDir()
-	goldenPath := filepath.Join(root, "salesforce.json")
-	localPath := filepath.Join(root, "local.json")
-	writeTestFile(t, goldenPath, `{
-  "schemaVersion": 1,
-  "source": "salesforce",
-  "project": "fixture",
-  "testClass": "AccountOracleTest",
-  "testMethod": "createsRecord",
-  "status": "pass",
-  "events": [{"type": "soql", "sequence": 1, "query": "SELECT Id FROM Account"}]
-}`)
-	writeTestFile(t, localPath, `{
-  "schemaVersion": 1,
-  "source": "glade",
-  "project": "fixture",
-  "testClass": "AccountOracleTest",
-  "testMethod": "createsRecord",
-  "status": "pass",
-  "events": [{"type": "dml", "sequence": 1, "operation": "insert", "object": "Account"}]
-}`)
-	runsDir := filepath.Join(root, "runs")
-
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"compat", "oracle-tests", "--salesforce-run", goldenPath, "--local-run", localPath, "--runs-dir", runsDir, "--run-id", "test-run", "--json"}, &stdout, &stderr)
-	if code != 1 {
-		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
-	}
-	for _, want := range []string{
-		`"target": "Salesforce oracle parity"`,
-		`"outcome": "trace_mismatch"`,
-		`"artifactDir":`,
-	} {
-		if !strings.Contains(stdout.String(), want) {
-			t.Fatalf("stdout missing %q: %q", want, stdout.String())
-		}
-	}
-	if _, err := os.Stat(filepath.Join(runsDir, "test-run", "oracle", "diff.json")); err != nil {
-		t.Fatalf("diff artifact not written: %v", err)
-	}
-}
-
-func TestRunCompatOracleTestsRejectsUnsafeRunID(t *testing.T) {
-	root := t.TempDir()
-	goldenPath := filepath.Join(root, "salesforce.json")
-	localPath := filepath.Join(root, "local.json")
-	writeTestFile(t, goldenPath, `{"schemaVersion":1,"source":"salesforce","testClass":"AccountOracleTest","status":"pass"}`)
-	writeTestFile(t, localPath, `{"schemaVersion":1,"source":"glade","testClass":"AccountOracleTest","status":"pass"}`)
-
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"compat", "oracle-tests", "--salesforce-run", goldenPath, "--local-run", localPath, "--runs-dir", filepath.Join(root, "runs"), "--run-id", "../escape", "--json"}, &stdout, &stderr)
-	if code != 1 {
-		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
-	}
-	if _, err := os.Stat(filepath.Join(root, "escape", "oracle", "diff.json")); !os.IsNotExist(err) {
-		t.Fatalf("unsafe artifact path was written, stat err = %v", err)
-	}
-}
-
-func TestRunCompatOracleTestsRejectsAnonymousComparisonWithoutLocalRun(t *testing.T) {
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"compat", "oracle-tests", "--anonymous", "System.debug('x');", "--target-org", "fake", "--json"}, &stdout, &stderr)
-	if code != 1 {
-		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
-	}
-	if !strings.Contains(stderr.String(), "--anonymous") {
-		t.Fatalf("stderr = %q", stderr.String())
-	}
-}
-
-func TestRunCompatOracleTestsGoldenOnlyIsNotParityReady(t *testing.T) {
-	root := t.TempDir()
-	goldenPath := filepath.Join(root, "salesforce.json")
-	writeTestFile(t, goldenPath, `{"schemaVersion":1,"source":"salesforce","testClass":"AccountOracleTest","status":"pass"}`)
-
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"compat", "oracle-tests", "--salesforce-run", goldenPath, "--golden-only", "--runs-dir", filepath.Join(root, "runs"), "--run-id", "golden", "--json"}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("exit code = %d, want 0; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
-	}
-	if !strings.Contains(stdout.String(), `"goldenOnly": true`) || !strings.Contains(stdout.String(), `"ready": false`) {
-		t.Fatalf("stdout = %q", stdout.String())
-	}
-}
-
-func TestRunCompatOracleTestsCheckCorpus(t *testing.T) {
-	root := t.TempDir()
-	goldenPath := filepath.Join(root, "salesforce.json")
-	localPath := filepath.Join(root, "local.json")
-	writeTestFile(t, goldenPath, `{"schemaVersion":1,"source":"salesforce","testClass":"AccountOracleTest","testMethod":"createsRecord","status":"pass"}`)
-	writeTestFile(t, localPath, `{"schemaVersion":1,"source":"glade","testClass":"AccountOracleTest","testMethod":"createsRecord","status":"pass"}`)
-	baselinePath := filepath.Join(root, "baseline.json")
-	writeTestFile(t, baselinePath, `{
-  "target": "oracle parity corpus",
-  "cases": [
-    {
-      "name": "passing-fixture",
-      "project": "fixture",
-      "salesforceRun": "salesforce.json",
-      "localRun": "local.json",
-      "ready": true,
-      "summary": {"total": 1, "pass": 1},
-      "outcomes": [
-        {"class": "AccountOracleTest", "method": "createsRecord", "outcome": "pass"}
-      ]
-    }
-  ]
-}`)
-
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"compat", "oracle-tests", "--check", baselinePath, "--json"}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("exit code = %d, want 0; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
-	}
-	if !strings.Contains(stdout.String(), `"target": "oracle parity corpus"`) || !strings.Contains(stdout.String(), `"ready": true`) {
-		t.Fatalf("stdout = %q", stdout.String())
-	}
-}
-
-func TestRunCompatOracleNextWithRunID(t *testing.T) {
-	root := t.TempDir()
-	runID := "oracle-next"
-	runDir := filepath.Join(root, "runs", runID)
-	if err := os.MkdirAll(runDir, 0o755); err != nil {
-		t.Fatalf("mkdir: %v", err)
-	}
-	writeTestFile(t, filepath.Join(runDir, "work-queue.json"), `{
-  "schemaVersion": 1,
-  "target": "apex oracle work queue",
-  "items": [
-    {"id":"work.0001","probeId":"p1","surfaceId":"S.A()","area":"stdlib.core","shard":0,"generatedClass":"A","methodName":"m","status":"planned"},
-    {"id":"work.0002","probeId":"p2","surfaceId":"S.B()","area":"stdlib.core","shard":1,"generatedClass":"B","methodName":"m","status":"complete"}
-  ]
-}`)
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"compat", "oracle", "next", "--run-id", runID, "--runs-dir", filepath.Join(root, "runs"), "--limit", "10", "--json"}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
-	}
-	if !strings.Contains(stdout.String(), `"count": 1`) || !strings.Contains(stdout.String(), `"work.0001"`) {
-		t.Fatalf("stdout = %q", stdout.String())
-	}
-}
-
-func TestRunCompatOracleResumeReadsLedger(t *testing.T) {
-	root := t.TempDir()
-	runID := "oracle-resume"
-	runDir := filepath.Join(root, "runs", runID)
-	if err := os.MkdirAll(runDir, 0o755); err != nil {
-		t.Fatalf("mkdir: %v", err)
-	}
-	writeTestFile(t, filepath.Join(runDir, "work-queue.json"), `{
-  "schemaVersion": 1,
-  "target": "apex oracle work queue",
-  "items": [
-    {"id":"work.0001","probeId":"p1","surfaceId":"S.A()","area":"stdlib.core","shard":0,"generatedClass":"A","methodName":"m","status":"planned"}
-  ]
-}`)
-	writeTestFile(t, filepath.Join(runDir, "ledger.jsonl"), `{"timestamp":"2026-05-22T00:00:00Z","runId":"oracle-resume","step":"generate","status":"ok"}`+"\n")
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"compat", "oracle", "resume", "--run-id", runID, "--runs-dir", filepath.Join(root, "runs")}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
-	}
-	for _, want := range []string{"ledgerRows: 1", "pending: 1", "work.0001"} {
-		if !strings.Contains(stdout.String(), want) {
-			t.Fatalf("stdout missing %q: %q", want, stdout.String())
-		}
 	}
 }
 
@@ -1836,65 +1658,6 @@ func TestRunCompatStubContractsCheckPreservesExistingSourceCountsWithoutSource(t
 	}
 }
 
-func TestRunCompatStubContractsProbeManifest(t *testing.T) {
-	var stdout, stderr bytes.Buffer
-	dir := t.TempDir()
-	manifestPath := filepath.Join(dir, "stub-probe-manifest.json")
-	code := Run(context.Background(), []string{"compat", "stub-contracts", "--probe-manifest", manifestPath, "--probe-tier", "core"}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("stub contracts probe manifest exit code = %d, want 0; stderr=%q", code, stderr.String())
-	}
-	if !strings.Contains(stdout.String(), "wrote") || !strings.Contains(stdout.String(), "tier=core") {
-		t.Fatalf("stdout = %q", stdout.String())
-	}
-	content, err := os.ReadFile(manifestPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, want := range []string{`"mode": "org-diff"`, `"contractId":`, `"requiresOrgProbe": true`} {
-		if !strings.Contains(string(content), want) {
-			t.Fatalf("manifest missing %q: %q", want, string(content))
-		}
-	}
-}
-
-func TestRunCompatStubDiscoveryJSON(t *testing.T) {
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"compat", "stub-discovery", "--tier", "smoke", "--limit", "3", "--json"}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("stub discovery json exit code = %d, want 0; stderr=%q", code, stderr.String())
-	}
-	for _, want := range []string{
-		`"target": "stub contract implementation discovery"`,
-		`"tier": "smoke"`,
-		`"requested": 3`,
-		`"candidates":`,
-		`"topImplementation":`,
-	} {
-		if !strings.Contains(stdout.String(), want) {
-			t.Fatalf("stub discovery stdout missing %q: %q", want, stdout.String())
-		}
-	}
-}
-
-func TestRunCompatStubDiscoveryNoExecFull(t *testing.T) {
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"compat", "stub-discovery", "--tier", "full", "--limit", "20", "--no-exec", "--json"}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("stub discovery no-exec json exit code = %d, want 0; stderr=%q", code, stderr.String())
-	}
-	for _, want := range []string{
-		`"requested": 20`,
-		`"executed": 0`,
-		`"needs_org_probe"`,
-		`"unverified"`,
-	} {
-		if !strings.Contains(stdout.String(), want) {
-			t.Fatalf("stub discovery no-exec stdout missing %q: %q", want, stdout.String())
-		}
-	}
-}
-
 func TestRunCompatStubInventoryOutputAndCheck(t *testing.T) {
 	sourceRoot := t.TempDir()
 	writeTestFile(t, filepath.Join(sourceRoot, "apex-system-stubs", "System", "String.cls"), `global class String {
@@ -2722,62 +2485,6 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	}
 }
 
-func TestRunProbeSummarizeTopStub(t *testing.T) {
-	dir := t.TempDir()
-	reportPath := filepath.Join(dir, "gap-report.json")
-	writeTestFile(t, reportPath, `{
-  "entries": [
-    {"probeId":"stub.connectapi-feed.get","gapType":"behavioral_gap","diff":"org throws System.UnsupportedOperationException; local throws System.CompileException"},
-    {"probeId":"stub.connectapi-feed.post","gapType":"behavioral_gap","diff":"org throws System.UnsupportedOperationException; local returns <nil>"},
-    {"probeId":"stub.auth-oauth.login","gapType":"unsupported_gap","diff":"org returns true; local throws UnsupportedFeature"}
-  ],
-  "traceDiffs": [
-    {"classification":"contract_equivalent"},
-    {"classification":"contract_equivalent"},
-    {"classification":"missing_trace"}
-  ]
-}`)
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"probe", "summarize", reportPath, "--top-stub"}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
-	}
-	out := stdout.String()
-	for _, want := range []string{
-		"topStubSuperfamilies:",
-		"  connectapi: 2",
-		"topDiffShapes:",
-		"traceClassificationCounts:",
-		"  contract_equivalent: 2",
-		"  missing_trace: 1",
-	} {
-		if !strings.Contains(out, want) {
-			t.Fatalf("stdout missing %q: %q", want, out)
-		}
-	}
-}
-
-func TestRunProbeSummarizeDefaultDoesNotPrintTopStubSections(t *testing.T) {
-	dir := t.TempDir()
-	reportPath := filepath.Join(dir, "gap-report.json")
-	writeTestFile(t, reportPath, `{
-  "entries": [
-    {"probeId":"stub.connectapi-feed.get","gapType":"behavioral_gap","diff":"org throws System.UnsupportedOperationException; local throws System.CompileException"}
-  ],
-  "traceDiffs": [{"classification":"contract_equivalent"}]
-}`)
-
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"probe", "summarize", reportPath}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
-	}
-	out := stdout.String()
-	if strings.Contains(out, "topStubSuperfamilies:") || strings.Contains(out, "traceClassificationCounts:") {
-		t.Fatalf("stdout unexpectedly included top stub sections: %q", out)
-	}
-}
-
 func writeTestFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -2865,67 +2572,5 @@ callout and fails.
 	}
 	if strings.Contains(stdout.String(), "callout-in-test") {
 		t.Fatalf("behavior filter should exclude callout-in-test: %q", stdout.String())
-	}
-}
-
-func TestRunCompatOracleInventoryFromCatalog(t *testing.T) {
-	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "apex_class_System_Database.md"), `# Database Class
-
-## Namespace
-[System](./apex_namespace_System.md)
-
-## Database Methods
-### query(soql)
-Runs a dynamic SOQL query.
-`)
-	dir := t.TempDir()
-	inventoryPath := filepath.Join(dir, "inventory.json")
-
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"compat", "docs-inventory", "--source", root, "--output", inventoryPath}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("inventory exit code = %d, want 0; stderr=%q", code, stderr.String())
-	}
-
-	stdout.Reset()
-	stderr.Reset()
-	code = Run(context.Background(), []string{"compat", "oracle", "inventory", "--inventory", inventoryPath, "--json"}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("oracle inventory exit code = %d, want 0; stderr=%q", code, stderr.String())
-	}
-	for _, want := range []string{`docs reconciliation`, `"Database"`} {
-		if !strings.Contains(stdout.String(), want) {
-			t.Fatalf("oracle inventory json missing %q: %q", want, stdout.String())
-		}
-	}
-
-	stdout.Reset()
-	stderr.Reset()
-	code = Run(context.Background(), []string{"compat", "oracle", "inventory", "--catalog", inventoryPath, "--inventory", inventoryPath}, &stdout, &stderr)
-	if code == 0 {
-		t.Fatalf("oracle inventory with both --catalog and --inventory should fail")
-	}
-}
-
-func TestRunCompatOracleRunAnonRequiresTargetOrg(t *testing.T) {
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"compat", "oracle", "run-anon", "--filter", "GLADE_Probe_0"}, &stdout, &stderr)
-	if code == 0 {
-		t.Fatalf("run-anon without --target-org should fail; stdout=%q", stdout.String())
-	}
-	if !strings.Contains(stderr.String(), "target-org") {
-		t.Fatalf("expected target-org error, got stderr=%q", stderr.String())
-	}
-}
-
-func TestRunCompatOracleRunAnonRejectsBadChunkSize(t *testing.T) {
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"compat", "oracle", "run-anon", "--chunk-size", "0", "--target-org", "x", "--filter", "C"}, &stdout, &stderr)
-	if code == 0 {
-		t.Fatalf("run-anon with --chunk-size 0 should fail")
-	}
-	if !strings.Contains(stderr.String(), "chunk-size") {
-		t.Fatalf("expected chunk-size error, got stderr=%q", stderr.String())
 	}
 }

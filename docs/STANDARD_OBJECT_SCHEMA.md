@@ -7,19 +7,19 @@ that Salesforce normally exposes through describe calls.
 
 ## Source Of Truth
 
-The checked-in standard baseline is generated from public Salesforce describe
-responses captured from the `glade-probe-lab` scratch org. The scratch org shape
-lives in `probes/sfdx/config/project-scratch-def.json` and enables a broad
-Enterprise feature set including Sales Cloud, Service Cloud, Person Accounts,
-Orders, Quotes, Products and Schedules, Multi-Currency, State and Country
-Picklists, and Order Management.
+The checked-in standard baseline lives in
+`internal/storage/standard_schema_generated.go`. It is generated from public
+Salesforce describe responses and carries a broad Enterprise feature spread
+including Sales Cloud, Service Cloud, Person Accounts, Orders, Quotes, Products
+and Schedules, Multi-Currency, State and Country Picklists, and Order
+Management.
 
 Regenerate the catalog with:
 
 ```bash
 mkdir -p tmp/standard-describes
 for obj in Account Contact Opportunity OpportunityContactRole Lead Order OrderItem Quote Pricebook2 Product2 Campaign CampaignMember Case Asset Contract Task Event User RecordType EmailTemplate ContentVersion ContentDocument ContentDocumentLink Attachment Document Organization UserRole Profile PermissionSet PermissionSetAssignment; do
-  sf sobject describe --sobject "$obj" --target-org glade-probe-lab --json > "tmp/standard-describes/$obj.json"
+  sf sobject describe --sobject "$obj" --target-org "$SF_TARGET_ORG" --json > "tmp/standard-describes/$obj.json"
 done
 node scripts/generate-standard-schema.mjs tmp/standard-describes internal/storage/standard_schema_generated.go
 ```
@@ -109,7 +109,8 @@ PermissionSetAssignment, PermissionSetGroup, PermissionSetGroupComponent,
 Pricebook2, PricebookEntry, Product2, Profile, RecordType, SetupEntityAccess,
 and User.
 
-The checked SObject stub inventory is written to `docs/STUB_INVENTORY.md`.
+The checked SObject stub inventory is written to
+`docs/generated/stubs/STUB_INVENTORY.md`.
 It currently contains 1,373 SObject stub classes, zero source objects missing
 active shape, and zero supported-feature fields missing active shape. The
 remaining field gaps are feature-gated fields such as Person Account and

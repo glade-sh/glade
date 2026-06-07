@@ -2,7 +2,7 @@
 
 This queue turns Salesforce surface expansion into small checked slices. Each row names the public surface, the implementation entry point, and the proof hook that should move before a status changes in `internal/capability`.
 
-| Surface | Next capability slice | Status source | Fixture or probe | Implementation entry point | Next check |
+| Surface | Next capability slice | Status source | Proof hook | Implementation entry point | Next check |
 | --- | --- | --- | --- | --- | --- |
 | ConnectApi | Endpoint extension lifecycle and organization settings calls | `internal/capability` | Add or extend `compat` fixture for endpoint extension before/after hooks | `internal/vm`, `internal/typesys` | `go test ./internal/vm ./internal/capability` |
 | Metadata | Read-only custom metadata and Metadata API describe shapes | `internal/capability` | Add metadata fixture covering records, labels, and static resources | `internal/schema`, `internal/storage`, `internal/vm` | `go run ./cmd/glade compat mvp --json` |

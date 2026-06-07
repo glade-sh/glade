@@ -13,8 +13,8 @@ func TestBuildStubContractReport(t *testing.T) {
 	if report.Totals.Entries == 0 || len(report.Entries) == 0 {
 		t.Fatalf("expected non-empty entries")
 	}
-	if report.Totals.WithProbe == 0 {
-		t.Fatalf("expected at least one probe-backed contract")
+	if report.Totals.WithOrgEvidence == 0 {
+		t.Fatalf("expected at least one org-evidence contract")
 	}
 	if report.Totals.ByMode[string(StubContractPassiveDTO)] == 0 {
 		t.Fatalf("expected passive-dto contracts")
@@ -113,17 +113,17 @@ func TestClassifyStubContractMode(t *testing.T) {
 	}
 }
 
-func TestStubContractProbeIDStable(t *testing.T) {
+func TestStubContractEvidenceIDStable(t *testing.T) {
 	entry := StubBehaviorEntry{
 		Type:   "Schema.DescribeSObjectResult",
 		Member: "getLocalName",
 	}
-	if got := stubContractProbeID(entry); got != "stub.schema-describesobjectresult.getlocalname" {
-		t.Fatalf("probe id = %q", got)
+	if got := stubContractEvidenceID(entry); got != "stub.schema-describesobjectresult.getlocalname" {
+		t.Fatalf("evidence id = %q", got)
 	}
 }
 
-func TestStubContractProbeIDIncludesSignature(t *testing.T) {
+func TestStubContractEvidenceIDIncludesSignature(t *testing.T) {
 	entryA := StubBehaviorEntry{
 		Type:       "Date",
 		Member:     "addError",
@@ -134,33 +134,15 @@ func TestStubContractProbeIDIncludesSignature(t *testing.T) {
 		Member:     "addError",
 		Parameters: []string{"String", "Boolean"},
 	}
-	idA := stubContractProbeID(entryA)
-	idB := stubContractProbeID(entryB)
+	idA := stubContractEvidenceID(entryA)
+	idB := stubContractEvidenceID(entryB)
 	if idA == idB {
-		t.Fatalf("expected unique probe IDs for overloads: %q", idA)
+		t.Fatalf("expected unique evidence IDs for overloads: %q", idA)
 	}
 	if idA != "stub.date.adderror.sig-string" {
 		t.Fatalf("idA = %q", idA)
 	}
 	if idB != "stub.date.adderror.sig-string-boolean" {
 		t.Fatalf("idB = %q", idB)
-	}
-}
-
-func TestBuildStubContractProbeManifest(t *testing.T) {
-	report := StubContractReport{
-		Entries: []StubContractEntry{
-			{ID: "String.trim()", Type: "String", Member: "trim", Mode: StubContractOrgDiff, ProbeID: "stub.string.trim"},
-			{ID: "CustomDto.value()", Type: "CustomDto", Member: "value", Mode: StubContractPassiveDTO},
-			{ID: "Network.call()", Type: "Network", Member: "call", Mode: StubContractLocalOnly},
-		},
-	}
-	core := BuildStubContractProbeManifest(report, "core")
-	if len(core) != 1 || core[0].ID != "stub.string.trim" {
-		t.Fatalf("core manifest = %#v", core)
-	}
-	full := BuildStubContractProbeManifest(report, "full")
-	if len(full) != 3 {
-		t.Fatalf("full manifest len = %d, want 3", len(full))
 	}
 }
