@@ -1,0 +1,93 @@
+# Dogfood Checklist
+
+Use this when handing a release candidate or local build to a real Salesforce
+project. Run commands from the SFDX project root unless noted.
+
+## 1. Build The Candidate
+
+For pre-tag dogfood, build from the current checkout:
+
+```bash
+cd path/to/glade
+go build -o glade ./cmd/glade
+mkdir -p ~/.local/bin
+install -m 0755 glade ~/.local/bin/glade
+./glade version
+glade version
+```
+
+After a tag is published, the installer path can prove the public artifact:
+
+```bash
+curl -fsSL https://glade.sh/install.sh | sh
+glade version
+```
+
+## 2. Doctor
+
+```bash
+glade doctor
+```
+
+The parser line must read `parser: ok (tree-sitter)`. If it says
+`parser: UNAVAILABLE`, rebuild with CGO enabled and a C compiler present.
+
+## 3. First Project Check
+
+```bash
+cd path/to/sfdx-project
+glade doctor
+glade check --project .
+glade test --project .
+```
+
+No Salesforce org login is needed. The project should have `sfdx-project.json`
+at its root.
+
+## 4. Focused Class Or Method
+
+Day-to-day test runs use `--filter`:
+
+```bash
+glade test --project . --filter AccountServiceTest --json
+glade test --project . --filter AccountServiceTest.testCreatesAccount --json
+```
+
+For compatibility triage output, use explicit class and method flags:
+
+```bash
+glade compat local-tests --project . --class AccountServiceTest --json
+glade compat local-tests --project . --class AccountServiceTest --method testCreatesAccount --json
+```
+
+## 5. Watch Once
+
+Use one watch cycle for editor hooks or a quick file-watch smoke check:
+
+```bash
+glade test --project . --watch-once
+```
+
+## 6. Capture JSON
+
+```bash
+mkdir -p reports
+glade check --project . --json > reports/glade-check.json
+glade test --project . --json > reports/glade-test.json
+glade compat local-tests --project . --parallel auto --json > reports/glade-local-tests.json
+```
+
+Add `--changed-since origin/main` when the report should cover only affected
+tests.
+
+## 7. File A Useful Issue
+
+Include:
+
+- `glade version`
+- full `glade doctor` output
+- the exact command that failed
+- the JSON report, if one was captured
+- the smallest Apex class, trigger, metadata file, or fixture that shows the
+  problem
+- whether Salesforce itself accepts or rejects the same code, when known

@@ -48,6 +48,7 @@ func (vm *VM) deferPreStartAsyncJobRecords() {
 		}
 		vm.recordIsolationJournalMutation("AsyncApexJob", storedID, record, true)
 		record.Fields["Status"] = storage.StringValue("Deferred")
+		record.System.HiddenFromSOQL = true
 		object.Records[storedID] = record
 	}
 	vm.Org.Objects["AsyncApexJob"] = object
@@ -208,7 +209,7 @@ func (vm *VM) isBatchableObject(value Value) bool {
 	}
 	class, ok := vm.lookupClass(value.Type)
 	if ok {
-		for _, iface := range vm.resolvedInterfaceNames(class) {
+		for _, iface := range vm.resolvedInterfaceNamesInHierarchy(class) {
 			if batchableInterfaceName(iface) {
 				return true
 			}
@@ -285,7 +286,7 @@ func (vm *VM) scheduleBatch(args []Value, result *Result) (Value, error) {
 	if err := vm.incrementLimit("scheduledJobs", 1); err != nil {
 		return Null, err
 	}
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "ScheduledBatch", Object: cloneValue(args[0]), BatchSize: batchSize, Name: args[1].Text, Cron: fmt.Sprintf("after %d minutes", args[2].Int)}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "ScheduledBatch", Object: cloneValue(args[0]), BatchSize: batchSize, Name: args[1].Text, Cron: fmt.Sprintf("after %d minutes", args[2].Int), SuppressWorkerRecords: true}
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	vm.recordCronTrigger(job, "Waiting")
@@ -697,6 +698,9 @@ func (vm *VM) enqueueAsyncJob(job AsyncJob) {
 		if vm.testContext.Draining && job.Kind == "BatchApex" && vm.currentAsyncKind == "Queueable" {
 			job.Deferred = true
 		}
+		if vm.testContext.Draining && job.Kind == "BatchApex" && vm.currentAsyncKind != "" {
+			job.SuppressWorkerRecords = true
+		}
 		vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
 		return
 	}
@@ -940,7 +944,9 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result) error {
 						return rollbackErr
 					}
 				}
-				vm.recordBatchWorkerJob(job, processed+1, processedItems, chunk, "Failed", err.Error())
+				if !job.SuppressWorkerRecords {
+					vm.recordBatchWorkerJob(job, processed+1, processedItems, chunk, "Failed", err.Error())
+				}
 				vm.recordAsyncJobTotals(job, len(chunks), processed, 1)
 				vm.recordAsyncJob(job, "Failed", err.Error())
 				if eventErr := vm.emitBatchApexErrorEvent(job, chunk, "EXECUTE", err, result); eventErr != nil {
@@ -950,7 +956,9 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result) error {
 			}
 			processed++
 			processedItems += len(chunk)
-			vm.recordBatchWorkerJob(job, processed, processedItems, chunk, "Completed", "")
+			if !job.SuppressWorkerRecords {
+				vm.recordBatchWorkerJob(job, processed, processedItems, chunk, "Completed", "")
+			}
 		}
 	}
 	if finish, ok := vm.resolveInstanceMethod(job.Object.Type, "finish"); ok {
@@ -989,7 +997,7 @@ func (vm *VM) isStatefulBatchObject(value Value) bool {
 	if !ok {
 		return false
 	}
-	for _, iface := range vm.resolvedInterfaceNames(class) {
+	for _, iface := range vm.resolvedInterfaceNamesInHierarchy(class) {
 		if statefulInterfaceName(iface) {
 			return true
 		}
@@ -1005,7 +1013,7 @@ func (vm *VM) requiresDatabaseBatchableContract(value Value) bool {
 	if !ok {
 		return false
 	}
-	for _, iface := range vm.resolvedInterfaceNames(class) {
+	for _, iface := range vm.resolvedInterfaceNamesInHierarchy(class) {
 		if batchableInterfaceName(iface) {
 			return true
 		}
@@ -1021,7 +1029,7 @@ func (vm *VM) databaseBatchableItemType(value Value) string {
 	if !ok {
 		return "Object"
 	}
-	for _, iface := range vm.resolvedInterfaceNames(class) {
+	for _, iface := range vm.resolvedInterfaceNamesInHierarchy(class) {
 		if !batchableInterfaceName(iface) {
 			continue
 		}
@@ -1072,6 +1080,9 @@ func (vm *VM) batchableConcreteMethodsByName(typeName, methodName string) []Meth
 		}
 		for _, method := range vm.registeredMethodCandidates(current + "." + methodName) {
 			if method.IsStatic || !strings.EqualFold(apexMethodMemberName(method.Name), methodName) {
+				continue
+			}
+			if methodHasModifier(method.Modifiers, "abstract") {
 				continue
 			}
 			out = append(out, method)
@@ -1133,7 +1144,7 @@ func (vm *VM) runtimeTypeImplementsIterableOf(typeName, itemType string) bool {
 	if !ok {
 		return false
 	}
-	for _, iface := range vm.resolvedInterfaceNames(class) {
+	for _, iface := range vm.resolvedInterfaceNamesInHierarchy(class) {
 		if !strings.EqualFold(collectionBase(iface), "Iterable") {
 			continue
 		}
@@ -1150,7 +1161,13 @@ func (vm *VM) runtimeBatchableScopeTypeCompatible(itemType, scopeType string) bo
 		return false
 	}
 	element, ok := collectionElementType(scopeType)
-	return ok && vm.runtimeBatchableItemAssignable(element, itemType)
+	if !ok {
+		return false
+	}
+	if vm.runtimeBatchableItemAssignable(element, itemType) {
+		return true
+	}
+	return runtimeBatchableSameType(itemType, "SObject") && runtimeBatchableSameType(element, "Object")
 }
 
 func (vm *VM) runtimeBatchableItemAssignable(from, to string) bool {
@@ -1163,6 +1180,60 @@ func runtimeBatchableVoidReturn(returnType string) bool {
 
 func runtimeBatchableSameType(left, right string) bool {
 	return strings.EqualFold(canonicalRuntimePlatformType(left), canonicalRuntimePlatformType(right))
+}
+
+func (vm *VM) resolvedInterfaceNamesInHierarchy(class Class) []string {
+	seenTypes := make(map[string]bool)
+	seenInterfaces := make(map[string]bool)
+	var out []string
+	for {
+		typeName := runtimeClassName(class)
+		if strings.TrimSpace(typeName) == "" {
+			typeName = class.Name
+		}
+		typeKey := strings.ToLower(strings.TrimSpace(typeName))
+		if typeKey == "" || seenTypes[typeKey] {
+			break
+		}
+		seenTypes[typeKey] = true
+		for _, iface := range vm.resolvedInterfaceNames(class) {
+			vm.appendResolvedInterfaceName(&out, seenInterfaces, iface)
+		}
+		superName := vm.resolvedSuperClassName(class)
+		if strings.TrimSpace(superName) == "" {
+			break
+		}
+		superClass, ok := vm.lookupClass(superName)
+		if !ok {
+			break
+		}
+		class = superClass
+	}
+	return out
+}
+
+func (vm *VM) appendResolvedInterfaceName(out *[]string, seen map[string]bool, interfaceName string) {
+	interfaceName = strings.TrimSpace(interfaceName)
+	if interfaceName == "" {
+		return
+	}
+	key := strings.ToLower(interfaceName)
+	if seen[key] {
+		return
+	}
+	seen[key] = true
+	*out = append(*out, interfaceName)
+	lookupName := interfaceName
+	if base, ok := genericBaseName(lookupName); ok {
+		lookupName = base
+	}
+	interfaceClass, ok := vm.lookupClass(lookupName)
+	if !ok {
+		return
+	}
+	for _, parent := range vm.resolvedInterfaceNames(interfaceClass) {
+		vm.appendResolvedInterfaceName(out, seen, parent)
+	}
 }
 
 func statefulInterfaceName(name string) bool {

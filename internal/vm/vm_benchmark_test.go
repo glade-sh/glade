@@ -227,6 +227,34 @@ func BenchmarkCollectStaticFieldValueRefsLargeOrderGraph(b *testing.B) {
 	}
 }
 
+func BenchmarkPropagateAliasSnapshotToStaticsTopLevelRefs(b *testing.B) {
+	previous := List()
+	for i := 0; i < 200; i++ {
+		previous.List = append(previous.List, Object("OrderLine"))
+	}
+	updated := previous
+	updated.List = append(updated.List, Object("OrderLine"))
+	snapshot := snapshotAlias(previous)
+
+	machine := New(nil)
+	for i := 0; i < 500; i++ {
+		className := fmt.Sprintf("OrderService%d", i)
+		fieldName := fmt.Sprintf("Lines%d", i)
+		machine.Classes[className] = Class{
+			Name: className,
+			StaticFields: map[string]Field{
+				fieldName: {Name: fieldName, Type: "List<OrderLine>", Static: true, Value: previous},
+			},
+		}
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		machine.propagateAliasSnapshotToStatics(snapshot, updated)
+	}
+}
+
 func BenchmarkTriggerNamespaceByName(b *testing.B) {
 	machine := New(nil)
 	machine.currentNamespace = "pkg"

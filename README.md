@@ -17,6 +17,9 @@ glade version
 glade doctor
 ```
 
+`glade doctor` must report `parser: ok (tree-sitter)` before project parsing,
+checking, or testing will work.
+
 Run it in an SFDX project:
 
 ```bash
@@ -98,6 +101,7 @@ glade server --project . --addr 127.0.0.1:8080
 
 - [Install](docs/INSTALL.md)
 - [Local Apex testing](docs/LOCAL_TESTING.md)
+- [Dogfood checklist](docs/DOGFOOD_CHECKLIST.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Compatibility policy](docs/COMPATIBILITY.md)
 - [Compatibility dashboard](docs/COMPATIBILITY_DASHBOARD.md)

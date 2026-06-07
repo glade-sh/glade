@@ -82,6 +82,7 @@ Use this workflow for an easy, repeatable distribution pass.
 1. Prepare release branch state.
    - Run the required gates from current source.
    - Confirm docs reflect the current command names and setup steps.
+   - Run the installed-binary dogfood checklist on at least one SFDX project.
 
 2. Cut and push a tag.
 
@@ -116,6 +117,8 @@ tar -xzf glade_vX.Y.Z_linux_amd64.tar.gz
 
 For an operator-oriented command checklist, use
 [`docs/DISTRIBUTION_WORKFLOW.md`](DISTRIBUTION_WORKFLOW.md).
+For a real-project dogfood pass, use
+[`docs/DOGFOOD_CHECKLIST.md`](DOGFOOD_CHECKLIST.md).
 
 ## Benchmark Checks
 

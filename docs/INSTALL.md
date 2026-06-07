@@ -82,6 +82,7 @@ Run parse/check/tests against an SFDX project without connecting to an org:
 
 ```bash
 cd path/to/sfdx-project
+glade doctor
 glade check --project .
 glade test --project . --json
 ```
@@ -96,6 +97,9 @@ glade test --project . --changed-since origin/main --json
 See [LOCAL_TESTING.md](LOCAL_TESTING.md) for class/method filters,
 dependency-selected test runs, `compat local-tests`, anonymous Apex, and the
 playground.
+
+For a short release-candidate dogfood pass, use
+[`DOGFOOD_CHECKLIST.md`](DOGFOOD_CHECKLIST.md).
 
 ## Distribute to a Few Machines (Pre-Release)
 
@@ -254,6 +258,7 @@ Use a release artifact:
     tar -xzf glade.tar.gz
     install -m 0755 glade ~/.local/bin/glade
     glade version
+    glade doctor
 ```
 
 ## Persistent Local Server

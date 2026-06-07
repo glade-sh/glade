@@ -122,6 +122,9 @@ if [[ "${server_ready}" != "1" ]]; then
   exit 1
 fi
 grep -q 'v65.0' "${TMP}/server-data.json"
+kill "${SERVER_PID}" 2>/dev/null || true
+wait "${SERVER_PID}" 2>/dev/null || true
+SERVER_PID=""
 
 "${GLADE}" compat mvp >"${TMP}/compat-mvp.out"
 grep -q 'MVP readiness: ready' "${TMP}/compat-mvp.out"
@@ -142,7 +145,10 @@ PY
   fi
 done
 "${GLADE}" compat validate "${RUN_FIXTURES[@]}"
-"${GLADE}" compat run "${RUN_FIXTURES[@]}"
+chunk_size=10
+for ((i = 0; i < ${#RUN_FIXTURES[@]}; i += chunk_size)); do
+  "${GLADE}" compat run "${RUN_FIXTURES[@]:i:chunk_size}"
+done
 "${GLADE}" compat replay testdata/replay/selector-service-domain
 "${GLADE}" compat replay testdata/replay/server-backed
 "${GLADE}" compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md

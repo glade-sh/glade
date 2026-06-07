@@ -820,6 +820,46 @@ func TestApplyOrgShapeAddsOptionalFeatureObjectsAndRecords(t *testing.T) {
 	}
 }
 
+func TestCloneRuntimeFrozenSharedClonesCustomMetadataRecords(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["Feature__mdt"] = ObjectState{
+		Definition: ObjectDefinition{APIName: "Feature__mdt"},
+		Records: map[ID]Record{
+			"m00000000000001": {ID: "m00000000000001", Object: "Feature__mdt", Fields: map[string]Value{"DeveloperName": StringValue("Default")}},
+		},
+	}
+
+	clone := org.CloneRuntimeFrozenShared()
+	object := clone.Objects["Feature__mdt"]
+	if object.RecordsShared {
+		t.Fatal("custom metadata records should not be shared")
+	}
+	record := object.Records["m00000000000001"]
+	record.Fields["DeveloperName"] = StringValue("Clone")
+	object.Records["m00000000000001"] = record
+	clone.Objects["Feature__mdt"] = object
+
+	if got := org.Objects["Feature__mdt"].Records["m00000000000001"].Fields["DeveloperName"].String; got != "Default" {
+		t.Fatalf("source custom metadata DeveloperName = %q, want Default", got)
+	}
+}
+
+func TestIsImmutableMetadataObjectExcludesCustomMetadata(t *testing.T) {
+	tests := []struct {
+		name string
+		want bool
+	}{
+		{name: "Profile", want: true},
+		{name: "Feature__mdt", want: false},
+		{name: "pkg__Feature__mdt", want: false},
+	}
+	for _, tt := range tests {
+		if got := IsImmutableMetadataObject(tt.name); got != tt.want {
+			t.Fatalf("IsImmutableMetadataObject(%q) = %t, want %t", tt.name, got, tt.want)
+		}
+	}
+}
+
 func TestApplyOrgShapeMultiCurrencyCreatesOrganizationFlag(t *testing.T) {
 	org := NewOrgState()
 	ApplyOrgShape(&org, []string{"MultiCurrency"})

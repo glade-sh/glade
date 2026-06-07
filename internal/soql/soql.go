@@ -268,6 +268,9 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 	matchedRecords := make([]storage.Record, 0, len(ids))
 	for _, idText := range ids {
 		record := object.Records[storage.ID(idText)]
+		if recordHiddenFromSOQL(object.Definition, record) {
+			continue
+		}
 		if record.System.IsDeleted && !query.AllRows {
 			continue
 		}
@@ -311,6 +314,13 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 		records = append(records, projected)
 	}
 	return Result{Records: records, Rows: len(records)}, nil
+}
+
+func recordHiddenFromSOQL(definition storage.ObjectDefinition, record storage.Record) bool {
+	if !strings.EqualFold(definition.APIName, "AsyncApexJob") {
+		return false
+	}
+	return record.System.HiddenFromSOQL
 }
 
 func shouldHydrateVirtualSchemaForQuery(objectName string) bool {

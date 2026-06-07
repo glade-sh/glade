@@ -362,6 +362,9 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
+	if !jsonOut && options.Method != "" && options.Class == "" {
+		return errors.New("--method requires --class")
+	}
 	if options.Project == "." &&
 		options.Class == "" &&
 		len(options.ClassList) == 0 &&
@@ -396,11 +399,39 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 	if err != nil {
 		return err
 	}
+	if !jsonOut {
+		if err := validateCompatLocalTestSelection(options, report); err != nil {
+			return err
+		}
+	}
 	if jsonOut {
 		return compat.WriteLocalTestJSON(w, report)
 	}
 	compat.WriteLocalTestText(w, report)
+	if report.Summary.LoadErrors != 0 {
+		return fmt.Errorf("local test load errors: %d", report.Summary.LoadErrors)
+	}
 	return nil
+}
+
+func validateCompatLocalTestSelection(options compat.LocalTestOptions, report compat.LocalTestReport) error {
+	if report.CasesDiscovered != 0 {
+		return nil
+	}
+	class := strings.TrimSpace(options.Class)
+	classFile := strings.TrimSpace(options.ClassFile)
+	switch {
+	case class != "" && strings.TrimSpace(options.Method) != "":
+		return fmt.Errorf("no local tests matched --class %q --method %q", class, options.Method)
+	case class != "":
+		return fmt.Errorf("no local tests matched --class %q", class)
+	case classFile != "":
+		return fmt.Errorf("no local tests matched --class-file %q", classFile)
+	case len(options.ClassList) != 0:
+		return fmt.Errorf("no local tests matched --class-list")
+	default:
+		return nil
+	}
 }
 
 func runCompatReplay(args []string, w io.Writer) error {

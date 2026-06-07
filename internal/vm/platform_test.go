@@ -777,6 +777,123 @@ System.assertEquals(alpha.Id, rows[0].Id);
 	}
 }
 
+func TestExecSearchQueryAppliesReturningWhereNullComparisons(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account named = new Account(Name = 'Named Account');
+Account unnamed = new Account();
+insert new List<Account>{named, unnamed};
+Test.setFixedSearchResults(new List<Id>{named.Id, unnamed.Id});
+List<Account> notNullRows = (List<Account>)Search.query('FIND {Account*} IN ALL FIELDS RETURNING Account(Id, Name WHERE Name != null ORDER BY Name)')[0];
+System.assertEquals(1, notNullRows.size());
+System.assertEquals(named.Id, notNullRows[0].Id);
+List<Account> nullRows = (List<Account>)Search.query('FIND {Account*} IN ALL FIELDS RETURNING Account(Id, Name WHERE Name = null)')[0];
+System.assertEquals(1, nullRows.size());
+System.assertEquals(unnamed.Id, nullRows[0].Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSOSLReturningWhereBlankStringIsNotNull(t *testing.T) {
+	record := storage.Record{Fields: map[string]storage.Value{"Name": storage.StringValue("")}}
+	if !soslRecordMatchesWhere(record, soslWhere{Field: "Name", Operator: "!=", ValueIsNull: true}) {
+		t.Fatal("blank string should match != null")
+	}
+	if soslRecordMatchesWhere(record, soslWhere{Field: "Name", Operator: "=", ValueIsNull: true}) {
+		t.Fatal("blank string should not match = null")
+	}
+}
+
+func TestExecSearchQueryAppliesReturningWhereNotEqualsText(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account beta = new Account(Name = 'Beta Account');
+Account alpha = new Account(Name = 'Alpha Account');
+insert new List<Account>{beta, alpha};
+Test.setFixedSearchResults(new List<Id>{beta.Id, alpha.Id});
+List<Account> rows = (List<Account>)Search.query('FIND {Account*} IN ALL FIELDS RETURNING Account(Id, Name WHERE Name != ''Beta Account'' ORDER BY Name)')[0];
+System.assertEquals(1, rows.size());
+System.assertEquals(alpha.Id, rows[0].Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSearchQueryReturningWhereKeepsOperatorLiteralText(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account operatorName = new Account(Name = 'A != B');
+Account plain = new Account(Name = 'Plain');
+insert new List<Account>{operatorName, plain};
+Test.setFixedSearchResults(new List<Id>{operatorName.Id, plain.Id});
+List<Account> rows = (List<Account>)Search.query('FIND {Account*} IN ALL FIELDS RETURNING Account(Id, Name WHERE Name = ''A != B'')')[0];
+System.assertEquals(1, rows.size());
+System.assertEquals(operatorName.Id, rows[0].Id);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSearchQueryReturningWhereKeepsClauseLiteralText(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account clauseName = new Account(Name = 'order by');
+Account plain = new Account(Name = 'Plain');
+insert new List<Account>{clauseName, plain};
+Test.setFixedSearchResults(new List<Id>{clauseName.Id, plain.Id});
+List<Account> rows = (List<Account>)Search.query('FIND {Account*} IN ALL FIELDS RETURNING Account(Id, Name WHERE Name = ''order by'')')[0];
+System.assertEquals(1, rows.size());
+System.assertEquals(clauseName.Id, rows[0].Id);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSearchQueryProjectsReturningFormatAlias(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'Acme', AnnualRevenue = 100);
@@ -8288,6 +8405,46 @@ System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE ParentJobId = :jo
 	}
 }
 
+func TestExecScheduleBatchSuppressesWorkerJobsForChunks(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<SObject>{ new Account(Id = '001000000000001', Name = 'one'), new Account(Id = '001000000000002', Name = 'two'), new Account(Id = '001000000000003', Name = 'three') };`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`insert new Account(Name = 'chunk');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+String cronId = System.scheduleBatch(new BatchWorker(), 'batch later', 1, 2);
+Test.stopTest();
+System.assertEquals(2, [SELECT COUNT() FROM Account WHERE Name = 'chunk']);
+AsyncApexJob job = [SELECT Id FROM AsyncApexJob WHERE CronTriggerId = :cronId AND JobType = 'BatchApex' AND Status = 'Completed' AND TotalJobItems = 2 AND JobItemsProcessed = 2 LIMIT 1];
+System.assertEquals(0, [SELECT COUNT() FROM AsyncApexJob WHERE ParentJobId = :job.Id AND JobType = 'BatchApexWorker']);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecFailedBatchChunkRollsBackChunkDML(t *testing.T) {
 	startProgram, err := CompileAnonymous(`return new List<Integer>{1, 2};`)
 	if err != nil {
@@ -8429,6 +8586,60 @@ System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'stateful-finis
 			"finish":  {Name: "StatefulBatch.finish", ClassName: "StatefulBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
 		},
 	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInheritedStatefulBatchPreservesInstanceFieldsBetweenTransactions(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<Integer>{1, 2};`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`
+Counter = Counter + 1;
+insert new Account(Name = 'inherited-stateful-count-' + Counter);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishProgram, err := CompileAnonymous(`insert new Account(Name = 'inherited-stateful-finish-' + Counter);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+Database.executeBatch(new ChildStatefulBatch(), 1);
+Test.stopTest();
+System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'inherited-stateful-count-1']);
+System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'inherited-stateful-count-2']);
+System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'inherited-stateful-finish-2']);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "BaseStatefulBatch",
+		IsAbstract: true,
+		Interfaces: []string{"Database.Batchable<Integer>", "Database.Stateful"},
+		Fields: map[string]Field{
+			"Counter": {Name: "Counter", Type: "Integer", Value: Int(0), InitialValue: Int(0)},
+		},
+		Methods: map[string]Method{
+			"start":   {Name: "BaseStatefulBatch.start", ClassName: "BaseStatefulBatch", ReturnType: "Iterable<Integer>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BaseStatefulBatch.execute", ClassName: "BaseStatefulBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Integer>"}}, Program: executeProgram},
+			"finish":  {Name: "BaseStatefulBatch.finish", ClassName: "BaseStatefulBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "ChildStatefulBatch", SuperClass: "BaseStatefulBatch"}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {
@@ -8611,13 +8822,16 @@ func TestExecStopTestDrainsOnlyJobsEnqueuedAfterStartTest(t *testing.T) {
 		t.Fatal(err)
 	}
 	program, err := CompileAnonymous(`
-System.enqueueJob(new PreStartWorker());
-Test.startTest();
-System.enqueueJob(new InsideWorker());
-Test.stopTest();
-System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'pre-start async'].size());
-System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'inside async'].size());
-`)
+	String preStartId = System.enqueueJob(new PreStartWorker());
+	Test.startTest();
+	System.enqueueJob(new InsideWorker());
+	Test.stopTest();
+	System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'pre-start async'].size());
+	System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'inside async'].size());
+	System.assertEquals(0, [SELECT COUNT() FROM AsyncApexJob WHERE Id = :preStartId]);
+	System.assertEquals(0, [SELECT COUNT() FROM AsyncApexJob WHERE Status = 'Deferred']);
+	System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob]);
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -9016,6 +9230,169 @@ func TestExecExecuteBatchRejectsIncompleteBatchableContract(t *testing.T) {
 				t.Fatalf("err = %v, want %q", err, tt.want)
 			}
 		})
+	}
+}
+
+func TestExecExecuteBatchRejectsOnlyAbstractInheritedBatchableMethods(t *testing.T) {
+	program, err := CompileAnonymous(`Database.executeBatch(new ChildBatch(), 1);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "BaseBatch",
+		IsAbstract: true,
+		Interfaces: []string{"Database.Batchable<Integer>"},
+		Methods: map[string]Method{
+			"start":   {Name: "BaseBatch.start", ClassName: "BaseBatch", ReturnType: "Iterable<Integer>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Modifiers: []string{"abstract"}},
+			"execute": {Name: "BaseBatch.execute", ClassName: "BaseBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Integer>"}}, Modifiers: []string{"abstract"}},
+			"finish":  {Name: "BaseBatch.finish", ClassName: "BaseBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Modifiers: []string{"abstract"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "ChildBatch", SuperClass: "BaseBatch"}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = machine.DrainAsync(&result)
+	if err == nil || !strings.Contains(err.Error(), "missing start") {
+		t.Fatalf("err = %v, want missing start", err)
+	}
+}
+
+func TestExecExecuteBatchAcceptsBatchableInheritedFromInterfaceParent(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<Account>{new Account(Name = 'alpha')};`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`
+for (Account account : scope) {
+	insert account;
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishProgram, err := CompileAnonymous(`return null;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+Database.executeBatch(new InterfaceParentBatch(), 1);
+Test.stopTest();
+System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'alpha']);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:        "IAccountBatch",
+		IsInterface: true,
+		Interfaces:  []string{"Database.Batchable<Account>"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "InterfaceParentBatch",
+		Interfaces: []string{"IAccountBatch"},
+		Methods: map[string]Method{
+			"start":   {Name: "InterfaceParentBatch.start", ClassName: "InterfaceParentBatch", ReturnType: "Iterable<Account>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "InterfaceParentBatch.execute", ClassName: "InterfaceParentBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Account>"}}, Program: executeProgram},
+			"finish":  {Name: "InterfaceParentBatch.finish", ClassName: "InterfaceParentBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecExecuteBatchAcceptsObjectScopeForSObjectBatchable(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return Database.getQueryLocator('SELECT Id FROM Account');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`
+System.assertEquals(1, scope.size());
+insert new Account(Name = 'object scope ran');
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'seed');
+Test.startTest();
+Database.executeBatch(new ObjectScopeBatch(), 200);
+Test.stopTest();
+System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'object scope ran']);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "ObjectScopeBatch",
+		Interfaces: []string{"Database.Batchable<SObject>"},
+		Methods: map[string]Method{
+			"start":   {Name: "ObjectScopeBatch.start", ClassName: "ObjectScopeBatch", ReturnType: "Database.QueryLocator", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "ObjectScopeBatch.execute", ClassName: "ObjectScopeBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Object>"}}, Program: executeProgram},
+			"finish":  {Name: "ObjectScopeBatch.finish", ClassName: "ObjectScopeBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecExecuteBatchRejectsObjectScopeForConcreteSObjectBatchable(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<Account>{new Account(Name = 'seed')};`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`return null;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`Database.executeBatch(new ObjectScopeAccountBatch(), 200);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "ObjectScopeAccountBatch",
+		Interfaces: []string{"Database.Batchable<Account>"},
+		Methods: map[string]Method{
+			"start":   {Name: "ObjectScopeAccountBatch.start", ClassName: "ObjectScopeAccountBatch", ReturnType: "Iterable<Account>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "ObjectScopeAccountBatch.execute", ClassName: "ObjectScopeAccountBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Object>"}}, Program: executeProgram},
+			"finish":  {Name: "ObjectScopeAccountBatch.finish", ClassName: "ObjectScopeAccountBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = machine.DrainAsync(&result)
+	if err == nil || !strings.Contains(err.Error(), "invalid execute signature") {
+		t.Fatalf("err = %v, want invalid execute signature", err)
 	}
 }
 

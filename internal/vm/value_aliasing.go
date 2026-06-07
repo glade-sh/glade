@@ -580,10 +580,13 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 	if locations.empty() {
 		return
 	}
-	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
-	seen := *seenPtr
-	clear(seen)
-	defer aliasRefSetPool.Put(seenPtr)
+	var seenPtr *map[uint64]bool
+	var seen map[uint64]bool
+	defer func() {
+		if seenPtr != nil {
+			aliasRefSetPool.Put(seenPtr)
+		}
+	}()
 	locations.forEach(func(location staticFieldRef) {
 		class, ok := vm.Classes[location.ClassName]
 		if !ok || class.StaticFields == nil {
@@ -592,6 +595,17 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 		field, ok := class.StaticFields[location.FieldName]
 		if !ok {
 			return
+		}
+		if field.Value.Ref != 0 && field.Value.Ref == previous.ref && field.Value.Kind == previous.kind {
+			field.Value = updated
+			class.StaticFields[location.FieldName] = field
+			vm.Classes[location.ClassName] = class
+			vm.rememberAdditionalStaticValueRefsInField(updated, location)
+			return
+		}
+		if seenPtr == nil {
+			seenPtr = aliasRefSetPool.Get().(*map[uint64]bool)
+			seen = *seenPtr
 		}
 		clearRefSeen(seen)
 		replaced, changed := replaceAliasSnapshot(field.Value, previous, updated, seen)

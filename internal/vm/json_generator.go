@@ -14,6 +14,7 @@ func newJSONGenerator(pretty bool) Value {
 	gen := Object("JSONGenerator")
 	gen.Fields["pretty"] = Bool(pretty)
 	gen.Fields["closed"] = Bool(false)
+	gen.Fields["unfinishedClose"] = Bool(false)
 	gen.Fields["rootWritten"] = Bool(false)
 	gen.Fields["out"] = String("")
 	gen.Fields["stack"] = List()
@@ -173,7 +174,7 @@ func (vm *VM) callJSONGeneratorMember(receiver Value, method string, args []Valu
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.getAsString expects 0 arguments")
 		}
-		updated, err := jsonGeneratorClose(receiver)
+		updated, err := jsonGeneratorFinish(receiver)
 		if err != nil {
 			return Null, updated, true, true, err
 		}
@@ -454,6 +455,23 @@ func jsonGeneratorBeforeValue(receiver Value) (Value, error) {
 
 func jsonGeneratorClose(receiver Value) (Value, error) {
 	updated := receiver
+	if jsonGeneratorBoolField(updated, "closed").Bool {
+		return updated, nil
+	}
+	stack := jsonGeneratorStack(updated)
+	if len(stack.List) > 0 {
+		updated.Fields["unfinishedClose"] = Bool(true)
+	}
+	updated.Fields["stack"] = stack
+	updated.Fields["closed"] = Bool(true)
+	return updated, nil
+}
+
+func jsonGeneratorFinish(receiver Value) (Value, error) {
+	updated := receiver
+	if jsonGeneratorBoolField(updated, "unfinishedClose").Bool {
+		return updated, jsonGeneratorException("JSONGenerator cannot close with open JSON containers")
+	}
 	if jsonGeneratorBoolField(updated, "closed").Bool {
 		return updated, nil
 	}

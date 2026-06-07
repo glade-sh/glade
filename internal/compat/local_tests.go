@@ -209,6 +209,18 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		Target:  "local Apex test execution readiness",
 		Project: absRoot,
 	}
+	projectLabel := filepath.Base(absRoot)
+	if projectLabel == "." || projectLabel == string(filepath.Separator) {
+		projectLabel = absRoot
+	}
+	if _, err := os.Stat(absRoot); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			appendLocalTestLoadError(&report, projectLabel, fmt.Sprintf("project root does not exist: %s", absRoot))
+			finalizeLocalTestReport(&report, options, started)
+			return report, nil
+		}
+		return LocalTestReport{}, err
+	}
 	stopProfile, err := startLocalTestProfiler(options)
 	if err != nil {
 		return LocalTestReport{}, err
@@ -218,9 +230,10 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 			_ = stopProfile()
 		}
 	}()
-	projectLabel := filepath.Base(absRoot)
-	if projectLabel == "." || projectLabel == string(filepath.Separator) {
-		projectLabel = absRoot
+	if strings.TrimSpace(options.Method) != "" && strings.TrimSpace(options.Class) == "" {
+		appendLocalTestLoadError(&report, projectLabel, "--method requires --class")
+		finalizeLocalTestReport(&report, options, started)
+		return report, nil
 	}
 
 	recordLocalTestPhase(&report, options, "load_start", started)
@@ -286,6 +299,20 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 	}
 	cases := apextest.Discover(index, testOpts)
 	cases = filterLocalTestCases(cases, options)
+	if err := validateFocusedLocalTestSelection(cases, options); err != nil {
+		appendLocalTestLoadError(&report, projectLabel, err.Error())
+		finalizeLocalTestReport(&report, options, started)
+		if stopProfile != nil {
+			if stopErr := stopProfile(); stopErr != nil {
+				return LocalTestReport{}, stopErr
+			}
+			stopProfile = nil
+		}
+		if err := maybeWriteLocalTestPerfJSON(report, options); err != nil {
+			return LocalTestReport{}, err
+		}
+		return report, nil
+	}
 	cases = selectChangedLocalTestCases(&report, index, cases, root, options)
 	testOpts.ParallelMethods = shouldParallelizeMethods(options, parallelism, len(cases))
 	sort.SliceStable(cases, func(i, j int) bool {
@@ -1264,6 +1291,26 @@ func filterLocalTestCases(cases []apextest.TestCase, options LocalTestOptions) [
 	return out
 }
 
+func validateFocusedLocalTestSelection(cases []apextest.TestCase, options LocalTestOptions) error {
+	if len(cases) != 0 {
+		return nil
+	}
+	class := strings.TrimSpace(options.Class)
+	method := strings.TrimSpace(options.Method)
+	switch {
+	case class != "" && method != "":
+		return fmt.Errorf("no Apex test methods matched --class %q --method %q", class, method)
+	case class != "":
+		return fmt.Errorf("no Apex test methods matched --class %q", class)
+	case strings.TrimSpace(options.ClassFile) != "":
+		return fmt.Errorf("no Apex test methods matched --class-file %q", options.ClassFile)
+	case len(options.ClassList) != 0:
+		return fmt.Errorf("no Apex test methods matched --class-list")
+	default:
+		return nil
+	}
+}
+
 func matchesLocalTestCase(className, methodName string, options LocalTestOptions) bool {
 	if options.Class != "" && !strings.EqualFold(className, options.Class) {
 		return false
@@ -1407,6 +1454,16 @@ func localTestCapabilityID(phase, code, message string) string {
 	default:
 		return "apex.test.unknown"
 	}
+}
+
+func appendLocalTestLoadError(report *LocalTestReport, projectLabel, message string) {
+	report.Outcomes = append(report.Outcomes, LocalTestOutcome{
+		ProjectLabel: projectLabel,
+		Outcome:      "load_error",
+		Phase:        "load",
+		CapabilityID: localTestCapabilityID("load", "", message),
+		Error:        message,
+	})
 }
 
 func isLocalTestTimeoutProblem(code, message string) bool {

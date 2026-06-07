@@ -15,6 +15,8 @@ go run ./cmd/glade compat stdlib --check docs/STDLIB_COVERAGE.md
 ```
 
 If a command fails, stop and fix before tagging.
+Use [DOGFOOD_CHECKLIST.md](DOGFOOD_CHECKLIST.md) for the final installed-binary
+smoke pass on a real Salesforce project.
 
 ## 2. Tag and Push
 

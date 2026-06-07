@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -420,6 +421,101 @@ private class ScheduleWithCartSubmitterTest {
 	}
 	if report.Outcomes[0].Class != "CartSubmitterTest" {
 		t.Fatalf("outcome = %#v", report.Outcomes[0])
+	}
+}
+
+func TestRunLocalTestsChangedSinceNoneDoesNotTurnFocusedClassIntoLoadError(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeLocalTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeLocalTestFile(t, filepath.Join(root, "force-app/main/default/classes/SampleTest.cls"), `
+@isTest
+private class SampleTest {
+  @isTest static void runs() {
+    System.assertEquals(1, 1);
+  }
+}
+`)
+	runGit := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = root
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	runGit("init")
+	runGit("config", "user.email", "glade@example.test")
+	runGit("config", "user.name", "Glade Test")
+	runGit("add", ".")
+	runGit("commit", "-m", "initial")
+
+	report, err := RunLocalTests(LocalTestOptions{
+		Project:      root,
+		Class:        "SampleTest",
+		ChangedSince: "HEAD",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.Ready || report.Summary.Total != 0 || report.Summary.LoadErrors != 0 {
+		t.Fatalf("report = %#v, want ready zero-run report", report)
+	}
+	if report.CasesDiscovered != 0 || report.CasesRun != 0 {
+		t.Fatalf("cases = discovered %d run %d, want 0/0", report.CasesDiscovered, report.CasesRun)
+	}
+	if report.Selection == nil {
+		t.Fatalf("selection missing: %#v", report)
+	}
+}
+
+func TestRunLocalTestsFocusedSelectionReportsNoMatches(t *testing.T) {
+	t.Parallel()
+	missingRoot := filepath.Join(t.TempDir(), "missing")
+	for _, tt := range []struct {
+		name    string
+		options LocalTestOptions
+		want    string
+	}{
+		{
+			name: "class",
+			options: LocalTestOptions{
+				Project: filepath.Join("..", "..", "testdata", "local-tests", "basic"),
+				Class:   "MissingTest",
+			},
+			want: `no Apex test methods matched --class "MissingTest"`,
+		},
+		{
+			name: "method without class",
+			options: LocalTestOptions{
+				Project: filepath.Join("..", "..", "testdata", "local-tests", "basic"),
+				Method:  "passes",
+			},
+			want: "--method requires --class",
+		},
+		{
+			name: "missing project",
+			options: LocalTestOptions{
+				Project: missingRoot,
+			},
+			want: "project root does not exist",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			report, err := RunLocalTests(tt.options)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if report.Ready {
+				t.Fatalf("ready = true, want false: %#v", report)
+			}
+			if report.Summary.Total != 1 || report.Summary.LoadErrors != 1 {
+				t.Fatalf("summary = %#v, want one load error", report.Summary)
+			}
+			if len(report.Outcomes) != 1 || report.Outcomes[0].Outcome != "load_error" || !strings.Contains(report.Outcomes[0].Error, tt.want) {
+				t.Fatalf("outcomes = %#v, want %q", report.Outcomes, tt.want)
+			}
+		})
 	}
 }
 

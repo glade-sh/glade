@@ -4282,12 +4282,13 @@ public class PreStartJob implements Queueable {
 private class PreStartJobTest {
   @isTest static void stopTestSkipsPreStartQueue() {
     System.enqueueJob(new PreStartJob());
-    Test.startTest();
-    Test.stopTest();
-    System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'pre-start async ran']);
-  }
-}
-`)
+	    Test.startTest();
+	    Test.stopTest();
+	    System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'pre-start async ran']);
+	    System.assertEquals(0, [SELECT COUNT() FROM AsyncApexJob]);
+	  }
+	}
+	`)
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
@@ -4381,6 +4382,26 @@ public class CountingBatch implements Database.Batchable<Integer> {
   }
 }
 `)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ObjectCountingBatch.cls"), `
+public class ObjectCountingBatch implements Database.Batchable<Object> {
+  public List<Object> start(Database.BatchableContext bc) {
+    return new List<Object>{1, 2, 3};
+  }
+  public void execute(Database.BatchableContext bc, List<Object> scope) {
+    for (Object value : scope) {
+      AsyncState.batchSum = AsyncState.batchSum + (Integer)value;
+      insert new Account(Name = 'object-batch-' + value);
+    }
+  }
+  public void finish(Database.BatchableContext bc) {
+    AsyncState.batchFinish = AsyncState.batchFinish + 1;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ChildObjectCountingBatch.cls"), `
+public class ChildObjectCountingBatch extends ObjectCountingBatch {
+}
+`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/ScheduledWorker.cls"), `
 public class ScheduledWorker {
   public void execute(Object sc) {
@@ -4430,8 +4451,8 @@ private class AsyncSemanticsTest {
     Integer afterRows = [SELECT COUNT() FROM Account];
     System.assertEquals(9, afterRows);
     List<AsyncApexJob> jobs = [SELECT Id, Status, JobType FROM AsyncApexJob];
-    System.assertEquals(10, jobs.size());
-    System.assertEquals(4, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApexWorker']);
+    System.assertEquals(8, jobs.size());
+    System.assertEquals(2, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApexWorker']);
     List<CronTrigger> crons = [SELECT Id, State FROM CronTrigger];
     System.assertEquals(2, crons.size());
     CronTrigger cron = crons.get(0);
@@ -4442,11 +4463,36 @@ private class AsyncSemanticsTest {
     System.assertEquals(1, AsyncState.scheduledRan);
     System.assertEquals(1, AsyncState.queueRan);
   }
+
+  @isTest static void acceptsInterfaceTypedBatchable() {
+    Database.Batchable<Object> batch = new ObjectCountingBatch();
+    Test.startTest();
+    String batchId = Database.executeBatch(batch, 2);
+    String scheduledBatchId = System.scheduleBatch(batch, 'typed batch later', 1, 2);
+    System.assertNotEquals('', batchId);
+    System.assertNotEquals('', scheduledBatchId);
+    Test.stopTest();
+    System.assertEquals(6, [SELECT COUNT() FROM Account]);
+    System.assertEquals(12, AsyncState.batchSum);
+    System.assertEquals(2, AsyncState.batchFinish);
+  }
+
+  @isTest static void acceptsBatchableInheritedFromSuperclass() {
+    Test.startTest();
+    String batchId = Database.executeBatch(new ChildObjectCountingBatch(), 2);
+    String scheduledBatchId = System.scheduleBatch(new ChildObjectCountingBatch(), 'child batch later', 1, 2);
+    System.assertNotEquals('', batchId);
+    System.assertNotEquals('', scheduledBatchId);
+    Test.stopTest();
+    System.assertEquals(6, [SELECT COUNT() FROM Account]);
+    System.assertEquals(12, AsyncState.batchSum);
+    System.assertEquals(2, AsyncState.batchFinish);
+  }
 }
 `)
 
 	run := Run(loadTestIndex(t, root), Options{})
-	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+	if got := run.Summary(); got.Total != 3 || got.Passed != 3 {
 		if run.Suites[0].Cases[0].Problem != nil {
 			t.Logf("problem=%#v", *run.Suites[0].Cases[0].Problem)
 		}

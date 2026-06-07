@@ -40,6 +40,18 @@ func TestRunDoctorReportsParser(t *testing.T) {
 	}
 }
 
+func TestRunDoctorProjectPathMustExist(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	missing := filepath.Join(t.TempDir(), "missing")
+	code := Run(context.Background(), []string{"doctor", "--project", missing}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), missing) || !strings.Contains(stderr.String(), "no such file or directory") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
 func TestRunUnknownCommand(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"wat"}, &stdout, &stderr)
@@ -70,7 +82,15 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "compat local-tests flag help",
 			args: []string{"compat", "local-tests", "--help"},
-			want: []string{"Usage:", "glade compat local-tests", "--class <name>", "--json"},
+			want: []string{
+				"Usage:",
+				"glade compat local-tests",
+				"--class <name>",
+				"--parallel-methods",
+				"--write-class-shards <dir>",
+				"--perf-json <path>",
+				"--json",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -562,6 +582,114 @@ func TestRunCompatLocalTestsBlockersOnlyAndFilters(t *testing.T) {
 	}
 	if strings.Contains(stdout.String(), "PassingTest") || strings.Contains(stdout.String(), "UnsupportedTest") {
 		t.Fatalf("stdout included unfiltered tests: %q", stdout.String())
+	}
+}
+
+func TestRunCompatLocalTestsMethodRequiresClass(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"compat", "local-tests",
+		"--project", "../../testdata/local-tests/basic",
+		"--method", "passes",
+	}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), "--method requires --class") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunCompatLocalTestsMissingClassFails(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"compat", "local-tests",
+		"--project", "../../testdata/local-tests/basic",
+		"--class", "MissingTest",
+	}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), `no local tests matched --class "MissingTest"`) {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunCompatLocalTestsMissingClassListFails(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"compat", "local-tests",
+		"--project", "../../testdata/local-tests/basic",
+		"--class-list", "MissingTest",
+	}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), "no local tests matched --class-list") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunCompatLocalTestsMissingClassFileFails(t *testing.T) {
+	root := t.TempDir()
+	classFile := filepath.Join(root, "classes.txt")
+	if err := os.WriteFile(classFile, []byte("MissingTest\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"compat", "local-tests",
+		"--project", "../../testdata/local-tests/basic",
+		"--class-file", classFile,
+	}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), "no local tests matched --class-file") || !strings.Contains(stderr.String(), classFile) {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunCompatLocalTestsMissingProjectFailsHumanMode(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"compat", "local-tests",
+		"--project", filepath.Join(t.TempDir(), "missing"),
+	}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stdout.String(), "load_error") || !strings.Contains(stdout.String(), "project root does not exist") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "local test load errors: 1") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunCompatLocalTestsMissingClassJSONStaysMachineReadable(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"compat", "local-tests",
+		"--project", "../../testdata/local-tests/basic",
+		"--class", "MissingTest",
+		"--json",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"ready": false`,
+		`"loadError": 1`,
+		`"outcome": "load_error"`,
+		`no Apex test methods matched --class \"MissingTest\"`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stdout missing %q: %q", want, stdout.String())
+		}
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q, want empty", stderr.String())
 	}
 }
 

@@ -484,6 +484,7 @@ type SystemFields struct {
 	OwnerID          ID     `json:"ownerId,omitempty"`
 	IsDeleted        bool   `json:"isDeleted,omitempty"`
 	Locked           bool   `json:"locked,omitempty"`
+	HiddenFromSOQL   bool   `json:"-"`
 }
 
 type Value struct {
@@ -1416,9 +1417,10 @@ func (o OrgState) CloneRuntimeFrozenDefinition() OrgState {
 // setup metadata that no Apex test execution path mutates (mirroring how
 // Salesforce keeps compiled metadata and describe-style setup data static across
 // a test run). Records for these objects can be shared by reference across
-// per-test org clones instead of deep-cloned, which is where almost all of the
-// base-org record volume lives (FieldPermissions, ApexClass, custom metadata
-// types, etc.) under SeeAllData=false where business objects start empty.
+// per-test org clones instead of deep-cloned, which is where most of the
+// base-org record volume lives (FieldPermissions, ApexClass, Profile, etc.)
+// under SeeAllData=false where business objects start empty. Custom metadata
+// records stay cloned because package tests can use them as runtime fixtures.
 //
 // Mutable runtime/business objects (User, AsyncApexJob, PermissionSetAssignment,
 // standard and custom data objects) are intentionally excluded so they continue
@@ -1429,9 +1431,6 @@ func IsImmutableMetadataObject(objectName string) bool {
 	name := strings.TrimSpace(objectName)
 	if name == "" {
 		return false
-	}
-	if len(name) >= 5 && strings.EqualFold(name[len(name)-5:], "__mdt") {
-		return true
 	}
 	switch strings.ToLower(name) {
 	case "apexclass", "apextrigger", "apexpage", "apexcomponent",

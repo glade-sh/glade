@@ -588,8 +588,10 @@ type soslOrderBy struct {
 }
 
 type soslWhere struct {
-	Field string
-	Value string
+	Field       string
+	Operator    string
+	Value       string
+	ValueIsNull bool
 }
 
 func soslHasSearchOption(query, option string) bool {
@@ -838,28 +840,45 @@ func trimSOSLReturningObjectsText(text string) string {
 }
 
 func parseSOSLReturningWhere(fields string) soslWhere {
-	index := lastIndexFold(fields, " where ")
+	index := lastIndexFoldOutsideQuotes(fields, " where ")
 	if index < 0 {
 		return soslWhere{}
 	}
 	whereText := fields[index+len(" where "):]
 	end := len(whereText)
 	for _, marker := range []string{" order by ", " offset ", " limit "} {
-		if markerIndex := indexFold(whereText, marker); markerIndex >= 0 && markerIndex < end {
+		if markerIndex := indexFoldOutsideQuotes(whereText, marker); markerIndex >= 0 && markerIndex < end {
 			end = markerIndex
 		}
 	}
 	whereText = strings.TrimSpace(whereText[:end])
-	eq := strings.IndexByte(whereText, '=')
-	if eq <= 0 {
+	operator, operatorIndex := soslWhereOperator(whereText)
+	if operatorIndex <= 0 {
 		return soslWhere{}
 	}
-	field := strings.TrimSpace(whereText[:eq])
-	value := strings.TrimSpace(whereText[eq+1:])
+	field := strings.TrimSpace(whereText[:operatorIndex])
+	value := strings.TrimSpace(whereText[operatorIndex+len(operator):])
+	valueIsNull := strings.EqualFold(value, "null")
 	if len(value) >= 2 && value[0] == '\'' && value[len(value)-1] == '\'' {
 		value = strings.ReplaceAll(value[1:len(value)-1], "''", "'")
 	}
-	return soslWhere{Field: field, Value: value}
+	return soslWhere{Field: field, Operator: operator, Value: value, ValueIsNull: valueIsNull}
+}
+
+func soslWhereOperator(whereText string) (string, int) {
+	for i := 0; i < len(whereText); i++ {
+		if soslQuotedAt(whereText, i) {
+			i = skipSOSLQuoted(whereText, i)
+			continue
+		}
+		if i+1 < len(whereText) && whereText[i] == '!' && whereText[i+1] == '=' {
+			return "!=", i
+		}
+		if whereText[i] == '=' {
+			return "=", i
+		}
+	}
+	return "", -1
 }
 
 func soslRecordMatchesWhere(record storage.Record, where soslWhere) bool {
@@ -867,10 +886,16 @@ func soslRecordMatchesWhere(record storage.Record, where soslWhere) bool {
 		return true
 	}
 	value, ok := record.GetField(where.Field)
-	if !ok {
-		return false
+	matches := false
+	if where.ValueIsNull {
+		matches = !ok || value.Kind == storage.ValueNull
+	} else if ok {
+		matches = strings.EqualFold(storageValueText(value), where.Value)
 	}
-	return strings.EqualFold(storageValueText(value), where.Value)
+	if where.Operator == "!=" {
+		return !matches
+	}
+	return matches
 }
 
 func (vm *VM) soslRecordMatchesPricebook(objectName string, record storage.Record, pricebookID string) bool {
@@ -1027,6 +1052,23 @@ func lastIndexFold(s, substr string) int {
 	return -1
 }
 
+func lastIndexFoldOutsideQuotes(s, substr string) int {
+	if substr == "" {
+		return len(s)
+	}
+	last := -1
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if soslQuotedAt(s, i) {
+			i = skipSOSLQuoted(s, i)
+			continue
+		}
+		if strings.EqualFold(s[i:i+len(substr)], substr) {
+			last = i
+		}
+	}
+	return last
+}
+
 func indexFold(s, substr string) int {
 	if substr == "" {
 		return 0
@@ -1037,6 +1079,40 @@ func indexFold(s, substr string) int {
 		}
 	}
 	return -1
+}
+
+func indexFoldOutsideQuotes(s, substr string) int {
+	if substr == "" {
+		return 0
+	}
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if soslQuotedAt(s, i) {
+			i = skipSOSLQuoted(s, i)
+			continue
+		}
+		if strings.EqualFold(s[i:i+len(substr)], substr) {
+			return i
+		}
+	}
+	return -1
+}
+
+func soslQuotedAt(text string, index int) bool {
+	return index >= 0 && index < len(text) && text[index] == '\''
+}
+
+func skipSOSLQuoted(text string, index int) int {
+	for i := index + 1; i < len(text); i++ {
+		if text[i] != '\'' {
+			continue
+		}
+		if i+1 < len(text) && text[i+1] == '\'' {
+			i++
+			continue
+		}
+		return i
+	}
+	return len(text) - 1
 }
 
 func trimSOSLReturningFieldList(fields string) string {

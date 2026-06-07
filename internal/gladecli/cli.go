@@ -49,7 +49,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stdout, "glade %s\n", Version)
 		return 0
 	case "doctor":
-		if err := runDoctor(ctx, stdout); err != nil {
+		if err := runDoctor(ctx, args[1:], stdout); err != nil {
 			fmt.Fprintf(stderr, "glade: %v\n", err)
 			return 1
 		}
@@ -284,7 +284,7 @@ func printCompatLocalTestsHelp(w io.Writer) {
 Report local Apex test execution readiness.
 
 Usage:
-  glade compat local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--method <name>] [--json]
+  glade compat local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--method <name>] [--parallel <n|auto>] [--json]
 
 Common flags:
   --project <root>          Project root. Defaults to current directory.
@@ -296,11 +296,21 @@ Common flags:
   --changed-since <ref>     Select tests affected since a git ref.
   --blockers-only           Print only blocking failures.
   --top-failures <n>        Limit failure groups in human output.
+  --max-failure-groups <n>  Limit grouped failure output.
   --timeout <ms-per-test>   Per-test timeout in milliseconds.
   --parallel <n|auto>       Run test classes with n workers.
+  --parallel-methods        Run test methods in parallel within each class.
+  --trace-blockers          Include blocked-test traces in JSON output.
+  --slow-test-ms <n>        Include traces/profiles for tests at or above n ms.
   --shard-count <n|auto>    Select one shard from a balanced class plan.
   --shard-index <i|auto>    Shard index to execute.
+  --write-class-shards <dir>  Write balanced class shard files and exit.
   --duration-history <path> Optional perf JSON used to weight class sharding.
+  --analyze                 Force project analysis before running tests.
+  --profile-on-timeout      Capture profiles for timed-out tests.
+  --cpu-profile <path>      Write a CPU profile for the local-test run.
+  --mem-profile <path>      Write an allocation profile for the local-test run.
+  --perf-json <path>        Write per-class timing data for future sharding.
   --progress                Print progress while running.
   --json                    Write JSON readiness results.
   --check <path>            Compare results with a checked baseline.
@@ -443,9 +453,28 @@ func packageArtifactMembers(members []typesys.MemberSymbol) []packageartifact.Ap
 	return out
 }
 
-func runDoctor(ctx context.Context, w io.Writer) error {
+func runDoctor(ctx context.Context, args []string, w io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
+	}
+
+	root := "."
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--project":
+			if i+1 >= len(args) {
+				return errors.New("--project requires a value")
+			}
+			root = args[i+1]
+			i++
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if info, err := os.Stat(root); err != nil {
+		return fmt.Errorf("project root %q: %w", root, err)
+	} else if !info.IsDir() {
+		return fmt.Errorf("project root %q is not a directory", root)
 	}
 
 	cwd, err := os.Getwd()
@@ -453,7 +482,7 @@ func runDoctor(ctx context.Context, w io.Writer) error {
 		return err
 	}
 
-	cfg, cfgPath, err := config.LoadNearest(cwd)
+	cfg, cfgPath, err := config.LoadNearest(root)
 	if err != nil && !errors.Is(err, config.ErrNotFound) {
 		return err
 	}

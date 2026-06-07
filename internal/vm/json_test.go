@@ -571,25 +571,35 @@ gen.writeFieldName('bad');
 	}
 }
 
-func TestExecJSONGeneratorCloseRejectsOpenOutput(t *testing.T) {
+func TestExecJSONGeneratorCloseWithOpenOutputDoesNotForceFinish(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator emptyGen = JSON.createGenerator(false);
 emptyGen.close();
 System.assertEquals('', emptyGen.getAsString());
 
+Boolean caught = false;
 JSONGenerator objectGen = JSON.createGenerator(false);
 objectGen.writeStartObject();
-Boolean caught = false;
+objectGen.close();
+System.assert(objectGen.isClosed());
+caught = false;
 try {
-	objectGen.close();
+	objectGen.writeEndObject();
+} catch (JSONException e) {
+	caught = true;
+	System.assertEquals('System.JSONException', e.getTypeName());
+	System.assert(e.getMessage().contains('JSONGenerator is closed'));
+}
+System.assert(caught);
+caught = false;
+try {
+	objectGen.getAsString();
 } catch (JSONException e) {
 	caught = true;
 	System.assertEquals('System.JSONException', e.getTypeName());
 	System.assert(e.getMessage().contains('JSONGenerator cannot close with open JSON containers'));
 }
 System.assert(caught);
-objectGen.writeEndObject();
-System.assertEquals('{}', objectGen.getAsString());
 
 JSONGenerator pendingGen = JSON.createGenerator(false);
 pendingGen.writeStartObject();
@@ -611,6 +621,34 @@ System.assertEquals('{"x":"ok"}', pendingGen.getAsString());
 		t.Fatal(err)
 	}
 	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONGeneratorCloseInFinallyPreservesThrownException(t *testing.T) {
+	program, err := CompileAnonymous(`
+String typeName = '';
+try {
+	JSONGenerator gen = JSON.createGenerator(false);
+	try {
+		gen.writeStartObject();
+		throw new LocalException('from builder');
+	} finally {
+		gen.close();
+	}
+} catch (Exception e) {
+	typeName = e.getTypeName();
+}
+System.assertEquals('LocalException', typeName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "LocalException", SuperClass: "Exception"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

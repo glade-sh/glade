@@ -29,6 +29,10 @@ glade test --project .
 `@IsTest` classes and runs them locally. Add `--json` for machine-readable
 output and `--junit reports/glade-junit.xml` for CI reports.
 
+`glade doctor` must report `parser: ok (tree-sitter)`. If the parser is
+unavailable, install a C compiler and rebuild or reinstall a parser-capable
+release artifact.
+
 ## Run Tests Without An Org
 
 Run every local Apex test:
@@ -147,8 +151,11 @@ glade test --project . --daemon --watch
 ## Compatibility Local-Test Runs
 
 `glade compat local-tests` uses the same local runtime but reports readiness
-outcomes for large-project parity work: `pass`, `fail`, `unsupported`,
-`loadError`, `compileError`, and `internalError`.
+outcomes for large-project parity work. Per-test outcome strings include
+`pass`, `fail`, `unsupported`, `load_error`, `compile_error`, `internal_error`,
+`assert_fail`, `runtime_gap`, `compile_gap`, and `timeout`. Summary keys use
+camelCase names such as `loadError`, `compileError`, `internalError`,
+`assertFail`, and `runtimeGap`.
 
 Use it when you want triage output, blocker grouping, sharding, or the
 compatibility JSON shape:
