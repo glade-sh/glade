@@ -326,6 +326,37 @@ func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys
 			"getsetupreferencetype", "gettoolingtype", "gettype":
 			return StubBehaviorImplemented, "local Invocable.Action.getDescribe derives InputParameter DTOs from invocation parameter maps for local tests", true
 		}
+	case "Invocable.Action.AdditionalAttribute":
+		switch name {
+		case "getapexclass", "getdatatype", "getiscollection", "getname", "getvalue",
+			"getvalueasbooleanlist", "getvalueasdatelist", "getvalueasdoublelist",
+			"getvalueasintegerlist", "getvalueaslist", "getvalueaslonglist",
+			"getvalueasstringlist":
+			return StubBehaviorPassiveDefault, "local passive Invocable.Action.AdditionalAttribute DTO accessors return stable null, false, or empty-list defaults", true
+		}
+	case "Invocable.Action.Error":
+		switch name {
+		case "clone":
+			return StubBehaviorImplemented, "local Invocable.Action.Error clone preserves passive DTO fields", true
+		case "getcode", "getmessage":
+			return StubBehaviorPassiveDefault, "local passive Invocable.Action.Error DTO accessors return stable null defaults", true
+		}
+	case "Invocable.Action.GenericType":
+		switch name {
+		case "getdescription", "getlabel", "getname", "getsupertype":
+			return StubBehaviorPassiveDefault, "local passive Invocable.Action.GenericType DTO accessors return stable null defaults", true
+		}
+	case "Invocable.Action.OutputParameter":
+		switch name {
+		case "getadditionalattributes", "getapexclass", "getdescription", "getlabel",
+			"getmaxoccurs", "getname", "getpicklistvalues", "getsobjecttype", "gettype":
+			return StubBehaviorPassiveDefault, "local passive Invocable.Action.OutputParameter DTO accessors return stable null, zero, or empty-list defaults", true
+		}
+	case "Invocable.Action.PicklistValue":
+		switch name {
+		case "getactive", "getdefaultvalue", "getlabel", "getvalidfor", "getvalue":
+			return StubBehaviorPassiveDefault, "local passive Invocable.Action.PicklistValue DTO accessors return stable null or false defaults", true
+		}
 	case "Schema.DataCategoryGroupSobjectTypePair":
 		switch name {
 		case "setdatacategorygroupname", "setsobject":

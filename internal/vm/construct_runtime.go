@@ -266,6 +266,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	if strings.EqualFold(typeName, "Auth.VerificationResult") {
 		return constructAuthVerificationResult(args, namedArgs)
 	}
+	if value, handled, err := constructProcessPluginDescribeResultParameter(typeName, args, namedArgs); handled || err != nil {
+		return value, err
+	}
 	if class, ok := vm.lookupClass(typeName); ok && (!vm.isSObjectType(typeName) || vm.classConstructorCanAccept(typeName, args, namedArgs)) && !platformVersionTypeName(typeName) {
 		typeName = runtimeClassName(class)
 		if class.IsInterface {
@@ -1601,6 +1604,49 @@ func passiveGeneratedPlaceholderSuffix(suffix string) bool {
 		}
 	}
 	return true
+}
+
+func constructProcessPluginDescribeResultParameter(typeName string, args []Value, namedArgs map[string]Value) (Value, bool, error) {
+	input := strings.EqualFold(typeName, "Process.PluginDescribeResult.InputParameter")
+	output := strings.EqualFold(typeName, "Process.PluginDescribeResult.OutputParameter")
+	if !input && !output {
+		return Null, false, nil
+	}
+	if len(namedArgs) != 0 {
+		return Null, true, fmt.Errorf("%s constructor does not accept named arguments", typeName)
+	}
+	object := Object(typeName)
+	if input {
+		switch len(args) {
+		case 3:
+			object.Fields["name"] = args[0]
+			object.Fields["parameterType"] = args[1]
+			object.Fields["required"] = args[2]
+			return object, true, nil
+		case 4:
+			object.Fields["name"] = args[0]
+			object.Fields["description"] = args[1]
+			object.Fields["parameterType"] = args[2]
+			object.Fields["required"] = args[3]
+			return object, true, nil
+		}
+		return Null, true, fmt.Errorf("%s constructor expects 3 or 4 arguments", typeName)
+	}
+	if output {
+		switch len(args) {
+		case 2:
+			object.Fields["name"] = args[0]
+			object.Fields["parameterType"] = args[1]
+			return object, true, nil
+		case 3:
+			object.Fields["name"] = args[0]
+			object.Fields["description"] = args[1]
+			object.Fields["parameterType"] = args[2]
+			return object, true, nil
+		}
+		return Null, true, fmt.Errorf("%s constructor expects 2 or 3 arguments", typeName)
+	}
+	return Null, false, nil
 }
 
 func (vm *VM) callImplicitSuperConstructor(class Class, ctor Method, object Value, result *Result) error {

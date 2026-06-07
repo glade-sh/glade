@@ -1,0 +1,533 @@
+{
+  "name": "core-runtime-metadata-flow-approval-enum-contracts",
+  "evidence": [
+    {
+      "surfaceId": "apex:Metadata.DeployProblemType.Error",
+      "symbol": "Metadata.DeployProblemType.Error",
+      "kind": "test",
+      "notes": "Metadata deploy problem type enum constants materialize as passive Apex enum values; deployment execution is not claimed."
+    },
+    {
+      "surfaceId": "apex:Metadata.DeployProblemType.Info",
+      "symbol": "Metadata.DeployProblemType.Info",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.DeployProblemType.Warning",
+      "symbol": "Metadata.DeployProblemType.Warning",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.ActivityEvent",
+      "symbol": "Metadata.FeedItemTypeEnum.ActivityEvent",
+      "kind": "test",
+      "notes": "Feed item type enum constants are passive DTO shape values."
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.AdvancedTextPost",
+      "symbol": "Metadata.FeedItemTypeEnum.AdvancedTextPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.AnnouncementPost",
+      "symbol": "Metadata.FeedItemTypeEnum.AnnouncementPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.ApprovalPost",
+      "symbol": "Metadata.FeedItemTypeEnum.ApprovalPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.AttachArticleEvent",
+      "symbol": "Metadata.FeedItemTypeEnum.AttachArticleEvent",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.AttachExternalDocumentEvent",
+      "symbol": "Metadata.FeedItemTypeEnum.AttachExternalDocumentEvent",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.BasicTemplateFeedItem",
+      "symbol": "Metadata.FeedItemTypeEnum.BasicTemplateFeedItem",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.CallLogPost",
+      "symbol": "Metadata.FeedItemTypeEnum.CallLogPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.CanvasPost",
+      "symbol": "Metadata.FeedItemTypeEnum.CanvasPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.CaseCommentPost",
+      "symbol": "Metadata.FeedItemTypeEnum.CaseCommentPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.ChangeStatusPost",
+      "symbol": "Metadata.FeedItemTypeEnum.ChangeStatusPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.ChatTranscriptPost",
+      "symbol": "Metadata.FeedItemTypeEnum.ChatTranscriptPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.CollaborationGroupCreated",
+      "symbol": "Metadata.FeedItemTypeEnum.CollaborationGroupCreated",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.CollaborationGroupUnarchived",
+      "symbol": "Metadata.FeedItemTypeEnum.CollaborationGroupUnarchived",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.ContentPost",
+      "symbol": "Metadata.FeedItemTypeEnum.ContentPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.CreateRecordEvent",
+      "symbol": "Metadata.FeedItemTypeEnum.CreateRecordEvent",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.DashboardComponentAlert",
+      "symbol": "Metadata.FeedItemTypeEnum.DashboardComponentAlert",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.DashboardComponentSnapshot",
+      "symbol": "Metadata.FeedItemTypeEnum.DashboardComponentSnapshot",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.EmailMessageEvent",
+      "symbol": "Metadata.FeedItemTypeEnum.EmailMessageEvent",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.FacebookPost",
+      "symbol": "Metadata.FeedItemTypeEnum.FacebookPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.LinkPost",
+      "symbol": "Metadata.FeedItemTypeEnum.LinkPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.MilestoneEvent",
+      "symbol": "Metadata.FeedItemTypeEnum.MilestoneEvent",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.PollPost",
+      "symbol": "Metadata.FeedItemTypeEnum.PollPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.ProfileSkillPost",
+      "symbol": "Metadata.FeedItemTypeEnum.ProfileSkillPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.QuestionPost",
+      "symbol": "Metadata.FeedItemTypeEnum.QuestionPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.ReplyPost",
+      "symbol": "Metadata.FeedItemTypeEnum.ReplyPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.RypplePost",
+      "symbol": "Metadata.FeedItemTypeEnum.RypplePost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.SocialPost",
+      "symbol": "Metadata.FeedItemTypeEnum.SocialPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.TestItem",
+      "symbol": "Metadata.FeedItemTypeEnum.TestItem",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.TextPost",
+      "symbol": "Metadata.FeedItemTypeEnum.TextPost",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.TrackedChange",
+      "symbol": "Metadata.FeedItemTypeEnum.TrackedChange",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.Undefined",
+      "symbol": "Metadata.FeedItemTypeEnum.Undefined",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedItemTypeEnum.UserStatus",
+      "symbol": "Metadata.FeedItemTypeEnum.UserStatus",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutComponentType.CaseExperts",
+      "symbol": "Metadata.FeedLayoutComponentType.CaseExperts",
+      "kind": "test",
+      "notes": "Feed layout enum constants are passive Metadata DTO shape values."
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutComponentType.CaseUnifiedFiles",
+      "symbol": "Metadata.FeedLayoutComponentType.CaseUnifiedFiles",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutComponentType.CustomButtons",
+      "symbol": "Metadata.FeedLayoutComponentType.CustomButtons",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutComponentType.CustomLinks",
+      "symbol": "Metadata.FeedLayoutComponentType.CustomLinks",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutComponentType.Followers",
+      "symbol": "Metadata.FeedLayoutComponentType.Followers",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutComponentType.Following",
+      "symbol": "Metadata.FeedLayoutComponentType.Following",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutComponentType.HelpAndToolLinks",
+      "symbol": "Metadata.FeedLayoutComponentType.HelpAndToolLinks",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutComponentType.Milestones",
+      "symbol": "Metadata.FeedLayoutComponentType.Milestones",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutComponentType.SimilarCases",
+      "symbol": "Metadata.FeedLayoutComponentType.SimilarCases",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutComponentType.Topics",
+      "symbol": "Metadata.FeedLayoutComponentType.Topics",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutComponentType.Visualforce",
+      "symbol": "Metadata.FeedLayoutComponentType.Visualforce",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutFilterPosition.CenterDropDown",
+      "symbol": "Metadata.FeedLayoutFilterPosition.CenterDropDown",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutFilterPosition.LeftFixed",
+      "symbol": "Metadata.FeedLayoutFilterPosition.LeftFixed",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutFilterPosition.LeftFloat",
+      "symbol": "Metadata.FeedLayoutFilterPosition.LeftFloat",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutFilterType.AllUpdates",
+      "symbol": "Metadata.FeedLayoutFilterType.AllUpdates",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutFilterType.Custom",
+      "symbol": "Metadata.FeedLayoutFilterType.Custom",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.FeedLayoutFilterType.FeedItemType",
+      "symbol": "Metadata.FeedLayoutFilterType.FeedItemType",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.LayoutHeader.PersonalTagging",
+      "symbol": "Metadata.LayoutHeader.PersonalTagging",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.LayoutHeader.PublicTagging",
+      "symbol": "Metadata.LayoutHeader.PublicTagging",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.LayoutSectionStyle.CustomLinks",
+      "symbol": "Metadata.LayoutSectionStyle.CustomLinks",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.LayoutSectionStyle.OneColumn",
+      "symbol": "Metadata.LayoutSectionStyle.OneColumn",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.LayoutSectionStyle.TwoColumnsLeftToRight",
+      "symbol": "Metadata.LayoutSectionStyle.TwoColumnsLeftToRight",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.LayoutSectionStyle.TwoColumnsTopToBottom",
+      "symbol": "Metadata.LayoutSectionStyle.TwoColumnsTopToBottom",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.ActionDefinition",
+      "symbol": "Metadata.PlatformActionListContextEnum.ActionDefinition",
+      "kind": "test",
+      "notes": "Platform action enum constants are passive Metadata DTO shape values; no action invocation is claimed."
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.Assistant",
+      "symbol": "Metadata.PlatformActionListContextEnum.Assistant",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.BannerPhoto",
+      "symbol": "Metadata.PlatformActionListContextEnum.BannerPhoto",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.Chatter",
+      "symbol": "Metadata.PlatformActionListContextEnum.Chatter",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.Dockable",
+      "symbol": "Metadata.PlatformActionListContextEnum.Dockable",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.FeedElement",
+      "symbol": "Metadata.PlatformActionListContextEnum.FeedElement",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.Flexipage",
+      "symbol": "Metadata.PlatformActionListContextEnum.Flexipage",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.Global_x",
+      "symbol": "Metadata.PlatformActionListContextEnum.Global_x",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.ListView",
+      "symbol": "Metadata.PlatformActionListContextEnum.ListView",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.ListViewDefinition",
+      "symbol": "Metadata.PlatformActionListContextEnum.ListViewDefinition",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.ListViewRecord",
+      "symbol": "Metadata.PlatformActionListContextEnum.ListViewRecord",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.Lookup",
+      "symbol": "Metadata.PlatformActionListContextEnum.Lookup",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.MetadataExplorer",
+      "symbol": "Metadata.PlatformActionListContextEnum.MetadataExplorer",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.MruList",
+      "symbol": "Metadata.PlatformActionListContextEnum.MruList",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.MruRow",
+      "symbol": "Metadata.PlatformActionListContextEnum.MruRow",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.ObjectHomeChart",
+      "symbol": "Metadata.PlatformActionListContextEnum.ObjectHomeChart",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.Photo",
+      "symbol": "Metadata.PlatformActionListContextEnum.Photo",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.Record",
+      "symbol": "Metadata.PlatformActionListContextEnum.Record",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.RecordEdit",
+      "symbol": "Metadata.PlatformActionListContextEnum.RecordEdit",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.RelatedList",
+      "symbol": "Metadata.PlatformActionListContextEnum.RelatedList",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionListContextEnum.RelatedListRecord",
+      "symbol": "Metadata.PlatformActionListContextEnum.RelatedListRecord",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionTypeEnum.ActionLink",
+      "symbol": "Metadata.PlatformActionTypeEnum.ActionLink",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionTypeEnum.CustomButton",
+      "symbol": "Metadata.PlatformActionTypeEnum.CustomButton",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionTypeEnum.InvocableAction",
+      "symbol": "Metadata.PlatformActionTypeEnum.InvocableAction",
+      "kind": "test",
+      "notes": "This covers only the Metadata enum constant shape, not Invocable action execution."
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionTypeEnum.ProductivityAction",
+      "symbol": "Metadata.PlatformActionTypeEnum.ProductivityAction",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionTypeEnum.QuickAction",
+      "symbol": "Metadata.PlatformActionTypeEnum.QuickAction",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.PlatformActionTypeEnum.StandardButton",
+      "symbol": "Metadata.PlatformActionTypeEnum.StandardButton",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.SortOrder.Asc_x",
+      "symbol": "Metadata.SortOrder.Asc_x",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.SortOrder.Desc_x",
+      "symbol": "Metadata.SortOrder.Desc_x",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.SummaryLayoutStyleEnum.CaseInteraction",
+      "symbol": "Metadata.SummaryLayoutStyleEnum.CaseInteraction",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.SummaryLayoutStyleEnum.ChildServiceReportTemplateStyle",
+      "symbol": "Metadata.SummaryLayoutStyleEnum.ChildServiceReportTemplateStyle",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.SummaryLayoutStyleEnum.DefaultQuoteTemplate",
+      "symbol": "Metadata.SummaryLayoutStyleEnum.DefaultQuoteTemplate",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.SummaryLayoutStyleEnum.DefaultServiceReportTemplate",
+      "symbol": "Metadata.SummaryLayoutStyleEnum.DefaultServiceReportTemplate",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.SummaryLayoutStyleEnum.Default_x",
+      "symbol": "Metadata.SummaryLayoutStyleEnum.Default_x",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.SummaryLayoutStyleEnum.PathAssistant",
+      "symbol": "Metadata.SummaryLayoutStyleEnum.PathAssistant",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.SummaryLayoutStyleEnum.QuickActionLayoutLeftRight",
+      "symbol": "Metadata.SummaryLayoutStyleEnum.QuickActionLayoutLeftRight",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.SummaryLayoutStyleEnum.QuickActionLayoutTopDown",
+      "symbol": "Metadata.SummaryLayoutStyleEnum.QuickActionLayoutTopDown",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.SummaryLayoutStyleEnum.QuoteTemplate",
+      "symbol": "Metadata.SummaryLayoutStyleEnum.QuoteTemplate",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.SummaryLayoutStyleEnum.ServiceReportTemplate",
+      "symbol": "Metadata.SummaryLayoutStyleEnum.ServiceReportTemplate",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.UiBehavior.Edit",
+      "symbol": "Metadata.UiBehavior.Edit",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.UiBehavior.Readonly",
+      "symbol": "Metadata.UiBehavior.Readonly",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Metadata.UiBehavior.Required",
+      "symbol": "Metadata.UiBehavior.Required",
+      "kind": "test"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/MetadataFlowApprovalEnumContractsTest.cls",
+      "content": "@isTest private class MetadataFlowApprovalEnumContractsTest { @isTest static void metadataEnumConstantsAreShapeValues() { System.assert(Metadata.DeployProblemType.Error != null); System.assert(Metadata.DeployProblemType.Info != null); System.assert(Metadata.DeployProblemType.Warning != null); System.assert(Metadata.DeployProblemType.values().size() >= 3); System.assert(Metadata.FeedItemTypeEnum.ActivityEvent != null); System.assert(Metadata.FeedItemTypeEnum.AdvancedTextPost != null); System.assert(Metadata.FeedItemTypeEnum.AnnouncementPost != null); System.assert(Metadata.FeedItemTypeEnum.ApprovalPost != null); System.assert(Metadata.FeedItemTypeEnum.AttachArticleEvent != null); System.assert(Metadata.FeedItemTypeEnum.AttachExternalDocumentEvent != null); System.assert(Metadata.FeedItemTypeEnum.BasicTemplateFeedItem != null); System.assert(Metadata.FeedItemTypeEnum.CallLogPost != null); System.assert(Metadata.FeedItemTypeEnum.CanvasPost != null); System.assert(Metadata.FeedItemTypeEnum.CaseCommentPost != null); System.assert(Metadata.FeedItemTypeEnum.ChangeStatusPost != null); System.assert(Metadata.FeedItemTypeEnum.ChatTranscriptPost != null); System.assert(Metadata.FeedItemTypeEnum.CollaborationGroupCreated != null); System.assert(Metadata.FeedItemTypeEnum.CollaborationGroupUnarchived != null); System.assert(Metadata.FeedItemTypeEnum.ContentPost != null); System.assert(Metadata.FeedItemTypeEnum.CreateRecordEvent != null); System.assert(Metadata.FeedItemTypeEnum.DashboardComponentAlert != null); System.assert(Metadata.FeedItemTypeEnum.DashboardComponentSnapshot != null); System.assert(Metadata.FeedItemTypeEnum.EmailMessageEvent != null); System.assert(Metadata.FeedItemTypeEnum.FacebookPost != null); System.assert(Metadata.FeedItemTypeEnum.LinkPost != null); System.assert(Metadata.FeedItemTypeEnum.MilestoneEvent != null); System.assert(Metadata.FeedItemTypeEnum.PollPost != null); System.assert(Metadata.FeedItemTypeEnum.ProfileSkillPost != null); System.assert(Metadata.FeedItemTypeEnum.QuestionPost != null); System.assert(Metadata.FeedItemTypeEnum.ReplyPost != null); System.assert(Metadata.FeedItemTypeEnum.RypplePost != null); System.assert(Metadata.FeedItemTypeEnum.SocialPost != null); System.assert(Metadata.FeedItemTypeEnum.TestItem != null); System.assert(Metadata.FeedItemTypeEnum.TextPost != null); System.assert(Metadata.FeedItemTypeEnum.TrackedChange != null); System.assert(Metadata.FeedItemTypeEnum.Undefined != null); System.assert(Metadata.FeedItemTypeEnum.UserStatus != null); System.assert(Metadata.FeedItemTypeEnum.values().size() >= 33); System.assert(Metadata.FeedLayoutComponentType.CaseExperts != null); System.assert(Metadata.FeedLayoutComponentType.CaseUnifiedFiles != null); System.assert(Metadata.FeedLayoutComponentType.CustomButtons != null); System.assert(Metadata.FeedLayoutComponentType.CustomLinks != null); System.assert(Metadata.FeedLayoutComponentType.Followers != null); System.assert(Metadata.FeedLayoutComponentType.Following != null); System.assert(Metadata.FeedLayoutComponentType.HelpAndToolLinks != null); System.assert(Metadata.FeedLayoutComponentType.Milestones != null); System.assert(Metadata.FeedLayoutComponentType.SimilarCases != null); System.assert(Metadata.FeedLayoutComponentType.Topics != null); System.assert(Metadata.FeedLayoutComponentType.Visualforce != null); System.assert(Metadata.FeedLayoutFilterPosition.CenterDropDown != null); System.assert(Metadata.FeedLayoutFilterPosition.LeftFixed != null); System.assert(Metadata.FeedLayoutFilterPosition.LeftFloat != null); System.assert(Metadata.FeedLayoutFilterType.AllUpdates != null); System.assert(Metadata.FeedLayoutFilterType.Custom != null); System.assert(Metadata.FeedLayoutFilterType.FeedItemType != null); System.assert(Metadata.LayoutHeader.PersonalTagging != null); System.assert(Metadata.LayoutHeader.PublicTagging != null); System.assert(Metadata.LayoutSectionStyle.CustomLinks != null); System.assert(Metadata.LayoutSectionStyle.OneColumn != null); System.assert(Metadata.LayoutSectionStyle.TwoColumnsLeftToRight != null); System.assert(Metadata.LayoutSectionStyle.TwoColumnsTopToBottom != null); System.assert(Metadata.PlatformActionListContextEnum.ActionDefinition != null); System.assert(Metadata.PlatformActionListContextEnum.Assistant != null); System.assert(Metadata.PlatformActionListContextEnum.BannerPhoto != null); System.assert(Metadata.PlatformActionListContextEnum.Chatter != null); System.assert(Metadata.PlatformActionListContextEnum.Dockable != null); System.assert(Metadata.PlatformActionListContextEnum.FeedElement != null); System.assert(Metadata.PlatformActionListContextEnum.Flexipage != null); System.assert(Metadata.PlatformActionListContextEnum.Global_x != null); System.assert(Metadata.PlatformActionListContextEnum.ListView != null); System.assert(Metadata.PlatformActionListContextEnum.ListViewDefinition != null); System.assert(Metadata.PlatformActionListContextEnum.ListViewRecord != null); System.assert(Metadata.PlatformActionListContextEnum.Lookup != null); System.assert(Metadata.PlatformActionListContextEnum.MetadataExplorer != null); System.assert(Metadata.PlatformActionListContextEnum.MruList != null); System.assert(Metadata.PlatformActionListContextEnum.MruRow != null); System.assert(Metadata.PlatformActionListContextEnum.ObjectHomeChart != null); System.assert(Metadata.PlatformActionListContextEnum.Photo != null); System.assert(Metadata.PlatformActionListContextEnum.Record != null); System.assert(Metadata.PlatformActionListContextEnum.RecordEdit != null); System.assert(Metadata.PlatformActionListContextEnum.RelatedList != null); System.assert(Metadata.PlatformActionListContextEnum.RelatedListRecord != null); System.assert(Metadata.PlatformActionTypeEnum.ActionLink != null); System.assert(Metadata.PlatformActionTypeEnum.CustomButton != null); System.assert(Metadata.PlatformActionTypeEnum.InvocableAction != null); System.assert(Metadata.PlatformActionTypeEnum.ProductivityAction != null); System.assert(Metadata.PlatformActionTypeEnum.QuickAction != null); System.assert(Metadata.PlatformActionTypeEnum.StandardButton != null); System.assert(Metadata.SortOrder.Asc_x != null); System.assert(Metadata.SortOrder.Desc_x != null); System.assert(Metadata.SummaryLayoutStyleEnum.CaseInteraction != null); System.assert(Metadata.SummaryLayoutStyleEnum.ChildServiceReportTemplateStyle != null); System.assert(Metadata.SummaryLayoutStyleEnum.DefaultQuoteTemplate != null); System.assert(Metadata.SummaryLayoutStyleEnum.DefaultServiceReportTemplate != null); System.assert(Metadata.SummaryLayoutStyleEnum.Default_x != null); System.assert(Metadata.SummaryLayoutStyleEnum.PathAssistant != null); System.assert(Metadata.SummaryLayoutStyleEnum.QuickActionLayoutLeftRight != null); System.assert(Metadata.SummaryLayoutStyleEnum.QuickActionLayoutTopDown != null); System.assert(Metadata.SummaryLayoutStyleEnum.QuoteTemplate != null); System.assert(Metadata.SummaryLayoutStyleEnum.ServiceReportTemplate != null); System.assert(Metadata.UiBehavior.Edit != null); System.assert(Metadata.UiBehavior.Readonly != null); System.assert(Metadata.UiBehavior.Required != null); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

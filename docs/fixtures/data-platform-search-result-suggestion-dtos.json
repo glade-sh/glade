@@ -67,6 +67,42 @@
       "kind": "test"
     },
     {
+      "surfaceId": "apex:Search.QuestionSuggestionFilter.addGroupId(String)",
+      "symbol": "Search.QuestionSuggestionFilter.addGroupId",
+      "kind": "test",
+      "notes": "QuestionSuggestionFilter records local DTO filter inputs without calling an external suggestion service."
+    },
+    {
+      "surfaceId": "apex:Search.QuestionSuggestionFilter.addNetworkId(String)",
+      "symbol": "Search.QuestionSuggestionFilter.addNetworkId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Search.QuestionSuggestionFilter.addUserId(String)",
+      "symbol": "Search.QuestionSuggestionFilter.addUserId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Search.QuestionSuggestionFilter.setGroupIds(List<String>)",
+      "symbol": "Search.QuestionSuggestionFilter.setGroupIds",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Search.QuestionSuggestionFilter.setNetworkIds(List<String>)",
+      "symbol": "Search.QuestionSuggestionFilter.setNetworkIds",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Search.QuestionSuggestionFilter.setTopicId(String)",
+      "symbol": "Search.QuestionSuggestionFilter.setTopicId",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Search.QuestionSuggestionFilter.setUserIds(List<String>)",
+      "symbol": "Search.QuestionSuggestionFilter.setUserIds",
+      "kind": "test"
+    },
+    {
       "surfaceId": "apex:Search.SuggestionOption.setFilter(Object)",
       "symbol": "Search.SuggestionOption.setFilter",
       "kind": "test"
@@ -112,7 +148,7 @@
     },
     {
       "path": "force-app/main/classes/SearchResultSuggestionDtosTest.cls",
-      "content": "@isTest private class SearchResultSuggestionDtosTest { @isTest static void resultAndSuggestionDtosUseLocalRows() { Account account = new Account(Name = 'Nook Trail'); insert account; Test.setFixedSearchResults(new List<Id>{ account.Id }); Search.SearchResults found = Search.find('FIND {Nook} IN ALL FIELDS RETURNING Account(Id, Name) WITH SNIPPET'); List<Search.SearchResult> accountResults = found.get('Account'); System.assertEquals(1, accountResults.size()); Search.SearchResult row = accountResults.get(0); Account foundAccount = (Account)row.getSObject(); System.assertEquals(account.Id, foundAccount.Id); System.assert(row.getSnippet() != null); System.assert(row.getSnippet('Name') != null); Search.KnowledgeSuggestionFilter filter = new Search.KnowledgeSuggestionFilter(); filter.addArticleType('FAQ'); filter.addDataCategory('Products', 'Trail'); filter.addTopic('Cabin'); filter.setChannel('AllChannels'); filter.setLanguage('en_US'); filter.setDataCategories(new Map<String,String>{ 'Products' => 'Trail' }); filter.setPublishStatus('Online'); filter.setValidationStatus('Validated'); Search.SuggestionOption option = new Search.SuggestionOption(); option.setFilter(filter); option.setLimit(3); Search.SuggestionResults suggestions = Search.suggest('Nook', 'Knowledge__kav', option); System.assertEquals(0, suggestions.getSuggestionResults().size()); System.assertEquals(false, suggestions.hasMoreResults()); Search.SuggestionResult emptySuggestion = new Search.SuggestionResult(); System.assertEquals(null, emptySuggestion.getSObject()); } }"
+      "content": "@isTest private class SearchResultSuggestionDtosTest { @isTest static void resultAndSuggestionDtosUseLocalRows() { Account account = new Account(Name = 'Nook Trail'); insert account; Test.setFixedSearchResults(new List<Id>{ account.Id }); Search.SearchResults found = Search.find('FIND {Nook} IN ALL FIELDS RETURNING Account(Id, Name) WITH SNIPPET'); List<Search.SearchResult> accountResults = found.get('Account'); System.assertEquals(1, accountResults.size()); Search.SearchResult row = accountResults.get(0); Account foundAccount = (Account)row.getSObject(); System.assertEquals(account.Id, foundAccount.Id); System.assert(row.getSnippet() != null); System.assert(row.getSnippet('Name') != null); Search.KnowledgeSuggestionFilter filter = new Search.KnowledgeSuggestionFilter(); filter.addArticleType('FAQ'); filter.addDataCategory('Products', 'Trail'); filter.addTopic('Cabin'); filter.setChannel('AllChannels'); filter.setLanguage('en_US'); filter.setDataCategories(new Map<String,String>{ 'Products' => 'Trail' }); filter.setPublishStatus('Online'); filter.setValidationStatus('Validated'); Search.QuestionSuggestionFilter questionFilter = new Search.QuestionSuggestionFilter(); questionFilter.addGroupId('0F9GROUP0000001'); questionFilter.addNetworkId('0DBNETWORK00001'); questionFilter.addUserId('005USER00000001'); questionFilter.setGroupIds(new List<String>{'0F9GROUP0000002'}); questionFilter.setNetworkIds(new List<String>{'0DBNETWORK00002'}); questionFilter.setTopicId('0TOtopic0000001'); questionFilter.setUserIds(new List<String>{'005USER00000002'}); Search.SuggestionOption option = new Search.SuggestionOption(); option.setFilter(filter); option.setLimit(3); Search.SuggestionResults suggestions = Search.suggest('Nook', 'Knowledge__kav', option); System.assertEquals(0, suggestions.getSuggestionResults().size()); System.assertEquals(false, suggestions.hasMoreResults()); Search.SuggestionResult emptySuggestion = new Search.SuggestionResult(); System.assertEquals(null, emptySuggestion.getSObject()); } }"
     }
   ],
   "command": {

@@ -23,6 +23,28 @@
       "symbol": "Process.PluginDescribeResult.OutputParameter",
       "kind": "check",
       "notes": "Nested docs shape aliases the project-visible plugin output parameter DTO."
+    },
+    {
+      "surfaceId": "apex:Process.PluginDescribeResult.InputParameter.PluginDescribeResult.InputParameter(String,Process.PluginDescribeResult.ParameterType,Boolean)",
+      "symbol": "Process.PluginDescribeResult.InputParameter",
+      "kind": "check",
+      "notes": "Docs spell this nested constructor with the parent type repeated; local Apex observes the InputParameter constructor."
+    },
+    {
+      "surfaceId": "apex:Process.PluginDescribeResult.InputParameter.PluginDescribeResult.InputParameter(String,String,Process.PluginDescribeResult.ParameterType,Boolean)",
+      "symbol": "Process.PluginDescribeResult.InputParameter",
+      "kind": "check"
+    },
+    {
+      "surfaceId": "apex:Process.PluginDescribeResult.OutputParameter.PluginDescribeResult.OutputParameter(String,Process.PluginDescribeResult.ParameterType)",
+      "symbol": "Process.PluginDescribeResult.OutputParameter",
+      "kind": "check",
+      "notes": "Docs spell this nested constructor with the parent type repeated; local Apex observes the OutputParameter constructor."
+    },
+    {
+      "surfaceId": "apex:Process.PluginDescribeResult.OutputParameter.PluginDescribeResult.OutputParameter(String,String,Process.PluginDescribeResult.ParameterType)",
+      "symbol": "Process.PluginDescribeResult.OutputParameter",
+      "kind": "check"
     }
   ],
   "source": [

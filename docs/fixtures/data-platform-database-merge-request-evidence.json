@@ -1,0 +1,62 @@
+{
+  "name": "data-platform-database-merge-request-evidence",
+  "evidence": [
+    {
+      "surfaceId": "apex:Database.MergeRequest.getAdditionalInformationMap()",
+      "symbol": "Database.MergeRequest.getAdditionalInformationMap",
+      "kind": "test",
+      "notes": "MergeRequest exposes local DTO getter/setter state without executing duplicate matching."
+    },
+    {
+      "surfaceId": "apex:Database.MergeRequest.getMasterRecord()",
+      "symbol": "Database.MergeRequest.getMasterRecord",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Database.MergeRequest.getRecordToMergeIds()",
+      "symbol": "Database.MergeRequest.getRecordToMergeIds",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Database.MergeRequest.setAdditionalInformationMap(List<Datacloud.AdditionalInformationMap>)",
+      "symbol": "Database.MergeRequest.setAdditionalInformationMap",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Database.MergeRequest.setMasterRecord(Object)",
+      "symbol": "Database.MergeRequest.setMasterRecord",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Database.MergeRequest.setRecordToMergeIds(List<String>)",
+      "symbol": "Database.MergeRequest.setRecordToMergeIds",
+      "kind": "test"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/DatabaseMergeRequestEvidenceTest.cls",
+      "content": "@isTest private class DatabaseMergeRequestEvidenceTest { @isTest static void mergeRequestAccessorsStoreLocalValues() { Account master = new Account(Name = 'Master'); Database.MergeRequest request = new Database.MergeRequest(); request.setMasterRecord(master); request.setRecordToMergeIds(new List<String>{'001000000000001AAA', '001000000000002AAA'}); request.setAdditionalInformationMap(new List<Datacloud.AdditionalInformationMap>()); System.assertEquals(master, request.getMasterRecord()); System.assertEquals(2, request.getRecordToMergeIds().size()); System.assertEquals(0, request.getAdditionalInformationMap().size()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

@@ -182,6 +182,11 @@ func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value
 	if receiver.Kind == ValueObject && strings.EqualFold(methodName, "getAsMap") {
 		return passiveDTOMapValue(receiver)
 	}
+	if receiver.Kind == ValueObject && len(method.Params) == 0 {
+		if value, handled, err := callInvocableActionPassiveDTOMember(receiver, methodName, nil); handled && err == nil {
+			return value
+		}
+	}
 	if receiver.Kind == ValueObject && strings.EqualFold(receiver.Type, "Flow.Interview") && strings.EqualFold(methodName, "start") {
 		receiver.Fields["started"] = Bool(true)
 		frame["this"] = receiver

@@ -1,0 +1,45 @@
+{
+  "name": "core-runtime-invocable-process-plugin-constructors",
+  "evidence": [
+    {
+      "surfaceId": "apex:Process.PluginDescribeResult.InputParameter.PluginDescribeResult.InputParameter(String,Process.PluginDescribeResult.ParameterType,Boolean)",
+      "symbol": "Process.PluginDescribeResult.InputParameter.PluginDescribeResult.InputParameter",
+      "kind": "test",
+      "notes": "Public Process.PluginDescribeResult.InputParameter constructor shape stores local DTO fields."
+    },
+    {
+      "surfaceId": "apex:Process.PluginDescribeResult.InputParameter.PluginDescribeResult.InputParameter(String,String,Process.PluginDescribeResult.ParameterType,Boolean)",
+      "symbol": "Process.PluginDescribeResult.InputParameter.PluginDescribeResult.InputParameter",
+      "kind": "test"
+    },
+    {
+      "surfaceId": "apex:Process.PluginDescribeResult.OutputParameter.PluginDescribeResult.OutputParameter(String,Process.PluginDescribeResult.ParameterType)",
+      "symbol": "Process.PluginDescribeResult.OutputParameter.PluginDescribeResult.OutputParameter",
+      "kind": "test",
+      "notes": "Public Process.PluginDescribeResult.OutputParameter constructor shape stores local DTO fields."
+    },
+    {
+      "surfaceId": "apex:Process.PluginDescribeResult.OutputParameter.PluginDescribeResult.OutputParameter(String,String,Process.PluginDescribeResult.ParameterType)",
+      "symbol": "Process.PluginDescribeResult.OutputParameter.PluginDescribeResult.OutputParameter",
+      "kind": "test"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/CoreRuntimeProcessPluginConstructorEvidenceTest.cls",
+      "content": "@isTest private class CoreRuntimeProcessPluginConstructorEvidenceTest { @isTest static void rows() { Process.PluginDescribeResult.InputParameter inputShort = new Process.PluginDescribeResult.InputParameter('recordId', Process.PluginDescribeResult.ParameterType.STRING, true); System.assertEquals('recordId', inputShort.name); System.assertEquals(Process.PluginDescribeResult.ParameterType.STRING, inputShort.parameterType); System.assertEquals(true, inputShort.required); Process.PluginDescribeResult.InputParameter inputLong = new Process.PluginDescribeResult.InputParameter('amount', 'Amount', Process.PluginDescribeResult.ParameterType.DECIMAL, false); System.assertEquals('amount', inputLong.name); System.assertEquals('Amount', inputLong.description); System.assertEquals(Process.PluginDescribeResult.ParameterType.DECIMAL, inputLong.parameterType); System.assertEquals(false, inputLong.required); Process.PluginDescribeResult.OutputParameter outputShort = new Process.PluginDescribeResult.OutputParameter('message', Process.PluginDescribeResult.ParameterType.STRING); System.assertEquals('message', outputShort.name); System.assertEquals(Process.PluginDescribeResult.ParameterType.STRING, outputShort.parameterType); Process.PluginDescribeResult.OutputParameter outputLong = new Process.PluginDescribeResult.OutputParameter('done', 'Done', Process.PluginDescribeResult.ParameterType.BOOLEAN); System.assertEquals('done', outputLong.name); System.assertEquals('Done', outputLong.description); System.assertEquals(Process.PluginDescribeResult.ParameterType.BOOLEAN, outputLong.parameterType); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

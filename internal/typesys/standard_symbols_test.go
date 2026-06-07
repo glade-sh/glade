@@ -913,6 +913,23 @@ func TestStandardPlatformSymbolsResolveInvocableActionDTOReferences(t *testing.T
 	requireStandardMethodType(t, input, "getAdditionalAttributes", "List<Invocable.Action.AdditionalAttribute>")
 	requireStandardMethodType(t, input, "getPicklistValues", "List<Invocable.Action.PicklistValue>")
 
+	additional := requireStandardSymbol(t, symbols, "Invocable.Action.AdditionalAttribute")
+	requireStandardMethodType(t, additional, "getValueAsStringList", "List<String>")
+	requireStandardMethodType(t, additional, "getValueAsList", "List<Object>")
+
+	genericType := requireStandardSymbol(t, symbols, "Invocable.Action.GenericType")
+	requireStandardMethodType(t, genericType, "getSuperType", "String")
+
+	output := requireStandardSymbol(t, symbols, "Invocable.Action.OutputParameter")
+	requireStandardMethodType(t, output, "getAdditionalAttributes", "List<Invocable.Action.AdditionalAttribute>")
+	requireStandardMethodType(t, output, "getPicklistValues", "List<Invocable.Action.PicklistValue>")
+
+	picklist := requireStandardSymbol(t, symbols, "Invocable.Action.PicklistValue")
+	requireStandardMethodType(t, picklist, "getDefaultValue", "Boolean")
+
+	err := requireStandardSymbol(t, symbols, "Invocable.Action.Error")
+	requireStandardMethodType(t, err, "getCode", "String")
+	requireStandardMethodType(t, err, "getMessage", "String")
 }
 
 func TestStandardPlatformSymbolsIncludeDomXmlNodeInsertBefore(t *testing.T) {
