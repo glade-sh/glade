@@ -1,22 +1,25 @@
 # Feature Parity Todo
 
-Status date: 2026-05-07.
+Status date: 2026-06-07.
 
-This is the remaining work to get `glade` to credible feature parity with glade,
-then beyond it. The current baselines are broad, but `glade compat mvp` is still
-expected to report not ready until every required capability is supported and
-covered by compatibility fixtures.
+This is the remaining work to keep `glade` at credible MVP parity and then push
+beyond it. The current baselines are broad, and `glade compat mvp` is the
+release gate for the required local MVP contract.
 
 Current checked status:
 
-- `glade compat mvp --json`: not ready; 4 of 21 required capabilities are
-  supported and 17 remain partial.
+- `glade compat mvp --json`: ready; 21 of 21 required capabilities are
+  supported for the local MVP contract.
 - `glade compat server-examples --json`: `pass=101 fail=0 unsupported=0
   missing=0`.
-- `glade compat local-tests --project example-projects/src-nmb-nutpl-develop
-  --timeout 30000 --top-failures 8 --json`: `total=761 pass=761`.
-- Full example-project runtime support is still incomplete; the current
-  six-project baseline is tracked in
+- `glade compat local-tests` dogfood proof gates are green for
+  `sf-cred-pkg-develop` (`total=4565 pass=4565`), `src-nmb-nu-develop`
+  (`total=11526 pass=11526`), and `nams-workspace`
+  (`total=5723 pass=5723`), with `src-nmb-nutpl-develop`
+  (`total=761 pass=761`) as the fast runtime sentinel.
+- Full example-project runtime support is still incomplete; NPSP and
+  `src-nmb-nc-develop` remain separate frontier gates unless freshly rerun.
+  Historical six-project baseline detail is tracked in
   `docs/fixtures/local-tests-example-projects.json`.
 - Generated compatibility docs are in sync with `internal/capability`.
 

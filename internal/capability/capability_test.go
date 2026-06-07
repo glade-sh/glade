@@ -172,6 +172,7 @@ func TestWriteKnownGapsMarkdown(t *testing.T) {
 	for _, want := range []string{
 		"# Known Gaps",
 		"Generated from `internal/capability`.",
+		"All required capabilities are currently `supported`.",
 		"No required MVP capability gaps are currently tracked.",
 	} {
 		if !strings.Contains(text, want) {

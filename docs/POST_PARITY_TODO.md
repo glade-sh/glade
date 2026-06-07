@@ -1,6 +1,6 @@
 # Post-Parity Todo
 
-Status date: 2026-05-07.
+Status date: 2026-06-07.
 
 This is the follow-on work after `docs/FEATURE_PARITY_TODO.md` is complete.
 It assumes `glade` can already parse, check, and run real Apex tests with
@@ -44,7 +44,7 @@ Current checked status:
 - The server-example support gate is green:
   `pass=101 fail=0 unsupported=0 missing=0`.
 - The broader post-parity readiness inventory is green for the checked
-  `example-projects` corpus. A May 7, 2026
+  `example-projects` corpus. A historical May 7, 2026
   `glade compat post-parity --project ./example-projects --json` run reported
   50,457 files scanned, 0 findings, 0 test-blocking findings, 0 surfaces, 114
   reports, and 7 dashboards.
@@ -64,12 +64,12 @@ Current checked status:
   actions, email templates, and Files objects. Runtime depth for UI rendering,
   advanced Flow interviews, and local UI/API serving remains tracked below.
 - The green post-parity inventory is also not a full runtime claim for every
-  checked example project. The current six-project runtime baseline has
-  `src-nmb-nutpl-develop` green at `total=761 pass=761`. Work is currently
-  focused on `sf-cred-pkg-develop`, where the May 14, 2026 local-test run is
-  `total=4268 pass=3185 unsupported=71 runtimeGap=404 assertFail=608
-  compileError=0 internalError=0`. Remaining example-project outcomes are
-  tracked as measured runtime blocker frontiers rather than scanner findings.
+  checked example project. The 2026-06-07 release-hardening dogfood gates are
+  green for `sf-cred-pkg-develop` (`total=4565 pass=4565`),
+  `src-nmb-nu-develop` (`total=11526 pass=11526`), and `nams-workspace`
+  (`total=5723 pass=5723`). `src-nmb-nutpl-develop` remains the fast runtime
+  sentinel at `total=761 pass=761`. NPSP and `src-nmb-nc-develop` remain
+  separate frontier gates unless freshly rerun.
 - Treat this document as the source for broad local-test support beyond the
   green server-example harness.
 
@@ -207,7 +207,7 @@ fixture work, not as known blockers in the current `example-projects` inventory.
      platform APIs, files, email, Workflow, and Flow.
    - [x] A readiness gate for claiming "legacy-project-test-ready."
 
-Current scanner top blockers from the broad post-parity inventory:
+Historical scanner top blockers from the broad post-parity inventory:
 
 | Rank | Blocker |
 | --- | --- |
@@ -224,8 +224,10 @@ Recently cleared blocker families:
 | Custom label and translation resolution | No current post-parity findings. |
 | Flow and Process Builder save-order metadata | No current post-parity findings. |
 
-Current `sf-cred-pkg-develop` blocker frontier from the May 14, 2026
-`compat local-tests --parallel 4 --top-failures 60 --json` run:
+Historical `sf-cred-pkg-develop` blocker frontier from the May 14, 2026
+`compat local-tests --parallel 4 --top-failures 60 --json` run. This table is
+kept for regression archaeology; the June 7, 2026 dogfood gate is green at
+`total=4565 pass=4565`:
 
 | Blocker family | Current count | Notes |
 | --- | ---: | --- |

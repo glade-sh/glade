@@ -203,11 +203,14 @@ func WriteKnownGapsMarkdown(w io.Writer, report Report) error {
 	if _, err := fmt.Fprintf(w, "Generated from `internal/capability`.\n\n"); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(w, "The MVP target is `%s`. This document lists required capabilities that are not yet `supported`.\n\n", report.Target); err != nil {
+	if report.Ready {
+		if _, err := fmt.Fprintf(w, "The MVP target is `%s`. All required capabilities are currently `supported`.\n\n", report.Target); err != nil {
+			return err
+		}
+		_, err := fmt.Fprintf(w, "No required MVP capability gaps are currently tracked.\n")
 		return err
 	}
-	if report.Ready {
-		_, err := fmt.Fprintf(w, "No required MVP capability gaps are currently tracked.\n")
+	if _, err := fmt.Fprintf(w, "The MVP target is `%s`. This document lists required capabilities that are not yet `supported`.\n\n", report.Target); err != nil {
 		return err
 	}
 

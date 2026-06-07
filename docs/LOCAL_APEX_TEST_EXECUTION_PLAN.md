@@ -1,6 +1,6 @@
 # Local Apex Test Execution Plan
 
-Status date: 2026-05-18.
+Status date: 2026-06-07.
 
 This plan turns the broad post-parity backlog into squad-sized implementation
 phases for full local Apex test execution. The target is not merely loading
@@ -19,7 +19,7 @@ pass=101 fail=0 unsupported=0 missing=0
 The owned local-test corpus gate is green for the checked baseline, including
 intentional unsupported classifications. The broader post-parity inventory for
 the full `example-projects` tree is green as a scanner/readiness gate. A
-May 18, 2026 inventory from the current checkout reports:
+historical May 18, 2026 inventory reported:
 
 ```text
 filesScanned=59482 findings=0 testBlockingFindings=0 surfaces=0 reports=114 dashboards=7
@@ -46,22 +46,28 @@ Use `docs/APEX_PARITY_FOLLOWUP_PLAN.md` for the broader Apex language,
 runtime, platform API, tooling, and release-hardening roadmap after the
 enterprise example-project local-test path is under control.
 
-Current execution status as of May 18, 2026: `sf-cred-pkg-develop` is the first
-large package with a fully green local runtime pass. The validated command is:
+Current execution status as of June 7, 2026: daily-use dogfood gates are green
+for `sf-cred-pkg-develop`, `src-nmb-nu-develop`, and `nams-workspace`.
+`src-nmb-nutpl-develop` remains the fast runtime sentinel. NPSP and
+`src-nmb-nc-develop` remain separate frontier gates unless freshly rerun.
+
+Primary validated command shape:
 
 ```bash
 go run ./cmd/glade compat local-tests \
   --project ./example-projects/sf-cred-pkg-develop \
   --parallel 4 \
-  --timeout 30000 \
+  --timeout 60000 \
   --top-failures 20 \
   --json
 ```
 
-Measured result, repeated twice after the deterministic custom data lookup fix:
+Measured release-hardening results:
 
 ```text
-total=4274 pass=4274 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0 topFailures=null durationMs=522094
+sf-cred-pkg-develop total=4565 pass=4565 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0
+src-nmb-nu-develop total=11526 pass=11526 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0
+nams-workspace total=5723 pass=5723 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0
 ```
 
 For future blocker triage on other large projects, cap the run by distinct
@@ -83,12 +89,12 @@ Auto mode note: when no explicit parallel or shard flags are supplied,
 For sharded execution, use `--parallel auto --shard-count auto --shard-index auto`
 with `GLADE_SHARD_COUNT` and `GLADE_SHARD_INDEX`.
 
-May 18, 2026 performance note: serial `sf-cred-pkg` runs took about 24.3
-minutes. After fixing deterministic custom data lookup for duplicate logical
-records, `--parallel 4` is green and runs in about 8.7 minutes. The next runtime
-frontier is no longer `sf-cred-pkg`; it is the remaining example-project
-compile/runtime gaps, especially managed-package dependency artifacts for
-`znu` and NPSP standard object/type coverage.
+June 7, 2026 performance note: full large-project runs still need bounded
+memory discipline. Prefer `--parallel 4` for NU unless a narrower repro is
+available, use shards for very large gates, and stop broad package sweeps when
+RSS pressure gets near the machine limit. `scripts/smoke.sh` chunks compat
+fixtures and tears down the local server promptly so smoke remains a release
+readiness check instead of a memory stress test.
 
 Performance baseline runs should build the CLI once before sweeping the corpus:
 
@@ -201,12 +207,11 @@ owned fixtures, then tightened as caching lands.
 ## Enterprise Example-Project Runtime Gap Plan
 
 The six checked `example-projects` directories are the runtime parity target for
-the next phase. The current static/readiness inventory is green, and the fast
-NUTPL runtime sentinel now passes end to end. The other five example projects
-still stop at measured compile-gap frontiers, so the project does not yet have
-full runtime support for all example projects. Treat scratch-org pass results as
-the behavioral target: failures in these projects are Glade parity gaps unless
-proven otherwise.
+the next phase. The current static/readiness inventory is green, and the
+dogfood runtime gates are green for NUTPL, sf-cred, NU, and NAMS. NPSP and
+`src-nmb-nc-develop` remain separate frontier gates unless freshly rerun. Treat
+scratch-org pass results as the behavioral target: failures in these projects
+are Glade parity gaps unless proven otherwise.
 
 Use `docs/plans/2026-06-04-salesforce-vertical-priority-overlay.md` as the work
 order above generated surface packets. The corpus decides priority; the packet
@@ -229,9 +234,9 @@ Current measured runtime frontier:
 | --- | --- |
 | Static/readiness inventory | `go run ./cmd/glade compat post-parity --project ./example-projects --json` reports `filesScanned=59482 findings=0 testBlockingFindings=0 surfaces=0 reports=114 dashboards=7`. |
 | Fast runtime green sentinel | `go run ./cmd/glade compat local-tests --project example-projects/src-nmb-nutpl-develop --timeout 30000 --top-failures 8 --json` reports `total=761 pass=761 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0 topFailures=null durationMs=51589`; `--parallel 4` also reports `total=761 pass=761` in `durationMs=22350`. |
-| Large-package green runtime sentinel | `go run ./cmd/glade compat local-tests --project example-projects/sf-cred-pkg-develop --parallel 4 --timeout 60000 --top-failures 20 --json --blockers-only` reports `casesRun=4274` with no blocker outcomes (`durationMs=601908`). |
-| Six-project runtime baseline | `docs/fixtures/local-tests-example-projects.json` tracks measured example-project frontiers; `src-nmb-nutpl-develop` and `sf-cred-pkg-develop` are green while the other unresolved projects remain measured gap frontiers. |
-| Scale runtime sentinel | `go run ./cmd/glade compat local-tests --project example-projects/src-nmb-nc-develop --timeout 30000 --top-failures 8 --json` returns structured compile-gap output rather than timing out or stack-overflowing; the current top blocker is missing `znu.Address`. |
+| Large-package dogfood sentinels | `sf-cred-pkg-develop` reports `total=4565 pass=4565`, `src-nmb-nu-develop` reports `total=11526 pass=11526`, and `nams-workspace` reports `total=5723 pass=5723`, all with zero fail, unsupported, load, compile, or internal errors in the June 7 release-hardening run. |
+| Six-project runtime baseline | `docs/fixtures/local-tests-example-projects.json` keeps historical measured example-project frontiers. Use fresh per-project JSON proof before calling NPSP or `src-nmb-nc-develop` green. |
+| Scale runtime frontier | `src-nmb-nc-develop` remains a separate gate unless freshly rerun; do not infer it from NU, NAMS, or sf-cred proof. |
 | Unit/regression suite | `go test ./...` must stay green after every merge. |
 
 ### Runtime Closure Phases
@@ -343,7 +348,7 @@ E1 baseline artifact:
   `go run ./cmd/glade compat post-parity --project ./example-projects --json --require-ready`
   reports `filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0`.
 
-Measured May 7, 2026 E1 baseline after native timeout/top-failure reporting,
+Historical May 7, 2026 E1 baseline after native timeout/top-failure reporting,
 standard-schema refreshes, package-aware duplicate-symbol handling, sema
 frontier fixes, and the NUTPL runtime closure:
 

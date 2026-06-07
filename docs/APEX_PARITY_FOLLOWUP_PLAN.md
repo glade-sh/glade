@@ -1,6 +1,6 @@
 # Comprehensive Apex Parity Follow-Up Plan
 
-Status date: 2026-05-14.
+Status date: 2026-06-07.
 
 This plan follows `docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md`. The local-test plan
 is the near-term product path: make the six enterprise example projects run
@@ -8,13 +8,13 @@ locally with scratch-org-like test behavior. This follow-up plan is broader. It
 tracks the work needed for `glade` to become a comprehensive Apex compatibility
 runtime and tooling stack, beyond the first local-test claim.
 
-Current checkpoint: `src-nmb-nutpl-develop` is the first green
-example-project runtime sentinel at `total=761 pass=761`. The active
-local-test closure target is now `sf-cred-pkg-develop`; the May 14, 2026
-runtime baseline is `total=4268 pass=3185 unsupported=71 runtimeGap=404
-assertFail=608 compileError=0 internalError=0`. Keep this plan behind the
-local-test closure work until the active example-project blocker frontier is
-green or explicitly accepted.
+Current checkpoint: the release-hardening dogfood gates are green for
+`sf-cred-pkg-develop` (`total=4565 pass=4565`), `src-nmb-nu-develop`
+(`total=11526 pass=11526`), and `nams-workspace`
+(`total=5723 pass=5723`). `src-nmb-nutpl-develop` remains the fast runtime
+sentinel at `total=761 pass=761`. Keep this plan behind local-test closure
+work until NPSP and `src-nmb-nc-develop` are either freshly green or explicitly
+accepted as remaining frontier gates.
 
 The goal is not to clone every Salesforce service. The goal is to make public
 Apex language behavior, public platform APIs, metadata-driven data behavior, and

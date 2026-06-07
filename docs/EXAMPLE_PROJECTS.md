@@ -173,28 +173,25 @@ go run ./cmd/glade compat local-tests --check docs/fixtures/local-tests-corpus.j
 
 ## Phase Gate
 
-Current status as of 2026-05-15:
+Current status as of 2026-06-07:
 
 - The server-example execution harness is green across the checked
   `example-projects` corpus: `pass=101 fail=0 unsupported=0 missing=0`.
 - The owned local-test corpus baseline is green via
   `go run ./cmd/glade compat local-tests --check
   docs/fixtures/local-tests-corpus.json --json`.
-- A full `example-projects` post-parity inventory currently includes the public
-  stubs and is not green: `filesScanned=59479 findings=4076
-  testBlockingFindings=4076 surfaces=2`. The remaining scanner buckets are
-  `platform.cache-connectapi` and `metadata.apex-deploy`.
-- `src-nmb-nutpl-develop` is the current green runtime sentinel:
-  `go run ./cmd/glade compat local-tests --project
-  example-projects/src-nmb-nutpl-develop --timeout 30000 --top-failures 8
-  --json` reports `total=761 pass=761` with no failures, unsupported outcomes,
-  load errors, compile errors, or internal errors.
-- Full runtime support for all six example projects is not complete yet. The
-  current six-project runtime baseline is
-  `docs/fixtures/local-tests-example-projects.json`: one project is green and
-  the other five stop at compile-gap frontiers such as missing `znu` managed
-  package types, missing standard object/type coverage, and package/source
-  duplicate-symbol issues.
+- A full `example-projects` post-parity inventory is green as a scanner and
+  readiness gate. It is not the same as proving every example-project Apex test
+  runs end to end.
+- Current release-hardening dogfood runtime gates are green for
+  `sf-cred-pkg-develop` (`total=4565 pass=4565`), `src-nmb-nu-develop`
+  (`total=11526 pass=11526`), and `nams-workspace`
+  (`total=5723 pass=5723`). `src-nmb-nutpl-develop` remains the fast runtime
+  sentinel at `total=761 pass=761`.
+- Full runtime support for all six example projects is not complete yet. NPSP
+  and `src-nmb-nc-develop` remain separate frontier gates unless freshly rerun.
+  Historical six-project baseline detail is tracked in
+  `docs/fixtures/local-tests-example-projects.json`.
 - `glade compat examples`, `glade compat server-examples`, and
   `glade compat post-parity` are separate gates. The zero post-parity inventory
   means no current scanner/test-readiness blockers are known for the checked

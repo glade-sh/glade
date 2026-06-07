@@ -431,24 +431,27 @@ startup, and compat commands.
 
 ### Working Rules
 
-- Current priority, as of 2026-05-06, is full local Apex test execution support:
-  make `glade test` run broad Salesforce-shaped projects with org-like metadata
-  resolution, test isolation, platform APIs, DML/trigger behavior, declarative
-  side effects, and explicit unsupported diagnostics.
+- Current priority, as of 2026-06-07, is daily-use and release hardening for
+  full local Apex test execution: keep `glade test` and
+  `glade compat local-tests` useful on broad Salesforce-shaped projects with
+  org-like metadata resolution, test isolation, platform APIs, DML/trigger
+  behavior, declarative side effects, bounded diagnostics, and stable JSON
+  proof gates.
 - Use `docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md` for squad-sized implementation
   phases and `docs/POST_PARITY_TODO.md` for the exhaustive post-parity backlog.
 - The server-example route harness is currently green. Do not add
   project-specific runtime routes or stdlib stubs for future example-project
   failures; fix the general parser, sema, VM, SOQL, DML, storage, metadata, or
   server behavior.
-- The checked post-parity readiness inventory is currently green for the
-  `example-projects` corpus (`filesScanned=50457 findings=0
-  testBlockingFindings=0 surfaces=0`). Treat that as a scanner/readiness gate,
-  not a blanket full-runtime claim. The checked local-test corpus is also green;
-  `src-nmb-nutpl-develop` is the current green example-project runtime sentinel
-  at `total=761 pass=761`. The remaining checked example projects still have
-  measured compile-gap frontiers, so future unsupported runtime cases should
-  remain explicit when they are outside the current support claim.
+- The checked post-parity readiness inventory is green for the
+  `example-projects` corpus; treat that as a scanner/readiness gate, not a
+  blanket full-runtime claim. The checked local-test corpus is also green. As
+  of the 2026-06-07 release-hardening run, the fresh dogfood runtime proof gates
+  are `sf-cred-pkg-develop` at `total=4565 pass=4565`,
+  `src-nmb-nu-develop` at `total=11526 pass=11526`, and `nams-workspace` at
+  `total=5723 pass=5723`. `src-nmb-nutpl-develop` remains the fast runtime
+  sentinel at `total=761 pass=761`. NPSP and `src-nmb-nc-develop` remain
+  separate example-project frontier gates unless freshly rerun.
 - Keep the parser behind `internal/apexast`. The parser module is
   `github.com/glade-sh/apex-parser`, vendored in-repo at
   `third_party/glade-apex-parser`; parser details live in `docs/APEX_PARSER.md`.
@@ -523,6 +526,8 @@ generated docs are in sync.
   execution beyond MVP parity.
 - `docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md` — squad-oriented implementation
   phases for full local Apex test execution.
+- `docs/DOGFOOD_CHECKLIST.md` — release-candidate and local-build dogfood
+  command checklist.
 - `docs/APEX_PARSER.md` — Apex parser module, CGO requirement, and validation.
 - `docs/RELEASE_NOTES.md` — ongoing release log.
 - `docs/RELEASE_POLICY.md` — release promotion and upgrade policy.
