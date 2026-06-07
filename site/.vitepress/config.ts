@@ -46,6 +46,7 @@ export default defineConfig({
       {
         text: 'Project Status',
         items: [
+          { text: 'Support Map', link: '/guide/support-map' },
           { text: 'Compatibility', link: '/guide/compatibility' },
           { text: 'Compatibility Dashboard', link: '/guide/compatibility-dashboard' }
         ]

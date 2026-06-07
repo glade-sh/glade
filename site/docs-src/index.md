@@ -4,17 +4,17 @@ layout: home
 hero:
   name: Glade
   text: Orgless Apex runtime
-  tagline: Parse, check, run, test, and serve Salesforce-shaped Apex projects on your own machine.
+  tagline: Check, run, test, and serve Salesforce-shaped Apex projects on your own machine.
   actions:
     - theme: brand
       text: Install Glade
       link: /guide/installation
     - theme: alt
+      text: Support Map
+      link: /guide/support-map
+    - theme: alt
       text: Try the Playground
       link: https://play.glade.sh/playground/
-    - theme: alt
-      text: CLI Reference
-      link: /guide/cli-reference
 
 features:
   - title: No org in the inner loop
@@ -34,6 +34,38 @@ It is made for the local development loop: check a project, run focused tests, e
 ::: tip Try it
 Open the hosted playground with built-in examples: [play.glade.sh/playground/?example=account-service](https://play.glade.sh/playground/?example=account-service)
 :::
+
+## First run
+
+Install Glade, then run it from an SFDX project:
+
+```bash
+curl -fsSL https://glade.sh/install.sh | sh
+glade doctor
+
+cd path/to/sfdx-project
+glade check --project .
+glade test --project . --json
+```
+
+For one test class or one test method:
+
+```bash
+glade test --project . --filter AccountServiceTest --json
+glade test --project . --filter AccountServiceTest.testCreatesAccount --json
+```
+
+## Support at a glance
+
+| Area | First-layer status |
+| --- | --- |
+| Apex parsing, indexing, semantic checks, local tests, SOQL, DML, triggers, SObjects, storage, local API, editor tools, and profiling | Supported for the local MVP contract. |
+| `Database`, dates, time, math, assertions, labels, URLs, and core user info | Supported, with tracked gaps in the standard-library ledger. |
+| `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller helpers, search, and many `Test.*` helpers | Partial, with method-level rows. |
+| Platform services that need live Salesforce engines or request context | Unsupported unless a row says otherwise. |
+
+Use the [Support Map](/guide/support-map) first. Use the generated ledgers when
+you need the exact method row.
 
 ## Runtime pipeline
 

@@ -1,63 +1,71 @@
 # Glade
 
-Glade is an orgless Apex runtime for local development and testing.
+Glade is a clean-room Apex runtime for local development and testing. It reads
+Salesforce projects from disk, checks Apex, runs supported tests without an org,
+and exposes the same runtime through a CLI, editor tools, a playground, and a
+Salesforce-shaped local API server.
 
 Site: <https://glade.sh>
 
-## What Glade Does
+## Start Here
 
-- Parses and checks Apex classes and triggers.
-- Runs anonymous Apex and local Apex tests.
-- Executes SOQL, DML, and trigger paths in a local runtime.
-- Serves a Salesforce-shaped local HTTP API for integration tests.
-- Tracks behavior coverage with compatibility fixtures and readiness gates.
-
-## Install
-
-For macOS and Linux:
+Install Glade:
 
 ```bash
 curl -fsSL https://glade.sh/install.sh | sh
-```
-
-Build and run from source:
-
-```bash
-git clone https://github.com/glade-sh/glade.git
-cd glade
-go build -o glade ./cmd/glade
-./glade version
-./glade doctor
-```
-
-During development, you can also run the CLI without installing a binary:
-
-```bash
-go run ./cmd/glade version
-go run ./cmd/glade check --project path/to/sfdx-project
-```
-
-## Quick Start
-
-Prerequisites:
-
-- Glade on your `PATH`
-- an SFDX project on disk for local project commands
-
-Smoke-check:
-
-```bash
 glade version
 glade doctor
 ```
 
-Run Apex tests locally without a Salesforce org:
+Run it in an SFDX project:
 
 ```bash
 cd path/to/sfdx-project
 glade check --project .
 glade test --project . --json
 ```
+
+Build from source when working on Glade itself:
+
+```bash
+git clone https://github.com/glade-sh/glade.git
+cd glade
+go build -o glade ./cmd/glade
+./glade version
+```
+
+## What Glade Supports
+
+The first layer is a support map. The second layer is the generated method and
+capability ledger.
+
+| Area | Current support |
+| --- | --- |
+| Apex parse, indexing, and semantic checks | Supported for the local MVP contract. |
+| Local Apex tests | Supported for the VM subset, with isolated test data, statics, limits, async drain, and JSON/JUnit output. |
+| SOQL, DML, triggers, SObjects, and storage | Supported for the checked local data runtime contract. |
+| `Database` methods | Supported for the tracked local rows in the stdlib ledger. |
+| `String`, dates, time, math, assertions, labels, URLs, and user info | Wide support, with exact rows in the stdlib ledger. |
+| `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller helpers, and many `Test.*` helpers | Partial. The local model covers common test paths and records gaps by method. |
+| Platform services such as approval execution, quick actions, business-hours services, sandbox lifecycle, live request context, and identity services | Unsupported unless a row says otherwise. Glade should return a stable unsupported diagnostic, not silent wrong behavior. |
+| Local API server, LSP, DAP, watch, profile, fixtures, and release gates | Supported for the local MVP contract. |
+
+Drill down from there:
+
+```bash
+glade compat mvp
+glade compat matrix --json
+glade compat stdlib --json
+```
+
+- High-level readiness: [docs/COMPATIBILITY_DASHBOARD.md](docs/COMPATIBILITY_DASHBOARD.md)
+- Method-level standard library coverage: [docs/STDLIB_COVERAGE.md](docs/STDLIB_COVERAGE.md)
+- Known gaps: [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md)
+- Site support map: <https://glade.sh/docs/guide/support-map>
+
+The rule is simple. A supported row has code and compatibility coverage.
+
+## Common Workflows
 
 Run one class, one method, or only tests affected by local changes:
 
@@ -80,35 +88,28 @@ Run anonymous Apex:
 glade exec "System.debug('hello from glade');"
 ```
 
-## Setup
+Serve a Salesforce-shaped local API:
 
-See [docs/INSTALL.md](docs/INSTALL.md) for:
+```bash
+glade server --project . --addr 127.0.0.1:8080
+```
 
-- one-line install
-- release-archive install
-- build from source
-- CI install patterns
-- local Apex testing without an org
-- persistent local server setup
-- playground setup
-- Homebrew tap workflow
+## Docs
+
+- [Install](docs/INSTALL.md)
+- [Local Apex testing](docs/LOCAL_TESTING.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Compatibility policy](docs/COMPATIBILITY.md)
+- [Compatibility dashboard](docs/COMPATIBILITY_DASHBOARD.md)
+- [Standard library coverage](docs/STDLIB_COVERAGE.md)
+- [Known gaps](docs/KNOWN_GAPS.md)
+- [Editor and debug setup](docs/EDITOR.md)
+- [Release policy](docs/RELEASE_POLICY.md)
 
 ## Release and Distribution
 
-See [docs/RELEASE_POLICY.md](docs/RELEASE_POLICY.md) for:
+Release notes, gates, archives, and Homebrew flow live in:
 
-- release gates
-- versioning and upgrade policy
-- release artifact workflow
-- Homebrew tap update workflow
-
-Operator runbook: [docs/DISTRIBUTION_WORKFLOW.md](docs/DISTRIBUTION_WORKFLOW.md)
-
-## Core Docs
-
-- [Start here docs map](docs/README.md)
-- [Local Apex testing](docs/LOCAL_TESTING.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Compatibility status](docs/COMPATIBILITY_DASHBOARD.md)
-- [Known gaps](docs/KNOWN_GAPS.md)
-- [Editor and debug setup](docs/EDITOR.md)
+- [docs/RELEASE_NOTES.md](docs/RELEASE_NOTES.md)
+- [docs/RELEASE_POLICY.md](docs/RELEASE_POLICY.md)
+- [docs/DISTRIBUTION_WORKFLOW.md](docs/DISTRIBUTION_WORKFLOW.md)

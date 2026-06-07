@@ -1,6 +1,9 @@
 # Compatibility Dashboard
 
-This page is the docs-site summary of the generated compatibility dashboard. The checked-in source report lives at `docs/COMPATIBILITY_DASHBOARD.md` in the repository and is generated from `internal/capability`.
+This page is the docs-site summary of the generated compatibility dashboard.
+Start with the [Support Map](/guide/support-map) for a broad area view. The
+checked-in source report lives at `docs/COMPATIBILITY_DASHBOARD.md` in the
+repository and is generated from `internal/capability`.
 
 ## Current gate commands
 

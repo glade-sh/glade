@@ -22,6 +22,15 @@ A release can only be promoted as MVP-ready when the required capabilities are s
 glade compat mvp --require-ready
 ```
 
+## First Layer
+
+Use the [Support Map](/guide/support-map) when you want the broad answer:
+runtime area, standard-library family, and whether the surface is supported,
+partial, or unsupported.
+
+Use this page and the generated reports when you need the lower layer:
+capability IDs, release gates, and method-level standard-library rows.
+
 ## Reports
 
 Generate the checked-in reports from the capability matrix:
@@ -32,7 +41,8 @@ glade compat gaps --output docs/KNOWN_GAPS.md
 glade compat stdlib --output docs/STDLIB_COVERAGE.md
 ```
 
-The docs site carries a short dashboard copy for readers. The repository remains the source of truth for the generated markdown files.
+The docs site carries a short dashboard copy and a support map for readers. The
+repository remains the source of truth for generated markdown files.
 
 ## Fixtures
 

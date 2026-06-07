@@ -9,6 +9,7 @@ of the way.
 2. Run Apex tests without an org: [LOCAL_TESTING.md](LOCAL_TESTING.md)
 3. Day-to-day editor commands: [EDITOR.md](EDITOR.md)
 4. Current support surface:
+   - Site first layer: <https://glade.sh/docs/guide/support-map>
    - [COMPATIBILITY_DASHBOARD.md](COMPATIBILITY_DASHBOARD.md)
    - [KNOWN_GAPS.md](KNOWN_GAPS.md)
    - [STDLIB_COVERAGE.md](STDLIB_COVERAGE.md)
