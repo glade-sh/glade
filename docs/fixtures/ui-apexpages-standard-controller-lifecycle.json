@@ -1,0 +1,43 @@
+{
+  "name": "ui-apexpages-standard-controller-lifecycle",
+  "evidence": [
+    {
+      "surfaceId": "apex:ApexPages.StandardController",
+      "symbol": "ApexPages.StandardController",
+      "kind": "test",
+      "notes": "StandardController lifecycle over seeded SObject records."
+    },
+    {
+      "surfaceId": "apex:ApexPages.StandardSetController",
+      "symbol": "ApexPages.StandardSetController",
+      "kind": "test",
+      "notes": "StandardSetController getRecord/getId/setPageSize over seeded SObject records."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/UIApexPagesStandardControllerLifecycleTest.cls",
+      "content": "@isTest private class UIApexPagesStandardControllerLifecycleTest { @isTest static void standardControllerLifecycle() { Account account = new Account(Name = 'Test Account'); insert account; ApexPages.StandardController sc = new ApexPages.StandardController(account); SObject retrieved = sc.getRecord(); System.assertEquals(account.Name, ((Account)retrieved).Name); System.assertEquals(account.Id, sc.getId()); sc.addFields(new List<String>{'Description'}); } @isTest static void standardSetControllerLifecycle() { Account a1 = new Account(Name = 'A1'); Account a2 = new Account(Name = 'A2'); insert new List<Account>{a1, a2}; List<Account> accounts = [SELECT Id, Name FROM Account WHERE Name LIKE 'A%' ORDER BY Name]; ApexPages.StandardSetController ssc = new ApexPages.StandardSetController(accounts); System.assertEquals(2, ssc.getResultSize()); System.assertEquals(2, ssc.getRecords().size()); ssc.setPageSize(1); System.assertEquals(1, ssc.getPageSize()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}
