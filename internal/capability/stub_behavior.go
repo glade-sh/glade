@@ -377,6 +377,20 @@ func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys
 		if name == "getjobs" || name == "getrunlogresponse" {
 			return StubBehaviorImplemented, "local runtime returns deterministic empty Data Mask job/read-log payloads without starting or canceling jobs", true
 		}
+	case "ConnectApi.NextBestAction":
+		switch name {
+		case "executestrategy":
+			return StubBehaviorImplemented, "local runtime returns a deterministic NBARecommendations DTO with an empty recommendations list without calling NBA services", true
+		case "setrecommendationreaction":
+			return StubBehaviorImplemented, "local runtime returns a deterministic RecommendationReaction DTO echoing the local reaction input without calling NBA services", true
+		}
+	case "ConnectApi.Orchestration", "ConnectApi.Orchestrator":
+		switch name {
+		case "getorchestrationinstancecollection":
+			return StubBehaviorImplemented, "local runtime returns a deterministic OrchestrationInstanceCollection DTO with an empty instances list without calling Orchestration services", true
+		case "publishorchestrationevent":
+			return StubBehaviorImplemented, "local runtime returns a deterministic OrchestrationEvent DTO echoing the local event input without calling Orchestration services", true
+		}
 	}
 	return "", "", false
 }

@@ -316,6 +316,20 @@ type ValidationRule struct {
 	ErrorDisplayField     string `json:"errorDisplayField,omitempty"`
 }
 
+type WorkflowTask struct {
+	Name             string `json:"name"`
+	AssignedToType   string `json:"assignedToType,omitempty"`
+	AssignedTo       string `json:"assignedTo,omitempty"`
+	Description      string `json:"description,omitempty"`
+	DueDateOffset    int    `json:"dueDateOffset,omitempty"`
+	HasDueDateOffset bool   `json:"hasDueDateOffset,omitempty"`
+	NotifyAssignee   bool   `json:"notifyAssignee,omitempty"`
+	Priority         string `json:"priority,omitempty"`
+	Status           string `json:"status,omitempty"`
+	Subject          string `json:"subject,omitempty"`
+	Protected        bool   `json:"protected,omitempty"`
+}
+
 type WorkflowRule struct {
 	Name         string                 `json:"name"`
 	Active       bool                   `json:"active,omitempty"`
@@ -323,6 +337,7 @@ type WorkflowRule struct {
 	Criteria     []WorkflowCriteriaItem `json:"criteria,omitempty"`
 	FieldUpdates []WorkflowFieldUpdate  `json:"fieldUpdates,omitempty"`
 	EmailAlerts  []WorkflowEmailAlert   `json:"emailAlerts,omitempty"`
+	Tasks        []WorkflowTask         `json:"tasks,omitempty"`
 }
 
 type WorkflowCriteriaItem struct {
@@ -1317,6 +1332,7 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		out.WorkflowRules[i].Criteria = append([]WorkflowCriteriaItem(nil), d.WorkflowRules[i].Criteria...)
 		out.WorkflowRules[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), d.WorkflowRules[i].FieldUpdates...)
 		out.WorkflowRules[i].EmailAlerts = append([]WorkflowEmailAlert(nil), d.WorkflowRules[i].EmailAlerts...)
+		out.WorkflowRules[i].Tasks = append([]WorkflowTask(nil), d.WorkflowRules[i].Tasks...)
 		for j := range out.WorkflowRules[i].EmailAlerts {
 			out.WorkflowRules[i].EmailAlerts[j].Recipients = append([]WorkflowEmailRecipient(nil), d.WorkflowRules[i].EmailAlerts[j].Recipients...)
 		}

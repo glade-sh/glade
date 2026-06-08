@@ -16,6 +16,26 @@ func TestResolveFieldNameResolvesIdCaseInsensitive(t *testing.T) {
 	}
 }
 
+func TestObjectDefinitionCloneCopiesWorkflowTasks(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "Contact",
+		WorkflowRules: []WorkflowRule{{
+			Name: "FollowUp",
+			Tasks: []WorkflowTask{{
+				Name:             "ThankYou",
+				Subject:          "Thanks",
+				DueDateOffset:    1,
+				HasDueDateOffset: true,
+			}},
+		}},
+	}
+	clone := definition.Clone()
+	definition.WorkflowRules[0].Tasks[0].Subject = "changed"
+	if clone.WorkflowRules[0].Tasks[0].Subject != "Thanks" || !clone.WorkflowRules[0].Tasks[0].HasDueDateOffset {
+		t.Fatalf("cloned workflow tasks = %#v", clone.WorkflowRules[0].Tasks)
+	}
+}
+
 func TestStandardObjectDefinitionIncludesHealthCloudDescribeShape(t *testing.T) {
 	definition, ok := StandardObjectDefinition("CareProgram")
 	if !ok {

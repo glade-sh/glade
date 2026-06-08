@@ -5868,6 +5868,161 @@ func TestWorkflowFieldUpdateRollsBackOnFailure(t *testing.T) {
 	}
 }
 
+func TestWorkflowTaskCreationOnInsert(t *testing.T) {
+	org := testOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName":    {APIName: "LastName", Type: storage.FieldString},
+				"Description": {APIName: "Description", Type: storage.FieldString},
+			},
+			WorkflowRules: []storage.WorkflowRule{{
+				Name:   "VolunteerThankYou",
+				Active: true,
+				Criteria: []storage.WorkflowCriteriaItem{{
+					Field:     "Description",
+					Operation: "equals",
+					Value:     "Volunteer",
+				}},
+				Tasks: []storage.WorkflowTask{{
+					Name:             "VolunteerThankYouTask",
+					Subject:          "Thank you for volunteering",
+					Status:           "Completed",
+					Priority:         "Normal",
+					Description:      "Automatic thank you sent",
+					DueDateOffset:    0,
+					HasDueDateOffset: true,
+					NotifyAssignee:   false,
+					AssignedToType:   "owner",
+				}},
+			}},
+			Relations: []storage.Relationship{{
+				Field:         "AccountId",
+				ParentObjects: []string{"Account"},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	engine.Now = func() time.Time { return time.Date(2026, 6, 7, 18, 0, 0, 0, time.UTC) }
+
+	result := engine.Insert([]storage.Record{{
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"LastName":    storage.StringValue("Volunteer"),
+			"Description": storage.StringValue("Volunteer"),
+		},
+	}})
+	if !result[0].Success {
+		t.Fatalf("insert = %#v", result)
+	}
+	taskRecords := org.Objects["Task"].Records
+	if len(taskRecords) != 1 {
+		t.Fatalf("expected 1 task record, got %d", len(taskRecords))
+	}
+	var createdTask storage.Record
+	for _, r := range taskRecords {
+		createdTask = r
+		break
+	}
+	if createdTask.Fields["Subject"].String != "Thank you for volunteering" {
+		t.Fatalf("task subject = %q", createdTask.Fields["Subject"].String)
+	}
+	if createdTask.Fields["Status"].String != "Completed" {
+		t.Fatalf("task status = %q", createdTask.Fields["Status"].String)
+	}
+	if createdTask.Fields["Priority"].String != "Normal" {
+		t.Fatalf("task priority = %q", createdTask.Fields["Priority"].String)
+	}
+	if createdTask.Fields["Description"].String != "Automatic thank you sent" {
+		t.Fatalf("task description = %q", createdTask.Fields["Description"].String)
+	}
+	if _, ok := createdTask.Fields["WhatId"]; ok {
+		t.Fatalf("task WhatId should not be set for Contact workflow tasks: %#v", createdTask.Fields["WhatId"])
+	}
+	if createdTask.Fields["WhoId"].ID != result[0].ID {
+		t.Fatalf("task WhoId = %q, want %q", createdTask.Fields["WhoId"].ID, result[0].ID)
+	}
+	if createdTask.Fields["ActivityDate"].String != "2026-06-07" {
+		t.Fatalf("task ActivityDate = %q", createdTask.Fields["ActivityDate"].String)
+	}
+	if createdTask.Fields["OwnerId"].String != "" {
+		t.Fatalf("task OwnerId should not be in Fields map, got %q", createdTask.Fields["OwnerId"].String)
+	}
+	if createdTask.System.OwnerID != "005000000000001" {
+		t.Fatalf("task System.OwnerID = %q", createdTask.System.OwnerID)
+	}
+}
+
+func TestWorkflowTaskOnlyAutomationDoesNotRestampSourceRecord(t *testing.T) {
+	org := testOrg()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Account",
+			KeyPrefix: "001",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+			WorkflowRules: []storage.WorkflowRule{{
+				Name:   "CreateFollowUp",
+				Active: true,
+				Tasks: []storage.WorkflowTask{{
+					Name:           "FollowUp",
+					Subject:        "Follow up",
+					Status:         "Not Started",
+					Priority:       "Normal",
+					AssignedToType: "creator",
+				}},
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {
+				ID:     "001000000000001",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"Name": storage.StringValue("Acme"),
+				},
+				System: storage.SystemFields{
+					CreatedDate:      "2026-06-01T00:00:00Z",
+					LastModifiedDate: "2026-06-01T00:00:00Z",
+					SystemModstamp:   "2026-06-01T00:00:00Z",
+					CreatedByID:      "005000000000001",
+					LastModifiedByID: "005000000000001",
+					OwnerID:          "005000000000001",
+				},
+			},
+		},
+	}
+	engine := NewEngine(&org)
+	engine.Now = func() time.Time { return time.Date(2026, 6, 7, 18, 0, 0, 0, time.UTC) }
+
+	result, err := engine.ApplyAutomation("Account", "001000000000001")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.WorkflowUpdated {
+		t.Fatalf("workflow result = %#v", result)
+	}
+	account := org.Objects["Account"].Records["001000000000001"]
+	if account.System.LastModifiedDate != "2026-06-01T00:00:00Z" || account.System.SystemModstamp != "2026-06-01T00:00:00Z" {
+		t.Fatalf("task-only workflow restamped source record: %#v", account.System)
+	}
+	taskRecords := org.Objects["Task"].Records
+	if len(taskRecords) != 1 {
+		t.Fatalf("expected 1 task, got %d", len(taskRecords))
+	}
+	for _, task := range taskRecords {
+		if task.Fields["WhatId"].ID != "001000000000001" {
+			t.Fatalf("task WhatId = %#v", task.Fields["WhatId"])
+		}
+		if _, ok := task.Fields["ActivityDate"]; ok {
+			t.Fatalf("task ActivityDate should not be set without dueDateOffset: %#v", task.Fields["ActivityDate"])
+		}
+	}
+}
+
 func TestMergeSoftDeletesDuplicateAndReparentsChildren(t *testing.T) {
 	org := testOrg()
 	org.Objects["Contact"] = storage.ObjectState{

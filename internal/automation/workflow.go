@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -35,6 +36,7 @@ type workflowXML struct {
 	Rules        []workflowRuleXML        `xml:"rules"`
 	FieldUpdates []workflowFieldUpdateXML `xml:"fieldUpdates"`
 	Alerts       []workflowAlertXML       `xml:"alerts"`
+	Tasks        []workflowTaskXML        `xml:"tasks"`
 }
 
 type workflowRuleXML struct {
@@ -71,6 +73,19 @@ type workflowAlertXML struct {
 	Name       string                 `xml:"name"`
 	Template   string                 `xml:"template"`
 	Recipients []workflowRecipientXML `xml:"recipients"`
+}
+
+type workflowTaskXML struct {
+	FullName       string `xml:"fullName"`
+	AssignedToType string `xml:"assignedToType"`
+	AssignedTo     string `xml:"assignedTo"`
+	Description    string `xml:"description"`
+	DueDateOffset  string `xml:"dueDateOffset"`
+	NotifyAssignee bool   `xml:"notifyAssignee"`
+	Priority       string `xml:"priority"`
+	Status         string `xml:"status"`
+	Subject        string `xml:"subject"`
+	Protected      bool   `xml:"protected"`
 }
 
 type workflowRecipientXML struct {
@@ -171,6 +186,33 @@ func loadWorkflowWithUpdates(path string, externalUpdates map[string]storage.Wor
 	}
 	workflow := Workflow{ObjectName: objectNameFromWorkflowPath(path), File: path}
 	diagnostics := make([]diagnostic.Diagnostic, 0)
+	tasks := make(map[string]storage.WorkflowTask, len(raw.Tasks))
+	for _, rawTask := range raw.Tasks {
+		task := storage.WorkflowTask{
+			Name:           firstNonBlank(rawTask.FullName, ""),
+			AssignedToType: strings.TrimSpace(rawTask.AssignedToType),
+			AssignedTo:     strings.TrimSpace(rawTask.AssignedTo),
+			Description:    strings.TrimSpace(rawTask.Description),
+			NotifyAssignee: rawTask.NotifyAssignee,
+			Priority:       strings.TrimSpace(rawTask.Priority),
+			Status:         strings.TrimSpace(rawTask.Status),
+			Subject:        strings.TrimSpace(rawTask.Subject),
+			Protected:      rawTask.Protected,
+		}
+		if rawOffset := strings.TrimSpace(rawTask.DueDateOffset); rawOffset != "" {
+			offset, err := strconv.Atoi(rawOffset)
+			if err != nil {
+				diagnostics = append(diagnostics, unsupported(path, task.Name, fmt.Sprintf("workflow task %q has invalid dueDateOffset %q", task.Name, rawOffset)))
+				continue
+			}
+			task.DueDateOffset = offset
+			task.HasDueDateOffset = true
+		}
+		if task.Name == "" {
+			continue
+		}
+		tasks[strings.ToLower(task.Name)] = task
+	}
 	for _, rawRule := range raw.Rules {
 		rule := storage.WorkflowRule{
 			Name:    firstNonBlank(rawRule.FullName, filepath.Base(path)),
@@ -213,6 +255,17 @@ func loadWorkflowWithUpdates(path string, externalUpdates map[string]storage.Wor
 				rule.EmailAlerts = append(rule.EmailAlerts, alert)
 				continue
 			}
+			if strings.EqualFold(actionType, "Task") {
+				task, ok := tasks[strings.ToLower(strings.TrimSpace(action.Name))]
+				if !ok {
+					if ruleCanRunActions {
+						diagnostics = append(diagnostics, unsupported(path, rule.Name, fmt.Sprintf("workflow task %q was not found", action.Name)))
+					}
+					continue
+				}
+				rule.Tasks = append(rule.Tasks, task)
+				continue
+			}
 			{
 				if ruleCanRunActions {
 					diagnostics = append(diagnostics, unsupported(path, rule.Name, fmt.Sprintf("workflow action type %q is not supported", action.Type)))
@@ -220,7 +273,7 @@ func loadWorkflowWithUpdates(path string, externalUpdates map[string]storage.Wor
 				continue
 			}
 		}
-		if len(rule.FieldUpdates) > 0 || len(rule.EmailAlerts) > 0 {
+		if len(rule.FieldUpdates) > 0 || len(rule.EmailAlerts) > 0 || len(rule.Tasks) > 0 {
 			workflow.Rules = append(workflow.Rules, rule)
 		}
 	}

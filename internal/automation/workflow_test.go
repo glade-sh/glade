@@ -20,6 +20,7 @@ func TestLoadProjectWorkflowFieldUpdatesAndDiagnostics(t *testing.T) {
     <criteriaItems><field>Account.Name</field><operation>equals</operation><value>Acme</value></criteriaItems>
     <actions><name>SetStatus</name><type>FieldUpdate</type></actions>
     <actions><name>SendMail</name><type>Alert</type></actions>
+    <actions><name>FollowUp</name><type>Task</type></actions>
   </rules>
   <fieldUpdates>
     <fullName>SetStatus</fullName>
@@ -31,6 +32,13 @@ func TestLoadProjectWorkflowFieldUpdatesAndDiagnostics(t *testing.T) {
     <template>welcome</template>
     <recipients><type>user</type><recipient>workflow@example.test</recipient></recipients>
   </alerts>
+  <tasks>
+    <fullName>FollowUp</fullName>
+    <subject>Follow up on Acme</subject>
+    <status>Not Started</status>
+    <priority>Normal</priority>
+    <dueDateOffset>7</dueDateOffset>
+  </tasks>
 </Workflow>`)
 	idx, err := LoadProject(project.Project{WorkflowFiles: []string{path}})
 	if err != nil {
@@ -40,11 +48,14 @@ func TestLoadProjectWorkflowFieldUpdatesAndDiagnostics(t *testing.T) {
 		t.Fatalf("workflows = %#v", idx.Workflows)
 	}
 	rules := idx.Workflows[0].Rules
-	if len(rules) != 1 || rules[0].Name != "MarkActive" || len(rules[0].Criteria) != 1 || len(rules[0].FieldUpdates) != 1 || len(rules[0].EmailAlerts) != 1 {
+	if len(rules) != 1 || rules[0].Name != "MarkActive" || len(rules[0].Criteria) != 1 || len(rules[0].FieldUpdates) != 1 || len(rules[0].EmailAlerts) != 1 || len(rules[0].Tasks) != 1 {
 		t.Fatalf("rules = %#v", rules)
 	}
 	if rules[0].EmailAlerts[0].Template != "welcome" || rules[0].EmailAlerts[0].Recipients[0].Recipient != "workflow@example.test" {
 		t.Fatalf("email alerts = %#v", rules[0].EmailAlerts)
+	}
+	if rules[0].Tasks[0].Subject != "Follow up on Acme" || rules[0].Tasks[0].Status != "Not Started" || rules[0].Tasks[0].DueDateOffset != 7 || !rules[0].Tasks[0].HasDueDateOffset {
+		t.Fatalf("tasks = %#v", rules[0].Tasks)
 	}
 	if len(idx.Diagnostics) != 0 {
 		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
@@ -107,7 +118,13 @@ func TestLoadProjectWorkflowIgnoresInactiveUnsupportedActionsAndActionlessRules(
     <active>false</active>
     <criteriaItems><field>Account.Name</field><operation>equals</operation><value>Acme</value></criteriaItems>
   </rules>
-  <tasks><fullName>FollowUp</fullName><subject>Follow up</subject></tasks>
+  <rules>
+    <fullName>ActiveTask</fullName>
+    <actions><name>FollowUp</name><type>Task</type></actions>
+    <active>true</active>
+    <criteriaItems><field>Account.Name</field><operation>equals</operation><value>Acme</value></criteriaItems>
+  </rules>
+  <tasks><fullName>FollowUp</fullName><subject>Follow up</subject><status>Not Started</status><priority>Normal</priority></tasks>
 </Workflow>`)
 	idx, err := LoadProject(project.Project{WorkflowFiles: []string{path}})
 	if err != nil {
@@ -116,8 +133,16 @@ func TestLoadProjectWorkflowIgnoresInactiveUnsupportedActionsAndActionlessRules(
 	if len(idx.Diagnostics) != 0 {
 		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
 	}
-	if len(idx.Workflows) != 1 || len(idx.Workflows[0].Rules) != 0 {
+	if len(idx.Workflows) != 1 || len(idx.Workflows[0].Rules) != 2 {
 		t.Fatalf("workflow side-effect rules = %#v", idx.Workflows)
+	}
+	activeRule := idx.Workflows[0].Rules[0]
+	if activeRule.Name != "ActiveTask" || len(activeRule.Tasks) != 1 || activeRule.Tasks[0].Subject != "Follow up" {
+		t.Fatalf("active task rule = %#v", activeRule)
+	}
+	inactiveRule := idx.Workflows[0].Rules[1]
+	if inactiveRule.Name != "InactiveTask" || inactiveRule.Active {
+		t.Fatalf("inactive task rule = %#v", inactiveRule)
 	}
 }
 

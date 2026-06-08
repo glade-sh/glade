@@ -200,6 +200,8 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Type.forName",
 		"ConnectApi.Organization.getSettings", "ConnectApi.ChatterUsers.getFollowings", "ConnectApi.Communities.getCommunity", "ConnectApi.Communities.getCommunities",
 		"System.ConnectApi.Communities.getCommunity", "System.ConnectApi.Communities.getCommunities",
+		"ConnectApi.NextBestAction.executeStrategy", "ConnectApi.NextBestAction.setRecommendationReaction",
+		"ConnectApi.Orchestration.getOrchestrationInstanceCollection", "ConnectApi.Orchestration.publishOrchestrationEvent", "ConnectApi.Orchestrator.getOrchestrationInstanceCollection", "ConnectApi.Orchestrator.publishOrchestrationEvent",
 		"EventBus.publishWithAccessLevel",
 		"BusinessHours.add", "BusinessHours.addGmt", "BusinessHours.diff", "BusinessHours.isWithin", "BusinessHours.nextStartDate",
 		"Cases.generateThreadingMessageId", "Cases.getCaseIdFromEmailHeaders", "Cases.getCaseIdFromEmailThreadId", "Cases.reparentFeedToCaseId",

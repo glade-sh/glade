@@ -30,7 +30,8 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) (bo
 	if !ok || record.System.IsDeleted {
 		return false, nil
 	}
-	changed := false
+	recordChanged := false
+	sideEffect := false
 	previous := record
 	record = record.Clone()
 	if record.Fields == nil {
@@ -66,7 +67,7 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) (bo
 				record.Fields[fieldName] = value
 				delete(record.ExplicitNulls, fieldName)
 			}
-			changed = true
+			recordChanged = true
 		}
 		for _, alert := range rule.EmailAlerts {
 			if e.WorkflowEmailer == nil {
@@ -75,10 +76,17 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) (bo
 			if err := e.WorkflowEmailer(alert, record); err != nil {
 				return false, err
 			}
+			sideEffect = true
+		}
+		for _, task := range rule.Tasks {
+			if err := e.createWorkflowTask(objectName, record, task); err != nil {
+				return false, err
+			}
+			sideEffect = true
 		}
 	}
-	if !changed {
-		return false, nil
+	if !recordChanged {
+		return sideEffect, nil
 	}
 	if err := validateRequired(object.Definition, record); err != nil {
 		return false, err
@@ -105,6 +113,51 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) (bo
 	e.removeUniqueIndexRecord(objectName, object.Definition, previous)
 	e.addUniqueIndexRecord(objectName, object.Definition, record)
 	return true, nil
+}
+
+func (e *Engine) createWorkflowTask(objectName string, record storage.Record, task storage.WorkflowTask) error {
+	storage.EnsureStandardObject(e.Org, "Task")
+	if e.IDs.Prefixes["Task"] == "" {
+		e.IDs.Prefixes["Task"] = e.Org.Objects["Task"].Definition.KeyPrefix
+	}
+	fields := map[string]storage.Value{
+		"Subject":     storage.StringValue(task.Subject),
+		"Status":      storage.StringValue(task.Status),
+		"Priority":    storage.StringValue(task.Priority),
+		"Description": storage.StringValue(task.Description),
+	}
+	if task.HasDueDateOffset {
+		dueDate := e.Now().AddDate(0, 0, task.DueDateOffset).Format("2006-01-02")
+		fields["ActivityDate"] = storage.DateValue(dueDate)
+	}
+	if task.AssignedToType != "" {
+		switch {
+		case strings.EqualFold(task.AssignedToType, "owner"):
+			ownerID := record.System.OwnerID
+			if ownerID == "" {
+				ownerID = e.systemUserID()
+			}
+			fields["OwnerId"] = storage.IDValue(ownerID)
+		case strings.EqualFold(task.AssignedToType, "creator"):
+			fields["OwnerId"] = storage.IDValue(e.systemUserID())
+		}
+	}
+	if strings.EqualFold(objectName, "Contact") || strings.EqualFold(objectName, "Lead") {
+		fields["WhoId"] = storage.IDValue(record.ID)
+	} else {
+		fields["WhatId"] = storage.IDValue(record.ID)
+	}
+	taskRecord := storage.Record{Object: "Task", Fields: fields}
+	if _, err := e.insertOne(taskRecord, nil); err != nil {
+		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: workflow task %s creation failed: %v", task.Name, err)
+	}
+	e.traceAutomation("apex.workflow.task", map[string]any{
+		"task":    task.Name,
+		"object":  objectName,
+		"record":  string(record.ID),
+		"subject": task.Subject,
+	})
+	return nil
 }
 
 func (e *Engine) ApplyAutomation(objectName string, id storage.ID) (AutomationResult, error) {
@@ -226,8 +279,8 @@ func hasComplexActiveAutomation(definition storage.ObjectDefinition) bool {
 		if !rule.Active {
 			continue
 		}
-		// Workflow email alerts are external side effects and should use full rollback path.
-		if len(rule.EmailAlerts) > 0 {
+		// Workflow email alerts and tasks are external side effects and should use full rollback path.
+		if len(rule.EmailAlerts) > 0 || len(rule.Tasks) > 0 {
 			return true
 		}
 	}
@@ -323,7 +376,7 @@ func (e *Engine) hasActiveObjectAutomationFor(objectName string, definition stor
 		if !rule.Active {
 			continue
 		}
-		if len(rule.FieldUpdates) > 0 || len(rule.EmailAlerts) > 0 {
+		if len(rule.FieldUpdates) > 0 || len(rule.EmailAlerts) > 0 || len(rule.Tasks) > 0 {
 			active = true
 			break
 		}

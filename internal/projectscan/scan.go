@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/automation"
 	metadatapkg "github.com/glade-sh/glade/internal/metadata"
 	"github.com/glade-sh/glade/internal/project"
@@ -132,8 +133,8 @@ var surfaceDefs = map[string]surfaceDef{
 		title:               "Aura server action metadata dependency",
 		area:                "metadata-loading",
 		stage:               "load",
-		status:              "unsupported",
-		testBlocking:        true,
+		status:              "partial",
+		testBlocking:        false,
 		suggestedCapability: "aura.action-metadata",
 	},
 	"lwc.controller-test": {
@@ -144,6 +145,15 @@ var surfaceDefs = map[string]surfaceDef{
 		status:              "unsupported",
 		testBlocking:        true,
 		suggestedCapability: "lwc.controller-test",
+	},
+	"lwc.controller-metadata": {
+		capability:          "lwc.controller-metadata",
+		title:               "LWC Apex controller method not found in source",
+		area:                "metadata-loading",
+		stage:               "load",
+		status:              "partial",
+		testBlocking:        false,
+		suggestedCapability: "lwc.controller-metadata",
 	},
 	"workflow.save-order": {
 		capability:          "workflow.save-order",
@@ -911,6 +921,9 @@ func scanTextFile(path, rel string, ctx *scanContext) ([]Finding, error) {
 				if capability == "visualforce.controller-test" && metadataType == "ApexClass" && strings.HasPrefix(symbol, "Page.") {
 					capability = "visualforce.page-metadata"
 				}
+				if capability == "lwc.controller-test" && ctx != nil && ctx.lwcControllerClassExists(lwcClassNameFromSymbol(symbol)) {
+					capability = "lwc.controller-metadata"
+				}
 				findings = append(findings, makeFinding(capability, rel, lineNo, metadataType, symbol, strings.TrimSpace(evidence)))
 			}
 		}
@@ -1155,6 +1168,33 @@ func (ctx *scanContext) resolvesLWCControllerReference(symbol string) bool {
 		return ctx.uiApex[strings.ToLower(stripDotNamespace(className)+"."+methodName)]
 	}
 	return false
+}
+
+func (ctx *scanContext) lwcControllerClassExists(className string) bool {
+	className = strings.TrimSpace(className)
+	if className == "" {
+		return false
+	}
+	lower := strings.ToLower(className)
+	if typ, ok := ctx.types[lower]; ok && typ.Kind == apexast.DeclarationClass {
+		return true
+	}
+	stripped := stripDotNamespace(className)
+	if stripped != className {
+		if typ, ok := ctx.types[strings.ToLower(stripped)]; ok && typ.Kind == apexast.DeclarationClass {
+			return true
+		}
+	}
+	return false
+}
+
+func lwcClassNameFromSymbol(symbol string) string {
+	symbol = strings.TrimSpace(symbol)
+	lastDot := strings.LastIndex(symbol, ".")
+	if lastDot <= 0 {
+		return ""
+	}
+	return symbol[:lastDot]
 }
 
 func (ctx *scanContext) resolvesAuraFile(path string) bool {
@@ -2661,17 +2701,24 @@ func supportedSiteCommunitySymbol(symbol, evidence string) bool {
 	}
 	for _, needle := range []string{
 		"$Site.", "Label.Site.",
-		"Site.SObjectType", "Site.UrlRewriter", "Site.getSiteId", "Site.getBaseUrl",
+		"Site.SObjectType", "Site.UrlRewriter", "Site.getSiteId", "Site.getBaseUrl", "Site.getBaseSecureUrl",
+		"Site.getBaseRequestUrl", "Site.getBaseCustomUrl", "Site.getBaseInsecureUrl",
+		"Site.getCurrentSiteUrl", "Site.getCustomWebAddress", "Site.getAnalyticsTrackingCode",
+		"Site.getExperienceId", "Site.getOriginalUrl", "Site.getPasswordPolicyStatement",
+		"Site.isPasswordExpired", "Site.getTemplate", "Site.getSiteType", "Site.getSiteTypeLabel",
 		"Site.getPathPrefix", "Site.getAdminEmail", "Site.getAdminId",
 		"Site.getDomain", "Site.getName", "Site.getPrefix",
 		"Site.getMasterLabel", "Site.isRegistrationEnabled", "Site.getErrorMessage",
 		"Site.getErrorDescription", "Site.forgotPassword", "Site.login",
 		"Site.changePassword", "Site.validatePassword", "Site.createExternalUser",
+		"Site.createPersonAccountPortalUser", "Site.passwordlessLogin", "Site.setPortalUserAsAuthProvider",
 		"Site.createPortalUser", "Site.isValidUsername", "Site.setExperienceId",
 		"Site.isLoginEnabled", "Site.ExternalUserCreateException", "Site.Id",
 		"Site.MasterLabel", "Site.Name", "Site testSite", "(Site)JSON.deserialize",
 		"Network.getNetworkId", "Network.getNetworkID", "Network.getLoginUrl", "Network.communitiesLanding",
 		"Network.getLogoutUrl", "Network.getSelfRegUrl", "Network.createExternalUserAsync",
+		"Network.createRecordAsync", "Network.loadAllPackageDefaultNetworkDashboardSettings",
+		"Network.loadAllPackageDefaultNetworkPulseSettings", "Network.loadAllPackageDefaultNetworkWorkspaceMetricSettings",
 		"System.Network.getLogoutUrl", "System.Network.getSelfRegUrl", "System.Network.createExternalUserAsync",
 		"Network.forwardToAuthPage", "System.Network.forwardToAuthPage",
 		"FROM Network", "From Network", "from Network", "Network.Status",
@@ -2694,6 +2741,12 @@ func supportedCacheConnectAPISymbol(symbol, evidence, file string) bool {
 		"ConnectApi.OrganizationSettings", "ConnectApi.UserSettings", "ConnectApi.TimeZone",
 		"ConnectApi.ChatterUsers.getFollowings", "ConnectApi.NamedCredentials.getExternalCredential",
 		"ConnectApi.UserProfiles.setPhoto", "ConnectApi.UserProfiles.deletePhoto",
+		"ConnectApi.NamedCredentials.getNamedCredentials", "ConnectApi.NamedCredentials.createExternalCredential",
+		"ConnectApi.NamedCredentials.createNamedCredential", "ConnectApi.UserProfiles.getUserProfile",
+		"ConnectApi.UserProfiles.getPhoto", "ConnectApi.NextBestAction.getRecommendation",
+		"ConnectApi.NextBestAction.getRecommendationReaction", "ConnectApi.NextBestAction.getRecommendationReactions",
+		"ConnectApi.NextBestAction.executeStrategy", "ConnectApi.NextBestAction.setRecommendationReaction",
+		"ConnectApi.Orchestration.getOrchestrationInstanceCollection", "ConnectApi.Orchestration.publishOrchestrationEvent", "ConnectApi.Orchestrator.getOrchestrationInstanceCollection", "ConnectApi.Orchestrator.publishOrchestrationEvent",
 	} {
 		if strings.Contains(evidence, needle) {
 			return true
@@ -2798,6 +2851,7 @@ func supportedMetadataAPISymbol(symbol, evidence string) bool {
 		"Metadata.DeployContainer", "Metadata.DeployDetails", "Metadata.DeployMessage",
 		"Metadata.DeployResult", "Metadata.DeployStatus", "Metadata.Metadata", "Metadata.MetadataType",
 		"Metadata.Operations.enqueueDeployment", "Metadata.Operations.checkDeployStatus", "Metadata.Operations.retrieve",
+		"Metadata.Layout", "Metadata.LayoutSection", "Metadata.LayoutColumn", "Metadata.LayoutItem",
 	} {
 		if strings.Contains(symbol, needle) || strings.Contains(evidence, needle) {
 			return true

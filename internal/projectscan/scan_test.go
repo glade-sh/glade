@@ -206,8 +206,8 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/ConnectApiWrapper.cls", "ConnectApi.NamedCredentials") {
 		t.Fatalf("mockable ConnectApi wrapper seam was reported as a blocker")
 	}
-	if !hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/DirectNamedCredentialMutation.cls", "ConnectApi.NamedCredentials") {
-		t.Fatalf("direct ConnectApi named credential mutation should remain a blocker")
+	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/DirectNamedCredentialMutation.cls", "ConnectApi.NamedCredentials") {
+		t.Fatalf("implemented direct ConnectApi named credential mutation was reported as a blocker")
 	}
 	if !hasLineFindingEvidenceContaining(report, "site.community-context", "src/classes/UsesPlatform.cls", "Site.UnknownContext") {
 		t.Fatalf("missing unsupported Site.UnknownContext finding")
@@ -303,6 +303,68 @@ func TestScanSuppressesSupportedReportsEnumReferences(t *testing.T) {
 	}
 }
 
+func TestScanSuppressesImplementedSiteAndNetworkMethods(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	writeFile(t, filepath.Join(root, "src/classes/SiteNetworkUse.cls"), `public class SiteNetworkUse {
+  public void supported(Account accountRecord) {
+    Site.getBaseSecureUrl();
+    Site.getBaseRequestUrl();
+    Site.getBaseCustomUrl();
+    Site.getBaseInsecureUrl();
+    Site.getCurrentSiteUrl();
+    Site.getCustomWebAddress();
+    Site.getAnalyticsTrackingCode();
+    Site.getExperienceId();
+    Site.getOriginalUrl();
+    Site.getPasswordPolicyStatement();
+    Site.isPasswordExpired();
+    Site.getTemplate();
+    Site.getSiteType();
+    Site.getSiteTypeLabel();
+    Site.createPersonAccountPortalUser(accountRecord, 'ownerId', 'password');
+    Site.passwordlessLogin('001000000000001', null, '/start');
+    Site.setPortalUserAsAuthProvider('001000000000001', 'provider');
+    Network.createRecordAsync('Process', accountRecord);
+    Network.loadAllPackageDefaultNetworkDashboardSettings();
+    Network.loadAllPackageDefaultNetworkPulseSettings();
+    Network.loadAllPackageDefaultNetworkWorkspaceMetricSettings();
+  }
+}`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, evidence := range []string{
+		"Site.getBaseSecureUrl()",
+		"Site.getBaseRequestUrl()",
+		"Site.getBaseCustomUrl()",
+		"Site.getBaseInsecureUrl()",
+		"Site.getCurrentSiteUrl()",
+		"Site.getCustomWebAddress()",
+		"Site.getAnalyticsTrackingCode()",
+		"Site.getExperienceId()",
+		"Site.getOriginalUrl()",
+		"Site.getPasswordPolicyStatement()",
+		"Site.isPasswordExpired()",
+		"Site.getTemplate()",
+		"Site.getSiteType()",
+		"Site.getSiteTypeLabel()",
+		"Site.createPersonAccountPortalUser(accountRecord, 'ownerId', 'password')",
+		"Site.passwordlessLogin('001000000000001', null, '/start')",
+		"Site.setPortalUserAsAuthProvider('001000000000001', 'provider')",
+		"Network.createRecordAsync('Process', accountRecord)",
+		"Network.loadAllPackageDefaultNetworkDashboardSettings()",
+		"Network.loadAllPackageDefaultNetworkPulseSettings()",
+		"Network.loadAllPackageDefaultNetworkWorkspaceMetricSettings()",
+	} {
+		if hasLineFindingEvidenceContaining(report, "site.community-context", "src/classes/SiteNetworkUse.cls", evidence) {
+			t.Fatalf("implemented Site/Network method should not be reported: %s %#v", evidence, report.Findings)
+		}
+	}
+}
+
 func TestScanSuppressesConnectApiCallsGuardedOutOfTests(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
@@ -346,6 +408,48 @@ func TestScanSuppressesConnectApiCallsGuardedOutOfTests(t *testing.T) {
 	}
 	if !hasLineFindingEvidenceContaining(report, "platform.cache-connectapi", "src/classes/ChatterPoster.cls", "guardedOr") {
 		t.Fatalf("or-guarded ChatterFeeds call can still run in tests and should remain a blocker")
+	}
+}
+
+func TestScanSuppressesImplementedConnectApiMethodsOnly(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	writeFile(t, filepath.Join(root, "src/classes/ConnectApiUse.cls"), `public class ConnectApiUse {
+  public void supported() {
+    ConnectApi.NextBestAction.getRecommendation('0T0000000000001');
+    ConnectApi.NextBestAction.getRecommendationReaction('0T0000000000001');
+    ConnectApi.NextBestAction.getRecommendationReactions(null, null, null, null, 0, 10);
+    ConnectApi.NextBestAction.executeStrategy('Default', 1, '001000000000001', true);
+    ConnectApi.NextBestAction.setRecommendationReaction(new ConnectApi.RecommendationReactionInput());
+    ConnectApi.NamedCredentials.getNamedCredentials();
+    ConnectApi.NamedCredentials.createExternalCredential(new ConnectApi.ExternalCredentialInput());
+    ConnectApi.NamedCredentials.createNamedCredential(new ConnectApi.NamedCredentialInput());
+    ConnectApi.UserProfiles.getUserProfile(null, UserInfo.getUserId());
+    ConnectApi.UserProfiles.getPhoto(null, UserInfo.getUserId());
+  }
+  public void unsupported() {
+  }
+}`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, evidence := range []string{
+		"getRecommendation('0T0000000000001')",
+		"getRecommendationReaction('0T0000000000001')",
+		"getRecommendationReactions(null, null, null, null, 0, 10)",
+		"executeStrategy('Default', 1, '001000000000001', true)",
+		"setRecommendationReaction(new ConnectApi.RecommendationReactionInput())",
+		"getNamedCredentials()",
+		"createExternalCredential(new ConnectApi.ExternalCredentialInput())",
+		"createNamedCredential(new ConnectApi.NamedCredentialInput())",
+		"getUserProfile(null, UserInfo.getUserId())",
+		"getPhoto(null, UserInfo.getUserId())",
+	} {
+		if hasLineFindingEvidenceContaining(report, "platform.cache-connectapi", "src/classes/ConnectApiUse.cls", evidence) {
+			t.Fatalf("implemented ConnectApi method should not be reported: %s %#v", evidence, report.Findings)
+		}
 	}
 }
 
@@ -1005,11 +1109,12 @@ import missing from '@salesforce/apex/WidgetController.missing';
 		t.Fatal(err)
 	}
 
-	if hasLineFinding(report, "lwc.controller-test", "force-app/main/default/lwc/widget/widget.js", "WidgetController.getWidget") {
+	if hasLineFinding(report, "lwc.controller-test", "force-app/main/default/lwc/widget/widget.js", "WidgetController.getWidget") ||
+		hasLineFinding(report, "lwc.controller-metadata", "force-app/main/default/lwc/widget/widget.js", "WidgetController.getWidget") {
 		t.Fatalf("resolved LWC Apex import should not be reported")
 	}
-	if !hasLineFinding(report, "lwc.controller-test", "force-app/main/default/lwc/widget/widget.js", "WidgetController.missing") {
-		t.Fatalf("missing unresolved LWC Apex import finding")
+	if !hasLineFinding(report, "lwc.controller-metadata", "force-app/main/default/lwc/widget/widget.js", "WidgetController.missing") {
+		t.Fatalf("missing upstream LWC Apex controller metadata finding")
 	}
 }
 
@@ -1019,6 +1124,9 @@ func TestScanSuppressesResolvedAuraControllerBundles(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/WidgetController.cls"), `public class WidgetController {
   @AuraEnabled public static String getWidget() { return 'widget'; }
   @AuraEnabled public static String saveWidget() { return 'saved'; }
+}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/BaseController.cls"), `public class BaseController {
+  @AuraEnabled public static String getSettings() { return 'settings'; }
 }`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.cmp"), `<aura:component controller="pkg.WidgetController">
   <aura:handler name="init" value="{!this}" action="{!c.getWidget}" />
@@ -1038,6 +1146,22 @@ func TestScanSuppressesResolvedAuraControllerBundles(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/aura/ClientOnly/ClientOnlyController.js"), `({
   doInit: function(component, event, helper) {},
   handleClick: function(component, event, helper) {}
+})`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/NoServer/NoServer.cmp"), `<aura:component>
+  <aura:handler name="init" value="{!this}" action="{!c.init}" />
+</aura:component>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/NoServer/NoServerController.js"), `({
+  init: function(component) {
+    var action = component.get("c.getSessionId");
+  }
+})`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Base/Base.cmp"), `<aura:component abstract="true" extensible="true" controller="BaseController" />`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Inherited/Inherited.cmp"), `<aura:component extends="c:Base" controller="WidgetController" />`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Inherited/InheritedHelper.js"), `({
+  load: function(component) {
+    component.get("c.getSettings");
+    component.get("c.saveWidget");
+  }
 })`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/aura/MissingServerAction/MissingServerAction.cmp"), `<aura:component controller="WidgetController" />`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/aura/MissingServerAction/MissingServerAction.cmp-meta.xml"), `<AuraDefinitionBundle/>`)
@@ -1067,6 +1191,14 @@ import missing from '@salesforce/apex/pkg.WidgetController.missing';
 		hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/ClientOnly/ClientOnlyController.js", "ClientOnly") {
 		t.Fatalf("client-only Aura actions should not be reported as Apex blockers: %#v", report.Findings)
 	}
+	if hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/NoServer/NoServer.cmp", "NoServer") ||
+		hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/NoServer/NoServerController.js", "NoServer") {
+		t.Fatalf("Aura bundle without a server controller should not be reported as Apex blocker: %#v", report.Findings)
+	}
+	if hasFindingContaining(report, "aura.action-metadata", "force-app/main/default/aura/Inherited/InheritedHelper.js", "Inherited") ||
+		hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/Inherited/Inherited.cmp", "Inherited") {
+		t.Fatalf("inherited Aura controller action should not be reported: %#v", report.Findings)
+	}
 	if hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/MissingServerAction/MissingServerActionHelper.js", "MissingServerAction") {
 		t.Fatalf("missing Aura server action should not be reported as controller-test debt")
 	}
@@ -1085,8 +1217,8 @@ import missing from '@salesforce/apex/pkg.WidgetController.missing';
 	if hasLineFinding(report, "lwc.controller-test", "force-app/main/default/lwc/widget/widget.js", "pkg.WidgetController.saveWidget") {
 		t.Fatalf("resolved namespaced LWC Apex import should not be reported")
 	}
-	if !hasLineFinding(report, "lwc.controller-test", "force-app/main/default/lwc/widget/widget.js", "pkg.WidgetController.missing") {
-		t.Fatalf("missing unresolved namespaced LWC Apex import finding")
+	if !hasLineFinding(report, "lwc.controller-metadata", "force-app/main/default/lwc/widget/widget.js", "pkg.WidgetController.missing") {
+		t.Fatalf("missing upstream namespaced LWC Apex controller metadata finding")
 	}
 }
 
@@ -1505,6 +1637,24 @@ func TestScanSuppressesModeledDeclarativeAutomation(t *testing.T) {
 	}
 	if findSurface(report, "flow.save-order") != nil {
 		t.Fatalf("modeled flow assignment should not be reported: %#v", report.Findings)
+	}
+}
+
+func TestScanKeepsWorkflowBlockerWhenSameFileHasUnsupportedAction(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/workflows/Widget__c.workflow-meta.xml"), `<Workflow>
+  <fieldUpdates><fullName>SetStatus</fullName><field>Status__c</field><literalValue>Ready</literalValue></fieldUpdates>
+  <rules><fullName>SupportedRule</fullName><active>true</active><actions><name>SetStatus</name><type>FieldUpdate</type></actions></rules>
+  <rules><fullName>UnsupportedRule</fullName><active>true</active><actions><name>NotifyEndpoint</name><type>OutboundMessage</type></actions></rules>
+</Workflow>`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !hasFindingContaining(report, "workflow.save-order", "force-app/main/default/workflows/Widget__c.workflow-meta.xml", "Widget__c") {
+		t.Fatalf("workflow with unsupported active action should remain blocking: %#v", report.Findings)
 	}
 }
 

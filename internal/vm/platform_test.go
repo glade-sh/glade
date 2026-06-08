@@ -2425,7 +2425,138 @@ func TestConnectApiReadOnlyHarnessDispatchIsCaseInsensitive(t *testing.T) {
 		t.Fatalf("lower-case ConnectApi method was not accepted")
 	}
 	if connectAPIReadOnlyHarnessMethodAllowed("connectapi.nextbestaction", "executeStrategy") {
-		t.Fatalf("executeStrategy should remain unsupported")
+		t.Fatalf("executeStrategy is dispatched via static call routing, not the read-only harness")
+	}
+}
+
+func TestExecConnectApiNextBestActionExecuteStrategy(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.NBARecommendations result = ConnectApi.NextBestAction.executeStrategy('Default', 1, '001000000000001', true);
+System.assertNotEquals(null, result);
+System.assertNotEquals(null, result.recommendations);
+System.assertEquals(1, result.recommendations.size());
+ConnectApi.NBARecommendation rec = result.recommendations[0];
+System.assertEquals('Accept', rec.acceptanceLabel);
+System.assertEquals('Reject', rec.rejectionLabel);
+ConnectApi.NBANativeRecommendation target = (ConnectApi.NBANativeRecommendation) rec.target;
+System.assertEquals('Local Recommendation 1', target.name);
+ConnectApi.NBAFlowAction action = (ConnectApi.NBAFlowAction) rec.targetAction;
+System.assertEquals('LocalRecommendationFlow', action.name);
+System.assertEquals('AutoLaunchedFlow', action.flowType.name());
+System.assertEquals(1, action.parameters.size());
+System.assertEquals('recordId', action.parameters[0].name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConnectApiNextBestActionSetRecommendationReaction(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.RecommendationReactionInput input = new ConnectApi.RecommendationReactionInput();
+input.contextRecordId = '001000000000001';
+input.targetActionName = 'LocalRecommendationFlow';
+input.targetId = '0nb000000000001';
+input.reactionType = ConnectApi.RecommendationReactionType.Accepted;
+ConnectApi.RecommendationReaction result = ConnectApi.NextBestAction.setRecommendationReaction(input);
+System.assertNotEquals(null, result);
+System.assertEquals('Accepted', result.reactionType.name());
+System.assertEquals('001000000000001', String.valueOf(result.contextRecord));
+System.assertEquals('LocalRecommendationFlow', String.valueOf(result.targetAction));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConnectApiOrchestrationGetInstanceCollection(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.OrchestrationInstanceCollection result = ConnectApi.Orchestration.getOrchestrationInstanceCollection('0Hr000000000001');
+System.assertNotEquals(null, result);
+System.assertNotEquals(null, result.instances);
+System.assertEquals(0, result.instances.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConnectApiOrchestrationPublishEvent(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.OrchestrationEventInfo info = new ConnectApi.OrchestrationEventInfo();
+info.orchestrationInstanceId = '0jE000000000001';
+info.stageStepInstanceId = '0jL000000000001';
+info.workAssignmentId = '0jf000000000001';
+info.workStatus = ConnectApi.OrchestrationWorkStatus.FlowCompleted;
+ConnectApi.OrchestrationEvent result = ConnectApi.Orchestrator.publishOrchestrationEvent(info);
+System.assertNotEquals(null, result);
+System.assertEquals(true, result.isSuccess);
+System.assertEquals('FlowCompleted', result.workStatus.name());
+System.assertEquals('0jE000000000001', result.orchestrationInstanceId);
+System.assertEquals('0jL000000000001', result.stageStepInstanceId);
+System.assertEquals('0jf000000000001', result.workAssignmentId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConnectApiOrchestrationFixtureShape(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.OrchestrationWorkAssignment assignment = new ConnectApi.OrchestrationWorkAssignment();
+assignment.id = '0jf9A0000000006QAA';
+assignment.contextRecordId = '0019A00000Gg58lQAB';
+assignment.label = 'Submit Content';
+assignment.screenFlowId = '3009A0000000JxIQAU';
+assignment.screenFlowInputParameters = '{"recordId":["0019A00000Gg58lQAB"]}';
+assignment.status = ConnectApi.OrchestrationInstanceStatus.NotStarted;
+
+ConnectApi.OrchestrationStepInstance step = new ConnectApi.OrchestrationStepInstance();
+step.workAssignments = new List<ConnectApi.OrchestrationWorkAssignment>{ assignment };
+step.id = '0jL9A000000000VUAQ';
+step.label = 'Submit Content for Approval';
+step.name = 'Submit_Content_for_Approval';
+step.status = ConnectApi.OrchestrationInstanceStatus.InProgress;
+step.type = ConnectApi.OrchestrationStepType.Task;
+
+ConnectApi.OrchestrationStageInstance stage = new ConnectApi.OrchestrationStageInstance();
+stage.stageStepInstances = new List<ConnectApi.OrchestrationStepInstance>{ step };
+stage.id = '0jL9A000000000KUAQ';
+stage.label = 'Stage1';
+stage.name = 'Stage1';
+stage.status = ConnectApi.OrchestrationInstanceStatus.InProgress;
+stage.position = 0;
+
+ConnectApi.OrchestrationInstance instance = new ConnectApi.OrchestrationInstance();
+instance.id = '0jL9A000000000vUAQ';
+instance.stageInstances = new List<ConnectApi.OrchestrationStageInstance>{ stage };
+
+System.assertEquals('0jf9A0000000006QAA', instance.stageInstances[0].stageStepInstances[0].workAssignments[0].id);
+System.assertEquals('Task', step.type.name());
+System.assertEquals(0, stage.position);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

@@ -66929,6 +66929,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "flowType", Type: "Object"},
 			{Name: "id", Type: "Object"},
 			{Name: "name", Type: "Object"},
+			{Name: "parameters", Type: "List<ConnectApi.NBAActionParameter>"},
 		},
 	},
 	{
@@ -69962,6 +69963,49 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "getOrchestrationInstance", ReturnType: "ConnectApi.OrchestrationInstance", ParameterSpecs: []StandardParameterSpec{{Name: "instanceId", Type: "String"}}, Static: true},
 			{Name: "getOrchestrationInstanceCollection", ReturnType: "ConnectApi.OrchestrationInstanceCollection", ParameterSpecs: []StandardParameterSpec{{Name: "relatedRecordId", Type: "String"}, {Name: "relatedOrchestrationId", Type: "String"}}, Static: true},
 			{Name: "getOrchestrationInstanceCollection", ReturnType: "ConnectApi.OrchestrationInstanceCollection", ParameterSpecs: []StandardParameterSpec{{Name: "relatedRecordId", Type: "String"}}, Static: true},
+			{Name: "publishOrchestrationEvent", ReturnType: "ConnectApi.OrchestrationEvent", ParameterSpecs: []StandardParameterSpec{{Name: "eventInfo", Type: "ConnectApi.OrchestrationEventInfo"}}, Static: true},
+		},
+	},
+	{
+		Name:       "ConnectApi.OrchestrationEvent",
+		SuperClass: "Object",
+		ConstructorSpecs: []StandardConstructorSpec{
+			{Parameters: []StandardParameterSpec{}},
+		},
+		Methods: []StandardMethodSpec{
+			{Name: "clone", ReturnType: "Object"},
+			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
+			{Name: "getBuildVersion", ReturnType: "Double"},
+			{Name: "hashCode", ReturnType: "Integer"},
+			{Name: "toString", ReturnType: "String"},
+		},
+		Properties: []StandardPropertySpec{
+			{Name: "isSuccess", Type: "Boolean"},
+			{Name: "orchestrationInstanceId", Type: "String"},
+			{Name: "stageStepInstanceId", Type: "String"},
+			{Name: "workAssignmentId", Type: "String"},
+			{Name: "workStatus", Type: "ConnectApi.OrchestrationWorkStatus"},
+		},
+	},
+	{
+		Name:       "ConnectApi.OrchestrationEventInfo",
+		SuperClass: "Object",
+		ConstructorSpecs: []StandardConstructorSpec{
+			{Parameters: []StandardParameterSpec{}},
+		},
+		Methods: []StandardMethodSpec{
+			{Name: "clone", ReturnType: "Object"},
+			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
+			{Name: "getBuildVersion", ReturnType: "Double"},
+			{Name: "hashCode", ReturnType: "Integer"},
+			{Name: "toString", ReturnType: "String"},
+		},
+		Properties: []StandardPropertySpec{
+			{Name: "eventType", Type: "String"},
+			{Name: "orchestrationInstanceId", Type: "String"},
+			{Name: "stageStepInstanceId", Type: "String"},
+			{Name: "workAssignmentId", Type: "String"},
+			{Name: "workStatus", Type: "ConnectApi.OrchestrationWorkStatus"},
 		},
 	},
 	{
@@ -70043,6 +70087,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "id", Type: "Object"},
 			{Name: "label", Type: "Object"},
 			{Name: "name", Type: "Object"},
+			{Name: "position", Type: "Object"},
+			{Name: "stageStepInstances", Type: "List<ConnectApi.OrchestrationStepInstance>"},
 			{Name: "status", Type: "Object"},
 			{Name: "stepInstances", Type: "Object"},
 		},
@@ -70072,6 +70118,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "name", Type: "Object"},
 			{Name: "status", Type: "Object"},
 			{Name: "stepType", Type: "Object"},
+			{Name: "type", Type: "ConnectApi.OrchestrationStepType"},
+			{Name: "workAssignments", Type: "List<ConnectApi.OrchestrationWorkAssignment>"},
 			{Name: "workItems", Type: "Object"},
 		},
 	},
@@ -70099,6 +70147,31 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "ManagedContentVariantSetLockBackgroundStep", Type: "ConnectApi.OrchestrationStepType", Static: true},
 			{Name: "ManagedContentVariantSetReadyBackgroundStep", Type: "ConnectApi.OrchestrationStepType", Static: true},
 			{Name: "MuleSoftStep", Type: "ConnectApi.OrchestrationStepType", Static: true},
+			{Name: "Task", Type: "ConnectApi.OrchestrationStepType", Static: true},
+		},
+	},
+	{
+		Name:       "ConnectApi.OrchestrationWorkAssignment",
+		SuperClass: "Object",
+		ConstructorSpecs: []StandardConstructorSpec{
+			{Parameters: []StandardParameterSpec{}},
+		},
+		Methods: []StandardMethodSpec{
+			{Name: "clone", ReturnType: "Object"},
+			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
+			{Name: "getBuildVersion", ReturnType: "Double"},
+			{Name: "hashCode", ReturnType: "Integer"},
+			{Name: "toString", ReturnType: "String"},
+		},
+		Properties: []StandardPropertySpec{
+			{Name: "assigneeId", Type: "Object"},
+			{Name: "contextRecordId", Type: "Object"},
+			{Name: "description", Type: "Object"},
+			{Name: "id", Type: "Object"},
+			{Name: "label", Type: "Object"},
+			{Name: "screenFlowId", Type: "Object"},
+			{Name: "screenFlowInputParameters", Type: "Object"},
+			{Name: "status", Type: "Object"},
 		},
 	},
 	{
@@ -70143,6 +70216,35 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		Properties: []StandardPropertySpec{
 			{Name: "Assigned", Type: "ConnectApi.OrchestrationWorkItemStatus", Static: true},
 			{Name: "Completed", Type: "ConnectApi.OrchestrationWorkItemStatus", Static: true},
+		},
+	},
+	{
+		Name:       "ConnectApi.OrchestrationWorkStatus",
+		Kind:       apexast.DeclarationEnum,
+		SuperClass: "Object",
+		Methods: []StandardMethodSpec{
+			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
+			{Name: "hashCode", ReturnType: "Integer"},
+			{Name: "ordinal", ReturnType: "Integer"},
+			{Name: "valueOf", ReturnType: "ConnectApi.OrchestrationWorkStatus", ParameterSpecs: []StandardParameterSpec{{Name: "str", Type: "String"}}, Static: true},
+			{Name: "values", ReturnType: "List<ConnectApi.OrchestrationWorkStatus>", Static: true},
+		},
+		Properties: []StandardPropertySpec{
+			{Name: "FlowCompleted", Type: "ConnectApi.OrchestrationWorkStatus", Static: true},
+		},
+	},
+	{
+		Name:       "ConnectApi.Orchestrator",
+		SuperClass: "Object",
+		ConstructorSpecs: []StandardConstructorSpec{
+			{Parameters: []StandardParameterSpec{}},
+		},
+		Methods: []StandardMethodSpec{
+			{Name: "clone", ReturnType: "Object"},
+			{Name: "getOrchestrationInstance", ReturnType: "ConnectApi.OrchestrationInstance", ParameterSpecs: []StandardParameterSpec{{Name: "instanceId", Type: "String"}}, Static: true},
+			{Name: "getOrchestrationInstanceCollection", ReturnType: "ConnectApi.OrchestrationInstanceCollection", ParameterSpecs: []StandardParameterSpec{{Name: "relatedRecordId", Type: "String"}, {Name: "relatedOrchestrationId", Type: "String"}}, Static: true},
+			{Name: "getOrchestrationInstanceCollection", ReturnType: "ConnectApi.OrchestrationInstanceCollection", ParameterSpecs: []StandardParameterSpec{{Name: "relatedRecordId", Type: "String"}}, Static: true},
+			{Name: "publishOrchestrationEvent", ReturnType: "ConnectApi.OrchestrationEvent", ParameterSpecs: []StandardParameterSpec{{Name: "eventInfo", Type: "ConnectApi.OrchestrationEventInfo"}}, Static: true},
 		},
 	},
 	{

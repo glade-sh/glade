@@ -189,6 +189,54 @@ func TestBuildResolvesNamespacedAuraAndLWCControllerReferences(t *testing.T) {
 	}
 }
 
+func TestBuildResolvesAuraActionsFromExtendedComponentController(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/BaseController.cls"), `public class BaseController {
+  @AuraEnabled public static String getSettings() { return 'settings'; }
+}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/TabController.cls"), `public class TabController {
+  @AuraEnabled public static String getOptions() { return 'options'; }
+}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Base/Base.cmp"), `<aura:component abstract="true" extensible="true" controller="BaseController" />`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Tabs/Tabs.cmp"), `<aura:component extends="c:Base" controller="TabController" />`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Tabs/TabsHelper.js"), `({
+  load: function(component) {
+    component.get("c.getSettings");
+    component.get("c.getOptions");
+  }
+})`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	apex := typesys.Build(p, schema.Schema{})
+	idx, err := Build(p, apex)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.AuraBundles) != 2 {
+		t.Fatalf("aura bundles = %#v", idx.AuraBundles)
+	}
+	var tabs *AuraBundle
+	for i := range idx.AuraBundles {
+		if idx.AuraBundles[i].Name == "Tabs" {
+			tabs = &idx.AuraBundles[i]
+			break
+		}
+	}
+	if tabs == nil {
+		t.Fatalf("missing Tabs bundle: %#v", idx.AuraBundles)
+	}
+	if !hasAuraActionOnClass(*tabs, "getSettings", "BaseController") || !hasAuraActionOnClass(*tabs, "getOptions", "TabController") {
+		t.Fatalf("inherited Aura actions = %#v", tabs.ActionReferences)
+	}
+	if !hasResolvedMethod(idx, "BaseController", "getSettings") || !hasResolvedMethod(idx, "TabController", "getOptions") {
+		t.Fatalf("apex methods = %#v", idx.ApexMethods)
+	}
+}
+
 func hasAuraComponent(bundle AuraBundle, namespace, name string) bool {
 	for _, ref := range bundle.ComponentReferences {
 		if ref.Namespace == namespace && ref.Name == name {
@@ -201,6 +249,15 @@ func hasAuraComponent(bundle AuraBundle, namespace, name string) bool {
 func hasAuraAction(bundle AuraBundle, name string, resolved bool) bool {
 	for _, ref := range bundle.ActionReferences {
 		if ref.Name == name && ref.Resolved == resolved {
+			return true
+		}
+	}
+	return false
+}
+
+func hasAuraActionOnClass(bundle AuraBundle, name, className string) bool {
+	for _, ref := range bundle.ActionReferences {
+		if ref.Name == name && ref.ClassName == className && ref.Resolved {
 			return true
 		}
 	}

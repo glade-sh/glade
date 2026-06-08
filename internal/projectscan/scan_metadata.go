@@ -196,6 +196,9 @@ func classifyByPath(rel, path string, ctx *scanContext) []Finding {
 		}
 		add("visualforce.component-test", "VisualforceComponent", baseNoExt(path))
 	case strings.Contains(lower, "/aura/"):
+		if !isAuraSourceFile(lower) {
+			return findings
+		}
 		if isPassiveAuraArtifact(lower) {
 			return findings
 		}

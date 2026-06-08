@@ -24,6 +24,7 @@ type AuraBundle struct {
 	Dir                  string                `json:"dir"`
 	Files                []UIFile              `json:"files,omitempty"`
 	ControllerReferences []ControllerReference `json:"controllerReferences,omitempty"`
+	ExtendsReferences    []AuraComponentRef    `json:"extendsReferences,omitempty"`
 	ComponentReferences  []AuraComponentRef    `json:"componentReferences,omitempty"`
 	ClientActions        []AuraActionReference `json:"clientActions,omitempty"`
 	ActionReferences     []AuraActionReference `json:"actionReferences,omitempty"`
@@ -104,6 +105,7 @@ type ApexMethodReference struct {
 
 var (
 	auraControllerAttrRe = regexp.MustCompile(`(?i)\bcontroller\s*=\s*["']([A-Za-z_][A-Za-z0-9_.]*)["']`)
+	auraExtendsAttrRe    = regexp.MustCompile(`(?i)\bextends\s*=\s*["']([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_-]*)["']`)
 	auraComponentTagRe   = regexp.MustCompile(`<\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_-]*)`)
 	auraMarkupActionRe   = regexp.MustCompile(`\{!\s*c\.([A-Za-z_][A-Za-z0-9_]*)`)
 	auraJSClientActionRe = regexp.MustCompile(`(?m)^\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*:\s*function\s*\(`)
@@ -117,11 +119,16 @@ var (
 
 func Build(p project.Project, apex typesys.Index) (Index, error) {
 	idx := Index{}
+	auraBundles := make([]AuraBundle, 0)
 	for _, group := range groupByBundle(p.AuraFiles) {
 		bundle, err := parseAuraBundle(group, apex)
 		if err != nil {
 			return Index{}, err
 		}
+		auraBundles = append(auraBundles, bundle)
+	}
+	resolveAuraInheritedActions(auraBundles, apex)
+	for _, bundle := range auraBundles {
 		idx.AuraBundles = append(idx.AuraBundles, bundle)
 		for _, action := range bundle.ActionReferences {
 			if action.ClassName == "" {
@@ -174,6 +181,7 @@ func Build(p project.Project, apex typesys.Index) (Index, error) {
 func parseAuraBundle(paths []string, apex typesys.Index) (AuraBundle, error) {
 	bundle := AuraBundle{Name: filepath.Base(filepath.Dir(paths[0])), Dir: filepath.Dir(paths[0])}
 	controllers := make(map[string]ControllerReference)
+	extends := make(map[string]AuraComponentRef)
 	components := make(map[string]AuraComponentRef)
 	clientActions := make(map[string]AuraActionReference)
 	clientActionNames := make(map[string]bool)
@@ -191,6 +199,11 @@ func parseAuraBundle(paths []string, apex typesys.Index) (AuraBundle, error) {
 			for _, match := range auraControllerAttrRe.FindAllStringSubmatchIndex(source, -1) {
 				name := source[match[2]:match[3]]
 				controllers[lookupKey(name)] = ControllerReference{Name: name, SourceRef: SourceRef{File: path, Line: lineAt(source, match[0])}}
+			}
+			for _, match := range auraExtendsAttrRe.FindAllStringSubmatchIndex(source, -1) {
+				ns := source[match[2]:match[3]]
+				name := source[match[4]:match[5]]
+				extends[lookupKey(ns+":"+name)] = AuraComponentRef{Namespace: ns, Name: name, SourceRef: SourceRef{File: path, Line: lineAt(source, match[0])}}
 			}
 			for _, match := range auraComponentTagRe.FindAllStringSubmatchIndex(source, -1) {
 				ns := source[match[2]:match[3]]
@@ -235,14 +248,17 @@ func parseAuraBundle(paths []string, apex typesys.Index) (AuraBundle, error) {
 	}
 	controllerName := firstControllerName(controllers)
 	bundle.ControllerReferences = sortedControllers(controllers)
+	bundle.ExtendsReferences = sortedComponents(extends)
 	bundle.ComponentReferences = sortedComponents(components)
 	bundle.ClientActions = sortedActions(clientActions)
 	for _, action := range actions {
-		if controllerName == "" {
+		if controllerName == "" && len(extends) == 0 {
 			continue
 		}
-		action.ClassName = controllerName
-		action.Resolved, action.ReturnType, action.Parameters = resolveApex(apex, action.ClassName, action.Name)
+		if controllerName != "" {
+			action.ClassName = controllerName
+			action.Resolved, action.ReturnType, action.Parameters = resolveApex(apex, action.ClassName, action.Name)
+		}
 		if !action.Resolved && clientActionNames[lookupKey(action.Name)] {
 			continue
 		}
@@ -251,6 +267,72 @@ func parseAuraBundle(paths []string, apex typesys.Index) (AuraBundle, error) {
 	bundle.ActionReferences = sortedActionsFromSlice(bundle.ActionReferences)
 	sort.Slice(bundle.Files, func(i, j int) bool { return bundle.Files[i].Path < bundle.Files[j].Path })
 	return bundle, nil
+}
+
+func resolveAuraInheritedActions(bundles []AuraBundle, apex typesys.Index) {
+	byName := make(map[string]int, len(bundles))
+	for i, bundle := range bundles {
+		byName[lookupKey(bundle.Name)] = i
+	}
+	for i := range bundles {
+		candidates := auraControllerCandidates(bundles, i, byName)
+		if len(candidates) == 0 {
+			continue
+		}
+		for j := range bundles[i].ActionReferences {
+			action := bundles[i].ActionReferences[j]
+			if action.Resolved {
+				continue
+			}
+			for _, candidate := range candidates {
+				resolved, returnType, params := resolveApex(apex, candidate, action.Name)
+				if !resolved {
+					continue
+				}
+				action.ClassName = candidate
+				action.Resolved = true
+				action.ReturnType = returnType
+				action.Parameters = params
+				break
+			}
+			if action.ClassName == "" {
+				action.ClassName = candidates[0]
+			}
+			bundles[i].ActionReferences[j] = action
+		}
+	}
+}
+
+func auraControllerCandidates(bundles []AuraBundle, index int, byName map[string]int) []string {
+	var out []string
+	seenControllers := make(map[string]bool)
+	var visit func(int, map[int]bool)
+	visit = func(i int, seenBundles map[int]bool) {
+		if i < 0 || i >= len(bundles) || seenBundles[i] {
+			return
+		}
+		seenBundles[i] = true
+		for _, controller := range bundles[i].ControllerReferences {
+			key := lookupKey(controller.Name)
+			if seenControllers[key] {
+				continue
+			}
+			seenControllers[key] = true
+			out = append(out, controller.Name)
+		}
+		for _, parent := range bundles[i].ExtendsReferences {
+			if !strings.EqualFold(parent.Namespace, "c") {
+				continue
+			}
+			parentIndex, ok := byName[lookupKey(parent.Name)]
+			if !ok {
+				continue
+			}
+			visit(parentIndex, seenBundles)
+		}
+	}
+	visit(index, make(map[int]bool))
+	return out
 }
 
 func stripJavaScriptComments(source string) string {

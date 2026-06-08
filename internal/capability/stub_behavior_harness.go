@@ -528,7 +528,7 @@ func connectAPIReadOnlyHarnessBehaviorMethodAllowed(typeName, methodName string)
 	case "connectapi.marketingintegration":
 		return name == "getform"
 	case "connectapi.orchestration":
-		return strings.HasPrefix(name, "get")
+		return name == "getorchestrationinstance"
 	case "connectapi.chatter":
 		return name == "getfollowers" || name == "getsubscription"
 	case "connectapi.chatterfeeds":

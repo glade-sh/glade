@@ -2063,6 +2063,16 @@ platformStaticCall:
 		return vm.connectAPIUserSetPhoto(args)
 	case "ConnectApi.UserProfiles.deletePhoto":
 		return vm.connectAPIUserDeletePhoto(args)
+	case "ConnectApi.NextBestAction.executeStrategy":
+		return vm.connectApiNBAExecuteStrategy(args)
+	case "ConnectApi.NextBestAction.setRecommendationReaction":
+		return vm.connectApiNBASetRecommendationReaction(args)
+	case "ConnectApi.Orchestration.getOrchestrationInstanceCollection",
+		"ConnectApi.Orchestrator.getOrchestrationInstanceCollection":
+		return vm.connectApiOrchGetInstanceCollection(args)
+	case "ConnectApi.Orchestration.publishOrchestrationEvent",
+		"ConnectApi.Orchestrator.publishOrchestrationEvent":
+		return vm.connectApiOrchPublishEvent(args)
 	case "Metadata.Operations.enqueueDeployment":
 		return vm.metadataEnqueueDeployment(args, result)
 	case "Metadata.Operations.checkDeployStatus":
