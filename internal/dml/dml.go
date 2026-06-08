@@ -33,6 +33,12 @@ type Engine struct {
 	uniqueFields   map[string][]string
 	uniqueIndexes  map[string]map[string]map[storage.ID]bool
 	SummaryByChild SummaryRelationCache
+	subflowCache   map[string]cachedSubflow
+}
+
+type cachedSubflow struct {
+	rule storage.FlowRule
+	def  storage.ObjectDefinition
 }
 
 type SummaryRelationCache map[string][]summaryRelation

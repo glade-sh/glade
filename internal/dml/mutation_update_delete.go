@@ -243,6 +243,9 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	if err := e.validateDeleteReferences(objectName, id, ctx); err != nil {
 		return err
 	}
+	if err := e.applyBeforeDeleteFlows(objectName, stored); err != nil {
+		return err
+	}
 	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
 		object = e.Org.Objects[objectName]
 		storedID, stored, _ = storage.LookupRecordByID(object.Records, id)

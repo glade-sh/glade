@@ -373,6 +373,8 @@ type FlowRule struct {
 	Active        bool                   `json:"active,omitempty"`
 	ProcessType   string                 `json:"processType,omitempty"`
 	TriggerType   string                 `json:"triggerType,omitempty"`
+	TriggerOrder  int                    `json:"triggerOrder,omitempty"`
+	RunInMode     string                 `json:"runInMode,omitempty"`
 	Formula       string                 `json:"formula,omitempty"`
 	Criteria      []WorkflowCriteriaItem `json:"criteria,omitempty"`
 	Branches      []FlowBranch           `json:"branches,omitempty"`
@@ -381,29 +383,41 @@ type FlowRule struct {
 	Actions       []FlowAction           `json:"actions,omitempty"`
 	RecordLookups []FlowRecordLookup     `json:"recordLookups,omitempty"`
 	RecordCreates []FlowRecordCreate     `json:"recordCreates,omitempty"`
+	RecordDeletes []FlowRecordDelete     `json:"recordDeletes,omitempty"`
+	CustomErrors  []FlowCustomError      `json:"customErrors,omitempty"`
+	ApexPlugins   []FlowApexPluginCall   `json:"apexPlugins,omitempty"`
 }
 
 type FlowBranch struct {
 	Name          string                 `json:"name"`
 	Default       bool                   `json:"default,omitempty"`
+	Formula       string                 `json:"formula,omitempty"`
 	Criteria      []WorkflowCriteriaItem `json:"criteria,omitempty"`
 	Steps         []FlowStep             `json:"steps,omitempty"`
 	FieldUpdates  []WorkflowFieldUpdate  `json:"fieldUpdates,omitempty"`
 	Actions       []FlowAction           `json:"actions,omitempty"`
 	RecordLookups []FlowRecordLookup     `json:"recordLookups,omitempty"`
 	RecordCreates []FlowRecordCreate     `json:"recordCreates,omitempty"`
+	RecordDeletes []FlowRecordDelete     `json:"recordDeletes,omitempty"`
 }
 
 type FlowStep struct {
-	Kind         string                `json:"kind"`
-	FieldUpdates []WorkflowFieldUpdate `json:"fieldUpdates,omitempty"`
-	Action       FlowAction            `json:"action,omitempty"`
-	RecordLookup FlowRecordLookup      `json:"recordLookup,omitempty"`
-	RecordCreate FlowRecordCreate      `json:"recordCreate,omitempty"`
-	RecordUpdate FlowRecordUpdate      `json:"recordUpdate,omitempty"`
-	Assignment   FlowAssignment        `json:"assignment,omitempty"`
-	Loop         FlowLoop              `json:"loop,omitempty"`
-	Branches     []FlowBranch          `json:"branches,omitempty"`
+	Kind                string                  `json:"kind"`
+	FaultTarget         string                  `json:"faultTarget,omitempty"`
+	FaultBranch         []FlowStep              `json:"faultBranch,omitempty"`
+	FieldUpdates        []WorkflowFieldUpdate   `json:"fieldUpdates,omitempty"`
+	Action              FlowAction              `json:"action,omitempty"`
+	RecordLookup        FlowRecordLookup        `json:"recordLookup,omitempty"`
+	RecordCreate        FlowRecordCreate        `json:"recordCreate,omitempty"`
+	RecordUpdate        FlowRecordUpdate        `json:"recordUpdate,omitempty"`
+	RecordDelete        FlowRecordDelete        `json:"recordDelete,omitempty"`
+	Subflow             FlowSubflow             `json:"subflow,omitempty"`
+	Assignment          FlowAssignment          `json:"assignment,omitempty"`
+	Transform           FlowTransform           `json:"transform,omitempty"`
+	CollectionProcessor FlowCollectionProcessor `json:"collectionProcessor,omitempty"`
+	CustomError         FlowCustomError         `json:"customError,omitempty"`
+	Loop                FlowLoop                `json:"loop,omitempty"`
+	Branches            []FlowBranch            `json:"branches,omitempty"`
 }
 
 type FlowAssignment struct {
@@ -452,6 +466,56 @@ type FlowRecordUpdate struct {
 	InputReference   string                 `json:"inputReference,omitempty"`
 	Criteria         []WorkflowCriteriaItem `json:"criteria,omitempty"`
 	InputAssignments []WorkflowFieldUpdate  `json:"inputAssignments,omitempty"`
+}
+
+type FlowRecordDelete struct {
+	Name           string                 `json:"name"`
+	ObjectName     string                 `json:"objectName"`
+	InputReference string                 `json:"inputReference,omitempty"`
+	Criteria       []WorkflowCriteriaItem `json:"criteria,omitempty"`
+}
+
+type FlowSubflow struct {
+	Name              string                `json:"name"`
+	FlowName          string                `json:"flowName"`
+	InputAssignments  []WorkflowFieldUpdate `json:"inputAssignments,omitempty"`
+	OutputAssignments []FlowAssignment      `json:"outputAssignments,omitempty"`
+}
+
+type FlowCustomError struct {
+	Name        string                   `json:"name"`
+	Description string                   `json:"description,omitempty"`
+	Messages    []FlowCustomErrorMessage `json:"messages,omitempty"`
+}
+
+type FlowCustomErrorMessage struct {
+	Message string `json:"message"`
+}
+
+type FlowApexPluginCall struct {
+	Name   string                `json:"name"`
+	Class  string                `json:"class"`
+	Inputs []WorkflowFieldUpdate `json:"inputs,omitempty"`
+}
+
+type FlowTransform struct {
+	Name             string                `json:"name"`
+	TransformType    string                `json:"transformType"`
+	SourceCollection string                `json:"sourceCollection"`
+	TargetCollection string                `json:"targetCollection"`
+	FieldMappings    []WorkflowFieldUpdate `json:"fieldMappings,omitempty"`
+	SumField         string                `json:"sumField,omitempty"`
+}
+
+type FlowCollectionProcessor struct {
+	Name                string                 `json:"name"`
+	ProcessorType       string                 `json:"processorType"`
+	CollectionReference string                 `json:"collectionReference"`
+	TargetCollection    string                 `json:"targetCollection,omitempty"`
+	SortField           string                 `json:"sortField,omitempty"`
+	SortOrder           string                 `json:"sortOrder,omitempty"`
+	Criteria            []WorkflowCriteriaItem `json:"criteria,omitempty"`
+	FieldMappings       []WorkflowFieldUpdate  `json:"fieldMappings,omitempty"`
 }
 
 type FieldType string
@@ -1282,6 +1346,38 @@ func (v Value) Clone() Value {
 	return out
 }
 
+func ValuesEqual(left, right Value) bool {
+	if left.Kind != right.Kind {
+		return false
+	}
+	switch left.Kind {
+	case ValueNull:
+		return true
+	case ValueString, ValueDate, ValueDateTime, ValueBlob:
+		return left.String == right.String
+	case ValueInteger:
+		return left.Integer == right.Integer
+	case ValueBoolean:
+		return left.Boolean == right.Boolean
+	case ValueDecimal:
+		return left.Decimal == right.Decimal
+	case ValueID:
+		return IDsEqual(left.ID, right.ID)
+	case ValueList:
+		if len(left.List) != len(right.List) {
+			return false
+		}
+		for i := range left.List {
+			if !ValuesEqual(left.List[i], right.List[i]) {
+				return false
+			}
+		}
+		return true
+	default:
+		return false
+	}
+}
+
 func (o ObjectState) Clone() ObjectState {
 	out := o
 	out.Definition = o.Definition.Clone()
@@ -1342,36 +1438,13 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		out.FlowRules[i].Criteria = append([]WorkflowCriteriaItem(nil), d.FlowRules[i].Criteria...)
 		out.FlowRules[i].Steps = cloneFlowSteps(d.FlowRules[i].Steps)
 		out.FlowRules[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), d.FlowRules[i].FieldUpdates...)
-		out.FlowRules[i].Actions = append([]FlowAction(nil), d.FlowRules[i].Actions...)
-		for j := range out.FlowRules[i].Actions {
-			out.FlowRules[i].Actions[j].Inputs = append([]WorkflowFieldUpdate(nil), d.FlowRules[i].Actions[j].Inputs...)
-		}
-		out.FlowRules[i].Branches = append([]FlowBranch(nil), d.FlowRules[i].Branches...)
-		for j := range out.FlowRules[i].Branches {
-			out.FlowRules[i].Branches[j].Criteria = append([]WorkflowCriteriaItem(nil), d.FlowRules[i].Branches[j].Criteria...)
-			out.FlowRules[i].Branches[j].Steps = cloneFlowSteps(d.FlowRules[i].Branches[j].Steps)
-			out.FlowRules[i].Branches[j].FieldUpdates = append([]WorkflowFieldUpdate(nil), d.FlowRules[i].Branches[j].FieldUpdates...)
-			out.FlowRules[i].Branches[j].Actions = append([]FlowAction(nil), d.FlowRules[i].Branches[j].Actions...)
-			for k := range out.FlowRules[i].Branches[j].Actions {
-				out.FlowRules[i].Branches[j].Actions[k].Inputs = append([]WorkflowFieldUpdate(nil), d.FlowRules[i].Branches[j].Actions[k].Inputs...)
-			}
-			out.FlowRules[i].Branches[j].RecordLookups = append([]FlowRecordLookup(nil), d.FlowRules[i].Branches[j].RecordLookups...)
-			for k := range out.FlowRules[i].Branches[j].RecordLookups {
-				out.FlowRules[i].Branches[j].RecordLookups[k].Criteria = append([]WorkflowCriteriaItem(nil), d.FlowRules[i].Branches[j].RecordLookups[k].Criteria...)
-			}
-			out.FlowRules[i].Branches[j].RecordCreates = append([]FlowRecordCreate(nil), d.FlowRules[i].Branches[j].RecordCreates...)
-			for k := range out.FlowRules[i].Branches[j].RecordCreates {
-				out.FlowRules[i].Branches[j].RecordCreates[k].InputAssignments = append([]WorkflowFieldUpdate(nil), d.FlowRules[i].Branches[j].RecordCreates[k].InputAssignments...)
-			}
-		}
-		out.FlowRules[i].RecordLookups = append([]FlowRecordLookup(nil), d.FlowRules[i].RecordLookups...)
-		for j := range out.FlowRules[i].RecordLookups {
-			out.FlowRules[i].RecordLookups[j].Criteria = append([]WorkflowCriteriaItem(nil), d.FlowRules[i].RecordLookups[j].Criteria...)
-		}
-		out.FlowRules[i].RecordCreates = append([]FlowRecordCreate(nil), d.FlowRules[i].RecordCreates...)
-		for j := range out.FlowRules[i].RecordCreates {
-			out.FlowRules[i].RecordCreates[j].InputAssignments = append([]WorkflowFieldUpdate(nil), d.FlowRules[i].RecordCreates[j].InputAssignments...)
-		}
+		out.FlowRules[i].Actions = cloneFlowActions(d.FlowRules[i].Actions)
+		out.FlowRules[i].Branches = cloneFlowBranches(d.FlowRules[i].Branches)
+		out.FlowRules[i].RecordLookups = cloneFlowRecordLookups(d.FlowRules[i].RecordLookups)
+		out.FlowRules[i].RecordCreates = cloneFlowRecordCreates(d.FlowRules[i].RecordCreates)
+		out.FlowRules[i].RecordDeletes = cloneFlowRecordDeletes(d.FlowRules[i].RecordDeletes)
+		out.FlowRules[i].CustomErrors = cloneFlowCustomErrors(d.FlowRules[i].CustomErrors)
+		out.FlowRules[i].ApexPlugins = cloneFlowApexPlugins(d.FlowRules[i].ApexPlugins)
 	}
 	out.Indexes = append([]IndexDefinition(nil), d.Indexes...)
 	for i := range out.Indexes {
@@ -1395,25 +1468,78 @@ func cloneFlowSteps(steps []FlowStep) []FlowStep {
 		out[i].RecordCreate.InputAssignments = append([]WorkflowFieldUpdate(nil), steps[i].RecordCreate.InputAssignments...)
 		out[i].RecordUpdate.Criteria = append([]WorkflowCriteriaItem(nil), steps[i].RecordUpdate.Criteria...)
 		out[i].RecordUpdate.InputAssignments = append([]WorkflowFieldUpdate(nil), steps[i].RecordUpdate.InputAssignments...)
+		out[i].RecordDelete.Criteria = append([]WorkflowCriteriaItem(nil), steps[i].RecordDelete.Criteria...)
+		out[i].Subflow.InputAssignments = append([]WorkflowFieldUpdate(nil), steps[i].Subflow.InputAssignments...)
+		out[i].Subflow.OutputAssignments = append([]FlowAssignment(nil), steps[i].Subflow.OutputAssignments...)
+		out[i].Transform.FieldMappings = append([]WorkflowFieldUpdate(nil), steps[i].Transform.FieldMappings...)
+		out[i].CollectionProcessor.Criteria = append([]WorkflowCriteriaItem(nil), steps[i].CollectionProcessor.Criteria...)
+		out[i].CollectionProcessor.FieldMappings = append([]WorkflowFieldUpdate(nil), steps[i].CollectionProcessor.FieldMappings...)
+		out[i].CustomError.Messages = append([]FlowCustomErrorMessage(nil), steps[i].CustomError.Messages...)
+		out[i].FaultBranch = cloneFlowSteps(steps[i].FaultBranch)
 		out[i].Loop.Steps = cloneFlowSteps(steps[i].Loop.Steps)
-		out[i].Branches = append([]FlowBranch(nil), steps[i].Branches...)
-		for j := range out[i].Branches {
-			out[i].Branches[j].Criteria = append([]WorkflowCriteriaItem(nil), steps[i].Branches[j].Criteria...)
-			out[i].Branches[j].Steps = cloneFlowSteps(steps[i].Branches[j].Steps)
-			out[i].Branches[j].FieldUpdates = append([]WorkflowFieldUpdate(nil), steps[i].Branches[j].FieldUpdates...)
-			out[i].Branches[j].Actions = append([]FlowAction(nil), steps[i].Branches[j].Actions...)
-			for k := range out[i].Branches[j].Actions {
-				out[i].Branches[j].Actions[k].Inputs = append([]WorkflowFieldUpdate(nil), steps[i].Branches[j].Actions[k].Inputs...)
-			}
-			out[i].Branches[j].RecordLookups = append([]FlowRecordLookup(nil), steps[i].Branches[j].RecordLookups...)
-			for k := range out[i].Branches[j].RecordLookups {
-				out[i].Branches[j].RecordLookups[k].Criteria = append([]WorkflowCriteriaItem(nil), steps[i].Branches[j].RecordLookups[k].Criteria...)
-			}
-			out[i].Branches[j].RecordCreates = append([]FlowRecordCreate(nil), steps[i].Branches[j].RecordCreates...)
-			for k := range out[i].Branches[j].RecordCreates {
-				out[i].Branches[j].RecordCreates[k].InputAssignments = append([]WorkflowFieldUpdate(nil), steps[i].Branches[j].RecordCreates[k].InputAssignments...)
-			}
-		}
+		out[i].Branches = cloneFlowBranches(steps[i].Branches)
+	}
+	return out
+}
+
+func cloneFlowBranches(branches []FlowBranch) []FlowBranch {
+	out := append([]FlowBranch(nil), branches...)
+	for i := range out {
+		out[i].Criteria = append([]WorkflowCriteriaItem(nil), branches[i].Criteria...)
+		out[i].Steps = cloneFlowSteps(branches[i].Steps)
+		out[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), branches[i].FieldUpdates...)
+		out[i].Actions = cloneFlowActions(branches[i].Actions)
+		out[i].RecordLookups = cloneFlowRecordLookups(branches[i].RecordLookups)
+		out[i].RecordCreates = cloneFlowRecordCreates(branches[i].RecordCreates)
+		out[i].RecordDeletes = cloneFlowRecordDeletes(branches[i].RecordDeletes)
+	}
+	return out
+}
+
+func cloneFlowActions(actions []FlowAction) []FlowAction {
+	out := append([]FlowAction(nil), actions...)
+	for i := range out {
+		out[i].Inputs = append([]WorkflowFieldUpdate(nil), actions[i].Inputs...)
+	}
+	return out
+}
+
+func cloneFlowRecordLookups(lookups []FlowRecordLookup) []FlowRecordLookup {
+	out := append([]FlowRecordLookup(nil), lookups...)
+	for i := range out {
+		out[i].Criteria = append([]WorkflowCriteriaItem(nil), lookups[i].Criteria...)
+	}
+	return out
+}
+
+func cloneFlowRecordCreates(creates []FlowRecordCreate) []FlowRecordCreate {
+	out := append([]FlowRecordCreate(nil), creates...)
+	for i := range out {
+		out[i].InputAssignments = append([]WorkflowFieldUpdate(nil), creates[i].InputAssignments...)
+	}
+	return out
+}
+
+func cloneFlowRecordDeletes(deletes []FlowRecordDelete) []FlowRecordDelete {
+	out := append([]FlowRecordDelete(nil), deletes...)
+	for i := range out {
+		out[i].Criteria = append([]WorkflowCriteriaItem(nil), deletes[i].Criteria...)
+	}
+	return out
+}
+
+func cloneFlowCustomErrors(errors []FlowCustomError) []FlowCustomError {
+	out := append([]FlowCustomError(nil), errors...)
+	for i := range out {
+		out[i].Messages = append([]FlowCustomErrorMessage(nil), errors[i].Messages...)
+	}
+	return out
+}
+
+func cloneFlowApexPlugins(plugins []FlowApexPluginCall) []FlowApexPluginCall {
+	out := append([]FlowApexPluginCall(nil), plugins...)
+	for i := range out {
+		out[i].Inputs = append([]WorkflowFieldUpdate(nil), plugins[i].Inputs...)
 	}
 	return out
 }

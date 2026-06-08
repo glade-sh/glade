@@ -527,10 +527,10 @@ func TestLoadProjectFlowApexActionCalls(t *testing.T) {
 		t.Fatalf("flows = %#v", idx.Flows)
 	}
 	actions := idx.Flows[0].Rules[0].Actions
-	if len(actions) != 1 || actions[0].ClassName != "WidgetFlowAction" || actions[0].MethodName != "run" {
+	if len(actions) != 2 || actions[0].ClassName != "WidgetFlowAction" || actions[0].MethodName != "run" {
 		t.Fatalf("actions = %#v", actions)
 	}
-	if len(idx.Diagnostics) != 1 || idx.Diagnostics[0].Code != "GLADEAUTO002" {
+	if len(idx.Diagnostics) != 0 {
 		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
 	}
 }
@@ -568,7 +568,7 @@ func TestLoadProjectFlowActionConnectorPreservesFollowingStep(t *testing.T) {
 	}
 }
 
-func TestLoadProjectFlowFaultConnectorsAreUnsupported(t *testing.T) {
+func TestLoadProjectFlowFaultConnectorsAreNowSupported(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "force-app/main/default/flows/Widget_Faults.flow-meta.xml")
 	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -585,7 +585,7 @@ func TestLoadProjectFlowFaultConnectorsAreUnsupported(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(idx.Diagnostics) != 4 {
+	if len(idx.Diagnostics) != 0 {
 		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
 	}
 }
@@ -678,7 +678,7 @@ func TestLoadProjectFlowStandardSideEffectActions(t *testing.T) {
 	}
 }
 
-func TestLoadProjectFlowNoOpActionFaultConnectorIsUnsupported(t *testing.T) {
+func TestLoadProjectFlowActionFaultConnectorIsNowSupported(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "force-app/main/default/flows/Widget_Action_Fault.flow-meta.xml")
 	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -705,12 +705,395 @@ func TestLoadProjectFlowNoOpActionFaultConnectorIsUnsupported(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(idx.Diagnostics) != 1 || !strings.Contains(idx.Diagnostics[0].Message, `action "Send_Quote_Email" fault connector`) {
+	if len(idx.Diagnostics) != 0 {
 		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
 	}
 	steps := idx.Flows[0].Rules[0].Steps
 	if len(steps) != 1 || steps[0].Action.ActionType != "emailSimple" {
 		t.Fatalf("steps = %#v", steps)
+	}
+	if steps[0].FaultTarget != "Log_Email_Error" {
+		t.Fatalf("expected FaultTarget 'Log_Email_Error', got %q", steps[0].FaultTarget)
+	}
+}
+
+func TestLoadProjectFlowFaultBranchBuiltForFaultOnlyRecoveryNode(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_Fault_Recovery.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <actionCalls>
+    <name>Send_Email</name>
+    <actionName>emailSimple</actionName>
+    <actionType>emailSimple</actionType>
+    <faultConnector><targetReference>Log_Error</targetReference></faultConnector>
+    <connector><targetReference>Update_Status</targetReference></connector>
+    <inputParameters><name>emailBody</name><value><stringValue>Body</stringValue></value></inputParameters>
+    <inputParameters><name>emailAddresses</name><value><stringValue>test@example.test</stringValue></value></inputParameters>
+    <inputParameters><name>emailSubject</name><value><stringValue>Subject</stringValue></value></inputParameters>
+  </actionCalls>
+  <recordCreates>
+    <name>Log_Error</name>
+    <object>Error__c</object>
+    <inputAssignments><field>Message__c</field><value><stringValue>email failed</stringValue></value></inputAssignments>
+  </recordCreates>
+  <assignments>
+    <name>Update_Status</name>
+    <assignmentItems>
+      <assignToReference>$Record.Status__c</assignToReference>
+      <operator>Assign</operator>
+      <value><stringValue>Done</stringValue></value>
+    </assignmentItems>
+  </assignments>
+  <start><connector><targetReference>Send_Email</targetReference></connector><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	steps := idx.Flows[0].Rules[0].Steps
+	if len(steps) != 2 {
+		t.Fatalf("expected 2 steps (Send_Email, Update_Status), got %d: %#v", len(steps), steps)
+	}
+	emailStep := steps[0]
+	if emailStep.Kind != "action" || emailStep.FaultTarget != "Log_Error" {
+		t.Fatalf("email step = %#v", emailStep)
+	}
+	if len(emailStep.FaultBranch) != 1 {
+		t.Fatalf("expected FaultBranch with 1 step (Log_Error), got %d: %#v", len(emailStep.FaultBranch), emailStep.FaultBranch)
+	}
+	faultStep := emailStep.FaultBranch[0]
+	if faultStep.Kind != "recordCreate" || faultStep.RecordCreate.Name != "Log_Error" || faultStep.RecordCreate.ObjectName != "Error__c" {
+		t.Fatalf("fault branch step = %#v", faultStep)
+	}
+	if faultStep.FaultTarget != "" {
+		t.Fatalf("fault step should not have a secondary fault target, got %q", faultStep.FaultTarget)
+	}
+}
+
+func TestLoadProjectFlowFaultBranchEmptyWhenTargetInMainBranch(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_Fault_In_Branch.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <actionCalls>
+    <name>Send_Email</name>
+    <actionName>emailSimple</actionName>
+    <actionType>emailSimple</actionType>
+    <faultConnector><targetReference>Update_Status</targetReference></faultConnector>
+    <connector><targetReference>Update_Status</targetReference></connector>
+    <inputParameters><name>emailBody</name><value><stringValue>Body</stringValue></value></inputParameters>
+    <inputParameters><name>emailAddresses</name><value><stringValue>test@example.test</stringValue></value></inputParameters>
+    <inputParameters><name>emailSubject</name><value><stringValue>Subject</stringValue></value></inputParameters>
+  </actionCalls>
+  <assignments>
+    <name>Update_Status</name>
+    <assignmentItems>
+      <assignToReference>$Record.Status__c</assignToReference>
+      <operator>Assign</operator>
+      <value><stringValue>Done</stringValue></value>
+    </assignmentItems>
+  </assignments>
+  <start><connector><targetReference>Send_Email</targetReference></connector><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	steps := idx.Flows[0].Rules[0].Steps
+	if len(steps) != 2 {
+		t.Fatalf("expected 2 steps (Send_Email, Update_Status), got %d: %#v", len(steps), steps)
+	}
+	emailStep := steps[0]
+	if emailStep.FaultTarget != "Update_Status" {
+		t.Fatalf("expected FaultTarget 'Update_Status', got %q", emailStep.FaultTarget)
+	}
+	if len(emailStep.FaultBranch) != 0 {
+		t.Fatalf("FaultBranch should be empty when target is in main branch, got %#v", emailStep.FaultBranch)
+	}
+}
+
+func TestLoadProjectFlowEnvironmentsDefaultIsAccepted(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_Env_Default.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <environments>Default</environments>
+  <start><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("environments Default should not produce diagnostics: %#v", idx.Diagnostics)
+	}
+}
+
+func TestLoadProjectFlowORConditionLogicSingleCondition(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_OR_Single.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <decisions>
+    <name>Check_Status</name>
+    <defaultConnector><targetReference>Set_Ready</targetReference></defaultConnector>
+    <rules>
+      <name>Is_Done</name>
+      <conditionLogic>or</conditionLogic>
+      <conditions>
+        <leftValueReference>$Record.Status__c</leftValueReference>
+        <operator>EqualTo</operator>
+        <rightValue><stringValue>Done</stringValue></rightValue>
+      </conditions>
+    </rules>
+  </decisions>
+  <assignments>
+    <name>Set_Ready</name>
+    <assignmentItems>
+      <assignToReference>$Record.Status__c</assignToReference>
+      <operator>Assign</operator>
+      <value><stringValue>Ready</stringValue></value>
+    </assignmentItems>
+  </assignments>
+  <start><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("or condition logic with single condition should be supported: %#v", idx.Diagnostics)
+	}
+}
+
+func TestLoadProjectFlowORConditionLogicMultipleConditions(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_OR_Multi.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <decisions>
+    <name>Check_Status</name>
+    <defaultConnector><targetReference>Set_Ready</targetReference></defaultConnector>
+    <rules>
+      <name>Is_Done</name>
+      <conditionLogic>or</conditionLogic>
+      <conditions>
+        <leftValueReference>$Record.Status__c</leftValueReference>
+        <operator>EqualTo</operator>
+        <rightValue><stringValue>Done</stringValue></rightValue>
+      </conditions>
+      <conditions>
+        <leftValueReference>$Record.Status__c</leftValueReference>
+        <operator>EqualTo</operator>
+        <rightValue><stringValue>Archived</stringValue></rightValue>
+      </conditions>
+      <connector><targetReference>Set_Done</targetReference></connector>
+    </rules>
+  </decisions>
+  <assignments>
+    <name>Set_Done</name>
+    <assignmentItems>
+      <assignToReference>$Record.Status__c</assignToReference>
+      <operator>Assign</operator>
+      <value><stringValue>Done</stringValue></value>
+    </assignmentItems>
+  </assignments>
+  <assignments>
+    <name>Set_Ready</name>
+    <assignmentItems>
+      <assignToReference>$Record.Status__c</assignToReference>
+      <operator>Assign</operator>
+      <value><stringValue>Ready</stringValue></value>
+    </assignmentItems>
+  </assignments>
+  <start><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("or condition logic with multiple conditions should be supported: %#v", idx.Diagnostics)
+	}
+}
+
+func TestLoadProjectFlowFormulaReferenceInDecisionCondition(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_Formula_Cond.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <formulas>
+    <name>NoMoreCapacity</name>
+    <dataType>Boolean</dataType>
+    <expression>{!$Record.Availability__c} = 0</expression>
+  </formulas>
+  <decisions>
+    <name>Has_Capacity</name>
+    <defaultConnector><targetReference>Set_Full</targetReference></defaultConnector>
+    <rules>
+      <name>At_Capacity</name>
+      <conditionLogic>and</conditionLogic>
+      <conditions>
+        <leftValueReference>NoMoreCapacity</leftValueReference>
+        <operator>EqualTo</operator>
+        <rightValue><booleanValue>true</booleanValue></rightValue>
+      </conditions>
+      <connector><targetReference>Set_Full</targetReference></connector>
+    </rules>
+  </decisions>
+  <assignments>
+    <name>Set_Full</name>
+    <assignmentItems>
+      <assignToReference>$Record.Status__c</assignToReference>
+      <operator>Assign</operator>
+      <value><stringValue>Full</stringValue></value>
+    </assignmentItems>
+  </assignments>
+  <start><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("formula reference in decision condition should be supported: %#v", idx.Diagnostics)
+	}
+	branches := idx.Flows[0].Rules[0].Branches
+	if len(branches) == 0 || branches[0].Formula != "(Availability__c = 0) = true" || len(branches[0].Criteria) != 0 {
+		t.Fatalf("formula decision branch should be stored as executable formula, got %#v", branches)
+	}
+}
+
+func TestLoadProjectFlowRecordReferenceObjectResolution(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_Ref_Record_Update.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <recordUpdates>
+    <name>Update_Parent</name>
+    <inputAssignments><field>Name</field><value><stringValue>Updated</stringValue></value></inputAssignments>
+    <inputReference>$Record.Parent__r</inputReference>
+  </recordUpdates>
+  <start><connector><targetReference>Update_Parent</targetReference></connector><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("$Record.Parent__r record update should resolve: %#v", idx.Diagnostics)
+	}
+	steps := idx.Flows[0].Rules[0].Steps
+	if len(steps) != 1 || steps[0].Kind != "recordUpdate" || steps[0].RecordUpdate.ObjectName != "Parent__c" {
+		t.Fatalf("expected recordUpdate step with ObjectName=Parent__c, got %#v", steps)
+	}
+}
+
+func TestLoadProjectFlowCustomErrorFollowsConnectorGraph(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_Custom_Error.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <assignments>
+    <name>Set_Status</name>
+    <assignmentItems>
+      <assignToReference>$Record.Status__c</assignToReference>
+      <operator>Assign</operator>
+      <value><stringValue>Ready</stringValue></value>
+    </assignmentItems>
+  </assignments>
+  <customErrors>
+    <name>Block_Record</name>
+    <customErrorMessages><message>Blocked</message></customErrorMessages>
+  </customErrors>
+  <start><connector><targetReference>Set_Status</targetReference></connector><object>Widget__c</object><triggerType>RecordBeforeSave</triggerType></start>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	steps := idx.Flows[0].Rules[0].Steps
+	if len(steps) != 1 || steps[0].Kind != "fieldUpdate" {
+		t.Fatalf("steps = %#v", steps)
+	}
+
+	path = filepath.Join(root, "force-app/main/default/flows/Widget_Custom_Error_Reached.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <customErrors>
+    <name>Block_Record</name>
+    <customErrorMessages><message>Blocked</message></customErrorMessages>
+  </customErrors>
+  <start><connector><targetReference>Block_Record</targetReference></connector><object>Widget__c</object><triggerType>RecordBeforeSave</triggerType></start>
+</Flow>`)
+	idx, err = LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	steps = idx.Flows[0].Rules[0].Steps
+	if len(steps) != 1 || steps[0].Kind != "customError" || steps[0].CustomError.Messages[0].Message != "Blocked" {
+		t.Fatalf("steps = %#v", steps)
+	}
+}
+
+func TestLoadProjectFlowNoOpSideEffectActionsAreModeled(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_NoOp_Actions.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <actionCalls>
+    <name>Run_Subflow_Action</name>
+    <actionName>Widget_Helper_Flow</actionName>
+    <actionType>flow</actionType>
+  </actionCalls>
+  <actionCalls>
+    <name>Open_Quick_Action</name>
+    <actionType>quickAction</actionType>
+  </actionCalls>
+  <start><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	actions := idx.Flows[0].Rules[0].Actions
+	if len(actions) != 2 || actions[0].ActionType != "flow" || actions[1].ActionType != "quickAction" {
+		t.Fatalf("actions = %#v", actions)
 	}
 }
 

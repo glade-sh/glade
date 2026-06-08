@@ -411,6 +411,9 @@ func flowInterviewCreate(args []Value) (Value, error) {
 	}
 	interview.Fields["flowName"] = args[offset]
 	interview.Fields["variables"] = args[offset+1]
+	interview.Fields["status"] = String("NotStarted")
+	interview.Fields["started"] = Bool(false)
+	interview.Fields["outputs"] = Map()
 	return interview, nil
 }
 

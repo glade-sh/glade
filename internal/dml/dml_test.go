@@ -5051,6 +5051,127 @@ func TestFlowRuleFormulaAndFormulaFieldUpdates(t *testing.T) {
 	}
 }
 
+func TestFlowDecisionBranchFormulaRoutes(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldInteger}
+	account.Definition.Fields["Status__c"] = storage.Field{APIName: "Status__c", Type: storage.FieldString}
+	account.Definition.FlowRules = []storage.FlowRule{{
+		Name:   "RouteByFormula",
+		Active: true,
+		Branches: []storage.FlowBranch{
+			{
+				Name:    "NoCapacity",
+				Formula: "(Score__c = 0) = true",
+				FieldUpdates: []storage.WorkflowFieldUpdate{{
+					Name:         "SetFull",
+					Field:        "Status__c",
+					LiteralValue: "Full",
+				}},
+			},
+			{
+				Name:    "Default",
+				Default: true,
+				FieldUpdates: []storage.WorkflowFieldUpdate{{
+					Name:         "SetOpen",
+					Field:        "Status__c",
+					LiteralValue: "Open",
+				}},
+			},
+		},
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	hit := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Full"), "Score__c": storage.IntegerValue(0)},
+	}})
+	if !hit[0].Success {
+		t.Fatalf("hit insert = %#v", hit)
+	}
+	if got := org.Objects["Account"].Records[hit[0].ID].Fields["Status__c"].String; got != "Full" {
+		t.Fatalf("formula branch status = %q", got)
+	}
+
+	miss := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Open"), "Score__c": storage.IntegerValue(2)},
+	}})
+	if !miss[0].Success {
+		t.Fatalf("miss insert = %#v", miss)
+	}
+	if got := org.Objects["Account"].Records[miss[0].ID].Fields["Status__c"].String; got != "Open" {
+		t.Fatalf("default branch status = %q", got)
+	}
+}
+
+func TestFlowRecordUpdateInputReferenceUpdatesTriggeringRelationshipRecord(t *testing.T) {
+	org := storage.NewOrgState()
+	parentID := storage.ID("a01000000000001")
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Parent__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			parentID: {
+				ID:     parentID,
+				Object: "Parent__c",
+				Fields: map[string]storage.Value{
+					"Name": storage.StringValue("Original"),
+				},
+			},
+		},
+	}
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a02",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
+			},
+			FlowRules: []storage.FlowRule{{
+				Name:   "UpdateParent",
+				Active: true,
+				Steps: []storage.FlowStep{{
+					Kind: "recordUpdate",
+					RecordUpdate: storage.FlowRecordUpdate{
+						Name:           "Update_Parent",
+						ObjectName:     "Parent__c",
+						InputReference: "$Record.Parent__r",
+						InputAssignments: []storage.WorkflowFieldUpdate{{
+							Name:         "Name",
+							Field:        "Name",
+							LiteralValue: "Updated",
+						}},
+					},
+				}},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Widget__c",
+		Fields: map[string]storage.Value{
+			"Name":      storage.StringValue("Child"),
+			"Parent__c": storage.IDValue(parentID),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	if got := org.Objects["Parent__c"].Records[parentID].Fields["Name"].String; got != "Updated" {
+		t.Fatalf("parent name = %q", got)
+	}
+}
+
 func TestFormulaEvaluatesMultiplication(t *testing.T) {
 	org := testOrg()
 	definition := storage.ObjectDefinition{
@@ -5811,6 +5932,30 @@ func TestBeforeSaveFlowRejectsSideEffectSteps(t *testing.T) {
 	}
 }
 
+func TestBeforeSaveFlowCustomErrorProducesValidationError(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.FlowRules = []storage.FlowRule{{
+		Name:        "BlockBeforeSave",
+		Active:      true,
+		TriggerType: "RecordBeforeSave",
+		Steps: []storage.FlowStep{{
+			Kind: "customError",
+			CustomError: storage.FlowCustomError{
+				Name:     "Block_Record",
+				Messages: []storage.FlowCustomErrorMessage{{Message: "Blocked by flow"}},
+			},
+		}},
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	err := engine.ApplyBeforeSaveFlows([]storage.Record{{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}}})
+	if err == nil || !strings.Contains(err.Error(), "Blocked by flow") {
+		t.Fatalf("ApplyBeforeSaveFlows error = %v", err)
+	}
+}
+
 func TestFlowUnknownStepFailsExplicitly(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
@@ -5874,6 +6019,284 @@ func TestFlowRecordCreateFailureRollsBackPriorCreatesAndSourceInsert(t *testing.
 	}
 	if got := len(org.Objects["ActionRequest__c"].Records); got != 0 {
 		t.Fatalf("prior flow create was not rolled back, got %d requests", got)
+	}
+}
+
+func TestFlowFaultBranchRecordCreateRecovery(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a0w",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Status__c": {APIName: "Status__c", Type: storage.FieldString},
+			},
+			FlowRules: []storage.FlowRule{{
+				Name:   "RecoverOnCreate",
+				Active: true,
+				Steps: []storage.FlowStep{
+					{
+						Kind:        "recordCreate",
+						FaultTarget: "Log_Failure",
+						FaultBranch: []storage.FlowStep{
+							{Kind: "recordCreate", RecordCreate: storage.FlowRecordCreate{Name: "Log_Failure", ObjectName: "ActionRequest__c", InputAssignments: []storage.WorkflowFieldUpdate{{Name: "ActionName__c", Field: "ActionName__c", LiteralValue: "Recovered"}, {Name: "SourceRecordId__c", Field: "SourceRecordId__c", SourceField: "Id"}}}},
+						},
+						RecordCreate: storage.FlowRecordCreate{Name: "Create_Missing", ObjectName: "Missing__c"},
+					},
+					{Kind: "fieldUpdate", FieldUpdates: []storage.WorkflowFieldUpdate{{Name: "SetRecovered", Field: "Status__c", LiteralValue: "Recovered"}}},
+				},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["ActionRequest__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "ActionRequest__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"ActionName__c":     {APIName: "ActionName__c", Type: storage.FieldString, Required: true},
+				"SourceRecordId__c": {APIName: "SourceRecordId__c", Type: storage.FieldReference, ReferenceTo: []string{"Widget__c"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	var events []string
+	engine.AutomationTracer = func(name string, args map[string]any) {
+		events = append(events, name)
+	}
+
+	result := engine.Insert([]storage.Record{{Object: "Widget__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Child")}}})
+	if !result[0].Success {
+		t.Fatalf("insert failed: %#v events=%#v", result, events)
+	}
+	if !stringSlicesContainInOrder(events, []string{"apex.flow.rule", "apex.flow.fault", "apex.flow.record_create"}) {
+		t.Fatalf("events = %#v", events)
+	}
+	if got := len(org.Objects["ActionRequest__c"].Records); got != 1 {
+		t.Fatalf("expected 1 ActionRequest__c from fault recovery, got %d", got)
+	}
+	if value, ok := org.Objects["Widget__c"].Records[result[0].ID].Fields["Status__c"]; ok && value.String == "Recovered" {
+		t.Fatalf("success-path Status__c update ran after fault branch: %#v", value)
+	}
+}
+
+func TestFlowFaultBranchRunsContinuationOnlyWhenIncluded(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a0w",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Status__c": {APIName: "Status__c", Type: storage.FieldString},
+			},
+			FlowRules: []storage.FlowRule{{
+				Name:   "RecoverAndContinue",
+				Active: true,
+				Steps: []storage.FlowStep{
+					{
+						Kind:        "recordCreate",
+						FaultTarget: "Log_Failure",
+						FaultBranch: []storage.FlowStep{
+							{Kind: "recordCreate", RecordCreate: storage.FlowRecordCreate{Name: "Log_Failure", ObjectName: "ActionRequest__c", InputAssignments: []storage.WorkflowFieldUpdate{{Name: "ActionName__c", Field: "ActionName__c", LiteralValue: "Recovered"}, {Name: "SourceRecordId__c", Field: "SourceRecordId__c", SourceField: "Id"}}}},
+							{Kind: "fieldUpdate", FieldUpdates: []storage.WorkflowFieldUpdate{{Name: "SetRecovered", Field: "Status__c", LiteralValue: "Recovered"}}},
+						},
+						RecordCreate: storage.FlowRecordCreate{Name: "Create_Missing", ObjectName: "Missing__c"},
+					},
+				},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["ActionRequest__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "ActionRequest__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"ActionName__c":     {APIName: "ActionName__c", Type: storage.FieldString, Required: true},
+				"SourceRecordId__c": {APIName: "SourceRecordId__c", Type: storage.FieldReference, ReferenceTo: []string{"Widget__c"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	var events []string
+	engine.AutomationTracer = func(name string, args map[string]any) {
+		events = append(events, name)
+	}
+
+	result := engine.Insert([]storage.Record{{Object: "Widget__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Child")}}})
+	if !result[0].Success {
+		t.Fatalf("insert failed: %#v events=%#v", result, events)
+	}
+	if !stringSlicesContainInOrder(events, []string{"apex.flow.rule", "apex.flow.fault", "apex.flow.record_create", "apex.flow.field_update"}) {
+		t.Fatalf("events = %#v", events)
+	}
+	if got := org.Objects["Widget__c"].Records[result[0].ID].Fields["Status__c"].String; got != "Recovered" {
+		t.Fatalf("expected Status__c 'Recovered', got %q", got)
+	}
+}
+
+func TestFlowFaultBranchActionFailsRecoveryCreatesErrorLog(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a0w",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Status__c": {APIName: "Status__c", Type: storage.FieldString},
+			},
+			FlowRules: []storage.FlowRule{{
+				Name:   "RecoverOnAction",
+				Active: true,
+				Steps: []storage.FlowStep{
+					{
+						Kind:        "action",
+						FaultTarget: "Log_Action_Error",
+						FaultBranch: []storage.FlowStep{
+							{Kind: "recordCreate", RecordCreate: storage.FlowRecordCreate{Name: "Log_Action_Error", ObjectName: "ActionRequest__c", InputAssignments: []storage.WorkflowFieldUpdate{{Name: "ActionName__c", Field: "ActionName__c", LiteralValue: "ActionFailed"}, {Name: "SourceRecordId__c", Field: "SourceRecordId__c", SourceField: "Id"}}}},
+						},
+						Action: storage.FlowAction{Name: "FailingAction", ActionType: "apex", ActionName: "FailingApex", Inputs: []storage.WorkflowFieldUpdate{{Name: "sourceId", SourceField: "Id"}}},
+					},
+					{Kind: "fieldUpdate", FieldUpdates: []storage.WorkflowFieldUpdate{{Name: "SetRecovered", Field: "Status__c", LiteralValue: "Recovered"}}},
+				},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["ActionRequest__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "ActionRequest__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"ActionName__c":     {APIName: "ActionName__c", Type: storage.FieldString, Required: true},
+				"SourceRecordId__c": {APIName: "SourceRecordId__c", Type: storage.FieldReference, ReferenceTo: []string{"Widget__c"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	var events []string
+	engine.AutomationTracer = func(name string, args map[string]any) {
+		events = append(events, name)
+	}
+	engine.FlowActionInvoker = func(action storage.FlowAction, record storage.Record) error {
+		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s failed", action.Name)
+	}
+
+	result := engine.Insert([]storage.Record{{Object: "Widget__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Child")}}})
+	if !result[0].Success {
+		t.Fatalf("insert should succeed after fault recovery: %#v events=%#v", result, events)
+	}
+	if !stringSlicesContainInOrder(events, []string{"apex.flow.action", "apex.flow.fault", "apex.flow.record_create"}) {
+		t.Fatalf("events = %#v", events)
+	}
+	if got := len(org.Objects["ActionRequest__c"].Records); got != 1 {
+		t.Fatalf("expected 1 ActionRequest__c from fault recovery, got %d", got)
+	}
+}
+
+func TestFlowFaultBranchFailureRollsBackEntireTransaction(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a0w",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+			FlowRules: []storage.FlowRule{{
+				Name:   "FaultHandlerAlsoFails",
+				Active: true,
+				Steps: []storage.FlowStep{
+					{
+						Kind:        "recordCreate",
+						FaultTarget: "Failing_Recovery",
+						FaultBranch: []storage.FlowStep{
+							{Kind: "recordCreate", RecordCreate: storage.FlowRecordCreate{Name: "Failing_Recovery", ObjectName: "Missing__c"}},
+						},
+						RecordCreate: storage.FlowRecordCreate{Name: "Create_Missing", ObjectName: "Missing__c"},
+					},
+				},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	var events []string
+	engine.AutomationTracer = func(name string, args map[string]any) {
+		events = append(events, name)
+	}
+
+	result := engine.Insert([]storage.Record{{Object: "Widget__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Child")}}})
+	if result[0].Success {
+		t.Fatalf("insert should fail when fault handler also fails: %#v events=%#v", result, events)
+	}
+	if got := len(org.Objects["Widget__c"].Records); got != 0 {
+		t.Fatalf("source insert was not rolled back, got %d widgets", got)
+	}
+	if !stringSlicesContainInOrder(events, []string{"apex.flow.rule", "apex.flow.fault"}) {
+		t.Fatalf("events = %#v", events)
+	}
+}
+
+func TestFlowFaultBranchSubflowFailsRecoveryHandlesError(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a0w",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Status__c": {APIName: "Status__c", Type: storage.FieldString},
+			},
+			FlowRules: []storage.FlowRule{{
+				Name:   "RecoverOnSubflow",
+				Active: true,
+				Steps: []storage.FlowStep{
+					{
+						Kind:        "subflow",
+						FaultTarget: "Log_Subflow_Error",
+						FaultBranch: []storage.FlowStep{
+							{Kind: "recordCreate", RecordCreate: storage.FlowRecordCreate{Name: "Log_Subflow_Error", ObjectName: "ActionRequest__c", InputAssignments: []storage.WorkflowFieldUpdate{{Name: "ActionName__c", Field: "ActionName__c", LiteralValue: "SubflowFailed"}, {Name: "SourceRecordId__c", Field: "SourceRecordId__c", SourceField: "Id"}}}},
+						},
+						Subflow: storage.FlowSubflow{Name: "Call_Missing", FlowName: "Missing_Flow"},
+					},
+					{Kind: "fieldUpdate", FieldUpdates: []storage.WorkflowFieldUpdate{{Name: "SetRecovered", Field: "Status__c", LiteralValue: "Recovered"}}},
+				},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["ActionRequest__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "ActionRequest__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"ActionName__c":     {APIName: "ActionName__c", Type: storage.FieldString, Required: true},
+				"SourceRecordId__c": {APIName: "SourceRecordId__c", Type: storage.FieldReference, ReferenceTo: []string{"Widget__c"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	var events []string
+	engine.AutomationTracer = func(name string, args map[string]any) {
+		events = append(events, name)
+	}
+
+	result := engine.Insert([]storage.Record{{Object: "Widget__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Child")}}})
+	if !result[0].Success {
+		t.Fatalf("insert should succeed after fault recovery: %#v events=%#v", result, events)
+	}
+	if !stringSlicesContainInOrder(events, []string{"apex.flow.rule", "apex.flow.fault", "apex.flow.record_create"}) {
+		t.Fatalf("events = %#v", events)
+	}
+	if got := len(org.Objects["ActionRequest__c"].Records); got != 1 {
+		t.Fatalf("expected 1 ActionRequest__c from fault recovery, got %d", got)
 	}
 }
 

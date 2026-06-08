@@ -3226,7 +3226,25 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Flow.Interview.start expects 0 arguments")
 			}
+			flowName := ""
+			if f, ok := receiver.Fields["flowName"]; ok && f.Kind == ValueString {
+				flowName = f.Text
+			}
+			if flowName != "" && vm.Org != nil {
+				found := false
+				for _, obj := range vm.Org.Objects {
+					for _, rule := range obj.Definition.FlowRules {
+						if rule.Active && strings.EqualFold(rule.Name, flowName) {
+							found = true
+						}
+					}
+				}
+				if !found {
+					return Null, receiver, false, true, fmt.Errorf("Flow.Interview.start: flow %q not found", flowName)
+				}
+			}
 			receiver.Fields["started"] = Bool(true)
+			receiver.Fields["status"] = String("Completed")
 			return Null, receiver, true, true, nil
 		case strings.EqualFold(method, "getVariableValue"):
 			if len(args) != 1 || args[0].Kind != ValueString {
