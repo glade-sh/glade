@@ -1,0 +1,65 @@
+{
+  "name": "integration-soapapi-unsupported",
+  "evidence": [
+    {
+      "surfaceId": "unknown:apex_callouts_client_certs_soap",
+      "symbol": "SOAP client certificates",
+      "kind": "unsupported",
+      "notes": "Client certificate configuration for SOAP callouts requires org-level certificate management that the local runtime does not model."
+    },
+    {
+      "surfaceId": "unknown:apex_continuation_callout_soap",
+      "symbol": "SOAP continuation callouts",
+      "kind": "unsupported",
+      "notes": "Continuation (asynchronous) SOAP callouts require server-side long-running callout management that the local runtime does not support."
+    },
+    {
+      "surfaceId": "unknown:api_eol_soap",
+      "symbol": "SOAP API EOL",
+      "kind": "unsupported",
+      "notes": "SOAP API end-of-life policy is a Salesforce platform lifecycle concern, not a local runtime behavior."
+    },
+    {
+      "surfaceId": "unknown:soap-apex",
+      "symbol": "SOAP in Apex",
+      "kind": "unsupported",
+      "notes": "SOAP web service callouts from Apex require WebServiceCallout support, which the local runtime does not implement."
+    },
+    {
+      "surfaceId": "unknown:soap_headers",
+      "symbol": "SOAP headers",
+      "kind": "unsupported",
+      "notes": "Custom SOAP header management requires WebServiceCallout framework support, which the local runtime does not implement."
+    },
+    {
+      "surfaceId": "unknown:soap_rns",
+      "symbol": "SOAP request/response namespaces",
+      "kind": "unsupported",
+      "notes": "SOAP XML namespace handling requires WebServiceCallout framework support, which the local runtime does not implement."
+    },
+    {
+      "surfaceId": "tooling:SOAP",
+      "symbol": "Tooling SOAP API",
+      "kind": "unsupported",
+      "notes": "The Tooling SOAP API is a server-side API endpoint; the local glade server does not implement a Tooling SOAP surface."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/IntegrationSOAPAPIUnsupportedTest.cls",
+      "content": "@isTest private class IntegrationSOAPAPIUnsupportedTest { @isTest static void soapVerticalGuard() { System.assertEquals('Account', Account.SObjectType.getDescribe().getName()); System.assertEquals('Id', Account.Id.getDescribe().getName()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}
