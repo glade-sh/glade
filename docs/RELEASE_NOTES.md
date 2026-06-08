@@ -23,6 +23,21 @@ Compatibility status:
 
 Release engineering:
 
+- Added ConnectApi runtime support for ChatterFeeds (postFeedElement, postFeedElementBatch,
+  updateComment, getComment), ChatterUsers (setPhoto, getReputation), CommerceCart
+  (getCartSummary, addItemToCart, addItemsToCart, getCartItems, getProduct,
+  getProductPrice/getProductPrices), Topics (getTopicSuggestions), and Wave
+  (executeQuery), with compatibility fixtures for each surface.
+- Added explicit-unsupported compatibility fixtures for Platform Events
+  metadata/tooling surfaces, Integration GraphQL/PubSub/SalesforceConnect Amazon
+  RDS APIs, External Marketing Cloud AMPscript/Handlebars engines, and AI
+  Agentforce product surfaces, moving 62 rows from missing-shape to documented
+  explicit-unsupported.
+- Reclassified PlatformEvent Flow references and missing label sources as
+  non-test-blocking, clearing the last test-blocking post-parity inventory
+  findings.
+- Fixed ConnectApi.UserProfiles.setPhoto overload dispatch and added
+  Communities.getCommunity evidence coverage.
 - Added `glade playground`, a local Apex playground web UI with workspace files,
   execute-anonymous runs, cached results, logs, variables, limits, trace output,
   diagnostics, org diffs, reset/seed controls, and a slick developer-focused

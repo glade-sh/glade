@@ -1,6 +1,6 @@
 # Post-Parity Todo
 
-Status date: 2026-06-07.
+Status date: 2026-06-08.
 
 This is the follow-on work after `docs/FEATURE_PARITY_TODO.md` is complete.
 It assumes `glade` can already parse, check, and run real Apex tests with

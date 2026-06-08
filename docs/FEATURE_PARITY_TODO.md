@@ -1,6 +1,6 @@
 # Feature Parity Todo
 
-Status date: 2026-06-07.
+Status date: 2026-06-08.
 
 This is the remaining work to keep `glade` at credible MVP parity and then push
 beyond it. The current baselines are broad, and `glade compat mvp` is the

@@ -1,6 +1,6 @@
 # Local Apex Test Execution Plan
 
-Status date: 2026-06-07.
+Status date: 2026-06-08.
 
 This plan turns the broad post-parity backlog into squad-sized implementation
 phases for full local Apex test execution. The target is not merely loading

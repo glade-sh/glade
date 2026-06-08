@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'Glade',
   description: 'Orgless Apex runtime for local development and testing.',
-  base: '/docs/',
+  base: '/',
   srcDir: 'docs-src',
   outDir: '.vitepress/dist',
   cleanUrls: true,
@@ -19,8 +19,8 @@ export default defineConfig({
     logo: '/logo-mark.svg',
     search: { provider: 'local' },
     nav: [
-      { text: 'Home', link: 'https://glade.sh/' },
-      { text: 'Docs', link: '/' },
+      { text: 'Home', link: '/' },
+      { text: 'Docs', link: '/guide/installation' },
       { text: 'Playground', link: 'https://play.glade.sh/playground/' },
       { text: 'GitHub', link: 'https://github.com/glade-sh/glade' }
     ],
@@ -28,7 +28,6 @@ export default defineConfig({
       {
         text: 'Start',
         items: [
-          { text: 'Introduction', link: '/' },
           { text: 'Installation', link: '/guide/installation' },
           { text: 'CLI Reference', link: '/guide/cli-reference' }
         ]
@@ -56,12 +55,8 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/glade-sh/glade' }
     ],
     footer: {
-      message: 'Clean-room local Apex runtime.',
+      message: '127.0.0.1 is a fine place to test Apex.',
       copyright: 'Released by the Glade project.'
-    },
-    editLink: {
-      pattern: 'https://github.com/glade-sh/glade/edit/main/site/docs-src/:path',
-      text: 'Edit this page on GitHub'
     }
   }
 })

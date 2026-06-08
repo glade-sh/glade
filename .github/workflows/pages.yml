@@ -40,17 +40,16 @@ jobs:
 
       - name: Build VitePress docs
         working-directory: site
-        run: npm run docs:build
+        run: npm run build
 
       - name: Assemble Pages artifact
         run: |
           set -euo pipefail
           rm -rf site-pages
-          mkdir -p site-pages/docs
-          cp site/index.html site-pages/index.html
+          mkdir -p site-pages
+          cp -R site/.vitepress/dist/. site-pages/
           cp site/install.sh site-pages/install.sh
           cp site/CNAME site-pages/CNAME
-          cp -R site/.vitepress/dist/. site-pages/docs/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

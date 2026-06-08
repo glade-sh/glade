@@ -1,6 +1,6 @@
 # Comprehensive Apex Parity Follow-Up Plan
 
-Status date: 2026-06-07.
+Status date: 2026-06-08.
 
 This plan follows `docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md`. The local-test plan
 is the near-term product path: make the six enterprise example projects run
