@@ -4,8 +4,8 @@
 **Completed:** 2026-06-07T23:59 PDT
 **Plan:** docs/SURFACE_VERTICAL_CLOSE_PLAN.md
 **Baseline:** implemented=129331, partial=30, gap=11720 (missingShape=6845, missingEvidence=4856)
-**Final:** implemented=129346, partial=30, gap=11703 (missingShape=6838, missingEvidence=4841)
-**Net delta:** +15 implemented, -17 gap
+**Final:** implemented=129347, partial=30, gap=11678 (missingShape=6838, missingEvidence=4840)
+**Net delta:** +16 implemented, -42 gap
 
 ## Overall Summary
 
@@ -18,7 +18,11 @@
 | 5 | other partials sweep | no tractable partials remain | 0 | DONE (exhausted) | - |
 | N | ConnectApi | +15 implemented, gap -10 | -10 | DONE | b1e618bd |
 
----
+### Residual Follow-up
+
+| Phase | Description | Δ | Commit |
+|-------|-------------|---|--------|
+| R1 | Fix UserProfiles.setPhoto overload, add Communities.getCommunity evidence | -1 | cd62f84c |
 
 ## Phase 1 — Integration.SOAPAPI
 
