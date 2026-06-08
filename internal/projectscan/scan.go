@@ -2442,10 +2442,29 @@ func (ctx *scanContext) objectDefinition(objectName string) (storage.ObjectDefin
 		return storage.ObjectDefinition{APIName: objectName, Fields: map[string]storage.Field{}}, true
 	}
 	if !storage.IsKnownStandardObject(objectName) {
+		if definition, ok := ctx.objectDefinitionByNamespacedSuffix(objectName); ok {
+			return definition, true
+		}
 		return storage.ObjectDefinition{}, false
 	}
 	storage.EnsureStandardObject(&ctx.org, objectName)
 	return ctx.org.Objects[objectName].Definition, true
+}
+
+func (ctx *scanContext) objectDefinitionByNamespacedSuffix(objectName string) (storage.ObjectDefinition, bool) {
+	var match storage.ObjectDefinition
+	found := false
+	for key, st := range ctx.org.Objects {
+		if !strings.EqualFold(stripAnyNamespaceToken(key), objectName) {
+			continue
+		}
+		if found {
+			return storage.ObjectDefinition{}, false
+		}
+		match = st.Definition
+		found = true
+	}
+	return match, found
 }
 
 func stripAnyNamespaceToken(name string) string {

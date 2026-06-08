@@ -267,7 +267,11 @@ func LoadProject(p project.Project) (Schema, error) {
 		if err != nil {
 			return Schema{}, err
 		}
-		byName[object.Name] = &object
+		if existing, ok := byName[object.Name]; ok {
+			mergeObjectMetadata(existing, object)
+		} else {
+			byName[object.Name] = &object
+		}
 	}
 
 	for _, path := range p.FieldFiles {
@@ -363,6 +367,66 @@ func LoadProject(p project.Project) (Schema, error) {
 		return out.Objects[i].Name < out.Objects[j].Name
 	})
 	return out, nil
+}
+
+func mergeObjectMetadata(dst *Object, src Object) {
+	if dst.Label == "" {
+		dst.Label = src.Label
+	}
+	if dst.PluralLabel == "" {
+		dst.PluralLabel = src.PluralLabel
+	}
+	if dst.SharingModel == "" {
+		dst.SharingModel = src.SharingModel
+	}
+	if dst.CustomSettingsType == "" {
+		dst.CustomSettingsType = src.CustomSettingsType
+	}
+	if dst.NameField == (NameField{}) {
+		dst.NameField = src.NameField
+	}
+	for _, field := range src.Fields {
+		if !hasFieldNamed(dst.Fields, field.Name) {
+			dst.Fields = append(dst.Fields, field)
+		}
+	}
+	for _, recordType := range src.RecordTypes {
+		if !hasRecordTypeNamed(dst.RecordTypes, recordType.DeveloperName) {
+			dst.RecordTypes = append(dst.RecordTypes, recordType)
+		}
+	}
+	for _, rule := range src.ValidationRules {
+		if !hasValidationRuleNamed(dst.ValidationRules, rule.Name) {
+			dst.ValidationRules = append(dst.ValidationRules, rule)
+		}
+	}
+}
+
+func hasFieldNamed(fields []Field, name string) bool {
+	for _, field := range fields {
+		if strings.EqualFold(field.Name, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasRecordTypeNamed(recordTypes []RecordType, name string) bool {
+	for _, recordType := range recordTypes {
+		if strings.EqualFold(recordType.DeveloperName, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasValidationRuleNamed(rules []ValidationRule, name string) bool {
+	for _, rule := range rules {
+		if strings.EqualFold(rule.Name, name) {
+			return true
+		}
+	}
+	return false
 }
 
 func addReferencedCustomObjects(byName map[string]*Object) {

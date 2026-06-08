@@ -819,6 +819,22 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 	}
 }
 
+func TestScanSuppressesUnqualifiedNamespacedBigObjectSchemaReference(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/resolved/resolved.js"), `import LEDGER_AMOUNT from '@salesforce/schema/Ledger__b.pkg__Amount__c';`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Ledger__b/pkg__Ledger__b.object-meta.xml"), `<CustomObject><label>Ledger</label><pluralLabel>Ledgers</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Ledger__b/fields/Amount__c.field-meta.xml"), `<CustomField><fullName>Amount__c</fullName><label>Amount</label><type>Number</type></CustomField>`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Ledger__b.pkg__Amount__c") {
+		t.Fatalf("resolved namespaced big-object field reference should not be reported")
+	}
+}
+
 func TestScanDoesNotClassifyPassiveUIFilesAsControllerBlockers(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/ExistingController.cls"), `public class ExistingController {

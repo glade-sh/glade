@@ -12,6 +12,7 @@ node_modules/
 /probes/output/
 /tmp/
 /.gocache/
+/kilo.jsonc
 
 # Compiled Go test binaries (go test -c output)
 *.test

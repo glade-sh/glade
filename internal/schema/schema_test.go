@@ -140,6 +140,45 @@ func TestLoadProjectInfersMissingReferencedCustomObjects(t *testing.T) {
 	}
 }
 
+func TestLoadProjectMergesDuplicateObjectMetadataFragments(t *testing.T) {
+	root := t.TempDir()
+	modernPath := filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml")
+	legacyPath := filepath.Join(root, "src/objects/Thing__c.object")
+	writeFile(t, modernPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+<label>Thing</label>
+<pluralLabel>Things</pluralLabel>
+<fields><fullName>Alpha__c</fullName><label>Alpha</label><type>Text</type></fields>
+<recordTypes><fullName>Retail</fullName><active>true</active></recordTypes>
+<validationRules><fullName>Block</fullName><active>true</active><errorMessage>blocked</errorMessage></validationRules>
+</CustomObject>`)
+	writeFile(t, legacyPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+<fields><fullName>alpha__c</fullName><label>Duplicate alpha</label><type>Text</type></fields>
+<fields><fullName>Beta__c</fullName><label>Beta</label><type>Text</type></fields>
+<recordTypes><fullName>retail</fullName><active>false</active></recordTypes>
+<recordTypes><fullName>Internal</fullName><active>true</active></recordTypes>
+<validationRules><fullName>block</fullName><active>false</active><errorMessage>duplicate</errorMessage></validationRules>
+<validationRules><fullName>Warn</fullName><active>true</active><errorMessage>warn</errorMessage></validationRules>
+</CustomObject>`)
+
+	s, err := LoadProject(project.Project{ObjectFiles: []string{modernPath, legacyPath}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	object := objectsByName(s.Objects)["Thing__c"]
+	fields := fieldsByName(object.Fields)
+	if len(object.Fields) != 2 || fields["Alpha__c"].Label != "Alpha" || fields["Beta__c"].Label != "Beta" {
+		t.Fatalf("fields = %#v", object.Fields)
+	}
+	recordTypes := recordTypesByName(object.RecordTypes)
+	if len(object.RecordTypes) != 2 || !recordTypes["Retail"].Active || !recordTypes["Internal"].Active {
+		t.Fatalf("record types = %#v", object.RecordTypes)
+	}
+	rules := validationRulesByName(object.ValidationRules)
+	if len(object.ValidationRules) != 2 || !rules["Block"].Active || !rules["Warn"].Active {
+		t.Fatalf("validation rules = %#v", object.ValidationRules)
+	}
+}
+
 func TestLoadProjectNormalizesLookupParentAndChildRelationshipNames(t *testing.T) {
 	root := t.TempDir()
 	objectPath := filepath.Join(root, "force-app/main/objects/Order__c/Order__c.object-meta.xml")
@@ -332,6 +371,22 @@ func objectsByName(objects []Object) map[string]Object {
 	out := make(map[string]Object, len(objects))
 	for _, object := range objects {
 		out[object.Name] = object
+	}
+	return out
+}
+
+func recordTypesByName(recordTypes []RecordType) map[string]RecordType {
+	out := make(map[string]RecordType, len(recordTypes))
+	for _, recordType := range recordTypes {
+		out[recordType.DeveloperName] = recordType
+	}
+	return out
+}
+
+func validationRulesByName(rules []ValidationRule) map[string]ValidationRule {
+	out := make(map[string]ValidationRule, len(rules))
+	for _, rule := range rules {
+		out[rule.Name] = rule
 	}
 	return out
 }
