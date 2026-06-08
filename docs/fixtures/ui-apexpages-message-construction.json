@@ -1,0 +1,29 @@
+{
+  "name": "ui-apexpages-message-construction",
+  "evidence": [
+    {
+      "surfaceId": "apex:System.ApexPages.Message",
+      "symbol": "ApexPages.Message",
+      "kind": "test",
+      "notes": "ApexPages.Message construction and getSummary/getSeverity in local test."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/UIApexPagesMessageConstructionTest.cls",
+      "content": "@isTest private class UIApexPagesMessageConstructionTest { @isTest static void messageConstructionAndAccessors() { ApexPages.Message msg = new ApexPages.Message(ApexPages.Severity.ERROR, 'Test summary'); System.assertEquals(ApexPages.Severity.ERROR, msg.getSeverity()); System.assertEquals('Test summary', msg.getSummary()); ApexPages.addMessage(msg); System.assertEquals(true, ApexPages.hasMessages()); System.assertEquals(true, ApexPages.hasMessages(ApexPages.Severity.ERROR)); System.assertEquals(1, ApexPages.getMessages().size()); } @isTest static void threeArgConstructor() { ApexPages.Message msg = new ApexPages.Message(ApexPages.Severity.ERROR, 'summary', 'detail'); System.assertEquals(ApexPages.Severity.ERROR, msg.getSeverity()); System.assertEquals('summary', msg.getSummary()); System.assertEquals('detail', msg.getDetail()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}
