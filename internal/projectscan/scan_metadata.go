@@ -1,6 +1,8 @@
 package projectscan
 
 import (
+	"encoding/xml"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -219,6 +221,10 @@ func classifyByPath(rel, path string, ctx *scanContext) []Finding {
 		if ctx != nil && ctx.resolvesAutomationFile(path) {
 			return findings
 		}
+		if strings.EqualFold(flowTriggerType(path), "PlatformEvent") {
+			add("flow.platform-event-trigger", "Flow", baseNoExt(path))
+			return findings
+		}
 		add("flow.save-order", "Flow", baseNoExt(path))
 	case strings.HasSuffix(lower, ".email"), strings.HasSuffix(lower, ".email-meta.xml"):
 		if ctx != nil && ctx.resolvesEmailTemplate(baseNoExt(path), path) {
@@ -324,4 +330,24 @@ func namespaceAliases(proj project.Project, sch schema.Schema, idx *metadatapkg.
 		return nil
 	}
 	return aliases
+}
+
+type scanFlowXML struct {
+	Start scanFlowStartXML `xml:"start"`
+}
+
+type scanFlowStartXML struct {
+	TriggerType string `xml:"triggerType"`
+}
+
+func flowTriggerType(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	var flow scanFlowXML
+	if err := xml.Unmarshal(data, &flow); err != nil {
+		return ""
+	}
+	return strings.TrimSpace(flow.Start.TriggerType)
 }

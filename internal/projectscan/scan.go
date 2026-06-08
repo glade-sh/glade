@@ -173,6 +173,15 @@ var surfaceDefs = map[string]surfaceDef{
 		testBlocking:        true,
 		suggestedCapability: "flow.save-order",
 	},
+	"flow.platform-event-trigger": {
+		capability:          "flow.platform-event-trigger",
+		title:               "Platform Event-triggered flows",
+		area:                "declarative-automation",
+		stage:               "load",
+		status:              "unsupported",
+		testBlocking:        false,
+		suggestedCapability: "flow.platform-event-trigger",
+	},
 	"labels.localization": {
 		capability:          "labels.localization",
 		title:               "Custom label and translation resolution",
@@ -180,6 +189,15 @@ var surfaceDefs = map[string]surfaceDef{
 		stage:               "resolve",
 		status:              "unsupported",
 		testBlocking:        true,
+		suggestedCapability: "labels.localization",
+	},
+	"labels.missing-source": {
+		capability:          "labels.missing-source",
+		title:               "Custom label metadata missing from sampled source",
+		area:                "metadata-localization",
+		stage:               "load",
+		status:              "partial",
+		testBlocking:        false,
 		suggestedCapability: "labels.localization",
 	},
 	"email.templates": {
@@ -923,6 +941,9 @@ func scanTextFile(path, rel string, ctx *scanContext) ([]Finding, error) {
 				}
 				if capability == "lwc.controller-test" && ctx != nil && ctx.lwcControllerClassExists(lwcClassNameFromSymbol(symbol)) {
 					capability = "lwc.controller-metadata"
+				}
+				if capability == "labels.localization" {
+					capability = "labels.missing-source"
 				}
 				findings = append(findings, makeFinding(capability, rel, lineNo, metadataType, symbol, strings.TrimSpace(evidence)))
 			}

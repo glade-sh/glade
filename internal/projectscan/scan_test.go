@@ -1432,7 +1432,7 @@ System.debug(System.Label.BlockCommentLabel);
 	if hasLineFinding(report, "custommetadata.legacy-records", "force-app/main/default/classes/UsesMetadata.cls", "MissingInCodeFence__mdt") {
 		t.Fatalf("unstarred block-comment custom metadata mention should not be reported")
 	}
-	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesMetadata.cls", "BlockCommentLabel") {
+	if hasLineFinding(report, "labels.missing-source", "force-app/main/default/classes/UsesMetadata.cls", "BlockCommentLabel") {
 		t.Fatalf("unstarred block-comment label mention should not be reported")
 	}
 	if hasLineFinding(report, "custommetadata.legacy-records", "force-app/main/default/classes/UsesMetadata.cls", "StringOnly__mdt") {
@@ -1518,82 +1518,82 @@ import REMOVE from '@salesforce/label/c.Remove';
 		t.Fatal(err)
 	}
 
-	if find := findSurface(report, "labels.localization"); find == nil {
+	if find := findSurface(report, "labels.missing-source"); find == nil {
 		t.Fatalf("expected unresolved label surface")
 	}
-	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Save") {
+	if hasLineFinding(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "Save") {
 		t.Fatalf("resolved System.Label.Save should not be reported")
 	}
-	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Greeting") {
+	if hasLineFinding(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "Greeting") {
 		t.Fatalf("resolved Label.Greeting should not be reported")
 	}
-	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Save.replace") {
+	if hasLineFindingContaining(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "Save.replace") {
 		t.Fatalf("resolved label String method chain should not be reported")
 	}
-	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Label.compareTo") {
+	if hasLineFindingContaining(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "Label.compareTo") {
 		t.Fatalf("ordinary .Label field method chain should not be reported")
 	}
-	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Label.get") {
+	if hasLineFindingContaining(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "Label.get") {
 		t.Fatalf("ordinary .Label field map access should not be reported")
 	}
-	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "pkg.Managed") {
+	if hasLineFinding(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "pkg.Managed") {
 		t.Fatalf("resolved managed-package label fallback should not be reported")
 	}
-	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "npo02.AddressCopyUnknownObject") {
+	if hasLineFinding(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "npo02.AddressCopyUnknownObject") {
 		t.Fatalf("resolved aliased System.Label namespace should not be reported")
 	}
-	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "pkg1.Contact_Merge_Error_Too_Few_Contacts") {
+	if hasLineFinding(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "pkg1.Contact_Merge_Error_Too_Few_Contacts") {
 		t.Fatalf("resolved aliased Label namespace should not be reported")
 	}
-	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "ext.Managed_Dependency_Label") {
+	if hasLineFinding(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "ext.Managed_Dependency_Label") {
 		t.Fatalf("external managed-package label fallback should not be reported")
 	}
-	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "get") {
+	if hasLineFinding(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "get") {
 		t.Fatalf("System.Label.get should not be reported as a missing label")
 	}
-	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "c.MyLabelName") {
+	if hasLineFindingContaining(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "c.MyLabelName") {
 		t.Fatalf("label-like Apex string literals should not be reported")
 	}
-	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Site.invalid_email") {
+	if hasLineFinding(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "Site.invalid_email") {
 		t.Fatalf("platform Site label fallback should not be reported")
 	}
-	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/lwc/labels/labels.js", "c.Save") {
+	if hasLineFindingContaining(report, "labels.missing-source", "force-app/main/default/lwc/labels/labels.js", "c.Save") {
 		t.Fatalf("resolved LWC c.Save label should not be reported")
 	}
-	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/lwc/labels/labels.js", "pkg.Managed") {
+	if hasLineFindingContaining(report, "labels.missing-source", "force-app/main/default/lwc/labels/labels.js", "pkg.Managed") {
 		t.Fatalf("resolved LWC managed-package label fallback should not be reported")
 	}
-	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/lwc/labels/labels.js", "c.Remove") {
+	if hasLineFindingContaining(report, "labels.missing-source", "force-app/main/default/lwc/labels/labels.js", "c.Remove") {
 		t.Fatalf("resolved LWC label named like a String method should not be reported")
 	}
-	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.Save") {
+	if hasLineFindingContaining(report, "labels.missing-source", "force-app/main/default/pages/Labels.page", "$Label.Save") {
 		t.Fatalf("resolved Visualforce $Label.Save should not be reported")
 	}
-	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.ext__External_Visualforce_Label") {
+	if hasLineFindingContaining(report, "labels.missing-source", "force-app/main/default/pages/Labels.page", "$Label.ext__External_Visualforce_Label") {
 		t.Fatalf("external Visualforce managed-package label fallback should not be reported")
 	}
-	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.site.site_login") {
+	if hasLineFindingContaining(report, "labels.missing-source", "force-app/main/default/pages/Labels.page", "$Label.site.site_login") {
 		t.Fatalf("platform Visualforce Site label fallback should not be reported")
 	}
-	if !hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Missing") {
+	if !hasLineFinding(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "Missing") {
 		t.Fatalf("missing unresolved Apex label finding")
 	}
-	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "pkg1.Missing_Aliased_Label") {
+	if hasLineFinding(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "pkg1.Missing_Aliased_Label") {
 		t.Fatalf("external managed-package missing label fallback should not be reported")
 	}
-	if !hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "orgns.Own_Namespace_Missing") {
+	if !hasLineFinding(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "orgns.Own_Namespace_Missing") {
 		t.Fatalf("missing own-namespace label finding")
 	}
-	if !hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Missing.replace") {
+	if !hasLineFindingContaining(report, "labels.missing-source", "force-app/main/default/classes/UsesLabels.cls", "Missing.replace") {
 		t.Fatalf("missing unresolved Apex label method-chain finding")
 	}
-	if !hasLineFindingContaining(report, "labels.localization", "force-app/main/default/lwc/labels/labels.js", "c.Missing") {
+	if !hasLineFindingContaining(report, "labels.missing-source", "force-app/main/default/lwc/labels/labels.js", "c.Missing") {
 		t.Fatalf("missing unresolved LWC label finding")
 	}
-	if !hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.Missing") {
+	if !hasLineFindingContaining(report, "labels.missing-source", "force-app/main/default/pages/Labels.page", "$Label.Missing") {
 		t.Fatalf("missing unresolved Visualforce label finding")
 	}
-	if !hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.orgns__Own_Visualforce_Missing") {
+	if !hasLineFindingContaining(report, "labels.missing-source", "force-app/main/default/pages/Labels.page", "$Label.orgns__Own_Visualforce_Missing") {
 		t.Fatalf("missing own-namespace Visualforce label finding")
 	}
 	for _, finding := range report.Findings {
@@ -1859,6 +1859,90 @@ func TestScanTextFileHandlesLongLines(t *testing.T) {
 
 	if !hasLineFinding(report, "ui.presentation-metadata", "src/lwc/bundle/bundle.js", "Missing__c.Name") {
 		t.Fatalf("missing finding after long line: %#v", report.Findings)
+	}
+}
+
+func TestScanClassifiesPlatformEventFlowAsNonTestBlocking(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/flows/LogEvent.flow-meta.xml"), `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <start>
+    <object>LogEvent__e</object>
+    <triggerType>PlatformEvent</triggerType>
+  </start>
+</Flow>`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if findSurface(report, "flow.save-order") != nil {
+		t.Fatalf("PlatformEvent flow should not be flow.save-order: %#v", report.Findings)
+	}
+	surface := findSurface(report, "flow.platform-event-trigger")
+	if surface == nil {
+		t.Fatalf("PlatformEvent flow should be flow.platform-event-trigger: %#v", report.Findings)
+	}
+	if surface.TestBlocking {
+		t.Fatalf("flow.platform-event-trigger should not be test-blocking: %#v", surface)
+	}
+}
+
+func TestScanKeepsNonPlatformEventUnsupportedFlowBlocking(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/flows/Update.flow-meta.xml"), `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <environments>Custom</environments>
+  <start>
+    <object>Account</object>
+    <triggerType>RecordAfterSave</triggerType>
+  </start>
+</Flow>`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if findSurface(report, "flow.platform-event-trigger") != nil {
+		t.Fatalf("non-PlatformEvent flow should not be flow.platform-event-trigger: %#v", report.Findings)
+	}
+	surface := findSurface(report, "flow.save-order")
+	if surface == nil {
+		t.Fatalf("unsupported DML-triggered flow should be flow.save-order: %#v", report.Findings)
+	}
+	if !surface.TestBlocking {
+		t.Fatalf("unsupported DML-triggered flow should be test-blocking: %#v", surface)
+	}
+}
+
+func TestScanMissingLabelSourceIsNonTestBlocking(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/labels/CustomLabels.labels-meta.xml"), `<CustomLabels>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Page.page"), `<apex:page>
+  {!$Label.MissingLabel}
+</apex:page>`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if findSurface(report, "labels.localization") != nil {
+		t.Fatalf("missing label source should not weaken labels.localization: %#v", report.Findings)
+	}
+	surface := findSurface(report, "labels.missing-source")
+	if surface == nil {
+		t.Fatalf("missing label should appear as labels.missing-source surface: %#v", report.Findings)
+	}
+	if surface.TestBlocking {
+		t.Fatalf("labels.missing-source surface should not be test-blocking: %#v", surface)
+	}
+	if surface.Status != "partial" {
+		t.Fatalf("labels.missing-source status should be partial, got %q", surface.Status)
 	}
 }
 
