@@ -69,11 +69,17 @@ func (vm *VM) connectAPICommerceStorePricingGetProductPrice(args []Value) (Value
 }
 
 func (vm *VM) connectAPICommerceStorePricingGetProductPrices(args []Value) (Value, error) {
-	if len(args) < 2 || len(args) > 3 {
-		return Null, fmt.Errorf("ConnectApi.CommerceStorePricing.getProductPrices expects 2-3 arguments")
+	if len(args) < 2 || len(args) > 4 {
+		return Null, fmt.Errorf("ConnectApi.CommerceStorePricing.getProductPrices expects 2-4 arguments")
+	}
+	currency := "USD"
+	if len(args) >= 4 {
+		if supplied := scalarText(args[3]); supplied != "" {
+			currency = supplied
+		}
 	}
 	result := Object("ConnectApi.PricingResult")
 	result.Fields["pricingBatches"] = typedList("List<ConnectApi.PricingBatchResult>")
-	result.Fields["currencyIsoCode"] = String("USD")
+	result.Fields["currencyIsoCode"] = String(currency)
 	return result, nil
 }
