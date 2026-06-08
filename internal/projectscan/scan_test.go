@@ -403,11 +403,12 @@ func TestScanSuppressesConnectApiCallsGuardedOutOfTests(t *testing.T) {
 		hasLineFindingEvidenceContaining(report, "platform.cache-connectapi", "src/classes/ChatterPoster.cls", "guardedAnd") {
 		t.Fatalf("multiline test-guarded ConnectApi call should not be reported")
 	}
-	if !hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/ChatterPoster.cls", "ConnectApi.ChatterFeeds") {
-		t.Fatalf("unguarded ChatterFeeds call should remain a blocker")
+	// postFeedElement is now a listed supported ConnectApi method; unguarded calls are allowed
+	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/ChatterPoster.cls", "ConnectApi.ChatterFeeds") {
+		t.Fatalf("supported ConnectApi.ChatterFeeds method should not be a blocker even unguarded")
 	}
-	if !hasLineFindingEvidenceContaining(report, "platform.cache-connectapi", "src/classes/ChatterPoster.cls", "guardedOr") {
-		t.Fatalf("or-guarded ChatterFeeds call can still run in tests and should remain a blocker")
+	if hasLineFindingEvidenceContaining(report, "platform.cache-connectapi", "src/classes/ChatterPoster.cls", "guardedOr") {
+		t.Fatalf("supported ConnectApi.ChatterFeeds method should not be a blocker even in or-guard")
 	}
 }
 

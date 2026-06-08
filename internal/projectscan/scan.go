@@ -2766,6 +2766,13 @@ func supportedCacheConnectAPISymbol(symbol, evidence, file string) bool {
 		"ConnectApi.NextBestAction.getRecommendationReaction", "ConnectApi.NextBestAction.getRecommendationReactions",
 		"ConnectApi.NextBestAction.executeStrategy", "ConnectApi.NextBestAction.setRecommendationReaction",
 		"ConnectApi.Orchestration.getOrchestrationInstanceCollection", "ConnectApi.Orchestration.publishOrchestrationEvent", "ConnectApi.Orchestrator.getOrchestrationInstanceCollection", "ConnectApi.Orchestrator.publishOrchestrationEvent",
+		"ConnectApi.ChatterFeeds.postFeedElement", "ConnectApi.ChatterFeeds.postFeedElementBatch",
+		"ConnectApi.ChatterFeeds.updateComment", "ConnectApi.ChatterFeeds.getComment",
+		"ConnectApi.ChatterUsers.setPhoto", "ConnectApi.ChatterUsers.getReputation",
+		"ConnectApi.CommerceCart.getCartSummary", "ConnectApi.CommerceCart.addItemToCart", "ConnectApi.CommerceCart.addItemsToCart",
+		"ConnectApi.CommerceCart.getCartItems", "ConnectApi.CommerceCatalog.getProduct",
+		"ConnectApi.CommerceStorePricing.getProductPrice", "ConnectApi.CommerceStorePricing.getProductPrices",
+		"ConnectApi.Topics.getTopicSuggestions", "ConnectApi.Wave.executeQuery",
 	} {
 		if strings.Contains(evidence, needle) {
 			return true

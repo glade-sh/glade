@@ -1,0 +1,17 @@
+{
+  "name": "apex-connectapi-commerce",
+  "evidence": [
+    { "surfaceId": "apex:ConnectApi.CommerceCart.getCartSummary(String,String,String)", "symbol": "CommerceCart.getCartSummary", "kind": "test" },
+    { "surfaceId": "apex:ConnectApi.CommerceCart.addItemToCart(String,String,String,ConnectApi.CartItemInput)", "symbol": "CommerceCart.addItemToCart", "kind": "test" },
+    { "surfaceId": "apex:ConnectApi.CommerceCart.addItemsToCart(String,String,String,List<ConnectApi.BatchInput>)", "symbol": "CommerceCart.addItemsToCart", "kind": "test" },
+    { "surfaceId": "apex:ConnectApi.CommerceCart.getCartItems(String,String,String)", "symbol": "CommerceCart.getCartItems", "kind": "test" },
+    { "surfaceId": "apex:ConnectApi.CommerceCatalog.getProduct(String,String,String,List<String>,Boolean,List<String>,Boolean,Boolean,Boolean,Boolean,Boolean,Boolean,Boolean,String)", "symbol": "CommerceCatalog.getProduct", "kind": "test" },
+    { "surfaceId": "apex:ConnectApi.CommerceStorePricing.getProductPrice(String,String,String)", "symbol": "CommerceStorePricing.getProductPrice", "kind": "test" },
+    { "surfaceId": "apex:ConnectApi.CommerceStorePricing.getProductPrices(String,String,ConnectApi.PricingInput)", "symbol": "CommerceStorePricing.getProductPrices", "kind": "test" }
+  ],
+  "source": [
+    { "path": "force-app/main/classes/ConnectApiCommerceTest.cls", "content": "@isTest private class ConnectApiCommerceTest { @isTest static void getCartSummary() { ConnectApi.CartSummary summary = ConnectApi.CommerceCart.getCartSummary('0ZE', '001-acc', '0cs-cart'); System.assertNotEquals(null, summary); } @isTest static void addItemToCart() { ConnectApi.CartItemInput input = new ConnectApi.CartItemInput(); ConnectApi.CartItem item = ConnectApi.CommerceCart.addItemToCart('0ZE', '001-acc', '0cs-cart', input); System.assertNotEquals(null, item); } @isTest static void addItemsToCart() { ConnectApi.BatchInput bi = new ConnectApi.BatchInput(); List<ConnectApi.BatchInput> inputs = new List<ConnectApi.BatchInput>{bi}; List<ConnectApi.BatchResult> results = ConnectApi.CommerceCart.addItemsToCart('0ZE', '001-acc', '0cs-cart', inputs); System.assertEquals(1, results.size()); } @isTest static void getCartItems() { ConnectApi.CartItemCollection items = ConnectApi.CommerceCart.getCartItems('0ZE', '001-acc', '0cs-cart'); System.assertNotEquals(null, items); } @isTest static void getProduct() { ConnectApi.ProductDetail product = ConnectApi.CommerceCatalog.getProduct('0ZE', '01t-prod', '001-acc', new List<String>{'Name'}, false, new List<String>(), false, false, false, false, false, false, false, ''); System.assertNotEquals(null, product); } @isTest static void getProductPrice() { ConnectApi.ProductPrice price = ConnectApi.CommerceStorePricing.getProductPrice('0ZE', '01t-prod', '001-acc'); System.assertNotEquals(null, price); } @isTest static void getProductPrices() { ConnectApi.PricingInput pi = new ConnectApi.PricingInput(); ConnectApi.PricingResult result = ConnectApi.CommerceStorePricing.getProductPrices('0ZE', '001-acc', pi); System.assertNotEquals(null, result); } }" }
+  ],
+  "command": { "kind": "test" },
+  "expected": { "result": { "ok": true, "total": 7, "passed": 7, "failed": 0, "errors": 0 } }
+}

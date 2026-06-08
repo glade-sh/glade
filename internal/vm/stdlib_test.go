@@ -841,19 +841,16 @@ PushUpgradeCustomizationRepository.create('pkg', '00Dsubscriber', true);
 	}
 }
 
-func TestExecGeneratedConnectApiServiceCallsRemainUnsupported(t *testing.T) {
+func TestExecGeneratedConnectApiServiceCallsNowSupported(t *testing.T) {
 	program, err := CompileAnonymous(`
 ConnectApi.FeedElement element = ConnectApi.ChatterFeeds.postFeedElement(null, null);
-System.assertEquals(null, element);
+System.assertNotEquals(null, element);
 	`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	_, err = Execute(program, nil)
-	if err == nil {
-		t.Fatal("expected generated ConnectApi service call to be unsupported")
-	}
-	if !strings.Contains(err.Error(), `unsupported call "ConnectApi.ChatterFeeds.postFeedElement"`) {
+	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

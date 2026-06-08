@@ -2073,6 +2073,36 @@ platformStaticCall:
 	case "ConnectApi.Orchestration.publishOrchestrationEvent",
 		"ConnectApi.Orchestrator.publishOrchestrationEvent":
 		return vm.connectApiOrchPublishEvent(args)
+	case "ConnectApi.ChatterFeeds.postFeedElement", "System.ConnectApi.ChatterFeeds.postFeedElement":
+		return vm.connectAPIChatterPostFeedElement(args)
+	case "ConnectApi.ChatterFeeds.postFeedElementBatch", "System.ConnectApi.ChatterFeeds.postFeedElementBatch":
+		return vm.connectAPIChatterPostFeedElementBatch(args)
+	case "ConnectApi.ChatterFeeds.updateComment", "System.ConnectApi.ChatterFeeds.updateComment":
+		return vm.connectAPIChatterUpdateComment(args)
+	case "ConnectApi.ChatterFeeds.getComment", "System.ConnectApi.ChatterFeeds.getComment":
+		return vm.connectAPIChatterGetComment(args)
+	case "ConnectApi.ChatterUsers.setPhoto", "System.ConnectApi.ChatterUsers.setPhoto":
+		return vm.connectAPIChatterUsersSetPhoto(args)
+	case "ConnectApi.ChatterUsers.getReputation", "System.ConnectApi.ChatterUsers.getReputation":
+		return vm.connectAPIChatterUsersGetReputation(args)
+	case "ConnectApi.CommerceCart.getCartSummary", "System.ConnectApi.CommerceCart.getCartSummary":
+		return vm.connectAPICommerceCartGetCartSummary(args)
+	case "ConnectApi.CommerceCart.addItemToCart", "System.ConnectApi.CommerceCart.addItemToCart":
+		return vm.connectAPICommerceCartAddItemToCart(args)
+	case "ConnectApi.CommerceCart.addItemsToCart", "System.ConnectApi.CommerceCart.addItemsToCart":
+		return vm.connectAPICommerceCartAddItemsToCart(args)
+	case "ConnectApi.CommerceCart.getCartItems", "System.ConnectApi.CommerceCart.getCartItems":
+		return vm.connectAPICommerceCartGetCartItems(args)
+	case "ConnectApi.CommerceCatalog.getProduct", "System.ConnectApi.CommerceCatalog.getProduct":
+		return vm.connectAPICommerceCatalogGetProduct(args)
+	case "ConnectApi.CommerceStorePricing.getProductPrice", "System.ConnectApi.CommerceStorePricing.getProductPrice":
+		return vm.connectAPICommerceStorePricingGetProductPrice(args)
+	case "ConnectApi.CommerceStorePricing.getProductPrices", "System.ConnectApi.CommerceStorePricing.getProductPrices":
+		return vm.connectAPICommerceStorePricingGetProductPrices(args)
+	case "ConnectApi.Topics.getTopicSuggestions", "System.ConnectApi.Topics.getTopicSuggestions":
+		return vm.connectAPITopicsGetTopicSuggestions(args)
+	case "ConnectApi.Wave.executeQuery", "System.ConnectApi.Wave.executeQuery":
+		return vm.connectAPIWaveExecuteQuery(args)
 	case "Metadata.Operations.enqueueDeployment":
 		return vm.metadataEnqueueDeployment(args, result)
 	case "Metadata.Operations.checkDeployStatus":
