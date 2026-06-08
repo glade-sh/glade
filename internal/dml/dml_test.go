@@ -5486,6 +5486,50 @@ func TestFlowChatterPostCreatesFeedItem(t *testing.T) {
 	}
 }
 
+func TestFlowStandardSideEffectActionsAreNoOps(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a0w",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Email__c":  {APIName: "Email__c", Type: storage.FieldString},
+				"Status__c": {APIName: "Status__c", Type: storage.FieldString},
+			},
+			FlowRules: []storage.FlowRule{{
+				Name:   "Notify",
+				Active: true,
+				Steps: []storage.FlowStep{
+					{Kind: "action", Action: storage.FlowAction{Name: "Send_Quote_Email", ActionType: "emailSimple", ActionName: "emailSimple", Inputs: []storage.WorkflowFieldUpdate{
+						{Name: "emailBody", LiteralValue: "This is the quote."},
+						{Name: "emailAddresses", SourceField: "Email__c"},
+						{Name: "emailSubject", LiteralValue: "AZ Insurance Quote"},
+					}}},
+					{Kind: "action", Action: storage.FlowAction{Name: "Notification_On_Adoption_Match", ActionType: "customNotificationAction", ActionName: "customNotificationAction", Inputs: []storage.WorkflowFieldUpdate{
+						{Name: "recipientIds", SourceField: "notificationRecipients"},
+					}}},
+					{Kind: "fieldUpdate", FieldUpdates: []storage.WorkflowFieldUpdate{{Name: "SetStatus", Field: "Status__c", LiteralValue: "Notified"}}},
+				},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	engine.FlowActionInvoker = func(action storage.FlowAction, record storage.Record) error {
+		t.Fatalf("standard side-effect action invoked as Apex: %#v", action)
+		return nil
+	}
+
+	insert := engine.Insert([]storage.Record{{Object: "Widget__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Child"), "Email__c": storage.StringValue("lead@example.test")}}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	if got := org.Objects["Widget__c"].Records[insert[0].ID].Fields["Status__c"].String; got != "Notified" {
+		t.Fatalf("status = %q", got)
+	}
+}
+
 func TestFlowStepsRunInXmlOrder(t *testing.T) {
 	org := testOrg()
 	org.Objects["Widget__c"] = storage.ObjectState{
@@ -5692,6 +5736,51 @@ func TestFlowRecordUpdateObjectAndCollection(t *testing.T) {
 	}
 	if got := widgets["a0w000000000003"].Fields["Status__c"].String; got != "Open" {
 		t.Fatalf("widget C status = %q", got)
+	}
+}
+
+func TestFlowRecordUpdateTargetsFirstLookupOutput(t *testing.T) {
+	org := testOrg()
+	sourceID := storage.ID("a03000000000001")
+	actionID := storage.ID("a05000000000001")
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a03",
+			Fields:    map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+			FlowRules: []storage.FlowRule{{
+				Name:   "CloseMatchedAction",
+				Active: true,
+				Steps: []storage.FlowStep{
+					{Kind: "recordLookup", RecordLookup: storage.FlowRecordLookup{Name: "Matched_Action", ObjectName: "Action__c", GetFirstRecordOnly: true, StoreOutputAutomatically: true, Criteria: []storage.WorkflowCriteriaItem{{Field: "Parent__c", Operation: "equals", SourceField: "Id"}}}},
+					{Kind: "recordUpdate", RecordUpdate: storage.FlowRecordUpdate{Name: "Close_Action", ObjectName: "Action__c", InputReference: "Matched_Action", InputAssignments: []storage.WorkflowFieldUpdate{{Name: "Status__c", Field: "Status__c", LiteralValue: "Closed"}}}},
+				},
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			sourceID: {Object: "Widget__c", ID: sourceID, Fields: map[string]storage.Value{"Name": storage.StringValue("Trigger")}},
+		},
+	}
+	org.Objects["Action__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Action__c",
+			KeyPrefix: "a05",
+			Fields: map[string]storage.Field{
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Widget__c"}},
+				"Status__c": {APIName: "Status__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			actionID: {Object: "Action__c", ID: actionID, Fields: map[string]storage.Value{"Parent__c": storage.IDValue(sourceID), "Status__c": storage.StringValue("Open")}},
+		},
+	}
+	engine := NewEngine(&org)
+	update := engine.Update([]storage.Record{{Object: "Widget__c", ID: sourceID, Fields: map[string]storage.Value{"Name": storage.StringValue("Updated")}}})
+	if !update[0].Success {
+		t.Fatalf("update = %#v", update)
+	}
+	if got := org.Objects["Action__c"].Records[actionID].Fields["Status__c"].String; got != "Closed" {
+		t.Fatalf("action status = %q", got)
 	}
 }
 

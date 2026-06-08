@@ -332,6 +332,9 @@ platformStaticCall:
 	if value, handled, err := vm.callConnectAPITestFixtureStatic(callee, args); handled || err != nil {
 		return value, err
 	}
+	if value, handled, err := vm.callConnectAPILocalStatic(callee, args); handled || err != nil {
+		return value, err
+	}
 	if value, handled := vm.callConnectAPIReadOnlyStaticDefault(callee, args); handled {
 		return value, nil
 	}

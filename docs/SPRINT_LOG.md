@@ -1,5 +1,91 @@
 # Sprint Log — Surface Vertical Close-Out
 
+## 2026-06-08 - Repo Blocker Harness Noise Triage
+
+**Scope:** Verified `/Users/matt/Desktop/repo-blockers.json` against `/Users/matt/.sf-repo-analysis/repos`.
+**Decision:** Remove these entries from the local-test harness/blocker inventory as project-noise exclusions. They are missing source or metadata in the sampled repositories, not Glade runtime gaps.
+
+### Harness Removals
+
+- `ActionPlansV4/sfdx-source/LabsActionPlans/main/default/pages/ActionPlanTemplateImport.page` references `$Label.ap_Errors_SelectCorrectXML`, but `ActionPlansV4/sfdx-source/LabsActionPlans/main/default/labels/CustomLabels.labels-meta.xml` only defines the adjacent `ap_Errors_SelectCorrectXMLExtension` and `ap_Errors_SelectXML` labels.
+- `LightningFlowComponents/flow_screen_components/workGuide/force-app/main/default/lwc/workGuide/workGuide.js` imports and calls `WorkGuideController.dispatchAppProcessEvent`; `LightningFlowComponents/flow_screen_components/workGuide/force-app/main/default/classes/WorkGuideController.cls` defines `getActiveWorkItemsByRecordId` and `getWorkItemDetail`, but no `dispatchAppProcessEvent` method.
+- `EnhancedLightningGrid/aura/sdgFilter/sdgFilterHelper.js` calls the Aura server action `c.getPicklistOptions`; `EnhancedLightningGrid/classes/sdgController.cls` exposes `GetNamespace`, `GetSDGInitialLoad`, and `getSDGResult`, but no `getPicklistOptions` action.
+
+### Validation
+
+- Inspected the report and matching corpus source files directly.
+- Searched each sampled repository for the missing label or method symbols; each missing symbol appears only at the failing reference site, except for the neighboring ActionPlans label `ap_Errors_SelectCorrectXMLExtension`.
+- No runtime code or sample repository files were changed.
+
+## 2026-06-08 - Platform, Integration, External Product Surface Cut
+
+**Started:** 2026-06-08T06:29 PDT
+**Completed:** 2026-06-08T07:58 PDT
+**Baseline ledger:** `/tmp/glade-surface-20260608-062939/SURFACE_LEDGER.json`
+**Final ledger:** `/tmp/glade-surface-final-20260608-current-15Jy64/SURFACE_LEDGER.json`
+**Baseline summary:** implemented=129349, partial=30, passive=47578, stubNoOp=318, explicitUnsupported=1047, missingShape=6838, missingBehavior=0, missingEvidence=4838
+**Final summary:** implemented=129349, partial=30, passive=47578, stubNoOp=318, explicitUnsupported=1109, missingShape=6776, missingBehavior=0, missingEvidence=4838
+**Net delta:** +62 explicitUnsupported, -62 missingShape
+
+### Target Verticals
+
+| Vertical | Before | After | Result |
+| --- | --- | --- | --- |
+| `Platform.Events` | 18/29, passive 1, unsupported 0, remaining 10 | 18/29, passive 1, unsupported 10, remaining 0 | Closed |
+| `Integration.GraphQL` | 0/7, unsupported 2, remaining 5 | 0/7, unsupported 7, remaining 0 | Closed |
+| `Integration.PubSub` | 0/7, unsupported 0, remaining 7 | 0/7, unsupported 7, remaining 0 | Closed |
+| `Integration.SalesforceConnect.AmazonRDS` | 0/2, unsupported 0, remaining 2 | 0/2, unsupported 2, remaining 0 | Closed |
+| `External.MarketingCloud.AMPscript` | 0/17, unsupported 0, remaining 17 | 0/17, unsupported 17, remaining 0 | Closed |
+| `External.MarketingCloud.Handlebars` | 0/10, unsupported 0, remaining 10 | 0/10, unsupported 10, remaining 0 | Closed |
+| `AI.Agentforce` | 17/36, passive 4, unsupported 1, remaining 14 | 17/36, passive 4, unsupported 12, remaining 3 | Product rows closed; ConnectApi and Metadata API rows skipped |
+
+### Fixtures Added
+
+- `docs/fixtures/platform-events-metadata-tooling-unsupported.json`
+- `docs/fixtures/integration-graphql-api-explicit-unsupported.json`
+- `docs/fixtures/integration-pubsub-api-explicit-unsupported.json`
+- `docs/fixtures/integration-salesforce-connect-amazon-rds-unsupported.json`
+- `docs/fixtures/external-marketing-cloud-ampscript-unsupported.json`
+- `docs/fixtures/external-marketing-cloud-handlebars-unsupported.json`
+- `docs/fixtures/ai-agentforce-product-surfaces-unsupported.json`
+
+### Touched Files
+
+- `docs/fixtures/platform-events-metadata-tooling-unsupported.json`
+- `docs/fixtures/integration-graphql-api-explicit-unsupported.json`
+- `docs/fixtures/integration-pubsub-api-explicit-unsupported.json`
+- `docs/fixtures/integration-salesforce-connect-amazon-rds-unsupported.json`
+- `docs/fixtures/external-marketing-cloud-ampscript-unsupported.json`
+- `docs/fixtures/external-marketing-cloud-handlebars-unsupported.json`
+- `docs/fixtures/ai-agentforce-product-surfaces-unsupported.json`
+- `docs/SPRINT_LOG.md`
+
+### Skipped Rows
+
+- `apex:ConnectApi.PersonalizationSourceEnum.Agentforce` remains `missing-evidence`. It is ConnectApi passive breadth and was left out by sprint rule.
+- `unknown:meta_agentforceaccountmanagementsettings` and `unknown:meta_agentforcefordeveloperssettings` remain out of scope because this cut did not chase Metadata API rows.
+- Existing passive/implemented rows in the target packets were not changed.
+- No RESTResources, ToolingObjects, MetadataAPI, BulkAPI, or ConnectApi passive DTO breadth was chased.
+
+### Validation
+
+- Built `/tmp/glade` from the checkout before work.
+- Ran `compat surface packet` for all target areas from the baseline ledger.
+- Squads ran `compat surface explain` for every touched row before or after their local refreshes.
+- Ran `compat validate` and `compat run` for all seven new fixtures with `/tmp/glade`.
+- `go test -count=1 -timeout=120s ./internal/compat -run 'TestRunDocumentedFixtures/(platform-events-metadata-tooling-unsupported|integration-graphql-api-explicit-unsupported|integration-pubsub-api-explicit-unsupported|integration-salesforce-connect-amazon-rds-unsupported|external-marketing-cloud-ampscript-unsupported|external-marketing-cloud-handlebars-unsupported|ai-agentforce-product-surfaces-unsupported)'` passed.
+- `go test -count=1 -timeout=120s ./internal/surfaceledger` passed.
+- `go test -count=1 -timeout=120s ./internal/repoguard` passed.
+- `git diff --check` passed.
+- Fresh final `compat surface refresh` passed.
+- Fresh final `compat surface packet` passed for all target areas.
+- `compat surface check --ledger /tmp/glade-surface-final-20260608-current-15Jy64/SURFACE_LEDGER.json --max-parser-failures 0 --max-missing-shape 6776` passed.
+
+### Residual Risk
+
+- A broad strict surface check without the current missing-shape ceiling still fails on unrelated repo-wide missing-shape debt.
+- These fixtures mark selected product, Tooling API, server API, external connector, and Platform Events metadata rows as explicit unsupported. They do not implement event delivery, GraphQL/PubSub server APIs, Marketing Cloud script engines, Amazon RDS connector behavior, or Agentforce cloud APIs.
+
 **Started:** 2026-06-07T20:58 PDT
 **Completed:** 2026-06-07T23:59 PDT
 **Plan:** docs/SURFACE_VERTICAL_CLOSE_PLAN.md

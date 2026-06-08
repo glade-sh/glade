@@ -2765,6 +2765,8 @@ func supportedCacheConnectAPISymbol(symbol, evidence, file string) bool {
 		"ConnectApi.UserProfiles.getPhoto", "ConnectApi.NextBestAction.getRecommendation",
 		"ConnectApi.NextBestAction.getRecommendationReaction", "ConnectApi.NextBestAction.getRecommendationReactions",
 		"ConnectApi.NextBestAction.executeStrategy", "ConnectApi.NextBestAction.setRecommendationReaction",
+		"ConnectApi.ManagedContent.getAllManagedContent", "ConnectApi.ManagedContent.getManagedContentByContentKeys",
+		"ConnectApi.EinsteinLLM.generateMessagesForPromptTemplate",
 		"ConnectApi.Orchestration.getOrchestrationInstanceCollection", "ConnectApi.Orchestration.publishOrchestrationEvent", "ConnectApi.Orchestrator.getOrchestrationInstanceCollection", "ConnectApi.Orchestrator.publishOrchestrationEvent",
 		"ConnectApi.ChatterFeeds.postFeedElement", "ConnectApi.ChatterFeeds.postFeedElementBatch",
 		"ConnectApi.ChatterFeeds.updateComment", "ConnectApi.ChatterFeeds.getComment",

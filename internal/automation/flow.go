@@ -196,7 +196,9 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 	if flowProcessTypeNonDML(raw.ProcessType) {
 		return flow, diagnostics, nil
 	}
-	diagnostics = flowUnsupportedNodeDiagnostics(path, name, raw)
+	formulas := flowFormulaMap(raw.Formulas)
+	variables := flowVariableMap(raw.Variables)
+	diagnostics = flowUnsupportedNodeDiagnostics(path, name, raw, formulas, variables)
 	if !flowProcessTypeSupported(raw.ProcessType) {
 		diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("processType %q is not modeled as DML-triggered automation", raw.ProcessType)))
 	}
@@ -207,8 +209,6 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 		ProcessType: strings.TrimSpace(raw.ProcessType),
 		TriggerType: strings.TrimSpace(raw.Start.TriggerType),
 	}
-	formulas := flowFormulaMap(raw.Formulas)
-	variables := flowVariableMap(raw.Variables)
 	routedDecisions := false
 	for _, filter := range raw.Start.Filters {
 		rule.Criteria = append(rule.Criteria, storage.WorkflowCriteriaItem{
@@ -283,8 +283,11 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 		}
 	}
 	for _, update := range raw.RecordUpdates {
+		if strings.TrimSpace(update.Object) != "" {
+			continue
+		}
 		if !flowUpdatesTriggeringRecord(update.InputReference) {
-			if !flowRequiresOrderedGraph(raw) {
+			if _, ok := modeledFlowRecordUpdate(update, formulas, variables, raw.RecordLookups); !ok && !flowRequiresOrderedGraph(raw) {
 				diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("record update %q does not target the triggering record", firstNonBlank(update.Name, update.Label))))
 			}
 			continue
@@ -339,6 +342,8 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 			}
 			if len(ordered.Steps) > 0 {
 				rule.Steps = ordered.Steps
+				rule.FieldUpdates = nil
+				rule.Actions = nil
 			}
 		}
 	}
@@ -1112,6 +1117,14 @@ func modeledFlowRecordUpdate(update flowRecordUpdateXML, formulas map[string]str
 		if variable, ok := variables[strings.ToLower(inputReference)]; ok {
 			objectName = strings.TrimSpace(variable.ObjectType)
 		}
+		if objectName == "" {
+			for _, lookup := range lookups {
+				if lookup.StoreOutputAutomatically && lookup.GetFirstRecordOnly && strings.EqualFold(inputReference, firstNonBlank(lookup.Name, lookup.Label)) {
+					objectName = strings.TrimSpace(lookup.Object)
+					break
+				}
+			}
+		}
 	}
 	if name == "" || objectName == "" {
 		return storage.FlowRecordUpdate{}, false
@@ -1155,6 +1168,11 @@ func flowBranchHasEffects(branch storage.FlowBranch) bool {
 func flowRequiresOrderedGraph(raw flowXML) bool {
 	if len(raw.Loops) > 0 {
 		return true
+	}
+	for _, update := range raw.RecordUpdates {
+		if strings.TrimSpace(update.Object) != "" || !flowUpdatesTriggeringRecord(update.InputReference) {
+			return true
+		}
 	}
 	for _, create := range raw.RecordCreates {
 		if strings.TrimSpace(create.InputReference) != "" {
@@ -1291,7 +1309,7 @@ func flowUpdatesTriggeringRecord(input string) bool {
 
 func modeledFlowActionCall(action flowActionCallXML, formulas map[string]string, variables map[string]flowVariableXML, lookups []flowRecordLookupXML) (storage.FlowAction, bool) {
 	actionType := strings.TrimSpace(action.ActionType)
-	if actionType != "" && !strings.EqualFold(actionType, "apex") && !strings.EqualFold(actionType, "chatterPost") {
+	if actionType != "" && !strings.EqualFold(actionType, "apex") && !flowBuiltinActionType(actionType) {
 		return storage.FlowAction{}, false
 	}
 	actionName := strings.TrimSpace(action.ActionName)
@@ -1327,6 +1345,24 @@ func modeledFlowActionCall(action flowActionCallXML, formulas map[string]string,
 	return out, true
 }
 
+func flowBuiltinActionType(actionType string) bool {
+	switch strings.ToLower(strings.TrimSpace(actionType)) {
+	case "chatterpost", "emailsimple", "customnotificationaction":
+		return true
+	default:
+		return false
+	}
+}
+
+func flowNoOpBuiltinActionType(actionType string) bool {
+	switch strings.ToLower(strings.TrimSpace(actionType)) {
+	case "emailsimple", "customnotificationaction":
+		return true
+	default:
+		return false
+	}
+}
+
 func flowOperator(operator string) string {
 	switch strings.ToLower(strings.ReplaceAll(operator, " ", "")) {
 	case "", "equalto", "equals":
@@ -1340,7 +1376,7 @@ func flowOperator(operator string) string {
 	}
 }
 
-func flowUnsupportedNodeDiagnostics(path, flowName string, raw flowXML) []diagnostic.Diagnostic {
+func flowUnsupportedNodeDiagnostics(path, flowName string, raw flowXML, formulas map[string]string, variables map[string]flowVariableXML) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	if target := strings.TrimSpace(raw.Start.FaultConnector.TargetReference); target != "" {
 		diagnostics = append(diagnostics, flowUnsupported(path, flowName, fmt.Sprintf("start fault connector to %q is not supported", target)))

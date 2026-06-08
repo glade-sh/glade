@@ -881,6 +881,31 @@ func (e *Engine) executeFlowRecordUpdate(update storage.FlowRecordUpdate, source
 		return 0, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s targets unknown object %s", update.Name, update.ObjectName)
 	}
 	if strings.TrimSpace(update.InputReference) != "" {
+		if output, ok := frame.lookupOutputs[flowFrameKey(update.InputReference)]; ok {
+			target, _, err := e.object(targetName)
+			if err != nil {
+				return 0, err
+			}
+			id, ok := flowRecordID(output.record)
+			if !ok {
+				return 0, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s references lookup output %s without an id", update.Name, update.InputReference)
+			}
+			matches, ok := e.evaluateFlowRecordUpdateCriteria(update, output.record, target.Definition, source, sourceDefinition, frame)
+			if !ok {
+				return 0, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s has unsupported criteria", update.Name)
+			}
+			if !matches {
+				return 0, nil
+			}
+			record, ok := e.flowRecordUpdateRecord(update, id, targetName, target.Definition, source, sourceDefinition, frame)
+			if !ok {
+				return 0, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s has unsupported assignment", update.Name)
+			}
+			if err := e.updateOne(record); err != nil {
+				return 0, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err)
+			}
+			return 1, nil
+		}
 		records, ok := frame.flowCollection(update.InputReference)
 		if !ok {
 			return 0, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s references unknown collection %s", update.Name, update.InputReference)
@@ -1235,6 +1260,15 @@ func flowActionsNeedLookupOutputs(actions []storage.FlowAction) bool {
 }
 
 func (e *Engine) applyBuiltinFlowAction(flowName string, action storage.FlowAction, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput) (bool, error) {
+	if isNoOpFlowSideEffectAction(action) {
+		e.traceAutomation("apex.flow.side_effect_action", map[string]any{
+			"flow":       flowName,
+			"action":     action.Name,
+			"actionType": action.ActionType,
+			"record":     string(source.ID),
+		})
+		return true, nil
+	}
 	if !strings.EqualFold(action.ActionType, "chatterPost") && !strings.EqualFold(action.ActionName, "chatterPost") {
 		return false, nil
 	}
@@ -1274,6 +1308,19 @@ func (e *Engine) applyBuiltinFlowAction(flowName string, action storage.FlowActi
 		"parent":   workflowValueString(parent),
 	})
 	return true, nil
+}
+
+func isNoOpFlowSideEffectAction(action storage.FlowAction) bool {
+	return isNoOpFlowSideEffectActionName(action.ActionType) || isNoOpFlowSideEffectActionName(action.ActionName)
+}
+
+func isNoOpFlowSideEffectActionName(name string) bool {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "emailsimple", "customnotificationaction":
+		return true
+	default:
+		return false
+	}
 }
 
 func (e *Engine) flowActionInputValues(action storage.FlowAction, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput) (map[string]storage.Value, bool) {

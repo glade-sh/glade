@@ -5,6 +5,122 @@ import (
 	"strings"
 )
 
+func (vm *VM) callConnectAPILocalStatic(callee string, args []Value) (Value, bool, error) {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok {
+		return Null, false, nil
+	}
+	switch {
+	case strings.EqualFold(className, "ConnectApi.ManagedContent") && strings.EqualFold(methodName, "getAllManagedContent"):
+		value, err := vm.connectAPIManagedContentGetAll(args)
+		return value, true, err
+	case strings.EqualFold(className, "ConnectApi.ManagedContent") && strings.EqualFold(methodName, "getManagedContentByContentKeys"):
+		value, err := vm.connectAPIManagedContentByContentKeys(args)
+		return value, true, err
+	case strings.EqualFold(className, "ConnectApi.EinsteinLLM") && strings.EqualFold(methodName, "generateMessagesForPromptTemplate"):
+		value, err := vm.connectAPIEinsteinGenerateMessagesForPromptTemplate(args)
+		return value, true, err
+	default:
+		return Null, false, nil
+	}
+}
+
+func (vm *VM) connectAPIManagedContentGetAll(args []Value) (Value, error) {
+	if len(args) != 5 {
+		return Null, fmt.Errorf("ConnectApi.ManagedContent.getAllManagedContent expects 5 arguments")
+	}
+	key := strings.TrimSpace(scalarText(args[4]))
+	if key == "" {
+		key = "local-content"
+	}
+	return vm.connectAPIManagedContentByContentKeys([]Value{args[0], List(String(key)), args[3], Bool(false)})
+}
+
+func (vm *VM) connectAPIManagedContentByContentKeys(args []Value) (Value, error) {
+	if len(args) != 4 && len(args) != 7 {
+		return Null, fmt.Errorf("ConnectApi.ManagedContent.getManagedContentByContentKeys expects 4 or 7 arguments")
+	}
+	keys := connectAPIManagedContentKeys(args[1])
+	if len(keys) == 0 {
+		keys = []string{"local-content"}
+	}
+	items := typedList("List<ConnectApi.ManagedContentVersion>")
+	collectionNodes := typedMap("Map<String,ConnectApi.ManagedContentNodeValue>")
+	for _, key := range keys {
+		item := vm.connectAPIManagedContentVersion(key)
+		items.List = append(items.List, item)
+		if nodes, ok := item.Fields["contentNodes"]; ok && nodes.Kind == ValueMap {
+			for mapKeyValue, node := range nodes.Map {
+				collectionNodes.Map[mapKeyValue] = node
+				if nodes.MapKeys != nil {
+					collectionNodes.MapKeys[mapKeyValue] = nodes.MapKeys[mapKeyValue]
+				}
+			}
+		}
+	}
+	result := Object("ConnectApi.ManagedContentVersionCollection")
+	result.Fields["items"] = items
+	result.Fields["contentNodes"] = collectionNodes
+	return result, nil
+}
+
+func connectAPIManagedContentKeys(value Value) []string {
+	if value.Kind != ValueList && value.Kind != ValueSet {
+		if text := strings.TrimSpace(scalarText(value)); text != "" {
+			return []string{text}
+		}
+		return nil
+	}
+	values := value.List
+	if value.Kind == ValueSet {
+		values = value.Set
+	}
+	out := make([]string, 0, len(values))
+	for _, item := range values {
+		if text := strings.TrimSpace(scalarText(item)); text != "" {
+			out = append(out, text)
+		}
+	}
+	return out
+}
+
+func (vm *VM) connectAPIManagedContentVersion(key string) Value {
+	title := "Local managed content " + key
+	titleNode := Object("ConnectApi.ManagedContentNodeValue")
+	titleNode.Fields["value"] = String(title)
+	keyNode := Object("ConnectApi.ManagedContentNodeValue")
+	keyNode.Fields["value"] = String(key)
+	nodes := typedMap("Map<String,ConnectApi.ManagedContentNodeValue>")
+	nodes.Map[mapKey(String("title"))] = titleNode
+	nodes.MapKeys[mapKey(String("title"))] = String("title")
+	nodes.Map[mapKey(String(key))] = keyNode
+	nodes.MapKeys[mapKey(String(key))] = String(key)
+
+	item := Object("ConnectApi.ManagedContentVersion")
+	item.Fields["contentKey"] = String(key)
+	item.Fields["contentNodes"] = nodes
+	item.Fields["title"] = String(title)
+	return item
+}
+
+func (vm *VM) connectAPIEinsteinGenerateMessagesForPromptTemplate(args []Value) (Value, error) {
+	if len(args) != 2 {
+		return Null, fmt.Errorf("ConnectApi.EinsteinLLM.generateMessagesForPromptTemplate expects 2 arguments")
+	}
+	promptName := strings.TrimSpace(scalarText(args[0]))
+	if promptName == "" {
+		promptName = "local-prompt"
+	}
+	generation := Object("ConnectApi.EinsteinLLMGenerationItemOutput")
+	generation.Fields["text"] = String("Local generation for " + promptName)
+	generations := typedList("List<ConnectApi.EinsteinLLMGenerationItemOutput>")
+	generations.List = append(generations.List, generation)
+
+	result := Object("ConnectApi.EinsteinPromptTemplateGenerationsRepresentation")
+	result.Fields["generations"] = generations
+	return result, nil
+}
+
 func (vm *VM) connectApiNBAExecuteStrategy(args []Value) (Value, error) {
 	if len(args) != 4 {
 		return Null, fmt.Errorf("ConnectApi.NextBestAction.executeStrategy expects 4 arguments")

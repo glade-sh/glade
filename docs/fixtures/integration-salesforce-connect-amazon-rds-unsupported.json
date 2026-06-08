@@ -1,0 +1,35 @@
+{
+  "name": "integration-salesforce-connect-amazon-rds-unsupported",
+  "evidence": [
+    {
+      "surfaceId": "unknown:platform/sf-connect-amazon-rds/index",
+      "symbol": "Salesforce Connect Amazon RDS overview",
+      "kind": "unsupported",
+      "notes": "Amazon RDS via Salesforce Connect is an external connector and server configuration surface, not local Apex-test-observable runtime behavior."
+    },
+    {
+      "surfaceId": "unknown:platform/sf-connect-amazon-rds/sf-connect-amazon-rds-reference/attach-discount",
+      "symbol": "Salesforce Connect Amazon RDS attach discount",
+      "kind": "unsupported",
+      "notes": "Amazon RDS connector discount attachment is a Salesforce Connect server administration surface outside the local Apex runtime."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/IntegrationSalesforceConnectAmazonRDSUnsupportedTest.cls",
+      "content": "@isTest private class IntegrationSalesforceConnectAmazonRDSUnsupportedTest { @isTest static void externalConnectorGuard() { System.assertEquals('Account', Account.SObjectType.getDescribe().getName()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

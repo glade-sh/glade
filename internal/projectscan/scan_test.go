@@ -417,6 +417,9 @@ func TestScanSuppressesImplementedConnectApiMethodsOnly(t *testing.T) {
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
 	writeFile(t, filepath.Join(root, "src/classes/ConnectApiUse.cls"), `public class ConnectApiUse {
   public void supported() {
+    ConnectApi.ManagedContent.getAllManagedContent(null, 0, 10, 'en_US', 'News');
+    ConnectApi.ManagedContent.getManagedContentByContentKeys(null, new List<String>{ 'home' }, 0, 10, 'en_US', 'News', false);
+    ConnectApi.EinsteinLLM.generateMessagesForPromptTemplate('Support_Response', new ConnectApi.EinsteinPromptTemplateGenerationsInput());
     ConnectApi.NextBestAction.getRecommendation('0T0000000000001');
     ConnectApi.NextBestAction.getRecommendationReaction('0T0000000000001');
     ConnectApi.NextBestAction.getRecommendationReactions(null, null, null, null, 0, 10);
@@ -429,6 +432,7 @@ func TestScanSuppressesImplementedConnectApiMethodsOnly(t *testing.T) {
     ConnectApi.UserProfiles.getPhoto(null, UserInfo.getUserId());
   }
   public void unsupported() {
+    ConnectApi.ManagedContent.publish('content-key');
   }
 }`)
 
@@ -437,6 +441,9 @@ func TestScanSuppressesImplementedConnectApiMethodsOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, evidence := range []string{
+		"getAllManagedContent(null, 0, 10, 'en_US', 'News')",
+		"getManagedContentByContentKeys(null, new List<String>{ 'home' }, 0, 10, 'en_US', 'News', false)",
+		"generateMessagesForPromptTemplate('Support_Response', new ConnectApi.EinsteinPromptTemplateGenerationsInput())",
 		"getRecommendation('0T0000000000001')",
 		"getRecommendationReaction('0T0000000000001')",
 		"getRecommendationReactions(null, null, null, null, 0, 10)",
@@ -451,6 +458,9 @@ func TestScanSuppressesImplementedConnectApiMethodsOnly(t *testing.T) {
 		if hasLineFindingEvidenceContaining(report, "platform.cache-connectapi", "src/classes/ConnectApiUse.cls", evidence) {
 			t.Fatalf("implemented ConnectApi method should not be reported: %s %#v", evidence, report.Findings)
 		}
+	}
+	if !hasLineFindingEvidenceContaining(report, "platform.cache-connectapi", "src/classes/ConnectApiUse.cls", "ManagedContent.publish") {
+		t.Fatalf("unsupported ConnectApi.ManagedContent.publish should still be reported: %#v", report.Findings)
 	}
 }
 

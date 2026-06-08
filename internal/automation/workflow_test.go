@@ -450,6 +450,57 @@ func TestLoadProjectFlowRoutedDecisionBranchWithoutConditions(t *testing.T) {
 	}
 }
 
+func TestLoadProjectFlowOrderedDecisionBranchModelsRelatedRecordUpdate(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_Close_Task.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <start><connector><targetReference>Route_Task</targetReference></connector><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+  <decisions>
+    <name>Route_Task</name>
+    <rules>
+      <name>Close_Task</name>
+      <conditions><leftValueReference>$Record.Status__c</leftValueReference><operator>EqualTo</operator><rightValue><stringValue>Closed</stringValue></rightValue></conditions>
+      <connector><targetReference>Update_Task_Associated</targetReference></connector>
+    </rules>
+  </decisions>
+  <recordUpdates>
+    <name>Update_Task_Associated</name>
+    <object>Task</object>
+    <filters><field>WhatId</field><operator>EqualTo</operator><value><elementReference>$Record.Id</elementReference></value></filters>
+    <inputAssignments><field>Status</field><value><stringValue>Completed</stringValue></value></inputAssignments>
+  </recordUpdates>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	rule := idx.Flows[0].Rules[0]
+	if len(rule.FieldUpdates) != 0 {
+		t.Fatalf("field updates = %#v", rule.FieldUpdates)
+	}
+	steps := rule.Steps
+	if len(steps) != 1 || steps[0].Kind != "decision" {
+		t.Fatalf("steps = %#v", steps)
+	}
+	branches := steps[0].Branches
+	if len(branches) != 1 || branches[0].Name != "Close_Task" || len(branches[0].Steps) != 1 || branches[0].Steps[0].Kind != "recordUpdate" {
+		t.Fatalf("branches = %#v", branches)
+	}
+	update := branches[0].Steps[0].RecordUpdate
+	if update.ObjectName != "Task" || len(update.Criteria) != 1 || update.Criteria[0].Field != "WhatId" || update.Criteria[0].SourceField != "Id" {
+		t.Fatalf("record update = %#v", update)
+	}
+	if len(update.InputAssignments) != 1 || update.InputAssignments[0].Field != "Status" || update.InputAssignments[0].LiteralValue != "Completed" {
+		t.Fatalf("record update assignments = %#v", update.InputAssignments)
+	}
+}
+
 func TestLoadProjectFlowApexActionCalls(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "force-app/main/default/flows/Widget_Action.flow-meta.xml")
@@ -576,6 +627,90 @@ func TestLoadProjectFlowChatterPostActionInputs(t *testing.T) {
 	}
 	if len(actions[0].Inputs) != 3 || actions[0].Inputs[0].LiteralValue != "Hello {!MatchedUser.Id}" || actions[0].Inputs[1].SourceField != "Parent__r.Id" {
 		t.Fatalf("action inputs = %#v", actions[0].Inputs)
+	}
+}
+
+func TestLoadProjectFlowStandardSideEffectActions(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_Standard_Actions.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <actionCalls>
+    <name>Send_Quote_Email</name>
+    <actionName>emailSimple</actionName>
+    <actionType>emailSimple</actionType>
+    <inputParameters><name>emailBody</name><value><stringValue>This is the quote.</stringValue></value></inputParameters>
+    <inputParameters><name>emailAddresses</name><value><elementReference>$Record.Email__c</elementReference></value></inputParameters>
+    <inputParameters><name>emailSubject</name><value><stringValue>AZ Insurance Quote</stringValue></value></inputParameters>
+    <connector><targetReference>Notification_On_Adoption_Match</targetReference></connector>
+  </actionCalls>
+  <actionCalls>
+    <name>Notification_On_Adoption_Match</name>
+    <actionName>customNotificationAction</actionName>
+    <actionType>customNotificationAction</actionType>
+    <inputParameters><name>customNotifTypeId</name><value><elementReference>Get_Custom_Notification_ID.Id</elementReference></value></inputParameters>
+    <inputParameters><name>recipientIds</name><value><elementReference>notificationRecipients</elementReference></value></inputParameters>
+  </actionCalls>
+  <recordLookups>
+    <name>Get_Custom_Notification_ID</name>
+    <object>CustomNotificationType</object>
+    <filters><field>DeveloperName</field><operator>EqualTo</operator><value><stringValue>Animal_Adoption_Match</stringValue></value></filters>
+    <getFirstRecordOnly>true</getFirstRecordOnly>
+    <storeOutputAutomatically>true</storeOutputAutomatically>
+  </recordLookups>
+  <start><connector><targetReference>Send_Quote_Email</targetReference></connector><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	steps := idx.Flows[0].Rules[0].Steps
+	if len(steps) != 2 || steps[0].Action.ActionType != "emailSimple" || steps[1].Action.ActionType != "customNotificationAction" {
+		t.Fatalf("steps = %#v", steps)
+	}
+	if got := steps[0].Action.Inputs[1].SourceField; got != "Email__c" {
+		t.Fatalf("email source field = %q", got)
+	}
+}
+
+func TestLoadProjectFlowNoOpActionFaultConnectorIsUnsupported(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_Action_Fault.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <actionCalls>
+    <name>Send_Quote_Email</name>
+    <actionName>emailSimple</actionName>
+    <actionType>emailSimple</actionType>
+    <faultConnector><targetReference>Log_Email_Error</targetReference></faultConnector>
+    <inputParameters><name>emailBody</name><value><stringValue>This is the quote.</stringValue></value></inputParameters>
+    <inputParameters><name>emailAddresses</name><value><elementReference>$Record.Email__c</elementReference></value></inputParameters>
+    <inputParameters><name>emailSubject</name><value><stringValue>AZ Insurance Quote</stringValue></value></inputParameters>
+  </actionCalls>
+  <recordCreates>
+    <name>Log_Email_Error</name>
+    <object>Error__c</object>
+    <inputAssignments><field>Message__c</field><value><stringValue>email failed</stringValue></value></inputAssignments>
+  </recordCreates>
+  <start><connector><targetReference>Send_Quote_Email</targetReference></connector><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 1 || !strings.Contains(idx.Diagnostics[0].Message, `action "Send_Quote_Email" fault connector`) {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	steps := idx.Flows[0].Rules[0].Steps
+	if len(steps) != 1 || steps[0].Action.ActionType != "emailSimple" {
+		t.Fatalf("steps = %#v", steps)
 	}
 }
 
@@ -990,6 +1125,44 @@ func TestLoadProjectFlowObjectAndCollectionRecordUpdates(t *testing.T) {
 	}
 	if update := steps[4].RecordUpdate; update.InputReference != "widgetUpdates" || update.ObjectName != "Widget__c" {
 		t.Fatalf("bulk update = %#v", update)
+	}
+}
+
+func TestLoadProjectFlowRecordUpdateTargetsLookupOutput(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "flows", "Widget_Update_Lookup.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <recordLookups>
+    <name>Get_Task</name>
+    <object>Task</object>
+    <filters><field>WhatId</field><operator>EqualTo</operator><value><elementReference>$Record.Id</elementReference></value></filters>
+    <connector><targetReference>Done</targetReference></connector>
+    <getFirstRecordOnly>true</getFirstRecordOnly>
+    <storeOutputAutomatically>true</storeOutputAutomatically>
+  </recordLookups>
+  <recordUpdates>
+    <name>Done</name>
+    <inputReference>Get_Task</inputReference>
+    <inputAssignments><field>Status</field><value><stringValue>Completed</stringValue></value></inputAssignments>
+  </recordUpdates>
+  <start><connector><targetReference>Get_Task</targetReference></connector><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	steps := idx.Flows[0].Rules[0].Steps
+	if len(steps) != 2 || steps[1].Kind != "recordUpdate" {
+		t.Fatalf("steps = %#v", steps)
+	}
+	if update := steps[1].RecordUpdate; update.ObjectName != "Task" || update.InputReference != "Get_Task" {
+		t.Fatalf("record update = %#v", update)
 	}
 }
 

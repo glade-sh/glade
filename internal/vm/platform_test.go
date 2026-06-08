@@ -2429,6 +2429,49 @@ func TestConnectApiReadOnlyHarnessDispatchIsCaseInsensitive(t *testing.T) {
 	}
 }
 
+func TestExecConnectApiManagedContentByContentKeysReturnsUsableNodes(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> keys = new List<String>{ 'home-hero' };
+ConnectApi.ManagedContentVersionCollection result =
+	ConnectApi.ManagedContent.getManagedContentByContentKeys(null, keys, 0, 1, 'en_US', 'News', false);
+System.assertNotEquals(null, result);
+System.assertEquals(1, result.items.size());
+ConnectApi.ManagedContentVersion item = result.items[0];
+System.assertEquals('home-hero', item.contentKey);
+System.assertNotEquals(null, item.contentNodes);
+System.assertEquals(true, item.contentNodes.containsKey('title'));
+ConnectApi.ManagedContentNodeValue title = item.contentNodes.get('title');
+System.assertEquals('Local managed content home-hero', title.value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConnectApiEinsteinLLMGenerateMessagesForPromptTemplateReturnsText(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.EinsteinPromptTemplateGenerationsInput input =
+	new ConnectApi.EinsteinPromptTemplateGenerationsInput();
+ConnectApi.EinsteinPromptTemplateGenerationsRepresentation result =
+	ConnectApi.EinsteinLLM.generateMessagesForPromptTemplate('Support_Response', input);
+System.assertNotEquals(null, result);
+System.assertEquals(1, result.generations.size());
+System.assertNotEquals(null, result.generations[0].text);
+System.assert(result.generations[0].text.contains('Support_Response'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecConnectApiNextBestActionExecuteStrategy(t *testing.T) {
 	program, err := CompileAnonymous(`
 ConnectApi.NBARecommendations result = ConnectApi.NextBestAction.executeStrategy('Default', 1, '001000000000001', true);

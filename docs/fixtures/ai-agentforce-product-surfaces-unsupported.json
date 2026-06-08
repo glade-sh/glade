@@ -1,0 +1,89 @@
+{
+  "name": "ai-agentforce-product-surfaces-unsupported",
+  "evidence": [
+    {
+      "surfaceId": "unknown:ai/agentforce/about/about-genai-api",
+      "symbol": "Agentforce generative AI API overview",
+      "kind": "unsupported",
+      "notes": "Agentforce generative AI API documentation describes cloud product APIs, outside local Apex-test-observable behavior."
+    },
+    {
+      "surfaceId": "unknown:ai/agentforce/agent-api",
+      "symbol": "Agentforce Agent API",
+      "kind": "unsupported",
+      "notes": "The Agent API is a cloud product API surface, not a local Apex runtime surface."
+    },
+    {
+      "surfaceId": "unknown:ai/agentforce/agent-script/agent-script-reference",
+      "symbol": "Agentforce Agent Script reference",
+      "kind": "unsupported",
+      "notes": "Agent Script is an Agentforce product scripting surface, outside local Apex tests."
+    },
+    {
+      "surfaceId": "unknown:ai/agentforce/agentforce-dx/agentforce-dx-reference",
+      "symbol": "Agentforce DX reference",
+      "kind": "unsupported",
+      "notes": "Agentforce DX behavior belongs to development tooling and product deployment, outside local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "unknown:ai/agentforce/agentforce-mobile-sdk/agentforce-mobile-sdk-overview",
+      "symbol": "Agentforce mobile SDK overview",
+      "kind": "unsupported",
+      "notes": "The Agentforce mobile SDK is client product behavior, outside local Apex tests."
+    },
+    {
+      "surfaceId": "unknown:ai/agentforce/agents-metadata-tooling/agents-metadata",
+      "symbol": "Agentforce agents metadata and tooling",
+      "kind": "unsupported",
+      "notes": "Agent metadata and tooling APIs are server-side configuration surfaces outside the local Apex runtime."
+    },
+    {
+      "surfaceId": "unknown:ai/agentforce/citations/citations-reference",
+      "symbol": "Agentforce citations reference",
+      "kind": "unsupported",
+      "notes": "Agentforce citation behavior depends on cloud agent execution, outside local Apex tests."
+    },
+    {
+      "surfaceId": "unknown:ai/agentforce/index",
+      "symbol": "Agentforce overview",
+      "kind": "unsupported",
+      "notes": "Agentforce overview pages describe product services, not local Apex runtime behavior."
+    },
+    {
+      "surfaceId": "unknown:ai/agentforce/models-apex-api/models-apex-reference",
+      "symbol": "Agentforce models Apex API reference",
+      "kind": "unsupported",
+      "notes": "Agentforce model APIs require cloud model services and are not implemented by the local Apex runtime."
+    },
+    {
+      "surfaceId": "unknown:ai/agentforce/models-api",
+      "symbol": "Agentforce models API",
+      "kind": "unsupported",
+      "notes": "The Agentforce models API is a cloud product API surface outside local Apex tests."
+    },
+    {
+      "surfaceId": "unknown:ai/agentforce/testing-api/testing-reference-summary",
+      "symbol": "Agentforce testing API reference",
+      "kind": "unsupported",
+      "notes": "Agentforce testing APIs exercise cloud agent services, outside local Apex tests."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/AIAgentforceProductSurfacesUnsupportedTest.cls",
+      "content": "@isTest private class AIAgentforceProductSurfacesUnsupportedTest { @isTest static void productSurfaceGuard() { System.assertEquals('Account', Account.SObjectType.getDescribe().getName()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}
