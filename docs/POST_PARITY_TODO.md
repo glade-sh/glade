@@ -9,6 +9,7 @@
 - [x] Flag static Salesforce-shaped risk: SOQL/DML/describe/async work in
   loops, unfiltered batch start queries, repeated describe, uncached
   `@AuraEnabled` reads, active Workflow, and Flow data fanout.
+- [x] Add async chain analysis for queueable, batch, and schedule paths, including cycle/depth risk findings.
 - [x] Accept local trace input and merge measured spans into the same ranked
   report.
 - [x] Extend profile reports with trace duration attribution.

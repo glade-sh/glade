@@ -34,6 +34,14 @@ func (p *Parser) ParseFile(path string) (File, error) {
 	return p.ParseSource(path, string(data)), nil
 }
 
+func (p *Parser) ParseFileAST(path string) (ASTFile, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ASTFile{Path: path}, err
+	}
+	return p.ParseSourceAST(path, string(data)), nil
+}
+
 func (p *Parser) ParseSource(path, source string) File {
 	out := File{Path: path, Kind: FileKindUnknown}
 	parseSource := normalizeApexSource(source)
@@ -84,6 +92,54 @@ func (p *Parser) ParseSource(path, source string) File {
 		out.Declarations = append(out.Declarations, decl)
 		if out.Kind == FileKindUnknown {
 			out.Kind = FileKind(decl.Kind)
+		}
+	}
+	return out
+}
+
+func (p *Parser) ParseSourceAST(path, source string) ASTFile {
+	out := ASTFile{Path: path}
+	parseSource := normalizeApexSource(source)
+	if p.parser == nil && p.err == nil {
+		parser := tree_sitter.NewParser()
+		p.err = parser.SetLanguage(tsapex.GetLanguage())
+		p.parser = parser
+	}
+	if p.err != nil {
+		out.Diagnostics = append(out.Diagnostics, Diagnostic{
+			Severity: Error,
+			Code:     "APEXPARSE001",
+			Message:  p.err.Error(),
+			File:     path,
+		})
+		return out
+	}
+
+	p.mu.Lock()
+	tree := p.parser.Parse([]byte(parseSource), nil)
+	p.mu.Unlock()
+	if tree == nil {
+		out.Diagnostics = append(out.Diagnostics, Diagnostic{
+			Severity: Error,
+			Code:     "APEXPARSE001",
+			Message:  "parse failed",
+			File:     path,
+		})
+		return out
+	}
+	defer tree.Close()
+
+	root := tree.RootNode()
+	if root == nil {
+		return out
+	}
+	lineMap := NewLineMap(source)
+	for _, child := range namedChildren(root) {
+		out.Nodes = append(out.Nodes, treeSitterASTNode(&child, source, lineMap))
+	}
+	if root.HasError() {
+		if diag, ok := treeSitterDiagnostic(path, source, root, lineMap); ok {
+			out.Diagnostics = append(out.Diagnostics, diag)
 		}
 	}
 	return out
@@ -394,6 +450,17 @@ func nodeText(node *tree_sitter.Node, source string) string {
 		return ""
 	}
 	return source[start:end]
+}
+
+func treeSitterASTNode(node *tree_sitter.Node, source string, lineMap LineMap) ASTNode {
+	out := ASTNode{
+		Kind:  node.Kind(),
+		Range: treeSitterRange(node, lineMap),
+	}
+	for _, child := range namedChildren(node) {
+		out.Children = append(out.Children, treeSitterASTNode(&child, source, lineMap))
+	}
+	return out
 }
 
 func normalizeVoidIdentifiers(source string) string {

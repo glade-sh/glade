@@ -7,6 +7,18 @@ type File struct {
 	Diagnostics  []Diagnostic  `json:"diagnostics,omitempty"`
 }
 
+type ASTFile struct {
+	Path        string       `json:"path"`
+	Nodes       []ASTNode    `json:"nodes"`
+	Diagnostics []Diagnostic `json:"diagnostics,omitempty"`
+}
+
+type ASTNode struct {
+	Kind     string    `json:"kind"`
+	Range    Range     `json:"range"`
+	Children []ASTNode `json:"children,omitempty"`
+}
+
 type FileKind string
 
 const (

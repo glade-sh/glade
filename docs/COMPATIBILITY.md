@@ -44,7 +44,7 @@ in [`docs/RELEASE_POLICY.md`](RELEASE_POLICY.md), with ongoing notes in
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| CLI surface | partial | `version`, `help`, `doctor`, `parse`, `inspect`, `schema`, `check`, `exec`, `test`, `profile analyze`, `server`, `db`, and `lsp` exist. Several commands are still partial because their underlying runtime fidelity is partial. |
+| CLI surface | partial | `version`, `help`, `doctor`, `parse`, `inspect`, `inspect performance`, `schema`, `check`, `exec`, `test`, `profile analyze`, `server`, `db`, and `lsp` exist. Several commands are still partial because their underlying runtime fidelity is partial. |
 | Project config | partial | Minimal `glade.yml` discovery exists. |
 | Diagnostics | partial | Shared diagnostic shape exists. |
 | Compatibility fixtures | partial | The maintenance fixture runner lives in `glade-tools`. Checked fixtures cover parse, check, exec, test, DB lifecycle, and server black-box behavior. Broader Salesforce black-box fixtures remain incomplete. |

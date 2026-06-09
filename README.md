@@ -51,13 +51,14 @@ coverage and known-gap docs checked into this repository.
 | `String`, dates, time, math, assertions, labels, URLs, and user info | Wide support, with exact rows in the stdlib ledger. |
 | `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller helpers, and many `Test.*` helpers | Partial. The local model covers common test paths and records gaps by method. |
 | Platform services such as approval execution, quick actions, business-hours services, sandbox lifecycle, live request context, and identity services | Unsupported unless a row says otherwise. Glade should return a stable unsupported diagnostic, not silent wrong behavior. |
-| Local API server, LSP, DAP, watch, and profile tools | Supported for local development. |
+| Local API server, LSP, DAP, watch, profile, and performance scanning tools | Supported for local development. |
 
 Drill down from there:
 
 ```bash
 glade check --project .
 glade test --project . --json
+glade inspect performance --project . --json
 ```
 
 - High-level readiness: [docs/COMPATIBILITY_DASHBOARD.md](docs/COMPATIBILITY_DASHBOARD.md)
@@ -75,6 +76,8 @@ Run one class, one method, or only tests affected by local changes:
 glade test --project . --filter AccountServiceTest --json
 glade test --project . --filter AccountServiceTest.testCreatesAccount --json
 glade test --project . --changed-since origin/main --json
+glade inspect performance --project . --json > reports/glade-performance.json
+glade inspect performance --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
 
 For large project triage and maintenance scanners, use the sibling

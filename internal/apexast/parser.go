@@ -7,6 +7,10 @@ import (
 	"github.com/glade-sh/glade/internal/diagnostic"
 )
 
+type ASTFile = external.ASTFile
+type ASTNode = external.ASTNode
+type Range = external.Range
+
 type Parser struct {
 	parser *external.Parser
 }
@@ -23,8 +27,16 @@ func (p *Parser) ParseFile(path string) (File, error) {
 	return convertFile(file), nil
 }
 
+func (p *Parser) ParseFileAST(path string) (ASTFile, error) {
+	return p.parser.ParseFileAST(path)
+}
+
 func (p *Parser) ParseSource(path, source string) File {
 	return convertFile(p.parser.ParseSource(path, source))
+}
+
+func (p *Parser) ParseSourceAST(path, source string) ASTFile {
+	return p.parser.ParseSourceAST(path, source)
 }
 
 func convertFile(file external.File) File {

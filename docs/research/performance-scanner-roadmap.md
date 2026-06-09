@@ -85,92 +85,55 @@ not reference them.
 - Merge the Query Plan results into findings as `ConfidenceMeasured` evidence.
 - Mark as a separate CLI flag (`--org` or `--query-plan`).
 
-## Phase 3: Managed Package-Aware Rules
+## Phase 3: PR Performance Impact Analysis
 
-**Why now:** Zero existing tools have managed-package-specific rules. PMD's
-`AvoidGlobalModifier` exists but is unaware of packaging lifecycle. No tool
-analyzes cross-namespace limit consumption, dynamic SOQL namespace injection
-overhead, or license-check patterns.
+**Why now:** Every other tool (PMD, Code Analyzer, SonarQube) does full-project
+scans. In a PR, the reviewer doesn't need 500 findings from unchanged code — they
+need the **3 new findings the PR introduced**. This is the daily code review
+use case that no existing Salesforce tool addresses.
 
-### Phase 3a: Global API surface audit
+**Design:** Run the scanner on the base branch, run on the PR branch, compare
+findings. Report only deltas: new findings, removed findings, score changes.
+Flag entry points downstream of changed methods.
 
-- Detect `global` classes and `global` methods.
-- Compute API surface size (count of global methods × parameters).
-- Flag classes with high global surface area (risk of version lock-in).
-- Compare global method signatures across git history or package version artifacts
-  to detect breaking changes before release.
-- Assign severity based on surface size: 1-5 global methods = low, 6-15 = medium, 16+ = high.
+**Implementation plan:** `docs/superpowers/plans/2026-06-09-pr-performance-impact.md`
 
-### Phase 3b: Namespace injection overhead
+### Phase 3a: Baseline comparison engine
 
-- Detect dynamic SOQL/SOSL strings with `String.format`, string concatenation, or variable injection for namespace prefixes.
-- Flag methods that call `Schema.getNamespace()` and inject it into dynamic queries
-  (runtime overhead per query).
-- Suggest static SOQL with namespace-qualified field references where possible
-  (the compiler handles namespace resolution at compile time for static SOQL).
-- Detect the pattern:
-  ```apex
-  String ns = Schema.getNamespace();
-  String query = 'SELECT ' + ns + '__Field__c FROM ' + ns + '__Object__c';
-  // BAD: runtime overhead, SOQL injection risk
-  ```
-  versus:
-  ```apex
-  List<MyObject__c> records = [SELECT Field__c FROM MyObject__c];
-  // GOOD: compile-time namespace resolution
-  ```
+- Accept `--baseline <path>` pointing to a prior scanner JSON report.
+- Compare findings by key (ID + file + line). Categorize each as new/removed/changed.
+- Changed findings surface score deltas: `perf.dml.loop score: 55 → 75 (+20)`.
+- Output as JSON (for CI tooling) or Markdown (for PR comments).
 
-### Phase 3c: License/framework overhead
+### Phase 3b: Entry-point impact propagation
 
-- Detect Custom Metadata Type queries executed in trigger or synchronous transaction contexts.
-- Flag license-check patterns that query `License__mdt` or similar metadata types
-  without caching (Platform Cache, static variable).
-- Detect `FeatureManagement.checkPermission()` calls in hot paths (UI controllers, triggers).
+- When a PR changes a method that's called from an entry point (trigger, invocable, batch, queueable, REST, LWC wire), flag the entry point as affected.
+- Build a call graph from entry points → files they depend on using the type index.
+- Report: "AccountHandler.cls change affects 3 entry points: AccountTrigger, AccountBatch, AccountREST."
+- This tells reviewers which parts of the system are impacted by a seemingly-small change.
 
-### Phase 3d: Certified vs non-certified package limit modeling
+### Phase 3c: CI integration
 
-Salesforce docs (`apex_gov_limits.md`) distinguish two categories with
-dramatically different limit behavior:
+- `--fail-on-new` flag: exit code 1 if any new findings are detected (CI gate).
+- `--ci` flag: emit GitHub Actions workflow annotations (`::warning file=...::soql in loop`).
+- `--sarif` flag: emit SARIF v2.1.0 for GitHub Advanced Security, GitLab SAST, VS Code.
+- Baseline committed to repo as a CI artifact (similar to `package-lock.json`).
 
-| Aspect | Non-Certified | Certified (AppExchange Security Review) |
-|--------|--------------|----------------------------------------|
-| Per-transaction SOQL | Shared with org (100 sync / 200 async) | **Separate, independent** limits |
-| Per-transaction DML | Shared with org (150) | **Separate, independent** limits |
-| Per-transaction SOSL | Shared with org (20) | Separate (220 cross-namespace = 11×20) |
-| Per-transaction Callouts | Shared with org (100) | Separate (1,100 cross-namespace = 11×100) |
-| Heap size | **Shared** (6 MB / 12 MB) | **Still shared** — heap is never independent |
-| CPU time | **Shared** (10s / 60s) | **Still shared** — CPU is never independent |
-| Transaction time | **Shared** (10 min) | **Still shared** |
-| Max unique namespaces | 10 per transaction | 10 per transaction |
-| Platform Cache | No free tier | **3 MB free** for security-reviewed packages |
+### Phase 3d: SARIF output
 
-**Implementation:**
-- Detect if a project is a managed package (has `namespace` in sfdx-project.json).
-- If no evidence of AppExchange certification, model limits as **shared** with subscriber org.
-- If certified (needs a flag or config), model limits as **independent** for SOQL/DML/SOSL/callouts.
-- Track per-entry-point governor limit budgets separately for certified vs non-certified paths.
-- Flag entry points whose static analysis suggests >50% limit consumption.
-- **Always** flag heap and CPU time as shared regardless of certification.
+- Map `Finding.Severity` → SARIF `result.level` (high→error, medium→warning, low→note).
+- Map `Finding.Location` → SARIF `result.locations[].physicalLocation`.
+- Map `Finding.Fix` → SARIF `result.fixes[]` with a `description.text`.
+- Use SARIF v2.1.0 schema (`$schema: "https://json.schemastore.org/sarif-2.1.0.json"`).
+- Enables native integration with GitHub code scanning alerts, GitLab SAST dashboard, VS Code Problems panel.
 
-### Phase 3e: Dynamic SOQL namespace injection detection
-
-- Detect dynamic SOQL/SOSL strings that concatenate `Schema.getNamespace()` or namespace prefixes.
-- Flag patterns where static SOQL with compile-time namespace resolution would suffice.
-- Detect SOQL injection risk from namespace concatenation (complements PMD `ApexSOQLInjection`).
-  ```apex
-  // BAD: runtime namespace resolution + SOQL injection risk
-  String query = 'SELECT ' + Schema.getNamespace() + '__Field__c FROM Account';
-  // GOOD: static SOQL with compile-time namespace resolution
-  List<Account> records = [SELECT MyField__c FROM Account];
-  ```
-
-## Phase 4: Async Chain Analysis
+## Phase 4: Async Chain Analysis (implemented)
 
 **Why now:** Queueable chaining, Batch finish-to-start chains, and recursive
 `System.enqueueJob()` patterns can create unbounded async work or exhaust daily
 async limits. No existing tool traces async call chains statically.
 
-### Phase 4a: Queueable chain detection
+### Phase 4a: Queueable chain detection (implemented)
 
 - Walk AST for `System.enqueueJob(new SomeQueueable(...))` calls.
 - Follow the `SomeQueueable.execute()` method for further `enqueueJob` calls.
@@ -178,14 +141,14 @@ async limits. No existing tool traces async call chains statically.
 - Flag chains deeper than 3 levels (risk of stacking limit at 50 jobs/day per chain).
 - Flag chains that form cycles (queueable A → queueable B → queueable A).
 
-### Phase 4b: Batch chain detection
+### Phase 4b: Batch chain detection (implemented)
 
 - Detect `Database.executeBatch()` in `Batchable.finish()`.
 - Detect `Database.executeBatch()` in `Batchable.execute()`.
 - Flag unbounded batch chains (no termination condition in source).
 - Flag batches that enqueue Queueable jobs from `execute()` (transaction scope risk).
 
-### Phase 4c: Future/schedule detection
+### Phase 4c: Future/schedule detection (implemented)
 
 - Detect `@Future` methods (flagged by PMD but useful to surface in a unified report).
 - Detect `System.schedule()` with recursive rescheduling patterns.
@@ -321,37 +284,43 @@ Security, GitLab SAST, and VS Code consume SARIF natively.
 - Default stays Markdown for human-readable output.
 - SARIF is for CI pipelines: `glade inspect performance --project . --sarif > glade-perf.sarif`.
 
-## Phase 9: Package-Version-Aware Rules
+## Phase 9: Trigger Recursion And Re-Entry Detection
 
-**Why now:** Managed packages have a strict version lifecycle (beta → released
-→ patch). Once a version is released, `global` members cannot be removed or
-have signatures changed. A scanner that understands this lifecycle can prevent
-breaking changes before release.
+**Why now:** Trigger recursion is the most common production performance outage
+in Salesforce. A record update fires a trigger, which updates another record,
+which fires another trigger, which updates the first record — and the
+transaction either hits the 16-deep recursion limit or consumes all governor
+limits before anyone notices. PMD requires developers to hand-write re-entry
+guards; no tool validates they actually work.
 
-### Phase 9a: Global API diff
+### Phase 9a: Re-entry guard audit
 
-- Accept a baseline JSON artifact from a prior scan (e.g., `glade inspect performance --json` from the previous release).
-- Compare current `global` API surface to baseline.
-- Flag:
-  - **Removed global methods** → BREAKING (severity critical).
-  - **Changed global method parameter types** → BREAKING.
-  - **Changed global method return type** → BREAKING.
-  - **Added mandatory parameters** → BREAKING (existing callers will fail).
-  - **Added optional parameters** → OK.
-  - **Added new global methods** → advisory (expands API surface).
-- Produce a diff report: `glade inspect performance --diff-baseline v1.0.0-scan.json`.
+- Detect `static Boolean` flags used for re-entry prevention.
+- Flag classes referenced by triggers that lack any re-entry guard.
+- Validate the guard pattern is complete:
+  ```apex
+  // Correct pattern
+  public static Boolean isRunning = false;
+  if (isRunning) return;
+  isRunning = true;
+  try { /* work */ } finally { isRunning = false; }
+  ```
+- Flag incorrect patterns: missing the `return` check, missing the `set true`,
+  missing the `finally` reset, or instance variables instead of static.
 
-### Phase 9b: Deprecation cycle enforcement
+### Phase 9b: Cross-object recursion simulation
 
-- Detect `@deprecated` annotations on global methods.
-- Flag deprecated methods that still have callers inside the package.
-- Flag deprecated methods in a version where they should be removed (after N major versions).
+- Build a trigger dependency graph: "Account trigger updates Contact → Contact trigger updates Case → Case trigger updates Account."
+- Detect cycles in the trigger dependency graph (potential recursion).
+- Flag trigger chains deeper than 3 objects (risk of recursion depth limit at 16).
+- Flag trigger chains that could update the originating object (Account → Contact → Account).
 
-### Phase 9c: API version consistency
+### Phase 9c: Handler dispatch best practices
 
-- Scan sfdx-project.json and metadata for API version (e.g., `sourceApiVersion: "64.0"`).
-- Verify no Apex class overrides the package default API version.
-- Flag mixed API versions within a single package (behavioral inconsistency risk).
+- Detect trigger → handler class dispatch patterns.
+- Flag triggers that contain logic directly (PMD `AvoidLogicInTrigger` but with context about handler structure).
+- Flag handler classes using `Trigger.new[0]` (non-bulk, PMD `AvoidDirectAccessTriggerMap`).
+- Verify the handler follows the one-trigger-per-object pattern for consistent execution order.
 
 ## Phase 10: Profiling Integration With Apex Debug Logs
 
@@ -442,35 +411,38 @@ analysis, loop iteration bounds, and query row estimation.
    with *why* a query is risky. High value for customers migrating from large
    orgs. No equivalent in any existing tool.
 
-3. **Phase 3 (Managed Package)**: Unique value proposition. Zero existing tools
-   address managed package patterns. Directly useful for ISV partners and
-   AppExchange listing preparation.
+3. **Phase 3 (PR Impact)**: Daily code review use case. Shows reviewers exactly
+   what performance impact a PR introduces — not a 500-finding full-project scan,
+   but the 3 new findings from changed code. GitHub annotations, CI gating,
+   SARIF output. No existing Salesforce tool does PR-diff analysis.
 
 4. **Phase 4 (Async Chains)**: Structural analysis of async call graphs. PMD
    flags individual `enqueueJob` calls but cannot trace chains. High value for
-   debugging transaction storms.
+   debugging transaction storms. Implemented.
 
 5. **Phase 5 (Trigger Deepening)**: Extends existing trigger detection with
-   re-entry and handler audit. Complements PMD's `AvoidLogicInTrigger` and
+   handler dispatch audit. Complements PMD's `AvoidLogicInTrigger` and
    `AvoidDirectAccessTriggerMap`.
 
-6. **Phase 6 (Platform Cache)**: Niche but high-value for ISV packages that
-   use cache heavily. No tooling exists.
+6. **Phase 6 (Platform Cache)**: Validates cache patterns (miss handlers, key
+   design, volume) for teams using Platform Cache heavily.
 
 7. **Phase 7 (LWC/Aura)**: Expands scanner scope beyond Apex. Competitive
    differentiator (PMD/SonarQube are Apex-only).
 
-8. **Phase 8 (SARIF)**: CI/CD integration. Required for adoption in existing
-   pipelines alongside Code Analyzer and PMD.
+8. **Phase 8 (VM Profiling)**: `glade test --max-queries 20` — per-test governor
+   limit gating. Unique to glade because no other tool has a VM that can execute
+   Apex and track limits.
 
-9. **Phase 9 (Version-aware)**: Sophisticated analysis for ISV release
-   management. Depends on Phase 3.
+9. **Phase 9 (Trigger Recursion)**: Detects trigger dependency cycles and
+   validates re-entry guards automatically. Most common production outage pattern
+   in Salesforce.
 
 10. **Phase 10 (Profiling)**: Bridges static analysis and runtime measurement.
-    Complements the base scanner's trace ingestion (Task 7).
+    Merges Apex debug log profiling with static findings.
 
 11. **Phase 11 (Limit estimation)**: Hardest problem, highest value. Requires
-    Phases 1-5 as foundation.
+    Phases 1-5 as foundation. Unique to glade because of the VM.
 
 ## What This Roadmap Does NOT Cover
 

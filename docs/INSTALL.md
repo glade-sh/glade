@@ -85,6 +85,7 @@ cd path/to/sfdx-project
 glade doctor
 glade check --project .
 glade test --project . --json
+glade inspect performance --project . --json
 ```
 
 Run a focused class or only tests affected by changes since a git ref:
@@ -92,6 +93,7 @@ Run a focused class or only tests affected by changes since a git ref:
 ```bash
 glade test --project . --filter AccountServiceTest --json
 glade test --project . --changed-since origin/main --json
+glade inspect performance --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
 
 See [LOCAL_TESTING.md](LOCAL_TESTING.md) for class/method filters,
