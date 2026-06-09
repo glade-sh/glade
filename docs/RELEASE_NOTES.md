@@ -2,24 +2,14 @@
 
 ## Unreleased
 
-Compatibility status:
+Support status:
 
-- MVP readiness: ready.
-- Required MVP capabilities are supported for the local MVP contract.
-- Checked example-project server support is green:
-  `pass=101 fail=0 unsupported=0 missing=0`.
-- Checked example-project post-parity readiness inventory is green:
-  `filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0`.
-- Checked example-project runtime support is no longer represented by one
-  green sentinel. `src-nmb-nutpl-develop` remains the fast runtime sentinel at
-  `total=761 pass=761`. Release dogfood should also prove
-  `sf-cred-pkg-develop`, `src-nmb-nu-develop`, and `nams-workspace` from fresh
-  per-project JSON before calling those large gates green. NPSP and
-  `src-nmb-nc-develop` remain separate frontier gates unless freshly rerun.
-  Historical six-project frontier detail lives in
-  `docs/fixtures/local-tests-example-projects.json`.
+- The published `glade` CLI is focused on local Apex parsing, checking,
+  execution, testing, storage, server, editor, profile, and playground flows.
+- Maintenance scanners, compatibility harnesses, and gap reports have moved to
+  the sibling `glade-tools` project.
 - See [`COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md) and
-  [`KNOWN_GAPS.md`](KNOWN_GAPS.md) for generated status.
+  [`KNOWN_GAPS.md`](KNOWN_GAPS.md) for checked support status.
 
 Release engineering:
 
@@ -47,7 +37,7 @@ Release engineering:
 - Added tag-driven parser-capable release artifact builds for macOS and Linux
   host architectures, with Windows held until a CGO-capable Windows release
   runner is wired.
-- Added release-readiness labels for server examples, MVP, Apex parity, legacy
+- Added release-readiness labels for server examples, Apex parity, legacy
   local tests, declarative automation, and Visualforce/Aura/LWC controller-test
   support.
 - Added a generated SObject stub field overlay for broad standard-object field
@@ -76,13 +66,12 @@ Release engineering:
 - Added manual, CI, and future Homebrew installation guidance.
 - Added editor integration docs with VS Code tasks, debug launch examples, LSP
   wiring, watch mode, and report commands.
-- Added a fail-fast `glade compat mvp --require-ready` gate and CI visibility
-  for machine-readable MVP readiness.
+- Added a fail-fast support gate in the maintenance tools.
 - Added compatibility fixture support and smoke coverage for expected
   unsupported-feature diagnostics.
 - Added typed `UnsupportedFeature` VM errors for unimplemented stdlib/platform
   calls while preserving fixture-compatible message text.
-- Added `glade compat stdlib` plus generated `docs/STDLIB_COVERAGE.md` coverage
+- Added `glade-tools stdlib` plus generated `docs/STDLIB_COVERAGE.md` coverage
   for supported and partial standard-library/platform APIs.
 - Tuned SQLite fixture persistence with transaction-scoped prepared inserts,
   storage pragmas, and large-fixture save/load coverage.
@@ -112,10 +101,10 @@ Release engineering:
   all-or-none rollback, explicit unsupported Composite batch responses,
   Salesforce-shaped errors, Glade fixture seed/export/reset, and SQLite
   persistence.
-- Added `glade compat replay` for deterministic directory replay bundles,
+- Added `glade-tools replay` for deterministic directory replay bundles,
   ordered in-process compat steps, JSON/text gate reports, checked expected
   outputs, path-escape validation, and redacted artifact export.
-- Added `glade compat readiness --project <root>` to report local project
+- Added `glade-tools readiness --project <root>` to report local project
   blockers by parser, project, schema, sema, stdlib, SOQL, DML, trigger, limit,
   storage, server, and unknown categories without mutating source or database
   state.

@@ -56,8 +56,8 @@ glade test --project . --filter AccountServiceTest.testCreatesAccount --json
 For compatibility triage output, use explicit class and method flags:
 
 ```bash
-glade compat local-tests --project . --class AccountServiceTest --json
-glade compat local-tests --project . --class AccountServiceTest --method testCreatesAccount --json
+glade-tools local-tests --project . --class AccountServiceTest --json
+glade-tools local-tests --project . --class AccountServiceTest --method testCreatesAccount --json
 ```
 
 ## 5. Watch Once
@@ -74,7 +74,7 @@ glade test --project . --watch-once
 mkdir -p reports
 glade check --project . --json > reports/glade-check.json
 glade test --project . --json > reports/glade-test.json
-glade compat local-tests --project . --parallel auto --json > reports/glade-local-tests.json
+glade-tools local-tests --project . --parallel auto --json > reports/glade-local-tests.json
 ```
 
 Add `--changed-since origin/main` when the report should cover only affected

@@ -109,8 +109,8 @@ PermissionSetAssignment, PermissionSetGroup, PermissionSetGroupComponent,
 Pricebook2, PricebookEntry, Product2, Profile, RecordType, SetupEntityAccess,
 and User.
 
-The checked SObject stub inventory is written to
-`docs/generated/stubs/STUB_INVENTORY.md`.
+The checked SObject stub inventory is maintained by the sibling `glade-tools`
+project.
 It currently contains 1,373 SObject stub classes, zero source objects missing
 active shape, and zero supported-feature fields missing active shape. The
 remaining field gaps are feature-gated fields such as Person Account and

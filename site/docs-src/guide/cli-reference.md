@@ -119,22 +119,6 @@ glade db inspect --db .glade/local-org.sqlite --json
 glade db export --db .glade/local-org.sqlite > exported-fixture.json
 ```
 
-## `glade compat`
-
-Run compatibility fixtures, readiness gates, generated capability reports, and large-project local-test triage.
-
-```bash
-glade compat mvp
-glade compat mvp --require-ready
-glade compat matrix --json
-glade compat validate fixtures/example.json
-glade compat run fixtures/example.json --json
-glade compat local-tests --project . --parallel auto --json
-glade compat dashboard --output docs/COMPATIBILITY_DASHBOARD.md
-glade compat gaps --output docs/KNOWN_GAPS.md
-glade compat stdlib --output docs/STDLIB_COVERAGE.md
-```
-
 ## `glade playground`
 
 Start the local browser playground for editing classes, running anonymous Apex, and inspecting logs, limits, traces, and org diffs.

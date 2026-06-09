@@ -3,47 +3,31 @@
 `glade` releases are tagged as `vMAJOR.MINOR.PATCH`. The release workflow builds
 platform archives and `SHA256SUMS.txt` from the tagged source.
 
-## Compatibility Gate
+## Release Gate
 
-A release can be promoted as MVP-ready only when:
+A release can be promoted when:
 
-- `glade compat mvp --require-ready` exits successfully and reports
-  `MVP readiness: ready`.
-- Every `requiredForMVP` capability in `internal/capability` is `supported`.
-- Any feature marked `supported` has compatibility fixtures.
-- `docs/COMPATIBILITY_DASHBOARD.md` and `docs/KNOWN_GAPS.md` are regenerated
-  from the same capability source and pass CI drift checks.
-
-Until that gate is green, releases must be described as preview builds.
+- `go test ./...` passes.
+- `scripts/smoke.sh` passes against the built binary.
+- `glade doctor` reports `parser: ok` for release archives.
+- Public support docs describe the current command surface and known gaps.
 
 ## Release Readiness Labels
 
 Use these labels narrowly. They are claims about checked gates from the current
 source tree, not broad promises that every Salesforce behavior is implemented.
 
-- `server-examples-green`: `glade compat server-examples` reports no failing,
-  unsupported, or missing probes for the checked server-example corpus.
-- `mvp-ready`: `glade compat mvp --require-ready` passes, every MVP-required
-  capability is `supported`, and generated compatibility docs are in sync.
-- `apex-parity-ready`: the parser, semantic checker, VM, stdlib, storage,
-  DML/SOQL, test runner, and local API compatibility fixtures that define the
-  Apex parity surface pass from source.
-- `legacy-project-test-ready`: `glade compat local-tests --check
-  docs/fixtures/local-tests-corpus.json` passes for owned fixtures modeled
-  after large legacy projects, and `glade compat post-parity --json` reports no
-  test-blocking findings for the checked example-project inventory.
-- `declarative-automation-test-ready`: the local-test corpus covers Workflow,
-  record-triggered or Process Builder-shaped Flow, invocable Apex actions, DML
-  rollback, and trace-visible declarative side effects.
-- `visualforce-aura-lwc-controller-test-ready`: owned fixtures cover
-  non-rendering Visualforce page/controller/action contracts, Aura Apex
-  discovery, LWC Apex import discovery, and VM-level controller action
-  dispatch. This label does not imply browser rendering or local UI serving.
+- `release-ready`: product tests, smoke, install docs, and parser-capable
+  release artifacts are current.
+- `server-ready`: the local API server product smoke and focused server tests
+  pass from source.
+- `local-test-ready`: `glade test` product JSON/JUnit output and focused
+  runtime tests pass from source.
 
 ## Salesforce API Versions
 
-The current default local API version is `v65.0`. Compatibility is tracked by
-the capability matrix, not by a blanket Salesforce API support claim.
+The current default local API version is `v65.0`. Support is tracked by checked
+docs and tests, not by a blanket Salesforce API support claim.
 
 When behavior differs by Salesforce API version, add the version to the
 capability notes or split the capability into version-scoped entries before
@@ -66,12 +50,10 @@ must document the migration path.
 
 Each release note should include:
 
-- Compatibility status: output summary from `glade compat mvp`.
 - Supported-platform artifacts and checksum verification instructions.
-- New capabilities promoted to `supported`, including fixture coverage.
+- New supported behavior and the tests that cover it.
 - Known gaps and unsupported-feature diagnostics that changed.
-- Upgrade notes for CLI flags, fixture formats, database schemas, and server
-  API behavior.
+- Upgrade notes for CLI flags, database schemas, and server API behavior.
 
 Use [`docs/RELEASE_NOTES.md`](RELEASE_NOTES.md) as the ongoing release log.
 
@@ -112,8 +94,7 @@ tar -xzf glade_vX.Y.Z_linux_amd64.tar.gz
    - Validate `brew install` and `glade version`.
 
 6. Publish release notes.
-   - Copy compatibility status from `glade compat mvp`.
-   - Call out new supported capabilities and remaining known gaps.
+   - Call out new supported behavior and remaining known gaps.
 
 For an operator-oriented command checklist, use
 [`docs/DISTRIBUTION_WORKFLOW.md`](DISTRIBUTION_WORKFLOW.md).

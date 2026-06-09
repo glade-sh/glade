@@ -83,7 +83,8 @@ Build from source in GitHub Actions:
   with:
     go-version-file: go.mod
 - run: go install github.com/glade-sh/glade/cmd/glade@latest
-- run: glade compat mvp
+- run: glade check --project .
+- run: glade test --project . --json
 ```
 
 Or download a release artifact and verify checksums:

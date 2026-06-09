@@ -152,7 +152,7 @@ func readRepoFile(t *testing.T, root, rel string) string {
 }
 
 func allowsCorpusTerms(rel string) bool {
-	return rel == "internal/compat/server_examples.go" || rel == "internal/compat/server_examples_test.go"
+	return false
 }
 
 func forbiddenCorpusTerms() []string {

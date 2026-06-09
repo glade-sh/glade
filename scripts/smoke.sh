@@ -126,34 +126,4 @@ kill "${SERVER_PID}" 2>/dev/null || true
 wait "${SERVER_PID}" 2>/dev/null || true
 SERVER_PID=""
 
-"${GLADE}" compat mvp >"${TMP}/compat-mvp.out"
-grep -q 'MVP readiness: ready' "${TMP}/compat-mvp.out"
-"${GLADE}" compat matrix --json >"${TMP}/compat-matrix.json"
-grep -q '"ready": true' "${TMP}/compat-matrix.json"
-RUN_FIXTURES=()
-for fixture in docs/fixtures/*.json; do
-  if python3 - "${fixture}" <<'PY'
-import json
-import sys
-with open(sys.argv[1], encoding="utf-8") as f:
-    data = json.load(f)
-name = data.get("name")
-raise SystemExit(0 if isinstance(name, str) and name else 1)
-PY
-  then
-    RUN_FIXTURES+=("${fixture}")
-  fi
-done
-"${GLADE}" compat validate "${RUN_FIXTURES[@]}"
-chunk_size=10
-for ((i = 0; i < ${#RUN_FIXTURES[@]}; i += chunk_size)); do
-  "${GLADE}" compat run "${RUN_FIXTURES[@]:i:chunk_size}"
-done
-"${GLADE}" compat replay testdata/replay/selector-service-domain
-"${GLADE}" compat replay testdata/replay/server-backed
-"${GLADE}" compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
-"${GLADE}" compat gaps --check docs/KNOWN_GAPS.md
-"${GLADE}" compat stdlib --check docs/STDLIB_COVERAGE.md
-GLADE_BIN="${GLADE}" scripts/apex-docs-support-gate.sh
-
 echo "smoke: ok"

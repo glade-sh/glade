@@ -16,18 +16,18 @@ page stays high level. The generated ledgers carry the method rows.
 
 | Area | Status | What to expect |
 | --- | --- | --- |
-| Apex parsing and project indexing | Supported | Large SFDX projects, nested types, namespace tokens, and stable parse diagnostics are covered by the local MVP gate. |
+| Apex parsing and project indexing | Supported | Large SFDX projects, nested types, namespace tokens, and stable parse diagnostics are covered by checked tests and support artifacts. |
 | Semantic analysis | Supported | Method bodies, constructors, inheritance, interfaces, locals, assignments, return paths, overloads, and token ranges are checked for the supported VM subset. |
 | Local Apex tests | Supported | Test discovery, `@TestSetup`, isolated org state, static reset, limits windows, async drain, stack frames, JSON, and JUnit reports are covered for the supported runtime. |
 | SOQL, DML, triggers, and SObjects | Supported | Static and dynamic SOQL, DML statements, `Database.*` result shapes, trigger context, schema-backed SObjects, and local storage are covered for the checked local data model. |
 | Local API server | Supported | Salesforce-shaped discovery, CRUD, query, queryAll, limits, userinfo, Tooling `executeAnonymous`, Composite sObject insert, reset endpoints, and SQLite persistence are covered. |
-| Editor and tooling | Supported | LSP diagnostics, symbols, hover, completion, rename, semantic tokens, DAP stepping, watch mode, and trace/profile reports are covered for the local MVP contract. |
+| Editor and tooling | Supported | LSP diagnostics, symbols, hover, completion, rename, semantic tokens, DAP stepping, watch mode, and trace/profile reports are covered for local development. |
 | Core standard library | Wide support | The common local test surface is covered. Method-level detail lives in the standard library ledger. |
 | Platform service APIs | Unsupported by default | Services that need live Salesforce process engines, identity services, request context, or sandbox lifecycle fail with explicit unsupported diagnostics unless the ledger says otherwise. |
 
 ## Standard Library Families
 
-Counts come from `glade compat stdlib --json` in this repository state.
+Counts come from the checked standard library coverage report in this repository state.
 
 | Family | First-layer status | Method rows |
 | --- | --- | ---: |
@@ -50,18 +50,12 @@ Schedulable, and AccessLevel edge rows.
 
 ## Drill Down
 
-Use the map first, then cut down to the exact row:
-
-```bash
-glade compat mvp
-glade compat matrix --json
-glade compat stdlib --json
-```
+Use the map first, then cut down to the exact checked row.
 
 - Generated capability dashboard: [Compatibility Dashboard](/guide/compatibility-dashboard)
 - Method-level standard library rows: [`docs/STDLIB_COVERAGE.md`](https://github.com/glade-sh/glade/blob/main/docs/STDLIB_COVERAGE.md)
 - Current known gaps: [`docs/KNOWN_GAPS.md`](https://github.com/glade-sh/glade/blob/main/docs/KNOWN_GAPS.md)
-- Project triage: `glade compat local-tests --project . --parallel auto --json`
+- Project triage: `glade-tools local-tests --project . --parallel auto --json`
 
 One rule keeps the marks honest. Do not call a surface supported until the row
 has implementation and compatibility evidence.

@@ -20,7 +20,6 @@ import (
 	"github.com/glade-sh/glade/internal/packageartifact"
 	"github.com/glade-sh/glade/internal/profile"
 	"github.com/glade-sh/glade/internal/project"
-	"github.com/glade-sh/glade/internal/projectscan"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/storage"
@@ -162,12 +161,6 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
-	case "compat":
-		if err := runCompat(ctx, args[1:], stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
-			return 1
-		}
-		return 0
 	default:
 		report := diagnostic.Report{
 			Diagnostics: []diagnostic.Diagnostic{{
@@ -193,7 +186,7 @@ Commands:
   version        Print the glade version.
   doctor         Print environment and project configuration status.
   parse          Parse Apex source files.
-  inspect        Inspect indexed project symbols and unsupported project gaps.
+  inspect        Inspect indexed project symbols.
   schema         Load local Salesforce metadata schema.
   check          Run semantic checks over a project.
   exec           Execute anonymous Apex.
@@ -206,23 +199,7 @@ Commands:
   server         Start the local Salesforce-compatible API baseline.
   playground     Start the local Apex playground web UI.
   db             Seed, reset, export, and inspect a persistent local database.
-  compat         Validate fixtures and report capability readiness.
   help           Print this help text.
-
-Compat subcommands:
-  validate           Validate compatibility fixture files.
-  run                Validate and execute fixtures.
-  matrix             Print the full capability matrix.
-  mvp                Print MVP readiness report.
-  local-tests        Report local Apex test execution readiness.
-  examples           Scan example projects and report support status.
-  post-parity        Scan a project for unsupported surfaces.
-  dashboard          Generate compatibility dashboard.
-  gaps               Generate known gaps document.
-  stdlib             Generate standard library coverage document.
-  stub-contracts     Report generated stub behavioral contract policy.
-  stub-behavior      Report generated platform stub behavior status.
-  tooling-fixtures   Validate captured Tooling snippet fixture reports.
 `)
 }
 
@@ -234,12 +211,6 @@ func printHelpTopic(w io.Writer, args []string) {
 	switch args[0] {
 	case "test":
 		printTestHelp(w)
-	case "compat":
-		if len(args) > 1 && args[1] == "local-tests" {
-			printCompatLocalTestsHelp(w)
-			return
-		}
-		printCompatHelp(w)
 	default:
 		printHelp(w)
 	}
@@ -272,53 +243,6 @@ Examples:
   glade test --project force-app
   glade test --project . --filter AccountServiceTest
   glade test --project . --watch
-`)+"\n")
-}
-
-func printCompatHelp(w io.Writer) {
-	fmt.Fprintf(w, "%s\n\nExamples:\n  glade compat mvp --json\n  glade compat local-tests --project . --json\n", compatUsage())
-}
-
-func printCompatLocalTestsHelp(w io.Writer) {
-	fmt.Fprint(w, strings.TrimSpace(`
-Report local Apex test execution readiness.
-
-Usage:
-  glade compat local-tests [--project <root>] [--class <name>] [--class-list <a,b>] [--class-file <path>] [--method <name>] [--parallel <n|auto>] [--json]
-
-Common flags:
-  --project <root>          Project root. Defaults to current directory.
-  --class <name>            Run one Apex test class.
-  --class-list <a,b>        Run a comma-separated list of test classes.
-  --class-file <path>       Run classes listed in a file.
-  --start-class <name>      Resume from a class name in sorted order.
-  --method <name>           Run one test method when paired with --class.
-  --changed-since <ref>     Select tests affected since a git ref.
-  --blockers-only           Print only blocking failures.
-  --top-failures <n>        Limit failure groups in human output.
-  --max-failure-groups <n>  Limit grouped failure output.
-  --timeout <ms-per-test>   Per-test timeout in milliseconds.
-  --parallel <n|auto>       Run test classes with n workers.
-  --parallel-methods        Run test methods in parallel within each class.
-  --trace-blockers          Include blocked-test traces in JSON output.
-  --slow-test-ms <n>        Include traces/profiles for tests at or above n ms.
-  --shard-count <n|auto>    Select one shard from a balanced class plan.
-  --shard-index <i|auto>    Shard index to execute.
-  --write-class-shards <dir>  Write balanced class shard files and exit.
-  --duration-history <path> Optional perf JSON used to weight class sharding.
-  --analyze                 Force project analysis before running tests.
-  --profile-on-timeout      Capture profiles for timed-out tests.
-  --cpu-profile <path>      Write a CPU profile for the local-test run.
-  --mem-profile <path>      Write an allocation profile for the local-test run.
-  --perf-json <path>        Write per-class timing data for future sharding.
-  --progress                Print progress while running.
-  --json                    Write JSON readiness results.
-  --check <path>            Compare results with a checked baseline.
-
-Examples:
-  glade compat local-tests --project . --json
-  glade compat local-tests --project . --class AccountServiceTest
-  glade compat local-tests --project . --class-file tests.txt --top-failures 10
 `)+"\n")
 }
 
@@ -596,27 +520,10 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 		return typesys.Index{}, err
 	}
 	if len(args) == 0 {
-		return typesys.Index{}, errors.New("usage: glade inspect symbols|gaps [--project <root>] [--json]")
-	}
-	if args[0] == "gaps" || args[0] == "post-parity" {
-		root, jsonOut, err := parseProjectFlags(args[1:])
-		if err != nil {
-			return typesys.Index{}, err
-		}
-		report, err := projectscan.Scan(root)
-		if err != nil {
-			return typesys.Index{}, err
-		}
-		if jsonOut {
-			enc := json.NewEncoder(w)
-			enc.SetIndent("", "  ")
-			return typesys.Index{}, enc.Encode(report)
-		}
-		writeProjectGapInspectText(w, report)
-		return typesys.Index{}, nil
+		return typesys.Index{}, errors.New("usage: glade inspect symbols [--project <root>] [--json]")
 	}
 	if args[0] != "symbols" {
-		return typesys.Index{}, errors.New("usage: glade inspect symbols|gaps [--project <root>] [--json]")
+		return typesys.Index{}, errors.New("usage: glade inspect symbols [--project <root>] [--json]")
 	}
 
 	root, jsonOut, err := parseProjectFlags(args[1:])
@@ -673,37 +580,6 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 		fmt.Fprintln(w)
 	}
 	return index, nil
-}
-
-func writeProjectGapInspectText(w io.Writer, report projectscan.Report) {
-	fmt.Fprintf(w, "project: %s\n", report.Project)
-	fmt.Fprintf(w, "filesScanned: %d\n", report.Summary.FilesScanned)
-	fmt.Fprintf(w, "surfaces: %d\n", report.Summary.Surfaces)
-	fmt.Fprintf(w, "findings: %d\n", report.Summary.Findings)
-	fmt.Fprintf(w, "testBlockingFindings: %d\n", report.Summary.TestBlockingFindings)
-	if len(report.TopBlockers) > 0 {
-		fmt.Fprintln(w, "topBlockers:")
-		for _, blocker := range report.TopBlockers {
-			fmt.Fprintf(w, "  %s: %d findings across %d files\n", blocker.Capability, blocker.Count, blocker.AffectedFiles)
-		}
-	}
-	if len(report.Surfaces) > 0 {
-		fmt.Fprintln(w, "surfaces:")
-		for _, surface := range report.Surfaces {
-			fmt.Fprintf(w, "  %s [%s/%s]: %d findings across %d files\n", surface.Capability, surface.Stage, surface.Status, surface.Count, surface.AffectedFiles)
-			for _, example := range surface.Examples {
-				if example.Line > 0 {
-					fmt.Fprintf(w, "    - %s:%d", example.File, example.Line)
-				} else {
-					fmt.Fprintf(w, "    - %s", example.File)
-				}
-				if example.Symbol != "" {
-					fmt.Fprintf(w, " %s", example.Symbol)
-				}
-				fmt.Fprintln(w)
-			}
-		}
-	}
 }
 
 func runSchema(ctx context.Context, args []string, w io.Writer) error {

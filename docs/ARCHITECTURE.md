@@ -61,15 +61,9 @@ and composed by the CLI.
   `executeAnonymous`, composite sObject insert, fixture/scoped reset endpoints,
   stable unsupported Apex REST dispatch errors, and optional SQLite-backed
   persistence.
-- `internal/compat`: compatibility fixture schema, fixture evidence metadata,
-  parse/check/exec/test/DB fixture execution, and catalog evidence reports.
-- `internal/capability`: machine-readable feature matrix and MVP readiness
-  gate, plus the docs-driven Apex support catalog and product namespace typed
-  stub reports.
-- `internal/surface`: enforced registry mapping each Salesforce surface to its
-  owning runtime/server/capability/compat packages and test commands. It is the
-  index for "where does this live", backed by `TestBuiltinRegistry...` so the
-  map cannot drift from reality. See `ADDING_A_PLATFORM_API.md`.
+- Maintenance scanners, compatibility fixtures, capability catalogs, and surface
+  ledgers live in the sibling `glade-tools` project. That project may depend on
+  this framework; this framework does not depend on it.
 
 ## Runtime Pipeline
 
@@ -99,8 +93,5 @@ and composed by the CLI.
 ## Adding Salesforce Functionality
 
 When Salesforce ships something new (a class, namespace, method, or surface) or
-a gap is found, start with [ADDING_A_PLATFORM_API.md](ADDING_A_PLATFORM_API.md).
-It maps each concern to its owning package and the order to wire things up. The
-conventions it enforces live in
-[ARCHITECTURE_STANDARDS.md](ARCHITECTURE_STANDARDS.md), and the surface-to-owner
-index is the `internal/surface` registry.
+a gap is found, keep product runtime changes in this repository and use
+`glade-tools` for gap discovery, fixtures, and generated support reports.

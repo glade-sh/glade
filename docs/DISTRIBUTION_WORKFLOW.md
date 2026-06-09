@@ -8,10 +8,7 @@ From the repo root:
 
 ```bash
 go test ./...
-go run ./cmd/glade compat mvp --json
-go run ./cmd/glade compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
-go run ./cmd/glade compat gaps --check docs/KNOWN_GAPS.md
-go run ./cmd/glade compat stdlib --check docs/STDLIB_COVERAGE.md
+scripts/smoke.sh
 ```
 
 If a command fails, stop and fix before tagging.
@@ -69,7 +66,6 @@ glade doctor
 
 Update [RELEASE_NOTES.md](RELEASE_NOTES.md):
 
-- MVP status from `glade compat mvp`
-- major capability changes
+- supported behavior changes
 - known gaps that changed
 - upgrade notes

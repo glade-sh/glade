@@ -14,32 +14,23 @@ with one of these statuses:
 Silent wrong behavior is a release blocker for any feature marked `supported`.
 Unsupported behavior should fail loudly and predictably.
 
-## MVP Gate
+## Support Map
 
-The MVP target is full-featured glade-parity for local Apex development. The
-current implementation is MVP-ready when every required capability in
-`internal/capability` is `supported` and the generated compatibility documents
-match that source.
+`glade` publishes product commands only. Maintenance scanners, compatibility
+fixtures, project gap reports, and generated support artifacts live in the
+sibling `glade-tools` project. The checked public reports in this repository
+are:
 
-Use:
+- [`docs/COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md)
+- [`docs/KNOWN_GAPS.md`](KNOWN_GAPS.md)
+- [`docs/STDLIB_COVERAGE.md`](STDLIB_COVERAGE.md)
+
+Use the installed tool for product checks:
 
 ```bash
-glade compat mvp
-glade compat mvp --require-ready
-glade compat matrix --json
-glade compat dashboard --output docs/COMPATIBILITY_DASHBOARD.md
-glade compat gaps --output docs/KNOWN_GAPS.md
-glade compat stdlib --output docs/STDLIB_COVERAGE.md
+glade check --project .
+glade test --project . --json
 ```
-
-The source of truth for required MVP capabilities is `internal/capability`.
-The generated public dashboard is checked in at
-[`docs/COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md). The generated
-known-gaps document is checked in at [`docs/KNOWN_GAPS.md`](KNOWN_GAPS.md). CI
-prints the machine-readable MVP gate and verifies that both generated documents
-match the capability source. The generated standard-library coverage matrix is
-checked in at [`docs/STDLIB_COVERAGE.md`](STDLIB_COVERAGE.md). Use
-`glade compat mvp --require-ready` for release promotion checks.
 
 Release installation and artifact verification are documented in
 [`docs/INSTALL.md`](INSTALL.md).
@@ -53,10 +44,10 @@ in [`docs/RELEASE_POLICY.md`](RELEASE_POLICY.md), with ongoing notes in
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| CLI surface | partial | `version`, `help`, `doctor`, `parse`, `inspect`, `schema`, `check`, `exec`, `test`, `profile analyze`, `server`, `db`, `lsp`, and `compat` exist. Several commands are still partial because their underlying runtime fidelity is partial. |
+| CLI surface | partial | `version`, `help`, `doctor`, `parse`, `inspect`, `schema`, `check`, `exec`, `test`, `profile analyze`, `server`, `db`, and `lsp` exist. Several commands are still partial because their underlying runtime fidelity is partial. |
 | Project config | partial | Minimal `glade.yml` discovery exists. |
 | Diagnostics | partial | Shared diagnostic shape exists. |
-| Compatibility fixtures | partial | JSON schema model exists; `glade compat validate/run` executes parse, check, exec, test, DB lifecycle, and server black-box fixtures, including malformed-parse diagnostics, storage seed/export/reset/inspect coverage, enterprise-style multi-class parse/index/check coverage, and local API coverage for discovery, auth stubs, CRUD/query, Tooling, Composite sObjects, errors, reset, and SQLite persistence; `glade compat replay` runs versioned directory bundles with source, metadata, fixtures, deterministic environment fields, ordered steps, JSON reports, and failure artifacts; `glade compat readiness` reports project blockers by parser/project/schema/sema/stdlib/SOQL/DML/trigger/limit/storage/server category; `glade compat matrix`, `glade compat mvp`, and `glade compat stdlib` expose machine-readable capability and standard-library status. Broader Salesforce black-box fixtures remain incomplete. |
+| Compatibility fixtures | partial | The maintenance fixture runner lives in `glade-tools`. Checked fixtures cover parse, check, exec, test, DB lifecycle, and server black-box behavior. Broader Salesforce black-box fixtures remain incomplete. |
 | Parser | supported | `glade parse` uses the local tree-sitter Apex parser module through `internal/apexast`, preserves Apex methods named `void`, provides stable malformed-parse diagnostics, and has enterprise-style multi-class, namespace/package-directory, and bounded large-index coverage for the local Apex execution corpus. |
 | Project loader | partial | SFDX package directories and Apex/object/field/record type files are discovered. |
 | Schema loader | partial | Custom object, custom field, picklist, and record type metadata are loaded. Local schema describe also merges the generated Salesforce standard object baseline for all checked SObject stub shape, with Person Account and Multi-Currency field overlays gated by org features. |
@@ -69,8 +60,8 @@ in [`docs/RELEASE_POLICY.md`](RELEASE_POLICY.md), with ongoing notes in
 | DML/transactions/triggers | supported | `internal/dml` and the VM support Apex insert/update/delete/upsert/undelete/merge syntax, `Database.*` allOrNone results, `SaveResult`/`UpsertResult`/`MergeResult` objects with structured single and multi-entry `Database.Error` values, required/unknown field validation, deterministic IDs, common system field stamping, soft delete/undelete query visibility, implicit and explicit external-ID upsert, ID/object mismatch checks, unique fields, lookup reference validation, simple Metadata API validation rules, merge loser soft-delete with child lookup reparenting, upsert insert/update trigger contexts, merge master update hooks, merge duplicate delete hooks, cascade soft delete from relationship metadata, rollback snapshots including failed flow record-create effects, and before/after trigger invocation with operation flags, size, new/old lists, nullable unavailable contexts, newMap/oldMap, after-undelete context, bulk partial-success row alignment, deterministic recursion guard rollback, and object-level and field-level `addError` row failures. |
 | Governor limits | partial | The VM tracks SOQL queries/rows including projected child relationship rows, DML statements/rows including cascade-delete child rows, deterministic live heap approximation across locals and mutated collections, deterministic CPU cost from statements plus SOQL/DML row work, callouts, aggregate async jobs, future calls, queueable jobs, batch jobs, scheduled jobs, and email invocations. Supported `Limits` getters expose current and max SOQL, DML, heap, CPU, callout, aggregate async, future, queueable, batch, scheduled, and email counters. Strict/permissive limit modes are available through CLI exec/test/server surfaces and compatibility exec/test fixtures. Exact Salesforce accounting and all platform-specific counters are not complete. |
 | Storage/fixtures/persistence | supported | SQLite-backed org storage persists object definitions, records, ID sequences, schema migrations/versioning, fixture seed/export/reset/inspect, object-aware alias and relationship-reference resolution, qualified object aliases, ambiguity checks, reference-target validation, deterministic platform data, local org settings, DB lifecycle and export re-import coverage, server persistence, scoped fixture reset endpoints, transaction-scoped prepared inserts, storage performance pragmas, large-fixture save/load coverage, cloned-org commit boundaries for mutating server requests and Tooling executeAnonymous, and serialized server request handling. |
-| DAP | supported | Local MVP DAP support covers DAP framing, setBreakpoints, continue/pause/next/stepIn/stepOut/disconnect, stackTrace with trace-provided line/column positions, scopes, variables, evaluate, VM debug pause hooks, live statement breakpoint stops with stack/locals/static snapshots, stack-depth live stepping, Locals/Statics/Trigger scopes, collection/object/SObject children, paused-context watch expressions, and `glade exec --debug` / `glade test --debug` snapshot sessions. Richer IDE launch/run orchestration is tracked post-MVP. |
-| LSP | supported | `glade lsp` runs a stdio LSP transport for initialize/shutdown, shared `glade check` diagnostics, open-buffer parse overlays, test-result diagnostics, incremental document sync, symbols, semantic tokens, definition, references, rename, hover, and Apex/SObject/member/field/keyword completion from the project index. Deeper context-aware completion is tracked post-MVP. |
-| Watch mode | supported | `glade test --watch` and `--watch-once` support native `fsnotify` watching with polling fallback, debounce, versioned newline-delimited JSON events with stable run IDs and test class arrays, incremental Apex-only re-indexing, dependency-graph affected-test selection, cancellable in-flight VM/test reruns, and stale run-result suppression. Profile/trace-driven watch reports are tracked post-MVP. |
-| Native profile analysis | supported | `glade profile analyze` reads native Chrome Trace Event output and emits native JSON or Markdown reports with hot events, categories, runtime sections for statements/methods/SOQL/DML/describe/callout/email/async/trigger/limits, source offsets, statement line/column ranges, SOQL/DML row deltas, and platform/resource counter attribution. No external apexrr dependency is used. pprof-compatible CPU output and wall-clock attribution are tracked post-MVP. |
-| Local API server | supported | `glade server` starts the local MVP Salesforce-shaped REST baseline with data version/root discovery, SObject CRUD, normal REST JSON payload decoding, explicit null updates, query/queryAll REST-shaped record attributes, describe/recent, limits, OAuth userinfo/id stubs with local user selection, Tooling `executeAnonymous` GET/POST success and failure shapes with `--limit-mode`, supported local-object Tooling queries, Composite sObject insert with `referenceId`, partial success, and all-or-none rollback, optional SQLite persistence through `--db`, Glade fixture/scoped reset endpoints, and Salesforce-shaped error arrays. Full auth, broader Tooling object coverage, Composite Graph, Bulk API, layout metadata, and broader REST resources are tracked post-MVP. |
+| DAP | supported | local DAP support covers DAP framing, setBreakpoints, continue/pause/next/stepIn/stepOut/disconnect, stackTrace with trace-provided line/column positions, scopes, variables, evaluate, VM debug pause hooks, live statement breakpoint stops with stack/locals/static snapshots, stack-depth live stepping, Locals/Statics/Trigger scopes, collection/object/SObject children, paused-context watch expressions, and `glade exec --debug` / `glade test --debug` snapshot sessions. Richer IDE launch/run orchestration is tracked future. |
+| LSP | supported | `glade lsp` runs a stdio LSP transport for initialize/shutdown, shared `glade check` diagnostics, open-buffer parse overlays, test-result diagnostics, incremental document sync, symbols, semantic tokens, definition, references, rename, hover, and Apex/SObject/member/field/keyword completion from the project index. Deeper context-aware completion is tracked future. |
+| Watch mode | supported | `glade test --watch` and `--watch-once` support native `fsnotify` watching with polling fallback, debounce, versioned newline-delimited JSON events with stable run IDs and test class arrays, incremental Apex-only re-indexing, dependency-graph affected-test selection, cancellable in-flight VM/test reruns, and stale run-result suppression. Profile/trace-driven watch reports are tracked future. |
+| Native profile analysis | supported | `glade profile analyze` reads native Chrome Trace Event output and emits native JSON or Markdown reports with hot events, categories, runtime sections for statements/methods/SOQL/DML/describe/callout/email/async/trigger/limits, source offsets, statement line/column ranges, SOQL/DML row deltas, and platform/resource counter attribution. No external apexrr dependency is used. pprof-compatible CPU output and wall-clock attribution are tracked future. |
+| Local API server | supported | `glade server` starts the local Salesforce-shaped REST baseline with data version/root discovery, SObject CRUD, normal REST JSON payload decoding, explicit null updates, query/queryAll REST-shaped record attributes, describe/recent, limits, OAuth userinfo/id stubs with local user selection, Tooling `executeAnonymous` GET/POST success and failure shapes with `--limit-mode`, supported local-object Tooling queries, Composite sObject insert with `referenceId`, partial success, and all-or-none rollback, optional SQLite persistence through `--db`, Glade fixture/scoped reset endpoints, and Salesforce-shaped error arrays. Full auth, broader Tooling object coverage, Composite Graph, Bulk API, layout metadata, and broader REST resources are tracked future. |

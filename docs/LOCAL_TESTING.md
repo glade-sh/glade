@@ -150,7 +150,7 @@ glade test --project . --daemon --watch
 
 ## Compatibility Local-Test Runs
 
-`glade compat local-tests` uses the same local runtime but reports readiness
+`glade-tools local-tests` uses the same local runtime but reports readiness
 outcomes for large-project parity work. Per-test outcome strings include
 `pass`, `fail`, `unsupported`, `load_error`, `compile_error`, `internal_error`,
 `assert_fail`, `runtime_gap`, `compile_gap`, and `timeout`. Summary keys use
@@ -161,20 +161,20 @@ Use it when you want triage output, blocker grouping, sharding, or the
 compatibility JSON shape:
 
 ```bash
-glade compat local-tests --project . --parallel auto --json
+glade-tools local-tests --project . --parallel auto --json
 ```
 
 Focused runs use explicit class and method flags:
 
 ```bash
-glade compat local-tests --project . --class AccountServiceTest --json
-glade compat local-tests --project . --class AccountServiceTest --method testCreatesAccount --json
+glade-tools local-tests --project . --class AccountServiceTest --json
+glade-tools local-tests --project . --class AccountServiceTest --method testCreatesAccount --json
 ```
 
 Affected-test selection is available here too:
 
 ```bash
-glade compat local-tests --project . --changed-since origin/main --parallel auto --json
+glade-tools local-tests --project . --changed-since origin/main --parallel auto --json
 ```
 
 For this command, `--parallel <n|auto>` controls class workers. The

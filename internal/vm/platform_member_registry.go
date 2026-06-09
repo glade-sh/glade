@@ -16,7 +16,7 @@ type platformObjectMemberSurface struct {
 // every call. The cache lives behind a function rather than a package var
 // because the handlers transitively reference this function, which would create
 // a package-initialization cycle. To add a Salesforce surface, register a
-// handler here and add its dispatch phase; see docs/ADDING_A_PLATFORM_API.md.
+// handler here and add its dispatch phase.
 var (
 	platformObjectMemberSurfacesOnce  sync.Once
 	platformObjectMemberSurfacesCache []platformObjectMemberSurface

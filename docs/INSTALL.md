@@ -202,30 +202,11 @@ Build from source:
   with:
     go-version-file: go.mod
 - run: go install github.com/glade-sh/glade/cmd/glade@latest
-- run: glade compat mvp
+- run: glade check --project .
+- run: glade test --project . --json
 ```
 
-If your CI job has access to the scraped public Apex docs corpus, set
-`GLADE_APEX_DOCS_SOURCE` and run the docs support gate. The gate regenerates the
-docs inventory, capability catalog, product namespace typed-stub report, and
-fixture evidence report, then fails if fixture evidence points at a symbol
-missing from the catalog.
-
-```yaml
-- run: scripts/apex-docs-support-gate.sh
-  env:
-    GLADE_APEX_DOCS_SOURCE: /path/to/salesforce-docs/apex
-```
-
-The product namespace report can also be generated directly from a catalog when
-reviewing broad typed-stub coverage:
-
-```bash
-glade compat docs-inventory --source /path/to/salesforce-docs/apex --output inventory.json
-glade compat catalog --inventory inventory.json --output catalog.json
-glade compat product-namespaces --catalog catalog.json --json
-glade compat product-namespaces --source /path/to/salesforce-docs/apex --output docs/generated/PRODUCT_NAMESPACE_COVERAGE.md
-```
+Maintenance generation commands live in the sibling `glade-tools` project.
 
 When refreshing broad standard SObject field coverage from public Apex stubs,
 regenerate the field overlay before running storage or VM compatibility checks:
@@ -245,7 +226,7 @@ node scripts/generate-system-stub-symbols.mjs /path/to/fulgor/stubs/apex-system-
 Tooling snippet fixture reports can be validated as stable JSON artifacts:
 
 ```bash
-glade compat tooling-fixtures tmp/tooling-snippet-results.json
+glade-tools tooling-fixtures tmp/tooling-snippet-results.json
 ```
 
 Use a release artifact:
@@ -274,7 +255,7 @@ glade server --db .glade/local-org.sqlite --addr 127.0.0.1:8080
 Seed and inspect the same file with the DB commands:
 
 ```bash
-glade db seed --db .glade/local-org.sqlite docs/fixtures/storage-db-lifecycle.json --json
+glade db seed --db .glade/local-org.sqlite seed.json --json
 glade db inspect --db .glade/local-org.sqlite --json
 glade db export --db .glade/local-org.sqlite > exported-fixture.json
 ```

@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
-	"github.com/glade-sh/glade/internal/compat"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/vm"
@@ -72,9 +71,6 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			i++
 		case "--json":
 			format = "json"
-		case "--compat-json":
-			format = "compat-json"
-			traceBlocked = true
 		case "--trace-blockers":
 			traceBlocked = true
 		case "--slow-test-ms":
@@ -258,8 +254,6 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		switch format {
 		case "json":
 			return result, testreport.WriteJSON(w, result)
-		case "compat-json":
-			return result, compat.WriteLocalTestJSON(w, compat.LocalTestReportFromRun(root, result))
 		default:
 			return result, testreport.WriteConsole(w, result)
 		}
@@ -314,8 +308,6 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	switch format {
 	case "json":
 		return result, testreport.WriteJSON(w, result)
-	case "compat-json":
-		return result, compat.WriteLocalTestJSON(w, compat.LocalTestReportFromRun(root, result))
 	default:
 		return result, testreport.WriteConsole(w, result)
 	}

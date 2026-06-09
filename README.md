@@ -39,26 +39,25 @@ go build -o glade ./cmd/glade
 
 ## What Glade Supports
 
-The first layer is a support map. The second layer is the generated method and
-capability ledger.
+The first layer is a support map. The second layer is the generated method
+coverage and known-gap docs checked into this repository.
 
 | Area | Current support |
 | --- | --- |
-| Apex parse, indexing, and semantic checks | Supported for the local MVP contract. |
+| Apex parse, indexing, and semantic checks | Supported for the local development contract. |
 | Local Apex tests | Supported for the VM subset, with isolated test data, statics, limits, async drain, and JSON/JUnit output. |
 | SOQL, DML, triggers, SObjects, and storage | Supported for the checked local data runtime contract. |
 | `Database` methods | Supported for the tracked local rows in the stdlib ledger. |
 | `String`, dates, time, math, assertions, labels, URLs, and user info | Wide support, with exact rows in the stdlib ledger. |
 | `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller helpers, and many `Test.*` helpers | Partial. The local model covers common test paths and records gaps by method. |
 | Platform services such as approval execution, quick actions, business-hours services, sandbox lifecycle, live request context, and identity services | Unsupported unless a row says otherwise. Glade should return a stable unsupported diagnostic, not silent wrong behavior. |
-| Local API server, LSP, DAP, watch, profile, fixtures, and release gates | Supported for the local MVP contract. |
+| Local API server, LSP, DAP, watch, and profile tools | Supported for local development. |
 
 Drill down from there:
 
 ```bash
-glade compat mvp
-glade compat matrix --json
-glade compat stdlib --json
+glade check --project .
+glade test --project . --json
 ```
 
 - High-level readiness: [docs/COMPATIBILITY_DASHBOARD.md](docs/COMPATIBILITY_DASHBOARD.md)
@@ -66,7 +65,7 @@ glade compat stdlib --json
 - Known gaps: [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md)
 - Site support map: <https://glade.sh/docs/guide/support-map>
 
-The rule is simple. A supported row has code and compatibility coverage.
+The rule is simple. A supported row has code and checked coverage.
 
 ## Common Workflows
 
@@ -78,11 +77,12 @@ glade test --project . --filter AccountServiceTest.testCreatesAccount --json
 glade test --project . --changed-since origin/main --json
 ```
 
-For large compatibility triage runs, use the compatibility harness and its
-class-parallel worker flag:
+For large project triage and maintenance scanners, use the sibling
+`~/Dev/glade-tools` project. Those commands depend on this framework but are not
+part of the published `glade` CLI:
 
 ```bash
-glade compat local-tests --project . --parallel auto --json
+glade-tools local-tests --project . --parallel auto --json
 ```
 
 Run anonymous Apex:
