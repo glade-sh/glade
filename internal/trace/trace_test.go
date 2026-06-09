@@ -34,3 +34,13 @@ func TestWriteJSONChromeTraceDocument(t *testing.T) {
 		t.Fatalf("event = %#v", event)
 	}
 }
+
+func TestDurationEventUsesChromeCompletePhase(t *testing.T) {
+	event := Duration("apex.method.AccountService.save", "apex.method", 1000, 250, map[string]any{"line": 7})
+	if event.Phase != PhaseComplete || event.Duration != 250 {
+		t.Fatalf("event = %#v", event)
+	}
+	if event.Timestamp != 1000 || event.Category != "apex.method" || event.Args["line"] != 7 {
+		t.Fatalf("event metadata = %#v", event)
+	}
+}

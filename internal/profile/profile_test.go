@@ -30,6 +30,25 @@ func TestAnalyzeRanksTraceEvents(t *testing.T) {
 	}
 }
 
+func TestAnalyzeAggregatesDurationEvents(t *testing.T) {
+	doc := trace.NewDocument([]trace.Event{
+		trace.Duration("apex.method.Slow.run", "apex.method", 100, 8000, map[string]any{"file": "Slow.cls", "line": 4}),
+		trace.Duration("apex.method.Slow.run", "apex.method", 9000, 2000, map[string]any{"file": "Slow.cls", "line": 4}),
+		trace.Duration("apex.soql", "apex.soql", 12000, 1500, map[string]any{"query": "SELECT Id FROM Account", "rows": 200}),
+	})
+
+	report := Analyze(doc)
+	if len(report.Spans) == 0 {
+		t.Fatalf("expected spans: %#v", report)
+	}
+	if report.Spans[0].Name != "apex.method.Slow.run" || report.Spans[0].DurationMS != 10 {
+		t.Fatalf("top span = %#v", report.Spans[0])
+	}
+	if report.Spans[0].Count != 2 || report.Spans[0].SourceRanges[0].Line != 4 {
+		t.Fatalf("span attribution = %#v", report.Spans[0])
+	}
+}
+
 func TestAnalyzeAttributesExpandedRuntimeEvents(t *testing.T) {
 	doc := trace.NewDocument([]trace.Event{
 		trace.Instant("apex.soql", "apex.soql", 1, map[string]any{"rows": 3}),
@@ -95,6 +114,7 @@ func TestAnalyzeAggregatesPostParitySurfaces(t *testing.T) {
 func TestWriteMarkdown(t *testing.T) {
 	report := Analyze(trace.NewDocument([]trace.Event{
 		trace.Instant("apex.statement.expr", "apex.statement", 1, map[string]any{"sourceOffset": 5}),
+		trace.Duration("apex.statement.expr", "apex.statement", 2, 1000, map[string]any{"sourceOffset": 5}),
 		trace.Instant("apex.method.Work.run", "apex.method", 2, nil),
 		trace.Instant("apex.soql", "apex.soql", 3, map[string]any{"rows": 4}),
 		trace.Instant("apex.metadata.deploy.status", "apex.metadata", 5, map[string]any{"status": "SUCCEEDED"}),
@@ -108,15 +128,12 @@ func TestWriteMarkdown(t *testing.T) {
 	if !strings.Contains(markdown, "## Runtime summary") || !strings.Contains(markdown, "CPU: 7 ms") || !strings.Contains(markdown, "Heap: 64 bytes") {
 		t.Fatalf("markdown summary = %q", markdown)
 	}
-	for _, section := range []string{"## Categories", "## Hot events", "## Statements", "## Methods", "## SOQL", "## Platform", "## Metadata"} {
+	for _, section := range []string{"## Categories", "## Measured spans", "## Hot events", "## Statements", "## Methods", "## SOQL", "## Platform", "## Metadata"} {
 		if !strings.Contains(markdown, section) {
 			t.Fatalf("markdown missing %s: %q", section, markdown)
 		}
 	}
-	if !strings.Contains(markdown, "| 5 | `apex.statement.expr` | `apex.statement` | 1 | [5] |\n\n## Statements") {
-		t.Fatalf("markdown sections not separated = %q", markdown)
-	}
-	if !strings.Contains(markdown, "| 1 | `apex.statement.expr` | `apex.statement` | 1 | [5] |") {
+	if !strings.Contains(markdown, "| 1 | `apex.statement.expr` | `apex.statement` | 2 | 1 | [5] |") {
 		t.Fatalf("markdown = %q", out.String())
 	}
 }

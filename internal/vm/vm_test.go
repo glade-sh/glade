@@ -5935,6 +5935,41 @@ System.assert(counts.containsKey('a'));
 	}
 }
 
+func TestTraceIncludesMethodSOQLAndDMLDurations(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'A');
+insert a;
+List<Account> accounts = [SELECT Id, Name FROM Account WHERE Name = 'A'];
+System.assertEquals(1, accounts.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var hasDMLSpan, hasSOQLSpan bool
+	for _, event := range result.Trace {
+		if event.Phase != trace.PhaseComplete || event.Duration <= 0 {
+			continue
+		}
+		switch event.Category {
+		case "apex.dml":
+			hasDMLSpan = true
+		case "apex.soql":
+			hasSOQLSpan = true
+		}
+	}
+	if !hasDMLSpan || !hasSOQLSpan {
+		t.Fatalf("missing duration spans dml=%v soql=%v trace=%#v", hasDMLSpan, hasSOQLSpan, result.Trace)
+	}
+}
+
 func TestExecMethodParameterMapPropagatesNestedCollectionAliases(t *testing.T) {
 	methodProgram, err := CompileAnonymous(`
 Set<String> values = (Set<String>)context.get('values');

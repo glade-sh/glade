@@ -55,6 +55,7 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 	if values, handled, err := vm.executeSoqlStub(query, queryText, binds, execResult); handled || err != nil {
 		return values, err
 	}
+	traceStart := traceSeqLen(execResult)
 	if vm.Org == nil {
 		return nil, fmt.Errorf("SOQL requires org state")
 	}
@@ -119,6 +120,17 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 		"query": queryText,
 		"rows":  result.Rows,
 	})
+	appendDurationTrace(
+		execResult,
+		"apex.soql",
+		"apex.soql",
+		int64(traceStart),
+		traceDurationFromLen(traceStart, traceSeqLen(execResult)+1),
+		map[string]any{
+			"query": queryText,
+			"rows":  result.Rows,
+		},
+	)
 	return values, nil
 }
 

@@ -256,6 +256,27 @@ func appendTrace(result *Result, name, category string, args map[string]any) {
 	result.Trace = append(result.Trace, trace.Instant(name, category, int64(len(result.Trace)), args))
 }
 
+func appendDurationTrace(result *Result, name, category string, startSeq int64, durationUS int64, args map[string]any) {
+	if result == nil || !result.traceEnabled || durationUS <= 0 {
+		return
+	}
+	result.Trace = append(result.Trace, trace.Duration(name, category, startSeq, durationUS, args))
+}
+
+func traceSeqLen(result *Result) int {
+	if result == nil {
+		return 0
+	}
+	return len(result.Trace)
+}
+
+func traceDurationFromLen(before, after int) int64 {
+	if after <= before {
+		return 1
+	}
+	return int64(after-before) * 1000
+}
+
 func (vm *VM) appendTrace(result *Result, name, category string, args map[string]any) {
 	appendTrace(result, name, category, args)
 }

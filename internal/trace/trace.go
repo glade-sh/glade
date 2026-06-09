@@ -13,7 +13,8 @@ const (
 type Phase string
 
 const (
-	PhaseInstant Phase = "i"
+	PhaseInstant  Phase = "i"
+	PhaseComplete Phase = "X"
 )
 
 type Event struct {
@@ -21,6 +22,7 @@ type Event struct {
 	Category  string         `json:"cat,omitempty"`
 	Phase     Phase          `json:"ph"`
 	Timestamp int64          `json:"ts"`
+	Duration  int64          `json:"dur,omitempty"`
 	ProcessID int            `json:"pid"`
 	ThreadID  int            `json:"tid"`
 	Scope     string         `json:"s,omitempty"`
@@ -43,6 +45,19 @@ func Instant(name, category string, timestamp int64, args map[string]any) Event 
 		ProcessID: 1,
 		ThreadID:  1,
 		Scope:     "t",
+		Args:      args,
+	}
+}
+
+func Duration(name, category string, timestamp, duration int64, args map[string]any) Event {
+	return Event{
+		Name:      name,
+		Category:  category,
+		Phase:     PhaseComplete,
+		Timestamp: timestamp,
+		Duration:  duration,
+		ProcessID: 1,
+		ThreadID:  1,
 		Args:      args,
 	}
 }

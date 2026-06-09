@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <processType>AutoLaunchedFlow</processType>
+    <status>Active</status>
+    <recordLookups>
+        <name>Lookup_Accounts</name>
+        <object>Account</object>
+    </recordLookups>
+    <recordUpdates>
+        <name>Update_Accounts</name>
+        <object>Account</object>
+    </recordUpdates>
+</Flow>

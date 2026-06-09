@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 
 	"github.com/glade-sh/glade/internal/trace"
 )
@@ -13,6 +14,7 @@ type Report struct {
 	Format      string           `json:"format"`
 	Events      int              `json:"events"`
 	Hot         []Entry          `json:"hot"`
+	Spans       []Entry          `json:"spans,omitempty"`
 	Categories  map[string]int   `json:"categories,omitempty"`
 	Limits      LimitAttribution `json:"limits,omitempty"`
 	Statements  []Entry          `json:"statements,omitempty"`
@@ -35,6 +37,9 @@ type Entry struct {
 	Count         int     `json:"count"`
 	FirstTS       int64   `json:"firstTs"`
 	LastTS        int64   `json:"lastTs"`
+	File          string  `json:"file,omitempty"`
+	DurationUS    int64   `json:"durationUs,omitempty"`
+	DurationMS    int64   `json:"durationMs,omitempty"`
 	SourceOffsets []int   `json:"sourceOffsets,omitempty"`
 	SourceRanges  []Range `json:"sourceRanges,omitempty"`
 }
@@ -82,6 +87,15 @@ func Analyze(doc trace.Document) Report {
 		if event.Timestamp > entry.LastTS {
 			entry.LastTS = event.Timestamp
 		}
+		if entry.File == "" {
+			if file, ok := event.Args["file"].(string); ok && strings.TrimSpace(file) != "" {
+				entry.File = file
+			}
+		}
+		if event.Duration > 0 {
+			entry.DurationUS += event.Duration
+			entry.DurationMS = entry.DurationUS / 1000
+		}
 		if offset, ok := intArg(event.Args["sourceOffset"]); ok && !containsInt(entry.SourceOffsets, offset) {
 			entry.SourceOffsets = append(entry.SourceOffsets, offset)
 		}
@@ -90,6 +104,17 @@ func Analyze(doc trace.Document) Report {
 			column, hasColumn := intArg(event.Args["column"])
 			if hasLine && hasColumn && !containsRange(entry.SourceRanges, offset, line, column) {
 				entry.SourceRanges = append(entry.SourceRanges, Range{Offset: offset, Line: line, Column: column})
+			}
+			continue
+		}
+		line, hasLine := intArg(event.Args["line"])
+		column, hasColumn := intArg(event.Args["column"])
+		if hasLine {
+			if !hasColumn {
+				column = 0
+			}
+			if !containsRange(entry.SourceRanges, -1, line, column) {
+				entry.SourceRanges = append(entry.SourceRanges, Range{Offset: -1, Line: line, Column: column})
 			}
 		}
 	}
@@ -171,6 +196,20 @@ func Analyze(doc trace.Document) Report {
 		}
 		return report.Hot[i].Name < report.Hot[j].Name
 	})
+	for _, entry := range report.Hot {
+		if entry.DurationUS > 0 {
+			report.Spans = append(report.Spans, entry)
+		}
+	}
+	sort.Slice(report.Spans, func(i, j int) bool {
+		if report.Spans[i].DurationUS != report.Spans[j].DurationUS {
+			return report.Spans[i].DurationUS > report.Spans[j].DurationUS
+		}
+		if report.Spans[i].Count != report.Spans[j].Count {
+			return report.Spans[i].Count > report.Spans[j].Count
+		}
+		return report.Spans[i].Name < report.Spans[j].Name
+	})
 	report.Statements = entriesForCategory(report.Hot, "apex.statement")
 	report.Methods = entriesForCategory(report.Hot, "apex.method")
 	report.SOQL = entriesForCategory(report.Hot, "apex.soql")
@@ -211,6 +250,9 @@ func WriteMarkdown(w io.Writer, report Report) error {
 		return err
 	}
 	if err := writeCategorySummary(w, report.Categories); err != nil {
+		return err
+	}
+	if err := writeEntriesSection(w, "Measured spans", report.Spans); err != nil {
 		return err
 	}
 	if err := writeEntriesSection(w, "Hot events", report.Hot); err != nil {
@@ -278,14 +320,14 @@ func writeEntriesSection(w io.Writer, title string, entries []Entry) error {
 	if _, err := fmt.Fprintf(w, "## %s\n\n", title); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(w, "| Rank | Event | Category | Count | Source offsets |"); err != nil {
+	if _, err := fmt.Fprintln(w, "| Rank | Event | Category | Count | Duration ms | Source offsets |"); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(w, "| --- | --- | --- | ---: | --- |"); err != nil {
+	if _, err := fmt.Fprintln(w, "| --- | --- | --- | ---: | ---: | --- |"); err != nil {
 		return err
 	}
 	for i, entry := range entries {
-		if _, err := fmt.Fprintf(w, "| %d | `%s` | `%s` | %d | %v |\n", i+1, entry.Name, entry.Category, entry.Count, entry.SourceOffsets); err != nil {
+		if _, err := fmt.Fprintf(w, "| %d | `%s` | `%s` | %d | %d | %v |\n", i+1, entry.Name, entry.Category, entry.Count, entry.DurationMS, entry.SourceOffsets); err != nil {
 			return err
 		}
 	}

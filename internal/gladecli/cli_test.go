@@ -445,6 +445,34 @@ func TestRunInspectSymbolsJSON(t *testing.T) {
 	}
 }
 
+func TestRunInspectPerformanceJSON(t *testing.T) {
+	root := writePerformanceScanProject(t)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"inspect", "performance", "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("code=%d stderr=%s stdout=%s", code, stderr.String(), stdout.String())
+	}
+	for _, want := range []string{"\"schemaVersion\": 1", "\"findings\"", "perf.soql.loop"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stdout missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestRunInspectPerformanceMarkdown(t *testing.T) {
+	root := writePerformanceScanProject(t)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"inspect", "performance", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("code=%d stderr=%s stdout=%s", code, stderr.String(), stdout.String())
+	}
+	for _, want := range []string{"# Performance Scan", "`perf.soql.loop`"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stdout missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
 func TestRunSchemaLoad(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -1041,6 +1069,25 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	if !strings.Contains(stdout.String(), `"Account": 0`) || !strings.Contains(stdout.String(), `"users": 2`) {
 		t.Fatalf("reset stdout = %q", stdout.String())
 	}
+}
+
+func writePerformanceScanProject(t *testing.T) string {
+	t.Helper()
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"64.0"}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Risk.cls"), `
+public class Risk {
+    @AuraEnabled
+    public static List<Account> load(List<Id> ids) {
+        List<Account> out = new List<Account>();
+        for (Id idValue : ids) {
+            out.add([SELECT Id, Name FROM Account WHERE Id = :idValue]);
+        }
+        return out;
+    }
+}
+`)
+	return root
 }
 
 func writeTestFile(t *testing.T, path, content string) {

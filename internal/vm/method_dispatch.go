@@ -311,6 +311,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		Line:   method.Line,
 		Column: method.Column,
 	})
+	traceStart := traceSeqLen(result)
 	appendTrace(result, "apex.method."+method.Name, "apex.method", map[string]any{
 		"method": method.Name,
 		"class":  method.ClassName,
@@ -318,6 +319,22 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		"line":   method.Line,
 		"column": method.Column,
 	})
+	defer func() {
+		appendDurationTrace(
+			result,
+			"apex.method."+method.Name,
+			"apex.method",
+			int64(traceStart),
+			traceDurationFromLen(traceStart, traceSeqLen(result)+1),
+			map[string]any{
+				"method": method.Name,
+				"class":  method.ClassName,
+				"file":   method.File,
+				"line":   method.Line,
+				"column": method.Column,
+			},
+		)
+	}()
 	defer func() {
 		vm.callStack = vm.callStack[:len(vm.callStack)-1]
 		vm.Globals = caller

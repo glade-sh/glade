@@ -128,6 +128,7 @@ func databaseSyncStampInWindow(stamp, start, end time.Time) bool {
 }
 
 func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value, error) {
+	traceStart := traceSeqLen(result)
 	if len(args) == 0 || len(args) > 4 {
 		return Null, fmt.Errorf("Database.%s expects records, optional external id field, and optional allOrNone", op)
 	}
@@ -188,7 +189,16 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 			return Null, err
 		}
 	}
+	records, _, recordsErr := vm.recordsFromValue(args[0])
+	if recordsErr != nil {
+		return Null, recordsErr
+	}
 	results, err := vm.applyDML(op, args[0], allOrNone, externalIDField, dmlOptions, result)
+	appendDurationTrace(result, "apex.dml."+op, "apex.dml", int64(traceStart), traceDurationFromLen(traceStart, traceSeqLen(result)+1), map[string]any{
+		"operation": op,
+		"rows":      len(records),
+		"objects":   dmlTraceObjectNames(records),
+	})
 	if err != nil {
 		return Null, err
 	}
@@ -4652,6 +4662,7 @@ func groupedRecordIndicesByObject(records []storage.Record) [][]int {
 }
 
 func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result *Result) error {
+	traceStart := traceSeqLen(result)
 	if op == "merge" {
 		if expr.Kind != ir.ExprCall || len(expr.Args) < 2 {
 			return fmt.Errorf("merge statement requires master and duplicate record(s)")
@@ -4665,6 +4676,10 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result
 			args = append(args, value)
 		}
 		value, err := vm.executeDatabaseMerge(args, result)
+		appendDurationTrace(result, "apex.dml."+op, "apex.dml", int64(traceStart), traceDurationFromLen(traceStart, traceSeqLen(result)+1), map[string]any{
+			"operation": op,
+			"rows":      len(args),
+		})
 		if err != nil {
 			return err
 		}
@@ -4691,10 +4706,20 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result
 	if err != nil {
 		return err
 	}
+	records, _, recordsErr := vm.recordsFromValue(value)
+	if recordsErr != nil {
+		return recordsErr
+	}
+	traceStart = traceSeqLen(result)
 	results, err := vm.applyDML(op, value, true, externalIDField, dml.Options{}, result)
 	if err != nil {
 		return err
 	}
+	appendDurationTrace(result, "apex.dml."+op, "apex.dml", int64(traceStart), traceDurationFromLen(traceStart, traceSeqLen(result)+1), map[string]any{
+		"operation": op,
+		"rows":      len(records),
+		"objects":   dmlTraceObjectNames(records),
+	})
 	for _, dmlResult := range results {
 		if !dmlResult.Success {
 			vm.addVisualforceDMLPageMessages(results)

@@ -18,6 +18,7 @@ import (
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/lsp"
 	"github.com/glade-sh/glade/internal/packageartifact"
+	"github.com/glade-sh/glade/internal/perfscan"
 	"github.com/glade-sh/glade/internal/profile"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
@@ -186,7 +187,7 @@ Commands:
   version        Print the glade version.
   doctor         Print environment and project configuration status.
   parse          Parse Apex source files.
-  inspect        Inspect indexed project symbols.
+  inspect        Inspect indexed project symbols and performance risks.
   schema         Load local Salesforce metadata schema.
   check          Run semantic checks over a project.
   exec           Execute anonymous Apex.
@@ -520,10 +521,16 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 		return typesys.Index{}, err
 	}
 	if len(args) == 0 {
-		return typesys.Index{}, errors.New("usage: glade inspect symbols [--project <root>] [--json]")
+		return typesys.Index{}, errors.New("usage: glade inspect symbols|performance [--project <root>] [--json]")
+	}
+	if args[0] == "performance" {
+		if err := runInspectPerformance(ctx, args[1:], w); err != nil {
+			return typesys.Index{}, err
+		}
+		return typesys.Index{}, nil
 	}
 	if args[0] != "symbols" {
-		return typesys.Index{}, errors.New("usage: glade inspect symbols [--project <root>] [--json]")
+		return typesys.Index{}, errors.New("usage: glade inspect symbols|performance [--project <root>] [--json]")
 	}
 
 	root, jsonOut, err := parseProjectFlags(args[1:])
@@ -580,6 +587,44 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 		fmt.Fprintln(w)
 	}
 	return index, nil
+}
+
+func runInspectPerformance(ctx context.Context, args []string, w io.Writer) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	root := "."
+	jsonOut := false
+	tracePath := ""
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--project":
+			if i+1 >= len(args) {
+				return errors.New("--project requires a value")
+			}
+			root = args[i+1]
+			i++
+		case "--json":
+			jsonOut = true
+		case "--trace":
+			if i+1 >= len(args) {
+				return errors.New("--trace requires a value")
+			}
+			tracePath = args[i+1]
+			i++
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+
+	report, err := perfscan.AnalyzeProject(perfscan.Options{ProjectRoot: root, TracePath: tracePath})
+	if err != nil {
+		return err
+	}
+	if jsonOut {
+		return perfscan.WriteJSON(w, report)
+	}
+	return perfscan.WriteMarkdown(w, report)
 }
 
 func runSchema(ctx context.Context, args []string, w io.Writer) error {

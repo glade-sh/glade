@@ -80,6 +80,13 @@ glade-tools local-tests --project . --parallel auto --json > reports/glade-local
 Add `--changed-since origin/main` when the report should cover only affected
 tests.
 
+## 6b. Performance Scanner
+
+```bash
+glade inspect performance --project . --json > reports/glade-performance.json
+glade inspect performance --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
+```
+
 ## 7. File A Useful Issue
 
 Include:
