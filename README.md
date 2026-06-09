@@ -80,6 +80,9 @@ glade inspect performance --project . --json > reports/glade-performance.json
 glade inspect performance --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
 
+The source-only performance scan maps entry points and hard static patterns.
+Trace input ranks measured spans and SOQL row counts.
+
 For large project triage and maintenance scanners, use the sibling
 `~/Dev/glade-tools` project. Those commands depend on this framework but are not
 part of the published `glade` CLI:

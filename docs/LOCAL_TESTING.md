@@ -62,6 +62,11 @@ Add trace data from a representative local run to rank the highest-cost paths fi
 glade inspect performance --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
 
+The static scan records entry points and high-confidence code shape. It does
+not treat a Visualforce page, Lightning wire, batch class, trigger, or SOQL
+query without a `WHERE` clause as a bottleneck by itself. Use trace input when
+you need measured elapsed spans and SOQL row counts.
+
 Use `--parallelism` to choose the worker count. Method-level parallel execution
 is on by default; use `--no-parallel-methods` only when a project has tests that
 share mutable local state.

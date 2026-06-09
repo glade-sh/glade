@@ -12,9 +12,6 @@ func TestAnalyzeProjectFindsUIDeclarativePerformanceRisks(t *testing.T) {
 	}
 	report.Finalize()
 
-	assertFinding(t, report, "perf.ui.visualforce.action")
-	assertFinding(t, report, "perf.ui.aura.server-action")
-	assertFinding(t, report, "perf.ui.lwc.wire-apex")
 	assertFinding(t, report, "perf.automation.flow.data-fanout")
 	assertFinding(t, report, "perf.automation.workflow.active-rule")
 	assertEntryPoint(t, report, EntryVisualforce)
@@ -22,6 +19,9 @@ func TestAnalyzeProjectFindsUIDeclarativePerformanceRisks(t *testing.T) {
 	assertEntryPoint(t, report, EntryLWC)
 	assertEntryPoint(t, report, EntryFlow)
 	assertEntryPoint(t, report, EntryWorkflow)
+	assertNoFinding(t, report, "perf.ui.visualforce.action")
+	assertNoFinding(t, report, "perf.ui.aura.server-action")
+	assertNoFinding(t, report, "perf.ui.lwc.wire-apex")
 }
 
 func assertEntryPoint(t *testing.T, report Report, kind EntryKind) {

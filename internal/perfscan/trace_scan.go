@@ -21,7 +21,7 @@ func scanTraceBytes(report *Report, data []byte) error {
 			Name:       span.Name,
 			Category:   span.Category,
 			DurationMS: span.DurationMS,
-			Count:      span.Count,
+			Count:      measuredCount(span),
 			File:       firstFile(span),
 			Line:       firstLine(span),
 		})
@@ -32,7 +32,7 @@ func scanTraceBytes(report *Report, data []byte) error {
 				Severity:   measuredSeverity(span.DurationMS),
 				Confidence: ConfidenceMeasured,
 				Score:      measuredScore(span.DurationMS),
-				Message:    fmt.Sprintf("Measured runtime span `%s` consumed %d ms across %d event(s).", span.Name, span.DurationMS, span.Count),
+				Message:    fmt.Sprintf("Measured runtime span `%s` consumed %d ms across %d span(s).", span.Name, span.DurationMS, measuredCount(span)),
 				Location:   Location{File: firstFile(span), Line: firstLine(span)},
 				Evidence:   []Evidence{{Kind: "trace", Message: "duration ms", Value: fmt.Sprint(span.DurationMS)}},
 				Fix:        "Open the measured transaction path, inspect the child SOQL/DML/describe/automation spans, and reduce the highest-duration work first.",
@@ -40,7 +40,8 @@ func scanTraceBytes(report *Report, data []byte) error {
 		}
 	}
 	for _, soql := range profileReport.SOQL {
-		if soqlRowsFromHotEvent(soql) >= 500 {
+		rows := soqlRowsFromHotEvent(soql)
+		if rows >= 500 {
 			report.AddFinding(Finding{
 				ID:         "perf.measured.soql-rows",
 				Category:   CategorySOQL,
@@ -49,7 +50,7 @@ func scanTraceBytes(report *Report, data []byte) error {
 				Score:      72,
 				Message:    "Measured SOQL returned a high row count in the traced transaction.",
 				Location:   Location{File: firstFile(soql), Line: firstLine(soql)},
-				Evidence:   []Evidence{{Kind: "trace", Message: "SOQL event count", Value: fmt.Sprint(soql.Count)}},
+				Evidence:   []Evidence{{Kind: "trace", Message: "SOQL rows", Value: fmt.Sprint(rows)}},
 				Fix:        "Check query filters and projections, then use a selective predicate or smaller data window.",
 			})
 		}
@@ -89,9 +90,13 @@ func firstLine(entry profile.Entry) int {
 	return 0
 }
 
-func soqlRowsFromHotEvent(entry profile.Entry) int {
-	if entry.Count >= 1 {
-		return 500
+func measuredCount(entry profile.Entry) int {
+	if entry.DurationCount > 0 {
+		return entry.DurationCount
 	}
-	return 0
+	return entry.Count
+}
+
+func soqlRowsFromHotEvent(entry profile.Entry) int {
+	return entry.Rows
 }

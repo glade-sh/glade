@@ -69,6 +69,7 @@ func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, par
 		"methodName": methodName,
 		"page":       tracePageReference(vm.currentPage),
 	})
+	constructStart, constructStartedAt := traceSpanStart(result)
 	appendVisualforceTrace(result, "controller.construct.start", map[string]any{
 		"className": className,
 	})
@@ -81,12 +82,21 @@ func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, par
 			"error":     out.Error.Message,
 			"errorType": out.Error.Type,
 		})
+		appendDurationTrace(result, "apex.visualforce.controller.construct", "apex.visualforce", constructStart, traceDurationSince(constructStartedAt), map[string]any{
+			"className": className,
+			"error":     out.Error.Message,
+			"errorType": out.Error.Type,
+		})
 		out.Trace = result.Trace
 		return out, nil
 	}
 	appendVisualforceTrace(result, "controller.construct.complete", map[string]any{
 		"className": className,
 	})
+	appendDurationTrace(result, "apex.visualforce.controller.construct", "apex.visualforce", constructStart, traceDurationSince(constructStartedAt), map[string]any{
+		"className": className,
+	})
+	actionStart, actionStartedAt := traceSpanStart(result)
 	appendVisualforceTrace(result, "action.invoke", map[string]any{
 		"className":  className,
 		"methodName": methodName,
@@ -107,6 +117,13 @@ func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, par
 			"currentPage":       tracePageReference(vm.currentPage),
 			"controllerCreated": true,
 		})
+		appendDurationTrace(result, "apex.visualforce.action", "apex.visualforce", actionStart, traceDurationSince(actionStartedAt), map[string]any{
+			"className":        className,
+			"methodName":       methodName,
+			"error":            out.Error.Message,
+			"errorType":        out.Error.Type,
+			"pageMessageCount": len(out.PageMessages),
+		})
 		out.Trace = result.Trace
 		return out, nil
 	}
@@ -126,6 +143,7 @@ func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, par
 		completeArgs["pageMessages"] = out.PageMessages
 	}
 	appendVisualforceTrace(result, "action.complete", completeArgs)
+	appendDurationTrace(result, "apex.visualforce.action", "apex.visualforce", actionStart, traceDurationSince(actionStartedAt), completeArgs)
 	out.Trace = result.Trace
 	return out, nil
 }

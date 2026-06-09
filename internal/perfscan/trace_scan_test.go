@@ -10,6 +10,7 @@ import (
 func TestTraceScanAddsMeasuredFindings(t *testing.T) {
 	doc := trace.NewDocument([]trace.Event{
 		trace.Duration("apex.method.PerfRisk.uncachedAccounts", "apex.method", 0, 125000, map[string]any{"file": "PerfRisk.cls", "line": 3}),
+		trace.Instant("apex.soql", "apex.soql", 125000, map[string]any{"query": "SELECT Id, Name FROM Account", "rows": 1000, "line": 5}),
 		trace.Duration("apex.soql", "apex.soql", 126000, 35000, map[string]any{"query": "SELECT Id, Name FROM Account", "rows": 1000, "line": 5}),
 	})
 	data, err := json.Marshal(doc)

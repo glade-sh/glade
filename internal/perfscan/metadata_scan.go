@@ -16,44 +16,16 @@ func scanMetadata(report *Report, p project.Project, index typesys.Index) {
 	vf := visualforce.LoadProjectBestEffort(p)
 	for _, page := range vf.Pages {
 		report.AddEntryPoint(EntryPoint{Kind: EntryVisualforce, Name: page.Name, File: page.File})
-		if page.Action != "" {
-			report.AddFinding(Finding{
-				ID:         "perf.ui.visualforce.action",
-				Category:   CategoryUI,
-				Severity:   SeverityMedium,
-				Confidence: ConfidenceStatic,
-				Score:      58,
-				EntryPoint: EntryPoint{Kind: EntryVisualforce, Name: page.Name, File: page.File},
-				Message:    "Visualforce page action runs controller code during page load and can hide SOQL, DML, and view-state work behind navigation.",
-				Location:   Location{File: page.File},
-				Evidence:   []Evidence{{Kind: "visualforce", Message: "page action", Value: page.Action}},
-				Fix:        "Keep page-load actions read-light, avoid DML during initial render, and move expensive work behind explicit user actions or async jobs.",
-			})
-		}
 	}
 
 	ui, err := uicontroller.Build(p, index)
 	if err == nil {
 		for _, ref := range ui.ApexMethods {
 			kind := EntryAura
-			id := "perf.ui.aura.server-action"
 			if ref.Framework == "lwc" {
 				kind = EntryLWC
-				id = "perf.ui.lwc.wire-apex"
 			}
 			report.AddEntryPoint(EntryPoint{Kind: kind, Name: ref.ClassName + "." + ref.MethodName, File: ref.File, Line: ref.Line, Method: ref.MethodName})
-			report.AddFinding(Finding{
-				ID:         id,
-				Category:   CategoryUI,
-				Severity:   SeverityLow,
-				Confidence: ConfidenceStatic,
-				Score:      42,
-				EntryPoint: EntryPoint{Kind: kind, Name: ref.ClassName + "." + ref.MethodName, File: ref.File, Line: ref.Line, Method: ref.MethodName},
-				Message:    "Lightning UI entry points can repeat Apex work across components, wires, and user interactions.",
-				Location:   Location{File: ref.File, Line: ref.Line},
-				Evidence:   []Evidence{{Kind: ref.Framework, Message: "Apex controller method", Value: ref.ClassName + "." + ref.MethodName}},
-				Fix:        "Use cacheable read methods, Lightning Data Service where possible, and consolidate duplicate server calls from the same view.",
-			})
 		}
 	}
 

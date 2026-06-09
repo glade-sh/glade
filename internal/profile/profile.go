@@ -35,6 +35,8 @@ type Entry struct {
 	Name          string  `json:"name"`
 	Category      string  `json:"category,omitempty"`
 	Count         int     `json:"count"`
+	Rows          int     `json:"rows,omitempty"`
+	DurationCount int     `json:"durationCount,omitempty"`
 	FirstTS       int64   `json:"firstTs"`
 	LastTS        int64   `json:"lastTs"`
 	File          string  `json:"file,omitempty"`
@@ -69,11 +71,11 @@ type LimitAttribution struct {
 func Analyze(doc trace.Document) Report {
 	byKey := make(map[string]*Entry)
 	for _, event := range doc.TraceEvents {
-		key := event.Category + "\x00" + event.Name
+		key := profileEntryKey(event)
 		entry := byKey[key]
 		if entry == nil {
 			entry = &Entry{
-				Name:     event.Name,
+				Name:     profileEntryName(event),
 				Category: event.Category,
 				FirstTS:  event.Timestamp,
 				LastTS:   event.Timestamp,
@@ -93,8 +95,14 @@ func Analyze(doc trace.Document) Report {
 			}
 		}
 		if event.Duration > 0 {
+			entry.DurationCount++
 			entry.DurationUS += event.Duration
 			entry.DurationMS = entry.DurationUS / 1000
+		}
+		if event.Phase == trace.PhaseInstant {
+			if rows, ok := intArg(event.Args["rows"]); ok {
+				entry.Rows += rows
+			}
 		}
 		if offset, ok := intArg(event.Args["sourceOffset"]); ok && !containsInt(entry.SourceOffsets, offset) {
 			entry.SourceOffsets = append(entry.SourceOffsets, offset)
@@ -131,14 +139,18 @@ func Analyze(doc trace.Document) Report {
 		report.Categories[event.Category]++
 		switch event.Category {
 		case "apex.soql":
-			report.Limits.SOQLQueries++
-			if rows, ok := intArg(event.Args["rows"]); ok {
-				report.Limits.SOQLRows += rows
+			if event.Phase == trace.PhaseInstant {
+				report.Limits.SOQLQueries++
+				if rows, ok := intArg(event.Args["rows"]); ok {
+					report.Limits.SOQLRows += rows
+				}
 			}
 		case "apex.dml":
-			report.Limits.DML++
-			if rows, ok := intArg(event.Args["rows"]); ok {
-				report.Limits.DMLRows += rows
+			if event.Phase == trace.PhaseInstant {
+				report.Limits.DML++
+				if rows, ok := intArg(event.Args["rows"]); ok {
+					report.Limits.DMLRows += rows
+				}
 			}
 		case "apex.callout":
 			report.Limits.Callouts++
@@ -320,19 +332,38 @@ func writeEntriesSection(w io.Writer, title string, entries []Entry) error {
 	if _, err := fmt.Fprintf(w, "## %s\n\n", title); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(w, "| Rank | Event | Category | Count | Duration ms | Source offsets |"); err != nil {
+	if _, err := fmt.Fprintln(w, "| Rank | Event | Category | Count | Rows | Duration ms | Source offsets |"); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(w, "| --- | --- | --- | ---: | ---: | --- |"); err != nil {
+	if _, err := fmt.Fprintln(w, "| --- | --- | --- | ---: | ---: | ---: | --- |"); err != nil {
 		return err
 	}
 	for i, entry := range entries {
-		if _, err := fmt.Fprintf(w, "| %d | `%s` | `%s` | %d | %d | %v |\n", i+1, entry.Name, entry.Category, entry.Count, entry.DurationMS, entry.SourceOffsets); err != nil {
+		if _, err := fmt.Fprintf(w, "| %d | `%s` | `%s` | %d | %d | %d | %v |\n", i+1, entry.Name, entry.Category, entry.Count, entry.Rows, entry.DurationMS, entry.SourceOffsets); err != nil {
 			return err
 		}
 	}
 	_, err := fmt.Fprintln(w)
 	return err
+}
+
+func profileEntryKey(event trace.Event) string {
+	key := event.Category + "\x00" + event.Name
+	if event.Category == "apex.soql" {
+		if query, ok := event.Args["query"].(string); ok && strings.TrimSpace(query) != "" {
+			key += "\x00" + strings.TrimSpace(query)
+		}
+	}
+	return key
+}
+
+func profileEntryName(event trace.Event) string {
+	if event.Category == "apex.soql" {
+		if query, ok := event.Args["query"].(string); ok && strings.TrimSpace(query) != "" {
+			return strings.TrimSpace(query)
+		}
+	}
+	return event.Name
 }
 
 func entriesForCategory(entries []Entry, category string) []Entry {

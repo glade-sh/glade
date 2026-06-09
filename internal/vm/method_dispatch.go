@@ -311,7 +311,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		Line:   method.Line,
 		Column: method.Column,
 	})
-	traceStart := traceSeqLen(result)
+	traceStart, traceStartedAt := traceSpanStart(result)
 	appendTrace(result, "apex.method."+method.Name, "apex.method", map[string]any{
 		"method": method.Name,
 		"class":  method.ClassName,
@@ -324,8 +324,8 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			result,
 			"apex.method."+method.Name,
 			"apex.method",
-			int64(traceStart),
-			traceDurationFromLen(traceStart, traceSeqLen(result)+1),
+			traceStart,
+			traceDurationSince(traceStartedAt),
 			map[string]any{
 				"method": method.Name,
 				"class":  method.ClassName,

@@ -15,16 +15,15 @@ import (
 )
 
 var (
-	invocableRe          = regexp.MustCompile(`(?i)@InvocableMethod\b`)
-	batchableRe          = regexp.MustCompile(`(?i)\bimplements\b[^{};]*Database\.Batchable\b`)
-	queryLocatorStringRe = regexp.MustCompile(`(?is)Database\.getQueryLocator\s*\(\s*'([^']*)'\s*\)`)
-	newClassTypeRe       = regexp.MustCompile(`(?i)new\s+([A-Za-z_][A-Za-z0-9_\.]*)`)
+	invocableRe    = regexp.MustCompile(`(?i)@InvocableMethod\b`)
+	batchableRe    = regexp.MustCompile(`(?i)\bimplements\b[^{};]*Database\.Batchable\b`)
+	newClassTypeRe = regexp.MustCompile(`(?i)new\s+([A-Za-z_][A-Za-z0-9_\.]*)`)
 )
 
 const (
-	noWhereSelectivityThreshold = 3
-	bigSelectFieldCount         = 20
-	maxAsyncChainDepth          = 3
+	selectivityRiskThreshold = 3
+	bigSelectFieldCount      = 20
+	maxAsyncChainDepth       = 3
 )
 
 var (
@@ -54,52 +53,10 @@ var (
 		"getglobaldescribe": {},
 		"describesobjects":  {},
 	}
-
-	auraMutatingMethodPrefixes = []string{
-		"create",
-		"commit",
-		"upsert",
-		"insert",
-		"update",
-		"delete",
-		"undelete",
-		"merge",
-		"remove",
-		"add",
-		"save",
-		"submit",
-		"process",
-		"request",
-		"publish",
-		"send",
-		"toggle",
-		"activate",
-		"deactivate",
-		"enable",
-		"disable",
-		"link",
-		"attach",
-		"detach",
-		"assign",
-		"sync",
-		"refresh",
-		"register",
-		"reset",
-		"clear",
-		"set",
-		"start",
-		"stop",
-		"launch",
-		"enqueue",
-		"schedule",
-		"transfer",
-		"upload",
-	}
 )
 
 func scanApex(report *Report, p project.Project, parsed apexast.Result, index typesys.Index) {
 	asyncMethodsByFile := collectAsyncMethodsByFile(parsed, index)
-	auraMethodsByFile := collectAuraMethodsByFile(parsed)
 	testMethodsByFile := collectTestMethodsByFile(parsed)
 	asyncGraph := newAsyncCallGraph(index)
 
@@ -107,39 +64,25 @@ func scanApex(report *Report, p project.Project, parsed apexast.Result, index ty
 		for _, decl := range file.Declarations {
 			if decl.Kind == apexast.DeclarationTrigger {
 				report.AddEntryPoint(EntryPoint{Kind: EntryTrigger, Name: decl.Name, File: file.Path, Line: decl.Range.Start.Line})
-				report.AddFinding(Finding{
-					ID:         "perf.entry.trigger",
-					Category:   CategoryApex,
-					Severity:   SeverityLow,
-					Confidence: ConfidenceStatic,
-					Score:      20,
-					EntryPoint: EntryPoint{Kind: EntryTrigger, Name: decl.Name, File: file.Path, Line: decl.Range.Start.Line},
-					Message:    "Trigger work runs in bulk transactions and shares limits with Apex, DML, Workflow, and Flow side effects.",
-					Location:   Location{File: file.Path, Line: decl.Range.Start.Line, Column: decl.Range.Start.Column},
-					Fix:        "Keep trigger logic bulk-safe, handler-based, and free of per-record SOQL, DML, describe, callout, or async enqueue work.",
-				})
 			}
 		}
 	}
 	for _, path := range p.ApexFiles {
-		if isTestSourcePath(path) {
+		if isTestSourcePath(path) || isVendoredSourcePath(path) {
 			continue
 		}
 		sourceBytes, err := os.ReadFile(path)
 		if err != nil {
 			continue
 		}
-		scanApexSource(report, path, string(sourceBytes), index, asyncMethodsByFile[path], auraMethodsByFile[path], testMethodsByFile[path], asyncGraph)
+		scanApexSource(report, path, string(sourceBytes), index, asyncMethodsByFile[path], testMethodsByFile[path], asyncGraph)
 	}
 	asyncGraph.emitFindings(report)
 }
 
-func scanApexSource(report *Report, path, source string, index typesys.Index, asyncMethods map[string]asyncMethodMetadata, auraMethods map[string]auraMethodMetadata, testMethods map[string]struct{}, asyncGraph *asyncCallGraph) {
+func scanApexSource(report *Report, path, source string, index typesys.Index, asyncMethods map[string]asyncMethodMetadata, testMethods map[string]struct{}, asyncGraph *asyncCallGraph) {
 	if asyncMethods == nil {
 		asyncMethods = make(map[string]asyncMethodMetadata)
-	}
-	if auraMethods == nil {
-		auraMethods = make(map[string]auraMethodMetadata)
 	}
 	if testMethods == nil {
 		testMethods = make(map[string]struct{})
@@ -153,7 +96,6 @@ func scanApexSource(report *Report, path, source string, index typesys.Index, as
 		report:       report,
 		resolver:     newPlatformCallResolver(index),
 		asyncMethods: asyncMethods,
-		auraMethods:  auraMethods,
 		testMethods:  testMethods,
 		asyncGraph:   asyncGraph,
 	}
@@ -164,21 +106,6 @@ func scanApexSource(report *Report, path, source string, index typesys.Index, as
 	state.popScope()
 
 	state.emitLoopFindings()
-	if len(state.describeLines) > 1 {
-		if isTestSourcePath(path) {
-			return
-		}
-		report.AddFinding(staticFinding(
-			"perf.describe.repeated",
-			CategoryDescribe,
-			SeverityMedium,
-			55,
-			path,
-			state.describeLines[0],
-			"Repeated describe calls in the same class can waste CPU and heap.",
-			"Store describe results in a local variable or immutable per-transaction cache.",
-		))
-	}
 
 	if astFile.Diagnostics != nil {
 		// Parse diagnostics are surfaced through declaration parsing and project analysis.
@@ -192,27 +119,6 @@ func scanApexSource(report *Report, path, source string, index typesys.Index, as
 	if batchableRe.MatchString(source) {
 		className := classNameFromSource(path, source)
 		report.AddEntryPoint(EntryPoint{Kind: EntryBatch, Name: className, File: path, Line: 1})
-		for _, match := range queryLocatorStringRe.FindAllStringSubmatchIndex(source, -1) {
-			if len(match) < 4 {
-				continue
-			}
-			query := source[match[2]:match[3]]
-			if !strings.Contains(strings.ToLower(query), " where ") {
-				line := lineAt(source, match[0])
-				report.AddFinding(Finding{
-					ID:         "perf.async.batch.unfiltered-start",
-					Category:   CategoryAsync,
-					Severity:   SeverityMedium,
-					Confidence: ConfidenceStatic,
-					Score:      68,
-					EntryPoint: EntryPoint{Kind: EntryBatch, Name: className, File: path, Line: line},
-					Message:    "Batch start query has no WHERE clause and may scan a large object before execute chunks begin.",
-					Location:   Location{File: path, Line: line},
-					Evidence:   []Evidence{{Kind: "soql", Message: "batch query locator", Value: query}},
-					Fix:        "Add selective filters or split large-object work by indexed fields and date windows.",
-				})
-			}
-		}
 	}
 
 }
@@ -242,7 +148,6 @@ func (s *scanApexFileState) scanNode(node apexast.ASTNode) {
 	case "dml_expression":
 		s.markLoop(findingsCategoryDML)
 		s.markFutureDml()
-		s.markAuraMethodMutation()
 	case "method_invocation":
 		s.processMethodInvocation(node)
 	}
@@ -299,18 +204,11 @@ func (s *scanApexFileState) processMethodInvocation(node apexast.ASTNode) {
 	}
 
 	method := strings.ToLower(strings.TrimSpace(methodName))
-	if looksAuraMutatingInvocation(method) {
-		s.markAuraMethodMutation()
-	}
-	if looksAuraUnsafeInvocation(method, segments) {
-		s.markAuraMethodMutation()
-	}
 	line := node.Range.Start.Line
 	if _, ok := platformDmlMethods[method]; ok {
 		if s.isPlatformStaticMethod(segments, methodName) {
 			s.markLoop(findingsCategoryDML)
 			s.markFutureDml()
-			s.markAuraMethodMutation()
 		}
 		return
 	}
@@ -318,7 +216,6 @@ func (s *scanApexFileState) processMethodInvocation(node apexast.ASTNode) {
 	if _, ok := platformAsyncMethods[method]; ok {
 		if s.isPlatformStaticMethod(segments, methodName) {
 			s.markLoop(findingsCategoryAsync)
-			s.markAuraMethodMutation()
 			s.recordAsyncInvocation(method, node, line)
 		}
 		return
@@ -340,19 +237,6 @@ func (s *scanApexFileState) processMethodInvocation(node apexast.ASTNode) {
 	}
 }
 
-func looksAuraMutatingInvocation(method string) bool {
-	methodName := strings.ToLower(strings.TrimSpace(method))
-	if methodName == "" {
-		return false
-	}
-	for _, prefix := range auraMutatingMethodPrefixes {
-		if strings.HasPrefix(methodName, prefix) {
-			return true
-		}
-	}
-	return false
-}
-
 func (s *scanApexFileState) recordAsyncInvocation(method string, node apexast.ASTNode, line int) {
 	methodLower := strings.ToLower(method)
 	switch methodLower {
@@ -365,7 +249,9 @@ func (s *scanApexFileState) recordAsyncInvocation(method string, node apexast.AS
 		if currentMethod == nil {
 			return
 		}
-		s.asyncGraph.addQueueableEdge(currentMethod.meta.className, target, line, s.path)
+		if currentMethod.hasMeta && currentMethod.meta.isQueueableExecute {
+			s.asyncGraph.addQueueableEdge(currentMethod.meta.className, target, line, s.path)
+		}
 		if currentMethod.meta.isBatchExecute && s.asyncGraph.addBatchQueueableEdge(currentMethod.meta.className, target, line, s.path) {
 			s.report.AddFinding(staticFinding(
 				"perf.async.batch.execute-queueable",
@@ -463,18 +349,25 @@ func (s *scanApexFileState) enterMethod(node apexast.ASTNode) {
 			))
 		}
 	}
-	auraFrame := auraMethodFrame{}
-	if auraMeta, ok := s.auraMethods[methodRangeKey(node.Range)]; ok {
-		auraFrame = auraMethodFrame{meta: auraMeta}
-	}
 	s.methodStack = append(s.methodStack, frame)
-	s.auraMethodStack = append(s.auraMethodStack, auraFrame)
 
 	for _, child := range node.Children {
 		s.scanNode(child)
 	}
 
 	top := &s.methodStack[len(s.methodStack)-1]
+	if len(top.describeLines) > 1 && !isTestSourcePath(s.path) {
+		s.report.AddFinding(staticFinding(
+			"perf.describe.repeated",
+			CategoryDescribe,
+			SeverityMedium,
+			55,
+			s.path,
+			top.describeLines[0],
+			"Repeated describe calls in the same method can waste CPU and heap.",
+			"Store describe results in a local variable or immutable per-transaction cache.",
+		))
+	}
 	if top.hasMeta && top.meta.isFutureCallout && top.sawFutureDml {
 		s.report.AddFinding(Finding{
 			ID:         "perf.async.future.callout-dml",
@@ -488,23 +381,7 @@ func (s *scanApexFileState) enterMethod(node apexast.ASTNode) {
 			Fix:        "Split callout and DML into separate async paths or use Continuation/queueable orchestration.",
 		})
 	}
-	auraTop := s.auraMethodStack[len(s.auraMethodStack)-1]
-	if auraTop.meta.isAuraEnabled &&
-		!isTestSourcePath(s.path) &&
-		shouldReportAuraMethod(auraTop.meta, auraTop.sawMutation) {
-		s.report.AddFinding(staticFinding(
-			"perf.ui.auraenabled.uncached",
-			CategoryUI,
-			SeverityMedium,
-			64,
-			s.path,
-			auraTop.meta.line,
-			"@AuraEnabled read methods without cacheable=true can make Lightning clients repeat server work.",
-			"Mark read-only Aura/LWC Apex methods as cacheable=true when they do not mutate state and can use client-side caching.",
-		))
-	}
 	s.methodStack = s.methodStack[:len(s.methodStack)-1]
-	s.auraMethodStack = s.auraMethodStack[:len(s.auraMethodStack)-1]
 }
 
 func (s *scanApexFileState) currentMethod() *asyncMethodFrame {
@@ -512,21 +389,6 @@ func (s *scanApexFileState) currentMethod() *asyncMethodFrame {
 		return nil
 	}
 	return &s.methodStack[len(s.methodStack)-1]
-}
-
-func (s *scanApexFileState) currentAuraMethod() *auraMethodFrame {
-	if len(s.auraMethodStack) == 0 {
-		return nil
-	}
-	return &s.auraMethodStack[len(s.auraMethodStack)-1]
-}
-
-func (s *scanApexFileState) markAuraMethodMutation() {
-	current := s.currentAuraMethod()
-	if current == nil {
-		return
-	}
-	current.sawMutation = true
 }
 
 func (s *scanApexFileState) emitLoopFindings() {
@@ -583,62 +445,10 @@ func (s *scanApexFileState) recordSoqlQuery(node apexast.ASTNode) {
 		return
 	}
 	line := node.Range.Start.Line
-	s.recordSoqlNoFilter(parsed, line, queryText)
 	s.recordSoqlSelectivity(parsed, line, queryText)
 	s.recordSoqlProjection(parsed, line, queryText)
 	s.recordSoqlChildQuery(parsed, line, queryText)
 	s.recordSoqlOrderBy(parsed, line, queryText)
-}
-
-func (s *scanApexFileState) recordSoqlNoFilter(query soql.Query, line int, queryText string) {
-	if queryHasCountAggregate(query) {
-		return
-	}
-	if query.Where != nil {
-		return
-	}
-	severity := SeverityHigh
-	score := 95
-	if isTestSourcePath(s.path) {
-		severity = SeverityMedium
-		score = 68
-	}
-	report := staticFinding(
-		"perf.soql.unfiltered",
-		CategorySOQL,
-		severity,
-		score,
-		s.path,
-		line,
-		"SOQL query has no WHERE clause and may scan an unbounded set of rows.",
-		"Add selective filters on indexed fields and keep result size aligned to needed transaction work.",
-	)
-	report.Evidence = []Evidence{
-		{Kind: "soql", Message: "query", Value: queryText},
-	}
-	s.report.AddFinding(report)
-}
-
-func queryHasCountAggregate(query soql.Query) bool {
-	if query.Count {
-		return true
-	}
-	for _, aggregate := range query.Aggregates {
-		if isCountAggregate(aggregate.Func) {
-			return true
-		}
-	}
-	for _, aggregate := range query.HavingAggregates {
-		if isCountAggregate(aggregate.Func) {
-			return true
-		}
-	}
-	return false
-}
-
-func isCountAggregate(functionName string) bool {
-	functionName = strings.TrimSpace(strings.ToUpper(functionName))
-	return strings.HasPrefix(functionName, "COUNT")
 }
 
 func (s *scanApexFileState) recordSoqlSelectivity(query soql.Query, line int, queryText string) {
@@ -646,7 +456,7 @@ func (s *scanApexFileState) recordSoqlSelectivity(query soql.Query, line int, qu
 		return
 	}
 	score, reasons := soqlSelectivityScore(*query.Where)
-	if score < noWhereSelectivityThreshold {
+	if score < selectivityRiskThreshold {
 		return
 	}
 	evidence := []Evidence{
@@ -658,14 +468,14 @@ func (s *scanApexFileState) recordSoqlSelectivity(query soql.Query, line int, qu
 	s.report.AddFinding(Finding{
 		ID:         "perf.soql.selectivity",
 		Category:   CategorySOQL,
-		Severity:   SeverityHigh,
+		Severity:   SeverityMedium,
 		Confidence: ConfidenceStatic,
-		Score:      89,
+		Score:      68,
 		EntryPoint: EntryPoint{Kind: EntryUnknown},
-		Message:    "SOQL WHERE clauses are not selective enough for a predictable scan profile.",
+		Message:    "SOQL WHERE clauses may be non-selective for large subscriber-org tables.",
 		Location:   Location{File: s.path, Line: line},
 		Evidence:   evidence,
-		Fix:        "Refine filters to indexed fields, remove non-selective operators, and add explicit limits where business-safe.",
+		Fix:        "Check the query plan with production-scale row counts, then refine filters to indexed fields or narrower predicates where needed.",
 	})
 	for _, reason := range reasons {
 		if strings.HasPrefix(reason, "Formula field in WHERE") {
@@ -891,6 +701,15 @@ func (s *scanApexFileState) recordFormalParameter(node apexast.ASTNode) {
 }
 
 func (s *scanApexFileState) recordDescribeLine(line int) {
+	if current := s.currentMethod(); current != nil {
+		for _, existing := range current.describeLines {
+			if existing == line {
+				return
+			}
+		}
+		current.describeLines = append(current.describeLines, line)
+		return
+	}
 	for _, existing := range s.describeLines {
 		if existing == line {
 			return
@@ -1109,20 +928,18 @@ const (
 )
 
 type scanApexFileState struct {
-	path            string
-	source          string
-	report          *Report
-	resolver        *platformCallResolver
-	asyncMethods    map[string]asyncMethodMetadata
-	auraMethods     map[string]auraMethodMetadata
-	testMethods     map[string]struct{}
-	methodStack     []asyncMethodFrame
-	auraMethodStack []auraMethodFrame
-	asyncGraph      *asyncCallGraph
-	loops           []*loopFindings
-	loopStack       []*loopFindings
-	describeLines   []int
-	scopes          []map[string]bool
+	path          string
+	source        string
+	report        *Report
+	resolver      *platformCallResolver
+	asyncMethods  map[string]asyncMethodMetadata
+	testMethods   map[string]struct{}
+	methodStack   []asyncMethodFrame
+	asyncGraph    *asyncCallGraph
+	loops         []*loopFindings
+	loopStack     []*loopFindings
+	describeLines []int
+	scopes        []map[string]bool
 }
 
 type asyncMethodMetadata struct {
@@ -1138,25 +955,10 @@ type asyncMethodMetadata struct {
 }
 
 type asyncMethodFrame struct {
-	meta         asyncMethodMetadata
-	hasMeta      bool
-	sawFutureDml bool
-}
-
-type auraMethodMetadata struct {
-	className         string
-	methodName        string
-	line              int
-	returnType        string
-	isStatic          bool
-	isAuraEnabled     bool
-	isAuraCacheable   bool
-	isAuraNoCacheable bool
-}
-
-type auraMethodFrame struct {
-	meta        auraMethodMetadata
-	sawMutation bool
+	meta          asyncMethodMetadata
+	hasMeta       bool
+	sawFutureDml  bool
+	describeLines []int
 }
 
 type asyncTypeFlags struct {
@@ -1187,41 +989,6 @@ func collectAsyncMethodsByFile(parsed apexast.Result, index typesys.Index) map[s
 		out[file.Path] = methodMap
 	}
 	return out
-}
-
-func collectAuraMethodsByFile(parsed apexast.Result) map[string]map[string]auraMethodMetadata {
-	out := make(map[string]map[string]auraMethodMetadata, len(parsed.Files))
-	for _, file := range parsed.Files {
-		methodMap := make(map[string]auraMethodMetadata)
-		collectAuraMethodsFromDeclarations(file.Declarations, nil, methodMap)
-		out[file.Path] = methodMap
-	}
-	return out
-}
-
-func collectAuraMethodsFromDeclarations(decls []apexast.Declaration, classStack []string, out map[string]auraMethodMetadata) {
-	for _, decl := range decls {
-		switch decl.Kind {
-		case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-			nextStack := append(append([]string{}, classStack...), decl.Name)
-			collectAuraMethodsFromDeclarations(decl.Members, nextStack, out)
-		case apexast.DeclarationMethod:
-			if !hasAuraEnabledModifier(decl.Modifiers) {
-				continue
-			}
-			meta := auraMethodMetadata{
-				className:         strings.Join(classStack, "."),
-				methodName:        decl.Name,
-				line:              decl.Range.Start.Line,
-				returnType:        decl.Type,
-				isStatic:          hasStaticModifier(decl.Modifiers),
-				isAuraEnabled:     true,
-				isAuraCacheable:   hasAuraCacheableModifier(decl.Modifiers),
-				isAuraNoCacheable: hasAuraNoCacheModifier(decl.Modifiers),
-			}
-			out[strconv.Itoa(decl.Range.Start.Offset)+":"+strconv.Itoa(decl.Range.End.Offset)] = meta
-		}
-	}
 }
 
 func collectTestMethodsByFile(parsed apexast.Result) map[string]map[string]struct{} {
@@ -1275,95 +1042,25 @@ func nextIsTestMethod(parentIsTestClass bool, modifiers []string) bool {
 	return false
 }
 
-func hasAuraEnabledModifier(modifiers []string) bool {
-	for _, modifier := range modifiers {
-		normalized := strings.ToLower(strings.TrimSpace(modifier))
-		normalized = strings.ReplaceAll(normalized, " ", "")
-		normalized = strings.TrimPrefix(normalized, "@")
-		if strings.HasPrefix(normalized, "auraenabled") {
-			return true
-		}
-	}
-	return false
-}
-
-func hasAuraCacheableModifier(modifiers []string) bool {
-	for _, modifier := range modifiers {
-		normalized := strings.ToLower(strings.TrimSpace(modifier))
-		normalized = strings.ReplaceAll(normalized, " ", "")
-		normalized = strings.TrimPrefix(normalized, "@")
-		if !strings.HasPrefix(normalized, "auraenabled") {
-			continue
-		}
-		return strings.Contains(normalized, "cacheable=true")
-	}
-	return false
-}
-
-func hasAuraNoCacheModifier(modifiers []string) bool {
-	for _, modifier := range modifiers {
-		normalized := strings.ToLower(strings.TrimSpace(modifier))
-		normalized = strings.ReplaceAll(normalized, " ", "")
-		normalized = strings.TrimPrefix(normalized, "@")
-		if !strings.HasPrefix(normalized, "auraenabled") {
-			continue
-		}
-		return strings.Contains(normalized, "cacheable=false")
-	}
-	return false
-}
-
-func hasStaticModifier(modifiers []string) bool {
-	for _, modifier := range modifiers {
-		if strings.EqualFold(strings.TrimSpace(modifier), "static") {
-			return true
-		}
-	}
-	return false
-}
-
-func shouldReportAuraMethod(meta auraMethodMetadata, sawMutation bool) bool {
-	if !meta.isAuraEnabled || meta.isAuraCacheable || meta.isAuraNoCacheable || sawMutation {
-		return false
-	}
-	if !meta.isStatic {
-		return false
-	}
-	return !isVoidType(meta.returnType)
-}
-
-func looksAuraUnsafeInvocation(method string, receiverSegments []string) bool {
-	if len(receiverSegments) == 0 {
-		return false
-	}
-	_ = method
-	for _, segment := range receiverSegments {
-		receiver := strings.ToLower(strings.TrimSpace(segment))
-		if receiver == "" {
-			continue
-		}
-		if strings.Contains(receiver, "http") ||
-			strings.Contains(receiver, "callout") ||
-			strings.Contains(receiver, "httprequest") ||
-			strings.Contains(receiver, "httpresponse") ||
-			strings.Contains(receiver, "httpclient") ||
-			strings.Contains(receiver, "verifiablehttpclient") {
-			return true
-		}
-	}
-	return false
-}
-
-func isVoidType(value string) bool {
-	return strings.EqualFold(strings.TrimSpace(value), "void")
-}
-
 func isTestSourcePath(path string) bool {
 	lower := strings.ToLower(path)
 	if strings.Contains(lower, "/test/") || strings.Contains(lower, "/tests/") {
 		return true
 	}
 	return strings.HasSuffix(lower, "test.cls") || strings.HasSuffix(lower, "tests.cls")
+}
+
+func isVendoredSourcePath(path string) bool {
+	lower := "/" + strings.Trim(strings.ToLower(filepathSlash(path)), "/") + "/"
+	return strings.Contains(lower, "/fflib/") ||
+		strings.Contains(lower, "/vendor/") ||
+		strings.Contains(lower, "/vendors/") ||
+		strings.Contains(lower, "/third-party/") ||
+		strings.Contains(lower, "/third_party/")
+}
+
+func filepathSlash(path string) string {
+	return strings.ReplaceAll(path, "\\", "/")
 }
 
 func collectAsyncTypeFlags(index typesys.Index) map[string]asyncTypeFlags {
@@ -1536,6 +1233,21 @@ func (g *asyncCallGraph) emitFindings(report *Report) {
 func (g *asyncCallGraph) emitQueueableFindings(report *Report) {
 	for _, cycle := range findCycles(g.queueableEdges) {
 		line, file := edgeLine(g.queueableEdges, cycle[0], cycle[1%len(cycle)])
+		if isSelfContinuationCycle(cycle) {
+			report.AddFinding(Finding{
+				ID:         "perf.async.queueable.self-continuation",
+				Category:   CategoryAsync,
+				Severity:   SeverityMedium,
+				Confidence: ConfidenceStatic,
+				Score:      78,
+				EntryPoint: EntryPoint{Kind: EntryUnknown},
+				Message:    "Queueable execute re-enqueues the same class as a continuation while work remains.",
+				Location:   Location{File: file, Line: line},
+				Evidence:   []Evidence{{Kind: "async", Message: "queueable continuation", Value: strings.Join(cycle, " -> ")}},
+				Fix:        "Verify the payload shrinks on every run, cap chain depth where possible, and prefer batch or scheduled work for large subscriber-org backlogs.",
+			})
+			continue
+		}
 		report.AddFinding(Finding{
 			ID:         "perf.async.queueable.cycle",
 			Category:   CategoryAsync,
@@ -1563,6 +1275,10 @@ func (g *asyncCallGraph) emitQueueableFindings(report *Report) {
 			Fix:        "Replace unbounded queueable handoff with explicit completion conditions and per-run limits.",
 		})
 	}
+}
+
+func isSelfContinuationCycle(cycle []string) bool {
+	return len(cycle) == 2 && strings.EqualFold(cycle[0], cycle[1])
 }
 
 func (g *asyncCallGraph) emitBatchFindings(report *Report) {
@@ -1790,7 +1506,8 @@ func hasSchedulableContextParam(params []apexast.Parameter) bool {
 
 func isTypeNameMatch(actualType, expected string) bool {
 	base := baseTypeName(normalizeAsyncTypeName(actualType))
-	return strings.EqualFold(base, expected)
+	expectedBase := baseTypeName(normalizeAsyncTypeName(expected))
+	return strings.EqualFold(base, expectedBase)
 }
 
 func isListType(value string) bool {

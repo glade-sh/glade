@@ -34,6 +34,7 @@ func TestAnalyzeAggregatesDurationEvents(t *testing.T) {
 	doc := trace.NewDocument([]trace.Event{
 		trace.Duration("apex.method.Slow.run", "apex.method", 100, 8000, map[string]any{"file": "Slow.cls", "line": 4}),
 		trace.Duration("apex.method.Slow.run", "apex.method", 9000, 2000, map[string]any{"file": "Slow.cls", "line": 4}),
+		trace.Instant("apex.soql", "apex.soql", 11000, map[string]any{"query": "SELECT Id FROM Account", "rows": 200}),
 		trace.Duration("apex.soql", "apex.soql", 12000, 1500, map[string]any{"query": "SELECT Id FROM Account", "rows": 200}),
 	})
 
@@ -46,6 +47,12 @@ func TestAnalyzeAggregatesDurationEvents(t *testing.T) {
 	}
 	if report.Spans[0].Count != 2 || report.Spans[0].SourceRanges[0].Line != 4 {
 		t.Fatalf("span attribution = %#v", report.Spans[0])
+	}
+	if len(report.SOQL) != 1 || report.SOQL[0].Rows != 200 || report.SOQL[0].DurationCount != 1 || report.SOQL[0].Name != "SELECT Id FROM Account" {
+		t.Fatalf("soql rows = %#v", report.SOQL)
+	}
+	if report.Limits.SOQLQueries != 1 || report.Limits.SOQLRows != 200 {
+		t.Fatalf("soql limits = %#v", report.Limits)
 	}
 }
 
@@ -133,7 +140,7 @@ func TestWriteMarkdown(t *testing.T) {
 			t.Fatalf("markdown missing %s: %q", section, markdown)
 		}
 	}
-	if !strings.Contains(markdown, "| 1 | `apex.statement.expr` | `apex.statement` | 2 | 1 | [5] |") {
+	if !strings.Contains(markdown, "| 1 | `apex.statement.expr` | `apex.statement` | 2 | 0 | 1 | [5] |") {
 		t.Fatalf("markdown = %q", out.String())
 	}
 }

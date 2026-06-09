@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/storage"
@@ -270,11 +271,16 @@ func traceSeqLen(result *Result) int {
 	return len(result.Trace)
 }
 
-func traceDurationFromLen(before, after int) int64 {
-	if after <= before {
+func traceSpanStart(result *Result) (int64, time.Time) {
+	return int64(traceSeqLen(result)), time.Now()
+}
+
+func traceDurationSince(start time.Time) int64 {
+	elapsed := time.Since(start).Microseconds()
+	if elapsed <= 0 {
 		return 1
 	}
-	return int64(after-before) * 1000
+	return elapsed
 }
 
 func (vm *VM) appendTrace(result *Result, name, category string, args map[string]any) {

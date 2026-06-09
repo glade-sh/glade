@@ -138,6 +138,15 @@ return next;
 			t.Fatalf("trace missing %s: %#v", event, result.Trace)
 		}
 	}
+	for _, event := range []string{
+		"apex.visualforce.controller.construct",
+		"apex.visualforce.action",
+	} {
+		span := findTraceEvent(result.Trace, event)
+		if span == nil || span.Phase != trace.PhaseComplete || span.Duration <= 0 {
+			t.Fatalf("duration trace missing %s: %#v", event, result.Trace)
+		}
+	}
 	complete := findTraceEvent(result.Trace, "apex.visualforce.action.complete")
 	if complete == nil {
 		t.Fatalf("completion trace missing: %#v", result.Trace)

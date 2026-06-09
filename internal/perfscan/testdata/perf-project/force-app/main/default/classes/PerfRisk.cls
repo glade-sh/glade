@@ -179,6 +179,42 @@ public class QueueableCycleC implements Queueable {
     }
 }
 
+public class QueueableSelfContinuation implements Queueable {
+    private List<String> ids;
+
+    public QueueableSelfContinuation(List<String> ids) {
+        this.ids = ids;
+    }
+
+    public void execute(QueueableContext context) {
+        if (!ids.isEmpty()) {
+            ids.remove(0);
+        }
+        if (!ids.isEmpty()) {
+            System.enqueueJob(new QueueableSelfContinuation(ids));
+        }
+    }
+}
+
+public class QueueableLauncherOnly implements Queueable {
+    public void execute(QueueableContext context) {
+    }
+
+    public static void runJob() {
+        System.enqueueJob(new QueueableLauncherOnly());
+    }
+}
+
+public class DescribeAcrossMethods {
+    public static void one() {
+        Account.SObjectType.getDescribe();
+    }
+
+    public static void two() {
+        Contact.SObjectType.getDescribe();
+    }
+}
+
 public class BatchChainExecute implements Database.Batchable<SObject> {
     public Database.QueryLocator start(Database.BatchableContext context) {
         return Database.getQueryLocator('SELECT Id FROM Account WHERE Id != null');
