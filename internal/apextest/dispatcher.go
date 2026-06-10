@@ -79,6 +79,13 @@ func (d *classDispatcher) recordObserved(name string, durationMS int64) {
 	}
 }
 
+// unfinishedClassCount returns classes still queued or running.
+func (d *classDispatcher) unfinishedClassCount() int {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.remaining
+}
+
 // close wakes any waiting workers so they observe an empty queue and exit.
 func (d *classDispatcher) close() {
 	d.mu.Lock()

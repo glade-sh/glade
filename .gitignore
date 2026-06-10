@@ -33,3 +33,5 @@ contrib/intellij-glade/build/
 contrib/intellij-glade/out/
 contrib/intellij-glade/sandbox/
 contrib/intellij-glade/*.iml
+.worktrees/
+.tmp_count/

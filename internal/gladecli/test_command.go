@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/cliui"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/vm"
@@ -29,13 +30,13 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		return testreport.Run{}, err
 	}
 	if len(args) > 0 && isHelpArg(args[0]) {
-		printTestHelp(w)
+		_ = cliui.WriteTestHelp(w)
 		return testreport.Run{}, nil
 	}
 	if len(args) > 0 && args[0] == "clear-cache" {
 		rest := args[1:]
 		if len(rest) > 0 && isHelpArg(rest[0]) {
-			printTestHelp(w)
+			_ = cliui.WriteTestHelp(w)
 			return testreport.Run{}, nil
 		}
 		if err := runTestClearCache(rest, w); err != nil {
@@ -46,7 +47,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if len(args) > 0 && args[0] == "serve" {
 		rest := args[1:]
 		if len(rest) > 0 && isHelpArg(rest[0]) {
-			printTestHelp(w)
+			_ = cliui.WriteTestHelp(w)
 			return testreport.Run{}, nil
 		}
 		if err := runTestServe(ctx, rest, progressW); err != nil {
@@ -67,7 +68,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	noServe := false
 	noCache := false
 	debug := false
-	progress := false
+	progressMode := cliui.ProgressAuto
 	traceBlocked := false
 	slowTestThresholdMS := int64(0)
 	changedSince := ""
@@ -80,6 +81,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	perfJSONPath := ""
 	debounce := watch.DefaultDebounce
 	backend := watch.BackendAuto
+	var compileDoneMS int64
+	var discoverTimeMS int64
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--project":
@@ -193,7 +196,11 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		case "--debug":
 			debug = true
 		case "--progress":
-			progress = true
+			progressMode = cliui.ProgressLine
+		case "--progress-json":
+			progressMode = cliui.ProgressJSON
+		case "--no-progress", "--quiet":
+			progressMode = cliui.ProgressOff
 		case "--debounce":
 			if i+1 >= len(args) {
 				return testreport.Run{}, errors.New("--debounce requires a duration")
@@ -229,13 +236,29 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	}()
 
 	var progressReporter *cliTestProgressReporter
-	if progress {
-		progressReporter = newCLITestProgressReporter(progressW)
+	if progressMode != cliui.ProgressOff {
+		progressReporter = newCLITestProgressReporter(cliui.NewRenderer(cliui.RendererOptions{
+			Stderr: progressW,
+			Mode:   progressMode,
+		}))
 		defer progressReporter.finish()
 	}
-	testOpts := apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS, ParallelMethods: parallelMethods, TimeoutMS: testTimeout.Milliseconds(), NoDiskCache: noCache}
-	if progress {
-		testOpts.Progress = progressReporter.handle
+	testOpts := apextest.Options{
+		Filter:              filter,
+		LimitMode:           limitMode,
+		TraceBlocked:        traceBlocked,
+		SlowTestThresholdMS: slowTestThresholdMS,
+		ParallelMethods:     parallelMethods,
+		TimeoutMS:           testTimeout.Milliseconds(),
+		NoDiskCache:         noCache,
+	}
+	if progressReporter != nil {
+		testOpts.Progress = func(progress apextest.TestProgress) {
+			if progress.Event == "compile_done" {
+				compileDoneMS = progress.DurationMS
+			}
+			progressReporter.enqueue(progress)
+		}
 	}
 	switch {
 	case parallelismOverride > 0:
@@ -273,6 +296,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			result = daemon.RunOptions(testOpts)
 		}
 		if progressReporter != nil {
+			result.DurationMS = time.Since(progressReporter.started).Milliseconds()
 			progressReporter.finish()
 		}
 		if stopProfile != nil {
@@ -281,7 +305,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			}
 			stopProfile = nil
 		}
-		if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath); err != nil {
+		if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath, 0, 0, result.Summary().DurationMS); err != nil {
 			return result, err
 		}
 		if debug {
@@ -303,6 +327,18 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if err != nil {
 		return testreport.Run{}, err
 	}
+	if progressReporter != nil && len(index.Project.Root) > 0 {
+		if root != index.Project.Root && root == "." {
+			root = "."
+		}
+		if len(index.Types) > 12000 {
+			projectPath := index.Project.Root
+			progressReporter.warn(fmt.Sprintf("large project index: %d types. For faster startup, run from a scoped project path with --project.", len(index.Types)))
+			if projectPath != "" {
+				progressReporter.warn(fmt.Sprintf("for this workspace, try: --project %s", projectPath))
+			}
+		}
+	}
 	if watchMode {
 		return runWatchTests(ctx, root, index, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 	}
@@ -313,17 +349,29 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		if err != nil {
 			return testreport.Run{}, err
 		}
+		discoverStart := time.Now()
 		cases = filterSelectedTestCases(cases, selection)
+		discoverTimeMS = time.Since(discoverStart).Milliseconds()
 		if progressReporter != nil {
 			progressReporter.setTotal(len(cases))
 		}
 		result = apextest.RunCasesContext(ctx, index, testOpts, cases)
 	} else {
+		discoverStart := time.Now()
 		cases := apextest.Discover(index, testOpts)
+		discoverTimeMS = time.Since(discoverStart).Milliseconds()
 		if progressReporter != nil {
 			progressReporter.setTotal(len(cases))
 		}
 		result = apextest.RunCasesContext(ctx, index, testOpts, cases)
+	}
+	if progressReporter != nil {
+		result.DurationMS = time.Since(progressReporter.started).Milliseconds()
+	}
+	runDurationMS := result.Summary().DurationMS
+	if progressReporter != nil && compileDoneMS > 10000 && index.Project.Root != "" && index.Project.Root != "." {
+		progressReporter.warn(fmt.Sprintf("compile test harness took %dms", compileDoneMS))
+		progressReporter.warn(fmt.Sprintf("for this workspace, try: --project %s", index.Project.Root))
 	}
 	if progressReporter != nil {
 		progressReporter.finish()
@@ -335,7 +383,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		stopProfile = nil
 	}
 	result.Dependencies = append(result.Dependencies, index.Dependencies...)
-	if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath); err != nil {
+	if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath, discoverTimeMS, compileDoneMS, runDurationMS); err != nil {
 		return result, err
 	}
 	if debug {
@@ -355,26 +403,105 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 }
 
 type cliTestProgressReporter struct {
-	w        io.Writer
-	started  time.Time
-	last     time.Time
-	total    int
-	done     int
-	passed   int
-	failed   int
-	errors   int
-	active   string
-	terminal bool
-	printed  bool
-	mu       sync.Mutex
-	finished bool
+	renderer  cliui.Renderer
+	started   time.Time
+	total     int
+	done      int
+	inflight  int
+	passed    int
+	failed    int
+	errors    int
+	active    string
+	phase     string
+	immediate cliui.Event
+	mu        sync.Mutex
+	finished  bool
+	events    chan apextest.TestProgress
+	closeOnce sync.Once
+	wg        sync.WaitGroup
 }
 
-func newCLITestProgressReporter(w io.Writer) *cliTestProgressReporter {
-	return &cliTestProgressReporter{
-		w:        w,
+const progressEventBuffer = 8192
+
+func newCLITestProgressReporter(renderer cliui.Renderer) *cliTestProgressReporter {
+	r := &cliTestProgressReporter{
+		renderer: renderer,
 		started:  time.Now(),
-		terminal: isTerminalWriter(w),
+		events:   make(chan apextest.TestProgress, progressEventBuffer),
+	}
+	r.wg.Add(1)
+	go r.loop()
+	r.renderer.Render(cliui.Event{
+		Kind:  cliui.EventPhaseStart,
+		Phase: "test",
+		Label: "Discovering tests",
+	})
+	return r
+}
+
+func (r *cliTestProgressReporter) enqueue(progress apextest.TestProgress) {
+	if r == nil {
+		return
+	}
+	r.events <- progress
+}
+
+func (r *cliTestProgressReporter) loop() {
+	defer r.wg.Done()
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	dirty := false
+	flush := func() {
+		if r == nil || r.renderer == nil {
+			dirty = false
+			return
+		}
+		if ev, ok := r.pendingRender(); ok {
+			r.renderer.Render(ev)
+		}
+		dirty = false
+	}
+
+	for {
+		select {
+		case progress, ok := <-r.events:
+			if !ok {
+				flush()
+				return
+			}
+			var closed bool
+			dirty, closed = r.drainProgress(progress, flush, dirty)
+			if closed {
+				flush()
+				return
+			}
+		case <-ticker.C:
+			if dirty {
+				flush()
+			}
+		}
+	}
+}
+
+func (r *cliTestProgressReporter) drainProgress(first apextest.TestProgress, flush func(), dirty bool) (bool, bool) {
+	progress := first
+	for {
+		if r.apply(progress) {
+			flush()
+			dirty = false
+		} else {
+			dirty = true
+		}
+		select {
+		case next, ok := <-r.events:
+			if !ok {
+				return dirty, true
+			}
+			progress = next
+		default:
+			return dirty, false
+		}
 	}
 }
 
@@ -384,137 +511,200 @@ func (r *cliTestProgressReporter) setTotal(total int) {
 	}
 	r.mu.Lock()
 	r.total = total
+	r.phase = "Running tests"
 	r.mu.Unlock()
+	r.flushNow()
 }
 
-func (r *cliTestProgressReporter) handle(progress apextest.TestProgress) {
-	if r == nil || r.w == nil {
-		return
+func (r *cliTestProgressReporter) apply(progress apextest.TestProgress) bool {
+	if r == nil {
+		return false
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.started.IsZero() {
-		r.started = time.Now()
-	}
-	important := false
+
 	name := progress.ClassName
 	if progress.MethodName != "" {
 		name += "." + progress.MethodName
 	}
+
 	switch progress.Event {
-	case "test_start", "setup_start":
+	case "setup_start":
 		r.active = name
+		r.phase = r.leftLabel("setting up " + name)
+		return r.total > 0 && r.total <= 100
+	case "test_start":
+		r.inflight++
+		r.active = name
+		r.phase = r.leftLabel(fmt.Sprintf("running %s", name))
+		return r.total > 0 && r.total <= 100
+	case "compile_start":
+		r.active = ""
+		r.phase = "compile test harness"
+		return true
+	case "compile_done":
+		r.active = ""
+		duration := fmt.Sprintf(" %dms", progress.DurationMS)
+		if progress.DurationMS <= 0 {
+			duration = ""
+		}
+		r.phase = "compile complete" + duration
+		return true
 	case "test_done":
 		r.done++
+		if r.inflight > 0 {
+			r.inflight--
+		}
+		r.active = ""
+		r.phase = r.leftLabel("")
 		switch testreport.Status(progress.Status) {
 		case testreport.StatusPass:
 			r.passed++
+			if progress.DurationMS >= 10_000 {
+				r.immediate = cliui.Event{
+					Kind:    cliui.EventWarn,
+					Phase:   "test",
+					Label:   fmt.Sprintf("slow %s (%s)", name, cliui.FormatDurationMS(progress.DurationMS)),
+					Current: r.done,
+					Total:   r.total,
+				}
+				return true
+			}
+			return false
 		case testreport.StatusFail:
 			r.failed++
-			important = r.failed <= 10
+			r.immediate = cliui.Event{
+				Kind:    cliui.EventFail,
+				Phase:   "test",
+				Label:   "FAIL " + name,
+				Current: r.done,
+				Total:   r.total,
+			}
+			return true
 		case testreport.StatusCompileError, testreport.StatusRuntimeError, testreport.StatusUnsupported:
 			r.errors++
-			important = r.errors <= 10
+			r.immediate = cliui.Event{
+				Kind:    cliui.EventFail,
+				Phase:   "test",
+				Label:   string(progress.Status) + " " + name,
+				Current: r.done,
+				Total:   r.total,
+			}
+			return true
 		}
-		r.active = name
 	case "setup_done":
 		if progress.Status != "pass" {
 			r.errors++
-			important = r.errors <= 10
+			r.immediate = cliui.Event{
+				Kind:    cliui.EventFail,
+				Phase:   "test",
+				Label:   "setup failed " + name,
+				Current: r.done,
+				Total:   r.total,
+			}
+			return true
 		}
-		r.active = name
 	}
-	if r.terminal {
-		r.writeLine(true)
-		return
+	return false
+}
+
+func (r *cliTestProgressReporter) leftLabel(prefix string) string {
+	left := r.total - r.done
+	if r.inflight > 0 {
+		if prefix != "" {
+			return fmt.Sprintf("%s · %d running · %d left", prefix, r.inflight, left)
+		}
+		return fmt.Sprintf("%d running · %d left", r.inflight, left)
 	}
-	now := time.Now()
-	if !r.printed || r.done == r.total || important || r.done%25 == 0 || now.Sub(r.last) >= 2*time.Second {
-		r.writeLine(false)
+	if prefix != "" {
+		if left > 0 {
+			return fmt.Sprintf("%s · %d left", prefix, left)
+		}
+		return prefix
+	}
+	if left > 0 {
+		return fmt.Sprintf("%d left", left)
+	}
+	return ""
+}
+
+func (r *cliTestProgressReporter) pendingRender() (cliui.Event, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.immediate.Kind != "" {
+		ev := r.immediate
+		r.immediate = cliui.Event{}
+		return ev, true
+	}
+	label := strings.TrimSpace(r.phase)
+	if label == "" {
+		label = r.leftLabel("")
+	}
+	return cliui.Event{
+		Kind:    cliui.EventPhaseTick,
+		Phase:   "test",
+		Label:   label,
+		Current: r.done,
+		Total:   r.total,
+	}, true
+}
+
+func (r *cliTestProgressReporter) flushNow() {
+	if ev, ok := r.pendingRender(); ok && r.renderer != nil {
+		r.renderer.Render(ev)
 	}
 }
 
-func (r *cliTestProgressReporter) finish() {
-	if r == nil || r.w == nil {
+func (r *cliTestProgressReporter) warn(message string) {
+	if r == nil || r.renderer == nil {
 		return
 	}
+	r.renderer.Render(cliui.Event{
+		Kind:  cliui.EventWarn,
+		Phase: "test",
+		Label: message,
+	})
+}
+
+func (r *cliTestProgressReporter) finish() {
+	if r == nil || r.renderer == nil {
+		return
+	}
+	r.closeOnce.Do(func() { close(r.events) })
+	r.wg.Wait()
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.finished {
 		return
 	}
 	r.finished = true
-	if r.printed && r.terminal {
-		fmt.Fprint(r.w, "\n")
-		return
+	ok := r.failed == 0 && r.errors == 0
+	current := r.done
+	if r.total > 0 && current < r.total {
+		current = r.total
 	}
-	if r.printed {
-		return
-	}
-	r.writeLine(false)
-}
-
-func (r *cliTestProgressReporter) writeLine(redraw bool) {
-	line := fmt.Sprintf("Progress: %s elapsed=%s eta=%s pass=%d fail=%d error=%d",
-		r.countText(), formatProgressDuration(time.Since(r.started)), r.etaText(), r.passed, r.failed, r.errors)
-	if r.active != "" {
-		line += " running=" + r.active
-	}
-	if redraw {
-		fmt.Fprintf(r.w, "\r\x1b[K%s", line)
-	} else {
-		fmt.Fprintln(r.w, line)
-	}
-	r.printed = true
-	r.last = time.Now()
-}
-
-func (r *cliTestProgressReporter) countText() string {
-	if r.total > 0 {
-		return fmt.Sprintf("%d/%d", r.done, r.total)
-	}
-	return fmt.Sprintf("%d done", r.done)
-}
-
-func (r *cliTestProgressReporter) etaText() string {
-	if r.total <= 0 || r.done <= 0 || r.done >= r.total {
-		return "0s"
-	}
-	elapsed := time.Since(r.started)
-	remaining := time.Duration(int64(elapsed) * int64(r.total-r.done) / int64(r.done))
-	return formatProgressDuration(remaining)
-}
-
-func formatProgressDuration(d time.Duration) string {
-	if d < 0 {
-		d = 0
-	}
-	d = d.Round(time.Second)
-	if d < time.Minute {
-		return fmt.Sprintf("%ds", int(d/time.Second))
-	}
-	if d < time.Hour {
-		return fmt.Sprintf("%dm%02ds", int(d/time.Minute), int((d%time.Minute)/time.Second))
-	}
-	return fmt.Sprintf("%dh%02dm", int(d/time.Hour), int((d%time.Hour)/time.Minute))
-}
-
-func isTerminalWriter(w io.Writer) bool {
-	file, ok := w.(*os.File)
-	if !ok || file == nil {
-		return false
-	}
-	info, err := file.Stat()
-	if err != nil {
-		return false
-	}
-	return info.Mode()&os.ModeCharDevice != 0
+	elapsed := cliui.FormatDuration(time.Since(r.started))
+	r.renderer.Render(cliui.Event{
+		Kind:    cliui.EventPhaseTick,
+		Phase:   "test",
+		Label:   "tests complete",
+		Current: current,
+		Total:   r.total,
+	})
+	r.renderer.Finish(cliui.Result{
+		OK:    ok,
+		Label: fmt.Sprintf("%d passed, %d failed, %d errors · %s", r.passed, r.failed, r.errors, elapsed),
+	})
 }
 
 type runPerfSummary struct {
 	GeneratedAt    string             `json:"generatedAt"`
 	Project        string             `json:"project"`
 	DurationMS     int64              `json:"durationMs"`
+	DiscoverMS     int64              `json:"discoverMs"`
+	CompileMS      int64              `json:"compileMs"`
+	TotalMS        int64              `json:"totalMs"`
 	Summary        testreport.Summary `json:"summary"`
 	TopSlowClasses []runPerfClass     `json:"topSlowClasses,omitempty"`
 	CPUProfilePath string             `json:"cpuProfilePath,omitempty"`
@@ -574,7 +764,7 @@ func startCLIProfiler(cpuProfilePath, memProfilePath string) (func() error, erro
 	}, nil
 }
 
-func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpuProfilePath, memProfilePath string) error {
+func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpuProfilePath, memProfilePath string, discoverMS, compileMS, totalMS int64) error {
 	if strings.TrimSpace(perfJSONPath) == "" {
 		return nil
 	}
@@ -583,6 +773,9 @@ func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpu
 		GeneratedAt:    time.Now().UTC().Format(time.RFC3339),
 		Project:        absRoot,
 		DurationMS:     result.Summary().DurationMS,
+		DiscoverMS:     discoverMS,
+		CompileMS:      compileMS,
+		TotalMS:        totalMS,
 		Summary:        result.Summary(),
 		CPUProfilePath: strings.TrimSpace(cpuProfilePath),
 		MemProfilePath: strings.TrimSpace(memProfilePath),

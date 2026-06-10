@@ -34,11 +34,11 @@ func TestRunDoctorReportsParser(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
 	out := stdout.String()
-	if !strings.Contains(out, "parser:") {
+	if !strings.Contains(out, "parser") {
 		t.Fatalf("doctor output missing parser line:\n%s", out)
 	}
 	// This test binary is built with CGO, so the parser must be available.
-	if !strings.Contains(out, "parser: ok (tree-sitter)") {
+	if !strings.Contains(out, "ok (tree-sitter)") {
 		t.Fatalf("expected parser ok in CGO build, got:\n%s", out)
 	}
 }
@@ -137,11 +137,16 @@ func TestRunTopLevelHelpAlignment(t *testing.T) {
 	}
 	got := stdout.String()
 	for _, want := range []string{
-		"  package        Build managed package artifacts.",
-		"  dap            Run the Debug Adapter Protocol server over stdio.",
-		"  server         Start the local Salesforce-compatible API baseline.",
-		"  playground     Start the local Apex playground web UI.",
-		"  db             Seed, reset, export, and inspect a persistent local database.",
+		"package",
+		"Build managed package artifacts.",
+		"dap",
+		"Run the Debug Adapter Protocol server over stdio.",
+		"server",
+		"Start the local Salesforce-compatible API baseline.",
+		"playground",
+		"Start the local Apex playground web UI.",
+		"db",
+		"Seed, reset, export, and inspect a persistent local database.",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("stdout missing aligned line %q:\n%s", want, got)
@@ -277,7 +282,7 @@ func TestRunDevTestWritesArtifacts(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
 	got := stdout.String()
-	for _, want := range []string{"Selected 1 test.", "PASS MathUtilTest.adds", "Result: 1 passed", "Report: "} {
+	for _, want := range []string{"1 selected", "MathUtilTest.adds", "1 passed", "Report: "} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("stdout missing %q:\n%s", want, got)
 		}
@@ -306,7 +311,7 @@ func TestRunDevWatchOnceUsesHumanOutput(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
 	got := stdout.String()
-	for _, want := range []string{"Watching ", "Strategy: affected tests", "Result: 1 passed", "Report: "} {
+	for _, want := range []string{"Watching ", "Strategy: affected tests", "1 passed", "Report: "} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("stdout missing %q:\n%s", want, got)
 		}
@@ -341,7 +346,7 @@ func TestRunReportCommands(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("report show exit code = %d, stderr=%q", code, showErr.String())
 	}
-	if got := showOut.String(); !strings.Contains(got, "Result: 1 passed") {
+	if got := showOut.String(); !strings.Contains(got, "1 passed") {
 		t.Fatalf("report show output = %q", got)
 	}
 
@@ -389,7 +394,7 @@ private class FailingTest {
 		t.Fatalf("rerun exit code = %d, want 1; stderr=%q stdout=%q", code, rerunErr.String(), rerunOut.String())
 	}
 	got := rerunOut.String()
-	if !strings.Contains(got, "Selected 1 test.") || !strings.Contains(got, "FAIL FailingTest.fails") {
+	if !strings.Contains(got, "1 selected") || !strings.Contains(got, "FailingTest.fails") {
 		t.Fatalf("rerun output = %q", got)
 	}
 }
@@ -580,6 +585,26 @@ func TestRunSchemaLoad(t *testing.T) {
 	}
 }
 
+func TestRunSchemaLoadProgressWritesToStderr(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Thing</label></CustomObject>`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"schema", "load", "--project", root, "--progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "Thing__c") {
+		t.Fatalf("stdout did not include schema result: %q", stdout.String())
+	}
+	for _, want := range []string{"schema · Loading project", "schema · 1/2 Loading metadata", "done · schema loaded"} {
+		if !strings.Contains(stderr.String(), want) {
+			t.Fatalf("stderr missing %q:\n%s", want, stderr.String())
+		}
+	}
+}
+
 func TestRunCheckJSON(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -608,6 +633,70 @@ func TestRunCheckUnknownType(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "GLADESEMA002") {
 		t.Fatalf("stdout did not include semantic diagnostic: %q", stdout.String())
+	}
+}
+
+func TestRunCheckProgressWritesPhasesToStderr(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Hello.cls"), "public class Hello { public void run() {} }")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "no diagnostics") {
+		t.Fatalf("stdout missing check result: %q", stdout.String())
+	}
+	for _, want := range []string{
+		"check · Loading project",
+		"check · 1/4 Loading metadata",
+		"check · 2/4 Indexing Apex symbols",
+		"check · 3/4 Running semantic checks",
+		"done · check complete",
+	} {
+		if !strings.Contains(stderr.String(), want) {
+			t.Fatalf("stderr missing %q:\n%s", want, stderr.String())
+		}
+	}
+}
+
+func TestRunCheckProgressJSONKeepsStdoutJSON(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Hello.cls"), "public class Hello { public void run() {} }")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--json", "--progress-json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !json.Valid(stdout.Bytes()) {
+		t.Fatalf("stdout is not json: %q", stdout.String())
+	}
+	for _, line := range strings.Split(strings.TrimSpace(stderr.String()), "\n") {
+		if !json.Valid([]byte(line)) {
+			t.Fatalf("stderr line is not json: %q\nall stderr:\n%s", line, stderr.String())
+		}
+	}
+	if !strings.Contains(stderr.String(), `"phase":"check"`) {
+		t.Fatalf("stderr missing check phase:\n%s", stderr.String())
+	}
+}
+
+func TestRunCheckNoProgressSuppressesProgress(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Hello.cls"), "public class Hello {}")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--no-progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q, want empty", stderr.String())
 	}
 }
 
@@ -996,13 +1085,45 @@ private class SampleTest {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), "Result: 1 passed") {
+	if !strings.Contains(stdout.String(), "1 passed") {
 		t.Fatalf("stdout did not include console result: %q", stdout.String())
 	}
 	got := stderr.String()
-	for _, want := range []string{"Progress:", "1/1", "elapsed=", "eta=", "SampleTest.passes"} {
+	for _, want := range []string{"test ·", "1/1", "SampleTest.passes"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("stderr missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestRunTestProgressJSONWritesNDJSONToStderr(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/SampleTest.cls"), `
+@isTest
+private class SampleTest {
+  @isTest static void passes() {
+    System.assertEquals(2, 1 + 1);
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--progress-json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "1 passed") {
+		t.Fatalf("stdout did not include console result: %q", stdout.String())
+	}
+	for _, line := range strings.Split(strings.TrimSpace(stderr.String()), "\n") {
+		if !json.Valid([]byte(line)) {
+			t.Fatalf("stderr line is not json: %q\nall stderr:\n%s", line, stderr.String())
+		}
+	}
+	for _, want := range []string{`"kind":"phase_start"`, `"kind":"phase_tick"`, `"kind":"done"`} {
+		if !strings.Contains(stderr.String(), want) {
+			t.Fatalf("stderr missing %q:\n%s", want, stderr.String())
 		}
 	}
 }

@@ -5315,23 +5315,25 @@ private class HelperTest {
 
 func TestMethodParallelismSharesClassWorkerBudget(t *testing.T) {
 	tests := []struct {
-		name             string
-		totalParallelism int
-		classParallelism int
-		methods          int
-		want             int
+		name              string
+		totalParallelism  int
+		classParallelism  int
+		methods           int
+		unfinishedClasses int
+		want              int
 	}{
-		{name: "single class uses full budget", totalParallelism: 8, classParallelism: 1, methods: 20, want: 8},
-		{name: "eight class workers run methods serially", totalParallelism: 8, classParallelism: 8, methods: 20, want: 1},
-		{name: "two class workers split budget", totalParallelism: 8, classParallelism: 2, methods: 20, want: 4},
-		{name: "rounds down to keep total under budget", totalParallelism: 3, classParallelism: 2, methods: 20, want: 1},
-		{name: "caps at method count", totalParallelism: 8, classParallelism: 2, methods: 3, want: 3},
+		{name: "single class uses full budget", totalParallelism: 8, classParallelism: 1, methods: 20, unfinishedClasses: 1, want: 8},
+		{name: "eight class workers run methods serially", totalParallelism: 8, classParallelism: 8, methods: 20, unfinishedClasses: 8, want: 1},
+		{name: "last class uses freed workers", totalParallelism: 8, classParallelism: 8, methods: 20, unfinishedClasses: 1, want: 8},
+		{name: "two class workers split budget", totalParallelism: 8, classParallelism: 2, methods: 20, unfinishedClasses: 2, want: 4},
+		{name: "rounds down to keep total under budget", totalParallelism: 3, classParallelism: 2, methods: 20, unfinishedClasses: 2, want: 1},
+		{name: "caps at method count", totalParallelism: 8, classParallelism: 2, methods: 3, unfinishedClasses: 2, want: 3},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := methodParallelismForClassRun(tt.totalParallelism, tt.classParallelism, tt.methods); got != tt.want {
-				t.Fatalf("methodParallelismForClassRun(%d, %d, %d) = %d, want %d", tt.totalParallelism, tt.classParallelism, tt.methods, got, tt.want)
+			if got := methodParallelismForClassRun(tt.totalParallelism, tt.classParallelism, tt.methods, tt.unfinishedClasses); got != tt.want {
+				t.Fatalf("methodParallelismForClassRun(%d, %d, %d, %d) = %d, want %d", tt.totalParallelism, tt.classParallelism, tt.methods, tt.unfinishedClasses, got, tt.want)
 			}
 		})
 	}
@@ -6639,7 +6641,7 @@ func TestRecordProjectReferencedBooleanFieldKeepsUnknownPlaceholder(t *testing.T
 		},
 	}
 
-	recordProjectReferencedBooleanField(&org, map[string]map[string]storage.Field{}, "pkg__Settings__c", "pkg__DefaultEnabled__c")
+	recordProjectReferencedBooleanField(&org, map[string]map[string]storage.Field{}, nil, "pkg__Settings__c", "pkg__DefaultEnabled__c")
 
 	field := org.Objects["pkg__Settings__c"].Definition.Fields["pkg__DefaultEnabled__c"]
 	assertUnknownProjectReferencedField(t, field)
@@ -6792,14 +6794,14 @@ func TestRecordProjectReferencedStandardFieldKeepsInferredShapeUnknown(t *testin
 		Records: map[storage.ID]storage.Record{},
 	}
 	inferred := map[string]map[string]storage.Field{}
-	recordProjectReferencedStandardField(&org, inferred, "pkg__ProcessingFee__c", "pkg__Mandatory__c")
-	applyReferencedStandardFieldSet(&org, inferred)
+	recordProjectReferencedStandardField(&org, inferred, nil, "pkg__ProcessingFee__c", "pkg__Mandatory__c")
+	applyReferencedStandardFieldSet(&org, inferred, nil)
 	field := org.Objects["pkg__ProcessingFee__c"].Definition.Fields["pkg__Mandatory__c"]
 	if field.Type != storage.FieldAny {
 		t.Fatalf("initial inferred field = %#v", field)
 	}
 
-	recordProjectReferencedStandardField(&org, map[string]map[string]storage.Field{}, "pkg__ProcessingFee__c", "pkg__Mandatory__c")
+	recordProjectReferencedStandardField(&org, map[string]map[string]storage.Field{}, nil, "pkg__ProcessingFee__c", "pkg__Mandatory__c")
 	field = org.Objects["pkg__ProcessingFee__c"].Definition.Fields["pkg__Mandatory__c"]
 	if field.Type != storage.FieldAny {
 		t.Fatalf("repeated inferred field = %#v", field)
@@ -7367,7 +7369,18 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 	if !foundCommunityLoginProfile {
 		t.Fatalf("customer community login profile row was not created; records=%#v", profiles)
 	}
-	if !objectPermissionRecordExists(org.Objects["ObjectPermissions"], string(communityLoginProfileID), "pkg__Cart__c") {
+	foundCartPermission := false
+	for _, record := range org.Objects["ObjectPermissions"].Records {
+		parent, hasParent := record.GetField("ParentId")
+		objectValue, hasObject := record.GetField("SObjectType")
+		if hasParent && hasObject &&
+			storageIDValueEqualsText(parent, string(communityLoginProfileID)) &&
+			storageStringValueEqualsText(objectValue, "pkg__Cart__c") {
+			foundCartPermission = true
+			break
+		}
+	}
+	if !foundCartPermission {
 		t.Fatalf("customer community profile cart permission row was not created; records=%#v", org.Objects["ObjectPermissions"].Records)
 	}
 	if !recordWithFieldValueExists(org.Objects["PermissionSet"], "Name", "Read_access_to_Account_Shipping_Address") {

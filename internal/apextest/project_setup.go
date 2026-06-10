@@ -300,6 +300,7 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 	if org == nil {
 		return
 	}
+	childRelationshipLookup := projectReferencedChildRelationshipLookup(*org)
 	cache := sourceCacheFor(caches)
 	cacheKey := projectReferencedStandardFieldCacheKey(index, cache)
 	if cacheKey != "" {
@@ -308,11 +309,11 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 			if len(fieldSet.Features) > 0 {
 				storage.ApplyOrgShape(org, fieldSet.Features)
 			}
-			applyReferencedStandardFieldSet(org, fieldSet.Fields)
+			applyReferencedStandardFieldSet(org, fieldSet.Fields, childRelationshipLookup)
 			return
 		}
 	}
-	scan := parallelScanProjectReferencedStandardFields(org, index, cache)
+	scan := parallelScanProjectReferencedStandardFields(org, index, cache, childRelationshipLookup)
 	for objectName := range scan.CustomObjects {
 		ensurePermissionReferencedObject(org, objectName)
 	}
@@ -321,7 +322,7 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 	}
 	inferred := scan.Inferred
 	childRelationshipRefs := scan.ChildRelationshipRefs
-	applyProjectReferencedSourceChildRelationships(org, inferred, childRelationshipRefs)
+	applyProjectReferencedSourceChildRelationships(org, inferred, childRelationshipRefs, childRelationshipLookup)
 	features := projectReferencedOrgShapeFeatures(inferred)
 	if len(features) > 0 {
 		storage.ApplyOrgShape(org, features)
@@ -329,7 +330,7 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 	if cacheKey != "" {
 		projectReferencedStandardFieldCache.Store(cacheKey, projectReferencedStandardFieldSet{Fields: inferred, Features: features})
 	}
-	applyReferencedStandardFieldSet(org, inferred)
+	applyReferencedStandardFieldSet(org, inferred, childRelationshipLookup)
 }
 
 func projectReferencedStandardFieldCacheKey(index typesys.Index, cache sourceCache) string {
@@ -515,7 +516,7 @@ func applyProjectProfileRecordTypeDefaults(org *storage.OrgState, p project.Proj
 		}
 	}
 }
-func applyProjectProfileRecords(org *storage.OrgState, p project.Project) {
+func applyProjectProfileRecords(org *storage.OrgState, p project.Project, permissionSetMetadataCache map[string]permissionSetMetadataCacheEntry) {
 	if org == nil || len(p.ProfileFiles) == 0 {
 		return
 	}
@@ -541,6 +542,10 @@ func applyProjectProfileRecords(org *storage.OrgState, p project.Project) {
 	if !profileRecordExists(state, "Customer Community User") {
 		addProjectProfileRecord(org, &state, &generator, "Customer Community User")
 	}
+	objectState := org.Objects["ObjectPermissions"]
+	fieldState := org.Objects["FieldPermissions"]
+	objectPermissionKeys := objectPermissionRecordKeys(objectState)
+	fieldPermissionKeys := fieldPermissionRecordKeys(fieldState)
 	org.IDSequences = generator.Sequences
 	org.Objects["Profile"] = state
 	for _, file := range p.ProfileFiles {
@@ -552,7 +557,7 @@ func applyProjectProfileRecords(org *storage.OrgState, p project.Project) {
 		if !ok {
 			continue
 		}
-		applyProjectPermissionSetMetadataPermissions(org, file, string(profileID), &generator)
+		applyProjectPermissionSetMetadataPermissions(org, file, string(profileID), &generator, objectPermissionKeys, fieldPermissionKeys, permissionSetMetadataCache)
 	}
 	org.IDSequences = generator.Sequences
 }
@@ -593,7 +598,7 @@ func projectProfileLicenseID(org *storage.OrgState, name string) (storage.ID, bo
 	return "", false
 }
 
-func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project) {
+func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project, permissionSetMetadataCache map[string]permissionSetMetadataCacheEntry) {
 	if org == nil || len(p.PermissionSetFiles) == 0 {
 		return
 	}
@@ -607,6 +612,10 @@ func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project) 
 	}
 	generator := storage.NewIDGenerator(storage.StandardKeyPrefixes())
 	generator.Sequences = org.IDSequences
+	objectState := org.Objects["ObjectPermissions"]
+	fieldState := org.Objects["FieldPermissions"]
+	objectPermissionKeys := objectPermissionRecordKeys(objectState)
+	fieldPermissionKeys := fieldPermissionRecordKeys(fieldState)
 	for _, file := range p.PermissionSetFiles {
 		name := metadataNameFromPath(file, ".permissionset-meta.xml", ".permissionset")
 		if name == "" {
@@ -619,8 +628,9 @@ func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project) 
 				continue
 			}
 			id = nextID
+			metadata, hasMetadata := readPermissionSetMetadata(file, permissionSetMetadataCache)
 			label := strings.ReplaceAll(name, "_", " ")
-			if metadata, ok := readPermissionSetMetadata(file); ok && strings.TrimSpace(metadata.Label) != "" {
+			if hasMetadata && strings.TrimSpace(metadata.Label) != "" {
 				label = strings.TrimSpace(metadata.Label)
 			}
 			state.Records[id] = storage.Record{
@@ -634,7 +644,8 @@ func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project) 
 				},
 			}
 		}
-		if metadata, ok := readPermissionSetMetadata(file); ok {
+		metadata, metadataOK := readPermissionSetMetadata(file, permissionSetMetadataCache)
+		if metadataOK {
 			customPermissions := permissionSetCustomPermissionValues(metadata)
 			if len(customPermissions) > 0 {
 				record := state.Records[id]
@@ -645,7 +656,7 @@ func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project) 
 				state.Records[id] = record
 			}
 		}
-		applyProjectPermissionSetMetadataPermissions(org, file, string(id), &generator)
+		applyProjectPermissionSetMetadataPermissions(org, file, string(id), &generator, objectPermissionKeys, fieldPermissionKeys, permissionSetMetadataCache)
 		applyProjectGuestPermissionSetAssignment(org, name, id, &generator)
 	}
 	org.IDSequences = generator.Sequences
@@ -747,11 +758,11 @@ func ensureProjectGuestUser(org *storage.OrgState) (storage.ID, bool) {
 	return id, true
 }
 
-func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, parentID string, generator *storage.IDGenerator) {
+func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, parentID string, generator *storage.IDGenerator, objectPermissionKeys map[string]bool, fieldPermissionKeys map[string]bool, permissionSetMetadataCache map[string]permissionSetMetadataCacheEntry) {
 	if org == nil || strings.TrimSpace(parentID) == "" || generator == nil {
 		return
 	}
-	metadata, ok := readPermissionSetMetadata(file)
+	metadata, ok := readPermissionSetMetadata(file, permissionSetMetadataCache)
 	if !ok {
 		return
 	}
@@ -765,10 +776,10 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 	if fieldState.Records == nil {
 		fieldState.Records = make(map[storage.ID]storage.Record)
 	}
-	fieldPermissionKeys := fieldPermissionRecordKeys(fieldState)
 	for _, permission := range metadata.ObjectPermission {
 		objectName := strings.TrimSpace(permission.Object)
-		if objectName == "" || objectPermissionRecordExists(objectState, parentID, objectName) {
+		key := objectPermissionRecordKey(parentID, objectName)
+		if key == "" || objectPermissionKeys[key] {
 			continue
 		}
 		ensurePermissionReferencedObject(org, objectName)
@@ -790,6 +801,7 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 				"PermissionsModifyAllRecords": storage.BooleanValue(permission.ModifyAllRecords),
 			},
 		}
+		objectPermissionKeys[key] = true
 	}
 	for _, permission := range metadata.FieldPermissions {
 		fieldName := strings.TrimSpace(permission.Field)

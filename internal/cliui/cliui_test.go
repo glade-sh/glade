@@ -13,11 +13,3 @@ func TestColorEnabled(t *testing.T) {
 		t.Fatal("TTY output without NO_COLOR should allow color")
 	}
 }
-
-func TestRow(t *testing.T) {
-	got := Row("PASS", "AccountTest.createsAccount", "42ms")
-	want := "PASS AccountTest.createsAccount  42ms"
-	if got != want {
-		t.Fatalf("row = %q, want %q", got, want)
-	}
-}

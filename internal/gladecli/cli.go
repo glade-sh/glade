@@ -13,6 +13,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apexlog"
+	"github.com/glade-sh/glade/internal/cliui"
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -33,7 +34,7 @@ var Version = "0.0.0-dev"
 // Run executes the glade CLI and returns a process exit code.
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
-		printHelp(stdout)
+		_ = cliui.WriteHelp(stdout)
 		return 0
 	}
 
@@ -43,14 +44,14 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			printHelpTopic(stdout, args[1:])
 			return 0
 		}
-		printHelp(stdout)
+		_ = cliui.WriteHelp(stdout)
 		return 0
 	case "version", "--version":
 		fmt.Fprintf(stdout, "glade %s\n", Version)
 		return 0
 	case "doctor":
 		if err := runDoctor(ctx, args[1:], stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			_ = cliui.WriteCLIError(stderr, err)
 			return 1
 		}
 		return 0
@@ -75,13 +76,13 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		}
 		return 0
 	case "schema":
-		if err := runSchema(ctx, args[1:], stdout); err != nil {
+		if err := runSchema(ctx, args[1:], stdout, stderr); err != nil {
 			fmt.Fprintf(stderr, "glade: %v\n", err)
 			return 1
 		}
 		return 0
 	case "check":
-		result, err := runCheck(ctx, args[1:], stdout)
+		result, err := runCheck(ctx, args[1:], stdout, stderr)
 		if err != nil {
 			fmt.Fprintf(stderr, "glade: %v\n", err)
 			return 1
@@ -190,113 +191,22 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		}
 		_ = report.WriteText(stderr)
 		fmt.Fprintln(stderr)
-		printHelp(stderr)
+		_ = cliui.WriteHelp(stderr)
 		return 2
 	}
 }
 
-func printHelp(w io.Writer) {
-	fmt.Fprint(w, `glade is a clean-room local Apex runtime.
-
-Usage:
-  glade <command> [flags]
-
-Commands:
-  version        Print the glade version.
-  doctor         Print environment and project configuration status.
-  parse          Parse Apex source files.
-  inspect        Inspect indexed project symbols and performance risks.
-  schema         Load local Salesforce metadata schema.
-  check          Run semantic checks over a project.
-  exec           Execute anonymous Apex.
-  debug          Parse, profile, explain, and synthesize from Salesforce debug logs.
-  editor         Install and check editor integrations.
-  dap            Run the Debug Adapter Protocol server over stdio.
-  test           Discover and run supported Apex tests.
-  dev            Run the human-focused local development cockpit.
-  report         List, show, export, and clean saved run reports.
-  lsp            Run the Language Server Protocol server over stdio.
-  profile        Analyze glade trace output.
-  package        Build managed package artifacts.
-  server         Start the local Salesforce-compatible API baseline.
-  playground     Start the local Apex playground web UI.
-  db             Seed, reset, export, and inspect a persistent local database.
-  help           Print this help text.
-`)
-}
-
 func printHelpTopic(w io.Writer, args []string) {
 	if len(args) == 0 {
-		printHelp(w)
+		_ = cliui.WriteHelp(w)
 		return
 	}
 	switch args[0] {
 	case "test":
-		printTestHelp(w)
+		_ = cliui.WriteTestHelp(w)
 	default:
-		printHelp(w)
+		_ = cliui.WriteHelp(w)
 	}
-}
-
-func printTestHelp(w io.Writer) {
-	fmt.Fprint(w, strings.TrimSpace(`
-Run local Apex tests.
-
-Usage:
-  glade test [--project <root>] [flags]
-  glade test serve [--project <root>] [serve flags]
-  glade test clear-cache [--project <root>]
-
-Persistent test server:
-  glade test serve keeps the project runtime warm across CLI invocations.
-  It writes .glade/test/serve.sock and serve.pid under the project root.
-  Later glade test runs auto-connect when that socket is reachable.
-  Use --no-serve to force a local build, or --connect to require the server.
-
-Serve flags:
-  --project <root>          Project root. Defaults to current directory.
-  --socket <path>           Override the unix socket path.
-  --no-watch                Do not watch project files for changes.
-  --no-warm                 Skip the initial runtime warm on startup.
-
-Common flags:
-  --project <root>          Project root. Defaults to current directory.
-  --filter <pattern>        Run matching test classes or methods.
-  --connect                 Require a running test server (see serve).
-  --no-serve                Do not auto-connect to a running test server.
-  --no-cache                Skip the on-disk startup cache for this run.
-  --daemon                  Keep index warm in-process for --watch loops.
-  --json                    Write JSON test results.
-  --junit <path>            Write JUnit XML results.
-  --progress                Print bounded progress to stderr.
-  --debug                   Run one DAP snapshot session after tests.
-  --watch                   Watch source files and emit NDJSON events.
-  --watch-once              Run one watch cycle and exit.
-  --changed-since <ref>     Select tests affected since a git ref.
-  --debounce <dur>          Watch debounce interval (default 500ms).
-  --watch-backend <mode>    Watch backend: auto, native, or poll.
-  --parallel-methods        Run test methods in parallel (default).
-  --no-parallel-methods     Force serial method execution within a class.
-  --parallelism <n>         Worker count (default: GOMAXPROCS).
-  --test-timeout <dur>      Per-test timeout (default 5m, e.g. 30s, 2m).
-  --gc-aggressive           Run with GOGC=50 for memory-constrained hosts.
-  --limit-mode <mode>       Use strict or permissive governor limits.
-
-Startup cache (.glade/test/startup.gob):
-  Written after a cold harness build; loaded when file/config/package fingerprints
-  still match. Does not store test results. A stale cache can hide new code —
-  use clear-cache after git pull or Glade upgrades, and --no-cache to debug.
-  See docs/TEST_STARTUP_CACHE.md for freshness rules and recovery.
-
-Examples:
-  glade test serve --project .
-  glade test clear-cache --project .
-  glade test --project . --filter AccountServiceTest
-  glade test --project . --no-cache --filter AccountServiceTest
-  glade test --project . --connect --filter AccountServiceTest
-  glade test --project . --daemon --watch
-  glade test --project . --changed-since origin/main --json
-`)+"\n")
 }
 
 func isHelpArg(arg string) bool {
@@ -464,26 +374,23 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 
-	fmt.Fprintf(w, "glade: %s\n", Version)
-	fmt.Fprintf(w, "go: %s\n", runtime.Version())
-	fmt.Fprintf(w, "os/arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
-	fmt.Fprintf(w, "cwd: %s\n", cwd)
-
-	if errors.Is(err, config.ErrNotFound) {
-		fmt.Fprintln(w, "config: not found")
-	} else {
-		fmt.Fprintf(w, "config: %s\n", cfgPath)
-		if cfg.Project.Root != "" {
-			fmt.Fprintf(w, "project.root: %s\n", cfg.Project.Root)
-		}
-		if cfg.Project.DefaultNamespace != "" {
-			fmt.Fprintf(w, "project.defaultNamespace: %s\n", cfg.Project.DefaultNamespace)
-		}
+	parserStatus := parserSelfCheck()
+	info := cliui.DoctorInfo{
+		Version:      Version,
+		GoVersion:    runtime.Version(),
+		OSArch:       runtime.GOOS + "/" + runtime.GOARCH,
+		CWD:          cwd,
+		ParserStatus: parserStatus,
+		ParserOK:     cliui.ParserStatusOK(parserStatus),
 	}
-
-	fmt.Fprintf(w, "parser: %s\n", parserSelfCheck())
-	fmt.Fprintln(w, "status: ok")
-	return nil
+	if errors.Is(err, config.ErrNotFound) {
+		info.ConfigMissing = true
+	} else {
+		info.ConfigPath = cfgPath
+		info.ProjectRoot = cfg.Project.Root
+		info.DefaultNamespace = cfg.Project.DefaultNamespace
+	}
+	return cliui.WriteDoctor(w, info)
 }
 
 // parserSelfCheck parses a trivial Apex class and reports whether the bundled
@@ -679,7 +586,7 @@ func runInspectPerformance(ctx context.Context, args []string, w io.Writer) erro
 	return perfscan.WriteMarkdown(w, report)
 }
 
-func runSchema(ctx context.Context, args []string, w io.Writer) error {
+func runSchema(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -687,18 +594,45 @@ func runSchema(ctx context.Context, args []string, w io.Writer) error {
 		return errors.New("usage: glade schema load [--project <root>] [--json]")
 	}
 
-	root, jsonOut, err := parseProjectFlags(args[1:])
+	root, jsonOut, progressMode, err := parseProjectProgressFlags(args[1:])
 	if err != nil {
 		return err
 	}
+	renderer := cliui.NewRenderer(cliui.RendererOptions{
+		Stderr: progressW,
+		Mode:   progressMode,
+	})
+	renderer.Render(cliui.Event{
+		Kind:  cliui.EventPhaseStart,
+		Phase: "schema",
+		Label: "Loading project",
+	})
 	p, err := project.Load(root)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "schema failed"})
 		return err
 	}
+
+	renderer.Render(cliui.Event{
+		Kind:    cliui.EventPhaseTick,
+		Phase:   "schema",
+		Label:   "Loading metadata",
+		Current: 1,
+		Total:   2,
+	})
 	s, err := gladeschema.LoadProject(p)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "schema failed"})
 		return err
 	}
+	renderer.Render(cliui.Event{
+		Kind:    cliui.EventPhaseEnd,
+		Phase:   "schema",
+		Label:   "Metadata loaded",
+		Current: 2,
+		Total:   2,
+	})
+	renderer.Finish(cliui.Result{OK: true, Label: "schema loaded"})
 	if jsonOut {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
@@ -712,20 +646,74 @@ func runSchema(ctx context.Context, args []string, w io.Writer) error {
 	return nil
 }
 
-func runCheck(ctx context.Context, args []string, w io.Writer) (sema.Result, error) {
+func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writer) (sema.Result, error) {
 	if err := ctx.Err(); err != nil {
 		return sema.Result{}, err
 	}
 
-	root, jsonOut, err := parseProjectFlags(args)
+	root, jsonOut, progressMode, err := parseProjectProgressFlags(args)
 	if err != nil {
 		return sema.Result{}, err
 	}
-	index, err := loadIndex(root)
+	renderer := cliui.NewRenderer(cliui.RendererOptions{
+		Stderr: progressW,
+		Mode:   progressMode,
+	})
+	renderer.Render(cliui.Event{
+		Kind:  cliui.EventPhaseStart,
+		Phase: "check",
+		Label: "Loading project",
+	})
+	p, err := project.Load(root)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "check failed"})
 		return sema.Result{}, err
 	}
+	renderer.Render(cliui.Event{
+		Kind:    cliui.EventPhaseTick,
+		Phase:   "check",
+		Label:   "Loading metadata",
+		Current: 1,
+		Total:   4,
+	})
+	s, err := gladeschema.LoadProject(p)
+	var index typesys.Index
+	if err != nil {
+		index = typesys.Build(p, gladeschema.Schema{})
+		index.Diagnostics = append(index.Diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "GLADESCHEMA001",
+			Message:  fmt.Sprintf("metadata schema load failed: %v", err),
+		})
+	} else {
+		renderer.Render(cliui.Event{
+			Kind:    cliui.EventPhaseTick,
+			Phase:   "check",
+			Label:   "Indexing Apex symbols",
+			Current: 2,
+			Total:   4,
+		})
+		index = typesys.Build(p, s)
+	}
+	renderer.Render(cliui.Event{
+		Kind:    cliui.EventPhaseTick,
+		Phase:   "check",
+		Label:   "Running semantic checks",
+		Current: 3,
+		Total:   4,
+	})
 	result := sema.Analyze(index)
+	renderer.Render(cliui.Event{
+		Kind:    cliui.EventPhaseEnd,
+		Phase:   "check",
+		Label:   "Semantic checks complete",
+		Current: 4,
+		Total:   4,
+	})
+	renderer.Finish(cliui.Result{
+		OK:    !result.HasErrors(),
+		Label: "check complete",
+	})
 
 	if jsonOut {
 		enc := json.NewEncoder(w)
@@ -733,16 +721,13 @@ func runCheck(ctx context.Context, args []string, w io.Writer) (sema.Result, err
 		return result, enc.Encode(result)
 	}
 
-	fmt.Fprintf(w, "project: %s\n", result.Project.Root)
-	fmt.Fprintf(w, "types: %d\n", result.Summary.Types)
-	fmt.Fprintf(w, "triggers: %d\n", result.Summary.Triggers)
-	fmt.Fprintf(w, "objects: %d\n", result.Summary.Objects)
-	fmt.Fprintf(w, "diagnostics: %d\n", result.Summary.Diagnostics)
-	if len(result.Diagnostics) > 0 {
-		_ = diagnostic.Report{Diagnostics: result.Diagnostics}.WriteText(w)
-		fmt.Fprintln(w)
-	}
-	return result, nil
+	return result, cliui.WriteCheckResult(w, cliui.CheckResultInfo{
+		ProjectRoot: result.Project.Root,
+		Types:       result.Summary.Types,
+		Triggers:    result.Summary.Triggers,
+		Objects:     result.Summary.Objects,
+		Diagnostics: result.Diagnostics,
+	})
 }
 
 func loadIndex(root string) (typesys.Index, error) {
@@ -988,6 +973,32 @@ func parseProjectFlags(args []string) (root string, jsonOut bool, err error) {
 		}
 	}
 	return root, jsonOut, nil
+}
+
+func parseProjectProgressFlags(args []string) (root string, jsonOut bool, progressMode cliui.ProgressMode, err error) {
+	root = "."
+	progressMode = cliui.ProgressAuto
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--json":
+			jsonOut = true
+		case "--progress":
+			progressMode = cliui.ProgressLine
+		case "--progress-json":
+			progressMode = cliui.ProgressJSON
+		case "--no-progress", "--quiet":
+			progressMode = cliui.ProgressOff
+		case "--project":
+			if i+1 >= len(args) {
+				return "", false, cliui.ProgressOff, errors.New("--project requires a value")
+			}
+			root = args[i+1]
+			i++
+		default:
+			return "", false, cliui.ProgressOff, fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	return root, jsonOut, progressMode, nil
 }
 
 func expandApexPaths(paths []string) ([]string, error) {

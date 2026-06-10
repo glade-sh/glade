@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/cliui"
 )
 
 type Reporter interface {
@@ -22,28 +24,185 @@ type ConsoleOptions struct {
 	ReportPath string
 }
 
+// consoleDetailLimit caps per-test listing on large runs so result formatting
+// stays responsive and stdout stays readable.
+const consoleDetailLimit = 80
+
 func WriteConsole(w io.Writer, run Run) error {
 	return WriteConsoleWithOptions(w, run, ConsoleOptions{})
 }
 
 func WriteConsoleWithOptions(w io.Writer, run Run, opts ConsoleOptions) error {
-	var out strings.Builder
+	t := cliui.NewTheme(w)
 	summary := run.Summary()
-	fmt.Fprintf(&out, "Selected %d %s.\n\n", summary.Total, plural(summary.Total, "test", "tests"))
-	for _, suite := range run.Suites {
-		for _, testCase := range suite.Cases {
-			writeConsoleCase(&out, suite.Name, testCase)
+	var out strings.Builder
+
+	out.WriteString(cliui.FormatBox(t, "Tests", formatTestHeaderSummary(summary), 80))
+	out.WriteString("\n\n")
+
+	compact := summary.Total > consoleDetailLimit
+	if compact {
+		writeCompactConsoleCases(&out, t, run, summary)
+	} else {
+		maxName := 20
+		for _, suite := range run.Suites {
+			for _, testCase := range suite.Cases {
+				if n := len(testCase.displayName(suite.Name)); n > maxName {
+					maxName = n
+				}
+			}
+		}
+		for _, suite := range run.Suites {
+			for _, testCase := range suite.Cases {
+				writeConsoleCaseLine(&out, t, suite.Name, testCase, maxName)
+			}
 		}
 	}
 	if problemCase, ok := firstProblemCase(run); ok {
-		writeConsoleProblem(&out, problemCase.suiteName, problemCase.testCase)
+		writeStyledConsoleProblem(&out, problemCase.suiteName, problemCase.testCase)
 	}
-	writeConsoleSummary(&out, summary)
+
+	out.WriteString("\n")
+	out.WriteString(cliui.FormatBox(t, "Result", formatTestResultSummary(summary), 80))
+	out.WriteString("\n")
 	if strings.TrimSpace(opts.ReportPath) != "" {
 		fmt.Fprintf(&out, "Report: %s\n", opts.ReportPath)
 	}
 	_, err := io.WriteString(w, out.String())
 	return err
+}
+
+func formatTestHeaderSummary(s Summary) string {
+	return fmt.Sprintf("%d selected · %d passed · %d failed · %s",
+		s.Total, s.Passed, s.Failed, cliui.FormatDurationMS(s.DurationMS))
+}
+
+func formatTestResultSummary(s Summary) string {
+	parts := []string{
+		fmt.Sprintf("%d passed", s.Passed),
+		fmt.Sprintf("%d failed", s.Failed),
+		fmt.Sprintf("%d total", s.Total),
+		cliui.FormatDurationMS(s.DurationMS),
+	}
+	if s.Skipped > 0 {
+		parts = append(parts, fmt.Sprintf("%d skipped", s.Skipped))
+	}
+	if s.CompileErrors > 0 {
+		parts = append(parts, fmt.Sprintf("%d compile errors", s.CompileErrors))
+	}
+	if s.RuntimeErrors > 0 {
+		parts = append(parts, fmt.Sprintf("%d runtime errors", s.RuntimeErrors))
+	}
+	if s.Unsupported > 0 {
+		parts = append(parts, fmt.Sprintf("%d unsupported", s.Unsupported))
+	}
+	return strings.Join(parts, " · ")
+}
+
+func testCaseIcon(t cliui.Theme, status Status) string {
+	switch normalizeStatus(status) {
+	case StatusPass:
+		if t.Color {
+			return t.Green(t.GlyphPass)
+		}
+		return t.GlyphPass
+	case StatusFail:
+		if t.Color {
+			return t.Red(t.GlyphFail)
+		}
+		return t.GlyphFail
+	case StatusSkipped:
+		if t.Color {
+			return t.Dim("○")
+		}
+		return "○"
+	default:
+		if t.Color {
+			return t.Red(t.GlyphFail)
+		}
+		return t.GlyphFail
+	}
+}
+
+func writeConsoleCaseLine(out *strings.Builder, t cliui.Theme, suiteName string, testCase Case, maxName int) {
+	name := testCase.displayName(suiteName)
+	timing := cliui.FormatDurationMS(testCase.DurationMS)
+	if t.Color {
+		timing = t.Dim(timing)
+	}
+	fmt.Fprintf(out, "  %s  %s  %s\n", testCaseIcon(t, testCase.Status), cliui.PadVisible(name, maxName), timing)
+}
+
+func writeCompactConsoleCases(out *strings.Builder, t cliui.Theme, run Run, summary Summary) {
+	maxName := 20
+	nonPass := 0
+	for _, suite := range run.Suites {
+		for _, testCase := range suite.Cases {
+			if normalizeStatus(testCase.Status) == StatusPass {
+				continue
+			}
+			nonPass++
+			if n := len(testCase.displayName(suite.Name)); n > maxName {
+				maxName = n
+			}
+		}
+	}
+	if nonPass == 0 {
+		line := fmt.Sprintf("... %d tests passed (listing omitted)", summary.Passed)
+		if t.Color {
+			line = t.Dim(line)
+		}
+		fmt.Fprintf(out, "  %s\n", line)
+		return
+	}
+	for _, suite := range run.Suites {
+		for _, testCase := range suite.Cases {
+			if normalizeStatus(testCase.Status) == StatusPass {
+				continue
+			}
+			writeConsoleCaseLine(out, t, suite.Name, testCase, maxName)
+		}
+	}
+	if summary.Passed > 0 {
+		line := fmt.Sprintf("... %d passed tests omitted from listing", summary.Passed)
+		if t.Color {
+			line = t.Dim(line)
+		}
+		fmt.Fprintf(out, "  %s\n", line)
+	}
+}
+
+func writeStyledConsoleProblem(out *strings.Builder, suiteName string, testCase Case) {
+	if testCase.Problem == nil {
+		return
+	}
+	out.WriteString("\n")
+	name := testCase.displayName(suiteName)
+	fmt.Fprintf(out, "  %s\n", name)
+	if testCase.Problem.Type != "" {
+		fmt.Fprintf(out, "  %s: %s\n", testCase.Problem.Type, testCase.Problem.Message)
+	} else if testCase.Problem.Message != "" {
+		fmt.Fprintf(out, "  %s\n", testCase.Problem.Message)
+	}
+	if testCase.Problem.Detail != "" {
+		for _, line := range strings.Split(testCase.Problem.Detail, "\n") {
+			fmt.Fprintf(out, "  %s\n", line)
+		}
+	}
+	if len(testCase.Problem.Stack) > 0 {
+		out.WriteString("\n")
+		frame := testCase.Problem.Stack[0]
+		symbol := frame.Symbol
+		if symbol == "" {
+			symbol = testCase.displayName(suiteName)
+		}
+		if frame.Line > 0 {
+			fmt.Fprintf(out, "  at %s:%d\n", symbol, frame.Line)
+		} else {
+			fmt.Fprintf(out, "  at %s\n", symbol)
+		}
+	}
+	out.WriteString("\n")
 }
 
 func WriteJSON(w io.Writer, run Run) error {
@@ -94,12 +253,6 @@ func WriteJUnitXML(w io.Writer, run Run) error {
 	return err
 }
 
-func writeConsoleCase(out *strings.Builder, suiteName string, testCase Case) {
-	status := normalizeStatus(testCase.Status)
-	label := consoleStatus(status)
-	fmt.Fprintf(out, "%s %s  %dms\n", label, testCase.displayName(suiteName), testCase.DurationMS)
-}
-
 type consoleProblemCase struct {
 	suiteName string
 	testCase  Case
@@ -118,82 +271,6 @@ func firstProblemCase(run Run) (consoleProblemCase, bool) {
 		}
 	}
 	return consoleProblemCase{}, false
-}
-
-func writeConsoleProblem(out *strings.Builder, suiteName string, testCase Case) {
-	if testCase.Problem == nil {
-		return
-	}
-	out.WriteString("\n")
-	if testCase.Problem.Type != "" {
-		fmt.Fprintf(out, "%s: %s\n", testCase.Problem.Type, testCase.Problem.Message)
-	} else if testCase.Problem.Message != "" {
-		fmt.Fprintf(out, "%s\n", testCase.Problem.Message)
-	}
-	if testCase.Problem.Detail != "" {
-		for _, line := range strings.Split(testCase.Problem.Detail, "\n") {
-			fmt.Fprintf(out, "%s\n", line)
-		}
-	}
-	if len(testCase.Problem.Stack) > 0 {
-		out.WriteString("\n")
-		frame := testCase.Problem.Stack[0]
-		symbol := frame.Symbol
-		if symbol == "" {
-			symbol = testCase.displayName(suiteName)
-		}
-		if frame.Line > 0 {
-			fmt.Fprintf(out, "at %s:%d\n", symbol, frame.Line)
-		} else {
-			fmt.Fprintf(out, "at %s\n", symbol)
-		}
-	}
-	out.WriteString("\n")
-}
-
-func writeConsoleSummary(out *strings.Builder, summary Summary) {
-	parts := []string{
-		fmt.Sprintf("%d %s", summary.Passed, plural(summary.Passed, "passed", "passed")),
-		fmt.Sprintf("%d %s", summary.Failed, plural(summary.Failed, "failed", "failed")),
-		fmt.Sprintf("%d %s", summary.Skipped, plural(summary.Skipped, "skipped", "skipped")),
-	}
-	if summary.CompileErrors > 0 {
-		parts = append(parts, fmt.Sprintf("%d %s", summary.CompileErrors, plural(summary.CompileErrors, "compile error", "compile errors")))
-	}
-	if summary.RuntimeErrors > 0 {
-		parts = append(parts, fmt.Sprintf("%d %s", summary.RuntimeErrors, plural(summary.RuntimeErrors, "runtime error", "runtime errors")))
-	}
-	if summary.Unsupported > 0 {
-		parts = append(parts, fmt.Sprintf("%d unsupported", summary.Unsupported))
-	}
-	parts = append(parts, fmt.Sprintf("%d total", summary.Total), fmt.Sprintf("%dms", summary.DurationMS))
-	fmt.Fprintf(out, "Result: %s\n", strings.Join(parts, ", "))
-}
-
-func plural(n int, singular, plural string) string {
-	if n == 1 {
-		return singular
-	}
-	return plural
-}
-
-func consoleStatus(status Status) string {
-	switch status {
-	case StatusPass:
-		return "PASS"
-	case StatusFail:
-		return "FAIL"
-	case StatusSkipped:
-		return "SKIP"
-	case StatusCompileError:
-		return "COMPILE"
-	case StatusRuntimeError:
-		return "ERROR"
-	case StatusUnsupported:
-		return "UNSUPPORTED"
-	default:
-		return "ERROR"
-	}
 }
 
 type junitTestSuites struct {

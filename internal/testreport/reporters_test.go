@@ -2,6 +2,7 @@ package testreport
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 )
 
@@ -11,24 +12,61 @@ func TestWriteConsole(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	const want = `Selected 6 tests.
+	got := out.String()
+	for _, want := range []string{
+		"Tests",
+		"6 selected · 1 passed · 1 failed",
+		"AccountTest.testCreatesAccount",
+		"AccountTest.testRejectsBlankName",
+		"System.AssertException: Expected true",
+		"at AccountTest.testRejectsBlankName:42",
+		"Result",
+		"1 passed · 1 failed · 6 total",
+	} {
+		if !bytes.Contains([]byte(got), []byte(want)) {
+			t.Fatalf("console output missing %q:\n%s", want, got)
+		}
+	}
+}
 
-PASS AccountTest.testCreatesAccount  12ms
-FAIL AccountTest.testRejectsBlankName  5ms
-SKIP BillingTest.testGateway  0ms
-COMPILE BrokenTest  7ms
-ERROR CrashTest.testThrows  10ms
-UNSUPPORTED FutureTest.testCallout  2ms
+func TestWriteConsoleOmitsLargePassListing(t *testing.T) {
+	run := Run{
+		Name:       "fixture",
+		DurationMS: 2500,
+		Suites: []Suite{{
+			Name: "AccountTest",
+			Cases: []Case{{
+				ClassName:  "AccountTest",
+				MethodName: "testCreatesAccount",
+				Status:     StatusPass,
+				DurationMS: 12,
+			}},
+		}},
+	}
+	for i := 0; i < consoleDetailLimit; i++ {
+		run.Suites[0].Cases = append(run.Suites[0].Cases, Case{
+			ClassName:  "AccountTest",
+			MethodName: fmt.Sprintf("testBulk%d", i),
+			Status:     StatusPass,
+			DurationMS: 1,
+		})
+	}
 
-System.AssertException: Expected true
-expected true but was false
-
-at AccountTest.testRejectsBlankName:42
-
-Result: 1 passed, 1 failed, 1 skipped, 1 compile error, 1 runtime error, 1 unsupported, 6 total, 36ms
-`
-	if got := out.String(); got != want {
-		t.Fatalf("console output mismatch\nwant:\n%s\ngot:\n%s", want, got)
+	var out bytes.Buffer
+	if err := WriteConsole(&out, run); err != nil {
+		t.Fatal(err)
+	}
+	got := out.String()
+	if bytes.Contains([]byte(got), []byte("testBulk0")) {
+		t.Fatalf("expected pass listing to be omitted for large run:\n%s", got)
+	}
+	for _, want := range []string{
+		"... 81 tests passed (listing omitted)",
+		"3s",
+	} {
+		if !bytes.Contains([]byte(got), []byte(want)) {
+			t.Fatalf("console output missing %q:\n%s", want, got)
+		}
 	}
 }
 

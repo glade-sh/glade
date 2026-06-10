@@ -200,6 +200,20 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 			InvokeProgErr: testInvokeErrors[testCaseKey(testCase)],
 		}
 	}
+	if emitProgress {
+		for i, testCase := range cases {
+			if results[i].Status == "" {
+				continue
+			}
+			reportProgress(opts, TestProgress{
+				Event:      "test_done",
+				ClassName:  testCase.ClassName,
+				MethodName: testCase.MethodName,
+				DurationMS: results[i].DurationMS,
+				Status:     string(results[i].Status),
+			})
+		}
+	}
 	if noSetupFastPath(setups, setupErrors, setupInvokeErrors) && allClassesHaveSingleMethod(suiteIndexes) {
 		for i := range planned {
 			if results[i].Status != "" {
@@ -219,7 +233,10 @@ assemble:
 		}
 	}
 
-	run := testreport.Run{Name: "glade test"}
+	run := testreport.Run{
+		Name:       "glade test",
+		DurationMS: time.Since(started).Milliseconds(),
+	}
 	for _, name := range order {
 		run.Suites = append(run.Suites, testreport.Suite{Name: name, Cases: suites[name]})
 	}
@@ -652,7 +669,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					reportProgress(opts, TestProgress{Event: "setup_done", ClassName: className, DurationMS: time.Since(started).Milliseconds(), Status: progressStatus(setupErr)})
 				}
 				if opts.ParallelMethods && len(classIndexes[className]) > 1 {
-					methodParallelism := methodParallelismForClassRun(opts.Parallelism, parallelism, len(classIndexes[className]))
+					methodParallelism := methodParallelismForClassRun(opts.Parallelism, parallelism, len(classIndexes[className]), dispatcher.unfinishedClassCount())
 					runClassMethodIndexes(ctx, classIndexes[className], planned, results, setupOrg, setupErr, setupRandom, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, methodParallelism)
 					dispatcher.recordObserved(className, time.Since(classStart).Milliseconds())
 					continue
@@ -749,7 +766,7 @@ func aggregateClassCostHints(classOrder []string, planned []testCasePlan) map[st
 	return out
 }
 
-func methodParallelismForClassRun(totalParallelism, classParallelism, methods int) int {
+func methodParallelismForClassRun(totalParallelism, classParallelism, methods, unfinishedClasses int) int {
 	if methods <= 1 {
 		return 1
 	}
@@ -762,6 +779,13 @@ func methodParallelismForClassRun(totalParallelism, classParallelism, methods in
 	parallelism := totalParallelism / classParallelism
 	if parallelism < 1 {
 		parallelism = 1
+	}
+	// When most class workers are idle at the tail, let the remaining class(es)
+	// use the freed CPU budget for method-level parallelism.
+	if unfinishedClasses > 0 && unfinishedClasses < classParallelism {
+		if boosted := totalParallelism / unfinishedClasses; boosted > parallelism {
+			parallelism = boosted
+		}
 	}
 	if parallelism > methods {
 		parallelism = methods
@@ -1712,9 +1736,10 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 		if applyProjectProfileRecordTypes(&org, *loadedProject) {
 			storage.EnsureDeterministicPlatformData(&org)
 		}
+		permissionSetMetadataCache := make(map[string]permissionSetMetadataCacheEntry)
 		applyProjectProfileRecordTypeDefaults(&org, *loadedProject)
-		applyProjectProfileRecords(&org, *loadedProject)
-		applyProjectPermissionSetRecords(&org, *loadedProject)
+		applyProjectProfileRecords(&org, *loadedProject, permissionSetMetadataCache)
+		applyProjectPermissionSetRecords(&org, *loadedProject, permissionSetMetadataCache)
 		storage.EnsureDeterministicPlatformData(&org)
 		applyProjectPermissionSetGroupRecords(&org, *loadedProject)
 	}
@@ -1870,7 +1895,7 @@ func apexReferenceScanSource(source string) string {
 	return string(out)
 }
 
-func recordProjectReferencedSObjectLiteralFields(org *storage.OrgState, inferred map[string]map[string]storage.Field, scanSource string, pattern *regexp.Regexp) {
+func recordProjectReferencedSObjectLiteralFields(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, scanSource string, pattern *regexp.Regexp) {
 	for _, match := range pattern.FindAllStringSubmatchIndex(scanSource, -1) {
 		if len(match) != 6 {
 			continue
@@ -1885,12 +1910,12 @@ func recordProjectReferencedSObjectLiteralFields(org *storage.OrgState, inferred
 				continue
 			}
 			fieldName := body[argMatch[2]:argMatch[3]]
-			recordProjectReferencedStandardField(org, inferred, objectName, fieldName)
+			recordProjectReferencedStandardField(org, inferred, childRelationshipLookup, objectName, fieldName)
 		}
 	}
 }
 
-func recordProjectReferencedSObjectLiteralLookupFields(org *storage.OrgState, inferred map[string]map[string]storage.Field, scanSource string, pattern *regexp.Regexp, varTypes map[string]string) {
+func recordProjectReferencedSObjectLiteralLookupFields(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, scanSource string, pattern *regexp.Regexp, varTypes map[string]string) {
 	for _, match := range pattern.FindAllStringSubmatchIndex(scanSource, -1) {
 		if len(match) != 6 {
 			continue
@@ -1908,7 +1933,7 @@ func recordProjectReferencedSObjectLiteralLookupFields(org *storage.OrgState, in
 			if !ok {
 				continue
 			}
-			recordProjectReferencedLookupField(org, inferred, objectName, body[argMatch[2]:argMatch[3]], parentObjectName)
+			recordProjectReferencedLookupFieldWithChildRelationship(org, inferred, childRelationshipLookup, objectName, body[argMatch[2]:argMatch[3]], parentObjectName, "")
 		}
 	}
 }
@@ -1934,7 +1959,7 @@ func projectChildRelationshipSourceReferences(source string) []projectChildRelat
 	return refs
 }
 
-func applyProjectReferencedSourceChildRelationships(org *storage.OrgState, inferred map[string]map[string]storage.Field, refs map[string]projectChildRelationshipSourceReference) {
+func applyProjectReferencedSourceChildRelationships(org *storage.OrgState, inferred map[string]map[string]storage.Field, refs map[string]projectChildRelationshipSourceReference, childRelationshipLookup map[string]struct{}) {
 	for _, ref := range refs {
 		canonicalChild, ok := storage.ResolveObjectName(*org, ref.ChildObject)
 		if !ok {
@@ -1944,14 +1969,14 @@ func applyProjectReferencedSourceChildRelationships(org *storage.OrgState, infer
 		if !ok {
 			continue
 		}
-		if projectReferencedNameIsChildRelationship(*org, canonicalParent, ref.ChildRelationship) {
+		if projectReferencedNameIsChildRelationship(*org, canonicalParent, ref.ChildRelationship, childRelationshipLookup) {
 			continue
 		}
 		fieldName, ok := projectReferencedChildLookupFieldCandidate(inferred[canonicalChild], ref.ChildRelationship, canonicalParent)
 		if !ok {
 			continue
 		}
-		recordProjectReferencedLookupFieldWithChildRelationship(org, inferred, canonicalChild, fieldName, canonicalParent, ref.ChildRelationship)
+		recordProjectReferencedLookupFieldWithChildRelationship(org, inferred, childRelationshipLookup, canonicalChild, fieldName, canonicalParent, ref.ChildRelationship)
 	}
 }
 
@@ -2016,7 +2041,7 @@ func apexMemberReferenceIsCall(source string, end int) bool {
 	return false
 }
 
-func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[string]map[string]storage.Field, objectName, fieldName string) {
+func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName string) {
 	if strings.EqualFold(fieldName, "SObjectType") || strings.EqualFold(fieldName, "Fields") {
 		return
 	}
@@ -2033,7 +2058,7 @@ func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[st
 	if parentRelationshipKnown(state.Definition, fieldName) {
 		return
 	}
-	if projectReferencedNameIsChildRelationship(*org, objectName, fieldName) {
+	if projectReferencedNameIsChildRelationship(*org, objectName, fieldName, childRelationshipLookup) {
 		return
 	}
 	if inferred[objectName] == nil {
@@ -2045,12 +2070,12 @@ func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[st
 	inferred[objectName][fieldName] = inferredReferencedField(fieldName)
 }
 
-func recordProjectReferencedBooleanField(org *storage.OrgState, inferred map[string]map[string]storage.Field, objectName, fieldName string) {
-	recordProjectReferencedStandardField(org, inferred, objectName, fieldName)
+func recordProjectReferencedBooleanField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName string) {
+	recordProjectReferencedStandardField(org, inferred, childRelationshipLookup, objectName, fieldName)
 }
 
-func recordProjectReferencedNumericField(org *storage.OrgState, inferred map[string]map[string]storage.Field, objectName, fieldName string) {
-	recordProjectReferencedStandardField(org, inferred, objectName, fieldName)
+func recordProjectReferencedNumericField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName string) {
+	recordProjectReferencedStandardField(org, inferred, childRelationshipLookup, objectName, fieldName)
 }
 
 func recordProjectReferencedListCustomSetting(org *storage.OrgState, objectName string) {
@@ -2084,11 +2109,11 @@ func recordProjectReferencedListCustomSetting(org *storage.OrgState, objectName 
 	org.Objects[canonicalObject] = state
 }
 
-func recordProjectReferencedLookupField(org *storage.OrgState, inferred map[string]map[string]storage.Field, objectName, fieldName, parentObjectName string) {
-	recordProjectReferencedLookupFieldWithChildRelationship(org, inferred, objectName, fieldName, parentObjectName, "")
+func recordProjectReferencedLookupField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName, parentObjectName string) {
+	recordProjectReferencedLookupFieldWithChildRelationship(org, inferred, childRelationshipLookup, objectName, fieldName, parentObjectName, "")
 }
 
-func recordProjectReferencedLookupFieldWithChildRelationship(org *storage.OrgState, inferred map[string]map[string]storage.Field, objectName, fieldName, parentObjectName, childRelationshipName string) {
+func recordProjectReferencedLookupFieldWithChildRelationship(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName, parentObjectName, childRelationshipName string) {
 	if strings.EqualFold(fieldName, "SObjectType") || strings.EqualFold(fieldName, "Fields") {
 		return
 	}
@@ -2103,7 +2128,7 @@ func recordProjectReferencedLookupFieldWithChildRelationship(org *storage.OrgSta
 	if _, ok := storage.ResolveFieldName(state.Definition, org.Namespace, fieldName); ok {
 		return
 	}
-	if projectReferencedNameIsChildRelationship(*org, objectName, fieldName) {
+	if projectReferencedNameIsChildRelationship(*org, objectName, fieldName, childRelationshipLookup) {
 		return
 	}
 	field := storage.Field{
@@ -2158,7 +2183,7 @@ func parentRelationshipKnown(definition storage.ObjectDefinition, name string) b
 	return false
 }
 
-func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]map[string]storage.Field) {
+func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}) {
 	for objectName, objectFields := range fields {
 		state, ok := org.Objects[objectName]
 		if !ok {
@@ -2171,7 +2196,7 @@ func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]ma
 			if _, ok := storage.ResolveFieldName(state.Definition, org.Namespace, fieldName); ok {
 				continue
 			}
-			if projectReferencedNameIsChildRelationship(*org, objectName, fieldName) {
+			if projectReferencedNameIsChildRelationship(*org, objectName, fieldName, childRelationshipLookup) {
 				continue
 			}
 			state.Definition.Fields[fieldName] = field
@@ -2258,17 +2283,6 @@ func referencedSyntheticFieldSetReferences(org *storage.OrgState, index typesys.
 		seenObjects := make(map[string]bool)
 		var names []string
 		var objectNames []string
-		addObject := func(objectName string) {
-			canonical, ok := storage.ResolveObjectName(*org, objectName)
-			if !ok || seenObjects[canonical] {
-				return
-			}
-			if len(syntheticFieldSetMembers(org.Objects[canonical].Definition, "")) == 0 {
-				return
-			}
-			seenObjects[canonical] = true
-			objectNames = append(objectNames, canonical)
-		}
 		fieldSetMatches := apexFieldSetConstantPattern.FindAllStringSubmatch(source, -1)
 		for _, match := range fieldSetMatches {
 			if len(match) != 3 || hasPrefixFold(match[1], "error") {
@@ -2280,6 +2294,20 @@ func referencedSyntheticFieldSetReferences(org *storage.OrgState, index typesys.
 			}
 			seenNames[strings.ToLower(name)] = true
 			names = append(names, name)
+		}
+		if len(names) == 0 {
+			continue
+		}
+		addObject := func(objectName string) {
+			canonical, ok := storage.ResolveObjectName(*org, objectName)
+			if !ok || seenObjects[canonical] {
+				return
+			}
+			if len(syntheticFieldSetMembers(org.Objects[canonical].Definition, "")) == 0 {
+				return
+			}
+			seenObjects[canonical] = true
+			objectNames = append(objectNames, canonical)
 		}
 		for _, match := range apexGetSObjectTypeReturnPattern.FindAllStringSubmatch(source, -1) {
 			if len(match) == 2 {
@@ -2295,9 +2323,6 @@ func referencedSyntheticFieldSetReferences(org *storage.OrgState, index typesys.
 			if len(match) == 2 {
 				addObject(match[1])
 			}
-		}
-		if len(fieldSetMatches) == 0 {
-			continue
 		}
 		for _, match := range apexTypedNamePattern.FindAllStringSubmatch(source, -1) {
 			if len(match) == 2 {
@@ -2461,28 +2486,36 @@ func syntheticFieldSetCanEditField(fieldName string, field storage.Field) bool {
 	return true
 }
 
-func projectReferencedNameIsChildRelationship(org storage.OrgState, objectName, name string) bool {
+func projectReferencedNameIsChildRelationship(org storage.OrgState, objectName, name string, relationshipLookup map[string]struct{}) bool {
 	parentName, ok := storage.ResolveObjectName(org, objectName)
 	if !ok {
 		parentName = objectName
 	}
+	if relationshipLookup == nil {
+		relationshipLookup = projectReferencedChildRelationshipLookup(org)
+	}
+	_, ok = relationshipLookup[strings.ToLower(parentName)+"\x00"+strings.ToLower(name)]
+	return ok
+}
+
+func projectReferencedChildRelationshipLookup(org storage.OrgState) map[string]struct{} {
+	lookup := make(map[string]struct{}, len(org.Objects))
 	for _, child := range org.Objects {
 		for _, relation := range child.Definition.Relations {
-			if relation.ChildRelationship == "" || !strings.EqualFold(relation.ChildRelationship, name) {
+			if relation.ChildRelationship == "" {
 				continue
 			}
+			relationName := strings.ToLower(relation.ChildRelationship)
 			for _, parent := range relation.ParentObjects {
-				resolvedParent, ok := storage.ResolveObjectName(org, parent)
+				parentName, ok := storage.ResolveObjectName(org, parent)
 				if !ok {
-					resolvedParent = parent
+					parentName = parent
 				}
-				if strings.EqualFold(resolvedParent, parentName) {
-					return true
-				}
+				lookup[strings.ToLower(parentName)+"\x00"+relationName] = struct{}{}
 			}
 		}
 	}
-	return false
+	return lookup
 }
 
 func inferredReferencedField(fieldName string) storage.Field {
@@ -3147,7 +3180,27 @@ func permissionSetCustomPermissionValues(metadata permissionSetMetadata) []stora
 	return out
 }
 
-func readPermissionSetMetadata(file string) (permissionSetMetadata, bool) {
+type permissionSetMetadataCacheEntry struct {
+	metadata permissionSetMetadata
+	ok       bool
+}
+
+func readPermissionSetMetadata(file string, cache map[string]permissionSetMetadataCacheEntry) (permissionSetMetadata, bool) {
+	if cache == nil {
+		return readPermissionSetMetadataNoCache(file)
+	}
+	if cached, ok := cache[file]; ok {
+		return cached.metadata, cached.ok
+	}
+	metadata, ok := readPermissionSetMetadataNoCache(file)
+	cache[file] = permissionSetMetadataCacheEntry{
+		metadata: metadata,
+		ok:       ok,
+	}
+	return metadata, ok
+}
+
+func readPermissionSetMetadataNoCache(file string) (permissionSetMetadata, bool) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return permissionSetMetadata{}, false
@@ -3232,15 +3285,28 @@ func recordFieldID(state storage.ObjectState, fieldName, value string) (storage.
 	return "", false
 }
 
-func objectPermissionRecordExists(state storage.ObjectState, parentID, objectName string) bool {
+func objectPermissionRecordKeys(state storage.ObjectState) map[string]bool {
+	keys := make(map[string]bool, len(state.Records))
 	for _, record := range state.Records {
 		parent, hasParent := record.GetField("ParentId")
 		objectValue, hasObject := record.GetField("SObjectType")
-		if hasParent && hasObject && storageIDValueEqualsText(parent, parentID) && storageStringValueEqualsText(objectValue, objectName) {
-			return true
+		if hasParent && hasObject {
+			key := objectPermissionRecordKey(storageRecordKeyText(parent), storageRecordKeyText(objectValue))
+			if key != "" {
+				keys[key] = true
+			}
 		}
 	}
-	return false
+	return keys
+}
+
+func objectPermissionRecordKey(parentID, objectName string) string {
+	parentID = strings.ToLower(strings.TrimSpace(parentID))
+	objectName = strings.ToLower(strings.TrimSpace(objectName))
+	if parentID == "" || objectName == "" {
+		return ""
+	}
+	return parentID + "\x00" + objectName
 }
 
 func fieldPermissionRecordExists(state storage.ObjectState, parentID, objectName, fieldName string) bool {
