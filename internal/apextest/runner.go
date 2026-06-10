@@ -253,6 +253,13 @@ type runtimeCacheEntry struct {
 	BaseErr       error
 }
 
+type CompiledProjectRuntime struct {
+	Methods   map[string]vm.Method `json:"methods,omitempty"`
+	Classes   []vm.Class           `json:"classes,omitempty"`
+	Triggers  []vm.Trigger         `json:"triggers,omitempty"`
+	PageNames []string             `json:"pageNames,omitempty"`
+}
+
 type setupCompileCacheEntry struct {
 	Methods     map[string][]vm.Method
 	Errors      map[string]error
@@ -1118,11 +1125,27 @@ func RegisterProjectRuntime(machine *vm.VM, index typesys.Index) error {
 func RegisterProjectRuntimeForRequest(machine *vm.VM, index typesys.Index) error {
 	sources := newSourceCache()
 	_, runtime := runtimeFromIndex(index, sources)
-	methods := runtime.Methods
-	classes := runtime.Classes
-	triggers := runtime.Triggers
+	return RegisterCompiledProjectRuntimeForRequest(machine, compiledProjectRuntimeFromEntry(runtime))
+}
+
+func CompileProjectRuntimeForRequest(index typesys.Index) CompiledProjectRuntime {
+	sources := newSourceCache()
+	_, runtime := runtimeFromIndex(index, sources)
+	return compiledProjectRuntimeFromEntry(runtime)
+}
+
+func RegisterCompiledProjectRuntimeForRequest(machine *vm.VM, runtime CompiledProjectRuntime) error {
 	registerVisualforcePages(machine, runtime.PageNames)
-	return registerBaseRuntime(machine, methods, classes, triggers)
+	return registerBaseRuntime(machine, runtime.Methods, runtime.Classes, runtime.Triggers)
+}
+
+func compiledProjectRuntimeFromEntry(runtime runtimeCacheEntry) CompiledProjectRuntime {
+	return CompiledProjectRuntime{
+		Methods:   runtime.Methods,
+		Classes:   runtime.Classes,
+		Triggers:  runtime.Triggers,
+		PageNames: runtime.PageNames,
+	}
 }
 
 func OrgFromIndex(index typesys.Index) storage.OrgState {

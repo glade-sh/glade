@@ -23,12 +23,20 @@ type Handler struct {
 	stateMu     sync.Mutex
 	seqMu       sync.Mutex
 	snapshot    Snapshot
+	launch      LaunchHandler
 	seq         int
 	breakpoints map[string][]Breakpoint
 	varRefs     map[int]vm.Value
 	varRefKeys  map[string]int
 	nextVarRef  int
 	live        *LiveSession
+	events      chan Event
+	pending     *pendingLiveSession
+}
+
+type pendingLiveSession struct {
+	machine *vm.VM
+	program ir.Program
 }
 
 func NewHandler(snapshot Snapshot) *Handler {
@@ -38,6 +46,7 @@ func NewHandler(snapshot Snapshot) *Handler {
 		varRefs:     make(map[int]vm.Value),
 		varRefKeys:  make(map[string]int),
 		nextVarRef:  firstVarRef,
+		events:      make(chan Event, 64),
 	}
 }
 
@@ -45,10 +54,12 @@ func (h *Handler) Handle(request Request) []any {
 	switch request.Command {
 	case CommandInitialize:
 		return h.withInitializedEvent(request)
+	case CommandLaunch, CommandAttach:
+		return h.handleLaunch(request)
 	case CommandSetBreakpoints:
 		return []any{h.handleSetBreakpoints(request)}
 	case CommandConfigurationDone:
-		return []any{h.success(request, nil)}
+		return h.handleConfigurationDone(request)
 	case CommandThreads:
 		threads := h.normalizedThreads()
 		return []any{h.success(request, map[string]any{"threads": threads})}
@@ -92,6 +103,32 @@ func (h *Handler) Handle(request Request) []any {
 	default:
 		return []any{h.failure(request, fmt.Sprintf("unsupported command %q", request.Command))}
 	}
+}
+
+func (h *Handler) SuccessResponse(request Request, body any) Response {
+	return h.success(request, body)
+}
+
+func (h *Handler) FailureResponse(request Request, message string) Response {
+	return h.failure(request, message)
+}
+
+func (h *Handler) EventMessage(name string, body any) Event {
+	return h.event(name, body)
+}
+
+func (h *Handler) Events() <-chan Event {
+	return h.events
+}
+
+func (h *Handler) PublishEvent(event Event) {
+	h.events <- event
+}
+
+func (h *Handler) PrepareLiveSession(machine *vm.VM, program ir.Program) {
+	h.stateMu.Lock()
+	defer h.stateMu.Unlock()
+	h.pending = &pendingLiveSession{machine: machine, program: program}
 }
 
 func (h *Handler) handleEvaluate(request Request) Response {
@@ -359,6 +396,37 @@ func (h *Handler) withStoppedEvent(request Request, reason string) []any {
 	}
 }
 
+func (h *Handler) handleLaunch(request Request) []any {
+	var args LaunchRequest
+	if err := request.DecodeArguments(&args); err != nil {
+		return []any{h.failure(request, err.Error())}
+	}
+	if h.launch == nil {
+		return []any{h.failure(request, "launch not implemented")}
+	}
+	if err := h.launch(args); err != nil {
+		return []any{h.failure(request, err.Error())}
+	}
+	messages := []any{h.success(request, nil)}
+	if h.hasBreakpoints() {
+		h.startPendingLiveSession()
+		return messages
+	}
+	messages = append(messages, h.event("initialized", nil))
+	return messages
+}
+
+func (h *Handler) handleConfigurationDone(request Request) []any {
+	h.startPendingLiveSession()
+	return []any{h.success(request, nil)}
+}
+
+func (h *Handler) SetLaunchHandler(handler LaunchHandler) {
+	h.stateMu.Lock()
+	defer h.stateMu.Unlock()
+	h.launch = handler
+}
+
 func (h *Handler) success(request Request, body any) Response {
 	return Response{
 		Seq:        h.nextSeq(),
@@ -413,6 +481,30 @@ func (h *Handler) liveSession() *LiveSession {
 	h.stateMu.Lock()
 	defer h.stateMu.Unlock()
 	return h.live
+}
+
+func (h *Handler) hasBreakpoints() bool {
+	h.stateMu.Lock()
+	defer h.stateMu.Unlock()
+	for _, breakpoints := range h.breakpoints {
+		for _, breakpoint := range breakpoints {
+			if breakpoint.Verified {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (h *Handler) startPendingLiveSession() {
+	h.stateMu.Lock()
+	pending := h.pending
+	h.pending = nil
+	h.stateMu.Unlock()
+	if pending == nil {
+		return
+	}
+	h.StartLiveSession(pending.machine, pending.program)
 }
 
 func (h *Handler) setLiveSession(session *LiveSession) {

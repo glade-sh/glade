@@ -1,0 +1,8 @@
+64.0 APEX_CODE,DEBUG;SYSTEM,DEBUG
+00:00:00.000 (0)|EXECUTION_STARTED
+00:00:00.001 (1000000)|CODE_UNIT_STARTED|[EXTERNAL]|ns.TestProcessor.fail
+00:00:00.002 (2000000)|EXCEPTION_THROWN|[21]|System.AuraHandledException: Nope
+Class.ns.TestProcessor.fail: line 21, column 1
+Class.ns.TestController.callProcessor: line 4, column 1
+00:00:00.003 (3000000)|FATAL_ERROR|System.AuraHandledException: Nope
+00:00:00.004 (4000000)|EXECUTION_FINISHED

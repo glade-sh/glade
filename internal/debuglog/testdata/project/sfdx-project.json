@@ -1,0 +1,10 @@
+{
+  "packageDirectories": [
+    {
+      "path": "force-app",
+      "default": true
+    }
+  ],
+  "sourceApiVersion": "64.0",
+  "namespace": "ns"
+}

@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/vm"
 	"github.com/glade-sh/glade/internal/watch"
 )
@@ -130,6 +133,7 @@ func TestRunTopLevelHelpAlignment(t *testing.T) {
 	got := stdout.String()
 	for _, want := range []string{
 		"  package        Build managed package artifacts.",
+		"  dap            Run the Debug Adapter Protocol server over stdio.",
 		"  server         Start the local Salesforce-compatible API baseline.",
 		"  playground     Start the local Apex playground web UI.",
 		"  db             Seed, reset, export, and inspect a persistent local database.",
@@ -146,6 +150,89 @@ func TestRunTopLevelHelpAlignment(t *testing.T) {
 		if strings.Contains(got, bad) {
 			t.Fatalf("stdout contains bad indentation %q:\n%s", bad, got)
 		}
+	}
+}
+
+func TestRunEditorInstallVSCodeUsesVSIX(t *testing.T) {
+	vsix := filepath.Join(t.TempDir(), "vscode-glade.vsix")
+	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var ranName string
+	var ranArgs []string
+	restore := stubEditorCommandDeps(t,
+		func(name string) (string, error) {
+			if name != "code" {
+				t.Fatalf("looked up %q, want code", name)
+			}
+			return "/usr/local/bin/code", nil
+		},
+		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+			ranName = name
+			ranArgs = append([]string(nil), args...)
+			return []byte("installed\n"), nil
+		},
+	)
+	defer restore()
+
+	var stdout bytes.Buffer
+	if err := runEditor(context.Background(), []string{"install", "vscode", "--vsix", vsix, "--force"}, &stdout); err != nil {
+		t.Fatal(err)
+	}
+	if ranName != "/usr/local/bin/code" {
+		t.Fatalf("ran name = %q", ranName)
+	}
+	wantArgs := []string{"--install-extension", vsix, "--force"}
+	if strings.Join(ranArgs, "\x00") != strings.Join(wantArgs, "\x00") {
+		t.Fatalf("ran args = %#v, want %#v", ranArgs, wantArgs)
+	}
+	if !strings.Contains(stdout.String(), "installed vscode extension") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunEditorDoctorVSCodeReportsPaths(t *testing.T) {
+	restore := stubEditorCommandDeps(t,
+		func(name string) (string, error) {
+			switch name {
+			case "code":
+				return "/usr/local/bin/code", nil
+			case "glade":
+				return "/Users/matt/.local/bin/glade", nil
+			default:
+				return "", os.ErrNotExist
+			}
+		},
+		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+			return nil, nil
+		},
+	)
+	defer restore()
+
+	var stdout bytes.Buffer
+	if err := runEditor(context.Background(), []string{"doctor", "vscode"}, &stdout); err != nil {
+		t.Fatal(err)
+	}
+	out := stdout.String()
+	for _, want := range []string{
+		"editor: code (/usr/local/bin/code)",
+		"glade: /Users/matt/.local/bin/glade",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("stdout missing %q:\n%s", want, out)
+		}
+	}
+}
+
+func stubEditorCommandDeps(t *testing.T, lookPath func(string) (string, error), run func(context.Context, string, ...string) ([]byte, error)) func() {
+	t.Helper()
+	origLookPath := editorCommandLookPath
+	origRun := editorCommandRun
+	editorCommandLookPath = lookPath
+	editorCommandRun = run
+	return func() {
+		editorCommandLookPath = origLookPath
+		editorCommandRun = origRun
 	}
 }
 
@@ -519,6 +606,146 @@ func TestRunCheckUnknownType(t *testing.T) {
 	}
 }
 
+func TestRunDebugParseJSON(t *testing.T) {
+	logPath := filepath.Join("..", "apexlog", "testdata", "core.log")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"debug", "parse", "--log", logPath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"entries"`) {
+		t.Fatalf("parse stdout missing entries: %s", stdout.String())
+	}
+}
+
+func TestRunDebugProfileMarkdown(t *testing.T) {
+	logPath := filepath.Join("..", "apexlog", "testdata", "core.log")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"debug", "profile", "--log", logPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "SOQL: 1 queries / 1 rows") {
+		t.Fatalf("profile stdout missing SOQL summary: %s", stdout.String())
+	}
+}
+
+func TestRunDebugProfileJSON(t *testing.T) {
+	logPath := filepath.Join("..", "apexlog", "testdata", "core.log")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"debug", "profile", "--log", logPath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"limits"`) {
+		t.Fatalf("profile json missing limits: %s", stdout.String())
+	}
+}
+
+func TestRunDebugExplainText(t *testing.T) {
+	projectRoot := filepath.Join("..", "debuglog", "testdata", "project")
+	logPath := filepath.Join("..", "debuglog", "testdata", "subscriber.log")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"debug", "explain", "--log", logPath, "--project", projectRoot}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "TestProcessor.cls") {
+		t.Fatalf("explain stdout missing source file: %s", stdout.String())
+	}
+}
+
+func TestRunDebugExplainJSON(t *testing.T) {
+	projectRoot := filepath.Join("..", "debuglog", "testdata", "project")
+	logPath := filepath.Join("..", "debuglog", "testdata", "subscriber.log")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"debug", "explain", "--log", logPath, "--project", projectRoot, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"entries"`) || !strings.Contains(stdout.String(), `"candidates"`) {
+		t.Fatalf("explain json missing entries or candidates: %s", stdout.String())
+	}
+}
+
+func TestRunDebugRepro(t *testing.T) {
+	projectRoot := filepath.Join("..", "debuglog", "testdata", "project")
+	logPath := filepath.Join("..", "debuglog", "testdata", "subscriber.log")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"debug", "repro", "--log", logPath, "--project", projectRoot}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	got := stdout.String()
+	for _, want := range []string{"TestProcessorRunReproTest", "new Account(Name = 'Acme')", "ns.TestProcessor.run();"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("repro stdout missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestRunDebugRequiresLog(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"debug", "parse"}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("parse code = 0, want failure")
+	}
+	if !strings.Contains(stderr.String(), "--log is required") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunDAP(t *testing.T) {
+	initMessage, err := encodeDAPRequest(dap.CommandInitialize, 1, map[string]any{"clientID": "test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	disconnectMessage, err := encodeDAPRequest(dap.CommandDisconnect, 2, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stdout bytes.Buffer
+	err = runDAP(context.Background(), nil, bytes.NewReader(append(initMessage, disconnectMessage...)), &stdout)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := stdout.String()
+	if !strings.Contains(got, `"command":"initialize"`) || !strings.Contains(got, `"event":"initialized"`) || !strings.Contains(got, `"event":"terminated"`) {
+		t.Fatalf("dap stdout missing handshake messages:\n%s", got)
+	}
+}
+
+func TestRunDAPLaunchEmitsStopped(t *testing.T) {
+	inR, inW := io.Pipe()
+	outR, outW := io.Pipe()
+	done := make(chan error, 1)
+	go func() {
+		defer outW.Close()
+		done <- runDAP(context.Background(), []string{"--project", filepath.Join("..", "debuglog", "testdata", "project")}, inR, outW)
+	}()
+
+	messages := make(chan map[string]any, 16)
+	go readDAPMessages(t, outR, messages)
+
+	writeDAPRequest(t, inW, dap.CommandInitialize, 1, nil)
+	writeDAPRequest(t, inW, dap.CommandSetBreakpoints, 2, map[string]any{
+		"source":      map[string]any{"name": "anonymous.apex"},
+		"breakpoints": []map[string]any{{"line": 2}},
+	})
+	writeDAPRequest(t, inW, dap.CommandLaunch, 3, map[string]any{"program": "Integer x = 1;\nx = x + 1;"})
+	waitForDAPEvent(t, messages, "stopped")
+	writeDAPRequest(t, inW, dap.CommandDisconnect, 4, nil)
+
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("DAP server did not stop")
+	}
+}
+
 func TestRunExec(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"exec", "Integer x = 1 + 1; System.debug('x=' + x); System.assertEquals(2, x);"}, &stdout, &stderr)
@@ -527,6 +754,54 @@ func TestRunExec(t *testing.T) {
 	}
 	if strings.TrimSpace(stdout.String()) != "x=2" {
 		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func writeDAPRequest(t *testing.T, w io.Writer, command string, seq int, args any) {
+	t.Helper()
+	message, err := encodeDAPRequest(command, seq, args)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.Write(message); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func readDAPMessages(t *testing.T, r io.Reader, out chan<- map[string]any) {
+	t.Helper()
+	reader := dap.NewReader(r)
+	for {
+		raw, err := reader.Read()
+		if err != nil {
+			close(out)
+			return
+		}
+		var message map[string]any
+		if err := json.Unmarshal(raw, &message); err != nil {
+			t.Errorf("decode DAP message: %v", err)
+			close(out)
+			return
+		}
+		out <- message
+	}
+}
+
+func waitForDAPEvent(t *testing.T, messages <-chan map[string]any, event string) {
+	t.Helper()
+	deadline := time.After(5 * time.Second)
+	for {
+		select {
+		case message, ok := <-messages:
+			if !ok {
+				t.Fatalf("DAP stream closed before %q", event)
+			}
+			if message["type"] == dap.MessageTypeEvent && message["event"] == event {
+				return
+			}
+		case <-deadline:
+			t.Fatalf("timeout waiting for DAP event %q", event)
+		}
 	}
 }
 

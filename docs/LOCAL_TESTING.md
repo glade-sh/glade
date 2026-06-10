@@ -215,6 +215,28 @@ glade exec --project . --trace reports/trace.json "System.debug(1);"
 glade profile analyze reports/trace.json
 ```
 
+## Offline Debug Log Analysis
+
+`glade debug` runs on saved Salesforce logs without org access:
+
+- `parse` prints structured JSON log entries.
+- `profile` builds measured runtime output.
+- `explain` adds conservative source candidate matches.
+- `repro` writes a best-effort Apex test class from the subscriber log.
+
+```bash
+glade debug parse --log internal/debuglog/testdata/subscriber.log --json
+glade debug profile --log internal/debuglog/testdata/subscriber.log
+glade debug explain --log internal/debuglog/testdata/subscriber.log --project internal/debuglog/testdata/project
+glade debug explain --log internal/debuglog/testdata/subscriber.log --project internal/debuglog/testdata/project --json
+glade debug repro --log internal/debuglog/testdata/subscriber.log --project internal/debuglog/testdata/project > ReproTest.cls
+```
+
+`repro` infers setup records from SOQL equality filters, entry-point calls from
+code-unit or stack-frame entries, and baseline assertions from DML and exception
+events. Treat the generated class as the first local reproducer, then tighten
+the assertions after the bug is understood.
+
 ## Playground
 
 Use the browser playground for quick experiments with local files, anonymous

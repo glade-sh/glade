@@ -5,6 +5,7 @@
 /coverage.out
 /.glade/
 /.superpowers/
+/.kilo/
 node_modules/
 /example-projects
 /probes/sfdx/.sf/
@@ -19,3 +20,16 @@ node_modules/
 
 # Ad-hoc compat run result dumps
 /test-results/
+
+# Generated Salesforce local tool caches
+internal/debuglog/testdata/project/.sfdx/
+internal/debuglog/testdata/project/.vscode/
+internal/debuglog/testdata/project/.glade/
+contrib/vscode-glade/dist/
+contrib/vscode-glade/out/
+contrib/intellij-glade/.gradle/
+contrib/intellij-glade/.intellijPlatform/
+contrib/intellij-glade/build/
+contrib/intellij-glade/out/
+contrib/intellij-glade/sandbox/
+contrib/intellij-glade/*.iml

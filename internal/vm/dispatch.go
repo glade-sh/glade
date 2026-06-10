@@ -596,12 +596,16 @@ platformStaticCall:
 			return Null, err
 		}
 		result.Debug = append(result.Debug, line)
+		event := DebugEvent{
+			Level:    level,
+			Message:  line,
+			TracePos: len(result.Trace),
+		}
 		if result.traceEnabled {
-			result.DebugEvents = append(result.DebugEvents, DebugEvent{
-				Level:    level,
-				Message:  line,
-				TracePos: len(result.Trace),
-			})
+			result.DebugEvents = append(result.DebugEvents, event)
+		}
+		if vm.debugOutputSink != nil {
+			vm.debugOutputSink(event)
 		}
 		if vm.Stdout != nil {
 			fmt.Fprintln(vm.Stdout, line)

@@ -20,6 +20,8 @@ const (
 
 const (
 	CommandInitialize        = "initialize"
+	CommandLaunch            = "launch"
+	CommandAttach            = "attach"
 	CommandSetBreakpoints    = "setBreakpoints"
 	CommandConfigurationDone = "configurationDone"
 	CommandThreads           = "threads"
@@ -34,6 +36,14 @@ const (
 	CommandEvaluate          = "evaluate"
 	CommandDisconnect        = "disconnect"
 )
+
+type LaunchRequest struct {
+	Program string `json:"program"`
+	Project string `json:"project"`
+	Source  string `json:"source,omitempty"`
+}
+
+type LaunchHandler func(request LaunchRequest) error
 
 type Request struct {
 	Seq       int             `json:"seq"`

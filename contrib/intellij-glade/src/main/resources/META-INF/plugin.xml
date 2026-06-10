@@ -1,0 +1,37 @@
+<idea-plugin>
+    <id>com.glade.apexdebugger</id>
+    <name>Glade Apex Debugger</name>
+    <vendor email="support@glade.sh" url="https://github.com/glade-sh/glade">Glade</vendor>
+
+    <description><![CDATA[
+        Run and debug local Apex with Glade. Execute and launch Apex anonymously from your editor using the glade CLI and DAP server.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
+    <depends>com.redhat.devtools.lsp4ij</depends>
+
+    <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
+        <debugAdapterServer
+            id="glade"
+            name="Glade Apex"
+            factoryClass="com.glade.intellij.dap.GladeDebugAdapterDescriptorFactory" />
+    </extensions>
+
+    <actions>
+        <action
+            id="Glade.ExecuteAnonymous"
+            class="com.glade.intellij.actions.ExecuteAnonymousAction"
+            text="Glade: Execute Anonymous Apex"
+            description="Execute anonymous Apex with glade">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+        <action
+            id="Glade.DebugAnonymous"
+            class="com.glade.intellij.actions.DebugAnonymousAction"
+            text="Glade: Debug Anonymous Apex"
+            description="Debug anonymous Apex with glade">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>

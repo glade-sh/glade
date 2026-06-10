@@ -138,6 +138,24 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
+	case "debug":
+		if err := runDebug(ctx, args[1:], stdout); err != nil {
+			fmt.Fprintf(stderr, "glade: %v\n", err)
+			return 1
+		}
+		return 0
+	case "editor":
+		if err := runEditor(ctx, args[1:], stdout); err != nil {
+			fmt.Fprintf(stderr, "glade: %v\n", err)
+			return 1
+		}
+		return 0
+	case "dap":
+		if err := runDAP(ctx, args[1:], os.Stdin, stdout); err != nil {
+			fmt.Fprintf(stderr, "glade: %v\n", err)
+			return 1
+		}
+		return 0
 	case "package":
 		if err := runPackage(ctx, args[1:], stdout); err != nil {
 			fmt.Fprintf(stderr, "glade: %v\n", err)
@@ -191,6 +209,9 @@ Commands:
   schema         Load local Salesforce metadata schema.
   check          Run semantic checks over a project.
   exec           Execute anonymous Apex.
+  debug          Parse, profile, explain, and synthesize from Salesforce debug logs.
+  editor         Install and check editor integrations.
+  dap            Run the Debug Adapter Protocol server over stdio.
   test           Discover and run supported Apex tests.
   dev            Run the human-focused local development cockpit.
   report         List, show, export, and clean saved run reports.
@@ -694,9 +715,17 @@ func runCheck(ctx context.Context, args []string, w io.Writer) (sema.Result, err
 }
 
 func loadIndex(root string) (typesys.Index, error) {
-	p, err := project.Load(root)
+	_, index, err := loadProjectIndex(root)
 	if err != nil {
 		return typesys.Index{}, err
+	}
+	return index, nil
+}
+
+func loadProjectIndex(root string) (project.Project, typesys.Index, error) {
+	p, err := project.Load(root)
+	if err != nil {
+		return project.Project{}, typesys.Index{}, err
 	}
 	s, err := gladeschema.LoadProject(p)
 	if err != nil {
@@ -706,9 +735,9 @@ func loadIndex(root string) (typesys.Index, error) {
 			Code:     "GLADESCHEMA001",
 			Message:  fmt.Sprintf("metadata schema load failed: %v", err),
 		})
-		return index, nil
+		return p, index, nil
 	}
-	return typesys.Build(p, s), nil
+	return p, typesys.Build(p, s), nil
 }
 
 func runExec(ctx context.Context, args []string, w io.Writer) error {

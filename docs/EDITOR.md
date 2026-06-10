@@ -49,6 +49,34 @@ The playground uses the same local compiler, project runtime registration, VM,
 and storage layers as CLI execution. It is a browser-first editor loop, not a
 hosted service.
 
+## Offline Debug Log Analysis
+
+`glade debug` reads local Salesforce debug logs and adds useful, offline-only
+post processing:
+
+- `parse` prints structured log entries.
+- `profile` converts measured log lines into the runtime profile format.
+- `explain` adds conservative source annotations for log-backed evidence.
+- `repro` emits a best-effort Apex test class from the same log evidence.
+
+Try these command lines from a project with matching `.cls` files:
+
+```bash
+glade debug parse --log internal/debuglog/testdata/subscriber.log --json
+glade debug profile --log internal/debuglog/testdata/subscriber.log
+glade debug explain --log internal/debuglog/testdata/subscriber.log --project internal/debuglog/testdata/project
+glade debug explain --log internal/debuglog/testdata/subscriber.log --project internal/debuglog/testdata/project --json
+glade debug repro --log internal/debuglog/testdata/subscriber.log --project internal/debuglog/testdata/project > ReproTest.cls
+```
+
+Matching is conservative. `explain` will rank candidates by confidence and keep
+the strongest links only. Confidence below `0.50` stays in JSON for tooling, but
+text output keeps the default threshold.
+
+`repro` uses the same annotations, SOQL object names, equality filters, DML row
+counts, code-unit entries, and exception stack frames. It writes Apex to stdout
+so the file can enter the local test loop after review.
+
 ## VS Code Tasks
 
 Create `.vscode/tasks.json` in a Salesforce project to run the same checks that
@@ -124,10 +152,10 @@ not require a Salesforce org.
 
 ## VS Code Debug Launch Examples
 
-`glade exec --debug` and `glade test --debug` speak Debug Adapter Protocol over
-stdio. VS Code needs an extension or DAP client configuration that can launch a
-stdio adapter and register an `glade-apex` debug type. Use this
-`.vscode/launch.json` shape as the project-side contract for that adapter.
+`glade dap`, `glade exec --debug`, and `glade test --debug` speak Debug Adapter
+Protocol over stdio. `glade dap --project .` starts a standalone adapter that
+accepts `initialize`, `launch`, breakpoints, stepping, variable inspection, and
+disconnect. Use the contrib VS Code extension or a stdio-capable DAP client.
 
 ```json
 {
@@ -135,33 +163,26 @@ stdio adapter and register an `glade-apex` debug type. Use this
   "configurations": [
     {
       "name": "glade: debug all tests",
-      "type": "glade-apex",
+      "type": "glade",
       "request": "launch",
-      "program": "glade",
-      "args": ["test", "--project", "${workspaceFolder}", "--debug"],
+      "program": "MathUtilTest.adds",
+      "project": "${workspaceFolder}",
       "cwd": "${workspaceFolder}"
     },
     {
       "name": "glade: debug one test class",
-      "type": "glade-apex",
+      "type": "glade",
       "request": "launch",
-      "program": "glade",
-      "args": [
-        "test",
-        "--project",
-        "${workspaceFolder}",
-        "--filter",
-        "${input:testClass}",
-        "--debug"
-      ],
+      "program": "${input:testClass}",
+      "project": "${workspaceFolder}",
       "cwd": "${workspaceFolder}"
     },
     {
       "name": "glade: debug anonymous Apex",
-      "type": "glade-apex",
+      "type": "glade",
       "request": "launch",
-      "program": "glade",
-      "args": ["exec", "--debug", "${input:anonymousApex}"],
+      "program": "${input:anonymousApex}",
+      "project": "${workspaceFolder}",
       "cwd": "${workspaceFolder}"
     }
   ],
@@ -214,11 +235,35 @@ glade test --project . --changed-since origin/main --json
 glade test --project . --daemon --changed-since origin/main --json
 ```
 
-The current DAP server supports initialize, breakpoints, continue, pause, next,
-step-in, step-out, stack trace, scopes, variables, evaluate, watch expressions,
-and disconnect. Live VM pause hooks can stop before statements at breakpoints
-and step through method calls; full IDE launch orchestration is still tracked as
-parity work.
+## IntelliJ Support
+
+`contrib/intellij-glade` uses the same `glade dap` wire protocol as the VS Code
+flow. Both clients send `initialize` and `launch` requests over stdio with
+`source` or `program`, plus `project`.
+
+The plugin launch path is the same:
+
+- Debug anonymous selection: starts `glade dap --project <workspace-root>` and sends
+  `source` in the launch request.
+- Debug a test entrypoint or program: sends `program` in the launch request.
+
+## DAP Startup Cache
+
+`glade dap` persists startup state in `.glade/dap/startup.json`. That cache keeps
+the warmed project index and org state between launches so large projects can start
+faster.
+
+The cache is auto-invalidated when relevant source files, config files, or package
+root directories change. To force a full rebuild, remove the cache directory:
+
+```bash
+rm -rf .glade/dap
+```
+
+The current DAP server supports initialize, launch, attach, breakpoints,
+continue, pause, next, step-in, step-out, stack trace, scopes, variables,
+evaluate, watch expressions, and disconnect. Live VM pause hooks stop before
+statements at breakpoints and step through method calls.
 
 ## LSP Wiring
 
@@ -295,4 +340,3 @@ The log uses the familiar `HH:MM:SS.mmm (nanos)|EVENT|details` format with
 structurally faithful rather than byte-identical: high-signal events in true
 execution order. Capture the same anonymous Apex's org log and diff the two to
 confirm glade matches the platform.
-

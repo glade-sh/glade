@@ -1,6 +1,7 @@
 package dap
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/glade-sh/glade/internal/ir"
@@ -52,8 +53,21 @@ func (h *Handler) StartLiveSession(machine *vm.VM, program ir.Program) *LiveSess
 	hooks := h.DebugHooks(session.onPause)
 	hooks.Step = true
 	machine.SetDebugHooks(hooks)
+	machine.SetDebugOutputSink(func(event vm.DebugEvent) {
+		session.handler.PublishEvent(session.handler.EventMessage("output", map[string]any{
+			"category": "console",
+			"output":   "USER_DEBUG|" + consoleDebugMessage(event.Message) + "\n",
+		}))
+	})
 	go func() {
 		_, err := machine.Execute(program)
+		if err != nil {
+			session.handler.PublishEvent(session.handler.EventMessage("output", map[string]any{
+				"category": "stderr",
+				"output":   err.Error() + "\n",
+			}))
+		}
+		session.handler.PublishEvent(session.handler.EventMessage("terminated", nil))
 		session.done <- err
 	}()
 	return session
@@ -81,6 +95,10 @@ func (s *LiveSession) Pause() {
 	s.mu.Unlock()
 }
 
+func (s *LiveSession) Paused() <-chan vm.DebugPause {
+	return s.paused
+}
+
 func (s *LiveSession) Disconnect() {
 	s.mu.Lock()
 	s.disconnect = true
@@ -103,7 +121,7 @@ func (s *LiveSession) onPause(pause vm.DebugPause) vm.DebugAction {
 	if !s.shouldStop(pause) {
 		return vm.DebugActionContinue
 	}
-	s.handler.ApplyPause(pause)
+	s.handler.PublishEvent(s.handler.ApplyPause(pause))
 	select {
 	case s.paused <- pause:
 	default:
@@ -183,4 +201,8 @@ func (s *LiveSession) send(control liveControl) {
 	case s.control <- control:
 	default:
 	}
+}
+
+func consoleDebugMessage(message string) string {
+	return strings.Join(strings.Fields(message), " ")
 }

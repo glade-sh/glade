@@ -1,0 +1,88 @@
+{
+  "name": "vscode-glade",
+  "displayName": "Glade Apex Debugger",
+  "description": "Debug local Apex with glade over the Debug Adapter Protocol.",
+  "version": "0.0.1",
+  "publisher": "glade",
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "categories": [
+    "Debuggers"
+  ],
+  "activationEvents": [
+    "onDebugResolve:glade",
+    "onCommand:glade.executeAnonymous",
+    "onCommand:glade.debugAnonymous"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "glade.executeAnonymous",
+        "title": "Glade: Execute Anonymous Apex"
+      },
+      {
+        "command": "glade.debugAnonymous",
+        "title": "Glade: Debug Anonymous Apex"
+      }
+    ],
+    "languages": [
+      {
+        "id": "apex",
+        "aliases": [
+          "Apex",
+          "apex"
+        ],
+        "extensions": [
+          ".cls",
+          ".trigger"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "breakpoints": [
+      {
+        "language": "apex"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "glade",
+        "label": "Glade Apex Debugger",
+        "languages": [
+          "apex"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Apex entry point or anonymous Apex to debug."
+              },
+              "source": {
+                "type": "string",
+                "description": "Anonymous Apex source to debug."
+              },
+              "project": {
+                "type": "string",
+                "description": "SFDX project root. Defaults to the workspace folder."
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "package": "mkdir -p dist && npm run compile && vsce package --allow-missing-repository --out dist/vscode-glade-${npm_package_version}.vsix",
+    "test": "npm run compile && node test/commands.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.92.0",
+    "@vscode/vsce": "^3.9.2",
+    "typescript": "^5.5.0"
+  }
+}

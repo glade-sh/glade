@@ -15,6 +15,7 @@ import (
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sobject"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/trace"
 )
 
@@ -134,13 +135,17 @@ func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, err
 }
 
 func orgForProject(root string) (storage.OrgState, error) {
-	index, err := loadIndex(root)
+	p, index, err := loadProjectIndex(root)
 	if err != nil {
 		if root == "." {
 			return storageBaseline(), nil
 		}
 		return storage.OrgState{}, err
 	}
+	return orgStateFromIndex(root, p, index), nil
+}
+
+func orgStateFromIndex(root string, p project.Project, index typesys.Index) storage.OrgState {
 	org := storage.NewOrgState()
 	org.APIVersion = index.Project.SourceAPIVersion
 	org.Namespace = index.Project.Namespace
@@ -152,15 +157,13 @@ func orgForProject(root string) (storage.OrgState, error) {
 		}
 	}
 	_ = storage.ApplyCustomMetadataRecords(&org, index.CustomMetadataRecords)
-	if p, err := project.Load(root); err == nil {
-		_ = resource.ApplyProject(&org, p)
-		if automationIndex, err := automation.LoadProject(p); err == nil {
-			automation.ApplyToOrg(&org, automationIndex)
-		}
+	_ = resource.ApplyProject(&org, p)
+	if automationIndex, err := automation.LoadProject(p); err == nil {
+		automation.ApplyToOrg(&org, automationIndex)
 	}
 	storage.EnsureDeterministicPlatformData(&org)
 	storage.ApplyOrgShape(&org, project.OrgShapeFeatures(root))
-	return org, nil
+	return org
 }
 
 func writeDBInspect(w io.Writer, path string, org storage.OrgState, jsonOut bool, schemaVersion int) error {

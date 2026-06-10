@@ -139,6 +139,7 @@ type VM struct {
 	// --- Debug / trace hooks ---
 	debugHooks         DebugHooks
 	hasDebugHooks      bool
+	debugOutputSink    func(DebugEvent)
 	traceEnabled       bool
 	ctx                context.Context
 	activeGetters      map[string]int
@@ -643,6 +644,12 @@ func (vm *VM) SetTraceEnabled(enabled bool) {
 	}
 }
 
+func (vm *VM) SetDebugOutputSink(sink func(DebugEvent)) {
+	if vm != nil {
+		vm.debugOutputSink = sink
+	}
+}
+
 func (vm *VM) SetToolingExecuteAnonymous(enabled bool) {
 	if vm != nil {
 		vm.toolingExecuteAnonymous = enabled
@@ -1081,6 +1088,10 @@ func (vm *VM) SetCurrentUser(record storage.Record) {
 func (vm *VM) SetDebugHooks(hooks DebugHooks) {
 	vm.debugHooks = hooks
 	vm.hasDebugHooks = true
+}
+
+func (vm *VM) SetCurrentNamespace(namespace string) {
+	vm.currentNamespace = strings.TrimSpace(namespace)
 }
 
 func (vm *VM) SetContext(ctx context.Context) {

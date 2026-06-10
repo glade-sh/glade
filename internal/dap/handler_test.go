@@ -404,9 +404,24 @@ func TestHandlerExecuteToBreakpointStopsBeforeStatement(t *testing.T) {
 }
 
 func TestHandlerUnsupportedCommandReturnsFailure(t *testing.T) {
-	messages := NewHandler(Snapshot{}).Handle(request(1, "launch", nil))
+	messages := NewHandler(Snapshot{}).Handle(request(1, "bogus", nil))
 	response := messages[0].(Response)
 	if response.Success || response.Message == "" {
+		t.Fatalf("response = %#v", response)
+	}
+}
+
+func TestHandlerLaunchUsesRegisteredHandler(t *testing.T) {
+	h := NewHandler(Snapshot{})
+	h.SetLaunchHandler(func(request LaunchRequest) error {
+		if request.Program != "Demo.run" {
+			t.Fatalf("program = %q", request.Program)
+		}
+		return nil
+	})
+	messages := h.Handle(request(1, CommandLaunch, map[string]any{"program": "Demo.run"}))
+	response := messages[0].(Response)
+	if !response.Success {
 		t.Fatalf("response = %#v", response)
 	}
 }
