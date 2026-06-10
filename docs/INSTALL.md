@@ -97,8 +97,9 @@ glade inspect performance --project . --trace reports/slow-test-trace.json > rep
 ```
 
 See [LOCAL_TESTING.md](LOCAL_TESTING.md) for class/method filters,
-dependency-selected test runs, `compat local-tests`, anonymous Apex, and the
-playground.
+dependency-selected test runs, and `glade test serve`. For when the test startup
+cache is created, how it stays fresh, and how to recover from a bad cache, see
+[TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md).
 
 For a short release-candidate dogfood pass, use
 [`DOGFOOD_CHECKLIST.md`](DOGFOOD_CHECKLIST.md).

@@ -156,16 +156,59 @@ Editing a trigger instead falls back to the full suite:
 {"event":"watch.tests_selected","time":"...","selection":{"mode":"all","reason":"changed trigger may affect any test"}}
 ```
 
-### Keep the project warm with the daemon
+### Startup cache and warm runs
 
-For repeated loops, `--daemon` holds a warm, incrementally-updated index and
-reference graph in a background service, so selection on each change is near
+Large projects pay a startup cost to build local org state and compile project
+helpers before the first test runs. `glade test` can persist that harness in
+`.glade/test/startup.gob` and reload it on later runs when fingerprint checks
+pass.
+
+**Read [TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md) for the full rules** —
+what is cached, when it is written, how freshness works, and when a bad cache
+can make results untrustworthy.
+
+Quick reference:
+
+| Goal | Command |
+| ---- | ------- |
+| Delete on-disk cache | `glade test clear-cache --project .` |
+| One run without disk cache | `glade test --project . --no-cache` |
+| Fastest repeated CLI loops | `glade test serve --project .` (see below) |
+
+Clear the cache after `git pull`, branch switches, Glade upgrades, or whenever
+tests behave as if old project state is still loaded. Use `--no-cache` while
+debugging harness or org-inference issues.
+
+For the fastest repeated loops, start a persistent test server in one terminal:
+
+```bash
+glade test serve --project .
+```
+
+Then run focused tests from another terminal. `glade test` auto-connects when
+`.glade/test/serve.sock` is reachable:
+
+```bash
+glade test --project . --filter AccountServiceTest
+```
+
+Use `--connect` to require the server, or `--no-serve` to force a local cold or
+disk-cache warm build.
+
+### Keep the index warm inside one watch loop
+
+For a single long-lived watch session, `--daemon` holds a warm, incrementally
+updated index and reference graph in-process. Selection on each change is near
 instant — only the edited file is re-scanned, never the whole project.
 
 ```bash
 glade test --project . --daemon --changed-since origin/main --json
 glade test --project . --daemon --watch
 ```
+
+Use `glade test serve` when separate CLI invocations should stay warm. Use
+`--daemon` when one `glade test --watch` process should avoid reloading the
+project on every save.
 
 ## Compatibility Local-Test Runs
 

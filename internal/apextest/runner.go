@@ -42,6 +42,7 @@ type Options struct {
 	TimeoutMS           int64
 	Parallelism         int
 	ParallelMethods     bool
+	NoDiskCache         bool
 	ClassDurationMS     map[string]int64
 	Progress            func(TestProgress)
 }
@@ -145,6 +146,10 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 		cases = Discover(index, opts)
 	}
 	sources := newSourceCache()
+	if opts.NoDiskCache {
+		disableDiskCache.Store(true)
+		defer disableDiskCache.Store(false)
+	}
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
@@ -346,6 +351,13 @@ func runtimeFromIndex(index typesys.Index, sources sourceCache) (runtimeCacheKey
 	}
 	runtimeCacheMu.RUnlock()
 
+	if diskEntry, ok := tryLoadDiskRuntime(index); ok {
+		runtimeCacheMu.Lock()
+		runtimeCache[key] = diskEntry
+		runtimeCacheMu.Unlock()
+		return key, cloneRuntimeCacheEntry(diskEntry)
+	}
+
 	methods := compileProjectMethods(index, sources)
 	classes := compileProjectClasses(index, methods, sources)
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
@@ -370,6 +382,7 @@ func runtimeFromIndex(index typesys.Index, sources sourceCache) (runtimeCacheKey
 	runtimeCacheMu.Lock()
 	runtimeCache[key] = entry
 	runtimeCacheMu.Unlock()
+	persistDiskRuntime(index, entry)
 	return key, cloneRuntimeCacheEntry(entry)
 }
 
@@ -2517,10 +2530,80 @@ var apexStaticFinalStringRE = regexp.MustCompile(`(?is)\bstatic\s+final\s+String
 var apexGetRecordTypeIdCallRE = regexp.MustCompile(`(?is)\bgetRecordTypeId\s*\(\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z_][A-Za-z0-9_]*))\s*\)`)
 var apexRecordTypeStringMethodRE = regexp.MustCompile(`(?is)\b([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*String\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*\{([^{}]*)\}`)
 
-func projectReferencedRecordTypes(p project.Project, caches ...sourceCache) []projectRecordTypeReference {
+func scanRecordTypesFromApexSource(source string) []projectRecordTypeReference {
+	var refs []projectRecordTypeReference
+	for _, match := range apexRecordTypeInfoCallRE.FindAllStringSubmatch(source, -1) {
+		objectName := match[1]
+		if objectName == "" {
+			objectName = match[2]
+		}
+		kind := strings.ToLower(match[3])
+		value := strings.TrimSpace(match[4])
+		ref := projectRecordTypeReference{ObjectName: objectName}
+		if kind == "developername" {
+			ref.DeveloperName = value
+			ref.Name = recordTypeLabelFromDeveloperName(value)
+		} else {
+			ref.DeveloperName = recordTypeDeveloperNameFromLabel(value)
+			ref.Name = value
+		}
+		refs = append(refs, ref)
+	}
+	return append(refs, projectReferencedTestDataHelperRecordTypes(source)...)
+}
+
+func parallelScanProjectReferencedRecordTypes(files []string, cache sourceCache) []projectRecordTypeReference {
+	if len(files) == 0 {
+		return nil
+	}
+	workers := compileWorkers(len(files))
+	if workers <= 1 {
+		var merged []projectRecordTypeReference
+		for _, file := range files {
+			source, err := cache.read(file)
+			if err != nil {
+				continue
+			}
+			merged = append(merged, scanRecordTypesFromApexSource(source)...)
+		}
+		return merged
+	}
+	jobs := make(chan string)
+	results := make(chan []projectRecordTypeReference, len(files))
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for file := range jobs {
+				source, err := cache.read(file)
+				if err != nil {
+					continue
+				}
+				results <- scanRecordTypesFromApexSource(source)
+			}
+		}()
+	}
+	go func() {
+		for _, file := range files {
+			jobs <- file
+		}
+		close(jobs)
+		wg.Wait()
+		close(results)
+	}()
+	var chunks [][]projectRecordTypeReference
+	for chunk := range results {
+		if len(chunk) > 0 {
+			chunks = append(chunks, chunk)
+		}
+	}
+	return mergeProjectRecordTypeReferences(chunks...)
+}
+
+func mergeProjectRecordTypeReferences(chunks ...[]projectRecordTypeReference) []projectRecordTypeReference {
 	seen := make(map[string]bool)
 	var refs []projectRecordTypeReference
-	cache := sourceCacheFor(caches)
 	add := func(ref projectRecordTypeReference) {
 		ref.ObjectName = strings.TrimSpace(ref.ObjectName)
 		ref.DeveloperName = strings.TrimSpace(ref.DeveloperName)
@@ -2535,32 +2618,23 @@ func projectReferencedRecordTypes(p project.Project, caches ...sourceCache) []pr
 		seen[key] = true
 		refs = append(refs, ref)
 	}
-	for _, file := range p.ApexFiles {
-		source, err := cache.read(file)
-		if err != nil {
-			continue
-		}
-		for _, match := range apexRecordTypeInfoCallRE.FindAllStringSubmatch(source, -1) {
-			objectName := match[1]
-			if objectName == "" {
-				objectName = match[2]
-			}
-			kind := strings.ToLower(match[3])
-			value := strings.TrimSpace(match[4])
-			ref := projectRecordTypeReference{ObjectName: objectName}
-			if kind == "developername" {
-				ref.DeveloperName = value
-				ref.Name = recordTypeLabelFromDeveloperName(value)
-			} else {
-				ref.DeveloperName = recordTypeDeveloperNameFromLabel(value)
-				ref.Name = value
-			}
-			add(ref)
-		}
-		for _, ref := range projectReferencedTestDataHelperRecordTypes(source) {
+	for _, chunk := range chunks {
+		for _, ref := range chunk {
 			add(ref)
 		}
 	}
+	sort.Slice(refs, func(i, j int) bool {
+		if refs[i].ObjectName != refs[j].ObjectName {
+			return refs[i].ObjectName < refs[j].ObjectName
+		}
+		return refs[i].DeveloperName < refs[j].DeveloperName
+	})
+	return refs
+}
+
+func projectReferencedRecordTypes(p project.Project, caches ...sourceCache) []projectRecordTypeReference {
+	cache := sourceCacheFor(caches)
+	var staticRefs []projectRecordTypeReference
 	for _, file := range projectDataJSONFiles(p.Root) {
 		data, err := os.ReadFile(file)
 		if err != nil {
@@ -2568,7 +2642,7 @@ func projectReferencedRecordTypes(p project.Project, caches ...sourceCache) []pr
 		}
 		for _, match := range dataRecordTypeQueryRE.FindAllStringSubmatch(string(data), -1) {
 			name := strings.TrimSpace(match[2])
-			add(projectRecordTypeReference{
+			staticRefs = append(staticRefs, projectRecordTypeReference{
 				ObjectName:    match[1],
 				DeveloperName: recordTypeDeveloperNameFromLabel(name),
 				Name:          name,
@@ -2581,20 +2655,17 @@ func projectReferencedRecordTypes(p project.Project, caches ...sourceCache) []pr
 			continue
 		}
 		for _, match := range projectRecordTypeConfigRE.FindAllStringSubmatch(string(data), -1) {
-			add(projectRecordTypeReference{
+			staticRefs = append(staticRefs, projectRecordTypeReference{
 				ObjectName:    match[1],
 				DeveloperName: match[2],
 				Name:          recordTypeLabelFromDeveloperName(match[2]),
 			})
 		}
 	}
-	sort.Slice(refs, func(i, j int) bool {
-		if refs[i].ObjectName != refs[j].ObjectName {
-			return refs[i].ObjectName < refs[j].ObjectName
-		}
-		return refs[i].DeveloperName < refs[j].DeveloperName
-	})
-	return refs
+	return mergeProjectRecordTypeReferences(
+		parallelScanProjectReferencedRecordTypes(p.ApexFiles, cache),
+		staticRefs,
+	)
 }
 
 func projectReferencedTestDataHelperRecordTypes(source string) []projectRecordTypeReference {

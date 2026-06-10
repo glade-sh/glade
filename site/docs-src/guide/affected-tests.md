@@ -26,11 +26,15 @@ Use one-shot watch mode for tools that want a single affected run:
 glade test --project . --watch-once
 ```
 
-Use the daemon when repeated parsing and graph rebuilds would cost too much:
+Use the daemon when repeated parsing and graph rebuilds would cost too much
+inside one watch process:
 
 ```bash
 glade test --project . --daemon --watch
 ```
+
+Use `glade test serve` when separate CLI invocations should stay warm across
+terminals or editor tasks.
 
 ## Selection modes
 

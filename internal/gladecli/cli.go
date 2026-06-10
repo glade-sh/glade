@@ -243,17 +243,38 @@ func printTestHelp(w io.Writer) {
 Run local Apex tests.
 
 Usage:
-  glade test [--project <root>] [--filter <pattern>] [--json] [--junit <path>] [--watch|--watch-once]
+  glade test [--project <root>] [flags]
+  glade test serve [--project <root>] [serve flags]
+  glade test clear-cache [--project <root>]
+
+Persistent test server:
+  glade test serve keeps the project runtime warm across CLI invocations.
+  It writes .glade/test/serve.sock and serve.pid under the project root.
+  Later glade test runs auto-connect when that socket is reachable.
+  Use --no-serve to force a local build, or --connect to require the server.
+
+Serve flags:
+  --project <root>          Project root. Defaults to current directory.
+  --socket <path>           Override the unix socket path.
+  --no-watch                Do not watch project files for changes.
+  --no-warm                 Skip the initial runtime warm on startup.
 
 Common flags:
   --project <root>          Project root. Defaults to current directory.
   --filter <pattern>        Run matching test classes or methods.
+  --connect                 Require a running test server (see serve).
+  --no-serve                Do not auto-connect to a running test server.
+  --no-cache                Skip the on-disk startup cache for this run.
+  --daemon                  Keep index warm in-process for --watch loops.
   --json                    Write JSON test results.
   --junit <path>            Write JUnit XML results.
   --progress                Print bounded progress to stderr.
+  --debug                   Run one DAP snapshot session after tests.
   --watch                   Watch source files and emit NDJSON events.
   --watch-once              Run one watch cycle and exit.
   --changed-since <ref>     Select tests affected since a git ref.
+  --debounce <dur>          Watch debounce interval (default 500ms).
+  --watch-backend <mode>    Watch backend: auto, native, or poll.
   --parallel-methods        Run test methods in parallel (default).
   --no-parallel-methods     Force serial method execution within a class.
   --parallelism <n>         Worker count (default: GOMAXPROCS).
@@ -261,10 +282,20 @@ Common flags:
   --gc-aggressive           Run with GOGC=50 for memory-constrained hosts.
   --limit-mode <mode>       Use strict or permissive governor limits.
 
+Startup cache (.glade/test/startup.gob):
+  Written after a cold harness build; loaded when file/config/package fingerprints
+  still match. Does not store test results. A stale cache can hide new code —
+  use clear-cache after git pull or Glade upgrades, and --no-cache to debug.
+  See docs/TEST_STARTUP_CACHE.md for freshness rules and recovery.
+
 Examples:
-  glade test --project force-app
+  glade test serve --project .
+  glade test clear-cache --project .
   glade test --project . --filter AccountServiceTest
-  glade test --project . --watch
+  glade test --project . --no-cache --filter AccountServiceTest
+  glade test --project . --connect --filter AccountServiceTest
+  glade test --project . --daemon --watch
+  glade test --project . --changed-since origin/main --json
 `)+"\n")
 }
 

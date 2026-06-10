@@ -36,6 +36,7 @@ export default defineConfig({
         text: 'Workflows',
         items: [
           { text: 'Local Testing', link: '/guide/local-testing' },
+          { text: 'Test Startup Cache', link: '/guide/test-startup-cache' },
           { text: 'Affected-Test Selection', link: '/guide/affected-tests' },
           { text: 'Editor, LSP, and DAP', link: '/guide/editor' },
           { text: 'Local API Server', link: '/guide/local-api-server' },

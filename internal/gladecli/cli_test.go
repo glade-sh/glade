@@ -96,12 +96,17 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "test flag help",
 			args: []string{"test", "--help"},
-			want: []string{"Usage:", "glade test", "--project <root>", "--watch"},
+			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "startup.gob", "--no-cache", "--connect", "--daemon"},
+		},
+		{
+			name: "test serve help",
+			args: []string{"test", "serve", "--help"},
+			want: []string{"Serve flags:", "startup.gob", "--no-warm"},
 		},
 		{
 			name: "help test",
 			args: []string{"help", "test"},
-			want: []string{"Usage:", "glade test", "--project <root>", "--watch"},
+			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "startup.gob", "--no-cache", "--connect", "--daemon"},
 		},
 	}
 	for _, tt := range tests {

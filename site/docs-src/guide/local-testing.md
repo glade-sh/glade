@@ -67,6 +67,25 @@ Run the daemon-backed watch loop:
 glade test --project . --daemon --watch
 ```
 
+## Warm startup across CLI runs
+
+Large projects rebuild local org state and helper compilation on cold start.
+`glade test` writes that harness to `.glade/test/startup.gob` after the first
+cold build and reloads it when fingerprint checks pass.
+
+**[Test Startup Cache](/guide/test-startup-cache)** explains when the cache is
+created, how it stays up to date, when it can be wrong, and how to recover.
+
+```bash
+glade test serve --project .
+glade test --project . --filter AccountServiceTest
+glade test clear-cache --project .
+glade test --project . --no-cache --filter AccountServiceTest
+```
+
+Clear the cache after `git pull` or Glade upgrades. Use `--no-cache` when
+debugging harness issues.
+
 ## CI pattern
 
 A small CI gate can check the project, run affected tests, then write JUnit output for test reporting:

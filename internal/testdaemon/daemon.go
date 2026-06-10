@@ -28,6 +28,17 @@ func New(root string) (*Daemon, error) {
 	return &Daemon{root: root, index: index, graph: watch.BuildReferenceGraph(index)}, nil
 }
 
+func (d *Daemon) Root() string {
+	return d.root
+}
+
+func (d *Daemon) Warm() {
+	d.mu.RLock()
+	index := d.index
+	d.mu.RUnlock()
+	apextest.WarmRuntime(index)
+}
+
 func (d *Daemon) RunFilter(filter string) testreport.Run {
 	return d.RunOptions(apextest.Options{Filter: filter})
 }

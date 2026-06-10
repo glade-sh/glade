@@ -7,8 +7,9 @@ of the way.
 
 1. Install and first run: [INSTALL.md](INSTALL.md)
 2. Run Apex tests without an org: [LOCAL_TESTING.md](LOCAL_TESTING.md)
-3. Day-to-day editor commands: [EDITOR.md](EDITOR.md)
-4. Current support surface:
+3. Test startup cache (when it is safe to trust): [TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md)
+4. Day-to-day editor commands: [EDITOR.md](EDITOR.md)
+5. Current support surface:
    - Site first layer: <https://glade.sh/docs/guide/support-map>
    - [COMPATIBILITY_DASHBOARD.md](COMPATIBILITY_DASHBOARD.md)
    - [KNOWN_GAPS.md](KNOWN_GAPS.md)

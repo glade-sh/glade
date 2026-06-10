@@ -67,17 +67,34 @@ glade exec --project . --limit-mode strict "System.debug(Limits.getDmlStatements
 
 ## `glade test`
 
-Discover and run local Apex tests. Useful flags include `--watch`, `--watch-once`, `--changed-since <ref>`, `--daemon`, `--filter`, `--json`, `--junit`, and `--limit-mode`.
+Discover and run local Apex tests. Useful flags include `--watch`, `--watch-once`, `--changed-since <ref>`, `--daemon`, `--connect`, `--no-serve`, `--filter`, `--json`, `--junit`, and `--limit-mode`.
+
+`glade test serve` keeps the runtime warm across CLI invocations. Later runs
+auto-connect through `.glade/test/serve.sock` unless `--no-serve` is set.
+
+Warmed harness state is cached on disk at `.glade/test/startup.gob` after a cold
+build. See [Test Startup Cache](/guide/test-startup-cache) for freshness rules.
 
 ```bash
+glade test serve --project .
 glade test --project .
 glade test --project . --filter AccountServiceTest --json
 glade test --project . --filter AccountServiceTest.testCreatesAccount --junit reports/glade-junit.xml
+glade test --project . --connect --filter AccountServiceTest
 glade test --project . --changed-since origin/main --json
 glade test --project . --watch
 glade test --project . --daemon --watch
 glade test --project . --limit-mode permissive --json
 ```
+
+Clear the on-disk startup cache or skip it for one run:
+
+```bash
+glade test clear-cache --project .
+glade test --project . --no-cache --filter AccountServiceTest
+```
+
+Run `glade help test` for the full flag list.
 
 ## `glade lsp`
 

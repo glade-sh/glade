@@ -68,6 +68,17 @@ Use one watch cycle for editor hooks or a quick file-watch smoke check:
 glade test --project . --watch-once
 ```
 
+On large projects, also smoke the warm path:
+
+```bash
+glade test serve --project .
+glade test --project . --filter <OneTestClass>
+```
+
+The second command should auto-connect and skip a full cold startup when
+`.glade/test/startup.gob` or the serve socket is warm. See
+[TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md) if warm behavior looks stale.
+
 ## 6. Capture JSON
 
 ```bash

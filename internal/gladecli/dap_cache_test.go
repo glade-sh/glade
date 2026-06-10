@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/glade-sh/glade/internal/startupcache"
 )
 
 func TestLoadDAPStartupStateCachesAndReusesState(t *testing.T) {
@@ -28,7 +30,7 @@ func TestLoadDAPStartupStateCachesAndReusesState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cache file missing after first load: %v", err)
 	}
-	var parsedOne dapStartupCache
+	var parsedOne startupcache.Entry
 	if err := json.Unmarshal(cacheOne, &parsedOne); err != nil {
 		t.Fatalf("parse first cache: %v", err)
 	}
@@ -46,7 +48,7 @@ func TestLoadDAPStartupStateCachesAndReusesState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cache file missing after second load: %v", err)
 	}
-	var parsedTwo dapStartupCache
+	var parsedTwo startupcache.Entry
 	if err := json.Unmarshal(cacheTwo, &parsedTwo); err != nil {
 		t.Fatalf("parse second cache: %v", err)
 	}
@@ -72,7 +74,7 @@ func TestLoadDAPStartupStateInvalidatesCacheOnProjectChange(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cache file missing after initial load: %v", err)
 	}
-	var parsedBefore dapStartupCache
+	var parsedBefore startupcache.Entry
 	if err := json.Unmarshal(cacheBefore, &parsedBefore); err != nil {
 		t.Fatalf("parse initial cache: %v", err)
 	}
@@ -98,7 +100,7 @@ func TestLoadDAPStartupStateInvalidatesCacheOnProjectChange(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cache file missing after reload: %v", err)
 	}
-	var parsedAfter dapStartupCache
+	var parsedAfter startupcache.Entry
 	if err := json.Unmarshal(cacheAfter, &parsedAfter); err != nil {
 		t.Fatalf("parse reloaded cache: %v", err)
 	}
@@ -126,7 +128,7 @@ func TestLoadDAPStartupStateCachesCompiledRuntime(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cache file missing: %v", err)
 	}
-	var parsed dapStartupCache
+	var parsed startupcache.Entry
 	if err := json.Unmarshal(data, &parsed); err != nil {
 		t.Fatalf("parse cache: %v", err)
 	}

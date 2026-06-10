@@ -135,6 +135,14 @@ not require a Salesforce org.
       "problemMatcher": []
     },
     {
+      "label": "glade: test serve",
+      "type": "shell",
+      "command": "glade",
+      "args": ["test", "serve", "--project", "${workspaceFolder}"],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
       "label": "glade: diagnostics once",
       "type": "shell",
       "command": "glade",
@@ -206,8 +214,14 @@ disconnect. Use the contrib VS Code extension or a stdio-capable DAP client.
 
 The internal `testdaemon` package keeps project load, schema, type index, and
 the affected-test **reference graph** warm for repeated editor and watch loops.
-`glade test --daemon` uses this service for focused runs, `--changed-since`, and
-watch mode:
+
+`glade test serve` runs a persistent unix-socket server that warms the runtime
+once and serves later `glade test` invocations over `.glade/test/serve.sock`.
+Client runs auto-connect when the socket is reachable. Use `--connect` to
+require the server or `--no-serve` to force a local build.
+
+`glade test --daemon` keeps the same warm index in-process for a single long
+`--watch` or `--changed-since` session:
 
 - `RunFilter(filter)` runs a focused test selection against the warm index.
 - `RunChangedSince(ref)` uses git file changes and affected-test selection, with
@@ -222,18 +236,37 @@ cross-file edges are never missed. Selection then walks the graph's reverse
 edges to find every test that transitively reaches the changed types. See
 `docs/LOCAL_TESTING.md` for the user-facing workflow and event examples.
 
-Keep cold one-shot `glade test` behavior separate from this service. Use
-`glade test --daemon --watch` or `glade test --daemon --changed-since main` for
-repeated local loops where avoiding project reload is the main win.
+Use `glade test serve` when separate CLI invocations should stay warm. Use
+`glade test --daemon --watch` or `glade test --daemon --changed-since origin/main`
+when one watch process should avoid reloading the project on every save.
 
 For the common local workflow, use `--changed-since` to select tests affected by
 changed Apex and metadata dependencies:
 
 ```bash
 git fetch origin main
+glade test serve --project .
 glade test --project . --changed-since origin/main --json
 glade test --project . --daemon --changed-since origin/main --json
 ```
+
+## Test Startup Cache
+
+`glade test` persists warmed org and compiled runtime state in
+`.glade/test/startup.gob`. That cache keeps large projects from rebuilding local
+org inference and helper compilation on every CLI invocation.
+
+See **[TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md)** for when the cache is
+created, how freshness checks work, limitations that can leave a stale cache
+in place, and how `glade test serve` interacts with the on-disk file.
+
+```bash
+glade test clear-cache --project .
+glade test --project . --no-cache --filter AccountServiceTest
+```
+
+Clear the cache after branch switches or Glade upgrades. Restart
+`glade test serve` after `clear-cache` if the server was already running.
 
 ## IntelliJ Support
 

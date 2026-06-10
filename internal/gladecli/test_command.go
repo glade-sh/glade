@@ -32,6 +32,28 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		printTestHelp(w)
 		return testreport.Run{}, nil
 	}
+	if len(args) > 0 && args[0] == "clear-cache" {
+		rest := args[1:]
+		if len(rest) > 0 && isHelpArg(rest[0]) {
+			printTestHelp(w)
+			return testreport.Run{}, nil
+		}
+		if err := runTestClearCache(rest, w); err != nil {
+			return testreport.Run{}, err
+		}
+		return testreport.Run{}, nil
+	}
+	if len(args) > 0 && args[0] == "serve" {
+		rest := args[1:]
+		if len(rest) > 0 && isHelpArg(rest[0]) {
+			printTestHelp(w)
+			return testreport.Run{}, nil
+		}
+		if err := runTestServe(ctx, rest, progressW); err != nil {
+			return testreport.Run{}, err
+		}
+		return testreport.Run{}, nil
+	}
 
 	root := "."
 	filter := ""
@@ -41,6 +63,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	watchMode := false
 	watchOnce := false
 	daemonMode := false
+	connectMode := false
+	noServe := false
+	noCache := false
 	debug := false
 	progress := false
 	traceBlocked := false
@@ -159,6 +184,12 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			watchOnce = true
 		case "--daemon":
 			daemonMode = true
+		case "--connect":
+			connectMode = true
+		case "--no-serve":
+			noServe = true
+		case "--no-cache":
+			noCache = true
 		case "--debug":
 			debug = true
 		case "--progress":
@@ -202,7 +233,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		progressReporter = newCLITestProgressReporter(progressW)
 		defer progressReporter.finish()
 	}
-	testOpts := apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS, ParallelMethods: parallelMethods, TimeoutMS: testTimeout.Milliseconds()}
+	testOpts := apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS, ParallelMethods: parallelMethods, TimeoutMS: testTimeout.Milliseconds(), NoDiskCache: noCache}
 	if progress {
 		testOpts.Progress = progressReporter.handle
 	}
@@ -213,6 +244,16 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		testOpts.Parallelism = runtime.GOMAXPROCS(0)
 	}
 	applyTestMemoryLimits(gcAggressive)
+
+	if noCache {
+		noServe = true
+	}
+	if !noServe && !watchMode && !daemonMode && !debug {
+		if result, used, err := tryTestServerRun(ctx, root, connectMode, filter, changedSince, format, junitPath, debug, w); used || err != nil {
+			return result, err
+		}
+	}
+
 	if daemonMode {
 		daemon, err := testdaemon.New(root)
 		if err != nil {
