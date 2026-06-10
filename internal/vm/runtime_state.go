@@ -862,6 +862,20 @@ func (vm *VM) ResetApexPageState() {
 	vm.siteExperienceID = ""
 }
 
+func (vm *VM) CurrentPage() Value {
+	if vm == nil || vm.currentPage.Kind == "" {
+		return Null
+	}
+	return vm.currentPage
+}
+
+func (vm *VM) PageMessages() []Value {
+	if vm == nil {
+		return nil
+	}
+	return vm.pageMessages
+}
+
 func (vm *VM) SetCurrentPageURL(rawURL string) {
 	if vm == nil {
 		return

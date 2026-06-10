@@ -88,6 +88,9 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	if got, status := ResolveLabel(registry, "pkg", "pkg", "Missing"); got != "" || status != LabelLookupMissing {
 		t.Fatalf("own namespace missing label = %q, %s", got, status)
 	}
+	if got, status := ResolveLabel(registry, "pkg", "c", "Greeting"); got != "Bonjour" || status != LabelLookupResolved {
+		t.Fatalf("c-prefixed package label = %q, %s", got, status)
+	}
 	if got, ok := URLForStaticResource(registry, "Site", "css/app.css"); !ok || got != "/resource/Site/css/app.css" {
 		t.Fatalf("resource url = %q, %v", got, ok)
 	}

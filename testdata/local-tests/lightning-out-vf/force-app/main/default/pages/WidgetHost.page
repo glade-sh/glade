@@ -1,0 +1,9 @@
+<apex:page showHeader="false" sidebar="false">
+    <apex:includeLightning />
+    <div id="host">Loading...</div>
+    <script>
+        $Lightning.use("c:lightningOut", function() {
+            $Lightning.createComponent("c:counter", { count: 1 }, "host", function(cmp) {});
+        });
+    </script>
+</apex:page>

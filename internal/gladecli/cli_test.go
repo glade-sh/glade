@@ -16,6 +16,18 @@ import (
 	"github.com/glade-sh/glade/internal/watch"
 )
 
+func TestRenderLWCCommandPrintsHTML(t *testing.T) {
+	root := filepath.Join("..", "..", "testdata", "local-tests", "lwc-rendering")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"render", "lwc", "counter", "--project", root, "--props", `{"count":"9"}`}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit = %d stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "9") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunVersion(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"version"}, &stdout, &stderr)

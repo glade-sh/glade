@@ -1,0 +1,13 @@
+{
+  "name": "glade-lwcruntime",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "playwright": "^1.52.0"
+  }
+}

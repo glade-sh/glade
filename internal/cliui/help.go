@@ -14,6 +14,7 @@ type HelpCommand struct {
 var topLevelCommands = []HelpCommand{
 	{Name: "version", Description: "Print the glade version."},
 	{Name: "doctor", Description: "Print environment and project configuration status."},
+	{Name: "toolchain", Description: "Install or inspect the global LWC toolchain for Lightning Out."},
 	{Name: "parse", Description: "Parse Apex source files."},
 	{Name: "inspect", Description: "Inspect indexed project symbols and performance risks."},
 	{Name: "schema", Description: "Load local Salesforce metadata schema."},

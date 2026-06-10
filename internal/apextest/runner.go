@@ -359,7 +359,7 @@ func cloneRuntimeCacheEntry(in runtimeCacheEntry) runtimeCacheEntry {
 	}
 }
 
-func runtimeFromIndex(index typesys.Index, sources sourceCache) (runtimeCacheKey, runtimeCacheEntry) {
+func runtimeFromIndex(index typesys.Index, sources *sourceCache) (runtimeCacheKey, runtimeCacheEntry) {
 	key := runtimeKey(index)
 	runtimeCacheMu.RLock()
 	if cached, ok := runtimeCache[key]; ok {
@@ -459,7 +459,7 @@ func allClassesHaveSingleMethod(classIndexes map[string][]int) bool {
 	return true
 }
 
-func compileTestSetupsCached(index typesys.Index, baseKey runtimeCacheKey, selectedClasses map[string]bool, sources sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error) {
+func compileTestSetupsCached(index typesys.Index, baseKey runtimeCacheKey, selectedClasses map[string]bool, sources *sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error) {
 	key := string(baseKey) + "|setup|" + classSetKey(selectedClasses)
 	setupCacheMu.RLock()
 	if cached, ok := setupCache[key]; ok {
@@ -474,7 +474,7 @@ func compileTestSetupsCached(index typesys.Index, baseKey runtimeCacheKey, selec
 	return methods, errs, programs, programErrs
 }
 
-func compileTestsCached(index typesys.Index, baseKey runtimeCacheKey, cases []TestCase, sources sourceCache) (map[string]vm.Method, map[string]error, map[string]ir.Program, map[string]error) {
+func compileTestsCached(index typesys.Index, baseKey runtimeCacheKey, cases []TestCase, sources *sourceCache) (map[string]vm.Method, map[string]error, map[string]ir.Program, map[string]error) {
 	key := string(baseKey) + "|tests|" + caseSetKey(cases)
 	testCacheMu.RLock()
 	if cached, ok := testCache[key]; ok {
@@ -1246,29 +1246,45 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 	}
 }
 
-type sourceCache map[string]string
-
-func newSourceCache() sourceCache {
-	return make(sourceCache)
+type sourceCache struct {
+	mu    sync.RWMutex
+	files map[string]string
 }
 
-func sourceCacheFor(caches []sourceCache) sourceCache {
+func newSourceCache() *sourceCache {
+	return &sourceCache{files: make(map[string]string)}
+}
+
+func sourceCacheFor(caches []*sourceCache) *sourceCache {
 	if len(caches) > 0 && caches[0] != nil {
 		return caches[0]
 	}
 	return newSourceCache()
 }
 
-func (cache sourceCache) read(file string) (string, error) {
-	if source, ok := cache[file]; ok {
+func (cache *sourceCache) read(file string) (string, error) {
+	if cache == nil {
+		return "", fmt.Errorf("source cache is nil")
+	}
+	cache.mu.RLock()
+	if source, ok := cache.files[file]; ok {
+		cache.mu.RUnlock()
 		return source, nil
 	}
+	cache.mu.RUnlock()
+
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return "", err
 	}
 	source := string(data)
-	cache[file] = source
+
+	cache.mu.Lock()
+	defer cache.mu.Unlock()
+	if existing, ok := cache.files[file]; ok {
+		return existing, nil
+	}
+	cache.files[file] = source
 	return source, nil
 }
 
@@ -1603,11 +1619,11 @@ func unsupportedProjectMethod(className, methodName, returnType string, modifier
 	}, true
 }
 
-func compileTestSetupMethods(index typesys.Index, caches ...sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error) {
+func compileTestSetupMethods(index typesys.Index, caches ...*sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error) {
 	return compileTestSetupMethodsForClasses(index, nil, caches...)
 }
 
-func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[string]bool, caches ...sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error) {
+func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[string]bool, caches ...*sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error) {
 	out := make(map[string][]vm.Method)
 	errs := make(map[string]error)
 	programs := make(map[string][]ir.Program)
@@ -1650,7 +1666,7 @@ func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[
 	return out, errs, programs, programErrs
 }
 
-func compileTestMethods(cases []TestCase, caches ...sourceCache) (map[string]vm.Method, map[string]error) {
+func compileTestMethods(cases []TestCase, caches ...*sourceCache) (map[string]vm.Method, map[string]error) {
 	methods := make(map[string]vm.Method, len(cases))
 	errs := make(map[string]error)
 	sources := sourceCacheFor(caches)
@@ -1690,7 +1706,7 @@ func testCaseKey(testCase TestCase) string {
 	return testCase.ClassName + "." + testCase.MethodName
 }
 
-func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
+func orgFromIndex(index typesys.Index, caches ...*sourceCache) storage.OrgState {
 	org := storage.NewOrgState()
 	org.Namespace = index.Project.Namespace
 	org.OrgID = "00D000000000001"
@@ -2220,7 +2236,7 @@ var apexSObjectReturnTypePattern = regexp.MustCompile(`(?i)\b(?:public|private|p
 var apexNewSObjectPattern = regexp.MustCompile(`(?i)\bnew\s+([A-Za-z_][A-Za-z0-9_]*(?:__[A-Za-z0-9_]+)?)\s*\(`)
 var apexTypedNamePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*(?:__[A-Za-z0-9_]+)?)\s+[A-Za-z_][A-Za-z0-9_]*\b`)
 
-func applyReferencedSyntheticFieldSets(org *storage.OrgState, index typesys.Index, caches ...sourceCache) {
+func applyReferencedSyntheticFieldSets(org *storage.OrgState, index typesys.Index, caches ...*sourceCache) {
 	if org == nil || len(index.Types) == 0 {
 		return
 	}
@@ -2248,7 +2264,7 @@ type syntheticFieldSetReference struct {
 	sortableLower string
 }
 
-func referencedSyntheticFieldSetReferences(org *storage.OrgState, index typesys.Index, caches ...sourceCache) []syntheticFieldSetReference {
+func referencedSyntheticFieldSetReferences(org *storage.OrgState, index typesys.Index, caches ...*sourceCache) []syntheticFieldSetReference {
 	cache := sourceCacheFor(caches)
 	fileHasNonTestType := make(map[string]bool)
 	fileHasTestTopLevelType := make(map[string]bool)
@@ -2585,7 +2601,7 @@ func scanRecordTypesFromApexSource(source string) []projectRecordTypeReference {
 	return append(refs, projectReferencedTestDataHelperRecordTypes(source)...)
 }
 
-func parallelScanProjectReferencedRecordTypes(files []string, cache sourceCache) []projectRecordTypeReference {
+func parallelScanProjectReferencedRecordTypes(files []string, cache *sourceCache) []projectRecordTypeReference {
 	if len(files) == 0 {
 		return nil
 	}
@@ -2665,7 +2681,7 @@ func mergeProjectRecordTypeReferences(chunks ...[]projectRecordTypeReference) []
 	return refs
 }
 
-func projectReferencedRecordTypes(p project.Project, caches ...sourceCache) []projectRecordTypeReference {
+func projectReferencedRecordTypes(p project.Project, caches ...*sourceCache) []projectRecordTypeReference {
 	cache := sourceCacheFor(caches)
 	var staticRefs []projectRecordTypeReference
 	for _, file := range projectDataJSONFiles(p.Root) {
@@ -3383,7 +3399,7 @@ func normalizeOrgKeyPrefixes(org *storage.OrgState) {
 	storage.EnsureUniqueKeyPrefixes(org)
 }
 
-func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ...sourceCache) {
+func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ...*sourceCache) {
 	if org == nil {
 		return
 	}

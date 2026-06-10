@@ -17,6 +17,7 @@ import (
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/gladehome"
 	"github.com/glade-sh/glade/internal/lsp"
 	"github.com/glade-sh/glade/internal/packageartifact"
 	"github.com/glade-sh/glade/internal/perfscan"
@@ -51,6 +52,12 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		return 0
 	case "doctor":
 		if err := runDoctor(ctx, args[1:], stdout); err != nil {
+			_ = cliui.WriteCLIError(stderr, err)
+			return 1
+		}
+		return 0
+	case "toolchain":
+		if err := runToolchain(ctx, args[1:], stdout); err != nil {
 			_ = cliui.WriteCLIError(stderr, err)
 			return 1
 		}
@@ -177,6 +184,12 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		return 0
 	case "db":
 		if err := runDB(ctx, args[1:], stdout); err != nil {
+			fmt.Fprintf(stderr, "glade: %v\n", err)
+			return 1
+		}
+		return 0
+	case "render":
+		if err := runRender(ctx, args[1:], stdout); err != nil {
 			fmt.Fprintf(stderr, "glade: %v\n", err)
 			return 1
 		}
@@ -375,13 +388,17 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) error {
 	}
 
 	parserStatus := parserSelfCheck()
+	toolchainPath, toolchainOK, toolchainDetail := gladehome.ToolchainStatus()
 	info := cliui.DoctorInfo{
-		Version:      Version,
-		GoVersion:    runtime.Version(),
-		OSArch:       runtime.GOOS + "/" + runtime.GOARCH,
-		CWD:          cwd,
-		ParserStatus: parserStatus,
-		ParserOK:     cliui.ParserStatusOK(parserStatus),
+		Version:          Version,
+		GoVersion:        runtime.Version(),
+		OSArch:           runtime.GOOS + "/" + runtime.GOARCH,
+		CWD:              cwd,
+		ParserStatus:     parserStatus,
+		ParserOK:         cliui.ParserStatusOK(parserStatus),
+		ToolchainPath:    toolchainPath,
+		ToolchainStatus:  toolchainDetail,
+		ToolchainOK:      toolchainOK,
 	}
 	if errors.Is(err, config.ErrNotFound) {
 		info.ConfigMissing = true

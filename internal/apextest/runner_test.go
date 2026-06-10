@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -7946,8 +7947,9 @@ private class ReferencedRecordTypesTest {
 
 func TestProjectReferencedRecordTypesUsesSourceCache(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "ReferencedRecordTypesTest.cls")
-	cache := sourceCache{
-		file: `
+	cache := &sourceCache{
+		files: map[string]string{
+			file: `
 @IsTest
 private class ReferencedRecordTypesTest {
   @IsTest static void referencedRecordTypesHaveIds() {
@@ -7955,6 +7957,7 @@ private class ReferencedRecordTypesTest {
   }
 }
 `,
+		},
 	}
 
 	refs := projectReferencedRecordTypes(project.Project{ApexFiles: []string{file}}, cache)
@@ -7963,6 +7966,27 @@ private class ReferencedRecordTypesTest {
 	}
 	if refs[0].ObjectName != "pkg__Product__c" || refs[0].Name != "Bundle" || refs[0].DeveloperName != "Bundle" {
 		t.Fatalf("ref = %#v", refs[0])
+	}
+}
+
+func TestSourceCacheReadIsConcurrentSafe(t *testing.T) {
+	dir := t.TempDir()
+	files := make([]string, 0, 8)
+	for i := 0; i < 8; i++ {
+		path := filepath.Join(dir, fmt.Sprintf("Class%d.cls", i))
+		writeFile(t, path, fmt.Sprintf("public class Class%d { Id rt = Schema.SObjectType.Account.getRecordTypeInfosByName().get('Master').getRecordTypeId(); }", i))
+		files = append(files, path)
+	}
+	cache := newSourceCache()
+	done := make(chan struct{}, 16)
+	for i := 0; i < 16; i++ {
+		go func() {
+			_ = parallelScanProjectReferencedRecordTypes(files, cache)
+			done <- struct{}{}
+		}()
+	}
+	for i := 0; i < 16; i++ {
+		<-done
 	}
 }
 

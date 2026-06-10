@@ -3330,7 +3330,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("PageReference.%s expects 0 arguments", method)
 			}
-			return Null, receiver, false, true, unsupportedCallError("PageReference." + method + " local Visualforce page rendering surface")
+			content, err := renderPageContent(vm, pageReferenceURL(receiver).Text, method == "getContentAsPDF")
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			return content, receiver, false, true, nil
 		case "getUrl":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("PageReference.getUrl expects 0 arguments")
