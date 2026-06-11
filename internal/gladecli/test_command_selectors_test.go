@@ -91,11 +91,43 @@ func runSelectionTestInRoot(t *testing.T, root string, args ...string) testrepor
 
 func selectionFixtureRoot(t *testing.T) string {
 	t.Helper()
-	root, err := filepath.Abs(filepath.Join("testdata", "test-selection"))
+	src, err := filepath.Abs(filepath.Join("testdata", "test-selection"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return root
+	dst := filepath.Join(t.TempDir(), "test-selection")
+	if err := copySelectionFixture(src, dst); err != nil {
+		t.Fatal(err)
+	}
+	return dst
+}
+
+func copySelectionFixture(src, dst string) error {
+	return filepath.WalkDir(src, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		if rel == "." {
+			return os.MkdirAll(dst, 0o755)
+		}
+		target := filepath.Join(dst, rel)
+		if entry.IsDir() {
+			return os.MkdirAll(target, 0o755)
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(target, data, info.Mode())
+	})
 }
 
 func classNames(run testreport.Run) []string {
