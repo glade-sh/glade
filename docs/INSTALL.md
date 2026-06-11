@@ -125,12 +125,13 @@ Install advisory scanners when needed. They are plugins, not product runtime
 packages:
 
 ```bash
-glade plugins install performance
+glade plugins install @glade/performance
 glade performance scan --project . --json
 ```
 
-The first-party plugin catalog, local archive install path, and author contract
-are documented in [PLUGINS.md](PLUGINS.md).
+The short aliases `compat` and `performance` resolve to `@glade/compat` and
+`@glade/performance`. The first-party plugin catalog, local archive install
+path, and author contract are documented in [PLUGINS.md](PLUGINS.md).
 
 Run a focused class or only tests affected by changes since a git ref:
 

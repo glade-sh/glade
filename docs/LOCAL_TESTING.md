@@ -53,7 +53,7 @@ glade test --project . --class AccountServiceTest --method testCreatesAccount --
 Generate an advisory performance report from source and metadata first:
 
 ```bash
-glade plugins install performance
+glade plugins install @glade/performance
 glade performance scan --project . --json > reports/glade-performance.json
 ```
 
@@ -69,6 +69,7 @@ query without a `WHERE` clause as a bottleneck by itself. Use trace input when
 you need measured elapsed spans and SOQL row counts.
 
 Plugin install, archive, and author details are in [PLUGINS.md](PLUGINS.md).
+The short alias `performance` resolves to `@glade/performance`.
 
 Use `--parallelism` to choose the worker count. Method-level parallel execution
 is on by default; use `--no-parallel-methods` only when a project has tests that

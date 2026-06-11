@@ -40,11 +40,23 @@ export default defineConfig({
           { text: 'Test Startup Cache', link: '/guide/test-startup-cache' },
           { text: 'Affected-Test Selection', link: '/guide/affected-tests' },
           { text: 'CI And Artifacts', link: '/guide/ci-artifacts' },
-          { text: 'Plugins', link: '/guide/plugins' },
           { text: 'Rich Local Workflows', link: '/guide/rich-local-workflows' },
           { text: 'Editor, LSP, and DAP', link: '/guide/editor' },
           { text: 'Local API Server', link: '/guide/local-api-server' },
           { text: 'Playground', link: '/guide/playground' }
+        ]
+      },
+      {
+        text: 'Plugins',
+        items: [
+          { text: 'Overview', link: '/guide/plugins' },
+          { text: 'First-Party Plugins', link: '/guide/plugins/first-party' },
+          { text: 'Marketplace', link: '/guide/plugins/marketplace' },
+          { text: 'Install And Manage', link: '/guide/plugins/install-manage' },
+          { text: 'Build A Plugin', link: '/guide/plugins/build' },
+          { text: 'Publish A Plugin', link: '/guide/plugins/publish' },
+          { text: 'Manifest Reference', link: '/guide/plugins/manifest' },
+          { text: 'Lock Files And CI', link: '/guide/plugins/lock-ci' }
         ]
       },
       {

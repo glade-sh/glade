@@ -51,7 +51,7 @@ Day-to-day test runs use `--filter`:
 ```bash
 glade test --project . --class AccountServiceTest --json
 glade test --project . --class AccountServiceTest --method testCreatesAccount --json
-glade plugins install compat
+glade plugins install @glade/compat
 glade compat local-tests --project . --class AccountServiceTest --json
 glade compat local-tests --project . --class AccountServiceTest --method testCreatesAccount --json
 ```
@@ -81,7 +81,7 @@ The second command should auto-connect and skip a full cold startup when
 mkdir -p reports
 glade check --project . --json > reports/glade-check.json
 glade test --project . --json > reports/glade-test.json
-glade plugins install compat
+glade plugins install @glade/compat
 glade compat local-tests --project . --parallel auto --json > reports/glade-local-tests.json
 ```
 
@@ -91,10 +91,13 @@ should cover only affected tests.
 ## 6b. Performance Scanner
 
 ```bash
-glade plugins install performance
+glade plugins install @glade/performance
 glade performance scan --project . --json > reports/glade-performance.json
 glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
+
+The short aliases `compat` and `performance` resolve to `@glade/compat` and
+`@glade/performance`.
 
 Use the source-only report as a map of entry points and hard static patterns.
 Use the trace-backed report to rank actual bottlenecks by elapsed spans and row

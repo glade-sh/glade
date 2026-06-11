@@ -60,7 +60,7 @@ Drill down from there:
 ```bash
 glade check --project .
 glade test --project . --json
-glade plugins install performance
+glade plugins install @glade/performance
 glade performance scan --project . --json
 ```
 
@@ -80,7 +80,7 @@ glade test --project . --filter AccountServiceTest --json
 glade test --project . --filter AccountServiceTest.testCreatesAccount --json
 glade test changed --project . --since origin/main --json
 glade test failed --project .
-glade plugins install performance
+glade plugins install @glade/performance
 glade performance scan --project . --json > reports/glade-performance.json
 glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
@@ -95,9 +95,9 @@ generated ledgers ship as plugins and do not live in the product runtime
 packages.
 
 First-party plugins are documented in [docs/PLUGINS.md](docs/PLUGINS.md).
-`compat` owns compatibility fixtures and surface ledgers. `performance` owns
-advisory performance scans. Third-party plugins use the same executable
-manifest contract.
+Install them as `@glade/compat` and `@glade/performance`. The short aliases
+`compat` and `performance` resolve to those canonical names. Third-party
+plugins use the same executable manifest contract.
 
 Run anonymous Apex:
 

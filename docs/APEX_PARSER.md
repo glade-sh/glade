@@ -91,7 +91,7 @@ Run project-level smoke checks from `glade`:
 
 ```sh
 go run ./cmd/glade check --project path/to/project --json
-glade plugins install compat
+glade plugins install @glade/compat
 glade compat replay testdata/replay/selector-service-domain
 scripts/smoke.sh
 ```

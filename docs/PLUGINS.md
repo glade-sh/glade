@@ -1,9 +1,8 @@
 # Glade Plugins
 
-Glade plugins are standalone executables. The product CLI discovers them from
-`~/.glade/plugins/installed.json` and dispatches by the first command word.
-Core Glade commands keep priority. A plugin cannot claim `test`, `schema`,
-`inspect`, `plugins`, or another core command root.
+Glade plugins are standalone executables. The product CLI discovers installed
+plugins from `~/.glade/plugins/installed.json` and dispatches by the first
+command word. Core Glade commands keep priority.
 
 Plugins are process extensions, not Go shared libraries. Glade does not load
 plugin code into its own process. It runs the plugin executable, passes the
@@ -14,32 +13,50 @@ original arguments, and streams stdout and stderr.
 Glade ships a small product runtime. Heavier maintenance and advisory tools
 ship as first-party plugins.
 
-| Plugin | Command roots | Purpose |
-| --- | --- | --- |
-| `compat` | `compat`, `surface`, `local-tests`, `post-parity`, `examples`, `dashboard`, `gaps`, `stdlib` | Compatibility fixtures, local-test readiness reports, surface ledgers, docs inventory, generated support reports, and gap scanners. |
-| `performance` | `performance` | Advisory Salesforce project performance scans. Replaces the old base `glade inspect performance` path. |
+| Plugin | Alias | Command roots | Purpose |
+| --- | --- | --- | --- |
+| `@glade/compat` | `compat` | `compat`, `surface`, `local-tests`, `post-parity`, `examples`, `dashboard`, `gaps`, `stdlib` | Compatibility fixtures, local-test readiness reports, surface ledgers, docs inventory, generated support reports, and parity scanners. |
+| `@glade/performance` | `performance` | `performance` | Advisory Salesforce project performance scans. Replaces the old base `glade inspect performance` path. |
 
 The first-party plugin source lives in the sibling `glade-tools` workspace.
-Users install and run it through `glade plugins`.
+Users install and run plugins through `glade plugins`. The product repository
+does not depend on `glade-tools` internals.
 
 ## Install And List
 
-Install a first-party plugin by name:
+Install first-party plugins with canonical coordinates:
 
 ```bash
-glade plugins install compat
-glade plugins install performance
+glade plugins install @glade/compat
+glade plugins install @glade/performance
 glade plugins list
 ```
+
+The short aliases `compat` and `performance` resolve to `@glade/compat` and
+`@glade/performance`.
 
 Name installs use the configured plugin registry. The production default is
 `https://plugins.glade.sh/index.json`; local development can set
 `GLADE_PLUGIN_REGISTRY_URL` to a test or staging registry.
 
+Search and inspect the marketplace:
+
+```bash
+glade plugins search quality
+glade plugins info @acme/quality
+glade plugins install @acme/quality@1.2.0
+```
+
 Install a local release archive:
 
 ```bash
 glade plugins install ./glade-plugin-compat_0.1.0_darwin_arm64.tar.gz
+```
+
+Install a remote archive with a required digest:
+
+```bash
+glade plugins install https://github.com/acme/glade-plugin-quality/releases/download/v1.2.0/glade-plugin-quality_1.2.0_darwin_arm64.tar.gz --sha256 <hash>
 ```
 
 Link a development binary without copying it:
@@ -79,10 +96,10 @@ Check installed plugin executables and manifests:
 glade plugins doctor
 ```
 
-Remove a plugin:
+Remove a plugin by canonical coordinate:
 
 ```bash
-glade plugins remove compat
+glade plugins remove @glade/compat
 ```
 
 ## Lock And Restore
@@ -99,6 +116,10 @@ Restore it:
 glade plugins restore
 ```
 
+`glade.plugins.lock.json` records canonical package coordinates, exact
+versions, registry, platform, trust label, publisher, and archive digest.
+Restore never installs `latest`; it verifies the locked digest.
+
 Linked plugins are skipped by default because local paths are not portable. Use
 `glade plugins lock --include-linked` only for local development.
 
@@ -107,7 +128,7 @@ Linked plugins are skipped by default because local paths are not portable. Use
 Every plugin executable must support:
 
 ```bash
-glade-plugin-compat manifest --json
+glade-plugin-quality manifest --json
 ```
 
 The manifest shape is:
@@ -115,51 +136,24 @@ The manifest shape is:
 ```json
 {
   "apiVersion": "glade.plugin.v1",
-  "name": "compat",
-  "version": "0.1.0",
-  "summary": "Compatibility fixtures, surface ledgers, and maintenance scanners.",
+  "name": "quality",
+  "version": "1.2.0",
+  "summary": "Project quality checks.",
   "commands": [
     {
-      "path": ["compat"],
-      "summary": "Run compatibility fixture and report commands."
-    },
-    {
-      "path": ["surface"],
-      "summary": "Refresh and inspect the Salesforce surface ledger."
-    },
-    {
-      "path": ["local-tests"],
-      "summary": "Report local Apex test execution readiness."
-    },
-    {
-      "path": ["post-parity"],
-      "summary": "Scan a project for unsupported surfaces."
-    },
-    {
-      "path": ["examples"],
-      "summary": "Scan example projects and report support status."
-    },
-    {
-      "path": ["dashboard"],
-      "summary": "Generate compatibility dashboard output."
-    },
-    {
-      "path": ["gaps"],
-      "summary": "Generate known-gaps output."
-    },
-    {
-      "path": ["stdlib"],
-      "summary": "Generate standard-library coverage output."
+      "path": ["quality"],
+      "summary": "Run project quality checks."
     }
   ],
   "minimumGladeVersion": "0.1.0",
-  "source": "github.com/glade-sh/glade/tools"
+  "source": "github.com/acme/glade-plugin-quality"
 }
 ```
 
-The host validates the manifest before install or link. The manifest name and
-version become filesystem path segments, so they must be simple tokens:
-letters, digits, `.`, `_`, and `-`.
+The host validates the manifest before install or link. The manifest `name`
+and `version` become filesystem path segments, so they must be simple
+path-safe tokens. For `@acme/quality`, the runtime manifest name remains
+`quality`.
 
 Command paths are advertised paths. Dispatch uses the first segment only. This
 manifest entry:
@@ -187,20 +181,13 @@ Archives must contain:
 ```text
 plugin.json
 checksums.txt
-bin/glade-plugin-<name>
+bin/glade-plugin-quality
 ```
 
 `checksums.txt` contains SHA-256 rows for each archived file. Glade rejects
-absolute paths, parent directory traversal, checksum mismatches, and command
-roots that collide with core commands.
-
-Minimal archive layout for a plugin named `quality`:
-
-```text
-plugin.json
-checksums.txt
-bin/glade-plugin-quality
-```
+absolute paths, parent directory traversal, checksum mismatches, unsafe
+manifest names, unsafe versions, and command roots that collide with core
+commands.
 
 Minimal `checksums.txt`:
 
@@ -209,24 +196,32 @@ Minimal `checksums.txt`:
 <sha256>  bin/glade-plugin-quality
 ```
 
-## Registry Shape
+## Marketplace Registry
 
-Registry installs read a JSON index. `glade plugins install compat` fetches the
-configured index, selects the current OS and architecture asset, verifies the
-archive SHA-256, then installs the archive.
+Registry installs read a JSON index. `glade plugins install @glade/compat`
+fetches the configured index, selects the current OS and architecture asset,
+verifies the archive SHA-256, then installs the archive.
 
 ```json
 {
   "version": 1,
   "plugins": [
     {
-      "name": "compat",
+      "name": "@glade/compat",
+      "aliases": ["compat"],
       "version": "0.1.0",
+      "publisher": "glade",
+      "trust": "first-party",
+      "summary": "Compatibility fixtures, surface ledgers, and maintenance scanners.",
+      "commands": ["compat", "surface", "local-tests", "post-parity", "examples", "dashboard", "gaps", "stdlib"],
+      "docsURL": "https://glade.sh/guide/plugins/first-party",
+      "sourceURL": "https://github.com/glade-sh/glade-tools",
+      "minimumGladeVersion": "0.1.0",
       "assets": [
         {
           "os": "darwin",
           "arch": "arm64",
-          "url": "https://example.com/glade-plugin-compat_0.1.0_darwin_arm64.tar.gz",
+          "url": "https://plugins.glade.sh/v0.1.0/glade-plugin-compat_0.1.0_darwin_arm64.tar.gz",
           "sha256": "<archive sha256>"
         }
       ]
@@ -234,6 +229,8 @@ archive SHA-256, then installs the archive.
   ]
 }
 ```
+
+The marketplace is a catalog. It does not replace archive installation.
 
 ## Troubleshooting
 
