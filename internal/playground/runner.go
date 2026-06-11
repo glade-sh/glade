@@ -122,6 +122,14 @@ func (r *Runner) Seed(reader io.Reader) error {
 	return saveDBOrg(r.store.db, org)
 }
 
+func (r *Runner) InvalidateSourceRuntime() {
+	r.mu.Lock()
+	r.runtimeTemplate = nil
+	r.lastOrgCacheKey = ""
+	r.mu.Unlock()
+	apextest.InvalidateRuntimeCaches()
+}
+
 func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

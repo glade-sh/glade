@@ -264,9 +264,38 @@ Start the local browser playground for editing classes, running anonymous Apex, 
 ```bash
 glade playground --db .glade/playground/org.sqlite --addr 127.0.0.1:1789 --open
 glade playground --examples --db .glade/playground/org.sqlite
+glade playground --example deal-desk-discount-guard --once
+glade playground --list-examples
+glade playground --no-db --addr 127.0.0.1:1789 --open
+glade playground --examples --reset-on-start
 glade playground --project . --db .glade/playground/org.sqlite
 glade playground --wizard --project . --examples
 ```
+
+Useful flags:
+
+- `--list-examples` prints built-in example ids, names, file counts, and tags. Add `--project-ref name=path` to include a local project reference.
+- `--example <id>` enables built-in examples and starts at `/playground/?example=<id>`. It uses the managed scratch workspace and cannot be combined with `--project` or `--project-ref`.
+- `--no-db` keeps org state in memory and writes no `.glade/playground/org.sqlite`.
+- `--reset-on-start` clears the scratch workspace and local org state before serving. It refuses `--project <path>` so project source is not deleted.
+
+Built-in examples:
+
+| ID | Name | Command |
+| --- | --- | --- |
+| `contact-relationship-drill` | Account + Contact Query | `glade playground --example contact-relationship-drill` |
+| `account-service` | Account Factory + Selector | `glade playground --example account-service` |
+| `trigger-contact-task` | Before Insert Trigger | `glade playground --example trigger-contact-task` |
+| `bulk-trigger-rollup` | Bulk Trigger Rollup | `glade playground --example bulk-trigger-rollup` |
+| `collection-selector` | Collection Selector | `glade playground --example collection-selector` |
+| `deal-desk-discount-guard` | Deal Desk Discount Guard | `glade playground --example deal-desk-discount-guard` |
+| `limit-counter-drill` | Governor Counter Drill | `glade playground --example limit-counter-drill` |
+| `governor-limits-strict` | Governor Limits (strict) | `glade playground --example governor-limits-strict` |
+| `map-selector-drill` | Map Selector Drill | `glade playground --example map-selector-drill` |
+| `org-diff-review-loop` | Org Diff Review Loop | `glade playground --example org-diff-review-loop` |
+| `org-diff-dml` | Org Diff after DML | `glade playground --example org-diff-dml` |
+| `persist-mode-ledger` | Persist Mode Ledger | `glade playground --example persist-mode-ledger` |
+| `renewal-health-scorecard` | Renewal Health Scorecard | `glade playground --example renewal-health-scorecard` |
 
 ::: tip Local workbench
 Open the local playground with examples:

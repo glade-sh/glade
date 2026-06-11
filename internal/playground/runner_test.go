@@ -329,12 +329,25 @@ func TestExampleProjectsRunAnonymous(t *testing.T) {
 	}
 }
 
+func TestExampleProjectsHaveUniqueIDs(t *testing.T) {
+	seen := make(map[string]bool)
+	for _, example := range ListExampleProjects() {
+		if seen[example.ID] {
+			t.Fatalf("duplicate example id %q", example.ID)
+		}
+		seen[example.ID] = true
+	}
+}
+
 func TestComplexExampleProjectsRunAnonymous(t *testing.T) {
 	want := map[string]string{
 		"bulk-trigger-rollup":        "AUTO-3",
 		"map-selector-drill":         "Energy => 2",
 		"contact-relationship-drill": "contacts: 3",
 		"limit-counter-drill":        "dml rows:",
+		"deal-desk-discount-guard":   "top bucket: strategic",
+		"renewal-health-scorecard":   "health score: 85",
+		"org-diff-review-loop":       "decision: approved",
 	}
 	for id, logText := range want {
 		t.Run(id, func(t *testing.T) {
@@ -345,6 +358,21 @@ func TestComplexExampleProjectsRunAnonymous(t *testing.T) {
 			meta, err := ws.LoadExample(id)
 			if err != nil {
 				t.Fatalf("LoadExample() error = %v", err)
+			}
+			if id == "deal-desk-discount-guard" || id == "renewal-health-scorecard" || id == "org-diff-review-loop" {
+				sourceFiles := 0
+				hasAnonymous := false
+				for _, file := range meta.Files {
+					switch file.Kind {
+					case "class", "trigger":
+						sourceFiles++
+					case "anonymous":
+						hasAnonymous = true
+					}
+				}
+				if sourceFiles < 3 || !hasAnonymous {
+					t.Fatalf("example %q files: source=%d anonymous=%t files=%#v", id, sourceFiles, hasAnonymous, meta.Files)
+				}
 			}
 			runner := NewRunner(ws, RunnerOptions{Version: "test"})
 			result, err := runner.Run(t.Context(), RunRequest{

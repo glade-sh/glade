@@ -59,6 +59,7 @@ type WorkspaceMetadata = {
   anonymousBody?: string
   workspaceHash?: string
   limitMode?: string
+  dbPath?: string
 }
 
 type ExampleProject = {
@@ -225,6 +226,76 @@ const databaseKindFilters: { value: DatabaseObjectKind; label: string }[] = [
   { value: "custom_setting", label: "Custom settings" },
 ]
 
+export type SourceTabFile = {
+  path: string
+  kind: "class" | "trigger" | "anonymous" | "data" | "metadata" | "other"
+  readOnly?: boolean
+}
+
+type SourceTabState = {
+  sourcePath: string
+  activePath: string
+  sourceTabs: string[]
+}
+
+type SourceTabItem = {
+  path: string
+  name: string
+  kind: WorkspaceFile["kind"]
+  active: boolean
+  dirty: boolean
+  readOnly: boolean
+  canClose: boolean
+}
+
+function isSourceEditorFile(file: SourceTabFile) {
+  return file.kind === "class" || file.kind === "trigger" || file.kind === "metadata"
+}
+
+export function openSourceTab(state: SourceTabState, path: string): SourceTabState {
+  const sourceTabs = state.sourceTabs.includes(path) ? state.sourceTabs : [...state.sourceTabs, path]
+  return { sourcePath: path, activePath: path, sourceTabs }
+}
+
+export function selectSourceTab(state: SourceTabState, path: string): SourceTabState {
+  return openSourceTab(state, path)
+}
+
+export function closeSourceTab(state: SourceTabState, path: string): SourceTabState {
+  if (state.sourceTabs.length <= 1) return state
+  const sourceTabs = state.sourceTabs.filter((item) => item !== path)
+  if (!sourceTabs.length) return state
+  if (state.sourcePath !== path) return { ...state, sourceTabs }
+  const nextPath = sourceTabs[sourceTabs.length - 1]
+  return { sourcePath: nextPath, activePath: nextPath, sourceTabs }
+}
+
+export function sourceTabItems({
+  files,
+  sourceTabs,
+  activePath,
+  dirtyPaths,
+}: {
+  files: SourceTabFile[]
+  sourceTabs: string[]
+  activePath: string
+  dirtyPaths: Set<string>
+}): SourceTabItem[] {
+  const fileByPath = new Map(files.filter(isSourceEditorFile).map((file) => [file.path, file]))
+  return sourceTabs
+    .map((path) => fileByPath.get(path))
+    .filter((file): file is SourceTabFile => Boolean(file))
+    .map((file) => ({
+      path: file.path,
+      name: fileName(file.path),
+      kind: file.kind,
+      active: file.path === activePath,
+      dirty: dirtyPaths.has(file.path),
+      readOnly: file.readOnly ?? false,
+      canClose: sourceTabs.length > 1 && file.path !== activePath,
+    }))
+}
+
 export default function App() {
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     const saved = localStorage.getItem("glade-playground-theme")
@@ -234,6 +305,7 @@ export default function App() {
   const [versions, setVersions] = useState<Record<string, number>>({})
   const [contentByPath, setContentByPath] = useState<Record<string, string>>({})
   const [sourcePath, setSourcePath] = useState<string>("")
+  const [sourceTabs, setSourceTabs] = useState<string[]>([])
   const [activePath, setActivePath] = useState<string>("")
   const [anonymousPath, setAnonymousPath] = useState<string>("anonymous.apex")
   const [anonymous, setAnonymous] = useState("")
@@ -262,6 +334,7 @@ export default function App() {
   const versionsRef = useRef<Record<string, number>>({})
   const contentRef = useRef<Record<string, string>>({})
   const sourcePathRef = useRef("")
+  const sourceTabsRef = useRef<string[]>([])
   const anonymousPathRef = useRef("anonymous.apex")
   const anonymousRef = useRef("")
   const modeRef = useRef<"scratch" | "persist">("scratch")
@@ -303,6 +376,10 @@ export default function App() {
   }, [sourcePath])
 
   useEffect(() => {
+    sourceTabsRef.current = sourceTabs
+  }, [sourceTabs])
+
+  useEffect(() => {
     anonymousPathRef.current = anonymousPath
   }, [anonymousPath])
 
@@ -327,10 +404,8 @@ export default function App() {
     localStorage.setItem("glade-playground-advanced", advanced ? "true" : "false")
     if (!advanced) {
       setCommandOpen(false)
-      setResultTab((current) => (current === "trace" ? "logs" : current))
-      modeRef.current = "scratch"
+      setResultTab((current) => (current === "trace" || current === "database" ? "logs" : current))
       limitModeRef.current = "permissive"
-      setMode("scratch")
       setLimitMode("permissive")
     }
   }, [advanced])
@@ -477,6 +552,11 @@ export default function App() {
     const content = cached ?? (await readWorkspaceFile(path))
     sourcePathRef.current = path
     setSourcePath(path)
+    if (isSourceEditorFile(file)) {
+      const next = openSourceTab({ sourcePath: path, activePath: path, sourceTabs: sourceTabsRef.current }, path)
+      sourceTabsRef.current = next.sourceTabs
+      setSourceTabs(next.sourceTabs)
+    }
     setContentByPath((current) => ({ ...current, [path]: content }))
   }, [])
 
@@ -487,7 +567,7 @@ export default function App() {
       const firstSource =
         workspace.files.find((file) => file.path === options.preferred) ??
         workspace.files.find((file) => file.kind === "class") ??
-        workspace.files.find((file) => file.kind !== "anonymous")
+        workspace.files.find(isSourceEditorFile)
       const nextContent: Record<string, string> = {}
       if (anonymousFile) nextContent[anonymousFile.path] = workspace.anonymousBody ?? ""
       setMeta(workspace)
@@ -506,7 +586,9 @@ export default function App() {
       anonymousPathRef.current = anonymousFile?.path ?? "anonymous.apex"
       anonymousRef.current = workspace.anonymousBody ?? ""
       sourcePathRef.current = ""
+      sourceTabsRef.current = []
       setSourcePath("")
+      setSourceTabs([])
       setActivePath("")
       if (firstSource) {
         await openFile(firstSource.path)
@@ -577,6 +659,16 @@ export default function App() {
   }, [classSearch, meta?.files])
 
   const activeSourceFile = useMemo(() => meta?.files.find((file) => file.path === sourcePath), [meta?.files, sourcePath])
+  const sourceTabList = useMemo(
+    () =>
+      sourceTabItems({
+        files: meta?.files ?? [],
+        sourceTabs,
+        activePath: sourcePath,
+        dirtyPaths,
+      }),
+    [dirtyPaths, meta?.files, sourcePath, sourceTabs],
+  )
   const sourceReadOnly = activeSourceFile?.readOnly ?? false
   const sourceContent = sourcePath ? contentByPath[sourcePath] ?? "" : ""
   const runTime = result ? `${(result.compileMs ?? 0) + (result.executeMs ?? 0)} ms` : "-"
@@ -614,6 +706,8 @@ export default function App() {
     return counts
   }, [database.objects])
   const cacheLabel = cacheState === "hit" ? "cache hit" : cacheState === "fresh" ? "cache fresh" : "cache stale"
+  const dbPath = meta?.dbPath?.trim() ?? ""
+  const dbStateLabel = dbPath || "memory-only"
   const onSourceChange = (value: string) => {
     if (!sourcePath || sourceReadOnly) return
     contentRef.current = { ...contentRef.current, [sourcePath]: value }
@@ -637,6 +731,9 @@ export default function App() {
     sourcePathRef.current = path
     setSourcePath(path)
     setActivePath(path)
+    const next = openSourceTab({ sourcePath: path, activePath: path, sourceTabs: sourceTabsRef.current }, path)
+    sourceTabsRef.current = next.sourceTabs
+    setSourceTabs(next.sourceTabs)
     setStatus("Saved")
   }
 
@@ -767,6 +864,80 @@ export default function App() {
       return next
     })
   }
+
+  const closeSourceTabAndHandle = (path: string) => {
+    const next = closeSourceTab({ sourcePath, activePath, sourceTabs }, path)
+    sourceTabsRef.current = next.sourceTabs
+    setSourceTabs(next.sourceTabs)
+    if (next.sourcePath !== sourcePath) {
+      void openFile(next.sourcePath).catch((error) => {
+        setProblemMessage(error instanceof Error ? error.message : String(error))
+        setStatus("Error")
+      })
+    }
+  }
+
+  const sourceEditor = (
+    <div className="source-editor-stack min-h-0">
+      <div className="source-tab-strip" data-testid="source-tab-strip" aria-label="Open source files">
+        {sourceTabList.length ? (
+          sourceTabList.map((tab) => {
+            const TabIcon = tab.kind === "trigger" ? Zap : FileCode2
+            return (
+              <div
+                key={tab.path}
+                className={cn("source-tab", tab.active && "active", tab.readOnly && "read-only")}
+                data-dirty={tab.dirty ? "true" : "false"}
+              >
+                <button
+                  className="source-tab-main"
+                  onClick={() => {
+                    const next = selectSourceTab({ sourcePath, activePath, sourceTabs }, tab.path)
+                    sourceTabsRef.current = next.sourceTabs
+                    setSourceTabs(next.sourceTabs)
+                    void openFile(tab.path).catch((error) => {
+                      setProblemMessage(error instanceof Error ? error.message : String(error))
+                      setStatus("Error")
+                    })
+                  }}
+                  title={tab.path}
+                >
+                  <TabIcon className={cn("source-tab-icon", tab.kind === "trigger" && "trigger")} />
+                  <span>{tab.name}</span>
+                  {tab.dirty ? <span className="source-tab-dirty" aria-label={`${tab.name} has unsaved changes`} /> : null}
+                </button>
+                {tab.canClose ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="source-tab-close"
+                    onClick={() => closeSourceTabAndHandle(tab.path)}
+                    title={`Close ${tab.name}`}
+                  >
+                    <Trash2 />
+                  </Button>
+                ) : null}
+              </div>
+            )
+          })
+        ) : (
+          <div className="source-tab-empty">
+            <FileCode2 className="size-3.5" />
+            No source open
+          </div>
+        )}
+      </div>
+      <CodeEditor
+        title="Apex Source"
+        contextLabel={sourcePath ? fileName(sourcePath) : "No source"}
+        contextTitle={sourcePath || "No source file selected"}
+        value={sourceContent}
+        onChange={onSourceChange}
+        readOnly={sourceReadOnly}
+        className="min-h-0 flex-1"
+      />
+    </div>
+  )
 
   const databaseBrowser = (
     <div className="database-browser">
@@ -938,25 +1109,29 @@ export default function App() {
           </div>
         </div>
         <div className="topbar-actions flex items-center gap-2">
+          <div className="run-mode-control" data-testid="run-mode-selector">
+            <span>mode</span>
+            <Select
+              value={mode}
+              onValueChange={(value) => {
+                const next = value as "scratch" | "persist"
+                modeRef.current = next
+                setMode(next)
+                setCacheState("stale")
+              }}
+            >
+              <SelectTrigger className="w-[118px]" aria-label="Run mode: scratch or persist">
+                <SelectValue placeholder={mode} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="scratch">scratch</SelectItem>
+                <SelectItem value="persist">persist</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="sr-only">scratch persist</span>
+          </div>
           {advanced ? (
             <>
-              <Select
-                value={mode}
-                onValueChange={(value) => {
-                  const next = value as "scratch" | "persist"
-                  modeRef.current = next
-                  setMode(next)
-                  setCacheState("stale")
-                }}
-              >
-                <SelectTrigger className="w-[118px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="scratch">scratch</SelectItem>
-                  <SelectItem value="persist">persist</SelectItem>
-                </SelectContent>
-              </Select>
               <Select
                 value={limitMode}
                 onValueChange={(value) => {
@@ -1099,58 +1274,17 @@ export default function App() {
         </aside>
 
         <section className="min-h-0">
-          {advanced ? (
-            <Tabs defaultValue="apex" className="flex h-full min-h-0 flex-col">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="apex">Apex</TabsTrigger>
-                <TabsTrigger value="database" data-testid="workspace-database-tab">
-                  Database
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="apex" className="min-h-0 flex-1">
-                <div className="editor-grid grid h-full min-h-0 gap-3">
-                  <CodeEditor
-                    title="Apex Source"
-                    contextLabel={sourcePath ? fileName(sourcePath) : "No source"}
-                    contextTitle={sourcePath || "No source file selected"}
-                    value={sourceContent}
-                    onChange={onSourceChange}
-                    readOnly={sourceReadOnly}
-                  />
-                  <CodeEditor
-                    title="Execute Anonymous"
-                    value={anonymous}
-                    onChange={onAnonymousChange}
-                    runLabel={running ? "Running" : "Run"}
-                    running={running}
-                    onRun={runAndHandle}
-                  />
-                </div>
-              </TabsContent>
-              <TabsContent value="database" className="min-h-0 flex-1">
-                <div className="h-full min-h-0">{databaseBrowser}</div>
-              </TabsContent>
-            </Tabs>
-          ) : (
-            <div className="editor-grid grid h-full min-h-0 gap-3">
-              <CodeEditor
-                title="Apex Source"
-                contextLabel={sourcePath ? fileName(sourcePath) : "No source"}
-                contextTitle={sourcePath || "No source file selected"}
-                value={sourceContent}
-                onChange={onSourceChange}
-                readOnly={sourceReadOnly}
-              />
-              <CodeEditor
-                title="Execute Anonymous"
-                value={anonymous}
-                onChange={onAnonymousChange}
-                runLabel={running ? "Running" : "Run"}
-                running={running}
-                onRun={runAndHandle}
-              />
-            </div>
-          )}
+          <div className="editor-grid grid h-full min-h-0 gap-3">
+            {sourceEditor}
+            <CodeEditor
+              title="Execute Anonymous"
+              value={anonymous}
+              onChange={onAnonymousChange}
+              runLabel={running ? "Running" : "Run"}
+              running={running}
+              onRun={runAndHandle}
+            />
+          </div>
         </section>
 
         <aside className="pane output-pane min-h-0">
@@ -1165,16 +1299,18 @@ export default function App() {
               )}
               <h2 className="truncate text-sm font-semibold">Output</h2>
             </div>
-            {advanced ? (
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" onClick={() => void seedOrg()} title="Seed data">
-                  <Database />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => void resetOrg()} title="Reset org">
-                  <RotateCcw />
-                </Button>
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="database-state" title={dbPath || "No database path configured"}>
+                <Database className="size-3.5" />
+                <span>{dbStateLabel}</span>
               </div>
-            ) : null}
+              <Button variant="ghost" size="icon" onClick={() => void seedOrg()} title="Seed data">
+                <Database />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => void resetOrg()} title="Reset org">
+                <RotateCcw />
+              </Button>
+            </div>
           </header>
 
           <div className="grid grid-cols-4 gap-2 p-3">
@@ -1197,12 +1333,17 @@ export default function App() {
           </div>
 
           <Tabs value={resultTab} onValueChange={setResultTab} className="flex min-h-0 flex-1 flex-col px-3 pb-3">
-            <TabsList className={cn("grid w-full", advanced ? "grid-cols-6" : "grid-cols-5")}>
+            <TabsList className={cn("grid w-full", advanced ? "grid-cols-7" : "grid-cols-5")}>
               <TabsTrigger value="logs">Logs</TabsTrigger>
               <TabsTrigger value="vars">Vars</TabsTrigger>
               <TabsTrigger value="limits">Limits</TabsTrigger>
               <TabsTrigger value="orgDiff">Org diff</TabsTrigger>
               <TabsTrigger value="problems">Problems</TabsTrigger>
+              {advanced ? (
+                <TabsTrigger value="database" data-testid="output-database-tab">
+                  Database
+                </TabsTrigger>
+              ) : null}
               {advanced ? <TabsTrigger value="trace">Trace</TabsTrigger> : null}
             </TabsList>
             <TabsContent value="logs" className="min-h-0 flex-1">
@@ -1291,11 +1432,16 @@ export default function App() {
               </ScrollArea>
             </TabsContent>
             {advanced ? (
-            <TabsContent value="trace" className="min-h-0 flex-1">
-              <ScrollArea className="result-box">
-                <pre>{JSON.stringify(result?.trace ?? [], null, 2)}</pre>
-              </ScrollArea>
-            </TabsContent>
+              <TabsContent value="database" className="min-h-0 flex-1">
+                <div className="result-box overflow-hidden">{databaseBrowser}</div>
+              </TabsContent>
+            ) : null}
+            {advanced ? (
+              <TabsContent value="trace" className="min-h-0 flex-1">
+                <ScrollArea className="result-box">
+                  <pre>{JSON.stringify(result?.trace ?? [], null, 2)}</pre>
+                </ScrollArea>
+              </TabsContent>
             ) : null}
           </Tabs>
         </aside>

@@ -352,13 +352,22 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "playground",
 		Description: "Start the local Apex playground web UI.",
-		Usage:       []string{"glade playground [--addr <host:port>] [--workspace <id>] [--data-root <path>] [--project <root>] [--db <path>] [--open|--no-open]", "glade playground --wizard [--project <root>] [--examples]"},
+		Usage: []string{
+			"glade playground [--addr <host:port>] [--workspace <id>] [--data-root <path>] [--project <root>] [--db <path>] [--open|--no-open]",
+			"glade playground --example <id> [--once|--open]",
+			"glade playground --list-examples [--project-ref <name=path>]",
+			"glade playground --wizard [--project <root>] [--examples]",
+		},
 		Flags: []FlagHelp{
 			{Name: "--addr", Value: "<host:port>", Description: "Bind address. Defaults to 127.0.0.1:1789."},
 			{Name: "--db", Value: "<path>", Description: "Persistent local database."},
+			{Name: "--no-db", Description: "Use memory-only org state and do not write org.sqlite."},
 			{Name: "--project", Value: "<root>", Description: "Attach a project to the workspace."},
 			{Name: "--project-ref", Value: "<name=path>", Description: "Add a named project reference."},
 			{Name: "--examples", Description: "Show bundled examples."},
+			{Name: "--list-examples", Description: "Print example ids, names, file counts, and tags without serving."},
+			{Name: "--example", Value: "<id>", Description: "Start on a bundled example in the managed scratch workspace."},
+			{Name: "--reset-on-start", Description: "Clear scratch workspace and org state before serving; refuses --project."},
 			{Name: "--public", Description: "Bind to PORT on all interfaces."},
 			{Name: "--run-timeout", Value: "<dur>", Description: "Anonymous Apex run timeout."},
 			{Name: "--rate-per-minute", Value: "<n>", Description: "Request rate limit."},
@@ -370,7 +379,12 @@ var commandReferences = []CommandHelp{
 			{Name: "--once", Description: "Prepare and exit without serving."},
 			{Name: "--wizard", Description: "Print a ready playground command without serving."},
 		},
-		Examples: []string{"glade playground --project . --open", "glade playground --wizard --project . --examples"},
+		Examples: []string{
+			"glade playground --project . --open",
+			"glade playground --example deal-desk-discount-guard --once",
+			"glade playground --list-examples",
+			"glade playground --wizard --project . --examples",
+		},
 	},
 	{
 		Name:        "db",

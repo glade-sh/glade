@@ -43,6 +43,54 @@ func TestServerWorkspaceAndRunRoutes(t *testing.T) {
 	}
 }
 
+func TestServerWorkspaceIncludesConfiguredDBPath(t *testing.T) {
+	dataRoot := t.TempDir()
+	dbPath := filepath.Join(t.TempDir(), "org.sqlite")
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test", DBPath: dbPath})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/playground/api/workspace", nil)
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("workspace status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var meta WorkspaceMetadata
+	if err := json.Unmarshal(rec.Body.Bytes(), &meta); err != nil {
+		t.Fatalf("decode workspace: %v", err)
+	}
+	if meta.DBPath != dbPath {
+		t.Fatalf("db path = %q, want %q", meta.DBPath, dbPath)
+	}
+}
+
+func TestPublicServerWorkspaceOmitsConfiguredDBPath(t *testing.T) {
+	dataRoot := t.TempDir()
+	dbPath := filepath.Join(t.TempDir(), "org.sqlite")
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test", DBPath: dbPath, Public: true})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/playground/api/workspace", nil)
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("workspace status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var meta WorkspaceMetadata
+	if err := json.Unmarshal(rec.Body.Bytes(), &meta); err != nil {
+		t.Fatalf("decode workspace: %v", err)
+	}
+	if meta.DBPath != "" {
+		t.Fatalf("public db path = %q, want empty", meta.DBPath)
+	}
+}
+
 func TestServerDatabaseRouteShowsLatestScratchRunRows(t *testing.T) {
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
@@ -225,6 +273,100 @@ func TestServerFileSaveRejectsStaleVersion(t *testing.T) {
 	handler.ServeHTTP(rec, req)
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("stale save status = %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestServerSaveSourceInvalidatesProjectRuntime(t *testing.T) {
+	dataRoot := t.TempDir()
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test"})
+	handler.runner.runtimeTemplate = &cachedRuntimeTemplate{workspaceHash: "warm"}
+	handler.runner.lastOrgCacheKey = "warm-result"
+
+	meta, err := ws.Metadata()
+	if err != nil {
+		t.Fatalf("Metadata() error = %v", err)
+	}
+	versions := make(map[string]int)
+	for _, file := range meta.Files {
+		versions[file.Path] = file.Version
+	}
+	save := FileSaveRequest{
+		Path:    "force-app/main/default/classes/AccountPlayground.cls",
+		Content: "public class AccountPlayground { public static String marker(){ return 'fresh'; } }",
+		Version: versions["force-app/main/default/classes/AccountPlayground.cls"],
+	}
+	body, _ := json.Marshal(save)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, "/playground/api/files", bytes.NewReader(body))
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("save status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if handler.runner.runtimeTemplate != nil {
+		t.Fatalf("runtime template was not invalidated")
+	}
+	if handler.runner.lastOrgCacheKey != "" {
+		t.Fatalf("last org cache key = %q, want empty", handler.runner.lastOrgCacheKey)
+	}
+}
+
+func TestServerDeleteSourceInvalidatesProjectRuntime(t *testing.T) {
+	dataRoot := t.TempDir()
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	if _, err := ws.SaveFile(FileSaveRequest{
+		Path:    "force-app/main/default/classes/DeleteMe.cls",
+		Content: "public class DeleteMe {}",
+		Version: 0,
+	}); err != nil {
+		t.Fatalf("SaveFile() error = %v", err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test"})
+	handler.runner.runtimeTemplate = &cachedRuntimeTemplate{workspaceHash: "warm"}
+	handler.runner.lastOrgCacheKey = "warm-result"
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodDelete, "/playground/api/files?path=force-app/main/default/classes/DeleteMe.cls", nil)
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("delete status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if handler.runner.runtimeTemplate != nil {
+		t.Fatalf("runtime template was not invalidated")
+	}
+	if handler.runner.lastOrgCacheKey != "" {
+		t.Fatalf("last org cache key = %q, want empty", handler.runner.lastOrgCacheKey)
+	}
+}
+
+func TestServerLoadExampleInvalidatesProjectRuntime(t *testing.T) {
+	dataRoot := t.TempDir()
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test", ShowExamples: true})
+	handler.runner.runtimeTemplate = &cachedRuntimeTemplate{workspaceHash: "warm"}
+	handler.runner.lastOrgCacheKey = "warm-result"
+
+	body, _ := json.Marshal(map[string]string{"id": "trigger-contact-task"})
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/playground/api/examples/load", bytes.NewReader(body))
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("load example status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if handler.runner.runtimeTemplate != nil {
+		t.Fatalf("runtime template was not invalidated")
+	}
+	if handler.runner.lastOrgCacheKey != "" {
+		t.Fatalf("last org cache key = %q, want empty", handler.runner.lastOrgCacheKey)
 	}
 }
 

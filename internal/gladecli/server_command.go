@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -116,6 +118,10 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 	projectRoot := ""
 	projectRefs := []playground.ProjectReference{}
 	showExamples := false
+	listExamples := false
+	exampleID := ""
+	noDB := false
+	resetOnStart := false
 	limitMode := vm.LimitModePermissive
 	openBrowser := false
 	openBrowserSet := false
@@ -139,6 +145,9 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 				return err
 			}
 			dbPath = value
+		case "--no-db":
+			dbPath = ""
+			noDB = true
 		case "--project":
 			value, err := takeFlagValue(args, &i, "--project requires a value")
 			if err != nil {
@@ -157,6 +166,17 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 			projectRefs = append(projectRefs, ref)
 		case "--examples":
 			showExamples = true
+		case "--list-examples":
+			listExamples = true
+		case "--example":
+			value, err := takeFlagValue(args, &i, "--example requires a value")
+			if err != nil {
+				return err
+			}
+			exampleID = strings.TrimSpace(value)
+			showExamples = true
+		case "--reset-on-start":
+			resetOnStart = true
 		case "--public":
 			public = true
 		case "--run-timeout":
@@ -215,6 +235,29 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
+	if exampleID != "" && !playgroundExampleExists(exampleID) {
+		return fmt.Errorf("unknown playground example %q", exampleID)
+	}
+	if exampleID != "" && projectRoot != "" {
+		return errors.New("--example requires the managed scratch workspace; remove --project")
+	}
+	if exampleID != "" && len(projectRefs) > 0 {
+		return errors.New("--example cannot be combined with --project-ref")
+	}
+	if listExamples {
+		return writePlaygroundExamplesList(w, projectRefs)
+	}
+	if resetOnStart && projectRoot != "" {
+		return errors.New("--reset-on-start refuses --project because it would delete project source")
+	}
+	if projectRoot == "" {
+		if _, err := playgroundWorkspaceRoot(dataRoot, workspaceID); err != nil {
+			return err
+		}
+	}
+	if noDB {
+		dbPath = ""
+	}
 	if public && !addrProvided {
 		port := strings.TrimSpace(os.Getenv("PORT"))
 		if port == "" {
@@ -232,6 +275,9 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 			projectRoot:    projectRoot,
 			projectRefs:    projectRefs,
 			showExamples:   showExamples,
+			exampleID:      exampleID,
+			noDB:           noDB,
+			resetOnStart:   resetOnStart,
 			limitMode:      limitMode,
 			openBrowser:    openBrowser,
 			openBrowserSet: openBrowserSet,
@@ -239,6 +285,11 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 			runTimeout:     runTimeout,
 			ratePerMinute:  ratePerMinute,
 		})
+	}
+	if resetOnStart {
+		if err := resetPlaygroundState(dataRoot, workspaceID, dbPath); err != nil {
+			return err
+		}
 	}
 	ws, err := playground.OpenWorkspace(playground.WorkspaceOptions{
 		DataRoot:    dataRoot,
@@ -258,7 +309,10 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 		RunTimeout:        runTimeout,
 		RatePerMinute:     ratePerMinute,
 	})
-	url := "http://" + addr + "/playground/"
+	url := playgroundURL(addr, exampleID)
+	if noDB {
+		fmt.Fprintln(w, "state: memory-only")
+	}
 	fmt.Fprintf(w, "glade playground: %s\n", url)
 	if once {
 		_ = handler
@@ -279,6 +333,9 @@ type playgroundWizardOptions struct {
 	projectRoot    string
 	projectRefs    []playground.ProjectReference
 	showExamples   bool
+	exampleID      string
+	noDB           bool
+	resetOnStart   bool
 	limitMode      vm.LimitMode
 	openBrowser    bool
 	openBrowserSet bool
@@ -312,6 +369,15 @@ func writePlaygroundWizard(w io.Writer, opts playgroundWizardOptions) error {
 	if opts.showExamples {
 		args = append(args, "--examples")
 	}
+	if opts.exampleID != "" {
+		args = append(args, "--example", opts.exampleID)
+	}
+	if opts.noDB {
+		args = append(args, "--no-db")
+	}
+	if opts.resetOnStart {
+		args = append(args, "--reset-on-start")
+	}
 	if opts.limitMode != "" && opts.limitMode != vm.LimitModePermissive {
 		args = append(args, "--limit-mode", string(opts.limitMode))
 	}
@@ -332,8 +398,202 @@ func writePlaygroundWizard(w io.Writer, opts playgroundWizardOptions) error {
 	}
 	fmt.Fprintln(w, "Playground wizard")
 	fmt.Fprintf(w, "  %s\n", shellCommand(args...))
-	fmt.Fprintln(w, "  Open: http://"+opts.addr+"/playground/")
+	fmt.Fprintln(w, "  Open: "+playgroundURL(opts.addr, opts.exampleID))
 	return nil
+}
+
+func playgroundExampleExists(id string) bool {
+	for _, example := range playground.ListExampleProjects() {
+		if example.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func playgroundURL(addr, exampleID string) string {
+	out := "http://" + addr + "/playground/"
+	if exampleID != "" {
+		out += "?example=" + url.QueryEscape(exampleID)
+	}
+	return out
+}
+
+func writePlaygroundExamplesList(w io.Writer, refs []playground.ProjectReference) error {
+	fmt.Fprintln(w, "Playground examples")
+	seen := make(map[string]bool)
+	for _, example := range playground.ListExampleProjects() {
+		if seen[example.ID] {
+			continue
+		}
+		seen[example.ID] = true
+		fmt.Fprintf(w, "  %s\t%s\t%d files\t%s\n", example.ID, example.Name, example.FileCount, strings.Join(example.Tags, ", "))
+	}
+	for _, ref := range normalizePlaygroundCLIProjectReferences(refs) {
+		count, err := countPlaygroundProjectRefFiles(ref.Path)
+		if err != nil {
+			return err
+		}
+		tags := append([]string{"local"}, ref.Tags...)
+		fmt.Fprintf(w, "  %s\t%s\t%d files\t%s\n", ref.ID, ref.Name, count, strings.Join(tags, ", "))
+	}
+	return nil
+}
+
+func normalizePlaygroundCLIProjectReferences(refs []playground.ProjectReference) []playground.ProjectReference {
+	out := make([]playground.ProjectReference, 0, len(refs))
+	used := make(map[string]int)
+	for _, ref := range refs {
+		ref.Path = strings.TrimSpace(ref.Path)
+		if ref.Path == "" {
+			continue
+		}
+		if abs, err := filepath.Abs(ref.Path); err == nil {
+			ref.Path = abs
+		}
+		ref.Name = strings.TrimSpace(ref.Name)
+		if ref.Name == "" {
+			ref.Name = filepath.Base(ref.Path)
+		}
+		ref.ID = strings.TrimSpace(ref.ID)
+		if ref.ID == "" {
+			ref.ID = "local-" + playgroundCLISlugID(ref.Name)
+		}
+		if n := used[ref.ID]; n > 0 {
+			used[ref.ID] = n + 1
+			ref.ID = fmt.Sprintf("%s-%d", ref.ID, n+1)
+		} else {
+			used[ref.ID] = 1
+		}
+		ref.Tags = append([]string(nil), ref.Tags...)
+		out = append(out, ref)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return out
+}
+
+func playgroundCLISlugID(value string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(value) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+			continue
+		}
+		if b.Len() > 0 && b.String()[b.Len()-1] != '-' {
+			b.WriteByte('-')
+		}
+	}
+	out := strings.Trim(b.String(), "-")
+	if out == "" {
+		return "project"
+	}
+	return out
+}
+
+func countPlaygroundProjectRefFiles(root string) (int, error) {
+	info, err := os.Stat(root)
+	if err != nil {
+		return 0, err
+	}
+	if !info.IsDir() {
+		return 0, fmt.Errorf("project reference is not a directory: %s", root)
+	}
+	count := 0
+	if err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if path != root && strings.HasPrefix(entry.Name(), ".") {
+			if entry.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if entry.IsDir() {
+			if shouldSkipPlaygroundCLIProjectRefDir(entry.Name()) && path != root {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if isAllowedPlaygroundCLIExtension(filepath.Ext(path)) {
+			count++
+		}
+		return nil
+	}); err != nil {
+		return 0, err
+	}
+	if count == 0 {
+		return 0, fmt.Errorf("project reference has no loadable files: %s", root)
+	}
+	return count, nil
+}
+
+func shouldSkipPlaygroundCLIProjectRefDir(name string) bool {
+	if strings.HasPrefix(name, ".") {
+		return true
+	}
+	switch name {
+	case ".git", ".hg", ".svn", ".sf", ".sfdx", ".glade", "node_modules", "dist", "bin":
+		return true
+	default:
+		return false
+	}
+}
+
+func isAllowedPlaygroundCLIExtension(ext string) bool {
+	switch strings.ToLower(ext) {
+	case ".cls", ".trigger", ".apex", ".json", ".xml", ".yml", ".yaml":
+		return true
+	default:
+		return false
+	}
+}
+
+func resetPlaygroundState(dataRoot, workspaceID, dbPath string) error {
+	root, err := playgroundWorkspaceRoot(dataRoot, workspaceID)
+	if err != nil {
+		return err
+	}
+	if err := os.RemoveAll(root); err != nil {
+		return err
+	}
+	if err := os.RemoveAll(filepath.Join(dataRoot, "cache")); err != nil {
+		return err
+	}
+	if dbPath != "" {
+		if err := os.Remove(dbPath); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+	}
+	return nil
+}
+
+func playgroundWorkspaceRoot(dataRoot, workspaceID string) (string, error) {
+	id := strings.TrimSpace(workspaceID)
+	if id == "" {
+		id = "default"
+	}
+	if filepath.IsAbs(id) || strings.ContainsAny(id, `/\`) {
+		return "", fmt.Errorf("invalid playground workspace id %q", workspaceID)
+	}
+	clean := filepath.Clean(id)
+	if clean == "." || clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) || clean != id {
+		return "", fmt.Errorf("invalid playground workspace id %q", workspaceID)
+	}
+	base := filepath.Join(dataRoot, "workspaces")
+	root := filepath.Join(base, id)
+	absBase, err := filepath.Abs(base)
+	if err != nil {
+		return "", err
+	}
+	absRoot, err := filepath.Abs(root)
+	if err != nil {
+		return "", err
+	}
+	if absRoot != absBase && !strings.HasPrefix(absRoot, absBase+string(filepath.Separator)) {
+		return "", fmt.Errorf("workspace path escapes playground data root: %s", workspaceID)
+	}
+	return root, nil
 }
 
 func parsePlaygroundProjectRef(value string) (playground.ProjectReference, error) {

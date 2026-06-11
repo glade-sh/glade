@@ -29,6 +29,7 @@ type Server struct {
 	workspace         *Workspace
 	runner            *Runner
 	defaultLimitMode  vm.LimitMode
+	dbPath            string
 	projectRefs       []ProjectReference
 	showExamples      bool
 	public            bool
@@ -68,6 +69,7 @@ func NewServer(workspace *Workspace, opts ServerOptions) *Server {
 		workspace:         workspace,
 		runner:            NewRunner(workspace, RunnerOptions{Version: opts.Version, DBPath: opts.DBPath}),
 		defaultLimitMode:  mode,
+		dbPath:            opts.DBPath,
 		projectRefs:       normalizeProjectReferences(opts.ProjectReferences),
 		showExamples:      opts.ShowExamples,
 		public:            opts.Public,
@@ -142,10 +144,11 @@ func (s *Server) handleLoadExample(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.runner.Reset()
+	s.runner.InvalidateSourceRuntime()
 	if s.runner.cache != nil {
 		_ = s.runner.cache.ClearLatest()
 	}
-	meta.LimitMode = s.effectiveLimitMode()
+	s.decorateWorkspaceMetadata(&meta)
 	writeJSON(w, http.StatusOK, meta)
 }
 
@@ -285,8 +288,15 @@ func (s *Server) handleWorkspace(w http.ResponseWriter) {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	meta.LimitMode = s.effectiveLimitMode()
+	s.decorateWorkspaceMetadata(&meta)
 	writeJSON(w, http.StatusOK, meta)
+}
+
+func (s *Server) decorateWorkspaceMetadata(meta *WorkspaceMetadata) {
+	meta.LimitMode = s.effectiveLimitMode()
+	if !s.public {
+		meta.DBPath = s.dbPath
+	}
 }
 
 func (s *Server) handleSaveFile(w http.ResponseWriter, r *http.Request) {
@@ -316,6 +326,9 @@ func (s *Server) handleSaveFile(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	if shouldInvalidateRuntimeForFile(resp.File.Path) {
+		s.runner.InvalidateSourceRuntime()
+	}
 	writeJSON(w, http.StatusOK, resp)
 }
 
@@ -330,7 +343,22 @@ func (s *Server) handleDeleteFile(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	if shouldInvalidateRuntimeForFile(path) {
+		s.runner.InvalidateSourceRuntime()
+	}
 	writeJSON(w, http.StatusOK, map[string]bool{"deleted": true})
+}
+
+func shouldInvalidateRuntimeForFile(path string) bool {
+	switch fileKind(path) {
+	case "class", "trigger", "metadata":
+		return true
+	case "other":
+		clean := strings.TrimPrefix(filepath.ToSlash(filepath.Clean(path)), "./")
+		return clean == "force-app" || strings.HasPrefix(clean, "force-app/")
+	default:
+		return false
+	}
 }
 
 func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {

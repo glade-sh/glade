@@ -695,6 +695,11 @@ func TestRunCommandHelp(t *testing.T) {
 			want: []string{"Usage:", "glade init", "--force", "--namespace <name>", "--package-dir <path>"},
 		},
 		{
+			name: "playground help",
+			args: []string{"playground", "--help"},
+			want: []string{"Usage:", "glade playground", "--list-examples", "--example <id>", "--no-db", "--reset-on-start"},
+		},
+		{
 			name: "help test",
 			args: []string{"help", "test"},
 			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "startup.gob", "--no-cache", "--connect", "--daemon"},
@@ -1844,6 +1849,113 @@ func TestRunPlaygroundProjectRefFlag(t *testing.T) {
 	}
 }
 
+func TestRunPlaygroundListExamples(t *testing.T) {
+	projectRoot := t.TempDir()
+	writeTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/LocalProbe.cls"), "public class LocalProbe {}")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"playground",
+		"--list-examples",
+		"--project-ref", "Local Probe=" + projectRoot,
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	out := stdout.String()
+	for _, want := range []string{"account-service", "Account Factory + Selector", "files", "DML", "local-probe", "Local Probe"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("list output missing %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "glade playground:") {
+		t.Fatalf("list-examples should not start the server:\n%s", out)
+	}
+}
+
+func TestRunPlaygroundExampleFlagPrintsDeepLocalURL(t *testing.T) {
+	root := t.TempDir()
+	dbPath := filepath.Join(t.TempDir(), "playground.sqlite")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"playground",
+		"--workspace", "default",
+		"--data-root", root,
+		"--db", dbPath,
+		"--example", "account-service",
+		"--once",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "http://127.0.0.1:1789/playground/?example=account-service") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunPlaygroundExampleFlagImpliesExamples(t *testing.T) {
+	root := t.TempDir()
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"playground",
+		"--wizard",
+		"--data-root", root,
+		"--example", "account-service",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	out := stdout.String()
+	for _, want := range []string{"--examples", "--example", "account-service", "?example=account-service"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("wizard output missing %q:\n%s", want, out)
+		}
+	}
+}
+
+func TestRunPlaygroundExampleFlagRejectsUnknownID(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"playground", "--example", "missing-example", "--once"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), `unknown playground example "missing-example"`) {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunPlaygroundExampleFlagRejectsProjectRoot(t *testing.T) {
+	projectRoot := t.TempDir()
+	writeTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"playground", "--project", projectRoot, "--example", "account-service", "--once"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "--example requires the managed scratch workspace") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunPlaygroundExampleFlagRejectsProjectRefs(t *testing.T) {
+	projectRoot := t.TempDir()
+	writeTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/LocalProbe.cls"), "public class LocalProbe {}")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"playground", "--project-ref", "Local Probe=" + projectRoot, "--example", "account-service", "--once"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "--example cannot be combined with --project-ref") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
 func TestRunPlaygroundExamplesFlag(t *testing.T) {
 	root := t.TempDir()
 	dbPath := filepath.Join(t.TempDir(), "playground.sqlite")
@@ -1862,18 +1974,98 @@ func TestRunPlaygroundExamplesFlag(t *testing.T) {
 	}
 }
 
-func TestRunPlaygroundWizardPrintsCommand(t *testing.T) {
+func TestRunPlaygroundNoDB(t *testing.T) {
 	root := t.TempDir()
+	t.Chdir(root)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"playground", "--no-db", "--once"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if _, err := os.Stat(filepath.Join(root, ".glade", "playground", "org.sqlite")); !os.IsNotExist(err) {
+		t.Fatalf("org sqlite should not be written with --no-db; stat err=%v", err)
+	}
+}
+
+func TestRunPlaygroundResetOnStartRefusesProjectRoot(t *testing.T) {
 	projectRoot := t.TempDir()
 	writeTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"playground", "--wizard", "--project", projectRoot, "--data-root", root, "--examples", "--public"}, &stdout, &stderr)
+	code := Run(context.Background(), []string{"playground", "--project", projectRoot, "--reset-on-start", "--once"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "--reset-on-start refuses --project") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestResetPlaygroundStateRejectsEscapingWorkspaceID(t *testing.T) {
+	parent := t.TempDir()
+	dataRoot := filepath.Join(parent, "playground")
+	outside := filepath.Join(parent, "outside")
+	sentinel := filepath.Join(outside, "sentinel.txt")
+	writeTestFile(t, sentinel, "keep")
+
+	err := resetPlaygroundState(dataRoot, "../../outside", "")
+	if err == nil {
+		t.Fatalf("resetPlaygroundState() error = nil, want path rejection")
+	}
+	if _, statErr := os.Stat(sentinel); statErr != nil {
+		t.Fatalf("sentinel was removed or changed: %v", statErr)
+	}
+}
+
+func TestRunPlaygroundRejectsEscapingWorkspaceID(t *testing.T) {
+	parent := t.TempDir()
+	dataRoot := filepath.Join(parent, "playground")
+	outside := filepath.Join(parent, "outside")
+	writeTestFile(t, filepath.Join(outside, "sentinel.txt"), "keep")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"playground", "--data-root", dataRoot, "--workspace", "../../outside", "--once"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "invalid playground workspace id") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+	if _, err := os.Stat(filepath.Join(outside, "sfdx-project.json")); !os.IsNotExist(err) {
+		t.Fatalf("playground wrote outside data root; stat err=%v", err)
+	}
+}
+
+func TestResetPlaygroundStateClearsResultCache(t *testing.T) {
+	dataRoot := filepath.Join(t.TempDir(), "playground")
+	workspaceFile := filepath.Join(dataRoot, "workspaces", "default", "anonymous.apex")
+	cacheFile := filepath.Join(dataRoot, "cache", "latest.json")
+	dbPath := filepath.Join(dataRoot, "org.sqlite")
+	writeTestFile(t, workspaceFile, "System.debug('old');")
+	writeTestFile(t, cacheFile, `{"status":"pass"}`)
+	writeTestFile(t, dbPath, "sqlite")
+
+	if err := resetPlaygroundState(dataRoot, "default", dbPath); err != nil {
+		t.Fatalf("resetPlaygroundState() error = %v", err)
+	}
+	for _, path := range []string{workspaceFile, cacheFile, dbPath} {
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			t.Fatalf("%s should be removed; stat err=%v", path, err)
+		}
+	}
+}
+
+func TestRunPlaygroundWizardPrintsCommand(t *testing.T) {
+	root := t.TempDir()
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"playground", "--wizard", "--data-root", root, "--examples", "--example", "account-service", "--no-db", "--reset-on-start", "--public"}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
 	out := stdout.String()
-	for _, want := range []string{"glade playground", "--project", projectRoot, "--data-root", root, "--examples", "--public", "--open"} {
+	for _, want := range []string{"glade playground", "--data-root", root, "--examples", "--example", "account-service", "--no-db", "--reset-on-start", "--public", "--open", "?example=account-service"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("wizard output missing %q:\n%s", want, out)
 		}

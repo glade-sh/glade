@@ -369,6 +369,203 @@ System.debug('dml rows: ' + Limits.getDmlRows());
 	},
 	{
 		ExampleProject: ExampleProject{
+			ID:          "deal-desk-discount-guard",
+			Name:        "Deal Desk Discount Guard",
+			Description: "Accounts flow through a trigger, selector, policy, and report before printing deal desk counters.",
+			Tags:        []string{"DML", "SOQL", "triggers", "limits"},
+		},
+		Files: map[string]string{
+			"sfdx-project.json": sfdxProjectJSON,
+			"force-app/main/default/classes/AccountDealScenario.cls": `public class AccountDealScenario {
+  public static List<Account> seed() {
+    List<Account> accounts = new List<Account>();
+    accounts.add(new Account(Name = 'North Ridge Manufacturing', Industry = 'Manufacturing', AnnualRevenue = 2500000));
+    accounts.add(new Account(Name = 'Twin Lakes Energy', Industry = 'Energy', AnnualRevenue = 900000));
+    accounts.add(new Account(Name = 'Port Alsworth Hardware', Industry = 'Retail', AnnualRevenue = 180000));
+    insert accounts;
+    return DealAccountSelector.allDealAccounts();
+  }
+}
+`,
+			"force-app/main/default/classes/DiscountPolicy.cls": `public class DiscountPolicy {
+  public static String bucket(Account account) {
+    if (account.AnnualRevenue >= 1000000) {
+      return 'strategic';
+    }
+    if (account.Industry == 'Energy') {
+      return 'managed';
+    }
+    return 'standard';
+  }
+}
+`,
+			"force-app/main/default/classes/DealAccountSelector.cls": `public class DealAccountSelector {
+  public static List<Account> allDealAccounts() {
+    return [
+      SELECT Id, Name, Industry, AnnualRevenue, AccountNumber
+      FROM Account
+    ];
+  }
+}
+`,
+			"force-app/main/default/classes/DealDeskReport.cls": `public class DealDeskReport {
+  public static void print() {
+    List<Account> accounts = AccountDealScenario.seed();
+    String topBucket = 'standard';
+    String rowName = '';
+    for (Account account : accounts) {
+      String bucket = DiscountPolicy.bucket(account);
+      if (bucket == 'strategic') {
+        topBucket = bucket;
+        rowName = account.Name;
+      }
+    }
+    System.debug('deal count: ' + accounts.size());
+    System.debug('top bucket: ' + topBucket);
+    System.debug('dml rows: ' + Limits.getDmlRows());
+    System.debug('queries: ' + Limits.getQueries());
+    System.debug('row: ' + rowName);
+  }
+}
+`,
+			"force-app/main/default/triggers/AccountDealTrigger.trigger": `trigger AccountDealTrigger on Account (before insert) {
+  Integer counter = 1;
+  for (Account account : Trigger.new) {
+    account.AccountNumber = 'DEAL-' + String.valueOf(counter);
+    counter++;
+  }
+}
+`,
+			"anonymous.apex": `DealDeskReport.print();
+`,
+			"seed.json": "{}\n",
+		},
+	},
+	{
+		ExampleProject: ExampleProject{
+			ID:          "renewal-health-scorecard",
+			Name:        "Renewal Health Scorecard",
+			Description: "A seeder, selector, rules class, and scorecard compute renewal health from Account and Contact rows.",
+			Tags:        []string{"DML", "SOQL", "contacts", "limits"},
+		},
+		Files: map[string]string{
+			"sfdx-project.json": sfdxProjectJSON,
+			"force-app/main/default/classes/RenewalSeeder.cls": `public class RenewalSeeder {
+  public static Id seed() {
+    Account account = new Account(Name = 'Twin Lakes Renewals', Industry = 'Technology');
+    insert account;
+    List<Contact> contacts = new List<Contact>();
+    contacts.add(new Contact(LastName = 'Owner', AccountId = account.Id));
+    contacts.add(new Contact(LastName = 'Champion', AccountId = account.Id));
+    contacts.add(new Contact(LastName = 'Support', AccountId = account.Id));
+    insert contacts;
+    return account.Id;
+  }
+}
+`,
+			"force-app/main/default/classes/RenewalAccountSelector.cls": `public class RenewalAccountSelector {
+  public static Account accountById(Id accountId) {
+    return [
+      SELECT Id, Name, Industry
+      FROM Account
+      WHERE Id = :accountId
+      LIMIT 1
+    ];
+  }
+
+  public static List<Contact> contactsFor(Id accountId) {
+    return [
+      SELECT Id, LastName, AccountId
+      FROM Contact
+      WHERE AccountId = :accountId
+    ];
+  }
+}
+`,
+			"force-app/main/default/classes/RenewalHealthRules.cls": `public class RenewalHealthRules {
+  public static Integer score(List<Contact> contacts) {
+    Integer score = 55 + (contacts.size() * 10);
+    if (score > 100) {
+      return 100;
+    }
+    return score;
+  }
+}
+`,
+			"force-app/main/default/classes/RenewalScorecard.cls": `public class RenewalScorecard {
+  public static void print() {
+    Id accountId = RenewalSeeder.seed();
+    Account account = RenewalAccountSelector.accountById(accountId);
+    List<Contact> contacts = RenewalAccountSelector.contactsFor(accountId);
+    Integer score = RenewalHealthRules.score(contacts);
+    System.debug('health score: ' + score);
+    System.debug('contacts: ' + contacts.size());
+    System.debug('queries: ' + Limits.getQueries());
+    System.debug('row: ' + account.Name);
+  }
+}
+`,
+			"anonymous.apex": `RenewalScorecard.print();
+`,
+			"seed.json": "{}\n",
+		},
+	},
+	{
+		ExampleProject: ExampleProject{
+			ID:          "org-diff-review-loop",
+			Name:        "Org Diff Review Loop",
+			Description: "A review class inserts an Account, a decision class updates it, and a report prints the final row.",
+			Tags:        []string{"DML", "SOQL", "updates", "org diff"},
+		},
+		Files: map[string]string{
+			"sfdx-project.json": sfdxProjectJSON,
+			"force-app/main/default/classes/ReviewScenario.cls": `public class ReviewScenario {
+  public static Id seed() {
+    Account account = new Account(Name = 'Review Seed', Industry = 'Energy');
+    insert account;
+    return account.Id;
+  }
+}
+`,
+			"force-app/main/default/classes/ReviewSelector.cls": `public class ReviewSelector {
+  public static Account byId(Id accountId) {
+    return [
+      SELECT Id, Name, Industry, AccountNumber
+      FROM Account
+      WHERE Id = :accountId
+      LIMIT 1
+    ];
+  }
+}
+`,
+			"force-app/main/default/classes/ReviewDecision.cls": `public class ReviewDecision {
+  public static String approve(Id accountId) {
+    Account account = ReviewSelector.byId(accountId);
+    account.Industry = 'Manufacturing';
+    account.AccountNumber = 'APPROVED';
+    update account;
+    return 'approved';
+  }
+}
+`,
+			"force-app/main/default/classes/ReviewReport.cls": `public class ReviewReport {
+  public static void print() {
+    Id accountId = ReviewScenario.seed();
+    String decision = ReviewDecision.approve(accountId);
+    Account account = ReviewSelector.byId(accountId);
+    System.debug('decision: ' + decision);
+    System.debug('row: ' + account.Name + ' / ' + account.Industry);
+    System.debug('dml rows: ' + Limits.getDmlRows());
+  }
+}
+`,
+			"anonymous.apex": `ReviewReport.print();
+`,
+			"seed.json": "{}\n",
+		},
+	},
+	{
+		ExampleProject: ExampleProject{
 			ID:          "limit-counter-drill",
 			Name:        "Governor Counter Drill",
 			Description: "Runs DML plus repeated SOQL, then prints Limits counters that appear in the Results panel.",

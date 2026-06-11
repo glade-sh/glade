@@ -40,6 +40,7 @@ type WorkspaceMetadata struct {
 	AnonymousBody string          `json:"anonymousBody,omitempty"`
 	WorkspaceHash string          `json:"workspaceHash,omitempty"`
 	LimitMode     vm.LimitMode    `json:"limitMode,omitempty"`
+	DBPath        string          `json:"dbPath,omitempty"`
 }
 
 type WorkspaceFile struct {
