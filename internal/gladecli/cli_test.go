@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -349,6 +350,7 @@ func TestRunLeafCommandUnknownFlagSuggestsClosestMatch(t *testing.T) {
 }
 
 func TestCompatIsNotPublicCommand(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"compat"}, &stdout, &stderr)
 	if code != 2 {
@@ -366,6 +368,99 @@ func TestCompatIsNotPublicCommand(t *testing.T) {
 	}
 	if strings.Contains(stdout.String(), "  compat ") || strings.Contains(stdout.String(), "glade compat") {
 		t.Fatalf("public help still mentions compat:\n%s", stdout.String())
+	}
+}
+
+func TestPluginsListEmpty(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "list"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "No plugins installed.") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestPluginsLinkListsPlugin(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper uses sh")
+	}
+	home := t.TempDir()
+	t.Setenv("GLADE_HOME", home)
+	exe := filepath.Join(home, "glade-plugin-compat")
+	script := `#!/bin/sh
+if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
+  printf '{"apiVersion":"glade.plugin.v1","name":"compat","version":"0.1.0","commands":[{"path":["compat"],"summary":"Compat commands."}]}'
+  exit 0
+fi
+`
+	if err := os.WriteFile(exe, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "link", "--exec", exe}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("link exit=%d stderr=%s", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"plugins", "list"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("list exit=%d stderr=%s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "compat 0.1.0 linked") {
+		t.Fatalf("unexpected list output:\n%s", stdout.String())
+	}
+}
+
+func TestPluginsInstallMissingArchiveDoesNotFetchRegistry(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", "http://127.0.0.1:1/index.json")
+	var stdout, stderr bytes.Buffer
+
+	code := Run(context.Background(), []string{"plugins", "install", "./missing-plugin.tar.gz"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "missing-plugin.tar.gz") {
+		t.Fatalf("stderr missing archive path: %q", stderr.String())
+	}
+	if strings.Contains(stderr.String(), "connect: connection refused") {
+		t.Fatalf("missing archive attempted registry fetch: %q", stderr.String())
+	}
+}
+
+func TestCompatDispatchesToLinkedPlugin(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper uses sh")
+	}
+	home := t.TempDir()
+	t.Setenv("GLADE_HOME", home)
+	exe := filepath.Join(home, "glade-plugin-compat")
+	script := `#!/bin/sh
+if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
+  printf '{"apiVersion":"glade.plugin.v1","name":"compat","version":"0.1.0","commands":[{"path":["compat"],"summary":"Compat commands."}]}'
+  exit 0
+fi
+echo "called plugin with $*"
+`
+	if err := os.WriteFile(exe, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	if code := Run(context.Background(), []string{"plugins", "link", "--exec", exe}, &stdout, &stderr); code != 0 {
+		t.Fatalf("link failed: %s", stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code := Run(context.Background(), []string{"compat", "local-tests", "--help"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("dispatch failed code=%d stderr=%s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "called plugin with compat local-tests --help") {
+		t.Fatalf("unexpected stdout:\n%s", stdout.String())
 	}
 }
 
@@ -1121,31 +1216,15 @@ func TestRunInspectSymbolsJSON(t *testing.T) {
 	}
 }
 
-func TestRunInspectPerformanceJSON(t *testing.T) {
-	root := writePerformanceScanProject(t)
+func TestInspectPerformanceMovedToPlugin(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"inspect", "performance", "--project", root, "--json"}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("code=%d stderr=%s stdout=%s", code, stderr.String(), stdout.String())
+	code := Run(context.Background(), []string{"inspect", "performance", "--project", "."}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatal("inspect performance unexpectedly succeeded without plugin")
 	}
-	for _, want := range []string{"\"schemaVersion\": 1", "\"findings\"", "perf.soql.loop"} {
-		if !strings.Contains(stdout.String(), want) {
-			t.Fatalf("stdout missing %q:\n%s", want, stdout.String())
-		}
-	}
-}
-
-func TestRunInspectPerformanceMarkdown(t *testing.T) {
-	root := writePerformanceScanProject(t)
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"inspect", "performance", "--project", root}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("code=%d stderr=%s stdout=%s", code, stderr.String(), stdout.String())
-	}
-	for _, want := range []string{"# Performance Scan", "`perf.soql.loop`"} {
-		if !strings.Contains(stdout.String(), want) {
-			t.Fatalf("stdout missing %q:\n%s", want, stdout.String())
-		}
+	if !strings.Contains(stderr.String(), "performance scans are provided by the performance plugin") {
+		t.Fatalf("stderr missing plugin guidance:\n%s", stderr.String())
 	}
 }
 

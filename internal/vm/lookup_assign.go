@@ -44,7 +44,7 @@ func (vm *VM) lookup(name string) (Value, error) {
 	if value, ok := schemaDisplayTypeStaticValue(name); ok {
 		return value, nil
 	}
-	if labelName, ok := systemLabelName(name); ok {
+	if labelName, ok := vm.systemLabelLookupName(name); ok {
 		if value, ok := vm.lookupLabel(labelName); ok {
 			return value, nil
 		}
@@ -463,6 +463,18 @@ func systemLabelName(name string) (string, bool) {
 	}
 	if len(parts) == 4 && strings.EqualFold(parts[0], "System") && strings.EqualFold(parts[1], "Label") {
 		return "Label." + parts[2] + "." + parts[3], true
+	}
+	return "", false
+}
+
+func (vm *VM) systemLabelLookupName(name string) (string, bool) {
+	if labelName, ok := systemLabelName(name); ok {
+		return labelName, true
+	}
+	namespace := strings.TrimSpace(vm.currentNamespace)
+	prefix := namespace + "."
+	if namespace != "" && len(name) > len(prefix) && hasPrefixFold(name, prefix) {
+		return systemLabelName(name[len(prefix):])
 	}
 	return "", false
 }

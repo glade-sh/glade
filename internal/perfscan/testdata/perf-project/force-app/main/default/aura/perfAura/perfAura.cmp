@@ -1,3 +1,0 @@
-<aura:component controller="PerfRisk">
-    <aura:handler name="init" value="{!this}" action="{!c.load}"/>
-</aura:component>

@@ -36,6 +36,8 @@ import (
 
 type Options struct {
 	Filter              string
+	SelectedClasses     []string
+	SelectedMethod      string
 	LimitMode           vm.LimitMode
 	TraceBlocked        bool
 	SlowTestThresholdMS int64
@@ -97,11 +99,16 @@ type TestProgress struct {
 func Discover(index typesys.Index, opts Options) []TestCase {
 	var out []TestCase
 	filters := testFilters(opts.Filter)
+	selectedClasses := selectedClassSet(opts.SelectedClasses)
+	selectedMethod := strings.TrimSpace(opts.SelectedMethod)
 	for _, typ := range index.Types {
 		if typ.Dependency {
 			continue
 		}
 		if typ.Kind != apexast.DeclarationClass {
+			continue
+		}
+		if len(selectedClasses) != 0 && !selectedClasses[strings.ToLower(typ.Name)] {
 			continue
 		}
 		for _, member := range typ.Members {
@@ -118,6 +125,9 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 			if len(filters) > 0 && !matchesTestFilter(testName, filters) {
 				continue
 			}
+			if selectedMethod != "" && !strings.EqualFold(member.Name, selectedMethod) {
+				continue
+			}
 			out = append(out, TestCase{
 				ClassName:  typ.Name,
 				MethodName: member.Name,
@@ -127,6 +137,18 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 				CostHint:   testCaseCostHint(typ.File),
 			})
 		}
+	}
+	return out
+}
+
+func selectedClassSet(classes []string) map[string]bool {
+	out := map[string]bool{}
+	for _, className := range classes {
+		className = strings.TrimSpace(className)
+		if className == "" {
+			continue
+		}
+		out[strings.ToLower(className)] = true
 	}
 	return out
 }

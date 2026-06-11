@@ -2986,7 +2986,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if endpoint, ok := request.Fields["endpoint"]; ok && endpoint.Kind == ValueString && vm.Org != nil {
 				if resolved, ok := resource.ResolveEndpoint(vm.Org.Metadata, endpoint.Text); ok {
 					request.Fields["resolvedEndpoint"] = String(resolved)
-				} else if name, ok := httpCalloutEndpointName(endpoint.Text); ok {
+				} else if name, ok := httpCalloutEndpointName(endpoint.Text); ok && (!hasMock || httpMockRequiresResolvedEndpoint(vm.testContext.HTTPMock)) {
 					return Null, receiver, false, true, newExceptionError("CalloutException", fmt.Sprintf("Named Credential %s was not found or is inactive", name))
 				}
 			}

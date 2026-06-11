@@ -70,6 +70,17 @@ glade schema load --project .
 glade schema load --project . --json
 ```
 
+## `glade schema import describe`
+
+Convert captured Salesforce describe JSON into a local Glade schema file.
+Live org capture belongs in a plugin. The base command only imports a captured
+catalog.
+
+```bash
+glade schema import describe --input reports/org-describe.json
+glade schema import describe --input reports/org-describe.json --output schema/local.schema.json
+```
+
 ## `glade check`
 
 Parse and type-check supported Apex and metadata semantics.
@@ -160,6 +171,31 @@ glade exec --project . --trace reports/trace.json "System.debug(1);"
 glade profile analyze reports/trace.json
 glade profile analyze reports/trace.json --json
 ```
+
+## `glade plugins`
+
+Install, link, list, inspect, lock, and restore executable plugins. First-party
+plugins provide compatibility fixtures and advisory scanners without putting
+that maintenance code in the base runtime.
+
+```bash
+glade plugins install compat
+glade plugins install performance
+glade plugins list
+glade plugins doctor
+glade plugins which compat
+glade plugins lock
+glade plugins restore
+```
+
+Once installed, plugin command roots behave like Glade commands:
+
+```bash
+glade compat local-tests --project . --json
+glade performance scan --project . --json
+```
+
+See [Plugins](/guide/plugins) for the author contract and archive layout.
 
 ## `glade debug`
 

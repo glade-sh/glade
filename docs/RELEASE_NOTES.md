@@ -6,8 +6,11 @@ Support status:
 
 - The published `glade` CLI is focused on local Apex parsing, checking,
   execution, testing, storage, server, editor, profile, and playground flows.
-- Maintenance scanners, compatibility harnesses, and gap reports have moved to
-  the sibling `glade-tools` project.
+- Added `glade plugins` with executable plugin install, link, list, doctor,
+  lock, restore, and command dispatch.
+- Maintenance scanners, compatibility harnesses, generated support reports, and
+  advisory performance scans now ship through first-party plugins. The first
+  plugins are `compat` and `performance`.
 - See [`COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md) and
   [`KNOWN_GAPS.md`](KNOWN_GAPS.md) for checked support status.
 
@@ -71,8 +74,9 @@ Release engineering:
   unsupported-feature diagnostics.
 - Added typed `UnsupportedFeature` VM errors for unimplemented stdlib/platform
   calls while preserving fixture-compatible message text.
-- Added `glade-tools stdlib` plus generated `docs/STDLIB_COVERAGE.md` coverage
-  for supported and partial standard-library/platform APIs.
+- Moved standard-library coverage generation behind the first-party compat
+  plugin, with generated `docs/STDLIB_COVERAGE.md` coverage for supported and
+  partial standard-library/platform APIs.
 - Tuned SQLite fixture persistence with transaction-scoped prepared inserts,
   storage pragmas, and large-fixture save/load coverage.
 - Strengthened server transaction boundaries so mutating REST, fixture/reset,
@@ -101,10 +105,10 @@ Release engineering:
   all-or-none rollback, explicit unsupported Composite batch responses,
   Salesforce-shaped errors, Glade fixture seed/export/reset, and SQLite
   persistence.
-- Added `glade-tools replay` for deterministic directory replay bundles,
+- Added compat plugin replay support for deterministic directory replay bundles,
   ordered in-process compat steps, JSON/text gate reports, checked expected
   outputs, path-escape validation, and redacted artifact export.
-- Added `glade-tools readiness --project <root>` to report local project
+- Added compat plugin readiness reporting to classify local project
   blockers by parser, project, schema, sema, stdlib, SOQL, DML, trigger, limit,
   storage, server, and unknown categories without mutating source or database
   state.

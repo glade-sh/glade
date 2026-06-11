@@ -19,8 +19,8 @@ import (
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/flagparse"
 	"github.com/glade-sh/glade/internal/lsp"
+	"github.com/glade-sh/glade/internal/orgdescribe"
 	"github.com/glade-sh/glade/internal/packageartifact"
-	"github.com/glade-sh/glade/internal/perfscan"
 	"github.com/glade-sh/glade/internal/profile"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
@@ -218,7 +218,16 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
+	case "plugins":
+		if err := runPlugins(ctx, args[1:], stdout); err != nil {
+			writeCommandError(stderr, args[0], err)
+			return 1
+		}
+		return 0
 	default:
+		if code, ok := runInstalledPluginCommand(ctx, args, stdout, stderr); ok {
+			return code
+		}
 		message := fmt.Sprintf("unknown command %q", args[0])
 		if suggestion := flagparse.Suggest(args[0], cliui.CommandNames()); suggestion != "" {
 			message += fmt.Sprintf("; did you mean %q?", suggestion)
@@ -246,7 +255,13 @@ func printHelpTopic(w io.Writer, args []string) {
 	case "exit-codes":
 		_ = cliui.WriteExitCodesHelp(w)
 	case "test":
-		_ = cliui.WriteTestHelp(w)
+		_ = writeTestHelp(w)
+	case "schema":
+		if len(args) >= 3 && args[1] == "import" && args[2] == "describe" {
+			_ = writeSchemaImportDescribeHelp(w)
+			return
+		}
+		_ = cliui.WriteCommandHelp(w, args)
 	default:
 		_ = cliui.WriteCommandHelp(w, args)
 	}
@@ -329,6 +344,9 @@ func flagTokenMissingValue(value string) bool {
 
 func helpRequestTopic(args []string) ([]string, bool) {
 	if len(args) < 2 {
+		return nil, false
+	}
+	if _, ok := cliui.FindCommandHelp(args[0]); !ok {
 		return nil, false
 	}
 	for i := 1; i < len(args); i++ {
@@ -809,16 +827,13 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 		return typesys.Index{}, err
 	}
 	if len(args) == 0 {
-		return typesys.Index{}, errors.New("usage: glade inspect symbols|performance [--project <root>] [--json]")
-	}
-	if args[0] == "performance" {
-		if err := runInspectPerformance(ctx, args[1:], w); err != nil {
-			return typesys.Index{}, err
-		}
-		return typesys.Index{}, nil
+		return typesys.Index{}, errors.New("usage: glade inspect symbols [--project <root>] [--json]")
 	}
 	if args[0] != "symbols" {
-		return typesys.Index{}, errors.New("usage: glade inspect symbols|performance [--project <root>] [--json]")
+		if args[0] == "performance" {
+			return typesys.Index{}, errors.New("performance scans are provided by the performance plugin; run `glade plugins install performance`, then `glade performance scan --project .`")
+		}
+		return typesys.Index{}, errors.New("usage: glade inspect symbols [--project <root>] [--json]")
 	}
 
 	root, jsonOut, err := parseProjectFlags(args[1:])
@@ -877,41 +892,15 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 	return index, nil
 }
 
-func runInspectPerformance(ctx context.Context, args []string, w io.Writer) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	root := "."
-	tracePath := ""
-	parsed, err := flagparse.New("glade inspect performance").
-		String("project", "p").
-		String("trace", "t").
-		Bool("json", "j").
-		Parse(args)
-	if err != nil {
-		return err
-	}
-	if parsed.String("project") != "" {
-		root = parsed.String("project")
-	}
-	tracePath = parsed.String("trace")
-
-	report, err := perfscan.AnalyzeProject(perfscan.Options{ProjectRoot: root, TracePath: tracePath})
-	if err != nil {
-		return err
-	}
-	if parsed.Bool("json") {
-		return perfscan.WriteJSON(w, report)
-	}
-	return perfscan.WriteMarkdown(w, report)
-}
-
 func runSchema(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
+	if len(args) >= 2 && args[0] == "import" && args[1] == "describe" {
+		return runSchemaImportDescribe(args[2:], w)
+	}
 	if len(args) == 0 || args[0] != "load" {
-		return errors.New("usage: glade schema load [--project <root>] [--json]")
+		return errors.New("usage: glade schema load [--project <root>] [--json] | glade schema import describe --input <describe.json> [--output <schema.json>]")
 	}
 
 	root, jsonOut, progressMode, err := parseProjectProgressFlags(args[1:])
@@ -964,6 +953,60 @@ func runSchema(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 		fmt.Fprintf(w, "%s fields=%d\n", object.Name, len(object.Fields))
 	}
 	return nil
+}
+
+func runSchemaImportDescribe(args []string, w io.Writer) error {
+	if len(args) > 0 && isHelpArg(args[0]) {
+		return writeSchemaImportDescribeHelp(w)
+	}
+	input := ""
+	output := ""
+	parsed, err := flagparse.New("glade schema import describe").
+		String("input", "").
+		String("output", "").
+		Parse(args)
+	if err != nil {
+		return err
+	}
+	input = parsed.String("input")
+	output = parsed.String("output")
+	if strings.TrimSpace(input) == "" {
+		return errors.New("usage: glade schema import describe --input <describe.json> [--output <schema.json>]")
+	}
+	data, err := os.ReadFile(input)
+	if err != nil {
+		return err
+	}
+	var catalog orgdescribe.Catalog
+	if err := json.Unmarshal(data, &catalog); err != nil {
+		return err
+	}
+	schemaData, err := json.MarshalIndent(catalog.ToSchema(), "", "  ")
+	if err != nil {
+		return err
+	}
+	schemaData = append(schemaData, '\n')
+	if strings.TrimSpace(output) == "" {
+		_, err := w.Write(schemaData)
+		return err
+	}
+	return os.WriteFile(output, schemaData, 0o644)
+}
+
+func writeSchemaImportDescribeHelp(w io.Writer) error {
+	_, err := fmt.Fprintln(w, strings.TrimSpace(`
+Import captured Salesforce describe JSON into a local Glade schema.
+
+Usage:
+  glade schema import describe --input <describe.json> [--output <schema.json>]
+
+Flags:
+  --input <describe.json>   Captured org describe catalog JSON.
+  --output <schema.json>    Write schema JSON to a file. Defaults to stdout.
+
+Live org capture belongs in a plugin.
+`))
+	return err
 }
 
 func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writer) (sema.Result, error) {

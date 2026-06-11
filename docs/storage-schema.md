@@ -255,6 +255,18 @@ to one fixture/org state and exists to make tests repeatable.
 - The SQLite backend uses these types as the logical schema while persisting
   object definitions, records, and ID sequences.
 
+## Describe Catalog Import
+
+Captured org describe JSON can be converted into a local Glade schema without
+logging in to an org:
+
+```bash
+glade schema import describe --input reports/org-describe.json --output schema/local.schema.json
+```
+
+The base product owns the file-to-local-schema conversion. Live org capture,
+readiness scans, and docs mining belong to plugins.
+
 ## Future Integration Points
 
 - SQLite query planning and explain metadata for SOQL profiling.

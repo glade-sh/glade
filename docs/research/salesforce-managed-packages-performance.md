@@ -493,7 +493,7 @@ public class MyCache implements Cache.CacheBuilder {
 
 8. **No LWC performance rules**: PMD/SonarQube focus on Apex backend. LWC performance (wire adapter usage, imperative call patterns, excessive @track usage, memory leaks) lacks static analysis coverage
 
-9. **No comprehensive async-chain analysis in earlier tooling**: Basic queueable/batch/schedule chain patterns are now surfaced by Glade’s `glade inspect performance` implementation, but trace-backed cross-transaction verification is not yet available.
+9. **No comprehensive async-chain analysis in earlier tooling**: Basic queueable/batch/schedule chain patterns are now surfaced by Glade’s first-party performance plugin, but trace-backed cross-transaction verification is not yet available.
 
 10. **No selector/domain layer enforcement**: No rules enforce SOQL-in-selector-layer patterns or DML-in-unit-of-work patterns (common ISV architecture patterns)
 

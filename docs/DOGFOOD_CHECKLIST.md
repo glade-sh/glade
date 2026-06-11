@@ -49,15 +49,11 @@ at its root.
 Day-to-day test runs use `--filter`:
 
 ```bash
-glade test --project . --filter AccountServiceTest --json
-glade test --project . --filter AccountServiceTest.testCreatesAccount --json
-```
-
-For compatibility triage output, use explicit class and method flags:
-
-```bash
-glade-tools local-tests --project . --class AccountServiceTest --json
-glade-tools local-tests --project . --class AccountServiceTest --method testCreatesAccount --json
+glade test --project . --class AccountServiceTest --json
+glade test --project . --class AccountServiceTest --method testCreatesAccount --json
+glade plugins install compat
+glade compat local-tests --project . --class AccountServiceTest --json
+glade compat local-tests --project . --class AccountServiceTest --method testCreatesAccount --json
 ```
 
 ## 5. Watch Once
@@ -85,7 +81,8 @@ The second command should auto-connect and skip a full cold startup when
 mkdir -p reports
 glade check --project . --json > reports/glade-check.json
 glade test --project . --json > reports/glade-test.json
-glade-tools local-tests --project . --parallel auto --json > reports/glade-local-tests.json
+glade plugins install compat
+glade compat local-tests --project . --parallel auto --json > reports/glade-local-tests.json
 ```
 
 Use `glade test changed --project . --since origin/main --json` when the report
@@ -94,8 +91,9 @@ should cover only affected tests.
 ## 6b. Performance Scanner
 
 ```bash
-glade inspect performance --project . --json > reports/glade-performance.json
-glade inspect performance --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
+glade plugins install performance
+glade performance scan --project . --json > reports/glade-performance.json
+glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
 
 Use the source-only report as a map of entry points and hard static patterns.

@@ -7,10 +7,10 @@ and composed by the CLI.
 
 - `cmd/glade`: executable entry point.
 - `internal/gladecli`: command routing and user-facing CLI behavior.
+- `internal/pluginhost`: plugin manifests, install state, archive and registry
+  install, lock restore, and command dispatch to installed executables.
 - `internal/apexast`: parser adapter and stable source model over the local
   tree-sitter Apex parser module.
-- `internal/apexdocs`: public Apex documentation inventory extraction, diffing,
-  and stable JSON generation for the broad support catalog.
 - `internal/config`: `glade.yml` discovery and parsing.
 - `internal/diagnostic`: shared diagnostic model for parser, semantic analysis,
   runtime, and CLI.
@@ -61,9 +61,11 @@ and composed by the CLI.
   `executeAnonymous`, composite sObject insert, fixture/scoped reset endpoints,
   stable unsupported Apex REST dispatch errors, and optional SQLite-backed
   persistence.
-- Maintenance scanners, compatibility fixtures, capability catalogs, and surface
-  ledgers live in the sibling `glade-tools` project. That project may depend on
-  this framework; this framework does not depend on it.
+- Maintenance scanners, compatibility fixtures, capability catalogs, advisory
+  performance scans, docs inventory, and surface ledgers ship as plugins.
+  Salesforce docs inventory extraction lives in the compat plugin because it
+  feeds ledgers and generated support reports, not runtime execution. Plugins
+  may depend on this framework; this framework does not depend on plugins.
 
 ## Runtime Pipeline
 
@@ -76,11 +78,9 @@ and composed by the CLI.
    platform calls into dedicated packages where behavior has a supported
    baseline.
 7. Surface the same runtime through CLI execution, tests, watch mode, LSP/DAP
-   snapshots, profile analysis, compatibility checks, and the local API server.
-8. Record diagnostics, traces, profiles, test reports, storage fixtures, server
-   responses, documentation inventories, capability catalogs, product namespace
-   stub reports, fixture evidence, and compatibility results in stable
-   machine-readable formats.
+   snapshots, profile analysis, plugin dispatch, and the local API server.
+8. Record diagnostics, traces, profiles, test reports, storage fixtures, and
+   server responses in stable machine-readable formats.
 
 ## Design Constraints
 
@@ -94,4 +94,4 @@ and composed by the CLI.
 
 When Salesforce ships something new (a class, namespace, method, or surface) or
 a gap is found, keep product runtime changes in this repository and use
-`glade-tools` for gap discovery, fixtures, and generated support reports.
+installed plugins for gap discovery, fixtures, and generated support reports.

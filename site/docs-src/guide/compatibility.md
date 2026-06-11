@@ -27,12 +27,13 @@ The detailed checked reports live in the repository.
 ## Fixtures
 
 Compatibility fixtures cover parser, semantic, execution, test, storage,
-server, and stdlib behavior. They are maintained in `glade-tools`, not in the
-published `glade` CLI.
+server, and stdlib behavior. They ship through the first-party `compat` plugin,
+not as base runtime commands.
 
 ## Local-test compatibility
 
 Large local-test gates classify each test as pass, fail, unsupported, load
-error, compile error, or internal error. Those gates live in `glade-tools`.
+error, compile error, or internal error. Those gates run through
+`glade compat local-tests` after the `compat` plugin is installed.
 
 The clean rule is simple. Add the fixture first. Then change the status.
