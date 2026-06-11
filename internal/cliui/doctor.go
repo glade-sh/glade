@@ -7,16 +7,16 @@ import (
 )
 
 type DoctorInfo struct {
-	Version          string
-	GoVersion        string
-	OSArch           string
-	CWD              string
-	ConfigPath       string
-	ConfigMissing    bool
-	ProjectRoot      string
-	DefaultNamespace string
-	ParserStatus     string
-	ParserOK         bool
+	Version          string `json:"version"`
+	GoVersion        string `json:"goVersion"`
+	OSArch           string `json:"osArch"`
+	CWD              string `json:"cwd"`
+	ConfigPath       string `json:"configPath,omitempty"`
+	ConfigMissing    bool   `json:"configMissing"`
+	ProjectRoot      string `json:"projectRoot,omitempty"`
+	DefaultNamespace string `json:"defaultNamespace,omitempty"`
+	ParserStatus     string `json:"parserStatus"`
+	ParserOK         bool   `json:"parserOK"`
 }
 
 func WriteDoctor(w io.Writer, info DoctorInfo) error {

@@ -1,7 +1,7 @@
 # CLI Personality Design
 
-**Date:** 2026-06-10  
-**Status:** Approved  
+**Date:** 2026-06-10
+**Status:** Approved
 **Goal:** Give glade a cohesive, modern CLI personality — hybrid of build-tool result formatting (Cargo/uv) and alive progress narration (AI CLIs) — across progress, results, help, doctor, and errors.
 
 ---

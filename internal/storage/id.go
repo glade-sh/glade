@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type ID string
@@ -48,6 +49,10 @@ func NewIDGenerator(prefixes map[string]string) IDGenerator {
 		Prefixes:  copyStringMap(prefixes),
 		Sequences: make(map[string]uint64),
 	}
+}
+
+func NewStandardIDGenerator() IDGenerator {
+	return NewIDGenerator(standardKeyPrefixes())
 }
 
 func NewRuntimeIDGenerator(prefixes map[string]string) IDGenerator {
@@ -275,14 +280,30 @@ var standardKeyPrefixBaseData = map[string]string{
 	"SetupEntityAccess":       "0J0",
 }
 
-func StandardKeyPrefixes() map[string]string {
-	prefixes := copyStringMap(standardKeyPrefixBaseData)
-	for object, prefix := range standardObjectKeyPrefixes() {
-		if prefix != "" {
-			prefixes[object] = prefix
+var standardKeyPrefixCache struct {
+	once     sync.Once
+	prefixes map[string]string
+}
+
+func standardKeyPrefixes() map[string]string {
+	standardKeyPrefixCache.once.Do(func() {
+		prefixes := copyStringMap(standardKeyPrefixBaseData)
+		for object, prefix := range standardObjectKeyPrefixes() {
+			if prefix != "" {
+				prefixes[object] = prefix
+			}
 		}
-	}
-	return prefixes
+		standardKeyPrefixCache.prefixes = prefixes
+	})
+	return standardKeyPrefixCache.prefixes
+}
+
+func StandardKeyPrefixes() map[string]string {
+	return copyStringMap(standardKeyPrefixes())
+}
+
+func StandardKeyPrefix(objectName string) string {
+	return standardKeyPrefixes()[objectName]
 }
 
 func ValidateID(id ID) error {

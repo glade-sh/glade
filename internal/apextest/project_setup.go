@@ -530,7 +530,7 @@ func applyProjectProfileRecords(org *storage.OrgState, p project.Project, permis
 	if org.IDSequences == nil {
 		org.IDSequences = make(map[string]uint64)
 	}
-	generator := storage.NewIDGenerator(storage.StandardKeyPrefixes())
+	generator := storage.NewStandardIDGenerator()
 	generator.Sequences = org.IDSequences
 	for _, file := range p.ProfileFiles {
 		name := profileNameFromPath(file)
@@ -610,7 +610,7 @@ func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project, 
 	if org.IDSequences == nil {
 		org.IDSequences = make(map[string]uint64)
 	}
-	generator := storage.NewIDGenerator(storage.StandardKeyPrefixes())
+	generator := storage.NewStandardIDGenerator()
 	generator.Sequences = org.IDSequences
 	objectState := org.Objects["ObjectPermissions"]
 	fieldState := org.Objects["FieldPermissions"]
@@ -873,7 +873,7 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 	if org.IDSequences == nil {
 		org.IDSequences = make(map[string]uint64)
 	}
-	generator := storage.NewIDGenerator(storage.StandardKeyPrefixes())
+	generator := storage.NewStandardIDGenerator()
 	generator.Sequences = org.IDSequences
 	for _, file := range p.PermissionSetGroupFiles {
 		name := metadataNameFromPath(file, ".permissionsetgroup-meta.xml", ".permissionsetgroup")

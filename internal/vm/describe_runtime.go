@@ -273,7 +273,7 @@ func (vm *VM) describePreparedDefinition(name string, definition storage.ObjectD
 		} else if canonical, ok := storage.ResolveKnownStandardObjectName(name); ok {
 			prefixName = canonical
 		}
-		if prefix := storage.StandardKeyPrefixes()[prefixName]; prefix != "" {
+		if prefix := storage.StandardKeyPrefix(prefixName); prefix != "" {
 			definition.KeyPrefix = prefix
 		} else {
 			definition.KeyPrefix = storage.AssignDeterministicPrefixes([]string{prefixName}, nil)[prefixName]

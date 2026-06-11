@@ -31,6 +31,13 @@ import (
 
 var Version = "0.0.0-dev"
 
+type versionInfo struct {
+	Version string `json:"version"`
+	Go      string `json:"go"`
+	OS      string `json:"os"`
+	Arch    string `json:"arch"`
+}
+
 // Run executes the glade CLI and returns a process exit code.
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
@@ -46,8 +53,25 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		}
 		_ = cliui.WriteHelp(stdout)
 		return 0
+	}
+
+	if topic, ok := helpRequestTopic(args); ok {
+		printHelpTopic(stdout, topic)
+		return 0
+	}
+
+	switch args[0] {
 	case "version", "--version":
-		fmt.Fprintf(stdout, "glade %s\n", Version)
+		if err := runVersion(args[1:], stdout); err != nil {
+			_ = cliui.WriteCLIError(stderr, err)
+			return 1
+		}
+		return 0
+	case "completion":
+		if err := runCompletion(args[1:], stdout); err != nil {
+			_ = cliui.WriteCLIError(stderr, err)
+			return 1
+		}
 		return 0
 	case "doctor":
 		if err := runDoctor(ctx, args[1:], stdout); err != nil {
@@ -205,12 +229,56 @@ func printHelpTopic(w io.Writer, args []string) {
 	case "test":
 		_ = cliui.WriteTestHelp(w)
 	default:
-		_ = cliui.WriteHelp(w)
+		_ = cliui.WriteCommandHelp(w, args)
 	}
 }
 
 func isHelpArg(arg string) bool {
 	return arg == "help" || arg == "-h" || arg == "--help"
+}
+
+func helpRequestTopic(args []string) ([]string, bool) {
+	if len(args) < 2 {
+		return nil, false
+	}
+	for i := 1; i < len(args); i++ {
+		if !isHelpArg(args[i]) {
+			continue
+		}
+		topic := []string{args[0]}
+		for _, arg := range args[1:i] {
+			if strings.HasPrefix(arg, "-") {
+				continue
+			}
+			topic = append(topic, arg)
+		}
+		return topic, true
+	}
+	return nil, false
+}
+
+func runVersion(args []string, w io.Writer) error {
+	jsonOut := false
+	for _, arg := range args {
+		switch arg {
+		case "--json":
+			jsonOut = true
+		default:
+			return fmt.Errorf("unknown flag %q", arg)
+		}
+	}
+	if jsonOut {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(versionInfo{
+			Version: Version,
+			Go:      runtime.Version(),
+			OS:      runtime.GOOS,
+			Arch:    runtime.GOARCH,
+		})
+	}
+	fmt.Fprintf(w, "glade %s\n", Version)
+	return nil
 }
 
 func runPackage(ctx context.Context, args []string, w io.Writer) error {
@@ -346,6 +414,7 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) error {
 	}
 
 	root := "."
+	jsonOut := false
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--project":
@@ -354,6 +423,8 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) error {
 			}
 			root = args[i+1]
 			i++
+		case "--json":
+			jsonOut = true
 		default:
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
@@ -389,6 +460,11 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) error {
 		info.ConfigPath = cfgPath
 		info.ProjectRoot = cfg.Project.Root
 		info.DefaultNamespace = cfg.Project.DefaultNamespace
+	}
+	if jsonOut {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(info)
 	}
 	return cliui.WriteDoctor(w, info)
 }

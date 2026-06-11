@@ -213,7 +213,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 	prefixes := storage.AssignDeterministicPrefixes(objectNames(objects), nil)
 
 	registry := DescribeRegistry{Objects: make(map[string]DescribeSObjectResult, len(objects))}
-	recordTypeIDs := storage.NewIDGenerator(map[string]string{"RecordType": storage.StandardKeyPrefixes()["RecordType"]})
+	recordTypeIDs := storage.NewIDGenerator(map[string]string{"RecordType": storage.StandardKeyPrefix("RecordType")})
 	for _, object := range objects {
 		describe := DescribeSObjectResult{
 			Name:         object.Name,

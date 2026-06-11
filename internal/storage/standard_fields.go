@@ -464,7 +464,7 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 		state.Definition.PluralLabel = objectName + "s"
 	}
 	if state.Definition.KeyPrefix == "" {
-		state.Definition.KeyPrefix = StandardKeyPrefixes()[objectName]
+		state.Definition.KeyPrefix = StandardKeyPrefix(objectName)
 	}
 	if state.Records == nil {
 		state.Records = make(map[ID]Record)
@@ -711,7 +711,7 @@ func StandardObjectDefinition(objectName string) (ObjectDefinition, bool) {
 		definition.PluralLabel = objectName + "s"
 	}
 	if definition.KeyPrefix == "" {
-		definition.KeyPrefix = StandardKeyPrefixes()[objectName]
+		definition.KeyPrefix = StandardKeyPrefix(objectName)
 	}
 	return definition, true
 }

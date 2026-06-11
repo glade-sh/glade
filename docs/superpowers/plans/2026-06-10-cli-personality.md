@@ -8,7 +8,7 @@
 
 **Tech Stack:** Go 1.26, standard library, existing `internal/cliui`, `internal/gladecli`, `internal/testreport`, `internal/diagnostic`.
 
-**Spec:** `docs/superpowers/specs/2026-06-10-cli-personality-design.md`  
+**Spec:** `docs/superpowers/specs/2026-06-10-cli-personality-design.md`
 **Future work:** Phases 2–6 in spec (not this plan).
 
 ---

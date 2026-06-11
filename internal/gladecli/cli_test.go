@@ -27,6 +27,26 @@ func TestRunVersion(t *testing.T) {
 	}
 }
 
+func TestRunVersionJSON(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"version", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	var got map[string]string
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
+	}
+	if got["version"] != Version {
+		t.Fatalf("version = %q, want %q", got["version"], Version)
+	}
+	for _, key := range []string{"go", "os", "arch"} {
+		if got[key] == "" {
+			t.Fatalf("missing %s in %#v", key, got)
+		}
+	}
+}
+
 func TestRunDoctorReportsParser(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"doctor"}, &stdout, &stderr)
@@ -40,6 +60,34 @@ func TestRunDoctorReportsParser(t *testing.T) {
 	// This test binary is built with CGO, so the parser must be available.
 	if !strings.Contains(out, "ok (tree-sitter)") {
 		t.Fatalf("expected parser ok in CGO build, got:\n%s", out)
+	}
+}
+
+func TestRunDoctorJSON(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"doctor", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	var got struct {
+		Version      string `json:"version"`
+		GoVersion    string `json:"goVersion"`
+		OSArch       string `json:"osArch"`
+		CWD          string `json:"cwd"`
+		ParserStatus string `json:"parserStatus"`
+		ParserOK     bool   `json:"parserOK"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
+	}
+	if got.Version != Version {
+		t.Fatalf("version = %q, want %q", got.Version, Version)
+	}
+	if got.GoVersion == "" || got.OSArch == "" || got.CWD == "" || got.ParserStatus == "" {
+		t.Fatalf("doctor JSON missing runtime fields: %#v", got)
+	}
+	if !got.ParserOK {
+		t.Fatalf("parserOK = false, want true: %#v", got)
 	}
 }
 
@@ -104,6 +152,26 @@ func TestRunCommandHelp(t *testing.T) {
 			want: []string{"Serve flags:", "startup.gob", "--no-warm"},
 		},
 		{
+			name: "parse flag help",
+			args: []string{"parse", "--help"},
+			want: []string{"Usage:", "glade parse <paths...>", "--json", "Examples:"},
+		},
+		{
+			name: "help check",
+			args: []string{"help", "check"},
+			want: []string{"Usage:", "glade check", "--project <root>", "--progress-json", "Examples:"},
+		},
+		{
+			name: "schema subcommand help",
+			args: []string{"schema", "load", "--help"},
+			want: []string{"Usage:", "glade schema load", "--project <root>", "--progress"},
+		},
+		{
+			name: "completion help",
+			args: []string{"help", "completion"},
+			want: []string{"Usage:", "glade completion bash|zsh|fish", "Examples:"},
+		},
+		{
 			name: "help test",
 			args: []string{"help", "test"},
 			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "startup.gob", "--no-cache", "--connect", "--daemon"},
@@ -126,6 +194,61 @@ func TestRunCommandHelp(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestRunCompletionBash(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"completion", "bash"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	got := stdout.String()
+	for _, want := range []string{
+		"_glade_completion",
+		"complete -F _glade_completion glade",
+		"version doctor parse inspect schema check exec",
+		"--project",
+		"--progress-json",
+		"test serve clear-cache",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("bash completion missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "compat") {
+		t.Fatalf("completion mentions maintenance command compat:\n%s", got)
+	}
+}
+
+func TestRunCompletionFish(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"completion", "fish"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	got := stdout.String()
+	for _, want := range []string{
+		"complete -c glade",
+		"-a 'test'",
+		"-l project",
+		"-l progress-json",
+		"-a 'serve clear-cache'",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("fish completion missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestRunCompletionRejectsUnknownShell(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"completion", "powershell"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), `unsupported completion shell "powershell"`) {
+		t.Fatalf("stderr = %q", stderr.String())
 	}
 }
 

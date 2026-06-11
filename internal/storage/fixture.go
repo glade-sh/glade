@@ -1446,7 +1446,7 @@ func prefixesForOrg(org OrgState) map[string]string {
 	for name, object := range org.Objects {
 		prefix := object.Definition.KeyPrefix
 		if prefix == "" {
-			prefix = StandardKeyPrefixes()[name]
+			prefix = StandardKeyPrefix(name)
 		}
 		if prefix != "" {
 			prefixes[name] = prefix

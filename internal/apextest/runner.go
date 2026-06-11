@@ -1690,8 +1690,25 @@ func testCaseKey(testCase TestCase) string {
 	return testCase.ClassName + "." + testCase.MethodName
 }
 
+var standardApexTestOrgCache struct {
+	once sync.Once
+	org  storage.OrgState
+}
+
+func standardApexTestOrg() storage.OrgState {
+	standardApexTestOrgCache.once.Do(func() {
+		org := storage.NewOrgState()
+		org.OrgID = "00D000000000001"
+		for _, objectName := range storage.KnownStandardObjectNames() {
+			storage.EnsureStandardObject(&org, objectName)
+		}
+		standardApexTestOrgCache.org = org
+	})
+	return standardApexTestOrgCache.org.Clone()
+}
+
 func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
-	org := storage.NewOrgState()
+	org := standardApexTestOrg()
 	org.Namespace = index.Project.Namespace
 	org.OrgID = "00D000000000001"
 	registry := sobject.BuildDescribeRegistry(schemaFromIndex(index))
@@ -1700,9 +1717,9 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 			Definition: sobject.ToObjectDefinition(describe),
 			Records:    make(map[storage.ID]storage.Record),
 		}
-	}
-	for _, objectName := range storage.KnownStandardObjectNames() {
-		storage.EnsureStandardObject(&org, objectName)
+		if storage.IsKnownStandardObject(name) {
+			storage.EnsureStandardObject(&org, name)
+		}
 	}
 	features := []string(nil)
 	if index.Project.Root != "" {
@@ -2500,6 +2517,7 @@ func projectReferencedNameIsChildRelationship(org storage.OrgState, objectName, 
 
 func projectReferencedChildRelationshipLookup(org storage.OrgState) map[string]struct{} {
 	lookup := make(map[string]struct{}, len(org.Objects))
+	parentNames := make(map[string]string)
 	for _, child := range org.Objects {
 		for _, relation := range child.Definition.Relations {
 			if relation.ChildRelationship == "" {
@@ -2507,15 +2525,25 @@ func projectReferencedChildRelationshipLookup(org storage.OrgState) map[string]s
 			}
 			relationName := strings.ToLower(relation.ChildRelationship)
 			for _, parent := range relation.ParentObjects {
-				parentName, ok := storage.ResolveObjectName(org, parent)
-				if !ok {
-					parentName = parent
-				}
+				parentName := resolvedChildRelationshipParentName(org, parentNames, parent)
 				lookup[strings.ToLower(parentName)+"\x00"+relationName] = struct{}{}
 			}
 		}
 	}
 	return lookup
+}
+
+func resolvedChildRelationshipParentName(org storage.OrgState, names map[string]string, parent string) string {
+	key := strings.ToLower(strings.TrimSpace(parent))
+	if cached, ok := names[key]; ok {
+		return cached
+	}
+	parentName, ok := storage.ResolveObjectName(org, parent)
+	if !ok {
+		parentName = parent
+	}
+	names[key] = parentName
+	return parentName
 }
 
 func inferredReferencedField(fieldName string) storage.Field {

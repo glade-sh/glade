@@ -103,6 +103,7 @@ func TestRunnerLoadsProjectReferenceCustomObjectSchema(t *testing.T) {
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/NextGenSettingService.cls"), `public class NextGenSettingService {
   public static void activateNextGenSetting() {
     VerifiableProtectedListSetting__c setting = new VerifiableProtectedListSetting__c();
+    setting.Name = 'Default';
     upsert setting;
     System.debug('activated');
   }

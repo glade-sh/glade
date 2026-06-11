@@ -67,7 +67,7 @@ func (vm *VM) ensureUserProfilePermissionSetAssignment(record storage.Record) {
 	}
 	prefix := state.Definition.KeyPrefix
 	if prefix == "" {
-		prefix = storage.StandardKeyPrefixes()["PermissionSetAssignment"]
+		prefix = storage.StandardKeyPrefix("PermissionSetAssignment")
 	}
 	generator := storage.NewRuntimeIDGenerator(map[string]string{"PermissionSetAssignment": prefix})
 	generator.Sequences = copyOrgIDSequences(vm.Org.IDSequences)

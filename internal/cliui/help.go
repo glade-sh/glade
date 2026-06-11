@@ -11,27 +11,349 @@ type HelpCommand struct {
 	Description string
 }
 
-var topLevelCommands = []HelpCommand{
-	{Name: "version", Description: "Print the glade version."},
-	{Name: "doctor", Description: "Print environment and project configuration status."},
-	{Name: "parse", Description: "Parse Apex source files."},
-	{Name: "inspect", Description: "Inspect indexed project symbols and performance risks."},
-	{Name: "schema", Description: "Load local Salesforce metadata schema."},
-	{Name: "check", Description: "Run semantic checks over a project."},
-	{Name: "exec", Description: "Execute anonymous Apex."},
-	{Name: "debug", Description: "Parse, profile, explain, and synthesize from Salesforce debug logs."},
-	{Name: "editor", Description: "Install and check editor integrations."},
-	{Name: "dap", Description: "Run the Debug Adapter Protocol server over stdio."},
-	{Name: "test", Description: "Discover and run supported Apex tests."},
-	{Name: "dev", Description: "Run the human-focused local development cockpit."},
-	{Name: "report", Description: "List, show, export, and clean saved run reports."},
-	{Name: "lsp", Description: "Run the Language Server Protocol server over stdio."},
-	{Name: "profile", Description: "Analyze glade trace output."},
-	{Name: "package", Description: "Build managed package artifacts."},
-	{Name: "server", Description: "Start the local Salesforce-compatible API baseline."},
-	{Name: "playground", Description: "Start the local Apex playground web UI."},
-	{Name: "db", Description: "Seed, reset, export, and inspect a persistent local database."},
-	{Name: "help", Description: "Print this help text."},
+type FlagHelp struct {
+	Name        string
+	Value       string
+	Description string
+}
+
+func (f FlagHelp) Display() string {
+	if f.Value == "" {
+		return f.Name
+	}
+	return f.Name + " " + f.Value
+}
+
+type SubcommandHelp struct {
+	Name        string
+	Description string
+}
+
+type CommandHelp struct {
+	Name        string
+	Description string
+	Usage       []string
+	Subcommands []SubcommandHelp
+	Flags       []FlagHelp
+	Examples    []string
+}
+
+var commandReferences = []CommandHelp{
+	{
+		Name:        "version",
+		Description: "Print the glade version.",
+		Usage:       []string{"glade version [--json]"},
+		Flags:       []FlagHelp{{Name: "--json", Description: "Write version, Go runtime, OS, and architecture as JSON."}},
+		Examples:    []string{"glade version", "glade version --json"},
+	},
+	{
+		Name:        "doctor",
+		Description: "Print environment and project configuration status.",
+		Usage:       []string{"glade doctor [--project <root>] [--json]"},
+		Flags: []FlagHelp{
+			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+			{Name: "--json", Description: "Write doctor status as JSON."},
+		},
+		Examples: []string{"glade doctor", "glade doctor --project . --json"},
+	},
+	{
+		Name:        "parse",
+		Description: "Parse Apex source files.",
+		Usage:       []string{"glade parse <paths...> [--json]"},
+		Flags:       []FlagHelp{{Name: "--json", Description: "Write parsed files and diagnostics as JSON."}},
+		Examples:    []string{"glade parse force-app/main/default/classes/AccountService.cls", "glade parse force-app --json"},
+	},
+	{
+		Name:        "inspect",
+		Description: "Inspect indexed project symbols and performance risks.",
+		Usage:       []string{"glade inspect symbols [--project <root>] [--json]", "glade inspect performance [--project <root>] [--trace <path>] [--json]"},
+		Subcommands: []SubcommandHelp{
+			{Name: "symbols", Description: "Print indexed Apex, trigger, and metadata symbols."},
+			{Name: "performance", Description: "Find local runtime and metadata performance risks."},
+		},
+		Flags: []FlagHelp{
+			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+			{Name: "--trace", Value: "<path>", Description: "Optional trace JSON for performance analysis."},
+			{Name: "--json", Description: "Write structured output."},
+		},
+		Examples: []string{"glade inspect symbols --project .", "glade inspect performance --project . --trace reports/trace.json"},
+	},
+	{
+		Name:        "schema",
+		Description: "Load local Salesforce metadata schema.",
+		Usage:       []string{"glade schema load [--project <root>] [--json] [--progress|--progress-json|--no-progress]"},
+		Subcommands: []SubcommandHelp{{Name: "load", Description: "Load and print local schema information."}},
+		Flags:       projectProgressFlags("Write schema as JSON."),
+		Examples:    []string{"glade schema load --project .", "glade schema load --project . --progress"},
+	},
+	{
+		Name:        "check",
+		Description: "Run semantic checks over a project.",
+		Usage:       []string{"glade check [--project <root>] [--json] [--progress|--progress-json|--no-progress]"},
+		Flags:       projectProgressFlags("Write semantic result as JSON."),
+		Examples:    []string{"glade check --project .", "glade check --project . --progress-json"},
+	},
+	{
+		Name:        "exec",
+		Description: "Execute anonymous Apex.",
+		Usage:       []string{"glade exec [--json] [--trace <path>] [--debug-log <path>] [--limit-mode <mode>] '<anonymous apex>'"},
+		Flags: []FlagHelp{
+			{Name: "--json", Description: "Write VM result and trace as JSON."},
+			{Name: "--debug", Description: "Serve one DAP snapshot for the run."},
+			{Name: "--trace", Value: "<path>", Description: "Write trace JSON to a file."},
+			{Name: "--debug-log", Value: "<path>", Description: "Write a Salesforce-style debug log. Use - for stdout."},
+			{Name: "--limit-mode", Value: "<mode>", Description: "Governor limit mode: permissive or strict."},
+		},
+		Examples: []string{`glade exec "System.debug('hello');"`, `glade exec --json "Integer x = 1;"`},
+	},
+	{
+		Name:        "debug",
+		Description: "Parse, profile, explain, and synthesize from Salesforce debug logs.",
+		Usage:       []string{"glade debug parse --log <path> [--json]", "glade debug profile --log <path> [--json]", "glade debug explain --log <path> [--project <root>] [--min-confidence <n>] [--json]", "glade debug repro --log <path> [--project <root>] [--min-confidence <n>]"},
+		Subcommands: []SubcommandHelp{
+			{Name: "parse", Description: "Parse a Salesforce debug log."},
+			{Name: "profile", Description: "Profile a parsed debug log."},
+			{Name: "explain", Description: "Annotate log frames with project symbols."},
+			{Name: "repro", Description: "Synthesize a local test from a debug log."},
+		},
+		Flags: []FlagHelp{
+			{Name: "--log", Value: "<path>", Description: "Debug log path. Use - where supported."},
+			{Name: "--project", Value: "<root>", Description: "Project root for explain and repro."},
+			{Name: "--min-confidence", Value: "<n>", Description: "Minimum confidence for explain and repro."},
+			{Name: "--json", Description: "Write structured output where available."},
+		},
+		Examples: []string{"glade debug profile --log apex.log", "glade debug explain --log apex.log --project ."},
+	},
+	{
+		Name:        "editor",
+		Description: "Install and check editor integrations.",
+		Usage:       []string{"glade editor install vscode --vsix <path> [--editor <code|cursor|windsurf>] [--force]", "glade editor doctor vscode [--editor <code|cursor|windsurf>]"},
+		Subcommands: []SubcommandHelp{
+			{Name: "install", Description: "Install an editor extension package."},
+			{Name: "doctor", Description: "Check editor and glade executable paths."},
+		},
+		Flags: []FlagHelp{
+			{Name: "--vsix", Value: "<path>", Description: "VS Code extension package."},
+			{Name: "--editor", Value: "<name>", Description: "Editor command: code, cursor, or windsurf."},
+			{Name: "--force", Description: "Force extension installation."},
+		},
+		Examples: []string{"glade editor doctor vscode", "glade editor install vscode --vsix vscode-glade.vsix --force"},
+	},
+	{
+		Name:        "dap",
+		Description: "Run the Debug Adapter Protocol server over stdio.",
+		Usage:       []string{"glade dap [--project <root>]"},
+		Flags:       []FlagHelp{{Name: "--project", Value: "<root>", Description: "Default project root for launch requests."}},
+		Examples:    []string{"glade dap --project ."},
+	},
+	{
+		Name:        "test",
+		Description: "Discover and run supported Apex tests.",
+		Usage:       []string{"glade test [--project <root>] [flags]", "glade test serve [--project <root>] [serve flags]", "glade test clear-cache [--project <root>]"},
+		Subcommands: []SubcommandHelp{
+			{Name: "serve", Description: "Keep the local test runtime warm over a socket."},
+			{Name: "clear-cache", Description: "Remove the startup cache for a project."},
+		},
+		Flags: []FlagHelp{
+			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+			{Name: "--filter", Value: "<pattern>", Description: "Run matching test classes or methods."},
+			{Name: "--connect", Description: "Require a running test server."},
+			{Name: "--no-serve", Description: "Do not auto-connect to a running test server."},
+			{Name: "--no-cache", Description: "Skip the on-disk startup cache."},
+			{Name: "--daemon", Description: "Keep index warm in process for watch loops."},
+			{Name: "--json", Description: "Write JSON test results."},
+			{Name: "--junit", Value: "<path>", Description: "Write JUnit XML results."},
+			{Name: "--progress", Description: "Print line progress to stderr."},
+			{Name: "--progress-json", Description: "Print NDJSON progress events to stderr."},
+			{Name: "--no-progress", Description: "Disable terminal progress."},
+			{Name: "--quiet", Description: "Alias for --no-progress."},
+			{Name: "--debug", Description: "Run one DAP snapshot session after tests."},
+			{Name: "--watch", Description: "Watch source files and emit NDJSON events."},
+			{Name: "--watch-once", Description: "Run one watch cycle and exit."},
+			{Name: "--changed-since", Value: "<ref>", Description: "Select tests affected since a git ref."},
+			{Name: "--debounce", Value: "<dur>", Description: "Watch debounce interval."},
+			{Name: "--watch-backend", Value: "<mode>", Description: "Watch backend: auto, native, or poll."},
+			{Name: "--parallel-methods", Description: "Run test methods in parallel."},
+			{Name: "--no-parallel-methods", Description: "Run methods serially within a class."},
+			{Name: "--parallelism", Value: "<n>", Description: "Worker count."},
+			{Name: "--test-timeout", Value: "<dur>", Description: "Per-test timeout."},
+			{Name: "--gc-aggressive", Description: "Run with GOGC=50."},
+			{Name: "--limit-mode", Value: "<mode>", Description: "Governor limit mode: permissive or strict."},
+		},
+		Examples: []string{"glade test serve --project .", "glade test --project . --filter AccountServiceTest"},
+	},
+	{
+		Name:        "dev",
+		Description: "Run the human-focused local development cockpit.",
+		Usage:       []string{"glade dev [--project <root>]", "glade dev test [--project <root>] [--class <name>|--test <Class.method>|--changed|--failed] [--out <runs-dir>]", "glade dev watch [--project <root>] [--out <runs-dir>]"},
+		Subcommands: []SubcommandHelp{
+			{Name: "test", Description: "Run a saved human-friendly test workflow."},
+			{Name: "watch", Description: "Watch and save run artifacts."},
+		},
+		Flags: []FlagHelp{
+			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+			{Name: "--out", Value: "<runs-dir>", Description: "Run artifact directory."},
+			{Name: "--all", Description: "Run all tests."},
+			{Name: "--class", Value: "<name>", Description: "Run one test class."},
+			{Name: "--test", Value: "<Class.method>", Description: "Run one test method."},
+			{Name: "--changed", Description: "Run tests affected since HEAD."},
+			{Name: "--failed", Description: "Rerun tests from the last failed run."},
+			{Name: "--watch", Description: "Watch during dev test."},
+			{Name: "--watch-once", Description: "Run one watch cycle and exit."},
+		},
+		Examples: []string{"glade dev --project .", "glade dev test --project . --failed"},
+	},
+	{
+		Name:        "report",
+		Description: "List, show, export, and clean saved run reports.",
+		Usage:       []string{"glade report list [--runs-dir <path>]", "glade report show latest [--runs-dir <path>]", "glade report export latest --output <path> [--runs-dir <path>]", "glade report clean [--runs-dir <path>] [--keep <n>]"},
+		Subcommands: []SubcommandHelp{
+			{Name: "list", Description: "List saved run reports."},
+			{Name: "show", Description: "Show the latest run report."},
+			{Name: "export", Description: "Export the latest report as a zip."},
+			{Name: "clean", Description: "Delete old run reports."},
+		},
+		Flags: []FlagHelp{
+			{Name: "--runs-dir", Value: "<path>", Description: "Run artifact directory."},
+			{Name: "--output", Value: "<path>", Description: "Export zip path."},
+			{Name: "--keep", Value: "<n>", Description: "Number of newest reports to keep."},
+		},
+		Examples: []string{"glade report list", "glade report show latest"},
+	},
+	{
+		Name:        "lsp",
+		Description: "Run the Language Server Protocol server over stdio.",
+		Usage:       []string{"glade lsp [--project <root>] [--diagnostics-once]"},
+		Flags: []FlagHelp{
+			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+			{Name: "--diagnostics-once", Description: "Write one diagnostics batch and exit."},
+		},
+		Examples: []string{"glade lsp --project . --diagnostics-once"},
+	},
+	{
+		Name:        "profile",
+		Description: "Analyze glade trace output.",
+		Usage:       []string{"glade profile analyze <trace.json> [--json]"},
+		Subcommands: []SubcommandHelp{{Name: "analyze", Description: "Analyze a glade trace JSON file."}},
+		Flags:       []FlagHelp{{Name: "--json", Description: "Write profile report as JSON."}},
+		Examples:    []string{"glade profile analyze trace.json", "glade profile analyze trace.json --json"},
+	},
+	{
+		Name:        "package",
+		Description: "Build managed package artifacts.",
+		Usage:       []string{"glade package build --project <root> --namespace <namespace> --output <artifact> [--version <version>] [--json]"},
+		Subcommands: []SubcommandHelp{{Name: "build", Description: "Build a package artifact JSON file."}},
+		Flags: []FlagHelp{
+			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+			{Name: "--namespace", Value: "<namespace>", Description: "Managed package namespace."},
+			{Name: "--output", Value: "<artifact>", Description: "Artifact JSON path."},
+			{Name: "--version", Value: "<version>", Description: "Optional package version."},
+			{Name: "--json", Description: "Write the artifact to stdout too."},
+		},
+		Examples: []string{"glade package build --project . --namespace pkg --output pkg.json"},
+	},
+	{
+		Name:        "server",
+		Description: "Start the local Salesforce-compatible API baseline.",
+		Usage:       []string{"glade server [--addr <host:port>] [--project <root>] [--db <path>] [--limit-mode <mode>]"},
+		Flags: []FlagHelp{
+			{Name: "--addr", Value: "<host:port>", Description: "Bind address. Defaults to 127.0.0.1:8080."},
+			{Name: "--db", Value: "<path>", Description: "Persistent local database."},
+			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+			{Name: "--limit-mode", Value: "<mode>", Description: "Governor limit mode: permissive or strict."},
+		},
+		Examples: []string{"glade server --project .", "glade server --db .glade/org.sqlite"},
+	},
+	{
+		Name:        "playground",
+		Description: "Start the local Apex playground web UI.",
+		Usage:       []string{"glade playground [--addr <host:port>] [--workspace <id>] [--data-root <path>] [--project <root>] [--db <path>] [--open|--no-open]"},
+		Flags: []FlagHelp{
+			{Name: "--addr", Value: "<host:port>", Description: "Bind address. Defaults to 127.0.0.1:1789."},
+			{Name: "--db", Value: "<path>", Description: "Persistent local database."},
+			{Name: "--project", Value: "<root>", Description: "Attach a project to the workspace."},
+			{Name: "--project-ref", Value: "<name=path>", Description: "Add a named project reference."},
+			{Name: "--examples", Description: "Show bundled examples."},
+			{Name: "--public", Description: "Bind to PORT on all interfaces."},
+			{Name: "--run-timeout", Value: "<dur>", Description: "Anonymous Apex run timeout."},
+			{Name: "--rate-per-minute", Value: "<n>", Description: "Request rate limit."},
+			{Name: "--data-root", Value: "<path>", Description: "Playground data directory."},
+			{Name: "--workspace", Value: "<id>", Description: "Workspace identifier."},
+			{Name: "--limit-mode", Value: "<mode>", Description: "Default limit mode."},
+			{Name: "--open", Description: "Open the browser."},
+			{Name: "--no-open", Description: "Do not open the browser."},
+			{Name: "--once", Description: "Prepare and exit without serving."},
+		},
+		Examples: []string{"glade playground --project . --open", "glade playground --examples"},
+	},
+	{
+		Name:        "db",
+		Description: "Seed, reset, export, and inspect a persistent local database.",
+		Usage:       []string{"glade db seed --db <path> [--project <root>] [--json] <fixture.json>", "glade db reset --db <path> [--project <root>] [--json]", "glade db export --db <path> [--project <root>]", "glade db inspect --db <path> [--project <root>] [--json]"},
+		Subcommands: []SubcommandHelp{
+			{Name: "seed", Description: "Apply a fixture to a persistent database."},
+			{Name: "reset", Description: "Clear data from a persistent database."},
+			{Name: "export", Description: "Write a fixture from a database."},
+			{Name: "inspect", Description: "Print database counts."},
+		},
+		Flags: []FlagHelp{
+			{Name: "--db", Value: "<path>", Description: "Persistent local database path."},
+			{Name: "--project", Value: "<root>", Description: "Project root for schema bootstrap."},
+			{Name: "--json", Description: "Write inspect output as JSON."},
+		},
+		Examples: []string{"glade db inspect --db .glade/org.sqlite", "glade db seed --db .glade/org.sqlite fixture.json"},
+	},
+	{
+		Name:        "completion",
+		Description: "Generate shell completion scripts.",
+		Usage:       []string{"glade completion bash|zsh|fish"},
+		Subcommands: []SubcommandHelp{
+			{Name: "bash", Description: "Write a bash completion script."},
+			{Name: "zsh", Description: "Write a zsh completion script."},
+			{Name: "fish", Description: "Write a fish completion script."},
+		},
+		Examples: []string{"glade completion zsh > ~/.zsh/completions/_glade", "glade completion fish > ~/.config/fish/completions/glade.fish"},
+	},
+	{
+		Name:        "help",
+		Description: "Print this help text.",
+		Usage:       []string{"glade help [command]"},
+		Examples:    []string{"glade help", "glade help test"},
+	},
+}
+
+func projectProgressFlags(jsonDescription string) []FlagHelp {
+	return []FlagHelp{
+		{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+		{Name: "--json", Description: jsonDescription},
+		{Name: "--progress", Description: "Print line progress to stderr."},
+		{Name: "--progress-json", Description: "Print NDJSON progress events to stderr."},
+		{Name: "--no-progress", Description: "Disable terminal progress."},
+		{Name: "--quiet", Description: "Alias for --no-progress."},
+	}
+}
+
+func CommandReferences() []CommandHelp {
+	out := make([]CommandHelp, len(commandReferences))
+	copy(out, commandReferences)
+	return out
+}
+
+func FindCommandHelp(name string) (CommandHelp, bool) {
+	for _, ref := range commandReferences {
+		if ref.Name == name {
+			return ref, true
+		}
+	}
+	return CommandHelp{}, false
+}
+
+func CommandNames() []string {
+	names := make([]string, 0, len(commandReferences))
+	for _, ref := range commandReferences {
+		names = append(names, ref.Name)
+	}
+	return names
 }
 
 func WriteHelp(w io.Writer) error {
@@ -55,22 +377,99 @@ func WriteHelp(w io.Writer) error {
 		return err
 	}
 	maxName := 0
-	for _, cmd := range topLevelCommands {
-		if len(cmd.Name) > maxName {
-			maxName = len(cmd.Name)
+	for _, ref := range commandReferences {
+		if len(ref.Name) > maxName {
+			maxName = len(ref.Name)
 		}
 	}
-	for _, cmd := range topLevelCommands {
-		name := t.Cyan(cmd.Name)
+	for _, ref := range commandReferences {
+		name := t.Cyan(ref.Name)
 		if !t.Color {
-			name = cmd.Name
+			name = ref.Name
 		}
-		desc := t.Dim(cmd.Description)
+		desc := t.Dim(ref.Description)
 		if !t.Color {
-			desc = cmd.Description
+			desc = ref.Description
 		}
 		if _, err := fmt.Fprintf(w, "  %-*s  %s\n", maxName, name, desc); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+func WriteCommandHelp(w io.Writer, args []string) error {
+	if len(args) == 0 {
+		return WriteHelp(w)
+	}
+	ref, ok := FindCommandHelp(args[0])
+	if !ok {
+		return WriteHelp(w)
+	}
+	t := NewTheme(w)
+	if _, err := fmt.Fprintln(w, t.Bold("glade "+ref.Name)+" — "+ref.Description); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "Usage:"); err != nil {
+		return err
+	}
+	for _, usage := range ref.Usage {
+		if _, err := fmt.Fprintln(w, "  "+usage); err != nil {
+			return err
+		}
+	}
+	if len(ref.Subcommands) > 0 {
+		if _, err := fmt.Fprintln(w); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "Subcommands:"); err != nil {
+			return err
+		}
+		maxName := 0
+		for _, sub := range ref.Subcommands {
+			if len(sub.Name) > maxName {
+				maxName = len(sub.Name)
+			}
+		}
+		for _, sub := range ref.Subcommands {
+			if _, err := fmt.Fprintf(w, "  %-*s  %s\n", maxName, sub.Name, sub.Description); err != nil {
+				return err
+			}
+		}
+	}
+	if len(ref.Flags) > 0 {
+		if _, err := fmt.Fprintln(w); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "Flags:"); err != nil {
+			return err
+		}
+		maxFlag := 0
+		for _, flag := range ref.Flags {
+			if len(flag.Display()) > maxFlag {
+				maxFlag = len(flag.Display())
+			}
+		}
+		for _, flag := range ref.Flags {
+			if _, err := fmt.Fprintf(w, "  %-*s  %s\n", maxFlag, flag.Display(), flag.Description); err != nil {
+				return err
+			}
+		}
+	}
+	if len(ref.Examples) > 0 {
+		if _, err := fmt.Fprintln(w); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "Examples:"); err != nil {
+			return err
+		}
+		for _, example := range ref.Examples {
+			if _, err := fmt.Fprintln(w, "  "+example); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
