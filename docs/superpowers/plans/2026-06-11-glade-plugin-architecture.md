@@ -16,7 +16,7 @@ Build the Salesforce-style user experience:
 
 ```bash
 glade plugins list
-glade plugins install compat
+glade plugins install @glade/compat
 glade compat local-tests --project . --parallel auto --json
 glade surface refresh --docs "$GLADE_SALESFORCE_DOCS_SOURCE" --out tmp/surface
 ```
@@ -186,7 +186,7 @@ Linked development plugins use the same shape with `"linked": true` and an execu
 - Move `/Users/matt/Dev/glade/internal/perfscan` to `/Users/matt/Dev/glade-tools/internal/perfscan`.
 - Create `scripts/build-plugin-archives.sh`: builds darwin/linux archives with checksums.
 - Create `plugin.json`: source manifest used in packaging.
-- Modify `README.md`: document `glade plugins link` and `glade plugins install compat`.
+- Modify `README.md`: document `glade plugins link` and `glade plugins install @glade/compat`.
 
 ## Task 1: Add Plugin Host Types In Glade
 
@@ -1774,7 +1774,7 @@ In `/Users/matt/Dev/glade/internal/gladecli/cli.go`, remove the `perfscan` impor
 In `/Users/matt/Dev/glade/internal/cliui/help.go`, remove `glade inspect performance` usage and examples. Add a short note in the plugin docs instead:
 
 ```text
-Performance scans are provided by the first-party performance plugin: `glade plugins install performance`, then `glade performance scan --project .`.
+Performance scans are provided by the first-party performance plugin: `glade plugins install @glade/performance`, then `glade performance scan --project .`.
 ```
 
 - [ ] **Step 5: Update tests**
@@ -2654,21 +2654,21 @@ glade-tools local-tests --project . --parallel auto --json
 with:
 
 ```bash
-glade plugins install compat
+glade plugins install @glade/compat
 glade compat local-tests --project . --parallel auto --json
 ```
 
 Replace surface-ledger examples with:
 
 ```bash
-glade plugins install compat
+glade plugins install @glade/compat
 glade surface refresh --docs "$GLADE_SALESFORCE_DOCS_SOURCE" --out tmp/surface
 ```
 
 Replace advisory performance scan examples with:
 
 ```bash
-glade plugins install performance
+glade plugins install @glade/performance
 glade performance scan --project . --json > reports/glade-performance.json
 glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
@@ -2692,7 +2692,7 @@ The product repo contains the plugin manager, command router, runtime, local sch
 In `/Users/matt/Dev/glade-tools/README.md`, say:
 
 ```text
-This repository builds the first-party compat plugin. The old `glade-tools` binary remains as a migration wrapper. New usage goes through `glade plugins install compat` or `glade plugins link --exec <path>`.
+This repository builds the first-party compat plugin. The old `glade-tools` binary remains as a migration wrapper. New usage goes through `glade plugins install @glade/compat` or `glade plugins link --exec <path>`.
 ```
 
 - [ ] **Step 5: Run doc and guard checks**
@@ -2913,7 +2913,7 @@ Expected: only intentional files are modified.
 - Third-party plugins are arbitrary executables. `plugins install` must show source, version, checksum, and path before install once interactive prompts exist. CI can pass `--yes`.
 - Registry availability can block installs. `plugins lock` plus local archive install gives CI a dry path.
 - Big fixture data can bloat archives. Keep data packs inside plugin releases, not in `/Users/matt/Dev/glade`.
-- Moving `inspect performance` breaks the old product command. This repo is pre-release; prefer the clean plugin boundary and make the error message point to `glade plugins install performance`.
+- Moving `inspect performance` breaks the old product command. This repo is pre-release; prefer the clean plugin boundary and make the error message point to `glade plugins install @glade/performance`.
 - Moving `apexdocs` can break `glade-tools` imports because the module path still sits under `github.com/glade-sh/glade/tools`. Rewrite imports in one pass and run the focused package set before touching docs.
 - Local-test selection can fork if copied twice. Move product-grade selectors into `glade test`, then let readiness plugin code call or mirror only the product selector contract.
 - Describe catalog import is base only when it is file-to-local-schema conversion. Any live Salesforce org capture or authentication must remain a plugin.

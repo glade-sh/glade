@@ -179,14 +179,17 @@ plugins provide compatibility fixtures and advisory scanners without putting
 that maintenance code in the base runtime.
 
 ```bash
-glade plugins install compat
-glade plugins install performance
+glade plugins install @glade/compat
+glade plugins install @glade/performance
 glade plugins list
 glade plugins doctor
 glade plugins which compat
 glade plugins lock
 glade plugins restore
 ```
+
+The short aliases `compat` and `performance` resolve to `@glade/compat` and
+`@glade/performance`.
 
 Once installed, plugin command roots behave like Glade commands:
 

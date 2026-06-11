@@ -293,7 +293,9 @@ var commandReferences = []CommandHelp{
 		Usage:       []string{"glade plugins <command> [flags]"},
 		Subcommands: []SubcommandHelp{
 			{Name: "list", Description: "List installed plugins."},
-			{Name: "install", Description: "Install a plugin from the registry or archive."},
+			{Name: "search", Description: "Search the plugin marketplace."},
+			{Name: "info", Description: "Show marketplace plugin metadata."},
+			{Name: "install", Description: "Install a plugin from the marketplace, registry, URL, or archive."},
 			{Name: "link", Description: "Link a local plugin executable."},
 			{Name: "remove", Description: "Remove an installed plugin."},
 			{Name: "which", Description: "Show the plugin that owns a command."},
@@ -301,7 +303,7 @@ var commandReferences = []CommandHelp{
 			{Name: "lock", Description: "Write glade.plugins.lock.json."},
 			{Name: "restore", Description: "Restore plugins from glade.plugins.lock.json."},
 		},
-		Examples: []string{"glade plugins list", "glade plugins install compat", "glade plugins lock"},
+		Examples: []string{"glade plugins install @glade/compat", "glade plugins install @glade/performance", "glade plugins search quality"},
 	},
 	{
 		Name:        "package",

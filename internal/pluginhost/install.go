@@ -7,7 +7,23 @@ import (
 	"path/filepath"
 )
 
+type InstallOptions struct {
+	CanonicalName string
+	RegistryURL   string
+	Publisher     string
+	Trust         string
+	AssetSHA256   string
+	AssetOS       string
+	AssetArch     string
+	Source        string
+	StorageName   string
+}
+
 func (s Store) InstallArchive(ctx context.Context, archivePath string) (InstalledPlugin, error) {
+	return s.InstallArchiveWithOptions(ctx, archivePath, InstallOptions{})
+}
+
+func (s Store) InstallArchiveWithOptions(ctx context.Context, archivePath string, opts InstallOptions) (InstalledPlugin, error) {
 	if err := ctx.Err(); err != nil {
 		return InstalledPlugin{}, err
 	}
@@ -52,7 +68,23 @@ func (s Store) InstallArchive(ctx context.Context, archivePath string) (Installe
 	if _, err := os.Stat(extractedExe.path); err != nil {
 		return InstalledPlugin{}, err
 	}
-	targetDir := filepath.Join(s.root, "plugins", manifest.Name, manifest.Version)
+	if opts.CanonicalName != "" {
+		ref, err := ParsePluginRef(opts.CanonicalName)
+		if err != nil {
+			return InstalledPlugin{}, err
+		}
+		if manifest.Name != ref.ManifestName() {
+			return InstalledPlugin{}, fmt.Errorf("manifest name %q does not match catalog package %q", manifest.Name, ref.ManifestName())
+		}
+	}
+	storageName := opts.StorageName
+	if storageName == "" {
+		storageName = manifest.Name
+	}
+	if err := validatePluginPathToken("plugin storage name", storageName); err != nil {
+		return InstalledPlugin{}, err
+	}
+	targetDir := filepath.Join(s.root, "plugins", storageName, manifest.Version)
 	if err := os.RemoveAll(targetDir); err != nil {
 		return InstalledPlugin{}, err
 	}
@@ -71,14 +103,26 @@ func (s Store) InstallArchive(ctx context.Context, archivePath string) (Installe
 	if err != nil {
 		return InstalledPlugin{}, err
 	}
+	source := opts.Source
+	if source == "" {
+		source = "archive:" + absArchive
+	}
 	plugin := InstalledPlugin{
-		Name:       manifest.Name,
-		Version:    manifest.Version,
-		Executable: executable,
-		Manifest:   filepath.Join(targetDir, "plugin.json"),
-		Source:     "archive:" + absArchive,
-		Linked:     false,
-		Commands:   manifest.CommandRoots(),
+		Name:          manifest.Name,
+		CanonicalName: opts.CanonicalName,
+		StorageName:   storageName,
+		Version:       manifest.Version,
+		Executable:    executable,
+		Manifest:      filepath.Join(targetDir, "plugin.json"),
+		Source:        source,
+		Linked:        false,
+		Commands:      manifest.CommandRoots(),
+		Registry:      opts.RegistryURL,
+		Publisher:     opts.Publisher,
+		Trust:         opts.Trust,
+		AssetSHA256:   opts.AssetSHA256,
+		AssetOS:       opts.AssetOS,
+		AssetArch:     opts.AssetArch,
 	}
 	state, err := s.ReadInstalled()
 	if err != nil {

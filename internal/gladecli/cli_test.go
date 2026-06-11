@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -429,6 +432,88 @@ func TestPluginsInstallMissingArchiveDoesNotFetchRegistry(t *testing.T) {
 	}
 	if strings.Contains(stderr.String(), "connect: connection refused") {
 		t.Fatalf("missing archive attempted registry fetch: %q", stderr.String())
+	}
+}
+
+func TestPluginsSearchAndInfoUseRegistry(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@glade/compat","aliases":["compat"],"version":"0.1.0","publisher":"glade","trust":"first-party","summary":"Compatibility fixtures.","commands":["compat","surface"],"docsURL":"https://glade.sh/guide/plugins/compat","assets":[{"os":%q,"arch":%q,"url":"https://example.test/compat.tar.gz","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}]}`, runtime.GOOS, runtime.GOARCH)
+	}))
+	defer server.Close()
+	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "search", "surface"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("search exit=%d stderr=%s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "@glade/compat 0.1.0 first-party") {
+		t.Fatalf("unexpected search output:\n%s", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"plugins", "info", "@glade/compat"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("info exit=%d stderr=%s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "commands: compat, surface") || !strings.Contains(stdout.String(), "docs: https://glade.sh/guide/plugins/compat") {
+		t.Fatalf("unexpected info output:\n%s", stdout.String())
+	}
+}
+
+func TestPluginsInstallRemoteURLRequiresSHA256(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "install", "https://example.test/plugin.tar.gz"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit=%d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), "remote plugin archive installs require --sha256") {
+		t.Fatalf("stderr missing sha256 message: %q", stderr.String())
+	}
+}
+
+func TestPluginsInstallCommunityRegistryInCIStopsBeforeDownload(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Setenv("CI", "1")
+	downloaded := false
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/index.json":
+			fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@acme/quality","version":"1.2.0","trust":"community","assets":[{"os":%q,"arch":%q,"url":%q,"sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}]}`,
+				runtime.GOOS, runtime.GOARCH, server.URL+"/quality.tar.gz")
+		case "/quality.tar.gz":
+			downloaded = true
+			w.WriteHeader(http.StatusOK)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL+"/index.json")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "install", "@acme/quality"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit=%d, want 1", code)
+	}
+	if downloaded {
+		t.Fatal("community plugin was downloaded before CI trust gate")
+	}
+	if !strings.Contains(stderr.String(), "rerun with --yes") {
+		t.Fatalf("stderr missing CI trust message: %q", stderr.String())
+	}
+}
+
+func TestScopedPluginCoordinateIsNotArchiveInstallArg(t *testing.T) {
+	if isArchiveInstallArg("@glade/compat") {
+		t.Fatal("@glade/compat was classified as an archive path")
+	}
+	if !isArchiveInstallArg("./glade-plugin-compat_0.1.0_darwin_arm64.tar.gz") {
+		t.Fatal("local archive path was not classified as an archive")
 	}
 }
 
