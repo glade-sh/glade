@@ -3,6 +3,7 @@ package pluginhost
 import (
 	"context"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -61,5 +62,50 @@ func TestRestoreLockFileInstallsExactVersions(t *testing.T) {
 	}
 	if len(calls) != 2 || calls[0] != "compat@1.0.0" || calls[1] != "performance@2.0.0" {
 		t.Fatalf("unexpected restore calls: %#v", calls)
+	}
+}
+
+func TestWriteLockFileUsesCanonicalRegistryIdentity(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "glade.plugins.lock.json")
+	state := InstalledState{Plugins: []InstalledPlugin{{
+		Name:          "compat",
+		CanonicalName: "@glade/compat",
+		Version:       "0.1.0",
+		Registry:      "https://plugins.glade.sh/index.json",
+		Trust:         "first-party",
+		Publisher:     "glade",
+		AssetOS:       "darwin",
+		AssetArch:     "arm64",
+		AssetSHA256:   strings.Repeat("a", 64),
+		Source:        "registry:@glade/compat",
+		Commands:      []string{"compat"},
+	}}}
+	if err := WriteLockFile(path, state, false); err != nil {
+		t.Fatal(err)
+	}
+	lock, err := ReadLockFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := lock.Plugins[0]
+	if got.Name != "@glade/compat" || got.Registry == "" || got.SHA256 == "" || got.OS != "darwin" || got.Arch != "arm64" {
+		t.Fatalf("unexpected lock plugin: %#v", got)
+	}
+}
+
+func TestRestoreLockInstallsExactCanonicalVersions(t *testing.T) {
+	lock := PluginLock{Version: 1, Plugins: []LockedPlugin{{
+		Name: "@acme/quality", Version: "1.2.0", Registry: "https://plugins.example.test/index.json", SHA256: strings.Repeat("b", 64),
+	}}}
+	var gotName, gotVersion string
+	err := NewStore(t.TempDir()).RestoreLock(context.Background(), lock, func(ctx context.Context, name, version string) (InstalledPlugin, error) {
+		gotName, gotVersion = name, version
+		return InstalledPlugin{Name: "quality", CanonicalName: name, Version: version}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotName != "@acme/quality" || gotVersion != "1.2.0" {
+		t.Fatalf("restore installed %q %q", gotName, gotVersion)
 	}
 }

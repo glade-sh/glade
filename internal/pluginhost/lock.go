@@ -30,11 +30,21 @@ func WriteLockFile(path string, state InstalledState, includeLinked bool) error 
 		if plugin.Linked && !includeLinked {
 			continue
 		}
+		name := plugin.Name
+		if plugin.CanonicalName != "" {
+			name = plugin.CanonicalName
+		}
 		lock.Plugins = append(lock.Plugins, LockedPlugin{
-			Name:     plugin.Name,
-			Version:  plugin.Version,
-			Source:   plugin.Source,
-			Commands: append([]string(nil), plugin.Commands...),
+			Name:      name,
+			Version:   plugin.Version,
+			Registry:  plugin.Registry,
+			OS:        plugin.AssetOS,
+			Arch:      plugin.AssetArch,
+			SHA256:    plugin.AssetSHA256,
+			Trust:     plugin.Trust,
+			Publisher: plugin.Publisher,
+			Source:    plugin.Source,
+			Commands:  append([]string(nil), plugin.Commands...),
 		})
 	}
 	data, err := json.MarshalIndent(lock, "", "  ")
