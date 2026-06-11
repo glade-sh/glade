@@ -11,8 +11,9 @@ of the way.
 4. CI outputs and saved artifacts: [CI_ARTIFACTS.md](CI_ARTIFACTS.md)
 5. Rich local workflows: [RICH_LOCAL_WORKFLOWS.md](RICH_LOCAL_WORKFLOWS.md)
 6. Test startup cache (when it is safe to trust): [TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md)
-7. Day-to-day editor commands: [EDITOR.md](EDITOR.md)
-8. Current support surface:
+7. Install and author plugins: [PLUGINS.md](PLUGINS.md)
+8. Day-to-day editor commands: [EDITOR.md](EDITOR.md)
+9. Current support surface:
    - Site first layer: <https://glade.sh/docs/guide/support-map>
    - [COMPATIBILITY_DASHBOARD.md](COMPATIBILITY_DASHBOARD.md)
    - [KNOWN_GAPS.md](KNOWN_GAPS.md)

@@ -104,18 +104,16 @@ var commandReferences = []CommandHelp{
 	},
 	{
 		Name:        "inspect",
-		Description: "Inspect indexed project symbols and performance risks.",
-		Usage:       []string{"glade inspect symbols [--project <root>] [--json]", "glade inspect performance [--project <root>] [--trace <path>] [--json]"},
+		Description: "Inspect indexed project symbols.",
+		Usage:       []string{"glade inspect symbols [--project <root>] [--json]"},
 		Subcommands: []SubcommandHelp{
 			{Name: "symbols", Description: "Print indexed Apex, trigger, and metadata symbols."},
-			{Name: "performance", Description: "Find local runtime and metadata performance risks."},
 		},
 		Flags: []FlagHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
-			{Name: "--trace", Value: "<path>", Description: "Optional trace JSON for performance analysis."},
 			{Name: "--json", Description: "Write structured output."},
 		},
-		Examples: []string{"glade inspect symbols --project .", "glade inspect performance --project . --trace reports/trace.json"},
+		Examples: []string{"glade inspect symbols --project ."},
 	},
 	{
 		Name:        "schema",
@@ -288,6 +286,22 @@ var commandReferences = []CommandHelp{
 		Subcommands: []SubcommandHelp{{Name: "analyze", Description: "Analyze a glade trace JSON file."}},
 		Flags:       []FlagHelp{{Name: "--json", Description: "Write profile report as JSON."}},
 		Examples:    []string{"glade profile analyze trace.json", "glade profile analyze trace.json --json"},
+	},
+	{
+		Name:        "plugins",
+		Description: "Find, install, and manage Glade plugins.",
+		Usage:       []string{"glade plugins <command> [flags]"},
+		Subcommands: []SubcommandHelp{
+			{Name: "list", Description: "List installed plugins."},
+			{Name: "install", Description: "Install a plugin from the registry or archive."},
+			{Name: "link", Description: "Link a local plugin executable."},
+			{Name: "remove", Description: "Remove an installed plugin."},
+			{Name: "which", Description: "Show the plugin that owns a command."},
+			{Name: "doctor", Description: "Check installed plugins."},
+			{Name: "lock", Description: "Write glade.plugins.lock.json."},
+			{Name: "restore", Description: "Restore plugins from glade.plugins.lock.json."},
+		},
+		Examples: []string{"glade plugins list", "glade plugins install compat", "glade plugins lock"},
 	},
 	{
 		Name:        "package",

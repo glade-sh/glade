@@ -6,7 +6,7 @@
 
 **Architecture:** Keep product commands in `glade`. Keep maintenance scanners, ledgers, and compatibility fixture workflows out of this repository's public CLI. Phase 1 builds the handles and first proof surfaces. Phase 2 adds measured evidence and agent policy. Phase 3 adds deeper enterprise/runtime behavior.
 
-**Tech Stack:** Go, existing `internal/gladecli`, `internal/cliui`, `internal/config`, `internal/testdaemon`, `internal/testreport`, `internal/profile`, `internal/perfscan`, `internal/debuglog`, `internal/storage`, and the existing CLI test harness.
+**Tech Stack:** Go, existing `internal/gladecli`, `internal/cliui`, `internal/config`, `internal/testdaemon`, `internal/testreport`, `internal/profile`, `internal/debuglog`, `internal/storage`, the first-party performance plugin, and the existing CLI test harness.
 
 ---
 
@@ -22,11 +22,11 @@ The useful existing pieces are already here:
 - `glade dev` writes run artifacts under `.glade/runs`.
 - `glade report` lists and exports saved run reports.
 - `glade db` seeds, resets, exports, and inspects local org storage.
-- `glade inspect performance` already owns performance scan style findings.
+- The first-party performance plugin owns performance scan style findings.
 
 Do not add an `apexlocal` binary. The product surface is `glade`.
 
-Do not add `compat` or surface-ledger commands back to `glade`. Those belong in `~/Dev/glade-tools`.
+Do not add `compat` or surface-ledger commands back to core Glade. They ship through the first-party compat plugin.
 
 ## Phase Order
 
@@ -46,7 +46,7 @@ Each subagent starts with:
 
 ```bash
 git status --short
-go test ./internal/gladecli ./internal/cliui ./internal/config ./internal/testdaemon ./internal/testreport ./internal/storage ./internal/profile ./internal/perfscan ./internal/debuglog -count=1
+go test ./internal/gladecli ./internal/cliui ./internal/config ./internal/testdaemon ./internal/testreport ./internal/storage ./internal/profile ./internal/debuglog -count=1
 ```
 
 If the baseline is red, record the failing package and error. Do not fix unrelated failures.
@@ -525,7 +525,7 @@ Expected: tests pass; query returns stable JSON.
 Phase 2 is complete when all of these pass:
 
 ```bash
-go test ./internal/gladecli ./internal/testreport ./internal/profile ./internal/perfscan ./internal/watch ./internal/apextest -count=1
+go test ./internal/gladecli ./internal/testreport ./internal/profile ./internal/watch ./internal/apextest -count=1
 go run ./cmd/glade check --project . --format sarif > /tmp/glade-check.sarif
 go run ./cmd/glade coverage --project . --json > /tmp/glade-coverage.json
 go run ./cmd/glade trace diff testdata/traces/before.json testdata/traces/after.json --json || true
@@ -653,7 +653,7 @@ go test ./internal/profile ./internal/testreport ./internal/gladecli -count=1
 - Create: `internal/securityscan/report.go`
 - Create: `internal/securityscan/securityscan_test.go`
 - Modify: `internal/gladecli/cli.go`
-- Modify: `internal/perfscan/model.go` only if shared finding types are reused.
+- Modify: `/Users/matt/Dev/glade-tools/internal/perfscan/model.go` only if shared finding types are reused by the performance plugin.
 
 **Work:**
 
@@ -698,7 +698,7 @@ go test ./internal/apextest ./internal/gladecli ./internal/runhistory -count=1
 Phase 3 is complete when all of these pass:
 
 ```bash
-go test ./internal/gladecli ./internal/storage ./internal/profile ./internal/perfscan ./internal/testreport ./internal/watch ./internal/config -count=1
+go test ./internal/gladecli ./internal/storage ./internal/profile ./internal/testreport ./internal/watch ./internal/config -count=1
 go run ./cmd/glade fixtures validate --project . --fixture testdata/fixtures/minimal.json --json || true
 go run ./cmd/glade shape diff --project . --left testdata/shapes/minimal.json --right testdata/shapes/enterprise.json --json || true
 go run ./cmd/glade report export latest --format html --output /tmp/glade-report.html || true
@@ -744,7 +744,7 @@ go test ./internal/fixturecheck ./internal/storage ./internal/gladecli -count=1
 - Create: `internal/bulkrisk/project.go`
 - Create: `internal/bulkrisk/bulkrisk_test.go`
 - Modify: `internal/profile/profile.go`
-- Modify: `internal/perfscan/report.go`
+- Modify: `/Users/matt/Dev/glade-tools/internal/perfscan/report.go`
 - Modify: `internal/gladecli/cli.go`
 
 **Work:**
@@ -883,7 +883,7 @@ files, and suggested first subagents.
 ## Final Guardrails
 
 - Keep `glade` product-facing.
-- Keep maintenance scanners and compatibility ledgers in `glade-tools`.
+- Keep maintenance scanners and compatibility ledgers in first-party plugins.
 - Keep JSON contracts stable once introduced.
 - Add tests before implementation in each area.
 - Prefer small command files over growing `internal/gladecli/cli.go`.

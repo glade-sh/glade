@@ -1,6 +1,6 @@
 # Performance Scanner Roadmap
 
-`glade inspect performance` is useful when it finds work a developer can
+The first-party performance plugin is useful when it finds work a developer can
 actually reduce. Entry points are map pins. Findings should be bottlenecks.
 
 ## Current Contract

@@ -53,14 +53,15 @@ coverage and known-gap docs checked into this repository.
 | `String`, dates, time, math, assertions, labels, URLs, and user info | Wide support, with exact rows in the stdlib ledger. |
 | `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller helpers, and many `Test.*` helpers | Partial. The local model covers common test paths and records gaps by method. |
 | Platform services such as approval execution, quick actions, business-hours services, sandbox lifecycle, live request context, and identity services | Unsupported unless a row says otherwise. Glade should return a stable unsupported diagnostic, not silent wrong behavior. |
-| Local API server, LSP, DAP, watch, profile, and performance scanning tools | Supported for local development. |
+| Local API server, LSP, DAP, watch, profile, and plugin-managed scanners | Supported for local development. |
 
 Drill down from there:
 
 ```bash
 glade check --project .
 glade test --project . --json
-glade inspect performance --project . --json
+glade plugins install performance
+glade performance scan --project . --json
 ```
 
 - High-level readiness: [docs/COMPATIBILITY_DASHBOARD.md](docs/COMPATIBILITY_DASHBOARD.md)
@@ -79,16 +80,24 @@ glade test --project . --filter AccountServiceTest --json
 glade test --project . --filter AccountServiceTest.testCreatesAccount --json
 glade test changed --project . --since origin/main --json
 glade test failed --project .
-glade inspect performance --project . --json > reports/glade-performance.json
-glade inspect performance --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
+glade plugins install performance
+glade performance scan --project . --json > reports/glade-performance.json
+glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
 
 The source-only performance scan maps entry points and hard static patterns.
 Trace input ranks measured spans and SOQL row counts.
 
-Large project triage and maintenance scanners live in the sibling
-`~/Dev/glade-tools` project. They depend on this framework but are not part of
-the published `glade` CLI.
+Maintenance scanners ship as plugins. The product repo contains the plugin
+manager, command router, runtime, local schema import, and product test runner.
+Maintenance scanners, advisory performance scans, docs inventory, fixtures, and
+generated ledgers ship as plugins and do not live in the product runtime
+packages.
+
+First-party plugins are documented in [docs/PLUGINS.md](docs/PLUGINS.md).
+`compat` owns compatibility fixtures and surface ledgers. `performance` owns
+advisory performance scans. Third-party plugins use the same executable
+manifest contract.
 
 Run anonymous Apex:
 
@@ -119,6 +128,7 @@ glade report export latest --runs-dir .glade/runs --format html --output reports
 - [CI artifacts](docs/CI_ARTIFACTS.md)
 - [Rich local workflows](docs/RICH_LOCAL_WORKFLOWS.md)
 - [Test startup cache](docs/TEST_STARTUP_CACHE.md)
+- [Plugins](docs/PLUGINS.md)
 - [Dogfood checklist](docs/DOGFOOD_CHECKLIST.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Compatibility policy](docs/COMPATIBILITY.md)

@@ -91,7 +91,7 @@ They don't address per-command flags like `--filter`, `--changed-since`, `--addr
 **Current state:** Phase 1 added `internal/flagparse`, with bool/string flags,
 short aliases, `--` end-of-options handling, and Levenshtein suggestions. It now
 backs the common project flag helpers plus high-traffic commands such as
-`version`, `doctor`, `parse`, `inspect performance`, `schema load`, `check`,
+`version`, `doctor`, `parse`, `schema load`, `check`,
 `exec`, `test`, `lsp`, `profile analyze`, and `package build`. Leaf commands
 that still have hand loops get typo suggestions at the `Run` error formatter.
 
@@ -113,7 +113,7 @@ Current `--json` support by command:
 | `version` | Yes | First cut emits version, Go runtime, OS, and architecture |
 | `doctor` | Yes | First cut emits `DoctorInfo` as JSON |
 | `parse` | Yes | |
-| `inspect` | Yes | Both symbols and performance |
+| `inspect` | Yes | Symbols. Advisory performance scans run through the performance plugin. |
 | `schema load` | Yes | |
 | `check` | Yes | |
 | `exec` | Yes | |
@@ -281,7 +281,7 @@ It gives wizard work a single place to read command names, flags, subcommands,
 and examples.
 
 This cut should stay product-only. Do not add completions or help topics for
-maintenance surfaces that moved to `glade-tools`.
+maintenance surfaces that ship through first-party plugins.
 
 ## 10. Wizard Ideas That Fit Glade
 

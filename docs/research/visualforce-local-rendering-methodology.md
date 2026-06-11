@@ -26,7 +26,7 @@ Glade has three tiers of Visualforce support, each at a different maturity level
 - `internal/server/`: Tooling API exposes `ApexPage` (type `066`) and `ApexComponent` (type `099`) objects with Markup, ApiVersion, MasterLabel, ControllerKey.
 - `internal/apextest/`: Registers Visualforce page names on the VM during test setup so `Page.` prefix references resolve.
 - `internal/resource/`: Reads `.page` files and stores `Markup` in the org state for the `ApexPage` SObject.
-- `internal/perfscan/`: Treats Visualforce pages as entry points (`EntryVisualforce` kind) and scans for `apex.visualforce.action` performance findings.
+- `glade-tools/internal/perfscan/`: Treats Visualforce pages as entry points (`EntryVisualforce` kind) and scans for `apex.visualforce.action` performance findings through the performance plugin.
 
 ### 1.2 What Is Explicitly Missing
 
@@ -918,7 +918,7 @@ Visualforce integration would add:
 | `internal/resource/resource.go` | ApexPage SObject creation, markup loading |
 | `internal/playground/server.go` | Web playground server (pattern for Visualforce dev UI) |
 | `internal/apextest/runner.go` | Test runner with Visualforce page registration |
-| `internal/perfscan/metadata_scan.go` | Performance scanner — VF entry points |
+| `glade-tools/internal/perfscan/metadata_scan.go` | Performance plugin scanner — VF entry points |
 | `internal/project/project.go` | File discovery for `.page` and `.component` |
 | `internal/ir/ir.go` | Intermediate representation (for expression compilation if needed) |
 | `docs/STDLIB_COVERAGE.md` | ApexPages coverage status |

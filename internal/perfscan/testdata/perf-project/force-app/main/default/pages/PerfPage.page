@@ -1,9 +1,0 @@
-<apex:page controller="PerfRisk" action="{!save}">
-    <apex:form>
-        <apex:pageBlock>
-            <apex:repeat value="{!accounts}" var="account">
-                <apex:outputText value="{!account.Description}"/>
-            </apex:repeat>
-        </apex:pageBlock>
-    </apex:form>
-</apex:page>

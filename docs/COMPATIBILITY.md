@@ -16,10 +16,9 @@ Unsupported behavior should fail loudly and predictably.
 
 ## Support Map
 
-`glade` publishes product commands only. Maintenance scanners, compatibility
-fixtures, project gap reports, and generated support artifacts live in the
-sibling `glade-tools` project. The checked public reports in this repository
-are:
+`glade` publishes product commands and plugin management. Maintenance scanners,
+compatibility fixtures, project gap reports, and generated support artifacts
+ship through plugins. The checked public reports in this repository are:
 
 - [`docs/COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md)
 - [`docs/KNOWN_GAPS.md`](KNOWN_GAPS.md)
@@ -44,10 +43,10 @@ in [`docs/RELEASE_POLICY.md`](RELEASE_POLICY.md), with ongoing notes in
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| CLI surface | partial | `version`, `help`, `doctor`, `parse`, `inspect`, `inspect performance`, `schema`, `check`, `exec`, `test`, `profile analyze`, `server`, `db`, and `lsp` exist. Several commands are still partial because their underlying runtime fidelity is partial. |
+| CLI surface | partial | `version`, `help`, `doctor`, `parse`, `inspect`, `schema`, `check`, `exec`, `test`, `profile analyze`, `server`, `db`, `plugins`, and `lsp` exist. Advisory performance scans run through the first-party performance plugin as `glade performance scan`. Several commands are still partial because their underlying runtime fidelity is partial. |
 | Project config | partial | Minimal `glade.yml` discovery exists. |
 | Diagnostics | partial | Shared diagnostic shape exists. |
-| Compatibility fixtures | partial | The maintenance fixture runner lives in `glade-tools`. Checked fixtures cover parse, check, exec, test, DB lifecycle, and server black-box behavior. Broader Salesforce black-box fixtures remain incomplete. |
+| Compatibility fixtures | partial | The maintenance fixture runner ships as the compat plugin. Checked fixtures cover parse, check, exec, test, DB lifecycle, and server black-box behavior. Broader Salesforce black-box fixtures remain incomplete. |
 | Parser | supported | `glade parse` uses the local tree-sitter Apex parser module through `internal/apexast`, preserves Apex methods named `void`, provides stable malformed-parse diagnostics, and has enterprise-style multi-class, namespace/package-directory, and bounded large-index coverage for the local Apex execution corpus. |
 | Project loader | partial | SFDX package directories and Apex/object/field/record type files are discovered. |
 | Schema loader | partial | Custom object, custom field, picklist, and record type metadata are loaded. Local schema describe also merges the generated Salesforce standard object baseline for all checked SObject stub shape, with Person Account and Multi-Currency field overlays gated by org features. |

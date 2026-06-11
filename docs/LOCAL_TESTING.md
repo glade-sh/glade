@@ -44,8 +44,8 @@ glade test --project . --json
 Run one test class or one method:
 
 ```bash
-glade test --project . --filter AccountServiceTest --json
-glade test --project . --filter AccountServiceTest.testCreatesAccount --json
+glade test --project . --class AccountServiceTest --json
+glade test --project . --class AccountServiceTest --method testCreatesAccount --json
 ```
 
 ## Run a Performance Risk Scan
@@ -53,19 +53,22 @@ glade test --project . --filter AccountServiceTest.testCreatesAccount --json
 Generate an advisory performance report from source and metadata first:
 
 ```bash
-glade inspect performance --project . --json > reports/glade-performance.json
+glade plugins install performance
+glade performance scan --project . --json > reports/glade-performance.json
 ```
 
 Add trace data from a representative local run to rank the highest-cost paths first:
 
 ```bash
-glade inspect performance --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
+glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
 
 The static scan records entry points and high-confidence code shape. It does
 not treat a Visualforce page, Lightning wire, batch class, trigger, or SOQL
 query without a `WHERE` clause as a bottleneck by itself. Use trace input when
 you need measured elapsed spans and SOQL row counts.
+
+Plugin install, archive, and author details are in [PLUGINS.md](PLUGINS.md).
 
 Use `--parallelism` to choose the worker count. Method-level parallel execution
 is on by default; use `--no-parallel-methods` only when a project has tests that

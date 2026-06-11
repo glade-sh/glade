@@ -19,6 +19,17 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
+func firstRunProblem(run testreport.Run) string {
+	for _, suite := range run.Suites {
+		for _, testCase := range suite.Cases {
+			if testCase.Problem != nil {
+				return testCase.Problem.Message
+			}
+		}
+	}
+	return ""
+}
+
 func TestRunExecutesAnonymousSubsetTestMethods(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"verifiable","packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -63,6 +74,33 @@ private class TestCustomizationSettings {
 	summary := run.Summary()
 	if summary.Total != 1 || summary.Passed != 1 {
 		t.Fatalf("summary = %#v, run = %#v", summary, run)
+	}
+}
+
+func TestRunNamespacedProjectLabelReferences(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/labels/CustomLabels.labels"), `<CustomLabels>
+  <labels><fullName>Greeting</fullName><language>en_US</language><value>Hello</value></labels>
+</CustomLabels>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/translations/fr.translation-meta.xml"), `<Translations>
+  <customLabels><name>Greeting</name><label>Bonjour</label></customLabels>
+</Translations>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/LabelTest.cls"), `
+@isTest
+private class LabelTest {
+  @isTest static void resolvesLabels() {
+    System.assertEquals('Hello', Label.Greeting);
+    System.assertEquals('Hello', Label.pkg.Greeting);
+    System.assertEquals('Bonjour', System.Label.get('pkg', 'Greeting', 'fr'));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{NoDiskCache: true})
+	summary := run.Summary()
+	if summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v, problem = %s, run = %#v", summary, firstRunProblem(run), run)
 	}
 }
 
@@ -5324,6 +5362,32 @@ private class ThirdTest {
 	}
 	if cases[0].ClassName != "FirstTest" || cases[1].ClassName != "ThirdTest" {
 		t.Fatalf("selected cases = %#v", cases)
+	}
+}
+
+func TestDiscoverSelectsExactClassAndMethod(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AccountServiceTest.cls"), `
+@isTest
+private class AccountServiceTest {
+  @isTest static void testCreatesAccount() { System.assert(true); }
+  @isTest static void testUpdatesAccount() { System.assert(true); }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AccountServiceTestExtra.cls"), `
+@isTest
+private class AccountServiceTestExtra {
+  @isTest static void testCreatesAccount() { System.assert(true); }
+}
+`)
+
+	cases := Discover(loadTestIndex(t, root), Options{
+		SelectedClasses: []string{"AccountServiceTest"},
+		SelectedMethod:  "testCreatesAccount",
+	})
+	if len(cases) != 1 || cases[0].ClassName != "AccountServiceTest" || cases[0].MethodName != "testCreatesAccount" {
+		t.Fatalf("cases = %#v", cases)
 	}
 }
 

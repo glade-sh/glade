@@ -654,6 +654,10 @@ func (vm *VM) localHTTPMockResponse(mock Value, request Value) (Value, error) {
 	}
 }
 
+func httpMockRequiresResolvedEndpoint(mock Value) bool {
+	return mock.Kind == ValueObject && mock.Type == "MultiStaticResourceCalloutMock"
+}
+
 func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Value) (Value, Value, error) {
 	name, ok := receiver.Fields["name"]
 	if !ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "" {

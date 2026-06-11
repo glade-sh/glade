@@ -31,13 +31,13 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		return testreport.Run{}, err
 	}
 	if len(args) > 0 && isHelpArg(args[0]) {
-		_ = cliui.WriteTestHelp(w)
+		_ = writeTestHelp(w)
 		return testreport.Run{}, nil
 	}
 	if len(args) > 0 && args[0] == "clear-cache" {
 		rest := args[1:]
 		if len(rest) > 0 && isHelpArg(rest[0]) {
-			_ = cliui.WriteTestHelp(w)
+			_ = writeTestHelp(w)
 			return testreport.Run{}, nil
 		}
 		if err := runTestClearCache(rest, w); err != nil {
@@ -48,7 +48,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if len(args) > 0 && args[0] == "daemon" {
 		rest := args[1:]
 		if len(rest) > 0 && isHelpArg(rest[0]) {
-			_ = cliui.WriteTestHelp(w)
+			_ = writeTestHelp(w)
 			return testreport.Run{}, nil
 		}
 		if err := runTestDaemonCommand(ctx, rest, w); err != nil {
@@ -59,7 +59,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if len(args) > 0 && args[0] == "changed" {
 		rest := args[1:]
 		if len(rest) > 0 && isHelpArg(rest[0]) {
-			_ = cliui.WriteTestHelp(w)
+			_ = writeTestHelp(w)
 			return testreport.Run{}, nil
 		}
 		rewritten, err := rewriteChangedTestArgs(rest)
@@ -71,7 +71,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if len(args) > 0 && args[0] == "failed" {
 		rest := args[1:]
 		if len(rest) > 0 && isHelpArg(rest[0]) {
-			_ = cliui.WriteTestHelp(w)
+			_ = writeTestHelp(w)
 			return testreport.Run{}, nil
 		}
 		rewritten := append([]string{}, rest...)
@@ -81,7 +81,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if len(args) > 0 && args[0] == "serve" {
 		rest := args[1:]
 		if len(rest) > 0 && isHelpArg(rest[0]) {
-			_ = cliui.WriteTestHelp(w)
+			_ = writeTestHelp(w)
 			return testreport.Run{}, nil
 		}
 		if err := runTestServe(ctx, rest, progressW); err != nil {
@@ -92,6 +92,15 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 
 	root := "."
 	filter := ""
+	className := ""
+	methodName := ""
+	classFile := ""
+	var selectedClasses []string
+	shardCount := 0
+	shardIndex := 0
+	shardIndexSet := false
+	durationHistoryPath := ""
+	writeClassShardsDir := ""
 	format := "console"
 	junitPath := ""
 	limitMode := vm.LimitMode("")
@@ -122,6 +131,13 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	parsed, err := flagparse.New("glade test").
 		String("project", "p").
 		String("filter", "f").
+		String("class", "").
+		String("method", "").
+		String("class-file", "").
+		String("shard-count", "").
+		String("shard-index", "").
+		String("duration-history", "").
+		String("write-class-shards", "").
 		Bool("json", "j").
 		Bool("trace-blockers", "").
 		String("slow-test-ms", "").
@@ -159,6 +175,47 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		root = parsed.String("project")
 	}
 	filter = parsed.String("filter")
+	className = strings.TrimSpace(parsed.String("class"))
+	methodName = strings.TrimSpace(parsed.String("method"))
+	classFile = strings.TrimSpace(parsed.String("class-file"))
+	durationHistoryPath = strings.TrimSpace(parsed.String("duration-history"))
+	writeClassShardsDir = strings.TrimSpace(parsed.String("write-class-shards"))
+	if className != "" && classFile != "" {
+		return testreport.Run{}, errors.New("--class and --class-file cannot be combined")
+	}
+	if methodName != "" && className == "" {
+		return testreport.Run{}, errors.New("--method requires --class")
+	}
+	if classFile != "" {
+		selectedClasses, err = readTestClassFile(classFile)
+		if err != nil {
+			return testreport.Run{}, err
+		}
+	}
+	if className != "" {
+		selectedClasses = []string{className}
+	}
+	if parsed.String("shard-count") != "" {
+		parsedShardCount, err := strconv.Atoi(parsed.String("shard-count"))
+		if err != nil || parsedShardCount <= 0 {
+			return testreport.Run{}, errors.New("--shard-count must be a positive integer")
+		}
+		shardCount = parsedShardCount
+	}
+	if parsed.String("shard-index") != "" {
+		parsedShardIndex, err := strconv.Atoi(parsed.String("shard-index"))
+		if err != nil || parsedShardIndex < 0 {
+			return testreport.Run{}, errors.New("--shard-index must be a non-negative integer")
+		}
+		shardIndex = parsedShardIndex
+		shardIndexSet = true
+	}
+	if shardIndexSet && shardCount == 0 {
+		return testreport.Run{}, errors.New("--shard-index requires --shard-count")
+	}
+	if shardCount > 0 && shardIndex >= shardCount {
+		return testreport.Run{}, fmt.Errorf("--shard-index must be between 0 and %d", shardCount-1)
+	}
 	if parsed.Bool("json") {
 		format = "json"
 	}
@@ -272,6 +329,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	}
 	testOpts := apextest.Options{
 		Filter:              filter,
+		SelectedClasses:     selectedClasses,
+		SelectedMethod:      methodName,
 		LimitMode:           limitMode,
 		TraceBlocked:        traceBlocked,
 		SlowTestThresholdMS: slowTestThresholdMS,
@@ -296,6 +355,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	applyTestMemoryLimits(gcAggressive)
 
 	if noCache {
+		noServe = true
+	}
+	if len(selectedClasses) != 0 || methodName != "" || shardCount > 0 || durationHistoryPath != "" || writeClassShardsDir != "" {
 		noServe = true
 	}
 	if !noServe && !watchMode && !daemonMode && !debug {
@@ -383,6 +445,13 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		discoverStart := time.Now()
 		cases = filterSelectedTestCases(cases, selection)
 		discoverTimeMS = time.Since(discoverStart).Milliseconds()
+		if strings.TrimSpace(writeClassShardsDir) != "" {
+			return testreport.Run{}, writeCLIClassShards(writeClassShardsDir, cases, durationHistoryPath, shardCount, parallelismOverride)
+		}
+		cases, err = applyCLIClassShard(cases, durationHistoryPath, shardCount, shardIndex)
+		if err != nil {
+			return testreport.Run{}, err
+		}
 		if progressReporter != nil {
 			progressReporter.setTotal(len(cases))
 		}
@@ -391,6 +460,13 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		discoverStart := time.Now()
 		cases := apextest.Discover(index, testOpts)
 		discoverTimeMS = time.Since(discoverStart).Milliseconds()
+		if strings.TrimSpace(writeClassShardsDir) != "" {
+			return testreport.Run{}, writeCLIClassShards(writeClassShardsDir, cases, durationHistoryPath, shardCount, parallelismOverride)
+		}
+		cases, err = applyCLIClassShard(cases, durationHistoryPath, shardCount, shardIndex)
+		if err != nil {
+			return testreport.Run{}, err
+		}
 		if progressReporter != nil {
 			progressReporter.setTotal(len(cases))
 		}
@@ -434,6 +510,246 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	default:
 		return result, testreport.WriteConsole(w, result)
 	}
+}
+
+func readTestClassFile(path string) ([]string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read --class-file: %w", err)
+	}
+	var out []string
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(strings.TrimSuffix(line, "\r"))
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		out = append(out, line)
+	}
+	return out, nil
+}
+
+type cliClassShard struct {
+	Index           int
+	TotalDurationMS int64
+	Classes         []string
+}
+
+type cliClassWeight struct {
+	Class  string
+	Weight int64
+}
+
+func applyCLIClassShard(cases []apextest.TestCase, historyPath string, shardCount, shardIndex int) ([]apextest.TestCase, error) {
+	if shardCount <= 0 {
+		return cases, nil
+	}
+	durations, err := loadCLIClassDurationHistory(historyPath)
+	if err != nil {
+		return nil, err
+	}
+	shards := planCLIClassShards(cases, durations, shardCount)
+	selected := map[string]bool{}
+	for _, className := range shards[shardIndex].Classes {
+		selected[className] = true
+	}
+	out := make([]apextest.TestCase, 0, len(cases))
+	for _, testCase := range cases {
+		if selected[testCase.ClassName] {
+			out = append(out, testCase)
+		}
+	}
+	return out, nil
+}
+
+func writeCLIClassShards(dir string, cases []apextest.TestCase, historyPath string, shardCount, parallelism int) error {
+	if shardCount <= 0 {
+		shardCount = parallelism
+	}
+	if shardCount <= 0 {
+		shardCount = runtime.GOMAXPROCS(0)
+	}
+	if shardCount <= 0 {
+		shardCount = 1
+	}
+	durations, err := loadCLIClassDurationHistory(historyPath)
+	if err != nil {
+		return err
+	}
+	shards := planCLIClassShards(cases, durations, shardCount)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	width := len(strconv.Itoa(len(shards) - 1))
+	if width < 3 {
+		width = 3
+	}
+	for _, shard := range shards {
+		sort.Strings(shard.Classes)
+		data := strings.Join(shard.Classes, "\n")
+		if data != "" {
+			data += "\n"
+		}
+		path := filepath.Join(dir, fmt.Sprintf("shard-%0*d.txt", width, shard.Index))
+		if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func planCLIClassShards(cases []apextest.TestCase, durations map[string]int64, shardCount int) []cliClassShard {
+	if shardCount <= 0 {
+		return nil
+	}
+	shards := make([]cliClassShard, shardCount)
+	for i := range shards {
+		shards[i].Index = i
+	}
+	weights := cliClassWeights(cases, durations)
+	if len(durations) == 0 {
+		sort.Slice(weights, func(i, j int) bool {
+			return weights[i].Class < weights[j].Class
+		})
+		for i, weight := range weights {
+			target := i % shardCount
+			shards[target].Classes = append(shards[target].Classes, weight.Class)
+			shards[target].TotalDurationMS += weight.Weight
+		}
+		return shards
+	}
+	for _, weight := range weights {
+		target := 0
+		for i := 1; i < len(shards); i++ {
+			if shards[i].TotalDurationMS < shards[target].TotalDurationMS {
+				target = i
+			}
+		}
+		shards[target].Classes = append(shards[target].Classes, weight.Class)
+		shards[target].TotalDurationMS += weight.Weight
+	}
+	for i := range shards {
+		sort.Strings(shards[i].Classes)
+	}
+	return shards
+}
+
+func cliClassWeights(cases []apextest.TestCase, durations map[string]int64) []cliClassWeight {
+	methodCounts := map[string]int64{}
+	for _, testCase := range cases {
+		if testCase.ClassName != "" {
+			methodCounts[testCase.ClassName]++
+		}
+	}
+	weights := make([]cliClassWeight, 0, len(methodCounts))
+	for className, methodCount := range methodCounts {
+		weight := durations[className]
+		if weight <= 0 {
+			weight = methodCount
+		}
+		weights = append(weights, cliClassWeight{Class: className, Weight: weight})
+	}
+	sort.Slice(weights, func(i, j int) bool {
+		if weights[i].Weight == weights[j].Weight {
+			return weights[i].Class < weights[j].Class
+		}
+		return weights[i].Weight > weights[j].Weight
+	})
+	return weights
+}
+
+func loadCLIClassDurationHistory(path string) (map[string]int64, error) {
+	if strings.TrimSpace(path) == "" {
+		return nil, nil
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var perf struct {
+		TopSlowClasses []struct {
+			Class      string `json:"class"`
+			DurationMS int64  `json:"durationMs"`
+		} `json:"topSlowClasses"`
+	}
+	if err := json.Unmarshal(data, &perf); err != nil {
+		return nil, err
+	}
+	out := map[string]int64{}
+	for _, class := range perf.TopSlowClasses {
+		if strings.TrimSpace(class.Class) != "" && class.DurationMS > 0 {
+			out[class.Class] = class.DurationMS
+		}
+	}
+	if len(out) != 0 {
+		return out, nil
+	}
+	var direct map[string]int64
+	if err := json.Unmarshal(data, &direct); err == nil {
+		for className, durationMS := range direct {
+			if strings.TrimSpace(className) != "" && durationMS > 0 {
+				out[className] = durationMS
+			}
+		}
+	}
+	return out, nil
+}
+
+func writeTestHelp(w io.Writer) error {
+	body := strings.TrimSpace(`
+Run local Apex tests.
+
+Usage:
+  glade test [--project <root>] [flags]
+  glade test changed [--project <root>] [--since <ref>]
+  glade test failed [--project <root>]
+  glade test serve [--project <root>] [serve flags]
+  glade test daemon status|stop [--project <root>]
+  glade test clear-cache [--project <root>]
+
+Common flags:
+  --project <root>          Project root. Defaults to current directory.
+  --filter <pattern>        Run matching test classes or methods.
+  --class <name>            Run one exact test class.
+  --method <name>           Run one exact test method. Requires --class.
+  --class-file <path>       Read exact test class names, one per line.
+  --shard-count <n>         Select one deterministic class shard.
+  --shard-index <i>         Shard index to run, starting at 0.
+  --duration-history <path> Weight shard planning with prior class durations.
+  --write-class-shards <dir> Write class shard files and exit.
+  --connect                 Require a running test server (see serve).
+  --no-serve                Do not auto-connect to a running test server.
+  --no-cache                Skip the on-disk startup cache for this run.
+  --last-failed             Rerun tests that failed in the last completed run.
+  --wizard                  Print daily test loop command suggestions.
+  --daemon                  Keep index warm in-process for --watch loops.
+  --json                    Write JSON test results.
+  --junit <path>            Write JUnit XML results.
+  --progress                Print line progress to stderr, even when not attached to a terminal.
+  --progress-json           Print NDJSON progress events to stderr.
+  --no-progress, --quiet    Disable terminal progress.
+  --debug                   Run one DAP snapshot session after tests.
+  --watch                   Watch source files and emit NDJSON events.
+  --watch-once              Run one watch cycle and exit.
+  --changed-since <ref>     Select tests affected since a git ref.
+  --since <ref>             Git ref for glade test changed (default HEAD).
+  --parallel-methods        Run test methods in parallel (default).
+  --no-parallel-methods     Force serial method execution within a class.
+  --parallelism <n>         Worker count (default: GOMAXPROCS).
+  --test-timeout <dur>      Per-test timeout (default 5m, e.g. 30s, 2m).
+  --limit-mode <mode>       Use strict or permissive governor limits.
+
+Serve flags:
+  --startup-cache <path>    Startup cache path. Defaults to .glade/test/startup.gob.
+  --no-warm                 Start the server without warming the project.
+
+Examples:
+  glade test --project . --class AccountServiceTest
+  glade test --project . --class AccountServiceTest --method testCreatesAccount
+  glade test --project . --class-file tests.txt
+  glade test --project . --shard-count 2 --shard-index 0
+`)
+	_, err := fmt.Fprintln(w, body)
+	return err
 }
 
 type cliTestProgressReporter struct {

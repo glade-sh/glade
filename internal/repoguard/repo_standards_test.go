@@ -107,6 +107,47 @@ func TestGenericSObjectHandlersAvoidStandardObjectShortcuts(t *testing.T) {
 	}
 }
 
+func TestPluginMaintenanceBoundary(t *testing.T) {
+	root := repoRoot(t)
+	for _, rel := range []string{
+		"internal/apexdocs",
+		"internal/" + "perfscan",
+		"internal/surfaceledger",
+		"internal/projectscan",
+		"internal/compat",
+		"docs/fixtures",
+	} {
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(rel))); err == nil {
+			t.Errorf("%s must live in a plugin, not the product repo", rel)
+		} else if !os.IsNotExist(err) {
+			t.Errorf("stat %s: %v", rel, err)
+		}
+	}
+
+	for _, rel := range repoGoFiles(t, root) {
+		text := readRepoFile(t, root, rel)
+		toolsImport := regexp.MustCompile(`(?m)^\s*(?:\w+\s+)?"github\.com/glade-sh/glade/` + "tools")
+		if toolsImport.MatchString(text) {
+			t.Errorf("%s imports glade-tools; product repo must not depend on plugins", rel)
+		}
+		perfscanImport := regexp.MustCompile(`(?m)^\s*(?:\w+\s+)?"github\.com/glade-sh/glade/internal/` + "perfscan")
+		if perfscanImport.MatchString(text) {
+			t.Errorf("%s imports %s; performance scan belongs to the plugin", rel, "internal/"+ "perfscan")
+		}
+	}
+
+	help := readRepoFile(t, root, "internal/cliui/help.go")
+	if strings.Contains(help, "inspect performance") {
+		t.Error("product help still lists inspect performance")
+	}
+
+	for _, rel := range []string{"README.md", "docs/LOCAL_TESTING.md", "docs/DOGFOOD_CHECKLIST.md", "docs/INSTALL.md", "docs/COMPATIBILITY.md"} {
+		if strings.Contains(readRepoFile(t, root, rel), "glade inspect performance") {
+			t.Errorf("%s still routes performance scans through glade inspect performance", rel)
+		}
+	}
+}
+
 func repoRoot(t *testing.T) string {
 	t.Helper()
 	_, file, _, ok := runtime.Caller(0)

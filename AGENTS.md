@@ -20,7 +20,8 @@ Keep product work here:
 - Product docs, release scripts, install docs, editor docs, storage docs, and
   checked support reports.
 
-Keep maintenance work in the sibling `~/Dev/glade-tools` project:
+Keep maintenance work in first-party plugins sourced from the sibling
+`~/Dev/glade-tools` project:
 
 - Compatibility fixtures and fixture runners.
 - Capability catalogs, dashboards, stdlib ledgers, and known-gap generators.
@@ -29,8 +30,8 @@ Keep maintenance work in the sibling `~/Dev/glade-tools` project:
 - Salesforce docs inventory, catalog reconcile, stub reports, and generated
   maintenance artifacts.
 
-`glade-tools` may depend on this repository. This repository must not depend on
-`glade-tools`.
+The compat and performance plugins may depend on this repository. This
+repository must not depend on `glade-tools` or plugin internals.
 
 ## Operating Principles
 
@@ -61,8 +62,9 @@ go test ./...
 scripts/smoke.sh
 ```
 
-For generated support reports, use `glade-tools`. Do not reintroduce a
-maintenance command under `glade`.
+For generated support reports, use the first-party compat plugin or its
+`glade-tools` source wrapper. Do not reintroduce a maintenance command under
+base `glade`.
 
 ## Release Notes
 
