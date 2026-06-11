@@ -196,6 +196,9 @@ func isRemoteArchiveInstallArg(arg string) bool {
 }
 
 func isArchiveInstallArg(arg string) bool {
+	if strings.HasPrefix(arg, "@") {
+		return false
+	}
 	if strings.HasSuffix(arg, ".tar.gz") {
 		return true
 	}

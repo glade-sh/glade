@@ -475,6 +475,15 @@ func TestPluginsInstallRemoteURLRequiresSHA256(t *testing.T) {
 	}
 }
 
+func TestScopedPluginCoordinateIsNotArchiveInstallArg(t *testing.T) {
+	if isArchiveInstallArg("@glade/compat") {
+		t.Fatal("@glade/compat was classified as an archive path")
+	}
+	if !isArchiveInstallArg("./glade-plugin-compat_0.1.0_darwin_arm64.tar.gz") {
+		t.Fatal("local archive path was not classified as an archive")
+	}
+}
+
 func TestCompatDispatchesToLinkedPlugin(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper uses sh")
