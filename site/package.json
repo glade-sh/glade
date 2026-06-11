@@ -2,9 +2,11 @@
   "scripts": {
     "dev": "vitepress dev .",
     "build": "vitepress build .",
+    "test": "node --test tests/*.test.mjs",
     "preview": "vitepress preview ."
   },
   "devDependencies": {
+    "@lucide/vue": "^1.17.0",
     "vitepress": "^1.5.0"
   },
   "type": "module"

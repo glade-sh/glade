@@ -10,9 +10,9 @@ head:
       src: /js/home.js
 
 hero:
-  name: "LOCAL APEX RUNTIME / ORG: NONE"
-  text: "Run Apex without the org round trip."
-  tagline: Glade parses, type-checks, and executes Salesforce Apex on your machine. Tests, SOQL, DML, triggers, limits, editor tools, CI reports, and a local Salesforce-shaped API all run from one Go binary.
+  name: "GLADE / LOCAL APEX RUNTIME"
+  text: "The local workbench for Apex."
+  tagline: Parse, check, test, query, debug, and exercise Salesforce-shaped APIs locally from one Go binary.
   actions:
     - theme: brand
       text: Install
@@ -23,29 +23,34 @@ hero:
     - theme: alt
       text: Docs
       link: /guide/installation
-
-features:
-  - icon: <span class="home-icon">&#9745;</span>
-    title: Check source
-    details: Build local diagnostics before deploy time.
-    link: /guide/cli-reference
-    linkText: glade check --project . --json
-  - icon: <span class="home-icon">&#9875;</span>
-    title: Run tests
-    details: Execute supported Apex tests with isolated local data.
-    link: /guide/local-testing
-    linkText: glade test changed --project . --since HEAD
-  - icon: <span class="home-icon">&#9000;</span>
-    title: Try anonymous Apex
-    details: Use the runtime directly for small probes.
-    link: /guide/cli-reference
-    linkText: glade exec 'System.debug(1+1);'
-  - icon: <span class="home-icon">&#9785;</span>
-    title: Run a local API
-    details: Exercise Salesforce-shaped REST flows against local state.
-    link: /guide/local-api-server
-    linkText: glade server --db local.sqlite
 ---
+
+<div class="home-features">
+  <a class="home-feature" href="/guide/cli-reference">
+    <span class="home-feature-icon"><IconSearchCheck aria-hidden="true" :size="32" :stroke-width="1.8" /></span>
+    <strong>Check source</strong>
+    <span>Build local diagnostics before deploy time.</span>
+    <code><span class="home-command-line">glade check</span><span class="home-command-line">--project .</span><span class="home-command-line">--json</span></code>
+  </a>
+  <a class="home-feature" href="/guide/local-testing">
+    <span class="home-feature-icon"><IconFlaskConical aria-hidden="true" :size="32" :stroke-width="1.8" /></span>
+    <strong>Run tests</strong>
+    <span>Execute supported Apex tests with isolated local data.</span>
+    <code><span class="home-command-line">glade test changed</span><span class="home-command-line">--project .</span><span class="home-command-line">--since HEAD</span></code>
+  </a>
+  <a class="home-feature" href="/guide/cli-reference">
+    <span class="home-feature-icon"><IconSquareTerminal aria-hidden="true" :size="32" :stroke-width="1.8" /></span>
+    <strong>Try anonymous Apex</strong>
+    <span>Use the runtime directly for small probes.</span>
+    <code><span class="home-command-line">glade exec</span><span class="home-command-line">'System.debug(1+1);'</span></code>
+  </a>
+  <a class="home-feature" href="/guide/local-api-server">
+    <span class="home-feature-icon"><IconServerCog aria-hidden="true" :size="32" :stroke-width="1.8" /></span>
+    <strong>Run a local API</strong>
+    <span>Exercise Salesforce-shaped REST flows against local state.</span>
+    <code><span class="home-command-line">glade server --db</span><span class="home-command-line">local.sqlite</span></code>
+  </a>
+</div>
 
 <div class="home-install">
   <div class="home-install-inner">
@@ -63,14 +68,14 @@ features:
   <div class="home-section-grid">
     <div>
       <p class="home-eyebrow">PLAYGROUND</p>
-      <h2 class="home-h2">A browser workbench, not a toy terminal.</h2>
-      <p class="home-p">Load examples, inspect source, run anonymous Apex, watch output, and browse local data. The UI stays plain so the Apex stays in view.</p>
+      <h2 class="home-h2">A workbench in the open.</h2>
+      <p class="home-p">Load examples, inspect source, run anonymous Apex, watch output, and browse local data. The UI stays quiet so the Apex stays in view.</p>
     </div>
   </div>
   <div class="home-panel home-panel-soft">
     <div class="home-panel-top">
       <span>glade playground / local workspace</span>
-      <span class="text-cyan">ready</span>
+      <span class="text-success">ready</span>
     </div>
     <div class="home-playground-grid">
       <div class="home-playground-side">
@@ -133,7 +138,7 @@ features:
 </div>
 
 <div class="home-section">
-  <h2 class="home-h2">Next Door</h2>
+  <h2 class="home-h2">Next steps</h2>
   <p class="home-p">Use it, wire it, inspect it.</p>
   <div class="home-next-cards">
     <a class="home-next-card" href="/guide/installation">

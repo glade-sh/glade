@@ -233,7 +233,7 @@ function highlightCodeBlock(codeElement) {
   codeElement.innerHTML = lines.map((line, i) => {
     const num = String(i + 1).padStart(digits, "0");
     return `<span class="line"><span class="line-number">${num}</span> ${line}</span>`;
-  }).join("\n");
+  }).join("");
 }
 
 document.querySelectorAll("code.language-apex").forEach(highlightCodeBlock);

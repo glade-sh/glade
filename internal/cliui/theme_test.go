@@ -18,9 +18,20 @@ func TestThemePlainWhenNoColor(t *testing.T) {
 
 func TestThemeANSIWhenColorEnabled(t *testing.T) {
 	th := Theme{Color: true}
-	got := th.Green("ok")
-	if !strings.Contains(got, "\x1b[32m") {
-		t.Fatalf("green = %q", got)
+	tests := []struct {
+		name string
+		got  string
+		want string
+	}{
+		{name: "green", got: th.Green("ok"), want: "\x1b[38;2;183;198;143m"},
+		{name: "cyan", got: th.Cyan("ok"), want: "\x1b[38;2;120;151;184m"},
+		{name: "magenta", got: th.Magenta("ok"), want: "\x1b[38;2;182;202;223m"},
+		{name: "dim", got: th.Dim("ok"), want: "\x1b[2;38;2;143;162;162m"},
+	}
+	for _, tt := range tests {
+		if !strings.Contains(tt.got, tt.want) {
+			t.Fatalf("%s = %q, want ANSI code %q", tt.name, tt.got, tt.want)
+		}
 	}
 }
 

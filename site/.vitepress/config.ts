@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'Glade',
-  description: 'Orgless Apex runtime for local development and testing.',
+  description: 'The local workbench for Apex.',
   base: '/',
   srcDir: 'docs-src',
   outDir: '.vitepress/dist',
@@ -10,10 +10,10 @@ export default defineConfig({
   appearance: 'dark',
   lastUpdated: true,
   head: [
-    ['meta', { name: 'theme-color', content: '#080b12' }],
+    ['meta', { name: 'theme-color', content: '#060a0d' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
-    ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap' }]
+    ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..700&family=Lora:ital,wght@0,400..700;1,400..700&family=Mona+Sans:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&family=Space+Grotesk:wght@400;500;600;700&display=swap' }]
   ],
   themeConfig: {
     logo: '/logo-mark.svg',
@@ -21,7 +21,7 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Docs', link: '/guide/installation' },
-      { text: 'Playground', link: 'https://play.glade.sh/playground/' },
+      { text: 'Playground', link: '/guide/playground' },
       { text: 'GitHub', link: 'https://github.com/glade-sh/glade' }
     ],
     sidebar: [
@@ -30,7 +30,8 @@ export default defineConfig({
         items: [
           { text: 'Installation', link: '/guide/installation' },
           { text: 'Project Configuration', link: '/guide/configuration' },
-          { text: 'CLI Reference', link: '/guide/cli-reference' }
+          { text: 'CLI Reference', link: '/guide/cli-reference' },
+          { text: 'Brand Guide', link: '/guide/brand-guide' }
         ]
       },
       {
