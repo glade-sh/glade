@@ -15,7 +15,7 @@ package  server  playground db     help
 
 ## 1. Shell Completion (P0 — High Impact)
 
-For a CLI with 19+ commands and dozens of flags, shell completion was the
+For a CLI with 23 top-level commands and dozens of flags, shell completion was the
 single highest-ROI DX gap. The first cut is now in place.
 
 **Current state:** Phase 1 implemented: `glade completion bash|zsh|fish`
@@ -68,7 +68,7 @@ pattern was repeated verbatim across 9 files covering roughly 500 lines of
 near-identical code:
 
 ```go
-// From cli.go:770 (pattern repeated in every command file)
+// Older manual pattern, repeated across command files
 for i := 0; i < len(args); i++ {
     switch args[i] {
     case "--project":
@@ -83,8 +83,8 @@ for i := 0; i < len(args); i++ {
 }
 ```
 
-The `parseProjectFlags` helper at `cli.go:959` and `parseProjectProgressFlags` at
-`cli.go:978` are partial solutions that only cover `--project` and `--json`/`--progress`.
+The `parseProjectFlags` and `parseProjectProgressFlags` helpers are partial
+solutions that only cover `--project` and `--json`/`--progress`.
 They don't address per-command flags like `--filter`, `--changed-since`, `--addr`,
 `--limit-mode`, `--watch`, etc.
 
@@ -207,8 +207,8 @@ Two overlapping watch paths exist:
 2. `glade dev watch` — human-friendly output, writes run artifacts, supports
    `--failed` and `--changed`
 
-The daemon socket (`glade test serve`) auto-connects from subsequent `glade test` runs
-via `tryTestServerRun()` in `test_command.go:274`. This is elegant. But there are gaps:
+The daemon socket (`glade test serve`) auto-connects from subsequent `glade test`
+runs through `tryTestServerRun()` in `test_serve_command.go`.
 
 **Current state:** Phase 3 implemented the daily loop surface:
 - `glade test daemon status` shows stopped, stale, warming, or ready state.
@@ -226,10 +226,10 @@ supervisor or background-start story. `glade test serve` remains the explicit
 start command.
 
 **Unify dev test and test watch:**
-`dev test --changed` (dev_command.go:186) and `test --changed-since HEAD`
-(test_command.go:346) are semantically identical but implemented as separate code
-paths. The `changedSinceSelection` function lives in `dev_command.go` but is called
-from `test_command.go`. Consolidate into `internal/watch/`.
+`dev test --changed` and `test --changed-since HEAD` are semantically identical
+but implemented as separate code paths. The `changedSinceSelection` function
+lives in `dev_command.go` but is called from `test_command.go`. Consolidate into
+`internal/watch/`.
 
 **Files touched:** `internal/gladecli/test_command.go`, `internal/gladecli/dev_command.go`,
 `internal/testdaemon/`.
@@ -442,7 +442,9 @@ Exit codes are now documented under `glade help exit-codes`.
 
 ## 15. CI/CD Integration (P2 — Medium Impact)
 
-No built-in CI utilities:
+Phase 4 added first-class CI outputs: JSON check output, SARIF, GitHub
+annotations, saved test runs, and HTML report export. Remaining polish is
+workflow scaffolding and shorter summary modes:
 
 **Pre-commit hooks:**
 ```
@@ -483,14 +485,14 @@ All three support `--json`.
 
 ## 18. Version Command (P1 — Small Impact)
 
-`glade version` now supports `--json`. The `Version` variable is still hardcoded
-to `"0.0.0-dev"` at `cli.go:32` — there's no ldflags-based injection visible in
-the command-driver code (though it likely exists in the build scripts).
+`glade version` now supports `--json`. The in-code default remains
+`"0.0.0-dev"`, and `scripts/build-local.sh` plus `scripts/release-build.sh`
+stamp real versions with Go `-ldflags`.
 
 **Current:**
 ```
 $ glade version --json
-{"version":"0.7.2","go":"go1.23.4","os":"darwin","arch":"arm64"}
+{"version":"v0.7.2","go":"go1.23.4","os":"darwin","arch":"arm64"}
 ```
 
 ---

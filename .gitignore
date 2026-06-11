@@ -22,6 +22,7 @@ node_modules/
 /test-results/
 
 # Generated Salesforce local tool caches
+**/testdata/**/.glade/
 internal/debuglog/testdata/project/.sfdx/
 internal/debuglog/testdata/project/.vscode/
 internal/debuglog/testdata/project/.glade/

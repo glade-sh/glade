@@ -121,7 +121,9 @@ Saved run artifacts and CI annotations are covered in [CI And Artifacts](/guide/
 
 ## Outcomes
 
-Local test and compatibility gates separate normal test failures from load errors, compile errors, unsupported features, and internal errors. That split matters. A failing assertion and an unsupported platform API leave different tracks.
+Local test runs separate assertion failures from load errors, compile errors,
+unsupported features, and internal errors. That split matters. A failing
+assertion and an unsupported platform API leave different tracks.
 
 ::: tip Try it
 Exercise the runtime your tests rely on — DML, triggers, and governor limits — in the playground: [play.glade.sh/playground/?example=bulk-trigger-rollup](https://play.glade.sh/playground/?example=bulk-trigger-rollup)

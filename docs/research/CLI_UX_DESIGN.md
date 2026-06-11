@@ -1,6 +1,6 @@
 # CLI UX Deep Dive: From Utilitarian Output to Design-Forward Interfaces
 
-*Context: The glade codebase at `/Users/matt/Dev/glade` has a single progress reporter (`cliTestProgressReporter` in `internal/gladecli/test_command.go:316`), a 2-function `internal/cliui/` package, and otherwise purely batched output. This analysis bridges from that baseline to the state of the art.*
+*Context: This note started from the pre-DX baseline, when `glade test` had the only progress reporter and most commands printed batched output. Phase 5 added shared progress helpers for slower local commands. Treat this as design research, not a current implementation map.*
 
 ---
 

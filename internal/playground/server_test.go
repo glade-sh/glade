@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestServerWorkspaceAndRunRoutes(t *testing.T) {
@@ -577,7 +578,11 @@ func TestPublicServerForcesScratchStrictRun(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenWorkspace() error = %v", err)
 	}
-	handler := NewServer(ws, ServerOptions{Version: "test", Public: true})
+	handler := NewServer(ws, ServerOptions{
+		Version:    "test",
+		Public:     true,
+		RunTimeout: 30 * time.Second,
+	})
 
 	body, _ := json.Marshal(RunRequest{
 		AnonymousBody: "Account account = new Account(Name = 'No Persist'); insert account;",
