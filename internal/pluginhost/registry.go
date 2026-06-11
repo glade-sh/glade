@@ -51,11 +51,20 @@ func (idx RegistryIndex) AssetFor(name, goos, goarch string) (RegistryPlugin, Re
 }
 
 func (idx RegistryIndex) AssetForVersion(name, version, goos, goarch string) (RegistryPlugin, RegistryAsset, bool) {
+	ref, err := ParsePluginRef(name)
+	if err != nil {
+		return RegistryPlugin{}, RegistryAsset{}, false
+	}
+	ref.Version = version
+	return idx.AssetForRef(ref, goos, goarch)
+}
+
+func (idx RegistryIndex) AssetForRef(ref PluginRef, goos, goarch string) (RegistryPlugin, RegistryAsset, bool) {
 	for _, plugin := range idx.Plugins {
-		if plugin.Name != name {
+		if !registryPluginMatchesRef(plugin, ref) {
 			continue
 		}
-		if version != "" && plugin.Version != version {
+		if ref.Version != "" && plugin.Version != ref.Version {
 			continue
 		}
 		for _, asset := range plugin.Assets {
@@ -67,8 +76,54 @@ func (idx RegistryIndex) AssetForVersion(name, version, goos, goarch string) (Re
 	return RegistryPlugin{}, RegistryAsset{}, false
 }
 
+func (idx RegistryIndex) Search(query string) []RegistryPlugin {
+	q := strings.ToLower(strings.TrimSpace(query))
+	var out []RegistryPlugin
+	for _, plugin := range idx.Plugins {
+		haystack := strings.ToLower(strings.Join(append([]string{
+			plugin.Name, plugin.Version, plugin.Publisher, plugin.Trust, plugin.Summary, plugin.DocsURL, plugin.SourceURL,
+		}, append(plugin.Aliases, plugin.Commands...)...), " "))
+		if q == "" || strings.Contains(haystack, q) {
+			out = append(out, plugin)
+		}
+	}
+	return out
+}
+
+func registryPluginMatchesRef(plugin RegistryPlugin, ref PluginRef) bool {
+	if plugin.Name == ref.Name || plugin.Name == ref.ManifestName() {
+		return true
+	}
+	for _, alias := range plugin.Aliases {
+		if alias == ref.Name || alias == ref.ManifestName() || firstPartyAliases[alias] == ref.Name {
+			return true
+		}
+	}
+	return false
+}
+
 func (idx RegistryIndex) NotFoundError(name string) error {
-	return fmt.Errorf("plugin %q was not found in registry", name)
+	ref, err := ParsePluginRef(name)
+	if err != nil {
+		return fmt.Errorf("plugin %q was not found in registry", name)
+	}
+	return idx.NotFoundErrorForRef(ref, runtime.GOOS, runtime.GOARCH)
+}
+
+func (idx RegistryIndex) NotFoundErrorForRef(ref PluginRef, goos, goarch string) error {
+	var platforms []string
+	for _, plugin := range idx.Plugins {
+		if !registryPluginMatchesRef(plugin, ref) {
+			continue
+		}
+		for _, asset := range plugin.Assets {
+			platforms = append(platforms, asset.OS+"/"+asset.Arch)
+		}
+	}
+	if len(platforms) > 0 {
+		return fmt.Errorf("plugin %q has no asset for %s/%s; available platforms: %s", ref.Name, goos, goarch, strings.Join(platforms, ", "))
+	}
+	return fmt.Errorf("plugin %q was not found in registry; run `glade plugins search %s`", ref.Name, ref.ManifestName())
 }
 
 func (s Store) InstallFromRegistry(ctx context.Context, name string) (InstalledPlugin, error) {
@@ -76,44 +131,58 @@ func (s Store) InstallFromRegistry(ctx context.Context, name string) (InstalledP
 }
 
 func (s Store) InstallFromRegistryVersion(ctx context.Context, name, version string) (InstalledPlugin, error) {
-	if err := validatePluginPathToken("plugin name", name); err != nil {
+	ref, err := ParsePluginRef(name)
+	if err != nil {
 		return InstalledPlugin{}, err
 	}
 	if version != "" {
 		if err := validatePluginPathToken("plugin version", version); err != nil {
 			return InstalledPlugin{}, err
 		}
+		ref.Version = version
 	}
-	index, err := FetchRegistry(ctx, RegistryURL())
+	return s.InstallFromRegistryURL(ctx, RegistryURL(), ref)
+}
+
+func (s Store) InstallFromRegistryURL(ctx context.Context, registryURL string, ref PluginRef) (InstalledPlugin, error) {
+	index, err := FetchRegistry(ctx, registryURL)
 	if err != nil {
 		return InstalledPlugin{}, err
 	}
-	registryPlugin, asset, ok := index.AssetForVersion(name, version, runtime.GOOS, runtime.GOARCH)
+	registryPlugin, asset, ok := index.AssetForRef(ref, runtime.GOOS, runtime.GOARCH)
 	if !ok {
-		return InstalledPlugin{}, index.NotFoundError(name)
+		return InstalledPlugin{}, index.NotFoundErrorForRef(ref, runtime.GOOS, runtime.GOARCH)
 	}
-	if err := validatePluginPathToken("registry plugin name", registryPlugin.Name); err != nil {
+	catalogRef, err := ParsePluginRef(registryPlugin.Name)
+	if err != nil {
 		return InstalledPlugin{}, err
+	}
+	if registryPlugin.Version == "" {
+		return InstalledPlugin{}, fmt.Errorf("registry plugin %q is missing version", registryPlugin.Name)
 	}
 	if err := validatePluginPathToken("registry plugin version", registryPlugin.Version); err != nil {
 		return InstalledPlugin{}, err
 	}
-	archivePath := filepath.Join(s.root, "plugins", "downloads", fmt.Sprintf("%s-%s-%s-%s.tar.gz", registryPlugin.Name, registryPlugin.Version, runtime.GOOS, runtime.GOARCH))
+	archivePath := filepath.Join(s.root, "plugins", "downloads", fmt.Sprintf("%s-%s-%s-%s.tar.gz", catalogRef.StorageName(), registryPlugin.Version, runtime.GOOS, runtime.GOARCH))
 	if err := downloadRegistryAsset(ctx, asset, archivePath); err != nil {
 		return InstalledPlugin{}, err
 	}
-	plugin, err := s.InstallArchive(ctx, archivePath)
+	plugin, err := s.InstallArchiveWithOptions(ctx, archivePath, InstallOptions{
+		CanonicalName: registryPlugin.Name,
+		RegistryURL:   registryURL,
+		Publisher:     registryPlugin.Publisher,
+		Trust:         registryPlugin.Trust,
+		AssetSHA256:   strings.ToLower(asset.SHA256),
+		AssetOS:       asset.OS,
+		AssetArch:     asset.Arch,
+		Source:        "registry:" + registryPlugin.Name,
+		StorageName:   catalogRef.StorageName(),
+	})
 	if err != nil {
 		return InstalledPlugin{}, err
 	}
-	plugin.Source = "registry:" + registryPlugin.Name
-	state, err := s.ReadInstalled()
-	if err != nil {
-		return InstalledPlugin{}, err
-	}
-	state.Plugins = replaceInstalled(state.Plugins, plugin)
-	if err := s.WriteInstalled(state); err != nil {
-		return InstalledPlugin{}, err
+	if plugin.Name != catalogRef.ManifestName() {
+		return InstalledPlugin{}, fmt.Errorf("manifest name %q does not match catalog package %q", plugin.Name, catalogRef.ManifestName())
 	}
 	return plugin, nil
 }

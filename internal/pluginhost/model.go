@@ -37,13 +37,21 @@ type InstalledState struct {
 }
 
 type InstalledPlugin struct {
-	Name       string   `json:"name"`
-	Version    string   `json:"version"`
-	Executable string   `json:"executable"`
-	Manifest   string   `json:"manifest"`
-	Source     string   `json:"source,omitempty"`
-	Linked     bool     `json:"linked"`
-	Commands   []string `json:"commands"`
+	Name          string   `json:"name"`
+	CanonicalName string   `json:"canonicalName,omitempty"`
+	StorageName   string   `json:"storageName,omitempty"`
+	Version       string   `json:"version"`
+	Executable    string   `json:"executable"`
+	Manifest      string   `json:"manifest"`
+	Source        string   `json:"source,omitempty"`
+	Linked        bool     `json:"linked"`
+	Commands      []string `json:"commands"`
+	Registry      string   `json:"registry,omitempty"`
+	Publisher     string   `json:"publisher,omitempty"`
+	Trust         string   `json:"trust,omitempty"`
+	AssetSHA256   string   `json:"assetSha256,omitempty"`
+	AssetOS       string   `json:"assetOS,omitempty"`
+	AssetArch     string   `json:"assetArch,omitempty"`
 }
 
 type RegistryIndex struct {
@@ -52,10 +60,17 @@ type RegistryIndex struct {
 }
 
 type RegistryPlugin struct {
-	Name    string          `json:"name"`
-	Version string          `json:"version"`
-	Summary string          `json:"summary,omitempty"`
-	Assets  []RegistryAsset `json:"assets"`
+	Name                string          `json:"name"`
+	Aliases             []string        `json:"aliases,omitempty"`
+	Version             string          `json:"version"`
+	Publisher           string          `json:"publisher,omitempty"`
+	Trust               string          `json:"trust,omitempty"`
+	Summary             string          `json:"summary,omitempty"`
+	Commands            []string        `json:"commands,omitempty"`
+	DocsURL             string          `json:"docsURL,omitempty"`
+	SourceURL           string          `json:"sourceURL,omitempty"`
+	MinimumGladeVersion string          `json:"minimumGladeVersion,omitempty"`
+	Assets              []RegistryAsset `json:"assets"`
 }
 
 type RegistryAsset struct {
@@ -71,10 +86,16 @@ type PluginLock struct {
 }
 
 type LockedPlugin struct {
-	Name     string   `json:"name"`
-	Version  string   `json:"version"`
-	Source   string   `json:"source,omitempty"`
-	Commands []string `json:"commands,omitempty"`
+	Name      string   `json:"name"`
+	Version   string   `json:"version"`
+	Registry  string   `json:"registry,omitempty"`
+	OS        string   `json:"os,omitempty"`
+	Arch      string   `json:"arch,omitempty"`
+	SHA256    string   `json:"sha256,omitempty"`
+	Trust     string   `json:"trust,omitempty"`
+	Publisher string   `json:"publisher,omitempty"`
+	Source    string   `json:"source,omitempty"`
+	Commands  []string `json:"commands,omitempty"`
 }
 
 func (m Manifest) Validate() error {

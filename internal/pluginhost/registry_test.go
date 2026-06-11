@@ -57,6 +57,52 @@ func TestRegistryMissingPlugin(t *testing.T) {
 	}
 }
 
+func TestRegistryFindsScopedNameAliasAndSearchResults(t *testing.T) {
+	index := RegistryIndex{Version: 1, Plugins: []RegistryPlugin{{
+		Name:      "@glade/compat",
+		Aliases:   []string{"compat"},
+		Version:   "0.1.0",
+		Publisher: "glade",
+		Trust:     "first-party",
+		Summary:   "Compatibility fixtures.",
+		Commands:  []string{"compat", "surface"},
+		DocsURL:   "https://glade.sh/guide/plugins/compat",
+		Assets: []RegistryAsset{{
+			OS: runtime.GOOS, Arch: runtime.GOARCH, URL: "https://example.test/compat.tar.gz", SHA256: strings.Repeat("a", 64),
+		}},
+	}}}
+	ref, err := ParsePluginRef("compat")
+	if err != nil {
+		t.Fatal(err)
+	}
+	plugin, asset, ok := index.AssetForRef(ref, runtime.GOOS, runtime.GOARCH)
+	if !ok {
+		t.Fatal("expected compat alias to resolve")
+	}
+	if plugin.Name != "@glade/compat" || asset.URL == "" {
+		t.Fatalf("unexpected plugin/asset: %#v %#v", plugin, asset)
+	}
+	results := index.Search("surface")
+	if len(results) != 1 || results[0].Name != "@glade/compat" {
+		t.Fatalf("unexpected search results: %#v", results)
+	}
+}
+
+func TestRegistryUnsupportedPlatformErrorNamesAvailablePlatforms(t *testing.T) {
+	index := RegistryIndex{Version: 1, Plugins: []RegistryPlugin{{
+		Name: "@acme/quality", Version: "1.2.0",
+		Assets: []RegistryAsset{{OS: "linux", Arch: "amd64", URL: "https://example.test/q.tar.gz", SHA256: strings.Repeat("b", 64)}},
+	}}}
+	ref, err := ParsePluginRef("@acme/quality")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = index.NotFoundErrorForRef(ref, runtime.GOOS, runtime.GOARCH)
+	if err == nil || !strings.Contains(err.Error(), "available platforms: linux/amd64") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestInstallFromRegistryWritesInstalledJSON(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("archive executable mode is unix-specific")
@@ -93,6 +139,72 @@ func TestInstallFromRegistryWritesInstalledJSON(t *testing.T) {
 	}
 	if len(state.Plugins) != 1 || state.Plugins[0].Version != "0.1.0" {
 		t.Fatalf("unexpected installed state: %#v", state)
+	}
+}
+
+func TestInstallFromRegistryScopedNameStoresCanonicalMetadata(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("archive executable mode is unix-specific")
+	}
+	root := t.TempDir()
+	body := makePluginArchive(t, root, "compat", "0.1.0")
+	sum := sha256.Sum256(body)
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/index.json":
+			fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@glade/compat","aliases":["compat"],"version":"0.1.0","publisher":"glade","trust":"first-party","docsURL":"https://glade.sh/guide/plugins/compat","assets":[{"os":%q,"arch":%q,"url":%q,"sha256":"%x"}]}]}`,
+				runtime.GOOS, runtime.GOARCH, server.URL+"/compat.tar.gz", sum)
+		case "/compat.tar.gz":
+			w.Write(body)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL+"/index.json")
+	store := NewStore(filepath.Join(root, "home"))
+
+	plugin, err := store.InstallFromRegistry(context.Background(), "@glade/compat")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plugin.Name != "compat" || plugin.CanonicalName != "@glade/compat" || plugin.StorageName != "glade__compat" {
+		t.Fatalf("unexpected plugin metadata: %#v", plugin)
+	}
+	if plugin.Registry != server.URL+"/index.json" || plugin.Trust != "first-party" || plugin.AssetSHA256 == "" {
+		t.Fatalf("missing registry metadata: %#v", plugin)
+	}
+	if _, err := os.Stat(filepath.Join(root, "home", "plugins", "glade__compat", "0.1.0", "plugin.json")); err != nil {
+		t.Fatalf("scoped storage missing: %v", err)
+	}
+}
+
+func TestInstallFromRegistryRejectsCatalogManifestMismatch(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("archive executable mode is unix-specific")
+	}
+	root := t.TempDir()
+	body := makePluginArchive(t, root, "wrong-name", "0.1.0")
+	sum := sha256.Sum256(body)
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/index.json":
+			fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@acme/quality","version":"0.1.0","assets":[{"os":%q,"arch":%q,"url":%q,"sha256":"%x"}]}]}`,
+				runtime.GOOS, runtime.GOARCH, server.URL+"/quality.tar.gz", sum)
+		case "/quality.tar.gz":
+			w.Write(body)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL+"/index.json")
+
+	_, err := NewStore(filepath.Join(root, "home")).InstallFromRegistry(context.Background(), "@acme/quality")
+	if err == nil || !strings.Contains(err.Error(), `manifest name "wrong-name" does not match catalog package "quality"`) {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 

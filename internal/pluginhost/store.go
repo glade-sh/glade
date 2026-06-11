@@ -34,6 +34,20 @@ func (s Store) PluginDir(name string) string {
 	return filepath.Join(s.root, "plugins", name)
 }
 
+func (p InstalledPlugin) IdentityName() string {
+	if p.CanonicalName != "" {
+		return p.CanonicalName
+	}
+	return p.Name
+}
+
+func (p InstalledPlugin) StorageKey() string {
+	if p.StorageName != "" {
+		return p.StorageName
+	}
+	return p.Name
+}
+
 func (s Store) ReadInstalled() (InstalledState, error) {
 	path := s.InstalledPath()
 	data, err := os.ReadFile(path)
@@ -78,8 +92,10 @@ func (s Store) ListInstalled() ([]InstalledPlugin, error) {
 }
 
 func (s Store) Remove(name string) error {
-	if err := validatePluginPathToken("plugin name", name); err != nil {
-		return err
+	if _, err := ParsePluginRef(name); err != nil {
+		if err := validatePluginPathToken("plugin name", name); err != nil {
+			return err
+		}
 	}
 	state, err := s.ReadInstalled()
 	if err != nil {
@@ -89,7 +105,7 @@ func (s Store) Remove(name string) error {
 	next := state.Plugins[:0]
 	for i := range state.Plugins {
 		plugin := state.Plugins[i]
-		if plugin.Name == name {
+		if installedPluginMatchesName(plugin, name) {
 			removed = &plugin
 			continue
 		}
@@ -100,17 +116,27 @@ func (s Store) Remove(name string) error {
 		return err
 	}
 	if removed != nil && !removed.Linked {
-		if err := os.RemoveAll(s.PluginDir(name)); err != nil {
+		if err := os.RemoveAll(s.PluginDir(removed.StorageKey())); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
+func installedPluginMatchesName(plugin InstalledPlugin, name string) bool {
+	if plugin.Name == name || plugin.CanonicalName == name {
+		return true
+	}
+	if canonical, ok := firstPartyAliases[name]; ok && plugin.CanonicalName == canonical {
+		return true
+	}
+	return false
+}
+
 func replaceInstalled(plugins []InstalledPlugin, plugin InstalledPlugin) []InstalledPlugin {
 	out := plugins[:0]
 	for _, existing := range plugins {
-		if existing.Name == plugin.Name {
+		if existing.IdentityName() == plugin.IdentityName() {
 			continue
 		}
 		out = append(out, existing)
