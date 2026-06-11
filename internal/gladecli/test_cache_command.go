@@ -1,7 +1,6 @@
 package gladecli
 
 import (
-	"errors"
 	"fmt"
 	"io"
 
@@ -13,11 +12,11 @@ func runTestClearCache(args []string, w io.Writer) error {
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--project":
-			if i+1 >= len(args) {
-				return errors.New("--project requires a value")
+			value, err := takeFlagValue(args, &i, "--project requires a value")
+			if err != nil {
+				return err
 			}
-			root = args[i+1]
-			i++
+			root = value
 		default:
 			return fmt.Errorf("unknown flag %q", args[i])
 		}

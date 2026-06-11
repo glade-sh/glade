@@ -40,3 +40,58 @@ func TestBuildAppliesInstalledNamespaceToCustomSchema(t *testing.T) {
 		t.Fatalf("standard object name = %q", artifact.Objects[1].Name)
 	}
 }
+
+func TestCompareIgnoresLocalApexFilePaths(t *testing.T) {
+	from := Artifact{
+		Namespace: "pkg",
+		ApexTypes: []ApexType{{
+			Name:       "Address",
+			Namespace:  "pkg",
+			File:       "/tmp/one/force-app/classes/Address.cls",
+			SourceRoot: "/tmp/one",
+			Members:    []ApexMember{{Name: "format"}},
+		}},
+	}
+	to := Artifact{
+		Namespace: "pkg",
+		ApexTypes: []ApexType{{
+			Name:       "Address",
+			Namespace:  "pkg",
+			File:       "/tmp/two/force-app/classes/Address.cls",
+			SourceRoot: "/tmp/two",
+			Members:    []ApexMember{{Name: "format"}},
+		}},
+	}
+
+	diff := Compare(from, to)
+	if diff.ChangedTypes != 0 {
+		t.Fatalf("changedTypes = %d, want 0; changed names=%#v", diff.ChangedTypes, diff.ChangedTypeNames)
+	}
+}
+
+func TestCompareReportsChangedObjects(t *testing.T) {
+	from := Artifact{
+		Namespace:  "pkg",
+		SourceHash: "same",
+		Objects: []schema.Object{{
+			Name:   "pkg__Thing__c",
+			Fields: []schema.Field{{Name: "Name", Type: "string"}},
+		}},
+	}
+	to := Artifact{
+		Namespace:  "pkg",
+		SourceHash: "same",
+		Objects: []schema.Object{{
+			Name:   "pkg__Thing__c",
+			Fields: []schema.Field{{Name: "Name", Type: "textarea"}},
+		}},
+	}
+
+	diff := Compare(from, to)
+	if !diff.Changed {
+		t.Fatal("changed = false, want true")
+	}
+	if diff.ChangedObjects != 1 || len(diff.ChangedObjectNames) != 1 || diff.ChangedObjectNames[0] != "pkg__Thing__c" {
+		t.Fatalf("changed objects = %d %#v", diff.ChangedObjects, diff.ChangedObjectNames)
+	}
+}

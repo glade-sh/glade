@@ -67,6 +67,25 @@ Run the daemon-backed watch loop:
 glade test --project . --daemon --watch
 ```
 
+Run tests affected by a git ref without remembering the lower-level flag:
+
+```bash
+glade test changed --project . --since HEAD
+```
+
+Rerun failures from the last completed run:
+
+```bash
+glade test failed --project .
+glade test --project . --last-failed
+```
+
+Print the next likely loop commands without running tests:
+
+```bash
+glade test --project . --wizard
+```
+
 ## Warm startup across CLI runs
 
 Large projects rebuild local org state and helper compilation on cold start.
@@ -78,7 +97,9 @@ created, how it stays up to date, when it can be wrong, and how to recover.
 
 ```bash
 glade test serve --project .
+glade test daemon status --project .
 glade test --project . --filter AccountServiceTest
+glade test daemon stop --project .
 glade test clear-cache --project .
 glade test --project . --no-cache --filter AccountServiceTest
 ```
@@ -92,9 +113,11 @@ A small CI gate can check the project, run affected tests, then write JUnit outp
 
 ```bash
 glade check --project . --json
-glade test --project . --changed-since origin/main --json
+glade test changed --project . --since origin/main --json
 glade test --project . --junit reports/glade-junit.xml
 ```
+
+Saved run artifacts and CI annotations are covered in [CI And Artifacts](/guide/ci-artifacts).
 
 ## Outcomes
 

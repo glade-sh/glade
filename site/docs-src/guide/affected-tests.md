@@ -4,10 +4,11 @@ Affected-test selection trims the test set by comparing local changes against a 
 
 ## Changed files from git
 
-Use `--changed-since <ref>` to compare tracked project files against a git ref:
+Use `glade test changed --since <ref>` to compare tracked project files against
+a git ref:
 
 ```bash
-glade test --project . --changed-since origin/main --json
+glade test changed --project . --since origin/main --json
 ```
 
 A changed production class selects tests that reference it. A changed test class selects itself. Metadata and unknown file types fall back to conservative behavior.
@@ -62,7 +63,7 @@ Before opening a pull request:
 
 ```bash
 glade check --project . --json
-glade test --project . --changed-since origin/main --json
+glade test changed --project . --since origin/main --json
 glade test --project . --junit reports/glade-junit.xml
 ```
 

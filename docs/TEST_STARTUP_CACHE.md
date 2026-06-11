@@ -157,6 +157,13 @@ glade test --project . --no-serve --filter MyTest
 
 # Persistent warm server (separate from startup.gob, but shares .glade/test/)
 glade test serve --project .
+
+# Inspect or stop the warm server
+glade test daemon status --project .
+glade test daemon stop --project .
+
+# Print cache/server/next-command hints without running tests
+glade test --project . --wizard
 ```
 
 ### When to clear or bypass
@@ -167,7 +174,7 @@ glade test serve --project .
 | After upgrading Glade | `glade test clear-cache` |
 | Harness looks stale; tests don't see new code | `--no-cache` once, then `clear-cache` |
 | Debugging org inference or compile issues | `--no-cache` |
-| `clear-cache` but serve still feels warm | Restart `glade test serve` |
+| `clear-cache` but serve still feels warm | `glade test daemon stop`, then start `glade test serve` again |
 
 ## Test server (`glade test serve`)
 

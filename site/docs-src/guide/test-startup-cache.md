@@ -69,6 +69,9 @@ If tests act like an old project is still loaded, use `--no-cache` once, then
 glade test clear-cache --project .
 glade test --project . --no-cache --filter MyTest
 glade test serve --project .
+glade test daemon status --project .
+glade test daemon stop --project .
+glade test --project . --wizard
 ```
 
 | Situation | Action |
@@ -76,7 +79,7 @@ glade test serve --project .
 | After `git pull` or branch switch | `clear-cache` |
 | After upgrading Glade | `clear-cache` |
 | Stale harness / missing new code | `--no-cache`, then `clear-cache` |
-| `clear-cache` but serve still warm | Restart `glade test serve` |
+| `clear-cache` but serve still warm | `glade test daemon stop`, then start `glade test serve` again |
 
 `--no-cache` skips disk read/write and does not auto-connect to a test server.
 

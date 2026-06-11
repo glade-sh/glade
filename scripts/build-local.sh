@@ -28,8 +28,8 @@ echo "building ${name} (CGO enabled) ..."
 )
 
 # Verify the parser is actually wired up (catches accidental no-CGO builds).
-doctor_out="$("${DIST_DIR}/${binary}" doctor 2>&1)"
-if [[ "${doctor_out}" != *"parser: ok"* ]]; then
+doctor_out="$("${DIST_DIR}/${binary}" doctor --json 2>&1)"
+if [[ "${doctor_out}" != *'"parserOK": true'* ]]; then
   echo "ERROR: built binary reports parser unavailable; aborting" >&2
   printf '%s\n' "${doctor_out}" >&2
   exit 1

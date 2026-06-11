@@ -7,19 +7,22 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/glade-sh/glade/internal/automation"
+	"github.com/glade-sh/glade/internal/cliui"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/resource"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sobject"
 	"github.com/glade-sh/glade/internal/storage"
-	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/trace"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
-func runDB(ctx context.Context, args []string, w io.Writer) error {
+func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -30,30 +33,53 @@ func runDB(ctx context.Context, args []string, w io.Writer) error {
 	dbPath := ""
 	root := "."
 	jsonOut := false
+	wizard := false
+	progressMode := cliui.ProgressAuto
 	positionals := make([]string, 0)
 	for i := 1; i < len(args); i++ {
 		switch args[i] {
 		case "--db":
-			if i+1 >= len(args) {
-				return errors.New("--db requires a path")
+			value, err := takeFlagValue(args, &i, "--db requires a path")
+			if err != nil {
+				return err
 			}
-			dbPath = args[i+1]
-			i++
+			dbPath = value
 		case "--project":
-			if i+1 >= len(args) {
-				return errors.New("--project requires a value")
+			value, err := takeFlagValue(args, &i, "--project requires a value")
+			if err != nil {
+				return err
 			}
-			root = args[i+1]
-			i++
+			root = value
 		case "--json":
 			jsonOut = true
+		case "--wizard":
+			wizard = true
+		case "--progress":
+			progressMode = cliui.ProgressLine
+		case "--progress-json":
+			progressMode = cliui.ProgressJSON
+		case "--no-progress", "--quiet":
+			progressMode = cliui.ProgressOff
+		case "--":
+			positionals = append(positionals, args[i+1:]...)
+			i = len(args)
 		default:
+			if strings.HasPrefix(args[i], "-") && args[i] != "-" {
+				return fmt.Errorf("unknown flag %q", args[i])
+			}
 			positionals = append(positionals, args[i])
 		}
+	}
+	if wizard {
+		return writeDBWizard(w, command, dbPath, root, jsonOut, positionals)
 	}
 	if dbPath == "" {
 		return errors.New("glade db requires --db <path>")
 	}
+	renderer := cliui.NewRenderer(cliui.RendererOptions{
+		Stderr: progressW,
+		Mode:   progressMode,
+	})
 	store, org, err := openDBStore(dbPath, root)
 	if err != nil {
 		return err
@@ -68,22 +94,31 @@ func runDB(ctx context.Context, args []string, w io.Writer) error {
 		if len(positionals) != 1 {
 			return errors.New("usage: glade db seed --db <path> [--project <root>] <fixture.json>")
 		}
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "db seed", Label: "Opening fixture"})
 		file, err := os.Open(positionals[0])
 		if err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "db seed failed"})
 			return err
 		}
 		defer file.Close()
 		fixture, err := storage.ReadFixture(file)
 		if err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "db seed failed"})
 			return err
 		}
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "db seed", Label: "Applying fixture", Current: 1, Total: 3})
 		if err := storage.ApplyFixture(&org, fixture); err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "db seed failed"})
 			return err
 		}
 		storage.EnsureDeterministicPlatformData(&org)
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "db seed", Label: "Saving database", Current: 2, Total: 3})
 		if err := store.Save(org); err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "db seed failed"})
 			return err
 		}
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "db seed", Label: "Fixture applied", Current: 3, Total: 3})
+		renderer.Finish(cliui.Result{OK: true, Label: "db seed complete"})
 		return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion)
 	case "reset":
 		if len(positionals) != 0 {
@@ -106,6 +141,30 @@ func runDB(ctx context.Context, args []string, w io.Writer) error {
 		return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion)
 	default:
 		return errors.New("usage: glade db seed|reset|export|inspect --db <path> [--project <root>] [--json] [fixture.json]")
+	}
+}
+
+func writeDBWizard(w io.Writer, command, dbPath, root string, jsonOut bool, positionals []string) error {
+	switch command {
+	case "seed":
+		fixture := "fixture.json"
+		if len(positionals) > 0 {
+			fixture = positionals[0]
+		}
+		if dbPath == "" {
+			dbPath = filepath.Join(".glade", "org.sqlite")
+		}
+		args := []string{"glade", "db", "seed", "--db", dbPath, "--project", root, "--progress"}
+		if jsonOut {
+			args = append(args, "--json")
+		}
+		args = append(args, fixture)
+		fmt.Fprintln(w, "DB seed wizard")
+		fmt.Fprintf(w, "  %s\n", shellCommand(args...))
+		fmt.Fprintf(w, "  %s\n", shellCommand("glade", "db", "inspect", "--db", dbPath, "--project", root))
+		return nil
+	default:
+		return errors.New("usage: glade db seed --wizard --db <path> [--project <root>] <fixture.json>")
 	}
 }
 

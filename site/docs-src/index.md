@@ -34,7 +34,7 @@ features:
     title: Run tests
     details: Execute supported Apex tests with isolated local data.
     link: /guide/local-testing
-    linkText: glade test --project . --json
+    linkText: glade test changed --project . --since HEAD
   - icon: <span class="home-icon">&#9000;</span>
     title: Try anonymous Apex
     details: Use the runtime directly for small probes.
@@ -124,9 +124,9 @@ features:
         <p>SObjects, SOQL, DML, triggers, limits, and storage.</p>
       </div>
       <div class="home-runtime-card">
-        <span>compat / docs</span>
+        <span>reports / docs</span>
         <h3>Proof surface</h3>
-        <p>Fixtures, dashboard, known gaps, and generated docs.</p>
+        <p>Config, CI artifacts, support maps, known gaps, and generated docs.</p>
       </div>
     </div>
   </div>

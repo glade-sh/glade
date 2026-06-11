@@ -96,7 +96,7 @@ type TestProgress struct {
 
 func Discover(index typesys.Index, opts Options) []TestCase {
 	var out []TestCase
-	filter := strings.ToLower(strings.TrimSpace(opts.Filter))
+	filters := testFilters(opts.Filter)
 	for _, typ := range index.Types {
 		if typ.Dependency {
 			continue
@@ -115,7 +115,7 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 				continue
 			}
 			testName := typ.Name + "." + member.Name
-			if filter != "" && !strings.Contains(strings.ToLower(testName), filter) {
+			if len(filters) > 0 && !matchesTestFilter(testName, filters) {
 				continue
 			}
 			out = append(out, TestCase{
@@ -129,6 +129,28 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 		}
 	}
 	return out
+}
+
+func testFilters(filter string) []string {
+	parts := strings.Split(filter, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.ToLower(strings.TrimSpace(part))
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
+}
+
+func matchesTestFilter(testName string, filters []string) bool {
+	testName = strings.ToLower(testName)
+	for _, filter := range filters {
+		if strings.Contains(testName, filter) {
+			return true
+		}
+	}
+	return false
 }
 
 func Run(index typesys.Index, opts Options) testreport.Run {
@@ -1246,29 +1268,44 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 	}
 }
 
-type sourceCache map[string]string
+type sourceCache struct {
+	state *sourceCacheState
+}
+
+type sourceCacheState struct {
+	mu      sync.Mutex
+	sources map[string]string
+}
 
 func newSourceCache() sourceCache {
-	return make(sourceCache)
+	return sourceCache{state: &sourceCacheState{sources: make(map[string]string)}}
 }
 
 func sourceCacheFor(caches []sourceCache) sourceCache {
-	if len(caches) > 0 && caches[0] != nil {
+	if len(caches) > 0 && caches[0].state != nil {
 		return caches[0]
 	}
 	return newSourceCache()
 }
 
 func (cache sourceCache) read(file string) (string, error) {
-	if source, ok := cache[file]; ok {
+	if cache.state == nil {
+		cache = newSourceCache()
+	}
+	cache.state.mu.Lock()
+	if source, ok := cache.state.sources[file]; ok {
+		cache.state.mu.Unlock()
 		return source, nil
 	}
+	cache.state.mu.Unlock()
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return "", err
 	}
 	source := string(data)
-	cache[file] = source
+	cache.state.mu.Lock()
+	cache.state.sources[file] = source
+	cache.state.mu.Unlock()
 	return source, nil
 }
 

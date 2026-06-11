@@ -57,11 +57,50 @@ var commandReferences = []CommandHelp{
 		Examples: []string{"glade doctor", "glade doctor --project . --json"},
 	},
 	{
+		Name:        "config",
+		Description: "Inspect, validate, and create glade.yml.",
+		Usage:       []string{"glade config show [--project <root>] [--json]", "glade config validate [--project <root>]", "glade config init [--project <root>] [--yes] [--force] [--namespace <name>] [--package-dir <path>] [--feature <name>]"},
+		Subcommands: []SubcommandHelp{
+			{Name: "show", Description: "Print resolved glade.yml and SFDX project settings."},
+			{Name: "validate", Description: "Validate glade.yml syntax and supported keys."},
+			{Name: "init", Description: "Create a glade.yml starter file."},
+		},
+		Flags: []FlagHelp{
+			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+			{Name: "--json", Description: "Write config show output as JSON."},
+			{Name: "--yes", Description: "Accept inferred defaults when creating glade.yml."},
+			{Name: "--force", Description: "Overwrite an existing glade.yml."},
+			{Name: "--namespace", Value: "<name>", Description: "Default package namespace."},
+			{Name: "--package-dir", Value: "<path>", Description: "Package directory. Repeat for more than one."},
+			{Name: "--feature", Value: "<name>", Description: "Org feature. Repeat for more than one."},
+		},
+		Examples: []string{"glade config show --project .", "glade config validate --project .", "glade config init --project . --yes"},
+	},
+	{
+		Name:        "init",
+		Description: "Create a glade.yml starter file.",
+		Usage:       []string{"glade init [--project <root>] [--yes] [--force] [--namespace <name>] [--package-dir <path>] [--feature <name>]"},
+		Flags: []FlagHelp{
+			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+			{Name: "--yes", Description: "Accept inferred defaults."},
+			{Name: "--force", Description: "Overwrite an existing glade.yml."},
+			{Name: "--namespace", Value: "<name>", Description: "Default package namespace."},
+			{Name: "--package-dir", Value: "<path>", Description: "Package directory. Repeat for more than one."},
+			{Name: "--feature", Value: "<name>", Description: "Org feature. Repeat for more than one."},
+		},
+		Examples: []string{"glade init --project . --yes", "glade init --namespace pkg --package-dir force-app"},
+	},
+	{
 		Name:        "parse",
 		Description: "Parse Apex source files.",
-		Usage:       []string{"glade parse <paths...> [--json]"},
-		Flags:       []FlagHelp{{Name: "--json", Description: "Write parsed files and diagnostics as JSON."}},
-		Examples:    []string{"glade parse force-app/main/default/classes/AccountService.cls", "glade parse force-app --json"},
+		Usage:       []string{"glade parse <paths...> [--json] [--progress|--progress-json|--no-progress]"},
+		Flags: []FlagHelp{
+			{Name: "--json", Description: "Write parsed files and diagnostics as JSON."},
+			{Name: "--progress", Description: "Print line progress to stderr."},
+			{Name: "--progress-json", Description: "Print NDJSON progress events to stderr."},
+			{Name: "--no-progress", Description: "Disable terminal progress."},
+		},
+		Examples: []string{"glade parse force-app/main/default/classes/AccountService.cls", "glade parse force-app --progress", "glade parse force-app --json"},
 	},
 	{
 		Name:        "inspect",
@@ -89,9 +128,12 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "check",
 		Description: "Run semantic checks over a project.",
-		Usage:       []string{"glade check [--project <root>] [--json] [--progress|--progress-json|--no-progress]"},
-		Flags:       projectProgressFlags("Write semantic result as JSON."),
-		Examples:    []string{"glade check --project .", "glade check --project . --progress-json"},
+		Usage:       []string{"glade check [--project <root>] [--format text|json|sarif|github] [--output <path>] [--progress|--progress-json|--no-progress]"},
+		Flags: append(projectProgressFlags("Write semantic result as JSON."),
+			FlagHelp{Name: "--format", Value: "<mode>", Description: "Output format: text, json, sarif, or github."},
+			FlagHelp{Name: "--output", Value: "<path>", Description: "Write the selected output format to a file."},
+		),
+		Examples: []string{"glade check --project .", "glade check --project . --format sarif --output glade.sarif", "glade check --project . --format github"},
 	},
 	{
 		Name:        "exec",
@@ -149,9 +191,12 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "test",
 		Description: "Discover and run supported Apex tests.",
-		Usage:       []string{"glade test [--project <root>] [flags]", "glade test serve [--project <root>] [serve flags]", "glade test clear-cache [--project <root>]"},
+		Usage:       []string{"glade test [--project <root>] [flags]", "glade test changed [--project <root>] [--since <ref>]", "glade test failed [--project <root>]", "glade test serve [--project <root>] [serve flags]", "glade test daemon status|stop [--project <root>]", "glade test clear-cache [--project <root>]"},
 		Subcommands: []SubcommandHelp{
+			{Name: "changed", Description: "Run tests affected since a git ref. Defaults to HEAD."},
+			{Name: "failed", Description: "Rerun tests that failed in the last run."},
 			{Name: "serve", Description: "Keep the local test runtime warm over a socket."},
+			{Name: "daemon", Description: "Show or stop the persistent test server."},
 			{Name: "clear-cache", Description: "Remove the startup cache for a project."},
 		},
 		Flags: []FlagHelp{
@@ -160,6 +205,8 @@ var commandReferences = []CommandHelp{
 			{Name: "--connect", Description: "Require a running test server."},
 			{Name: "--no-serve", Description: "Do not auto-connect to a running test server."},
 			{Name: "--no-cache", Description: "Skip the on-disk startup cache."},
+			{Name: "--last-failed", Description: "Rerun tests that failed in the last completed run."},
+			{Name: "--wizard", Description: "Print daily test loop command suggestions."},
 			{Name: "--daemon", Description: "Keep index warm in process for watch loops."},
 			{Name: "--json", Description: "Write JSON test results."},
 			{Name: "--junit", Value: "<path>", Description: "Write JUnit XML results."},
@@ -171,6 +218,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--watch", Description: "Watch source files and emit NDJSON events."},
 			{Name: "--watch-once", Description: "Run one watch cycle and exit."},
 			{Name: "--changed-since", Value: "<ref>", Description: "Select tests affected since a git ref."},
+			{Name: "--since", Value: "<ref>", Description: "Git ref for glade test changed. Defaults to HEAD."},
 			{Name: "--debounce", Value: "<dur>", Description: "Watch debounce interval."},
 			{Name: "--watch-backend", Value: "<mode>", Description: "Watch backend: auto, native, or poll."},
 			{Name: "--parallel-methods", Description: "Run test methods in parallel."},
@@ -206,19 +254,22 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "report",
 		Description: "List, show, export, and clean saved run reports.",
-		Usage:       []string{"glade report list [--runs-dir <path>]", "glade report show latest [--runs-dir <path>]", "glade report export latest --output <path> [--runs-dir <path>]", "glade report clean [--runs-dir <path>] [--keep <n>]"},
+		Usage:       []string{"glade report list [--runs-dir <path>]", "glade report show latest [--runs-dir <path>] [--json]", "glade report github latest [--runs-dir <path>]", "glade report export latest --output <path> [--format zip|html] [--runs-dir <path>]", "glade report clean [--runs-dir <path>] [--keep <n>]"},
 		Subcommands: []SubcommandHelp{
 			{Name: "list", Description: "List saved run reports."},
 			{Name: "show", Description: "Show the latest run report."},
-			{Name: "export", Description: "Export the latest report as a zip."},
+			{Name: "github", Description: "Emit GitHub Actions annotations for the latest run."},
+			{Name: "export", Description: "Export the latest report as zip or HTML."},
 			{Name: "clean", Description: "Delete old run reports."},
 		},
 		Flags: []FlagHelp{
 			{Name: "--runs-dir", Value: "<path>", Description: "Run artifact directory."},
-			{Name: "--output", Value: "<path>", Description: "Export zip path."},
+			{Name: "--output", Value: "<path>", Description: "Export output path."},
+			{Name: "--format", Value: "<mode>", Description: "Export format: zip or html."},
+			{Name: "--json", Description: "Write latest report metadata and results as JSON."},
 			{Name: "--keep", Value: "<n>", Description: "Number of newest reports to keep."},
 		},
-		Examples: []string{"glade report list", "glade report show latest"},
+		Examples: []string{"glade report show latest --json", "glade report github latest", "glade report export latest --format html --output report.html"},
 	},
 	{
 		Name:        "lsp",
@@ -240,17 +291,34 @@ var commandReferences = []CommandHelp{
 	},
 	{
 		Name:        "package",
-		Description: "Build managed package artifacts.",
-		Usage:       []string{"glade package build --project <root> --namespace <namespace> --output <artifact> [--version <version>] [--json]"},
-		Subcommands: []SubcommandHelp{{Name: "build", Description: "Build a package artifact JSON file."}},
+		Description: "Build, inspect, validate, and diff managed package artifacts.",
+		Usage: []string{
+			"glade package build --project <root> --namespace <namespace> --output <artifact> [--version <version>] [--json] [--progress|--progress-json|--no-progress]",
+			"glade package info <artifact.json> [--json]",
+			"glade package validate <artifact.json> [--json]",
+			"glade package diff <from.json> <to.json> [--json]",
+		},
+		Subcommands: []SubcommandHelp{
+			{Name: "build", Description: "Build a package artifact JSON file."},
+			{Name: "info", Description: "Print artifact metadata and counts."},
+			{Name: "validate", Description: "Check artifact shape before publishing or installing."},
+			{Name: "diff", Description: "Compare two package artifact JSON files."},
+		},
 		Flags: []FlagHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
 			{Name: "--namespace", Value: "<namespace>", Description: "Managed package namespace."},
 			{Name: "--output", Value: "<artifact>", Description: "Artifact JSON path."},
 			{Name: "--version", Value: "<version>", Description: "Optional package version."},
-			{Name: "--json", Description: "Write the artifact to stdout too."},
+			{Name: "--json", Description: "Write structured JSON output."},
+			{Name: "--progress", Description: "Print line progress to stderr for package build."},
+			{Name: "--progress-json", Description: "Print NDJSON progress events to stderr."},
+			{Name: "--no-progress", Description: "Disable terminal progress."},
 		},
-		Examples: []string{"glade package build --project . --namespace pkg --output pkg.json"},
+		Examples: []string{
+			"glade package build --project . --namespace pkg --output pkg.json --progress",
+			"glade package info pkg.json --json",
+			"glade package diff old.json new.json",
+		},
 	},
 	{
 		Name:        "server",
@@ -267,7 +335,7 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "playground",
 		Description: "Start the local Apex playground web UI.",
-		Usage:       []string{"glade playground [--addr <host:port>] [--workspace <id>] [--data-root <path>] [--project <root>] [--db <path>] [--open|--no-open]"},
+		Usage:       []string{"glade playground [--addr <host:port>] [--workspace <id>] [--data-root <path>] [--project <root>] [--db <path>] [--open|--no-open]", "glade playground --wizard [--project <root>] [--examples]"},
 		Flags: []FlagHelp{
 			{Name: "--addr", Value: "<host:port>", Description: "Bind address. Defaults to 127.0.0.1:1789."},
 			{Name: "--db", Value: "<path>", Description: "Persistent local database."},
@@ -283,13 +351,14 @@ var commandReferences = []CommandHelp{
 			{Name: "--open", Description: "Open the browser."},
 			{Name: "--no-open", Description: "Do not open the browser."},
 			{Name: "--once", Description: "Prepare and exit without serving."},
+			{Name: "--wizard", Description: "Print a ready playground command without serving."},
 		},
-		Examples: []string{"glade playground --project . --open", "glade playground --examples"},
+		Examples: []string{"glade playground --project . --open", "glade playground --wizard --project . --examples"},
 	},
 	{
 		Name:        "db",
 		Description: "Seed, reset, export, and inspect a persistent local database.",
-		Usage:       []string{"glade db seed --db <path> [--project <root>] [--json] <fixture.json>", "glade db reset --db <path> [--project <root>] [--json]", "glade db export --db <path> [--project <root>]", "glade db inspect --db <path> [--project <root>] [--json]"},
+		Usage:       []string{"glade db seed --db <path> [--project <root>] [--json] [--progress|--progress-json|--no-progress] <fixture.json>", "glade db seed --wizard --db <path> [--project <root>] <fixture.json>", "glade db reset --db <path> [--project <root>] [--json]", "glade db export --db <path> [--project <root>]", "glade db inspect --db <path> [--project <root>] [--json]"},
 		Subcommands: []SubcommandHelp{
 			{Name: "seed", Description: "Apply a fixture to a persistent database."},
 			{Name: "reset", Description: "Clear data from a persistent database."},
@@ -300,8 +369,12 @@ var commandReferences = []CommandHelp{
 			{Name: "--db", Value: "<path>", Description: "Persistent local database path."},
 			{Name: "--project", Value: "<root>", Description: "Project root for schema bootstrap."},
 			{Name: "--json", Description: "Write inspect output as JSON."},
+			{Name: "--wizard", Description: "Print a seed and inspect command pair."},
+			{Name: "--progress", Description: "Print line progress to stderr for seed."},
+			{Name: "--progress-json", Description: "Print NDJSON progress events to stderr."},
+			{Name: "--no-progress", Description: "Disable terminal progress."},
 		},
-		Examples: []string{"glade db inspect --db .glade/org.sqlite", "glade db seed --db .glade/org.sqlite fixture.json"},
+		Examples: []string{"glade db inspect --db .glade/org.sqlite", "glade db seed --wizard --db .glade/org.sqlite fixture.json", "glade db seed --db .glade/org.sqlite --progress fixture.json"},
 	},
 	{
 		Name:        "completion",
@@ -395,6 +468,15 @@ func WriteHelp(w io.Writer) error {
 			return err
 		}
 	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, t.Bold("Topics")); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "  exit-codes  Explain process exit codes for scripts and CI."); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -459,6 +541,23 @@ func WriteCommandHelp(w io.Writer, args []string) error {
 			}
 		}
 	}
+	if ref.Name == "completion" {
+		if _, err := fmt.Fprintln(w); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "Install:"); err != nil {
+			return err
+		}
+		for _, line := range []string{
+			"bash: source <(glade completion bash)",
+			"zsh:  glade completion zsh > ~/.zsh/completions/_glade",
+			"fish: glade completion fish > ~/.config/fish/completions/glade.fish",
+		} {
+			if _, err := fmt.Fprintln(w, "  "+line); err != nil {
+				return err
+			}
+		}
+	}
 	if len(ref.Examples) > 0 {
 		if _, err := fmt.Fprintln(w); err != nil {
 			return err
@@ -475,13 +574,33 @@ func WriteCommandHelp(w io.Writer, args []string) error {
 	return nil
 }
 
+func WriteExitCodesHelp(w io.Writer) error {
+	body := strings.TrimSpace(`
+Exit codes
+
+  0  Command completed without errors.
+  1  Command failed, found diagnostics, or tests failed.
+  2  Command was not understood.
+
+Notes:
+  parse, inspect, and check return 1 when diagnostics include errors.
+  test returns 1 when any test fails or errors.
+  unknown commands return 2 before command execution starts.
+`)
+	_, err := fmt.Fprintln(w, body)
+	return err
+}
+
 func WriteTestHelp(w io.Writer) error {
 	body := strings.TrimSpace(`
 Run local Apex tests.
 
 Usage:
   glade test [--project <root>] [flags]
+  glade test changed [--project <root>] [--since <ref>]
+  glade test failed [--project <root>]
   glade test serve [--project <root>] [serve flags]
+  glade test daemon status|stop [--project <root>]
   glade test clear-cache [--project <root>]
 
 Persistent test server:
@@ -489,6 +608,17 @@ Persistent test server:
   It writes .glade/test/serve.sock and serve.pid under the project root.
   Later glade test runs auto-connect when that socket is reachable.
   Use --no-serve to force a local build, or --connect to require the server.
+
+Daily loop:
+  glade test changed --project . --since HEAD runs tests affected by changed files.
+  glade test failed --project . reruns tests that failed in the last completed run.
+  glade test --project . --last-failed is the flag form of the same rerun.
+  glade test --project . --wizard prints the likely next command without running it.
+
+Daemon lifecycle:
+  glade test serve --project . starts the persistent warm server.
+  glade test daemon status --project . shows stopped, stale, warming, or ready state.
+  glade test daemon stop --project . shuts down a live server or removes stale files.
 
 Serve flags:
   --project <root>          Project root. Defaults to current directory.
@@ -502,6 +632,8 @@ Common flags:
   --connect                 Require a running test server (see serve).
   --no-serve                Do not auto-connect to a running test server.
   --no-cache                Skip the on-disk startup cache for this run.
+  --last-failed             Rerun tests that failed in the last completed run.
+  --wizard                  Print daily test loop command suggestions.
   --daemon                  Keep index warm in-process for --watch loops.
   --json                    Write JSON test results.
   --junit <path>            Write JUnit XML results.
@@ -512,6 +644,7 @@ Common flags:
   --watch                   Watch source files and emit NDJSON events.
   --watch-once              Run one watch cycle and exit.
   --changed-since <ref>     Select tests affected since a git ref.
+  --since <ref>             Git ref for glade test changed (default HEAD).
   --debounce <dur>          Watch debounce interval (default 500ms).
   --watch-backend <mode>    Watch backend: auto, native, or poll.
   --parallel-methods        Run test methods in parallel (default).
@@ -529,6 +662,9 @@ Startup cache (.glade/test/startup.gob):
 
 Examples:
   glade test serve --project .
+  glade test daemon status --project .
+  glade test changed --project . --since HEAD
+  glade test failed --project .
   glade test clear-cache --project .
   glade test --project . --filter AccountServiceTest
   glade test --project . --no-cache --filter AccountServiceTest

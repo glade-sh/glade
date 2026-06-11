@@ -33,34 +33,34 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--addr":
-			if i+1 >= len(args) {
-				return errors.New("--addr requires a value")
+			value, err := takeFlagValue(args, &i, "--addr requires a value")
+			if err != nil {
+				return err
 			}
-			addr = args[i+1]
-			i++
+			addr = value
 		case "--db":
-			if i+1 >= len(args) {
-				return errors.New("--db requires a path")
+			value, err := takeFlagValue(args, &i, "--db requires a path")
+			if err != nil {
+				return err
 			}
-			dbPath = args[i+1]
-			i++
+			dbPath = value
 		case "--project":
-			if i+1 >= len(args) {
-				return errors.New("--project requires a value")
+			value, err := takeFlagValue(args, &i, "--project requires a value")
+			if err != nil {
+				return err
 			}
-			root = args[i+1]
+			root = value
 			projectProvided = true
-			i++
 		case "--limit-mode":
-			if i+1 >= len(args) {
-				return errors.New("--limit-mode requires a value")
+			value, err := takeFlagValue(args, &i, "--limit-mode requires a value")
+			if err != nil {
+				return err
 			}
-			mode, err := parseLimitMode(args[i+1])
+			mode, err := parseLimitMode(value)
 			if err != nil {
 				return err
 			}
 			limitMode = mode
-			i++
 		default:
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
@@ -118,93 +118,99 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 	showExamples := false
 	limitMode := vm.LimitModePermissive
 	openBrowser := false
+	openBrowserSet := false
 	once := false
+	wizard := false
 	public := false
 	runTimeout := time.Duration(0)
 	ratePerMinute := 0
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--addr":
-			if i+1 >= len(args) {
-				return errors.New("--addr requires a value")
+			value, err := takeFlagValue(args, &i, "--addr requires a value")
+			if err != nil {
+				return err
 			}
-			addr = args[i+1]
+			addr = value
 			addrProvided = true
-			i++
 		case "--db":
-			if i+1 >= len(args) {
-				return errors.New("--db requires a path")
+			value, err := takeFlagValue(args, &i, "--db requires a path")
+			if err != nil {
+				return err
 			}
-			dbPath = args[i+1]
-			i++
+			dbPath = value
 		case "--project":
-			if i+1 >= len(args) {
-				return errors.New("--project requires a value")
+			value, err := takeFlagValue(args, &i, "--project requires a value")
+			if err != nil {
+				return err
 			}
-			projectRoot = args[i+1]
-			i++
+			projectRoot = value
 		case "--project-ref":
-			if i+1 >= len(args) {
-				return errors.New("--project-ref requires a value")
+			value, err := takeFlagValue(args, &i, "--project-ref requires a value")
+			if err != nil {
+				return err
 			}
-			ref, err := parsePlaygroundProjectRef(args[i+1])
+			ref, err := parsePlaygroundProjectRef(value)
 			if err != nil {
 				return err
 			}
 			projectRefs = append(projectRefs, ref)
-			i++
 		case "--examples":
 			showExamples = true
 		case "--public":
 			public = true
 		case "--run-timeout":
-			if i+1 >= len(args) {
-				return errors.New("--run-timeout requires a value")
+			value, err := takeFlagValue(args, &i, "--run-timeout requires a value")
+			if err != nil {
+				return err
 			}
-			d, err := time.ParseDuration(args[i+1])
+			d, err := time.ParseDuration(value)
 			if err != nil {
 				return err
 			}
 			runTimeout = d
-			i++
 		case "--rate-per-minute":
-			if i+1 >= len(args) {
-				return errors.New("--rate-per-minute requires a value")
+			value, err := takeFlagValue(args, &i, "--rate-per-minute requires a value")
+			if err != nil {
+				return err
 			}
-			n, err := strconv.Atoi(args[i+1])
+			n, err := strconv.Atoi(value)
 			if err != nil {
 				return err
 			}
 			ratePerMinute = n
-			i++
 		case "--data-root":
-			if i+1 >= len(args) {
-				return errors.New("--data-root requires a value")
+			value, err := takeFlagValue(args, &i, "--data-root requires a value")
+			if err != nil {
+				return err
 			}
-			dataRoot = args[i+1]
-			i++
+			dataRoot = value
 		case "--workspace":
-			if i+1 >= len(args) {
-				return errors.New("--workspace requires a value")
+			value, err := takeFlagValue(args, &i, "--workspace requires a value")
+			if err != nil {
+				return err
 			}
-			workspaceID = args[i+1]
-			i++
+			workspaceID = value
 		case "--limit-mode":
-			if i+1 >= len(args) {
-				return errors.New("--limit-mode requires a value")
+			value, err := takeFlagValue(args, &i, "--limit-mode requires a value")
+			if err != nil {
+				return err
 			}
-			mode, err := parseLimitMode(args[i+1])
+			mode, err := parseLimitMode(value)
 			if err != nil {
 				return err
 			}
 			limitMode = mode
-			i++
 		case "--open":
 			openBrowser = true
+			openBrowserSet = true
 		case "--no-open":
 			openBrowser = false
+			openBrowserSet = true
 		case "--once":
 			once = true
+		case "--wizard":
+			wizard = true
 		default:
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
@@ -215,6 +221,24 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 			port = "8080"
 		}
 		addr = "0.0.0.0:" + port
+	}
+	if wizard {
+		return writePlaygroundWizard(w, playgroundWizardOptions{
+			addr:           addr,
+			addrProvided:   addrProvided,
+			dbPath:         dbPath,
+			dataRoot:       dataRoot,
+			workspaceID:    workspaceID,
+			projectRoot:    projectRoot,
+			projectRefs:    projectRefs,
+			showExamples:   showExamples,
+			limitMode:      limitMode,
+			openBrowser:    openBrowser,
+			openBrowserSet: openBrowserSet,
+			public:         public,
+			runTimeout:     runTimeout,
+			ratePerMinute:  ratePerMinute,
+		})
 	}
 	ws, err := playground.OpenWorkspace(playground.WorkspaceOptions{
 		DataRoot:    dataRoot,
@@ -244,6 +268,72 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 		_ = openURL(url)
 	}
 	return http.ListenAndServe(addr, handler)
+}
+
+type playgroundWizardOptions struct {
+	addr           string
+	addrProvided   bool
+	dbPath         string
+	dataRoot       string
+	workspaceID    string
+	projectRoot    string
+	projectRefs    []playground.ProjectReference
+	showExamples   bool
+	limitMode      vm.LimitMode
+	openBrowser    bool
+	openBrowserSet bool
+	public         bool
+	runTimeout     time.Duration
+	ratePerMinute  int
+}
+
+func writePlaygroundWizard(w io.Writer, opts playgroundWizardOptions) error {
+	args := []string{"glade", "playground"}
+	if opts.public {
+		args = append(args, "--public")
+	} else if opts.addrProvided {
+		args = append(args, "--addr", opts.addr)
+	}
+	if opts.projectRoot != "" {
+		args = append(args, "--project", opts.projectRoot)
+	}
+	if opts.dbPath != "" && opts.dbPath != filepath.Join(".glade", "playground", "org.sqlite") {
+		args = append(args, "--db", opts.dbPath)
+	}
+	if opts.dataRoot != "" {
+		args = append(args, "--data-root", opts.dataRoot)
+	}
+	if opts.workspaceID != "" && opts.workspaceID != "default" {
+		args = append(args, "--workspace", opts.workspaceID)
+	}
+	for _, ref := range opts.projectRefs {
+		args = append(args, "--project-ref", ref.Name+"="+ref.Path)
+	}
+	if opts.showExamples {
+		args = append(args, "--examples")
+	}
+	if opts.limitMode != "" && opts.limitMode != vm.LimitModePermissive {
+		args = append(args, "--limit-mode", string(opts.limitMode))
+	}
+	if opts.runTimeout > 0 {
+		args = append(args, "--run-timeout", opts.runTimeout.String())
+	}
+	if opts.ratePerMinute > 0 {
+		args = append(args, "--rate-per-minute", strconv.Itoa(opts.ratePerMinute))
+	}
+	if opts.openBrowserSet {
+		if opts.openBrowser {
+			args = append(args, "--open")
+		} else {
+			args = append(args, "--no-open")
+		}
+	} else {
+		args = append(args, "--open")
+	}
+	fmt.Fprintln(w, "Playground wizard")
+	fmt.Fprintf(w, "  %s\n", shellCommand(args...))
+	fmt.Fprintln(w, "  Open: http://"+opts.addr+"/playground/")
+	return nil
 }
 
 func parsePlaygroundProjectRef(value string) (playground.ProjectReference, error) {

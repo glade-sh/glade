@@ -55,7 +55,6 @@ Use the map first, then cut down to the exact checked row.
 - Generated capability dashboard: [Compatibility Dashboard](/guide/compatibility-dashboard)
 - Method-level standard library rows: [`docs/STDLIB_COVERAGE.md`](https://github.com/glade-sh/glade/blob/main/docs/STDLIB_COVERAGE.md)
 - Current known gaps: [`docs/KNOWN_GAPS.md`](https://github.com/glade-sh/glade/blob/main/docs/KNOWN_GAPS.md)
-- Project triage: `glade-tools local-tests --project . --parallel auto --json`
 
 One rule keeps the marks honest. Do not call a surface supported until the row
 has implementation and compatibility evidence.

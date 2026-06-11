@@ -1,6 +1,7 @@
 # Installation
 
-Glade ships as a single binary for macOS, Linux, and Windows release archives. The public site also serves an install script at the root domain.
+Glade ships as a single binary. Release archives are parser-capable CGO builds,
+and the public site serves an install script at the root domain.
 
 ## One-line install
 
@@ -17,7 +18,7 @@ GLADE_INSTALL_DIR=/usr/local/bin curl -fsSL https://glade.sh/install.sh | sh
 GLADE_VERSION=vX.Y.Z curl -fsSL https://glade.sh/install.sh | sh
 ```
 
-Check the blade after it is on your path:
+Check the binary after it is on your path:
 
 ```bash
 glade version
@@ -32,6 +33,8 @@ Prerequisites:
 
 - Go 1.26 or newer
 - Git
+- A C compiler with CGO enabled. On macOS, install Xcode Command Line Tools. On
+  Debian or Ubuntu, install `build-essential`.
 
 ```bash
 git clone https://github.com/glade-sh/glade.git
@@ -62,6 +65,9 @@ go run ./cmd/glade check --project path/to/sfdx-project
 From an SFDX project root:
 
 ```bash
+glade init --project . --yes
+glade config validate --project .
+glade config show --project .
 glade check --project .
 glade test --project . --json
 ```
@@ -71,7 +77,7 @@ Run one class, one method, or tests affected by a git ref:
 ```bash
 glade test --project . --filter AccountServiceTest --json
 glade test --project . --filter AccountServiceTest.testCreatesAccount --json
-glade test --project . --changed-since origin/main --json
+glade test changed --project . --since origin/main --json
 ```
 
 ## CI usage
@@ -85,6 +91,7 @@ Build from source in GitHub Actions:
 - run: go install github.com/glade-sh/glade/cmd/glade@latest
 - run: glade check --project .
 - run: glade test --project . --json
+- run: glade check --project . --format sarif --output glade-check.sarif
 ```
 
 Or download a release artifact and verify checksums:
@@ -100,5 +107,5 @@ Or download a release artifact and verify checksums:
 ```
 
 ::: tip Next step
-Run local tests without an org: [Local Testing](/guide/local-testing).
+Create project config: [Project Configuration](/guide/configuration).
 :::

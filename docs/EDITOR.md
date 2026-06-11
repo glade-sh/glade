@@ -109,9 +109,10 @@ not require a Salesforce org.
       "command": "glade",
       "args": [
         "test",
+        "changed",
         "--project",
         "${workspaceFolder}",
-        "--changed-since",
+        "--since",
         "origin/main",
         "--json"
       ],
@@ -221,7 +222,7 @@ Client runs auto-connect when the socket is reachable. Use `--connect` to
 require the server or `--no-serve` to force a local build.
 
 `glade test --daemon` keeps the same warm index in-process for a single long
-`--watch` or `--changed-since` session:
+`--watch` or changed-test session:
 
 - `RunFilter(filter)` runs a focused test selection against the warm index.
 - `RunChangedSince(ref)` uses git file changes and affected-test selection, with
@@ -237,17 +238,16 @@ edges to find every test that transitively reaches the changed types. See
 `docs/LOCAL_TESTING.md` for the user-facing workflow and event examples.
 
 Use `glade test serve` when separate CLI invocations should stay warm. Use
-`glade test --daemon --watch` or `glade test --daemon --changed-since origin/main`
-when one watch process should avoid reloading the project on every save.
+`glade test --daemon --watch` when one long process should avoid reloading the
+project.
 
-For the common local workflow, use `--changed-since` to select tests affected by
-changed Apex and metadata dependencies:
+For the common local workflow, use `glade test changed` to select tests affected
+by changed Apex and metadata dependencies:
 
 ```bash
 git fetch origin main
 glade test serve --project .
-glade test --project . --changed-since origin/main --json
-glade test --project . --daemon --changed-since origin/main --json
+glade test changed --project . --since origin/main --json
 ```
 
 ## Test Startup Cache
@@ -340,7 +340,7 @@ For CI or editor tasks that need a single machine-readable run, use:
 
 ```bash
 glade test --project . --json
-glade test --project . --changed-since origin/main --json
+glade test changed --project . --since origin/main --json
 glade test --project . --junit reports/glade-junit.xml
 glade check --project . --json
 ```

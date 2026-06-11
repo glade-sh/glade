@@ -45,6 +45,12 @@ Start from an SFDX project:
 glade playground --project . --db .glade/playground/org.sqlite --open
 ```
 
+Print a ready command without starting the server:
+
+```bash
+glade playground --wizard --project . --examples
+```
+
 ## What to use it for
 
 - Share runnable examples with a deep link.

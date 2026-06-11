@@ -29,6 +29,37 @@ glade version
 glade doctor   # confirm: "parser: ok (tree-sitter)"
 ```
 
+## Shell Completion
+
+`glade` can print completion scripts for bash, zsh, and fish:
+
+```bash
+glade completion bash
+glade completion zsh
+glade completion fish
+```
+
+For a one-session bash install:
+
+```bash
+source <(glade completion bash)
+```
+
+For zsh, write the generated script into a directory already listed in
+`$fpath`, then restart the shell:
+
+```bash
+mkdir -p ~/.zsh/completions
+glade completion zsh > ~/.zsh/completions/_glade
+```
+
+For fish:
+
+```bash
+mkdir -p ~/.config/fish/completions
+glade completion fish > ~/.config/fish/completions/glade.fish
+```
+
 ## Build And Run From Source
 
 Use this path for Glade development or for trying the current repository state
@@ -83,6 +114,9 @@ Run parse/check/tests against an SFDX project without connecting to an org:
 ```bash
 cd path/to/sfdx-project
 glade doctor
+glade init --project . --yes
+glade config validate --project .
+glade config show --project .
 glade check --project .
 glade test --project . --json
 glade inspect performance --project . --json
@@ -92,10 +126,11 @@ Run a focused class or only tests affected by changes since a git ref:
 
 ```bash
 glade test --project . --filter AccountServiceTest --json
-glade test --project . --changed-since origin/main --json
+glade test changed --project . --since origin/main --json
 glade inspect performance --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
 
+See [CONFIG.md](CONFIG.md) for `glade.yml`, `glade init`, and config inspection.
 See [LOCAL_TESTING.md](LOCAL_TESTING.md) for class/method filters,
 dependency-selected test runs, and `glade test serve`. For when the test startup
 cache is created, how it stays fresh, and how to recover from a bad cache, see
@@ -207,29 +242,6 @@ Build from source:
 - run: go install github.com/glade-sh/glade/cmd/glade@latest
 - run: glade check --project .
 - run: glade test --project . --json
-```
-
-Maintenance generation commands live in the sibling `glade-tools` project.
-
-When refreshing broad standard SObject field coverage from public Apex stubs,
-regenerate the field overlay before running storage or VM compatibility checks:
-
-```bash
-node scripts/generate-sobject-stub-overlay.mjs /path/to/fulgor/stubs/apex-sobject-stubs internal/storage/standard_sobject_stub_overlay_generated.go
-```
-
-When refreshing broad system, Schema, Database, and product namespace type
-shape from public Apex stubs, regenerate the type-symbol overlay before running
-type-system or semantic-analysis checks:
-
-```bash
-node scripts/generate-system-stub-symbols.mjs /path/to/fulgor/stubs/apex-system-stubs internal/typesys/system_stub_symbols_generated.go
-```
-
-Tooling snippet fixture reports can be validated as stable JSON artifacts:
-
-```bash
-glade-tools tooling-fixtures tmp/tooling-snippet-results.json
 ```
 
 Use a release artifact:

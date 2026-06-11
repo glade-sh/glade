@@ -19,6 +19,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/cliui"
+	"github.com/glade-sh/glade/internal/flagparse"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/vm"
@@ -43,6 +44,39 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			return testreport.Run{}, err
 		}
 		return testreport.Run{}, nil
+	}
+	if len(args) > 0 && args[0] == "daemon" {
+		rest := args[1:]
+		if len(rest) > 0 && isHelpArg(rest[0]) {
+			_ = cliui.WriteTestHelp(w)
+			return testreport.Run{}, nil
+		}
+		if err := runTestDaemonCommand(ctx, rest, w); err != nil {
+			return testreport.Run{}, err
+		}
+		return testreport.Run{}, nil
+	}
+	if len(args) > 0 && args[0] == "changed" {
+		rest := args[1:]
+		if len(rest) > 0 && isHelpArg(rest[0]) {
+			_ = cliui.WriteTestHelp(w)
+			return testreport.Run{}, nil
+		}
+		rewritten, err := rewriteChangedTestArgs(rest)
+		if err != nil {
+			return testreport.Run{}, err
+		}
+		return runTest(ctx, rewritten, w, progressW)
+	}
+	if len(args) > 0 && args[0] == "failed" {
+		rest := args[1:]
+		if len(rest) > 0 && isHelpArg(rest[0]) {
+			_ = cliui.WriteTestHelp(w)
+			return testreport.Run{}, nil
+		}
+		rewritten := append([]string{}, rest...)
+		rewritten = append(rewritten, "--last-failed")
+		return runTest(ctx, rewritten, w, progressW)
 	}
 	if len(args) > 0 && args[0] == "serve" {
 		rest := args[1:]
@@ -76,6 +110,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	parallelismOverride := 0
 	testTimeout := 5 * time.Minute
 	gcAggressive := false
+	lastFailed := false
+	wizard := false
 	cpuProfilePath := ""
 	memProfilePath := ""
 	perfJSONPath := ""
@@ -83,147 +119,138 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	backend := watch.BackendAuto
 	var compileDoneMS int64
 	var discoverTimeMS int64
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--project":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--project requires a value")
-			}
-			root = args[i+1]
-			i++
-		case "--filter":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--filter requires a value")
-			}
-			filter = args[i+1]
-			i++
-		case "--json":
-			format = "json"
-		case "--trace-blockers":
-			traceBlocked = true
-		case "--slow-test-ms":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--slow-test-ms requires a value")
-			}
-			parsed, err := strconv.ParseInt(args[i+1], 10, 64)
-			if err != nil || parsed < 0 {
-				return testreport.Run{}, fmt.Errorf("--slow-test-ms must be a non-negative integer")
-			}
-			slowTestThresholdMS = parsed
-			i++
-		case "--changed-since":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--changed-since requires a value")
-			}
-			changedSince = args[i+1]
-			i++
-		case "--parallel-methods":
-			parallelMethods = true
-		case "--no-parallel-methods":
-			parallelMethods = false
-		case "--parallelism":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--parallelism requires a value")
-			}
-			parsed, err := strconv.Atoi(args[i+1])
-			if err != nil || parsed < 0 {
-				return testreport.Run{}, fmt.Errorf("--parallelism must be a non-negative integer")
-			}
-			parallelismOverride = parsed
-			i++
-		case "--test-timeout":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--test-timeout requires a duration")
-			}
-			parsed, err := time.ParseDuration(args[i+1])
-			if err != nil {
-				return testreport.Run{}, fmt.Errorf("--test-timeout: %w", err)
-			}
-			if parsed < 0 {
-				return testreport.Run{}, errors.New("--test-timeout must be non-negative")
-			}
-			testTimeout = parsed
-			i++
-		case "--gc-aggressive":
-			gcAggressive = true
-		case "--cpu-profile":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--cpu-profile requires a path")
-			}
-			cpuProfilePath = args[i+1]
-			i++
-		case "--mem-profile":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--mem-profile requires a path")
-			}
-			memProfilePath = args[i+1]
-			i++
-		case "--perf-json":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--perf-json requires a path")
-			}
-			perfJSONPath = args[i+1]
-			i++
-		case "--junit":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--junit requires a path")
-			}
-			junitPath = args[i+1]
-			i++
-		case "--limit-mode":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--limit-mode requires a value")
-			}
-			mode, err := parseLimitMode(args[i+1])
-			if err != nil {
-				return testreport.Run{}, err
-			}
-			limitMode = mode
-			i++
-		case "--watch":
-			watchMode = true
-		case "--watch-once":
-			watchMode = true
-			watchOnce = true
-		case "--daemon":
-			daemonMode = true
-		case "--connect":
-			connectMode = true
-		case "--no-serve":
-			noServe = true
-		case "--no-cache":
-			noCache = true
-		case "--debug":
-			debug = true
-		case "--progress":
-			progressMode = cliui.ProgressLine
-		case "--progress-json":
-			progressMode = cliui.ProgressJSON
-		case "--no-progress", "--quiet":
-			progressMode = cliui.ProgressOff
-		case "--debounce":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--debounce requires a duration")
-			}
-			parsed, err := time.ParseDuration(args[i+1])
-			if err != nil {
-				return testreport.Run{}, err
-			}
-			debounce = parsed
-			i++
-		case "--watch-backend":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--watch-backend requires a value")
-			}
-			parsed, err := parseWatchBackend(args[i+1])
-			if err != nil {
-				return testreport.Run{}, err
-			}
-			backend = parsed
-			i++
-		default:
-			return testreport.Run{}, fmt.Errorf("unknown flag %q", args[i])
+	parsed, err := flagparse.New("glade test").
+		String("project", "p").
+		String("filter", "f").
+		Bool("json", "j").
+		Bool("trace-blockers", "").
+		String("slow-test-ms", "").
+		String("changed-since", "c").
+		Bool("parallel-methods", "").
+		Bool("no-parallel-methods", "").
+		String("parallelism", "").
+		String("test-timeout", "").
+		Bool("gc-aggressive", "").
+		String("cpu-profile", "").
+		String("mem-profile", "").
+		String("perf-json", "").
+		String("junit", "").
+		String("limit-mode", "").
+		Bool("watch", "").
+		Bool("watch-once", "").
+		Bool("daemon", "").
+		Bool("connect", "").
+		Bool("no-serve", "").
+		Bool("no-cache", "").
+		Bool("last-failed", "").
+		Bool("wizard", "").
+		Bool("debug", "").
+		Bool("progress", "").
+		Bool("progress-json", "").
+		Bool("no-progress", "").
+		Bool("quiet", "q").
+		String("debounce", "").
+		String("watch-backend", "").
+		Parse(args)
+	if err != nil {
+		return testreport.Run{}, err
+	}
+	if parsed.String("project") != "" {
+		root = parsed.String("project")
+	}
+	filter = parsed.String("filter")
+	if parsed.Bool("json") {
+		format = "json"
+	}
+	traceBlocked = parsed.Bool("trace-blockers")
+	if parsed.String("slow-test-ms") != "" {
+		parsedMS, err := strconv.ParseInt(parsed.String("slow-test-ms"), 10, 64)
+		if err != nil || parsedMS < 0 {
+			return testreport.Run{}, fmt.Errorf("--slow-test-ms must be a non-negative integer")
 		}
+		slowTestThresholdMS = parsedMS
+	}
+	changedSince = parsed.String("changed-since")
+	if parsed.Bool("no-parallel-methods") {
+		parallelMethods = false
+	} else if parsed.Bool("parallel-methods") {
+		parallelMethods = true
+	}
+	if parsed.String("parallelism") != "" {
+		parsedParallelism, err := strconv.Atoi(parsed.String("parallelism"))
+		if err != nil || parsedParallelism < 0 {
+			return testreport.Run{}, fmt.Errorf("--parallelism must be a non-negative integer")
+		}
+		parallelismOverride = parsedParallelism
+	}
+	if parsed.String("test-timeout") != "" {
+		parsedTimeout, err := time.ParseDuration(parsed.String("test-timeout"))
+		if err != nil {
+			return testreport.Run{}, fmt.Errorf("--test-timeout: %w", err)
+		}
+		if parsedTimeout < 0 {
+			return testreport.Run{}, errors.New("--test-timeout must be non-negative")
+		}
+		testTimeout = parsedTimeout
+	}
+	gcAggressive = parsed.Bool("gc-aggressive")
+	cpuProfilePath = parsed.String("cpu-profile")
+	memProfilePath = parsed.String("mem-profile")
+	perfJSONPath = parsed.String("perf-json")
+	junitPath = parsed.String("junit")
+	if parsed.String("limit-mode") != "" {
+		mode, err := parseLimitMode(parsed.String("limit-mode"))
+		if err != nil {
+			return testreport.Run{}, err
+		}
+		limitMode = mode
+	}
+	watchMode = parsed.Bool("watch")
+	if parsed.Bool("watch-once") {
+		watchMode = true
+		watchOnce = true
+	}
+	daemonMode = parsed.Bool("daemon")
+	connectMode = parsed.Bool("connect")
+	noServe = parsed.Bool("no-serve")
+	noCache = parsed.Bool("no-cache")
+	lastFailed = parsed.Bool("last-failed")
+	wizard = parsed.Bool("wizard")
+	debug = parsed.Bool("debug")
+	progressMode = progressModeFromArgs(args, progressMode)
+	if parsed.String("debounce") != "" {
+		parsedDebounce, err := time.ParseDuration(parsed.String("debounce"))
+		if err != nil {
+			return testreport.Run{}, err
+		}
+		debounce = parsedDebounce
+	}
+	if parsed.String("watch-backend") != "" {
+		parsedBackend, err := parseWatchBackend(parsed.String("watch-backend"))
+		if err != nil {
+			return testreport.Run{}, err
+		}
+		backend = parsedBackend
+	}
+	if wizard {
+		if err := writeTestWizard(ctx, root, w); err != nil {
+			return testreport.Run{}, err
+		}
+		return testreport.Run{}, nil
+	}
+	if lastFailed {
+		if strings.TrimSpace(filter) != "" {
+			return testreport.Run{}, errors.New("--last-failed cannot be combined with --filter")
+		}
+		failures, err := readLastFailedTests(root)
+		if err != nil {
+			return testreport.Run{}, err
+		}
+		if len(failures) == 0 {
+			fmt.Fprint(w, "No failed tests recorded.\n")
+			return testreport.Run{}, nil
+		}
+		filter = strings.Join(failures, ",")
 	}
 	stopProfile, err := startCLIProfiler(cpuProfilePath, memProfilePath)
 	if err != nil {
@@ -295,6 +322,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		} else {
 			result = daemon.RunOptions(testOpts)
 		}
+		if err := writeLastFailedTests(root, result); err != nil {
+			return result, err
+		}
 		if progressReporter != nil {
 			result.DurationMS = time.Since(progressReporter.started).Milliseconds()
 			progressReporter.finish()
@@ -328,6 +358,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		return testreport.Run{}, err
 	}
 	if progressReporter != nil && len(index.Project.Root) > 0 {
+		progressReporter.warn("startup cache: " + testStartupCacheStatus(index.Project.Root))
 		if root != index.Project.Root && root == "." {
 			root = "."
 		}
@@ -389,6 +420,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if debug {
 		return result, serveDAPSnapshot(testRunSnapshot(result), w)
 	}
+	if err := writeLastFailedTests(root, result); err != nil {
+		return result, err
+	}
 	if junitPath != "" {
 		if err := writeJUnitFile(junitPath, result); err != nil {
 			return result, err
@@ -437,6 +471,25 @@ func newCLITestProgressReporter(renderer cliui.Renderer) *cliTestProgressReporte
 		Label: "Discovering tests",
 	})
 	return r
+}
+
+func progressModeFromArgs(args []string, fallback cliui.ProgressMode) cliui.ProgressMode {
+	mode := fallback
+	for _, arg := range args {
+		name := arg
+		if before, _, ok := strings.Cut(arg, "="); ok {
+			name = before
+		}
+		switch name {
+		case "--progress":
+			mode = cliui.ProgressLine
+		case "--progress-json":
+			mode = cliui.ProgressJSON
+		case "--no-progress", "--quiet", "-q":
+			mode = cliui.ProgressOff
+		}
+	}
+	return mode
 }
 
 func (r *cliTestProgressReporter) enqueue(progress apextest.TestProgress) {

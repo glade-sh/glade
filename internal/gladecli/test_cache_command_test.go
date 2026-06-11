@@ -30,6 +30,17 @@ func TestTestClearCache(t *testing.T) {
 	}
 }
 
+func TestTestClearCacheRejectsFlagTokenAsProjectValue(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "clear-cache", "--project", "--json"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "--project requires a value") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
 type stderrDiscard struct{}
 
 func (stderrDiscard) Write(p []byte) (int, error) { return len(p), nil }

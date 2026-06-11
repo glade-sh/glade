@@ -17,6 +17,7 @@ import (
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/flagparse"
 	"github.com/glade-sh/glade/internal/lsp"
 	"github.com/glade-sh/glade/internal/packageartifact"
 	"github.com/glade-sh/glade/internal/perfscan"
@@ -79,10 +80,22 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
+	case "config":
+		if err := runConfig(".", args[1:], stdout); err != nil {
+			writeCommandError(stderr, args[0], err)
+			return 1
+		}
+		return 0
+	case "init":
+		if err := runConfigInit(".", args[1:], stdout); err != nil {
+			writeCommandError(stderr, args[0], err)
+			return 1
+		}
+		return 0
 	case "parse":
-		result, err := runParse(ctx, args[1:], stdout)
+		result, err := runParse(ctx, args[1:], stdout, stderr)
 		if err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		if result.HasErrors() {
@@ -92,7 +105,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	case "inspect":
 		index, err := runInspect(ctx, args[1:], stdout)
 		if err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		if index.HasErrors() {
@@ -101,14 +114,14 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		return 0
 	case "schema":
 		if err := runSchema(ctx, args[1:], stdout, stderr); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	case "check":
 		result, err := runCheck(ctx, args[1:], stdout, stderr)
 		if err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		if result.HasErrors() {
@@ -117,14 +130,14 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		return 0
 	case "exec":
 		if err := runExec(ctx, args[1:], stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	case "test":
 		result, err := runTest(ctx, args[1:], stdout, stderr)
 		if err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		summary := result.Summary()
@@ -135,7 +148,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	case "dev":
 		result, ranTests, err := runDev(ctx, args[1:], stdout)
 		if err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		if ranTests {
@@ -147,70 +160,74 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		return 0
 	case "report":
 		if err := runReport(args[1:], stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	case "lsp":
 		if err := runLSP(ctx, args[1:], stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	case "profile":
 		if err := runProfile(ctx, args[1:], stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	case "debug":
 		if err := runDebug(ctx, args[1:], stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	case "editor":
 		if err := runEditor(ctx, args[1:], stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	case "dap":
 		if err := runDAP(ctx, args[1:], os.Stdin, stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	case "package":
-		if err := runPackage(ctx, args[1:], stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+		if err := runPackage(ctx, args[1:], stdout, stderr); err != nil {
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	case "server":
 		if err := runServer(ctx, args[1:], stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	case "playground":
 		if err := runPlayground(ctx, args[1:], stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	case "db":
-		if err := runDB(ctx, args[1:], stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
+		if err := runDB(ctx, args[1:], stdout, stderr); err != nil {
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	default:
+		message := fmt.Sprintf("unknown command %q", args[0])
+		if suggestion := flagparse.Suggest(args[0], cliui.CommandNames()); suggestion != "" {
+			message += fmt.Sprintf("; did you mean %q?", suggestion)
+		}
 		report := diagnostic.Report{
 			Diagnostics: []diagnostic.Diagnostic{{
 				Severity: diagnostic.Error,
 				Code:     "GLADECLI001",
-				Message:  fmt.Sprintf("unknown command %q", args[0]),
+				Message:  message,
 			}},
 		}
 		_ = report.WriteText(stderr)
@@ -226,6 +243,8 @@ func printHelpTopic(w io.Writer, args []string) {
 		return
 	}
 	switch args[0] {
+	case "exit-codes":
+		_ = cliui.WriteExitCodesHelp(w)
 	case "test":
 		_ = cliui.WriteTestHelp(w)
 	default:
@@ -235,6 +254,77 @@ func printHelpTopic(w io.Writer, args []string) {
 
 func isHelpArg(arg string) bool {
 	return arg == "help" || arg == "-h" || arg == "--help"
+}
+
+func writeCommandError(w io.Writer, command string, err error) {
+	message := err.Error()
+	if !strings.Contains(message, "did you mean") {
+		if suggestion := suggestFlagForCommand(command, message); suggestion != "" {
+			message += fmt.Sprintf("; did you mean %q?", suggestion)
+		}
+	}
+	fmt.Fprintf(w, "glade: %s\n", message)
+}
+
+func suggestFlagForCommand(command, message string) string {
+	if !strings.HasPrefix(message, "unknown flag ") {
+		return ""
+	}
+	flag := quotedValue(message)
+	if flag == "" {
+		return ""
+	}
+	ref, ok := cliui.FindCommandHelp(command)
+	if !ok {
+		return ""
+	}
+	candidates := make([]string, 0, len(ref.Flags))
+	for _, flagHelp := range ref.Flags {
+		candidates = append(candidates, flagHelp.Name)
+	}
+	return flagparse.Suggest(flag, candidates)
+}
+
+func quotedValue(message string) string {
+	start := strings.IndexByte(message, '"')
+	if start < 0 {
+		return ""
+	}
+	end := strings.IndexByte(message[start+1:], '"')
+	if end < 0 {
+		return ""
+	}
+	return message[start+1 : start+1+end]
+}
+
+func shellCommand(args ...string) string {
+	quoted := make([]string, 0, len(args))
+	for _, arg := range args {
+		quoted = append(quoted, shellQuoteArg(arg))
+	}
+	return strings.Join(quoted, " ")
+}
+
+func shellQuoteArg(arg string) string {
+	if arg == "" {
+		return "''"
+	}
+	if !strings.ContainsAny(arg, " \t\n'\"\\$`!*?[]{}()&;<>|") {
+		return arg
+	}
+	return "'" + strings.ReplaceAll(arg, "'", "'\\''") + "'"
+}
+
+func takeFlagValue(args []string, index *int, message string) (string, error) {
+	if *index+1 >= len(args) || flagTokenMissingValue(args[*index+1]) {
+		return "", errors.New(message)
+	}
+	*index++
+	return args[*index], nil
+}
+
+func flagTokenMissingValue(value string) bool {
+	return strings.HasPrefix(value, "-") && value != "-"
 }
 
 func helpRequestTopic(args []string) ([]string, bool) {
@@ -258,16 +348,13 @@ func helpRequestTopic(args []string) ([]string, bool) {
 }
 
 func runVersion(args []string, w io.Writer) error {
-	jsonOut := false
-	for _, arg := range args {
-		switch arg {
-		case "--json":
-			jsonOut = true
-		default:
-			return fmt.Errorf("unknown flag %q", arg)
-		}
+	parsed, err := flagparse.New("glade version").
+		Bool("json", "j").
+		Parse(args)
+	if err != nil {
+		return err
 	}
-	if jsonOut {
+	if parsed.Bool("json") {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		return enc.Encode(versionInfo{
@@ -281,78 +368,108 @@ func runVersion(args []string, w io.Writer) error {
 	return nil
 }
 
-func runPackage(ctx context.Context, args []string, w io.Writer) error {
+func runPackage(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if len(args) == 0 || args[0] != "build" {
-		return errors.New("usage: glade package build --project <root> --namespace <namespace> --output <artifact> [--version <version>] [--json]")
+	if len(args) == 0 {
+		return errors.New("usage: glade package build|info|validate|diff ...")
 	}
 
+	switch args[0] {
+	case "build":
+		return runPackageBuild(ctx, args[1:], w, progressW)
+	case "info":
+		return runPackageInfo(args[1:], w)
+	case "validate":
+		return runPackageValidate(args[1:], w)
+	case "diff":
+		return runPackageDiff(args[1:], w)
+	default:
+		return errors.New("usage: glade package build|info|validate|diff ...")
+	}
+}
+
+func runPackageBuild(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	root := "."
 	namespace := ""
 	version := ""
 	output := ""
-	jsonOut := false
-	for i := 1; i < len(args); i++ {
-		switch args[i] {
-		case "--project":
-			if i+1 >= len(args) {
-				return errors.New("--project requires a value")
-			}
-			root = args[i+1]
-			i++
-		case "--namespace":
-			if i+1 >= len(args) {
-				return errors.New("--namespace requires a value")
-			}
-			namespace = strings.TrimSpace(args[i+1])
-			i++
-		case "--version":
-			if i+1 >= len(args) {
-				return errors.New("--version requires a value")
-			}
-			version = strings.TrimSpace(args[i+1])
-			i++
-		case "--output":
-			if i+1 >= len(args) {
-				return errors.New("--output requires a value")
-			}
-			output = args[i+1]
-			i++
-		case "--json":
-			jsonOut = true
-		default:
-			return fmt.Errorf("unknown flag %q", args[i])
-		}
+	parsed, err := flagparse.New("glade package build").
+		String("project", "p").
+		String("namespace", "n").
+		String("version", "v").
+		String("output", "o").
+		Bool("json", "j").
+		Bool("progress", "").
+		Bool("progress-json", "").
+		Bool("no-progress", "").
+		Bool("quiet", "q").
+		Parse(args)
+	if err != nil {
+		return err
 	}
+	if parsed.String("project") != "" {
+		root = parsed.String("project")
+	}
+	namespace = strings.TrimSpace(parsed.String("namespace"))
+	version = strings.TrimSpace(parsed.String("version"))
+	output = parsed.String("output")
+	jsonOut := parsed.Bool("json")
 	if namespace == "" {
 		return errors.New("--namespace is required")
 	}
 	if output == "" {
 		return errors.New("--output is required")
 	}
+	progressMode := cliui.ProgressAuto
+	switch {
+	case parsed.Bool("progress-json"):
+		progressMode = cliui.ProgressJSON
+	case parsed.Bool("progress"):
+		progressMode = cliui.ProgressLine
+	case parsed.Bool("no-progress") || parsed.Bool("quiet"):
+		progressMode = cliui.ProgressOff
+	}
+	renderer := cliui.NewRenderer(cliui.RendererOptions{
+		Stderr: progressW,
+		Mode:   progressMode,
+	})
 
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "package", Label: "Loading project"})
 	p, err := project.Load(root)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "package failed"})
 		return err
 	}
 	p.Namespace = namespace
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "package", Label: "Loading metadata", Current: 1, Total: 4})
 	s, err := gladeschema.LoadProject(p)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "package failed"})
 		return err
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "package", Label: "Indexing package symbols", Current: 2, Total: 4})
 	idx := typesys.Build(p, s)
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "package", Label: "Building artifact", Current: 3, Total: 4})
 	artifact, err := packageartifact.Build(namespace, version, p, s, packageArtifactTypes(idx.Types))
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "package failed"})
 		return err
 	}
 	if err := os.MkdirAll(filepath.Dir(output), 0o755); err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "package failed"})
 		return err
 	}
 	if err := packageartifact.WriteJSON(output, artifact); err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "package failed"})
 		return err
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "package", Label: "Artifact written", Detail: output, Current: 4, Total: 4})
+	renderer.Finish(cliui.Result{OK: true, Label: "package built"})
 	if jsonOut {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
@@ -366,6 +483,129 @@ func runPackage(ctx context.Context, args []string, w io.Writer) error {
 	fmt.Fprintf(w, "apexTypes: %d\n", len(artifact.ApexTypes))
 	fmt.Fprintf(w, "objects: %d\n", len(artifact.Objects))
 	fmt.Fprintf(w, "sourceHash: %s\n", artifact.SourceHash)
+	return nil
+}
+
+func runPackageInfo(args []string, w io.Writer) error {
+	parsed, err := flagparse.New("glade package info").
+		Bool("json", "j").
+		AllowPositionals(true).
+		Parse(args)
+	if err != nil {
+		return err
+	}
+	if len(parsed.Positionals) != 1 {
+		return errors.New("usage: glade package info <artifact.json> [--json]")
+	}
+	artifact, err := packageartifact.ReadJSON(parsed.Positionals[0])
+	if err != nil {
+		return err
+	}
+	info := packageartifact.Inspect(artifact)
+	if parsed.Bool("json") {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(info)
+	}
+	fmt.Fprintf(w, "namespace: %s\n", info.Namespace)
+	if info.Version != "" {
+		fmt.Fprintf(w, "version: %s\n", info.Version)
+	}
+	fmt.Fprintf(w, "sourceRoot: %s\n", info.SourceRoot)
+	fmt.Fprintf(w, "sourceApiVersion: %s\n", info.SourceAPIVersion)
+	fmt.Fprintf(w, "apexTypes: %d\n", info.ApexTypes)
+	fmt.Fprintf(w, "objects: %d\n", info.Objects)
+	fmt.Fprintf(w, "customMetadataRecords: %d\n", info.CustomMetadataRecords)
+	fmt.Fprintf(w, "labels: %d\n", info.Labels)
+	fmt.Fprintf(w, "staticResources: %d\n", info.StaticResources)
+	fmt.Fprintf(w, "sourceHash: %s\n", info.SourceHash)
+	return nil
+}
+
+func runPackageValidate(args []string, w io.Writer) error {
+	parsed, err := flagparse.New("glade package validate").
+		Bool("json", "j").
+		AllowPositionals(true).
+		Parse(args)
+	if err != nil {
+		return err
+	}
+	if len(parsed.Positionals) != 1 {
+		return errors.New("usage: glade package validate <artifact.json> [--json]")
+	}
+	artifact, err := packageartifact.ReadJSON(parsed.Positionals[0])
+	if err != nil {
+		return err
+	}
+	issues := packageartifact.Validate(artifact)
+	if parsed.Bool("json") {
+		out := struct {
+			OK     bool     `json:"ok"`
+			Issues []string `json:"issues,omitempty"`
+		}{OK: len(issues) == 0, Issues: issues}
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(out)
+	}
+	if len(issues) == 0 {
+		fmt.Fprintln(w, "package artifact ok")
+		return nil
+	}
+	for _, issue := range issues {
+		fmt.Fprintf(w, "package artifact issue: %s\n", issue)
+	}
+	return fmt.Errorf("package artifact has %d issue(s)", len(issues))
+}
+
+func runPackageDiff(args []string, w io.Writer) error {
+	parsed, err := flagparse.New("glade package diff").
+		Bool("json", "j").
+		AllowPositionals(true).
+		Parse(args)
+	if err != nil {
+		return err
+	}
+	if len(parsed.Positionals) != 2 {
+		return errors.New("usage: glade package diff <from.json> <to.json> [--json]")
+	}
+	from, err := packageartifact.ReadJSON(parsed.Positionals[0])
+	if err != nil {
+		return err
+	}
+	to, err := packageartifact.ReadJSON(parsed.Positionals[1])
+	if err != nil {
+		return err
+	}
+	diff := packageartifact.Compare(from, to)
+	if parsed.Bool("json") {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(diff)
+	}
+	fmt.Fprintf(w, "changed: %t\n", diff.Changed)
+	fmt.Fprintf(w, "types: +%d -%d changed=%d\n", diff.AddedTypes, diff.RemovedTypes, diff.ChangedTypes)
+	fmt.Fprintf(w, "objects: +%d -%d changed=%d\n", diff.AddedObjects, diff.RemovedObjects, diff.ChangedObjects)
+	if diff.SourceHashChanged {
+		fmt.Fprintln(w, "sourceHash: changed")
+	}
+	for _, name := range diff.AddedTypeNames {
+		fmt.Fprintf(w, "+ type %s\n", name)
+	}
+	for _, name := range diff.RemovedTypeNames {
+		fmt.Fprintf(w, "- type %s\n", name)
+	}
+	for _, name := range diff.ChangedTypeNames {
+		fmt.Fprintf(w, "~ type %s\n", name)
+	}
+	for _, name := range diff.AddedObjectNames {
+		fmt.Fprintf(w, "+ object %s\n", name)
+	}
+	for _, name := range diff.RemovedObjectNames {
+		fmt.Fprintf(w, "- object %s\n", name)
+	}
+	for _, name := range diff.ChangedObjectNames {
+		fmt.Fprintf(w, "~ object %s\n", name)
+	}
 	return nil
 }
 
@@ -414,20 +654,15 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) error {
 	}
 
 	root := "."
-	jsonOut := false
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--project":
-			if i+1 >= len(args) {
-				return errors.New("--project requires a value")
-			}
-			root = args[i+1]
-			i++
-		case "--json":
-			jsonOut = true
-		default:
-			return fmt.Errorf("unknown flag %q", args[i])
-		}
+	parsed, err := flagparse.New("glade doctor").
+		String("project", "p").
+		Bool("json", "j").
+		Parse(args)
+	if err != nil {
+		return err
+	}
+	if parsed.String("project") != "" {
+		root = parsed.String("project")
 	}
 	if info, err := os.Stat(root); err != nil {
 		return fmt.Errorf("project root %q: %w", root, err)
@@ -461,7 +696,7 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) error {
 		info.ProjectRoot = cfg.Project.Root
 		info.DefaultNamespace = cfg.Project.DefaultNamespace
 	}
-	if jsonOut {
+	if parsed.Bool("json") {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		return enc.Encode(info)
@@ -486,33 +721,49 @@ func parserSelfCheck() string {
 	return "UNAVAILABLE (could not parse a trivial class)"
 }
 
-func runParse(ctx context.Context, args []string, w io.Writer) (apexast.Result, error) {
+func runParse(ctx context.Context, args []string, w io.Writer, progressW io.Writer) (apexast.Result, error) {
 	if err := ctx.Err(); err != nil {
 		return apexast.Result{}, err
 	}
 
-	jsonOut := false
-	paths := make([]string, 0, len(args))
-	for _, arg := range args {
-		switch arg {
-		case "--json":
-			jsonOut = true
-		default:
-			paths = append(paths, arg)
-		}
+	parsed, err := flagparse.New("glade parse").
+		Bool("json", "j").
+		Bool("progress", "").
+		Bool("progress-json", "").
+		Bool("no-progress", "").
+		Bool("quiet", "q").
+		AllowPositionals(true).
+		Parse(args)
+	if err != nil {
+		return apexast.Result{}, err
 	}
+	jsonOut := parsed.Bool("json")
+	paths := parsed.Positionals
 	if len(paths) == 0 {
 		return apexast.Result{}, errors.New("usage: glade parse <paths...> [--json]")
 	}
+	progressMode := cliui.ProgressAuto
+	switch {
+	case parsed.Bool("progress-json"):
+		progressMode = cliui.ProgressJSON
+	case parsed.Bool("progress"):
+		progressMode = cliui.ProgressLine
+	case parsed.Bool("no-progress") || parsed.Bool("quiet"):
+		progressMode = cliui.ProgressOff
+	}
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: progressMode})
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "parse", Label: "Finding Apex files"})
 
 	files, err := expandApexPaths(paths)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "parse failed"})
 		return apexast.Result{}, err
 	}
 
 	parser := apexast.NewParser()
 	result := apexast.Result{Files: make([]apexast.File, 0, len(files))}
-	for _, path := range files {
+	for i, path := range files {
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "parse", Label: filepath.Base(path), Current: i + 1, Total: len(files)})
 		file, err := parser.ParseFile(path)
 		if err != nil {
 			result.Diagnostics = append(result.Diagnostics, diagnostic.Diagnostic{
@@ -525,6 +776,8 @@ func runParse(ctx context.Context, args []string, w io.Writer) (apexast.Result, 
 		}
 		result.Files = append(result.Files, file)
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "parse", Label: "Apex parsed", Current: len(files), Total: len(files)})
+	renderer.Finish(cliui.Result{OK: !result.HasErrors(), Label: "parse complete"})
 
 	if jsonOut {
 		enc := json.NewEncoder(w)
@@ -629,34 +882,25 @@ func runInspectPerformance(ctx context.Context, args []string, w io.Writer) erro
 		return err
 	}
 	root := "."
-	jsonOut := false
 	tracePath := ""
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--project":
-			if i+1 >= len(args) {
-				return errors.New("--project requires a value")
-			}
-			root = args[i+1]
-			i++
-		case "--json":
-			jsonOut = true
-		case "--trace":
-			if i+1 >= len(args) {
-				return errors.New("--trace requires a value")
-			}
-			tracePath = args[i+1]
-			i++
-		default:
-			return fmt.Errorf("unknown flag %q", args[i])
-		}
+	parsed, err := flagparse.New("glade inspect performance").
+		String("project", "p").
+		String("trace", "t").
+		Bool("json", "j").
+		Parse(args)
+	if err != nil {
+		return err
 	}
+	if parsed.String("project") != "" {
+		root = parsed.String("project")
+	}
+	tracePath = parsed.String("trace")
 
 	report, err := perfscan.AnalyzeProject(perfscan.Options{ProjectRoot: root, TracePath: tracePath})
 	if err != nil {
 		return err
 	}
-	if jsonOut {
+	if parsed.Bool("json") {
 		return perfscan.WriteJSON(w, report)
 	}
 	return perfscan.WriteMarkdown(w, report)
@@ -727,7 +971,7 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		return sema.Result{}, err
 	}
 
-	root, jsonOut, progressMode, err := parseProjectProgressFlags(args)
+	root, outputFormat, outputPath, progressMode, err := parseCheckFlags(args)
 	if err != nil {
 		return sema.Result{}, err
 	}
@@ -791,19 +1035,85 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		Label: "check complete",
 	})
 
-	if jsonOut {
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-		return result, enc.Encode(result)
+	out := w
+	var file *os.File
+	if outputPath != "" {
+		if err := os.MkdirAll(filepath.Dir(outputPath), 0o755); err != nil {
+			return result, err
+		}
+		file, err = os.Create(outputPath)
+		if err != nil {
+			return result, err
+		}
+		defer file.Close()
+		out = file
 	}
 
-	return result, cliui.WriteCheckResult(w, cliui.CheckResultInfo{
+	switch outputFormat {
+	case "json":
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		if out != w {
+			enc = json.NewEncoder(out)
+			enc.SetIndent("", "  ")
+		}
+		return result, enc.Encode(result)
+	case "sarif":
+		return result, diagnostic.Report{Diagnostics: result.Diagnostics}.WriteSARIF(out)
+	case "github":
+		return result, diagnostic.Report{Diagnostics: result.Diagnostics}.WriteGitHubAnnotations(out)
+	}
+
+	return result, cliui.WriteCheckResult(out, cliui.CheckResultInfo{
 		ProjectRoot: result.Project.Root,
 		Types:       result.Summary.Types,
 		Triggers:    result.Summary.Triggers,
 		Objects:     result.Summary.Objects,
 		Diagnostics: result.Diagnostics,
 	})
+}
+
+func parseCheckFlags(args []string) (root string, outputFormat string, outputPath string, progressMode cliui.ProgressMode, err error) {
+	root = "."
+	outputFormat = "text"
+	progressMode = cliui.ProgressAuto
+	parsed, err := flagparse.New("glade check").
+		String("project", "p").
+		Bool("json", "j").
+		String("format", "").
+		String("output", "o").
+		Bool("progress", "").
+		Bool("progress-json", "").
+		Bool("no-progress", "").
+		Bool("quiet", "q").
+		Parse(args)
+	if err != nil {
+		return "", "", "", cliui.ProgressOff, err
+	}
+	if parsed.String("project") != "" {
+		root = parsed.String("project")
+	}
+	if parsed.Bool("json") {
+		outputFormat = "json"
+	}
+	if parsed.String("format") != "" {
+		outputFormat = strings.ToLower(strings.TrimSpace(parsed.String("format")))
+	}
+	switch outputFormat {
+	case "text", "json", "sarif", "github":
+	default:
+		return "", "", "", cliui.ProgressOff, fmt.Errorf("--format must be text, json, sarif, or github")
+	}
+	outputPath = parsed.String("output")
+	switch {
+	case parsed.Bool("progress-json"):
+		progressMode = cliui.ProgressJSON
+	case parsed.Bool("progress"):
+		progressMode = cliui.ProgressLine
+	case parsed.Bool("no-progress") || parsed.Bool("quiet"):
+		progressMode = cliui.ProgressOff
+	}
+	return root, outputFormat, outputPath, progressMode, nil
 }
 
 func loadIndex(root string) (typesys.Index, error) {
@@ -837,45 +1147,33 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 
-	jsonOut := false
 	debug := false
 	tracePath := ""
 	debugLogPath := ""
 	limitMode := vm.LimitMode("")
-	sourceParts := make([]string, 0, len(args))
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		switch arg {
-		case "--json":
-			jsonOut = true
-		case "--debug":
-			debug = true
-		case "--trace":
-			if i+1 >= len(args) {
-				return errors.New("--trace requires a path")
-			}
-			tracePath = args[i+1]
-			i++
-		case "--debug-log":
-			if i+1 >= len(args) {
-				return errors.New("--debug-log requires a path (use - for stdout)")
-			}
-			debugLogPath = args[i+1]
-			i++
-		case "--limit-mode":
-			if i+1 >= len(args) {
-				return errors.New("--limit-mode requires a value")
-			}
-			mode, err := parseLimitMode(args[i+1])
-			if err != nil {
-				return err
-			}
-			limitMode = mode
-			i++
-		default:
-			sourceParts = append(sourceParts, arg)
-		}
+	parsed, err := flagparse.New("glade exec").
+		Bool("json", "j").
+		Bool("debug", "").
+		String("trace", "t").
+		String("debug-log", "").
+		String("limit-mode", "").
+		AllowPositionals(true).
+		Parse(args)
+	if err != nil {
+		return err
 	}
+	jsonOut := parsed.Bool("json")
+	debug = parsed.Bool("debug")
+	tracePath = parsed.String("trace")
+	debugLogPath = parsed.String("debug-log")
+	if parsed.String("limit-mode") != "" {
+		mode, err := parseLimitMode(parsed.String("limit-mode"))
+		if err != nil {
+			return err
+		}
+		limitMode = mode
+	}
+	sourceParts := parsed.Positionals
 	if len(sourceParts) == 0 {
 		return errors.New("usage: glade exec [--json] [--trace <path>] [--debug-log <path>] '<anonymous apex>'")
 	}
@@ -945,27 +1243,22 @@ func runLSP(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	root := "."
-	diagnosticsOnce := false
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--project":
-			if i+1 >= len(args) {
-				return errors.New("--project requires a value")
-			}
-			root = args[i+1]
-			i++
-		case "--diagnostics-once":
-			diagnosticsOnce = true
-		default:
-			return fmt.Errorf("unknown flag %q", args[i])
-		}
+	parsed, err := flagparse.New("glade lsp").
+		String("project", "p").
+		Bool("diagnostics-once", "").
+		Parse(args)
+	if err != nil {
+		return err
+	}
+	if parsed.String("project") != "" {
+		root = parsed.String("project")
 	}
 	index, err := loadIndex(root)
 	if err != nil {
 		return err
 	}
 	handler := lsp.NewHandler(index)
-	if diagnosticsOnce {
+	if parsed.Bool("diagnostics-once") {
 		for _, notification := range handler.PublishDiagnostics(sema.Analyze(index).Diagnostics) {
 			if err := lsp.WriteMessage(w, notification); err != nil {
 				return err
@@ -983,18 +1276,19 @@ func runProfile(ctx context.Context, args []string, w io.Writer) error {
 	if len(args) == 0 || args[0] != "analyze" {
 		return errors.New("usage: glade profile analyze <trace.json> [--json]")
 	}
-	jsonOut := false
 	tracePath := ""
-	for _, arg := range args[1:] {
-		switch arg {
-		case "--json":
-			jsonOut = true
-		default:
-			if tracePath != "" {
-				return fmt.Errorf("unexpected argument %q", arg)
-			}
-			tracePath = arg
-		}
+	parsed, err := flagparse.New("glade profile analyze").
+		Bool("json", "j").
+		AllowPositionals(true).
+		Parse(args[1:])
+	if err != nil {
+		return err
+	}
+	if len(parsed.Positionals) > 1 {
+		return fmt.Errorf("unexpected argument %q", parsed.Positionals[1])
+	}
+	if len(parsed.Positionals) == 1 {
+		tracePath = parsed.Positionals[0]
 	}
 	if tracePath == "" {
 		return errors.New("usage: glade profile analyze <trace.json> [--json]")
@@ -1009,7 +1303,7 @@ func runProfile(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	report := profile.Analyze(doc)
-	if jsonOut {
+	if parsed.Bool("json") {
 		return profile.WriteJSON(w, report)
 	}
 	return profile.WriteMarkdown(w, report)
@@ -1034,47 +1328,45 @@ func storageBaseline() storage.OrgState {
 
 func parseProjectFlags(args []string) (root string, jsonOut bool, err error) {
 	root = "."
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--json":
-			jsonOut = true
-		case "--project":
-			if i+1 >= len(args) {
-				return "", false, errors.New("--project requires a value")
-			}
-			root = args[i+1]
-			i++
-		default:
-			return "", false, fmt.Errorf("unknown flag %q", args[i])
-		}
+	parsed, err := flagparse.New("glade project").
+		String("project", "p").
+		Bool("json", "j").
+		Parse(args)
+	if err != nil {
+		return "", false, err
 	}
-	return root, jsonOut, nil
+	if parsed.String("project") != "" {
+		root = parsed.String("project")
+	}
+	return root, parsed.Bool("json"), nil
 }
 
 func parseProjectProgressFlags(args []string) (root string, jsonOut bool, progressMode cliui.ProgressMode, err error) {
 	root = "."
 	progressMode = cliui.ProgressAuto
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--json":
-			jsonOut = true
-		case "--progress":
-			progressMode = cliui.ProgressLine
-		case "--progress-json":
-			progressMode = cliui.ProgressJSON
-		case "--no-progress", "--quiet":
-			progressMode = cliui.ProgressOff
-		case "--project":
-			if i+1 >= len(args) {
-				return "", false, cliui.ProgressOff, errors.New("--project requires a value")
-			}
-			root = args[i+1]
-			i++
-		default:
-			return "", false, cliui.ProgressOff, fmt.Errorf("unknown flag %q", args[i])
-		}
+	parsed, err := flagparse.New("glade project progress").
+		String("project", "p").
+		Bool("json", "j").
+		Bool("progress", "").
+		Bool("progress-json", "").
+		Bool("no-progress", "").
+		Bool("quiet", "q").
+		Parse(args)
+	if err != nil {
+		return "", false, cliui.ProgressOff, err
 	}
-	return root, jsonOut, progressMode, nil
+	if parsed.String("project") != "" {
+		root = parsed.String("project")
+	}
+	switch {
+	case parsed.Bool("progress"):
+		progressMode = cliui.ProgressLine
+	case parsed.Bool("progress-json"):
+		progressMode = cliui.ProgressJSON
+	case parsed.Bool("no-progress") || parsed.Bool("quiet"):
+		progressMode = cliui.ProgressOff
+	}
+	return root, parsed.Bool("json"), progressMode, nil
 }
 
 func expandApexPaths(paths []string) ([]string, error) {

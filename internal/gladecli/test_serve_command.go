@@ -22,17 +22,17 @@ func runTestServe(ctx context.Context, args []string, logW io.Writer) error {
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--project":
-			if i+1 >= len(args) {
-				return errors.New("--project requires a value")
+			value, err := takeFlagValue(args, &i, "--project requires a value")
+			if err != nil {
+				return err
 			}
-			root = args[i+1]
-			i++
+			root = value
 		case "--socket":
-			if i+1 >= len(args) {
-				return errors.New("--socket requires a value")
+			value, err := takeFlagValue(args, &i, "--socket requires a value")
+			if err != nil {
+				return err
 			}
-			socket = args[i+1]
-			i++
+			socket = value
 		case "--watch":
 			watchOn = true
 		case "--no-watch":
@@ -121,5 +121,10 @@ func tryTestServerRun(
 		return testreport.Run{}, false, nil
 	}
 	result, err := runTestViaServer(ctx, socket, filter, changedSince, format, junitPath, debug, w)
+	if err == nil {
+		if recordErr := writeLastFailedTests(root, result); recordErr != nil {
+			return result, true, recordErr
+		}
+	}
 	return result, true, err
 }

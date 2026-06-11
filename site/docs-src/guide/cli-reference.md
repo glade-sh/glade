@@ -19,12 +19,36 @@ glade doctor
 glade doctor --project .
 ```
 
+## `glade completion`
+
+Generate shell completion scripts.
+
+```bash
+source <(glade completion bash)
+glade completion zsh > ~/.zsh/completions/_glade
+glade completion fish > ~/.config/fish/completions/glade.fish
+```
+
+## `glade config`
+
+Inspect, validate, and create `glade.yml`.
+
+```bash
+glade config show --project .
+glade config show --project . --json
+glade config validate --project .
+glade config init --project . --yes --package-dir force-app
+```
+
+`glade init` is a top-level alias for `glade config init`.
+
 ## `glade parse`
 
 Parse Apex files and report parser diagnostics.
 
 ```bash
 glade parse force-app/main/default/classes/AccountService.cls
+glade parse force-app/main/default/classes --progress
 glade parse force-app/main/default/classes --json
 ```
 
@@ -53,6 +77,8 @@ Parse and type-check supported Apex and metadata semantics.
 ```bash
 glade check --project .
 glade check --project . --json
+glade check --project . --format sarif --output glade-check.sarif
+glade check --project . --format github
 ```
 
 ## `glade exec`
@@ -67,7 +93,9 @@ glade exec --project . --limit-mode strict "System.debug(Limits.getDmlStatements
 
 ## `glade test`
 
-Discover and run local Apex tests. Useful flags include `--watch`, `--watch-once`, `--changed-since <ref>`, `--daemon`, `--connect`, `--no-serve`, `--filter`, `--json`, `--junit`, and `--limit-mode`.
+Discover and run local Apex tests. Useful flags include `changed --since <ref>`,
+`--watch`, `--watch-once`, `--last-failed`, `--wizard`, `--daemon`,
+`--connect`, `--no-serve`, `--filter`, `--json`, `--junit`, and `--limit-mode`.
 
 `glade test serve` keeps the runtime warm across CLI invocations. Later runs
 auto-connect through `.glade/test/serve.sock` unless `--no-serve` is set.
@@ -77,14 +105,18 @@ build. See [Test Startup Cache](/guide/test-startup-cache) for freshness rules.
 
 ```bash
 glade test serve --project .
+glade test daemon status --project .
 glade test --project .
 glade test --project . --filter AccountServiceTest --json
 glade test --project . --filter AccountServiceTest.testCreatesAccount --junit reports/glade-junit.xml
 glade test --project . --connect --filter AccountServiceTest
-glade test --project . --changed-since origin/main --json
+glade test changed --project . --since origin/main --json
+glade test failed --project .
+glade test --project . --wizard
 glade test --project . --watch
 glade test --project . --daemon --watch
 glade test --project . --limit-mode permissive --json
+glade test daemon stop --project .
 ```
 
 Clear the on-disk startup cache or skip it for one run:
@@ -95,6 +127,20 @@ glade test --project . --no-cache --filter AccountServiceTest
 ```
 
 Run `glade help test` for the full flag list.
+
+## `glade dev` and `glade report`
+
+Run the human-focused test loop and save artifacts under `.glade/runs`.
+
+```bash
+glade dev --project .
+glade dev test --project . --out .glade/runs
+glade dev test --project . --failed --out .glade/runs
+glade report list --runs-dir .glade/runs
+glade report show latest --runs-dir .glade/runs --json
+glade report github latest --runs-dir .glade/runs
+glade report export latest --runs-dir .glade/runs --format html --output glade-report.html
+```
 
 ## `glade lsp`
 
@@ -115,6 +161,37 @@ glade profile analyze reports/trace.json
 glade profile analyze reports/trace.json --json
 ```
 
+## `glade debug`
+
+Parse, profile, explain, or synthesize from Salesforce debug logs.
+
+```bash
+glade debug parse --log apex.log --json
+glade debug profile --log apex.log
+glade debug explain --log apex.log --project . --json
+```
+
+## `glade editor` and `glade dap`
+
+Install and check editor integrations, or run the Debug Adapter Protocol server.
+
+```bash
+glade editor doctor vscode
+glade editor install vscode --vsix vscode-glade.vsix --force
+glade dap --project .
+```
+
+## `glade package`
+
+Build, inspect, validate, and diff managed package artifacts.
+
+```bash
+glade package build --project . --namespace pkg --output pkg.json --progress
+glade package info pkg.json --json
+glade package validate pkg.json
+glade package diff old.json pkg.json --json
+```
+
 ## `glade server`
 
 Start the local Salesforce-shaped REST API baseline. Use `--db` for persistence and `--limit-mode` for execute-anonymous limit behavior.
@@ -131,7 +208,8 @@ Seed, reset, export, and inspect local org storage fixtures.
 
 ```bash
 glade db reset --db .glade/local-org.sqlite --json
-glade db seed --db .glade/local-org.sqlite seed.json --json
+glade db seed --wizard --db .glade/local-org.sqlite --project . seed.json
+glade db seed --db .glade/local-org.sqlite --project . --progress seed.json
 glade db inspect --db .glade/local-org.sqlite --json
 glade db export --db .glade/local-org.sqlite > exported-fixture.json
 ```
@@ -144,6 +222,7 @@ Start the local browser playground for editing classes, running anonymous Apex, 
 glade playground --db .glade/playground/org.sqlite --addr 127.0.0.1:1789 --open
 glade playground --examples --db .glade/playground/org.sqlite
 glade playground --project . --db .glade/playground/org.sqlite
+glade playground --wizard --project . --examples
 ```
 
 ::: tip Try it

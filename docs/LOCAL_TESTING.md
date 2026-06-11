@@ -117,13 +117,13 @@ To never skip a test that could catch a regression, selection falls back to
 
 ### Run once against a git ref
 
-Use `--changed-since <git-ref>` to select tests from everything changed since a
-ref. The ref is passed to git, so common choices are `origin/main`, `main`, or
-the merge-base branch CI uses.
+Use `glade test changed --since <git-ref>` to select tests from everything
+changed since a ref. The ref is passed to git, so common choices are
+`origin/main`, `main`, or the merge-base branch CI uses.
 
 ```bash
 git fetch origin main
-glade test --project . --changed-since origin/main --json
+glade test changed --project . --since origin/main --json
 ```
 
 Only the selected classes execute. If the change set hits a trigger or schema,
@@ -171,6 +171,9 @@ Quick reference:
 
 | Goal | Command |
 | ---- | ------- |
+| Run tests affected by changed files | `glade test changed --project . --since HEAD` |
+| Rerun the last failed tests | `glade test failed --project .` |
+| Pick the next loop command | `glade test --project . --wizard` |
 | Delete on-disk cache | `glade test clear-cache --project .` |
 | One run without disk cache | `glade test --project . --no-cache` |
 | Fastest repeated CLI loops | `glade test serve --project .` (see below) |
@@ -189,7 +192,9 @@ Then run focused tests from another terminal. `glade test` auto-connects when
 `.glade/test/serve.sock` is reachable:
 
 ```bash
+glade test daemon status --project .
 glade test --project . --filter AccountServiceTest
+glade test daemon stop --project .
 ```
 
 Use `--connect` to require the server, or `--no-serve` to force a local cold or
@@ -202,46 +207,13 @@ updated index and reference graph in-process. Selection on each change is near
 instant — only the edited file is re-scanned, never the whole project.
 
 ```bash
-glade test --project . --daemon --changed-since origin/main --json
 glade test --project . --daemon --watch
 ```
 
 Use `glade test serve` when separate CLI invocations should stay warm. Use
 `--daemon` when one `glade test --watch` process should avoid reloading the
-project on every save.
-
-## Compatibility Local-Test Runs
-
-`glade-tools local-tests` uses the same local runtime but reports readiness
-outcomes for large-project parity work. Per-test outcome strings include
-`pass`, `fail`, `unsupported`, `load_error`, `compile_error`, `internal_error`,
-`assert_fail`, `runtime_gap`, `compile_gap`, and `timeout`. Summary keys use
-camelCase names such as `loadError`, `compileError`, `internalError`,
-`assertFail`, and `runtimeGap`.
-
-Use it when you want triage output, blocker grouping, sharding, or the
-compatibility JSON shape:
-
-```bash
-glade-tools local-tests --project . --parallel auto --json
-```
-
-Focused runs use explicit class and method flags:
-
-```bash
-glade-tools local-tests --project . --class AccountServiceTest --json
-glade-tools local-tests --project . --class AccountServiceTest --method testCreatesAccount --json
-```
-
-Affected-test selection is available here too:
-
-```bash
-glade-tools local-tests --project . --changed-since origin/main --parallel auto --json
-```
-
-For this command, `--parallel <n|auto>` controls class workers. The
-day-to-day `glade test` command uses `--parallelism <n>` and has
-`--parallel-methods` enabled by default.
+project on every save. For a one-shot changed-file run, use
+`glade test changed --project . --since origin/main`.
 
 ## Anonymous Apex
 

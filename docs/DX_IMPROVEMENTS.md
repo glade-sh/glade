@@ -3,11 +3,12 @@
 Analysis date: 2026-06-10. Based on full source review of `cmd/`, `internal/gladecli/`,
 `internal/cliui/`, `internal/config/`, `internal/project/`, and related packages.
 
-## Current CLI Surface (19 top-level commands)
+## Current CLI Surface (23 top-level commands)
 
 ```
-version  doctor  parse  inspect  schema  check  exec  debug  editor
-dap      test    dev    report   lsp      profile package server playground  db  help
+version  doctor  completion config init    parse   inspect schema check
+exec     debug   editor     dap    test    dev     report  lsp    profile
+package  server  playground db     help
 ```
 
 ---
@@ -17,13 +18,14 @@ dap      test    dev    report   lsp      profile package server playground  db 
 For a CLI with 19+ commands and dozens of flags, shell completion was the
 single highest-ROI DX gap. The first cut is now in place.
 
-**Current state:** First cut implemented: `glade completion bash|zsh|fish`
+**Current state:** Phase 1 implemented: `glade completion bash|zsh|fish`
 generates scripts from a shared command catalog. Terminal users can now complete
-top-level commands, subcommands, and long flags.
+top-level commands, subcommands, and long flags. `docs/INSTALL.md` and
+`glade help completion` include install snippets.
 
-**Remaining polish:** add install snippets to docs, add smarter value completion
-for project paths and enum-like values, and keep command metadata in sync as the
-flag parser improves.
+**Remaining polish:** add smarter value completion for project paths and enum-like
+values, and keep command metadata in sync as more command internals move to the
+shared flag parser.
 
 **Files touched:** `internal/gladecli/completion_command.go` (new), `internal/gladecli/cli.go`.
 
@@ -31,11 +33,12 @@ flag parser improves.
 
 ## 2. Help System (P0 — High Impact)
 
-The help system had been largely absent. First cut implemented: `glade <command>
+The help system had been largely absent. Phase 1 implemented: `glade <command>
 --help`, `glade <subcommand> --help`, and `glade help <command>` now use the
 shared command catalog. `glade help test` keeps its deeper hand-written reference.
-Before that, every other command that received unknown flags or no args printed a
-bare one-line usage error with no flag descriptions:
+`glade help exit-codes` now documents the process exit code contract. Before
+that, every other command that received unknown flags or no args printed a bare
+one-line usage error with no flag descriptions:
 
 ```
 $ glade parse --help
@@ -51,8 +54,8 @@ Compare to `glade test --help` which produces a deeper reference with sections f
 
 **Remaining polish:**
 - Add deeper per-subcommand topics where a command has many modes.
-- Generate help directly from the future shared flag parser.
-- Add typo suggestions for unknown commands and flags.
+- Generate help directly from flag definitions instead of keeping metadata in a
+  separate command catalog.
 
 **Files touched:** `internal/cliui/help.go`, `internal/gladecli/cli.go`.
 
@@ -60,8 +63,9 @@ Compare to `glade test --help` which produces a deeper reference with sections f
 
 ## 3. Flag Parsing Boilerplate (P1 — Medium Impact, Internal Quality)
 
-Every command manually parses flags with index-based loops. This pattern is repeated
-verbatim across 9 files covering roughly 500 lines of near-identical code:
+Before Phase 1, every command manually parsed flags with index-based loops. This
+pattern was repeated verbatim across 9 files covering roughly 500 lines of
+near-identical code:
 
 ```go
 // From cli.go:770 (pattern repeated in every command file)
@@ -84,24 +88,19 @@ The `parseProjectFlags` helper at `cli.go:959` and `parseProjectProgressFlags` a
 They don't address per-command flags like `--filter`, `--changed-since`, `--addr`,
 `--limit-mode`, `--watch`, etc.
 
-**Problems:**
-- Every new flag needs boilerplate in multiple places
-- Subtle bugs from inconsistent handling (e.g., unknown flags silently consumed as
-  positionals in `parse`)
-- No `--` end-of-options support anywhere
-- No short flags (`-p` for `--project`, `-j` for `--json`)
-- Flag value validation is scattered
+**Current state:** Phase 1 added `internal/flagparse`, with bool/string flags,
+short aliases, `--` end-of-options handling, and Levenshtein suggestions. It now
+backs the common project flag helpers plus high-traffic commands such as
+`version`, `doctor`, `parse`, `inspect performance`, `schema load`, `check`,
+`exec`, `test`, `lsp`, `profile analyze`, and `package build`. Leaf commands
+that still have hand loops get typo suggestions at the `Run` error formatter.
 
-**Suggested:** A lightweight internal flag parser (conceptually similar to `flag.FlagSet`
-but without `flag`'s global state and `os.Args` assumptions, since `Run()` takes `args []string`).
-This would:
-- Eliminate ~500 lines of boilerplate
-- Make `--help` generation automatic (flags are registered with descriptions)
-- Enable short flags
-- Provide consistent error messages including Levenshtein suggestions for typos
+**Remaining polish:** migrate the remaining leaf command loops (`dev`, `debug`,
+`editor`, `db`, `server`, and `playground`) when those files next move, then
+derive command help from parser registrations instead of duplicate metadata.
 
-**Files touched:** New `internal/flagparse/` or embedding in `internal/cliui/`.
-All command files rewritten to use it.
+**Files touched:** `internal/flagparse/`, `internal/gladecli/cli.go`,
+`internal/gladecli/test_command.go`.
 
 ---
 
@@ -122,17 +121,17 @@ Current `--json` support by command:
 | `debug` | Yes | Partial (some subcommands) |
 | `editor` | No | Not applicable |
 | `dap` | No | JSON protocol already |
-| `report` | No | No structured output |
+| `report` | Yes | `show latest --json`; GitHub and HTML outputs also landed |
 | `lsp` | No | JSON protocol already |
 | `profile analyze` | Yes | |
-| `package build` | No | `--json` flag exists but only controls stdout — the artifact is always JSON |
+| `package build/info/validate/diff` | Yes | Build writes artifact JSON; info, validate, and diff also support `--json` |
 | `server` | No | Not applicable |
 | `playground` | No | Not applicable |
 | `db` | Yes | inspect/export |
 | `dev` | No | Human-oriented by design |
 
 Remaining key gap:
-- `glade report show latest --json` should emit the run summary
+- Add structured output to `editor doctor` if editor integrations need agent-readable status.
 
 **Files touched:** `internal/gladecli/cli.go` (version, doctor), `internal/gladecli/dev_command.go` (report).
 
@@ -140,21 +139,21 @@ Remaining key gap:
 
 ## 5. Progress Indicators (P2 — Medium Impact)
 
-Only three commands use the progress renderer system:
+Phase 5 wired the existing progress renderer into the slow local workflow commands
+that have bounded work:
 - `check` — 4-phase progress (load project, load metadata, index, semantic checks)
 - `schema load` — 2-phase progress
 - `test` — rich progress with running count, per-test status, slow-test warnings
-
-Commands that _could_ benefit:
-- `parse` — scanning hundreds of files with no feedback; a simple file count ticker
-- `package build` — indexing and artifact generation can be slow on large projects
-- `db seed` — large fixture files take time
-- `exec` with large computations
+- `parse` — Apex file discovery and per-file parse ticks
+- `package build` — project load, metadata load, symbol index, artifact write
+- `db seed` — fixture read, apply, save
 
 The progress infrastructure in `cliui/` already supports modes: auto (TTY), line,
-JSON-NDJSON, and off. It's well-designed and needs only to be wired into more commands.
+JSON-NDJSON, and off. Keep new slow commands on that renderer instead of
+inventing one-off progress text.
 
-**Files touched:** `internal/gladecli/cli.go` (parse, package), `internal/gladecli/db_command.go`.
+**Files touched:** `internal/gladecli/cli.go` (parse, package), `internal/gladecli/db_command.go`,
+`docs/RICH_LOCAL_WORKFLOWS.md`.
 
 ---
 
@@ -173,11 +172,15 @@ org:
   features: []
 ```
 
-**Missing CLI commands for config:**
-- `glade config validate` — validates `glade.yml` syntax with proper error reporting
-- `glade config show` — prints resolved config (layered with `sfdx-project.json`)
-- `glade config init` — interactive scaffolding that asks project root, namespace,
-  package dirs, and writes a valid `glade.yml`
+**Current state:** Phase 2 implemented:
+- `glade config validate` validates `glade.yml` syntax with proper error reporting.
+- `glade config show` prints resolved config layered with `sfdx-project.json`.
+- `glade config init` and `glade init` scaffold `glade.yml` from inferred SFDX
+  package directories and namespace, with a terminal prompt path plus repeatable
+  flags for package dirs and org features.
+
+**Remaining polish:** run `doctor` after init, offer next-command probes, and add
+config-backed defaults for common `test` and `check` flags.
 
 **Missing config keys:**
 - `test.timeout` — default per-test timeout
@@ -190,11 +193,10 @@ org:
 Currently, these are all CLI-only flags. A project can't express "this test suite needs
 `--no-parallel-methods`" except through shell wrappers or Makefiles.
 
-**The inline list format** `[a, b, c]` in the YAML subset parser is undocumented. Users
-must infer it from source.
+The inline list format `[a, b, c]` is now documented in `docs/CONFIG.md`.
 
-**Files touched:** `internal/config/config.go`, new `internal/gladecli/config_command.go`,
-`docs/` (config reference).
+**Files touched:** `internal/gladecli/config_command.go`, `internal/gladecli/cli.go`,
+`internal/cliui/help.go`, `docs/CONFIG.md`, `docs/INSTALL.md`.
 
 ---
 
@@ -208,17 +210,20 @@ Two overlapping watch paths exist:
 The daemon socket (`glade test serve`) auto-connects from subsequent `glade test` runs
 via `tryTestServerRun()` in `test_command.go:274`. This is elegant. But there are gaps:
 
-**No lifecycle management:**
-- `glade test serve` starts a daemon. There's no `stop`, `status`, or `list` command.
-- If the terminal dies, the daemon socket remains. The daemon process is orphaned.
-- `testdaemon.ServerReachable()` checks the socket but can give a false positive on
-  a stale socket.
+**Current state:** Phase 3 implemented the daily loop surface:
+- `glade test daemon status` shows stopped, stale, warming, or ready state.
+- `glade test daemon stop` shuts down a reachable server and removes stale socket
+  or pid files.
+- `glade test changed --since HEAD` wraps the existing affected-test path.
+- `glade test failed` and `glade test --last-failed` rerun failed tests recorded
+  by the last completed run.
+- `glade test --wizard` prints cache, daemon, and next-command suggestions without
+  hiding the exact command.
+- Progress output now includes a startup cache hint.
 
-**Suggested:**
-- `glade test daemon list` — show running daemons (project root, PID, uptime)
-- `glade test daemon stop` — graceful shutdown via socket or signal
-- `glade test daemon status` — health check (is index warm? last run?)
-- `glade test daemon restart` — stop + start
+**Remaining polish:** `glade test daemon restart` should wait for a real process
+supervisor or background-start story. `glade test serve` remains the explicit
+start command.
 
 **Unify dev test and test watch:**
 `dev test --changed` (dev_command.go:186) and `test --changed-since HEAD`
@@ -233,16 +238,18 @@ from `test_command.go`. Consolidate into `internal/watch/`.
 
 ## 8. New Command Opportunities
 
-### 8a. `glade init` (P1 — Medium Effort)
+### 8a. `glade init` (Done — Medium Effort)
 
-Scaffolds a new SFDX project or bootstraps `glade.yml` from an existing one.
-The `doctor` command already walks up the directory tree looking for config.
-`init` is the natural pairing.
+Bootstraps `glade.yml` from an existing project. The command infers package
+directories and namespace from `sfdx-project.json`, prompts at a terminal,
+accepts repeatable `--package-dir` and `--feature` flags, and refuses to
+overwrite unless `--force` is set.
 
 ```
-glade init                # interactive wizard
-glade init --project .    # scaffold glade.yml from current directory
-glade init --output .     # create full project skeleton
+glade init --project . --yes
+glade config init --project . --yes --package-dir force-app --feature PersonAccounts
+glade config validate --project .
+glade config show --project . --json
 ```
 
 ### 8b. `glade coverage` (P2 — Medium Effort)
@@ -261,85 +268,70 @@ editor integration and pre-commit hooks. Could also be a mode on `check`:
 
 ---
 
-## 9. Best First Cut for Glade
+## 9. First Cut Completed
 
-The best first DX cut is a shared command catalog that feeds:
+The first DX cut was a shared command catalog that feeds:
 
 - `glade <command> --help`
 - `glade help <command>`
 - `glade completion bash|zsh|fish`
 
-That one move makes the CLI easier to discover without changing runtime behavior.
-It also gives future wizard work a single place to read command names, flags,
-subcommands, and examples.
+That move made the CLI easier to discover without changing runtime behavior.
+It gives wizard work a single place to read command names, flags, subcommands,
+and examples.
 
 This cut should stay product-only. Do not add completions or help topics for
 maintenance surfaces that moved to `glade-tools`.
 
 ## 10. Wizard Ideas That Fit Glade
 
-### 10a. `glade init` wizard (P1)
+### 10a. `glade init` wizard (Done)
 
-This is the most useful wizard.
-
-Flow:
-
-1. Detect `sfdx-project.json`, `glade.yml`, package directories, namespace, and
-   scratch org features.
-2. Ask only for missing values.
-3. Write a small `glade.yml`.
-4. Run `glade doctor`.
-5. Print the next two commands:
-
-```bash
-glade check --project .
-glade test --project .
-```
-
-Flags should make it CI-safe:
+`glade init` now infers package dirs and namespace from `sfdx-project.json`,
+prompts in a terminal, and accepts CI-safe flags:
 
 ```bash
 glade init --project . --yes
 glade init --project . --namespace pkg --package-dir force-app --force
 ```
 
-### 10b. `glade test --wizard` (P2)
+### 10b. `glade test --wizard` (Done)
 
 Help developers pick a fast local test path.
 
-The wizard can inspect project size, existing `.glade/test/startup.gob`, and a
-reachable test server socket. Then it recommends one command:
+The wizard inspects existing `.glade/test/startup.gob` and a reachable test
+server socket. Then it prints command choices:
 
-- single class: `glade test --filter AccountServiceTest`
-- changed files: `glade test --changed-since HEAD`
+- changed files: `glade test changed --since HEAD`
+- last failure: `glade test --last-failed`
 - warm loop: `glade test serve --project .`
 - stubborn cache: `glade test clear-cache --project .`
 
-It should not hide the command it runs. Show the exact command, then ask before
-running it.
+It does not run a command. The user sees the exact command first.
 
-### 10c. `glade db seed --wizard` (P2)
+### 10c. `glade db seed --wizard` (Done)
 
 Good for local app developers who want a working org state.
 
-Flow:
+Phase 5 added a command printer for seed runs:
 
-1. Pick or create `.glade/org.sqlite`.
-2. Offer fixture files found under `testdata/`, `fixtures/`, and `data/`.
-3. Show object and record counts before writing.
-4. Run `glade db inspect --db <path>` after seeding.
+```bash
+glade db seed --wizard --db .glade/org.sqlite --project . fixtures/dev.json
+```
 
-### 10d. `glade playground --wizard` (P3)
+It prints the seed command with progress enabled and the follow-up inspect
+command for the same database. It does not mutate the database.
+
+### 10d. `glade playground --wizard` (Done)
 
 Good for demos and support.
 
-Flow:
+Phase 5 added a command printer that preserves the selected project, workspace,
+data root, project refs, examples, public mode, limits, and browser choice:
 
-1. Pick workspace.
-2. Pick project reference.
-3. Pick database.
-4. Offer examples.
-5. Start playground with `--open`.
+```bash
+glade playground --wizard --project . --examples
+```
 
 Keep this behind the existing `playground` command. A separate top-level TUI
 would add weight before the normal CLI surface is finished.
@@ -350,14 +342,10 @@ would add weight before the normal CLI surface is finished.
   config, parser-disabled builds, and stale test cache.
 - `glade explain <error-code>`: describe `GLADE*` diagnostics with examples and
   likely fixes.
-- `glade test --last-failed`: promote the existing `dev test --failed` flow into
-  the main test command.
-- `glade test daemon status|stop|restart`: make the warm server lifecycle visible.
-- `glade check --format github`: emit annotations for CI without a wrapper script.
+- `glade test daemon restart`: add a true background restart once daemon start is
+  process-managed instead of foreground `serve`.
 - `glade report open latest`: open the latest HTML/Markdown report when one
   exists.
-- `glade config show|validate`: inspect resolved `glade.yml` plus inferred SFDX
-  settings before running heavier commands.
 
 ### 8d. `glade explain <code>` (P5 — Small Effort)
 
@@ -393,15 +381,20 @@ large projects.
 
 Current test output formats: console (plain text), JSON, JUnit XML, NDJSON (watch).
 
-**Missing:**
+**Current state:** Phase 4 implemented:
 - **SARIF** — Static Analysis Results Interchange Format. Standard format supported
-  by GitHub, GitLab, VS Code. Emitting `check` results as SARIF would enable native
-  CI annotations: `glade check --format sarif --output results.sarif`
+  by GitHub, GitLab, VS Code. `glade check --format sarif --output results.sarif`
+  writes code-scanning output.
+- **GitHub Actions annotations** — `glade check --format github` emits semantic
+  diagnostics, and `glade report github latest` emits latest saved-run failures.
+- **Report JSON** — `glade report show latest --json` combines `latest.json`,
+  `run.json`, and `results.json`.
+- **HTML report** — `glade report export latest --format html --output report.html`
+  writes a single-file saved-run report for CI artifacts.
+
+**Remaining polish:**
 - **TAP** — Test Anything Protocol. Common in CI/CD pipelines.
   `glade test --format tap`
-- **HTML report** — The `dev test` command already writes `summary.md` to
-  `.glade/runs`. A simple HTML template would make reports browsable in CI artifacts.
-- **GitHub Actions annotations** — `::error file=AccountService.cls,line=42::message`
 
 ---
 
@@ -422,13 +415,19 @@ FORCE_COLOR=1 glade test ...  # force color in pipes
 
 ## 14. Error Message Quality (P3 — Low Impact)
 
-**Unknown flag suggestions:**
+**Current state:** unknown command and flag suggestions are in place for the
+shared command catalog and high-traffic parser-backed commands.
+
+**Remaining polish:**
+- Derive all help and suggestions from parser registrations so leaf command loops
+  cannot drift from the command catalog.
+- Group diagnostics by file and severity in human output.
+
+Historical problem:
 ```
 $ glade test --filteer AccountServiceTest
 glade: unknown flag "--filteer"
 ```
-No "did you mean `--filter`?" suggestion. Given the flag list is known for each
-command, Levenshtein distance suggestions are straightforward and high-signal.
 
 **Usage messages are too terse:**
 ```
@@ -437,14 +436,7 @@ usage: glade parse <paths...> [--json]
 Doesn't explain that `<paths...>` accepts files or directories, or that directories
 are walked recursively for `.cls` and `.trigger` files.
 
-**Exit code documentation:**
-The exit code contract is undocumented:
-- `parse`, `inspect`, `check` return 1 on errors
-- `test` returns 1 on test failures or errors
-- `dev` conditionally returns 1 based on whether tests ran
-- Unknown command returns 2
-
-This should be documented in `--help` output and in a consistent help topic.
+Exit codes are now documented under `glade help exit-codes`.
 
 ---
 
@@ -471,10 +463,12 @@ A `glade ci init` that writes a `.github/workflows/glade.yml` with check + test 
 
 ## 16. Package Command Depth (P3 — Low-Medium Impact)
 
-`glade package build` produces a JSON artifact. Missing subcommands:
-- `glade package validate` — validate an existing artifact against a project
-- `glade package info` — print artifact metadata (namespace, version, type count) without full file load
-- `glade package diff artifact1.json artifact2.json` — compare two artifact versions
+Phase 5 filled out the artifact loop:
+- `glade package info <artifact.json>` prints namespace, version, source hash, and counts.
+- `glade package validate <artifact.json>` checks artifact shape before publishing or installing.
+- `glade package diff <from.json> <to.json>` compares two artifact versions.
+
+All three support `--json`.
 
 ---
 
@@ -537,27 +531,21 @@ as a deprecated alias.
 
 | Priority | Area | Effort | File Impact |
 |----------|------|--------|-------------|
-| **P0** | Shell completion first cut | Small | 1 new file |
-| **P0** | `--help` for every command first cut | Medium | 2 files |
-| **P1** | Shared flag parser | Medium | 1 new package, all command files |
-| **P1** | `--json` on `report` (`version`/`doctor` landed) | Small | 1 file |
-| **P1** | `glade init` scaffolding | Medium | 1 new file |
-| **P1** | Config validation and show commands | Small-Medium | 1 new file |
-| **P2** | Watch/daemon management commands | Small-Medium | 2 files |
-| **P2** | SARIF output for `check` | Small | 1 file |
+| **Done** | Phase 1 discoverability: completion install docs, deeper help, shared flag parser, typo suggestions | Medium | CLI/help/docs |
+| **Done** | `--json` on `report`, `version`, and `doctor` | Small | CLI/report |
+| **Done** | Phase 2 project setup: `config show`, `config validate`, `config init`, `glade init` | Medium | CLI/help/docs |
+| **Done** | Phase 3 daily test loop: daemon status/stop, changed alias, last failed, wizard, cache hints | Medium | CLI/help/docs |
+| **Done** | Phase 4 CI and artifacts: report JSON, GitHub annotations, SARIF, HTML report export | Medium | CLI/help/docs |
+| **Done** | Phase 5 rich local workflows: progress on parse/package/db seed, DB seed wizard, playground wizard, package info/validate/diff | Medium | CLI/help/docs |
 | **P2** | `glade coverage` | Medium | 1 new file |
 | **P2** | `glade db query` | Medium | 1 file |
 | **P2** | CI integration (`hook`, `ci` formats) | Small-Medium | 2 files |
-| **P2** | Progress on `parse` and `package` | Small | 2 files |
 | **P3** | `--color` / `NO_COLOR` explicit | Small | 1 file |
-| **P3** | Levenshtein suggestions for unknown flags | Small | Shared flag parser |
 | **P3** | Diagnostic grouping in `check` output | Medium | 2 files |
 | **P3** | `glade lint` / `glade explain` | Medium | 1-2 new files |
 | **P4** | `glade bench` | Small-Medium | 1 new file |
 | **P4** | `glade fmt` / `glade docs` / `glade graph` | Large | 3+ new files |
-| **P4** | HTML test reports | Medium | 1 file |
 | **P5** | `glade hook install` | Small | 1 new file |
-| **P5** | `glade package validate/info/diff` | Medium | 1 file |
 | **P5** | `glade db dump/migrate` | Medium | 1 file |
 | **P5** | `glade explain <code>` | Small | 1 new file |
 

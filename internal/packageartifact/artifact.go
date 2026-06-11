@@ -69,6 +69,44 @@ type Summary struct {
 	StaticResources int    `json:"staticResources"`
 }
 
+type Info struct {
+	Namespace             string    `json:"namespace"`
+	PackageName           string    `json:"packageName,omitempty"`
+	Version               string    `json:"version,omitempty"`
+	SourceRoot            string    `json:"sourceRoot,omitempty"`
+	SourceHash            string    `json:"sourceHash,omitempty"`
+	SourceAPIVersion      string    `json:"sourceApiVersion,omitempty"`
+	BuiltAt               time.Time `json:"builtAt"`
+	ApexTypes             int       `json:"apexTypes"`
+	Objects               int       `json:"objects"`
+	CustomMetadataRecords int       `json:"customMetadataRecords"`
+	Labels                int       `json:"labels"`
+	StaticResources       int       `json:"staticResources"`
+}
+
+type Diff struct {
+	Changed               bool     `json:"changed"`
+	FromNamespace         string   `json:"fromNamespace,omitempty"`
+	ToNamespace           string   `json:"toNamespace,omitempty"`
+	FromVersion           string   `json:"fromVersion,omitempty"`
+	ToVersion             string   `json:"toVersion,omitempty"`
+	AddedTypes            int      `json:"addedTypes"`
+	RemovedTypes          int      `json:"removedTypes"`
+	ChangedTypes          int      `json:"changedTypes"`
+	AddedObjects          int      `json:"addedObjects"`
+	RemovedObjects        int      `json:"removedObjects"`
+	ChangedObjects        int      `json:"changedObjects"`
+	AddedTypeNames        []string `json:"addedTypeNames,omitempty"`
+	RemovedTypeNames      []string `json:"removedTypeNames,omitempty"`
+	ChangedTypeNames      []string `json:"changedTypeNames,omitempty"`
+	AddedObjectNames      []string `json:"addedObjectNames,omitempty"`
+	RemovedObjectNames    []string `json:"removedObjectNames,omitempty"`
+	ChangedObjectNames    []string `json:"changedObjectNames,omitempty"`
+	SourceHashChanged     bool     `json:"sourceHashChanged"`
+	APIVersionChanged     bool     `json:"apiVersionChanged"`
+	SchemaResourceChanged bool     `json:"schemaResourceChanged"`
+}
+
 func Build(namespace, version string, p project.Project, s schema.Schema, apexTypes []ApexType) (Artifact, error) {
 	sourceHash, err := SourceHash(p)
 	if err != nil {
@@ -87,6 +125,73 @@ func Build(namespace, version string, p project.Project, s schema.Schema, apexTy
 		Labels:                len(p.LabelFiles),
 		StaticResources:       len(p.StaticResourceFiles) + len(p.StaticResourceMetas),
 	}, nil
+}
+
+func Inspect(artifact Artifact) Info {
+	return Info{
+		Namespace:             artifact.Namespace,
+		PackageName:           artifact.PackageName,
+		Version:               artifact.Version,
+		SourceRoot:            artifact.SourceRoot,
+		SourceHash:            artifact.SourceHash,
+		SourceAPIVersion:      artifact.SourceAPIVersion,
+		BuiltAt:               artifact.BuiltAt,
+		ApexTypes:             len(artifact.ApexTypes),
+		Objects:               len(artifact.Objects),
+		CustomMetadataRecords: len(artifact.CustomMetadataRecords),
+		Labels:                artifact.Labels,
+		StaticResources:       artifact.StaticResources,
+	}
+}
+
+func Validate(artifact Artifact) []string {
+	issues := make([]string, 0)
+	if strings.TrimSpace(artifact.Namespace) == "" {
+		issues = append(issues, "namespace is required")
+	}
+	if strings.TrimSpace(artifact.SourceHash) == "" {
+		issues = append(issues, "sourceHash is required")
+	}
+	for _, typ := range artifact.ApexTypes {
+		if strings.TrimSpace(typ.Name) == "" {
+			issues = append(issues, "apex type name is required")
+		}
+		if strings.TrimSpace(typ.Namespace) == "" {
+			issues = append(issues, "apex type "+typ.Name+" is missing namespace")
+		}
+	}
+	for _, object := range artifact.Objects {
+		if strings.TrimSpace(object.Name) == "" {
+			issues = append(issues, "object name is required")
+		}
+	}
+	return issues
+}
+
+func Compare(from, to Artifact) Diff {
+	diff := Diff{
+		FromNamespace:         from.Namespace,
+		ToNamespace:           to.Namespace,
+		FromVersion:           from.Version,
+		ToVersion:             to.Version,
+		SourceHashChanged:     from.SourceHash != to.SourceHash,
+		APIVersionChanged:     from.SourceAPIVersion != to.SourceAPIVersion,
+		SchemaResourceChanged: len(from.CustomMetadataRecords) != len(to.CustomMetadataRecords) || from.Labels != to.Labels || from.StaticResources != to.StaticResources,
+	}
+	fromTypes := apexTypeFingerprints(from.ApexTypes)
+	toTypes := apexTypeFingerprints(to.ApexTypes)
+	diff.AddedTypeNames, diff.RemovedTypeNames, diff.ChangedTypeNames = compareFingerprints(fromTypes, toTypes)
+	fromObjects := objectFingerprints(from.Objects)
+	toObjects := objectFingerprints(to.Objects)
+	diff.AddedObjectNames, diff.RemovedObjectNames, diff.ChangedObjectNames = compareFingerprints(fromObjects, toObjects)
+	diff.AddedTypes = len(diff.AddedTypeNames)
+	diff.RemovedTypes = len(diff.RemovedTypeNames)
+	diff.ChangedTypes = len(diff.ChangedTypeNames)
+	diff.AddedObjects = len(diff.AddedObjectNames)
+	diff.RemovedObjects = len(diff.RemovedObjectNames)
+	diff.ChangedObjects = len(diff.ChangedObjectNames)
+	diff.Changed = diff.SourceHashChanged || diff.APIVersionChanged || diff.SchemaResourceChanged || diff.AddedTypes > 0 || diff.RemovedTypes > 0 || diff.ChangedTypes > 0 || diff.AddedObjects > 0 || diff.RemovedObjects > 0 || diff.ChangedObjects > 0
+	return diff
 }
 
 func Summarize(dep project.ManagedPackageDependency, artifact Artifact) Summary {
@@ -121,6 +226,49 @@ func ReadJSON(path string) (Artifact, error) {
 		return Artifact{}, err
 	}
 	return artifact, nil
+}
+
+func apexTypeFingerprints(types []ApexType) map[string]string {
+	out := make(map[string]string, len(types))
+	for _, typ := range types {
+		key := typ.Namespace + "." + typ.Name
+		typ.File = ""
+		typ.SourceRoot = ""
+		data, _ := json.Marshal(typ)
+		out[key] = string(data)
+	}
+	return out
+}
+
+func objectFingerprints(objects []schema.Object) map[string]string {
+	out := make(map[string]string, len(objects))
+	for _, object := range objects {
+		data, _ := json.Marshal(object)
+		out[object.Name] = string(data)
+	}
+	return out
+}
+
+func compareFingerprints(from, to map[string]string) (added []string, removed []string, changed []string) {
+	for name, toValue := range to {
+		fromValue, ok := from[name]
+		if !ok {
+			added = append(added, name)
+			continue
+		}
+		if fromValue != toValue {
+			changed = append(changed, name)
+		}
+	}
+	for name := range from {
+		if _, ok := to[name]; !ok {
+			removed = append(removed, name)
+		}
+	}
+	sort.Strings(added)
+	sort.Strings(removed)
+	sort.Strings(changed)
+	return added, removed, changed
 }
 
 func namespaceObjects(namespace string, objects []schema.Object) []schema.Object {

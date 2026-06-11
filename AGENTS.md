@@ -13,9 +13,10 @@ Keep product work here:
 
 - Apex parsing, indexing, and semantic checks.
 - The VM, test runner, SOQL, DML, storage, schema, and server runtime.
-- Product CLI commands: `version`, `doctor`, `parse`, `inspect`, `schema`,
-  `check`, `exec`, `test`, `profile`, `package`, `server`, `playground`, `db`,
-  `lsp`, `dev`, and `report`.
+- Product CLI commands: `version`, `doctor`, `completion`, `config`, `init`,
+  `parse`, `inspect`, `schema`, `check`, `exec`, `debug`, `editor`, `dap`,
+  `test`, `dev`, `report`, `lsp`, `profile`, `package`, `server`,
+  `playground`, and `db`.
 - Product docs, release scripts, install docs, editor docs, storage docs, and
   checked support reports.
 

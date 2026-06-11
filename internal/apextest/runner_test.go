@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -5296,6 +5297,57 @@ private class ManyTest {
 	}
 }
 
+func TestDiscoverFilterAllowsCommaSeparatedNames(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FirstTest.cls"), `
+@isTest
+private class FirstTest {
+  @isTest static void one() { System.assert(true); }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SecondTest.cls"), `
+@isTest
+private class SecondTest {
+  @isTest static void two() { System.assert(true); }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ThirdTest.cls"), `
+@isTest
+private class ThirdTest {
+  @isTest static void three() { System.assert(true); }
+}
+`)
+	cases := Discover(loadTestIndex(t, root), Options{Filter: "FirstTest, ThirdTest"})
+	if len(cases) != 2 {
+		t.Fatalf("cases = %#v", cases)
+	}
+	if cases[0].ClassName != "FirstTest" || cases[1].ClassName != "ThirdTest" {
+		t.Fatalf("selected cases = %#v", cases)
+	}
+}
+
+func TestSourceCacheConcurrentRead(t *testing.T) {
+	cache := newSourceCache()
+	files := make([]string, 64)
+	for i := range files {
+		path := filepath.Join(t.TempDir(), fmt.Sprintf("Source%d.cls", i))
+		writeFile(t, path, fmt.Sprintf("public class Source%d {}", i))
+		files[i] = path
+	}
+	var wg sync.WaitGroup
+	for _, file := range files {
+		wg.Add(1)
+		go func(file string) {
+			defer wg.Done()
+			if _, err := cache.read(file); err != nil {
+				t.Errorf("read %s: %v", file, err)
+			}
+		}(file)
+	}
+	wg.Wait()
+}
+
 func TestDiscoverSkipsHelpersInIsTestClass(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -7946,16 +7998,15 @@ private class ReferencedRecordTypesTest {
 
 func TestProjectReferencedRecordTypesUsesSourceCache(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "ReferencedRecordTypesTest.cls")
-	cache := sourceCache{
-		file: `
+	cache := newSourceCache()
+	cache.state.sources[file] = `
 @IsTest
 private class ReferencedRecordTypesTest {
   @IsTest static void referencedRecordTypesHaveIds() {
     Id bundle = SObjectType.pkg__Product__c.getRecordTypeInfosByName().get('Bundle').getRecordTypeId();
   }
 }
-`,
-	}
+`
 
 	refs := projectReferencedRecordTypes(project.Project{ApexFiles: []string{file}}, cache)
 	if len(refs) != 1 {

@@ -52,8 +52,8 @@ func TestReleaseBuildProducesParserCapableArtifacts(t *testing.T) {
 	if strings.Contains(text, "CGO_ENABLED=0") {
 		t.Fatal("scripts/release-build.sh disables CGO; release artifacts must keep the Apex parser available")
 	}
-	if !strings.Contains(text, "parser: ok") {
-		t.Fatal("scripts/release-build.sh must verify doctor reports parser: ok")
+	if !strings.Contains(text, "doctor --json") || !strings.Contains(text, `"parserOK": true`) {
+		t.Fatal("scripts/release-build.sh must verify doctor --json reports parserOK true")
 	}
 	if strings.Contains(text, "doctor 2>/dev/null | grep -q") {
 		t.Fatal("scripts/release-build.sh must not pipe doctor into grep -q under pipefail")

@@ -88,8 +88,8 @@ glade test --project . --json > reports/glade-test.json
 glade-tools local-tests --project . --parallel auto --json > reports/glade-local-tests.json
 ```
 
-Add `--changed-since origin/main` when the report should cover only affected
-tests.
+Use `glade test changed --project . --since origin/main --json` when the report
+should cover only affected tests.
 
 ## 6b. Performance Scanner
 

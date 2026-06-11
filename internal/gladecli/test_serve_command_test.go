@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -47,6 +48,24 @@ func TestTryTestServerRunAutoConnect(t *testing.T) {
 	}
 	if stdout.Len() == 0 {
 		t.Fatal("expected console output")
+	}
+}
+
+func TestRunTestServeRejectsFlagTokenAsValue(t *testing.T) {
+	err := runTestServe(context.Background(), []string{"--project", "--socket", "--bogus"}, io.Discard)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "--project requires a value") {
+		t.Fatalf("error = %v", err)
+	}
+
+	err = runTestServe(context.Background(), []string{"--socket", "--watch", "--bogus"}, io.Discard)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "--socket requires a value") {
+		t.Fatalf("error = %v", err)
 	}
 }
 

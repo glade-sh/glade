@@ -6,10 +6,13 @@ of the way.
 ## If You Want To Use Glade
 
 1. Install and first run: [INSTALL.md](INSTALL.md)
-2. Run Apex tests without an org: [LOCAL_TESTING.md](LOCAL_TESTING.md)
-3. Test startup cache (when it is safe to trust): [TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md)
-4. Day-to-day editor commands: [EDITOR.md](EDITOR.md)
-5. Current support surface:
+2. Project configuration: [CONFIG.md](CONFIG.md)
+3. Run Apex tests without an org: [LOCAL_TESTING.md](LOCAL_TESTING.md)
+4. CI outputs and saved artifacts: [CI_ARTIFACTS.md](CI_ARTIFACTS.md)
+5. Rich local workflows: [RICH_LOCAL_WORKFLOWS.md](RICH_LOCAL_WORKFLOWS.md)
+6. Test startup cache (when it is safe to trust): [TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md)
+7. Day-to-day editor commands: [EDITOR.md](EDITOR.md)
+8. Current support surface:
    - Site first layer: <https://glade.sh/docs/guide/support-map>
    - [COMPATIBILITY_DASHBOARD.md](COMPATIBILITY_DASHBOARD.md)
    - [KNOWN_GAPS.md](KNOWN_GAPS.md)
@@ -24,20 +27,19 @@ of the way.
 ## If You Want To Contribute
 
 1. Runtime architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
-2. Where to add Salesforce functionality: [ADDING_A_PLATFORM_API.md](ADDING_A_PLATFORM_API.md)
-3. Surface Ledger local runbook: [ADDING_A_PLATFORM_API.md#finding-the-next-gap-instead-of-waiting-for-a-failure](ADDING_A_PLATFORM_API.md#finding-the-next-gap-instead-of-waiting-for-a-failure). Start with `compat surface sources`, then `compat surface refresh`, then `compat surface packet`.
-4. Package boundaries and conventions: [ARCHITECTURE_STANDARDS.md](ARCHITECTURE_STANDARDS.md)
-5. Storage model and DB behavior: [storage-schema.md](storage-schema.md)
-6. Example-project harness: [EXAMPLE_PROJECTS.md](EXAMPLE_PROJECTS.md)
-7. Apex declaration parser: [APEX_PARSER.md](APEX_PARSER.md)
+2. Product boundary for AI and human contributors: [../AGENTS.md](../AGENTS.md)
+3. Clean-room rules: [CLEAN_ROOM.md](CLEAN_ROOM.md)
+4. Storage model and DB behavior: [storage-schema.md](storage-schema.md)
+5. Apex declaration parser: [APEX_PARSER.md](APEX_PARSER.md)
+6. DX roadmap and backlog: [DX_IMPROVEMENTS.md](DX_IMPROVEMENTS.md)
 
-## Planning And Backlog Docs
+## Research And Backlog Docs
 
-These are working design and backlog trails, not first-use docs:
+These are durable research notes and backlog ledgers, not first-use docs:
 
-- [LOCAL_APEX_TEST_EXECUTION_PLAN.md](LOCAL_APEX_TEST_EXECUTION_PLAN.md)
-- [APEX_PARITY_FOLLOWUP_PLAN.md](APEX_PARITY_FOLLOWUP_PLAN.md)
+- [DX_IMPROVEMENTS.md](DX_IMPROVEMENTS.md)
 - [POST_PARITY_TODO.md](POST_PARITY_TODO.md)
-- [FEATURE_PARITY_TODO.md](FEATURE_PARITY_TODO.md)
-- [MANAGED_PACKAGE_DEPENDENCY_PLAN.md](MANAGED_PACKAGE_DEPENDENCY_PLAN.md)
-- [BEHAVIORAL_STUB_SUPPORT_PLAN.md](BEHAVIORAL_STUB_SUPPORT_PLAN.md)
+- [research/CLI_UX_DESIGN.md](research/CLI_UX_DESIGN.md)
+- [research/performance-scanner-roadmap.md](research/performance-scanner-roadmap.md)
+- [research/visualforce-local-rendering-methodology.md](research/visualforce-local-rendering-methodology.md)
+- [superpowers/](superpowers/) working specs and implementation plans

@@ -28,7 +28,8 @@ Prepare a local database before starting the server:
 
 ```bash
 glade db reset --db .glade/local-org.sqlite --json
-glade db seed --db .glade/local-org.sqlite seed.json --json
+glade db seed --wizard --db .glade/local-org.sqlite --project . seed.json
+glade db seed --db .glade/local-org.sqlite --project . --progress seed.json
 glade db inspect --db .glade/local-org.sqlite --json
 ```
 

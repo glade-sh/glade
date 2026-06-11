@@ -31,8 +31,8 @@ mkdir -p "${DIST_DIR}"
 	CGO_ENABLED=1 go build -trimpath -ldflags "${LDFLAGS}" -o "${workdir}/${binary}" ./cmd/glade
 )
 
-doctor_out="$("${workdir}/${binary}" doctor 2>&1)"
-if [[ "${doctor_out}" != *"parser: ok"* ]]; then
+doctor_out="$("${workdir}/${binary}" doctor --json 2>&1)"
+if [[ "${doctor_out}" != *'"parserOK": true'* ]]; then
 	echo "ERROR: built binary reports parser unavailable; aborting" >&2
 	printf '%s\n' "${doctor_out}" >&2
 	exit 1

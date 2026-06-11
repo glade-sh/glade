@@ -59,11 +59,11 @@ func runDevStatus(args []string, w io.Writer) error {
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--project":
-			if i+1 >= len(args) {
-				return errors.New("--project requires a value")
+			value, err := takeFlagValue(args, &i, "--project requires a value")
+			if err != nil {
+				return err
 			}
-			root = args[i+1]
-			i++
+			root = value
 		default:
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
@@ -128,30 +128,30 @@ func runDevTest(ctx context.Context, args []string, w io.Writer) (testreport.Run
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--project":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--project requires a value")
+			value, err := takeFlagValue(args, &i, "--project requires a value")
+			if err != nil {
+				return testreport.Run{}, err
 			}
-			root = args[i+1]
-			i++
+			root = value
 		case "--out":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--out requires a path")
+			value, err := takeFlagValue(args, &i, "--out requires a path")
+			if err != nil {
+				return testreport.Run{}, err
 			}
-			outRoot = args[i+1]
-			i++
+			outRoot = value
 		case "--all":
 		case "--class":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--class requires a value")
+			value, err := takeFlagValue(args, &i, "--class requires a value")
+			if err != nil {
+				return testreport.Run{}, err
 			}
-			filter = args[i+1]
-			i++
+			filter = value
 		case "--test":
-			if i+1 >= len(args) {
-				return testreport.Run{}, errors.New("--test requires a value")
+			value, err := takeFlagValue(args, &i, "--test requires a value")
+			if err != nil {
+				return testreport.Run{}, err
 			}
-			filter = args[i+1]
-			i++
+			filter = value
 		case "--changed":
 			changed = true
 		case "--failed":
@@ -210,6 +210,8 @@ func latestFailedFilter(outRoot string) (string, error) {
 	if err := json.Unmarshal(data, &result); err != nil {
 		return "", err
 	}
+	seen := map[string]bool{}
+	var failures []string
 	for _, suite := range result.Suites {
 		for _, testCase := range suite.Cases {
 			status := testCase.Status
@@ -219,19 +221,15 @@ func latestFailedFilter(outRoot string) (string, error) {
 			if status == testreport.StatusPass || status == testreport.StatusSkipped {
 				continue
 			}
-			if testCase.ClassName != "" && testCase.MethodName != "" {
-				return testCase.ClassName + "." + testCase.MethodName, nil
+			name := failedTestName(suite.Name, testCase)
+			if name == "" || seen[name] {
+				continue
 			}
-			if testCase.ClassName != "" {
-				return testCase.ClassName, nil
-			}
-			if testCase.Name != "" {
-				return testCase.Name, nil
-			}
-			return suite.Name, nil
+			seen[name] = true
+			failures = append(failures, name)
 		}
 	}
-	return "", nil
+	return strings.Join(failures, ","), nil
 }
 
 func writeDevTestArtifacts(outRoot, projectRoot string, result testreport.Run, events []byte) (runartifact.Run, error) {
@@ -312,34 +310,43 @@ func runReport(args []string, w io.Writer) error {
 	}
 	switch args[0] {
 	case "list":
-		runsDir, _, err := parseReportArgs(args[1:])
+		runsDir, err := parseReportRunsDirArgs(args[1:])
 		if err != nil {
 			return err
 		}
 		return runReportList(runsDir, w)
 	case "show":
 		if len(args) < 2 || args[1] != "latest" {
-			return errors.New("usage: glade report show latest [--runs-dir <path>]")
+			return errors.New("usage: glade report show latest [--runs-dir <path>] [--json]")
 		}
-		runsDir, _, err := parseReportArgs(args[2:])
+		runsDir, jsonOut, err := parseReportShowArgs(args[2:])
 		if err != nil {
 			return err
 		}
-		return runReportShowLatest(runsDir, w)
+		return runReportShowLatest(runsDir, jsonOut, w)
+	case "github":
+		if len(args) < 2 || args[1] != "latest" {
+			return errors.New("usage: glade report github latest [--runs-dir <path>]")
+		}
+		runsDir, err := parseReportRunsDirArgs(args[2:])
+		if err != nil {
+			return err
+		}
+		return runReportGitHubLatest(runsDir, w)
 	case "export":
 		if len(args) < 2 || args[1] != "latest" {
-			return errors.New("usage: glade report export latest --output <path> [--runs-dir <path>]")
+			return errors.New("usage: glade report export latest --output <path> [--format zip|html] [--runs-dir <path>]")
 		}
-		runsDir, output, err := parseReportArgs(args[2:])
+		runsDir, output, format, err := parseReportExportArgs(args[2:])
 		if err != nil {
 			return err
 		}
 		if output == "" {
 			return errors.New("--output is required")
 		}
-		return runReportExportLatest(runsDir, output, w)
+		return runReportExportLatest(runsDir, output, format, w)
 	case "clean":
-		runsDir, _, keep, err := parseReportCleanArgs(args[1:])
+		runsDir, keep, err := parseReportCleanArgs(args[1:])
 		if err != nil {
 			return err
 		}
@@ -354,55 +361,103 @@ func runReport(args []string, w io.Writer) error {
 	}
 }
 
-func parseReportArgs(args []string) (runsDir string, output string, err error) {
+func parseReportShowArgs(args []string) (runsDir string, jsonOut bool, err error) {
 	runsDir = filepath.Join(".glade", "runs")
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--runs-dir":
-			if i+1 >= len(args) {
-				return "", "", errors.New("--runs-dir requires a path")
+			value, err := takeFlagValue(args, &i, "--runs-dir requires a path")
+			if err != nil {
+				return "", false, err
 			}
-			runsDir = args[i+1]
-			i++
-		case "--output":
-			if i+1 >= len(args) {
-				return "", "", errors.New("--output requires a path")
-			}
-			output = args[i+1]
-			i++
+			runsDir = value
+		case "--json":
+			jsonOut = true
 		default:
-			return "", "", fmt.Errorf("unknown flag %q", args[i])
+			return "", false, fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
-	return runsDir, output, nil
+	return runsDir, jsonOut, nil
 }
 
-func parseReportCleanArgs(args []string) (runsDir string, output string, keep int, err error) {
+func parseReportExportArgs(args []string) (runsDir string, output string, format string, err error) {
+	runsDir = filepath.Join(".glade", "runs")
+	format = "zip"
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--runs-dir":
+			value, err := takeFlagValue(args, &i, "--runs-dir requires a path")
+			if err != nil {
+				return "", "", "", err
+			}
+			runsDir = value
+		case "--output":
+			value, err := takeFlagValue(args, &i, "--output requires a path")
+			if err != nil {
+				return "", "", "", err
+			}
+			output = value
+		case "--format":
+			value, err := takeFlagValue(args, &i, "--format requires a value")
+			if err != nil {
+				return "", "", "", err
+			}
+			format = strings.ToLower(strings.TrimSpace(value))
+		default:
+			return "", "", "", fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	switch format {
+	case "zip", "html":
+	default:
+		return "", "", "", errors.New("--format must be zip or html")
+	}
+	return runsDir, output, format, nil
+}
+
+func parseReportRunsDirArgs(args []string) (runsDir string, err error) {
+	runsDir = filepath.Join(".glade", "runs")
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--runs-dir":
+			value, err := takeFlagValue(args, &i, "--runs-dir requires a path")
+			if err != nil {
+				return "", err
+			}
+			runsDir = value
+		default:
+			return "", fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	return runsDir, nil
+}
+
+func parseReportCleanArgs(args []string) (runsDir string, keep int, err error) {
 	runsDir = filepath.Join(".glade", "runs")
 	keep = 10
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--runs-dir":
-			if i+1 >= len(args) {
-				return "", "", 0, errors.New("--runs-dir requires a path")
+			value, err := takeFlagValue(args, &i, "--runs-dir requires a path")
+			if err != nil {
+				return "", 0, err
 			}
-			runsDir = args[i+1]
-			i++
+			runsDir = value
 		case "--keep":
-			if i+1 >= len(args) {
-				return "", "", 0, errors.New("--keep requires a value")
+			value, err := takeFlagValue(args, &i, "--keep requires a value")
+			if err != nil {
+				return "", 0, err
 			}
-			parsed, parseErr := strconv.Atoi(args[i+1])
+			parsed, parseErr := strconv.Atoi(value)
 			if parseErr != nil || parsed < 0 {
-				return "", "", 0, errors.New("--keep must be a non-negative integer")
+				return "", 0, errors.New("--keep must be a non-negative integer")
 			}
 			keep = parsed
-			i++
 		default:
-			return "", "", 0, fmt.Errorf("unknown flag %q", args[i])
+			return "", 0, fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
-	return runsDir, output, keep, nil
+	return runsDir, keep, nil
 }
 
 func runReportList(runsDir string, w io.Writer) error {
@@ -433,10 +488,19 @@ func runReportList(runsDir string, w io.Writer) error {
 	return nil
 }
 
-func runReportShowLatest(runsDir string, w io.Writer) error {
+func runReportShowLatest(runsDir string, jsonOut bool, w io.Writer) error {
 	latest, err := readLatest(runsDir)
 	if err != nil {
 		return err
+	}
+	if jsonOut {
+		envelope, err := loadLatestReportEnvelope(runsDir, latest)
+		if err != nil {
+			return err
+		}
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(envelope)
 	}
 	data, err := os.ReadFile(latest.SummaryPath)
 	if err != nil {
@@ -446,13 +510,41 @@ func runReportShowLatest(runsDir string, w io.Writer) error {
 	return err
 }
 
-func runReportExportLatest(runsDir, output string, w io.Writer) error {
+func runReportGitHubLatest(runsDir string, w io.Writer) error {
+	latest, err := readLatest(runsDir)
+	if err != nil {
+		return err
+	}
+	result, err := loadLatestTestResult(latest)
+	if err != nil {
+		return err
+	}
+	return testreport.WriteGitHubAnnotations(w, result)
+}
+
+func runReportExportLatest(runsDir, output string, format string, w io.Writer) error {
 	latest, err := readLatest(runsDir)
 	if err != nil {
 		return err
 	}
 	if err := os.MkdirAll(filepath.Dir(output), 0o755); err != nil {
 		return err
+	}
+	if format == "html" {
+		result, err := loadLatestTestResult(latest)
+		if err != nil {
+			return err
+		}
+		file, err := os.Create(output)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		if err := testreport.WriteHTML(file, result, testreport.HTMLReportOptions{Title: "Glade Test Report"}); err != nil {
+			return err
+		}
+		fmt.Fprintf(w, "Exported %s\n", output)
+		return nil
 	}
 	file, err := os.Create(output)
 	if err != nil {
@@ -490,6 +582,39 @@ func runReportExportLatest(runsDir, output string, w io.Writer) error {
 	}
 	fmt.Fprintf(w, "Exported %s\n", output)
 	return nil
+}
+
+func loadLatestReportEnvelope(runsDir string, latest runartifact.Latest) (map[string]any, error) {
+	result, err := loadLatestTestResult(latest)
+	if err != nil {
+		return nil, err
+	}
+	var runMeta map[string]any
+	runData, err := os.ReadFile(filepath.Join(latest.RunDir, "run.json"))
+	if err == nil {
+		if err := json.Unmarshal(runData, &runMeta); err != nil {
+			return nil, err
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
+	return map[string]any{
+		"latest": latest,
+		"run":    runMeta,
+		"result": result,
+	}, nil
+}
+
+func loadLatestTestResult(latest runartifact.Latest) (testreport.Run, error) {
+	data, err := os.ReadFile(latest.ResultsPath)
+	if err != nil {
+		return testreport.Run{}, err
+	}
+	var result testreport.Run
+	if err := json.Unmarshal(data, &result); err != nil {
+		return testreport.Run{}, err
+	}
+	return result, nil
 }
 
 func readLatest(runsDir string) (runartifact.Latest, error) {

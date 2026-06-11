@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/dap"
+	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/vm"
 	"github.com/glade-sh/glade/internal/watch"
 )
@@ -91,6 +92,21 @@ func TestRunDoctorJSON(t *testing.T) {
 	}
 }
 
+func TestRunDoctorShortFlags(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"doctor", "-p", ".", "-j"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	var got map[string]any
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
+	}
+	if got["version"] != Version {
+		t.Fatalf("version = %v, want %q", got["version"], Version)
+	}
+}
+
 func TestRunDoctorProjectPathMustExist(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	missing := filepath.Join(t.TempDir(), "missing")
@@ -103,6 +119,168 @@ func TestRunDoctorProjectPathMustExist(t *testing.T) {
 	}
 }
 
+func TestRunConfigValidateReportsOK(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "glade.yml"), `project:
+  packageDirs: [force-app]
+  defaultNamespace: ns
+org:
+  features: [PersonAccounts]
+`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"config", "validate", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, "status: ok") || !strings.Contains(got, filepath.Join(root, "glade.yml")) {
+		t.Fatalf("stdout = %q", got)
+	}
+}
+
+func TestRunConfigValidateReportsParseError(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "glade.yml"), `project:
+  potato: true
+`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"config", "validate", "--project", root}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), `unsupported config key "potato"`) {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunConfigShowJSON(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"sfdxns","sourceApiVersion":"65.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), `project:
+  packageDirs: [force-app, packages/core]
+  defaultNamespace: glns
+org:
+  features: [PersonAccounts]
+`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"config", "show", "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	var got struct {
+		ConfigPath       string   `json:"configPath"`
+		ConfigFound      bool     `json:"configFound"`
+		ProjectRoot      string   `json:"projectRoot"`
+		Namespace        string   `json:"namespace"`
+		SourceAPIVersion string   `json:"sourceApiVersion"`
+		PackageDirs      []string `json:"packageDirs"`
+		OrgFeatures      []string `json:"orgFeatures"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
+	}
+	if !got.ConfigFound || got.ConfigPath != filepath.Join(root, "glade.yml") {
+		t.Fatalf("config fields = %#v", got)
+	}
+	if got.ProjectRoot != root || got.Namespace != "glns" || got.SourceAPIVersion != "65.0" {
+		t.Fatalf("project fields = %#v", got)
+	}
+	if strings.Join(got.PackageDirs, ",") != "force-app,packages/core" {
+		t.Fatalf("packageDirs = %#v", got.PackageDirs)
+	}
+	if strings.Join(got.OrgFeatures, ",") != "PersonAccounts" {
+		t.Fatalf("orgFeatures = %#v", got.OrgFeatures)
+	}
+}
+
+func TestRunConfigInitWritesGladeYML(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"sfdxns","sourceApiVersion":"65.0"}`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"config", "init", "--project", root, "--yes", "--namespace", "glns", "--feature", "PersonAccounts", "--package-dir", "force-app", "--package-dir", "packages/core"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	data, err := os.ReadFile(filepath.Join(root, "glade.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(data)
+	for _, want := range []string{
+		"project:",
+		"  packageDirs: [force-app, packages/core]",
+		"  defaultNamespace: glns",
+		"org:",
+		"  features: [PersonAccounts]",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("glade.yml missing %q:\n%s", want, got)
+		}
+	}
+	if !strings.Contains(stdout.String(), "created: "+filepath.Join(root, "glade.yml")) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestConfigInitPromptAcceptsOverrides(t *testing.T) {
+	opts := configInitOptions{
+		namespace:   "pkg",
+		packageDirs: []string{"force-app"},
+	}
+	var stdout bytes.Buffer
+	if err := promptConfigInit(strings.NewReader("packages/core\nnewns\nPersonAccounts, Communities\n"), &stdout, &opts); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(opts.packageDirs, ",") != "packages/core" {
+		t.Fatalf("packageDirs = %#v", opts.packageDirs)
+	}
+	if opts.namespace != "newns" {
+		t.Fatalf("namespace = %q", opts.namespace)
+	}
+	if strings.Join(opts.features, ",") != "PersonAccounts,Communities" {
+		t.Fatalf("features = %#v", opts.features)
+	}
+	if !strings.Contains(stdout.String(), "Package dirs [force-app]:") {
+		t.Fatalf("prompt output = %q", stdout.String())
+	}
+}
+
+func TestRunConfigInitRefusesOverwrite(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "glade.yml"), `project:
+  packageDirs: [force-app]
+`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"config", "init", "--project", root, "--yes"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), "already exists") || !strings.Contains(stderr.String(), "--force") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunInitAliasesConfigInit(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"aliasns"}`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"init", "--project", root, "--yes"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	data, err := os.ReadFile(filepath.Join(root, "glade.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(data)
+	if !strings.Contains(got, "  packageDirs: [force-app]") || !strings.Contains(got, "  defaultNamespace: aliasns") {
+		t.Fatalf("glade.yml =\n%s", got)
+	}
+	if !strings.Contains(stdout.String(), "next: glade config validate --project") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunUnknownCommand(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"wat"}, &stdout, &stderr)
@@ -111,6 +289,62 @@ func TestRunUnknownCommand(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), `unknown command "wat"`) {
 		t.Fatalf("stderr did not include diagnostic: %q", stderr.String())
+	}
+}
+
+func TestRunUnknownCommandSuggestsClosestMatch(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"chek"}, &stdout, &stderr)
+	if code != 2 {
+		t.Fatalf("exit code = %d, want 2", code)
+	}
+	if !strings.Contains(stderr.String(), `unknown command "chek"`) {
+		t.Fatalf("stderr did not include diagnostic: %q", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), `did you mean "check"?`) {
+		t.Fatalf("stderr missing suggestion: %q", stderr.String())
+	}
+}
+
+func TestRunUnknownFlagSuggestsClosestMatch(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--projec", "."}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), `unknown flag "--projec"`) {
+		t.Fatalf("stderr did not include unknown flag: %q", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), `did you mean "--project"?`) {
+		t.Fatalf("stderr missing suggestion: %q", stderr.String())
+	}
+}
+
+func TestRunTestUnknownFlagSuggestsClosestMatch(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--filteer", "AccountTest"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), `unknown flag "--filteer"`) {
+		t.Fatalf("stderr did not include unknown flag: %q", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), `did you mean "--filter"?`) {
+		t.Fatalf("stderr missing suggestion: %q", stderr.String())
+	}
+}
+
+func TestRunLeafCommandUnknownFlagSuggestsClosestMatch(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"playground", "--opne", "--once"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), `unknown flag "--opne"`) {
+		t.Fatalf("stderr did not include unknown flag: %q", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), `did you mean "--open"?`) {
+		t.Fatalf("stderr missing suggestion: %q", stderr.String())
 	}
 }
 
@@ -132,6 +366,14 @@ func TestCompatIsNotPublicCommand(t *testing.T) {
 	}
 	if strings.Contains(stdout.String(), "  compat ") || strings.Contains(stdout.String(), "glade compat") {
 		t.Fatalf("public help still mentions compat:\n%s", stdout.String())
+	}
+}
+
+func TestRunExecDoubleDashStopsFlagParsing(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"exec", "--", "String value = '--json'; System.assertEquals('--json', value);"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
 }
 
@@ -169,12 +411,27 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "completion help",
 			args: []string{"help", "completion"},
-			want: []string{"Usage:", "glade completion bash|zsh|fish", "Examples:"},
+			want: []string{"Usage:", "glade completion bash|zsh|fish", "Install:", "source <(glade completion bash)", "Examples:"},
+		},
+		{
+			name: "config help",
+			args: []string{"help", "config"},
+			want: []string{"Usage:", "glade config show", "validate", "init", "--package-dir <path>", "--feature <name>"},
+		},
+		{
+			name: "init help",
+			args: []string{"init", "--help"},
+			want: []string{"Usage:", "glade init", "--force", "--namespace <name>", "--package-dir <path>"},
 		},
 		{
 			name: "help test",
 			args: []string{"help", "test"},
 			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "startup.gob", "--no-cache", "--connect", "--daemon"},
+		},
+		{
+			name: "help exit codes",
+			args: []string{"help", "exit-codes"},
+			want: []string{"Exit codes", "0  Command completed", "1  Command failed", "2  Command was not understood"},
 		},
 	}
 	for _, tt := range tests {
@@ -207,10 +464,12 @@ func TestRunCompletionBash(t *testing.T) {
 	for _, want := range []string{
 		"_glade_completion",
 		"complete -F _glade_completion glade",
-		"version doctor parse inspect schema check exec",
+		"version doctor config init parse inspect schema check exec",
 		"--project",
+		"--package-dir",
 		"--progress-json",
-		"test serve clear-cache",
+		"config show validate init",
+		"test changed failed serve daemon clear-cache",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("bash completion missing %q:\n%s", want, got)
@@ -233,7 +492,7 @@ func TestRunCompletionFish(t *testing.T) {
 		"-a 'test'",
 		"-l project",
 		"-l progress-json",
-		"-a 'serve clear-cache'",
+		"-a 'changed failed serve daemon clear-cache'",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("fish completion missing %q:\n%s", want, got)
@@ -261,7 +520,7 @@ func TestRunTopLevelHelpAlignment(t *testing.T) {
 	got := stdout.String()
 	for _, want := range []string{
 		"package",
-		"Build managed package artifacts.",
+		"Build, inspect, validate, and diff managed package artifacts.",
 		"dap",
 		"Run the Debug Adapter Protocol server over stdio.",
 		"server",
@@ -493,6 +752,57 @@ func TestRunReportCommands(t *testing.T) {
 	}
 }
 
+func TestRunReportJSONGitHubAndHTML(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/FailingTest.cls"), `
+@isTest
+private class FailingTest {
+  @isTest static void fails() {
+    System.assertEquals(2, 1);
+  }
+}
+`)
+	runsDir := filepath.Join(root, ".glade", "runs")
+	var devOut, devErr bytes.Buffer
+	code := Run(context.Background(), []string{"dev", "test", "--project", root, "--out", runsDir}, &devOut, &devErr)
+	if code != 1 {
+		t.Fatalf("dev test exit code = %d, want 1; stderr=%q stdout=%q", code, devErr.String(), devOut.String())
+	}
+
+	var jsonOut, jsonErr bytes.Buffer
+	code = Run(context.Background(), []string{"report", "show", "latest", "--runs-dir", runsDir, "--json"}, &jsonOut, &jsonErr)
+	if code != 0 {
+		t.Fatalf("report json exit code = %d, stderr=%q", code, jsonErr.String())
+	}
+	if !json.Valid(jsonOut.Bytes()) || !strings.Contains(jsonOut.String(), `"latest"`) || !strings.Contains(jsonOut.String(), `"result"`) {
+		t.Fatalf("report json output = %q", jsonOut.String())
+	}
+
+	var ghOut, ghErr bytes.Buffer
+	code = Run(context.Background(), []string{"report", "github", "latest", "--runs-dir", runsDir}, &ghOut, &ghErr)
+	if code != 0 {
+		t.Fatalf("report github exit code = %d, stderr=%q", code, ghErr.String())
+	}
+	if !strings.Contains(ghOut.String(), "::error") || !strings.Contains(ghOut.String(), "FailingTest") {
+		t.Fatalf("github annotations = %q", ghOut.String())
+	}
+
+	htmlPath := filepath.Join(root, "report.html")
+	var htmlOut, htmlErr bytes.Buffer
+	code = Run(context.Background(), []string{"report", "export", "latest", "--runs-dir", runsDir, "--output", htmlPath, "--format", "html"}, &htmlOut, &htmlErr)
+	if code != 0 {
+		t.Fatalf("report html exit code = %d, stderr=%q", code, htmlErr.String())
+	}
+	htmlData, err := os.ReadFile(htmlPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(htmlData), "<!doctype html>") || !strings.Contains(string(htmlData), "FailingTest.fails") {
+		t.Fatalf("html report = %s", htmlData)
+	}
+}
+
 func TestRunDevTestFailedRerunsLatestFailure(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -519,6 +829,38 @@ private class FailingTest {
 	got := rerunOut.String()
 	if !strings.Contains(got, "1 selected") || !strings.Contains(got, "FailingTest.fails") {
 		t.Fatalf("rerun output = %q", got)
+	}
+}
+
+func TestLatestFailedFilterIncludesAllFailures(t *testing.T) {
+	runsDir := t.TempDir()
+	runDir := filepath.Join(runsDir, "20260611-120000")
+	if err := os.MkdirAll(runDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	resultsPath := filepath.Join(runDir, "results.json")
+	writeTestFile(t, resultsPath, `{
+  "suites": [{
+    "name": "Failures",
+    "cases": [
+      {"className": "FirstTest", "methodName": "fails", "status": "fail"},
+      {"className": "SecondTest", "methodName": "breaks", "status": "runtime_error"},
+      {"className": "PassingTest", "methodName": "passes", "status": "pass"}
+    ]
+  }]
+}`)
+	writeTestFile(t, filepath.Join(runsDir, "latest.json"), `{
+  "runId": "20260611-120000",
+  "runDir": "`+filepath.ToSlash(runDir)+`",
+  "resultsPath": "`+filepath.ToSlash(resultsPath)+`"
+}`)
+
+	got, err := latestFailedFilter(runsDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "FirstTest.fails,SecondTest.breaks" {
+		t.Fatalf("filter = %q", got)
 	}
 }
 
@@ -616,6 +958,70 @@ public class Hidden {
 	}
 }
 
+func TestRunPackageRichArtifactWorkflow(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"NU","sourceApiVersion":"61.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Address.cls"), `
+global class Address {
+  global String street;
+  global String format() { return street; }
+}
+`)
+	first := filepath.Join(root, "out", "first.json")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"package", "build", "--project", root, "--namespace", "pkg", "--version", "1.0", "--output", first, "--progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("build exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "package") || !strings.Contains(stderr.String(), "done") {
+		t.Fatalf("progress stderr = %q", stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"package", "info", first, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("info exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"namespace": "pkg"`) || !strings.Contains(stdout.String(), `"apexTypes": 1`) {
+		t.Fatalf("info stdout = %q", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"package", "validate", first}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("validate exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "package artifact ok") {
+		t.Fatalf("validate stdout = %q", stdout.String())
+	}
+
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Zed.cls"), `
+global class Zed {
+  global void touch() {}
+}
+`)
+	second := filepath.Join(root, "out", "second.json")
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"package", "build", "--project", root, "--namespace", "pkg", "--version", "2.0", "--output", second, "--no-progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("second build exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"package", "diff", first, second, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("diff exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"addedTypes": 1`) || !strings.Contains(stdout.String(), `"changed": true`) {
+		t.Fatalf("diff stdout = %q", stdout.String())
+	}
+}
+
 func TestRunCheckReportsMalformedMetadataAsDiagnostic(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -629,6 +1035,39 @@ func TestRunCheckReportsMalformedMetadataAsDiagnostic(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), `"code": "GLADESCHEMA001"`) || !strings.Contains(stdout.String(), `"types": 1`) {
 		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCheckFormatsForCI(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Broken.cls"), "public class Broken { public MissingType run() { return null; } }")
+
+	sarifPath := filepath.Join(root, "check.sarif")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--format", "sarif", "--output", sarifPath, "--no-progress"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("sarif exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("sarif stdout = %q, want empty when --output is used", stdout.String())
+	}
+	data, err := os.ReadFile(sarifPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !json.Valid(data) || !strings.Contains(string(data), `"version": "2.1.0"`) || !strings.Contains(string(data), "GLADESEMA002") {
+		t.Fatalf("sarif = %s", data)
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"check", "--project", root, "--format", "github", "--no-progress"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("github exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "::error") || !strings.Contains(stdout.String(), "GLADESEMA002") {
+		t.Fatalf("github stdout = %q", stdout.String())
 	}
 }
 
@@ -646,6 +1085,23 @@ func TestRunParseJSON(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), `"name": "Hello"`) {
 		t.Fatalf("stdout did not include parsed declaration: %q", stdout.String())
+	}
+}
+
+func TestRunParseProgressWritesToStderr(t *testing.T) {
+	dir := t.TempDir()
+	first := filepath.Join(dir, "Hello.cls")
+	second := filepath.Join(dir, "World.cls")
+	writeTestFile(t, first, "public class Hello {}")
+	writeTestFile(t, second, "public class World {}")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"parse", dir, "--progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "parse") || !strings.Contains(stderr.String(), "done") {
+		t.Fatalf("progress stderr = %q", stderr.String())
 	}
 }
 
@@ -1150,6 +1606,56 @@ func TestRunPlaygroundExamplesFlag(t *testing.T) {
 	}
 }
 
+func TestRunPlaygroundWizardPrintsCommand(t *testing.T) {
+	root := t.TempDir()
+	projectRoot := t.TempDir()
+	writeTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"playground", "--wizard", "--project", projectRoot, "--data-root", root, "--examples", "--public"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	out := stdout.String()
+	for _, want := range []string{"glade playground", "--project", projectRoot, "--data-root", root, "--examples", "--public", "--open"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("wizard output missing %q:\n%s", want, out)
+		}
+	}
+}
+
+func TestRunPlaygroundWizardHonorsNoOpenAndPublicAddress(t *testing.T) {
+	root := t.TempDir()
+	projectRoot := t.TempDir()
+	writeTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"playground", "--wizard", "--project", projectRoot, "--data-root", root, "--public", "--no-open"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	out := stdout.String()
+	for _, want := range []string{"--public", "--no-open", "http://0.0.0.0:8080/playground/"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("wizard output missing %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "--open") {
+		t.Fatalf("wizard output should not include --open when --no-open is explicit:\n%s", out)
+	}
+}
+
+func TestRunPlaygroundRejectsFlagTokenAsProjectValue(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"playground", "--project", "--once", "--wizard"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "--project requires a value") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
 func TestRunPlaygroundUnknownFlag(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"playground", "--bogus"}, &stdout, &stderr)
@@ -1434,6 +1940,184 @@ private class WarmTwoTest {
 	}
 }
 
+func TestRunTestDaemonStatusNoServer(t *testing.T) {
+	root := t.TempDir()
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "daemon", "status", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, "test daemon: stopped") || !strings.Contains(got, "socket: ") || !strings.Contains(got, "pid: none") {
+		t.Fatalf("stdout = %q", got)
+	}
+}
+
+func TestRunTestDaemonStatusAndStopRunningServer(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/WarmOneTest.cls"), `
+@isTest
+private class WarmOneTest {
+  @isTest static void passes() { System.assertEquals(2, 1 + 1); }
+}
+`)
+	socket := testdaemon.ServeSocketPath(root)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	server, err := testdaemon.NewServer(testdaemon.ServerConfig{
+		Root:  root,
+		Warm:  true,
+		Watch: false,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	errCh := make(chan error, 1)
+	go func() { errCh <- server.ListenAndServe(ctx, io.Discard) }()
+	waitForServer(t, ctx, socket)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "daemon", "status", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("status exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, "test daemon: running") || !strings.Contains(got, "ready: true") || !strings.Contains(got, "pid: ") {
+		t.Fatalf("status stdout = %q", got)
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"test", "daemon", "stop", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("stop exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "test daemon: stopped") {
+		t.Fatalf("stop stdout = %q", stdout.String())
+	}
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("serve exit: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("server did not stop")
+	}
+	if _, err := os.Stat(socket); !os.IsNotExist(err) {
+		t.Fatalf("socket still present: %v", err)
+	}
+}
+
+func TestRunTestLastFailedRerunsRecordedFailures(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/FailingTest.cls"), `
+@isTest
+private class FailingTest {
+  @isTest static void fails() { System.assert(false, 'still broken'); }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/PassingTest.cls"), `
+@isTest
+private class PassingTest {
+  @isTest static void passes() { System.assert(true); }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--filter", "FailingTest", "--json"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("first exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"test", "--project", root, "--last-failed", "--json"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("last-failed exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, `"total": 1`) || !strings.Contains(got, "FailingTest") {
+		t.Fatalf("stdout = %q", got)
+	}
+	if strings.Contains(got, "PassingTest") {
+		t.Fatalf("last-failed ran passing class: %q", got)
+	}
+}
+
+func TestRunTestChangedAliasUsesHead(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"help", "test"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{"glade test changed", "--since <ref>", "--last-failed"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("help missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestRewriteChangedTestArgsDefaultsToHead(t *testing.T) {
+	args, err := rewriteChangedTestArgs([]string{"--project", "repo", "--json", "--daemon"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(args, " "); got != "--project repo --changed-since HEAD --json --daemon" {
+		t.Fatalf("args = %q", got)
+	}
+	args, err = rewriteChangedTestArgs([]string{"--project", "repo", "--since", "origin/main", "--no-progress"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(args, " "); got != "--project repo --changed-since origin/main --no-progress" {
+		t.Fatalf("args = %q", got)
+	}
+}
+
+func TestRunTestWizardPrintsDailyLoopCommands(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--wizard"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		"Test wizard",
+		"daemon: stopped",
+		"cache:",
+		"glade test changed --project",
+		"glade test --project",
+		"--last-failed",
+		"glade test serve --project",
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("wizard missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestRunTestProgressIncludesStartupCacheHint(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/CacheHintTest.cls"), `
+@isTest
+private class CacheHintTest {
+  @isTest static void passes() { System.assert(true); }
+}
+`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--filter", "CacheHintTest", "--progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "startup cache:") {
+		t.Fatalf("stderr missing cache hint:\n%s", stderr.String())
+	}
+}
+
 func TestRunTestDaemonWatchOnceStreamsEvents(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -1592,6 +2276,90 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), `"Account": 0`) || !strings.Contains(stdout.String(), `"users": 2`) {
 		t.Fatalf("reset stdout = %q", stdout.String())
+	}
+}
+
+func TestRunDBSeedWizardAndProgress(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "glade.db")
+	fixturePath := filepath.Join(dir, "fixture.json")
+	writeTestFile(t, fixturePath, `{
+  "version":"glade.storage.v1",
+  "objects":[{"name":"Account","records":[{"alias":"acme","fields":{"Name":{"kind":"string","string":"Acme"}}}]}]
+}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "seed", "--wizard", "--db", dbPath, "--project", dir, fixturePath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("wizard exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	for _, want := range []string{"glade db seed", "--db", dbPath, "--project", dir, fixturePath, "--progress"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("wizard output missing %q:\n%s", want, stdout.String())
+		}
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "seed", "--db", dbPath, "--project", dir, fixturePath, "--progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("seed exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "db seed") || !strings.Contains(stderr.String(), "done") {
+		t.Fatalf("progress stderr = %q", stderr.String())
+	}
+}
+
+func TestRunDBRejectsFlagTokenAsDBValue(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "inspect", "--db", "--json"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "--db requires a path") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+	if _, err := os.Stat(filepath.Join(dir, "--json")); err == nil {
+		t.Fatalf("db file named --json was created")
+	}
+}
+
+func TestRunDBRejectsUnknownFlagBeforeFixture(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "glade.db")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "seed", "--db", dbPath, "--bogus"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), `unknown flag "--bogus"`) {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunReportRejectsFlagTokenAsRunsDirValue(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"report", "show", "latest", "--runs-dir", "--json"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "--runs-dir requires a path") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunReportListRejectsIgnoredOutputFlag(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"report", "list", "--output", "report.zip"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), `unknown flag "--output"`) {
+		t.Fatalf("stderr = %q", stderr.String())
 	}
 }
 

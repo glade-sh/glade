@@ -24,6 +24,8 @@ Run it in an SFDX project:
 
 ```bash
 cd path/to/sfdx-project
+glade init --project . --yes
+glade config validate --project .
 glade check --project .
 glade test --project . --json
 ```
@@ -75,7 +77,8 @@ Run one class, one method, or only tests affected by local changes:
 ```bash
 glade test --project . --filter AccountServiceTest --json
 glade test --project . --filter AccountServiceTest.testCreatesAccount --json
-glade test --project . --changed-since origin/main --json
+glade test changed --project . --since origin/main --json
+glade test failed --project .
 glade inspect performance --project . --json > reports/glade-performance.json
 glade inspect performance --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
@@ -83,13 +86,9 @@ glade inspect performance --project . --trace reports/slow-test-trace.json > rep
 The source-only performance scan maps entry points and hard static patterns.
 Trace input ranks measured spans and SOQL row counts.
 
-For large project triage and maintenance scanners, use the sibling
-`~/Dev/glade-tools` project. Those commands depend on this framework but are not
-part of the published `glade` CLI:
-
-```bash
-glade-tools local-tests --project . --parallel auto --json
-```
+Large project triage and maintenance scanners live in the sibling
+`~/Dev/glade-tools` project. They depend on this framework but are not part of
+the published `glade` CLI.
 
 Run anonymous Apex:
 
@@ -103,10 +102,23 @@ Serve a Salesforce-shaped local API:
 glade server --project . --addr 127.0.0.1:8080
 ```
 
+Write CI artifacts from the same local run loop:
+
+```bash
+glade check --project . --format sarif --output reports/glade-check.sarif
+glade dev test --project . --out .glade/runs
+glade report github latest --runs-dir .glade/runs
+glade report export latest --runs-dir .glade/runs --format html --output reports/glade-report.html
+```
+
 ## Docs
 
 - [Install](docs/INSTALL.md)
+- [Project configuration](docs/CONFIG.md)
 - [Local Apex testing](docs/LOCAL_TESTING.md)
+- [CI artifacts](docs/CI_ARTIFACTS.md)
+- [Rich local workflows](docs/RICH_LOCAL_WORKFLOWS.md)
+- [Test startup cache](docs/TEST_STARTUP_CACHE.md)
 - [Dogfood checklist](docs/DOGFOOD_CHECKLIST.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Compatibility policy](docs/COMPATIBILITY.md)
