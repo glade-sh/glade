@@ -55,6 +55,32 @@ private class MathTest {
 	}
 }
 
+func TestRunNoDiskCachePreservesExistingGlobalDisable(t *testing.T) {
+	wasDisabled := disableDiskCache.Load()
+	disableDiskCache.Store(true)
+	t.Cleanup(func() { disableDiskCache.Store(wasDisabled) })
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CacheToggleTest.cls"), `
+@isTest
+private class CacheToggleTest {
+  @isTest static void runs() {
+    System.assert(true);
+  }
+}
+
+`)
+
+	run := Run(loadTestIndex(t, root), Options{NoDiskCache: true})
+	summary := run.Summary()
+	if summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v", summary)
+	}
+	if diskCacheEnabled() {
+		t.Fatal("NoDiskCache run re-enabled a globally disabled disk cache")
+	}
+}
+
 func TestRunStaticTestClassCallWinsOverSameNameField(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"verifiable","packageDirectories":[{"path":"force-app","default":true}]}`)

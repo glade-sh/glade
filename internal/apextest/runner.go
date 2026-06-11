@@ -191,8 +191,9 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	}
 	sources := newSourceCache()
 	if opts.NoDiskCache {
+		wasDisabled := disableDiskCache.Load()
 		disableDiskCache.Store(true)
-		defer disableDiskCache.Store(false)
+		defer disableDiskCache.Store(wasDisabled)
 	}
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
