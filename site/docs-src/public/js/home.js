@@ -40,7 +40,7 @@
       '<a href="/guide/cli-reference" class="home-cmd-item"><strong>Check source</strong><code>glade check --project . --json</code></a>' +
       '<a href="/guide/local-testing" class="home-cmd-item"><strong>Run tests</strong><code>glade test --project . --json</code></a>' +
       '<a href="/guide/installation" class="home-cmd-item"><strong>Open docs</strong><code>/guide/installation</code></a>' +
-      '<a href="https://play.glade.sh/playground/" class="home-cmd-item"><strong>Open playground</strong><code>play.glade.sh/playground</code></a>' +
+      '<a href="/guide/playground" class="home-cmd-item"><strong>Local playground</strong><code>glade playground --examples --open</code></a>' +
       "</div></div>"
     document.body.appendChild(overlay)
 

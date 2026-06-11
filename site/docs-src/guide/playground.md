@@ -1,23 +1,6 @@
 # Playground
 
-The hosted playground runs in the browser at [play.glade.sh/playground/](https://play.glade.sh/playground/). It is the quickest place to try Apex snippets, SOQL, DML, logs, limits, traces, and local org diffs without installing anything.
-
-## Hosted playground
-
-Open the default playground:
-
-```text
-https://play.glade.sh/playground/
-```
-
-Deep-link to an example by id:
-
-```text
-https://play.glade.sh/playground/?example=account-service
-https://play.glade.sh/playground/?example=bulk-trigger-rollup
-```
-
-Those links are handy in issues, docs, and review comments. A small repro beats a paragraph of hand waving.
+`glade playground` starts a local browser workbench for Apex snippets, SOQL, DML, logs, limits, traces, and local org diffs. It runs from your machine and can use built-in examples, a scratch workspace, or an SFDX project.
 
 ## Local playground
 
@@ -53,11 +36,15 @@ glade playground --wizard --project . --examples
 
 ## What to use it for
 
-- Share runnable examples with a deep link.
+- Load built-in examples and inspect every source file.
 - Try a small Apex behavior before adding it to a project.
 - Inspect SOQL, DML, limits, traces, and org state in one place.
 - Reproduce a compatibility gap before writing a fixture.
 
 ::: tip Try it
-Open the Account Service example now: [play.glade.sh/playground/?example=account-service](https://play.glade.sh/playground/?example=account-service)
+Start the local playground with built-in examples:
+
+```bash
+glade playground --examples --addr 127.0.0.1:1789 --open
+```
 :::

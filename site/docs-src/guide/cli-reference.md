@@ -268,6 +268,10 @@ glade playground --project . --db .glade/playground/org.sqlite
 glade playground --wizard --project . --examples
 ```
 
-::: tip Try it
-Open the hosted playground: [play.glade.sh/playground/](https://play.glade.sh/playground/).
+::: tip Local workbench
+Open the local playground with examples:
+
+```bash
+glade playground --examples --addr 127.0.0.1:1789 --open
+```
 :::

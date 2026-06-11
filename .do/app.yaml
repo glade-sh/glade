@@ -8,7 +8,7 @@ services:
     github:
       repo: glade-sh/glade
       branch: main
-      deploy_on_push: true
+      deploy_on_push: false
     dockerfile_path: Dockerfile
     http_port: 8080
     instance_count: 1
@@ -19,6 +19,3 @@ services:
       - key: PORT
         value: "8080"
         scope: RUN_TIME
-domains:
-  - domain: play.glade.sh
-    type: PRIMARY

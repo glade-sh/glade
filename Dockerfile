@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# Builds the Glade playground image for public hosting (play.glade.sh).
+# Builds the Glade playground image for local container validation.
 #
 # The Apex parser (github.com/glade-sh/apex-parser) is vendored into this repo at
 # third_party/glade-apex-parser and wired in via a `replace` directive in go.mod,

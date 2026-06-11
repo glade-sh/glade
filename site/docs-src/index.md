@@ -18,8 +18,8 @@ hero:
       text: Install
       link: /guide/installation
     - theme: alt
-      text: Open Playground
-      link: https://play.glade.sh/playground/
+      text: Local Playground
+      link: /guide/playground
     - theme: alt
       text: Docs
       link: /guide/installation
@@ -140,9 +140,9 @@ features:
       <strong>Docs</strong>
       <span>Install, editor setup, server use, CLI reference, and compatibility notes.</span>
     </a>
-    <a class="home-next-card" href="https://play.glade.sh/playground/">
+    <a class="home-next-card" href="/guide/playground">
       <strong>Playground</strong>
-      <span>Run Apex examples in a browser-backed Glade loop.</span>
+      <span>Start the local browser workbench from your machine.</span>
     </a>
     <a class="home-next-card" href="https://github.com/glade-sh/glade">
       <strong>GitHub</strong>

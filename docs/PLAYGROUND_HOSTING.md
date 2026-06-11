@@ -1,6 +1,8 @@
-# Hosting the public Glade Playground
+# Playground Container Runbook
 
-`glade playground --public` is the mode intended for `play.glade.sh`. It keeps the local developer default unchanged, but adds guard rails for a server that accepts arbitrary Apex.
+Public playground publishing is paused. Do not attach a public domain or enable automatic deploys until the public isolation plan is implemented and verified.
+
+Use this runbook only to build and validate the playground container.
 
 ## Local container run
 
@@ -27,7 +29,7 @@ The image builds only the Go binary. The playground UI assets are embedded in
 because the Apex declaration parser is a tree-sitter (C) parser; the binary links
 against glibc and runs on a glibc base image.
 
-## Hardened flags
+## Public-mode flags
 
 ```bash
 glade playground --examples --public --addr 0.0.0.0:${PORT:-8080}
@@ -50,16 +52,16 @@ The VM checks request context during execution and also uses the strict CPU cap.
 
 Because the parser is vendored into the repo, App Platform can build the image
 directly from the connected GitHub source. `.do/app.yaml` defines one web service
-that builds from the repo `Dockerfile`:
+that builds from the repo `Dockerfile`. The spec does not configure a public
+domain and has automatic deploys disabled.
 
 ```bash
 doctl apps create --spec .do/app.yaml      # first deploy
 doctl apps update <app-id> --spec .do/app.yaml   # subsequent deploys
 ```
 
-Update the `github.repo`/`branch` fields in `.do/app.yaml` to match your
-connection. With `deploy_on_push: true`, App Platform rebuilds on every push to
-the branch.
+Update the `github.repo`/`branch` fields in `.do/app.yaml` only for a private
+validation app. Keep `deploy_on_push: false` while public publishing is paused.
 
 If you prefer a prebuilt image instead of a source build, push one to a registry
 (`PUSH=1 REGISTRY=registry.digitalocean.com/<your-registry> scripts/build-playground-image.sh`)
@@ -67,10 +69,11 @@ and point the service at it with an `image:` block in `.do/app.yaml`.
 
 The service listens on port `8080` and health-checks `GET /playground/`.
 
-## DNS for play.glade.sh
-
-In App Platform, add `play.glade.sh` as the primary domain. Then create the DNS record DigitalOcean shows, usually a CNAME from `play` to the App Platform target. Wait for certificate provisioning before sending public traffic.
-
 ## Security model and scaling
 
-The playground executes untrusted Apex. Public mode limits CPU-like VM steps, wall-clock runtime, rate, persistent org mutation, seed mutation, and workspace growth. It is not a security sandbox for the Go process. Run it in a container with platform CPU and memory limits, expose it only through HTTPS, and prefer horizontal instances over large single instances. In-process rate limits are per instance; add edge rate limiting if multiple instances serve the same domain.
+The playground executes untrusted Apex. Public mode limits CPU-like VM steps,
+wall-clock runtime, rate, persistent org mutation, seed mutation, and workspace
+growth. It is not a security sandbox for the Go process. Any future public
+deployment must run in a container with platform CPU and memory limits, expose
+only HTTPS, and prefer horizontal instances over large single instances. In-process
+rate limits are per instance; add edge rate limiting before shared public traffic.

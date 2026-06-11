@@ -126,5 +126,9 @@ unsupported features, and internal errors. That split matters. A failing
 assertion and an unsupported platform API leave different tracks.
 
 ::: tip Try it
-Exercise the runtime your tests rely on — DML, triggers, and governor limits — in the playground: [play.glade.sh/playground/?example=bulk-trigger-rollup](https://play.glade.sh/playground/?example=bulk-trigger-rollup)
+Exercise the runtime your tests rely on - DML, triggers, and governor limits - in the local playground:
+
+```bash
+glade playground --examples --addr 127.0.0.1:1789 --open
+```
 :::
