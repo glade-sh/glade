@@ -127,6 +127,62 @@ func TestRestoreLockVerifiesLockedSHA256(t *testing.T) {
 	}
 }
 
+func TestRestoreLockVerifiesLockedVersion(t *testing.T) {
+	lock := PluginLock{Version: 1, Plugins: []LockedPlugin{{
+		Name: "@acme/quality", Version: "1.2.0", SHA256: strings.Repeat("b", 64),
+	}}}
+	err := NewStore(t.TempDir()).RestoreLock(context.Background(), lock, func(ctx context.Context, name, version string) (InstalledPlugin, error) {
+		return InstalledPlugin{Name: "quality", CanonicalName: name, Version: "2.0.0", AssetSHA256: strings.Repeat("b", 64)}, nil
+	})
+	if err == nil || !strings.Contains(err.Error(), "version mismatch") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestRestoreLockRejectsRegistryDigestDriftBeforeDownload(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("archive executable mode is unix-specific")
+	}
+	root := t.TempDir()
+	body := makePluginArchive(t, root, "quality", "1.2.0")
+	sum := sha256.Sum256(body)
+	lockedSHA := strings.Repeat("b", 64)
+	downloaded := false
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/index.json":
+			fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@acme/quality","version":"1.2.0","assets":[{"os":%q,"arch":%q,"url":%q,"sha256":"%x"}]}]}`,
+				runtime.GOOS, runtime.GOARCH, server.URL+"/quality.tar.gz", sum)
+		case "/quality.tar.gz":
+			downloaded = true
+			w.Write(body)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+	lock := PluginLock{Version: 1, Plugins: []LockedPlugin{{
+		Name: "@acme/quality", Version: "1.2.0", Registry: server.URL + "/index.json", SHA256: lockedSHA,
+	}}}
+	store := NewStore(filepath.Join(root, "home"))
+
+	err := store.RestoreLock(context.Background(), lock, nil)
+	if err == nil || !strings.Contains(err.Error(), "does not match lock") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if downloaded {
+		t.Fatal("registry asset was downloaded after locked digest drift")
+	}
+	state, readErr := store.ReadInstalled()
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if len(state.Plugins) != 0 {
+		t.Fatalf("digest drift left installed state: %#v", state)
+	}
+}
+
 func TestRestoreLockRestoresURLSource(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("archive executable mode is unix-specific")

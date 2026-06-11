@@ -86,7 +86,7 @@ func runPluginsList(ctx context.Context, stdout io.Writer) error {
 		if plugin.Linked {
 			link = " linked"
 		}
-		fmt.Fprintf(stdout, "%s %s%s %s\n", plugin.Name, plugin.Version, link, strings.Join(plugin.Commands, ","))
+		fmt.Fprintf(stdout, "%s %s%s %s\n", plugin.IdentityName(), plugin.Version, link, strings.Join(plugin.Commands, ","))
 	}
 	return nil
 }
@@ -203,7 +203,7 @@ func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Wri
 		}
 		fmt.Fprintf(stderr, "warning: plugin %s is %s; review its source before use\n", plugin.IdentityName(), plugin.Trust)
 	}
-	fmt.Fprintf(stdout, "Installed plugin %s %s with commands %v.\n", plugin.Name, plugin.Version, plugin.Commands)
+	fmt.Fprintf(stdout, "Installed plugin %s %s with commands %v.\n", plugin.IdentityName(), plugin.Version, plugin.Commands)
 	return nil
 }
 
@@ -307,7 +307,7 @@ func runPluginsWhich(args []string, stdout io.Writer) error {
 	if !ok {
 		return fmt.Errorf("no plugin provides command %q", args[0])
 	}
-	fmt.Fprintf(stdout, "%s is provided by %s %s\n", args[0], plugin.Name, plugin.Version)
+	fmt.Fprintf(stdout, "%s is provided by %s %s\n", args[0], plugin.IdentityName(), plugin.Version)
 	fmt.Fprintf(stdout, "executable: %s\n", plugin.Executable)
 	return nil
 }
@@ -319,10 +319,10 @@ func runPluginsDoctor(ctx context.Context, stdout io.Writer) error {
 	}
 	for _, result := range results {
 		if result.OK {
-			fmt.Fprintf(stdout, "%s %s ok\n", result.Plugin.Name, result.Plugin.Version)
+			fmt.Fprintf(stdout, "%s %s ok\n", result.Plugin.IdentityName(), result.Plugin.Version)
 			continue
 		}
-		fmt.Fprintf(stdout, "%s %s %s\n", result.Plugin.Name, result.Plugin.Version, result.Message)
+		fmt.Fprintf(stdout, "%s %s %s\n", result.Plugin.IdentityName(), result.Plugin.Version, result.Message)
 	}
 	return nil
 }
@@ -380,7 +380,7 @@ func runInstalledPluginCommand(ctx context.Context, args []string, stdout, stder
 	}
 	code, err := pluginhost.RunPlugin(ctx, plugin, args, stdout, stderr)
 	if err != nil {
-		fmt.Fprintf(stderr, "glade: plugin %s failed: %v\n", plugin.Name, err)
+		fmt.Fprintf(stderr, "glade: plugin %s failed: %v\n", plugin.IdentityName(), err)
 		return 1, true
 	}
 	return code, true

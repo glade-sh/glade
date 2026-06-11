@@ -34,6 +34,9 @@ glade plugins list
 
 The short aliases `compat` and `performance` resolve to `@glade/compat` and
 `@glade/performance`.
+Registry installs appear by canonical coordinate in `plugins list`,
+`plugins which`, and `plugins doctor`. Linked development plugins without a
+catalog coordinate use their manifest name.
 
 Name installs use the configured plugin registry. The production default is
 `https://plugins.glade.sh/index.json`; local development can set
@@ -118,7 +121,8 @@ glade plugins restore
 
 `glade.plugins.lock.json` records canonical package coordinates, exact
 versions, registry, platform, trust label, publisher, and archive digest.
-Restore never installs `latest`; it verifies the locked digest.
+Restore never installs `latest`; it checks registry digests before download
+and verifies the locked manifest version and archive digest.
 
 Linked plugins are skipped by default because local paths are not portable. Use
 `glade plugins lock --include-linked` only for local development.

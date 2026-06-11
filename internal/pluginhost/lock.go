@@ -74,24 +74,29 @@ func (s Store) RestoreLock(ctx context.Context, lock PluginLock, install LockIns
 			installer = func(ctx context.Context, name, version string) (InstalledPlugin, error) {
 				if strings.HasPrefix(plugin.Source, "url:") {
 					return s.InstallRemoteArchive(ctx, strings.TrimPrefix(plugin.Source, "url:"), plugin.SHA256, InstallOptions{
-						Trust:  plugin.Trust,
-						Source: plugin.Source,
+						Trust:           plugin.Trust,
+						Source:          plugin.Source,
+						ExpectedVersion: plugin.Version,
 					})
 				}
-				if plugin.Registry != "" {
-					ref, err := ParsePluginRef(name)
-					if err != nil {
-						return InstalledPlugin{}, err
-					}
-					ref.Version = version
-					return s.InstallFromRegistryURL(ctx, plugin.Registry, ref)
+				ref, err := ParsePluginRef(name)
+				if err != nil {
+					return InstalledPlugin{}, err
 				}
-				return s.InstallFromRegistryVersion(ctx, name, version)
+				ref.Version = version
+				registryURL := plugin.Registry
+				if registryURL == "" {
+					registryURL = RegistryURL()
+				}
+				return s.installFromRegistryURL(ctx, registryURL, ref, plugin.SHA256)
 			}
 		}
 		installed, err := installer(ctx, plugin.Name, plugin.Version)
 		if err != nil {
 			return err
+		}
+		if plugin.Version != "" && installed.Version != plugin.Version {
+			return fmt.Errorf("restored plugin %s %s version mismatch: got %s", plugin.Name, plugin.Version, installed.Version)
 		}
 		if plugin.SHA256 != "" && !strings.EqualFold(installed.AssetSHA256, plugin.SHA256) {
 			return fmt.Errorf("restored plugin %s %s checksum mismatch", plugin.Name, plugin.Version)

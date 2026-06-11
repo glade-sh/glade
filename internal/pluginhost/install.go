@@ -8,15 +8,16 @@ import (
 )
 
 type InstallOptions struct {
-	CanonicalName string
-	RegistryURL   string
-	Publisher     string
-	Trust         string
-	AssetSHA256   string
-	AssetOS       string
-	AssetArch     string
-	Source        string
-	StorageName   string
+	CanonicalName   string
+	ExpectedVersion string
+	RegistryURL     string
+	Publisher       string
+	Trust           string
+	AssetSHA256     string
+	AssetOS         string
+	AssetArch       string
+	Source          string
+	StorageName     string
 }
 
 func (s Store) InstallArchive(ctx context.Context, archivePath string) (InstalledPlugin, error) {
@@ -52,6 +53,9 @@ func (s Store) InstallArchiveWithOptions(ctx context.Context, archivePath string
 	manifest, err := LoadManifestFromFile(manifestPath)
 	if err != nil {
 		return InstalledPlugin{}, err
+	}
+	if opts.ExpectedVersion != "" && manifest.Version != opts.ExpectedVersion {
+		return InstalledPlugin{}, fmt.Errorf("manifest version %q does not match expected version %q", manifest.Version, opts.ExpectedVersion)
 	}
 	exeName := "glade-plugin-" + manifest.Name
 	relativeExe := filepath.ToSlash(filepath.Join("bin", exeName))

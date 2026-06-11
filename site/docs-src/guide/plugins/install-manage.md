@@ -10,6 +10,9 @@ glade plugins install @acme/quality@1.2.0
 
 The short aliases `compat` and `performance` resolve to `@glade/compat` and
 `@glade/performance`.
+Registry installs appear by canonical coordinate in `plugins list`,
+`plugins which`, and `plugins doctor`. Linked development plugins without a
+catalog coordinate use their manifest name.
 
 ## Find and inspect
 

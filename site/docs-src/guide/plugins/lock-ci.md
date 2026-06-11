@@ -31,8 +31,8 @@ identity:
 }
 ```
 
-`restore` never installs `latest`. It installs the locked version and verifies
-the locked digest.
+`restore` never installs `latest`. It checks registry digests before download
+and verifies the locked manifest version and archive digest.
 
 ## CI
 

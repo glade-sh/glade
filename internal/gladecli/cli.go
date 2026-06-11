@@ -831,7 +831,8 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 	}
 	if args[0] != "symbols" {
 		if args[0] == "performance" {
-			return typesys.Index{}, errors.New("performance scans are provided by the performance plugin; run `glade plugins install performance`, then `glade performance scan --project .`")
+			return typesys.Index{}, errors.New("performance scans are provided by the performance plugin; " +
+				"run `glade plugins install @glade/performance`, then `glade performance scan --project .`")
 		}
 		return typesys.Index{}, errors.New("usage: glade inspect symbols [--project <root>] [--json]")
 	}

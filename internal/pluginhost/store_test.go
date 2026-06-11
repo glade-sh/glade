@@ -71,6 +71,25 @@ func TestStoreListInstalled(t *testing.T) {
 	}
 }
 
+func TestReplaceInstalledReplacesLegacyFirstPartyEntry(t *testing.T) {
+	legacy := InstalledPlugin{Name: "compat", Version: "0.0.1", Commands: []string{"compat"}}
+	next := InstalledPlugin{
+		Name:          "compat",
+		CanonicalName: "@glade/compat",
+		StorageName:   "glade__compat",
+		Version:       "0.1.0",
+		Commands:      []string{"compat"},
+	}
+
+	got := replaceInstalled([]InstalledPlugin{legacy}, next)
+	if len(got) != 1 {
+		t.Fatalf("expected one installed plugin, got %#v", got)
+	}
+	if got[0].CanonicalName != "@glade/compat" || got[0].Version != "0.1.0" {
+		t.Fatalf("legacy entry was not replaced: %#v", got)
+	}
+}
+
 func TestStoreRemoveInstalledAndKeepsLinkedExecutable(t *testing.T) {
 	root := t.TempDir()
 	exe := filepath.Join(root, "linked-plugin")

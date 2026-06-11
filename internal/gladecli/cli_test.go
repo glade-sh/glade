@@ -386,6 +386,37 @@ func TestPluginsListEmpty(t *testing.T) {
 	}
 }
 
+func TestPluginsListAndWhichUseCanonicalIdentity(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("GLADE_HOME", home)
+	statePath := filepath.Join(home, "plugins", "installed.json")
+	if err := os.MkdirAll(filepath.Dir(statePath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(statePath, []byte(`{"version":1,"plugins":[{"name":"compat","canonicalName":"@glade/compat","storageName":"glade__compat","version":"0.1.0","commands":["compat"]}]}`+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "list"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("list exit=%d stderr=%s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "@glade/compat 0.1.0") {
+		t.Fatalf("list did not use canonical identity:\n%s", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"plugins", "which", "compat"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("which exit=%d stderr=%s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "compat is provided by @glade/compat 0.1.0") {
+		t.Fatalf("which did not use canonical identity:\n%s", stdout.String())
+	}
+}
+
 func TestPluginsLinkListsPlugin(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper uses sh")
@@ -1308,7 +1339,8 @@ func TestInspectPerformanceMovedToPlugin(t *testing.T) {
 	if code == 0 {
 		t.Fatal("inspect performance unexpectedly succeeded without plugin")
 	}
-	if !strings.Contains(stderr.String(), "performance scans are provided by the performance plugin") {
+	if !strings.Contains(stderr.String(), "performance scans are provided by the performance plugin") ||
+		!strings.Contains(stderr.String(), "glade plugins install @glade/performance") {
 		t.Fatalf("stderr missing plugin guidance:\n%s", stderr.String())
 	}
 }

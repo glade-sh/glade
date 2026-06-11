@@ -136,12 +136,31 @@ func installedPluginMatchesName(plugin InstalledPlugin, name string) bool {
 func replaceInstalled(plugins []InstalledPlugin, plugin InstalledPlugin) []InstalledPlugin {
 	out := plugins[:0]
 	for _, existing := range plugins {
-		if existing.IdentityName() == plugin.IdentityName() {
+		if installedPluginsConflict(existing, plugin) {
 			continue
 		}
 		out = append(out, existing)
 	}
 	return append(out, plugin)
+}
+
+func installedPluginsConflict(existing, plugin InstalledPlugin) bool {
+	if existing.IdentityName() == plugin.IdentityName() {
+		return true
+	}
+	if existing.Name != "" && existing.Name == plugin.Name {
+		return true
+	}
+	if existing.StorageKey() == plugin.StorageKey() {
+		return true
+	}
+	if existing.CanonicalName != "" && firstPartyAliases[plugin.Name] == existing.CanonicalName {
+		return true
+	}
+	if plugin.CanonicalName != "" && firstPartyAliases[existing.Name] == plugin.CanonicalName {
+		return true
+	}
+	return false
 }
 
 func atomicWriteFile(path string, data []byte, mode os.FileMode) error {

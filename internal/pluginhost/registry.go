@@ -80,9 +80,12 @@ func (idx RegistryIndex) Search(query string) []RegistryPlugin {
 	q := strings.ToLower(strings.TrimSpace(query))
 	var out []RegistryPlugin
 	for _, plugin := range idx.Plugins {
-		haystack := strings.ToLower(strings.Join(append([]string{
+		fields := []string{
 			plugin.Name, plugin.Version, plugin.Publisher, plugin.Trust, plugin.Summary, plugin.DocsURL, plugin.SourceURL,
-		}, append(plugin.Aliases, plugin.Commands...)...), " "))
+		}
+		fields = append(fields, plugin.Aliases...)
+		fields = append(fields, plugin.Commands...)
+		haystack := strings.ToLower(strings.Join(fields, " "))
 		if q == "" || strings.Contains(haystack, q) {
 			out = append(out, plugin)
 		}
@@ -145,6 +148,10 @@ func (s Store) InstallFromRegistryVersion(ctx context.Context, name, version str
 }
 
 func (s Store) InstallFromRegistryURL(ctx context.Context, registryURL string, ref PluginRef) (InstalledPlugin, error) {
+	return s.installFromRegistryURL(ctx, registryURL, ref, "")
+}
+
+func (s Store) installFromRegistryURL(ctx context.Context, registryURL string, ref PluginRef, expectedSHA256 string) (InstalledPlugin, error) {
 	index, err := FetchRegistry(ctx, registryURL)
 	if err != nil {
 		return InstalledPlugin{}, err
@@ -163,20 +170,33 @@ func (s Store) InstallFromRegistryURL(ctx context.Context, registryURL string, r
 	if err := validatePluginPathToken("registry plugin version", registryPlugin.Version); err != nil {
 		return InstalledPlugin{}, err
 	}
+	expectedSHA256 = strings.ToLower(strings.TrimSpace(expectedSHA256))
+	if expectedSHA256 != "" {
+		if len(expectedSHA256) != sha256.Size*2 {
+			return InstalledPlugin{}, fmt.Errorf("locked checksum for %s %s must be %d hex characters", registryPlugin.Name, registryPlugin.Version, sha256.Size*2)
+		}
+		if _, err := hex.DecodeString(expectedSHA256); err != nil {
+			return InstalledPlugin{}, fmt.Errorf("locked checksum for %s %s must be hex", registryPlugin.Name, registryPlugin.Version)
+		}
+		if !strings.EqualFold(asset.SHA256, expectedSHA256) {
+			return InstalledPlugin{}, fmt.Errorf("registry asset checksum for %s %s does not match lock", registryPlugin.Name, registryPlugin.Version)
+		}
+	}
 	archivePath := filepath.Join(s.root, "plugins", "downloads", fmt.Sprintf("%s-%s-%s-%s.tar.gz", catalogRef.StorageName(), registryPlugin.Version, runtime.GOOS, runtime.GOARCH))
 	if err := downloadRegistryAsset(ctx, asset, archivePath); err != nil {
 		return InstalledPlugin{}, err
 	}
 	plugin, err := s.InstallArchiveWithOptions(ctx, archivePath, InstallOptions{
-		CanonicalName: registryPlugin.Name,
-		RegistryURL:   registryURL,
-		Publisher:     registryPlugin.Publisher,
-		Trust:         registryPlugin.Trust,
-		AssetSHA256:   strings.ToLower(asset.SHA256),
-		AssetOS:       asset.OS,
-		AssetArch:     asset.Arch,
-		Source:        "registry:" + registryPlugin.Name,
-		StorageName:   catalogRef.StorageName(),
+		CanonicalName:   registryPlugin.Name,
+		ExpectedVersion: registryPlugin.Version,
+		RegistryURL:     registryURL,
+		Publisher:       registryPlugin.Publisher,
+		Trust:           registryPlugin.Trust,
+		AssetSHA256:     strings.ToLower(asset.SHA256),
+		AssetOS:         asset.OS,
+		AssetArch:       asset.Arch,
+		Source:          "registry:" + registryPlugin.Name,
+		StorageName:     catalogRef.StorageName(),
 	})
 	if err != nil {
 		return InstalledPlugin{}, err

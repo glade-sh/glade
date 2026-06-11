@@ -218,6 +218,41 @@ func TestInstallFromRegistryRejectsCatalogManifestMismatch(t *testing.T) {
 	}
 }
 
+func TestInstallFromRegistryRejectsCatalogVersionMismatch(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("archive executable mode is unix-specific")
+	}
+	root := t.TempDir()
+	body := makePluginArchive(t, root, "quality", "2.0.0")
+	sum := sha256.Sum256(body)
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/index.json":
+			fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@acme/quality","version":"1.2.0","assets":[{"os":%q,"arch":%q,"url":%q,"sha256":"%x"}]}]}`,
+				runtime.GOOS, runtime.GOARCH, server.URL+"/quality.tar.gz", sum)
+		case "/quality.tar.gz":
+			w.Write(body)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL+"/index.json")
+
+	_, err := NewStore(filepath.Join(root, "home")).InstallFromRegistry(context.Background(), "@acme/quality@1.2.0")
+	if err == nil || !strings.Contains(err.Error(), `manifest version "2.0.0" does not match expected version "1.2.0"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	state, readErr := NewStore(filepath.Join(root, "home")).ReadInstalled()
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if len(state.Plugins) != 0 {
+		t.Fatalf("mismatched version left installed state: %#v", state)
+	}
+}
+
 func TestInstallFromRegistryVersionUsesExactVersion(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("archive executable mode is unix-specific")
