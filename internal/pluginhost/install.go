@@ -68,6 +68,15 @@ func (s Store) InstallArchiveWithOptions(ctx context.Context, archivePath string
 	if _, err := os.Stat(extractedExe.path); err != nil {
 		return InstalledPlugin{}, err
 	}
+	if opts.CanonicalName != "" {
+		ref, err := ParsePluginRef(opts.CanonicalName)
+		if err != nil {
+			return InstalledPlugin{}, err
+		}
+		if manifest.Name != ref.ManifestName() {
+			return InstalledPlugin{}, fmt.Errorf("manifest name %q does not match catalog package %q", manifest.Name, ref.ManifestName())
+		}
+	}
 	storageName := opts.StorageName
 	if storageName == "" {
 		storageName = manifest.Name

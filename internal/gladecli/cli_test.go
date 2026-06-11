@@ -475,6 +475,39 @@ func TestPluginsInstallRemoteURLRequiresSHA256(t *testing.T) {
 	}
 }
 
+func TestPluginsInstallCommunityRegistryInCIStopsBeforeDownload(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Setenv("CI", "1")
+	downloaded := false
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/index.json":
+			fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@acme/quality","version":"1.2.0","trust":"community","assets":[{"os":%q,"arch":%q,"url":%q,"sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}]}`,
+				runtime.GOOS, runtime.GOARCH, server.URL+"/quality.tar.gz")
+		case "/quality.tar.gz":
+			downloaded = true
+			w.WriteHeader(http.StatusOK)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL+"/index.json")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "install", "@acme/quality"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit=%d, want 1", code)
+	}
+	if downloaded {
+		t.Fatal("community plugin was downloaded before CI trust gate")
+	}
+	if !strings.Contains(stderr.String(), "rerun with --yes") {
+		t.Fatalf("stderr missing CI trust message: %q", stderr.String())
+	}
+}
+
 func TestScopedPluginCoordinateIsNotArchiveInstallArg(t *testing.T) {
 	if isArchiveInstallArg("@glade/compat") {
 		t.Fatal("@glade/compat was classified as an archive path")

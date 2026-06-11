@@ -2,7 +2,12 @@ package pluginhost
 
 import (
 	"context"
+	"crypto/sha256"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -119,5 +124,32 @@ func TestRestoreLockVerifiesLockedSHA256(t *testing.T) {
 	})
 	if err == nil || !strings.Contains(err.Error(), "checksum mismatch") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestRestoreLockRestoresURLSource(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("archive executable mode is unix-specific")
+	}
+	root := t.TempDir()
+	body := makePluginArchive(t, root, "quality", "1.2.0")
+	sum := sha256.Sum256(body)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(body)
+	}))
+	defer server.Close()
+	lock := PluginLock{Version: 1, Plugins: []LockedPlugin{{
+		Name: "quality", Version: "1.2.0", Source: "url:" + server.URL + "/quality.tar.gz", SHA256: fmt.Sprintf("%x", sum), Trust: "unlisted",
+	}}}
+	store := NewStore(filepath.Join(root, "home"))
+	if err := store.RestoreLock(context.Background(), lock, nil); err != nil {
+		t.Fatal(err)
+	}
+	state, err := store.ReadInstalled()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(state.Plugins) != 1 || state.Plugins[0].Source != "url:"+server.URL+"/quality.tar.gz" {
+		t.Fatalf("unexpected restored state: %#v", state)
 	}
 }

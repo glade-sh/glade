@@ -164,6 +164,9 @@ func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Wri
 		plugin pluginhost.InstalledPlugin
 	)
 	if isRemoteArchiveInstallArg(opts.target) {
+		if err := enforcePluginTrustBeforeInstall(opts.target, "unlisted", opts.yes); err != nil {
+			return err
+		}
 		plugin, err = store.InstallRemoteArchive(ctx, opts.target, opts.sha256, pluginhost.InstallOptions{})
 	} else if isArchiveInstallArg(opts.target) {
 		plugin, err = store.InstallArchive(ctx, opts.target)
@@ -175,6 +178,19 @@ func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Wri
 		registryURL := pluginhost.RegistryURL()
 		if opts.registry != "" {
 			registryURL = opts.registry
+		}
+		if os.Getenv("CI") != "" && !opts.yes {
+			index, fetchErr := pluginhost.FetchRegistry(ctx, registryURL)
+			if fetchErr != nil {
+				return fetchErr
+			}
+			registryPlugin, _, ok := index.AssetForRef(ref, runtime.GOOS, runtime.GOARCH)
+			if !ok {
+				return index.NotFoundErrorForRef(ref, runtime.GOOS, runtime.GOARCH)
+			}
+			if err := enforcePluginTrustBeforeInstall(registryPlugin.Name, registryPlugin.Trust, opts.yes); err != nil {
+				return err
+			}
 		}
 		plugin, err = store.InstallFromRegistryURL(ctx, registryURL, ref)
 	}
@@ -188,6 +204,16 @@ func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Wri
 		fmt.Fprintf(stderr, "warning: plugin %s is %s; review its source before use\n", plugin.IdentityName(), plugin.Trust)
 	}
 	fmt.Fprintf(stdout, "Installed plugin %s %s with commands %v.\n", plugin.Name, plugin.Version, plugin.Commands)
+	return nil
+}
+
+func enforcePluginTrustBeforeInstall(name, trust string, yes bool) error {
+	if os.Getenv("CI") == "" || yes {
+		return nil
+	}
+	if trust == "community" || trust == "unlisted" {
+		return fmt.Errorf("plugin %s is %s; rerun with --yes or restore from a lock file in CI", name, trust)
+	}
 	return nil
 }
 

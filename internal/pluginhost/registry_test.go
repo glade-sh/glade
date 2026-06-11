@@ -206,6 +206,16 @@ func TestInstallFromRegistryRejectsCatalogManifestMismatch(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), `manifest name "wrong-name" does not match catalog package "quality"`) {
 		t.Fatalf("unexpected error: %v", err)
 	}
+	state, readErr := NewStore(filepath.Join(root, "home")).ReadInstalled()
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if len(state.Plugins) != 0 {
+		t.Fatalf("mismatched manifest left installed state: %#v", state)
+	}
+	if _, statErr := os.Stat(filepath.Join(root, "home", "plugins", "acme__quality")); !os.IsNotExist(statErr) {
+		t.Fatalf("mismatched manifest left plugin directory: %v", statErr)
+	}
 }
 
 func TestInstallFromRegistryVersionUsesExactVersion(t *testing.T) {

@@ -181,9 +181,6 @@ func (s Store) InstallFromRegistryURL(ctx context.Context, registryURL string, r
 	if err != nil {
 		return InstalledPlugin{}, err
 	}
-	if plugin.Name != catalogRef.ManifestName() {
-		return InstalledPlugin{}, fmt.Errorf("manifest name %q does not match catalog package %q", plugin.Name, catalogRef.ManifestName())
-	}
 	return plugin, nil
 }
 

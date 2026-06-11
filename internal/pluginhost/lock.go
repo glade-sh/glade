@@ -72,6 +72,12 @@ func (s Store) RestoreLock(ctx context.Context, lock PluginLock, install LockIns
 		installer := install
 		if installer == nil {
 			installer = func(ctx context.Context, name, version string) (InstalledPlugin, error) {
+				if strings.HasPrefix(plugin.Source, "url:") {
+					return s.InstallRemoteArchive(ctx, strings.TrimPrefix(plugin.Source, "url:"), plugin.SHA256, InstallOptions{
+						Trust:  plugin.Trust,
+						Source: plugin.Source,
+					})
+				}
 				if plugin.Registry != "" {
 					ref, err := ParsePluginRef(name)
 					if err != nil {
