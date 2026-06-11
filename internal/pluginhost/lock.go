@@ -3,8 +3,10 @@ package pluginhost
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const LockFileName = "glade.plugins.lock.json"
@@ -66,12 +68,27 @@ func DefaultLockPath() (string, error) {
 type LockInstaller func(ctx context.Context, name, version string) (InstalledPlugin, error)
 
 func (s Store) RestoreLock(ctx context.Context, lock PluginLock, install LockInstaller) error {
-	if install == nil {
-		install = s.InstallFromRegistryVersion
-	}
 	for _, plugin := range lock.Plugins {
-		if _, err := install(ctx, plugin.Name, plugin.Version); err != nil {
+		installer := install
+		if installer == nil {
+			installer = func(ctx context.Context, name, version string) (InstalledPlugin, error) {
+				if plugin.Registry != "" {
+					ref, err := ParsePluginRef(name)
+					if err != nil {
+						return InstalledPlugin{}, err
+					}
+					ref.Version = version
+					return s.InstallFromRegistryURL(ctx, plugin.Registry, ref)
+				}
+				return s.InstallFromRegistryVersion(ctx, name, version)
+			}
+		}
+		installed, err := installer(ctx, plugin.Name, plugin.Version)
+		if err != nil {
 			return err
+		}
+		if plugin.SHA256 != "" && !strings.EqualFold(installed.AssetSHA256, plugin.SHA256) {
+			return fmt.Errorf("restored plugin %s %s checksum mismatch", plugin.Name, plugin.Version)
 		}
 	}
 	return nil

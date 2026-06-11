@@ -100,12 +100,24 @@ func TestRestoreLockInstallsExactCanonicalVersions(t *testing.T) {
 	var gotName, gotVersion string
 	err := NewStore(t.TempDir()).RestoreLock(context.Background(), lock, func(ctx context.Context, name, version string) (InstalledPlugin, error) {
 		gotName, gotVersion = name, version
-		return InstalledPlugin{Name: "quality", CanonicalName: name, Version: version}, nil
+		return InstalledPlugin{Name: "quality", CanonicalName: name, Version: version, AssetSHA256: strings.Repeat("b", 64)}, nil
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if gotName != "@acme/quality" || gotVersion != "1.2.0" {
 		t.Fatalf("restore installed %q %q", gotName, gotVersion)
+	}
+}
+
+func TestRestoreLockVerifiesLockedSHA256(t *testing.T) {
+	lock := PluginLock{Version: 1, Plugins: []LockedPlugin{{
+		Name: "@acme/quality", Version: "1.2.0", SHA256: strings.Repeat("b", 64),
+	}}}
+	err := NewStore(t.TempDir()).RestoreLock(context.Background(), lock, func(ctx context.Context, name, version string) (InstalledPlugin, error) {
+		return InstalledPlugin{Name: "quality", CanonicalName: name, Version: version, AssetSHA256: strings.Repeat("a", 64)}, nil
+	})
+	if err == nil || !strings.Contains(err.Error(), "checksum mismatch") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

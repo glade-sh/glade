@@ -328,10 +328,11 @@ func runPluginsRestore(ctx context.Context, stdout io.Writer) error {
 	if err != nil {
 		return err
 	}
+	store := pluginhost.NewStore(pluginhost.DefaultRoot())
+	if err := store.RestoreLock(ctx, lock, nil); err != nil {
+		return err
+	}
 	for _, plugin := range lock.Plugins {
-		if _, err := pluginhost.NewStore(pluginhost.DefaultRoot()).InstallFromRegistryVersion(ctx, plugin.Name, plugin.Version); err != nil {
-			return err
-		}
 		fmt.Fprintf(stdout, "Restored plugin %s %s.\n", plugin.Name, plugin.Version)
 	}
 	return nil
