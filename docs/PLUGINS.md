@@ -27,6 +27,7 @@ does not depend on `glade-tools` internals.
 Install first-party plugins with canonical coordinates:
 
 ```bash
+glade plugins available
 glade plugins install @glade/compat
 glade plugins install @glade/performance
 glade plugins list
@@ -42,13 +43,20 @@ Name installs use the configured plugin registry. The production default is
 `https://plugins.glade.sh/index.json`; local development can set
 `GLADE_PLUGIN_REGISTRY_URL` to a test or staging registry.
 
-Search and inspect the marketplace:
+List, search, and inspect the marketplace:
 
 ```bash
+glade plugins available
+glade plugins search
 glade plugins search quality
 glade plugins info @acme/quality
 glade plugins install @acme/quality@1.2.0
 ```
+
+`glade plugins available` lists every plugin in the configured marketplace.
+`glade plugins search` without a query lists the same catalog. Add a query to
+filter by name, alias, command, trust label, publisher, summary, docs URL, or
+source URL.
 
 Install a local release archive:
 

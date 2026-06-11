@@ -3,6 +3,7 @@
 Use canonical coordinates for marketplace installs.
 
 ```bash
+glade plugins available
 glade plugins install @glade/compat
 glade plugins install @glade/performance
 glade plugins install @acme/quality@1.2.0
@@ -17,6 +18,8 @@ catalog coordinate use their manifest name.
 ## Find and inspect
 
 ```bash
+glade plugins available
+glade plugins search
 glade plugins search quality
 glade plugins info @acme/quality
 glade plugins list
@@ -24,8 +27,10 @@ glade plugins which compat
 glade plugins doctor
 ```
 
-`which` reports the installed plugin that owns a command root. `doctor` checks
-installed executables and manifests.
+`available` lists every plugin in the configured marketplace. Bare `search`
+lists the same catalog; add a query to filter it. `which` reports the
+installed plugin that owns a command root. `doctor` checks installed
+executables and manifests.
 
 ## Remove and restore
 

@@ -99,6 +99,12 @@ Install them as `@glade/compat` and `@glade/performance`. The short aliases
 `compat` and `performance` resolve to those canonical names. Third-party
 plugins use the same executable manifest contract.
 
+List installable marketplace plugins:
+
+```bash
+glade plugins available
+```
+
 Run anonymous Apex:
 
 ```bash

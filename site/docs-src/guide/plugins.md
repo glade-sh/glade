@@ -11,6 +11,7 @@ marketplace plugins add heavier workflows when a project needs them.
 - `@glade/performance` - advisory Salesforce performance scans.
 
 ```bash
+glade plugins available
 glade plugins install @glade/compat
 glade plugins install @glade/performance
 ```
@@ -21,13 +22,16 @@ The short aliases `compat` and `performance` resolve to `@glade/compat` and
 ## Marketplace plugins
 
 ```bash
+glade plugins available
+glade plugins search
 glade plugins search quality
 glade plugins info @acme/quality
 glade plugins install @acme/quality
 ```
 
 The default marketplace is curated. Third-party publishers can also use a
-custom registry or a direct archive URL.
+custom registry or a direct archive URL. `available` and bare `search` list
+the installable catalog before you know a plugin name.
 
 ## Build and publish
 

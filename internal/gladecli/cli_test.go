@@ -494,6 +494,66 @@ func TestPluginsSearchAndInfoUseRegistry(t *testing.T) {
 	}
 }
 
+func TestPluginsAvailableListsRegistry(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@glade/compat","aliases":["compat"],"version":"0.1.0","publisher":"glade","trust":"first-party","summary":"Compatibility fixtures.","commands":["compat","surface"],"assets":[{"os":%q,"arch":%q,"url":"https://example.test/compat.tar.gz","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]},{"name":"@glade/performance","aliases":["performance"],"version":"0.1.0","publisher":"glade","trust":"first-party","summary":"Performance scans.","commands":["performance"],"assets":[{"os":%q,"arch":%q,"url":"https://example.test/performance.tar.gz","sha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}]}]}`, runtime.GOOS, runtime.GOARCH, runtime.GOOS, runtime.GOARCH)
+	}))
+	defer server.Close()
+	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "available"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("available exit=%d stderr=%s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "@glade/compat 0.1.0 first-party Compatibility fixtures.") ||
+		!strings.Contains(stdout.String(), "@glade/performance 0.1.0 first-party Performance scans.") {
+		t.Fatalf("unexpected available output:\n%s", stdout.String())
+	}
+}
+
+func TestPluginsAvailableRejectsArguments(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "available", "quality"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("available exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "usage: glade plugins available") {
+		t.Fatalf("stderr missing usage:\n%s", stderr.String())
+	}
+}
+
+func TestPluginsSearchWithoutQueryListsRegistry(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@glade/compat","version":"0.1.0","trust":"first-party","summary":"Compatibility fixtures.","assets":[{"os":%q,"arch":%q,"url":"https://example.test/compat.tar.gz","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}]}`, runtime.GOOS, runtime.GOARCH)
+	}))
+	defer server.Close()
+	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "search"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("search exit=%d stderr=%s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "@glade/compat 0.1.0 first-party Compatibility fixtures.") {
+		t.Fatalf("unexpected search output:\n%s", stdout.String())
+	}
+}
+
+func TestPluginsHelpShowsAvailable(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "--help"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("help exit=%d stderr=%s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "available") ||
+		!strings.Contains(stdout.String(), "List plugins available to install.") {
+		t.Fatalf("plugins help missing available command:\n%s", stdout.String())
+	}
+}
+
 func TestPluginsInstallRemoteURLRequiresSHA256(t *testing.T) {
 	t.Setenv("GLADE_HOME", t.TempDir())
 	var stdout, stderr bytes.Buffer

@@ -21,6 +21,8 @@ func runPlugins(ctx context.Context, args []string, stdout, stderr io.Writer) er
 	switch args[0] {
 	case "list":
 		return runPluginsList(ctx, stdout)
+	case "available":
+		return runPluginsAvailable(ctx, args[1:], stdout)
 	case "search":
 		return runPluginsSearch(ctx, args[1:], stdout)
 	case "info":
@@ -52,6 +54,7 @@ Usage:
 
 Commands:
   list              List installed plugins.
+  available         List plugins available to install.
   search            Search the plugin marketplace.
   info              Show marketplace plugin metadata.
   link              Link a local plugin executable.
@@ -63,6 +66,7 @@ Commands:
   restore           Restore plugins from glade.plugins.lock.json.
 
 Examples:
+  glade plugins available
   glade plugins install @glade/compat
   glade plugins install @glade/performance
   glade plugins search quality
@@ -231,17 +235,32 @@ func isArchiveInstallArg(arg string) bool {
 	return strings.ContainsAny(arg, `/\`)
 }
 
+func runPluginsAvailable(ctx context.Context, args []string, stdout io.Writer) error {
+	if len(args) != 0 {
+		return errors.New("usage: glade plugins available")
+	}
+	return runPluginsSearch(ctx, nil, stdout)
+}
+
 func runPluginsSearch(ctx context.Context, args []string, stdout io.Writer) error {
-	if len(args) != 1 {
-		return errors.New("usage: glade plugins search <query>")
+	if len(args) > 1 {
+		return errors.New("usage: glade plugins search [query]")
+	}
+	query := ""
+	if len(args) == 1 {
+		query = args[0]
 	}
 	index, err := pluginhost.FetchRegistry(ctx, pluginhost.RegistryURL())
 	if err != nil {
 		return err
 	}
-	results := index.Search(args[0])
+	results := index.Search(query)
 	if len(results) == 0 {
-		fmt.Fprintf(stdout, "No plugins found for %q.\n", args[0])
+		if query == "" {
+			fmt.Fprintln(stdout, "No plugins available.")
+			return nil
+		}
+		fmt.Fprintf(stdout, "No plugins found for %q.\n", query)
 		return nil
 	}
 	for _, plugin := range results {

@@ -5,10 +5,15 @@ for your OS and CPU, verifies SHA-256, verifies the archive checksums, reads
 `manifest --json`, then records the install.
 
 ```bash
+glade plugins available
+glade plugins search
 glade plugins search quality
 glade plugins info @acme/quality
 glade plugins install @acme/quality
 ```
+
+`available` and bare `search` list every installable plugin in the configured
+marketplace. Add a query when you want to narrow the list.
 
 ## Trust labels
 
