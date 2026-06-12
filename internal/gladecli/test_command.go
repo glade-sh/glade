@@ -1068,16 +1068,17 @@ func (r *cliTestProgressReporter) finish() {
 }
 
 type runPerfSummary struct {
-	GeneratedAt    string             `json:"generatedAt"`
-	Project        string             `json:"project"`
-	DurationMS     int64              `json:"durationMs"`
-	DiscoverMS     int64              `json:"discoverMs"`
-	CompileMS      int64              `json:"compileMs"`
-	TotalMS        int64              `json:"totalMs"`
-	Summary        testreport.Summary `json:"summary"`
-	TopSlowClasses []runPerfClass     `json:"topSlowClasses,omitempty"`
-	CPUProfilePath string             `json:"cpuProfilePath,omitempty"`
-	MemProfilePath string             `json:"memProfilePath,omitempty"`
+	GeneratedAt    string                `json:"generatedAt"`
+	Project        string                `json:"project"`
+	DurationMS     int64                 `json:"durationMs"`
+	DiscoverMS     int64                 `json:"discoverMs"`
+	CompileMS      int64                 `json:"compileMs"`
+	TotalMS        int64                 `json:"totalMs"`
+	Summary        testreport.Summary    `json:"summary"`
+	ApexPerf       apextest.PerfCounters `json:"apexPerf"`
+	TopSlowClasses []runPerfClass        `json:"topSlowClasses,omitempty"`
+	CPUProfilePath string                `json:"cpuProfilePath,omitempty"`
+	MemProfilePath string                `json:"memProfilePath,omitempty"`
 }
 
 type runPerfClass struct {
@@ -1146,6 +1147,7 @@ func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpu
 		CompileMS:      compileMS,
 		TotalMS:        totalMS,
 		Summary:        result.Summary(),
+		ApexPerf:       apextest.SnapshotPerfCounters(),
 		CPUProfilePath: strings.TrimSpace(cpuProfilePath),
 		MemProfilePath: strings.TrimSpace(memProfilePath),
 	}

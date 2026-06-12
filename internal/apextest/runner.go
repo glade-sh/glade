@@ -184,6 +184,7 @@ func RunContext(ctx context.Context, index typesys.Index, opts Options) testrepo
 }
 
 func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cases []TestCase) testreport.Run {
+	ResetPerfCounters()
 	started := time.Now()
 	emitProgress := opts.Progress != nil
 	if cases == nil {
@@ -207,7 +208,7 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	}
 	org := runtime.Template.CloneRuntimeOrg()
 	initializeTestOrg(&org)
-	baseMachine := runtime.BaseMachine.CloneRuntime(nil)
+	baseMachine := cloneRuntimeMachine(runtime.BaseMachine)
 	baseMachine.SetTraceEnabled(false)
 	baseMachine.EnableTestContext()
 	// Prime the schema stamp so per-test clones inherit it and reuse the shared
@@ -966,6 +967,8 @@ func initializeTestOrg(org *storage.OrgState) {
 }
 
 func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.VM, baseRuntimeErr error, setups []vm.Method, setupErr error, setupPrograms []ir.Program, setupProgramErr error, triggerErrors []error, org storage.OrgState, opts Options) (storage.OrgState, uint64, error, bool) {
+	started := time.Now()
+	defer func() { recordSetupDuration(time.Since(started)) }()
 	if err := ctx.Err(); err != nil {
 		return org, 0, err, true
 	}
@@ -985,7 +988,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 		return org, 0, nil, true
 	}
 	setupOrg := cloneRuntimeOrgForClass(org, className, "setup")
-	machine := baseMachine.CloneRuntime(nil)
+	machine := cloneRuntimeMachine(baseMachine)
 	machine.SetTraceEnabled(false)
 	if opts.LimitMode != "" {
 		machine.SetLimitMode(opts.LimitMode)
@@ -1019,7 +1022,9 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 	}
 	started := time.Now()
 	defer func() {
-		out.DurationMS = time.Since(started).Milliseconds()
+		elapsed := time.Since(started)
+		recordRunDuration(elapsed)
+		out.DurationMS = elapsed.Milliseconds()
 	}()
 	if setupErr != nil {
 		if errors.Is(setupErr, context.Canceled) || errors.Is(setupErr, context.DeadlineExceeded) {
@@ -1051,7 +1056,7 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 		out.Problem = problem("UnsupportedFeature", invokeErr.Error(), testCase)
 		return out
 	}
-	machine := baseMachine.CloneRuntime(nil)
+	machine := cloneRuntimeMachine(baseMachine)
 	machine.SetDeterministicRandomState(setupRandom)
 	machine.SetTraceEnabled(opts.TraceBlocked || opts.SlowTestThresholdMS > 0)
 	if opts.LimitMode != "" {
@@ -1148,12 +1153,25 @@ func registerRuntime(machine *vm.VM, methods map[string]vm.Method, classes []vm.
 
 func cloneRuntimeOrg(org storage.OrgState) storage.OrgState {
 	recordCloneRuntimeOrg("", "")
-	return org.CloneRollbackSnapshot()
+	started := time.Now()
+	clone := org.CloneRollbackSnapshot()
+	recordCloneRuntimeOrgDuration(time.Since(started))
+	return clone
 }
 
 func cloneRuntimeOrgForClass(org storage.OrgState, className, phase string) storage.OrgState {
 	recordCloneRuntimeOrg(className, phase)
-	return org.CloneRuntimeFrozenShared()
+	started := time.Now()
+	clone := org.CloneRuntimeFrozenShared()
+	recordCloneRuntimeOrgDuration(time.Since(started))
+	return clone
+}
+
+func cloneRuntimeMachine(machine *vm.VM) *vm.VM {
+	started := time.Now()
+	clone := machine.CloneRuntime(nil)
+	recordCloneRuntimeMachineDuration(time.Since(started))
+	return clone
 }
 
 func flattenSetupMethods(setups map[string][]vm.Method) []vm.Method {
