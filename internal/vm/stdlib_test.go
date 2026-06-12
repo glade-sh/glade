@@ -2067,16 +2067,17 @@ System.assertEquals('001000000000001AAA', EncodingUtil.urlEncode(recordId, 'UTF-
 Blob md5 = Crypto.generateDigest('MD5', hello);
 Blob sha1 = Crypto.generateDigest('SHA1', hello);
 Blob sha256 = Crypto.generateDigest('SHA-256', hello);
+Blob sha256NoDash = Crypto.generateDigest('sha256', hello);
+Blob sha384 = Crypto.generateDigest('SHA-384', hello);
 Blob sha512 = Crypto.generateDigest('SHA-512', hello);
 Blob sha3 = Crypto.generateDigest('SHA3-256', hello);
-Blob normalizedSha512 = Crypto.generateDigest(' sha_512 ', hello);
 System.assertEquals('5d41402abc4b2a76b9719d911017c592', EncodingUtil.convertToHex(md5));
 System.assertEquals('aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d', EncodingUtil.convertToHex(sha1));
 System.assertEquals('2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', EncodingUtil.convertToHex(sha256));
+System.assertEquals(EncodingUtil.convertToHex(sha256), EncodingUtil.convertToHex(sha256NoDash));
+System.assertEquals('59e1748777448c69de6b800d7a33bbfb9ff1b463e44354c3553bcdb9c666fa90125a3c79f90397bdf5f6a13de828684f', EncodingUtil.convertToHex(sha384));
 System.assertEquals('9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca72323c3d99ba5c11d7c7acc6e14b8c5da0c4663475c2e5c3adef46f73bcdec043', EncodingUtil.convertToHex(sha512));
 System.assertEquals('3338be694f50c5f338814986cdf0686453a888b84f424d792af4b9202398f392', EncodingUtil.convertToHex(sha3));
-System.assertEquals(EncodingUtil.convertToHex(sha512), EncodingUtil.convertToHex(normalizedSha512));
-System.assertEquals(EncodingUtil.convertToHex(sha256), EncodingUtil.convertToHex(Crypto.generateDigest(' sha_256 ', hello)));
 System.assertEquals('snow+trail', EncodingUtil.urlEncode('snow trail', ' utf_8 '));
 System.assertEquals('A B+Ω', EncodingUtil.urlDecode('A+B%2B%CE%A9', 'UTF8'));
 Blob message = Blob.valueOf('message');
@@ -3099,6 +3100,8 @@ func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 		{source: "EncodingUtil.urlDecode('%zz', 'UTF-8');", want: "invalid URL escape"},
 		{source: "Crypto.areEqualConstantTime(Blob.valueOf('x'), 'x');", want: "Crypto.areEqualConstantTime right expects Blob"},
 		{source: "Crypto.generateDigest('SHA-999', Blob.valueOf('x'));", want: `unsupported digest algorithm "SHA-999"`},
+		{source: "Crypto.generateDigest(' sha_256 ', Blob.valueOf('x'));", want: `unsupported digest algorithm " sha_256 "`},
+		{source: "Crypto.generateDigest('SHA3_256', Blob.valueOf('x'));", want: `unsupported digest algorithm "SHA3_256"`},
 		{source: "Crypto.generateMac('hmacSHA999', Blob.valueOf('x'), Blob.valueOf('key'));", want: `unsupported MAC algorithm "hmacSHA999"`},
 		{source: "Crypto.generateMac('hmacSHA256', Blob.valueOf('x'), 'key');", want: "Crypto.generateMac privateKey expects Blob"},
 		{source: "Crypto.verifyHmac('hmacSHA999', Blob.valueOf('x'), Blob.valueOf('key'), Blob.valueOf('mac'));", want: `unsupported MAC algorithm "hmacSHA999"`},
