@@ -35,9 +35,13 @@ type Handler struct {
 }
 
 type pendingLiveSession struct {
-	machine *vm.VM
-	program ir.Program
+	machine   *vm.VM
+	program   ir.Program
+	className string
+	done      LiveSessionDoneHook
 }
+
+type LiveSessionDoneHook func(machine *vm.VM, err error) error
 
 func NewHandler(snapshot Snapshot) *Handler {
 	return &Handler{
@@ -126,9 +130,17 @@ func (h *Handler) PublishEvent(event Event) {
 }
 
 func (h *Handler) PrepareLiveSession(machine *vm.VM, program ir.Program) {
+	h.PrepareLiveSessionWithDone(machine, program, nil)
+}
+
+func (h *Handler) PrepareLiveSessionWithDone(machine *vm.VM, program ir.Program, done LiveSessionDoneHook) {
+	h.PrepareLiveSessionInClassWithDone(machine, program, "", done)
+}
+
+func (h *Handler) PrepareLiveSessionInClassWithDone(machine *vm.VM, program ir.Program, className string, done LiveSessionDoneHook) {
 	h.stateMu.Lock()
 	defer h.stateMu.Unlock()
-	h.pending = &pendingLiveSession{machine: machine, program: program}
+	h.pending = &pendingLiveSession{machine: machine, program: program, className: className, done: done}
 }
 
 func (h *Handler) handleEvaluate(request Request) Response {
@@ -504,7 +516,7 @@ func (h *Handler) startPendingLiveSession() {
 	if pending == nil {
 		return
 	}
-	h.StartLiveSession(pending.machine, pending.program)
+	h.StartLiveSessionInClassWithDone(pending.machine, pending.program, pending.className, pending.done)
 }
 
 func (h *Handler) setLiveSession(session *LiveSession) {

@@ -43,6 +43,37 @@ func TestLiveSessionContinueStepAndDisconnect(t *testing.T) {
 	}
 }
 
+func TestLiveSessionDoneHookRunsBeforeDone(t *testing.T) {
+	h := NewHandler(Snapshot{})
+	program, err := vm.CompileAnonymous("Integer x = 1;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := vm.New(nil)
+	called := false
+	session := h.StartLiveSessionWithDone(machine, program, func(got *vm.VM, execErr error) error {
+		if got != machine {
+			t.Fatalf("hook machine = %p, want %p", got, machine)
+		}
+		if execErr != nil {
+			t.Fatalf("execErr = %v", execErr)
+		}
+		called = true
+		return nil
+	})
+	select {
+	case err := <-session.Done():
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("live session did not finish")
+	}
+	if !called {
+		t.Fatal("done hook was not called")
+	}
+}
+
 func TestLiveSessionStepInOverAndOutUseStackDepth(t *testing.T) {
 	h := NewHandler(Snapshot{})
 	h.Handle(request(1, CommandSetBreakpoints, map[string]any{

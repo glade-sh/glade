@@ -149,15 +149,18 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "exec",
 		Description: "Execute anonymous Apex.",
-		Usage:       []string{"glade exec [--json] [--trace <path>] [--debug-log <path>] [--limit-mode <mode>] '<anonymous apex>'"},
+		Usage:       []string{"glade exec [--project <root>] [--db <path>] [--dry-run] [--json] [--trace <path>] [--debug-log <path>] [--limit-mode <mode>] '<anonymous apex>'"},
 		Flags: []FlagHelp{
+			{Name: "--project, -p", Value: "<root>", Description: "SFDX project root used for metadata and local org shape."},
+			{Name: "--db", Value: "<path>", Description: "SQLite local org path for DB-backed anonymous Apex execution."},
+			{Name: "--dry-run", Description: "Run against the selected local org without saving changes."},
 			{Name: "--json", Description: "Write VM result and trace as JSON."},
 			{Name: "--debug", Description: "Serve one DAP snapshot for the run."},
 			{Name: "--trace", Value: "<path>", Description: "Write trace JSON to a file."},
 			{Name: "--debug-log", Value: "<path>", Description: "Write a Salesforce-style debug log. Use - for stdout."},
 			{Name: "--limit-mode", Value: "<mode>", Description: "Governor limit mode: permissive or strict."},
 		},
-		Examples: []string{`glade exec "System.debug('hello');"`, `glade exec --json "Integer x = 1;"`},
+		Examples: []string{`glade exec "System.debug('hello');"`, `glade exec --json "Integer x = 1;"`, `glade exec --project . --db .glade/envs/dev.sqlite "insert new Account(Name = 'Local');"`},
 	},
 	{
 		Name:        "debug",
@@ -180,24 +183,29 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "editor",
 		Description: "Install and check editor integrations.",
-		Usage:       []string{"glade editor install vscode --vsix <path> [--editor <code|cursor|windsurf>] [--force]", "glade editor doctor vscode [--editor <code|cursor|windsurf>]"},
+		Usage:       []string{"glade editor install vscode [--vsix <path>] [--editor <code|cursor|windsurf>] [--force]", "glade editor doctor vscode [--editor <code|cursor|windsurf>] [--json]"},
 		Subcommands: []SubcommandHelp{
 			{Name: "install", Description: "Install an editor extension package."},
 			{Name: "doctor", Description: "Check editor and glade executable paths."},
 		},
 		Flags: []FlagHelp{
-			{Name: "--vsix", Value: "<path>", Description: "VS Code extension package."},
+			{Name: "--vsix", Value: "<path>", Description: "VS Code extension package. Defaults to bundled VSIX when available."},
 			{Name: "--editor", Value: "<name>", Description: "Editor command: code, cursor, or windsurf."},
 			{Name: "--force", Description: "Force extension installation."},
+			{Name: "--json", Description: "Write editor doctor status as JSON."},
 		},
 		Examples: []string{"glade editor doctor vscode", "glade editor install vscode --vsix vscode-glade.vsix --force"},
 	},
 	{
 		Name:        "dap",
 		Description: "Run the Debug Adapter Protocol server over stdio.",
-		Usage:       []string{"glade dap [--project <root>]"},
-		Flags:       []FlagHelp{{Name: "--project", Value: "<root>", Description: "Default project root for launch requests."}},
-		Examples:    []string{"glade dap --project ."},
+		Usage:       []string{"glade dap [--project <root>] [--db <path>] [--dry-run]"},
+		Flags: []FlagHelp{
+			{Name: "--project", Value: "<root>", Description: "Default project root for launch requests."},
+			{Name: "--db", Value: "<path>", Description: "SQLite local org path for DB-backed debug sessions."},
+			{Name: "--dry-run", Description: "Debug against the selected local org without saving changes."},
+		},
+		Examples: []string{"glade dap --project .", "glade dap --project . --db .glade/envs/dev.sqlite"},
 	},
 	{
 		Name:        "test",

@@ -6,6 +6,53 @@ preview: DAP has live VM pause/step primitives, LSP uses full-project indexing
 at startup with open-buffer overlays, and watch mode uses native file watching
 with polling fallback.
 
+## VS Code Extension
+
+Glade ships a VS Code extension in release archives. Install Glade first, then
+install the bundled VSIX:
+
+```bash
+glade editor doctor vscode
+glade editor install vscode --force
+```
+
+The extension adds a `Glade` Activity Bar beside the Salesforce VS Code
+extensions. It does not replace Salesforce org-backed commands, CodeLens,
+language features, or scratch-org test runs. Glade surfaces use `Glade: ...`
+command titles, `glade.*` command ids, a separate `Glade Apex` Test Explorer
+controller, and CodeLens labels that include `Local`.
+
+The sidebar shows:
+
+- Project: SFDX root, package dirs, namespace, API version, and Salesforce
+  extension detection.
+- Recommended Runs: changed tests, failed tests, and warm watch controls.
+- Apex Tests: local Apex tests through the VS Code Testing API.
+- Data Environments: named SQLite-backed local org states.
+- Local Org: inspect, seed, reset, and export for the active environment.
+- Debug And Logs: active Apex breakpoint count.
+
+The default local data environment is `dev` at `.glade/envs/dev.sqlite`.
+`Glade: Execute Local Anonymous Apex`, CodeLens debug, and Test Explorer debug
+all pass the active DB to Glade:
+
+```bash
+glade exec --project <root> --db <active-db> --debug-log - "insert new Account(Name='local');"
+glade dap --project <root> --db <active-db>
+```
+
+Configure more environments in workspace settings:
+
+```json
+{
+  "glade.environments": [
+    { "name": "dev", "dbPath": ".glade/envs/dev.sqlite" },
+    { "name": "feature", "dbPath": ".glade/envs/feature.sqlite" }
+  ],
+  "glade.activeEnvironment": "dev"
+}
+```
+
 ## Browser Playground
 
 `glade playground` starts a local web UI for quick Apex experiments. It is useful
@@ -267,18 +314,6 @@ glade test --project . --no-cache --filter AccountServiceTest
 
 Clear the cache after branch switches or Glade upgrades. Restart
 `glade test serve` after `clear-cache` if the server was already running.
-
-## IntelliJ Support
-
-`contrib/intellij-glade` uses the same `glade dap` wire protocol as the VS Code
-flow. Both clients send `initialize` and `launch` requests over stdio with
-`source` or `program`, plus `project`.
-
-The plugin launch path is the same:
-
-- Debug anonymous selection: starts `glade dap --project <workspace-root>` and sends
-  `source` in the launch request.
-- Debug a test entrypoint or program: sends `program` in the launch request.
 
 ## DAP Startup Cache
 

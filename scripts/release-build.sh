@@ -38,7 +38,18 @@ mkdir -p "${DIST_DIR}"
 	CGO_ENABLED=1 go build -trimpath -ldflags "${LDFLAGS}" -o "${workdir}/${binary}" ./cmd/glade
 )
 
-mkdir -p "${workdir}/share/glade/lwcruntime/src"
+(
+	cd "${ROOT}/contrib/vscode-glade"
+	if [[ ! -d node_modules ]]; then
+		npm ci
+	fi
+	rm -f dist/vscode-glade-*.vsix
+	npm run package
+)
+mkdir -p "${workdir}/share/glade/editor"
+cp "${ROOT}"/contrib/vscode-glade/dist/vscode-glade-*.vsix "${workdir}/share/glade/editor/vscode-glade.vsix"
+
+mkdir -p "${workdir}/share/glade/lwcruntime/src" "${workdir}/share/glade/third_party"
 cp -R "${ROOT}/third_party/lwc" "${workdir}/share/glade/third_party/lwc"
 cp -R "${ROOT}/lwcruntime/src/shims" "${workdir}/share/glade/lwcruntime/src/shims"
 

@@ -1,30 +1,145 @@
 {
   "name": "vscode-glade",
-  "displayName": "Glade Apex Debugger",
-  "description": "Debug local Apex with glade over the Debug Adapter Protocol.",
+  "displayName": "Glade Local Apex",
+  "description": "Run, test, debug, and inspect local Apex projects with Glade.",
   "version": "0.0.1",
   "publisher": "glade",
+  "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.92.0"
   },
   "categories": [
-    "Debuggers"
+    "Debuggers",
+    "Testing",
+    "Programming Languages"
   ],
   "activationEvents": [
+    "workspaceContains:**/sfdx-project.json",
+    "onLanguage:apex",
+    "onView:glade.project",
+    "onView:glade.recommendedRuns",
+    "onView:glade.apexTests",
+    "onView:glade.environments",
+    "onView:glade.localOrg",
+    "onView:glade.debugLogs",
     "onDebugResolve:glade",
+    "onCommand:glade.runChangedTests",
+    "onCommand:glade.runFailedTests",
+    "onCommand:glade.runLocalTestFromCodeLens",
+    "onCommand:glade.debugLocalTestFromCodeLens",
     "onCommand:glade.executeAnonymous",
-    "onCommand:glade.debugAnonymous"
+    "onCommand:glade.debugAnonymous",
+    "onCommand:glade.debugCurrentTest"
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "glade",
+          "title": "Glade",
+          "icon": "media/glade.svg"
+        }
+      ]
+    },
+    "views": {
+      "glade": [
+        {
+          "id": "glade.project",
+          "name": "Project",
+          "when": "config.glade.enableSidebar"
+        },
+        {
+          "id": "glade.recommendedRuns",
+          "name": "Recommended Runs",
+          "when": "config.glade.enableSidebar"
+        },
+        {
+          "id": "glade.apexTests",
+          "name": "Apex Tests",
+          "when": "config.glade.enableSidebar"
+        },
+        {
+          "id": "glade.environments",
+          "name": "Data Environments",
+          "when": "config.glade.enableSidebar"
+        },
+        {
+          "id": "glade.localOrg",
+          "name": "Local Org",
+          "when": "config.glade.enableSidebar"
+        },
+        {
+          "id": "glade.debugLogs",
+          "name": "Debug And Logs",
+          "when": "config.glade.enableSidebar"
+        }
+      ]
+    },
     "commands": [
       {
+        "command": "glade.refresh",
+        "title": "Glade: Refresh"
+      },
+      {
+        "command": "glade.runChangedTests",
+        "title": "Glade: Run Local Changed Tests"
+      },
+      {
+        "command": "glade.runFailedTests",
+        "title": "Glade: Run Local Failed Tests"
+      },
+      {
+        "command": "glade.runLocalTestFromCodeLens",
+        "title": "Glade: Run Local Test"
+      },
+      {
+        "command": "glade.debugLocalTestFromCodeLens",
+        "title": "Glade: Debug Local Test"
+      },
+      {
+        "command": "glade.startWatch",
+        "title": "Glade: Start Local Watch"
+      },
+      {
+        "command": "glade.stopWatch",
+        "title": "Glade: Stop Local Watch"
+      },
+      {
+        "command": "glade.createEnvironment",
+        "title": "Glade: Create Local Data Environment"
+      },
+      {
+        "command": "glade.switchEnvironment",
+        "title": "Glade: Switch Local Data Environment"
+      },
+      {
+        "command": "glade.seedLocalOrg",
+        "title": "Glade: Seed Local Data Environment"
+      },
+      {
+        "command": "glade.resetLocalOrg",
+        "title": "Glade: Reset Local Data Environment"
+      },
+      {
+        "command": "glade.exportLocalOrg",
+        "title": "Glade: Export Local Data Environment"
+      },
+      {
+        "command": "glade.inspectLocalOrg",
+        "title": "Glade: Inspect Local Data Environment"
+      },
+      {
         "command": "glade.executeAnonymous",
-        "title": "Glade: Execute Anonymous Apex"
+        "title": "Glade: Execute Local Anonymous Apex"
       },
       {
         "command": "glade.debugAnonymous",
-        "title": "Glade: Debug Anonymous Apex"
+        "title": "Glade: Debug Local Anonymous Apex"
+      },
+      {
+        "command": "glade.debugCurrentTest",
+        "title": "Glade: Debug Local Current Test"
       }
     ],
     "languages": [
@@ -67,22 +182,95 @@
               "project": {
                 "type": "string",
                 "description": "SFDX project root. Defaults to the workspace folder."
+              },
+              "dbPath": {
+                "type": "string",
+                "description": "SQLite local org path for DB-backed debug sessions."
+              },
+              "className": {
+                "type": "string",
+                "description": "Apex class context for local test debug sessions."
+              },
+              "methodName": {
+                "type": "string",
+                "description": "Apex method context for local test debug sessions."
               }
             }
           }
         }
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Glade",
+      "properties": {
+        "glade.enableSidebar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the Glade Activity Bar and sidebar views."
+        },
+        "glade.enableTestExplorer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Glade local Apex Test Explorer integration."
+        },
+        "glade.enableCodeLens": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Glade local Apex CodeLens commands."
+        },
+        "glade.enableLsp": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Glade local Apex language diagnostics."
+        },
+        "glade.environments": {
+          "type": "array",
+          "default": [],
+          "description": "Named local Glade data environments. Empty means a dev environment at .glade/envs/dev.sqlite.",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "dbPath"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "dbPath": {
+                "type": "string"
+              },
+              "fixturePath": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "glade.activeEnvironment": {
+          "type": "string",
+          "default": "dev",
+          "description": "Name of the active Glade local data environment."
+        },
+        "glade.changedSince": {
+          "type": "string",
+          "default": "origin/main",
+          "description": "Default Git ref for Glade local changed-test runs."
+        }
+      }
+    }
   },
   "scripts": {
     "compile": "tsc -p ./",
     "package": "mkdir -p dist && npm run compile && vsce package --allow-missing-repository --out dist/vscode-glade-${npm_package_version}.vsix",
-    "test": "npm run compile && node test/commands.test.js"
+    "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/localOrg.test.js && node test/watch.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/vscode": "^1.92.0",
     "@vscode/vsce": "^3.9.2",
     "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
   }
 }

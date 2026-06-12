@@ -904,6 +904,132 @@ func TestRunEditorDoctorVSCodeReportsPaths(t *testing.T) {
 	}
 }
 
+func TestRunEditorDoctorVSCodeJSONReportsBundledVSIX(t *testing.T) {
+	home := t.TempDir()
+	vsix := filepath.Join(home, "editor", "vscode-glade.vsix")
+	if err := os.MkdirAll(filepath.Dir(vsix), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GLADE_HOME", home)
+	restore := stubEditorCommandDeps(t,
+		func(name string) (string, error) {
+			switch name {
+			case "code":
+				return "/usr/local/bin/code", nil
+			case "glade":
+				return "/Users/matt/.local/bin/glade", nil
+			default:
+				return "", os.ErrNotExist
+			}
+		},
+		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+			return nil, nil
+		},
+	)
+	defer restore()
+
+	var stdout bytes.Buffer
+	if err := runEditor(context.Background(), []string{"doctor", "vscode", "--json"}, &stdout); err != nil {
+		t.Fatal(err)
+	}
+	var got struct {
+		Target string `json:"target"`
+		Editor struct {
+			Command string `json:"command"`
+			Path    string `json:"path"`
+			OK      bool   `json:"ok"`
+		} `json:"editor"`
+		Glade struct {
+			Path string `json:"path"`
+			OK   bool   `json:"ok"`
+		} `json:"glade"`
+		BundledVSIX struct {
+			Path   string `json:"path"`
+			Exists bool   `json:"exists"`
+		} `json:"bundledVsix"`
+		OK bool `json:"ok"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("json: %v\n%s", err, stdout.String())
+	}
+	if got.Target != "vscode" || got.Editor.Command != "code" || !got.Editor.OK || !got.Glade.OK {
+		t.Fatalf("doctor json = %#v", got)
+	}
+	if got.BundledVSIX.Path != vsix || !got.BundledVSIX.Exists {
+		t.Fatalf("bundled vsix = %#v, want %q", got.BundledVSIX, vsix)
+	}
+}
+
+func TestRunEditorInstallVSCodeUsesBundledVSIXWhenPathOmitted(t *testing.T) {
+	vsix := filepath.Join(t.TempDir(), "vscode-glade.vsix")
+	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GLADE_VSCODE_VSIX", vsix)
+	var ranArgs []string
+	restore := stubEditorCommandDeps(t,
+		func(name string) (string, error) {
+			if name != "code" {
+				t.Fatalf("looked up %q, want code", name)
+			}
+			return "/usr/local/bin/code", nil
+		},
+		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+			ranArgs = append([]string(nil), args...)
+			return []byte("installed\n"), nil
+		},
+	)
+	defer restore()
+
+	var stdout bytes.Buffer
+	if err := runEditor(context.Background(), []string{"install", "vscode", "--force"}, &stdout); err != nil {
+		t.Fatal(err)
+	}
+	wantArgs := []string{"--install-extension", vsix, "--force"}
+	if strings.Join(ranArgs, "\x00") != strings.Join(wantArgs, "\x00") {
+		t.Fatalf("ran args = %#v, want %#v", ranArgs, wantArgs)
+	}
+}
+
+func TestRunEditorInstallVSCodeUsesGladeHomeBundledVSIX(t *testing.T) {
+	home := t.TempDir()
+	vsix := filepath.Join(home, "editor", "vscode-glade.vsix")
+	if err := os.MkdirAll(filepath.Dir(vsix), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GLADE_HOME", home)
+	t.Setenv("GLADE_VSCODE_VSIX", "")
+	var ranArgs []string
+	restore := stubEditorCommandDeps(t,
+		func(name string) (string, error) {
+			if name != "code" {
+				t.Fatalf("looked up %q, want code", name)
+			}
+			return "/usr/local/bin/code", nil
+		},
+		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+			ranArgs = append([]string(nil), args...)
+			return []byte("installed\n"), nil
+		},
+	)
+	defer restore()
+
+	var stdout bytes.Buffer
+	if err := runEditor(context.Background(), []string{"install", "vscode", "--force"}, &stdout); err != nil {
+		t.Fatal(err)
+	}
+	wantArgs := []string{"--install-extension", vsix, "--force"}
+	if strings.Join(ranArgs, "\x00") != strings.Join(wantArgs, "\x00") {
+		t.Fatalf("ran args = %#v, want %#v", ranArgs, wantArgs)
+	}
+}
+
 func stubEditorCommandDeps(t *testing.T, lookPath func(string) (string, error), run func(context.Context, string, ...string) ([]byte, error)) func() {
 	t.Helper()
 	origLookPath := editorCommandLookPath
@@ -1661,6 +1787,29 @@ func TestRunDAP(t *testing.T) {
 	}
 }
 
+func TestRunDAPAcceptsDBFlag(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	dbPath := filepath.Join(root, ".glade", "envs", "dev.sqlite")
+	initMessage, err := encodeDAPRequest(dap.CommandInitialize, 1, map[string]any{"clientID": "test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	disconnectMessage, err := encodeDAPRequest(dap.CommandDisconnect, 2, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stdout bytes.Buffer
+	err = runDAP(context.Background(), []string{"--project", root, "--db", dbPath}, bytes.NewReader(append(initMessage, disconnectMessage...)), &stdout)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := stdout.String()
+	if !strings.Contains(got, `"command":"initialize"`) || !strings.Contains(got, `"event":"terminated"`) {
+		t.Fatalf("dap stdout missing handshake messages:\n%s", got)
+	}
+}
+
 func TestRunDAPLaunchEmitsStopped(t *testing.T) {
 	inR, inW := io.Pipe()
 	outR, outW := io.Pipe()
@@ -1692,6 +1841,165 @@ func TestRunDAPLaunchEmitsStopped(t *testing.T) {
 	}
 }
 
+func TestRunDAPWithDBPersistsOnCleanTermination(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	dbPath := filepath.Join(root, ".glade", "envs", "dev.sqlite")
+
+	inR, inW := io.Pipe()
+	outR, outW := io.Pipe()
+	done := make(chan error, 1)
+	go func() {
+		defer outW.Close()
+		done <- runDAP(context.Background(), []string{"--project", root, "--db", dbPath}, inR, outW)
+	}()
+
+	messages := make(chan map[string]any, 16)
+	go readDAPMessages(t, outR, messages)
+
+	writeDAPRequest(t, inW, dap.CommandInitialize, 1, nil)
+	writeDAPRequest(t, inW, dap.CommandLaunch, 2, map[string]any{
+		"source": "insert new Account(Name = 'DAP Supply');",
+	})
+	writeDAPRequest(t, inW, dap.CommandConfigurationDone, 3, nil)
+	waitForDAPEvent(t, messages, "terminated")
+	_ = inW.Close()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("DAP server did not stop")
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "inspect", "--db", dbPath, "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inspect failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	var inspect struct {
+		ByObject map[string]int `json:"byObject"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &inspect); err != nil {
+		t.Fatalf("inspect json: %v\n%s", err, stdout.String())
+	}
+	if got := inspect.ByObject["Account"]; got != 1 {
+		t.Fatalf("Account rows = %d, want 1; inspect=%s", got, stdout.String())
+	}
+}
+
+func TestRunDAPLaunchCanExecutePrivateTestMethodInClass(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/SampleTest.cls"), `
+@IsTest
+private class SampleTest {
+  @IsTest
+  static void checks() {
+    System.assertEquals(1, 1);
+  }
+}
+`)
+
+	inR, inW := io.Pipe()
+	outR, outW := io.Pipe()
+	done := make(chan error, 1)
+	go func() {
+		defer outW.Close()
+		done <- runDAP(context.Background(), []string{"--project", root}, inR, outW)
+	}()
+
+	messages := make(chan map[string]any, 16)
+	go readDAPMessages(t, outR, messages)
+
+	writeDAPRequest(t, inW, dap.CommandInitialize, 1, nil)
+	writeDAPRequest(t, inW, dap.CommandLaunch, 2, map[string]any{
+		"source":     "checks();",
+		"className":  "SampleTest",
+		"methodName": "checks",
+	})
+	writeDAPRequest(t, inW, dap.CommandConfigurationDone, 3, nil)
+	stderrOutput := waitForDAPTerminatedAndStderr(t, messages)
+	_ = inW.Close()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("DAP server did not stop")
+	}
+	if stderrOutput != "" {
+		t.Fatalf("DAP stderr output = %q", stderrOutput)
+	}
+}
+
+func TestRunDAPLaunchTestMethodDoesNotPersistDBWrites(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/SampleTest.cls"), `
+@IsTest
+private class SampleTest {
+  @IsTest
+  static void insertsAccount() {
+    insert new Account(Name = 'Test Debug Row');
+  }
+}
+`)
+	dbPath := filepath.Join(root, ".glade", "envs", "dev.sqlite")
+
+	inR, inW := io.Pipe()
+	outR, outW := io.Pipe()
+	done := make(chan error, 1)
+	go func() {
+		defer outW.Close()
+		done <- runDAP(context.Background(), []string{"--project", root, "--db", dbPath}, inR, outW)
+	}()
+
+	messages := make(chan map[string]any, 16)
+	go readDAPMessages(t, outR, messages)
+
+	writeDAPRequest(t, inW, dap.CommandInitialize, 1, nil)
+	writeDAPRequest(t, inW, dap.CommandLaunch, 2, map[string]any{
+		"source":     "insertsAccount();",
+		"className":  "SampleTest",
+		"methodName": "insertsAccount",
+	})
+	writeDAPRequest(t, inW, dap.CommandConfigurationDone, 3, nil)
+	stderrOutput := waitForDAPTerminatedAndStderr(t, messages)
+	_ = inW.Close()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("DAP server did not stop")
+	}
+	if stderrOutput != "" {
+		t.Fatalf("DAP stderr output = %q", stderrOutput)
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "inspect", "--db", dbPath, "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inspect failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	var inspect struct {
+		ByObject map[string]int `json:"byObject"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &inspect); err != nil {
+		t.Fatalf("inspect json: %v\n%s", err, stdout.String())
+	}
+	if got := inspect.ByObject["Account"]; got != 0 {
+		t.Fatalf("Account rows = %d, want 0; inspect=%s", got, stdout.String())
+	}
+}
+
 func TestRunExec(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"exec", "Integer x = 1 + 1; System.debug('x=' + x); System.assertEquals(2, x);"}, &stdout, &stderr)
@@ -1700,6 +2008,129 @@ func TestRunExec(t *testing.T) {
 	}
 	if strings.TrimSpace(stdout.String()) != "x=2" {
 		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunExecWithDBPersistsAnonymousDML(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	dbPath := filepath.Join(root, ".glade", "envs", "dev.sqlite")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"exec",
+		"--project", root,
+		"--db", dbPath,
+		"insert new Account(Name = 'Pond Supply');",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exec failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "inspect", "--db", dbPath, "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inspect failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	var inspect struct {
+		ByObject map[string]int `json:"byObject"`
+		Records  int            `json:"records"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &inspect); err != nil {
+		t.Fatalf("inspect json: %v\n%s", err, stdout.String())
+	}
+	if got := inspect.ByObject["Account"]; got != 1 {
+		t.Fatalf("Account rows = %d, want 1; inspect=%s", got, stdout.String())
+	}
+}
+
+func TestRunExecWithProjectRegistersLocalClasses(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/LocalProbe.cls"), `
+public class LocalProbe {
+  public static String value() {
+    return 'local';
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"exec",
+		"--project", root,
+		"System.assertEquals('local', LocalProbe.value());",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exec failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+}
+
+func TestRunExecWithDBDryRunDoesNotPersist(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	dbPath := filepath.Join(root, ".glade", "envs", "dev.sqlite")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"exec",
+		"--project", root,
+		"--db", dbPath,
+		"--dry-run",
+		"insert new Account(Name = 'Dry Run Supply');",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exec failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "inspect", "--db", dbPath, "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inspect failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	var inspect struct {
+		ByObject map[string]int `json:"byObject"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &inspect); err != nil {
+		t.Fatalf("inspect json: %v\n%s", err, stdout.String())
+	}
+	if got := inspect.ByObject["Account"]; got != 0 {
+		t.Fatalf("Account rows = %d, want 0; inspect=%s", got, stdout.String())
+	}
+}
+
+func TestRunExecWithDBDoesNotPersistOnExecutionError(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	dbPath := filepath.Join(root, ".glade", "envs", "dev.sqlite")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"exec",
+		"--project", root,
+		"--db", dbPath,
+		"insert new Account(Name = 'Bad Supply'); System.assertEquals(1, 2);",
+	}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("exec succeeded, want failure stdout=%q stderr=%q", stdout.String(), stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "inspect", "--db", dbPath, "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inspect failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	var inspect struct {
+		ByObject map[string]int `json:"byObject"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &inspect); err != nil {
+		t.Fatalf("inspect json: %v\n%s", err, stdout.String())
+	}
+	if got := inspect.ByObject["Account"]; got != 0 {
+		t.Fatalf("Account rows = %d, want 0; inspect=%s", got, stdout.String())
 	}
 }
 
@@ -1747,6 +2178,34 @@ func waitForDAPEvent(t *testing.T, messages <-chan map[string]any, event string)
 			}
 		case <-deadline:
 			t.Fatalf("timeout waiting for DAP event %q", event)
+		}
+	}
+}
+
+func waitForDAPTerminatedAndStderr(t *testing.T, messages <-chan map[string]any) string {
+	t.Helper()
+	deadline := time.After(5 * time.Second)
+	var stderr strings.Builder
+	for {
+		select {
+		case message, ok := <-messages:
+			if !ok {
+				t.Fatal("DAP stream closed before terminated")
+			}
+			if message["type"] != dap.MessageTypeEvent {
+				continue
+			}
+			if message["event"] == "output" {
+				body, _ := message["body"].(map[string]any)
+				if body["category"] == "stderr" {
+					stderr.WriteString(fmt.Sprint(body["output"]))
+				}
+			}
+			if message["event"] == "terminated" {
+				return stderr.String()
+			}
+		case <-deadline:
+			t.Fatal("timeout waiting for DAP terminated event")
 		}
 	}
 }

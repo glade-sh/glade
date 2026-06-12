@@ -169,6 +169,11 @@ func writeDBWizard(w io.Writer, command, dbPath, root string, jsonOut bool, posi
 }
 
 func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, error) {
+	if dir := filepath.Dir(path); dir != "." && dir != "" {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return nil, storage.OrgState{}, err
+		}
+	}
 	store, err := storage.OpenSQLite(path)
 	if err != nil {
 		return nil, storage.OrgState{}, err

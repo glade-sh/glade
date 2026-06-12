@@ -1,8 +1,98 @@
 # Editor, LSP, and DAP
 
-Glade includes editor-facing surfaces for diagnostics and debug snapshots. They are built on the same parser, semantic analyzer, project loader, and runtime as the CLI.
+Glade includes a VS Code extension for local Apex work. It uses the same parser,
+semantic checks, VM, storage layer, test runner, LSP, and DAP surfaces as the
+CLI.
 
-## Language server
+## VS Code Extension
+
+Install the bundled extension from a Glade release:
+
+```bash
+glade editor doctor vscode
+glade editor install vscode --force
+```
+
+The VSIX lives in the release archive at
+`share/glade/editor/vscode-glade.vsix`. For extension development, package from
+the source tree:
+
+```bash
+cd contrib/vscode-glade
+npm install
+npm run package
+glade editor install vscode --vsix dist/vscode-glade-0.0.1.vsix --force
+```
+
+Open an SFDX project. The extension adds a `Glade` Activity Bar with Project,
+Recommended Runs, Apex Tests, Data Environments, Local Org, and Debug And Logs
+views.
+
+Glade sits beside the Salesforce VS Code Extension Pack. It keeps separate
+`glade.*` command ids, a `Glade Apex` Test Explorer controller, and CodeLens
+labels that include `Local`. It does not take over `SFDX:*` commands,
+Salesforce scratch-org tests, Salesforce CodeLens, Apex Replay Debugger, or the
+Salesforce Apex language server.
+
+## Local Tests
+
+Run local tests from the Glade Activity Bar, the native VS Code Test Explorer,
+or CodeLens. Focused runs call:
+
+```bash
+glade test --project <root> --json --class <Class> --method <Method>
+```
+
+Changed-test runs use:
+
+```bash
+glade test changed --project <root> --since origin/main --json
+```
+
+Change the default ref with `glade.changedSince`.
+
+The warm watch buttons run:
+
+```bash
+glade test --project <root> --daemon --watch
+```
+
+## Local Data Environments
+
+The default environment is `dev` at `.glade/envs/dev.sqlite`. Add more named
+environments in workspace settings:
+
+```json
+{
+  "glade.environments": [
+    { "name": "dev", "dbPath": ".glade/envs/dev.sqlite" },
+    { "name": "feature", "dbPath": ".glade/envs/feature.sqlite" }
+  ],
+  "glade.activeEnvironment": "feature"
+}
+```
+
+Execute anonymous Apex persists successful DML to the active environment:
+
+```bash
+glade exec --project <root> --db <active-db> --debug-log - "insert new Account(Name='local');"
+```
+
+The Local Org view can inspect, seed, reset, and export the active DB.
+
+## Debug
+
+Glade debug sessions use Debug Adapter Protocol over stdio:
+
+```bash
+glade dap --project <root> --db <active-db>
+```
+
+Anonymous debug, CodeLens debug, and Test Explorer debug all use the active
+local data environment. Breakpoints come from the normal VS Code Apex gutter.
+Glade does not draw a second breakpoint surface.
+
+## Language Server
 
 Start the LSP server over stdio:
 
@@ -16,11 +106,10 @@ Run one diagnostics pass without starting a long-lived server:
 glade lsp --project . --diagnostics-once
 ```
 
-Use `--diagnostics-once` in editor tasks, CI checks, or smoke scripts when you want LSP-shaped diagnostics without wiring a client.
+The VS Code extension keeps the Glade LSP off by default. Set
+`glade.enableLsp=true` when you want local Glade diagnostics in VS Code.
 
-## VS Code task example
-
-Add a task that checks the current workspace:
+## VS Code Task Example
 
 ```json
 {
@@ -33,6 +122,13 @@ Add a task that checks the current workspace:
       "problemMatcher": []
     },
     {
+      "label": "glade: watch local tests",
+      "type": "shell",
+      "command": "glade test --project . --daemon --watch",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
       "label": "glade: lsp diagnostics",
       "type": "shell",
       "command": "glade lsp --project . --diagnostics-once",
@@ -41,26 +137,3 @@ Add a task that checks the current workspace:
   ]
 }
 ```
-
-## Debug snapshots
-
-The DAP surface exposes snapshot sessions for supported execution paths. Use it when an editor integration wants stable runtime state rather than only console output.
-
-A common workflow is:
-
-1. Run an Apex command or test with trace output.
-2. Analyze the trace with `glade profile analyze`.
-3. Use editor diagnostics and snapshots to narrow the next edit.
-
-```bash
-glade exec --project . --trace reports/trace.json "System.debug(1);"
-glade profile analyze reports/trace.json --json
-```
-
-## Editor loop
-
-- Keep `glade check --project . --json` as the fast correctness pass.
-- Use `glade test --filter <name> --watch` for active test work.
-- Use `glade lsp --diagnostics-once` when configuring an editor task.
-
-The editor should not need a Salesforce org for this loop. That is the point of the tool.

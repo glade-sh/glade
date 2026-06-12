@@ -2,11 +2,16 @@ package gladecli
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
+
+	"github.com/glade-sh/glade/internal/gladehome"
 )
 
 var editorCommandLookPath = exec.LookPath
@@ -20,7 +25,7 @@ func runEditor(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) < 2 {
-		return errors.New("usage: glade editor <install|doctor> vscode [--vsix <path>] [--editor <code|cursor|windsurf>] [--force]")
+		return errors.New("usage: glade editor <install|doctor> vscode [--vsix <path>] [--editor <code|cursor|windsurf>] [--force] [--json]")
 	}
 	command := args[0]
 	target := args[1]
@@ -62,12 +67,17 @@ func runEditorInstall(ctx context.Context, args []string, w io.Writer) error {
 		}
 	}
 	if vsix == "" {
-		return errors.New("--vsix is required")
-	}
-	if info, err := os.Stat(vsix); err != nil {
-		return fmt.Errorf("vsix %q: %w", vsix, err)
-	} else if info.IsDir() {
-		return fmt.Errorf("vsix %q is a directory", vsix)
+		resolved, err := resolveBundledVSIX()
+		if err != nil {
+			return fmt.Errorf("--vsix is required when no bundled VS Code extension is available: %w", err)
+		}
+		vsix = resolved
+	} else {
+		resolved, err := existingVSIX(vsix)
+		if err != nil {
+			return err
+		}
+		vsix = resolved
 	}
 	editorPath, err := resolveEditorCommand(editor)
 	if err != nil {
@@ -90,6 +100,7 @@ func runEditorInstall(ctx context.Context, args []string, w io.Writer) error {
 
 func runEditorDoctor(args []string, w io.Writer) error {
 	editor := "code"
+	jsonOut := false
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--editor":
@@ -98,22 +109,69 @@ func runEditorDoctor(args []string, w io.Writer) error {
 			}
 			editor = args[i+1]
 			i++
+		case "--json":
+			jsonOut = true
 		default:
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
+	report := editorDoctorReport{Target: "vscode"}
+	report.Editor.Command = editorCommandName(editor)
 	editorPath, err := resolveEditorCommand(editor)
 	if err != nil {
-		fmt.Fprintf(w, "editor: %s (missing: %v)\n", editor, err)
+		report.Editor.Error = err.Error()
 	} else {
-		fmt.Fprintf(w, "editor: %s (%s)\n", editorCommandName(editor), editorPath)
+		report.Editor.Path = editorPath
+		report.Editor.OK = true
 	}
+	report.Glade.Command = "glade"
 	if gladePath, err := editorCommandLookPath("glade"); err != nil {
-		fmt.Fprintf(w, "glade: missing (%v)\n", err)
+		report.Glade.Error = err.Error()
 	} else {
-		fmt.Fprintf(w, "glade: %s\n", gladePath)
+		report.Glade.Path = gladePath
+		report.Glade.OK = true
+	}
+	if vsix, err := resolveBundledVSIX(); err == nil {
+		report.BundledVSIX.Path = vsix
+		report.BundledVSIX.Exists = true
+	}
+	report.OK = report.Editor.OK && report.Glade.OK
+	if jsonOut {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(report)
+	}
+	if report.Editor.OK {
+		fmt.Fprintf(w, "editor: %s (%s)\n", editorCommandName(editor), report.Editor.Path)
+	} else {
+		fmt.Fprintf(w, "editor: %s (missing: %s)\n", editor, report.Editor.Error)
+	}
+	if report.Glade.OK {
+		fmt.Fprintf(w, "glade: %s\n", report.Glade.Path)
+	} else {
+		fmt.Fprintf(w, "glade: missing (%s)\n", report.Glade.Error)
 	}
 	return nil
+}
+
+type editorDoctorReport struct {
+	Target      string              `json:"target"`
+	Editor      editorDoctorCommand `json:"editor"`
+	Glade       editorDoctorCommand `json:"glade"`
+	BundledVSIX editorBundledVSIX   `json:"bundledVsix"`
+	OK          bool                `json:"ok"`
+}
+
+type editorDoctorCommand struct {
+	Command string `json:"command,omitempty"`
+	Path    string `json:"path,omitempty"`
+	Error   string `json:"error,omitempty"`
+	OK      bool   `json:"ok"`
+}
+
+type editorBundledVSIX struct {
+	Path   string `json:"path,omitempty"`
+	Exists bool   `json:"exists"`
 }
 
 func resolveEditorCommand(editor string) (string, error) {
@@ -139,4 +197,44 @@ func editorCommandName(editor string) string {
 	default:
 		return ""
 	}
+}
+
+func resolveBundledVSIX() (string, error) {
+	if fromEnv := strings.TrimSpace(os.Getenv("GLADE_VSCODE_VSIX")); fromEnv != "" {
+		return existingVSIX(fromEnv)
+	}
+	for _, candidate := range bundledVSIXCandidates() {
+		if vsix, err := existingVSIX(candidate); err == nil {
+			return vsix, nil
+		}
+	}
+	return "", fmt.Errorf("vscode-glade.vsix not found")
+}
+
+func bundledVSIXCandidates() []string {
+	candidates := []string{}
+	if home := strings.TrimSpace(os.Getenv("GLADE_HOME")); home != "" {
+		candidates = append(candidates, filepath.Join(home, "editor", "vscode-glade.vsix"))
+	}
+	candidates = append(candidates, filepath.Join(gladehome.UserShareDir(), "editor", "vscode-glade.vsix"))
+	exe, err := os.Executable()
+	if err == nil {
+		exeDir := filepath.Dir(exe)
+		candidates = append(candidates,
+			filepath.Join(exeDir, "share", "glade", "editor", "vscode-glade.vsix"),
+			filepath.Join(exeDir, "..", "share", "glade", "editor", "vscode-glade.vsix"),
+		)
+	}
+	return candidates
+}
+
+func existingVSIX(path string) (string, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return "", fmt.Errorf("vsix %q: %w", path, err)
+	}
+	if info.IsDir() {
+		return "", fmt.Errorf("vsix %q is a directory", path)
+	}
+	return path, nil
 }
