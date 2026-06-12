@@ -58,3 +58,25 @@ func TestEnsureMutableObjectDefinitionClonesOnlyOneObject(t *testing.T) {
 		t.Fatalf("unmutated object definition was cloned")
 	}
 }
+
+func TestRuntimeTemplateSchemaStampClearsOnMutableDefinition(t *testing.T) {
+	org := benchmarkOrgState(2, 1)
+	template := NewRuntimeTemplate(org)
+	template.RuntimeSchemaStamp = "trusted"
+	clone := template.CloneRuntimeOrg()
+	if clone.RuntimeSchemaStamp == "" {
+		t.Fatalf("RuntimeSchemaStamp is empty")
+	}
+
+	_, cloned := EnsureMutableObjectDefinition(&clone, "PerfObject0__c")
+	if !cloned {
+		t.Fatalf("expected mutable definition clone")
+	}
+	object := clone.Objects["PerfObject0__c"]
+	object.Definition.Fields["RuntimeOnly__c"] = Field{APIName: "RuntimeOnly__c", Type: FieldString}
+	clone.Objects["PerfObject0__c"] = object
+
+	if clone.RuntimeSchemaStamp != "" {
+		t.Fatalf("RuntimeSchemaStamp should clear after definition mutation")
+	}
+}

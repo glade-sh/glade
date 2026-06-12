@@ -69,13 +69,15 @@ func runtimeCacheEntryFromStartup(entry startupcache.Entry) runtimeCacheEntry {
 	registerVisualforcePages(baseMachine, pageNames)
 	baseErr := registerBaseRuntime(baseMachine, runtime.Methods, runtime.Classes, runtime.Triggers)
 	org := entry.Org
+	template := storage.NewRuntimeTemplate(org)
+	vm.PrimeRuntimeTemplateSchema(&template)
 	return runtimeCacheEntry{
 		Methods:       runtime.Methods,
 		Classes:       runtime.Classes,
 		Triggers:      runtime.Triggers,
 		TriggerErrors: nil,
 		Org:           org,
-		Template:      storage.NewRuntimeTemplate(org),
+		Template:      template,
 		PageNames:     pageNames,
 		BaseMachine:   baseMachine,
 		BaseErr:       baseErr,

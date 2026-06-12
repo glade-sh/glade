@@ -426,6 +426,7 @@ func runtimeFromIndex(index typesys.Index, sources *sourceCache) (runtimeCacheKe
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
 	org := orgFromIndex(index, sources)
 	template := storage.NewRuntimeTemplate(org)
+	vm.PrimeRuntimeTemplateSchema(&template)
 	pageNames := visualforcePageNames(index)
 	baseMachine := vm.New(nil)
 	baseMachine.SetTraceEnabled(false)
