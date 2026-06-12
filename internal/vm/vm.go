@@ -475,10 +475,19 @@ func (vm *VM) webServiceCalloutInvoke(args []Value, result *Result) (Value, erro
 	if args[3].Kind != ValueList || len(args[3].List) < 7 {
 		return Null, fmt.Errorf("WebServiceCallout.invoke expects 7 option strings")
 	}
+	responseType := scalarText(args[3].List[6])
+	responseKey := mapKey(String("response_x"))
+	if _, ok := args[2].Map[responseKey]; !ok {
+		response := Object(responseType)
+		if responseType != "" {
+			vm.initializeFields(&response, responseType)
+		}
+		args[2].Map[responseKey] = response
+		args[2].MapKeys[responseKey] = String("response_x")
+	}
 	if vm.testContext == nil || vm.testContext.WebServiceMock.Kind != ValueObject {
 		operation := scalarText(args[3].List[3])
-		responseType := scalarText(args[3].List[6])
-		response := Object(responseType)
+		response := args[2].Map[responseKey]
 		if strings.EqualFold(operation, "renameMetadata") {
 			saveResult := Object("MetadataService.SaveResult")
 			saveResult.Fields["success"] = Bool(true)
@@ -486,8 +495,8 @@ func (vm *VM) webServiceCalloutInvoke(args []Value, result *Result) (Value, erro
 		} else {
 			response.Fields["result"] = List()
 		}
-		args[2].Map[mapKey(String("response_x"))] = response
-		args[2].MapKeys[mapKey(String("response_x"))] = String("response_x")
+		args[2].Map[responseKey] = response
+		args[2].MapKeys[responseKey] = String("response_x")
 		return Null, nil
 	}
 	mockArgs := []Value{

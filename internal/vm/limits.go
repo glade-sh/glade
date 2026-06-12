@@ -10,39 +10,41 @@ const (
 )
 
 type Limits struct {
-	Queries       int `json:"queries"`
-	QueryRows     int `json:"queryRows"`
-	DMLStatements int `json:"dmlStatements"`
-	DMLRows       int `json:"dmlRows"`
-	HeapSize      int `json:"heapSize"`
-	CPUTimeMS     int `json:"cpuTimeMs"`
-	Callouts      int `json:"callouts"`
-	AsyncJobs     int `json:"asyncJobs"`
-	FutureCalls   int `json:"futureCalls"`
-	QueueableJobs int `json:"queueableJobs"`
-	BatchJobs     int `json:"batchJobs"`
-	ScheduledJobs int `json:"scheduledJobs"`
-	EmailInvokes  int `json:"emailInvocations"`
-	RunAs         int `json:"runAs"`
-	Savepoints    int `json:"savepoints"`
+	Queries             int `json:"queries"`
+	QueryRows           int `json:"queryRows"`
+	DMLStatements       int `json:"dmlStatements"`
+	DMLRows             int `json:"dmlRows"`
+	HeapSize            int `json:"heapSize"`
+	CPUTimeMS           int `json:"cpuTimeMs"`
+	Callouts            int `json:"callouts"`
+	AsyncJobs           int `json:"asyncJobs"`
+	FutureCalls         int `json:"futureCalls"`
+	QueueableJobs       int `json:"queueableJobs"`
+	BatchJobs           int `json:"batchJobs"`
+	ScheduledJobs       int `json:"scheduledJobs"`
+	EmailInvokes        int `json:"emailInvocations"`
+	RunAs               int `json:"runAs"`
+	Savepoints          int `json:"savepoints"`
+	PublishImmediateDML int `json:"publishImmediateDml"`
 }
 
 type LimitCaps struct {
-	Queries       int `json:"queries"`
-	QueryRows     int `json:"queryRows"`
-	DMLStatements int `json:"dmlStatements"`
-	DMLRows       int `json:"dmlRows"`
-	HeapSize      int `json:"heapSize"`
-	CPUTimeMS     int `json:"cpuTimeMs"`
-	Callouts      int `json:"callouts"`
-	AsyncJobs     int `json:"asyncJobs"`
-	FutureCalls   int `json:"futureCalls"`
-	QueueableJobs int `json:"queueableJobs"`
-	BatchJobs     int `json:"batchJobs"`
-	ScheduledJobs int `json:"scheduledJobs"`
-	EmailInvokes  int `json:"emailInvocations"`
-	RunAs         int `json:"runAs"`
-	Savepoints    int `json:"savepoints"`
+	Queries             int `json:"queries"`
+	QueryRows           int `json:"queryRows"`
+	DMLStatements       int `json:"dmlStatements"`
+	DMLRows             int `json:"dmlRows"`
+	HeapSize            int `json:"heapSize"`
+	CPUTimeMS           int `json:"cpuTimeMs"`
+	Callouts            int `json:"callouts"`
+	AsyncJobs           int `json:"asyncJobs"`
+	FutureCalls         int `json:"futureCalls"`
+	QueueableJobs       int `json:"queueableJobs"`
+	BatchJobs           int `json:"batchJobs"`
+	ScheduledJobs       int `json:"scheduledJobs"`
+	EmailInvokes        int `json:"emailInvocations"`
+	RunAs               int `json:"runAs"`
+	Savepoints          int `json:"savepoints"`
+	PublishImmediateDML int `json:"publishImmediateDml"`
 }
 
 type LimitViolation struct {
@@ -53,21 +55,22 @@ type LimitViolation struct {
 
 func defaultLimitCaps() LimitCaps {
 	return LimitCaps{
-		Queries:       100,
-		QueryRows:     50000,
-		DMLStatements: 150,
-		DMLRows:       10000,
-		HeapSize:      6 * 1024 * 1024,
-		CPUTimeMS:     10000,
-		Callouts:      100,
-		AsyncJobs:     50,
-		FutureCalls:   50,
-		QueueableJobs: 50,
-		BatchJobs:     5,
-		ScheduledJobs: 100,
-		EmailInvokes:  10,
-		RunAs:         100,
-		Savepoints:    5,
+		Queries:             100,
+		QueryRows:           50000,
+		DMLStatements:       150,
+		DMLRows:             10000,
+		HeapSize:            6 * 1024 * 1024,
+		CPUTimeMS:           10000,
+		Callouts:            100,
+		AsyncJobs:           50,
+		FutureCalls:         50,
+		QueueableJobs:       50,
+		BatchJobs:           5,
+		ScheduledJobs:       100,
+		EmailInvokes:        10,
+		RunAs:               100,
+		Savepoints:          5,
+		PublishImmediateDML: 150,
 	}
 }
 
@@ -131,6 +134,9 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 	case "savepoints":
 		vm.limits.Savepoints += delta
 		return vm.checkLimit(name, vm.limits.Savepoints, vm.limitCaps.Savepoints)
+	case "publishImmediateDml":
+		vm.limits.PublishImmediateDML += delta
+		return vm.checkLimit(name, vm.limits.PublishImmediateDML, vm.limitCaps.PublishImmediateDML)
 	default:
 		return fmt.Errorf("unknown limit %q", name)
 	}
@@ -231,9 +237,9 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getLimitEmailInvocations":
 		return Int(int64(vm.limitCaps.EmailInvokes)), true
 	case "getPublishImmediateDML":
-		return Int(0), true
+		return Int(int64(vm.limits.PublishImmediateDML)), true
 	case "getLimitPublishImmediateDML":
-		return Int(150), true
+		return Int(int64(vm.limitCaps.PublishImmediateDML)), true
 	case "getAggregateQueries", "getApexCursorRows", "getApexCursors", "getApexPaginationCursorRows",
 		"getApexPaginationCursors", "getChildRelationshipsDescribes", "getDatabaseTime",
 		"getFetchCallsOnApexCursor", "getFieldSetsDescribes", "getFieldsDescribes",

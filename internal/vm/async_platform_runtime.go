@@ -19,6 +19,9 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 	if len(records) == 0 {
 		return List(), nil
 	}
+	if err := vm.incrementLimit("publishImmediateDml", 1); err != nil {
+		return Null, err
+	}
 	results := make([]Value, 0, len(records))
 	triggerRecords := make([]storage.Record, 0, len(records))
 	eventUUIDs := make([]string, 0, len(records))
