@@ -1,17 +1,14 @@
 package resource
 
 import (
-	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
 )
 
-func TestResolveVerifiablePackageLabelCPrefix(t *testing.T) {
-	root := "/Users/matt/.sf-repo-analysis/repos/sf-cred-pkg-develop"
-	if _, err := os.Stat(root); err != nil {
-		t.Skip("sf-cred-pkg-develop not present")
-	}
+func TestResolvePackageLabelCPrefix(t *testing.T) {
+	root := filepath.Join("..", "..", "testdata", "local-tests", "lightning-out-vf")
 	p, err := project.Load(root)
 	if err != nil {
 		t.Fatal(err)
@@ -24,10 +21,7 @@ func TestResolveVerifiablePackageLabelCPrefix(t *testing.T) {
 		name  string
 		value string
 	}{
-		{name: "connectVerifiableSync", value: "Connect Verifiable Sync"},
-		{name: "connectVerifiableSyncDescription", value: "Receive updates in Salesforce by subscribing to Verifiable Sync."},
-		{name: "cancel", value: "Cancel"},
-		{name: "saveAndClose", value: "Save & Close"},
+		{name: "Greeting", value: "Hello from Glade"},
 	} {
 		got, status := ResolveLabel(registry, p.Namespace, "c", tc.name)
 		if status != LabelLookupResolved || got != tc.value {
