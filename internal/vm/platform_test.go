@@ -6725,6 +6725,74 @@ System.assertNotEquals(null, response.get('response_x'));
 	}
 }
 
+func TestExecWebServiceCalloutMockMaterializesGeneratedResponseShape(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.setMock('WebServiceMock', new MockResponse());
+Map<String, Object> response = new Map<String, Object>();
+WebServiceCallout.invoke(
+  new Object(),
+  'request',
+  response,
+  new String[]{'https://example.test', 'soapAction', 'requestNS', 'requestName', 'responseNS', 'responseName', 'GeneratedResponse'}
+);
+GeneratedResponse shell = (GeneratedResponse)response.get('response_x');
+System.assertEquals('mocked', shell.result);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doInvoke, err := CompileAnonymous(`
+GeneratedResponse shell = (GeneratedResponse)response.get('response_x');
+System.assertNotEquals(null, shell);
+shell.result = 'mocked';
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "GeneratedResponse",
+		Fields: map[string]Field{
+			"result": {Name: "result", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "MockResponse",
+		Interfaces: []string{"WebServiceMock"},
+		Methods: map[string]Method{
+			"doInvoke": {
+				Name:       "MockResponse.doInvoke",
+				ClassName:  "MockResponse",
+				ReturnType: "void",
+				Params: []Param{
+					{Name: "stub", Type: "Object"},
+					{Name: "request", Type: "Object"},
+					{Name: "response", Type: "Map<String,Object>"},
+					{Name: "endpoint", Type: "String"},
+					{Name: "soapAction", Type: "String"},
+					{Name: "requestName", Type: "String"},
+					{Name: "responseNS", Type: "String"},
+					{Name: "responseName", Type: "String"},
+					{Name: "responseType", Type: "String"},
+				},
+				Program: doInvoke,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatalf("err = %v", err)
+	}
+	if result.Limits.Callouts != 1 {
+		t.Fatalf("callouts = %d, want 1", result.Limits.Callouts)
+	}
+}
+
 func TestExecUnsupportedTestHelperAPIsHaveStableShape(t *testing.T) {
 	cases := []struct {
 		name string
@@ -9350,6 +9418,38 @@ System.assertEquals(150, Limits.getLimitPublishImmediateDML());
 	}
 }
 
+func TestExecEventBusPublishImmediateDMLLimitIsSeparateFromDML(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(0, Limits.getDMLStatements());
+System.assertEquals(0, Limits.getPublishImmediateDML());
+EventBus.publish(new Local_Event__e(Name__c = 'Trail'));
+System.assertEquals(0, Limits.getDMLStatements());
+System.assertEquals(1, Limits.getPublishImmediateDML());
+insert new Account(Name = 'ordinary');
+System.assertEquals(1, Limits.getDMLStatements());
+System.assertEquals(1, Limits.getPublishImmediateDML());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Event__e",
+			KeyPrefix: "e00",
+			Fields: map[string]storage.Field{
+				"Name__c": {APIName: "Name__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPassiveLimitsGettersHaveStableValues(t *testing.T) {
 	for _, getter := range []string{
 		"getApexCursorRows",
@@ -10901,6 +11001,78 @@ System.assert(jobId.startsWith('707'));
 				t.Fatalf("err = %#v, want UnsupportedFeature %q", err, tc.want)
 			}
 		})
+	}
+}
+
+func TestExecAsyncOptionsMaximumQueueableStackDepthRejectsTooDeepChain(t *testing.T) {
+	program, err := CompileAnonymous(`
+AsyncOptions opts = new AsyncOptions();
+opts.setMaximumQueueableStackDepth(1);
+Test.startTest();
+System.enqueueJob(new ParentWorker(), opts);
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parentProgram, err := CompileAnonymous(`System.enqueueJob(new ChildWorker());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "ParentWorker",
+		Interfaces: []string{"Queueable"},
+		Methods: map[string]Method{
+			"execute": {
+				Name:       "ParentWorker.execute",
+				ClassName:  "ParentWorker",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "QueueableContext"}},
+				Program:    parentProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "ChildWorker", Interfaces: []string{"Queueable"}}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "MaximumQueueableStackDepth exceeded") {
+		t.Fatalf("err = %v, want maximum queueable stack depth rejection", err)
+	}
+}
+
+func TestExecQueueableAndAsyncLimitsResetInsideStartTestAndRestoreParent(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.enqueueJob(new QueueWorker());
+System.assertEquals(1, Limits.getAsyncJobs());
+System.assertEquals(1, Limits.getQueueableJobs());
+Test.startTest();
+System.assertEquals(0, Limits.getAsyncJobs());
+System.assertEquals(0, Limits.getQueueableJobs());
+System.enqueueJob(new QueueWorker());
+System.assertEquals(1, Limits.getAsyncJobs());
+System.assertEquals(1, Limits.getQueueableJobs());
+Test.stopTest();
+System.assertEquals(1, Limits.getAsyncJobs());
+System.assertEquals(1, Limits.getQueueableJobs());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "QueueWorker", Interfaces: []string{"Queueable"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "QueueWorker.execute", ClassName: "QueueWorker", Params: []Param{{Name: "context", Type: "QueueableContext"}}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -13955,6 +14127,66 @@ System.assertEquals('accepted', observed.getBody());
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecContinuationInvokeMethodReturnsControllerResponse(t *testing.T) {
+	callbackProgram, err := CompileAnonymous(`
+HttpResponse response = (HttpResponse)Continuation.getResponse('request-1');
+return response.getBody();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Continuation cont = new Continuation(60);
+HttpRequest req = new HttpRequest();
+cont.addHttpRequest(req);
+cont.continuationMethod = 'resume';
+HttpResponse response = new HttpResponse();
+response.setBody('continued');
+Test.setContinuationResponse('request-1', response);
+Object observed = Test.invokeContinuationMethod(new Controller(), cont);
+System.assertEquals('continued', (String)observed);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "Controller",
+		Methods: map[string]Method{
+			"resume": {
+				Name:       "Controller.resume",
+				ClassName:  "Controller",
+				ReturnType: "String",
+				Program:    callbackProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecExternalServiceHarnessRejectsLiveExecution(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object harness = Test.getExternalService();
+System.assertNotEquals(null, harness);
+ExternalService.run(harness);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	_, err = machine.Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "ExternalService.run live external service execution surface") {
+		t.Fatalf("err = %#v, want unsupported live external service execution", err)
 	}
 }
 
