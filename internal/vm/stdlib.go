@@ -2473,6 +2473,11 @@ func splitRegex(name, pattern, text string, limit int64) ([]string, error) {
 	if pattern == "" {
 		return splitStringCharacters(text, limit), nil
 	}
+	converted, err := javaRegexQuoteEscapesToGo(pattern)
+	if err != nil {
+		return nil, unsupportedCallError(name + " " + err.Error())
+	}
+	pattern = converted
 	if lookahead, ok := wholePositiveLookahead(pattern); ok {
 		return splitRegexPositiveLookahead(name, lookahead, text, limit)
 	}

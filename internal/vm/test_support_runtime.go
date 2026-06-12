@@ -326,7 +326,7 @@ func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
 	}
 	content, ok := vm.staticResourceContent(args[1].Text)
 	if !ok {
-		return Null, fmt.Errorf("Test.loadData static resource %s not found", args[1].Text)
+		return Null, newExceptionError("StringException", fmt.Sprintf("Test.loadData static resource %s not found", args[1].Text))
 	}
 	reader := csv.NewReader(strings.NewReader(content))
 	reader.TrimLeadingSpace = true
@@ -339,6 +339,9 @@ func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
 		return out, nil
 	}
 	headers := rows[0]
+	if err := vm.validateTestLoadDataHeaders(objectName, headers); err != nil {
+		return Null, err
+	}
 	for rowIndex, csvRow := range rows[1:] {
 		record := Object(objectName)
 		for i, header := range headers {
@@ -365,6 +368,29 @@ func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
 		return Null, err
 	}
 	return out, nil
+}
+func (vm *VM) validateTestLoadDataHeaders(objectName string, headers []string) error {
+	if vm == nil || vm.Org == nil {
+		return nil
+	}
+	canonicalObject := objectName
+	if resolved, ok := vm.resolveObjectName(objectName); ok {
+		canonicalObject = resolved
+	}
+	object, ok := vm.Org.Objects[canonicalObject]
+	if !ok {
+		return nil
+	}
+	for _, header := range headers {
+		fieldName := strings.TrimSpace(header)
+		if fieldName == "" {
+			return newExceptionError("StringException", fmt.Sprintf("Test.loadData %s CSV header contains a blank field name", objectName))
+		}
+		if _, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, fieldName); !ok {
+			return newExceptionError("StringException", fmt.Sprintf("Test.loadData %s CSV header contains Unknown field %s", objectName, fieldName))
+		}
+	}
+	return nil
 }
 func (vm *VM) staticResourceContent(name string) (string, bool) {
 	if vm == nil || vm.Org == nil {
