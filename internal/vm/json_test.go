@@ -1377,6 +1377,64 @@ System.assert(strictCaught);
 	}
 }
 
+func TestExecJSONDeserializeLwcControllerDTOs(t *testing.T) {
+	program, err := CompileAnonymous(`
+LwcDTO dto = (LwcDTO)JSON.deserialize(
+    '{"name":"Widget","status":"Ready","rows":[{"label":"A","count":2}],"extra":{"ok":true},"statusLabels":{"Ready":"go"}}',
+    LwcDTO.class
+);
+System.assertEquals('Widget', dto.name);
+System.assertEquals(LwcDTO.Status.Ready, dto.status);
+System.assertEquals('A', dto.rows[0].label);
+System.assertEquals(2, dto.rows[0].count);
+System.assertEquals(true, dto.extra.get('ok'));
+System.assertEquals('go', dto.statusLabels.get(LwcDTO.Status.Ready));
+System.assert(JSON.serialize(dto).contains('"status":"Ready"'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "LwcDTO.Status",
+		EnumValues: []string{
+			"Draft",
+			"Ready",
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "LwcDTO.Row",
+		Fields: map[string]Field{
+			"label": {Name: "label", Type: "String"},
+			"count": {Name: "count", Type: "Integer"},
+		},
+		FieldOrder: []string{"label", "count"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "LwcDTO",
+		Fields: map[string]Field{
+			"name":   {Name: "name", Type: "String"},
+			"status": {Name: "status", Type: "Status"},
+			"rows":   {Name: "rows", Type: "List<Row>"},
+			"extra":  {Name: "extra", Type: "Map<String,Object>"},
+			"statusLabels": {
+				Name: "statusLabels",
+				Type: "Map<Status,String>",
+			},
+		},
+		FieldOrder: []string{"name", "status", "rows", "extra", "statusLabels"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeTypedApexClassMatchesLowerCamelFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 JsonVerification decoded = (JsonVerification)JSON.deserialize('{"id":"V-7","lastUpdated":"2026-05-25T10:11:12Z","providerInfo":{"providerId":"P-1"}}', JsonVerification.class);

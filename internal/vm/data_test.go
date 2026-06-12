@@ -9655,6 +9655,107 @@ Database.update(new Account(Id = '001000000000901AAA', ShippingStreet = 'Baker')
 	}
 }
 
+func TestExecAccessLevelPermissionSetIdScopesLocalSOQLPermissions(t *testing.T) {
+	program, err := CompileAnonymous(`
+AccessLevel scoped = AccessLevel.withPermissionSetId('0PS000000000998');
+List<Account> rows = Database.queryWithBinds(
+	'SELECT Id, Hidden__c FROM Account',
+	new Map<String,Object>(),
+	scoped
+);
+System.assertEquals(1, rows.size());
+System.assertEquals('secret', rows[0].Hidden__c);
+
+List<Account> systemRows = Database.queryWithBinds(
+	'SELECT Id, Hidden__c FROM Account',
+	new Map<String,Object>(),
+	AccessLevel.SYSTEM_MODE
+);
+System.assertEquals(1, systemRows.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	account := org.Objects["Account"]
+	account.Definition.Fields["Hidden__c"] = storage.Field{APIName: "Hidden__c", Type: storage.FieldString}
+	account.Records["001000000000901AAA"] = storage.Record{
+		ID:     "001000000000901AAA",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":      storage.StringValue("Acme"),
+			"Hidden__c": storage.StringValue("secret"),
+		},
+	}
+	org.Objects["Account"] = account
+
+	user := Object("User")
+	user.Fields["Id"] = String("005000000000998")
+	user.Fields["profileId"] = String("00e000000000002")
+
+	plainProgram, err := CompileAnonymous(`
+Database.queryWithBinds('SELECT Id, Hidden__c FROM Account', new Map<String,Object>(), AccessLevel.USER_MODE);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.executionUser = user
+	if _, err := machine.Execute(plainProgram); err == nil || !strings.Contains(err.Error(), "sObject type 'Account' is not supported by USER_MODE") {
+		t.Fatalf("err = %v, want Account access denial", err)
+	}
+
+	org.Objects["ObjectPermissions"].Records["110000000000998"] = storage.Record{
+		ID:     "110000000000998",
+		Object: "ObjectPermissions",
+		Fields: map[string]storage.Value{
+			"ParentId":        storage.IDValue("0PS000000000998"),
+			"SObjectType":     storage.StringValue("Account"),
+			"PermissionsRead": storage.BooleanValue(true),
+		},
+	}
+	machine = New(nil)
+	machine.SetOrg(&org)
+	machine.executionUser = user
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "No such column 'Hidden__c' on entity 'Account'.") {
+		t.Fatalf("err = %v, want Hidden__c access denial", err)
+	}
+
+	org.Objects["FieldPermissions"].Records["0FP000000000998"] = storage.Record{
+		ID:     "0FP000000000998",
+		Object: "FieldPermissions",
+		Fields: map[string]storage.Value{
+			"ParentId":        storage.IDValue("0PS000000000998"),
+			"SObjectType":     storage.StringValue("Account"),
+			"Field":           storage.StringValue("Account.Hidden__c"),
+			"PermissionsRead": storage.BooleanValue(true),
+		},
+	}
+	machine = New(nil)
+	machine.SetOrg(&org)
+	machine.executionUser = user
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	unknownProgram, err := CompileAnonymous(`
+AccessLevel scoped = AccessLevel.withPermissionSetId('0PS000000000404');
+Database.queryWithBinds('SELECT Id, Hidden__c FROM Account', new Map<String,Object>(), scoped);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine = New(nil)
+	machine.SetOrg(&org)
+	machine.executionUser = user
+	if _, err := machine.Execute(unknownProgram); err == nil || !strings.Contains(err.Error(), "sObject type 'Account' is not supported by USER_MODE") {
+		t.Fatalf("err = %v, want scoped Account access denial", err)
+	}
+}
+
 func TestExecCustomObjectIdDescribeNameFeedsDynamicFieldList(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<String> fields = new List<String>();

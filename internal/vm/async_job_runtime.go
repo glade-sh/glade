@@ -150,6 +150,9 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 			job.QueueableMaxDepth = maxDepth
 		}
 	}
+	if job.QueueableMaxDepth > 0 && job.QueueableDepth > job.QueueableMaxDepth {
+		return Null, fmt.Errorf("MaximumQueueableStackDepth exceeded")
+	}
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
