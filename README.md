@@ -55,17 +55,20 @@ repository.
 | `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller helpers, and many `Test.*` helpers | Works with limits. The local model covers common test paths and records gaps by method. |
 | Platform services such as approval execution, quick actions, business-hours services, sandbox lifecycle, live request context, and identity services | Not supported unless a row says otherwise. Glade should return a stable unsupported diagnostic, not silent wrong behavior. |
 | Local API server, LSP, DAP, watch, and profile tools | Work well for local development. |
+| Enterprise graph and report tools | Work as conservative local evidence for assessment, cruft review, and refactor proof. |
 
 Drill down from there:
 
 ```bash
 glade check --project .
 glade test --project . --json
-glade plugins install @glade/performance
 glade performance scan --project . --json
 ```
 
-- Public support map: <https://glade.sh/docs/guide/support-map>
+The performance scan is a plugin command. Use it after installing from a live
+registry, a direct archive, or a locally linked plugin.
+
+- Public support map: <https://glade.sh/guide/support-map>
 - Method-level standard library coverage: [docs/STDLIB_COVERAGE.md](docs/STDLIB_COVERAGE.md)
 - Known gaps: [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md)
 - Developer compatibility dashboard: [docs/COMPATIBILITY_DASHBOARD.md](docs/COMPATIBILITY_DASHBOARD.md)
@@ -81,7 +84,6 @@ glade test --project . --filter AccountServiceTest --json
 glade test --project . --filter AccountServiceTest.testCreatesAccount --json
 glade test changed --project . --since origin/main --json
 glade test failed --project .
-glade plugins install @glade/performance
 glade performance scan --project . --json > reports/glade-performance.json
 glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
@@ -100,7 +102,11 @@ Install them as `@glade/compat` and `@glade/performance`. The short aliases
 `compat` and `performance` resolve to those canonical names. Third-party
 plugins use the same executable manifest contract.
 
-List installable marketplace plugins:
+The public plugin registry is still preview. Coordinate installs need a live
+registry or custom registry. Direct archives and local links are the fallback
+paths for maintainer work.
+
+List installable marketplace plugins when a registry is configured:
 
 ```bash
 glade plugins available
@@ -127,6 +133,15 @@ glade report github latest --runs-dir .glade/runs
 glade report export latest --runs-dir .glade/runs --format html --output reports/glade-report.html
 ```
 
+Map a large codebase and collect branch-change proof:
+
+```bash
+glade inspect graph --project . --json
+glade report assess --project . --format html --out reports/glade-assessment.html
+glade report cruft --project . --format html --out reports/glade-cruft.html
+glade report refactor-proof --project . --since origin/main --format html --out reports/glade-refactor-proof.html
+```
+
 ## Docs
 
 - [Install](docs/INSTALL.md)
@@ -134,6 +149,7 @@ glade report export latest --runs-dir .glade/runs --format html --output reports
 - [Local Apex testing](docs/LOCAL_TESTING.md)
 - [CI artifacts](docs/CI_ARTIFACTS.md)
 - [Rich local workflows](docs/RICH_LOCAL_WORKFLOWS.md)
+- [Enterprise workflows](docs/ENTERPRISE_WORKFLOWS.md)
 - [Test startup cache](docs/TEST_STARTUP_CACHE.md)
 - [Plugins](docs/PLUGINS.md)
 - [Dogfood checklist](docs/DOGFOOD_CHECKLIST.md)

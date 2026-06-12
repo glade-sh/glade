@@ -24,6 +24,10 @@ does not depend on `glade-tools` internals.
 
 ## Install And List
 
+The public plugin registry is preview. Coordinate installs need a live
+registry or custom registry. Direct archives and local links are the reliable
+fallbacks for maintainer work until the production registry is published.
+
 Install first-party plugins with canonical coordinates:
 
 ```bash
@@ -39,9 +43,9 @@ Registry installs appear by canonical coordinate in `plugins list`,
 `plugins which`, and `plugins doctor`. Linked development plugins without a
 catalog coordinate use their manifest name.
 
-Name installs use the configured plugin registry. The production default is
-`https://plugins.glade.sh/index.json`; local development can set
-`GLADE_PLUGIN_REGISTRY_URL` to a test or staging registry.
+Name installs use the configured plugin registry. The default registry URL is
+`https://plugins.glade.sh/index.json` once that service is live. Local
+development can set `GLADE_PLUGIN_REGISTRY_URL` to a test or staging registry.
 
 List, search, and inspect the marketplace:
 

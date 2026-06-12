@@ -50,6 +50,7 @@ export default defineConfig({
           { text: 'CLI Reference', link: '/guide/cli-reference' },
           { text: 'Run Apex Tests Locally', link: '/guide/local-testing' },
           { text: 'Run Only Affected Tests', link: '/guide/affected-tests' },
+          { text: 'Map Enterprise Projects', link: '/guide/enterprise-workflows' },
           { text: 'Use The Local Playground', link: '/guide/playground' },
           { text: 'Run A Local Salesforce-Shaped API', link: '/guide/local-api-server' },
           { text: 'Add Glade To CI', link: '/guide/ci-artifacts' }

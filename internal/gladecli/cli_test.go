@@ -751,6 +751,11 @@ func TestRunCommandHelp(t *testing.T) {
 			want: []string{"Usage:", "glade schema load", "--project <root>", "--progress"},
 		},
 		{
+			name: "schema parent help",
+			args: []string{"help", "schema"},
+			want: []string{"Usage:", "glade schema load", "glade schema import describe", "import describe"},
+		},
+		{
 			name: "completion help",
 			args: []string{"help", "completion"},
 			want: []string{"Usage:", "glade completion bash|zsh|fish", "Install:", "source <(glade completion bash)", "Examples:"},

@@ -215,6 +215,7 @@ plugins provide compatibility fixtures and advisory scanners without putting
 that maintenance code in the base runtime.
 
 ```bash
+# Requires a live plugin registry, custom registry, direct archive, or linked plugin.
 glade plugins available
 glade plugins install @glade/compat
 glade plugins install @glade/performance

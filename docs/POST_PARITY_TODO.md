@@ -3,7 +3,8 @@
 ## Performance Scanner And Bottleneck Reports
 
 - [x] Move advisory project scanning to the performance plugin:
-  `glade plugins install @glade/performance`, then `glade performance scan`.
+  install `@glade/performance` from a live registry, direct archive, or local
+  link, then run `glade performance scan`.
 - [x] Report entry points for triggers, batches, queueables, schedulables,
   invocable methods, Visualforce page actions, Aura server actions, LWC Apex
   imports/wires, Flow, and Workflow.

@@ -21,6 +21,7 @@ glade test changed --project . --since origin/main
 - You want to run supported Apex tests without logging into an org.
 - You want local SOQL, DML, trigger, SObject, and limit feedback.
 - You want a Salesforce-shaped local API for development loops.
+- You want local assessment, cruft review, or refactor-proof reports for a large Apex project.
 
 ## Use Salesforce When
 
@@ -34,4 +35,4 @@ glade test changed --project . --since origin/main
 Glade models the local paths it can prove. Unsupported platform services fail
 with stable diagnostics instead of pretending to work.
 
-Next: [Quickstart](/guide/quickstart) or [What Glade supports](/guide/support-map).
+Next: [Quickstart](/guide/quickstart), [Enterprise Workflows](/guide/enterprise-workflows), or [What Glade supports](/guide/support-map).

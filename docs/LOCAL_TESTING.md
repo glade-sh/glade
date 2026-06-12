@@ -53,6 +53,7 @@ glade test --project . --class AccountServiceTest --method testCreatesAccount --
 Generate an advisory performance report from source and metadata first:
 
 ```bash
+# Requires a live plugin registry, custom registry, direct archive, or linked plugin.
 glade plugins install @glade/performance
 glade performance scan --project . --json > reports/glade-performance.json
 ```

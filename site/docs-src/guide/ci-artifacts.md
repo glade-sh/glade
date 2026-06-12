@@ -76,6 +76,19 @@ The default export remains a zip:
 glade report export latest --runs-dir .glade/runs --output glade-report.zip
 ```
 
+## Refactor proof reports
+
+Use a proof report when CI needs a branch-change artifact:
+
+```bash
+glade report refactor-proof --project . --since origin/main --format html --out reports/glade-refactor-proof.html
+glade report refactor-proof --project . --since origin/main --fail-on-api-break --format json
+```
+
+The report records the git diff, parse and semantic status, graph impact,
+affected-test selection, optional trace summary, and public or global API
+surface warnings.
+
 Upload the files after a gate, even when the test or check step fails:
 
 ```yaml

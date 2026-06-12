@@ -119,7 +119,7 @@ Current `--json` support by command:
 | `exec` | Yes | |
 | `test` | Yes | |
 | `debug` | Yes | Partial (some subcommands) |
-| `editor` | No | Not applicable |
+| `editor` | Yes | `glade editor doctor vscode --json` reports editor, glade executable, and bundled VSIX status. Install is action-oriented. |
 | `dap` | No | JSON protocol already |
 | `report` | Yes | `show latest --json`; GitHub and HTML outputs also landed |
 | `lsp` | No | JSON protocol already |
@@ -131,7 +131,7 @@ Current `--json` support by command:
 | `dev` | No | Human-oriented by design |
 
 Remaining key gap:
-- Add structured output to `editor doctor` if editor integrations need agent-readable status.
+- Add structured command inventory output only if editor integrations need more than `editor doctor vscode --json`.
 
 **Files touched:** `internal/gladecli/cli.go` (version, doctor), `internal/gladecli/dev_command.go` (report).
 

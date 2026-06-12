@@ -51,6 +51,13 @@ Day-to-day test runs use `--filter`:
 ```bash
 glade test --project . --class AccountServiceTest --json
 glade test --project . --class AccountServiceTest --method testCreatesAccount --json
+```
+
+If the public plugin registry is not live for this machine, install a direct
+archive or link the local `glade-tools` compat plugin before running plugin
+commands:
+
+```bash
 glade plugins install @glade/compat
 glade compat local-tests --project . --class AccountServiceTest --json
 glade compat local-tests --project . --class AccountServiceTest --method testCreatesAccount --json
@@ -81,6 +88,7 @@ The second command should auto-connect and skip a full cold startup when
 mkdir -p reports
 glade check --project . --json > reports/glade-check.json
 glade test --project . --json > reports/glade-test.json
+# Requires a live plugin registry, custom registry, direct archive, or linked plugin.
 glade plugins install @glade/compat
 glade compat local-tests --project . --parallel auto --json > reports/glade-local-tests.json
 ```
@@ -91,6 +99,7 @@ should cover only affected tests.
 ## 6b. Performance Scanner
 
 ```bash
+# Requires a live plugin registry, custom registry, direct archive, or linked plugin.
 glade plugins install @glade/performance
 glade performance scan --project . --json > reports/glade-performance.json
 glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md

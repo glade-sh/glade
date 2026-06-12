@@ -23,7 +23,7 @@ ship through plugins.
 Use the public support map first when deciding whether Glade can run a project
 or test path:
 
-- <https://glade.sh/docs/guide/support-map>
+- <https://glade.sh/guide/support-map>
 
 The checked repository artifacts are the lower layer:
 
@@ -50,7 +50,7 @@ in [`docs/RELEASE_POLICY.md`](RELEASE_POLICY.md), with ongoing notes in
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| CLI surface | partial | `version`, `help`, `doctor`, `parse`, `inspect`, `schema`, `check`, `exec`, `test`, `profile analyze`, `server`, `db`, `plugins`, and `lsp` exist. Advisory performance scans run through the first-party performance plugin as `glade performance scan`. Several commands are still partial because their underlying runtime fidelity is partial. |
+| CLI surface | partial | `version`, `doctor`, `completion`, `config`, `init`, `parse`, `inspect`, `schema`, `check`, `exec`, `debug`, `editor`, `dap`, `test`, `dev`, `report`, `lsp`, `profile`, `plugins`, `package`, `server`, `playground`, and `db` exist. Advisory performance scans run through the first-party performance plugin as `glade performance scan`. Several commands are still partial because their underlying runtime fidelity is partial. |
 | Project config | partial | Minimal `glade.yml` discovery exists. |
 | Diagnostics | partial | Shared diagnostic shape exists. |
 | Compatibility fixtures | partial | The maintenance fixture runner ships as the compat plugin. Checked fixtures cover parse, check, exec, test, DB lifecycle, and server black-box behavior. Broader Salesforce black-box fixtures remain incomplete. |

@@ -14,6 +14,7 @@ const ciArtifacts = await readFile(new URL("../docs-src/guide/ci-artifacts.md", 
 const overview = await readFile(new URL("../docs-src/guide/overview.md", import.meta.url), "utf8");
 const quickstart = await readFile(new URL("../docs-src/guide/quickstart.md", import.meta.url), "utf8");
 const supportMap = await readFile(new URL("../docs-src/guide/support-map.md", import.meta.url), "utf8");
+const enterpriseWorkflows = await readFile(new URL("../docs-src/guide/enterprise-workflows.md", import.meta.url), "utf8");
 const compatibilityDashboard = await readFile(new URL("../docs-src/guide/compatibility-dashboard.md", import.meta.url), "utf8");
 const plugins = await readFile(new URL("../docs-src/guide/plugins.md", import.meta.url), "utf8");
 const firstPartyPlugins = await readFile(new URL("../docs-src/guide/plugins/first-party.md", import.meta.url), "utf8");
@@ -132,6 +133,7 @@ test("theme uses the forest clearing design direction", () => {
   assert.match(config, /text: 'Overview'/);
   assert.match(config, /text: 'Quickstart'/);
   assert.match(config, /text: 'What Glade Supports'/);
+  assert.match(config, /text: 'Map Enterprise Projects'/);
   assert.match(config, /text: 'Plugin Lock Files And CI'/);
   assert.ok(config.indexOf("text: 'Overview'") < config.indexOf("text: 'Brand Guide'"));
   assert.doesNotMatch(config, /text: 'Project Status'/);
@@ -149,6 +151,7 @@ test("mobile nav screen keeps a visible touch surface", () => {
 test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(overview, /^# What is Glade\?/m);
   assert.match(overview, /Glade models the local paths it can prove/);
+  assert.match(overview, /local assessment, cruft review, or refactor-proof reports/);
   assert.match(overview, /Use Salesforce When/);
   assert.match(quickstart, /^# Quickstart: Check and Test an SFDX Project/m);
   assert.match(quickstart, /glade check --project \./);
@@ -171,6 +174,16 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(compatibilityDashboard, /\| Required incomplete \| 0 \|/);
   assert.match(compatibilityDashboard, /\| Required supported capabilities \| 21 \|/);
   assert.match(compatibilityDashboard, /\| Tracked post-MVP partial capabilities \| 9 \|/);
+});
+
+test("enterprise workflow docs expose current report commands", () => {
+  assert.match(enterpriseWorkflows, /^# Enterprise Workflows/m);
+  assert.match(enterpriseWorkflows, /glade inspect graph --project \. --json/);
+  assert.match(enterpriseWorkflows, /glade report assess --project \. --format html/);
+  assert.match(enterpriseWorkflows, /glade report cruft --project \. --format html/);
+  assert.match(enterpriseWorkflows, /glade report refactor-proof --project \. --since origin\/main/);
+  assert.match(enterpriseWorkflows, /--fail-on-api-break/);
+  assert.match(enterpriseWorkflows, /Compatibility and support-map generation remain plugin-owned/);
 });
 
 test("public launch docs avoid stale public routes and registry promises", () => {

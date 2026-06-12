@@ -1,0 +1,70 @@
+# Enterprise Workflows
+
+Use these commands when a large Apex project needs a map before it needs edits.
+The reports use local evidence. They do not claim full Salesforce parity.
+
+## Assessment
+
+Generate a codebase assessment:
+
+```bash
+glade report assess --project . --format html --out reports/glade-assessment.html --include-metadata --include-tests
+```
+
+The report includes inventory, top risk signals, trigger map, SOQL and DML
+counts, async and callout indicators, fflib-style inventory, test health,
+findings, and known limitations.
+
+## Cruft And Dead Code
+
+Scan for conservative delete, deprecate, review, and do-not-delete candidates:
+
+```bash
+glade report cruft --project . --format html --out reports/glade-cruft.html
+```
+
+Global and public symbols are protected by default. A global package surface is
+not a safe-delete candidate. Dynamic Apex, string dispatch, custom metadata
+routing, Aura, LWC, and invocable exposure lower confidence.
+
+## Refactor Proof
+
+Collect proof for a branch change:
+
+```bash
+glade report refactor-proof --project . --since origin/main --format html --out reports/glade-refactor-proof.html
+```
+
+The proof report records git diff, parse and semantic status, graph impact,
+affected-test selection, optional trace summary, and public or global API
+surface warnings.
+
+Use `--fail-on-api-break` when CI should fail on public or global API surface
+changes:
+
+```bash
+glade report refactor-proof --project . --since origin/main --fail-on-api-break --format json
+```
+
+## Graph And Traces
+
+Build the project graph directly:
+
+```bash
+glade inspect graph --project . --json
+```
+
+Write a local test trace, then summarize it in a proof report:
+
+```bash
+glade test --project . --class MyPassingTest --trace reports/glade-trace.json --json
+glade report refactor-proof --project . --since origin/main --trace reports/glade-trace.json --format html --out reports/glade-refactor-proof.html
+```
+
+## Known Limits
+
+- Static graph references are conservative and may over-select.
+- Dynamic Apex and metadata-driven dispatch reduce confidence.
+- Global and public managed-package APIs are never safe-delete candidates.
+- Service config validation exists before full runtime fixture injection.
+- Compatibility and support-map generation remain plugin-owned.
