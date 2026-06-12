@@ -53,6 +53,44 @@ return out;
 	}
 }
 
+func TestInvokeLWCMethodUsesCurrentPageReference(t *testing.T) {
+	program, err := CompileAnonymous(`
+PageReference page = System.currentPageReference();
+page.getParameters().put('wire', recordId);
+return page.getUrl() + ':' + page.getParameters().get('mode') + ':' + page.getParameters().get('wire');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	machine.SetCurrentPageURL("/apex/Host?mode=local")
+	if err := machine.RegisterMethod(Method{
+		Name:       "ItemCtrl.getItems",
+		ClassName:  "ItemCtrl",
+		ReturnType: "String",
+		IsStatic:   true,
+		Modifiers:  []string{"AuraEnabled"},
+		Params:     []Param{{Name: "recordId", Type: "String"}},
+		Program:    program,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.InvokeLWCMethod("ItemCtrl", "getItems", map[string]any{"recordId": "001XX0000000001"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Success {
+		t.Fatalf("success = false: %#v", result.Error)
+	}
+	if result.ReturnValue != "/apex/Host?mode=local&wire=001XX0000000001:local:001XX0000000001" {
+		t.Fatalf("returnValue = %#v", result.ReturnValue)
+	}
+	if got := machine.CurrentPage().Fields["parameters"].Map[mapKey(String("wire"))]; got.Kind != ValueString || got.Text != "001XX0000000001" {
+		t.Fatalf("current page params = %#v", machine.CurrentPage().Fields["parameters"])
+	}
+}
+
 func TestInvokeAuraActionReturnsAuraHandledExceptionShape(t *testing.T) {
 	program, err := CompileAnonymous(`throw new AuraHandledException('blocked');`)
 	if err != nil {
@@ -172,6 +210,58 @@ return next;
 	currentParams, ok := currentPage["parameters"].(map[string]any)
 	if !ok || currentParams["mode"] != "quick" {
 		t.Fatalf("current-page params = %#v", currentPage["parameters"])
+	}
+}
+
+func TestInvokeVisualforceActionResetsPageMessagesPerRequest(t *testing.T) {
+	saveProgram, err := CompileAnonymous(`
+ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.INFO, 'Saved'));
+return null;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	quietProgram, err := CompileAnonymous(`return null;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "AccountController",
+		Methods: map[string]Method{
+			"save": {
+				Name:       "AccountController.save",
+				ClassName:  "AccountController",
+				ReturnType: "PageReference",
+				Program:    saveProgram,
+			},
+			"quiet": {
+				Name:       "AccountController.quiet",
+				ClassName:  "AccountController",
+				ReturnType: "PageReference",
+				Program:    quietProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	first, err := machine.InvokeVisualforceAction("AccountController", "save", "/apex/Edit", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !first.Success || len(first.PageMessages) != 1 {
+		t.Fatalf("first result = %#v", first)
+	}
+	second, err := machine.InvokeVisualforceAction("AccountController", "quiet", "/apex/Edit", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !second.Success {
+		t.Fatalf("second success = false: %#v", second.Error)
+	}
+	if len(second.PageMessages) != 0 {
+		t.Fatalf("second pageMessages = %#v", second.PageMessages)
 	}
 }
 
