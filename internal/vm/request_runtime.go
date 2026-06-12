@@ -441,7 +441,7 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 		"Test.newSendEmailQuickActionDefaults":
 		return "", false
 	}
-	for _, prefix := range []string{"Approval.", "Auth.", "QuickAction.", "Canvas.", "Continuation."} {
+	for _, prefix := range []string{"Approval.", "Auth.", "QuickAction.", "Canvas.", "Continuation.", "ExternalService."} {
 		if len(callee) >= len(prefix) && strings.EqualFold(callee[:len(prefix)], prefix) {
 			switch prefix {
 			case "Approval.":
@@ -457,6 +457,8 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 				return "local canvas app integration surface", true
 			case "Continuation.":
 				return "local continuation callout surface", true
+			case "ExternalService.":
+				return "live external service execution surface", true
 			}
 		}
 	}

@@ -8,6 +8,7 @@ export default class ApexWireHost extends LightningElement {
     items;
 
     get itemText() {
-        return this.items && this.items.data ? this.items.data : '';
+        const rows = this.items && this.items.data;
+        return rows && rows.length ? rows[0].Name : '';
     }
 }

@@ -50,6 +50,7 @@ func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, par
 	if strings.TrimSpace(pageURL) == "" {
 		pageURL = "/apex/current"
 	}
+	vm.pageMessages = nil
 	vm.currentPage = vm.newPageReference(pageURL)
 	if len(params) > 0 {
 		pageParams := typedMap("Map<String,String>")

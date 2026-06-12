@@ -46,8 +46,11 @@ func ResourceURLModuleJS(url string) string {
 }
 
 func UIRecordAPIModuleJS() string {
-	return `import { createGetRecordWireAdapter } from "/lightning/shims/core/wire-adapter.js";
+	return `import { createFetchWireAdapter, createGetRecordWireAdapter } from "/lightning/shims/core/wire-adapter.js";
 export const getRecord = createGetRecordWireAdapter();
+export const getObjectInfo = createFetchWireAdapter("/lightning/wire/getObjectInfo", (config) => ({
+  objectApiName: config && config.objectApiName
+}));
 `
 }
 

@@ -1067,7 +1067,7 @@ Search.SearchResults found = Search.find('FIND {Nook*} IN ALL FIELDS RETURNING A
 System.assertEquals(1, found.get('Account').size());
 Search.SuggestionOption option = new Search.SuggestionOption();
 Search.SuggestionResults suggestions = Search.suggest('Nook', 'Account', option);
-System.assertEquals(0, suggestions.getSuggestionResults().size());
+System.assertEquals(1, suggestions.getSuggestionResults().size());
 Search.SuggestionResults userSuggestions = Search.suggest('Nook', 'Account', option, AccessLevel.USER_MODE);
 System.assertEquals(false, userSuggestions.hasMoreResults());
 List<List<SObject>> objectRows = Search.query('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name)', (Object)AccessLevel.SYSTEM_MODE);
@@ -1075,7 +1075,7 @@ System.assertEquals(1, objectRows[0].size());
 Search.SearchResults objectFound = Search.find('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name)', (Object)AccessLevel.USER_MODE);
 System.assertEquals(1, objectFound.get('Account').size());
 Search.SuggestionResults objectSuggestions = Search.suggest('Nook', 'Account', (Object)new Search.SuggestionOption());
-System.assertEquals(0, objectSuggestions.getSuggestionResults().size());
+System.assertEquals(1, objectSuggestions.getSuggestionResults().size());
 Search.SuggestionResults objectUserSuggestions = Search.suggest('Nook', 'Account', (Object)new Search.SuggestionOption(), (Object)AccessLevel.SYSTEM_MODE);
 System.assertEquals(false, objectUserSuggestions.hasMoreResults());
 `)
@@ -1103,6 +1103,100 @@ Search.query('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name)', arbitrary
 	}
 	if _, err := machine.Execute(badProgram); err == nil || !strings.Contains(err.Error(), "AccessLevel") {
 		t.Fatalf("expected AccessLevel error, got %v", err)
+	}
+}
+
+func TestExecSearchUsesOrgBackedSOSLRows(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Nook Supply', Site = 'North dock');
+insert new Contact(LastName = 'Nook Buyer', Email = 'buyer@example.test');
+
+List<List<SObject>> rows = Search.query(
+	'FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name, Site), Contact(Id, Name, Email)'
+);
+System.assertEquals(2, rows.size());
+System.assertEquals(1, rows[0].size());
+System.assertEquals(1, rows[1].size());
+System.assertEquals('Nook Supply', ((Account)rows[0][0]).Name);
+System.assertEquals('buyer@example.test', ((Contact)rows[1][0]).Email);
+
+Search.SearchResults results = Search.find(
+	'FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name, Site), Contact(Id, Name)'
+);
+System.assertEquals(1, results.get('Account').size());
+System.assertEquals(1, results.get('Contact').size());
+System.assertEquals('Nook Supply', ((Account)results.get('Account')[0].getSObject()).Name);
+
+Search.SearchResults snippetResults = Search.find(
+	'FIND {North} IN ALL FIELDS RETURNING Account(Id, Name, Site) WITH SNIPPET'
+);
+System.assertEquals('North dock', snippetResults.get('Account')[0].getSnippet('Site'));
+
+Search.SuggestionOption option = new Search.SuggestionOption();
+option.setLimit(5);
+Search.SuggestionResults suggestions = Search.suggest('Noo', 'Account', option);
+System.assertEquals(1, suggestions.getSuggestionResults().size());
+System.assertEquals('Nook Supply', ((Account)suggestions.getSuggestionResults()[0].getSObject()).Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSearchAccessLevelAppliesLocalPermissions(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Nook Supply', Score__c = 7);
+insert account;
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
+User u = new User(
+	Username = 'search-user@example.invalid',
+	Alias = 'suser',
+	Email = 'search-user@example.invalid',
+	LastName = 'Search',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+System.runAs(u) {
+	Boolean caught = false;
+	try {
+		Search.query('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name, Score__c)', AccessLevel.USER_MODE);
+	} catch (QueryException qe) {
+		caught = qe.getMessage().contains('Account') || qe.getMessage().contains('Score__c');
+	}
+	System.assert(caught);
+	List<List<SObject>> systemRows = Search.query(
+		'FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name, Score__c)',
+		AccessLevel.SYSTEM_MODE
+	);
+	System.assertEquals(1, systemRows[0].size());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	account := org.Objects["Account"]
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldDecimal}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -6725,6 +6819,74 @@ System.assertNotEquals(null, response.get('response_x'));
 	}
 }
 
+func TestExecWebServiceCalloutMockMaterializesGeneratedResponseShape(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.setMock('WebServiceMock', new MockResponse());
+Map<String, Object> response = new Map<String, Object>();
+WebServiceCallout.invoke(
+  new Object(),
+  'request',
+  response,
+  new String[]{'https://example.test', 'soapAction', 'requestNS', 'requestName', 'responseNS', 'responseName', 'GeneratedResponse'}
+);
+GeneratedResponse shell = (GeneratedResponse)response.get('response_x');
+System.assertEquals('mocked', shell.result);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doInvoke, err := CompileAnonymous(`
+GeneratedResponse shell = (GeneratedResponse)response.get('response_x');
+System.assertNotEquals(null, shell);
+shell.result = 'mocked';
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "GeneratedResponse",
+		Fields: map[string]Field{
+			"result": {Name: "result", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "MockResponse",
+		Interfaces: []string{"WebServiceMock"},
+		Methods: map[string]Method{
+			"doInvoke": {
+				Name:       "MockResponse.doInvoke",
+				ClassName:  "MockResponse",
+				ReturnType: "void",
+				Params: []Param{
+					{Name: "stub", Type: "Object"},
+					{Name: "request", Type: "Object"},
+					{Name: "response", Type: "Map<String,Object>"},
+					{Name: "endpoint", Type: "String"},
+					{Name: "soapAction", Type: "String"},
+					{Name: "requestName", Type: "String"},
+					{Name: "responseNS", Type: "String"},
+					{Name: "responseName", Type: "String"},
+					{Name: "responseType", Type: "String"},
+				},
+				Program: doInvoke,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatalf("err = %v", err)
+	}
+	if result.Limits.Callouts != 1 {
+		t.Fatalf("callouts = %d, want 1", result.Limits.Callouts)
+	}
+}
+
 func TestExecUnsupportedTestHelperAPIsHaveStableShape(t *testing.T) {
 	cases := []struct {
 		name string
@@ -9350,6 +9512,38 @@ System.assertEquals(150, Limits.getLimitPublishImmediateDML());
 	}
 }
 
+func TestExecEventBusPublishImmediateDMLLimitIsSeparateFromDML(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(0, Limits.getDMLStatements());
+System.assertEquals(0, Limits.getPublishImmediateDML());
+EventBus.publish(new Local_Event__e(Name__c = 'Trail'));
+System.assertEquals(0, Limits.getDMLStatements());
+System.assertEquals(1, Limits.getPublishImmediateDML());
+insert new Account(Name = 'ordinary');
+System.assertEquals(1, Limits.getDMLStatements());
+System.assertEquals(1, Limits.getPublishImmediateDML());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Event__e",
+			KeyPrefix: "e00",
+			Fields: map[string]storage.Field{
+				"Name__c": {APIName: "Name__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPassiveLimitsGettersHaveStableValues(t *testing.T) {
 	for _, getter := range []string{
 		"getApexCursorRows",
@@ -10901,6 +11095,78 @@ System.assert(jobId.startsWith('707'));
 				t.Fatalf("err = %#v, want UnsupportedFeature %q", err, tc.want)
 			}
 		})
+	}
+}
+
+func TestExecAsyncOptionsMaximumQueueableStackDepthRejectsTooDeepChain(t *testing.T) {
+	program, err := CompileAnonymous(`
+AsyncOptions opts = new AsyncOptions();
+opts.setMaximumQueueableStackDepth(1);
+Test.startTest();
+System.enqueueJob(new ParentWorker(), opts);
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parentProgram, err := CompileAnonymous(`System.enqueueJob(new ChildWorker());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "ParentWorker",
+		Interfaces: []string{"Queueable"},
+		Methods: map[string]Method{
+			"execute": {
+				Name:       "ParentWorker.execute",
+				ClassName:  "ParentWorker",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "QueueableContext"}},
+				Program:    parentProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "ChildWorker", Interfaces: []string{"Queueable"}}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "MaximumQueueableStackDepth exceeded") {
+		t.Fatalf("err = %v, want maximum queueable stack depth rejection", err)
+	}
+}
+
+func TestExecQueueableAndAsyncLimitsResetInsideStartTestAndRestoreParent(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.enqueueJob(new QueueWorker());
+System.assertEquals(1, Limits.getAsyncJobs());
+System.assertEquals(1, Limits.getQueueableJobs());
+Test.startTest();
+System.assertEquals(0, Limits.getAsyncJobs());
+System.assertEquals(0, Limits.getQueueableJobs());
+System.enqueueJob(new QueueWorker());
+System.assertEquals(1, Limits.getAsyncJobs());
+System.assertEquals(1, Limits.getQueueableJobs());
+Test.stopTest();
+System.assertEquals(1, Limits.getAsyncJobs());
+System.assertEquals(1, Limits.getQueueableJobs());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "QueueWorker", Interfaces: []string{"Queueable"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "QueueWorker.execute", ClassName: "QueueWorker", Params: []Param{{Name: "context", Type: "QueueableContext"}}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -13955,6 +14221,66 @@ System.assertEquals('accepted', observed.getBody());
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecContinuationInvokeMethodReturnsControllerResponse(t *testing.T) {
+	callbackProgram, err := CompileAnonymous(`
+HttpResponse response = (HttpResponse)Continuation.getResponse('request-1');
+return response.getBody();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Continuation cont = new Continuation(60);
+HttpRequest req = new HttpRequest();
+cont.addHttpRequest(req);
+cont.continuationMethod = 'resume';
+HttpResponse response = new HttpResponse();
+response.setBody('continued');
+Test.setContinuationResponse('request-1', response);
+Object observed = Test.invokeContinuationMethod(new Controller(), cont);
+System.assertEquals('continued', (String)observed);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "Controller",
+		Methods: map[string]Method{
+			"resume": {
+				Name:       "Controller.resume",
+				ClassName:  "Controller",
+				ReturnType: "String",
+				Program:    callbackProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecExternalServiceHarnessRejectsLiveExecution(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object harness = Test.getExternalService();
+System.assertNotEquals(null, harness);
+ExternalService.run(harness);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	_, err = machine.Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "ExternalService.run live external service execution surface") {
+		t.Fatalf("err = %#v, want unsupported live external service execution", err)
 	}
 }
 
