@@ -39,6 +39,7 @@ export default defineConfig({
         items: [
           { text: 'Overview', link: '/guide/overview' },
           { text: 'Quickstart', link: '/guide/quickstart' },
+          { text: 'Tester Field Guide', link: '/guide/tester-field-guide' },
           { text: 'Installation', link: '/guide/installation' },
           { text: 'What Glade Supports', link: '/guide/support-map' }
         ]
@@ -60,7 +61,7 @@ export default defineConfig({
         text: 'Advanced',
         items: [
           { text: 'Speed Up Test Startup', link: '/guide/test-startup-cache' },
-          { text: 'Editor, LSP, and DAP', link: '/guide/editor' },
+          { text: 'VS Code Extension, LSP, and DAP', link: '/guide/editor' },
           { text: 'Progress, Wizards, and Package Artifacts', link: '/guide/rich-local-workflows' }
         ]
       },

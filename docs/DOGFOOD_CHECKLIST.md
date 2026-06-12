@@ -3,6 +3,9 @@
 Use this when handing a release candidate or local build to a real Salesforce
 project. Run commands from the SFDX project root unless noted.
 
+For the broader pilot handoff, including VS Code, AI, CI, and report workflows,
+start with [TESTER_FIELD_GUIDE.md](TESTER_FIELD_GUIDE.md).
+
 ## 1. Build The Candidate
 
 For pre-tag dogfood, build from the current checkout:

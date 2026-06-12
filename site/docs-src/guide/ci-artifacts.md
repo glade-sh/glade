@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - run: curl -fsSL https://glade.sh/install.sh | sh
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: glade doctor
@@ -20,6 +22,10 @@ jobs:
 ```
 
 ## Semantic checks
+
+Use `fetch-depth: 0` when a workflow runs
+`glade test changed --project . --since origin/main`. The affected-test selector
+needs the git base ref on disk.
 
 Use SARIF for code-scanning uploads:
 

@@ -10,6 +10,10 @@ Use SARIF for code-scanning uploads:
 glade check --project . --format sarif --output glade-check.sarif
 ```
 
+In GitHub Actions, use `actions/checkout` with `fetch-depth: 0` before
+`glade test changed --since origin/main`. The affected-test selector needs the
+git base ref on disk.
+
 Use GitHub annotations for inline workflow logs:
 
 ```bash

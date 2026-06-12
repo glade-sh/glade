@@ -46,6 +46,21 @@ Manual fallback:
 - Release archives: <https://github.com/glade-sh/glade/releases>
 - Checksums: <https://github.com/glade-sh/glade/releases/latest/download/SHA256SUMS.txt>
 
+## Install VS Code Extension
+
+Release archives include the Glade VS Code extension at
+`share/glade/editor/vscode-glade.vsix`. After the `glade` binary is on your
+path, check the editor install path and install the bundled extension:
+
+```bash
+glade editor doctor vscode
+glade editor install vscode --force
+```
+
+Open an SFDX project in VS Code. The extension adds a Glade Activity Bar,
+native Test Explorer entries, local CodeLens actions, DAP debug launches, and
+named local data environments. See [Editor, LSP, and DAP](/guide/editor).
+
 ## Build from source
 
 Use this path when developing Glade or trying the current repository state before a release is cut.
@@ -143,6 +158,8 @@ glade doctor
 ```
 
 ::: tip Next step
-Create project config: [Configure a Glade Project](/guide/configuration), then
-check [What Glade supports](/guide/support-map).
+For a pilot handoff, use the [Tester Field Guide](/guide/tester-field-guide).
+For a narrow first run, create project config:
+[Configure a Glade Project](/guide/configuration), then check
+[What Glade supports](/guide/support-map).
 :::

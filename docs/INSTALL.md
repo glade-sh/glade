@@ -29,6 +29,21 @@ glade version
 glade doctor   # confirm: "parser: ok (tree-sitter)"
 ```
 
+## Install VS Code Extension
+
+Release archives include the Glade VS Code extension at
+`share/glade/editor/vscode-glade.vsix`. After the `glade` binary is on your
+path, check the editor install path and install the bundled extension:
+
+```bash
+glade editor doctor vscode
+glade editor install vscode --force
+```
+
+Open an SFDX project in VS Code. The extension adds a Glade Activity Bar,
+native Test Explorer entries, local CodeLens actions, DAP debug launches, and
+named local data environments. See [EDITOR.md](EDITOR.md).
+
 ## Shell Completion
 
 `glade` can print completion scripts for bash, zsh, and fish:
@@ -150,6 +165,8 @@ See [LOCAL_TESTING.md](LOCAL_TESTING.md) for class/method filters,
 dependency-selected test runs, and `glade test serve`. For when the test startup
 cache is created, how it stays fresh, and how to recover from a bad cache, see
 [TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md).
+For a compact pilot handoff that covers VS Code, AI, CI, and report workflows,
+see [TESTER_FIELD_GUIDE.md](TESTER_FIELD_GUIDE.md).
 
 For a short release-candidate dogfood pass, use
 [`DOGFOOD_CHECKLIST.md`](DOGFOOD_CHECKLIST.md).

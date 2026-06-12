@@ -20,6 +20,11 @@ glade doctor
 `glade doctor` must report `parser: ok (tree-sitter)` before project parsing,
 checking, or testing will work.
 
+For a small tester pilot, start with
+[docs/TESTER_FIELD_GUIDE.md](docs/TESTER_FIELD_GUIDE.md). It shows the install,
+first project run, VS Code setup, AI handoff prompt, CI gate, and useful
+follow-on workflows in one place.
+
 Run it in an SFDX project:
 
 ```bash
@@ -144,6 +149,7 @@ glade report refactor-proof --project . --since origin/main --format html --out 
 
 ## Docs
 
+- [Tester field guide](docs/TESTER_FIELD_GUIDE.md)
 - [Install](docs/INSTALL.md)
 - [Project configuration](docs/CONFIG.md)
 - [Local Apex testing](docs/LOCAL_TESTING.md)

@@ -1,6 +1,8 @@
 # Quickstart: Check and Test an SFDX Project
 
 This path gets from install to the first local check in a few minutes.
+For a small pilot with VS Code, AI, CI, and report workflows, use the
+[Tester Field Guide](/guide/tester-field-guide).
 
 ## 1. Install
 

@@ -194,21 +194,21 @@ glade playground --project . --open</code></pre>
     </div>
   </div>
   <div class="home-next-cards">
-    <a class="home-next-card" href="/guide/installation">
-      <strong>Docs</strong>
-      <span>Overview, quickstart, install, support, and local workflow docs.</span>
+    <a class="home-next-card" href="/guide/tester-field-guide">
+      <strong>Tester Field Guide</strong>
+      <span>Install, first run, VS Code, AI, CI, and pilot feedback.</span>
     </a>
     <a class="home-next-card" href="/guide/playground">
       <strong>Playground Docs</strong>
       <span>Run the local browser workbench from your machine.</span>
     </a>
+    <a class="home-next-card" href="/guide/editor">
+      <strong>VS Code Extension</strong>
+      <span>Install the bundled extension and run local Apex work from VS Code.</span>
+    </a>
     <a class="home-next-card" href="https://github.com/glade-sh/glade">
       <strong>GitHub</strong>
       <span>Source, issues, releases, fixtures, and history.</span>
-    </a>
-    <a class="home-next-card" href="https://glade.sh/install.sh">
-      <strong>install.sh</strong>
-      <span>The same installer used by the command above.</span>
     </a>
   </div>
 </div>

@@ -287,6 +287,7 @@ body::before {
 
 .vp-doc div[class*='language-'] pre {
   background: var(--glade-code-bg) !important;
+  line-height: 1.5;
   padding: 22px 24px;
 }
 
@@ -294,19 +295,32 @@ body::before {
   background: transparent;
   padding: 0;
   color: var(--glade-code-text);
+  line-height: 1.5;
 }
 
 .vp-doc div[class*='language-'] > span.lang {
-  top: 12px;
-  right: 54px;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  height: 28px;
+  min-width: 52px;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--glade-code-border);
+  border-left: 1px solid var(--glade-code-border);
+  border-bottom-left-radius: 8px;
+  background: var(--glade-code-header);
   color: var(--glade-code-muted);
   font-size: 11px;
+  font-weight: 700;
   letter-spacing: 0;
+  line-height: 1;
+  padding: 0 10px;
 }
 
 .vp-doc div[class*='language-'] > button.copy {
-  top: 9px;
-  right: 10px;
+  top: 8px;
+  right: 8px;
   border: 1px solid var(--glade-code-border);
   border-radius: 6px;
   background-color: var(--glade-code-header);
@@ -1835,11 +1849,11 @@ body::before {
   color: inherit;
 }
 
-.line {
+.home-code-block .line {
   display: block;
 }
 
-.line-number {
+.home-code-block .line-number {
   display: inline-block;
   min-width: 1.5em;
   margin-right: 0.75em;

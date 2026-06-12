@@ -11,8 +11,11 @@ const highlight = await readFile(new URL("../docs-src/public/js/highlight.js", i
 const homeScript = await readFile(new URL("../docs-src/public/js/home.js", import.meta.url), "utf8");
 const brandGuide = await readFile(new URL("../docs-src/guide/brand-guide.md", import.meta.url), "utf8");
 const ciArtifacts = await readFile(new URL("../docs-src/guide/ci-artifacts.md", import.meta.url), "utf8");
+const installation = await readFile(new URL("../docs-src/guide/installation.md", import.meta.url), "utf8");
 const overview = await readFile(new URL("../docs-src/guide/overview.md", import.meta.url), "utf8");
 const quickstart = await readFile(new URL("../docs-src/guide/quickstart.md", import.meta.url), "utf8");
+const testerFieldGuide = await readFile(new URL("../docs-src/guide/tester-field-guide.md", import.meta.url), "utf8");
+const editor = await readFile(new URL("../docs-src/guide/editor.md", import.meta.url), "utf8");
 const supportMap = await readFile(new URL("../docs-src/guide/support-map.md", import.meta.url), "utf8");
 const enterpriseWorkflows = await readFile(new URL("../docs-src/guide/enterprise-workflows.md", import.meta.url), "utf8");
 const compatibilityDashboard = await readFile(new URL("../docs-src/guide/compatibility-dashboard.md", import.meta.url), "utf8");
@@ -68,7 +71,11 @@ test("home page follows the brand review conversion pass", () => {
   assert.match(index, /href="\/guide\/support-map#works-well"/);
   assert.match(index, /Unsupported platform services fail with stable diagnostics/);
   assert.match(index, /Ready to try it locally\?/);
+  assert.match(index, /<strong>Tester Field Guide<\/strong>/);
+  assert.match(index, /href="\/guide\/tester-field-guide"/);
   assert.match(index, /<strong>Playground Docs<\/strong>/);
+  assert.match(index, /<strong>VS Code Extension<\/strong>/);
+  assert.match(index, /href="\/guide\/editor"/);
   assert.ok(index.indexOf("class=\"home-install\"") < index.indexOf("class=\"home-features\""));
 });
 
@@ -92,6 +99,10 @@ test("home code samples keep tight lines and do not wrap commands", () => {
   assert.match(highlight, /window\.gladeHighlightCodeBlock = highlightCodeBlock/);
   assert.doesNotMatch(highlight, /\.join\("\\n"\)/);
   assert.equal((index.match(/class="home-command-line"/g) || []).length, 10);
+  assert.match(css, /\.home-code-block \.line\s*\{[\s\S]*display: block;/);
+  assert.match(css, /\.home-code-block \.line-number\s*\{[\s\S]*display: inline-block;/);
+  assert.doesNotMatch(css, /^\.line\s*\{/m);
+  assert.doesNotMatch(css, /^\.line-number\s*\{/m);
   assert.match(css, /\.home-command-line\s*\{[\s\S]*display: block;[\s\S]*white-space: nowrap;/);
   assert.match(css, /\.home-command-line \+ \.home-command-line\s*\{[\s\S]*padding-left: 1\.25rem;/);
   assert.doesNotMatch(css, /\.home-feature code\s*\{[\s\S]*overflow-wrap: anywhere;[\s\S]*\}/);
@@ -103,6 +114,8 @@ test("home code samples keep tight lines and do not wrap commands", () => {
 
 test("docs code blocks and tables fill their content lane cleanly", () => {
   assert.match(css, /\.vp-doc div\[class\*='language-'\] pre\s*\{[\s\S]*padding: 22px 24px;/);
+  assert.match(css, /\.vp-doc div\[class\*='language-'\] code\s*\{[\s\S]*line-height: 1\.5;/);
+  assert.match(css, /\.vp-doc div\[class\*='language-'\] > span\.lang\s*\{[\s\S]*top: 0;[\s\S]*right: 0;[\s\S]*display: inline-flex;[\s\S]*height: 28px;/);
   assert.match(css, /\.vp-doc table\s*\{[\s\S]*width: 100%;/);
   assert.match(css, /\.vp-doc th,\s*\n\.vp-doc td\s*\{[\s\S]*padding: 14px 18px;/);
   assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.vp-doc table\s*\{[\s\S]*display: block;[\s\S]*overflow-x: auto;/);
@@ -132,8 +145,10 @@ test("theme uses the forest clearing design direction", () => {
   assert.match(config, /\{ text: 'Docs', link: '\/guide\/overview' \}/);
   assert.match(config, /text: 'Overview'/);
   assert.match(config, /text: 'Quickstart'/);
+  assert.match(config, /text: 'Tester Field Guide'/);
   assert.match(config, /text: 'What Glade Supports'/);
   assert.match(config, /text: 'Map Enterprise Projects'/);
+  assert.match(config, /text: 'VS Code Extension, LSP, and DAP'/);
   assert.match(config, /text: 'Plugin Lock Files And CI'/);
   assert.ok(config.indexOf("text: 'Overview'") < config.indexOf("text: 'Brand Guide'"));
   assert.doesNotMatch(config, /text: 'Project Status'/);
@@ -154,6 +169,7 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(overview, /local assessment, cruft review, or refactor-proof reports/);
   assert.match(overview, /Use Salesforce When/);
   assert.match(quickstart, /^# Quickstart: Check and Test an SFDX Project/m);
+  assert.match(quickstart, /\[Tester Field Guide\]\(\/guide\/tester-field-guide\)/);
   assert.match(quickstart, /glade check --project \./);
   assert.match(quickstart, /glade test changed --project \. --since origin\/main/);
   assert.match(supportMap, /^# What Glade Supports/m);
@@ -189,6 +205,20 @@ test("enterprise workflow docs expose current report commands", () => {
 test("public launch docs avoid stale public routes and registry promises", () => {
   assert.match(siteReadme, /https:\/\/glade\.sh\/guide\/support-map/);
   assert.doesNotMatch(siteReadme, /https:\/\/glade\.sh\/docs\/guide\//);
+  assert.match(testerFieldGuide, /^# Tester Field Guide/m);
+  assert.match(testerFieldGuide, /glade editor install vscode --force/);
+  assert.match(testerFieldGuide, /AI coding agent/);
+  assert.match(testerFieldGuide, /fetch-depth: 0/);
+  assert.match(testerFieldGuide, /glade report refactor-proof --project \. --since origin\/main/);
+  assert.match(testerFieldGuide, /default public plugin registry is preview/);
+  assert.match(ciArtifacts, /fetch-depth: 0/);
+  assert.match(installation, /^## Install VS Code Extension/m);
+  assert.match(installation, /glade editor doctor vscode/);
+  assert.match(installation, /glade editor install vscode --force/);
+  assert.match(installation, /share\/glade\/editor\/vscode-glade\.vsix/);
+  assert.match(installation, /\[Editor, LSP, and DAP\]\(\/guide\/editor\)/);
+  assert.match(editor, /^## VS Code Extension/m);
+  assert.match(editor, /Glade Activity Bar/);
   assert.match(ciArtifacts, /mkdir -p reports/);
   assert.match(plugins, /The default public plugin registry is not live yet/);
   assert.match(plugins, /glade plugins link --exec \.\/glade-plugin-quality/);
