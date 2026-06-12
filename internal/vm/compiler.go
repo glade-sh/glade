@@ -228,6 +228,14 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 		if err != nil {
 			return ir.Instruction{}, err
 		}
+		runAsExpr := userExpr
+		if p.match(tokenSymbol, ",") {
+			packageExpr, err := p.parseExpression()
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+			runAsExpr = ir.Expr{Kind: ir.ExprCall, Callee: "System.runAs", Args: []ir.Expr{userExpr, packageExpr}}
+		}
 		if _, err := p.expect(tokenSymbol, ")"); err != nil {
 			return ir.Instruction{}, err
 		}
@@ -235,7 +243,7 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 		if err != nil {
 			return ir.Instruction{}, err
 		}
-		return ir.Instruction{Op: ir.OpRunAs, Expr: userExpr, Then: body, Pos: start.pos}, nil
+		return ir.Instruction{Op: ir.OpRunAs, Expr: runAsExpr, Then: body, Pos: start.pos}, nil
 	}
 
 	if p.peek(tokenSymbol, "{") {

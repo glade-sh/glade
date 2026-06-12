@@ -192,11 +192,12 @@ func (vm *VM) stripInaccessibleRecords(accessType string, records Value, enforce
 	}
 	return out, removedFields, modifiedIndexes, nil
 }
-func (vm *VM) enforceUserModeDMLAccess(op string, value Value) error {
+func (vm *VM) enforceUserModeDMLAccess(op string, value Value, accessLevel Value) error {
 	objectPermission, fieldPermission := userModeDMLPermissions(op)
 	if objectPermission == "" {
 		return nil
 	}
+	scopedPermissionSetID := accessLevelPermissionSetID(accessLevel)
 	records := dmlAccessRecords(value)
 	for _, record := range records {
 		if record.Kind != ValueObject {
@@ -208,7 +209,7 @@ func (vm *VM) enforceUserModeDMLAccess(op string, value Value) error {
 				objectName = resolved
 			}
 		}
-		if !vm.currentUserObjectPermission(objectName, objectPermission) {
+		if !vm.currentUserObjectPermissionWithScope(objectName, objectPermission, scopedPermissionSetID) {
 			return newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
 		}
 		for field := range record.Fields {
@@ -219,12 +220,45 @@ func (vm *VM) enforceUserModeDMLAccess(op string, value Value) error {
 			if strings.EqualFold(canonicalField, "Id") {
 				continue
 			}
-			if !vm.currentUserFieldPermission(objectName, canonicalField, fieldPermission) {
+			if !vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID) {
 				return newExceptionError("SecurityException", fmt.Sprintf("Access to field '%s.%s' denied", objectName, canonicalField))
 			}
 		}
 	}
 	return nil
+}
+
+func accessLevelPermissionSetID(accessLevel Value) string {
+	if !isDatabaseAccessLevelValue(accessLevel) || accessLevel.Fields == nil {
+		return ""
+	}
+	value, ok := accessLevel.Fields["permissionSetId"]
+	if !ok {
+		return ""
+	}
+	if value.Kind == ValueString {
+		return strings.TrimSpace(value.Text)
+	}
+	if text, ok := platformScalarObjectText(value); ok {
+		return strings.TrimSpace(text)
+	}
+	return ""
+}
+
+func (vm *VM) currentUserObjectPermissionWithScope(objectName, method, permissionSetID string) bool {
+	if permissionSetID != "" {
+		allowed, ok := vm.explicitObjectPermission(permissionSetID, objectName, method)
+		return ok && allowed
+	}
+	return vm.currentUserObjectPermission(objectName, method)
+}
+
+func (vm *VM) currentUserFieldPermissionWithScope(objectName, fieldName, method, permissionSetID string) bool {
+	if permissionSetID != "" {
+		allowed, ok := vm.explicitFieldPermission(permissionSetID, objectName, fieldName, method)
+		return ok && allowed
+	}
+	return vm.currentUserFieldPermission(objectName, fieldName, method)
 }
 func dmlAccessRecords(value Value) []Value {
 	if value.Kind == ValueList {

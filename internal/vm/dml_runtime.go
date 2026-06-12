@@ -135,6 +135,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 	allOrNone := true
 	externalIDField := ""
 	userMode := false
+	accessLevel := Value{}
 	dmlOptions := dml.Options{}
 	if len(args) >= 2 {
 		if args[1].Kind == ValueBool {
@@ -144,6 +145,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 			dmlOptions = databaseDMLOptions(args[1])
 		} else if isDatabaseAccessLevelValue(args[1]) {
 			userMode = isUserModeAccessLevel(args[1])
+			accessLevel = args[1]
 		} else if op == "upsert" {
 			field, err := vm.externalIDFieldName(args[1])
 			if err != nil {
@@ -157,6 +159,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 	if len(args) == 3 {
 		if isDatabaseAccessLevelValue(args[2]) {
 			userMode = isUserModeAccessLevel(args[2])
+			accessLevel = args[2]
 		} else if op != "upsert" {
 			return Null, fmt.Errorf("Database.%s expects at most records and allOrNone", op)
 		} else if args[2].Kind == ValueBool {
@@ -177,6 +180,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 		}
 		allOrNone = args[2].Bool
 		userMode = isUserModeAccessLevel(args[3])
+		accessLevel = args[3]
 	}
 	if op == "delete" || op == "undelete" {
 		records, ok := vm.deleteIDsToSObjects(args[0])
@@ -185,7 +189,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 		}
 	}
 	if userMode {
-		if err := vm.enforceUserModeDMLAccess(op, args[0]); err != nil {
+		if err := vm.enforceUserModeDMLAccess(op, args[0], accessLevel); err != nil {
 			return Null, err
 		}
 	}

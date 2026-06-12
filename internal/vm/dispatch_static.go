@@ -166,7 +166,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Security.stripInaccessible",
 		"Approval.process", "Approval.lock", "Approval.unlock", "Approval.isLocked",
 		"Answers.findSimilar",
-		"QuickAction.describeAvailableQuickActions", "QuickAction.describeQuickActions",
+		"QuickAction.describeAvailableActions", "QuickAction.describeAvailableQuickActions", "QuickAction.describeQuickActions",
 		"QuickAction.retrieveQuickActionTemplate", "QuickAction.retrieveQuickActionTemplates",
 		"QuickAction.performQuickAction", "QuickAction.performQuickActions",
 		"String.valueOf", "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty",

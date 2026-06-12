@@ -435,7 +435,7 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 		return "", false
 	}
 	switch callee {
-	case "QuickAction.describeAvailableQuickActions", "QuickAction.describeQuickActions",
+	case "QuickAction.describeAvailableActions", "QuickAction.describeAvailableQuickActions", "QuickAction.describeQuickActions",
 		"QuickAction.retrieveQuickActionTemplate", "QuickAction.retrieveQuickActionTemplates",
 		"QuickAction.performQuickAction", "QuickAction.performQuickActions",
 		"Test.newSendEmailQuickActionDefaults":

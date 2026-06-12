@@ -455,41 +455,6 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "Approval.ProcessWorkitemRequest.setAction local approval process metadata"`,
 		},
 		{
-			name: "approval process api",
-			src:  `Approval.process(new Approval.ProcessSubmitRequest());`,
-			want: `unsupported call "Approval.process local approval process metadata"`,
-		},
-		{
-			name: "approval process api all or none",
-			src:  `Approval.process(new Approval.ProcessSubmitRequest(), false);`,
-			want: `unsupported call "Approval.process local approval process metadata"`,
-		},
-		{
-			name: "business hours add api",
-			src:  `BusinessHours.add('01m000000000001AAA', Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0), 1250);`,
-			want: `unsupported call "BusinessHours.add local business hours metadata"`,
-		},
-		{
-			name: "business hours add gmt api",
-			src:  `BusinessHours.addGmt('01m000000000001AAA', Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0), 1250);`,
-			want: `unsupported call "BusinessHours.addGmt local business hours metadata"`,
-		},
-		{
-			name: "business hours diff api",
-			src:  `BusinessHours.diff('01m000000000001AAA', Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0), Datetime.newInstanceGmt(2026, 5, 15, 11, 0, 0));`,
-			want: `unsupported call "BusinessHours.diff local business hours metadata"`,
-		},
-		{
-			name: "business hours is within api",
-			src:  `BusinessHours.isWithin('01m000000000001AAA', Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0));`,
-			want: `unsupported call "BusinessHours.isWithin local business hours metadata"`,
-		},
-		{
-			name: "business hours next start date api",
-			src:  `BusinessHours.nextStartDate('01m000000000001AAA', Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0));`,
-			want: `unsupported call "BusinessHours.nextStartDate local business hours metadata"`,
-		},
-		{
 			name: "answers find similar api",
 			src:  `Answers.findSimilar(new Question(Title = 'Acme'));`,
 			want: `unsupported call "Answers.findSimilar local Answers zone search surface"`,
@@ -503,11 +468,6 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			name: "event bus publish after commit",
 			src:  `EventBus.publishAfterCommit(new List<Account>{new Account(Name = 'Acme')});`,
 			want: `unsupported call "EventBus.publishAfterCommit local platform event after-commit delivery surface"`,
-		},
-		{
-			name: "quick action describe",
-			src:  `QuickAction.describeAvailableActions('Account');`,
-			want: `unsupported call "QuickAction.describeAvailableActions local quick action UI surface"`,
 		},
 		{
 			name: "canvas integration",
@@ -1110,6 +1070,14 @@ Search.SuggestionResults suggestions = Search.suggest('Nook', 'Account', option)
 System.assertEquals(0, suggestions.getSuggestionResults().size());
 Search.SuggestionResults userSuggestions = Search.suggest('Nook', 'Account', option, AccessLevel.USER_MODE);
 System.assertEquals(false, userSuggestions.hasMoreResults());
+List<List<SObject>> objectRows = Search.query('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name)', (Object)AccessLevel.SYSTEM_MODE);
+System.assertEquals(1, objectRows[0].size());
+Search.SearchResults objectFound = Search.find('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name)', (Object)AccessLevel.USER_MODE);
+System.assertEquals(1, objectFound.get('Account').size());
+Search.SuggestionResults objectSuggestions = Search.suggest('Nook', 'Account', (Object)new Search.SuggestionOption());
+System.assertEquals(0, objectSuggestions.getSuggestionResults().size());
+Search.SuggestionResults objectUserSuggestions = Search.suggest('Nook', 'Account', (Object)new Search.SuggestionOption(), (Object)AccessLevel.SYSTEM_MODE);
+System.assertEquals(false, objectUserSuggestions.hasMoreResults());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1124,6 +1092,17 @@ System.assertEquals(false, userSuggestions.hasMoreResults());
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+
+	badProgram, err := CompileAnonymous(`
+Object arbitrary = new Object();
+Search.query('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name)', arbitrary);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(badProgram); err == nil || !strings.Contains(err.Error(), "AccessLevel") {
+		t.Fatalf("expected AccessLevel error, got %v", err)
 	}
 }
 
@@ -1313,6 +1292,11 @@ System.assertEquals(1, available.size());
 System.assertEquals('Account.NewTask', available[0].getName());
 System.assertEquals('New Task', available[0].getLabel());
 System.assertEquals('Create', available[0].getType());
+
+List<QuickAction.DescribeAvailableQuickActionResult> aliasAvailable =
+	QuickAction.describeAvailableActions('Account');
+System.assertEquals(1, aliasAvailable.size());
+System.assertEquals('Account.NewTask', aliasAvailable[0].getName());
 
 List<QuickAction.DescribeQuickActionResult> described =
 	QuickAction.describeQuickActions(new List<String>{'Account.NewTask', 'Account.Unknown'});
@@ -3340,6 +3324,9 @@ PageReference aliasReplacement = new PageReference('Page.AccountView?mode=alias'
 Test.setCurrentPageReference(aliasReplacement);
 System.assertEquals('/apex/AccountView?mode=alias', System.currentPageReference().getUrl());
 System.assertEquals('/apex/AccountView?mode=alias', ApexPages.currentPage().getUrl());
+Object objectPage = new PageReference('/apex/ObjectOverload');
+Test.setCurrentPageReference(objectPage);
+System.assertEquals('/apex/ObjectOverload', System.currentPageReference().getUrl());
 System.assertEquals('Page.Missing', new PageReference('Page.Missing').getUrl());
 ApexPages.Severity severity = ApexPages.Severity.ERROR;
 System.assertEquals('ERROR', severity.name());
@@ -3733,18 +3720,52 @@ handler.handlePredictionResponse(new NLPPredictions.PredictionResponseContextImp
 	}
 }
 
-func TestExecBusinessHoursMetadataBackedMethodsAreUnsupported(t *testing.T) {
+func TestExecBusinessHoursRecordBackedWeekSchedule(t *testing.T) {
 	program, err := CompileAnonymous(`
-Id businessHoursId = '01m000000000001AAA';
-Datetime start = Datetime.newInstanceGmt(2026, 5, 15, 10, 0, 0);
-BusinessHours.add(businessHoursId, start, 1250);
+Datetime mondayNine = Datetime.newInstanceGmt(2026, 6, 15, 16, 0, 0);
+System.assertEquals(true, BusinessHours.isWithin('01m000000000001AAA', mondayNine));
+Datetime mondayTen = BusinessHours.add('01m000000000001AAA', mondayNine, 60 * 60 * 1000);
+System.assertEquals(Datetime.newInstanceGmt(2026, 6, 15, 17, 0, 0), mondayTen);
+System.assertEquals(mondayTen, BusinessHours.nextStartDate('01m000000000001AAA', mondayTen));
+Datetime mondayEleven = BusinessHours.addGmt('01m000000000001AAA', mondayTen, 60 * 60 * 1000);
+System.assertEquals(Datetime.newInstanceGmt(2026, 6, 15, 18, 0, 0), mondayEleven);
+System.assertEquals(60 * 60 * 1000, BusinessHours.diff('01m000000000001AAA', mondayNine, mondayTen));
+Datetime saturday = Datetime.newInstanceGmt(2026, 6, 20, 16, 0, 0);
+System.assertEquals(false, BusinessHours.isWithin('01m000000000001AAA', saturday));
+System.assertEquals(Datetime.newInstanceGmt(2026, 6, 22, 16, 0, 0), BusinessHours.nextStartDate('01m000000000001AAA', saturday));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), `unsupported call "BusinessHours.add local business hours metadata"`) {
-		t.Fatalf("BusinessHours.add error = %v", err)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "BusinessHours")
+	businessHours := org.Objects["BusinessHours"]
+	businessHours.Records["01m000000000001AAA"] = storage.Record{
+		ID:     "01m000000000001AAA",
+		Object: "BusinessHours",
+		Fields: map[string]storage.Value{
+			"Id":                 storage.IDValue("01m000000000001AAA"),
+			"Name":               storage.StringValue("Default"),
+			"IsActive":           storage.BooleanValue(true),
+			"IsDefault":          storage.BooleanValue(true),
+			"TimeZoneSidKey":     storage.StringValue("America/Los_Angeles"),
+			"MondayStartTime":    storage.StringValue("09:00:00.000Z"),
+			"MondayEndTime":      storage.StringValue("17:00:00.000Z"),
+			"TuesdayStartTime":   storage.StringValue("09:00:00.000Z"),
+			"TuesdayEndTime":     storage.StringValue("17:00:00.000Z"),
+			"WednesdayStartTime": storage.StringValue("09:00:00.000Z"),
+			"WednesdayEndTime":   storage.StringValue("17:00:00.000Z"),
+			"ThursdayStartTime":  storage.StringValue("09:00:00.000Z"),
+			"ThursdayEndTime":    storage.StringValue("17:00:00.000Z"),
+			"FridayStartTime":    storage.StringValue("09:00:00.000Z"),
+			"FridayEndTime":      storage.StringValue("17:00:00.000Z"),
+		},
+	}
+	org.Objects["BusinessHours"] = businessHours
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -6766,6 +6787,21 @@ System.assertEquals(false, Test.isSoqlStubDefined(Account.SObjectType));
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecSafeGeneratedTestHelpersCDCFlag(t *testing.T) {
+	program, err := CompileAnonymous(`Test.enableChangeDataCapture();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if !machine.testContext.ChangeDataCaptureEnabled {
+		t.Fatal("ChangeDataCaptureEnabled = false, want true")
 	}
 }
 
@@ -9874,7 +9910,7 @@ func TestExecExecuteBatchRejectsInvalidBatchableSignatures(t *testing.T) {
 }
 
 func TestExecScheduledApexResolvesExecuteBySchedulableContext(t *testing.T) {
-	scheduledProgram, err := CompileAnonymous("return null;")
+	scheduledProgram, err := CompileAnonymous("MultiWorker.triggerId = context.getTriggerId();")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -9884,8 +9920,9 @@ func TestExecScheduledApexResolvesExecuteBySchedulableContext(t *testing.T) {
 	}
 	program, err := CompileAnonymous(`
 Test.startTest();
-System.schedule('nightly', '0 0 0 * * ?', new MultiWorker());
+String scheduleId = System.schedule('nightly', '0 0 0 * * ?', new MultiWorker());
 Test.stopTest();
+System.assertEquals(scheduleId, MultiWorker.triggerId);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -9895,6 +9932,9 @@ Test.stopTest();
 	if err := machine.RegisterClass(Class{
 		Name:       "MultiWorker",
 		Interfaces: []string{"Schedulable", "Database.Batchable<SObject>"},
+		StaticFields: map[string]Field{
+			"triggerId": {Name: "triggerId", Type: "String", Static: true},
+		},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -10813,16 +10853,31 @@ func TestExecAbortJobUnknownRecordsAreTypedUnsupported(t *testing.T) {
 }
 
 func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
+	program, err := CompileAnonymous(`
+AsyncOptions opts = new AsyncOptions();
+System.assertEquals(null, opts.getMaximumQueueableStackDepth());
+opts.setMaximumQueueableStackDepth(2);
+System.assertEquals(2, opts.getMaximumQueueableStackDepth());
+String jobId = System.enqueueJob(new QueueWorker(), opts);
+System.assert(jobId.startsWith('707'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "QueueWorker"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
 	cases := []struct {
 		name string
 		src  string
 		want string
 	}{
-		{
-			name: "async options getter",
-			src:  `AsyncOptions opts = new AsyncOptions(); opts.getMaximumQueueableStackDepth();`,
-			want: `unsupported call "AsyncOptions.getMaximumQueueableStackDepth local async options surface"`,
-		},
 		{
 			name: "async options setter",
 			src:  `AsyncOptions opts = new AsyncOptions(); opts.setMinimumQueueableDelayInMinutes(1);`,
@@ -13133,16 +13188,101 @@ System.assert(upsertListResults.get(1).isSuccess());
 	}
 }
 
-func TestExecAccessLevelWithPermissionSetIdIsExplicitUnsupported(t *testing.T) {
-	program, err := CompileAnonymous("AccessLevel.withPermissionSetId('0PS000000000001');")
+func TestExecAccessLevelWithPermissionSetIdConstructsUserModeScope(t *testing.T) {
+	program, err := CompileAnonymous(`
+AccessLevel scoped = AccessLevel.withPermissionSetId('0PS000000000001');
+System.assertEquals('USER_MODE', scoped.name());
+`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	_, err = machine.Execute(program)
-	var runtimeErr *RuntimeError
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "AccessLevel.withPermissionSetId permission-set-scoped user mode"` {
-		t.Fatalf("err = %#v, want UnsupportedFeature permission-set-scoped user mode", err)
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	scoped, ok := result.Vars["scoped"]
+	if !ok {
+		t.Fatal("scoped AccessLevel not captured")
+	}
+	if got := scoped.Fields["permissionSetId"]; got.Kind != ValueString || got.Text != "0PS000000000001" {
+		t.Fatalf("permissionSetId = %#v, want string 0PS000000000001", got)
+	}
+}
+
+func TestExecRunAsPackageVersionScopesTestContext(t *testing.T) {
+	program, err := CompileAnonymous(`
+Package.Version v = new Package.Version(1, 2, 3);
+System.runAs(v) {
+	System.assertEquals('1.2.3', String.valueOf(v));
+}
+System.runAs(new User(Id = '005000000000999'), v) {
+	System.assertEquals('005000000000999', UserInfo.getUserId());
+}
+System.assertEquals('system', UserInfo.getUserId());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if machine.testContext.PackageRunAsDepth != 0 {
+		t.Fatalf("PackageRunAsDepth = %d, want restored 0", machine.testContext.PackageRunAsDepth)
+	}
+	if machine.testContext.CurrentPackageVersion.Kind != "" {
+		t.Fatalf("CurrentPackageVersion = %#v, want restored zero value", machine.testContext.CurrentPackageVersion)
+	}
+}
+
+func TestExecApprovalProcessSubmitRequestLocalResult(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Needs Approval');
+insert account;
+Approval.ProcessSubmitRequest request = new Approval.ProcessSubmitRequest();
+request.setObjectId(account.Id);
+request.setComments('local submit');
+Approval.ProcessResult result = Approval.process(request);
+System.assertEquals(true, result.isSuccess());
+System.assertEquals(account.Id, result.getEntityId());
+System.assertEquals(0, result.getErrors().size());
+System.assertNotEquals(null, result.getInstanceId());
+System.assertEquals(1, result.getNewWorkitemIds().size());
+
+Approval.ProcessSubmitRequest bad = new Approval.ProcessSubmitRequest();
+Approval.ProcessResult badResult = Approval.process(bad, false);
+System.assertEquals(false, badResult.isSuccess());
+System.assertEquals(1, badResult.getErrors().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApprovalProcessSubmitRequestMissingObjectRaisesWhenAllOrNone(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+	Approval.process(new Approval.ProcessSubmitRequest());
+} catch (DmlException e) {
+	caught = e.getMessage().contains('ObjectId');
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -13177,7 +13317,7 @@ func TestExecRequestGetCurrentBasics(t *testing.T) {
 	program, err := CompileAnonymous(`
 Request request = Request.getCurrent();
 System.assertEquals('glade-request-000000000001', request.getRequestId());
-System.assertEquals(Quiddity.SYNCHRONOUS, request.getQuiddity());
+System.assertEquals('RUNTEST_SYNC', request.getQuiddity().name());
 System.assertEquals('glade-request-000000000001', System.Request.getCurrent().getRequestId());
 System.assertEquals('glade-request-000000000001', RequestImpl.getCurrent().getRequestId());
 UIRequest uiRequest = UIRequest.getCurrent();
@@ -13188,19 +13328,9 @@ System.assertEquals(null, uiRequest.getRequestHeader('x-missing'));
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
-		t.Fatal(err)
-	}
-
-	testProgram, err := CompileAnonymous(`
-System.assertEquals(Quiddity.RUNTEST_SYNC, Request.getCurrent().getQuiddity());
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
 	machine := New(nil)
 	machine.EnableTestContext()
-	if _, err := machine.Execute(testProgram); err != nil {
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

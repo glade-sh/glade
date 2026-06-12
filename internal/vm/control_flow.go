@@ -839,25 +839,97 @@ func switchCaseEnumNameMatch(value Value, expr ir.Expr, err error) (bool, bool) 
 }
 
 func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (execOutcome, error) {
-	user, err := vm.eval(inst.Expr, result)
-	if err != nil {
-		return execOutcome{}, err
-	}
 	if vm.testContext == nil {
 		return execOutcome{}, fmt.Errorf("System.runAs is only available in test context")
 	}
-	vm.ensureRunAsUserRecord(&user)
+	userExpr := inst.Expr
+	var packageExpr *ir.Expr
+	if inst.Expr.Kind == ir.ExprCall && inst.Expr.Callee == "System.runAs" {
+		if len(inst.Expr.Args) != 2 {
+			return execOutcome{}, fmt.Errorf("System.runAs expects User, Version")
+		}
+		userExpr = inst.Expr.Args[0]
+		packageExpr = &inst.Expr.Args[1]
+	}
+	user, err := vm.eval(userExpr, result)
+	if err != nil {
+		return execOutcome{}, err
+	}
+	var packageVersion Value
+	changesUser := true
+	if packageExpr != nil {
+		packageVersion, err = vm.eval(*packageExpr, result)
+		if err != nil {
+			return execOutcome{}, err
+		}
+		if !isPackageVersionValue(packageVersion) {
+			return execOutcome{}, fmt.Errorf("System.runAs package context expects Package.Version")
+		}
+	} else if isPackageVersionValue(user) {
+		packageVersion = user
+		changesUser = false
+	}
+	if packageVersion.Kind != "" && !isPackageVersionValue(packageVersion) {
+		return execOutcome{}, fmt.Errorf("System.runAs package context expects Package.Version")
+	}
+	if packageVersion.Kind == ValueNull {
+		return execOutcome{}, fmt.Errorf("System.runAs package context expects Package.Version")
+	}
+	if changesUser && (user.Kind != ValueObject || !strings.EqualFold(user.Type, "User")) {
+		return execOutcome{}, fmt.Errorf("System.runAs expects User or Package.Version, got %s", runtimeValueTypeName(user))
+	}
+	if changesUser {
+		vm.ensureRunAsUserRecord(&user)
+	}
 	if err := vm.incrementLimit("runAs", 1); err != nil {
 		return execOutcome{}, err
 	}
 	previous := vm.testContext.CurrentUser
-	vm.testContext.CurrentUser = user
+	previousPackageVersion := vm.testContext.CurrentPackageVersion
+	if changesUser {
+		vm.testContext.CurrentUser = user
+	}
 	vm.testContext.RunAsDepth++
+	if packageVersion.Kind != "" {
+		vm.testContext.CurrentPackageVersion = packageVersion
+		vm.testContext.PackageRunAsDepth++
+	}
 	defer func() {
+		if packageVersion.Kind != "" {
+			vm.testContext.PackageRunAsDepth--
+			vm.testContext.CurrentPackageVersion = previousPackageVersion
+		}
 		vm.testContext.RunAsDepth--
-		vm.testContext.CurrentUser = previous
+		if changesUser {
+			vm.testContext.CurrentUser = previous
+		}
 	}()
 	return vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)
+}
+
+func isPackageVersionValue(value Value) bool {
+	return strings.EqualFold(value.Type, "Version") ||
+		strings.EqualFold(value.Type, "Package.Version") ||
+		strings.EqualFold(value.Static, "Package.Version") ||
+		(value.Kind == ValueString && packageVersionString(value.Text))
+}
+
+func packageVersionString(text string) bool {
+	parts := strings.Split(strings.TrimSpace(text), ".")
+	if len(parts) != 2 && len(parts) != 3 {
+		return false
+	}
+	for _, part := range parts {
+		if part == "" {
+			return false
+		}
+		for _, r := range part {
+			if r < '0' || r > '9' {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (vm *VM) ensureRunAsUserRecord(user *Value) {

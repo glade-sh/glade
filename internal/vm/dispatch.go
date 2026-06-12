@@ -353,6 +353,9 @@ platformStaticCall:
 	if value, handled, err := vm.callPackagedControllerStatic(callee, args); handled || err != nil {
 		return value, err
 	}
+	if strings.EqualFold(callee, "Approval.process") {
+		return vm.executeApprovalProcess(args)
+	}
 	if reason, ok := unsupportedIntegrationSurface(callee); ok {
 		return Null, unsupportedCallError(callee + " " + reason)
 	}
@@ -937,7 +940,7 @@ platformStaticCall:
 	case "Approval.isLocked":
 		return vm.executeApprovalIsLocked(args)
 	case "Approval.process":
-		return Null, unsupportedCallError(callee + " local approval process metadata")
+		return vm.executeApprovalProcess(args)
 	case "Answers.findSimilar":
 		return Null, unsupportedCallError(callee + " local Answers zone search surface")
 	case "Database.merge":
@@ -1001,6 +1004,9 @@ platformStaticCall:
 			}
 			return String(fmt.Sprintf("Blob[%d]", len(raw))), nil
 		}
+		if args[0].Kind == ValueObject && isPackageVersionValue(args[0]) {
+			return String(versionValueString(args[0])), nil
+		}
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Datetime") {
 			datetimeValue, err := parsePlatformDatetime(args[0])
 			if err != nil {
@@ -1052,7 +1058,9 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("AccessLevel.withPermissionSetId expects String")
 		}
-		return Null, unsupportedCallError("AccessLevel.withPermissionSetId permission-set-scoped user mode")
+		value := Value{Kind: ValueObject, Type: "AccessLevel", Text: "USER_MODE", Fields: map[string]Value{}}
+		value.Fields["permissionSetId"] = args[0]
+		return value, nil
 	case "RoundingMode.valueOf":
 		return roundingModeStatic(args)
 	case "Id.valueOf":
@@ -2006,25 +2014,13 @@ platformStaticCall:
 		vm.managedFeatureValues[managedFeatureValueKey("Date", args[0].Text)] = cloneValue(args[1])
 		return Null, nil
 	case "BusinessHours.add", "BusinessHours.addGmt":
-		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueInt {
-			return Null, fmt.Errorf("%s expects String, Datetime, Long", callee)
-		}
-		return Null, unsupportedCallError(callee + " local business hours metadata")
+		return vm.businessHoursAdd(callee, args)
 	case "BusinessHours.diff":
-		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueObject || args[2].Type != "Datetime" {
-			return Null, fmt.Errorf("BusinessHours.diff expects String, Datetime, Datetime")
-		}
-		return Null, unsupportedCallError(callee + " local business hours metadata")
+		return vm.businessHoursDiff(args)
 	case "BusinessHours.isWithin":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
-			return Null, fmt.Errorf("BusinessHours.isWithin expects String, Datetime")
-		}
-		return Null, unsupportedCallError(callee + " local business hours metadata")
+		return vm.businessHoursIsWithin(args)
 	case "BusinessHours.nextStartDate":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
-			return Null, fmt.Errorf("BusinessHours.nextStartDate expects String, Datetime")
-		}
-		return Null, unsupportedCallError(callee + " local business hours metadata")
+		return vm.businessHoursNextStartDate(args)
 	case "EventBus.publish":
 		return vm.eventBusPublish(args, result)
 	case "EventBus.publishWithAccessLevel":
@@ -2554,7 +2550,7 @@ platformStaticCall:
 	case "Formula.recalculateFormulas", "formula.recalculateFormulas", "formula.recalculateformulas", "System.Formula.recalculateFormulas", "System.formula.recalculateFormulas", "System.formula.recalculateformulas":
 		return vm.recalculateFormulaList(args)
 	case "Test.setCurrentPage", "Test.setCurrentPageReference":
-		if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "PageReference" {
+		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "PageReference") {
 			return Null, fmt.Errorf("%s expects PageReference", callee)
 		}
 		if err := vm.requireTestContext(callee); err != nil {
@@ -2600,6 +2596,8 @@ platformStaticCall:
 		return vm.testCreateStubQueryRows(args)
 	case "Test.loadData":
 		return vm.testLoadData(args, result)
+	case "QuickAction.describeAvailableActions":
+		return vm.quickActionDescribeAvailable(args)
 	case "QuickAction.describeAvailableQuickActions":
 		return vm.quickActionDescribeAvailable(args)
 	case "QuickAction.describeQuickActions":
@@ -2704,6 +2702,7 @@ platformStaticCall:
 		if err := vm.requireTestContext(callee); err != nil {
 			return Null, err
 		}
+		vm.testContext.ChangeDataCaptureEnabled = true
 		return Null, nil
 	case "Test.setReadOnlyApplicationMode":
 		if len(args) != 1 || args[0].Kind != ValueBool {

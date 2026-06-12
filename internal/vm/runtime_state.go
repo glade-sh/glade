@@ -396,30 +396,33 @@ type callFrame struct {
 }
 
 type TestContext struct {
-	Started                 bool
-	Stopped                 bool
-	CurrentUser             Value
-	SeeAllData              bool
-	SeeAllDataSet           bool
-	AsyncJobs               []AsyncJob
-	AsyncStartIndex         int
-	EventPublishes          []eventPublishCallback
-	PlatformEvents          []storage.Record
-	PlatformEventStartIndex int
-	Draining                bool
-	HTTPMock                Value
-	WebServiceMock          Value
-	ContinuationResponses   map[string]Value
-	ConnectAPIFixtures      map[string]Value
-	SoqlStubs               map[string]Value
-	ParentLimits            Limits
-	ParentViolations        []LimitViolation
-	RunAsDepth              int
-	SetupDML                bool
-	NonSetupDML             bool
-	JobSeq                  int
-	ChainEnqueued           bool
-	PreserveAsyncStatics    bool
+	Started                  bool
+	Stopped                  bool
+	CurrentUser              Value
+	SeeAllData               bool
+	SeeAllDataSet            bool
+	AsyncJobs                []AsyncJob
+	AsyncStartIndex          int
+	EventPublishes           []eventPublishCallback
+	PlatformEvents           []storage.Record
+	PlatformEventStartIndex  int
+	ChangeDataCaptureEnabled bool
+	Draining                 bool
+	HTTPMock                 Value
+	WebServiceMock           Value
+	ContinuationResponses    map[string]Value
+	ConnectAPIFixtures       map[string]Value
+	SoqlStubs                map[string]Value
+	ParentLimits             Limits
+	ParentViolations         []LimitViolation
+	CurrentPackageVersion    Value
+	RunAsDepth               int
+	PackageRunAsDepth        int
+	SetupDML                 bool
+	NonSetupDML              bool
+	JobSeq                   int
+	ChainEnqueued            bool
+	PreserveAsyncStatics     bool
 }
 
 type eventPublishCallback struct {

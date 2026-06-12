@@ -9586,6 +9586,75 @@ System.assert(result.isSuccess());
 	}
 }
 
+func TestExecAccessLevelPermissionSetIdScopesLocalDMLPermissions(t *testing.T) {
+	program, err := CompileAnonymous(`
+AccessLevel scoped = AccessLevel.withPermissionSetId('0PS000000000998');
+Database.SaveResult result = Database.update(new Account(Id = '001000000000901AAA', ShippingStreet = 'Baker'), scoped);
+System.assert(result.isSuccess());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	account := org.Objects["Account"]
+	account.Definition.Fields["ShippingStreet"] = storage.Field{APIName: "ShippingStreet", Type: storage.FieldString}
+	account.Records["001000000000901AAA"] = storage.Record{
+		ID:     "001000000000901AAA",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Acme"),
+		},
+	}
+	org.Objects["Account"] = account
+
+	user := Object("User")
+	user.Fields["Id"] = String("005000000000998")
+	user.Fields["profileId"] = String("00e000000000002")
+
+	plainProgram, err := CompileAnonymous(`
+Database.update(new Account(Id = '001000000000901AAA', ShippingStreet = 'Baker'), AccessLevel.USER_MODE);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.executionUser = user
+	if _, err := machine.Execute(plainProgram); err == nil || !strings.Contains(err.Error(), "Access to entity 'Account' denied") {
+		t.Fatalf("err = %v, want Account access denial", err)
+	}
+
+	org.Objects["ObjectPermissions"].Records["110000000000998"] = storage.Record{
+		ID:     "110000000000998",
+		Object: "ObjectPermissions",
+		Fields: map[string]storage.Value{
+			"ParentId":        storage.IDValue("0PS000000000998"),
+			"SObjectType":     storage.StringValue("Account"),
+			"PermissionsRead": storage.BooleanValue(true),
+			"PermissionsEdit": storage.BooleanValue(true),
+		},
+	}
+	org.Objects["FieldPermissions"].Records["0FP000000000998"] = storage.Record{
+		ID:     "0FP000000000998",
+		Object: "FieldPermissions",
+		Fields: map[string]storage.Value{
+			"ParentId":        storage.IDValue("0PS000000000998"),
+			"SObjectType":     storage.StringValue("Account"),
+			"Field":           storage.StringValue("Account.ShippingAddress"),
+			"PermissionsRead": storage.BooleanValue(true),
+			"PermissionsEdit": storage.BooleanValue(true),
+		},
+	}
+	machine = New(nil)
+	machine.SetOrg(&org)
+	machine.executionUser = user
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCustomObjectIdDescribeNameFeedsDynamicFieldList(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<String> fields = new List<String>();
@@ -11701,7 +11770,7 @@ func TestExecUnsupportedDatabaseAndApprovalSurfacesReturnUnsupportedFeature(t *t
 		{
 			name:    "approvalProcess",
 			source:  "Approval.process(null);",
-			message: `unsupported call "Approval.process local approval process metadata"`,
+			message: `unsupported call "Approval.process request type null"`,
 		},
 	}
 	for _, tc := range tests {

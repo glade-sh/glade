@@ -2,7 +2,7 @@
 
 Start here when deciding whether Glade can run a project, a test class, or a
 local Salesforce-shaped API flow. This page is the public map. The generated
-ledgers carry the exact method rows.
+ledgers carry the exact ledger rows.
 
 ## Status Key
 
@@ -41,6 +41,7 @@ service parity.
 | Visualforce controller helpers | PageReference, messages, current page, and controller test helpers are modeled for controller tests. Glade does not render full Visualforce pages. |
 | Search and SOSL helpers | Local deterministic test paths exist. Full Salesforce search ranking and index behavior are not modeled. |
 | Test helpers | Many common `Test.*` paths work. Service-dependent helpers and org-global behavior remain explicit gaps. |
+| Local test harness and request context | Request/UIRequest context, install/uninstall hooks, sandbox post-copy helpers, scheduled Apex, QuickAction DTOs, BusinessHours week schedules, and approval result shapes have deterministic local models. Live hosted engines are not contacted. |
 
 ## Not Supported Today
 
@@ -49,7 +50,7 @@ This is the smaller list a first user should check before betting on Glade.
 | Area | Why it is outside the current local contract |
 | --- | --- |
 | Live Salesforce auth and sessions | The local server exposes local stubs. It does not implement real Salesforce OAuth, session validation, or org identity services. |
-| Live platform process engines | Approval execution, live business-hours calculations, quick actions, request context, sandbox lifecycle, Trailblazer identity, Answers, and password reset services require Salesforce-hosted engines. |
+| Fenced live service APIs | Trailblazer identity, Answers, and password reset services require Salesforce-hosted engines. |
 | Full Visualforce rendering | Controller logic is the supported path. Component rendering, page lifecycle, `getContent`, and PDF generation remain outside the current runtime. |
 | Broad REST and Tooling API parity | The local API server covers the checked local baseline. Bulk API, Composite Graph, Streaming/PubSub, GraphQL, layout metadata, and broad Tooling object coverage remain future work. |
 | Live outbound side effects | Real callouts, delivered email, push notifications, and external service mutations are not performed. Tests should use local mocks and result objects. |
@@ -75,27 +76,29 @@ state.
 | `Database` | Works well | 37 supported / 37 tracked |
 | Date, Datetime, Time, TimeZone | Works well | 26 supported / 26 tracked |
 | String, Decimal, Boolean, Math | Wide local support | 29 supported, 3 partial / 32 tracked |
-| System, Assert, Limits | Mixed | 12 supported, 1 partial, 4 unsupported / 17 tracked |
+| System, Assert, Limits | Mixed | 13 supported, 4 partial / 17 tracked |
 | Schema and SObject | Works with limits | 1 supported, 6 partial / 7 tracked |
-| Test helpers | Mixed | 8 supported, 7 partial, 13 unsupported / 28 tracked |
+| Test helpers | Works with limits | 18 supported, 10 partial / 28 tracked |
 | JSON, Pattern, EncodingUtil, Crypto | Works with limits | 4 supported, 13 partial / 17 tracked |
 | ApexPages and PageReference | Wide controller support | 12 supported, 2 partial, 1 unknown / 15 tracked |
 | HTTP and WebServiceCallout | Works with limits | 1 supported, 4 partial / 5 tracked |
 | Messaging | Works with limits | 1 supported, 4 partial / 5 tracked |
-| Search and SOSL helpers | Works with limits | 7 partial, 4 unsupported / 11 tracked |
-| UserInfo, URL, and Label | Wide local support | 19 supported, 2 unsupported / 21 tracked |
+| Search and SOSL helpers | Works with limits | 11 partial / 11 tracked |
+| UserInfo, URL, and Label | Wide local support | 21 supported / 21 tracked |
 | Type, FeatureManagement, Exception, and diagnostics | Works with limits | 6 supported, 3 partial / 9 tracked |
-| Service-only platform APIs | Not supported | 35 unsupported / 35 tracked |
+| Local test harness and request context | Works with limits | 12 supported, 18 partial / 30 tracked |
+| Fenced live service APIs | Not supported | 5 unsupported / 5 tracked |
 
-The service-only group includes Approval, BusinessHours, QuickAction, Request,
-UIRequest, Sandbox, TrailblazerIdentity, Answers, ResetPasswordResult,
-Schedulable, and AccessLevel edge rows.
+The local test harness and request-context group includes Approval,
+BusinessHours, QuickAction, Request, UIRequest, Sandbox, Schedulable, and
+AccessLevel edge rows. The fenced live-service group includes Answers,
+ResetPasswordResult, and TrailblazerIdentity rows.
 
 ## Drill Down
 
 Use this map first, then cut down to the exact checked row.
 
-- Method-level standard-library rows: [`docs/STDLIB_COVERAGE.md`](https://github.com/glade-sh/glade/blob/main/docs/STDLIB_COVERAGE.md)
+- Ledger standard-library rows: [`docs/STDLIB_COVERAGE.md`](https://github.com/glade-sh/glade/blob/main/docs/STDLIB_COVERAGE.md)
 - Current known gaps: [`docs/KNOWN_GAPS.md`](https://github.com/glade-sh/glade/blob/main/docs/KNOWN_GAPS.md)
 - Developer compatibility reports: [Developer Reports](/guide/compatibility-dashboard)
 

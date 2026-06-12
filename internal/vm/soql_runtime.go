@@ -439,6 +439,9 @@ func (vm *VM) searchQuery(args []Value) (Value, error) {
 	if args[0].Kind != ValueString {
 		return Null, fmt.Errorf("Search.query expects query String")
 	}
+	if len(args) == 2 && args[1].Kind != ValueNull && !isDatabaseAccessLevelValue(args[1]) {
+		return Null, fmt.Errorf("Search.query expects AccessLevel")
+	}
 	return vm.executeSOSL(args[0].Text, nil)
 }
 
@@ -448,6 +451,9 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 	}
 	if args[0].Kind != ValueString {
 		return Null, fmt.Errorf("Search.find expects query String")
+	}
+	if len(args) == 2 && args[1].Kind != ValueNull && !isDatabaseAccessLevelValue(args[1]) {
+		return Null, fmt.Errorf("Search.find expects AccessLevel")
 	}
 	queryText, err := vm.expandSOQLBinds(args[0].Text)
 	if err != nil {
@@ -503,10 +509,20 @@ func (vm *VM) searchSuggest(args []Value) (Value, error) {
 	if args[0].Kind != ValueString || args[1].Kind != ValueString {
 		return Null, fmt.Errorf("Search.suggest expects query and sObjectType Strings")
 	}
+	if !isSearchSuggestionOptionValue(args[2]) {
+		return Null, fmt.Errorf("Search.suggest expects Search.SuggestionOption")
+	}
+	if len(args) == 4 && args[3].Kind != ValueNull && !isDatabaseAccessLevelValue(args[3]) {
+		return Null, fmt.Errorf("Search.suggest expects AccessLevel")
+	}
 	results := Object("Search.SuggestionResults")
 	results.Fields["suggestionResults"] = typedList("List<Search.SuggestionResult>")
 	results.Fields["hasMoreResults"] = Bool(false)
 	return results, nil
+}
+
+func isSearchSuggestionOptionValue(value Value) bool {
+	return value.Kind == ValueObject && strings.EqualFold(value.Type, "Search.SuggestionOption")
 }
 
 func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
