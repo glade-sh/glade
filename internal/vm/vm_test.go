@@ -635,7 +635,7 @@ System.assertEquals(0, category.getChildCategories().size());
 }
 
 func TestGeneratedPlatformFallbackSelectsTypeAwareOverload(t *testing.T) {
-	original := generatedPlatformMethodIndex
+	original := generatedPlatformMethods()
 	generatedPlatformMethodIndex = map[string]map[string][]Method{
 		"generated.overload": {
 			"pick": {

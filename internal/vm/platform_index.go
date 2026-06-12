@@ -19,9 +19,6 @@ var (
 )
 
 func CommonSObjectTypeNames() []string {
-	if commonSObjectTypeNames != nil {
-		return commonSObjectTypeNames
-	}
 	commonSObjectTypeNamesOnce.Do(func() {
 		commonSObjectTypeNames = buildCommonSObjectTypeNames()
 	})
@@ -29,9 +26,6 @@ func CommonSObjectTypeNames() []string {
 }
 
 func generatedPlatformTypes() map[string]generatedPlatformType {
-	if generatedPlatformTypeIndex != nil {
-		return generatedPlatformTypeIndex
-	}
 	generatedPlatformTypeIndexOnce.Do(func() {
 		generatedPlatformTypeIndex = buildGeneratedPlatformTypeIndex()
 	})
@@ -39,9 +33,6 @@ func generatedPlatformTypes() map[string]generatedPlatformType {
 }
 
 func generatedPlatformMethods() map[string]map[string][]Method {
-	if generatedPlatformMethodIndex != nil {
-		return generatedPlatformMethodIndex
-	}
 	generatedPlatformMethodIndexOnce.Do(func() {
 		generatedPlatformMethodIndex = buildGeneratedPlatformMethodIndex()
 	})
