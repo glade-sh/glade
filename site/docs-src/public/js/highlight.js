@@ -236,4 +236,6 @@ function highlightCodeBlock(codeElement) {
   }).join("");
 }
 
+window.gladeHighlightCodeBlock = highlightCodeBlock;
+
 document.querySelectorAll("code.language-apex").forEach(highlightCodeBlock);

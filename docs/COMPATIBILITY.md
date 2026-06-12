@@ -14,15 +14,22 @@ with one of these statuses:
 Silent wrong behavior is a release blocker for any feature marked `supported`.
 Unsupported behavior should fail loudly and predictably.
 
-## Support Map
+## Public Support Map
 
 `glade` publishes product commands and plugin management. Maintenance scanners,
 compatibility fixtures, project gap reports, and generated support artifacts
-ship through plugins. The checked public reports in this repository are:
+ship through plugins.
 
-- [`docs/COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md)
-- [`docs/KNOWN_GAPS.md`](KNOWN_GAPS.md)
+Use the public support map first when deciding whether Glade can run a project
+or test path:
+
+- <https://glade.sh/docs/guide/support-map>
+
+The checked repository artifacts are the lower layer:
+
 - [`docs/STDLIB_COVERAGE.md`](STDLIB_COVERAGE.md)
+- [`docs/KNOWN_GAPS.md`](KNOWN_GAPS.md)
+- Maintainer gate: [`docs/COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md)
 
 Use the installed tool for product checks:
 

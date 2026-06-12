@@ -41,19 +41,20 @@ go build -o glade ./cmd/glade
 
 ## What Glade Supports
 
-The first layer is a support map. The second layer is the generated method
-coverage and known-gap docs checked into this repository.
+The first layer is the public Apex and Salesforce support map. The second layer
+is the generated method coverage and known-gap docs checked into this
+repository.
 
 | Area | Current support |
 | --- | --- |
-| Apex parse, indexing, and semantic checks | Supported for the local development contract. |
-| Local Apex tests | Supported for the VM subset, with isolated test data, statics, limits, async drain, and JSON/JUnit output. |
-| SOQL, DML, triggers, SObjects, and storage | Supported for the checked local data runtime contract. |
+| Apex parse, indexing, and semantic checks | Works well for the local development contract. |
+| Local Apex tests | Works well for the VM subset, with isolated test data, statics, limits, async drain, and JSON/JUnit output. |
+| SOQL, DML, triggers, SObjects, and storage | Works well for the checked local data runtime contract. |
 | `Database` methods | Supported for the tracked local rows in the stdlib ledger. |
 | `String`, dates, time, math, assertions, labels, URLs, and user info | Wide support, with exact rows in the stdlib ledger. |
-| `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller helpers, and many `Test.*` helpers | Partial. The local model covers common test paths and records gaps by method. |
-| Platform services such as approval execution, quick actions, business-hours services, sandbox lifecycle, live request context, and identity services | Unsupported unless a row says otherwise. Glade should return a stable unsupported diagnostic, not silent wrong behavior. |
-| Local API server, LSP, DAP, watch, profile, and plugin-managed scanners | Supported for local development. |
+| `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller helpers, and many `Test.*` helpers | Works with limits. The local model covers common test paths and records gaps by method. |
+| Platform services such as approval execution, quick actions, business-hours services, sandbox lifecycle, live request context, and identity services | Not supported unless a row says otherwise. Glade should return a stable unsupported diagnostic, not silent wrong behavior. |
+| Local API server, LSP, DAP, watch, and profile tools | Work well for local development. |
 
 Drill down from there:
 
@@ -64,10 +65,10 @@ glade plugins install @glade/performance
 glade performance scan --project . --json
 ```
 
-- High-level readiness: [docs/COMPATIBILITY_DASHBOARD.md](docs/COMPATIBILITY_DASHBOARD.md)
+- Public support map: <https://glade.sh/docs/guide/support-map>
 - Method-level standard library coverage: [docs/STDLIB_COVERAGE.md](docs/STDLIB_COVERAGE.md)
 - Known gaps: [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md)
-- Site support map: <https://glade.sh/docs/guide/support-map>
+- Developer compatibility dashboard: [docs/COMPATIBILITY_DASHBOARD.md](docs/COMPATIBILITY_DASHBOARD.md)
 
 The rule is simple. A supported row has code and checked coverage.
 
@@ -138,7 +139,7 @@ glade report export latest --runs-dir .glade/runs --format html --output reports
 - [Dogfood checklist](docs/DOGFOOD_CHECKLIST.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Compatibility policy](docs/COMPATIBILITY.md)
-- [Compatibility dashboard](docs/COMPATIBILITY_DASHBOARD.md)
+- [Developer compatibility dashboard](docs/COMPATIBILITY_DASHBOARD.md)
 - [Standard library coverage](docs/STDLIB_COVERAGE.md)
 - [Known gaps](docs/KNOWN_GAPS.md)
 - [Editor and debug setup](docs/EDITOR.md)

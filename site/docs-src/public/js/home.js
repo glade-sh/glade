@@ -1,4 +1,78 @@
 (function () {
+  var examples = {
+    account: {
+      source: [
+        "public class RunMe {",
+        "  public static void main() {",
+        "    Account a = new Account(Name = 'Twin Lakes');",
+        "    insert a;",
+        "    System.debug([SELECT Name FROM Account].size());",
+        "  }",
+        "}"
+      ].join("\n"),
+      idle: {
+        status: "Not run",
+        timing: "--",
+        log: "Run Example to see output",
+        state: "No local writes yet"
+      },
+      result: {
+        status: "Pass",
+        timing: "38 ms",
+        log: "USER_DEBUG | Account count: 1",
+        state: "local.sqlite · 1 Account inserted"
+      }
+    },
+    soql: {
+      source: [
+        "public class RunMe {",
+        "  public static void main() {",
+        "    List<Account> rows = [",
+        "      SELECT Name FROM Account WHERE Name LIKE 'Twin%'",
+        "    ];",
+        "    System.debug(rows.size());",
+        "  }",
+        "}"
+      ].join("\n"),
+      idle: {
+        status: "Not run",
+        timing: "--",
+        log: "Run Example to see output",
+        state: "No query cursor yet"
+      },
+      result: {
+        status: "Pass",
+        timing: "24 ms",
+        log: "USER_DEBUG | SOQL rows: 1",
+        state: "local.sqlite · Account read"
+      }
+    },
+    rollback: {
+      source: [
+        "public class RunMe {",
+        "  public static void main() {",
+        "    Savepoint sp = Database.setSavepoint();",
+        "    insert new Account(Name = 'Temporary');",
+        "    Database.rollback(sp);",
+        "    System.debug([SELECT Id FROM Account].size());",
+        "  }",
+        "}"
+      ].join("\n"),
+      idle: {
+        status: "Not run",
+        timing: "--",
+        log: "Run Example to see output",
+        state: "No transaction opened"
+      },
+      result: {
+        status: "Pass",
+        timing: "42 ms",
+        log: "USER_DEBUG | Records after rollback: 0",
+        state: "local.sqlite · rollback restored state"
+      }
+    }
+  }
+
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init)
   } else {
@@ -6,25 +80,90 @@
   }
 
   function init() {
-    var root = document.querySelector(".VPLayout")
-    if (!root) return
-    initCopyButtons()
+    initHomeControls()
     initCommandPalette()
   }
 
-  function initCopyButtons() {
-    document.querySelectorAll("[data-copy-target]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var target = document.getElementById(btn.getAttribute("data-copy-target"))
-        if (!target) return
-        var text = target.textContent.trim()
+  function initHomeControls() {
+    document.addEventListener("click", function (e) {
+      var target = e.target
+      if (!target || !target.closest) return
+
+      var copyButton = target.closest("[data-copy-target]")
+      if (copyButton) {
+        var copyTarget = document.getElementById(copyButton.getAttribute("data-copy-target"))
+        if (!copyTarget) return
+        var text = copyTarget.textContent.trim()
         navigator.clipboard.writeText(text).then(function () {
-          btn.textContent = "Copied"
+          copyButton.textContent = "Copied"
           setTimeout(function () {
-            btn.textContent = "Copy"
+            copyButton.textContent = "Copy"
           }, 1400)
         })
-      })
+        return
+      }
+
+      var runButton = target.closest("[data-run-example]")
+      if (runButton) {
+        var activeId = activeExampleId()
+        var example = examples[activeId]
+        if (!example || runButton.hasAttribute("disabled")) return
+        runButton.setAttribute("disabled", "true")
+        setStatus("running")
+        setTimeout(function () {
+          setStatus("pass")
+          setOutput(example.result)
+          runButton.removeAttribute("disabled")
+        }, 520)
+        return
+      }
+
+      var exampleButton = target.closest("[data-example-id]")
+      if (exampleButton) {
+        setActiveExample(exampleButton.getAttribute("data-example-id"))
+      }
+    })
+  }
+
+  function activeExampleId() {
+    var side = document.querySelector("[data-example-active]")
+    return side ? side.getAttribute("data-example-active") : "account"
+  }
+
+  function setActiveExample(id) {
+    var example = examples[id]
+    var side = document.querySelector("[data-example-active]")
+    var code = document.querySelector("[data-example-code]")
+    if (!example || !side || !code) return
+
+    side.setAttribute("data-example-active", id)
+    document.querySelectorAll("[data-example-id]").forEach(function (button) {
+      var active = button.getAttribute("data-example-id") === id
+      button.classList.toggle("active", active)
+      button.setAttribute("aria-pressed", active ? "true" : "false")
+    })
+
+    code.textContent = example.source
+    if (window.gladeHighlightCodeBlock) {
+      window.gladeHighlightCodeBlock(code)
+    }
+    setStatus("idle")
+    setOutput(example.idle)
+  }
+
+  function setStatus(value) {
+    var status = document.querySelector("[data-run-status]")
+    if (!status) return
+    status.textContent = value
+    status.className = "home-status-pill home-status-" + value
+  }
+
+  function setOutput(output) {
+    Object.keys(output).forEach(function (key) {
+      var target = document.querySelector('[data-output-key="' + key + '"]')
+      if (!target) return
+      target.textContent = output[key]
+      target.className = key === "status" && output[key] === "Pass" ? "home-output-pass" : ""
     })
   }
 
@@ -36,11 +175,11 @@
       '<div class="home-cmd-panel">' +
       '<div class="home-cmd-header"><span>glade</span><button class="home-cmd-close">esc</button></div>' +
       '<div class="home-cmd-items">' +
-      '<a href="/guide/installation" class="home-cmd-item"><strong>Install</strong><code>curl -fsSL https://glade.sh/install.sh | sh</code></a>' +
+      '<a href="/guide/installation" class="home-cmd-item"><strong>Install Glade</strong><code>curl -fsSL https://glade.sh/install.sh | sh</code></a>' +
       '<a href="/guide/cli-reference" class="home-cmd-item"><strong>Check source</strong><code>glade check --project . --json</code></a>' +
       '<a href="/guide/local-testing" class="home-cmd-item"><strong>Run tests</strong><code>glade test --project . --json</code></a>' +
       '<a href="/guide/installation" class="home-cmd-item"><strong>Open docs</strong><code>/guide/installation</code></a>' +
-      '<a href="/guide/playground" class="home-cmd-item"><strong>Local playground</strong><code>glade playground --examples --open</code></a>' +
+      '<a href="/guide/playground" class="home-cmd-item"><strong>Open Playground</strong><code>glade playground --examples --open</code></a>' +
       "</div></div>"
     document.body.appendChild(overlay)
 

@@ -1,48 +1,91 @@
-# Support Map
+# Apex and Salesforce Support
 
-Start here when deciding whether Glade can run a project or a test path. This
-page stays high level. The generated ledgers carry the method rows.
+Start here when deciding whether Glade can run a project, a test class, or a
+local Salesforce-shaped API flow. This page is the public map. The generated
+ledgers carry the exact method rows.
 
 ## Status Key
 
 | Status | Meaning |
 | --- | --- |
-| Supported | Implemented and covered by compatibility fixtures. |
-| Partial | Common local paths work, and gaps are named. |
-| Unsupported | Glade should fail with a stable unsupported diagnostic. |
-| Unknown | A row exists, but the team has not measured it yet. |
+| Works well | Implemented, fixture-backed, and fit for normal local use. |
+| Works with limits | Common local paths work. The limits are named. |
+| Not supported | Glade should stop with a stable unsupported diagnostic. |
+| Not measured | A row exists, but the team has not measured it yet. |
 
-## Runtime Areas
+## Works Well
 
-| Area | Status | What to expect |
+These areas are the main local development contract.
+
+| Area | What to expect |
+| --- | --- |
+| Apex parsing and project indexing | Large SFDX projects, nested types, namespace tokens, and stable parse diagnostics. |
+| Semantic checks | Type references, inheritance, interfaces, overloads, locals, assignments, return paths, and token ranges for the supported VM subset. |
+| Local Apex tests | `@isTest`, `@TestSetup`, isolated org state, static reset, governor windows, async drain, stack frames, JSON, and JUnit output. |
+| SOQL, DML, triggers, and SObjects | Static and dynamic SOQL, DML statements, `Database.*` result shapes, trigger context, schema-backed SObjects, and local SQLite-backed storage. |
+| Local API server | Salesforce-shaped REST discovery, SObject CRUD, query/queryAll, limits, userinfo stubs, Tooling `executeAnonymous`, Composite sObject insert, reset endpoints, and optional SQLite persistence. |
+| Editor and debug tools | LSP diagnostics, symbols, hover, completion, rename, semantic tokens, DAP stepping, watch mode, and trace/profile reports. |
+
+## Works With Limits
+
+These areas cover useful local test paths. They are not full Salesforce
+service parity.
+
+| Area | Current limit |
+| --- | --- |
+| Core standard library | Common `System`, `String`, date/time, math, assertions, labels, URLs, user info, and collection paths are covered. Exact method rows live in the standard-library ledger. |
+| Schema and describe APIs | Local describe supports checked object, field, record type, child relationship, and generated standard-object shape. Full org metadata parity remains outside the local model. |
+| JSON, regex, encoding, and crypto | Common serialization, parsing, regex, base64, hex, URL encoding, and digest paths are covered. Edge semantics stay method-level. |
+| HTTP, SOAP, and callout mocks | Request/response-shaped mock paths work for tests. Glade does not perform live outbound service calls. |
+| Messaging | Local message/result shapes and invocation counts are covered. Glade does not deliver email, push, or other live messages. |
+| Visualforce controller helpers | PageReference, messages, current page, and controller test helpers are modeled for controller tests. Glade does not render full Visualforce pages. |
+| Search and SOSL helpers | Local deterministic test paths exist. Full Salesforce search ranking and index behavior are not modeled. |
+| Test helpers | Many common `Test.*` paths work. Service-dependent helpers and org-global behavior remain explicit gaps. |
+
+## Not Supported Today
+
+This is the smaller list a first user should check before betting on Glade.
+
+| Area | Why it is outside the current local contract |
+| --- | --- |
+| Live Salesforce auth and sessions | The local server exposes local stubs. It does not implement real Salesforce OAuth, session validation, or org identity services. |
+| Live platform process engines | Approval execution, live business-hours calculations, quick actions, request context, sandbox lifecycle, Trailblazer identity, Answers, and password reset services require Salesforce-hosted engines. |
+| Full Visualforce rendering | Controller logic is the supported path. Component rendering, page lifecycle, `getContent`, and PDF generation remain outside the current runtime. |
+| Broad REST and Tooling API parity | The local API server covers the checked local baseline. Bulk API, Composite Graph, Streaming/PubSub, GraphQL, layout metadata, and broad Tooling object coverage remain future work. |
+| Live outbound side effects | Real callouts, delivered email, push notifications, and external service mutations are not performed. Tests should use local mocks and result objects. |
+| Exact Salesforce governor accounting | Glade tracks deterministic local limits. Salesforce's full production accounting and every platform-specific counter are not complete. |
+
+## Area Detail
+
+| Area | First-layer status | Notes |
 | --- | --- | --- |
-| Apex parsing and project indexing | Supported | Large SFDX projects, nested types, namespace tokens, and stable parse diagnostics are covered by checked tests and support artifacts. |
-| Semantic analysis | Supported | Method bodies, constructors, inheritance, interfaces, locals, assignments, return paths, overloads, and token ranges are checked for the supported VM subset. |
-| Local Apex tests | Supported | Test discovery, `@TestSetup`, isolated org state, static reset, limits windows, async drain, stack frames, JSON, and JUnit reports are covered for the supported runtime. |
-| SOQL, DML, triggers, and SObjects | Supported | Static and dynamic SOQL, DML statements, `Database.*` result shapes, trigger context, schema-backed SObjects, and local storage are covered for the checked local data model. |
-| Local API server | Supported | Salesforce-shaped discovery, CRUD, query, queryAll, limits, userinfo, Tooling `executeAnonymous`, Composite sObject insert, reset endpoints, and SQLite persistence are covered. |
-| Editor and tooling | Supported | LSP diagnostics, symbols, hover, completion, rename, semantic tokens, DAP stepping, watch mode, and trace/profile reports are covered for local development. |
-| Core standard library | Wide support | The common local test surface is covered. Method-level detail lives in the standard library ledger. |
-| Platform service APIs | Unsupported by default | Services that need live Salesforce process engines, identity services, request context, or sandbox lifecycle fail with explicit unsupported diagnostics unless the ledger says otherwise. |
+| Apex front end | Works well | Parser, project loader, symbols, semantic checks, LSP, and diagnostics form the front door. |
+| Runtime and tests | Works well | VM execution, local tests, SObjects, SOQL, DML, triggers, async drain, and local storage are the core contract. |
+| Local Salesforce API | Works well | Useful for local REST and Tooling `executeAnonymous` flows. It is not a hosted-org replacement. |
+| Standard library | Works with limits | Broad local support, with exact method status in the checked ledger. |
+| Platform service APIs | Not supported by default | Service-backed rows should fail with explicit unsupported diagnostics unless the ledger says otherwise. |
 
 ## Standard Library Families
 
-Counts come from the checked standard library coverage report in this repository state.
+Counts come from the checked standard library coverage report in this repository
+state.
 
-| Family | First-layer status | Method rows |
+| Family | First-layer status | Ledger rows |
 | --- | --- | ---: |
-| `Database` | Supported | 37 supported / 37 tracked |
-| Date, Datetime, Time, TimeZone | Supported | 26 supported / 26 tracked |
-| String and primitives | Wide support | 21 supported, 3 partial / 24 tracked |
+| `Database` | Works well | 37 supported / 37 tracked |
+| Date, Datetime, Time, TimeZone | Works well | 26 supported / 26 tracked |
+| String, Decimal, Boolean, Math | Wide local support | 29 supported, 3 partial / 32 tracked |
 | System, Assert, Limits | Mixed | 12 supported, 1 partial, 4 unsupported / 17 tracked |
-| Schema and SObject | Partial | 1 supported, 6 partial / 7 tracked |
+| Schema and SObject | Works with limits | 1 supported, 6 partial / 7 tracked |
 | Test helpers | Mixed | 8 supported, 7 partial, 13 unsupported / 28 tracked |
-| JSON, Pattern, EncodingUtil, Crypto | Partial | 4 supported, 13 partial / 17 tracked |
-| ApexPages and PageReference | Wide support | 12 supported, 2 partial, 1 unknown / 15 tracked |
-| HTTP and WebServiceCallout | Partial | 1 supported, 4 partial / 5 tracked |
-| Messaging | Partial | 1 supported, 4 partial / 5 tracked |
-| Search and SOSL helpers | Partial | 7 partial, 4 unsupported / 11 tracked |
-| Service-only platform APIs | Unsupported service surface | 35 unsupported / 35 tracked |
+| JSON, Pattern, EncodingUtil, Crypto | Works with limits | 4 supported, 13 partial / 17 tracked |
+| ApexPages and PageReference | Wide controller support | 12 supported, 2 partial, 1 unknown / 15 tracked |
+| HTTP and WebServiceCallout | Works with limits | 1 supported, 4 partial / 5 tracked |
+| Messaging | Works with limits | 1 supported, 4 partial / 5 tracked |
+| Search and SOSL helpers | Works with limits | 7 partial, 4 unsupported / 11 tracked |
+| UserInfo, URL, and Label | Wide local support | 19 supported, 2 unsupported / 21 tracked |
+| Type, FeatureManagement, Exception, and diagnostics | Works with limits | 6 supported, 3 partial / 9 tracked |
+| Service-only platform APIs | Not supported | 35 unsupported / 35 tracked |
 
 The service-only group includes Approval, BusinessHours, QuickAction, Request,
 UIRequest, Sandbox, TrailblazerIdentity, Answers, ResetPasswordResult,
@@ -50,11 +93,11 @@ Schedulable, and AccessLevel edge rows.
 
 ## Drill Down
 
-Use the map first, then cut down to the exact checked row.
+Use this map first, then cut down to the exact checked row.
 
-- Generated capability dashboard: [Compatibility Dashboard](/guide/compatibility-dashboard)
-- Method-level standard library rows: [`docs/STDLIB_COVERAGE.md`](https://github.com/glade-sh/glade/blob/main/docs/STDLIB_COVERAGE.md)
+- Method-level standard-library rows: [`docs/STDLIB_COVERAGE.md`](https://github.com/glade-sh/glade/blob/main/docs/STDLIB_COVERAGE.md)
 - Current known gaps: [`docs/KNOWN_GAPS.md`](https://github.com/glade-sh/glade/blob/main/docs/KNOWN_GAPS.md)
+- Developer compatibility reports: [Developer Reports](/guide/compatibility-dashboard)
 
 One rule keeps the marks honest. Do not call a surface supported until the row
 has implementation and compatibility evidence.

@@ -14,10 +14,10 @@ of the way.
 7. Install and author plugins: [PLUGINS.md](PLUGINS.md)
 8. Day-to-day editor commands: [EDITOR.md](EDITOR.md)
 9. Current support surface:
-   - Site first layer: <https://glade.sh/docs/guide/support-map>
-   - [COMPATIBILITY_DASHBOARD.md](COMPATIBILITY_DASHBOARD.md)
-   - [KNOWN_GAPS.md](KNOWN_GAPS.md)
-   - [STDLIB_COVERAGE.md](STDLIB_COVERAGE.md)
+   - Public Apex and Salesforce support map: <https://glade.sh/docs/guide/support-map>
+   - Method-level standard-library rows: [STDLIB_COVERAGE.md](STDLIB_COVERAGE.md)
+   - Current known gaps: [KNOWN_GAPS.md](KNOWN_GAPS.md)
+   - Maintainer gate: [COMPATIBILITY_DASHBOARD.md](COMPATIBILITY_DASHBOARD.md)
 
 ## If You Want To Ship Releases
 
