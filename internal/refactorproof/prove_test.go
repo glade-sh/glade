@@ -46,11 +46,10 @@ func TestProofFindingsWarnWhenStageNotRun(t *testing.T) {
 }
 
 func TestProveReturnsEnterpriseReportWithSchemaVersion(t *testing.T) {
-	root := filepath.Clean("../..")
+	root := filepath.Join("..", "..", "testdata", "local-tests", "enterprise-composed")
 
 	result, err := Prove(context.Background(), Options{
-		Root:  root,
-		Since: "HEAD",
+		Root: root,
 	})
 	if err != nil {
 		t.Fatal(err)
