@@ -3210,6 +3210,36 @@ System.assertEquals('built', thing.Name);
 	}
 }
 
+func TestExecTypeNewInstanceRunsFactoryTargetZeroArgConstructor(t *testing.T) {
+	constructorProgram, err := CompileAnonymous(`marker = 'constructed';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+FactoryTarget made = (FactoryTarget)Type.forName('FactoryTarget').newInstance();
+System.assertEquals('constructed', made.marker);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "FactoryTarget",
+		Fields: map[string]Field{
+			"marker": {Name: "marker", Type: "String"},
+		},
+		FieldOrder: []string{"marker"},
+		Constructors: []Method{
+			{Name: "FactoryTarget.<init>", ClassName: "FactoryTarget", Program: constructorProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCoreSystemContextHelpersReturnFalse(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(false, System.isBatch());

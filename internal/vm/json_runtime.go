@@ -896,7 +896,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		out := Map()
 		out.Type = typeName
 		for key, item := range fields {
-			keyValue, err := typedJSONMapKey(keyType, key)
+			keyValue, err := vm.typedJSONMapKey(keyType, key)
 			if err != nil {
 				return Null, err
 			}
