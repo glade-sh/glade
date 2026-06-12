@@ -19,9 +19,11 @@ import (
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/cliui"
+	"github.com/glade-sh/glade/internal/enterprise"
 	"github.com/glade-sh/glade/internal/flagparse"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/trace"
 	"github.com/glade-sh/glade/internal/vm"
 	"github.com/glade-sh/glade/internal/watch"
 )
@@ -124,6 +126,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	cpuProfilePath := ""
 	memProfilePath := ""
 	perfJSONPath := ""
+	tracePath := ""
+	servicesPath := ""
 	debounce := watch.DefaultDebounce
 	backend := watch.BackendAuto
 	var compileDoneMS int64
@@ -150,6 +154,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		String("cpu-profile", "").
 		String("mem-profile", "").
 		String("perf-json", "").
+		String("trace", "").
+		String("services", "").
 		String("junit", "").
 		String("limit-mode", "").
 		Bool("watch", "").
@@ -254,7 +260,15 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	cpuProfilePath = parsed.String("cpu-profile")
 	memProfilePath = parsed.String("mem-profile")
 	perfJSONPath = parsed.String("perf-json")
+	tracePath = strings.TrimSpace(parsed.String("trace"))
+	servicesPath = strings.TrimSpace(parsed.String("services"))
 	junitPath = parsed.String("junit")
+	if servicesPath != "" {
+		if err := enterprise.ValidateServiceConfig(servicesPath); err != nil {
+			return testreport.Run{}, err
+		}
+		fmt.Fprintln(progressW, "services: config validated; runtime virtualization hooks are not enabled yet")
+	}
 	if parsed.String("limit-mode") != "" {
 		mode, err := parseLimitMode(parsed.String("limit-mode"))
 		if err != nil {
@@ -266,6 +280,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if parsed.Bool("watch-once") {
 		watchMode = true
 		watchOnce = true
+	}
+	if tracePath != "" && watchMode {
+		return testreport.Run{}, errors.New("--trace cannot be combined with --watch or --watch-once")
 	}
 	daemonMode = parsed.Bool("daemon")
 	connectMode = parsed.Bool("connect")
@@ -333,6 +350,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		SelectedMethod:      methodName,
 		LimitMode:           limitMode,
 		TraceBlocked:        traceBlocked,
+		TraceAll:            tracePath != "",
 		SlowTestThresholdMS: slowTestThresholdMS,
 		ParallelMethods:     parallelMethods,
 		TimeoutMS:           testTimeout.Milliseconds(),
@@ -357,7 +375,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if noCache {
 		noServe = true
 	}
-	if len(selectedClasses) != 0 || methodName != "" || shardCount > 0 || durationHistoryPath != "" || writeClassShardsDir != "" {
+	if len(selectedClasses) != 0 || methodName != "" || shardCount > 0 || durationHistoryPath != "" || writeClassShardsDir != "" || tracePath != "" || servicesPath != "" {
 		noServe = true
 	}
 	if !noServe && !watchMode && !daemonMode && !debug {
@@ -399,6 +417,11 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 		if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath, 0, 0, result.Summary().DurationMS); err != nil {
 			return result, err
+		}
+		if tracePath != "" {
+			if err := writeTestTraceFile(tracePath, result); err != nil {
+				return result, err
+			}
 		}
 		if debug {
 			return result, serveDAPSnapshot(testRunSnapshot(result), w)
@@ -493,6 +516,11 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath, discoverTimeMS, compileDoneMS, runDurationMS); err != nil {
 		return result, err
 	}
+	if tracePath != "" {
+		if err := writeTestTraceFile(tracePath, result); err != nil {
+			return result, err
+		}
+	}
 	if debug {
 		return result, serveDAPSnapshot(testRunSnapshot(result), w)
 	}
@@ -510,6 +538,27 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	default:
 		return result, testreport.WriteConsole(w, result)
 	}
+}
+
+func writeTestTraceFile(path string, result testreport.Run) error {
+	if path == "" {
+		return nil
+	}
+	var events []trace.Event
+	for _, suite := range result.Suites {
+		for _, testCase := range suite.Cases {
+			events = append(events, testCase.Trace...)
+		}
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return trace.WriteJSON(file, trace.NewDocument(events))
 }
 
 func readTestClassFile(path string) ([]string, error) {
@@ -724,6 +773,8 @@ Common flags:
   --daemon                  Keep index warm in-process for --watch loops.
   --json                    Write JSON test results.
   --junit <path>            Write JUnit XML results.
+  --trace <path>            Write a Chrome trace JSON document for this run.
+  --services <path>         Validate a services.yml virtualization config.
   --progress                Print line progress to stderr, even when not attached to a terminal.
   --progress-json           Print NDJSON progress events to stderr.
   --no-progress, --quiet    Disable terminal progress.

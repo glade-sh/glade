@@ -307,11 +307,13 @@ func watchDisplayRoot(root string) string {
 	return filepath.Base(filepath.Clean(root))
 }
 
-func runReport(args []string, w io.Writer) error {
+func runReport(ctx context.Context, args []string, w io.Writer) error {
 	if len(args) == 0 || isHelpArg(args[0]) {
-		return errors.New("usage: glade report list|show latest|export latest|clean [--runs-dir <path>]")
+		return errors.New("usage: glade report assess|cruft|refactor-proof|list|show latest|export latest|clean")
 	}
 	switch args[0] {
+	case "assess", "cruft", "refactor-proof":
+		return runEnterpriseReport(ctx, args[0], args[1:], w)
 	case "list":
 		runsDir, err := parseReportRunsDirArgs(args[1:])
 		if err != nil {

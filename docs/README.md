@@ -10,10 +10,11 @@ of the way.
 3. Run Apex tests without an org: [LOCAL_TESTING.md](LOCAL_TESTING.md)
 4. CI outputs and saved artifacts: [CI_ARTIFACTS.md](CI_ARTIFACTS.md)
 5. Rich local workflows: [RICH_LOCAL_WORKFLOWS.md](RICH_LOCAL_WORKFLOWS.md)
-6. Test startup cache (when it is safe to trust): [TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md)
-7. Install and author plugins: [PLUGINS.md](PLUGINS.md)
-8. Day-to-day editor commands: [EDITOR.md](EDITOR.md)
-9. Current support surface:
+6. Enterprise workflows: [ENTERPRISE_WORKFLOWS.md](ENTERPRISE_WORKFLOWS.md)
+7. Test startup cache (when it is safe to trust): [TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md)
+8. Install and author plugins: [PLUGINS.md](PLUGINS.md)
+9. Day-to-day editor commands: [EDITOR.md](EDITOR.md)
+10. Current support surface:
    - Public Apex and Salesforce support map: <https://glade.sh/docs/guide/support-map>
    - Method-level standard-library rows: [STDLIB_COVERAGE.md](STDLIB_COVERAGE.md)
    - Current known gaps: [KNOWN_GAPS.md](KNOWN_GAPS.md)

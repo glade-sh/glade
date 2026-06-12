@@ -44,6 +44,65 @@ func TestRunVersion(t *testing.T) {
 	}
 }
 
+func TestRunTestWritesTraceFile(t *testing.T) {
+	root := filepath.Join("..", "..", "testdata", "local-tests", "basic")
+	tracePath := filepath.Join(t.TempDir(), "trace.json")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--class", "PassingTest", "--trace", tracePath, "--json", "--no-progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit = %d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	data, err := os.ReadFile(tracePath)
+	if err != nil {
+		t.Fatalf("read trace: %v", err)
+	}
+	if !bytes.Contains(data, []byte(`"traceEvents"`)) {
+		t.Fatalf("trace document missing traceEvents: %s", string(data))
+	}
+}
+
+func TestRunTestRejectsTraceWithWatch(t *testing.T) {
+	root := filepath.Join("..", "..", "testdata", "local-tests", "basic")
+	tracePath := filepath.Join(t.TempDir(), "trace.json")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--class", "PassingTest", "--trace", tracePath, "--watch-once", "--json", "--no-progress"}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("exit = 0 stdout=%q stderr=%q", stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "--trace cannot be combined with --watch or --watch-once") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+	if _, err := os.Stat(tracePath); !os.IsNotExist(err) {
+		t.Fatalf("trace path exists or stat failed unexpectedly: %v", err)
+	}
+}
+
+func TestRunTestValidatesServicesConfig(t *testing.T) {
+	root := filepath.Join("..", "..", "testdata", "local-tests", "basic")
+	dir := t.TempDir()
+	fixture := filepath.Join(dir, "fixture.json")
+	if err := os.WriteFile(fixture, []byte(`{"ok":true}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	servicesPath := filepath.Join(dir, "services.yml")
+	if err := os.WriteFile(servicesPath, []byte(`version: 0
+mode: strict
+calloutFixtures: [fixture.json]
+asyncDrain: true
+asyncMaxDepth: 5
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--class", "PassingTest", "--services", servicesPath, "--json", "--no-progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit = %d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "services: config validated") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
 func TestRunVersionJSON(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"version", "--json"}, &stdout, &stderr)
