@@ -77,5 +77,13 @@ fi
 tar -xzf "$tmpdir/$archive" -C "$tmpdir"
 install -m 0755 "$tmpdir/glade" "$install_dir/glade"
 
+share_dir="${GLADE_HOME:-$HOME/.local/share/glade}"
+if [ -d "$tmpdir/share/glade" ]; then
+  mkdir -p "$share_dir"
+  rm -rf "$share_dir/third_party" "$share_dir/lwcruntime"
+  cp -R "$tmpdir/share/glade/." "$share_dir/"
+  echo "glade LWC toolchain installed to $share_dir"
+fi
+
 echo "glade installed to $install_dir/glade"
 "$install_dir/glade" version

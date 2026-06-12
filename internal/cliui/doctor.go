@@ -17,6 +17,9 @@ type DoctorInfo struct {
 	DefaultNamespace string `json:"defaultNamespace,omitempty"`
 	ParserStatus     string `json:"parserStatus"`
 	ParserOK         bool   `json:"parserOK"`
+	ToolchainPath    string `json:"toolchainPath,omitempty"`
+	ToolchainStatus  string `json:"toolchainStatus"`
+	ToolchainOK      bool   `json:"toolchainOK"`
 }
 
 func WriteDoctor(w io.Writer, info DoctorInfo) error {
@@ -36,6 +39,7 @@ func WriteDoctor(w io.Writer, info DoctorInfo) error {
 	}{
 		{true, "go", info.GoVersion},
 		{info.ParserOK, "parser", info.ParserStatus},
+		{info.ToolchainOK, "lwc.toolchain", toolchainDoctorValue(info)},
 	}
 	if info.ConfigMissing {
 		rows = append(rows, struct {
@@ -65,7 +69,7 @@ func WriteDoctor(w io.Writer, info DoctorInfo) error {
 		}
 	}
 
-	allOK := info.ParserOK && !info.ConfigMissing
+	allOK := info.ParserOK && info.ToolchainOK && !info.ConfigMissing
 	for _, row := range rows {
 		icon := t.Green(t.GlyphPass)
 		if !row.ok {
@@ -109,4 +113,14 @@ func WriteDoctor(w io.Writer, info DoctorInfo) error {
 
 func ParserStatusOK(status string) bool {
 	return strings.HasPrefix(status, "ok")
+}
+
+func toolchainDoctorValue(info DoctorInfo) string {
+	if info.ToolchainPath == "" {
+		return info.ToolchainStatus
+	}
+	if info.ToolchainStatus == "" {
+		return info.ToolchainPath
+	}
+	return info.ToolchainPath + " (" + info.ToolchainStatus + ")"
 }

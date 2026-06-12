@@ -26,6 +26,7 @@ type Server struct {
 	queryLocators map[string]queryLocatorState
 	queryOrder    []string
 	nextQueryID   int
+	lightning     lightningState
 }
 
 type queryLocatorState struct {
@@ -155,6 +156,18 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	parts := splitPath(r.URL.EscapedPath())
+	if len(parts) >= 2 && parts[0] == "apex" {
+		s.handleVisualforcePage(w, r, parts[1:])
+		return
+	}
+	if len(parts) >= 1 && parts[0] == "lightning" {
+		s.handleLightning(w, r, parts[1:])
+		return
+	}
+	if len(parts) >= 1 && parts[0] == "resource" {
+		s.handleStaticResource(w, r, parts[1:])
+		return
+	}
 	if len(parts) >= 2 && parts[0] == "services" && parts[1] == "oauth2" {
 		s.handleOAuth(w, r, parts[2:])
 		return

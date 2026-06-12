@@ -3,6 +3,7 @@ package project
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -451,6 +452,32 @@ func TestLoadReportsMalformedManagedPackageArtifactAsLoadError(t *testing.T) {
 	}
 	if len(p.DependencyDiagnostics) != 1 || p.DependencyDiagnostics[0].Code != "dependency_load_error" {
 		t.Fatalf("diagnostics = %#v", p.DependencyDiagnostics)
+	}
+}
+
+func TestDiscoverLWCBundleFiles(t *testing.T) {
+	root := t.TempDir()
+	base := filepath.Join(root, "force-app/main/default/lwc/counter")
+	writeFile(t, filepath.Join(base, "counter.js"), `export default class Counter {}`)
+	writeFile(t, filepath.Join(base, "counter.html"), `<template><p>{count}</p></template>`)
+	writeFile(t, filepath.Join(base, "counter.css"), `.title { color: red; }`)
+	writeFile(t, filepath.Join(base, "counter.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><isExposed>true</isExposed></LightningComponentBundle>`)
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.LWCFiles) != 1 || !strings.HasSuffix(p.LWCFiles[0], "counter.js") {
+		t.Fatalf("LWCFiles = %#v", p.LWCFiles)
+	}
+	if len(p.LWCHTMLFiles) != 1 {
+		t.Fatalf("LWCHTMLFiles = %#v", p.LWCHTMLFiles)
+	}
+	if len(p.LWCCSSFiles) != 1 {
+		t.Fatalf("LWCCSSFiles = %#v", p.LWCCSSFiles)
+	}
+	if len(p.LWCMetaFiles) != 1 {
+		t.Fatalf("LWCMetaFiles = %#v", p.LWCMetaFiles)
 	}
 }
 

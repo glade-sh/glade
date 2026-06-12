@@ -470,6 +470,12 @@ func ResolveLabel(registry storage.MetadataRegistry, orgNamespace, namespace, na
 	if namespace == "" || name == "" {
 		return "", LabelLookupMissing
 	}
+	// Namespaced packages import local labels as @salesforce/label/c.MyLabel.
+	if strings.EqualFold(namespace, "c") && orgNamespace != "" && !strings.EqualFold(orgNamespace, "c") {
+		if value, ok := LookupLabel(registry, orgNamespace, name); ok {
+			return value, LabelLookupResolved
+		}
+	}
 	if isPlatformLabelNamespace(namespace) {
 		return name, LabelLookupPlatformFallback
 	}

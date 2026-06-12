@@ -35,6 +35,8 @@ func runDev(ctx context.Context, args []string, w io.Writer) (testreport.Run, bo
 		case "watch":
 			result, err := runDevTest(ctx, append(args[1:], "--watch"), w)
 			return result, true, err
+		case "vf":
+			return testreport.Run{}, false, runDevVF(ctx, args[1:], w)
 		case "help", "-h", "--help":
 			printDevHelp(w)
 			return testreport.Run{}, false, nil
@@ -51,6 +53,7 @@ Usage:
   glade dev [--project <root>]
   glade dev test [--project <root>] [--class <name>|--test <Class.method>|--changed|--failed] [--out <runs-dir>]
   glade dev watch [--project <root>] [--out <runs-dir>]
+  glade dev vf [--project <root>] [--port <port>|--addr <host:port>]
 `)+"\n")
 }
 

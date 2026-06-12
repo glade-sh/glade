@@ -1,0 +1,13 @@
+<apex:page showHeader="false" sidebar="false">
+    <apex:includeLightning />
+    <div id="host">Loading...</div>
+    <script>
+        $Lightning.use("c:lightningOut", function() {
+            $Lightning.createComponent("c:eventChild", {}, "host", function(cmp) {
+                cmp.addEventListener("select", function(e) {
+                    window.__selected = e.detail.id;
+                });
+            });
+        });
+    </script>
+</apex:page>

@@ -27,9 +27,20 @@ rm -rf "${DIST_DIR}"
 mkdir -p "${DIST_DIR}"
 
 (
+	cd "${ROOT}/third_party/lwc"
+	if [[ ! -d node_modules ]]; then
+		npm ci
+	fi
+)
+
+(
 	cd "${ROOT}"
 	CGO_ENABLED=1 go build -trimpath -ldflags "${LDFLAGS}" -o "${workdir}/${binary}" ./cmd/glade
 )
+
+mkdir -p "${workdir}/share/glade/lwcruntime/src"
+cp -R "${ROOT}/third_party/lwc" "${workdir}/share/glade/third_party/lwc"
+cp -R "${ROOT}/lwcruntime/src/shims" "${workdir}/share/glade/lwcruntime/src/shims"
 
 doctor_out="$("${workdir}/${binary}" doctor --json 2>&1)"
 if [[ "${doctor_out}" != *'"parserOK": true'* ]]; then
@@ -42,10 +53,10 @@ cp "${ROOT}/LICENSE" "${workdir}/LICENSE"
 if [[ "${goos}" == "windows" ]]; then
 	(
 		cd "${workdir}"
-		zip -q "${DIST_DIR}/${archive}" "${binary}" LICENSE
+		zip -q "${DIST_DIR}/${archive}" "${binary}" LICENSE share
 	)
 else
-	tar -C "${workdir}" -czf "${DIST_DIR}/${archive}" "${binary}" LICENSE
+	tar -C "${workdir}" -czf "${DIST_DIR}/${archive}" "${binary}" LICENSE share
 fi
 
 (

@@ -625,6 +625,32 @@ glade dev vf --port 8080 --project .
 - `glade test` still isolates org state per test run.
 - Existing perf scan still records `EntryVisualforce` findings.
 
+#### Phase 1 execution record
+
+**Phase 1 entry point**
+- Branch starts from local `main` and contains no functional runtime changes.
+- Parser, expression, renderer, and server code may be scaffolded in parallel files, but no test behavior is expected yet.
+
+**Phase 1 artifacts**
+- `docs/research/visualforce-local-rendering-methodology.md` updated for phase 1 detail.
+- `internal/visualforce/{compiler.go,expression.go}` initial implementations exist or are planned with clear compile barriers.
+- `internal/server` gains a gated `/apex/{name}` path that compiles page markup into a non-panicking HTML fragment.
+- `internal/vm/platform_passive_members.go` contains TODO/bridge for `getContent` fallback path.
+
+**Phase 1 definition of done**
+- One-page `.page` fixture renders static output from controller fields.
+- `$Label` and simple merge references evaluate in output context.
+- No existing `go` package import or behavior changes are required for unrelated CLI/subcommands.
+- A short evidence note is added to this doc: files touched, manual request path (`/apex/{name}`), and known known-gaps.
+
+**Phase 1 execution note (local-main worktree)**
+- `GET /apex/{pageName}` routes through `internal/server/visualforce.go` and emits `text/html`.
+- `internal/visualforce/compiler.go` parses Visualforce markup as an AST-like tree with namespaces and attributes (self-closing tag normalization included).
+- `internal/visualforce/expression.go` adds a lightweight `{! ... }` parser/evaluator path for labels and controller-like fields.
+- `internal/visualforce/render.go` adds baseline `apex:page`, `apex:outputText`, and `apex:outputField` rendering.
+- `PageReference.getContent()` uses the registered visualforce renderer when project context is available.
+- Server test `internal/server/visualforce_test.go` proves label rendering end-to-end via `/apex/Edit`.
+
 ### Phase 2: Interaction (Forms + Postback) — 2-3 weeks
 
 **Objective:** Add full request lifecycle for page actions and controller round-trip.
@@ -663,6 +689,26 @@ glade dev vf --port 8080 --project .
 - Invalid or tampered view-state returns controlled failure, no crash.
 - CSRF token mismatch fails closed with explicit error path.
 
+#### Phase 2 execution record
+
+**Phase 2 entry point**
+- Start only after phase 1 proves read-only page GET path.
+- Carry only one view-state secret and CSRF strategy into this phase.
+
+**Phase 2 artifacts**
+- `internal/visualforce/viewstate/` (or equivalent) owns serialization format, HMAC check, and migration helpers.
+- Server postback handler logs request source, decoded view-state payload, and action target.
+- At least one controller action flow fixture exists in `testdata` with bound input field updates.
+- `ApexPages` message assertions exist for action success and action failure branches.
+
+**Phase 2 execution note (local-main worktree)**
+- `internal/visualforce/viewstate.go` implements HMAC-signed view state encode/decode with CSRF verification.
+- `POST /apex/{pageName}` decodes view state, binds form fields, and dispatches controller actions.
+- Renderers added for `apex:form`, input components, command controls, and `apex:pageMessages`.
+- Server regression test covers POST round-trip HTML rendering.
+
+**Phase 2 definition of done:** met for scaffold-level form lifecycle and tamper detection.
+
 ### Phase 3: Data Components (Tables, Repeats, Detail) — 2-3 weeks
 
 **Objective:** Cover data-heavy pages and reusable listing layouts used by sales pages.
@@ -699,6 +745,24 @@ glade dev vf --port 8080 --project .
 - At least one fixture of each family renders deterministic HTML.
 - No hidden panics when component receives non-list for repeat-like nodes.
 - No unsupported-feature bleed into runtime paths used by core pages.
+
+#### Phase 3 execution record
+
+**Phase 3 entry point**
+- Requires phase 2 postback and component state round-trip to be stable.
+- Keeps output rendering deterministic and avoids per-request random IDs.
+
+**Phase 3 artifacts**
+- Table renderer path supports direct `value` and `rows`/`first`-style pagination where cheap and safe.
+- Variable scope state object has explicit `push`/`pop` operations.
+- `apex:dataList`, `apex:dataTable`, and `apex:pageBlockTable` each have one deterministic fixture.
+
+**Phase 3 execution note (local-main worktree)**
+- `internal/visualforce/render.go` adds repeat, dataTable, pageBlockTable, dataList, detail, and related layout renderers.
+- Expression scope stack (`scope.go`) supports `var`/`indexVar` iteration semantics.
+- Tests cover repeat + dataTable output and empty-collection behavior.
+
+**Phase 3 definition of done:** met for deterministic table/repeat fixtures.
 
 ### Phase 4: Component Composition & Static Resources — 2-3 weeks
 
@@ -737,6 +801,25 @@ glade dev vf --port 8080 --project .
 - Dynamic component render fallback returns diagnostic marker rather than generic panic.
 - Static file responses include correct MIME and cache headers for repeat calls.
 
+#### Phase 4 execution record
+
+**Phase 4 entry point**
+- Requires phase 3 data components to function without regressions.
+- Enforces explicit composition precedence: page-level template resolution before custom-component lookup.
+
+**Phase 4 artifacts**
+- `c:MyComponent` compiler path resolves local `.component` and loads controller binding.
+- `apex:composition` + `apex:define` + `apex:insert` supports variable substitution and body passthrough.
+- Static resource endpoint serves packaged files with deterministic cache headers and content type.
+
+**Phase 4 execution note (local-main worktree)**
+- Custom component resolution (`c:*`) with attribute passthrough and missing-component fallback marker.
+- Composition chain support via `apex:composition`, `apex:define`, `apex:insert`, and `apex:include`.
+- `GET /resource/{name}/{path}` serves bundle subpaths via `ResolveStaticResourceFile`.
+- `apex:dynamicComponent` renders a visible fallback block.
+
+**Phase 4 definition of done:** met for composition/resource scaffold paths.
+
 ### Phase 5: Developer Experience — 1-2 weeks
 
 **Objective:** Turn rendering work into usable local workflow and test hooks.
@@ -770,6 +853,29 @@ glade dev vf --port 8080 --project .
 - New command appears in help and CLI docs.
 - Typical page tests can assert against output and action side effects.
 - DX path supports local page iteration without browser/manual steps.
+
+#### Phase 5 execution record
+
+**Phase 5 entry point**
+- Requires phase 4 to land and pass component composition fixtures.
+- Adds explicit UX and test affordances; does not add unbounded renderer coverage.
+
+**Phase 5 artifacts**
+- `glade dev vf` command entry in `internal/gladecli` and `docs` command references.
+- Error overlay path that includes:
+  - file path
+  - line/column (best-effort from parse tree mapping)
+  - raw expression text
+- Test-only rendering assertions in apex test helpers.
+- Optional render telemetry output to logger.
+
+**Phase 5 execution note (local-main worktree)**
+- `glade dev vf` command added in `internal/gladecli/dev_vf_command.go` with file watching and hot reload.
+- Debug render overlay returns actionable HTML errors for compile/render failures on `/apex/{name}`.
+- `visualforce.RenderPageForTest` exposes page rendering for Apex test assertions.
+- Render metrics counters live on `RenderContext.Metrics`.
+
+**Phase 5 definition of done:** met for local dev workflow and test render hook.
 
 ### Phase execution and worktree process
 

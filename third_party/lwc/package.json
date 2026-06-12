@@ -1,0 +1,10 @@
+{
+  "name": "glade-lwc-toolchain",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@lwc/compiler": "8.20.4",
+    "@lwc/engine-dom": "8.20.4",
+    "@lwc/synthetic-shadow": "8.20.4"
+  }
+}

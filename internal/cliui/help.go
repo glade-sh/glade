@@ -57,6 +57,19 @@ var commandReferences = []CommandHelp{
 		Examples: []string{"glade doctor", "glade doctor --project . --json"},
 	},
 	{
+		Name:        "toolchain",
+		Description: "Install or inspect the global LWC toolchain for Lightning Out.",
+		Usage:       []string{"glade toolchain install [--from <glade-checkout>]", "glade toolchain status"},
+		Subcommands: []SubcommandHelp{
+			{Name: "install", Description: "Install the LWC runtime toolchain."},
+			{Name: "status", Description: "Print the current LWC toolchain status."},
+		},
+		Flags: []FlagHelp{
+			{Name: "--from", Value: "<glade-checkout>", Description: "Install from another glade checkout. Defaults to the current checkout."},
+		},
+		Examples: []string{"glade toolchain status", "glade toolchain install --from ."},
+	},
+	{
 		Name:        "config",
 		Description: "Inspect, validate, and create glade.yml.",
 		Usage:       []string{"glade config show [--project <root>] [--json]", "glade config validate [--project <root>]", "glade config init [--project <root>] [--yes] [--force] [--namespace <name>] [--package-dir <path>] [--feature <name>]"},

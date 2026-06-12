@@ -21,6 +21,18 @@ import (
 	"github.com/glade-sh/glade/internal/watch"
 )
 
+func TestRenderLWCCommandPrintsHTML(t *testing.T) {
+	root := filepath.Join("..", "..", "testdata", "local-tests", "lwc-rendering")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"render", "lwc", "counter", "--project", root, "--props", `{"count":"9"}`}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit = %d stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "9") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunVersion(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"version"}, &stdout, &stderr)
@@ -740,7 +752,7 @@ func TestRunCompletionBash(t *testing.T) {
 	for _, want := range []string{
 		"_glade_completion",
 		"complete -F _glade_completion glade",
-		"version doctor config init parse inspect schema check exec",
+		"version doctor toolchain config init parse inspect schema check exec",
 		"--project",
 		"--package-dir",
 		"--progress-json",

@@ -16,7 +16,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, caches ...sourceCache) []vm.Class {
+func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, caches ...*sourceCache) []vm.Class {
 	var out []vm.Class
 	sources := sourceCacheFor(caches)
 	knownTypes := knownTypeNames(index.Types)
@@ -113,7 +113,7 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, ca
 	out = append(out, passiveStandardRuntimeClasses(index.Types, out)...)
 	return out
 }
-func compileProjectMethods(index typesys.Index, caches ...sourceCache) map[string]vm.Method {
+func compileProjectMethods(index typesys.Index, caches ...*sourceCache) map[string]vm.Method {
 	type methodCompileJob struct {
 		ClassName  string
 		Kind       apexast.DeclarationKind
@@ -256,7 +256,7 @@ func compileProjectMethodSignature(className, methodName, returnType string, mod
 		Column:     r.Start.Column,
 	}, nil
 }
-func compileProjectTriggers(index typesys.Index, caches ...sourceCache) ([]vm.Trigger, []error) {
+func compileProjectTriggers(index typesys.Index, caches ...*sourceCache) ([]vm.Trigger, []error) {
 	var out []vm.Trigger
 	var errs []error
 	sources := sourceCacheFor(caches)
@@ -296,7 +296,7 @@ func compileProjectTriggers(index typesys.Index, caches ...sourceCache) ([]vm.Tr
 	}
 	return out, errs
 }
-func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.Index, caches ...sourceCache) {
+func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.Index, caches ...*sourceCache) {
 	if org == nil {
 		return
 	}
@@ -333,7 +333,7 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 	applyReferencedStandardFieldSet(org, inferred, childRelationshipLookup)
 }
 
-func projectReferencedStandardFieldCacheKey(index typesys.Index, cache sourceCache) string {
+func projectReferencedStandardFieldCacheKey(index typesys.Index, cache *sourceCache) string {
 	if index.Project.Root == "" {
 		return ""
 	}
@@ -386,7 +386,7 @@ func projectReferencedAccountPersonField(fieldName string) bool {
 		strings.EqualFold(fieldName, "IsPersonAccount")
 }
 
-func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project, caches ...sourceCache) {
+func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project, caches ...*sourceCache) {
 	if org == nil {
 		return
 	}
@@ -413,7 +413,7 @@ func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project,
 	}
 }
 
-func applyManagedDependencyReferencedRecordTypes(org *storage.OrgState, p project.Project, caches ...sourceCache) {
+func applyManagedDependencyReferencedRecordTypes(org *storage.OrgState, p project.Project, caches ...*sourceCache) {
 	if org == nil {
 		return
 	}

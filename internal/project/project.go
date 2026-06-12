@@ -56,6 +56,9 @@ type Project struct {
 	VisualforceComponentFiles  []string                   `json:"visualforceComponentFiles"`
 	AuraFiles                  []string                   `json:"auraFiles"`
 	LWCFiles                   []string                   `json:"lwcFiles"`
+	LWCHTMLFiles               []string                   `json:"lwcHtmlFiles"`
+	LWCCSSFiles                []string                   `json:"lwcCssFiles"`
+	LWCMetaFiles               []string                   `json:"lwcMetaFiles"`
 	ManagedPackageDependencies []ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
 	DependencyDiagnostics      []DependencyDiagnostic     `json:"dependencyDiagnostics,omitempty"`
 }
@@ -389,6 +392,9 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	sort.Strings(p.VisualforceComponentFiles)
 	sort.Strings(p.AuraFiles)
 	sort.Strings(p.LWCFiles)
+	sort.Strings(p.LWCHTMLFiles)
+	sort.Strings(p.LWCCSSFiles)
+	sort.Strings(p.LWCMetaFiles)
 	return p, nil
 }
 
@@ -721,8 +727,17 @@ func collectFiles(root string, p *Project) error {
 			p.VisualforceComponentFiles = append(p.VisualforceComponentFiles, path)
 		case isAuraPath(lower) && isAuraSourceFile(lower):
 			p.AuraFiles = append(p.AuraFiles, path)
-		case isLWCPath(lower) && strings.HasSuffix(lower, ".js"):
-			p.LWCFiles = append(p.LWCFiles, path)
+		case isLWCPath(lower):
+			switch {
+			case strings.HasSuffix(lower, ".js"):
+				p.LWCFiles = append(p.LWCFiles, path)
+			case strings.HasSuffix(lower, ".html"):
+				p.LWCHTMLFiles = append(p.LWCHTMLFiles, path)
+			case strings.HasSuffix(lower, ".css"):
+				p.LWCCSSFiles = append(p.LWCCSSFiles, path)
+			case strings.HasSuffix(lower, ".js-meta.xml"):
+				p.LWCMetaFiles = append(p.LWCMetaFiles, path)
+			}
 		}
 		return nil
 	})

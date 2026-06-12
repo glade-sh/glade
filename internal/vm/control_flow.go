@@ -65,7 +65,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 				}
 			}
 		}
-		if vm.traceEnabled {
+		if vm.traceEnabled && result != nil {
 			result.Trace = append(result.Trace, statementTraceEvent(seq, inst, program.Source))
 		}
 		vm.setCurrentStatement(inst, program.Source)

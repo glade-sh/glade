@@ -361,7 +361,7 @@ func recordProjectReferencedLookupFieldReadOnly(org *storage.OrgState, inferred 
 	inferred[objectName][fieldName] = field
 }
 
-func parallelScanProjectReferencedStandardFields(org *storage.OrgState, index typesys.Index, cache sourceCache, childRelationshipLookup map[string]struct{}) standardFieldScanResult {
+func parallelScanProjectReferencedStandardFields(org *storage.OrgState, index typesys.Index, cache *sourceCache, childRelationshipLookup map[string]struct{}) standardFieldScanResult {
 	files := projectReferencedApexFiles(index)
 	if len(files) == 0 {
 		return standardFieldScanResult{}
